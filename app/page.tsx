@@ -1,65 +1,168 @@
-import Image from "next/image";
+import Header from "@/components/Header/Header";
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <main className="min-h-screen bg-gray-100">
+
+      <Header />
+
+      {/* HERO */}
+
+      <section className="bg-gradient-to-r from-blue-700 to-blue-500 py-24 text-white">
+
+        <div className="max-w-6xl mx-auto px-6 text-center">
+
+          <h1 className="text-6xl font-extrabold">
+            Tutto quello che cerchi...
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+
+          <h2 className="text-6xl font-extrabold mt-2">
+            è già nella tua città.
+          </h2>
+
+          <p className="mt-8 text-xl text-blue-100 max-w-3xl mx-auto">
+            LocalHub ti permette di trovare negozi, professionisti,
+            offerte, servizi e attività locali in pochi secondi.
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+
+          <div className="mt-14 flex flex-col md:flex-row gap-4 justify-center">
+
+            <input
+              type="text"
+              placeholder="Cerca un prodotto, un negozio o un servizio..."
+              className="bg-white rounded-xl p-5 text-black text-lg shadow-xl w-full md:w-[650px]"
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+            <button className="bg-yellow-400 hover:bg-yellow-300 text-black font-bold px-10 rounded-xl transition">
+              Cerca
+            </button>
+
+          </div>
+
         </div>
-      </main>
-    </div>
+
+      </section>
+
+      {/* CATEGORIE */}
+
+      <section className="max-w-7xl mx-auto py-20 px-6">
+
+        <h2 className="text-4xl font-bold text-center mb-12">
+          Esplora le categorie
+        </h2>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+
+          <div className="bg-white rounded-3xl shadow-lg p-10 text-center hover:shadow-2xl hover:-translate-y-2 transition">
+            <div className="text-6xl">🛍️</div>
+            <h3 className="mt-6 text-xl font-bold">
+              Negozi
+            </h3>
+          </div>
+
+          <div className="bg-white rounded-3xl shadow-lg p-10 text-center hover:shadow-2xl hover:-translate-y-2 transition">
+            <div className="text-6xl">🍕</div>
+            <h3 className="mt-6 text-xl font-bold">
+              Food
+            </h3>
+          </div>
+
+          <div className="bg-white rounded-3xl shadow-lg p-10 text-center hover:shadow-2xl hover:-translate-y-2 transition">
+            <div className="text-6xl">👕</div>
+            <h3 className="mt-6 text-xl font-bold">
+              Moda
+            </h3>
+          </div>
+
+          <div className="bg-white rounded-3xl shadow-lg p-10 text-center hover:shadow-2xl hover:-translate-y-2 transition">
+            <div className="text-6xl">🔧</div>
+            <h3 className="mt-6 text-xl font-bold">
+              Servizi
+            </h3>
+          </div>
+
+        </div>
+
+      </section>
+
+      {/* ATTIVITÀ IN EVIDENZA */}
+
+      <section className="bg-white py-20">
+
+        <div className="max-w-7xl mx-auto px-6">
+
+          <h2 className="text-4xl font-bold mb-12">
+            🔥 Attività in evidenza
+          </h2>
+
+          <div className="grid md:grid-cols-3 gap-8">
+
+            <div className="rounded-3xl overflow-hidden shadow-xl bg-gray-50">
+              <div className="h-56 bg-blue-200 flex items-center justify-center text-6xl">
+                🥖
+              </div>
+
+              <div className="p-8">
+                <h3 className="text-2xl font-bold">
+                  Panificio Rossi
+                </h3>
+
+                <p className="mt-3 text-gray-600">
+                  Pane fresco, dolci e prodotti artigianali ogni giorno.
+                </p>
+
+                <button className="mt-6 bg-blue-700 text-white px-6 py-3 rounded-xl">
+                  Scopri
+                </button>
+              </div>
+            </div>
+
+            <div className="rounded-3xl overflow-hidden shadow-xl bg-gray-50">
+              <div className="h-56 bg-pink-200 flex items-center justify-center text-6xl">
+                👗
+              </div>
+
+              <div className="p-8">
+                <h3 className="text-2xl font-bold">
+                  Fashion Style
+                </h3>
+
+                <p className="mt-3 text-gray-600">
+                  Abbigliamento uomo, donna e accessori.
+                </p>
+
+                <button className="mt-6 bg-blue-700 text-white px-6 py-3 rounded-xl">
+                  Scopri
+                </button>
+              </div>
+            </div>
+
+            <div className="rounded-3xl overflow-hidden shadow-xl bg-gray-50">
+              <div className="h-56 bg-green-200 flex items-center justify-center text-6xl">
+                💻
+              </div>
+
+              <div className="p-8">
+                <h3 className="text-2xl font-bold">
+                  Tech Store
+                </h3>
+
+                <p className="mt-3 text-gray-600">
+                  Smartphone, PC, assistenza tecnica e accessori.
+                </p>
+
+                <button className="mt-6 bg-blue-700 text-white px-6 py-3 rounded-xl">
+                  Scopri
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+    </main>
   );
 }
