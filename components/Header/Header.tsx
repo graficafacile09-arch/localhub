@@ -1,36 +1,48 @@
+import Image from "next/image";
+
 export default function Header() {
-    return (
-      <header className="bg-blue-700 shadow-lg">
-        <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
-  
-          <div>
-            <h1 className="text-3xl font-bold text-white">
-              LOCALHUB
-            </h1>
-            <p className="text-blue-100 text-sm">
-              Trova tutto nella tua città
-            </p>
-          </div>
-  
-          <nav className="flex gap-8 text-white font-medium">
-            <a href="#" className="hover:text-blue-200">
-              Home
-            </a>
-  
-            <a href="#" className="hover:text-blue-200">
-              Negozi
-            </a>
-  
-            <a href="#" className="hover:text-blue-200">
-              Categorie
-            </a>
-  
-            <a href="#" className="hover:text-blue-200">
-              Contatti
-            </a>
-          </nav>
-  
+  return (
+    <header className="bg-white shadow-md border-b">
+      <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between px-4 md:px-6 py-4 gap-4">
+
+        {/* LOGO */}
+
+        <div className="flex items-center justify-center md:justify-start w-full md:w-auto">
+
+          <Image
+            src="/logo.png"
+            alt="LocalHub"
+            width={170}
+            height={55}
+            priority
+            className="w-[170px] md:w-[220px] h-auto"
+          />
+
         </div>
-      </header>
-    );
-  }
+
+        {/* MENU */}
+
+        <nav className="flex flex-wrap justify-center gap-4 md:gap-8 text-sm md:text-base text-gray-700 font-semibold">
+
+          <a href="#" className="hover:text-blue-600 transition">
+            Home
+          </a>
+
+          <a href="#" className="hover:text-blue-600 transition">
+            Negozi
+          </a>
+
+          <a href="#" className="hover:text-blue-600 transition">
+            Categorie
+          </a>
+
+          <a href="#" className="hover:text-blue-600 transition">
+            Contatti
+          </a>
+
+        </nav>
+
+      </div>
+    </header>
+  );
+}
