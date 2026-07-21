@@ -1,3 +1,5 @@
+import { cercaNegoziDemo, espandiQueryConSinonimi } from "./negozi-demo";
+import { calcolaPunteggioNegozio, filtraNegoziPerPertinenza } from "./ranking-negozi";
 import { supabase } from "./supabase";
 
 export async function getNegozi() {
@@ -46,21 +48,57 @@ export async function getProdottiNegozio(negozioId: string) {
 }
 
 export async function cercaNegozi(ricerca: string) {
+  const terminiEspansi = Array.from(
+    new Set(
+      espandiQueryConSinonimi(ricerca)
+        .split(/\s+/)
+        .map((termine) => termine.trim())
+        .filter(Boolean)
+    )
+  ).slice(0, 12);
+
+  const filtriRicerca = (terminiEspansi.length > 0 ? terminiEspansi : [ricerca.trim()])
+    .flatMap((termine) => {
+      const pulito = termine.replace(/[,%]/g, " ").trim();
+
+      if (!pulito) {
+        return [];
+      }
+
+      return [
+        `nome.ilike.%${pulito}%`,
+        `categoria.ilike.%${pulito}%`,
+        `descrizione.ilike.%${pulito}%`,
+        `servizi.ilike.%${pulito}%`,
+        `parole_chiave.ilike.%${pulito}%`,
+      ];
+    })
+    .join(",");
+
   const { data, error } = await supabase
     .from("negozi")
     .select("*")
-    .or(
-      `nome.ilike.%${ricerca}%,
-      categoria.ilike.%${ricerca}%,
-      descrizione.ilike.%${ricerca}%,
-      servizi.ilike.%${ricerca}%,
-      parole_chiave.ilike.%${ricerca}%`
-    );
+    .or(filtriRicerca);
+
+  const negoziDemo = cercaNegoziDemo(ricerca);
 
   if (error) {
     console.log(error);
-    return [];
+    return negoziDemo;
   }
 
-  return data;
+  const unici = new Map<string, typeof negoziDemo[number] | (typeof data)[number]>();
+
+  [...negoziDemo, ...(data ?? [])].forEach((negozio) => {
+    if (!unici.has(negozio.id)) {
+      unici.set(negozio.id, negozio);
+    }
+  });
+
+  return filtraNegoziPerPertinenza(
+    Array.from(unici.values()).filter(
+      (negozio) => calcolaPunteggioNegozio(negozio, espandiQueryConSinonimi(ricerca)) > 0
+    ),
+    espandiQueryConSinonimi(ricerca)
+  );
 }

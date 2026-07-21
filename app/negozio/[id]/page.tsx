@@ -1,5 +1,12 @@
-import Image from "next/image";
+import Link from "next/link";
+import Header from "@/components/Header/Header";
+import BackLink from "@/components/ui/BackLink";
 import { getNegozio, getProdottiNegozio } from "@/lib/negozi";
+import { getNegozioCardImmagine } from "@/lib/negozi-card-immagini";
+import {
+  getNegozioDemoById,
+  getProdottiDemoByNegozioId,
+} from "@/lib/negozi-demo";
 
 export default async function PaginaNegozio({
   params,
@@ -8,19 +15,29 @@ export default async function PaginaNegozio({
 }) {
   const { id } = await params;
 
-  const negozio = await getNegozio(id);
+  const negozioReale = await getNegozio(id);
+  const negozioDemo = negozioReale ? null : getNegozioDemoById(id);
+  const negozio = negozioReale ?? negozioDemo;
 
   if (!negozio) {
     return (
-      <main className="max-w-5xl mx-auto py-20 text-center">
-        <h1 className="text-4xl font-bold">
-          Negozio non trovato
-        </h1>
+      <main className="min-h-screen bg-gray-100">
+        <Header />
+        <div className="max-w-5xl mx-auto py-20 text-center">
+          <h1 className="text-4xl font-bold">
+            Negozio non trovato
+          </h1>
+          <Link href="/negozi" className="mt-6 inline-block text-blue-700 hover:underline">
+            Torna ai negozi
+          </Link>
+        </div>
       </main>
     );
   }
 
-  const prodotti = await getProdottiNegozio(id);
+  const prodotti = negozioReale
+    ? await getProdottiNegozio(id)
+    : getProdottiDemoByNegozioId(id);
 
   console.log("================================");
   console.log("ID RICEVUTO:", id);
@@ -29,15 +46,29 @@ export default async function PaginaNegozio({
   console.log("================================");
 
   return (
-    <main className="max-w-6xl mx-auto py-10 px-6">
+    <main className="min-h-screen bg-gray-100">
+      <Header />
 
-      <Image
-        src={`/negozi/${negozio.immagine}`}
-        alt={negozio.nome}
-        width={1200}
-        height={500}
-        className="w-full h-96 object-cover rounded-3xl"
-      />
+      <div className="max-w-6xl mx-auto py-10 px-6">
+
+      <BackLink href="/negozi" label="Torna ai negozi" />
+
+      <div className="overflow-hidden rounded-3xl bg-white shadow-lg">
+        <div className="relative aspect-video max-h-135 overflow-hidden">
+          <div
+            role="img"
+            aria-label={`Fotografia del negozio ${negozio.nome}`}
+            className="h-full w-full bg-cover bg-center"
+            style={{
+              backgroundImage: `url(${getNegozioCardImmagine({
+                immagine: negozio.immagine,
+                categoria: negozio.categoria,
+              })})`,
+            }}
+          />
+          <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-black/55 via-black/10 to-transparent" />
+        </div>
+      </div>
 
       <h1 className="text-5xl font-bold mt-8">
         {negozio.nome}
@@ -111,6 +142,7 @@ export default async function PaginaNegozio({
 
       </section>
 
+      </div>
     </main>
   );
 }
