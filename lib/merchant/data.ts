@@ -351,7 +351,7 @@ export async function updateMerchantProductForStore(
     quantita_disponibile: input.quantitaDisponibile ?? 1,
     stato_condizione: input.statoCondizione ?? null,
     attivo: input.attivo,
-    origine_pubblicazione: input.originePubblicazione?.trim() || storeResult.data.origine_pubblicazione,
+    origine_pubblicazione: input.originePubblicazione?.trim() || "manuale",
   };
 
   const updateResult = await supabase

@@ -1,10 +1,18 @@
 "use client";
 
+import type { LucideIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { Home, LayoutGrid, Search, Store, UserRound } from "lucide-react";
 
-const navLinks = [
+type NavLink = {
+  href: string;
+  label: string;
+  icon: LucideIcon;
+  featured?: boolean;
+};
+
+const navLinks: NavLink[] = [
   { href: "/", label: "Home", icon: Home },
   { href: "/negozi", label: "Negozi", icon: Store },
   { href: "/#categorie", label: "Categorie", icon: LayoutGrid },
@@ -12,8 +20,8 @@ const navLinks = [
   { href: "/merchant", label: "Area negozianti", icon: UserRound },
 ];
 
-// Voci mostrate nella bottom navigation su mobile (max 5)
-const bottomNavLinks = [
+// Voci mostrate nella bottom navigation su mobile
+const bottomNavLinks: NavLink[] = [
   { href: "/", label: "Home", icon: Home },
   { href: "/negozi", label: "Negozi", icon: Store },
   { href: "/#categorie", label: "Categorie", icon: LayoutGrid },

@@ -102,7 +102,7 @@ export async function PUT(
     quantitaDisponibile: payload.quantitaDisponibile ?? null,
     immaginePrincipale: payload.immaginePrincipale?.trim() ?? "",
     attivo: payload.attivo ?? true,
-    originePubblicazione: payload.originePubblicazione ?? storeResult.data.origine_pubblicazione,
+    originePubblicazione: payload.originePubblicazione ?? "manuale",
   });
 
   if (updateResult.setupRequired) {
