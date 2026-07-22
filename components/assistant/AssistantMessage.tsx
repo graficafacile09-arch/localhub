@@ -163,7 +163,7 @@ export default function AssistantMessage({ message }: AssistantMessageProps) {
               {message.negozi.length}{" "}
               {message.negozi.length === 1 ? "negozio trovato" : "negozi trovati"}
             </p>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 pb-2 sm:grid-cols-2 lg:grid-cols-3">
               {message.negozi.map((negozio, index) => (
                 <ShopResultCard
                   key={negozio.id}

@@ -48,10 +48,35 @@ export default function AssistantChat() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  // Ref all'ultimo messaggio assistente — usato per scrollare verso il risultato
+  const lastAssistantRef = useRef<HTMLDivElement>(null);
+  // Tiene traccia di quanti messaggi assistente ci sono stati finora
+  const assistantCountRef = useRef(0);
 
-  // Scroll in fondo quando arrivano nuovi messaggi
+  // Scroll: quando arriva una nuova risposta dell'assistente, scrolla
+  // all'inizio dell'ultimo messaggio assistente così l'utente vede il risultato.
+  // Quando è in loading (typing indicator) scrolla al fondo.
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const assistantMessages = messages.filter((m) => m.role === "assistant");
+    const newCount = assistantMessages.length;
+
+    if (isLoading) {
+      // Durante il caricamento scrolla al fondo per mostrare il typing indicator
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    } else if (newCount > assistantCountRef.current) {
+      // È appena arrivata una nuova risposta: scrolla all'inizio del risultato
+      assistantCountRef.current = newCount;
+      // Piccolo delay per lasciar completare il render delle card
+      setTimeout(() => {
+        lastAssistantRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }, 80);
+    } else {
+      // Messaggi utente aggiuntivi o altri aggiornamenti: scrolla al fondo
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
   }, [messages, isLoading]);
 
   // ── Invio messaggio ─────────────────────────────────────────────────────────
@@ -194,15 +219,30 @@ export default function AssistantChat() {
           </div>
         ) : (
           /* Lista messaggi */
-          <div className="mx-auto flex max-w-3xl flex-col gap-6">
-            {messages.map((message) => (
-              <AssistantMessage key={message.id} message={message} />
-            ))}
+          <div className="mx-auto flex max-w-3xl flex-col gap-6 pt-2 sm:pt-0">
+            {messages.map((message, index) => {
+              // È l'ultimo messaggio assistente della lista?
+              const isLastAssistant =
+                message.role === "assistant" &&
+                !messages.slice(index + 1).some((m) => m.role === "assistant");
+
+              return (
+                <div
+                  key={message.id}
+                  // scroll-mt garantisce almeno 28px di spazio visivo sopra
+                  // la card quando viene portata in view dallo scrollIntoView
+                  className={isLastAssistant ? "scroll-mt-7" : undefined}
+                  ref={isLastAssistant ? lastAssistantRef : undefined}
+                >
+                  <AssistantMessage message={message} />
+                </div>
+              );
+            })}
 
             {/* Typing indicator */}
             {isLoading && <TypingIndicator />}
 
-            {/* Sentinel per lo scroll */}
+            {/* Sentinel per lo scroll al fondo */}
             <div ref={messagesEndRef} />
           </div>
         )}
