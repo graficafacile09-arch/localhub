@@ -1,0 +1,135 @@
+/**
+ * LocalHub — Search Service
+ *
+ * Punto di accesso unificato alla ricerca.
+ * Quando BRAIN_ENABLED=true, usa BrainOrchestrator per ricerca semantica + LLM.
+ * Altrimenti cade in graceful fallback sulla ricerca keyword esistente (ricercaConAi).
+ *
+ * Questo è lo strato di servizio che tutte le API route e i componenti
+ * client devono usare — mai chiamare ricercaConAi() o brainSearch() direttamente
+ * da UI o API, sempre passare da qui.
+ *
+ * @module lib/search-service
+ */
+
+import type { NegozioRicerca } from "./ricerca-ai";
+import type { QueryIntentType } from "./brain/types";
+
+// ─── Tipi pubblici ────────────────────────────────────────────────────────────
+
+/** Risultato unificato della ricerca, indipendente dalla sorgente */
+export interface SearchResult {
+  /** Lista di negozi trovati, già ordinati per rilevanza */
+  negozi: NegozioRicerca[];
+
+  /** Risposta sintetica in linguaggio naturale (Markdown) */
+  risposta: string | null;
+
+  /** Da quale sistema ha risposto la ricerca */
+  source: "brain" | "fallback";
+
+  /** Intento classificato da Brain (null se fallback) */
+  intent: QueryIntentType | null;
+
+  /** Confidenza dell'intent 0-100 (null se fallback) */
+  intentConfidence: number | null;
+
+  /** Query espansa usata per il retrieval (null se fallback) */
+  queryExpanded: string | null;
+
+  /** Tempo di elaborazione in ms */
+  processingMs: number;
+}
+
+// ─── Service principale ───────────────────────────────────────────────────────
+
+/**
+ * Esegue la ricerca usando Brain (se abilitato) o il fallback keyword+LLM.
+ *
+ * @param query - La query dell'utente
+ * @param options - Opzioni opzionali per Brain
+ */
+export async function search(
+  query: string,
+  options?: {
+    sessionId?: string;
+    userId?: string;
+    useMemory?: boolean;
+  }
+): Promise<SearchResult> {
+  const termine = query.trim();
+
+  if (!termine) {
+    return {
+      negozi: [],
+      risposta: null,
+      source: "fallback",
+      intent: null,
+      intentConfidence: null,
+      queryExpanded: null,
+      processingMs: 0,
+    };
+  }
+
+  const startTime = Date.now();
+
+  // ─── Tentativo Brain ──────────────────────────────────────────────────────
+  try {
+    const { brainSearch, isBrainEnabled } = await import("./brain/index");
+
+    if (isBrainEnabled()) {
+      const brainResult = await brainSearch(termine, {
+        sessionId: options?.sessionId,
+        userId: options?.userId,
+        useMemory: options?.useMemory ?? false,
+      });
+
+      if (brainResult) {
+        const { context, response } = brainResult.data;
+
+        // Trasforma BrainCandidate[] → NegozioRicerca[]
+        const negozi: NegozioRicerca[] = context.candidates.map((c) => ({
+          id: c.id,
+          nome: (c.data.nome as string) ?? c.id,
+          descrizione: (c.data.descrizione as string | null | undefined) ?? null,
+          categoria: (c.data.categoria as string | null | undefined) ?? null,
+          indirizzo: (c.data.indirizzo as string | null | undefined) ?? null,
+          telefono: (c.data.telefono as string | null | undefined) ?? null,
+          immagine: (c.data.immagine as string | null | undefined) ?? null,
+        }));
+
+        return {
+          negozi,
+          risposta: response,
+          source: "brain",
+          intent: context.intent?.type ?? null,
+          intentConfidence: context.intent?.confidence ?? null,
+          queryExpanded: context.queryExpanded ?? null,
+          processingMs: brainResult.processingMs,
+        };
+      }
+    }
+  } catch (error) {
+    // Brain non disponibile — cade nel fallback
+    console.warn("[search-service] Brain non disponibile, uso fallback:", error);
+  }
+
+  // ─── Fallback: ricerca keyword + LLM esistente ────────────────────────────
+  try {
+    const { ricercaConAi } = await import("./ricerca-ai");
+    const risultato = await ricercaConAi(termine);
+
+    return {
+      negozi: risultato.negozi,
+      risposta: risultato.risposta || null,
+      source: "fallback",
+      intent: null,
+      intentConfidence: null,
+      queryExpanded: null,
+      processingMs: Date.now() - startTime,
+    };
+  } catch (error) {
+    // Anche il fallback ha fallito — ritorna risultato vuoto con errore propagato
+    throw error;
+  }
+}

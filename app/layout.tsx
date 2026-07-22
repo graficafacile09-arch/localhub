@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Footer from "../components/Footer/Footer";
+import AssistantFab from "../components/assistant/AssistantFab";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -37,6 +38,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-[#eaeded]">
         {children}
         <Footer />
+        <AssistantFab />
       </body>
     </html>
   );
