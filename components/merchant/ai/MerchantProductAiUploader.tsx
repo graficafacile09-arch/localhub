@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Upload } from "lucide-react";
+import { useRef, useState } from "react";
+import { Camera, Image as ImageIcon, Upload } from "lucide-react";
 import type { ProductVisionSuggestion } from "@/lib/product-assistant/vision";
 
 type AnalysisResult = {
@@ -27,9 +27,12 @@ export default function MerchantProductAiUploader({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+  // Due input separati: uno forza la fotocamera (capture), l'altro apre la galleria
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
+
+  function handleFileSelected(selected: File | null | undefined) {
     setError(null);
-    const selected = event.target.files?.[0] ?? null;
 
     if (!selected) {
       setFile(null);
@@ -42,6 +45,14 @@ export default function MerchantProductAiUploader({
     // Revoca l'object URL precedente per evitare memory leak
     if (preview) URL.revokeObjectURL(preview);
     setPreview(URL.createObjectURL(selected));
+  }
+
+  function handleCameraChange(event: React.ChangeEvent<HTMLInputElement>) {
+    handleFileSelected(event.target.files?.[0]);
+  }
+
+  function handleGalleryChange(event: React.ChangeEvent<HTMLInputElement>) {
+    handleFileSelected(event.target.files?.[0]);
   }
 
   async function handleAnalyzeClick() {
@@ -108,52 +119,90 @@ export default function MerchantProductAiUploader({
           </div>
         ) : null}
 
-        <div className="grid gap-4 md:grid-cols-[1.2fr_0.8fr]">
-          {/* Area upload */}
-          <label className="group flex min-h-[220px] cursor-pointer flex-col items-center justify-center gap-3 overflow-hidden rounded-[1.75rem] border border-dashed border-slate-300 bg-slate-50 px-5 py-8 text-center transition hover:border-blue-400 hover:bg-blue-50/60">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-200 transition group-hover:bg-blue-100">
-              <Upload className="h-5 w-5 text-slate-500 transition group-hover:text-blue-600" />
+        {/* Pulsanti selezione immagine */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-2">
+          {/* Bottone Fotocamera — usa capture="environment" per aprire la fotocamera sul mobile */}
+          <button
+            type="button"
+            onClick={() => cameraInputRef.current?.click()}
+            disabled={loading}
+            className="flex flex-col items-center gap-3 rounded-[1.75rem] border border-dashed border-blue-300 bg-blue-50/60 px-4 py-6 text-center transition hover:border-blue-400 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-100">
+              <Camera className="h-6 w-6 text-blue-600" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-slate-700 group-hover:text-blue-700">
-                {file ? file.name : "Seleziona immagine"}
-              </p>
-              <p className="mt-1 text-xs text-slate-500">
-                JPEG, PNG o WEBP — oppure usa la fotocamera
-              </p>
+              <p className="text-sm font-bold text-slate-800">Fotocamera</p>
+              <p className="mt-0.5 text-xs text-slate-500">Scatta una foto ora</p>
             </div>
-            <input
-              type="file"
-              accept="image/*"
-              capture="environment"
-              onChange={handleFileChange}
-              className="hidden"
-            />
-          </label>
+          </button>
+          {/* Input nascosto con capture="environment" — forza la fotocamera posteriore */}
+          <input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            onChange={handleCameraChange}
+            className="hidden"
+            aria-label="Scatta foto con la fotocamera"
+          />
 
-          {/* Anteprima */}
+          {/* Bottone Galleria — senza capture, apre la galleria o il file picker */}
+          <button
+            type="button"
+            onClick={() => galleryInputRef.current?.click()}
+            disabled={loading}
+            className="flex flex-col items-center gap-3 rounded-[1.75rem] border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center transition hover:border-blue-400 hover:bg-blue-50/60 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100">
+              <ImageIcon className="h-6 w-6 text-slate-500" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-slate-800">Galleria</p>
+              <p className="mt-0.5 text-xs text-slate-500">Scegli dalla galleria</p>
+            </div>
+          </button>
+          {/* Input nascosto senza capture — apre la galleria / file picker */}
+          <input
+            ref={galleryInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleGalleryChange}
+            className="hidden"
+            aria-label="Seleziona immagine dalla galleria"
+          />
+        </div>
+
+        {/* Anteprima immagine selezionata */}
+        {preview ? (
           <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-4">
-            <p className="text-sm font-semibold text-slate-700">Anteprima</p>
-            <div className="mt-3 flex h-44 items-center justify-center overflow-hidden rounded-3xl bg-white shadow-sm">
-              {preview ? (
-                <img
-                  src={preview}
-                  alt="Anteprima prodotto selezionato"
-                  className="h-full w-full object-contain"
-                />
-              ) : (
-                <p className="text-sm text-slate-400">Nessuna immagine selezionata</p>
-              )}
+            <p className="text-sm font-semibold text-slate-700">
+              Anteprima
+              {file ? <span className="ml-2 text-xs font-normal text-slate-400">— {file.name}</span> : null}
+            </p>
+            <div className="mt-3 flex max-h-64 items-center justify-center overflow-hidden rounded-3xl bg-white shadow-sm">
+              <img
+                src={preview}
+                alt="Anteprima prodotto selezionato"
+                className="max-h-64 w-full object-contain"
+              />
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="flex min-h-[100px] items-center justify-center rounded-[1.75rem] border border-dashed border-slate-200 bg-slate-50/60">
+            <div className="flex flex-col items-center gap-2 text-slate-400">
+              <Upload className="h-6 w-6" />
+              <p className="text-sm">Nessuna immagine selezionata</p>
+            </div>
+          </div>
+        )}
 
         {/* Pulsante analisi — mostra spinner durante l'attesa */}
         <button
           type="button"
           onClick={handleAnalyzeClick}
           disabled={loading || !file}
-          className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-amber-400 via-yellow-400 to-amber-500 px-6 text-sm font-bold text-slate-900 shadow-lg shadow-amber-400/40 transition hover:from-amber-300 hover:via-yellow-300 hover:to-amber-400 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-amber-400 via-yellow-400 to-amber-500 px-6 text-sm font-bold text-slate-900 shadow-lg shadow-amber-400/40 transition hover:from-amber-300 hover:via-yellow-300 hover:to-amber-400 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {loading ? (
             <>

@@ -5,6 +5,7 @@ import type { User } from "@supabase/supabase-js";
 import type { MerchantStoreSummary } from "@/lib/merchant/types";
 import MerchantStoreSwitcher from "./MerchantStoreSwitcher";
 import MerchantBottomNav from "./MerchantBottomNav";
+import MerchantTopBar from "./MerchantTopBar";
 
 export default function MerchantShell({
   user,
@@ -24,10 +25,13 @@ export default function MerchantShell({
   return (
     <main className="min-h-screen bg-[#eef3f8] text-slate-900">
 
-      {/* ── Header ────────────────────────────────────────────────────────────── */}
-      <div className="border-b border-blue-900/15 bg-[linear-gradient(180deg,#1d4ed8_0%,#2563eb_100%)] text-white shadow-lg">
+      {/* ── Top App Bar mobile — sticky, visibile solo su mobile ─────────────── */}
+      <MerchantTopBar storeName={currentStore?.nome ?? null} />
+
+      {/* ── Header desktop — visibile solo su md+ ────────────────────────────── */}
+      <div className="hidden border-b border-blue-900/15 bg-[linear-gradient(180deg,#1d4ed8_0%,#2563eb_100%)] text-white shadow-lg md:block">
         <div className="h-1 bg-linear-to-r from-cyan-300 via-white to-yellow-300" />
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 md:px-6">
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-4">
           <div>
             <Link href="/merchant" className="text-2xl font-black tracking-tight text-white">
               LocalHub Merchant
@@ -40,13 +44,10 @@ export default function MerchantShell({
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Email visibile solo su desktop */}
-            <div className="hidden rounded-2xl border border-white/15 bg-white/10 px-4 py-2 text-sm text-blue-50 sm:block">
+            <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-2 text-sm text-blue-50">
               {user.email}
             </div>
-
-            {/* Pulsante Esci — visibile solo su desktop (su mobile c'è nella bottom nav) */}
-            <form action="/api/auth/signout" method="post" className="hidden md:block">
+            <form action="/api/auth/signout" method="post">
               <button
                 type="submit"
                 className="inline-flex h-11 items-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-4 text-sm font-semibold text-white transition hover:bg-white/15"
@@ -62,11 +63,11 @@ export default function MerchantShell({
       {/* ── Layout principale ─────────────────────────────────────────────────── */}
       {/*
         Desktop/tablet (md+): griglia 2 colonne con sidebar
-        Mobile (< md):        colonna singola, sidebar nascosta
+        Mobile (< md):        colonna singola, nessuna sidebar
       */}
-      <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 md:grid-cols-[280px_minmax(0,1fr)] md:px-6">
+      <div className="mx-auto grid max-w-7xl gap-6 px-4 py-4 md:grid-cols-[280px_minmax(0,1fr)] md:px-6 md:py-6">
 
-        {/* Sidebar — visibile solo su desktop/tablet */}
+        {/* Sidebar — visibile solo su desktop/tablet ─────────────────────────── */}
         <aside className="hidden space-y-5 md:block">
           <div className="rounded-3xl border border-white/70 bg-white p-5 shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
@@ -111,8 +112,8 @@ export default function MerchantShell({
           <MerchantStoreSwitcher stores={stores} currentStoreId={currentStoreId} />
         </aside>
 
-        {/* Contenuto principale */}
-        <section className="min-w-0 space-y-6">
+        {/* Contenuto principale ──────────────────────────────────────────────── */}
+        <section className="min-w-0 space-y-4 md:space-y-6">
           {banner ? (
             <div className="rounded-3xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
               {banner}
@@ -122,7 +123,7 @@ export default function MerchantShell({
         </section>
       </div>
 
-      {/* ── Bottom Navigation mobile (< md) ──────────────────────────────────── */}
+      {/* ── Bottom Navigation mobile ──────────────────────────────────────────── */}
       <MerchantBottomNav storeId={currentStore?.id ?? null} />
     </main>
   );

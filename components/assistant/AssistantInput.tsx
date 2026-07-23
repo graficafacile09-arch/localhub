@@ -42,7 +42,7 @@ export default function AssistantInput({
     if (!el) return;
     el.style.height = "auto";
     // Max ~5 righe (circa 130px)
-    el.style.height = `${Math.min(el.scrollHeight, 130)}px`;
+    el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
   }, []);
 
   useEffect(() => {
@@ -67,7 +67,7 @@ export default function AssistantInput({
   const canSend = !isLoading && value.trim().length > 0;
 
   return (
-    <div className="relative flex items-end gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-3 shadow-[0_8px_30px_rgba(15,23,42,0.10)] ring-1 ring-slate-100 transition-shadow focus-within:shadow-[0_8px_30px_rgba(37,99,235,0.16)] focus-within:ring-blue-200">
+    <div className="relative flex items-end gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-[0_8px_30px_rgba(15,23,42,0.10)] ring-1 ring-slate-100 transition-shadow focus-within:shadow-[0_8px_30px_rgba(37,99,235,0.16)] focus-within:ring-blue-200">
       {/* Textarea */}
       <textarea
         ref={textareaRef}
@@ -77,7 +77,7 @@ export default function AssistantInput({
         disabled={isLoading}
         placeholder={placeholder}
         rows={1}
-        className="max-h-[130px] min-h-[40px] flex-1 resize-none bg-transparent text-[15px] leading-6 text-slate-900 placeholder:text-slate-400 focus:outline-none disabled:opacity-60"
+        className="max-h-[120px] min-h-[36px] flex-1 resize-none bg-transparent text-[14px] leading-6 text-slate-900 placeholder:text-slate-400 focus:outline-none disabled:opacity-60"
         aria-label="Messaggio per l'assistente"
         aria-multiline="true"
       />
@@ -87,13 +87,13 @@ export default function AssistantInput({
         type="button"
         onClick={onSend}
         disabled={!canSend}
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 text-white shadow-sm transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 text-white shadow-sm transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
         aria-label={isLoading ? "Invio in corso…" : "Invia messaggio"}
       >
         {isLoading ? (
-          <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+          <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
         ) : (
-          <ArrowUp className="h-4 w-4" aria-hidden />
+          <ArrowUp className="h-3.5 w-3.5" aria-hidden />
         )}
       </button>
     </div>

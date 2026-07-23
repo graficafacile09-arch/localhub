@@ -29,35 +29,20 @@ export const metadata: Metadata = {
 export default function AssistantPage() {
   return (
     /*
-     * Il layout usa `h-[100dvh]` per occupare l'intera viewport anche su mobile
-     * dove la barra del browser modifica l'altezza disponibile.
-     * `overflow-hidden` sul wrapper esterno impedisce doppio scroll.
+     * h-[100dvh]: occupa la viewport dinamica su mobile (esclude barre browser).
+     * overflow-hidden: impedisce doppio scroll a livello di pagina.
+     * flex flex-col: Header (shrink-0) + main (flex-1 min-h-0).
      */
     <div className="flex h-[100dvh] flex-col overflow-hidden bg-slate-50">
-      {/* Header sticky */}
+      {/* Header globale — si restringe, non cresce */}
       <Header />
 
-      {/* Intestazione pagina — compatta, non toglie spazio alla chat */}
-      <div className="border-b border-slate-200/80 bg-white px-4 py-3 sm:px-6">
-        <div className="mx-auto flex max-w-3xl items-center justify-between gap-4">
-          <div>
-            <h1 className="text-base font-black tracking-tight text-slate-950 sm:text-lg">
-              Assistente AI
-            </h1>
-            <p className="text-[12px] text-slate-500">
-              Trova negozi e servizi locali — powered by LocalHub Brain
-            </p>
-          </div>
-          {/* Badge status */}
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-[11px] font-bold text-emerald-700 ring-1 ring-emerald-200">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
-            Online
-          </div>
-        </div>
-      </div>
-
-      {/* Chat — occupa tutto lo spazio rimanente */}
-      <main className="min-h-0 flex-1">
+      {/*
+       * main è flex-1 min-h-0: prende tutto lo spazio verticale residuo
+       * senza espandersi oltre. flex flex-col propaga l'altezza ad AssistantChat
+       * che usa h-full internamente.
+       */}
+      <main className="flex flex-1 flex-col min-h-0">
         <AssistantChat />
       </main>
     </div>
