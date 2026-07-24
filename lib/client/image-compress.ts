@@ -5,7 +5,13 @@ export type CompressResult = {
   compressedSize: number;
   compressionMs: number;
   reductionPercent: number;
+  width: number;
+  height: number;
 };
+
+const MAX_DIM = 800;
+const JPEG_QUALITY = 0.72;
+const MAX_FILE_SIZE = 280_000;
 
 function getOrientedDimensions(
   img: HTMLImageElement,
@@ -82,80 +88,130 @@ function getJpegOrientation(file: File): Promise<number> {
   });
 }
 
-export function compressImage(file: File, maxDim = 1024, quality = 0.78): Promise<CompressResult> {
+function canvasToBlob(canvas: HTMLCanvasElement, quality: number): Promise<Blob> {
   return new Promise((resolve, reject) => {
-    const tStart = performance.now();
-    const originalSize = file.size;
+    canvas.toBlob(
+      (blob) => {
+        if (blob) resolve(blob);
+        else reject(new Error("canvas.toBlob returned null"));
+      },
+      "image/jpeg",
+      quality
+    );
+  });
+}
 
+export async function compressImage(file: File): Promise<CompressResult> {
+  const tStart = performance.now();
+  const originalSize = file.size;
+
+  if (originalSize <= MAX_FILE_SIZE) {
+    const ms = Math.round(performance.now() - tStart);
+    console.log("=== COMPRESSIONE CLIENT ===");
+    console.log("immagine già sotto 280 KB, nessuna compressione");
+    console.log(`tempo: ${ms}ms`);
+    return {
+      blob: file,
+      file,
+      originalSize,
+      compressedSize: originalSize,
+      compressionMs: ms,
+      reductionPercent: 0,
+      width: 0,
+      height: 0,
+    };
+  }
+
+  const img = await new Promise<HTMLImageElement>((resolve, reject) => {
     const img = new Image();
     const url = URL.createObjectURL(file);
-
-    img.onload = async () => {
-      try {
-        const orientation = await getJpegOrientation(file);
-        const dims = getOrientedDimensions(img, orientation);
-        let { width, height } = dims;
-
-        if (width > maxDim || height > maxDim) {
-          const ratio = Math.min(maxDim / width, maxDim / height);
-          width = Math.round(width * ratio);
-          height = Math.round(height * ratio);
-        }
-
-        const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d")!;
-
-        drawWithOrientation(ctx, img, width, height, orientation);
-
-        canvas.toBlob(
-          (blob) => {
-            URL.revokeObjectURL(url);
-            if (!blob) {
-              reject(new Error("Compressione immagine fallita."));
-              return;
-            }
-
-            const compressedFile = new File([blob], file.name.replace(/\.[^.]+$/, ".jpg"), {
-              type: "image/jpeg",
-            });
-            const compressedSize = compressedFile.size;
-            const compressionMs = Math.round(performance.now() - tStart);
-            const reductionPercent = originalSize
-              ? Math.round((1 - compressedSize / originalSize) * 100)
-              : 0;
-
-            console.log("=== COMPRESSIONE CLIENT ===");
-            console.log(`originale: ${(originalSize / 1024).toFixed(1)} KB`);
-            console.log(`compressa: ${(compressedSize / 1024).toFixed(1)} KB`);
-            console.log(`riduzione: ${reductionPercent}%`);
-            console.log(`tempo: ${compressionMs}ms`);
-            console.log(`dimensioni: ${width}x${height}`);
-
-            resolve({
-              blob,
-              file: compressedFile,
-              originalSize,
-              compressedSize,
-              compressionMs,
-              reductionPercent,
-            });
-          },
-          "image/jpeg",
-          quality
-        );
-      } catch (err) {
-        URL.revokeObjectURL(url);
-        reject(err);
-      }
-    };
-
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      reject(new Error("Impossibile caricare l'immagine."));
-    };
-
+    img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Impossibile caricare l'immagine.")); };
     img.src = url;
   });
+
+  const orientation = await getJpegOrientation(file);
+  const dims = getOrientedDimensions(img, orientation);
+
+  let quality = JPEG_QUALITY;
+  let dim = MAX_DIM;
+
+  let lastBlob: Blob | null = null;
+
+  for (let attempt = 0; attempt < 6; attempt++) {
+    let { width, height } = dims;
+    if (width > dim || height > dim) {
+      const ratio = Math.min(dim / width, dim / height);
+      width = Math.round(width * ratio);
+      height = Math.round(height * ratio);
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d")!;
+    drawWithOrientation(ctx, img, width, height, orientation);
+
+    const blob = await canvasToBlob(canvas, quality);
+    lastBlob = blob;
+
+    if (blob.size <= MAX_FILE_SIZE) {
+      const compressedFile = new File([blob], file.name.replace(/\.[^.]+$/, ".jpg"), {
+        type: "image/jpeg",
+      });
+      const compressedSize = compressedFile.size;
+      const compressionMs = Math.round(performance.now() - tStart);
+      const reductionPercent = Math.round((1 - compressedSize / originalSize) * 100);
+
+      console.log("=== COMPRESSIONE CLIENT ===");
+      console.log(`originale: ${(originalSize / 1024).toFixed(1)} KB`);
+      console.log(`compressa: ${(compressedSize / 1024).toFixed(1)} KB`);
+      console.log(`riduzione: ${reductionPercent}%`);
+      console.log(`tempo: ${compressionMs}ms`);
+      console.log(`dimensioni: ${width}x${height}`);
+      console.log(`qualità: ${Math.round(quality * 100)}%`);
+
+      return {
+        blob,
+        file: compressedFile,
+        originalSize,
+        compressedSize,
+        compressionMs,
+        reductionPercent,
+        width,
+        height,
+      };
+    }
+
+    quality -= 0.1;
+    if (quality < 0.3) {
+      quality = JPEG_QUALITY;
+      dim = Math.max(dim - 100, 400);
+    }
+  }
+
+  const blob = lastBlob!;
+  const compressedFile = new File([blob], file.name.replace(/\.[^.]+$/, ".jpg"), {
+    type: "image/jpeg",
+  });
+  const compressedSize = compressedFile.size;
+  const compressionMs = Math.round(performance.now() - tStart);
+  const reductionPercent = Math.round((1 - compressedSize / originalSize) * 100);
+
+  console.log("=== COMPRESSIONE CLIENT ===");
+  console.log(`originale: ${(originalSize / 1024).toFixed(1)} KB`);
+  console.log(`compressa: ${(compressedSize / 1024).toFixed(1)} KB (limite ${(MAX_FILE_SIZE / 1024).toFixed(0)} KB non raggiunto)`);
+  console.log(`riduzione: ${reductionPercent}%`);
+  console.log(`tempo: ${compressionMs}ms`);
+
+  return {
+    blob,
+    file: compressedFile,
+    originalSize,
+    compressedSize,
+    compressionMs,
+    reductionPercent,
+    width: 0,
+    height: 0,
+  };
 }
