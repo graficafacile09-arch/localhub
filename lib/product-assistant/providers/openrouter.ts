@@ -22,10 +22,6 @@ type OpenRouterMessage = {
   >;
 };
 
-function log(...args: unknown[]) {
-  console.log("[OpenRouterProvider]", ...args);
-}
-
 export class OpenRouterProvider implements VisionProvider {
   private readonly apiKey: string;
   private readonly model: string;
@@ -42,16 +38,11 @@ export class OpenRouterProvider implements VisionProvider {
     const prompt = buildVisionPrompt(context);
     const startTime = Date.now();
 
-    log(`Modello: ${this.model}, immagini: ${images.length}`);
-    log(`Prompt (primi 300): "${prompt.slice(0, 300)}..."`);
-    log(`OPENROUTER_API_KEY presente: ${Boolean(this.apiKey)}`);
-
     const content: OpenRouterMessage["content"] = [{ type: "text", text: prompt }];
 
     for (const image of images) {
       const mimeType = detectMimeType(image.filename);
       const base64 = image.buffer.toString("base64");
-      log(`Immagine: ${image.filename} (${mimeType}, ${base64.length} bytes base64)`);
       content.push({
         type: "image_url",
         image_url: { url: `data:${mimeType};base64,${base64}` },
@@ -65,7 +56,6 @@ export class OpenRouterProvider implements VisionProvider {
     let tokenCount: { input?: number; output?: number; total?: number } | undefined;
 
     try {
-      log("Chiamata OpenRouter API in corso...");
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 60000);
@@ -90,11 +80,9 @@ export class OpenRouterProvider implements VisionProvider {
       clearTimeout(timeoutId);
 
       httpStatus = response.status;
-      log(`Risposta OpenRouter: HTTP ${httpStatus}`);
 
       if (!response.ok) {
         const errorBody = await response.text().catch(() => "unknown");
-        log(`ERRORE OpenRouter (HTTP ${httpStatus}): ${errorBody}`);
 
         if (httpStatus === 429 || httpStatus === 402) {
           throw new ProviderError(
@@ -133,8 +121,6 @@ export class OpenRouterProvider implements VisionProvider {
         : undefined;
 
       responseText = json.choices?.[0]?.message?.content ?? "";
-      log(`Risposta raw text length: ${responseText.length}`);
-      log(`Risposta raw text (primi 500): "${responseText.slice(0, 500)}"`);
 
       if (!responseText.trim()) {
         throw new ProviderError(
@@ -145,20 +131,15 @@ export class OpenRouterProvider implements VisionProvider {
       }
 
       const jsonStr = extractJsonFromText(responseText);
-      log(`JSON extracted length: ${jsonStr.length}`);
 
       let parsed: unknown;
       try {
         parsed = JSON.parse(jsonStr);
-        log("JSON parsato con successo");
-      } catch (parseErr) {
-        log(`ERRORE parsing JSON: ${parseErr}`);
-        log(`JSON estratto: "${jsonStr.slice(0, 800)}"`);
+      } catch {
         const fallbackJson = extractJsonFallback(responseText);
         if (fallbackJson) {
           try {
             parsed = JSON.parse(fallbackJson);
-            log("JSON recuperato con fallback");
           } catch {
             throw new ProviderError(
               AI_PROVIDER_UNKNOWN_ERROR,
@@ -178,8 +159,6 @@ export class OpenRouterProvider implements VisionProvider {
       const latencyMs = Date.now() - startTime;
       const suggestion = extractSuggestion(parsed);
 
-      log(`Analisi completata in ${latencyMs}ms: "${suggestion.nome}"`);
-
       return {
         suggestion,
         model: this.model,
@@ -191,12 +170,10 @@ export class OpenRouterProvider implements VisionProvider {
       const latencyMs = Date.now() - startTime;
 
       if (caught instanceof ProviderError) {
-        log(`ERRORE OpenRouter: [${caught.code}] ${caught.message}`);
         throw caught;
       }
 
       if (caught instanceof DOMException && caught.name === "AbortError") {
-        log(`ERRORE OpenRouter: timeout (60s)`);
         throw new ProviderError(
           AI_PROVIDER_TIMEOUT,
           "OpenRouter: timeout richiesta (60s).",
@@ -205,7 +182,6 @@ export class OpenRouterProvider implements VisionProvider {
       }
 
       const msg = caught instanceof Error ? caught.message : "Errore sconosciuto";
-      log(`ERRORE OpenRouter: ${msg}`);
       throw new ProviderError(
         AI_PROVIDER_NETWORK_ERROR,
         `OpenRouter: errore di rete — ${msg}`,

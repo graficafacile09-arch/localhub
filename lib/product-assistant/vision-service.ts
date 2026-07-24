@@ -92,12 +92,9 @@ export async function analyzeImages(
     };
   }
 
-  log(`[${requestId}] analyzeImages — ${images.length} immagini`);
-
   for (const entry of PROVIDER_CHAIN) {
     const provider = entry.build();
     if (!provider) {
-      console.log(`Trying ${entry.name} — SKIPPED (no config)`);
       continue;
     }
 
@@ -105,7 +102,6 @@ export async function analyzeImages(
     const attempt: AttemptLog = { provider: entry.name, latencyMs: 0 };
 
     try {
-      console.log(`Trying ${entry.name}`);
       const result = await provider.analyze(images, context);
 
       attempt.model = result.model;
@@ -114,9 +110,6 @@ export async function analyzeImages(
       attempt.tokenCount = result.tokenCount;
 
       attempts.push(attempt);
-
-      console.log(`${entry.name} SUCCESS`);
-      log(formatProviderLog(requestId, attempts, entry.name));
 
       return {
         success: true,
@@ -136,13 +129,8 @@ export async function analyzeImages(
       }
 
       attempts.push(attempt);
-      console.log(`${entry.name} FAILED`);
-      console.log("ERROR:", attempt.errorCode, attempt.errorMessage);
     }
   }
-
-  console.log("PROVIDER FINALE:", null);
-  log(formatProviderLog(requestId, attempts, null));
 
   const lastAttempt = attempts[attempts.length - 1];
   if (lastAttempt?.errorCode === "AI_PROVIDER_QUOTA_EXCEEDED") {
@@ -173,6 +161,4 @@ export async function analyzeImages(
   };
 }
 
-function log(...args: unknown[]) {
-  console.log("[VisionService]", ...args);
-}
+
