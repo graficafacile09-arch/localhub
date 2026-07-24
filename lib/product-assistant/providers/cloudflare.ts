@@ -26,7 +26,7 @@ function log(...args: unknown[]) {
   console.log("[CloudflareProvider]", ...args);
 }
 
-const CLOUDFLARE_MODEL = "@cf/meta/llama-3.2-11b-vision-instruct";
+const CLOUDFLARE_MODEL = "@cf/google/gemma-4-26b-a4b-it";
 
 export class CloudflareProvider implements VisionProvider {
   private readonly accountId: string;
