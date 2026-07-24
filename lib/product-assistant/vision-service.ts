@@ -1,7 +1,6 @@
 import type { VisionProvider } from "./providers/base";
 import { CloudflareProvider } from "./providers/cloudflare";
 import { GeminiProvider } from "./providers/gemini";
-import { MoondreamProvider } from "./providers/moondream";
 import { OpenRouterProvider } from "./providers/openrouter";
 import { ProviderError, type AttemptLog, formatProviderLog } from "./providers/utils";
 import type {
@@ -33,8 +32,7 @@ export type VisionServiceResult =
     };
 
 // ─── Catena fissa di provider ─────────────────────────────────────────────────
-// Moondream 3.1 è il provider primario (2B parametri attivi, inferenza veloce).
-// Cloudflare (Gemma 4) è il fallback principale.
+// Cloudflare (Gemma 4) è il provider principale.
 // OpenRouter e Gemini sono solo provider di emergenza.
 
 type ProviderEntry = {
@@ -47,13 +45,6 @@ function buildCloudflare(): VisionProvider | null {
   const apiToken = process.env.CLOUDFLARE_API_TOKEN;
   if (!accountId || !apiToken) return null;
   return new CloudflareProvider(accountId, apiToken);
-}
-
-function buildMoondream(): VisionProvider | null {
-  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
-  const apiToken = process.env.CLOUDFLARE_API_TOKEN;
-  if (!accountId || !apiToken) return null;
-  return new MoondreamProvider(accountId, apiToken);
 }
 
 function buildOpenRouter(): VisionProvider | null {
@@ -71,7 +62,6 @@ function buildGemini(): VisionProvider | null {
 }
 
 const PROVIDER_CHAIN: ProviderEntry[] = [
-  { name: "Moondream", build: buildMoondream },
   { name: "Cloudflare", build: buildCloudflare },
   { name: "OpenRouter", build: buildOpenRouter },
   { name: "Gemini", build: buildGemini },

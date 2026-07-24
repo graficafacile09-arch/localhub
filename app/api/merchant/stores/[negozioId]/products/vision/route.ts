@@ -5,8 +5,10 @@ import { buildVisionPrompt } from "@/lib/product-assistant/prompts";
 
 const LOW_CONFIDENCE_THRESHOLD = 60;
 const MAX_TOKENS = 300;
-const MAX_IMAGE_DIM = 1024;
 const JPEG_QUALITY = 80;
+
+const CROP_SIZE = 640;
+const NO_CROP_MAX_DIM = 1024;
 
 const MODELS: Record<string, string> = {
   gemma: "@cf/google/gemma-4-26b-a4b-it",
@@ -110,13 +112,35 @@ export async function POST(request: Request) {
     const mime = "image/jpeg";
     const tPrep = performance.now();
 
-    const bufResized = await sharp(bufRaw)
-      .resize(MAX_IMAGE_DIM, MAX_IMAGE_DIM, { fit: "inside", withoutEnlargement: true })
-      .jpeg({ quality: JPEG_QUALITY })
-      .toBuffer();
+    const cropEnabled = searchParams.get("crop") === "1";
+    let bufProcessed: Buffer;
+    let processedW = 0;
+    let processedH = 0;
+
+    if (cropEnabled) {
+      const result = await sharp(bufRaw)
+        .resize(CROP_SIZE, CROP_SIZE, {
+          fit: "cover",
+          position: "attention",
+          withoutEnlargement: true,
+        })
+        .jpeg({ quality: JPEG_QUALITY })
+        .toBuffer({ resolveWithObject: true });
+      bufProcessed = result.data;
+      processedW = result.info.width;
+      processedH = result.info.height;
+    } else {
+      const result = await sharp(bufRaw)
+        .resize(NO_CROP_MAX_DIM, NO_CROP_MAX_DIM, { fit: "inside", withoutEnlargement: true })
+        .jpeg({ quality: JPEG_QUALITY })
+        .toBuffer({ resolveWithObject: true });
+      bufProcessed = result.data;
+      processedW = result.info.width;
+      processedH = result.info.height;
+    }
     const tResizeEnd = performance.now();
 
-    const base64 = bufResized.toString("base64");
+    const base64 = bufProcessed.toString("base64");
     const tB64End = performance.now();
 
     const prompt = buildVisionPrompt();
@@ -276,10 +300,11 @@ export async function POST(request: Request) {
 
     console.log("=== PROFILING VERCELL ===");
     console.log(`Modello: ${modelId}`);
+    console.log(`Crop: ${cropEnabled ? "si (attention 640x640)" : "no (1024 max)"}`);
     console.log(`5. Ricezione richiesta su Vercel: ${Math.round(tPrep - tRecv)}ms (formData + arrayBuffer)`);
     console.log(`   Dimensione upload ricevuto: ${(bufRaw.length / 1024).toFixed(1)} KB`);
-    console.log(`6a. Ridimensionamento immagine (sharp): ${Math.round(tResizeEnd - tPrep)}ms`);
-    console.log(`   Dopo sharp resize: ${(bufResized.length / 1024).toFixed(1)} KB`);
+    console.log(`6a. Elaborazione immagine (sharp): ${Math.round(tResizeEnd - tPrep)}ms`);
+    console.log(`   Dopo sharp: ${(bufProcessed.length / 1024).toFixed(1)} KB (${processedW}x${processedH})`);
     console.log(`6b. Base64: ${Math.round(tB64End - tResizeEnd)}ms`);
     console.log(`   Body inviato a Cloudflare: ${(bodySize / 1024).toFixed(1)} KB`);
     console.log(`7a. Invio richiesta -> primi header Cloudflare: ${Math.round(latencyHeaders)}ms`);
