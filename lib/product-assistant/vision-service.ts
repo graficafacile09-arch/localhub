@@ -1,5 +1,6 @@
 import type { VisionProvider } from "./providers/base";
 import { GeminiProvider } from "./providers/gemini";
+import { OpenRouterProvider } from "./providers/openrouter";
 import type {
   ProductVisionSuggestion,
   VisionContext,
@@ -50,18 +51,14 @@ function createProvider(): VisionProvider | null {
       return new GeminiProvider(apiKey, model);
     }
 
-    // ── Aggiungere qui i provider futuri ────────────────────────────────────
-    // case "openai": {
-    //   const apiKey = process.env.OPENAI_API_KEY;
-    //   if (!apiKey) return null;
-    //   return new OpenAiProvider(apiKey);
-    // }
-    // case "claude": {
-    //   const apiKey = process.env.ANTHROPIC_API_KEY;
-    //   if (!apiKey) return null;
-    //   return new ClaudeProvider(apiKey);
-    // }
-    // ────────────────────────────────────────────────────────────────────────
+    case "openrouter": {
+      const apiKey = process.env.OPENROUTER_API_KEY;
+      if (!apiKey) {
+        return null;
+      }
+      const model = process.env.OPENROUTER_MODEL ?? "qwen/qwen2.5-vl-72b-instruct";
+      return new OpenRouterProvider(apiKey, model);
+    }
 
     default:
       return null;
