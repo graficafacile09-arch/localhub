@@ -42,3 +42,10 @@ next-env.d.ts
 
 .vercel
 .env*
+
+# test files
+test-*.mjs
+test-*.js
+test-image.jpg
+test-session.json
+*.log
