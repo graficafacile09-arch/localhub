@@ -1,133 +1,73 @@
 import { NextResponse } from "next/server";
-import { getCurrentUser } from "@/lib/auth/session";
-import { getMerchantStoreForUser } from "@/lib/merchant/data";
-import { analyzeImages } from "@/lib/product-assistant/vision";
-import type { VisionImage } from "@/lib/product-assistant/vision";
 
-export async function POST(
-  request: Request,
-  context: { params: Promise<{ negozioId: string }> }
-) {
-  console.log("=== ROUTE START ===");
-  console.log("ACCOUNT:", process.env.CLOUDFLARE_ACCOUNT_ID);
-  console.log("TOKEN:", process.env.CLOUDFLARE_API_TOKEN?.substring(0, 12));
+const MODEL = "@cf/google/gemma-4-26b-a4b-it";
 
-  const startTime = Date.now();
-  const requestId = crypto.randomUUID().slice(0, 8);
+export async function POST(request: Request) {
+  console.log("=== ROUTE START MINIMA ===");
 
-  function log(...args: unknown[]) {
-    console.log(`[VisionAPI:${requestId}]`, ...args);
+  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
+  const apiToken = process.env.CLOUDFLARE_API_TOKEN;
+  if (!accountId || !apiToken) {
+    return NextResponse.json({ error: "Cloudflare non configurato" }, { status: 500 });
   }
 
-  function error(code: string, message: string, status: number) {
-    log(`ERR ${code} — ${message}`);
-    return NextResponse.json(
-      { success: false, error: { code, message } },
-      { status, headers: { "Content-Type": "application/json" } }
-    );
+  const formData = await request.formData();
+  const file = formData.get("image");
+  if (!file || !(file instanceof Blob)) {
+    return NextResponse.json({ error: "Immagine mancante" }, { status: 422 });
   }
 
-  try {
-    const cfKeyPresent = Boolean(process.env.CLOUDFLARE_API_TOKEN);
-    const cfIdPresent = Boolean(process.env.CLOUDFLARE_ACCOUNT_ID);
-    const orKeyPresent = Boolean(process.env.OPENROUTER_API_KEY);
-    const geminiKeyPresent = Boolean(process.env.GEMINI_API_KEY);
-    log(`CLOUDFLARE configurato=${cfKeyPresent && cfIdPresent}`);
-    log(`OPENROUTER_API_KEY presente=${orKeyPresent}`);
-    log(`GEMINI_API_KEY presente=${geminiKeyPresent}`);
-    log(`Catena fallback: Cloudflare → OpenRouter → Gemini`);
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const filename = file instanceof File ? file.name : "product-image.jpg";
+  const ext = filename.toLowerCase().split(".").pop() ?? "jpg";
+  const mime = ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg";
+  const base64 = buffer.toString("base64");
 
-    // ── Autenticazione ────────────────────────────────────────────────────────
-    log("Autenticazione in corso...");
-    const user = await getCurrentUser();
+  const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/v1/chat/completions`;
 
-    if (!user) {
-      return error("UNAUTHORIZED", "Devi effettuare l'accesso.", 401);
-    }
-
-    log(`Utente autenticato: ${user.id}`);
-
-    // ── Verifica proprietà negozio ────────────────────────────────────────────
-    log("Verifica negozio in corso...");
-    const { negozioId } = await context.params;
-    log(`Negozio ID: ${negozioId}`);
-
-    const storeResult = await getMerchantStoreForUser(user.id, negozioId);
-
-    if (storeResult.setupRequired) {
-      return error(
-        "SETUP_REQUIRED",
-        storeResult.errorMessage ?? "Configurazione database non completata.",
-        503
-      );
-    }
-
-    if (!storeResult.data) {
-      return error("FORBIDDEN", "Non puoi gestire questo negozio.", 403);
-    }
-
-    log(`Negozio verificato: ${storeResult.data.nome}`);
-
-    // ── Ricezione immagine ───────────────────────────────────────────────────
-    log("Lettura FormData in corso...");
-    const formData = await request.formData();
-    const file = formData.get("image");
-
-    if (!file || !(file instanceof Blob)) {
-      return error("INVALID_BODY", "Immagine mancante o non valida.", 422);
-    }
-
-    log(`File ricevuto: name=${file instanceof File ? file.name : "unknown"}, size=${file.size} bytes`);
-
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const filename = file instanceof File ? file.name : "product-image.jpg";
-
-    log(`Buffer creato: ${buffer.length} bytes`);
-
-    // ── Analisi AI (Cloudflare → OpenRouter → Gemini) ────────────────────────
-    const images: VisionImage[] = [
-      { buffer, filename, role: "primary" },
-    ];
-
-    const visionContext = {
-      negozioNome: storeResult.data.nome,
-      negozioCategoria: storeResult.data.categoria ?? undefined,
-    };
-
-    log("Chiamata analyzeImages in corso...");
-    const result = await analyzeImages(images, visionContext);
-    log(`analyzeImages completato: success=${result.success}`);
-
-    if (!result.success) {
-      if (!result.disabled) {
-        return error("AI_PROVIDER_QUOTA_EXCEEDED", "Quota del provider AI esaurita.", 429);
-      }
-      return error("VISION_DISABLED", result.message, 503);
-    }
-
-    log(`Suggerimento ottenuto: "${result.suggestion.nome}" (confidenza: ${result.suggestion.confidenza}%)`);
-    log(`Tempo totale: ${Date.now() - startTime}ms`);
-
-    // TEMP: restituisce il JSON parsato direttamente
-    return NextResponse.json(result.suggestion);
-  } catch (caught: unknown) {
-    const elapsed = Date.now() - startTime;
-    const message =
-      caught instanceof Error ? caught.message : "Errore sconosciuto.";
-    const stack = caught instanceof Error ? caught.stack : undefined;
-
-    log(`EXCEPTION dopo ${elapsed}ms: ${message}`);
-    if (stack) log(stack);
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: {
-          code: "VISION_FAILED",
-          message: message || "Errore interno durante l'analisi AI.",
+  const cfResponse = await fetch(url, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: "Descrivi questo prodotto in italiano. Restituisci solo JSON con: nome, categoria, descrizione, prezzo_suggerito, parole_chiave, confidenza.",
+            },
+            {
+              type: "image_url",
+              image_url: { url: `data:${mime};base64,${base64}` },
+            },
+          ],
         },
-      },
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
+      ],
+      max_tokens: 2000,
+      temperature: 0.1,
+    }),
+  });
+
+  const status = cfResponse.status;
+  const body = await cfResponse.text();
+
+  if (!cfResponse.ok) {
+    return NextResponse.json({ success: false, status, body }, { status });
   }
+
+  const json = JSON.parse(body);
+  const content = (json.choices?.[0]?.message?.content ?? "")
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+
+  const parsed = JSON.parse(content);
+
+  return NextResponse.json(parsed);
 }
