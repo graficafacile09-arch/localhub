@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, ArrowLeft, Camera, CheckCircle2, Sparkles } from "lucide-react";
+import Link from "next/link";
+import { AlertTriangle, ArrowLeft, Camera, CheckCircle2, FileText, Sparkles } from "lucide-react";
 import type { ProductVisionSuggestion } from "@/lib/product-assistant/vision";
 import MerchantProductAiUploader from "./MerchantProductAiUploader";
 import MerchantProductForm from "@/components/merchant/MerchantProductForm";
@@ -110,11 +111,22 @@ export default function MerchantProductAiWizard({ negozioId }: MerchantProductAi
 
       {/* ── STEP 1 & 2: Upload + analisi ─────────────────────────────────────── */}
       {step === 1 || step === 2 ? (
-        <MerchantProductAiUploader
-          negozioId={negozioId}
-          onResult={handleResult}
-          onAnalysisStart={() => setStep(2)}
-        />
+        <>
+          <MerchantProductAiUploader
+            negozioId={negozioId}
+            onResult={handleResult}
+            onAnalysisStart={() => setStep(2)}
+          />
+          <div className="text-center">
+            <Link
+              href={`/merchant/${negozioId}/prodotti/nuovo?manual=1`}
+              className="inline-flex items-center gap-2 text-sm font-medium text-slate-400 transition hover:text-blue-600"
+            >
+              <FileText className="h-4 w-4" />
+              Inserisci manualmente i dati del prodotto
+            </Link>
+          </div>
+        </>
       ) : null}
 
       {/* ── STEP 3: Form pre-compilato + pubblica ────────────────────────────── */}
@@ -177,17 +189,24 @@ export default function MerchantProductAiWizard({ negozioId }: MerchantProductAi
               initialData={{
                 nome: result.suggestion.nome,
                 descrizione: result.suggestion.descrizione,
+                descrizione_completa: result.suggestion.descrizioneCompleta ?? undefined,
                 categoria: result.suggestion.categoria,
                 sottocategoria: result.suggestion.sottocategoria ?? undefined,
                 marca: result.suggestion.marca ?? undefined,
                 colore: result.suggestion.colore ?? undefined,
                 materiale: result.suggestion.materiale ?? undefined,
+                caratteristiche: result.suggestion.caratteristiche,
+                peso_volume: result.suggestion.pesoVolume ?? undefined,
                 parole_chiave: result.suggestion.paroleChiave,
+                filtri_catalogo: result.suggestion.filtriCatalogo ?? undefined,
                 prezzo: result.suggestion.prezzoSuggerito ?? 0,
                 prezzo_suggerito: result.suggestion.prezzoSuggerito ?? null,
                 immagine_principale: result.suggestion.immaginePrincipale ?? "",
                 quantita_disponibile: result.suggestion.quantitaSuggerita,
                 stato_condizione: result.suggestion.statoCondizione,
+                seo_title: result.suggestion.seoTitle ?? undefined,
+                seo_description: result.suggestion.seoDescription ?? undefined,
+                alt_text_immagine: result.suggestion.altTextImmagine ?? undefined,
                 attivo: true,
                 origine_pubblicazione: "ai",
               }}

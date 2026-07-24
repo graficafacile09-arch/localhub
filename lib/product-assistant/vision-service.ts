@@ -9,18 +9,35 @@ import type {
 /** Soglia sotto la quale il riconoscimento è considerato inaffidabile */
 const LOW_CONFIDENCE_THRESHOLD = 60;
 
+// ─── Risultato del servizio (discriminated union) ─────────────────────────────
+
+export type VisionServiceResult =
+  | {
+      /** Provider configurato e risposta valida */
+      success: true;
+      suggestion: ProductVisionSuggestion;
+      /** true se confidenza < 60: il frontend deve mostrare un avviso */
+      lowConfidence: boolean;
+    }
+  | {
+      /** Provider non disponibile (es. chiave API mancante) */
+      success: false;
+      /** true se il servizio è disabilitato per mancanza di configurazione */
+      disabled: true;
+      /** Messaggio chiaro per l'utente (non tecnico) */
+      message: string;
+    };
+
 // ─── Factory: istanzia il provider corretto in base a VISION_PROVIDER ─────────
 
-function createProvider(): VisionProvider {
+function createProvider(): VisionProvider | null {
   const providerName = (process.env.VISION_PROVIDER ?? "gemini").toLowerCase();
 
   switch (providerName) {
     case "gemini": {
       const apiKey = process.env.GEMINI_API_KEY;
       if (!apiKey) {
-        throw new Error(
-          "GEMINI_API_KEY mancante. Aggiungila al file .env.local per usare il provider Gemini."
-        );
+        return null;
       }
       const model = process.env.GEMINI_MODEL ?? "gemini-1.5-flash";
       return new GeminiProvider(apiKey, model);
@@ -29,46 +46,80 @@ function createProvider(): VisionProvider {
     // ── Aggiungere qui i provider futuri ────────────────────────────────────
     // case "openai": {
     //   const apiKey = process.env.OPENAI_API_KEY;
-    //   if (!apiKey) throw new Error("OPENAI_API_KEY mancante.");
+    //   if (!apiKey) return null;
     //   return new OpenAiProvider(apiKey);
     // }
     // case "claude": {
     //   const apiKey = process.env.ANTHROPIC_API_KEY;
-    //   if (!apiKey) throw new Error("ANTHROPIC_API_KEY mancante.");
+    //   if (!apiKey) return null;
     //   return new ClaudeProvider(apiKey);
     // }
     // ────────────────────────────────────────────────────────────────────────
 
     default:
-      throw new Error(
-        `Provider Vision non supportato: "${providerName}". Valori accettati: gemini`
-      );
+      return null;
   }
 }
 
-// ─── Risultato con flag lowConfidence ─────────────────────────────────────────
-
-export type VisionServiceResult = {
-  suggestion: ProductVisionSuggestion;
-  /** true se confidenza < 60: il frontend deve mostrare un avviso al merchant */
-  lowConfidence: boolean;
-};
-
 // ─── Entry point del servizio ─────────────────────────────────────────────────
+
+function log(...args: unknown[]) {
+  console.log("[VisionService]", ...args);
+}
 
 export async function analyzeImages(
   images: VisionImage[],
   context?: VisionContext
 ): Promise<VisionServiceResult> {
   if (images.length === 0) {
-    throw new Error("Nessuna immagine fornita per l'analisi.");
+    return {
+      success: false,
+      disabled: true,
+      message: "Nessuna immagine fornita per l'analisi.",
+    };
   }
 
   const provider = createProvider();
-  const suggestion = await provider.analyze(images, context);
 
-  return {
-    suggestion,
-    lowConfidence: suggestion.confidenza < LOW_CONFIDENCE_THRESHOLD,
-  };
+  if (!provider) {
+    const providerName = (process.env.VISION_PROVIDER ?? "gemini").toLowerCase();
+
+    const message =
+      providerName === "gemini"
+        ? "Il riconoscimento automatico dei prodotti tramite fotocamera non è attivo. Per abilitarlo, aggiungi GEMINI_API_KEY al file .env.local. Puoi ottenere una chiave gratuita su https://aistudio.google.com/apikey."
+        : `Il provider "${providerName}" non è configurato o la chiave API è mancante. Controlla le impostazioni.`;
+
+    console.warn(`[VisionService] ${message}`);
+
+    return {
+      success: false,
+      disabled: true,
+      message,
+    };
+  }
+
+  try {
+    log("Chiamata provider.analyze()...");
+    const suggestion = await provider.analyze(images, context);
+    log(`Provider.analyze() completato: "${suggestion.nome}"`);
+
+    return {
+      success: true,
+      suggestion,
+      lowConfidence: suggestion.confidenza < LOW_CONFIDENCE_THRESHOLD,
+    };
+  } catch (caught: unknown) {
+    const message =
+      caught instanceof Error ? caught.message : "Errore sconosciuto durante l'analisi.";
+    const stack = caught instanceof Error ? caught.stack : undefined;
+
+    log(`ERRORE provider.analyze(): ${message}`);
+    if (stack) log(stack);
+
+    return {
+      success: false,
+      disabled: true,
+      message: `Il provider AI ha restituito un errore: ${message}. Riprova o contatta l'assistenza.`,
+    };
+  }
 }

@@ -12,14 +12,8 @@ type QueryError = {
   message?: string;
 };
 
-type MerchantMembershipRow = {
-  negozio_id: string;
-  role: MerchantRole;
-  is_active: boolean;
-};
-
 type NegozioRow = {
-  id: string | number;
+  id: string;
   nome?: string | null;
   categoria?: string | null;
   descrizione?: string | null;
@@ -31,37 +25,49 @@ type ProdottoRow = {
   negozio_id?: string | number | null;
   nome?: string | null;
   descrizione?: string | null;
+  descrizione_completa?: string | null;
   categoria?: string | null;
   sottocategoria?: string | null;
   marca?: string | null;
   colore?: string | null;
   materiale?: string | null;
+  caratteristiche?: string[] | null;
+  peso_volume?: string | null;
   parole_chiave?: string[] | null;
+  filtri_catalogo?: Record<string, string> | null;
   prezzo?: number | string | null;
   prezzo_suggerito?: number | null;
   immagine_principale?: string | null;
   quantita_disponibile?: number | null;
   stato_condizione?: string | null;
+  seo_title?: string | null;
+  seo_description?: string | null;
+  alt_text_immagine?: string | null;
   attivo?: boolean | null;
   origine_pubblicazione?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
 };
 
-const SCHEMA_ERROR_CODES = new Set(["42P01", "42703", "PGRST204"]);
+const SCHEMA_ERROR_CODES = new Set(["42P01", "42703", "PGRST204", "PGRST205"]);
 
 function isSchemaError(error: QueryError | null) {
   return Boolean(error?.code && SCHEMA_ERROR_CODES.has(error.code));
 }
 
-function mapStore(row: NegozioRow, role: MerchantRole): MerchantStoreSummary {
+// =================================================================
+// Funzioni concentrate per la gestione dello store
+// =================================================================
+// Nota: attualmente la proprietà è determinata da negozi.owner_user_id.
+
+function mapStore(row: NegozioRow): MerchantStoreSummary {
   return {
     id: String(row.id),
     nome: row.nome?.trim() || "Negozio senza nome",
     categoria: row.categoria ?? null,
     descrizione: row.descrizione ?? null,
     attivo: row.attivo ?? true,
-    role,
+    role: "owner" as MerchantRole,
   };
 }
 
@@ -77,12 +83,16 @@ function mapProduct(row: ProdottoRow): MerchantProduct {
     negozio_id: String(row.negozio_id ?? ""),
     nome: row.nome?.trim() || "Prodotto senza nome",
     descrizione: row.descrizione ?? null,
+    descrizione_completa: row.descrizione_completa ?? null,
     categoria: row.categoria ?? null,
     sottocategoria: row.sottocategoria ?? null,
     marca: row.marca ?? null,
     colore: row.colore ?? null,
     materiale: row.materiale ?? null,
+    caratteristiche: row.caratteristiche ?? null,
+    peso_volume: row.peso_volume ?? null,
     parole_chiave: row.parole_chiave ?? null,
+    filtri_catalogo: row.filtri_catalogo ?? null,
     prezzo:
       typeof row.prezzo === "number"
         ? row.prezzo
@@ -93,6 +103,9 @@ function mapProduct(row: ProdottoRow): MerchantProduct {
     immagine_principale: row.immagine_principale ?? null,
     quantita_disponibile: row.quantita_disponibile ?? null,
     stato_condizione: parseStatoCondizione(row.stato_condizione),
+    seo_title: row.seo_title ?? null,
+    seo_description: row.seo_description ?? null,
+    alt_text_immagine: row.alt_text_immagine ?? null,
     attivo: row.attivo ?? true,
     origine_pubblicazione: row.origine_pubblicazione ?? null,
     created_at: row.created_at ?? null,
@@ -100,67 +113,45 @@ function mapProduct(row: ProdottoRow): MerchantProduct {
   };
 }
 
+// =================================================================
+// getMerchantStoresForUser — recupera i negozi di un utente
+// Attualmente: query diretta su negozi.owner_user_id
+// Nota: in futuro potrà essere estesa per supportare membri aggiuntivi
+// =================================================================
 export async function getMerchantStoresForUser(userId: string): Promise<MerchantQueryResult<MerchantStoreSummary[]>> {
   const supabase = await createServerSupabaseClient();
-  const { data: memberships, error: membershipsError } = await supabase
-    .from("merchant_memberships")
-    .select("negozio_id, role, is_active")
-    .eq("user_id", userId)
-    .eq("is_active", true);
+  const { data: stores, error } = await supabase
+    .from("negozi")
+    .select("id, nome, categoria, descrizione, attivo")
+    .eq("owner_user_id", userId)
+    .order("created_at", { ascending: true });
 
-  if (membershipsError) {
-    if (isSchemaError(membershipsError)) {
+  if (error) {
+    if (isSchemaError(error)) {
       return {
         data: [],
         setupRequired: true,
-        errorMessage: "La Merchant Foundation non è ancora configurata nel database.",
+        errorMessage: "La configurazione del database merchant non è completa. Contatta l'amministratore.",
       };
     }
 
     return {
       data: [],
       setupRequired: false,
-      errorMessage: membershipsError.message ?? "Impossibile recuperare i negozi del merchant.",
+      errorMessage: error.message ?? "Impossibile recuperare i negozi.",
     };
   }
-
-  const righeMembership = (memberships ?? []) as MerchantMembershipRow[];
-
-  if (righeMembership.length === 0) {
-    return {
-      data: [],
-      setupRequired: false,
-      errorMessage: null,
-    };
-  }
-
-  const ids = righeMembership.map((membership) => membership.negozio_id);
-  const { data: stores, error: storesError } = await supabase
-    .from("negozi")
-    .select("id, nome, categoria, descrizione, attivo")
-    .in("id", ids);
-
-  if (storesError) {
-    return {
-      data: [],
-      setupRequired: false,
-      errorMessage: storesError.message ?? "Impossibile recuperare i dati dei negozi.",
-    };
-  }
-
-  const roleByStoreId = new Map(righeMembership.map((membership) => [membership.negozio_id, membership.role]));
-
-  const normalized = ((stores ?? []) as NegozioRow[])
-    .map((store) => mapStore(store, roleByStoreId.get(String(store.id)) ?? "manager"))
-    .sort((a, b) => a.nome.localeCompare(b.nome, "it"));
 
   return {
-    data: normalized,
+    data: ((stores ?? []) as NegozioRow[]).map(mapStore),
     setupRequired: false,
     errorMessage: null,
   };
 }
 
+// =================================================================
+// getMerchantStoreForUser — recupera un singolo negozio se di proprietà
+// =================================================================
 export async function getMerchantStoreForUser(userId: string, negozioId: string) {
   const storesResult = await getMerchantStoresForUser(userId);
   const store = storesResult.data.find((item) => item.id === negozioId) ?? null;
@@ -170,6 +161,25 @@ export async function getMerchantStoreForUser(userId: string, negozioId: string)
     data: store,
   };
 }
+
+// =================================================================
+// canManageStore — verifica se l'utente può gestire un negozio
+// =================================================================
+export async function canManageStore(userId: string, negozioId: string): Promise<boolean> {
+  const supabase = await createServerSupabaseClient();
+  const { data, error } = await supabase
+    .from("negozi")
+    .select("id", { head: true, count: "exact" })
+    .eq("id", negozioId)
+    .eq("owner_user_id", userId);
+
+  if (error || !data) return false;
+  return true;
+}
+
+// =================================================================
+// Prodotti — CRUD
+// =================================================================
 
 export async function getMerchantProductsForStore(
   userId: string,
@@ -189,7 +199,7 @@ export async function getMerchantProductsForStore(
   const query = await supabase
     .from("prodotti")
     .select(
-      "id, negozio_id, nome, descrizione, categoria, sottocategoria, marca, colore, materiale, parole_chiave, prezzo, prezzo_suggerito, immagine_principale, quantita_disponibile, stato_condizione, attivo, origine_pubblicazione, created_at, updated_at"
+      "id, negozio_id, nome, descrizione, descrizione_completa, categoria, sottocategoria, marca, colore, materiale, caratteristiche, peso_volume, parole_chiave, filtri_catalogo, prezzo, prezzo_suggerito, immagine_principale, quantita_disponibile, stato_condizione, seo_title, seo_description, alt_text_immagine, attivo, origine_pubblicazione, created_at, updated_at"
     )
     .eq("negozio_id", negozioId)
     .order("created_at", { ascending: false });
@@ -255,7 +265,7 @@ export async function createMerchantProductForStore(
   }
 
   const supabase = await createServerSupabaseClient();
-  const payload = {
+  const payload: Record<string, unknown> = {
     negozio_id: negozioId,
     nome: input.nome.trim(),
     descrizione: input.descrizione.trim(),
@@ -273,6 +283,14 @@ export async function createMerchantProductForStore(
     attivo: input.attivo,
     origine_pubblicazione: input.originePubblicazione?.trim() || "manuale",
   };
+
+  if (input.descrizioneCompleta !== undefined) payload.descrizione_completa = input.descrizioneCompleta.trim() || null;
+  if (input.caratteristiche !== undefined) payload.caratteristiche = input.caratteristiche;
+  if (input.pesoVolume !== undefined) payload.peso_volume = input.pesoVolume.trim() || null;
+  if (input.filtriCatalogo !== undefined) payload.filtri_catalogo = input.filtriCatalogo;
+  if (input.seoTitle !== undefined) payload.seo_title = input.seoTitle.trim() || null;
+  if (input.seoDescription !== undefined) payload.seo_description = input.seoDescription.trim() || null;
+  if (input.altTextImmagine !== undefined) payload.alt_text_immagine = input.altTextImmagine.trim() || null;
 
   const insertResult = await supabase.from("prodotti").insert(payload).select("*").single();
 
@@ -336,7 +354,7 @@ export async function updateMerchantProductForStore(
   }
 
   const supabase = await createServerSupabaseClient();
-  const payload = {
+  const payload: Record<string, unknown> = {
     nome: input.nome.trim(),
     descrizione: input.descrizione.trim(),
     categoria: input.categoria.trim(),
@@ -353,6 +371,14 @@ export async function updateMerchantProductForStore(
     attivo: input.attivo,
     origine_pubblicazione: input.originePubblicazione?.trim() || "manuale",
   };
+
+  if (input.descrizioneCompleta !== undefined) payload.descrizione_completa = input.descrizioneCompleta.trim() || null;
+  if (input.caratteristiche !== undefined) payload.caratteristiche = input.caratteristiche;
+  if (input.pesoVolume !== undefined) payload.peso_volume = input.pesoVolume.trim() || null;
+  if (input.filtriCatalogo !== undefined) payload.filtri_catalogo = input.filtriCatalogo;
+  if (input.seoTitle !== undefined) payload.seo_title = input.seoTitle.trim() || null;
+  if (input.seoDescription !== undefined) payload.seo_description = input.seoDescription.trim() || null;
+  if (input.altTextImmagine !== undefined) payload.alt_text_immagine = input.altTextImmagine.trim() || null;
 
   const updateResult = await supabase
     .from("prodotti")

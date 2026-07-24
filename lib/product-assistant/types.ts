@@ -18,6 +18,38 @@ export type ProductVisionSuggestion = {
   confidenza: number;
   /** URL immagine principale se restituita dal provider (opzionale) */
   immaginePrincipale: string | null;
+
+  // ─── Nuovi campi AI arricchiti ─────────────────────────────────────────────
+
+  /**
+   * Descrizione commerciale completa e dettagliata (300-800 caratteri),
+   * adatta alla scheda prodotto del catalogo.
+   */
+  descrizioneCompleta: string | null;
+
+  /** Caratteristiche principali del prodotto (bullet point) */
+  caratteristiche: string[];
+
+  /**
+   * Peso o volume se leggibile dall'immagine/etichetta.
+   * Esempi: "500g", "1.5L", "10x15cm", null se non determinabile.
+   */
+  pesoVolume: string | null;
+
+  /** Titolo SEO ottimizzato per i motori di ricerca (max 60 caratteri) */
+  seoTitle: string | null;
+
+  /** Meta description SEO (max 160 caratteri) */
+  seoDescription: string | null;
+
+  /** Testo alternativo dell'immagine per accessibilità e SEO */
+  altTextImmagine: string | null;
+
+  /**
+   * Attributi chiave per il filtro del catalogo.
+   * Esempio: { "taglia": "M", "stagione": "estate", "tipo_tessuto": "cotone biologico" }
+   */
+  filtriCatalogo: Record<string, string> | null;
 };
 
 // ─── Risposta completa dell'API vision (include il flag lowConfidence) ─────────

@@ -15,17 +15,24 @@ type MerchantProductFormProps = {
 const DEFAULT_PRODUCT_FORM = {
   nome: "",
   descrizione: "",
+  descrizione_completa: "",
   categoria: "",
   sottocategoria: "",
   marca: "",
   colore: "",
   materiale: "",
+  caratteristiche: "",
+  peso_volume: "",
   parole_chiave: "",
+  filtri_catalogo: "",
   prezzo: 0,
   prezzoSuggerito: null as number | null,
   quantitaDisponibile: 1 as number | null,
   statoCondizione: "nuovo" as "nuovo" | "usato" | "ricondizionato",
   immaginePrincipale: "",
+  seo_title: "",
+  seo_description: "",
+  alt_text_immagine: "",
   attivo: true,
   originePubblicazione: "manuale",
 };
@@ -45,20 +52,35 @@ export default function MerchantProductForm({
     ? {
         nome: initialData.nome ?? "",
         descrizione: initialData.descrizione ?? "",
+        descrizione_completa: initialData.descrizione_completa ?? "",
         categoria: initialData.categoria ?? "",
         sottocategoria: initialData.sottocategoria ?? "",
         marca: initialData.marca ?? "",
         colore: initialData.colore ?? "",
         materiale: initialData.materiale ?? "",
+        caratteristiche:
+          Array.isArray(initialData.caratteristiche) && initialData.caratteristiche.length > 0
+            ? initialData.caratteristiche.join(", ")
+            : (initialData.caratteristiche as string | null | undefined) ?? "",
+        peso_volume: initialData.peso_volume ?? "",
         parole_chiave:
           Array.isArray(initialData.parole_chiave) && initialData.parole_chiave.length > 0
             ? initialData.parole_chiave.join(", ")
             : (initialData.parole_chiave as string | null | undefined) ?? "",
+        filtri_catalogo:
+          initialData.filtri_catalogo && typeof initialData.filtri_catalogo === "object"
+            ? Object.entries(initialData.filtri_catalogo as Record<string, string>)
+                .map(([k, v]) => `${k}: ${v}`)
+                .join(", ")
+            : (initialData.filtri_catalogo as string | null | undefined) ?? "",
         prezzo: initialData.prezzo ?? 0,
         prezzoSuggerito: initialData.prezzo_suggerito ?? null,
         quantitaDisponibile: initialData.quantita_disponibile ?? 1,
         statoCondizione: (initialData.stato_condizione ?? "nuovo") as "nuovo" | "usato" | "ricondizionato",
         immaginePrincipale: initialData.immagine_principale ?? "",
+        seo_title: initialData.seo_title ?? "",
+        seo_description: initialData.seo_description ?? "",
+        alt_text_immagine: initialData.alt_text_immagine ?? "",
         attivo: initialData.attivo ?? true,
         originePubblicazione: initialData.origine_pubblicazione ?? "manuale",
       }
@@ -73,15 +95,34 @@ export default function MerchantProductForm({
     const payload = {
       nome: String(formData.get("nome") ?? "").trim(),
       descrizione: String(formData.get("descrizione") ?? "").trim(),
+      descrizioneCompleta: String(formData.get("descrizione_completa") ?? "").trim() || undefined,
       categoria: String(formData.get("categoria") ?? "").trim(),
       sottocategoria: String(formData.get("sottocategoria") ?? "").trim() || null,
       marca: String(formData.get("marca") ?? "").trim() || undefined,
       colore: String(formData.get("colore") ?? "").trim() || undefined,
       materiale: String(formData.get("materiale") ?? "").trim() || undefined,
+      caratteristiche: String(formData.get("caratteristiche") ?? "")
+        .split(/[,;]\s*/)
+        .map((item) => item.trim())
+        .filter(Boolean),
+      pesoVolume: String(formData.get("peso_volume") ?? "").trim() || undefined,
       paroleChiave: String(formData.get("parole_chiave") ?? "")
         .split(/[,;]\s*/)
         .map((item) => item.trim())
         .filter(Boolean),
+      filtriCatalogo: String(formData.get("filtri_catalogo") ?? "")
+        .split(/[,;]\s*/)
+        .map((pair) => pair.trim())
+        .filter(Boolean)
+        .reduce<Record<string, string>>((acc, pair) => {
+          const sepIndex = pair.indexOf(":");
+          if (sepIndex > 0) {
+            const key = pair.slice(0, sepIndex).trim();
+            const val = pair.slice(sepIndex + 1).trim();
+            if (key && val) acc[key] = val;
+          }
+          return acc;
+        }, {}) || undefined,
       prezzo: Number(formData.get("prezzo") ?? 0),
       prezzoSuggerito: formData.get("prezzoSuggerito")
         ? Number(formData.get("prezzoSuggerito"))
@@ -91,6 +132,9 @@ export default function MerchantProductForm({
         : 1,
       statoCondizione: String(formData.get("statoCondizione") ?? "nuovo") as "nuovo" | "usato" | "ricondizionato",
       immaginePrincipale: String(formData.get("immaginePrincipale") ?? "").trim(),
+      seoTitle: String(formData.get("seo_title") ?? "").trim() || undefined,
+      seoDescription: String(formData.get("seo_description") ?? "").trim() || undefined,
+      altTextImmagine: String(formData.get("alt_text_immagine") ?? "").trim() || undefined,
       attivo: formData.get("attivo") === "on",
       originePubblicazione: String(formData.get("originePubblicazione") ?? initialValues.originePubblicazione),
     };
@@ -233,6 +277,20 @@ export default function MerchantProductForm({
           />
         </div>
 
+        {/* Peso / Volume */}
+        <div className="space-y-2">
+          <label htmlFor="peso_volume" className="text-sm font-semibold text-slate-700">
+            Peso / Volume
+          </label>
+          <input
+            id="peso_volume"
+            name="peso_volume"
+            defaultValue={initialValues.peso_volume}
+            placeholder="es. 500g, 1.5L, 10x15cm"
+            className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+          />
+        </div>
+
         {/* Stato / condizione */}
         <div className="space-y-2">
           <label htmlFor="statoCondizione" className="text-sm font-semibold text-slate-700">
@@ -282,6 +340,51 @@ export default function MerchantProductForm({
           />
         </div>
 
+        {/* Descrizione breve */}
+        <div className="space-y-2 md:col-span-2">
+          <label htmlFor="descrizione" className="text-sm font-semibold text-slate-700">
+            Descrizione breve <span className="text-red-500">*</span>
+          </label>
+          <textarea
+            id="descrizione"
+            name="descrizione"
+            rows={3}
+            defaultValue={initialValues.descrizione}
+            required
+            placeholder="Appare nella card del catalogo e nei risultati di ricerca (100-200 caratteri)"
+            className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+          />
+        </div>
+
+        {/* Descrizione completa */}
+        <div className="space-y-2 md:col-span-2">
+          <label htmlFor="descrizione_completa" className="text-sm font-semibold text-slate-700">
+            Descrizione completa
+          </label>
+          <textarea
+            id="descrizione_completa"
+            name="descrizione_completa"
+            rows={6}
+            defaultValue={initialValues.descrizione_completa}
+            placeholder="Descrizione dettagliata per la scheda prodotto (materiali, finiture, usi consigliati)"
+            className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+          />
+        </div>
+
+        {/* Caratteristiche principali */}
+        <div className="space-y-2 md:col-span-2">
+          <label htmlFor="caratteristiche" className="text-sm font-semibold text-slate-700">
+            Caratteristiche principali
+          </label>
+          <input
+            id="caratteristiche"
+            name="caratteristiche"
+            defaultValue={initialValues.caratteristiche}
+            placeholder="es. Cotone biologico, Lavabile in lavatrice, Vestibilità regolare (separate da virgola)"
+            className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+          />
+        </div>
+
         {/* Tag SEO / parole chiave */}
         <div className="space-y-2 md:col-span-2">
           <label htmlFor="parole_chiave" className="text-sm font-semibold text-slate-700">
@@ -292,6 +395,20 @@ export default function MerchantProductForm({
             name="parole_chiave"
             defaultValue={initialValues.parole_chiave}
             placeholder="es. maglietta, cotone, sport, running (separati da virgola)"
+            className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+          />
+        </div>
+
+        {/* Filtri catalogo */}
+        <div className="space-y-2 md:col-span-2">
+          <label htmlFor="filtri_catalogo" className="text-sm font-semibold text-slate-700">
+            Attributi filtro catalogo
+          </label>
+          <input
+            id="filtri_catalogo"
+            name="filtri_catalogo"
+            defaultValue={initialValues.filtri_catalogo}
+            placeholder='es. taglia: M, stagione: estate, genere: uomo, tipo_tessuto: cotone (formato "chiave: valore")'
             className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
           />
         </div>
@@ -311,19 +428,60 @@ export default function MerchantProductForm({
           />
         </div>
 
-        {/* Descrizione */}
-        <div className="space-y-2 md:col-span-2">
-          <label htmlFor="descrizione" className="text-sm font-semibold text-slate-700">
-            Descrizione <span className="text-red-500">*</span>
-          </label>
-          <textarea
-            id="descrizione"
-            name="descrizione"
-            rows={5}
-            defaultValue={initialValues.descrizione}
-            required
-            className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-          />
+      </div>
+
+      {/* ─── Sezione SEO ─────────────────────────────────────────────────────── */}
+      <div className="rounded-2xl border border-slate-100 bg-slate-50 p-5">
+        <p className="mb-4 text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
+          Ottimizzazione SEO
+        </p>
+        <div className="grid gap-5 md:grid-cols-2">
+
+          {/* SEO Title */}
+          <div className="space-y-2">
+            <label htmlFor="seo_title" className="text-sm font-semibold text-slate-700">
+              SEO Title
+            </label>
+            <input
+              id="seo_title"
+              name="seo_title"
+              defaultValue={initialValues.seo_title}
+              placeholder="max 60 caratteri — titolo per Google"
+              maxLength={60}
+              className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+            />
+          </div>
+
+          {/* Alt text immagine */}
+          <div className="space-y-2">
+            <label htmlFor="alt_text_immagine" className="text-sm font-semibold text-slate-700">
+              Testo alternativo immagine
+            </label>
+            <input
+              id="alt_text_immagine"
+              name="alt_text_immagine"
+              defaultValue={initialValues.alt_text_immagine}
+              placeholder="Descrivi cosa mostra la foto per accessibilità"
+              className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+            />
+          </div>
+
+          {/* SEO Description */}
+          <div className="space-y-2 md:col-span-2">
+            <label htmlFor="seo_description" className="text-sm font-semibold text-slate-700">
+              Meta Description
+            </label>
+            <textarea
+              id="seo_description"
+              name="seo_description"
+              rows={2}
+              defaultValue={initialValues.seo_description}
+              maxLength={160}
+              placeholder="max 160 caratteri — descrizione che appare nei risultati di ricerca"
+              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+            />
+          </div>
+
         </div>
       </div>
 
