@@ -56,6 +56,12 @@ const emptySuggestion: ProductVisionSuggestion = {
   seoTitle: null,
   seoDescription: null,
   altTextImmagine: null,
+  formato: null,
+  tipoConfezione: null,
+  codiceEan: null,
+  produttore: null,
+  ingredienti: [],
+  allergeni: [],
 };
 
 // ─── Mock Provider Factory ────────────────────────────────────────────────────

@@ -50,6 +50,26 @@ export type ProductVisionSuggestion = {
    * Esempio: { "taglia": "M", "stagione": "estate", "tipo_tessuto": "cotone biologico" }
    */
   filtriCatalogo: Record<string, string> | null;
+
+  // ─── Nuovi campi da etichetta ───────────────────────────────────────────────
+
+  /** Formato o quantità esatta (es: "250ml", "500g", "1L") */
+  formato: string | null;
+
+  /** Tipo di confezione (es: "bottiglia vetro", "lattina alluminio", "scatola cartone") */
+  tipoConfezione: string | null;
+
+  /** Codice EAN-13 a 13 cifre se leggibile */
+  codiceEan: string | null;
+
+  /** Nome del produttore/fabbricante se leggibile */
+  produttore: string | null;
+
+  /** Lista ingredienti se leggibili sull'etichetta */
+  ingredienti: string[];
+
+  /** Lista allergeni se leggibili sull'etichetta */
+  allergeni: string[];
 };
 
 // ─── Risposta completa dell'API vision (include il flag lowConfidence) ─────────

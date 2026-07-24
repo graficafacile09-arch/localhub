@@ -140,6 +140,12 @@ export function extractSuggestion(raw: unknown): ProductVisionSuggestion {
     seoDescription: parseString(payload.seo_description ?? payload.seoDescription),
     altTextImmagine: parseString(payload.alt_text_immagine ?? payload.altTextImmagine),
     filtriCatalogo: parseFiltriCatalogo(payload.filtri_catalogo ?? payload.filtriCatalogo),
+    formato: parseString(payload.formato),
+    tipoConfezione: parseString(payload.tipo_confezione ?? payload.tipoConfezione),
+    codiceEan: parseString(payload.codice_ean ?? payload.codiceEan),
+    produttore: parseString(payload.produttore),
+    ingredienti: parseStringsArray(payload.ingredienti),
+    allergeni: parseStringsArray(payload.allergeni),
   };
 }
 
@@ -207,6 +213,12 @@ export function emptySuggestion(): ProductVisionSuggestion {
     seoTitle: null,
     seoDescription: null,
     altTextImmagine: null,
+    formato: null,
+    tipoConfezione: null,
+    codiceEan: null,
+    produttore: null,
+    ingredienti: [],
+    allergeni: [],
   };
 }
 
