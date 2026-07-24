@@ -12,7 +12,7 @@
  * @module lib/search-service
  */
 
-import type { NegozioRicerca } from "./ricerca-ai";
+import type { NegozioRicerca, ProdottoRicerca } from "./ricerca-ai";
 import type { QueryIntentType } from "./brain/types";
 
 // ─── Tipi pubblici ────────────────────────────────────────────────────────────
@@ -21,6 +21,9 @@ import type { QueryIntentType } from "./brain/types";
 export interface SearchResult {
   /** Lista di negozi trovati, già ordinati per rilevanza */
   negozi: NegozioRicerca[];
+
+  /** Lista di prodotti trovati */
+  prodotti: ProdottoRicerca[];
 
   /** Risposta sintetica in linguaggio naturale (Markdown) */
   risposta: string | null;
@@ -62,6 +65,7 @@ export async function search(
   if (!termine) {
     return {
       negozi: [],
+      prodotti: [],
       risposta: null,
       source: "fallback",
       intent: null,
@@ -100,6 +104,7 @@ export async function search(
 
         return {
           negozi,
+          prodotti: [],
           risposta: response,
           source: "brain",
           intent: context.intent?.type ?? null,
@@ -121,6 +126,7 @@ export async function search(
 
     return {
       negozi: risultato.negozi,
+      prodotti: risultato.prodotti ?? [],
       risposta: risultato.risposta || null,
       source: "fallback",
       intent: null,

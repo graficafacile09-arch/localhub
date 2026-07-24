@@ -20,7 +20,7 @@ export default async function MerchantLayout({
             Attiva Supabase per usare l&apos;area merchant
           </h1>
           <p className="mt-4 text-sm leading-6 text-slate-600">
-            Aggiungi `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_ANON_KEY` all&apos;ambiente, poi esegui la migrazione SQL della Merchant Foundation.
+            Aggiungi `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_ANON_KEY` all&apos;ambiente.
           </p>
         </div>
       </main>

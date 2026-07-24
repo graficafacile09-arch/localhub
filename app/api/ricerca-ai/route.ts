@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { ricercaConAi } from "@/lib/ricerca-ai";
+import { search } from "@/lib/search-service";
 
 export async function POST(request: Request) {
   try {
@@ -9,8 +9,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "La query è vuota." }, { status: 400 });
     }
 
-    const risultato = await ricercaConAi(query);
-    return NextResponse.json(risultato);
+    const result = await search(query);
+
+    return NextResponse.json({
+      risposta: result.risposta ?? "",
+      negozi: result.negozi,
+      prodotti: result.prodotti,
+    });
   } catch (error: unknown) {
     console.error("ERRORE CRITICO NELL'API:", error);
     const message =

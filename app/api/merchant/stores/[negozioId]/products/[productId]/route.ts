@@ -45,7 +45,7 @@ export async function GET(
   const storeResult = await getMerchantStoreForUser(user.id, negozioId);
 
   if (storeResult.setupRequired) {
-    return apiError("SETUP_REQUIRED", storeResult.errorMessage ?? "Merchant Foundation non configurata.", 503);
+    return apiError("SETUP_REQUIRED", storeResult.errorMessage ?? "Configurazione database non completata.", 503);
   }
 
   if (!storeResult.data) {
@@ -75,7 +75,7 @@ export async function PUT(
   const storeResult = await getMerchantStoreForUser(user.id, negozioId);
 
   if (storeResult.setupRequired) {
-    return apiError("SETUP_REQUIRED", storeResult.errorMessage ?? "Merchant Foundation non configurata.", 503);
+    return apiError("SETUP_REQUIRED", storeResult.errorMessage ?? "Configurazione database non completata.", 503);
   }
 
   if (!storeResult.data) {
@@ -106,7 +106,7 @@ export async function PUT(
   });
 
   if (updateResult.setupRequired) {
-    return apiError("SETUP_REQUIRED", updateResult.errorMessage ?? "Merchant Foundation non configurata.", 503);
+    return apiError("SETUP_REQUIRED", updateResult.errorMessage ?? "Configurazione database non completata.", 503);
   }
 
   if (!updateResult.data) {

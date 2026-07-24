@@ -1,12 +1,14 @@
 import Link from "next/link";
 import Header from "@/components/Header/Header";
-import BackLink from "@/components/ui/BackLink";
+import StoreProductCard from "@/components/negozio/StoreProductCard";
+import { OpenAssistantLink } from "@/components/assistant/OpenAssistantButton";
 import { getNegozio, getProdottiNegozio } from "@/lib/negozi";
 import { getNegozioCardImmagine } from "@/lib/negozi-card-immagini";
 import {
   getNegozioDemoById,
   getProdottiDemoByNegozioId,
 } from "@/lib/negozi-demo";
+import { MapPin, Phone, MessageCircle, ExternalLink } from "lucide-react";
 
 export default async function PaginaNegozio({
   params,
@@ -16,18 +18,16 @@ export default async function PaginaNegozio({
   const { id } = await params;
 
   const negozioReale = await getNegozio(id);
-  const negozioDemo = negozioReale ? null : getNegozioDemoById(id);
-  const negozio = negozioReale ?? negozioDemo;
+  const negozioDemoVal = negozioReale ? null : getNegozioDemoById(id);
+  const negozio = negozioReale ?? negozioDemoVal;
 
   if (!negozio) {
     return (
-      <main className="min-h-screen bg-gray-100">
+      <main className="min-h-screen bg-slate-50">
         <Header />
-        <div className="max-w-5xl mx-auto py-20 text-center">
-          <h1 className="text-4xl font-bold">
-            Negozio non trovato
-          </h1>
-          <Link href="/negozi" className="mt-6 inline-block text-blue-700 hover:underline">
+        <div className="mx-auto max-w-5xl py-20 text-center">
+          <h1 className="text-2xl font-bold text-slate-900">Negozio non trovato</h1>
+          <Link href="/negozi" className="mt-4 inline-block text-sm font-semibold text-blue-600 hover:underline">
             Torna ai negozi
           </Link>
         </div>
@@ -39,109 +39,163 @@ export default async function PaginaNegozio({
     ? await getProdottiNegozio(id)
     : getProdottiDemoByNegozioId(id);
 
-  console.log("================================");
-  console.log("ID RICEVUTO:", id);
-  console.log("NEGOZIO:", negozio);
-  console.log("PRODOTTI:", prodotti);
-  console.log("================================");
+  const imageUrl = getNegozioCardImmagine({
+    immagine: negozio.immagine,
+    categoria: negozio.categoria,
+  });
+
+  const buildWhatsAppUrl = () => {
+    const phone = (negozio.whatsapp || negozio.telefono || "").replace(/[\s\-().+]/g, "");
+    const number = phone.startsWith("39") ? phone : `39${phone}`;
+    const msg = encodeURIComponent(
+      `Ciao! Ho trovato "${negozio.nome}" su InCittà e vorrei informazioni.`
+    );
+    return `https://wa.me/${number}?text=${msg}`;
+  };
+
+  const buildMapsUrl = () => {
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(negozio.indirizzo || "")}`;
+  };
 
   return (
-    <main className="min-h-screen bg-gray-100">
+    <main className="min-h-screen bg-slate-50">
       <Header />
 
-      <div className="max-w-6xl mx-auto py-10 px-6">
-
-      <BackLink href="/negozi" label="Torna ai negozi" />
-
-      <div className="overflow-hidden rounded-3xl bg-white shadow-lg">
-        <div className="relative aspect-video max-h-135 overflow-hidden">
-          <div
-            role="img"
-            aria-label={`Fotografia del negozio ${negozio.nome}`}
-            className="h-full w-full bg-cover bg-center"
-            style={{
-              backgroundImage: `url(${getNegozioCardImmagine({
-                immagine: negozio.immagine,
-                categoria: negozio.categoria,
-              })})`,
-            }}
-          />
-          <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-black/55 via-black/10 to-transparent" />
-        </div>
-      </div>
-
-      <h1 className="text-5xl font-bold mt-8">
-        {negozio.nome}
-      </h1>
-
-      <p className="text-xl text-gray-600 mt-4">
-        {negozio.descrizione}
-      </p>
-
-      <div className="mt-8 space-y-3 text-lg">
-
-        <p>📍 <strong>Indirizzo:</strong> {negozio.indirizzo}</p>
-
-        <p>📞 <strong>Telefono:</strong> {negozio.telefono}</p>
-
-        <p>✉️ <strong>Email:</strong> {negozio.email}</p>
-
-        <p>💬 <strong>WhatsApp:</strong> {negozio.whatsapp}</p>
-
-        <p>🌐 <strong>Sito Web:</strong> {negozio.sito_web}</p>
-
-        <p>🕒 <strong>Orari:</strong> {negozio.orari}</p>
-
-      </div>
-
-      <section className="mt-16">
-
-        <h2 className="text-3xl font-bold mb-8">
-          I nostri prodotti
-        </h2>
-
-        {prodotti.length === 0 ? (
-          <p className="text-red-600 text-xl">
-            Nessun prodotto trovato.
-          </p>
-        ) : (
-          <div className="grid md:grid-cols-2 gap-6">
-
-            {prodotti.map((prodotto) => (
-
-              <div
-                key={prodotto.id}
-                className="bg-white rounded-2xl shadow-lg p-6"
-              >
-                <h3 className="text-2xl font-bold">
-                  {prodotto.nome}
-                </h3>
-
-                <p className="mt-2 text-gray-600">
-                  {prodotto.descrizione}
-                </p>
-
-                <div className="flex justify-between mt-6">
-
-                  <span className="text-blue-700 font-semibold">
-                    {prodotto.categoria}
-                  </span>
-
-                  <span className="text-2xl font-bold">
-                    € {prodotto.prezzo}
-                  </span>
-
-                </div>
-
-              </div>
-
-            ))}
-
+      <div className="mx-auto max-w-5xl px-3 py-3 sm:px-5">
+        {/* Hero immagine */}
+        <div className="overflow-hidden rounded-xl">
+          <div className="relative aspect-video max-h-[240px] overflow-hidden">
+            <div
+              role="img"
+              aria-label={`Fotografia del negozio ${negozio.nome}`}
+              className="h-full w-full bg-cover bg-center"
+              style={{ backgroundImage: `url(${imageUrl})` }}
+            />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
           </div>
+        </div>
+
+        {/* Info negozio */}
+        <div className="mt-3">
+          <h1 className="text-xl font-black tracking-tight text-slate-900">
+            {negozio.nome}
+          </h1>
+          {negozio.categoria && (
+            <p className="mt-0.5 text-xs font-semibold text-blue-600">
+              {negozio.categoria}
+            </p>
+          )}
+          {negozio.descrizione && (
+            <p className="mt-1 text-xs leading-5 text-slate-500">
+              {negozio.descrizione}
+            </p>
+          )}
+        </div>
+
+        {/* Info compatte */}
+        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-500">
+          {negozio.indirizzo && (
+            <span className="flex items-center gap-1">
+              <MapPin className="h-3 w-3 text-blue-500" />
+              {negozio.indirizzo}
+            </span>
+          )}
+          {negozio.telefono && (
+            <span className="flex items-center gap-1">
+              <Phone className="h-3 w-3 text-blue-500" />
+              {negozio.telefono}
+            </span>
+          )}
+          {negozio.orari && (
+            <span className="text-slate-400">
+              {negozio.orari}
+            </span>
+          )}
+        </div>
+
+        {/* Azioni */}
+        <div className="mt-3 flex flex-wrap gap-2">
+          {negozio.telefono && (
+            <a
+              href={buildWhatsAppUrl()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-emerald-600"
+            >
+              <MessageCircle className="h-3.5 w-3.5" />
+              WhatsApp
+            </a>
+          )}
+          {negozio.indirizzo && (
+            <a
+              href={buildMapsUrl()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 transition hover:border-blue-300 hover:text-blue-700"
+            >
+              <MapPin className="h-3.5 w-3.5" />
+              Mappa
+            </a>
+          )}
+          {negozio.telefono && (
+            <a
+              href={`tel:${negozio.telefono}`}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 transition hover:border-blue-300 hover:text-blue-700"
+            >
+              <Phone className="h-3.5 w-3.5" />
+              Chiama
+            </a>
+          )}
+          {negozio.sito_web && (
+            <a
+              href={negozio.sito_web.startsWith("http") ? negozio.sito_web : `https://${negozio.sito_web}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 transition hover:border-blue-300 hover:text-blue-700"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              Sito web
+            </a>
+          )}
+        </div>
+
+        {/* Prodotti */}
+        {prodotti.length > 0 && (
+          <section className="mt-4">
+            <h2 className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">
+              Prodotti ({prodotti.length})
+            </h2>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+              {prodotti.map((prodotto: Record<string, unknown>) => (
+                <StoreProductCard
+                  key={prodotto.id as string}
+                  id={prodotto.id as string}
+                  nome={prodotto.nome as string}
+                  descrizione={(prodotto.descrizione as string) ?? null}
+                  prezzo={prodotto.prezzo as number}
+                  categoria={(prodotto.categoria as string) ?? null}
+                  immagine_principale={(prodotto.immagine_principale as string) ?? null}
+                />
+              ))}
+            </div>
+          </section>
         )}
 
-      </section>
+        {prodotti.length === 0 && (
+          <section className="mt-4 rounded-xl border border-slate-100 bg-white p-4 text-center">
+            <p className="text-xs text-slate-400">
+              Nessun prodotto pubblicato. Torna a trovarci presto!
+            </p>
+          </section>
+        )}
 
+        {/* CTA AI */}
+        <div className="mt-4 rounded-xl border border-blue-100 bg-blue-50 p-3 text-center">
+          <p className="text-xs text-slate-600">
+            Hai una domanda su questo negozio?
+          </p>
+          <OpenAssistantLink label="Chiedi all'AI" />
+        </div>
       </div>
     </main>
   );

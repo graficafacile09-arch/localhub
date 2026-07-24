@@ -34,12 +34,10 @@ export default function MerchantShell({
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-4">
           <div>
             <Link href="/merchant" className="text-2xl font-black tracking-tight text-white">
-              LocalHub Merchant
+              Area Commercianti
             </Link>
             <p className="mt-1 text-sm text-blue-100">
-              {currentStore
-                ? `${currentStore.nome} · ${currentStore.role}`
-                : "Dashboard negozianti"}
+              {currentStore?.nome ?? "Area Commercianti"}
             </p>
           </div>
 
@@ -61,10 +59,6 @@ export default function MerchantShell({
       </div>
 
       {/* ── Layout principale ─────────────────────────────────────────────────── */}
-      {/*
-        Desktop/tablet (md+): griglia 2 colonne con sidebar
-        Mobile (< md):        colonna singola, nessuna sidebar
-      */}
       <div className="mx-auto grid max-w-7xl gap-6 px-4 py-4 md:grid-cols-[280px_minmax(0,1fr)] md:px-6 md:py-6">
 
         {/* Sidebar — visibile solo su desktop/tablet ─────────────────────────── */}
@@ -79,7 +73,7 @@ export default function MerchantShell({
                 className="flex items-center gap-3 rounded-2xl px-4 py-3 hover:bg-slate-50"
               >
                 <LayoutGrid className="h-4 w-4 text-blue-600" />
-                I tuoi negozi
+                Il mio negozio
               </Link>
               {currentStore ? (
                 <>
@@ -88,7 +82,7 @@ export default function MerchantShell({
                     className="flex items-center gap-3 rounded-2xl px-4 py-3 hover:bg-slate-50"
                   >
                     <Package className="h-4 w-4 text-blue-600" />
-                    Prodotti
+                    I miei prodotti
                   </Link>
                   <Link
                     href={`/merchant/${currentStore.id}/prodotti/nuovo`}
@@ -102,7 +96,7 @@ export default function MerchantShell({
                     className="flex items-center gap-3 rounded-2xl px-4 py-3 hover:bg-slate-50"
                   >
                     <Settings className="h-4 w-4 text-blue-600" />
-                    Impostazioni
+                    Gestione negozio
                   </Link>
                 </>
               ) : null}

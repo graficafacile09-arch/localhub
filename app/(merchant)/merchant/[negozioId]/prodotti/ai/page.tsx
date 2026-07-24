@@ -16,7 +16,7 @@ export default async function MerchantProductAiPage({
     return (
       <MerchantEmptyState
         title="Configurazione database richiesta"
-        description={storeResult.errorMessage ?? "Attiva prima la Merchant Foundation nel database."}
+        description={storeResult.errorMessage ?? "Esegui la migrazione SQL per attivare l'area commercianti."}
       />
     );
   }
@@ -30,5 +30,7 @@ export default async function MerchantProductAiPage({
     );
   }
 
-  return <MerchantProductAiWizard negozioId={negozioId} />;
+  return (
+    <MerchantProductAiWizard negozioId={negozioId} />
+  );
 }

@@ -4,6 +4,7 @@
  * Assembla un BrainContext strutturato a partire da una query grezza.
  */
 
+import { normalizza } from "../../text-utils";
 import { classifyIntent } from "../reasoning/steps/classify";
 import { makeDecision } from "../reasoning/decision-engine";
 import type { BrainContext, UserContext } from "../types";
@@ -26,20 +27,10 @@ const ITALIAN_STOPWORDS = new Set([
 ]);
 
 /**
- * Normalizza una stringa rimuovendo accenti e convertendo in minuscolo.
- */
-function normalize(text: string): string {
-  return text
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-}
-
-/**
  * Estrae i termini significativi dalla query eliminando stopwords.
  */
 function extractTerms(query: string): string[] {
-  const normalized = normalize(query);
+  const normalized = normalizza(query);
   const tokens = normalized
     .split(/\s+/)
     .map((term) => term.trim())
@@ -66,7 +57,7 @@ function expandQuery(query: string): string {
     animali: ["animali", "pet", "cane", "gatto"],
   };
 
-  const normalized = normalize(query);
+  const normalized = normalizza(query);
   let expanded = query;
 
   for (const [key, values] of Object.entries(synonyms)) {

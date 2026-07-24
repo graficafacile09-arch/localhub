@@ -225,7 +225,6 @@ export class BrainOrchestratorImpl implements BrainOrchestrator {
     const { applyCombiner, sortByCombinedScore } = await import("../ranking");
 
     // Trasforma in BrainCandidate
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const brainCandidates = candidates.map((item) => {
       // calcolaPunteggioNegozio accetta { id, nome?, categoria?, ... }
       // Il cast è sicuro perché T ha sempre id:string e i campi extra sono opzionali

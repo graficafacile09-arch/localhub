@@ -11,8 +11,8 @@ export default async function MerchantHomePage() {
   if (storesResult.setupRequired) {
     return (
       <MerchantEmptyState
-        title="Merchant Foundation da configurare"
-        description={storesResult.errorMessage ?? "Esegui la migrazione SQL iniziale per attivare membership, prodotti merchant e dashboard autenticata."}
+        title="Configurazione database richiesta"
+        description={storesResult.errorMessage ?? "Esegui la migrazione SQL iniziale per attivare l'area commercianti."}
       />
     );
   }
@@ -24,8 +24,8 @@ export default async function MerchantHomePage() {
   if (storesResult.data.length === 0) {
     return (
       <MerchantEmptyState
-        title="Nessun negozio associato"
-        description="Questo utente non ha ancora membership attive. Collega l'account a uno o più negozi in Supabase per iniziare a gestire il catalogo."
+        title="Nessun negozio trovato"
+        description="Non hai ancora un negozio associato al tuo account. Se ti sei appena registrato, riprova tra qualche istante."
       />
     );
   }
@@ -40,7 +40,7 @@ export default async function MerchantHomePage() {
           I tuoi negozi
         </h1>
         <p className="mt-3 text-sm leading-6 text-slate-600">
-          Scegli il negozio da gestire. Da qui partiranno il catalogo manuale e la futura funzione Pubblica con AI.
+          Scegli il negozio da gestire. Da qui partiranno il catalogo e la pubblicazione prodotti.
         </p>
       </div>
 
@@ -52,7 +52,7 @@ export default async function MerchantHomePage() {
             className="rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-[0_20px_40px_-32px_rgba(37,99,235,0.45)]"
           >
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
-              {store.role}
+              Il mio negozio
             </p>
             <h2 className="mt-3 text-2xl font-black tracking-tight text-slate-900">
               {store.nome}

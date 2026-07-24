@@ -1,4 +1,5 @@
 import { calcolaPunteggioNegozio, filtraNegoziPerPertinenza } from "./ranking-negozi";
+import { normalizza, radice } from "./text-utils";
 
 export type NegozioDemo = {
   id: string;
@@ -95,24 +96,9 @@ const stopWordsRicerca = new Set([
   "uno",
 ]);
 
-function normalizzaTesto(testo: string) {
-  return testo
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-}
-
-function radice(termine: string) {
-  if (termine.length <= 4) {
-    return termine;
-  }
-
-  return termine.replace(/[aeiou]$/i, "");
-}
-
 function attivaGruppo(termine: string, voce: string) {
-  const termineNorm = normalizzaTesto(termine).trim();
-  const voceNorm = normalizzaTesto(voce).trim();
+  const termineNorm = normalizza(termine).trim();
+  const voceNorm = normalizza(voce).trim();
 
   if (!termineNorm || !voceNorm) {
     return false;
@@ -126,7 +112,7 @@ function attivaGruppo(termine: string, voce: string) {
 }
 
 function normalizzaTermini(query: string) {
-  const terminiBase = normalizzaTesto(query)
+  const terminiBase = normalizza(query)
     .split(/[^a-z0-9]+/)
     .map((termine) => termine.trim())
     .filter((termine) => termine && !stopWordsRicerca.has(termine));

@@ -1,95 +1,65 @@
 import Header from "@/components/Header/Header";
-import BackLink from "@/components/ui/BackLink";
+import { getNegozi } from "@/lib/negozi";
 import { negoziDemo } from "@/lib/negozi-demo";
 import { getNegozioCardImmagine } from "@/lib/negozi-card-immagini";
-import { supabase } from "@/lib/supabase";
 import Link from "next/link";
+import { MapPin } from "lucide-react";
 
 export default async function NegoziPage() {
-  const { data: negozi, error } = await supabase
-    .from("negozi")
-    .select("*");
-
-  const negoziCompleti = [...(negozi ?? []), ...negoziDemo];
+  const negoziDB = await getNegozi();
+  const negozi = negoziDB.length > 0 ? negoziDB : negoziDemo;
 
   return (
-    <main className="min-h-screen bg-gray-100">
+    <main className="min-h-screen bg-slate-50">
       <Header />
 
-      <section className="max-w-7xl mx-auto px-6 py-16">
-        <BackLink href="/" label="Torna alla Home" />
-
-        <h1 className="text-5xl font-bold text-gray-900">
-          Tutti i negozi
+      <div className="mx-auto max-w-7xl px-3 py-3 sm:px-5">
+        <h1 className="mb-3 text-lg font-black tracking-tight text-slate-900">
+          Negozi di Castrovillari
         </h1>
 
-        <p className="mt-4 text-lg text-gray-600">
-          Scopri le attività commerciali presenti su InCittà.
-        </p>
-
-        {error && (
-          <p className="mt-6 text-red-600">
-            Errore nel caricamento dei negozi dal database. Ti mostro comunque alcune demo.
-          </p>
-        )}
-
-        <div className="mt-12 grid grid-cols-1 gap-8 md:grid-cols-3">
-          {negoziCompleti.map((negozio) => {
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+          {negozi.map((negozio) => {
             const imageUrl = getNegozioCardImmagine({
               immagine: negozio.immagine,
               categoria: negozio.categoria,
             });
 
             return (
-              <article
+              <Link
                 key={negozio.id}
-                className="group overflow-hidden rounded-[28px] bg-white shadow-[0_18px_50px_-18px_rgba(15,23,42,0.28)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_28px_70px_-22px_rgba(15,23,42,0.36)]"
+                href={`/negozio/${negozio.id}`}
+                className="group overflow-hidden rounded-xl border border-slate-100 bg-white transition hover:border-blue-200 hover:shadow-md"
               >
-                <div className="relative aspect-video overflow-hidden">
+                <div className="relative aspect-video overflow-hidden bg-slate-100">
                   <div
                     role="img"
-                    aria-label={`Fotografia della categoria ${negozio.categoria}`}
-                    className="h-full w-full bg-cover bg-center transition-transform duration-700 ease-out group-hover:scale-105"
+                    aria-label={negozio.nome}
+                    className="h-full w-full bg-cover bg-center transition-transform duration-300 group-hover:scale-105"
                     style={{ backgroundImage: `url(${imageUrl})` }}
                   />
-                  <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-black/70 via-black/15 to-transparent" />
+                  {negozio.categoria && (
+                    <span className="absolute bottom-1 left-1.5 rounded-full bg-black/55 px-1.5 py-px text-[9px] font-semibold text-white backdrop-blur-sm">
+                      {negozio.categoria}
+                    </span>
+                  )}
                 </div>
-
-                <div className="p-6">
-                  <h2 className="text-2xl font-bold text-slate-900">
+                <div className="p-2">
+                  <h2 className="truncate text-xs font-bold text-slate-900">
                     {negozio.nome}
                   </h2>
-
-                  <p className="mt-2 text-sm font-semibold uppercase tracking-[0.22em] text-blue-700">
-                    {negozio.categoria}
-                  </p>
-
-                  <p className="mt-3 text-[15px] leading-7 text-slate-600">
-                    {negozio.descrizione}
-                  </p>
-
-                  <p className="mt-5 text-sm text-slate-500">
-                    <span className="font-semibold text-slate-700">Indirizzo:</span>{" "}
-                    {negozio.indirizzo}
-                  </p>
-
-                  <p className="mt-2 text-sm text-slate-500">
-                    <span className="font-semibold text-slate-700">Telefono:</span>{" "}
-                    {negozio.telefono}
-                  </p>
-
-                  <Link
-                    href={`/negozio/${negozio.id}`}
-                    className="mt-6 inline-flex w-full items-center justify-center rounded-2xl bg-blue-700 px-4 py-3 text-sm font-semibold text-white transition-all duration-300 hover:bg-blue-800"
-                  >
-                    Visualizza negozio
-                  </Link>
+                  {negozio.indirizzo && (
+                    <p className="mt-0.5 flex items-center gap-1 text-[10px] text-slate-400">
+                      <MapPin className="h-2.5 w-2.5 shrink-0" />
+                      <span className="truncate">{negozio.indirizzo}</span>
+                    </p>
+                  )}
                 </div>
-              </article>
+              </Link>
             );
           })}
         </div>
-      </section>
+      </div>
     </main>
   );
 }

@@ -1,18 +1,8 @@
-/**
- * LocalHub Assistant — AssistantMessage
- *
- * Renderizza un singolo messaggio nella chat.
- * - Messaggi utente: bolla destra, sfondo ambra
- * - Messaggi assistente: bolla sinistra, sfondo bianco + Markdown + ShopResultCard
- *
- * @module components/assistant/AssistantMessage
- */
-
 import { Fragment } from "react";
 import ShopResultCard from "./ShopResultCard";
-import type { NegozioRicerca } from "@/lib/ricerca-ai";
-
-// ─── Tipi ─────────────────────────────────────────────────────────────────────
+import type { NegozioRicerca, ProdottoRicerca } from "@/lib/ricerca-ai";
+import Link from "next/link";
+import { getProdottoImmagine } from "@/lib/prodotti-immagini";
 
 export type MessageRole = "user" | "assistant";
 
@@ -21,9 +11,8 @@ export interface ChatMessage {
   role: MessageRole;
   content: string;
   negozi?: NegozioRicerca[];
-  /** Tempo di elaborazione ms (solo messaggi assistant) */
+  prodotti?: ProdottoRicerca[];
   processingMs?: number;
-  /** Sorgente (brain | fallback) */
   source?: "brain" | "fallback";
 }
 
@@ -31,49 +20,40 @@ interface AssistantMessageProps {
   message: ChatMessage;
 }
 
-// ─── Markdown parser minimalista ──────────────────────────────────────────────
-// Evita dipendenze esterne (react-markdown già presente nel progetto, ma
-// il requisito dice "nessuna libreria aggiuntiva" — usiamo quella già installata
-// solo se il progetto la ha; altrimenti implementiamo un subset sufficiente).
-// Poiché react-markdown e remark-gfm sono già in package.json, li usiamo.
-
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 const markdownComponents: Components = {
   h1: ({ children }) => (
-    <h3 className="mt-6 text-xl font-black tracking-tight text-slate-950 first:mt-0">
+    <h3 className="mt-4 text-base font-black tracking-tight text-slate-950 first:mt-0">
       {children}
     </h3>
   ),
   h2: ({ children }) => (
-    <h3 className="mt-5 text-lg font-black tracking-tight text-slate-950 first:mt-0">
+    <h3 className="mt-3 text-sm font-black tracking-tight text-slate-950 first:mt-0">
       {children}
     </h3>
   ),
   h3: ({ children }) => (
-    <h4 className="mt-4 text-base font-bold text-slate-900 first:mt-0">
+    <h4 className="mt-2 text-sm font-bold text-slate-900 first:mt-0">
       {children}
     </h4>
   ),
   p: ({ children }) => (
-    <p className="mt-3 text-[15px] leading-7 text-slate-700 first:mt-0">
+    <p className="mt-2 text-[13px] leading-5 text-slate-700 first:mt-0">
       {children}
     </p>
   ),
   ul: ({ children }) => (
-    <ul className="mt-3 space-y-2 text-slate-700">{children}</ul>
+    <ul className="mt-2 space-y-1 text-slate-700">{children}</ul>
   ),
   ol: ({ children }) => (
-    <ol className="mt-3 list-decimal space-y-2 pl-5 text-slate-700 marker:font-semibold marker:text-blue-600">
+    <ol className="mt-2 list-decimal space-y-1 pl-4 text-slate-700 marker:font-semibold marker:text-blue-600">
       {children}
     </ol>
   ),
   li: ({ children }) => (
-    <li className="relative overflow-hidden rounded-xl border border-slate-200/80 bg-gradient-to-r from-white to-slate-50 px-3 py-2.5 text-[14px] leading-6 shadow-sm">
-      <span className="absolute inset-y-0 left-0 w-0.5 rounded-full bg-gradient-to-b from-blue-600 to-cyan-400" />
-      <span className="block pl-2">{children}</span>
-    </li>
+    <li className="text-[13px] leading-5 text-slate-700">{children}</li>
   ),
   strong: ({ children }) => (
     <strong className="font-extrabold text-slate-950">{children}</strong>
@@ -82,7 +62,7 @@ const markdownComponents: Components = {
     <em className="font-medium text-blue-700">{children}</em>
   ),
   blockquote: ({ children }) => (
-    <blockquote className="mt-4 rounded-xl border-l-4 border-amber-400 bg-amber-50 px-4 py-3 text-slate-700 shadow-sm">
+    <blockquote className="mt-2 rounded-lg border-l-2 border-amber-400 bg-amber-50 px-3 py-2 text-[13px] text-slate-700">
       {children}
     </blockquote>
   ),
@@ -97,13 +77,11 @@ const markdownComponents: Components = {
     </a>
   ),
   code: ({ children }) => (
-    <code className="rounded bg-slate-100 px-1.5 py-0.5 text-[13px] font-mono text-slate-800">
+    <code className="rounded bg-slate-100 px-1 py-0.5 text-[12px] font-mono text-slate-800">
       {children}
     </code>
   ),
 };
-
-// ─── Componente ───────────────────────────────────────────────────────────────
 
 export default function AssistantMessage({ message }: AssistantMessageProps) {
   const isUser = message.role === "user";
@@ -111,8 +89,8 @@ export default function AssistantMessage({ message }: AssistantMessageProps) {
   if (isUser) {
     return (
       <div className="flex justify-end">
-        <div className="max-w-[80%] rounded-2xl rounded-tr-sm bg-gradient-to-r from-blue-600 via-blue-600 to-cyan-500 px-4 py-3 text-white shadow-sm">
-          <p className="text-[15px] leading-7 whitespace-pre-wrap break-words">
+        <div className="max-w-[80%] rounded-xl rounded-tr-sm bg-blue-600 px-3 py-2 text-white">
+          <p className="text-[13px] leading-5 whitespace-pre-wrap break-words">
             {message.content}
           </p>
         </div>
@@ -120,33 +98,20 @@ export default function AssistantMessage({ message }: AssistantMessageProps) {
     );
   }
 
-  // ── Messaggio assistente ─────────────────────────────────────────────────
   return (
-    <div className="flex items-start gap-3">
-      {/* Avatar AI */}
+    <div className="flex items-start gap-2">
       <div
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow-sm"
+        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-gradient-to-r from-blue-600 to-cyan-500 text-white"
         aria-hidden
       >
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={2}
-          className="h-4 w-4"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z"
-          />
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
         </svg>
       </div>
 
-      <div className="flex min-w-0 flex-1 flex-col gap-3">
-        {/* Bolla testo */}
+      <div className="flex min-w-0 flex-1 flex-col gap-2">
         {message.content && (
-          <div className="rounded-2xl rounded-tl-sm bg-white px-5 py-4 shadow-sm ring-1 ring-slate-200/80">
+          <div className="rounded-xl rounded-tl-sm bg-white px-3 py-2.5 shadow-sm ring-1 ring-slate-200/80">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               components={markdownComponents}
@@ -156,14 +121,50 @@ export default function AssistantMessage({ message }: AssistantMessageProps) {
           </div>
         )}
 
-        {/* Grid di ShopResultCard */}
+        {/* Prodotti trovati */}
+        {message.prodotti && message.prodotti.length > 0 && (
+          <Fragment>
+            <p className="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+              {message.prodotti.length} prodott{message.prodotti.length === 1 ? "o trovato" : "i trovati"}
+            </p>
+            <div className="grid grid-cols-2 gap-1.5 pb-1">
+              {message.prodotti.map((prodotto) => (
+                <Link
+                  key={prodotto.id}
+                  href={`/negozio/${prodotto.negozio_id}`}
+                  className="flex gap-2 overflow-hidden rounded-lg border border-slate-100 bg-white p-1.5 transition hover:border-blue-200 hover:shadow-sm"
+                >
+                  <div className="h-12 w-12 shrink-0 overflow-hidden rounded bg-slate-100">
+                    <div
+                      role="img"
+                      aria-label={prodotto.nome}
+                      className="h-full w-full bg-cover bg-center"
+                      style={{
+                        backgroundImage: `url(${getProdottoImmagine({
+                          immagine_principale: prodotto.immagine_principale,
+                          categoria: prodotto.categoria,
+                        })})`,
+                      }}
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="line-clamp-1 text-[11px] font-bold text-slate-900">{prodotto.nome}</p>
+                    <p className="text-[11px] font-black text-blue-700">€{prodotto.prezzo}</p>
+                    <p className="line-clamp-1 text-[9px] text-slate-400">{prodotto.negozio_nome}</p>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </Fragment>
+        )}
+
+        {/* Negozi trovati */}
         {message.negozi && message.negozi.length > 0 && (
           <Fragment>
-            <p className="ml-1 text-[12px] font-bold uppercase tracking-[0.18em] text-slate-500">
-              {message.negozi.length}{" "}
-              {message.negozi.length === 1 ? "negozio trovato" : "negozi trovati"}
+            <p className="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+              {message.negozi.length} negoz{message.negozi.length === 1 ? "io trovato" : "i trovati"}
             </p>
-            <div className="grid grid-cols-1 gap-3 pb-2 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-1.5 pb-1">
               {message.negozi.map((negozio, index) => (
                 <ShopResultCard
                   key={negozio.id}
@@ -175,11 +176,9 @@ export default function AssistantMessage({ message }: AssistantMessageProps) {
           </Fragment>
         )}
 
-        {/* Meta: source + processing time */}
         {message.processingMs !== undefined && (
-          <p className="ml-1 text-[11px] text-slate-400">
-            {message.source === "brain" ? "🧠 Brain" : "⚡ Ricerca veloce"} ·{" "}
-            {message.processingMs}ms
+          <p className="ml-1 text-[10px] text-slate-400">
+            {message.source === "brain" ? "🧠 Brain" : "⚡ Ricerca"} · {message.processingMs}ms
           </p>
         )}
       </div>

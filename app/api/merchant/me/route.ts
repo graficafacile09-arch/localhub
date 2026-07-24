@@ -12,7 +12,7 @@ export async function GET() {
   const storesResult = await getMerchantStoresForUser(user.id);
 
   if (storesResult.setupRequired) {
-    return apiError("SETUP_REQUIRED", storesResult.errorMessage ?? "Merchant Foundation non configurata.", 503);
+    return apiError("SETUP_REQUIRED", storesResult.errorMessage ?? "Configurazione database non completata.", 503);
   }
 
   return apiOk({

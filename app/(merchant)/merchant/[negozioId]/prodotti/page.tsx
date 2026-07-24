@@ -17,7 +17,7 @@ export default async function MerchantProductsPage({
     return (
       <MerchantEmptyState
         title="Configurazione database richiesta"
-        description={storeResult.errorMessage ?? "La tabella merchant_memberships non è ancora disponibile."}
+        description={storeResult.errorMessage ?? "Esegui la migrazione SQL per attivare l'area commercianti."}
       />
     );
   }
@@ -26,7 +26,7 @@ export default async function MerchantProductsPage({
     return (
       <MerchantEmptyState
         title="Accesso non disponibile"
-        description="Questo negozio non è collegato al tuo account merchant."
+        description="Questo negozio non è collegato al tuo account."
       />
     );
   }
@@ -72,7 +72,7 @@ export default async function MerchantProductsPage({
 
             {/* Pulsante manuale — secondario */}
             <Link
-              href={`/merchant/${negozioId}/prodotti/nuovo`}
+              href={`/merchant/${negozioId}/prodotti/nuovo?manual=1`}
               className="inline-flex h-12 items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
             >
               Aggiungi manualmente
@@ -123,7 +123,7 @@ export default async function MerchantProductsPage({
                 Aggiungi con AI
               </Link>
               <Link
-                href={`/merchant/${negozioId}/prodotti/nuovo`}
+                href={`/merchant/${negozioId}/prodotti/nuovo?manual=1`}
                 className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
               >
                 Aggiungi manualmente

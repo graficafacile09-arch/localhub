@@ -15,7 +15,7 @@ export default async function MerchantSettingsPage({
     return (
       <MerchantEmptyState
         title="Configurazione database richiesta"
-        description={storeResult.errorMessage ?? "Completa la migrazione SQL prima di usare le impostazioni merchant."}
+        description={storeResult.errorMessage ?? "Completa la migrazione SQL prima di usare le impostazioni."}
       />
     );
   }

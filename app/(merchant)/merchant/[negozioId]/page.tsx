@@ -17,7 +17,7 @@ export default async function MerchantStorePage({
     return (
       <MerchantEmptyState
         title="Configurazione database richiesta"
-        description={storeResult.errorMessage ?? "Esegui la migrazione SQL della Merchant Foundation per attivare la dashboard."}
+        description={storeResult.errorMessage ?? "Esegui la migrazione SQL per attivare l'area commercianti."}
       />
     );
   }
@@ -26,7 +26,7 @@ export default async function MerchantStorePage({
     return (
       <MerchantEmptyState
         title="Negozio non disponibile"
-        description="Non hai accesso a questo negozio oppure non esiste una membership attiva collegata al tuo account."
+        description="Non hai accesso a questo negozio oppure non esiste."
       />
     );
   }

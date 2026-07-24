@@ -109,49 +109,58 @@ alter table public.merchant_memberships enable row level security;
 alter table public.prodotti enable row level security;
 alter table public.product_media enable row level security;
 
-create policy if not exists "merchant profiles self select"
+drop policy if exists "merchant profiles self select" on public.merchant_profiles;
+create policy "merchant profiles self select"
 on public.merchant_profiles
 for select
 using (auth.uid() = id);
 
-create policy if not exists "merchant profiles self update"
+drop policy if exists "merchant profiles self update" on public.merchant_profiles;
+create policy "merchant profiles self update"
 on public.merchant_profiles
 for update
 using (auth.uid() = id)
 with check (auth.uid() = id);
 
-create policy if not exists "merchant memberships self select"
+drop policy if exists "merchant memberships self select" on public.merchant_memberships;
+create policy "merchant memberships self select"
 on public.merchant_memberships
 for select
 using (auth.uid() = user_id);
 
-create policy if not exists "public active products read"
+drop policy if exists "public active products read" on public.prodotti;
+create policy "public active products read"
 on public.prodotti
 for select
 using (attivo = true);
 
-create policy if not exists "merchant own products read"
+drop policy if exists "merchant own products read" on public.prodotti;
+create policy "merchant own products read"
 on public.prodotti
 for select
 using (public.is_merchant_for_store(negozio_id::text));
 
-create policy if not exists "merchant own products insert"
+drop policy if exists "merchant own products insert" on public.prodotti;
+create policy "merchant own products insert"
 on public.prodotti
 for insert
 with check (public.is_merchant_for_store(negozio_id::text));
 
-create policy if not exists "merchant own products update"
+drop policy if exists "merchant own products update" on public.prodotti;
+create policy "merchant own products update"
 on public.prodotti
 for update
 using (public.is_merchant_for_store(negozio_id::text))
 with check (public.is_merchant_for_store(negozio_id::text));
 
-create policy if not exists "public product media read"
+drop policy if exists "public product media read" on public.product_media;
+create policy "public product media read"
 on public.product_media
 for select
 using (true);
 
-create policy if not exists "merchant product media write"
+drop policy if exists "merchant product media write" on public.product_media;
+create policy "merchant product media write"
 on public.product_media
 for all
 using (true)

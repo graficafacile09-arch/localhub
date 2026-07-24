@@ -16,9 +16,21 @@ export type NegozioRicerca = {
   immagine?: string | null;
 };
 
+export type ProdottoRicerca = {
+  id: string;
+  negozio_id: string;
+  nome: string;
+  descrizione: string | null;
+  categoria: string | null;
+  prezzo: number;
+  negozio_nome: string;
+  immagine_principale: string | null;
+};
+
 export type RisultatoRicercaAi = {
   risposta: string;
   negozi: NegozioRicerca[];
+  prodotti: ProdottoRicerca[];
 };
 
 function pulisciRispostaAi(risposta: string): string {
@@ -103,6 +115,8 @@ function armonizzaMarkdownRispostaAi(risposta: string): string {
   return testo.trim();
 }
 
+// ─── Ricerca negozi per AI ───────────────────────────────────────────────────
+
 async function cercaNegoziPerAi(query: string): Promise<NegozioRicerca[]> {
   const queryEspansa = espandiQueryConSinonimi(query);
   const terminiEspansi = Array.from(
@@ -161,6 +175,56 @@ async function cercaNegoziPerAi(query: string): Promise<NegozioRicerca[]> {
   ).slice(0, 10);
 }
 
+// ─── Ricerca prodotti per AI ─────────────────────────────────────────────────
+
+async function cercaProdottiPerAi(query: string): Promise<ProdottoRicerca[]> {
+  const termini = Array.from(
+    new Set(
+      espandiQueryConSinonimi(query)
+        .split(/\s+/)
+        .map((t) => t.trim())
+        .filter(Boolean)
+    )
+  ).slice(0, 10);
+
+  if (termini.length === 0) return [];
+
+  const filtri = termini
+    .flatMap((t) => {
+      const p = t.replace(/[,%]/g, " ").trim();
+      if (!p) return [];
+      return [
+        `nome.ilike.%${p}%`,
+        `descrizione.ilike.%${p}%`,
+        `categoria.ilike.%${p}%`,
+        `marca.ilike.%${p}%`,
+      ];
+    })
+    .join(",");
+
+  const { data, error } = await supabase
+    .from("prodotti")
+    .select("id, negozio_id, nome, descrizione, categoria, prezzo, immagine_principale, negozi!inner(id, nome)")
+    .eq("attivo", true)
+    .or(filtri)
+    .limit(10);
+
+  if (error) return [];
+
+  return (data ?? []).map((p: Record<string, unknown>) => ({
+    id: p.id as string,
+    negozio_id: p.negozio_id as string,
+    nome: p.nome as string,
+    descrizione: (p.descrizione as string) ?? null,
+    categoria: (p.categoria as string) ?? null,
+    prezzo: p.prezzo as number,
+    negozio_nome: (p.negozi as { nome: string })?.nome ?? "",
+    immagine_principale: (p.immagine_principale as string) ?? null,
+  }));
+}
+
+// ─── Ricerca AI principale ───────────────────────────────────────────────────
+
 export async function ricercaConAi(query: string): Promise<RisultatoRicercaAi> {
   const termine = query.trim();
 
@@ -168,10 +232,14 @@ export async function ricercaConAi(query: string): Promise<RisultatoRicercaAi> {
     return {
       risposta: "",
       negozi: [],
+      prodotti: [],
     };
   }
 
-  const negozi = await cercaNegoziPerAi(termine);
+  const [negozi, prodotti] = await Promise.all([
+    cercaNegoziPerAi(termine),
+    cercaProdottiPerAi(termine),
+  ]);
 
   const contestoNegozi =
     negozi.length > 0
@@ -183,32 +251,48 @@ export async function ricercaConAi(query: string): Promise<RisultatoRicercaAi> {
           .join("\n")
       : "Nessun negozio specifico trovato nel database locale.";
 
-  const prompt = `Sei l'assistente virtuale di "Cerca in Citta". Il tuo compito e aiutare l'utente a trovare quello che cerca basandoti solo sui negozi del nostro database.
+  const contestoProdotti =
+    prodotti.length > 0
+      ? prodotti
+          .map(
+            (p) =>
+              `- ${p.nome}: ${p.descrizione || "Nessuna descrizione"}. Prezzo: EUR ${p.prezzo}. Negozio: ${p.negozio_nome}. Categoria: ${p.categoria || "Non specificata"}.`
+          )
+          .join("\n")
+      : "Nessun prodotto specifico trovato nel database locale.";
+
+  const prompt = `Sei l'assistente virtuale di "InCitta", l'Amazon della citta. Il tuo compito e aiutare l'utente a trovare negozi e prodotti basandoti ESCLUSIVAMENTE sui dati del nostro database locale. NON usare internet. NON inventare attivita o prodotti inesistenti.
 
 Query dell'utente: "${termine}"
 Sinonimi e termini correlati utili: "${espandiQueryConSinonimi(termine)}"
 
-Negozi disponibili nel database che corrispondono:
+Negozi disponibili nel database:
 ${contestoNegozi}
 
+Prodotti disponibili nel database:
+${contestoProdotti}
+
 Istruzioni di risposta:
-1. Se ci sono negozi pertinenti nel database, mostra solo risultati utili per l'utente con stile diretto e commerciale.
-2. Se non ci sono negozi pertinenti nel database locale, scrivi una risposta breve e utile senza inventare attivita inesistenti.
-3. USA IL MARKDOWN.
-4. NON inserire considerazioni finali, note, conclusioni, premesse, spiegazioni del ragionamento, frasi come "in base ai dati", "ho analizzato", "ecco le mie considerazioni" o simili.
-5. NON parlare del tuo processo interno.
-6. NON aggiungere sezioni meta o editoriali.
-7. Se trovi negozi pertinenti usa questa struttura:
-## Attivita consigliate
-- **Nome negozio** - breve descrizione utile.
-  - Categoria: ...
+1. Se ci sono prodotti pertinenti, mostrali PRIMA con nome, prezzo e negozio di provenienza.
+2. Se ci sono negozi pertinenti, mostrali DOPO i prodotti.
+3. Se non ci sono risultati pertinenti, scrivi una risposta breve e utile SENZA inventare attivita o prodotti inesistenti.
+4. USA IL MARKDOWN.
+5. NON inserire considerazioni finali, note, conclusioni, premesse, spiegazioni del ragionamento.
+6. NON parlare del tuo processo interno.
+7. Struttura della risposta con prodotti:
+## Prodotti trovati
+- **Nome prodotto** - descrizione breve.
+  - Prezzo: EUR ...
+  - Negozio: ...
+8. Struttura della risposta con negozi:
+## Negozi consigliati
+- **Nome negozio** - breve descrizione.
   - Indirizzo: ...
   - Telefono: ...
-8. Dopo l'elenco puoi aggiungere solo una sezione finale facoltativa:
+9. Puoi aggiungere una sezione finale:
 ## Suggerimento rapido
-con una singola frase concreta per aiutare l'utente a scegliere meglio.
-9. Mantieni il testo elegante, breve, ordinato e focalizzato solo sui risultati.
-10. Se la query descrive un bisogno concreto o un problema (es. animale con zecche, auto da riparare, farmaci, arredare casa), proponi solo attivita coerenti con quel bisogno e NON elencare negozi fuori tema.`;
+con una singola frase concreta.
+10. Mantieni il testo breve, ordinato e focalizzato sui risultati utili per l'utente.`;
 
   const groqApiKey = process.env.GROQ_API_KEY;
 
@@ -243,5 +327,6 @@ con una singola frase concreta per aiutare l'utente a scegliere meglio.
   return {
     risposta: pulisciRispostaAi(rispostaAI),
     negozi,
+    prodotti,
   };
 }

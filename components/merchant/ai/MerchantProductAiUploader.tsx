@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Camera, Image as ImageIcon, Upload } from "lucide-react";
+import { Camera, ImageIcon, Upload, Sparkles } from "lucide-react";
 import type { ProductVisionSuggestion } from "@/lib/product-assistant/vision";
 
 type AnalysisResult = {
@@ -11,9 +11,7 @@ type AnalysisResult = {
 
 type MerchantProductAiUploaderProps = {
   negozioId: string;
-  /** Chiamato quando l'analisi restituisce un risultato (suggestion + lowConfidence) */
   onResult: (result: AnalysisResult) => void;
-  /** Chiamato appena parte la richiesta al server (prima della risposta) */
   onAnalysisStart?: () => void;
 };
 
@@ -26,33 +24,34 @@ export default function MerchantProductAiUploader({
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [cameraSupported, setCameraSupported] = useState(true);
 
-  // Due input separati: uno forza la fotocamera (capture), l'altro apre la galleria
   const cameraInputRef = useRef<HTMLInputElement>(null);
-  const galleryInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   function handleFileSelected(selected: File | null | undefined) {
     setError(null);
-
     if (!selected) {
       setFile(null);
       setPreview(null);
       return;
     }
-
     setFile(selected);
-
-    // Revoca l'object URL precedente per evitare memory leak
     if (preview) URL.revokeObjectURL(preview);
     setPreview(URL.createObjectURL(selected));
   }
 
-  function handleCameraChange(event: React.ChangeEvent<HTMLInputElement>) {
-    handleFileSelected(event.target.files?.[0]);
-  }
-
-  function handleGalleryChange(event: React.ChangeEvent<HTMLInputElement>) {
-    handleFileSelected(event.target.files?.[0]);
+  function handleCameraClick() {
+    // Try to use camera - if it fails, show fallback
+    try {
+      const input = cameraInputRef.current;
+      if (input) {
+        input.click();
+      }
+    } catch {
+      setCameraSupported(false);
+      fileInputRef.current?.click();
+    }
   }
 
   async function handleAnalyzeClick() {
@@ -63,8 +62,6 @@ export default function MerchantProductAiUploader({
 
     setLoading(true);
     setError(null);
-
-    // Notifica il wizard che l'analisi è partita (per avanzare allo step 2)
     onAnalysisStart?.();
 
     try {
@@ -100,129 +97,126 @@ export default function MerchantProductAiUploader({
 
   return (
     <div className="rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm">
-      <div className="space-y-4">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
-            Step 1 — Fotografia prodotto
-          </p>
-          <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-900">
-            Scatta o seleziona un&apos;immagine
-          </h2>
-          <p className="mt-2 text-sm leading-6 text-slate-600">
-            Il sistema AI riconosce il prodotto e compila automaticamente tutti i campi dell&apos;annuncio.
-          </p>
-        </div>
+      <div className="space-y-5">
 
-        {error ? (
+        {error && (
           <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
           </div>
-        ) : null}
+        )}
 
-        {/* Pulsanti selezione immagine */}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-2">
-          {/* Bottone Fotocamera — usa capture="environment" per aprire la fotocamera sul mobile */}
-          <button
-            type="button"
-            onClick={() => cameraInputRef.current?.click()}
-            disabled={loading}
-            className="flex flex-col items-center gap-3 rounded-[1.75rem] border border-dashed border-blue-300 bg-blue-50/60 px-4 py-6 text-center transition hover:border-blue-400 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-100">
-              <Camera className="h-6 w-6 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-sm font-bold text-slate-800">Fotocamera</p>
-              <p className="mt-0.5 text-xs text-slate-500">Scatta una foto ora</p>
-            </div>
-          </button>
-          {/* Input nascosto con capture="environment" — forza la fotocamera posteriore */}
-          <input
-            ref={cameraInputRef}
-            type="file"
-            accept="image/*"
-            capture="environment"
-            onChange={handleCameraChange}
-            className="hidden"
-            aria-label="Scatta foto con la fotocamera"
-          />
+        {/* ─── PULSANTE FOTOCAMERA PRINCIPALE ─── */}
+        {!preview && !loading && (
+          <div className="space-y-4">
+            <button
+              type="button"
+              onClick={handleCameraClick}
+              className="group relative w-full overflow-hidden rounded-[2rem] border-2 border-dashed border-blue-300 bg-gradient-to-b from-blue-50 to-blue-50/60 px-6 py-10 text-center transition-all hover:border-blue-400 hover:shadow-lg hover:shadow-blue-200/50 active:scale-[0.99]"
+            >
+              <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-[2rem] bg-gradient-to-b from-blue-500 to-blue-600 shadow-lg shadow-blue-300/50 transition-transform duration-300 group-hover:scale-110 group-hover:shadow-xl group-hover:shadow-blue-400/50">
+                <Camera className="h-9 w-9 text-white" />
+              </div>
+              <p className="mt-5 text-xl font-bold text-slate-800">
+                Scatta foto del prodotto
+              </p>
+              <p className="mt-1.5 text-sm text-slate-500">
+                Inquadra il prodotto, l&apos;AI lo riconosce in pochi secondi
+              </p>
+            </button>
 
-          {/* Bottone Galleria — senza capture, apre la galleria o il file picker */}
-          <button
-            type="button"
-            onClick={() => galleryInputRef.current?.click()}
-            disabled={loading}
-            className="flex flex-col items-center gap-3 rounded-[1.75rem] border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center transition hover:border-blue-400 hover:bg-blue-50/60 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100">
-              <ImageIcon className="h-6 w-6 text-slate-500" />
-            </div>
-            <div>
-              <p className="text-sm font-bold text-slate-800">Galleria</p>
-              <p className="mt-0.5 text-xs text-slate-500">Scegli dalla galleria</p>
-            </div>
-          </button>
-          {/* Input nascosto senza capture — apre la galleria / file picker */}
-          <input
-            ref={galleryInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleGalleryChange}
-            className="hidden"
-            aria-label="Seleziona immagine dalla galleria"
-          />
-        </div>
+            {/* Input nascosto per fotocamera */}
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={(e) => handleFileSelected(e.target.files?.[0])}
+              className="hidden"
+              aria-label="Scatta foto con la fotocamera"
+            />
 
-        {/* Anteprima immagine selezionata */}
-        {preview ? (
-          <div className="rounded-[1.75rem] border border-slate-200 bg-slate-50 p-4">
-            <p className="text-sm font-semibold text-slate-700">
-              Anteprima
-              {file ? <span className="ml-2 text-xs font-normal text-slate-400">— {file.name}</span> : null}
-            </p>
-            <div className="mt-3 flex max-h-64 items-center justify-center overflow-hidden rounded-3xl bg-white shadow-sm">
+            {/* Input nascosto per file fallback */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={(e) => handleFileSelected(e.target.files?.[0])}
+              className="hidden"
+              aria-label="Carica immagine dalla galleria"
+            />
+
+            {/* Fallback: Carica immagine */}
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="inline-flex items-center gap-2 text-sm font-medium text-slate-400 transition hover:text-blue-600"
+              >
+                <ImageIcon className="h-4 w-4" />
+                oppure carica un&apos;immagine
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ─── ANTEPRIMA ─── */}
+        {preview && !loading && (
+          <div className="space-y-4">
+            <div className="overflow-hidden rounded-[1.75rem] bg-slate-100 shadow-inner">
               <img
                 src={preview}
-                alt="Anteprima prodotto selezionato"
-                className="max-h-64 w-full object-contain"
+                alt="Anteprima prodotto"
+                className="max-h-72 w-full object-contain"
               />
             </div>
-          </div>
-        ) : (
-          <div className="flex min-h-[100px] items-center justify-center rounded-[1.75rem] border border-dashed border-slate-200 bg-slate-50/60">
-            <div className="flex flex-col items-center gap-2 text-slate-400">
-              <Upload className="h-6 w-6" />
-              <p className="text-sm">Nessuna immagine selezionata</p>
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  if (preview) URL.revokeObjectURL(preview);
+                  setPreview(null);
+                  setFile(null);
+                }}
+                className="flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"
+              >
+                Rifai foto
+              </button>
+              <button
+                type="button"
+                onClick={handleAnalyzeClick}
+                className="flex-1 rounded-2xl bg-gradient-to-b from-blue-500 to-blue-700 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-blue-500/30 transition hover:shadow-xl hover:shadow-blue-500/40 active:scale-[0.98]"
+              >
+                Analizza con AI
+              </button>
             </div>
           </div>
         )}
 
-        {/* Pulsante analisi — mostra spinner durante l'attesa */}
-        <button
-          type="button"
-          onClick={handleAnalyzeClick}
-          disabled={loading || !file}
-          className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-amber-400 via-yellow-400 to-amber-500 px-6 text-sm font-bold text-slate-900 shadow-lg shadow-amber-400/40 transition hover:from-amber-300 hover:via-yellow-300 hover:to-amber-400 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {loading ? (
-            <>
-              <span
-                className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-slate-900/30 border-t-slate-900"
-                aria-hidden
-              />
-              Analisi in corso…
-            </>
-          ) : (
-            "Analizza con AI"
-          )}
-        </button>
-
-        {/* Messaggio di attesa durante step 2 */}
+        {/* ─── CARICAMENTO ─── */}
         {loading && (
-          <p className="text-center text-xs text-slate-500">
-            L&apos;AI sta analizzando il prodotto. Potrebbe richiedere qualche secondo…
-          </p>
+          <div className="space-y-4">
+            <div className="flex min-h-[200px] items-center justify-center rounded-[1.75rem] bg-slate-50">
+              <div className="flex flex-col items-center gap-4">
+                <div className="relative flex h-16 w-16 items-center justify-center">
+                  <div className="absolute h-16 w-16 animate-ping rounded-full bg-blue-200 opacity-30" />
+                  <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-b from-blue-500 to-blue-700 shadow-lg">
+                    <Sparkles className="h-7 w-7 text-white" />
+                  </div>
+                </div>
+                <div className="text-center">
+                  <p className="text-base font-bold text-slate-800">
+                    L&apos;AI sta analizzando il prodotto
+                  </p>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Riconoscimento in corso...
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
+
       </div>
     </div>
   );

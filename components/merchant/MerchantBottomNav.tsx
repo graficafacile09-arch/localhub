@@ -19,8 +19,6 @@ export default function MerchantBottomNav({ storeId: storeIdProp }: MerchantBott
   const pathname = usePathname();
 
   // Estrae negozioId direttamente dall'URL: /merchant/[negozioId]/...
-  // Garantisce che la bottom nav funzioni sempre, indipendentemente
-  // da come il layout passa la prop
   const urlStoreId = pathname.match(/^\/merchant\/([^/]+)/)?.[1] ?? null;
   const storeId = storeIdProp ?? urlStoreId;
 
@@ -30,7 +28,7 @@ export default function MerchantBottomNav({ storeId: storeIdProp }: MerchantBott
   const navItems = [
     {
       key: "dashboard",
-      label: "Dashboard",
+      label: "Negozio",
       icon: Home,
       href: storeId ? `/merchant/${storeId}` : "/merchant",
       available: true,
@@ -54,7 +52,7 @@ export default function MerchantBottomNav({ storeId: storeIdProp }: MerchantBott
     },
     {
       key: "negozio",
-      label: "Negozio",
+      label: "Gestione",
       icon: Store,
       href: storeId ? `/merchant/${storeId}/impostazioni` : "/merchant",
       available: hasStore,
@@ -62,9 +60,9 @@ export default function MerchantBottomNav({ storeId: storeIdProp }: MerchantBott
     },
     {
       key: "altro",
-      label: "Altro",
-      icon: Settings,
-      href: null, // gestito con form signout + impostazioni
+      label: "Esci",
+      icon: LogOut,
+      href: null,
       available: true,
       ai: false,
       isMenu: true,
@@ -73,7 +71,6 @@ export default function MerchantBottomNav({ storeId: storeIdProp }: MerchantBott
 
   function isActive(href: string | null): boolean {
     if (!href) return false;
-    // Match esatto per dashboard, prefisso per le altre
     if (href === `/merchant/${storeId}`) {
       return pathname === href;
     }
@@ -85,9 +82,8 @@ export default function MerchantBottomNav({ storeId: storeIdProp }: MerchantBott
       {/* ── Bottom Navigation Bar ────────────────────────────────────────────── */}
       <nav
         className="fixed bottom-0 left-0 right-0 z-50 md:hidden"
-        aria-label="Navigazione merchant mobile"
+        aria-label="Navigazione area commercianti mobile"
       >
-        {/* Safe area support — padding-bottom per notch iPhone e gesture bar Android */}
         <div
           className="border-t border-slate-200/80 bg-white/95 shadow-[0_-1px_0_0_rgba(0,0,0,0.06),0_-8px_32px_rgba(15,23,42,0.10)] backdrop-blur-md"
           style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
@@ -129,7 +125,7 @@ export default function MerchantBottomNav({ storeId: storeIdProp }: MerchantBott
                 );
               }
 
-              // ── Voce "Altro" — apre signout via form ─────────────────────
+              // ── Voce "Esci" — apre signout via form ─────────────────────
               if (item.isMenu) {
                 return (
                   <MerchantBottomNavAltro key={item.key} />
@@ -146,7 +142,6 @@ export default function MerchantBottomNav({ storeId: storeIdProp }: MerchantBott
                   `}
                   aria-current={active ? "page" : undefined}
                 >
-                  {/* Pill indicatore attivo */}
                   <span
                     className={`flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200
                       ${active ? "bg-blue-50" : "bg-transparent"}
@@ -173,7 +168,7 @@ export default function MerchantBottomNav({ storeId: storeIdProp }: MerchantBott
         </div>
       </nav>
 
-      {/* Spacer: evita che il contenuto finisca sotto la bottom nav */}
+      {/* Spacer */}
       <div
         className="md:hidden"
         style={{
@@ -185,14 +180,13 @@ export default function MerchantBottomNav({ storeId: storeIdProp }: MerchantBott
   );
 }
 
-// ── Voce "Altro": mostra logout + link impostazioni ──────────────────────────
 function MerchantBottomNavAltro() {
   return (
     <form action="/api/auth/signout" method="post" className="flex flex-col items-center">
       <button
         type="submit"
         className="flex flex-col items-center gap-1.5 rounded-xl px-3 py-1.5 transition-all duration-150 active:scale-95"
-        aria-label="Esci dall'area merchant"
+        aria-label="Esci dall'area commercianti"
       >
         <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-transparent transition-all duration-200">
           <LogOut className="h-5 w-5 text-slate-400" aria-hidden />
