@@ -1,11 +1,12 @@
-import type { ProductVisionSuggestion, VisionContext, VisionImage } from "../types";
+import type { VisionContext, VisionImage } from "../types";
+import type { ProviderResult } from "./utils";
 
 /**
  * Contratto comune per tutti i provider di Computer Vision.
  *
- * Per aggiungere un nuovo provider (OpenAI, Claude, Grok, ecc.):
+ * Per aggiungere un nuovo provider:
  * 1. Crea un file in providers/ che implementa questa interfaccia
- * 2. Aggiungi il case nella factory di vision-service.ts
+ * 2. Aggiungi il case in vision-service.ts
  * Zero modifiche al resto del progetto.
  */
 export interface VisionProvider {
@@ -18,5 +19,5 @@ export interface VisionProvider {
   analyze(
     images: VisionImage[],
     context?: VisionContext
-  ): Promise<ProductVisionSuggestion>;
+  ): Promise<ProviderResult>;
 }

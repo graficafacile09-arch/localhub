@@ -14,7 +14,7 @@ import {
   extractSuggestion,
 } from "./utils";
 
-type OpenRouterMessage = {
+type CloudflareMessage = {
   role: "user" | "assistant" | "system";
   content: Array<
     | { type: "text"; text: string }
@@ -23,16 +23,20 @@ type OpenRouterMessage = {
 };
 
 function log(...args: unknown[]) {
-  console.log("[OpenRouterProvider]", ...args);
+  console.log("[CloudflareProvider]", ...args);
 }
 
-export class OpenRouterProvider implements VisionProvider {
-  private readonly apiKey: string;
-  private readonly model: string;
+export class CloudflareProvider implements VisionProvider {
+  private readonly accountId: string;
+  private readonly apiToken: string;
 
-  constructor(apiKey: string, model: string) {
-    this.apiKey = apiKey;
-    this.model = model;
+  constructor(accountId: string, apiToken: string) {
+    this.accountId = accountId;
+    this.apiToken = apiToken;
+  }
+
+  get model(): string {
+    return "@cf/meta/llama-3.2-11b-vision-instruct";
   }
 
   async analyze(
@@ -44,9 +48,9 @@ export class OpenRouterProvider implements VisionProvider {
 
     log(`Modello: ${this.model}, immagini: ${images.length}`);
     log(`Prompt (primi 300): "${prompt.slice(0, 300)}..."`);
-    log(`OPENROUTER_API_KEY presente: ${Boolean(this.apiKey)}`);
+    log(`CLOUDFLARE_ACCOUNT_ID presente: ${Boolean(this.accountId)}`);
 
-    const content: OpenRouterMessage["content"] = [{ type: "text", text: prompt }];
+    const content: CloudflareMessage["content"] = [{ type: "text", text: prompt }];
 
     for (const image of images) {
       const mimeType = detectMimeType(image.filename);
@@ -58,28 +62,27 @@ export class OpenRouterProvider implements VisionProvider {
       });
     }
 
-    const messages: OpenRouterMessage[] = [{ role: "user", content }];
+    const messages: CloudflareMessage[] = [{ role: "user", content }];
+
+    const baseUrl = `https://api.cloudflare.com/client/v4/accounts/${this.accountId}/ai/run`;
+    const url = `${baseUrl}/${this.model}`;
 
     let httpStatus: number | string = "unknown";
     let responseText = "";
-    let tokenCount: { input?: number; output?: number; total?: number } | undefined;
 
     try {
-      log("Chiamata OpenRouter API in corso...");
+      log("Chiamata Cloudflare Workers AI in corso...");
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 60000);
 
-      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      const response = await fetch(url, {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${this.apiKey}`,
+          "Authorization": `Bearer ${this.apiToken}`,
           "Content-Type": "application/json",
-          "HTTP-Referer": "https://localhub-eta.vercel.app",
-          "X-Title": "LocalHub",
         },
         body: JSON.stringify({
-          model: this.model,
           messages,
           max_tokens: 2000,
           temperature: 0.1,
@@ -90,16 +93,16 @@ export class OpenRouterProvider implements VisionProvider {
       clearTimeout(timeoutId);
 
       httpStatus = response.status;
-      log(`Risposta OpenRouter: HTTP ${httpStatus}`);
+      log(`Risposta Cloudflare: HTTP ${httpStatus}`);
 
       if (!response.ok) {
         const errorBody = await response.text().catch(() => "unknown");
-        log(`ERRORE OpenRouter (HTTP ${httpStatus}): ${errorBody}`);
+        log(`ERRORE Cloudflare (HTTP ${httpStatus}): ${errorBody}`);
 
-        if (httpStatus === 429 || httpStatus === 402) {
+        if (httpStatus === 429) {
           throw new ProviderError(
             AI_PROVIDER_QUOTA_EXCEEDED,
-            `OpenRouter: HTTP ${httpStatus} — ${errorBody.slice(0, 200)}`,
+            "Cloudflare quota esaurita (rate limit).",
             httpStatus
           );
         }
@@ -107,39 +110,43 @@ export class OpenRouterProvider implements VisionProvider {
         if (httpStatus >= 500 && httpStatus < 600) {
           throw new ProviderError(
             AI_PROVIDER_UNKNOWN_ERROR,
-            `OpenRouter: errore server HTTP ${httpStatus}.`,
+            `Cloudflare: errore server HTTP ${httpStatus}.`,
             httpStatus
           );
         }
 
         throw new ProviderError(
           AI_PROVIDER_UNKNOWN_ERROR,
-          `OpenRouter: HTTP ${httpStatus} — ${errorBody.slice(0, 200)}`,
+          `Cloudflare: HTTP ${httpStatus} — ${errorBody.slice(0, 200)}`,
           httpStatus
         );
       }
 
       const json = await response.json() as {
-        choices?: Array<{ message?: { content?: string } }>;
-        usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number };
+        result?: { response?: string; usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number } };
+        success?: boolean;
+        errors?: Array<{ message?: string }>;
       };
 
-      tokenCount = json.usage
-        ? {
-            input: json.usage.prompt_tokens,
-            output: json.usage.completion_tokens,
-            total: json.usage.total_tokens,
-          }
-        : undefined;
+      if (!json.success) {
+        const errMsg = json.errors?.[0]?.message ?? "Errore sconosciuto Cloudflare";
+        log(`ERRORE Cloudflare API: ${errMsg}`);
 
-      responseText = json.choices?.[0]?.message?.content ?? "";
+        if (errMsg.toLowerCase().includes("quota") || errMsg.toLowerCase().includes("limit") || errMsg.toLowerCase().includes("ratelimit")) {
+          throw new ProviderError(AI_PROVIDER_QUOTA_EXCEEDED, `Cloudflare: ${errMsg}`, httpStatus);
+        }
+
+        throw new ProviderError(AI_PROVIDER_UNKNOWN_ERROR, `Cloudflare: ${errMsg}`, httpStatus);
+      }
+
+      responseText = json.result?.response ?? "";
       log(`Risposta raw text length: ${responseText.length}`);
       log(`Risposta raw text (primi 500): "${responseText.slice(0, 500)}"`);
 
       if (!responseText.trim()) {
         throw new ProviderError(
           AI_PROVIDER_UNKNOWN_ERROR,
-          "OpenRouter: risposta vuota.",
+          "Cloudflare: risposta vuota.",
           httpStatus
         );
       }
@@ -162,14 +169,14 @@ export class OpenRouterProvider implements VisionProvider {
           } catch {
             throw new ProviderError(
               AI_PROVIDER_UNKNOWN_ERROR,
-              "OpenRouter: impossibile parsare JSON dalla risposta.",
+              "Cloudflare: impossibile parsare JSON dalla risposta.",
               httpStatus
             );
           }
         } else {
           throw new ProviderError(
             AI_PROVIDER_UNKNOWN_ERROR,
-            "OpenRouter: impossibile parsare JSON dalla risposta.",
+            "Cloudflare: impossibile parsare JSON dalla risposta.",
             httpStatus
           );
         }
@@ -177,6 +184,13 @@ export class OpenRouterProvider implements VisionProvider {
 
       const latencyMs = Date.now() - startTime;
       const suggestion = extractSuggestion(parsed);
+      const tokenCount = json.result?.usage
+        ? {
+            input: json.result.usage.prompt_tokens,
+            output: json.result.usage.completion_tokens,
+            total: json.result.usage.total_tokens,
+          }
+        : undefined;
 
       log(`Analisi completata in ${latencyMs}ms: "${suggestion.nome}"`);
 
@@ -191,24 +205,24 @@ export class OpenRouterProvider implements VisionProvider {
       const latencyMs = Date.now() - startTime;
 
       if (caught instanceof ProviderError) {
-        log(`ERRORE OpenRouter: [${caught.code}] ${caught.message}`);
+        log(`ERRORE Cloudflare: [${caught.code}] ${caught.message}`);
         throw caught;
       }
 
       if (caught instanceof DOMException && caught.name === "AbortError") {
-        log(`ERRORE OpenRouter: timeout (60s)`);
+        log(`ERRORE Cloudflare: timeout (60s)`);
         throw new ProviderError(
           AI_PROVIDER_TIMEOUT,
-          "OpenRouter: timeout richiesta (60s).",
+          "Cloudflare: timeout richiesta (60s).",
           "timeout"
         );
       }
 
       const msg = caught instanceof Error ? caught.message : "Errore sconosciuto";
-      log(`ERRORE OpenRouter: ${msg}`);
+      log(`ERRORE Cloudflare: ${msg}`);
       throw new ProviderError(
         AI_PROVIDER_NETWORK_ERROR,
-        `OpenRouter: errore di rete — ${msg}`,
+        `Cloudflare: errore di rete — ${msg}`,
         "network"
       );
     }

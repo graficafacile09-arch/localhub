@@ -24,14 +24,14 @@ export async function POST(
   }
 
   try {
-    const visionProvider = (process.env.VISION_PROVIDER ?? "gemini").toLowerCase();
+    const cfKeyPresent = Boolean(process.env.CLOUDFLARE_API_TOKEN);
+    const cfIdPresent = Boolean(process.env.CLOUDFLARE_ACCOUNT_ID);
     const orKeyPresent = Boolean(process.env.OPENROUTER_API_KEY);
-    let providerName = "Nessuno";
-    if (visionProvider === "openrouter") providerName = "OpenRouter";
-    else if (visionProvider === "gemini") providerName = "Gemini";
-    log(`VISION_PROVIDER=${process.env.VISION_PROVIDER ?? "non impostato"}`);
+    const geminiKeyPresent = Boolean(process.env.GEMINI_API_KEY);
+    log(`CLOUDFLARE configurato=${cfKeyPresent && cfIdPresent}`);
     log(`OPENROUTER_API_KEY presente=${orKeyPresent}`);
-    log(`Provider selezionato=${providerName}`);
+    log(`GEMINI_API_KEY presente=${geminiKeyPresent}`);
+    log(`Catena fallback: Cloudflare → OpenRouter → Gemini`);
 
     // ── Autenticazione ────────────────────────────────────────────────────────
     log("Autenticazione in corso...");
