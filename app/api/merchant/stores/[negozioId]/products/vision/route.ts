@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { extractSuggestion } from "@/lib/product-assistant/providers/utils";
+import { buildVisionPrompt } from "@/lib/product-assistant/prompts";
 
 const MODEL = "@cf/google/gemma-4-26b-a4b-it";
 const LOW_CONFIDENCE_THRESHOLD = 60;
@@ -37,18 +38,12 @@ export async function POST(request: Request) {
         {
           role: "user",
           content: [
-            {
-              type: "text",
-              text: "Descrivi questo prodotto in italiano. Restituisci solo JSON con: nome, categoria, descrizione, prezzo_suggerito, parole_chiave, confidenza.",
-            },
-            {
-              type: "image_url",
-              image_url: { url: `data:${mime};base64,${base64}` },
-            },
+            { type: "text", text: buildVisionPrompt() },
+            { type: "image_url", image_url: { url: `data:${mime};base64,${base64}` } },
           ],
         },
       ],
-      max_tokens: 2000,
+      max_tokens: 3072,
       temperature: 0.1,
     }),
   });

@@ -11,54 +11,57 @@ export function buildVisionPrompt(context?: VisionContext): string {
     ? `Il negozio si chiama "${context.negozioNome}"${context.negozioCategoria ? ` e appartiene alla categoria "${context.negozioCategoria}"` : ""}.`
     : "";
 
-  return `Sei un assistente AI specializzato nel riconoscimento di prodotti commerciali da fotografie.
+  return `Sei un assistente specializzato nell'analisi professionale di prodotti per marketplace italiani. Il tuo compito è riconoscere il prodotto nella foto e restituire una scheda tecnica completa e verificabile. Non inventare mai dati: se non sei sicuro, usa null.
 ${contestoNegozio ? `\n${contestoNegozio}\n` : ""}
-Analizza l'immagine del prodotto.
+REGOLE ASSOLUTE:
+- Restituisci SOLO un oggetto JSON valido, senza testo prima o dopo.
+- NIENTE markdown, niente \`\`\`json, niente \`\`\`, niente spiegazioni.
+- La risposta DEVE iniziare con { e finire con }.
+- Non inventare mai marche, prezzi, codici o ingredienti. Usa null se non sei sicuro.
+- Se nella foto vedi etichette leggibili, leggile accuratamente.
+- Per il prezzo: stima in base al mercato italiano reale. Se non puoi stimare con ragionevole certezza, restituisci null.
 
-REGOLA ASSOLUTA: restituisci SOLO un oggetto JSON valido. NIENTE altro.
-- NIENTE markdown, niente \`\`\`json, niente \`\`\`
-- NIENTE testo prima o dopo il JSON
-- NIENTE spiegazioni, commenti, prefazioni, conclusioni
-- La risposta deve INIZIARE con { e FINIRE con }
-- Se non rispetti questa regola, il sistema si rompe.
-
-Il JSON DEVE avere esattamente questa struttura (copia fedelmente i nomi dei campi in snake_case):
+STRUTTURA JSON RICHIESTA (usa ESATTAMENTE questi nomi di campo in snake_case):
 
 {
-  "nome": "Nome commerciale del prodotto (massimo 80 caratteri)",
-  "descrizione": "Descrizione commerciale breve adatta alla card del catalogo (100-200 caratteri)",
-  "descrizione_completa": "Descrizione commerciale completa e dettagliata, stile scheda prodotto e-commerce (300-800 caratteri). Usa tono persuasivo ma professionale, includi materiali, finiture, usi consigliati.",
-  "categoria": "Categoria principale del prodotto (es: Abbigliamento, Elettronica, Casa, Sport, Beauty, Alimentari, ecc.)",
-  "sottocategoria": "Sottocategoria più specifica o null se non determinabile (es: Running, Skincare, Divani)",
-  "marca": "Marca o produttore se visibile/riconoscibile, altrimenti null",
-  "colore": "Colore principale del prodotto o null se non applicabile",
-  "materiale": "Materiale principale (es: cotone, plastica, acciaio, pelle) o null se non visibile",
-  "caratteristiche": ["caratteristica 1", "caratteristica 2", "caratteristica 3", "caratteristica 4", "caratteristica 5"],
-  "peso_volume": "Peso o volume se leggibile dall'etichetta (es: 500g, 1.5L, 10x15cm) o null",
-  "parole_chiave": ["tag1", "tag2", "tag3", "tag4", "tag5"],
+  "nome": "Nome commerciale completo del prodotto (max 80 caratteri, preciso)",
+  "descrizione": "Descrizione breve e accattivante per card catalogo (100-200 caratteri)",
+  "descrizione_completa": "Descrizione commerciale dettagliata per scheda prodotto (300-800 caratteri, stile professionale, includi materiali, finiture, utilizzo)",
+  "categoria": "Categoria merceologica principale (es: Abbigliamento, Alimentari, Beauty, Casa, Elettronica, Sport, Giardinaggio, Animali, Giochi, Auto-moto, Ufficio)",
+  "sottocategoria": "Sottocategoria specifica o null (es: Scarpe da Running, Crema Viso, Detergente Piatti, Cibo Secco)",
+  "marca": "Marca o produttore se leggibile/riconoscibile, altrimenti null",
+  "formato": "Formato o quantità esatta se leggibile (es: 250ml, 500g, 1L, 24x50g, 75cl) o null",
+  "tipo_confezione": "Tipo di confezione (es: bottiglia vetro, busta plastica, lattina alluminio, scatola cartone, barattolo vetro, tubetto) o null",
+  "colore": "Colore dominante del prodotto o null",
+  "materiale": "Materiale principale (es: cotone, acciaio inox, vetro, plastica PET, pelle, legno, silicone) o null",
+  "peso_volume": "Peso netto o volume se leggibile sull'etichetta (es: 500g, 1.5L, 10x15x20cm) o null",
+  "codice_ean": "Codice EAN-13 a 13 cifre se leggibile nell'immagine, altrimenti null",
+  "produttore": "Nome del produttore/fabbricante se leggibile, altrimenti null",
+  "ingredienti": ["Ingrediente 1", "Ingrediente 2"] o [] se non leggibili/non applicabile,
+  "allergeni": ["Allergene 1", "Allergene 2"] o [] se non leggibili/non applicabile,
+  "caratteristiche": ["Caratteristica chiave 1", "Caratteristica chiave 2", ...] (da 3 a 8 punti, oggettivi e verificabili: funzionalità, dimensioni, usi, compatibilità)",
+  "parole_chiave": ["parola1", "parola2", "parola3", ...] (da 5 a 10 tag SEO italiani per il motore di ricerca del marketplace)",
   "filtri_catalogo": {
     "taglia": "valore o null",
-    "stagione": "valore o null",
     "genere": "valore o null",
+    "stagione": "valore o null",
     "tipo_tessuto": "valore o null",
     "certificazione": "valore o null"
   },
-  "prezzo_suggerito": numero indicativo in euro (senza simbolo) o null se non stimabile,
+  "prezzo_suggerito": numero in euro senza simbolo (es: 12.50) oppure null se non stimabile con sicurezza,
   "stato_condizione": "nuovo" oppure "usato" oppure "ricondizionato",
-  "quantita_suggerita": 1,
-  "confidenza": numero intero da 0 a 100 che indica quanto sei sicuro del riconoscimento,
-  "seo_title": "Titolo SEO ottimizzato per Google (max 60 caratteri, includi marca e parola chiave principale) o null",
-  "seo_description": "Meta description SEO (max 160 caratteri, attraente con call-to-action) o null",
-  "alt_text_immagine": "Testo alternativo dell'immagine per accessibilita e SEO (descrivi cosa si vede nella foto) o null"
+  "quantita_suggerita": numero intero (quasi sempre 1, salvo confezioni multiple evidenti),
+  "confidenza": numero intero 0-100 che rappresenta la tua certezza complessiva sul riconoscimento,
+  "seo_title": "Titolo SEO per Google (max 60 caratteri, includi marca, nome, formato) o null",
+  "seo_description": "Meta description SEO (max 160 caratteri, descrizione accattivante con call-to-action) o null",
+  "alt_text_immagine": "Testo alternativo immagine per accessibilità e SEO (descrivi cosa mostra la foto) o null"
 }
 
-Regole obbligatorie:
-- "confidenza" deve riflettere onestamente la certezza: se l'immagine è sfocata, parziale o ambigua, usa un valore basso (sotto 60)
-- "parole_chiave" deve contenere termini SEO utili per la ricerca del prodotto
-- "stato_condizione" è quasi sempre "nuovo" a meno che non si vedano chiari segni di usura
-- "quantita_suggerita" è sempre 1 salvo casi evidenti (es. confezione multipla)
-- "caratteristiche" deve elencare da 3 a 8 punti chiave del prodotto (materiali, funzionalità, dimensioni, usi)
-- "filtri_catalogo" deve contenere solo attributi oggettivi e utili per filtraggio, ometti quelli non determinabili
-- Se un campo non è determinabile, usa null (non stringhe vuote)
-- RICORDA: la risposta DEVE iniziare con { e DEVE finire con }, senza nient'altro prima o dopo.`;
+REGOLE DI COMPILAZIONE (fondamentali):
+- confidenza: onesto. Sfocato o parziale = sotto 60. Immagine chiara e prodotto riconoscibile = 80+. Etichetta leggibile con tutti i dati = 95+.
+- prezzo_suggerito: mai inventare. Usa null se non puoi stimare. Se stimi, indica un prezzo al pubblico italiano realistico (IVA inclusa).
+- marca, produttore, codice_ean: solo se LEGGIBILI nell'immagine. Mai inventare.
+- ingredienti, allergeni: solo se leggibili sull'etichetta. Altrimenti [].
+- Se un campo non è determinabile: usa null (mai stringhe vuote).
+- stato_condizione: "nuovo" è il default. Usa "usato" solo se vedi chiari segni di usura.`;
 }
