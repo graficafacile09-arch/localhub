@@ -33,10 +33,6 @@ export type VisionServiceResult =
 function createProvider(): VisionProvider | null {
   const providerName = (process.env.VISION_PROVIDER ?? "gemini").toLowerCase();
 
-  console.log("[VisionService] GEMINI_API_KEY presente:", !!process.env.GEMINI_API_KEY);
-  console.log("[VisionService] Lunghezza chiave:", process.env.GEMINI_API_KEY?.length);
-  console.log("[VisionService] Prefisso:", process.env.GEMINI_API_KEY?.slice(0, 4));
-
   switch (providerName) {
     case "gemini": {
       const apiKey = process.env.GEMINI_API_KEY;
