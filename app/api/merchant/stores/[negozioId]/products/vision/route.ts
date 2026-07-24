@@ -3,11 +3,76 @@ import sharp from "sharp";
 import { extractSuggestion } from "@/lib/product-assistant/providers/utils";
 import { buildVisionPrompt } from "@/lib/product-assistant/prompts";
 
-const MODEL = "@cf/google/gemma-4-26b-a4b-it";
 const LOW_CONFIDENCE_THRESHOLD = 60;
 const MAX_TOKENS = 300;
 const MAX_IMAGE_DIM = 1024;
 const JPEG_QUALITY = 80;
+
+const MODELS: Record<string, string> = {
+  gemma: "@cf/google/gemma-4-26b-a4b-it",
+  moondream: "@cf/moondream/moondream3.1-9B-A2B",
+};
+
+async function callChatCompletions(accountId: string, apiToken: string, model: string, prompt: string, imageBase64: string, mime: string) {
+  const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/v1/chat/completions`;
+
+  const body = JSON.stringify({
+    model,
+    messages: [
+      {
+        role: "user",
+        content: [
+          { type: "text", text: prompt },
+          { type: "image_url", image_url: { url: `data:${mime};base64,${imageBase64}` } },
+        ],
+      },
+    ],
+    max_completion_tokens: MAX_TOKENS,
+    temperature: 0.1,
+    chat_template_kwargs: { enable_thinking: false },
+  });
+
+  const tStart = performance.now();
+  const bodySize = new Blob([body]).size;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiToken}`, "Content-Type": "application/json" },
+    body,
+  });
+  const tHeaders = performance.now();
+  const status = response.status;
+  const rawBody = await response.text();
+  const tBody = performance.now();
+
+  return { status, rawBody, bodySize, latencyHeaders: tHeaders - tStart, latencyBody: tBody - tHeaders, tBody };
+}
+
+async function callMoondream(accountId: string, apiToken: string, prompt: string, imageBase64: string, mime: string) {
+  const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/moondream/moondream3.1-9B-A2B`;
+
+  const body = JSON.stringify({
+    task: "query",
+    image: `data:${mime};base64,${imageBase64}`,
+    question: prompt,
+    max_tokens: MAX_TOKENS,
+    temperature: 0.1,
+    reasoning: false,
+  });
+
+  const tStart = performance.now();
+  const bodySize = new Blob([body]).size;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${apiToken}`, "Content-Type": "application/json" },
+    body,
+  });
+  const tHeaders = performance.now();
+  const status = response.status;
+  const rawBody = await response.text();
+  const tBody = performance.now();
+
+  return { status, rawBody, bodySize, latencyHeaders: tHeaders - tStart, latencyBody: tBody - tHeaders, tBody };
+}
 
 export async function POST(request: Request) {
   const tStart = performance.now();
@@ -18,6 +83,16 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { success: false, error: { code: "CLOUDFLARE_NOT_CONFIGURED", message: "Cloudflare non configurato." } },
         { status: 500 }
+      );
+    }
+
+    const { searchParams } = new URL(request.url);
+    const modelKey = searchParams.get("model") ?? "gemma";
+    const modelId = MODELS[modelKey];
+    if (!modelId) {
+      return NextResponse.json(
+        { success: false, error: { code: "INVALID_MODEL", message: `Modello sconosciuto: ${modelKey}. Usa: ${Object.keys(MODELS).join(", ")}.` } },
+        { status: 400 }
       );
     }
 
@@ -45,49 +120,46 @@ export async function POST(request: Request) {
     const tB64End = performance.now();
 
     const prompt = buildVisionPrompt();
-    const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/v1/chat/completions`;
 
-    const body = JSON.stringify({
-      model: MODEL,
-      messages: [
-        {
-          role: "user",
-          content: [
-            { type: "text", text: prompt },
-            { type: "image_url", image_url: { url: `data:${mime};base64,${base64}` } },
-          ],
-        },
-      ],
-      max_completion_tokens: MAX_TOKENS,
-      temperature: 0.1,
-      chat_template_kwargs: { enable_thinking: false },
-    });
+    let responseData: {
+      status: number;
+      rawBody: string;
+      bodySize: number;
+      latencyHeaders: number;
+      latencyBody: number;
+      tBody: number;
+    };
 
-    const tCfStart = performance.now();
-    const cfResponse = await fetch(url, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiToken}`,
-        "Content-Type": "application/json",
-      },
-      body,
-    });
-    const tCfEnd = performance.now();
+    if (modelKey === "moondream") {
+      responseData = await callMoondream(accountId, apiToken, prompt, base64, mime);
+    } else {
+      responseData = await callChatCompletions(accountId, apiToken, modelId, prompt, base64, mime);
+    }
 
-    const status = cfResponse.status;
-    const headersSnapshot: Record<string, string> = {};
-    cfResponse.headers.forEach((v, k) => { headersSnapshot[k] = v; });
+    const { status, rawBody, bodySize, latencyHeaders, latencyBody, tBody } = responseData;
+    const tCfHeaders = tPrep + latencyHeaders;
+    const tCfBody = tBody;
 
-    const rawBody = await cfResponse.text();
-    const tRecvResp = performance.now();
+    if (!responseData || rawBody === undefined) {
+      return NextResponse.json(
+        { success: false, error: { code: "AI_PROVIDER_ERROR", message: `Errore interno: responseData non valido.` } },
+        { status: 500 }
+      );
+    }
 
-    if (!cfResponse.ok) {
+    if (status !== 200) {
+      if (status === 429) {
+        return NextResponse.json(
+          { success: false, error: { code: "AI_PROVIDER_QUOTA_EXCEEDED", message: `Cloudflare (${modelKey}): quota esaurita HTTP 429.` } },
+          { status }
+        );
+      }
       return NextResponse.json(
         {
           success: false,
           error: {
-            code: status === 429 ? "AI_PROVIDER_QUOTA_EXCEEDED" : "AI_PROVIDER_ERROR",
-            message: `Cloudflare: HTTP ${status}.`,
+            code: "AI_PROVIDER_ERROR",
+            message: `Cloudflare (${modelKey}): HTTP ${status}. Body: ${rawBody.slice(0, 500)}`,
           },
         },
         { status }
@@ -100,12 +172,14 @@ export async function POST(request: Request) {
           success: false,
           error: {
             code: "AI_PROVIDER_ERROR",
-            message: `Cloudflare: body vuoto. HTTP ${status}, Content-Length: ${headersSnapshot["content-length"] ?? "N/A"}, headers: ${JSON.stringify(headersSnapshot)}.`,
+            message: `Cloudflare (${modelKey}): body vuoto. HTTP ${status}.`,
           },
         },
         { status: 502 }
       );
     }
+
+    const tParseStart = performance.now();
 
     let responseJson: {
       choices?: Array<{
@@ -113,6 +187,8 @@ export async function POST(request: Request) {
         finish_reason?: string;
       }>;
       usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number };
+      answer?: string;
+      error?: { message?: string };
     };
     try {
       responseJson = JSON.parse(rawBody);
@@ -122,49 +198,76 @@ export async function POST(request: Request) {
           success: false,
           error: {
             code: "AI_PROVIDER_ERROR",
-            message: `Cloudflare: risposta JSON non valida. HTTP ${status}, body (primi 500): ${rawBody.slice(0, 500)}.`,
+            message: `Cloudflare (${modelKey}): risposta JSON non valida. HTTP ${status}, body (primi 500): ${rawBody.slice(0, 500)}.`,
           },
         },
         { status: 502 }
       );
     }
-    const tParseEnd = performance.now();
 
-    const finishReason = responseJson.choices?.[0]?.finish_reason ?? "unknown";
-    const usage = responseJson.usage;
-
-    const content = (responseJson.choices?.[0]?.message?.content ?? "")
-      .replace(/^```json\s*/i, "")
-      .replace(/^```\s*/i, "")
-      .replace(/\s*```$/i, "")
-      .trim();
-
-    if (!content) {
-      if (finishReason === "length") {
-        console.log("Il modello ha esaurito i token prima di produrre message.content.");
-      }
+    if (responseJson.error) {
       return NextResponse.json(
         {
           success: false,
           error: {
             code: "AI_PROVIDER_ERROR",
-            message: `Cloudflare: risposta vuota. finish_reason: ${finishReason}, prompt_tokens: ${usage?.prompt_tokens ?? "?"}, completion_tokens: ${usage?.completion_tokens ?? "?"}, total_tokens: ${usage?.total_tokens ?? "?"}.`,
+            message: `Cloudflare (${modelKey}): ${responseJson.error.message ?? "Errore sconosciuto"}`,
           },
         },
         { status: 502 }
       );
     }
 
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(content);
-    } catch {
+    let content: string;
+    let finishReason: string;
+    let usage: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number } | undefined;
+
+    if (modelKey === "moondream") {
+      content = responseJson.answer ?? "";
+      finishReason = content ? "stop" : "unknown";
+      usage = undefined;
+    } else {
+      finishReason = responseJson.choices?.[0]?.finish_reason ?? "unknown";
+      usage = responseJson.usage;
+      content = (responseJson.choices?.[0]?.message?.content ?? "")
+        .replace(/^```json\s*/i, "")
+        .replace(/^```\s*/i, "")
+        .replace(/\s*```$/i, "")
+        .trim();
+    }
+
+    if (!content) {
       return NextResponse.json(
-        { success: false, error: { code: "AI_PROVIDER_ERROR", message: "Cloudflare: impossibile parsare la risposta del modello." } },
+        {
+          success: false,
+          error: {
+            code: "AI_PROVIDER_ERROR",
+            message: `Cloudflare (${modelKey}): risposta vuota. finish_reason: ${finishReason}.`,
+          },
+        },
         { status: 502 }
       );
     }
-    const tExtract = performance.now();
+
+    const jsonStr = (() => {
+      const trimmed = content.trim();
+      try { JSON.parse(trimmed); return trimmed; } catch { /* fall through */ }
+      const braceStart = trimmed.indexOf("{");
+      const braceEnd = trimmed.lastIndexOf("}");
+      if (braceStart !== -1 && braceEnd > braceStart) return trimmed.slice(braceStart, braceEnd + 1);
+      return trimmed;
+    })();
+
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(jsonStr);
+    } catch {
+      return NextResponse.json(
+        { success: false, error: { code: "AI_PROVIDER_ERROR", message: `Cloudflare (${modelKey}): impossibile parsare JSON dalla risposta: ${content.slice(0, 300)}` } },
+        { status: 502 }
+      );
+    }
+    const tParseEnd = performance.now();
 
     const suggestion = extractSuggestion(parsed);
     const tDone = performance.now();
@@ -172,18 +275,25 @@ export async function POST(request: Request) {
     const tTotal = Math.round(tDone - tStart);
 
     console.log("=== PROFILING VERCELL ===");
+    console.log(`Modello: ${modelId}`);
     console.log(`5. Ricezione richiesta su Vercel: ${Math.round(tPrep - tRecv)}ms (formData + arrayBuffer)`);
+    console.log(`   Dimensione upload ricevuto: ${(bufRaw.length / 1024).toFixed(1)} KB`);
     console.log(`6a. Ridimensionamento immagine (sharp): ${Math.round(tResizeEnd - tPrep)}ms`);
+    console.log(`   Dopo sharp resize: ${(bufResized.length / 1024).toFixed(1)} KB`);
     console.log(`6b. Base64: ${Math.round(tB64End - tResizeEnd)}ms`);
-    console.log(`7. Invio Vercel -> Cloudflare (fetch + attesa AI): ${Math.round(tCfEnd - tCfStart)}ms`);
-    console.log(`8. Download risposta Cloudflare: ${Math.round(tRecvResp - tCfEnd)}ms`);
-    console.log(`9a. Parsing JSON risposta: ${Math.round(tParseEnd - tRecvResp)}ms`);
-    console.log(`9b. Estrazione suggestion: ${Math.round(tDone - tExtract)}ms`);
+    console.log(`   Body inviato a Cloudflare: ${(bodySize / 1024).toFixed(1)} KB`);
+    console.log(`7a. Invio richiesta -> primi header Cloudflare: ${Math.round(latencyHeaders)}ms`);
+    console.log(`7b. Download body risposta Cloudflare: ${Math.round(latencyBody)}ms`);
+    console.log(`   Dimensione risposta Cloudflare: ${(rawBody.length / 1024).toFixed(1)} KB`);
+    console.log(`9a. Parsing JSON risposta: ${Math.round(tParseEnd - tParseStart)}ms`);
+    console.log(`9b. Estrazione suggestion: ${Math.round(tDone - tParseEnd)}ms`);
     console.log(`TOTALE server: ${tTotal}ms`);
-    console.log(`--- Metriche modello ---`);
-    console.log(`prompt_tokens: ${usage?.prompt_tokens ?? "N/A"}`);
-    console.log(`completion_tokens: ${usage?.completion_tokens ?? "N/A"}`);
-    console.log(`total_tokens: ${usage?.total_tokens ?? "N/A"}`);
+    if (usage) {
+      console.log(`--- Metriche modello ---`);
+      console.log(`prompt_tokens: ${usage.prompt_tokens ?? "N/A"}`);
+      console.log(`completion_tokens: ${usage.completion_tokens ?? "N/A"}`);
+      console.log(`total_tokens: ${usage.total_tokens ?? "N/A"}`);
+    }
     console.log(`finish_reason: ${finishReason}`);
 
     return NextResponse.json({

@@ -165,6 +165,7 @@ export default function MerchantProductAiUploader({
     const t0 = performance.now();
 
     try {
+      const originalSize = file.size;
       const { compressImage } = await import("@/lib/client/image-compress");
       const compressed = await compressImage(file);
       const t1 = performance.now();
@@ -194,6 +195,8 @@ export default function MerchantProductAiUploader({
         throw new Error(data.error?.message ?? "Errore durante l'analisi dell'immagine.");
       }
 
+      const responseSize = new Blob([JSON.stringify(data)]).size;
+
       const rendStart = performance.now();
       onResult({
         suggestion: data.suggestion,
@@ -202,9 +205,11 @@ export default function MerchantProductAiUploader({
       const rendEnd = performance.now();
 
       console.log("=== PROFILING CLIENT ===");
+      console.log(`Foto originale: ${(originalSize / 1024).toFixed(1)} KB`);
+      console.log(`Dopo compressione: ${(compressed.compressedSize / 1024).toFixed(1)} KB (${compressed.reductionPercent}% riduzione)`);
       console.log(`3. Compressione client: ${Math.round(t1 - t0)}ms`);
-      console.log(`4. Upload browser -> Vercel (attesa risposta): ${Math.round(t2 - t1)}ms`);
-      console.log(`5. Download risposta: ${Math.round(t3 - t2)}ms`);
+      console.log(`4. Upload browser -> Vercel (attesa risposta): ${Math.round(t2 - t1)}ms (upload ${(compressed.compressedSize / 1024).toFixed(1)} KB)`);
+      console.log(`5. Download risposta: ${Math.round(t3 - t2)}ms (${(responseSize / 1024).toFixed(1)} KB)`);
       console.log(`10. Rendering React: ${Math.round(rendEnd - rendStart)}ms`);
       console.log(`TOTALE client: ${Math.round(rendEnd - t0)}ms`);
     } catch (caught) {
