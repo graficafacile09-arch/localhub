@@ -1,0 +1,395 @@
+⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+⚠ Blocked cross-origin request to Next.js dev resource /_next/webpack-hmr from "192.168.1.5".
+Cross-origin access to Next.js dev resources is blocked by default for safety.
+
+To allow this host in development, add it to "allowedDevOrigins" in next.config.js and restart the dev server:
+
+// next.config.js
+module.exports = {
+  allowedDevOrigins: ['192.168.1.5'],
+}
+
+Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
+[browser] Image with src "/icons/food.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (file://C:/Users/denni/Desktop/localhub/.next/dev/static/chunks/node_modules_101i21d._.js?id=%255Bproject%255D%252Fnode_modules%252Fnext%252Fdist%252Fclient%252Fimage-component.js+%255Bapp-client%255D+%2528ecmascript%2529:154:40)
+[browser] Image with src "/icons/store.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (file://C:/Users/denni/Desktop/localhub/.next/dev/static/chunks/node_modules_101i21d._.js?id=%255Bproject%255D%252Fnode_modules%252Fnext%252Fdist%252Fclient%252Fimage-component.js+%255Bapp-client%255D+%2528ecmascript%2529:154:40)
+[browser] Image with src "/icons/fashion.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (file://C:/Users/denni/Desktop/localhub/.next/dev/static/chunks/node_modules_101i21d._.js?id=%255Bproject%255D%252Fnode_modules%252Fnext%252Fdist%252Fclient%252Fimage-component.js+%255Bapp-client%255D+%2528ecmascript%2529:154:40)
+[browser] Image with src "/icons/services.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. (file://C:/Users/denni/Desktop/localhub/.next/dev/static/chunks/node_modules_101i21d._.js?id=%255Bproject%255D%252Fnode_modules%252Fnext%252Fdist%252Fclient%252Fimage-component.js+%255Bapp-client%255D+%2528ecmascript%2529:154:40)
+[browser] Image with src "/negozi/panificio.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes (file://C:/Users/denni/Desktop/localhub/.next/dev/static/chunks/node_modules_101i21d._.js?id=%255Bproject%255D%252Fnode_modules%252Fnext%252Fdist%252Fclient%252Fimage-component.js+%255Bapp-client%255D+%2528ecmascript%2529:132:52)
+[browser] Image with src "/negozi/panificio.png" has "fill" and a height value of 0. This is likely because the parent element of the image has not been styled to have a set height. (file://C:/Users/denni/Desktop/localhub/.next/dev/static/chunks/node_modules_101i21d._.js?id=%255Bproject%255D%252Fnode_modules%252Fnext%252Fdist%252Fclient%252Fimage-component.js+%255Bapp-client%255D+%2528ecmascript%2529:148:44)
+[browser] Image with src "/negozi/fashion.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes (file://C:/Users/denni/Desktop/localhub/.next/dev/static/chunks/node_modules_101i21d._.js?id=%255Bproject%255D%252Fnode_modules%252Fnext%252Fdist%252Fclient%252Fimage-component.js+%255Bapp-client%255D+%2528ecmascript%2529:132:52)
+[browser] Image with src "/negozi/fashion.png" has "fill" and a height value of 0. This is likely because the parent element of the image has not been styled to have a set height. (file://C:/Users/denni/Desktop/localhub/.next/dev/static/chunks/node_modules_101i21d._.js?id=%255Bproject%255D%252Fnode_modules%252Fnext%252Fdist%252Fclient%252Fimage-component.js+%255Bapp-client%255D+%2528ecmascript%2529:148:44)
+[browser] Image with src "/negozi/tech.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes (file://C:/Users/denni/Desktop/localhub/.next/dev/static/chunks/node_modules_101i21d._.js?id=%255Bproject%255D%252Fnode_modules%252Fnext%252Fdist%252Fclient%252Fimage-component.js+%255Bapp-client%255D+%2528ecmascript%2529:132:52)
+[browser] Image with src "/negozi/tech.png" has "fill" and a height value of 0. This is likely because the parent element of the image has not been styled to have a set height. (file://C:/Users/denni/Desktop/localhub/.next/dev/static/chunks/node_modules_101i21d._.js?id=%255Bproject%255D%252Fnode_modules%252Fnext%252Fdist%252Fclient%252Fimage-component.js+%255Bapp-client%255D+%2528ecmascript%2529:148:44)
+[browser] Image with src "/icons/store.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/icons/food.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/icons/fashion.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/icons/services.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/negozi/tech.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/negozi/fashion.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/negozi/panificio.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/icons/store.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/icons/food.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/icons/fashion.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/icons/services.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/negozi/tech.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/negozi/fashion.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/negozi/panificio.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/icons/store.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/icons/food.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/icons/fashion.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/icons/services.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio.
+[browser] Image with src "/negozi/tech.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/negozi/fashion.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/negozi/panificio.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/negozi/tech.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/negozi/fashion.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/negozi/panificio.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/negozi/fashion.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/negozi/tech.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/negozi/panificio.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+⚠ Fast Refresh had to perform a full reload when ./node_modules/next/dist/client/image-component.js changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+[browser] Image with src "/negozi/fashion.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/negozi/tech.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/negozi/panificio.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+⚠ Fast Refresh had to perform a full reload when ./node_modules/next/dist/client/image-component.js changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+[browser] Image with src "/negozi/fashion.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/negozi/tech.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/negozi/panificio.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+⨯ ./lib/negozi-demo.ts:106:10
+the name `radice` is defined multiple times
+  [90m104 |[0m }
+  [90m105 |[0m
+[31m[1m>[0m [90m106 |[0m [36mfunction[0m radice(termine: string) {
+  [90m    |[0m          [31m[1m^^^^^^[0m
+  [90m107 |[0m   [36mif[0m (termine.length <= [35m4[0m) {
+  [90m108 |[0m     [36mreturn[0m termine;
+  [90m109 |[0m   }
+
+Ecmascript file had an error
+
+Import trace:
+  Server Component:
+    ./lib/negozi-demo.ts
+    ./app/page.tsx
+
+
+⨯ ./lib/negozi-demo.ts:106:10
+the name `radice` is defined multiple times
+  [90m104 |[0m }
+  [90m105 |[0m
+[31m[1m>[0m [90m106 |[0m [36mfunction[0m radice(termine: string) {
+  [90m    |[0m          [31m[1m^^^^^^[0m
+  [90m107 |[0m   [36mif[0m (termine.length <= [35m4[0m) {
+  [90m108 |[0m     [36mreturn[0m termine;
+  [90m109 |[0m   }
+
+Ecmascript file had an error
+
+Import trace:
+  Server Component:
+    ./lib/negozi-demo.ts
+    ./app/page.tsx
+
+
+⨯ ./lib/negozi-demo.ts:106:10
+the name `radice` is defined multiple times
+  [90m104 |[0m }
+  [90m105 |[0m
+[31m[1m>[0m [90m106 |[0m [36mfunction[0m radice(termine: string) {
+  [90m    |[0m          [31m[1m^^^^^^[0m
+  [90m107 |[0m   [36mif[0m (termine.length <= [35m4[0m) {
+  [90m108 |[0m     [36mreturn[0m termine;
+  [90m109 |[0m   }
+
+Ecmascript file had an error
+
+Import trace:
+  Server Component:
+    ./lib/negozi-demo.ts
+    ./app/page.tsx
+
+
+[browser] ./lib/negozi-demo.ts:106:10
+the name `radice` is defined multiple times
+  104 | }
+  105 |
+> 106 | function radice(termine: string) {
+      |          ^^^^^^
+  107 |   if (termine.length <= 4) {
+  108 |     return termine;
+  109 |   }
+
+Ecmascript file had an error
+
+Import trace:
+  Server Component:
+    ./lib/negozi-demo.ts
+    ./app/page.tsx 
+[browser] ./lib/negozi-demo.ts:106:10
+the name `radice` is defined multiple times
+  104 | }
+  105 |
+> 106 | function radice(termine: string) {
+      |          ^^^^^^
+  107 |   if (termine.length <= 4) {
+  108 |     return termine;
+  109 |   }
+
+Ecmascript file had an error
+
+Import trace:
+  Server Component:
+    ./lib/negozi-demo.ts
+    ./lib/ricerca-ai.ts
+    ./app/ricerca/page.tsx 
+[browser] ./lib/negozi-demo.ts:106:10
+the name `radice` is defined multiple times
+  104 | }
+  105 |
+> 106 | function radice(termine: string) {
+      |          ^^^^^^
+  107 |   if (termine.length <= 4) {
+  108 |     return termine;
+  109 |   }
+
+Ecmascript file had an error
+
+Import trace:
+  Server Component:
+    ./lib/negozi-demo.ts
+    ./app/negozi/page.tsx 
+[browser] ./lib/negozi-demo.ts:106:10
+the name `radice` is defined multiple times
+  104 | }
+  105 |
+> 106 | function radice(termine: string) {
+      |          ^^^^^^
+  107 |   if (termine.length <= 4) {
+  108 |     return termine;
+  109 |   }
+
+Ecmascript file had an error
+
+Import trace:
+  Server Component:
+    ./lib/negozi-demo.ts
+    ./app/page.tsx 
+[browser] Uncaught Error: ./lib/negozi-demo.ts:106:10
+the name `radice` is defined multiple times
+  104 | }
+  105 |
+> 106 | function radice(termine: string) {
+      |          ^^^^^^
+  107 |   if (termine.length <= 4) {
+  108 |     return termine;
+  109 |   }
+
+Ecmascript file had an error
+
+Import trace:
+  Server Component:
+    ./lib/negozi-demo.ts
+    ./app/page.tsx
+
+
+    at <unknown> (Error: ./lib/negozi-demo.ts:106:10)
+    at <unknown> (Error: (./lib/negozi-demo.ts:106:10)
+[browser] ./lib/negozi-demo.ts:106:10
+the name `radice` is defined multiple times
+  104 | }
+  105 |
+> 106 | function radice(termine: string) {
+      |          ^^^^^^
+  107 |   if (termine.length <= 4) {
+  108 |     return termine;
+  109 |   }
+
+Ecmascript file had an error
+
+Import trace:
+  Server Component:
+    ./lib/negozi-demo.ts
+    ./app/page.tsx 
+[browser] Image with src "/negozi/fashion.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/negozi/tech.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/negozi/panificio.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+⨯ The file "./proxy.ts" must export a function, either as a default export or as a named "proxy" export.
+This function is what Next.js runs for every request handled by this proxy (previously called middleware).
+
+Why this happens:
+- You are migrating from `middleware` to `proxy`, but haven't updated the exported function.
+- The file exists but doesn't export a function.
+- The export is not a function (e.g., an object or constant).
+- There's a syntax error preventing the export from being recognized.
+
+To fix it:
+- Ensure this file has either a default or "proxy" function export.
+
+Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+⨯ [Error: The Proxy file "/proxy" must export a function named `proxy` or a default function.]
+⨯ [Error: The Proxy file "/proxy" must export a function named `proxy` or a default function.]
+⨯ [Error: The Proxy file "/proxy" must export a function named `proxy` or a default function.]
+⨯ [Error: The Proxy file "/proxy" must export a function named `proxy` or a default function.]
+⨯ [Error: The Proxy file "/proxy" must export a function named `proxy` or a default function.]
+⨯ [Error: The Proxy file "/proxy" must export a function named `proxy` or a default function.]
+[browser] ./proxy.ts
+Proxy is missing expected function export name
+This function is what Next.js runs for every request handled by this proxy (previously called middleware).
+
+Why this happens:
+- You are migrating from `middleware` to `proxy`, but haven't updated the exported function.
+- The file exists but doesn't export a function.
+- The export is not a function (e.g., an object or constant).
+- There's a syntax error preventing the export from being recognized.
+
+To fix it:
+- Ensure this file has either a default or "proxy" function export.
+
+Learn more: https://nextjs.org/docs/messages/middleware-to-proxy 
+[browser] ./proxy.ts
+Proxy is missing expected function export name
+This function is what Next.js runs for every request handled by this proxy (previously called middleware).
+
+Why this happens:
+- You are migrating from `middleware` to `proxy`, but haven't updated the exported function.
+- The file exists but doesn't export a function.
+- The export is not a function (e.g., an object or constant).
+- There's a syntax error preventing the export from being recognized.
+
+To fix it:
+- Ensure this file has either a default or "proxy" function export.
+
+Learn more: https://nextjs.org/docs/messages/middleware-to-proxy 
+[browser] Uncaught Error: ./proxy.ts
+Proxy is missing expected function export name
+This function is what Next.js runs for every request handled by this proxy (previously called middleware).
+
+Why this happens:
+- You are migrating from `middleware` to `proxy`, but haven't updated the exported function.
+- The file exists but doesn't export a function.
+- The export is not a function (e.g., an object or constant).
+- There's a syntax error preventing the export from being recognized.
+
+To fix it:
+- Ensure this file has either a default or "proxy" function export.
+
+Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+
+
+[browser] ./proxy.ts
+Proxy is missing expected function export name
+This function is what Next.js runs for every request handled by this proxy (previously called middleware).
+
+Why this happens:
+- You are migrating from `middleware` to `proxy`, but haven't updated the exported function.
+- The file exists but doesn't export a function.
+- The export is not a function (e.g., an object or constant).
+- There's a syntax error preventing the export from being recognized.
+
+To fix it:
+- Ensure this file has either a default or "proxy" function export.
+
+Learn more: https://nextjs.org/docs/messages/middleware-to-proxy 
+[browser] ./proxy.ts
+Proxy is missing expected function export name
+This function is what Next.js runs for every request handled by this proxy (previously called middleware).
+
+Why this happens:
+- You are migrating from `middleware` to `proxy`, but haven't updated the exported function.
+- The file exists but doesn't export a function.
+- The export is not a function (e.g., an object or constant).
+- There's a syntax error preventing the export from being recognized.
+
+To fix it:
+- Ensure this file has either a default or "proxy" function export.
+
+Learn more: https://nextjs.org/docs/messages/middleware-to-proxy 
+[browser] ./proxy.ts
+Proxy is missing expected function export name
+This function is what Next.js runs for every request handled by this proxy (previously called middleware).
+
+Why this happens:
+- You are migrating from `middleware` to `proxy`, but haven't updated the exported function.
+- The file exists but doesn't export a function.
+- The export is not a function (e.g., an object or constant).
+- There's a syntax error preventing the export from being recognized.
+
+To fix it:
+- Ensure this file has either a default or "proxy" function export.
+
+Learn more: https://nextjs.org/docs/messages/middleware-to-proxy 
+[browser] ./proxy.ts
+Proxy is missing expected function export name
+This function is what Next.js runs for every request handled by this proxy (previously called middleware).
+
+Why this happens:
+- You are migrating from `middleware` to `proxy`, but haven't updated the exported function.
+- The file exists but doesn't export a function.
+- The export is not a function (e.g., an object or constant).
+- There's a syntax error preventing the export from being recognized.
+
+To fix it:
+- Ensure this file has either a default or "proxy" function export.
+
+Learn more: https://nextjs.org/docs/messages/middleware-to-proxy 
+[browser] ./proxy.ts
+Proxy is missing expected function export name
+This function is what Next.js runs for every request handled by this proxy (previously called middleware).
+
+Why this happens:
+- You are migrating from `middleware` to `proxy`, but haven't updated the exported function.
+- The file exists but doesn't export a function.
+- The export is not a function (e.g., an object or constant).
+- There's a syntax error preventing the export from being recognized.
+
+To fix it:
+- Ensure this file has either a default or "proxy" function export.
+
+Learn more: https://nextjs.org/docs/messages/middleware-to-proxy 
+[browser] ./proxy.ts
+Proxy is missing expected function export name
+This function is what Next.js runs for every request handled by this proxy (previously called middleware).
+
+Why this happens:
+- You are migrating from `middleware` to `proxy`, but haven't updated the exported function.
+- The file exists but doesn't export a function.
+- The export is not a function (e.g., an object or constant).
+- There's a syntax error preventing the export from being recognized.
+
+To fix it:
+- Ensure this file has either a default or "proxy" function export.
+
+Learn more: https://nextjs.org/docs/messages/middleware-to-proxy 
+[browser] ./proxy.ts
+Proxy is missing expected function export name
+This function is what Next.js runs for every request handled by this proxy (previously called middleware).
+
+Why this happens:
+- You are migrating from `middleware` to `proxy`, but haven't updated the exported function.
+- The file exists but doesn't export a function.
+- The export is not a function (e.g., an object or constant).
+- There's a syntax error preventing the export from being recognized.
+
+To fix it:
+- Ensure this file has either a default or "proxy" function export.
+
+Learn more: https://nextjs.org/docs/messages/middleware-to-proxy 
+[browser] ./proxy.ts
+Proxy is missing expected function export name
+This function is what Next.js runs for every request handled by this proxy (previously called middleware).
+
+Why this happens:
+- You are migrating from `middleware` to `proxy`, but haven't updated the exported function.
+- The file exists but doesn't export a function.
+- The export is not a function (e.g., an object or constant).
+- There's a syntax error preventing the export from being recognized.
+
+To fix it:
+- Ensure this file has either a default or "proxy" function export.
+
+Learn more: https://nextjs.org/docs/messages/middleware-to-proxy 
+[browser] Image with src "/negozi/fashion.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/negozi/tech.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[browser] Image with src "/negozi/panificio.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes
+[/api/search] Errore: SyntaxError: Unexpected end of JSON input
+    at JSON.parse (<anonymous>)
