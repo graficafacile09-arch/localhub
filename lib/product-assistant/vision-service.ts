@@ -26,6 +26,13 @@ export type VisionServiceResult =
       disabled: true;
       /** Messaggio chiaro per l'utente (non tecnico) */
       message: string;
+    }
+  | {
+      /** Quota API Gemini esaurita */
+      success: false;
+      disabled: false;
+      code: "GEMINI_QUOTA_EXCEEDED";
+      message: string;
     };
 
 // ─── Factory: istanzia il provider corretto in base a VISION_PROVIDER ─────────
@@ -115,6 +122,21 @@ export async function analyzeImages(
 
     log(`ERRORE provider.analyze(): ${message}`);
     if (stack) log(stack);
+
+    if (
+      caught &&
+      typeof caught === "object" &&
+      "code" in caught &&
+      (caught as Record<string, unknown>).code === "GEMINI_QUOTA_EXCEEDED"
+    ) {
+      return {
+        success: false,
+        disabled: false,
+        code: "GEMINI_QUOTA_EXCEEDED" as const,
+        message:
+          "La quota API di Gemini è esaurita. Riprova più tardi oppure abilita la fatturazione sul progetto Google AI Studio.",
+      };
+    }
 
     return {
       success: false,

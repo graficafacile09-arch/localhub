@@ -219,6 +219,13 @@ export class GeminiProvider implements VisionProvider {
         : "unknown";
       log(`ERRORE chiamata Gemini (HTTP ${status}): ${msg}`);
       if (caught instanceof Error && caught.stack) log(`Stack: ${caught.stack}`);
+
+      if (status === "429") {
+        const quotaError = new Error("Gemini quota exceeded");
+        (quotaError as unknown as Record<string, unknown>).code = "GEMINI_QUOTA_EXCEEDED";
+        throw quotaError;
+      }
+
       return emptySuggestion();
     }
 

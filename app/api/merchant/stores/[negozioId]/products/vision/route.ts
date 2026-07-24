@@ -86,6 +86,9 @@ export async function POST(
     log(`analyzeImages completato: success=${result.success}`);
 
     if (!result.success) {
+      if (!result.disabled) {
+        return error("GEMINI_QUOTA_EXCEEDED", "Quota API Gemini esaurita.", 429);
+      }
       return error("VISION_DISABLED", result.message, 503);
     }
 

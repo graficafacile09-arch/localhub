@@ -77,10 +77,14 @@ export default function MerchantProductAiUploader({
         success: boolean;
         suggestion?: ProductVisionSuggestion;
         lowConfidence?: boolean;
-        error?: { message?: string };
+        error?: { code?: string; message?: string };
       };
 
       if (!response.ok || !data.success || !data.suggestion) {
+        if (data.error?.code === "GEMINI_QUOTA_EXCEEDED") {
+          setError("La quota API di Gemini è terminata. Il riconoscimento immagini è temporaneamente non disponibile.");
+          return;
+        }
         throw new Error(data.error?.message ?? "Errore durante l'analisi dell'immagine.");
       }
 
