@@ -258,3 +258,60 @@ alter table if exists public.prodotti
   add column if not exists alt_text_immagine text;
 
 commit;
+
+-- ═══════════════════════════════════════════════════════════════════
+-- 7. 20260724_product_vision_cache.sql
+-- ═══════════════════════════════════════════════════════════════════
+begin;
+
+create table if not exists public.product_vision_cache (
+  id uuid primary key default gen_random_uuid(),
+  image_hash text not null,
+  product_name text not null,
+  brand text,
+  category text,
+  ean text,
+  suggested_price numeric,
+  description text,
+  confidence integer not null default 0,
+  model_used text not null,
+  hit_count integer not null default 1,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  full_suggestion jsonb
+);
+
+create unique index if not exists product_vision_cache_hash_idx
+  on public.product_vision_cache (image_hash);
+
+create index if not exists product_vision_cache_name_idx
+  on public.product_vision_cache (product_name text_pattern_ops);
+
+create index if not exists product_vision_cache_brand_idx
+  on public.product_vision_cache (brand);
+
+create index if not exists product_vision_cache_ean_idx
+  on public.product_vision_cache (ean);
+
+drop trigger if exists product_vision_cache_set_updated_at on public.product_vision_cache;
+create trigger product_vision_cache_set_updated_at
+  before update on public.product_vision_cache
+  for each row execute function public.set_updated_at();
+
+alter table public.product_vision_cache enable row level security;
+
+create policy if not exists "vision cache public read"
+  on public.product_vision_cache for select
+  using (true);
+
+create policy if not exists "vision cache public insert"
+  on public.product_vision_cache for insert
+  with check (true);
+
+create policy if not exists "vision cache public update"
+  on public.product_vision_cache for update
+  using (true) with check (true);
+
+notify pgrst, 'reload schema';
+
+commit;

@@ -3,6 +3,7 @@ import { CloudflareProvider } from "./providers/cloudflare";
 import { GeminiProvider } from "./providers/gemini";
 import { OpenRouterProvider } from "./providers/openrouter";
 import { ProviderError, type AttemptLog, formatProviderLog } from "./providers/utils";
+import { checkImageCache, storeInCache } from "./vision-cache";
 import type {
   ProductVisionSuggestion,
   VisionContext,
@@ -92,6 +93,31 @@ export async function analyzeImages(
     };
   }
 
+  const primaryImage = images[0];
+  const cacheLookupStart = Date.now();
+
+  if (primaryImage) {
+    const cached = await checkImageCache(primaryImage.buffer);
+    if (cached.hit) {
+      const latencyMs = Date.now() - cacheLookupStart;
+      console.log(`[${requestId}] CACHE HIT — ${cached.entry.product_name} (${cached.entry.model_used}, hit #${cached.entry.hit_count}) — ${latencyMs}ms`);
+      const suggestion = cached.entry.full_suggestion ?? {
+        nome: cached.entry.product_name,
+        marca: cached.entry.brand,
+        categoria: cached.entry.category,
+        codiceEan: cached.entry.ean,
+        prezzoSuggerito: cached.entry.suggested_price,
+        descrizione: cached.entry.description,
+        confidenza: cached.entry.confidence,
+      } as ProductVisionSuggestion;
+      return {
+        success: true,
+        suggestion,
+        lowConfidence: suggestion.confidenza < LOW_CONFIDENCE_THRESHOLD,
+      };
+    }
+  }
+
   for (const entry of PROVIDER_CHAIN) {
     const provider = entry.build();
     if (!provider) {
@@ -110,6 +136,11 @@ export async function analyzeImages(
       attempt.tokenCount = result.tokenCount;
 
       attempts.push(attempt);
+
+      if (primaryImage) {
+        storeInCache(primaryImage.buffer, result.suggestion, result.model).catch(() => {});
+        console.log(`[${requestId}] CACHE STORE — ${result.suggestion.nome} (${result.model}, ${result.latencyMs}ms)`);
+      }
 
       return {
         success: true,

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import sharp from "sharp";
 import { extractSuggestion } from "@/lib/product-assistant/providers/utils";
 import { buildVisionPrompt } from "@/lib/product-assistant/prompts";
+import { checkImageCache, storeInCache } from "@/lib/product-assistant/vision-cache";
 
 const LOW_CONFIDENCE_THRESHOLD = 60;
 const MAX_TOKENS = 300;
@@ -143,6 +144,36 @@ export async function POST(request: Request) {
     const base64 = bufProcessed.toString("base64");
     const tB64End = performance.now();
 
+    const tCacheStart = performance.now();
+    const cached = await checkImageCache(bufProcessed);
+
+    if (cached.hit) {
+      const tCacheEnd = performance.now();
+      const suggestion = cached.entry.full_suggestion ?? {
+        nome: cached.entry.product_name,
+        marca: cached.entry.brand,
+        categoria: cached.entry.category,
+        codiceEan: cached.entry.ean,
+        prezzoSuggerito: cached.entry.suggested_price,
+        descrizione: cached.entry.description,
+        confidenza: cached.entry.confidence,
+      } as any;
+
+      console.log("=== PROFILING VERCELL (CACHE HIT) ===");
+      console.log(`Cache hit: ${cached.entry.product_name} (${cached.entry.model_used}, hit #${cached.entry.hit_count})`);
+      console.log(`Cache lookup: ${Math.round(tCacheEnd - tCacheStart)}ms`);
+      console.log(`TOTALE server: ${Math.round(tCacheEnd - tStart)}ms`);
+
+      const res = extractSuggestion(suggestion);
+      return NextResponse.json({
+        success: true,
+        suggestion: res,
+        lowConfidence: res.confidenza < LOW_CONFIDENCE_THRESHOLD,
+        cached: true,
+      });
+    }
+
+    const tCacheEnd = performance.now();
     const prompt = buildVisionPrompt();
 
     let responseData: {
@@ -294,6 +325,7 @@ export async function POST(request: Request) {
     const tParseEnd = performance.now();
 
     const suggestion = extractSuggestion(parsed);
+    storeInCache(bufProcessed, suggestion, modelId).catch(() => {});
     const tDone = performance.now();
 
     const tTotal = Math.round(tDone - tStart);
