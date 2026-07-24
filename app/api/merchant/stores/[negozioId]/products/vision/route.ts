@@ -170,6 +170,12 @@ export async function POST(request: Request) {
         suggestion: res,
         lowConfidence: res.confidenza < LOW_CONFIDENCE_THRESHOLD,
         cached: true,
+        tempiFasi: {
+          upload: Math.round(tRecv - tStart),
+          preprocessing: Math.round(tCacheEnd - tPrep),
+          cacheLookup: Math.round(tCacheEnd - tCacheStart),
+          totale: Math.round(tCacheEnd - tStart),
+        },
       });
     }
 
@@ -353,10 +359,24 @@ export async function POST(request: Request) {
     }
     console.log(`finish_reason: ${finishReason}`);
 
+    const tempiFasi = {
+      upload: Math.round(tRecv - tStart),
+      preprocessing: Math.round(tPrep - tRecv),
+      sharpResize: Math.round(tResizeEnd - tPrep),
+      base64: Math.round(tB64End - tResizeEnd),
+      cacheLookup: Math.round(tCacheEnd - tCacheStart),
+      fase7A: Math.round(latencyHeaders),
+      fase7B: Math.round(latencyBody),
+      parseRisposta: Math.round(tParseEnd - tParseStart),
+      estrazioneSuggestion: Math.round(tDone - tParseEnd),
+      totale: Math.round(tDone - tStart),
+    };
+
     return NextResponse.json({
       success: true,
       suggestion,
       lowConfidence: suggestion.confidenza < LOW_CONFIDENCE_THRESHOLD,
+      tempiFasi,
     });
   } catch (caught: unknown) {
     const message = caught instanceof Error ? caught.message : "Errore sconosciuto.";
