@@ -169,82 +169,73 @@ export default function MerchantProductForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5 rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm">
+    <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+      {/* Errore */}
+      {error ? (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{error}</div>
+      ) : null}
+
+      {/* Anteprima immagine */}
+      {initialValues.immaginePrincipale ? (
+        <div className="flex justify-center">
+          <img
+            src={initialValues.immaginePrincipale}
+            alt="Anteprima"
+            className="h-32 w-32 rounded-xl object-cover shadow-xs"
+          />
+        </div>
+      ) : (
+        <div className="flex justify-center">
+          <div className="flex h-20 w-20 items-center justify-center rounded-xl bg-slate-100 text-slate-400">
+            <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
+            </svg>
+          </div>
+        </div>
+      )}
+
+      {/* Banner prezzo AI */}
+      {initialValues.prezzoSuggerito !== null ? (
+        <div className="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-xs text-blue-700">
+          AI suggerisce €{initialValues.prezzoSuggerito.toFixed(2)}
+        </div>
+      ) : null}
+
+      {/* Nome */}
       <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
-          {productId ? "Modifica prodotto" : "Nuovo prodotto"}
-        </p>
-        <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-900">
-          {productId ? "Aggiorna i dettagli del prodotto" : "Aggiungi un prodotto al catalogo"}
-        </h1>
-        <p className="mt-3 text-sm leading-6 text-slate-600">
-          Usa il modulo per completare i campi e gestire la disponibilità a magazzino.
-        </p>
+        <input
+          id="nome"
+          name="nome"
+          defaultValue={initialValues.nome}
+          required
+          placeholder="Nome prodotto *"
+          className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+        />
       </div>
 
-      {/* Banner prezzo suggerito dall'AI */}
-      {initialValues.prezzoSuggerito !== null ? (
-        <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-700">
-          Prezzo suggerito dall&apos;AI: <strong>€ {initialValues.prezzoSuggerito.toFixed(2)}</strong>
-        </div>
-      ) : null}
+      {/* Categoria + Marca */}
+      <div className="grid grid-cols-2 gap-3">
+        <input
+          id="categoria"
+          name="categoria"
+          defaultValue={initialValues.categoria}
+          required
+          placeholder="Categoria *"
+          className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+        />
+        <input
+          id="marca"
+          name="marca"
+          defaultValue={initialValues.marca}
+          placeholder="Marca"
+          className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+        />
+      </div>
 
-      {/* Errore di salvataggio */}
-      {error ? (
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {error}
-        </div>
-      ) : null}
-
-      <div className="grid gap-5 md:grid-cols-2">
-
-        {/* Nome */}
-        <div className="space-y-2 md:col-span-2">
-          <label htmlFor="nome" className="text-sm font-semibold text-slate-700">
-            Nome prodotto <span className="text-red-500">*</span>
-          </label>
-          <input
-            id="nome"
-            name="nome"
-            defaultValue={initialValues.nome}
-            required
-            className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-          />
-        </div>
-
-        {/* Categoria */}
-        <div className="space-y-2">
-          <label htmlFor="categoria" className="text-sm font-semibold text-slate-700">
-            Categoria <span className="text-red-500">*</span>
-          </label>
-          <input
-            id="categoria"
-            name="categoria"
-            defaultValue={initialValues.categoria}
-            required
-            className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-          />
-        </div>
-
-        {/* Marca */}
-        <div className="space-y-2">
-          <label htmlFor="marca" className="text-sm font-semibold text-slate-700">
-            Marca
-          </label>
-          <input
-            id="marca"
-            name="marca"
-            defaultValue={initialValues.marca}
-            placeholder="Riconosciuta dall'AI o inserimento manuale"
-            className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-          />
-        </div>
-
-        {/* Prezzo */}
-        <div className="space-y-2">
-          <label htmlFor="prezzo" className="text-sm font-semibold text-slate-700">
-            Prezzo (€) <span className="text-red-500">*</span>
-          </label>
+      {/* Prezzo + Quantità */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="relative">
+          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">&euro;</span>
           <input
             id="prezzo"
             name="prezzo"
@@ -253,277 +244,165 @@ export default function MerchantProductForm({
             step="0.01"
             defaultValue={initialValues.prezzo}
             required
-            className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+            placeholder="0,00"
+            className="h-10 w-full rounded-lg border border-slate-200 pl-7 pr-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
           />
         </div>
-
-        {/* Quantità disponibile */}
-        <div className="space-y-2">
-          <label htmlFor="quantitaDisponibile" className="text-sm font-semibold text-slate-700">
-            Quantità
-          </label>
-          <input
-            id="quantitaDisponibile"
-            name="quantitaDisponibile"
-            type="number"
-            min="0"
-            defaultValue={initialValues.quantitaDisponibile ?? 1}
-            className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-          />
-        </div>
-
-        {/* Descrizione breve */}
-        <div className="space-y-2 md:col-span-2">
-          <label htmlFor="descrizione" className="text-sm font-semibold text-slate-700">
-            Descrizione breve <span className="text-red-500">*</span>
-          </label>
-          <textarea
-            id="descrizione"
-            name="descrizione"
-            rows={3}
-            defaultValue={initialValues.descrizione}
-            required
-            placeholder="Appare nella card del catalogo e nei risultati di ricerca (100-200 caratteri)"
-            className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-          />
-        </div>
-
-        {/* Immagine principale */}
-        <div className="space-y-2 md:col-span-2">
-          <label htmlFor="immaginePrincipale" className="text-sm font-semibold text-slate-700">
-            Immagine principale (URL)
-          </label>
-          <input
-            id="immaginePrincipale"
-            name="immaginePrincipale"
-            type="url"
-            defaultValue={initialValues.immaginePrincipale}
-            placeholder="https://..."
-            className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-          />
-        </div>
-
+        <input
+          id="quantitaDisponibile"
+          name="quantitaDisponibile"
+          type="number"
+          min="0"
+          defaultValue={initialValues.quantitaDisponibile ?? 1}
+          placeholder="Quantit&agrave;"
+          className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+        />
       </div>
 
-      {/* ─── Dettagli avanzati (collassabile) ──────────────────────────────────── */}
-      <div className="overflow-hidden rounded-2xl border border-slate-200">
+      {/* Descrizione */}
+      <textarea
+        id="descrizione"
+        name="descrizione"
+        rows={2}
+        defaultValue={initialValues.descrizione}
+        required
+        placeholder="Descrizione breve *"
+        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+      />
+
+      {/* Immagine (URL) - hidden */}
+      <input
+        id="immaginePrincipale"
+        name="immaginePrincipale"
+        type="hidden"
+        defaultValue={initialValues.immaginePrincipale}
+      />
+
+      {/* ─── Dettagli avanzati ──────────────────────────────────────────────────── */}
+      <div className="overflow-hidden rounded-lg border border-slate-200">
         <button
           type="button"
           onClick={() => setShowAdvanced(!showAdvanced)}
-          className="flex w-full items-center justify-between bg-slate-50 px-5 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-100"
+          className="flex w-full items-center justify-between px-4 py-2.5 text-xs font-semibold text-slate-500 transition hover:bg-slate-50"
         >
           Dettagli avanzati
-          {showAdvanced ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          {showAdvanced ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
         </button>
 
         {showAdvanced && (
-          <div className="border-t border-slate-200 p-5">
-            <div className="grid gap-5 md:grid-cols-2">
-
-              {/* Sottocategoria */}
-              <div className="space-y-2">
-                <label htmlFor="sottocategoria" className="text-sm font-semibold text-slate-700">
-                  Sottocategoria
-                </label>
-                <input
-                  id="sottocategoria"
-                  name="sottocategoria"
-                  defaultValue={initialValues.sottocategoria}
-                  placeholder="es. Running, Skincare, Divani…"
-                  className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-                />
-              </div>
-
-              {/* Colore */}
-              <div className="space-y-2">
-                <label htmlFor="colore" className="text-sm font-semibold text-slate-700">
-                  Colore
-                </label>
-                <input
-                  id="colore"
-                  name="colore"
-                  defaultValue={initialValues.colore}
-                  className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-                />
-              </div>
-
-              {/* Materiale */}
-              <div className="space-y-2">
-                <label htmlFor="materiale" className="text-sm font-semibold text-slate-700">
-                  Materiale
-                </label>
-                <input
-                  id="materiale"
-                  name="materiale"
-                  defaultValue={initialValues.materiale}
-                  className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-                />
-              </div>
-
-              {/* Peso / Volume */}
-              <div className="space-y-2">
-                <label htmlFor="peso_volume" className="text-sm font-semibold text-slate-700">
-                  Peso / Volume
-                </label>
-                <input
-                  id="peso_volume"
-                  name="peso_volume"
-                  defaultValue={initialValues.peso_volume}
-                  placeholder="es. 500g, 1.5L, 10x15cm"
-                  className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-                />
-              </div>
-
-              {/* Stato / condizione */}
-              <div className="space-y-2">
-                <label htmlFor="statoCondizione" className="text-sm font-semibold text-slate-700">
-                  Stato / condizione
-                </label>
-                <select
-                  id="statoCondizione"
-                  name="statoCondizione"
-                  defaultValue={initialValues.statoCondizione}
-                  className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-                >
-                  <option value="nuovo">Nuovo</option>
-                  <option value="usato">Usato</option>
-                  <option value="ricondizionato">Ricondizionato</option>
-                </select>
-              </div>
-
-              {/* Descrizione completa */}
-              <div className="space-y-2 md:col-span-2">
-                <label htmlFor="descrizione_completa" className="text-sm font-semibold text-slate-700">
-                  Descrizione completa
-                </label>
-                <textarea
-                  id="descrizione_completa"
-                  name="descrizione_completa"
-                  rows={4}
-                  defaultValue={initialValues.descrizione_completa}
-                  placeholder="Descrizione dettagliata per la scheda prodotto"
-                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-                />
-              </div>
-
-              {/* Caratteristiche principali */}
-              <div className="space-y-2 md:col-span-2">
-                <label htmlFor="caratteristiche" className="text-sm font-semibold text-slate-700">
-                  Caratteristiche principali
-                </label>
-                <input
-                  id="caratteristiche"
-                  name="caratteristiche"
-                  defaultValue={initialValues.caratteristiche}
-                  placeholder="es. Cotone biologico, Lavabile in lavatrice, Vestibilità regolare (separate da virgola)"
-                  className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-                />
-              </div>
-
-              {/* Parole chiave */}
-              <div className="space-y-2 md:col-span-2">
-                <label htmlFor="parole_chiave" className="text-sm font-semibold text-slate-700">
-                  Tag SEO / parole chiave
-                </label>
-                <input
-                  id="parole_chiave"
-                  name="parole_chiave"
-                  defaultValue={initialValues.parole_chiave}
-                  placeholder="es. maglietta, cotone, sport, running (separati da virgola)"
-                  className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-                />
-              </div>
-
-              {/* Filtri catalogo */}
-              <div className="space-y-2 md:col-span-2">
-                <label htmlFor="filtri_catalogo" className="text-sm font-semibold text-slate-700">
-                  Attributi filtro catalogo
-                </label>
-                <input
-                  id="filtri_catalogo"
-                  name="filtri_catalogo"
-                  defaultValue={initialValues.filtri_catalogo}
-                  placeholder='es. taglia: M, stagione: estate (formato "chiave: valore")'
-                  className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-                />
-              </div>
-
-              {/* SEO Title */}
-              <div className="space-y-2">
-                <label htmlFor="seo_title" className="text-sm font-semibold text-slate-700">
-                  SEO Title
-                </label>
-                <input
-                  id="seo_title"
-                  name="seo_title"
-                  defaultValue={initialValues.seo_title}
-                  placeholder="max 60 caratteri"
-                  maxLength={60}
-                  className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-                />
-              </div>
-
-              {/* Alt text immagine */}
-              <div className="space-y-2">
-                <label htmlFor="alt_text_immagine" className="text-sm font-semibold text-slate-700">
-                  Alt text immagine
-                </label>
-                <input
-                  id="alt_text_immagine"
-                  name="alt_text_immagine"
-                  defaultValue={initialValues.alt_text_immagine}
-                  placeholder="Descrizione foto per accessibilità"
-                  className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-                />
-              </div>
-
-              {/* SEO Description */}
-              <div className="space-y-2 md:col-span-2">
-                <label htmlFor="seo_description" className="text-sm font-semibold text-slate-700">
-                  Meta Description
-                </label>
-                <textarea
-                  id="seo_description"
-                  name="seo_description"
-                  rows={2}
-                  defaultValue={initialValues.seo_description}
-                  maxLength={160}
-                  placeholder="max 160 caratteri — descrizione per risultati di ricerca"
-                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-                />
-              </div>
-
+          <div className="space-y-3 border-t border-slate-200 p-4">
+            <div className="grid grid-cols-2 gap-3">
+              <input
+                id="sottocategoria"
+                name="sottocategoria"
+                defaultValue={initialValues.sottocategoria}
+                placeholder="Sottocategoria"
+                className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              />
+              <select
+                id="statoCondizione"
+                name="statoCondizione"
+                defaultValue={initialValues.statoCondizione}
+                className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              >
+                <option value="nuovo">Nuovo</option>
+                <option value="usato">Usato</option>
+                <option value="ricondizionato">Ricondizionato</option>
+              </select>
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <input
+                id="colore"
+                name="colore"
+                defaultValue={initialValues.colore}
+                placeholder="Colore"
+                className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              />
+              <input
+                id="materiale"
+                name="materiale"
+                defaultValue={initialValues.materiale}
+                placeholder="Materiale"
+                className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              />
+            </div>
+            <input
+              id="peso_volume"
+              name="peso_volume"
+              defaultValue={initialValues.peso_volume}
+              placeholder="Peso / Volume (es. 500g, 1.5L)"
+              className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            />
+            <textarea
+              id="descrizione_completa"
+              name="descrizione_completa"
+              rows={2}
+              defaultValue={initialValues.descrizione_completa}
+              placeholder="Descrizione completa"
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            />
+            <input
+              id="caratteristiche"
+              name="caratteristiche"
+              defaultValue={initialValues.caratteristiche}
+              placeholder="Caratteristiche (separate da virgola)"
+              className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            />
+            <input
+              id="parole_chiave"
+              name="parole_chiave"
+              defaultValue={initialValues.parole_chiave}
+              placeholder="Tag SEO (separati da virgola)"
+              className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            />
+            <input
+              id="filtri_catalogo"
+              name="filtri_catalogo"
+              defaultValue={initialValues.filtri_catalogo}
+              placeholder='Filtri (es. "taglia: M, stagione: estate")'
+              className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            />
+            <div className="grid grid-cols-2 gap-3">
+              <input
+                id="seo_title"
+                name="seo_title"
+                defaultValue={initialValues.seo_title}
+                placeholder="SEO title"
+                maxLength={60}
+                className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              />
+              <input
+                id="alt_text_immagine"
+                name="alt_text_immagine"
+                defaultValue={initialValues.alt_text_immagine}
+                placeholder="Alt text foto"
+                className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              />
+            </div>
+            <textarea
+              id="seo_description"
+              name="seo_description"
+              rows={2}
+              defaultValue={initialValues.seo_description}
+              maxLength={160}
+              placeholder="Meta description SEO"
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            />
           </div>
         )}
       </div>
 
-      {/* Checkbox attivo + campi hidden */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <label className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700">
-          <input
-            type="checkbox"
-            name="attivo"
-            defaultChecked={initialValues.attivo}
-            className="h-4 w-4 rounded border-slate-300 text-blue-600"
-          />
-          Prodotto attivo e disponibile nel catalogo
-        </label>
-
-        <input type="hidden" name="originePubblicazione" value={initialValues.originePubblicazione} />
-        <input type="hidden" name="prezzoSuggerito" value={initialValues.prezzoSuggerito ?? ""} />
-      </div>
+      <input type="hidden" name="originePubblicazione" value={initialValues.originePubblicazione} />
+      <input type="hidden" name="prezzoSuggerito" value={initialValues.prezzoSuggerito ?? ""} />
 
       {/* Submit */}
-      <div className="flex flex-wrap gap-3">
-        <button
-          type="submit"
-          disabled={submitting}
-          className="inline-flex h-12 items-center justify-center rounded-2xl bg-linear-to-r from-amber-400 via-yellow-400 to-amber-500 px-6 text-sm font-bold text-slate-900 shadow-lg shadow-amber-400/40 transition hover:from-amber-300 hover:via-yellow-300 hover:to-amber-400 disabled:cursor-not-allowed disabled:opacity-70"
-        >
-          {submitting ? "Salvataggio in corso..." : submitLabel}
-        </button>
-      </div>
+      <button
+        type="submit"
+        disabled={submitting}
+        className="flex h-11 w-full items-center justify-center rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 px-4 text-sm font-bold text-white shadow-lg shadow-blue-500/30 transition hover:from-blue-500 hover:to-blue-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
+      >
+        {submitting ? "Pubblicazione in corso..." : submitLabel}
+      </button>
     </form>
   );
 }
