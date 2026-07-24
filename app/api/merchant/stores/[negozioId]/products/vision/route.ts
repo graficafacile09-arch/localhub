@@ -1,11 +1,16 @@
 import { NextResponse } from "next/server";
+import sharp from "sharp";
 import { extractSuggestion } from "@/lib/product-assistant/providers/utils";
 import { buildVisionPrompt } from "@/lib/product-assistant/prompts";
 
 const MODEL = "@cf/google/gemma-4-26b-a4b-it";
 const LOW_CONFIDENCE_THRESHOLD = 60;
+const MAX_TOKENS = 300;
+const MAX_IMAGE_DIM = 1024;
+const JPEG_QUALITY = 80;
 
 export async function POST(request: Request) {
+  const tStart = performance.now();
   try {
     const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
     const apiToken = process.env.CLOUDFLARE_API_TOKEN;
@@ -25,47 +30,50 @@ export async function POST(request: Request) {
       );
     }
 
-    const buffer = Buffer.from(await file.arrayBuffer());
-    const filename = file instanceof File ? file.name : "product-image.jpg";
-    const ext = filename.toLowerCase().split(".").pop() ?? "jpg";
-    const mime = ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg";
-    const base64 = buffer.toString("base64");
+    const bufRaw = Buffer.from(await file.arrayBuffer());
+    const mime = "image/jpeg";
 
-    console.log("=== DIAGNOSTICA RICHIESTA ===");
-    console.log("MIME:", mime);
-    console.log("Buffer dimensione:", buffer.length, "bytes");
-    console.log("Base64 lunghezza:", base64.length, "chars");
-    console.log("Prompt:", buildVisionPrompt());
+    const tResize = performance.now();
+    const bufResized = await sharp(bufRaw)
+      .resize(MAX_IMAGE_DIM, MAX_IMAGE_DIM, { fit: "inside", withoutEnlargement: true })
+      .jpeg({ quality: JPEG_QUALITY })
+      .toBuffer();
+    const resizeMs = Math.round(performance.now() - tResize);
 
-    const requestBody = {
-      model: MODEL,
-      messages: [
-        {
-          role: "user",
-          content: [
-            { type: "text", text: buildVisionPrompt() },
-            { type: "image_url", image_url: { url: `data:${mime};base64,${base64}` } },
-          ],
-        },
-      ],
-      max_tokens: 3072,
-      temperature: 0.1,
-    };
+    const base64 = bufResized.toString("base64");
 
-    const bodyForLog = JSON.parse(JSON.stringify(requestBody));
-    bodyForLog.messages[0].content[1].image_url.url = `data:${mime};base64,... (${base64.length} chars)`;
-    console.log("REQUEST BODY (senza base64):", JSON.stringify(bodyForLog, null, 2));
+    console.log("=== TIMING ===");
+    console.log(`ridimensionamento: ${resizeMs}ms`);
+    console.log(`bytes: ${bufRaw.length} → ${bufResized.length}`);
+    console.log(`base64: ${base64.length} chars`);
 
+    const prompt = buildVisionPrompt();
     const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/v1/chat/completions`;
 
+    const tCf = performance.now();
     const cfResponse = await fetch(url, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiToken}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(requestBody),
+      body: JSON.stringify({
+        model: MODEL,
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "text", text: prompt },
+              { type: "image_url", image_url: { url: `data:${mime};base64,${base64}` } },
+            ],
+          },
+        ],
+        max_completion_tokens: MAX_TOKENS,
+        temperature: 0.1,
+        chat_template_kwargs: { enable_thinking: false },
+      }),
     });
+    const cfMs = Math.round(performance.now() - tCf);
 
     const status = cfResponse.status;
     const headersSnapshot: Record<string, string> = {};
@@ -87,41 +95,50 @@ export async function POST(request: Request) {
     }
 
     if (!rawBody.trim()) {
-      console.log("=== BODY VUOTO ===");
-      console.log("HTTP", status, "Headers:", JSON.stringify(headersSnapshot));
       return NextResponse.json(
         {
           success: false,
           error: {
             code: "AI_PROVIDER_ERROR",
-            message: `Cloudflare: body vuoto. HTTP ${status}, Content-Length: ${headersSnapshot["content-length"] ?? "N/A"}, Transfer-Encoding: ${headersSnapshot["transfer-encoding"] ?? "N/A"}, headers: ${JSON.stringify(headersSnapshot)}.`,
+            message: `Cloudflare: body vuoto. HTTP ${status}, Content-Length: ${headersSnapshot["content-length"] ?? "N/A"}, headers: ${JSON.stringify(headersSnapshot)}.`,
           },
         },
         { status: 502 }
       );
     }
 
-    let responseJson: { choices?: Array<{ message?: { content?: string }; finish_reason?: string }>; usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number } };
+    const tParse = performance.now();
+
+    let responseJson: {
+      choices?: Array<{
+        message?: { content?: string };
+        finish_reason?: string;
+      }>;
+      usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number };
+    };
     try {
       responseJson = JSON.parse(rawBody);
     } catch {
-      console.log("=== JSON NON VALIDO ===");
-      console.log("HTTP", status, "rawBody (primi 500):", rawBody.slice(0, 500));
       return NextResponse.json(
         {
           success: false,
           error: {
             code: "AI_PROVIDER_ERROR",
-            message: `Cloudflare: risposta JSON non valida. HTTP ${status}, body (primi 500): ${rawBody.slice(0, 500)}, Content-Length: ${headersSnapshot["content-length"] ?? "N/A"}, headers: ${JSON.stringify(headersSnapshot)}.`,
+            message: `Cloudflare: risposta JSON non valida. HTTP ${status}, body (primi 500): ${rawBody.slice(0, 500)}.`,
           },
         },
         { status: 502 }
       );
     }
 
-    console.log("=== RISPOSTA COMPLETA ===");
-    console.log("choices[0]:", JSON.stringify(responseJson.choices?.[0], null, 2));
-    console.log("usage:", JSON.stringify(responseJson.usage, null, 2));
+    const finishReason = responseJson.choices?.[0]?.finish_reason ?? "unknown";
+    const usage = responseJson.usage;
+
+    console.log("=== METRICHE MODELLO ===");
+    console.log(`prompt_tokens: ${usage?.prompt_tokens ?? "N/A"}`);
+    console.log(`completion_tokens: ${usage?.completion_tokens ?? "N/A"}`);
+    console.log(`total_tokens: ${usage?.total_tokens ?? "N/A"}`);
+    console.log(`finish_reason: ${finishReason}`);
 
     const content = (responseJson.choices?.[0]?.message?.content ?? "")
       .replace(/^```json\s*/i, "")
@@ -130,17 +147,15 @@ export async function POST(request: Request) {
       .trim();
 
     if (!content) {
-      const finishReason = responseJson.choices?.[0]?.finish_reason ?? "unknown";
-      console.log("=== CONTENUTO VUOTO ===");
-      console.log("HTTP", status, "finish_reason:", finishReason);
-      console.log("choices[0] completo:", JSON.stringify(responseJson.choices?.[0], null, 2));
-      console.log("usage:", JSON.stringify(responseJson.usage, null, 2));
+      if (finishReason === "length") {
+        console.log("Il modello ha esaurito i token prima di produrre message.content.");
+      }
       return NextResponse.json(
         {
           success: false,
           error: {
             code: "AI_PROVIDER_ERROR",
-            message: `Cloudflare: risposta vuota. HTTP ${status}, finish_reason: ${finishReason}, body (primi 500): ${rawBody.slice(0, 500)}, Content-Length: ${headersSnapshot["content-length"] ?? "N/A"}, Transfer-Encoding: ${headersSnapshot["transfer-encoding"] ?? "N/A"}, headers: ${JSON.stringify(headersSnapshot)}.`,
+            message: `Cloudflare: risposta vuota. finish_reason: ${finishReason}, prompt_tokens: ${usage?.prompt_tokens ?? "?"}, completion_tokens: ${usage?.completion_tokens ?? "?"}, total_tokens: ${usage?.total_tokens ?? "?"}.`,
           },
         },
         { status: 502 }
@@ -156,8 +171,12 @@ export async function POST(request: Request) {
         { status: 502 }
       );
     }
+    const parseMs = Math.round(performance.now() - tParse);
 
     const suggestion = extractSuggestion(parsed);
+
+    const tTotal = Math.round(performance.now() - tStart);
+    console.log(`Cloudflare: ${cfMs}ms | parse: ${parseMs}ms | TOTALE: ${tTotal}ms`);
 
     return NextResponse.json({
       success: true,

@@ -65,8 +65,10 @@ export default function MerchantProductAiUploader({
     onAnalysisStart?.();
 
     try {
+      const { compressImage } = await import("@/lib/client/image-compress");
+      const compressed = await compressImage(file);
       const formData = new FormData();
-      formData.append("image", file);
+      formData.append("image", compressed.file);
 
       const response = await fetch(
         `/api/merchant/stores/${negozioId}/products/vision`,

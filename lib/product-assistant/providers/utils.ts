@@ -132,7 +132,7 @@ export function extractSuggestion(raw: unknown): ProductVisionSuggestion {
     statoCondizione: parseCondition(payload.stato_condizione ?? payload.statoCondizione),
     quantitaSuggerita: parseQuantita(payload.quantita_suggerita ?? payload.quantitaSuggerita),
     confidenza: parseConfidenza(payload.confidenza),
-    immaginePrincipale: null,
+    immaginePrincipale: parseString(payload.image_url ?? payload.immaginePrincipale),
     descrizioneCompleta: parseString(payload.descrizione_completa ?? payload.descrizioneCompleta),
     caratteristiche: parseStringsArray(payload.caratteristiche),
     pesoVolume: parseString(payload.peso_volume ?? payload.pesoVolume),
@@ -140,12 +140,12 @@ export function extractSuggestion(raw: unknown): ProductVisionSuggestion {
     seoDescription: parseString(payload.seo_description ?? payload.seoDescription),
     altTextImmagine: parseString(payload.alt_text_immagine ?? payload.altTextImmagine),
     filtriCatalogo: parseFiltriCatalogo(payload.filtri_catalogo ?? payload.filtriCatalogo),
-    formato: parseString(payload.formato),
-    tipoConfezione: parseString(payload.tipo_confezione ?? payload.tipoConfezione),
-    codiceEan: parseString(payload.codice_ean ?? payload.codiceEan),
-    produttore: parseString(payload.produttore),
-    ingredienti: parseStringsArray(payload.ingredienti),
-    allergeni: parseStringsArray(payload.allergeni),
+    formato: null,
+    tipoConfezione: null,
+    codiceEan: null,
+    produttore: null,
+    ingredienti: [],
+    allergeni: [],
   };
 }
 
