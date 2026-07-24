@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
+import { extractSuggestion } from "@/lib/product-assistant/providers/utils";
 
 const MODEL = "@cf/google/gemma-4-26b-a4b-it";
+const LOW_CONFIDENCE_THRESHOLD = 60;
 
 export async function POST(request: Request) {
-  console.log("=== ROUTE START MINIMA ===");
-
   const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
   const apiToken = process.env.CLOUDFLARE_API_TOKEN;
   if (!accountId || !apiToken) {
@@ -68,6 +68,11 @@ export async function POST(request: Request) {
     .trim();
 
   const parsed = JSON.parse(content);
+  const suggestion = extractSuggestion(parsed);
 
-  return NextResponse.json(parsed);
+  return NextResponse.json({
+    success: true,
+    suggestion,
+    lowConfidence: suggestion.confidenza < LOW_CONFIDENCE_THRESHOLD,
+  });
 }
