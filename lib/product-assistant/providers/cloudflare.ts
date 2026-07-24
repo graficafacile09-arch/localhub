@@ -26,6 +26,8 @@ function log(...args: unknown[]) {
   console.log("[CloudflareProvider]", ...args);
 }
 
+const CLOUDFLARE_MODEL = "@cf/meta/llama-3.2-11b-vision-instruct";
+
 export class CloudflareProvider implements VisionProvider {
   private readonly accountId: string;
   private readonly apiToken: string;
@@ -36,7 +38,7 @@ export class CloudflareProvider implements VisionProvider {
   }
 
   get model(): string {
-    return "@cf/meta/llama-3.2-11b-vision-instruct";
+    return CLOUDFLARE_MODEL;
   }
 
   async analyze(
@@ -64,14 +66,15 @@ export class CloudflareProvider implements VisionProvider {
 
     const messages: CloudflareMessage[] = [{ role: "user", content }];
 
-    const baseUrl = `https://api.cloudflare.com/client/v4/accounts/${this.accountId}/ai/run`;
-    const url = `${baseUrl}/${this.model}`;
+    // Endpoint OpenAI-compatible (NON l'API REST nativa /ai/run/{model})
+    const url = `https://api.cloudflare.com/client/v4/accounts/${this.accountId}/ai/v1/chat/completions`;
 
     let httpStatus: number | string = "unknown";
     let responseText = "";
+    let tokenCount: { input?: number; output?: number; total?: number } | undefined;
 
     try {
-      log("Chiamata Cloudflare Workers AI in corso...");
+      log("Chiamata Cloudflare Workers AI (OpenAI-compatible endpoint) in corso...");
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 60000);
@@ -83,6 +86,7 @@ export class CloudflareProvider implements VisionProvider {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          model: CLOUDFLARE_MODEL,
           messages,
           max_tokens: 2000,
           temperature: 0.1,
@@ -122,14 +126,18 @@ export class CloudflareProvider implements VisionProvider {
         );
       }
 
+      // Formato risposta OpenAI-compatible
       const json = await response.json() as {
-        result?: { response?: string; usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number } };
-        success?: boolean;
-        errors?: Array<{ message?: string }>;
+        choices?: Array<{
+          message?: { content?: string };
+          finish_reason?: string;
+        }>;
+        usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number };
+        error?: { message?: string; code?: string };
       };
 
-      if (!json.success) {
-        const errMsg = json.errors?.[0]?.message ?? "Errore sconosciuto Cloudflare";
+      if (json.error) {
+        const errMsg = json.error.message ?? "Errore sconosciuto Cloudflare";
         log(`ERRORE Cloudflare API: ${errMsg}`);
 
         if (errMsg.toLowerCase().includes("quota") || errMsg.toLowerCase().includes("limit") || errMsg.toLowerCase().includes("ratelimit")) {
@@ -139,17 +147,27 @@ export class CloudflareProvider implements VisionProvider {
         throw new ProviderError(AI_PROVIDER_UNKNOWN_ERROR, `Cloudflare: ${errMsg}`, httpStatus);
       }
 
-      responseText = json.result?.response ?? "";
+      responseText = json.choices?.[0]?.message?.content ?? "";
       log(`Risposta raw text length: ${responseText.length}`);
       log(`Risposta raw text (primi 500): "${responseText.slice(0, 500)}"`);
 
       if (!responseText.trim()) {
+        const finishReason = json.choices?.[0]?.finish_reason ?? "unknown";
+        log(`Finish reason: ${finishReason}`);
         throw new ProviderError(
           AI_PROVIDER_UNKNOWN_ERROR,
-          "Cloudflare: risposta vuota.",
+          `Cloudflare: risposta vuota (finish_reason: ${finishReason}).`,
           httpStatus
         );
       }
+
+      tokenCount = json.usage
+        ? {
+            input: json.usage.prompt_tokens,
+            output: json.usage.completion_tokens,
+            total: json.usage.total_tokens,
+          }
+        : undefined;
 
       const jsonStr = extractJsonFromText(responseText);
       log(`JSON extracted length: ${jsonStr.length}`);
@@ -184,13 +202,6 @@ export class CloudflareProvider implements VisionProvider {
 
       const latencyMs = Date.now() - startTime;
       const suggestion = extractSuggestion(parsed);
-      const tokenCount = json.result?.usage
-        ? {
-            input: json.result.usage.prompt_tokens,
-            output: json.result.usage.completion_tokens,
-            total: json.result.usage.total_tokens,
-          }
-        : undefined;
 
       log(`Analisi completata in ${latencyMs}ms: "${suggestion.nome}"`);
 
