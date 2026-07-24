@@ -154,8 +154,9 @@ export function extractJsonFromText(text: string): string {
   }
 
   const noMarkdown = trimmed
-    .replace(/^```(?:json)?\s*/i, "")
-    .replace(/\s*```\s*$/i, "")
+    .replace(/^```(?:json)?\s*\n*/i, "")
+    .replace(/\n*\s*```\s*$/i, "")
+    .replace(/```(?:json)?/gi, "")
     .trim();
 
   try {
