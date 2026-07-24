@@ -259,7 +259,7 @@ export class OpenRouterProvider implements VisionProvider {
 
         if (httpStatus === 429) {
           const quotaError = new Error("OpenRouter quota exceeded");
-          (quotaError as unknown as Record<string, unknown>).code = "GEMINI_QUOTA_EXCEEDED";
+          (quotaError as unknown as Record<string, unknown>).code = "AI_PROVIDER_QUOTA_EXCEEDED";
           throw quotaError;
         }
 
@@ -273,7 +273,7 @@ export class OpenRouterProvider implements VisionProvider {
       log(`Risposta raw text length: ${responseText.length}`);
       log(`Risposta raw text (primi 500): "${responseText.slice(0, 500)}"`);
     } catch (caught: unknown) {
-      if (caught instanceof Error && "code" in caught && (caught as unknown as Record<string, unknown>).code === "GEMINI_QUOTA_EXCEEDED") {
+      if (caught instanceof Error && "code" in caught && (caught as unknown as Record<string, unknown>).code === "AI_PROVIDER_QUOTA_EXCEEDED") {
         throw caught;
       }
       const msg = caught instanceof Error ? caught.message : "Errore sconosciuto";

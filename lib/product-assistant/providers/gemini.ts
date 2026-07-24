@@ -221,8 +221,8 @@ export class GeminiProvider implements VisionProvider {
       if (caught instanceof Error && caught.stack) log(`Stack: ${caught.stack}`);
 
       if (status === "429") {
-        const quotaError = new Error("Gemini quota exceeded");
-        (quotaError as unknown as Record<string, unknown>).code = "GEMINI_QUOTA_EXCEEDED";
+        const quotaError = new Error("AI provider quota exceeded");
+        (quotaError as unknown as Record<string, unknown>).code = "AI_PROVIDER_QUOTA_EXCEEDED";
         throw quotaError;
       }
 

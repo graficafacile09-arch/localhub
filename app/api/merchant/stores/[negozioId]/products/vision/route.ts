@@ -87,7 +87,7 @@ export async function POST(
 
     if (!result.success) {
       if (!result.disabled) {
-        return error("GEMINI_QUOTA_EXCEEDED", "Quota API Gemini esaurita.", 429);
+        return error("AI_PROVIDER_QUOTA_EXCEEDED", "Quota del provider AI esaurita.", 429);
       }
       return error("VISION_DISABLED", result.message, 503);
     }
