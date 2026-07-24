@@ -165,6 +165,21 @@ export class CloudflareProvider implements VisionProvider {
       }
 
       responseText = json.choices?.[0]?.message?.content ?? "";
+
+      // DEBUG: stampa raw content prima del parsing
+      console.log("=== CLOUDFLARE choices[0].message.content (raw) ===");
+      console.log(responseText);
+      console.log("=============================================");
+
+      // Ignora reasoning_content — usiamo solo message.content
+
+      // Pulizia automatica markdown (Gemma restituisce ```json ... ```)
+      responseText = responseText
+        .replace(/^```json\s*/i, "")
+        .replace(/^```\s*/i, "")
+        .replace(/\s*```$/i, "")
+        .trim();
+
       log(`Risposta raw text length: ${responseText.length}`);
       log(`Risposta raw text (primi 500): "${responseText.slice(0, 500)}"`);
 
@@ -192,6 +207,7 @@ export class CloudflareProvider implements VisionProvider {
       let parsed: unknown;
       try {
         parsed = JSON.parse(jsonStr);
+        console.log("JSON PARSED:", JSON.stringify(parsed, null, 2));
         log("JSON parsato con successo");
       } catch (parseErr) {
         log(`ERRORE parsing JSON: ${parseErr}`);

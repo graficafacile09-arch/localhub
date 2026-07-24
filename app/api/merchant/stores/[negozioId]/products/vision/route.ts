@@ -104,11 +104,8 @@ export async function POST(
     log(`Suggerimento ottenuto: "${result.suggestion.nome}" (confidenza: ${result.suggestion.confidenza}%)`);
     log(`Tempo totale: ${Date.now() - startTime}ms`);
 
-    return NextResponse.json({
-      success: true,
-      suggestion: result.suggestion,
-      lowConfidence: result.lowConfidence,
-    });
+    // TEMP: restituisce il JSON parsato direttamente
+    return NextResponse.json(result.suggestion);
   } catch (caught: unknown) {
     const elapsed = Date.now() - startTime;
     const message =
