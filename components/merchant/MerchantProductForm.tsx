@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import type { MerchantProduct } from "@/lib/merchant/types";
 
 type MerchantProductFormProps = {
@@ -47,6 +48,7 @@ export default function MerchantProductForm({
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const initialValues = initialData
     ? {
@@ -224,20 +226,6 @@ export default function MerchantProductForm({
           />
         </div>
 
-        {/* Sottocategoria */}
-        <div className="space-y-2">
-          <label htmlFor="sottocategoria" className="text-sm font-semibold text-slate-700">
-            Sottocategoria
-          </label>
-          <input
-            id="sottocategoria"
-            name="sottocategoria"
-            defaultValue={initialValues.sottocategoria}
-            placeholder="es. Running, Skincare, Divani…"
-            className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-          />
-        </div>
-
         {/* Marca */}
         <div className="space-y-2">
           <label htmlFor="marca" className="text-sm font-semibold text-slate-700">
@@ -247,65 +235,9 @@ export default function MerchantProductForm({
             id="marca"
             name="marca"
             defaultValue={initialValues.marca}
+            placeholder="Riconosciuta dall'AI o inserimento manuale"
             className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
           />
-        </div>
-
-        {/* Colore */}
-        <div className="space-y-2">
-          <label htmlFor="colore" className="text-sm font-semibold text-slate-700">
-            Colore
-          </label>
-          <input
-            id="colore"
-            name="colore"
-            defaultValue={initialValues.colore}
-            className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-          />
-        </div>
-
-        {/* Materiale */}
-        <div className="space-y-2">
-          <label htmlFor="materiale" className="text-sm font-semibold text-slate-700">
-            Materiale
-          </label>
-          <input
-            id="materiale"
-            name="materiale"
-            defaultValue={initialValues.materiale}
-            className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-          />
-        </div>
-
-        {/* Peso / Volume */}
-        <div className="space-y-2">
-          <label htmlFor="peso_volume" className="text-sm font-semibold text-slate-700">
-            Peso / Volume
-          </label>
-          <input
-            id="peso_volume"
-            name="peso_volume"
-            defaultValue={initialValues.peso_volume}
-            placeholder="es. 500g, 1.5L, 10x15cm"
-            className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-          />
-        </div>
-
-        {/* Stato / condizione */}
-        <div className="space-y-2">
-          <label htmlFor="statoCondizione" className="text-sm font-semibold text-slate-700">
-            Stato / condizione
-          </label>
-          <select
-            id="statoCondizione"
-            name="statoCondizione"
-            defaultValue={initialValues.statoCondizione}
-            className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-          >
-            <option value="nuovo">Nuovo</option>
-            <option value="usato">Usato</option>
-            <option value="ricondizionato">Ricondizionato</option>
-          </select>
         </div>
 
         {/* Prezzo */}
@@ -328,7 +260,7 @@ export default function MerchantProductForm({
         {/* Quantità disponibile */}
         <div className="space-y-2">
           <label htmlFor="quantitaDisponibile" className="text-sm font-semibold text-slate-700">
-            Quantità disponibile
+            Quantità
           </label>
           <input
             id="quantitaDisponibile"
@@ -356,63 +288,6 @@ export default function MerchantProductForm({
           />
         </div>
 
-        {/* Descrizione completa */}
-        <div className="space-y-2 md:col-span-2">
-          <label htmlFor="descrizione_completa" className="text-sm font-semibold text-slate-700">
-            Descrizione completa
-          </label>
-          <textarea
-            id="descrizione_completa"
-            name="descrizione_completa"
-            rows={6}
-            defaultValue={initialValues.descrizione_completa}
-            placeholder="Descrizione dettagliata per la scheda prodotto (materiali, finiture, usi consigliati)"
-            className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-          />
-        </div>
-
-        {/* Caratteristiche principali */}
-        <div className="space-y-2 md:col-span-2">
-          <label htmlFor="caratteristiche" className="text-sm font-semibold text-slate-700">
-            Caratteristiche principali
-          </label>
-          <input
-            id="caratteristiche"
-            name="caratteristiche"
-            defaultValue={initialValues.caratteristiche}
-            placeholder="es. Cotone biologico, Lavabile in lavatrice, Vestibilità regolare (separate da virgola)"
-            className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-          />
-        </div>
-
-        {/* Tag SEO / parole chiave */}
-        <div className="space-y-2 md:col-span-2">
-          <label htmlFor="parole_chiave" className="text-sm font-semibold text-slate-700">
-            Tag SEO / parole chiave
-          </label>
-          <input
-            id="parole_chiave"
-            name="parole_chiave"
-            defaultValue={initialValues.parole_chiave}
-            placeholder="es. maglietta, cotone, sport, running (separati da virgola)"
-            className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-          />
-        </div>
-
-        {/* Filtri catalogo */}
-        <div className="space-y-2 md:col-span-2">
-          <label htmlFor="filtri_catalogo" className="text-sm font-semibold text-slate-700">
-            Attributi filtro catalogo
-          </label>
-          <input
-            id="filtri_catalogo"
-            name="filtri_catalogo"
-            defaultValue={initialValues.filtri_catalogo}
-            placeholder='es. taglia: M, stagione: estate, genere: uomo, tipo_tessuto: cotone (formato "chiave: valore")'
-            className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-          />
-        </div>
-
         {/* Immagine principale */}
         <div className="space-y-2 md:col-span-2">
           <label htmlFor="immaginePrincipale" className="text-sm font-semibold text-slate-700">
@@ -430,59 +305,197 @@ export default function MerchantProductForm({
 
       </div>
 
-      {/* ─── Sezione SEO ─────────────────────────────────────────────────────── */}
-      <div className="rounded-2xl border border-slate-100 bg-slate-50 p-5">
-        <p className="mb-4 text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
-          Ottimizzazione SEO
-        </p>
-        <div className="grid gap-5 md:grid-cols-2">
+      {/* ─── Dettagli avanzati (collassabile) ──────────────────────────────────── */}
+      <div className="overflow-hidden rounded-2xl border border-slate-200">
+        <button
+          type="button"
+          onClick={() => setShowAdvanced(!showAdvanced)}
+          className="flex w-full items-center justify-between bg-slate-50 px-5 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-100"
+        >
+          Dettagli avanzati
+          {showAdvanced ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+        </button>
 
-          {/* SEO Title */}
-          <div className="space-y-2">
-            <label htmlFor="seo_title" className="text-sm font-semibold text-slate-700">
-              SEO Title
-            </label>
-            <input
-              id="seo_title"
-              name="seo_title"
-              defaultValue={initialValues.seo_title}
-              placeholder="max 60 caratteri — titolo per Google"
-              maxLength={60}
-              className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-            />
+        {showAdvanced && (
+          <div className="border-t border-slate-200 p-5">
+            <div className="grid gap-5 md:grid-cols-2">
+
+              {/* Sottocategoria */}
+              <div className="space-y-2">
+                <label htmlFor="sottocategoria" className="text-sm font-semibold text-slate-700">
+                  Sottocategoria
+                </label>
+                <input
+                  id="sottocategoria"
+                  name="sottocategoria"
+                  defaultValue={initialValues.sottocategoria}
+                  placeholder="es. Running, Skincare, Divani…"
+                  className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                />
+              </div>
+
+              {/* Colore */}
+              <div className="space-y-2">
+                <label htmlFor="colore" className="text-sm font-semibold text-slate-700">
+                  Colore
+                </label>
+                <input
+                  id="colore"
+                  name="colore"
+                  defaultValue={initialValues.colore}
+                  className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                />
+              </div>
+
+              {/* Materiale */}
+              <div className="space-y-2">
+                <label htmlFor="materiale" className="text-sm font-semibold text-slate-700">
+                  Materiale
+                </label>
+                <input
+                  id="materiale"
+                  name="materiale"
+                  defaultValue={initialValues.materiale}
+                  className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                />
+              </div>
+
+              {/* Peso / Volume */}
+              <div className="space-y-2">
+                <label htmlFor="peso_volume" className="text-sm font-semibold text-slate-700">
+                  Peso / Volume
+                </label>
+                <input
+                  id="peso_volume"
+                  name="peso_volume"
+                  defaultValue={initialValues.peso_volume}
+                  placeholder="es. 500g, 1.5L, 10x15cm"
+                  className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                />
+              </div>
+
+              {/* Stato / condizione */}
+              <div className="space-y-2">
+                <label htmlFor="statoCondizione" className="text-sm font-semibold text-slate-700">
+                  Stato / condizione
+                </label>
+                <select
+                  id="statoCondizione"
+                  name="statoCondizione"
+                  defaultValue={initialValues.statoCondizione}
+                  className="h-12 w-full rounded-2xl border border-slate-200 bg-white px-4 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                >
+                  <option value="nuovo">Nuovo</option>
+                  <option value="usato">Usato</option>
+                  <option value="ricondizionato">Ricondizionato</option>
+                </select>
+              </div>
+
+              {/* Descrizione completa */}
+              <div className="space-y-2 md:col-span-2">
+                <label htmlFor="descrizione_completa" className="text-sm font-semibold text-slate-700">
+                  Descrizione completa
+                </label>
+                <textarea
+                  id="descrizione_completa"
+                  name="descrizione_completa"
+                  rows={4}
+                  defaultValue={initialValues.descrizione_completa}
+                  placeholder="Descrizione dettagliata per la scheda prodotto"
+                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                />
+              </div>
+
+              {/* Caratteristiche principali */}
+              <div className="space-y-2 md:col-span-2">
+                <label htmlFor="caratteristiche" className="text-sm font-semibold text-slate-700">
+                  Caratteristiche principali
+                </label>
+                <input
+                  id="caratteristiche"
+                  name="caratteristiche"
+                  defaultValue={initialValues.caratteristiche}
+                  placeholder="es. Cotone biologico, Lavabile in lavatrice, Vestibilità regolare (separate da virgola)"
+                  className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                />
+              </div>
+
+              {/* Parole chiave */}
+              <div className="space-y-2 md:col-span-2">
+                <label htmlFor="parole_chiave" className="text-sm font-semibold text-slate-700">
+                  Tag SEO / parole chiave
+                </label>
+                <input
+                  id="parole_chiave"
+                  name="parole_chiave"
+                  defaultValue={initialValues.parole_chiave}
+                  placeholder="es. maglietta, cotone, sport, running (separati da virgola)"
+                  className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                />
+              </div>
+
+              {/* Filtri catalogo */}
+              <div className="space-y-2 md:col-span-2">
+                <label htmlFor="filtri_catalogo" className="text-sm font-semibold text-slate-700">
+                  Attributi filtro catalogo
+                </label>
+                <input
+                  id="filtri_catalogo"
+                  name="filtri_catalogo"
+                  defaultValue={initialValues.filtri_catalogo}
+                  placeholder='es. taglia: M, stagione: estate (formato "chiave: valore")'
+                  className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                />
+              </div>
+
+              {/* SEO Title */}
+              <div className="space-y-2">
+                <label htmlFor="seo_title" className="text-sm font-semibold text-slate-700">
+                  SEO Title
+                </label>
+                <input
+                  id="seo_title"
+                  name="seo_title"
+                  defaultValue={initialValues.seo_title}
+                  placeholder="max 60 caratteri"
+                  maxLength={60}
+                  className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                />
+              </div>
+
+              {/* Alt text immagine */}
+              <div className="space-y-2">
+                <label htmlFor="alt_text_immagine" className="text-sm font-semibold text-slate-700">
+                  Alt text immagine
+                </label>
+                <input
+                  id="alt_text_immagine"
+                  name="alt_text_immagine"
+                  defaultValue={initialValues.alt_text_immagine}
+                  placeholder="Descrizione foto per accessibilità"
+                  className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                />
+              </div>
+
+              {/* SEO Description */}
+              <div className="space-y-2 md:col-span-2">
+                <label htmlFor="seo_description" className="text-sm font-semibold text-slate-700">
+                  Meta Description
+                </label>
+                <textarea
+                  id="seo_description"
+                  name="seo_description"
+                  rows={2}
+                  defaultValue={initialValues.seo_description}
+                  maxLength={160}
+                  placeholder="max 160 caratteri — descrizione per risultati di ricerca"
+                  className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                />
+              </div>
+
+            </div>
           </div>
-
-          {/* Alt text immagine */}
-          <div className="space-y-2">
-            <label htmlFor="alt_text_immagine" className="text-sm font-semibold text-slate-700">
-              Testo alternativo immagine
-            </label>
-            <input
-              id="alt_text_immagine"
-              name="alt_text_immagine"
-              defaultValue={initialValues.alt_text_immagine}
-              placeholder="Descrivi cosa mostra la foto per accessibilità"
-              className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-            />
-          </div>
-
-          {/* SEO Description */}
-          <div className="space-y-2 md:col-span-2">
-            <label htmlFor="seo_description" className="text-sm font-semibold text-slate-700">
-              Meta Description
-            </label>
-            <textarea
-              id="seo_description"
-              name="seo_description"
-              rows={2}
-              defaultValue={initialValues.seo_description}
-              maxLength={160}
-              placeholder="max 160 caratteri — descrizione che appare nei risultati di ricerca"
-              className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-            />
-          </div>
-
-        </div>
+        )}
       </div>
 
       {/* Checkbox attivo + campi hidden */}
