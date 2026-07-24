@@ -74,7 +74,17 @@ export class CloudflareProvider implements VisionProvider {
     let tokenCount: { input?: number; output?: number; total?: number } | undefined;
 
     try {
-      log("Chiamata Cloudflare Workers AI (OpenAI-compatible endpoint) in corso...");
+      log(`URL chiamata: ${url}`);
+      log(`Account ID: ${this.accountId.slice(0, 8)}...`);
+      log(`Token: ${this.apiToken.slice(0, 8)}...`);
+
+      const bodyForLog = JSON.stringify({
+        model: CLOUDFLARE_MODEL,
+        messages: [{ role: "user", content: "..." }],
+        max_tokens: 2000,
+        temperature: 0.1,
+      });
+      log(`Body inviato (senza image): ${bodyForLog}`);
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 60000);
@@ -97,16 +107,23 @@ export class CloudflareProvider implements VisionProvider {
       clearTimeout(timeoutId);
 
       httpStatus = response.status;
-      log(`Risposta Cloudflare: HTTP ${httpStatus}`);
+      log(`STATUS: ${httpStatus}`);
+
+      const responseHeaders: Record<string, string> = {};
+      response.headers.forEach((value: string, key: string) => {
+        responseHeaders[key] = value;
+      });
+      log(`HEADERS: ${JSON.stringify(responseHeaders, null, 2)}`);
+
+      const fullBody = await response.text().catch(() => "unknown");
+      log(`BODY COMPLETO: ${fullBody}`);
 
       if (!response.ok) {
-        const errorBody = await response.text().catch(() => "unknown");
-        log(`ERRORE Cloudflare (HTTP ${httpStatus}): ${errorBody}`);
 
         if (httpStatus === 429) {
           throw new ProviderError(
             AI_PROVIDER_QUOTA_EXCEEDED,
-            "Cloudflare quota esaurita (rate limit).",
+            `Cloudflare quota esaurita (rate limit). Body: ${fullBody.slice(0, 500)}`,
             httpStatus
           );
         }
@@ -114,20 +131,20 @@ export class CloudflareProvider implements VisionProvider {
         if (httpStatus >= 500 && httpStatus < 600) {
           throw new ProviderError(
             AI_PROVIDER_UNKNOWN_ERROR,
-            `Cloudflare: errore server HTTP ${httpStatus}.`,
+            `Cloudflare: errore server HTTP ${httpStatus}. Body: ${fullBody.slice(0, 500)}`,
             httpStatus
           );
         }
 
         throw new ProviderError(
           AI_PROVIDER_UNKNOWN_ERROR,
-          `Cloudflare: HTTP ${httpStatus} — ${errorBody.slice(0, 200)}`,
+          `Cloudflare: HTTP ${httpStatus} — Body: ${fullBody.slice(0, 500)}`,
           httpStatus
         );
       }
 
       // Formato risposta OpenAI-compatible
-      const json = await response.json() as {
+      const json = JSON.parse(fullBody) as {
         choices?: Array<{
           message?: { content?: string };
           finish_reason?: string;
