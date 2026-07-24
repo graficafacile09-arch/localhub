@@ -97,7 +97,7 @@ export async function analyzeImages(
   for (const entry of PROVIDER_CHAIN) {
     const provider = entry.build();
     if (!provider) {
-      log(`[${requestId}] ${entry.name} — saltato (configurazione mancante)`);
+      console.log(`Trying ${entry.name} — SKIPPED (no config)`);
       continue;
     }
 
@@ -105,7 +105,7 @@ export async function analyzeImages(
     const attempt: AttemptLog = { provider: entry.name, latencyMs: 0 };
 
     try {
-      log(`[${requestId}] >>> Tentativo: ${entry.name}`);
+      console.log(`Trying ${entry.name}`);
       const result = await provider.analyze(images, context);
 
       attempt.model = result.model;
@@ -115,6 +115,7 @@ export async function analyzeImages(
 
       attempts.push(attempt);
 
+      console.log(`${entry.name} SUCCESS`);
       log(formatProviderLog(requestId, attempts, entry.name));
 
       return {
@@ -135,11 +136,12 @@ export async function analyzeImages(
       }
 
       attempts.push(attempt);
-      log(`[${requestId}] ${entry.name} — FALLBACK: [${attempt.errorCode}] ${attempt.errorMessage}`);
+      console.log(`${entry.name} FAILED`);
+      console.log("ERROR:", attempt.errorCode, attempt.errorMessage);
     }
   }
 
-  // Tutti i provider hanno fallito
+  console.log("PROVIDER FINALE:", null);
   log(formatProviderLog(requestId, attempts, null));
 
   const lastAttempt = attempts[attempts.length - 1];

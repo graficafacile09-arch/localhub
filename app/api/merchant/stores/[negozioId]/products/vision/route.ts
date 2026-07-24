@@ -8,6 +8,10 @@ export async function POST(
   request: Request,
   context: { params: Promise<{ negozioId: string }> }
 ) {
+  console.log("=== ROUTE START ===");
+  console.log("ACCOUNT:", process.env.CLOUDFLARE_ACCOUNT_ID);
+  console.log("TOKEN:", process.env.CLOUDFLARE_API_TOKEN?.substring(0, 12));
+
   const startTime = Date.now();
   const requestId = crypto.randomUUID().slice(0, 8);
 

@@ -74,6 +74,8 @@ export class CloudflareProvider implements VisionProvider {
     let tokenCount: { input?: number; output?: number; total?: number } | undefined;
 
     try {
+      console.log("MODEL:", CLOUDFLARE_MODEL);
+      console.log("ENDPOINT:", url);
       log(`URL chiamata: ${url}`);
       log(`Account ID: ${this.accountId.slice(0, 8)}...`);
       log(`Token: ${this.apiToken.slice(0, 8)}...`);
@@ -107,6 +109,7 @@ export class CloudflareProvider implements VisionProvider {
       clearTimeout(timeoutId);
 
       httpStatus = response.status;
+      console.log("HTTP STATUS:", response.status);
       log(`STATUS: ${httpStatus}`);
 
       const responseHeaders: Record<string, string> = {};
@@ -116,6 +119,7 @@ export class CloudflareProvider implements VisionProvider {
       log(`HEADERS: ${JSON.stringify(responseHeaders, null, 2)}`);
 
       const fullBody = await response.text().catch(() => "unknown");
+      console.log("BODY:", fullBody);
       log(`BODY COMPLETO: ${fullBody}`);
 
       if (!response.ok) {
