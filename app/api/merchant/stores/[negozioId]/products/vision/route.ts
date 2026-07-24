@@ -21,6 +21,7 @@ export async function POST(request: Request) {
       );
     }
 
+    const tRecv = performance.now();
     const formData = await request.formData();
     const file = formData.get("image");
     if (!file || !(file instanceof Blob)) {
@@ -32,54 +33,53 @@ export async function POST(request: Request) {
 
     const bufRaw = Buffer.from(await file.arrayBuffer());
     const mime = "image/jpeg";
+    const tPrep = performance.now();
 
-    const tResize = performance.now();
     const bufResized = await sharp(bufRaw)
       .resize(MAX_IMAGE_DIM, MAX_IMAGE_DIM, { fit: "inside", withoutEnlargement: true })
       .jpeg({ quality: JPEG_QUALITY })
       .toBuffer();
-    const resizeMs = Math.round(performance.now() - tResize);
+    const tResizeEnd = performance.now();
 
     const base64 = bufResized.toString("base64");
-
-    console.log("=== TIMING ===");
-    console.log(`ridimensionamento: ${resizeMs}ms`);
-    console.log(`bytes: ${bufRaw.length} → ${bufResized.length}`);
-    console.log(`base64: ${base64.length} chars`);
+    const tB64End = performance.now();
 
     const prompt = buildVisionPrompt();
     const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/v1/chat/completions`;
 
-    const tCf = performance.now();
+    const body = JSON.stringify({
+      model: MODEL,
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: prompt },
+            { type: "image_url", image_url: { url: `data:${mime};base64,${base64}` } },
+          ],
+        },
+      ],
+      max_completion_tokens: MAX_TOKENS,
+      temperature: 0.1,
+      chat_template_kwargs: { enable_thinking: false },
+    });
+
+    const tCfStart = performance.now();
     const cfResponse = await fetch(url, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiToken}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        model: MODEL,
-        messages: [
-          {
-            role: "user",
-            content: [
-              { type: "text", text: prompt },
-              { type: "image_url", image_url: { url: `data:${mime};base64,${base64}` } },
-            ],
-          },
-        ],
-        max_completion_tokens: MAX_TOKENS,
-        temperature: 0.1,
-        chat_template_kwargs: { enable_thinking: false },
-      }),
+      body,
     });
-    const cfMs = Math.round(performance.now() - tCf);
+    const tCfEnd = performance.now();
 
     const status = cfResponse.status;
     const headersSnapshot: Record<string, string> = {};
     cfResponse.headers.forEach((v, k) => { headersSnapshot[k] = v; });
 
     const rawBody = await cfResponse.text();
+    const tRecvResp = performance.now();
 
     if (!cfResponse.ok) {
       return NextResponse.json(
@@ -107,8 +107,6 @@ export async function POST(request: Request) {
       );
     }
 
-    const tParse = performance.now();
-
     let responseJson: {
       choices?: Array<{
         message?: { content?: string };
@@ -130,15 +128,10 @@ export async function POST(request: Request) {
         { status: 502 }
       );
     }
+    const tParseEnd = performance.now();
 
     const finishReason = responseJson.choices?.[0]?.finish_reason ?? "unknown";
     const usage = responseJson.usage;
-
-    console.log("=== METRICHE MODELLO ===");
-    console.log(`prompt_tokens: ${usage?.prompt_tokens ?? "N/A"}`);
-    console.log(`completion_tokens: ${usage?.completion_tokens ?? "N/A"}`);
-    console.log(`total_tokens: ${usage?.total_tokens ?? "N/A"}`);
-    console.log(`finish_reason: ${finishReason}`);
 
     const content = (responseJson.choices?.[0]?.message?.content ?? "")
       .replace(/^```json\s*/i, "")
@@ -171,12 +164,27 @@ export async function POST(request: Request) {
         { status: 502 }
       );
     }
-    const parseMs = Math.round(performance.now() - tParse);
+    const tExtract = performance.now();
 
     const suggestion = extractSuggestion(parsed);
+    const tDone = performance.now();
 
-    const tTotal = Math.round(performance.now() - tStart);
-    console.log(`Cloudflare: ${cfMs}ms | parse: ${parseMs}ms | TOTALE: ${tTotal}ms`);
+    const tTotal = Math.round(tDone - tStart);
+
+    console.log("=== PROFILING VERCELL ===");
+    console.log(`5. Ricezione richiesta su Vercel: ${Math.round(tPrep - tRecv)}ms (formData + arrayBuffer)`);
+    console.log(`6a. Ridimensionamento immagine (sharp): ${Math.round(tResizeEnd - tPrep)}ms`);
+    console.log(`6b. Base64: ${Math.round(tB64End - tResizeEnd)}ms`);
+    console.log(`7. Invio Vercel -> Cloudflare (fetch + attesa AI): ${Math.round(tCfEnd - tCfStart)}ms`);
+    console.log(`8. Download risposta Cloudflare: ${Math.round(tRecvResp - tCfEnd)}ms`);
+    console.log(`9a. Parsing JSON risposta: ${Math.round(tParseEnd - tRecvResp)}ms`);
+    console.log(`9b. Estrazione suggestion: ${Math.round(tDone - tExtract)}ms`);
+    console.log(`TOTALE server: ${tTotal}ms`);
+    console.log(`--- Metriche modello ---`);
+    console.log(`prompt_tokens: ${usage?.prompt_tokens ?? "N/A"}`);
+    console.log(`completion_tokens: ${usage?.completion_tokens ?? "N/A"}`);
+    console.log(`total_tokens: ${usage?.total_tokens ?? "N/A"}`);
+    console.log(`finish_reason: ${finishReason}`);
 
     return NextResponse.json({
       success: true,

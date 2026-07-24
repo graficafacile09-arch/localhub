@@ -78,41 +78,44 @@ export default function MerchantProductAiUploader({
     }
   }
 
-  function captureFrame(): File | null {
-    const video = videoRef.current;
-    if (!video || !video.videoWidth) return null;
+  function captureFrame(): Promise<File | null> {
+    return new Promise((resolve) => {
+      const video = videoRef.current;
+      if (!video || !video.videoWidth) { resolve(null); return; }
 
-    let width = video.videoWidth;
-    let height = video.videoHeight;
-    if (width > CAPTURE_WIDTH || height > CAPTURE_HEIGHT) {
-      const ratio = Math.min(CAPTURE_WIDTH / width, CAPTURE_HEIGHT / height);
-      width = Math.round(width * ratio);
-      height = Math.round(height * ratio);
-    }
+      let width = video.videoWidth;
+      let height = video.videoHeight;
+      if (width > CAPTURE_WIDTH || height > CAPTURE_HEIGHT) {
+        const ratio = Math.min(CAPTURE_WIDTH / width, CAPTURE_HEIGHT / height);
+        width = Math.round(width * ratio);
+        height = Math.round(height * ratio);
+      }
 
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext("2d")!;
-    ctx.drawImage(video, 0, 0, width, height);
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(video, 0, 0, width, height);
 
-    canvas.toBlob(
-      (blob) => {
-        stopStream();
-        if (!blob) {
-          fallbackToFileInput();
-          return;
-        }
-        const captured = new File([blob], "camera-capture.jpg", { type: "image/jpeg" });
-        console.log("=== CATTURA FOTOCAMERA ===");
-        console.log(`dimensioni: ${width}x${height}`);
-        console.log(`file: ${(captured.size / 1024).toFixed(1)} KB`);
-        setFileAndPreview(captured);
-      },
-      "image/jpeg",
-      0.85
-    );
-    return null;
+      canvas.toBlob(
+        (blob) => {
+          stopStream();
+          if (!blob) {
+            fallbackToFileInput();
+            resolve(null);
+            return;
+          }
+          const captured = new File([blob], "camera-capture.jpg", { type: "image/jpeg" });
+          console.log("=== CATTURA FOTOCAMERA ===");
+          console.log(`dimensioni: ${width}x${height}`);
+          console.log(`file: ${(captured.size / 1024).toFixed(1)} KB`);
+          setFileAndPreview(captured);
+          resolve(captured);
+        },
+        "image/jpeg",
+        0.85
+      );
+    });
   }
 
   function fallbackToFileInput() {
@@ -129,19 +132,24 @@ export default function MerchantProductAiUploader({
     if (capturingRef.current) return;
     capturingRef.current = true;
 
+    const t0 = performance.now();
     const started = await startCamera();
     if (!started) {
       capturingRef.current = false;
       fallbackToFileInput();
       return;
     }
+    const t1 = performance.now();
 
-    setTimeout(() => {
-      if (capturingRef.current) {
-        captureFrame();
-        capturingRef.current = false;
-      }
-    }, 300);
+    await new Promise((r) => setTimeout(r, 300));
+    const t2 = performance.now();
+    await captureFrame();
+    capturingRef.current = false;
+    const t3 = performance.now();
+
+    console.log("=== PROFILING CLIENT ===");
+    console.log(`1. Apertura fotocamera: ${Math.round(t1 - t0)}ms`);
+    console.log(`2. Scatto immagine (include attesa 300ms): ${Math.round(t3 - t2)}ms`);
   }
 
   async function handleAnalyzeClick() {
@@ -154,25 +162,31 @@ export default function MerchantProductAiUploader({
     setError(null);
     onAnalysisStart?.();
 
+    const t0 = performance.now();
+
     try {
       const { compressImage } = await import("@/lib/client/image-compress");
       const compressed = await compressImage(file);
+      const t1 = performance.now();
+
       const formData = new FormData();
       formData.append("image", compressed.file);
 
-      const response = await fetch(
+      const uploadResponse = await fetch(
         `/api/merchant/stores/${negozioId}/products/vision`,
         { method: "POST", body: formData }
       );
+      const t2 = performance.now();
 
-      const data = (await response.json()) as {
+      const data = (await uploadResponse.json()) as {
         success: boolean;
         suggestion?: ProductVisionSuggestion;
         lowConfidence?: boolean;
         error?: { code?: string; message?: string };
       };
+      const t3 = performance.now();
 
-      if (!response.ok || !data.success || !data.suggestion) {
+      if (!uploadResponse.ok || !data.success || !data.suggestion) {
         if (data.error?.code === "AI_PROVIDER_QUOTA_EXCEEDED") {
           setError("Il servizio di riconoscimento AI è temporaneamente non disponibile. Riprova più tardi.");
           return;
@@ -180,10 +194,19 @@ export default function MerchantProductAiUploader({
         throw new Error(data.error?.message ?? "Errore durante l'analisi dell'immagine.");
       }
 
+      const rendStart = performance.now();
       onResult({
         suggestion: data.suggestion,
         lowConfidence: data.lowConfidence ?? false,
       });
+      const rendEnd = performance.now();
+
+      console.log("=== PROFILING CLIENT ===");
+      console.log(`3. Compressione client: ${Math.round(t1 - t0)}ms`);
+      console.log(`4. Upload browser -> Vercel (attesa risposta): ${Math.round(t2 - t1)}ms`);
+      console.log(`5. Download risposta: ${Math.round(t3 - t2)}ms`);
+      console.log(`10. Rendering React: ${Math.round(rendEnd - rendStart)}ms`);
+      console.log(`TOTALE client: ${Math.round(rendEnd - t0)}ms`);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Errore imprevisto.");
     } finally {
