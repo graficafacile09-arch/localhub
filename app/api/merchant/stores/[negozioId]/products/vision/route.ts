@@ -3,6 +3,7 @@ import sharp from "sharp";
 import { extractSuggestion } from "@/lib/product-assistant/providers/utils";
 import { buildVisionPrompt } from "@/lib/product-assistant/prompts";
 import { checkImageCache, storeInCache } from "@/lib/product-assistant/vision-cache";
+import { callGeminiGeneration } from "@/lib/product-assistant/providers/gemini";
 
 const LOW_CONFIDENCE_THRESHOLD = 60;
 const MAX_TOKENS = 300;
@@ -80,22 +81,22 @@ async function callMoondream(accountId: string, apiToken: string, prompt: string
 export async function POST(request: Request) {
   const tStart = performance.now();
   try {
+    const { searchParams } = new URL(request.url);
+    const modelKey = searchParams.get("model") ?? "gemma";
+    const VALID_KEYS = [...Object.keys(MODELS), "gemini"];
+    if (!VALID_KEYS.includes(modelKey)) {
+      return NextResponse.json(
+        { success: false, error: { code: "INVALID_MODEL", message: `Modello sconosciuto: ${modelKey}. Usa: ${VALID_KEYS.join(", ")}.` } },
+        { status: 400 }
+      );
+    }
+    const modelId = MODELS[modelKey];
     const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
     const apiToken = process.env.CLOUDFLARE_API_TOKEN;
-    if (!accountId || !apiToken) {
+    if (modelKey !== "gemini" && (!accountId || !apiToken)) {
       return NextResponse.json(
         { success: false, error: { code: "CLOUDFLARE_NOT_CONFIGURED", message: "Cloudflare non configurato." } },
         { status: 500 }
-      );
-    }
-
-    const { searchParams } = new URL(request.url);
-    const modelKey = searchParams.get("model") ?? "gemma";
-    const modelId = MODELS[modelKey];
-    if (!modelId) {
-      return NextResponse.json(
-        { success: false, error: { code: "INVALID_MODEL", message: `Modello sconosciuto: ${modelKey}. Usa: ${Object.keys(MODELS).join(", ")}.` } },
-        { status: 400 }
       );
     }
 
@@ -191,10 +192,20 @@ export async function POST(request: Request) {
       tBody: number;
     };
 
-    if (modelKey === "moondream") {
-      responseData = await callMoondream(accountId, apiToken, prompt, base64, mime);
+    if (modelKey === "gemini") {
+      const geminiApiKey = process.env.GEMINI_API_KEY;
+      const geminiModel = process.env.GEMINI_MODEL || "gemini-2.0-flash";
+      if (!geminiApiKey) {
+        return NextResponse.json(
+          { success: false, error: { code: "GEMINI_NOT_CONFIGURED", message: "Gemini API key non configurata." } },
+          { status: 500 }
+        );
+      }
+      responseData = await callGeminiGeneration(geminiApiKey, geminiModel, prompt, base64, mime);
+    } else if (modelKey === "moondream") {
+      responseData = await callMoondream(accountId!, apiToken!, prompt, base64, mime);
     } else {
-      responseData = await callChatCompletions(accountId, apiToken, modelId, prompt, base64, mime);
+      responseData = await callChatCompletions(accountId!, apiToken!, modelId, prompt, base64, mime);
     }
 
     const { status, rawBody, bodySize, latencyHeaders, latencyBody, tBody } = responseData;
@@ -210,17 +221,19 @@ export async function POST(request: Request) {
 
     if (status !== 200) {
       if (status === 429) {
+        const provider = modelKey === "gemini" ? "Gemini" : `Cloudflare (${modelKey})`;
         return NextResponse.json(
-          { success: false, error: { code: "AI_PROVIDER_QUOTA_EXCEEDED", message: `Cloudflare (${modelKey}): quota esaurita HTTP 429.` } },
+          { success: false, error: { code: "AI_PROVIDER_QUOTA_EXCEEDED", message: `${provider}: quota esaurita HTTP 429.` } },
           { status }
         );
       }
+      const providerErr = modelKey === "gemini" ? "Gemini" : `Cloudflare (${modelKey})`;
       return NextResponse.json(
         {
           success: false,
           error: {
             code: "AI_PROVIDER_ERROR",
-            message: `Cloudflare (${modelKey}): HTTP ${status}. Body: ${rawBody.slice(0, 500)}`,
+            message: `${providerErr}: HTTP ${status}. Body: ${rawBody.slice(0, 500)}`,
           },
         },
         { status }
@@ -228,12 +241,13 @@ export async function POST(request: Request) {
     }
 
     if (!rawBody.trim()) {
+      const provider = modelKey === "gemini" ? "Gemini" : `Cloudflare (${modelKey})`;
       return NextResponse.json(
         {
           success: false,
           error: {
             code: "AI_PROVIDER_ERROR",
-            message: `Cloudflare (${modelKey}): body vuoto. HTTP ${status}.`,
+            message: `${provider}: body vuoto. HTTP ${status}.`,
           },
         },
         { status: 502 }
@@ -250,16 +264,26 @@ export async function POST(request: Request) {
       usage?: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number };
       answer?: string;
       error?: { message?: string };
+      candidates?: Array<{
+        content?: { parts?: Array<{ text?: string }> };
+        finishReason?: string;
+      }>;
+      usageMetadata?: {
+        promptTokenCount?: number;
+        candidatesTokenCount?: number;
+        totalTokenCount?: number;
+      };
     };
     try {
       responseJson = JSON.parse(rawBody);
     } catch {
+      const provider = modelKey === "gemini" ? "Gemini" : `Cloudflare (${modelKey})`;
       return NextResponse.json(
         {
           success: false,
           error: {
             code: "AI_PROVIDER_ERROR",
-            message: `Cloudflare (${modelKey}): risposta JSON non valida. HTTP ${status}, body (primi 500): ${rawBody.slice(0, 500)}.`,
+            message: `${provider}: risposta JSON non valida. HTTP ${status}, body (primi 500): ${rawBody.slice(0, 500)}.`,
           },
         },
         { status: 502 }
@@ -267,12 +291,13 @@ export async function POST(request: Request) {
     }
 
     if (responseJson.error) {
+      const provider = modelKey === "gemini" ? "Gemini" : `Cloudflare (${modelKey})`;
       return NextResponse.json(
         {
           success: false,
           error: {
             code: "AI_PROVIDER_ERROR",
-            message: `Cloudflare (${modelKey}): ${responseJson.error.message ?? "Errore sconosciuto"}`,
+            message: `${provider}: ${responseJson.error.message ?? "Errore sconosciuto"}`,
           },
         },
         { status: 502 }
@@ -283,7 +308,18 @@ export async function POST(request: Request) {
     let finishReason: string;
     let usage: { prompt_tokens?: number; completion_tokens?: number; total_tokens?: number } | undefined;
 
-    if (modelKey === "moondream") {
+    if (modelKey === "gemini") {
+      const candidate = responseJson.candidates?.[0];
+      content = candidate?.content?.parts?.[0]?.text ?? "";
+      finishReason = candidate?.finishReason ?? "unknown";
+      usage = responseJson.usageMetadata
+        ? {
+            prompt_tokens: responseJson.usageMetadata.promptTokenCount,
+            completion_tokens: responseJson.usageMetadata.candidatesTokenCount,
+            total_tokens: responseJson.usageMetadata.totalTokenCount,
+          }
+        : undefined;
+    } else if (modelKey === "moondream") {
       content = responseJson.answer ?? "";
       finishReason = content ? "stop" : "unknown";
       usage = undefined;
@@ -298,12 +334,13 @@ export async function POST(request: Request) {
     }
 
     if (!content) {
+      const provider = modelKey === "gemini" ? "Gemini" : `Cloudflare (${modelKey})`;
       return NextResponse.json(
         {
           success: false,
           error: {
             code: "AI_PROVIDER_ERROR",
-            message: `Cloudflare (${modelKey}): risposta vuota. finish_reason: ${finishReason}.`,
+            message: `${provider}: risposta vuota. finish_reason: ${finishReason}.`,
           },
         },
         { status: 502 }
@@ -323,31 +360,35 @@ export async function POST(request: Request) {
     try {
       parsed = JSON.parse(jsonStr);
     } catch {
+      const provider = modelKey === "gemini" ? "Gemini" : `Cloudflare (${modelKey})`;
       return NextResponse.json(
-        { success: false, error: { code: "AI_PROVIDER_ERROR", message: `Cloudflare (${modelKey}): impossibile parsare JSON dalla risposta: ${content.slice(0, 300)}` } },
+        { success: false, error: { code: "AI_PROVIDER_ERROR", message: `${provider}: impossibile parsare JSON dalla risposta: ${content.slice(0, 300)}` } },
         { status: 502 }
       );
     }
     const tParseEnd = performance.now();
 
     const suggestion = extractSuggestion(parsed);
-    storeInCache(bufProcessed, suggestion, modelId).catch(() => {});
+    const cacheModel = modelKey === "gemini" ? "gemini-1.5-flash" : modelId;
+    storeInCache(bufProcessed, suggestion, cacheModel).catch(() => {});
     const tDone = performance.now();
 
     const tTotal = Math.round(tDone - tStart);
 
+    const providerName = modelKey === "gemini" ? "Gemini" : modelKey === "moondream" ? "Moondream" : "Cloudflare";
     console.log("=== PROFILING VERCELL ===");
-    console.log(`Modello: ${modelId}`);
+    console.log(`Provider: ${providerName}`);
+    if (modelId) console.log(`Modello: ${modelId}`);
     console.log(`Crop: ${cropEnabled ? "si (attention 640x640)" : "no (1024 max)"}`);
     console.log(`5. Ricezione richiesta su Vercel: ${Math.round(tPrep - tRecv)}ms (formData + arrayBuffer)`);
     console.log(`   Dimensione upload ricevuto: ${(bufRaw.length / 1024).toFixed(1)} KB`);
     console.log(`6a. Elaborazione immagine (sharp): ${Math.round(tResizeEnd - tPrep)}ms`);
     console.log(`   Dopo sharp: ${(bufProcessed.length / 1024).toFixed(1)} KB (${processedW}x${processedH})`);
     console.log(`6b. Base64: ${Math.round(tB64End - tResizeEnd)}ms`);
-    console.log(`   Body inviato a Cloudflare: ${(bodySize / 1024).toFixed(1)} KB`);
-    console.log(`7a. Invio richiesta -> primi header Cloudflare: ${Math.round(latencyHeaders)}ms`);
-    console.log(`7b. Download body risposta Cloudflare: ${Math.round(latencyBody)}ms`);
-    console.log(`   Dimensione risposta Cloudflare: ${(rawBody.length / 1024).toFixed(1)} KB`);
+    console.log(`   Body inviato a ${providerName}: ${(bodySize / 1024).toFixed(1)} KB`);
+    console.log(`7a. Invio richiesta -> primi header ${providerName}: ${Math.round(latencyHeaders)}ms`);
+    console.log(`7b. Download body risposta ${providerName}: ${Math.round(latencyBody)}ms`);
+    console.log(`   Dimensione risposta ${providerName}: ${(rawBody.length / 1024).toFixed(1)} KB`);
     console.log(`9a. Parsing JSON risposta: ${Math.round(tParseEnd - tParseStart)}ms`);
     console.log(`9b. Estrazione suggestion: ${Math.round(tDone - tParseEnd)}ms`);
     console.log(`TOTALE server: ${tTotal}ms`);

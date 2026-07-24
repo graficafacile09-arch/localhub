@@ -1,6 +1,5 @@
 import type { VisionProvider } from "./providers/base";
 import { CloudflareProvider } from "./providers/cloudflare";
-import { GeminiProvider } from "./providers/gemini";
 import { OpenRouterProvider } from "./providers/openrouter";
 import { ProviderError, type AttemptLog, formatProviderLog } from "./providers/utils";
 import { checkImageCache, storeInCache } from "./vision-cache";
@@ -34,7 +33,7 @@ export type VisionServiceResult =
 
 // ─── Catena fissa di provider ─────────────────────────────────────────────────
 // Cloudflare (Gemma 4) è il provider principale.
-// OpenRouter e Gemini sono solo provider di emergenza.
+// OpenRouter è solo provider di emergenza.
 
 type ProviderEntry = {
   name: string;
@@ -55,17 +54,9 @@ function buildOpenRouter(): VisionProvider | null {
   return new OpenRouterProvider(apiKey, model);
 }
 
-function buildGemini(): VisionProvider | null {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return null;
-  const model = process.env.GEMINI_MODEL ?? "gemini-1.5-flash";
-  return new GeminiProvider(apiKey, model);
-}
-
 const PROVIDER_CHAIN: ProviderEntry[] = [
   { name: "Cloudflare", build: buildCloudflare },
   { name: "OpenRouter", build: buildOpenRouter },
-  { name: "Gemini", build: buildGemini },
 ];
 
 // ─── Entry point del servizio ─────────────────────────────────────────────────
