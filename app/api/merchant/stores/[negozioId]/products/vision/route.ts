@@ -24,6 +24,15 @@ export async function POST(
   }
 
   try {
+    const visionProvider = (process.env.VISION_PROVIDER ?? "gemini").toLowerCase();
+    const orKeyPresent = Boolean(process.env.OPENROUTER_API_KEY);
+    let providerName = "Nessuno";
+    if (visionProvider === "openrouter") providerName = "OpenRouter";
+    else if (visionProvider === "gemini") providerName = "Gemini";
+    log(`VISION_PROVIDER=${process.env.VISION_PROVIDER ?? "non impostato"}`);
+    log(`OPENROUTER_API_KEY presente=${orKeyPresent}`);
+    log(`Provider selezionato=${providerName}`);
+
     // ── Autenticazione ────────────────────────────────────────────────────────
     log("Autenticazione in corso...");
     const user = await getCurrentUser();
