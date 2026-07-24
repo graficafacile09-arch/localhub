@@ -15,6 +15,9 @@ type MerchantProductAiUploaderProps = {
   onAnalysisStart?: () => void;
 };
 
+const CAPTURE_WIDTH = 800;
+const CAPTURE_HEIGHT = 800;
+
 export default function MerchantProductAiUploader({
   negozioId,
   onResult,
@@ -24,12 +27,14 @@ export default function MerchantProductAiUploader({
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [cameraSupported, setCameraSupported] = useState(true);
 
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const capturingRef = useRef(false);
 
-  function handleFileSelected(selected: File | null | undefined) {
+  function setFileAndPreview(selected: File | null) {
     setError(null);
     if (!selected) {
       setFile(null);
@@ -41,17 +46,102 @@ export default function MerchantProductAiUploader({
     setPreview(URL.createObjectURL(selected));
   }
 
-  function handleCameraClick() {
-    // Try to use camera - if it fails, show fallback
+  function handleFileSelected(selected: File | null | undefined) {
+    setFileAndPreview(selected ?? null);
+  }
+
+  function stopStream() {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+  }
+
+  async function startCamera() {
     try {
-      const input = cameraInputRef.current;
-      if (input) {
-        input.click();
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          width: { ideal: CAPTURE_WIDTH },
+          height: { ideal: CAPTURE_HEIGHT },
+          facingMode: "environment",
+        },
+        audio: false,
+      });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
       }
+      return true;
     } catch {
-      setCameraSupported(false);
+      return false;
+    }
+  }
+
+  function captureFrame(): File | null {
+    const video = videoRef.current;
+    if (!video || !video.videoWidth) return null;
+
+    let width = video.videoWidth;
+    let height = video.videoHeight;
+    if (width > CAPTURE_WIDTH || height > CAPTURE_HEIGHT) {
+      const ratio = Math.min(CAPTURE_WIDTH / width, CAPTURE_HEIGHT / height);
+      width = Math.round(width * ratio);
+      height = Math.round(height * ratio);
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d")!;
+    ctx.drawImage(video, 0, 0, width, height);
+
+    canvas.toBlob(
+      (blob) => {
+        stopStream();
+        if (!blob) {
+          fallbackToFileInput();
+          return;
+        }
+        const captured = new File([blob], "camera-capture.jpg", { type: "image/jpeg" });
+        console.log("=== CATTURA FOTOCAMERA ===");
+        console.log(`dimensioni: ${width}x${height}`);
+        console.log(`file: ${(captured.size / 1024).toFixed(1)} KB`);
+        setFileAndPreview(captured);
+      },
+      "image/jpeg",
+      0.85
+    );
+    return null;
+  }
+
+  function fallbackToFileInput() {
+    capturingRef.current = false;
+    stopStream();
+    try {
+      cameraInputRef.current?.click();
+    } catch {
       fileInputRef.current?.click();
     }
+  }
+
+  async function handleCameraClick() {
+    if (capturingRef.current) return;
+    capturingRef.current = true;
+
+    const started = await startCamera();
+    if (!started) {
+      capturingRef.current = false;
+      fallbackToFileInput();
+      return;
+    }
+
+    setTimeout(() => {
+      if (capturingRef.current) {
+        captureFrame();
+        capturingRef.current = false;
+      }
+    }, 300);
   }
 
   async function handleAnalyzeClick() {
@@ -130,7 +220,10 @@ export default function MerchantProductAiUploader({
               </p>
             </button>
 
-            {/* Input nascosto per fotocamera */}
+            {/* Video nascosto per cattura diretta */}
+            <video ref={videoRef} className="hidden" playsInline />
+
+            {/* Input nascosto per fotocamera (fallback) */}
             <input
               ref={cameraInputRef}
               type="file"
