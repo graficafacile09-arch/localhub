@@ -182,6 +182,8 @@ export default function MerchantProductAiUploader({
     setError(null);
     onAnalysisStart?.();
 
+    const photoUrl = URL.createObjectURL(captured);
+
     try {
       const { compressImage } = await import("@/lib/client/image-compress");
       const compressed = await compressImage(captured);
@@ -212,7 +214,7 @@ export default function MerchantProductAiUploader({
       onResult({
         suggestion: data.suggestion,
         lowConfidence: data.lowConfidence ?? false,
-        photoUrl: preview ?? "",
+        photoUrl,
       });
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Errore imprevisto.");
