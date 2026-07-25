@@ -27,9 +27,17 @@ export default function MerchantBottomNav({ storeId: storeIdProp }: MerchantBott
   // Voce AI — la più prominente, posizionata al centro
   const navItems = [
     {
+      key: "home",
+      label: "Home",
+      icon: Home,
+      href: "/",
+      available: true,
+      ai: false,
+    },
+    {
       key: "dashboard",
       label: "Negozio",
-      icon: Home,
+      icon: Store,
       href: storeId ? `/merchant/${storeId}` : "/merchant",
       available: true,
       ai: false,
@@ -71,6 +79,7 @@ export default function MerchantBottomNav({ storeId: storeIdProp }: MerchantBott
 
   function isActive(href: string | null): boolean {
     if (!href) return false;
+    if (href === "/") return pathname === "/";
     if (href === `/merchant/${storeId}`) {
       return pathname === href;
     }

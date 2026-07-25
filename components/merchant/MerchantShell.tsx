@@ -32,7 +32,10 @@ export default function MerchantShell({
       <div className="hidden border-b border-blue-900/15 bg-[linear-gradient(180deg,#1d4ed8_0%,#2563eb_100%)] text-white shadow-lg md:block">
         <div className="h-1 bg-linear-to-r from-cyan-300 via-white to-yellow-300" />
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-4">
-          <div>
+          <div className="flex items-center gap-3">
+            <span className="inline-flex items-center rounded bg-red-600 px-2 py-1 text-xs font-bold text-white">
+              TEST DESKTOP HEADER
+            </span>
             <Link href="/merchant" className="text-2xl font-black tracking-tight text-white">
               Area Commercianti
             </Link>
