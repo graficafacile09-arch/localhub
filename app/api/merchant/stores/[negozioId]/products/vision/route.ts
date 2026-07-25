@@ -4,6 +4,9 @@ import { extractSuggestion } from "@/lib/product-assistant/providers/utils";
 import { buildVisionPrompt } from "@/lib/product-assistant/prompts";
 import { checkImageCache, storeInCache } from "@/lib/product-assistant/vision-cache";
 import { callGeminiGeneration } from "@/lib/product-assistant/providers/gemini";
+import { getCurrentUser } from "@/lib/auth/session";
+import { checkRateLimit } from "@/lib/rate-limiter";
+import { logScan } from "@/lib/scan-log";
 
 const LOW_CONFIDENCE_THRESHOLD = 60;
 const MAX_TOKENS = 300;
@@ -78,11 +81,44 @@ async function callMoondream(accountId: string, apiToken: string, prompt: string
   return { status, rawBody, bodySize, latencyHeaders: tHeaders - tStart, latencyBody: tBody - tHeaders, tBody };
 }
 
-export async function POST(request: Request) {
+export async function POST(
+  request: Request,
+  context: { params: Promise<{ negozioId: string }> }
+) {
   const tStart = performance.now();
   try {
+    const { negozioId } = await context.params;
+
+    // ── Autenticazione ─────────────────────────────────────────────────────
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: { code: "UNAUTHORIZED", message: "Devi effettuare l'accesso per usare la scansione AI." } },
+        { status: 401 }
+      );
+    }
+
+    // ── Rate limiting ───────────────────────────────────────────────────────
+    const rateCheck = await checkRateLimit(user.id);
+    if (!rateCheck.allowed) {
+      await logScan({
+        userId: user.id,
+        negozioId,
+        provider: "rate_limiter",
+        responseTimeMs: Math.round(performance.now() - tStart),
+        cacheHit: false,
+        status: "rate_limited",
+        errorCode: "RATE_LIMITED",
+        errorMessage: rateCheck.reason,
+      });
+      return NextResponse.json(
+        { success: false, error: { code: "RATE_LIMITED", message: rateCheck.reason } },
+        { status: 429 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
-    const modelKey = searchParams.get("model") ?? "gemma";
+    const modelKey = searchParams.get("model") ?? "gemini";
     const VALID_KEYS = [...Object.keys(MODELS), "gemini"];
     if (!VALID_KEYS.includes(modelKey)) {
       return NextResponse.json(
@@ -94,6 +130,16 @@ export async function POST(request: Request) {
     const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
     const apiToken = process.env.CLOUDFLARE_API_TOKEN;
     if (modelKey !== "gemini" && (!accountId || !apiToken)) {
+      logScan({
+        userId: user.id,
+        negozioId,
+        provider: `Cloudflare (${modelKey})`,
+        responseTimeMs: Math.round(performance.now() - tStart),
+        cacheHit: false,
+        status: "error",
+        errorCode: "CLOUDFLARE_NOT_CONFIGURED",
+        errorMessage: "Cloudflare non configurato.",
+      });
       return NextResponse.json(
         { success: false, error: { code: "CLOUDFLARE_NOT_CONFIGURED", message: "Cloudflare non configurato." } },
         { status: 500 }
@@ -160,12 +206,20 @@ export async function POST(request: Request) {
         confidenza: cached.entry.confidence,
       } as any;
 
-      console.log("=== PROFILING VERCELL (CACHE HIT) ===");
-      console.log(`Cache hit: ${cached.entry.product_name} (${cached.entry.model_used}, hit #${cached.entry.hit_count})`);
-      console.log(`Cache lookup: ${Math.round(tCacheEnd - tCacheStart)}ms`);
-      console.log(`TOTALE server: ${Math.round(tCacheEnd - tStart)}ms`);
-
       const res = extractSuggestion(suggestion);
+
+      logScan({
+        userId: user.id,
+        negozioId,
+        provider: "cache",
+        responseTimeMs: Math.round(tCacheEnd - tStart),
+        confidence: res.confidenza,
+        cacheHit: true,
+        imageHash: cached.entry.image_hash,
+        modelUsed: cached.entry.model_used,
+        status: "success",
+      });
+
       return NextResponse.json({
         success: true,
         suggestion: res,
@@ -196,6 +250,16 @@ export async function POST(request: Request) {
       const geminiApiKey = process.env.GEMINI_API_KEY;
       const geminiModel = process.env.GEMINI_MODEL || "gemini-2.0-flash";
       if (!geminiApiKey) {
+        logScan({
+          userId: user.id,
+          negozioId,
+          provider: "Gemini",
+          responseTimeMs: Math.round(performance.now() - tStart),
+          cacheHit: false,
+          status: "error",
+          errorCode: "GEMINI_NOT_CONFIGURED",
+          errorMessage: "Gemini API key non configurata.",
+        });
         return NextResponse.json(
           { success: false, error: { code: "GEMINI_NOT_CONFIGURED", message: "Gemini API key non configurata." } },
           { status: 500 }
@@ -220,20 +284,39 @@ export async function POST(request: Request) {
     }
 
     if (status !== 200) {
+      const provider = modelKey === "gemini" ? "Gemini" : `Cloudflare (${modelKey})`;
       if (status === 429) {
-        const provider = modelKey === "gemini" ? "Gemini" : `Cloudflare (${modelKey})`;
+        logScan({
+          userId: user.id,
+          negozioId,
+          provider,
+          responseTimeMs: Math.round(performance.now() - tStart),
+          cacheHit: false,
+          status: "error",
+          errorCode: "AI_PROVIDER_QUOTA_EXCEEDED",
+          errorMessage: `${provider}: quota esaurita HTTP 429.`,
+        });
         return NextResponse.json(
           { success: false, error: { code: "AI_PROVIDER_QUOTA_EXCEEDED", message: `${provider}: quota esaurita HTTP 429.` } },
           { status }
         );
       }
-      const providerErr = modelKey === "gemini" ? "Gemini" : `Cloudflare (${modelKey})`;
+      logScan({
+        userId: user.id,
+        negozioId,
+        provider,
+        responseTimeMs: Math.round(performance.now() - tStart),
+        cacheHit: false,
+        status: "error",
+        errorCode: "AI_PROVIDER_ERROR",
+        errorMessage: `${provider}: HTTP ${status}.`,
+      });
       return NextResponse.json(
         {
           success: false,
           error: {
             code: "AI_PROVIDER_ERROR",
-            message: `${providerErr}: HTTP ${status}. Body: ${rawBody.slice(0, 500)}`,
+            message: `${provider}: HTTP ${status}. Body: ${rawBody.slice(0, 500)}`,
           },
         },
         { status }
@@ -376,29 +459,7 @@ export async function POST(request: Request) {
     const tTotal = Math.round(tDone - tStart);
 
     const providerName = modelKey === "gemini" ? "Gemini" : modelKey === "moondream" ? "Moondream" : "Cloudflare";
-    console.log("=== PROFILING VERCELL ===");
-    console.log(`Provider: ${providerName}`);
-    if (modelId) console.log(`Modello: ${modelId}`);
-    console.log(`Crop: ${cropEnabled ? "si (attention 640x640)" : "no (1024 max)"}`);
-    console.log(`5. Ricezione richiesta su Vercel: ${Math.round(tPrep - tRecv)}ms (formData + arrayBuffer)`);
-    console.log(`   Dimensione upload ricevuto: ${(bufRaw.length / 1024).toFixed(1)} KB`);
-    console.log(`6a. Elaborazione immagine (sharp): ${Math.round(tResizeEnd - tPrep)}ms`);
-    console.log(`   Dopo sharp: ${(bufProcessed.length / 1024).toFixed(1)} KB (${processedW}x${processedH})`);
-    console.log(`6b. Base64: ${Math.round(tB64End - tResizeEnd)}ms`);
-    console.log(`   Body inviato a ${providerName}: ${(bodySize / 1024).toFixed(1)} KB`);
-    console.log(`7a. Invio richiesta -> primi header ${providerName}: ${Math.round(latencyHeaders)}ms`);
-    console.log(`7b. Download body risposta ${providerName}: ${Math.round(latencyBody)}ms`);
-    console.log(`   Dimensione risposta ${providerName}: ${(rawBody.length / 1024).toFixed(1)} KB`);
-    console.log(`9a. Parsing JSON risposta: ${Math.round(tParseEnd - tParseStart)}ms`);
-    console.log(`9b. Estrazione suggestion: ${Math.round(tDone - tParseEnd)}ms`);
-    console.log(`TOTALE server: ${tTotal}ms`);
-    if (usage) {
-      console.log(`--- Metriche modello ---`);
-      console.log(`prompt_tokens: ${usage.prompt_tokens ?? "N/A"}`);
-      console.log(`completion_tokens: ${usage.completion_tokens ?? "N/A"}`);
-      console.log(`total_tokens: ${usage.total_tokens ?? "N/A"}`);
-    }
-    console.log(`finish_reason: ${finishReason}`);
+    const totalTokens = usage?.total_tokens ?? undefined;
 
     const tempiFasi = {
       upload: Math.round(tRecv - tStart),
@@ -413,6 +474,19 @@ export async function POST(request: Request) {
       totale: Math.round(tDone - tStart),
     };
 
+    logScan({
+      userId: user.id,
+      negozioId,
+      provider: providerName,
+      responseTimeMs: tTotal,
+      confidence: suggestion.confidenza,
+      cacheHit: false,
+      imageHash: undefined,
+      modelUsed: modelKey === "gemini" ? process.env.GEMINI_MODEL || "gemini-2.0-flash" : modelId ?? undefined,
+      totalTokens,
+      status: "success",
+    });
+
     return NextResponse.json({
       success: true,
       suggestion,
@@ -421,6 +495,19 @@ export async function POST(request: Request) {
     });
   } catch (caught: unknown) {
     const message = caught instanceof Error ? caught.message : "Errore sconosciuto.";
+    const userInfo = await getCurrentUser().catch(() => null);
+
+    logScan({
+      userId: userInfo?.id ?? "unknown",
+      negozioId: undefined,
+      provider: "unknown",
+      responseTimeMs: Math.round(performance.now() - tStart),
+      cacheHit: false,
+      status: "error",
+      errorCode: "VISION_FAILED",
+      errorMessage: message,
+    });
+
     return NextResponse.json(
       { success: false, error: { code: "VISION_FAILED", message } },
       { status: 500 }

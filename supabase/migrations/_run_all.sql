@@ -315,3 +315,53 @@ create policy if not exists "vision cache public update"
 notify pgrst, 'reload schema';
 
 commit;
+
+-- ═══════════════════════════════════════════════════════════════════
+-- 8. 20260725_scan_log.sql
+-- ═══════════════════════════════════════════════════════════════════
+begin;
+
+create table if not exists public.scan_log (
+  id uuid primary key default gen_random_uuid(),
+  user_id text not null,
+  negozio_id text,
+  created_at timestamptz not null default now(),
+  provider text not null,
+  response_time_ms integer not null default 0,
+  confidence integer,
+  cache_hit boolean not null default false,
+  error_code text,
+  error_message text,
+  image_hash text,
+  model_used text,
+  total_tokens integer,
+  status text not null default 'success'
+    check (status in ('success', 'error', 'rate_limited'))
+);
+
+create index if not exists scan_log_user_time_idx
+  on public.scan_log (user_id, created_at desc);
+
+create index if not exists scan_log_created_at_idx
+  on public.scan_log (created_at desc);
+
+create index if not exists scan_log_provider_idx
+  on public.scan_log (provider);
+
+alter table public.scan_log enable row level security;
+
+create policy if not exists "scan_log insert own"
+  on public.scan_log for insert
+  with check (user_id = auth.uid()::text);
+
+create policy if not exists "scan_log select own"
+  on public.scan_log for select
+  using (user_id = auth.uid()::text);
+
+create policy if not exists "scan_log admin select all"
+  on public.scan_log for select
+  using (true);
+
+notify pgrst, 'reload schema';
+
+commit;
