@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Camera, Sparkles } from "lucide-react";
+import { Camera } from "lucide-react";
 import MerchantDashboardCards from "@/components/merchant/MerchantDashboardCards";
 import MerchantEmptyState from "@/components/merchant/MerchantEmptyState";
 import MerchantQuickActions from "@/components/merchant/MerchantQuickActions";
