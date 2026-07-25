@@ -65,7 +65,19 @@ export default function MerchantProductAiUploader({
   }
 
   function handleFileSelected(selected: File | null | undefined) {
-    setFileAndPreview(selected ?? null);
+    if (!selected) return;
+    setFileAndPreview(selected);
+    if (autoStart) {
+      handleAutoAnalyze(selected);
+    }
+  }
+
+  function handleUploadFromViewfinder() {
+    stopStream();
+    setShowCamera(false);
+    setStarted(false);
+    capturingRef.current = false;
+    fileInputRef.current?.click();
   }
 
   function stopStream() {
@@ -310,24 +322,50 @@ export default function MerchantProductAiUploader({
           <span className="text-xs text-white/70">Inquadra il prodotto...</span>
         </div>
       </div>
-
-      {/* ─── PULSANTE INIZIALE (solo modalità manuale) ─── */}
-      {showInitial && (
+      {showViewfinder && (
         <button
           type="button"
-          onClick={handleCameraClick}
-          className="group relative w-full overflow-hidden rounded-[2rem] border-2 border-dashed border-blue-300 bg-gradient-to-b from-blue-50 to-blue-50/60 px-6 py-10 text-center transition-all hover:border-blue-400 hover:shadow-lg hover:shadow-blue-200/50 active:scale-[0.99]"
+          onClick={handleUploadFromViewfinder}
+          className="w-full rounded-2xl border-2 border-dashed border-emerald-300 bg-gradient-to-b from-emerald-50 to-emerald-50/60 px-4 py-3 text-sm font-semibold text-emerald-700 transition hover:border-emerald-400 hover:shadow-lg hover:shadow-emerald-200/50 active:scale-[0.99]"
         >
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-[2rem] bg-gradient-to-b from-blue-500 to-blue-700 shadow-lg shadow-blue-300/50 transition-transform duration-300 group-hover:scale-110 group-hover:shadow-xl group-hover:shadow-blue-400/50">
-            <Camera className="h-9 w-9 text-white" />
-          </div>
-          <p className="mt-5 text-xl font-bold text-slate-800">
-            Scatta foto del prodotto
-          </p>
-          <p className="mt-1.5 text-sm text-slate-500">
-            Inquadra il prodotto, l&apos;AI lo riconosce in pochi secondi
-          </p>
+          <ImageIcon className="mr-2 inline-block h-5 w-5" />
+          Carica immagine
         </button>
+      )}
+
+      {/* ─── PULSANTI INIZIALI (solo modalità manuale) ─── */}
+      {showInitial && (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={handleCameraClick}
+            className="group relative w-full overflow-hidden rounded-[2rem] border-2 border-dashed border-blue-300 bg-gradient-to-b from-blue-50 to-blue-50/60 px-4 py-8 text-center transition-all hover:border-blue-400 hover:shadow-lg hover:shadow-blue-200/50 active:scale-[0.99]"
+          >
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[1.5rem] bg-gradient-to-b from-blue-500 to-blue-700 shadow-lg shadow-blue-300/50 transition-transform duration-300 group-hover:scale-110">
+              <Camera className="h-7 w-7 text-white" />
+            </div>
+            <p className="mt-4 text-lg font-bold text-slate-800">
+              Scatta foto
+            </p>
+            <p className="mt-1 text-xs text-slate-500">
+              Usa la fotocamera
+            </p>
+          </button>
+          <label
+            htmlFor="ai-file-upload"
+            className="group relative w-full cursor-pointer overflow-hidden rounded-[2rem] border-2 border-dashed border-emerald-300 bg-gradient-to-b from-emerald-50 to-emerald-50/60 px-4 py-8 text-center transition-all hover:border-emerald-400 hover:shadow-lg hover:shadow-emerald-200/50 active:scale-[0.99]"
+          >
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[1.5rem] bg-gradient-to-b from-emerald-500 to-emerald-700 shadow-lg shadow-emerald-300/50 transition-transform duration-300 group-hover:scale-110">
+              <ImageIcon className="h-7 w-7 text-white" />
+            </div>
+            <p className="mt-4 text-lg font-bold text-slate-800">
+              Carica immagine
+            </p>
+            <p className="mt-1 text-xs text-slate-500">
+              Scegli una foto dal dispositivo
+            </p>
+          </label>
+          </div>
       )}
 
       {/* Input nascosto per fotocamera (fallback) */}
@@ -341,6 +379,7 @@ export default function MerchantProductAiUploader({
         aria-label="Scatta foto con la fotocamera"
       />
       <input
+        id="ai-file-upload"
         ref={fileInputRef}
         type="file"
         accept="image/*"
@@ -348,20 +387,6 @@ export default function MerchantProductAiUploader({
         className="hidden"
         aria-label="Carica immagine dalla galleria"
       />
-
-      {/* Fallback carica immagine (solo modalità manuale) */}
-      {showInitial && (
-        <div className="text-center">
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="inline-flex items-center gap-2 text-sm font-medium text-slate-400 transition hover:text-blue-600"
-          >
-            <ImageIcon className="h-4 w-4" />
-            oppure carica un&apos;immagine
-          </button>
-        </div>
-      )}
 
       {/* ─── ANTEPRIMA + ANALIZZA (solo modalità manuale) ─── */}
       {showPreviewOnly && (

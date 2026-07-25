@@ -118,7 +118,7 @@ export async function POST(
     }
 
     const { searchParams } = new URL(request.url);
-    const modelKey = searchParams.get("model") ?? "gemini";
+    const modelKey = searchParams.get("model") ?? "gemma";
     const VALID_KEYS = [...Object.keys(MODELS), "gemini"];
     if (!VALID_KEYS.includes(modelKey)) {
       return NextResponse.json(
