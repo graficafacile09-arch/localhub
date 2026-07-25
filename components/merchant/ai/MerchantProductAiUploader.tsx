@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Camera, ImageIcon, Upload, Sparkles } from "lucide-react";
 import type { ProductVisionSuggestion } from "@/lib/product-assistant/vision";
 
@@ -27,12 +27,19 @@ export default function MerchantProductAiUploader({
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showCamera, setShowCamera] = useState(false);
 
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const capturingRef = useRef(false);
+
+  useEffect(() => {
+    return () => {
+      stopStream();
+    };
+  }, []);
 
   function setFileAndPreview(selected: File | null) {
     setError(null);
@@ -141,15 +148,30 @@ export default function MerchantProductAiUploader({
     }
     const t1 = performance.now();
 
-    await new Promise((r) => setTimeout(r, 300));
-    const t2 = performance.now();
-    await captureFrame();
+    setShowCamera(true);
     capturingRef.current = false;
-    const t3 = performance.now();
 
     console.log("=== PROFILING CLIENT ===");
     console.log(`1. Apertura fotocamera: ${Math.round(t1 - t0)}ms`);
-    console.log(`2. Scatto immagine (include attesa 300ms): ${Math.round(t3 - t2)}ms`);
+  }
+
+  async function handleCaptureClick() {
+    if (capturingRef.current) return;
+    capturingRef.current = true;
+
+    const t0 = performance.now();
+    await captureFrame();
+    setShowCamera(false);
+    capturingRef.current = false;
+    const t1 = performance.now();
+
+    console.log(`Cattura immagine: ${Math.round(t1 - t0)}ms`);
+  }
+
+  function handleCancelCamera() {
+    stopStream();
+    setShowCamera(false);
+    capturingRef.current = false;
   }
 
   async function handleAnalyzeClick() {
@@ -229,8 +251,63 @@ export default function MerchantProductAiUploader({
           </div>
         )}
 
+        {/* ─── VIDEOCAMERA VIEWFINDER ─── */}
+        {showCamera && (
+          <div className="relative bg-black rounded-2xl overflow-hidden">
+            <video
+              ref={videoRef}
+              className="w-full aspect-square object-cover"
+              playsInline
+              autoPlay
+              muted
+            />
+
+            {/* Overlay scuro con foro centrale per crop */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div
+                className="aspect-square w-4/5 rounded-xl"
+                style={{ boxShadow: "0 0 0 9999px rgba(0,0,0,0.5)" }}
+              />
+            </div>
+
+            {/* Cornice crop */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="aspect-square w-4/5 rounded-xl border-2 border-white/70" />
+            </div>
+
+            {/* Angoli crop */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="aspect-square w-4/5">
+                <div className="absolute top-0 left-0 h-8 w-8 rounded-tl-xl border-t-4 border-l-4 border-white" />
+                <div className="absolute top-0 right-0 h-8 w-8 rounded-tr-xl border-t-4 border-r-4 border-white" />
+                <div className="absolute bottom-0 left-0 h-8 w-8 rounded-bl-xl border-b-4 border-l-4 border-white" />
+                <div className="absolute bottom-0 right-0 h-8 w-8 rounded-br-xl border-b-4 border-r-4 border-white" />
+              </div>
+            </div>
+
+            {/* Pulsanti capture */}
+            <div className="absolute bottom-6 left-0 right-0 flex flex-col items-center gap-4">
+              <button
+                type="button"
+                onClick={handleCaptureClick}
+                className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-white/80 bg-white/20 transition-all active:scale-90 hover:bg-white/30"
+                aria-label="Scatta foto"
+              >
+                <div className="h-12 w-12 rounded-full bg-white" />
+              </button>
+              <button
+                type="button"
+                onClick={handleCancelCamera}
+                className="text-sm font-medium text-white/80 transition hover:text-white"
+              >
+                Annulla
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* ─── PULSANTE FOTOCAMERA PRINCIPALE ─── */}
-        {!preview && !loading && (
+        {!preview && !loading && !showCamera && (
           <div className="space-y-4">
             <button
               type="button"
@@ -247,9 +324,6 @@ export default function MerchantProductAiUploader({
                 Inquadra il prodotto, l&apos;AI lo riconosce in pochi secondi
               </p>
             </button>
-
-            {/* Video nascosto per cattura diretta */}
-            <video ref={videoRef} className="hidden" playsInline />
 
             {/* Input nascosto per fotocamera (fallback) */}
             <input
