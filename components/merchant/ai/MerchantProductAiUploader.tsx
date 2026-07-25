@@ -65,22 +65,18 @@ export default function MerchantProductAiUploader({
   }
 
   function handleFileSelected(selected: File | null | undefined) {
-    console.log("[handleFileSelected] selected:", selected?.name ?? "null/undefined", "autoStart:", autoStart);
     if (!selected) return;
     setFileAndPreview(selected);
     if (autoStart) {
-      console.log("[handleFileSelected] calling handleAutoAnalyze");
       handleAutoAnalyze(selected);
     }
   }
 
   function handleUploadFromViewfinder() {
-    console.log("[handleUploadFromViewfinder] clicked");
     stopStream();
     setShowCamera(false);
     setStarted(false);
     capturingRef.current = false;
-    console.log("[handleUploadFromViewfinder] clicking fileInputRef");
     fileInputRef.current?.click();
   }
 
@@ -194,7 +190,6 @@ export default function MerchantProductAiUploader({
   }
 
   async function handleAutoAnalyze(captured: File) {
-    console.log("[handleAutoAnalyze] called with file:", captured.name, captured.size);
     setLoading(true);
     setError(null);
     onAnalysisStart?.();
