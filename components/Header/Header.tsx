@@ -22,9 +22,10 @@ export default function Header() {
           <div className="md:hidden">
             <Link
               href="/merchant"
-              className="text-sm font-semibold text-blue-600 hover:underline"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-blue-700"
             >
-              Area Commercianti
+              <span className="text-base leading-none">+</span>
+              Aggiungi Prodotto
             </Link>
           </div>
         </div>
@@ -49,8 +50,9 @@ export default function Header() {
             Assistente AI
           </Link>
 
-          <Link href="/merchant" className="hidden md:inline-block text-blue-600 hover:text-blue-700 transition">
-            Area Commercianti
+          <Link href="/merchant" className="hidden md:inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-blue-700">
+            <span className="text-base leading-none">+</span>
+            Aggiungi Prodotto
           </Link>
 
         </nav>

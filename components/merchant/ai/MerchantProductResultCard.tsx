@@ -114,7 +114,7 @@ export default function MerchantProductResultCard({
         </div>
       )}
 
-      {/* Corpo scheda */}
+      {/* Corpo scheda — layout scheda prodotto */}
       <div className="p-5">
         <div className="flex gap-4">
           {/* Miniatura foto */}
@@ -138,7 +138,7 @@ export default function MerchantProductResultCard({
               {suggestion.nome}
             </h2>
             {suggestion.marca && (
-              <p className="mt-0.5 text-sm font-semibold text-slate-500">{suggestion.marca}</p>
+              <p className="text-sm font-semibold text-slate-500">{suggestion.marca}</p>
             )}
             <div className="mt-1.5 flex flex-wrap items-center gap-2">
               <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700">
@@ -148,6 +148,16 @@ export default function MerchantProductResultCard({
                 <span className="text-xs text-slate-400">{suggestion.sottocategoria}</span>
               )}
             </div>
+
+            {/* Prezzo ben visibile — subito sotto i dati prima della descrizione */}
+            {suggestion.prezzoSuggerito != null && (
+              <div className="mt-3 flex items-baseline gap-2 rounded-xl bg-emerald-50 px-3 py-2">
+                <span className="text-2xl font-black text-emerald-800">
+                  €{suggestion.prezzoSuggerito.toFixed(2)}
+                </span>
+                <span className="text-xs text-emerald-600">prezzo indicativo</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -156,16 +166,6 @@ export default function MerchantProductResultCard({
           <p className="mt-4 text-sm leading-6 text-slate-600">
             {suggestion.descrizione}
           </p>
-        )}
-
-        {/* Prezzo */}
-        {suggestion.prezzoSuggerito != null && (
-          <div className="mt-4 flex items-baseline gap-1">
-            <span className="text-2xl font-black text-slate-900">
-              €{suggestion.prezzoSuggerito.toFixed(2)}
-            </span>
-            <span className="text-xs text-slate-400">prezzo indicativo</span>
-          </div>
         )}
 
         {/* Error */}

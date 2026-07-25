@@ -284,10 +284,10 @@ export default function MerchantProductAiUploader({
       )}
 
       {/* ─── VIEWFINDER ─── */}
-      <div className={`relative bg-black rounded-2xl overflow-hidden ${showViewfinder ? '' : 'hidden'}`}>
+      <div className={`relative bg-black rounded-2xl overflow-hidden pointer-events-none select-none ${showViewfinder ? '' : 'hidden'}`}>
         <video
           ref={videoRef}
-          className="w-full aspect-square object-cover"
+          className="w-full aspect-square object-cover pointer-events-none"
           playsInline
           muted
         />
@@ -317,7 +317,7 @@ export default function MerchantProductAiUploader({
           onClick={handleCameraClick}
           className="group relative w-full overflow-hidden rounded-[2rem] border-2 border-dashed border-blue-300 bg-gradient-to-b from-blue-50 to-blue-50/60 px-6 py-10 text-center transition-all hover:border-blue-400 hover:shadow-lg hover:shadow-blue-200/50 active:scale-[0.99]"
         >
-          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-[2rem] bg-gradient-to-b from-blue-500 to-blue-600 shadow-lg shadow-blue-300/50 transition-transform duration-300 group-hover:scale-110 group-hover:shadow-xl group-hover:shadow-blue-400/50">
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-[2rem] bg-gradient-to-b from-blue-500 to-blue-700 shadow-lg shadow-blue-300/50 transition-transform duration-300 group-hover:scale-110 group-hover:shadow-xl group-hover:shadow-blue-400/50">
             <Camera className="h-9 w-9 text-white" />
           </div>
           <p className="mt-5 text-xl font-bold text-slate-800">

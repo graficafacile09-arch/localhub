@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, Sparkles } from "lucide-react";
+import Link from "next/link";
+import { ArrowLeft, Home, Sparkles } from "lucide-react";
 import type { ProductVisionSuggestion } from "@/lib/product-assistant/vision";
 import MerchantProductAiUploader from "./MerchantProductAiUploader";
 import MerchantProductResultCard from "./MerchantProductResultCard";
@@ -40,13 +41,17 @@ export default function MerchantProductAiWizard({ negozioId }: MerchantProductAi
 
   return (
     <div className="space-y-4">
-      {/* Header minimale */}
+      {/* Header minimale + Home */}
       {showScanner && (
         <div className="flex items-center gap-3 rounded-2xl bg-gradient-to-b from-blue-500 to-blue-700 px-5 py-4 text-white shadow-lg shadow-blue-500/30">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 backdrop-blur-sm">
-            <Sparkles className="h-5 w-5" />
-          </div>
-          <div>
+          <Link
+            href={`/merchant/${negozioId}`}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15 backdrop-blur-sm transition hover:bg-white/25"
+            aria-label="Torna alla dashboard"
+          >
+            <Home className="h-5 w-5" />
+          </Link>
+          <div className="flex-1">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-200">
               Assistente AI
             </p>
