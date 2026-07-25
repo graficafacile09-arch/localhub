@@ -318,20 +318,18 @@ export default function MerchantProductAiUploader({
             <div className="absolute bottom-0 right-0 h-8 w-8 rounded-br-xl border-b-4 border-r-4 border-white" />
           </div>
         </div>
-        <div className="absolute bottom-4 left-0 right-0 text-center">
+        <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 pb-3 pt-8 bg-gradient-to-t from-black/60 to-transparent">
           <span className="text-xs text-white/70">Inquadra il prodotto...</span>
+          <button
+            type="button"
+            onClick={handleUploadFromViewfinder}
+            className="pointer-events-auto flex items-center gap-1.5 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/30 active:scale-[0.97]"
+          >
+            <ImageIcon className="h-3.5 w-3.5" />
+            Carica immagine
+          </button>
         </div>
       </div>
-      {showViewfinder && (
-        <button
-          type="button"
-          onClick={handleUploadFromViewfinder}
-          className="w-full rounded-2xl border-2 border-dashed border-emerald-300 bg-gradient-to-b from-emerald-50 to-emerald-50/60 px-4 py-3 text-sm font-semibold text-emerald-700 transition hover:border-emerald-400 hover:shadow-lg hover:shadow-emerald-200/50 active:scale-[0.99]"
-        >
-          <ImageIcon className="mr-2 inline-block h-5 w-5" />
-          Carica immagine
-        </button>
-      )}
 
       {/* ─── PULSANTI INIZIALI (solo modalità manuale) ─── */}
       {showInitial && (
