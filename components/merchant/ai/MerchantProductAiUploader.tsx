@@ -276,20 +276,21 @@ export default function MerchantProductAiUploader({
   const showPreviewOnly = preview && !loading && !autoStart;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {error && (
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-xs text-red-700">
           {error}
         </div>
       )}
 
       {/* ─── VIEWFINDER ─── */}
-      <div className={`relative bg-black rounded-2xl overflow-hidden pointer-events-none select-none ${showViewfinder ? '' : 'hidden'}`}>
+      <div className={`relative bg-black rounded-2xl overflow-hidden pointer-events-none select-none touch-none ${showViewfinder ? '' : 'hidden'}`}>
         <video
           ref={videoRef}
           className="w-full aspect-square object-cover pointer-events-none"
           playsInline
           muted
+          disablePictureInPicture
         />
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="aspect-square w-4/5 rounded-xl" style={{ boxShadow: "0 0 0 9999px rgba(0,0,0,0.5)" }} />

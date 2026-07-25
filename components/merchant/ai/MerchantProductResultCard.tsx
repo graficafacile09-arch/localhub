@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, CheckCircle2, Pencil, RotateCcw, Sparkles } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Pencil, RotateCcw } from "lucide-react";
 import type { ProductVisionSuggestion } from "@/lib/product-assistant/vision";
 
 type ResultCardProps = {
@@ -77,16 +77,16 @@ export default function MerchantProductResultCard({
 
   if (published) {
     return (
-      <div className="rounded-[2rem] border border-emerald-200 bg-emerald-50 p-8 text-center">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500">
-          <CheckCircle2 className="h-7 w-7 text-white" />
+      <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-6 text-center">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500">
+          <CheckCircle2 className="h-6 w-6 text-white" />
         </div>
-        <p className="mt-4 text-lg font-bold text-emerald-900">Prodotto pubblicato</p>
+        <p className="mt-3 text-base font-bold text-emerald-900">Prodotto pubblicato</p>
         <p className="mt-1 text-sm text-emerald-700">{suggestion.nome} è ora nel catalogo.</p>
         <button
           type="button"
           onClick={onRetake}
-          className="mt-6 inline-flex items-center gap-2 rounded-2xl border border-emerald-300 bg-white px-5 py-3 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-50"
+          className="mt-4 inline-flex items-center gap-2 rounded-xl border border-emerald-300 bg-white px-4 py-2.5 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-50"
         >
           <RotateCcw className="h-4 w-4" />
           Aggiungi un altro prodotto
@@ -96,66 +96,66 @@ export default function MerchantProductResultCard({
   }
 
   return (
-    <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
-      {/* Confidenza banner */}
-      {lowConfidence ? (
-        <div className="flex items-start gap-3 border-b border-amber-100 bg-amber-50 px-5 py-3">
-          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
-          <p className="text-xs leading-5 text-amber-800">
-            Riconoscimento a bassa confidenza ({suggestion.confidenza}%). Verifica i dati prima di pubblicare.
-          </p>
-        </div>
-      ) : (
-        <div className="flex items-center gap-3 border-b border-emerald-100 bg-emerald-50 px-5 py-2.5">
-          <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-xs font-bold text-white">
-            {suggestion.confidenza}%
-          </span>
-          <p className="text-xs font-semibold text-emerald-800">Prodotto riconosciuto</p>
-        </div>
-      )}
+    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      {/* Confidenza banner — compatto */}
+      <div className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold ${lowConfidence ? "bg-amber-50 text-amber-800" : "bg-emerald-50 text-emerald-800"}`}>
+        {lowConfidence ? (
+          <>
+            <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+            <span>Bassa confidenza ({suggestion.confidenza}%) — verifica i dati</span>
+          </>
+        ) : (
+          <>
+            <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-[10px] font-bold text-white">
+              {suggestion.confidenza}%
+            </span>
+            <span>Prodotto riconosciuto</span>
+          </>
+        )}
+      </div>
 
-      {/* Corpo scheda — layout scheda prodotto */}
-      <div className="p-5">
+      <div className="p-4">
+        {/* Riga superiore: immagine + dati */}
         <div className="flex gap-4">
-          {/* Miniatura foto */}
           <div className="shrink-0">
             {photoUrl ? (
               <img
                 src={photoUrl}
-                alt="Foto prodotto"
-                className="h-24 w-24 rounded-xl object-cover border border-slate-200"
+                alt=""
+                className="h-[120px] w-[120px] rounded-xl object-cover border border-slate-200"
               />
             ) : (
-              <div className="flex h-24 w-24 items-center justify-center rounded-xl bg-slate-100 text-slate-400">
-                <Sparkles className="h-6 w-6" />
+              <div className="flex h-[120px] w-[120px] items-center justify-center rounded-xl bg-slate-100 text-slate-400 text-sm font-semibold">
+                No img
               </div>
             )}
           </div>
 
-          {/* Dati prodotto */}
-          <div className="min-w-0 flex-1">
-            <h2 className="text-lg font-black tracking-tight text-slate-900 truncate">
-              {suggestion.nome}
-            </h2>
-            {suggestion.marca && (
-              <p className="text-sm font-semibold text-slate-500">{suggestion.marca}</p>
-            )}
-            <div className="mt-1.5 flex flex-wrap items-center gap-2">
-              <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-semibold text-blue-700">
-                {suggestion.categoria}
-              </span>
-              {suggestion.sottocategoria && (
-                <span className="text-xs text-slate-400">{suggestion.sottocategoria}</span>
+          <div className="flex min-w-0 flex-1 flex-col justify-between">
+            <div className="min-w-0">
+              <h2 className="text-base font-black tracking-tight text-slate-900 truncate">
+                {suggestion.nome}
+              </h2>
+              {suggestion.marca && (
+                <p className="text-xs font-semibold text-slate-500 truncate">{suggestion.marca}</p>
               )}
+              <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                <span className="rounded-md bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700 leading-tight">
+                  {suggestion.categoria}
+                </span>
+                {suggestion.sottocategoria && (
+                  <span className="text-[11px] text-slate-400">{suggestion.sottocategoria}</span>
+                )}
+              </div>
             </div>
 
-            {/* Prezzo ben visibile — subito sotto i dati prima della descrizione */}
+            {/* Prezzo — elemento principale */}
             {suggestion.prezzoSuggerito != null && (
-              <div className="mt-3 flex items-baseline gap-2 rounded-xl bg-emerald-50 px-3 py-2">
-                <span className="text-2xl font-black text-emerald-800">
+              <div className="mt-3 inline-flex items-baseline gap-1.5 rounded-lg bg-emerald-50 px-3 py-2 self-start">
+                <span className="text-xl font-black text-emerald-800">
                   €{suggestion.prezzoSuggerito.toFixed(2)}
                 </span>
-                <span className="text-xs text-emerald-600">prezzo indicativo</span>
+                <span className="text-[10px] font-medium text-emerald-600">prezzo indicativo</span>
               </div>
             )}
           </div>
@@ -163,42 +163,42 @@ export default function MerchantProductResultCard({
 
         {/* Descrizione */}
         {suggestion.descrizione && (
-          <p className="mt-4 text-sm leading-6 text-slate-600">
+          <p className="mt-3 text-sm leading-5 text-slate-600 line-clamp-3">
             {suggestion.descrizione}
           </p>
         )}
 
         {/* Error */}
         {error && (
-          <div className="mt-3 rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-xs text-red-700">
+          <div className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
             {error}
           </div>
         )}
 
         {/* Azioni */}
-        <div className="mt-5 flex gap-3">
+        <div className="mt-4 flex gap-2">
           <button
             type="button"
             onClick={handlePublish}
             disabled={publishing}
-            className="flex-1 rounded-2xl bg-gradient-to-b from-blue-500 to-blue-700 px-4 py-3 text-sm font-bold text-white shadow-lg shadow-blue-500/30 transition hover:shadow-xl hover:shadow-blue-500/40 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
+            className="flex-1 rounded-xl bg-gradient-to-b from-blue-500 to-blue-700 px-3 py-2.5 text-sm font-bold text-white shadow shadow-blue-500/20 transition hover:shadow-md hover:shadow-blue-500/30 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {publishing ? "Pubblicazione..." : "Pubblica"}
           </button>
           <button
             type="button"
             onClick={onEdit}
-            className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"
+            className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"
           >
-            <Pencil className="h-4 w-4" />
+            <Pencil className="h-3.5 w-3.5" />
             Modifica
           </button>
           <button
             type="button"
             onClick={onRetake}
-            className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"
+            className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"
           >
-            <RotateCcw className="h-4 w-4" />
+            <RotateCcw className="h-3.5 w-3.5" />
             Riprova
           </button>
         </div>

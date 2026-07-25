@@ -40,22 +40,22 @@ export default function MerchantProductAiWizard({ negozioId }: MerchantProductAi
   const showForm = editing && result;
 
   return (
-    <div className="space-y-4">
-      {/* Header minimale + Home */}
+    <div className="space-y-3">
+      {/* Header minimale + Home — compatto */}
       {showScanner && (
-        <div className="flex items-center gap-3 rounded-2xl bg-gradient-to-b from-blue-500 to-blue-700 px-5 py-4 text-white shadow-lg shadow-blue-500/30">
+        <div className="flex items-center gap-3 rounded-2xl bg-gradient-to-b from-blue-500 to-blue-700 px-4 py-3 text-white shadow shadow-blue-500/20">
           <Link
             href={`/merchant/${negozioId}`}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15 backdrop-blur-sm transition hover:bg-white/25"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/15 backdrop-blur-sm transition hover:bg-white/25"
             aria-label="Torna alla dashboard"
           >
-            <Home className="h-5 w-5" />
+            <Home className="h-4 w-4" />
           </Link>
           <div className="flex-1">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-200">
+            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-blue-200">
               Assistente AI
             </p>
-            <p className="text-sm font-bold">Inquadra il prodotto per la scansione</p>
+            <p className="text-xs font-semibold text-white/90">Inquadra il prodotto</p>
           </div>
         </div>
       )}

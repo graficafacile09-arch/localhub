@@ -81,14 +81,14 @@ export default function MerchantBottomNav({ storeId: storeIdProp }: MerchantBott
     <>
       {/* ── Bottom Navigation Bar ────────────────────────────────────────────── */}
       <nav
-        className="fixed bottom-0 left-0 right-0 z-50 md:hidden"
+        className="fixed bottom-0 left-0 right-0 z-[60] md:hidden"
         aria-label="Navigazione area commercianti mobile"
       >
         <div
           className="border-t border-slate-200/80 bg-white/95 shadow-[0_-1px_0_0_rgba(0,0,0,0.06),0_-8px_32px_rgba(15,23,42,0.10)] backdrop-blur-md"
           style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
         >
-          <div className="flex items-end justify-around px-1 pt-2 pb-2">
+          <div className="flex items-end justify-around px-1 pt-2 pb-2 touch-manipulation">
             {navItems.map((item) => {
               const Icon = item.icon;
               const active = item.href ? isActive(item.href) : false;

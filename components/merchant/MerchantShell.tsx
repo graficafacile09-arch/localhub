@@ -59,7 +59,7 @@ export default function MerchantShell({
       </div>
 
       {/* ── Layout principale ─────────────────────────────────────────────────── */}
-      <div className="mx-auto grid max-w-7xl gap-6 px-4 py-4 md:grid-cols-[280px_minmax(0,1fr)] md:px-6 md:py-6">
+      <div className="mx-auto grid max-w-7xl gap-4 px-4 py-3 md:grid-cols-[280px_minmax(0,1fr)] md:px-6 md:py-5">
 
         {/* Sidebar — visibile solo su desktop/tablet ─────────────────────────── */}
         <aside className="hidden space-y-5 md:block">
@@ -107,7 +107,7 @@ export default function MerchantShell({
         </aside>
 
         {/* Contenuto principale ──────────────────────────────────────────────── */}
-        <section className="min-w-0 space-y-4 md:space-y-6">
+        <section className="min-w-0 space-y-3">
           {banner ? (
             <div className="rounded-3xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
               {banner}
