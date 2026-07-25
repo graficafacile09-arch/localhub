@@ -139,39 +139,30 @@ export default function MerchantProductAiUploader({
     if (capturingRef.current) return;
     capturingRef.current = true;
 
+    setShowCamera(true);
+    await new Promise((r) => setTimeout(r, 100));
+
     const t0 = performance.now();
     const started = await startCamera();
     if (!started) {
       capturingRef.current = false;
+      setShowCamera(false);
       fallbackToFileInput();
       return;
     }
     const t1 = performance.now();
 
-    setShowCamera(true);
-    capturingRef.current = false;
-
-    console.log("=== PROFILING CLIENT ===");
-    console.log(`1. Apertura fotocamera: ${Math.round(t1 - t0)}ms`);
-  }
-
-  async function handleCaptureClick() {
-    if (capturingRef.current) return;
-    capturingRef.current = true;
-
-    const t0 = performance.now();
+    // Mostra l'anteprima della fotocamera per 2 secondi,
+    // così l'utente vede cosa sta inquadrando prima dello scatto
+    await new Promise((r) => setTimeout(r, 2000));
     await captureFrame();
     setShowCamera(false);
     capturingRef.current = false;
-    const t1 = performance.now();
+    const t3 = performance.now();
 
-    console.log(`Cattura immagine: ${Math.round(t1 - t0)}ms`);
-  }
-
-  function handleCancelCamera() {
-    stopStream();
-    setShowCamera(false);
-    capturingRef.current = false;
+    console.log("=== PROFILING CLIENT ===");
+    console.log(`1. Apertura fotocamera: ${Math.round(t1 - t0)}ms`);
+    console.log(`2. Auto-capture dopo preview: ${Math.round(t3 - t1)}ms`);
   }
 
   async function handleAnalyzeClick() {
@@ -251,60 +242,42 @@ export default function MerchantProductAiUploader({
           </div>
         )}
 
-        {/* ─── VIDEOCAMERA VIEWFINDER ─── */}
-        {showCamera && (
-          <div className="relative bg-black rounded-2xl overflow-hidden">
-            <video
-              ref={videoRef}
-              className="w-full aspect-square object-cover"
-              playsInline
-              autoPlay
-              muted
+        {/* ─── VIDEOCAMERA VIEWFINDER (sempre nel DOM, visibilità toggle) ─── */}
+        <div className={`relative bg-black rounded-2xl overflow-hidden ${showCamera ? '' : 'hidden'}`}>
+          <video
+            ref={videoRef}
+            className="w-full aspect-square object-cover"
+            playsInline
+            muted
+          />
+
+          {/* Overlay scuro con foro centrale per crop */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div
+              className="aspect-square w-4/5 rounded-xl"
+              style={{ boxShadow: "0 0 0 9999px rgba(0,0,0,0.5)" }}
             />
+          </div>
 
-            {/* Overlay scuro con foro centrale per crop */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div
-                className="aspect-square w-4/5 rounded-xl"
-                style={{ boxShadow: "0 0 0 9999px rgba(0,0,0,0.5)" }}
-              />
-            </div>
+          {/* Cornice crop */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="aspect-square w-4/5 rounded-xl border-2 border-white/70" />
+          </div>
 
-            {/* Cornice crop */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="aspect-square w-4/5 rounded-xl border-2 border-white/70" />
-            </div>
-
-            {/* Angoli crop */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="aspect-square w-4/5">
-                <div className="absolute top-0 left-0 h-8 w-8 rounded-tl-xl border-t-4 border-l-4 border-white" />
-                <div className="absolute top-0 right-0 h-8 w-8 rounded-tr-xl border-t-4 border-r-4 border-white" />
-                <div className="absolute bottom-0 left-0 h-8 w-8 rounded-bl-xl border-b-4 border-l-4 border-white" />
-                <div className="absolute bottom-0 right-0 h-8 w-8 rounded-br-xl border-b-4 border-r-4 border-white" />
-              </div>
-            </div>
-
-            {/* Pulsanti capture */}
-            <div className="absolute bottom-6 left-0 right-0 flex flex-col items-center gap-4">
-              <button
-                type="button"
-                onClick={handleCaptureClick}
-                className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-white/80 bg-white/20 transition-all active:scale-90 hover:bg-white/30"
-                aria-label="Scatta foto"
-              >
-                <div className="h-12 w-12 rounded-full bg-white" />
-              </button>
-              <button
-                type="button"
-                onClick={handleCancelCamera}
-                className="text-sm font-medium text-white/80 transition hover:text-white"
-              >
-                Annulla
-              </button>
+          {/* Angoli crop */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="aspect-square w-4/5">
+              <div className="absolute top-0 left-0 h-8 w-8 rounded-tl-xl border-t-4 border-l-4 border-white" />
+              <div className="absolute top-0 right-0 h-8 w-8 rounded-tr-xl border-t-4 border-r-4 border-white" />
+              <div className="absolute bottom-0 left-0 h-8 w-8 rounded-bl-xl border-b-4 border-l-4 border-white" />
+              <div className="absolute bottom-0 right-0 h-8 w-8 rounded-br-xl border-b-4 border-r-4 border-white" />
             </div>
           </div>
-        )}
+
+          <div className="absolute bottom-4 left-0 right-0 text-center">
+            <span className="text-xs text-white/70">Inquadra il prodotto...</span>
+          </div>
+        </div>
 
         {/* ─── PULSANTE FOTOCAMERA PRINCIPALE ─── */}
         {!preview && !loading && !showCamera && (

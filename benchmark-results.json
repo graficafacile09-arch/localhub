@@ -1,0 +1,352 @@
+[
+  {
+    "label": "Gemini 2.0 Flash-Lite",
+    "image": "nutella.jpg",
+    "elapsed": 1636,
+    "parsed": {
+      "nome": "Minidisk",
+      "categoria": "Elettronica",
+      "marca": null,
+      "prezzo_suggerito": null,
+      "descrizione": "Illustrazione stilizzata di un supporto di memorizzazione magnetico di colore rosso, simile a un floppy disk.",
+      "confidenza": 40
+    },
+    "error": null,
+    "expected": {
+      "file": "nutella.jpg",
+      "product": "Nutella",
+      "brand": "Ferrero",
+      "category": "Alimentari",
+      "ean": "8000500310428"
+    }
+  },
+  {
+    "label": "Gemini 2.0 Flash-Lite",
+    "image": "coca-cola.jpg",
+    "elapsed": 1073,
+    "parsed": {
+      "nome": "Floppy Disk",
+      "categoria": "Elettronica",
+      "marca": null,
+      "prezzo_suggerito": null,
+      "descrizione": "Rappresentazione stilizzata di un floppy disk rosso, supporto di memorizzazione magnetica vintage per computer.",
+      "confidenza": 50
+    },
+    "error": null,
+    "expected": {
+      "file": "coca-cola.jpg",
+      "product": "Coca-Cola 1.5L",
+      "brand": "Coca-Cola",
+      "category": "Bevande",
+      "ean": "5449000000996"
+    }
+  },
+  {
+    "label": "Gemini 2.0 Flash-Lite",
+    "image": "barilla-spaghetti.jpg",
+    "elapsed": 1320,
+    "parsed": {
+      "nome": "Floppy Disk",
+      "categoria": "Elettronica",
+      "marca": null,
+      "prezzo_suggerito": null,
+      "descrizione": "Rappresentazione stilizzata di un floppy disk magnetico da 3.5 pollici, storico supporto di memorizzazione per computer.",
+      "confidenza": 95
+    },
+    "error": null,
+    "expected": {
+      "file": "barilla-spaghetti.jpg",
+      "product": "Spaghetti n.5",
+      "brand": "Barilla",
+      "category": "Alimentari",
+      "ean": "8076809500019"
+    }
+  },
+  {
+    "label": "Gemini 2.0 Flash-Lite",
+    "image": "mulino-bianco.jpg",
+    "elapsed": 1016,
+    "parsed": {
+      "nome": "Floppy disk 3.5 pollici stilizzato",
+      "categoria": "Elettronica",
+      "marca": null,
+      "prezzo_suggerito": null,
+      "descrizione": "Illustrazione stilizzata di un floppy disk magnetico da 3.5 pollici su sfondo chiaro.",
+      "confidenza": 95
+    },
+    "error": null,
+    "expected": {
+      "file": "mulino-bianco.jpg",
+      "product": "Abbracci",
+      "brand": "Mulino Bianco",
+      "category": "Alimentari",
+      "ean": "8001410000123"
+    }
+  },
+  {
+    "label": "Gemini 2.0 Flash-Lite",
+    "image": "dash.jpg",
+    "elapsed": 1031,
+    "parsed": {
+      "nome": "Floppy disk 3.5 pollici",
+      "categoria": "Elettronica",
+      "marca": null,
+      "prezzo_suggerito": null,
+      "descrizione": "Rappresentazione stilizzata di un floppy disk magnetico da 3.5 pollici, storico supporto di memorizzazione dati per computer.",
+      "confidenza": 95
+    },
+    "error": null,
+    "expected": {
+      "file": "dash.jpg",
+      "product": "Dash",
+      "brand": "Procter & Gamble",
+      "category": "Casa",
+      "ean": "8001410000123"
+    }
+  },
+  {
+    "label": "Gemini 2.0 Flash-Lite",
+    "image": "kinder-bueno.jpg",
+    "elapsed": 1137,
+    "parsed": {
+      "nome": "Floppy Disk 5.25 pollici",
+      "categoria": "Elettronica",
+      "marca": null,
+      "prezzo_suggerito": null,
+      "descrizione": "Un vecchio disco magnetico flessibile da 5,25 pollici utilizzato in passato come supporto di memorizzazione per computer.",
+      "confidenza": 90
+    },
+    "error": null,
+    "expected": {
+      "file": "kinder-bueno.jpg",
+      "product": "Kinder Bueno",
+      "brand": "Ferrero",
+      "category": "Alimentari",
+      "ean": "8000500210001"
+    }
+  },
+  {
+    "label": "Gemini 2.0 Flash-Lite",
+    "image": "estathe.jpg",
+    "elapsed": 1052,
+    "parsed": {
+      "nome": "Floppy disk 3.5 pollici",
+      "categoria": "Elettronica",
+      "marca": null,
+      "prezzo_suggerito": null,
+      "descrizione": "Rappresentazione stilizzata e minimale di un floppy disk magnetico da 3.5 pollici, un vecchio supporto di memorizzazione per computer.",
+      "confidenza": 50
+    },
+    "error": null,
+    "expected": {
+      "file": "estathe.jpg",
+      "product": "Estathé",
+      "brand": "Ferrero",
+      "category": "Bevande",
+      "ean": "8000500310428"
+    }
+  },
+  {
+    "label": "Gemini 2.0 Flash-Lite",
+    "image": "rio-mare.jpg",
+    "elapsed": 1240,
+    "parsed": {
+      "nome": "Floppy Disk 3.5 pollici",
+      "categoria": "Elettronica",
+      "marca": null,
+      "prezzo_suggerito": null,
+      "descrizione": "Unità di memorizzazione magnetica vintage da 3.5 pollici stilizzata in grafica digitale minimalista blu.",
+      "confidenza": 85
+    },
+    "error": null,
+    "expected": {
+      "file": "rio-mare.jpg",
+      "product": "Rio Mare",
+      "brand": "Bolton Group",
+      "category": "Alimentari",
+      "ean": "8002270000123"
+    }
+  },
+  {
+    "label": "Gemini 2.0 Flash-Lite",
+    "image": "san-benedetto.jpg",
+    "elapsed": 1177,
+    "parsed": {
+      "nome": "Floppy disk 3.5 pollici",
+      "categoria": "Elettronica",
+      "marca": null,
+      "prezzo_suggerito": null,
+      "descrizione": "Rappresentazione stilizzata di un floppy disk magnetico da 3.5 pollici, un supporto di memorizzazione dati ormai obsoleto.",
+      "confidenza": 95
+    },
+    "error": null,
+    "expected": {
+      "file": "san-benedetto.jpg",
+      "product": "Acqua San Benedetto",
+      "brand": "San Benedetto",
+      "category": "Bevande",
+      "ean": "8001410000123"
+    }
+  },
+  {
+    "label": "Gemini 2.0 Flash-Lite",
+    "image": "red-bull.jpg",
+    "elapsed": 1001,
+    "parsed": {
+      "nome": "Icona Floppy Disk",
+      "categoria": "Elettronica",
+      "marca": null,
+      "prezzo_suggerito": null,
+      "descrizione": "Rappresentazione grafica stilizzata di un floppy disk magnetico, simbolo storico per il salvataggio dei dati informatici.",
+      "confidenza": 50
+    },
+    "error": null,
+    "expected": {
+      "file": "red-bull.jpg",
+      "product": "Red Bull",
+      "brand": "Red Bull GmbH",
+      "category": "Bevande",
+      "ean": "9006216000123"
+    }
+  },
+  {
+    "label": "Groq Llama 3.2 11B Vision",
+    "image": "nutella.jpg",
+    "elapsed": 180,
+    "parsed": null,
+    "error": "HTTP 404: The model `meta-llama/llama-3.2-11b-vision-instruct` does not exist or you do not have access to it.",
+    "expected": {
+      "file": "nutella.jpg",
+      "product": "Nutella",
+      "brand": "Ferrero",
+      "category": "Alimentari",
+      "ean": "8000500310428"
+    }
+  },
+  {
+    "label": "Groq Llama 3.2 11B Vision",
+    "image": "coca-cola.jpg",
+    "elapsed": 61,
+    "parsed": null,
+    "error": "HTTP 404: The model `meta-llama/llama-3.2-11b-vision-instruct` does not exist or you do not have access to it.",
+    "expected": {
+      "file": "coca-cola.jpg",
+      "product": "Coca-Cola 1.5L",
+      "brand": "Coca-Cola",
+      "category": "Bevande",
+      "ean": "5449000000996"
+    }
+  },
+  {
+    "label": "Groq Llama 3.2 11B Vision",
+    "image": "barilla-spaghetti.jpg",
+    "elapsed": 64,
+    "parsed": null,
+    "error": "HTTP 404: The model `meta-llama/llama-3.2-11b-vision-instruct` does not exist or you do not have access to it.",
+    "expected": {
+      "file": "barilla-spaghetti.jpg",
+      "product": "Spaghetti n.5",
+      "brand": "Barilla",
+      "category": "Alimentari",
+      "ean": "8076809500019"
+    }
+  },
+  {
+    "label": "Groq Llama 3.2 11B Vision",
+    "image": "mulino-bianco.jpg",
+    "elapsed": 61,
+    "parsed": null,
+    "error": "HTTP 404: The model `meta-llama/llama-3.2-11b-vision-instruct` does not exist or you do not have access to it.",
+    "expected": {
+      "file": "mulino-bianco.jpg",
+      "product": "Abbracci",
+      "brand": "Mulino Bianco",
+      "category": "Alimentari",
+      "ean": "8001410000123"
+    }
+  },
+  {
+    "label": "Groq Llama 3.2 11B Vision",
+    "image": "dash.jpg",
+    "elapsed": 62,
+    "parsed": null,
+    "error": "HTTP 404: The model `meta-llama/llama-3.2-11b-vision-instruct` does not exist or you do not have access to it.",
+    "expected": {
+      "file": "dash.jpg",
+      "product": "Dash",
+      "brand": "Procter & Gamble",
+      "category": "Casa",
+      "ean": "8001410000123"
+    }
+  },
+  {
+    "label": "Groq Llama 3.2 11B Vision",
+    "image": "kinder-bueno.jpg",
+    "elapsed": 47,
+    "parsed": null,
+    "error": "HTTP 404: The model `meta-llama/llama-3.2-11b-vision-instruct` does not exist or you do not have access to it.",
+    "expected": {
+      "file": "kinder-bueno.jpg",
+      "product": "Kinder Bueno",
+      "brand": "Ferrero",
+      "category": "Alimentari",
+      "ean": "8000500210001"
+    }
+  },
+  {
+    "label": "Groq Llama 3.2 11B Vision",
+    "image": "estathe.jpg",
+    "elapsed": 65,
+    "parsed": null,
+    "error": "HTTP 404: The model `meta-llama/llama-3.2-11b-vision-instruct` does not exist or you do not have access to it.",
+    "expected": {
+      "file": "estathe.jpg",
+      "product": "Estathé",
+      "brand": "Ferrero",
+      "category": "Bevande",
+      "ean": "8000500310428"
+    }
+  },
+  {
+    "label": "Groq Llama 3.2 11B Vision",
+    "image": "rio-mare.jpg",
+    "elapsed": 62,
+    "parsed": null,
+    "error": "HTTP 404: The model `meta-llama/llama-3.2-11b-vision-instruct` does not exist or you do not have access to it.",
+    "expected": {
+      "file": "rio-mare.jpg",
+      "product": "Rio Mare",
+      "brand": "Bolton Group",
+      "category": "Alimentari",
+      "ean": "8002270000123"
+    }
+  },
+  {
+    "label": "Groq Llama 3.2 11B Vision",
+    "image": "san-benedetto.jpg",
+    "elapsed": 49,
+    "parsed": null,
+    "error": "HTTP 404: The model `meta-llama/llama-3.2-11b-vision-instruct` does not exist or you do not have access to it.",
+    "expected": {
+      "file": "san-benedetto.jpg",
+      "product": "Acqua San Benedetto",
+      "brand": "San Benedetto",
+      "category": "Bevande",
+      "ean": "8001410000123"
+    }
+  },
+  {
+    "label": "Groq Llama 3.2 11B Vision",
+    "image": "red-bull.jpg",
+    "elapsed": 62,
+    "parsed": null,
+    "error": "HTTP 404: The model `meta-llama/llama-3.2-11b-vision-instruct` does not exist or you do not have access to it.",
+    "expected": {
+      "file": "red-bull.jpg",
+      "product": "Red Bull",
+      "brand": "Red Bull GmbH",
+      "category": "Bevande",
+      "ean": "9006216000123"
+    }
+  }
+]

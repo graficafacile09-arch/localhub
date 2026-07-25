@@ -1,0 +1,82 @@
+[
+  {
+    "file": "nutella.jpg",
+    "product": "NUTELLA",
+    "brand": "Ferrero",
+    "category": "Alimentari",
+    "ean": "8000500310107",
+    "color": "#D32F2F"
+  },
+  {
+    "file": "coca-cola.jpg",
+    "product": "COCA-COLA",
+    "brand": "Coca-Cola",
+    "category": "Bevande",
+    "ean": "5449000000996",
+    "color": "#C40000"
+  },
+  {
+    "file": "barilla-spaghetti.jpg",
+    "product": "BARILLA",
+    "brand": "Barilla",
+    "category": "Alimentari",
+    "ean": "8006540010351",
+    "color": "#0056A0"
+  },
+  {
+    "file": "mulino-bianco.jpg",
+    "product": "MULINO BIANCO",
+    "brand": "Barilla",
+    "category": "Alimentari",
+    "ean": "8006540012345",
+    "color": "#FFD700"
+  },
+  {
+    "file": "dash.jpg",
+    "product": "DASH",
+    "brand": "P&G",
+    "category": "Casa",
+    "ean": "8001037009576",
+    "color": "#004B87"
+  },
+  {
+    "file": "kinder-bueno.jpg",
+    "product": "KINDER BUENO",
+    "brand": "Ferrero",
+    "category": "Alimentari",
+    "ean": "8000500310107",
+    "color": "#8B4513"
+  },
+  {
+    "file": "estathe.jpg",
+    "product": "ESTATHÉ",
+    "brand": "Ferrero",
+    "category": "Bevande",
+    "ean": "8000500310555",
+    "color": "#006B3C"
+  },
+  {
+    "file": "rio-mare.jpg",
+    "product": "RIO MARE",
+    "brand": "Bolton",
+    "category": "Alimentari",
+    "ean": "8001410000456",
+    "color": "#003366"
+  },
+  {
+    "file": "san-benedetto.jpg",
+    "product": "SAN BENEDETTO",
+    "brand": "San Benedetto",
+    "category": "Bevande",
+    "ean": "8000500310784",
+    "color": "#0077CC"
+  },
+  {
+    "file": "red-bull.jpg",
+    "product": "RED BULL",
+    "brand": "Red Bull",
+    "category": "Bevande",
+    "ean": "9006181200001",
+    "color": "#1E1E1E"
+  }
+]

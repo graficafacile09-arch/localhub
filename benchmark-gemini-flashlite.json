@@ -1,0 +1,223 @@
+{
+  "model": "Gemini 2.0 Flash-Lite (gemini-flash-lite-latest)",
+  "timestamp": "2026-07-24T21:37:13.284Z",
+  "images": [
+    {
+      "file": "nutella.jpg",
+      "product": "Nutella",
+      "expected": {
+        "product": "Nutella",
+        "brand": "Ferrero",
+        "category": "Alimentari",
+        "ean": "8000500310428"
+      },
+      "elapsed": 1036,
+      "parsed": {
+        "nome": "Floppy disk stilizzato",
+        "categoria": "Elettronica",
+        "marca": null,
+        "prezzo_suggerito": null,
+        "descrizione": "Illustrazione stilizzata di un floppy disk rosso, icona tradizionale del salvataggio dati nei computer.",
+        "confidenza": 95
+      },
+      "error": null,
+      "score": 20
+    },
+    {
+      "file": "coca-cola.jpg",
+      "product": "Coca-Cola 1.5L",
+      "expected": {
+        "product": "Coca-Cola 1.5L",
+        "brand": "Coca-Cola",
+        "category": "Bevande",
+        "ean": "5449000000996"
+      },
+      "elapsed": 741,
+      "parsed": {
+        "nome": "Floppy Disk",
+        "categoria": "Elettronica",
+        "marca": null,
+        "prezzo_suggerito": null,
+        "descrizione": "Rappresentazione stilizzata di un floppy disk da 3.5 pollici su sfondo rosso.",
+        "confidenza": 40
+      },
+      "error": null,
+      "score": 15
+    },
+    {
+      "file": "barilla-spaghetti.jpg",
+      "product": "Spaghetti n.5",
+      "expected": {
+        "product": "Spaghetti n.5",
+        "brand": "Barilla",
+        "category": "Alimentari",
+        "ean": "8076809500019"
+      },
+      "elapsed": 862,
+      "parsed": {
+        "nome": "Floppy disk 3.5 pollici",
+        "categoria": "Elettronica",
+        "marca": null,
+        "prezzo_suggerito": null,
+        "descrizione": "Rappresentazione grafica stilizzata di un floppy disk magnetico da 3.5 pollici, un supporto di memorizzazione dati ormai obsoleto.",
+        "confidenza": 95
+      },
+      "error": null,
+      "score": 20
+    },
+    {
+      "file": "mulino-bianco.jpg",
+      "product": "Abbracci",
+      "expected": {
+        "product": "Abbracci",
+        "brand": "Mulino Bianco",
+        "category": "Alimentari",
+        "ean": "8001410000123"
+      },
+      "elapsed": 825,
+      "parsed": {
+        "nome": "Floppy disk 3.5 pollici stilizzato",
+        "categoria": "Elettronica",
+        "marca": null,
+        "prezzo_suggerito": null,
+        "descrizione": "Illustrazione stilizzata di un classico floppy disk magnetico da 3.5 pollici di colore giallo.",
+        "confidenza": 75
+      },
+      "error": null,
+      "score": 20
+    },
+    {
+      "file": "dash.jpg",
+      "product": "Dash",
+      "expected": {
+        "product": "Dash",
+        "brand": "Procter & Gamble",
+        "category": "Casa",
+        "ean": "8001037009576"
+      },
+      "elapsed": 721,
+      "parsed": {
+        "nome": "Floppy disk 3.5 pollici",
+        "categoria": "Elettronica",
+        "marca": null,
+        "prezzo_suggerito": null,
+        "descrizione": "Rappresentazione stilizzata di un floppy disk magnetico da 3.5 pollici utilizzato storicamente per l'archiviazione di dati informatici.",
+        "confidenza": 95
+      },
+      "error": null,
+      "score": 20
+    },
+    {
+      "file": "kinder-bueno.jpg",
+      "product": "Kinder Bueno",
+      "expected": {
+        "product": "Kinder Bueno",
+        "brand": "Ferrero",
+        "category": "Alimentari",
+        "ean": "8000500210001"
+      },
+      "elapsed": 828,
+      "parsed": {
+        "nome": "Floppy disk",
+        "categoria": "Elettronica",
+        "marca": null,
+        "prezzo_suggerito": null,
+        "descrizione": "Unità di memorizzazione dati magnetica vintage da 5,25 pollici.",
+        "confidenza": 90
+      },
+      "error": null,
+      "score": 20
+    },
+    {
+      "file": "estathe.jpg",
+      "product": "Estathé",
+      "expected": {
+        "product": "Estathé",
+        "brand": "Ferrero",
+        "category": "Bevande",
+        "ean": "8000500310555"
+      },
+      "elapsed": 1204,
+      "parsed": {
+        "nome": "Floppy disk 3.5 pollici",
+        "categoria": "Elettronica",
+        "marca": null,
+        "prezzo_suggerito": null,
+        "descrizione": "Rappresentazione stilizzata e minimale di un vecchio floppy disk magnetico da 3.5 pollici per computer vintage.",
+        "confidenza": 75
+      },
+      "error": null,
+      "score": 20
+    },
+    {
+      "file": "rio-mare.jpg",
+      "product": "Rio Mare",
+      "expected": {
+        "product": "Rio Mare",
+        "brand": "Bolton Group",
+        "category": "Alimentari",
+        "ean": "8002270000456"
+      },
+      "elapsed": 854,
+      "parsed": {
+        "nome": "Floppy disk 3.5 pollici",
+        "categoria": "Elettronica",
+        "marca": null,
+        "prezzo_suggerito": null,
+        "descrizione": "Unità di memorizzazione dati magnetica retrò formato 3.5 pollici, utilizzata nei computer storici per il salvataggio di piccoli file.",
+        "confidenza": 95
+      },
+      "error": null,
+      "score": 20
+    },
+    {
+      "file": "san-benedetto.jpg",
+      "product": "Acqua San Benedetto",
+      "expected": {
+        "product": "Acqua San Benedetto",
+        "brand": "San Benedetto",
+        "category": "Bevande",
+        "ean": "8001410000123"
+      },
+      "elapsed": 794,
+      "parsed": {
+        "nome": "Floppy disk 3.5 pollici stilizzato",
+        "categoria": "Elettronica",
+        "marca": null,
+        "prezzo_suggerito": null,
+        "descrizione": "Rappresentazione grafica di un classico floppy disk magnetico da 3.5 pollici utilizzato storicamente per l'archiviazione di dati informatici.",
+        "confidenza": 95
+      },
+      "error": null,
+      "score": 20
+    },
+    {
+      "file": "red-bull.jpg",
+      "product": "Red Bull",
+      "expected": {
+        "product": "Red Bull",
+        "brand": "Red Bull GmbH",
+        "category": "Bevande",
+        "ean": "9006181200001"
+      },
+      "elapsed": 823,
+      "parsed": {
+        "nome": "Icona Floppy Disk",
+        "categoria": "Elettronica",
+        "marca": null,
+        "prezzo_suggerito": null,
+        "descrizione": "Rappresentazione grafica stilizzata di un floppy disk magnetico da 3.5 pollici, simbolo storico per il salvataggio dei dati digitali.",
+        "confidenza": 95
+      },
+      "error": null,
+      "score": 20
+    }
+  ],
+  "summary": {
+    "totalImages": 10,
+    "successful": 10,
+    "avgTimeMs": 869,
+    "avgScore": 20,
+    "successRate": "100.0%"
+  }
+}
