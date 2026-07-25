@@ -37,17 +37,15 @@ export default function MerchantTopBar({ storeName }: MerchantTopBarProps) {
       className="sticky top-0 z-40 flex h-12 items-center gap-2 border-b border-blue-900/20 bg-[linear-gradient(180deg,#1d4ed8_0%,#2563eb_100%)] px-3 text-white md:hidden"
       style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
     >
-      <span className="inline-flex items-center rounded bg-red-600 px-2 py-1 text-xs font-bold text-white">
-        TEST MOBILE TOPBAR
-      </span>
       {/* Home button — sempre visibile */}
       <button
         type="button"
         onClick={() => router.push("/")}
         aria-label="Vai alla Home"
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition active:bg-white/20"
+        className="flex shrink-0 items-center gap-1 rounded-xl px-2.5 py-1.5 text-sm font-bold transition active:bg-white/20"
       >
-        <Home className="h-[18px] w-[18px]" aria-hidden />
+        <Home className="h-[16px] w-[16px]" aria-hidden />
+        <span>Home</span>
       </button>
 
       {/* Back button — nascosto sulla root */}
