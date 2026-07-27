@@ -134,18 +134,31 @@ export async function cercaProdotti(ricerca: string, limit = 20) {
         `descrizione.ilike.%${p}%`,
         `categoria.ilike.%${p}%`,
         `marca.ilike.%${p}%`,
+        `sottocategoria.ilike.%${p}%`,
+        `colore.ilike.%${p}%`,
+        `materiale.ilike.%${p}%`,
       ];
     })
     .join(",");
 
+  // Il database non espone una relazione PostgREST tra prodotti e negozi.
+  // Recuperiamo i prodotti prima e i nomi dei negozi con una seconda query.
   const { data, error } = await supabase
     .from("prodotti")
-    .select("*, negozi!inner(id, nome)")
+    .select("id, negozio_id, nome, descrizione, categoria, prezzo, immagine_principale")
     .eq("attivo", true)
     .or(filtri)
     .limit(limit);
 
   if (error) return [];
+
+  const negozioIds = Array.from(
+    new Set((data ?? []).map((prodotto) => prodotto.negozio_id).filter(Boolean))
+  );
+  const { data: negozi } = negozioIds.length
+    ? await supabase.from("negozi").select("id, nome").in("id", negozioIds)
+    : { data: [] };
+  const nomiNegozi = new Map((negozi ?? []).map((negozio) => [negozio.id, negozio.nome]));
 
   return (data ?? []).map((p: Record<string, unknown>) => ({
     id: p.id as string,
@@ -155,7 +168,7 @@ export async function cercaProdotti(ricerca: string, limit = 20) {
     categoria: (p.categoria as string) ?? null,
     prezzo: p.prezzo as number,
     immagine_principale: (p.immagine_principale as string) ?? null,
-    negozio_nome: (p.negozi as { nome: string })?.nome ?? "",
+    negozio_nome: nomiNegozi.get(p.negozio_id as string) ?? "",
   }));
 }
 

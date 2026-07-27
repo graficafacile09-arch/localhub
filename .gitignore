@@ -49,3 +49,7 @@ test-*.js
 test-image.jpg
 test-session.json
 *.log
+
+# Temp debug files
+_dev_*
+_test_*

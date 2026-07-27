@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, Home, Sparkles } from "lucide-react";
+import { ArrowLeft, Home } from "lucide-react";
 import type { ProductVisionSuggestion } from "@/lib/product-assistant/vision";
 import MerchantProductAiUploader from "./MerchantProductAiUploader";
 import MerchantProductResultCard from "./MerchantProductResultCard";
@@ -41,7 +41,6 @@ export default function MerchantProductAiWizard({ negozioId }: MerchantProductAi
 
   return (
     <div className="space-y-3">
-      {/* Header minimale + Home — compatto */}
       {showScanner && (
         <div className="flex items-center gap-3 rounded-2xl bg-gradient-to-b from-blue-500 to-blue-700 px-4 py-3 text-white shadow shadow-blue-500/20">
           <Link

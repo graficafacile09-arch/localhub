@@ -137,7 +137,7 @@ export default function MerchantProductForm({
       seoTitle: String(formData.get("seo_title") ?? "").trim() || undefined,
       seoDescription: String(formData.get("seo_description") ?? "").trim() || undefined,
       altTextImmagine: String(formData.get("alt_text_immagine") ?? "").trim() || undefined,
-      attivo: formData.get("attivo") === "on",
+      attivo: true,
       originePubblicazione: String(formData.get("originePubblicazione") ?? initialValues.originePubblicazione),
     };
 

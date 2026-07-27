@@ -20,6 +20,7 @@ type MerchantProductAiUploaderProps = {
 const CAPTURE_WIDTH = 800;
 const CAPTURE_HEIGHT = 800;
 const PREVIEW_DELAY = 2500;
+const RETRY_CONFIDENCE_THRESHOLD = 70;
 
 export default function MerchantProductAiUploader({
   negozioId,
@@ -35,7 +36,6 @@ export default function MerchantProductAiUploader({
   const [started, setStarted] = useState(false);
 
   const cameraInputRef = useRef<HTMLInputElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const capturingRef = useRef(false);
@@ -51,34 +51,6 @@ export default function MerchantProductAiUploader({
       handleCameraClick();
     }
   }, [autoStart]);
-
-  function setFileAndPreview(selected: File | null) {
-    setError(null);
-    if (!selected) {
-      setFile(null);
-      setPreview(null);
-      return;
-    }
-    setFile(selected);
-    if (preview) URL.revokeObjectURL(preview);
-    setPreview(URL.createObjectURL(selected));
-  }
-
-  function handleFileSelected(selected: File | null | undefined) {
-    if (!selected) return;
-    setFileAndPreview(selected);
-    if (autoStart) {
-      handleAutoAnalyze(selected);
-    }
-  }
-
-  function handleUploadFromViewfinder() {
-    stopStream();
-    setShowCamera(false);
-    setStarted(false);
-    capturingRef.current = false;
-    fileInputRef.current?.click();
-  }
 
   function stopStream() {
     if (streamRef.current) {
@@ -151,7 +123,7 @@ export default function MerchantProductAiUploader({
     try {
       cameraInputRef.current?.click();
     } catch {
-      fileInputRef.current?.click();
+      // Native label will handle it via htmlFor
     }
   }
 
@@ -189,43 +161,118 @@ export default function MerchantProductAiUploader({
     setStarted(false);
   }
 
-  async function handleAutoAnalyze(captured: File) {
+  function setFileAndPreview(selected: File | null) {
+    setError(null);
+    if (!selected) {
+      setFile(null);
+      setPreview(null);
+      return;
+    }
+    setFile(selected);
+    if (preview) URL.revokeObjectURL(preview);
+    setPreview(URL.createObjectURL(selected));
+  }
+
+  function fileToDataUrl(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function analyzeWithRetry(sourceFile: File, photoUrl: string) {
     setLoading(true);
     setError(null);
     onAnalysisStart?.();
 
-    const photoUrl = URL.createObjectURL(captured);
-
     try {
+      const { preprocessImage } = await import("@/lib/client/image-preprocess");
       const { compressImage } = await import("@/lib/client/image-compress");
-      const compressed = await compressImage(captured);
 
+      const preprocessed = await preprocessImage(sourceFile);
+      const compressed = await compressImage(preprocessed.file);
+
+      // First attempt — no crop
       const formData = new FormData();
       formData.append("image", compressed.file);
 
-      const uploadResponse = await fetch(
+      const res1 = await fetch(
         `/api/merchant/stores/${negozioId}/products/vision`,
         { method: "POST", body: formData }
       );
 
-      const data = (await uploadResponse.json()) as {
+      if (!res1.ok) {
+        const errData = await res1.json().catch(() => ({}));
+        if (errData.error?.code === "AI_PROVIDER_QUOTA_EXCEEDED") {
+          setError("Il servizio di riconoscimento AI è temporaneamente non disponibile. Riprova più tardi.");
+          return;
+        }
+        throw new Error(errData.error?.message ?? `Errore HTTP ${res1.status}`);
+      }
+
+      const data1 = (await res1.json()) as {
         success: boolean;
         suggestion?: ProductVisionSuggestion;
         lowConfidence?: boolean;
         error?: { code?: string; message?: string };
       };
 
-      if (!uploadResponse.ok || !data.success || !data.suggestion) {
-        if (data.error?.code === "AI_PROVIDER_QUOTA_EXCEEDED") {
-          setError("Il servizio di riconoscimento AI è temporaneamente non disponibile. Riprova più tardi.");
-          return;
-        }
-        throw new Error(data.error?.message ?? "Errore durante l'analisi dell'immagine.");
+      if (!data1.success || !data1.suggestion) {
+        throw new Error(data1.error?.message ?? "Errore durante l'analisi dell'immagine.");
       }
 
+      if (data1.suggestion.confidenza >= RETRY_CONFIDENCE_THRESHOLD) {
+        onResult({
+          suggestion: data1.suggestion,
+          lowConfidence: data1.lowConfidence ?? false,
+          photoUrl,
+        });
+        return;
+      }
+
+      // Second attempt — with crop=1 (sharp attention crop)
+      const formData2 = new FormData();
+      formData2.append("image", compressed.file);
+
+      const res2 = await fetch(
+        `/api/merchant/stores/${negozioId}/products/vision?crop=1`,
+        { method: "POST", body: formData2 }
+      );
+
+      if (!res2.ok) {
+        onResult({
+          suggestion: data1.suggestion,
+          lowConfidence: true,
+          photoUrl,
+        });
+        return;
+      }
+
+      const data2 = (await res2.json()) as {
+        success: boolean;
+        suggestion?: ProductVisionSuggestion;
+        lowConfidence?: boolean;
+        error?: { code?: string; message?: string };
+      };
+
+      if (!data2.success || !data2.suggestion) {
+        onResult({
+          suggestion: data1.suggestion,
+          lowConfidence: true,
+          photoUrl,
+        });
+        return;
+      }
+
+      const best = data2.suggestion.confidenza >= data1.suggestion.confidenza
+        ? data2.suggestion
+        : data1.suggestion;
+
       onResult({
-        suggestion: data.suggestion,
-        lowConfidence: data.lowConfidence ?? false,
+        suggestion: best,
+        lowConfidence: data2.lowConfidence ?? false,
         photoUrl,
       });
     } catch (caught) {
@@ -235,52 +282,44 @@ export default function MerchantProductAiUploader({
     }
   }
 
+  async function handleAutoAnalyze(captured: File, displayUrl?: string) {
+    const photoUrl = displayUrl ?? (await fileToDataUrl(captured));
+    await analyzeWithRetry(captured, photoUrl);
+  }
+
   async function handleAnalyzeClick() {
     if (!file) {
       setError("Seleziona prima un'immagine del prodotto.");
       return;
     }
-    setLoading(true);
-    setError(null);
-    onAnalysisStart?.();
+    const photoUrl = await fileToDataUrl(file);
+    await analyzeWithRetry(file, photoUrl);
+  }
 
+  async function handleUploadChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const selected = e.target.files?.[0];
+    if (!selected) return;
+    e.target.value = "";
+
+    stopStream();
+    setShowCamera(false);
+    setStarted(false);
+    capturingRef.current = false;
+
+    setFileAndPreview(selected);
+
+    let displayUrl: string | undefined;
     try {
-      const { compressImage } = await import("@/lib/client/image-compress");
-      const compressed = await compressImage(file);
-
-      const formData = new FormData();
-      formData.append("image", compressed.file);
-
-      const uploadResponse = await fetch(
-        `/api/merchant/stores/${negozioId}/products/vision`,
-        { method: "POST", body: formData }
-      );
-
-      const data = (await uploadResponse.json()) as {
-        success: boolean;
-        suggestion?: ProductVisionSuggestion;
-        lowConfidence?: boolean;
-        error?: { code?: string; message?: string };
-      };
-
-      if (!uploadResponse.ok || !data.success || !data.suggestion) {
-        if (data.error?.code === "AI_PROVIDER_QUOTA_EXCEEDED") {
-          setError("Il servizio di riconoscimento AI è temporaneamente non disponibile. Riprova più tardi.");
-          return;
-        }
-        throw new Error(data.error?.message ?? "Errore durante l'analisi dell'immagine.");
-      }
-
-      onResult({
-        suggestion: data.suggestion,
-        lowConfidence: data.lowConfidence ?? false,
-        photoUrl: preview ?? "",
+      displayUrl = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.readAsDataURL(selected);
       });
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "Errore imprevisto.");
-    } finally {
-      setLoading(false);
+    } catch {
+      // fallback: blob URL
     }
+
+    handleAutoAnalyze(selected, displayUrl);
   }
 
   const showViewfinder = showCamera && !loading && !preview;
@@ -320,14 +359,14 @@ export default function MerchantProductAiUploader({
         </div>
         <div className="absolute bottom-0 left-0 right-0 flex items-center justify-between px-4 pb-3 pt-8 bg-gradient-to-t from-black/60 to-transparent">
           <span className="text-xs text-white/70">Inquadra il prodotto...</span>
-          <button
-            type="button"
-            onClick={handleUploadFromViewfinder}
-            className="pointer-events-auto flex items-center gap-1.5 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/30 active:scale-[0.97]"
+          <label
+            htmlFor="ai-file-upload"
+            onClick={() => { capturingRef.current = false; }}
+            className="pointer-events-auto flex cursor-pointer items-center gap-1.5 rounded-xl bg-white/20 backdrop-blur-sm border border-white/30 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/30 active:scale-[0.97]"
           >
             <ImageIcon className="h-3.5 w-3.5" />
             Carica immagine
-          </button>
+          </label>
         </div>
       </div>
 
@@ -372,16 +411,26 @@ export default function MerchantProductAiUploader({
         type="file"
         accept="image/*"
         capture="environment"
-        onChange={(e) => handleFileSelected(e.target.files?.[0])}
+        onChange={(e) => {
+          const selected = e.target.files?.[0];
+          if (!selected) return;
+          e.target.value = "";
+          stopStream();
+          setShowCamera(false);
+          setStarted(false);
+          setFileAndPreview(selected);
+          handleAutoAnalyze(selected);
+        }}
         className="hidden"
         aria-label="Scatta foto con la fotocamera"
       />
+
+      {/* Input file persistente — aperto via <label htmlFor="ai-file-upload"> */}
       <input
         id="ai-file-upload"
-        ref={fileInputRef}
         type="file"
         accept="image/*"
-        onChange={(e) => handleFileSelected(e.target.files?.[0])}
+        onChange={handleUploadChange}
         className="hidden"
         aria-label="Carica immagine dalla galleria"
       />
