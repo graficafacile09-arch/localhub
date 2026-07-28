@@ -14,23 +14,7 @@ function parseTime(t: string): number {
 }
 
 function formatTimeRange(apertura: string, chiusura: string): string {
-  const a = apertura.slice(0, 5);
-  const c = chiusura.slice(0, 5);
-  const gap = parseTime(chiusura) - parseTime(apertura);
-  const hasLunchBreak = gap > 360;
-  if (hasLunchBreak) {
-    const lunchEnd = apertura;
-    const lunchStartMinutes = parseTime(apertura) + 60;
-    const lunchStartH = Math.floor(lunchStartMinutes / 60);
-    const lunchStartM = lunchStartMinutes % 60;
-    const lunchStart = `${String(lunchStartH).padStart(2, "0")}:${String(lunchStartM).padStart(2, "0")}`;
-    const lunchEndMinutes = parseTime(chiusura) - 60;
-    const lunchEndH = Math.floor(lunchEndMinutes / 60);
-    const lunchEndM = lunchEndMinutes % 60;
-    const lunchEnd2 = `${String(lunchEndH).padStart(2, "0")}:${String(lunchEndM).padStart(2, "0")}`;
-    return `${a}–${lunchStart} | ${lunchEnd2}–${c}`;
-  }
-  return `${a}–${c}`;
+  return `${apertura.slice(0, 5)} – ${chiusura.slice(0, 5)}`;
 }
 
 function getStatus(schedule: Record<string, DaySchedule> | null): {
