@@ -4,6 +4,7 @@ import { getProdottoImmagine } from "@/lib/prodotti-immagini";
 import AcquistaLayout from "./layout";
 import { DeliveryOptionCard } from "@/components/prodotti/DeliveryOptionCard";
 import { PriceDisplay } from "@/components/prodotti/PriceDisplay";
+import { QuantitySelector } from "@/components/prodotti/QuantitySelector";
 import { OrderSummary } from "@/components/prodotti/OrderSummary";
 
 function formatPrezzo(p: number): number {
@@ -89,7 +90,15 @@ export default async function AcquistaPage({
 
         <div className="space-y-4">
           <div className="rounded-xl border border-slate-200 bg-white p-4">
-            <h3 className="text-sm font-bold text-slate-900">Quantità: 1</h3>
+            <h3 className="text-sm font-bold text-slate-900">Quantità</h3>
+            <div className="mt-3">
+              <QuantitySelector
+                value={1}
+                onChange={() => {}}
+                min={1}
+                max={disponibile ? (quantita ?? 1) : 1}
+              />
+            </div>
           </div>
 
           <OrderSummary
