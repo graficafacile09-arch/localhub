@@ -88,9 +88,9 @@ export default function OpeningHoursDisplay({
   }
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5">
+    <div className="rounded-xl border-slate-200 bg-white p-5" style={{ backgroundColor: "#ff0000", border: "5px solid #00ff00" }}>
       <div className="mb-4">
-        <p className="text-sm font-semibold text-slate-900">Orari di apertura</p>
+        <p className="text-sm font-bold text-white" style={{ fontSize: 24 }}>TEST OPENINGHOURSDISPLAY</p>
         <div className="mt-2 flex items-center gap-1.5 text-sm">
           {status.open ? (
             <>
