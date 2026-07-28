@@ -94,7 +94,6 @@ export default async function AcquistaPage({
             <div className="mt-3">
               <QuantitySelector
                 value={1}
-                onChange={() => {}}
                 min={1}
                 max={disponibile ? (quantita ?? 1) : 1}
               />
