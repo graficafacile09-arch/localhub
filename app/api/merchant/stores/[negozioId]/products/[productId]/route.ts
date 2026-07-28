@@ -72,8 +72,6 @@ export async function PUT(
     return apiError("UNAUTHORIZED", "Devi effettuare l'accesso.", 401);
   }
 
-  console.log("PUT USER ID", user.id);
-
   const { negozioId, productId } = await context.params;
   const storeResult = await getMerchantStoreForUser(user.id, negozioId);
 

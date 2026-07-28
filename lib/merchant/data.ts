@@ -364,15 +364,10 @@ export async function updateMerchantProductForStore(
 
   const supabase = await createServerSupabaseClient();
 
-  const { data: authUserData } = await supabase.auth.getUser();
-  console.log("AUTH USER ID IN UPDATE", authUserData?.user?.id);
-
   const immagineFinale =
     input.immaginePrincipale.trim()
       ? await uploadDataUrlToStorage(input.immaginePrincipale.trim())
       : null;
-
-  console.log("IMMAGINE FINALE", immagineFinale);
 
   const payload: Record<string, unknown> = {
     nome: input.nome.trim(),
@@ -400,17 +395,6 @@ export async function updateMerchantProductForStore(
   if (input.seoDescription !== undefined) payload.seo_description = input.seoDescription.trim() || null;
   if (input.altTextImmagine !== undefined) payload.alt_text_immagine = input.altTextImmagine.trim() || null;
 
-  console.log("UPDATE PAYLOAD", payload);
-  console.log("UPDATE FILTERS", { productId, negozioId });
-
-  const { data: rowBefore, error: findErr } = await supabase
-    .from("prodotti")
-    .select("id, negozio_id, immagine_principale")
-    .eq("id", productId)
-    .eq("negozio_id", negozioId);
-
-  console.log("ROW BEFORE UPDATE", { data: rowBefore, error: findErr });
-
   const updateResult = await supabase
     .from("prodotti")
     .update(payload)
@@ -418,17 +402,6 @@ export async function updateMerchantProductForStore(
     .eq("negozio_id", negozioId)
     .select("*")
     .single();
-
-  console.log("UPDATE ERROR", updateResult.error);
-  console.log("UPDATE DATA", updateResult.data);
-
-  const { data: verifyRows, error: verifyError } = await supabase
-    .from("prodotti")
-    .select("id, immagine_principale")
-    .eq("id", productId);
-
-  console.log("VERIFY SELECT ERROR", verifyError);
-  console.log("VERIFY SELECT ROWS", verifyRows);
 
   if (updateResult.error) {
     return {
