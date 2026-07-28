@@ -1,9 +1,8 @@
-import { Building2, Clock, ImageIcon, MessageCircle, Settings } from "lucide-react";
+import { Building2, Clock, MessageCircle, Settings } from "lucide-react";
 import MerchantEmptyState from "@/components/merchant/MerchantEmptyState";
 import StoreInfoForm from "@/components/merchant/settings/StoreInfoForm";
 import OpeningHoursEditor from "@/components/merchant/settings/OpeningHoursEditor";
 import SocialContactsForm from "@/components/merchant/settings/SocialContactsForm";
-import StoreGallery from "@/components/merchant/settings/StoreGallery";
 import SettingsShell from "@/components/merchant/settings/SettingsShell";
 import { requireCurrentUser } from "@/lib/auth/session";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -29,13 +28,14 @@ type StoreRow = {
   attivo: boolean | null;
   indirizzo: string | null;
   telefono: string | null;
-  email_negozio: string | null;
+  email: string | null;
   sito_web: string | null;
-  logo_url: string | null;
-  banner_url: string | null;
-  orari_apertura: Record<string, DaySchedule> | null;
-  contatti_social: { whatsapp?: string; facebook?: string; instagram?: string; tiktok?: string } | null;
-  galleria: string[] | null;
+  immagine: string | null;
+  copertina: string | null;
+  orari: Record<string, DaySchedule> | null;
+  facebook: string | null;
+  instagram: string | null;
+  whatsapp: string | null;
 };
 
 export default async function MerchantSettingsPage({
@@ -68,7 +68,7 @@ export default async function MerchantSettingsPage({
   const supabase = await createServerSupabaseClient();
   const { data: row } = await supabase
     .from("negozi")
-    .select("id, nome, descrizione, categoria, attivo, indirizzo, telefono, email_negozio, sito_web, logo_url, banner_url, orari_apertura, contatti_social, galleria")
+    .select("id, nome, descrizione, categoria, attivo, indirizzo, telefono, email, sito_web, immagine, copertina, orari, facebook, instagram, whatsapp")
     .eq("id", negozioId)
     .single();
 
@@ -89,20 +89,18 @@ export default async function MerchantSettingsPage({
     categoria: store.categoria ?? "",
     indirizzo: store.indirizzo ?? "",
     telefono: store.telefono ?? "",
-    email_negozio: store.email_negozio ?? "",
+    email: store.email ?? "",
     sito_web: store.sito_web ?? "",
-    logo_url: store.logo_url ?? "",
-    banner_url: store.banner_url ?? "",
+    immagine: store.immagine ?? "",
+    copertina: store.copertina ?? "",
   };
 
-  const hoursInitial: Record<string, DaySchedule> = store.orari_apertura ?? DEFAULT_HOURS;
+  const hoursInitial: Record<string, DaySchedule> = store.orari ?? DEFAULT_HOURS;
   const socialInitial = {
-    whatsapp: store.contatti_social?.whatsapp ?? "",
-    facebook: store.contatti_social?.facebook ?? "",
-    instagram: store.contatti_social?.instagram ?? "",
-    tiktok: store.contatti_social?.tiktok ?? "",
+    whatsapp: store.whatsapp ?? "",
+    facebook: store.facebook ?? "",
+    instagram: store.instagram ?? "",
   };
-  const galleryInitial: string[] = Array.isArray(store.galleria) ? store.galleria : [];
 
   return (
     <SettingsShell>
@@ -145,11 +143,6 @@ export default async function MerchantSettingsPage({
         {/* 3. Contatti e Social */}
         <Section id="social" icon={<MessageCircle className="h-4 w-4" />} title="Contatti e Social" subtitle="Collega i tuoi profili social e WhatsApp">
           <SocialContactsForm storeId={negozioId} initial={socialInitial} />
-        </Section>
-
-        {/* 4. Galleria negozio */}
-        <Section id="galleria" icon={<ImageIcon className="h-4 w-4" />} title="Galleria negozio" subtitle="Carica foto della tua attività per attirare più clienti">
-          <StoreGallery storeId={negozioId} initial={galleryInitial} />
         </Section>
 
       </div>

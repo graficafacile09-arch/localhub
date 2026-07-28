@@ -12,17 +12,18 @@ type StoreSettings = {
   categoria?: string;
   indirizzo?: string;
   telefono?: string;
-  email_negozio?: string;
+  email?: string;
   sito_web?: string;
-  logo_url?: string;
-  banner_url?: string;
-  orari_apertura?: Record<string, { apertura: string; chiusura: string; chiuso: boolean }>;
-  contatti_social?: { whatsapp?: string; facebook?: string; instagram?: string; tiktok?: string };
-  galleria?: string[];
+  immagine?: string;
+  copertina?: string;
+  orari?: Record<string, { apertura: string; chiusura: string; chiuso: boolean }>;
+  facebook?: string;
+  instagram?: string;
+  whatsapp?: string;
 };
 
 const SELECT_FIELDS =
-  "id, nome, descrizione, categoria, indirizzo, telefono, email_negozio, sito_web, logo_url, banner_url, orari_apertura, contatti_social, galleria";
+  "id, nome, descrizione, categoria, indirizzo, telefono, email, sito_web, immagine, copertina, orari, facebook, instagram, whatsapp";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const URL_RE = /^https?:\/\/.+/;
@@ -36,7 +37,7 @@ function validate(body: StoreSettings): string | null {
   if ("categoria" in body && (!body.categoria || !body.categoria.trim())) {
     return "La categoria è obbligatoria.";
   }
-  if ("email_negozio" in body && body.email_negozio && !EMAIL_RE.test(body.email_negozio)) {
+  if ("email" in body && body.email && !EMAIL_RE.test(body.email)) {
     return "Formato email non valido.";
   }
   if ("sito_web" in body && body.sito_web && !URL_RE.test(body.sito_web)) {
@@ -114,8 +115,8 @@ export async function PUT(
   const payload: Record<string, unknown> = {};
   const allowedFields = [
     "nome", "descrizione", "categoria", "indirizzo", "telefono",
-    "email_negozio", "sito_web", "logo_url", "banner_url",
-    "orari_apertura", "contatti_social", "galleria",
+    "email", "sito_web", "immagine", "copertina",
+    "orari", "facebook", "instagram", "whatsapp",
   ];
 
   for (const field of allowedFields) {
@@ -132,7 +133,7 @@ export async function PUT(
 
   const { data: oldRow } = await supabase
     .from("negozi")
-    .select("logo_url, banner_url, galleria")
+    .select("immagine, copertina")
     .eq("id", negozioId)
     .single();
 
@@ -148,19 +149,13 @@ export async function PUT(
   }
 
   if (oldRow) {
-    const oldGallery: string[] = Array.isArray(oldRow.galleria) ? oldRow.galleria : [];
-    const oldUrls = [oldRow.logo_url, oldRow.banner_url, ...oldGallery].filter(
+    const oldUrls = [oldRow.immagine, oldRow.copertina].filter(
       (u): u is string => !!u && typeof u === "string"
     );
 
-    const newGallery: string[] =
-      payload.galleria !== undefined
-        ? (payload.galleria as string[])
-        : oldGallery;
     const newUrls = [
-      (payload.logo_url as string) ?? oldRow.logo_url,
-      (payload.banner_url as string) ?? oldRow.banner_url,
-      ...newGallery,
+      (payload.immagine as string) ?? oldRow.immagine,
+      (payload.copertina as string) ?? oldRow.copertina,
     ].filter((u): u is string => !!u && typeof u === "string");
 
     await deleteOrphanImages(oldUrls, newUrls);

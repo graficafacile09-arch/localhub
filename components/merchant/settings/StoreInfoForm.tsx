@@ -11,10 +11,10 @@ type StoreInfo = {
   categoria: string;
   indirizzo: string;
   telefono: string;
-  email_negozio: string;
+  email: string;
   sito_web: string;
-  logo_url: string;
-  banner_url: string;
+  immagine: string;
+  copertina: string;
 };
 
 export default function StoreInfoForm({
@@ -54,9 +54,9 @@ export default function StoreInfoForm({
     return json.data?.url ?? null;
   }
 
-  async function handleImageField(file: File | undefined, field: "logo_url" | "banner_url") {
+  async function handleImageField(file: File | undefined, field: "immagine" | "copertina") {
     if (!file) return;
-    const url = await handleUpload(file, field === "logo_url" ? "logo" : "banner");
+    const url = await handleUpload(file, field === "immagine" ? "logo" : "banner");
     if (url) updateField(field, url);
   }
 
@@ -92,8 +92,8 @@ export default function StoreInfoForm({
             className="group relative flex h-28 w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 transition hover:border-blue-300"
             onClick={() => logoInput.current?.click()}
           >
-            {form.logo_url ? (
-              <img src={form.logo_url} alt="Logo" className="h-full w-full object-cover" />
+            {form.immagine ? (
+              <img src={form.immagine} alt="Logo" className="h-full w-full object-cover" />
             ) : (
               <div className="flex flex-col items-center gap-1 text-slate-400">
                 <Camera className="h-6 w-6" />
@@ -107,7 +107,7 @@ export default function StoreInfoForm({
             type="file"
             accept="image/jpeg,image/png,image/webp"
             className="hidden"
-            onChange={(e) => handleImageField(e.target.files?.[0], "logo_url")}
+            onChange={(e) => handleImageField(e.target.files?.[0], "immagine")}
           />
         </div>
 
@@ -117,8 +117,8 @@ export default function StoreInfoForm({
             className="group relative flex h-28 w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 transition hover:border-blue-300"
             onClick={() => bannerInput.current?.click()}
           >
-            {form.banner_url ? (
-              <img src={form.banner_url} alt="Banner" className="h-full w-full object-cover" />
+            {form.copertina ? (
+              <img src={form.copertina} alt="Banner" className="h-full w-full object-cover" />
             ) : (
               <div className="flex flex-col items-center gap-1 text-slate-400">
                 <Camera className="h-6 w-6" />
@@ -132,7 +132,7 @@ export default function StoreInfoForm({
             type="file"
             accept="image/jpeg,image/png,image/webp"
             className="hidden"
-            onChange={(e) => handleImageField(e.target.files?.[0], "banner_url")}
+            onChange={(e) => handleImageField(e.target.files?.[0], "copertina")}
           />
         </div>
       </div>
@@ -151,7 +151,7 @@ export default function StoreInfoForm({
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field icon={<Mail className="h-4 w-4" />} label="Email" value={form.email_negozio} onChange={(v) => updateField("email_negozio", v)} type="email" />
+        <Field icon={<Mail className="h-4 w-4" />} label="Email" value={form.email} onChange={(v) => updateField("email", v)} type="email" />
         <Field icon={<Globe className="h-4 w-4" />} label="Sito web" value={form.sito_web} onChange={(v) => updateField("sito_web", v)} type="url" placeholder="https://..." />
       </div>
 

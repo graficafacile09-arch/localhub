@@ -80,7 +80,7 @@ export default function OpeningHoursEditor({
       const res = await fetch(`/api/merchant/stores/${storeId}/settings`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orari_apertura: data }),
+        body: JSON.stringify({ orari: data }),
       });
       const json = (await res.json()) as { success: boolean; error?: { message?: string } };
       if (!res.ok || !json.success) {
