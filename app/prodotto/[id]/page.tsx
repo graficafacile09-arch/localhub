@@ -3,7 +3,7 @@ import Header from "@/components/Header/Header";
 import { getProdotto, getNegozio } from "@/lib/negozi";
 import { getProdottoDemoById } from "@/lib/negozi-demo";
 import { getProdottoImmagine } from "@/lib/prodotti-immagini";
-import { MapPin, Phone, MessageCircle, ArrowLeft, ExternalLink } from "lucide-react";
+import { MapPin, Phone, MessageCircle, ArrowLeft, ExternalLink, ShoppingBag } from "lucide-react";
 import OpeningHoursDisplay from "@/components/negozio/OpeningHoursDisplay";
 
 export default async function PaginaProdotto({
@@ -176,7 +176,14 @@ export default async function PaginaProdotto({
 
             {/* Actions */}
             <div className="mt-3 flex flex-wrap gap-2">
-              {negozio.telefono && (
+              <Link
+                href={`/prodotto/${negozio?.id ?? id}/acquista`}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-blue-700"
+              >
+                <ShoppingBag className="h-3.5 w-3.5" />
+                Acquista
+              </Link>
+              {negozio?.telefono && (
                 <a
                   href={buildWhatsAppUrl()}
                   target="_blank"
