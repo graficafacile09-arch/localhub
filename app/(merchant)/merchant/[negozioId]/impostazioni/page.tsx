@@ -7,18 +7,8 @@ import SettingsShell from "@/components/merchant/settings/SettingsShell";
 import { requireCurrentUser } from "@/lib/auth/session";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getMerchantStoreForUser } from "@/lib/merchant/data";
-
-type DaySchedule = { apertura: string; chiusura: string; chiuso: boolean };
-
-const DEFAULT_HOURS: Record<string, DaySchedule> = {
-  "lunedì":    { apertura: "", chiusura: "", chiuso: false },
-  "martedì":   { apertura: "", chiusura: "", chiuso: false },
-  "mercoledì": { apertura: "", chiusura: "", chiuso: false },
-  "giovedì":   { apertura: "", chiusura: "", chiuso: false },
-  "venerdì":   { apertura: "", chiusura: "", chiuso: false },
-  "sabato":    { apertura: "", chiusura: "", chiuso: false },
-  "domenica":  { apertura: "", chiusura: "", chiuso: true },
-};
+import type { Orari } from "@/types/orari";
+import { DEFAULT_HOURS } from "@/types/orari";
 
 type StoreRow = {
   id: string;
@@ -32,7 +22,7 @@ type StoreRow = {
   sito_web: string | null;
   immagine: string | null;
   copertina: string | null;
-  orari: Record<string, DaySchedule> | null;
+  orari: Orari | null;
   facebook: string | null;
   instagram: string | null;
   whatsapp: string | null;
@@ -95,7 +85,7 @@ export default async function MerchantSettingsPage({
     copertina: store.copertina ?? "",
   };
 
-  const hoursInitial: Record<string, DaySchedule> = store.orari ?? DEFAULT_HOURS;
+  const hoursInitial: Orari = store.orari ?? DEFAULT_HOURS;
   const socialInitial = {
     whatsapp: store.whatsapp ?? "",
     facebook: store.facebook ?? "",

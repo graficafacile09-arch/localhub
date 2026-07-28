@@ -16,7 +16,7 @@ type StoreSettings = {
   sito_web?: string;
   immagine?: string;
   copertina?: string;
-  orari?: Record<string, { apertura: string; chiusura: string; chiuso: boolean }>;
+  orari?: Record<string, { chiuso: boolean; apertura1: string; chiusura1: string; apertura2: string; chiusura2: string }>;
   facebook?: string;
   instagram?: string;
   whatsapp?: string;

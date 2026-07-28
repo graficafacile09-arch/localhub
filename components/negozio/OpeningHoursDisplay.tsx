@@ -1,80 +1,108 @@
 "use client";
 
 import { useMemo } from "react";
+import type { DaySchedule, Orari } from "@/types/orari";
+import { DAYS, ITALIAN_DAYS, parseTime } from "@/types/orari";
 
-type DaySchedule = { apertura: string; chiusura: string; chiuso: boolean };
+const LABEL: Record<string, string> = {
+  "lunedì": "Lunedì", "martedì": "Martedì", "mercoledì": "Mercoledì",
+  "giovedì": "Giovedì", "venerdì": "Venerdì", "sabato": "Sabato", "domenica": "Domenica",
+};
 
-const DAYS_ORDER = ["lunedì", "martedì", "mercoledì", "giovedì", "venerdì", "sabato", "domenica"] as const;
-const ITALIAN_DAYS = ["domenica", "lunedì", "martedì", "mercoledì", "giovedì", "venerdì", "sabato"];
-
-function parseTime(t: string): number {
-  const parts = t.split(":").map(Number);
-  return parts[0] * 60 + (parts[1] ?? 0);
-}
-
-function formatTimeRange(apertura: string, chiusura: string): string {
-  return `${apertura.slice(0, 5)} – ${chiusura.slice(0, 5)}`;
-}
-
-function getStatus(schedule: Record<string, DaySchedule> | null): {
+type Interval = { open: number; close: number };
+type StatusInfo = {
+  type: "open" | "closed";
   text: string;
-  open: boolean;
-} {
-  if (!schedule) return { text: "Orari non disponibili", open: false };
+};
 
-  const todayName = ITALIAN_DAYS[new Date().getDay()];
-  const today = schedule[todayName];
-
-  if (!today || today.chiuso) {
-    const nextDay = DAYS_ORDER.find((d) => schedule[d] && !schedule[d].chiuso);
-    if (nextDay) {
-      return {
-        text: `Apre ${nextDay} alle ${schedule[nextDay].apertura.slice(0, 5)}`,
-        open: false,
-      };
-    }
-    return { text: "Chiuso", open: false };
+function getIntervals(day: DaySchedule): Interval[] {
+  if (day.chiuso) return [];
+  const result: Interval[] = [];
+  if (day.apertura1 && day.chiusura1) {
+    result.push({ open: parseTime(day.apertura1), close: parseTime(day.chiusura1) });
   }
+  if (day.apertura2 && day.chiusura2) {
+    result.push({ open: parseTime(day.apertura2), close: parseTime(day.chiusura2) });
+  }
+  return result.sort((a, b) => a.open - b.open);
+}
+
+function fmt(m: number): string {
+  const h = Math.floor(m / 60);
+  const min = m % 60;
+  return `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
+}
+
+function formatInterval(i: Interval): string {
+  return `${fmt(i.open)}\u2013${fmt(i.close)}`;
+}
+
+function getStatus(schedule: Orari | null): StatusInfo {
+  if (!schedule) return { type: "closed", text: "Orari non disponibili" };
 
   const now = new Date();
+  const todayName = ITALIAN_DAYS[now.getDay()];
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
-  const openMinutes = parseTime(today.apertura);
-  const closeMinutes = parseTime(today.chiusura);
 
-  if (currentMinutes >= openMinutes && currentMinutes < closeMinutes) {
-    return {
-      text: `Chiude alle ${today.chiusura.slice(0, 5)}`,
-      open: true,
-    };
+  const today = schedule[todayName];
+  const intervals = today ? getIntervals(today) : [];
+
+  if (!today || today.chiuso || intervals.length === 0) {
+    for (let i = 1; i <= 7; i++) {
+      const nextIdx = (now.getDay() + i) % 7;
+      const nextName = ITALIAN_DAYS[nextIdx];
+      const next = schedule[nextName];
+      const nextIntervals = next ? getIntervals(next) : [];
+      if (next && !next.chiuso && nextIntervals.length > 0) {
+        const prefix = i === 1 ? "domani" : LABEL[nextName] ?? nextName;
+        return { type: "closed", text: `Riapre ${prefix} alle ${fmt(nextIntervals[0].open)}` };
+      }
+    }
+    return { type: "closed", text: "Chiuso oggi" };
   }
 
-  if (currentMinutes < openMinutes) {
-    return {
-      text: `Apre oggi alle ${today.apertura.slice(0, 5)}`,
-      open: false,
-    };
+  for (const iv of intervals) {
+    if (currentMinutes >= iv.open && currentMinutes < iv.close) {
+      return { type: "open", text: `Chiude alle ${fmt(iv.close)}` };
+    }
   }
 
-  return { text: "Chiuso", open: false };
+  const nextInterval = intervals.find((iv) => currentMinutes < iv.open);
+  if (nextInterval) {
+    return { type: "closed", text: `Apre oggi alle ${fmt(nextInterval.open)}` };
+  }
+
+  for (let i = 1; i <= 7; i++) {
+    const nextIdx = (now.getDay() + i) % 7;
+    const nextName = ITALIAN_DAYS[nextIdx];
+    const next = schedule[nextName];
+    const nextIntervals = next ? getIntervals(next) : [];
+    if (next && !next.chiuso && nextIntervals.length > 0) {
+      const prefix = i === 1 ? "domani" : LABEL[nextName] ?? nextName;
+      return { type: "closed", text: `Riapre ${prefix} alle ${fmt(nextIntervals[0].open)}` };
+    }
+  }
+
+  return { type: "closed", text: "Chiuso oggi" };
 }
 
-function getTodayName(): string {
-  return ITALIAN_DAYS[new Date().getDay()];
+function findNextOpenForDay(schedule: Orari, day: string): string | null {
+  const d = schedule[day];
+  const intervals = d ? getIntervals(d) : [];
+  if (!d || d.chiuso || intervals.length === 0) return null;
+  return formatInterval(intervals[0]);
 }
 
 export default function OpeningHoursDisplay({
   orari,
 }: {
-  orari: Record<string, DaySchedule> | string | null | undefined;
+  orari: Orari | string | null | undefined;
 }) {
-  const schedule = useMemo<Record<string, DaySchedule> | null>(() => {
+  const schedule = useMemo<Orari | null>(() => {
     if (!orari) return null;
     if (typeof orari === "object") return orari;
     return null;
   }, [orari]);
-
-  const status = useMemo(() => getStatus(schedule), [schedule]);
-  const todayName = useMemo(() => getTodayName(), []);
 
   if (!schedule) {
     if (typeof orari === "string" && orari) {
@@ -87,55 +115,105 @@ export default function OpeningHoursDisplay({
     return null;
   }
 
+  const now = new Date();
+  const todayName = ITALIAN_DAYS[now.getDay()];
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+  const today = schedule[todayName];
+  const todayIntervals = today ? getIntervals(today) : [];
+
+  let statusText = "";
+  let statusType: "open" | "closed" = "closed";
+
+  if (!today || today.chiuso || todayIntervals.length === 0) {
+    for (let i = 1; i <= 7; i++) {
+      const nextIdx = (now.getDay() + i) % 7;
+      const nextName = ITALIAN_DAYS[nextIdx];
+      const next = schedule[nextName];
+      const nextIntervals = next ? getIntervals(next) : [];
+      if (next && !next.chiuso && nextIntervals.length > 0) {
+        const prefix = i === 1 ? "domani" : LABEL[nextName] ?? nextName;
+        statusText = `Riapre ${prefix} alle ${fmt(nextIntervals[0].open)}`;
+        break;
+      }
+    }
+    if (!statusText) {
+      statusText = "Chiuso oggi";
+    }
+  } else {
+    for (const iv of todayIntervals) {
+      if (currentMinutes >= iv.open && currentMinutes < iv.close) {
+        statusText = `Chiude alle ${fmt(iv.close)}`;
+        statusType = "open";
+        break;
+      }
+    }
+    if (statusType === "closed") {
+      const nextInterval = todayIntervals.find((iv) => currentMinutes < iv.open);
+      if (nextInterval) {
+        statusText = `Apre oggi alle ${fmt(nextInterval.open)}`;
+      } else {
+        for (let i = 1; i <= 7; i++) {
+          const nextIdx = (now.getDay() + i) % 7;
+          const nextName = ITALIAN_DAYS[nextIdx];
+          const next = schedule[nextName];
+          const nextIntervals = next ? getIntervals(next) : [];
+          if (next && !next.chiuso && nextIntervals.length > 0) {
+            const prefix = i === 1 ? "domani" : LABEL[nextName] ?? nextName;
+            statusText = `Riapre ${prefix} alle ${fmt(nextIntervals[0].open)}`;
+            break;
+          }
+        }
+        if (!statusText) {
+          statusText = "Chiuso oggi";
+        }
+      }
+    }
+  }
+
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-5">
       <div className="mb-4">
         <p className="text-sm font-semibold text-slate-900">Orari di apertura</p>
         <div className="mt-2 flex items-center gap-1.5 text-sm">
-          {status.open ? (
+          {statusType === "open" ? (
             <>
-              <span className="text-emerald-600 font-medium">Aperto</span>
-              <span className="text-slate-400">·</span>
-              <span className="text-slate-600">{status.text}</span>
+              <span className="text-lg leading-none">🟢</span>
+              <span className="font-medium text-emerald-600">Aperto ora</span>
+              <span className="text-slate-400">&middot;</span>
+              <span className="text-slate-600">{statusText}</span>
             </>
           ) : (
             <>
-              <span className="text-amber-600 font-medium">Chiuso</span>
-              <span className="text-slate-400">·</span>
-              <span className="text-slate-600">{status.text}</span>
+              <span className="text-lg leading-none">🔴</span>
+              <span className="font-medium text-amber-600">Chiuso</span>
+              <span className="text-slate-400">&middot;</span>
+              <span className="text-slate-600">{statusText}</span>
             </>
           )}
         </div>
       </div>
 
-      <div className="divide-y divide-slate-100 text-sm">
-        {DAYS_ORDER.map((day) => {
+      <div className="space-y-3 text-sm">
+        {DAYS.map((day) => {
           const d = schedule[day];
           const isToday = day === todayName;
-          const closed = !d || d.chiuso;
+          const intervals = d ? getIntervals(d) : [];
+          const closed = !d || d.chiuso || intervals.length === 0;
 
           return (
-            <div
-              key={day}
-              className="flex items-center justify-between py-2.5"
-            >
-              <span className="flex items-center gap-2">
-                <span className={`${isToday ? "font-bold text-slate-900" : "text-slate-700"}`}>
-                  {day.charAt(0).toUpperCase() + day.slice(1)}
-                </span>
+            <div key={day} className="flex items-center justify-between py-1.5">
+              <span className={`flex shrink-0 items-center gap-2 ${isToday ? "font-bold text-slate-900" : "text-slate-700"}`}>
+                {LABEL[day] ?? day}
                 {isToday && (
                   <span className="rounded-full bg-blue-600 px-2 py-0.5 text-[11px] font-bold leading-none text-white">
                     Oggi
                   </span>
                 )}
               </span>
-              {closed ? (
-                <span className="text-slate-300">Chiuso</span>
-              ) : (
-                <span className={`tabular-nums ${isToday ? "font-bold text-slate-900" : "text-slate-600"}`}>
-                  {formatTimeRange(d.apertura, d.chiusura)}
-                </span>
-              )}
+              <span className="tabular-nums text-right whitespace-pre leading-tight text-slate-600">
+                {closed ? "Chiuso" : intervals.map((iv) => formatInterval(iv)).join("\n")}
+              </span>
             </div>
           );
         })}

@@ -1,45 +1,41 @@
 "use client";
 
 import { useEffect } from "react";
-import { Check, Clock, Loader2 } from "lucide-react";
+import { Check, Clock, Loader2, Plus, X } from "lucide-react";
 import { useSettingsForm } from "./useSettingsForm";
 import { useSettingsContext } from "./SettingsShell";
+import type { DaySchedule, Orari } from "@/types/orari";
+import { DAYS, EMPTY_DAY, CLOSED_DAY } from "@/types/orari";
 
-type DaySchedule = { apertura: string; chiusura: string; chiuso: boolean };
-
-const DAYS = ["lunedì", "martedì", "mercoledì", "giovedì", "venerdì", "sabato", "domenica"] as const;
 const SHORT: Record<string, string> = {
   "lunedì": "Lun", "martedì": "Mar", "mercoledì": "Mer",
   "giovedì": "Gio", "venerdì": "Ven", "sabato": "Sab", "domenica": "Dom",
 };
 
-const PRESETS: Record<string, Record<string, DaySchedule>> = {
+function cloneDay(d: DaySchedule): DaySchedule {
+  return { ...d };
+}
+
+const DEFAULT_TEMPLATE: DaySchedule = { chiuso: false, apertura1: "09:00", chiusura1: "18:00", apertura2: "", chiusura2: "" };
+
+function buildDefault(days: readonly string[]): Orari {
+  const r: Orari = {};
+  for (const d of days) r[d] = { ...DEFAULT_TEMPLATE };
+  return r;
+}
+
+const PRESETS: Record<string, Orari> = {
   "Lun-Ven 9-18": {
-    "lunedì":    { apertura: "09:00", chiusura: "18:00", chiuso: false },
-    "martedì":   { apertura: "09:00", chiusura: "18:00", chiuso: false },
-    "mercoledì": { apertura: "09:00", chiusura: "18:00", chiuso: false },
-    "giovedì":   { apertura: "09:00", chiusura: "18:00", chiuso: false },
-    "venerdì":   { apertura: "09:00", chiusura: "18:00", chiuso: false },
-    "sabato":    { apertura: "", chiusura: "", chiuso: true },
-    "domenica":  { apertura: "", chiusura: "", chiuso: true },
+    ...buildDefault(["lunedì", "martedì", "mercoledì", "giovedì", "venerdì"]),
+    sabato: { ...CLOSED_DAY },
+    domenica: { ...CLOSED_DAY },
   },
   "Lun-Sab 9-20": {
-    "lunedì":    { apertura: "09:00", chiusura: "20:00", chiuso: false },
-    "martedì":   { apertura: "09:00", chiusura: "20:00", chiuso: false },
-    "mercoledì": { apertura: "09:00", chiusura: "20:00", chiuso: false },
-    "giovedì":   { apertura: "09:00", chiusura: "20:00", chiuso: false },
-    "venerdì":   { apertura: "09:00", chiusura: "20:00", chiuso: false },
-    "sabato":    { apertura: "09:00", chiusura: "20:00", chiuso: false },
-    "domenica":  { apertura: "", chiusura: "", chiuso: true },
+    ...buildDefault(["lunedì", "martedì", "mercoledì", "giovedì", "venerdì", "sabato"]),
+    domenica: { ...CLOSED_DAY },
   },
   "Tutti 9-21": {
-    "lunedì":    { apertura: "09:00", chiusura: "21:00", chiuso: false },
-    "martedì":   { apertura: "09:00", chiusura: "21:00", chiuso: false },
-    "mercoledì": { apertura: "09:00", chiusura: "21:00", chiuso: false },
-    "giovedì":   { apertura: "09:00", chiusura: "21:00", chiuso: false },
-    "venerdì":   { apertura: "09:00", chiusura: "21:00", chiuso: false },
-    "sabato":    { apertura: "09:00", chiusura: "21:00", chiuso: false },
-    "domenica":  { apertura: "09:00", chiusura: "21:00", chiuso: false },
+    ...buildDefault(["lunedì", "martedì", "mercoledì", "giovedì", "venerdì", "sabato", "domenica"]),
   },
 };
 
@@ -48,7 +44,7 @@ export default function OpeningHoursEditor({
   initial,
 }: {
   storeId: string;
-  initial: Record<string, DaySchedule>;
+  initial: Orari;
 }) {
   const { setFormDirty } = useSettingsContext();
   const { data: schedule, updateAll, saving, saved, error, isDirty, handleSubmit } = useSettingsForm(initial);
@@ -57,8 +53,24 @@ export default function OpeningHoursEditor({
     setFormDirty("hours", isDirty);
   }, [isDirty, setFormDirty]);
 
-  function updateDay(day: string, field: keyof DaySchedule, value: string | boolean) {
-    updateAll({ ...schedule, [day]: { ...schedule[day], [field]: value } });
+  function updateDay(day: string, patch: Partial<DaySchedule>) {
+    const current = schedule[day] ? cloneDay(schedule[day]) : { ...EMPTY_DAY };
+    updateAll({ ...schedule, [day]: { ...current, ...patch } });
+  }
+
+  function toggleChiuso(day: string, aperto: boolean) {
+    updateAll({
+      ...schedule,
+      [day]: aperto ? { ...EMPTY_DAY } : { ...CLOSED_DAY },
+    });
+  }
+
+  function addSecondInterval(day: string) {
+    updateDay(day, { apertura2: "15:30", chiusura2: "20:00" });
+  }
+
+  function removeSecondInterval(day: string) {
+    updateDay(day, { apertura2: "", chiusura2: "" });
   }
 
   function applyPreset(name: string) {
@@ -66,11 +78,9 @@ export default function OpeningHoursEditor({
     if (preset) updateAll(preset);
   }
 
-  function setAllDays(apertura: string, chiusura: string, chiuso: boolean) {
-    const updated: Record<string, DaySchedule> = {};
-    for (const day of DAYS) {
-      updated[day] = { apertura, chiusura, chiuso };
-    }
+  function setAllClosed() {
+    const updated: Orari = {};
+    for (const day of DAYS) updated[day] = { ...CLOSED_DAY };
     updateAll(updated);
   }
 
@@ -98,7 +108,6 @@ export default function OpeningHoursEditor({
         </div>
       )}
 
-      {/* Presets */}
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Preimpostazioni:</span>
         {Object.keys(PRESETS).map((name) => (
@@ -113,64 +122,107 @@ export default function OpeningHoursEditor({
         ))}
         <button
           type="button"
-          onClick={() => setAllDays("", "", true)}
+          onClick={setAllClosed}
           className="rounded-lg border border-slate-200 bg-white px-3 py-1 text-[11px] font-semibold text-slate-600 transition hover:border-red-300 hover:text-red-600"
         >
           Chiudi tutto
         </button>
       </div>
 
-      {/* Grid */}
       <div className="space-y-2">
         {DAYS.map((day) => {
-          const s = schedule[day] ?? { apertura: "", chiusura: "", chiuso: true };
+          const s = schedule[day] ?? EMPTY_DAY;
+          const hasSecond = !!(s.apertura2 && s.chiusura2);
+
           return (
             <div
               key={day}
-              className={`flex items-center gap-3 rounded-xl border px-4 py-3 transition ${
+              className={`rounded-xl border px-4 py-3 transition ${
                 s.chiuso ? "border-slate-100 bg-slate-50/60 opacity-60" : "border-slate-200 bg-white"
               }`}
             >
-              <label className="flex w-16 shrink-0 items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={!s.chiuso}
-                  onChange={(e) => updateDay(day, "chiuso", !e.target.checked)}
-                  className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                />
-                <span className="text-sm font-semibold text-slate-700">{SHORT[day]}</span>
-              </label>
+              <div className="flex items-start gap-3">
+                <label className="flex w-16 shrink-0 items-center gap-2 pt-0.5">
+                  <input
+                    type="checkbox"
+                    checked={!s.chiuso}
+                    onChange={(e) => toggleChiuso(day, e.target.checked)}
+                    className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-sm font-semibold text-slate-700">{SHORT[day]}</span>
+                </label>
 
-              {s.chiuso ? (
-                <span className="text-xs font-medium text-slate-400 italic">Chiuso</span>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1.5">
-                    <Clock className="h-3.5 w-3.5 text-slate-400" />
-                    <input
-                      type="time"
-                      value={s.apertura}
-                      onChange={(e) => updateDay(day, "apertura", e.target.value)}
-                      className="h-8 w-28 rounded-lg border border-slate-200 px-2 text-xs text-slate-700 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
-                    />
+                {s.chiuso ? (
+                  <span className="pt-0.5 text-xs font-medium text-slate-400 italic">Chiuso</span>
+                ) : (
+                  <div className="flex flex-1 flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="w-[72px] shrink-0 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Mattina</span>
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="time"
+                          value={s.apertura1}
+                          onChange={(e) => updateDay(day, { apertura1: e.target.value })}
+                          className="h-8 w-28 rounded-lg border border-slate-200 px-2 text-xs text-slate-700 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
+                        />
+                      </div>
+                      <span className="text-xs text-slate-400">&rarr;</span>
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          type="time"
+                          value={s.chiusura1}
+                          onChange={(e) => updateDay(day, { chiusura1: e.target.value })}
+                          className="h-8 w-28 rounded-lg border border-slate-200 px-2 text-xs text-slate-700 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
+                        />
+                      </div>
+                    </div>
+
+                    {hasSecond ? (
+                      <div className="flex items-center gap-2">
+                        <span className="w-[72px] shrink-0 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Pomeriggio</span>
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="time"
+                            value={s.apertura2}
+                            onChange={(e) => updateDay(day, { apertura2: e.target.value })}
+                            className="h-8 w-28 rounded-lg border border-slate-200 px-2 text-xs text-slate-700 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
+                          />
+                        </div>
+                        <span className="text-xs text-slate-400">&rarr;</span>
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="time"
+                            value={s.chiusura2}
+                            onChange={(e) => updateDay(day, { chiusura2: e.target.value })}
+                            className="h-8 w-28 rounded-lg border border-slate-200 px-2 text-xs text-slate-700 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeSecondInterval(day)}
+                          className="ml-1 rounded-lg p-1 text-slate-400 transition hover:bg-red-50 hover:text-red-500"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => addSecondInterval(day)}
+                        className="flex items-center gap-1 text-xs font-semibold text-blue-600 transition hover:text-blue-700"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                        Aggiungi turno pomeridiano
+                      </button>
+                    )}
                   </div>
-                  <span className="text-xs text-slate-400">&rarr;</span>
-                  <div className="flex items-center gap-1.5">
-                    <input
-                      type="time"
-                      value={s.chiusura}
-                      onChange={(e) => updateDay(day, "chiusura", e.target.value)}
-                      className="h-8 w-28 rounded-lg border border-slate-200 px-2 text-xs text-slate-700 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-100"
-                    />
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           );
         })}
       </div>
 
-      {/* Salva */}
       <div className="flex items-center gap-3 pt-1">
         <button
           type="submit"
