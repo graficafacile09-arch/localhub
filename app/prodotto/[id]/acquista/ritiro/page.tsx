@@ -6,7 +6,6 @@ import { PriceDisplay } from "@/components/prodotti/PriceDisplay";
 import { QuantitySelector } from "@/components/prodotti/QuantitySelector";
 import { OrderSummary } from "@/components/prodotti/OrderSummary";
 import { StoreInfoCard } from "@/components/prodotti/StoreInfoCard";
-import OpeningHoursDisplay from "@/components/negozio/OpeningHoursDisplay";
 
 async function getProductData(id: string) {
   const prodottoReale = await getProdotto(id);
@@ -106,17 +105,6 @@ export default async function RitiroPage({
           )}
 
           <StoreInfoCard negozio={negozio} />
-
-          {negozio && negozio.orari && (
-            <div className="rounded-xl border border-slate-200 bg-white p-4">
-              <h3 className="text-sm font-bold text-slate-900">
-                Orari di apertura
-              </h3>
-              <div className="mt-2">
-                <OpeningHoursDisplay orari={negozio.orari} />
-              </div>
-            </div>
-          )}
 
           <button
             type="button"

@@ -6,7 +6,6 @@ import { ProductImage } from "@/components/prodotti/ProductImage";
 import { PriceDisplay } from "@/components/prodotti/PriceDisplay";
 import { QuantitySelector } from "@/components/prodotti/QuantitySelector";
 import { OrderSummary } from "@/components/prodotti/OrderSummary";
-import { StoreInfoCard } from "@/components/prodotti/StoreInfoCard";
 
 function formatPrezzo(p: number): number {
   return Number(p);
@@ -71,12 +70,6 @@ export default async function AcquistaPage({
               </p>
             )}
           </div>
-
-          {("descrizione" in prodotto && prodotto.descrizione) && (
-            <p className="text-sm text-slate-600">{prodotto.descrizione as string}</p>
-          )}
-
-          <StoreInfoCard negozio={negozio} />
         </div>
 
         <div className="space-y-4">
@@ -113,7 +106,7 @@ export default async function AcquistaPage({
             <DeliveryOptionCard
               icon="🚚"
               title="Spedizione a domicilio"
-              description={`Consegna a domicilio tramite corriere.`}
+              description="Ricevi il prodotto direttamente a casa tramite corriere."
               actionLabel="Continua"
               href={`/prodotto/${id}/acquista/spedizione`}
             />
