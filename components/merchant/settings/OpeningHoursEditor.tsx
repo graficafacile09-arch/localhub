@@ -12,11 +12,6 @@ const SHORT: Record<string, string> = {
   "giovedì": "Gio", "venerdì": "Ven", "sabato": "Sab", "domenica": "Dom",
 };
 
-const LABEL: Record<string, string> = {
-  "lunedì": "Lunedì", "martedì": "Martedì", "mercoledì": "Mercoledì",
-  "giovedì": "Giovedì", "venerdì": "Venerdì", "sabato": "Sabato", "domenica": "Domenica",
-};
-
 function cloneDay(d: DaySchedule): DaySchedule {
   return { ...d };
 }
@@ -96,28 +91,28 @@ export default function OpeningHoursEditor({
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
+    <form onSubmit={onSubmit} className="space-y-3">
       {error && (
-        <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          <span className="h-2 w-2 shrink-0 rounded-full bg-red-500" />
+        <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-red-500" />
           {error}
         </div>
       )}
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-1.5">
         {Object.keys(PRESETS).map((name) => (
           <button
             key={name}
             type="button"
             onClick={() => applyPreset(name)}
-            className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-600 transition hover:border-blue-300 hover:text-blue-600"
+            className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-semibold text-slate-500 transition hover:border-blue-300 hover:text-blue-600"
           >
             {name}
           </button>
         ))}
       </div>
 
-      <div className="space-y-1.5">
+      <div className="space-y-1">
         {DAYS.map((day) => {
           const s = schedule[day] ?? EMPTY_DAY;
           const hasSecond = !!(s.apertura2 && s.chiusura2);
@@ -125,75 +120,73 @@ export default function OpeningHoursEditor({
           return (
             <div
               key={day}
-              className={`rounded-xl border px-4 py-2.5 transition ${
-                s.chiuso ? "border-slate-100 bg-slate-50/60" : "border-slate-200 bg-white"
+              className={`flex items-center gap-2 rounded-lg px-3 py-1.5 transition ${
+                s.chiuso ? "bg-slate-50/70" : "bg-white"
               }`}
             >
-              <div className="flex items-center gap-3">
-                <label className="flex w-16 shrink-0 items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={!s.chiuso}
-                    onChange={(e) => toggleChiuso(day, e.target.checked)}
-                    className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-                  />
-                  <span className={`text-sm font-semibold ${s.chiuso ? "text-slate-400" : "text-slate-700"}`}>
-                    {SHORT[day]}
-                  </span>
-                </label>
+              <label className="flex w-12 shrink-0 items-center gap-1.5">
+                <input
+                  type="checkbox"
+                  checked={!s.chiuso}
+                  onChange={(e) => toggleChiuso(day, e.target.checked)}
+                  className="h-3.5 w-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-400"
+                />
+                <span className={`text-[11px] font-semibold ${s.chiuso ? "text-slate-400" : "text-slate-600"}`}>
+                  {SHORT[day]}
+                </span>
+              </label>
 
-                {s.chiuso ? (
-                  <span className="text-xs text-slate-400 italic">Chiuso</span>
-                ) : (
-                  <div className="flex flex-1 flex-col gap-1.5 min-w-0">
-                    <div className="flex items-center gap-2 min-w-0 flex-wrap">
-                      <span className="w-14 shrink-0 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Mattina</span>
+              {s.chiuso ? (
+                <span className="text-[10px] text-slate-400 italic">Chiuso</span>
+              ) : (
+                <div className="flex flex-1 flex-col gap-0.5 min-w-0">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="w-12 shrink-0 text-[9px] font-medium uppercase tracking-wider text-slate-400">Mattina</span>
+                    <div className="flex items-center gap-1 min-w-0 flex-1">
+                      <Clock className="h-2.5 w-2.5 text-slate-400 shrink-0" />
+                      <input
+                        type="time"
+                        value={s.apertura1}
+                        onChange={(e) => updateDay(day, { apertura1: e.target.value })}
+                        className="h-6 flex-1 min-w-0 rounded border border-slate-100 bg-slate-50 px-1.5 text-[11px] text-slate-700 outline-none focus:border-blue-300 focus:ring-1 focus:ring-blue-50"
+                      />
+                    </div>
+                    <span className="text-[10px] text-slate-300 shrink-0">&ndash;</span>
+                    <div className="flex items-center gap-1 min-w-0 flex-1">
+                      <input
+                        type="time"
+                        value={s.chiusura1}
+                        onChange={(e) => updateDay(day, { chiusura1: e.target.value })}
+                        className="h-6 flex-1 min-w-0 rounded border border-slate-100 bg-slate-50 px-1.5 text-[11px] text-slate-700 outline-none focus:border-blue-300 focus:ring-1 focus:ring-blue-50"
+                      />
+                    </div>
+                  </div>
+
+                  {hasSecond && (
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <span className="w-12 shrink-0 text-[9px] font-medium uppercase tracking-wider text-slate-400">Pomeriggio</span>
                       <div className="flex items-center gap-1 min-w-0 flex-1">
-                        <Clock className="h-3 w-3 text-slate-400 shrink-0" />
+                        <Clock className="h-2.5 w-2.5 text-slate-400 shrink-0" />
                         <input
                           type="time"
-                          value={s.apertura1}
-                          onChange={(e) => updateDay(day, { apertura1: e.target.value })}
-                          className="h-7 w-full min-w-0 rounded border border-slate-200 px-1.5 text-xs text-slate-700 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
+                          value={s.apertura2}
+                          onChange={(e) => updateDay(day, { apertura2: e.target.value })}
+                          className="h-6 flex-1 min-w-0 rounded border border-slate-100 bg-slate-50 px-1.5 text-[11px] text-slate-700 outline-none focus:border-blue-300 focus:ring-1 focus:ring-blue-50"
                         />
                       </div>
-                      <span className="text-xs text-slate-300 shrink-0">&rarr;</span>
+                      <span className="text-[10px] text-slate-300 shrink-0">&ndash;</span>
                       <div className="flex items-center gap-1 min-w-0 flex-1">
                         <input
                           type="time"
-                          value={s.chiusura1}
-                          onChange={(e) => updateDay(day, { chiusura1: e.target.value })}
-                          className="h-7 w-full min-w-0 rounded border border-slate-200 px-1.5 text-xs text-slate-700 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
+                          value={s.chiusura2}
+                          onChange={(e) => updateDay(day, { chiusura2: e.target.value })}
+                          className="h-6 flex-1 min-w-0 rounded border border-slate-100 bg-slate-50 px-1.5 text-[11px] text-slate-700 outline-none focus:border-blue-300 focus:ring-1 focus:ring-blue-50"
                         />
                       </div>
                     </div>
-
-                    {hasSecond && (
-                      <div className="flex items-center gap-2 min-w-0 flex-wrap">
-                        <span className="w-14 shrink-0 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Pomeriggio</span>
-                        <div className="flex items-center gap-1 min-w-0 flex-1">
-                          <Clock className="h-3 w-3 text-slate-400 shrink-0" />
-                          <input
-                            type="time"
-                            value={s.apertura2}
-                            onChange={(e) => updateDay(day, { apertura2: e.target.value })}
-                            className="h-7 w-full min-w-0 rounded border border-slate-200 px-1.5 text-xs text-slate-700 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
-                          />
-                        </div>
-                        <span className="text-xs text-slate-300 shrink-0">&rarr;</span>
-                        <div className="flex items-center gap-1 min-w-0 flex-1">
-                          <input
-                            type="time"
-                            value={s.chiusura2}
-                            onChange={(e) => updateDay(day, { chiusura2: e.target.value })}
-                            className="h-7 w-full min-w-0 rounded border border-slate-200 px-1.5 text-xs text-slate-700 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
-                          />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              )}
             </div>
           );
         })}
@@ -203,15 +196,15 @@ export default function OpeningHoursEditor({
         <button
           type="submit"
           disabled={saving || !isDirty}
-          className="inline-flex h-10 items-center gap-2 rounded-xl bg-blue-600 px-5 text-sm font-bold text-white shadow-md shadow-blue-500/25 transition hover:bg-blue-700 active:scale-[0.98] disabled:opacity-50"
+          className="inline-flex h-9 items-center gap-2 rounded-lg bg-blue-600 px-4 text-xs font-bold text-white transition hover:bg-blue-700 active:scale-[0.98] disabled:opacity-50"
         >
-          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : saved ? <Check className="h-4 w-4" /> : null}
+          {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : saved ? <Check className="h-3.5 w-3.5" /> : null}
           {saving ? "Salvataggio..." : saved ? "Salvato!" : "Salva orari"}
         </button>
         {isDirty && !saving && (
-          <span className="flex items-center gap-1.5 text-xs font-medium text-amber-600">
-            <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-            Non salvato
+          <span className="flex items-center gap-1 text-[10px] font-medium text-amber-600">
+            <span className="h-1 w-1 rounded-full bg-amber-500" />
+           Non salvato
           </span>
         )}
       </div>

@@ -151,12 +151,12 @@ export default async function RicercaPage({
                             <span className="truncate">{negozio.indirizzo}</span>
                           </p>
                         )}
-                        {negozio.telefono && (
-                          <p className="flex items-center gap-1 text-[11px] text-slate-500">
-                            <Phone className="h-3 w-3 shrink-0" />
-                            <span>{negozio.telefono}</span>
-                          </p>
-                        )}
+{negozio.telefono && (
+  <p className="flex items-center gap-1 text-[11px] text-slate-500">
+    <Phone className="h-3 w-3 shrink-0" />
+    <span>{negozio.telefono}</span>
+  </p>
+)}
                       </div>
                     </Link>
                   ))}
