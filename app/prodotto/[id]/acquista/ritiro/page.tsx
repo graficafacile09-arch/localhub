@@ -8,23 +8,17 @@ import { OrderSummary } from "@/components/prodotti/OrderSummary";
 import { StoreInfoCard } from "@/components/prodotti/StoreInfoCard";
 
 async function getProductData(id: string) {
-  console.log("[RITIRO] getProductData START, id:", id);
   const prodottoReale = await getProdotto(id);
-  console.log("[RITIRO] getProdotto result:", prodottoReale ? "found" : "null");
   const prodottoDemo = prodottoReale ? null : getProdottoDemoById(id);
   const prodotto = prodottoReale ?? prodottoDemo;
-  console.log("[RITIRO] prodotto:", prodotto ? prodotto.id : "null");
 
   if (!prodotto) return null;
 
   const negozio = await getNegozio(String(prodotto.negozio_id));
-  console.log("[RITIRO] negozio:", negozio ? negozio.id : "null");
   const prezzo = Number("prezzo" in prodotto ? prodotto.prezzo : 0);
-  console.log("[RITIRO] prezzo:", prezzo, typeof prezzo);
   const quantita = "quantita_disponibile" in prodotto
     ? Number(prodotto.quantita_disponibile)
     : null;
-  console.log("[RITIRO] quantita:", quantita);
 
   return { prodotto, negozio, prezzo, quantita };
 }

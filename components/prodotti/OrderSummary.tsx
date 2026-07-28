@@ -7,12 +7,10 @@ export function OrderSummary({
     quantita: number;
   }>;
 }) {
-  console.log("[OrderSummary] rendering, items:", items);
   const subtotale = items.reduce(
     (sum, item) => sum + item.prezzo * item.quantita,
     0,
   );
-  console.log("[OrderSummary] subtotale:", subtotale);
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white p-4">

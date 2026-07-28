@@ -12,23 +12,17 @@ function formatPrezzo(p: number): number {
 }
 
 async function getProductData(id: string) {
-  console.log("[ACQUISTA] getProductData START, id:", id);
   const prodottoReale = await getProdotto(id);
-  console.log("[ACQUISTA] getProdotto result:", prodottoReale ? "found" : "null");
   const prodottoDemo = prodottoReale ? null : getProdottoDemoById(id);
   const prodotto = prodottoReale ?? prodottoDemo;
-  console.log("[ACQUISTA] prodotto:", prodotto ? prodotto.id : "null");
 
   if (!prodotto) return null;
 
   const negozio = await getNegozio(String(prodotto.negozio_id));
-  console.log("[ACQUISTA] negozio:", negozio ? negozio.id : "null");
   const prezzo = formatPrezzo(
     "prezzo" in prodotto ? Number(prodotto.prezzo) : 0,
   );
-  console.log("[ACQUISTA] prezzo:", prezzo, typeof prezzo);
   const quantita = "quantita_disponibile" in prodotto ? Number(prodotto.quantita_disponibile) : null;
-  console.log("[ACQUISTA] quantita:", quantita);
 
   return { prodotto, negozio, prezzo, quantita };
 }
@@ -38,7 +32,6 @@ export default async function AcquistaPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  try {
   const { id } = await params;
   const data = await getProductData(id);
 
@@ -55,7 +48,6 @@ export default async function AcquistaPage({
   const { prodotto, negozio, prezzo, quantita } = data;
   const nome = "nome" in prodotto ? (prodotto.nome as string) : "Prodotto";
   const disponibile = quantita !== null && quantita > 0;
-  console.log("[ACQUISTA] rendering page, nome:", nome, "prezzo:", prezzo, "quantita:", quantita);
 
   return (
     <AcquistaLayout>
@@ -130,17 +122,4 @@ export default async function AcquistaPage({
       </div>
     </AcquistaLayout>
   );
-  } catch (e) {
-    console.error("[ACQUISTA] ERROR:", e);
-    return (
-      <AcquistaLayout>
-        <div className="py-12 text-center">
-          <p className="text-red-600">Errore: {e instanceof Error ? e.message : String(e)}</p>
-          <pre className="mt-4 text-left text-xs text-red-500">
-            {e instanceof Error ? e.stack : ""}
-          </pre>
-        </div>
-      </AcquistaLayout>
-    );
-  }
 }

@@ -20,23 +20,17 @@ interface ShippingFormData {
 }
 
 async function getProductData(id: string) {
-  console.log("[SPEDIZIONE] getProductData START, id:", id);
   const prodottoReale = await getProdotto(id);
-  console.log("[SPEDIZIONE] getProdotto result:", prodottoReale ? "found" : "null");
   const prodottoDemo = prodottoReale ? null : getProdottoDemoById(id);
   const prodotto = prodottoReale ?? prodottoDemo;
-  console.log("[SPEDIZIONE] prodotto:", prodotto ? prodotto.id : "null");
 
   if (!prodotto) return null;
 
   const negozio = await getNegozio(String(prodotto.negozio_id));
-  console.log("[SPEDIZIONE] negozio:", negozio ? negozio.id : "null");
   const prezzo = Number("prezzo" in prodotto ? prodotto.prezzo : 0);
-  console.log("[SPEDIZIONE] prezzo:", prezzo, typeof prezzo);
   const quantita = "quantita_disponibile" in prodotto
     ? Number(prodotto.quantita_disponibile)
     : null;
-  console.log("[SPEDIZIONE] quantita:", quantita);
 
   return { prodotto, negozio, prezzo, quantita };
 }

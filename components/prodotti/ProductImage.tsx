@@ -9,9 +9,7 @@ export function ProductImage({
   categoria: string | null;
   nome: string;
 }) {
-  console.log("[ProductImage] rendering, prodottoId:", prodottoId, "categoria:", categoria, "nome:", nome);
   const src = `/api/prodotto-immagine?id=${prodottoId}&categoria=${categoria ?? ""}`;
-  console.log("[ProductImage] src:", src);
 
   return (
     <div className="relative aspect-square overflow-hidden rounded-xl bg-slate-100">
