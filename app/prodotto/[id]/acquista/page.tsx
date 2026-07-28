@@ -1,11 +1,8 @@
 import { getProdotto, getNegozio } from "@/lib/negozi";
 import { getProdottoDemoById } from "@/lib/negozi-demo";
 import { getProdottoImmagine } from "@/lib/prodotti-immagini";
+import Link from "next/link";
 import AcquistaLayout from "./layout";
-import { DeliveryOptionCard } from "@/components/prodotti/DeliveryOptionCard";
-import { PriceDisplay } from "@/components/prodotti/PriceDisplay";
-import { QuantitySelector } from "@/components/prodotti/QuantitySelector";
-import { OrderSummary } from "@/components/prodotti/OrderSummary";
 
 function formatPrezzo(p: number): number {
   return Number(p);
@@ -22,12 +19,14 @@ async function getProductData(id: string) {
   const prezzo = formatPrezzo(
     "prezzo" in prodotto ? Number(prodotto.prezzo) : 0,
   );
-  const quantita = "quantita_disponibile" in prodotto ? Number(prodotto.quantita_disponibile) : null;
+  const quantita = "quantita_disponibile" in prodotto
+    ? Number(prodotto.quantita_disponibile)
+    : null;
 
   return { prodotto, negozio, prezzo, quantita };
 }
 
-export default async function AcquistaPage({
+export default async function AcquistaChoicePage({
   params,
 }: {
   params: Promise<{ id: string }>;
@@ -49,6 +48,15 @@ export default async function AcquistaPage({
   const nome = "nome" in prodotto ? (prodotto.nome as string) : "Prodotto";
   const disponibile = quantita !== null && quantita > 0;
 
+  const imageUrl = getProdottoImmagine({
+    immagine_principale: "immagine_principale" in prodotto
+      ? (prodotto.immagine_principale as string | null)
+      : null,
+    categoria: "categoria" in prodotto
+      ? (prodotto.categoria as string | null)
+      : null,
+  });
+
   return (
     <AcquistaLayout>
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -59,19 +67,16 @@ export default async function AcquistaPage({
                 role="img"
                 aria-label={nome}
                 className="h-full w-full bg-cover bg-center"
-                style={{
-                  backgroundImage: `url(${getProdottoImmagine({
-                    immagine_principale: "immagine_principale" in prodotto ? (prodotto.immagine_principale as string | null) : null,
-                    categoria: "categoria" in prodotto ? (prodotto.categoria as string | null) : null,
-                  })})`,
-                }}
+                style={{ backgroundImage: `url(${imageUrl})` }}
               />
             </div>
           </div>
 
           <div>
             <h2 className="text-lg font-black text-slate-900">{nome}</h2>
-            <PriceDisplay price={prezzo} />
+            <p className="text-2xl font-black text-emerald-700">
+              €{prezzo.toFixed(2)}
+            </p>
             {quantita !== null && (
               <p className="mt-1 text-xs text-slate-500">
                 {disponibile ? `${quantita} disponibili` : "Non disponibile"}
@@ -80,44 +85,46 @@ export default async function AcquistaPage({
           </div>
         </div>
 
-        <div className="space-y-4">
-          <div className="rounded-xl border border-slate-200 bg-white p-4">
-            <h3 className="text-sm font-bold text-slate-900">Quantità</h3>
-            <div className="mt-3">
-              <QuantitySelector
-                value={1}
-                min={1}
-                max={disponibile ? (quantita ?? 1) : 1}
-              />
+        <div className="flex flex-col gap-3">
+          <Link
+            href={`/prodotto/${id}/acquista/ritiro`}
+            className="group block rounded-xl border-2 border-slate-200 bg-white p-5 text-left transition hover:border-blue-400 hover:shadow-md"
+          >
+            <div className="flex items-start gap-3">
+              <span className="text-2xl shrink-0">🏪</span>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-sm font-bold text-slate-900 group-hover:text-blue-700">
+                  Ritiro in negozio
+                </h3>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  Ritira gratuitamente presso il punto vendita.
+                </p>
+                <span className="mt-2 inline-block text-xs font-semibold text-blue-600">
+                  Continua →
+                </span>
+              </div>
             </div>
-          </div>
+          </Link>
 
-          <OrderSummary
-            items={[
-              {
-                nome,
-                prezzo,
-                quantita: 1,
-              },
-            ]}
-          />
-
-          <div className="space-y-3">
-            <DeliveryOptionCard
-              icon="🏪"
-              title="Ritiro in negozio"
-              description={`Ritira il tuo ordine presso ${negozio?.nome ?? "negozio"}.`}
-              actionLabel="Continua"
-              href={`/prodotto/${id}/acquista/ritiro`}
-            />
-            <DeliveryOptionCard
-              icon="🚚"
-              title="Spedizione a domicilio"
-              description="Ricevi il prodotto direttamente a casa tramite corriere."
-              actionLabel="Continua"
-              href={`/prodotto/${id}/acquista/spedizione`}
-            />
-          </div>
+          <Link
+            href={`/prodotto/${id}/acquista/spedizione`}
+            className="group block rounded-xl border-2 border-slate-200 bg-white p-5 text-left transition hover:border-blue-400 hover:shadow-md"
+          >
+            <div className="flex items-start gap-3">
+              <span className="text-2xl shrink-0">🚚</span>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-sm font-bold text-slate-900 group-hover:text-blue-700">
+                  Spedizione a domicilio
+                </h3>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  Ricevi il prodotto all'indirizzo desiderato.
+                </p>
+                <span className="mt-2 inline-block text-xs font-semibold text-blue-600">
+                  Continua →
+                </span>
+              </div>
+            </div>
+          </Link>
         </div>
       </div>
     </AcquistaLayout>

@@ -2,22 +2,6 @@ import { getProdotto, getNegozio } from "@/lib/negozi";
 import { getProdottoDemoById } from "@/lib/negozi-demo";
 import { getProdottoImmagine } from "@/lib/prodotti-immagini";
 import AcquistaLayout from "../layout";
-import { PriceDisplay } from "@/components/prodotti/PriceDisplay";
-import { QuantitySelector } from "@/components/prodotti/QuantitySelector";
-import { OrderSummary } from "@/components/prodotti/OrderSummary";
-import { StoreInfoCard } from "@/components/prodotti/StoreInfoCard";
-
-interface ShippingFormData {
-  nome: string;
-  cognome: string;
-  telefono: string;
-  email: string;
-  indirizzo: string;
-  cap: string;
-  citta: string;
-  provincia: string;
-  note: string;
-}
 
 async function getProductData(id: string) {
   const prodottoReale = await getProdotto(id);
@@ -87,9 +71,19 @@ export default async function SpedizionePage({
   const { prodotto, negozio, prezzo, quantita } = data;
   const nome = "nome" in prodotto ? (prodotto.nome as string) : "Prodotto";
   const disponibile = quantita !== null && quantita > 0;
-  const totale = prezzo * 1;
+
+  const imageUrl = getProdottoImmagine({
+    immagine_principale: "immagine_principale" in prodotto
+      ? (prodotto.immagine_principale as string | null)
+      : null,
+    categoria: "categoria" in prodotto
+      ? (prodotto.categoria as string | null)
+      : null,
+  });
+
+  const subtotal = prezzo * 1;
   const costoSpedizione = 5.9;
-  const totaleConSpedizione = totale + costoSpedizione;
+  const totaleConSpedizione = subtotal + costoSpedizione;
 
   return (
     <AcquistaLayout>
@@ -101,19 +95,16 @@ export default async function SpedizionePage({
                 role="img"
                 aria-label={nome}
                 className="h-full w-full bg-cover bg-center"
-                style={{
-                  backgroundImage: `url(${getProdottoImmagine({
-                    immagine_principale: "immagine_principale" in prodotto ? (prodotto.immagine_principale as string | null) : null,
-                    categoria: "categoria" in prodotto ? (prodotto.categoria as string | null) : null,
-                  })})`,
-                }}
+                style={{ backgroundImage: `url(${imageUrl})` }}
               />
             </div>
           </div>
 
           <div>
             <h2 className="text-lg font-black text-slate-900">{nome}</h2>
-            <PriceDisplay price={prezzo} />
+            <p className="text-2xl font-black text-emerald-700">
+              €{prezzo.toFixed(2)}
+            </p>
             {quantita !== null && (
               <p className="mt-1 text-xs text-slate-500">
                 {disponibile ? `${quantita} disponibili` : "Non disponibile"}
@@ -125,33 +116,31 @@ export default async function SpedizionePage({
         <div className="space-y-4">
           <div className="rounded-xl border border-slate-200 bg-white p-4">
             <h3 className="text-sm font-bold text-slate-900">Quantità</h3>
-            <div className="mt-3">
-              <QuantitySelector
-                value={1}
-                min={1}
-                max={disponibile ? (quantita ?? 1) : 1}
-              />
+            <div className="mt-3 flex items-center gap-2">
+              <span className="flex h-8 w-10 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-sm font-bold text-slate-900">
+                1
+              </span>
             </div>
           </div>
 
-          <OrderSummary
-            items={[
-              {
-                nome,
-                prezzo,
-                quantita: 1,
-              },
-            ]}
-          />
-
-          <div className="rounded-xl border border-slate-100 bg-slate-50/50 p-4">
-            <h3 className="text-sm font-bold text-slate-900">Spedizione</h3>
-            <div className="mt-2 space-y-1 text-xs text-slate-500">
-              <div className="flex justify-between">
-                <span>Corriere standard</span>
+          <div className="rounded-xl border border-slate-200 bg-white p-4">
+            <h3 className="text-sm font-bold text-slate-900">Riepilogo ordine</h3>
+            <div className="mt-3 space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="flex-1 text-slate-700">
+                  {nome} × 1
+                </span>
+                <span className="font-semibold text-slate-900">
+                  €{subtotal.toFixed(2)}
+                </span>
+              </div>
+            </div>
+            <div className="mt-4 border-t border-slate-100 pt-3">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-500">Spedizione</span>
                 <span>€{costoSpedizione.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between pt-1 border-t border-slate-200 font-bold">
+              <div className="flex items-center justify-between pt-1 font-bold border-t border-slate-200">
                 <span>Totale</span>
                 <span>€{totaleConSpedizione.toFixed(2)}</span>
               </div>
@@ -176,16 +165,14 @@ export default async function SpedizionePage({
               <FormField label="Città" id="citta" required />
               <FormField label="Provincia" id="provincia" required />
             </div>
-            <FormField label="Note" id="note" />
-
-            <StoreInfoCard negozio={negozio} />
+            <FormField label="Note consegna" id="note" />
 
             <button
               type="submit"
               disabled={!disponibile}
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white shadow-md shadow-blue-500/25 transition hover:bg-blue-700 active:scale-[0.98] disabled:opacity-50"
             >
-              CONTINUA AL PAGAMENTO
+              Continua al pagamento
             </button>
           </form>
         </div>
