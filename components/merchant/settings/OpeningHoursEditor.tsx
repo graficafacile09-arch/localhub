@@ -145,48 +145,48 @@ export default function OpeningHoursEditor({
                 {s.chiuso ? (
                   <span className="text-xs text-slate-400 italic">Chiuso</span>
                 ) : (
-                  <div className="flex flex-1 flex-col gap-1.5">
-                    <div className="flex items-center gap-2">
+                  <div className="flex flex-1 flex-col gap-1.5 min-w-0">
+                    <div className="flex items-center gap-2 min-w-0 flex-wrap">
                       <span className="w-14 shrink-0 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Mattina</span>
-                      <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1 min-w-0 flex-1">
                         <Clock className="h-3 w-3 text-slate-400 shrink-0" />
                         <input
                           type="time"
                           value={s.apertura1}
                           onChange={(e) => updateDay(day, { apertura1: e.target.value })}
-                          className="h-7 w-24 rounded border border-slate-200 px-1.5 text-xs text-slate-700 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
+                          className="h-7 w-full min-w-0 rounded border border-slate-200 px-1.5 text-xs text-slate-700 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
                         />
                       </div>
-                      <span className="text-xs text-slate-300">&rarr;</span>
-                      <div className="flex items-center gap-1">
+                      <span className="text-xs text-slate-300 shrink-0">&rarr;</span>
+                      <div className="flex items-center gap-1 min-w-0 flex-1">
                         <input
                           type="time"
                           value={s.chiusura1}
                           onChange={(e) => updateDay(day, { chiusura1: e.target.value })}
-                          className="h-7 w-24 rounded border border-slate-200 px-1.5 text-xs text-slate-700 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
+                          className="h-7 w-full min-w-0 rounded border border-slate-200 px-1.5 text-xs text-slate-700 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
                         />
                       </div>
                     </div>
 
                     {hasSecond && (
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 min-w-0 flex-wrap">
                         <span className="w-14 shrink-0 text-[10px] font-semibold uppercase tracking-wider text-slate-400">Pomeriggio</span>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 min-w-0 flex-1">
                           <Clock className="h-3 w-3 text-slate-400 shrink-0" />
                           <input
                             type="time"
                             value={s.apertura2}
                             onChange={(e) => updateDay(day, { apertura2: e.target.value })}
-                            className="h-7 w-24 rounded border border-slate-200 px-1.5 text-xs text-slate-700 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
+                            className="h-7 w-full min-w-0 rounded border border-slate-200 px-1.5 text-xs text-slate-700 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
                           />
                         </div>
-                        <span className="text-xs text-slate-300">&rarr;</span>
-                        <div className="flex items-center gap-1">
+                        <span className="text-xs text-slate-300 shrink-0">&rarr;</span>
+                        <div className="flex items-center gap-1 min-w-0 flex-1">
                           <input
                             type="time"
                             value={s.chiusura2}
                             onChange={(e) => updateDay(day, { chiusura2: e.target.value })}
-                            className="h-7 w-24 rounded border border-slate-200 px-1.5 text-xs text-slate-700 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
+                            className="h-7 w-full min-w-0 rounded border border-slate-200 px-1.5 text-xs text-slate-700 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
                           />
                         </div>
                       </div>
