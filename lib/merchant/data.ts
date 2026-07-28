@@ -169,13 +169,13 @@ export async function getMerchantStoreForUser(userId: string, negozioId: string)
 // =================================================================
 export async function canManageStore(userId: string, negozioId: string): Promise<boolean> {
   const supabase = await createServerSupabaseClient();
-  const { data, error } = await supabase
+  const { count, error } = await supabase
     .from("negozi")
     .select("id", { head: true, count: "exact" })
     .eq("id", negozioId)
     .eq("owner_user_id", userId);
 
-  if (error || !data) return false;
+  if (error || !count || count === 0) return false;
   return true;
 }
 
