@@ -19,12 +19,14 @@ export async function getNegozi() {
 }
 
 export async function getNegozio(id: string) {
+  console.log("[getNegozio] START, id:", id);
   const { data, error } = await supabase
     .from("negozi")
     .select("*")
     .eq("id", id)
     .single();
 
+  console.log("[getNegozio] result:", { data: data ? "found" : "null", error: error ? error.message : "null" });
   if (error) {
     console.log(error);
     return null;
@@ -49,12 +51,14 @@ export async function getNegoziInEvidenza(limit = 6) {
 }
 
 export async function getProdotto(id: string) {
+  console.log("[getProdotto] START, id:", id);
   const { data, error } = await supabase
     .from("prodotti")
     .select("*")
     .eq("id", id)
     .single();
 
+  console.log("[getProdotto] result:", { data: data ? "found" : "null", error: error ? error.message : "null" });
   if (error) {
     console.log(error);
     return null;

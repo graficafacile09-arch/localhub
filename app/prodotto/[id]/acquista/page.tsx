@@ -12,17 +12,23 @@ function formatPrezzo(p: number): number {
 }
 
 async function getProductData(id: string) {
+  console.log("[ACQUISTA] getProductData START, id:", id);
   const prodottoReale = await getProdotto(id);
+  console.log("[ACQUISTA] getProdotto result:", prodottoReale ? "found" : "null");
   const prodottoDemo = prodottoReale ? null : getProdottoDemoById(id);
   const prodotto = prodottoReale ?? prodottoDemo;
+  console.log("[ACQUISTA] prodotto:", prodotto ? prodotto.id : "null");
 
   if (!prodotto) return null;
 
   const negozio = await getNegozio(String(prodotto.negozio_id));
+  console.log("[ACQUISTA] negozio:", negozio ? negozio.id : "null");
   const prezzo = formatPrezzo(
     "prezzo" in prodotto ? Number(prodotto.prezzo) : 0,
   );
+  console.log("[ACQUISTA] prezzo:", prezzo, typeof prezzo);
   const quantita = "quantita_disponibile" in prodotto ? Number(prodotto.quantita_disponibile) : null;
+  console.log("[ACQUISTA] quantita:", quantita);
 
   return { prodotto, negozio, prezzo, quantita };
 }
