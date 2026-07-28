@@ -109,11 +109,9 @@ export default async function PaginaNegozio({
           )}
         </div>
 
-        {negozio.orari && (
-          <div className="mt-3">
-            <OpeningHoursDisplay orari={negozio.orari} />
-          </div>
-        )}
+        <div className="mt-3">
+          <OpeningHoursDisplay orari={negozio.orari} />
+        </div>
 
         {/* Azioni */}
         <div className="mt-3 flex flex-wrap gap-2">
