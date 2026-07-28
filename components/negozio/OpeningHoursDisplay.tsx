@@ -79,24 +79,18 @@ export default function OpeningHoursDisplay({
   if (!schedule) {
     if (typeof orari === "string" && orari) {
       return (
-        <div className="rounded-xl border border-slate-200 bg-white p-5" style={{ backgroundColor: "#ff0000", border: "5px solid #00ff00" }}>
-          <p className="text-sm font-bold text-white" style={{ fontSize: 24 }}>TEST OPENINGHOURSDISPLAY (stringa)</p>
+        <div className="rounded-xl border border-slate-200 bg-white p-5">
           <p className="text-sm text-slate-600">{orari}</p>
         </div>
       );
     }
-    return (
-      <div className="rounded-xl border border-slate-200 bg-white p-5" style={{ backgroundColor: "#ff0000", border: "5px solid #00ff00" }}>
-        <p className="text-sm font-bold text-white" style={{ fontSize: 24 }}>TEST OPENINGHOURSDISPLAY (null)</p>
-        <p className="text-sm text-white">orari è {JSON.stringify(orari)}</p>
-      </div>
-    );
+    return null;
   }
 
   return (
-    <div className="rounded-xl border-slate-200 bg-white p-5" style={{ backgroundColor: "#ff0000", border: "5px solid #00ff00" }}>
+    <div className="rounded-xl border border-slate-200 bg-white p-5">
       <div className="mb-4">
-        <p className="text-sm font-bold text-white" style={{ fontSize: 24 }}>TEST OPENINGHOURSDISPLAY</p>
+        <p className="text-sm font-semibold text-slate-900">Orari di apertura</p>
         <div className="mt-2 flex items-center gap-1.5 text-sm">
           {status.open ? (
             <>
