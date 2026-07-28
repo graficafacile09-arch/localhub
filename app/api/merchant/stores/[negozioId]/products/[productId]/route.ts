@@ -1,6 +1,7 @@
 import { apiError, apiOk } from "@/lib/api/response";
 import { getCurrentUser } from "@/lib/auth/session";
-import { getMerchantProductForStore, getMerchantStoreForUser, updateMerchantProductForStore } from "@/lib/merchant/data";
+import { deleteMerchantProductForStore, getMerchantProductForStore, getMerchantStoreForUser, updateMerchantProductForStore } from "@/lib/merchant/data";
+import { deleteImageFromStorage } from "@/lib/supabase/storage";
 import type { MerchantProductInput } from "@/lib/merchant/types";
 
 function validateProductPayload(payload: Partial<MerchantProductInput>) {
@@ -71,6 +72,8 @@ export async function PUT(
     return apiError("UNAUTHORIZED", "Devi effettuare l'accesso.", 401);
   }
 
+  console.log("PUT USER ID", user.id);
+
   const { negozioId, productId } = await context.params;
   const storeResult = await getMerchantStoreForUser(user.id, negozioId);
 
@@ -88,6 +91,9 @@ export async function PUT(
   if (validationError) {
     return apiError("INVALID_BODY", validationError, 422);
   }
+
+  const oldProductResult = await getMerchantProductForStore(user.id, negozioId, productId);
+  const oldImmagine = oldProductResult.data?.immagine_principale;
 
   const updateResult = await updateMerchantProductForStore(user.id, negozioId, productId, {
     nome: payload.nome!.trim(),
@@ -113,5 +119,51 @@ export async function PUT(
     return apiError("PRODUCT_UPDATE_FAILED", updateResult.errorMessage ?? "Impossibile aggiornare il prodotto.", 500);
   }
 
+  if (oldImmagine && payload.immaginePrincipale?.startsWith("data:")) {
+    await deleteImageFromStorage(oldImmagine);
+  }
+
   return apiOk({ product: updateResult.data });
+}
+
+export async function DELETE(
+  _request: Request,
+  context: { params: Promise<{ negozioId: string; productId: string }> }
+) {
+  const user = await getCurrentUser();
+
+  if (!user) {
+    return apiError("UNAUTHORIZED", "Devi effettuare l'accesso.", 401);
+  }
+
+  const { negozioId, productId } = await context.params;
+  const storeResult = await getMerchantStoreForUser(user.id, negozioId);
+
+  if (storeResult.setupRequired) {
+    return apiError("SETUP_REQUIRED", storeResult.errorMessage ?? "Configurazione database non completata.", 503);
+  }
+
+  if (!storeResult.data) {
+    return apiError("FORBIDDEN", "Non puoi eliminare prodotti per questo negozio.", 403);
+  }
+
+  const productResult = await getMerchantProductForStore(user.id, negozioId, productId);
+
+  if (!productResult.data) {
+    return apiError("NOT_FOUND", "Prodotto non trovato.", 404);
+  }
+
+  await deleteImageFromStorage(productResult.data.immagine_principale);
+
+  const deleteResult = await deleteMerchantProductForStore(user.id, negozioId, productId);
+
+  if (deleteResult.setupRequired) {
+    return apiError("SETUP_REQUIRED", deleteResult.errorMessage ?? "Configurazione database non completata.", 503);
+  }
+
+  if (deleteResult.errorMessage) {
+    return apiError("PRODUCT_DELETE_FAILED", deleteResult.errorMessage, 500);
+  }
+
+  return apiOk({ deleted: true });
 }

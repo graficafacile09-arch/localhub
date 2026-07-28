@@ -48,6 +48,21 @@ export async function getNegoziInEvidenza(limit = 6) {
   return data ?? [];
 }
 
+export async function getProdotto(id: string) {
+  const { data, error } = await supabase
+    .from("prodotti")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (error) {
+    console.log(error);
+    return null;
+  }
+
+  return data;
+}
+
 // ─── Prodotti ────────────────────────────────────────────────────────────────
 
 export type Prodotto = {

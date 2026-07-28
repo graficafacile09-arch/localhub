@@ -77,7 +77,7 @@ export default async function RicercaPage({
                   {prodotti.map((prodotto) => (
                     <Link
                       key={prodotto.id}
-                      href={`/negozio/${prodotto.negozio_id}`}
+                      href={`/prodotto/${prodotto.id}`}
                       className="group overflow-hidden rounded-xl border border-slate-100 bg-white transition hover:border-blue-200 hover:shadow-md"
                     >
                       <div className="relative aspect-square overflow-hidden bg-slate-100">

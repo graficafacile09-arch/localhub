@@ -1,4 +1,6 @@
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { uploadDataUrlToStorage } from "@/lib/supabase/storage";
 import type {
   MerchantProduct,
   MerchantProductInput,
@@ -207,7 +209,7 @@ export async function getMerchantProductsForStore(
   if (query.error && isSchemaError(query.error)) {
     const fallbackQuery = await supabase
       .from("prodotti")
-      .select("id, negozio_id, nome, descrizione, categoria, prezzo")
+      .select("id, negozio_id, nome, descrizione, categoria, prezzo, immagine_principale")
       .eq("negozio_id", negozioId);
 
     if (fallbackQuery.error) {
@@ -242,10 +244,11 @@ export async function getMerchantProductsForStore(
 
 export async function getMerchantProductForStore(userId: string, negozioId: string, productId: string) {
   const productsResult = await getMerchantProductsForStore(userId, negozioId);
+  const found = productsResult.data.find((item) => item.id === productId) ?? null;
 
   return {
     ...productsResult,
-    data: productsResult.data.find((item) => item.id === productId) ?? null,
+    data: found,
   };
 }
 
@@ -265,6 +268,12 @@ export async function createMerchantProductForStore(
   }
 
   const supabase = await createServerSupabaseClient();
+
+  const immagineFinale =
+    input.immaginePrincipale.trim()
+      ? await uploadDataUrlToStorage(input.immaginePrincipale.trim())
+      : null;
+
   const payload: Record<string, unknown> = {
     negozio_id: negozioId,
     nome: input.nome.trim(),
@@ -277,7 +286,7 @@ export async function createMerchantProductForStore(
     parole_chiave: input.paroleChiave ?? null,
     prezzo: input.prezzo,
     prezzo_suggerito: input.prezzoSuggerito ?? null,
-    immagine_principale: input.immaginePrincipale.trim() || null,
+    immagine_principale: immagineFinale,
     quantita_disponibile: input.quantitaDisponibile ?? 1,
     stato_condizione: input.statoCondizione ?? null,
     attivo: input.attivo,
@@ -354,6 +363,17 @@ export async function updateMerchantProductForStore(
   }
 
   const supabase = await createServerSupabaseClient();
+
+  const { data: authUserData } = await supabase.auth.getUser();
+  console.log("AUTH USER ID IN UPDATE", authUserData?.user?.id);
+
+  const immagineFinale =
+    input.immaginePrincipale.trim()
+      ? await uploadDataUrlToStorage(input.immaginePrincipale.trim())
+      : null;
+
+  console.log("IMMAGINE FINALE", immagineFinale);
+
   const payload: Record<string, unknown> = {
     nome: input.nome.trim(),
     descrizione: input.descrizione.trim(),
@@ -365,7 +385,7 @@ export async function updateMerchantProductForStore(
     parole_chiave: input.paroleChiave ?? null,
     prezzo: input.prezzo,
     prezzo_suggerito: input.prezzoSuggerito ?? null,
-    immagine_principale: input.immaginePrincipale.trim() || null,
+    immagine_principale: immagineFinale,
     quantita_disponibile: input.quantitaDisponibile ?? 1,
     stato_condizione: input.statoCondizione ?? null,
     attivo: input.attivo,
@@ -380,6 +400,17 @@ export async function updateMerchantProductForStore(
   if (input.seoDescription !== undefined) payload.seo_description = input.seoDescription.trim() || null;
   if (input.altTextImmagine !== undefined) payload.alt_text_immagine = input.altTextImmagine.trim() || null;
 
+  console.log("UPDATE PAYLOAD", payload);
+  console.log("UPDATE FILTERS", { productId, negozioId });
+
+  const { data: rowBefore, error: findErr } = await supabase
+    .from("prodotti")
+    .select("id, negozio_id, immagine_principale")
+    .eq("id", productId)
+    .eq("negozio_id", negozioId);
+
+  console.log("ROW BEFORE UPDATE", { data: rowBefore, error: findErr });
+
   const updateResult = await supabase
     .from("prodotti")
     .update(payload)
@@ -387,6 +418,17 @@ export async function updateMerchantProductForStore(
     .eq("negozio_id", negozioId)
     .select("*")
     .single();
+
+  console.log("UPDATE ERROR", updateResult.error);
+  console.log("UPDATE DATA", updateResult.data);
+
+  const { data: verifyRows, error: verifyError } = await supabase
+    .from("prodotti")
+    .select("id, immagine_principale")
+    .eq("id", productId);
+
+  console.log("VERIFY SELECT ERROR", verifyError);
+  console.log("VERIFY SELECT ROWS", verifyRows);
 
   if (updateResult.error) {
     return {
@@ -398,6 +440,44 @@ export async function updateMerchantProductForStore(
 
   return {
     data: mapProduct(updateResult.data as ProdottoRow),
+    setupRequired: false,
+    errorMessage: null,
+  };
+}
+
+export async function deleteMerchantProductForStore(
+  userId: string,
+  negozioId: string,
+  productId: string
+): Promise<MerchantQueryResult<null>> {
+  const storeResult = await getMerchantStoreForUser(userId, negozioId);
+
+  if (storeResult.setupRequired || !storeResult.data) {
+    return {
+      data: null,
+      setupRequired: storeResult.setupRequired,
+      errorMessage: storeResult.errorMessage ?? "Negozio non disponibile per questo merchant.",
+    };
+  }
+
+  const supabase = createAdminSupabaseClient();
+
+  const { error } = await supabase
+    .from("prodotti")
+    .delete()
+    .eq("id", productId)
+    .eq("negozio_id", negozioId);
+
+  if (error) {
+    return {
+      data: null,
+      setupRequired: false,
+      errorMessage: error.message ?? "Impossibile eliminare il prodotto.",
+    };
+  }
+
+  return {
+    data: null,
     setupRequired: false,
     errorMessage: null,
   };

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { Camera, ChevronDown, ChevronUp } from "lucide-react";
 import type { MerchantProduct } from "@/lib/merchant/types";
 
 type MerchantProductFormProps = {
@@ -49,6 +49,8 @@ export default function MerchantProductForm({
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [newImageDataUrl, setNewImageDataUrl] = useState<string | null>(null);
 
   const initialValues = initialData
     ? {
@@ -133,7 +135,7 @@ export default function MerchantProductForm({
         ? Number(formData.get("quantitaDisponibile"))
         : 1,
       statoCondizione: String(formData.get("statoCondizione") ?? "nuovo") as "nuovo" | "usato" | "ricondizionato",
-      immaginePrincipale: String(formData.get("immaginePrincipale") ?? "").trim(),
+      immaginePrincipale: newImageDataUrl ?? String(formData.get("immaginePrincipale") ?? "").trim(),
       seoTitle: String(formData.get("seo_title") ?? "").trim() || undefined,
       seoDescription: String(formData.get("seo_description") ?? "").trim() || undefined,
       altTextImmagine: String(formData.get("alt_text_immagine") ?? "").trim() || undefined,
@@ -175,24 +177,47 @@ export default function MerchantProductForm({
         <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{error}</div>
       ) : null}
 
-      {/* Anteprima immagine */}
-      {initialValues.immaginePrincipale ? (
-        <div className="flex justify-center">
-          <img
-            src={initialValues.immaginePrincipale}
-            alt="Anteprima"
-            className="h-32 w-32 rounded-xl object-cover shadow-xs"
-          />
-        </div>
-      ) : (
-        <div className="flex justify-center">
-          <div className="flex h-20 w-20 items-center justify-center rounded-xl bg-slate-100 text-slate-400">
-            <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z" />
-            </svg>
+      {/* Anteprima immagine + upload */}
+      <div className="flex flex-col items-center gap-3">
+        {newImageDataUrl || initialValues.immaginePrincipale ? (
+          <div className="relative">
+            <img
+              src={newImageDataUrl || initialValues.immaginePrincipale}
+              alt="Anteprima"
+              className="h-40 w-40 rounded-2xl object-cover shadow-md"
+            />
+            <div className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-white shadow-md">
+              <Camera className="h-3 w-3 text-slate-600" />
+            </div>
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="flex h-32 w-32 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 text-slate-400 transition hover:border-blue-300 hover:bg-blue-50/50">
+            <Camera className="h-8 w-8" />
+            <span className="text-[10px] font-medium">Nessuna foto</span>
+          </div>
+        )}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = () => setNewImageDataUrl(reader.result as string);
+            reader.readAsDataURL(file);
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50"
+        >
+          <Camera className="h-3.5 w-3.5" />
+          {initialValues.immaginePrincipale ? "Cambia immagine" : "Aggiungi immagine"}
+        </button>
+      </div>
 
       {/* Banner prezzo AI */}
       {initialValues.prezzoSuggerito !== null ? (

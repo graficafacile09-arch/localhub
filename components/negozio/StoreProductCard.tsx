@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getProdottoImmagine } from "@/lib/prodotti-immagini";
 
 type StoreProductCardProps = {
@@ -10,6 +11,7 @@ type StoreProductCardProps = {
 };
 
 export default function StoreProductCard({
+  id,
   nome,
   descrizione,
   prezzo,
@@ -19,7 +21,10 @@ export default function StoreProductCard({
   const imageUrl = getProdottoImmagine({ immagine_principale, categoria });
 
   return (
-    <div className="overflow-hidden rounded-xl border border-slate-100 bg-white transition hover:border-blue-200 hover:shadow-sm">
+    <Link
+      href={`/prodotto/${id}`}
+      className="group overflow-hidden rounded-xl border border-slate-100 bg-white transition hover:border-blue-200 hover:shadow-sm"
+    >
       <div className="relative aspect-square overflow-hidden bg-slate-100">
         <div
           role="img"
@@ -42,6 +47,6 @@ export default function StoreProductCard({
         )}
         <p className="mt-1 text-base font-black text-blue-700">€{prezzo}</p>
       </div>
-    </div>
+    </Link>
   );
 }

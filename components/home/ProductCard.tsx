@@ -13,6 +13,7 @@ type ProductCardProps = {
 };
 
 export default function ProductCard({
+  id,
   nome,
   prezzo,
   negozio_nome,
@@ -24,7 +25,7 @@ export default function ProductCard({
 
   return (
     <Link
-      href={`/negozio/${negozio_id}`}
+      href={`/prodotto/${id}`}
       className="group overflow-hidden rounded-xl border border-slate-100 bg-white transition hover:border-blue-200 hover:shadow-md"
     >
       <div className="relative aspect-square overflow-hidden bg-slate-100">

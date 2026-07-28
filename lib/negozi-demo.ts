@@ -408,6 +408,10 @@ export function getProdottiDemoByNegozioId(negozioId: string) {
   return prodottiDemo.filter((prodotto) => prodotto.negozio_id === negozioId);
 }
 
+export function getProdottoDemoById(id: string) {
+  return prodottiDemo.find((prodotto) => prodotto.id === id) ?? null;
+}
+
 export function espandiQueryConSinonimi(query: string) {
   return normalizzaTermini(query).join(" ");
 }

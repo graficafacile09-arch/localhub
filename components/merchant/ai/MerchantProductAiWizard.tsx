@@ -109,7 +109,7 @@ export default function MerchantProductAiWizard({ negozioId }: MerchantProductAi
               filtri_catalogo: result.suggestion.filtriCatalogo ?? undefined,
               prezzo: result.suggestion.prezzoSuggerito ?? 0,
               prezzo_suggerito: result.suggestion.prezzoSuggerito ?? null,
-              immagine_principale: result.suggestion.immaginePrincipale ?? "",
+              immagine_principale: result.photoUrl || (result.suggestion.immaginePrincipale ?? ""),
               quantita_disponibile: result.suggestion.quantitaSuggerita,
               stato_condizione: result.suggestion.statoCondizione,
               seo_title: result.suggestion.seoTitle ?? undefined,

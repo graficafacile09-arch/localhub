@@ -1,9 +1,10 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { BarChart3, Home, LayoutGrid, LogOut, Package, Settings, Sparkles } from "lucide-react";
+import { BarChart3, Home, LogOut } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import type { MerchantStoreSummary } from "@/lib/merchant/types";
 import MerchantStoreSwitcher from "./MerchantStoreSwitcher";
+import MerchantSidebarNav from "./MerchantSidebarNav";
 import MerchantBottomNav from "./MerchantBottomNav";
 import MerchantTopBar from "./MerchantTopBar";
 
@@ -76,38 +77,21 @@ export default function MerchantShell({
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
               Navigazione
             </p>
-            <div className="mt-4 space-y-2 text-sm font-semibold text-slate-700">
+            <div className="mt-4">
               <Link
                 href="/merchant"
-                className="flex items-center gap-3 rounded-2xl px-4 py-3 hover:bg-slate-50"
+                className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-slate-700 transition-all duration-150 hover:bg-slate-50"
               >
-                <LayoutGrid className="h-4 w-4 text-blue-600" />
-                Il mio negozio
+                <Home className="h-4 w-4 text-blue-600" />
+                La mia area
               </Link>
               {currentStore ? (
-                <>
-                  <Link
-                    href={`/merchant/${currentStore.id}/prodotti`}
-                    className="flex items-center gap-3 rounded-2xl px-4 py-3 hover:bg-slate-50"
-                  >
-                    <Package className="h-4 w-4 text-blue-600" />
-                    I miei prodotti
-                  </Link>
-                  <Link
-                    href={`/merchant/${currentStore.id}/prodotti/nuovo`}
-                    className="flex items-center gap-3 rounded-2xl px-4 py-3 hover:bg-slate-50"
-                  >
-                    <Sparkles className="h-4 w-4 text-blue-600" />
-                    Nuovo prodotto
-                  </Link>
-                  <Link
-                    href={`/merchant/${currentStore.id}/impostazioni`}
-                    className="flex items-center gap-3 rounded-2xl px-4 py-3 hover:bg-slate-50"
-                  >
-                    <Settings className="h-4 w-4 text-blue-600" />
-                    Gestione negozio
-                  </Link>
-                </>
+                <div className="mt-2">
+                  <MerchantSidebarNav
+                    storeId={currentStore.id}
+                    storeName={currentStore.nome}
+                  />
+                </div>
               ) : null}
             </div>
           </div>

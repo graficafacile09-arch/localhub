@@ -47,7 +47,7 @@ export default function MerchantProductResultCard({
         prezzo: suggestion.prezzoSuggerito ?? 0,
         quantitaDisponibile: suggestion.quantitaSuggerita,
         statoCondizione: suggestion.statoCondizione,
-        immaginePrincipale: suggestion.immaginePrincipale || "",
+        immaginePrincipale: photoUrl || suggestion.immaginePrincipale || "",
         seoTitle: suggestion.seoTitle || undefined,
         seoDescription: suggestion.seoDescription || undefined,
         altTextImmagine: suggestion.altTextImmagine || undefined,
