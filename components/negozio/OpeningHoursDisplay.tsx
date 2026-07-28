@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Clock, CheckCircle2, XCircle } from "lucide-react";
+import { Clock } from "lucide-react";
 
 type DaySchedule = { apertura: string; chiusura: string; chiuso: boolean };
 
@@ -20,8 +20,6 @@ function formatTimeRange(apertura: string, chiusura: string): string {
 function getStatus(schedule: Record<string, DaySchedule> | null): {
   text: string;
   open: boolean;
-  closesAt?: string;
-  opensAt?: string;
 } {
   if (!schedule) return { text: "Orari non disponibili", open: false };
 
@@ -34,7 +32,6 @@ function getStatus(schedule: Record<string, DaySchedule> | null): {
       return {
         text: `Chiuso oggi — riapre ${nextDay} alle ${schedule[nextDay].apertura.slice(0, 5)}`,
         open: false,
-        opensAt: schedule[nextDay].apertura.slice(0, 5),
       };
     }
     return { text: "Chiuso", open: false };
@@ -49,7 +46,6 @@ function getStatus(schedule: Record<string, DaySchedule> | null): {
     return {
       text: `Aperto adesso — chiude alle ${today.chiusura.slice(0, 5)}`,
       open: true,
-      closesAt: today.chiusura.slice(0, 5),
     };
   }
 
@@ -57,7 +53,6 @@ function getStatus(schedule: Record<string, DaySchedule> | null): {
     return {
       text: `Chiuso — riapre oggi alle ${today.apertura.slice(0, 5)}`,
       open: false,
-      opensAt: today.apertura.slice(0, 5),
     };
   }
 
@@ -88,14 +83,12 @@ export default function OpeningHoursDisplay({
   if (!schedule) {
     if (typeof orari === "string" && orari) {
       return (
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="mb-3 flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-50 text-blue-600">
-              <Clock className="h-4 w-4" />
-            </div>
-            <span className="text-sm font-bold tracking-tight text-slate-800">Orari di apertura</span>
+        <div className="rounded-lg border border-slate-200 bg-white p-4">
+          <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-800">
+            <Clock className="h-4 w-4 text-slate-500" />
+            Orari di apertura
           </div>
-          <p className="text-sm leading-relaxed text-slate-600">{orari}</p>
+          <p className="text-sm text-slate-600">{orari}</p>
         </div>
       );
     }
@@ -103,28 +96,18 @@ export default function OpeningHoursDisplay({
   }
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="mb-4 flex items-center gap-2.5">
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-50 text-blue-600">
-          <Clock className="h-4 w-4" />
-        </div>
-        <span className="text-sm font-bold tracking-tight text-slate-800">Orari di apertura</span>
+    <div className="rounded-lg border border-slate-200 bg-white p-4">
+      <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-slate-800">
+        <Clock className="h-4 w-4 text-slate-500" />
+        Orari di apertura
       </div>
 
-      <div className={`mb-4 flex items-center gap-2.5 rounded-xl px-4 py-3 text-sm ${
-        status.open ? "bg-emerald-50" : "bg-slate-50"
-      }`}>
-        {status.open ? (
-          <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600" />
-        ) : (
-          <XCircle className="h-5 w-5 shrink-0 text-slate-400" />
-        )}
-        <span className={`font-semibold ${status.open ? "text-emerald-800" : "text-slate-600"}`}>
-          {status.text}
-        </span>
+      <div className="mb-3 flex items-center gap-1.5 text-xs font-medium">
+        <span className={`inline-block h-2 w-2 rounded-full ${status.open ? "bg-emerald-500" : "bg-amber-500"}`} />
+        <span className={status.open ? "text-emerald-700" : "text-amber-700"}>{status.text}</span>
       </div>
 
-      <div className="divide-y divide-slate-100">
+      <div className="divide-y divide-slate-100 text-sm">
         {DAYS_ORDER.map((day) => {
           const d = schedule[day];
           const isToday = day === todayName;
@@ -133,26 +116,20 @@ export default function OpeningHoursDisplay({
           return (
             <div
               key={day}
-              className={`flex items-center justify-between py-2.5 ${
-                isToday ? "-mx-3 rounded-xl bg-blue-50/70 px-3" : "px-0"
-              }`}
+              className={`flex items-center justify-between py-2 ${isToday ? "font-semibold" : ""}`}
             >
-              <div className="flex items-center gap-2">
-                <span className={`text-sm ${isToday ? "font-bold text-blue-900" : "font-medium text-slate-700"}`}>
-                  {day.charAt(0).toUpperCase() + day.slice(1)}
-                </span>
+              <span className={`flex items-center gap-2 ${isToday ? "text-blue-700" : "text-slate-700"}`}>
+                {day.charAt(0).toUpperCase() + day.slice(1)}
                 {isToday && (
-                  <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-blue-700">
+                  <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-bold uppercase leading-none text-blue-700">
                     Oggi
                   </span>
                 )}
-              </div>
+              </span>
               {closed ? (
-                <span className="text-sm italic text-slate-300">Chiuso</span>
+                <span className="text-slate-300">Chiuso</span>
               ) : (
-                <span className={`text-sm tabular-nums tracking-tight ${
-                  isToday ? "font-semibold text-blue-700" : "text-slate-600"
-                }`}>
+                <span className={`tabular-nums ${isToday ? "text-blue-700" : "text-slate-600"}`}>
                   {formatTimeRange(d.apertura, d.chiusura)}
                 </span>
               )}
