@@ -1,8 +1,8 @@
 import { getProdotto, getNegozio } from "@/lib/negozi";
 import { getProdottoDemoById } from "@/lib/negozi-demo";
+import { getProdottoImmagine } from "@/lib/prodotti-immagini";
 import AcquistaLayout from "./layout";
 import { DeliveryOptionCard } from "@/components/prodotti/DeliveryOptionCard";
-import { ProductImage } from "@/components/prodotti/ProductImage";
 import { PriceDisplay } from "@/components/prodotti/PriceDisplay";
 import { QuantitySelector } from "@/components/prodotti/QuantitySelector";
 import { OrderSummary } from "@/components/prodotti/OrderSummary";
@@ -61,13 +61,21 @@ export default async function AcquistaPage({
     <AcquistaLayout>
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <div className="space-y-4">
-          <ProductImage
-            prodottoId={prodotto.id}
-            categoria={
-              "categoria" in prodotto ? (prodotto.categoria as string | null) : null
-            }
-            nome={nome}
-          />
+          <div className="overflow-hidden rounded-xl">
+            <div className="relative aspect-square max-h-[400px] overflow-hidden bg-slate-100">
+              <div
+                role="img"
+                aria-label={nome}
+                className="h-full w-full bg-cover bg-center"
+                style={{
+                  backgroundImage: `url(${getProdottoImmagine({
+                    immagine_principale: "immagine_principale" in prodotto ? (prodotto.immagine_principale as string | null) : null,
+                    categoria: "categoria" in prodotto ? (prodotto.categoria as string | null) : null,
+                  })})`,
+                }}
+              />
+            </div>
+          </div>
 
           <div>
             <h2 className="text-lg font-black text-slate-900">{nome}</h2>
