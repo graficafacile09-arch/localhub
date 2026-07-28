@@ -4,6 +4,7 @@ import { getProdotto, getNegozio } from "@/lib/negozi";
 import { getProdottoDemoById } from "@/lib/negozi-demo";
 import { getProdottoImmagine } from "@/lib/prodotti-immagini";
 import { MapPin, Phone, MessageCircle, ArrowLeft, ExternalLink } from "lucide-react";
+import OpeningHoursDisplay from "@/components/negozio/OpeningHoursDisplay";
 
 export default async function PaginaProdotto({
   params,
@@ -165,12 +166,13 @@ export default async function PaginaProdotto({
                   {negozio.telefono}
                 </span>
               )}
-              {negozio.orari && (
-                <span className="text-slate-400">
-                  {negozio.orari}
-                </span>
-              )}
             </div>
+
+            {negozio.orari && (
+              <div className="mt-3">
+                <OpeningHoursDisplay orari={negozio.orari} />
+              </div>
+            )}
 
             {/* Actions */}
             <div className="mt-3 flex flex-wrap gap-2">
