@@ -129,7 +129,7 @@ export async function PUT(
     return apiError("INVALID_BODY", "Nessun campo da aggiornare.", 422);
   }
 
-  const supabase = await createServerSupabaseClient();
+  const supabase = createAdminSupabaseClient();
 
   const { data: oldRow } = await supabase
     .from("negozi")
