@@ -37,12 +37,13 @@ const actions = [
 ];
 
 const settingsItems = [
-  { label: "Informazioni negozio", icon: Settings, href: true, comingSoon: false },
-  { label: "Logo", icon: Image, href: false, comingSoon: true },
-  { label: "Banner", icon: Image, href: false, comingSoon: true },
-  { label: "Contatti", icon: Smartphone, href: false, comingSoon: true },
-  { label: "Social", icon: Globe, href: false, comingSoon: true },
-  { label: "Orari", icon: Clock, href: false, comingSoon: true },
+  { label: "Informazioni negozio", icon: Settings, href: "/merchant/[storeId]/impostazioni#informazioni", comingSoon: false },
+  { label: "Logo", icon: Image, href: "/merchant/[storeId]/impostazioni#informazioni", comingSoon: false },
+  { label: "Banner", icon: Image, href: "/merchant/[storeId]/impostazioni#informazioni", comingSoon: false },
+  { label: "Contatti", icon: Smartphone, href: "/merchant/[storeId]/impostazioni#informazioni", comingSoon: false },
+  { label: "Social", icon: Globe, href: "/merchant/[storeId]/impostazioni#social", comingSoon: false },
+  { label: "Orari", icon: Clock, href: "/merchant/[storeId]/impostazioni#orari", comingSoon: false },
+  { label: "Galleria", icon: Image, href: "/merchant/[storeId]/impostazioni#galleria", comingSoon: false },
   { label: "Spedizioni", icon: MapPin, href: false, comingSoon: true },
   { label: "Privacy", icon: Shield, href: false, comingSoon: true },
   { label: "Pagamenti", icon: CreditCard, href: false, comingSoon: true },
@@ -141,8 +142,11 @@ export default function MerchantQuickActions({ storeId }: { storeId: string }) {
                 );
 
                 if (item.href) {
+                  const href = typeof item.href === "string"
+                    ? item.href.replace("[storeId]", storeId)
+                    : `/merchant/${storeId}/impostazioni`;
                   return (
-                    <Link key={item.label} href={`/merchant/${storeId}/impostazioni`}>
+                    <Link key={item.label} href={href}>
                       {content}
                     </Link>
                   );

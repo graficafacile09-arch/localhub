@@ -133,22 +133,22 @@ export default async function MerchantSettingsPage({
         </div>
 
         {/* 1. Informazioni negozio */}
-        <Section icon={<Building2 className="h-4 w-4" />} title="Informazioni negozio" subtitle="Dati generali, contatti, logo e banner">
+        <Section id="informazioni" icon={<Building2 className="h-4 w-4" />} title="Informazioni negozio" subtitle="Dati generali, contatti, logo e banner">
           <StoreInfoForm storeId={negozioId} initial={infoInitial} />
         </Section>
 
         {/* 2. Orari di apertura */}
-        <Section icon={<Clock className="h-4 w-4" />} title="Orari di apertura" subtitle="Configura gli orari settimanali del negozio">
+        <Section id="orari" icon={<Clock className="h-4 w-4" />} title="Orari di apertura" subtitle="Configura gli orari settimanali del negozio">
           <OpeningHoursEditor storeId={negozioId} initial={hoursInitial} />
         </Section>
 
         {/* 3. Contatti e Social */}
-        <Section icon={<MessageCircle className="h-4 w-4" />} title="Contatti e Social" subtitle="Collega i tuoi profili social e WhatsApp">
+        <Section id="social" icon={<MessageCircle className="h-4 w-4" />} title="Contatti e Social" subtitle="Collega i tuoi profili social e WhatsApp">
           <SocialContactsForm storeId={negozioId} initial={socialInitial} />
         </Section>
 
         {/* 4. Galleria negozio */}
-        <Section icon={<ImageIcon className="h-4 w-4" />} title="Galleria negozio" subtitle="Carica foto della tua attività per attirare più clienti">
+        <Section id="galleria" icon={<ImageIcon className="h-4 w-4" />} title="Galleria negozio" subtitle="Carica foto della tua attività per attirare più clienti">
           <StoreGallery storeId={negozioId} initial={galleryInitial} />
         </Section>
 
@@ -161,15 +161,17 @@ function Section({
   icon,
   title,
   subtitle,
+  id,
   children,
 }: {
   icon: React.ReactNode;
   title: string;
   subtitle: string;
+  id?: string;
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm">
+    <div id={id} className="rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm">
       <div className="mb-5 flex items-center gap-3">
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
           {icon}
