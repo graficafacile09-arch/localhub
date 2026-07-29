@@ -1,0 +1,215 @@
+"use client";
+
+import { useState } from "react";
+import { MapPin, Phone, MessageCircle, Calendar, Clock } from "lucide-react";
+import QuantitySelector from "./QuantitySelector";
+
+type NegozioData = {
+  nome: string;
+  indirizzo: string | null;
+  telefono: string | null;
+  whatsapp: string | null;
+};
+
+export default function RitiroForm({
+  prodottoId,
+  nome,
+  prezzo,
+  imageUrl,
+  negozio,
+}: {
+  prodottoId: string;
+  nome: string;
+  prezzo: number;
+  imageUrl: string;
+  negozio: NegozioData | null;
+}) {
+  const [quantita, setQuantita] = useState(1);
+  const [data, setData] = useState("");
+  const [fascia, setFascia] = useState("");
+  const [note, setNote] = useState("");
+
+  const subtotal = prezzo * quantita;
+
+  const buildWhatsAppUrl = () => {
+    if (!negozio?.whatsapp && !negozio?.telefono) return "#";
+    const phone = (negozio.whatsapp || negozio.telefono || "").replace(/[\s\-().+]/g, "");
+    const number = phone.startsWith("39") ? phone : `39${phone}`;
+    const msg = encodeURIComponent(
+      `Ciao! Vorrei ritirare "${nome}" x${quantita} il ${data || "da definire"} (${fascia || "orario da definire"}).${note ? ` Note: ${note}` : ""}`
+    );
+    return `https://wa.me/${number}?text=${msg}`;
+  };
+
+  const buildMapsUrl = () => {
+    if (!negozio?.indirizzo) return "#";
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(negozio.indirizzo)}`;
+  };
+
+  const oggi = new Date().toISOString().split("T")[0];
+
+  return (
+    <div className="mt-4 grid gap-4 sm:grid-cols-2">
+      {/* Colonna sinistra: prodotto */}
+      <div className="space-y-4">
+        <div className="overflow-hidden rounded-xl">
+          <div className="relative aspect-square max-h-[300px] overflow-hidden bg-slate-100">
+            <div
+              role="img"
+              aria-label={nome}
+              className="h-full w-full bg-cover bg-center"
+              style={{ backgroundImage: `url(${imageUrl})` }}
+            />
+          </div>
+        </div>
+
+        <div>
+          <h2 className="text-lg font-black text-slate-900">{nome}</h2>
+          <p className="text-2xl font-black text-emerald-700">
+            €{prezzo.toFixed(2)}
+          </p>
+        </div>
+      </div>
+
+      {/* Colonna destra: form ritiro */}
+      <div className="space-y-4">
+        {/* Quantità */}
+        <div className="rounded-xl border border-slate-200 bg-white p-4">
+          <h3 className="text-sm font-bold text-slate-900">Quantità</h3>
+          <div className="mt-3">
+            <QuantitySelector value={quantita} onChange={setQuantita} />
+          </div>
+        </div>
+
+        {/* Dati negozio */}
+        {negozio && (
+          <div className="rounded-xl border border-slate-200 bg-white p-4">
+            <h3 className="text-sm font-bold text-slate-900">Punto vendita</h3>
+            <p className="mt-1 text-sm font-semibold text-slate-900">{negozio.nome}</p>
+            {negozio.indirizzo && (
+              <p className="mt-0.5 flex items-center gap-1.5 text-xs text-slate-500">
+                <MapPin className="h-3.5 w-3.5 shrink-0 text-blue-500" />
+                {negozio.indirizzo}
+              </p>
+            )}
+            <div className="mt-3 flex flex-wrap gap-2">
+              {negozio.indirizzo && (
+                <a
+                  href={buildMapsUrl()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 transition hover:border-blue-300 hover:text-blue-700"
+                >
+                  <MapPin className="h-3 w-3" />
+                  Google Maps
+                </a>
+              )}
+              {negozio.telefono && (
+                <a
+                  href={`tel:${negozio.telefono}`}
+                  className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 transition hover:border-blue-300 hover:text-blue-700"
+                >
+                  <Phone className="h-3 w-3" />
+                  {negozio.telefono}
+                </a>
+              )}
+              {(negozio.whatsapp || negozio.telefono) && (
+                <a
+                  href={buildWhatsAppUrl()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-emerald-700 transition hover:border-emerald-300 hover:text-emerald-800"
+                >
+                  <MessageCircle className="h-3 w-3" />
+                  WhatsApp
+                </a>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Selezione data */}
+        <div className="rounded-xl border border-slate-200 bg-white p-4">
+          <h3 className="text-sm font-bold text-slate-900">
+            <Calendar className="mr-1.5 inline-block h-4 w-4 text-blue-500" />
+            Data ritiro
+          </h3>
+          <input
+            type="date"
+            value={data}
+            onChange={(e) => setData(e.target.value)}
+            min={oggi}
+            className="mt-2 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
+          />
+        </div>
+
+        {/* Selezione fascia oraria */}
+        <div className="rounded-xl border border-slate-200 bg-white p-4">
+          <h3 className="text-sm font-bold text-slate-900">
+            <Clock className="mr-1.5 inline-block h-4 w-4 text-blue-500" />
+            Fascia oraria
+          </h3>
+          <select
+            value={fascia}
+            onChange={(e) => setFascia(e.target.value)}
+            className="mt-2 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
+          >
+            <option value="">Seleziona fascia oraria</option>
+            <option value="09:00–10:00">09:00 – 10:00</option>
+            <option value="10:00–11:00">10:00 – 11:00</option>
+            <option value="11:00–12:00">11:00 – 12:00</option>
+            <option value="12:00–13:00">12:00 – 13:00</option>
+            <option value="14:00–15:00">14:00 – 15:00</option>
+            <option value="15:00–16:00">15:00 – 16:00</option>
+            <option value="16:00–17:00">16:00 – 17:00</option>
+            <option value="17:00–18:00">17:00 – 18:00</option>
+            <option value="18:00–19:00">18:00 – 19:00</option>
+          </select>
+        </div>
+
+        {/* Note cliente */}
+        <div className="rounded-xl border border-slate-200 bg-white p-4">
+          <h3 className="text-sm font-bold text-slate-900">Note</h3>
+          <textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            rows={3}
+            placeholder="Eventuali note per il ritiro..."
+            className="mt-2 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100 placeholder:text-slate-400"
+          />
+        </div>
+
+        {/* Riepilogo ordine */}
+        <div className="rounded-xl border border-slate-200 bg-white p-4">
+          <h3 className="text-sm font-bold text-slate-900">Riepilogo ordine</h3>
+          <div className="mt-3 space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="flex-1 text-slate-700">
+                {nome} × {quantita}
+              </span>
+              <span className="font-semibold text-slate-900">
+                €{subtotal.toFixed(2)}
+              </span>
+            </div>
+          </div>
+          <div className="mt-4 border-t border-slate-100 pt-3">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-slate-500">Totale</span>
+              <span className="text-lg font-black text-slate-900">
+                €{subtotal.toFixed(2)}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Conferma ritiro */}
+        <button
+          type="button"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white shadow-md shadow-blue-500/25 transition hover:bg-blue-700 active:scale-[0.98]"
+        >
+          Conferma ritiro
+        </button>
+      </div>
+    </div>
+  );
+}

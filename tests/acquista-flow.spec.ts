@@ -98,11 +98,11 @@ test.describe("Acquista Flow E2E", () => {
 
     expect(page.url()).toContain("/acquista/spedizione");
 
-    const submitButton = page.locator("text=Continua al pagamento");
+    const submitButton = page.locator("text=Procedi al pagamento");
     expect(await submitButton.isVisible()).toBeTruthy();
 
-    const form = page.locator("form.space-y-3");
-    expect(await form.isVisible()).toBeTruthy();
+    const indirizzoSection = page.locator("text=Indirizzo di spedizione");
+    expect(await indirizzoSection.isVisible()).toBeTruthy();
 
     expect(jsErrors.length).toBe(0);
   });

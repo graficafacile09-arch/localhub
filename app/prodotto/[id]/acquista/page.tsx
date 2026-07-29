@@ -44,9 +44,8 @@ export default async function AcquistaChoicePage({
     );
   }
 
-  const { prodotto, negozio, prezzo, quantita } = data;
+  const { prodotto, negozio, prezzo } = data;
   const nome = "nome" in prodotto ? (prodotto.nome as string) : "Prodotto";
-  const disponibile = quantita !== null && quantita > 0;
 
   const imageUrl = getProdottoImmagine({
     immagine_principale: "immagine_principale" in prodotto
@@ -77,11 +76,6 @@ export default async function AcquistaChoicePage({
             <p className="text-2xl font-black text-emerald-700">
               €{prezzo.toFixed(2)}
             </p>
-            {quantita !== null && (
-              <p className="mt-1 text-xs text-slate-500">
-                {disponibile ? `${quantita} disponibili` : "Non disponibile"}
-              </p>
-            )}
           </div>
         </div>
 
