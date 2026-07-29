@@ -44,14 +44,29 @@ test.describe("Acquista Flow E2E", () => {
     const title = await page.textContent("h1");
     expect(title).toContain("Trattamento Glow Viso");
 
-    const acquistaButton = page.locator("text=Acquista");
-    const isVisible = await acquistaButton.isVisible();
+    // Verify NO opening hours on product page
+    const orariText = await page.locator("text=Orari di apertura").count();
+    expect(orariText).toBe(0);
+    console.log("✓ No opening hours on product page.");
 
-    if (!isVisible) {
-      console.log("NOTE: Acquista button not visible - expected for demo products without real negozio.");
-    } else {
-      console.log("Acquista button IS visible.");
-    }
+    // Aperto ora / Chiuso should not appear
+    const apertoChiuso = await page.locator("text=Aperto ora, text=Chiuso").count();
+    // Just log, not a hard assert - text might not match exactly
+
+    // Verify ACQUISTA button is visible
+    const acquistaButton = page.locator("text=ACQUISTA").or(page.locator("text=Acquista").first());
+    await expect(acquistaButton.first()).toBeVisible();
+    console.log("✓ ACQUISTA button is visible.");
+
+    // Verify button is clickable
+    await expect(acquistaButton.first()).toBeEnabled();
+    console.log("✓ ACQUISTA button is clickable.");
+
+    // Verify click navigates to /prodotto/[id]/acquista
+    await acquistaButton.first().click();
+    await page.waitForURL(/\/prodotto\/prod-demo-beauty-1\/acquista/, { timeout: 15000 });
+    expect(page.url()).toContain("/acquista");
+    console.log("✓ Click navigates to /prodotto/[id]/acquista.");
 
     expect(jsErrors.length).toBe(0);
   });
@@ -125,6 +140,20 @@ test.describe("Acquista Flow E2E", () => {
 
       expect(jsErrors.length).toBe(0);
     }
+  });
+
+  test("Verify orari appear on negozio page but NOT on product page", async () => {
+    // Go to negozio page - opening hours SHOULD be visible
+    await page.goto("/negozio/demo-beauty-1", { timeout: 30000 });
+    const negozioOrari = await page.locator("text=Lun-Sab").count();
+    expect(negozioOrari).toBeGreaterThan(0);
+    console.log("✓ Opening hours ARE visible on negozio page.");
+
+    // Go to product page - opening hours should NOT be visible
+    await page.goto("/prodotto/prod-demo-beauty-1", { timeout: 30000 });
+    const prodottoOrari = await page.locator("text=Lun-Sab").count();
+    expect(prodottoOrari).toBe(0);
+    console.log("✓ No opening hours on product page.");
   });
 
   test("Verify no orari on acquista pages", async () => {
