@@ -4,7 +4,6 @@ import { getProdotto, getNegozio } from "@/lib/negozi";
 import { getProdottoDemoById } from "@/lib/negozi-demo";
 import { getProdottoImmagine } from "@/lib/prodotti-immagini";
 import { MapPin, Phone, MessageCircle, ArrowLeft, ExternalLink, ShoppingBag } from "lucide-react";
-import OpeningHoursDisplay from "@/components/negozio/OpeningHoursDisplay";
 
 export default async function PaginaProdotto({
   params,
@@ -133,6 +132,17 @@ export default async function PaginaProdotto({
           )}
         </div>
 
+        {/* Buy button - always visible */}
+        <div className="mt-4">
+          <Link
+            href={`/prodotto/${id}/acquista`}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-base font-bold text-white shadow-sm transition hover:bg-blue-700"
+          >
+            <ShoppingBag className="h-5 w-5" />
+            ACQUISTA
+          </Link>
+        </div>
+
         {/* Store info */}
         {negozio && (
           <div className="mt-6 rounded-xl border border-slate-200 bg-white p-4">
@@ -168,16 +178,10 @@ export default async function PaginaProdotto({
               )}
             </div>
 
-            {negozio.orari && (
-              <div className="mt-3">
-                <OpeningHoursDisplay orari={negozio.orari} />
-              </div>
-            )}
-
             {/* Actions */}
             <div className="mt-3 flex flex-wrap gap-2">
               <Link
-                href={`/prodotto/${negozio?.id ?? id}/acquista`}
+                href={`/prodotto/${id}/acquista`}
                 className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-blue-700"
               >
                 <ShoppingBag className="h-3.5 w-3.5" />
