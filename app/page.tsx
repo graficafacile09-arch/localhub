@@ -5,12 +5,17 @@ import { getCategorie, getNegoziInEvidenza, getProdottiInEvidenza } from "@/lib/
 import { getNegozioCardImmagine } from "@/lib/negozi-card-immagini";
 import CategoryTile, { TutteCategorieTile } from "@/components/home/CategoryTile";
 
+// La homepage deve riflettere in tempo reale i negozi in evidenza flaggati
+// dal merchant (il toggle "In evidenza" della dashboard), quindi non viene
+// prerenderizzata staticamente a build.
+export const dynamic = "force-dynamic";
+
 // Numero di categorie mostrate in homepage (le altre sono in /categorie).
 const NUMERO_CATEGORIE_HOME = 8;
 
 export default async function Home() {
   const [negozi, prodottiInEvidenza, categorie] = await Promise.all([
-    getNegoziInEvidenza(6),
+    getNegoziInEvidenza(8),
     getProdottiInEvidenza(8),
     getCategorie(),
   ]);
@@ -73,17 +78,21 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ATTIVITÀ IN EVIDENZA */}
-      <section className="bg-white py-12 border-t border-slate-100">
-        <div className="max-w-7xl mx-auto px-4 md:px-6">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl font-bold text-slate-900">
-              Attività in evidenza
-            </h2>
-            <Link href="/negozi" className="text-blue-600 font-semibold text-sm hover:underline">
-              Vedi tutti i negozi &rarr;
-            </Link>
-          </div>
+      {/* ⭐ NEGOZI IN EVIDENZA (solo se ce ne sono) */}
+      {negozi.length > 0 && (
+        <section className="bg-white py-12 border-t border-slate-100">
+          <div className="max-w-7xl mx-auto px-4 md:px-6">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-2xl font-bold text-slate-900">
+                ⭐ Negozi in evidenza
+              </h2>
+              <Link
+                href="/negozi?featured=1"
+                className="text-blue-600 font-semibold text-sm hover:underline"
+              >
+                Vedi tutti &rarr;
+              </Link>
+            </div>
 
           <div className="grid md:grid-cols-3 gap-6">
             {negozi.map((negozio) => {
@@ -129,8 +138,9 @@ export default async function Home() {
               );
             })}
           </div>
-        </div>
-      </section>
+          </div>
+        </section>
+      )}
     </main>
   );
 }

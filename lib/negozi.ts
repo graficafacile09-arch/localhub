@@ -121,23 +121,48 @@ export async function getNegozioBySlug(slug: string) {
   return data;
 }
 
-export async function getNegoziInEvidenza(limit = 6) {
+// Negozi in Evidenza: SOLO quelli con in_evidenza=true (attivi, non nel
+// Cestino). ESATTAMENTE 2 query SQL, zero N+1:
+//   Q1 negozi con flag in_evidenza (con limite opzionale, es. homepage max 8)
+//   Q2 conteggio prodotti attivi per i negozi trovati (una sola query)
+// Ranking identico alle pagine categoria: in_evidenza → prodotti attivi →
+// visite (se esiste) → created_at DESC → nome → id (via ordinaNegoziPerCategoria).
+export async function getNegoziInEvidenza(limit?: number) {
   const db = getDb();
   if (!db) return [];
 
-  const { data, error } = await db
+  // Q1 — negozi in evidenza: attivi, non cestino, flag in_evidenza=true.
+  let query = db
     .from("negozi")
     .select("*")
+    .eq("in_evidenza", true)
     .eq("attivo", true)
-    .is("deleted_at", null)
-    .order("created_at", { ascending: false })
-    .limit(limit);
+    .is("deleted_at", null);
+  if (limit) query = query.limit(limit);
 
-  if (error) {
-    return [];
+  const { data, error } = await query;
+  if (error) return [];
+
+  const negozi = data ?? [];
+  if (negozi.length === 0) return [];
+
+  // Q2 — conteggio prodotti attivi per i negozi trovati (una sola query,
+  // niente N+1): si recuperano solo i negozio_id dei prodotti attivi.
+  const conteggioProdotti = new Map<string, number>();
+  const { data: prodotti } = await db
+    .from("prodotti")
+    .select("negozio_id")
+    .eq("attivo", true)
+    .in(
+      "negozio_id",
+      negozi.map((n) => n.id as string)
+    );
+  for (const p of prodotti ?? []) {
+    const id = p.negozio_id as string;
+    conteggioProdotti.set(id, (conteggioProdotti.get(id) ?? 0) + 1);
   }
 
-  return data ?? [];
+  return ordinaNegoziPerCategoria(negozi, conteggioProdotti);
 }
 
 // ─── Categorie ──────────────────────────────────────────────────────────────
