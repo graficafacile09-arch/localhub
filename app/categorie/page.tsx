@@ -1,9 +1,10 @@
 import Header from "@/components/Header/Header";
-import { getCategorie } from "@/lib/negozi";
+import { getCategorie, getConteggiNegoziPerCategoria } from "@/lib/negozi";
 import CategoryTile from "@/components/home/CategoryTile";
 
 export default async function CategoriePage() {
   const categorie = await getCategorie();
+  const conteggi = await getConteggiNegoziPerCategoria(categorie);
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -21,7 +22,12 @@ export default async function CategoriePage() {
 
         <div className="grid grid-cols-4 gap-2 md:gap-3">
           {categorie.map((categoria, index) => (
-            <CategoryTile key={categoria.id} categoria={categoria} index={index} />
+            <CategoryTile
+              key={categoria.id}
+              categoria={categoria}
+              index={index}
+              count={conteggi.get(categoria.id) ?? 0}
+            />
           ))}
         </div>
       </div>

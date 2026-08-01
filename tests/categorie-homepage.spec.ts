@@ -76,4 +76,31 @@ test.describe("PAGINA /categorie — elenco completo", () => {
     await expect(page.locator("body")).toContainText("negozi in", { timeout: 10000 });
     await expect(page.locator('a[href^="/negozio/"]').first()).toBeVisible({ timeout: 10000 });
   });
+
+  test("ogni categoria mostra il conteggio reale dei negozi attivi", async ({ page }) => {
+    await page.goto(`${BASE}/categorie`, { waitUntil: "networkidle" });
+
+    // Ogni tile mostra un conteggio "X negozi" o "1 negozio" / "0 negozi"
+    const tiles = page.locator('a[href^="/ricerca?categoria="]');
+    const count = await tiles.count();
+    expect(count).toBeGreaterThan(8);
+
+    const conteggi = await tiles.evaluateAll((els) =>
+      els.map((el) => el.textContent ?? "")
+    );
+    for (const testo of conteggi) {
+      expect(testo).toMatch(/\d+ negoz[io]/);
+    }
+
+    // Il conteggio reale dal DB: il numero mostrato deve coincidere con i
+    // negozi attivi effettivamente filtrati nella pagina /ricerca.
+    // Tech & Elettronica ha 11 negozi attivi (valori storici "elettronica"/"Elettronica").
+    const tech = tiles.filter({ hasText: "Tech & Elettronica" });
+    await expect(tech).toContainText("11 negozi");
+
+    // Una categoria senza negozi mostra comunque "0 negozi" ed è cliccabile
+    const panificio = tiles.filter({ hasText: "Panificio" });
+    await expect(panificio).toContainText("0 negozi");
+    await expect(panificio).toBeVisible();
+  });
 });

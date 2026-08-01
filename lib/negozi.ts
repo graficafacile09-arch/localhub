@@ -175,6 +175,43 @@ export async function getCategoriaBySlug(slug: string) {
   return (data as Categoria) ?? null;
 }
 
+// Conta i negozi ATTIVI (attivo=true e non nel Cestino) per ogni categoria.
+// Una sola query sul DB (seleziona solo la colonna categoria) e aggregazione in
+// memoria: nessuna query per singola categoria (niente N+1). Il matching usa
+// lo stesso criterio di cercaNegoziPerCategoria (nome + sinonimi, case-insensitive).
+export async function getConteggiNegoziPerCategoria(categorie: Categoria[]) {
+  const db = getDb();
+  if (!db) return new Map<string, number>();
+
+  const { data, error } = await db
+    .from("negozi")
+    .select("categoria")
+    .eq("attivo", true)
+    .is("deleted_at", null);
+
+  if (error) return new Map<string, number>();
+
+  const conteggiPerValore = new Map<string, number>();
+  for (const row of data ?? []) {
+    const valore = ((row.categoria as string) ?? "").trim().toLowerCase();
+    if (!valore) continue;
+    conteggiPerValore.set(valore, (conteggiPerValore.get(valore) ?? 0) + 1);
+  }
+
+  const conteggi = new Map<string, number>();
+  for (const cat of categorie) {
+    const termini = [cat.nome, ...(cat.sinonimi ?? [])]
+      .map((t) => t.trim().toLowerCase())
+      .filter(Boolean);
+    let totale = 0;
+    for (const [valore, count] of conteggiPerValore) {
+      if (termini.some((t) => valore.includes(t))) totale += count;
+    }
+    conteggi.set(cat.id, totale);
+  }
+  return conteggi;
+}
+
 export async function cercaNegoziPerCategoria(categoria: Categoria) {
   const db = getDb();
   if (!db) return [];

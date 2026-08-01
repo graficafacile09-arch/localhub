@@ -34,9 +34,11 @@ const TILE_CLASS =
 export default function CategoryTile({
   categoria,
   index,
+  count,
 }: {
   categoria: Categoria;
   index: number;
+  count?: number;
 }) {
   const stile = STILI_TILE[index % STILI_TILE.length];
   const icona = ICONE_CATEGORIE[categoria.slug] ?? "/icons/store.png";
@@ -54,6 +56,11 @@ export default function CategoryTile({
       <span className={`text-[11px] md:text-xs font-semibold transition-colors ${stile.text}`}>
         {categoria.nome}
       </span>
+      {typeof count === "number" && (
+        <span className="-mt-1 text-[10px] font-medium text-slate-400">
+          {count === 1 ? "1 negozio" : `${count} negozi`}
+        </span>
+      )}
     </Link>
   );
 }
