@@ -1,8 +1,7 @@
 import Header from "@/components/Header/Header";
 import SearchForm from "@/components/home/SearchForm";
 import { OpenAssistantButton, OpenAssistantLink } from "@/components/assistant/OpenAssistantButton";
-import { cercaNegozi } from "@/lib/negozi";
-import { cercaProdotti } from "@/lib/negozi";
+import { cercaNegozi, cercaProdotti, getCategoriaBySlug, cercaNegoziPerCategoria } from "@/lib/negozi";
 import { getNegozioCardImmagine } from "@/lib/negozi-card-immagini";
 import { getProdottoImmagine } from "@/lib/prodotti-immagini";
 import { search } from "@/lib/search-service";
@@ -13,17 +12,25 @@ import { Sparkles, MapPin, Phone } from "lucide-react";
 export default async function RicercaPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; categoria?: string }>;
 }) {
-  const { q } = await searchParams;
+  const { q, categoria: categoriaSlug } = await searchParams;
   const termine = q?.trim() ?? "";
 
   let prodotti: ProdottoRicerca[] = [];
   let negozi: NegozioRicerca[] = [];
   let rispostaAi: string | null = null;
   let erroreAi: string | null = null;
+  let categoriaAttiva: string | null = null;
 
-  if (termine) {
+  // Filtro per categoria: mostra tutti i negozi della categoria (nessuna ricerca testuale).
+  if (categoriaSlug) {
+    const categoria = await getCategoriaBySlug(categoriaSlug);
+    if (categoria) {
+      categoriaAttiva = categoria.nome;
+      negozi = (await cercaNegoziPerCategoria(categoria)) as NegozioRicerca[];
+    }
+  } else if (termine) {
     [prodotti, negozi] = await Promise.all([
       cercaProdotti(termine),
       cercaNegozi(termine),
@@ -56,13 +63,22 @@ export default async function RicercaPage({
           <SearchForm initialQuery={termine} compact />
         </div>
 
-        {termine ? (
+        {termine || categoriaAttiva ? (
           <>
             {/* Conteggio risultati */}
             <div className="mb-3 flex flex-wrap items-center gap-2">
               <span className="text-sm text-slate-600">
-                <span className="font-bold">{prodotti.length + negozi.length}</span> risultati per{" "}
-                <span className="font-bold text-blue-700">&ldquo;{termine}&rdquo;</span>
+                {categoriaAttiva ? (
+                  <>
+                    <span className="font-bold">{negozi.length}</span> negozi in{" "}
+                    <span className="font-bold text-blue-700">&ldquo;{categoriaAttiva}&rdquo;</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="font-bold">{prodotti.length + negozi.length}</span> risultati per{" "}
+                    <span className="font-bold text-blue-700">&ldquo;{termine}&rdquo;</span>
+                  </>
+                )}
               </span>
               <OpenAssistantButton label="Chiedi all'AI" />
             </div>
@@ -168,10 +184,14 @@ export default async function RicercaPage({
             {prodotti.length === 0 && negozi.length === 0 && !rispostaAi && !erroreAi && (
               <div className="py-12 text-center">
                 <p className="text-sm text-slate-500">
-                  Nessun risultato trovato per &ldquo;{termine}&rdquo;.
+                  {categoriaAttiva
+                    ? `Nessun negozio trovato per la categoria "${categoriaAttiva}".`
+                    : `Nessun risultato trovato per "${termine}".`}
                 </p>
                 <p className="mt-1 text-xs text-slate-400">
-                  Prova con termini diversi o chiedi all&apos;AI.
+                  {categoriaAttiva
+                    ? "Prova con un'altra categoria o usa la ricerca testuale."
+                    : "Prova con termini diversi o chiedi all'AI."}
                 </p>
               </div>
             )}

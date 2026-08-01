@@ -1,6 +1,7 @@
 import { calcolaPunteggioNegozio, filtraNegoziPerPertinenza } from "./ranking-negozi";
 import { normalizza, radice } from "./text-utils";
 import { createAdminSupabaseClient } from "./supabase/admin";
+import type { Categoria } from "@/types/negozio";
 
 const getDb = () => {
   try {
@@ -131,6 +132,75 @@ export async function getNegoziInEvidenza(limit = 6) {
     .is("deleted_at", null)
     .order("created_at", { ascending: false })
     .limit(limit);
+
+  if (error) {
+    return [];
+  }
+
+  return data ?? [];
+}
+
+// ─── Categorie ──────────────────────────────────────────────────────────────
+
+export async function getCategorie() {
+  const db = getDb();
+  if (!db) return [];
+
+  const { data, error } = await db
+    .from("categorie")
+    .select("*")
+    .eq("attivo", true)
+    .order("ordine", { ascending: true });
+
+  if (error) {
+    return [];
+  }
+
+  return (data as Categoria[]) ?? [];
+}
+
+export async function getCategoriaBySlug(slug: string) {
+  const db = getDb();
+  if (!db) return null;
+
+  const { data, error } = await db
+    .from("categorie")
+    .select("*")
+    .eq("slug", slug)
+    .eq("attivo", true)
+    .single();
+
+  if (error) return null;
+
+  return (data as Categoria) ?? null;
+}
+
+export async function cercaNegoziPerCategoria(categoria: Categoria) {
+  const db = getDb();
+  if (!db) return [];
+
+  // Match case-insensitive sul nome della categoria e sui suoi sinonimi:
+  // copre sia i dati storici (es. "elettronica", "Elettronica") sia quelli
+  // già allineati al catalogo (es. "Tech & Elettronica").
+  const termini = [
+    categoria.nome,
+    ...(categoria.sinonimi ?? []),
+  ]
+    .map((t) => t.trim().replace(/[%_,]/g, " ").trim())
+    .filter(Boolean);
+
+  if (termini.length === 0) return [];
+
+  const or = termini
+    .map((t) => `categoria.ilike.%${t}%`)
+    .join(",");
+
+  const { data, error } = await db
+    .from("negozi")
+    .select("*")
+    .eq("attivo", true)
+    .is("deleted_at", null)
+    .or(or);
 
   if (error) {
     return [];
