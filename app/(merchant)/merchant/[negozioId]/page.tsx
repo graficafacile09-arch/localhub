@@ -4,6 +4,7 @@ import MerchantDashboardCards from "@/components/merchant/MerchantDashboardCards
 import MerchantEmptyState from "@/components/merchant/MerchantEmptyState";
 import MerchantQuickActions from "@/components/merchant/MerchantQuickActions";
 import DeleteStoreButton from "@/components/negozio/DeleteStoreButton";
+import StoreTrashCard from "@/components/merchant/StoreTrashCard";
 import { requireCurrentUser } from "@/lib/auth/session";
 import { getMerchantProductsForStore, getMerchantStoreForUser } from "@/lib/merchant/data";
 
@@ -92,6 +93,9 @@ export default async function MerchantStorePage({
           <DeleteStoreButton negozioId={negozioId} isDemo={false} />
         </div>
       </div>
+
+      {/* Cestino */}
+      <StoreTrashCard />
     </div>
   );
 }
