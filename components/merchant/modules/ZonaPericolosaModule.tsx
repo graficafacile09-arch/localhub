@@ -20,7 +20,7 @@ export default function ZonaPericolosaModule({ storeId }: Props) {
       const stores = Array.isArray(json?.data?.stores) ? json.data.stores : [];
       setTrashCount(stores.length);
     } catch {
-      setTrashCount(0);
+      // In caso di errore non affermare che il cestino sia vuoto: resta "…"
     }
   }, []);
 
