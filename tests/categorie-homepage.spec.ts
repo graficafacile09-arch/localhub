@@ -103,4 +103,27 @@ test.describe("PAGINA /categorie — elenco completo", () => {
     await expect(panificio).toContainText("0 negozi");
     await expect(panificio).toBeVisible();
   });
+
+  test("conteggio /categorie == numero card negozio in /ricerca (filtro collegato)", async ({ page }) => {
+    await page.goto(`${BASE}/categorie`, { waitUntil: "networkidle" });
+
+    // Legge il conteggio mostrato sulla tile (es. "11 negozi" → 11)
+    const tech = page
+      .locator('a[href^="/ricerca?categoria="]')
+      .filter({ hasText: "Tech & Elettronica" });
+    const testo = (await tech.textContent()) ?? "";
+    const match = testo.match(/(\d+)\s+negoz[io]/);
+    expect(match, "la tile deve mostrare un conteggio numerico").not.toBeNull();
+    const conteggioTile = Number(match![1]);
+
+    // Click → /ricerca?categoria=tech-elettronica
+    await tech.click();
+    await expect(page).toHaveURL(/\/ricerca\?categoria=tech-elettronica/);
+
+    // Il numero di card negozio deve coincidere ESATTAMENTE col conteggio
+    const cardNegozi = page.locator('a[href^="/negozio/"]');
+    await expect(cardNegozi.first()).toBeVisible({ timeout: 10000 });
+    const nCard = await cardNegozi.count();
+    expect(nCard, "numero card negozio == conteggio /categorie").toBe(conteggioTile);
+  });
 });

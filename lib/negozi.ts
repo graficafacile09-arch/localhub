@@ -175,10 +175,19 @@ export async function getCategoriaBySlug(slug: string) {
   return (data as Categoria) ?? null;
 }
 
+// Termini di matching di una categoria: nome + sinonimi, normalizzati (lowercase, trim).
+function getTerminiCategoria(categoria: Categoria): string[] {
+  return [categoria.nome, ...(categoria.sinonimi ?? [])]
+    .map((t) => t.trim().toLowerCase())
+    .filter(Boolean);
+}
+
 // Conta i negozi ATTIVI (attivo=true e non nel Cestino) per ogni categoria.
 // Una sola query sul DB (seleziona solo la colonna categoria) e aggregazione in
 // memoria: nessuna query per singola categoria (niente N+1). Il matching usa
-// lo stesso criterio di cercaNegoziPerCategoria (nome + sinonimi, case-insensitive).
+// lo STESSO criterio di cercaNegoziPerCategoria (uguaglianza esatta
+// case-insensitive su nome + sinonimi), così conteggio e negozi mostrati
+// coincidono sempre esattamente.
 export async function getConteggiNegoziPerCategoria(categorie: Categoria[]) {
   const db = getDb();
   if (!db) return new Map<string, number>();
@@ -200,12 +209,10 @@ export async function getConteggiNegoziPerCategoria(categorie: Categoria[]) {
 
   const conteggi = new Map<string, number>();
   for (const cat of categorie) {
-    const termini = [cat.nome, ...(cat.sinonimi ?? [])]
-      .map((t) => t.trim().toLowerCase())
-      .filter(Boolean);
+    const termini = getTerminiCategoria(cat);
     let totale = 0;
     for (const [valore, count] of conteggiPerValore) {
-      if (termini.some((t) => valore.includes(t))) totale += count;
+      if (termini.includes(valore)) totale += count;
     }
     conteggi.set(cat.id, totale);
   }
@@ -216,28 +223,40 @@ export async function cercaNegoziPerCategoria(categoria: Categoria) {
   const db = getDb();
   if (!db) return [];
 
-  // Match case-insensitive sul nome della categoria e sui suoi sinonimi:
-  // copre sia i dati storici (es. "elettronica", "Elettronica") sia quelli
-  // già allineati al catalogo (es. "Tech & Elettronica").
-  const termini = [
-    categoria.nome,
-    ...(categoria.sinonimi ?? []),
-  ]
-    .map((t) => t.trim().replace(/[%_,]/g, " ").trim())
-    .filter(Boolean);
+  // 1) Una sola query: valori distinti di categoria dei negozi attivi.
+  const { data: valoriRows, error: errValori } = await db
+    .from("negozi")
+    .select("categoria")
+    .eq("attivo", true)
+    .is("deleted_at", null);
 
+  if (errValori) return [];
+
+  // 2) Risolvi quali valori appartengono ESATTAMENTE alla categoria:
+  //    uguaglianza case-insensitive su nome + sinonimi (nessun LIKE, nessuna
+  //    ricerca testuale). Copre i dati storici ("elettronica", "Elettronica")
+  //    e quelli allineati al catalogo ("Tech & Elettronica").
+  const termini = getTerminiCategoria(categoria);
   if (termini.length === 0) return [];
 
-  const or = termini
-    .map((t) => `categoria.ilike.%${t}%`)
-    .join(",");
+  const valoriUnici = Array.from(
+    new Set(
+      (valoriRows ?? [])
+        .map((row) => ((row.categoria as string) ?? "").trim())
+        .filter(Boolean)
+    )
+  );
+  const matching = valoriUnici.filter((valore) => termini.includes(valore.toLowerCase()));
 
+  if (matching.length === 0) return [];
+
+  // 3) Filtro reale sul database: categoria IN (valori esatti).
   const { data, error } = await db
     .from("negozi")
     .select("*")
     .eq("attivo", true)
     .is("deleted_at", null)
-    .or(or);
+    .in("categoria", matching);
 
   if (error) {
     return [];
