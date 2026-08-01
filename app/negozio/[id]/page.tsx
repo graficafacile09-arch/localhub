@@ -4,13 +4,8 @@ import StoreProductCard from "@/components/negozio/StoreProductCard";
 import { OpenAssistantLink } from "@/components/assistant/OpenAssistantButton";
 import { getNegozio, getProdottiNegozio } from "@/lib/negozi";
 import { getNegozioCardImmagine } from "@/lib/negozi-card-immagini";
-import {
-  getNegozioDemoById,
-  getProdottiDemoByNegozioId,
-} from "@/lib/negozi-demo";
 import { MapPin, Phone, MessageCircle, ExternalLink } from "lucide-react";
 import OpeningHoursDisplay from "@/components/negozio/OpeningHoursDisplay";
-
 export default async function PaginaNegozio({
   params,
 }: {
@@ -18,9 +13,7 @@ export default async function PaginaNegozio({
 }) {
   const { id } = await params;
 
-  const negozioReale = await getNegozio(id);
-  const negozioDemoVal = negozioReale ? null : getNegozioDemoById(id);
-  const negozio = negozioReale ?? negozioDemoVal;
+  const negozio = await getNegozio(id);
 
   if (!negozio) {
     return (
@@ -36,12 +29,10 @@ export default async function PaginaNegozio({
     );
   }
 
-  const prodotti = negozioReale
-    ? await getProdottiNegozio(id)
-    : getProdottiDemoByNegozioId(id);
+  const prodotti = await getProdottiNegozio(id);
 
   const imageUrl = getNegozioCardImmagine({
-    immagine: negozio.immagine,
+    logo_url: negozio.logo_url,
     categoria: negozio.categoria,
   });
 

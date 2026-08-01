@@ -1,3 +1,4 @@
+import { revalidatePath } from "next/cache";
 import { apiError, apiOk } from "@/lib/api/response";
 import { getCurrentUser } from "@/lib/auth/session";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -8,26 +9,62 @@ const GALLERY_BUCKET = "store-images";
 
 type StoreSettings = {
   nome?: string;
+  slug?: string;
   descrizione?: string;
+  descrizione_completa?: string;
   categoria?: string;
-  indirizzo?: string;
+  sottocategoria?: string;
+  logo_url?: string;
+  copertina_url?: string;
+  galleria?: string[];
   telefono?: string;
-  email?: string;
+  email_negozio?: string;
+  whatsapp?: string;
   sito_web?: string;
-  immagine?: string;
-  copertina?: string;
+  indirizzo?: string;
+  citta?: string;
+  cap?: string;
+  provincia?: string;
+  coordinate?: string;
   orari?: Record<string, { chiuso: boolean; apertura1: string; chiusura1: string; apertura2: string; chiusura2: string }>;
   facebook?: string;
   instagram?: string;
-  whatsapp?: string;
+  tiktok?: string;
+  youtube?: string;
+  attivo?: boolean;
+  mostra_telefono?: boolean;
+  mostra_indirizzo?: boolean;
+  mostra_orari?: boolean;
+  accetta_whatsapp?: boolean;
+  in_evidenza?: boolean;
+  servizi?: string[];
+  colori?: { primary: string; secondary: string; accent: string };
+  parole_chiave?: string[];
+  seo_title?: string;
+  seo_description?: string;
+  seo_keywords?: string[];
+  data?: Record<string, unknown>;
+  moduli_attivi?: string[];
 };
 
 const SELECT_FIELDS =
-  "id, nome, descrizione, categoria, indirizzo, telefono, email, sito_web, immagine, copertina, orari, facebook, instagram, whatsapp";
+  "id, slug, nome, descrizione, descrizione_completa, categoria, sottocategoria, " +
+  "logo_url, copertina_url, galleria, " +
+  "telefono, email_negozio, whatsapp, sito_web, " +
+  "indirizzo, citta, cap, provincia, coordinate, " +
+  "orari, " +
+  "facebook, instagram, tiktok, youtube, " +
+  "attivo, mostra_telefono, mostra_indirizzo, mostra_orari, accetta_whatsapp, in_evidenza, " +
+  "servizi, colori, parole_chiave, " +
+  "seo_title, seo_description, seo_keywords, " +
+  "data, moduli_attivi, version, " +
+  "deleted_at, deleted_by, created_at, updated_at";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const URL_RE = /^https?:\/\/.+/;
 const PHONE_MAX = 30;
+const CAP_RE = /^\d{5}$/;
+const COORDS_RE = /^-?\d+(\.\d+)?,\s*-?\d+(\.\d+)?$/;
 const GALLERY_BUCKET_PREFIX = `/object/public/${GALLERY_BUCKET}/`;
 
 function validate(body: StoreSettings): string | null {
@@ -37,7 +74,7 @@ function validate(body: StoreSettings): string | null {
   if ("categoria" in body && (!body.categoria || !body.categoria.trim())) {
     return "La categoria è obbligatoria.";
   }
-  if ("email" in body && body.email && !EMAIL_RE.test(body.email)) {
+  if ("email_negozio" in body && body.email_negozio && !EMAIL_RE.test(body.email_negozio)) {
     return "Formato email non valido.";
   }
   if ("sito_web" in body && body.sito_web && !URL_RE.test(body.sito_web)) {
@@ -45,6 +82,12 @@ function validate(body: StoreSettings): string | null {
   }
   if ("telefono" in body && body.telefono && body.telefono.length > PHONE_MAX) {
     return `Il telefono non può superare ${PHONE_MAX} caratteri.`;
+  }
+  if ("cap" in body && body.cap && !CAP_RE.test(body.cap)) {
+    return "Il CAP deve essere composto da 5 cifre.";
+  }
+  if ("coordinate" in body && body.coordinate && !COORDS_RE.test(body.coordinate)) {
+    return "Formato coordinate non valido. Usa 'lat, lng' (es. 45.4642, 9.1900).";
   }
   return null;
 }
@@ -114,9 +157,17 @@ export async function PUT(
 
   const payload: Record<string, unknown> = {};
   const allowedFields = [
-    "nome", "descrizione", "categoria", "indirizzo", "telefono",
-    "email", "sito_web", "immagine", "copertina",
-    "orari", "facebook", "instagram", "whatsapp",
+    "nome", "slug", "descrizione", "descrizione_completa", "categoria", "sottocategoria",
+    "logo_url", "copertina_url", "galleria",
+    "telefono", "email_negozio", "whatsapp", "sito_web",
+    "indirizzo", "citta", "cap", "provincia", "coordinate",
+    "orari",
+    "facebook", "instagram", "tiktok", "youtube",
+    "attivo", "mostra_telefono", "mostra_indirizzo", "mostra_orari",
+    "accetta_whatsapp", "in_evidenza",
+    "servizi", "colori", "parole_chiave",
+    "seo_title", "seo_description", "seo_keywords",
+    "data", "moduli_attivi",
   ];
 
   for (const field of allowedFields) {
@@ -131,9 +182,21 @@ export async function PUT(
 
   const supabase = createAdminSupabaseClient();
 
+  // Merge `data` into the existing jsonb instead of replacing it: modules
+  // (offerte/eventi/ai) each PUT their own slice and must not wipe the others.
+  if ("data" in payload && payload.data && typeof payload.data === "object") {
+    const { data: oldRow } = await supabase
+      .from("negozi")
+      .select("data")
+      .eq("id", negozioId)
+      .single();
+    const existing = (oldRow?.data ?? {}) as Record<string, unknown>;
+    payload.data = { ...existing, ...(payload.data as Record<string, unknown>) };
+  }
+
   const { data: oldRow } = await supabase
     .from("negozi")
-    .select("immagine, copertina")
+    .select("logo_url, copertina_url")
     .eq("id", negozioId)
     .single();
 
@@ -149,17 +212,22 @@ export async function PUT(
   }
 
   if (oldRow) {
-    const oldUrls = [oldRow.immagine, oldRow.copertina].filter(
+    const oldUrls = [oldRow.logo_url, oldRow.copertina_url].filter(
       (u): u is string => !!u && typeof u === "string"
     );
-
     const newUrls = [
-      (payload.immagine as string) ?? oldRow.immagine,
-      (payload.copertina as string) ?? oldRow.copertina,
+      (payload.logo_url as string) ?? oldRow.logo_url,
+      (payload.copertina_url as string) ?? oldRow.copertina_url,
     ].filter((u): u is string => !!u && typeof u === "string");
 
     await deleteOrphanImages(oldUrls, newUrls);
   }
+
+  revalidatePath(`/negozio/${negozioId}`);
+  revalidatePath(`/merchant/${negozioId}`);
+  revalidatePath(`/negozi`);
+  revalidatePath(`/`);
+  revalidatePath(`/ricerca`);
 
   return apiOk({ settings: data });
 }

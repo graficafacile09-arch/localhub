@@ -1,7 +1,6 @@
 import Link from "next/link";
 import Header from "@/components/Header/Header";
 import { getProdotto, getNegozio } from "@/lib/negozi";
-import { getProdottoDemoById } from "@/lib/negozi-demo";
 import { getProdottoImmagine } from "@/lib/prodotti-immagini";
 import { MapPin, Phone, MessageCircle, ArrowLeft, ExternalLink, ShoppingBag } from "lucide-react";
 
@@ -12,9 +11,7 @@ export default async function PaginaProdotto({
 }) {
   const { id } = await params;
 
-  const prodottoReale = await getProdotto(id);
-  const prodottoDemo = prodottoReale ? null : getProdottoDemoById(id);
-  const prodotto = prodottoReale ?? prodottoDemo;
+  const prodotto = await getProdotto(id);
 
   if (!prodotto) {
     return (

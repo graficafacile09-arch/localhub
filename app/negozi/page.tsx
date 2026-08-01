@@ -1,13 +1,11 @@
 import Header from "@/components/Header/Header";
 import { getNegozi } from "@/lib/negozi";
-import { negoziDemo } from "@/lib/negozi-demo";
 import { getNegozioCardImmagine } from "@/lib/negozi-card-immagini";
 import Link from "next/link";
 import { MapPin } from "lucide-react";
 
 export default async function NegoziPage() {
-  const negoziDB = await getNegozi();
-  const negozi = negoziDB.length > 0 ? negoziDB : negoziDemo;
+  const negozi = await getNegozi();
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -21,7 +19,7 @@ export default async function NegoziPage() {
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
           {negozi.map((negozio) => {
             const imageUrl = getNegozioCardImmagine({
-              immagine: negozio.immagine,
+              logo_url: negozio.logo_url,
               categoria: negozio.categoria,
             });
 
@@ -29,13 +27,13 @@ export default async function NegoziPage() {
               <Link
                 key={negozio.id}
                 href={`/negozio/${negozio.id}`}
-                className="group overflow-hidden rounded-xl border border-slate-100 bg-white transition hover:border-blue-200 hover:shadow-md"
+                className="group overflow-hidden rounded-xl border border-slate-100 bg-white transition hover:border-blue-200 hover:shadow-sm"
               >
                 <div className="relative aspect-video overflow-hidden bg-slate-100">
                   <div
                     role="img"
                     aria-label={negozio.nome}
-                    className="h-full w-full bg-cover bg-center transition-transform duration-300 group-hover:scale-105"
+                    className="h-full w-full bg-cover bg-center"
                     style={{ backgroundImage: `url(${imageUrl})` }}
                   />
                   {negozio.categoria && (

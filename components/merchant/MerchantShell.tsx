@@ -7,6 +7,7 @@ import MerchantStoreSwitcher from "./MerchantStoreSwitcher";
 import MerchantSidebarNav from "./MerchantSidebarNav";
 import MerchantBottomNav from "./MerchantBottomNav";
 import MerchantTopBar from "./MerchantTopBar";
+import MerchantGlobalNav from "./MerchantGlobalNav";
 
 export default function MerchantShell({
   user,
@@ -77,23 +78,15 @@ export default function MerchantShell({
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
               Navigazione
             </p>
-            <div className="mt-4">
-              <Link
-                href="/merchant"
-                className="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-slate-700 transition-all duration-150 hover:bg-slate-50"
-              >
-                <Home className="h-4 w-4 text-blue-600" />
-                La mia area
-              </Link>
-              {currentStore ? (
-                <div className="mt-2">
-                  <MerchantSidebarNav
-                    storeId={currentStore.id}
-                    storeName={currentStore.nome}
-                  />
-                </div>
-              ) : null}
-            </div>
+            <MerchantGlobalNav />
+            {currentStore ? (
+              <div className="mt-2">
+                <MerchantSidebarNav
+                  storeId={currentStore.id}
+                  storeName={currentStore.nome}
+                />
+              </div>
+            ) : null}
           </div>
 
           <MerchantStoreSwitcher stores={stores} currentStoreId={currentStoreId} />

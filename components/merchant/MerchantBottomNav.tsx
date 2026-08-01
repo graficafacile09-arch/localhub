@@ -9,6 +9,7 @@ import {
   Settings,
   Sparkles,
   Store,
+  Trash2,
 } from "lucide-react";
 
 type MerchantBottomNavProps = {
@@ -18,9 +19,15 @@ type MerchantBottomNavProps = {
 export default function MerchantBottomNav({ storeId: storeIdProp }: MerchantBottomNavProps) {
   const pathname = usePathname();
 
+  // Pagine globali dell'area merchant che NON identificano un negozio
+  const GLOBAL_MERCHANT_SLUGS = ["trash", "admin", "nuovo", "template"];
+
   // Estrae negozioId direttamente dall'URL: /merchant/[negozioId]/...
   const urlStoreId = pathname.match(/^\/merchant\/([^/]+)/)?.[1] ?? null;
-  const storeId = storeIdProp ?? urlStoreId;
+  const storeId =
+    urlStoreId && !GLOBAL_MERCHANT_SLUGS.includes(urlStoreId)
+      ? storeIdProp ?? urlStoreId
+      : storeIdProp;
 
   const hasStore = Boolean(storeId);
 
@@ -67,6 +74,14 @@ export default function MerchantBottomNav({ storeId: storeIdProp }: MerchantBott
       ai: false,
     },
     {
+      key: "cestino",
+      label: "Cestino",
+      icon: Trash2,
+      href: "/merchant/trash",
+      available: true,
+      ai: false,
+    },
+    {
       key: "altro",
       label: "Esci",
       icon: LogOut,
@@ -83,6 +98,8 @@ export default function MerchantBottomNav({ storeId: storeIdProp }: MerchantBott
     if (href === `/merchant/${storeId}`) {
       return pathname === href;
     }
+    // "Negozio" (senza negozio selezionato) è attivo solo sulla home dell'area
+    if (href === "/merchant") return pathname === "/merchant";
     return pathname.startsWith(href);
   }
 

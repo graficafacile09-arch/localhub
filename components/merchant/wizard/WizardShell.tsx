@@ -1,0 +1,470 @@
+"use client";
+
+import { useState, useEffect, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Store, LayoutTemplate, Copy, Loader2, Camera } from "lucide-react";
+import { getCategoriesConsigliate } from "./templates";
+import { getTemplates } from "./templates";
+
+const categories = getCategoriesConsigliate();
+
+type UserTemplate = {
+  id: string;
+  nome: string;
+  descrizione: string;
+  categoria: string | null;
+  is_system: boolean;
+  created_at: string;
+};
+
+type StoreSummary = {
+  id: string;
+  nome: string;
+  categoria: string | null;
+};
+
+type SystemTemplate = {
+  id: string;
+  nome: string;
+  descrizione: string;
+  icone: string[];
+  categorieConsigliate: string[];
+  moduli_attivi: string[];
+  defaultColor?: { primary: string; secondary: string; accent: string };
+};
+
+type AnyTemplate = SystemTemplate | UserTemplate;
+
+type Mode = "blank" | "template" | "duplica";
+
+export default function WizardShell() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [mode, setMode] = useState<Mode>("blank");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  const [form, setForm] = useState({
+    nome: "",
+    categoria: "",
+    citta: "",
+    logo: "",
+  });
+
+  const [duplicaStoreId, setDuplicaStoreId] = useState("");
+  const [stores, setStores] = useState<StoreSummary[]>([]);
+  const [storesLoading, setStoresLoading] = useState(false);
+
+  const [userTemplates, setUserTemplates] = useState<UserTemplate[]>([]);
+  const [templatesLoading, setTemplatesLoading] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+
+  const systemTemplates = getTemplates();
+
+  const handleSelectTemplate = (id: string) => {
+    setSelectedTemplateId(id);
+    const allTemplates: AnyTemplate[] = [...systemTemplates, ...userTemplates];
+    const selected = allTemplates.find((t) => t.id === id);
+    if (selected && "categoria" in selected && selected.categoria) {
+      setForm((prev) => ({ ...prev, categoria: selected.categoria ?? "" }));
+    }
+  };
+
+  useEffect(() => {
+    const templateParam = searchParams?.get("template");
+    if (templateParam) {
+      setMode("template");
+      setSelectedTemplateId(templateParam);
+      const allTemplates: AnyTemplate[] = [...systemTemplates, ...userTemplates];
+      const selected = allTemplates.find((t) => t.id === templateParam);
+      if (selected && "categoria" in selected && selected.categoria) {
+        setForm((prev) => ({ ...prev, categoria: selected.categoria ?? "" }));
+      }
+    }
+  }, [searchParams, systemTemplates, userTemplates]);
+
+  useEffect(() => {
+    async function loadStores() {
+      setStoresLoading(true);
+      try {
+        const res = await fetch("/api/merchant/stores");
+        const json = await res.json();
+        if (json.success) {
+          setStores(json.data.stores ?? []);
+        }
+      } catch {
+      } finally {
+        setStoresLoading(false);
+      }
+    }
+
+    async function loadTemplates() {
+      setTemplatesLoading(true);
+      try {
+        const res = await fetch("/api/merchant/templates");
+        const json = await res.json();
+        if (json.success) {
+          const userTemplates = (json.data?.templates ?? []).filter((t: UserTemplate) => !t.is_system);
+          setUserTemplates(userTemplates);
+        }
+      } catch {
+      } finally {
+        setTemplatesLoading(false);
+      }
+    }
+
+    loadStores();
+    loadTemplates();
+  }, []);
+
+  const allTemplatesCombined: AnyTemplate[] = [...systemTemplates, ...userTemplates];
+
+  function toSlug(text: string): string {
+    return text
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, "")
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-")
+      .trim();
+  }
+
+  function updateField(field: keyof typeof form, value: string) {
+    setForm((f) => {
+      const next = { ...f, [field]: value };
+      if (field === "nome") {
+        next.categoria = form.categoria || categories[0] || "";
+      }
+      return next;
+    });
+  }
+
+  async function handleSubmit() {
+    if (!form.nome.trim()) { setError("Inserisci il nome del negozio."); return; }
+
+    if (mode !== "duplica") {
+      if (!form.categoria.trim()) { setError("Seleziona una categoria."); return; }
+      if (!form.citta.trim()) { setError("Inserisci la città."); return; }
+    }
+
+    if (mode === "duplica" && !duplicaStoreId) {
+      setError("Seleziona un negozio da duplicare.");
+      return;
+    }
+
+    if (mode === "template" && !selectedTemplateId) {
+      setError("Seleziona un template.");
+      return;
+    }
+
+    setError("");
+    setSaving(true);
+
+    try {
+      let response: Response;
+
+      if (mode === "blank") {
+        response = await fetch("/api/merchant/stores", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            nome: form.nome.trim(),
+            categoria: form.categoria.trim(),
+            citta: form.citta.trim(),
+            logo_url: form.logo || undefined,
+          }),
+        });
+      } else if (mode === "template") {
+        const slug = toSlug(form.nome);
+        response = await fetch(`/api/merchant/templates/${selectedTemplateId}/use`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            nome: form.nome.trim(),
+            slug,
+            categoria: form.categoria.trim(),
+            citta: form.citta.trim(),
+          }),
+        });
+      } else {
+        const slug = toSlug(form.nome);
+        const allOptions = {
+          informazioni: true,
+          logo: true,
+          copertina: true,
+          galleria: true,
+          prodotti: true,
+          servizi: true,
+          offerte: true,
+          eventi: true,
+          orari: true,
+          contatti: true,
+          social: true,
+          seo: true,
+          ai: true,
+        };
+        response = await fetch(`/api/merchant/stores/${duplicaStoreId}/duplicate`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            newStore: {
+              nome: form.nome.trim(),
+              slug,
+              categoria: form.categoria.trim() || undefined,
+              citta: form.citta.trim() || undefined,
+            },
+            options: allOptions,
+          }),
+        });
+      }
+
+      const json = await response.json();
+      if (json.success) {
+        router.push(`/merchant/${json.data.storeId}/edit`);
+      } else {
+        setError(json.error?.message ?? "Errore durante la creazione.");
+      }
+    } catch {
+      setError("Errore di connessione.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      if (typeof ev.target?.result === "string") {
+        updateField("logo", ev.target.result);
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+
+  return (
+    <div className="mx-auto max-w-2xl px-3 py-6 sm:px-5">
+      <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-sm sm:p-8">
+        <div className="mb-6 flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+            <Store className="h-5 w-5" />
+          </div>
+          <div>
+            <h1 className="text-base font-black text-slate-900">Nuovo negozio</h1>
+            <p className="text-xs text-slate-400">Crea una nuova attività in pochi secondi</p>
+          </div>
+        </div>
+
+        <div className="mb-6 grid gap-3 sm:grid-cols-3">
+          <button
+            type="button"
+            onClick={() => setMode("blank")}
+            className={`flex flex-col items-center gap-2 rounded-xl border-2 p-4 text-center transition-all ${
+              mode === "blank"
+                ? "border-blue-500 bg-blue-50"
+                : "border-slate-200 bg-white hover:border-blue-200"
+            }`}
+          >
+            <Store className="h-6 w-6 text-slate-600" />
+            <span className="text-xs font-semibold">Da zero</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode("template")}
+            className={`flex flex-col items-center gap-2 rounded-xl border-2 p-4 text-center transition-all ${
+              mode === "template"
+                ? "border-blue-500 bg-blue-50"
+                : "border-slate-200 bg-white hover:border-blue-200"
+            }`}
+          >
+            <LayoutTemplate className="h-6 w-6 text-slate-600" />
+            <span className="text-xs font-semibold">Da Template</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode("duplica")}
+            className={`flex flex-col items-center gap-2 rounded-xl border-2 p-4 text-center transition-all ${
+              mode === "duplica"
+                ? "border-blue-500 bg-blue-50"
+                : "border-slate-200 bg-white hover:border-blue-200"
+            }`}
+          >
+            <Copy className="h-6 w-6 text-slate-600" />
+            <span className="text-xs font-semibold">Duplica negozio</span>
+          </button>
+        </div>
+
+        {mode === "template" && (
+          <div className="mb-6">
+            <h3 className="mb-2 text-xs font-semibold text-slate-500">Scegli un template</h3>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {allTemplatesCombined.map((t) => {
+                const isSelected = selectedTemplateId === t.id;
+                const isSystem = "icone" in t;
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => handleSelectTemplate(t.id)}
+                    className={`rounded-xl border-2 p-3 text-left transition-all ${
+                      isSelected
+                        ? "border-blue-500 bg-blue-50"
+                        : "border-slate-200 bg-white hover:border-blue-200"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-lg">
+                        {"icone" in t ? (t.icone?.[0] ?? "🏪") : "🏪"}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-slate-900">{t.nome}</p>
+                        <p className="text-xs text-slate-500 line-clamp-1">{t.descrizione}</p>
+                      </div>
+                    </div>
+                    {isSystem && (
+                      <span className="mt-1 inline-block rounded-full bg-blue-50 px-2 py-0.5 text-[9px] font-semibold text-blue-600">
+                        Predefinito
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {mode === "duplica" && (
+          <div className="mb-6">
+            <h3 className="mb-2 text-xs font-semibold text-slate-500">Negozio da duplicare</h3>
+            {storesLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
+              </div>
+            ) : stores.length === 0 ? (
+              <p className="text-center text-xs text-slate-400 py-4">
+                Nessun negozio disponibile. Creane prima uno da zero.
+              </p>
+            ) : (
+              <select
+                value={duplicaStoreId}
+                onChange={(e) => setDuplicaStoreId(e.target.value)}
+                className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              >
+                <option value="">Seleziona un negozio</option>
+                {stores.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.nome} {s.categoria ? `(${s.categoria})` : ""}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+        )}
+
+        <div className="mb-6">
+          <div className="mb-4 flex items-center gap-4">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50">
+              {form.logo ? (
+                <div
+                  role="img"
+                  aria-label="Logo"
+                  className="h-full w-full bg-cover bg-center"
+                  style={{ backgroundImage: `url(${form.logo})` }}
+                />
+              ) : (
+                <Camera className="h-6 w-6 text-slate-300" />
+              )}
+            </div>
+            <div>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
+              >
+                Carica logo
+              </button>
+              {form.logo && (
+                <button
+                  type="button"
+                  onClick={() => updateField("logo", "")}
+                  className="ml-2 text-[10px] font-semibold text-red-500 hover:underline"
+                >
+                  Rimuovi
+                </button>
+              )}
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleLogoUpload}
+            />
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-slate-500">Nome negozio *</label>
+              <input
+                type="text"
+                value={form.nome}
+                onChange={(e) => updateField("nome", e.target.value)}
+                placeholder="es. Panificio Rossi"
+                className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-slate-500">Categoria *</label>
+              <select
+                value={form.categoria}
+                onChange={(e) => updateField("categoria", e.target.value)}
+                className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              >
+                <option value="">Seleziona categoria</option>
+                {categories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-slate-500">Città *</label>
+              <input
+                type="text"
+                value={form.citta}
+                onChange={(e) => updateField("citta", e.target.value)}
+                placeholder="es. Castrovillari"
+                className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              />
+            </div>
+          </div>
+        </div>
+
+        {error && (
+          <p className="mb-4 text-xs font-semibold text-red-500">{error}</p>
+        )}
+
+        <button
+          type="button"
+          onClick={handleSubmit}
+          disabled={saving}
+          className="w-full rounded-xl bg-blue-600 px-6 py-3 text-xs font-bold text-white transition hover:bg-blue-700 disabled:opacity-50"
+        >
+          {saving ? (
+            <div className="flex items-center justify-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Creazione...
+            </div>
+          ) : (
+            "Crea negozio"
+          )}
+        </button>
+      </div>
+    </div>
+  );
+}

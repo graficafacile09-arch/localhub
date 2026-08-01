@@ -23,7 +23,7 @@ function buildMapsUrl(indirizzo: string): string {
 
 export default function ShopResultCard({ negozio, rank }: ShopResultCardProps) {
   const imageUrl = getNegozioCardImmagine({
-    immagine: negozio.immagine,
+    logo_url: negozio.logo_url,
     categoria: negozio.categoria,
   });
 

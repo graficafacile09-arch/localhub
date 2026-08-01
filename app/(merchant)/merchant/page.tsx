@@ -23,10 +23,20 @@ export default async function MerchantHomePage() {
 
   if (storesResult.data.length === 0) {
     return (
-      <MerchantEmptyState
-        title="Nessun negozio trovato"
-        description="Non hai ancora un negozio associato al tuo account. Se ti sei appena registrato, riprova tra qualche istante."
-      />
+      <div className="space-y-6">
+        <MerchantEmptyState
+          title="Nessun negozio trovato"
+          description="Non hai ancora un negozio associato al tuo account. Se ti sei appena registrato, riprova tra qualche istante."
+        />
+        <div className="text-center">
+          <Link
+            href="/merchant/nuovo"
+            className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white transition hover:bg-blue-700"
+          >
+            Crea il tuo primo negozio
+          </Link>
+        </div>
+      </div>
     );
   }
 
@@ -42,6 +52,15 @@ export default async function MerchantHomePage() {
         <p className="mt-3 text-sm leading-6 text-slate-600">
           Scegli il negozio da gestire. Da qui partiranno il catalogo e la pubblicazione prodotti.
         </p>
+      </div>
+
+      <div className="mb-4">
+        <Link
+          href="/merchant/nuovo"
+          className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-blue-700"
+        >
+          + Nuovo negozio
+        </Link>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">

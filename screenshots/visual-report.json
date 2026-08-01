@@ -1,0 +1,38 @@
+{
+  "template": "demo-panificio-1",
+  "allGood": true,
+  "pages": [
+    {
+      "store": "demo-beauty-1",
+      "diffs": []
+    },
+    {
+      "store": "demo-casa-1",
+      "diffs": []
+    },
+    {
+      "store": "demo-auto-1",
+      "diffs": []
+    },
+    {
+      "store": "demo-salute-1",
+      "diffs": []
+    },
+    {
+      "store": "demo-tech-1",
+      "diffs": []
+    },
+    {
+      "store": "demo-bimbi-1",
+      "diffs": []
+    },
+    {
+      "store": "demo-sport-1",
+      "diffs": []
+    },
+    {
+      "store": "demo-pet-1",
+      "diffs": []
+    }
+  ]
+}

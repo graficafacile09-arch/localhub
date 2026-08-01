@@ -1,5 +1,6 @@
 type NegozioCardImmagineInput = {
-  immagine?: string | null;
+  logo_url?: string | null;
+  immagine?: string | null; // backward compat
   categoria?: string | null;
 };
 
@@ -28,6 +29,10 @@ const placeholderFiles = new Set([
 ]);
 
 const immaginiPerCategoria: { match: string[]; url: string }[] = [
+  {
+    match: ["panificio", "bakery", "forno", "pane", "pasticceria", "panetteria"],
+    url: pexelsImage(2147491),
+  },
   {
     match: ["alimentari", "supermercato", "grocery", "market"],
     url: pexelsImage(10907746),
@@ -148,7 +153,8 @@ function normalizeCustomImage(immagine: string) {
   return `/negozi/${immagine}`;
 }
 
-export function getNegozioCardImmagine({ immagine, categoria }: NegozioCardImmagineInput) {
+export function getNegozioCardImmagine({ logo_url, immagine, categoria }: NegozioCardImmagineInput) {
+  immagine = logo_url ?? immagine;
   if (isCustomImage(immagine)) {
     return normalizeCustomImage(immagine!.trim());
   }

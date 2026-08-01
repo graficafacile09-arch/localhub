@@ -1,32 +1,8 @@
-import { Building2, Clock, MessageCircle, Settings } from "lucide-react";
+import { Settings } from "lucide-react";
 import MerchantEmptyState from "@/components/merchant/MerchantEmptyState";
-import StoreInfoForm from "@/components/merchant/settings/StoreInfoForm";
-import OpeningHoursEditor from "@/components/merchant/settings/OpeningHoursEditor";
-import SocialContactsForm from "@/components/merchant/settings/SocialContactsForm";
-import SettingsShell from "@/components/merchant/settings/SettingsShell";
+import ModulesPage from "./ModulesPage";
 import { requireCurrentUser } from "@/lib/auth/session";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { getMerchantStoreForUser } from "@/lib/merchant/data";
-import type { Orari } from "@/types/orari";
-import { DEFAULT_HOURS } from "@/types/orari";
-
-type StoreRow = {
-  id: string;
-  nome: string | null;
-  descrizione: string | null;
-  categoria: string | null;
-  attivo: boolean | null;
-  indirizzo: string | null;
-  telefono: string | null;
-  email: string | null;
-  sito_web: string | null;
-  immagine: string | null;
-  copertina: string | null;
-  orari: Orari | null;
-  facebook: string | null;
-  instagram: string | null;
-  whatsapp: string | null;
-};
 
 export default async function MerchantSettingsPage({
   params,
@@ -55,47 +31,11 @@ export default async function MerchantSettingsPage({
     );
   }
 
-  const supabase = await createServerSupabaseClient();
-  const { data: row } = await supabase
-    .from("negozi")
-    .select("id, nome, descrizione, categoria, attivo, indirizzo, telefono, email, sito_web, immagine, copertina, orari, facebook, instagram, whatsapp")
-    .eq("id", negozioId)
-    .single();
-
-  const store = row as StoreRow | null;
-
-  if (!store) {
-    return (
-      <MerchantEmptyState
-        title="Errore di caricamento"
-        description="Impossibile caricare i dati del negozio."
-      />
-    );
-  }
-
-  const infoInitial = {
-    nome: store.nome ?? "",
-    descrizione: store.descrizione ?? "",
-    categoria: store.categoria ?? "",
-    indirizzo: store.indirizzo ?? "",
-    telefono: store.telefono ?? "",
-    email: store.email ?? "",
-    sito_web: store.sito_web ?? "",
-    immagine: store.immagine ?? "",
-    copertina: store.copertina ?? "",
-  };
-
-  const hoursInitial: Orari = store.orari ?? DEFAULT_HOURS;
-  const socialInitial = {
-    whatsapp: store.whatsapp ?? "",
-    facebook: store.facebook ?? "",
-    instagram: store.instagram ?? "",
-  };
+  const store = storeResult.data;
 
   return (
-    <SettingsShell>
+    <div className="mx-auto max-w-5xl px-3 py-3 sm:px-5">
       <div className="space-y-6">
-
         {/* Header */}
         <div className="rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm">
           <div className="flex items-start gap-4">
@@ -104,7 +44,7 @@ export default async function MerchantSettingsPage({
             </div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
-                Impostazioni negozio
+                Gestione negozio
               </p>
               <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-900">
                 {store.nome ?? "Negozio"}
@@ -120,51 +60,8 @@ export default async function MerchantSettingsPage({
           </div>
         </div>
 
-        {/* 1. Informazioni negozio */}
-        <Section id="informazioni" icon={<Building2 className="h-4 w-4" />} title="Informazioni negozio" subtitle="Dati generali, contatti, logo e banner">
-          <StoreInfoForm storeId={negozioId} initial={infoInitial} />
-        </Section>
-
-        {/* 2. Orari di apertura */}
-        <Section id="orari" icon={<Clock className="h-4 w-4" />} title="Orari di apertura" subtitle="Configura gli orari settimanali del negozio">
-          <OpeningHoursEditor storeId={negozioId} initial={hoursInitial} />
-        </Section>
-
-        {/* 3. Contatti e Social */}
-        <Section id="social" icon={<MessageCircle className="h-4 w-4" />} title="Contatti e Social" subtitle="Collega i tuoi profili social e WhatsApp">
-          <SocialContactsForm storeId={negozioId} initial={socialInitial} />
-        </Section>
-
+        <ModulesPage storeId={negozioId} />
       </div>
-    </SettingsShell>
-  );
-}
-
-function Section({
-  icon,
-  title,
-  subtitle,
-  id,
-  children,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  subtitle: string;
-  id?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div id={id} className="rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm">
-      <div className="mb-5 flex items-center gap-3">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-          {icon}
-        </div>
-        <div>
-          <h2 className="text-sm font-bold tracking-tight text-slate-900">{title}</h2>
-          <p className="mt-0.5 text-xs text-slate-500">{subtitle}</p>
-        </div>
-      </div>
-      {children}
     </div>
   );
 }

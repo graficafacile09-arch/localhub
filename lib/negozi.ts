@@ -1,28 +1,115 @@
-import { cercaNegoziDemo, espandiQueryConSinonimi } from "./negozi-demo";
 import { calcolaPunteggioNegozio, filtraNegoziPerPertinenza } from "./ranking-negozi";
-import { supabase } from "./supabase";
+import { normalizza, radice } from "./text-utils";
+import { createAdminSupabaseClient } from "./supabase/admin";
+
+const getDb = () => {
+  try {
+    return createAdminSupabaseClient();
+  } catch {
+    return null;
+  }
+};
+
+const sinonimiRicerca: Record<string, string[]> = {
+  panificio: ["panificio", "forno", "pane", "pasticceria", "pasticcere", "bakery", "bakery shop", "cornetti", "pizza al taglio", "focaccia", "grissini", "biscotti", "torte", "dolci", "lievitati", "panetteria", "pane casereccio"],
+  beauty: ["beauty", "bellezza", "parrucchiere", "parrucchieri", "barber", "barbiere", "estetica", "estetista", "trucco", "makeup", "make-up", "benessere", "capelli", "taglio", "piega", "barba", "skincare"],
+  casa: ["casa", "arredo", "arredamento", "mobili", "interior", "decorazioni", "illuminazione", "cucina", "salotto", "camera", "divano", "tavolo"],
+  auto: ["auto", "macchina", "officina", "gomme", "pneumatici", "tagliando", "meccanico", "carrozzeria", "revisione", "olio", "freni", "batteria", "concessionaria"],
+  salute: ["salute", "farmacia", "parafarmacia", "medicinali", "integratori", "benessere", "sanitaria", "febbre", "raffreddore", "mal", "testa", "dolore", "ricetta", "analisi", "antibiotico"],
+  tech: ["tech", "tecnologia", "elettronica", "telefonia", "cellulari", "cellulare", "smartphone", "computer", "pc", "tablet", "accessori", "riparazioni", "monitor", "stampante", "ricarica"],
+  bimbi: ["bimbi", "bambini", "giocattoli", "giocattolo", "infanzia", "scuola", "cartoleria", "neonati", "prima", "infanzia", "zaino", "pannolini", "didattico"],
+  sport: ["sport", "fitness", "palestra", "allenamento", "running", "yoga", "pilates", "abbigliamento", "sportivo", "workout", "tapis", "roulant", "pesi", "training"],
+  moda: ["moda", "abbigliamento", "boutique", "vestiti", "vestito", "scarpe", "calzature", "elegante", "eleganti", "outfit"],
+  pet: ["pet", "animali", "animale", "cani", "cane", "gatti", "gatto", "veterinario", "veterinaria", "toelettatura", "crocchette", "shop", "zecche", "zecca", "pulci", "pulce", "antiparassitario", "antiparassitari", "cucciolo", "croccantini", "lettiera", "guinzaglio", "mangime"],
+};
+
+const stopWordsRicerca = new Set([
+  "a", "ad", "al", "alla", "alle", "allo", "ai", "agli", "all",
+  "che", "chi", "con", "da", "dei", "del", "della", "delle", "dello",
+  "di", "e", "gli", "ha", "hai", "ho", "i", "il", "in", "io",
+  "la", "le", "lo", "mia", "mio", "mie", "miei", "mi",
+  "nelle", "nella", "nel", "nei", "per", "serve", "servono", "servire",
+  "se", "sul", "sulla", "sulle", "sui", "su", "tra",
+  "devo", "fare", "un", "una", "uno",
+]);
+
+function attivaGruppo(termine: string, voce: string) {
+  const termineNorm = normalizza(termine).trim();
+  const voceNorm = normalizza(voce).trim();
+  if (!termineNorm || !voceNorm) return false;
+  if (termineNorm === voceNorm) return true;
+  return radice(termineNorm) === radice(voceNorm);
+}
+
+function normalizzaTermini(query: string) {
+  const terminiBase = normalizza(query)
+    .split(/[^a-z0-9]+/)
+    .map((termine) => termine.trim())
+    .filter((termine) => termine && !stopWordsRicerca.has(termine));
+
+  const terminiEspansi = new Set(terminiBase);
+  for (const termine of terminiBase) {
+    for (const gruppo of Object.values(sinonimiRicerca)) {
+      if (gruppo.some((voce) => attivaGruppo(termine, voce))) {
+        gruppo.forEach((voce) => terminiEspansi.add(voce));
+      }
+    }
+  }
+  return Array.from(terminiEspansi);
+}
+
+export function espandiQueryConSinonimi(query: string) {
+  return normalizzaTermini(query).join(" ");
+}
 
 // ─── Negozi ──────────────────────────────────────────────────────────────────
 
 export async function getNegozi() {
-  const { data, error } = await supabase
+  const db = getDb();
+  if (!db) return [];
+
+  const { data, error } = await db
     .from("negozi")
     .select("*")
-    .eq("attivo", true);
+    .eq("attivo", true)
+    .is("deleted_at", null);
 
   if (error) {
     console.log(error);
     return [];
   }
 
-  return data;
+  return data ?? [];
 }
 
 export async function getNegozio(id: string) {
-  const { data, error } = await supabase
+  const db = getDb();
+  if (!db) return null;
+
+  const { data, error } = await db
     .from("negozi")
     .select("*")
     .eq("id", id)
+    .is("deleted_at", null)
+    .single();
+
+  if (error) {
+    console.log(error);
+    return null;
+  }
+
+  return data;
+}
+
+export async function getNegozioBySlug(slug: string) {
+  const db = getDb();
+  if (!db) return null;
+
+  const { data, error } = await db
+    .from("negozi")
+    .select("*")
+    .eq("slug", slug)
+    .is("deleted_at", null)
     .single();
 
   if (error) {
@@ -34,10 +121,14 @@ export async function getNegozio(id: string) {
 }
 
 export async function getNegoziInEvidenza(limit = 6) {
-  const { data, error } = await supabase
+  const db = getDb();
+  if (!db) return [];
+
+  const { data, error } = await db
     .from("negozi")
     .select("*")
     .eq("attivo", true)
+    .is("deleted_at", null)
     .order("created_at", { ascending: false })
     .limit(limit);
 
@@ -49,7 +140,10 @@ export async function getNegoziInEvidenza(limit = 6) {
 }
 
 export async function getProdotto(id: string) {
-  const { data, error } = await supabase
+  const db = getDb();
+  if (!db) return null;
+
+  const { data, error } = await db
     .from("prodotti")
     .select("*")
     .eq("id", id)
@@ -78,7 +172,10 @@ export type Prodotto = {
 };
 
 export async function getProdottiNegozio(negozioId: string) {
-  const { data, error } = await supabase
+  const db = getDb();
+  if (!db) return [];
+
+  const { data, error } = await db
     .from("prodotti")
     .select("*")
     .eq("negozio_id", negozioId)
@@ -93,10 +190,14 @@ export async function getProdottiNegozio(negozioId: string) {
 }
 
 export async function getProdottiInEvidenza(limit = 8) {
-  const { data, error } = await supabase
+  const db = getDb();
+  if (!db) return [];
+
+  const { data, error } = await db
     .from("prodotti")
     .select("*, negozi!inner(nome)")
     .eq("attivo", true)
+    .filter("negozi.deleted_at", "is", null)
     .order("created_at", { ascending: false })
     .limit(limit);
 
@@ -111,10 +212,14 @@ export async function getProdottiInEvidenza(limit = 8) {
 }
 
 export async function getUltimiProdotti(limit = 12) {
-  const { data, error } = await supabase
+  const db = getDb();
+  if (!db) return [];
+
+  const { data, error } = await db
     .from("prodotti")
     .select("*, negozi!inner(nome)")
     .eq("attivo", true)
+    .filter("negozi.deleted_at", "is", null)
     .order("created_at", { ascending: false })
     .limit(limit);
 
@@ -129,6 +234,9 @@ export async function getUltimiProdotti(limit = 12) {
 }
 
 export async function cercaProdotti(ricerca: string, limit = 20) {
+  const db = getDb();
+  if (!db) return [];
+
   const termini = Array.from(
     new Set(
       espandiQueryConSinonimi(ricerca)
@@ -156,9 +264,7 @@ export async function cercaProdotti(ricerca: string, limit = 20) {
     })
     .join(",");
 
-  // Il database non espone una relazione PostgREST tra prodotti e negozi.
-  // Recuperiamo i prodotti prima e i nomi dei negozi con una seconda query.
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("prodotti")
     .select("id, negozio_id, nome, descrizione, categoria, prezzo, immagine_principale")
     .eq("attivo", true)
@@ -171,7 +277,7 @@ export async function cercaProdotti(ricerca: string, limit = 20) {
     new Set((data ?? []).map((prodotto) => prodotto.negozio_id).filter(Boolean))
   );
   const { data: negozi } = negozioIds.length
-    ? await supabase.from("negozi").select("id, nome").in("id", negozioIds)
+    ? await db.from("negozi").select("id, nome").in("id", negozioIds).is("deleted_at", null)
     : { data: [] };
   const nomiNegozi = new Map((negozi ?? []).map((negozio) => [negozio.id, negozio.nome]));
 
@@ -190,6 +296,9 @@ export async function cercaProdotti(ricerca: string, limit = 20) {
 // ─── Ricerca negozi ──────────────────────────────────────────────────────────
 
 export async function cercaNegozi(ricerca: string) {
+  const db = getDb();
+  if (!db) return [];
+
   const terminiEspansi = Array.from(
     new Set(
       espandiQueryConSinonimi(ricerca)
@@ -202,11 +311,7 @@ export async function cercaNegozi(ricerca: string) {
   const filtriRicerca = (terminiEspansi.length > 0 ? terminiEspansi : [ricerca.trim()])
     .flatMap((termine) => {
       const pulito = termine.replace(/[,%]/g, " ").trim();
-
-      if (!pulito) {
-        return [];
-      }
-
+      if (!pulito) return [];
       return [
         `nome.ilike.%${pulito}%`,
         `categoria.ilike.%${pulito}%`,
@@ -217,28 +322,19 @@ export async function cercaNegozi(ricerca: string) {
     })
     .join(",");
 
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("negozi")
     .select("*")
-    .or(filtriRicerca);
-
-  const negoziDemo = cercaNegoziDemo(ricerca);
+    .or(filtriRicerca)
+    .is("deleted_at", null);
 
   if (error) {
     console.log(error);
-    return negoziDemo;
+    return [];
   }
 
-  const unici = new Map<string, typeof negoziDemo[number] | (typeof data)[number]>();
-
-  [...negoziDemo, ...(data ?? [])].forEach((negozio) => {
-    if (!unici.has(negozio.id)) {
-      unici.set(negozio.id, negozio);
-    }
-  });
-
   return filtraNegoziPerPertinenza(
-    Array.from(unici.values()).filter(
+    (data ?? []).filter(
       (negozio) => calcolaPunteggioNegozio(negozio, espandiQueryConSinonimi(ricerca)) > 0
     ),
     espandiQueryConSinonimi(ricerca)

@@ -13,7 +13,6 @@
  */
 
 import type { NegozioRicerca, ProdottoRicerca } from "./ricerca-ai";
-import type { QueryIntentType } from "./brain/types";
 
 // ─── Tipi pubblici ────────────────────────────────────────────────────────────
 
@@ -32,7 +31,7 @@ export interface SearchResult {
   source: "brain" | "fallback";
 
   /** Intento classificato da Brain (null se fallback) */
-  intent: QueryIntentType | null;
+  intent: string | null;
 
   /** Confidenza dell'intent 0-100 (null se fallback) */
   intentConfidence: number | null;
@@ -79,7 +78,10 @@ export async function search(
 
   // ─── Tentativo Brain ──────────────────────────────────────────────────────
   try {
-    const { brainSearch, isBrainEnabled } = await import("./brain/index");
+    // @ts-expect-error — Brain module will be re-enabled in a future phase
+    const brainModule = await import("./brain/index");
+    const brainSearch = brainModule.brainSearch;
+    const isBrainEnabled = brainModule.isBrainEnabled;
 
     if (isBrainEnabled()) {
       const brainResult = await brainSearch(termine, {
@@ -92,15 +94,18 @@ export async function search(
         const { context, response } = brainResult.data;
 
         // Trasforma BrainCandidate[] → NegozioRicerca[]
-        const negozi: NegozioRicerca[] = context.candidates.map((c) => ({
-          id: c.id,
-          nome: (c.data.nome as string) ?? c.id,
-          descrizione: (c.data.descrizione as string | null | undefined) ?? null,
-          categoria: (c.data.categoria as string | null | undefined) ?? null,
-          indirizzo: (c.data.indirizzo as string | null | undefined) ?? null,
-          telefono: (c.data.telefono as string | null | undefined) ?? null,
-          immagine: (c.data.immagine as string | null | undefined) ?? null,
-        }));
+        const negozi: NegozioRicerca[] = context.candidates.map((c: Record<string, unknown>) => {
+          const data = c.data as Record<string, unknown> ?? {};
+          return {
+            id: c.id as string,
+            nome: (data.nome as string) ?? (c.id as string),
+            descrizione: (data.descrizione as string | null | undefined) ?? null,
+            categoria: (data.categoria as string | null | undefined) ?? null,
+            indirizzo: (data.indirizzo as string | null | undefined) ?? null,
+            telefono: (data.telefono as string | null | undefined) ?? null,
+            immagine: (data.immagine as string | null | undefined) ?? null,
+          };
+        });
 
         return {
           negozi,

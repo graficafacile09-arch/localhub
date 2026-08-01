@@ -126,6 +126,7 @@ export async function getMerchantStoresForUser(userId: string): Promise<Merchant
     .from("negozi")
     .select("id, nome, categoria, descrizione, attivo")
     .eq("owner_user_id", userId)
+    .is("deleted_at", null)
     .order("created_at", { ascending: true });
 
   if (error) {
@@ -173,7 +174,8 @@ export async function canManageStore(userId: string, negozioId: string): Promise
     .from("negozi")
     .select("id", { head: true, count: "exact" })
     .eq("id", negozioId)
-    .eq("owner_user_id", userId);
+    .eq("owner_user_id", userId)
+    .is("deleted_at", null);
 
   if (error || !count || count === 0) return false;
   return true;
@@ -446,6 +448,45 @@ export async function deleteMerchantProductForStore(
       data: null,
       setupRequired: false,
       errorMessage: error.message ?? "Impossibile eliminare il prodotto.",
+    };
+  }
+
+  return {
+    data: null,
+    setupRequired: false,
+    errorMessage: null,
+  };
+}
+
+export async function deleteMerchantStore(
+  userId: string,
+  negozioId: string
+): Promise<MerchantQueryResult<null>> {
+  const storeResult = await getMerchantStoreForUser(userId, negozioId);
+
+  if (storeResult.setupRequired || !storeResult.data) {
+    return {
+      data: null,
+      setupRequired: storeResult.setupRequired,
+      errorMessage: storeResult.errorMessage ?? "Negozio non disponibile per questo merchant.",
+    };
+  }
+
+  const supabase = createAdminSupabaseClient();
+
+  // Soft delete: il negozio viene spostato nel Cestino (deleted_at).
+  // Prodotti, media e immagini NON vengono eliminati.
+  const { error } = await supabase
+    .from("negozi")
+    .update({ deleted_at: new Date().toISOString(), deleted_by: userId })
+    .eq("id", negozioId)
+    .eq("owner_user_id", userId);
+
+  if (error) {
+    return {
+      data: null,
+      setupRequired: false,
+      errorMessage: error.message ?? "Impossibile eliminare il negozio.",
     };
   }
 

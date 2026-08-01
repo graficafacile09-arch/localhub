@@ -26,13 +26,13 @@ export default function ProductCard({
   return (
     <Link
       href={`/prodotto/${id}`}
-      className="group overflow-hidden rounded-xl border border-slate-100 bg-white transition hover:border-blue-200 hover:shadow-md"
+      className="group overflow-hidden rounded-xl border border-slate-100 bg-white transition hover:border-blue-200 hover:shadow-sm"
     >
       <div className="relative aspect-square overflow-hidden bg-slate-100">
         <div
           role="img"
           aria-label={nome}
-          className="h-full w-full bg-cover bg-center transition-transform duration-300 group-hover:scale-105"
+          className="h-full w-full bg-cover bg-center"
           style={{ backgroundImage: `url(${imageUrl})` }}
         />
       </div>

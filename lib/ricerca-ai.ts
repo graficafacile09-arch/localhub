@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { cercaNegoziDemo, espandiQueryConSinonimi } from "./negozi-demo";
+import { espandiQueryConSinonimi } from "./negozi";
 import { calcolaPunteggioNegozio, filtraNegoziPerPertinenza } from "./ranking-negozi";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -13,7 +13,8 @@ export type NegozioRicerca = {
   categoria?: string | null;
   indirizzo?: string | null;
   telefono?: string | null;
-  immagine?: string | null;
+  logo_url?: string | null;
+  immagine?: string | null; // backward compat
 };
 
 export type ProdottoRicerca = {
@@ -150,25 +151,16 @@ async function cercaNegoziPerAi(query: string): Promise<NegozioRicerca[]> {
     .from("negozi")
     .select("*")
     .or(filtriRicerca)
+    .is("deleted_at", null)
     .limit(10);
-
-  const negoziDemo = cercaNegoziDemo(query);
 
   if (error) {
     console.error("Errore database Supabase:", error);
-    return negoziDemo;
+    return [];
   }
 
-  const unici = new Map<string, NegozioRicerca>();
-
-  [...negoziDemo, ...(data ?? [])].forEach((negozio) => {
-    if (!unici.has(negozio.id)) {
-      unici.set(negozio.id, negozio);
-    }
-  });
-
   return filtraNegoziPerPertinenza(
-    Array.from(unici.values()).filter(
+    (data ?? []).filter(
       (negozio) => calcolaPunteggioNegozio(negozio, queryEspansa) > 0
     ),
     queryEspansa
@@ -220,7 +212,7 @@ async function cercaProdottiPerAi(query: string): Promise<ProdottoRicerca[]> {
     new Set((data ?? []).map((prodotto) => prodotto.negozio_id).filter(Boolean))
   );
   const { data: negozi } = negozioIds.length
-    ? await supabase.from("negozi").select("id, nome").in("id", negozioIds)
+    ? await supabase.from("negozi").select("id, nome").in("id", negozioIds).is("deleted_at", null)
     : { data: [] };
   const nomiNegozi = new Map((negozi ?? []).map((negozio) => [negozio.id, negozio.nome]));
 

@@ -1,13 +1,10 @@
 import { getProdotto, getNegozio } from "@/lib/negozi";
-import { getProdottoDemoById } from "@/lib/negozi-demo";
 import { getProdottoImmagine } from "@/lib/prodotti-immagini";
 import AcquistaLayout from "../layout";
 import RitiroForm from "@/components/acquista/RitiroForm";
 
 async function getProductData(id: string) {
-  const prodottoReale = await getProdotto(id);
-  const prodottoDemo = prodottoReale ? null : getProdottoDemoById(id);
-  const prodotto = prodottoReale ?? prodottoDemo;
+  const prodotto = await getProdotto(id);
 
   if (!prodotto) return null;
 

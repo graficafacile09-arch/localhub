@@ -78,13 +78,13 @@ export default async function RicercaPage({
                     <Link
                       key={prodotto.id}
                       href={`/prodotto/${prodotto.id}`}
-                      className="group overflow-hidden rounded-xl border border-slate-100 bg-white transition hover:border-blue-200 hover:shadow-md"
+                      className="group overflow-hidden rounded-xl border border-slate-100 bg-white transition hover:border-blue-200 hover:shadow-sm"
                     >
                       <div className="relative aspect-square overflow-hidden bg-slate-100">
                         <div
                           role="img"
                           aria-label={prodotto.nome}
-                          className="h-full w-full bg-cover bg-center transition-transform duration-300 group-hover:scale-105"
+                          className="h-full w-full bg-cover bg-center"
                           style={{
                             backgroundImage: `url(${getProdottoImmagine({
                               immagine_principale: prodotto.immagine_principale,
@@ -127,10 +127,10 @@ export default async function RicercaPage({
                         <div
                           role="img"
                           aria-label={negozio.nome}
-                          className="h-full w-full bg-cover bg-center transition-transform duration-300 group-hover:scale-105"
+                          className="h-full w-full bg-cover bg-center"
                           style={{
                             backgroundImage: `url(${getNegozioCardImmagine({
-                              immagine: negozio.immagine,
+                              logo_url: negozio.logo_url,
                               categoria: negozio.categoria,
                             })})`,
                           }}

@@ -6,12 +6,6 @@ type ProdottoImmagineInput = {
 const pexelsProduct = (id: number) =>
   `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=600&h=600&dpr=2`;
 
-const placeholderFiles = new Set([
-  "auto.png", "auto.svg", "beauty.png", "beauty.svg", "bimbi.png", "bimbi.svg",
-  "casa.png", "casa.svg", "elettronica.svg", "pet.png", "pet.svg", "salute.png",
-  "salute.svg", "sport.png", "sport.svg", "tech.png",
-]);
-
 const immaginiPerCategoria: { match: string[]; url: string }[] = [
   { match: ["arredamento", "mobili", "divano", "tavolo", "sedia", "casa"], url: pexelsProduct(5486110) },
   { match: ["illuminazione", "lampada", "lampade", "luci"], url: pexelsProduct(11158041) },
@@ -42,8 +36,7 @@ function isCustomImage(immagine?: string | null): boolean {
   if (!value) return false;
   if (value.startsWith("http://") || value.startsWith("https://")) return true;
   const normalized = value.split("/").pop()?.toLowerCase() ?? value.toLowerCase();
-  if (placeholderFiles.has(normalized) || normalized.endsWith(".svg")) return false;
-  return true;
+  return !(normalized.endsWith(".svg"));
 }
 
 function normalizeCustomImage(immagine: string): string {

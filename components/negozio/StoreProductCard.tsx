@@ -1,23 +1,16 @@
 import Link from "next/link";
 import { getProdottoImmagine } from "@/lib/prodotti-immagini";
 
-type StoreProductCardProps = {
+type Props = {
   id: string;
   nome: string;
-  descrizione?: string | null;
+  descrizione: string | null;
   prezzo: number;
-  categoria?: string | null;
-  immagine_principale?: string | null;
+  categoria: string | null;
+  immagine_principale: string | null;
 };
 
-export default function StoreProductCard({
-  id,
-  nome,
-  descrizione,
-  prezzo,
-  categoria,
-  immagine_principale,
-}: StoreProductCardProps) {
+export default function StoreProductCard({ id, nome, descrizione, prezzo, categoria, immagine_principale }: Props) {
   const imageUrl = getProdottoImmagine({ immagine_principale, categoria });
 
   return (
@@ -25,27 +18,18 @@ export default function StoreProductCard({
       href={`/prodotto/${id}`}
       className="group overflow-hidden rounded-xl border border-slate-100 bg-white transition hover:border-blue-200 hover:shadow-sm"
     >
-      <div className="relative aspect-square overflow-hidden bg-slate-100">
+      <div className="aspect-square overflow-hidden bg-slate-50">
         <div
           role="img"
           aria-label={nome}
-          className="h-full w-full bg-cover bg-center"
+          className="h-full w-full bg-cover bg-center transition group-hover:scale-105"
           style={{ backgroundImage: `url(${imageUrl})` }}
         />
-        {categoria && (
-          <span className="absolute left-1.5 top-1.5 rounded-full bg-black/55 px-1.5 py-px text-[9px] font-semibold text-white backdrop-blur-sm">
-            {categoria}
-          </span>
-        )}
       </div>
-      <div className="p-2.5">
-        <h3 className="line-clamp-1 text-sm font-bold text-slate-900">{nome}</h3>
-        {descrizione && (
-          <p className="mt-0.5 line-clamp-2 text-[11px] leading-[14px] text-slate-400">
-            {descrizione}
-          </p>
-        )}
-        <p className="mt-1 text-base font-black text-blue-700">€{prezzo}</p>
+      <div className="p-2">
+        <h3 className="truncate text-xs font-bold text-slate-900">{nome}</h3>
+        {descrizione && <p className="mt-0.5 line-clamp-2 text-[10px] leading-4 text-slate-400">{descrizione}</p>}
+        <p className="mt-1 text-xs font-bold text-blue-600">&euro; {prezzo.toFixed(2)}</p>
       </div>
     </Link>
   );

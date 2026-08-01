@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { Camera } from "lucide-react";
+import { Camera, Trash2 } from "lucide-react";
 import MerchantDashboardCards from "@/components/merchant/MerchantDashboardCards";
 import MerchantEmptyState from "@/components/merchant/MerchantEmptyState";
 import MerchantQuickActions from "@/components/merchant/MerchantQuickActions";
+import DeleteStoreButton from "@/components/negozio/DeleteStoreButton";
 import { requireCurrentUser } from "@/lib/auth/session";
 import { getMerchantProductsForStore, getMerchantStoreForUser } from "@/lib/merchant/data";
 
@@ -77,6 +78,20 @@ export default async function MerchantStorePage({
           inVetrina: manuali,
         }}
       />
+
+      {/* Zona Pericolosa */}
+      <div className="rounded-2xl border border-red-200 bg-red-50 p-5 shadow-sm">
+        <h2 className="flex items-center gap-2 text-sm font-bold text-red-700">
+          <Trash2 className="h-4 w-4" />
+          Zona Pericolosa
+        </h2>
+        <p className="mt-2 text-xs leading-5 text-red-600">
+          L'eliminazione del negozio è definitiva e comporta la rimozione di tutti i dati associati.
+        </p>
+        <div className="mt-4">
+          <DeleteStoreButton negozioId={negozioId} isDemo={false} />
+        </div>
+      </div>
     </div>
   );
 }

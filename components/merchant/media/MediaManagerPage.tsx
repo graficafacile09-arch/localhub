@@ -1,0 +1,173 @@
+"use client";
+
+import { useState, useEffect, useCallback } from "react";
+import { ArrowLeft, Image as ImageIcon, Trash2, Loader2 } from "lucide-react";
+import Link from "next/link";
+import MediaGrid from "./MediaGrid";
+import MediaUploader from "./MediaUploader";
+
+type MediaItem = {
+  id: string;
+  public_url: string;
+  nome: string;
+  alt_text: string;
+  mime_type: string;
+  file_size: number;
+  width: number | null;
+  height: number | null;
+  created_at: string;
+};
+
+type Props = {
+  storeId: string;
+};
+
+export default function MediaManagerPage({ storeId }: Props) {
+  const [items, setItems] = useState<MediaItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState<Set<string>>(new Set());
+
+  const loadMedia = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/merchant/stores/${storeId}/media`);
+      const json = await res.json();
+      if (json.success) {
+        setItems(json.data?.media ?? []);
+      } else {
+        setError(json.error?.message ?? "Errore nel caricamento dei media.");
+      }
+    } catch {
+      setError("Errore di rete.");
+    } finally {
+      setLoading(false);
+    }
+  }, [storeId]);
+
+  useEffect(() => {
+    loadMedia();
+  }, [loadMedia]);
+
+  const handleUpload = async (file: File) => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const res = await fetch(`/api/merchant/stores/${storeId}/media`, {
+      method: "POST",
+      body: formData,
+    });
+
+    const json = await res.json();
+    if (!json.success) {
+      throw new Error(json.error?.message ?? "Errore nel caricamento.");
+    }
+
+    await loadMedia();
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Eliminare definitivamente questo media?")) return;
+
+    setDeleting((prev) => new Set(prev).add(id));
+    try {
+      const res = await fetch(`/api/merchant/stores/${storeId}/media/${id}`, {
+        method: "DELETE",
+      });
+      const json = await res.json();
+      if (json.success) {
+        setItems((prev) => prev.filter((item) => item.id !== id));
+      } else {
+        alert(json.error?.message ?? "Errore nell'eliminazione.");
+      }
+    } catch {
+      alert("Errore di rete.");
+    } finally {
+      setDeleting((prev) => { const next = new Set(prev); next.delete(id); return next; });
+    }
+  };
+
+  const handleRename = async (id: string, nome: string) => {
+    try {
+      const res = await fetch(`/api/merchant/stores/${storeId}/media/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nome }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        setItems((prev) =>
+          prev.map((item) => (item.id === id ? { ...item, nome } : item))
+        );
+      }
+    } catch {
+      // silent
+    }
+  };
+
+  return (
+    <div className="mx-auto max-w-6xl">
+      {/* Breadcrumb */}
+      <div className="mb-6">
+        <Link
+          href={`/merchant/${storeId}/edit`}
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 transition hover:text-slate-700"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Torna all&apos;Editor
+        </Link>
+      </div>
+
+      {/* Header */}
+      <div className="mb-6 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="rounded-xl bg-blue-50 p-2.5">
+            <ImageIcon className="h-5 w-5 text-blue-600" />
+          </div>
+          <div>
+            <h1 className="text-lg font-bold text-slate-800">Libreria Media</h1>
+            <p className="text-xs text-slate-400">
+              Gestisci tutte le immagini del tuo negozio in un unico posto
+            </p>
+          </div>
+        </div>
+
+        {items.length > 0 && (
+          <div className="text-xs text-slate-400">
+            {items.length} {items.length === 1 ? "file" : "file"}
+          </div>
+        )}
+      </div>
+
+      {/* Uploader */}
+      <div className="mb-8">
+        <MediaUploader onUpload={handleUpload} />
+      </div>
+
+      {/* Grid */}
+      {loading ? (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+        </div>
+      ) : error ? (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+          {error}
+          <button
+            type="button"
+            onClick={loadMedia}
+            className="ml-2 underline transition hover:text-red-800"
+          >
+            Riprova
+          </button>
+        </div>
+      ) : (
+        <MediaGrid
+          items={items}
+          onDelete={handleDelete}
+          onRename={handleRename}
+        />
+      )}
+    </div>
+  );
+}

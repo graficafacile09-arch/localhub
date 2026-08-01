@@ -3,15 +3,13 @@ import Image from "next/image";
 import Link from "next/link";
 import { Search } from "lucide-react";
 import { getNegoziInEvidenza, getProdottiInEvidenza } from "@/lib/negozi";
-import { negoziDemo } from "@/lib/negozi-demo";
+import { getNegozioCardImmagine } from "@/lib/negozi-card-immagini";
 
 export default async function Home() {
-  const [negoziInEvidenza, prodottiInEvidenza] = await Promise.all([
+  const [negozi, prodottiInEvidenza] = await Promise.all([
     getNegoziInEvidenza(6),
     getProdottiInEvidenza(8),
   ]);
-
-  const negozi = negoziInEvidenza.length > 0 ? negoziInEvidenza : negoziDemo.slice(0, 6);
 
   return (
     <main className="min-h-screen bg-gray-50">
@@ -108,22 +106,23 @@ export default async function Home() {
 
           <div className="grid md:grid-cols-3 gap-6">
             {negozi.map((negozio) => {
-              const imageSrc = negozio.immagine?.startsWith("http")
-                ? negozio.immagine
-                : `/negozi/${negozio.immagine || "tech.png"}`;
+              const imageUrl = getNegozioCardImmagine({
+                logo_url: negozio.logo_url,
+                categoria: negozio.categoria,
+              });
 
               return (
                 <div
                   key={negozio.id}
-                  className="rounded-2xl overflow-hidden border border-slate-100 shadow-sm bg-white hover:shadow-md transition flex flex-col justify-between"
+                  className="rounded-2xl overflow-hidden border border-slate-100 shadow-sm bg-white hover:shadow-sm transition flex flex-col justify-between"
                 >
                   <div>
-                    <div className="relative w-full h-48 bg-gray-100">
-                      <Image
-                        src={imageSrc}
-                        alt={negozio.nome}
-                        fill
-                        className="object-cover"
+                    <div className="relative w-full h-48 bg-slate-100 overflow-hidden">
+                      <div
+                        role="img"
+                        aria-label={negozio.nome}
+                        className="absolute inset-0 bg-cover bg-center"
+                        style={{ backgroundImage: `url(${imageUrl})` }}
                       />
                     </div>
 
