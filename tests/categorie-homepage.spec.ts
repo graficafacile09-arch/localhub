@@ -3,15 +3,19 @@ import { test, expect } from "@playwright/test";
 const BASE = "http://localhost:3100";
 
 test.describe("CATEGORIE HOMEPAGE — dinamiche dal catalogo", () => {
-  test("la homepage genera le tile dal catalogo (niente più ?q= hardcoded)", async ({ page }) => {
+  test("la homepage mostra 8 categorie + tile 'Tutte le categorie' (niente più ?q= hardcoded)", async ({ page }) => {
     await page.goto(`${BASE}/`, { waitUntil: "networkidle" });
 
     await expect(page.locator("body")).toContainText("Categorie");
 
-    // Tile dinamiche: link a /ricerca?categoria=<slug>
+    // Esattamente 8 tile dinamiche ?categoria=...
     const tiles = page.locator('a[href^="/ricerca?categoria="]');
-    const count = await tiles.count();
-    expect(count, "le tile dinamiche devono essere renderizzate").toBeGreaterThanOrEqual(5);
+    await expect(tiles).toHaveCount(8);
+
+    // Nona tile "Tutte le categorie" → /categorie
+    const tutte = page.getByRole("link", { name: "Tutte le categorie" });
+    await expect(tutte, "la tile Tutte le categorie deve esistere").toBeVisible();
+    await expect(tutte).toHaveAttribute("href", "/categorie");
 
     // Le vecchie tile hardcoded ?q=... non devono esistere
     const oldTiles = page.locator(
@@ -20,7 +24,7 @@ test.describe("CATEGORIE HOMEPAGE — dinamiche dal catalogo", () => {
     await expect(oldTiles).toHaveCount(0);
   });
 
-  test("click su una categoria → /ricerca?categoria=<slug> → negozi filtrati", async ({ page }) => {
+  test("click su una categoria della homepage → /ricerca?categoria=<slug> → negozi filtrati", async ({ page }) => {
     await page.goto(`${BASE}/`, { waitUntil: "networkidle" });
 
     // "Tech & Elettronica" è nel catalogo e ha negozi (storici "elettronica"/"Elettronica")
@@ -42,5 +46,34 @@ test.describe("CATEGORIE HOMEPAGE — dinamiche dal catalogo", () => {
     await page.goto(`${BASE}/ricerca?categoria=panificio`, { waitUntil: "networkidle" });
 
     await expect(page.locator("body")).toContainText("Nessun negozio trovato", { timeout: 10000 });
+  });
+});
+
+test.describe("PAGINA /categorie — elenco completo", () => {
+  test("mostra TUTTE le categorie e ogni tile apre /ricerca?categoria=<slug>", async ({ page }) => {
+    await page.goto(`${BASE}/categorie`, { waitUntil: "networkidle" });
+
+    await expect(page.locator("h1")).toContainText("Tutte le categorie");
+
+    // Più delle 8 della homepage (22 nel catalogo)
+    const tiles = page.locator('a[href^="/ricerca?categoria="]');
+    const count = await tiles.count();
+    expect(count, "la pagina /categorie deve mostrare tutte le categorie").toBeGreaterThan(8);
+
+    // Ogni tile punta a /ricerca?categoria=<slug>
+    const hrefs = await tiles.evaluateAll((els) =>
+      els.map((el) => (el as HTMLAnchorElement).getAttribute("href"))
+    );
+    for (const href of hrefs) {
+      expect(href).toMatch(/^\/ricerca\?categoria=[a-z0-9-]+$/);
+    }
+
+    // Click su una categoria → pagina di ricerca con i negozi
+    const tech = tiles.filter({ hasText: "Tech & Elettronica" });
+    await expect(tech).toBeVisible();
+    await tech.click();
+    await expect(page).toHaveURL(/\/ricerca\?categoria=tech-elettronica/);
+    await expect(page.locator("body")).toContainText("negozi in", { timeout: 10000 });
+    await expect(page.locator('a[href^="/negozio/"]').first()).toBeVisible({ timeout: 10000 });
   });
 });
