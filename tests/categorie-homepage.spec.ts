@@ -47,6 +47,30 @@ test.describe("CATEGORIE HOMEPAGE — dinamiche dal catalogo", () => {
 
     await expect(page.locator("body")).toContainText("Nessun negozio trovato", { timeout: 10000 });
   });
+
+  test("i negozi della categoria sono ordinati per ranking (prodotti attivi prima)", async ({ page }) => {
+    await page.goto(`${BASE}/ricerca?categoria=tech-elettronica`, { waitUntil: "networkidle" });
+
+    const cardNegozi = page.locator('a[href^="/negozio/"]');
+    await expect(cardNegozi.first()).toBeVisible({ timeout: 10000 });
+
+    // Nel DB: "Tech Store 2" ha 1 prodotto attivo, i 10 "Test Store Vision" ne hanno 0.
+    // Il ranking (criterio 2: maggior numero di prodotti attivi) deve metterlo PRIMO.
+    const primo = (await cardNegozi.first().locator("h3").textContent())?.trim();
+    expect(primo, "il negozio con più prodotti attivi deve essere primo").toBe("Tech Store 2");
+
+    // Ordinamento stabile e deterministico: ricaricando la pagina l'ordine resta identico.
+    const ordine1 = await cardNegozi.evaluateAll((els) =>
+      els.map((el) => el.querySelector("h3")?.textContent?.trim() ?? "")
+    );
+    await page.reload({ waitUntil: "networkidle" });
+    const ordine2 = await page
+      .locator('a[href^="/negozio/"]')
+      .evaluateAll((els) =>
+        els.map((el) => el.querySelector("h3")?.textContent?.trim() ?? "")
+      );
+    expect(ordine2).toEqual(ordine1);
+  });
 });
 
 test.describe("PAGINA /categorie — elenco completo", () => {

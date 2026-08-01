@@ -262,7 +262,59 @@ export async function cercaNegoziPerCategoria(categoria: Categoria) {
     return [];
   }
 
-  return data ?? [];
+  const negozi = data ?? [];
+
+  // 4) Una sola query aggregata per il conteggio dei prodotti ATTIVI per
+  //    negozio (niente N+1): si recuperano solo i negozio_id dei prodotti
+  //    attivi e si conta in memoria.
+  const conteggioProdotti = new Map<string, number>();
+  if (negozi.length > 0) {
+    const { data: prodotti } = await db
+      .from("prodotti")
+      .select("negozio_id")
+      .eq("attivo", true)
+      .in(
+        "negozio_id",
+        negozi.map((n) => n.id as string)
+      );
+    for (const p of prodotti ?? []) {
+      const id = p.negozio_id as string;
+      conteggioProdotti.set(id, (conteggioProdotti.get(id) ?? 0) + 1);
+    }
+  }
+
+  // 5) Ranking stabile e deterministico (nessun ordinamento casuale):
+  //    1. in evidenza (in_evidenza = true) per primi
+  //    2. maggior numero di prodotti attivi
+  //    3. maggior numero di visite (campo facoltativo: se la colonna non
+  //       esiste viene letto come 0 e ignorato senza rompere il ranking)
+  //    4. più recenti (created_at DESC)
+  //    5. ordine alfabetico del nome (ultimo criterio)
+  //    Tie-break finale sull'id per garantire la determinismo totale.
+  return negozi
+    .slice()
+    .sort((a, b) => {
+      const aEvidenza = a.in_evidenza ? 1 : 0;
+      const bEvidenza = b.in_evidenza ? 1 : 0;
+      if (aEvidenza !== bEvidenza) return bEvidenza - aEvidenza;
+
+      const aProdotti = conteggioProdotti.get(a.id as string) ?? 0;
+      const bProdotti = conteggioProdotti.get(b.id as string) ?? 0;
+      if (aProdotti !== bProdotti) return bProdotti - aProdotti;
+
+      const aVisite = Number((a as Record<string, unknown>).visite ?? 0);
+      const bVisite = Number((b as Record<string, unknown>).visite ?? 0);
+      if (aVisite !== bVisite) return bVisite - aVisite;
+
+      const aTime = new Date(a.created_at as string).getTime();
+      const bTime = new Date(b.created_at as string).getTime();
+      if (aTime !== bTime) return bTime - aTime;
+
+      const nomeDiff = String(a.nome).localeCompare(String(b.nome), "it");
+      if (nomeDiff !== 0) return nomeDiff;
+
+      return String(a.id).localeCompare(String(b.id));
+    });
 }
 
 export async function getProdotto(id: string) {
