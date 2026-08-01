@@ -36,23 +36,55 @@ test.describe("CATEGORIE HOMEPAGE — dinamiche dal catalogo", () => {
 
     await expect(page).toHaveURL(/\/ricerca\?categoria=tech-elettronica/);
 
-    // Conteggio per categoria + sezione Negozi con almeno una card
-    await expect(page.locator("body")).toContainText("negozi in", { timeout: 10000 });
-    await expect(page.locator("h2", { hasText: "Negozi" })).toBeVisible();
+    // Vetrina categoria: header con nome, conteggio "X negozi in" e card negozio
+    await expect(page.locator("h1")).toContainText("Tech & Elettronica", { timeout: 10000 });
+    await expect(page.locator("body")).toContainText("11 negozi in", { timeout: 10000 });
     await expect(page.locator('a[href^="/negozio/"]').first()).toBeVisible({ timeout: 10000 });
   });
 
-  test("categoria senza negozi → messaggio Nessun negozio trovato", async ({ page }) => {
+  test("categoria senza negozi → empty state professionale con Torna alle categorie", async ({ page }) => {
     // fioraio è una categoria del catalogo senza negozi visibili
     await page.goto(`${BASE}/ricerca?categoria=fioraio`, { waitUntil: "networkidle" });
 
-    await expect(page.locator("body")).toContainText("Nessun negozio trovato", { timeout: 10000 });
+    await expect(page.locator("body")).toContainText("Nessun negozio presente in questa categoria", {
+      timeout: 10000,
+    });
+    const torna = page.getByRole("link", { name: "Torna alle categorie" });
+    await expect(torna, "il pulsante Torna alle categorie deve esistere").toBeVisible();
+    await expect(torna).toHaveAttribute("href", "/categorie");
+  });
+
+  test("le card negozio mostrano il pulsante Entra nel negozio / Prodotti in arrivo", async ({ page }) => {
+    // Tech Store 2 ha 1 prodotto attivo → "Entra nel negozio"; i Test Store Vision hanno 0 prodotti → "Prodotti in arrivo"
+    await page.goto(`${BASE}/ricerca?categoria=tech-elettronica`, { waitUntil: "networkidle" });
+
+    const cardConProdotti = page.locator('a[href^="/negozio/"]', { hasText: "Tech Store 2" });
+    await expect(cardConProdotti).toContainText("Entra nel negozio", { timeout: 10000 });
+    await expect(cardConProdotti).toContainText("1 prodotto attivo");
+
+    const cardSenzaProdotti = page
+      .locator('a[href^="/negozio/"]', { hasText: "Test Store Vision" })
+      .first();
+    await expect(cardSenzaProdotti).toContainText("Prodotti in arrivo", { timeout: 10000 });
+  });
+
+  test("il numero visualizzato nel header coincide con le card mostrate", async ({ page }) => {
+    await page.goto(`${BASE}/ricerca?categoria=tech-elettronica`, { waitUntil: "networkidle" });
+
+    // Header: "11 negozi in"
+    await expect(page.locator("body")).toContainText("11 negozi in", { timeout: 10000 });
+
+    // 11 card negozio (Tech Store 2 + 10 Test Store Vision)
+    const cardNegozi = page.locator('a[href^="/negozio/"]');
+    await expect(cardNegozi.first()).toBeVisible({ timeout: 10000 });
+    expect(await cardNegozi.count()).toBe(11);
   });
 
   test("ogni negozio demo è raggiungibile cliccando la SUA categoria (non la ricerca testuale)", async ({ page }) => {
     // Panificio Rossi → categoria Panificio (era Alimentari, orfano)
     await page.goto(`${BASE}/ricerca?categoria=panificio`, { waitUntil: "networkidle" });
-    await expect(page.locator("body")).toContainText("negozi in", { timeout: 10000 });
+    // Header grammaticale: 1 negozio (singolare) in "Panificio"
+    await expect(page.locator("body")).toContainText("1 negozio in", { timeout: 10000 });
     await expect(page.locator('a[href^="/negozio/"]', { hasText: "Panificio Rossi" })).toBeVisible({
       timeout: 10000,
     });
@@ -116,7 +148,8 @@ test.describe("PAGINA /categorie — elenco completo", () => {
     await expect(tech).toBeVisible();
     await tech.click();
     await expect(page).toHaveURL(/\/ricerca\?categoria=tech-elettronica/);
-    await expect(page.locator("body")).toContainText("negozi in", { timeout: 10000 });
+    await expect(page.locator("h1")).toContainText("Tech & Elettronica", { timeout: 10000 });
+    await expect(page.locator("body")).toContainText("11 negozi in", { timeout: 10000 });
     await expect(page.locator('a[href^="/negozio/"]').first()).toBeVisible({ timeout: 10000 });
   });
 

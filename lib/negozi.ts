@@ -219,6 +219,45 @@ export async function getConteggiNegoziPerCategoria(categorie: Categoria[]) {
   return conteggi;
 }
 
+// Ranking condiviso delle pagine categoria — stabile e deterministico
+// (nessun ordinamento casuale):
+//   1. in evidenza (in_evidenza = true) per primi
+//   2. maggior numero di prodotti attivi
+//   3. maggior numero di visite (campo facoltativo: se la colonna non esiste
+//      viene letto come 0 e ignorato senza rompere il ranking)
+//   4. più recenti (created_at DESC)
+//   5. ordine alfabetico del nome (ultimo criterio)
+//   Tie-break finale sull'id per garantire il determinismo totale.
+function ordinaNegoziPerCategoria<T extends Record<string, unknown>>(
+  negozi: T[],
+  conteggioProdotti: Map<string, number>
+): T[] {
+  return negozi
+    .slice()
+    .sort((a, b) => {
+      const aEvidenza = a.in_evidenza ? 1 : 0;
+      const bEvidenza = b.in_evidenza ? 1 : 0;
+      if (aEvidenza !== bEvidenza) return bEvidenza - aEvidenza;
+
+      const aProdotti = conteggioProdotti.get(a.id as string) ?? 0;
+      const bProdotti = conteggioProdotti.get(b.id as string) ?? 0;
+      if (aProdotti !== bProdotti) return bProdotti - aProdotti;
+
+      const aVisite = Number(a.visite ?? 0);
+      const bVisite = Number(b.visite ?? 0);
+      if (aVisite !== bVisite) return bVisite - aVisite;
+
+      const aTime = new Date(a.created_at as string).getTime();
+      const bTime = new Date(b.created_at as string).getTime();
+      if (aTime !== bTime) return bTime - aTime;
+
+      const nomeDiff = String(a.nome).localeCompare(String(b.nome), "it");
+      if (nomeDiff !== 0) return nomeDiff;
+
+      return String(a.id).localeCompare(String(b.id));
+    });
+}
+
 export async function cercaNegoziPerCategoria(categoria: Categoria) {
   const db = getDb();
   if (!db) return [];
@@ -283,38 +322,96 @@ export async function cercaNegoziPerCategoria(categoria: Categoria) {
     }
   }
 
-  // 5) Ranking stabile e deterministico (nessun ordinamento casuale):
-  //    1. in evidenza (in_evidenza = true) per primi
-  //    2. maggior numero di prodotti attivi
-  //    3. maggior numero di visite (campo facoltativo: se la colonna non
-  //       esiste viene letto come 0 e ignorato senza rompere il ranking)
-  //    4. più recenti (created_at DESC)
-  //    5. ordine alfabetico del nome (ultimo criterio)
-  //    Tie-break finale sull'id per garantire la determinismo totale.
-  return negozi
-    .slice()
-    .sort((a, b) => {
-      const aEvidenza = a.in_evidenza ? 1 : 0;
-      const bEvidenza = b.in_evidenza ? 1 : 0;
-      if (aEvidenza !== bEvidenza) return bEvidenza - aEvidenza;
+  return ordinaNegoziPerCategoria(negozi, conteggioProdotti);
+}
 
-      const aProdotti = conteggioProdotti.get(a.id as string) ?? 0;
-      const bProdotti = conteggioProdotti.get(b.id as string) ?? 0;
-      if (aProdotti !== bProdotti) return bProdotti - aProdotti;
+export type NegozioCategoria = {
+  id: string;
+  nome: string;
+  categoria: string | null;
+  descrizione: string | null;
+  logo_url: string | null;
+  copertina_url: string | null;
+  in_evidenza: boolean;
+  visite: number | null;
+  created_at: string;
+  prodotti_attivi: number;
+};
 
-      const aVisite = Number((a as Record<string, unknown>).visite ?? 0);
-      const bVisite = Number((b as Record<string, unknown>).visite ?? 0);
-      if (aVisite !== bVisite) return bVisite - aVisite;
+export type CategoriaShowcase = {
+  categoria: Categoria | null;
+  negozi: NegozioCategoria[];
+  totaleNegozi: number;
+};
 
-      const aTime = new Date(a.created_at as string).getTime();
-      const bTime = new Date(b.created_at as string).getTime();
-      if (aTime !== bTime) return bTime - aTime;
+// Vetrina ufficiale di una categoria (pagina /ricerca?categoria=<slug>).
+// ESATTAMENTE 3 query SQL, zero N+1, nessuna query per singolo negozio:
+//   Q1 categoria per slug
+//   Q2 negozi attivi (filtro in-memory sui termini della categoria)
+//   Q3 conteggio prodotti attivi per tutti i negozi trovati (una sola query)
+// Il ranking riusa ordinaNegoziPerCategoria (identico a cercaNegoziPerCategoria).
+export async function getCategoriaShowcase(slug: string): Promise<CategoriaShowcase> {
+  const db = getDb();
+  if (!db) return { categoria: null, negozi: [], totaleNegozi: 0 };
 
-      const nomeDiff = String(a.nome).localeCompare(String(b.nome), "it");
-      if (nomeDiff !== 0) return nomeDiff;
+  // Q1 — categoria tramite slug.
+  const categoria = await getCategoriaBySlug(slug);
+  if (!categoria) return { categoria: null, negozi: [], totaleNegozi: 0 };
 
-      return String(a.id).localeCompare(String(b.id));
-    });
+  const termini = getTerminiCategoria(categoria);
+  if (termini.length === 0) return { categoria, negozi: [], totaleNegozi: 0 };
+
+  // Q2 — negozi attivi in un'unica query; matching in-memory con lo STESSO
+  // criterio di cercaNegoziPerCategoria (uguaglianza case-insensitive su
+  // nome + sinonimi, nessun LIKE). Il select usa "*" così eventuali colonne
+  // opzionali (es. visite) non rompono la query se assenti.
+  const { data: negoziRaw, error: errNegozi } = await db
+    .from("negozi")
+    .select("*")
+    .eq("attivo", true)
+    .is("deleted_at", null);
+
+  if (errNegozi) return { categoria, negozi: [], totaleNegozi: 0 };
+
+  const negoziFiltrati = (negoziRaw ?? []).filter((n) => {
+    const valore = ((n.categoria as string) ?? "").trim().toLowerCase();
+    return valore && termini.includes(valore);
+  });
+
+  if (negoziFiltrati.length === 0) {
+    return { categoria, negozi: [], totaleNegozi: 0 };
+  }
+
+  // Q3 — conteggio prodotti attivi per TUTTI i negozi trovati (una sola
+  // query aggregata) e aggregazione in memoria.
+  const conteggioProdotti = new Map<string, number>();
+  const { data: prodotti } = await db
+    .from("prodotti")
+    .select("negozio_id")
+    .eq("attivo", true)
+    .in(
+      "negozio_id",
+      negoziFiltrati.map((n) => n.id as string)
+    );
+  for (const p of prodotti ?? []) {
+    const id = p.negozio_id as string;
+    conteggioProdotti.set(id, (conteggioProdotti.get(id) ?? 0) + 1);
+  }
+
+  const negozi = ordinaNegoziPerCategoria(negoziFiltrati, conteggioProdotti).map((n) => ({
+    id: n.id as string,
+    nome: n.nome as string,
+    categoria: (n.categoria as string) ?? null,
+    descrizione: (n.descrizione as string) ?? null,
+    logo_url: (n.logo_url as string) ?? null,
+    copertina_url: (n.copertina_url as string) ?? null,
+    in_evidenza: !!n.in_evidenza,
+    visite: n.visite != null ? Number(n.visite) : null,
+    created_at: n.created_at as string,
+    prodotti_attivi: conteggioProdotti.get(n.id as string) ?? 0,
+  }));
+
+  return { categoria, negozi, totaleNegozi: negozi.length };
 }
 
 export async function getProdotto(id: string) {

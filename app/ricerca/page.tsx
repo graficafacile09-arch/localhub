@@ -1,11 +1,13 @@
 import Header from "@/components/Header/Header";
 import SearchForm from "@/components/home/SearchForm";
+import CategoriaShowcaseView from "@/components/categoria/CategoriaShowcaseView";
 import { OpenAssistantButton, OpenAssistantLink } from "@/components/assistant/OpenAssistantButton";
-import { cercaNegozi, cercaProdotti, getCategoriaBySlug, cercaNegoziPerCategoria } from "@/lib/negozi";
+import { cercaNegozi, cercaProdotti, getCategoriaShowcase } from "@/lib/negozi";
 import { getNegozioCardImmagine } from "@/lib/negozi-card-immagini";
 import { getProdottoImmagine } from "@/lib/prodotti-immagini";
 import { search } from "@/lib/search-service";
 import type { ProdottoRicerca, NegozioRicerca } from "@/lib/ricerca-ai";
+import type { CategoriaShowcase } from "@/lib/negozi";
 import Link from "next/link";
 import { Sparkles, MapPin, Phone } from "lucide-react";
 
@@ -21,15 +23,12 @@ export default async function RicercaPage({
   let negozi: NegozioRicerca[] = [];
   let rispostaAi: string | null = null;
   let erroreAi: string | null = null;
-  let categoriaAttiva: string | null = null;
+  let categoriaShowcase: CategoriaShowcase | null = null;
 
-  // Filtro per categoria: mostra tutti i negozi della categoria (nessuna ricerca testuale).
+  // Vetrina categoria: pagina dedicata (header + card + empty state),
+  // 3 query SQL, zero N+1 — nessuna ricerca testuale.
   if (categoriaSlug) {
-    const categoria = await getCategoriaBySlug(categoriaSlug);
-    if (categoria) {
-      categoriaAttiva = categoria.nome;
-      negozi = (await cercaNegoziPerCategoria(categoria)) as NegozioRicerca[];
-    }
+    categoriaShowcase = await getCategoriaShowcase(categoriaSlug);
   } else if (termine) {
     [prodotti, negozi] = await Promise.all([
       cercaProdotti(termine),
@@ -63,22 +62,16 @@ export default async function RicercaPage({
           <SearchForm initialQuery={termine} compact />
         </div>
 
-        {termine || categoriaAttiva ? (
+        {categoriaShowcase ? (
+          /* ═══ VETRINA CATEGORIA ═══ */
+          <CategoriaShowcaseView showcase={categoriaShowcase} />
+        ) : termine ? (
           <>
             {/* Conteggio risultati */}
             <div className="mb-3 flex flex-wrap items-center gap-2">
               <span className="text-sm text-slate-600">
-                {categoriaAttiva ? (
-                  <>
-                    <span className="font-bold">{negozi.length}</span> negozi in{" "}
-                    <span className="font-bold text-blue-700">&ldquo;{categoriaAttiva}&rdquo;</span>
-                  </>
-                ) : (
-                  <>
-                    <span className="font-bold">{prodotti.length + negozi.length}</span> risultati per{" "}
-                    <span className="font-bold text-blue-700">&ldquo;{termine}&rdquo;</span>
-                  </>
-                )}
+                <span className="font-bold">{prodotti.length + negozi.length}</span> risultati per{" "}
+                <span className="font-bold text-blue-700">&ldquo;{termine}&rdquo;</span>
               </span>
               <OpenAssistantButton label="Chiedi all'AI" />
             </div>
@@ -184,14 +177,10 @@ export default async function RicercaPage({
             {prodotti.length === 0 && negozi.length === 0 && !rispostaAi && !erroreAi && (
               <div className="py-12 text-center">
                 <p className="text-sm text-slate-500">
-                  {categoriaAttiva
-                    ? `Nessun negozio trovato per la categoria "${categoriaAttiva}".`
-                    : `Nessun risultato trovato per "${termine}".`}
+                  Nessun risultato trovato per &ldquo;{termine}&rdquo;.
                 </p>
                 <p className="mt-1 text-xs text-slate-400">
-                  {categoriaAttiva
-                    ? "Prova con un'altra categoria o usa la ricerca testuale."
-                    : "Prova con termini diversi o chiedi all'AI."}
+                  Prova con termini diversi o chiedi all'AI.
                 </p>
               </div>
             )}
