@@ -43,9 +43,28 @@ test.describe("CATEGORIE HOMEPAGE — dinamiche dal catalogo", () => {
   });
 
   test("categoria senza negozi → messaggio Nessun negozio trovato", async ({ page }) => {
-    await page.goto(`${BASE}/ricerca?categoria=panificio`, { waitUntil: "networkidle" });
+    // fioraio è una categoria del catalogo senza negozi visibili
+    await page.goto(`${BASE}/ricerca?categoria=fioraio`, { waitUntil: "networkidle" });
 
     await expect(page.locator("body")).toContainText("Nessun negozio trovato", { timeout: 10000 });
+  });
+
+  test("ogni negozio demo è raggiungibile cliccando la SUA categoria (non la ricerca testuale)", async ({ page }) => {
+    // Panificio Rossi → categoria Panificio (era Alimentari, orfano)
+    await page.goto(`${BASE}/ricerca?categoria=panificio`, { waitUntil: "networkidle" });
+    await expect(page.locator("body")).toContainText("negozi in", { timeout: 10000 });
+    await expect(page.locator('a[href^="/negozio/"]', { hasText: "Panificio Rossi" })).toBeVisible({
+      timeout: 10000,
+    });
+
+    // Tech Store 2 e Test Store Vision → categoria Tech & Elettronica
+    await page.goto(`${BASE}/ricerca?categoria=tech-elettronica`, { waitUntil: "networkidle" });
+    await expect(page.locator('a[href^="/negozio/"]', { hasText: "Tech Store 2" })).toBeVisible({
+      timeout: 10000,
+    });
+    await expect(page.locator('a[href^="/negozio/"]', { hasText: "Test Store Vision" }).first()).toBeVisible({
+      timeout: 10000,
+    });
   });
 
   test("i negozi della categoria sono ordinati per ranking (prodotti attivi prima)", async ({ page }) => {
@@ -122,10 +141,15 @@ test.describe("PAGINA /categorie — elenco completo", () => {
     const tech = tiles.filter({ hasText: "Tech & Elettronica" });
     await expect(tech).toContainText("11 negozi");
 
-    // Una categoria senza negozi mostra comunque "0 negozi" ed è cliccabile
+    // Dopo la normalizzazione demo, Panificio ha 1 negozio visibile (Panificio Rossi)
     const panificio = tiles.filter({ hasText: "Panificio" });
-    await expect(panificio).toContainText("0 negozi");
+    await expect(panificio).toContainText("1 negozio");
     await expect(panificio).toBeVisible();
+
+    // Una categoria davvero senza negozi mostra "0 negozi" ed è cliccabile
+    const fioraio = tiles.filter({ hasText: "Fioraio" });
+    await expect(fioraio).toContainText("0 negozi");
+    await expect(fioraio).toBeVisible();
   });
 
   test("conteggio /categorie == numero card negozio in /ricerca (filtro collegato)", async ({ page }) => {
