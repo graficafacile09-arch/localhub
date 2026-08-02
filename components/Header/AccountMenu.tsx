@@ -36,6 +36,13 @@ type VoceMenu = {
   icon: ComponentType<{ className?: string }>;
 };
 
+/** Etichette italiane dei ruoli mostrate all'utente (mai i valori tecnici). */
+const ETICHETTE_RUOLO: Record<RuoloUtente, string> = {
+  customer: "Acquirente",
+  merchant: "Commerciante",
+  admin: "Amministratore",
+};
+
 export default function AccountMenu({ account }: { account: DatiAccount | null }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -120,8 +127,8 @@ export default function AccountMenu({ account }: { account: DatiAccount | null }
           <span className="block max-w-[140px] truncate text-sm font-bold leading-tight text-slate-900">
             {nome || email}
           </span>
-          <span className="block text-[11px] capitalize text-slate-500">
-            {role}
+          <span className="block text-[11px] text-slate-500">
+            {ETICHETTE_RUOLO[role]}
           </span>
         </span>
         <ChevronDown
@@ -139,7 +146,7 @@ export default function AccountMenu({ account }: { account: DatiAccount | null }
           className="absolute right-0 top-full z-50 mt-2 w-64 rounded-2xl border border-slate-100 bg-white p-2 text-slate-700 shadow-xl"
         >
           <p className="border-b border-slate-100 px-3 pb-2 pt-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-            {nome || email} · {role}
+            {nome || email} · {ETICHETTE_RUOLO[role]}
           </p>
 
           <div className="py-1">

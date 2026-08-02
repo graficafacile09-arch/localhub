@@ -47,19 +47,21 @@ const admin = createClient(url, serviceRole, {
 /** ⚠️ Tenere allineato con tests/fixtures/users.ts. */
 const UTENTI = [
   { chiave: "admin", email: "admin.test@localhub.it", password: "AdminTest123!", fullName: "Amministratore Test", ruolo: "admin" },
-  { chiave: "merchantA", email: "merchant-a.test@localhub.it", password: "MerchantTest123!", fullName: "Merchant A Test", ruolo: "merchant", nomeNegozio: "Negozio QA Merchant A" },
-  { chiave: "merchantB", email: "merchant-b.test@localhub.it", password: "MerchantTest123!", fullName: "Merchant B Test", ruolo: "merchant", nomeNegozio: "Negozio QA Merchant B" },
-  { chiave: "merchantC", email: "merchant-c.test@localhub.it", password: "MerchantTest123!", fullName: "Merchant C Test", ruolo: "merchant", nomeNegozio: "Negozio QA Merchant C" },
-  { chiave: "merchantD", email: "merchant-d.test@localhub.it", password: "MerchantTest123!", fullName: "Merchant D Test", ruolo: "merchant", nomeNegozio: "Negozio QA Merchant D" },
+  { chiave: "merchantA", email: "commerciante-a.test@localhub.it", vecchiaEmail: "merchant-a.test@localhub.it", password: "MerchantTest123!", fullName: "Commerciante A Test", ruolo: "merchant", nomeNegozio: "Negozio QA Commerciante A" },
+  { chiave: "merchantB", email: "commerciante-b.test@localhub.it", vecchiaEmail: "merchant-b.test@localhub.it", password: "MerchantTest123!", fullName: "Commerciante B Test", ruolo: "merchant", nomeNegozio: "Negozio QA Commerciante B" },
+  { chiave: "merchantC", email: "commerciante-c.test@localhub.it", vecchiaEmail: "merchant-c.test@localhub.it", password: "MerchantTest123!", fullName: "Commerciante C Test", ruolo: "merchant", nomeNegozio: "Negozio QA Commerciante C" },
+  { chiave: "merchantD", email: "commerciante-d.test@localhub.it", vecchiaEmail: "merchant-d.test@localhub.it", password: "MerchantTest123!", fullName: "Commerciante D Test", ruolo: "merchant", nomeNegozio: "Negozio QA Commerciante D" },
   { chiave: "customerA", email: "customer-a.test@localhub.it", password: "CustomerTest123!", fullName: "Cliente A Test", ruolo: "customer" },
   { chiave: "customerB", email: "customer-b.test@localhub.it", password: "CustomerTest123!", fullName: "Cliente B Test", ruolo: "customer" },
   { chiave: "customerC", email: "customer-c.test@localhub.it", password: "CustomerTest123!", fullName: "Cliente C Test", ruolo: "customer" },
 ];
 
-async function trovaUtente(email) {
+/** Cerca l'utente per email nuova O per email precedente (rinnovo idempotente). */
+async function trovaUtente(utente) {
   const { data, error } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
   if (error) throw error;
-  return data.users.find((u) => u.email?.toLowerCase() === email.toLowerCase()) ?? null;
+  const candidati = [utente.email, utente.vecchiaEmail].filter(Boolean).map((e) => e.toLowerCase());
+  return data.users.find((u) => u.email && candidati.includes(u.email.toLowerCase())) ?? null;
 }
 
 /**
@@ -82,9 +84,12 @@ async function assicuraNegozio(userId, nomeCanonico) {
   }
 
   const attivi = negozi ?? [];
-  const negozioFixture = attivi.find(
-    (n) => n.nome === nomeCanonico || n.nome === "Negozio QA"
-  );
+  // Trova il negozio fixture anche con i nomi storici ("Negozio QA Merchant …")
+  // così la rinomina al canonico è idempotente e auto-riparante.
+  const negozioFixture =
+    attivi.find((n) => n.nome === nomeCanonico || n.nome === "Negozio QA") ??
+    attivi.find((n) => n.nome.startsWith("Negozio QA Merchant")) ??
+    null;
 
   if (negozioFixture) {
     if (negozioFixture.nome !== nomeCanonico) {
@@ -147,7 +152,7 @@ async function pulisciNegoziDiTest(userId, nomeCanonico) {
   }
 
   const daEliminare = (negozi ?? []).filter((n) => {
-    if (n.nome === nomeCanonico || n.nome === "Negozio QA") return false;
+    if (n.nome === nomeCanonico || n.nome === "Negozio QA" || n.nome.startsWith("Negozio QA Merchant")) return false;
     // Nomi generati dai test merchant (sempre con timestamp o prefisso E2E).
     return /^(E2E|Negozio Rinominato)\s/.test(n.nome);
   });
@@ -164,7 +169,7 @@ async function pulisciNegoziDiTest(userId, nomeCanonico) {
 }
 
 for (const utente of UTENTI) {
-  let user = await trovaUtente(utente.email);
+  let user = await trovaUtente(utente);
 
   if (!user) {
     const { data, error } = await admin.auth.admin.createUser({
@@ -181,12 +186,19 @@ for (const utente of UTENTI) {
     console.log(`Utente creato: ${utente.email} (${user.id})`);
   } else {
     // Allinea password, conferma email e nome (idempotenza completa).
-    await admin.auth.admin.updateUserById(user.id, {
+    // Se l'email è cambiata (es. merchant-a → commerciante-a), la rinnova
+    // mantenendo lo stesso user id (ruoli e negozi restano collegati).
+    const updatePayload = {
       password: utente.password,
       email_confirm: true,
       user_metadata: { full_name: utente.fullName },
-    });
-    console.log(`Utente esistente (password allineata): ${utente.email} (${user.id})`);
+    };
+    if (user.email?.toLowerCase() !== utente.email.toLowerCase()) {
+      updatePayload.email = utente.email;
+      console.log(`  Email aggiornata: ${user.email} → ${utente.email}`);
+    }
+    await admin.auth.admin.updateUserById(user.id, updatePayload);
+    console.log(`Utente esistente (allineato): ${utente.email} (${user.id})`);
   }
 
   const { error: roleError } = await admin
