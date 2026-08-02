@@ -20,8 +20,12 @@ const VOCI: Array<[string, string]> = [
   ["Registro attività", "/amministratore/registro-attivita"],
 ];
 
-/** Route che NON mostrano più il placeholder (Panoramica = dashboard, Utenti = modulo). */
-const ROUTE_NON_PLACEHOLDER = ["/amministratore", "/amministratore/utenti"];
+/** Route che NON mostrano più il placeholder (moduli completi o dashboard). */
+const ROUTE_NON_PLACEHOLDER = [
+  "/amministratore",
+  "/amministratore/utenti",
+  "/amministratore/attivita",
+];
 
 test.describe("PANNELLO AMMINISTRATORE — struttura", () => {
   test("la Panoramica è una dashboard con riquadri, attività recenti, stato e accesso rapido", async ({
@@ -164,6 +168,126 @@ test.describe("PANNELLO AMMINISTRATORE — struttura", () => {
     // La voce Impostazioni del menu utente punta al modulo esistente.
     await page.getByRole("menuitem", { name: "Impostazioni" }).click();
     await expect(page).toHaveURL(/\/amministratore\/impostazioni/);
+  });
+});
+
+test.describe("MODULO ATTIVITÀ — centro di controllo", () => {
+  test("mostra header, barra superiore con filtri e tabella dei negozi", async ({
+    page,
+  }) => {
+    await page.goto(`${BASE}/amministratore/attivita`, {
+      waitUntil: "networkidle",
+    });
+
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Attività" })
+    ).toBeVisible();
+    await expect(page.locator("body")).toContainText(
+      "Gestisci tutti i negozi presenti nella piattaforma"
+    );
+
+    // Barra superiore
+    await expect(
+      page.getByRole("searchbox", { name: "Cerca attività" })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("combobox", { name: "Filtra per categoria" })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("combobox", { name: "Filtra per stato" })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("combobox", { name: "Filtra per evidenza" })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("combobox", { name: "Ordina attività" })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: /Nuova attività/ })
+    ).toBeVisible();
+  });
+
+  test("la tabella mostra le colonne Logo, Nome, Categoria, Proprietario, Prodotti, Stato, In evidenza, Data creazione e Azioni", async ({
+    page,
+  }) => {
+    await page.goto(`${BASE}/amministratore/attivita`, {
+      waitUntil: "networkidle",
+    });
+
+    const tabella = page.locator("table");
+    for (const colonna of [
+      "Logo",
+      "Nome",
+      "Categoria",
+      "Proprietario",
+      "Prodotti",
+      "Stato",
+      "In evidenza",
+      "Data creazione",
+      "Azioni",
+    ]) {
+      await expect(
+        tabella.getByRole("columnheader", { name: colonna, exact: true })
+      ).toBeVisible();
+    }
+  });
+
+  test("la ricerca filtra le attività per nome", async ({ page }) => {
+    await page.goto(`${BASE}/amministratore/attivita`, {
+      waitUntil: "networkidle",
+    });
+
+    const tabella = page.locator("table");
+    const primaRiga = tabella.locator("tbody tr").first();
+    const nomePrimo = (await primaRiga.locator("td").nth(1).innerText()).trim();
+
+    // Ricerca un nome sicuramente assente → nessun risultato.
+    await page
+      .getByRole("searchbox", { name: "Cerca attività" })
+      .fill("zxqv-non-esiste");
+    await expect(page.locator("body")).toContainText("Nessuna attività trovata");
+
+    // Ricerca del nome della prima riga → almeno quella riga visibile.
+    await page
+      .getByRole("searchbox", { name: "Cerca attività" })
+      .fill(nomePrimo);
+    await expect(tabella.getByText(nomePrimo).first()).toBeVisible();
+  });
+
+  test("il menu Azioni di un negozio elenca le voci placeholder", async ({
+    page,
+  }) => {
+    await page.goto(`${BASE}/amministratore/attivita`, {
+      waitUntil: "networkidle",
+    });
+
+    const tabella = page.locator("table");
+    const nomePrima = (await tabella
+      .locator("tbody tr")
+      .first()
+      .locator("td")
+      .nth(1)
+      .innerText()).trim();
+
+    await page.getByRole("button", { name: `Azioni per ${nomePrima}` }).click();
+
+    for (const voce of [
+      "Visualizza",
+      "Modifica",
+      "Apri negozio",
+      "Gestisci proprietario",
+      /Metti in evidenza|Togli evidenza/,
+      /Disattiva|Riattiva/,
+      "Elimina",
+    ]) {
+      await expect(
+        page.getByRole("menuitem", { name: voce })
+      ).toBeVisible();
+    }
+
+    // Click su una voce placeholder: nessuna navigazione, resta sulla pagina.
+    await page.getByRole("menuitem", { name: "Visualizza" }).click();
+    await expect(page).toHaveURL(/\/amministratore\/attivita/);
   });
 });
 

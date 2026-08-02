@@ -1,3 +1,6 @@
+import { getCategorie } from "@/lib/negozi";
+import { getAttivitaAdmin } from "./attivita-queries";
+import type { AttivitaRow } from "./attivita-types";
 import { utentiDemo } from "./demo-utenti";
 import type { FiltroRuoloUtente, Utente } from "./types";
 
@@ -29,4 +32,17 @@ export async function getConteggiUtenti(): Promise<
     commerciante: tutti.filter((u) => u.ruolo === "commerciante").length,
     utente: tutti.filter((u) => u.ruolo === "utente").length,
   };
+}
+
+// ─── Modulo Attività ────────────────────────────────────────────────────────
+
+/** Elenco attività (negozi) per il centro di controllo Amministratore. */
+export async function getAttivita(): Promise<AttivitaRow[]> {
+  return getAttivitaAdmin();
+}
+
+/** Nomi delle categorie per il filtro (riusa getCategorie di lib/negozi). */
+export async function getCategorieAttivita(): Promise<string[]> {
+  const categorie = await getCategorie();
+  return categorie.map((c) => c.nome).filter(Boolean);
 }
