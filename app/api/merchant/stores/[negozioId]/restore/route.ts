@@ -20,7 +20,7 @@ export async function POST(
     .eq("id", negozioId)
     .eq("owner_user_id", user.id)
     .not("deleted_at", "is", null)
-    .select("id");
+    .select("id, slug");
 
   if (error) {
     return apiError("RESTORE_FAILED", error.message ?? "Impossibile ripristinare il negozio.", 500);
@@ -30,9 +30,10 @@ export async function POST(
     return apiError("FORBIDDEN", "Negozio non trovato nel cestino.", 404);
   }
 
+  const slug = (data[0] as { slug?: string | null }).slug ?? negozioId;
   revalidatePath("/merchant");
   revalidatePath("/negozi");
-  revalidatePath(`/negozio/${negozioId}`);
+  revalidatePath(`/negozio/${slug}`);
   revalidatePath("/");
 
   return apiOk({ restored: true, storeId: negozioId });

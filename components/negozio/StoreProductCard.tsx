@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getProdottoImmagine } from "@/lib/prodotti-immagini";
 
 type Props = {
-  id: string;
+  slug: string;
   nome: string;
   descrizione: string | null;
   prezzo: number;
@@ -10,12 +10,12 @@ type Props = {
   immagine_principale: string | null;
 };
 
-export default function StoreProductCard({ id, nome, descrizione, prezzo, categoria, immagine_principale }: Props) {
+export default function StoreProductCard({ slug, nome, descrizione, prezzo, categoria, immagine_principale }: Props) {
   const imageUrl = getProdottoImmagine({ immagine_principale, categoria });
 
   return (
     <Link
-      href={`/prodotto/${id}`}
+      href={`/prodotto/${slug}`}
       className="group overflow-hidden rounded-xl border border-slate-100 bg-white transition hover:border-blue-200 hover:shadow-sm"
     >
       <div className="aspect-square overflow-hidden bg-slate-50">

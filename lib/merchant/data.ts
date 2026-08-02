@@ -1,6 +1,7 @@
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { uploadDataUrlToStorage } from "@/lib/supabase/storage";
+import { generaSlugUnivoco } from "@/lib/slug-server";
 import type {
   MerchantProduct,
   MerchantProductInput,
@@ -279,6 +280,7 @@ export async function createMerchantProductForStore(
   const payload: Record<string, unknown> = {
     negozio_id: negozioId,
     nome: input.nome.trim(),
+    slug: await generaSlugUnivoco("prodotti", input.nome.trim()),
     descrizione: input.descrizione.trim(),
     categoria: input.categoria.trim(),
     sottocategoria: input.sottocategoria?.trim() || null,
@@ -311,6 +313,7 @@ export async function createMerchantProductForStore(
       .insert({
         negozio_id: negozioId,
         nome: input.nome.trim(),
+        slug: await generaSlugUnivoco("prodotti", input.nome.trim()),
         descrizione: input.descrizione.trim(),
         categoria: input.categoria.trim(),
         prezzo: input.prezzo,

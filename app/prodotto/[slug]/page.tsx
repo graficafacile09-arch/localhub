@@ -1,32 +1,50 @@
 import Link from "next/link";
+import { permanentRedirect, notFound } from "next/navigation";
+import type { Metadata } from "next";
 import Header from "@/components/Header/Header";
-import { getProdotto, getNegozio } from "@/lib/negozi";
+import { risolviProdottoPubblico, getNegozio } from "@/lib/negozi";
 import { getProdottoImmagine } from "@/lib/prodotti-immagini";
 import { MapPin, Phone, MessageCircle, ArrowLeft, ExternalLink, ShoppingBag } from "lucide-react";
 
-export default async function PaginaProdotto({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
+type Params = { slug: string };
 
-  const prodotto = await getProdotto(id);
+// ─── SEO ─────────────────────────────────────────────────────────────────────
+export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
+  const { slug } = await params;
+  const { prodotto } = await risolviProdottoPubblico(slug);
+  if (!prodotto) return { title: "Prodotto non trovato" };
 
+  const nome = (prodotto.nome as string) ?? "Prodotto";
+  const descrizione =
+    ((prodotto.descrizione_completa as string) ?? (prodotto.descrizione as string) ?? "")
+      .slice(0, 155) || `${nome} disponibile su InCittà.`;
+  const canonical = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://localhub-eta.vercel.app"}/prodotto/${prodotto.slug as string}`;
+
+  return {
+    title: `${nome} | InCittà`,
+    description: descrizione,
+    alternates: { canonical },
+    openGraph: {
+      title: `${nome} | InCittà`,
+      description: descrizione,
+      url: canonical,
+      type: "website",
+      siteName: "InCittà",
+    },
+  };
+}
+
+export default async function PaginaProdotto({ params }: { params: Promise<Params> }) {
+  const { slug } = await params;
+
+  // Risoluzione: slug canonico oppure id numerico legacy (redirect 301/308).
+  const { prodotto, slugLegacy } = await risolviProdottoPubblico(slug);
+  if (slugLegacy) permanentRedirect(slugLegacy);
   if (!prodotto) {
-    return (
-      <main className="min-h-screen bg-slate-50">
-        <Header />
-        <div className="mx-auto max-w-5xl py-20 text-center">
-          <h1 className="text-2xl font-bold text-slate-900">Prodotto non trovato</h1>
-          <Link href="/negozi" className="mt-4 inline-block text-sm font-semibold text-blue-600 hover:underline">
-            Torna ai negozi
-          </Link>
-        </div>
-      </main>
-    );
+    notFound();
   }
 
+  const id = prodotto.id as string;
   const negozio = await getNegozio(String(prodotto.negozio_id));
 
   const imageUrl = getProdottoImmagine({
@@ -40,17 +58,17 @@ export default async function PaginaProdotto({
 
   const buildWhatsAppUrl = () => {
     if (!negozio) return "#";
-    const phone = (negozio.whatsapp || negozio.telefono || "").replace(/[\s\-().+]/g, "");
+    const phone = ((negozio.whatsapp as string) || (negozio.telefono as string) || "").replace(/[\s\-().+]/g, "");
     const number = phone.startsWith("39") ? phone : `39${phone}`;
     const msg = encodeURIComponent(
-      `Ciao! Vorrei informazioni su "${prodotto.nome}" visto su InCittà.`
+      `Ciao! Vorrei informazioni su "${prodotto.nome as string}" visto su InCittà.`
     );
     return `https://wa.me/${number}?text=${msg}`;
   };
 
   const buildMapsUrl = () => {
     if (!negozio?.indirizzo) return "#";
-    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(negozio.indirizzo)}`;
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(negozio.indirizzo as string)}`;
   };
 
   return (
@@ -58,14 +76,23 @@ export default async function PaginaProdotto({
       <Header />
 
       <div className="mx-auto max-w-5xl px-3 py-3 sm:px-5">
+        {/* Breadcrumb */}
+        <nav aria-label="Breadcrumb" className="mb-3 flex items-center gap-1.5 text-[11px] text-slate-400">
+          <Link href="/" className="transition hover:text-blue-600">Home</Link>
+          <span>/</span>
+          <Link href="/negozi" className="transition hover:text-blue-600">Negozi</Link>
+          <span>/</span>
+          <span className="truncate font-semibold text-slate-600">{prodotto.nome as string}</span>
+        </nav>
+
         {/* Back to store */}
         {negozio && (
           <Link
-            href={`/negozio/${negozio.id}`}
+            href={`/negozio/${negozio.slug}`}
             className="mb-3 inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 transition hover:text-blue-600"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            Torna a {negozio.nome}
+            Torna a {negozio.nome as string}
           </Link>
         )}
 
@@ -74,7 +101,7 @@ export default async function PaginaProdotto({
           <div className="relative aspect-square max-h-[400px] overflow-hidden bg-slate-100">
             <div
               role="img"
-              aria-label={prodotto.nome}
+              aria-label={prodotto.nome as string}
               className="h-full w-full bg-cover bg-center"
               style={{ backgroundImage: `url(${imageUrl})` }}
             />
@@ -86,7 +113,7 @@ export default async function PaginaProdotto({
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0 flex-1">
               <h1 className="text-xl font-black tracking-tight text-slate-900">
-                {prodotto.nome}
+                {prodotto.nome as string}
               </h1>
               {"categoria" in prodotto && prodotto.categoria && (
                 <p className="mt-0.5 text-xs font-semibold text-blue-600">
@@ -132,7 +159,7 @@ export default async function PaginaProdotto({
         {/* Buy button - always visible */}
         <div className="mt-4">
           <Link
-            href={`/prodotto/${id}/acquista`}
+            href={`/prodotto/${prodotto.slug}/acquista`}
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-base font-bold text-white shadow-sm transition hover:bg-blue-700"
           >
             <ShoppingBag className="h-5 w-5" />
@@ -144,19 +171,19 @@ export default async function PaginaProdotto({
         {negozio && (
           <div className="mt-6 rounded-xl border border-slate-200 bg-white p-4">
             <Link
-              href={`/negozio/${negozio.id}`}
+              href={`/negozio/${negozio.slug}`}
               className="text-sm font-bold text-slate-900 transition hover:text-blue-600"
             >
-              {negozio.nome}
+              {negozio.nome as string}
             </Link>
             {negozio.categoria && (
               <p className="mt-px text-[11px] font-semibold text-blue-600">
-                {negozio.categoria}
+                {negozio.categoria as string}
               </p>
             )}
             {negozio.descrizione && (
               <p className="mt-1 text-xs leading-5 text-slate-500">
-                {negozio.descrizione}
+                {negozio.descrizione as string}
               </p>
             )}
 
@@ -164,13 +191,13 @@ export default async function PaginaProdotto({
               {negozio.indirizzo && (
                 <span className="flex items-center gap-1">
                   <MapPin className="h-3 w-3 text-blue-500" />
-                  {negozio.indirizzo}
+                  {negozio.indirizzo as string}
                 </span>
               )}
               {negozio.telefono && (
                 <span className="flex items-center gap-1">
                   <Phone className="h-3 w-3 text-blue-500" />
-                  {negozio.telefono}
+                  {negozio.telefono as string}
                 </span>
               )}
             </div>
@@ -178,7 +205,7 @@ export default async function PaginaProdotto({
             {/* Actions */}
             <div className="mt-3 flex flex-wrap gap-2">
               <Link
-                href={`/prodotto/${id}/acquista`}
+                href={`/prodotto/${prodotto.slug}/acquista`}
                 className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-blue-700"
               >
                 <ShoppingBag className="h-3.5 w-3.5" />
@@ -208,7 +235,7 @@ export default async function PaginaProdotto({
               )}
               {negozio.telefono && (
                 <a
-                  href={`tel:${negozio.telefono}`}
+                  href={`tel:${negozio.telefono as string}`}
                   className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 transition hover:border-blue-300 hover:text-blue-700"
                 >
                   <Phone className="h-3.5 w-3.5" />
@@ -217,7 +244,7 @@ export default async function PaginaProdotto({
               )}
               {negozio.sito_web && (
                 <a
-                  href={negozio.sito_web.startsWith("http") ? negozio.sito_web : `https://${negozio.sito_web}`}
+                  href={(negozio.sito_web as string).startsWith("http") ? (negozio.sito_web as string) : `https://${negozio.sito_web as string}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 transition hover:border-blue-300 hover:text-blue-700"

@@ -98,6 +98,7 @@ export async function search(
           const data = c.data as Record<string, unknown> ?? {};
           return {
             id: c.id as string,
+            slug: (data.slug as string | null | undefined) ?? null,
             nome: (data.nome as string) ?? (c.id as string),
             descrizione: (data.descrizione as string | null | undefined) ?? null,
             categoria: (data.categoria as string | null | undefined) ?? null,

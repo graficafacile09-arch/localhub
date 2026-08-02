@@ -1,13 +1,11 @@
 import { test, expect, Page, Dialog } from "@playwright/test";
+import { BASE, UTENTI, loginUtente } from "./fixtures/auth";
 
-const BASE = "http://localhost:3100";
-// Test merchant created via the registration flow in a previous run (Supabase
-// signup rate-limit is now active, so we reuse that account instead of registering).
-const RECOVERED_EMAIL = "qa-1785509630216-0@localhub.it";
-const PASSWORD = "TestPass123!";
+// Fixture merchant dedicata a QUESTA suite (nessun altro test concorrente
+// usa merchantA, quindi i suoi logout globali non danneggiano altri test).
+const MERCHANT = UTENTI.merchantA;
 const TS = Date.now();
 
-/* eslint-disable no-console */
 const log = (msg: string) => console.log(`\n>>> ${msg}`);
 
 /*
@@ -19,7 +17,6 @@ const log = (msg: string) => console.log(`\n>>> ${msg}`);
 test.describe("Merchant full journey (DB-synced + build-fixed)", () => {
   let page: Page;
   let storeId: string | null = null;
-  let EMAIL_USED = RECOVERED_EMAIL;
 
   test.beforeAll(async ({ browser }) => {
     page = await browser.newPage();
@@ -39,16 +36,12 @@ test.describe("Merchant full journey (DB-synced + build-fixed)", () => {
   });
 
   test("Full merchant journey: login (recovered account) → wizard → editor → products → logout → re-login", async () => {
-    test.setTimeout(420_000);
+    test.setTimeout(900_000);
 
     /* ── Step 1: Accesso con account di recupero (già registrato via UI) ── */
-    await test.step("1. Accesso (account recuperato)", async () => {
-      log("Step 1: Accesso account recuperato");
-      await page.goto(`${BASE}/login`, { waitUntil: "networkidle" });
-      await page.locator("#email").fill(RECOVERED_EMAIL);
-      await page.locator("#password").fill(PASSWORD);
-      await page.locator('form[action="/api/auth/login"] button[type="submit"]').click();
-      await page.waitForURL(/\/merchant/, { timeout: 20000 });
+    await test.step("1. Accesso (account fixture)", async () => {
+      log("Step 1: Accesso account fixture");
+      await loginUtente(page, MERCHANT, { waitFor: /\/merchant/ });
       await expect(page).toHaveURL(/\/merchant/);
       const m = page.url().match(/\/merchant\/([^/]+)/);
       storeId = m ? m[1] : null;
@@ -66,10 +59,7 @@ test.describe("Merchant full journey (DB-synced + build-fixed)", () => {
       await page.locator('form[action="/api/auth/signout"] button[type="submit"]').first().click();
       await page.waitForURL(`${BASE}/login`, { timeout: 15000 });
       await expect(page).toHaveURL(/\/login/);
-      await page.locator("#email").fill(EMAIL_USED);
-      await page.locator("#password").fill(PASSWORD);
-      await page.locator('form[action="/api/auth/login"] button[type="submit"]').click();
-      await page.waitForURL(/\/merchant/, { timeout: 20000 });
+      await loginUtente(page, MERCHANT, { waitFor: /\/merchant/ });
       await expect(page).toHaveURL(/\/merchant/);
     });
 
@@ -319,11 +309,18 @@ test.describe("Merchant full journey (DB-synced + build-fixed)", () => {
     await test.step("17. Eliminazione prodotto", async () => {
       test.skip(!storeId, "requires a store");
       log("Step 17: Eliminazione prodotto");
+      // Flusso reale dell'app: il pulsante "Elimina" vive nella LISTA prodotti
+      // (per riga), NON nella pagina di modifica. Torna alla lista, individua
+      // il prodotto creato dal test e clicca Elimina sulla sua riga
+      // (window.confirm auto-accettato dal handler di pagina).
       await page.goto(`${BASE}/merchant/${storeId}/prodotti`, { waitUntil: "networkidle" });
-      // open the product, then click Elimina (triggers window.confirm, auto-accepted)
-      await page.locator("a").filter({ hasText: "Modifica" }).first().click();
-      await page.waitForURL(/\/merchant\/[^/]+\/prodotti\/[^/]+$/, { timeout: 15000 });
-      await page.getByRole("button", { name: "Elimina" }).click();
+      const cardProdotto = page
+        .locator("div")
+        .filter({ hasText: `Prodotto E2E ${TS}` })
+        .filter({ has: page.getByRole("button", { name: "Elimina" }) })
+        .last();
+      await expect(cardProdotto).toBeVisible({ timeout: 10000 });
+      await cardProdotto.getByRole("button", { name: "Elimina" }).click();
       const delRes = await page.waitForResponse(
         (r) =>
           r.url().includes(`/api/merchant/stores/${storeId}/products`) && r.request().method() === "DELETE",
@@ -331,6 +328,8 @@ test.describe("Merchant full journey (DB-synced + build-fixed)", () => {
       );
       expect(delRes.status(), "product DELETE should be 200").toBe(200);
       await expect(page).not.toHaveURL(/\/500|\/error/);
+      // dopo il router.refresh() la riga sparisce dalla lista
+      await expect(cardProdotto).toHaveCount(0, { timeout: 10000 });
     });
 
     /* ── Step 18: Logout ──────────────────────────────────────────────────── */
@@ -345,11 +344,7 @@ test.describe("Merchant full journey (DB-synced + build-fixed)", () => {
     /* ── Step 19: Nuovo login ─────────────────────────────────────────────── */
     await test.step("19. Nuovo login", async () => {
       log("Step 19: Nuovo login");
-      await page.goto(`${BASE}/login`);
-      await page.locator("#email").fill(EMAIL_USED);
-      await page.locator("#password").fill(PASSWORD);
-      await page.locator('form[action="/api/auth/login"] button[type="submit"]').click();
-      await page.waitForURL(/\/merchant/, { timeout: 20000 });
+      await loginUtente(page, MERCHANT, { waitFor: /\/merchant/ });
       await expect(page).toHaveURL(/\/merchant/);
     });
   });

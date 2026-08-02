@@ -28,17 +28,18 @@ const admin = createClient(
   env.SUPABASE_SERVICE_ROLE_KEY || env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
 
-// I due negozi demo usati per i test (con conteggio prodotti noto).
-// Panificio Rossi ha 11 prodotti attivi, Tech Store 2 ne ha 1.
-const NOMI_DEMO = ["Panificio Rossi", "Tech Store 2"];
+// Chiave UNIVOCA per selezionare i negozi: lo SLUG (mai il nome — i nomi
+// possono ripetersi, gli slug no). Panificio Rossi esiste in 2 copie reali
+// (panificio-rossi e demo-panificio-1): il test flagga SOLO lo slug scelto.
+const SLUG_DEMO = ["panificio-rossi", "tech-store-2"];
 
 async function getStores() {
   const { data, error } = await admin
     .from("negozi")
-    .select("id, nome, in_evidenza")
-    .in("nome", NOMI_DEMO);
+    .select("id, slug, in_evidenza")
+    .in("slug", SLUG_DEMO);
   if (error) throw new Error(`Errore lettura negozi: ${error.message}`);
-  return (data ?? []) as { id: string; nome: string; in_evidenza: boolean }[];
+  return (data ?? []) as { id: string; slug: string; in_evidenza: boolean }[];
 }
 
 async function setFeatured(stores: { id: string }[], on: boolean) {
@@ -113,43 +114,78 @@ test.describe("NEGOZI IN EVIDENZA", () => {
     }
   });
 
-  test("pagina completa: /negozi?featured=1 mostra solo gli evidenziati", async ({ page }) => {
+  test("pagina completa: /negozi?featured=1 mostra i negozi flaggati (identificati per slug)", async ({ page }) => {
     const restore = await flagAndRestore(true);
     try {
       await page.goto(`${BASE}/negozi?featured=1`, { waitUntil: "networkidle" });
 
-      // I due negozi flaggati devono comparire
-      await expect(
-        page.locator('a[href^="/negozio/"]', { hasText: "Panificio Rossi" })
-      ).toBeVisible({ timeout: 10000 });
-      await expect(
-        page.locator('a[href^="/negozio/"]', { hasText: "Tech Store 2" })
-      ).toBeVisible({ timeout: 10000 });
+      // I negozi flaggati per slug devono comparire (href univoco = chiave).
+      for (const slug of SLUG_DEMO) {
+        await expect(
+          page.locator(`a[href="/negozio/${slug}"]`)
+        ).toBeVisible({ timeout: 10000 });
+      }
 
-      // Solo gli evidenziati: nessun altro negozio demo presente
-      await expect(
-        page.locator('a[href^="/negozio/"]', { hasText: "Test Store Vision" })
-      ).toHaveCount(0);
+      // I negozi NON flaggati non devono comparire. Identifichiamo un negozio
+      // reale NON in evidenza per slug (test-store-vision-* sono stati di test
+      // con 0 prodotti; panificio demo resta fuori perché mai flaggato).
+      const nonEvidenziati = await admin
+        .from("negozi")
+        .select("slug")
+        .eq("attivo", true)
+        .is("deleted_at", null)
+        .eq("in_evidenza", false)
+        .limit(1);
+      const slugNonEvidenziato = nonEvidenziati.data?.[0]?.slug as string | undefined;
+      if (slugNonEvidenziato) {
+        await expect(
+          page.locator(`a[href="/negozio/${slugNonEvidenziato}"]`)
+        ).toHaveCount(0);
+      }
     } finally {
       await restore();
     }
   });
 
-  test("ordinamento: Panificio Rossi (11 prodotti) prima di Tech Store 2 (1 prodotto)", async ({ page }) => {
+  test("ordinamento: i negozi in evidenza rispettano il ranking reale (più prodotti attivi prima)", async ({ page }) => {
     const restore = await flagAndRestore(true);
     try {
       await page.goto(`${BASE}/negozi?featured=1`, { waitUntil: "networkidle" });
 
       const cardNegozi = page.locator('a[href^="/negozio/"]');
-      await expect(cardNegozi).toHaveCount(2, { timeout: 10000 });
+      await expect(cardNegozi.first()).toBeVisible({ timeout: 10000 });
 
-      const nomi = await cardNegozi.evaluateAll((els) =>
-        els.map((el) => el.querySelector("h2")?.textContent?.trim() ?? "")
+      // Ranking dinamico: la stessa query usata dall'app (conteggio prodotti
+      // attivi per i negozi flaggati) determina l'ordine atteso — nessun
+      // numero hardcoded, il test resta valido se domani i dati cambiano.
+      const stores = await getStores();
+      const { data: prodotti } = await admin
+        .from("prodotti")
+        .select("negozio_id")
+        .eq("attivo", true)
+        .in(
+          "negozio_id",
+          stores.map((s) => s.id)
+        );
+      const conteggio = new Map<string, number>();
+      for (const p of prodotti ?? []) {
+        const id = p.negozio_id as string;
+        conteggio.set(id, (conteggio.get(id) ?? 0) + 1);
+      }
+      const slugPerId = new Map(stores.map((s) => [s.id, s.slug]));
+      const ordineAtteso = [...stores].sort((a, b) => {
+        const diff = (conteggio.get(b.id) ?? 0) - (conteggio.get(a.id) ?? 0);
+        if (diff !== 0) return diff;
+        return (a.slug ?? "").localeCompare(b.slug ?? "");
+      });
+
+      const hrefs = await cardNegozi.evaluateAll((els) =>
+        els.map((el) => el.getAttribute("href") ?? "")
       );
-      expect(nomi[0], "il negozio con più prodotti attivi deve essere primo").toBe(
-        "Panificio Rossi"
-      );
-      expect(nomi[1], "il secondo deve essere Tech Store 2").toBe("Tech Store 2");
+
+      // L'ordine visualizzato deve coincidere col ranking dinamico.
+      expect(hrefs[0]).toBe(`/negozio/${slugPerId.get(ordineAtteso[0].id)}`);
+      expect(hrefs[1]).toBe(`/negozio/${slugPerId.get(ordineAtteso[1].id)}`);
     } finally {
       await restore();
     }

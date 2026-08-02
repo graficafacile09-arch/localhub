@@ -128,7 +128,7 @@ export default async function Home() {
                   </div>
 
                   <div className="p-5 pt-0">
-                    <Link href={`/negozio/${negozio.id}`}>
+                    <Link href={`/negozio/${negozio.slug}`}>
                       <button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl font-semibold text-sm transition">
                         Scopri
                       </button>

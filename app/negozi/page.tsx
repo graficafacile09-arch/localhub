@@ -58,7 +58,7 @@ export default async function NegoziPage({
               return (
                 <Link
                   key={negozio.id}
-                  href={`/negozio/${negozio.id}`}
+                  href={`/negozio/${negozio.slug}`}
                   className="group overflow-hidden rounded-xl border border-slate-100 bg-white transition hover:border-blue-200 hover:shadow-sm"
                 >
                   <div className="relative aspect-video overflow-hidden bg-slate-100">

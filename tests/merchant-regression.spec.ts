@@ -1,13 +1,11 @@
 import { test, expect, Page, Dialog } from "@playwright/test";
+import { BASE, UTENTI, loginUtente } from "./fixtures/auth";
 
-const BASE = "http://localhost:3100";
-// Test merchant created via the registration flow in a previous run (Supabase
-// signup rate-limit is now active, so we reuse that account instead of registering).
-const RECOVERED_EMAIL = "qa-1785509630216-0@localhub.it";
-const PASSWORD = "TestPass123!";
+// Fixture merchant dedicata a QUESTA suite (nessun altro test concorrente
+// usa merchantB, quindi i suoi logout globali non danneggiano altri test).
+const MERCHANT = UTENTI.merchantB;
 const TS = Date.now();
 
-/* eslint-disable no-console */
 const log = (msg: string) => console.log(`\n>>> ${msg}`);
 
 /*
@@ -23,7 +21,6 @@ test.describe("MERCHANT REGRESSION TEST (DB-synced + build-fixed)", () => {
   let storeId: string | null = null; // store A: E2E Panificio (main target of module tests)
   let storeIdDuplicato: string | null = null; // store B: deleted in "Elimina"
   let storeIdTemplate: string | null = null; // store C (reference only)
-  let EMAIL_USED = RECOVERED_EMAIL;
 
   test.beforeAll(async ({ browser }) => {
     page = await browser.newPage();
@@ -55,16 +52,12 @@ test.describe("MERCHANT REGRESSION TEST (DB-synced + build-fixed)", () => {
   }
 
   test("MERCHANT REGRESSION: login → dashboard → wizard ×3 → editor → 13 moduli → media → reload → elimina → logout", async () => {
-    test.setTimeout(600_000);
+    test.setTimeout(1_200_000);
 
     /* ── 1. Login ─────────────────────────────────────────────────────────── */
     await test.step("1. Login", async () => {
       log("Step 1: Login");
-      await page.goto(`${BASE}/login`, { waitUntil: "networkidle" });
-      await page.locator("#email").fill(RECOVERED_EMAIL);
-      await page.locator("#password").fill(PASSWORD);
-      await page.locator('form[action="/api/auth/login"] button[type="submit"]').click();
-      await page.waitForURL(/\/merchant/, { timeout: 20000 });
+      await loginUtente(page, MERCHANT, { waitFor: /\/merchant/ });
       await expect(page).toHaveURL(/\/merchant/);
     });
 
@@ -165,7 +158,7 @@ test.describe("MERCHANT REGRESSION TEST (DB-synced + build-fixed)", () => {
 
     /* ── 6. Editor ────────────────────────────────────────────────────────── */
     await test.step("6. Editor", async () => {
-      test.skip(!storeId, "requires a store");
+      if (!storeId) { test.skip(true, "requires a store"); return; }
       log("Step 6: Editor");
       const settingsPromise = page.waitForResponse(
         (r) => r.url().includes(`/api/merchant/stores/${storeId}/settings`) && r.request().method() === "GET",
@@ -189,7 +182,7 @@ test.describe("MERCHANT REGRESSION TEST (DB-synced + build-fixed)", () => {
 
     /* ── 7. Informazioni ──────────────────────────────────────────────────── */
     await test.step("7. Informazioni", async () => {
-      test.skip(!storeId, "requires a store");
+      if (!storeId) { test.skip(true, "requires a store"); return; }
       log("Step 7: Informazioni");
       await page.goto(`${BASE}/merchant/${storeId}/edit?modulo=informazioni`, { waitUntil: "networkidle" });
       await expect(page.locator("body")).toContainText("Informazioni");
@@ -201,7 +194,7 @@ test.describe("MERCHANT REGRESSION TEST (DB-synced + build-fixed)", () => {
 
     /* ── 8. Immagini (logo) ───────────────────────────────────────────────── */
     await test.step("8. Immagini", async () => {
-      test.skip(!storeId, "requires a store");
+      if (!storeId) { test.skip(true, "requires a store"); return; }
       log("Step 8: Immagini (logo upload)");
       await page.goto(`${BASE}/merchant/${storeId}/edit`, { waitUntil: "networkidle" });
       const fileInput = page.locator('input[type="file"][accept*="image"]').first();
@@ -218,7 +211,7 @@ test.describe("MERCHANT REGRESSION TEST (DB-synced + build-fixed)", () => {
 
     /* ── 9. Prodotti ──────────────────────────────────────────────────────── */
     await test.step("9. Prodotti (create + image + reopen + delete)", async () => {
-      test.skip(!storeId, "requires a store");
+      if (!storeId) { test.skip(true, "requires a store"); return; }
       log("Step 9: Prodotti");
       await page.goto(`${BASE}/merchant/${storeId}/prodotti/nuovo?manual=1`, { waitUntil: "domcontentloaded" });
       await page.locator("#nome").fill(`Prodotto E2E ${TS}`);
@@ -256,8 +249,17 @@ test.describe("MERCHANT REGRESSION TEST (DB-synced + build-fixed)", () => {
       await page.waitForURL(/\/merchant\/[^/]+\/prodotti\/[^/]+$/, { timeout: 15000 });
       await expect(page.locator("#nome")).toHaveValue(`Prodotto E2E ${TS}`, { timeout: 10000 });
 
-      // delete
-      await page.getByRole("button", { name: "Elimina" }).click();
+      // delete: flusso reale dell'app — il pulsante "Elimina" vive nella LISTA
+      // prodotti, NON nella pagina di modifica. Torna alla lista e clicca
+      // Elimina sulla riga del prodotto appena verificato.
+      await page.goto(`${BASE}/merchant/${storeId}/prodotti`, { waitUntil: "domcontentloaded" });
+      const cardProdotto = page
+        .locator("div")
+        .filter({ hasText: `Prodotto E2E ${TS}` })
+        .filter({ has: page.getByRole("button", { name: "Elimina" }) })
+        .last();
+      await expect(cardProdotto).toBeVisible({ timeout: 10000 });
+      await cardProdotto.getByRole("button", { name: "Elimina" }).click();
       const delRes = await page.waitForResponse(
         (r) =>
           r.url().includes(`/api/merchant/stores/${storeId}/products`) && r.request().method() === "DELETE",
@@ -265,11 +267,12 @@ test.describe("MERCHANT REGRESSION TEST (DB-synced + build-fixed)", () => {
       );
       expect(delRes.status(), "product DELETE should be 200").toBe(200);
       await expect(page).not.toHaveURL(/\/500|\/error/);
+      await expect(cardProdotto).toHaveCount(0, { timeout: 10000 });
     });
 
     /* ── 10. Servizi ──────────────────────────────────────────────────────── */
     await test.step("10. Servizi", async () => {
-      test.skip(!storeId, "requires a store");
+      if (!storeId) { test.skip(true, "requires a store"); return; }
       log("Step 10: Servizi");
       await page.goto(`${BASE}/merchant/${storeId}/edit?modulo=servizi`, { waitUntil: "domcontentloaded" });
       await expect(page.locator("body")).toContainText("Servizi");
@@ -282,7 +285,7 @@ test.describe("MERCHANT REGRESSION TEST (DB-synced + build-fixed)", () => {
 
     /* ── 11. Offerte ──────────────────────────────────────────────────────── */
     await test.step("11. Offerte", async () => {
-      test.skip(!storeId, "requires a store");
+      if (!storeId) { test.skip(true, "requires a store"); return; }
       log("Step 11: Offerte");
       await page.goto(`${BASE}/merchant/${storeId}/edit?modulo=offerte`, { waitUntil: "domcontentloaded" });
       await expect(page.locator("body")).toContainText("Offerte");
@@ -297,7 +300,7 @@ test.describe("MERCHANT REGRESSION TEST (DB-synced + build-fixed)", () => {
 
     /* ── 12. Eventi ───────────────────────────────────────────────────────── */
     await test.step("12. Eventi", async () => {
-      test.skip(!storeId, "requires a store");
+      if (!storeId) { test.skip(true, "requires a store"); return; }
       log("Step 12: Eventi");
       await page.goto(`${BASE}/merchant/${storeId}/edit?modulo=eventi`, { waitUntil: "domcontentloaded" });
       await expect(page.locator("body")).toContainText("Eventi");
@@ -311,7 +314,7 @@ test.describe("MERCHANT REGRESSION TEST (DB-synced + build-fixed)", () => {
 
     /* ── 13. Contatti ─────────────────────────────────────────────────────── */
     await test.step("13. Contatti", async () => {
-      test.skip(!storeId, "requires a store");
+      if (!storeId) { test.skip(true, "requires a store"); return; }
       log("Step 13: Contatti");
       await page.goto(`${BASE}/merchant/${storeId}/edit?modulo=contatti`, { waitUntil: "domcontentloaded" });
       await expect(page.locator("body")).toContainText("Contatti");
@@ -324,7 +327,7 @@ test.describe("MERCHANT REGRESSION TEST (DB-synced + build-fixed)", () => {
 
     /* ── 14. Posizione ────────────────────────────────────────────────────── */
     await test.step("14. Posizione", async () => {
-      test.skip(!storeId, "requires a store");
+      if (!storeId) { test.skip(true, "requires a store"); return; }
       log("Step 14: Posizione");
       await page.goto(`${BASE}/merchant/${storeId}/edit?modulo=posizione`, { waitUntil: "domcontentloaded" });
       await expect(page.locator("body")).toContainText("Posizione");
@@ -338,7 +341,7 @@ test.describe("MERCHANT REGRESSION TEST (DB-synced + build-fixed)", () => {
 
     /* ── 15. Orari ────────────────────────────────────────────────────────── */
     await test.step("15. Orari", async () => {
-      test.skip(!storeId, "requires a store");
+      if (!storeId) { test.skip(true, "requires a store"); return; }
       log("Step 15: Orari");
       await page.goto(`${BASE}/merchant/${storeId}/edit?modulo=orari`, { waitUntil: "domcontentloaded" });
       await expect(page.locator("body")).toContainText("Orari");
@@ -349,7 +352,7 @@ test.describe("MERCHANT REGRESSION TEST (DB-synced + build-fixed)", () => {
 
     /* ── 16. Social ───────────────────────────────────────────────────────── */
     await test.step("16. Social", async () => {
-      test.skip(!storeId, "requires a store");
+      if (!storeId) { test.skip(true, "requires a store"); return; }
       log("Step 16: Social");
       await page.goto(`${BASE}/merchant/${storeId}/edit?modulo=social`, { waitUntil: "domcontentloaded" });
       await expect(page.locator("body")).toContainText("Social");
@@ -363,7 +366,7 @@ test.describe("MERCHANT REGRESSION TEST (DB-synced + build-fixed)", () => {
 
     /* ── 17. SEO ──────────────────────────────────────────────────────────── */
     await test.step("17. SEO", async () => {
-      test.skip(!storeId, "requires a store");
+      if (!storeId) { test.skip(true, "requires a store"); return; }
       log("Step 17: SEO");
       await page.goto(`${BASE}/merchant/${storeId}/edit?modulo=seo`, { waitUntil: "domcontentloaded" });
       await expect(page.locator("body")).toContainText("SEO");
@@ -378,7 +381,7 @@ test.describe("MERCHANT REGRESSION TEST (DB-synced + build-fixed)", () => {
 
     /* ── 18. AI ───────────────────────────────────────────────────────────── */
     await test.step("18. AI", async () => {
-      test.skip(!storeId, "requires a store");
+      if (!storeId) { test.skip(true, "requires a store"); return; }
       log("Step 18: AI");
       await page.goto(`${BASE}/merchant/${storeId}/edit?modulo=ai`, { waitUntil: "domcontentloaded" });
       await expect(page.locator("body")).toContainText("Assistente AI");
@@ -393,7 +396,7 @@ test.describe("MERCHANT REGRESSION TEST (DB-synced + build-fixed)", () => {
 
     /* ── 19. Media (copertina + galleria) ─────────────────────────────────── */
     await test.step("19. Media", async () => {
-      test.skip(!storeId, "requires a store");
+      if (!storeId) { test.skip(true, "requires a store"); return; }
       log("Step 19: Media (copertina + galleria)");
       await page.goto(`${BASE}/merchant/${storeId}/edit?modulo=immagini`, { waitUntil: "domcontentloaded" });
       await expect(page.locator("body")).toContainText("Immagini");
@@ -426,7 +429,7 @@ test.describe("MERCHANT REGRESSION TEST (DB-synced + build-fixed)", () => {
 
     /* ── 20. Reload + verifica persistenza (API) ──────────────────────────── */
     await test.step("20. Reload + persistenza", async () => {
-      test.skip(!storeId, "requires a store");
+      if (!storeId) { test.skip(true, "requires a store"); return; }
       log("Step 20: Reload + verifica persistenza");
       await page.goto(`${BASE}/merchant/${storeId}/edit`, { waitUntil: "domcontentloaded" });
       await expect(page).toHaveURL(/\/merchant\/[^/]+\/edit/);
@@ -437,7 +440,24 @@ test.describe("MERCHANT REGRESSION TEST (DB-synced + build-fixed)", () => {
         async (u) => {
           const r = await fetch(u);
           const j = await r.json();
-          return j.data.settings as Record<string, any>;
+          return j.data.settings as {
+            nome: string;
+            descrizione: string;
+            servizi: string[];
+            data?: {
+              offerte?: Array<{ titolo?: string }>;
+              eventi?: Array<{ titolo?: string }>;
+              ai_data?: { tono?: string };
+            };
+            telefono?: string;
+            indirizzo?: string;
+            citta?: string;
+            orari?: Record<string, { apertura1?: string }>;
+            facebook?: string;
+            seo_title?: string;
+            logo_url?: string;
+            galleria?: string[];
+          };
         },
         `/api/merchant/stores/${storeId}/settings`
       );

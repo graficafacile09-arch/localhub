@@ -8,6 +8,7 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export type NegozioRicerca = {
   id: string;
+  slug?: string | null;
   nome: string;
   descrizione?: string | null;
   categoria?: string | null;
@@ -19,6 +20,7 @@ export type NegozioRicerca = {
 
 export type ProdottoRicerca = {
   id: string;
+  slug?: string | null;
   negozio_id: string;
   nome: string;
   descrizione: string | null;
@@ -201,7 +203,7 @@ async function cercaProdottiPerAi(query: string): Promise<ProdottoRicerca[]> {
   // corrente: una join qui rendeva la ricerca prodotti sempre vuota.
   const { data, error } = await supabase
     .from("prodotti")
-    .select("id, negozio_id, nome, descrizione, categoria, prezzo, immagine_principale")
+    .select("id, slug, negozio_id, nome, descrizione, categoria, prezzo, immagine_principale")
     .eq("attivo", true)
     .or(filtri)
     .limit(10);
@@ -212,12 +214,14 @@ async function cercaProdottiPerAi(query: string): Promise<ProdottoRicerca[]> {
     new Set((data ?? []).map((prodotto) => prodotto.negozio_id).filter(Boolean))
   );
   const { data: negozi } = negozioIds.length
-    ? await supabase.from("negozi").select("id, nome").in("id", negozioIds).is("deleted_at", null)
+    ? await supabase.from("negozi").select("id, nome, slug").in("id", negozioIds).is("deleted_at", null)
     : { data: [] };
   const nomiNegozi = new Map((negozi ?? []).map((negozio) => [negozio.id, negozio.nome]));
+  const slugNegozi = new Map((negozi ?? []).map((negozio) => [negozio.id, negozio.slug]));
 
   return (data ?? []).map((p: Record<string, unknown>) => ({
     id: p.id as string,
+    slug: (p.slug as string) ?? null,
     negozio_id: p.negozio_id as string,
     nome: p.nome as string,
     descrizione: (p.descrizione as string) ?? null,

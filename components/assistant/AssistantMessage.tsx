@@ -131,7 +131,7 @@ export default function AssistantMessage({ message }: AssistantMessageProps) {
               {message.prodotti.map((prodotto) => (
                 <Link
                   key={prodotto.id}
-                  href={`/negozio/${prodotto.negozio_id}`}
+                  href={`/prodotto/${prodotto.slug}`}
                   className="flex gap-2 overflow-hidden rounded-lg border border-slate-100 bg-white p-1.5 transition hover:border-blue-200 hover:shadow-sm"
                 >
                   <div className="h-12 w-12 shrink-0 overflow-hidden rounded bg-slate-100">

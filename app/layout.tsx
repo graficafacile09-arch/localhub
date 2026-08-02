@@ -19,10 +19,25 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://localhub-eta.vercel.app";
+
 export const metadata: Metadata = {
-  title: "InCittà | Amazon della tua città",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "InCittà | Amazon della tua città",
+    template: "%s | InCittà",
+  },
   description:
     "Trova negozi, prodotti e servizi della tua città. Cerca, confronta e acquista localmente.",
+  openGraph: {
+    siteName: "InCittà",
+    locale: "it_IT",
+    type: "website",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({

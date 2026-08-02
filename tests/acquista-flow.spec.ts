@@ -1,5 +1,11 @@
 import { test, expect, Page } from "@playwright/test";
 
+// URL pubbliche con SLUG (architettura URL ufficiale LocalHub).
+// I dati demo sono seedati da supabase/migrations/20260802_seed_demo_completo.sql
+// (negozio demo-beauty-1 → prodotto trattamento-glow-viso "Trattamento Glow Viso").
+const PRODOTTO_SLUG = "trattamento-glow-viso";
+const NEGOZIO_SLUG = "demo-beauty-1";
+
 test.describe("Acquista Flow E2E", () => {
   let page: Page;
   let jsErrors: string[] = [];
@@ -36,7 +42,7 @@ test.describe("Acquista Flow E2E", () => {
   });
 
   test("Step 1-2: Open product page and verify content", async () => {
-    const response = await page.goto("/prodotto/prod-demo-beauty-1", { timeout: 30000 });
+    const response = await page.goto(`/prodotto/${PRODOTTO_SLUG}`, { timeout: 30000 });
     await page.screenshot({ path: "screenshots/01-product-page.png", fullPage: true });
 
     expect(response?.status()).toBe(200);
@@ -45,13 +51,9 @@ test.describe("Acquista Flow E2E", () => {
     expect(title).toContain("Trattamento Glow Viso");
 
     // Verify NO opening hours on product page
-    const orariText = await page.locator("text=Orari di apertura").count();
+    const orariText = await page.locator("text=Orari").count();
     expect(orariText).toBe(0);
     console.log("✓ No opening hours on product page.");
-
-    // Aperto ora / Chiuso should not appear
-    const apertoChiuso = await page.locator("text=Aperto ora, text=Chiuso").count();
-    // Just log, not a hard assert - text might not match exactly
 
     // Verify ACQUISTA button is visible
     const acquistaButton = page.locator("text=ACQUISTA").or(page.locator("text=Acquista").first());
@@ -62,17 +64,17 @@ test.describe("Acquista Flow E2E", () => {
     await expect(acquistaButton.first()).toBeEnabled();
     console.log("✓ ACQUISTA button is clickable.");
 
-    // Verify click navigates to /prodotto/[id]/acquista
+    // Verify click navigates to /prodotto/<slug>/acquista
     await acquistaButton.first().click();
-    await page.waitForURL(/\/prodotto\/prod-demo-beauty-1\/acquista/, { timeout: 15000 });
+    await page.waitForURL(new RegExp(`/prodotto/${PRODOTTO_SLUG}/acquista`), { timeout: 15000 });
     expect(page.url()).toContain("/acquista");
-    console.log("✓ Click navigates to /prodotto/[id]/acquista.");
+    console.log("✓ Click navigates to /prodotto/<slug>/acquista.");
 
     expect(jsErrors.length).toBe(0);
   });
 
   test("Step 3-4: Navigate to acquista choice page", async () => {
-    const response = await page.goto("/prodotto/prod-demo-beauty-1/acquista", { timeout: 30000 });
+    const response = await page.goto(`/prodotto/${PRODOTTO_SLUG}/acquista`, { timeout: 30000 });
     await page.screenshot({ path: "screenshots/02-acquista-choice.png", fullPage: true });
 
     expect(response?.status()).toBe(200);
@@ -90,7 +92,7 @@ test.describe("Acquista Flow E2E", () => {
   });
 
   test("Step 5-6: Click Ritiro and verify page", async () => {
-    await page.goto("/prodotto/prod-demo-beauty-1/acquista", { timeout: 30000 });
+    await page.goto(`/prodotto/${PRODOTTO_SLUG}/acquista`, { timeout: 30000 });
 
     await page.click("text=Ritiro in negozio");
     await page.waitForURL(/\/acquista\/ritiro/, { timeout: 15000 });
@@ -105,7 +107,7 @@ test.describe("Acquista Flow E2E", () => {
   });
 
   test("Step 7-9: Click Spedizione and verify page", async () => {
-    await page.goto("/prodotto/prod-demo-beauty-1/acquista", { timeout: 30000 });
+    await page.goto(`/prodotto/${PRODOTTO_SLUG}/acquista`, { timeout: 30000 });
 
     await page.click("text=Spedizione a domicilio");
     await page.waitForURL(/\/acquista\/spedizione/, { timeout: 15000 });
@@ -124,9 +126,9 @@ test.describe("Acquista Flow E2E", () => {
 
   test("Step 10-13: Verify no errors on all acquista pages", async () => {
     const routes = [
-      "/prodotto/prod-demo-beauty-1/acquista",
-      "/prodotto/prod-demo-beauty-1/acquista/ritiro",
-      "/prodotto/prod-demo-beauty-1/acquista/spedizione",
+      `/prodotto/${PRODOTTO_SLUG}/acquista`,
+      `/prodotto/${PRODOTTO_SLUG}/acquista/ritiro`,
+      `/prodotto/${PRODOTTO_SLUG}/acquista/spedizione`,
     ];
 
     for (const route of routes) {
@@ -144,29 +146,29 @@ test.describe("Acquista Flow E2E", () => {
 
   test("Verify orari appear on negozio page but NOT on product page", async () => {
     // Go to negozio page - opening hours SHOULD be visible
-    await page.goto("/negozio/demo-beauty-1", { timeout: 30000 });
-    const negozioOrari = await page.locator("text=Lun-Sab").count();
+    await page.goto(`/negozio/${NEGOZIO_SLUG}`, { timeout: 30000 });
+    const negozioOrari = await page.locator("text=Orari").count();
     expect(negozioOrari).toBeGreaterThan(0);
     console.log("✓ Opening hours ARE visible on negozio page.");
 
     // Go to product page - opening hours should NOT be visible
-    await page.goto("/prodotto/prod-demo-beauty-1", { timeout: 30000 });
-    const prodottoOrari = await page.locator("text=Lun-Sab").count();
+    await page.goto(`/prodotto/${PRODOTTO_SLUG}`, { timeout: 30000 });
+    const prodottoOrari = await page.locator("text=Orari").count();
     expect(prodottoOrari).toBe(0);
     console.log("✓ No opening hours on product page.");
   });
 
   test("Verify no orari on acquista pages", async () => {
     const routes = [
-      "/prodotto/prod-demo-beauty-1/acquista",
-      "/prodotto/prod-demo-beauty-1/acquista/ritiro",
-      "/prodotto/prod-demo-beauty-1/acquista/spedizione",
+      `/prodotto/${PRODOTTO_SLUG}/acquista`,
+      `/prodotto/${PRODOTTO_SLUG}/acquista/ritiro`,
+      `/prodotto/${PRODOTTO_SLUG}/acquista/spedizione`,
     ];
 
     for (const route of routes) {
       await page.goto(route, { timeout: 30000 });
 
-      const orariText = await page.locator("text=Orari di apertura").count();
+      const orariText = await page.locator('text="Orari"').count();
       expect(orariText).toBe(0);
     }
   });

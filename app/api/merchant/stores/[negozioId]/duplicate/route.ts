@@ -3,6 +3,7 @@ import { apiError, apiOk } from "@/lib/api/response";
 import { getCurrentUser } from "@/lib/auth/session";
 import { canManageStore } from "@/lib/merchant/data";
 import { duplicateStore } from "@/lib/merchant/duplicate-store";
+import { generaSlugUnivoco } from "@/lib/slug-server";
 import type { DuplicateOptions, NewStoreInput } from "@/lib/merchant/duplicate-store";
 
 export async function POST(
@@ -38,7 +39,13 @@ export async function POST(
   }
 
   try {
-    const result = await duplicateStore(user.id, negozioId, body.newStore, body.options);
+    const slugUnivoco = await generaSlugUnivoco("negozi", body.newStore.slug);
+    const result = await duplicateStore(
+      user.id,
+      negozioId,
+      { ...body.newStore, slug: slugUnivoco },
+      body.options
+    );
     return apiOk({ storeId: result.id }, 201);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Errore sconosciuto durante la duplicazione.";

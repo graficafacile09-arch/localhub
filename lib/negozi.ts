@@ -1,6 +1,7 @@
 import { calcolaPunteggioNegozio, filtraNegoziPerPertinenza } from "./ranking-negozi";
 import { normalizza, radice } from "./text-utils";
 import { createAdminSupabaseClient } from "./supabase/admin";
+import { isNumericId, isUuid } from "./slug";
 import type { Categoria } from "@/types/negozio";
 
 const getDb = () => {
@@ -119,6 +120,79 @@ export async function getNegozioBySlug(slug: string) {
   }
 
   return data;
+}
+
+export async function getProdottoBySlug(slug: string) {
+  const db = getDb();
+  if (!db) return null;
+
+  const { data, error } = await db
+    .from("prodotti")
+    .select("*")
+    .eq("slug", slug)
+    .single();
+
+  if (error) {
+    console.log(error);
+    return null;
+  }
+
+  return data;
+}
+
+// ─── Risoluzione URL pubbliche (slug canonico + ponte legacy) ───────────────
+// Le URL pubbliche usano SOLO gli slug. Se il parametro è un UUID legacy
+// (negozio) o un id numerico legacy (prodotto), queste funzioni lo
+// riconoscono e restituiscono slugLegacy: la route farà redirect 301/308
+// verso l'URL canonica. Nessuna logica di rendering per gli ID.
+
+// I dati pubblici arrivano dal DB (select *) e non sono tipizzati riga per
+// riga: si usano Record<string, any> come per il resto del codice esistente.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type RecordPubblico = Record<string, any>;
+
+export type RisoluzioneNegozio = {
+  negozio: RecordPubblico | null;
+  slugLegacy: string | null;
+};
+
+export type RisoluzioneProdotto = {
+  prodotto: RecordPubblico | null;
+  slugLegacy: string | null;
+};
+
+export async function risolviNegozioPubblico(param: string): Promise<RisoluzioneNegozio> {
+  // 1) Slug canonico: risoluzione diretta.
+  const negozio = await getNegozioBySlug(param);
+  if (negozio) return { negozio, slugLegacy: null };
+
+  // 2) Ponte legacy: parametro che sembra un UUID → cerca per id.
+  if (isUuid(param)) {
+    const legacy = await getNegozio(param);
+    if (legacy) {
+      const slug = (legacy.slug as string) ?? "";
+      if (slug) return { negozio: null, slugLegacy: `/negozio/${slug}` };
+    }
+  }
+
+  return { negozio: null, slugLegacy: null };
+}
+
+export async function risolviProdottoPubblico(param: string): Promise<RisoluzioneProdotto> {
+  // 1) Slug canonico: risoluzione diretta.
+  const prodotto = await getProdottoBySlug(param);
+  if (prodotto) return { prodotto, slugLegacy: null };
+
+  // 2) Ponte legacy: parametro numerico (id bigint legacy) → cerca per id.
+  if (isNumericId(param)) {
+    const legacy = await getProdotto(param);
+    if (legacy) {
+      const slug = (legacy.slug as string) ?? "";
+      if (slug) return { prodotto: null, slugLegacy: `/prodotto/${slug}` };
+    }
+  }
+
+  return { prodotto: null, slugLegacy: null };
 }
 
 // Negozi in Evidenza: SOLO quelli con in_evidenza=true (attivi, non nel
@@ -352,6 +426,7 @@ export async function cercaNegoziPerCategoria(categoria: Categoria) {
 
 export type NegozioCategoria = {
   id: string;
+  slug: string | null;
   nome: string;
   categoria: string | null;
   descrizione: string | null;
@@ -425,6 +500,7 @@ export async function getCategoriaShowcase(slug: string): Promise<CategoriaShowc
 
   const negozi = ordinaNegoziPerCategoria(negoziFiltrati, conteggioProdotti).map((n) => ({
     id: n.id as string,
+    slug: (n.slug as string) ?? null,
     nome: n.nome as string,
     categoria: (n.categoria as string) ?? null,
     descrizione: (n.descrizione as string) ?? null,
@@ -461,6 +537,7 @@ export async function getProdotto(id: string) {
 
 export type Prodotto = {
   id: string;
+  slug: string | null;
   negozio_id: string;
   nome: string;
   descrizione: string | null;
@@ -566,7 +643,7 @@ export async function cercaProdotti(ricerca: string, limit = 20) {
 
   const { data, error } = await db
     .from("prodotti")
-    .select("id, negozio_id, nome, descrizione, categoria, prezzo, immagine_principale")
+    .select("id, slug, negozio_id, nome, descrizione, categoria, prezzo, immagine_principale")
     .eq("attivo", true)
     .or(filtri)
     .limit(limit);
@@ -583,6 +660,7 @@ export async function cercaProdotti(ricerca: string, limit = 20) {
 
   return (data ?? []).map((p: Record<string, unknown>) => ({
     id: p.id as string,
+    slug: (p.slug as string) ?? null,
     negozio_id: p.negozio_id as string,
     nome: p.nome as string,
     descrizione: (p.descrizione as string) ?? null,

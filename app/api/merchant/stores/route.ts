@@ -2,6 +2,8 @@ import { apiError, apiOk } from "@/lib/api/response";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getMerchantStoresForUser } from "@/lib/merchant/data";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { toSlug } from "@/lib/slug";
+import { generaSlugUnivoco } from "@/lib/slug-server";
 
 export async function GET() {
   const user = await getCurrentUser();
@@ -32,12 +34,16 @@ export async function POST(request: Request) {
 
   const supabase = createAdminSupabaseClient();
 
+  const slugBase = (body.slug as string)?.trim() || toSlug(nome);
+  const slug = await generaSlugUnivoco("negozi", slugBase || "negozio");
+
   const { data, error } = await supabase
     .from("negozi")
     .insert({
       owner_user_id: user.id,
       nome,
       categoria,
+      slug,
       citta: (body.citta as string)?.trim() || null,
       logo_url: (body.logo_url as string) || null,
       attivo: false,

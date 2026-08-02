@@ -76,15 +76,15 @@ export default function AdminUserMenu() {
             {ADMIN_USER.name} · {ADMIN_USER.role}
           </p>
 
-          <button
-            type="button"
+          <Link
+            href="/profilo"
             role="menuitem"
             onClick={() => setOpen(false)}
             className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition hover:bg-slate-50 hover:text-blue-700"
           >
             <UserRound className="h-4 w-4 shrink-0 text-blue-600" aria-hidden />
             Il mio profilo
-          </button>
+          </Link>
 
           <Link
             href="/amministratore/impostazioni"
@@ -96,19 +96,16 @@ export default function AdminUserMenu() {
             Impostazioni
           </Link>
 
-          <button
-            type="button"
-            role="menuitem"
-            onClick={() => setOpen(false)}
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-50"
-          >
-            <LogOut className="h-4 w-4 shrink-0" aria-hidden />
-            Esci
-          </button>
-
-          <p className="mt-1 border-t border-slate-100 px-3 pb-1 pt-2 text-[10px] text-slate-400">
-            Logout non ancora implementato
-          </p>
+          <form action="/api/auth/signout" method="post">
+            <button
+              type="submit"
+              role="menuitem"
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-50"
+            >
+              <LogOut className="h-4 w-4 shrink-0" aria-hidden />
+              Esci
+            </button>
+          </form>
         </div>
       )}
     </div>

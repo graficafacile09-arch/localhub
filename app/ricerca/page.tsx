@@ -86,7 +86,7 @@ export default async function RicercaPage({
                   {prodotti.map((prodotto) => (
                     <Link
                       key={prodotto.id}
-                      href={`/prodotto/${prodotto.id}`}
+                      href={`/prodotto/${prodotto.slug}`}
                       className="group overflow-hidden rounded-xl border border-slate-100 bg-white transition hover:border-blue-200 hover:shadow-sm"
                     >
                       <div className="relative aspect-square overflow-hidden bg-slate-100">
@@ -129,7 +129,7 @@ export default async function RicercaPage({
                   {negozi.map((negozio) => (
                     <Link
                       key={negozio.id}
-                      href={`/negozio/${negozio.id}`}
+                      href={`/negozio/${negozio.slug}`}
                       className="group flex gap-3 overflow-hidden rounded-xl border border-slate-100 bg-white p-2.5 transition hover:border-blue-200 hover:shadow-sm"
                     >
                       <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-slate-100">

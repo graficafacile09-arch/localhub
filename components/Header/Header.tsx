@@ -1,7 +1,39 @@
 import Image from "next/image";
 import Link from "next/link";
+import { getCurrentRole } from "@/lib/auth/session";
+import { contaNegoziUtente } from "@/lib/auth/roles";
+import { getMerchantStoresForUser } from "@/lib/merchant/data";
+import AccountMenu, { type DatiAccount } from "./AccountMenu";
 
-export default function Header() {
+/**
+ * Header pubblico: sostituisce "+ Aggiungi Prodotto" con il menu Account,
+ * che cambia automaticamente in base al ruolo dell'utente loggato.
+ */
+export default async function Header() {
+  const auth = await getCurrentRole();
+
+  let account: DatiAccount | null = null;
+
+  if (auth) {
+    const { user, role } = auth;
+    const nome =
+      String(user.user_metadata?.full_name ?? "").trim() ||
+      String(user.email ?? "");
+
+    let hasStores = false;
+    let firstStoreId: string | null = null;
+
+    if (role === "admin") {
+      hasStores = (await contaNegoziUtente(user.id)) > 0;
+    } else if (role === "merchant") {
+      const storesResult = await getMerchantStoresForUser(user.id);
+      hasStores = storesResult.data.length > 0;
+      firstStoreId = storesResult.data[0]?.id ?? null;
+    }
+
+    account = { nome, email: user.email ?? "", role, hasStores, firstStoreId };
+  }
+
   return (
     <header className="bg-white shadow-md border-b">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between px-4 md:px-6 py-4 gap-4">
@@ -20,19 +52,13 @@ export default function Header() {
             />
           </Link>
           <div className="md:hidden">
-            <Link
-              href="/merchant"
-              className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3 py-2 text-sm font-bold text-white shadow-sm transition hover:bg-blue-700"
-            >
-              <span className="text-base leading-none">+</span>
-              Aggiungi Prodotto
-            </Link>
+            <AccountMenu account={account} />
           </div>
         </div>
 
         {/* MENU */}
 
-        <nav className="flex flex-wrap items-center justify-center gap-4 md:gap-8 text-sm md:text-base text-gray-700 font-semibold">
+        <nav className="flex flex-wrap items-center justify-center gap-4 md:gap-6 text-sm md:text-base text-gray-700 font-semibold">
 
           <Link href="/" className="hover:text-blue-600 transition">
             Home
@@ -50,10 +76,9 @@ export default function Header() {
             Assistente AI
           </Link>
 
-          <Link href="/merchant" className="hidden md:inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-blue-700">
-            <span className="text-base leading-none">+</span>
-            Aggiungi Prodotto
-          </Link>
+          <div className="hidden md:block">
+            <AccountMenu account={account} />
+          </div>
 
         </nav>
 

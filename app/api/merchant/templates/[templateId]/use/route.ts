@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { apiError, apiOk } from "@/lib/api/response";
 import { getCurrentUser } from "@/lib/auth/session";
 import { createStoreFromTemplate } from "@/lib/merchant/template-store";
+import { generaSlugUnivoco } from "@/lib/slug-server";
 
 export async function POST(
   request: NextRequest,
@@ -24,9 +25,10 @@ export async function POST(
   if (!citta) return apiError("VALIDATION_ERROR", "La città è obbligatoria.", 422);
 
   try {
+    const slugUnivoco = await generaSlugUnivoco("negozi", slug);
     const result = await createStoreFromTemplate(user.id, templateId, {
       nome,
-      slug,
+      slug: slugUnivoco,
       categoria,
       sottocategoria: (body.sottocategoria as string)?.trim() || undefined,
       citta,

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { getRoleForUser, redirectPerRuolo } from "@/lib/auth/roles";
 
 export async function POST(request: Request) {
   const loginUrl = new URL("/login", request.url);
@@ -68,6 +69,16 @@ export async function POST(request: Request) {
         loginUrl.searchParams.set("error", "Account creato ma impossibile creare il negozio. Contatta l'assistenza.");
         return NextResponse.redirect(loginUrl);
       }
+
+      // Assegna il ruolo merchant (FASE 7): la registrazione crea un negozio.
+      const { error: roleError } = await adminClient
+        .from("user_roles")
+        .insert({ user_id: userId, role: "merchant" });
+
+      if (roleError) {
+        loginUrl.searchParams.set("error", "Account creato ma impossibile assegnare il ruolo. Contatta l'assistenza.");
+        return NextResponse.redirect(loginUrl);
+      }
     } catch {
       loginUrl.searchParams.set("error", "Errore durante la creazione dell'account. Riprova.");
       return NextResponse.redirect(loginUrl);
@@ -80,5 +91,7 @@ export async function POST(request: Request) {
     return NextResponse.redirect(loginUrl);
   }
 
-  return NextResponse.redirect(new URL("/merchant", request.url));
+  // Redirect automatico in base al ruolo (FASE 7).
+  const role = userId ? await getRoleForUser(userId) : "customer";
+  return NextResponse.redirect(new URL(redirectPerRuolo(role), request.url));
 }

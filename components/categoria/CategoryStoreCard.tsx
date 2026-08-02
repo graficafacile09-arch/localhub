@@ -17,10 +17,11 @@ export default function CategoryStoreCard({ negozio }: { negozio: NegozioCategor
       : logoFallback;
 
   const haProdotti = negozio.prodotti_attivi > 0;
+  const hrefNegozio = `/negozio/${negozio.slug}`;
 
   return (
     <Link
-      href={`/negozio/${negozio.id}`}
+      href={hrefNegozio}
       className="group flex flex-col overflow-hidden rounded-2xl border border-white/70 bg-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
     >
       {/* Copertina */}

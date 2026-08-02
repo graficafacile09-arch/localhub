@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import AdminShell from "@/components/amministratore/AdminShell";
+import { requireRole } from "@/lib/auth/session";
 
 export const metadata = {
   title: "Amministratore — InCittà",
@@ -8,13 +9,15 @@ export const metadata = {
 };
 
 /**
- * Layout indipendente dell'area Amministratore.
- * Solo struttura UI e navigazione: nessuna logica, query o permessi.
+ * Layout dell'area Amministratore.
+ * FASE 7: accessibile SOLO agli utenti con ruolo admin.
  */
-export default function AmministratoreLayout({
+export default async function AmministratoreLayout({
   children,
 }: {
   children: ReactNode;
 }) {
+  await requireRole(["admin"], "/login");
+
   return <AdminShell>{children}</AdminShell>;
 }

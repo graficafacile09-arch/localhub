@@ -1,47 +1,33 @@
-import { getProdotto, getNegozio } from "@/lib/negozi";
+import { permanentRedirect } from "next/navigation";
+import { risolviProdottoPubblico, getNegozio } from "@/lib/negozi";
 import { getProdottoImmagine } from "@/lib/prodotti-immagini";
 import Link from "next/link";
-import AcquistaLayout from "./layout";
 
 function formatPrezzo(p: number): number {
   return Number(p);
 }
 
-async function getProductData(id: string) {
-  const prodotto = await getProdotto(id);
+type Params = { slug: string };
 
-  if (!prodotto) return null;
+export default async function AcquistaChoicePage({ params }: { params: Promise<Params> }) {
+  const { slug } = await params;
 
+  const { prodotto, slugLegacy } = await risolviProdottoPubblico(slug);
+  if (slugLegacy) permanentRedirect(`${slugLegacy}/acquista`);
+  if (!prodotto) {
+    return (
+      <div className="py-12 text-center">
+        <p className="text-slate-600">Prodotto non trovato.</p>
+      </div>
+    );
+  }
+
+  const id = prodotto.id as string;
+  const slugProdotto = (prodotto.slug as string) ?? id;
   const negozio = await getNegozio(String(prodotto.negozio_id));
   const prezzo = formatPrezzo(
     "prezzo" in prodotto ? Number(prodotto.prezzo) : 0,
   );
-  const quantita = "quantita_disponibile" in prodotto
-    ? Number(prodotto.quantita_disponibile)
-    : null;
-
-  return { prodotto, negozio, prezzo, quantita };
-}
-
-export default async function AcquistaChoicePage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
-  const data = await getProductData(id);
-
-  if (!data) {
-    return (
-      <AcquistaLayout>
-        <div className="py-12 text-center">
-          <p className="text-slate-600">Prodotto non trovato.</p>
-        </div>
-      </AcquistaLayout>
-    );
-  }
-
-  const { prodotto, negozio, prezzo } = data;
   const nome = "nome" in prodotto ? (prodotto.nome as string) : "Prodotto";
 
   const imageUrl = getProdottoImmagine({
@@ -54,8 +40,7 @@ export default async function AcquistaChoicePage({
   });
 
   return (
-    <AcquistaLayout>
-      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+    <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <div className="space-y-4">
           <div className="overflow-hidden rounded-xl">
             <div className="relative aspect-square max-h-[400px] overflow-hidden bg-slate-100">
@@ -78,7 +63,7 @@ export default async function AcquistaChoicePage({
 
         <div className="flex flex-col gap-3">
           <Link
-            href={`/prodotto/${id}/acquista/ritiro`}
+            href={`/prodotto/${slugProdotto}/acquista/ritiro`}
             className="group block rounded-xl border-2 border-slate-200 bg-white p-5 text-left transition hover:border-blue-400 hover:shadow-md"
           >
             <div className="flex items-start gap-3">
@@ -98,7 +83,7 @@ export default async function AcquistaChoicePage({
           </Link>
 
           <Link
-            href={`/prodotto/${id}/acquista/spedizione`}
+            href={`/prodotto/${slugProdotto}/acquista/spedizione`}
             className="group block rounded-xl border-2 border-slate-200 bg-white p-5 text-left transition hover:border-blue-400 hover:shadow-md"
           >
             <div className="flex items-start gap-3">
@@ -118,6 +103,5 @@ export default async function AcquistaChoicePage({
           </Link>
         </div>
       </div>
-    </AcquistaLayout>
   );
 }

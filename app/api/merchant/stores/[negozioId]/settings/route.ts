@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { canManageStore } from "@/lib/merchant/data";
+import { toSlug } from "@/lib/slug";
 
 const GALLERY_BUCKET = "store-images";
 
@@ -88,6 +89,11 @@ function validate(body: StoreSettings): string | null {
   }
   if ("coordinate" in body && body.coordinate && !COORDS_RE.test(body.coordinate)) {
     return "Formato coordinate non valido. Usa 'lat, lng' (es. 45.4642, 9.1900).";
+  }
+  if ("slug" in body && body.slug !== undefined) {
+    const slug = toSlug(String(body.slug));
+    if (!slug) return "Lo slug non può essere vuoto.";
+    body.slug = slug;
   }
   return null;
 }
@@ -182,6 +188,23 @@ export async function PUT(
 
   const supabase = createAdminSupabaseClient();
 
+  // Unicità dello slug: se lo slug è cambiato, verifica che non esista già
+  // su un altro negozio (l'indice UNIQUE parziale lo garantirebbe comunque,
+  // ma restituiamo un errore chiaro al merchant).
+  if ("slug" in payload && payload.slug) {
+    const { count, error: countError } = await supabase
+      .from("negozi")
+      .select("id", { head: true, count: "exact" })
+      .eq("slug", payload.slug as string)
+      .neq("id", negozioId);
+    if (countError) {
+      return apiError("UPDATE_FAILED", countError.message ?? "Impossibile verificare lo slug.", 500);
+    }
+    if (count && count > 0) {
+      return apiError("SLUG_TAKEN", "Questo slug è già utilizzato da un altro negozio.", 422);
+    }
+  }
+
   // Merge `data` into the existing jsonb instead of replacing it: modules
   // (offerte/eventi/ai) each PUT their own slice and must not wipe the others.
   if ("data" in payload && payload.data && typeof payload.data === "object") {
@@ -223,7 +246,8 @@ export async function PUT(
     await deleteOrphanImages(oldUrls, newUrls);
   }
 
-  revalidatePath(`/negozio/${negozioId}`);
+  const slugFinale = ((data as { slug?: string } | null)?.slug) ?? negozioId;
+  revalidatePath(`/negozio/${slugFinale}`);
   revalidatePath(`/merchant/${negozioId}`);
   revalidatePath(`/negozi`);
   revalidatePath(`/`);

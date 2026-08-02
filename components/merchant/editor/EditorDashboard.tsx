@@ -161,6 +161,7 @@ export default function EditorDashboard({ storeId, onModuleStatus }: DashboardPr
   const logoUrl = store.logo_url as string | null;
   const attivo = store.attivo as boolean;
   const updatedAt = store.updated_at as string ?? "";
+  const slugAnteprima = (store.slug as string) ?? storeId;
 
   const fieldsTotal = 13;
   const fieldsDone = [
@@ -251,7 +252,7 @@ export default function EditorDashboard({ storeId, onModuleStatus }: DashboardPr
 
           <div className="mt-3 flex flex-wrap gap-2">
               <Link
-                href={`/negozio/${storeId}`}
+                href={`/negozio/${slugAnteprima}`}
                 target="_blank"
                 className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-blue-700"
               >
@@ -320,7 +321,7 @@ export default function EditorDashboard({ storeId, onModuleStatus }: DashboardPr
               <X className="h-4 w-4" />
             </button>
             <iframe
-              src={`/negozio/${storeId}`}
+              src={`/negozio/${slugAnteprima}`}
               className="h-full w-full rounded-xl border-0"
               title={`Anteprima ${store?.nome ?? "Negozio"}`}
             />

@@ -1,6 +1,18 @@
 import { test, expect } from "@playwright/test";
+import { BASE, UTENTI, loginUtente } from "./fixtures/auth";
 
-const BASE = "http://localhost:3100";
+// FASE 7: /amministratore è protetto — i test accedono come admin.
+// Account condiviso SOLO tra test admin: nessuno di essi esegue mai un
+// signOut, quindi non può esserci revoca incrociata di sessioni.
+async function accediComeAdmin(page: import("@playwright/test").Page) {
+  await loginUtente(page, UTENTI.admin, { waitFor: `${BASE}/amministratore` });
+}
+
+// Ogni test del pannello parte loggato come admin (il redirect per ruolo
+// porta l'admin su /amministratore).
+test.beforeEach(async ({ page }) => {
+  await accediComeAdmin(page);
+});
 
 /** Le 14 voci del menu Amministratore (etichetta → route). */
 const VOCI: Array<[string, string]> = [

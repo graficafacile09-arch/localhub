@@ -64,7 +64,7 @@ export default function ShopResultCard({ negozio, rank }: ShopResultCardProps) {
 
         <div className="mt-1.5 flex flex-wrap gap-1">
           <Link
-            href={`/negozio/${negozio.id}`}
+            href={`/negozio/${negozio.slug}`}
             className="inline-flex items-center gap-1 rounded-md bg-blue-600 px-2 py-0.5 text-[10px] font-bold text-white transition hover:bg-blue-700"
           >
             <ExternalLink className="h-2.5 w-2.5" />

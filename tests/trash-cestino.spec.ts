@@ -1,16 +1,10 @@
 import { test, expect } from "@playwright/test";
+import { BASE, UTENTI, loginUtente } from "./fixtures/auth";
 
-const BASE = "http://localhost:3100";
-// Same recovered merchant account used by the other e2e suites.
-const RECOVERED_EMAIL = "qa-1785509630216-0@localhub.it";
-const PASSWORD = "TestPass123!";
-
+// Fixture merchant dedicata a QUESTA suite (merchantC): nessun altro test
+// concorrente la usa, quindi i flussi di delete/restore non confliggono.
 async function login(page: import("@playwright/test").Page) {
-  await page.goto(`${BASE}/login`, { waitUntil: "networkidle" });
-  await page.locator("#email").fill(RECOVERED_EMAIL);
-  await page.locator("#password").fill(PASSWORD);
-  await page.locator('form[action="/api/auth/login"] button[type="submit"]').click();
-  await page.waitForURL(/\/merchant/, { timeout: 20000 });
+  await loginUtente(page, UTENTI.merchantC, { waitFor: /\/merchant/ });
   await expect(page).toHaveURL(/\/merchant/);
 }
 

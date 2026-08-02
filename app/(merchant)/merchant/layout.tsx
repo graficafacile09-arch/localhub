@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import MerchantShell from "@/components/merchant/MerchantShell";
-import { requireCurrentUser } from "@/lib/auth/session";
+import { requireRole } from "@/lib/auth/session";
 import { getMerchantStoresForUser } from "@/lib/merchant/data";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
@@ -27,7 +27,8 @@ export default async function MerchantLayout({
     );
   }
 
-  const user = await requireCurrentUser("/login");
+  // FASE 7: accesso SOLO a merchant e admin (i customer vengono reindirizzati).
+  const { user } = await requireRole(["merchant", "admin"], "/login");
   const storesResult = await getMerchantStoresForUser(user.id);
 
   return (
