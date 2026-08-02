@@ -17,7 +17,7 @@ export default async function MerchantLayout({
             Configurazione richiesta
           </p>
           <h1 className="mt-3 text-3xl font-black tracking-tight">
-            Attiva Supabase per usare l&apos;area merchant
+            Attiva Supabase per usare l&apos;area commerciante
           </h1>
           <p className="mt-4 text-sm leading-6 text-slate-600">
             Aggiungi `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_ANON_KEY` all&apos;ambiente.

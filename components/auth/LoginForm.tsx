@@ -8,7 +8,7 @@ export default function LoginForm({ error, authConfigured }: LoginFormProps) {
     <form action="/api/auth/login" method="post" className="space-y-4">
       {!authConfigured ? (
         <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          Configura prima `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_ANON_KEY` per attivare l&apos;accesso merchant.
+          Configura prima `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_ANON_KEY` per attivare l&apos;accesso commerciante.
         </div>
       ) : null}
 

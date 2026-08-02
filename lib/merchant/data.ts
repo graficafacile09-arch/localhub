@@ -135,7 +135,7 @@ export async function getMerchantStoresForUser(userId: string): Promise<Merchant
       return {
         data: [],
         setupRequired: true,
-        errorMessage: "La configurazione del database merchant non è completa. Contatta l'amministratore.",
+        errorMessage: "La configurazione del database per l'area commerciante non è completa. Contatta l'amministratore.",
       };
     }
 
@@ -266,7 +266,7 @@ export async function createMerchantProductForStore(
     return {
       data: null,
       setupRequired: storeResult.setupRequired,
-      errorMessage: storeResult.errorMessage ?? "Negozio non disponibile per questo merchant.",
+      errorMessage: storeResult.errorMessage ?? "Negozio non disponibile per questo commerciante.",
     };
   }
 
@@ -363,7 +363,7 @@ export async function updateMerchantProductForStore(
     return {
       data: null,
       setupRequired: storeResult.setupRequired,
-      errorMessage: storeResult.errorMessage ?? "Negozio non disponibile per questo merchant.",
+      errorMessage: storeResult.errorMessage ?? "Negozio non disponibile per questo commerciante.",
     };
   }
 
@@ -434,7 +434,7 @@ export async function deleteMerchantProductForStore(
     return {
       data: null,
       setupRequired: storeResult.setupRequired,
-      errorMessage: storeResult.errorMessage ?? "Negozio non disponibile per questo merchant.",
+      errorMessage: storeResult.errorMessage ?? "Negozio non disponibile per questo commerciante.",
     };
   }
 
@@ -471,7 +471,7 @@ export async function deleteMerchantStore(
     return {
       data: null,
       setupRequired: storeResult.setupRequired,
-      errorMessage: storeResult.errorMessage ?? "Negozio non disponibile per questo merchant.",
+      errorMessage: storeResult.errorMessage ?? "Negozio non disponibile per questo commerciante.",
     };
   }
 
