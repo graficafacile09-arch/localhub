@@ -1,0 +1,47 @@
+"use client";
+
+import Link from "next/link";
+import { Home, Menu } from "lucide-react";
+
+/**
+ * Barra superiore mobile del pannello Amministratore (visibile solo su mobile).
+ * Apre il drawer di navigazione tramite la callback passata dall'AdminShell.
+ */
+export default function AdminMobileTopBar({
+  onOpenMenu,
+  menuOpen = false,
+}: {
+  onOpenMenu: () => void;
+  menuOpen?: boolean;
+}) {
+  return (
+    <div
+      className="sticky top-0 z-40 flex h-12 items-center gap-2 border-b border-blue-900/20 bg-[linear-gradient(180deg,#1d4ed8_0%,#2563eb_100%)] px-3 text-white md:hidden"
+      style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
+    >
+      <Link
+        href="/"
+        aria-label="Vai alla Home"
+        className="flex shrink-0 items-center gap-1 rounded-xl px-2.5 py-1.5 text-sm font-bold transition active:bg-white/20"
+      >
+        <Home className="h-4 w-4" aria-hidden />
+        <span>Home</span>
+      </Link>
+
+      <span className="truncate text-sm font-bold tracking-tight text-white/90">
+        Amministratore
+      </span>
+
+      <button
+        type="button"
+        onClick={onOpenMenu}
+        aria-label="Apri il menu"
+        aria-haspopup="dialog"
+        aria-expanded={menuOpen}
+        className="ml-auto flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition active:bg-white/20"
+      >
+        <Menu className="h-5 w-5" aria-hidden />
+      </button>
+    </div>
+  );
+}
