@@ -1,17 +1,15 @@
-import AdminPlaceholder from "@/components/amministratore/AdminPlaceholder";
-import { getAdminNavItem } from "@/components/amministratore/navigation";
+import UtentiModule from "@/components/amministratore/UtentiModule";
+import { getConteggiUtenti, getUtenti } from "@/lib/amministratore/service";
 
 export const metadata = {
   title: "Utenti — Amministratore",
 };
 
-export default function UtentiPage() {
-  const item = getAdminNavItem("/amministratore/utenti");
-  return (
-    <AdminPlaceholder
-      icon={item.icon}
-      title={item.label}
-      description={item.description}
-    />
-  );
+export default async function UtentiPage() {
+  const [utenti, conteggi] = await Promise.all([
+    getUtenti("tutti"),
+    getConteggiUtenti(),
+  ]);
+
+  return <UtentiModule utenti={utenti} conteggi={conteggi} />;
 }

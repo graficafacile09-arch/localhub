@@ -20,6 +20,9 @@ const VOCI: Array<[string, string]> = [
   ["Registro attività", "/amministratore/registro-attivita"],
 ];
 
+/** Route che NON mostrano più il placeholder (Panoramica = dashboard, Utenti = modulo). */
+const ROUTE_NON_PLACEHOLDER = ["/amministratore", "/amministratore/utenti"];
+
 test.describe("PANNELLO AMMINISTRATORE — struttura", () => {
   test("la Panoramica è una dashboard con riquadri, attività recenti, stato e accesso rapido", async ({
     page,
@@ -117,8 +120,9 @@ test.describe("PANNELLO AMMINISTRATORE — struttura", () => {
   test("ogni sezione placeholder è raggiungibile e mostra titolo e badge", async ({
     page,
   }) => {
-    // La Panoramica è una dashboard (non un placeholder): si esclude dal loop.
-    for (const [label, href] of VOCI.slice(1)) {
+    // Dashboard e Utenti non sono più placeholder: si escludono dal loop.
+    for (const [label, href] of VOCI) {
+      if (ROUTE_NON_PLACEHOLDER.includes(href)) continue;
       await page.goto(`${BASE}${href}`, { waitUntil: "networkidle" });
       await expect(
         page.getByRole("heading", { level: 1 })
@@ -160,6 +164,83 @@ test.describe("PANNELLO AMMINISTRATORE — struttura", () => {
     // La voce Impostazioni del menu utente punta al modulo esistente.
     await page.getByRole("menuitem", { name: "Impostazioni" }).click();
     await expect(page).toHaveURL(/\/amministratore\/impostazioni/);
+  });
+});
+
+test.describe("MODULO UTENTI — ruoli e permessi", () => {
+  test("mostra le tab Tutti, Amministratori, Commercianti, Utenti con i conteggi", async ({
+    page,
+  }) => {
+    await page.goto(`${BASE}/amministratore/utenti`, {
+      waitUntil: "networkidle",
+    });
+
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Utenti" })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("tab", { name: /Tutti/ })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("tab", { name: /Amministratori/ })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("tab", { name: /Commercianti/ })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("tab", { name: /^Utenti/ })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: /Nuovo utente/ })
+    ).toBeVisible();
+  });
+
+  test("la tabella mostra Nome, Email, Ruolo, Stato, Ultimo accesso e Azioni", async ({
+    page,
+  }) => {
+    await page.goto(`${BASE}/amministratore/utenti`, {
+      waitUntil: "networkidle",
+    });
+
+    const tabella = page.locator("table");
+    await expect(tabella.getByText("Giulia Ferrari")).toBeVisible();
+    await expect(tabella.getByText("giulia.ferrari@localhub.it")).toBeVisible();
+    await expect(tabella.getByText("Marco Bianchi")).toBeVisible();
+    await expect(tabella.getByText("Alessia Romano")).toBeVisible();
+    await expect(tabella.getByText("Amministratore").first()).toBeVisible();
+    await expect(tabella.getByText("Commerciante").first()).toBeVisible();
+    await expect(tabella.getByText("Attivo").first()).toBeVisible();
+  });
+
+  test("il filtro Commercianti mostra solo i commercianti", async ({ page }) => {
+    await page.goto(`${BASE}/amministratore/utenti`, {
+      waitUntil: "networkidle",
+    });
+
+    await page.getByRole("tab", { name: /Commercianti/ }).click();
+    await expect(page.getByText("Alessia Romano")).toBeVisible();
+    await expect(page.getByText("Luca Esposito")).toBeVisible();
+    await expect(page.getByText("Giulia Ferrari")).toBeHidden();
+  });
+
+  test("il menu Azioni di un utente elenca le voci placeholder", async ({
+    page,
+  }) => {
+    await page.goto(`${BASE}/amministratore/utenti`, {
+      waitUntil: "networkidle",
+    });
+
+    await page.getByRole("button", { name: "Azioni per Giulia Ferrari" }).click();
+
+    for (const voce of ["Visualizza", "Modifica", "Permessi", "Disattiva", "Elimina"]) {
+      await expect(
+        page.getByRole("menuitem", { name: voce })
+      ).toBeVisible();
+    }
+
+    // Click su una voce placeholder: nessuna navigazione, menu chiuso.
+    await page.getByRole("menuitem", { name: "Visualizza" }).click();
+    await expect(page).toHaveURL(/\/amministratore\/utenti/);
   });
 });
 
