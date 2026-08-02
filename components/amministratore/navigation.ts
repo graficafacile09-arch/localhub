@@ -4,6 +4,8 @@ import {
   Bot,
   CalendarDays,
   FolderTree,
+  HelpCircle,
+  Home,
   LayoutDashboard,
   Newspaper,
   Package,
@@ -21,6 +23,8 @@ export type AdminNavItem = {
   label: string;
   description: string;
   icon: LucideIcon;
+  /** true = voce solo UI (es. Guida), senza navigazione reale ancora. */
+  placeholder?: boolean;
 };
 
 /** Base path del pannello Amministratore. */
@@ -133,3 +137,26 @@ export function getAdminNavItem(href: string): AdminNavItem {
   }
   return item;
 }
+
+/** Voci della sezione footer della sidebar (navigazione rapida). */
+export const adminFooterItems: AdminNavItem[] = [
+  {
+    href: "/",
+    label: "Torna al sito",
+    description: "Apri la homepage pubblica di LocalHub.",
+    icon: Home,
+  },
+  {
+    href: `${ADMIN_BASE}/impostazioni`,
+    label: "Impostazioni",
+    description: "Configurazione generale della piattaforma.",
+    icon: Settings,
+  },
+  {
+    href: `${ADMIN_BASE}/guida`,
+    label: "Guida",
+    description: "Documentazione e aiuto sull'uso del pannello.",
+    icon: HelpCircle,
+    placeholder: true,
+  },
+];

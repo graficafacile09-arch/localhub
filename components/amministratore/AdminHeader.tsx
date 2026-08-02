@@ -1,24 +1,30 @@
 import Link from "next/link";
-import { Home, ShieldCheck } from "lucide-react";
+import { ShieldCheck, Store } from "lucide-react";
 import AdminUserMenu from "./AdminUserMenu";
 
 /**
  * Header desktop del pannello Amministratore (visibile su md+).
- * Riprende il linguaggio visivo dell'area commercianti di LocalHub.
+ * Brand LocalHub + titolo Amministratore, menu utente in alto a destra.
  */
 export default function AdminHeader() {
   return (
     <div className="hidden border-b border-blue-900/15 bg-[linear-gradient(180deg,#1d4ed8_0%,#2563eb_100%)] text-white shadow-lg md:block">
       <div className="h-1 bg-linear-to-r from-cyan-300 via-white to-yellow-300" />
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-4">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-5">
           <Link
             href="/"
-            className="flex items-center gap-1.5 rounded-xl bg-white/15 px-3 py-2 text-sm font-bold text-white transition hover:bg-white/25"
+            aria-label="LocalHub — torna al sito"
+            className="flex items-center gap-2 rounded-2xl px-2 py-1.5 transition hover:bg-white/10"
           >
-            <Home className="h-4 w-4" aria-hidden />
-            Home
+            <Store className="h-6 w-6 text-cyan-200" aria-hidden />
+            <span className="text-lg font-black tracking-tight text-white">
+              LocalHub
+            </span>
           </Link>
+
+          <span className="h-8 w-px bg-white/20" aria-hidden />
+
           <div>
             <div className="flex items-center gap-2.5">
               <ShieldCheck className="h-5 w-5 text-cyan-200" aria-hidden />

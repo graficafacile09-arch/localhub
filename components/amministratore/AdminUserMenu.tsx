@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, LogOut, UserRound } from "lucide-react";
+import Link from "next/link";
+import { ChevronDown, LogOut, Settings, UserRound } from "lucide-react";
 
 /** Dati utente placeholder: il pannello non tocca ancora l'autenticazione. */
 const ADMIN_USER = {
@@ -11,7 +12,8 @@ const ADMIN_USER = {
 
 /**
  * Riquadro utente in alto a destra con menu a tendina.
- * "Il mio profilo" ed "Esci" sono predisposti ma non ancora implementati.
+ * Voci: Il mio profilo, Impostazioni (punta al modulo esistente), Esci.
+ * Il logout NON è ancora implementato.
  */
 export default function AdminUserMenu() {
   const [open, setOpen] = useState(false);
@@ -68,7 +70,7 @@ export default function AdminUserMenu() {
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-full z-50 mt-2 w-60 rounded-2xl border border-slate-100 bg-white p-2 text-slate-700 shadow-xl"
+          className="absolute right-0 top-full z-50 mt-2 w-64 rounded-2xl border border-slate-100 bg-white p-2 text-slate-700 shadow-xl"
         >
           <p className="px-3 pb-1.5 pt-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
             {ADMIN_USER.name} · {ADMIN_USER.role}
@@ -83,6 +85,16 @@ export default function AdminUserMenu() {
             <UserRound className="h-4 w-4 shrink-0 text-blue-600" aria-hidden />
             Il mio profilo
           </button>
+
+          <Link
+            href="/amministratore/impostazioni"
+            role="menuitem"
+            onClick={() => setOpen(false)}
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition hover:bg-slate-50 hover:text-blue-700"
+          >
+            <Settings className="h-4 w-4 shrink-0 text-blue-600" aria-hidden />
+            Impostazioni
+          </Link>
 
           <button
             type="button"

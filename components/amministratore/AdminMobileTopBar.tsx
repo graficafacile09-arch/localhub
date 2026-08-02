@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Home, Menu } from "lucide-react";
+import { Menu, Store } from "lucide-react";
 
 /**
  * Barra superiore mobile del pannello Amministratore (visibile solo su mobile).
@@ -21,11 +21,11 @@ export default function AdminMobileTopBar({
     >
       <Link
         href="/"
-        aria-label="Vai alla Home"
-        className="flex shrink-0 items-center gap-1 rounded-xl px-2.5 py-1.5 text-sm font-bold transition active:bg-white/20"
+        aria-label="LocalHub — torna al sito"
+        className="flex shrink-0 items-center gap-1 rounded-xl px-2 py-1.5 text-sm font-black tracking-tight transition active:bg-white/20"
       >
-        <Home className="h-4 w-4" aria-hidden />
-        <span>Home</span>
+        <Store className="h-4 w-4 text-cyan-200" aria-hidden />
+        <span>LocalHub</span>
       </Link>
 
       <span className="truncate text-sm font-bold tracking-tight text-white/90">

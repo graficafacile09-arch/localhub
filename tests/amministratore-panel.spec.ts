@@ -21,7 +21,7 @@ const VOCI: Array<[string, string]> = [
 ];
 
 test.describe("PANNELLO AMMINISTRATORE — struttura", () => {
-  test("la Panoramica mostra header, menu laterale e badge Modulo in preparazione", async ({
+  test("la Panoramica è una dashboard con riquadri, attività recenti, stato e accesso rapido", async ({
     page,
   }) => {
     await page.goto(`${BASE}/amministratore`, { waitUntil: "networkidle" });
@@ -30,13 +30,44 @@ test.describe("PANNELLO AMMINISTRATORE — struttura", () => {
     await expect(
       page.getByRole("heading", { level: 1, name: "Panoramica" })
     ).toBeVisible();
-    await expect(page.locator("body")).toContainText("Pannello Amministratore");
-    await expect(page.locator("body")).toContainText("Modulo in preparazione");
+
+    // Riquadri statistici
+    await expect(page.locator("body")).toContainText("Attività");
+    await expect(page.locator("body")).toContainText("Prodotti");
+    await expect(page.locator("body")).toContainText("Utenti");
+    await expect(page.locator("body")).toContainText("Offerte");
+    await expect(page.locator("body")).toContainText("Eventi");
+    await expect(page.locator("body")).toContainText("Negozi in evidenza");
+    await expect(page.locator("body")).toContainText("Segnalazioni");
+
+    // Sezioni sotto i riquadri
     await expect(
-      page.getByRole("link", { name: "Attività", exact: true })
+      page.getByRole("heading", { name: "Attività recenti" })
     ).toBeVisible();
     await expect(
-      page.getByRole("link", { name: "Registro attività", exact: true })
+      page.getByRole("heading", { name: "Stato della piattaforma" })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: "Accesso rapido" })
+    ).toBeVisible();
+
+    // Accesso rapido: pulsanti grandi (scoped alla sezione dedicata)
+    const sezioneRapida = page
+      .getByRole("heading", { name: "Accesso rapido" })
+      .locator("xpath=ancestor::section");
+    await expect(
+      sezioneRapida.getByRole("link", { name: /Gestisci Attività/ })
+    ).toBeVisible();
+    await expect(
+      sezioneRapida.getByRole("link", { name: /Gestisci Prodotti/ })
+    ).toBeVisible();
+    await expect(
+      sezioneRapida.getByRole("link", { name: /Gestisci Utenti/ })
+    ).toBeVisible();
+    await expect(
+      sezioneRapida.getByRole("link", {
+        name: /Categorie Organizzazione del catalogo/,
+      })
     ).toBeVisible();
   });
 
@@ -45,15 +76,49 @@ test.describe("PANNELLO AMMINISTRATORE — struttura", () => {
   }) => {
     await page.goto(`${BASE}/amministratore`, { waitUntil: "networkidle" });
 
+    const nav = page.getByRole("navigation", { name: "Menu Amministratore" });
     for (const [label, href] of VOCI) {
-      const link = page.getByRole("link", { name: label, exact: true });
+      const link = nav.getByRole("link", { name: label, exact: true });
       await expect(link, `voce «${label}»`).toBeVisible();
       await expect(link).toHaveAttribute("href", href);
     }
   });
 
-  test("ogni sezione è raggiungibile e mostra titolo e badge", async ({ page }) => {
-    for (const [label, href] of VOCI) {
+  test("la sezione footer della sidebar ha Torna al sito, Impostazioni e Guida", async ({
+    page,
+  }) => {
+    await page.goto(`${BASE}/amministratore`, { waitUntil: "networkidle" });
+
+    const footer = page.getByRole("navigation", {
+      name: "Navigazione rapida",
+    });
+
+    const tornaAlSito = footer.getByRole("link", {
+      name: "Torna al sito",
+      exact: true,
+    });
+    await expect(tornaAlSito).toBeVisible();
+    await expect(tornaAlSito).toHaveAttribute("href", "/");
+
+    const impostazioni = footer.getByRole("link", {
+      name: "Impostazioni",
+      exact: true,
+    });
+    await expect(impostazioni).toBeVisible();
+    await expect(impostazioni).toHaveAttribute(
+      "href",
+      "/amministratore/impostazioni"
+    );
+
+    // Guida è una voce placeholder (non un link)
+    await expect(footer.getByText("Guida", { exact: true })).toBeVisible();
+  });
+
+  test("ogni sezione placeholder è raggiungibile e mostra titolo e badge", async ({
+    page,
+  }) => {
+    // La Panoramica è una dashboard (non un placeholder): si esclude dal loop.
+    for (const [label, href] of VOCI.slice(1)) {
       await page.goto(`${BASE}${href}`, { waitUntil: "networkidle" });
       await expect(
         page.getByRole("heading", { level: 1 })
@@ -62,13 +127,21 @@ test.describe("PANNELLO AMMINISTRATORE — struttura", () => {
     }
   });
 
-  test("l'header mostra nome utente e ruolo Amministratore", async ({ page }) => {
+  test("l'header mostra brand LocalHub, titolo Amministratore e ruolo", async ({
+    page,
+  }) => {
     await page.goto(`${BASE}/amministratore`, { waitUntil: "networkidle" });
 
+    await expect(
+      page.getByRole("link", { name: "LocalHub — torna al sito" })
+    ).toBeVisible();
+    await expect(page.locator("body")).toContainText("Amministratore");
     await expect(page.locator("body")).toContainText("Ruolo: Amministratore");
   });
 
-  test("il menu utente si apre con Il mio profilo ed Esci", async ({ page }) => {
+  test("il menu utente si apre con Il mio profilo, Impostazioni ed Esci", async ({
+    page,
+  }) => {
     await page.goto(`${BASE}/amministratore`, { waitUntil: "networkidle" });
 
     const trigger = page
@@ -79,7 +152,14 @@ test.describe("PANNELLO AMMINISTRATORE — struttura", () => {
     await expect(
       page.getByRole("menuitem", { name: "Il mio profilo" })
     ).toBeVisible();
+    await expect(
+      page.getByRole("menuitem", { name: "Impostazioni" })
+    ).toBeVisible();
     await expect(page.getByRole("menuitem", { name: "Esci" })).toBeVisible();
+
+    // La voce Impostazioni del menu utente punta al modulo esistente.
+    await page.getByRole("menuitem", { name: "Impostazioni" }).click();
+    await expect(page).toHaveURL(/\/amministratore\/impostazioni/);
   });
 });
 
@@ -89,7 +169,9 @@ test.describe("PANNELLO AMMINISTRATORE — sidebar collassabile (desktop)", () =
   }) => {
     await page.goto(`${BASE}/amministratore`, { waitUntil: "networkidle" });
 
-    const etichetta = page.getByText("Attività", { exact: true });
+    const etichetta = page
+      .getByRole("navigation", { name: "Menu Amministratore" })
+      .getByText("Attività", { exact: true });
     await expect(etichetta).toBeVisible();
 
     await page.getByRole("button", { name: "Comprimi il menu" }).click();
