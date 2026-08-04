@@ -13,7 +13,7 @@ export type StatoUtente = "attivo" | "disattivato";
 /** Etichette e colori dei ruoli (usati da tab e tabella). */
 export const RUOLI_UTENTE: Record<RuoloUtente, { label: string }> = {
   amministratore: { label: "Amministratore" },
-  commerciante: { label: "Commerciante" },
+  commerciante: { label: "Amministratore" },
   utente: { label: "Utente" },
 };
 

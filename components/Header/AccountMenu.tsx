@@ -39,7 +39,7 @@ type VoceMenu = {
 /** Etichette italiane dei ruoli mostrate all'utente (mai i valori tecnici). */
 const ETICHETTE_RUOLO: Record<RuoloUtente, string> = {
   customer: "Acquirente",
-  merchant: "Commerciante",
+  merchant: "Amministratore",
   admin: "Amministratore",
 };
 

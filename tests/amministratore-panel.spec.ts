@@ -313,7 +313,7 @@ test.describe("MODULO ATTIVITÀ — centro di controllo", () => {
 });
 
 test.describe("MODULO UTENTI — ruoli e permessi", () => {
-  test("mostra le tab Tutti, Amministratori, Commercianti, Utenti con i conteggi", async ({
+  test("mostra le tab Tutti, Amministratori, Utenti con i conteggi", async ({
     page,
   }) => {
     await page.goto(`${BASE}/amministratore/utenti`, {
@@ -326,12 +326,10 @@ test.describe("MODULO UTENTI — ruoli e permessi", () => {
     await expect(
       page.getByRole("tab", { name: /Tutti/ })
     ).toBeVisible();
+    // Due tab con label "Amministratori" (admin + ex-commerciante)
     await expect(
       page.getByRole("tab", { name: /Amministratori/ })
-    ).toBeVisible();
-    await expect(
-      page.getByRole("tab", { name: /Commercianti/ })
-    ).toBeVisible();
+    ).toHaveCount(2);
     await expect(
       page.getByRole("tab", { name: /^Utenti/ })
     ).toBeVisible();
@@ -352,17 +350,19 @@ test.describe("MODULO UTENTI — ruoli e permessi", () => {
     await expect(tabella.getByText("giulia.ferrari@localhub.it")).toBeVisible();
     await expect(tabella.getByText("Marco Bianchi")).toBeVisible();
     await expect(tabella.getByText("Alessia Romano")).toBeVisible();
+    // Entrambi i ruoli admin e commerciante ora mostrano "Amministratore"
     await expect(tabella.getByText("Amministratore").first()).toBeVisible();
-    await expect(tabella.getByText("Commerciante").first()).toBeVisible();
+    await expect(tabella.getByText("Utente").first()).toBeVisible();
     await expect(tabella.getByText("Attivo").first()).toBeVisible();
   });
 
-  test("il filtro Commercianti mostra solo i commercianti", async ({ page }) => {
+  test("il filtro Amministratori (ex commercianti) mostra gli utenti corretti", async ({ page }) => {
     await page.goto(`${BASE}/amministratore/utenti`, {
       waitUntil: "networkidle",
     });
 
-    await page.getByRole("tab", { name: /Commercianti/ }).click();
+    // Il secondo tab "Amministratori" è quello per il ruolo ex-commerciante
+    await page.getByRole("tab", { name: /Amministratori/ }).nth(1).click();
     await expect(page.getByText("Alessia Romano")).toBeVisible();
     await expect(page.getByText("Luca Esposito")).toBeVisible();
     await expect(page.getByText("Giulia Ferrari")).toBeHidden();
