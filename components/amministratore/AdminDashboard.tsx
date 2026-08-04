@@ -18,6 +18,7 @@ import {
   Users,
 } from "lucide-react";
 import type { ConteggiDashboard } from "@/lib/amministratore/data";
+import ZonaPericolosaDashboard from "./ZonaPericolosaDashboard";
 
 const formatNumero = new Intl.NumberFormat("it-IT");
 
@@ -154,7 +155,7 @@ export default function AdminDashboard({
 
   return (
     <div className="space-y-5">
-      {/* ── Intestazione dashboard ──────────────────────────────────────────── */}
+      {/* Header */}
       <div className="rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm md:p-8">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
           <div>
@@ -183,7 +184,7 @@ export default function AdminDashboard({
         </div>
       </div>
 
-      {/* ── Riquadri statistici ─────────────────────────────────────────────── */}
+      {/* Stat tiles */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
         {tiles.map((tile) => {
           const Icon = tile.icon;
@@ -220,7 +221,7 @@ export default function AdminDashboard({
           );
         })}
 
-        {/* Riquadro extra: categorie (dato reale) */}
+        {/* Categorie extra tile */}
         <Link
           href="/amministratore/categorie"
           className="group relative overflow-hidden rounded-[1.75rem] border border-dashed border-slate-200 bg-white/60 p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md"
@@ -244,9 +245,9 @@ export default function AdminDashboard({
         </Link>
       </div>
 
-      {/* ── Griglia sezioni secondarie ──────────────────────────────────────── */}
+      {/* Secondary sections grid */}
       <div className="grid gap-5 lg:grid-cols-5">
-        {/* 1) Attività recenti (placeholder) */}
+        {/* Recent activity */}
         <section className="rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm lg:col-span-3">
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-sm font-black tracking-tight text-slate-900">
@@ -294,7 +295,7 @@ export default function AdminDashboard({
           </div>
         </section>
 
-        {/* 2) Stato della piattaforma (placeholder) */}
+        {/* Platform status */}
         <section className="rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm lg:col-span-2">
           <h2 className="text-sm font-black tracking-tight text-slate-900">
             Stato della piattaforma
@@ -348,7 +349,7 @@ export default function AdminDashboard({
         </section>
       </div>
 
-      {/* ── 3) Accesso rapido ────────────────────────────────────────────────── */}
+      {/* Quick access */}
       <section className="rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm md:p-8">
         <div className="flex items-center gap-2">
           <ShieldCheck className="h-5 w-5 text-blue-600" aria-hidden />
@@ -388,6 +389,9 @@ export default function AdminDashboard({
           })}
         </div>
       </section>
+
+      {/* Zona Pericolosa */}
+      <ZonaPericolosaDashboard />
     </div>
   );
 }
