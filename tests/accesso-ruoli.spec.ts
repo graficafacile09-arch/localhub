@@ -103,13 +103,13 @@ test.describe("SISTEMA DI ACCESSO E RUOLI", () => {
     await page.getByRole("button", { name: /Menu utente di/ }).click();
 
     await expect(
-      page.getByRole("menuitem", { name: "Area Amministratore" })
+      page.getByRole("menuitem", { name: "Area Commerciante" })
     ).toBeVisible();
     await expect(
       page.getByRole("menuitem", { name: "Vai al sito" })
     ).toBeVisible();
     // Nessuna voce per le altre aree (merchant puro): la voce dell'area
-    // merchant è quella chiamata "Area Amministratore" (FASE 1 rename).
+    // merchant è quella chiamata "Area Commerciante".
     await expect(
       page.getByRole("menuitem", { name: "Area Clienti" })
     ).toHaveCount(0);

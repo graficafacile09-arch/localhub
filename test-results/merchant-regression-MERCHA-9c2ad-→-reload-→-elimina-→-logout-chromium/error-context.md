@@ -14,8 +14,8 @@
 ```
 Error: expect(received).toBe(expected) // Object.is equality
 
-Expected: "Via Roma 1"
-Received: ""
+Expected: "Sconto E2E"
+Received: undefined
 ```
 
 # Page snapshot
@@ -28,9 +28,9 @@ Received: ""
         - link "Home" [ref=f23e7] [cursor=pointer]:
           - /url: /
         - generic [ref=f23e11]:
-          - link "Area Amministratore" [ref=f23e12] [cursor=pointer]:
+          - link "Area Commerciante" [ref=f23e12] [cursor=pointer]:
             - /url: /merchant
-          - paragraph [ref=f23e13]: Area Amministratore
+          - paragraph [ref=f23e13]: Area Commerciante
       - generic [ref=f23e14]:
         - generic [ref=f23e15]: commerciante-b.test@localhub.it
         - button "Esci" [ref=f23e17]
@@ -195,91 +195,107 @@ Received: ""
               - /url: /merchant/0ec6a58c-5949-4464-92ed-ce96e571c899
               - generic [ref=f23e145]: E2E Template 1785854085556
               - generic [ref=f23e146]: Bar
-      - generic [ref=f23e148]:
-        - complementary [ref=f23e149]:
-          - navigation [ref=f23e150]:
-            - generic [ref=f23e151]:
-              - button "Dashboard" [ref=f23e152]
-              - link "Libreria Media" [ref=f23e158] [cursor=pointer]:
-                - /url: /merchant/30f5a2d8-99e5-478a-993d-3d00dceef71f/media
-              - generic [ref=f23e163]:
-                - button "Dati Base" [ref=f23e164]
-                - generic [ref=f23e172]:
-                  - button "Informazioni ✓" [ref=f23e173]:
-                    - generic [ref=f23e178]: Informazioni
-                    - generic [ref=f23e179]: ✓
-                  - button "Immagini ✓" [ref=f23e181]:
-                    - generic [ref=f23e186]: Immagini
-                    - generic [ref=f23e187]: ✓
-                  - button "Contatti ✓" [ref=f23e189]:
-                    - generic [ref=f23e192]: Contatti
-                    - generic [ref=f23e193]: ✓
-                  - button "Posizione" [ref=f23e195]
-                  - button "Orari ✓" [ref=f23e200]:
-                    - generic [ref=f23e204]: Orari
-                    - generic [ref=f23e205]: ✓
-              - generic [ref=f23e207]:
-                - button "Catalogo" [ref=f23e208]
-                - generic [ref=f23e216]:
-                  - button "Prodotti" [ref=f23e217]
-                  - button "Servizi 1 ✓" [ref=f23e223]:
-                    - generic [ref=f23e227]: Servizi
-                    - generic [ref=f23e228]:
-                      - generic [ref=f23e229]: "1"
-                      - generic [ref=f23e230]: ✓
-                  - button "Offerte 1 ✓" [ref=f23e231]:
-                    - generic [ref=f23e235]: Offerte
-                    - generic [ref=f23e236]:
-                      - generic [ref=f23e237]: "1"
-                      - generic [ref=f23e238]: ✓
-                  - button "Eventi 1 ✓" [ref=f23e239]:
-                    - generic [ref=f23e242]: Eventi
-                    - generic [ref=f23e243]:
-                      - generic [ref=f23e244]: "1"
-                      - generic [ref=f23e245]: ✓
-              - button "Online ✓" [ref=f23e247]:
-                - generic [ref=f23e250]: Online
-                - generic [ref=f23e251]: ✓
-              - button "Altro ✓" [ref=f23e255]:
-                - generic [ref=f23e259]: Altro
+            - link "Negozio Rinominato 1785854623461 Bar" [ref=f23e147] [cursor=pointer]:
+              - /url: /merchant/365f5e9e-c5e2-4ae5-b500-037d498013dd
+              - generic [ref=f23e148]: Negozio Rinominato 1785854623461
+              - generic [ref=f23e149]: Bar
+            - link "E2E Duplicato 1785854623461 Bar" [ref=f23e150] [cursor=pointer]:
+              - /url: /merchant/8de26546-57cb-419a-85d8-d6e3092b4601
+              - generic [ref=f23e151]: E2E Duplicato 1785854623461
+              - generic [ref=f23e152]: Bar
+            - link "E2E Template 1785854623461 Bar" [ref=f23e153] [cursor=pointer]:
+              - /url: /merchant/2cb8e6bf-3985-4784-96a4-1b45dc495666
+              - generic [ref=f23e154]: E2E Template 1785854623461
+              - generic [ref=f23e155]: Bar
+      - generic [ref=f23e157]:
+        - complementary [ref=f23e158]:
+          - navigation [ref=f23e159]:
+            - generic [ref=f23e160]:
+              - button "Dashboard" [ref=f23e161]
+              - link "Libreria Media" [ref=f23e167] [cursor=pointer]:
+                - /url: /merchant/365f5e9e-c5e2-4ae5-b500-037d498013dd/media
+              - generic [ref=f23e172]:
+                - button "Dati Base ✓" [ref=f23e173]:
+                  - generic [ref=f23e178]: Dati Base
+                  - generic [ref=f23e179]: ✓
+                - generic [ref=f23e182]:
+                  - button "Informazioni ✓" [ref=f23e183]:
+                    - generic [ref=f23e188]: Informazioni
+                    - generic [ref=f23e189]: ✓
+                  - button "Immagini ✓" [ref=f23e191]:
+                    - generic [ref=f23e196]: Immagini
+                    - generic [ref=f23e197]: ✓
+                  - button "Contatti ✓" [ref=f23e199]:
+                    - generic [ref=f23e202]: Contatti
+                    - generic [ref=f23e203]: ✓
+                  - button "Posizione ✓" [ref=f23e205]:
+                    - generic [ref=f23e209]: Posizione
+                    - generic [ref=f23e210]: ✓
+                  - button "Orari ✓" [ref=f23e212]:
+                    - generic [ref=f23e216]: Orari
+                    - generic [ref=f23e217]: ✓
+              - generic [ref=f23e219]:
+                - button "Catalogo" [ref=f23e220]
+                - generic [ref=f23e228]:
+                  - button "Prodotti" [ref=f23e229]
+                  - button "Servizi 1 ✓" [ref=f23e235]:
+                    - generic [ref=f23e239]: Servizi
+                    - generic [ref=f23e240]:
+                      - generic [ref=f23e241]: "1"
+                      - generic [ref=f23e242]: ✓
+                  - button "Offerte" [ref=f23e243]
+                  - button "Eventi 1 ✓" [ref=f23e248]:
+                    - generic [ref=f23e251]: Eventi
+                    - generic [ref=f23e252]:
+                      - generic [ref=f23e253]: "1"
+                      - generic [ref=f23e254]: ✓
+              - button "Online ✓" [ref=f23e256]:
+                - generic [ref=f23e259]: Online
                 - generic [ref=f23e260]: ✓
-              - button "Manutenzione" [ref=f23e265]
-              - button "Elimina negozio" [ref=f23e273]
-        - main [ref=f23e279]:
-          - generic [ref=f23e280]:
-            - generic [ref=f23e281]:
-              - generic [ref=f23e282]:
-                - img "Logo" [ref=f23e284]
-                - button "Cambia logo" [ref=f23e285]
-                - generic [ref=f23e289]:
-                  - generic [ref=f23e290]:
-                    - textbox "Nome negozio" [ref=f23e292]: Negozio Rinominato 1785854085556
-                    - generic [ref=f23e293]: Bozza
-                  - paragraph [ref=f23e295]: Bar
-                  - paragraph [ref=f23e296]: "Ultimo aggiornamento: 4 agosto 2026 alle ore 16:35"
-                  - generic [ref=f23e297]:
-                    - link "Anteprima negozio" [ref=f23e298] [cursor=pointer]:
-                      - /url: /negozio/e2e-panificio-1785854085556
-                    - button "Anteprima inline" [ref=f23e299]
-                    - button "Applica Template" [ref=f23e300]
-              - generic [ref=f23e304]:
-                - paragraph [ref=f23e305]: Completezza profilo
-                - paragraph [ref=f23e306]: 85%
-            - generic [ref=f23e309]:
-              - heading "Azioni rapide" [level=2] [ref=f23e310]
-              - generic [ref=f23e311]:
-                - button "Aggiungi prodotto" [ref=f23e312]
-                - button "Modifica immagini" [ref=f23e317]
-  - contentinfo [ref=f23e322]: © 2026 InCittà · Castrovillari
-  - button "Apri l'Assistente AI" [ref=f23e323]:
-    - generic [ref=f23e327]: AI
-  - button "Open Next.js Dev Tools" [ref=f23e333] [cursor=pointer]
-  - alert [ref=f23e337]
+              - button "Altro ✓" [ref=f23e264]:
+                - generic [ref=f23e268]: Altro
+                - generic [ref=f23e269]: ✓
+              - button "Manutenzione" [ref=f23e274]
+              - button "Elimina negozio" [ref=f23e282]
+        - main [ref=f23e288]:
+          - generic [ref=f23e289]:
+            - generic [ref=f23e290]:
+              - generic [ref=f23e291]:
+                - img "Logo" [ref=f23e293]
+                - button "Cambia logo" [ref=f23e294]
+                - generic [ref=f23e298]:
+                  - generic [ref=f23e299]:
+                    - textbox "Nome negozio" [ref=f23e301]: Negozio Rinominato 1785854623461
+                    - generic [ref=f23e302]: Bozza
+                  - paragraph [ref=f23e304]: Bar
+                  - paragraph [ref=f23e305]: "Ultimo aggiornamento: 4 agosto 2026 alle ore 16:44"
+                  - generic [ref=f23e306]:
+                    - link "Anteprima negozio" [ref=f23e307] [cursor=pointer]:
+                      - /url: /negozio/e2e-panificio-1785854623461
+                    - button "Anteprima inline" [ref=f23e308]
+                    - button "Applica Template" [ref=f23e309]
+              - generic [ref=f23e313]:
+                - paragraph [ref=f23e314]: Completezza profilo
+                - paragraph [ref=f23e315]: 85%
+            - generic [ref=f23e318]:
+              - heading "Azioni rapide" [level=2] [ref=f23e319]
+              - generic [ref=f23e320]:
+                - button "Aggiungi prodotto" [ref=f23e321]
+                - button "Modifica immagini" [ref=f23e326]
+  - contentinfo [ref=f23e331]: © 2026 InCittà · Castrovillari
+  - button "Apri l'Assistente AI" [ref=f23e332]:
+    - generic [ref=f23e336]: AI
+  - button "Open Next.js Dev Tools" [ref=f23e342] [cursor=pointer]
+  - alert [ref=f23e346]
 ```
 
 # Test source
 
 ```ts
+  367 |     /* ── 17. SEO ──────────────────────────────────────────────────────────── */
+  368 |     await test.step("17. SEO", async () => {
+  369 |       if (!storeId) { test.skip(true, "requires a store"); return; }
+  370 |       log("Step 17: SEO");
   371 |       await page.goto(`${BASE}/merchant/${storeId}/edit?modulo=seo`, { waitUntil: "domcontentloaded" });
   372 |       await expect(page.locator("body")).toContainText("SEO");
   373 |       await page.locator('input[placeholder="Titolo per i motori di ricerca"]').fill("Negozio E2E | LocalHub");
@@ -376,12 +392,12 @@ Received: ""
   464 |       expect(s.nome).toMatch(/Rinominato/);
   465 |       expect(s.descrizione).toMatch(/Descrizione aggiornata/);
   466 |       expect(Array.isArray(s.servizi) && s.servizi.includes("Consegna a domicilio"), "servizi persisted").toBe(true);
-  467 |       expect(s.data?.offerte?.[0]?.titolo).toBe("Sconto E2E");
+> 467 |       expect(s.data?.offerte?.[0]?.titolo).toBe("Sconto E2E");
+      |                                            ^ Error: expect(received).toBe(expected) // Object.is equality
   468 |       expect(s.data?.eventi?.[0]?.titolo).toBe("Degustazione E2E");
   469 |       expect(s.data?.ai_data?.tono).toBe("amichevole");
   470 |       expect(s.telefono).toBe("0981 123456");
-> 471 |       expect(s.indirizzo).toBe("Via Roma 1");
-      |                           ^ Error: expect(received).toBe(expected) // Object.is equality
+  471 |       expect(s.indirizzo).toBe("Via Roma 1");
   472 |       expect(s.citta).toBe("Castrovillari");
   473 |       expect(s.orari?.["lunedì"]?.apertura1).toBe("08:00");
   474 |       expect(s.facebook).toBe("negozio-e2e");

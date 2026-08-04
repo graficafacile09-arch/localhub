@@ -39,7 +39,7 @@ type VoceMenu = {
 /** Etichette italiane dei ruoli mostrate all'utente (mai i valori tecnici). */
 const ETICHETTE_RUOLO: Record<RuoloUtente, string> = {
   customer: "Acquirente",
-  merchant: "Amministratore",
+  merchant: "Commerciante",
   admin: "Amministratore",
 };
 
@@ -95,7 +95,7 @@ export default function AccountMenu({ account }: { account: DatiAccount | null }
   }
 
   if (ruoli.includes("merchant")) {
-    voci.push({ label: "Area Amministratore", href: storeBase, icon: Store });
+    voci.push({ label: "Area Commerciante", href: storeBase, icon: Store });
   }
 
   if (ruoli.includes("customer")) {

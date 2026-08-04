@@ -65,7 +65,7 @@ test.describe("MERCHANT REGRESSION TEST (DB-synced + build-fixed)", () => {
     await test.step("2. Dashboard", async () => {
       log("Step 2: Dashboard");
       await page.goto(`${BASE}/merchant`, { waitUntil: "networkidle" });
-      await expect(page.locator("body")).toContainText("Area Amministratore");
+      await expect(page.locator("body")).toContainText("Area Commerciante");
       const m = page.url().match(/\/merchant\/([^/]+)/);
       if (m) {
         storeId = m[1];

@@ -44,7 +44,7 @@ export default async function MerchantHomePage() {
     <div className="space-y-6">
       <div className="rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
-          Area Amministratore
+          Area Commerciante
         </p>
         <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-900">
           I tuoi negozi

@@ -44,10 +44,10 @@ export default function MerchantShell({
             </Link>
             <div>
               <Link href="/merchant" className="text-2xl font-black tracking-tight text-white">
-                Area Amministratore
+                Area Commerciante
               </Link>
               <p className="mt-1 text-sm text-blue-100">
-                {currentStore?.nome ?? "Area Amministratore"}
+                {currentStore?.nome ?? "Area Commerciante"}
               </p>
             </div>
           </div>
