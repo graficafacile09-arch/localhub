@@ -27,9 +27,9 @@ export async function POST(request: Request) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Dopo il login l'utente atterra sulla homepage e sceglie manualmente
-  // l'area dal menu account (Area Clienti / Area Commerciante / Area Amministratore).
-  // Nessun redirect automatico basato sul ruolo: il webmaster (multi-ruolo)
-  // vede tutte le voci contemporaneamente.
-  return NextResponse.redirect(new URL("/", request.url));
+  // Rispetta la destinazione scelta dall'utente (passata dal layout
+  // dell'area tramite ?redirect=). Solo path interni (iniziano con /).
+  const redirect = String(formData.get("redirect") ?? "").trim();
+  const destinazione = redirect.startsWith("/") ? redirect : "/";
+  return NextResponse.redirect(new URL(destinazione, request.url));
 }

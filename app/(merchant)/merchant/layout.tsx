@@ -29,7 +29,7 @@ export default async function MerchantLayout({
 
   // Accesso SOLO a chi possiede il ruolo merchant o admin (multi-role).
   // I customer vengono reindirizzati alla home del loro ruolo.
-  const { user } = await requireRuoli(["merchant", "admin"], "/login");
+  const { user } = await requireRuoli(["merchant", "admin"], "/login?redirect=/merchant");
   const storesResult = await getMerchantStoresForUser(user.id);
 
   return (

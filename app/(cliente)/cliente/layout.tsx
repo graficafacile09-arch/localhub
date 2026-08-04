@@ -19,7 +19,7 @@ export default async function ClienteLayout({
 }: {
   children: ReactNode;
 }) {
-  await requireRuoli(["customer"], "/login");
+  await requireRuoli(["customer"], "/login?redirect=/cliente");
 
   return <ClienteShell>{children}</ClienteShell>;
 }

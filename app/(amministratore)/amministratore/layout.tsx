@@ -18,7 +18,7 @@ export default async function AmministratoreLayout({
 }: {
   children: ReactNode;
 }) {
-  await requireRuoli(["admin"], "/login");
+  await requireRuoli(["admin"], "/login?redirect=/amministratore");
 
   // I dati dell'account (server-only) vengono caricati qui e passati allo
   // shell client, che li inoltra all'header per il menu utente.

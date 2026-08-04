@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 function LoginContent() {
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
+  const redirect = searchParams.get("redirect") ?? "";
   const [tab, setTab] = useState<"login" | "register">("login");
 
   return (
@@ -59,16 +60,17 @@ function LoginContent() {
             </div>
           )}
 
-          {tab === "login" ? <LoginForm /> : <RegisterForm />}
+          {tab === "login" ? <LoginForm redirect={redirect} /> : <RegisterForm />}
         </div>
       </div>
     </main>
   );
 }
 
-function LoginForm() {
+function LoginForm({ redirect }: { redirect: string }) {
   return (
     <form action="/api/auth/login" method="post" className="space-y-4">
+      {redirect && <input type="hidden" name="redirect" value={redirect} />}
       <div className="space-y-2">
         <label htmlFor="email" className="text-sm font-semibold text-slate-700">Email</label>
         <input
