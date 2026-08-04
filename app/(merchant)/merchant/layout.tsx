@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import MerchantShell from "@/components/merchant/MerchantShell";
-import { requireRole } from "@/lib/auth/session";
+import { requireRuoli } from "@/lib/auth/session";
 import { getMerchantStoresForUser } from "@/lib/merchant/data";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
@@ -17,7 +17,7 @@ export default async function MerchantLayout({
             Configurazione richiesta
           </p>
           <h1 className="mt-3 text-3xl font-black tracking-tight">
-            Attiva Supabase per usare l&apos;area commerciante
+            Attiva Supabase per usare l&apos;area amministratore
           </h1>
           <p className="mt-4 text-sm leading-6 text-slate-600">
             Aggiungi `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_ANON_KEY` all&apos;ambiente.
@@ -27,8 +27,9 @@ export default async function MerchantLayout({
     );
   }
 
-  // FASE 7: accesso SOLO a merchant e admin (i customer vengono reindirizzati).
-  const { user } = await requireRole(["merchant", "admin"], "/login");
+  // Accesso SOLO a chi possiede il ruolo merchant o admin (multi-role).
+  // I customer vengono reindirizzati alla home del loro ruolo.
+  const { user } = await requireRuoli(["merchant", "admin"], "/login");
   const storesResult = await getMerchantStoresForUser(user.id);
 
   return (

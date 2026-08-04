@@ -1,0 +1,518 @@
+
+> localhub@0.1.0 lint
+> eslint
+
+
+C:\Users\denni\Desktop\localhub\app\(merchant)\merchant\[negozioId]\impostazioni\ModulesPage.tsx
+  26:15  warning  'json' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\denni\Desktop\localhub\app\api\merchant\stores\[negozioId]\products\vision\route.ts
+  186:7   warning  'processedW' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  187:7   warning  'processedH' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  207:12  error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  275:30  warning  'bodySize' is assigned a value but never used    @typescript-eslint/no-unused-vars
+  276:11  warning  'tCfHeaders' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  277:11  warning  'tCfBody' is assigned a value but never used     @typescript-eslint/no-unused-vars
+
+C:\Users\denni\Desktop\localhub\app\page.tsx
+  19:18  warning  'prodottiInEvidenza' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\denni\Desktop\localhub\app\prodotto\[slug]\acquista\layout.tsx
+  20:69  error  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+C:\Users\denni\Desktop\localhub\app\prodotto\[slug]\acquista\page.tsx
+  27:9   warning  'negozio' is assigned a value but never used                     @typescript-eslint/no-unused-vars
+  96:41  error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+C:\Users\denni\Desktop\localhub\app\prodotto\[slug]\acquista\spedizione\page.tsx
+  21:9  warning  'negozio' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\denni\Desktop\localhub\components\acquista\RitiroForm.tsx
+  15:3  warning  'prodottoId' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\denni\Desktop\localhub\components\amministratore\TemplateManagerPage.tsx
+  4:39  warning  'Trash2' is defined but never used  @typescript-eslint/no-unused-vars
+  4:47  warning  'Pencil' is defined but never used  @typescript-eslint/no-unused-vars
+  4:55  warning  'X' is defined but never used       @typescript-eslint/no-unused-vars
+
+C:\Users\denni\Desktop\localhub\components\home\ProductCard.tsx
+  26:3  warning  'negozio_id' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\denni\Desktop\localhub\components\merchant\MerchantProductForm.tsx
+  184:13  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\denni\Desktop\localhub\components\merchant\MerchantQuickActions.tsx
+  10:3  warning  'FileText' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\denni\Desktop\localhub\components\merchant\ai\MerchantProductAiUploader.tsx
+   53:6   warning  React Hook useEffect has a missing dependency: 'handleCameraClick'. Either include it or remove the dependency array                                                                                                                                                                     react-hooks/exhaustive-deps
+  442:13  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\denni\Desktop\localhub\components\merchant\ai\MerchantProductResultCard.tsx
+  122:15  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\denni\Desktop\localhub\components\merchant\editor\EditorDashboard.tsx
+   28:46  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       @typescript-eslint/no-explicit-any
+   83:6   warning  React Hook useEffect has a missing dependency: 'onModuleStatus'. Either include it or remove the dependency array. If 'onModuleStatus' changes too often, find the parent component that defines it and wrap that definition in useCallback                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    react-hooks/exhaustive-deps
+   85:29  warning  React Hook useCallback received a function whose dependencies are unknown. Pass an inline function instead                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     react-hooks/exhaustive-deps
+   86:5   error    Error: Expected the first argument to be an inline function expression
+
+Expected the first argument to be an inline function expression.
+
+C:\Users\denni\Desktop\localhub\components\merchant\editor\EditorDashboard.tsx:86:5
+   84 |
+   85 |   const debouncedSaveNome = useCallback(
+>  86 |     debounce((value: string) => {
+      |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  87 |       if (value.trim() === (store?.nome ?? "")) return;
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  88 |       setSavingNome(true);
+      …
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 102 |         .finally(() => setSavingNome(false));
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 103 |     }, 500),
+      | ^^^^^^^^^^^^ Expected the first argument to be an inline function expression
+  104 |     [storeId, store?.nome]
+  105 |   );
+  106 |  react-hooks/use-memo
+  194:15  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        @next/next/no-img-element
+  386:39  error    Unexpected any. Specify a different type                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       @typescript-eslint/no-explicit-any
+
+C:\Users\denni\Desktop\localhub\components\merchant\media\MediaGrid.tsx
+  96:17  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\denni\Desktop\localhub\components\merchant\media\MediaManagerPage.tsx
+   4:41  warning  'Trash2' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               @typescript-eslint/no-unused-vars
+  29:10  warning  'deleting' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    @typescript-eslint/no-unused-vars
+  50:5   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\denni\Desktop\localhub\components\merchant\media\MediaManagerPage.tsx:50:5
+  48 |
+  49 |   useEffect(() => {
+> 50 |     loadMedia();
+     |     ^^^^^^^^^ Avoid calling setState() directly within an effect
+  51 |   }, [loadMedia]);
+  52 |
+  53 |   const handleUpload = async (file: File) => {  react-hooks/set-state-in-effect
+
+C:\Users\denni\Desktop\localhub\components\merchant\media\MediaPickerDialog.tsx
+  49:15  error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\denni\Desktop\localhub\components\merchant\media\MediaPickerDialog.tsx:49:15
+  47 |
+  48 |   useEffect(() => {
+> 49 |     if (open) loadMedia();
+     |               ^^^^^^^^^ Avoid calling setState() directly within an effect
+  50 |   }, [open, loadMedia]);
+  51 |
+  52 |   if (!open) return null;  react-hooks/set-state-in-effect
+  98:23  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 @next/next/no-img-element
+
+C:\Users\denni\Desktop\localhub\components\merchant\media\MediaUploader.tsx
+  4:30  warning  'FileImage' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\denni\Desktop\localhub\components\merchant\modules\ContattiModule.tsx
+  4:17  warning  'Mail' is defined but never used           @typescript-eslint/no-unused-vars
+  4:23  warning  'Globe' is defined but never used          @typescript-eslint/no-unused-vars
+  4:30  warning  'MessageCircle' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\denni\Desktop\localhub\components\merchant\modules\ImmaginiModule.tsx
+   11:10  warning  'saving' is assigned a value but never used                                                                                                                                                                                                                                              @typescript-eslint/no-unused-vars
+  100:26  warning  Image elements must have an alt prop, either with meaningful text, or an empty string for decorative images                                                                                                                                                                              jsx-a11y/alt-text
+  107:24  warning  Image elements must have an alt prop, either with meaningful text, or an empty string for decorative images                                                                                                                                                                              jsx-a11y/alt-text
+  134:15  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  167:13  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\denni\Desktop\localhub\components\merchant\modules\ImpostazioniModule.tsx
+  4:73  warning  'Palette' is defined but never used  @typescript-eslint/no-unused-vars
+  4:82  warning  'Tag' is defined but never used      @typescript-eslint/no-unused-vars
+
+C:\Users\denni\Desktop\localhub\components\merchant\modules\InformazioniModule.tsx
+  4:21  warning  'FileText' is defined but never used  @typescript-eslint/no-unused-vars
+  4:31  warning  'Tag' is defined but never used       @typescript-eslint/no-unused-vars
+
+C:\Users\denni\Desktop\localhub\components\merchant\modules\PosizioneModule.tsx
+  4:18  warning  'Globe' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\denni\Desktop\localhub\components\merchant\modules\SocialModule.tsx
+  6:10  warning  'Field' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\denni\Desktop\localhub\components\merchant\wizard\StepDatiDaTemplate.tsx
+  3:20  warning  'useMemo' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\denni\Desktop\localhub\components\merchant\wizard\StepDatiIniziali.tsx
+  5:27  warning  'Building2' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\denni\Desktop\localhub\components\merchant\wizard\StepDuplica.tsx
+  3:10  warning  'Search' is defined but never used  @typescript-eslint/no-unused-vars
+  3:18  warning  'Copy' is defined but never used    @typescript-eslint/no-unused-vars
+
+C:\Users\denni\Desktop\localhub\components\merchant\wizard\WizardShell.tsx
+  59:10  warning  'templatesLoading' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     @typescript-eslint/no-unused-vars
+  76:7   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+C:\Users\denni\Desktop\localhub\components\merchant\wizard\WizardShell.tsx:76:7
+  74 |     const templateParam = searchParams?.get("template");
+  75 |     if (templateParam) {
+> 76 |       setMode("template");
+     |       ^^^^^^^ Avoid calling setState() directly within an effect
+  77 |       setSelectedTemplateId(templateParam);
+  78 |       const allTemplates: AnyTemplate[] = [...systemTemplates, ...userTemplates];
+  79 |       const selected = allTemplates.find((t) => t.id === templateParam);  react-hooks/set-state-in-effect
+
+C:\Users\denni\Desktop\localhub\generate-benchmark-images.mjs
+  85:9  warning  'eanText' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\denni\Desktop\localhub\lib\merchant\duplicate-store.ts
+   27:6   warning  'NegozioRow' is defined but never used           @typescript-eslint/no-unused-vars
+  188:17  warning  'id' is assigned a value but never used          @typescript-eslint/no-unused-vars
+  188:21  warning  'negozio_id' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  188:33  warning  'created_at' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  188:45  warning  'updated_at' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\denni\Desktop\localhub\lib\merchant\template-store.ts
+  140:17  warning  'id' is assigned a value but never used          @typescript-eslint/no-unused-vars
+  140:21  warning  'negozio_id' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  140:33  warning  'created_at' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  140:45  warning  'updated_at' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  484:15  warning  'id' is assigned a value but never used          @typescript-eslint/no-unused-vars
+  484:19  warning  'negozio_id' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  484:31  warning  'created_at' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  484:43  warning  'updated_at' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\denni\Desktop\localhub\lib\product-assistant\providers\cloudflare.ts
+  201:13  warning  'latencyMs' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\denni\Desktop\localhub\lib\product-assistant\providers\moondream.ts
+  162:13  warning  'latencyMs' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\denni\Desktop\localhub\lib\product-assistant\providers\openrouter.ts
+  170:13  warning  'latencyMs' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\denni\Desktop\localhub\lib\product-assistant\vision-cache.ts
+   36:17  warning  'info' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  167:12  error    Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+
+C:\Users\denni\Desktop\localhub\lib\product-assistant\vision-service.ts
+  4:42  warning  'formatProviderLog' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\denni\Desktop\localhub\lib\ricerca-ai.ts
+  220:9  warning  'slugNegozi' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\denni\Desktop\localhub\lib\scan-log.ts
+  37:55  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\denni\Desktop\localhub\list-groq-models.mjs
+  2:10  warning  'resolve' is defined but never used       @typescript-eslint/no-unused-vars
+  4:7   warning  'key' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\denni\Desktop\localhub\run-gemini-benchmark.mjs
+   44:9   warning  'base64' is assigned a value but never used    @typescript-eslint/no-unused-vars
+   46:9   warning  'url' is assigned a value but never used       @typescript-eslint/no-unused-vars
+  115:11  warning  'score' is assigned a value but never used     @typescript-eslint/no-unused-vars
+  139:9   warning  'avgTime' is assigned a value but never used   @typescript-eslint/no-unused-vars
+  140:9   warning  'avgScore' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\denni\Desktop\localhub\run-groq-benchmark.mjs
+    4:7   warning  'IMAGES_DIR' is assigned a value but never used   @typescript-eslint/no-unused-vars
+   19:7   warning  'PROMPT' is assigned a value but never used       @typescript-eslint/no-unused-vars
+   30:36  warning  'productInfo' is defined but never used           @typescript-eslint/no-unused-vars
+   34:9   warning  'url' is assigned a value but never used          @typescript-eslint/no-unused-vars
+  141:9   warning  'valid' is assigned a value but never used        @typescript-eslint/no-unused-vars
+  142:9   warning  'avgTime' is assigned a value but never used      @typescript-eslint/no-unused-vars
+  143:9   warning  'avgScore' is assigned a value but never used     @typescript-eslint/no-unused-vars
+  144:9   warning  'successRate' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\denni\Desktop\localhub\run-real-benchmark.mjs
+  4:7  warning  'BASE' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\denni\Desktop\localhub\screenshots\visual-compare.mjs
+  12:7  warning  'STRUCTURAL_SECTIONS' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\denni\Desktop\localhub\scripts\test-fallback.ts
+   15:15  warning  'VisionServiceResult' is defined but never used  @typescript-eslint/no-unused-vars
+   17:10  warning  'analyzeImages' is defined but never used        @typescript-eslint/no-unused-vars
+   75:7   warning  '_images' is defined but never used              @typescript-eslint/no-unused-vars
+   76:7   warning  '_context' is defined but never used             @typescript-eslint/no-unused-vars
+  134:13  warning  'result' is assigned a value but never used      @typescript-eslint/no-unused-vars
+  179:13  warning  'result' is assigned a value but never used      @typescript-eslint/no-unused-vars
+  226:13  warning  'result' is assigned a value but never used      @typescript-eslint/no-unused-vars
+  272:13  warning  'result' is assigned a value but never used      @typescript-eslint/no-unused-vars
+
+C:\Users\denni\Desktop\localhub\scripts\test-final.cjs
+   1:26  error    A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  72:33  warning  'be' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\denni\Desktop\localhub\scripts\test-session.cjs
+    1:26  error    A `require()` style import is forbidden           @typescript-eslint/no-require-imports
+  133:9   warning  'finalClient' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\denni\Desktop\localhub\scripts\test-update.cjs
+  1:26  error    A `require()` style import is forbidden          @typescript-eslint/no-require-imports
+  8:7   warning  'NEGOZIO_ID' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\denni\Desktop\localhub\scripts\test-update2.cjs
+  1:26  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+C:\Users\denni\Desktop\localhub\src\app\api\search\visual\route.ts
+  31:9  warning  'startTime' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\denni\Desktop\localhub\src\pipeline\acquisition\index.ts
+   1:10  warning  'ULID' is defined but never used               @typescript-eslint/no-unused-vars
+   3:10  warning  'pipeline' is defined but never used           @typescript-eslint/no-unused-vars
+  45:5   warning  'mimeType' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  86:26  warning  'format' is assigned a value but never used    @typescript-eslint/no-unused-vars
+
+C:\Users\denni\Desktop\localhub\src\pipeline\ai-fallback\index.ts
+    2:48   warning  'ProductPrediction' is defined but never used   @typescript-eslint/no-unused-vars
+    2:67   warning  'CategoryPrediction' is defined but never used  @typescript-eslint/no-unused-vars
+    2:101  warning  'FingerprintResult' is defined but never used   @typescript-eslint/no-unused-vars
+    2:120  warning  'ULID' is defined but never used                @typescript-eslint/no-unused-vars
+  149:31   warning  'request' is defined but never used             @typescript-eslint/no-unused-vars
+  172:37   error    Unexpected any. Specify a different type        @typescript-eslint/no-explicit-any
+
+C:\Users\denni\Desktop\localhub\src\pipeline\feedback\index.ts
+    3:39  warning  'AIResult' is defined but never used           @typescript-eslint/no-unused-vars
+    3:49  warning  'ProductCandidate' is defined but never used   @typescript-eslint/no-unused-vars
+    3:67  warning  'FingerprintResult' is defined but never used  @typescript-eslint/no-unused-vars
+    3:86  warning  'ULID' is defined but never used               @typescript-eslint/no-unused-vars
+    3:92  warning  'generateULID' is defined but never used       @typescript-eslint/no-unused-vars
+  119:60  warning  'imageHash' is defined but never used          @typescript-eslint/no-unused-vars
+
+C:\Users\denni\Desktop\localhub\src\pipeline\fingerprint\index.ts
+    1:126  warning  'BoundingBox' is defined but never used       @typescript-eslint/no-unused-vars
+   45:22   warning  'dct' is assigned a value but never used      @typescript-eslint/no-unused-vars
+   65:17   error    A `require()` style import is forbidden       @typescript-eslint/no-require-imports
+  108:20   error    Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  139:19   error    A `require()` style import is forbidden       @typescript-eslint/no-require-imports
+  145:19   warning  'info' is assigned a value but never used     @typescript-eslint/no-unused-vars
+  170:19   error    Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  203:31   error    Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  226:37   error    Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  228:53   error    Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  234:19   error    Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  246:36   error    Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  246:44   error    Unexpected any. Specify a different type      @typescript-eslint/no-explicit-any
+  378:19   warning  'info' is assigned a value but never used     @typescript-eslint/no-unused-vars
+  396:25   error    'v' is never reassigned. Use 'const' instead  prefer-const
+  442:10   warning  'hammingDistance' is defined but never used   @typescript-eslint/no-unused-vars
+  450:10   warning  'cosineSimilarity' is defined but never used  @typescript-eslint/no-unused-vars
+  460:10   warning  'colorDistance' is defined but never used     @typescript-eslint/no-unused-vars
+
+C:\Users\denni\Desktop\localhub\src\pipeline\index.ts
+    7:25  warning  'PreprocessedImage' is defined but never used  @typescript-eslint/no-unused-vars
+    7:44  warning  'FingerprintResult' is defined but never used  @typescript-eslint/no-unused-vars
+  101:72  error    Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+  102:28  error    Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+  104:29  error    Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+  142:13  error    Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+  144:15  error    Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+
+C:\Users\denni\Desktop\localhub\src\pipeline\product-profile\builder.ts
+    5:3   warning  'PHashProfile' is defined but never used         @typescript-eslint/no-unused-vars
+    6:3   warning  'EmbeddingProfile' is defined but never used     @typescript-eslint/no-unused-vars
+    7:3   warning  'VectorProfile' is defined but never used        @typescript-eslint/no-unused-vars
+   15:3   warning  'QualitySignal' is defined but never used        @typescript-eslint/no-unused-vars
+   16:3   warning  'ContextSignal' is defined but never used        @typescript-eslint/no-unused-vars
+   17:3   warning  'RGB' is defined but never used                  @typescript-eslint/no-unused-vars
+   18:3   warning  'KeypointCluster' is defined but never used      @typescript-eslint/no-unused-vars
+   19:3   warning  'GeometricLayout' is defined but never used      @typescript-eslint/no-unused-vars
+   20:3   warning  'ShapeProfile' is defined but never used         @typescript-eslint/no-unused-vars
+   21:3   warning  'LogoProfile' is defined but never used          @typescript-eslint/no-unused-vars
+   22:3   warning  'LayoutProfile' is defined but never used        @typescript-eslint/no-unused-vars
+   23:3   warning  'MaterialProfile' is defined but never used      @typescript-eslint/no-unused-vars
+   24:3   warning  'CategoryPrediction' is defined but never used   @typescript-eslint/no-unused-vars
+   25:3   warning  'AttributeProfile' is defined but never used     @typescript-eslint/no-unused-vars
+   27:3   warning  'BrandPrediction' is defined but never used      @typescript-eslint/no-unused-vars
+   28:3   warning  'PriceTierPrediction' is defined but never used  @typescript-eslint/no-unused-vars
+   30:3   warning  'OCRTextBlock' is defined but never used         @typescript-eslint/no-unused-vars
+   31:3   warning  'BrandOCRMatch' is defined but never used        @typescript-eslint/no-unused-vars
+   32:3   warning  'BoundingBox' is defined but never used          @typescript-eslint/no-unused-vars
+   34:3   warning  'ULID' is defined but never used                 @typescript-eslint/no-unused-vars
+   35:3   warning  'cosineSimilarity' is defined but never used     @typescript-eslint/no-unused-vars
+   36:3   warning  'hammingDistance' is defined but never used      @typescript-eslint/no-unused-vars
+   37:3   warning  'updateCentroid' is defined but never used       @typescript-eslint/no-unused-vars
+   38:3   warning  'mergePHashCentroids' is defined but never used  @typescript-eslint/no-unused-vars
+   46:14  error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   58:21  error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   63:15  error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   64:16  error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   68:16  error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  191:25  error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  287:57  warning  'i' is defined but never used                    @typescript-eslint/no-unused-vars
+  360:39  error    Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+
+C:\Users\denni\Desktop\localhub\src\pipeline\product-profile\updater.ts
+    4:3   warning  'QueryProfile' is defined but never used     @typescript-eslint/no-unused-vars
+    5:3   warning  'MultiLayerScore' is defined but never used  @typescript-eslint/no-unused-vars
+    6:3   warning  'ScoredCandidate' is defined but never used  @typescript-eslint/no-unused-vars
+    8:3   warning  'ULID' is defined but never used             @typescript-eslint/no-unused-vars
+    9:3   warning  'BarcodeSignal' is defined but never used    @typescript-eslint/no-unused-vars
+   10:3   warning  'OCRSignal' is defined but never used        @typescript-eslint/no-unused-vars
+   11:3   warning  'VisualSignal' is defined but never used     @typescript-eslint/no-unused-vars
+   14:3   warning  'CorrectionEvent' is defined but never used  @typescript-eslint/no-unused-vars
+  250:15  error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  251:15  error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  253:6   error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+  310:33  error    Unexpected any. Specify a different type     @typescript-eslint/no-explicit-any
+
+C:\Users\denni\Desktop\localhub\src\pipeline\query-profile\extractor.ts
+   10:3   warning  'BoundingBox' is defined but never used   @typescript-eslint/no-unused-vars
+   11:3   warning  'RGB' is defined but never used           @typescript-eslint/no-unused-vars
+   44:35  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   54:27  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  103:29  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  153:32  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  164:45  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  181:37  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  198:33  warning  'fp' is defined but never used            @typescript-eslint/no-unused-vars
+  198:37  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  208:28  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  218:33  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  232:39  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  232:48  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\denni\Desktop\localhub\src\pipeline\ranking\index.ts
+    1:101  warning  'ULID' is defined but never used          @typescript-eslint/no-unused-vars
+    7:59   error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   23:68   error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   35:56   error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   44:57   error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   54:54   error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   63:58   error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   69:58   error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   75:56   error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   85:25   warning  'candidate' is defined but never used     @typescript-eslint/no-unused-vars
+   85:54   warning  'fp' is defined but never used            @typescript-eslint/no-unused-vars
+   85:58   error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  185:25   error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  186:24   error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  196:18   error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  213:9    error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  260:9    error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  293:9    error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  327:54   error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  357:72   error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  358:28   error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\denni\Desktop\localhub\src\pipeline\scoring\ambiguity-resolver.ts
+    1:10  warning  'MultiLayerScorer' is defined but never used  @typescript-eslint/no-unused-vars
+    5:3   warning  'ProductProfile' is defined but never used    @typescript-eslint/no-unused-vars
+    7:3   warning  'MultiLayerScore' is defined but never used   @typescript-eslint/no-unused-vars
+   10:3   warning  'AIModel' is defined but never used           @typescript-eslint/no-unused-vars
+   39:5   warning  'scoreThreshold' is defined but never used    @typescript-eslint/no-unused-vars
+  126:42  warning  'ai' is defined but never used                @typescript-eslint/no-unused-vars
+  235:37  warning  'prompt' is defined but never used            @typescript-eslint/no-unused-vars
+
+C:\Users\denni\Desktop\localhub\src\pipeline\scoring\multi-layer-scorer.ts
+    8:3   warning  'BarcodeSignal' is defined but never used          @typescript-eslint/no-unused-vars
+   10:3   warning  'VisualSignal' is defined but never used           @typescript-eslint/no-unused-vars
+   11:3   warning  'PackagingSignal' is defined but never used        @typescript-eslint/no-unused-vars
+   12:3   warning  'SemanticSignal' is defined but never used         @typescript-eslint/no-unused-vars
+   13:3   warning  'QualitySignal' is defined but never used          @typescript-eslint/no-unused-vars
+   15:3   warning  'hammingDistance' is defined but never used        @typescript-eslint/no-unused-vars
+  140:9   warning  'matchedLayer' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  300:28  error    Unexpected any. Specify a different type           @typescript-eslint/no-explicit-any
+  300:36  error    Unexpected any. Specify a different type           @typescript-eslint/no-explicit-any
+  388:32  error    Unexpected any. Specify a different type           @typescript-eslint/no-explicit-any
+  388:40  error    Unexpected any. Specify a different type           @typescript-eslint/no-explicit-any
+  405:32  error    Unexpected any. Specify a different type           @typescript-eslint/no-explicit-any
+  405:40  error    Unexpected any. Specify a different type           @typescript-eslint/no-explicit-any
+
+C:\Users\denni\Desktop\localhub\src\pipeline\search-first.ts
+   3:10  warning  'VisualSearchPipeline' is defined but never used  @typescript-eslint/no-unused-vars
+   3:32  warning  'PipelineConfig' is defined but never used        @typescript-eslint/no-unused-vars
+  13:3   warning  'ProductProfile' is defined but never used        @typescript-eslint/no-unused-vars
+  31:19  error    Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  32:19  error    Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+
+C:\Users\denni\Desktop\localhub\src\pipeline\search-first\index.ts
+    1:16  warning  'PoolConfig' is defined but never used               @typescript-eslint/no-unused-vars
+    3:10  warning  'GoogleGenAI' is defined but never used              @typescript-eslint/no-unused-vars
+   10:3   warning  'ProductProfile' is defined but never used           @typescript-eslint/no-unused-vars
+  119:11  error    'filtered' is never reassigned. Use 'const' instead  prefer-const
+  130:35  warning  'reason' is assigned a value but never used          @typescript-eslint/no-unused-vars
+  215:27  error    Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+  233:36  error    Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+  251:17  warning  '_' is defined but never used                        @typescript-eslint/no-unused-vars
+  263:45  warning  'reasoning' is defined but never used                @typescript-eslint/no-unused-vars
+  281:15  error    Unexpected any. Specify a different type             @typescript-eslint/no-explicit-any
+
+C:\Users\denni\Desktop\localhub\src\pipeline\search\index.ts
+    3:90   warning  'THRESHOLDS' is defined but never used    @typescript-eslint/no-unused-vars
+    3:133  warning  'shouldUseAI' is defined but never used   @typescript-eslint/no-unused-vars
+   88:81   warning  'index' is defined but never used         @typescript-eslint/no-unused-vars
+  368:16   warning  'id' is defined but never used            @typescript-eslint/no-unused-vars
+  377:39   warning  'options' is defined but never used       @typescript-eslint/no-unused-vars
+  412:13   warning  'record' is defined but never used        @typescript-eslint/no-unused-vars
+  413:16   warning  'id' is defined but never used            @typescript-eslint/no-unused-vars
+  414:16   warning  'record' is defined but never used        @typescript-eslint/no-unused-vars
+  422:39   warning  'options' is defined but never used       @typescript-eslint/no-unused-vars
+  455:13   warning  'record' is defined but never used        @typescript-eslint/no-unused-vars
+  456:16   warning  'id' is defined but never used            @typescript-eslint/no-unused-vars
+  457:16   warning  'record' is defined but never used        @typescript-eslint/no-unused-vars
+  465:39   warning  'options' is defined but never used       @typescript-eslint/no-unused-vars
+  536:13   warning  'record' is defined but never used        @typescript-eslint/no-unused-vars
+  537:16   warning  'id' is defined but never used            @typescript-eslint/no-unused-vars
+  538:16   warning  'record' is defined but never used        @typescript-eslint/no-unused-vars
+  546:16   warning  'fp' is defined but never used            @typescript-eslint/no-unused-vars
+  546:39   warning  'options' is defined but never used       @typescript-eslint/no-unused-vars
+  550:13   warning  'record' is defined but never used        @typescript-eslint/no-unused-vars
+  551:16   warning  'id' is defined but never used            @typescript-eslint/no-unused-vars
+  552:16   warning  'record' is defined but never used        @typescript-eslint/no-unused-vars
+  573:40   error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  605:41   error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  645:47   warning  'fp' is defined but never used            @typescript-eslint/no-unused-vars
+
+C:\Users\denni\Desktop\localhub\test-cloudflare.js
+  11:12  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  12:14  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+C:\Users\denni\Desktop\localhub\test-request.mjs
+   3:10  warning  'resolve' is defined but never used           @typescript-eslint/no-unused-vars
+  84:7   warning  'baseUrl' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  89:7   warning  'width' is assigned a value but never used    @typescript-eslint/no-unused-vars
+  89:20  warning  'height' is assigned a value but never used   @typescript-eslint/no-unused-vars
+
+C:\Users\denni\Desktop\localhub\test\benchmark-clean.mjs
+   11:9   warning  'out' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  102:42  warning  'e' is defined but never used             @typescript-eslint/no-unused-vars
+
+C:\Users\denni\Desktop\localhub\test\benchmark-final2.mjs
+  3:10  warning  'readFileSync' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\denni\Desktop\localhub\test\benchmark-real.mjs
+  4:7  warning  'STORE_ID' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\denni\Desktop\localhub\test\gen-realistic.mjs
+  95:9  warning  'img' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\denni\Desktop\localhub\test\generate-test-images.mjs
+  6:64  warning  'label' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\denni\Desktop\localhub\test\verify-deep.mjs
+   3:10  warning  'writeFileSync' is defined but never used      @typescript-eslint/no-unused-vars
+  63:9   warning  'tHeaders' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+✖ 303 problems (88 errors, 215 warnings)
+  1 error and 0 warnings potentially fixable with the `--fix` option.
+

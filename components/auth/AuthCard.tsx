@@ -7,7 +7,7 @@ export default function AuthCard({ title, description, children }: { title: stri
       <div className="space-y-6 p-8">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
-            Area negozianti
+            Area Amministratore
           </p>
           <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-900">
             {title}

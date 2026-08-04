@@ -5,6 +5,8 @@ import { OpenAssistantButton, OpenAssistantLink } from "@/components/assistant/O
 import { cercaNegozi, cercaProdotti, getCategoriaShowcase } from "@/lib/negozi";
 import { getNegozioCardImmagine } from "@/lib/negozi-card-immagini";
 import { getProdottoImmagine } from "@/lib/prodotti-immagini";
+import { chiavePreferito, getStatoPreferitiPerPagina } from "@/lib/cliente/favorites";
+import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
 import { search } from "@/lib/search-service";
 import type { ProdottoRicerca, NegozioRicerca } from "@/lib/ricerca-ai";
 import type { CategoriaShowcase } from "@/lib/negozi";
@@ -24,6 +26,10 @@ export default async function RicercaPage({
   let rispostaAi: string | null = null;
   let erroreAi: string | null = null;
   let categoriaShowcase: CategoriaShowcase | null = null;
+
+  // Stato preferiti per i pulsanti cuore: una sola chiamata per pagina
+  // (Set di chiavi), nessuna richiesta per singola card.
+  const statoPreferiti = await getStatoPreferitiPerPagina();
 
   // Vetrina categoria: pagina dedicata (header + card + empty state),
   // 3 query SQL, zero N+1 — nessuna ricerca testuale.
@@ -64,7 +70,11 @@ export default async function RicercaPage({
 
         {categoriaShowcase ? (
           /* ═══ VETRINA CATEGORIA ═══ */
-          <CategoriaShowcaseView showcase={categoriaShowcase} />
+          <CategoriaShowcaseView
+            showcase={categoriaShowcase}
+            chiaviPreferiti={statoPreferiti.chiavi}
+            autenticato={statoPreferiti.autenticato}
+          />
         ) : termine ? (
           <>
             {/* Conteggio risultati */}
@@ -84,36 +94,48 @@ export default async function RicercaPage({
                 </h2>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
                   {prodotti.map((prodotto) => (
-                    <Link
+                    <div
                       key={prodotto.id}
-                      href={`/prodotto/${prodotto.slug}`}
-                      className="group overflow-hidden rounded-xl border border-slate-100 bg-white transition hover:border-blue-200 hover:shadow-sm"
+                      className="relative overflow-hidden rounded-xl border border-slate-100 bg-white transition hover:border-blue-200 hover:shadow-sm"
                     >
-                      <div className="relative aspect-square overflow-hidden bg-slate-100">
-                        <div
-                          role="img"
-                          aria-label={prodotto.nome}
-                          className="h-full w-full bg-cover bg-center"
-                          style={{
-                            backgroundImage: `url(${getProdottoImmagine({
-                              immagine_principale: prodotto.immagine_principale,
-                              categoria: prodotto.categoria,
-                            })})`,
-                          }}
-                        />
-                      </div>
-                      <div className="p-2">
-                        <h3 className="line-clamp-2 text-xs font-bold leading-tight text-slate-900">
-                          {prodotto.nome}
-                        </h3>
-                        <p className="mt-0.5 text-sm font-black text-blue-700">
-                          €{prodotto.prezzo}
-                        </p>
-                        <p className="mt-0.5 line-clamp-1 text-[10px] text-slate-400">
-                          {prodotto.negozio_nome}
-                        </p>
-                      </div>
-                    </Link>
+                      <Link
+                        href={`/prodotto/${prodotto.slug}`}
+                        className="group block"
+                      >
+                        <div className="relative aspect-square overflow-hidden bg-slate-100">
+                          <div
+                            role="img"
+                            aria-label={prodotto.nome}
+                            className="h-full w-full bg-cover bg-center"
+                            style={{
+                              backgroundImage: `url(${getProdottoImmagine({
+                                immagine_principale: prodotto.immagine_principale,
+                                categoria: prodotto.categoria,
+                              })})`,
+                            }}
+                          />
+                        </div>
+                        <div className="p-2">
+                          <h3 className="line-clamp-2 text-xs font-bold leading-tight text-slate-900">
+                            {prodotto.nome}
+                          </h3>
+                          <p className="mt-0.5 text-sm font-black text-blue-700">
+                            €{prodotto.prezzo}
+                          </p>
+                          <p className="mt-0.5 line-clamp-1 text-[10px] text-slate-400">
+                            {prodotto.negozio_nome}
+                          </p>
+                        </div>
+                      </Link>
+                      <FavoritoButton
+                        tipo="prodotto"
+                        riferimentoId={prodotto.id}
+                        attivo={statoPreferiti.chiavi.has(chiavePreferito("prodotto", prodotto.id))}
+                        autenticato={statoPreferiti.autenticato}
+                        className="absolute right-2 top-2 z-10"
+                        label={prodotto.nome}
+                      />
+                    </div>
                   ))}
                 </div>
               </section>
@@ -127,47 +149,59 @@ export default async function RicercaPage({
                 </h2>
                 <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
                   {negozi.map((negozio) => (
-                    <Link
+                    <div
                       key={negozio.id}
-                      href={`/negozio/${negozio.slug}`}
-                      className="group flex gap-3 overflow-hidden rounded-xl border border-slate-100 bg-white p-2.5 transition hover:border-blue-200 hover:shadow-sm"
+                      className="relative flex gap-3 overflow-hidden rounded-xl border border-slate-100 bg-white p-2.5 transition hover:border-blue-200 hover:shadow-sm"
                     >
-                      <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-slate-100">
-                        <div
-                          role="img"
-                          aria-label={negozio.nome}
-                          className="h-full w-full bg-cover bg-center"
-                          style={{
-                            backgroundImage: `url(${getNegozioCardImmagine({
-                              logo_url: negozio.logo_url,
-                              categoria: negozio.categoria,
-                            })})`,
-                          }}
-                        />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <h3 className="truncate text-sm font-bold text-slate-900">
-                          {negozio.nome}
-                        </h3>
-                        {negozio.categoria && (
-                          <p className="text-[10px] font-semibold text-blue-600">
-                            {negozio.categoria}
-                          </p>
-                        )}
-                        {negozio.indirizzo && (
-                          <p className="mt-1 flex items-center gap-1 text-[11px] text-slate-500">
-                            <MapPin className="h-3 w-3 shrink-0" />
-                            <span className="truncate">{negozio.indirizzo}</span>
-                          </p>
-                        )}
+                      <Link
+                        href={`/negozio/${negozio.slug}`}
+                        className="group flex min-w-0 flex-1 gap-3"
+                      >
+                        <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-slate-100">
+                          <div
+                            role="img"
+                            aria-label={negozio.nome}
+                            className="h-full w-full bg-cover bg-center"
+                            style={{
+                              backgroundImage: `url(${getNegozioCardImmagine({
+                                logo_url: negozio.logo_url,
+                                categoria: negozio.categoria,
+                              })})`,
+                            }}
+                          />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="truncate text-sm font-bold text-slate-900">
+                            {negozio.nome}
+                          </h3>
+                          {negozio.categoria && (
+                            <p className="text-[10px] font-semibold text-blue-600">
+                              {negozio.categoria}
+                            </p>
+                          )}
+                          {negozio.indirizzo && (
+                            <p className="mt-1 flex items-center gap-1 text-[11px] text-slate-500">
+                              <MapPin className="h-3 w-3 shrink-0" />
+                              <span className="truncate">{negozio.indirizzo}</span>
+                            </p>
+                          )}
 {negozio.telefono && (
   <p className="flex items-center gap-1 text-[11px] text-slate-500">
     <Phone className="h-3 w-3 shrink-0" />
     <span>{negozio.telefono}</span>
   </p>
 )}
-                      </div>
-                    </Link>
+                        </div>
+                      </Link>
+                      <FavoritoButton
+                        tipo="negozio"
+                        riferimentoId={negozio.id}
+                        attivo={statoPreferiti.chiavi.has(chiavePreferito("negozio", negozio.id))}
+                        autenticato={statoPreferiti.autenticato}
+                        className="absolute right-2 top-2 z-10"
+                        label={negozio.nome}
+                      />
+                    </div>
                   ))}
                 </div>
               </section>
@@ -180,7 +214,7 @@ export default async function RicercaPage({
                   Nessun risultato trovato per &ldquo;{termine}&rdquo;.
                 </p>
                 <p className="mt-1 text-xs text-slate-400">
-                  Prova con termini diversi o chiedi all'AI.
+                  Prova con termini diversi o chiedi all&apos;AI.
                 </p>
               </div>
             )}

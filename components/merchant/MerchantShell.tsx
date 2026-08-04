@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { BarChart3, Home, LogOut } from "lucide-react";
+import { Home, LogOut } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import type { MerchantStoreSummary } from "@/lib/merchant/types";
 import MerchantStoreSwitcher from "./MerchantStoreSwitcher";
@@ -44,10 +44,10 @@ export default function MerchantShell({
             </Link>
             <div>
               <Link href="/merchant" className="text-2xl font-black tracking-tight text-white">
-                Area Commercianti
+                Area Amministratore
               </Link>
               <p className="mt-1 text-sm text-blue-100">
-                {currentStore?.nome ?? "Area Commercianti"}
+                {currentStore?.nome ?? "Area Amministratore"}
               </p>
             </div>
           </div>
@@ -90,22 +90,6 @@ export default function MerchantShell({
           </div>
 
           <MerchantStoreSwitcher stores={stores} currentStoreId={currentStoreId} />
-
-          {/* Admin dashboard link */}
-          <div className="rounded-3xl border border-white/70 bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
-              Monitoraggio
-            </p>
-            <div className="mt-4 space-y-2 text-sm font-semibold text-slate-700">
-              <Link
-                href="/merchant/admin"
-                className="flex items-center gap-3 rounded-2xl px-4 py-3 hover:bg-slate-50"
-              >
-                <BarChart3 className="h-4 w-4 text-blue-600" />
-                Scansioni AI
-              </Link>
-            </div>
-          </div>
         </aside>
 
         {/* Contenuto principale ──────────────────────────────────────────────── */}

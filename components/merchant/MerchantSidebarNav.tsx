@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutGrid, Package, Copy, Edit3, FolderOpen, LayoutTemplate,
+  LayoutGrid, Package, Copy, Edit3, FolderOpen,
 } from "lucide-react";
 import DuplicaNegozioWizard from "@/components/merchant/media/DuplicaNegozioWizard";
 
@@ -91,19 +91,6 @@ export default function MerchantSidebarNav({
       >
         <FolderOpen className="h-4 w-4 text-blue-600" />
         Libreria Media
-      </Link>
-
-      {/* Template */}
-      <Link
-        href={`/merchant/template`}
-        className={`flex items-center gap-3 rounded-2xl px-4 py-3 transition-all duration-150 ${
-          pathname.startsWith(`/merchant/template`)
-            ? "bg-blue-50 text-blue-700 shadow-sm"
-            : "hover:bg-slate-50"
-        }`}
-      >
-        <LayoutTemplate className="h-4 w-4 text-blue-600" />
-        Template
       </Link>
 
       {/* Duplica */}

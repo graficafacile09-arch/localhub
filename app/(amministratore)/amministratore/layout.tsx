@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import AdminShell from "@/components/amministratore/AdminShell";
-import { requireRole } from "@/lib/auth/session";
+import { getDatiAccount } from "@/components/Header/get-account-data";
+import { requireRuoli } from "@/lib/auth/session";
 
 export const metadata = {
   title: "Amministratore — InCittà",
@@ -10,14 +11,18 @@ export const metadata = {
 
 /**
  * Layout dell'area Amministratore.
- * FASE 7: accessibile SOLO agli utenti con ruolo admin.
+ * Accessibile SOLO agli utenti che possiedono il ruolo admin (multi-role).
  */
 export default async function AmministratoreLayout({
   children,
 }: {
   children: ReactNode;
 }) {
-  await requireRole(["admin"], "/login");
+  await requireRuoli(["admin"], "/login");
 
-  return <AdminShell>{children}</AdminShell>;
+  // I dati dell'account (server-only) vengono caricati qui e passati allo
+  // shell client, che li inoltra all'header per il menu utente.
+  const account = await getDatiAccount();
+
+  return <AdminShell account={account}>{children}</AdminShell>;
 }

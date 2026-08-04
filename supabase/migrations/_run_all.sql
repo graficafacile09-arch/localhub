@@ -753,3 +753,121 @@ on conflict (user_id, role) do nothing;
 -- insert into public.user_roles (user_id, role) values ('<UUID>', 'admin');
 
 commit;
+
+-- ═══════════════════════════════════════════════════════════════════
+-- 15. 20260803_cliente_profili.sql
+-- ═══════════════════════════════════════════════════════════════════
+begin;
+
+create table if not exists public.cliente_profili (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  nome text not null default '',
+  cognome text not null default '',
+  telefono text,
+  avatar_url text,
+  indirizzo text,
+  citta text,
+  cap text,
+  provincia text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  unique (user_id)
+);
+
+create index if not exists idx_cliente_profili_user_id
+  on public.cliente_profili (user_id);
+
+alter table public.cliente_profili enable row level security;
+
+drop policy if exists "cliente profilo self select" on public.cliente_profili;
+create policy "cliente profilo self select"
+  on public.cliente_profili
+  for select
+  using (auth.uid() = user_id);
+
+drop policy if exists "cliente profilo self insert" on public.cliente_profili;
+create policy "cliente profilo self insert"
+  on public.cliente_profili
+  for insert
+  with check (auth.uid() = user_id);
+
+drop policy if exists "cliente profilo self update" on public.cliente_profili;
+create policy "cliente profilo self update"
+  on public.cliente_profili
+  for update
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+drop trigger if exists cliente_profili_set_updated_at on public.cliente_profili;
+create trigger cliente_profili_set_updated_at
+  before update on public.cliente_profili
+  for each row execute function public.set_updated_at();
+
+notify pgrst, 'reload schema';
+
+commit;
+
+-- ═══════════════════════════════════════════════════════════════════
+-- 16. 20260804_preferiti.sql
+-- ═══════════════════════════════════════════════════════════════════
+begin;
+
+create table if not exists public.preferiti (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  tipo text not null check (tipo in ('negozio', 'prodotto')),
+  riferimento_id text not null,
+  slug text not null,
+  nome text not null,
+  immagine_url text,
+  categoria text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint preferiti_user_tipo_rif_unq unique (user_id, tipo, riferimento_id)
+);
+
+create index if not exists preferiti_user_created_idx
+  on public.preferiti (user_id, created_at desc);
+
+create index if not exists preferiti_user_tipo_idx
+  on public.preferiti (user_id, tipo);
+
+create index if not exists preferiti_rif_idx
+  on public.preferiti (tipo, riferimento_id);
+
+alter table public.preferiti enable row level security;
+
+drop policy if exists "preferiti self select" on public.preferiti;
+create policy "preferiti self select"
+  on public.preferiti
+  for select
+  using (auth.uid() = user_id);
+
+drop policy if exists "preferiti self insert" on public.preferiti;
+create policy "preferiti self insert"
+  on public.preferiti
+  for insert
+  with check (auth.uid() = user_id);
+
+drop policy if exists "preferiti self update" on public.preferiti;
+create policy "preferiti self update"
+  on public.preferiti
+  for update
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+drop policy if exists "preferiti self delete" on public.preferiti;
+create policy "preferiti self delete"
+  on public.preferiti
+  for delete
+  using (auth.uid() = user_id);
+
+drop trigger if exists preferiti_set_updated_at on public.preferiti;
+create trigger preferiti_set_updated_at
+  before update on public.preferiti
+  for each row execute function public.set_updated_at();
+
+notify pgrst, 'reload schema';
+
+commit;

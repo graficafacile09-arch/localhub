@@ -1,4 +1,5 @@
 import {
+  BadgePercent,
   BarChart3,
   Bell,
   Bot,
@@ -7,14 +8,15 @@ import {
   HelpCircle,
   Home,
   LayoutDashboard,
+  LayoutTemplate,
   Newspaper,
   Package,
   ScrollText,
   Settings,
   Star,
   Store,
+  Trash2,
   Users,
-  BadgePercent,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -45,6 +47,13 @@ export const adminNavItems: AdminNavItem[] = [
     description:
       "Gestione delle attività commerciali e professionali registrate sulla piattaforma.",
     icon: Store,
+  },
+  {
+    href: `${ADMIN_BASE}/cestino`,
+    label: "Cestino",
+    description:
+      "Negozi eliminati dalla piattaforma: ripristino o eliminazione definitiva (solo amministratore).",
+    icon: Trash2,
   },
   {
     href: `${ADMIN_BASE}/prodotti`,
@@ -88,6 +97,13 @@ export const adminNavItems: AdminNavItem[] = [
     icon: Star,
   },
   {
+    href: `${ADMIN_BASE}/template`,
+    label: "Template",
+    description:
+      "Template di piattaforma per la creazione di nuovi negozi (creazione, modifica ed eliminazione riservate all'amministratore).",
+    icon: LayoutTemplate,
+  },
+  {
     href: `${ADMIN_BASE}/contenuti`,
     label: "Contenuti",
     description:
@@ -100,6 +116,13 @@ export const adminNavItems: AdminNavItem[] = [
     description:
       "Configurazione e monitoraggio dell'assistente intelligente.",
     icon: Bot,
+  },
+  {
+    href: `${ADMIN_BASE}/scansioni`,
+    label: "Scansioni AI",
+    description:
+      "Monitoraggio in tempo reale delle scansioni AI dei prodotti (log provider, cache ed errori).",
+    icon: BarChart3,
   },
   {
     href: `${ADMIN_BASE}/statistiche`,

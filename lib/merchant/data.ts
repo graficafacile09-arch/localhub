@@ -135,7 +135,7 @@ export async function getMerchantStoresForUser(userId: string): Promise<Merchant
       return {
         data: [],
         setupRequired: true,
-        errorMessage: "La configurazione del database per l'area commerciante non è completa. Contatta l'amministratore.",
+        errorMessage: "La configurazione del database per l'area amministratore non è completa. Contatta l'amministratore.",
       };
     }
 

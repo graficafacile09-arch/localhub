@@ -1,0 +1,75 @@
+import {
+  Heart,
+  LayoutDashboard,
+  Package,
+  Settings,
+  ShoppingBasket,
+  UserRound,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+
+export type ClienteNavItem = {
+  href: string;
+  label: string;
+  description: string;
+  icon: LucideIcon;
+  /** true = voce solo UI, senza navigazione reale ancora. */
+  placeholder?: boolean;
+};
+
+/** Base path dell'Area Clienti. */
+export const CLIENTE_BASE = "/cliente";
+
+/** Voci del menu laterale (ordine di visualizzazione). */
+export const clienteNavItems: ClienteNavItem[] = [
+  {
+    href: CLIENTE_BASE,
+    label: "Dashboard",
+    description:
+      "Il tuo riepilogo personale: ordini, preferiti, offerte ed eventi.",
+    icon: LayoutDashboard,
+  },
+  {
+    href: `${CLIENTE_BASE}/ordini`,
+    label: "Ordini",
+    description: "Storico dei tuoi ordini con lo stato di spedizione e consegna.",
+    icon: Package,
+  },
+  {
+    href: `${CLIENTE_BASE}/preferiti`,
+    label: "Preferiti",
+    description: "I negozi e i prodotti che hai salvato per non perderli di vista.",
+    icon: Heart,
+  },
+  {
+    href: `${CLIENTE_BASE}/profilo`,
+    label: "Profilo",
+    description: "I tuoi dati personali, la tua immagine e le preferenze dell'account.",
+    icon: UserRound,
+  },
+  {
+    href: `${CLIENTE_BASE}/impostazioni`,
+    label: "Impostazioni",
+    description: "Preferenze, notifiche e sicurezza del tuo account.",
+    icon: Settings,
+  },
+];
+
+/** Trova la voce di navigazione per una route (per le pagine placeholder). */
+export function getClienteNavItem(href: string): ClienteNavItem {
+  const item = clienteNavItems.find((entry) => entry.href === href);
+  if (!item) {
+    throw new Error(`Voce di navigazione Area Clienti non trovata: ${href}`);
+  }
+  return item;
+}
+
+/** Voci della sezione footer della sidebar (navigazione rapida). */
+export const clienteFooterItems: ClienteNavItem[] = [
+  {
+    href: "/",
+    label: "Torna al sito",
+    description: "Apri la homepage pubblica di LocalHub.",
+    icon: ShoppingBasket,
+  },
+];

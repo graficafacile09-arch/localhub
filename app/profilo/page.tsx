@@ -1,17 +1,13 @@
-import { UserRound } from "lucide-react";
-import AccountPlaceholder from "@/components/AccountPlaceholder";
+import { permanentRedirect } from "next/navigation";
 
 export const metadata = {
   title: "Profilo — LocalHub",
-  description: "Il tuo profilo su LocalHub: dati personali e preferenze.",
 };
 
-export default function ProfiloPage() {
-  return (
-    <AccountPlaceholder
-      icon={UserRound}
-      title="Profilo"
-      description="Qui potrai gestire i tuoi dati personali, la tua immagine e le preferenze dell'account."
-    />
-  );
+/**
+ * Pagina legacy: il Profilo vive nell'Area Clienti (/cliente/profilo).
+ * Redirect permanente per non spezzare vecchi link e segnalibri.
+ */
+export default function ProfiloLegacyPage() {
+  permanentRedirect("/cliente/profilo");
 }

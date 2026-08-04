@@ -6,10 +6,8 @@ import {
   Home,
   LogOut,
   Package,
-  Settings,
   Sparkles,
   Store,
-  Trash2,
 } from "lucide-react";
 
 type MerchantBottomNavProps = {
@@ -20,7 +18,7 @@ export default function MerchantBottomNav({ storeId: storeIdProp }: MerchantBott
   const pathname = usePathname();
 
   // Pagine globali dell'area merchant che NON identificano un negozio
-  const GLOBAL_MERCHANT_SLUGS = ["trash", "admin", "nuovo", "template"];
+  const GLOBAL_MERCHANT_SLUGS = ["nuovo"];
 
   // Estrae negozioId direttamente dall'URL: /merchant/[negozioId]/...
   const urlStoreId = pathname.match(/^\/merchant\/([^/]+)/)?.[1] ?? null;
@@ -74,14 +72,6 @@ export default function MerchantBottomNav({ storeId: storeIdProp }: MerchantBott
       ai: false,
     },
     {
-      key: "cestino",
-      label: "Cestino",
-      icon: Trash2,
-      href: "/merchant/trash",
-      available: true,
-      ai: false,
-    },
-    {
       key: "altro",
       label: "Esci",
       icon: LogOut,
@@ -108,7 +98,7 @@ export default function MerchantBottomNav({ storeId: storeIdProp }: MerchantBott
       {/* ── Bottom Navigation Bar ────────────────────────────────────────────── */}
       <nav
         className="fixed bottom-0 left-0 right-0 z-[60] md:hidden"
-        aria-label="Navigazione area commercianti mobile"
+        aria-label="Navigazione area amministratore mobile"
       >
         <div
           className="border-t border-slate-200/80 bg-white/95 shadow-[0_-1px_0_0_rgba(0,0,0,0.06),0_-8px_32px_rgba(15,23,42,0.10)] backdrop-blur-md"
@@ -212,7 +202,7 @@ function MerchantBottomNavAltro() {
       <button
         type="submit"
         className="flex flex-col items-center gap-1.5 rounded-xl px-3 py-1.5 transition-all duration-150 active:scale-95"
-        aria-label="Esci dall'area commercianti"
+        aria-label="Esci dall'area amministratore"
       >
         <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-transparent transition-all duration-200">
           <LogOut className="h-5 w-5 text-slate-400" aria-hidden />

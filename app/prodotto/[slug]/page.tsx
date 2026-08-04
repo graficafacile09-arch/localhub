@@ -4,6 +4,8 @@ import type { Metadata } from "next";
 import Header from "@/components/Header/Header";
 import { risolviProdottoPubblico, getNegozio } from "@/lib/negozi";
 import { getProdottoImmagine } from "@/lib/prodotti-immagini";
+import { chiavePreferito, getStatoPreferitiPerPagina } from "@/lib/cliente/favorites";
+import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
 import { MapPin, Phone, MessageCircle, ArrowLeft, ExternalLink, ShoppingBag } from "lucide-react";
 
 type Params = { slug: string };
@@ -46,6 +48,9 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
 
   const id = prodotto.id as string;
   const negozio = await getNegozio(String(prodotto.negozio_id));
+
+  // Stato preferiti per il pulsante "Salva" del prodotto.
+  const statoPreferiti = await getStatoPreferitiPerPagina();
 
   const imageUrl = getProdottoImmagine({
     immagine_principale: "immagine_principale" in prodotto ? (prodotto.immagine_principale as string | null) : null,
@@ -157,7 +162,7 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
         </div>
 
         {/* Buy button - always visible */}
-        <div className="mt-4">
+        <div className="mt-4 space-y-2">
           <Link
             href={`/prodotto/${prodotto.slug}/acquista`}
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-base font-bold text-white shadow-sm transition hover:bg-blue-700"
@@ -165,6 +170,15 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
             <ShoppingBag className="h-5 w-5" />
             ACQUISTA
           </Link>
+          <FavoritoButton
+            tipo="prodotto"
+            riferimentoId={id}
+            attivo={statoPreferiti.chiavi.has(chiavePreferito("prodotto", id))}
+            autenticato={statoPreferiti.autenticato}
+            variante="inline"
+            className="w-full"
+            label={String(prodotto.nome ?? "")}
+          />
         </div>
 
         {/* Store info */}

@@ -18,7 +18,7 @@ export default async function MerchantEditProductPage({
     return (
       <MerchantEmptyState
         title="Configurazione database richiesta"
-        description={storeResult.errorMessage ?? "Esegui la migrazione SQL per attivare l'area commercianti."}
+        description={storeResult.errorMessage ?? "Esegui la migrazione SQL per attivare l'area amministratore."}
       />
     );
   }

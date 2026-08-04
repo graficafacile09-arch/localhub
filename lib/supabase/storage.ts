@@ -1,13 +1,14 @@
 import { createAdminSupabaseClient } from "./admin";
 
-const BUCKET_NAME = "product-images";
+const DEFAULT_BUCKET = "product-images";
 
 function isDataUrl(value: string): boolean {
   return /^data:image\/\w+;base64,/.test(value);
 }
 
 export async function uploadDataUrlToStorage(
-  dataUrl: string
+  dataUrl: string,
+  bucketName: string = DEFAULT_BUCKET
 ): Promise<string> {
   if (!isDataUrl(dataUrl)) {
     return dataUrl;
@@ -25,7 +26,7 @@ export async function uploadDataUrlToStorage(
   const supabase = createAdminSupabaseClient();
 
   const { error: uploadError } = await supabase.storage
-    .from(BUCKET_NAME)
+    .from(bucketName)
     .upload(fileName, buffer, {
       contentType: mimeType,
       upsert: false,
@@ -34,13 +35,13 @@ export async function uploadDataUrlToStorage(
   if (uploadError) {
     const msg = (uploadError.message ?? "").toLowerCase();
     if (msg.includes("bucket") || msg.includes("not found") || msg.includes("does not exist")) {
-      const { error: createError } = await supabase.storage.createBucket(BUCKET_NAME, {
+      const { error: createError } = await supabase.storage.createBucket(bucketName, {
         public: true,
       });
       if (createError) throw createError;
 
       const { error: retryError } = await supabase.storage
-        .from(BUCKET_NAME)
+        .from(bucketName)
         .upload(fileName, buffer, { contentType: mimeType, upsert: false });
       if (retryError) throw retryError;
     } else {
@@ -49,28 +50,29 @@ export async function uploadDataUrlToStorage(
   }
 
   const { data: publicUrlData } = supabase.storage
-    .from(BUCKET_NAME)
+    .from(bucketName)
     .getPublicUrl(fileName);
 
   return publicUrlData.publicUrl;
 }
 
-function extractStoragePath(publicUrl: string): string | null {
-  const expectedPrefix = `/object/public/${BUCKET_NAME}/`;
+function extractStoragePath(publicUrl: string, bucketName: string): string | null {
+  const expectedPrefix = `/object/public/${bucketName}/`;
   const idx = publicUrl.indexOf(expectedPrefix);
   if (idx === -1) return null;
   return publicUrl.slice(idx + expectedPrefix.length).split("?")[0];
 }
 
 export async function deleteImageFromStorage(
-  imageUrl: string | null | undefined
+  imageUrl: string | null | undefined,
+  bucketName: string = DEFAULT_BUCKET
 ): Promise<void> {
   if (!imageUrl) return;
 
   const supabase = createAdminSupabaseClient();
-  const storagePath = extractStoragePath(imageUrl);
+  const storagePath = extractStoragePath(imageUrl, bucketName);
 
   if (!storagePath) return;
 
-  await supabase.storage.from(BUCKET_NAME).remove([storagePath]);
+  await supabase.storage.from(bucketName).remove([storagePath]);
 }

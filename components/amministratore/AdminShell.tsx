@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { PanelLeftClose, PanelLeftOpen, ShieldCheck, X } from "lucide-react";
+import type { DatiAccount } from "@/components/Header/AccountMenu";
 import AdminHeader from "./AdminHeader";
 import AdminMobileTopBar from "./AdminMobileTopBar";
 import AdminSidebar from "./AdminSidebar";
@@ -12,8 +13,15 @@ import AdminSidebar from "./AdminSidebar";
  * - Desktop/tablet: sidebar collassabile (espansa o solo icone).
  * - Mobile: top bar con menu a drawer.
  * Non esegue alcuna logica: solo UI e navigazione.
+ * `account` arriva dal layout (server) e alimenta il menu utente reale.
  */
-export default function AdminShell({ children }: { children: ReactNode }) {
+export default function AdminShell({
+  account,
+  children,
+}: {
+  account: DatiAccount | null;
+  children: ReactNode;
+}) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -41,7 +49,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
         menuOpen={mobileOpen}
         onOpenMenu={() => setMobileOpen(true)}
       />
-      <AdminHeader />
+      <AdminHeader account={account} />
 
       {/* ── Layout principale ─────────────────────────────────────────────────── */}
       <div

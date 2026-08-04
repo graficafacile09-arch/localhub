@@ -6,12 +6,11 @@ import { useState } from "react";
 import {
   Building2, Image, Package, Sparkles, Tag, Calendar, Phone,
   MapPin, Clock, MessageCircle, Search, Bot, Settings,
-  LayoutDashboard, FolderOpen, Copy, Save, ChevronDown, ChevronRight,
+  LayoutDashboard, FolderOpen, Copy, ChevronDown, ChevronRight,
   Skull,
 } from "lucide-react";
 import type { ModuleStatus } from "./StoreEditor";
 import DuplicaNegozioWizard from "@/components/merchant/media/DuplicaNegozioWizard";
-import CreaTemplateWizard from "@/components/merchant/template/CreaTemplateWizard";
 
 const MODULE_GROUPS = [
   {
@@ -65,8 +64,6 @@ export default function EditorSidebar({ activeSlug, onSelect, onClose, moduleSta
   const params = useParams<{ negozioId: string }>();
   const storeId = params.negozioId;
   const [showDuplica, setShowDuplica] = useState(false);
-  const [showCreaTemplate, setShowCreaTemplate] = useState(false);
-  const [templateSuccess, setTemplateSuccess] = useState(false);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
     "Dati Base": true,
     "Catalogo": true,
@@ -93,14 +90,6 @@ export default function EditorSidebar({ activeSlug, onSelect, onClose, moduleSta
           storeId={storeId}
           storeName={storeName ?? "Negozio"}
           onClose={() => setShowDuplica(false)}
-        />
-      )}
-      {showCreaTemplate && (
-        <CreaTemplateWizard
-          storeId={storeId}
-          storeName={storeName ?? "Negozio"}
-          onClose={() => { setShowCreaTemplate(false); setTemplateSuccess(false); }}
-          onCreated={() => setTemplateSuccess(true)}
         />
       )}
 
@@ -216,14 +205,6 @@ export default function EditorSidebar({ activeSlug, onSelect, onClose, moduleSta
 
           {expandedGroups["Manutenzione"] && (
             <div className="ml-6 mt-0.5 space-y-0.5">
-              <button
-                type="button"
-                onClick={() => { setShowCreaTemplate(true); setTemplateSuccess(false); }}
-                className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-xs font-semibold text-slate-600 transition-all duration-150 hover:bg-slate-50 hover:text-slate-800"
-              >
-                <Save className={`h-3.5 w-3.5 shrink-0 ${templateSuccess ? "text-emerald-500" : "text-slate-400"}`} />
-                <span className="flex-1 truncate">{templateSuccess ? "Template salvato!" : "Salva come Template"}</span>
-              </button>
               <button
                 type="button"
                 onClick={() => setShowDuplica(true)}

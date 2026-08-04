@@ -178,6 +178,28 @@ export async function getTemplates(userId: string): Promise<UserTemplate[]> {
   return (data ?? []) as UserTemplate[];
 }
 
+/**
+ * Template DISPONIBILI per i commercianti (solo lettura).
+ * I template sono una funzione di piattaforma gestita dall'amministratore:
+ * il commerciante può sceglierli durante la creazione del negozio, ma NON
+ * crearli/modificarli/eliminarli. Per questo l'elenco include TUTTI i
+ * template di piattaforma, senza filtro sul proprietario.
+ */
+export async function getTemplateDisponibili(): Promise<UserTemplate[]> {
+  const supabase = createAdminSupabaseClient();
+
+  const { data, error } = await supabase
+    .from("template_negozi")
+    .select("id, nome, descrizione, categoria, is_system, created_at, updated_at")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    throw new Error(error.message ?? "Impossibile caricare i template.");
+  }
+
+  return (data ?? []) as UserTemplate[];
+}
+
 export async function getTemplateById(templateId: string): Promise<TemplateData> {
   const supabase = createAdminSupabaseClient();
 

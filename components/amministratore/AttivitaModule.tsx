@@ -91,8 +91,8 @@ export default function AttivitaModule({
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
               Gestisci tutti i negozi presenti nella piattaforma. Questo è il
-              pannello dell&apos;Amministratore, non quello del Commerciante:
-              qui vedi ogni attività, il suo proprietario e lo stato globale.
+              pannello di amministrazione della piattaforma: qui vedi ogni
+              attività, il suo proprietario e lo stato globale.
             </p>
           </div>
         </div>

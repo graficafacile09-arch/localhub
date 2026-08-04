@@ -2,22 +2,29 @@ import { test, expect } from "@playwright/test";
 import { BASE, UTENTI, loginUtente } from "./fixtures/auth";
 
 // Fixture merchant dedicata a QUESTA suite (merchantC): nessun altro test
-// concorrente la usa, quindi i flussi di delete/restore non confliggono.
-async function login(page: import("@playwright/test").Page) {
+// concorrente la usa, quindi i flussi delete/restore non confliggono.
+// L'account admin è condiviso SOLO tra test che non eseguono mai signOut.
+async function loginMerchant(page: import("@playwright/test").Page) {
   await loginUtente(page, UTENTI.merchantC, { waitFor: /\/merchant/ });
   await expect(page).toHaveURL(/\/merchant/);
 }
 
+async function loginAdmin(page: import("@playwright/test").Page) {
+  await loginUtente(page, UTENTI.admin, { waitFor: `${BASE}/amministratore` });
+}
+
 test.describe.configure({ mode: "serial" });
 
-test.describe("CESTINO — soft delete, trash e restore", () => {
-  test("create → elimina (soft) → trash → restore", async ({ page }) => {
+test.describe("CESTINO DI PIATTAFORMA — solo amministratore", () => {
+  test("merchant elimina il proprio negozio; il ripristino è solo admin", async ({
+    page,
+  }) => {
     test.setTimeout(180_000);
 
-    /* ── 1. Login ─────────────────────────────────────────────────── */
-    await login(page);
+    /* ── 1. Login merchant ─────────────────────────────────────────── */
+    await loginMerchant(page);
 
-    /* ── 2. Crea negozio via API ──────────────────────────────────── */
+    /* ── 2. Crea negozio via API ───────────────────────────────────── */
     const nome = `E2E Cestino ${Date.now()}`;
     const createJson = await page.evaluate(async (n) => {
       const r = await fetch("/api/merchant/stores", {
@@ -30,7 +37,7 @@ test.describe("CESTINO — soft delete, trash e restore", () => {
     const storeId: string = createJson.data?.storeId;
     expect(storeId, "create must return storeId").toBeTruthy();
 
-    /* ── 3. DELETE → soft delete (deleted_at) ─────────────────────── */
+    /* ── 3. DELETE → soft delete (deleted_at) ──────────────────────── */
     const del = await page.evaluate(async (id) => {
       const r = await fetch(`/api/merchant/stores/${id}`, { method: "DELETE" });
       return { status: r.status, json: await r.json() };
@@ -38,16 +45,20 @@ test.describe("CESTINO — soft delete, trash e restore", () => {
     expect(del.status, "DELETE should be 200").toBe(200);
     expect(del.json.data.deleted).toBe(true);
 
-    /* ── 4. GET /api/merchant/trash → deve contenere il negozio ──── */
-    const trashJson = await page.evaluate(async () => {
+    /* ── 4. Il merchant NON ha più né cestino né restore (funzione admin) */
+    const trashGone = await page.evaluate(async () => {
       const r = await fetch("/api/merchant/trash");
-      return r.json();
+      return r.status;
     });
-    expect(trashJson.success).toBe(true);
-    const trashIds = (trashJson.data.stores as { id: string }[]).map((s) => s.id);
-    expect(trashIds, "trash must contain the deleted store").toContain(storeId);
+    expect(trashGone, "merchant trash API must be gone (404)").toBe(404);
 
-    /* ── 5. Lista negozi merchant → NON deve contenere il negozio ── */
+    const restoreGone = await page.evaluate(async (id) => {
+      const r = await fetch(`/api/merchant/stores/${id}/restore`, { method: "POST" });
+      return r.status;
+    }, storeId);
+    expect(restoreGone, "merchant restore API must be gone (404)").toBe(404);
+
+    /* ── 5. Lista negozi merchant → NON contiene il negozio ───────── */
     const listJson = await page.evaluate(async () => {
       const r = await fetch("/api/merchant/stores");
       return r.json();
@@ -55,16 +66,34 @@ test.describe("CESTINO — soft delete, trash e restore", () => {
     const listIds = (listJson.data.stores as { id: string }[]).map((s) => s.id);
     expect(listIds, "merchant store list must exclude the deleted store").not.toContain(storeId);
 
-    /* ── 6. POST restore → deleted_at = null ──────────────────────── */
+    /* ── 6. L'ADMIN vede il negozio nel Cestino globale ───────────── */
+    await loginAdmin(page);
+    const trashJson = await page.evaluate(async () => {
+      const r = await fetch("/api/amministratore/cestino");
+      return { status: r.status, json: await r.json() };
+    });
+    expect(trashJson.status, "admin trash API should be 200").toBe(200);
+    const trashIds = (trashJson.json.data.stores as { id: string }[]).map((s) => s.id);
+    expect(trashIds, "admin trash must contain the deleted store").toContain(storeId);
+
+    /* ── 7. L'admin ripristina via API ─────────────────────────────── */
     const restore = await page.evaluate(async (id) => {
-      const r = await fetch(`/api/merchant/stores/${id}/restore`, { method: "POST" });
+      const r = await fetch(`/api/amministratore/negozi/${id}/ripristina`, { method: "POST" });
       return { status: r.status, json: await r.json() };
     }, storeId);
-    expect(restore.status, "restore should be 200").toBe(200);
+    expect(restore.status, "admin restore should be 200").toBe(200);
     expect(restore.json.data.restored).toBe(true);
-    expect(restore.json.data.storeId).toBe(storeId);
 
-    /* ── 7. Lista negozi merchant → di nuovo presente ─────────────── */
+    /* ── 8. Il negozio non è più nel Cestino admin ─────────────────── */
+    const trashJson2 = await page.evaluate(async () => {
+      const r = await fetch("/api/amministratore/cestino");
+      return r.json();
+    });
+    const trashIds2 = (trashJson2.data.stores as { id: string }[]).map((s) => s.id);
+    expect(trashIds2, "restored store must no longer be in admin trash").not.toContain(storeId);
+
+    /* ── 9. Il merchant ritrova il negozio nella sua lista ─────────── */
+    await loginMerchant(page);
     const listJson2 = await page.evaluate(async () => {
       const r = await fetch("/api/merchant/stores");
       return r.json();
@@ -72,37 +101,20 @@ test.describe("CESTINO — soft delete, trash e restore", () => {
     const listIds2 = (listJson2.data.stores as { id: string }[]).map((s) => s.id);
     expect(listIds2, "restored store must be back in the merchant list").toContain(storeId);
 
-    /* ── 8. Il negozio ripristinato NON è nel cestino ─────────────── */
-    const trashJson2 = await page.evaluate(async () => {
-      const r = await fetch("/api/merchant/trash");
-      return r.json();
-    });
-    const trashIds2 = (trashJson2.data.stores as { id: string }[]).map((s) => s.id);
-    expect(trashIds2, "restored store must no longer be in trash").not.toContain(storeId);
-
-    /* ── 9. Cleanup: rimetti nel cestino ──────────────────────────── */
+    /* ── 10. Cleanup: rimetti il negozio nel cestino (admin) ──────── */
+    await loginAdmin(page);
     await page.evaluate(async (id) => {
-      await fetch(`/api/merchant/stores/${id}`, { method: "DELETE" });
+      await fetch(`/api/amministratore/negozi/${id}/cestina`, { method: "POST" });
     }, storeId);
   });
 
-  test("UI: pagina /merchant/trash — lista, dati, ripristina, cestino vuoto", async ({ page }) => {
+  test("UI: pagina /amministratore/cestino — lista, dati e ripristino", async ({
+    page,
+  }) => {
     test.setTimeout(240_000);
 
-    /* ── 1. Login ─────────────────────────────────────────────────── */
-    await login(page);
-
-    /* ── 2. Svuota il cestino (restore di tutti i residui E2E) ────── */
-    await page.evaluate(async () => {
-      const r = await fetch("/api/merchant/trash");
-      const json = await r.json();
-      const stores = (json.data?.stores ?? []) as { id: string }[];
-      for (const s of stores) {
-        await fetch(`/api/merchant/stores/${s.id}/restore`, { method: "POST" });
-      }
-    });
-
-    /* ── 3. Crea e soft-delete un negozio via API ─────────────────── */
+    /* ── 1. Merchant: crea e soft-delete un negozio via API ───────── */
+    await loginMerchant(page);
     const nome = `E2E Trash UI ${Date.now()}`;
     const createJson = await page.evaluate(async (n) => {
       const r = await fetch("/api/merchant/stores", {
@@ -118,18 +130,20 @@ test.describe("CESTINO — soft delete, trash e restore", () => {
       await fetch(`/api/merchant/stores/${id}`, { method: "DELETE" });
     }, storeId);
 
-    /* ── 4. Naviga a /merchant/trash ──────────────────────────────── */
-    await page.goto(`${BASE}/merchant/trash`, { waitUntil: "networkidle" });
-    await expect(page).toHaveURL(/\/merchant\/trash/);
-    await expect(page.locator("body")).toContainText("Cestino");
+    /* ── 2. Admin: naviga a /amministratore/cestino ───────────────── */
+    await loginAdmin(page);
+    await page.goto(`${BASE}/amministratore/cestino`, { waitUntil: "networkidle" });
+    await expect(page).toHaveURL(/\/amministratore\/cestino/);
+    await expect(page.getByRole("heading", { level: 1, name: "Cestino" })).toBeVisible();
 
-    /* ── 4b. Desktop: sidebar contiene "Cestino" ed è evidenziata ─── */
-    const sidebarCestino = page.locator("aside").getByRole("link", { name: "Cestino", exact: true });
-    await expect(sidebarCestino, "sidebar must contain Cestino link").toBeVisible();
-    await expect(sidebarCestino, "sidebar Cestino must be highlighted on /merchant/trash").toHaveClass(/bg-blue-50/);
+    // Sidebar: la voce Cestino è presente ed evidenziata.
+    const sidebarCestino = page
+      .locator("aside")
+      .getByRole("link", { name: "Cestino", exact: true });
+    await expect(sidebarCestino, "admin sidebar must contain Cestino").toBeVisible();
+    await expect(sidebarCestino, "sidebar Cestino must be highlighted").toHaveClass(/bg-blue-50/);
 
-    /* ── 5. Il negozio è in lista con nome, categoria, data ───────── */
-    // La card del negozio è il div che contiene sia il nome sia il pulsante Ripristina
+    /* ── 3. Il negozio è in lista con nome, categoria e data ──────── */
     const row = page
       .locator("div")
       .filter({ hasText: nome })
@@ -141,51 +155,40 @@ test.describe("CESTINO — soft delete, trash e restore", () => {
     const restoreButton = row.getByRole("button", { name: "Ripristina" });
     await expect(restoreButton).toBeVisible();
 
-    /* ── 6. Click Ripristina → sparisce dalla lista ───────────────── */
+    /* ── 4. Click Ripristina → sparisce dalla lista ───────────────── */
     await restoreButton.click();
     await expect(page.locator("body")).not.toContainText(nome, { timeout: 10000 });
 
-    /* ── 7. API: negozio di nuovo nella lista merchant ────────────── */
-    const listJson = await page.evaluate(async () => {
-      const r = await fetch("/api/merchant/stores");
+    /* ── 5. API: negozio di nuovo attivo ───────────────────────────── */
+    const trashJson = await page.evaluate(async () => {
+      const r = await fetch("/api/amministratore/cestino");
       return r.json();
     });
-    const listIds = (listJson.data.stores as { id: string }[]).map((s) => s.id);
-    expect(listIds, "restored store must be back in merchant list").toContain(storeId);
+    const trashIds = (trashJson.data.stores as { id: string }[]).map((s) => s.id);
+    expect(trashIds, "restored store must no longer be in admin trash").not.toContain(storeId);
 
-    /* ── 8. Cestino di nuovo vuoto → messaggio vuoto ──────────────── */
-    await page.reload({ waitUntil: "networkidle" });
-    await expect(page.locator("body")).toContainText("Il cestino è vuoto", { timeout: 10000 });
-
-    /* ── 9. Cleanup: rimetti nel cestino ──────────────────────────── */
+    /* ── 6. Cleanup: rimetti il negozio nel cestino ───────────────── */
     await page.evaluate(async (id) => {
-      await fetch(`/api/merchant/stores/${id}`, { method: "DELETE" });
+      await fetch(`/api/amministratore/negozi/${id}/cestina`, { method: "POST" });
     }, storeId);
   });
 
-  test("UI mobile: bottom nav contiene Cestino e la pagina si apre", async ({ page }) => {
-    test.setTimeout(240_000);
+  test("un commerciante NON può leggere né ripristinare dal Cestino admin", async ({
+    page,
+  }) => {
+    test.setTimeout(180_000);
 
-    /* ── 1. Viewport mobile + Login ───────────────────────────────── */
-    await page.setViewportSize({ width: 390, height: 844 });
-    await login(page);
+    await loginMerchant(page);
 
-    /* ── 2. Naviga a /merchant/trash ──────────────────────────────── */
-    await page.goto(`${BASE}/merchant/trash`, { waitUntil: "networkidle" });
-    await expect(page).toHaveURL(/\/merchant\/trash/);
+    /* API admin: 403 per un merchant puro. */
+    const adminTrash = await page.evaluate(async () => {
+      const r = await fetch("/api/amministratore/cestino");
+      return { status: r.status };
+    });
+    expect(adminTrash.status, "merchant reading admin trash must be 403").toBe(403);
 
-    /* ── 3. Bottom nav mobile contiene "Cestino" ──────────────────── */
-    const bottomNav = page.locator('nav[aria-label="Navigazione area commercianti mobile"]');
-    await expect(bottomNav, "mobile bottom nav must exist").toBeVisible();
-    const mobileCestino = bottomNav.getByRole("link", { name: "Cestino", exact: true });
-    await expect(mobileCestino, "bottom nav must contain Cestino").toBeVisible();
-    await expect(mobileCestino, "Cestino must be highlighted on /merchant/trash").toHaveAttribute("aria-current", "page");
-
-    /* ── 4. Click Cestino → la pagina si apre ─────────────────────── */
-    // force: il pulsante flottante "Apri l'Assistente AI" (fixed bottom-right)
-    // intercetta i click sul centro del link; il Link Next.js naviga comunque.
-    await mobileCestino.click({ force: true });
-    await expect(page).toHaveURL(/\/merchant\/trash/);
-    await expect(page.locator("h1")).toContainText("Cestino");
+    /* La pagina /amministratore è protetta: il merchant viene reindirizzato. */
+    await page.goto(`${BASE}/amministratore`, { waitUntil: "networkidle" });
+    await expect(page).toHaveURL(`${BASE}/`);
   });
 });

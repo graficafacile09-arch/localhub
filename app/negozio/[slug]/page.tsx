@@ -6,6 +6,8 @@ import StoreProductCard from "@/components/negozio/StoreProductCard";
 import { OpenAssistantLink } from "@/components/assistant/OpenAssistantButton";
 import { risolviNegozioPubblico, getProdottiNegozio } from "@/lib/negozi";
 import { getNegozioCardImmagine } from "@/lib/negozi-card-immagini";
+import { chiavePreferito, getStatoPreferitiPerPagina } from "@/lib/cliente/favorites";
+import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
 import { MapPin, Phone, MessageCircle, ExternalLink } from "lucide-react";
 import OpeningHoursDisplay from "@/components/negozio/OpeningHoursDisplay";
 
@@ -50,6 +52,9 @@ export default async function PaginaNegozio({ params }: { params: Promise<Params
   const id = negozio.id as string;
   const slugCanonico = (negozio.slug as string) ?? "";
   const prodotti = await getProdottiNegozio(id);
+
+  // Stato preferiti per il pulsante "Salva negozio" e per le card prodotto.
+  const statoPreferiti = await getStatoPreferitiPerPagina();
 
   const imageUrl = getNegozioCardImmagine({
     logo_url: (negozio.logo_url as string) ?? null,
@@ -153,7 +158,15 @@ export default async function PaginaNegozio({ params }: { params: Promise<Params
         )}
 
         {/* Azioni */}
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <FavoritoButton
+            tipo="negozio"
+            riferimentoId={id}
+            attivo={statoPreferiti.chiavi.has(chiavePreferito("negozio", id))}
+            autenticato={statoPreferiti.autenticato}
+            variante="inline"
+            label={String(negozio.nome ?? "")}
+          />
           {negozio.telefono && (
             <a
               href={buildWhatsAppUrl()}
@@ -205,17 +218,23 @@ export default async function PaginaNegozio({ params }: { params: Promise<Params
               Prodotti ({prodotti.length})
             </h2>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
-              {prodotti.map((prodotto: Record<string, unknown>) => (
-                <StoreProductCard
-                  key={prodotto.id as string}
-                  slug={(prodotto.slug as string) ?? String(prodotto.id)}
-                  nome={prodotto.nome as string}
-                  descrizione={(prodotto.descrizione as string) ?? null}
-                  prezzo={prodotto.prezzo as number}
-                  categoria={(prodotto.categoria as string) ?? null}
-                  immagine_principale={(prodotto.immagine_principale as string) ?? null}
-                />
-              ))}
+              {prodotti.map((prodotto: Record<string, unknown>) => {
+                const prodottoId = String(prodotto.id);
+                return (
+                  <StoreProductCard
+                    key={prodottoId}
+                    id={prodottoId}
+                    slug={(prodotto.slug as string) ?? prodottoId}
+                    nome={prodotto.nome as string}
+                    descrizione={(prodotto.descrizione as string) ?? null}
+                    prezzo={prodotto.prezzo as number}
+                    categoria={(prodotto.categoria as string) ?? null}
+                    immagine_principale={(prodotto.immagine_principale as string) ?? null}
+                    preferitoAttivo={statoPreferiti.chiavi.has(chiavePreferito("prodotto", prodottoId))}
+                    autenticato={statoPreferiti.autenticato}
+                  />
+                );
+              })}
             </div>
           </section>
         )}

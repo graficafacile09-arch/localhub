@@ -2,8 +2,13 @@ import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { getRoleForUser, redirectPerRuolo } from "@/lib/auth/roles";
 
+/**
+ * Registrazione CLIENTE (acquirente).
+ * Crea un account con SOLO il ruolo customer: nessun negozio, nessuna
+ * funzione da commerciante. Dopo la registrazione l'utente viene portato
+ * alla homepage e potrà accedere all'Area Clienti (/cliente).
+ */
 export async function POST(request: Request) {
   const loginUrl = new URL("/login", request.url);
 
@@ -17,9 +22,8 @@ export async function POST(request: Request) {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const passwordConfirm = String(formData.get("password_confirm") ?? "");
-  const storeName = String(formData.get("store_name") ?? "").trim();
 
-  if (!name || !email || !password || !storeName) {
+  if (!name || !email || !password) {
     loginUrl.searchParams.set("error", "Compila tutti i campi obbligatori.");
     return NextResponse.redirect(loginUrl);
   }
@@ -38,7 +42,7 @@ export async function POST(request: Request) {
   const { data: signUpData, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: { full_name: name, store_name: storeName } },
+    options: { data: { full_name: name } },
   });
 
   if (error) {
@@ -48,7 +52,6 @@ export async function POST(request: Request) {
 
   const userId = signUpData?.user?.id;
 
-  // Auto-conferma utente tramite admin client (disabilita verifica email in sviluppo)
   if (userId) {
     try {
       const adminClient = createAdminSupabaseClient();
@@ -56,24 +59,10 @@ export async function POST(request: Request) {
         email_confirm: true,
       });
 
-      // Crea automaticamente il negozio per il nuovo merchant
-      const { error: storeError } = await adminClient
-        .from("negozi")
-        .insert({
-          nome: storeName,
-          categoria: "Altro",
-          owner_user_id: userId,
-        });
-
-      if (storeError) {
-        loginUrl.searchParams.set("error", "Account creato ma impossibile creare il negozio. Contatta l'assistenza.");
-        return NextResponse.redirect(loginUrl);
-      }
-
-      // Assegna il ruolo merchant (FASE 7): la registrazione crea un negozio.
+      // Assegna il ruolo customer: l'account acquista, non vende.
       const { error: roleError } = await adminClient
         .from("user_roles")
-        .insert({ user_id: userId, role: "merchant" });
+        .insert({ user_id: userId, role: "customer" });
 
       if (roleError) {
         loginUrl.searchParams.set("error", "Account creato ma impossibile assegnare il ruolo. Contatta l'assistenza.");
@@ -91,7 +80,6 @@ export async function POST(request: Request) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Redirect automatico in base al ruolo (FASE 7).
-  const role = userId ? await getRoleForUser(userId) : "customer";
-  return NextResponse.redirect(new URL(redirectPerRuolo(role), request.url));
+  // Il cliente viene portato alla homepage (customer → /).
+  return NextResponse.redirect(new URL("/", request.url));
 }

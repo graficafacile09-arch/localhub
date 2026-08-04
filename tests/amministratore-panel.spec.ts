@@ -14,18 +14,21 @@ test.beforeEach(async ({ page }) => {
   await accediComeAdmin(page);
 });
 
-/** Le 14 voci del menu Amministratore (etichetta → route). */
+/** Le voci del menu Amministratore (etichetta → route). */
 const VOCI: Array<[string, string]> = [
   ["Panoramica", "/amministratore"],
   ["Attività", "/amministratore/attivita"],
+  ["Cestino", "/amministratore/cestino"],
   ["Prodotti", "/amministratore/prodotti"],
   ["Offerte", "/amministratore/offerte"],
   ["Eventi", "/amministratore/eventi"],
   ["Utenti", "/amministratore/utenti"],
   ["Categorie", "/amministratore/categorie"],
   ["Negozi in evidenza", "/amministratore/negozi-in-evidenza"],
+  ["Template", "/amministratore/template"],
   ["Contenuti", "/amministratore/contenuti"],
   ["Assistente AI", "/amministratore/assistente-ai"],
+  ["Scansioni AI", "/amministratore/scansioni"],
   ["Statistiche", "/amministratore/statistiche"],
   ["Segnalazioni", "/amministratore/segnalazioni"],
   ["Impostazioni", "/amministratore/impostazioni"],
@@ -37,6 +40,9 @@ const ROUTE_NON_PLACEHOLDER = [
   "/amministratore",
   "/amministratore/utenti",
   "/amministratore/attivita",
+  "/amministratore/cestino",
+  "/amministratore/template",
+  "/amministratore/scansioni",
 ];
 
 test.describe("PANNELLO AMMINISTRATORE — struttura", () => {
@@ -90,7 +96,7 @@ test.describe("PANNELLO AMMINISTRATORE — struttura", () => {
     ).toBeVisible();
   });
 
-  test("il menu laterale elenca tutte le 14 voci con le route corrette", async ({
+  test("il menu laterale elenca tutte le voci con le route corrette", async ({
     page,
   }) => {
     await page.goto(`${BASE}/amministratore`, { waitUntil: "networkidle" });
@@ -147,7 +153,7 @@ test.describe("PANNELLO AMMINISTRATORE — struttura", () => {
     }
   });
 
-  test("l'header mostra brand LocalHub, titolo Amministratore e ruolo", async ({
+  test("l'header mostra brand LocalHub, titolo Amministratore e menu utente reale", async ({
     page,
   }) => {
     await page.goto(`${BASE}/amministratore`, { waitUntil: "networkidle" });
@@ -156,21 +162,24 @@ test.describe("PANNELLO AMMINISTRATORE — struttura", () => {
       page.getByRole("link", { name: "LocalHub — torna al sito" })
     ).toBeVisible();
     await expect(page.locator("body")).toContainText("Amministratore");
-    await expect(page.locator("body")).toContainText("Ruolo: Amministratore");
+    await expect(
+      page.getByRole("button", { name: /Menu utente di/ })
+    ).toBeVisible();
   });
 
-  test("il menu utente si apre con Il mio profilo, Impostazioni ed Esci", async ({
-    page,
-  }) => {
+  test("il menu utente si apre con le voci dell'admin", async ({ page }) => {
     await page.goto(`${BASE}/amministratore`, { waitUntil: "networkidle" });
 
     const trigger = page
-      .getByRole("button", { name: /Amministratore/ })
+      .getByRole("button", { name: /Menu utente di/ })
       .first();
     await trigger.click();
 
     await expect(
-      page.getByRole("menuitem", { name: "Il mio profilo" })
+      page.getByRole("menuitem", { name: "Area Amministratore" })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("menuitem", { name: "Vai al sito" })
     ).toBeVisible();
     await expect(
       page.getByRole("menuitem", { name: "Impostazioni" })

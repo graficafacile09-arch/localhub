@@ -1,17 +1,13 @@
-import { ShoppingBag } from "lucide-react";
-import AccountPlaceholder from "@/components/AccountPlaceholder";
+import { permanentRedirect } from "next/navigation";
 
 export const metadata = {
   title: "Ordini — LocalHub",
-  description: "I tuoi ordini su LocalHub.",
 };
 
-export default function OrdiniPage() {
-  return (
-    <AccountPlaceholder
-      icon={ShoppingBag}
-      title="Ordini"
-      description="Qui troverai lo storico dei tuoi ordini con lo stato di spedizione e consegna."
-    />
-  );
+/**
+ * Pagina legacy: gli Ordini vivono nell'Area Clienti (/cliente/ordini).
+ * Redirect permanente per non spezzare vecchi link e segnalibri.
+ */
+export default function OrdiniLegacyPage() {
+  permanentRedirect("/cliente/ordini");
 }

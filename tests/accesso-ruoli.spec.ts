@@ -2,13 +2,16 @@ import { test, expect } from "@playwright/test";
 import { BASE, UTENTI, loginUtente } from "./fixtures/auth";
 
 test.describe("SISTEMA DI ACCESSO E RUOLI", () => {
-  test("anonimo: /amministratore e /merchant reindirizzano a /login; header mostra Accedi", async ({
+  test("anonimo: /amministratore, /merchant e /cliente reindirizzano a /login; header mostra Accedi", async ({
     page,
   }) => {
     await page.goto(`${BASE}/amministratore`, { waitUntil: "networkidle" });
     await expect(page).toHaveURL(/\/login/);
 
     await page.goto(`${BASE}/merchant`, { waitUntil: "networkidle" });
+    await expect(page).toHaveURL(/\/login/);
+
+    await page.goto(`${BASE}/cliente`, { waitUntil: "networkidle" });
     await expect(page).toHaveURL(/\/login/);
 
     // Homepage: niente più "Aggiungi Prodotto", ma il pulsante Accedi.
@@ -19,16 +22,20 @@ test.describe("SISTEMA DI ACCESSO E RUOLI", () => {
     await expect(page.getByText("Aggiungi Prodotto")).toHaveCount(0);
   });
 
-  test("admin: login → /amministratore; menu utente da amministratore", async ({
+  test("admin puro: login → /amministratore; menu con Area Amministratore; /cliente negato", async ({
     page,
   }) => {
     await loginUtente(page, UTENTI.admin, { waitFor: `${BASE}/amministratore` });
+
+    // Un admin puro (senza ruolo customer) NON entra nell'Area Clienti.
+    await page.goto(`${BASE}/cliente`, { waitUntil: "networkidle" });
+    await expect(page).toHaveURL(`${BASE}/`);
 
     await page.goto(`${BASE}/`, { waitUntil: "networkidle" });
     await page.getByRole("button", { name: /Menu utente di/ }).click();
 
     await expect(
-      page.getByRole("menuitem", { name: "Pannello Amministratore" })
+      page.getByRole("menuitem", { name: "Area Amministratore" })
     ).toBeVisible();
     await expect(
       page.getByRole("menuitem", { name: "Vai al sito" })
@@ -36,21 +43,21 @@ test.describe("SISTEMA DI ACCESSO E RUOLI", () => {
     await expect(
       page.getByRole("menuitem", { name: "Impostazioni" })
     ).toBeVisible();
+    // Nessuna voce per le altre aree (admin puro): l'unica voce
+    // "Area Amministratore" è quella dell'area admin (FASE 1 rename).
     await expect(
-      page.getByRole("menuitem", { name: "Profilo" })
-    ).toBeVisible();
-    // L'admin di test non possiede negozi → nessuna voce "Area Commerciante".
+      page.getByRole("menuitem", { name: "Area Amministratore" })
+    ).toHaveCount(1);
     await expect(
-      page.getByRole("menuitem", { name: "Area Commerciante" })
+      page.getByRole("menuitem", { name: "Area Clienti" })
     ).toHaveCount(0);
     await expect(page.getByRole("menuitem", { name: "Esci" })).toBeVisible();
   });
 
-  test("customer: login → homepage; /merchant e /amministratore negati; menu acquirente", async ({
+  test("customer: login → homepage; /merchant e /amministratore negati; Area Clienti OK", async ({
     page,
   }) => {
-    // Account dedicato (customerA): nessun altro test concorrente lo usa,
-    // quindi la sessione non può essere revocata da un signOut altrui.
+    // Account dedicato (customerA): nessun altro test concorrente lo usa.
     await loginUtente(page, UTENTI.customerA, { waitFor: `${BASE}/` });
 
     await page.goto(`${BASE}/merchant`, { waitUntil: "networkidle" });
@@ -59,7 +66,16 @@ test.describe("SISTEMA DI ACCESSO E RUOLI", () => {
     await page.goto(`${BASE}/amministratore`, { waitUntil: "networkidle" });
     await expect(page).toHaveURL(`${BASE}/`);
 
+    // L'Area Clienti è accessibile al customer.
+    await page.goto(`${BASE}/cliente`, { waitUntil: "networkidle" });
+    await expect(page).toHaveURL(/\/cliente/);
+    await expect(page.locator("body")).toContainText("Area Clienti");
+
+    await page.goto(`${BASE}/`, { waitUntil: "networkidle" });
     await page.getByRole("button", { name: /Menu utente di/ }).click();
+    await expect(
+      page.getByRole("menuitem", { name: "Area Clienti" })
+    ).toBeVisible();
     await expect(
       page.getByRole("menuitem", { name: "Profilo" })
     ).toBeVisible();
@@ -72,28 +88,31 @@ test.describe("SISTEMA DI ACCESSO E RUOLI", () => {
     await expect(page.getByRole("menuitem", { name: "Esci" })).toBeVisible();
   });
 
-  test("merchant: login → /merchant; menu utente da commerciante", async ({
+  test("merchant: login → /merchant; menu da commerciante; /cliente negato", async ({
     page,
   }) => {
-    // Account dedicato (merchantD): nessun test concorrente fa signOut su
-    // questo account (merchantA/B/C sono usati dalle altre suite).
+    // Account dedicato (merchantD): nessun altro test concorrente fa signOut
+    // su questo account (merchantA/B/C sono usati dalle altre suite).
     await loginUtente(page, UTENTI.merchantD, { waitFor: /\/merchant/ });
+
+    // Un merchant puro (senza ruolo customer) NON entra nell'Area Clienti.
+    await page.goto(`${BASE}/cliente`, { waitUntil: "networkidle" });
+    await expect(page).toHaveURL(`${BASE}/`);
 
     await page.goto(`${BASE}/`, { waitUntil: "networkidle" });
     await page.getByRole("button", { name: /Menu utente di/ }).click();
 
-    for (const voce of [
-      "Il mio negozio",
-      "Prodotti",
-      "Offerte",
-      "Eventi",
-      "Statistiche",
-      "Profilo",
-    ]) {
-      await expect(
-        page.getByRole("menuitem", { name: voce })
-      ).toBeVisible();
-    }
+    await expect(
+      page.getByRole("menuitem", { name: "Area Amministratore" })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("menuitem", { name: "Vai al sito" })
+    ).toBeVisible();
+    // Nessuna voce per le altre aree (merchant puro): la voce dell'area
+    // merchant è quella chiamata "Area Amministratore" (FASE 1 rename).
+    await expect(
+      page.getByRole("menuitem", { name: "Area Clienti" })
+    ).toHaveCount(0);
     await expect(page.getByRole("menuitem", { name: "Esci" })).toBeVisible();
   });
 

@@ -3,19 +3,16 @@
 import { useEffect, useRef, useState, type ComponentType } from "react";
 import Link from "next/link";
 import {
-  BarChart3,
-  CalendarDays,
   ChevronDown,
   Globe,
   Heart,
   LogIn,
   LogOut,
-  Package,
   Settings,
   ShieldCheck,
   ShoppingBag,
+  ShoppingBasket,
   Store,
-  Tag,
   UserRound,
 } from "lucide-react";
 import type { RuoloUtente } from "@/lib/auth/roles";
@@ -23,10 +20,13 @@ import type { RuoloUtente } from "@/lib/auth/roles";
 export type DatiAccount = {
   nome: string;
   email: string;
+  /** Ruolo a priorità maggiore (per etichetta e redirect predefinito). */
   role: RuoloUtente;
-  /** Solo per admin: possiede almeno un negozio? */
+  /** TUTTI i ruoli posseduti: le voci del menu derivano da questo insieme. */
+  ruoli: RuoloUtente[];
+  /** True se l'utente possiede almeno un negozio. */
   hasStores: boolean;
-  /** Solo per merchant: id del primo negozio (per i link diretti). */
+  /** Id del primo negozio (per i link diretti dell'area commerciante). */
   firstStoreId: string | null;
 };
 
@@ -77,35 +77,43 @@ export default function AccountMenu({ account }: { account: DatiAccount | null }
     );
   }
 
-  const { nome, email, role, hasStores, firstStoreId } = account;
+  const { nome, email, role, ruoli } = account;
   const iniziale = (nome || email).charAt(0).toUpperCase();
-  const storeBase = firstStoreId ? `/merchant/${firstStoreId}` : "/merchant";
+  const storeBase = account.firstStoreId
+    ? `/merchant/${account.firstStoreId}`
+    : "/merchant";
 
-  const voci: VoceMenu[] =
-    role === "admin"
-      ? [
-          { label: "Pannello Amministratore", href: "/amministratore", icon: ShieldCheck },
-          ...(hasStores
-            ? [{ label: "Area Commerciante", href: "/merchant", icon: Store }]
-            : []),
-          { label: "Vai al sito", href: "/", icon: Globe },
-          { label: "Impostazioni", href: "/amministratore/impostazioni", icon: Settings },
-          { label: "Profilo", href: "/profilo", icon: UserRound },
-        ]
-      : role === "merchant"
-        ? [
-            { label: "Il mio negozio", href: "/merchant", icon: Store },
-            { label: "Prodotti", href: storeBase, icon: Package },
-            { label: "Offerte", href: "/merchant", icon: Tag },
-            { label: "Eventi", href: "/merchant", icon: CalendarDays },
-            { label: "Statistiche", href: "/merchant", icon: BarChart3 },
-            { label: "Profilo", href: "/profilo", icon: UserRound },
-          ]
-        : [
-            { label: "Profilo", href: "/profilo", icon: UserRound },
-            { label: "Preferiti", href: "/preferiti", icon: Heart },
-            { label: "Ordini", href: "/ordini", icon: ShoppingBag },
-          ];
+  /**
+   * Il menu riflette l'INSIEME dei ruoli posseduti:
+   * il webmaster (admin+merchant+customer) vede le tre voci di area.
+   * Un utente con il solo ruolo customer vede i link rapidi della sua area.
+   */
+  const voci: VoceMenu[] = [];
+
+  if (ruoli.includes("admin")) {
+    voci.push({ label: "Area Amministratore", href: "/amministratore", icon: ShieldCheck });
+  }
+
+  if (ruoli.includes("merchant")) {
+    voci.push({ label: "Area Amministratore", href: storeBase, icon: Store });
+  }
+
+  if (ruoli.includes("customer")) {
+    if (ruoli.length === 1) {
+      voci.push({ label: "Area Clienti", href: "/cliente", icon: ShoppingBasket });
+      voci.push({ label: "Profilo", href: "/cliente/profilo", icon: UserRound });
+      voci.push({ label: "Preferiti", href: "/cliente/preferiti", icon: Heart });
+      voci.push({ label: "Ordini", href: "/cliente/ordini", icon: ShoppingBag });
+    } else {
+      voci.push({ label: "Area Clienti", href: "/cliente", icon: ShoppingBasket });
+    }
+  }
+
+  voci.push({ label: "Vai al sito", href: "/", icon: Globe });
+
+  if (ruoli.includes("admin")) {
+    voci.push({ label: "Impostazioni", href: "/amministratore/impostazioni", icon: Settings });
+  }
 
   return (
     <div className="relative" ref={menuRef}>

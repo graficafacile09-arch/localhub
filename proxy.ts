@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { getSupabaseConfig, isSupabaseConfigured } from "@/lib/supabase/config";
-import { getRoleForUser, ruoloSoddisfa } from "@/lib/auth/roles";
+import { getRuoliUtente, ruoliSoddisfano } from "@/lib/auth/roles";
 
 export async function proxy(request: NextRequest) {
   if (!isSupabaseConfigured()) {
@@ -31,6 +31,7 @@ export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const areaAmministratore = pathname.startsWith("/amministratore");
   const areaMerchant = pathname.startsWith("/merchant");
+  const areaCliente = pathname.startsWith("/cliente");
 
   // Redirect mantenendo i cookie di sessione appena rinfrescati da getUser.
   function redirectConSessione(destinazione: string) {
@@ -44,21 +45,29 @@ export async function proxy(request: NextRequest) {
   }
 
   // ── Protezione delle aree riservate ──────────────────────────────────
-  if (areaAmministratore || areaMerchant) {
+  // Verifica sull'INSIEME dei ruoli (multi-role): un utente con più ruoli
+  // (es. il webmaster admin+merchant+customer) accede a ogni area a cui
+  // corrisponde almeno uno dei suoi ruoli.
+  if (areaAmministratore || areaMerchant || areaCliente) {
     // Non loggato → login
     if (!user) {
       return redirectConSessione("/login");
     }
 
-    const role = await getRoleForUser(user.id);
+    const ruoli = await getRuoliUtente(user.id);
 
-    // /amministratore → SOLO admin
-    if (areaAmministratore && !ruoloSoddisfa(role, ["admin"])) {
+    // /amministratore → SOLO chi possiede il ruolo admin
+    if (areaAmministratore && !ruoliSoddisfano(ruoli, ["admin"])) {
       return redirectConSessione("/");
     }
 
     // /merchant → merchant o admin
-    if (areaMerchant && !ruoloSoddisfa(role, ["merchant", "admin"])) {
+    if (areaMerchant && !ruoliSoddisfano(ruoli, ["merchant", "admin"])) {
+      return redirectConSessione("/");
+    }
+
+    // /cliente → SOLO chi possiede il ruolo customer
+    if (areaCliente && !ruoliSoddisfano(ruoli, ["customer"])) {
       return redirectConSessione("/");
     }
   }

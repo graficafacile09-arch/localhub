@@ -1,38 +1,15 @@
 import Image from "next/image";
 import Link from "next/link";
-import { getCurrentRole } from "@/lib/auth/session";
-import { contaNegoziUtente } from "@/lib/auth/roles";
-import { getMerchantStoresForUser } from "@/lib/merchant/data";
-import AccountMenu, { type DatiAccount } from "./AccountMenu";
+import AccountMenu from "./AccountMenu";
+import { getDatiAccount } from "./get-account-data";
 
 /**
- * Header pubblico: sostituisce "+ Aggiungi Prodotto" con il menu Account,
- * che cambia automaticamente in base al ruolo dell'utente loggato.
+ * Header pubblico: mostra il menu Account che cambia in base all'INSIEME
+ * dei ruoli dell'utente (il webmaster vede Area Clienti, Area Commerciante
+ * e Area Amministratore).
  */
 export default async function Header() {
-  const auth = await getCurrentRole();
-
-  let account: DatiAccount | null = null;
-
-  if (auth) {
-    const { user, role } = auth;
-    const nome =
-      String(user.user_metadata?.full_name ?? "").trim() ||
-      String(user.email ?? "");
-
-    let hasStores = false;
-    let firstStoreId: string | null = null;
-
-    if (role === "admin") {
-      hasStores = (await contaNegoziUtente(user.id)) > 0;
-    } else if (role === "merchant") {
-      const storesResult = await getMerchantStoresForUser(user.id);
-      hasStores = storesResult.data.length > 0;
-      firstStoreId = storesResult.data[0]?.id ?? null;
-    }
-
-    account = { nome, email: user.email ?? "", role, hasStores, firstStoreId };
-  }
+  const account = await getDatiAccount();
 
   return (
     <header className="bg-white shadow-md border-b">

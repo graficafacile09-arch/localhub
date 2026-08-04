@@ -1,17 +1,13 @@
-import { Heart } from "lucide-react";
-import AccountPlaceholder from "@/components/AccountPlaceholder";
+import { permanentRedirect } from "next/navigation";
 
 export const metadata = {
   title: "Preferiti — LocalHub",
-  description: "I tuoi negozi e prodotti preferiti su LocalHub.",
 };
 
-export default function PreferitiPage() {
-  return (
-    <AccountPlaceholder
-      icon={Heart}
-      title="Preferiti"
-      description="Qui ritroverai i negozi e i prodotti che hai salvato per non perderli di vista."
-    />
-  );
+/**
+ * Pagina legacy: i Preferiti vivono nell'Area Clienti (/cliente/preferiti).
+ * Redirect permanente per non spezzare vecchi link e segnalibri.
+ */
+export default function PreferitiLegacyPage() {
+  permanentRedirect("/cliente/preferiti");
 }

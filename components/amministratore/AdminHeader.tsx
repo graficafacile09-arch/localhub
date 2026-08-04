@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { ShieldCheck, Store } from "lucide-react";
-import AdminUserMenu from "./AdminUserMenu";
+import AccountMenu, { type DatiAccount } from "@/components/Header/AccountMenu";
 
 /**
  * Header desktop del pannello Amministratore (visibile su md+).
- * Brand LocalHub + titolo Amministratore, menu utente in alto a destra.
+ * `account` arriva dal layout (server): il webmaster (admin+merchant+
+ * customer) vede nel menu utente tutte e tre le voci di area.
  */
-export default function AdminHeader() {
+export default function AdminHeader({ account }: { account: DatiAccount | null }) {
   return (
     <div className="hidden border-b border-blue-900/15 bg-[linear-gradient(180deg,#1d4ed8_0%,#2563eb_100%)] text-white shadow-lg md:block">
       <div className="h-1 bg-linear-to-r from-cyan-300 via-white to-yellow-300" />
@@ -38,7 +39,7 @@ export default function AdminHeader() {
           </div>
         </div>
 
-        <AdminUserMenu />
+        <AccountMenu account={account} />
       </div>
     </div>
   );

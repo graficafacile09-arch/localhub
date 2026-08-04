@@ -3,6 +3,8 @@ import Link from "next/link";
 import { Search } from "lucide-react";
 import { getCategorie, getNegoziInEvidenza, getProdottiInEvidenza } from "@/lib/negozi";
 import { getNegozioCardImmagine } from "@/lib/negozi-card-immagini";
+import { chiavePreferito, getStatoPreferitiPerPagina } from "@/lib/cliente/favorites";
+import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
 import CategoryTile, { TutteCategorieTile } from "@/components/home/CategoryTile";
 
 // La homepage deve riflettere in tempo reale i negozi in evidenza flaggati
@@ -14,10 +16,11 @@ export const dynamic = "force-dynamic";
 const NUMERO_CATEGORIE_HOME = 8;
 
 export default async function Home() {
-  const [negozi, prodottiInEvidenza, categorie] = await Promise.all([
+  const [negozi, prodottiInEvidenza, categorie, statoPreferiti] = await Promise.all([
     getNegoziInEvidenza(8),
     getProdottiInEvidenza(8),
     getCategorie(),
+    getStatoPreferitiPerPagina(),
   ]);
 
   return (
@@ -104,7 +107,7 @@ export default async function Home() {
               return (
                 <div
                   key={negozio.id}
-                  className="rounded-2xl overflow-hidden border border-slate-100 shadow-sm bg-white hover:shadow-sm transition flex flex-col justify-between"
+                  className="relative rounded-2xl overflow-hidden border border-slate-100 shadow-sm bg-white hover:shadow-sm transition flex flex-col justify-between"
                 >
                   <div>
                     <div className="relative w-full h-48 bg-slate-100 overflow-hidden">
@@ -134,6 +137,15 @@ export default async function Home() {
                       </button>
                     </Link>
                   </div>
+
+                  <FavoritoButton
+                    tipo="negozio"
+                    riferimentoId={negozio.id}
+                    attivo={statoPreferiti.chiavi.has(chiavePreferito("negozio", negozio.id))}
+                    autenticato={statoPreferiti.autenticato}
+                    className="absolute right-2.5 top-2.5 z-10"
+                    label={negozio.nome}
+                  />
                 </div>
               );
             })}

@@ -3,8 +3,12 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import {
   getRoleForUser,
+  getRuoliUtente,
+  PRIORITA_RUOLO,
   redirectPerRuolo,
   ruoloSoddisfa,
+  ruoliSoddisfano,
+  utenteHaRuoli,
   type RuoloUtente,
 } from "@/lib/auth/roles";
 
@@ -80,4 +84,74 @@ export async function requireRole(
   }
 
   return data;
+}
+
+// ════════════════════════════════════════════════════════════════════
+// Controlli MULTI-RUOLO — l'accesso alle aree è verificato sull'INSIEME
+// dei ruoli posseduti, non sul singolo ruolo a priorità maggiore.
+// Un utente con più ruoli (es. webmaster admin+merchant+customer) può
+// entrare in tutte le aree corrispondenti a uno dei suoi ruoli.
+// ════════════════════════════════════════════════════════════════════
+
+export type UtenteConRuoli = {
+  user: NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>;
+  /** Ruolo a priorità maggiore (per UI e redirect predefiniti). */
+  role: RuoloUtente;
+  /** Tutti i ruoli posseduti (verifica accesso aree). */
+  ruoli: RuoloUtente[];
+};
+
+/** Utente corrente + ruolo principale + TUTTI i ruoli posseduti. */
+export async function getCurrentRuoli(): Promise<UtenteConRuoli | null> {
+  const user = await getCurrentUser();
+  if (!user) return null;
+
+  const ruoli = await getRuoliUtente(user.id);
+  const role =
+    ruoli.length === 0
+      ? "customer"
+      : ruoli.reduce<RuoloUtente>((acc, ruolo) =>
+          PRIORITA_RUOLO[ruolo] > PRIORITA_RUOLO[acc] ? ruolo : acc,
+          "customer"
+        );
+
+  return { user, role, ruoli };
+}
+
+/**
+ * Richiede che l'utente loggato possieda ALMENO UNO dei ruoli richiesti
+ * (verifica sull'insieme dei ruoli). Usato dai layout delle aree.
+ * - Non loggato → redirect a `redirectTo` (default /login).
+ * - Nessun ruolo compatibile → redirect alla home del ruolo principale.
+ */
+export async function requireRuoli(
+  richiesti: readonly RuoloUtente[],
+  redirectTo = "/login"
+): Promise<UtenteConRuoli> {
+  const data = await getCurrentRuoli();
+
+  if (!data) {
+    redirect(redirectTo);
+  }
+
+  if (!ruoliSoddisfano(data.ruoli, richiesti)) {
+    redirect(redirectPerRuolo(data.role));
+  }
+
+  return data;
+}
+
+/**
+ * Utente corrente + verifica ruoli per le ROUTE HANDLER API.
+ * Restituisce { user, ok }: l'handler decide 401 (non autenticato) o
+ * 403 (autenticato ma ruolo non consentito). Verifica sull'INSIEME dei
+ * ruoli posseduti (multi-role).
+ */
+export async function getApiUtente(
+  richiesti: readonly RuoloUtente[]
+): Promise<{ user: NonNullable<Awaited<ReturnType<typeof getCurrentUser>>> | null; ok: boolean }> {
+  const user = await getCurrentUser();
+  if (!user) return { user: null, ok: false };
+  const ok = await utenteHaRuoli(user.id, richiesti);
+  return { user, ok };
 }
