@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { ShieldCheck } from "lucide-react";
 import AccountMenu from "./AccountMenu";
 import { getDatiAccount } from "./get-account-data";
 
@@ -53,8 +54,13 @@ export default async function Header() {
             Assistente AI
           </Link>
 
-          <Link href="/login?area=admin" className="hover:text-blue-600 transition">
-            Amministratore
+          <Link
+            href={account ? "/amministratore" : "/login?area=admin"}
+            title="Amministrazione"
+            aria-label="Amministrazione"
+            className="inline-flex items-center hover:text-blue-600 transition"
+          >
+            <ShieldCheck className="h-5 w-5" aria-hidden />
           </Link>
 
           <div className="hidden md:block">

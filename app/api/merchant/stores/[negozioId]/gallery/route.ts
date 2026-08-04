@@ -1,5 +1,6 @@
 import { apiError, apiOk } from "@/lib/api/response";
 import { getCurrentUser } from "@/lib/auth/session";
+import { utenteHaRuoli } from "@/lib/auth/roles";
 import { canManageStore } from "@/lib/merchant/data";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
@@ -55,7 +56,12 @@ export async function POST(
     );
   }
 
-  const supabaseServer = await createServerSupabaseClient();
+  // Gli admin leggono la galleria di QUALSIASI negozio (bypass RLS).
+  const supabaseServer =
+    (await utenteHaRuoli(user.id, ["admin"]))
+      ? createAdminSupabaseClient()
+      : await createServerSupabaseClient();
+
   const { data: storeRow } = await supabaseServer
     .from("negozi")
     .select("galleria")

@@ -2,6 +2,7 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { uploadDataUrlToStorage } from "@/lib/supabase/storage";
 import { generaSlugUnivoco } from "@/lib/slug-server";
+import { utenteHaRuoli } from "@/lib/auth/roles";
 import type {
   MerchantProduct,
   MerchantProductInput,
@@ -56,6 +57,18 @@ const SCHEMA_ERROR_CODES = new Set(["42P01", "42703", "PGRST204", "PGRST205"]);
 
 function isSchemaError(error: QueryError | null) {
   return Boolean(error?.code && SCHEMA_ERROR_CODES.has(error.code));
+}
+
+/**
+ * Client Supabase corretto per l'utente: gli ADMIN usano il client admin
+ * (bypassa RLS) così possono gestire QUALSIASI negozio della piattaforma;
+ * i commercianti usano il client server (RLS li limita ai propri negozi).
+ */
+async function getDbForUser(userId: string) {
+  if (await utenteHaRuoli(userId, ["admin"])) {
+    return createAdminSupabaseClient();
+  }
+  return await createServerSupabaseClient();
 }
 
 // =================================================================
@@ -122,13 +135,25 @@ function mapProduct(row: ProdottoRow): MerchantProduct {
 // Nota: in futuro potrà essere estesa per supportare membri aggiuntivi
 // =================================================================
 export async function getMerchantStoresForUser(userId: string): Promise<MerchantQueryResult<MerchantStoreSummary[]>> {
-  const supabase = await createServerSupabaseClient();
-  const { data: stores, error } = await supabase
+  // Verifica del ruolo eseguita UNA volta: da qui si sceglie il client e il
+  // filtro di proprietà (gli ADMIN vedono TUTTI i negozi della piattaforma,
+  // i commercianti solo i propri).
+  const isAdmin = await utenteHaRuoli(userId, ["admin"]);
+  const supabase = isAdmin
+    ? createAdminSupabaseClient()
+    : await createServerSupabaseClient();
+
+  let query = supabase
     .from("negozi")
     .select("id, nome, categoria, descrizione, attivo")
-    .eq("owner_user_id", userId)
     .is("deleted_at", null)
     .order("created_at", { ascending: true });
+
+  if (!isAdmin) {
+    query = query.eq("owner_user_id", userId);
+  }
+
+  const { data: stores, error } = await query;
 
   if (error) {
     if (isSchemaError(error)) {
@@ -170,6 +195,9 @@ export async function getMerchantStoreForUser(userId: string, negozioId: string)
 // canManageStore — verifica se l'utente può gestire un negozio
 // =================================================================
 export async function canManageStore(userId: string, negozioId: string): Promise<boolean> {
+  // Gli ADMIN possono gestire QUALSIASI negozio della piattaforma.
+  if (await utenteHaRuoli(userId, ["admin"])) return true;
+
   const supabase = await createServerSupabaseClient();
   const { count, error } = await supabase
     .from("negozi")
@@ -200,7 +228,7 @@ export async function getMerchantProductsForStore(
     };
   }
 
-  const supabase = await createServerSupabaseClient();
+  const supabase = await getDbForUser(userId);
   const query = await supabase
     .from("prodotti")
     .select(
@@ -270,7 +298,7 @@ export async function createMerchantProductForStore(
     };
   }
 
-  const supabase = await createServerSupabaseClient();
+  const supabase = await getDbForUser(userId);
 
   const immagineFinale =
     input.immaginePrincipale.trim()
@@ -367,7 +395,7 @@ export async function updateMerchantProductForStore(
     };
   }
 
-  const supabase = await createServerSupabaseClient();
+  const supabase = await getDbForUser(userId);
 
   const immagineFinale =
     input.immaginePrincipale.trim()

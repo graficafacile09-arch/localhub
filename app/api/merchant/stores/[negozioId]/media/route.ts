@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { apiError, apiOk } from "@/lib/api/response";
 import { getCurrentUser } from "@/lib/auth/session";
+import { utenteHaRuoli } from "@/lib/auth/roles";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { canManageStore } from "@/lib/merchant/data";
@@ -18,7 +19,12 @@ export async function GET(
   const allowed = await canManageStore(user.id, negozioId);
   if (!allowed) return apiError("FORBIDDEN", "Non puoi gestire questo negozio.", 403);
 
-  const supabase = await createServerSupabaseClient();
+  // Gli admin leggono i media di QUALSIASI negozio (bypass RLS).
+  const supabase =
+    (await utenteHaRuoli(user.id, ["admin"]))
+      ? createAdminSupabaseClient()
+      : await createServerSupabaseClient();
+
   const { data, error } = await supabase
     .from("media")
     .select("*")
