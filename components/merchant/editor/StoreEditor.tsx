@@ -71,16 +71,6 @@ export default function StoreEditor({ storeId }: Props) {
         return;
       }
 
-      if (activeSlug === "zona-pericolosa") {
-        try {
-          const mod = await import("@/components/merchant/modules/ZonaPericolosaModule");
-          if (!cancelled) setModuleComponent(() => mod.default);
-        } catch {
-          if (!cancelled) setLoadError(true);
-        }
-        return;
-      }
-
       try {
         const Component = await getModuleComponent(activeSlug);
         if (!cancelled) {
@@ -107,7 +97,6 @@ export default function StoreEditor({ storeId }: Props) {
   const handleSidebarClose = useCallback(() => setSidebarOpen(false), []);
 
   const pageTitle = isDashboard ? "Dashboard" :
-    activeSlug === "zona-pericolosa" ? "Zona Pericolosa" :
     activeSlug.charAt(0).toUpperCase() + activeSlug.slice(1);
 
   return (
@@ -176,7 +165,7 @@ export default function StoreEditor({ storeId }: Props) {
         ) : (
           <div className="flex items-center justify-center py-20">
             <p className="text-sm text-slate-400">
-              {activeSlug === "zona-pericolosa" ? "Caricamento..." : "Caricamento modulo..."}
+              Caricamento modulo...
             </p>
           </div>
         )}

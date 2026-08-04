@@ -7,7 +7,6 @@ import {
   Building2, Image, Package, Sparkles, Tag, Calendar, Phone,
   MapPin, Clock, MessageCircle, Search, Bot, Settings,
   LayoutDashboard, FolderOpen, Copy, ChevronDown, ChevronRight,
-  Skull,
 } from "lucide-react";
 import type { ModuleStatus } from "./StoreEditor";
 import DuplicaNegozioWizard from "@/components/merchant/media/DuplicaNegozioWizard";
@@ -217,21 +216,7 @@ export default function EditorSidebar({ activeSlug, onSelect, onClose, moduleSta
           )}
         </div>
 
-        <div className="my-2 border-t border-red-100" />
 
-        {/* Zona Pericolosa */}
-        <button
-          type="button"
-          onClick={() => { onSelect("zona-pericolosa"); onClose?.(); }}
-          className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-xs font-semibold transition-all duration-150 ${
-            activeSlug === "zona-pericolosa"
-              ? "bg-red-50 text-red-700 shadow-sm"
-              : "text-red-600 hover:bg-red-50 hover:text-red-700"
-          }`}
-        >
-          <Skull className="h-4 w-4 shrink-0" />
-          Elimina negozio
-        </button>
       </div>
     </nav>
   );

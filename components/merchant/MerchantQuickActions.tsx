@@ -16,7 +16,6 @@ import {
   Settings,
   Shield,
   Smartphone,
-  Trash2,
 } from "lucide-react";
 
 const actions = [
@@ -47,7 +46,7 @@ const settingsItems = [
   { label: "Spedizioni", icon: MapPin, href: false, comingSoon: true },
   { label: "Privacy", icon: Shield, href: false, comingSoon: true },
   { label: "Pagamenti", icon: CreditCard, href: false, comingSoon: true },
-  { label: "Eliminazione negozio", icon: Trash2, href: false, comingSoon: true },
+
 ];
 
 export default function MerchantQuickActions({ storeId }: { storeId: string }) {

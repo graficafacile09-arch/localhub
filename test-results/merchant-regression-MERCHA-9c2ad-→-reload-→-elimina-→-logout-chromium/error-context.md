@@ -7,14 +7,14 @@
 # Test info
 
 - Name: merchant-regression.spec.ts >> MERCHANT REGRESSION TEST (DB-synced + build-fixed) >> MERCHANT REGRESSION: login → dashboard → wizard ×3 → editor → 13 moduli → media → reload → elimina → logout
-- Location: tests\merchant-regression.spec.ts:54:7
+- Location: tests\merchant-regression.spec.ts:53:7
 
 # Error details
 
 ```
 Error: expect(received).toBe(expected) // Object.is equality
 
-Expected: "Sconto E2E"
+Expected: "Degustazione E2E"
 Received: undefined
 ```
 
@@ -207,238 +207,268 @@ Received: undefined
               - /url: /merchant/2cb8e6bf-3985-4784-96a4-1b45dc495666
               - generic [ref=f23e154]: E2E Template 1785854623461
               - generic [ref=f23e155]: Bar
-      - generic [ref=f23e157]:
-        - complementary [ref=f23e158]:
-          - navigation [ref=f23e159]:
-            - generic [ref=f23e160]:
-              - button "Dashboard" [ref=f23e161]
-              - link "Libreria Media" [ref=f23e167] [cursor=pointer]:
-                - /url: /merchant/365f5e9e-c5e2-4ae5-b500-037d498013dd/media
-              - generic [ref=f23e172]:
-                - button "Dati Base ✓" [ref=f23e173]:
-                  - generic [ref=f23e178]: Dati Base
-                  - generic [ref=f23e179]: ✓
-                - generic [ref=f23e182]:
-                  - button "Informazioni ✓" [ref=f23e183]:
-                    - generic [ref=f23e188]: Informazioni
-                    - generic [ref=f23e189]: ✓
-                  - button "Immagini ✓" [ref=f23e191]:
-                    - generic [ref=f23e196]: Immagini
-                    - generic [ref=f23e197]: ✓
-                  - button "Contatti ✓" [ref=f23e199]:
-                    - generic [ref=f23e202]: Contatti
-                    - generic [ref=f23e203]: ✓
-                  - button "Posizione ✓" [ref=f23e205]:
-                    - generic [ref=f23e209]: Posizione
-                    - generic [ref=f23e210]: ✓
-                  - button "Orari ✓" [ref=f23e212]:
-                    - generic [ref=f23e216]: Orari
-                    - generic [ref=f23e217]: ✓
-              - generic [ref=f23e219]:
-                - button "Catalogo" [ref=f23e220]
-                - generic [ref=f23e228]:
-                  - button "Prodotti" [ref=f23e229]
-                  - button "Servizi 1 ✓" [ref=f23e235]:
-                    - generic [ref=f23e239]: Servizi
-                    - generic [ref=f23e240]:
-                      - generic [ref=f23e241]: "1"
-                      - generic [ref=f23e242]: ✓
-                  - button "Offerte" [ref=f23e243]
-                  - button "Eventi 1 ✓" [ref=f23e248]:
-                    - generic [ref=f23e251]: Eventi
-                    - generic [ref=f23e252]:
-                      - generic [ref=f23e253]: "1"
-                      - generic [ref=f23e254]: ✓
-              - button "Online ✓" [ref=f23e256]:
-                - generic [ref=f23e259]: Online
-                - generic [ref=f23e260]: ✓
-              - button "Altro ✓" [ref=f23e264]:
-                - generic [ref=f23e268]: Altro
-                - generic [ref=f23e269]: ✓
-              - button "Manutenzione" [ref=f23e274]
-              - button "Elimina negozio" [ref=f23e282]
-        - main [ref=f23e288]:
-          - generic [ref=f23e289]:
-            - generic [ref=f23e290]:
-              - generic [ref=f23e291]:
-                - img "Logo" [ref=f23e293]
-                - button "Cambia logo" [ref=f23e294]
-                - generic [ref=f23e298]:
-                  - generic [ref=f23e299]:
-                    - textbox "Nome negozio" [ref=f23e301]: Negozio Rinominato 1785854623461
-                    - generic [ref=f23e302]: Bozza
-                  - paragraph [ref=f23e304]: Bar
-                  - paragraph [ref=f23e305]: "Ultimo aggiornamento: 4 agosto 2026 alle ore 16:44"
-                  - generic [ref=f23e306]:
-                    - link "Anteprima negozio" [ref=f23e307] [cursor=pointer]:
-                      - /url: /negozio/e2e-panificio-1785854623461
-                    - button "Anteprima inline" [ref=f23e308]
-                    - button "Applica Template" [ref=f23e309]
-              - generic [ref=f23e313]:
-                - paragraph [ref=f23e314]: Completezza profilo
-                - paragraph [ref=f23e315]: 85%
-            - generic [ref=f23e318]:
-              - heading "Azioni rapide" [level=2] [ref=f23e319]
+            - link "Negozio Rinominato 1785859719433 Bar" [ref=f23e156] [cursor=pointer]:
+              - /url: /merchant/2700d6fe-a167-45c7-8edd-d0dacf1f9697
+              - generic [ref=f23e157]: Negozio Rinominato 1785859719433
+              - generic [ref=f23e158]: Bar
+            - link "E2E Duplicato 1785859719433 Bar" [ref=f23e159] [cursor=pointer]:
+              - /url: /merchant/c8691699-9fb1-4dcf-94aa-8c5478d063b4
+              - generic [ref=f23e160]: E2E Duplicato 1785859719433
+              - generic [ref=f23e161]: Bar
+            - link "E2E Template 1785859719433 Bar" [ref=f23e162] [cursor=pointer]:
+              - /url: /merchant/b8ba3c4f-18f4-4fe5-b7c1-1eed8532cde1
+              - generic [ref=f23e163]: E2E Template 1785859719433
+              - generic [ref=f23e164]: Bar
+            - link "Negozio Rinominato 1785859810802 Bar" [ref=f23e165] [cursor=pointer]:
+              - /url: /merchant/5a409dca-cb94-4331-a842-474ac4a1e980
+              - generic [ref=f23e166]: Negozio Rinominato 1785859810802
+              - generic [ref=f23e167]: Bar
+            - link "E2E Duplicato 1785859810802 Bar" [ref=f23e168] [cursor=pointer]:
+              - /url: /merchant/f0c54530-c3f8-47e6-91b0-1c506d636e7f
+              - generic [ref=f23e169]: E2E Duplicato 1785859810802
+              - generic [ref=f23e170]: Bar
+            - link "E2E Template 1785859810802 Bar" [ref=f23e171] [cursor=pointer]:
+              - /url: /merchant/a68933f9-81c0-4b3e-acab-89f25df8da46
+              - generic [ref=f23e172]: E2E Template 1785859810802
+              - generic [ref=f23e173]: Bar
+            - link "Negozio Rinominato 1785859935250 Bar" [ref=f23e174] [cursor=pointer]:
+              - /url: /merchant/cb6b6eaf-61d9-4d88-bc83-2a924d6ea393
+              - generic [ref=f23e175]: Negozio Rinominato 1785859935250
+              - generic [ref=f23e176]: Bar
+            - link "E2E Duplicato 1785859935250 Bar" [ref=f23e177] [cursor=pointer]:
+              - /url: /merchant/51c3756f-68b7-4e25-8a94-752e1874eb94
+              - generic [ref=f23e178]: E2E Duplicato 1785859935250
+              - generic [ref=f23e179]: Bar
+            - link "E2E Template 1785859935250 Bar" [ref=f23e180] [cursor=pointer]:
+              - /url: /merchant/1ec05f48-0321-4ea7-99d9-67fbee79e399
+              - generic [ref=f23e181]: E2E Template 1785859935250
+              - generic [ref=f23e182]: Bar
+            - link "Negozio Rinominato 1785860068696 Bar" [ref=f23e183] [cursor=pointer]:
+              - /url: /merchant/8df86959-3a52-4e4a-9fdc-172236c61391
+              - generic [ref=f23e184]: Negozio Rinominato 1785860068696
+              - generic [ref=f23e185]: Bar
+            - link "E2E Duplicato 1785860068696 Bar" [ref=f23e186] [cursor=pointer]:
+              - /url: /merchant/f2c47ebe-1320-4751-b810-2fc382734099
+              - generic [ref=f23e187]: E2E Duplicato 1785860068696
+              - generic [ref=f23e188]: Bar
+            - link "E2E Template 1785860068696 Bar" [ref=f23e189] [cursor=pointer]:
+              - /url: /merchant/f540b92c-524b-461b-94e5-f551682185db
+              - generic [ref=f23e190]: E2E Template 1785860068696
+              - generic [ref=f23e191]: Bar
+      - generic [ref=f23e193]:
+        - complementary [ref=f23e194]:
+          - navigation [ref=f23e195]:
+            - generic [ref=f23e196]:
+              - button "Dashboard" [ref=f23e197]
+              - link "Libreria Media" [ref=f23e203] [cursor=pointer]:
+                - /url: /merchant/8df86959-3a52-4e4a-9fdc-172236c61391/media
+              - generic [ref=f23e208]:
+                - button "Dati Base ✓" [ref=f23e209]:
+                  - generic [ref=f23e214]: Dati Base
+                  - generic [ref=f23e215]: ✓
+                - generic [ref=f23e218]:
+                  - button "Informazioni ✓" [ref=f23e219]:
+                    - generic [ref=f23e224]: Informazioni
+                    - generic [ref=f23e225]: ✓
+                  - button "Immagini ✓" [ref=f23e227]:
+                    - generic [ref=f23e232]: Immagini
+                    - generic [ref=f23e233]: ✓
+                  - button "Contatti ✓" [ref=f23e235]:
+                    - generic [ref=f23e238]: Contatti
+                    - generic [ref=f23e239]: ✓
+                  - button "Posizione ✓" [ref=f23e241]:
+                    - generic [ref=f23e245]: Posizione
+                    - generic [ref=f23e246]: ✓
+                  - button "Orari ✓" [ref=f23e248]:
+                    - generic [ref=f23e252]: Orari
+                    - generic [ref=f23e253]: ✓
+              - generic [ref=f23e255]:
+                - button "Catalogo" [ref=f23e256]
+                - generic [ref=f23e264]:
+                  - button "Prodotti" [ref=f23e265]
+                  - button "Servizi 1 ✓" [ref=f23e271]:
+                    - generic [ref=f23e275]: Servizi
+                    - generic [ref=f23e276]:
+                      - generic [ref=f23e277]: "1"
+                      - generic [ref=f23e278]: ✓
+                  - button "Offerte 1 ✓" [ref=f23e279]:
+                    - generic [ref=f23e283]: Offerte
+                    - generic [ref=f23e284]:
+                      - generic [ref=f23e285]: "1"
+                      - generic [ref=f23e286]: ✓
+                  - button "Eventi" [ref=f23e287]
+              - button "Online ✓" [ref=f23e292]:
+                - generic [ref=f23e295]: Online
+                - generic [ref=f23e296]: ✓
+              - button "Altro ✓" [ref=f23e300]:
+                - generic [ref=f23e304]: Altro
+                - generic [ref=f23e305]: ✓
+              - button "Manutenzione" [ref=f23e310]
+        - main [ref=f23e317]:
+          - generic [ref=f23e318]:
+            - generic [ref=f23e319]:
               - generic [ref=f23e320]:
-                - button "Aggiungi prodotto" [ref=f23e321]
-                - button "Modifica immagini" [ref=f23e326]
-  - contentinfo [ref=f23e331]: © 2026 InCittà · Castrovillari
-  - button "Apri l'Assistente AI" [ref=f23e332]:
-    - generic [ref=f23e336]: AI
-  - button "Open Next.js Dev Tools" [ref=f23e342] [cursor=pointer]
-  - alert [ref=f23e346]
+                - img "Logo" [ref=f23e322]
+                - button "Cambia logo" [ref=f23e323]
+                - generic [ref=f23e327]:
+                  - generic [ref=f23e328]:
+                    - textbox "Nome negozio" [ref=f23e330]: Negozio Rinominato 1785860068696
+                    - generic [ref=f23e331]: Bozza
+                  - paragraph [ref=f23e333]: Bar
+                  - paragraph [ref=f23e334]: "Ultimo aggiornamento: 4 agosto 2026 alle ore 18:15"
+                  - generic [ref=f23e335]:
+                    - link "Anteprima negozio" [ref=f23e336] [cursor=pointer]:
+                      - /url: /negozio/e2e-panificio-1785860068696
+                    - button "Anteprima inline" [ref=f23e337]
+                    - button "Applica Template" [ref=f23e338]
+              - generic [ref=f23e342]:
+                - paragraph [ref=f23e343]: Completezza profilo
+                - paragraph [ref=f23e344]: 85%
+            - generic [ref=f23e347]:
+              - heading "Azioni rapide" [level=2] [ref=f23e348]
+              - generic [ref=f23e349]:
+                - button "Aggiungi prodotto" [ref=f23e350]
+                - button "Modifica immagini" [ref=f23e355]
+  - contentinfo [ref=f23e360]: © 2026 InCittà · Castrovillari
+  - button "Apri l'Assistente AI" [ref=f23e361]:
+    - generic [ref=f23e365]: AI
+  - button "Open Next.js Dev Tools" [ref=f23e371] [cursor=pointer]
+  - alert [ref=f23e375]
 ```
 
 # Test source
 
 ```ts
-  367 |     /* ── 17. SEO ──────────────────────────────────────────────────────────── */
-  368 |     await test.step("17. SEO", async () => {
-  369 |       if (!storeId) { test.skip(true, "requires a store"); return; }
-  370 |       log("Step 17: SEO");
-  371 |       await page.goto(`${BASE}/merchant/${storeId}/edit?modulo=seo`, { waitUntil: "domcontentloaded" });
-  372 |       await expect(page.locator("body")).toContainText("SEO");
-  373 |       await page.locator('input[placeholder="Titolo per i motori di ricerca"]').fill("Negozio E2E | LocalHub");
-  374 |       await page.locator("textarea").fill("Descrizione SEO di test per il negozio E2E");
-  375 |       const kw = page.getByPlaceholder("Digita una keyword SEO e premi Invio...");
-  376 |       await kw.fill("pasticceria");
-  377 |       await kw.press("Enter");
-  378 |       await expect(page.locator("body")).toContainText("pasticceria");
-  379 |       await saveModule(storeId);
-  380 |     });
-  381 | 
-  382 |     /* ── 18. AI ───────────────────────────────────────────────────────────── */
-  383 |     await test.step("18. AI", async () => {
-  384 |       if (!storeId) { test.skip(true, "requires a store"); return; }
-  385 |       log("Step 18: AI");
-  386 |       await page.goto(`${BASE}/merchant/${storeId}/edit?modulo=ai`, { waitUntil: "domcontentloaded" });
-  387 |       await expect(page.locator("body")).toContainText("Assistente AI");
-  388 |       await page.locator("textarea").fill("Rispondi sempre in italiano e sii gentile.");
-  389 |       await page.locator("select").selectOption("amichevole");
-  390 |       const faq = page.getByPlaceholder("Domanda frequente (es. Fate consegne a domicilio?)");
-  391 |       await faq.fill("Fate consegne a domicilio?");
-  392 |       await faq.press("Enter");
-  393 |       await expect(page.locator("body")).toContainText("Fate consegne a domicilio?");
-  394 |       await saveModule(storeId);
-  395 |     });
-  396 | 
-  397 |     /* ── 19. Media (copertina + galleria) ─────────────────────────────────── */
-  398 |     await test.step("19. Media", async () => {
-  399 |       if (!storeId) { test.skip(true, "requires a store"); return; }
-  400 |       log("Step 19: Media (copertina + galleria)");
-  401 |       await page.goto(`${BASE}/merchant/${storeId}/edit?modulo=immagini`, { waitUntil: "domcontentloaded" });
-  402 |       await expect(page.locator("body")).toContainText("Immagini");
-  403 |       const galleryPosts: string[] = [];
-  404 |       page.on("response", (r) => {
-  405 |         if (r.url().includes(`/api/merchant/stores/${storeId}/gallery`) && r.request().method() === "POST") {
-  406 |           galleryPosts.push(r.url());
-  407 |         }
-  408 |       });
-  409 |       const inputs = page.locator('input[type="file"]');
-  410 |       await inputs.nth(1).setInputFiles("fixtures/logo-test.png"); // copertina
-  411 |       await expect.poll(() => galleryPosts.length, { timeout: 20000 }).toBe(1);
-  412 |       await inputs.nth(2).setInputFiles("fixtures/logo-test.png"); // galleria
-  413 |       await expect.poll(() => galleryPosts.length, { timeout: 20000 }).toBe(2);
-  414 |       // both uploads also trigger a settings PUT; verify galleria persisted
-  415 |       await expect
-  416 |         .poll(
-  417 |           async () => {
-  418 |             const j = await page.evaluate(
-  419 |               async (u) => (await fetch(u)).json(),
-  420 |               `/api/merchant/stores/${storeId}/settings`
-  421 |             );
-  422 |             return (j.data?.settings?.galleria ?? []).length;
-  423 |           },
-  424 |           { timeout: 20000 }
-  425 |         )
-  426 |         .toBeGreaterThanOrEqual(1);
-  427 |       await expect(page.locator("body")).toContainText("Immagini");
-  428 |     });
-  429 | 
-  430 |     /* ── 20. Reload + verifica persistenza (API) ──────────────────────────── */
-  431 |     await test.step("20. Reload + persistenza", async () => {
-  432 |       if (!storeId) { test.skip(true, "requires a store"); return; }
-  433 |       log("Step 20: Reload + verifica persistenza");
-  434 |       await page.goto(`${BASE}/merchant/${storeId}/edit`, { waitUntil: "domcontentloaded" });
-  435 |       await expect(page).toHaveURL(/\/merchant\/[^/]+\/edit/);
-  436 |       await page.reload({ waitUntil: "domcontentloaded" });
-  437 |       await expect(page.locator("body")).toContainText("Completezza profilo");
-  438 |       // fetch the settings API directly (avoids the reload-destroys-response race)
-  439 |       const s = await page.evaluate(
-  440 |         async (u) => {
-  441 |           const r = await fetch(u);
-  442 |           const j = await r.json();
-  443 |           return j.data.settings as {
-  444 |             nome: string;
-  445 |             descrizione: string;
-  446 |             servizi: string[];
-  447 |             data?: {
-  448 |               offerte?: Array<{ titolo?: string }>;
-  449 |               eventi?: Array<{ titolo?: string }>;
-  450 |               ai_data?: { tono?: string };
-  451 |             };
-  452 |             telefono?: string;
-  453 |             indirizzo?: string;
-  454 |             citta?: string;
-  455 |             orari?: Record<string, { apertura1?: string }>;
-  456 |             facebook?: string;
-  457 |             seo_title?: string;
-  458 |             logo_url?: string;
-  459 |             galleria?: string[];
-  460 |           };
-  461 |         },
-  462 |         `/api/merchant/stores/${storeId}/settings`
-  463 |       );
-  464 |       expect(s.nome).toMatch(/Rinominato/);
-  465 |       expect(s.descrizione).toMatch(/Descrizione aggiornata/);
-  466 |       expect(Array.isArray(s.servizi) && s.servizi.includes("Consegna a domicilio"), "servizi persisted").toBe(true);
-> 467 |       expect(s.data?.offerte?.[0]?.titolo).toBe("Sconto E2E");
-      |                                            ^ Error: expect(received).toBe(expected) // Object.is equality
-  468 |       expect(s.data?.eventi?.[0]?.titolo).toBe("Degustazione E2E");
-  469 |       expect(s.data?.ai_data?.tono).toBe("amichevole");
-  470 |       expect(s.telefono).toBe("0981 123456");
-  471 |       expect(s.indirizzo).toBe("Via Roma 1");
-  472 |       expect(s.citta).toBe("Castrovillari");
-  473 |       expect(s.orari?.["lunedì"]?.apertura1).toBe("08:00");
-  474 |       expect(s.facebook).toBe("negozio-e2e");
-  475 |       expect(s.seo_title).toBe("Negozio E2E | LocalHub");
-  476 |       expect(s.logo_url).toBeTruthy();
-  477 |       expect(Array.isArray(s.galleria) && s.galleria.length >= 1).toBe(true);
-  478 |       log(`persistenza OK — storeId=${storeId}`);
-  479 |     });
-  480 | 
-  481 |     /* ── 21. Elimina (negozio duplicato) ──────────────────────────────────── */
-  482 |     await test.step("21. Elimina negozio", async () => {
-  483 |       test.skip(!storeIdDuplicato, "requires the duplicated store");
-  484 |       log(`Step 21: Elimina negozio (${storeIdDuplicato})`);
-  485 |       await page.goto(`${BASE}/merchant/${storeIdDuplicato}/edit?modulo=zona-pericolosa`, {
-  486 |         waitUntil: "domcontentloaded",
-  487 |       });
-  488 |       await expect(page.locator("body")).toContainText("Zona Pericolosa");
-  489 |       const delPromise = page.waitForResponse(
-  490 |         (r) => r.url().endsWith(`/api/merchant/stores/${storeIdDuplicato}`) && r.request().method() === "DELETE",
-  491 |         { timeout: 15000 }
-  492 |       );
-  493 |       await page.getByRole("button", { name: "Sposta nel Cestino" }).click();
-  494 |       const delRes = await delPromise;
-  495 |       expect(delRes.status(), "store DELETE should be 200").toBe(200);
-  496 |       await page.waitForURL(/\/merchant$/, { timeout: 15000 });
-  497 |       await page.reload({ waitUntil: "domcontentloaded" });
-  498 |       await expect(page.locator(`a[href*="/merchant/${storeIdDuplicato}"]`)).toHaveCount(0);
-  499 |     });
-  500 | 
-  501 |     /* ── 22. Logout ───────────────────────────────────────────────────────── */
-  502 |     await test.step("22. Logout", async () => {
-  503 |       log("Step 22: Logout");
-  504 |       await page.goto(`${BASE}/merchant`, { waitUntil: "domcontentloaded" });
-  505 |       await page.locator('form[action="/api/auth/signout"] button[type="submit"]').first().click();
-  506 |       await page.waitForURL(`${BASE}/login`, { timeout: 15000 });
-  507 |       await expect(page).toHaveURL(/\/login/);
-  508 |       // reload after logout → session is gone, still on login
-  509 |       await page.reload({ waitUntil: "domcontentloaded" });
-  510 |       await expect(page).toHaveURL(/\/login/);
-  511 |     });
-  512 |   });
-  513 | });
-  514 | 
+  365 |     await test.step("17. SEO", async () => {
+  366 |       if (!storeId) { test.skip(true, "requires a store"); return; }
+  367 |       log("Step 17: SEO");
+  368 |       await page.goto(`${BASE}/merchant/${storeId}/edit?modulo=seo`, { waitUntil: "domcontentloaded" });
+  369 |       await expect(page.locator("body")).toContainText("SEO");
+  370 |       await page.locator('input[placeholder="Titolo per i motori di ricerca"]').fill("Negozio E2E | LocalHub");
+  371 |       await page.locator("textarea").fill("Descrizione SEO di test per il negozio E2E");
+  372 |       const kw = page.getByPlaceholder("Digita una keyword SEO e premi Invio...");
+  373 |       await kw.fill("pasticceria");
+  374 |       await kw.press("Enter");
+  375 |       await expect(page.locator("body")).toContainText("pasticceria");
+  376 |       await saveModule(storeId);
+  377 |     });
+  378 | 
+  379 |     /* ── 18. AI ───────────────────────────────────────────────────────────── */
+  380 |     await test.step("18. AI", async () => {
+  381 |       if (!storeId) { test.skip(true, "requires a store"); return; }
+  382 |       log("Step 18: AI");
+  383 |       await page.goto(`${BASE}/merchant/${storeId}/edit?modulo=ai`, { waitUntil: "domcontentloaded" });
+  384 |       await expect(page.locator("body")).toContainText("Assistente AI");
+  385 |       await page.locator("textarea").fill("Rispondi sempre in italiano e sii gentile.");
+  386 |       await page.locator("select").selectOption("amichevole");
+  387 |       const faq = page.getByPlaceholder("Domanda frequente (es. Fate consegne a domicilio?)");
+  388 |       await faq.fill("Fate consegne a domicilio?");
+  389 |       await faq.press("Enter");
+  390 |       await expect(page.locator("body")).toContainText("Fate consegne a domicilio?");
+  391 |       await saveModule(storeId);
+  392 |     });
+  393 | 
+  394 |     /* ── 19. Media (copertina + galleria) ─────────────────────────────────── */
+  395 |     await test.step("19. Media", async () => {
+  396 |       if (!storeId) { test.skip(true, "requires a store"); return; }
+  397 |       log("Step 19: Media (copertina + galleria)");
+  398 |       await page.goto(`${BASE}/merchant/${storeId}/edit?modulo=immagini`, { waitUntil: "domcontentloaded" });
+  399 |       await expect(page.locator("body")).toContainText("Immagini");
+  400 |       const galleryPosts: string[] = [];
+  401 |       page.on("response", (r) => {
+  402 |         if (r.url().includes(`/api/merchant/stores/${storeId}/gallery`) && r.request().method() === "POST") {
+  403 |           galleryPosts.push(r.url());
+  404 |         }
+  405 |       });
+  406 |       const inputs = page.locator('input[type="file"]');
+  407 |       await inputs.nth(1).setInputFiles("fixtures/logo-test.png"); // copertina
+  408 |       await expect.poll(() => galleryPosts.length, { timeout: 20000 }).toBe(1);
+  409 |       await inputs.nth(2).setInputFiles("fixtures/logo-test.png"); // galleria
+  410 |       await expect.poll(() => galleryPosts.length, { timeout: 20000 }).toBe(2);
+  411 |       // both uploads also trigger a settings PUT; verify galleria persisted
+  412 |       await expect
+  413 |         .poll(
+  414 |           async () => {
+  415 |             const j = await page.evaluate(
+  416 |               async (u) => (await fetch(u)).json(),
+  417 |               `/api/merchant/stores/${storeId}/settings`
+  418 |             );
+  419 |             return (j.data?.settings?.galleria ?? []).length;
+  420 |           },
+  421 |           { timeout: 20000 }
+  422 |         )
+  423 |         .toBeGreaterThanOrEqual(1);
+  424 |       await expect(page.locator("body")).toContainText("Immagini");
+  425 |     });
+  426 | 
+  427 |     /* ── 20. Reload + verifica persistenza (API) ──────────────────────────── */
+  428 |     await test.step("20. Reload + persistenza", async () => {
+  429 |       if (!storeId) { test.skip(true, "requires a store"); return; }
+  430 |       log("Step 20: Reload + verifica persistenza");
+  431 |       await page.goto(`${BASE}/merchant/${storeId}/edit`, { waitUntil: "domcontentloaded" });
+  432 |       await expect(page).toHaveURL(/\/merchant\/[^/]+\/edit/);
+  433 |       await page.reload({ waitUntil: "domcontentloaded" });
+  434 |       await expect(page.locator("body")).toContainText("Completezza profilo");
+  435 |       // fetch the settings API directly (avoids the reload-destroys-response race)
+  436 |       const s = await page.evaluate(
+  437 |         async (u) => {
+  438 |           const r = await fetch(u);
+  439 |           const j = await r.json();
+  440 |           return j.data.settings as {
+  441 |             nome: string;
+  442 |             descrizione: string;
+  443 |             servizi: string[];
+  444 |             data?: {
+  445 |               offerte?: Array<{ titolo?: string }>;
+  446 |               eventi?: Array<{ titolo?: string }>;
+  447 |               ai_data?: { tono?: string };
+  448 |             };
+  449 |             telefono?: string;
+  450 |             indirizzo?: string;
+  451 |             citta?: string;
+  452 |             orari?: Record<string, { apertura1?: string }>;
+  453 |             facebook?: string;
+  454 |             seo_title?: string;
+  455 |             logo_url?: string;
+  456 |             galleria?: string[];
+  457 |           };
+  458 |         },
+  459 |         `/api/merchant/stores/${storeId}/settings`
+  460 |       );
+  461 |       expect(s.nome).toMatch(/Rinominato/);
+  462 |       expect(s.descrizione).toMatch(/Descrizione aggiornata/);
+  463 |       expect(Array.isArray(s.servizi) && s.servizi.includes("Consegna a domicilio"), "servizi persisted").toBe(true);
+  464 |       expect(s.data?.offerte?.[0]?.titolo).toBe("Sconto E2E");
+> 465 |       expect(s.data?.eventi?.[0]?.titolo).toBe("Degustazione E2E");
+      |                                           ^ Error: expect(received).toBe(expected) // Object.is equality
+  466 |       expect(s.data?.ai_data?.tono).toBe("amichevole");
+  467 |       expect(s.telefono).toBe("0981 123456");
+  468 |       expect(s.indirizzo).toBe("Via Roma 1");
+  469 |       expect(s.citta).toBe("Castrovillari");
+  470 |       expect(s.orari?.["lunedì"]?.apertura1).toBe("08:00");
+  471 |       expect(s.facebook).toBe("negozio-e2e");
+  472 |       expect(s.seo_title).toBe("Negozio E2E | LocalHub");
+  473 |       expect(s.logo_url).toBeTruthy();
+  474 |       expect(Array.isArray(s.galleria) && s.galleria.length >= 1).toBe(true);
+  475 |       log(`persistenza OK — storeId=${storeId}`);
+  476 |     });
+  477 | 
+  478 |     /* ── 21. Elimina (negozio duplicato) ──────────────────────────────────── */
+  479 |     // RIMOSSO: l'eliminazione negozio è ora esclusiva dell'Area Amministratore.
+  480 |     // Il commerciante non può più accedere alla Zona Pericolosa.
+  481 | 
+  482 |     /* ── 22. Logout ───────────────────────────────────────────────────────── */
+  483 |     await test.step("22. Logout", async () => {
+  484 |       log("Step 22: Logout");
+  485 |       await page.goto(`${BASE}/merchant`, { waitUntil: "domcontentloaded" });
+  486 |       await page.locator('form[action="/api/auth/signout"] button[type="submit"]').first().click();
+  487 |       await page.waitForURL(`${BASE}/login`, { timeout: 15000 });
+  488 |       await expect(page).toHaveURL(/\/login/);
+  489 |       // reload after logout → session is gone, still on login
+  490 |       await page.reload({ waitUntil: "domcontentloaded" });
+  491 |       await expect(page).toHaveURL(/\/login/);
+  492 |     });
+  493 |   });
+  494 | });
+  495 | 
 ```

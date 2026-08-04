@@ -19,7 +19,6 @@ const log = (msg: string) => console.log(`\n>>> ${msg}`);
 test.describe("MERCHANT REGRESSION TEST (DB-synced + build-fixed)", () => {
   let page: Page;
   let storeId: string | null = null; // store A: E2E Panificio (main target of module tests)
-  let storeIdDuplicato: string | null = null; // store B: deleted in "Elimina"
   let storeIdTemplate: string | null = null; // store C (reference only)
 
   test.beforeAll(async ({ browser }) => {
@@ -126,9 +125,7 @@ test.describe("MERCHANT REGRESSION TEST (DB-synced + build-fixed)", () => {
       );
       await page.waitForURL(/\/merchant\/[^/]+\/edit/, { timeout: 20000 });
       const m = page.url().match(/\/merchant\/([^/]+)\/edit/);
-      storeIdDuplicato = m ? m[1] : null;
-      expect(storeIdDuplicato, "duplicato storeId must be captured").toBeTruthy();
-      log(`duplicazione storeIdDuplicato=${storeIdDuplicato}`);
+      log(`duplicazione storeId=${m ? m[1] : "?"}`);
     });
 
     /* ── 5. Template ──────────────────────────────────────────────────────── */
@@ -479,24 +476,8 @@ test.describe("MERCHANT REGRESSION TEST (DB-synced + build-fixed)", () => {
     });
 
     /* ── 21. Elimina (negozio duplicato) ──────────────────────────────────── */
-    await test.step("21. Elimina negozio", async () => {
-      test.skip(!storeIdDuplicato, "requires the duplicated store");
-      log(`Step 21: Elimina negozio (${storeIdDuplicato})`);
-      await page.goto(`${BASE}/merchant/${storeIdDuplicato}/edit?modulo=zona-pericolosa`, {
-        waitUntil: "domcontentloaded",
-      });
-      await expect(page.locator("body")).toContainText("Zona Pericolosa");
-      const delPromise = page.waitForResponse(
-        (r) => r.url().endsWith(`/api/merchant/stores/${storeIdDuplicato}`) && r.request().method() === "DELETE",
-        { timeout: 15000 }
-      );
-      await page.getByRole("button", { name: "Sposta nel Cestino" }).click();
-      const delRes = await delPromise;
-      expect(delRes.status(), "store DELETE should be 200").toBe(200);
-      await page.waitForURL(/\/merchant$/, { timeout: 15000 });
-      await page.reload({ waitUntil: "domcontentloaded" });
-      await expect(page.locator(`a[href*="/merchant/${storeIdDuplicato}"]`)).toHaveCount(0);
-    });
+    // RIMOSSO: l'eliminazione negozio è ora esclusiva dell'Area Amministratore.
+    // Il commerciante non può più accedere alla Zona Pericolosa.
 
     /* ── 22. Logout ───────────────────────────────────────────────────────── */
     await test.step("22. Logout", async () => {
