@@ -33,7 +33,11 @@ export default async function MerchantLayout({
   const storesResult = await getMerchantStoresForUser(user.id);
 
   return (
-    <MerchantShell
+    <>
+      <div style={{background:"#2563eb",color:"white",padding:"20px",textAlign:"center",fontSize:"28px",fontWeight:"900",fontFamily:"monospace",position:"sticky",top:0,zIndex:9999}}>
+        ═══ MERCHANT LAYOUT ═══ app/(merchant)/merchant/layout.tsx ═══
+      </div>
+      <MerchantShell
       user={user}
       stores={storesResult.data}
       banner={storesResult.setupRequired ? storesResult.errorMessage : storesResult.errorMessage}

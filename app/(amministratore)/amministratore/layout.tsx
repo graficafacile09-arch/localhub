@@ -24,5 +24,12 @@ export default async function AmministratoreLayout({
   // shell client, che li inoltra all'header per il menu utente.
   const account = await getDatiAccount();
 
-  return <AdminShell account={account}>{children}</AdminShell>;
+  return (
+    <>
+      <div style={{background:"#dc2626",color:"white",padding:"20px",textAlign:"center",fontSize:"28px",fontWeight:"900",fontFamily:"monospace",position:"sticky",top:0,zIndex:9999}}>
+        ═══ ADMIN LAYOUT ═══ app/(amministratore)/amministratore/layout.tsx ═══
+      </div>
+      <AdminShell account={account}>{children}</AdminShell>
+    </>
+  );
 }
