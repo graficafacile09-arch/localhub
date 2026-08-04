@@ -6,7 +6,8 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 /**
  * Registrazione COMMERCIANTE (venditore).
  * Crea un account con ruolo merchant e il relativo negozio iniziale.
- * L'utente viene portato direttamente nell'Area Commerciante (/merchant).
+ * Dopo la registrazione l'utente atterra sulla homepage e sceglie
+ * manualmente l'area dal menu account.
  */
 export async function POST(request: Request) {
   const loginUrl = new URL("/login", request.url);
@@ -95,6 +96,7 @@ export async function POST(request: Request) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Il merchant viene portato direttamente nell'Area Commerciante.
-  return NextResponse.redirect(new URL("/merchant", request.url));
+  // Dopo la registrazione l'utente atterra sulla homepage e sceglie
+  // manualmente l'area dal menu account.
+  return NextResponse.redirect(new URL("/", request.url));
 }

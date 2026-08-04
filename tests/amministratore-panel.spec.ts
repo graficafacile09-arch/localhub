@@ -5,11 +5,12 @@ import { BASE, UTENTI, loginUtente } from "./fixtures/auth";
 // Account condiviso SOLO tra test admin: nessuno di essi esegue mai un
 // signOut, quindi non può esserci revoca incrociata di sessioni.
 async function accediComeAdmin(page: import("@playwright/test").Page) {
-  await loginUtente(page, UTENTI.admin, { waitFor: `${BASE}/amministratore` });
+  await loginUtente(page, UTENTI.admin);
 }
 
-// Ogni test del pannello parte loggato come admin (il redirect per ruolo
-// porta l'admin su /amministratore).
+// Ogni test del pannello parte loggato come admin. Dopo il login l'utente
+// atterra sulla homepage (/); ogni test naviga esplicitamente alla propria
+// sezione dell'area amministratore.
 test.beforeEach(async ({ page }) => {
   await accediComeAdmin(page);
 });

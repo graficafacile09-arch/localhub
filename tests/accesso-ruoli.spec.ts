@@ -22,10 +22,10 @@ test.describe("SISTEMA DI ACCESSO E RUOLI", () => {
     await expect(page.getByText("Aggiungi Prodotto")).toHaveCount(0);
   });
 
-  test("admin puro: login → /amministratore; menu con Area Amministratore; /cliente negato", async ({
+  test("admin puro: login → / (homepage); menu con Area Amministratore; /cliente negato", async ({
     page,
   }) => {
-    await loginUtente(page, UTENTI.admin, { waitFor: `${BASE}/amministratore` });
+    await loginUtente(page, UTENTI.admin, { waitFor: `${BASE}/` });
 
     // Un admin puro (senza ruolo customer) NON entra nell'Area Clienti.
     await page.goto(`${BASE}/cliente`, { waitUntil: "networkidle" });
@@ -88,12 +88,12 @@ test.describe("SISTEMA DI ACCESSO E RUOLI", () => {
     await expect(page.getByRole("menuitem", { name: "Esci" })).toBeVisible();
   });
 
-  test("merchant: login → /merchant; menu da commerciante; /cliente negato", async ({
+  test("merchant: login → / (homepage); menu da commerciante; /cliente negato", async ({
     page,
   }) => {
     // Account dedicato (merchantD): nessun altro test concorrente fa signOut
     // su questo account (merchantA/B/C sono usati dalle altre suite).
-    await loginUtente(page, UTENTI.merchantD, { waitFor: /\/merchant/ });
+    await loginUtente(page, UTENTI.merchantD, { waitFor: `${BASE}/` });
 
     // Un merchant puro (senza ruolo customer) NON entra nell'Area Clienti.
     await page.goto(`${BASE}/cliente`, { waitUntil: "networkidle" });

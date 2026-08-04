@@ -56,8 +56,8 @@ test.describe("MERCHANT REGRESSION TEST (DB-synced + build-fixed)", () => {
     /* ── 1. Login ─────────────────────────────────────────────────────────── */
     await test.step("1. Login", async () => {
       log("Step 1: Login");
-      await loginUtente(page, MERCHANT, { waitFor: /\/merchant/ });
-      await expect(page).toHaveURL(/\/merchant/);
+      await loginUtente(page, MERCHANT);
+      await expect(page).toHaveURL(`${BASE}/`);
     });
 
     /* ── 2. Dashboard ─────────────────────────────────────────────────────── */

@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { getRoleForUser, redirectPerRuolo } from "@/lib/auth/roles";
 
 export async function POST(request: Request) {
   const loginUrl = new URL("/login", request.url);
@@ -28,8 +27,9 @@ export async function POST(request: Request) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Redirect automatico in base al ruolo (FASE 7):
-  // customer → / · merchant → /merchant · admin → /amministratore
-  const role = data?.user ? await getRoleForUser(data.user.id) : "customer";
-  return NextResponse.redirect(new URL(redirectPerRuolo(role), request.url));
+  // Dopo il login l'utente atterra sulla homepage e sceglie manualmente
+  // l'area dal menu account (Area Clienti / Area Commerciante / Area Amministratore).
+  // Nessun redirect automatico basato sul ruolo: il webmaster (multi-ruolo)
+  // vede tutte le voci contemporaneamente.
+  return NextResponse.redirect(new URL("/", request.url));
 }

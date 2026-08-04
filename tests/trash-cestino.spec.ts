@@ -5,12 +5,12 @@ import { BASE, UTENTI, loginUtente } from "./fixtures/auth";
 // concorrente la usa, quindi i flussi delete/restore non confliggono.
 // L'account admin è condiviso SOLO tra test che non eseguono mai signOut.
 async function loginMerchant(page: import("@playwright/test").Page) {
-  await loginUtente(page, UTENTI.merchantC, { waitFor: /\/merchant/ });
-  await expect(page).toHaveURL(/\/merchant/);
+  await loginUtente(page, UTENTI.merchantC);
+  await expect(page).toHaveURL(`${BASE}/`);
 }
 
 async function loginAdmin(page: import("@playwright/test").Page) {
-  await loginUtente(page, UTENTI.admin, { waitFor: `${BASE}/amministratore` });
+  await loginUtente(page, UTENTI.admin);
 }
 
 test.describe.configure({ mode: "serial" });

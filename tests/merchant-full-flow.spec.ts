@@ -41,8 +41,8 @@ test.describe("Merchant full journey (DB-synced + build-fixed)", () => {
     /* ── Step 1: Accesso con account di recupero (già registrato via UI) ── */
     await test.step("1. Accesso (account fixture)", async () => {
       log("Step 1: Accesso account fixture");
-      await loginUtente(page, MERCHANT, { waitFor: /\/merchant/ });
-      await expect(page).toHaveURL(/\/merchant/);
+      await loginUtente(page, MERCHANT);
+      await expect(page).toHaveURL(`${BASE}/`);
       const m = page.url().match(/\/merchant\/([^/]+)/);
       storeId = m ? m[1] : null;
     });
@@ -59,8 +59,8 @@ test.describe("Merchant full journey (DB-synced + build-fixed)", () => {
       await page.locator('form[action="/api/auth/signout"] button[type="submit"]').first().click();
       await page.waitForURL(`${BASE}/login`, { timeout: 15000 });
       await expect(page).toHaveURL(/\/login/);
-      await loginUtente(page, MERCHANT, { waitFor: /\/merchant/ });
-      await expect(page).toHaveURL(/\/merchant/);
+      await loginUtente(page, MERCHANT);
+      await expect(page).toHaveURL(`${BASE}/`);
     });
 
     /* ── Step 3: Apertura area Merchant ───────────────────────────────────── */
@@ -344,8 +344,8 @@ test.describe("Merchant full journey (DB-synced + build-fixed)", () => {
     /* ── Step 19: Nuovo login ─────────────────────────────────────────────── */
     await test.step("19. Nuovo login", async () => {
       log("Step 19: Nuovo login");
-      await loginUtente(page, MERCHANT, { waitFor: /\/merchant/ });
-      await expect(page).toHaveURL(/\/merchant/);
+      await loginUtente(page, MERCHANT);
+      await expect(page).toHaveURL(`${BASE}/`);
     });
   });
 });
