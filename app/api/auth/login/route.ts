@@ -2,11 +2,21 @@ import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
-/** Riporta il redirect sul loginUrl se è un path interno valido. */
-function preservaRedirect(loginUrl: URL, formData: FormData) {
-  const redirect = String(formData.get("redirect") ?? "").trim();
-  if (redirect.startsWith("/")) {
-    loginUrl.searchParams.set("redirect", redirect);
+/** Mappa area → percorso di atterraggio. */
+function areaToPath(area: string): string {
+  switch (area) {
+    case "admin": return "/amministratore";
+    case "merchant": return "/merchant";
+    case "cliente": return "/cliente";
+    default: return "";
+  }
+}
+
+/** Riporta l'area sul loginUrl se valida. */
+function preservaArea(loginUrl: URL, formData: FormData) {
+  const area = String(formData.get("area") ?? "").trim();
+  if (areaToPath(area)) {
+    loginUrl.searchParams.set("area", area);
   }
 }
 
@@ -24,7 +34,7 @@ export async function POST(request: Request) {
 
   if (!email || !password) {
     loginUrl.searchParams.set("error", "Inserisci email e password.");
-    preservaRedirect(loginUrl, formData);
+    preservaArea(loginUrl, formData);
     return NextResponse.redirect(loginUrl);
   }
 
@@ -33,13 +43,13 @@ export async function POST(request: Request) {
 
   if (error) {
     loginUrl.searchParams.set("error", error.message);
-    preservaRedirect(loginUrl, formData);
+    preservaArea(loginUrl, formData);
     return NextResponse.redirect(loginUrl);
   }
 
-  // Rispetta la destinazione scelta dall'utente (passata dal layout
-  // dell'area tramite ?redirect=). Solo path interni (iniziano con /).
-  const redirect = String(formData.get("redirect") ?? "").trim();
-  const destinazione = redirect.startsWith("/") ? redirect : "/";
+  // Rispetta l'area scelta dall'utente (passata dal layout tramite
+  // ?area=admin|merchant|cliente). Nessun redirect automatico.
+  const area = String(formData.get("area") ?? "").trim();
+  const destinazione = areaToPath(area) || "/";
   return NextResponse.redirect(new URL(destinazione, request.url));
 }

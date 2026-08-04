@@ -50,8 +50,17 @@ export default function AccountMenu({ account }: { account: DatiAccount | null }
   const pathname = usePathname();
 
   // Login URL: se l'utente è su una pagina pubblica e clicca Accedi,
-  // dopo il login tornerà alla pagina da cui ha cliccato.
-  const loginHref = pathname === "/login" ? "/login" : `/login?redirect=${encodeURIComponent(pathname)}`;
+  // il parametro area indica il contesto (cliente/merchant/admin).
+  function getAreaParam(): string {
+    if (pathname.startsWith("/cliente")) return "cliente";
+    if (pathname.startsWith("/merchant")) return "merchant";
+    if (pathname.startsWith("/amministratore")) return "admin";
+    return "";
+  }
+  const loginHref =
+    pathname === "/login"
+      ? "/login"
+      : (() => { const a = getAreaParam(); return a ? `/login?area=${a}` : "/login"; })();
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {

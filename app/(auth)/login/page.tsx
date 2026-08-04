@@ -6,8 +6,15 @@ import { useSearchParams } from "next/navigation";
 function LoginContent() {
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
-  const redirect = searchParams.get("redirect") ?? "";
+  const area = searchParams.get("area") ?? "";
   const [tab, setTab] = useState<"login" | "register">("login");
+
+  /** Mappa area → percorso di atterraggio dopo il login. */
+  const areaRedirect =
+    area === "admin" ? "/amministratore"
+    : area === "merchant" ? "/merchant"
+    : area === "cliente" ? "/cliente"
+    : "";
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#eef3f8] px-4 py-12">
@@ -16,11 +23,13 @@ function LoginContent() {
         <div className="space-y-6 p-8">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
-              {redirect.startsWith("/amministratore")
+              {area === "admin"
                 ? "Area Amministratore"
-                : redirect.startsWith("/cliente")
+                : area === "cliente"
                   ? "Area Clienti"
-                  : "Area Commerciante"}
+                  : area === "merchant"
+                    ? "Area Commerciante"
+                    : "Area Commerciante"}
             </p>
             <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-900">
               {tab === "login" ? "Bentornato" : "Benvenuto"}
@@ -64,17 +73,17 @@ function LoginContent() {
             </div>
           )}
 
-          {tab === "login" ? <LoginForm redirect={redirect} /> : <RegisterForm />}
+          {tab === "login" ? <LoginForm area={area} /> : <RegisterForm />}
         </div>
       </div>
     </main>
   );
 }
 
-function LoginForm({ redirect }: { redirect: string }) {
+function LoginForm({ area }: { area: string }) {
   return (
     <form action="/api/auth/login" method="post" className="space-y-4">
-      {redirect && <input type="hidden" name="redirect" value={redirect} />}
+      {area && <input type="hidden" name="area" value={area} />}
       <div className="space-y-2">
         <label htmlFor="email" className="text-sm font-semibold text-slate-700">Email</label>
         <input

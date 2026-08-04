@@ -17,7 +17,7 @@ test.describe("SISTEMA DI ACCESSO E RUOLI", () => {
     // Homepage: niente più "Aggiungi Prodotto", ma il pulsante Accedi.
     await page.goto(`${BASE}/`, { waitUntil: "networkidle" });
     await expect(
-      page.getByRole("link", { name: /Accedi/ })
+      page.getByRole("link", { name: /Accedi/ }).first()
     ).toBeVisible();
     await expect(page.getByText("Aggiungi Prodotto")).toHaveCount(0);
   });
@@ -132,7 +132,7 @@ test.describe("SISTEMA DI ACCESSO E RUOLI", () => {
     page,
   }) => {
     await page.goto(`${BASE}/`, { waitUntil: "networkidle" });
-    await page.getByRole("link", { name: /Accedi/ }).click();
+    await page.getByRole("link", { name: /^Accedi$/ }).first().click();
     await expect(page).toHaveURL(/\/login/);
     await expect(page.locator("#email")).toBeVisible();
     await expect(

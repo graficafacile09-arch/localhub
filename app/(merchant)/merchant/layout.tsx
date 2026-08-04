@@ -29,21 +29,16 @@ export default async function MerchantLayout({
 
   // Accesso SOLO a chi possiede il ruolo merchant o admin (multi-role).
   // I customer vengono reindirizzati alla home del loro ruolo.
-  const { user } = await requireRuoli(["merchant", "admin"], "/login?redirect=/merchant");
+  const { user } = await requireRuoli(["merchant", "admin"], "/login?area=merchant");
   const storesResult = await getMerchantStoresForUser(user.id);
 
   return (
-    <>
-      <div style={{background:"#2563eb",color:"white",padding:"20px",textAlign:"center",fontSize:"28px",fontWeight:"900",fontFamily:"monospace",position:"sticky",top:0,zIndex:9999}}>
-        ═══ MERCHANT LAYOUT ═══ app/(merchant)/merchant/layout.tsx ═══
-      </div>
-      <MerchantShell
+    <MerchantShell
       user={user}
       stores={storesResult.data}
       banner={storesResult.setupRequired ? storesResult.errorMessage : storesResult.errorMessage}
     >
       {children}
     </MerchantShell>
-    </>
   );
 }

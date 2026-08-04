@@ -19,14 +19,7 @@ export default async function ClienteLayout({
 }: {
   children: ReactNode;
 }) {
-  await requireRuoli(["customer"], "/login?redirect=/cliente");
+  await requireRuoli(["customer"], "/login?area=cliente");
 
-  return (
-    <>
-      <div style={{background:"#16a34a",color:"white",padding:"20px",textAlign:"center",fontSize:"28px",fontWeight:"900",fontFamily:"monospace",position:"sticky",top:0,zIndex:9999}}>
-        ═══ CLIENT LAYOUT ═══ app/(cliente)/cliente/layout.tsx ═══
-      </div>
-      <ClienteShell>{children}</ClienteShell>
-    </>
-  );
+  return <ClienteShell>{children}</ClienteShell>;
 }

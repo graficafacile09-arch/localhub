@@ -67,7 +67,7 @@ export async function hasRole(
 /**
  * Richiede che l'utente loggato abbia uno dei ruoli richiesti.
  * - Non loggato → redirect a `redirectTo` (default /login).
- * - Loggato ma ruolo non consentito → redirect alla home del proprio ruolo.
+ * - Loggato ma ruolo non consentito → redirect a /login (nessun automatismo).
  */
 export async function requireRole(
   richiesti: readonly RuoloUtente[],
@@ -80,7 +80,7 @@ export async function requireRole(
   }
 
   if (!ruoloSoddisfa(data.role, richiesti)) {
-    redirect(redirectPerRuolo(data.role));
+    redirect("/login");
   }
 
   return data;
@@ -122,7 +122,7 @@ export async function getCurrentRuoli(): Promise<UtenteConRuoli | null> {
  * Richiede che l'utente loggato possieda ALMENO UNO dei ruoli richiesti
  * (verifica sull'insieme dei ruoli). Usato dai layout delle aree.
  * - Non loggato → redirect a `redirectTo` (default /login).
- * - Nessun ruolo compatibile → redirect alla home del ruolo principale.
+ * - Nessun ruolo compatibile → redirect a /login (nessun automatismo).
  */
 export async function requireRuoli(
   richiesti: readonly RuoloUtente[],
@@ -135,7 +135,7 @@ export async function requireRuoli(
   }
 
   if (!ruoliSoddisfano(data.ruoli, richiesti)) {
-    redirect(redirectPerRuolo(data.role));
+    redirect("/login");
   }
 
   return data;

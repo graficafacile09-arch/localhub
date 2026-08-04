@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { AlertCircle, CheckCircle2, Mail, UserRound } from "lucide-react";
-import { Field, SaveBar } from "@/components/merchant/modules/ModuleFields";
+import { Field, SaveBar } from "@/components/ui/ModuleFields";
 import ClienteEmptyState from "@/components/cliente/ClienteEmptyState";
 import ClienteAvatarUploader from "./ClienteAvatarUploader";
 import type { ClienteProfilo } from "@/lib/cliente/types";
