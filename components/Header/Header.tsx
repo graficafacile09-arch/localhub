@@ -53,6 +53,10 @@ export default async function Header() {
             Assistente AI
           </Link>
 
+          <Link href="/login?area=admin" className="hover:text-blue-600 transition">
+            Amministratore
+          </Link>
+
           <div className="hidden md:block">
             <AccountMenu account={account} />
           </div>

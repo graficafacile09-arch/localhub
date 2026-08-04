@@ -7,6 +7,7 @@
 export type AttivitaRow = {
   id: string;
   nome: string;
+  slug: string | null;
   categoria: string | null;
   logo_url: string | null;
   /** Email del proprietario (da auth.users) o null se non assegnato. */

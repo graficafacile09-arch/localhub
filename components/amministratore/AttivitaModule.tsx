@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Sparkles, Store } from "lucide-react";
 import type {
   AttivitaRow,
@@ -32,11 +32,18 @@ export default function AttivitaModule({
   const [evidenza, setEvidenza] =
     useState<FiltroEvidenzaAttivita>("tutti");
   const [ordina, setOrdina] = useState<OrdinaAttivita>("recenti");
+  // Mantiene traccia degli id eliminati localmente (per aggiornamento UI immediato)
+  const [eliminati, setEliminati] = useState<Set<string>>(new Set());
+
+  const handleElimina = useCallback((id: string) => {
+    setEliminati((prev) => new Set(prev).add(id));
+  }, []);
 
   const visibili = useMemo(() => {
     const termine = normalizza(ricerca);
 
     const filtrati = attivita.filter((riga) => {
+      if (eliminati.has(riga.id)) return false;
       if (termine) {
         const nelTesto = [
           riga.nome,
@@ -119,16 +126,15 @@ export default function AttivitaModule({
       </p>
 
       {/* ── Tabella ─────────────────────────────────────────────────────────── */}
-      <AttivitaTable attivita={visibili} />
+      <AttivitaTable attivita={visibili} onElimina={handleElimina} />
 
       {/* ── Nota di stato ───────────────────────────────────────────────────── */}
       <div className="flex items-start gap-3 rounded-3xl border border-blue-100 bg-blue-50/60 px-5 py-4 text-sm text-blue-900">
         <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" aria-hidden />
         <p className="leading-6">
-          <span className="font-bold">Stato attuale:</span> dati reali dal
-          database (negozi, prodotti attivi e proprietari). Le azioni
-          (Visualizza, Modifica, Apri negozio, Gestisci proprietario, Metti in
-          evidenza, Disattiva, Elimina) sono placeholder.
+          <span className="font-bold">Centro di controllo:</span> dati reali dal
+          database. Elimina sposta nel Cestino (ripristinabile). Modifica e
+          Apri dashboard portano all&apos;area commerciante del negozio.
         </p>
       </div>
     </div>

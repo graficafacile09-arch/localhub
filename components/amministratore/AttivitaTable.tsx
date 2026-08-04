@@ -31,7 +31,13 @@ function BadgeStato({ attivo }: { attivo: boolean }) {
  * Colonne: Logo, Nome, Categoria, Proprietario, Prodotti, Stato, In evidenza,
  * Data creazione, Azioni. Azioni tutte placeholder.
  */
-export default function AttivitaTable({ attivita }: { attivita: AttivitaRow[] }) {
+export default function AttivitaTable({
+  attivita,
+  onElimina,
+}: {
+  attivita: AttivitaRow[];
+  onElimina?: (id: string) => void;
+}) {
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
       <div className="overflow-x-auto">
@@ -112,7 +118,7 @@ export default function AttivitaTable({ attivita }: { attivita: AttivitaRow[] })
                     {formatData.format(new Date(negozio.created_at))}
                   </td>
                   <td className="px-5 py-4 text-right">
-                    <AttivitaActionsMenu attivita={negozio} />
+                    <AttivitaActionsMenu attivita={negozio} onElimina={onElimina} />
                   </td>
                 </tr>
               );

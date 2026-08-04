@@ -12,6 +12,7 @@ const getDb = () => {
 type NegozioRow = {
   id: string;
   nome: string;
+  slug: string | null;
   categoria: string | null;
   logo_url: string | null;
   owner_user_id: string | null;
@@ -36,7 +37,7 @@ export async function getAttivitaAdmin(): Promise<AttivitaRow[]> {
   const { data: negoziRaw, error } = await db
     .from("negozi")
     .select(
-      "id, nome, categoria, logo_url, owner_user_id, attivo, in_evidenza, created_at"
+      "id, nome, slug, categoria, logo_url, owner_user_id, attivo, in_evidenza, created_at"
     )
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
@@ -87,6 +88,7 @@ export async function getAttivitaAdmin(): Promise<AttivitaRow[]> {
   return negozi.map((n) => ({
     id: n.id,
     nome: n.nome,
+    slug: n.slug ?? null,
     categoria: n.categoria ?? null,
     logo_url: n.logo_url ?? null,
     proprietario:

@@ -276,7 +276,7 @@ test.describe("MODULO ATTIVITÀ — centro di controllo", () => {
     await expect(tabella.getByText(nomePrimo).first()).toBeVisible();
   });
 
-  test("il menu Azioni di un negozio elenca le voci placeholder", async ({
+  test("il menu Azioni di un negozio elenca le voci (Elimina con conferma)", async ({
     page,
   }) => {
     await page.goto(`${BASE}/amministratore/attivita`, {
@@ -294,9 +294,9 @@ test.describe("MODULO ATTIVITÀ — centro di controllo", () => {
     await page.getByRole("button", { name: `Azioni per ${nomePrima}` }).click();
 
     for (const voce of [
-      "Visualizza",
+      "Apri dashboard",
       "Modifica",
-      "Apri negozio",
+      "Duplica negozio",
       "Gestisci proprietario",
       /Metti in evidenza|Togli evidenza/,
       /Disattiva|Riattiva/,
@@ -307,9 +307,12 @@ test.describe("MODULO ATTIVITÀ — centro di controllo", () => {
       ).toBeVisible();
     }
 
-    // Click su una voce placeholder: nessuna navigazione, resta sulla pagina.
-    await page.getByRole("menuitem", { name: "Visualizza" }).click();
-    await expect(page).toHaveURL(/\/amministratore\/attivita/);
+    // Click su Elimina apre la conferma (non chiude il menu).
+    await page.getByRole("menuitem", { name: "Elimina" }).click();
+    await expect(page.locator("body")).toContainText("Eliminare");
+    await expect(
+      page.getByRole("button", { name: "Annulla" })
+    ).toBeVisible();
   });
 });
 
