@@ -44,5 +44,6 @@ export default async function MerchantLayout({
     >
       {children}
     </MerchantShell>
+    </>
   );
 }
