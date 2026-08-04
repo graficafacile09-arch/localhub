@@ -49,9 +49,11 @@ export async function proxy(request: NextRequest) {
   // (es. il webmaster admin+merchant+customer) accede a ogni area a cui
   // corrisponde almeno uno dei suoi ruoli.
   if (areaAmministratore || areaMerchant || areaCliente) {
-    // Non loggato → login
+    // Non loggato → login (preservando la destinazione originale)
     if (!user) {
-      return redirectConSessione("/login");
+      const loginUrl = new URL("/login", request.url);
+      loginUrl.searchParams.set("redirect", pathname);
+      return redirectConSessione(loginUrl.toString());
     }
 
     const ruoli = await getRuoliUtente(user.id);

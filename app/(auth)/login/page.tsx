@@ -16,7 +16,11 @@ function LoginContent() {
         <div className="space-y-6 p-8">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
-              Area Amministratore
+              {redirect.startsWith("/amministratore")
+                ? "Area Amministratore"
+                : redirect.startsWith("/cliente")
+                  ? "Area Clienti"
+                  : "Area Commerciante"}
             </p>
             <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-900">
               {tab === "login" ? "Bentornato" : "Benvenuto"}

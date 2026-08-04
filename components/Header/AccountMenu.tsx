@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type ComponentType } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   ChevronDown,
   Globe,
@@ -46,6 +47,11 @@ const ETICHETTE_RUOLO: Record<RuoloUtente, string> = {
 export default function AccountMenu({ account }: { account: DatiAccount | null }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
+
+  // Login URL: se l'utente è su una pagina pubblica e clicca Accedi,
+  // dopo il login tornerà alla pagina da cui ha cliccato.
+  const loginHref = pathname === "/login" ? "/login" : `/login?redirect=${encodeURIComponent(pathname)}`;
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -68,7 +74,7 @@ export default function AccountMenu({ account }: { account: DatiAccount | null }
   if (!account) {
     return (
       <Link
-        href="/login"
+        href={loginHref}
         className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-blue-700"
       >
         <LogIn className="h-4 w-4" aria-hidden />
