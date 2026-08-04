@@ -8,27 +8,42 @@ import MerchantSidebarNav from "./MerchantSidebarNav";
 import MerchantBottomNav from "./MerchantBottomNav";
 import MerchantTopBar from "./MerchantTopBar";
 import MerchantGlobalNav from "./MerchantGlobalNav";
+import AdminSidebar from "@/components/amministratore/AdminSidebar";
 
+/**
+ * Shell condivisa tra Area Commerciante e Area Amministratore.
+ *
+ * `area="merchant"` (default) → identica alla vecchia Area Commerciante.
+ * `area="admin"` → stessa grafica, stessi moduli, stessa esperienza d'uso:
+ * la differenza è solo il titolo dell'header ("Area Amministratore") e una
+ * card extra in sidebar con gli strumenti di piattaforma (AdminSidebar
+ * riusato: Cestino, Utenti, Template, Scansioni AI, …).
+ */
 export default function MerchantShell({
   user,
   stores,
   currentStoreId,
   banner,
+  area = "merchant",
   children,
 }: {
   user: User;
   stores: MerchantStoreSummary[];
   currentStoreId?: string;
   banner?: string | null;
+  area?: "merchant" | "admin";
   children: ReactNode;
 }) {
   const currentStore = stores.find((store) => store.id === currentStoreId) ?? null;
+  const isAdmin = area === "admin";
+  const areaTitle = isAdmin ? "Area Amministratore" : "Area Commerciante";
+  const areaHref = isAdmin ? "/amministratore" : "/merchant";
 
   return (
     <main className="min-h-screen bg-[#eef3f8] text-slate-900">
 
       {/* ── Top App Bar mobile — sticky, visibile solo su mobile ─────────────── */}
-      <MerchantTopBar storeName={currentStore?.nome ?? null} />
+      <MerchantTopBar storeName={currentStore?.nome ?? null} area={area} />
 
       {/* ── Header desktop — visibile solo su md+ ────────────────────────────── */}
       <div className="hidden border-b border-blue-900/15 bg-[linear-gradient(180deg,#1d4ed8_0%,#2563eb_100%)] text-white shadow-lg md:block">
@@ -43,11 +58,11 @@ export default function MerchantShell({
               Home
             </Link>
             <div>
-              <Link href="/merchant" className="text-2xl font-black tracking-tight text-white">
-                Area Commerciante
+              <Link href={areaHref} className="text-2xl font-black tracking-tight text-white">
+                {areaTitle}
               </Link>
               <p className="mt-1 text-sm text-blue-100">
-                {currentStore?.nome ?? "Area Commerciante"}
+                {currentStore?.nome ?? areaTitle}
               </p>
             </div>
           </div>
@@ -78,7 +93,7 @@ export default function MerchantShell({
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
               Navigazione
             </p>
-            <MerchantGlobalNav />
+            <MerchantGlobalNav area={area} />
             {currentStore ? (
               <div className="mt-2">
                 <MerchantSidebarNav
@@ -90,6 +105,17 @@ export default function MerchantShell({
           </div>
 
           <MerchantStoreSwitcher stores={stores} currentStoreId={currentStoreId} />
+
+          {/* Amministrazione — SOLO nell'Area Amministratore (stesso stile,
+              stessi strumenti di piattaforma già esistenti, componente riusato) */}
+          {isAdmin ? (
+            <div className="rounded-3xl border border-white/70 bg-white p-5 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
+                Amministrazione
+              </p>
+              <AdminSidebar />
+            </div>
+          ) : null}
         </aside>
 
         {/* Contenuto principale ──────────────────────────────────────────────── */}
@@ -104,7 +130,7 @@ export default function MerchantShell({
       </div>
 
       {/* ── Bottom Navigation mobile ──────────────────────────────────────────── */}
-      <MerchantBottomNav storeId={currentStore?.id ?? null} />
+      <MerchantBottomNav storeId={currentStore?.id ?? null} area={area} />
     </main>
   );
 }

@@ -4,7 +4,16 @@ import MerchantEmptyState from "@/components/merchant/MerchantEmptyState";
 import { requireCurrentUser } from "@/lib/auth/session";
 import { getMerchantStoresForUser } from "@/lib/merchant/data";
 
-export default async function MerchantHomePage() {
+/**
+ * Home condivisa tra Area Commerciante (default) e Area Amministratore.
+ * `labelArea` personalizza solo l'etichetta visibile (es. "Area Amministratore");
+ * logica, grafica ed esperienza restano identiche.
+ */
+export default async function MerchantHomePage({
+  labelArea = "Area Commerciante",
+}: {
+  labelArea?: string;
+}) {
   const user = await requireCurrentUser("/login");
   const storesResult = await getMerchantStoresForUser(user.id);
 
@@ -44,7 +53,7 @@ export default async function MerchantHomePage() {
     <div className="space-y-6">
       <div className="rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
-          Area Commerciante
+          {labelArea}
         </p>
         <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-900">
           I tuoi negozi

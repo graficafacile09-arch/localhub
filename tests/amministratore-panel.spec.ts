@@ -47,53 +47,34 @@ const ROUTE_NON_PLACEHOLDER = [
 ];
 
 test.describe("PANNELLO AMMINISTRATORE — struttura", () => {
-  test("la Panoramica è una dashboard con riquadri, attività recenti, stato e accesso rapido", async ({
+  test("la Panoramica è la home condivisa con il commerciante + Zona Pericolosa", async ({
     page,
   }) => {
     await page.goto(`${BASE}/amministratore`, { waitUntil: "networkidle" });
 
     await expect(page).toHaveTitle(/Amministratore/);
+
+    // Home condivisa con l'Area Commerciante (stessa pagina, stesso layout)
     await expect(
-      page.getByRole("heading", { level: 1, name: "Panoramica" })
+      page.getByRole("heading", { level: 1, name: "I tuoi negozi" })
+    ).toBeVisible();
+    await expect(page.locator("body")).toContainText("Area Amministratore");
+
+    // Strumenti di piattaforma (esclusivi dell'admin)
+    await expect(
+      page.getByRole("heading", { name: "Amministrazione" })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: /Cestino/ }).first()
+    ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: /Utenti/ }).first()
     ).toBeVisible();
 
-    // Riquadri statistici
-    await expect(page.locator("body")).toContainText("Attività");
-    await expect(page.locator("body")).toContainText("Prodotti");
-    await expect(page.locator("body")).toContainText("Utenti");
-    await expect(page.locator("body")).toContainText("Offerte");
-    await expect(page.locator("body")).toContainText("Eventi");
-    await expect(page.locator("body")).toContainText("Negozi in evidenza");
-    await expect(page.locator("body")).toContainText("Segnalazioni");
-
-    // Sezioni sotto i riquadri
+    // Zona Pericolosa (esclusiva dell'admin)
+    await expect(page.locator("body")).toContainText("ZONA PERICOLOSA");
     await expect(
-      page.getByRole("heading", { name: "Attività recenti" })
-    ).toBeVisible();
-    await expect(
-      page.getByRole("heading", { name: "Stato della piattaforma" })
-    ).toBeVisible();
-    await expect(
-      page.getByRole("heading", { name: "Accesso rapido" })
-    ).toBeVisible();
-
-    // Accesso rapido: pulsanti grandi (scoped alla sezione dedicata)
-    const sezioneRapida = page
-      .getByRole("heading", { name: "Accesso rapido" })
-      .locator("xpath=ancestor::section");
-    await expect(
-      sezioneRapida.getByRole("link", { name: /Gestisci Attività/ })
-    ).toBeVisible();
-    await expect(
-      sezioneRapida.getByRole("link", { name: /Gestisci Prodotti/ })
-    ).toBeVisible();
-    await expect(
-      sezioneRapida.getByRole("link", { name: /Gestisci Utenti/ })
-    ).toBeVisible();
-    await expect(
-      sezioneRapida.getByRole("link", {
-        name: /Categorie Organizzazione del catalogo/,
-      })
+      page.getByRole("button", { name: "Elimina negozio" })
     ).toBeVisible();
   });
 
@@ -154,42 +135,38 @@ test.describe("PANNELLO AMMINISTRATORE — struttura", () => {
     }
   });
 
-  test("l'header mostra brand LocalHub, titolo Amministratore e menu utente reale", async ({
+  test("l'header mostra Home, Area Amministratore e il menu di uscita", async ({
     page,
   }) => {
     await page.goto(`${BASE}/amministratore`, { waitUntil: "networkidle" });
 
     await expect(
-      page.getByRole("link", { name: "LocalHub — torna al sito" })
+      page.getByRole("link", { name: "Home", exact: true })
     ).toBeVisible();
-    await expect(page.locator("body")).toContainText("Amministratore");
+    await expect(page.locator("body")).toContainText("Area Amministratore");
     await expect(
-      page.getByRole("button", { name: /Menu utente di/ })
+      page.getByRole("button", { name: "Esci" })
     ).toBeVisible();
   });
 
-  test("il menu utente si apre con le voci dell'admin", async ({ page }) => {
+  test("la sidebar ha La mia area verso /amministratore e la card Amministrazione", async ({
+    page,
+  }) => {
     await page.goto(`${BASE}/amministratore`, { waitUntil: "networkidle" });
 
-    const trigger = page
-      .getByRole("button", { name: /Menu utente di/ })
-      .first();
-    await trigger.click();
+    const laMiaArea = page.getByRole("link", { name: "La mia area" });
+    await expect(laMiaArea).toBeVisible();
+    await expect(laMiaArea).toHaveAttribute("href", "/amministratore");
 
+    const nav = page.getByRole("navigation", {
+      name: "Menu Amministratore",
+    });
     await expect(
-      page.getByRole("menuitem", { name: "Area Amministratore" })
+      nav.getByRole("link", { name: "Cestino", exact: true })
     ).toBeVisible();
     await expect(
-      page.getByRole("menuitem", { name: "Vai al sito" })
+      nav.getByRole("link", { name: "Utenti", exact: true })
     ).toBeVisible();
-    await expect(
-      page.getByRole("menuitem", { name: "Impostazioni" })
-    ).toBeVisible();
-    await expect(page.getByRole("menuitem", { name: "Esci" })).toBeVisible();
-
-    // La voce Impostazioni del menu utente punta al modulo esistente.
-    await page.getByRole("menuitem", { name: "Impostazioni" }).click();
-    await expect(page).toHaveURL(/\/amministratore\/impostazioni/);
   });
 });
 
@@ -393,44 +370,24 @@ test.describe("MODULO UTENTI — ruoli e permessi", () => {
   });
 });
 
-test.describe("PANNELLO AMMINISTRATORE — sidebar collassabile (desktop)", () => {
-  test("Comprimi menu nasconde le etichette, Espandi le ripristina", async ({
+test.describe("PANNELLO AMMINISTRATORE — mobile (stessa esperienza commerciante)", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test("su mobile la home admin è accessibile con top bar e bottom nav", async ({
     page,
   }) => {
     await page.goto(`${BASE}/amministratore`, { waitUntil: "networkidle" });
 
-    const etichetta = page
-      .getByRole("navigation", { name: "Menu Amministratore" })
-      .getByText("Attività", { exact: true });
-    await expect(etichetta).toBeVisible();
-
-    await page.getByRole("button", { name: "Comprimi il menu" }).click();
-    await expect(etichetta).toBeHidden();
-
-    await page.getByRole("button", { name: "Espandi il menu" }).click();
-    await expect(etichetta).toBeVisible();
-  });
-});
-
-test.describe("PANNELLO AMMINISTRATORE — mobile drawer", () => {
-  test.use({ viewport: { width: 390, height: 844 } });
-
-  test("il menu si apre dal drawer e naviga a una sezione", async ({ page }) => {
-    await page.goto(`${BASE}/amministratore`, { waitUntil: "networkidle" });
-
-    await page.getByRole("button", { name: "Apri il menu" }).click();
-
     await expect(
-      page.getByRole("dialog", { name: "Menu Amministratore" })
-    ).toBeVisible();
-    await expect(
-      page.getByRole("link", { name: "Attività", exact: true })
+      page.getByRole("heading", { level: 1, name: "I tuoi negozi" })
     ).toBeVisible();
 
-    await page.getByRole("link", { name: "Attività", exact: true }).click();
-    await expect(page).toHaveURL(/\/amministratore\/attivita/);
+    // Bottom navigation mobile — stessa esperienza dell'Area Commerciante
     await expect(
-      page.getByRole("heading", { level: 1, name: "Attività" })
+      page.getByRole("link", { name: "Home", exact: true })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Negozio", exact: true })
     ).toBeVisible();
   });
 });

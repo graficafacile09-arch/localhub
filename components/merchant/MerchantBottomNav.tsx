@@ -12,10 +12,16 @@ import {
 
 type MerchantBottomNavProps = {
   storeId: string | null;
+  area?: "merchant" | "admin";
 };
 
-export default function MerchantBottomNav({ storeId: storeIdProp }: MerchantBottomNavProps) {
+export default function MerchantBottomNav({
+  storeId: storeIdProp,
+  area = "merchant",
+}: MerchantBottomNavProps) {
   const pathname = usePathname();
+
+  const baseHref = area === "admin" ? "/amministratore" : "/merchant";
 
   // Pagine globali dell'area merchant che NON identificano un negozio
   const GLOBAL_MERCHANT_SLUGS = ["nuovo"];
@@ -43,7 +49,7 @@ export default function MerchantBottomNav({ storeId: storeIdProp }: MerchantBott
       key: "dashboard",
       label: "Negozio",
       icon: Store,
-      href: storeId ? `/merchant/${storeId}` : "/merchant",
+      href: storeId ? `/merchant/${storeId}` : baseHref,
       available: true,
       ai: false,
     },
@@ -51,7 +57,7 @@ export default function MerchantBottomNav({ storeId: storeIdProp }: MerchantBott
       key: "prodotti",
       label: "Prodotti",
       icon: Package,
-      href: storeId ? `/merchant/${storeId}/prodotti` : "/merchant",
+      href: storeId ? `/merchant/${storeId}/prodotti` : baseHref,
       available: hasStore,
       ai: false,
     },
@@ -59,7 +65,7 @@ export default function MerchantBottomNav({ storeId: storeIdProp }: MerchantBott
       key: "ai",
       label: "AI",
       icon: Sparkles,
-      href: storeId ? `/merchant/${storeId}/prodotti/ai` : "/merchant",
+      href: storeId ? `/merchant/${storeId}/prodotti/ai` : baseHref,
       available: hasStore,
       ai: true, // pulsante centrale prominente
     },
@@ -67,7 +73,7 @@ export default function MerchantBottomNav({ storeId: storeIdProp }: MerchantBott
       key: "negozio",
       label: "Gestione",
       icon: Store,
-      href: storeId ? `/merchant/${storeId}/impostazioni` : "/merchant",
+      href: storeId ? `/merchant/${storeId}/impostazioni` : baseHref,
       available: hasStore,
       ai: false,
     },
@@ -89,7 +95,7 @@ export default function MerchantBottomNav({ storeId: storeIdProp }: MerchantBott
       return pathname === href;
     }
     // "Negozio" (senza negozio selezionato) è attivo solo sulla home dell'area
-    if (href === "/merchant") return pathname === "/merchant";
+    if (href === baseHref) return pathname === baseHref;
     return pathname.startsWith(href);
   }
 

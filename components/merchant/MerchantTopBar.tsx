@@ -5,24 +5,30 @@ import { ArrowLeft, Home } from "lucide-react";
 
 type MerchantTopBarProps = {
   storeName?: string | null;
+  area?: "merchant" | "admin";
 };
 
-export default function MerchantTopBar({ storeName }: MerchantTopBarProps) {
+export default function MerchantTopBar({
+  storeName,
+  area = "merchant",
+}: MerchantTopBarProps) {
   const pathname = usePathname();
   const router = useRouter();
 
+  const isAdmin = area === "admin";
+  const baseHref = isAdmin ? "/amministratore" : "/merchant";
   const storeId = pathname.match(/^\/merchant\/([^/]+)/)?.[1] ?? null;
-  const dashboardHref = storeId ? `/merchant/${storeId}` : "/merchant";
+  const dashboardHref = storeId ? `/merchant/${storeId}` : baseHref;
 
-  const title = resolveTitle(pathname, storeName);
+  const title = resolveTitle(pathname, storeName, isAdmin);
 
   const isRoot =
-    pathname === "/merchant" ||
+    pathname === baseHref ||
     (storeId !== null && pathname === `/merchant/${storeId}`);
 
   function handleBack() {
     if (isRoot) {
-      if (storeId) router.push("/merchant");
+      if (storeId) router.push(baseHref);
       return;
     }
     if (window.history.length > 1) {
@@ -68,11 +74,17 @@ export default function MerchantTopBar({ storeName }: MerchantTopBarProps) {
   );
 }
 
-function resolveTitle(pathname: string, storeName?: string | null): string {
+function resolveTitle(
+  pathname: string,
+  storeName?: string | null,
+  isAdmin = false
+): string {
+  if (isAdmin && pathname === "/amministratore") return "I tuoi negozi";
+  if (isAdmin && pathname.startsWith("/amministratore")) return "Amministrazione";
   if (pathname === "/merchant") return "I tuoi negozi";
 
   const withStore = /^\/merchant\/([^/]+)(\/.*)?$/.exec(pathname);
-  if (!withStore) return "Commerciante";
+  if (!withStore) return isAdmin ? "Amministratore" : "Commerciante";
 
   const suffix = withStore[2] ?? "";
 

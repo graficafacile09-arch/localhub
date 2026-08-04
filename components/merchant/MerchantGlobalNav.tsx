@@ -5,19 +5,25 @@ import { usePathname } from "next/navigation";
 import { Home } from "lucide-react";
 
 /**
- * Navigazione globale dell'Area Commerciante.
- * Il Cestino NON è più qui: è una funzione di piattaforma gestita
- * esclusivamente dall'amministratore.
+ * Navigazione globale condivisa tra Area Commerciante e Area Amministratore.
+ * - merchant (default): "La mia area" → /merchant
+ * - admin:              "La mia area" → /amministratore
+ * Il Cestino NON è qui: è una funzione di piattaforma gestita
+ * esclusivamente dall'amministratore (card "Amministrazione" in sidebar).
  */
-export default function MerchantGlobalNav() {
+export default function MerchantGlobalNav({
+  area = "merchant",
+}: {
+  area?: "merchant" | "admin";
+}) {
   const pathname = usePathname();
-
-  const laMiaAreaActive = pathname === "/merchant";
+  const href = area === "admin" ? "/amministratore" : "/merchant";
+  const laMiaAreaActive = pathname === href;
 
   return (
     <div className="mt-4">
       <Link
-        href="/merchant"
+        href={href}
         className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition-all duration-150 hover:bg-slate-50 ${
           laMiaAreaActive ? "bg-blue-50 text-blue-700 shadow-sm" : "text-slate-700"
         }`}
