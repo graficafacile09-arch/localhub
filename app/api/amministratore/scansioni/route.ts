@@ -1,22 +1,14 @@
 import { apiError, apiOk } from "@/lib/api/response";
-import { getCurrentUser } from "@/lib/auth/session";
-import { utenteHaRuoli } from "@/lib/auth/roles";
+import { requireApiArea } from "@/lib/auth/session-area";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 /**
  * Monitoraggio GLOBALE delle scansioni AI (scan_log di piattaforma).
- * Funzione di amministrazione: riservata agli utenti con ruolo admin.
+ * Riservato alla sessione admin (email autorizzata + ruolo admin).
  */
 export async function GET() {
-  const user = await getCurrentUser();
-
-  if (!user) {
-    return apiError("UNAUTHORIZED", "Devi effettuare l'accesso.", 401);
-  }
-
-  if (!(await utenteHaRuoli(user.id, ["admin"]))) {
-    return apiError("FORBIDDEN", "Accesso riservato agli amministratori.", 403);
-  }
+  const { error } = await requireApiArea("admin");
+  if (error) return error;
 
   const supabase = await createServerSupabaseClient();
   const now = new Date();

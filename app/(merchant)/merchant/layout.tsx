@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
+import { redirect } from "next/navigation";
 import MerchantShell from "@/components/merchant/MerchantShell";
-import { requireRuoli } from "@/lib/auth/session";
+import { areaToPath } from "@/lib/auth/area";
+import { getSessionArea } from "@/lib/auth/session-area";
 import { getMerchantStoresForUser } from "@/lib/merchant/data";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
@@ -27,14 +29,22 @@ export default async function MerchantLayout({
     );
   }
 
-  // Accesso SOLO a chi possiede il ruolo merchant o admin (multi-role).
-  // I customer vengono reindirizzati alla home del loro ruolo.
-  const { user } = await requireRuoli(["merchant", "admin"], "/login?area=merchant");
-  const storesResult = await getMerchantStoresForUser(user.id);
+  // L'accesso è determinato dall'AREA ATTIVA della sessione (cookie httpOnly
+  // lh_area), scelta al login e fissa per tutta la sessione: entra SOLO chi
+  // ha una sessione "merchant". Gli altri vengono reindirizzati alla propria
+  // area, mai a /login (se autenticati). Helper centrale: getSessionArea.
+  const sessione = await getSessionArea();
+  if (!sessione) redirect("/login?area=merchant");
+
+  if (sessione.area !== "merchant") {
+    redirect(areaToPath(sessione.area));
+  }
+
+  const storesResult = await getMerchantStoresForUser(sessione.user.id);
 
   return (
     <MerchantShell
-      user={user}
+      user={sessione.user}
       stores={storesResult.data}
       banner={storesResult.setupRequired ? storesResult.errorMessage : storesResult.errorMessage}
     >

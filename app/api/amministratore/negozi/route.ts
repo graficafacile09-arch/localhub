@@ -1,18 +1,14 @@
 import { apiError, apiOk } from "@/lib/api/response";
-import { getCurrentUser } from "@/lib/auth/session";
-import { utenteHaRuoli } from "@/lib/auth/roles";
+import { requireApiArea } from "@/lib/auth/session-area";
 import { getNegoziAttiviSintesi } from "@/lib/amministratore/negozi";
 
 /**
- * Elenco sintetico dei negozi ATTIVI (solo admin).
+ * Elenco sintetico dei negozi ATTIVI (solo sessione admin).
  * Usato dal picker "sorgente" per la creazione dei template di piattaforma.
  */
 export async function GET() {
-  const user = await getCurrentUser();
-  if (!user) return apiError("UNAUTHORIZED", "Devi effettuare l'accesso.", 401);
-  if (!(await utenteHaRuoli(user.id, ["admin"]))) {
-    return apiError("FORBIDDEN", "Accesso riservato agli amministratori.", 403);
-  }
+  const { error } = await requireApiArea("admin");
+  if (error) return error;
 
   try {
     const stores = await getNegoziAttiviSintesi();

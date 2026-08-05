@@ -1,6 +1,11 @@
 /**
  * FIXTURE UTENTI DI TEST — Sistema di isolamento della suite Playwright.
  *
+ * VARIABILE D'AMBIENTE OBBLIGATORIA: il server di test deve essere avviato
+ * con NEXT_PUBLIC_ADMIN_EMAIL=admin.test@localhub.it (l'admin autorizzato
+ * della suite). Senza questa variabile l'account admin non può accedere
+ * all'Area Amministratore, perché il gate richiede l'email autorizzata.
+ *
  * REGOLA ASSOLUTA: MAI condividere un account tra test concorrenti.
  * Il signOut di Supabase è GLOBALE (scope: "global"): revoca TUTTE le
  * sessioni dell'utente. Se due test in parallelo usano lo stesso account,

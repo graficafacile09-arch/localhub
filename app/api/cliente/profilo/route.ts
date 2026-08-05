@@ -1,5 +1,5 @@
 import { apiError, apiOk } from "@/lib/api/response";
-import { getApiUtente } from "@/lib/auth/session";
+import { requireApiArea } from "@/lib/auth/session-area";
 import { aggiornaProfilo, getProfilo } from "@/lib/cliente/profile";
 import type { ClienteProfilo } from "@/lib/cliente/types";
 
@@ -46,18 +46,18 @@ function conEmail(profilo: ClienteProfilo | null, email: string): ClienteProfilo
 }
 
 export async function GET() {
-  const { user, ok } = await getApiUtente(["customer"]);
-  if (!user) return apiError("UNAUTHORIZED", "Devi effettuare l'accesso.", 401);
-  if (!ok) return apiError("FORBIDDEN", "Accesso riservato ai clienti.", 403);
+  const { sessione, error } = await requireApiArea("cliente");
+  if (error) return error;
+  const user = sessione.user;
 
   const profilo = await getProfilo(user.id);
   return apiOk({ profilo: conEmail(profilo, user.email ?? "") });
 }
 
 export async function PUT(request: Request) {
-  const { user, ok } = await getApiUtente(["customer"]);
-  if (!user) return apiError("UNAUTHORIZED", "Devi effettuare l'accesso.", 401);
-  if (!ok) return apiError("FORBIDDEN", "Accesso riservato ai clienti.", 403);
+  const { sessione, error } = await requireApiArea("cliente");
+  if (error) return error;
+  const user = sessione.user;
 
   const body = (await request.json()) as Record<string, unknown>;
 

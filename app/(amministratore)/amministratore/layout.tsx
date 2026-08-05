@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
+import { redirect } from "next/navigation";
 import MerchantShell from "@/components/merchant/MerchantShell";
-import { requireRuoli } from "@/lib/auth/session";
+import { areaToPath } from "@/lib/auth/area";
+import { getSessionArea } from "@/lib/auth/session-area";
 import { getMerchantStoresForUser } from "@/lib/merchant/data";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
@@ -11,14 +13,11 @@ export const metadata = {
 };
 
 /**
- * Layout dell'area Amministratore.
- * Accessibile SOLO agli utenti che possiedono il ruolo admin (multi-role).
- *
- * Riutilizza la STESSA shell dell'Area Commerciante (MerchantShell): stessa
- * grafica, stesso header, stessa sidebar e stessi moduli. La differenza è
- * che l'amministratore vede tutti i negozi della piattaforma e, in sidebar,
- * la card "Amministrazione" con gli strumenti di piattaforma (Cestino,
- * Utenti, Template, Scansioni AI, …).
+ * Layout dell'Area Amministratore.
+ * Accessibile SOLO alle sessioni con area attiva "admin" — che al login
+ * vengono concesse ESCLUSIVAMENTE a graficafacile09@gmail.com con ruolo
+ * admin (verifica email + ruolo nel risolutore dell'area). Qualsiasi altra
+ * sessione viene reindirizzata alla propria area.
  */
 export default async function AmministratoreLayout({
   children,
@@ -43,13 +42,23 @@ export default async function AmministratoreLayout({
     );
   }
 
-  const { user } = await requireRuoli(["admin"], "/login?area=admin");
-  const storesResult = await getMerchantStoresForUser(user.id);
+  // L'accesso è determinato dall'AREA ATTIVA della sessione (cookie httpOnly
+  // lh_area). L'helper centrale garantisce che l'area "admin" venga concessa
+  // solo all'admin autorizzato (email + ruolo): un cookie admin non valido
+  // viene risolto automaticamente alla propria area.
+  const sessione = await getSessionArea();
+  if (!sessione) redirect("/login?area=admin");
+
+  if (sessione.area !== "admin") {
+    redirect(areaToPath(sessione.area));
+  }
+
+  const storesResult = await getMerchantStoresForUser(sessione.user.id);
 
   return (
     <MerchantShell
       area="admin"
-      user={user}
+      user={sessione.user}
       stores={storesResult.data}
       banner={storesResult.errorMessage}
     >

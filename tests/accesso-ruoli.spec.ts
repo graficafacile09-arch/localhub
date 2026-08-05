@@ -22,14 +22,15 @@ test.describe("SISTEMA DI ACCESSO E RUOLI", () => {
     await expect(page.getByText("Aggiungi Prodotto")).toHaveCount(0);
   });
 
-  test("admin puro: login → / (homepage); menu con Area Amministratore; /cliente negato", async ({
+  test("admin puro: login → / (homepage); menu con Area Amministratore; /cliente → /amministratore", async ({
     page,
   }) => {
     await loginUtente(page, UTENTI.admin, { waitFor: `${BASE}/` });
 
-    // Un admin puro (senza ruolo customer) NON entra nell'Area Clienti.
+    // L'admin (autorizzato via env) NON entra nell'Area Clienti:
+    // viene reindirizzato direttamente alla propria area /amministratore.
     await page.goto(`${BASE}/cliente`, { waitUntil: "networkidle" });
-    await expect(page).toHaveURL(`${BASE}/`);
+    await expect(page).toHaveURL(`${BASE}/amministratore`);
 
     await page.goto(`${BASE}/`, { waitUntil: "networkidle" });
     await page.getByRole("button", { name: /Menu utente di/ }).click();
@@ -54,17 +55,19 @@ test.describe("SISTEMA DI ACCESSO E RUOLI", () => {
     await expect(page.getByRole("menuitem", { name: "Esci" })).toBeVisible();
   });
 
-  test("customer: login → homepage; /merchant e /amministratore negati; Area Clienti OK", async ({
+  test("customer: login → homepage; /merchant e /amministratore → /cliente; Area Clienti OK", async ({
     page,
   }) => {
     // Account dedicato (customerA): nessun altro test concorrente lo usa.
     await loginUtente(page, UTENTI.customerA, { waitFor: `${BASE}/` });
 
+    // Un customer NON entra in /merchant: reindirizzato alla propria area /cliente.
     await page.goto(`${BASE}/merchant`, { waitUntil: "networkidle" });
-    await expect(page).toHaveURL(`${BASE}/`);
+    await expect(page).toHaveURL(`${BASE}/cliente`);
 
+    // Un customer NON entra in /amministratore: reindirizzato a /cliente.
     await page.goto(`${BASE}/amministratore`, { waitUntil: "networkidle" });
-    await expect(page).toHaveURL(`${BASE}/`);
+    await expect(page).toHaveURL(`${BASE}/cliente`);
 
     // L'Area Clienti è accessibile al customer.
     await page.goto(`${BASE}/cliente`, { waitUntil: "networkidle" });
@@ -88,16 +91,17 @@ test.describe("SISTEMA DI ACCESSO E RUOLI", () => {
     await expect(page.getByRole("menuitem", { name: "Esci" })).toBeVisible();
   });
 
-  test("merchant: login → / (homepage); menu da commerciante; /cliente negato", async ({
+  test("merchant: login → / (homepage); menu da commerciante; /cliente → /merchant", async ({
     page,
   }) => {
     // Account dedicato (merchantD): nessun altro test concorrente fa signOut
     // su questo account (merchantA/B/C sono usati dalle altre suite).
     await loginUtente(page, UTENTI.merchantD, { waitFor: `${BASE}/` });
 
-    // Un merchant puro (senza ruolo customer) NON entra nell'Area Clienti.
+    // Un merchant NON entra nell'Area Clienti: reindirizzato a /merchant
+    // (che, se il merchant ha un solo negozio, auto-redirecta al negozio).
     await page.goto(`${BASE}/cliente`, { waitUntil: "networkidle" });
-    await expect(page).toHaveURL(`${BASE}/`);
+    await expect(page).toHaveURL(/\/merchant/);
 
     await page.goto(`${BASE}/`, { waitUntil: "networkidle" });
     await page.getByRole("button", { name: /Menu utente di/ }).click();

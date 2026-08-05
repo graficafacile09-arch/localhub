@@ -2,12 +2,8 @@ import { redirect } from "next/navigation";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import {
-  getRoleForUser,
   getRuoliUtente,
   PRIORITA_RUOLO,
-  redirectPerRuolo,
-  ruoloSoddisfa,
-  ruoliSoddisfano,
   utenteHaRuoli,
   type RuoloUtente,
 } from "@/lib/auth/roles";
@@ -38,66 +34,18 @@ export async function requireCurrentUser(redirectTo = "/login") {
 }
 
 // ════════════════════════════════════════════════════════════════════
-// Sistema ruoli — funzioni centralizzate.
-// Ogni controllo dei permessi deve usare ESCLUSIVAMENTE queste funzioni.
-// ════════════════════════════════════════════════════════════════════
-
-export type UtenteConRuolo = {
-  user: NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>;
-  role: RuoloUtente;
-};
-
-/** Utente corrente + ruolo (null se non loggato). */
-export async function getCurrentRole(): Promise<UtenteConRuolo | null> {
-  const user = await getCurrentUser();
-  if (!user) return null;
-
-  const role = await getRoleForUser(user.id);
-  return { user, role };
-}
-
-/** True se l'utente loggato ha uno dei ruoli richiesti. */
-export async function hasRole(
-  richiesti: readonly RuoloUtente[]
-): Promise<boolean> {
-  const data = await getCurrentRole();
-  return data ? ruoloSoddisfa(data.role, richiesti) : false;
-}
-
-/**
- * Richiede che l'utente loggato abbia uno dei ruoli richiesti.
- * - Non loggato → redirect a `redirectTo` (default /login).
- * - Loggato ma ruolo non consentito → redirect a /login (nessun automatismo).
- */
-export async function requireRole(
-  richiesti: readonly RuoloUtente[],
-  redirectTo = "/login"
-): Promise<UtenteConRuolo> {
-  const data = await getCurrentRole();
-
-  if (!data) {
-    redirect(redirectTo);
-  }
-
-  if (!ruoloSoddisfa(data.role, richiesti)) {
-    redirect("/login");
-  }
-
-  return data;
-}
-
-// ════════════════════════════════════════════════════════════════════
-// Controlli MULTI-RUOLO — l'accesso alle aree è verificato sull'INSIEME
-// dei ruoli posseduti, non sul singolo ruolo a priorità maggiore.
-// Un utente con più ruoli (es. webmaster admin+merchant+customer) può
-// entrare in tutte le aree corrispondenti a uno dei suoi ruoli.
+// Utente corrente + ruoli (per informazione e per l'AREA ATTIVA).
+// L'accesso alle aree NON deriva più dall'insieme dei ruoli: è deciso
+// dall'AREA ATTIVA della sessione (cookie httpOnly lh_area, vedi
+// lib/auth/area.ts). Queste funzioni restano utili per l'etichetta del
+// menu, i fallback di area e le route API (verifica di ruolo).
 // ════════════════════════════════════════════════════════════════════
 
 export type UtenteConRuoli = {
   user: NonNullable<Awaited<ReturnType<typeof getCurrentUser>>>;
-  /** Ruolo a priorità maggiore (per UI e redirect predefiniti). */
+  /** Ruolo a priorità maggiore (per UI e fallback). */
   role: RuoloUtente;
-  /** Tutti i ruoli posseduti (verifica accesso aree). */
+  /** Tutti i ruoli posseduti (informativi). */
   ruoli: RuoloUtente[];
 };
 
@@ -116,29 +64,6 @@ export async function getCurrentRuoli(): Promise<UtenteConRuoli | null> {
         );
 
   return { user, role, ruoli };
-}
-
-/**
- * Richiede che l'utente loggato possieda ALMENO UNO dei ruoli richiesti
- * (verifica sull'insieme dei ruoli). Usato dai layout delle aree.
- * - Non loggato → redirect a `redirectTo` (default /login).
- * - Nessun ruolo compatibile → redirect a /login (nessun automatismo).
- */
-export async function requireRuoli(
-  richiesti: readonly RuoloUtente[],
-  redirectTo = "/login"
-): Promise<UtenteConRuoli> {
-  const data = await getCurrentRuoli();
-
-  if (!data) {
-    redirect(redirectTo);
-  }
-
-  if (!ruoliSoddisfano(data.ruoli, richiesti)) {
-    redirect("/login");
-  }
-
-  return data;
 }
 
 /**

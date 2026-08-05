@@ -54,14 +54,18 @@ export default async function Header() {
             Assistente AI
           </Link>
 
-          <Link
-            href={account ? "/amministratore" : "/login?area=admin"}
-            title="Amministrazione"
-            aria-label="Amministrazione"
-            className="inline-flex items-center hover:text-blue-600 transition"
-          >
-            <ShieldCheck className="h-5 w-5" aria-hidden />
-          </Link>
+          {/* Icona Amministrazione: visibile SOLO nelle sessioni con area
+              attiva "admin" (concessa solo all'admin autorizzato al login) */}
+          {account && account.area === "admin" ? (
+            <Link
+              href="/amministratore"
+              title="Amministrazione"
+              aria-label="Amministrazione"
+              className="inline-flex items-center hover:text-blue-600 transition"
+            >
+              <ShieldCheck className="h-5 w-5" aria-hidden />
+            </Link>
+          ) : null}
 
           <div className="hidden md:block">
             <AccountMenu account={account} />

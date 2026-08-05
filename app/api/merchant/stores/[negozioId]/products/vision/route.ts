@@ -5,6 +5,8 @@ import { buildVisionPrompt } from "@/lib/product-assistant/prompts";
 import { checkImageCache, storeInCache } from "@/lib/product-assistant/vision-cache";
 import { callGeminiGeneration } from "@/lib/product-assistant/providers/gemini";
 import { getCurrentUser } from "@/lib/auth/session";
+import { requireApiArea } from "@/lib/auth/session-area";
+import { canManageStore } from "@/lib/merchant/data";
 import { checkRateLimit } from "@/lib/rate-limiter";
 import { logScan } from "@/lib/scan-log";
 
@@ -89,12 +91,16 @@ export async function POST(
   try {
     const { negozioId } = await context.params;
 
-    // ── Autenticazione ─────────────────────────────────────────────────────
-    const user = await getCurrentUser();
-    if (!user) {
+    // ── Autenticazione + area di sessione ─────────────────────────────────
+    const { sessione, error } = await requireApiArea("merchant");
+    if (error) return error;
+    const user = sessione.user;
+
+    // ── Proprietà del negozio (merchant o admin autorizzato) ─────────────
+    if (!(await canManageStore(user.id, negozioId))) {
       return NextResponse.json(
-        { success: false, error: { code: "UNAUTHORIZED", message: "Devi effettuare l'accesso per usare la scansione AI." } },
-        { status: 401 }
+        { success: false, error: { code: "FORBIDDEN", message: "Non puoi gestire questo negozio." } },
+        { status: 403 }
       );
     }
 
@@ -196,15 +202,16 @@ export async function POST(
 
     if (cached.hit) {
       const tCacheEnd = performance.now();
-      const suggestion = cached.entry.full_suggestion ?? {
-        nome: cached.entry.product_name,
-        marca: cached.entry.brand,
-        categoria: cached.entry.category,
-        codiceEan: cached.entry.ean,
-        prezzoSuggerito: cached.entry.suggested_price,
-        descrizione: cached.entry.description,
-        confidenza: cached.entry.confidence,
-      } as any;
+      const suggestion: Parameters<typeof extractSuggestion>[0] =
+        cached.entry.full_suggestion ?? {
+          nome: cached.entry.product_name,
+          marca: cached.entry.brand,
+          categoria: cached.entry.category,
+          codiceEan: cached.entry.ean,
+          prezzoSuggerito: cached.entry.suggested_price,
+          descrizione: cached.entry.description,
+          confidenza: cached.entry.confidence,
+        };
 
       const res = extractSuggestion(suggestion);
 

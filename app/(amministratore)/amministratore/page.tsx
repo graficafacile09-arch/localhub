@@ -70,7 +70,7 @@ const STRUMENTI = [
 export default async function PanoramicaPage() {
   return (
     <div className="space-y-5">
-      <MerchantHomePage labelArea="Area Amministratore" />
+      <MerchantHomePage labelArea="Area Amministratore" area="admin" />
 
       {/* Strumenti di piattaforma — esclusivi dell'amministratore */}
       <section className="rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm">

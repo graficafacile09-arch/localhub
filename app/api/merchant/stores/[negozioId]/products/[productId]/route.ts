@@ -1,5 +1,5 @@
 import { apiError, apiOk } from "@/lib/api/response";
-import { getCurrentUser } from "@/lib/auth/session";
+import { requireApiArea } from "@/lib/auth/session-area";
 import { deleteMerchantProductForStore, getMerchantProductForStore, getMerchantStoreForUser, updateMerchantProductForStore } from "@/lib/merchant/data";
 import { deleteImageFromStorage } from "@/lib/supabase/storage";
 import type { MerchantProductInput } from "@/lib/merchant/types";
@@ -36,11 +36,9 @@ export async function GET(
   _request: Request,
   context: { params: Promise<{ negozioId: string; productId: string }> }
 ) {
-  const user = await getCurrentUser();
-
-  if (!user) {
-    return apiError("UNAUTHORIZED", "Devi effettuare l'accesso.", 401);
-  }
+  const { sessione, error } = await requireApiArea("merchant");
+  if (error) return error;
+  const user = sessione.user;
 
   const { negozioId, productId } = await context.params;
   const storeResult = await getMerchantStoreForUser(user.id, negozioId);
@@ -66,11 +64,9 @@ export async function PUT(
   request: Request,
   context: { params: Promise<{ negozioId: string; productId: string }> }
 ) {
-  const user = await getCurrentUser();
-
-  if (!user) {
-    return apiError("UNAUTHORIZED", "Devi effettuare l'accesso.", 401);
-  }
+  const { sessione, error } = await requireApiArea("merchant");
+  if (error) return error;
+  const user = sessione.user;
 
   const { negozioId, productId } = await context.params;
   const storeResult = await getMerchantStoreForUser(user.id, negozioId);
@@ -128,11 +124,9 @@ export async function DELETE(
   _request: Request,
   context: { params: Promise<{ negozioId: string; productId: string }> }
 ) {
-  const user = await getCurrentUser();
-
-  if (!user) {
-    return apiError("UNAUTHORIZED", "Devi effettuare l'accesso.", 401);
-  }
+  const { sessione, error } = await requireApiArea("merchant");
+  if (error) return error;
+  const user = sessione.user;
 
   const { negozioId, productId } = await context.params;
   const storeResult = await getMerchantStoreForUser(user.id, negozioId);

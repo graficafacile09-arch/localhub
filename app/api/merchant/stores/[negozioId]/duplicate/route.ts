@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { apiError, apiOk } from "@/lib/api/response";
-import { getCurrentUser } from "@/lib/auth/session";
+import { requireApiArea } from "@/lib/auth/session-area";
 import { canManageStore } from "@/lib/merchant/data";
 import { duplicateStore } from "@/lib/merchant/duplicate-store";
 import { generaSlugUnivoco } from "@/lib/slug-server";
@@ -10,8 +10,9 @@ export async function POST(
   request: NextRequest,
   context: { params: Promise<{ negozioId: string }> }
 ) {
-  const user = await getCurrentUser();
-  if (!user) return apiError("UNAUTHORIZED", "Devi effettuare l'accesso.", 401);
+  const { sessione, error } = await requireApiArea("merchant");
+  if (error) return error;
+  const user = sessione.user;
 
   const { negozioId } = await context.params;
   const allowed = await canManageStore(user.id, negozioId);

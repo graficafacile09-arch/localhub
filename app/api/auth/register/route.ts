@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { AREA_COOKIE, areaCookieOptions } from "@/lib/auth/area";
 
 /**
  * Registrazione CLIENTE (acquirente).
@@ -80,6 +81,8 @@ export async function POST(request: Request) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Il cliente viene portato alla homepage (customer → /).
-  return NextResponse.redirect(new URL("/", request.url));
+  // La sessione nasce legata all'area cliente (sessione attiva httpOnly).
+  const response = NextResponse.redirect(new URL("/", request.url));
+  response.cookies.set(AREA_COOKIE, "cliente", areaCookieOptions());
+  return response;
 }

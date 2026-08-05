@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { apiError, apiOk } from "@/lib/api/response";
-import { getCurrentUser } from "@/lib/auth/session";
+import { requireApiArea } from "@/lib/auth/session-area";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { canManageStore } from "@/lib/merchant/data";
 
@@ -10,8 +10,9 @@ export async function DELETE(
   _request: NextRequest,
   context: { params: Promise<{ negozioId: string; mediaId: string }> }
 ) {
-  const user = await getCurrentUser();
-  if (!user) return apiError("UNAUTHORIZED", "Devi effettuare l'accesso.", 401);
+  const { sessione, error } = await requireApiArea("merchant");
+  if (error) return error;
+  const user = sessione.user;
 
   const { negozioId, mediaId } = await context.params;
   const allowed = await canManageStore(user.id, negozioId);
@@ -54,8 +55,9 @@ export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ negozioId: string; mediaId: string }> }
 ) {
-  const user = await getCurrentUser();
-  if (!user) return apiError("UNAUTHORIZED", "Devi effettuare l'accesso.", 401);
+  const { sessione, error: errArea } = await requireApiArea("merchant");
+  if (errArea) return errArea;
+  const user = sessione.user;
 
   const { negozioId, mediaId } = await context.params;
   const allowed = await canManageStore(user.id, negozioId);

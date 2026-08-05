@@ -1,18 +1,16 @@
 import { apiError, apiOk } from "@/lib/api/response";
-import { getCurrentUser } from "@/lib/auth/session";
-import { utenteHaRuoli } from "@/lib/auth/roles";
+import { requireApiArea } from "@/lib/auth/session-area";
 import { getNegoziCestino } from "@/lib/amministratore/negozi";
 
 /**
- * Cestino GLOBALE della piattaforma — solo amministratori.
+ * Cestino GLOBALE della piattaforma — solo sessione admin.
+ * L'area di sessione "admin" viene concessa solo all'admin autorizzato
+ * (email + ruolo): qualsiasi altra sessione riceve 403.
  * Elenca tutti i negozi eliminati (soft delete), di qualunque proprietario.
  */
 export async function GET() {
-  const user = await getCurrentUser();
-  if (!user) return apiError("UNAUTHORIZED", "Devi effettuare l'accesso.", 401);
-  if (!(await utenteHaRuoli(user.id, ["admin"]))) {
-    return apiError("FORBIDDEN", "Accesso riservato agli amministratori.", 403);
-  }
+  const { error } = await requireApiArea("admin");
+  if (error) return error;
 
   try {
     const stores = await getNegoziCestino();

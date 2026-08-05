@@ -17,14 +17,20 @@ import {
   UserRound,
 } from "lucide-react";
 import type { RuoloUtente } from "@/lib/auth/roles";
+import type { AreaAttiva } from "@/lib/auth/area";
 
 export type DatiAccount = {
   nome: string;
   email: string;
-  /** Ruolo a priorità maggiore (per etichetta e redirect predefinito). */
+  /** Ruolo a priorità maggiore (solo informativo, non determina l'accesso). */
   role: RuoloUtente;
-  /** TUTTI i ruoli posseduti: le voci del menu derivano da questo insieme. */
+  /** TUTTI i ruoli posseduti (solo informativo, non determina l'accesso). */
   ruoli: RuoloUtente[];
+  /**
+   * Area ATTIVA della sessione (cookie httpOnly lh_area): è lei che determina
+   * le voci del menu. Fissa per tutta la sessione, scelta al login.
+   */
+  area: AreaAttiva | null;
   /** True se l'utente possiede almeno un negozio. */
   hasStores: boolean;
   /** Id del primo negozio (per i link diretti dell'area commerciante). */
@@ -40,6 +46,13 @@ type VoceMenu = {
 /** Etichette italiane dei ruoli mostrate all'utente (mai i valori tecnici). */
 const ETICHETTE_RUOLO: Record<RuoloUtente, string> = {
   customer: "Acquirente",
+  merchant: "Commerciante",
+  admin: "Amministratore",
+};
+
+/** Etichetta dell'area ATTIVA: è la sessione, non il ruolo, a qualificare l'utente. */
+const ETICHETTE_AREA: Record<AreaAttiva, string> = {
+  cliente: "Acquirente",
   merchant: "Commerciante",
   admin: "Amministratore",
 };
@@ -92,41 +105,37 @@ export default function AccountMenu({ account }: { account: DatiAccount | null }
     );
   }
 
-  const { nome, email, role, ruoli } = account;
+  const { nome, email, area } = account;
   const iniziale = (nome || email).charAt(0).toUpperCase();
   const storeBase = account.firstStoreId
     ? `/merchant/${account.firstStoreId}`
     : "/merchant";
 
   /**
-   * Il menu riflette l'INSIEME dei ruoli posseduti:
-   * il webmaster (admin+merchant+customer) vede le tre voci di area.
-   * Un utente con il solo ruolo customer vede i link rapidi della sua area.
+   * Il menu mostra ESCLUSIVAMENTE l'area attiva della sessione (cookie
+   * httpOnly lh_area), scelta al login e fissa per tutta la sessione:
+   * - sessione admin → solo Area Amministratore (+ Impostazioni)
+   * - sessione merchant → solo Area Commerciante
+   * - sessione cliente → solo Area Clienti (Profilo, Preferiti, Ordini)
+   * Le altre aree sono INVISIBILI anche se l'account possiede altri ruoli:
+   * per cambiarle serve logout e rientro dall'ingresso corretto.
    */
   const voci: VoceMenu[] = [];
 
-  if (ruoli.includes("admin")) {
+  if (area === "admin") {
     voci.push({ label: "Area Amministratore", href: "/amministratore", icon: ShieldCheck });
-  }
-
-  if (ruoli.includes("merchant")) {
+  } else if (area === "merchant") {
     voci.push({ label: "Area Commerciante", href: storeBase, icon: Store });
-  }
-
-  if (ruoli.includes("customer")) {
-    if (ruoli.length === 1) {
-      voci.push({ label: "Area Clienti", href: "/cliente", icon: ShoppingBasket });
-      voci.push({ label: "Profilo", href: "/cliente/profilo", icon: UserRound });
-      voci.push({ label: "Preferiti", href: "/cliente/preferiti", icon: Heart });
-      voci.push({ label: "Ordini", href: "/cliente/ordini", icon: ShoppingBag });
-    } else {
-      voci.push({ label: "Area Clienti", href: "/cliente", icon: ShoppingBasket });
-    }
+  } else if (area === "cliente") {
+    voci.push({ label: "Area Clienti", href: "/cliente", icon: ShoppingBasket });
+    voci.push({ label: "Profilo", href: "/cliente/profilo", icon: UserRound });
+    voci.push({ label: "Preferiti", href: "/cliente/preferiti", icon: Heart });
+    voci.push({ label: "Ordini", href: "/cliente/ordini", icon: ShoppingBag });
   }
 
   voci.push({ label: "Vai al sito", href: "/", icon: Globe });
 
-  if (ruoli.includes("admin")) {
+  if (area === "admin") {
     voci.push({ label: "Impostazioni", href: "/amministratore/impostazioni", icon: Settings });
   }
 
@@ -151,7 +160,7 @@ export default function AccountMenu({ account }: { account: DatiAccount | null }
             {nome || email}
           </span>
           <span className="block text-[11px] text-slate-500">
-            {ETICHETTE_RUOLO[role]}
+            {area ? ETICHETTE_AREA[area] : ETICHETTE_RUOLO[account.role]}
           </span>
         </span>
         <ChevronDown
@@ -169,7 +178,7 @@ export default function AccountMenu({ account }: { account: DatiAccount | null }
           className="absolute right-0 top-full z-50 mt-2 w-64 rounded-2xl border border-slate-100 bg-white p-2 text-slate-700 shadow-xl"
         >
           <p className="border-b border-slate-100 px-3 pb-2 pt-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-            {nome || email} · {ETICHETTE_RUOLO[role]}
+            {nome || email} · {area ? ETICHETTE_AREA[area] : ETICHETTE_RUOLO[account.role]}
           </p>
 
           <div className="py-1">

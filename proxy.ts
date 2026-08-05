@@ -1,7 +1,16 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { getSupabaseConfig, isSupabaseConfigured } from "@/lib/supabase/config";
-import { getRuoliUtente, ruoliSoddisfano } from "@/lib/auth/roles";
+import { getRuoliUtente } from "@/lib/auth/roles";
+import {
+  AREA_COOKIE,
+  areaCookieOptions,
+  areaPerRuoli,
+  areaToPath,
+  isAreaAttiva,
+  risolviAreaAttiva,
+  type AreaAttiva,
+} from "@/lib/auth/area";
 
 export async function proxy(request: NextRequest) {
   if (!isSupabaseConfigured()) {
@@ -29,49 +38,72 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const pathname = request.nextUrl.pathname;
-  const areaAmministratore = pathname.startsWith("/amministratore");
-  const areaMerchant = pathname.startsWith("/merchant");
-  const areaCliente = pathname.startsWith("/cliente");
+  const areaRichiesta: AreaAttiva | null =
+    pathname.startsWith("/amministratore") ? "admin"
+    : pathname.startsWith("/merchant") ? "merchant"
+    : pathname.startsWith("/cliente") ? "cliente"
+    : null;
 
   // Redirect mantenendo i cookie di sessione appena rinfrescati da getUser.
-  function redirectConSessione(destinazione: string) {
+  function redirectConSessione(destinazione: string, cookieArea: AreaAttiva | null = null) {
     const redirectResponse = NextResponse.redirect(
       new URL(destinazione, request.url)
     );
     for (const cookie of response.cookies.getAll()) {
       redirectResponse.cookies.set(cookie.name, cookie.value, cookie);
     }
+    if (cookieArea) {
+      redirectResponse.cookies.set(AREA_COOKIE, cookieArea, areaCookieOptions());
+    }
     return redirectResponse;
   }
 
-  // ── Protezione delle aree riservate ──────────────────────────────────
-  // Verifica sull'INSIEME dei ruoli (multi-role): un utente con più ruoli
-  // (es. il webmaster admin+merchant+customer) accede a ogni area a cui
-  // corrisponde almeno uno dei suoi ruoli.
-  if (areaAmministratore || areaMerchant || areaCliente) {
-    // Non loggato → login (preservando la destinazione originale)
-    if (!user) {
-      const loginUrl = new URL("/login", request.url);
-      loginUrl.searchParams.set("redirect", pathname);
-      return redirectConSessione(loginUrl.toString());
+  // ── Pagine pubbliche: migrazione sessioni legacy ──────────────────────
+  // Se un utente autenticato non ha ancora il cookie lh_area (sessioni create
+  // prima dell'area attiva), glielo assegniamo in base ai ruoli, così il menu
+  // e i gate risultano coerenti dal primo caricamento.
+  if (!areaRichiesta) {
+    if (user) {
+      const cookieValue = request.cookies.get(AREA_COOKIE)?.value;
+      if (!isAreaAttiva(cookieValue)) {
+        const ruoli = await getRuoliUtente(user.id);
+        const area = areaPerRuoli(user.email ?? "", ruoli);
+        if (area) {
+          response.cookies.set(AREA_COOKIE, area, areaCookieOptions());
+        }
+      }
     }
+    return response;
+  }
 
-    const ruoli = await getRuoliUtente(user.id);
+  // ── Aree riservate ────────────────────────────────────────────────────
+  // Non loggato → login preservando l'area richiesta.
+  if (!user) {
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("area", areaRichiesta);
+    return redirectConSessione(loginUrl.toString());
+  }
 
-    // /amministratore → SOLO chi possiede il ruolo admin
-    if (areaAmministratore && !ruoliSoddisfano(ruoli, ["admin"])) {
-      return redirectConSessione("/");
-    }
+  const ruoli = await getRuoliUtente(user.id);
+  const email = user.email ?? "";
+  const cookieValue = request.cookies.get(AREA_COOKIE)?.value;
+  const { area, correzione } = risolviAreaAttiva(email, ruoli, cookieValue);
 
-    // /merchant → merchant o admin
-    if (areaMerchant && !ruoliSoddisfano(ruoli, ["merchant", "admin"])) {
-      return redirectConSessione("/");
-    }
+  // Nessuna area possibile per questo utente → login (non può stare in aree).
+  if (!area) {
+    return redirectConSessione(`/login?area=${areaRichiesta}`);
+  }
 
-    // /cliente → SOLO chi possiede il ruolo customer
-    if (areaCliente && !ruoliSoddisfano(ruoli, ["customer"])) {
-      return redirectConSessione("/");
-    }
+  // Cookie mancante/invalido/non più consentito → correzione con redirect.
+  if (correzione) {
+    return redirectConSessione(areaToPath(area), area);
+  }
+
+  // Area della sessione diversa da quella richiesta → l'utente viene sempre
+  // reindirizzato alla PROPRIA area di sessione (mai a un'altra area, mai a
+  // /login se autenticato).
+  if (area !== areaRichiesta) {
+    return redirectConSessione(areaToPath(area));
   }
 
   return response;

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { AREA_COOKIE, areaCookieOptions } from "@/lib/auth/area";
 
 /**
  * Registrazione COMMERCIANTE (venditore).
@@ -96,7 +97,8 @@ export async function POST(request: Request) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Dopo la registrazione l'utente atterra sulla homepage e sceglie
-  // manualmente l'area dal menu account.
-  return NextResponse.redirect(new URL("/", request.url));
+  // La sessione nasce legata all'area merchant (sessione attiva httpOnly).
+  const response = NextResponse.redirect(new URL("/", request.url));
+  response.cookies.set(AREA_COOKIE, "merchant", areaCookieOptions());
+  return response;
 }

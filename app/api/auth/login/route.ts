@@ -1,21 +1,20 @@
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-
-/** Mappa area → percorso di atterraggio. */
-function areaToPath(area: string): string {
-  switch (area) {
-    case "admin": return "/amministratore";
-    case "merchant": return "/merchant";
-    case "cliente": return "/cliente";
-    default: return "";
-  }
-}
+import { getRuoliUtente } from "@/lib/auth/roles";
+import {
+  AREA_COOKIE,
+  areaCookieOptions,
+  areaEffettiva,
+  areaPerRuoli,
+  areaToPath,
+  isAreaAttiva,
+} from "@/lib/auth/area";
 
 /** Riporta l'area sul loginUrl se valida. */
 function preservaArea(loginUrl: URL, formData: FormData) {
   const area = String(formData.get("area") ?? "").trim();
-  if (areaToPath(area)) {
+  if (isAreaAttiva(area)) {
     loginUrl.searchParams.set("area", area);
   }
 }
@@ -47,9 +46,30 @@ export async function POST(request: Request) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Rispetta l'area scelta dall'utente (passata dal layout tramite
-  // ?area=admin|merchant|cliente). Nessun redirect automatico.
-  const area = String(formData.get("area") ?? "").trim();
-  const destinazione = areaToPath(area) || "/";
-  return NextResponse.redirect(new URL(destinazione, request.url));
+  // ── Area attiva della sessione ────────────────────────────────────────
+  // L'area è SCELTA dall'ingresso (Accedi come Cliente/Venditore/
+  // Amministrazione) e resta fissa per tutta la sessione. L'area scelta
+  // deve corrispondere a un ruolo posseduto (per admin: anche l'email
+  // autorizzata); altrimenti si ripiega sulla propria area. Il cookie è
+  // httpOnly: il browser non può modificarlo, quindi l'unico modo per
+  // cambiare area è fare logout e rientrare dall'ingresso corretto.
+  const areaRichiesta = String(formData.get("area") ?? "").trim();
+  const ruoli = await getRuoliUtente(data.user.id);
+  const userEmail = data.user.email ?? "";
+
+  const areaAttiva = isAreaAttiva(areaRichiesta)
+    ? areaEffettiva(userEmail, ruoli, areaRichiesta)
+    : areaPerRuoli(userEmail, ruoli);
+
+  // Ingresso esplicito → si atterra nell'area scelta; login generico (senza
+  // area) → homepage, ma con la sessione già legata all'area dell'utente.
+  const destinazione = isAreaAttiva(areaRichiesta) && areaAttiva
+    ? areaToPath(areaAttiva)
+    : "/";
+
+  const response = NextResponse.redirect(new URL(destinazione, request.url));
+  if (areaAttiva) {
+    response.cookies.set(AREA_COOKIE, areaAttiva, areaCookieOptions());
+  }
+  return response;
 }

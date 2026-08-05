@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { apiError, apiOk } from "@/lib/api/response";
-import { getCurrentUser } from "@/lib/auth/session";
-import { utenteHaRuoli } from "@/lib/auth/roles";
+import { requireApiArea } from "@/lib/auth/session-area";
+import { utenteAdminAutorizzato } from "@/lib/auth/roles";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { canManageStore } from "@/lib/merchant/data";
@@ -12,16 +12,17 @@ export async function GET(
   _request: NextRequest,
   context: { params: Promise<{ negozioId: string }> }
 ) {
-  const user = await getCurrentUser();
-  if (!user) return apiError("UNAUTHORIZED", "Devi effettuare l'accesso.", 401);
+  const { sessione, error: errArea } = await requireApiArea("merchant");
+  if (errArea) return errArea;
+  const user = sessione.user;
 
   const { negozioId } = await context.params;
   const allowed = await canManageStore(user.id, negozioId);
   if (!allowed) return apiError("FORBIDDEN", "Non puoi gestire questo negozio.", 403);
 
-  // Gli admin leggono i media di QUALSIASI negozio (bypass RLS).
+  // L'admin AUTORIZZATO legge i media di QUALSIASI negozio (bypass RLS).
   const supabase =
-    (await utenteHaRuoli(user.id, ["admin"]))
+    (await utenteAdminAutorizzato(user.id, user.email ?? ""))
       ? createAdminSupabaseClient()
       : await createServerSupabaseClient();
 
@@ -42,8 +43,9 @@ export async function POST(
   request: NextRequest,
   context: { params: Promise<{ negozioId: string }> }
 ) {
-  const user = await getCurrentUser();
-  if (!user) return apiError("UNAUTHORIZED", "Devi effettuare l'accesso.", 401);
+  const { sessione, error } = await requireApiArea("merchant");
+  if (error) return error;
+  const user = sessione.user;
 
   const { negozioId } = await context.params;
   const allowed = await canManageStore(user.id, negozioId);

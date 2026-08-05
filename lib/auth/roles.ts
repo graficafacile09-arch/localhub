@@ -7,6 +7,31 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
  */
 export type RuoloUtente = "customer" | "merchant" | "admin";
 
+/**
+ * Unica email autorizzata ad accedere all'Area Amministratore.
+ * Sovrascrivibile con NEXT_PUBLIC_ADMIN_EMAIL (usata dalla suite E2E,
+ * dove l'admin autorizzato è admin.test@localhub.it).
+ */
+export const ADMIN_EMAIL =
+  process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? "graficafacile09@gmail.com";
+
+/** True se l'email corrisponde all'amministratore autorizzato. */
+export function isAdminEmail(email: string): boolean {
+  return email === ADMIN_EMAIL;
+}
+
+/**
+ * True se l'utente possiede il ruolo admin ED è l'email autorizzata.
+ * È la verifica corretta per OGNI potere amministrativo: il solo ruolo
+ * admin (senza l'email autorizzata) non concede alcun privilegio.
+ */
+export async function utenteAdminAutorizzato(
+  userId: string,
+  email: string
+): Promise<boolean> {
+  return isAdminEmail(email) && (await utenteHaRuoli(userId, ["admin"]));
+}
+
 /** Tutti i ruoli conosciuti, in ordine di privilegio crescente. */
 export const RUOLI_UTENTE: readonly RuoloUtente[] = [
   "customer",

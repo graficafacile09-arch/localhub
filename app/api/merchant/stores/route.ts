@@ -1,16 +1,14 @@
 import { apiError, apiOk } from "@/lib/api/response";
-import { getApiUtente, getCurrentUser } from "@/lib/auth/session";
+import { requireApiArea } from "@/lib/auth/session-area";
 import { getMerchantStoresForUser } from "@/lib/merchant/data";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { toSlug } from "@/lib/slug";
 import { generaSlugUnivoco } from "@/lib/slug-server";
 
 export async function GET() {
-  const user = await getCurrentUser();
-
-  if (!user) {
-    return apiError("UNAUTHORIZED", "Devi effettuare l'accesso.", 401);
-  }
+  const { sessione, error } = await requireApiArea("merchant");
+  if (error) return error;
+  const user = sessione.user;
 
   const storesResult = await getMerchantStoresForUser(user.id);
 
@@ -22,10 +20,10 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  // Solo chi possiede il ruolo merchant o admin può creare negozi.
-  const { user, ok } = await getApiUtente(["merchant", "admin"]);
-  if (!user) return apiError("UNAUTHORIZED", "Devi effettuare l'accesso.", 401);
-  if (!ok) return apiError("FORBIDDEN", "Accesso riservato ai commercianti.", 403);
+  // Solo la sessione merchant può creare negozi.
+  const { sessione, error: errArea } = await requireApiArea("merchant");
+  if (errArea) return errArea;
+  const user = sessione.user;
 
   const body = await request.json();
   const nome = (body.nome as string)?.trim();

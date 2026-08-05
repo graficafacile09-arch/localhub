@@ -1,23 +1,19 @@
 import { NextRequest } from "next/server";
 import { apiError, apiOk } from "@/lib/api/response";
-import { getCurrentUser } from "@/lib/auth/session";
-import { utenteHaRuoli } from "@/lib/auth/roles";
+import { requireApiArea } from "@/lib/auth/session-area";
 import {
   creaTemplateAdmin,
   getTutteTemplate,
 } from "@/lib/amministratore/templates";
 
 /**
- * Template di PIATTAFORMA — solo amministratori.
+ * Template di PIATTAFORMA — solo sessione admin.
  * GET  → elenco completo dei template.
  * POST → crea un template da un negozio sorgente.
  */
 export async function GET() {
-  const user = await getCurrentUser();
-  if (!user) return apiError("UNAUTHORIZED", "Devi effettuare l'accesso.", 401);
-  if (!(await utenteHaRuoli(user.id, ["admin"]))) {
-    return apiError("FORBIDDEN", "Accesso riservato agli amministratori.", 403);
-  }
+  const { error } = await requireApiArea("admin");
+  if (error) return error;
 
   try {
     const templates = await getTutteTemplate();
@@ -29,11 +25,8 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const user = await getCurrentUser();
-  if (!user) return apiError("UNAUTHORIZED", "Devi effettuare l'accesso.", 401);
-  if (!(await utenteHaRuoli(user.id, ["admin"]))) {
-    return apiError("FORBIDDEN", "Accesso riservato agli amministratori.", 403);
-  }
+  const { sessione, error } = await requireApiArea("admin");
+  if (error) return error;
 
   const body = await request.json();
   const sourceStoreId = body.sourceStoreId as string;
@@ -54,7 +47,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const result = await creaTemplateAdmin(
-      user.id,
+      sessione.user.id,
       sourceStoreId,
       { nome, descrizione, categoria },
       options as never

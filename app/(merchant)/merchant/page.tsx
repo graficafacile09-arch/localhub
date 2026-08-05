@@ -11,8 +11,11 @@ import { getMerchantStoresForUser } from "@/lib/merchant/data";
  */
 export default async function MerchantHomePage({
   labelArea = "Area Commerciante",
+  area = "merchant",
 }: {
   labelArea?: string;
+  /** area="admin" → vista della dashboard amministratore (nessun link /merchant). */
+  area?: "merchant" | "admin";
 }) {
   const user = await requireCurrentUser("/login");
   const storesResult = await getMerchantStoresForUser(user.id);
@@ -26,7 +29,10 @@ export default async function MerchantHomePage({
     );
   }
 
-  if (storesResult.data.length === 1) {
+  // SOLO la sessione merchant può entrare nelle pagine /merchant/*: per
+  // l'admin area la dashboard è un elenco informativo (evita il loop
+  // /amministratore → /merchant/{id} → /amministratore).
+  if (storesResult.data.length === 1 && area === "merchant") {
     redirect(`/merchant/${storesResult.data[0].id}`);
   }
 
@@ -73,29 +79,50 @@ export default async function MerchantHomePage({
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        {storesResult.data.map((store) => (
-          <Link
-            key={store.id}
-            href={`/merchant/${store.id}`}
-            className="rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-[0_20px_40px_-32px_rgba(37,99,235,0.45)]"
-          >
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
-              Il mio negozio
-            </p>
-            <h2 className="mt-3 text-2xl font-black tracking-tight text-slate-900">
-              {store.nome}
-            </h2>
-            <p className="mt-2 text-sm text-slate-600">
-              {store.categoria ?? "Categoria non definita"}
-            </p>
-            <p className="mt-4 text-sm leading-6 text-slate-600">
-              {store.descrizione ?? "Nessuna descrizione disponibile per questo negozio."}
-            </p>
-            <span className="mt-6 inline-flex rounded-2xl bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700">
-              Gestisci negozio
-            </span>
-          </Link>
-        ))}
+        {storesResult.data.map((store) => {
+          const contenuto = (
+            <>
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
+                Il mio negozio
+              </p>
+              <h2 className="mt-3 text-2xl font-black tracking-tight text-slate-900">
+                {store.nome}
+              </h2>
+              <p className="mt-2 text-sm text-slate-600">
+                {store.categoria ?? "Categoria non definita"}
+              </p>
+              <p className="mt-4 text-sm leading-6 text-slate-600">
+                {store.descrizione ?? "Nessuna descrizione disponibile per questo negozio."}
+              </p>
+              <span className="mt-6 inline-flex rounded-2xl bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700">
+                {area === "admin" ? "Vedi scheda pubblica" : "Gestisci negozio"}
+              </span>
+            </>
+          );
+
+          // La sessione admin non può aprire /merchant/*: le card non sono
+          // link (la scheda pubblica si raggiunge dall'Area Admin/Attività).
+          if (area === "admin") {
+            return (
+              <div
+                key={store.id}
+                className="rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm"
+              >
+                {contenuto}
+              </div>
+            );
+          }
+
+          return (
+            <Link
+              key={store.id}
+              href={`/merchant/${store.id}`}
+              className="rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-[0_20px_40px_-32px_rgba(37,99,235,0.45)]"
+            >
+              {contenuto}
+            </Link>
+          );
+        })}
       </div>
     </div>
   );

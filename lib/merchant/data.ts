@@ -2,7 +2,8 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { uploadDataUrlToStorage } from "@/lib/supabase/storage";
 import { generaSlugUnivoco } from "@/lib/slug-server";
-import { utenteHaRuoli } from "@/lib/auth/roles";
+import { getCurrentUser } from "@/lib/auth/session";
+import { utenteAdminAutorizzato } from "@/lib/auth/roles";
 import type {
   MerchantProduct,
   MerchantProductInput,
@@ -15,6 +16,18 @@ type QueryError = {
   code?: string;
   message?: string;
 };
+
+/**
+ * True se l'utente è l'ADMIN AUTORIZZATO (email + ruolo admin).
+ * Il solo ruolo admin senza l'email autorizzata NON concede poteri
+ * amministrativi: blocca il bypass del gate via Area Commerciante.
+ * Variante locale che legge l'email dalla sessione corrente.
+ */
+async function utenteAdminAutorizzatoCorrente(userId: string): Promise<boolean> {
+  const user = await getCurrentUser();
+  if (!user) return false;
+  return utenteAdminAutorizzato(userId, user.email ?? "");
+}
 
 type NegozioRow = {
   id: string;
@@ -60,12 +73,12 @@ function isSchemaError(error: QueryError | null) {
 }
 
 /**
- * Client Supabase corretto per l'utente: gli ADMIN usano il client admin
- * (bypassa RLS) così possono gestire QUALSIASI negozio della piattaforma;
+ * Client Supabase corretto per l'utente: l'ADMIN AUTORIZZATO usa il client
+ * admin (bypassa RLS) così può gestire QUALSIASI negozio della piattaforma;
  * i commercianti usano il client server (RLS li limita ai propri negozi).
  */
 async function getDbForUser(userId: string) {
-  if (await utenteHaRuoli(userId, ["admin"])) {
+  if (await utenteAdminAutorizzatoCorrente(userId)) {
     return createAdminSupabaseClient();
   }
   return await createServerSupabaseClient();
@@ -136,9 +149,9 @@ function mapProduct(row: ProdottoRow): MerchantProduct {
 // =================================================================
 export async function getMerchantStoresForUser(userId: string): Promise<MerchantQueryResult<MerchantStoreSummary[]>> {
   // Verifica del ruolo eseguita UNA volta: da qui si sceglie il client e il
-  // filtro di proprietà (gli ADMIN vedono TUTTI i negozi della piattaforma,
-  // i commercianti solo i propri).
-  const isAdmin = await utenteHaRuoli(userId, ["admin"]);
+  // filtro di proprietà (l'admin AUTORIZZATO vede TUTTI i negozi della
+  // piattaforma, i commercianti solo i propri).
+  const isAdmin = await utenteAdminAutorizzatoCorrente(userId);
   const supabase = isAdmin
     ? createAdminSupabaseClient()
     : await createServerSupabaseClient();
@@ -195,8 +208,8 @@ export async function getMerchantStoreForUser(userId: string, negozioId: string)
 // canManageStore — verifica se l'utente può gestire un negozio
 // =================================================================
 export async function canManageStore(userId: string, negozioId: string): Promise<boolean> {
-  // Gli ADMIN possono gestire QUALSIASI negozio della piattaforma.
-  if (await utenteHaRuoli(userId, ["admin"])) return true;
+  // L'admin AUTORIZZATO può gestire QUALSIASI negozio della piattaforma.
+  if (await utenteAdminAutorizzatoCorrente(userId)) return true;
 
   const supabase = await createServerSupabaseClient();
   const { count, error } = await supabase

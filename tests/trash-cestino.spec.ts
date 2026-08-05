@@ -187,8 +187,10 @@ test.describe("CESTINO DI PIATTAFORMA — solo amministratore", () => {
     });
     expect(adminTrash.status, "merchant reading admin trash must be 403").toBe(403);
 
-    /* La pagina /amministratore è protetta: il merchant viene reindirizzato. */
+    /* La pagina /amministratore è protetta: il merchant viene reindirizzato
+       direttamente alla propria area /merchant (che può auto-redirectare
+       al negozio unico del merchant). */
     await page.goto(`${BASE}/amministratore`, { waitUntil: "networkidle" });
-    await expect(page).toHaveURL(`${BASE}/`);
+    await expect(page).toHaveURL(/\/merchant/);
   });
 });

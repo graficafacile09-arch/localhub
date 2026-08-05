@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
+import { redirect } from "next/navigation";
 import ClienteShell from "@/components/cliente/ClienteShell";
-import { requireRuoli } from "@/lib/auth/session";
+import { areaToPath } from "@/lib/auth/area";
+import { getSessionArea } from "@/lib/auth/session-area";
 
 export const metadata = {
   title: "Area Clienti — LocalHub",
@@ -10,16 +12,24 @@ export const metadata = {
 
 /**
  * Layout dell'Area Clienti.
- * Accessibile SOLO agli utenti che possiedono il ruolo customer (verifica
- * sull'insieme dei ruoli): merchant puri e admin puri vengono reindirizzati.
- * Il webmaster (customer+merchant+admin) mantiene l'accesso.
+ * L'accesso è determinato dall'AREA ATTIVA della sessione (cookie httpOnly
+ * lh_area), scelta al login e fissa per tutta la sessione: entra SOLO chi ha
+ * una sessione "cliente". Chi ha una sessione di un'altra area viene sempre
+ * reindirizzato alla propria area — anche se l'account possiede più ruoli.
  */
 export default async function ClienteLayout({
   children,
 }: {
   children: ReactNode;
 }) {
-  await requireRuoli(["customer"], "/login?area=cliente");
+  // Helper centrale: l'area attiva della sessione determina l'accesso.
+  const sessione = await getSessionArea();
+  if (!sessione) redirect("/login?area=cliente");
+
+  // Solo la sessione "cliente" entra in /cliente.
+  if (sessione.area !== "cliente") {
+    redirect(areaToPath(sessione.area));
+  }
 
   return <ClienteShell>{children}</ClienteShell>;
 }

@@ -1,7 +1,6 @@
 import { NextRequest } from "next/server";
 import { apiError, apiOk } from "@/lib/api/response";
-import { getCurrentUser } from "@/lib/auth/session";
-import { utenteHaRuoli } from "@/lib/auth/roles";
+import { requireApiArea } from "@/lib/auth/session-area";
 import {
   aggiornaTemplateAdmin,
   eliminaTemplateAdmin,
@@ -9,20 +8,18 @@ import {
 } from "@/lib/amministratore/templates";
 
 /**
- * Template di PIATTAFORMA — solo amministratori.
+ * Template di PIATTAFORMA — solo sessione admin.
  * GET    → dettaglio del template.
  * PATCH  → modifica nome/descrizione/categoria.
  * DELETE → eliminazione (i template di sistema sono protetti).
  */
+
 export async function GET(
   _request: NextRequest,
   context: { params: Promise<{ templateId: string }> }
 ) {
-  const user = await getCurrentUser();
-  if (!user) return apiError("UNAUTHORIZED", "Devi effettuare l'accesso.", 401);
-  if (!(await utenteHaRuoli(user.id, ["admin"]))) {
-    return apiError("FORBIDDEN", "Accesso riservato agli amministratori.", 403);
-  }
+  const { error } = await requireApiArea("admin");
+  if (error) return error;
 
   const { templateId } = await context.params;
 
@@ -43,11 +40,8 @@ export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ templateId: string }> }
 ) {
-  const user = await getCurrentUser();
-  if (!user) return apiError("UNAUTHORIZED", "Devi effettuare l'accesso.", 401);
-  if (!(await utenteHaRuoli(user.id, ["admin"]))) {
-    return apiError("FORBIDDEN", "Accesso riservato agli amministratori.", 403);
-  }
+  const { error } = await requireApiArea("admin");
+  if (error) return error;
 
   const { templateId } = await context.params;
   const body = await request.json();
@@ -69,11 +63,8 @@ export async function DELETE(
   _request: NextRequest,
   context: { params: Promise<{ templateId: string }> }
 ) {
-  const user = await getCurrentUser();
-  if (!user) return apiError("UNAUTHORIZED", "Devi effettuare l'accesso.", 401);
-  if (!(await utenteHaRuoli(user.id, ["admin"]))) {
-    return apiError("FORBIDDEN", "Accesso riservato agli amministratori.", 403);
-  }
+  const { error } = await requireApiArea("admin");
+  if (error) return error;
 
   const { templateId } = await context.params;
 

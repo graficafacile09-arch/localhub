@@ -1,13 +1,11 @@
 import { apiError, apiOk } from "@/lib/api/response";
-import { getCurrentUser } from "@/lib/auth/session";
+import { requireApiArea } from "@/lib/auth/session-area";
 import { getMerchantStoresForUser } from "@/lib/merchant/data";
 
 export async function GET() {
-  const user = await getCurrentUser();
-
-  if (!user) {
-    return apiError("UNAUTHORIZED", "Devi effettuare l'accesso.", 401);
-  }
+  const { sessione, error } = await requireApiArea("merchant");
+  if (error) return error;
+  const user = sessione.user;
 
   const storesResult = await getMerchantStoresForUser(user.id);
 
