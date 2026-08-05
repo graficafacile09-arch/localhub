@@ -12,7 +12,7 @@ type TabDef = {
 const TAB: TabDef[] = [
   { id: "tutti", label: "Tutti", icon: Users },
   { id: "amministratore", label: "Amministratori", icon: UserCog },
-  { id: "commerciante", label: "Amministratori", icon: Store },
+  { id: "commerciante", label: "Commercianti", icon: Store },
   { id: "utente", label: "Utenti", icon: UserRound },
 ];
 

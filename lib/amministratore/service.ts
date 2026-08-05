@@ -1,31 +1,26 @@
 import { getCategorie } from "@/lib/negozi";
 import { getAttivitaAdmin } from "./attivita-queries";
 import type { AttivitaRow } from "./attivita-types";
-import { utentiDemo } from "./demo-utenti";
+import { getUtentiReali } from "./utenti-queries";
 import type { FiltroRuoloUtente, Utente } from "./types";
 
 /**
  * Servizio utenti del pannello Amministratore.
- *
- * In questa fase restituisce dati DEMO; il contratto delle funzioni è già
- * pensato per essere collegato al database nelle prossime fasi senza dover
- * toccare i componenti: basterà sostituire l'implementazione interna.
+ * Dati REALI dal database (auth.users + user_roles + profili + negozi).
  */
 
-/** Elenco utenti con filtro opzionale per ruolo (null = tutti). */
+/** Elenco utenti con filtro opzionale per ruolo (tutti = nessun filtro). */
 export async function getUtenti(
   filtro: FiltroRuoloUtente = "tutti"
 ): Promise<Utente[]> {
-  // TODO(fase successiva): leggere da database (auth.users + profili).
-  if (filtro === "tutti") return utentiDemo;
-  return utentiDemo.filter((utente) => utente.ruolo === filtro);
+  return getUtentiReali(filtro);
 }
 
 /** Conteggi per le tab (tutti / amministratori / commercianti / utenti). */
 export async function getConteggiUtenti(): Promise<
   Record<FiltroRuoloUtente, number>
 > {
-  const tutti = await getUtenti("tutti");
+  const tutti = await getUtentiReali("tutti");
   return {
     tutti: tutti.length,
     amministratore: tutti.filter((u) => u.ruolo === "amministratore").length,

@@ -1,7 +1,6 @@
 import { Mail, ShieldAlert, Store } from "lucide-react";
 import type { RuoloUtente, StatoUtente, Utente } from "@/lib/amministratore/types";
 import { RUOLI_UTENTE } from "@/lib/amministratore/types";
-import UtentiActionsMenu from "./UtentiActionsMenu";
 
 const formatData = new Intl.DateTimeFormat("it-IT", {
   day: "2-digit",
@@ -60,11 +59,22 @@ function Avatar({ nome }: { nome: string }) {
 }
 
 /**
- * Tabella utenti del modulo /amministratore/utenti.
+ * Tabella utenti del modulo /amministratore/utenti — dati reali dal DB.
  * Colonne: Nome, Email, Ruolo, Stato, Ultimo accesso, Azioni.
- * Le Azioni sono tutte placeholder (vedi UtentiActionsMenu).
  */
-export default function UtentiTable({ utenti }: { utenti: Utente[] }) {
+import UtentiActionsMenu from "./UtentiActionsMenu";
+
+type AggiornamentoUtente = Partial<Pick<Utente, "ruolo" | "stato">>;
+
+export default function UtentiTable({
+  utenti,
+  onAggiorna,
+  onElimina,
+}: {
+  utenti: Utente[];
+  onAggiorna?: (id: string, aggiornamento: AggiornamentoUtente) => void;
+  onElimina?: (id: string) => void;
+}) {
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
       <div className="overflow-x-auto">
@@ -118,7 +128,11 @@ export default function UtentiTable({ utenti }: { utenti: Utente[] }) {
                     : "Mai"}
                 </td>
                 <td className="px-5 py-4 text-right">
-                  <UtentiActionsMenu utente={utente} />
+                  <UtentiActionsMenu
+                    utente={utente}
+                    onAggiorna={onAggiorna}
+                    onElimina={onElimina}
+                  />
                 </td>
               </tr>
             ))}

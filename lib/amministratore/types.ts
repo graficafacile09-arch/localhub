@@ -1,7 +1,6 @@
 /**
  * Tipi del sistema Ruoli e Permessi del pannello Amministratore.
- * Modulo /amministratore/utenti — infrastruttura, nessun collegamento al
- * database in questa fase.
+ * Modulo /amministratore/utenti — dati reali da auth.users + user_roles.
  */
 
 /** Ruoli di piattaforma LocalHub. */
@@ -13,7 +12,7 @@ export type StatoUtente = "attivo" | "disattivato";
 /** Etichette e colori dei ruoli (usati da tab e tabella). */
 export const RUOLI_UTENTE: Record<RuoloUtente, { label: string }> = {
   amministratore: { label: "Amministratore" },
-  commerciante: { label: "Amministratore" },
+  commerciante: { label: "Commerciante" },
   utente: { label: "Utente" },
 };
 
