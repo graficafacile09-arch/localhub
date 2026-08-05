@@ -69,10 +69,12 @@ type AggiornamentoUtente = Partial<Pick<Utente, "ruolo" | "stato">>;
 export default function UtentiTable({
   utenti,
   onAggiorna,
+  onDettaglio,
   onElimina,
 }: {
   utenti: Utente[];
   onAggiorna?: (id: string, aggiornamento: AggiornamentoUtente) => void;
+  onDettaglio?: (utente: Utente) => void;
   onElimina?: (id: string) => void;
 }) {
   return (
@@ -131,6 +133,7 @@ export default function UtentiTable({
                   <UtentiActionsMenu
                     utente={utente}
                     onAggiorna={onAggiorna}
+                    onDettaglio={onDettaglio}
                     onElimina={onElimina}
                   />
                 </td>

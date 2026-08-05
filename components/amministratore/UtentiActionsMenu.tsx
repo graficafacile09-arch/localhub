@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Ban, Loader2, MoreHorizontal, Pencil, ShieldCheck, Trash2 } from "lucide-react";
+import { Ban, Eye, Loader2, MoreHorizontal, Pencil, ShieldCheck, Trash2 } from "lucide-react";
 import type { FiltroRuoloUtente, StatoUtente, Utente } from "@/lib/amministratore/types";
 
 type AggiornamentoUtente = Partial<Pick<Utente, "ruolo" | "stato">>;
@@ -9,10 +9,12 @@ type AggiornamentoUtente = Partial<Pick<Utente, "ruolo" | "stato">>;
 export default function UtentiActionsMenu({
   utente,
   onAggiorna,
+  onDettaglio,
   onElimina,
 }: {
   utente: Utente;
   onAggiorna?: (id: string, aggiornamento: AggiornamentoUtente) => void;
+  onDettaglio?: (utente: Utente) => void;
   onElimina?: (id: string) => void;
 }) {
   const [aperto, setAperto] = useState(false);
@@ -73,6 +75,10 @@ export default function UtentiActionsMenu({
       </button>
       {aperto && (
         <div role="menu" className="absolute right-0 top-full z-30 mt-1 w-56 rounded-2xl border border-slate-100 bg-white p-1.5 shadow-xl">
+          <button type="button" role="menuitem" onClick={() => { onDettaglio?.(utente); setAperto(false); }} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50">
+            <Eye className="h-4 w-4" />
+            Visualizza
+          </button>
           <button type="button" role="menuitem" disabled={caricamento} onClick={() => void aggiorna({ ruolo: prossimoRuolo }, { ruolo: prossimoRuolo })} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60">
             {caricamento ? <Loader2 className="h-4 w-4 animate-spin" /> : <Pencil className="h-4 w-4" />}
             Ruolo: {prossimoRuolo === "commerciante" ? "Commerciante" : "Utente"}

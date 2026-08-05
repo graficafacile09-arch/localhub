@@ -9,6 +9,7 @@ import {
   Search,
   Sparkles,
   UserRound,
+  X,
 } from "lucide-react";
 import {
   RUOLI_UTENTE,
@@ -34,6 +35,7 @@ export default function UtentiModule({
   const [pagina, setPagina] = useState(1);
   const [perPagina, setPerPagina] = useState(10);
   const [mostraNuovo, setMostraNuovo] = useState(false);
+  const [utenteDettaglio, setUtenteDettaglio] = useState<Utente | null>(null);
   const [creando, setCreando] = useState(false);
   const [errore, setErrore] = useState<string | null>(null);
   type RuoloCreabile = "utente" | "commerciante" | "amministratore";
@@ -103,6 +105,13 @@ export default function UtentiModule({
     const rimosso = utenti.find((utente) => utente.id === id);
     setUtenti((precedenti) => precedenti.filter((utente) => utente.id !== id));
     if (rimosso) aggiornaConteggi({ tutti: -1, [rimosso.ruolo]: -1 });
+    setUtenteDettaglio((precedente) => (precedente?.id === id ? null : precedente));
+  }
+
+  function aggiornaDettaglio(id: string, aggiornamento: Partial<Pick<Utente, "ruolo" | "stato">>) {
+    setUtenteDettaglio((precedente) =>
+      precedente?.id === id ? { ...precedente, ...aggiornamento } : precedente
+    );
   }
 
   async function creaUtente(event: React.FormEvent<HTMLFormElement>) {
@@ -253,8 +262,64 @@ export default function UtentiModule({
           <UtentiTabs attivo={filtro} conteggi={conteggi} onChange={setFiltro} />
         </div>
       </div>
+      {utenteDettaglio && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 p-4 backdrop-blur-sm" role="presentation">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="dettaglio-utente-titolo"
+            className="w-full max-w-lg rounded-[2rem] border border-white/70 bg-white p-6 shadow-2xl md:p-8"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-700 ring-1 ring-blue-100">
+                  <UserRound className="h-6 w-6" aria-hidden />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">Dettaglio utente</p>
+                  <h2 id="dettaglio-utente-titolo" className="mt-1 text-xl font-black text-slate-900">{utenteDettaglio.nome}</h2>
+                </div>
+              </div>
+              <button
+                type="button"
+                aria-label="Chiudi dettaglio utente"
+                onClick={() => setUtenteDettaglio(null)}
+                className="rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+              >
+                <X className="h-5 w-5" aria-hidden />
+              </button>
+            </div>
+            <dl className="mt-6 grid gap-3 sm:grid-cols-2">
+              <div className="rounded-2xl bg-slate-50 p-4 sm:col-span-2">
+                <dt className="text-xs font-bold uppercase tracking-wide text-slate-400">Email</dt>
+                <dd className="mt-1 break-all text-sm font-semibold text-slate-800">{utenteDettaglio.email}</dd>
+              </div>
+              <div className="rounded-2xl bg-slate-50 p-4">
+                <dt className="text-xs font-bold uppercase tracking-wide text-slate-400">Ruolo</dt>
+                <dd className="mt-1 text-sm font-semibold text-slate-800">{RUOLI_UTENTE[utenteDettaglio.ruolo].label}</dd>
+              </div>
+              <div className="rounded-2xl bg-slate-50 p-4">
+                <dt className="text-xs font-bold uppercase tracking-wide text-slate-400">Stato account</dt>
+                <dd className="mt-1 text-sm font-semibold text-slate-800">{utenteDettaglio.stato === "attivo" ? "Attivo" : "Disattivato"}</dd>
+              </div>
+              <div className="rounded-2xl bg-slate-50 p-4">
+                <dt className="text-xs font-bold uppercase tracking-wide text-slate-400">Ultimo accesso</dt>
+                <dd className="mt-1 text-sm font-semibold text-slate-800">{utenteDettaglio.ultimoAccesso ? formatDataDettaglio(utenteDettaglio.ultimoAccesso) : "Mai"}</dd>
+              </div>
+              <div className="rounded-2xl bg-slate-50 p-4">
+                <dt className="text-xs font-bold uppercase tracking-wide text-slate-400">Registrato il</dt>
+                <dd className="mt-1 text-sm font-semibold text-slate-800">{formatDataDettaglio(utenteDettaglio.registratoIl)}</dd>
+              </div>
+              <div className="rounded-2xl bg-slate-50 p-4 sm:col-span-2">
+                <dt className="text-xs font-bold uppercase tracking-wide text-slate-400">Negozi gestiti</dt>
+                <dd className="mt-1 text-sm font-semibold text-slate-800">{utenteDettaglio.negozi ?? 0}</dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+      )}
       <div role="tabpanel" id="panel-utenti" aria-labelledby="tab-utenti-tutti">
-        <UtentiTable utenti={utentiPagina} onAggiorna={aggiornaUtente} onElimina={eliminaUtente} />
+        <UtentiTable utenti={utentiPagina} onAggiorna={(id, aggiornamento) => { aggiornaUtente(id, aggiornamento); aggiornaDettaglio(id, aggiornamento); }} onDettaglio={setUtenteDettaglio} onElimina={eliminaUtente} />
         <div className="mt-3 flex flex-col gap-3 rounded-2xl border border-slate-100 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm sm:flex-row sm:items-center sm:justify-between">
           <p>
             {ordinate.length === 0
@@ -293,6 +358,16 @@ export default function UtentiModule({
 
 type OrdinamentoUtenti = "nome" | "email" | "ruolo" | "ultimoAccesso" | "stato";
 type DirezioneOrdinamento = "asc" | "desc";
+
+const formatDataDettaglioFormatter = new Intl.DateTimeFormat("it-IT", {
+  day: "2-digit",
+  month: "long",
+  year: "numeric",
+});
+
+function formatDataDettaglio(value: string): string {
+  return formatDataDettaglioFormatter.format(new Date(value));
+}
 
 function valoreOrdinamento(utente: Utente, campo: OrdinamentoUtenti): string {
   switch (campo) {
