@@ -82,19 +82,25 @@ export async function getUtentiReali(
     deleted_at?: string | null;
   }[] = [];
   try {
-    const { data, error } = await db.auth.admin.listUsers({
-      page: 1,
-      perPage: 1000,
-    });
-    if (!error && data) {
-      utentiAuth = data.users.map((u) => ({
-        id: u.id,
-        email: u.email ?? null,
-        created_at: u.created_at ?? new Date().toISOString(),
-        last_sign_in_at: u.last_sign_in_at ?? null,
-        banned_until: u.banned_until ?? null,
-        deleted_at: u.deleted_at ?? null,
-      }));
+    // Auth Admin API restituisce al massimo 1000 utenti per pagina: carichiamo
+    // tutte le pagine per non troncare la lista reale prima della paginazione UI.
+    const perPage = 1000;
+    let page = 1;
+    while (true) {
+      const { data, error } = await db.auth.admin.listUsers({ page, perPage });
+      if (error || !data) break;
+      utentiAuth.push(
+        ...data.users.map((u) => ({
+          id: u.id,
+          email: u.email ?? null,
+          created_at: u.created_at ?? new Date().toISOString(),
+          last_sign_in_at: u.last_sign_in_at ?? null,
+          banned_until: u.banned_until ?? null,
+          deleted_at: u.deleted_at ?? null,
+        }))
+      );
+      if (data.users.length < perPage) break;
+      page += 1;
     }
   } catch {
     utentiAuth = [];

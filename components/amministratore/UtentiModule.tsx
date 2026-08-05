@@ -1,8 +1,20 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Plus, Sparkles, UserRound } from "lucide-react";
-import type { FiltroRuoloUtente, Utente } from "@/lib/amministratore/types";
+import { useEffect, useMemo, useState } from "react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronsUpDown,
+  Plus,
+  Search,
+  Sparkles,
+  UserRound,
+} from "lucide-react";
+import {
+  RUOLI_UTENTE,
+  type FiltroRuoloUtente,
+  type Utente,
+} from "@/lib/amministratore/types";
 import UtentiTabs from "./UtentiTabs";
 import UtentiTable from "./UtentiTable";
 
@@ -16,6 +28,11 @@ export default function UtentiModule({
   const [utenti, setUtenti] = useState(utentiIniziali);
   const [conteggi, setConteggi] = useState(conteggiIniziali);
   const [filtro, setFiltro] = useState<FiltroRuoloUtente>("tutti");
+  const [ricerca, setRicerca] = useState("");
+  const [ordinamento, setOrdinamento] = useState<OrdinamentoUtenti>("nome");
+  const [direzione, setDirezione] = useState<DirezioneOrdinamento>("asc");
+  const [pagina, setPagina] = useState(1);
+  const [perPagina, setPerPagina] = useState(10);
   const [mostraNuovo, setMostraNuovo] = useState(false);
   const [creando, setCreando] = useState(false);
   const [errore, setErrore] = useState<string | null>(null);
@@ -28,10 +45,44 @@ export default function UtentiModule({
     ruolo: "utente" as RuoloCreabile,
   });
 
-  const visibili = useMemo(
-    () => (filtro === "tutti" ? utenti : utenti.filter((utente) => utente.ruolo === filtro)),
-    [filtro, utenti]
+  const filtrati = useMemo(() => {
+    const query = ricerca.trim().toLocaleLowerCase("it");
+    return utenti.filter((utente) => {
+      const ruolo = RUOLI_UTENTE[utente.ruolo].label.toLocaleLowerCase("it");
+      const corrispondeRuolo = filtro === "tutti" || utente.ruolo === filtro;
+      const corrispondeRicerca =
+        !query ||
+        [utente.nome, utente.email, utente.ruolo, ruolo].some((valore) =>
+          valore.toLocaleLowerCase("it").includes(query)
+        );
+      return corrispondeRuolo && corrispondeRicerca;
+    });
+  }, [filtro, ricerca, utenti]);
+
+  const ordinate = useMemo(() => {
+    const copia = [...filtrati];
+    copia.sort((a, b) => {
+      const valoreA = valoreOrdinamento(a, ordinamento);
+      const valoreB = valoreOrdinamento(b, ordinamento);
+      const confronto = valoreA.localeCompare(valoreB, "it", {
+        numeric: true,
+        sensitivity: "base",
+      });
+      return direzione === "asc" ? confronto : -confronto;
+    });
+    return copia;
+  }, [direzione, filtrati, ordinamento]);
+
+  const numeroPagine = Math.max(1, Math.ceil(ordinate.length / perPagina));
+  const paginaEffettiva = Math.min(pagina, numeroPagine);
+  const utentiPagina = ordinate.slice(
+    (paginaEffettiva - 1) * perPagina,
+    paginaEffettiva * perPagina
   );
+
+  useEffect(() => {
+    setPagina(1);
+  }, [direzione, filtro, ordinamento, perPagina, ricerca]);
 
   function aggiornaConteggi(delta: Partial<Record<FiltroRuoloUtente, number>>) {
     setConteggi((precedenti) => ({
@@ -79,6 +130,15 @@ export default function UtentiModule({
     } finally {
       setCreando(false);
     }
+  }
+
+  function cambiaOrdinamento(value: OrdinamentoUtenti) {
+    if (value === ordinamento) {
+      setDirezione((precedente) => (precedente === "asc" ? "desc" : "asc"));
+      return;
+    }
+    setOrdinamento(value);
+    setDirezione("asc");
   }
 
   return (
@@ -138,9 +198,114 @@ export default function UtentiModule({
         </div>
       )}
 
-      <div className="rounded-[2rem] border border-white/70 bg-white p-4 shadow-sm md:p-5"><UtentiTabs attivo={filtro} conteggi={conteggi} onChange={setFiltro} /></div>
-      <div role="tabpanel" id="panel-utenti" aria-labelledby="tab-utenti-tutti"><UtentiTable utenti={visibili} onAggiorna={aggiornaUtente} onElimina={eliminaUtente} /></div>
+      <div className="rounded-[2rem] border border-white/70 bg-white p-4 shadow-sm md:p-5">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <label className="relative block min-w-0 flex-1 lg:max-w-md">
+            <span className="sr-only">Cerca utenti per nome, email o ruolo</span>
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden />
+            <input
+              type="search"
+              value={ricerca}
+              onChange={(event) => setRicerca(event.target.value)}
+              placeholder="Cerca nome, email o ruolo..."
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100"
+            />
+          </label>
+          <div className="flex flex-wrap items-center gap-2">
+            <label className="flex items-center gap-2 text-xs font-bold text-slate-500">
+              <span>Ordina</span>
+              <select
+                value={ordinamento}
+                onChange={(event) => cambiaOrdinamento(event.target.value as OrdinamentoUtenti)}
+                className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+              >
+                <option value="nome">Nome</option>
+                <option value="email">Email</option>
+                <option value="ruolo">Ruolo</option>
+                <option value="ultimoAccesso">Ultimo accesso</option>
+                <option value="stato">Stato</option>
+              </select>
+            </label>
+            <button
+              type="button"
+              onClick={() => setDirezione((precedente) => (precedente === "asc" ? "desc" : "asc"))}
+              aria-label={`Ordinamento ${direzione === "asc" ? "crescente" : "decrescente"}`}
+              title={`Ordine ${direzione === "asc" ? "crescente" : "decrescente"}`}
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+            >
+              <ChevronsUpDown className="h-4 w-4" aria-hidden />
+            </button>
+            <label className="flex items-center gap-2 text-xs font-bold text-slate-500">
+              <span>Righe</span>
+              <select
+                value={perPagina}
+                onChange={(event) => setPerPagina(Number(event.target.value))}
+                className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+              >
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+              </select>
+            </label>
+          </div>
+        </div>
+        <div className="mt-4 border-t border-slate-100 pt-4">
+          <UtentiTabs attivo={filtro} conteggi={conteggi} onChange={setFiltro} />
+        </div>
+      </div>
+      <div role="tabpanel" id="panel-utenti" aria-labelledby="tab-utenti-tutti">
+        <UtentiTable utenti={utentiPagina} onAggiorna={aggiornaUtente} onElimina={eliminaUtente} />
+        <div className="mt-3 flex flex-col gap-3 rounded-2xl border border-slate-100 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+          <p>
+            {ordinate.length === 0
+              ? "Nessun risultato"
+              : `Visualizzati ${(paginaEffettiva - 1) * perPagina + 1}–${Math.min(paginaEffettiva * perPagina, ordinate.length)} di ${ordinate.length}`}
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setPagina((precedente) => Math.max(1, precedente - 1))}
+              disabled={paginaEffettiva <= 1}
+              aria-label="Pagina precedente"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <ChevronLeft className="h-4 w-4" aria-hidden />
+            </button>
+            <span className="min-w-20 text-center text-xs font-bold text-slate-600">
+              Pagina {paginaEffettiva} di {numeroPagine}
+            </span>
+            <button
+              type="button"
+              onClick={() => setPagina((precedente) => Math.min(numeroPagine, precedente + 1))}
+              disabled={paginaEffettiva >= numeroPagine}
+              aria-label="Pagina successiva"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <ChevronRight className="h-4 w-4" aria-hidden />
+            </button>
+          </div>
+        </div>
+      </div>
       <div className="flex items-start gap-3 rounded-3xl border border-violet-100 bg-violet-50/60 px-5 py-4 text-sm text-violet-900"><Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-violet-600" aria-hidden /><p className="leading-6"><span className="font-bold">Dati reali:</span> elenco e gestione degli utenti registrati sulla piattaforma.</p></div>
     </div>
   );
+}
+
+type OrdinamentoUtenti = "nome" | "email" | "ruolo" | "ultimoAccesso" | "stato";
+type DirezioneOrdinamento = "asc" | "desc";
+
+function valoreOrdinamento(utente: Utente, campo: OrdinamentoUtenti): string {
+  switch (campo) {
+    case "email":
+      return utente.email;
+    case "ruolo":
+      return utente.ruolo;
+    case "ultimoAccesso":
+      return utente.ultimoAccesso ?? "";
+    case "stato":
+      return utente.stato;
+    case "nome":
+    default:
+      return utente.nome;
+  }
 }
