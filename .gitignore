@@ -43,6 +43,10 @@ next-env.d.ts
 .vercel
 .env*
 
+# test output artifacts
+/playwright-report/
+/test-results/
+
 # test files
 test-*.mjs
 test-*.js
