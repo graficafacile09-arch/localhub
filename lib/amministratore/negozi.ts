@@ -1,14 +1,63 @@
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
+/** Riga minima di negozio valutabile per il filtro demo. */
+export type NegozioDemoRow = {
+  nome: string | null;
+  slug?: string | null;
+  is_demo?: boolean | null;
+};
+
 /**
- * True se il negozio è un DATO DEMO/DI TEST creato dalla suite E2E
- * (nomi "E2E …" o "Negozio Rinominato …", sempre con timestamp).
- * I negozi demo NON compaiono nelle viste dell'Area Amministratore:
- * devono restare visibili solo i negozi reali del database.
- * Allineata alla pulizia di scripts/setup-test-users.mjs.
+ * FILTRO DEFINITIVO dei negozi demo (migrazione 20260806_negozi_is_demo):
+ *  1. colonna is_demo = true (fonte autorevole, impostata dalla migrazione
+ *     per i seed "demo-…" e per i negozi dei test E2E);
+ *  2. fallback per nome ("E2E …", "Negozio Rinominato …" — suite E2E);
+ *  3. fallback per slug ("demo-…" — negozi seed con nomi realistici).
+ * I negozi demo NON compaiono MAI nelle viste dell'Area Amministratore.
  */
-export function eNegozioDemo(nome: string): boolean {
-  return /^(E2E|Negozio Rinominato)\s/.test(nome);
+export function eNegozioDaEscludere(riga: NegozioDemoRow): boolean {
+  if (riga.is_demo === true) return true;
+  const nome = riga.nome ?? "";
+  if (/^(E2E|Negozio Rinominato)\s/.test(nome)) return true;
+  if (riga.slug && /^demo-/i.test(riga.slug)) return true;
+  return false;
+}
+
+export type EsitoQuery<T> = {
+  data: T[] | null;
+  error: { code?: string; message?: string } | null;
+};
+
+/** Codici di errore PostgREST/Supabase relativi a schema/colonne mancanti. */
+const CODICI_SCHEMA = new Set(["42P01", "42703", "PGRST204", "PGRST205"]);
+
+/**
+ * Esegue una query sui negozi escludendo SEMPRE i demo:
+ * prova prima con la colonna is_demo (migrazione applicata); se la colonna
+ * non esiste, ripete la query senza colonna e filtra per nome/slug in TS.
+ * In entrambi i casi nessun negozio demo raggiunge il chiamante.
+ */
+export async function queryNegoziNonDemo<T extends NegozioDemoRow>(
+  esegui: (usaColonna: boolean) => Promise<EsitoQuery<T>>
+): Promise<EsitoQuery<T>> {
+  const conColonna = await esegui(true);
+  if (!conColonna.error) {
+    return {
+      data: (conColonna.data ?? []).filter((r) => !eNegozioDaEscludere(r)),
+      error: null,
+    };
+  }
+  if (CODICI_SCHEMA.has(conColonna.error.code ?? "")) {
+    const senzaColonna = await esegui(false);
+    if (!senzaColonna.error) {
+      return {
+        data: (senzaColonna.data ?? []).filter((r) => !eNegozioDaEscludere(r)),
+        error: null,
+      };
+    }
+    return senzaColonna;
+  }
+  return conColonna;
 }
 
 /** Negozio nel Cestino (soft-deleted) visto dall'amministratore. */
@@ -32,42 +81,65 @@ export type NegozioSintesi = {
 /**
  * Cestino GLOBALE della piattaforma (funzione di piattaforma → solo admin).
  * Elenca TUTTI i negozi soft-deleted, di qualunque proprietario.
+ * I negozi demo non compaiono MAI nel Cestino admin.
  */
 export async function getNegoziCestino(): Promise<NegozioCestino[]> {
   const supabase = createAdminSupabaseClient();
-  const { data, error } = await supabase
-    .from("negozi")
-    .select("id, nome, categoria, descrizione, attivo, logo_url, deleted_at")
-    .not("deleted_at", "is", null)
-    .order("deleted_at", { ascending: false });
 
-  if (error) {
-    throw new Error(error.message ?? "Impossibile recuperare il cestino.");
+  const esito = await queryNegoziNonDemo<NegozioCestino & { slug: string | null }>(
+    async (usaColonna) => {
+      let query = supabase
+        .from("negozi")
+        .select(
+          "id, nome, categoria, descrizione, attivo, logo_url, deleted_at, slug"
+        )
+        .not("deleted_at", "is", null)
+        .order("deleted_at", { ascending: false });
+      if (usaColonna) query = query.eq("is_demo", false);
+      const { data, error } = await query;
+      return {
+        data: (data ?? []) as (NegozioCestino & { slug: string | null })[],
+        error,
+      };
+    }
+  );
+
+  if (esito.error) {
+    throw new Error(
+      esito.error.message ?? "Impossibile recuperare il cestino."
+    );
   }
 
-  // I negozi demo di test non compaiono mai nel Cestino admin.
-  return ((data ?? []) as NegozioCestino[]).filter(
-    (n) => !eNegozioDemo(n.nome)
-  );
+  return (esito.data ?? []) as NegozioCestino[];
 }
 
 /** Elenco dei negozi ATTIVI (per il picker della creazione template). */
 export async function getNegoziAttiviSintesi(): Promise<NegozioSintesi[]> {
   const supabase = createAdminSupabaseClient();
-  const { data, error } = await supabase
-    .from("negozi")
-    .select("id, nome, categoria")
-    .is("deleted_at", null)
-    .order("nome", { ascending: true });
 
-  if (error) {
-    throw new Error(error.message ?? "Impossibile recuperare i negozi.");
+  const esito = await queryNegoziNonDemo<NegozioSintesi & { slug: string | null }>(
+    async (usaColonna) => {
+      let query = supabase
+        .from("negozi")
+        .select("id, nome, categoria, slug")
+        .is("deleted_at", null)
+        .order("nome", { ascending: true });
+      if (usaColonna) query = query.eq("is_demo", false);
+      const { data, error } = await query;
+      return {
+        data: (data ?? []) as (NegozioSintesi & { slug: string | null })[],
+        error,
+      };
+    }
+  );
+
+  if (esito.error) {
+    throw new Error(
+      esito.error.message ?? "Impossibile recuperare i negozi."
+    );
   }
 
-  // I negozi demo di test non compaiono mai nell'Area Amministratore.
-  return ((data ?? []) as NegozioSintesi[]).filter(
-    (n) => !eNegozioDemo(n.nome)
-  );
+  return (esito.data ?? []) as NegozioSintesi[];
 }
 
 /**
