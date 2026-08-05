@@ -33,7 +33,7 @@ export type DatiAccount = {
   area: AreaAttiva | null;
   /** True se l'utente possiede almeno un negozio. */
   hasStores: boolean;
-  /** Id del primo negozio (per i link diretti dell'area commerciante). */
+  /** Id del primo negozio (per i link diretti dell'area venditore). */
   firstStoreId: string | null;
 };
 
@@ -46,14 +46,14 @@ type VoceMenu = {
 /** Etichette italiane dei ruoli mostrate all'utente (mai i valori tecnici). */
 const ETICHETTE_RUOLO: Record<RuoloUtente, string> = {
   customer: "Acquirente",
-  merchant: "Commerciante",
+  merchant: "Venditore",
   admin: "Amministratore",
 };
 
 /** Etichetta dell'area ATTIVA: è la sessione, non il ruolo, a qualificare l'utente. */
 const ETICHETTE_AREA: Record<AreaAttiva, string> = {
   cliente: "Acquirente",
-  merchant: "Commerciante",
+  merchant: "Venditore",
   admin: "Amministratore",
 };
 
@@ -115,7 +115,7 @@ export default function AccountMenu({ account }: { account: DatiAccount | null }
    * Il menu mostra ESCLUSIVAMENTE l'area attiva della sessione (cookie
    * httpOnly lh_area), scelta al login e fissa per tutta la sessione:
    * - sessione admin → solo Area Amministratore (+ Impostazioni)
-   * - sessione merchant → solo Area Commerciante
+   * - sessione merchant → solo Area Venditore
    * - sessione cliente → solo Area Clienti (Profilo, Preferiti, Ordini)
    * Le altre aree sono INVISIBILI anche se l'account possiede altri ruoli:
    * per cambiarle serve logout e rientro dall'ingresso corretto.
@@ -125,7 +125,7 @@ export default function AccountMenu({ account }: { account: DatiAccount | null }
   if (area === "admin") {
     voci.push({ label: "Area Amministratore", href: "/amministratore", icon: ShieldCheck });
   } else if (area === "merchant") {
-    voci.push({ label: "Area Commerciante", href: storeBase, icon: Store });
+    voci.push({ label: "Area Venditore", href: storeBase, icon: Store });
   } else if (area === "cliente") {
     voci.push({ label: "Area Clienti", href: "/cliente", icon: ShoppingBasket });
     voci.push({ label: "Profilo", href: "/cliente/profilo", icon: UserRound });

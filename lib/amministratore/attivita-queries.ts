@@ -1,4 +1,5 @@
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { eNegozioDemo } from "./negozi";
 import type { AttivitaRow } from "./attivita-types";
 
 const getDb = () => {
@@ -85,7 +86,10 @@ export async function getAttivitaAdmin(): Promise<AttivitaRow[]> {
     }
   }
 
-  return negozi.map((n) => ({
+  // I negozi demo di test non compaiono mai nell'Area Amministratore.
+  const negoziReali = negozi.filter((n) => !eNegozioDemo(n.nome));
+
+  return negoziReali.map((n) => ({
     id: n.id,
     nome: n.nome,
     slug: n.slug ?? null,

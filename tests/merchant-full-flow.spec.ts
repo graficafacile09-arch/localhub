@@ -51,7 +51,7 @@ test.describe("Merchant full journey (DB-synced + build-fixed)", () => {
     await test.step("2. Accesso (logout → login again)", async () => {
       log("Step 2: Accesso");
       await page.goto(`${BASE}/merchant`, { waitUntil: "networkidle" });
-      await expect(page.locator("body")).toContainText("Area Commerciante");
+      await expect(page.locator("body")).toContainText("Area Venditore");
       // capture the store id belonging to this merchant (created during signup)
       const m = page.url().match(/\/merchant\/([^/]+)/);
       storeId = m ? m[1] : null;
@@ -67,7 +67,7 @@ test.describe("Merchant full journey (DB-synced + build-fixed)", () => {
     await test.step("3. Apertura area Merchant", async () => {
       log("Step 3: Apertura area Merchant");
       await page.goto(`${BASE}/merchant`, { waitUntil: "networkidle" });
-      await expect(page.locator("body")).toContainText("Area Commerciante");
+      await expect(page.locator("body")).toContainText("Area Venditore");
       // If only one store exists, /merchant auto-redirects to /merchant/{id}
       const m = page.url().match(/\/merchant\/([^/]+)/);
       storeId = m ? m[1] : storeId;

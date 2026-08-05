@@ -99,7 +99,11 @@ export function areaEffettiva(
  * autorizzata). Nessuna richiesta può uscire dall'area della sessione:
  * - sessione merchant → API/pagine admin = 403 (anche se ha altri ruoli)
  * - sessione cliente  → API/pagine merchant e admin = 403
- * - sessione admin    → solo email autorizzata + ruolo admin
+ * - sessione admin    → solo email autorizzata + ruolo admin; l'admin
+ *   autorizzato gestisce QUALSIASI negozio con l'editor del venditore,
+ *   quindi gli è consentita anche l'area "merchant" (risorse negozi).
+ *   La direzione inversa resta vietata: nessun merchant/cliente può usare
+ *   risorse admin.
  */
 export function areaConsenteAccesso(
   email: string,
@@ -107,10 +111,14 @@ export function areaConsenteAccesso(
   areaSessione: AreaAttiva,
   areaRichiesta: AreaAttiva
 ): boolean {
-  if (areaSessione !== areaRichiesta) return false;
   if (areaSessione === "admin") {
-    return ruoli.includes("admin") && isAdminEmail(email);
+    const adminOk = ruoli.includes("admin") && isAdminEmail(email);
+    if (!adminOk) return false;
+    // L'admin autorizzato ha accesso sia alle risorse di piattaforma (admin)
+    // sia alla gestione dei negozi (merchant) tramite l'editor condiviso.
+    return areaRichiesta === "admin" || areaRichiesta === "merchant";
   }
+  if (areaSessione !== areaRichiesta) return false;
   if (areaSessione === "merchant") {
     return ruoli.includes("merchant");
   }

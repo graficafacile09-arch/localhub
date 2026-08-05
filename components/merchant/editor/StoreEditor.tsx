@@ -14,9 +14,15 @@ export type ModuleStatus = {
 
 type Props = {
   storeId: string;
+  /**
+   * Percorso base dell'editor (per la URL bar):
+   * - venditore:  "/merchant"        → /merchant/{id}/edit
+   * - amministratore: "/amministratore/negozi" → /amministratore/negozi/{id}/edit
+   */
+  basePath?: string;
 };
 
-export default function StoreEditor({ storeId }: Props) {
+export default function StoreEditor({ storeId, basePath = "/merchant" }: Props) {
   const searchParams = useSearchParams();
   const modulo = searchParams.get("modulo");
 
@@ -41,10 +47,10 @@ export default function StoreEditor({ storeId }: Props) {
   useEffect(() => {
     const url =
       activeSlug === "dashboard"
-        ? `/merchant/${storeId}/edit`
-        : `/merchant/${storeId}/edit?modulo=${activeSlug}`;
+        ? `${basePath}/${storeId}/edit`
+        : `${basePath}/${storeId}/edit?modulo=${activeSlug}`;
     window.history.replaceState(null, "", url);
-  }, [activeSlug, storeId]);
+  }, [activeSlug, storeId, basePath]);
 
   useEffect(() => {
     async function loadName() {
@@ -121,6 +127,7 @@ export default function StoreEditor({ storeId }: Props) {
           onClose={handleSidebarClose}
           moduleStatus={moduleStatus}
           storeName={storeName}
+          basePath={basePath}
         />
       </aside>
 

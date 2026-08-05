@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { Home } from "lucide-react";
 
 /**
- * Navigazione globale condivisa tra Area Commerciante e Area Amministratore.
+ * Navigazione globale condivisa tra Area Venditore e Area Amministratore.
  * - merchant (default): "La mia area" → /merchant
  * - admin:              "La mia area" → /amministratore
  * Il Cestino NON è qui: è una funzione di piattaforma gestita

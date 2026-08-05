@@ -134,7 +134,7 @@ export default function AttivitaModule({
         <p className="leading-6">
           <span className="font-bold">Centro di controllo:</span> dati reali dal
           database. Elimina sposta nel Cestino (ripristinabile). Modifica e
-          Apri dashboard portano all&apos;area commerciante del negozio.
+          Apri dashboard aprono l&apos;editor del negozio nell&apos;Area Amministratore.
         </p>
       </div>
     </div>

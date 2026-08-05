@@ -22,9 +22,9 @@ import DuplicaNegozioWizard from "@/components/merchant/media/DuplicaNegozioWiza
  *
  * Azioni funzionali:
  * - Visualizza → pagina pubblica del negozio (/negozio/[slug])
- * - Apri negozio → dashboard commerciante del negozio (/merchant/[id])
- * - Modifica → editor del negozio (/merchant/[id]/edit)
- * - Duplica → duplica il negozio (stesso wizard del commerciante)
+ * - Apri negozio → dashboard amministratore del negozio (/amministratore/negozi/[id])
+ * - Modifica → editor amministratore (/amministratore/negozi/[id]/edit)
+ * - Duplica → duplica il negozio (stesso wizard del venditore)
  * - Elimina → cestina il negozio (conferma + API amministratore)
  *
  * Azioni placeholder (in attesa di implementazione):
@@ -181,13 +181,13 @@ export default function AttivitaActionsMenu({
             </a>
           )}
 
-          {/* Apri negozio — dashboard commerciante */}
+          {/* Apri negozio — dashboard amministratore del negozio */}
           <button
             type="button"
             role="menuitem"
             onClick={() => {
               setOpen(false);
-              router.push(`/merchant/${attivita.id}`);
+              router.push(`/amministratore/negozi/${attivita.id}`);
             }}
             className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
           >
@@ -195,13 +195,13 @@ export default function AttivitaActionsMenu({
             Apri dashboard
           </button>
 
-          {/* Modifica — editor del negozio */}
+          {/* Modifica — editor amministratore del negozio */}
           <button
             type="button"
             role="menuitem"
             onClick={() => {
               setOpen(false);
-              router.push(`/merchant/${attivita.id}/edit`);
+              router.push(`/amministratore/negozi/${attivita.id}/edit`);
             }}
             className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
           >

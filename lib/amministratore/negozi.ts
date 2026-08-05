@@ -1,5 +1,16 @@
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
+/**
+ * True se il negozio è un DATO DEMO/DI TEST creato dalla suite E2E
+ * (nomi "E2E …" o "Negozio Rinominato …", sempre con timestamp).
+ * I negozi demo NON compaiono nelle viste dell'Area Amministratore:
+ * devono restare visibili solo i negozi reali del database.
+ * Allineata alla pulizia di scripts/setup-test-users.mjs.
+ */
+export function eNegozioDemo(nome: string): boolean {
+  return /^(E2E|Negozio Rinominato)\s/.test(nome);
+}
+
 /** Negozio nel Cestino (soft-deleted) visto dall'amministratore. */
 export type NegozioCestino = {
   id: string;
@@ -34,7 +45,10 @@ export async function getNegoziCestino(): Promise<NegozioCestino[]> {
     throw new Error(error.message ?? "Impossibile recuperare il cestino.");
   }
 
-  return (data ?? []) as NegozioCestino[];
+  // I negozi demo di test non compaiono mai nel Cestino admin.
+  return ((data ?? []) as NegozioCestino[]).filter(
+    (n) => !eNegozioDemo(n.nome)
+  );
 }
 
 /** Elenco dei negozi ATTIVI (per il picker della creazione template). */
@@ -50,7 +64,10 @@ export async function getNegoziAttiviSintesi(): Promise<NegozioSintesi[]> {
     throw new Error(error.message ?? "Impossibile recuperare i negozi.");
   }
 
-  return (data ?? []) as NegozioSintesi[];
+  // I negozi demo di test non compaiono mai nell'Area Amministratore.
+  return ((data ?? []) as NegozioSintesi[]).filter(
+    (n) => !eNegozioDemo(n.nome)
+  );
 }
 
 /**
@@ -86,4 +103,32 @@ export async function ripristinaNegozio(negozioId: string): Promise<void> {
   if (error) {
     throw new Error(error.message ?? "Impossibile ripristinare il negozio.");
   }
+}
+
+/**
+ * Elimina DEFINITIVAMENTE un negozio dal database — SOLO se è nel Cestino
+ * (deleted_at non null). Elimina anche prodotti e media collegati.
+ * Azione distruttiva e irreversibile, riservata all'amministratore.
+ */
+export async function eliminaDefinitivamenteNegozio(
+  negozioId: string
+): Promise<void> {
+  const supabase = createAdminSupabaseClient();
+
+  // Soltanto dal Cestino: il negozio DEVE avere deleted_at impostato.
+  const { error } = await supabase
+    .from("negozi")
+    .delete()
+    .eq("id", negozioId)
+    .not("deleted_at", "is", null);
+
+  if (error) {
+    throw new Error(
+      error.message ?? "Impossibile eliminare definitivamente il negozio."
+    );
+  }
+
+  // Pulizia dei dati collegati (best effort: se una tabella manca, si ignora).
+  await supabase.from("prodotti").delete().eq("negozio_id", negozioId);
+  await supabase.from("media").delete().eq("negozio_id", negozioId);
 }

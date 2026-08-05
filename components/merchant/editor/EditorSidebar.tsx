@@ -57,9 +57,11 @@ type Props = {
   onClose?: () => void;
   moduleStatus: Record<string, ModuleStatus>;
   storeName?: string;
+  /** Percorso base dell'editor: "/merchant" (venditore) o "/amministratore/negozi" (admin). */
+  basePath?: string;
 };
 
-export default function EditorSidebar({ activeSlug, onSelect, onClose, moduleStatus, storeName }: Props) {
+export default function EditorSidebar({ activeSlug, onSelect, onClose, moduleStatus, storeName, basePath = "/merchant" }: Props) {
   const params = useParams<{ negozioId: string }>();
   const storeId = params.negozioId;
   const [showDuplica, setShowDuplica] = useState(false);
@@ -109,7 +111,7 @@ export default function EditorSidebar({ activeSlug, onSelect, onClose, moduleSta
 
         {/* Libreria Media (link esterno) */}
         <Link
-          href={`/merchant/${storeId}/media`}
+          href={`${basePath}/${storeId}/media`}
           className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-xs font-semibold text-slate-600 transition-all duration-150 hover:bg-slate-50 hover:text-slate-800"
         >
           <FolderOpen className="h-4 w-4 shrink-0 text-slate-400" />

@@ -11,9 +11,9 @@ import MerchantGlobalNav from "./MerchantGlobalNav";
 import AdminSidebar from "@/components/amministratore/AdminSidebar";
 
 /**
- * Shell condivisa tra Area Commerciante e Area Amministratore.
+ * Shell condivisa tra Area Venditore e Area Amministratore.
  *
- * `area="merchant"` (default) → identica alla vecchia Area Commerciante.
+ * `area="merchant"` (default) → identica alla vecchia Area Venditore.
  * `area="admin"` → stessa grafica, stessi moduli, stessa esperienza d'uso:
  * la differenza è solo il titolo dell'header ("Area Amministratore") e una
  * card extra in sidebar con gli strumenti di piattaforma (AdminSidebar
@@ -36,7 +36,7 @@ export default function MerchantShell({
 }) {
   const currentStore = stores.find((store) => store.id === currentStoreId) ?? null;
   const isAdmin = area === "admin";
-  const areaTitle = isAdmin ? "Area Amministratore" : "Area Commerciante";
+  const areaTitle = isAdmin ? "Area Amministratore" : "Area Venditore";
   const areaHref = isAdmin ? "/amministratore" : "/merchant";
 
   return (

@@ -20,9 +20,11 @@ type MediaItem = {
 
 type Props = {
   storeId: string;
+  /** Percorso di ritorno all'editor (venditore: /merchant/{id}/edit, admin: /amministratore/negozi/{id}/edit). */
+  backHref?: string;
 };
 
-export default function MediaManagerPage({ storeId }: Props) {
+export default function MediaManagerPage({ storeId, backHref }: Props) {
   const [items, setItems] = useState<MediaItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -47,6 +49,9 @@ export default function MediaManagerPage({ storeId }: Props) {
   }, [storeId]);
 
   useEffect(() => {
+    // Caricamento iniziale intenzionale: loadMedia aggiorna lo stato dopo
+    // l'await della risposta (pattern di data-fetching standard).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadMedia();
   }, [loadMedia]);
 
@@ -111,7 +116,7 @@ export default function MediaManagerPage({ storeId }: Props) {
       {/* Breadcrumb */}
       <div className="mb-6">
         <Link
-          href={`/merchant/${storeId}/edit`}
+          href={backHref ?? `/merchant/${storeId}/edit`}
           className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 transition hover:text-slate-700"
         >
           <ArrowLeft className="h-3.5 w-3.5" />

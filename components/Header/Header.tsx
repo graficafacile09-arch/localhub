@@ -5,9 +5,8 @@ import AccountMenu from "./AccountMenu";
 import { getDatiAccount } from "./get-account-data";
 
 /**
- * Header pubblico: mostra il menu Account che cambia in base all'INSIEME
- * dei ruoli dell'utente (il webmaster vede Area Clienti, Area Commerciante
- * e Area Amministratore).
+ * Header pubblico: mostra il menu Account che riflette l'AREA ATTIVA della
+ * sessione (cookie httpOnly lh_area): cliente, venditore o amministratore.
  */
 export default async function Header() {
   const account = await getDatiAccount();
@@ -54,18 +53,20 @@ export default async function Header() {
             Assistente AI
           </Link>
 
-          {/* Icona Amministrazione: visibile SOLO nelle sessioni con area
-              attiva "admin" (concessa solo all'admin autorizzato al login) */}
-          {account && account.area === "admin" ? (
-            <Link
-              href="/amministratore"
-              title="Amministrazione"
-              aria-label="Amministrazione"
-              className="inline-flex items-center hover:text-blue-600 transition"
-            >
-              <ShieldCheck className="h-5 w-5" aria-hidden />
-            </Link>
-          ) : null}
+          {/* Icona Amministrazione (scudetto) — SEMPRE visibile accanto ad
+              Assistente AI. Click:
+              - non autenticato  → /login?area=admin
+              - autenticato come admin → /amministratore
+              L'area di sessione resta protetta da proxy + layout: qualunque
+              altro utente viene reindirizzato alla propria area. */}
+          <Link
+            href={account && account.area === "admin" ? "/amministratore" : "/login?area=admin"}
+            title="Amministrazione"
+            aria-label="Amministrazione"
+            className="inline-flex items-center hover:text-blue-600 transition"
+          >
+            <ShieldCheck className="h-5 w-5" aria-hidden />
+          </Link>
 
           <div className="hidden md:block">
             <AccountMenu account={account} />

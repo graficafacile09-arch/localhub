@@ -1,20 +1,21 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import MerchantEmptyState from "@/components/merchant/MerchantEmptyState";
+import EliminaNegozioButton from "@/components/amministratore/EliminaNegozioButton";
 import { requireCurrentUser } from "@/lib/auth/session";
 import { getMerchantStoresForUser } from "@/lib/merchant/data";
 
 /**
- * Home condivisa tra Area Commerciante (default) e Area Amministratore.
+ * Home condivisa tra Area Venditore (default) e Area Amministratore.
  * `labelArea` personalizza solo l'etichetta visibile (es. "Area Amministratore");
  * logica, grafica ed esperienza restano identiche.
  */
 export default async function MerchantHomePage({
-  labelArea = "Area Commerciante",
+  labelArea = "Area Venditore",
   area = "merchant",
 }: {
   labelArea?: string;
-  /** area="admin" → vista della dashboard amministratore (nessun link /merchant). */
+  /** area="admin" → vista della dashboard amministratore (editor admin, elimina). */
   area?: "merchant" | "admin";
 }) {
   const user = await requireCurrentUser("/login");
@@ -37,6 +38,17 @@ export default async function MerchantHomePage({
   }
 
   if (storesResult.data.length === 0) {
+    // L'Area Amministratore mostra SOLO negozi reali: se non ce ne sono,
+    // messaggio dedicato (nessun CTA verso /merchant, vietato all'admin).
+    if (area === "admin") {
+      return (
+        <MerchantEmptyState
+          title="Nessun negozio presente."
+          description="Non ci sono negozi reali nel database. I dati demo e di test non vengono mostrati nell'Area Amministratore."
+        />
+      );
+    }
+
     return (
       <div className="space-y-6">
         <MerchantEmptyState
@@ -69,14 +81,18 @@ export default async function MerchantHomePage({
         </p>
       </div>
 
-      <div className="mb-4">
-        <Link
-          href="/merchant/nuovo"
-          className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-blue-700"
-        >
-          + Nuovo negozio
-        </Link>
-      </div>
+      {/* Il CTA "+ Nuovo negozio" è solo per i venditori: l'admin gestisce
+          i negozi esistenti (il wizard di creazione è in /merchant/nuovo). */}
+      {area === "merchant" && (
+        <div className="mb-4">
+          <Link
+            href="/merchant/nuovo"
+            className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-blue-700"
+          >
+            + Nuovo negozio
+          </Link>
+        </div>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-2">
         {storesResult.data.map((store) => {
@@ -95,20 +111,29 @@ export default async function MerchantHomePage({
                 {store.descrizione ?? "Nessuna descrizione disponibile per questo negozio."}
               </p>
               <span className="mt-6 inline-flex rounded-2xl bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700">
-                {area === "admin" ? "Vedi scheda pubblica" : "Gestisci negozio"}
+                {area === "admin" ? "Apri editor" : "Gestisci negozio"}
               </span>
             </>
           );
 
-          // La sessione admin non può aprire /merchant/*: le card non sono
-          // link (la scheda pubblica si raggiunge dall'Area Admin/Attività).
+          // Sessione admin → la card apre l'EDITOR amministratore
+          // (/amministratore/negozi/{id}/edit, riuso dell'editor condiviso)
+          // e offre l'eliminazione diretta (con conferma → Cestino).
           if (area === "admin") {
             return (
               <div
                 key={store.id}
-                className="rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm"
+                className="relative rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm"
               >
-                {contenuto}
+                <div className="absolute right-4 top-4 z-10">
+                  <EliminaNegozioButton storeId={store.id} storeName={store.nome} />
+                </div>
+                <Link
+                  href={`/amministratore/negozi/${store.id}/edit`}
+                  className="block transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-[0_20px_40px_-32px_rgba(37,99,235,0.45)]"
+                >
+                  {contenuto}
+                </Link>
               </div>
             );
           }

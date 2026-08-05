@@ -24,8 +24,9 @@ test.describe("CESTINO DI PIATTAFORMA — solo amministratore", () => {
     /* ── 1. Login merchant ─────────────────────────────────────────── */
     await loginMerchant(page);
 
-    /* ── 2. Crea negozio via API ───────────────────────────────────── */
-    const nome = `E2E Cestino ${Date.now()}`;
+    /* ── 2. Crea negozio via API (nome NON-demo: i negozi "E2E …" sono
+            filtrati dalle viste admin) ──────────────────────────────── */
+    const nome = `QA Cestino ${Date.now()}`;
     const createJson = await page.evaluate(async (n) => {
       const r = await fetch("/api/merchant/stores", {
         method: "POST",
@@ -113,9 +114,10 @@ test.describe("CESTINO DI PIATTAFORMA — solo amministratore", () => {
   }) => {
     test.setTimeout(240_000);
 
-    /* ── 1. Merchant: crea e soft-delete un negozio via API ───────── */
+    /* ── 1. Merchant: crea e soft-delete un negozio via API (nome
+            NON-demo, altrimenti verrebbe filtrato dalle viste admin) ─ */
     await loginMerchant(page);
-    const nome = `E2E Trash UI ${Date.now()}`;
+    const nome = `QA Trash UI ${Date.now()}`;
     const createJson = await page.evaluate(async (n) => {
       const r = await fetch("/api/merchant/stores", {
         method: "POST",

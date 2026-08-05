@@ -9,13 +9,6 @@ function LoginContent() {
   const area = searchParams.get("area") ?? "";
   const [tab, setTab] = useState<"login" | "register">("login");
 
-  /** Mappa area → percorso di atterraggio dopo il login. */
-  const areaRedirect =
-    area === "admin" ? "/amministratore"
-    : area === "merchant" ? "/merchant"
-    : area === "cliente" ? "/cliente"
-    : "";
-
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#eef3f8] px-4 py-12">
       <div className="w-full max-w-md overflow-hidden rounded-[2rem] border border-blue-200/70 bg-white shadow-[0_30px_70px_-40px_rgba(37,99,235,0.35)]">
@@ -27,9 +20,7 @@ function LoginContent() {
                 ? "Area Amministratore"
                 : area === "cliente"
                   ? "Area Clienti"
-                  : area === "merchant"
-                    ? "Area Commerciante"
-                    : "Area Commerciante"}
+                  : "Area Venditore"}
             </p>
             <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-900">
               {tab === "login" ? "Bentornato" : "Benvenuto"}
@@ -88,7 +79,7 @@ function LoginForm({ area }: { area: string }) {
         <label htmlFor="email" className="text-sm font-semibold text-slate-700">Email</label>
         <input
           id="email" name="email" type="email" required autoComplete="email"
-          placeholder="commerciante@localhub.it"
+          placeholder="venditore@localhub.it"
           className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
         />
       </div>
@@ -110,8 +101,8 @@ function LoginForm({ area }: { area: string }) {
   );
 }
 
-/** Tipologia di registrazione: acquirente (customer) o commerciante. */
-type TipoRegistrazione = "cliente" | "commerciante";
+/** Tipologia di registrazione: acquirente (customer) o venditore. */
+type TipoRegistrazione = "cliente" | "venditore";
 
 function RegisterForm() {
   const [tipo, setTipo] = useState<TipoRegistrazione>("cliente");
@@ -136,10 +127,10 @@ function RegisterForm() {
         </button>
         <button
           type="button"
-          onClick={() => setTipo("commerciante")}
-          aria-pressed={tipo === "commerciante"}
+          onClick={() => setTipo("venditore")}
+          aria-pressed={tipo === "venditore"}
           className={`rounded-xl py-2 text-xs font-bold transition-all duration-200 ${
-            tipo === "commerciante"
+            tipo === "venditore"
               ? "bg-white text-blue-700 shadow-sm"
               : "text-slate-500 hover:text-slate-700"
           }`}
@@ -161,7 +152,7 @@ function RegisterForm() {
           <label htmlFor="reg_email" className="text-sm font-semibold text-slate-700">Email</label>
           <input
             id="reg_email" name="email" type="email" required autoComplete="email"
-            placeholder={tipo === "cliente" ? "cliente@localhub.it" : "commerciante@localhub.it"}
+            placeholder={tipo === "cliente" ? "cliente@localhub.it" : "venditore@localhub.it"}
             className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
           />
         </div>
@@ -181,7 +172,7 @@ function RegisterForm() {
             className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
           />
         </div>
-        {tipo === "commerciante" && (
+        {tipo === "venditore" && (
           <div className="space-y-2">
             <label htmlFor="store_name" className="text-sm font-semibold text-slate-700">Nome attività</label>
             <input

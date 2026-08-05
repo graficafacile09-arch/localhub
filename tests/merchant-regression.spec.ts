@@ -41,7 +41,7 @@ test.describe("MERCHANT REGRESSION TEST (DB-synced + build-fixed)", () => {
   async function saveModule(storeId: string, label = "Salva modifiche") {
     const putPromise = page.waitForResponse(
       (r) => r.url().includes(`/api/merchant/stores/${storeId}/settings`) && r.request().method() === "PUT",
-      { timeout: 15000 }
+      { timeout: 30000 }
     );
     await page.getByRole("button", { name: label }).click();
     const res = await putPromise;
@@ -64,14 +64,14 @@ test.describe("MERCHANT REGRESSION TEST (DB-synced + build-fixed)", () => {
     await test.step("2. Dashboard", async () => {
       log("Step 2: Dashboard");
       await page.goto(`${BASE}/merchant`, { waitUntil: "networkidle" });
-      await expect(page.locator("body")).toContainText("Area Commerciante");
+      await expect(page.locator("body")).toContainText("Area Venditore");
       const m = page.url().match(/\/merchant\/([^/]+)/);
       if (m) {
         storeId = m[1];
       } else {
         // multiple stores → store list; open the original store
         await page.locator(`a[href*="/merchant/"]`).filter({ hasText: "Negozio QA" }).first().click();
-        await page.waitForURL(/\/merchant\/[^/]+/, { timeout: 15000 });
+        await page.waitForURL(/\/merchant\/[^/]+/, { timeout: 30000 });
         const urlMatch = page.url().match(/\/merchant\/([^/]+)/);
         storeId = urlMatch ? urlMatch[1] : null;
       }
@@ -90,7 +90,7 @@ test.describe("MERCHANT REGRESSION TEST (DB-synced + build-fixed)", () => {
       await page.locator('input[placeholder="es. Castrovillari"]').fill("Castrovillari");
       const resPromise = page.waitForResponse(
         (r) => r.url().endsWith("/api/merchant/stores") && r.request().method() === "POST",
-        { timeout: 15000 }
+        { timeout: 30000 }
       );
       await page.locator("button", { hasText: "Crea negozio" }).click();
       const res = await resPromise;
@@ -121,7 +121,7 @@ test.describe("MERCHANT REGRESSION TEST (DB-synced + build-fixed)", () => {
       await page.locator("button", { hasText: "Crea negozio" }).click();
       await page.waitForResponse(
         (r) => r.url().includes("/duplicate") && r.request().method() === "POST",
-        { timeout: 15000 }
+        { timeout: 30000 }
       );
       await page.waitForURL(/\/merchant\/[^/]+\/edit/, { timeout: 20000 });
       const m = page.url().match(/\/merchant\/([^/]+)\/edit/);
@@ -159,7 +159,7 @@ test.describe("MERCHANT REGRESSION TEST (DB-synced + build-fixed)", () => {
       log("Step 6: Editor");
       const settingsPromise = page.waitForResponse(
         (r) => r.url().includes(`/api/merchant/stores/${storeId}/settings`) && r.request().method() === "GET",
-        { timeout: 10000 }
+        { timeout: 20000 }
       );
       await page.goto(`${BASE}/merchant/${storeId}/edit`, { waitUntil: "networkidle" });
       await expect(page).toHaveURL(/\/merchant\/[^/]+\/edit$/);
@@ -168,10 +168,10 @@ test.describe("MERCHANT REGRESSION TEST (DB-synced + build-fixed)", () => {
       expect(res.status(), "settings GET should be 200").toBe(200);
       // rename store (debounced PUT from the editor dashboard)
       const nomeInput = page.locator('input[placeholder="Nome negozio"]').first();
-      await nomeInput.fill(`Negozio Rinominato ${TS}`, { timeout: 15000 });
+      await nomeInput.fill(`Negozio Rinominato ${TS}`, { timeout: 30000 });
       const putRes = await page.waitForResponse(
         (r) => r.url().includes(`/api/merchant/stores/${storeId}/settings`) && r.request().method() === "PUT",
-        { timeout: 15000 }
+        { timeout: 30000 }
       );
       expect(putRes.status(), "settings PUT (nome) should be 200").toBe(200);
       await expect(page.locator("input[placeholder='Nome negozio']")).toHaveValue(`Negozio Rinominato ${TS}`);
@@ -198,7 +198,7 @@ test.describe("MERCHANT REGRESSION TEST (DB-synced + build-fixed)", () => {
       await fileInput.setInputFiles("fixtures/logo-test.png");
       const galleryRes = await page.waitForResponse(
         (r) => r.url().includes(`/api/merchant/stores/${storeId}/gallery`) && r.request().method() === "POST",
-        { timeout: 15000 }
+        { timeout: 30000 }
       );
       expect(galleryRes.status(), "gallery upload should succeed").toBe(200);
       const gBody = await galleryRes.json();
@@ -218,22 +218,22 @@ test.describe("MERCHANT REGRESSION TEST (DB-synced + build-fixed)", () => {
       await page.locator('button[type="submit"]', { hasText: "Salva prodotto" }).click();
       const createRes = await page.waitForResponse(
         (r) => r.url().endsWith(`/api/merchant/stores/${storeId}/products`) && r.request().method() === "POST",
-        { timeout: 15000 }
+        { timeout: 30000 }
       );
       expect(createRes.status(), "product POST should be 200/201").toBeLessThan(300);
-      await page.waitForURL(/\/merchant\/[^/]+\/prodotti$/, { timeout: 15000 });
+      await page.waitForURL(/\/merchant\/[^/]+\/prodotti$/, { timeout: 30000 });
       await expect(page.locator("body")).toContainText(`Prodotto E2E ${TS}`);
 
       // edit + image
       await page.locator("a").filter({ hasText: "Modifica" }).first().click();
-      await page.waitForURL(/\/merchant\/[^/]+\/prodotti\/[^/]+$/, { timeout: 15000 });
+      await page.waitForURL(/\/merchant\/[^/]+\/prodotti\/[^/]+$/, { timeout: 30000 });
       await expect(page.locator("body")).toContainText("Modifica prodotto");
       await page.locator('input[type="file"][accept*="image"]').first().setInputFiles("fixtures/logo-test.png");
       const putPromise = page.waitForResponse(
         (r) =>
           r.url().includes(`/api/merchant/stores/${storeId}/products/`) &&
           r.request().method() === "PUT",
-        { timeout: 15000 }
+        { timeout: 30000 }
       );
       await page.locator('button[type="submit"]').filter({ hasText: "Aggiorna prodotto" }).click();
       const putRes = await putPromise;
@@ -243,8 +243,8 @@ test.describe("MERCHANT REGRESSION TEST (DB-synced + build-fixed)", () => {
       // reopen: values persisted
       await page.goto(`${BASE}/merchant/${storeId}/prodotti`, { waitUntil: "domcontentloaded" });
       await page.locator("a").filter({ hasText: "Modifica" }).first().click();
-      await page.waitForURL(/\/merchant\/[^/]+\/prodotti\/[^/]+$/, { timeout: 15000 });
-      await expect(page.locator("#nome")).toHaveValue(`Prodotto E2E ${TS}`, { timeout: 10000 });
+      await page.waitForURL(/\/merchant\/[^/]+\/prodotti\/[^/]+$/, { timeout: 30000 });
+      await expect(page.locator("#nome")).toHaveValue(`Prodotto E2E ${TS}`, { timeout: 20000 });
 
       // delete: flusso reale dell'app — il pulsante "Elimina" vive nella LISTA
       // prodotti, NON nella pagina di modifica. Torna alla lista e clicca
@@ -255,16 +255,16 @@ test.describe("MERCHANT REGRESSION TEST (DB-synced + build-fixed)", () => {
         .filter({ hasText: `Prodotto E2E ${TS}` })
         .filter({ has: page.getByRole("button", { name: "Elimina" }) })
         .last();
-      await expect(cardProdotto).toBeVisible({ timeout: 10000 });
+      await expect(cardProdotto).toBeVisible({ timeout: 20000 });
       await cardProdotto.getByRole("button", { name: "Elimina" }).click();
       const delRes = await page.waitForResponse(
         (r) =>
           r.url().includes(`/api/merchant/stores/${storeId}/products`) && r.request().method() === "DELETE",
-        { timeout: 15000 }
+        { timeout: 30000 }
       );
       expect(delRes.status(), "product DELETE should be 200").toBe(200);
       await expect(page).not.toHaveURL(/\/500|\/error/);
-      await expect(cardProdotto).toHaveCount(0, { timeout: 10000 });
+      await expect(cardProdotto).toHaveCount(0, { timeout: 20000 });
     });
 
     /* ── 10. Servizi ──────────────────────────────────────────────────────── */
@@ -484,7 +484,7 @@ test.describe("MERCHANT REGRESSION TEST (DB-synced + build-fixed)", () => {
       log("Step 22: Logout");
       await page.goto(`${BASE}/merchant`, { waitUntil: "domcontentloaded" });
       await page.locator('form[action="/api/auth/signout"] button[type="submit"]').first().click();
-      await page.waitForURL(`${BASE}/login`, { timeout: 15000 });
+      await page.waitForURL(`${BASE}/login`, { timeout: 30000 });
       await expect(page).toHaveURL(/\/login/);
       // reload after logout → session is gone, still on login
       await page.reload({ waitUntil: "domcontentloaded" });

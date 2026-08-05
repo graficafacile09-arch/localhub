@@ -61,7 +61,7 @@ const STRUMENTI = [
 /**
  * Home dell'Area Amministratore.
  *
- * È la STESSA pagina dell'Area Commerciante (componente riusato
+ * È la STESSA pagina dell'Area Venditore (componente riusato
  * `MerchantHomePage`): stesso layout, stessa grafica, stessa esperienza.
  * L'unica differenza visibile è l'etichetta "Area Amministratore" e, in
  * fondo, gli strumenti di piattaforma e il blocco ZONA PERICOLOSA

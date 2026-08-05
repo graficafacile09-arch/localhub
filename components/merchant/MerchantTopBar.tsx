@@ -84,7 +84,7 @@ function resolveTitle(
   if (pathname === "/merchant") return "I tuoi negozi";
 
   const withStore = /^\/merchant\/([^/]+)(\/.*)?$/.exec(pathname);
-  if (!withStore) return isAdmin ? "Amministratore" : "Commerciante";
+  if (!withStore) return isAdmin ? "Amministratore" : "Venditore";
 
   const suffix = withStore[2] ?? "";
 
@@ -95,5 +95,5 @@ function resolveTitle(
   if (suffix === "/prodotti") return "Prodotti";
   if (suffix === "/impostazioni") return "Impostazioni";
 
-  return storeName ?? "Commerciante";
+  return storeName ?? "Venditore";
 }

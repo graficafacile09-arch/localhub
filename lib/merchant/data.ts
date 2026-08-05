@@ -4,6 +4,7 @@ import { uploadDataUrlToStorage } from "@/lib/supabase/storage";
 import { generaSlugUnivoco } from "@/lib/slug-server";
 import { getCurrentUser } from "@/lib/auth/session";
 import { utenteAdminAutorizzato } from "@/lib/auth/roles";
+import { eNegozioDemo } from "@/lib/amministratore/negozi";
 import type {
   MerchantProduct,
   MerchantProductInput,
@@ -168,6 +169,12 @@ export async function getMerchantStoresForUser(userId: string): Promise<Merchant
 
   const { data: stores, error } = await query;
 
+  // L'Area Amministratore mostra SOLO negozi reali: i negozi demo di test
+  // ("E2E …", "Negozio Rinominato …") vengono esclusi dalla vista admin.
+  const storesFiltrati = isAdmin
+    ? ((stores ?? []) as NegozioRow[]).filter((n) => !eNegozioDemo(n.nome ?? ""))
+    : ((stores ?? []) as NegozioRow[]);
+
   if (error) {
     if (isSchemaError(error)) {
       return {
@@ -185,7 +192,7 @@ export async function getMerchantStoresForUser(userId: string): Promise<Merchant
   }
 
   return {
-    data: ((stores ?? []) as NegozioRow[]).map(mapStore),
+    data: storesFiltrati.map(mapStore),
     setupRequired: false,
     errorMessage: null,
   };
@@ -307,7 +314,7 @@ export async function createMerchantProductForStore(
     return {
       data: null,
       setupRequired: storeResult.setupRequired,
-      errorMessage: storeResult.errorMessage ?? "Negozio non disponibile per questo commerciante.",
+      errorMessage: storeResult.errorMessage ?? "Negozio non disponibile per questo venditore.",
     };
   }
 
@@ -404,7 +411,7 @@ export async function updateMerchantProductForStore(
     return {
       data: null,
       setupRequired: storeResult.setupRequired,
-      errorMessage: storeResult.errorMessage ?? "Negozio non disponibile per questo commerciante.",
+      errorMessage: storeResult.errorMessage ?? "Negozio non disponibile per questo venditore.",
     };
   }
 
@@ -475,7 +482,7 @@ export async function deleteMerchantProductForStore(
     return {
       data: null,
       setupRequired: storeResult.setupRequired,
-      errorMessage: storeResult.errorMessage ?? "Negozio non disponibile per questo commerciante.",
+      errorMessage: storeResult.errorMessage ?? "Negozio non disponibile per questo venditore.",
     };
   }
 
@@ -512,7 +519,7 @@ export async function deleteMerchantStore(
     return {
       data: null,
       setupRequired: storeResult.setupRequired,
-      errorMessage: storeResult.errorMessage ?? "Negozio non disponibile per questo commerciante.",
+      errorMessage: storeResult.errorMessage ?? "Negozio non disponibile per questo venditore.",
     };
   }
 

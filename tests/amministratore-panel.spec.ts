@@ -71,10 +71,12 @@ test.describe("PANNELLO AMMINISTRATORE — struttura", () => {
       page.getByRole("link", { name: /Utenti/ }).first()
     ).toBeVisible();
 
-    // Zona Pericolosa (esclusiva dell'admin)
+    // Zona Pericolosa (esclusiva dell'admin). Le card negozio hanno i propri
+    // bottoni "Elimina <nome>": il bottone "Elimina negozio" è quello del
+    // blocco Zona Pericolosa (match esatto).
     await expect(page.locator("body")).toContainText("ZONA PERICOLOSA");
     await expect(
-      page.getByRole("button", { name: "Elimina negozio" })
+      page.getByRole("button", { name: "Elimina negozio", exact: true })
     ).toBeVisible();
   });
 

@@ -1,7 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { AlertTriangle, CalendarClock, RefreshCw, RotateCcw, Trash2 } from "lucide-react";
+import {
+  AlertTriangle,
+  CalendarClock,
+  Loader2,
+  RefreshCw,
+  RotateCcw,
+  Trash2,
+} from "lucide-react";
 
 type TrashStore = {
   id: string;
@@ -39,6 +46,8 @@ export default function CestinoModule() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [restoringId, setRestoringId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const fetchTrash = useCallback(async () => {
     setError(null);
@@ -82,6 +91,30 @@ export default function CestinoModule() {
     }
   }
 
+  /** Eliminazione DEFINITIVA (irreversibile): solo dal Cestino, con conferma. */
+  async function handleDeleteForever(storeId: string) {
+    if (deletingId) return;
+    setDeletingId(storeId);
+    setError(null);
+    try {
+      const res = await fetch(`/api/amministratore/negozi/${storeId}/definitivo`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        throw new Error(err?.error?.message ?? "Impossibile eliminare definitivamente il negozio.");
+      }
+      setConfirmDeleteId(null);
+      // Il negozio sparisce dal cestino (eliminato dal database).
+      setStores((prev) => (prev ?? []).filter((s) => s.id !== storeId));
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Errore durante l'eliminazione definitiva.");
+      setConfirmDeleteId(null);
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -96,7 +129,8 @@ export default function CestinoModule() {
               Cestino
             </h1>
             <p className="mt-1 text-sm text-slate-500">
-              I negozi eliminati dalla piattaforma finiscono qui. Il ripristino è riservato all&apos;amministratore.
+              I negozi eliminati dalla piattaforma finiscono qui. Il ripristino è riservato
+              all&apos;amministratore; l&apos;eliminazione definitiva è irreversibile.
             </p>
           </div>
           <button
@@ -173,15 +207,58 @@ export default function CestinoModule() {
                   </span>
                 </div>
               </div>
-              <button
-                type="button"
-                onClick={() => handleRestore(store.id)}
-                disabled={restoringId === store.id}
-                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-blue-700 disabled:opacity-60"
-              >
-                <RotateCcw className="h-3.5 w-3.5" />
-                {restoringId === store.id ? "Ripristino..." : "Ripristina"}
-              </button>
+              <div className="flex shrink-0 flex-col items-stretch gap-2 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={() => handleRestore(store.id)}
+                  disabled={restoringId === store.id || deletingId === store.id}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-blue-700 disabled:opacity-60"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  {restoringId === store.id ? "Ripristino..." : "Ripristina"}
+                </button>
+
+                {confirmDeleteId === store.id ? (
+                  <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-2">
+                    <p className="text-[11px] font-semibold text-red-700">Irreversibile?</p>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteForever(store.id)}
+                      disabled={deletingId === store.id}
+                      className="inline-flex items-center gap-1 rounded-lg bg-red-600 px-3 py-1.5 text-[11px] font-bold text-white transition hover:bg-red-700 disabled:opacity-60"
+                    >
+                      {deletingId === store.id ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-3 w-3" />
+                      )}
+                      Elimina
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmDeleteId(null)}
+                      disabled={deletingId === store.id}
+                      className="rounded-lg px-2 py-1.5 text-[11px] font-semibold text-slate-600 transition hover:bg-red-100 disabled:opacity-60"
+                    >
+                      Annulla
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setError(null);
+                      setConfirmDeleteId(store.id);
+                    }}
+                    disabled={restoringId === store.id || deletingId === store.id}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-xs font-bold text-red-600 transition hover:bg-red-50 disabled:opacity-60"
+                    title="Elimina definitivamente dal database (irreversibile)"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Elimina definitivamente
+                  </button>
+                )}
+              </div>
             </div>
           ))}
         </div>
