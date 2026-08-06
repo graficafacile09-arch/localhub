@@ -4,6 +4,7 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { AREA_COOKIE, areaCookieOptions } from "@/lib/auth/area";
 import { isPartitaIvaValida, normalizzaPartitaIva } from "@/lib/partita-iva";
+import { verificaPartitaIvaConVies } from "@/lib/partita-iva-verifica";
 
 /**
  * Registrazione COMMERCIANTE (venditore).
@@ -33,21 +34,37 @@ export async function POST(request: Request) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Partita IVA: obbligatoria e valida per la registrazione Venditore.
+  // Partita IVA: obbligatoria per la registrazione Venditore.
   if (!partitaIvaRaw) {
     loginUrl.searchParams.set("error", "Partita IVA obbligatoria.");
     return NextResponse.redirect(loginUrl);
   }
 
+  // 1) Controllo del formato (11 cifre + algoritmo ufficiale).
   if (!isPartitaIvaValida(partitaIvaRaw)) {
-    loginUrl.searchParams.set("error", "Partita IVA non valida.");
+    loginUrl.searchParams.set("error", "Partita IVA non valida oppure non esistente.");
     return NextResponse.redirect(loginUrl);
   }
 
   const partitaIva = normalizzaPartitaIva(partitaIvaRaw);
 
-  // Anti-duplicazione: la stessa Partita IVA non può essere registrata due
-  // volte. Nessun account Venditore viene creato se esiste già.
+  // 2) Verifica REALE della Partita IVA tramite il servizio ufficiale VIES.
+  //    Se risulta non valida o inesistente -> registrazione bloccata.
+  //    Se il servizio non è raggiungibile -> l'account NON viene creato.
+  const esitoVerifica = await verificaPartitaIvaConVies(partitaIva);
+
+  if (esitoVerifica.stato === "non_verificabile") {
+    loginUrl.searchParams.set("error", "Impossibile verificare la Partita IVA. Riprovare più tardi.");
+    return NextResponse.redirect(loginUrl);
+  }
+
+  if (esitoVerifica.stato === "non_valida") {
+    loginUrl.searchParams.set("error", "Partita IVA non valida oppure non esistente.");
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // 3) Anti-duplicazione: la stessa Partita IVA non può essere registrata
+  //    due volte. Nessun account Venditore viene creato se esiste già.
   const adminClient = createAdminSupabaseClient();
   let paginaUtenti = 1;
   let partitaIvaGiaRegistrata = false;
