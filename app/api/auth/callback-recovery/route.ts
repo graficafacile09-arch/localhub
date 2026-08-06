@@ -28,9 +28,49 @@ export async function GET(request: NextRequest) {
   }
 
   const supabase = await createServerSupabaseClient();
-  const { error } = await supabase.auth.exchangeCodeForSession(code);
 
+  // === LOG DIAGNOSTICO (solo logging, nessuna modifica alla logica) ===
+  const cookies = request.cookies.getAll();
+  const verifierCookie = cookies.find((c) =>
+    c.name.endsWith("-auth-token-code-verifier"),
+  );
+  console.log("[callback-recovery][diag] ====== INIZIO CALLBACK ====");
+  console.log("[callback-recovery][diag] URL completo richiesto:", request.url);
+  console.log(
+    "[callback-recovery][diag] searchParams:",
+    JSON.stringify(Object.fromEntries(request.nextUrl.searchParams.entries())),
+  );
+  console.log("[callback-recovery][diag] valore code:", code);
+  console.log(
+    "[callback-recovery][diag] tutti i cookie ricevuti:",
+    JSON.stringify(cookies.map((c) => ({ name: c.name, value: c.value }))),
+  );
+  console.log(
+    "[callback-recovery][diag] cookie code-verifier:",
+    verifierCookie
+      ? JSON.stringify({
+          name: verifierCookie.name,
+          value: verifierCookie.value,
+        })
+      : "(NON PRESENTE)",
+  );
+  // ====== FINE DIAGNOSTICA ======
+
+  const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+
+  console.log("[callback-recovery][diag] risposta Supabase (completa):");
+  console.log(
+    "[callback-recovery][diag] successo:",
+    error ? "NO" : "SI",
+    error ? "" : JSON.stringify(data),
+  );
   if (error) {
+    console.error("[callback-recovery][diag] risposta Supabase (errore):");
+    console.error(JSON.stringify(error, null, 2));
+    console.error(
+      "[callback-recovery][diag] stack completo:",
+      error.stack ?? "(nessuno stack)",
+    );
     console.error(
       "[callback-recovery] exchangeCodeForSession:",
       `status=${error.status ?? "n/a"} message=${error.message}`,
