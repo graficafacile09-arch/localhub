@@ -4,7 +4,7 @@ import { uploadDataUrlToStorage } from "@/lib/supabase/storage";
 import { generaSlugUnivoco } from "@/lib/slug-server";
 import { getCurrentUser } from "@/lib/auth/session";
 import { utenteAdminAutorizzato } from "@/lib/auth/roles";
-import { eNegozioDemo } from "@/lib/amministratore/negozi";
+import { eNegozioDaEscludere } from "@/lib/amministratore/negozi";
 import type {
   MerchantProduct,
   MerchantProductInput,
@@ -172,7 +172,9 @@ export async function getMerchantStoresForUser(userId: string): Promise<Merchant
   // L'Area Amministratore mostra SOLO negozi reali: i negozi demo di test
   // ("E2E …", "Negozio Rinominato …") vengono esclusi dalla vista admin.
   const storesFiltrati = isAdmin
-    ? ((stores ?? []) as NegozioRow[]).filter((n) => !eNegozioDemo(n.nome ?? ""))
+    ? ((stores ?? []) as NegozioRow[]).filter((n) =>
+        !eNegozioDaEscludere({ nome: n.nome ?? null })
+      )
     : ((stores ?? []) as NegozioRow[]);
 
   if (error) {
