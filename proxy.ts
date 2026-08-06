@@ -31,6 +31,12 @@ export async function proxy(request: NextRequest) {
         cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
       },
     },
+    // Idem al client server: refresh/correzione della sessione mantengono i
+    // cookie httpOnly e Secure (vedi lib/supabase/server.ts).
+    cookieOptions: {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+    },
   });
 
   const {

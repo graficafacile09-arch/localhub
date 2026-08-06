@@ -26,5 +26,12 @@ export async function createServerSupabaseClient() {
         });
       },
     },
+    // I cookie di sessione sono httpOnly (mai leggibili dal JS del browser,
+    // come il cookie area lh_area) e Secure in produzione. Path, SameSite e
+    // maxAge restano i default del pacchetto (/, lax, 400 giorni).
+    cookieOptions: {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+    },
   });
 }
