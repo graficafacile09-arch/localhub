@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { validaToken } from "@/lib/password-reset";
 
@@ -23,6 +24,17 @@ export default async function ResetPasswordPage({
   const params = await searchParams;
   const tokenRaw = params.token ?? "";
   const err = params.err;
+
+  const reqHeaders = await headers();
+  // [DIAGNOSI-TEMP] URL esatto ricevuto dal server dopo il click nella mail.
+  console.log(
+    "[reset-flusso] PAGE " +
+      `REQUEST_URL-APPROX=${reqHeaders.get("x-forwarded-host") ?? reqHeaders.get("host") ?? "?"}` +
+      `|PROTO=${reqHeaders.get("x-forwarded-proto") ?? "?"}` +
+      `|URI=${reqHeaders.get("x-forwarded-uri") ?? "?"}`,
+  );
+  console.log("[reset-flusso] PAGE SEARCHPARAMS=" + JSON.stringify(Object.fromEntries(Object.entries(params))));
+  console.log("[reset-flusso] PAGE TOKEN_RAW=" + JSON.stringify(tokenRaw));
 
   let tokenValorizzato: string | null = null;
   let erroreLink: string | null = null;
