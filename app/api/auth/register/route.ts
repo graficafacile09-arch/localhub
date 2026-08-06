@@ -12,6 +12,7 @@ import { AREA_COOKIE, areaCookieOptions } from "@/lib/auth/area";
  */
 export async function POST(request: Request) {
   const loginUrl = new URL("/login", request.url);
+  loginUrl.searchParams.set("area", "cliente");
 
   if (!isSupabaseConfigured()) {
     loginUrl.searchParams.set("error", "Configurazione Supabase mancante.");

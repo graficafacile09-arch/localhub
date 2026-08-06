@@ -13,6 +13,7 @@ import { isPartitaIvaValida, normalizzaPartitaIva } from "@/lib/partita-iva";
  */
 export async function POST(request: Request) {
   const loginUrl = new URL("/login", request.url);
+  loginUrl.searchParams.set("area", "merchant");
 
   if (!isSupabaseConfigured()) {
     loginUrl.searchParams.set("error", "Configurazione Supabase mancante.");
