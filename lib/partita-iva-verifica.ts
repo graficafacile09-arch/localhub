@@ -42,7 +42,7 @@ export async function verificaPartitaIvaConVies(
       signal: AbortSignal.timeout(TIMEOUT_MS),
     });
   } catch {
-    // Timeout / rete non raggiungibile: il venditore NON viene creato.
+    // Timeout / rete non raggiungibile / servizio giù: VIES non verificabile.
     return { stato: "non_verificabile" };
   }
 
@@ -63,8 +63,10 @@ export async function verificaPartitaIvaConVies(
     }
   }
 
-  if (response.status >= 500) return { stato: "non_verificabile" };
-
-  // 400 (input non valido) / 403: la Partita IVA non è riconosciuta.
-  return { stato: "non_valida" };
+  // Qualunque stato diverso da 200 (4xx: input rifiutato/limiti/manutenzione,
+  // 5xx: errore server, altri): errore del servizio VIES. Viene trattato come
+  // "non_verificabile" (mai come "non valida") perché un malfunzionamento
+  // temporaneo del servizio non deve bloccare una registrazione con Partita IVA
+  // formalmente corretta.
+  return { stato: "non_verificabile" };
 }

@@ -49,16 +49,19 @@ export async function POST(request: Request) {
   const partitaIva = normalizzaPartitaIva(partitaIvaRaw);
 
   // 2) Verifica REALE della Partita IVA tramite il servizio ufficiale VIES.
-  //    Se risulta non valida o inesistente -> registrazione bloccata.
-  //    Se il servizio non è raggiungibile -> l'account NON viene creato.
+  //    - valida            -> registrazione consentita.
+  //    - non_valida        -> registrazione bloccata.
+  //    - non_verificabile  -> VIES offline / timeout / errore di rete o del
+  //                           servizio: la registrazione NON viene bloccata,
+  //                           viene scritto solo un warning nei log server.
   const esitoVerifica = await verificaPartitaIvaConVies(partitaIva);
 
   if (esitoVerifica.stato === "non_verificabile") {
-    loginUrl.searchParams.set("error", "Impossibile verificare la Partita IVA. Riprovare più tardi.");
-    return NextResponse.redirect(loginUrl);
-  }
-
-  if (esitoVerifica.stato === "non_valida") {
+    console.warn(
+      "[register-merchant] VIES non verificabile, registrazione non bloccata:",
+      `piva=${partitaIva} stato=non_verificabile`,
+    );
+  } else if (esitoVerifica.stato === "non_valida") {
     loginUrl.searchParams.set("error", "Partita IVA non valida oppure non esistente.");
     return NextResponse.redirect(loginUrl);
   }
