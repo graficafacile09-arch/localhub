@@ -20,8 +20,13 @@ export async function POST(request: Request) {
     return NextResponse.redirect(pageUrl);
   }
 
-  const formData = await request.formData();
-  const email = String(formData.get("email") ?? "").trim();
+  let email = "";
+  try {
+    const formData = await request.formData();
+    email = String(formData.get("email") ?? "").trim();
+  } catch {
+    // Corpo assente o Content-Type non valido: trattato come campo mancante.
+  }
 
   if (!email) {
     pageUrl.searchParams.set("error", "Inserisci l'email del tuo account.");
