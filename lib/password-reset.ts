@@ -64,15 +64,22 @@ export async function invalidaTokenPrecedenti(userId: string): Promise<void> {
 export async function creaTokenReset(userId: string): Promise<string> {
   const admin = createAdminSupabaseClient();
   const token = generaTokenReset();
+  const tokenHash = hashaTokenReset(token);
   const { error } = await admin.from("reset_tokens").insert({
     user_id: userId,
-    token_hash: hashaTokenReset(token),
+    token_hash: tokenHash,
     expires_at: new Date(Date.now() + RESET_TOKEN_TTL_MS).toISOString(),
   });
 
   if (error) {
     throw new Error(`impossibile creare il token: ${error.message}`);
   }
+
+  // [DIAGNOSI-TEMP] hash realmente scritto in reset_tokens.token_hash.
+  console.log(
+    "[reset-flusso] DIAGNOSI " +
+      `TOKEN_HASH_DB=${tokenHash} RAW=${token}`,
+  );
 
   return token;
 }

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createHash } from "node:crypto";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import {
   creaTokenReset,
@@ -50,8 +51,23 @@ export async function POST(request: Request) {
       // Token casuale (32 byte); nel DB resta solo l'hash.
       const token = await creaTokenReset(userId);
 
+      // [DIAGNOSI-TEMP] traccia lo stesso token nella stessa richiesta:
+      // raw token, sha256(raw), hash salvato nel DB e URL completo.
+      const sha256Diagnostico = createHash("sha256").update(token, "utf8").digest("hex");
+      console.log(
+        "[reset-flusso] DIAGNOSI " +
+          `RAW=${token} ` +
+          `SHA256=${sha256Diagnostico} ` +
+          `URL_SENZA_TOKEN=${new URL("/reset-password", request.url).toString()}`,
+      );
+
       const resetUrl = new URL("/reset-password", request.url);
       resetUrl.searchParams.set("token", token);
+
+      console.log(
+        "[reset-flusso] DIAGNOSI " +
+          `URL_CON_TOKEN=${email},${resetUrl.toString()}`,
+      );
 
       await inviaEmailResetPassword({ to: email, resetUrl: resetUrl.toString() });
     }
