@@ -54,6 +54,9 @@ export async function POST(request: Request) {
       resetUrl.searchParams.set("token", token);
 
       await inviaEmailResetPassword({ to: email, resetUrl: resetUrl.toString() });
+
+      // [E2E-TEMP] solo per il test: traccia l'URL esatto e l'id Resend.
+      console.log(`[e2e] RESET_URL=${resetUrl.toString()}`);
     }
   } catch (err) {
     // L'errore non deve MAI rivelare se l'account esiste: loggiamo

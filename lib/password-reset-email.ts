@@ -29,7 +29,7 @@ export async function inviaEmailResetPassword(opts: {
 
   const resend = new Resend(apiKey);
 
-  const { error } = await resend.emails.send({
+  const { data, error } = await resend.emails.send({
     from: FROM_EMAIL,
     to: opts.to,
     subject: "Recupero password LocalHub",
@@ -53,6 +53,11 @@ export async function inviaEmailResetPassword(opts: {
       </div>
     `,
   });
+
+  // [E2E-TEMP] conferma che Resend ha accettato l'invio.
+  if (data?.id) {
+    console.log(`[e2e] RESEND_ID=${data.id}`);
+  }
 
   if (error) {
     console.error("[password-reset-email] Resend:", error.message);
