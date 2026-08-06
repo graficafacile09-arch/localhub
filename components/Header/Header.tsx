@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ShieldCheck } from "lucide-react";
 import AccountMenu from "./AccountMenu";
+import AssistantNavButton from "@/components/assistant/AssistantNavButton";
 import { getDatiAccount } from "./get-account-data";
 
 /**
@@ -49,9 +50,7 @@ export default async function Header() {
             Categorie
           </Link>
 
-          <Link href="/assistant" className="hover:text-blue-600 transition">
-            Assistente AI
-          </Link>
+          <AssistantNavButton />
 
           {/* Icona Amministrazione (scudetto) — SEMPRE visibile accanto ad
               Assistente AI. Click:
