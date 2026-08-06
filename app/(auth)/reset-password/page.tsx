@@ -1,85 +1,46 @@
-"use client";
-
-import { Suspense, useEffect, useState } from "react";
+import { redirect } from "next/navigation";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { createBrowserClient } from "@supabase/ssr";
-import { getSupabaseConfig } from "@/lib/supabase/config";
+import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 /**
- * Pagina di destinazione del link di recupero: processa i token inviati da
- * Supabase nel fragment dell'URL (sessione di recovery) e permette di
- * impostare la nuova password. Il flusso è client perché i token arrivano
- * nel #fragment: il server non li riceve mai.
+ * Destinazione del link di recupero. Con il flusso PKCE di Supabase:
+ *  1. l'email contiene il link /auth/v1/verify?token=pkce_...&redirect_to=/reset-password
+ *  2. GoTrue segue e redirige qui con ?code=<auth_code> in query string
+ *  3. lo scambio code -> sessione di recovery avviene in una ROUTE HANDLER
+ *     (unico contesto in cui si possono scrivere i cookie di sessione;
+ *     il code_verifier è salvato in un cookie httpOnly leggibile solo dal server).
+ *  4. qui rimane solo la UI: se la sessione di recovery è attiva si mostra il
+ *     modulo nuova password, altrimenti un invito a richiedere un nuovo link.
+ *
+ * La pagina NON è client: il click su `<a href="/api/...">` nel link di Supabase
+ * è a GET; tutto lo scambio avviene server-side prima di renderizzare l'HTML.
  */
-function ResetContent() {
-  const router = useRouter();
-  const [stato, setStato] = useState<"caricamento" | "form" | "errore">("caricamento");
-  const [messaggio, setMessaggio] = useState("");
-  const [password, setPassword] = useState("");
-  const [passwordConfirm, setPasswordConfirm] = useState("");
-  const [inviando, setInviando] = useState(false);
+export default async function ResetPasswordPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ code?: string; err?: string }>;
+}) {
+  const params = await searchParams;
+  const code = params.code;
+  const err = params.err;
 
-  useEffect(() => {
-    let annullato = false;
-
-    const { url, anonKey } = getSupabaseConfig();
-    const supabase = createBrowserClient(url, anonKey);
-    supabase.auth
-      .getSession()
-      .then(({ data, error }) => {
-        if (annullato) return;
-        if (error || !data.session) {
-          setStato("errore");
-          setMessaggio(
-            "Il link di recupero non è valido oppure è scaduto. Richiedi un nuovo link.",
-          );
-          return;
-        }
-        setStato("form");
-      })
-      .catch(() => {
-        if (!annullato) {
-          setStato("errore");
-          setMessaggio(
-            "Il link di recupero non è valido oppure è scaduto. Richiedi un nuovo link.",
-          );
-        }
-      });
-
-    return () => {
-      annullato = true;
-    };
-  }, []);
-
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-
-    if (password.length < 6) {
-      setMessaggio("La password deve essere di almeno 6 caratteri.");
-      return;
-    }
-    if (password !== passwordConfirm) {
-      setMessaggio("Le password non coincidono.");
-      return;
-    }
-
-    setInviando(true);
-    setMessaggio("");
-
-    const { url, anonKey } = getSupabaseConfig();
-    const supabase = createBrowserClient(url, anonKey);
-    const { error } = await supabase.auth.updateUser({ password });
-
-    if (error) {
-      setInviando(false);
-      setMessaggio(error.message);
-      return;
-    }
-
-    await supabase.auth.signOut();
-    router.push("/login?ok=1");
+  // (3) Il link ha portato il codice: deleghiamo lo scambio alla route handler
+  // che, se riesce, scrive i cookie di sessione e redirige qui senza code.
+  if (code) {
+    redirect(`/api/auth/callback-recovery?code=${encodeURIComponent(code)}`);
   }
+
+  // Senza ?code= la sessione di recovery deve già esistere nei cookie
+  // (scritta dalla route handler durante lo scambio del codice).
+  let hasSession = false;
+  if (!err && isSupabaseConfigured()) {
+    const supabase = await createServerSupabaseClient();
+    const { data } = await supabase.auth.getUser();
+    hasSession = Boolean(data.user);
+  }
+
+  const showError = Boolean(err) || !hasSession;
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#eef3f8] px-4 py-12">
@@ -99,14 +60,12 @@ function ResetContent() {
             </p>
           </div>
 
-          {stato === "caricamento" && (
-            <p className="text-sm text-slate-500">Verifica del link in corso…</p>
-          )}
-
-          {stato === "errore" && (
+          {showError ? (
             <div className="space-y-4">
               <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                {messaggio}
+                {err === "link_invalido"
+                  ? "Il link di recupero non è valido oppure è scaduto. Richiedi un nuovo link."
+                  : err}
               </div>
               <Link
                 href="/recupero-password"
@@ -115,10 +74,8 @@ function ResetContent() {
                 Richiedi un nuovo link di recupero
               </Link>
             </div>
-          )}
-
-          {stato === "form" && (
-            <form onSubmit={handleSubmit} className="space-y-4">
+          ) : (
+            <form action="/api/auth/reset-password" method="post" className="space-y-4">
               <div className="space-y-2">
                 <label htmlFor="password" className="text-sm font-semibold text-slate-700">
                   Nuova password
@@ -130,11 +87,6 @@ function ResetContent() {
                   required
                   autoComplete="new-password"
                   placeholder="Minimo 6 caratteri"
-                  value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
-                    if (messaggio) setMessaggio("");
-                  }}
                   className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                 />
               </div>
@@ -149,27 +101,15 @@ function ResetContent() {
                   required
                   autoComplete="new-password"
                   placeholder="Ripeti la password"
-                  value={passwordConfirm}
-                  onChange={(e) => {
-                    setPasswordConfirm(e.target.value);
-                    if (messaggio) setMessaggio("");
-                  }}
-                  className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                  className="h-11 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                 />
               </div>
 
-              {messaggio && (
-                <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                  {messaggio}
-                </div>
-              )}
-
               <button
                 type="submit"
-                disabled={inviando}
-                className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-gradient-to-b from-blue-500 to-blue-700 text-sm font-bold text-white shadow-lg shadow-blue-500/30 transition hover:shadow-xl hover:shadow-blue-500/40 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-gradient-to-b from-blue-500 to-blue-700 text-sm font-bold text-white shadow-lg shadow-blue-500/30 transition hover:shadow-xl hover:shadow-blue-500/40 active:scale-[0.98]"
               >
-                {inviando ? "Salvataggio…" : "Salva nuova password"}
+                Salva nuova password
               </button>
             </form>
           )}
@@ -183,13 +123,5 @@ function ResetContent() {
         </div>
       </div>
     </main>
-  );
-}
-
-export default function ResetPasswordPage() {
-  return (
-    <Suspense>
-      <ResetContent />
-    </Suspense>
   );
 }
