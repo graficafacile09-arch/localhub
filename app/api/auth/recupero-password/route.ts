@@ -1,13 +1,20 @@
 import { NextResponse } from "next/server";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import {
+  creaTokenReset,
+  invalidaTokenPrecedenti,
+  trovaUserIdPerEmail,
+} from "@/lib/password-reset";
+import { inviaEmailResetPassword } from "@/lib/password-reset-email";
 
 /**
  * Recupero password — invia il link di reset via email.
  *
- * Il link generato da Supabase porta alla pagina /reset-password con i token
- * di recupero (fragment): quella pagina (client) li processa e permette di
- * impostare la nuova password.
+ * Il flusso è totalmente server-side (nessun PKCE GoTrue):
+ *  1. cerca l'account per email (esatta, admin client su auth.users);
+ *  2. in una stessa sequenza: invalida i token precedenti (R1), genera un
+ *     token casuale da 32 byte e ne salva SOLO l'hash SHA-256 (scadenza 30min);
+ *  3. l'email porta a /reset-password?token=... gestito dalla nostrapagina.
  *
  * La risposta è VOLUTAMENTE identica per email esistente e non esistente
  * (anti-enumeration): non viene mai rivelato se un account esiste o meno.
@@ -33,20 +40,28 @@ export async function POST(request: Request) {
     return NextResponse.redirect(pageUrl);
   }
 
-  const supabase = await createServerSupabaseClient();
-  const resetUrl = new URL("/reset-password", request.url);
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: resetUrl.toString(),
-  });
+  try {
+    const userId = await trovaUserIdPerEmail(email);
 
-  if (error) {
-    console.error(
-      "[recupero-password] resetPasswordForEmail:",
-      `code=${error.status ?? "n/a"} message=${error.message}`,
-    );
+    if (userId) {
+      // R1: nessun token precedente deve sopravvivere alla nuova richiesta.
+      await invalidaTokenPrecedenti(userId);
+
+      // Token casuale (32 byte); nel DB resta solo l'hash.
+      const token = await creaTokenReset(userId);
+
+      const resetUrl = new URL("/reset-password", request.url);
+      resetUrl.searchParams.set("token", token);
+
+      await inviaEmailResetPassword({ to: email, resetUrl: resetUrl.toString() });
+    }
+  } catch (err) {
+    // L'errore non deve MAI rivelare se l'account esiste: loggiamo
+    // internamente e rispondiamo come sempre (anti-enumeration).
+    console.error("[recupero-password] errore interno:", err);
   }
 
-  // Esito identico in ogni caso: l'utente deve solo controllare la posta.
+  // Esito IDENTICO in ogni caso: l'utente deve solo controllare la posta.
   pageUrl.searchParams.set("sent", "1");
   return NextResponse.redirect(pageUrl);
 }

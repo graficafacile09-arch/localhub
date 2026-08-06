@@ -1,59 +1,91 @@
 import { NextResponse } from "next/server";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { consumaToken } from "@/lib/password-reset";
 
 /**
  * Salva la nuova password dopo il recupero.
  *
- * A questo punto il browser ha i cookie della sessione di RECOVERY (scritti
- * dalla route app/api/auth/callback-recovery durante lo scambio del codice).
- * updateUser aggiorna la password con quella sessione; poi si esce (signOut)
- * e si torna al login con un messaggio di conferma.
+ * Il flusso è interamente server-side:
+ *  1. il token (hidden field) viene consumato ATOMICAMENTE: se è già usato,
+ *     scaduto o inesistente la funzione SQL restituisce null → errore;
+ *  2. solo dopo il consumo riuscito si aggiorna la password con la Admin API
+ *     (updateUserById), che Revokes automaticamente TUTTE le sessioni
+ *     dell'utente (verificato sul sorgente GoTrue v2.194.0);
+ *  3. si torna al login con il messaggio di conferma.
  */
 export async function POST(request: Request) {
-  const pageUrl = new URL("/reset-password", request.url);
+  const resetUrl = new URL("/reset-password", request.url);
   const loginUrl = new URL("/login", request.url);
 
   if (!isSupabaseConfigured()) {
-    pageUrl.searchParams.set("err", "Configurazione Supabase mancante.");
-    return NextResponse.redirect(pageUrl);
+    resetUrl.searchParams.set("err", "Configurazione Supabase mancante.");
+    return NextResponse.redirect(resetUrl);
   }
 
+  let token = "";
   let password = "";
   let confirm = "";
   try {
     const formData = await request.formData();
+    token = String(formData.get("token") ?? "");
     password = String(formData.get("password") ?? "");
     confirm = String(formData.get("password_confirm") ?? "");
   } catch {
     // Corpo assente o Content-Type non valido: gestito come campo mancante.
   }
 
+  if (!token) {
+    resetUrl.searchParams.set("err", "Link di recupero mancante. Richiedi un nuovo link.");
+    return NextResponse.redirect(resetUrl);
+  }
   if (password.length < 6) {
-    pageUrl.searchParams.set("err", "La password deve essere di almeno 6 caratteri.");
-    return NextResponse.redirect(pageUrl);
+    resetUrl.searchParams.set("err", "La password deve essere di almeno 6 caratteri.");
+    return NextResponse.redirect(resetUrl);
   }
   if (password !== confirm) {
-    pageUrl.searchParams.set("err", "Le password non coincidono.");
-    return NextResponse.redirect(pageUrl);
+    resetUrl.searchParams.set("err", "Le password non coincidono.");
+    return NextResponse.redirect(resetUrl);
   }
 
-  const supabase = await createServerSupabaseClient();
-  const { error } = await supabase.auth.updateUser({ password });
+  // R2: consumo ATOMICO del token. Uno solo dei due casi seguenti:
+  //   - valido → userId dell'account e token già marcato used (anzi,
+  //     "usato" viene scritto nella STESSA UPDATE del consumo);
+  //   - null → token inesistente, scaduto o già usato: niente cambio password.
+  const userId = await consumaToken(token);
+
+  if (!userId) {
+    resetUrl.searchParams.set(
+      "err",
+      "Il link di recupero non è più valido o è già stato usato. Richiedi un nuovo link.",
+    );
+    return NextResponse.redirect(resetUrl);
+  }
+
+  let adminClient: ReturnType<typeof createAdminSupabaseClient>;
+  try {
+    adminClient = createAdminSupabaseClient();
+  } catch (err) {
+    console.error("[reset-password] admin client:", err);
+    resetUrl.searchParams.set("err", "Errore interno. Riprova o richiedi un nuovo link.");
+    return NextResponse.redirect(resetUrl);
+  }
+
+  // Cambio password via Admin API: oltre ad aggiornarla, GoTrue revoca TUTTE
+  // le sessioni esistenti dell'utente (logout di tutte le sessioni).
+  const { error } = await adminClient.auth.admin.updateUserById(userId, { password });
 
   if (error) {
     console.error(
-      "[reset-password] updateUser:",
+      "[reset-password] updateUserById:",
       `status=${error.status ?? "n/a"} message=${error.message}`,
     );
-    pageUrl.searchParams.set(
+    resetUrl.searchParams.set(
       "err",
-      "Impossibile salvare la password. Il link è scaduto o già utilizzato: richiedi un nuovo link.",
+      "Impossibile salvare la password. Il link è stato consumato: richiedi un nuovo link.",
     );
-    return NextResponse.redirect(pageUrl);
+    return NextResponse.redirect(resetUrl);
   }
-
-  await supabase.auth.signOut();
 
   loginUrl.searchParams.set("ok", "1");
   return NextResponse.redirect(loginUrl);

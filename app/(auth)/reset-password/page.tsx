@@ -1,46 +1,51 @@
-import { redirect } from "next/navigation";
 import Link from "next/link";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { validaToken } from "@/lib/password-reset";
 
 /**
- * Destinazione del link di recupero. Con il flusso PKCE di Supabase:
- *  1. l'email contiene il link /auth/v1/verify?token=pkce_...&redirect_to=/reset-password
- *  2. GoTrue segue e redirige qui con ?code=<auth_code> in query string
- *  3. lo scambio code -> sessione di recovery avviene in una ROUTE HANDLER
- *     (unico contesto in cui si possono scrivere i cookie di sessione;
- *     il code_verifier è salvato in un cookie httpOnly leggibile solo dal server).
- *  4. qui rimane solo la UI: se la sessione di recovery è attiva si mostra il
- *     modulo nuova password, altrimenti un invito a richiedere un nuovo link.
+ * Destinazione del link di recupero. Il flusso è interamente server-side
+ * (nessun callback GoTrue):
+ *  1. l'email contiene /reset-password?token=<random64hex>
+ *  2. questa PAGINA valida il token lato server (esiste, non scaduto,
+ *     non già usato) e mostra il form con cui impostare la nuova password
+ *     (il token viaggia come campo hidden);
+ *  3. il submit POST a /api/auth/reset-password consuma il token in modo
+ *     atomico e cambia la password via Admin API (revoca tutte le sessioni).
  *
- * La pagina NON è client: il click su `<a href="/api/...">` nel link di Supabase
- * è a GET; tutto lo scambio avviene server-side prima di renderizzare l'HTML.
+ * Se il token non è valido viene mostrato l'errore e l'invito a richiedere
+ * un nuovo link: il token NON viene consumato qui.
  */
 export default async function ResetPasswordPage({
   searchParams,
 }: {
-  searchParams: Promise<{ code?: string; err?: string }>;
+  searchParams: Promise<{ token?: string; err?: string }>;
 }) {
   const params = await searchParams;
-  const code = params.code;
+  const tokenRaw = params.token ?? "";
   const err = params.err;
 
-  // (3) Il link ha portato il codice: deleghiamo lo scambio alla route handler
-  // che, se riesce, scrive i cookie di sessione e redirige qui senza code.
-  if (code) {
-    redirect(`/api/auth/callback-recovery?code=${encodeURIComponent(code)}`);
+  let tokenValorizzato: string | null = null;
+  let erroreLink: string | null = null;
+
+  if (!isSupabaseConfigured()) {
+    erroreLink = "Configurazione Supabase mancante.";
+  } else if (err) {
+    erroreLink = err;
+  } else if (tokenRaw) {
+    const esito = await validaToken(tokenRaw);
+    if (esito.valido) {
+      tokenValorizzato = tokenRaw;
+    } else {
+      erroreLink =
+        esito.motivo === "scaduto"
+          ? "Il link di recupero è scaduto. Richiedi un nuovo link."
+          : "Il link di recupero non è più valido o è già stato usato. Richiedi un nuovo link.";
+    }
+  } else {
+    erroreLink = "Link di recupero mancante. Richiedi un nuovo link.";
   }
 
-  // Senza ?code= la sessione di recovery deve già esistere nei cookie
-  // (scritta dalla route handler durante lo scambio del codice).
-  let hasSession = false;
-  if (!err && isSupabaseConfigured()) {
-    const supabase = await createServerSupabaseClient();
-    const { data } = await supabase.auth.getUser();
-    hasSession = Boolean(data.user);
-  }
-
-  const showError = Boolean(err) || !hasSession;
+  const mostraForm = tokenValorizzato !== null;
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#eef3f8] px-4 py-12">
@@ -55,17 +60,16 @@ export default async function ResetPasswordPage({
               Imposta una nuova password
             </h1>
             <p className="mt-3 text-sm leading-6 text-slate-600">
-              Scegli una nuova password per il tuo account. Dopo il salvataggio
-              potrai accedere con quella nuova.
+              {mostraForm
+                ? "Scegli una nuova password per il tuo account. Dopo il salvataggio potrai accedere con quella nuova."
+                : "Non è possibile impostare una nuova password con questo link."}
             </p>
           </div>
 
-          {showError ? (
+          {!mostraForm ? (
             <div className="space-y-4">
               <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                {err === "link_invalido"
-                  ? "Il link di recupero non è valido oppure è scaduto. Richiedi un nuovo link."
-                  : err}
+                {erroreLink}
               </div>
               <Link
                 href="/recupero-password"
@@ -75,43 +79,7 @@ export default async function ResetPasswordPage({
               </Link>
             </div>
           ) : (
-            <form action="/api/auth/reset-password" method="post" className="space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="password" className="text-sm font-semibold text-slate-700">
-                  Nuova password
-                </label>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  required
-                  autoComplete="new-password"
-                  placeholder="Minimo 6 caratteri"
-                  className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-                />
-              </div>
-              <div className="space-y-2">
-                <label htmlFor="password_confirm" className="text-sm font-semibold text-slate-700">
-                  Conferma nuova password
-                </label>
-                <input
-                  id="password_confirm"
-                  name="password_confirm"
-                  type="password"
-                  required
-                  autoComplete="new-password"
-                  placeholder="Ripeti la password"
-                  className="h-11 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-gradient-to-b from-blue-500 to-blue-700 text-sm font-bold text-white shadow-lg shadow-blue-500/30 transition hover:shadow-xl hover:shadow-blue-500/40 active:scale-[0.98]"
-              >
-                Salva nuova password
-              </button>
-            </form>
+            <ResetPasswordForm token={tokenValorizzato!} />
           )}
 
           <Link
@@ -123,5 +91,48 @@ export default async function ResetPasswordPage({
         </div>
       </div>
     </main>
+  );
+}
+
+function ResetPasswordForm({ token }: { token: string }) {
+  return (
+    <form action="/api/auth/reset-password" method="post" className="space-y-4">
+      <input type="hidden" name="token" value={token} />
+      <div className="space-y-2">
+        <label htmlFor="password" className="text-sm font-semibold text-slate-700">
+          Nuova password
+        </label>
+        <input
+          id="password"
+          name="password"
+          type="password"
+          required
+          autoComplete="new-password"
+          placeholder="Minimo 6 caratteri"
+          className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+        />
+      </div>
+      <div className="space-y-2">
+        <label htmlFor="password_confirm" className="text-sm font-semibold text-slate-700">
+          Conferma nuova password
+        </label>
+        <input
+          id="password_confirm"
+          name="password_confirm"
+          type="password"
+          required
+          autoComplete="new-password"
+          placeholder="Ripeti la password"
+          className="h-11 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+        />
+      </div>
+
+      <button
+        type="submit"
+        className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-gradient-to-b from-blue-500 to-blue-700 text-sm font-bold text-white shadow-lg shadow-blue-500/30 transition hover:shadow-xl hover:shadow-blue-500/40 active:scale-[0.98]"
+      >
+        Salva nuova password
+      </button>
+    </form>
   );
 }
