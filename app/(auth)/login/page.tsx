@@ -7,6 +7,7 @@ import { isPartitaIvaValida } from "@/lib/partita-iva";
 function LoginContent() {
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
+  const ok = searchParams.get("ok");
   const area = searchParams.get("area") ?? "";
   const [tab, setTab] = useState<"login" | "register">("login");
 
@@ -67,6 +68,12 @@ function LoginContent() {
             </div>
           )}
 
+          {ok === "1" && (
+            <div className="rounded-2xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+              Password aggiornata. Accedi con la nuova password.
+            </div>
+          )}
+
           {tab === "login" ? (
             <LoginForm area={area} />
           ) : area === "merchant" ? (
@@ -99,6 +106,14 @@ function LoginForm({ area }: { area: string }) {
           placeholder="Inserisci la password"
           className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
         />
+      </div>
+      <div className="flex items-center justify-end">
+        <a
+          href="/recupero-password"
+          className="text-xs font-semibold text-blue-700 hover:text-blue-800"
+        >
+          Password dimenticata?
+        </a>
       </div>
       <button
         type="submit"
