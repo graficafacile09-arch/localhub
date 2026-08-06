@@ -3,6 +3,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { AREA_COOKIE, areaCookieOptions } from "@/lib/auth/area";
+import { isPartitaIvaValida, normalizzaPartitaIva } from "@/lib/partita-iva";
 
 /**
  * Registrazione COMMERCIANTE (venditore).
@@ -24,9 +25,21 @@ export async function POST(request: Request) {
   const password = String(formData.get("password") ?? "");
   const passwordConfirm = String(formData.get("password_confirm") ?? "");
   const storeName = String(formData.get("store_name") ?? "").trim();
+  const partitaIvaRaw = String(formData.get("partita_iva") ?? "").trim();
 
   if (!name || !email || !password || !storeName) {
     loginUrl.searchParams.set("error", "Compila tutti i campi obbligatori.");
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // Partita IVA: obbligatoria e valida per la registrazione Venditore.
+  if (!partitaIvaRaw) {
+    loginUrl.searchParams.set("error", "Partita IVA obbligatoria.");
+    return NextResponse.redirect(loginUrl);
+  }
+
+  if (!isPartitaIvaValida(partitaIvaRaw)) {
+    loginUrl.searchParams.set("error", "Partita IVA non valida.");
     return NextResponse.redirect(loginUrl);
   }
 
@@ -44,7 +57,13 @@ export async function POST(request: Request) {
   const { data: signUpData, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: { full_name: name, store_name: storeName } },
+    options: {
+      data: {
+        full_name: name,
+        store_name: storeName,
+        partita_iva: normalizzaPartitaIva(partitaIvaRaw),
+      },
+    },
   });
 
   if (error) {

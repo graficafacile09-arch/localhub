@@ -2,6 +2,7 @@
 
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { isPartitaIvaValida } from "@/lib/partita-iva";
 
 function LoginContent() {
   const searchParams = useSearchParams();
@@ -106,8 +107,25 @@ type TipoRegistrazione = "cliente" | "venditore";
 
 function RegisterForm() {
   const [tipo, setTipo] = useState<TipoRegistrazione>("cliente");
+  const [partitaIva, setPartitaIva] = useState("");
+  const [partitaIvaError, setPartitaIvaError] = useState("");
   const action =
     tipo === "cliente" ? "/api/auth/register" : "/api/auth/register-merchant";
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    // La Partita IVA è obbligatoria SOLO per i venditori:
+    // il flusso Cliente resta invariato (submit nativo).
+    if (tipo !== "venditore") return;
+    if (partitaIva.trim() === "") {
+      e.preventDefault();
+      setPartitaIvaError("Partita IVA obbligatoria.");
+      return;
+    }
+    if (!isPartitaIvaValida(partitaIva)) {
+      e.preventDefault();
+      setPartitaIvaError("Partita IVA non valida.");
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -115,7 +133,10 @@ function RegisterForm() {
       <div className="grid grid-cols-2 gap-1 rounded-2xl bg-slate-100 p-1">
         <button
           type="button"
-          onClick={() => setTipo("cliente")}
+          onClick={() => {
+            setTipo("cliente");
+            setPartitaIvaError("");
+          }}
           aria-pressed={tipo === "cliente"}
           className={`rounded-xl py-2 text-xs font-bold transition-all duration-200 ${
             tipo === "cliente"
@@ -127,7 +148,10 @@ function RegisterForm() {
         </button>
         <button
           type="button"
-          onClick={() => setTipo("venditore")}
+          onClick={() => {
+            setTipo("venditore");
+            setPartitaIvaError("");
+          }}
           aria-pressed={tipo === "venditore"}
           className={`rounded-xl py-2 text-xs font-bold transition-all duration-200 ${
             tipo === "venditore"
@@ -139,7 +163,7 @@ function RegisterForm() {
         </button>
       </div>
 
-      <form action={action} method="post" className="space-y-4">
+      <form action={action} method="post" onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
           <label htmlFor="name" className="text-sm font-semibold text-slate-700">Nome e Cognome</label>
           <input
@@ -173,14 +197,34 @@ function RegisterForm() {
           />
         </div>
         {tipo === "venditore" && (
-          <div className="space-y-2">
-            <label htmlFor="store_name" className="text-sm font-semibold text-slate-700">Nome attività</label>
-            <input
-              id="store_name" name="store_name" type="text" required
-              placeholder="es. Pizzeria Da Mario"
-              className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-            />
-          </div>
+          <>
+            <div className="space-y-2">
+              <label htmlFor="partita_iva" className="text-sm font-semibold text-slate-700">Partita IVA</label>
+              <input
+                id="partita_iva" name="partita_iva" type="text" inputMode="numeric"
+                autoComplete="off" maxLength={13}
+                placeholder="es. 01234567890"
+                value={partitaIva}
+                onChange={(e) => {
+                  setPartitaIva(e.target.value);
+                  if (partitaIvaError) setPartitaIvaError("");
+                }}
+                aria-invalid={partitaIvaError ? true : undefined}
+                className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+              />
+              {partitaIvaError && (
+                <p className="text-xs font-semibold text-red-600">{partitaIvaError}</p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="store_name" className="text-sm font-semibold text-slate-700">Nome attività</label>
+              <input
+                id="store_name" name="store_name" type="text" required
+                placeholder="es. Pizzeria Da Mario"
+                className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+              />
+            </div>
+          </>
         )}
         <button
           type="submit"
