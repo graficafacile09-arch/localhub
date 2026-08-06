@@ -25,3 +25,36 @@ export function isPartitaIvaValida(value: string): boolean {
   const cifraControllo = (10 - (somma % 10)) % 10;
   return cifraControllo === Number(piva[10]);
 }
+
+/**
+ * Predisposizione per la verifica ufficiale della Partita IVA
+ * (Agenzia delle Entrate / VIES).
+ *
+ * Oggi NON effettua alcuna chiamata esterna: la registrazione Venditore si
+ * basa sul controllo algoritmico (isPartitaIvaValida). Quando in futuro
+ * verrà collegato un servizio ufficiale, l'integrazione andrà aggiunta
+ * esclusivamente qui (abilitando il flag) e resterà condivisa tra client
+ * e server.
+ */
+export const VERIFICA_UFFICIALE_ABILITATA = false;
+
+export type FonteVerificaPivaUfficiale = "agenzia-entrate" | "vies";
+
+export interface EsitoVerificaPivaUfficiale {
+  fonte: FonteVerificaPivaUfficiale;
+  valida: boolean;
+}
+
+/**
+ * Punto unico di integrazione futura con i servizi ufficiali.
+ * Con il flag disattivo restituisce sempre null: nessuna chiamata esterna.
+ */
+export async function verificaPivaConServizioUfficiale(
+  _piva: string,
+): Promise<EsitoVerificaPivaUfficiale | null> {
+  if (!VERIFICA_UFFICIALE_ABILITATA) return null;
+
+  // TODO (fase futura): integrare l'endpoint ufficiale, es. VIES
+  // (https://ec.europa.eu/taxation_customs/vies) o Agenzia delle Entrate.
+  return null;
+}

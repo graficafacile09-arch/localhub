@@ -44,6 +44,38 @@ export async function POST(request: Request) {
     return NextResponse.redirect(loginUrl);
   }
 
+  const partitaIva = normalizzaPartitaIva(partitaIvaRaw);
+
+  // Anti-duplicazione: la stessa Partita IVA non può essere registrata due
+  // volte. Nessun account Venditore viene creato se esiste già.
+  const adminClient = createAdminSupabaseClient();
+  let paginaUtenti = 1;
+  let partitaIvaGiaRegistrata = false;
+
+  for (;;) {
+    const { data: utentiEsistenti, error: listError } =
+      await adminClient.auth.admin.listUsers({ page: paginaUtenti, perPage: 1000 });
+
+    if (listError || !utentiEsistenti) break;
+
+    if (
+      utentiEsistenti.users.some(
+        (utente) => utente.user_metadata?.partita_iva === partitaIva,
+      )
+    ) {
+      partitaIvaGiaRegistrata = true;
+      break;
+    }
+
+    if (utentiEsistenti.users.length < 1000) break;
+    paginaUtenti += 1;
+  }
+
+  if (partitaIvaGiaRegistrata) {
+    loginUrl.searchParams.set("error", "Esiste già un account associato a questa Partita IVA.");
+    return NextResponse.redirect(loginUrl);
+  }
+
   if (password !== passwordConfirm) {
     loginUrl.searchParams.set("error", "Le password non coincidono.");
     return NextResponse.redirect(loginUrl);
@@ -62,7 +94,7 @@ export async function POST(request: Request) {
       data: {
         full_name: name,
         store_name: storeName,
-        partita_iva: normalizzaPartitaIva(partitaIvaRaw),
+        partita_iva: partitaIva,
       },
     },
   });
@@ -77,7 +109,6 @@ export async function POST(request: Request) {
   // Auto-conferma utente tramite admin client (disabilita verifica email in sviluppo)
   if (userId) {
     try {
-      const adminClient = createAdminSupabaseClient();
       await adminClient.auth.admin.updateUserById(userId, {
         email_confirm: true,
       });
