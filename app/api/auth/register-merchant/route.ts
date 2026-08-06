@@ -4,7 +4,6 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { AREA_COOKIE, areaCookieOptions } from "@/lib/auth/area";
 import { isPartitaIvaValida, normalizzaPartitaIva } from "@/lib/partita-iva";
-import { verificaPartitaIvaConVies } from "@/lib/partita-iva-verifica";
 
 /**
  * Registrazione COMMERCIANTE (venditore).
@@ -48,25 +47,7 @@ export async function POST(request: Request) {
 
   const partitaIva = normalizzaPartitaIva(partitaIvaRaw);
 
-  // 2) Verifica REALE della Partita IVA tramite il servizio ufficiale VIES.
-  //    - valida            -> registrazione consentita.
-  //    - non_valida        -> registrazione bloccata.
-  //    - non_verificabile  -> VIES offline / timeout / errore di rete o del
-  //                           servizio: la registrazione NON viene bloccata,
-  //                           viene scritto solo un warning nei log server.
-  const esitoVerifica = await verificaPartitaIvaConVies(partitaIva);
-
-  if (esitoVerifica.stato === "non_verificabile") {
-    console.warn(
-      "[register-merchant] VIES non verificabile, registrazione non bloccata:",
-      `piva=${partitaIva} stato=non_verificabile`,
-    );
-  } else if (esitoVerifica.stato === "non_valida") {
-    loginUrl.searchParams.set("error", "Partita IVA non valida oppure non esistente.");
-    return NextResponse.redirect(loginUrl);
-  }
-
-  // 3) Anti-duplicazione: la stessa Partita IVA non può essere registrata
+  // 2) Anti-duplicazione: la stessa Partita IVA non può essere registrata
   //    due volte. Nessun account Venditore viene creato se esiste già.
   const adminClient = createAdminSupabaseClient();
   let paginaUtenti = 1;
