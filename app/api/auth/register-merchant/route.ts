@@ -148,13 +148,37 @@ export async function POST(request: Request) {
       }
 
       // Assegna il ruolo merchant: la registrazione crea un negozio.
-      const { error: roleError } = await adminClient
+      // Logica idempotente: se il ruolo merchant esiste già per l'utente
+      // non viene eseguito alcun INSERT e il flusso continua normalmente.
+      const { data: ruoloEsistente, error: ruoloEsistenteError } = await adminClient
         .from("user_roles")
-        .insert({ user_id: userId, role: "merchant" });
+        .select("id")
+        .eq("user_id", userId)
+        .eq("role", "merchant")
+        .maybeSingle();
 
-      if (roleError) {
+      if (ruoloEsistenteError) {
         loginUrl.searchParams.set("error", "Account creato ma impossibile assegnare il ruolo. Contatta l'assistenza.");
         return NextResponse.redirect(loginUrl);
+      }
+
+      if (!ruoloEsistente) {
+        const { error: roleError } = await adminClient
+          .from("user_roles")
+          .insert({ user_id: userId, role: "merchant" });
+
+        // 23505 (duplicate key): il ruolo è stato assegnato tra la verifica
+        // e l'INSERT. Viene trattato come SUCCESSO, il flusso continua.
+        const isDuplicateKey =
+          roleError != null &&
+          (roleError.code === "23505" ||
+            (typeof roleError.message === "string" &&
+              roleError.message.includes("duplicate key")));
+
+        if (roleError && !isDuplicateKey) {
+          loginUrl.searchParams.set("error", "Account creato ma impossibile assegnare il ruolo. Contatta l'assistenza.");
+          return NextResponse.redirect(loginUrl);
+        }
       }
     } catch {
       loginUrl.searchParams.set("error", "Errore durante la creazione dell'account. Riprova.");
