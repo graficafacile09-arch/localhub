@@ -117,7 +117,26 @@ export async function POST(request: Request) {
   });
 
   if (error) {
-    loginUrl.searchParams.set("error", error.message);
+    // Rate limit Supabase (es. email di conferma via provider built-in:
+    // {"code":429,"error_code":"over_email_send_rate_limit","msg":"email rate limit exceeded"}).
+    // Il messaggio tecnico finisce SOLO nei log server; all'utente un messaggio amichevole.
+    const isRateLimit =
+      error.status === 429 ||
+      (typeof error.code === "string" &&
+        (error.code === "rate_limit_exceeded" || error.code.includes("rate_limit")));
+
+    if (isRateLimit) {
+      console.error(
+        "[register-merchant] Rate limit Supabase raggiunto:",
+        `code=${error.code ?? "n/a"} status=${error.status ?? "n/a"} message=${error.message}`,
+      );
+      loginUrl.searchParams.set(
+        "error",
+        "Al momento non è possibile completare la registrazione. Riprova tra qualche minuto.",
+      );
+    } else {
+      loginUrl.searchParams.set("error", error.message);
+    }
     return NextResponse.redirect(loginUrl);
   }
 
