@@ -1,17 +1,16 @@
 import Link from "next/link";
-import { headers } from "next/headers";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { validaToken } from "@/lib/password-reset";
 
 /**
- * Destinazione del link di recupero. Il flusso è interamente server-side
- * (nessun callback GoTrue):
+ * Destinazione del link di recupero. Il flusso è interamente server-side:
  *  1. l'email contiene /reset-password?token=<random64hex>
  *  2. questa PAGINA valida il token lato server (esiste, non scaduto,
  *     non già usato) e mostra il form con cui impostare la nuova password
  *     (il token viaggia come campo hidden);
- *  3. il submit POST a /api/auth/reset-password consuma il token in modo
- *     atomico e cambia la password via Admin API (revoca tutte le sessioni).
+ *  3. il submit POST a /api/auth/reset-password cambia la password via Admin
+ *     API (revoca tutte le sessioni) e SOLO DOPO il successo consuma il token
+ *     (se il cambio fallisce, il token resta utilizzabile).
  *
  * Se il token non è valido viene mostrato l'errore e l'invito a richiedere
  * un nuovo link: il token NON viene consumato qui.
@@ -24,17 +23,6 @@ export default async function ResetPasswordPage({
   const params = await searchParams;
   const tokenRaw = params.token ?? "";
   const err = params.err;
-
-  const reqHeaders = await headers();
-  // [DIAGNOSI-TEMP] URL esatto ricevuto dal server dopo il click nella mail.
-  console.log(
-    "[reset-flusso] PAGE " +
-      `REQUEST_URL-APPROX=${reqHeaders.get("x-forwarded-host") ?? reqHeaders.get("host") ?? "?"}` +
-      `|PROTO=${reqHeaders.get("x-forwarded-proto") ?? "?"}` +
-      `|URI=${reqHeaders.get("x-forwarded-uri") ?? "?"}`,
-  );
-  console.log("[reset-flusso] PAGE SEARCHPARAMS=" + JSON.stringify(Object.fromEntries(Object.entries(params))));
-  console.log("[reset-flusso] PAGE TOKEN_RAW=" + JSON.stringify(tokenRaw));
 
   let tokenValorizzato: string | null = null;
   let erroreLink: string | null = null;

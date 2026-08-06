@@ -10,7 +10,7 @@ import { inviaEmailResetPassword } from "@/lib/password-reset-email";
 /**
  * Recupero password — invia il link di reset via email.
  *
- * Il flusso è totalmente server-side (nessun PKCE GoTrue):
+ * Flusso server-side:
  *  1. cerca l'account per email (esatta, admin client su auth.users);
  *  2. in una stessa sequenza: invalida i token precedenti (R1), genera un
  *     token casuale da 32 byte e ne salva SOLO l'hash SHA-256 (scadenza 30min);

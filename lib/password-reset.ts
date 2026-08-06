@@ -44,9 +44,9 @@ export async function trovaUserIdPerEmail(email: string): Promise<string | null>
 }
 
 /**
- * R1: invalida immediatamente tutti i token precedenti dello stesso utente.
- * Vengono marcati come usati (ritirati) prima di crearne uno nuovo: non può
- * mai esistere più di un token valido per lo stesso account.
+ * R1: rende inutilizzabili immediatamente tutti i token precedenti dello
+ * stesso utente prima di crearne uno nuovo: non può mai esistere più di un
+ * token cucito valido per lo stesso account.
  */
 export async function invalidaTokenPrecedenti(userId: string): Promise<void> {
   const admin = createAdminSupabaseClient();
@@ -82,8 +82,9 @@ export type EsitoValidazioneToken =
   | { valido: false; motivo: "inesistente" | "scaduto" | "usato" | "non_valido" };
 
 /**
- * Valida un token SOLO in lettura (per la pagina): non lo consuma.
- * La validazione definitiva avviene in `consumaToken` durante il POST.
+ * Valida un token SOLO in lettura (per la pagina e per il POST): non lo
+ * consuma. Il consumo avviene SOLO dopo che il cambio password è andato
+ * a buon fine (`marcaTokenUsato`).
  */
 export async function validaToken(token: string): Promise<EsitoValidazioneToken> {
   if (!tokenValido(token)) {
@@ -115,12 +116,12 @@ export async function validaToken(token: string): Promise<EsitoValidazioneToken>
 }
 
 /**
- * R2: consuma ATOMICAMENTE il token (single UPDATE nella funzione SQL).
- * Restituisce la userId se il token è valido+non usato+non scaduto,
- * altrimenti null. Dopo un utilizzo corretto il token è 'usato' con lo stesso
- * UPDATE (stessa "transazione"): nessuna finestra per un riuso concorrente.
+ * Marca il token come usato. Va chiamato SOLO DOPO il successo di
+ * updateUserById(): se il cambio password fallisce il token resta
+ * utilizzabile. Il single UPDATE rende comunque impossibile il riuso:
+ * usato viene scritto incondizionatamente.
  */
-export async function consumaToken(token: string): Promise<string | null> {
+export async function marcaTokenUsato(token: string): Promise<string | null> {
   if (!tokenValido(token)) {
     return null;
   }

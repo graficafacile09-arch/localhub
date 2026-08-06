@@ -1,18 +1,18 @@
 import { NextResponse } from "next/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
-import { consumaToken } from "@/lib/password-reset";
+import { marcaTokenUsato, validaToken } from "@/lib/password-reset";
 
 /**
  * Salva la nuova password dopo il recupero.
  *
- * Il flusso è interamente server-side:
- *  1. il token (hidden field) viene consumato ATOMICAMENTE: se è già usato,
- *     scaduto o inesistente la funzione SQL restituisce null → errore;
- *  2. solo dopo il consumo riuscito si aggiorna la password con la Admin API
- *     (updateUserById), che Revokes automaticamente TUTTE le sessioni
- *     dell'utente (verificato sul sorgente GoTrue v2.194.0);
- *  3. si torna al login con il messaggio di conferma.
+ * Flusso server-side (nessun callback GoTrue):
+ *  1. il token (hidden field) viene VALIDATO in lettura (esiste, non usato,
+ *     non scaduto); se non valido → errore e nessuna operazione;
+ *  2. la password viene cambiata con la Admin API (updateUserById), che
+ *     revoca anche tutte le sessioni dell'utente;
+ *  3. SOLO DOPO il successo di updateUserById il token viene marcato usato:
+ *     se il cambio password fallisce, il token resta utilizzabile.
  */
 export async function POST(request: Request) {
   const resetUrl = new URL("/reset-password", request.url);
@@ -48,13 +48,9 @@ export async function POST(request: Request) {
     return NextResponse.redirect(resetUrl);
   }
 
-  // R2: consumo ATOMICO del token. Uno solo dei due casi seguenti:
-  //   - valido → userId dell'account e token già marcato used (anzi,
-  //     "usato" viene scritto nella STESSA UPDATE del consumo);
-  //   - null → token inesistente, scaduto o già usato: niente cambio password.
-  const userId = await consumaToken(token);
-
-  if (!userId) {
+  // 1. Validazione in lettura: nessuna modifica al DB.
+  const esito = await validaToken(token);
+  if (!esito.valido) {
     resetUrl.searchParams.set(
       "err",
       "Il link di recupero non è più valido o è già stato usato. Richiedi un nuovo link.",
@@ -71,9 +67,11 @@ export async function POST(request: Request) {
     return NextResponse.redirect(resetUrl);
   }
 
-  // Cambio password via Admin API: oltre ad aggiornarla, GoTrue revoca TUTTE
-  // le sessioni esistenti dell'utente (logout di tutte le sessioni).
-  const { error } = await adminClient.auth.admin.updateUserById(userId, { password });
+  // 2. Cambio password via Admin API: GoTrue revoca anche tutte le sessioni
+  //    dell'utente (logout). Se fallisce → errore; il token NON viene consumato.
+  const { error } = await adminClient.auth.admin.updateUserById(esito.userId, {
+    password,
+  });
 
   if (error) {
     console.error(
@@ -82,10 +80,13 @@ export async function POST(request: Request) {
     );
     resetUrl.searchParams.set(
       "err",
-      "Impossibile salvare la password. Il link è stato consumato: richiedi un nuovo link.",
+      "Impossibile salvare la password in questo momento. Il link è ancora valido: richiedi semplicemente un nuovo recupero.",
     );
     return NextResponse.redirect(resetUrl);
   }
+
+  // 3. Solo ora il token viene consumato.
+  await marcaTokenUsato(token);
 
   loginUrl.searchParams.set("ok", "1");
   return NextResponse.redirect(loginUrl);

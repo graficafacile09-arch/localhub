@@ -1,9 +1,8 @@
 -- ═══════════════════════════════════════════════════════════════════════
 -- Password recovery — token monouso, sistema 100% backend.
 --
--- Sostituisce il flusso PKCE di GoTrue (resetPasswordForEmail + callback) con:
 --   1. token casuale da 32 byte (256 bit), inviato per email
---   2. nel DB viene salvato SOLO l'hASH SHA-256 del token (mai il raw)
+--   2. nel DB viene salvato SOLO l'hash SHA-256 del token (mai il raw)
 --   3. validità 30 minuti; monouso (consumo atomico); i token precedenti
 --      dello stesso utente muoiono al momento della nuova richiesta (R1)
 --   4. nessuna policy RLS: i client (anon/autenticato) non vedono nulla,
