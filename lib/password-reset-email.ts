@@ -29,13 +29,6 @@ export async function inviaEmailResetPassword(opts: {
 
   const resend = new Resend(apiKey);
 
-  // [E2E-TEMP] prova oggettiva del mittente realmente usato.
-  console.log(
-    "[reset-flusso] DIAGNOSI "
-      + `RESEND_FROM_EMAIL_ENV=${process.env.RESEND_FROM_EMAIL ? "SET" : "NOT_SET"} `
-      + `FROM_EMAIL_READ=${FROM_EMAIL} `,
-  );
-
   const { error } = await resend.emails.send({
     from: FROM_EMAIL,
     to: opts.to,
