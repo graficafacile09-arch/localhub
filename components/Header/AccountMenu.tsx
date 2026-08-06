@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState, type ComponentType } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import {
   ChevronDown,
   Globe,
@@ -60,20 +59,6 @@ const ETICHETTE_AREA: Record<AreaAttiva, string> = {
 export default function AccountMenu({ account }: { account: DatiAccount | null }) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-  const pathname = usePathname();
-
-  // Login URL: se l'utente è su una pagina pubblica e clicca Accedi,
-  // il parametro area indica il contesto (cliente/merchant/admin).
-  function getAreaParam(): string {
-    if (pathname.startsWith("/cliente")) return "cliente";
-    if (pathname.startsWith("/merchant")) return "merchant";
-    if (pathname.startsWith("/amministratore")) return "admin";
-    return "";
-  }
-  const loginHref =
-    pathname === "/login"
-      ? "/login"
-      : (() => { const a = getAreaParam(); return a ? `/login?area=${a}` : "/login"; })();
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -92,16 +77,51 @@ export default function AccountMenu({ account }: { account: DatiAccount | null }
     };
   }, []);
 
-  // ── Non loggato: pulsante Accedi ────────────────────────────────────────
+  // ── Non loggato: pulsante Accedi con menu a tendina ─────────────────────
+  // Il menu offre ESCLUSIVAMENTE l'ingresso Cliente e Venditore (flussi di
+  // login esistenti). L'accesso Amministratore resta solo dallo scudetto
+  // nella barra di navigazione.
   if (!account) {
     return (
-      <Link
-        href={loginHref}
-        className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-blue-700"
-      >
-        <LogIn className="h-4 w-4" aria-hidden />
-        Accedi
-      </Link>
+      <div className="relative" ref={menuRef}>
+        <button
+          type="button"
+          onClick={() => setOpen((value) => !value)}
+          aria-expanded={open}
+          aria-haspopup="menu"
+          className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-blue-700"
+        >
+          <LogIn className="h-4 w-4" aria-hidden />
+          Accedi
+        </button>
+
+        {open && (
+          <div
+            role="menu"
+            aria-label="Accedi"
+            className="absolute right-0 top-full z-50 mt-2 w-64 rounded-2xl border border-slate-100 bg-white p-2 text-slate-700 shadow-xl"
+          >
+            <Link
+              href="/login?area=cliente"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition hover:bg-slate-50 hover:text-blue-700"
+            >
+              <ShoppingBasket className="h-4 w-4 shrink-0 text-blue-600" aria-hidden />
+              Entra come Cliente
+            </Link>
+            <Link
+              href="/login?area=merchant"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition hover:bg-slate-50 hover:text-blue-700"
+            >
+              <Store className="h-4 w-4 shrink-0 text-blue-600" aria-hidden />
+              Entra come Venditore
+            </Link>
+          </div>
+        )}
+      </div>
     );
   }
 

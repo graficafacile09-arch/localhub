@@ -38,23 +38,6 @@ export default async function Home() {
             Trova negozi, professionisti, offerte e servizi locali in pochi secondi.
           </p>
 
-          {/* Due ingressi principali per le aree della piattaforma.
-              L'accesso Amministratore è nella barra di navigazione in alto. */}
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-            <Link
-              href="/login?area=cliente"
-              className="inline-flex items-center gap-2 rounded-full bg-white/15 px-5 py-2.5 text-sm font-bold text-white backdrop-blur-sm transition hover:bg-white/25 hover:shadow-lg"
-            >
-              🛍️ Accedi come Cliente
-            </Link>
-            <Link
-              href="/login?area=merchant"
-              className="inline-flex items-center gap-2 rounded-full bg-white/15 px-5 py-2.5 text-sm font-bold text-white backdrop-blur-sm transition hover:bg-white/25 hover:shadow-lg"
-            >
-              🏪 Accedi come Venditore
-            </Link>
-          </div>
-
           <form action="/ricerca" method="GET" className="mt-6 max-w-xl mx-auto">
             <div className="relative group">
               <div className="absolute -inset-1.5 bg-gradient-to-r from-blue-400 via-blue-500 to-cyan-400 rounded-full opacity-0 group-focus-within:opacity-100 blur-xl transition-all duration-500" />
