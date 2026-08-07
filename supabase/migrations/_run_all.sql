@@ -871,3 +871,82 @@ create trigger preferiti_set_updated_at
 notify pgrst, 'reload schema';
 
 commit;
+
+-- ═══════════════════════════════════════════════════════════════════
+-- 17. 20260806_negozi_is_demo.sql
+-- ═══════════════════════════════════════════════════════════════════
+begin;
+
+alter table public.negozi
+  add column if not exists is_demo boolean not null default false;
+
+-- Backfill: i negozi seed (slug "demo-…"), i negozi dei test E2E
+-- (nomi "E2E …" / "Negozio Rinominato …") e i residui dei benchmark di
+-- visione artificiale (slug "test-store-vision-…") diventano is_demo.
+update public.negozi
+set is_demo = true
+where is_demo = false
+  and (
+    slug like 'demo-%'
+    or slug like 'test-store-vision-%'
+    or nome ~ '^(E2E|Negozio Rinominato)[[:space:]]'
+  );
+
+create index if not exists negozi_is_demo_idx
+  on public.negozi (is_demo)
+  where is_demo = true;
+
+notify pgrst, 'reload schema';
+
+commit;
+
+-- ═══════════════════════════════════════════════════════════════════
+-- 18. 20260806_1300_pulizia_negozi_e2e_duplicato.sql
+-- ═══════════════════════════════════════════════════════════════════
+-- Pulizia definitiva dei negozi di test creati durante gli E2E:
+-- nome che inizia con "E2E" o "Duplicato" (varianti coperte da ILIKE),
+-- più slug "e2e-…" / "duplicato…" (variante "Negozio Rinominato" E2E).
+-- NON tocca: demo ufficiali (slug "demo-…"), template, negozi reali.
+-- Elimina anche i record collegati (prodotti, product_media, media,
+-- preferiti, scan_log) mantenendo l'integrità referenziale.
+begin;
+
+create temp table negozi_e2e on commit drop as
+  select id, nome, slug
+  from public.negozi
+  where nome ilike 'E2E%'
+     or nome ilike 'Duplicato%'
+     or slug ilike 'e2e-%'
+     or slug ilike 'duplicato%';
+
+create temp table prodotti_e2e on commit drop as
+  select id, negozio_id
+  from public.prodotti
+  where negozio_id in (select id::text from negozi_e2e);
+
+delete from public.product_media
+where product_id in (select id::text from prodotti_e2e);
+
+delete from public.preferiti
+where (tipo = 'prodotto' and riferimento_id in (select id::text from prodotti_e2e))
+   or (tipo = 'negozio'  and riferimento_id in (select id::text from negozi_e2e));
+
+delete from public.prodotti
+where negozio_id in (select id::text from negozi_e2e);
+
+delete from public.media
+where negozio_id in (select id from negozi_e2e);
+
+delete from public.scan_log
+where negozio_id in (select id::text from negozi_e2e);
+
+delete from public.negozi
+where id in (select id from negozi_e2e);
+
+select
+  (select count(*) from negozi_e2e)   as negozi_eliminati,
+  (select count(*) from prodotti_e2e) as prodotti_eliminati;
+
+notify pgrst, 'reload schema';
+
+commit;

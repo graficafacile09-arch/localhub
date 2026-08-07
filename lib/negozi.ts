@@ -258,6 +258,34 @@ export async function getCategorie() {
   return (data as Categoria[]) ?? [];
 }
 
+export type CategoriaConNegozi = {
+  categoria: Categoria;
+  count: number;
+};
+
+// Categorie della pagina /categorie: SOLO quelle realmente usate dai negozi
+// attivi. Derivate dal DB tramite lo stesso criterio di matching già usato
+// da getConteggiNegoziPerCategoria / getCategoriaShowcase (uguaglianza
+// case-insensitive su nome + sinonimi): nessuna struttura dati parallela,
+// nessun dato hardcoded, ogni categoria compare una sola volta.
+// ESATTAMENTE 2 query SQL, zero N+1.
+export async function getCategorieConNegozi(): Promise<CategoriaConNegozi[]> {
+  const db = getDb();
+  if (!db) return [];
+
+  const categorie = await getCategorie();
+  if (categorie.length === 0) return [];
+
+  const conteggi = await getConteggiNegoziPerCategoria(categorie);
+
+  return categorie
+    .filter((categoria) => (conteggi.get(categoria.id) ?? 0) > 0)
+    .map((categoria) => ({
+      categoria,
+      count: conteggi.get(categoria.id) ?? 0,
+    }));
+}
+
 export async function getCategoriaBySlug(slug: string) {
   const db = getDb();
   if (!db) return null;

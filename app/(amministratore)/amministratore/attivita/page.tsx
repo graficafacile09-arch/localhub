@@ -5,7 +5,7 @@ import {
 } from "@/lib/amministratore/service";
 
 export const metadata = {
-  title: "Attività — Amministratore",
+  title: "Negozi — Amministratore",
 };
 
 // I dati reali dei negozi devono riflettere lo stato corrente del database.

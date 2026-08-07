@@ -28,8 +28,6 @@ export default function MediaPickerDialog({ open, storeId, onClose, onSelect }: 
   const [error, setError] = useState<string | null>(null);
 
   const loadMedia = useCallback(async () => {
-    setLoading(true);
-    setError(null);
     try {
       const res = await fetch(`/api/merchant/stores/${storeId}/media`);
       const json = await res.json();

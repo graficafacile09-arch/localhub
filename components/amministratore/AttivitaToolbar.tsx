@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowUpDown, Plus, Search, SlidersHorizontal } from "lucide-react";
+import { ArrowUpDown, Search, SlidersHorizontal } from "lucide-react";
 import type {
   FiltroEvidenzaAttivita,
   FiltroStatoAttivita,
@@ -10,8 +10,8 @@ import { OPZIONI_ORDINA } from "@/lib/amministratore/attivita-types";
 
 /**
  * Barra superiore del modulo Attività: ricerca, filtro categoria, filtro
- * stato, filtro in evidenza, ordinamento e pulsante "Nuova attività"
- * (placeholder). Componente controllato: lo stato vive nel modulo.
+ * stato, filtro in evidenza e ordinamento. Componente controllato: lo
+ * stato vive nel modulo.
  */
 export default function AttivitaToolbar({
   ricerca,
@@ -125,15 +125,6 @@ export default function AttivitaToolbar({
             </select>
           </div>
 
-          {/* Nuova attività (placeholder) */}
-          <button
-            type="button"
-            title="Disponibile in una fase successiva"
-            className="inline-flex items-center gap-2 rounded-2xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-blue-600/25 transition hover:bg-blue-700 active:scale-[0.98]"
-          >
-            <Plus className="h-4 w-4" aria-hidden />
-            Nuova attività
-          </button>
         </div>
       </div>
     </div>

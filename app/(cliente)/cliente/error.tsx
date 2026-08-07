@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { AlertTriangle } from "lucide-react";
+import BackButton from "@/components/BackButton";
 
 /**
  * Error boundary dell'Area Clienti (convenzione Next 16).
@@ -38,6 +39,9 @@ export default function ClienteError({
       >
         Riprova
       </button>
+      <div className="mt-3">
+        <BackButton label="Torna alla home" />
+      </div>
     </div>
   );
 }

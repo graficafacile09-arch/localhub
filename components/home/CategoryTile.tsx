@@ -45,7 +45,7 @@ export default function CategoryTile({
 
   return (
     <Link
-      href={`/ricerca?categoria=${categoria.slug}`}
+      href={`/categorie/${categoria.slug}`}
       className={TILE_CLASS}
     >
       <div

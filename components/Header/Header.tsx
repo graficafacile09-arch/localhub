@@ -46,7 +46,7 @@ export default async function Header() {
             Negozi
           </Link>
 
-          <Link href="/ricerca" className="hover:text-blue-600 transition">
+          <Link href="/categorie" className="hover:text-blue-600 transition">
             Categorie
           </Link>
 

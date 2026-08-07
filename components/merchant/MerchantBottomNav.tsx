@@ -8,6 +8,8 @@ import {
   Package,
   Sparkles,
   Store,
+  Trash2,
+  Users,
 } from "lucide-react";
 
 type MerchantBottomNavProps = {
@@ -21,7 +23,9 @@ export default function MerchantBottomNav({
 }: MerchantBottomNavProps) {
   const pathname = usePathname();
 
-  const baseHref = area === "admin" ? "/amministratore" : "/merchant";
+  const isAdmin = area === "admin";
+  const baseHref = isAdmin ? "/amministratore" : "/merchant";
+  const ADMIN_BASE = "/amministratore";
 
   // Pagine globali dell'area merchant che NON identificano un negozio
   const GLOBAL_MERCHANT_SLUGS = ["nuovo"];
@@ -34,6 +38,54 @@ export default function MerchantBottomNav({
       : storeIdProp;
 
   const hasStore = Boolean(storeId);
+
+  // ── Voci dell'Area Amministratore (mobile): la stessa gerarchia della
+  //    sidebar desktop — Negozi sopra Cestino sopra Utenti. ────────────────
+  const adminNavItems = [
+    {
+      key: "home",
+      label: "Home",
+      icon: Home,
+      href: "/",
+      available: true,
+      ai: false,
+    },
+    {
+      key: "negozi",
+      label: "Negozi",
+      icon: Store,
+      href: `${ADMIN_BASE}/attivita`,
+      available: true,
+      ai: false,
+    },
+    {
+      key: "cestino",
+      label: "Cestino",
+      icon: Trash2,
+      href: `${ADMIN_BASE}/cestino`,
+      available: true,
+      ai: false,
+    },
+    {
+      key: "utenti",
+      label: "Utenti",
+      icon: Users,
+      href: `${ADMIN_BASE}/utenti`,
+      available: true,
+      ai: false,
+    },
+    {
+      key: "altro",
+      label: "Esci",
+      icon: LogOut,
+      href: null,
+      available: true,
+      isMenu: true,
+      ai: false,
+    },
+  ];
+
+  // Nell'Area Amministratore si usa la gerarchia admin, non le voci merchant.
 
   // Voce AI — la più prominente, posizionata al centro
   const navItems = [
@@ -88,6 +140,9 @@ export default function MerchantBottomNav({
     },
   ];
 
+  // Nell'Area Amministratore si usa la gerarchia admin, non le voci merchant.
+  const items = isAdmin ? adminNavItems : navItems;
+
   function isActive(href: string | null): boolean {
     if (!href) return false;
     if (href === "/") return pathname === "/";
@@ -111,7 +166,7 @@ export default function MerchantBottomNav({
           style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
         >
           <div className="flex items-end justify-around px-1 pt-2 pb-2 touch-manipulation">
-            {navItems.map((item) => {
+            {items.map((item) => {
               const Icon = item.icon;
               const active = item.href ? isActive(item.href) : false;
 

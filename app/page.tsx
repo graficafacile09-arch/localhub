@@ -1,7 +1,7 @@
 import Header from "@/components/Header/Header";
 import Link from "next/link";
 import { Search } from "lucide-react";
-import { getCategorie, getNegoziInEvidenza, getProdottiInEvidenza } from "@/lib/negozi";
+import { getCategorieConNegozi, getNegoziInEvidenza, getProdottiInEvidenza } from "@/lib/negozi";
 import { getNegozioCardImmagine } from "@/lib/negozi-card-immagini";
 import { chiavePreferito, getStatoPreferitiPerPagina } from "@/lib/cliente/favorites";
 import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
@@ -16,10 +16,10 @@ export const dynamic = "force-dynamic";
 const NUMERO_CATEGORIE_HOME = 8;
 
 export default async function Home() {
-  const [negozi, prodottiInEvidenza, categorie, statoPreferiti] = await Promise.all([
+  const [negozi, prodottiInEvidenza, categorieConNegozi, statoPreferiti] = await Promise.all([
     getNegoziInEvidenza(8),
     getProdottiInEvidenza(8),
-    getCategorie(),
+    getCategorieConNegozi(),
     getStatoPreferitiPerPagina(),
   ]);
 
@@ -74,8 +74,8 @@ export default async function Home() {
         </div>
 
         <div className="grid grid-cols-4 gap-2 md:gap-3">
-          {categorie.slice(0, NUMERO_CATEGORIE_HOME).map((categoria, index) => (
-            <CategoryTile key={categoria.id} categoria={categoria} index={index} />
+          {categorieConNegozi.slice(0, NUMERO_CATEGORIE_HOME).map(({ categoria, count }, index) => (
+            <CategoryTile key={categoria.id} categoria={categoria} index={index} count={count} />
           ))}
           <TutteCategorieTile index={NUMERO_CATEGORIE_HOME} />
         </div>

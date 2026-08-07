@@ -4,7 +4,7 @@ import { uploadDataUrlToStorage } from "@/lib/supabase/storage";
 import { generaSlugUnivoco } from "@/lib/slug-server";
 import { getCurrentUser } from "@/lib/auth/session";
 import { utenteAdminAutorizzato } from "@/lib/auth/roles";
-import { eNegozioDaEscludere } from "@/lib/amministratore/negozi";
+import { queryNegoziNonDemo } from "@/lib/amministratore/negozi";
 import type {
   MerchantProduct,
   MerchantProductInput,
@@ -150,32 +150,50 @@ function mapProduct(row: ProdottoRow): MerchantProduct {
 // =================================================================
 export async function getMerchantStoresForUser(userId: string): Promise<MerchantQueryResult<MerchantStoreSummary[]>> {
   // Verifica del ruolo eseguita UNA volta: da qui si sceglie il client e il
-  // filtro di proprietà (l'admin AUTORIZZATO vede TUTTI i negozi della
+  // filtro di proprietà (l'admin AUTORIZZATO vede TUTTI i negozi reali della
   // piattaforma, i commercianti solo i propri).
   const isAdmin = await utenteAdminAutorizzatoCorrente(userId);
-  const supabase = isAdmin
-    ? createAdminSupabaseClient()
-    : await createServerSupabaseClient();
 
-  let query = supabase
-    .from("negozi")
-    .select("id, nome, categoria, descrizione, attivo")
-    .is("deleted_at", null)
-    .order("created_at", { ascending: true });
+  // Admin: tutti i negozi REALI (i demo non compaiono MAI, né per colonna
+  // is_demo né per nome/slug di fallback). Commerciante: solo i propri.
+  let esito: {
+    data: (MerchantStoreSummary & { slug: string | null })[] | null;
+    error: { code?: string; message?: string } | null;
+  };
 
-  if (!isAdmin) {
-    query = query.eq("owner_user_id", userId);
+  if (isAdmin) {
+    esito = await queryNegoziNonDemo<
+      MerchantStoreSummary & { slug: string | null }
+    >(async (usaColonna) => {
+      const supabase = createAdminSupabaseClient();
+      let query = supabase
+        .from("negozi")
+        .select("id, nome, categoria, descrizione, attivo, slug")
+        .is("deleted_at", null)
+        .order("created_at", { ascending: true });
+      if (usaColonna) query = query.eq("is_demo", false);
+      const { data, error } = await query;
+      return {
+        data: (data ?? []) as (MerchantStoreSummary & { slug: string | null })[],
+        error,
+      };
+    });
+  } else {
+    const supabase = await createServerSupabaseClient();
+    const { data, error } = await supabase
+      .from("negozi")
+      .select("id, nome, categoria, descrizione, attivo")
+      .is("deleted_at", null)
+      .eq("owner_user_id", userId)
+      .order("created_at", { ascending: true });
+    esito = {
+      data: (data ?? []) as (MerchantStoreSummary & { slug: string | null })[],
+      error,
+    };
   }
 
-  const { data: stores, error } = await query;
-
-  // L'Area Amministratore mostra SOLO negozi reali: i negozi demo di test
-  // ("E2E …", "Negozio Rinominato …") vengono esclusi dalla vista admin.
-  const storesFiltrati = isAdmin
-    ? ((stores ?? []) as NegozioRow[]).filter((n) =>
-        !eNegozioDaEscludere({ nome: n.nome ?? null })
-      )
-    : ((stores ?? []) as NegozioRow[]);
+  const { data: stores, error } = esito;
+  const storesFiltrati = (stores ?? []) as NegozioRow[];
 
   if (error) {
     if (isSchemaError(error)) {

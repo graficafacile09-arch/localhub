@@ -40,13 +40,25 @@ type Mode = "blank" | "template" | "duplica";
 export default function WizardShell() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [mode, setMode] = useState<Mode>("blank");
+
+  // Preselezione dal query param ?template=…: letta UNA volta all'avvio
+  // (lazy initializer), senza effetti che settano stato. I template di
+  // sistema (TemplateNegozio) non espongono una categoria: il campo parte
+  // vuoto e quella di un template personale arriva quando i template
+  // vengono caricati (loadTemplates).
+  const templateParam = searchParams?.get("template") ?? null;
+  const systemTemplates = getTemplates();
+  const categoriaTemplateIniziale: string = "";
+
+  const [mode, setMode] = useState<Mode>(() =>
+    templateParam ? "template" : "blank"
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
   const [form, setForm] = useState({
     nome: "",
-    categoria: "",
+    categoria: categoriaTemplateIniziale,
     citta: "",
     logo: "",
   });
@@ -57,9 +69,9 @@ export default function WizardShell() {
 
   const [userTemplates, setUserTemplates] = useState<UserTemplate[]>([]);
   const [templatesLoading, setTemplatesLoading] = useState(false);
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
-
-  const systemTemplates = getTemplates();
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(
+    () => templateParam
+  );
 
   const handleSelectTemplate = (id: string) => {
     setSelectedTemplateId(id);
@@ -69,19 +81,6 @@ export default function WizardShell() {
       setForm((prev) => ({ ...prev, categoria: selected.categoria ?? "" }));
     }
   };
-
-  useEffect(() => {
-    const templateParam = searchParams?.get("template");
-    if (templateParam) {
-      setMode("template");
-      setSelectedTemplateId(templateParam);
-      const allTemplates: AnyTemplate[] = [...systemTemplates, ...userTemplates];
-      const selected = allTemplates.find((t) => t.id === templateParam);
-      if (selected && "categoria" in selected && selected.categoria) {
-        setForm((prev) => ({ ...prev, categoria: selected.categoria ?? "" }));
-      }
-    }
-  }, [searchParams, systemTemplates, userTemplates]);
 
   useEffect(() => {
     async function loadStores() {
@@ -104,8 +103,22 @@ export default function WizardShell() {
         const res = await fetch("/api/merchant/templates");
         const json = await res.json();
         if (json.success) {
-          const userTemplates = (json.data?.templates ?? []).filter((t: UserTemplate) => !t.is_system);
-          setUserTemplates(userTemplates);
+          const utentiTemplates = (json.data?.templates ?? []).filter(
+            (t: UserTemplate) => !t.is_system
+          );
+          setUserTemplates(utentiTemplates);
+          // Categoria del template personale preselezionato (?template=…).
+          if (templateParam) {
+            const selezionato = [...systemTemplates, ...utentiTemplates].find(
+              (t) => t.id === templateParam
+            );
+            if (selezionato && "categoria" in selezionato && selezionato.categoria) {
+              setForm((prev) => ({
+                ...prev,
+                categoria: selezionato.categoria ?? "",
+              }));
+            }
+          }
         }
       } catch {
       } finally {
@@ -115,7 +128,7 @@ export default function WizardShell() {
 
     loadStores();
     loadTemplates();
-  }, []);
+  }, [searchParams, systemTemplates, templateParam]);
 
   const allTemplatesCombined: AnyTemplate[] = [...systemTemplates, ...userTemplates];
 

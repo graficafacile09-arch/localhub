@@ -27,14 +27,44 @@ export default function AdminSidebar({
     return pathname.startsWith(href);
   }
 
-  function renderItem(item: { href: string; label: string; icon: LucideIcon }) {
+  // Le voci sono parti dell'array "adminNavItems" o "adminFooterItems".
+  // Ogni fetta ha header con href "#" ripetuto: la chiave univoca è l'etichetta.
+  function itemKey(item: { label: string }) {
+    return item.label;
+  }
+
+  function renderItem(item: { href: string; label: string; icon: LucideIcon; section?: boolean }) {
     const active = isActive(item.href);
     const Icon = item.icon;
 
-    if (collapsed) {
+    // Etichetta di sezione: non è un link, separa i gruppi di voci.
+    if (item.section) {
+      if (collapsed) {
+        return (
+          <div
+            key={itemKey(item)}
+            className="flex h-6 items-center justify-center"
+            title={item.label}
+          >
+            <span className="block h-px w-6 bg-slate-200" aria-hidden />
+          </div>
+        );
+      }
       return (
+        <p
+          key={itemKey(item)}
+          className="flex items-center gap-2 px-4 pt-3 pb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400"
+        >
+          <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden />
+          {item.label}
+        </p>
+      );
+    }
+
+    if (collapsed) {
+return (
         <Link
-          key={item.href}
+          key={itemKey(item)}
           href={item.href}
           title={item.label}
           aria-label={item.label}
@@ -52,7 +82,7 @@ export default function AdminSidebar({
 
     return (
       <Link
-        key={item.href}
+        key={itemKey(item)}
         href={item.href}
         aria-current={active ? "page" : undefined}
         className={`flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition-all duration-150 ${
@@ -74,48 +104,14 @@ export default function AdminSidebar({
     <div className="space-y-1">
       <nav aria-label="Menu Amministratore" className="space-y-1">
         {adminNavItems.map((item) => renderItem(item))}
-      </nav>
-
-      {/* ── Sezione footer: navigazione rapida ─────────────────────────────── */}
+      </nav>      {/* ── Sezione footer: navigazione rapida ─────────────────────────────── */}
       <nav
         aria-label="Navigazione rapida"
         className={`!mt-4 space-y-1 border-t border-slate-100 pt-4 ${
           collapsed ? "flex flex-col items-center" : ""
         }`}
       >
-        {adminFooterItems.map((item) => {
-          const Icon = item.icon;
-
-          // Voce placeholder (es. Guida): solo UI, nessuna navigazione reale.
-          if (item.placeholder) {
-            if (collapsed) {
-              return (
-                <span
-                  key={item.href}
-                  title={`${item.label} — in preparazione`}
-                  className="flex h-11 w-11 cursor-not-allowed items-center justify-center rounded-2xl text-slate-300"
-                >
-                  <Icon className="h-5 w-5" aria-hidden />
-                </span>
-              );
-            }
-            return (
-              <span
-                key={item.href}
-                title="In preparazione"
-                className="flex cursor-not-allowed items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-slate-400"
-              >
-                <Icon className="h-4 w-4 shrink-0 text-slate-300" aria-hidden />
-                <span className="truncate">{item.label}</span>
-                <span className="ml-auto rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-400">
-                  Presto
-                </span>
-              </span>
-            );
-          }
-
-          return renderItem(item);
-        })}
+        {adminFooterItems.map((item) => renderItem(item))}
       </nav>
 
       <div

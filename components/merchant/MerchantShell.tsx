@@ -89,6 +89,15 @@ export default function MerchantShell({
 
         {/* Sidebar — visibile solo su desktop/tablet ─────────────────────────── */}
         <aside className="hidden space-y-5 md:block">
+          {/* Amministrazione — SOLO nell'Area Amministratore. PRIMA card della
+              sidebar: il menu admin (Strumenti di piattaforma → Negozi → …) è la
+              prima cosa che l'amministratore vede entrando in /amministratore. */}
+          {isAdmin ? (
+            <div className="rounded-3xl border border-white/70 bg-white p-5 shadow-sm">
+              <AdminSidebar />
+            </div>
+          ) : null}
+
           <div className="rounded-3xl border border-white/70 bg-white p-5 shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
               Navigazione
@@ -105,17 +114,6 @@ export default function MerchantShell({
           </div>
 
           <MerchantStoreSwitcher stores={stores} currentStoreId={currentStoreId} />
-
-          {/* Amministrazione — SOLO nell'Area Amministratore (stesso stile,
-              stessi strumenti di piattaforma già esistenti, componente riusato) */}
-          {isAdmin ? (
-            <div className="rounded-3xl border border-white/70 bg-white p-5 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
-                Amministrazione
-              </p>
-              <AdminSidebar />
-            </div>
-          ) : null}
         </aside>
 
         {/* Contenuto principale ──────────────────────────────────────────────── */}

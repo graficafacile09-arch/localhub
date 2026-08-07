@@ -15,6 +15,13 @@ type DashboardProps = {
   onModuleStatus?: (status: Record<string, ModuleStatus>) => void;
 };
 
+type TemplateData = {
+  id: string;
+  nome: string;
+  descrizione?: string;
+  categoria?: string | null;
+};
+
 export default function EditorDashboard({ storeId, onModuleStatus }: DashboardProps) {
   const [store, setStore] = useState<StoreData | null>(null);
   const [prodottiCount, setProdottiCount] = useState(0);
@@ -25,7 +32,7 @@ export default function EditorDashboard({ storeId, onModuleStatus }: DashboardPr
   const [logoUploading, setLogoUploading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
-  const [templates, setTemplates] = useState<any[]>([]);
+  const [templates, setTemplates] = useState<TemplateData[]>([]);
   const [applyingTemplate, setApplyingTemplate] = useState<string | null>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
 
@@ -82,8 +89,10 @@ export default function EditorDashboard({ storeId, onModuleStatus }: DashboardPr
     onModuleStatus?.(status);
   }, [store, prodottiCount]);
 
-  const debouncedSaveNome = useCallback(
-    debounce((value: string) => {
+  const nomeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const saveNome = useCallback(
+    (value: string) => {
       if (value.trim() === (store?.nome ?? "")) return;
       setSavingNome(true);
       fetch(`/api/merchant/stores/${storeId}/settings`, {
@@ -94,20 +103,21 @@ export default function EditorDashboard({ storeId, onModuleStatus }: DashboardPr
         .then((r) => r.json())
         .then((json) => {
           if (json.success) {
-            setStore((prev) => prev ? { ...prev, nome: value.trim() } : prev);
+            setStore((prev) => (prev ? { ...prev, nome: value.trim() } : prev));
             setSavedNome(true);
             setTimeout(() => setSavedNome(false), 2000);
           }
         })
         .finally(() => setSavingNome(false));
-    }, 500),
+    },
     [storeId, store?.nome]
   );
 
   function handleNomeChange(e: React.ChangeEvent<HTMLInputElement>) {
     const value = e.target.value;
     setNomeInput(value);
-    debouncedSaveNome(value);
+    if (nomeTimer.current) clearTimeout(nomeTimer.current);
+    nomeTimer.current = setTimeout(() => saveNome(value), 500);
   }
 
   async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -381,12 +391,4 @@ export default function EditorDashboard({ storeId, onModuleStatus }: DashboardPr
       )}
     </div>
   );
-}
-
-function debounce<T extends (...args: any[]) => void>(fn: T, wait: number): T {
-  let timeout: ReturnType<typeof setTimeout> | null = null;
-  return ((...args: Parameters<T>) => {
-    if (timeout) clearTimeout(timeout);
-    timeout = setTimeout(() => fn(...args), wait);
-  }) as T;
 }

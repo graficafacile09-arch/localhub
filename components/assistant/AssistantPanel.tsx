@@ -166,12 +166,13 @@ export default function AssistantPanel() {
           <button
             type="button"
             onClick={() => setIsOpen(false)}
-            className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+            className="flex h-10 shrink-0 items-center gap-1.5 rounded-lg bg-blue-600 px-3 text-white shadow-sm transition hover:bg-blue-700 active:scale-95"
             aria-label="Chiudi assistente"
           >
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} className="h-5 w-5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
+            <span className="text-sm font-bold leading-none">Chiudi</span>
           </button>
         </div>
 

@@ -13,7 +13,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef } from "react";
-import { ArrowUp, Loader2 } from "lucide-react";
+import { Loader2, Search } from "lucide-react";
 
 // ─── Tipi ─────────────────────────────────────────────────────────────────────
 
@@ -82,18 +82,18 @@ export default function AssistantInput({
         aria-multiline="true"
       />
 
-      {/* Pulsante invia */}
+      {/* Pulsante ricerca (lente) */}
       <button
         type="button"
         onClick={onSend}
         disabled={!canSend}
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 text-white shadow-sm transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
-        aria-label={isLoading ? "Invio in corso…" : "Invia messaggio"}
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 text-white shadow-md ring-2 ring-blue-300 transition hover:brightness-110 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:ring-0"
+        aria-label={isLoading ? "Ricerca in corso…" : "Cerca"}
       >
         {isLoading ? (
-          <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+          <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
         ) : (
-          <ArrowUp className="h-3.5 w-3.5" aria-hidden />
+          <Search className="h-5 w-5" aria-hidden />
         )}
       </button>
     </div>

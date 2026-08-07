@@ -1,4 +1,5 @@
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { eNegozioDaEscludere } from "./negozi";
 
 export type ConteggiDashboard = {
   negozi: number;
@@ -21,15 +22,56 @@ const getDb = () => {
 
 type AdminDb = NonNullable<ReturnType<typeof getDb>>;
 
+/** Codici di errore PostgREST/Supabase relativi a schema/colonne mancanti. */
+const CODICI_SCHEMA = new Set(["42P01", "42703", "PGRST204", "PGRST205"]);
+const èErroreSchema = (e: { code?: string } | null) =>
+  Boolean(e?.code && CODICI_SCHEMA.has(e.code));
+
+/**
+ * Id dei negozi demo (colonna is_demo, con fallback per nome/slug).
+ * I negozi demo non compaiono MAI nei dati dell'Area Amministratore.
+ */
+async function idNegoziDemo(db: AdminDb): Promise<string[]> {
+  const { data: conColonna, error } = await db
+    .from("negozi")
+    .select("id")
+    .eq("is_demo", true);
+
+  if (!error) return (conColonna ?? []).map((r) => String(r.id));
+
+  if (èErroreSchema(error)) {
+    const { data: senzaColonna } = await db
+      .from("negozi")
+      .select("id, nome, slug");
+    return (senzaColonna ?? [])
+      .filter((r) =>
+        eNegozioDaEscludere({
+          nome: r.nome as string | null,
+          slug: r.slug as string | null,
+        })
+      )
+      .map((r) => String(r.id));
+  }
+
+  return [];
+}
+
 async function contaNegoziAttivi(db: AdminDb): Promise<number> {
   try {
-    const { count, error } = await db
+    const query = db
       .from("negozi")
       .select("id", { count: "exact", head: true })
       .eq("attivo", true)
       .is("deleted_at", null);
-    if (error) return 0;
-    return count ?? 0;
+    let res = await query.eq("is_demo", false);
+    if (èErroreSchema(res.error)) {
+      res = await db
+        .from("negozi")
+        .select("id", { count: "exact", head: true })
+        .eq("attivo", true)
+        .is("deleted_at", null);
+    }
+    return res.count ?? 0;
   } catch {
     return 0;
   }
@@ -37,10 +79,16 @@ async function contaNegoziAttivi(db: AdminDb): Promise<number> {
 
 async function contaProdottiAttivi(db: AdminDb): Promise<number> {
   try {
-    const { count, error } = await db
+    const demoIds = await idNegoziDemo(db);
+    let query = db
       .from("prodotti")
       .select("id", { count: "exact", head: true })
       .eq("attivo", true);
+    // I prodotti dei negozi demo non contano nei dati della piattaforma.
+    if (demoIds.length > 0) {
+      query = query.not("negozio_id", "in", `(${demoIds.join(",")})`);
+    }
+    const { count, error } = await query;
     if (error) return 0;
     return count ?? 0;
   } catch {
@@ -50,14 +98,22 @@ async function contaProdottiAttivi(db: AdminDb): Promise<number> {
 
 async function contaNegoziInEvidenza(db: AdminDb): Promise<number> {
   try {
-    const { count, error } = await db
+    const query = db
       .from("negozi")
       .select("id", { count: "exact", head: true })
       .eq("in_evidenza", true)
       .eq("attivo", true)
       .is("deleted_at", null);
-    if (error) return 0;
-    return count ?? 0;
+    let res = await query.eq("is_demo", false);
+    if (èErroreSchema(res.error)) {
+      res = await db
+        .from("negozi")
+        .select("id", { count: "exact", head: true })
+        .eq("in_evidenza", true)
+        .eq("attivo", true)
+        .is("deleted_at", null);
+    }
+    return res.count ?? 0;
   } catch {
     return 0;
   }
@@ -78,9 +134,9 @@ async function contaCategorieAttive(db: AdminDb): Promise<number> {
 
 /**
  * Conteggi reali per la Dashboard Amministratore.
- * Usa solo dati realmente disponibili: se una sezione non ha ancora una
- * tabella dedicata (utenti, offerte, eventi, segnalazioni) il valore è 0 —
- * nessun dato inventato. In caso di errore di configurazione ritorna 0.
+ * Dati REALI dal database; i negozi demo sono sempre esclusi. Le sezioni
+ * senza tabella dedicata (utenti, offerte, eventi, segnalazioni) restano
+ * a 0 finché il relativo modulo non avrà la sua fonte dati.
  */
 export async function getConteggiDashboard(): Promise<ConteggiDashboard> {
   const db = getDb();

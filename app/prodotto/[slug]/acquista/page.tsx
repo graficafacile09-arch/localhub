@@ -93,7 +93,7 @@ export default async function AcquistaChoicePage({ params }: { params: Promise<P
                   Spedizione a domicilio
                 </h3>
                 <p className="mt-0.5 text-xs text-slate-500">
-                  Ricevi il prodotto all'indirizzo desiderato.
+                  Ricevi il prodotto all&apos;indirizzo desiderato.
                 </p>
                 <span className="mt-2 inline-block text-xs font-semibold text-blue-600">
                   Continua →

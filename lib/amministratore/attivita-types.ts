@@ -10,6 +10,8 @@ export type AttivitaRow = {
   slug: string | null;
   categoria: string | null;
   logo_url: string | null;
+  /** ID del proprietario (auth.users) o null se non assegnato. */
+  proprietarioId: string | null;
   /** Email del proprietario (da auth.users) o null se non assegnato. */
   proprietario: string | null;
   /** Numero di prodotti attivi. */

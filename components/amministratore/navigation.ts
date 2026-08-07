@@ -5,7 +5,6 @@ import {
   Bot,
   CalendarDays,
   FolderTree,
-  HelpCircle,
   Home,
   LayoutDashboard,
   LayoutTemplate,
@@ -17,6 +16,7 @@ import {
   Store,
   Trash2,
   Users,
+  Wrench,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -25,8 +25,8 @@ export type AdminNavItem = {
   label: string;
   description: string;
   icon: LucideIcon;
-  /** true = voce solo UI (es. Guida), senza navigazione reale ancora. */
-  placeholder?: boolean;
+  /** Etichetta di sola intestazione (non cliccabile), es. "Strumenti di piattaforma". */
+  section?: boolean;
 };
 
 /** Base path del pannello Amministratore. */
@@ -35,17 +35,17 @@ export const ADMIN_BASE = "/amministratore";
 /** Voci del menu laterale (ordine di visualizzazione). */
 export const adminNavItems: AdminNavItem[] = [
   {
-    href: ADMIN_BASE,
-    label: "Panoramica",
-    description:
-      "Vista d'insieme della piattaforma: numeri chiave e stato generale di LocalHub.",
-    icon: LayoutDashboard,
+    href: "#",
+    label: "Strumenti di piattaforma",
+    description: "Strumenti di gestione della piattaforma.",
+    section: true,
+    icon: Wrench,
   },
   {
     href: `${ADMIN_BASE}/attivita`,
-    label: "Attività",
+    label: "Negozi",
     description:
-      "Gestione delle attività commerciali e professionali registrate sulla piattaforma.",
+      "Tutti i negozi della piattaforma: visualizza, modifica, duplica ed elimina le attività commerciali e professionali registrate.",
     icon: Store,
   },
   {
@@ -54,6 +54,13 @@ export const adminNavItems: AdminNavItem[] = [
     description:
       "Negozi eliminati dalla piattaforma: ripristino o eliminazione definitiva (solo amministratore).",
     icon: Trash2,
+  },
+  {
+    href: `${ADMIN_BASE}/utenti`,
+    label: "Utenti",
+    description:
+      "Gestione degli utenti registrati e dei loro profili.",
+    icon: Users,
   },
   {
     href: `${ADMIN_BASE}/prodotti`,
@@ -74,13 +81,6 @@ export const adminNavItems: AdminNavItem[] = [
     label: "Eventi",
     description: "Pianificazione e moderazione degli eventi della città.",
     icon: CalendarDays,
-  },
-  {
-    href: `${ADMIN_BASE}/utenti`,
-    label: "Utenti",
-    description:
-      "Gestione degli utenti registrati e dei loro profili.",
-    icon: Users,
   },
   {
     href: `${ADMIN_BASE}/categorie`,
@@ -150,6 +150,20 @@ export const adminNavItems: AdminNavItem[] = [
       "Cronologia delle operazioni eseguite sulla piattaforma.",
     icon: ScrollText,
   },
+  {
+    href: "#",
+    label: "Amministrazione",
+    description: "Viste di amministrazione della piattaforma.",
+    section: true,
+    icon: LayoutDashboard,
+  },
+  {
+    href: ADMIN_BASE,
+    label: "Panoramica",
+    description:
+      "Vista d'insieme della piattaforma: numeri chiave e stato generale di LocalHub.",
+    icon: LayoutDashboard,
+  },
 ];
 
 /** Trova la voce di navigazione per una route (per le pagine placeholder). */
@@ -174,12 +188,5 @@ export const adminFooterItems: AdminNavItem[] = [
     label: "Impostazioni",
     description: "Configurazione generale della piattaforma.",
     icon: Settings,
-  },
-  {
-    href: `${ADMIN_BASE}/guida`,
-    label: "Guida",
-    description: "Documentazione e aiuto sull'uso del pannello.",
-    icon: HelpCircle,
-    placeholder: true,
   },
 ];

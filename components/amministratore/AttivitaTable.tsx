@@ -2,6 +2,7 @@ import { Package, Star, Store, UserRound } from "lucide-react";
 import type { AttivitaRow } from "@/lib/amministratore/attivita-types";
 import { getNegozioCardImmagine } from "@/lib/negozi-card-immagini";
 import AttivitaActionsMenu from "./AttivitaActionsMenu";
+import AttivitaEliminaButton from "./AttivitaEliminaButton";
 
 const formatData = new Intl.DateTimeFormat("it-IT", {
   day: "2-digit",
@@ -29,14 +30,21 @@ function BadgeStato({ attivo }: { attivo: boolean }) {
 /**
  * Tabella Attività — centro di controllo di tutti i negozi della piattaforma.
  * Colonne: Logo, Nome, Categoria, Proprietario, Prodotti, Stato, In evidenza,
- * Data creazione, Azioni. Azioni tutte placeholder.
+ * Data creazione, Azioni (Visualizza, Apri dashboard, Modifica, Duplica,
+ * Elimina).
  */
+type AggiornamentoAttivita = Partial<
+  Pick<AttivitaRow, "proprietarioId" | "proprietario" | "attivo" | "in_evidenza">
+>;
+
 export default function AttivitaTable({
   attivita,
   onElimina,
+  onAggiorna,
 }: {
   attivita: AttivitaRow[];
   onElimina?: (id: string) => void;
+  onAggiorna?: (id: string, aggiornamento: AggiornamentoAttivita) => void;
 }) {
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
@@ -118,7 +126,18 @@ export default function AttivitaTable({
                     {formatData.format(new Date(negozio.created_at))}
                   </td>
                   <td className="px-5 py-4 text-right">
-                    <AttivitaActionsMenu attivita={negozio} onElimina={onElimina} />
+                    <div className="flex items-center justify-end gap-2">
+                      <AttivitaEliminaButton
+                        storeId={negozio.id}
+                        storeName={negozio.nome}
+                        onElimina={(id) => onElimina?.(id)}
+                      />
+                      <AttivitaActionsMenu
+                        attivita={negozio}
+                        onElimina={onElimina}
+                        onAggiorna={onAggiorna}
+                      />
+                    </div>
                   </td>
                 </tr>
               );

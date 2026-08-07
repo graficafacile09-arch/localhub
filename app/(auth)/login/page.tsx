@@ -2,6 +2,7 @@
 
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import BackButton from "@/components/BackButton";
 import { isPartitaIvaValida } from "@/lib/partita-iva";
 
 function LoginContent() {
@@ -12,7 +13,11 @@ function LoginContent() {
   const [tab, setTab] = useState<"login" | "register">("login");
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#eef3f8] px-4 py-12">
+    <main className="relative flex min-h-screen items-center justify-center bg-[#eef3f8] px-4 py-12">
+      <BackButton
+        label="Torna al sito"
+        className="absolute left-4 top-4 sm:left-6 sm:top-6"
+      />
       <div className="w-full max-w-md overflow-hidden rounded-[2rem] border border-blue-200/70 bg-white shadow-[0_30px_70px_-40px_rgba(37,99,235,0.35)]">
         <div className="h-1 bg-linear-to-r from-cyan-300 via-white to-yellow-300" />
         <div className="space-y-6 p-8">
