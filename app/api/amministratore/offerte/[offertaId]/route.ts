@@ -2,13 +2,15 @@ import { revalidatePath } from "next/cache";
 import { apiError, apiOk } from "@/lib/api/response";
 import { requireApiArea } from "@/lib/auth/session-area";
 import { aggiornaOffertaAdmin, eliminaOffertaAdmin } from "@/lib/offerte";
+import { registraAttivitaAdmin, OPERATION_TYPES, TARGET_TYPES } from "@/lib/amministratore/activity-log";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
 /** Aggiornamento di un'offerta da parte dell'amministratore (toggle, titolo, ecc.). */
 export async function PATCH(
   request: Request,
   context: { params: Promise<{ offertaId: string }> }
 ) {
-  const { error } = await requireApiArea("admin");
+  const { sessione, error } = await requireApiArea("admin");
   if (error) return error;
 
   const { offertaId } = await context.params;
@@ -43,6 +45,21 @@ export async function PATCH(
     return apiError("UPDATE_FAILED", risultato.errore, 500);
   }
 
+  // Registra attività
+  const offerta = risultato.data;
+  await registraAttivitaAdmin({
+    adminUserId: sessione.user.id,
+    adminEmail: sessione.user.email ?? "",
+    operationType: OPERATION_TYPES.OFFERTA_MODIFICATA,
+    targetType: TARGET_TYPES.OFFERTA,
+    targetId: offerta.id,
+    targetName: offerta.titolo,
+    negozioId: offerta.negozio_id,
+    negozioNome: offerta.negozio_nome ?? null,
+    result: "success",
+    detail: { campi: Object.keys(patch).join(", ") },
+  });
+
   revalidatePath("/");
   revalidatePath("/negozi");
   revalidatePath("/amministratore/offerte");
@@ -52,14 +69,36 @@ export async function PATCH(
 
 /** Eliminazione definitiva di un'offerta da parte dell'amministratore. */
 export async function DELETE(_request: Request, context: { params: Promise<{ offertaId: string }> }) {
-  const { error } = await requireApiArea("admin");
+  const { sessione, error } = await requireApiArea("admin");
   if (error) return error;
 
   const { offertaId } = await context.params;
+
+  // Recupera info offerta prima dell'eliminazione per il log
+  const db = createAdminSupabaseClient();
+  const { data: offerta } = await db
+    .from("offerte")
+    .select("id, titolo, negozio_id, negozi(nome)")
+    .eq("id", offertaId)
+    .single();
+
   const risultato = await eliminaOffertaAdmin(offertaId);
   if (!risultato.ok) {
     return apiError("DELETE_FAILED", risultato.errore, 500);
   }
+
+  // Registra attività
+  await registraAttivitaAdmin({
+    adminUserId: sessione.user.id,
+    adminEmail: sessione.user.email ?? "",
+    operationType: OPERATION_TYPES.OFFERTA_ELIMINATA,
+    targetType: TARGET_TYPES.OFFERTA,
+    targetId: offertaId,
+    targetName: offerta?.titolo ?? offertaId,
+    negozioId: offerta?.negozio_id ?? null,
+    negozioNome: ((offerta?.negozi as unknown as { nome: string | null } | null) ?? { nome: null }).nome,
+    result: "success",
+  });
 
   revalidatePath("/");
   revalidatePath("/negozi");

@@ -3,6 +3,7 @@ import { apiError, apiOk } from "@/lib/api/response";
 import { requireApiArea } from "@/lib/auth/session-area";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getCategorieAdmin } from "@/lib/amministratore/categorie-queries";
+import { registraAttivitaAdmin, OPERATION_TYPES, TARGET_TYPES } from "@/lib/amministratore/activity-log";
 
 const getDb = () => {
   try {
@@ -40,7 +41,7 @@ export async function GET() {
 
 /** Creazione di una nuova categoria (amministratore). */
 export async function POST(request: Request) {
-  const { error } = await requireApiArea("admin");
+  const { sessione, error } = await requireApiArea("admin");
   if (error) return error;
 
   const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
@@ -94,6 +95,17 @@ export async function POST(request: Request) {
     }
     return apiError("CREATE_FAILED", erroreInsert.message ?? "Impossibile creare la categoria.", 500);
   }
+
+  // Registra attività
+  await registraAttivitaAdmin({
+    adminUserId: sessione.user.id,
+    adminEmail: sessione.user.email ?? "",
+    operationType: OPERATION_TYPES.CATEGORIA_CREATA,
+    targetType: TARGET_TYPES.CATEGORIA,
+    targetId: (data as { id: string }).id,
+    targetName: nome,
+    result: "success",
+  });
 
   revalidatePath("/amministratore/categorie");
   revalidatePath("/categorie");

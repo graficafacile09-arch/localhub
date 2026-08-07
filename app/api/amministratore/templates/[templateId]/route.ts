@@ -6,6 +6,8 @@ import {
   eliminaTemplateAdmin,
   getTutteTemplate,
 } from "@/lib/amministratore/templates";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { registraAttivitaAdmin, OPERATION_TYPES, TARGET_TYPES } from "@/lib/amministratore/activity-log";
 
 /**
  * Template di PIATTAFORMA — solo sessione admin.
@@ -40,11 +42,19 @@ export async function PATCH(
   request: NextRequest,
   context: { params: Promise<{ templateId: string }> }
 ) {
-  const { error } = await requireApiArea("admin");
+  const { sessione, error } = await requireApiArea("admin");
   if (error) return error;
 
   const { templateId } = await context.params;
   const body = await request.json();
+
+  // Recupera nome template prima della modifica per il log
+  const db = createAdminSupabaseClient();
+  const { data: esistente } = await db
+    .from("templates")
+    .select("nome")
+    .eq("id", templateId)
+    .single();
 
   try {
     await aggiornaTemplateAdmin(templateId, {
@@ -52,27 +62,60 @@ export async function PATCH(
       descrizione: body.descrizione,
       categoria: body.categoria,
     });
-    return apiOk({ updated: true });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Errore sconosciuto.";
     return apiError("UPDATE_FAILED", message, 500);
   }
+
+  // Registra attività
+  await registraAttivitaAdmin({
+    adminUserId: sessione.user.id,
+    adminEmail: sessione.user.email ?? "",
+    operationType: OPERATION_TYPES.TEMPLATE_MODIFICATO,
+    targetType: TARGET_TYPES.TEMPLATE,
+    targetId: templateId,
+    targetName: esistente?.nome ?? templateId,
+    result: "success",
+    detail: { campi: Object.keys(body).join(", ") },
+  });
+
+  return apiOk({ updated: true });
 }
 
 export async function DELETE(
   _request: NextRequest,
   context: { params: Promise<{ templateId: string }> }
 ) {
-  const { error } = await requireApiArea("admin");
+  const { sessione, error } = await requireApiArea("admin");
   if (error) return error;
 
   const { templateId } = await context.params;
 
+  // Recupera nome template prima dell'eliminazione per il log
+  const db = createAdminSupabaseClient();
+  const { data: esistente } = await db
+    .from("templates")
+    .select("nome")
+    .eq("id", templateId)
+    .single();
+
   try {
     await eliminaTemplateAdmin(templateId);
-    return apiOk({ deleted: true });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Errore sconosciuto.";
     return apiError("DELETE_FAILED", message, 500);
   }
+
+  // Registra attività
+  await registraAttivitaAdmin({
+    adminUserId: sessione.user.id,
+    adminEmail: sessione.user.email ?? "",
+    operationType: OPERATION_TYPES.TEMPLATE_ELIMINATO,
+    targetType: TARGET_TYPES.TEMPLATE,
+    targetId: templateId,
+    targetName: esistente?.nome ?? templateId,
+    result: "success",
+  });
+
+  return apiOk({ deleted: true });
 }

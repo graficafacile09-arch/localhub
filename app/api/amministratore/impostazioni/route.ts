@@ -6,6 +6,7 @@ import {
   aggiornaImpostazioni,
   getImpostazioniAdmin,
 } from "@/lib/platform/settings";
+import { registraAttivitaAdmin, OPERATION_TYPES, TARGET_TYPES } from "@/lib/amministratore/activity-log";
 
 /**
  * IMPOSTAZIONI PIATTAFORMA — pannello Amministratore.
@@ -33,7 +34,7 @@ export async function GET() {
 }
 
 export async function PATCH(request: Request) {
-  const { error } = await requireApiArea("admin");
+  const { sessione, error } = await requireApiArea("admin");
   if (error) return error;
 
   const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
@@ -57,6 +58,18 @@ export async function PATCH(request: Request) {
   if (!esito.ok) {
     return apiError("UPDATE_FAILED", esito.errore, 500);
   }
+
+  // Registra attività
+  await registraAttivitaAdmin({
+    adminUserId: sessione.user.id,
+    adminEmail: sessione.user.email ?? "",
+    operationType: OPERATION_TYPES.IMPOSTAZIONI_MODIFICATE,
+    targetType: TARGET_TYPES.IMPOSTAZIONI,
+    targetId: "platform_settings",
+    targetName: "Impostazioni piattaforma",
+    result: "success",
+    detail: { chiavi_modificate: Object.keys(valori).join(", ") },
+  });
 
   // Le impostazioni pubbliche alimentano layout, header e footer: aggiorna
   // subito la cache delle pagine che le mostrano.

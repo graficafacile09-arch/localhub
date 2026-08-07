@@ -2,6 +2,7 @@ import { apiError, apiOk } from "@/lib/api/response";
 import { requireApiArea } from "@/lib/auth/session-area";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { isAdminEmail } from "@/lib/auth/roles";
+import { registraAttivitaAdmin, OPERATION_TYPES, TARGET_TYPES } from "@/lib/amministratore/activity-log";
 
 const RUOLI_DB = {
   amministratore: "admin",
@@ -24,13 +25,19 @@ export async function PATCH(
   request: Request,
   context: { params: Promise<{ utenteId: string }> }
 ) {
+  const { sessione, error: errArea } = await requireApiArea("admin");
+  if (errArea) return errArea;
+
   const { error, db } = await adminRoute();
   if (error || !db) return error;
+
   const { utenteId } = await context.params;
   const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
   if (!body || Object.keys(body).length === 0) {
     return apiError("VALIDATION_ERROR", "Nessun campo da aggiornare.", 422);
   }
+
+  const operazioni: string[] = [];
 
   if ("ruolo" in body) {
     if (!ruoloValido(body.ruolo)) {
@@ -68,9 +75,10 @@ export async function PATCH(
       }
       return apiError("ROLE_FAILED", insertRoleError.message, 422);
     }
+    operazioni.push(`ruolo: ${body.ruolo}`);
   }
 
-  if (body && "stato" in body) {
+  if ("stato" in body) {
     if (body.stato !== "attivo" && body.stato !== "disattivato") {
       return apiError("VALIDATION_ERROR", "Stato non valido.", 422);
     }
@@ -84,6 +92,22 @@ export async function PATCH(
       ? await db.auth.admin.updateUserById(utenteId, { ban_duration: "876000h" })
       : await db.auth.admin.updateUserById(utenteId, { ban_duration: "none" });
     if (banError) return apiError("STATUS_FAILED", banError.message, 422);
+    operazioni.push(`stato: ${body.stato}`);
+  }
+
+  // Registra attività
+  if (operazioni.length > 0) {
+    const { data: user } = await db.auth.admin.getUserById(utenteId);
+    await registraAttivitaAdmin({
+      adminUserId: sessione.user.id,
+      adminEmail: sessione.user.email ?? "",
+      operationType: OPERATION_TYPES.UTENTE_MODIFICATO,
+      targetType: TARGET_TYPES.UTENTE,
+      targetId: utenteId,
+      targetName: user?.user?.email ?? utenteId,
+      result: "success",
+      detail: { operazioni: operazioni.join(", ") },
+    });
   }
 
   return apiOk({ updated: true });
@@ -93,8 +117,12 @@ export async function DELETE(
   _request: Request,
   context: { params: Promise<{ utenteId: string }> }
 ) {
+  const { sessione, error: errArea } = await requireApiArea("admin");
+  if (errArea) return errArea;
+
   const { error, db } = await adminRoute();
   if (error || !db) return error;
+
   const { utenteId } = await context.params;
   const { data: user, error: userError } = await db.auth.admin.getUserById(utenteId);
   if (userError || !user.user) return apiError("NOT_FOUND", "Utente non trovato.", 404);
@@ -104,5 +132,18 @@ export async function DELETE(
 
   const { error: deleteError } = await db.auth.admin.deleteUser(utenteId);
   if (deleteError) return apiError("DELETE_FAILED", deleteError.message, 422);
+
+  // Registra attività
+  await registraAttivitaAdmin({
+    adminUserId: sessione.user.id,
+    adminEmail: sessione.user.email ?? "",
+    operationType: OPERATION_TYPES.UTENTE_MODIFICATO, // usiamo lo stesso tipo per eliminazione
+    targetType: TARGET_TYPES.UTENTE,
+    targetId: utenteId,
+    targetName: user.user.email ?? utenteId,
+    result: "success",
+    detail: { azione: "eliminato" },
+  });
+
   return apiOk({ deleted: true, userId: utenteId });
 }

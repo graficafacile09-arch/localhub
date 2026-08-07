@@ -5,6 +5,8 @@ import {
   creaTemplateAdmin,
   getTutteTemplate,
 } from "@/lib/amministratore/templates";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { registraAttivitaAdmin, OPERATION_TYPES, TARGET_TYPES } from "@/lib/amministratore/activity-log";
 
 /**
  * Template di PIATTAFORMA — solo sessione admin.
@@ -52,6 +54,19 @@ export async function POST(request: NextRequest) {
       { nome, descrizione, categoria },
       options as never
     );
+
+    // Registra attività
+    await registraAttivitaAdmin({
+      adminUserId: sessione.user.id,
+      adminEmail: sessione.user.email ?? "",
+      operationType: OPERATION_TYPES.TEMPLATE_CREATO,
+      targetType: TARGET_TYPES.TEMPLATE,
+      targetId: result.id,
+      targetName: nome,
+      negozioId: sourceStoreId,
+      result: "success",
+    });
+
     return apiOk({ templateId: result.id }, 201);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Errore sconosciuto.";

@@ -3,6 +3,7 @@ import { apiError, apiOk } from "@/lib/api/response";
 import { requireApiArea } from "@/lib/auth/session-area";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { èUtenteTest } from "@/lib/amministratore/utenti-queries";
+import { registraAttivitaAdmin, OPERATION_TYPES, TARGET_TYPES } from "@/lib/amministratore/activity-log";
 
 const CAMPI_MODULO = ["owner_user_id", "in_evidenza", "attivo"] as const;
 type CampoModulo = (typeof CAMPI_MODULO)[number];
@@ -17,7 +18,7 @@ export async function PATCH(
   request: Request,
   context: { params: Promise<{ negozioId: string }> }
 ) {
-  const { error } = await requireApiArea("admin");
+  const { sessione, error } = await requireApiArea("admin");
   if (error) return error;
 
   const { negozioId } = await context.params;
@@ -88,6 +89,20 @@ export async function PATCH(
       500
     );
   }
+
+  // Registra attività
+  const campiModificati = Object.keys(payload).join(", ");
+  await registraAttivitaAdmin({
+    adminUserId: sessione.user.id,
+    adminEmail: sessione.user.email ?? "",
+    operationType: OPERATION_TYPES.NEGOZIO_MODIFICATO,
+    targetType: TARGET_TYPES.NEGOZIO,
+    targetId: data.id,
+    targetName: data.id, // nome negozio non disponibile qui, useremo targetName per l'id
+    negozioId: data.id,
+    result: "success",
+    detail: { campi: campiModificati },
+  });
 
   revalidatePath("/amministratore/attivita");
   revalidatePath("/amministratore");

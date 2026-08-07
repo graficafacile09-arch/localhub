@@ -2,6 +2,7 @@ import { revalidatePath } from "next/cache";
 import { apiError, apiOk } from "@/lib/api/response";
 import { requireApiArea } from "@/lib/auth/session-area";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { registraAttivitaAdmin, OPERATION_TYPES, TARGET_TYPES } from "@/lib/amministratore/activity-log";
 
 const SLUG_REGEX = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
@@ -10,7 +11,7 @@ export async function PATCH(
   request: Request,
   context: { params: Promise<{ categoriaId: string }> }
 ) {
-  const { error } = await requireApiArea("admin");
+  const { sessione, error } = await requireApiArea("admin");
   if (error) return error;
 
   const { categoriaId } = await context.params;
@@ -23,7 +24,7 @@ export async function PATCH(
 
   const { data: esistente, error: erroreEsistente } = await db
     .from("categorie")
-    .select("id")
+    .select("id, nome")
     .eq("id", categoriaId)
     .single();
   if (erroreEsistente || !esistente) {
@@ -93,10 +94,64 @@ export async function PATCH(
     return apiError("UPDATE_FAILED", erroreUpdate.message ?? "Impossibile aggiornare la categoria.", 500);
   }
 
+  // Registra attività
+  await registraAttivitaAdmin({
+    adminUserId: sessione.user.id,
+    adminEmail: sessione.user.email ?? "",
+    operationType: OPERATION_TYPES.CATEGORIA_MODIFICATA,
+    targetType: TARGET_TYPES.CATEGORIA,
+    targetId: categoriaId,
+    targetName: (data as { nome: string }).nome ?? esistente.nome,
+    result: "success",
+    detail: { campi: Object.keys(payload).join(", "), nome_precedente: esistente.nome },
+  });
+
   revalidatePath("/amministratore/categorie");
   revalidatePath("/categorie");
   revalidatePath("/");
   revalidatePath("/negozi");
 
   return apiOk({ categoria: data });
+}
+
+/** Eliminazione di una categoria. */
+export async function DELETE(_request: Request, context: { params: Promise<{ categoriaId: string }> }) {
+  const { sessione, error } = await requireApiArea("admin");
+  if (error) return error;
+
+  const { categoriaId } = await context.params;
+
+  const db = createAdminSupabaseClient();
+
+  const { data: esistente, error: erroreEsistente } = await db
+    .from("categorie")
+    .select("id, nome")
+    .eq("id", categoriaId)
+    .single();
+  if (erroreEsistente || !esistente) {
+    return apiError("NOT_FOUND", "Categoria non trovata.", 404);
+  }
+
+  const { error: erroreDelete } = await db.from("categorie").delete().eq("id", categoriaId);
+  if (erroreDelete) {
+    return apiError("DELETE_FAILED", erroreDelete.message ?? "Impossibile eliminare la categoria.", 500);
+  }
+
+  // Registra attività
+  await registraAttivitaAdmin({
+    adminUserId: sessione.user.id,
+    adminEmail: sessione.user.email ?? "",
+    operationType: OPERATION_TYPES.CATEGORIA_ELIMINATA,
+    targetType: TARGET_TYPES.CATEGORIA,
+    targetId: categoriaId,
+    targetName: esistente.nome,
+    result: "success",
+  });
+
+  revalidatePath("/amministratore/categorie");
+  revalidatePath("/categorie");
+  revalidatePath("/");
+  revalidatePath("/negozi");
+
+  return apiOk({ successo: true });
 }

@@ -1,17 +1,13 @@
-import AdminPlaceholder from "@/components/amministratore/AdminPlaceholder";
-import { getAdminNavItem } from "@/components/amministratore/navigation";
+import RegistroAttivitaModule from "@/components/amministratore/RegistroAttivitaModule";
 
 export const metadata = {
   title: "Registro attività — Amministratore",
 };
 
 export default function RegistroAttivitaPage() {
-  const item = getAdminNavItem("/amministratore/registro-attivita");
   return (
-    <AdminPlaceholder
-      icon={item.icon}
-      title={item.label}
-      description={item.description}
-    />
+    <section className="space-y-5" aria-label="Registro attività Amministrazione">
+      <RegistroAttivitaModule />
+    </section>
   );
 }
