@@ -79,6 +79,31 @@ async function contaOfferteAttive(negoziAttivi: string[], negoziRighe: NegozioRi
   }
 }
 
+/**
+ * Conta gli eventi ATTIVI della tabella `eventi` per i negozi attivi
+ * (non demo, non sospesi). Se la query fallisce (tabella assente su DB
+ * non migrati) usa il conteggio JSONB `data.eventi`.
+ */
+async function contaEventiAttivi(
+  negoziAttivi: string[],
+  negoziRighe: NegozioRiga[],
+  contaElementi: (chiave: "eventi") => number
+): Promise<number> {
+  const db = getDb();
+  if (!db || negoziAttivi.length === 0) return 0;
+
+  try {
+    const { data, error } = await db
+      .from("eventi")
+      .select("attivo")
+      .in("negozio_id", negoziAttivi);
+    if (error) throw error;
+    return (data ?? []).filter((e) => e.attivo === true).length;
+  } catch {
+    return contaElementi("eventi");
+  }
+}
+
 export type DashboardNegozioBreve = {
   id: string;
   nome: string;
@@ -484,7 +509,7 @@ export async function getDatiDashboard(): Promise<DatiDashboard> {
         String((elemento as Record<string, unknown>).titolo).trim()
     );
   const contaElementi = (
-    chiave: "offerte" | "eventi",
+    chiave: "eventi",
     filtro: (elemento: Record<string, unknown>) => boolean = () => true
   ) =>
     negoziAttivi.reduce((totale, negozio) => {
@@ -493,7 +518,7 @@ export async function getDatiDashboard(): Promise<DatiDashboard> {
       return totale + elementi.filter(elementoPubblicato).filter(filtro).length;
     }, 0);
   dati.kpi.offerteAttive = await contaOfferteAttive(negoziAttivi.map((n) => n.id), negoziAttivi);
-  dati.kpi.eventi = contaElementi("eventi");
+  dati.kpi.eventi = await contaEventiAttivi(negoziAttivi.map((n) => n.id), negoziAttivi, contaElementi);
 
   const perCategoria = new Map<string, number>();
   for (const n of [...negoziAttivi, ...negoziSospesi]) {

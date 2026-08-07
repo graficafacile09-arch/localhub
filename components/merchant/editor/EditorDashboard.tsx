@@ -30,6 +30,7 @@ export default function EditorDashboard({ storeId, basePath = "/merchant", onMod
   const [store, setStore] = useState<StoreData | null>(null);
   const [prodottiCount, setProdottiCount] = useState(0);
   const [offerteCount, setOfferteCount] = useState(0);
+  const [eventiCount, setEventiCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [nomeInput, setNomeInput] = useState("");
   const [savingNome, setSavingNome] = useState(false);
@@ -43,14 +44,16 @@ export default function EditorDashboard({ storeId, basePath = "/merchant", onMod
 
   useEffect(() => {
     async function load() {
-      const [settingsRes, productsRes, offerteRes] = await Promise.all([
+      const [settingsRes, productsRes, offerteRes, eventiRes] = await Promise.all([
         fetch(`/api/merchant/stores/${storeId}/settings`),
         fetch(`/api/merchant/stores/${storeId}/products`),
         fetch(`/api/merchant/stores/${storeId}/offerte`),
+        fetch(`/api/merchant/stores/${storeId}/eventi`),
       ]);
       const settingsJson = await settingsRes.json();
       const productsJson = await productsRes.json();
       const offerteJson = await offerteRes.json();
+      const eventiJson = await eventiRes.json();
 
       if (settingsJson.success) {
         setStore(settingsJson.data.settings);
@@ -61,6 +64,9 @@ export default function EditorDashboard({ storeId, basePath = "/merchant", onMod
       }
       if (offerteJson.success && Array.isArray(offerteJson.data.offerte)) {
         setOfferteCount(offerteJson.data.offerte.length);
+      }
+      if (eventiJson.success && Array.isArray(eventiJson.data.eventi)) {
+        setEventiCount(eventiJson.data.eventi.length);
       }
       setLoading(false);
      }
@@ -87,7 +93,7 @@ export default function EditorDashboard({ storeId, basePath = "/merchant", onMod
       prodotti: { complete: prodottiCount > 0, count: prodottiCount },
       servizi: { complete: srv.length > 0, count: srv.length },
       offerte: { complete: offerteCount > 0, count: offerteCount },
-      eventi: { complete: Array.isArray(data.eventi) && (data.eventi as unknown[]).length > 0, count: Array.isArray(data.eventi) ? (data.eventi as unknown[]).length : 0 },
+      eventi: { complete: eventiCount > 0, count: eventiCount },
       contatti: { complete: !!(store.telefono || store.email_negozio || store.whatsapp) },
       posizione: { complete: !!(store.indirizzo && store.citta) },
       orari: { complete: !!store.orari },
@@ -97,7 +103,7 @@ export default function EditorDashboard({ storeId, basePath = "/merchant", onMod
       impostazioni: { complete: true },
     };
     onModuleStatus?.(status);
-  }, [store, prodottiCount, offerteCount]);
+  }, [store, prodottiCount, offerteCount, eventiCount]);
 
   const nomeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -190,7 +196,7 @@ export default function EditorDashboard({ storeId, basePath = "/merchant", onMod
     prodottiCount > 0,
     Array.isArray(store.servizi) && (store.servizi as unknown[]).length > 0,
     offerteCount > 0,
-    Array.isArray((store.data as Record<string, unknown> | null)?.eventi) && ((store.data as Record<string, unknown>).eventi as unknown[]).length > 0,
+    eventiCount > 0,
     !!(store.telefono || store.email_negozio || store.whatsapp),
     !!(store.indirizzo && store.citta),
     !!store.orari,
