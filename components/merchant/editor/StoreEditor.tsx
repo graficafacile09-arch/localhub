@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Menu, LayoutDashboard, AlertTriangle, RefreshCw } from "lucide-react";
 import EditorSidebar from "./EditorSidebar";
 import EditorDashboard from "./EditorDashboard";
-import { getModuleComponent } from "@/lib/modules/registry";
+import { getModuleComponent, type ModuleComponentProps } from "@/lib/modules/registry";
 
 export type ModuleStatus = {
   complete: boolean;
@@ -27,7 +27,7 @@ export default function StoreEditor({ storeId, basePath = "/merchant" }: Props) 
   const modulo = searchParams.get("modulo");
 
   const [activeSlug, setActiveSlug] = useState<string>(modulo ?? "dashboard");
-  const [ModuleComponent, setModuleComponent] = useState<React.ComponentType<{ storeId: string }> | null>(null);
+  const [ModuleComponent, setModuleComponent] = useState<React.ComponentType<ModuleComponentProps> | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [moduleStatus, setModuleStatus] = useState<Record<string, ModuleStatus>>({});
   const [storeName, setStoreName] = useState("");
@@ -149,7 +149,12 @@ export default function StoreEditor({ storeId, basePath = "/merchant" }: Props) 
         </div>
 
         {isDashboard ? (
-          <EditorDashboard storeId={storeId} onModuleStatus={handleModuleStatus} />
+          <EditorDashboard
+            storeId={storeId}
+            basePath={basePath}
+            onModuleStatus={handleModuleStatus}
+            onSelectModule={handleSelect}
+          />
         ) : loadError ? (
           <div className="flex flex-col items-center justify-center gap-4 py-20">
             <AlertTriangle className="h-8 w-8 text-amber-500" />
@@ -168,7 +173,7 @@ export default function StoreEditor({ storeId, basePath = "/merchant" }: Props) 
             </button>
           </div>
         ) : ModuleComponent ? (
-          <ModuleComponent storeId={storeId} />
+          <ModuleComponent storeId={storeId} basePath={basePath} />
         ) : (
           <div className="flex items-center justify-center py-20">
             <p className="text-sm text-slate-400">

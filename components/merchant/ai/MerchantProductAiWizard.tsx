@@ -16,9 +16,17 @@ type AnalysisResult = {
 
 type MerchantProductAiWizardProps = {
   negozioId: string;
+  /** Link di ritorno alla dashboard (default: pagina negozio venditore). */
+  backHref?: string;
+  /** Redirect dopo il salvataggio (default: elenco prodotti venditore). */
+  onSuccessRedirect?: string;
 };
 
-export default function MerchantProductAiWizard({ negozioId }: MerchantProductAiWizardProps) {
+export default function MerchantProductAiWizard({
+  negozioId,
+  backHref = `/merchant/${negozioId}`,
+  onSuccessRedirect = `/merchant/${negozioId}/prodotti`,
+}: MerchantProductAiWizardProps) {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [editing, setEditing] = useState(false);
 
@@ -44,7 +52,7 @@ export default function MerchantProductAiWizard({ negozioId }: MerchantProductAi
       {showScanner && (
         <div className="flex items-center gap-3 rounded-2xl bg-gradient-to-b from-blue-500 to-blue-700 px-4 py-3 text-white shadow shadow-blue-500/20">
           <Link
-            href={`/merchant/${negozioId}`}
+            href={backHref}
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/15 backdrop-blur-sm transition hover:bg-white/25"
             aria-label="Torna alla dashboard"
           >
@@ -119,7 +127,7 @@ export default function MerchantProductAiWizard({ negozioId }: MerchantProductAi
               origine_pubblicazione: "ai",
             }}
             submitLabel="Pubblica prodotto"
-            onSuccessRedirect={`/merchant/${negozioId}/prodotti`}
+            onSuccessRedirect={onSuccessRedirect}
           />
 
           <button

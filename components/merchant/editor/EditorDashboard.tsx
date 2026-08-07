@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Store, Package, Camera, Check, X, FolderOpen } from "lucide-react";
+import { Store, Camera, Check, X, FolderOpen, Plus, Bot, Image as ImageIcon, PenSquare, Eye, ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 
 type StoreData = Record<string, unknown>;
@@ -12,7 +12,11 @@ type ModuleStatus = {
 
 type DashboardProps = {
   storeId: string;
+  /** Percorso base dell'editor: "/merchant" (venditore) o "/amministratore/negozi" (admin). */
+  basePath?: string;
   onModuleStatus?: (status: Record<string, ModuleStatus>) => void;
+  /** Apre un modulo esistente dello StoreEditor (es. "informazioni"). */
+  onSelectModule?: (slug: string) => void;
 };
 
 type TemplateData = {
@@ -22,7 +26,7 @@ type TemplateData = {
   categoria?: string | null;
 };
 
-export default function EditorDashboard({ storeId, onModuleStatus }: DashboardProps) {
+export default function EditorDashboard({ storeId, basePath = "/merchant", onModuleStatus, onSelectModule }: DashboardProps) {
   const [store, setStore] = useState<StoreData | null>(null);
   const [prodottiCount, setProdottiCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -298,27 +302,99 @@ export default function EditorDashboard({ storeId, onModuleStatus }: DashboardPr
         </div>
       </div>
 
-      <div>
-        <h2 className="mb-3 text-sm font-bold text-slate-800">Azioni rapide</h2>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => window.location.hash = "?modulo=prodotti"}
-            className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-blue-700"
-          >
-            <Package className="h-4 w-4" />
-            Aggiungi prodotto
-          </button>
-          <button
-            type="button"
-            onClick={() => window.location.hash = "?modulo=immagini"}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-600 transition hover:bg-slate-50"
-          >
-            <Store className="h-4 w-4" />
-            Modifica immagini
-          </button>
+      {/* AZIONI RAPIDE */}
+      <section>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-sm font-bold uppercase tracking-[0.14em] text-slate-500">
+            Azioni rapide
+          </h2>
         </div>
-      </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          <Link
+            href={`${basePath}/${storeId}/prodotti/nuovo`}
+            className="group rounded-2xl bg-linear-to-br from-blue-600 to-blue-500 p-4 text-white shadow-md shadow-blue-500/20 transition hover:shadow-lg hover:shadow-blue-500/30 active:scale-[0.98]"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20">
+                <Plus className="h-5 w-5" />
+              </div>
+              <ArrowUpRight className="h-4 w-4 text-white/60 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+            </div>
+            <p className="mt-3 text-sm font-black leading-tight">Aggiungi prodotto</p>
+            <p className="mt-1 text-[11px] leading-4 text-blue-100">
+              Crea un nuovo prodotto, con o senza AI
+            </p>
+          </Link>
+
+          <Link
+            href={`${basePath}/${storeId}/prodotti/ai`}
+            className="group rounded-2xl bg-linear-to-br from-violet-600 to-fuchsia-500 p-4 text-white shadow-sm shadow-violet-500/20 transition hover:shadow-lg hover:shadow-violet-500/30 active:scale-[0.98]"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20">
+                <Bot className="h-5 w-5" />
+              </div>
+              <ArrowUpRight className="h-4 w-4 text-white/60 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+            </div>
+            <p className="mt-3 text-sm font-black leading-tight">Scansiona con AI</p>
+            <p className="mt-1 text-[11px] leading-snug text-fuchsia-100">
+              Fotocamera e riconoscimento automatico
+            </p>
+          </Link>
+
+          <Link
+            href={`${basePath}/${storeId}/media`}
+            className="group rounded-2xl border border-slate-200 bg-white p-4 text-slate-800 shadow-sm transition hover:border-blue-300 hover:shadow-md active:scale-[0.98]"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
+                <ImageIcon className="h-5 w-5" />
+              </div>
+              <ArrowUpRight className="h-4 w-4 text-slate-300 transition group-hover:text-blue-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+            </div>
+            <p className="mt-3 text-sm font-black leading-tight text-slate-900">Gestisci immagini</p>
+            <p className="mt-1 text-[11px] leading-snug text-slate-500">
+              Logo, copertina, galleria e media
+            </p>
+          </Link>
+
+          <button
+            type="button"
+            onClick={() => onSelectModule?.("informazioni")}
+            className="group rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-blue-300 hover:shadow-md active:scale-[0.98]"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
+                <PenSquare className="h-5 w-5" />
+              </div>
+              <ArrowUpRight className="h-4 w-4 text-slate-300 transition group-hover:text-blue-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+            </div>
+            <p className="mt-3 text-sm font-black leading-tight text-slate-900">Modifica informazioni</p>
+            <p className="mt-1 text-[11px] leading-snug text-slate-500">
+              Dati principali del negozio
+            </p>
+          </button>
+
+          <Link
+            href={`/negozio/${slugAnteprima}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group rounded-2xl border border-slate-200 bg-white p-4 text-slate-600 shadow-sm transition hover:border-emerald-300 hover:shadow-md active:scale-[0.98]"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                <Eye className="h-5 w-5" />
+              </div>
+              <ArrowUpRight className="h-4 w-4 text-slate-300 transition group-hover:text-emerald-500 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+            </div>
+            <p className="mt-3 text-sm font-black leading-tight text-slate-900">Visualizza negozio</p>
+            <p className="mt-1 text-[11px] leading-snug text-slate-500">
+              Apri la pagina pubblica reale
+            </p>
+          </Link>
+        </div>
+      </section>
+      {/* FINE AZIONI RAPIDE */}
 
       {showPreview && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">

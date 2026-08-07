@@ -91,6 +91,7 @@ export default function EditorSidebar({ activeSlug, onSelect, onClose, moduleSta
           storeId={storeId}
           storeName={storeName ?? "Negozio"}
           onClose={() => setShowDuplica(false)}
+          editHref={`${basePath}/${storeId}/edit`}
         />
       )}
 

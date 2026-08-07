@@ -8,6 +8,8 @@ type Props = {
   storeId: string;
   storeName: string;
   onClose: () => void;
+  /** Destinazione dopo la duplicazione. Default: editor venditore del nuovo negozio. */
+  editHref?: string;
 };
 
 function toSlug(text: string): string {
@@ -19,7 +21,7 @@ function toSlug(text: string): string {
     .trim();
 }
 
-export default function DuplicaNegozioWizard({ storeId, storeName, onClose }: Props) {
+export default function DuplicaNegozioWizard({ storeId, storeName, onClose, editHref }: Props) {
   const router = useRouter();
   const [nome, setNome] = useState(`${storeName} (copia)`);
   const [saving, setSaving] = useState(false);
@@ -67,7 +69,7 @@ export default function DuplicaNegozioWizard({ storeId, storeName, onClose }: Pr
       const json = await res.json();
       if (json.success) {
         onClose();
-        router.push(`/merchant/${json.data.storeId}/edit`);
+        router.push(editHref ?? `/merchant/${json.data.storeId}/edit`);
       } else {
         setError(json.error?.message ?? "Errore durante la duplicazione.");
       }

@@ -1,15 +1,21 @@
 import type { ModuloRegistro } from "@/types/negozio";
 
+export type ModuleComponentProps = {
+  storeId: string;
+  /** Percorso base dell'editor: "/merchant" (venditore) o "/amministratore/negozi" (admin). */
+  basePath?: string;
+};
+
 export type ModuleDefinition = {
   slug: string;
   nome: string;
   icona: string;
-  componente: React.ComponentType<{ storeId: string }>;
+  componente: React.ComponentType<ModuleComponentProps>;
 };
 
-const MODULES = new Map<string, () => Promise<{ default: React.ComponentType<{ storeId: string }> }>>();
+const MODULES = new Map<string, () => Promise<{ default: React.ComponentType<ModuleComponentProps> }>>();
 
-function register(slug: string, loader: () => Promise<{ default: React.ComponentType<{ storeId: string }> }>) {
+function register(slug: string, loader: () => Promise<{ default: React.ComponentType<ModuleComponentProps> }>) {
   MODULES.set(slug, loader);
 }
 
@@ -27,7 +33,7 @@ register("seo", () => import("@/components/merchant/modules/SeoModule"));
 register("ai", () => import("@/components/merchant/modules/AiModule"));
 register("impostazioni", () => import("@/components/merchant/modules/ImpostazioniModule"));
 
-export async function getModuleComponent(slug: string): Promise<React.ComponentType<{ storeId: string }> | null> {
+export async function getModuleComponent(slug: string): Promise<React.ComponentType<ModuleComponentProps> | null> {
   const loader = MODULES.get(slug);
   if (!loader) return null;
   try {
@@ -52,6 +58,6 @@ export function moduliDaRegistro(registro: ModuloRegistro[]): ModuleDefinition[]
       slug: m.slug,
       nome: m.nome,
       icona: m.icona,
-      componente: null as unknown as React.ComponentType<{ storeId: string }>,
+      componente: null as unknown as React.ComponentType<ModuleComponentProps>,
     }));
 }
