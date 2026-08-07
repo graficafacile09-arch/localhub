@@ -7,6 +7,7 @@ import ClienteHeader from "./ClienteHeader";
 import ClienteMobileTopBar from "./ClienteMobileTopBar";
 import ClienteSidebar from "./ClienteSidebar";
 import ClienteBreadcrumb from "./ClienteBreadcrumb";
+import ClienteBottomNav from "./ClienteBottomNav";
 
 /**
  * Struttura dell'Area Clienti.
@@ -55,7 +56,7 @@ export default function ClienteShell({ children }: { children: ReactNode }) {
         {/* Sidebar desktop ─────────────────────────────────────────────────── */}
         <aside className="hidden md:block">
           <div className="sticky top-5 space-y-3">
-            <div className="rounded-3xl border border-white/70 bg-white p-4 shadow-sm">
+            <div className="rounded-3xl border border-white/70 bg-white p-5 shadow-sm">
               {!collapsed && (
                 <p className="mb-4 px-1 text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
                   Area Clienti
@@ -85,13 +86,16 @@ export default function ClienteShell({ children }: { children: ReactNode }) {
         </aside>
 
         {/* Contenuto principale ─────────────────────────────────────────────── */}
-        <section className="min-w-0">
+        <section className="min-w-0 space-y-3">
           <ClienteBreadcrumb />
           {children}
         </section>
       </div>
 
-      {/* ── Drawer mobile ─────────────────────────────────────────────────────── */}
+      {/* ── Bottom Navigation mobile (stessa struttura MerchanteBottomNav) ───── */}
+      <ClienteBottomNav />
+
+      {/* ── Drawer mobile ──────────── ─────────────────────────────────────────── */}
       {mobileOpen && (
         <div
           className="fixed inset-0 z-50 md:hidden"
@@ -104,41 +108,33 @@ export default function ClienteShell({ children }: { children: ReactNode }) {
             onClick={() => setMobileOpen(false)}
           />
 
-          <div className="absolute inset-y-0 left-0 flex w-[86%] max-w-sm flex-col bg-[#eef3f8] shadow-2xl">
+          <div className="absolute inset-y-0 right-0 flex w-[85%] max-w-xs flex-col overflow-y-auto bg-[#eef3f8] p-4 shadow-2xl">
             {/* Intestazione drawer */}
-            <div className="border-b border-teal-900/15 bg-[linear-gradient(180deg,#0f766e_0%,#0d9488_100%)] p-5 text-white">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <span
-                    aria-hidden
-                    className="flex h-11 w-11 items-center justify-center rounded-full bg-linear-to-br from-cyan-400 to-teal-600 text-base font-black text-white ring-2 ring-white/30"
-                  >
-                    C
-                  </span>
-                  <div>
-                    <p className="flex items-center gap-1.5 text-base font-black tracking-tight">
-                      <ShoppingBasket className="h-4 w-4 text-cyan-200" aria-hidden />
-                      Area Clienti
-                    </p>
-                    <p className="text-xs text-teal-100">
-                      La tua area personale
-                    </p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setMobileOpen(false)}
-                  aria-label="Chiudi il menu"
-                  autoFocus
-                  className="flex h-9 w-9 items-center justify-center rounded-xl transition active:bg-white/20"
+            <div className="mb-3 flex items-center justify-between rounded-2xl border border-white/70 bg-white px-4 py-3">
+              <div className="flex items-center gap-3">
+                <span
+                  aria-hidden
+                  className="flex h-8 w-8 items-center justify-center rounded-xl bg-teal-50"
                 >
-                  <X className="h-5 w-5" aria-hidden />
-                </button>
+                  <ShoppingBasket className="h-4 w-4 text-teal-600" aria-hidden />
+                </span>
+                <p className="text-xs font-semibold uppercase tracking-[0.15em] text-teal-700">
+                  Area Clienti
+                </p>
               </div>
+              <button
+                type="button"
+                onClick={() => setMobileOpen(false)}
+                aria-label="Chiudi il menu"
+                autoFocus
+                className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 text-slate-500 transition active:bg-slate-200"
+              >
+                <X className="h-4 w-4" aria-hidden />
+              </button>
             </div>
 
             {/* Navigazione */}
-            <div className="flex-1 overflow-y-auto p-4">
+            <div className="flex-1">
               <ClienteSidebar />
             </div>
           </div>

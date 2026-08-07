@@ -1,10 +1,12 @@
 "use client";
 
-import Link from "next/link";
-import { Menu, ShoppingBasket } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Home, Menu } from "lucide-react";
 
 /**
  * Barra superiore mobile dell'Area Clienti (visibile solo su mobile).
+ * Stessa struttura della MerchantTopBar (Venditore/Amministratore):
+ * pulsante Home + titolo area + pulsante menu (drawer).
  * Apre il drawer di navigazione tramite la callback passata dal ClienteShell.
  */
 export default function ClienteMobileTopBar({
@@ -14,24 +16,30 @@ export default function ClienteMobileTopBar({
   onOpenMenu: () => void;
   menuOpen?: boolean;
 }) {
+  const router = useRouter();
+
   return (
     <div
       className="sticky top-0 z-40 flex h-12 items-center gap-2 border-b border-teal-900/20 bg-[linear-gradient(180deg,#0f766e_0%,#0d9488_100%)] px-3 text-white md:hidden"
       style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
     >
-      <Link
-        href="/"
-        aria-label="LocalHub — torna al sito"
-        className="flex shrink-0 items-center gap-1 rounded-xl px-2 py-1.5 text-sm font-black tracking-tight transition active:bg-white/20"
+      {/* Home button — sempre visibile (stessa posizione della MerchantTopBar) */}
+      <button
+        type="button"
+        onClick={() => router.push("/")}
+        aria-label="Vai alla Home"
+        className="flex shrink-0 items-center gap-1 rounded-xl px-2.5 py-1.5 text-sm font-bold transition active:bg-white/20"
       >
-        <ShoppingBasket className="h-4 w-4 text-cyan-200" aria-hidden />
-        <span>LocalHub</span>
-      </Link>
+        <Home className="h-[16px] w-[16px]" aria-hidden />
+        <span>Home</span>
+      </button>
 
+      {/* Title */}
       <span className="truncate text-sm font-bold tracking-tight text-white/90">
         Area Clienti
       </span>
 
+      {/* Menu — apre il drawer di navigazione */}
       <button
         type="button"
         onClick={onOpenMenu}

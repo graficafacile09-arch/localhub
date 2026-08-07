@@ -19,7 +19,7 @@ export default function ClienteBreadcrumb() {
   return (
     <nav
       aria-label="Percorso di navigazione"
-      className="mb-3 flex items-center gap-1.5 text-xs font-semibold text-slate-500"
+      className="flex items-center gap-1.5 text-xs font-semibold text-slate-500"
     >
       <Link
         href="/"
