@@ -1,17 +1,14 @@
-import AdminPlaceholder from "@/components/amministratore/AdminPlaceholder";
-import { getAdminNavItem } from "@/components/amministratore/navigation";
+import CategorieModule from "@/components/amministratore/CategorieModule";
+import { getCategorieAdmin } from "@/lib/amministratore/categorie-queries";
 
 export const metadata = {
   title: "Categorie — Amministratore",
 };
 
-export default function CategoriePage() {
-  const item = getAdminNavItem("/amministratore/categorie");
-  return (
-    <AdminPlaceholder
-      icon={item.icon}
-      title={item.label}
-      description={item.description}
-    />
-  );
+// I dati reali delle categorie devono riflettere lo stato corrente del database.
+export const dynamic = "force-dynamic";
+
+export default async function CategoriePage() {
+  const categorie = await getCategorieAdmin();
+  return <CategorieModule categorie={categorie} />;
 }
