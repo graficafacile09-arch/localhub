@@ -13,10 +13,13 @@ export default function AttivitaEliminaButton({
   storeId,
   storeName,
   onElimina,
+  expand = false,
 }: {
   storeId: string;
   storeName: string;
   onElimina: (id: string) => void;
+  /** Variante grande a tutta larghezza (card "Gestione Negozi"). */
+  expand?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [eliminando, setEliminando] = useState(false);
@@ -46,28 +49,43 @@ export default function AttivitaEliminaButton({
   }
 
   return (
-    <div className="relative inline-block" ref={containerRef}>
+    <div
+      className={expand ? "relative" : "relative inline-block"}
+      ref={containerRef}
+    >
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
         aria-label={`Elimina ${storeName}`}
         title="Elimina (sposta nel Cestino)"
-        className="flex h-9 w-9 items-center justify-center rounded-xl border border-red-200 bg-white text-red-600 transition hover:border-red-300 hover:bg-red-50"
+        className={
+          expand
+            ? "inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 text-sm font-black text-red-600 transition hover:border-red-300 hover:bg-red-50"
+            : "flex h-9 w-9 items-center justify-center rounded-xl border border-red-200 bg-white text-red-600 transition hover:border-red-300 hover:bg-red-50"
+        }
       >
         <Trash2 className="h-4 w-4" aria-hidden />
+        {expand ? "Elimina" : null}
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-50 mt-2 w-72 rounded-2xl border border-red-200 bg-red-50 p-4 text-left shadow-xl">
+        <div
+          className={
+            expand
+              ? "absolute left-0 top-full z-50 mt-2 w-72 rounded-2xl border border-red-200 bg-red-50 p-4 text-left shadow-xl"
+              : "absolute right-0 top-full z-50 mt-2 w-72 rounded-2xl border border-red-200 bg-red-50 p-4 text-left shadow-xl"
+          }
+        >
           <div className="flex items-start gap-2.5">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />
             <div>
               <p className="text-sm font-bold text-red-800">
-                Eliminare &ldquo;{storeName}&rdquo;?
+                Vuoi spostare questo negozio nel Cestino?
               </p>
               <p className="mt-1 text-xs leading-5 text-red-600">
-                Il negozio verrà spostato nel Cestino. Potrai ripristinarlo
-                dalla pagina Cestino oppure eliminarlo definitivamente.
+                &ldquo;{storeName}&rdquo; verrà spostato nel Cestino. Potrai
+                ripristinarlo dalla pagina Cestino oppure eliminarlo
+                definitivamente.
               </p>
               {errore && (
                 <p className="mt-2 rounded-lg bg-red-100 px-2.5 py-1.5 text-xs font-semibold text-red-800">
@@ -86,7 +104,7 @@ export default function AttivitaEliminaButton({
                   ) : (
                     <Trash2 className="h-3.5 w-3.5" />
                   )}
-                  {eliminando ? "Eliminazione..." : "Conferma"}
+                  {eliminando ? "Eliminazione..." : "Sposta nel Cestino"}
                 </button>
                 <button
                   type="button"

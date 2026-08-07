@@ -1,89 +1,65 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
-import { Sparkles, Store } from "lucide-react";
-import type {
-  AttivitaRow,
-  FiltroEvidenzaAttivita,
-  FiltroStatoAttivita,
-  OrdinaAttivita,
-} from "@/lib/amministratore/attivita-types";
-import AttivitaTable from "./AttivitaTable";
+import { ChevronLeft, ShieldCheck, Store } from "lucide-react";
+import type { AttivitaRow } from "@/lib/amministratore/attivita-types";
+import AttivitaCardGrid from "./AttivitaCardGrid";
 import AttivitaToolbar from "./AttivitaToolbar";
-
-type AggiornamentoAttivita = Partial<
-  Pick<AttivitaRow, "proprietarioId" | "proprietario" | "attivo" | "in_evidenza">
->;
 
 const normalizza = (testo: string) => testo.trim().toLowerCase();
 
-/** Modulo Attività interattivo con mutazioni admin immediate e locali. */
+/** Modulo "Gestione Negozi": header, ricerca, filtro e griglia di card. */
 export default function AttivitaModule({
   attivita,
   categorie,
+  errorMessage = null,
 }: {
   attivita: AttivitaRow[];
   categorie: string[];
+  errorMessage?: string | null;
 }) {
-  const [righe, setRighe] = useState(attivita);
   const [ricerca, setRicerca] = useState("");
   const [categoria, setCategoria] = useState("tutte");
-  const [stato, setStato] = useState<FiltroStatoAttivita>("tutti");
-  const [evidenza, setEvidenza] = useState<FiltroEvidenzaAttivita>("tutti");
-  const [ordina, setOrdina] = useState<OrdinaAttivita>("recenti");
   const [eliminati, setEliminati] = useState<Set<string>>(new Set());
 
   const handleElimina = useCallback((id: string) => {
     setEliminati((prev) => new Set(prev).add(id));
   }, []);
 
-  const handleAggiorna = useCallback(
-    (id: string, aggiornamento: AggiornamentoAttivita) => {
-      setRighe((prev) =>
-        prev.map((riga) => (riga.id === id ? { ...riga, ...aggiornamento } : riga))
-      );
-    },
-    []
-  );
-
   const visibili = useMemo(() => {
     const termine = normalizza(ricerca);
-    const filtrati = righe.filter((riga) => {
+    return attivita.filter((riga) => {
       if (eliminati.has(riga.id)) return false;
+      if (categoria !== "tutte" && riga.categoria !== categoria) return false;
       if (termine) {
-        const nelTesto = [riga.nome, riga.categoria, riga.proprietario]
+        const nelTesto = [riga.nome, riga.categoria, riga.slug]
           .filter(Boolean)
           .join(" ")
           .toLowerCase();
         if (!nelTesto.includes(termine)) return false;
       }
-      if (categoria !== "tutte" && riga.categoria !== categoria) return false;
-      if (stato === "attivi" && !riga.attivo) return false;
-      if (stato === "disattivati" && riga.attivo) return false;
-      if (evidenza === "solo-evidenza" && !riga.in_evidenza) return false;
       return true;
-    });
-
-    return filtrati.sort((a, b) => {
-      switch (ordina) {
-        case "nome":
-          return a.nome.localeCompare(b.nome, "it");
-        case "prodotti":
-          return b.prodotti - a.prodotti;
-        case "evidenza":
-          return Number(b.in_evidenza) - Number(a.in_evidenza);
-        case "stato":
-          return Number(b.attivo) - Number(a.attivo);
-        case "recenti":
-        default:
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-      }
-    });
-  }, [righe, ricerca, categoria, stato, evidenza, ordina, eliminati]);
+    }).sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+  }, [attivita, ricerca, categoria, eliminati]);
 
   return (
     <div className="space-y-5">
       <div className="rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm md:p-8">
+        {/* Breadcrumb */}
+        <nav aria-label="Percorso" className="mb-5">
+          <button
+            type="button"
+            onClick={() => (window.location.href = "/amministratore")}
+            className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 transition hover:text-blue-800"
+          >
+            <ChevronLeft className="h-3.5 w-3.5" aria-hidden />
+            Torna al pannello
+          </button>
+        </nav>
+
         <div className="flex items-start gap-4">
           <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 ring-1 ring-blue-100">
             <Store className="h-7 w-7" aria-hidden />
@@ -93,13 +69,12 @@ export default function AttivitaModule({
               Centro di controllo
             </p>
             <h1 className="mt-1.5 text-2xl font-black tracking-tight text-slate-900 md:text-3xl">
-              Negozi
+              Gestione Negozi
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-              Gestisci tutti i negozi presenti nella piattaforma. Questo è il
-              pannello di amministrazione della piattaforma: qui vedi ogni
-              attività, il suo proprietario e lo stato globale, puoi modificare,
-              duplicare ed eliminare un negozio.
+              Gestisci tutti i negozi presenti sulla piattaforma. Usa la ricerca
+              o il filtro per categoria, apri un negozio per modificarlo oppure
+              sposta nel Cestino una scheda non più attiva.
             </p>
           </div>
         </div>
@@ -111,30 +86,43 @@ export default function AttivitaModule({
         categoria={categoria}
         categorie={categorie}
         onCategoria={setCategoria}
-        stato={stato}
-        onStato={setStato}
-        evidenza={evidenza}
-        onEvidenza={setEvidenza}
-        ordina={ordina}
-        onOrdina={setOrdina}
       />
 
-      <p className="px-1 text-xs font-semibold text-slate-500">
-        {visibili.length} attività trovate
-      </p>
+      {/* Errori server (es. DB non raggiungibile) */}
+      {errorMessage ? (
+        <div className="flex items-start gap-3 rounded-3xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-900">
+          <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-red-600" aria-hidden />
+          <p className="leading-6">{errorMessage}</p>
+        </div>
+      ) : null}
 
-      <AttivitaTable
-        attivita={visibili}
-        onElimina={handleElimina}
-        onAggiorna={handleAggiorna}
-      />
+      <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+        <p className="text-sm font-black text-slate-700">
+          {visibili.length}{" "}
+          {visibili.length === 1 ? "negozio" : "negozi"}
+        </p>
+        {(ricerca || categoria !== "tutte") && (
+          <button
+            type="button"
+            onClick={() => {
+              setRicerca("");
+              setCategoria("tutte");
+            }}
+            className="text-xs font-semibold text-blue-600 underline-offset-2 transition hover:underline"
+          >
+            Azzera filtri
+          </button>
+        )}
+      </div>
+
+      <AttivitaCardGrid attivita={visibili} onElimina={handleElimina} />
 
       <div className="flex items-start gap-3 rounded-3xl border border-blue-100 bg-blue-50/60 px-5 py-4 text-sm text-blue-900">
-        <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" aria-hidden />
+        <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" aria-hidden />
         <p className="leading-6">
           <span className="font-bold">Centro di controllo:</span> dati reali dal
-          database. Le azioni amministrative aggiornano subito la tabella; Elimina
-          sposta nel Cestino.
+          database. Elimina sposta la scheda nel Cestino, da cui puoi
+          ripristinarla o eliminarla definitivamente.
         </p>
       </div>
     </div>

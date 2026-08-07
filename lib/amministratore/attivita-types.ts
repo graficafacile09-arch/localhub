@@ -10,6 +10,10 @@ export type AttivitaRow = {
   slug: string | null;
   categoria: string | null;
   logo_url: string | null;
+  /** Città/località del negozio, se impostata. */
+  citta: string | null;
+  /** Flag demo/test (seed o negozi di test). */
+  is_demo: boolean;
   /** ID del proprietario (auth.users) o null se non assegnato. */
   proprietarioId: string | null;
   /** Email del proprietario (da auth.users) o null se non assegnato. */

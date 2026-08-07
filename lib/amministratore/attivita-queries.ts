@@ -27,7 +27,7 @@ export async function getAttivitaAdmin(): Promise<AttivitaRow[]> {
   const { data: negozi, error: erroreNegozi } = await db
     .from("negozi")
     .select(
-      "id, nome, slug, categoria, logo_url, owner_user_id, attivo, in_evidenza, created_at"
+      "id, nome, slug, categoria, citta, is_demo, logo_url, owner_user_id, attivo, in_evidenza, created_at"
     )
     .is("deleted_at", null)
     .order("created_at", { ascending: false });
@@ -79,6 +79,8 @@ export async function getAttivitaAdmin(): Promise<AttivitaRow[]> {
     nome: n.nome,
     slug: n.slug ?? null,
     categoria: n.categoria ?? null,
+    citta: n.citta ?? null,
+    is_demo: Boolean(n.is_demo),
     logo_url: n.logo_url ?? null,
     proprietarioId: n.owner_user_id ?? null,
     proprietario:
