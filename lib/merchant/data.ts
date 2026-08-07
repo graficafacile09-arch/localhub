@@ -4,7 +4,6 @@ import { uploadDataUrlToStorage } from "@/lib/supabase/storage";
 import { generaSlugUnivoco } from "@/lib/slug-server";
 import { getCurrentUser } from "@/lib/auth/session";
 import { utenteAdminAutorizzato } from "@/lib/auth/roles";
-import { queryNegoziNonDemo } from "@/lib/amministratore/negozi";
 import type {
   MerchantProduct,
   MerchantProductInput,
@@ -154,30 +153,25 @@ export async function getMerchantStoresForUser(userId: string): Promise<Merchant
   // piattaforma, i commercianti solo i propri).
   const isAdmin = await utenteAdminAutorizzatoCorrente(userId);
 
-  // Admin: tutti i negozi REALI (i demo non compaiono MAI, né per colonna
-  // is_demo né per nome/slug di fallback). Commerciante: solo i propri.
+  // Admin: TUTTI i negozi reali non eliminati, inclusi quelli con is_demo
+  // (la lista "Gestione Negozi" li mostra, quindi devono essere modificabili).
+  // Commerciante: solo i propri.
   let esito: {
     data: (MerchantStoreSummary & { slug: string | null })[] | null;
     error: { code?: string; message?: string } | null;
   };
 
   if (isAdmin) {
-    esito = await queryNegoziNonDemo<
-      MerchantStoreSummary & { slug: string | null }
-    >(async (usaColonna) => {
-      const supabase = createAdminSupabaseClient();
-      let query = supabase
-        .from("negozi")
-        .select("id, nome, categoria, descrizione, attivo, slug")
-        .is("deleted_at", null)
-        .order("created_at", { ascending: true });
-      if (usaColonna) query = query.eq("is_demo", false);
-      const { data, error } = await query;
-      return {
-        data: (data ?? []) as (MerchantStoreSummary & { slug: string | null })[],
-        error,
-      };
-    });
+    const supabase = createAdminSupabaseClient();
+    const { data, error } = await supabase
+      .from("negozi")
+      .select("id, nome, categoria, descrizione, attivo, slug")
+      .is("deleted_at", null)
+      .order("created_at", { ascending: true });
+    esito = {
+      data: (data ?? []) as (MerchantStoreSummary & { slug: string | null })[],
+      error,
+    };
   } else {
     const supabase = await createServerSupabaseClient();
     const { data, error } = await supabase

@@ -2,15 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { LogOut } from "lucide-react";
+import { ADMIN_BASE } from "@/components/amministratore/navigation";
 import {
-  Home,
-  LogOut,
-  Package,
-  Sparkles,
-  Store,
-  Trash2,
-  Users,
-} from "lucide-react";
+  MERCHANT_BASE,
+  getAdminBottomNavItems,
+  getMerchantBottomNavItems,
+} from "./navigation";
 
 type MerchantBottomNavProps = {
   storeId: string | null;
@@ -24,8 +22,7 @@ export default function MerchantBottomNav({
   const pathname = usePathname();
 
   const isAdmin = area === "admin";
-  const baseHref = isAdmin ? "/amministratore" : "/merchant";
-  const ADMIN_BASE = "/amministratore";
+  const baseHref = isAdmin ? ADMIN_BASE : MERCHANT_BASE;
 
   // Pagine globali dell'area merchant che NON identificano un negozio
   const GLOBAL_MERCHANT_SLUGS = ["nuovo"];
@@ -39,109 +36,10 @@ export default function MerchantBottomNav({
 
   const hasStore = Boolean(storeId);
 
-  // ── Voci dell'Area Amministratore (mobile): la stessa gerarchia della
-  //    sidebar desktop — Negozi sopra Cestino sopra Utenti. ────────────────
-  const adminNavItems = [
-    {
-      key: "home",
-      label: "Home",
-      icon: Home,
-      href: "/",
-      available: true,
-      ai: false,
-    },
-    {
-      key: "negozi",
-      label: "Negozi",
-      icon: Store,
-      href: `${ADMIN_BASE}/attivita`,
-      available: true,
-      ai: false,
-    },
-    {
-      key: "cestino",
-      label: "Cestino",
-      icon: Trash2,
-      href: `${ADMIN_BASE}/cestino`,
-      available: true,
-      ai: false,
-    },
-    {
-      key: "utenti",
-      label: "Utenti",
-      icon: Users,
-      href: `${ADMIN_BASE}/utenti`,
-      available: true,
-      ai: false,
-    },
-    {
-      key: "altro",
-      label: "Esci",
-      icon: LogOut,
-      href: null,
-      available: true,
-      isMenu: true,
-      ai: false,
-    },
-  ];
-
-  // Nell'Area Amministratore si usa la gerarchia admin, non le voci merchant.
-
-  // Voce AI — la più prominente, posizionata al centro
-  const navItems = [
-    {
-      key: "home",
-      label: "Home",
-      icon: Home,
-      href: "/",
-      available: true,
-      ai: false,
-    },
-    {
-      key: "dashboard",
-      label: "Negozio",
-      icon: Store,
-      href: storeId ? `/merchant/${storeId}` : baseHref,
-      available: true,
-      ai: false,
-    },
-    {
-      key: "prodotti",
-      label: "Prodotti",
-      icon: Package,
-      href: storeId ? `/merchant/${storeId}/prodotti` : baseHref,
-      available: hasStore,
-      ai: false,
-    },
-    {
-      key: "ai",
-      label: "AI",
-      icon: Sparkles,
-      href: storeId ? `/merchant/${storeId}/prodotti/ai` : baseHref,
-      available: hasStore,
-      ai: true, // pulsante centrale prominente
-    },
-    {
-      key: "negozio",
-      label: "Gestione",
-      icon: Store,
-      href: storeId ? `/merchant/${storeId}/impostazioni` : baseHref,
-      available: hasStore,
-      ai: false,
-    },
-    {
-      key: "altro",
-      label: "Esci",
-      icon: LogOut,
-      href: null,
-      available: true,
-      ai: false,
-      isMenu: true,
-    },
-  ];
-
-  // Nell'Area Amministratore si usa la gerarchia admin, non le voci merchant.
-  const items = isAdmin ? adminNavItems : navItems;
+  // Le voci (etichette, icone, path) arrivano da navigation.ts — unica fonte.
+  const items = isAdmin
+    ? getAdminBottomNavItems()
+    : getMerchantBottomNavItems(storeId, baseHref);
 
   function isActive(href: string | null): boolean {
     if (!href) return false;
@@ -156,7 +54,7 @@ export default function MerchantBottomNav({
 
   return (
     <>
-      {/* ── Bottom Navigation Bar ────────────────────────────────────────────── */}
+      {/* ── Bottom Navigation Bar ─────────────────────────────────────────────── */}
       <nav
         className="fixed bottom-0 left-0 right-0 z-[60] md:hidden"
         aria-label="Navigazione area amministratore mobile"
@@ -169,13 +67,14 @@ export default function MerchantBottomNav({
             {items.map((item) => {
               const Icon = item.icon;
               const active = item.href ? isActive(item.href) : false;
+              const available = item.requiresStore ? hasStore : true;
 
               // ── Pulsante AI — prominente e sollevato ──────────────────────
               if (item.ai) {
                 return (
                   <Link
                     key={item.key}
-                    href={item.available ? item.href! : "#"}
+                    href={available ? item.href! : "#"}
                     aria-label="Aggiungi prodotto con AI"
                     className="relative -mt-5 flex flex-col items-center"
                   >
@@ -186,7 +85,7 @@ export default function MerchantBottomNav({
                             ? "bg-blue-700 shadow-blue-600/50"
                             : "bg-linear-to-br from-blue-600 to-blue-500 shadow-blue-500/40"
                         }
-                        ${!item.available ? "opacity-40" : ""}
+                        ${!available ? "opacity-40" : ""}
                       `}
                     >
                       <Icon className="h-6 w-6 text-white" aria-hidden />
@@ -204,18 +103,16 @@ export default function MerchantBottomNav({
 
               // ── Voce "Esci" — apre signout via form ─────────────────────
               if (item.isMenu) {
-                return (
-                  <MerchantBottomNavAltro key={item.key} />
-                );
+                return <MerchantBottomNavAltro key={item.key} />;
               }
 
               // ── Voci standard ─────────────────────────────────────────────
               return (
                 <Link
                   key={item.key}
-                  href={item.available ? item.href! : "#"}
+                  href={available ? item.href! : "#"}
                   className={`flex flex-col items-center gap-1.5 rounded-xl px-3 py-1.5 transition-all duration-150 active:scale-95
-                    ${!item.available ? "pointer-events-none opacity-30" : ""}
+                    ${!available ? "pointer-events-none opacity-30" : ""}
                   `}
                   aria-current={active ? "page" : undefined}
                 >

@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home } from "lucide-react";
+import { ADMIN_BASE } from "@/components/amministratore/navigation";
+import { MERCHANT_BASE } from "./navigation";
 
 /**
  * Navigazione globale condivisa tra Area Venditore e Area Amministratore.
@@ -17,7 +19,7 @@ export default function MerchantGlobalNav({
   area?: "merchant" | "admin";
 }) {
   const pathname = usePathname();
-  const href = area === "admin" ? "/amministratore" : "/merchant";
+  const href = area === "admin" ? ADMIN_BASE : MERCHANT_BASE;
   const laMiaAreaActive = pathname === href;
 
   return (

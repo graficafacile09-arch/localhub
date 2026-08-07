@@ -80,37 +80,28 @@ export type NegozioSintesi = {
 
 /**
  * Cestino GLOBALE della piattaforma (funzione di piattaforma → solo admin).
- * Elenca TUTTI i negozi soft-deleted, di qualunque proprietario.
- * I negozi demo non compaiono MAI nel Cestino admin.
+ * Elenca TUTTI i negozi soft-deleted, di qualunque proprietario e valore
+ * is_demo: la lista admin "Gestione Negozi" mostra ogni negozio, quindi
+ * anche ciò che viene eliminato deve essere visibile e ripristinabile.
  */
 export async function getNegoziCestino(): Promise<NegozioCestino[]> {
   const supabase = createAdminSupabaseClient();
 
-  const esito = await queryNegoziNonDemo<NegozioCestino & { slug: string | null }>(
-    async (usaColonna) => {
-      let query = supabase
-        .from("negozi")
-        .select(
-          "id, nome, categoria, descrizione, attivo, logo_url, deleted_at, slug"
-        )
-        .not("deleted_at", "is", null)
-        .order("deleted_at", { ascending: false });
-      if (usaColonna) query = query.eq("is_demo", false);
-      const { data, error } = await query;
-      return {
-        data: (data ?? []) as (NegozioCestino & { slug: string | null })[],
-        error,
-      };
-    }
-  );
+  const { data, error } = await supabase
+    .from("negozi")
+    .select(
+      "id, nome, categoria, descrizione, attivo, logo_url, deleted_at, slug"
+    )
+    .not("deleted_at", "is", null)
+    .order("deleted_at", { ascending: false });
 
-  if (esito.error) {
+  if (error) {
     throw new Error(
-      esito.error.message ?? "Impossibile recuperare il cestino."
+      error.message ?? "Impossibile recuperare il cestino."
     );
   }
 
-  return (esito.data ?? []) as NegozioCestino[];
+  return (data ?? []) as NegozioCestino[];
 }
 
 /** Elenco dei negozi ATTIVI (per il picker della creazione template). */

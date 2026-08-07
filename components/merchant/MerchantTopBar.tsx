@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { ArrowLeft, Home, Menu, X } from "lucide-react";
 import AdminSidebar from "@/components/amministratore/AdminSidebar";
+import { ADMIN_BASE } from "@/components/amministratore/navigation";
+import { MERCHANT_BASE, getMerchantTopTitle } from "./navigation";
 
 type MerchantTopBarProps = {
   storeName?: string | null;
@@ -18,11 +20,11 @@ export default function MerchantTopBar({
   const router = useRouter();
 
   const isAdmin = area === "admin";
-  const baseHref = isAdmin ? "/amministratore" : "/merchant";
+  const baseHref = isAdmin ? ADMIN_BASE : MERCHANT_BASE;
   const storeId = pathname.match(/^\/merchant\/([^/]+)/)?.[1] ?? null;
   const dashboardHref = storeId ? `/merchant/${storeId}` : baseHref;
 
-  const title = resolveTitle(pathname, storeName, isAdmin);
+  const title = getMerchantTopTitle(pathname, storeName, isAdmin);
 
   const isRoot =
     pathname === baseHref ||
@@ -129,28 +131,4 @@ function AdminMobileMenuButton() {
       ) : null}
     </>
   );
-}
-
-function resolveTitle(
-  pathname: string,
-  storeName?: string | null,
-  isAdmin = false
-): string {
-  if (isAdmin && pathname === "/amministratore") return "I tuoi negozi";
-  if (isAdmin && pathname.startsWith("/amministratore")) return "Amministrazione";
-  if (pathname === "/merchant") return "I tuoi negozi";
-
-  const withStore = /^\/merchant\/([^/]+)(\/.*)?$/.exec(pathname);
-  if (!withStore) return isAdmin ? "Amministratore" : "Venditore";
-
-  const suffix = withStore[2] ?? "";
-
-  if (suffix === "" || suffix === "/") return storeName ?? "Dashboard";
-  if (suffix === "/prodotti/ai") return "Aggiungi con AI";
-  if (suffix === "/prodotti/nuovo") return "Nuovo prodotto";
-  if (/^\/prodotti\/[^/]+$/.test(suffix)) return "Modifica prodotto";
-  if (suffix === "/prodotti") return "Prodotti";
-  if (suffix === "/impostazioni") return "Impostazioni";
-
-  return storeName ?? "Venditore";
 }
