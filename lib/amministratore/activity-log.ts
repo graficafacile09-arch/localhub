@@ -269,6 +269,14 @@ export const OPERATION_TYPES = {
   TEMPLATE_CREATO: "template_creato",
   TEMPLATE_MODIFICATO: "template_modificato",
   TEMPLATE_ELIMINATO: "template_eliminato",
+
+  // Segnalazioni
+  SEGNALAZIONE_STATO_MODIFICATO: "segnalazione_stato_modificato",
+  SEGNALAZIONE_PRIORITA_MODIFICATA: "segnalazione_priorita_modificata",
+  SEGNALAZIONE_NOTA_MODIFICATA: "segnalazione_nota_modificata",
+  SEGNALAZIONE_RISOLTA: "segnalazione_risolta",
+  SEGNALAZIONE_ARCHIVIATA: "segnalazione_archiviata",
+  SEGNALAZIONE_RIAPERTA: "segnalazione_riaperta",
 } as const;
 
 export const TARGET_TYPES = {
@@ -281,4 +289,5 @@ export const TARGET_TYPES = {
   IMPOSTAZIONI: "impostazioni",
   NEGOZIO_IN_EVIDENZA: "negozio_in_evidenza",
   TEMPLATE: "template",
+  SEGNALAZIONE: "segnalazione",
 } as const;

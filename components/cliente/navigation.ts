@@ -1,4 +1,5 @@
 import {
+  Flag,
   Heart,
   LayoutDashboard,
   Package,
@@ -46,6 +47,12 @@ export const clienteNavItems: ClienteNavItem[] = [
     label: "Profilo",
     description: "I tuoi dati personali, la tua immagine e le preferenze dell'account.",
     icon: UserRound,
+  },
+  {
+    href: `${CLIENTE_BASE}/segnalazioni`,
+    label: "Segnalazioni",
+    description: "Invia una segnalazione o un report al team di supporto.",
+    icon: Flag,
   },
   {
     href: `${CLIENTE_BASE}/impostazioni`,
