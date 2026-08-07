@@ -2,6 +2,7 @@ import Header from "@/components/Header/Header";
 import { getNegozi, getNegoziInEvidenza } from "@/lib/negozi";
 import { getNegozioCardImmagine } from "@/lib/negozi-card-immagini";
 import { chiavePreferito, getStatoPreferitiPerPagina } from "@/lib/cliente/favorites";
+import { getImpostazioniPubbliche } from "@/lib/platform/settings";
 import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
 import Link from "next/link";
 import { ArrowLeft, MapPin, Star } from "lucide-react";
@@ -13,6 +14,9 @@ export default async function NegoziPage({
 }) {
   const { featured } = await searchParams;
   const soloEvidenziati = featured === "1";
+
+  const impostazioni = await getImpostazioniPubbliche();
+  const citta = impostazioni.city_name?.trim() || "Castrovillari";
 
   // /negozi?featured=1 → solo negozi in evidenza (2 query, zero N+1);
   // altrimenti tutti i negozi attivi (comportamento attuale invariato).
@@ -29,7 +33,7 @@ export default async function NegoziPage({
 
       <div className="mx-auto max-w-7xl px-3 py-3 sm:px-5">
         <h1 className="mb-3 text-lg font-black tracking-tight text-slate-900">
-          {soloEvidenziati ? "⭐ Negozi in evidenza" : "Negozi di Castrovillari"}
+          {soloEvidenziati ? "⭐ Negozi in evidenza" : `Negozi di ${citta}`}
         </h1>
 
         {soloEvidenziati && negozi.length === 0 ? (

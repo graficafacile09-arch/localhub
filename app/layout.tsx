@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import AssistantFab from "../components/assistant/AssistantFab";
 import AssistantPanel from "../components/assistant/AssistantPanel";
+import { getImpostazioniPubbliche } from "@/lib/platform/settings";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -21,30 +22,47 @@ export const viewport: Viewport = {
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://localhub-eta.vercel.app";
 
-export const metadata: Metadata = {
-  metadataBase: new URL(SITE_URL),
-  title: {
-    default: "InCittà | Amazon della tua città",
-    template: "%s | InCittà",
-  },
-  description:
-    "Trova negozi, prodotti e servizi della tua città. Cerca, confronta e acquista localmente.",
-  openGraph: {
-    siteName: "InCittà",
-    locale: "it_IT",
-    type: "website",
-  },
-  robots: {
-    index: true,
-    follow: true,
-  },
+// Valori di fallback = quelli usati prima dell'introduzione delle impostazioni
+// piattaforma: il sito resta identico anche senza DB o con righe vuote.
+const DEFAULTS = {
+  site_name: "InCittà",
+  site_tagline: "Amazon della tua città",
+  footer_text: "© 2026 InCittà · Castrovillari",
 };
 
-export default function RootLayout({
+export async function generateMetadata(): Promise<Metadata> {
+  const impostazioni = await getImpostazioniPubbliche();
+  const nome = impostazioni.site_name?.trim() || DEFAULTS.site_name;
+  const tagline = impostazioni.site_tagline?.trim() || DEFAULTS.site_tagline;
+
+  return {
+    metadataBase: new URL(SITE_URL),
+    title: {
+      default: `${nome} | ${tagline}`,
+      template: `%s | ${nome}`,
+    },
+    description:
+      "Trova negozi, prodotti e servizi della tua città. Cerca, confronta e acquista localmente.",
+    openGraph: {
+      siteName: nome,
+      locale: "it_IT",
+      type: "website",
+    },
+    robots: {
+      index: true,
+      follow: true,
+    },
+  };
+}
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const impostazioni = await getImpostazioniPubbliche();
+  const footerText = impostazioni.footer_text?.trim() || DEFAULTS.footer_text;
+
   return (
     <html
       lang="it"
@@ -54,7 +72,7 @@ export default function RootLayout({
         {children}
 
         <footer className="border-t border-slate-200 bg-white py-3 text-center text-xs text-slate-400">
-          © 2026 InCittà · Castrovillari
+          {footerText}
         </footer>
 
         <AssistantFab />

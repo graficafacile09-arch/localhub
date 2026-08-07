@@ -4,6 +4,7 @@ import Header from "@/components/Header/Header";
 import CategoriaShowcaseView from "@/components/categoria/CategoriaShowcaseView";
 import { getCategoriaShowcase, getCategoriaBySlug } from "@/lib/negozi";
 import { getStatoPreferitiPerPagina } from "@/lib/cliente/favorites";
+import { getImpostazioniPubbliche } from "@/lib/platform/settings";
 import { ArrowLeft } from "lucide-react";
 
 type Params = { slug: string };
@@ -12,9 +13,12 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const { slug } = await params;
   const categoria = await getCategoriaBySlug(slug);
   if (!categoria) return { title: "Categoria non trovata | InCittà" };
+
+  const impostazioni = await getImpostazioniPubbliche();
+  const citta = impostazioni.city_name?.trim() || "Castrovillari";
   return {
     title: `${categoria.nome} | InCittà`,
-    description: categoria.descrizione ?? `Negozi e attività della categoria ${categoria.nome} a Castrovillari.`,
+    description: categoria.descrizione ?? `Negozi e attività della categoria ${categoria.nome} a ${citta}.`,
   };
 }
 
