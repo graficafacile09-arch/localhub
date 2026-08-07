@@ -35,6 +35,50 @@ const getDb = () => {
   }
 };
 
+/**
+ * Conta le offerte ATTIVE e nel periodo valido della tabella `offerte`,
+ * limitate ai negozi attivi (non demo, non sospesi). Se la query fallisce
+ * (tabella assente su DB non migrati) cade via al JSONB dei negozi.
+ */
+async function contaOfferteAttive(negoziAttivi: string[], negoziRighe: NegozioRiga[]): Promise<number> {
+  const db = getDb();
+  if (!db || negoziAttivi.length === 0) return 0;
+
+  try {
+    const { data, error } = await db
+      .from("offerte")
+      .select("attiva, data_inizio, data_fine")
+      .in("negozio_id", negoziAttivi);
+    if (error) throw error;
+
+    const ora = Date.now();
+    return (data ?? []).filter((o) => {
+      if (o.attiva !== true) return false;
+      if (o.data_inizio && new Date(o.data_inizio).getTime() > ora) return false;
+      if (o.data_fine && new Date(o.data_fine).getTime() < ora) return false;
+      return true;
+    }).length;
+  } catch {
+    // Fallback: JSONB `data.offerte` dei negozi attivi.
+    const oggi = new Date();
+    const oggiLocale = `${oggi.getFullYear()}-${String(oggi.getMonth() + 1).padStart(2, "0")}-${String(oggi.getDate()).padStart(2, "0")}`;
+    const pubblicato = (e: unknown): e is Record<string, unknown> =>
+      Boolean(
+        e && typeof e === "object" && typeof (e as Record<string, unknown>).titolo === "string"
+      );
+    const inPeriodo = (el: Record<string, unknown>) => {
+      const dal = typeof el.valido_dal === "string" ? el.valido_dal : "";
+      const al = typeof el.valido_al === "string" ? el.valido_al : "";
+      return (!dal || dal <= oggiLocale) && (!al || al >= oggiLocale);
+    };
+    return negoziRighe.reduce((totale, negozio) => {
+      const elementi = negozio.data?.offerte;
+      if (!Array.isArray(elementi)) return totale;
+      return totale + elementi.filter(pubblicato).filter(inPeriodo).length;
+    }, 0);
+  }
+}
+
 export type DashboardNegozioBreve = {
   id: string;
   nome: string;
@@ -432,8 +476,6 @@ export async function getDatiDashboard(): Promise<DatiDashboard> {
   dati.kpi.negoziSospesi = negoziSospesi.length;
   dati.kpi.negoziCestino = negoziCestino.length;
 
-  const oggi = new Date();
-  const oggiLocale = `${oggi.getFullYear()}-${String(oggi.getMonth() + 1).padStart(2, "0")}-${String(oggi.getDate()).padStart(2, "0")}`;
   const elementoPubblicato = (elemento: unknown): elemento is Record<string, unknown> =>
     Boolean(
       elemento &&
@@ -441,11 +483,6 @@ export async function getDatiDashboard(): Promise<DatiDashboard> {
         typeof (elemento as Record<string, unknown>).titolo === "string" &&
         String((elemento as Record<string, unknown>).titolo).trim()
     );
-  const offertaAttiva = (elemento: Record<string, unknown>) => {
-    const dal = typeof elemento.valido_dal === "string" ? elemento.valido_dal : "";
-    const al = typeof elemento.valido_al === "string" ? elemento.valido_al : "";
-    return (!dal || dal <= oggiLocale) && (!al || al >= oggiLocale);
-  };
   const contaElementi = (
     chiave: "offerte" | "eventi",
     filtro: (elemento: Record<string, unknown>) => boolean = () => true
@@ -455,7 +492,7 @@ export async function getDatiDashboard(): Promise<DatiDashboard> {
       if (!Array.isArray(elementi)) return totale;
       return totale + elementi.filter(elementoPubblicato).filter(filtro).length;
     }, 0);
-  dati.kpi.offerteAttive = contaElementi("offerte", offertaAttiva);
+  dati.kpi.offerteAttive = await contaOfferteAttive(negoziAttivi.map((n) => n.id), negoziAttivi);
   dati.kpi.eventi = contaElementi("eventi");
 
   const perCategoria = new Map<string, number>();

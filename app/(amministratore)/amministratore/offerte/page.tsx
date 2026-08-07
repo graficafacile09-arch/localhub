@@ -1,17 +1,14 @@
-import AdminPlaceholder from "@/components/amministratore/AdminPlaceholder";
-import { getAdminNavItem } from "@/components/amministratore/navigation";
+import OfferteModule from "@/components/amministratore/OfferteModule";
+import { getOfferteAdmin } from "@/lib/offerte";
 
 export const metadata = {
   title: "Offerte — Amministratore",
 };
 
-export default function OffertePage() {
-  const item = getAdminNavItem("/amministratore/offerte");
-  return (
-    <AdminPlaceholder
-      icon={item.icon}
-      title={item.label}
-      description={item.description}
-    />
-  );
+// I dati reali delle offerte devono riflettere lo stato corrente del database.
+export const dynamic = "force-dynamic";
+
+export default async function OffertePage() {
+  const offerte = await getOfferteAdmin();
+  return <OfferteModule offerte={offerte} />;
 }
