@@ -9,7 +9,7 @@ type Props = {
   maxSize?: number;
 };
 
-export default function MediaUploader({ onUpload, accept = "image/*", maxSize = 10 }: Props) {
+export default function MediaUploader({ onUpload, accept = "image/*", maxSize = 4 }: Props) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -26,8 +26,8 @@ export default function MediaUploader({ onUpload, accept = "image/*", maxSize = 
     setIsUploading(true);
     try {
       await onUpload(file);
-    } catch {
-      setError("Errore durante il caricamento.");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Errore durante il caricamento.");
     } finally {
       setIsUploading(false);
     }

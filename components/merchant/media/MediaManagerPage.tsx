@@ -64,9 +64,18 @@ export default function MediaManagerPage({ storeId, backHref }: Props) {
       body: formData,
     });
 
-    const json = await res.json();
-    if (!json.success) {
-      throw new Error(json.error?.message ?? "Errore nel caricamento.");
+    const json = (await res.json().catch(() => null)) as {
+      success?: boolean;
+      error?: { message?: string };
+    } | null;
+
+    if (!json?.success) {
+      const message =
+        json?.error?.message ??
+        (res.status === 413
+          ? "Il file supera il limite consentito dalla piattaforma. Riduci la dimensione a 4 MB."
+          : `Errore HTTP ${res.status} durante il caricamento.`);
+      throw new Error(message);
     }
 
     await loadMedia();

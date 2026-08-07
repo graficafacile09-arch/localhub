@@ -57,9 +57,9 @@ export async function POST(
     return apiError("MISSING_FILE", "Nessun file inviato.", 422);
   }
 
-  const maxSize = 10 * 1024 * 1024;
+  const maxSize = 4 * 1024 * 1024;
   if (file.size > maxSize) {
-    return apiError("FILE_TOO_LARGE", "Il file non può superare 10 MB.", 413);
+    return apiError("FILE_TOO_LARGE", "Il file non può superare 4 MB.", 413);
   }
 
   const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/svg+xml"];
