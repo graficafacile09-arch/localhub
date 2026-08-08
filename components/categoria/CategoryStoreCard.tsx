@@ -41,7 +41,7 @@ export default function CategoryStoreCard({ negozio, preferitoAttivo, autenticat
         className="flex flex-1 flex-col"
       >
         {/* Copertina */}
-        <div className="relative aspect-[16/9] w-full overflow-hidden bg-slate-100">
+        <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
           <div
             role="img"
             aria-label={negozio.nome}
@@ -49,7 +49,7 @@ export default function CategoryStoreCard({ negozio, preferitoAttivo, autenticat
             style={{ backgroundImage: `url(${copertina})` }}
           />
           {/* Logo in sovrapposizione */}
-          <div className="absolute bottom-3 left-3 flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl border-2 border-white bg-white shadow-sm">
+          <div className="absolute bottom-3 left-3 flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl border-2 border-white bg-white shadow-sm">
             <div
               role="img"
               aria-label={`Logo ${negozio.nome}`}
