@@ -2,7 +2,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { ShieldCheck } from "lucide-react";
 import AccountMenu from "./AccountMenu";
-import AssistantNavButton from "@/components/assistant/AssistantNavButton";
 import { getDatiAccount } from "./get-account-data";
 
 /**
@@ -36,21 +35,28 @@ export default async function Header() {
 
         {/* MENU */}
 
-        <nav className="flex flex-wrap items-center justify-center gap-4 md:gap-6 text-sm md:text-base text-gray-700 font-semibold">
+        <nav className="flex flex-nowrap items-center justify-center gap-2 md:gap-3">
 
-          <Link href="/" className="hover:text-blue-600 transition">
-            Home
+          <Link
+            href="/"
+            className="relative inline-flex items-center overflow-hidden rounded-full bg-gradient-to-b from-yellow-300 to-yellow-400 px-3.5 py-1.5 text-sm font-bold text-slate-800 shadow-md shadow-yellow-400/30 ring-1 ring-yellow-300 transition-all duration-200 before:pointer-events-none before:absolute before:inset-0 before:rounded-full before:bg-gradient-to-b before:from-white/25 before:to-transparent hover:-translate-y-0.5 hover:from-yellow-200 hover:to-yellow-300 hover:shadow-lg hover:shadow-yellow-400/40 active:translate-y-0 active:scale-95 active:shadow-sm"
+          >
+            <span className="relative">Home</span>
           </Link>
 
-          <Link href="/negozi" className="hover:text-blue-600 transition">
-            Negozi
+          <Link
+            href="/negozi"
+            className="relative inline-flex items-center overflow-hidden rounded-full bg-gradient-to-b from-yellow-300 to-yellow-400 px-3.5 py-1.5 text-sm font-bold text-slate-800 shadow-md shadow-yellow-400/30 ring-1 ring-yellow-300 transition-all duration-200 before:pointer-events-none before:absolute before:inset-0 before:rounded-full before:bg-gradient-to-b before:from-white/25 before:to-transparent hover:-translate-y-0.5 hover:from-yellow-200 hover:to-yellow-300 hover:shadow-lg hover:shadow-yellow-400/40 active:translate-y-0 active:scale-95 active:shadow-sm"
+          >
+            <span className="relative">Negozi</span>
           </Link>
 
-          <Link href="/categorie" className="hover:text-blue-600 transition">
-            Categorie
+          <Link
+            href="/categorie"
+            className="relative inline-flex items-center overflow-hidden rounded-full bg-gradient-to-b from-yellow-300 to-yellow-400 px-3.5 py-1.5 text-sm font-bold text-slate-800 shadow-md shadow-yellow-400/30 ring-1 ring-yellow-300 transition-all duration-200 before:pointer-events-none before:absolute before:inset-0 before:rounded-full before:bg-gradient-to-b before:from-white/25 before:to-transparent hover:-translate-y-0.5 hover:from-yellow-200 hover:to-yellow-300 hover:shadow-lg hover:shadow-yellow-400/40 active:translate-y-0 active:scale-95 active:shadow-sm"
+          >
+            <span className="relative">Categorie</span>
           </Link>
-
-          <AssistantNavButton />
 
           {/* Icona Amministrazione (scudetto) — SEMPRE visibile accanto ad
               Assistente AI. Click:
@@ -62,9 +68,9 @@ export default async function Header() {
             href={account && account.area === "admin" ? "/amministratore" : "/login?area=admin"}
             title="Amministrazione"
             aria-label="Amministrazione"
-            className="inline-flex items-center hover:text-blue-600 transition"
+            className="relative inline-flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-gradient-to-b from-yellow-300 to-yellow-400 text-slate-800 shadow-md shadow-yellow-400/30 ring-1 ring-yellow-300 transition-all duration-200 before:pointer-events-none before:absolute before:inset-0 before:rounded-full before:bg-gradient-to-b before:from-white/25 before:to-transparent hover:-translate-y-0.5 hover:from-yellow-200 hover:to-yellow-300 hover:shadow-lg hover:shadow-yellow-400/40 active:translate-y-0 active:scale-95"
           >
-            <ShieldCheck className="h-5 w-5" aria-hidden />
+            <ShieldCheck className="relative h-4 w-4" aria-hidden />
           </Link>
 
           <div className="hidden md:block">

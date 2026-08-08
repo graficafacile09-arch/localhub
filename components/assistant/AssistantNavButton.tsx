@@ -12,9 +12,9 @@ export default function AssistantNavButton() {
     <button
       type="button"
       onClick={() => window.dispatchEvent(new Event("assistant:open"))}
-      className="hover:text-blue-600 transition"
+      className="relative inline-flex items-center overflow-hidden rounded-full bg-gradient-to-b from-yellow-300 to-yellow-400 px-3.5 py-1.5 text-sm font-bold text-slate-800 shadow-md shadow-yellow-400/30 ring-1 ring-yellow-300 transition-all duration-200 before:pointer-events-none before:absolute before:inset-0 before:rounded-full before:bg-gradient-to-b before:from-white/25 before:to-transparent hover:-translate-y-0.5 hover:from-yellow-200 hover:to-yellow-300 hover:shadow-lg hover:shadow-yellow-400/40 active:translate-y-0 active:scale-95 active:shadow-sm"
     >
-      Assistente AI
+      <span className="relative">Assistente AI</span>
     </button>
   );
 }
