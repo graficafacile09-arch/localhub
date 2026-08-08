@@ -35,7 +35,7 @@ export default async function CategoriePage() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-4 gap-2 md:gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 md:gap-4">
             {categorieConNegozi.map(({ categoria, count }, index) => (
               <CategoryTile
                 key={categoria.id}

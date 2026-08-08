@@ -1,35 +1,96 @@
-import Image from "next/image";
 import Link from "next/link";
-import { LayoutGrid } from "lucide-react";
+import {
+  Baby,
+  Croissant,
+  CalendarDays,
+  Car,
+  Coffee,
+  Droplets,
+  Dumbbell,
+  Flower2,
+  Footprints,
+  Gem,
+  Hammer,
+  HeartPulse,
+  Home,
+  LayoutGrid,
+  PawPrint,
+  PenLine,
+  Pill,
+  Pizza,
+  Scissors,
+  Shirt,
+  ShoppingBag,
+  Smartphone,
+  Store,
+  UtensilsCrossed,
+  Wrench,
+  Zap,
+  type LucideIcon,
+} from "lucide-react";
 import type { Categoria } from "@/types/negozio";
 
-// Icona di fallback per le categorie senza mappatura specifica.
-export const ICONE_CATEGORIE: Record<string, string> = {
-  panificio: "/icons/food.png",
-  ristorante: "/icons/food.png",
-  bar: "/icons/food.png",
-  pizzeria: "/icons/food.png",
-  beauty: "/icons/services.png",
-  salute: "/icons/services.png",
-  farmacia: "/icons/services.png",
-  elettricista: "/icons/services.png",
-  idraulico: "/icons/services.png",
-  falegname: "/icons/services.png",
-  abbigliamento: "/icons/fashion.png",
-  calzature: "/icons/fashion.png",
-  gioielleria: "/icons/fashion.png",
+// Immagini fotografiche REALI (Pexels) condivise con il resto del sito
+// (stesso pattern di lib/negozi-card-immagini: nessuna illustrazione).
+const pexelsImage = (id: number) =>
+  `https://images.pexels.com/photos/${id}/pexels-photo-${id}.jpeg?auto=compress&cs=tinysrgb&fit=crop&w=1200&h=675&dpr=2`;
+
+type StileCategoria = {
+  url: string;
+  icona: LucideIcon;
 };
 
-// Palette cicliche per mantenere lo stesso aspetto delle tile originali.
-export const STILI_TILE = [
-  { box: "group-hover:from-blue-50 group-hover:to-blue-100", text: "text-slate-700 group-hover:text-blue-600" },
-  { box: "group-hover:from-orange-50 group-hover:to-orange-100", text: "text-slate-700 group-hover:text-orange-500" },
-  { box: "group-hover:from-fuchsia-50 group-hover:to-fuchsia-100", text: "text-slate-700 group-hover:text-fuchsia-500" },
-  { box: "group-hover:from-slate-100 group-hover:to-slate-200", text: "text-slate-700 group-hover:text-slate-600" },
+const FALLBACK: StileCategoria = { url: pexelsImage(33407840), icona: Store };
+
+// Mappatura per parole chiave su slug + nome: copre tutte le categorie
+// attuali (Panificio, Beauty, Casa, Auto, Salute, Tech, Bimbi, Sport,
+// Abbigliamento, Pet, Ristorante, Bar, ...) e resta valida se in futuro
+// le categorie verranno rinominate con i nuovi nomi.
+const STILI_CATEGORIE: { match: string[]; url: string; icona: LucideIcon }[] = [
+  { match: ["panificio", "bakery", "forno", "pane", "pasticceria", "panetteria"], url: pexelsImage(2147491), icona: Croissant },
+  { match: ["beauty", "bellezza", "parrucchiere", "estetista", "barbiere", "salone", "skincare", "makeup"], url: pexelsImage(853427), icona: Scissors },
+  { match: ["casa", "arredo", "arredamento", "mobili", "interior", "decorazioni", "illuminazione", "cucina"], url: pexelsImage(5486110), icona: Home },
+  { match: ["auto", "officina", "meccanico", "carrozzeria", "concessionaria", "gomme", "macchina"], url: pexelsImage(29566871), icona: Car },
+  { match: ["salute", "farmacia", "parafarmacia", "benessere", "sanitaria", "medicinali", "wellness"], url: pexelsImage(8657365), icona: HeartPulse },
+  { match: ["tech", "elettronica", "tecnologia", "telefonia", "computer", "smartphone", "tablet", "informatica"], url: pexelsImage(25809260), icona: Smartphone },
+  { match: ["cartoleria", "cancelleria", "ufficio", "forniture"], url: pexelsImage(18176581), icona: PenLine },
+  { match: ["bimbi", "bambini", "giocattoli", "infanzia", "neonati", "scuola"], url: pexelsImage(29790215), icona: Baby },
+  { match: ["sport", "fitness", "palestra", "yoga", "training", "pilates", "running", "allenamento"], url: pexelsImage(8933584), icona: Dumbbell },
+  { match: ["abbigliamento", "moda", "boutique", "fashion", "vestiti", "shopping", "shop", "acquisti"], url: pexelsImage(15306470), icona: Shirt },
+  { match: ["pet", "animali", "cane", "gatto", "veterinario", "toelettatura", "mangime"], url: pexelsImage(12064408), icona: PawPrint },
+  { match: ["ristorante", "ristoranti", "trattoria", "osteria", "cucina", "tavola calda", "food"], url: pexelsImage(30754469), icona: UtensilsCrossed },
+  { match: ["bar", "caffe", "caffè", "caffetteria", "colazione", "coffee"], url: pexelsImage(19748170), icona: Coffee },
+  { match: ["pizzeria", "pizza", "focaccia"], url: pexelsImage(29807154), icona: Pizza },
+  { match: ["calzature", "scarpe", "footwear", "sneakers", "sandali", "stivali"], url: pexelsImage(37052027), icona: Footprints },
+  { match: ["fioraio", "fiori", "florist", "piante", "giardino", "composizioni"], url: pexelsImage(32939456), icona: Flower2 },
+  { match: ["gioielleria", "gioielli", "orologeria", "oro", "argento", "pietre preziose"], url: pexelsImage(29043373), icona: Gem },
+  { match: ["elettricista", "elettricita", "impianti", "elettrico", "quadro elettrico"], url: pexelsImage(19756443), icona: Zap },
+  { match: ["idraulico", "idraulica", "caldaia", "termoidraulica", "riscaldamento"], url: pexelsImage(19756443), icona: Droplets },
+  { match: ["falegname", "falegnameria", "carpenteria", "legno", "mobilio"], url: pexelsImage(19756443), icona: Hammer },
+  { match: ["servizi", "services", "professionisti", "artigiani", "varie", "generico"], url: pexelsImage(19756443), icona: Wrench },
+  { match: ["eventi", "tempo libero", "event", "intrattenimento", "spettacolo", "cultura"], url: pexelsImage(1190298), icona: CalendarDays },
+  { match: ["gelateria", "gelato"], url: pexelsImage(36583362), icona: Coffee },
 ];
 
-const TILE_CLASS =
-  "group flex flex-col items-center gap-2 rounded-xl bg-white p-3 md:p-4 transition-all duration-200 hover:shadow-sm hover:-translate-y-0.5 ring-1 ring-slate-100";
+function stilePerCategoria(categoria: Categoria): StileCategoria {
+  const testo = `${categoria.slug} ${categoria.nome}`.toLowerCase();
+  const trovato = STILI_CATEGORIE.find((stile) =>
+    stile.match.some((termine) => testo.includes(termine))
+  );
+  return trovato ?? FALLBACK;
+}
+
+const CARD_CLASS =
+  "group relative block aspect-[4/3] overflow-hidden rounded-2xl bg-slate-200 shadow-sm ring-1 ring-slate-900/5 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-900/15 sm:aspect-[16/10]";
+
+const OVERLAY_CLASS =
+  "absolute inset-0 bg-gradient-to-t from-slate-900/85 via-slate-900/25 to-transparent";
+
+const ICON_BADGE_CLASS =
+  "flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white shadow-md ring-1 ring-slate-900/5 md:h-11 md:w-11";
+
+const NOME_CLASS =
+  "truncate text-sm font-black tracking-tight text-white drop-shadow-sm md:text-base";
 
 export default function CategoryTile({
   categoria,
@@ -40,44 +101,63 @@ export default function CategoryTile({
   index: number;
   count?: number;
 }) {
-  const stile = STILI_TILE[index % STILI_TILE.length];
-  const icona = ICONE_CATEGORIE[categoria.slug] ?? "/icons/store.png";
+  const stile = stilePerCategoria(categoria);
+  const Icona = stile.icona;
 
   return (
     <Link
       href={`/categorie/${categoria.slug}`}
-      className={TILE_CLASS}
+      className={CARD_CLASS}
     >
+      {/* Immagine fotografica reale a tutta card */}
       <div
-        className={`flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-lg bg-gradient-to-br from-slate-50 to-slate-100 transition-all duration-200 ${stile.box} group-hover:scale-110`}
-      >
-        <Image src={icona} alt="" width={24} height={24} className="md:w-7 md:h-7" />
-      </div>
-      <span className={`text-[11px] md:text-xs font-semibold transition-colors ${stile.text}`}>
-        {categoria.nome}
-      </span>
-      {typeof count === "number" && (
-        <span className="-mt-1 text-[10px] font-medium text-slate-400">
-          {count === 1 ? "1 negozio" : `${count} negozi`}
+        role="img"
+        aria-label={categoria.nome}
+        className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
+        style={{ backgroundImage: `url(${stile.url})` }}
+      />
+      {/* Overlay leggermente scuro nella parte inferiore */}
+      <div className={OVERLAY_CLASS} />
+
+      {/* Nome in bianco + icona circolare bianca in basso */}
+      <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 p-3 md:p-4">
+        <div className="min-w-0">
+          <h3 className={NOME_CLASS}>
+            {categoria.nome}
+          </h3>
+          {typeof count === "number" && (
+            <p className="mt-0.5 text-[10px] font-medium text-white/80 md:text-[11px]">
+              {count === 1 ? "1 negozio" : `${count} negozi`}
+            </p>
+          )}
+        </div>
+        <span className={ICON_BADGE_CLASS}>
+          <Icona className="h-4 w-4 text-blue-700 md:h-5 md:w-5" aria-hidden />
         </span>
-      )}
+      </div>
     </Link>
   );
 }
 
 export function TutteCategorieTile({ index = 0 }: { index?: number }) {
-  const stile = STILI_TILE[index % STILI_TILE.length];
-
   return (
-    <Link href="/categorie" className={TILE_CLASS}>
+    <Link href="/categorie" className={CARD_CLASS}>
       <div
-        className={`flex h-10 w-10 md:h-12 md:w-12 items-center justify-center rounded-lg bg-gradient-to-br from-slate-50 to-slate-100 transition-all duration-200 ${stile.box} group-hover:scale-110`}
-      >
-        <LayoutGrid className="h-5 w-5 text-slate-500 transition-colors group-hover:text-blue-600 md:h-6 md:w-6" />
+        role="img"
+        aria-label="Tutte le categorie"
+        className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-105"
+        style={{ backgroundImage: `url(${pexelsImage(10907746)})` }}
+      />
+      <div className={OVERLAY_CLASS} />
+
+      <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 p-3 md:p-4">
+        <h3 className={NOME_CLASS}>
+          Tutte le categorie
+        </h3>
+        <span className={ICON_BADGE_CLASS}>
+          <LayoutGrid className="h-4 w-4 text-blue-700 md:h-5 md:w-5" aria-hidden />
+        </span>
       </div>
-      <span className={`text-[11px] md:text-xs font-semibold transition-colors ${stile.text}`}>
-        Tutte le categorie
-      </span>
     </Link>
   );
 }
