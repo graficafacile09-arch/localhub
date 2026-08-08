@@ -28,7 +28,7 @@ export default async function Home() {
       <Header />
 
       {/* HERO COMPATTO ED ELEGANTE */}
-      <section className="bg-gradient-to-r from-blue-700 to-blue-600 py-10 md:py-14 text-white px-4">
+      <section className="relative overflow-hidden bg-gradient-to-r from-blue-700 to-blue-600 py-10 md:py-14 text-white px-4 rounded-b-[2.5rem] sm:rounded-b-[3.5rem] md:rounded-b-[4.5rem] shadow-xl shadow-blue-900/20">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-2xl md:text-4xl font-black tracking-tight">
             Tutto quello che cerchi... è già nella tua città.
