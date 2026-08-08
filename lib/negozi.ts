@@ -1,36 +1,16 @@
 import { calcolaPunteggioNegozio, filtraNegoziPerPertinenza } from "./ranking-negozi";
 import { estraiToken, normalizza, radice } from "./text-utils";
 import { createAdminSupabaseClient } from "./supabase/admin";
-import { createServerSupabaseClient } from "./supabase/server";
 import { isNumericId, isUuid, toSlug } from "./slug";
 import type { Categoria } from "@/types/negozio";
 
-// Client Supabase PRIVILEGIATO per il data layer pubblico.
-// Ordine di tentativi (nessuno di questi due rompe RLS pubbliche esistenti):
-//   1. service_role (createAdminSupabaseClient) — bypass completo,
-//      necessario per backfill slug (UPDATE) e per leggere negozi con
-//      qualunque colonna opzionale.
-//   2. fallback anonimo (createServerSupabaseClient) — utile se
-//      SUPABASE_SERVICE_ROLE_KEY non è disponibile nel runtime (es. edge
-//      di Vercel in alcuni ambienti): anonimo passa comunque le policy
-//      "negozi public read" e "categorie public read" + "prodotti public
-//      active" (tutte create con using(true)).
-// Il tipo ritornato è lo stesso di createAdminSupabaseClient (alla fine
-// sono entrambi SupabaseClient): le query usano metodi standard select/
-// eq/is/in/update/order/single/maybeSingle comuni a entrambi.
-async function getDataLayerClient() {
+const getDb = () => {
   try {
     return createAdminSupabaseClient();
   } catch {
-    try {
-      return await createServerSupabaseClient();
-    } catch {
-      return null;
-    }
+    return null;
   }
-}
-
-const getDb = getDataLayerClient;
+};
 
 // Assicura che un record negozio abbia uno slug pubblico valido.
 // Se slug è null/vuoto: genera slug=toSlug(nome)+suffix se duplicato,
