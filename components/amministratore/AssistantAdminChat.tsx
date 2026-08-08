@@ -77,18 +77,29 @@ export default function AssistantAdminChat() {
       });
 
       if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(
-          (errData as { error?: string }).error ?? `Errore HTTP ${response.status}`
-        );
+        const errData = (await response.json().catch(() => ({}))) as {
+          error?: string | { message?: string };
+        };
+        const errMessage =
+          (typeof errData?.error === "string"
+            ? errData.error
+            : errData?.error?.message) ?? `Errore HTTP ${response.status}`;
+        throw new Error(errMessage);
       }
 
-      const data = (await response.json()) as { risposta: string };
+      const json = (await response.json()) as {
+        risposta?: string;
+        data?: { risposta?: string };
+      };
+
+      // L'API restituisce { success: true, data: { risposta } }.
+      // Fallback su data.risposta per compatibilità con eventuali versioni precedenti.
+      const risposta = json?.data?.risposta ?? json?.risposta;
 
       const assistantMsg: ChatMessage = {
         id: nextId(),
         role: "assistant",
-        content: data.risposta ?? "Nessuna risposta.",
+        content: risposta ?? "Nessuna risposta.",
       };
 
       setMessages((prev) => [...prev, assistantMsg]);
