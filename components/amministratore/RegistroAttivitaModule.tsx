@@ -105,10 +105,22 @@ export default function RegistroAttivitaModule() {
     try {
       const res = await fetch(`/api/amministratore/registro-attivita?${params.toString()}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      setAttivita(data.attivita ?? []);
-      setTotale(data.totale ?? 0);
-      setStats(data.stats ?? null);
+      const json = (await res.json()) as {
+        attivita?: AdminActivityLog[];
+        totale?: number;
+        stats?: AdminActivityStats | null;
+        data?: {
+          attivita?: AdminActivityLog[];
+          totale?: number;
+          stats?: AdminActivityStats | null;
+        };
+      };
+      // L'API restituisce { success: true, data: { attivita, totale, stats } }.
+      // Fallback sulla vecchia forma piatta per compatibilità.
+      const payload = json?.data ?? json;
+      setAttivita(payload.attivita ?? []);
+      setTotale(payload.totale ?? 0);
+      setStats(payload.stats ?? null);
     } catch (err) {
       setErrore(err instanceof Error ? err.message : "Errore caricamento registro");
     } finally {

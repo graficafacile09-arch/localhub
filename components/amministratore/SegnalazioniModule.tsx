@@ -142,10 +142,22 @@ export default function SegnalazioniModule() {
     try {
       const res = await fetch(`/api/amministratore/segnalazioni?${params.toString()}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-      setSegnalazioni(data.segnalazioni ?? []);
-      setTotale(data.totale ?? 0);
-      setStats(data.stats ?? null);
+      const json = (await res.json()) as {
+        segnalazioni?: SegnalazioneAdmin[];
+        totale?: number;
+        stats?: SegnalazioneStats | null;
+        data?: {
+          segnalazioni?: SegnalazioneAdmin[];
+          totale?: number;
+          stats?: SegnalazioneStats | null;
+        };
+      };
+      // L'API restituisce { success: true, data: { segnalazioni, totale, stats } }.
+      // Fallback sulla vecchia forma piatta per compatibilità.
+      const payload = json?.data ?? json;
+      setSegnalazioni(payload.segnalazioni ?? []);
+      setTotale(payload.totale ?? 0);
+      setStats(payload.stats ?? null);
     } catch (err) {
       setErrore(err instanceof Error ? err.message : "Errore caricamento segnalazioni");
     } finally {
@@ -223,8 +235,14 @@ export default function SegnalazioniModule() {
         throw new Error(errData.error?.message ?? `Errore HTTP ${res.status}`);
       }
 
-      const json = await res.json();
-      const aggiornata = json.segnalazione;
+      const json = (await res.json()) as {
+        segnalazione?: SegnalazioneAdmin;
+        data?: { segnalazione?: SegnalazioneAdmin };
+      };
+      const aggiornata = json?.data?.segnalazione ?? json?.segnalazione;
+      if (!aggiornata) {
+        throw new Error("Risposta senza segnalazione aggiornata.");
+      }
 
       setSegnalazioni((prev) =>
         prev.map((s) => (s.id === aggiornata.id ? aggiornata : s))
