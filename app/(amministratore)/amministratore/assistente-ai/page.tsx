@@ -1,3 +1,4 @@
+import Link from "next/link";
 import AssistantAdminChat from "@/components/amministratore/AssistantAdminChat";
 
 export const metadata = {
@@ -8,15 +9,12 @@ export default function AssistenteAiPage() {
   return (
     <section className="space-y-5" aria-label="Assistente AI Amministrazione">
       <nav aria-label="Percorso" className="mb-5">
-        <button
-          type="button"
-          onClick={() => {
-            window.location.href = "/amministratore";
-          }}
+        <Link
+          href="/amministratore"
           className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 transition hover:text-blue-800"
         >
           Torna al pannello
-        </button>
+        </Link>
       </nav>
 
       <div className="rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm md:p-8">
