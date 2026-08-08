@@ -93,7 +93,8 @@ export default function AssistantAdminChat() {
       };
 
       // L'API restituisce { success: true, data: { risposta } }.
-      // Fallback su data.risposta per compatibilità con eventuali versioni precedenti.
+      // Fallback sulla vecchia forma piatta { risposta } per compatibilità
+      // con eventuali versioni precedenti dell'endpoint.
       const risposta = json?.data?.risposta ?? json?.risposta;
 
       const assistantMsg: ChatMessage = {
