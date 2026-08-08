@@ -18,12 +18,23 @@ export default function CategoryStoreCard({ negozio, preferitoAttivo, autenticat
     categoria: negozio.categoria,
   });
 
-  // Copertina: se presente un'immagine valida usala, altrimenti fallback
-  // sul placeholder di categoria (stesso helper usato nel resto del sito).
+  // Copertina: usata SOLO se è un URL valido (assoluto o root-relative).
+  // I valori relativi tipo "copertina-panificio.jpg" non sono risolvibili
+  // (il file non esiste in /public) e produrrebbero un'immagine rotta:
+  // in quel caso si ricade sul placeholder fotografico di categoria,
+  // esattamente come per gli altri negozi senza copertina.
   const copertina =
-    negozio.copertina_url && negozio.copertina_url.trim()
+    negozio.copertina_url &&
+    (negozio.copertina_url.startsWith("http://") ||
+      negozio.copertina_url.startsWith("https://") ||
+      negozio.copertina_url.startsWith("/"))
       ? negozio.copertina_url.trim()
-      : logoFallback;
+      : getNegozioCardImmagine({
+          // Solo categoria: placeholder fotografico grande, non il logo.
+          logo_url: null,
+          immagine: null,
+          categoria: negozio.categoria,
+        });
 
   const haProdotti = negozio.prodotti_attivi > 0;
   // Link pubblico USA SEMPRE lo slug (mai UUID, mai null/undefined).
