@@ -265,6 +265,29 @@ export async function eliminaOffertaAdmin(
 // OFFERTE PUBBLICHE (solo attive e in periodo valido)
 // ════════════════════════════════════════════════════
 
+export async function getOffertePubblicheNegozio(negozioId: string): Promise<Offerta[]> {
+  const db = getDb();
+  if (!db) return [];
+
+  const { data, error } = await db
+    .from("offerte")
+    .select(COLONNE_OFFERTE)
+    .eq("negozio_id", negozioId)
+    .eq("attiva", true)
+    .order("created_at", { ascending: false });
+
+  if (error) return [];
+
+  const ora = Date.now();
+  return (data ?? [])
+    .map((riga) => assumiOfferta(riga as Record<string, unknown>))
+    .filter((o) => {
+      if (o.data_inizio && Date.parse(o.data_inizio) > ora) return false;
+      if (o.data_fine && Date.parse(o.data_fine) < ora) return false;
+      return true;
+    });
+}
+
 export async function getOffertePubbliche(): Promise<Offerta[]> {
   const db = getDb();
   if (!db) return [];

@@ -244,6 +244,29 @@ export async function canManageStore(userId: string, negozioId: string): Promise
   return true;
 }
 
+export async function getSlugNegozioGestibile(userId: string, negozioId: string): Promise<string | null> {
+  const isAdmin = await utenteAdminAutorizzatoCorrente(userId);
+  const supabase = isAdmin
+    ? createAdminSupabaseClient()
+    : await createServerSupabaseClient();
+
+  const query = supabase
+    .from("negozi")
+    .select("slug")
+    .eq("id", negozioId)
+    .is("deleted_at", null);
+
+  if (!isAdmin) {
+    query.eq("owner_user_id", userId);
+  }
+
+  const { data, error } = await query.limit(1).maybeSingle();
+
+  if (error || !data) return null;
+  const slug = (data as Record<string, unknown>).slug as string | null;
+  return slug && slug.trim() ? slug.trim() : null;
+}
+
 // =================================================================
 // Prodotti — CRUD
 // =================================================================

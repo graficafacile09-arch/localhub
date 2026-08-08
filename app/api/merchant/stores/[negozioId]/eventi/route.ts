@@ -1,7 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { apiError, apiOk } from "@/lib/api/response";
 import { requireApiArea } from "@/lib/auth/session-area";
-import { canManageStore } from "@/lib/merchant/data";
+import { canManageStore, getSlugNegozioGestibile } from "@/lib/merchant/data";
 import { creaEventoNegozio, getEventiNegozio, type EventoInput } from "@/lib/eventi";
 
 function validaInput(
@@ -104,6 +104,8 @@ export async function POST(request: Request, context: { params: Promise<{ negozi
   revalidatePath("/");
   revalidatePath("/negozi");
   revalidatePath("/amministratore/eventi");
+  const slugPubblico = await getSlugNegozioGestibile(sessione.user.id, negozioId);
+  if (slugPubblico) revalidatePath(`/negozio/${slugPubblico}`);
 
   return apiOk({ evento: risultato.data }, 201);
 }

@@ -92,7 +92,7 @@ alter table if exists public.negozi
 
 -- Estensione modulare
 alter table if exists public.negozi
-  add column if not exists moduli_attivi jsonb not null default '["informazioni","immagini","prodotti","servizi","contatti","posizione","orari","social","seo","ai","impostazioni"]'::jsonb,
+  add column if not exists moduli_attivi jsonb not null default '["informazioni","immagini","prodotti","servizi","contatti","posizione","orari","social","offerte","eventi","seo","ai","impostazioni"]'::jsonb,
   add column if not exists data jsonb not null default '{}'::jsonb,
   add column if not exists version integer not null default 1;
 

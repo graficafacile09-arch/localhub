@@ -8,8 +8,10 @@ import { risolviNegozioPubblico, getProdottiNegozio } from "@/lib/negozi";
 import { getNegozioCardImmagine } from "@/lib/negozi-card-immagini";
 import { chiavePreferito, getStatoPreferitiPerPagina } from "@/lib/cliente/favorites";
 import { getSiteUrl } from "@/lib/site";
+import { getOffertePubblicheNegozio, type Offerta } from "@/lib/offerte";
+import { getEventiPubbliciNegozio, type Evento } from "@/lib/eventi";
 import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
-import { MapPin, Phone, MessageCircle, ExternalLink } from "lucide-react";
+import { MapPin, Phone, MessageCircle, ExternalLink, Tag, Calendar, Clock } from "lucide-react";
 import OpeningHoursDisplay from "@/components/negozio/OpeningHoursDisplay";
 
 type Params = { slug: string };
@@ -53,6 +55,19 @@ export default async function PaginaNegozio({ params }: { params: Promise<Params
   const id = negozio.id as string;
   const slugCanonico = (negozio.slug as string) ?? "";
   const prodotti = await getProdottiNegozio(id);
+
+  const moduliAttivi: string[] = Array.isArray(negozio.moduli_attivi)
+    ? (negozio.moduli_attivi as string[])
+    : [];
+
+  let offerte: Offerta[] = [];
+  let eventi: Evento[] = [];
+  if (moduliAttivi.includes("offerte")) {
+    offerte = await getOffertePubblicheNegozio(id);
+  }
+  if (moduliAttivi.includes("eventi")) {
+    eventi = await getEventiPubbliciNegozio(id);
+  }
 
   // Stato preferiti per il pulsante "Salva negozio" e per le card prodotto.
   const statoPreferiti = await getStatoPreferitiPerPagina();
@@ -245,6 +260,126 @@ export default async function PaginaNegozio({ params }: { params: Promise<Params
             <p className="text-xs text-slate-400">
               Nessun prodotto pubblicato. Torna a trovarci presto!
             </p>
+          </section>
+        )}
+
+        {/* Offerte */}
+        {offerte.length > 0 && (
+          <section className="mt-5">
+            <h2 className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-slate-500">
+              <Tag className="h-3.5 w-3.5 text-amber-500" />
+              Offerte ({offerte.length})
+            </h2>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {offerte.map((offerta) => (
+                <article
+                  key={offerta.id}
+                  className="overflow-hidden rounded-xl border border-amber-100 bg-gradient-to-br from-amber-50 to-white"
+                >
+                  <div className="flex items-start gap-3 p-3">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-100">
+                      <Tag className="h-5 w-5 text-amber-600" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="truncate text-sm font-black text-slate-900">
+                        {offerta.titolo}
+                      </h3>
+                      {offerta.descrizione && (
+                        <p className="mt-0.5 line-clamp-2 text-[11px] leading-4 text-slate-600">
+                          {offerta.descrizione}
+                        </p>
+                      )}
+                      <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+                        {offerta.prezzo_originale !== null && (
+                          <span className="text-[11px] text-slate-400 line-through">
+                            €{Number(offerta.prezzo_originale).toFixed(2)}
+                          </span>
+                        )}
+                        {offerta.prezzo_offerta !== null && (
+                          <span className="rounded-md bg-amber-500 px-1.5 py-0.5 text-[11px] font-black text-white">
+                            €{Number(offerta.prezzo_offerta).toFixed(2)}
+                          </span>
+                        )}
+                        {(offerta.data_inizio || offerta.data_fine) && (
+                          <span className="flex items-center gap-1 text-[11px] text-slate-500">
+                            <Clock className="h-3 w-3" />
+                            {offerta.data_inizio
+                              ? new Date(offerta.data_inizio).toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit" })
+                              : ""}
+                            {offerta.data_inizio && offerta.data_fine ? " → " : ""}
+                            {offerta.data_fine
+                              ? new Date(offerta.data_fine).toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "2-digit" })
+                              : ""}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Eventi */}
+        {eventi.length > 0 && (
+          <section className="mt-5">
+            <h2 className="mb-2 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-slate-500">
+              <Calendar className="h-3.5 w-3.5 text-blue-500" />
+              Eventi ({eventi.length})
+            </h2>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {eventi.map((evento) => (
+                <article
+                  key={evento.id}
+                  className="overflow-hidden rounded-xl border border-blue-100 bg-gradient-to-br from-blue-50 to-white"
+                >
+                  <div className="flex items-start gap-3 p-3">
+                    <div className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-lg bg-blue-100 leading-tight">
+                      <span className="text-[9px] font-black uppercase tracking-tight text-blue-600">
+                        {evento.data_inizio
+                          ? new Date(evento.data_inizio).toLocaleDateString("it-IT", { month: "short" }).toUpperCase()
+                          : "DATA"}
+                      </span>
+                      <span className="text-[14px] font-black text-blue-700 leading-none">
+                        {evento.data_inizio
+                          ? new Date(evento.data_inizio).toLocaleDateString("it-IT", { day: "2-digit" })
+                          : "—"}
+                      </span>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="truncate text-sm font-black text-slate-900">
+                        {evento.titolo}
+                      </h3>
+                      {evento.descrizione && (
+                        <p className="mt-0.5 line-clamp-2 text-[11px] leading-4 text-slate-600">
+                          {evento.descrizione}
+                        </p>
+                      )}
+                      <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-slate-500">
+                        {evento.luogo && (
+                          <span className="flex items-center gap-1">
+                            <MapPin className="h-3 w-3 text-blue-500" />
+                            <span className="truncate">{evento.luogo}</span>
+                          </span>
+                        )}
+                        {(evento.data_inizio || evento.data_fine) && (
+                          <span className="flex items-center gap-1">
+                            <Clock className="h-3 w-3" />
+                            {evento.data_inizio
+                              ? new Date(evento.data_inizio).toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit" })
+                              : ""}
+                            {evento.data_fine && evento.data_inizio && evento.data_fine !== evento.data_inizio
+                              ? " → " + new Date(evento.data_fine).toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "2-digit" })
+                              : ""}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
           </section>
         )}
 

@@ -251,6 +251,29 @@ export async function eliminaEventoAdmin(
 // EVENTI PUBBLICI (solo attivi e in periodo valido)
 // ════════════════════════════════════════════════════
 
+export async function getEventiPubbliciNegozio(negozioId: string): Promise<Evento[]> {
+  const db = getDb();
+  if (!db) return [];
+
+  const { data, error } = await db
+    .from("eventi")
+    .select(COLONNE_EVENTI)
+    .eq("negozio_id", negozioId)
+    .eq("attivo", true)
+    .order("data_inizio", { ascending: true });
+
+  if (error) return [];
+
+  const ora = Date.now();
+  return (data ?? [])
+    .map((riga) => assumiEvento(riga as Record<string, unknown>))
+    .filter((e) => {
+      if (e.data_inizio && Date.parse(e.data_inizio) > ora + 60_000) return false;
+      if (e.data_fine && Date.parse(e.data_fine) < ora - 60_000) return false;
+      return true;
+    });
+}
+
 export async function getEventiPubblici(): Promise<Evento[]> {
   const db = getDb();
   if (!db) return [];
