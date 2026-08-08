@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, PackageOpen, Store } from "lucide-react";
 import { getNegozioCardImmagine } from "@/lib/negozi-card-immagini";
+import { toSlug } from "@/lib/slug";
 import type { NegozioCategoria } from "@/lib/negozi";
 import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
 
@@ -25,10 +26,11 @@ export default function CategoryStoreCard({ negozio, preferitoAttivo, autenticat
       : logoFallback;
 
   const haProdotti = negozio.prodotti_attivi > 0;
-  const slugValido = negozio.slug && negozio.slug.trim().length > 0;
-  const hrefNegozio = slugValido
-    ? `/negozio/${negozio.slug!.trim()}`
-    : `/negozio/${negozio.id}`;
+  // Link pubblico USA SEMPRE lo slug (mai UUID, mai null/undefined).
+  // Il data layer (getCategoriaShowcase) assicura slug popolato e persistito;
+  // questo è un ultimo riparo deterministico senza alcun fallback a ID.
+  const slugPubblico = (negozio.slug ?? "").trim() || toSlug(negozio.nome) || negozio.id;
+  const hrefNegozio = `/negozio/${slugPubblico}`;
   const mostraPreferiti =
     preferitoAttivo !== undefined && autenticato !== undefined;
 

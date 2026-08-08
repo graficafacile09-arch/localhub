@@ -1,7 +1,7 @@
 import { calcolaPunteggioNegozio, filtraNegoziPerPertinenza } from "./ranking-negozi";
 import { normalizza, radice } from "./text-utils";
 import { createAdminSupabaseClient } from "./supabase/admin";
-import { isNumericId, isUuid } from "./slug";
+import { isNumericId, isUuid, toSlug } from "./slug";
 import type { Categoria } from "@/types/negozio";
 
 const getDb = () => {
@@ -11,6 +11,40 @@ const getDb = () => {
     return null;
   }
 };
+
+// Assicura che un record negozio abbia uno slug pubblico valido.
+// Se slug è null/vuoto: genera slug=toSlug(nome)+suffix se duplicato,
+// salva l'UPDATE sul DB e restituisce lo slug finale.
+// Non tocca RLS o altri campi; usa il client admin bypass per scritture.
+async function assicuraSlugNegozio(
+  db: ReturnType<typeof createAdminSupabaseClient>,
+  negozio: Record<string, unknown>,
+): Promise<string> {
+  const attuale = ((negozio.slug as string) ?? "").trim();
+  if (attuale) return attuale;
+
+  const base = toSlug((negozio.nome as string) ?? "negozio") || "negozio";
+  let candidato = base;
+  let suffix = 1;
+  // 10 tentativi di disambiguazione.
+  while (suffix <= 100) {
+    const { data: esistente } = await db
+      .from("negozi")
+      .select("id")
+      .eq("slug", candidato)
+      .neq("id", negozio.id as string)
+      .limit(1)
+      .maybeSingle();
+    if (!esistente) break;
+    suffix += 1;
+    candidato = `${base}-${suffix}`;
+  }
+
+  const id = negozio.id as string;
+  await db.from("negozi").update({ slug: candidato, updated_at: new Date().toISOString() }).eq("id", id);
+  return candidato;
+}
+
 
 const sinonimiRicerca: Record<string, string[]> = {
   panificio: ["panificio", "forno", "pane", "pasticceria", "pasticcere", "bakery", "bakery shop", "cornetti", "pizza al taglio", "focaccia", "grissini", "biscotti", "torte", "dolci", "lievitati", "panetteria", "pane casereccio"],
@@ -162,6 +196,8 @@ export type RisoluzioneProdotto = {
 };
 
 export async function risolviNegozioPubblico(param: string): Promise<RisoluzioneNegozio> {
+  const db = getDb();
+
   // 1) Slug canonico: risoluzione diretta.
   const negozio = await getNegozioBySlug(param);
   if (negozio) return { negozio, slugLegacy: null };
@@ -169,10 +205,10 @@ export async function risolviNegozioPubblico(param: string): Promise<Risoluzione
   // 2) Ponte legacy: parametro che sembra un UUID → cerca per id.
   if (isUuid(param)) {
     const legacy = await getNegozio(param);
-    if (legacy) {
-      const slug = (legacy.slug as string) ?? "";
+    if (legacy && db) {
+      let slug = ((legacy.slug as string) ?? "").trim();
+      if (!slug) slug = await assicuraSlugNegozio(db, legacy as Record<string, unknown>);
       if (slug) return { negozio: null, slugLegacy: `/negozio/${slug}` };
-      return { negozio: legacy, slugLegacy: null };
     }
   }
 
@@ -527,19 +563,25 @@ export async function getCategoriaShowcase(slug: string): Promise<CategoriaShowc
     conteggioProdotti.set(id, (conteggioProdotti.get(id) ?? 0) + 1);
   }
 
-  const negozi = ordinaNegoziPerCategoria(negoziFiltrati, conteggioProdotti).map((n) => ({
-    id: n.id as string,
-    slug: (n.slug as string) ?? null,
-    nome: n.nome as string,
-    categoria: (n.categoria as string) ?? null,
-    descrizione: (n.descrizione as string) ?? null,
-    logo_url: (n.logo_url as string) ?? null,
-    copertina_url: (n.copertina_url as string) ?? null,
-    in_evidenza: !!n.in_evidenza,
-    visite: n.visite != null ? Number(n.visite) : null,
-    created_at: n.created_at as string,
-    prodotti_attivi: conteggioProdotti.get(n.id as string) ?? 0,
-  }));
+  const ordinati = ordinaNegoziPerCategoria(negoziFiltrati, conteggioProdotti);
+
+  const negozi: NegozioCategoria[] = [];
+  for (const n of ordinati) {
+    const slug = await assicuraSlugNegozio(db, n as Record<string, unknown>);
+    negozi.push({
+      id: n.id as string,
+      slug,
+      nome: n.nome as string,
+      categoria: (n.categoria as string) ?? null,
+      descrizione: (n.descrizione as string) ?? null,
+      logo_url: (n.logo_url as string) ?? null,
+      copertina_url: (n.copertina_url as string) ?? null,
+      in_evidenza: !!n.in_evidenza,
+      visite: n.visite != null ? Number(n.visite) : null,
+      created_at: n.created_at as string,
+      prodotti_attivi: conteggioProdotti.get(n.id as string) ?? 0,
+    });
+  }
 
   return { categoria, negozi, totaleNegozi: negozi.length };
 }
