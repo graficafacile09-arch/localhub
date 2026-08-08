@@ -11,6 +11,11 @@ export function getSiteUrl(): string {
   const explicit = normalizeUrl(process.env.NEXT_PUBLIC_SITE_URL ?? "");
   if (explicit) return explicit;
   const vercel = normalizeUrl(process.env.VERCEL_URL ?? "");
-  if (vercel) return vercel;
+  const isCustomDomain =
+    vercel &&
+    !vercel.endsWith(".vercel.app") &&
+    !/^https:\/\/[^.]+\.[^.]+\.vercel\.app$/.test(vercel) &&
+    !/localhub/i.test(vercel);
+  if (isCustomDomain) return vercel;
   return PRODUCTION_FALLBACK;
 }
