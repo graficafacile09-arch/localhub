@@ -28,49 +28,53 @@ import {
 } from "lucide-react";
 import type { Categoria } from "@/types/negozio";
 
-// Simboli (icone) piccoli e professionali per ogni categoria: niente immagini.
-const FALLBACK_ICONA: LucideIcon = Store;
+// Simboli (icone) piccoli con sfondo pastello coordinato: un tocco di colore
+// per ogni categoria, senza immagini e senza icone giocattolose.
+type StileCategoria = {
+  icona: LucideIcon;
+  bg: string;
+  text: string;
+};
 
-const ICONE_CATEGORIE: { match: string[]; icona: LucideIcon }[] = [
-  { match: ["panificio", "bakery", "forno", "pane", "pasticceria", "panetteria"], icona: Croissant },
-  { match: ["beauty", "bellezza", "parrucchiere", "estetista", "barbiere", "salone", "skincare", "makeup"], icona: Scissors },
-  { match: ["casa", "arredo", "arredamento", "mobili", "interior", "decorazioni", "illuminazione", "cucina"], icona: Home },
-  { match: ["auto", "officina", "meccanico", "carrozzeria", "concessionaria", "gomme", "macchina"], icona: Car },
-  { match: ["salute", "farmacia", "parafarmacia", "benessere", "sanitaria", "medicinali", "wellness"], icona: HeartPulse },
-  { match: ["tech", "elettronica", "tecnologia", "telefonia", "computer", "smartphone", "tablet", "informatica"], icona: Smartphone },
-  { match: ["cartoleria", "cancelleria", "ufficio", "forniture"], icona: PenLine },
-  { match: ["bimbi", "bambini", "giocattoli", "infanzia", "neonati", "scuola"], icona: Baby },
-  { match: ["sport", "fitness", "palestra", "yoga", "training", "pilates", "running", "allenamento"], icona: Dumbbell },
-  { match: ["abbigliamento", "moda", "boutique", "fashion", "vestiti", "shopping", "shop", "acquisti"], icona: Shirt },
-  { match: ["pet", "animali", "cane", "gatto", "veterinario", "toelettatura", "mangime"], icona: PawPrint },
-  { match: ["ristorante", "ristoranti", "trattoria", "osteria", "cucina", "tavola calda", "food"], icona: UtensilsCrossed },
-  { match: ["bar", "caffe", "caffè", "caffetteria", "colazione", "coffee"], icona: Coffee },
-  { match: ["pizzeria", "pizza", "focaccia"], icona: Pizza },
-  { match: ["calzature", "scarpe", "footwear", "sneakers", "sandali", "stivali"], icona: Footprints },
-  { match: ["fioraio", "fiori", "florist", "piante", "giardino", "composizioni"], icona: Flower2 },
-  { match: ["gioielleria", "gioielli", "orologeria", "oro", "argento", "pietre preziose"], icona: Gem },
-  { match: ["elettricista", "elettricita", "impianti", "elettrico", "quadro elettrico"], icona: Zap },
-  { match: ["idraulico", "idraulica", "caldaia", "termoidraulica", "riscaldamento"], icona: Droplets },
-  { match: ["falegname", "falegnameria", "carpenteria", "legno", "mobilio"], icona: Hammer },
-  { match: ["servizi", "services", "professionisti", "artigiani", "varie", "generico"], icona: Wrench },
-  { match: ["eventi", "tempo libero", "event", "intrattenimento", "spettacolo", "cultura"], icona: CalendarDays },
-  { match: ["gelateria", "gelato"], icona: Coffee },
+const FALLBACK: StileCategoria = { icona: Store, bg: "bg-blue-100", text: "text-blue-600" };
+
+const ICONE_CATEGORIE: { match: string[]; icona: LucideIcon; bg: string; text: string }[] = [
+  { match: ["panificio", "bakery", "forno", "pane", "pasticceria", "panetteria"], icona: Croissant, bg: "bg-amber-100", text: "text-amber-600" },
+  { match: ["beauty", "bellezza", "parrucchiere", "estetista", "barbiere", "salone", "skincare", "makeup"], icona: Scissors, bg: "bg-fuchsia-100", text: "text-fuchsia-600" },
+  { match: ["casa", "arredo", "arredamento", "mobili", "interior", "decorazioni", "illuminazione", "cucina"], icona: Home, bg: "bg-orange-100", text: "text-orange-600" },
+  { match: ["auto", "officina", "meccanico", "carrozzeria", "concessionaria", "gomme", "macchina"], icona: Car, bg: "bg-sky-100", text: "text-sky-600" },
+  { match: ["salute", "farmacia", "parafarmacia", "benessere", "sanitaria", "medicinali", "wellness"], icona: HeartPulse, bg: "bg-rose-100", text: "text-rose-600" },
+  { match: ["tech", "elettronica", "tecnologia", "telefonia", "computer", "smartphone", "tablet", "informatica"], icona: Smartphone, bg: "bg-violet-100", text: "text-violet-600" },
+  { match: ["cartoleria", "cancelleria", "ufficio", "forniture"], icona: PenLine, bg: "bg-indigo-100", text: "text-indigo-600" },
+  { match: ["bimbi", "bambini", "giocattoli", "infanzia", "neonati", "scuola"], icona: Baby, bg: "bg-yellow-100", text: "text-yellow-600" },
+  { match: ["sport", "fitness", "palestra", "yoga", "training", "pilates", "running", "allenamento"], icona: Dumbbell, bg: "bg-emerald-100", text: "text-emerald-600" },
+  { match: ["abbigliamento", "moda", "boutique", "fashion", "vestiti", "shopping", "shop", "acquisti"], icona: Shirt, bg: "bg-pink-100", text: "text-pink-600" },
+  { match: ["pet", "animali", "cane", "gatto", "veterinario", "toelettatura", "mangime"], icona: PawPrint, bg: "bg-teal-100", text: "text-teal-600" },
+  { match: ["ristorante", "ristoranti", "trattoria", "osteria", "cucina", "tavola calda", "food"], icona: UtensilsCrossed, bg: "bg-red-100", text: "text-red-600" },
+  { match: ["bar", "caffe", "caffè", "caffetteria", "colazione", "coffee"], icona: Coffee, bg: "bg-lime-100", text: "text-lime-600" },
+  { match: ["pizzeria", "pizza", "focaccia"], icona: Pizza, bg: "bg-amber-100", text: "text-amber-600" },
+  { match: ["calzature", "scarpe", "footwear", "sneakers", "sandali", "stivali"], icona: Footprints, bg: "bg-cyan-100", text: "text-cyan-600" },
+  { match: ["fioraio", "fiori", "florist", "piante", "giardino", "composizioni"], icona: Flower2, bg: "bg-green-100", text: "text-green-600" },
+  { match: ["gioielleria", "gioielli", "orologeria", "oro", "argento", "pietre preziose"], icona: Gem, bg: "bg-purple-100", text: "text-purple-600" },
+  { match: ["elettricista", "elettricita", "impianti", "elettrico", "quadro elettrico"], icona: Zap, bg: "bg-yellow-100", text: "text-yellow-600" },
+  { match: ["idraulico", "idraulica", "caldaia", "termoidraulica", "riscaldamento"], icona: Droplets, bg: "bg-blue-100", text: "text-blue-600" },
+  { match: ["falegname", "falegnameria", "carpenteria", "legno", "mobilio"], icona: Hammer, bg: "bg-stone-100", text: "text-stone-600" },
+  { match: ["servizi", "services", "professionisti", "artigiani", "varie", "generico"], icona: Wrench, bg: "bg-cyan-100", text: "text-cyan-600" },
+  { match: ["eventi", "tempo libero", "event", "intrattenimento", "spettacolo", "cultura"], icona: CalendarDays, bg: "bg-fuchsia-100", text: "text-fuchsia-600" },
+  { match: ["gelateria", "gelato"], icona: Coffee, bg: "bg-pink-100", text: "text-pink-600" },
 ];
 
-function iconaPerCategoria(categoria: Categoria): LucideIcon {
+function stilePerCategoria(categoria: Categoria): StileCategoria {
   const testo = `${categoria.slug} ${categoria.nome}`.toLowerCase();
   const trovato = ICONE_CATEGORIE.find((stile) =>
     stile.match.some((termine) => testo.includes(termine))
   );
-  return trovato?.icona ?? FALLBACK_ICONA;
+  return trovato ?? FALLBACK;
 }
 
-// Card pulita senza immagini: simbolo piccolo + nome ben leggibile.
+// Card pulita senza immagini: simbolo colorato + nome ben leggibile.
 const CARD_CLASS =
   "group flex flex-col items-center gap-2 rounded-2xl bg-white p-3.5 ring-1 ring-slate-100 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md md:p-4";
-
-const ICON_BADGE_CLASS =
-  "flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-slate-50 to-slate-100 ring-1 ring-slate-100 transition-colors duration-200 group-hover:from-blue-50 group-hover:to-blue-100 md:h-11 md:w-11";
 
 const NOME_CLASS =
   "block text-[11px] font-semibold text-slate-700 transition-colors group-hover:text-blue-600 md:text-xs";
@@ -84,15 +88,18 @@ export default function CategoryTile({
   index: number;
   count?: number;
 }) {
-  const Icona = iconaPerCategoria(categoria);
+  const stile = stilePerCategoria(categoria);
+  const Icona = stile.icona;
 
   return (
     <Link
       href={`/categorie/${categoria.slug}`}
       className={CARD_CLASS}
     >
-      <span className={ICON_BADGE_CLASS}>
-        <Icona className="h-5 w-5 text-slate-600 transition-colors group-hover:text-blue-600 md:h-[22px] md:w-[22px]" aria-hidden />
+      <span
+        className={`flex h-10 w-10 items-center justify-center rounded-full transition-transform duration-200 group-hover:scale-110 md:h-11 md:w-11 ${stile.bg}`}
+      >
+        <Icona className={`h-5 w-5 md:h-[22px] md:w-[22px] ${stile.text}`} aria-hidden />
       </span>
       <span className="text-center">
         <span className={NOME_CLASS}>
@@ -111,8 +118,8 @@ export default function CategoryTile({
 export function TutteCategorieTile({ index = 0 }: { index?: number }) {
   return (
     <Link href="/categorie" className={CARD_CLASS}>
-      <span className={ICON_BADGE_CLASS}>
-        <LayoutGrid className="h-5 w-5 text-slate-600 transition-colors group-hover:text-blue-600 md:h-[22px] md:w-[22px]" aria-hidden />
+      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 transition-transform duration-200 group-hover:scale-110 md:h-11 md:w-11">
+        <LayoutGrid className="h-5 w-5 text-blue-600 md:h-[22px] md:w-[22px]" aria-hidden />
       </span>
       <span className="text-center">
         <span className={NOME_CLASS}>
