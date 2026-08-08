@@ -26,7 +26,9 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const descrizione =
     ((negozio.descrizione as string) ?? (negozio.descrizione_completa as string) ?? "")
       .slice(0, 155) || `Scopri ${nome} su InCittà.`;
-  const canonical = `${getSiteUrl()}/negozio/${negozio.slug as string}`;
+  const slugCanonico = ((negozio.slug as string) ?? "").trim();
+  const slugOrId = slugCanonico || (negozio.id as string);
+  const canonical = `${getSiteUrl()}/negozio/${slugOrId}`;
 
   return {
     title: `${nome} | InCittà`,
@@ -53,7 +55,7 @@ export default async function PaginaNegozio({ params }: { params: Promise<Params
   }
 
   const id = negozio.id as string;
-  const slugCanonico = (negozio.slug as string) ?? "";
+  const slugCanonico = ((negozio.slug as string) ?? "").trim() || id;
   const prodotti = await getProdottiNegozio(id);
 
   const moduliAttivi: string[] = Array.isArray(negozio.moduli_attivi)

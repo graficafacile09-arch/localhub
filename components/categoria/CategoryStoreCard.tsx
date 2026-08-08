@@ -25,7 +25,10 @@ export default function CategoryStoreCard({ negozio, preferitoAttivo, autenticat
       : logoFallback;
 
   const haProdotti = negozio.prodotti_attivi > 0;
-  const hrefNegozio = `/negozio/${negozio.slug}`;
+  const slugValido = negozio.slug && negozio.slug.trim().length > 0;
+  const hrefNegozio = slugValido
+    ? `/negozio/${negozio.slug!.trim()}`
+    : `/negozio/${negozio.id}`;
   const mostraPreferiti =
     preferitoAttivo !== undefined && autenticato !== undefined;
 

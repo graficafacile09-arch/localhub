@@ -172,6 +172,7 @@ export async function risolviNegozioPubblico(param: string): Promise<Risoluzione
     if (legacy) {
       const slug = (legacy.slug as string) ?? "";
       if (slug) return { negozio: null, slugLegacy: `/negozio/${slug}` };
+      return { negozio: legacy, slugLegacy: null };
     }
   }
 
