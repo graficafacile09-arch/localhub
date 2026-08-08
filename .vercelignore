@@ -1,0 +1,12 @@
+﻿.next/
+.next/**
+node_modules/
+build/
+dist/
+.git/
+.trae/
+.figma/
+*.log
+playwright-report/
+test-results/
+.vercel
