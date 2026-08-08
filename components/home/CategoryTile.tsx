@@ -3,8 +3,10 @@ import {
   Baby,
   CalendarDays,
   Car,
+  Cat,
   Coffee,
   Croissant,
+  Dog,
   Droplets,
   Dumbbell,
   Flower2,
@@ -14,7 +16,6 @@ import {
   HeartPulse,
   Home,
   LayoutGrid,
-  PawPrint,
   PenLine,
   Pizza,
   Scissors,
@@ -32,13 +33,15 @@ import type { Categoria } from "@/types/negozio";
 // per ogni categoria, senza immagini e senza icone giocattolose.
 type StileCategoria = {
   icona: LucideIcon;
+  /** Seconda icona affiancata (es. cane + gatto). */
+  icona2?: LucideIcon;
   bg: string;
   text: string;
 };
 
 const FALLBACK: StileCategoria = { icona: Store, bg: "bg-blue-100", text: "text-blue-600" };
 
-const ICONE_CATEGORIE: { match: string[]; icona: LucideIcon; bg: string; text: string }[] = [
+const ICONE_CATEGORIE: ({ match: string[] } & StileCategoria)[] = [
   { match: ["panificio", "bakery", "forno", "pane", "pasticceria", "panetteria"], icona: Croissant, bg: "bg-amber-100", text: "text-amber-600" },
   { match: ["beauty", "bellezza", "parrucchiere", "estetista", "barbiere", "salone", "skincare", "makeup"], icona: Scissors, bg: "bg-fuchsia-100", text: "text-fuchsia-600" },
   { match: ["casa", "arredo", "arredamento", "mobili", "interior", "decorazioni", "illuminazione", "cucina"], icona: Home, bg: "bg-orange-100", text: "text-orange-600" },
@@ -48,8 +51,10 @@ const ICONE_CATEGORIE: { match: string[]; icona: LucideIcon; bg: string; text: s
   { match: ["cartoleria", "cancelleria", "ufficio", "forniture"], icona: PenLine, bg: "bg-indigo-100", text: "text-indigo-600" },
   { match: ["bimbi", "bambini", "giocattoli", "infanzia", "neonati", "scuola"], icona: Baby, bg: "bg-yellow-100", text: "text-yellow-600" },
   { match: ["sport", "fitness", "palestra", "yoga", "training", "pilates", "running", "allenamento"], icona: Dumbbell, bg: "bg-emerald-100", text: "text-emerald-600" },
-  { match: ["abbigliamento", "moda", "boutique", "fashion", "vestiti", "shopping", "shop", "acquisti"], icona: Shirt, bg: "bg-pink-100", text: "text-pink-600" },
-  { match: ["pet", "animali", "cane", "gatto", "veterinario", "toelettatura", "mangime"], icona: PawPrint, bg: "bg-teal-100", text: "text-teal-600" },
+  // NB: niente "shop" tra i match: "Pet Shop & Animali" lo intercetterebbe
+  // (il find prende il PRIMO match) e mostrerebbe la maglietta. Resta "shopping".
+  { match: ["abbigliamento", "moda", "boutique", "fashion", "vestiti", "shopping", "acquisti"], icona: Shirt, bg: "bg-pink-100", text: "text-pink-600" },
+  { match: ["pet", "animali", "cane", "gatto", "veterinario", "toelettatura", "mangime"], icona: Dog, icona2: Cat, bg: "bg-teal-100", text: "text-teal-600" },
   { match: ["ristorante", "ristoranti", "trattoria", "osteria", "cucina", "tavola calda", "food"], icona: UtensilsCrossed, bg: "bg-red-100", text: "text-red-600" },
   { match: ["bar", "caffe", "caffè", "caffetteria", "colazione", "coffee"], icona: Coffee, bg: "bg-lime-100", text: "text-lime-600" },
   { match: ["pizzeria", "pizza", "focaccia"], icona: Pizza, bg: "bg-amber-100", text: "text-amber-600" },
@@ -90,6 +95,7 @@ export default function CategoryTile({
 }) {
   const stile = stilePerCategoria(categoria);
   const Icona = stile.icona;
+  const SecondaIcona = stile.icona2;
 
   return (
     <Link
@@ -99,7 +105,14 @@ export default function CategoryTile({
       <span
         className={`flex h-10 w-10 items-center justify-center rounded-full transition-transform duration-200 group-hover:scale-110 md:h-11 md:w-11 ${stile.bg}`}
       >
-        <Icona className={`h-5 w-5 md:h-[22px] md:w-[22px] ${stile.text}`} aria-hidden />
+        {SecondaIcona ? (
+          <span className={`flex items-center gap-[2px] ${stile.text}`} aria-hidden>
+            <Icona className="h-[18px] w-[18px] md:h-5 md:w-5" />
+            <SecondaIcona className="h-[18px] w-[18px] md:h-5 md:w-5" />
+          </span>
+        ) : (
+          <Icona className={`h-5 w-5 md:h-[22px] md:w-[22px] ${stile.text}`} aria-hidden />
+        )}
       </span>
       <span className="text-center">
         <span className={NOME_CLASS}>
