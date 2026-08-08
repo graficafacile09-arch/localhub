@@ -73,7 +73,7 @@ export default async function Home() {
           <span className="h-px flex-1 bg-slate-200" />
         </div>
 
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 md:gap-4">
+        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 md:gap-3 lg:grid-cols-6">
           {categorieConNegozi.slice(0, NUMERO_CATEGORIE_HOME).map(({ categoria, count }, index) => (
             <CategoryTile key={categoria.id} categoria={categoria} index={index} count={count} />
           ))}

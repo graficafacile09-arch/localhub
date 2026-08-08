@@ -81,16 +81,16 @@ function stilePerCategoria(categoria: Categoria): StileCategoria {
 }
 
 const CARD_CLASS =
-  "group relative block aspect-[3/2] overflow-hidden rounded-2xl bg-slate-200 shadow-sm ring-1 ring-slate-900/5 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-slate-900/15 sm:aspect-[2/1]";
+  "group relative block aspect-[2/1] overflow-hidden rounded-xl bg-slate-200 shadow-sm ring-1 ring-slate-900/5 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-slate-900/10";
 
 const OVERLAY_CLASS =
   "absolute inset-0 bg-gradient-to-t from-slate-900/85 via-slate-900/25 to-transparent";
 
 const ICON_BADGE_CLASS =
-  "flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white shadow-md ring-1 ring-slate-900/5 md:h-9 md:w-9";
+  "flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-slate-900/5 md:h-8 md:w-8";
 
 const NOME_CLASS =
-  "truncate text-sm font-black tracking-tight text-white drop-shadow-sm md:text-base";
+  "truncate text-xs font-bold tracking-tight text-white drop-shadow-sm md:text-sm";
 
 export default function CategoryTile({
   categoria,
@@ -120,19 +120,19 @@ export default function CategoryTile({
       <div className={OVERLAY_CLASS} />
 
       {/* Nome in bianco + icona circolare bianca in basso */}
-      <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 p-2.5 md:p-3">
+      <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 p-2 md:p-2.5">
         <div className="min-w-0">
           <h3 className={NOME_CLASS}>
             {categoria.nome}
           </h3>
           {typeof count === "number" && (
-            <p className="mt-0.5 text-[10px] font-medium text-white/80 md:text-[11px]">
+            <p className="mt-0.5 text-[9px] font-medium text-white/80 md:text-[10px]">
               {count === 1 ? "1 negozio" : `${count} negozi`}
             </p>
           )}
         </div>
         <span className={ICON_BADGE_CLASS}>
-          <Icona className="h-4 w-4 text-blue-700 md:h-4.5 md:w-4.5" aria-hidden />
+          <Icona className="h-3.5 w-3.5 text-blue-700 md:h-4 md:w-4" aria-hidden />
         </span>
       </div>
     </Link>
@@ -150,12 +150,12 @@ export function TutteCategorieTile({ index = 0 }: { index?: number }) {
       />
       <div className={OVERLAY_CLASS} />
 
-      <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 p-2.5 md:p-3">
+      <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-2 p-2 md:p-2.5">
         <h3 className={NOME_CLASS}>
           Tutte le categorie
         </h3>
         <span className={ICON_BADGE_CLASS}>
-          <LayoutGrid className="h-4 w-4 text-blue-700 md:h-4.5 md:w-4.5" aria-hidden />
+          <LayoutGrid className="h-3.5 w-3.5 text-blue-700 md:h-4 md:w-4" aria-hidden />
         </span>
       </div>
     </Link>
