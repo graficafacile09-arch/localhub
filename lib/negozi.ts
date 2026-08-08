@@ -1,5 +1,5 @@
 import { calcolaPunteggioNegozio, filtraNegoziPerPertinenza } from "./ranking-negozi";
-import { normalizza, radice } from "./text-utils";
+import { estraiToken, normalizza, radice } from "./text-utils";
 import { createAdminSupabaseClient } from "./supabase/admin";
 import { isNumericId, isUuid, toSlug } from "./slug";
 import type { Categoria } from "@/types/negozio";
@@ -346,6 +346,32 @@ function getTerminiCategoria(categoria: Categoria): string[] {
     .filter(Boolean);
 }
 
+// Matching TOKEN-BASED tra un valore negozi.categoria e i termini di una
+// categoria. Usa lo STESSO criterio in ogni punto (conteggi, showcase,
+// ricerca):
+//   1. se termini include direttamente il valore lowercase → match rapido
+//   2. altrimenti estrae TOKEN normalizzati (NFD + split [^a-z0-9]+) da
+//      entrambi e verifica che l'intersezione NON sia vuota.
+// Così anche nomi categoria con " & " (es. "Tech & Elettronica" vs token
+// singolo "elettronica") o con accenti matchano correttamente.
+function valoreCategoriaMatcha(valore: string, termini: readonly string[]): boolean {
+  const v = valore.trim().toLowerCase();
+  if (!v) return false;
+  if (termini.includes(v)) return true;
+
+  const tokenValore = estraiToken(v);
+  if (tokenValore.length === 0) return false;
+
+  for (const termine of termini) {
+    const t = termine.trim();
+    if (!t) continue;
+    if (tokenValore.includes(normalizza(t).trim())) return true;
+    const tokenTermine = estraiToken(t);
+    if (tokenTermine.some((tk) => tokenValore.includes(tk))) return true;
+  }
+  return false;
+}
+
 // Conta i negozi ATTIVI (attivo=true e non nel Cestino) per ogni categoria.
 // Una sola query sul DB (seleziona solo la colonna categoria) e aggregazione in
 // memoria: nessuna query per singola categoria (niente N+1). Il matching usa
@@ -366,7 +392,7 @@ export async function getConteggiNegoziPerCategoria(categorie: Categoria[]) {
 
   const conteggiPerValore = new Map<string, number>();
   for (const row of data ?? []) {
-    const valore = ((row.categoria as string) ?? "").trim().toLowerCase();
+    const valore = ((row.categoria as string) ?? "").trim();
     if (!valore) continue;
     conteggiPerValore.set(valore, (conteggiPerValore.get(valore) ?? 0) + 1);
   }
@@ -376,7 +402,7 @@ export async function getConteggiNegoziPerCategoria(categorie: Categoria[]) {
     const termini = getTerminiCategoria(cat);
     let totale = 0;
     for (const [valore, count] of conteggiPerValore) {
-      if (termini.includes(valore)) totale += count;
+      if (valoreCategoriaMatcha(valore, termini)) totale += count;
     }
     conteggi.set(cat.id, totale);
   }
@@ -449,7 +475,7 @@ export async function cercaNegoziPerCategoria(categoria: Categoria) {
         .filter(Boolean)
     )
   );
-  const matching = valoriUnici.filter((valore) => termini.includes(valore.toLowerCase()));
+  const matching = valoriUnici.filter((valore) => valoreCategoriaMatcha(valore, termini));
 
   if (matching.length === 0) return [];
 
@@ -539,8 +565,8 @@ export async function getCategoriaShowcase(slug: string): Promise<CategoriaShowc
   if (errNegozi) return { categoria, negozi: [], totaleNegozi: 0 };
 
   const negoziFiltrati = (negoziRaw ?? []).filter((n) => {
-    const valore = ((n.categoria as string) ?? "").trim().toLowerCase();
-    return valore && termini.includes(valore);
+    const valore = ((n.categoria as string) ?? "").trim();
+    return valore && valoreCategoriaMatcha(valore, termini);
   });
 
   if (negoziFiltrati.length === 0) {
