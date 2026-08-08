@@ -5,6 +5,7 @@ import Header from "@/components/Header/Header";
 import { risolviProdottoPubblico, getNegozio } from "@/lib/negozi";
 import { getProdottoImmagine } from "@/lib/prodotti-immagini";
 import { chiavePreferito, getStatoPreferitiPerPagina } from "@/lib/cliente/favorites";
+import { getSiteUrl } from "@/lib/site";
 import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
 import { MapPin, Phone, MessageCircle, ArrowLeft, ExternalLink, ShoppingBag } from "lucide-react";
 
@@ -20,7 +21,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const descrizione =
     ((prodotto.descrizione_completa as string) ?? (prodotto.descrizione as string) ?? "")
       .slice(0, 155) || `${nome} disponibile su InCittà.`;
-  const canonical = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://localhub-eta.vercel.app"}/prodotto/${prodotto.slug as string}`;
+  const canonical = `${getSiteUrl()}/prodotto/${prodotto.slug as string}`;
 
   return {
     title: `${nome} | InCittà`,

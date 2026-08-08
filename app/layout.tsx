@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import AssistantFab from "../components/assistant/AssistantFab";
 import AssistantPanel from "../components/assistant/AssistantPanel";
 import { getImpostazioniPubbliche } from "@/lib/platform/settings";
+import { getSiteUrl } from "@/lib/site";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -20,7 +21,7 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://localhub-eta.vercel.app";
+const SITE_URL = getSiteUrl();
 
 // Valori di fallback = quelli usati prima dell'introduzione delle impostazioni
 // piattaforma: il sito resta identico anche senza DB o con righe vuote.

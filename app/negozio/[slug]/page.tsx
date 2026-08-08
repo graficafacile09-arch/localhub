@@ -7,6 +7,7 @@ import { OpenAssistantLink } from "@/components/assistant/OpenAssistantButton";
 import { risolviNegozioPubblico, getProdottiNegozio } from "@/lib/negozi";
 import { getNegozioCardImmagine } from "@/lib/negozi-card-immagini";
 import { chiavePreferito, getStatoPreferitiPerPagina } from "@/lib/cliente/favorites";
+import { getSiteUrl } from "@/lib/site";
 import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
 import { MapPin, Phone, MessageCircle, ExternalLink } from "lucide-react";
 import OpeningHoursDisplay from "@/components/negozio/OpeningHoursDisplay";
@@ -23,7 +24,7 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const descrizione =
     ((negozio.descrizione as string) ?? (negozio.descrizione_completa as string) ?? "")
       .slice(0, 155) || `Scopri ${nome} su InCittà.`;
-  const canonical = `${process.env.NEXT_PUBLIC_SITE_URL ?? "https://localhub-eta.vercel.app"}/negozio/${negozio.slug as string}`;
+  const canonical = `${getSiteUrl()}/negozio/${negozio.slug as string}`;
 
   return {
     title: `${nome} | InCittà`,
