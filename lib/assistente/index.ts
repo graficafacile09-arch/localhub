@@ -73,57 +73,71 @@ async function callGroq(
     throw new Error("Chiave API Groq mancante. Aggiungi GROQ_API_KEY al file .env.local.");
   }
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  // Retry con backoff su 429/402 (rate limit): l'assistente esegue fino a 2
+  // chiamate LLM per messaggio, quindi i picchi brevi di quota sono normali.
+  const TENTATIVI = 3;
+  let ultimoErrore: Error | null = null;
 
-  try {
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${groqApiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: GROQ_MODEL,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-        max_tokens: maxTokens,
-        temperature,
-      }),
-      signal: controller.signal,
-    });
+  for (let tentativo = 1; tentativo <= TENTATIVI; tentativo++) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
-    clearTimeout(timeoutId);
+    try {
+      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${groqApiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: GROQ_MODEL,
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt },
+          ],
+          max_tokens: maxTokens,
+          temperature,
+        }),
+        signal: controller.signal,
+      });
 
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => "unknown");
-      if (response.status === 429 || response.status === 402) {
-        throw new Error(`Quota superata (HTTP ${response.status}).`);
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => "unknown");
+        if (response.status === 429 || response.status === 402) {
+          ultimoErrore = new Error(`Quota superata (HTTP ${response.status}).`);
+          if (tentativo < TENTATIVI) {
+            await new Promise((r) => setTimeout(r, tentativo * 1500));
+            continue;
+          }
+          throw ultimoErrore;
+        }
+        if (response.status >= 500 && response.status < 600) {
+          throw new Error(`Errore server AI (HTTP ${response.status}).`);
+        }
+        throw new Error(`Errore Groq (HTTP ${response.status}): ${errorText.slice(0, 200)}`);
       }
-      if (response.status >= 500 && response.status < 600) {
-        throw new Error(`Errore server AI (HTTP ${response.status}).`);
+
+      const resData = (await response.json()) as {
+        choices?: Array<{ message?: { content?: string } }>;
+      };
+
+      const content = resData.choices?.[0]?.message?.content?.trim() ?? "";
+      if (!content) throw new Error("Risposta AI vuota.");
+
+      return content;
+    } catch (caught: unknown) {
+      clearTimeout(timeoutId);
+      if (caught instanceof DOMException && caught.name === "AbortError") {
+        throw new Error(`Timeout chiamata AI (${TIMEOUT_MS / 1000}s).`);
       }
-      throw new Error(`Errore Groq (HTTP ${response.status}): ${errorText.slice(0, 200)}`);
+      if (caught instanceof Error) throw caught;
+      throw new Error("Errore sconosciuto chiamata AI.");
     }
-
-    const resData = (await response.json()) as {
-      choices?: Array<{ message?: { content?: string } }>;
-    };
-
-    const content = resData.choices?.[0]?.message?.content?.trim() ?? "";
-    if (!content) throw new Error("Risposta AI vuota.");
-
-    return content;
-  } catch (caught: unknown) {
-    clearTimeout(timeoutId);
-    if (caught instanceof DOMException && caught.name === "AbortError") {
-      throw new Error(`Timeout chiamata AI (${TIMEOUT_MS / 1000}s).`);
-    }
-    if (caught instanceof Error) throw caught;
-    throw new Error("Errore sconosciuto chiamata AI.");
   }
+
+  throw ultimoErrore ?? new Error("Chiamata AI fallita.");
 }
 
 // ─── Normalizzazione messaggi ────────────────────────────────────────────────
@@ -298,7 +312,8 @@ function pianoPredefinito(
 
 function fallbackTestuale(
   risultati: RisultatiRecuperati,
-  domanda: string
+  domanda: string,
+  notaVincolo = ""
 ): string {
   const sezioni: string[] = [];
   const totale =
@@ -348,7 +363,8 @@ function fallbackTestuale(
     );
   }
 
-  return sezioni.join("\n\n");
+  const nota = notaVincolo ? `\n\n_${notaVincolo}_` : "";
+  return sezioni.join("\n\n") + nota;
 }
 
 // ─── Orchestratore principale ────────────────────────────────────────────────
@@ -382,7 +398,7 @@ export async function chatConAssistente(
     selezioneOk = true;
   } else {
     try {
-      const raw = await callGroq(SYSTEM_PROMPT, buildToolSelectionPrompt(storico), 700, 0.1);
+      const raw = await callGroq(SYSTEM_PROMPT, buildToolSelectionPrompt(storico), 450, 0.1);
       const parsed = JSON.parse(extractJsonFromText(raw)) as {
         tools?: ToolInvocation[];
         directReply?: string | null;
@@ -488,13 +504,34 @@ export async function chatConAssistente(
   };
   const contesto = buildContextoRisultati(risultati);
 
+  // Nota sul vincolo di prezzo applicato: quando l'utente chiede un limite
+  // ("sotto 500 euro") e i prodotti recuperati lo superano, l'AI deve
+  // segnalarli onestamente come alternative fuori budget.
+  const vincoliPrezzo = invocazioni
+    .map((t) => t.params)
+    .filter((p): p is ToolParams => !!p && (p.maxPrice != null || p.minPrice != null))
+    .map((p) => {
+      const pezzi: string[] = [];
+      if (p.minPrice != null) pezzi.push(`min €${p.minPrice}`);
+      if (p.maxPrice != null) pezzi.push(`max €${p.maxPrice}`);
+      return pezzi.join(" e ");
+    });
+  const notaVincolo =
+    vincoliPrezzo.length > 0
+      ? `Nota: la tua richiesta indicava un limite di prezzo (${vincoliPrezzo.join("; ")}). Se un prodotto/opzione elencato supera il limite, è l'alternativa più vicina realmente trovata: segnalalo sempre con il prezzo reale.`
+      : "";
+
+  const contestoFinale = notaVincolo
+    ? `${contesto}\n\n${notaVincolo}`
+    : contesto;
+
   // 5) Risposta finale AI
   let risposta: string;
   try {
-    risposta = await callGroq(SYSTEM_PROMPT, buildFinalPrompt(storico, contesto), 900, 0.2);
+    risposta = await callGroq(SYSTEM_PROMPT, buildFinalPrompt(storico, contestoFinale), 700, 0.2);
   } catch (error) {
     console.warn("[assistente] Risposta finale fallita, uso elenco risultati:", error);
-    risposta = fallbackTestuale(risultati, domanda);
+    risposta = fallbackTestuale(risultati, domanda, notaVincolo);
   }
 
   return {

@@ -797,8 +797,12 @@ export async function cercaNegozi(ricerca: string) {
         `nome.ilike.%${pulito}%`,
         `categoria.ilike.%${pulito}%`,
         `descrizione.ilike.%${pulito}%`,
-        `servizi.ilike.%${pulito}%`,
-        `parole_chiave.ilike.%${pulito}%`,
+        // servizi e parole_chiave sono colonne text[]: senza cast il filtro
+        // ilike fallisce ("operator does not exist: text[] ~~* unknown") e
+        // l'intera query non restituisce nulla. Il cast ::text conserva il
+        // matching per sottostringa sul testo serializzato dell'array.
+        `servizi::text.ilike.%${pulito}%`,
+        `parole_chiave::text.ilike.%${pulito}%`,
       ];
     })
     .join(",");

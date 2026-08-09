@@ -7,7 +7,7 @@ type NegozioIndicizzabile = {
   descrizione?: string | null;
   indirizzo?: string | null;
   sito_web?: string | null;
-  servizi?: string | null;
+  servizi?: string[] | string | null;
   parole_chiave?: string[] | string | null;
 };
 
@@ -45,6 +45,16 @@ function paroleChiaveComeTesto(paroleChiave: NegozioIndicizzabile["parole_chiave
   return paroleChiave ?? "";
 }
 
+// servizi è text[] nel DB: lo converto in testo per il matching in memoria
+// (stesso trattamento già riservato a parole_chiave).
+function serviziComeTesto(servizi: NegozioIndicizzabile["servizi"]) {
+  if (Array.isArray(servizi)) {
+    return servizi.join(" ");
+  }
+
+  return servizi ?? "";
+}
+
 export function calcolaPunteggioNegozio(
   negozio: NegozioIndicizzabile,
   query: string
@@ -57,7 +67,7 @@ export function calcolaPunteggioNegozio(
   const descrizione = negozio.descrizione ?? "";
   const indirizzo = negozio.indirizzo ?? "";
   const sito = negozio.sito_web ?? "";
-  const servizi = negozio.servizi ?? "";
+  const servizi = serviziComeTesto(negozio.servizi);
   const paroleChiave = paroleChiaveComeTesto(negozio.parole_chiave);
 
   for (const termine of termini) {
