@@ -2,6 +2,11 @@ import { calcolaPunteggioNegozio, filtraNegoziPerPertinenza } from "./ranking-ne
 import { estraiToken, normalizza, radice } from "./text-utils";
 import { createAdminSupabaseClient } from "./supabase/admin";
 import { isNumericId, isUuid, toSlug } from "./slug";
+import {
+  patternIlikeTolleranti,
+  punteggioFuzzy,
+  terminiSignificativi,
+} from "./search-tollerante";
 import type { Categoria } from "@/types/negozio";
 
 const getDb = () => {
@@ -754,15 +759,27 @@ export async function cercaProdotti(ricerca: string, limit = 20) {
 
   if (error) return [];
 
+  // Fase esatta insufficiente → ricerca tollerante (refusi, accenti, plurali,
+  // maiuscole/minuscole già coperte da ilike). Il ranking resta invariato:
+  // gli esatti precedono sempre i tolleranti, senza mai rimescolarli.
+  const esatti = (data ?? []) as Record<string, unknown>[];
+  let risultati = esatti;
+  if (esatti.length < limit) {
+    const tolleranti = await cercaProdottiTolleranti(db, ricerca, esatti, limit);
+    if (tolleranti.length > 0) {
+      risultati = unisciEsattiETolleranti(esatti, tolleranti, limit);
+    }
+  }
+
   const negozioIds = Array.from(
-    new Set((data ?? []).map((prodotto) => prodotto.negozio_id).filter(Boolean))
+    new Set(risultati.map((prodotto) => prodotto.negozio_id).filter(Boolean))
   );
   const { data: negozi } = negozioIds.length
     ? await db.from("negozi").select("id, nome").in("id", negozioIds).is("deleted_at", null)
     : { data: [] };
   const nomiNegozi = new Map((negozi ?? []).map((negozio) => [negozio.id, negozio.nome]));
 
-  return (data ?? []).map((p: Record<string, unknown>) => ({
+  return risultati.map((p) => ({
     id: p.id as string,
     slug: (p.slug as string) ?? null,
     negozio_id: p.negozio_id as string,
@@ -773,6 +790,82 @@ export async function cercaProdotti(ricerca: string, limit = 20) {
     immagine_principale: (p.immagine_principale as string) ?? null,
     negozio_nome: nomiNegozi.get(p.negozio_id as string) ?? "",
   }));
+}
+
+// ─── Ricerca tollerante (fallback) ───────────────────────────────────────────
+
+// Unisce risultati esatti e tolleranti, deduplicando per id e rispettando il
+// limite: prima gli esatti (ranking invariato), poi i tolleranti ordinati per
+// punteggio fuzzy. Non rimescola mai l'ordine degli esatti.
+function unisciEsattiETolleranti<T extends Record<string, unknown>>(
+  esatti: T[],
+  tolleranti: T[],
+  limit: number
+): T[] {
+  const visti = new Set(esatti.map((r) => String(r.id)));
+  const aggiunti: T[] = [];
+  for (const r of tolleranti) {
+    const chiave = String(r.id);
+    if (visti.has(chiave)) continue;
+    visti.add(chiave);
+    aggiunti.push(r);
+    if (esatti.length + aggiunti.length >= limit) break;
+  }
+  return [...esatti, ...aggiunti].slice(0, limit);
+}
+
+// Query tollerante sui prodotti: pattern con varianti accentate e wildcard di
+// tolleranza sui termini significativi, poi punteggio fuzzy in memoria.
+async function cercaProdottiTolleranti(
+  db: ReturnType<typeof createAdminSupabaseClient>,
+  ricerca: string,
+  giaTrovati: Record<string, unknown>[],
+  limit: number
+): Promise<Record<string, unknown>[]> {
+  const termini = terminiSignificativi(ricerca, 3);
+  if (termini.length === 0) return [];
+
+  // Pattern per ogni termine: esatto + tolleranza a 1 errore + accenti.
+  // Cap per termine (14) e totale (42): limita le condizioni di PostgREST
+  // garantendo comunque pattern per tutti i termini significativi.
+  const pattern = new Set<string>();
+  for (const t of termini) {
+    for (const p of patternIlikeTolleranti(t).slice(0, 14)) pattern.add(p);
+    if (pattern.size >= 42) break;
+  }
+  const patternList = Array.from(pattern).slice(0, 42);
+  if (patternList.length === 0) return [];
+
+  const filtri = patternList
+    .flatMap((pat) => [
+      `nome.ilike.${pat}`,
+      `descrizione.ilike.${pat}`,
+      `categoria.ilike.${pat}`,
+      `marca.ilike.${pat}`,
+      `sottocategoria.ilike.${pat}`,
+    ])
+    .join(",");
+
+  const { data, error } = await db
+    .from("prodotti")
+    .select("id, slug, negozio_id, nome, descrizione, categoria, marca, sottocategoria, prezzo, immagine_principale")
+    .eq("attivo", true)
+    .or(filtri)
+    .limit(50);
+
+  if (error) return [];
+
+  const trovati = new Set(giaTrovati.map((r) => String(r.id)));
+  return (data ?? [])
+    .filter((r) => !trovati.has(String(r.id)))
+    .map((r) => ({
+      riga: r as Record<string, unknown>,
+      punteggio: punteggioFuzzy([r.nome, r.descrizione, r.categoria, r.marca, r.sottocategoria], termini),
+    }))
+    .filter((x) => x.punteggio > 0)
+    .sort((a, b) => b.punteggio - a.punteggio)
+    .slice(0, limit)
+    .map((x) => x.riga);
 }
 
 // ─── Ricerca negozi ──────────────────────────────────────────────────────────
@@ -825,10 +918,61 @@ export async function cercaNegozi(ricerca: string) {
     return [];
   }
 
-  return filtraNegoziPerPertinenza(
+  // Fase esatta: ranking esistente invariato (filtraNegoziPerPertinenza).
+  const esatti = filtraNegoziPerPertinenza(
     (data ?? []).filter(
       (negozio) => calcolaPunteggioNegozio(negozio, espandiQueryConSinonimi(ricerca)) > 0
     ),
     espandiQueryConSinonimi(ricerca)
   );
+
+  // Nessun risultato esatto → ricerca tollerante (refusi, accenti, plurali).
+  // Il ranking non viene alterato: questa fase scatta solo a risultati vuoti.
+  if (esatti.length > 0) return esatti;
+  return cercaNegoziTolleranti(db, ricerca);
+}
+
+// Query tollerante sui negozi: pattern con varianti accentate e wildcard di
+// tolleranza sui termini significativi, poi punteggio fuzzy in memoria.
+async function cercaNegoziTolleranti(
+  db: ReturnType<typeof createAdminSupabaseClient>,
+  ricerca: string
+): Promise<Record<string, unknown>[]> {
+  const termini = terminiSignificativi(ricerca, 3);
+  if (termini.length === 0) return [];
+
+  const pattern = new Set<string>();
+  for (const t of termini) {
+    for (const p of patternIlikeTolleranti(t).slice(0, 14)) pattern.add(p);
+    if (pattern.size >= 42) break;
+  }
+  const patternList = Array.from(pattern).slice(0, 42);
+  if (patternList.length === 0) return [];
+
+  const filtri = patternList
+    .flatMap((pat) => [`nome.ilike.${pat}`, `categoria.ilike.${pat}`, `descrizione.ilike.${pat}`])
+    .join(",");
+
+  const { data, error } = await db
+    .from("negozi")
+    .select("*")
+    .eq("attivo", true)
+    .or(filtri)
+    .is("deleted_at", null)
+    .limit(30);
+
+  if (error) {
+    console.log(error);
+    return [];
+  }
+
+  return (data ?? [])
+    .map((n) => ({
+      negozio: n as Record<string, unknown>,
+      punteggio: punteggioFuzzy([n.nome, n.categoria, n.descrizione], termini),
+    }))
+    .filter((x) => x.punteggio > 0)
+    .sort((a, b) => b.punteggio - a.punteggio)
+    .slice(0, 10)
+    .map((x) => x.negozio);
 }
