@@ -111,7 +111,8 @@ export async function getNegozi() {
     .from("negozi")
     .select("*")
     .eq("attivo", true)
-    .is("deleted_at", null);
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false });
 
   if (error) {
     console.log(error);
