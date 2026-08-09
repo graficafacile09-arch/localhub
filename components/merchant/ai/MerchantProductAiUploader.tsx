@@ -21,6 +21,7 @@ const CAPTURE_WIDTH = 800;
 const CAPTURE_HEIGHT = 800;
 const PREVIEW_DELAY = 2500;
 const RETRY_CONFIDENCE_THRESHOLD = 70;
+const IMMAGINE_STORAGE_KEY = "prodotti_ai_immagine";
 
 export default function MerchantProductAiUploader({
   negozioId,
@@ -48,9 +49,40 @@ export default function MerchantProductAiUploader({
   useEffect(() => {
     if (autoStart && !autoStartedRef.current) {
       autoStartedRef.current = true;
+
+      // Immagine pre-caricata dalla dashboard ("Carica immagine"): entra nello stesso flusso AI dello scanner.
+      // Il consumo è gate sul param ?immagine=1 per non dirottare mai il flusso fotocamera con chiavi stale.
+      const fromCarica = new URLSearchParams(window.location.search).get("immagine") === "1";
+      const stored = fromCarica ? sessionStorage.getItem(IMMAGINE_STORAGE_KEY) : null;
+      if (stored) {
+        sessionStorage.removeItem(IMMAGINE_STORAGE_KEY);
+        handleStoredImage(stored);
+        return;
+      }
+
       handleCameraClick();
     }
   }, [autoStart]);
+
+  function dataUrlToFile(dataUrl: string): File {
+    const [meta, b64] = dataUrl.split(",");
+    const mime = meta.match(/data:(.*?);/)?.[1] ?? "image/jpeg";
+    const bin = atob(b64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new File([bytes], "immagine-prodotto.jpg", { type: mime });
+  }
+
+  async function handleStoredImage(dataUrl: string) {
+    try {
+      const file = dataUrlToFile(dataUrl);
+      setFileAndPreview(file);
+      await handleAutoAnalyze(file, dataUrl);
+    } catch {
+      // Fallback sicuro: apri la fotocamera come nel flusso normale.
+      handleCameraClick();
+    }
+  }
 
   function stopStream() {
     if (streamRef.current) {

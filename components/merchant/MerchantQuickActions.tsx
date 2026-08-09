@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ChevronDown,
   ChevronUp,
@@ -12,20 +13,13 @@ import {
   Image,
   LayoutList,
   MapPin,
-  Package,
   Settings,
   Shield,
   Smartphone,
+  Upload,
 } from "lucide-react";
 
 const actions = [
-  {
-    key: "manual",
-    title: "Nuovo prodotto",
-    description: "Aggiungi manualmente un prodotto.",
-    icon: Package,
-    href: (storeId: string) => `/merchant/${storeId}/prodotti/nuovo`,
-  },
   {
     key: "catalog",
     title: "Gestisci prodotti",
@@ -34,6 +28,8 @@ const actions = [
     href: (storeId: string) => `/merchant/${storeId}/prodotti`,
   },
 ];
+
+const IMMAGINE_STORAGE_KEY = "prodotti_ai_immagine";
 
 const settingsItems = [
   { label: "Informazioni negozio", icon: Settings, href: "/merchant/[storeId]/impostazioni#informazioni", comingSoon: false },
@@ -50,39 +46,108 @@ const settingsItems = [
 ];
 
 export default function MerchantQuickActions({ storeId }: { storeId: string }) {
+  const router = useRouter();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [preparing, setPreparing] = useState(false);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  async function handleImageSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const selected = e.target.files?.[0];
+    e.target.value = "";
+    if (!selected) return;
+
+    setPreparing(true);
+    setImageError(null);
+
+    try {
+      // Compressione/ridimensionamento client-side prima dell'upload (stesso helper dello scanner AI).
+      const { compressImage } = await import("@/lib/client/image-compress");
+      const compressed = await compressImage(selected);
+
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = () => reject(new Error("Lettura immagine fallita"));
+        reader.readAsDataURL(compressed.file);
+      });
+
+      try {
+        // Pulisci prima eventuali chiavi stale, poi salva l'immagine compressa.
+        sessionStorage.removeItem(IMMAGINE_STORAGE_KEY);
+        sessionStorage.setItem(IMMAGINE_STORAGE_KEY, dataUrl);
+      } catch {
+        // sessionStorage non disponibile: apri comunque il flusso AI normale
+      }
+
+      router.push(`/merchant/${storeId}/prodotti/ai?immagine=1`);
+    } catch (caught) {
+      setImageError(
+        caught instanceof Error && caught.message !== "Lettura immagine fallita"
+          ? "Immagine non valida. Riprova con un'altra foto."
+          : "Impossibile leggere l'immagine. Riprova."
+      );
+    } finally {
+      setPreparing(false);
+    }
+  }
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
+      {/* Carica immagine — apre il selettore del dispositivo e avvia il flusso AI (sostituisce il vecchio "Nuovo prodotto") */}
+      <button
+        type="button"
+        onClick={() => fileInputRef.current?.click()}
+        disabled={preparing}
+        className="group flex items-center gap-4 rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/50 p-5 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-lg hover:shadow-blue-500/15 disabled:cursor-wait disabled:opacity-70 cursor-pointer"
+      >
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white transition group-hover:bg-blue-700">
+          {preparing ? (
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+          ) : (
+            <Upload className="h-5 w-5" />
+          )}
+        </div>
+        <div className="min-w-0">
+          <h2 className="text-base font-bold tracking-tight text-blue-900">
+            {preparing ? "Preparazione immagine…" : "Carica immagine"}
+          </h2>
+          <p className="mt-0.5 text-xs leading-5 text-slate-500">
+            {preparing
+              ? "Compressione in corso…"
+              : "Scegli una foto dal dispositivo, l'AI la riconosce"}
+          </p>
+        </div>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleImageSelected}
+          aria-label="Carica immagine prodotto dalla galleria"
+        />
+      </button>
+
+      {imageError && (
+        <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-700">
+          {imageError}
+        </p>
+      )}
+
       {actions.map((action) => {
         const Icon = action.icon;
-        const isPrimary = action.key === "manual";
 
         return (
           <Link
             key={action.key}
             href={action.href(storeId)}
-            className={`group flex items-center gap-4 rounded-2xl p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg cursor-pointer ${
-              isPrimary
-                ? "border border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/50 hover:border-blue-300 hover:shadow-blue-500/15"
-                : "border border-slate-200 bg-white hover:border-blue-200 hover:shadow-blue-500/10"
-            }`}
+            className="group flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-lg hover:shadow-blue-500/10 cursor-pointer"
           >
-            <div
-              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition ${
-                isPrimary
-                  ? "bg-blue-600 text-white group-hover:bg-blue-700"
-                  : "bg-blue-50 text-blue-700 group-hover:bg-blue-100"
-              }`}
-            >
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700 transition group-hover:bg-blue-100">
               <Icon className="h-5 w-5" />
             </div>
             <div className="min-w-0">
-              <h2
-                className={`text-base font-bold tracking-tight ${
-                  isPrimary ? "text-blue-900" : "text-slate-900"
-                }`}
-              >
+              <h2 className="text-base font-bold tracking-tight text-slate-900">
                 {action.title}
               </h2>
               <p className="mt-0.5 text-xs leading-5 text-slate-500">

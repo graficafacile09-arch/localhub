@@ -63,7 +63,7 @@ export default async function MerchantStorePage({
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15">
           <Camera className="h-5 w-5" />
         </div>
-        <span>Scansiona prodotto</span>
+        <span>Scansiona nuovo prodotto</span>
       </Link>
 
       {/* Altre azioni rapide */}
