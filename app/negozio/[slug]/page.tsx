@@ -12,7 +12,7 @@ import { getOffertePubblicheNegozio, type Offerta } from "@/lib/offerte";
 import { getEventiPubbliciNegozio, type Evento } from "@/lib/eventi";
 import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
 import { MapPin, Phone, MessageCircle, ExternalLink, Tag, Calendar, Clock } from "lucide-react";
-import StoreInfoCard from "@/components/negozio/StoreInfoCard";
+import OpeningHoursDisplay from "@/components/negozio/OpeningHoursDisplay";
 
 type Params = { slug: string };
 
@@ -153,14 +153,25 @@ export default async function PaginaNegozio({ params }: { params: Promise<Params
           )}
         </div>
 
-        {/* Scheda informazioni — card moderna unica (indirizzo, telefono, orari) */}
-        {(negozio.indirizzo || negozio.telefono || negozio.orari) && (
+        {/* Info compatte — piccole pill con accento amber, stessa compattezza */}
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          {negozio.indirizzo && (
+            <span className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-slate-200/80 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 shadow-sm">
+              <MapPin className="h-3 w-3 shrink-0 text-amber-500" />
+              <span className="min-w-0 truncate">{negozio.indirizzo as string}</span>
+            </span>
+          )}
+          {negozio.telefono && (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/80 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 shadow-sm">
+              <Phone className="h-3 w-3 text-amber-500" />
+              {negozio.telefono as string}
+            </span>
+          )}
+        </div>
+
+        {negozio.orari && (
           <div className="mt-3">
-            <StoreInfoCard
-              indirizzo={(negozio.indirizzo as string) ?? null}
-              telefono={(negozio.telefono as string) ?? null}
-              orari={(negozio.orari as never) ?? null}
-            />
+            <OpeningHoursDisplay orari={negozio.orari as never} />
           </div>
         )}
 
