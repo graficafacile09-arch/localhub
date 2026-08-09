@@ -40,67 +40,33 @@ type MerchantCorreggiAiDialogProps = {
   onConfirm: (suggestion: ProductVisionSuggestion) => void;
 };
 
-// ─── Riconoscimento vocale (Web Speech API, solo client) ─────────────────────
-type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
+// ─── Registrazione vocale (MediaRecorder → Groq Whisper, solo client) ────────
+const MIME_OPZIONI = [
+  "audio/webm;codecs=opus",
+  "audio/webm",
+  "audio/mp4;codecs=mp4a.40.2",
+  "audio/mp4",
+  "audio/ogg;codecs=opus",
+];
 
-type SpeechRecognitionLike = {
-  lang: string;
-  interimResults: boolean;
-  continuous: boolean;
-  maxAlternatives: number;
-  onresult: ((event: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null;
-  onerror: ((event: { error?: string }) => void) | null;
-  onend: (() => void) | null;
-  start: () => void;
-  stop: () => void;
-  abort: () => void;
-};
-
-/**
- * Ritorna il costruttore della Web Speech API disponibile in QUESTO browser,
- * controllando ogni implementazione nota in modo INDIPENDENTE (standard, webkit,
- * moz, ms). Un valore non-funzione su una proprietà non deve nascondere
- * un'API valida esposta con un altro prefisso.
- */
-function getSpeechRecognition(): SpeechRecognitionCtor | null {
-  if (typeof window === "undefined") return null;
-  const w = window as unknown as Record<string, unknown>;
-  for (const chiave of [
-    "SpeechRecognition",
-    "webkitSpeechRecognition",
-    "mozSpeechRecognition",
-    "msSpeechRecognition",
-  ] as const) {
-    const c = w[chiave];
-    if (typeof c === "function") return c as SpeechRecognitionCtor;
+/** Sceglie il primo MIME audio supportato dal browser (Chrome/Android/FF → webm, Safari/iOS → mp4). */
+function scegliMimeType(): string | undefined {
+  if (typeof MediaRecorder === "undefined") return undefined;
+  for (const mime of MIME_OPZIONI) {
+    try {
+      if (MediaRecorder.isTypeSupported(mime)) return mime;
+    } catch {
+      // MIME non riconosciuto: prova il successivo
+    }
   }
-  return null;
+  return undefined;
 }
 
-type Piattaforma = "ios" | "android" | "desktop" | "altro";
-
-function getPiattaforma(): Piattaforma {
-  if (typeof navigator === "undefined") return "altro";
-  const ua = navigator.userAgent;
-  // iPadOS 13+ riporta "Macintosh" come UA: rileva il touch come indizio.
-  if (
-    /iPad|iPhone|iPod/i.test(ua) ||
-    (navigator.maxTouchPoints > 1 && /Macintosh/i.test(ua))
-  ) {
-    return "ios";
-  }
-  if (/Android/i.test(ua)) return "android";
-  return "desktop";
-}
-
-function messaggioNonDisponibile(piattaforma: Piattaforma): string {
-  if (piattaforma === "ios") {
-    return "Su iPhone/iPad il riconoscimento vocale del browser non è disponibile (Apple non supporta la Web Speech API in nessun browser iOS). Puoi scrivere la correzione nel campo di testo.";
-  }
-  if (piattaforma === "android") {
-    return "Questo browser Android non espone il riconoscimento vocale: prova con Chrome o Samsung Internet, oppure scrivi la correzione nel campo di testo.";
-  }
-  return "Riconoscimento vocale non disponibile su questo browser: usa il campo di testo.";
+function estensionePerMime(mime: string | undefined): string {
+  if (!mime) return "webm";
+  if (mime.includes("mp4")) return "m4a";
+  if (mime.includes("ogg")) return "ogg";
+  return "webm";
 }
 
 const SUGGERIMENTI = [
@@ -129,23 +95,27 @@ export default function MerchantCorreggiAiDialog({
 
   // ── Stato microfono ────────────────────────────────────────────────────────
   const [listening, setListening] = useState(false);
-  const [supportoVocale, setSupportoVocale] = useState<boolean | null>(null);
+  const [trascrivendo, setTrascrivendo] = useState(false);
+  const [supportoRegistrazione, setSupportoRegistrazione] = useState<boolean | null>(null);
   const [permessoMicrofono, setPermessoMicrofono] = useState<"granted" | "denied" | "prompt" | "unknown">("unknown");
   const [erroreVocale, setErroreVocale] = useState<string | null>(null);
-  const riconoscimentoRef = useRef<SpeechRecognitionLike | null>(null);
-  const inputRef = useRef("");
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const chunkAudioRef = useRef<Blob[]>([]);
+  const startingRef = useRef(false); // guard sincrono contro il doppio tap
   const baseTestoRef = useRef("");
-  const haRisultatoRef = useRef(false);
-  const stopManualeRef = useRef(false);
+  const inputRef = useRef("");
 
   const chatRef = useRef<HTMLDivElement>(null);
   const permessoRef = useRef<PermissionStatus | null>(null);
 
-  // ── Inizializzazione: disponibilità speech + stato permesso ────────────────
+  // ── Inizializzazione: supporto MediaRecorder + stato permesso ──────────────
   useEffect(() => {
-    const Ctor = getSpeechRecognition();
-    setSupportoVocale(Ctor !== null);
-    if (!Ctor) return;
+    setSupportoRegistrazione(
+      typeof window !== "undefined" &&
+        typeof MediaRecorder !== "undefined" &&
+        !!navigator.mediaDevices?.getUserMedia
+    );
 
     if (typeof navigator !== "undefined" && "permissions" in navigator) {
       navigator.permissions
@@ -162,11 +132,12 @@ export default function MerchantCorreggiAiDialog({
         });
     }
 
-    // Cleanup: interrompe l'ascolto senza messaggi spuri e rimuove il listener del permesso.
+    // Cleanup: ferma registrazione e stream, rimuove il listener del permesso.
+    // Il ref viene azzerato PRIMA di fermare lo stream: l'onstop che scatta
+    // quando il dialog è chiuso non invierà alcun upload (guard in onstop).
     return () => {
-      stopManualeRef.current = true;
-      riconoscimentoRef.current?.abort();
-      riconoscimentoRef.current = null;
+      mediaRecorderRef.current = null;
+      fermaStream();
       if (permessoRef.current) permessoRef.current.onchange = null;
     };
   }, []);
@@ -192,123 +163,154 @@ export default function MerchantCorreggiAiDialog({
   }, [messaggi, ultimiCambi, inCaricamento]);
 
   // ── Microfono ──────────────────────────────────────────────────────────────
-  /** Chiede il permesso microfono (se serve) e restituisce true se si può ascoltare. */
-  const richiediPermessoMicrofono = useCallback(async (): Promise<boolean> => {
-    if (permessoMicrofono === "denied") return false;
-    if (permessoMicrofono === "granted") return true;
-    // Permesso non ancora deciso: lo chiediamo esplicitamente (gesto utente)
-    // così il rifiuto viene gestito in modo pulito e prevedibile.
-    // Appena ottenuto, fermiamo subito le tracce: il permesso resta concesso
-    // e il riconoscimento gestisce da sé il microfono (pattern Chrome).
-    if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) return true;
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      stream.getTracks().forEach((t) => t.stop());
-      setPermessoMicrofono("granted");
-      return true;
-    } catch {
-      setPermessoMicrofono("denied");
-      setErroreVocale("Microfono non consentito: abilitalo dalle impostazioni del browser oppure scrivi la correzione.");
-      return false;
+  function fermaStream() {
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach((t) => t.stop());
+      mediaStreamRef.current = null;
     }
-  }, [permessoMicrofono]);
+  }
+
+  /** Invia il clip audio al backend (Groq Whisper) e inserisce il testo nel campo. */
+  const inviaTrascrizione = useCallback(
+    async (blob: Blob, mimeType: string) => {
+      if (blob.size === 0) {
+        setErroreVocale("Non ho registrato nulla. Riprova o scrivi il testo.");
+        return;
+      }
+      setTrascrivendo(true);
+      setErroreVocale(null);
+      try {
+        const formData = new FormData();
+        formData.append("audio", blob, `registrazione.${estensionePerMime(mimeType)}`);
+
+        const res = await fetch(`/api/merchant/stores/${negozioId}/products/trascrivi-audio`, {
+          method: "POST",
+          body: formData,
+        });
+
+        const data = (await res.json()) as {
+          success?: boolean;
+          data?: { testo?: string };
+          error?: { message?: string };
+        };
+        if (!res.ok || !data.success || !data.data?.testo) {
+          throw new Error(data.error?.message ?? "Errore durante la trascrizione.");
+        }
+
+        const testo = data.data.testo.trim();
+        if (!testo) {
+          setErroreVocale("Non ho sentito nulla. Riprova o scrivi il testo.");
+          return;
+        }
+
+        const base = baseTestoRef.current;
+        // Il testo trascritto finisce nel campo (modificabile prima dell'invio).
+        setInput(base ? `${base} ${testo}` : testo);
+      } catch (caught) {
+        setErroreVocale(
+          caught instanceof Error ? caught.message : "Errore durante la trascrizione."
+        );
+      } finally {
+        setTrascrivendo(false);
+      }
+    },
+    [negozioId]
+  );
 
   const startListening = useCallback(async () => {
-    const Ctor = getSpeechRecognition();
-    if (!Ctor) {
-      setErroreVocale(messaggioNonDisponibile(getPiattaforma()));
+    if (typeof MediaRecorder === "undefined" || !navigator.mediaDevices?.getUserMedia) {
+      setErroreVocale("La registrazione vocale non è disponibile su questo browser: usa il campo di testo.");
       return;
     }
+    // Guard sincrono: impedisce che un doppio tap avvii due stream/recorder
+    // (il setState di `listening` arriva solo DOPO l'await di getUserMedia).
+    if (listening || trascrivendo || startingRef.current) return;
+    startingRef.current = true;
 
-    // Su desktop (Chrome/Edge) il riconoscimento richiede il permesso microfono:
-    // su Android il consenso lo gestisce il browser stesso all'avvio.
-    if (getPiattaforma() === "desktop") {
-      const ok = await richiediPermessoMicrofono();
-      if (!ok) return;
-    }
-
-    if (!riconoscimentoRef.current) {
-      const recognition = new Ctor();
-      recognition.lang = "it-IT";
-      recognition.interimResults = true;
-      recognition.continuous = false;
-      recognition.maxAlternatives = 1;
-
-      recognition.onresult = (event) => {
-        let trascrizione = "";
-        for (let i = 0; i < event.results.length; i++) {
-          trascrizione += event.results[i]?.[0]?.transcript ?? "";
-        }
-        const testo = trascrizione.trim();
-        if (testo) {
-          haRisultatoRef.current = true;
-          const base = baseTestoRef.current;
-          // Il testo riconosciuto finisce nel campo (modificabile prima dell'invio).
-          setInput(base ? `${base} ${testo}` : testo);
-        }
-      };
-
-      recognition.onerror = (event) => {
-        const codice = event.error ?? "";
-        if (codice === "not-allowed" || codice === "service-not-allowed") {
-          setPermessoMicrofono("denied");
-          setErroreVocale("Microfono non consentito: abilitalo dal browser oppure scrivi la correzione.");
-        } else if (codice === "no-speech") {
-          setErroreVocale("Non ho sentito nulla. Riprova o scrivi il testo.");
-        } else if (codice === "audio-capture") {
-          setErroreVocale("Nessun microfono rilevato: collega un microfono oppure scrivi il testo.");
-        } else if (codice === "network") {
-          setErroreVocale("Errore di rete nel riconoscimento vocale: usa il campo di testo.");
-        } else if (codice === "language-not-supported") {
-          setErroreVocale("Lingua non supportata dal riconoscimento vocale: scrivi il testo.");
-        } else if (codice === "aborted") {
-          // Interruzione manuale o chiusura del dialog: nessun messaggio.
-        } else {
-          setErroreVocale("Il riconoscimento vocale non ha funzionato: riprova o scrivi il testo.");
-        }
-      };
-
-      recognition.onend = () => {
-        // Un'istanza SpeechRecognition può essere usata una sola volta:
-        // alla fine, rilascia il riferimento SOLO se è ancora la nostra istanza.
-        const èAncoraAttiva = riconoscimentoRef.current === recognition;
-        if (èAncoraAttiva) riconoscimentoRef.current = null;
-        // Se nel frattempo è partita una nuova sessione (o il dialog è chiuso),
-        // questo onend appartiene a una sessione superata: non tocca stato né messaggi.
-        if (!èAncoraAttiva) return;
-        setListening(false);
-        // Ascolto terminato senza risultato e senza errore: avvisa l'utente.
-        if (!stopManualeRef.current && !haRisultatoRef.current) {
-          setErroreVocale("Non ho sentito nulla. Riprova o scrivi il testo.");
-        }
-        stopManualeRef.current = false;
-        haRisultatoRef.current = false;
-      };
-
-      riconoscimentoRef.current = recognition;
-    }
-
-    setErroreVocale(null);
-    haRisultatoRef.current = false;
-    stopManualeRef.current = false;
-    baseTestoRef.current = inputRef.current.trim();
+    // Chiede il permesso al microfono (gesto utente) e ottiene lo stream.
+    let stream: MediaStream;
     try {
-      riconoscimentoRef.current.start();
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      setPermessoMicrofono("granted");
+    } catch {
+      startingRef.current = false;
+      setPermessoMicrofono("denied");
+      setErroreVocale("Microfono non consentito: abilitalo dalle impostazioni del browser oppure scrivi la correzione.");
+      return;
+    }
+    mediaStreamRef.current = stream;
+
+    const mimeType = scegliMimeType();
+    let recorder: MediaRecorder;
+    try {
+      recorder = mimeType
+        ? new MediaRecorder(stream, { mimeType })
+        : new MediaRecorder(stream);
+    } catch {
+      recorder = new MediaRecorder(stream);
+    }
+    mediaRecorderRef.current = recorder;
+    chunkAudioRef.current = [];
+
+    recorder.ondataavailable = (e) => {
+      if (e.data && e.data.size > 0) chunkAudioRef.current.push(e.data);
+    };
+
+    recorder.onerror = () => {
+      startingRef.current = false;
+      fermaStream();
+      mediaRecorderRef.current = null;
+      setListening(false);
+      setErroreVocale("Errore durante la registrazione: riprova o scrivi il testo.");
+    };
+
+    recorder.onstop = async () => {
+      // Se il dialog è stato chiuso (ref azzerato dal cleanup) non inviamo nulla.
+      const èRegistrazioneAttiva = mediaRecorderRef.current === recorder;
+      const blob = new Blob(chunkAudioRef.current, {
+        type: recorder.mimeType || mimeType || "audio/webm",
+      });
+      chunkAudioRef.current = [];
+      fermaStream();
+      startingRef.current = false;
+      if (èRegistrazioneAttiva) mediaRecorderRef.current = null;
+      setListening(false);
+      if (!èRegistrazioneAttiva) return;
+      await inviaTrascrizione(blob, recorder.mimeType || mimeType || "audio/webm");
+    };
+
+    baseTestoRef.current = inputRef.current.trim();
+    setErroreVocale(null);
+    try {
+      recorder.start();
       setListening(true);
     } catch {
-      riconoscimentoRef.current = null;
+      startingRef.current = false;
+      fermaStream();
+      mediaRecorderRef.current = null;
       setListening(false);
-      setErroreVocale("Microfono già in uso da un'altra applicazione.");
+      setErroreVocale("Impossibile avviare la registrazione: riprova o scrivi il testo.");
     }
-  }, [richiediPermessoMicrofono]);
+  }, [listening, trascrivendo, inviaTrascrizione]);
 
   const stopListening = useCallback(() => {
-    stopManualeRef.current = true;
-    riconoscimentoRef.current?.stop();
-    // Rilascia subito il riferimento per permettere una nuova sessione di ascolto;
-    // l'onend della vecchia istanza non sovrascriverà la nuova (guard in onend).
-    riconoscimentoRef.current = null;
-    setListening(false);
+    const recorder = mediaRecorderRef.current;
+    if (recorder && recorder.state !== "inactive") {
+      try {
+        recorder.stop();
+      } catch {
+        // fallback: ferma lo stream direttamente
+        startingRef.current = false;
+        fermaStream();
+        mediaRecorderRef.current = null;
+        setListening(false);
+      }
+    } else {
+      startingRef.current = false;
+      fermaStream();
+      mediaRecorderRef.current = null;
+      setListening(false);
+    }
   }, []);
 
   // ── Invio correzione → endpoint correggi-ai (nessun write DB) ─────────────
@@ -372,8 +374,8 @@ export default function MerchantCorreggiAiDialog({
     onConfirm(draft);
   }, [draft, onConfirm]);
 
-  const supportoDeterminato = supportoVocale !== null;
-  const microfonoDisponibile = supportoVocale === true;
+  const supportoDeterminato = supportoRegistrazione !== null;
+  const microfonoDisponibile = supportoRegistrazione === true;
   const suggerimento = SUGGERIMENTI[messaggi.length % SUGGERIMENTI.length];
 
   return (
@@ -519,7 +521,10 @@ export default function MerchantCorreggiAiDialog({
         {supportoDeterminato && !microfonoDisponibile && (
           <div className="mx-5 mb-1 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-4 text-amber-800">
             <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-            <span>{messaggioNonDisponibile(getPiattaforma())}</span>
+            <span>
+              La registrazione vocale non è disponibile su questo browser: puoi scrivere le
+              correzioni nel campo di testo.
+            </span>
           </div>
         )}
         {listening && (
@@ -529,8 +534,15 @@ export default function MerchantCorreggiAiDialog({
               <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
             </span>
             <span>
-              <strong>Sto ascoltando...</strong> Parla ora, poi premi il quadrato rosso per fermare.
+              <strong>Registrazione in corso...</strong> Parla ora, poi premi il quadrato rosso per
+              fermare.
             </span>
+          </div>
+        )}
+        {trascrivendo && !listening && (
+          <div className="mx-5 mb-1 flex items-center gap-2 rounded-xl border border-violet-200 bg-violet-50 px-3 py-2 text-[11px] leading-4 text-violet-800">
+            <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
+            <span>Trascrizione in corso...</span>
           </div>
         )}
         {supportoDeterminato && microfonoDisponibile && permessoMicrofono === "denied" && (
@@ -561,9 +573,15 @@ export default function MerchantCorreggiAiDialog({
             <button
               type="button"
               onClick={listening ? stopListening : () => void startListening()}
-              disabled={!microfonoDisponibile || inCaricamento}
-              aria-label={listening ? "Ferma ascolto" : "Correggi a voce"}
-              title={microfonoDisponibile ? (listening ? "Ferma ascolto" : "Parla") : "Microfono non disponibile"}
+              disabled={!microfonoDisponibile || inCaricamento || trascrivendo}
+              aria-label={listening ? "Ferma registrazione" : "Correggi a voce"}
+              title={
+                microfonoDisponibile
+                  ? listening
+                    ? "Ferma registrazione"
+                    : "Parla"
+                  : "Microfono non disponibile"
+              }
               className={`relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 ${
                 listening
                   ? "border-red-300 bg-red-500 text-white shadow-lg shadow-red-500/30"
@@ -575,6 +593,8 @@ export default function MerchantCorreggiAiDialog({
               )}
               {listening ? (
                 <Square className="relative h-4 w-4 fill-current" />
+              ) : trascrivendo ? (
+                <Loader2 className="relative h-4.5 w-4.5 animate-spin" />
               ) : (
                 <Mic className="relative h-4.5 w-4.5" />
               )}
