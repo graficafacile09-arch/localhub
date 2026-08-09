@@ -12,6 +12,57 @@ import type { ProdottoRicerca, NegozioRicerca } from "@/lib/ricerca-ai";
 import type { CategoriaShowcase } from "@/lib/negozi";
 import Link from "next/link";
 import { Sparkles, MapPin, Phone } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+
+// Renderizza la risposta AI in markdown (come nella chat assistente): i link
+// eventualmente presenti nel testo diventano cliccabili e la formattazione
+// (grassetti, elenchi) viene rispettata invece di mostrare righe piatte.
+function RispostaAiMarkdown({ testo }: { testo: string }) {
+  return (
+    <ReactMarkdown
+      remarkPlugins={[remarkGfm]}
+      components={{
+        h1: ({ children }) => (
+          <h3 className="mt-3 text-sm font-black tracking-tight text-slate-950 first:mt-0">{children}</h3>
+        ),
+        h2: ({ children }) => (
+          <h3 className="mt-3 text-sm font-black tracking-tight text-slate-950 first:mt-0">{children}</h3>
+        ),
+        h3: ({ children }) => (
+          <h4 className="mt-2 text-sm font-bold text-slate-900 first:mt-0">{children}</h4>
+        ),
+        p: ({ children }) => (
+          <p className="mt-2 text-xs leading-5 text-slate-700 first:mt-0">{children}</p>
+        ),
+        ul: ({ children }) => (
+          <ul className="mt-2 list-disc space-y-1 pl-4 text-slate-700">{children}</ul>
+        ),
+        ol: ({ children }) => (
+          <ol className="mt-2 list-decimal space-y-1 pl-4 text-slate-700">{children}</ol>
+        ),
+        li: ({ children }) => (
+          <li className="text-xs leading-5 text-slate-700">{children}</li>
+        ),
+        strong: ({ children }) => (
+          <strong className="font-extrabold text-slate-950">{children}</strong>
+        ),
+        a: ({ children, href }) => (
+          <a
+            href={href}
+            className="font-semibold text-blue-700 underline decoration-blue-300 underline-offset-4 transition hover:text-blue-800"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {children}
+          </a>
+        ),
+      }}
+    >
+      {testo}
+    </ReactMarkdown>
+  );
+}
 
 export default async function RicercaPage({
   searchParams,
@@ -238,11 +289,7 @@ export default async function RicercaPage({
                 </div>
                 <div className="rounded-xl border border-blue-100 bg-white p-3">
                   <div className="prose prose-sm prose-slate max-w-none prose-headings:text-sm prose-headings:font-bold prose-p:text-xs prose-li:text-xs">
-                    {rispostaAi.split("\n").map((line, i) => (
-                      <p key={i} className="text-xs leading-5 text-slate-700">
-                        {line}
-                      </p>
-                    ))}
+                    <RispostaAiMarkdown testo={rispostaAi} />
                   </div>
                   <OpenAssistantLink label="Approfondisci con l'AI" />
                 </div>

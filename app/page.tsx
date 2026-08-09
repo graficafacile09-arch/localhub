@@ -107,36 +107,40 @@ export default async function Home() {
               return (
                 <div
                   key={negozio.id}
-                  className="relative rounded-2xl overflow-hidden border border-slate-100 shadow-sm bg-white hover:shadow-sm transition flex flex-col justify-between"
+                  className="relative flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md"
                 >
-                  <div>
-                    <div className="relative w-full h-48 bg-slate-100 overflow-hidden">
-                      <div
-                        role="img"
-                        aria-label={negozio.nome}
-                        className="absolute inset-0 bg-cover bg-center"
-                        style={{ backgroundImage: `url(${imageUrl})` }}
-                      />
+                  <Link
+                    href={`/negozio/${negozio.slug}`}
+                    aria-label={`Vai al negozio ${negozio.nome}`}
+                    className="group flex flex-1 flex-col justify-between"
+                  >
+                    <div>
+                      <div className="relative w-full h-48 bg-slate-100 overflow-hidden">
+                        <div
+                          role="img"
+                          aria-label={negozio.nome}
+                          className="absolute inset-0 bg-cover bg-center transition duration-300 group-hover:scale-105"
+                          style={{ backgroundImage: `url(${imageUrl})` }}
+                        />
+                      </div>
+
+                      <div className="p-5">
+                        <h3 className="text-xl font-bold text-slate-900 transition group-hover:text-blue-700">
+                          {negozio.nome}
+                        </h3>
+
+                        <p className="mt-2 text-sm text-slate-600 line-clamp-2">
+                          {negozio.descrizione || "Scopri le migliori offerte e prodotti selezionati."}
+                        </p>
+                      </div>
                     </div>
 
-                    <div className="p-5">
-                      <h3 className="text-xl font-bold text-slate-900">
-                        {negozio.nome}
-                      </h3>
-
-                      <p className="mt-2 text-sm text-slate-600 line-clamp-2">
-                        {negozio.descrizione || "Scopri le migliori offerte e prodotti selezionati."}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="p-5 pt-0">
-                    <Link href={`/negozio/${negozio.slug}`}>
-                      <button className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl font-semibold text-sm transition">
+                    <div className="p-5 pt-0">
+                      <span className="block w-full bg-blue-600 group-hover:bg-blue-700 text-white py-2.5 rounded-xl font-semibold text-sm transition text-center">
                         Scopri
-                      </button>
-                    </Link>
-                  </div>
+                      </span>
+                    </div>
+                  </Link>
 
                   <FavoritoButton
                     tipo="negozio"
