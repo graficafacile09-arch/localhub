@@ -98,11 +98,17 @@ type RichiestaCatturata = { url: string; method: string; body: string; headers: 
 
 function creaFetchMock(opzioni: { status?: number; body?: string; abbandona?: boolean } = {}) {
   const richieste: RichiestaCatturata[] = [];
-  const mock = (async (url: unknown, init?: { method?: string; headers?: Record<string, string>; body?: string; signal?: AbortSignal }) => {
+  const mock = (async (url: unknown, init?: { method?: string; headers?: Record<string, string>; body?: string | Uint8Array; signal?: AbortSignal }) => {
+    const corpoDecodificato =
+      typeof init?.body === "string"
+        ? init.body
+        : init?.body instanceof Uint8Array
+          ? new TextDecoder("utf-8").decode(init.body)
+          : "";
     richieste.push({
       url: String(url),
       method: init?.method ?? "GET",
-      body: String(init?.body ?? ""),
+      body: corpoDecodificato,
       headers: (init?.headers ?? {}) as Record<string, string>,
     });
     if (opzioni.abbandona) {
@@ -155,7 +161,7 @@ async function main() {
     const urlOk = req.url === "https://ntfy.sh/incitta-ordini-dm7k92x4";
     const methodOk = req.method === "POST";
     const ctOk = (req.headers["Content-Type"] || "").toLowerCase() === "text/plain; charset=utf-8";
-    const titleOk = req.headers["X-Title"] === "🛍️ Nuovo ordine LH-000123";
+    const titleOk = req.headers["X-Title"] === "Nuovo ordine LH-000123";
     const prioOk = req.headers["X-Priority"] === "high";
     const tagsOk = req.headers["X-Tags"] === "shopping_cart";
     const bodyOk =

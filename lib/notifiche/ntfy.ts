@@ -179,15 +179,20 @@ export async function inviaNotificaConfigurataNtfy(
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
+    // IMPORTANTE (runtime Vercel/undici): il body deve essere passato come
+    // bytes UTF-8 espliciti (Uint8Array) perché una stringa JS con emoji
+    // viene convertita come ByteString Latin-1 e lancia "character ... greater
+    // than 255". Gli header HTTP devono restare ASCII (spec RFC 7230):
+    // l'emoji del titolo è già veicolata dal corpo e dal tag X-Tags.
     const res = await fetchImpl(url, {
       method: "POST",
       headers: {
         "Content-Type": "text/plain; charset=utf-8",
-        "X-Title": `🛍️ Nuovo ordine ${(dati.numero || "").trim() || ""}`.trim(),
+        "X-Title": `Nuovo ordine ${(dati.numero || "").trim() || ""}`.trim(),
         "X-Priority": PRIORITA_ORDINE,
         "X-Tags": "shopping_cart",
       },
-      body: corpo,
+      body: new TextEncoder().encode(corpo),
       signal: controller.signal,
     });
     clearTimeout(timer);
