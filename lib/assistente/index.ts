@@ -160,9 +160,10 @@ async function eseguiTool(
   switch (nome) {
     case "searchStores":
     case "searchProducts": {
-      // Se l'LLM non riporta il soggetto nei follow-up ("sotto 500 euro"),
-      // usiamo la query sostanziale della conversazione (es. "cerco una TV").
-      const q = (params?.query ?? "").trim() || fallbackQuery;
+      // Se l'LLM non riporta il soggetto nei follow-up ("sotto 500 euro") o
+      // passa una query che è solo un vincolo di prezzo, usiamo la query
+      // sostanziale della conversazione (es. "cerco una TV").
+      const q = eQuerySostanziale(params?.query ?? "") || fallbackQuery;
       if (!q) return vuoto;
       if (nome === "searchStores") {
         return { ...vuoto, negozi: await searchStores(q, limit) };
@@ -188,18 +189,87 @@ async function eseguiTool(
 // Ultima query "sostanziale" dell'utente: se il messaggio corrente è solo un
 // vincolo/follow-up ("sotto 500 euro", "e sotto i 300?", "più economico"),
 // usa la richiesta precedente come soggetto della ricerca.
+const RE_VINCOLO = /^(e\s+)?(sotto|sopra|massimo|minimo|meno di|più di|piu di|più economico|piu economico|che altro|più caro|piu caro|oltre|fino a|tra)\b/i;
+
+function eQuerySostanziale(q: string): string | null {
+  const t = q.trim();
+  if (!t || t.length <= 3) return null;
+  if (RE_VINCOLO.test(t)) return null;
+  const parole = t.split(/\s+/);
+  const soloVincoli = parole.every((p) =>
+    /^(e|sotto|sopra|massimo|minimo|minore|fino|oltre|più|piu|di|a|da|tra|euro|€|\d+)$/i.test(p)
+  );
+  if (soloVincoli) return null;
+  return t;
+}
+
 function ultimaQuerySostanziale(storico: MessaggioAssistente[]): string {
   const utenti = storico.filter((m) => m.role === "user").map((m) => m.content);
   const ultima = utenti[utenti.length - 1] ?? "";
   if (utenti.length >= 2) {
     const precedente = utenti[utenti.length - 2];
-    const corta = ultima.trim().length <= 8;
-    const soloVincolo = /^(e\s+)?(sotto|sopra|massimo|minimo|meno di|più di|piu di|più economico|piu economico|che altro|più caro|piu caro|oltre|fino a|tra)\b/i.test(
-      ultima.trim()
-    );
-    if (corta || soloVincolo) return precedente;
+    if (!eQuerySostanziale(ultima)) return precedente;
   }
   return ultima;
+}
+
+// Guardie deterministiche per le intenzioni CHIARE: garantiscono che "ci sono
+// offerte?", "cosa c'è questo weekend?", "voglio mangiare", "va bene" e
+// "che cos'è InCittà?" scelgano SEMPRE il tool/risposta giusti, senza
+// affidarsi alla disciplina del modello. Per tutto il resto decide l'LLM.
+function pianoPredefinito(
+  storico: MessaggioAssistente[]
+): { directReply: string | null; tools: ToolInvocation[] } | null {
+  const utenti = storico.filter((m) => m.role === "user").map((m) => m.content);
+  const ultimo = (utenti[utenti.length - 1] ?? "").trim().toLowerCase();
+  if (!ultimo) return null;
+
+  const RE_PIATTAFORMA =
+    /che cos'è incittà|che cos'e incitta|cos'è incittà|come funziona|chi sei|cosa sei|cos'è il sito/;
+  const RE_OFFERTE = /\bofferte\b|\bpromozion|\bsconti?\b|\bsaldo\b|\bsaldi\b/;
+  const RE_EVENTI =
+    /\beventi?\b|weekend|fine settimana|manifestazion|in programma|cosa c'è|cosa c'e|cosa succede|mostra|concerto|fiera/;
+  const RE_CIBO =
+    /\bmangiare\b|ristorant|trattoria|pizzeria|\bpizza\b|cena|pranzo|aperitiv|\bpanificio\b|\bforno\b/;
+  const RE_CHIACCHIERA =
+    /^(va bene|ok|okay|perfetto|grazie|grazie mille|ciao|buongiorno|buonasera)$/;
+
+  if (RE_PIATTAFORMA.test(ultimo)) {
+    return {
+      directReply:
+        "InCittà è la piattaforma locale della tua città: raccoglie le attività commerciali del territorio con i loro negozi, prodotti e prezzi, offerte e promozioni, eventi e manifestazioni. Puoi cercare attività, confrontare prodotti, vedere orari e contatti e contattare i negozi direttamente.",
+      tools: [],
+    };
+  }
+  if (RE_OFFERTE.test(ultimo)) {
+    // params vuoti = TUTTE le offerte attive (query non specificata)
+    return { directReply: null, tools: [{ tool: "searchOffers", params: {} }] };
+  }
+  if (RE_EVENTI.test(ultimo)) {
+    // params vuoti = TUTTI gli eventi attivi (query non specificata)
+    return { directReply: null, tools: [{ tool: "searchEvents", params: {} }] };
+  }
+  if (RE_CIBO.test(ultimo)) {
+    const termine = ultimo.includes("pizzeria") || ultimo.includes("pizza")
+      ? "pizza"
+      : ultimo.includes("ristorante") ? "ristorante"
+      : ultimo.includes("trattoria") ? "trattoria"
+      : ultimo.includes("panificio") ? "panificio"
+      : ultimo.includes("forno") ? "forno"
+      : ultimo.includes("cena") ? "cena"
+      : ultimo.includes("pranzo") ? "pranzo"
+      : "mangiare";
+    return { directReply: null, tools: [{ tool: "searchStores", params: { query: termine } }] };
+  }
+  if (RE_CHIACCHIERA.test(ultimo)) {
+    return {
+      directReply:
+        "Va bene, sono qui! Posso aiutarti a trovare negozi, prodotti, offerte ed eventi nella tua città. Dimmi pure cosa cerchi.",
+      tools: [],
+    };
+  }
+
+  return null;
 }
 
 // ─── Fallback testuale quando la risposta finale LLM fallisce ────────────────
@@ -279,38 +349,49 @@ export async function chatConAssistente(
   let selezioneOk = false;
   let invocazioni: ToolInvocation[] = [];
 
-  // 1) Selezione tool via LLM
-  try {
-    const raw = await callGroq(SYSTEM_PROMPT, buildToolSelectionPrompt(storico), 700, 0.1);
-    const parsed = JSON.parse(extractJsonFromText(raw)) as {
-      tools?: ToolInvocation[];
-      directReply?: string | null;
-    };
+  // 1) Piano di ricerca: guardie deterministiche per le intenzioni chiare
+  // (offerte, eventi, mangiare, chiacchiera, domande su InCittà); per tutto
+  // il resto la selezione dei tool la fa l'LLM.
+  const piano = pianoPredefinito(storico);
 
-    if (parsed && typeof parsed.directReply === "string" && parsed.directReply.trim()) {
-      directReply = parsed.directReply.trim();
-    }
-
-    const tools = Array.isArray(parsed?.tools) ? parsed.tools.slice(0, 3) : [];
-    invocazioni = tools.filter((t) => typeof t.tool === "string" && t.tool.trim());
-    const queryDefault = ultimaQuerySostanziale(storico);
-
-    if (invocazioni.length > 0) {
-      const risultati = await Promise.all(
-        invocazioni.map((t) => eseguiTool(t.tool as string, t.params ?? {}, queryDefault))
-      );
-      for (const r of risultati) {
-        if (r.negozi.length > 0) negozi = [...negozi, ...r.negozi];
-        if (r.prodotti.length > 0) prodotti = [...prodotti, ...r.prodotti];
-        if (r.offerte.length > 0) offerte = [...offerte, ...r.offerte];
-        if (r.eventi.length > 0) eventi = [...eventi, ...r.eventi];
-        if (r.categorie.length > 0) categorie = [...categorie, ...r.categorie];
-      }
-    }
+  if (piano) {
+    directReply = piano.directReply;
+    invocazioni = piano.tools.filter((t) => typeof t.tool === "string" && t.tool.trim());
     selezioneOk = true;
-  } catch (error) {
-    // Selezione fallita → ricerca completa di sicurezza sull'ultima domanda
-    console.warn("[assistente] Selezione tool fallita, uso searchAll:", error);
+  } else {
+    try {
+      const raw = await callGroq(SYSTEM_PROMPT, buildToolSelectionPrompt(storico), 700, 0.1);
+      const parsed = JSON.parse(extractJsonFromText(raw)) as {
+        tools?: ToolInvocation[];
+        directReply?: string | null;
+      };
+
+      if (parsed && typeof parsed.directReply === "string" && parsed.directReply.trim()) {
+        directReply = parsed.directReply.trim();
+      }
+
+      const tools = Array.isArray(parsed?.tools) ? parsed.tools.slice(0, 3) : [];
+      invocazioni = tools.filter((t) => typeof t.tool === "string" && t.tool.trim());
+      selezioneOk = true;
+    } catch (error) {
+      // Selezione fallita → ricerca completa di sicurezza sull'ultima domanda
+      console.warn("[assistente] Selezione tool fallita, uso searchAll:", error);
+    }
+  }
+
+  // Esecuzione dei tool scelti (dal piano o dall'LLM).
+  const queryDefault = ultimaQuerySostanziale(storico);
+  if (invocazioni.length > 0) {
+    const risultati = await Promise.all(
+      invocazioni.map((t) => eseguiTool(t.tool as string, t.params ?? {}, queryDefault))
+    );
+    for (const r of risultati) {
+      if (r.negozi.length > 0) negozi = [...negozi, ...r.negozi];
+      if (r.prodotti.length > 0) prodotti = [...prodotti, ...r.prodotti];
+      if (r.offerte.length > 0) offerte = [...offerte, ...r.offerte];
+      if (r.eventi.length > 0) eventi = [...eventi, ...r.eventi];
+      if (r.categorie.length > 0) categorie = [...categorie, ...r.categorie];
+    }
   }
 
   // 2) Risposta diretta (chiacchiera / cortesia): nessuna ricerca
