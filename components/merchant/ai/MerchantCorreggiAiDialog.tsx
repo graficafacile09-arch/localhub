@@ -96,6 +96,7 @@ export default function MerchantCorreggiAiDialog({
   // ── Stato microfono ────────────────────────────────────────────────────────
   const [listening, setListening] = useState(false);
   const [trascrivendo, setTrascrivendo] = useState(false);
+  const [permessoInAttesa, setPermessoInAttesa] = useState(false);
   const [supportoRegistrazione, setSupportoRegistrazione] = useState<boolean | null>(null);
   const [permessoMicrofono, setPermessoMicrofono] = useState<"granted" | "denied" | "prompt" | "unknown">("unknown");
   const [erroreVocale, setErroreVocale] = useState<string | null>(null);
@@ -103,10 +104,12 @@ export default function MerchantCorreggiAiDialog({
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const chunkAudioRef = useRef<Blob[]>([]);
   const startingRef = useRef(false); // guard sincrono contro il doppio tap
+  const chiusoRef = useRef(false); // true quando il dialog è stato chiuso
   const baseTestoRef = useRef("");
   const inputRef = useRef("");
 
   const chatRef = useRef<HTMLDivElement>(null);
+  const inputElRef = useRef<HTMLInputElement>(null);
   const permessoRef = useRef<PermissionStatus | null>(null);
 
   // ── Inizializzazione: supporto MediaRecorder + stato permesso ──────────────
@@ -136,6 +139,7 @@ export default function MerchantCorreggiAiDialog({
     // Il ref viene azzerato PRIMA di fermare lo stream: l'onstop che scatta
     // quando il dialog è chiuso non invierà alcun upload (guard in onstop).
     return () => {
+      chiusoRef.current = true;
       mediaRecorderRef.current = null;
       fermaStream();
       if (permessoRef.current) permessoRef.current.onchange = null;
@@ -204,8 +208,10 @@ export default function MerchantCorreggiAiDialog({
         }
 
         const base = baseTestoRef.current;
-        // Il testo trascritto finisce nel campo (modificabile prima dell'invio).
+        // Il testo trascritto finisce nel campo (modificabile prima dell'invio)
+        // e il focus va subito sul campo per poter modificare o premere Invio.
         setInput(base ? `${base} ${testo}` : testo);
+        inputElRef.current?.focus();
       } catch (caught) {
         setErroreVocale(
           caught instanceof Error ? caught.message : "Errore durante la trascrizione."
@@ -226,16 +232,27 @@ export default function MerchantCorreggiAiDialog({
     // (il setState di `listening` arriva solo DOPO l'await di getUserMedia).
     if (listening || trascrivendo || startingRef.current) return;
     startingRef.current = true;
+    setPermessoInAttesa(true);
 
-    // Chiede il permesso al microfono (gesto utente) e ottiene lo stream.
+    // Chiede il permesso al microfono UNA SOLA VOLTA (il browser se lo ricorda)
+    // e, appena autorizzato, la registrazione parte AUTOMATICAMENTE.
     let stream: MediaStream;
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       setPermessoMicrofono("granted");
     } catch {
       startingRef.current = false;
+      setPermessoInAttesa(false);
       setPermessoMicrofono("denied");
       setErroreVocale("Microfono non consentito: abilitalo dalle impostazioni del browser oppure scrivi la correzione.");
+      return;
+    }
+    setPermessoInAttesa(false);
+    // Se il dialog è stato chiuso mentre il prompt permesso era aperto,
+    // libera subito lo stream appena ottenuto (niente microfono in background).
+    if (chiusoRef.current) {
+      stream.getTracks().forEach((t) => t.stop());
+      startingRef.current = false;
       return;
     }
     mediaStreamRef.current = stream;
@@ -258,6 +275,7 @@ export default function MerchantCorreggiAiDialog({
 
     recorder.onerror = () => {
       startingRef.current = false;
+      setPermessoInAttesa(false);
       fermaStream();
       mediaRecorderRef.current = null;
       setListening(false);
@@ -273,9 +291,11 @@ export default function MerchantCorreggiAiDialog({
       chunkAudioRef.current = [];
       fermaStream();
       startingRef.current = false;
+      setPermessoInAttesa(false);
       if (èRegistrazioneAttiva) mediaRecorderRef.current = null;
       setListening(false);
       if (!èRegistrazioneAttiva) return;
+      // Parte automaticamente la trascrizione Whisper.
       await inviaTrascrizione(blob, recorder.mimeType || mimeType || "audio/webm");
     };
 
@@ -286,6 +306,7 @@ export default function MerchantCorreggiAiDialog({
       setListening(true);
     } catch {
       startingRef.current = false;
+      setPermessoInAttesa(false);
       fermaStream();
       mediaRecorderRef.current = null;
       setListening(false);
@@ -517,7 +538,7 @@ export default function MerchantCorreggiAiDialog({
           )}
         </div>
 
-        {/* Banner microfono */}
+        {/* Banner microfono (solo casi eccezionali: il resto è sul pulsante) */}
         {supportoDeterminato && !microfonoDisponibile && (
           <div className="mx-5 mb-1 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-4 text-amber-800">
             <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
@@ -525,24 +546,6 @@ export default function MerchantCorreggiAiDialog({
               La registrazione vocale non è disponibile su questo browser: puoi scrivere le
               correzioni nel campo di testo.
             </span>
-          </div>
-        )}
-        {listening && (
-          <div className="mx-5 mb-1 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-[11px] leading-4 text-red-700">
-            <span className="relative flex h-2 w-2 shrink-0">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
-            </span>
-            <span>
-              <strong>Registrazione in corso...</strong> Parla ora, poi premi il quadrato rosso per
-              fermare.
-            </span>
-          </div>
-        )}
-        {trascrivendo && !listening && (
-          <div className="mx-5 mb-1 flex items-center gap-2 rounded-xl border border-violet-200 bg-violet-50 px-3 py-2 text-[11px] leading-4 text-violet-800">
-            <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
-            <span>Trascrizione in corso...</span>
           </div>
         )}
         {supportoDeterminato && microfonoDisponibile && permessoMicrofono === "denied" && (
@@ -554,12 +557,6 @@ export default function MerchantCorreggiAiDialog({
             </span>
           </div>
         )}
-        {supportoDeterminato && microfonoDisponibile && permessoMicrofono === "prompt" && (
-          <div className="mx-5 mb-1 flex items-start gap-2 rounded-xl border border-violet-100 bg-violet-50 px-3 py-2 text-[11px] leading-4 text-violet-800">
-            <Mic className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-            <span>Premi il microfono e consenti l&apos;accesso quando il browser lo richiede.</span>
-          </div>
-        )}
         {erroreVocale && (
           <div className="mx-5 mb-1 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-4 text-amber-800">
             <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
@@ -569,38 +566,66 @@ export default function MerchantCorreggiAiDialog({
 
         {/* Input */}
         <div className="border-t border-slate-100 px-4 pb-1.5 pt-3">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={listening ? stopListening : () => void startListening()}
-              disabled={!microfonoDisponibile || inCaricamento || trascrivendo}
-              aria-label={listening ? "Ferma registrazione" : "Correggi a voce"}
-              title={
-                microfonoDisponibile
-                  ? listening
-                    ? "Ferma registrazione"
-                    : "Parla"
-                  : "Microfono non disponibile"
-              }
-              className={`relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 ${
-                listening
-                  ? "border-red-300 bg-red-500 text-white shadow-lg shadow-red-500/30"
-                  : "border-slate-200 bg-white text-slate-600 hover:border-red-200 hover:bg-red-50 hover:text-red-600"
-              }`}
-            >
-              {listening && (
-                <span className="absolute inset-0 animate-ping rounded-xl bg-red-400/50" />
-              )}
-              {listening ? (
-                <Square className="relative h-4 w-4 fill-current" />
-              ) : trascrivendo ? (
+          {/* Pulsante microfono: stato sempre visibile e tappabile */}
+          <button
+            type="button"
+            onClick={listening ? stopListening : () => void startListening()}
+            disabled={!microfonoDisponibile || inCaricamento || trascrivendo || permessoInAttesa}
+            aria-label={
+              listening
+                ? "Ferma registrazione"
+                : trascrivendo
+                  ? "Trascrizione in corso"
+                  : "Parla"
+            }
+            title={
+              microfonoDisponibile
+                ? listening
+                  ? "Ferma registrazione"
+                  : "Parla"
+                : "Microfono non disponibile"
+            }
+            className={`relative flex h-13 w-full items-center justify-center gap-2 rounded-2xl border text-sm font-bold tracking-tight transition active:scale-[0.98] disabled:cursor-not-allowed ${
+              listening
+                ? "border-red-300 bg-red-500 text-white shadow-lg shadow-red-500/30"
+                : trascrivendo || permessoInAttesa
+                  ? "border-violet-300 bg-violet-50 text-violet-700"
+                  : "border-slate-200 bg-white text-slate-700 hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+            } ${
+              // Opacità ridotta solo quando il pulsante è inutilizzabile,
+              // NON durante la richiesta permesso (deve restare ben visibile).
+              permessoInAttesa ? "" : "disabled:opacity-50"
+            }`}
+          >
+            {listening && (
+              <span className="absolute inset-0 animate-ping rounded-2xl bg-red-400/40" />
+            )}
+            {permessoInAttesa ? (
+              <>
                 <Loader2 className="relative h-4.5 w-4.5 animate-spin" />
-              ) : (
+                Consenti microfono…
+              </>
+            ) : listening ? (
+              <>
+                <Square className="relative h-4 w-4 fill-current" />
+                Sto ascoltando…
+              </>
+            ) : trascrivendo ? (
+              <>
+                <Loader2 className="relative h-4.5 w-4.5 animate-spin" />
+                Trascrizione…
+              </>
+            ) : (
+              <>
                 <Mic className="relative h-4.5 w-4.5" />
-              )}
-            </button>
+                Parla
+              </>
+            )}
+          </button>
 
+          <div className="mt-2 flex items-center gap-2">
             <input
+              ref={inputElRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {
