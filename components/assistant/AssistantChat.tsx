@@ -51,6 +51,12 @@ export default function AssistantChat() {
   const isLoadingRef = useRef(false);
   const messagesRef = useRef<ChatMessage[]>([]);
 
+  // SessionId della conversazione (parte del contratto dell'endpoint;
+  // il backend è stateless, ma la cronologia resta il veicolo del contesto).
+  const sessionIdRef = useRef<string>(
+    `ass-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+  );
+
   useEffect(() => {
     messagesRef.current = messages;
   }, [messages]);
@@ -124,7 +130,7 @@ export default function AssistantChat() {
       const response = await fetch("/api/assistente", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: storico }),
+        body: JSON.stringify({ messages: storico, sessionId: sessionIdRef.current }),
       });
 
       if (!response.ok) {

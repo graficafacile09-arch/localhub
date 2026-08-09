@@ -242,7 +242,7 @@ function pianoPredefinito(
     /che cos'è incittà|che cos'e incitta|cos'è incittà|come funziona|chi sei|cosa sei|cos'è il sito/;
   const RE_OFFERTE = /\bofferte\b|\bpromozion|\bsconti?\b|\bsaldo\b|\bsaldi\b/;
   const RE_EVENTI =
-    /\beventi?\b|weekend|fine settimana|manifestazion|in programma|cosa c'è|cosa c'e|cosa succede|mostra|concerto|fiera/;
+    /\beventi?\b|weekend|fine settimana|manifestazion|in programma|cosa c'è|cosa c'e|cosa succede|\bmostra\b|\bconcerto\b|\bfiera\b/;
   const RE_CIBO =
     /\bmangiare\b|ristorant|trattoria|pizzeria|\bpizza\b|cena|pranzo|aperitiv|\bpanificio\b|\bforno\b/;
   const RE_CHIACCHIERA =
@@ -337,7 +337,8 @@ function fallbackTestuale(
     risultati.eventi.length;
 
   if (totale === 0) {
-    return `Non ho trovato risultati per "${domanda}". Prova con termini diversi o guarda le categorie disponibili su InCittà.`;
+    const richiesta = domanda.replace(/\s+/g, " ").trim().slice(0, 100);
+    return `Non ho trovato risultati per "${richiesta}". Prova con termini diversi o guarda le categorie disponibili su InCittà.`;
   }
 
   if (risultati.prodotti.length > 0) {
@@ -389,7 +390,9 @@ export async function chatConAssistente(
   const inizio = Date.now();
   const storico = normalizzaMessaggi(messages);
   const ultimo = storico[storico.length - 1];
-  const domanda = ultimo && ultimo.role === "user" ? ultimo.content : "";
+  // Cap sulla domanda: evita abuso di token e superfici di prompt injection
+  // (la storia è già troncata a 300 caratteri per messaggio).
+  const domanda = (ultimo && ultimo.role === "user" ? ultimo.content : "").slice(0, 500);
 
   // Stato dei risultati recuperati
   let negozi: NegozioRicerca[] = [];
