@@ -56,11 +56,51 @@ type SpeechRecognitionLike = {
   abort: () => void;
 };
 
+/**
+ * Ritorna il costruttore della Web Speech API disponibile in QUESTO browser,
+ * controllando ogni implementazione nota in modo INDIPENDENTE (standard, webkit,
+ * moz, ms). Un valore non-funzione su una proprietà non deve nascondere
+ * un'API valida esposta con un altro prefisso.
+ */
 function getSpeechRecognition(): SpeechRecognitionCtor | null {
   if (typeof window === "undefined") return null;
   const w = window as unknown as Record<string, unknown>;
-  const ctor = w.SpeechRecognition ?? w.webkitSpeechRecognition;
-  return typeof ctor === "function" ? (ctor as SpeechRecognitionCtor) : null;
+  for (const chiave of [
+    "SpeechRecognition",
+    "webkitSpeechRecognition",
+    "mozSpeechRecognition",
+    "msSpeechRecognition",
+  ] as const) {
+    const c = w[chiave];
+    if (typeof c === "function") return c as SpeechRecognitionCtor;
+  }
+  return null;
+}
+
+type Piattaforma = "ios" | "android" | "desktop" | "altro";
+
+function getPiattaforma(): Piattaforma {
+  if (typeof navigator === "undefined") return "altro";
+  const ua = navigator.userAgent;
+  // iPadOS 13+ riporta "Macintosh" come UA: rileva il touch come indizio.
+  if (
+    /iPad|iPhone|iPod/i.test(ua) ||
+    (navigator.maxTouchPoints > 1 && /Macintosh/i.test(ua))
+  ) {
+    return "ios";
+  }
+  if (/Android/i.test(ua)) return "android";
+  return "desktop";
+}
+
+function messaggioNonDisponibile(piattaforma: Piattaforma): string {
+  if (piattaforma === "ios") {
+    return "Su iPhone/iPad il riconoscimento vocale del browser non è disponibile (Apple non supporta la Web Speech API in nessun browser iOS). Puoi scrivere la correzione nel campo di testo.";
+  }
+  if (piattaforma === "android") {
+    return "Questo browser Android non espone il riconoscimento vocale: prova con Chrome o Samsung Internet, oppure scrivi la correzione nel campo di testo.";
+  }
+  return "Riconoscimento vocale non disponibile su questo browser: usa il campo di testo.";
 }
 
 const SUGGERIMENTI = [
@@ -93,6 +133,10 @@ export default function MerchantCorreggiAiDialog({
   const [permessoMicrofono, setPermessoMicrofono] = useState<"granted" | "denied" | "prompt" | "unknown">("unknown");
   const [erroreVocale, setErroreVocale] = useState<string | null>(null);
   const riconoscimentoRef = useRef<SpeechRecognitionLike | null>(null);
+  const inputRef = useRef("");
+  const baseTestoRef = useRef("");
+  const haRisultatoRef = useRef(false);
+  const stopManualeRef = useRef(false);
 
   const chatRef = useRef<HTMLDivElement>(null);
   const permessoRef = useRef<PermissionStatus | null>(null);
@@ -118,12 +162,19 @@ export default function MerchantCorreggiAiDialog({
         });
     }
 
-    // Cleanup: interrompe l'ascolto e rimuove il listener del permesso.
+    // Cleanup: interrompe l'ascolto senza messaggi spuri e rimuove il listener del permesso.
     return () => {
+      stopManualeRef.current = true;
       riconoscimentoRef.current?.abort();
+      riconoscimentoRef.current = null;
       if (permessoRef.current) permessoRef.current.onchange = null;
     };
   }, []);
+
+  // Mantiene inputRef allineato al valore corrente del campo di testo.
+  useEffect(() => {
+    inputRef.current = input;
+  }, [input]);
 
   // ── Escape per chiudere ────────────────────────────────────────────────────
   useEffect(() => {
@@ -141,24 +192,59 @@ export default function MerchantCorreggiAiDialog({
   }, [messaggi, ultimiCambi, inCaricamento]);
 
   // ── Microfono ──────────────────────────────────────────────────────────────
-  const startListening = useCallback(() => {
+  /** Chiede il permesso microfono (se serve) e restituisce true se si può ascoltare. */
+  const richiediPermessoMicrofono = useCallback(async (): Promise<boolean> => {
+    if (permessoMicrofono === "denied") return false;
+    if (permessoMicrofono === "granted") return true;
+    // Permesso non ancora deciso: lo chiediamo esplicitamente (gesto utente)
+    // così il rifiuto viene gestito in modo pulito e prevedibile.
+    // Appena ottenuto, fermiamo subito le tracce: il permesso resta concesso
+    // e il riconoscimento gestisce da sé il microfono (pattern Chrome).
+    if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) return true;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach((t) => t.stop());
+      setPermessoMicrofono("granted");
+      return true;
+    } catch {
+      setPermessoMicrofono("denied");
+      setErroreVocale("Microfono non consentito: abilitalo dalle impostazioni del browser oppure scrivi la correzione.");
+      return false;
+    }
+  }, [permessoMicrofono]);
+
+  const startListening = useCallback(async () => {
     const Ctor = getSpeechRecognition();
     if (!Ctor) {
-      setErroreVocale("Riconoscimento vocale non disponibile: usa il campo di testo.");
+      setErroreVocale(messaggioNonDisponibile(getPiattaforma()));
       return;
+    }
+
+    // Su desktop (Chrome/Edge) il riconoscimento richiede il permesso microfono:
+    // su Android il consenso lo gestisce il browser stesso all'avvio.
+    if (getPiattaforma() === "desktop") {
+      const ok = await richiediPermessoMicrofono();
+      if (!ok) return;
     }
 
     if (!riconoscimentoRef.current) {
       const recognition = new Ctor();
       recognition.lang = "it-IT";
-      recognition.interimResults = false;
+      recognition.interimResults = true;
       recognition.continuous = false;
       recognition.maxAlternatives = 1;
 
       recognition.onresult = (event) => {
-        const trascrizione = event.results[0]?.[0]?.transcript ?? "";
-        if (trascrizione.trim()) {
-          setInput((precedente) => (precedente ? `${precedente} ${trascrizione.trim()}` : trascrizione.trim()));
+        let trascrizione = "";
+        for (let i = 0; i < event.results.length; i++) {
+          trascrizione += event.results[i]?.[0]?.transcript ?? "";
+        }
+        const testo = trascrizione.trim();
+        if (testo) {
+          haRisultatoRef.current = true;
+          const base = baseTestoRef.current;
+          // Il testo riconosciuto finisce nel campo (modificabile prima dell'invio).
+          setInput(base ? `${base} ${testo}` : testo);
         }
       };
 
@@ -169,8 +255,14 @@ export default function MerchantCorreggiAiDialog({
           setErroreVocale("Microfono non consentito: abilitalo dal browser oppure scrivi la correzione.");
         } else if (codice === "no-speech") {
           setErroreVocale("Non ho sentito nulla. Riprova o scrivi il testo.");
+        } else if (codice === "audio-capture") {
+          setErroreVocale("Nessun microfono rilevato: collega un microfono oppure scrivi il testo.");
         } else if (codice === "network") {
           setErroreVocale("Errore di rete nel riconoscimento vocale: usa il campo di testo.");
+        } else if (codice === "language-not-supported") {
+          setErroreVocale("Lingua non supportata dal riconoscimento vocale: scrivi il testo.");
+        } else if (codice === "aborted") {
+          // Interruzione manuale o chiusura del dialog: nessun messaggio.
         } else {
           setErroreVocale("Il riconoscimento vocale non ha funzionato: riprova o scrivi il testo.");
         }
@@ -178,26 +270,44 @@ export default function MerchantCorreggiAiDialog({
 
       recognition.onend = () => {
         // Un'istanza SpeechRecognition può essere usata una sola volta:
-        // alla fine, rilascia il riferimento così la prossima crea una nuova.
-        riconoscimentoRef.current = null;
+        // alla fine, rilascia il riferimento SOLO se è ancora la nostra istanza.
+        const èAncoraAttiva = riconoscimentoRef.current === recognition;
+        if (èAncoraAttiva) riconoscimentoRef.current = null;
+        // Se nel frattempo è partita una nuova sessione (o il dialog è chiuso),
+        // questo onend appartiene a una sessione superata: non tocca stato né messaggi.
+        if (!èAncoraAttiva) return;
         setListening(false);
+        // Ascolto terminato senza risultato e senza errore: avvisa l'utente.
+        if (!stopManualeRef.current && !haRisultatoRef.current) {
+          setErroreVocale("Non ho sentito nulla. Riprova o scrivi il testo.");
+        }
+        stopManualeRef.current = false;
+        haRisultatoRef.current = false;
       };
 
       riconoscimentoRef.current = recognition;
     }
 
     setErroreVocale(null);
+    haRisultatoRef.current = false;
+    stopManualeRef.current = false;
+    baseTestoRef.current = inputRef.current.trim();
     try {
       riconoscimentoRef.current.start();
       setListening(true);
     } catch {
+      riconoscimentoRef.current = null;
       setListening(false);
       setErroreVocale("Microfono già in uso da un'altra applicazione.");
     }
-  }, []);
+  }, [richiediPermessoMicrofono]);
 
   const stopListening = useCallback(() => {
+    stopManualeRef.current = true;
     riconoscimentoRef.current?.stop();
+    // Rilascia subito il riferimento per permettere una nuova sessione di ascolto;
+    // l'onend della vecchia istanza non sovrascriverà la nuova (guard in onend).
+    riconoscimentoRef.current = null;
     setListening(false);
   }, []);
 
@@ -409,9 +519,17 @@ export default function MerchantCorreggiAiDialog({
         {supportoDeterminato && !microfonoDisponibile && (
           <div className="mx-5 mb-1 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-4 text-amber-800">
             <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+            <span>{messaggioNonDisponibile(getPiattaforma())}</span>
+          </div>
+        )}
+        {listening && (
+          <div className="mx-5 mb-1 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-[11px] leading-4 text-red-700">
+            <span className="relative flex h-2 w-2 shrink-0">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
+            </span>
             <span>
-              Riconoscimento vocale non disponibile su questo browser: puoi scrivere le correzioni
-              nel campo di testo.
+              <strong>Sto ascoltando...</strong> Parla ora, poi premi il quadrato rosso per fermare.
             </span>
           </div>
         )}
@@ -442,9 +560,10 @@ export default function MerchantCorreggiAiDialog({
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={listening ? stopListening : startListening}
-              disabled={!microfonoDisponibile}
-              title={microfonoDisponibile ? "Parla" : "Microfono non disponibile"}
+              onClick={listening ? stopListening : () => void startListening()}
+              disabled={!microfonoDisponibile || inCaricamento}
+              aria-label={listening ? "Ferma ascolto" : "Correggi a voce"}
+              title={microfonoDisponibile ? (listening ? "Ferma ascolto" : "Parla") : "Microfono non disponibile"}
               className={`relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 ${
                 listening
                   ? "border-red-300 bg-red-500 text-white shadow-lg shadow-red-500/30"
