@@ -127,18 +127,20 @@ export default function AssistantMessage({ message }: AssistantMessageProps) {
             <p className="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">
               {message.prodotti.length} prodott{message.prodotti.length === 1 ? "o trovato" : "i trovati"}
             </p>
-            <div className="grid grid-cols-2 gap-1.5 pb-1">
+            <div className="grid grid-cols-2 gap-2 pb-1">
               {message.prodotti.map((prodotto) => (
                 <Link
                   key={prodotto.id}
                   href={`/prodotto/${prodotto.slug}`}
-                  className="flex gap-2 overflow-hidden rounded-lg border border-slate-100 bg-white p-1.5 transition hover:border-blue-200 hover:shadow-sm"
+                  onClick={() => window.dispatchEvent(new Event("assistant:close"))}
+                  className="group flex gap-2.5 overflow-hidden rounded-xl border border-slate-100 bg-white p-2 transition hover:border-blue-200 hover:shadow-md"
+                  aria-label={`Apri il prodotto ${prodotto.nome}`}
                 >
-                  <div className="h-12 w-12 shrink-0 overflow-hidden rounded bg-slate-100">
+                  <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-slate-100">
                     <div
                       role="img"
                       aria-label={prodotto.nome}
-                      className="h-full w-full bg-cover bg-center"
+                      className="h-full w-full bg-cover bg-center transition duration-200 group-hover:scale-105"
                       style={{
                         backgroundImage: `url(${getProdottoImmagine({
                           immagine_principale: prodotto.immagine_principale,
@@ -147,10 +149,12 @@ export default function AssistantMessage({ message }: AssistantMessageProps) {
                       }}
                     />
                   </div>
-                  <div className="min-w-0">
-                    <p className="line-clamp-1 text-[11px] font-bold text-slate-900">{prodotto.nome}</p>
-                    <p className="text-[11px] font-black text-blue-700">€{prodotto.prezzo}</p>
-                    <p className="line-clamp-1 text-[9px] text-slate-400">{prodotto.negozio_nome}</p>
+                  <div className="min-w-0 flex-1">
+                    <p className="line-clamp-2 text-xs font-bold leading-tight text-slate-900 transition group-hover:text-blue-700">
+                      {prodotto.nome}
+                    </p>
+                    <p className="mt-0.5 text-sm font-black text-blue-700">€{prodotto.prezzo}</p>
+                    <p className="mt-0.5 line-clamp-1 text-[10px] text-slate-400">{prodotto.negozio_nome}</p>
                   </div>
                 </Link>
               ))}

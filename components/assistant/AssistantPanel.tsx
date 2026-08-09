@@ -34,6 +34,15 @@ export default function AssistantPanel() {
     return () => window.removeEventListener("assistant:open", handleOpen);
   }, []);
 
+  // Chiusura da eventi globali: i link dei risultati (card negozio/prodotto)
+  // dispatchano "assistant:close" prima di navigare, così il pannello non
+  // resta aperto sopra la pagina di destinazione.
+  useEffect(() => {
+    const handleClose = () => setIsOpen(false);
+    window.addEventListener("assistant:close", handleClose);
+    return () => window.removeEventListener("assistant:close", handleClose);
+  }, []);
+
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
