@@ -159,6 +159,33 @@ export default function MerchantCorreggiAiDialog({
     if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   }, [messaggi, ultimiCambi, inCaricamento]);
 
+  // ── Altezza massima adattiva (mobile): segue il visual viewport reale ──────
+  // Su iOS/Android `vh` può superare lo spazio visibile (toolbar del browser e
+  // tastiera aperta), spingendo il footer "Conferma modifiche" sotto la piega.
+  // Aggiorniamo una CSS variable con l'altezza visibile effettiva; il pannello
+  // la usa come max-height, così il footer resta SEMPRE raggiungibile.
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.visualViewport) return;
+    const aggiorna = () => {
+      const h = window.visualViewport?.height;
+      if (h) {
+        document.documentElement.style.setProperty(
+          "--dialog-correggi-max-h",
+          `${Math.round(h * 0.92)}px`
+        );
+      }
+    };
+    aggiorna();
+    window.visualViewport.addEventListener("resize", aggiorna);
+    window.visualViewport.addEventListener("scroll", aggiorna);
+    return () => {
+      window.visualViewport?.removeEventListener("resize", aggiorna);
+      window.visualViewport?.removeEventListener("scroll", aggiorna);
+      // Ripulisce la variabile globale impostata su documentElement.
+      document.documentElement.style.removeProperty("--dialog-correggi-max-h");
+    };
+  }, []);
+
   // ── Microfono ──────────────────────────────────────────────────────────────
   function fermaStream() {
     if (mediaStreamRef.current) {
@@ -397,7 +424,7 @@ export default function MerchantCorreggiAiDialog({
   const suggerimento = SUGGERIMENTI[messaggi.length % SUGGERIMENTI.length];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
       {/* Overlay */}
       <div
         className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
@@ -410,7 +437,12 @@ export default function MerchantCorreggiAiDialog({
         role="dialog"
         aria-modal="true"
         aria-label="Correggi con AI"
-        className="relative flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-3xl bg-white shadow-2xl"
+        style={{
+          // Altezza massima adattiva: usa il visual viewport reale (mobile
+          // con toolbar/tastiera) con fallback dvh/vh per browser moderni.
+          maxHeight: "var(--dialog-correggi-max-h, min(92dvh, 92vh))",
+        }}
+        className="relative flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl"
       >
         {/* Header */}
         <div className="flex items-center gap-3 bg-gradient-to-b from-violet-600 to-fuchsia-600 px-5 py-4 text-white">
@@ -458,8 +490,8 @@ export default function MerchantCorreggiAiDialog({
           </span>
         </div>
 
-        {/* Area chat */}
-        <div ref={chatRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto px-5 py-4">
+        {/* Area chat — unica zona scrollabile del dialog */}
+        <div ref={chatRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-5 pb-6 pt-4">
           {/* Messaggio di benvenuto */}
           <div className="flex items-start gap-2">
             <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-b from-violet-500 to-fuchsia-600">
@@ -663,8 +695,13 @@ export default function MerchantCorreggiAiDialog({
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="flex items-center gap-2 border-t border-slate-100 bg-slate-50 px-4 py-3">
+        {/* Footer — sticky in fondo al dialog, sempre visibile (con safe-area mobile) */}
+        <div
+          style={{
+            paddingBottom: "max(0.75rem, env(safe-area-inset-bottom, 0px))",
+          }}
+          className="flex shrink-0 items-center gap-2 border-t border-slate-100 bg-slate-50 px-4 pb-3 pt-3"
+        >
           <button
             type="button"
             onClick={annullaUltimaModifica}

@@ -19,6 +19,9 @@ const geistMono = Geist_Mono({
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  // Necessario perché env(safe-area-inset-bottom) (usato nei footer dei dialog
+  // come "Correggi con AI") abbia effetto su iPhone/iPad.
+  viewportFit: "cover",
 };
 
 const SITE_URL = getSiteUrl();
