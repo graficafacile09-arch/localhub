@@ -12,7 +12,7 @@ import { getOffertePubblicheNegozio, type Offerta } from "@/lib/offerte";
 import { getEventiPubbliciNegozio, type Evento } from "@/lib/eventi";
 import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
 import { MapPin, Phone, MessageCircle, ExternalLink, Tag, Calendar, Clock } from "lucide-react";
-import OpeningHoursDisplay from "@/components/negozio/OpeningHoursDisplay";
+import StoreInfoCard from "@/components/negozio/StoreInfoCard";
 
 type Params = { slug: string };
 
@@ -153,25 +153,14 @@ export default async function PaginaNegozio({ params }: { params: Promise<Params
           )}
         </div>
 
-        {/* Info compatte */}
-        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-500">
-          {negozio.indirizzo && (
-            <span className="flex items-center gap-1">
-              <MapPin className="h-3 w-3 text-blue-500" />
-              {negozio.indirizzo as string}
-            </span>
-          )}
-          {negozio.telefono && (
-            <span className="flex items-center gap-1">
-              <Phone className="h-3 w-3 text-blue-500" />
-              {negozio.telefono as string}
-            </span>
-          )}
-        </div>
-
-        {negozio.orari && (
+        {/* Scheda informazioni — card moderna unica (indirizzo, telefono, orari) */}
+        {(negozio.indirizzo || negozio.telefono || negozio.orari) && (
           <div className="mt-3">
-            <OpeningHoursDisplay orari={negozio.orari as never} />
+            <StoreInfoCard
+              indirizzo={(negozio.indirizzo as string) ?? null}
+              telefono={(negozio.telefono as string) ?? null}
+              orari={(negozio.orari as never) ?? null}
+            />
           </div>
         )}
 
