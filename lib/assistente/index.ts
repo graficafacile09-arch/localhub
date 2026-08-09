@@ -264,16 +264,30 @@ function pianoPredefinito(
     return { directReply: null, tools: [{ tool: "searchEvents", params: {} }] };
   }
   if (RE_CIBO.test(ultimo)) {
-    const termine = ultimo.includes("pizzeria") || ultimo.includes("pizza")
+    // Cerchiamo su PIÙ termini alimentari: l'espansione sinonimi di
+    // "mangiare" viene troncata a 12 termini in cercaNegozi, quindi termini
+    // come "panificio"/"forno" non arriverebbero mai al DB. Lanciando più
+    // ricerche specifiche il Panificio/ristorante viene sempre trovato.
+    const specifico = ultimo.includes("pizzeria") || ultimo.includes("pizza")
       ? "pizza"
       : ultimo.includes("ristorante") ? "ristorante"
       : ultimo.includes("trattoria") ? "trattoria"
       : ultimo.includes("panificio") ? "panificio"
       : ultimo.includes("forno") ? "forno"
+      : ultimo.includes("gelateria") ? "gelateria"
+      : ultimo.includes("bar") ? "bar"
       : ultimo.includes("cena") ? "cena"
       : ultimo.includes("pranzo") ? "pranzo"
-      : "mangiare";
-    return { directReply: null, tools: [{ tool: "searchStores", params: { query: termine } }] };
+      : "";
+    const termini = Array.from(
+      new Set(
+        (specifico ? [specifico] : []).concat(["mangiare", "panificio", "forno", "ristorante", "pizzeria"])
+      )
+    );
+    return {
+      directReply: null,
+      tools: termini.map((query) => ({ tool: "searchStores", params: { query } })),
+    };
   }
   if (RE_CHIACCHIERA.test(ultimo)) {
     return {
