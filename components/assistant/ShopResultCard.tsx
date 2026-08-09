@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { MapPin, Navigation, MessageCircle, ExternalLink } from "lucide-react";
 import { getNegozioCardImmagine } from "@/lib/negozi-card-immagini";
+import { normalizzaNumeroWhatsApp } from "@/lib/telefono";
 import type { NegozioRicerca } from "@/lib/ricerca-ai";
 
 type ShopResultCardProps = {
@@ -9,8 +10,7 @@ type ShopResultCardProps = {
 };
 
 function buildWhatsAppUrl(telefono: string, nomeNegozio: string): string {
-  const digits = telefono.replace(/[\s\-().+]/g, "");
-  const number = digits.startsWith("39") ? digits : `39${digits}`;
+  const number = normalizzaNumeroWhatsApp(telefono);
   const msg = encodeURIComponent(
     `Ciao! Ho trovato "${nomeNegozio}" su InCittà e vorrei informazioni.`
   );

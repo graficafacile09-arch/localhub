@@ -1,4 +1,5 @@
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { inviaNotificaNuovoOrdine } from "@/lib/notifiche/whatsapp";
 import type {
   ClienteOrdine,
   RigaOrdine,
@@ -283,9 +284,22 @@ export async function creaOrdine(
     };
   }
 
+  const giaEsistente = esito.giaEsistente ?? false;
+
+  // ── 3. Notifica WhatsApp al negoziante (BEST-EFFORT, mai blocca) ───────
+  // Solo per un ordine REALMENTE nuovo (mai per i retry idempotenti con la
+  // stessa idempotency_key). La notifica avviene DOPO la creazione riuscita:
+  // eventuali errori Meta vengono solo loggati e l'ordine resta salvato
+  // (lo stock è già stato decrementato dalla RPC atomica). Il .catch è una
+  // rete di sicurezza: il helper non lancia mai, ma qui non deve MAI
+  // interferire con la risposta al cliente.
+  if (!giaEsistente && esito.ordine?.id) {
+    await inviaNotificaNuovoOrdine(esito.ordine.id).catch(() => {});
+  }
+
   return {
     ok: true,
-    giaEsistente: esito.giaEsistente ?? false,
+    giaEsistente,
     ordine: esito.ordine!,
   };
 }

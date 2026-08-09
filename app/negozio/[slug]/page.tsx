@@ -8,6 +8,7 @@ import { risolviNegozioPubblico, getProdottiNegozio } from "@/lib/negozi";
 import { getNegozioCardImmagine } from "@/lib/negozi-card-immagini";
 import { chiavePreferito, getStatoPreferitiPerPagina } from "@/lib/cliente/favorites";
 import { getSiteUrl } from "@/lib/site";
+import { normalizzaNumeroWhatsApp } from "@/lib/telefono";
 import { getOffertePubblicheNegozio, type Offerta } from "@/lib/offerte";
 import { getEventiPubbliciNegozio, type Evento } from "@/lib/eventi";
 import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
@@ -80,8 +81,7 @@ export default async function PaginaNegozio({ params }: { params: Promise<Params
   });
 
   const buildWhatsAppUrl = () => {
-    const phone = ((negozio.whatsapp as string) || (negozio.telefono as string) || "").replace(/[\s\-().+]/g, "");
-    const number = phone.startsWith("39") ? phone : `39${phone}`;
+    const number = normalizzaNumeroWhatsApp((negozio.whatsapp as string) || (negozio.telefono as string));
     const msg = encodeURIComponent(
       `Ciao! Ho trovato "${negozio.nome as string}" su InCittà e vorrei informazioni.`
     );

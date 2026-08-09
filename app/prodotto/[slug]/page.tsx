@@ -6,6 +6,7 @@ import { risolviProdottoPubblico, getNegozio } from "@/lib/negozi";
 import { getProdottoImmagine } from "@/lib/prodotti-immagini";
 import { chiavePreferito, getStatoPreferitiPerPagina } from "@/lib/cliente/favorites";
 import { getSiteUrl } from "@/lib/site";
+import { normalizzaNumeroWhatsApp } from "@/lib/telefono";
 import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
 import { MapPin, Phone, MessageCircle, ArrowLeft, ExternalLink, ShoppingBag } from "lucide-react";
 
@@ -64,8 +65,7 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
 
   const buildWhatsAppUrl = () => {
     if (!negozio) return "#";
-    const phone = ((negozio.whatsapp as string) || (negozio.telefono as string) || "").replace(/[\s\-().+]/g, "");
-    const number = phone.startsWith("39") ? phone : `39${phone}`;
+    const number = normalizzaNumeroWhatsApp((negozio.whatsapp as string) || (negozio.telefono as string));
     const msg = encodeURIComponent(
       `Ciao! Vorrei informazioni su "${prodotto.nome as string}" visto su InCittà.`
     );
