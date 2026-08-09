@@ -52,10 +52,13 @@ const sinonimiRicerca: Record<string, string[]> = {
   casa: ["casa", "arredo", "arredamento", "mobili", "interior", "decorazioni", "illuminazione", "cucina", "salotto", "camera", "divano", "tavolo"],
   auto: ["auto", "macchina", "officina", "gomme", "pneumatici", "tagliando", "meccanico", "carrozzeria", "revisione", "olio", "freni", "batteria", "concessionaria"],
   salute: ["salute", "farmacia", "parafarmacia", "medicinali", "integratori", "benessere", "sanitaria", "febbre", "raffreddore", "mal", "testa", "dolore", "ricetta", "analisi", "antibiotico"],
-  tech: ["tech", "tecnologia", "elettronica", "telefonia", "cellulari", "cellulare", "smartphone", "computer", "pc", "tablet", "accessori", "riparazioni", "monitor", "stampante", "ricarica"],
+  tech: ["tech", "tecnologia", "elettronica", "telefonia", "cellulari", "cellulare", "smartphone", "telefonino", "telefonini", "computer", "pc", "tablet", "accessori", "riparazioni", "monitor", "stampante", "ricarica"],
   bimbi: ["bimbi", "bambini", "giocattoli", "giocattolo", "infanzia", "scuola", "cartoleria", "neonati", "prima", "infanzia", "zaino", "pannolini", "didattico"],
   sport: ["sport", "fitness", "palestra", "allenamento", "running", "yoga", "pilates", "abbigliamento", "sportivo", "workout", "tapis", "roulant", "pesi", "training"],
   moda: ["moda", "abbigliamento", "boutique", "vestiti", "vestito", "scarpe", "calzature", "elegante", "eleganti", "outfit"],
+  ristorazione: ["mangiare", "ristorante", "ristorazione", "ristoranti", "trattoria", "trattorie", "cena", "cene", "pranzo", "pranzi", "cibo", "aperitivo", "aperitivi", "pizzeria", "pizzerie", "cucina"],
+  promozioni: ["offerte", "offerta", "promozioni", "promozione", "sconti", "sconto", "saldo", "saldi", "affari"],
+  regalo: ["regalo", "regali", "regalare", "dono", "doni", "omaggio", "omaggi"],
   pet: ["pet", "animali", "animale", "cani", "cane", "gatti", "gatto", "veterinario", "veterinaria", "toelettatura", "crocchette", "shop", "zecche", "zecca", "pulci", "pulce", "antiparassitario", "antiparassitari", "cucciolo", "croccantini", "lettiera", "guinzaglio", "mangime"],
 };
 

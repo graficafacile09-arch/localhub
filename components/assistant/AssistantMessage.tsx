@@ -13,7 +13,7 @@ export interface ChatMessage {
   negozi?: NegozioRicerca[];
   prodotti?: ProdottoRicerca[];
   processingMs?: number;
-  source?: "brain" | "fallback";
+  source?: "brain" | "fallback" | "assistente";
 }
 
 interface AssistantMessageProps {
@@ -178,7 +178,11 @@ export default function AssistantMessage({ message }: AssistantMessageProps) {
 
         {message.processingMs !== undefined && (
           <p className="ml-1 text-[10px] text-slate-400">
-            {message.source === "brain" ? "🧠 Brain" : "⚡ Ricerca"} · {message.processingMs}ms
+            {message.source === "brain"
+              ? "🧠 Brain"
+              : message.source === "assistente"
+                ? "🤖 Assistente"
+                : "⚡ Ricerca"} · {message.processingMs}ms
           </p>
         )}
       </div>

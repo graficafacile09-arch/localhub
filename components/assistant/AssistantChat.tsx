@@ -46,8 +46,14 @@ export default function AssistantChat() {
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  // Ref per evitare closure stale su isLoading nei callback
+  // Ref per evitare closure stale su isLoading e sui messaggi nei callback
+  // (sendMessage è useCallback con deps vuote: senza ref vedrebbe sempre []).
   const isLoadingRef = useRef(false);
+  const messagesRef = useRef<ChatMessage[]>([]);
+
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
 
   // Container scrollabile — usiamo scrollTop direttamente per non
   // innescare lo scroll del viewport su mobile.
@@ -107,11 +113,18 @@ export default function AssistantChat() {
     isLoadingRef.current = true;
     setIsLoading(true);
 
+    // Cronologia recente della conversazione (gli ultimi messaggi + quello nuovo),
+    // per permettere all'AI di mantenere il contesto (es. "e sotto i 300?").
+    const storico = [
+      ...messagesRef.current.slice(-7).map((m) => ({ role: m.role, content: m.content })),
+      { role: "user" as const, content: termine },
+    ];
+
     try {
-      const response = await fetch("/api/search", {
+      const response = await fetch("/api/assistente", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: termine }),
+        body: JSON.stringify({ messages: storico }),
       });
 
       if (!response.ok) {
@@ -129,9 +142,9 @@ export default function AssistantChat() {
         content = `Ho trovato **${data.negozi.length} ${data.negozi.length === 1 ? "negozio" : "negozi"}** pertinenti alla tua ricerca.`;
       }
 
-      if (!content && data.negozi.length === 0) {
+      if (!content && data.negozi.length === 0 && (data.prodotti?.length ?? 0) === 0) {
         content =
-          "Non ho trovato negozi corrispondenti alla tua ricerca. Prova con termini diversi, ad esempio il tipo di attività o categoria.";
+          "Non ho trovato risultati corrispondenti alla tua ricerca. Prova con termini diversi, ad esempio il tipo di attività o categoria.";
       }
 
       const assistantMsg: ChatMessage = {
@@ -139,8 +152,9 @@ export default function AssistantChat() {
         role: "assistant",
         content,
         negozi: data.negozi.length > 0 ? data.negozi : undefined,
+        prodotti: data.prodotti && data.prodotti.length > 0 ? data.prodotti : undefined,
         processingMs: data.processingMs,
-        source: data.source,
+        source: (data.source as ChatMessage["source"]) ?? "assistente",
       };
 
       setMessages((prev) => [...prev, assistantMsg]);
