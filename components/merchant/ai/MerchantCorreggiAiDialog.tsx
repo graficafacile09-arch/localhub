@@ -105,8 +105,6 @@ export default function MerchantCorreggiAiDialog({
   const chunkAudioRef = useRef<Blob[]>([]);
   const startingRef = useRef(false); // guard sincrono contro il doppio tap
   const chiusoRef = useRef(false); // true quando il dialog è stato chiuso
-  const baseTestoRef = useRef("");
-  const inputRef = useRef("");
 
   const chatRef = useRef<HTMLDivElement>(null);
   const inputElRef = useRef<HTMLInputElement>(null);
@@ -146,11 +144,6 @@ export default function MerchantCorreggiAiDialog({
     };
   }, []);
 
-  // Mantiene inputRef allineato al valore corrente del campo di testo.
-  useEffect(() => {
-    inputRef.current = input;
-  }, [input]);
-
   // ── Escape per chiudere ────────────────────────────────────────────────────
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -174,7 +167,51 @@ export default function MerchantCorreggiAiDialog({
     }
   }
 
-  /** Invia il clip audio al backend (Groq Whisper) e inserisce il testo nel campo. */
+  /** Invia il testo al flusso AI (stesso handler del pulsante "Invia"). */
+  const inviaCorrezione = useCallback(
+    async (testo: string) => {
+      const messaggio = testo.trim();
+      if (!messaggio || inCaricamento) return;
+
+      setInput("");
+      setErroreInvio(null);
+      setMessaggi((prev) => [...prev, { ruolo: "utente", testo: messaggio }]);
+      setUltimiCambi(null);
+      setInCaricamento(true);
+
+      try {
+        const res = await fetch(`/api/merchant/stores/${negozioId}/products/correggi-ai`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ suggestion: draft, messaggio, storico }),
+        });
+
+        const data = (await res.json()) as ApiCorrezioneRisposta;
+        if (!res.ok || !data.success || !data.data) {
+          throw new Error(data.error?.message ?? "Errore durante la correzione.");
+        }
+
+        const risposta = data.data;
+        setDraft(risposta.suggestion);
+        setUltimiCambi(risposta.cambi);
+        setMessaggi((prev) => [...prev, { ruolo: "ai", testo: risposta.messaggio }]);
+        setStorico((prev) => [
+          ...prev,
+          { role: "user", content: messaggio },
+          { role: "assistant", content: risposta.messaggio },
+        ]);
+        setHistory((prev) => [...prev, draft]);
+      } catch (caught) {
+        setErroreInvio(caught instanceof Error ? caught.message : "Errore imprevisto.");
+        setMessaggi((prev) => prev.slice(0, -1)); // rimuovi il messaggio utente non andato a buon fine
+      } finally {
+        setInCaricamento(false);
+      }
+    },
+    [draft, storico, inCaricamento, negozioId]
+  );
+
+  /** Trascrive il clip audio e INVIA AUTOMATICAMENTE il testo al flusso AI. */
   const inviaTrascrizione = useCallback(
     async (blob: Blob, mimeType: string) => {
       if (blob.size === 0) {
@@ -207,11 +244,12 @@ export default function MerchantCorreggiAiDialog({
           return;
         }
 
-        const base = baseTestoRef.current;
-        // Il testo trascritto finisce nel campo (modificabile prima dell'invio)
-        // e il focus va subito sul campo per poter modificare o premere Invio.
-        setInput(base ? `${base} ${testo}` : testo);
-        inputElRef.current?.focus();
+        // CHAT VOCALE: trascrizione finita → invio AUTOMATICO con lo stesso
+        // handler del pulsante "Invia" (nessuna logica duplicata). Il testo
+        // compare come messaggio utente nella conversazione e parte subito la
+        // risposta AI con il normale indicatore di elaborazione.
+        setTrascrivendo(false);
+        await inviaCorrezione(testo);
       } catch (caught) {
         setErroreVocale(
           caught instanceof Error ? caught.message : "Errore durante la trascrizione."
@@ -220,7 +258,7 @@ export default function MerchantCorreggiAiDialog({
         setTrascrivendo(false);
       }
     },
-    [negozioId]
+    [negozioId, inviaCorrezione]
   );
 
   const startListening = useCallback(async () => {
@@ -299,7 +337,6 @@ export default function MerchantCorreggiAiDialog({
       await inviaTrascrizione(blob, recorder.mimeType || mimeType || "audio/webm");
     };
 
-    baseTestoRef.current = inputRef.current.trim();
     setErroreVocale(null);
     try {
       // Timeslice 250ms: emette chunk audio a intervalli regolari così, allo
@@ -337,50 +374,6 @@ export default function MerchantCorreggiAiDialog({
       setListening(false);
     }
   }, []);
-
-  // ── Invio correzione → endpoint correggi-ai (nessun write DB) ─────────────
-  const inviaCorrezione = useCallback(
-    async (testo: string) => {
-      const messaggio = testo.trim();
-      if (!messaggio || inCaricamento) return;
-
-      setInput("");
-      setErroreInvio(null);
-      setMessaggi((prev) => [...prev, { ruolo: "utente", testo: messaggio }]);
-      setUltimiCambi(null);
-      setInCaricamento(true);
-
-      try {
-        const res = await fetch(`/api/merchant/stores/${negozioId}/products/correggi-ai`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ suggestion: draft, messaggio, storico }),
-        });
-
-        const data = (await res.json()) as ApiCorrezioneRisposta;
-        if (!res.ok || !data.success || !data.data) {
-          throw new Error(data.error?.message ?? "Errore durante la correzione.");
-        }
-
-        const risposta = data.data;
-        setDraft(risposta.suggestion);
-        setUltimiCambi(risposta.cambi);
-        setMessaggi((prev) => [...prev, { ruolo: "ai", testo: risposta.messaggio }]);
-        setStorico((prev) => [
-          ...prev,
-          { role: "user", content: messaggio },
-          { role: "assistant", content: risposta.messaggio },
-        ]);
-        setHistory((prev) => [...prev, draft]);
-      } catch (caught) {
-        setErroreInvio(caught instanceof Error ? caught.message : "Errore imprevisto.");
-        setMessaggi((prev) => prev.slice(0, -1)); // rimuovi il messaggio utente non andato a buon fine
-      } finally {
-        setInCaricamento(false);
-      }
-    },
-    [draft, storico, inCaricamento, negozioId]
-  );
 
   // ── Annulla ultima modifica ────────────────────────────────────────────────
   const annullaUltimaModifica = useCallback(() => {
@@ -633,7 +626,9 @@ export default function MerchantCorreggiAiDialog({
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
+                // Durante registrazione/trascrizione l'invio manuale è sospeso:
+                // il messaggio vocale deve passare senza conflitti dal flusso AI.
+                if (e.key === "Enter" && !e.shiftKey && !listening && !trascrivendo) {
                   e.preventDefault();
                   inviaCorrezione(input);
                 }
@@ -645,7 +640,7 @@ export default function MerchantCorreggiAiDialog({
             <button
               type="button"
               onClick={() => inviaCorrezione(input)}
-              disabled={!input.trim() || inCaricamento}
+              disabled={!input.trim() || inCaricamento || listening || trascrivendo}
               aria-label="Invia"
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-b from-violet-500 to-fuchsia-600 text-white shadow shadow-fuchsia-500/25 transition hover:shadow-md active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
             >
