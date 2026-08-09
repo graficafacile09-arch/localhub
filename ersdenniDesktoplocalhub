@@ -1,0 +1,26 @@
+[35mPRODUCTION_ARCHITECTURE.md[m[36m:[m[32m531[m[36m:[m- [ ] `.env` produzione: `[1;31mGROQ_API_KEY[m` (opzionale, per futuro)
+[35mapp/api/merchant/stores/[negozioId]/products/correggi-ai/route.ts[m[36m:[m[32m47[m[36m:[m  const groqApiKey = process.env.[1;31mGROQ_API_KEY[m;
+[35mapp/api/merchant/stores/[negozioId]/products/correggi-ai/route.ts[m[36m:[m[32m49[m[36m:[m    throw new Error("Chiave API Groq mancante. Aggiungi [1;31mGROQ_API_KEY[m al file .env.local.");
+[35mapp/api/merchant/stores/[negozioId]/products/correggi-ai/route.ts[m[36m:[m[32m56[m[36m:[m    const response = await fetch("https://[1;31mapi.groq.com[m/openai/v1/chat/completions", {
+[35mapp/api/merchant/stores/[negozioId]/products/correggi-ai/route.ts[m[36m:[m[32m162[m[36m:[m    // ── Chiamata LLM (riusa [1;31mGROQ_API_KEY[m, come lib/ricerca-ai.ts) ────────────
+[35mapp/api/merchant/stores/[negozioId]/products/trascrivi-audio/route.ts[m[36m:[m[32m9[m[36m:[m * Groq Whisper, usando la stessa [1;31mGROQ_API_KEY[m già presente nel progetto.
+[35mapp/api/merchant/stores/[negozioId]/products/trascrivi-audio/route.ts[m[36m:[m[32m57[m[36m:[m    const groqApiKey = process.env.[1;31mGROQ_API_KEY[m;
+[35mapp/api/merchant/stores/[negozioId]/products/trascrivi-audio/route.ts[m[36m:[m[32m59[m[36m:[m      throw new Error("Chiave API Groq mancante. Aggiungi [1;31mGROQ_API_KEY[m al file .env.local.");
+[35mapp/api/merchant/stores/[negozioId]/products/trascrivi-audio/route.ts[m[36m:[m[32m74[m[36m:[m      const response = await fetch("https://[1;31mapi.groq.com[m/openai/v1/audio/transcriptions", {
+[35mcheck-groq-models.mjs[m[36m:[m[32m3[m[36m:[mconst key = fs.readFileSync('.env.local', 'utf8').match(/[1;31mGROQ_API_KEY[m=(.+)/)[1].trim();
+[35mcheck-groq-models.mjs[m[36m:[m[32m6[m[36m:[m  const res = await fetch('https://[1;31mapi.groq.com[m/openai/v1/models', {
+[35mlib/assistente/index.ts[m[36m:[m[32m10[m[36m:[m * Usa [1;31mGROQ_API_KEY[m (già presente nel progetto), modello già in uso
+[35mlib/assistente/index.ts[m[36m:[m[32m71[m[36m:[m  const groqApiKey = process.env.[1;31mGROQ_API_KEY[m;
+[35mlib/assistente/index.ts[m[36m:[m[32m73[m[36m:[m    throw new Error("Chiave API Groq mancante. Aggiungi [1;31mGROQ_API_KEY[m al file .env.local.");
+[35mlib/assistente/index.ts[m[36m:[m[32m86[m[36m:[m      const response = await fetch("https://[1;31mapi.groq.com[m/openai/v1/chat/completions", {
+[35mlib/ricerca-ai.ts[m[36m:[m[32m306[m[36m:[m  const groqApiKey = process.env.[1;31mGROQ_API_KEY[m;
+[35mlib/ricerca-ai.ts[m[36m:[m[32m310[m[36m:[m      "Chiave API Groq mancante. Aggiungi [1;31mGROQ_API_KEY[m al file .env.local."
+[35mlib/ricerca-ai.ts[m[36m:[m[32m314[m[36m:[m  const response = await fetch("https://[1;31mapi.groq.com[m/openai/v1/chat/completions", {
+[35mlist-groq-models.mjs[m[36m:[m[32m4[m[36m:[mconst key = fs.readFileSync('.env.local', 'utf8').match(/[1;31mGROQ_API_KEY[m=(.+)/)[1].trim();
+[35mlist-groq-models.mjs[m[36m:[m[32m7[m[36m:[m  const res = await fetch('https://[1;31mapi.groq.com[m/openai/v1/models', {
+[35mlist-groq-models.mjs[m[36m:[m[32m8[m[36m:[m    headers: { Authorization: `Bearer ${fs.readFileSync('.env.local', 'utf8').match(/[1;31mGROQ_API_KEY[m=(.+)/)[1].trim()}` }
+[35mrun-groq-benchmark.mjs[m[36m:[m[32m33[m[36m:[m  const key = fs.readFileSync('.env.local', 'utf8').match(/[1;31mGROQ_API_KEY[m=(.+)/)[1].trim();
+[35mrun-groq-benchmark.mjs[m[36m:[m[32m34[m[36m:[m  const url = 'https://[1;31mapi.groq.com[m/openai/v1/chat/completions';
+[35mrun-groq-benchmark.mjs[m[36m:[m[32m37[m[36m:[m  const res = await fetch('https://[1;31mapi.groq.com[m/openai/v1/chat/completions', {
+[35mrun-real-benchmark.mjs[m[36m:[m[32m73[m[36m:[m    const key = fs.readFileSync('.env.local', 'utf8').match(/[1;31mGROQ_API_KEY[m=(.+)/)[1].trim();
+[35mrun-real-benchmark.mjs[m[36m:[m[32m74[m[36m:[m    const url = 'https://[1;31mapi.groq.com[m/openai/v1/chat/completions';

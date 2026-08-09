@@ -272,7 +272,7 @@ export async function createStoreFromTemplate(
       categoria: newStore.categoria,
       sottocategoria: newStore.sottocategoria ?? null,
       citta: newStore.citta,
-      attivo: false,
+      attivo: true,
       version: 1,
     })
     .select("id")

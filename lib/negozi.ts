@@ -815,6 +815,7 @@ export async function cercaNegozi(ricerca: string) {
   const { data, error } = await db
     .from("negozi")
     .select("*")
+    .eq("attivo", true)
     .or(filtriRicerca)
     .is("deleted_at", null);
 

@@ -46,7 +46,7 @@ export async function POST(request: Request) {
       slug,
       citta: (body.citta as string)?.trim() || null,
       logo_url: (body.logo_url as string) || null,
-      attivo: false,
+      attivo: true,
     })
     .select("id")
     .single();

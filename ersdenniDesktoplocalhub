@@ -1,0 +1,35 @@
+[35mapp/api/merchant/stores/[negozioId]/products/correggi-ai/route.ts[m[36m-[m[32m48[m[36m-[m  if (!groqApiKey) {
+[35mapp/api/merchant/stores/[negozioId]/products/correggi-ai/route.ts[m[36m-[m[32m49[m[36m-[m    throw new Error("Chiave API Groq mancante. Aggiungi GROQ_API_KEY al file .env.local.");
+[35mapp/api/merchant/stores/[negozioId]/products/correggi-ai/route.ts[m[36m-[m[32m50[m[36m-[m  }
+[35mapp/api/merchant/stores/[negozioId]/products/correggi-ai/route.ts[m[36m-[m[32m51[m[36m-[m
+[35mapp/api/merchant/stores/[negozioId]/products/correggi-ai/route.ts[m[36m-[m[32m52[m[36m-[m  const controller = new AbortController();
+[35mapp/api/merchant/stores/[negozioId]/products/correggi-ai/route.ts[m[36m-[m[32m53[m[36m-[m  const timeoutId = setTimeout(() => controller.abort(), 60000);
+[35mapp/api/merchant/stores/[negozioId]/products/correggi-ai/route.ts[m[36m-[m[32m54[m[36m-[m
+[35mapp/api/merchant/stores/[negozioId]/products/correggi-ai/route.ts[m[36m-[m[32m55[m[36m-[m  try {
+[35mapp/api/merchant/stores/[negozioId]/products/correggi-ai/route.ts[m[36m:[m[32m56[m[36m:[m    const response = await fetch("https://[1;31mapi.groq.com[m/openai/v1/chat/completions", {
+[35mapp/api/merchant/stores/[negozioId]/products/correggi-ai/route.ts[m[36m-[m[32m57[m[36m-[m      method: "POST",
+[35mapp/api/merchant/stores/[negozioId]/products/correggi-ai/route.ts[m[36m-[m[32m58[m[36m-[m      headers: {
+[35mapp/api/merchant/stores/[negozioId]/products/correggi-ai/route.ts[m[36m-[m[32m59[m[36m-[m        Authorization: `Bearer ${groqApiKey}`,
+[35mapp/api/merchant/stores/[negozioId]/products/correggi-ai/route.ts[m[36m-[m[32m60[m[36m-[m        "Content-Type": "application/json",
+[35mapp/api/merchant/stores/[negozioId]/products/correggi-ai/route.ts[m[36m-[m[32m61[m[36m-[m      },
+[35mapp/api/merchant/stores/[negozioId]/products/correggi-ai/route.ts[m[36m-[m[32m62[m[36m-[m      body: JSON.stringify({
+[35mapp/api/merchant/stores/[negozioId]/products/correggi-ai/route.ts[m[36m-[m[32m63[m[36m-[m        model: CORREGGI_MODEL,
+[35mapp/api/merchant/stores/[negozioId]/products/correggi-ai/route.ts[m[36m-[m[32m64[m[36m-[m        messages: [
+[36m--[m
+[35mlib/assistente/index.ts[m[36m-[m[32m78[m[36m-[m  const TENTATIVI = 3;
+[35mlib/assistente/index.ts[m[36m-[m[32m79[m[36m-[m  let ultimoErrore: Error | null = null;
+[35mlib/assistente/index.ts[m[36m-[m[32m80[m[36m-[m
+[35mlib/assistente/index.ts[m[36m-[m[32m81[m[36m-[m  for (let tentativo = 1; tentativo <= TENTATIVI; tentativo++) {
+[35mlib/assistente/index.ts[m[36m-[m[32m82[m[36m-[m    const controller = new AbortController();
+[35mlib/assistente/index.ts[m[36m-[m[32m83[m[36m-[m    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+[35mlib/assistente/index.ts[m[36m-[m[32m84[m[36m-[m
+[35mlib/assistente/index.ts[m[36m-[m[32m85[m[36m-[m    try {
+[35mlib/assistente/index.ts[m[36m:[m[32m86[m[36m:[m      const response = await fetch("https://[1;31mapi.groq.com[m/openai/v1/chat/completions", {
+[35mlib/assistente/index.ts[m[36m-[m[32m87[m[36m-[m        method: "POST",
+[35mlib/assistente/index.ts[m[36m-[m[32m88[m[36m-[m        headers: {
+[35mlib/assistente/index.ts[m[36m-[m[32m89[m[36m-[m          Authorization: `Bearer ${groqApiKey}`,
+[35mlib/assistente/index.ts[m[36m-[m[32m90[m[36m-[m          "Content-Type": "application/json",
+[35mlib/assistente/index.ts[m[36m-[m[32m91[m[36m-[m        },
+[35mlib/assistente/index.ts[m[36m-[m[32m92[m[36m-[m        body: JSON.stringify({
+[35mlib/assistente/index.ts[m[36m-[m[32m93[m[36m-[m          model: GROQ_MODEL,
+[35mlib/assistente/index.ts[m[36m-[m[32m94[m[36m-[m          messages: [

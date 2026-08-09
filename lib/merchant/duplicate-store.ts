@@ -55,7 +55,7 @@ export async function duplicateStore(
     categoria: newStore.categoria ?? source.categoria ?? null,
     sottocategoria: newStore.sottocategoria ?? source.sottocategoria ?? null,
     citta: newStore.citta ?? source.citta ?? null,
-    attivo: source.attivo ?? false,
+    attivo: true,
     version: 1,
   };
 
