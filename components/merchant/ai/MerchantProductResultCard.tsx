@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, CheckCircle2, Pencil, RotateCcw } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Mic, Pencil, RotateCcw } from "lucide-react";
 import type { ProductVisionSuggestion } from "@/lib/product-assistant/vision";
 
 type ResultCardProps = {
@@ -12,6 +12,8 @@ type ResultCardProps = {
   photoUrl: string;
   onRetake: () => void;
   onEdit: () => void;
+  /** Apre la correzione vocale/testuale con l'AI sul draft. */
+  onCorreggi: () => void;
 };
 
 export default function MerchantProductResultCard({
@@ -21,6 +23,7 @@ export default function MerchantProductResultCard({
   photoUrl,
   onRetake,
   onEdit,
+  onCorreggi,
 }: ResultCardProps) {
   const router = useRouter();
   const [publishing, setPublishing] = useState(false);
@@ -175,8 +178,18 @@ export default function MerchantProductResultCard({
           </div>
         )}
 
+        {/* Correggi con AI — interviene sul draft, prima della pubblicazione */}
+        <button
+          type="button"
+          onClick={onCorreggi}
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-600 px-3 py-2.5 text-sm font-bold text-white shadow shadow-fuchsia-500/20 transition hover:shadow-md hover:shadow-fuchsia-500/30 active:scale-[0.98]"
+        >
+          <Mic className="h-4 w-4" />
+          Correggi con AI
+        </button>
+
         {/* Azioni */}
-        <div className="mt-4 flex gap-2">
+        <div className="mt-2 flex gap-2">
           <button
             type="button"
             onClick={handlePublish}
