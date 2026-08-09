@@ -72,7 +72,7 @@ export default async function MerchantEditProductPage({
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
               Modifica prodotto
             </p>
-            <h1 className="mt-2 text-2xl font-black tracking-tight text-slate-900 truncate">
+            <h1 className="mt-2 text-xl font-black tracking-tight text-slate-900 truncate">
               {product.nome}
             </h1>
             <p className="mt-1 text-sm text-slate-500">
