@@ -324,17 +324,28 @@ export async function chatConAssistente(
     };
   }
 
-  // 3) Fallback: ricerca completa solo se la selezione è fallita o l'LLM non ha
-  // scelto alcun tool. Se i tool hanno girato ma non hanno trovato nulla, i
-  // risultati sono davvero vuoti → la risposta finale lo dirà onestamente.
+  // 3) Fallback: ricerca completa SOLO se la selezione LLM è fallita.
+  // Se l'LLM ha scelto tool che non hanno trovato nulla, i risultati sono
+  // davvero vuoti → la risposta finale lo dirà onestamente.
+  // Se l'LLM non ha scelto tool né risposta diretta (es. "va bene" senza
+  // contesto), NON inventiamo una ricerca: rispondiamo in modo naturale.
   const toolsEseguiti = invocazioni.length > 0;
-  if (!selezioneOk || (!directReply && !toolsEseguiti)) {
+  if (!selezioneOk) {
     const tutto = await searchAll(domanda, {});
     negozi = tutto.negozi;
     prodotti = tutto.prodotti;
     offerte = tutto.offerte;
     eventi = tutto.eventi;
     categorie = tutto.categorie;
+  } else if (!directReply && !toolsEseguiti) {
+    return {
+      risposta:
+        "Va bene, sono qui! Posso aiutarti a trovare negozi, prodotti, offerte ed eventi nella tua città. Dimmi pure cosa cerchi.",
+      negozi: [],
+      prodotti: [],
+      processingMs: Date.now() - inizio,
+      source: "assistente",
+    };
   }
 
   // 4) Contesto strutturato per la risposta finale

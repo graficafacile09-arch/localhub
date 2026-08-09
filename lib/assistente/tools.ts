@@ -111,14 +111,29 @@ export async function searchProducts(
   const maxPrice = opts.maxPrice != null ? Number(opts.maxPrice) : null;
   const minPrice = opts.minPrice != null ? Number(opts.minPrice) : null;
 
-  return righe
-    .filter((p) => {
-      const prezzo = Number(p.prezzo);
-      if (!Number.isFinite(prezzo)) return false;
-      if (maxPrice != null && Number.isFinite(maxPrice) && prezzo > maxPrice) return false;
-      if (minPrice != null && Number.isFinite(minPrice) && prezzo < minPrice) return false;
-      return true;
-    })
+  // Escludiamo i prodotti senza prezzo reale (es. prezzo 0 da dati demo).
+  const conPrezzo = righe.filter((p) => {
+    const prezzo = Number(p.prezzo);
+    return Number.isFinite(prezzo) && prezzo > 0;
+  });
+
+  const nelBudget = conPrezzo.filter((p) => {
+    const prezzo = Number(p.prezzo);
+    if (maxPrice != null && Number.isFinite(maxPrice) && prezzo > maxPrice) return false;
+    if (minPrice != null && Number.isFinite(minPrice) && prezzo < minPrice) return false;
+    return true;
+  });
+
+  // Se il filtro prezzo esclude tutto, mostriamo comunque un paio di opzioni
+  // fuori budget: l'AI le segnalerà onestamente come "vicine" alla richiesta.
+  const scelti =
+    nelBudget.length > 0
+      ? nelBudget
+      : (maxPrice != null || minPrice != null) && conPrezzo.length > 0
+        ? conPrezzo.slice(0, 3)
+        : nelBudget;
+
+  return scelti
     .sort((a, b) => Number(a.prezzo) - Number(b.prezzo))
     .slice(0, limita(opts.limit, 8, 10));
 }
