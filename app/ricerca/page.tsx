@@ -47,9 +47,10 @@ export default async function RicercaPage({
       <Header />
 
       <div className="mx-auto max-w-7xl px-3 py-3 sm:px-5">
-        {/* Barra ricerca */}
+        {/* Barra ricerca — SEMPRE utilizzabile per nuove ricerche (form GET
+            nativo verso /ricerca?q=..., con icona lente come submit) */}
         <div className="mb-3">
-          <SearchForm initialQuery={termine} compact />
+          <SearchForm initialQuery={termine} />
         </div>
 
         {categoriaShowcase ? (
