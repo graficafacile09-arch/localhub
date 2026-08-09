@@ -302,7 +302,11 @@ export default function MerchantCorreggiAiDialog({
     baseTestoRef.current = inputRef.current.trim();
     setErroreVocale(null);
     try {
-      recorder.start();
+      // Timeslice 250ms: emette chunk audio a intervalli regolari così, allo
+      // stop, il blob contiene SEMPRE audio anche con registrazioni brevi o
+      // su Safari/iOS (senza timeslice il blob può risultare vuoto e la
+      // trascrizione automatica non partirebbe).
+      recorder.start(250);
       setListening(true);
     } catch {
       startingRef.current = false;
