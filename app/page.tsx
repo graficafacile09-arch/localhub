@@ -6,6 +6,7 @@ import { getNegozioCardImmagine } from "@/lib/negozi-card-immagini";
 import { chiavePreferito, getStatoPreferitiPerPagina } from "@/lib/cliente/favorites";
 import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
 import CategoryTile, { TutteCategorieTile } from "@/components/home/CategoryTile";
+import { normalizza } from "@/lib/text-utils";
 
 // La homepage deve riflettere in tempo reale i negozi in evidenza flaggati
 // dal merchant (il toggle "In evidenza" della dashboard), quindi non viene
@@ -22,6 +23,20 @@ export default async function Home() {
     getCategorieConNegozi(),
     getStatoPreferitiPerPagina(),
   ]);
+
+  // Categorie in ordine alfabetico crescente (A→Z) in base al NOME
+  // visualizzato, non all'ID o allo slug. L'ordinamento avviene qui, nel
+  // punto di visualizzazione, senza modificare i dati del database né il
+  // comportamento di getCategorieConNegozi (usato anche altrove).
+  // normalizza() rende il confronto case-insensitive e insensibile agli
+  // accenti (es. "Caffè" ≡ "caffe"), come già avviene nel resto del sito;
+  // il tie-break finale con localeCompare italiano garantisce stabilità.
+  const categorieOrdinate = [...categorieConNegozi].sort((a, b) => {
+    const nomeA = normalizza(a.categoria.nome);
+    const nomeB = normalizza(b.categoria.nome);
+    if (nomeA !== nomeB) return nomeA.localeCompare(nomeB, "it");
+    return a.categoria.nome.localeCompare(b.categoria.nome, "it");
+  });
 
   return (
     <main className="min-h-screen bg-gray-50">
@@ -74,7 +89,7 @@ export default async function Home() {
         </div>
 
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 md:gap-3 lg:grid-cols-6">
-          {categorieConNegozi.slice(0, NUMERO_CATEGORIE_HOME).map(({ categoria, count }, index) => (
+          {categorieOrdinate.slice(0, NUMERO_CATEGORIE_HOME).map(({ categoria, count }, index) => (
             <CategoryTile key={categoria.id} categoria={categoria} index={index} count={count} />
           ))}
           <TutteCategorieTile index={NUMERO_CATEGORIE_HOME} />
