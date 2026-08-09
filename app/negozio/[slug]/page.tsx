@@ -11,7 +11,7 @@ import { getSiteUrl } from "@/lib/site";
 import { getOffertePubblicheNegozio, type Offerta } from "@/lib/offerte";
 import { getEventiPubbliciNegozio, type Evento } from "@/lib/eventi";
 import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
-import { MapPin, Phone, MessageCircle, ExternalLink, Tag, Calendar, Clock, Info, Globe } from "lucide-react";
+import { MapPin, Phone, MessageCircle, Tag, Calendar, Clock, Globe } from "lucide-react";
 import OpeningHoursDisplay from "@/components/negozio/OpeningHoursDisplay";
 
 type Params = { slug: string };
@@ -108,7 +108,7 @@ export default async function PaginaNegozio({ params }: { params: Promise<Params
 
         {/* Hero — copertina con identità sovrapposta */}
         <div className="relative overflow-hidden rounded-2xl border border-white/60 bg-white shadow-sm">
-          <div className="relative aspect-[16/9] max-h-[320px] w-full overflow-hidden sm:aspect-[21/9]">
+          <div className="relative aspect-[16/9] max-h-[230px] w-full overflow-hidden sm:aspect-[21/9]">
             <div
               role="img"
               aria-label={`Fotografia del negozio ${negozio.nome as string}`}
@@ -118,9 +118,9 @@ export default async function PaginaNegozio({ params }: { params: Promise<Params
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-900/25 to-transparent" />
 
             {/* Identità sovrapposta */}
-            <div className="absolute inset-x-0 bottom-0 p-4 sm:p-6">
+            <div className="absolute inset-x-0 bottom-0 p-3.5 sm:p-5">
               {negozio.categoria && (
-                <span className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-amber-400 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-amber-950 shadow-sm">
+                <span className="mb-1.5 inline-flex items-center gap-1.5 rounded-full bg-amber-400 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-amber-950 shadow-sm">
                   <Tag className="h-3 w-3" aria-hidden />
                   {negozio.categoria as string}
                 </span>
@@ -129,7 +129,7 @@ export default async function PaginaNegozio({ params }: { params: Promise<Params
                 {negozio.nome as string}
               </h1>
               {negozio.descrizione && (
-                <p className="mt-1 line-clamp-2 max-w-2xl text-xs leading-5 text-white/85 drop-shadow-sm sm:text-sm">
+                <p className="mt-1 line-clamp-1 max-w-2xl text-xs leading-5 text-white/85 drop-shadow-sm sm:text-sm">
                   {negozio.descrizione as string}
                 </p>
               )}
@@ -154,95 +154,39 @@ export default async function PaginaNegozio({ params }: { params: Promise<Params
           }}
         />
 
-        {/* Info negozio — contatti e orari affiancati (niente card verticale alta) */}
-        <div className={negozio.orari ? "mt-3 grid items-start gap-3 lg:grid-cols-2" : "mt-3"}>
-          {/* Contatti e indirizzo */}
-          <div className="rounded-2xl border border-white/70 bg-white p-4 shadow-sm sm:p-5">
-            <div className="flex items-center gap-3">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-100">
-                <Info className="h-[18px] w-[18px] text-amber-600" aria-hidden />
-              </span>
-              <h2 className="text-sm font-black tracking-tight text-slate-900">
-                Contatti e indirizzo
-              </h2>
-            </div>
-            <ul className="mt-3 divide-y divide-slate-100">
-              {negozio.indirizzo && (
-                <li>
-                  <a
-                    href={buildMapsUrl()}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group flex items-center gap-3 py-2.5 first:pt-0 last:pb-0"
-                  >
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 ring-1 ring-blue-100">
-                      <MapPin className="h-4 w-4 text-blue-600" aria-hidden />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-[10px] font-black uppercase tracking-wide text-slate-400">
-                        Indirizzo
-                      </span>
-                      <span className="block truncate text-[13px] font-bold text-slate-700 transition group-hover:text-blue-700">
-                        {negozio.indirizzo as string}
-                      </span>
-                    </span>
-                    <ExternalLink className="h-3.5 w-3.5 shrink-0 text-slate-300 transition group-hover:text-blue-500" aria-hidden />
-                  </a>
-                </li>
-              )}
-              {negozio.telefono && (
-                <li>
-                  <a
-                    href={`tel:${negozio.telefono as string}`}
-                    className="group flex items-center gap-3 py-2.5 first:pt-0 last:pb-0"
-                  >
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-50 ring-1 ring-emerald-100">
-                      <Phone className="h-4 w-4 text-emerald-600" aria-hidden />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-[10px] font-black uppercase tracking-wide text-slate-400">
-                        Telefono
-                      </span>
-                      <span className="block truncate text-[13px] font-bold text-slate-700 transition group-hover:text-emerald-700">
-                        {negozio.telefono as string}
-                      </span>
-                    </span>
-                    <Phone className="h-3.5 w-3.5 shrink-0 text-slate-300 transition group-hover:text-emerald-500" aria-hidden />
-                  </a>
-                </li>
-              )}
-              {negozio.sito_web && (
-                <li>
-                  <a
-                    href={(negozio.sito_web as string).startsWith("http") ? (negozio.sito_web as string) : `https://${negozio.sito_web as string}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group flex items-center gap-3 py-2.5 first:pt-0 last:pb-0"
-                  >
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 ring-1 ring-slate-200">
-                      <Globe className="h-4 w-4 text-slate-600" aria-hidden />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-[10px] font-black uppercase tracking-wide text-slate-400">
-                        Sito web
-                      </span>
-                      <span className="block truncate text-[13px] font-bold text-slate-700 transition group-hover:text-slate-900">
-                        {negozio.sito_web as string}
-                      </span>
-                    </span>
-                    <ExternalLink className="h-3.5 w-3.5 shrink-0 text-slate-300 transition group-hover:text-slate-500" aria-hidden />
-                  </a>
-                </li>
-              )}
-            </ul>
-          </div>
-
-          {/* Orari di apertura */}
-          {negozio.orari && <OpeningHoursDisplay orari={negozio.orari as never} />}
+        {/* Info compatte — pill cliccabili (mappa / telefono) */}
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          {negozio.indirizzo && (
+            <a
+              href={buildMapsUrl()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-slate-200/80 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 shadow-sm transition hover:border-blue-300 hover:text-blue-700"
+            >
+              <MapPin className="h-3 w-3 shrink-0 text-amber-500" aria-hidden />
+              <span className="min-w-0 truncate">{negozio.indirizzo as string}</span>
+            </a>
+          )}
+          {negozio.telefono && (
+            <a
+              href={`tel:${negozio.telefono as string}`}
+              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/80 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 shadow-sm transition hover:border-emerald-300 hover:text-emerald-700"
+            >
+              <Phone className="h-3 w-3 text-amber-500" aria-hidden />
+              {negozio.telefono as string}
+            </a>
+          )}
         </div>
 
+        {/* Orari di apertura — compatti */}
+        {negozio.orari && (
+          <div className="mt-2">
+            <OpeningHoursDisplay orari={negozio.orari as never} />
+          </div>
+        )}
+
         {/* Azioni */}
-        <div className="mt-3 flex flex-wrap items-center gap-2">
+        <div className="mt-2 flex flex-wrap items-center gap-2">
           <FavoritoButton
             tipo="negozio"
             riferimentoId={id}
@@ -280,6 +224,17 @@ export default async function PaginaNegozio({ params }: { params: Promise<Params
             >
               <Phone className="h-4 w-4" />
               Chiama
+            </a>
+          )}
+          {negozio.sito_web && (
+            <a
+              href={(negozio.sito_web as string).startsWith("http") ? (negozio.sito_web as string) : `https://${negozio.sito_web as string}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900 hover:shadow"
+            >
+              <Globe className="h-4 w-4" />
+              Sito web
             </a>
           )}
         </div>
@@ -327,7 +282,7 @@ export default async function PaginaNegozio({ params }: { params: Promise<Params
 
         {/* Offerte */}
         {offerte.length > 0 && (
-          <section className="mt-5">
+          <section className="mt-4">
             <div className="mb-2 flex items-center gap-2">
               <h2 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-slate-500">
                 <Tag className="h-3.5 w-3.5 text-amber-500" />
@@ -390,7 +345,7 @@ export default async function PaginaNegozio({ params }: { params: Promise<Params
 
         {/* Eventi */}
         {eventi.length > 0 && (
-          <section className="mt-5">
+          <section className="mt-4">
             <div className="mb-2 flex items-center gap-2">
               <h2 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-slate-500">
                 <Calendar className="h-3.5 w-3.5 text-blue-500" />

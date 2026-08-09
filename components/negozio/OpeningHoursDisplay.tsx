@@ -22,13 +22,13 @@ export default function OpeningHoursDisplay({ orari }: Props) {
   if (!orari || typeof orari !== "object") return null;
 
   return (
-    <div className="rounded-2xl border border-white/70 bg-white p-4 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md sm:p-5">
+    <div className="rounded-2xl border border-white/70 bg-white p-3.5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md sm:p-4">
       {/* Intestazione — accento amber coerente con il giallo InCittà */}
-      <div className="flex items-center gap-3">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-100">
-          <Clock className="h-[18px] w-[18px] text-amber-600" aria-hidden />
+      <div className="flex items-center gap-2.5">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-100">
+          <Clock className="h-4 w-4 text-amber-600" aria-hidden />
         </span>
-        <h2 className="text-sm font-black tracking-tight text-slate-900">
+        <h2 className="text-[13px] font-black tracking-tight text-slate-900">
           Orari di apertura
         </h2>
       </div>
@@ -46,7 +46,7 @@ export default function OpeningHoursDisplay({ orari }: Props) {
           return (
             <li
               key={day}
-              className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 py-2.5 first:pt-0 last:pb-0"
+              className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 py-2 first:pt-0 last:pb-0"
             >
               <span className="text-[13px] font-black capitalize tracking-tight text-slate-800">
                 {day}
