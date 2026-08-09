@@ -1,7 +1,8 @@
 /**
  * Test concreti del flusso ordini (FASE ORDINI) contro il DB reale.
  *
- * Verifica i casi richiesti:
+ * Verifica i casi richiesti chiamando la VERA implementazione (la funzione
+ * PostgreSQL atomica `public.crea_ordine`, usata da /api/cliente/ordini):
  *   T1 un ordine valido venga salvato (ordini + ordini_righe, numero LH-...)
  *   T2 un prodotto inesistente venga rifiutato (404)
  *   T3 un prodotto inattivo venga rifiutato (409)
@@ -10,9 +11,7 @@
  *      (il server risolve SEMPRE il negozio dal prodotto)
  *   T6 un doppio click non generi due ordini (idempotency_key identica)
  *
- * Replica fedelmente la logica di lib/cliente/orders.ts (creaOrdine) con il
- * client service role: stesse query, stesse validazioni, stesso inserimento.
- * Uso: node scripts/test-ordini.mjs
+ * Uso: node scripts/test-ordini.mjs <service_role_key>
  */
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
@@ -46,115 +45,56 @@ function ko(messaggio, dettaglio) {
   if (dettaglio !== undefined) console.log(`     → ${JSON.stringify(dettaglio)}`);
 }
 
-const COSTI_SPEDIZIONE = { standard: 5.9, express: 12.9 };
+/** HTTP status associato ai codici della RPC (stessa mappa di lib/cliente/orders.ts). */
+const STATUS_DA_CODICE = {
+  VALIDATION_ERROR: 422,
+  PRODOTTO_NON_TROVATO: 404,
+  NEGOZIO_NON_TROVATO: 404,
+  PRODOTTO_INATTIVO: 409,
+  NEGOZIO_INATTIVO: 409,
+  SCORTE_INSUFFICIENTI: 409,
+  PREZZO_NON_VALIDO: 500,
+  SAVE_FAILED: 500,
+};
 
-/** Replica di creaOrdine (stessa logica di lib/cliente/orders.ts). */
+/** Chiama la VERA RPC atomica crea_ordine (stessa di /api/cliente/ordini). */
 async function creaOrdine(db, input) {
-  const key = String(input.idempotencyKey ?? "").trim();
-  if (!key || key.length > 64) return { ok: false, codice: "VALIDATION_ERROR", status: 422 };
+  const payload = {
+    idempotencyKey: String(input.idempotencyKey ?? "").trim(),
+    prodottoId: String(input.prodottoId ?? ""),
+    quantita: Number(input.quantita),
+    modalita: input.modalita,
+    clienteNome: String(input.cliente?.nome ?? "").trim(),
+    clienteCognome: String(input.cliente?.cognome ?? "").trim(),
+    clienteTelefono: input.cliente?.telefono ?? null,
+    clienteEmail: input.cliente?.email ?? null,
+    clienteIp: input.clienteIp ?? null,
+    ritiroData: input.ritiro?.data ?? null,
+    ritiroFascia: input.ritiro?.fascia ?? null,
+    spedizioneIndirizzo: input.spedizione?.indirizzo ?? null,
+    spedizioneCap: input.spedizione?.cap ?? null,
+    spedizioneCitta: input.spedizione?.citta ?? null,
+    spedizioneProvincia: input.spedizione?.provincia ?? null,
+    spedizioneNote: input.spedizione?.note ?? null,
+    metodoSpedizione: input.spedizione?.metodoSpedizione ?? null,
+    metodoPagamento: input.spedizione?.metodoPagamento ?? null,
+    note: input.note ?? null,
+  };
 
-  const prodottoId = String(input.prodottoId ?? "");
-  if (!/^\d+$/.test(prodottoId)) return { ok: false, codice: "VALIDATION_ERROR", status: 422 };
-
-  const quantita = Number(input.quantita);
-  if (!Number.isInteger(quantita) || quantita < 1 || quantita > 99) {
-    return { ok: false, codice: "VALIDATION_ERROR", status: 422 };
+  const { data, error } = await db.rpc("crea_ordine", { p_payload: payload });
+  if (error) {
+    return { ok: false, codice: "SAVE_FAILED", status: 500, errore: error.message };
   }
-  if (input.modalita !== "ritiro" && input.modalita !== "spedizione") {
-    return { ok: false, codice: "VALIDATION_ERROR", status: 422 };
+  if (!data || data.ok !== true) {
+    const codice = String(data?.codice ?? "SAVE_FAILED");
+    return {
+      ok: false,
+      codice,
+      status: STATUS_DA_CODICE[codice] ?? 500,
+      errore: data?.messaggio,
+    };
   }
-  const nome = String(input.cliente?.nome ?? "").trim();
-  const cognome = String(input.cliente?.cognome ?? "").trim();
-  if (!nome || !cognome) return { ok: false, codice: "VALIDATION_ERROR", status: 422 };
-
-  // Idempotenza
-  const { data: esistente } = await db
-    .from("ordini").select("*").eq("idempotency_key", key).maybeSingle();
-  if (esistente) {
-    const { data: righeE } = await db
-      .from("ordini_righe").select("*").eq("ordine_id", esistente.id).order("created_at");
-    return { ok: true, giaEsistente: true, ordine: { ...esistente, righe: righeE ?? [] } };
-  }
-
-  // Prodotto
-  const { data: prodotto, error: errP } = await db
-    .from("prodotti")
-    .select("id, negozio_id, nome, prezzo, quantita_disponibile, attivo, immagine_principale")
-    .eq("id", Number(prodottoId)).single();
-  if (errP || !prodotto) return { ok: false, codice: "PRODOTTO_NON_TROVATO", status: 404 };
-  if (!prodotto.attivo) return { ok: false, codice: "PRODOTTO_INATTIVO", status: 409 };
-
-  // Negozio (sempre dal prodotto)
-  const { data: negozio, error: errN } = await db
-    .from("negozi")
-    .select("id, nome, attivo, deleted_at")
-    .eq("id", String(prodotto.negozio_id)).single();
-  if (errN || !negozio) return { ok: false, codice: "NEGOZIO_NON_TROVATO", status: 404 };
-  if (!negozio.attivo || negozio.deleted_at) return { ok: false, codice: "NEGOZIO_INATTIVO", status: 409 };
-
-  const prezzoUnitario = Number(prodotto.prezzo);
-  const disponibile = prodotto.quantita_disponibile;
-  if (disponibile != null && Number(disponibile) < quantita) {
-    return { ok: false, codice: "SCORTE_INSUFFICIENTI", status: 409 };
-  }
-
-  const costoSpedizione = input.modalita === "spedizione"
-    ? COSTI_SPEDIZIONE[input.spedizione?.metodoSpedizione ?? "standard"]
-    : 0;
-  const totale = Number((prezzoUnitario * quantita + costoSpedizione).toFixed(2));
-
-  const { data: ordineRow, error: errO } = await db
-    .from("ordini")
-    .insert({
-      idempotency_key: key,
-      modalita: input.modalita,
-      totale,
-      negozio_id: negozio.id,
-      negozio_nome: String(negozio.nome),
-      cliente_nome: nome,
-      cliente_cognome: cognome,
-      cliente_telefono: input.cliente?.telefono ?? null,
-      cliente_email: input.cliente?.email ?? null,
-      ritiro_data: input.modalita === "ritiro" ? (input.ritiro?.data ?? null) : null,
-      ritiro_fascia: input.modalita === "ritiro" ? (input.ritiro?.fascia ?? null) : null,
-      spedizione_indirizzo: input.modalita === "spedizione" ? String(input.spedizione?.indirizzo ?? "") : null,
-      spedizione_cap: input.modalita === "spedizione" ? String(input.spedizione?.cap ?? "") : null,
-      spedizione_citta: input.modalita === "spedizione" ? String(input.spedizione?.citta ?? "") : null,
-      spedizione_provincia: input.modalita === "spedizione" ? String(input.spedizione?.provincia ?? "") : null,
-      metodo_spedizione: input.modalita === "spedizione" ? (input.spedizione?.metodoSpedizione ?? "standard") : null,
-      costo_spedizione: costoSpedizione,
-      metodo_pagamento: input.modalita === "spedizione" ? (input.spedizione?.metodoPagamento ?? "carta") : null,
-      note: input.note ?? null,
-    })
-    .select("*").single();
-
-  if (errO || !ordineRow) {
-    if (String(errO?.code ?? "") === "23505") {
-      const { data: giaCreato } = await db
-        .from("ordini").select("*").eq("idempotency_key", key).single();
-      if (giaCreato) {
-        const { data: righeG } = await db
-          .from("ordini_righe").select("*").eq("ordine_id", giaCreato.id).order("created_at");
-        return { ok: true, giaEsistente: true, ordine: { ...giaCreato, righe: righeG ?? [] } };
-      }
-    }
-    return { ok: false, codice: "SAVE_FAILED", status: 500 };
-  }
-
-  const { data: righeRow, error: errR } = await db
-    .from("ordini_righe")
-    .insert({
-      ordine_id: ordineRow.id,
-      prodotto_id: Number(prodotto.id),
-      nome_prodotto: String(prodotto.nome),
-      prezzo_unitario: prezzoUnitario,
-      quantita,
-      immagine_url: prodotto.immagine_principale ?? null,
-    })
-    .select("*").single();
-
-  const righe = errR || !righeRow ? [] : [righeRow];
-  return { ok: true, giaEsistente: false, ordine: { ...ordineRow, righe } };
+  return { ok: true, giaEsistente: !!data.giaEsistente, ordine: data.ordine };
 }
 
 async function main() {
@@ -171,47 +111,43 @@ async function main() {
 
   const db = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, serviceRoleKey);
 
-  console.log("\n── SETUP: individuo un prodotto attivo e un altro negozio ──");
+  console.log("\n── SETUP: creo un prodotto di test con stock sufficiente ──");
 
-  // Seleziona un prodotto attivo il cui NEGOZIO esiste davvero: nel DB demo
-  // alcuni prodotti puntano a negozi orfani. Prima prendo i negozi attivi,
-  // poi un prodotto attivo di uno di essi.
-  const { data: negoziAttivi, error: errNegoziAttivi } = await db
+  // Il decremento delle scorte è ora REALE (RPC atomica): i test non possono
+  // riusare i prodotti demo (il loro stock si esaurirebbe). Creo un prodotto
+  // di test dedicato (stock 10) su un negozio attivo reale, e lo elimino in
+  // pulizia.
+  const { data: negozi, error: errNegoziAttivi } = await db
     .from("negozi")
     .select("id")
     .eq("attivo", true)
     .is("deleted_at", null)
     .limit(50);
-  if (errNegoziAttivi) {
-    console.log("❌ Errore query negozi:", errNegoziAttivi.message);
+  if (errNegoziAttivi || !negozi || negozi.length === 0) {
+    console.log("❌ Nessun negozio attivo nel DB:", errNegoziAttivi?.message ?? "nessun negozio");
     process.exit(1);
   }
-  const negoziAttiviIds = (negoziAttivi ?? []).map((n) => n.id);
-  if (negoziAttiviIds.length === 0) {
-    console.log("⚠️  Nessun negozio attivo nel DB: impossibile testare.");
-    process.exit(1);
-  }
-  const { data: attivi, error: errAttivi } = await db
+  const ts = Date.now();
+  const { data: prodotto, error: errProdotto } = await db
     .from("prodotti")
+    .insert({
+      slug: `test-ordini-${ts}`,
+      negozio_id: negozi[0].id,
+      nome: `Prodotto Test Ordini (${ts})`,
+      descrizione: "prodotto temporaneo per test del flusso ordini",
+      categoria: "Test",
+      prezzo: 5.0,
+      attivo: true,
+      quantita_disponibile: 10,
+      origine_pubblicazione: "manuale",
+    })
     .select("id, negozio_id, nome, prezzo, quantita_disponibile, attivo")
-    .eq("attivo", true)
-    .in("negozio_id", negoziAttiviIds)
-    .limit(20);
-  if (errAttivi) {
-    console.log("❌ Errore query prodotti:", errAttivi.message);
+    .single();
+  if (errProdotto || !prodotto) {
+    console.log("❌ Creazione prodotto di test:", errProdotto?.message);
     process.exit(1);
   }
-  if (!attivi || attivi.length === 0) {
-    console.log("⚠️  Nessun prodotto attivo con negozio esistente: impossibile testare.");
-    process.exit(1);
-  }
-  const prodotto = attivi[0];
-  console.log(`  prodotto attivo: id=${prodotto.id} negozio=${prodotto.negozio_id} prezzo=${prodotto.prezzo}`);
-
-  const { data: negozi } = await db
-    .from("negozi").select("id").eq("attivo", true).is("deleted_at", null).limit(50);
-  const altroNegozio = (negozi ?? []).find((n) => String(n.id) !== String(prodotto.negozio_id)) ?? null;
-  if (altroNegozio) console.log(`  altro negozio disponibile: ${altroNegozio.id}`);
+  console.log(`  prodotto di test: id=${prodotto.id} negozio=${prodotto.negozio_id} stock=10`);
 
   const baseCliente = { nome: "Test", cognome: "Ordini", telefono: "333 1234567" };
   const baseInput = (idempotencyKey, over = {}) => ({
@@ -271,7 +207,7 @@ async function main() {
   // ── T5 prodotto di un altro negozio ───────────────────────────────────────
   console.log("\n── T5 negozio risolto dal prodotto ──");
   const t5 = await creaOrdine(db, baseInput("t5-" + crypto.randomUUID()));
-  if (t5.ok && String(t5.ordine.negozio_id) === String(prodotto.negozio_id)) {
+  if (t5.ok && String(t5.ordine.negozioId) === String(prodotto.negozio_id)) {
     ok("T5 l'ordine è agganciato al negozio del prodotto (nessun negozio estraneo)");
   } else {
     ko("T5 negozio dal prodotto", t5);
@@ -294,7 +230,7 @@ async function main() {
     ko("T6 doppio click", { primo: primo.ok, secondo: secondo.ok });
   }
 
-  // ── PULIZIA ordini di test ────────────────────────────────────────────────
+  // ── PULIZIA ordini di test + prodotto di test ─────────────────────────────
   console.log("\n── PULIZIA ordini di test ──");
   const { data: righeTest } = await db
     .from("ordini")
@@ -311,6 +247,12 @@ async function main() {
   } else {
     console.log("  (nessun ordine residuo da pulire)");
   }
+  const { error: delProdottoTest } = await db
+    .from("prodotti")
+    .delete()
+    .like("slug", `test-ordini-${ts}-%`);
+  if (!delProdottoTest) ok(`prodotto di test eliminato`);
+  else console.log("  ⚠️ pulizia prodotto di test:", delProdottoTest.message);
 
   console.log(`\n─────────────────────────────`);
   console.log(`Totale: ${passati} passati, ${falliti} falliti`);

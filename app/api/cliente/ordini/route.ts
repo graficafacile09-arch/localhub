@@ -1,24 +1,47 @@
 import { apiError, apiOk } from "@/lib/api/response";
 import { creaOrdine, type CreaOrdineInput } from "@/lib/cliente/orders";
+import { checkRateLimit } from "@/lib/rate-limiter";
+
+/** IP del richiedente (pattern già usato da /api/assistente). */
+function ipRichiedente(request: Request): string {
+  return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "anon";
+}
 
 /**
  * API Ordini — Area Clienti.
  *
  * POST /api/cliente/ordini
- * Crea un ordine realmente salvato su Supabase (ordini + ordini_righe).
+ * Crea un ordine realmente salvato su Supabase in modo ATOMICO:
+ * la funzione PostgreSQL crea_ordine blocca la riga del prodotto
+ * (SELECT ... FOR UPDATE), valida, salva ordine + righe e decrementa le
+ * scorte in un'unica transazione (migrazione 20260813_ordini_stock.sql).
  *
  * Il checkout è pubblico (nessuna sessione richiesta): l'acquisto avviene
  * dalla pagina prodotto senza login. Il payload contiene i dati del cliente
  * e la chiave di idempotenza generata dal client (anti doppio invio).
  *
- * Validazioni lato server:
- *   - input ben formato;
- *   - negozio esiste, attivo, non cestinato;
- *   - prodotto esiste, attivo e appartiene al negozio;
- *   - prezzo e disponibilità letti DAL DATABASE;
- *   - totale calcolato dal server (mai fidarsi del client).
+ * RATE LIMIT: prima di qualunque operazione sul database viene contato il
+ * numero di ordini creati da questo IP nell'ultimo minuto/ora (tabella
+ * ordini, colonna cliente_ip) con lo stesso lib/rate-limiter.ts usato da
+ * altri endpoint. Limiti: ORDINI_RATE_LIMIT_PER_MINUTE (default 6) e
+ * ORDINI_RATE_LIMIT_PER_HOUR (default 40). Oltre il limite → HTTP 429,
+ * nessun ordine e nessuna modifica allo stock.
  */
 export async function POST(request: Request) {
+  // ── Rate limit per IP (prima di qualunque operazione costosa sul DB) ──
+  const ip = ipRichiedente(request);
+  const rateCheck = await checkRateLimit(ip, {
+    subject: "ordini",
+    idColumn: "cliente_ip",
+    useAdminClient: true,
+    reasonLabel: "ordini",
+  });
+  if (!rateCheck.allowed) {
+    return apiError("RATE_LIMITED", rateCheck.reason, 429, {
+      retryAfter: rateCheck.retryAfter,
+    });
+  }
+
   let body: Record<string, unknown>;
   try {
     body = (await request.json()) as Record<string, unknown>;
@@ -95,6 +118,7 @@ export async function POST(request: Request) {
           }
         : null,
     note: typeof body.note === "string" ? body.note : null,
+    clienteIp: ip,
   };
 
   const esito = await creaOrdine(input);

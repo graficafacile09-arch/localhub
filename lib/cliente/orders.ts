@@ -9,9 +9,21 @@ import type {
  * Servizio Ordini dell'Area Clienti.
  * Fase completa — creazione ordine realmente persistita.
  *
- * - creaOrdine: valida prodotto/negozio, calcola i totali dal DATABASE
- *   (mai fidarsi dei prezzi inviati dal client), salva ordine + righe con
- *   idempotenza (idempotency_key): un doppio click NON crea due ordini.
+ * - creaOrdine: valida l'input lato server e delega la creazione (ordine +
+ *   righe + decremento atomico dello stock) alla funzione PostgreSQL
+ *   `public.crea_ordine(p_payload jsonb)` (migrazione 20260813):
+ *     - TUTTO in una transazione con lock della riga prodotto
+ *       (SELECT ... FOR UPDATE): due richieste simultanee non possono
+ *       vendere più pezzi di quelli disponibili;
+ *     - quantità richiesta > disponibilità → SCORTE_INSUFFICIENTI (409),
+ *       stock invariato;
+ *     - quantità_disponibile non può mai diventare negativa (UPDATE
+ *       guardato + CHECK constraint);
+ *     - errore durante la creazione → rollback totale: nessun decremento
+ *       "orfano" senza ordine;
+ *     - idempotenza via idempotency_key UNIQUE: un retry con la stessa
+ *       chiave NON crea un nuovo ordine né decrementa di nuovo lo stock.
+ *   Il prezzo e i totali sono calcolati DAL DATABASE (mai dal client).
  */
 
 /** Dati di un cliente che effettua un ordine (checkout pubblico). */
@@ -45,8 +57,8 @@ export type CreaOrdineInput = {
     metodoPagamento: "carta" | "paypal" | "bonifico";
   } | null;
   note?: string | null;
-  /** userId dell'utente autenticato, se presente (nullable: checkout pubblico). */
-  clienteUserId?: string | null;
+  /** IP del richiedente (rate limiting per IP, salvato su ordini.cliente_ip). */
+  clienteIp?: string | null;
 };
 
 /** Esito della creazione ordine. */
@@ -69,10 +81,16 @@ export type OrdinePersistito = {
   righe: RigaOrdine[];
 };
 
-/** Costi di spedizione (specchio dei valori mostrati in SpedizioneForm). */
-const COSTI_SPEDIZIONE: Record<"standard" | "express", number> = {
-  standard: 5.9,
-  express: 12.9,
+/** HTTP status associato a ciascun codice d'errore della RPC. */
+const STATUS_DA_CODICE: Record<string, number> = {
+  VALIDATION_ERROR: 422,
+  PRODOTTO_NON_TROVATO: 404,
+  NEGOZIO_NON_TROVATO: 404,
+  PRODOTTO_INATTIVO: 409,
+  NEGOZIO_INATTIVO: 409,
+  SCORTE_INSUFFICIENTI: 409,
+  PREZZO_NON_VALIDO: 500,
+  SAVE_FAILED: 500,
 };
 
 const getDb = () => {
@@ -143,17 +161,15 @@ function assumiOrdine(riga: Record<string, unknown>, righe: RigaOrdine[]): Ordin
 }
 
 /**
- * Crea un ordine realmente salvato su Supabase.
+ * Crea un ordine salvandolo realmente su Supabase in modo ATOMICO.
  *
  * Validazioni (tutte lato server, mai fidarsi del client):
- *   1. input ben formato;
- *   2. negozio esiste ed è attivo;
- *   3. prodotto esiste, è attivo e appartiene al negozio;
- *   4. prezzo e disponibilità (quantita_disponibile se valorizzata);
- *   5. quantità positiva e limite anti-abuso (max 99).
- * Il prezzo è letto DAL DATABASE; il totale è calcolato dal server.
- * Idempotenza: se esiste già un ordine con la stessa idempotency_key,
- * viene restituito l'ordine esistente (nessun doppio ordine).
+ *   1. input ben formato (chiave idempotenza, prodotto, quantità, modalità,
+ *      cliente, dati ritiro/spedizione);
+ *   2. la creazione effettiva (prodotto attivo, negozio attivo, prezzo,
+ *      disponibilità, insert ordine + righe, decremento stock) avviene nella
+ *      transazione atomica `public.crea_ordine` — vedi la migrazione
+ *      20260813_ordini_stock.sql per i dettagli di locking e rollback.
  */
 export async function creaOrdine(
   input: CreaOrdineInput
@@ -166,7 +182,7 @@ export async function creaOrdine(
   if (!key || key.length > 64) {
     return { ok: false, errore: "Chiave di idempotenza non valida.", codice: "VALIDATION_ERROR", status: 422 };
   }
-  if (!input.prodottoId || !/^\d+$/.test(input.prodottoId)) {
+  if (!input.prodottoId || !/^\d+$/.test(String(input.prodottoId))) {
     return { ok: false, errore: "Prodotto non valido.", codice: "VALIDATION_ERROR", status: 422 };
   }
   const quantita = Number(input.quantita);
@@ -214,163 +230,62 @@ export async function creaOrdine(
   }
   const note = input.note ? String(input.note).trim().slice(0, 500) : null;
 
-  // ── 2. Idempotenza: se esiste già un ordine con questa chiave, lo restituisce ──
-  const { data: esistente } = await db
-    .from("ordini")
-    .select("id")
-    .eq("idempotency_key", key)
-    .maybeSingle();
-  if (esistente) {
-    const { data: ordineRow } = await db
-      .from("ordini")
-      .select("*")
-      .eq("id", esistente.id)
-      .single();
-    const { data: righeRow } = await db
-      .from("ordini_righe")
-      .select("*")
-      .eq("ordine_id", esistente.id)
-      .order("created_at", { ascending: true });
-    if (ordineRow) {
-      return {
-        ok: true,
-        giaEsistente: true,
-        ordine: assumiOrdine(ordineRow as Record<string, unknown>, (righeRow ?? []).map((r) => assumiRiga(r as Record<string, unknown>))),
-      };
-    }
-  }
+  // ── 2. Transazione atomica nel database (ordine + righe + stock) ────────
+  // La funzione PostgreSQL gestisce: idempotenza, lock del prodotto,
+  // validazioni di prodotto/negozio/prezzo/scorte, insert ordine e righe,
+  // decremento dello stock. Qualunque errore → rollback totale.
+  const payload = {
+    idempotencyKey: key,
+    prodottoId: String(input.prodottoId),
+    quantita,
+    modalita: input.modalita,
+    clienteNome: nome,
+    clienteCognome: cognome,
+    clienteTelefono: telefono,
+    clienteEmail: email,
+    clienteIp: input.clienteIp ?? null,
+    ritiroData: input.modalita === "ritiro" ? (input.ritiro?.data ?? null) : null,
+    ritiroFascia: input.modalita === "ritiro" ? (input.ritiro?.fascia ?? null) : null,
+    spedizioneIndirizzo: input.modalita === "spedizione" ? String(input.spedizione!.indirizzo).trim() : null,
+    spedizioneCap: input.modalita === "spedizione" ? String(input.spedizione!.cap).trim() : null,
+    spedizioneCitta: input.modalita === "spedizione" ? String(input.spedizione!.citta).trim() : null,
+    spedizioneProvincia: input.modalita === "spedizione" ? String(input.spedizione!.provincia).trim() : null,
+    spedizioneNote: input.modalita === "spedizione" ? (input.spedizione!.note ? String(input.spedizione!.note).trim().slice(0, 500) : null) : null,
+    metodoSpedizione: input.modalita === "spedizione" ? input.spedizione!.metodoSpedizione : null,
+    metodoPagamento: input.modalita === "spedizione" ? input.spedizione!.metodoPagamento : null,
+    note,
+  };
 
-  // ── 3. Verifica prodotto (attivo + negozio_id) ───────────────────────────
-  const { data: prodotto, error: errProdotto } = await db
-    .from("prodotti")
-    .select("id, negozio_id, nome, prezzo, quantita_disponibile, attivo, immagine_principale")
-    .eq("id", Number(input.prodottoId))
-    .single();
+  const { data, error } = await db.rpc("crea_ordine", { p_payload: payload });
 
-  if (errProdotto || !prodotto) {
-    return { ok: false, errore: "Prodotto non trovato.", codice: "PRODOTTO_NON_TROVATO", status: 404 };
-  }
-  if (!prodotto.attivo) {
-    return { ok: false, errore: "Questo prodotto non è più disponibile.", codice: "PRODOTTO_INATTIVO", status: 409 };
-  }
-
-  // ── 4. Verifica negozio (esiste, attivo, non cestinato) ─────────────────
-  const { data: negozioRow, error: errNegozioRow } = await db
-    .from("negozi")
-    .select("id, nome, attivo, deleted_at")
-    .eq("id", String(prodotto.negozio_id))
-    .single();
-
-  if (errNegozioRow || !negozioRow) {
-    return { ok: false, errore: "Negozio non trovato.", codice: "NEGOZIO_NON_TROVATO", status: 404 };
-  }
-  if (!negozioRow.attivo || negozioRow.deleted_at) {
-    return { ok: false, errore: "Il negozio non è più attivo.", codice: "NEGOZIO_INATTIVO", status: 409 };
-  }
-
-  // ── 5. Prezzo e disponibilità (dal DATABASE) ─────────────────────────────
-  const prezzoUnitario = Number(prodotto.prezzo);
-  if (!Number.isFinite(prezzoUnitario) || prezzoUnitario < 0) {
-    return { ok: false, errore: "Prezzo del prodotto non valido.", codice: "PREZZO_NON_VALIDO", status: 500 };
-  }
-  const disponibile = prodotto.quantita_disponibile;
-  if (disponibile != null && Number(disponibile) < quantita) {
-    return {
-      ok: false,
-      errore: `Disponibilità insufficiente (restano ${Number(disponibile)} pezzi).`,
-      codice: "SCORTE_INSUFFICIENTI",
-      status: 409,
-    };
-  }
-
-  const costoSpedizione =
-    input.modalita === "spedizione"
-      ? COSTI_SPEDIZIONE[input.spedizione!.metodoSpedizione]
-      : 0;
-  const totale = Number((prezzoUnitario * quantita + costoSpedizione).toFixed(2));
-
-  // ── 6. Salvataggio ordine + righe (idempotente) ─────────────────────────
-  const { data: ordineRow, error: errOrdine } = await db
-    .from("ordini")
-    .insert({
-      idempotency_key: key,
-      modalita: input.modalita,
-      totale,
-      negozio_id: negozioRow.id,
-      negozio_nome: String(negozioRow.nome),
-      cliente_user_id: input.clienteUserId ?? null,
-      cliente_nome: nome,
-      cliente_cognome: cognome,
-      cliente_telefono: telefono,
-      cliente_email: email,
-      ritiro_data: input.modalita === "ritiro" ? (input.ritiro?.data ?? null) : null,
-      ritiro_fascia: input.modalita === "ritiro" ? (input.ritiro?.fascia ?? null) : null,
-      spedizione_indirizzo: input.modalita === "spedizione" ? String(input.spedizione!.indirizzo).trim() : null,
-      spedizione_cap: input.modalita === "spedizione" ? String(input.spedizione!.cap).trim() : null,
-      spedizione_citta: input.modalita === "spedizione" ? String(input.spedizione!.citta).trim() : null,
-      spedizione_provincia: input.modalita === "spedizione" ? String(input.spedizione!.provincia).trim() : null,
-      spedizione_note: input.modalita === "spedizione" ? (input.spedizione!.note ? String(input.spedizione!.note).trim().slice(0, 500) : null) : null,
-      metodo_spedizione: input.modalita === "spedizione" ? input.spedizione!.metodoSpedizione : null,
-      costo_spedizione: costoSpedizione,
-      metodo_pagamento: input.modalita === "spedizione" ? input.spedizione!.metodoPagamento : null,
-      note,
-    })
-    .select("id, numero, stato, totale, created_at, modalita, negozio_id, negozio_nome, ritiro_data, ritiro_fascia")
-    .single();
-
-  if (errOrdine || !ordineRow) {
-    // Errore di unique su idempotency_key (race condition del doppio click):
-    // recuperiamo l'ordine già creato e lo restituiamo senza errore.
-    if (String(errOrdine?.code ?? "") === "23505") {
-      const { data: giaCreato } = await db
-        .from("ordini")
-        .select("*")
-        .eq("idempotency_key", key)
-        .single();
-      if (giaCreato) {
-        const { data: righeGia } = await db
-          .from("ordini_righe")
-          .select("*")
-          .eq("ordine_id", giaCreato.id)
-          .order("created_at", { ascending: true });
-        return {
-          ok: true,
-          giaEsistente: true,
-          ordine: assumiOrdine(giaCreato as Record<string, unknown>, (righeGia ?? []).map((r) => assumiRiga(r as Record<string, unknown>))),
-        };
-      }
-    }
+  if (error) {
+    // La RPC non lancia per gli errori di business (ritorna ok:false):
+    // qui arrivano solo errori infrastrutturali.
+    console.error("[ordini] RPC crea_ordine fallita:", error.message);
     return { ok: false, errore: "Impossibile salvare l'ordine.", codice: "SAVE_FAILED", status: 500 };
   }
 
-  // ── 7. Righe ordine ──────────────────────────────────────────────────────
-  const { data: righeRow, error: errRighe } = await db
-    .from("ordini_righe")
-    .insert({
-      ordine_id: ordineRow.id,
-      prodotto_id: Number(prodotto.id),
-      nome_prodotto: String(prodotto.nome),
-      prezzo_unitario: prezzoUnitario,
-      quantita,
-      immagine_url: (prodotto.immagine_principale as string | null) ?? null,
-    })
-    .select("*")
-    .single();
+  const esito = data as unknown as {
+    ok: boolean;
+    giaEsistente?: boolean;
+    ordine?: OrdinePersistito;
+    codice?: string;
+    messaggio?: string;
+  };
 
-  if (errRighe || !righeRow) {
-    // L'ordine è già salvato (mai perso): ritorniamo comunque l'esito,
-    // segnalando l'ordine con righe vuote solo in casi estremi.
-    console.error("[ordini] Errore salvataggio righe:", errRighe?.message);
+  if (!esito || esito.ok !== true) {
+    const codice = String(esito?.codice ?? "SAVE_FAILED");
     return {
-      ok: true,
-      giaEsistente: false,
-      ordine: assumiOrdine(ordineRow as Record<string, unknown>, []),
+      ok: false,
+      errore: String(esito?.messaggio ?? "Impossibile salvare l'ordine."),
+      codice,
+      status: STATUS_DA_CODICE[codice] ?? 500,
     };
   }
 
-  const ordine: OrdinePersistito = assumiOrdine(
-    ordineRow as Record<string, unknown>,
-    [assumiRiga(righeRow as Record<string, unknown>)]
-  );
-  return { ok: true, giaEsistente: false, ordine };
+  return {
+    ok: true,
+    giaEsistente: esito.giaEsistente ?? false,
+    ordine: esito.ordine!,
+  };
 }
