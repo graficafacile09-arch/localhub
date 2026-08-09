@@ -789,6 +789,15 @@ export async function cercaNegozi(ricerca: string) {
     )
   ).slice(0, 12);
 
+  // servizi e parole_chiave sono colonne text[]: il filtro ilike fallisce
+  // ("operator does not exist: text[] ~~* unknown") e il cast ::text non è
+  // supportato nei logical tree di PostgREST. Usiamo l'operatore `cs`
+  // (array contains) per l'elemento esatto; il matching per radice/affinità
+  // resta comunque coperto dal ranking in memoria (filtraNegoziPerPertinenza,
+  // che ora gestisce gli array in sicurezza).
+  const elemento = (p: string) =>
+    /^[A-Za-z0-9_.\-]+$/.test(p) ? p : `"${p.replace(/"/g, '\\"')}"`;
+
   const filtriRicerca = (terminiEspansi.length > 0 ? terminiEspansi : [ricerca.trim()])
     .flatMap((termine) => {
       const pulito = termine.replace(/[,%]/g, " ").trim();
@@ -797,12 +806,8 @@ export async function cercaNegozi(ricerca: string) {
         `nome.ilike.%${pulito}%`,
         `categoria.ilike.%${pulito}%`,
         `descrizione.ilike.%${pulito}%`,
-        // servizi e parole_chiave sono colonne text[]: senza cast il filtro
-        // ilike fallisce ("operator does not exist: text[] ~~* unknown") e
-        // l'intera query non restituisce nulla. Il cast ::text conserva il
-        // matching per sottostringa sul testo serializzato dell'array.
-        `servizi::text.ilike.%${pulito}%`,
-        `parole_chiave::text.ilike.%${pulito}%`,
+        `servizi.cs.{${elemento(pulito)}}`,
+        `parole_chiave.cs.{${elemento(pulito)}}`,
       ];
     })
     .join(",");
