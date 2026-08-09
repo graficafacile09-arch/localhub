@@ -269,6 +269,28 @@ function pianoPredefinito(
     };
   }
 
+  // Follow-up con vincolo di prezzo ("sotto 500 euro", "massimo 100 euro"):
+  // riusa il SOGGETTO della richiesta precedente con maxPrice, così il
+  // contesto viene mantenuto in modo deterministico.
+  if (utenti.length >= 2) {
+    const precedente = utenti[utenti.length - 2] ?? "";
+    const prezzo = ultimo.match(/(\d{1,6})/)?.[1];
+    if (prezzo && RE_VINCOLO.test(ultimo)) {
+      const soggetto = eQuerySostanziale(precedente) ?? precedente;
+      if (soggetto) {
+        return {
+          directReply: null,
+          tools: [
+            {
+              tool: "searchProducts",
+              params: { query: soggetto, maxPrice: parseInt(prezzo, 10) },
+            },
+          ],
+        };
+      }
+    }
+  }
+
   return null;
 }
 
@@ -393,6 +415,21 @@ export async function chatConAssistente(
       if (r.categorie.length > 0) categorie = [...categorie, ...r.categorie];
     }
   }
+
+  console.log(
+    "[assistente] piano:",
+    JSON.stringify(invocazioni.map((t) => t.tool)),
+    "| risultati — negozi:",
+    negozi.length,
+    "prodotti:",
+    prodotti.length,
+    "offerte:",
+    offerte.length,
+    "eventi:",
+    eventi.length,
+    "categorie:",
+    categorie.length
+  );
 
   // 2) Risposta diretta (chiacchiera / cortesia): nessuna ricerca
   if (directReply) {
