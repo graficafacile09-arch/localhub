@@ -437,12 +437,14 @@ export async function chatConAssistente(
     const risultati = await Promise.all(
       invocazioni.map((t) => eseguiTool(t.tool as string, t.params ?? {}, queryDefault))
     );
+    // Merge con deduplica per id: più tool possono restituire lo stesso
+    // negozio/prodotto (es. ricerca cibo multi-termine).
     for (const r of risultati) {
-      if (r.negozi.length > 0) negozi = [...negozi, ...r.negozi];
-      if (r.prodotti.length > 0) prodotti = [...prodotti, ...r.prodotti];
-      if (r.offerte.length > 0) offerte = [...offerte, ...r.offerte];
-      if (r.eventi.length > 0) eventi = [...eventi, ...r.eventi];
-      if (r.categorie.length > 0) categorie = [...categorie, ...r.categorie];
+      for (const n of r.negozi) if (!negozi.some((e) => e.id === n.id)) negozi = [...negozi, n];
+      for (const p of r.prodotti) if (!prodotti.some((e) => e.id === p.id)) prodotti = [...prodotti, p];
+      for (const o of r.offerte) if (!offerte.some((e) => e.id === o.id)) offerte = [...offerte, o];
+      for (const e of r.eventi) if (!eventi.some((x) => x.id === e.id)) eventi = [...eventi, e];
+      for (const c of r.categorie) if (!categorie.some((x) => x.nome === c.nome)) categorie = [...categorie, c];
     }
   }
 
