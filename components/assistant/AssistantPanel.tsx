@@ -28,6 +28,17 @@ export default function AssistantPanel() {
   const lastAssistantRef = useRef<HTMLDivElement>(null);
   const assistantCountRef = useRef(0);
 
+  // Cronologia recente + sessionId (contratto di /api/assistente: il backend
+  // è stateless, la storia recente è il veicolo del contesto).
+  const messagesRef = useRef<ChatMessage[]>([]);
+  const sessionIdRef = useRef<string>(
+    `ass-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+  );
+
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
+
   useEffect(() => {
     const handleOpen = () => setIsOpen(true);
     window.addEventListener("assistant:open", handleOpen);
@@ -84,11 +95,19 @@ export default function AssistantPanel() {
     isLoadingRef.current = true;
     setIsLoading(true);
 
+    // L'Assistente usa l'endpoint dedicato /api/assistente (Gemini): la
+    // ricerca normale resta 100% database, l'AI parte SOLO da qui (pulsante
+    // esplicito). Si invia la cronologia recente per mantenere il contesto.
+    const storico = [
+      ...messagesRef.current.slice(-7).map((m) => ({ role: m.role, content: m.content })),
+      { role: "user" as const, content: termine },
+    ];
+
     try {
-      const response = await fetch("/api/search", {
+      const response = await fetch("/api/assistente", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: termine }),
+        body: JSON.stringify({ messages: storico, sessionId: sessionIdRef.current }),
       });
 
       if (!response.ok) {
@@ -118,7 +137,7 @@ export default function AssistantPanel() {
         negozi: data.negozi.length > 0 ? data.negozi : undefined,
         prodotti: data.prodotti.length > 0 ? data.prodotti : undefined,
         processingMs: data.processingMs,
-        source: data.source,
+        source: (data.source as ChatMessage["source"]) ?? "assistente",
       };
 
       setMessages((prev) => [...prev, assistantMsg]);

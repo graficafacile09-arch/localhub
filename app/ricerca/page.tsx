@@ -1,68 +1,16 @@
 import Header from "@/components/Header/Header";
 import SearchForm from "@/components/home/SearchForm";
 import CategoriaShowcaseView from "@/components/categoria/CategoriaShowcaseView";
-import { OpenAssistantButton, OpenAssistantLink } from "@/components/assistant/OpenAssistantButton";
+import { OpenAssistantButton } from "@/components/assistant/OpenAssistantButton";
 import { cercaNegozi, cercaProdotti, getCategoriaShowcase } from "@/lib/negozi";
 import { getNegozioCardImmagine } from "@/lib/negozi-card-immagini";
 import { getProdottoImmagine } from "@/lib/prodotti-immagini";
 import { chiavePreferito, getStatoPreferitiPerPagina } from "@/lib/cliente/favorites";
 import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
-import { search } from "@/lib/search-service";
 import type { ProdottoRicerca, NegozioRicerca } from "@/lib/ricerca-ai";
 import type { CategoriaShowcase } from "@/lib/negozi";
 import Link from "next/link";
-import { Sparkles, MapPin, Phone } from "lucide-react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-
-// Renderizza la risposta AI in markdown (come nella chat assistente): i link
-// eventualmente presenti nel testo diventano cliccabili e la formattazione
-// (grassetti, elenchi) viene rispettata invece di mostrare righe piatte.
-function RispostaAiMarkdown({ testo }: { testo: string }) {
-  return (
-    <ReactMarkdown
-      remarkPlugins={[remarkGfm]}
-      components={{
-        h1: ({ children }) => (
-          <h3 className="mt-3 text-sm font-black tracking-tight text-slate-950 first:mt-0">{children}</h3>
-        ),
-        h2: ({ children }) => (
-          <h3 className="mt-3 text-sm font-black tracking-tight text-slate-950 first:mt-0">{children}</h3>
-        ),
-        h3: ({ children }) => (
-          <h4 className="mt-2 text-sm font-bold text-slate-900 first:mt-0">{children}</h4>
-        ),
-        p: ({ children }) => (
-          <p className="mt-2 text-xs leading-5 text-slate-700 first:mt-0">{children}</p>
-        ),
-        ul: ({ children }) => (
-          <ul className="mt-2 list-disc space-y-1 pl-4 text-slate-700">{children}</ul>
-        ),
-        ol: ({ children }) => (
-          <ol className="mt-2 list-decimal space-y-1 pl-4 text-slate-700">{children}</ol>
-        ),
-        li: ({ children }) => (
-          <li className="text-xs leading-5 text-slate-700">{children}</li>
-        ),
-        strong: ({ children }) => (
-          <strong className="font-extrabold text-slate-950">{children}</strong>
-        ),
-        a: ({ children, href }) => (
-          <a
-            href={href}
-            className="font-semibold text-blue-700 underline decoration-blue-300 underline-offset-4 transition hover:text-blue-800"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {children}
-          </a>
-        ),
-      }}
-    >
-      {testo}
-    </ReactMarkdown>
-  );
-}
+import { MapPin, Phone } from "lucide-react";
 
 export default async function RicercaPage({
   searchParams,
@@ -74,8 +22,6 @@ export default async function RicercaPage({
 
   let prodotti: ProdottoRicerca[] = [];
   let negozi: NegozioRicerca[] = [];
-  let rispostaAi: string | null = null;
-  let erroreAi: string | null = null;
   let categoriaShowcase: CategoriaShowcase | null = null;
 
   // Stato preferiti per i pulsanti cuore: una sola chiamata per pagina
@@ -87,26 +33,13 @@ export default async function RicercaPage({
   if (categoriaSlug) {
     categoriaShowcase = await getCategoriaShowcase(categoriaSlug);
   } else if (termine) {
+    // Ricerca NORMALE = solo database (negozi + prodotti attivi, ranking
+    // tollerante con sinonimi/refusi). Nessuna chiamata AI: l'Assistente
+    // Gemini parte SOLO con il pulsante esplicito qui sotto.
     [prodotti, negozi] = await Promise.all([
       cercaProdotti(termine),
       cercaNegozi(termine),
     ]);
-
-    try {
-      const result = await search(termine);
-      rispostaAi = result.risposta;
-      if (prodotti.length === 0 && result.prodotti.length > 0) {
-        prodotti = result.prodotti;
-      }
-      if (negozi.length === 0 && result.negozi.length > 0) {
-        negozi = result.negozi;
-      }
-    } catch (error) {
-      erroreAi =
-        error instanceof Error
-          ? error.message
-          : "Impossibile generare la risposta AI.";
-    }
   }
 
   return (
@@ -259,7 +192,7 @@ export default async function RicercaPage({
             )}
 
             {/* Nessun risultato */}
-            {prodotti.length === 0 && negozi.length === 0 && !rispostaAi && !erroreAi && (
+            {prodotti.length === 0 && negozi.length === 0 && (
               <div className="py-12 text-center">
                 <p className="text-sm text-slate-500">
                   Nessun risultato trovato per &ldquo;{termine}&rdquo;.
@@ -270,31 +203,6 @@ export default async function RicercaPage({
               </div>
             )}
 
-            {/* Errore AI */}
-            {erroreAi && (
-              <div className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-                <p className="font-semibold">Assistente AI non disponibile</p>
-                <p className="mt-1 text-xs">{erroreAi}</p>
-              </div>
-            )}
-
-            {/* ═══ CONSIGLI AI ═══ */}
-            {rispostaAi && (
-              <section className="mb-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Sparkles className="h-4 w-4 text-blue-600" />
-                  <h2 className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                    Consigli AI
-                  </h2>
-                </div>
-                <div className="rounded-xl border border-blue-100 bg-white p-3">
-                  <div className="prose prose-sm prose-slate max-w-none prose-headings:text-sm prose-headings:font-bold prose-p:text-xs prose-li:text-xs">
-                    <RispostaAiMarkdown testo={rispostaAi} />
-                  </div>
-                  <OpenAssistantLink label="Approfondisci con l'AI" />
-                </div>
-              </section>
-            )}
           </>
         ) : (
           <div className="py-12 text-center">

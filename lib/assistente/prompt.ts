@@ -10,7 +10,7 @@
  *     strutturato per la risposta finale.
  *   - buildFinalPrompt: risposta finale con storia + contesto recuperato.
  *
- * NB: il prompt è volutamente COMPATTO: la chiave Groq è su un piano con
+ * NB: il prompt è volutamente COMPATTO: la chiave Gemini è su un piano con
  * limite di token giornaliero, quindi ogni token risparmiato per chiamata
  * aumenta i messaggi che l'assistente può gestire.
  *

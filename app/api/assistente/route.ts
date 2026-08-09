@@ -21,7 +21,7 @@ import { NextResponse } from "next/server";
 import { chatConAssistente, type MessaggioAssistente } from "@/lib/assistente";
 
 // ─── Rate limit in-memory per IP (guardia leggera anti-abuso) ───────────────
-// L'endpoint è pubblico e ogni messaggio consuma token Groq (chiave con
+// L'endpoint è pubblico e ogni messaggio consuma token Gemini (chiave con
 // quota giornaliera): limitiamo le richieste per IP con una finestra
 // scorrevole in memoria. Non usa DB né scan_log (legato all'auth merchant),
 // e non richiede modifiche allo schema. Essendo per-istanza serverless è una
