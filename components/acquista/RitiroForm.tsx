@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { MapPin, Phone, MessageCircle, Calendar, Clock } from "lucide-react";
+import { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { MapPin, Phone, MessageCircle, Calendar, Clock, Loader2, User } from "lucide-react";
 import QuantitySelector from "./QuantitySelector";
+import { creaOrdineViaApi, nuovaChiaveIdempotenza } from "@/lib/cliente/ordini-client";
 
 type NegozioData = {
   nome: string;
@@ -24,12 +26,65 @@ export default function RitiroForm({
   imageUrl: string;
   negozio: NegozioData | null;
 }) {
+  const router = useRouter();
   const [quantita, setQuantita] = useState(1);
   const [data, setData] = useState("");
   const [fascia, setFascia] = useState("");
   const [note, setNote] = useState("");
+  // Dati del cliente (obbligatori per identificare il ritirante)
+  const [nomeCliente, setNomeCliente] = useState("");
+  const [cognomeCliente, setCognomeCliente] = useState("");
+  const [telefonoCliente, setTelefonoCliente] = useState("");
+
+  const [inviando, setInviando] = useState(false);
+  const [errore, setErrore] = useState<string | null>(null);
+  // Chiave di idempotenza: generata UNA volta per pagina → un doppio click
+  // (o retry) non crea mai due ordini.
+  const chiaveIdempotenza = useRef<string>(nuovaChiaveIdempotenza());
 
   const subtotal = prezzo * quantita;
+
+  const confermaRitiro = async () => {
+    if (inviando) return; // anti doppio invio
+    if (!nomeCliente.trim() || !cognomeCliente.trim()) {
+      setErrore("Inserisci nome e cognome per il ritiro.");
+      return;
+    }
+
+    setInviando(true);
+    setErrore(null);
+    try {
+      const esito = await creaOrdineViaApi({
+        idempotencyKey: chiaveIdempotenza.current,
+        prodottoId,
+        quantita,
+        modalita: "ritiro",
+        cliente: {
+          nome: nomeCliente.trim(),
+          cognome: cognomeCliente.trim(),
+          telefono: telefonoCliente.trim() || null,
+        },
+        ritiro: {
+          data: data || null,
+          fascia: fascia || null,
+        },
+        note: note.trim() || null,
+      });
+
+      if (!esito.ok) {
+        setErrore(esito.errore);
+        setInviando(false);
+        return;
+      }
+
+      // Chiusura Assistente AI + navigazione alla conferma ordine.
+      window.dispatchEvent(new Event("assistant:close"));
+      router.push(`/ordini/conferma/${esito.ordineId}`);
+    } catch {
+      setErrore("Si è verificato un errore. Riprova.");
+      setInviando(false);
+    }
+  };
 
   const buildWhatsAppUrl = () => {
     if (!negozio?.whatsapp && !negozio?.telefono) return "#";
@@ -128,6 +183,46 @@ export default function RitiroForm({
           </div>
         )}
 
+        {/* Dati del cliente per il ritiro */}
+        <div className="rounded-xl border border-slate-200 bg-white p-4">
+          <h3 className="text-sm font-bold text-slate-900">
+            <User className="mr-1.5 inline-block h-4 w-4 text-blue-500" />
+            Chi ritira
+          </h3>
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <div>
+              <label htmlFor="nome-ritiro" className="block text-xs font-semibold text-slate-700">Nome *</label>
+              <input
+                id="nome-ritiro"
+                type="text"
+                value={nomeCliente}
+                onChange={(e) => setNomeCliente(e.target.value)}
+                className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
+              />
+            </div>
+            <div>
+              <label htmlFor="cognome-ritiro" className="block text-xs font-semibold text-slate-700">Cognome *</label>
+              <input
+                id="cognome-ritiro"
+                type="text"
+                value={cognomeCliente}
+                onChange={(e) => setCognomeCliente(e.target.value)}
+                className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
+              />
+            </div>
+          </div>
+          <div className="mt-3">
+            <label htmlFor="telefono-ritiro" className="block text-xs font-semibold text-slate-700">Telefono (facoltativo)</label>
+            <input
+              id="telefono-ritiro"
+              type="tel"
+              value={telefonoCliente}
+              onChange={(e) => setTelefonoCliente(e.target.value)}
+              className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
+            />
+          </div>
+        </div>
+
         {/* Selezione data */}
         <div className="rounded-xl border border-slate-200 bg-white p-4">
           <h3 className="text-sm font-bold text-slate-900">
@@ -202,12 +297,28 @@ export default function RitiroForm({
           </div>
         </div>
 
+        {/* Errore di invio */}
+        {errore && (
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+            {errore}
+          </div>
+        )}
+
         {/* Conferma ritiro */}
         <button
           type="button"
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white shadow-md shadow-blue-500/25 transition hover:bg-blue-700 active:scale-[0.98]"
+          onClick={confermaRitiro}
+          disabled={inviando}
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white shadow-md shadow-blue-500/25 transition hover:bg-blue-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
         >
-          Conferma ritiro
+          {inviando ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Invio ordine...
+            </>
+          ) : (
+            "Conferma ritiro"
+          )}
         </button>
       </div>
     </div>

@@ -1,25 +1,94 @@
 "use client";
 
-import { useState } from "react";
-import { Package, Truck, CreditCard, Building, Banknote } from "lucide-react";
+import { useState, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { Package, Truck, CreditCard, Building, Banknote, Loader2 } from "lucide-react";
 import QuantitySelector from "./QuantitySelector";
+import { creaOrdineViaApi, nuovaChiaveIdempotenza } from "@/lib/cliente/ordini-client";
 
 export default function SpedizioneForm({
   nome,
   prezzo,
   imageUrl,
+  prodottoId,
 }: {
   nome: string;
   prezzo: number;
   imageUrl: string;
+  prodottoId: string;
 }) {
+  const router = useRouter();
   const [quantita, setQuantita] = useState(1);
-  const [metodoSpedizione, setMetodoSpedizione] = useState("standard");
-  const [metodoPagamento, setMetodoPagamento] = useState("carta");
+  const [metodoSpedizione, setMetodoSpedizione] = useState<"standard" | "express">("standard");
+  const [metodoPagamento, setMetodoPagamento] = useState<"carta" | "paypal" | "bonifico">("carta");
+  const [inviando, setInviando] = useState(false);
+  const [errore, setErrore] = useState<string | null>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  // Chiave di idempotenza: generata UNA volta per pagina → un doppio click
+  // (o retry) non crea mai due ordini.
+  const chiaveIdempotenza = useRef<string>(nuovaChiaveIdempotenza());
 
   const costoSpedizione = metodoSpedizione === "express" ? 12.9 : 5.9;
   const subtotal = prezzo * quantita;
   const totale = subtotal + costoSpedizione;
+
+  const procediAlPagamento = async () => {
+    if (inviando) return; // anti doppio invio
+    const form = formRef.current;
+    if (!form) return;
+
+    // Legge i campi del modulo (FormField sono input uncontrolled con id).
+    const dati = new FormData(form);
+    const val = (chiave: string) => String(dati.get(chiave) ?? "").trim();
+
+    if (!val("nome") || !val("cognome")) {
+      setErrore("Inserisci nome e cognome.");
+      return;
+    }
+    if (!val("indirizzo") || !val("cap") || !val("citta") || !val("provincia")) {
+      setErrore("Completa l'indirizzo di spedizione.");
+      return;
+    }
+
+    setInviando(true);
+    setErrore(null);
+    try {
+      const esito = await creaOrdineViaApi({
+        idempotencyKey: chiaveIdempotenza.current,
+        prodottoId,
+        quantita,
+        modalita: "spedizione",
+        cliente: {
+          nome: val("nome"),
+          cognome: val("cognome"),
+          telefono: val("telefono") || null,
+          email: val("email") || null,
+        },
+        spedizione: {
+          indirizzo: val("indirizzo"),
+          cap: val("cap"),
+          citta: val("citta"),
+          provincia: val("provincia"),
+          note: val("note") || null,
+          metodoSpedizione,
+          metodoPagamento,
+        },
+      });
+
+      if (!esito.ok) {
+        setErrore(esito.errore);
+        setInviando(false);
+        return;
+      }
+
+      // Chiusura Assistente AI + navigazione alla conferma ordine.
+      window.dispatchEvent(new Event("assistant:close"));
+      router.push(`/ordini/conferma/${esito.ordineId}`);
+    } catch {
+      setErrore("Si è verificato un errore. Riprova.");
+      setInviando(false);
+    }
+  };
 
   return (
     <div className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -53,7 +122,7 @@ export default function SpedizioneForm({
       </div>
 
       {/* Colonna destra: form */}
-      <div className="space-y-4">
+      <form ref={formRef} className="space-y-4" onSubmit={(e) => e.preventDefault()}>
         {/* Indirizzo di spedizione */}
         <div className="rounded-xl border border-slate-200 bg-white p-4">
           <h3 className="text-sm font-bold text-slate-900">
@@ -234,14 +303,30 @@ export default function SpedizioneForm({
           </div>
         </div>
 
+        {/* Errore di invio */}
+        {errore && (
+          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+            {errore}
+          </div>
+        )}
+
         {/* Procedi al pagamento */}
         <button
           type="button"
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white shadow-md shadow-blue-500/25 transition hover:bg-blue-700 active:scale-[0.98]"
+          onClick={procediAlPagamento}
+          disabled={inviando}
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white shadow-md shadow-blue-500/25 transition hover:bg-blue-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
         >
-          Procedi al pagamento
+          {inviando ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Invio ordine...
+            </>
+          ) : (
+            "Procedi al pagamento"
+          )}
         </button>
-      </div>
+      </form>
     </div>
   );
 }

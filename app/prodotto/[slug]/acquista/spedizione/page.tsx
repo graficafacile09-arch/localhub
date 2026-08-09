@@ -1,5 +1,5 @@
 import { permanentRedirect } from "next/navigation";
-import { risolviProdottoPubblico, getNegozio } from "@/lib/negozi";
+import { risolviProdottoPubblico } from "@/lib/negozi";
 import { getProdottoImmagine } from "@/lib/prodotti-immagini";
 import SpedizioneForm from "@/components/acquista/SpedizioneForm";
 
@@ -18,7 +18,7 @@ export default async function SpedizionePage({ params }: { params: Promise<Param
     );
   }
 
-  const negozio = await getNegozio(String(prodotto.negozio_id));
+  const id = prodotto.id as string;
   const prezzo = Number("prezzo" in prodotto ? prodotto.prezzo : 0);
   const nome = "nome" in prodotto ? (prodotto.nome as string) : "Prodotto";
 
@@ -33,6 +33,7 @@ export default async function SpedizionePage({ params }: { params: Promise<Param
 
   return (
     <SpedizioneForm
+        prodottoId={id}
         nome={nome}
         prezzo={prezzo}
         imageUrl={imageUrl}
