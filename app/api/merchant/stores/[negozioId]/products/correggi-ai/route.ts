@@ -4,6 +4,7 @@ import { canManageStore } from "@/lib/merchant/data";
 import { extractJsonFromText } from "@/lib/product-assistant/providers/utils";
 import { diffCorrezioni, mergeSuggestion } from "@/lib/product-assistant/correggi-ai";
 import type { ProductVisionSuggestion } from "@/lib/product-assistant/types";
+import { callGeminiText, type GeminiMessage } from "@/lib/ai/gemini-text";
 
 /**
  * POST /api/merchant/stores/[negozioId]/products/correggi-ai
@@ -16,8 +17,6 @@ import type { ProductVisionSuggestion } from "@/lib/product-assistant/types";
  * La pubblicazione avviene esclusivamente tramite il normale endpoint
  * di pubblicazione prodotti già esistente.
  */
-
-const CORREGGI_MODEL = process.env.CORREGGI_AI_MODEL ?? "llama-3.3-70b-versatile";
 
 type MessaggioConversazione = { role: "user" | "assistant"; content: string };
 
@@ -44,71 +43,31 @@ async function callLLM(
   draftJson: string,
   messaggio: string
 ): Promise<{ messaggio: string; suggestion: unknown }> {
-  const groqApiKey = process.env.GROQ_API_KEY;
-  if (!groqApiKey) {
-    throw new Error("Chiave API Groq mancante. Aggiungi GROQ_API_KEY al file .env.local.");
-  }
+  // Ruoli Gemini: "assistant" → "model" (Gemini non accetta "assistant").
+  const storicoGemini: GeminiMessage[] = storico.map((m) => ({
+    role: m.role === "assistant" ? "model" : "user",
+    content: m.content,
+  }));
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 60000);
+  const content = await callGeminiText({
+    systemPrompt: SYSTEM_PROMPT,
+    history: storicoGemini,
+    userPrompt: `DRAFT ATTUALE DEL PRODOTTO (JSON):\n${draftJson}\n\n---\nRICHIESTA DEL VENDITORE:\n"${messaggio}"\n\nApplica la richiesta e restituisci SOLO il JSON richiesto.`,
+    maxTokens: 2000,
+    temperature: 0.2,
+    json: true,
+    timeoutMs: 60_000,
+  });
 
-  try {
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${groqApiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: CORREGGI_MODEL,
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          ...storico.map((m) => ({ role: m.role, content: m.content })),
-          {
-            role: "user",
-            content: `DRAFT ATTUALE DEL PRODOTTO (JSON):\n${draftJson}\n\n---\nRICHIESTA DEL VENDITORE:\n"${messaggio}"\n\nApplica la richiesta e restituisci SOLO il JSON richiesto.`,
-          },
-        ],
-        temperature: 0.2,
-        max_tokens: 2000,
-        response_format: { type: "json_object" },
-      }),
-      signal: controller.signal,
-    });
+  const jsonStr = extractJsonFromText(content);
+  const parsed = JSON.parse(jsonStr) as Record<string, unknown>;
 
-    clearTimeout(timeoutId);
+  const messaggioRisposta =
+    typeof parsed.messaggio === "string" && parsed.messaggio.trim()
+      ? parsed.messaggio.trim()
+      : "Ho aggiornato il prodotto.";
 
-    if (!response.ok) {
-      const errorBody = await response.text().catch(() => "unknown");
-      throw new Error(`Errore Groq (HTTP ${response.status}): ${errorBody.slice(0, 300)}`);
-    }
-
-    const resData = (await response.json()) as {
-      choices?: Array<{ message?: { content?: string } }>;
-    };
-
-    const content = resData.choices?.[0]?.message?.content ?? "";
-    if (!content.trim()) {
-      throw new Error("Risposta AI vuota.");
-    }
-
-    const jsonStr = extractJsonFromText(content);
-    const parsed = JSON.parse(jsonStr) as Record<string, unknown>;
-
-    const messaggioRisposta =
-      typeof parsed.messaggio === "string" && parsed.messaggio.trim()
-        ? parsed.messaggio.trim()
-        : "Ho aggiornato il prodotto.";
-
-    return { messaggio: messaggioRisposta, suggestion: parsed.suggestion };
-  } catch (caught: unknown) {
-    clearTimeout(timeoutId);
-    if (caught instanceof DOMException && caught.name === "AbortError") {
-      throw new Error("Timeout chiamata AI (60s).");
-    }
-    if (caught instanceof Error) throw caught;
-    throw new Error("Errore sconosciuto chiamata AI.");
-  }
+  return { messaggio: messaggioRisposta, suggestion: parsed.suggestion };
 }
 
 export async function POST(
@@ -159,7 +118,7 @@ export async function POST(
           .slice(-10)
       : [];
 
-    // ── Chiamata LLM (riusa GROQ_API_KEY, come lib/ricerca-ai.ts) ────────────
+    // ── Chiamata LLM (Gemini, come l'assistente AI) ───────────────────────────
     const originale = draft as ProductVisionSuggestion;
     const draftJson = JSON.stringify(draft);
 

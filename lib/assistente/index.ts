@@ -7,11 +7,11 @@
  *   2. esecuzione dei tool (retrieval su dati pubblici, riuso funzioni esistenti);
  *   3. contesto strutturato dei risultati → risposta finale dell'AI.
  *
- * Usa GROQ_API_KEY (già presente nel progetto), modello già in uso
- * (llama-3.3-70b-versatile), timeout su ogni chiamata, max_tokens e
- * temperature. Fallback: se la selezione tool fallisce → searchAll sulla
- * domanda; se la risposta finale fallisce → elenco testuale dei risultati
- * recuperati. Nessuna scrittura su DB.
+ * Usa GEMINI_API_KEY (già presente nel progetto, usata anche dalla Vision),
+ * modello GEMINI_MODEL (con fallback gemini-2.0-flash), timeout su ogni
+ * chiamata, max_tokens e temperature. Fallback: se la selezione tool fallisce
+ * → searchAll sulla domanda; se la risposta finale fallisce → elenco testuale
+ * dei risultati recuperati. Nessuna scrittura su DB.
  *
  * @module lib/assistente/index
  */
@@ -33,6 +33,7 @@ import {
   type RisultatiRecuperati,
 } from "./prompt";
 import { extractJsonFromText } from "@/lib/product-assistant/providers/utils";
+import { callGeminiText } from "@/lib/ai/gemini-text";
 import type { NegozioRicerca, ProdottoRicerca } from "@/lib/ricerca-ai";
 
 // ─── Tipi pubblici ───────────────────────────────────────────────────────────
@@ -52,93 +53,17 @@ export interface RispostaAssistente {
 
 // ─── Configurazione LLM ──────────────────────────────────────────────────────
 
-const GROQ_MODEL = "llama-3.3-70b-versatile";
-const TIMEOUT_MS = 45_000;
-
 type ToolInvocation = {
   tool?: string;
   params?: ToolParams;
 };
 
-// ─── Chiamata Groq con timeout ───────────────────────────────────────────────
-
-async function callGroq(
-  systemPrompt: string,
-  userPrompt: string,
-  maxTokens: number,
-  temperature: number
-): Promise<string> {
-  const groqApiKey = process.env.GROQ_API_KEY;
-  if (!groqApiKey) {
-    throw new Error("Chiave API Groq mancante. Aggiungi GROQ_API_KEY al file .env.local.");
-  }
-
-  // Retry con backoff su 429/402 (rate limit): l'assistente esegue fino a 2
-  // chiamate LLM per messaggio, quindi i picchi brevi di quota sono normali.
-  const TENTATIVI = 3;
-  let ultimoErrore: Error | null = null;
-
-  for (let tentativo = 1; tentativo <= TENTATIVI; tentativo++) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
-
-    try {
-      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${groqApiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: GROQ_MODEL,
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userPrompt },
-          ],
-          max_tokens: maxTokens,
-          temperature,
-        }),
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        const errorText = await response.text().catch(() => "unknown");
-        if (response.status === 429 || response.status === 402) {
-          ultimoErrore = new Error(`Quota superata (HTTP ${response.status}).`);
-          if (tentativo < TENTATIVI) {
-            await new Promise((r) => setTimeout(r, tentativo * 1500));
-            continue;
-          }
-          throw ultimoErrore;
-        }
-        if (response.status >= 500 && response.status < 600) {
-          throw new Error(`Errore server AI (HTTP ${response.status}).`);
-        }
-        throw new Error(`Errore Groq (HTTP ${response.status}): ${errorText.slice(0, 200)}`);
-      }
-
-      const resData = (await response.json()) as {
-        choices?: Array<{ message?: { content?: string } }>;
-      };
-
-      const content = resData.choices?.[0]?.message?.content?.trim() ?? "";
-      if (!content) throw new Error("Risposta AI vuota.");
-
-      return content;
-    } catch (caught: unknown) {
-      clearTimeout(timeoutId);
-      if (caught instanceof DOMException && caught.name === "AbortError") {
-        throw new Error(`Timeout chiamata AI (${TIMEOUT_MS / 1000}s).`);
-      }
-      if (caught instanceof Error) throw caught;
-      throw new Error("Errore sconosciuto chiamata AI.");
-    }
-  }
-
-  throw ultimoErrore ?? new Error("Chiamata AI fallita.");
-}
+// ─── Chiamata Gemini con timeout e retry ────────────────────────────────────
+// Il provider è centralizzato in lib/ai/gemini-text.ts (callGeminiText): usa
+// GEMINI_API_KEY + GEMINI_MODEL, endpoint generateContent di Gemini, retry con
+// backoff su 429/402 (quota) e timeout su ogni chiamata. L'assistente esegue
+// fino a 2 chiamate LLM per messaggio, quindi i picchi brevi di quota sono
+// gestiti dal retry interno.
 
 // ─── Normalizzazione messaggi ────────────────────────────────────────────────
 
@@ -415,7 +340,13 @@ export async function chatConAssistente(
     selezioneOk = true;
   } else {
     try {
-      const raw = await callGroq(SYSTEM_PROMPT, buildToolSelectionPrompt(storico), 450, 0.1);
+      const raw = await callGeminiText({
+        systemPrompt: SYSTEM_PROMPT,
+        userPrompt: buildToolSelectionPrompt(storico),
+        maxTokens: 450,
+        temperature: 0.1,
+        timeoutMs: 45_000,
+      });
       const parsed = JSON.parse(extractJsonFromText(raw)) as {
         tools?: ToolInvocation[];
         directReply?: string | null;
@@ -547,7 +478,13 @@ export async function chatConAssistente(
   // 5) Risposta finale AI
   let risposta: string;
   try {
-    risposta = await callGroq(SYSTEM_PROMPT, buildFinalPrompt(storico, contestoFinale), 700, 0.2);
+    risposta = await callGeminiText({
+      systemPrompt: SYSTEM_PROMPT,
+      userPrompt: buildFinalPrompt(storico, contestoFinale),
+      maxTokens: 700,
+      temperature: 0.2,
+      timeoutMs: 45_000,
+    });
   } catch (error) {
     console.warn("[assistente] Risposta finale fallita, uso elenco risultati:", error);
     risposta = fallbackTestuale(risultati, domanda, notaVincolo);
