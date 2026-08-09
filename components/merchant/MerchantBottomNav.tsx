@@ -56,7 +56,7 @@ export default function MerchantBottomNav({
     <>
       {/* ── Bottom Navigation Bar ─────────────────────────────────────────────── */}
       <nav
-        className="fixed bottom-0 left-0 right-0 z-[60] md:hidden"
+        className="merchant-bottom-nav fixed bottom-0 left-0 right-0 z-[60] md:hidden"
         aria-label="Navigazione area amministratore mobile"
       >
         <div
@@ -144,7 +144,7 @@ export default function MerchantBottomNav({
 
       {/* Spacer */}
       <div
-        className="md:hidden"
+        className="merchant-bottom-nav-spacer md:hidden"
         style={{
           height: `calc(72px + env(safe-area-inset-bottom, 0px))`,
         }}

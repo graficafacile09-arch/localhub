@@ -153,6 +153,16 @@ export default function MerchantCorreggiAiDialog({
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
 
+  // ── Nasconde la bottom nav mobile mentre il dialog è aperto ───────────────
+  // La barra di navigazione inferiore (MerchantBottomNav, z-[60]) si sovrappone
+  // al dialog (z-50) e può coprire/intercettare "Conferma modifiche". Il dialog
+  // è montato SOLO quando è aperto, quindi mount = classe sul body, unmount =
+  // rimozione: la barra torna esattamente come prima alla chiusura.
+  useEffect(() => {
+    document.body.classList.add("correggi-ai-aperto");
+    return () => document.body.classList.remove("correggi-ai-aperto");
+  }, []);
+
   // ── Auto-scroll chat ───────────────────────────────────────────────────────
   useEffect(() => {
     const el = chatRef.current;
