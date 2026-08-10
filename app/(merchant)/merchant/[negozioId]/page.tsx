@@ -95,7 +95,7 @@ export default async function MerchantStorePage({
         )}
       </div>
 
-      {/* ── AVVISI URGENTI (prima cosa visibile) ── */}
+      {/* ── 1. ATTENZIONE — AVVISI URGENTI (prima cosa visibile) ── */}
       {(nonLetti > 0 || reclamiAperti > 0) && (
         <div className="space-y-3">
           {nonLetti > 0 && (
@@ -113,22 +113,9 @@ export default async function MerchantStorePage({
         </div>
       )}
 
-      {/* Scansione — azione principale, immediatamente visibile */}
-      <Link
-        href={`/merchant/${negozioId}/prodotti/ai`}
-        className="flex items-center justify-center gap-3 rounded-2xl bg-gradient-to-b from-blue-500 to-blue-700 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-blue-500/30 transition-all hover:from-blue-400 hover:to-blue-600 active:scale-[0.98]"
-      >
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15">
-          <Camera className="h-5 w-5" />
-        </div>
-        <span>Scansiona nuovo prodotto</span>
-      </Link>
-
-      {/* Altre azioni rapide */}
-      <MerchantQuickActions storeId={negozioId} />
-
-      {/* Ordini — riepilogo + accesso diretto (card NON link per evitare
-          anchor-in-anchor: il KPI grid interno resta una lista di Link) */}
+      {/* ── 2. ORDINI — riepilogo + accesso diretto (card NON link per
+          evitare anchor-in-anchor: il KPI grid interno resta una lista di
+          Link) ──────────────────────────────────────────────────────────────── */}
       <div className="rounded-2xl border border-white/70 bg-white p-5 shadow-sm transition hover:border-blue-200 hover:shadow-md">
         <Link
           href={`/merchant/${negozioId}/ordini`}
@@ -176,7 +163,21 @@ export default async function MerchantStorePage({
         )}
       </div>
 
-      {/* Statistiche — comprimibili */}
+      {/* Scansione — azione principale, immediatamente visibile */}
+      <Link
+        href={`/merchant/${negozioId}/prodotti/ai`}
+        className="flex items-center justify-center gap-3 rounded-2xl bg-gradient-to-b from-blue-500 to-blue-700 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-blue-500/30 transition-all hover:from-blue-400 hover:to-blue-600 active:scale-[0.98]"
+      >
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15">
+          <Camera className="h-5 w-5" />
+        </div>
+        <span>Scansiona nuovo prodotto</span>
+      </Link>
+
+      {/* Altre azioni rapide */}
+      <MerchantQuickActions storeId={negozioId} />
+
+      {/* ── 4. Statistiche — comprimibili ──────────────────────────────────── */}
       <MerchantDashboardCards
         totals={{
           prodotti: prodotti.length,

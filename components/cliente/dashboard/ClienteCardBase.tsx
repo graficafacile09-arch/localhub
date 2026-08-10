@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -15,6 +16,7 @@ export default function ClienteCardBase({
   hrefLabel,
   accent = "text-teal-600",
   secondaryIcon: SecondaryIcon,
+  badge,
 }: {
   icon: LucideIcon;
   value: string;
@@ -25,6 +27,8 @@ export default function ClienteCardBase({
   accent?: string;
   /** Icona decorativa secondaria (gerarchia visiva della card). */
   secondaryIcon?: LucideIcon;
+  /** Badge opzionale accanto al valore (es. stato ultimo ordine). */
+  badge?: ReactNode;
 }) {
   return (
     <Link
@@ -45,6 +49,7 @@ export default function ClienteCardBase({
           <span className="text-4xl font-black tracking-tight text-slate-900">
             {value}
           </span>
+          {badge ? <span className="mt-2 shrink-0">{badge}</span> : null}
         </span>
       </div>
 

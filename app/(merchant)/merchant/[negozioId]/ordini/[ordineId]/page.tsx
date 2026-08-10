@@ -1,6 +1,6 @@
 import Link from "next/link";
 import {
-  AlertTriangle as AlertTriangleIcon,
+  AlertTriangle,
   ArrowLeft,
   History,
   MessageSquareText,
@@ -228,15 +228,25 @@ export default async function MerchantOrdineDettaglioPage({
         </div>
       </div>
 
-      {/* ── Reclami del cliente ─────────────────────────────────────────────── */}
+      {/* ── RECLAMI — Centro gestione reclamo (scheda operativa completa) ──── */}
       {reclami.length > 0 && (
-        <Sezione icon={AlertTriangleIcon} titolo="Reclami del cliente">
+        <div className="space-y-4">
+          <div className="flex items-center gap-2">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-red-100 text-red-600">
+              <AlertTriangle className="h-4 w-4" aria-hidden />
+            </span>
+            <h2 className="text-sm font-black uppercase tracking-wide text-slate-900">
+              Reclami del cliente
+            </h2>
+          </div>
           <ReclamiOrdine
             negozioId={negozioId}
             ordineId={ordineId}
+            numero={ordine.numero}
+            sintesi={sintesi}
             reclamiIniziali={reclami}
           />
-        </Sezione>
+        </div>
       )}
 
       {/* ── Ritorno ─────────────────────────────────────────────────────────── */}

@@ -16,7 +16,14 @@ import ClienteBottomNav from "./ClienteBottomNav";
  * - Mobile: top bar con menu a drawer.
  * Non esegue alcuna logica: solo UI e navigazione.
  */
-export default function ClienteShell({ children }: { children: ReactNode }) {
+export default function ClienteShell({
+  children,
+  ordiniInCorso = 0,
+}: {
+  children: ReactNode;
+  /** Conteggio ordini in corso (badge sulla voce Ordini del menu). */
+  ordiniInCorso?: number;
+}) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
@@ -73,7 +80,7 @@ export default function ClienteShell({ children }: { children: ReactNode }) {
                   Area Clienti
                 </p>
               )}
-              <ClienteSidebar collapsed={collapsed} />
+              <ClienteSidebar collapsed={collapsed} ordiniInCorso={ordiniInCorso} />
             </div>
 
             <button
@@ -146,7 +153,10 @@ export default function ClienteShell({ children }: { children: ReactNode }) {
 
             {/* Navigazione — chiude il drawer al click di ogni voce */}
             <div className="flex-1">
-              <ClienteSidebar onNavigate={() => setMobileOpen(false)} />
+              <ClienteSidebar
+                onNavigate={() => setMobileOpen(false)}
+                ordiniInCorso={ordiniInCorso}
+              />
             </div>
           </div>
         </div>

@@ -119,12 +119,24 @@ export function OrderCard({
             <BellRing className="h-3 w-3" aria-hidden /> Nuovo ordine
           </span>
         ) : null}
-        {haReclamoAperto && vista === "venditore" ? (
-          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-red-50 px-2.5 py-1 text-[10px] font-bold text-red-700 ring-1 ring-red-200">
-            <AlertTriangle className="h-3 w-3" aria-hidden /> Reclamo aperto
-          </span>
-        ) : null}
       </div>
+
+      {/* ── 2bis. RECLAMO APERTO — segnale operativo a tutta larghezza (venditore) */}
+      {haReclamoAperto && vista === "venditore" ? (
+        <div className="mt-3 flex items-center gap-2.5 overflow-hidden rounded-xl border border-red-200 bg-red-50/80 px-3 py-2.5">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-600 text-white">
+            <AlertTriangle className="h-4 w-4" aria-hidden />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[11px] font-black uppercase tracking-wide text-red-800">
+              Reclamo aperto
+            </span>
+            <span className="block truncate text-[11px] leading-4 text-red-700/80">
+              Il cliente ha segnalato un problema su questo ordine
+            </span>
+          </span>
+        </div>
+      ) : null}
 
       {/* ── 3. Identità + data/ora ──────────────────────────────────────────── */}
       <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">

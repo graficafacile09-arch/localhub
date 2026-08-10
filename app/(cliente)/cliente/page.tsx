@@ -89,7 +89,7 @@ export default async function ClienteDashboardPage() {
           }
         />
         <PreferitiCard conteggio={totalePreferiti} />
-        <UltimoAcquistoCard numero={ultimoNumero} descrizione={ultimo} />
+        <UltimoAcquistoCard numero={ultimoNumero} descrizione={ultimo} stato={statoUltimo} />
         <OfferteConsigliateCard />
         <NegoziPreferitiCard conteggio={negoziPreferiti} />
         <EventiConsigliatiCard />

@@ -6,6 +6,7 @@ import {
   Home,
   LayoutGrid,
   LogOut,
+  MessageSquareWarning,
   Package,
   ReceiptText,
   Sparkles,
@@ -23,6 +24,8 @@ export type MerchantNavItem = {
   label: string;
   href: string | null;
   icon: LucideIcon;
+  /** Descrizione breve sotto l'etichetta (sidebar ricca). */
+  description?: string;
   /** Voce di sola intestazione (non cliccabile). */
   section?: boolean;
   /** Voce azione (apre un flusso, es. Duplica negozio). */
@@ -60,6 +63,7 @@ export function getMerchantStoreNavItems(storeId: string): MerchantNavItem[] {
     {
       key: "dashboard",
       label: "Dashboard",
+      description: "Panoramica del negozio",
       href: storePath,
       icon: LayoutGrid,
       exactActive: true,
@@ -67,14 +71,23 @@ export function getMerchantStoreNavItems(storeId: string): MerchantNavItem[] {
     {
       key: "prodotti",
       label: "Prodotti",
+      description: "Catalogo e pubblicazioni",
       href: `${storePath}/prodotti`,
       icon: Package,
     },
     {
       key: "ordini",
       label: "Ordini",
+      description: "Da confermare a consegnati",
       href: `${storePath}/ordini`,
       icon: ReceiptText,
+    },
+    {
+      key: "reclami",
+      label: "Reclami",
+      description: "Problemi dei clienti aperti",
+      href: `${storePath}/ordini?filtro=reclami`,
+      icon: MessageSquareWarning,
     },
     {
       key: "editor",
@@ -86,12 +99,14 @@ export function getMerchantStoreNavItems(storeId: string): MerchantNavItem[] {
     {
       key: "gestione-negozio",
       label: "Gestione negozio",
+      description: "Dati e informazioni",
       href: `${storePath}/edit`,
       icon: Edit3,
     },
     {
       key: "media",
       label: "Libreria Media",
+      description: "Immagini e file",
       href: `${storePath}/media`,
       icon: FolderOpen,
     },

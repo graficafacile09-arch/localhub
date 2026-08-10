@@ -14,6 +14,8 @@ export type ClienteNavItem = {
   label: string;
   description: string;
   icon: LucideIcon;
+  /** Gruppo di sezione nella sidebar (separazione logica del menu). */
+  gruppo: "ordini" | "account" | "footer";
   /** true = voce solo UI, senza navigazione reale ancora. */
   placeholder?: boolean;
 };
@@ -29,36 +31,42 @@ export const clienteNavItems: ClienteNavItem[] = [
     description:
       "Il tuo riepilogo personale: ordini, preferiti, offerte ed eventi.",
     icon: LayoutDashboard,
+    gruppo: "ordini",
   },
   {
     href: `${CLIENTE_BASE}/ordini`,
     label: "Ordini",
     description: "Storico dei tuoi ordini con lo stato di spedizione e consegna.",
     icon: Package,
+    gruppo: "ordini",
   },
   {
     href: `${CLIENTE_BASE}/preferiti`,
     label: "Preferiti",
     description: "I negozi e i prodotti che hai salvato per non perderli di vista.",
     icon: Heart,
+    gruppo: "account",
   },
   {
     href: `${CLIENTE_BASE}/profilo`,
     label: "Profilo",
     description: "I tuoi dati personali, la tua immagine e le preferenze dell'account.",
     icon: UserRound,
+    gruppo: "account",
   },
   {
     href: `${CLIENTE_BASE}/segnalazioni`,
     label: "Segnalazioni",
     description: "Invia una segnalazione o un report al team di supporto.",
     icon: Flag,
+    gruppo: "account",
   },
   {
     href: `${CLIENTE_BASE}/impostazioni`,
     label: "Impostazioni",
     description: "Preferenze, notifiche e sicurezza del tuo account.",
     icon: Settings,
+    gruppo: "account",
   },
 ];
 
@@ -78,5 +86,6 @@ export const clienteFooterItems: ClienteNavItem[] = [
     label: "Torna al sito",
     description: "Apri la homepage pubblica di LocalHub.",
     icon: ShoppingBasket,
+    gruppo: "footer",
   },
 ];

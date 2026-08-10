@@ -3,6 +3,9 @@ import { redirect } from "next/navigation";
 import ClienteShell from "@/components/cliente/ClienteShell";
 import { areaToPath } from "@/lib/auth/area";
 import { getSessionArea } from "@/lib/auth/session-area";
+import { getOrdiniCliente } from "@/lib/cliente/ordini";
+import { filtraOrdiniCliente } from "@/lib/cliente/ordini-format";
+import type { OrdineClienteLista } from "@/lib/cliente/types";
 
 export const metadata = {
   title: "Area Clienti — LocalHub",
@@ -31,5 +34,17 @@ export default async function ClienteLayout({
     redirect(areaToPath(sessione.area));
   }
 
-  return <ClienteShell>{children}</ClienteShell>;
+  // Badge "Ordini [N]" del menu: conteggio degli ordini IN CORSO (dati
+  // reali da Supabase, best-effort — un errore non deve bloccare l'area).
+  let ordiniInCorso = 0;
+  try {
+    const ordini: OrdineClienteLista[] = await getOrdiniCliente(sessione.user.id);
+    ordiniInCorso = filtraOrdiniCliente(ordini, "in_corso").length;
+  } catch {
+    ordiniInCorso = 0;
+  }
+
+  return (
+    <ClienteShell ordiniInCorso={ordiniInCorso}>{children}</ClienteShell>
+  );
 }

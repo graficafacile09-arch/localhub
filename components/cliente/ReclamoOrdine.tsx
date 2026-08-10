@@ -87,18 +87,26 @@ export default function ReclamoOrdine({ ordineId, puòReclamare, reclamiIniziali
     }
   }
 
-  // Reclamo attivo presente → riquadro informativo (niente pulsante duplicato).
+  // Reclamo attivo presente → scheda operativa ROSSA (stesso linguaggio
+  // del venditore): segnale evidente, stato e messaggio. Niente pulsante
+  // duplicato: un solo reclamo attivo per ordine (già garantito lato DB).
   if (attivo) {
     return (
-      <div className="rounded-[1.75rem] border border-amber-200 bg-amber-50/60 p-5 shadow-sm">
-        <div className="flex items-center gap-3">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700 ring-1 ring-amber-200">
+      <div className="relative overflow-hidden rounded-[1.75rem] border border-red-200 bg-white shadow-sm">
+        <span
+          className="absolute inset-y-0 left-0 w-1.5 bg-linear-to-b from-red-500 to-red-700"
+          aria-hidden
+        />
+        <div className="flex items-center gap-3 px-5 py-4 pl-6">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-600 text-white shadow-sm shadow-red-600/30">
             <AlertTriangle className="h-5 w-5" aria-hidden />
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <p className="text-sm font-black uppercase tracking-wide text-amber-900">
-                Reclamo inviato
+              <p className="text-sm font-black uppercase tracking-wide text-red-800">
+                {attivo.stato === "in_gestione"
+                  ? "Reclamo in gestione"
+                  : "Reclamo inviato"}
               </p>
               <span
                 className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${COLORI[attivo.stato]}`}
@@ -106,11 +114,11 @@ export default function ReclamoOrdine({ ordineId, puòReclamare, reclamiIniziali
                 {ETICHETTE[attivo.stato]}
               </span>
             </div>
-            <p className="mt-1 text-xs leading-5 text-amber-700">
+            <p className="mt-1 text-xs leading-5 text-slate-600">
               {attivo.messaggio ? (
                 <>“{attivo.messaggio}”</>
               ) : (
-                "Hai segnalato un problema con questo ordine. Il negozio è stato avvisato."
+                "Hai segnalato un problema con questo ordine: il negozio è stato avvisato e sta gestendo la tua segnalazione."
               )}
             </p>
           </div>

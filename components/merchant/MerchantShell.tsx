@@ -26,6 +26,7 @@ export default function MerchantShell({
   banner,
   area = "merchant",
   ordiniNonLettiPerNegozio,
+  reclamiApertiPerNegozio,
   children,
 }: {
   user: User;
@@ -35,6 +36,8 @@ export default function MerchantShell({
   area?: "merchant" | "admin";
   /** Conteggio ordini non letti per negozio (badge "Ordini [N]"). */
   ordiniNonLettiPerNegozio?: Record<string, number>;
+  /** Conteggio reclami ATTIVI per negozio (badge rosso "Reclami [N]"). */
+  reclamiApertiPerNegozio?: Record<string, number>;
   children: ReactNode;
 }) {
   const currentStore = stores.find((store) => store.id === currentStoreId) ?? null;
@@ -112,6 +115,7 @@ export default function MerchantShell({
                   storeId={currentStore.id}
                   storeName={currentStore.nome}
                   ordiniNonLetti={ordiniNonLettiPerNegozio?.[currentStore.id] ?? 0}
+                  reclamiAperti={reclamiApertiPerNegozio?.[currentStore.id] ?? 0}
                 />
               </div>
             ) : null}
