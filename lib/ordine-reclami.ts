@@ -25,6 +25,11 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { inviaMessaggioNtfy, type ConfigNtfy } from "@/lib/notifiche/ntfy";
 import { canManageStore } from "@/lib/merchant/data";
+import {
+  ETICHETTE_STATO,
+  etichettaMotivoAnnullamento,
+  isStatoOrdine,
+} from "@/lib/merchant/ordini-stati";
 
 // ═══════════════════════════════════════════════════════════════════════
 // PARTE PURA (tipi + macchina a stati + messaggio ntfy): ri-exportata dal
@@ -36,6 +41,7 @@ import {
   costruisciMessaggioReclamoNtfy,
   ETICHETTA_TIPO_RECLAMO,
   ETICHETTE_STATO_RECLAMO,
+  formattaDataOraReclamo,
   isStatoReclamo,
   isTipoReclamo,
   transizioneReclamoConsentita,
@@ -51,6 +57,7 @@ export {
   costruisciMessaggioReclamoNtfy,
   ETICHETTA_TIPO_RECLAMO,
   ETICHETTE_STATO_RECLAMO,
+  formattaDataOraReclamo,
   isStatoReclamo,
   isTipoReclamo,
   transizioneReclamoConsentita,
@@ -378,29 +385,65 @@ export type OpzioniNotificaReclamo = {
  * stesso dei nuovi ordini) e al SYSTEM/ADMIN (topic NTFY_ADMIN_TOPIC,
  * OPZIONALE: se non configurato la notifica admin viene saltata).
  * BEST-EFFORT: MAI throw, il reclamo DB è la fonte di verità.
+ *
+ * Il messaggio identifica subito l'ordine (numero LEGGIBILE tipo "LH-00125",
+ * MAI l'UUID), il negozio, il cliente e lo STATO ATTUALE dell'ordine
+ * (con motivo/nota se ANNULLATO). Tutti i dati sono letti dal DB lato
+ * server: nessun valore inviato dal browser.
  */
 export async function notificaReclamoNtfy(
   reclamo: ReclamoOrdine,
   opts: OpzioniNotificaReclamo = {}
 ): Promise<void> {
   try {
-    // Dati ordine per il messaggio (numero, negozio, link).
+    // Dati ordine per il messaggio (numero leggibile, negozio, stato,
+    // annullamento, cliente, link). Tutto letto dal DB: mai dal browser.
     const adminDb = (opts.db ?? createAdminSupabaseClient()) as ReclamiDbClient;
     const { data: ordine } = await adminDb
       .from("ordini")
-      .select("numero, negozio_nome")
+      .select(
+        "numero, negozio_nome, stato, annullato_motivo, annullato_nota, cliente_nome, cliente_cognome"
+      )
       .eq("id", reclamo.ordineId)
       .maybeSingle();
 
     const numero = String(ordine?.numero ?? "");
     const negozioNome = String(ordine?.negozio_nome ?? "");
+
+    // Stato ordine ATTUALE con etichetta leggibile; ANNULLATO esplicito e
+    // maiuscolo come richiesto, con motivo + nota se disponibili.
+    const statoValue = ordine?.stato;
+    const èAnnullato = statoValue === "cancellato";
+    const statoOrdine = èAnnullato
+      ? "ANNULLATO"
+      : isStatoOrdine(statoValue)
+        ? ETICHETTE_STATO[statoValue]
+        : typeof statoValue === "string"
+          ? statoValue
+          : "";
+    const motivoAnnullamento =
+      èAnnullato && ordine?.annullato_motivo
+        ? etichettaMotivoAnnullamento(String(ordine.annullato_motivo))
+        : null;
+    const notaAnnullamento =
+      èAnnullato && ordine?.annullato_nota ? String(ordine.annullato_nota) : null;
+
+    // Nome cliente: snapshot del reclamo (nome + cognome dell'ordine al
+    // momento della segnalazione); fallback sul nome attuale dell'ordine.
+    const clienteNome =
+      reclamo.clienteNome.trim() ||
+      `${String(ordine?.cliente_nome ?? "")} ${String(ordine?.cliente_cognome ?? "")}`.trim();
+
     const linkVenditore = `${SITE_URL.replace(/\/+$/, "")}/merchant/${encodeURIComponent(reclamo.negozioId)}/ordini/${encodeURIComponent(reclamo.ordineId)}`;
 
     const corpo = costruisciMessaggioReclamoNtfy({
       numero,
       negozioNome,
-      clienteNome: reclamo.clienteNome,
-      tipo: reclamo.tipo,
+      clienteNome,
+      statoOrdine,
+      motivoAnnullamento,
+      notaAnnullamento,
+      dataOra: formattaDataOraReclamo(reclamo.createdAt),
       messaggio: reclamo.messaggio,
       linkOrdine: linkVenditore,
     });

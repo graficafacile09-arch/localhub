@@ -21,6 +21,7 @@ import {
   creaReclamoOrdine,
   ETICHETTA_TIPO_RECLAMO,
   ETICHETTE_STATO_RECLAMO,
+  formattaDataOraReclamo,
   getReclamiVenditore,
   notificaReclamoNtfy,
   transizioneReclamoConsentita,
@@ -106,6 +107,20 @@ function fakeDbOrdine(ordine: Record<string, unknown> | null) {
   };
 }
 
+/** Ordine tipico per le notifiche (numero leggibile, stato, cliente). */
+function ordineNotifica(over: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    numero: "LH-000043",
+    negozio_nome: "Salus Farma",
+    stato: "in_preparazione",
+    annullato_motivo: null,
+    annullato_nota: null,
+    cliente_nome: "Mario",
+    cliente_cognome: "Rossi",
+    ...over,
+  };
+}
+
 /** Fetch FAKE per ntfy: registra le chiamate (url, title, body) e risponde 200. */
 function fakeFetch(registro: Array<{ url: string; title: string; tags: string; body: string }>) {
   return async (input: URL | RequestInfo, init?: RequestInit) => {
@@ -187,7 +202,7 @@ async function main() {
         chiamateRpc.push({ fn, params });
         return { data: { ok: true, giaEsistente: false, reclamo: reclamoRow() }, error: null };
       },
-      db: fakeDbOrdine({ numero: "LH-000043", negozio_nome: "Salus Farma" }),
+      db: fakeDbOrdine(ordineNotifica()),
       fetchImpl: fakeFetch(registroFetch),
     });
     check("ok = true", esito.ok === true, JSON.stringify(esito));
@@ -201,10 +216,15 @@ async function main() {
       check("notifica verso topic venditore", registroFetch[0]?.url.includes("incitta-ordini-test"));
       check("notifica ha titolo reclamo", registroFetch[0]?.title.includes("Reclamo ordine #LH-000043"));
       check("notifica contiene RECLAMO ORDINE", registroFetch[0]?.body.includes("🚨 RECLAMO ORDINE #LH-000043"));
-      check("notifica contiene negozio", registroFetch[0]?.body.includes("Salus Farma"));
-      check("notifica contiene cliente", registroFetch[0]?.body.includes("Mario Rossi"));
-      check("notifica contiene tipo", registroFetch[0]?.body.includes("Ordine non arrivato"));
-      check("notifica contiene messaggio", registroFetch[0]?.body.includes("Non è arrivato nulla"));
+      check("notifica contiene negozio", registroFetch[0]?.body.includes("🏪 Negozio: Salus Farma"));
+      check("notifica contiene cliente", registroFetch[0]?.body.includes("👤 Cliente: Mario Rossi"));
+      check("notifica contiene stato ordine", registroFetch[0]?.body.includes("⚠️ Stato ordine: Nuovo"));
+      check("notifica contiene data reclamo", registroFetch[0]?.body.includes("📅 Data: 10/08/2026"));
+      check("notifica contiene messaggio", registroFetch[0]?.body.includes("📝 Problema: Non è arrivato nulla"));
+      check("notifica contiene link gestione", registroFetch[0]?.body.includes("🔗 Gestisci reclamo:"));
+      check("numero ordine LEGGIBILE usato", registroFetch[0]?.body.includes("🚨 RECLAMO ORDINE #LH-000043"));
+      check("UUID presenti SOLO nel link (mai come numero ordine)", (registroFetch[0]?.body ?? "").split("\n").filter((l) => l.includes(ORDINE_ID) || l.includes(NEGOZIO_ID)).every((l) => l.trim().startsWith("https://")));
+      check("notifica NON contiene riga Tipo", !registroFetch[0]?.body.includes("Tipo:"));
     }
   }
 
@@ -214,7 +234,7 @@ async function main() {
     const registroFetch: Array<{ url: string; title: string; tags: string; body: string }> = [];
     const esito = await creaReclamoOrdine(CLIENTE_ID, ORDINE_ID, { messaggio: "di nuovo" }, {
       rpc: async () => ({ data: { ok: true, giaEsistente: true, reclamo: reclamoRow() }, error: null }),
-      db: fakeDbOrdine({ numero: "LH-000043", negozio_nome: "Salus Farma" }),
+      db: fakeDbOrdine(ordineNotifica()),
       fetchImpl: fakeFetch(registroFetch),
     });
     check("ok = true", esito.ok === true);
@@ -337,23 +357,56 @@ async function main() {
     check("tipo mappato", lista[0]?.tipo === "ordine_non_arrivato");
   }
 
-  // ── T12: costruisciMessaggioReclamoNtfy ──────────────────────────────────────
+  // ── T12: costruisciMessaggioReclamoNtfy (formato richiesto) ──────────────────
   console.log("\n[T12] Messaggio ntfy reclamo (formato richiesto)");
   {
     const corpo = costruisciMessaggioReclamoNtfy({
       numero: "LH-000043",
       negozioNome: "Salus Farma",
       clienteNome: "Mario Rossi",
-      tipo: "ordine_non_arrivato",
+      statoOrdine: "Nuovo",
+      motivoAnnullamento: null,
+      notaAnnullamento: null,
+      dataOra: "10/08/2026 12:00",
       messaggio: "Non è arrivato nulla",
       linkOrdine: "https://www.incitta.online/merchant/x/ordini/y",
     });
-    check("contiene RECLAMO ORDINE #LH-000043", corpo.includes("🚨 RECLAMO ORDINE #LH-000043"));
-    check("contiene Negozio", corpo.includes("Negozio: Salus Farma"));
-    check("contiene Cliente", corpo.includes("Cliente: Mario Rossi"));
-    check("contiene Tipo", corpo.includes("Tipo: Ordine non arrivato"));
-    check("contiene Messaggio", corpo.includes("Messaggio: Non è arrivato nulla"));
-    check("contiene Apri ordine", corpo.includes("Apri ordine: https://"));
+    check("contiene 🚨 RECLAMO ORDINE #LH-000043", corpo.includes("🚨 RECLAMO ORDINE #LH-000043"));
+    check("contiene 🏪 Negozio", corpo.includes("🏪 Negozio: Salus Farma"));
+    check("contiene 👤 Cliente", corpo.includes("👤 Cliente: Mario Rossi"));
+    check("contiene ⚠️ Stato ordine", corpo.includes("⚠️ Stato ordine: Nuovo"));
+    check("contiene 📝 Problema", corpo.includes("📝 Problema: Non è arrivato nulla"));
+    check("contiene 📅 Data", corpo.includes("📅 Data: 10/08/2026 12:00"));
+    check("contiene 🔗 Gestisci reclamo su riga dedicata", corpo.includes("🔗 Gestisci reclamo:\nhttps://www.incitta.online/merchant/x/ordini/y"));
+    check("NON contiene riga Tipo", !corpo.includes("Tipo:"));
+    check("numero leggibile nel titolo (mai UUID)", corpo.includes("#LH-000043") && !corpo.includes(ORDINE_ID));
+  }
+
+  // ── T12b: ordine ANNULLATO → stato esplicito + motivo + nota ─────────────────
+  console.log("\n[T12b] Messaggio ntfy reclamo su ordine ANNULLATO");
+  {
+    const corpo = costruisciMessaggioReclamoNtfy({
+      numero: "LH-000043",
+      negozioNome: "Salus Farma",
+      clienteNome: "Mario Rossi",
+      statoOrdine: "ANNULLATO",
+      motivoAnnullamento: "Prodotto non disponibile",
+      notaAnnullamento: "Esaurito in magazzino",
+      dataOra: "10/08/2026 12:00",
+      messaggio: "Non è arrivato nulla",
+      linkOrdine: "https://www.incitta.online/merchant/x/ordini/y",
+    });
+    check("stato ANNULLATO esplicito", corpo.includes("⚠️ Stato ordine: ANNULLATO"));
+    check("motivo presente", corpo.includes("📌 Motivo: Prodotto non disponibile"));
+    check("nota presente", corpo.includes("📌 Nota: Esaurito in magazzino"));
+  }
+
+  // ── T12c: formattaDataOraReclamo (fuso Europe/Rome, deterministico) ─────────
+  console.log("\n[T12c] formattaDataOraReclamo");
+  {
+    check("ISO → GG/MM/AAAA HH:MM Roma", formattaDataOraReclamo("2026-08-10T10:00:00.000Z") === "10/08/2026 12:00");
+    check("null → ''", formattaDataOraReclamo(null) === "");
+    check("data invalida → fallback stringa", formattaDataOraReclamo("non-una-data") === "non-una-data");
   }
 
   // ── T13: notificaReclamoNtfy — admin topic configurato → 2 invii ─────────────
@@ -370,13 +423,15 @@ async function main() {
         gestitoAt: null, gestitoDa: null, gestitoNota: null,
       } satisfies ReclamoOrdine,
       {
-        db: fakeDbOrdine({ numero: "LH-000043", negozio_nome: "Salus Farma" }),
+        db: fakeDbOrdine(ordineNotifica()),
         fetchImpl: fakeFetch(registroFetch),
       }
     );
     check("2 invii (venditore + admin)", registroFetch.length === 2, String(registroFetch.length));
     check("invio admin verso topic admin", registroFetch.some((r) => r.url.includes("incitta-admin-test")));
     check("titolo admin contiene [ADMIN]", registroFetch.some((r) => r.title.includes("[ADMIN]")));
+    check("messaggio con stato ordine", registroFetch.every((r) => r.body.includes("⚠️ Stato ordine: Nuovo")));
+    check("UUID solo nel link", registroFetch.every((r) => r.body.split("\n").filter((l) => l.includes(ORDINE_ID)).every((l) => l.trim().startsWith("https://"))));
   }
 
   // ── T14: notifica MAI throw anche con db che fallisce ────────────────────────
@@ -416,6 +471,54 @@ async function main() {
     "ETICHETTA_TIPO_RECLAMO = Ordine non arrivato",
     ETICHETTA_TIPO_RECLAMO.ordine_non_arrivato === "Ordine non arrivato"
   );
+
+  // ── T16: errore ntfy NON fa fallire la creazione del reclamo ────────────────
+  console.log("\n[T16] Notifica KO durante la creazione → reclamo comunque creato");
+  {
+    const esito = await creaReclamoOrdine(CLIENTE_ID, ORDINE_ID, { messaggio: "Problema" }, {
+      rpc: async () => ({
+        data: { ok: true, giaEsistente: false, reclamo: reclamoRow() },
+        error: null,
+      }),
+      // DB delle notifiche rotto + fetch che lancia: la notifica NON può
+      // impedire la creazione (il reclamo è già salvato dalla RPC).
+      db: {
+        from() {
+          throw new Error("db down");
+        },
+      },
+      fetchImpl: async () => {
+        throw new Error("rete down");
+      },
+    });
+    check("ok = true (reclamo creato nonostante ntfy KO)", esito.ok === true, JSON.stringify(esito));
+    if (esito.ok) check("giaEsistente = false", esito.giaEsistente === false);
+  }
+
+  // ── T17: nome cliente con fallback sull'ordine ───────────────────────────────
+  console.log("\n[T17] Cliente dal fallback ordine (snapshot reclamo vuoto)");
+  delete process.env.NTFY_ADMIN_TOPIC; // solo venditore: 1 invio atteso
+  {
+    const registroFetch: Array<{ url: string; title: string; tags: string; body: string }> = [];
+    await notificaReclamoNtfy(
+      {
+        id: RECLAMO_ID, ordineId: ORDINE_ID, negozioId: NEGOZIO_ID, clienteUserId: CLIENTE_ID,
+        clienteNome: "", clienteEmail: null, clienteTelefono: null,
+        tipo: "ordine_non_arrivato", messaggio: null, stato: "aperto",
+        createdAt: "2026-08-10T10:00:00.000Z", updatedAt: "2026-08-10T10:00:00.000Z",
+        gestitoAt: null, gestitoDa: null, gestitoNota: null,
+      } satisfies ReclamoOrdine,
+      {
+        db: fakeDbOrdine(ordineNotifica({ stato: "cancellato", annullato_motivo: "prodotto_non_disponibile", annullato_nota: "Esaurito" })),
+        fetchImpl: fakeFetch(registroFetch),
+      }
+    );
+    check("1 invio", registroFetch.length === 1, String(registroFetch.length));
+    check("nome cliente dal fallback ordine", registroFetch[0]?.body.includes("👤 Cliente: Mario Rossi"));
+    check("stato ANNULLATO esplicito", registroFetch[0]?.body.includes("⚠️ Stato ordine: ANNULLATO"));
+    check("motivo con etichetta leggibile", registroFetch[0]?.body.includes("📌 Motivo: Prodotto non disponibile"));
+    check("nota annullamento presente", registroFetch[0]?.body.includes("📌 Nota: Esaurito"));
+  }
 
   restoreEnv();
 
