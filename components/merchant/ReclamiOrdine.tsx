@@ -89,6 +89,8 @@ export default function ReclamiOrdine({
   const [contattaAperto, setContattaAperto] = useState<string | null>(null);
   const [testoMessaggio, setTestoMessaggio] = useState("");
   const [invioMessaggio, setInvioMessaggio] = useState(false);
+  // Errore mostrato DENTRO il dialog (mai nascosto sotto il backdrop).
+  const [erroreInvio, setErroreInvio] = useState<string | null>(null);
 
   if (reclami.length === 0) return null;
 
@@ -129,14 +131,16 @@ export default function ReclamiOrdine({
   }
 
   async function inviaMessaggio(reclamoId: string) {
+    // Guardia anti doppio submit (oltre al disabled del pulsante).
+    if (invioMessaggio) return;
     const corpo = testoMessaggio.trim();
+    // Messaggio vuoto → errore DENTRO il modal, MAI una POST, contenuto intatto.
     if (!corpo) {
-      setErrore("Scrivi un messaggio prima di inviarlo.");
+      setErroreInvio("Scrivi un messaggio prima di inviarlo.");
       return;
     }
     setInvioMessaggio(true);
-    setErrore(null);
-    setSuccesso(null);
+    setErroreInvio(null);
     try {
       const res = await fetch(
         `/api/merchant/stores/${negozioId}/ordini/${ordineId}/reclami/${reclamoId}/messaggi`,
@@ -151,10 +155,14 @@ export default function ReclamiOrdine({
         data?: { messaggio?: MessaggioReclamo };
       } | null;
 
+      // 4xx/5xx → errore nel modal, il modal NON si chiude, testo preservato.
       if (!res.ok) {
-        setErrore(data?.error?.message ?? "Impossibile inviare il messaggio.");
+        setErroreInvio(
+          data?.error?.message ?? "Impossibile inviare il messaggio. Riprova."
+        );
         return;
       }
+      // Il modal si chiude SOLO dopo una risposta di successo.
       if (data?.data?.messaggio) {
         const msg = data.data.messaggio;
         setMessaggi((prev) => ({
@@ -164,10 +172,11 @@ export default function ReclamiOrdine({
       }
       setSuccesso("Messaggio inviato al cliente. Verrà avvisato via email.");
       setTestoMessaggio("");
+      setErroreInvio(null);
       setContattaAperto(null);
       router.refresh();
     } catch {
-      setErrore("Errore di rete. Riprova.");
+      setErroreInvio("Errore di rete. Controlla la connessione e riprova.");
     } finally {
       setInvioMessaggio(false);
     }
@@ -279,6 +288,7 @@ export default function ReclamiOrdine({
                     onClick={() => {
                       setErrore(null);
                       setSuccesso(null);
+                      setErroreInvio(null);
                       setTestoMessaggio("");
                       setContattaAperto(reclamo.id);
                     }}
@@ -438,7 +448,10 @@ export default function ReclamiOrdine({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
             className="fixed inset-0 bg-black/40 backdrop-blur-sm"
-            onClick={() => setContattaAperto(null)}
+            onClick={() => {
+              // Durante l'invio il modal NON può essere chiuso dal backdrop.
+              if (!invioMessaggio) setContattaAperto(null);
+            }}
           />
           <div className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-xl">
             <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
@@ -452,8 +465,12 @@ export default function ReclamiOrdine({
               </div>
               <button
                 type="button"
-                onClick={() => setContattaAperto(null)}
-                className="rounded-lg p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+                onClick={() => {
+                  // Durante l'invio il modal NON può essere chiuso dalla X.
+                  if (!invioMessaggio) setContattaAperto(null);
+                }}
+                disabled={invioMessaggio}
+                className="rounded-lg p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 disabled:opacity-40"
                 aria-label="Chiudi"
               >
                 <X className="h-4 w-4" />
@@ -461,6 +478,24 @@ export default function ReclamiOrdine({
             </div>
 
             <div className="space-y-4 px-5 py-4">
+              {erroreInvio && (
+                <div
+                  role="alert"
+                  className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3"
+                >
+                  <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-red-100 text-red-600">
+                    <AlertTriangle className="h-4 w-4" aria-hidden />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-xs font-black uppercase tracking-wide text-red-700">
+                      Invio non riuscito
+                    </p>
+                    <p className="mt-0.5 text-sm leading-5 text-red-700/90">
+                      {erroreInvio}
+                    </p>
+                  </div>
+                </div>
+              )}
               <p className="text-xs leading-5 text-slate-500">
                 Scrivi un messaggio al cliente: verrà avvisato via email e
                 potrà risponderti direttamente dal dettaglio del suo ordine.
@@ -500,7 +535,7 @@ export default function ReclamiOrdine({
               <button
                 type="button"
                 onClick={() => void inviaMessaggio(contattaAperto)}
-                disabled={invioMessaggio || !testoMessaggio.trim()}
+                disabled={invioMessaggio}
                 className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-blue-700 disabled:opacity-50"
               >
                 {invioMessaggio ? (
