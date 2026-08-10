@@ -25,7 +25,10 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { inviaMessaggioNtfy, type ConfigNtfy } from "@/lib/notifiche/ntfy";
 import { canManageStore } from "@/lib/merchant/data";
-import { inviaEmailMessaggioReclamo } from "@/lib/cliente/ordine-email";
+import {
+  inviaEmailMessaggioReclamo,
+  inviaEmailRispostaClienteReclamo,
+} from "@/lib/cliente/ordine-email";
 import { getReclamiOrdineCliente, type ReclamiDbClient } from "@/lib/ordine-reclami";
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -60,14 +63,17 @@ export function validaCorpoMessaggio(
 
 function mappaMessaggio(row: Record<string, unknown>): MessaggioReclamo {
   const mittente = isMittenteMessaggio(row.mittente) ? row.mittente : "cliente";
+  // Chiavi SNAKE_CASE (righe grezze del SELECT * usato dalle GET) oppure
+  // CAMEL_CASE (jsonb restituito dalle RPC): entrambi gli stili supportati.
   return {
     id: String(row.id ?? ""),
-    reclamoId: String(row.reclamo_id ?? ""),
+    reclamoId: String(row.reclamo_id ?? row.reclamoId ?? ""),
     mittente,
-    mittenteNome: String(row.mittente_nome ?? ""),
+    mittenteNome: String(row.mittente_nome ?? row.mittenteNome ?? ""),
     corpo: String(row.corpo ?? ""),
-    lettoAt: (row.letto_at as string | null) ?? null,
-    createdAt: String(row.created_at ?? ""),
+    lettoAt:
+      ((row.letto_at as string | null) ?? (row.lettoAt as string | null) ?? null),
+    createdAt: String(row.created_at ?? row.createdAt ?? ""),
   };
 }
 
@@ -179,7 +185,7 @@ export async function aggiungiMessaggioVenditore(
   return { ok: true, messaggio };
 }
 
-/** Opzioni testabili (RPC, db per la notifica, fetch per ntfy). */
+/** Opzioni testabili (RPC, db per la notifica, fetch per ntfy, email). */
 export type OpzioniMessaggioCliente = {
   rpc?: (
     fn: string,
@@ -187,6 +193,11 @@ export type OpzioniMessaggioCliente = {
   ) => Promise<{ data: unknown; error: { message: string } | null }>;
   db?: ReclamiDbClient;
   fetchImpl?: typeof fetch;
+  inviaEmailRisposta?: (
+    reclamoId: string,
+    corpo: string,
+    clienteNome?: string
+  ) => Promise<{ stato: string; motivo: string }>;
 };
 
 /**
@@ -242,6 +253,20 @@ export async function aggiungiMessaggioCliente(
 
   // ntfy al VENDITORE — BEST-EFFORT (il messaggio DB è la fonte di verità).
   await notificaRispostaClienteNtfy(messaggio, opts).catch(() => {});
+
+  // EMAIL al VENDITORE — BEST-EFFORT: MAI throw, MAI blocca il messaggio.
+  // Destinatario: owner del negozio (auth.users, fallback email_negozio).
+  try {
+    await (opts.inviaEmailRisposta ?? inviaEmailRispostaClienteReclamo)(
+      reclamoId,
+      messaggio.corpo,
+      messaggio.mittenteNome
+    );
+  } catch (err) {
+    console.error(
+      `[reclami-messaggi] reclamo ${reclamoId}: email risposta cliente fallita (best-effort): ${(err as Error)?.message ?? "sconosciuto"}`
+    );
+  }
 
   return { ok: true, messaggio };
 }

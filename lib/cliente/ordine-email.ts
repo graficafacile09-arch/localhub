@@ -564,6 +564,212 @@ export async function inviaEmailMessaggioReclamo(
 }
 
 // ═══════════════════════════════════════════════════════════════════════
+// EMAIL RISPOSTA DEL CLIENTE → VENDITORE (il cliente ha risposto al reclamo)
+// Invio BEST-EFFORT dopo il salvataggio della risposta: il messaggio DB NON
+// fallisce mai per un errore email. Destinatario: il VENDITORE (owner del
+// negozio dell'ordine, email da auth.users; fallback negozi.email_negozio).
+// Skip silenziosi: email venditore assente o non valida.
+// ═══════════════════════════════════════════════════════════════════════
+
+/** Dati della risposta del cliente necessari all'email al venditore. */
+export type DatiRispostaClienteVenditore = {
+  reclamoId: string;
+  ordineId: string;
+  negozioId: string;
+  numero: string;
+  negozioNome: string;
+  venditoreEmail: string;
+  clienteNome: string;
+  corpo: string;
+  createdAt: string;
+};
+
+/** Opzioni per i test dell'email risposta cliente → venditore. */
+export type OpzioniEmailRispostaCliente = {
+  db?: DbLike;
+  invia?: (dati: DatiRispostaClienteVenditore) => Promise<void>;
+};
+
+/** Oggetto email: "Il cliente ha risposto sul reclamo ordine LH-XXXX — InCittà". */
+export function costruisciOggettoRispostaClienteVenditore(
+  numero: string,
+  negozioNome: string
+): string {
+  const n = (numero || "").trim() || "ordine";
+  const negozio = (negozioNome || "").trim();
+  return negozio
+    ? `Il cliente ha risposto sul reclamo ${n} — ${negozio}`
+    : `Il cliente ha risposto sul reclamo ${n} — InCittà`;
+}
+
+/**
+ * HTML dell'email "il cliente ha risposto al reclamo" (puro, testabile).
+ * Include la risposta del cliente e il link al pannello venditore.
+ */
+export function costruisciHtmlRispostaClienteVenditore(
+  dati: DatiRispostaClienteVenditore
+): string {
+  const linkVenditore = `${SITE_URL.replace(/\/+$/, "")}/merchant/${encodeURIComponent(
+    dati.negozioId
+  )}/ordini/${encodeURIComponent(dati.ordineId)}`;
+  return `
+  <!DOCTYPE html>
+  <html lang="it">
+  <body style="margin:0;padding:0;background-color:#f1f5f9;font-family:Arial,Helvetica,sans-serif;">
+    <div style="max-width:560px;margin:0 auto;padding:24px 16px;">
+      <div style="background:#2563eb;border-radius:16px 16px 0 0;padding:24px;text-align:center;">
+        <p style="margin:0;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#dbeafe;font-weight:700;">Reclamo ordine</p>
+        <p style="margin:8px 0 0;font-size:20px;font-weight:800;color:#ffffff;">${escapeHtml(dati.numero)}</p>
+        <p style="margin:6px 0 0;font-size:13px;color:#dbeafe;">Il cliente ha risposto alla tua segnalazione</p>
+      </div>
+
+      <div style="background:#ffffff;border-radius:0 0 16px 16px;padding:24px;box-shadow:0 1px 3px rgba(15,23,42,0.06);">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td style="font-size:14px;color:#0f172a;"><strong>🏪 ${escapeHtml(dati.negozioNome || "Negozio")}</strong></td>
+            <td align="right" style="font-size:12px;color:#64748b;">${formattaDataEmail(dati.createdAt)}</td>
+          </tr>
+        </table>
+
+        <p style="margin:14px 0 0;font-size:14px;color:#334155;line-height:1.6;">
+          <strong>${escapeHtml(dati.clienteNome || "Il cliente")}</strong> ha risposto alla tua segnalazione:
+        </p>
+
+        <div style="margin-top:16px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:14px;color:#1e3a8a;font-size:14px;line-height:1.6;">
+          “${escapeHtml(dati.corpo)}”
+        </div>
+
+        <div style="margin-top:24px;text-align:center;">
+          <a href="${linkVenditore}"
+             style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;padding:13px 28px;border-radius:12px;font-size:14px;font-weight:700;">
+            Gestisci reclamo
+          </a>
+        </div>
+
+        <p style="margin:20px 0 0;font-size:11px;color:#94a3b8;text-align:center;line-height:1.6;">
+          Puoi rispondere al cliente dal pannello venditore.
+          <br/>Questa email riguarda una segnalazione su InCittà.
+        </p>
+      </div>
+    </div>
+  </body>
+  </html>`;
+}
+
+/**
+ * Invia al VENDITORE l'email con la risposta del cliente sul reclamo.
+ * MAI throw: ogni problema viene loggato e restituito come stato; il
+ * messaggio resta salvato nel DB a prescindere dall'esito dell'email.
+ * `corpo` è il testo della risposta appena salvata (dal DB, mai dal browser).
+ */
+export async function inviaEmailRispostaClienteReclamo(
+  reclamoId: string,
+  corpo: string,
+  clienteNome?: string,
+  opts: OpzioniEmailRispostaCliente = {}
+): Promise<EsitoEmailOrdine> {
+  try {
+    const db = (opts.db ?? createAdminSupabaseClient()) as {
+      from: (t: string) => any;
+    };
+
+    const { data: reclamo, error: errReclamo } = await db
+      .from("ordine_reclami")
+      .select("id, ordine_id, negozio_id, cliente_nome")
+      .eq("id", reclamoId)
+      .single();
+    if (errReclamo || !reclamo) {
+      console.error(`[ordine-email] reclamo ${reclamoId}: reclamo non trovato (${errReclamo?.message ?? "null"})`);
+      return { stato: "error", motivo: "reclamo_non_trovato" };
+    }
+
+    const ordineId = String(reclamo.ordine_id ?? "");
+    const negozioId = String(reclamo.negozio_id ?? "");
+    const { data: ordine, error: errOrdine } = await db
+      .from("ordini")
+      .select("numero, negozio_nome")
+      .eq("id", ordineId)
+      .maybeSingle();
+    if (errOrdine) {
+      console.error(`[ordine-email] reclamo ${reclamoId}: lettura ordine fallita: ${errOrdine.message}`);
+    }
+
+    // ── Email del VENDITORE: owner del negozio (auth.users), fallback
+    //    negozi.email_negozio. Mai un valore inviato dal browser. ────────
+    let venditoreEmail = "";
+    const { data: negozio, error: errNegozio } = await db
+      .from("negozi")
+      .select("owner_user_id, email_negozio")
+      .eq("id", negozioId)
+      .maybeSingle();
+    if (errNegozio) {
+      console.error(`[ordine-email] reclamo ${reclamoId}: lettura negozio fallita: ${errNegozio.message}`);
+    }
+    const ownerUserId = negozio?.owner_user_id ? String(negozio.owner_user_id) : "";
+    if (ownerUserId) {
+      const { data: owner, error: errOwner } = await db
+        .from("auth.users")
+        .select("email")
+        .eq("id", ownerUserId)
+        .maybeSingle();
+      if (errOwner) {
+        console.error(`[ordine-email] reclamo ${reclamoId}: lettura owner fallita: ${errOwner.message}`);
+      }
+      venditoreEmail = String(owner?.email ?? "").trim();
+    }
+    if (!venditoreEmail) {
+      venditoreEmail = String(negozio?.email_negozio ?? "").trim();
+    }
+
+    if (!venditoreEmail) {
+      console.log(`[ordine-email] reclamo ${reclamoId}: email venditore assente, invio saltato`);
+      return { stato: "skipped", motivo: "email_assente" };
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(venditoreEmail)) {
+      console.warn(`[ordine-email] reclamo ${reclamoId}: email venditore non valida, invio saltato`);
+      return { stato: "skipped", motivo: "email_non_valida" };
+    }
+
+    const dati: DatiRispostaClienteVenditore = {
+      reclamoId,
+      ordineId,
+      negozioId,
+      numero: String(ordine?.numero ?? ""),
+      negozioNome: String(ordine?.negozio_nome ?? ""),
+      venditoreEmail,
+      clienteNome: (clienteNome ?? reclamo.cliente_nome ?? "").toString().trim() || "Il cliente",
+      corpo: (corpo || "").trim() || "Risposta del cliente.",
+      createdAt: new Date().toISOString(),
+    };
+
+    await (opts.invia ??
+      (async (d) => {
+        const apiKey = process.env.RESEND_API_KEY;
+        if (!apiKey) throw new Error("RESEND_API_KEY non configurata");
+        const resend = new Resend(apiKey);
+        const { error } = await conTimeout(
+          resend.emails.send({
+            from: FROM_EMAIL,
+            to: d.venditoreEmail,
+            subject: costruisciOggettoRispostaClienteVenditore(d.numero, d.negozioNome),
+            html: costruisciHtmlRispostaClienteVenditore(d),
+          }),
+          RESEND_TIMEOUT_MS
+        );
+        if (error) throw new Error(`Resend: ${error.message}`);
+      }))(dati);
+
+    console.log(`[ordine-email] reclamo ${reclamoId}: email risposta cliente inviata a ${maskEmail(venditoreEmail)}`);
+    return { stato: "sent", messageId: null };
+  } catch (err) {
+    console.error(
+      `[ordine-email] reclamo ${reclamoId}: invio risposta cliente fallito (best-effort): ${(err as Error)?.message ?? "sconosciuto"}`
+    );
+    return { stato: "error", motivo: "invio_fallito" };
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
 // EMAIL DI AGGIORNAMENTO STATO ORDINE (azione del venditore)
 // Invio BEST-EFFORT dopo un cambio stato riuscito: ordine/stato NON fallisce
 // mai per un errore email. Solo per stati "visibili al cliente" (confermato,

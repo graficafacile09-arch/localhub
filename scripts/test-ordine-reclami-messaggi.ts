@@ -27,6 +27,9 @@ import {
 import {
   costruisciHtmlMessaggioReclamo,
   costruisciOggettoMessaggioReclamo,
+  costruisciHtmlRispostaClienteVenditore,
+  costruisciOggettoRispostaClienteVenditore,
+  inviaEmailRispostaClienteReclamo,
 } from "../lib/cliente/ordine-email";
 
 const ORDINE_ID = "11111111-1111-1111-1111-111111111111";
@@ -67,6 +70,9 @@ class FakeQuery {
     return this;
   }
   maybeSingle() {
+    return { data: this.result, error: null };
+  }
+  single() {
     return { data: this.result, error: null };
   }
   then(resolve: (value: { data: unknown; error: null }) => void) {
@@ -241,6 +247,7 @@ async function main() {
   console.log("\n[T7] Cliente risponde — successo + ntfy al venditore");
   {
     const registroFetch: Array<{ url: string; title: string; body: string }> = [];
+    const emailVenditore: Array<{ reclamoId: string; corpo: string }> = [];
     const esito = await aggiungiMessaggioCliente(
       CLIENTE_ID, RECLAMO_ID, "Sì, aspetto conferma",
       {
@@ -250,6 +257,10 @@ async function main() {
           ordini: { numero: "LH-000043", negozio_nome: "Salus Farma" },
         }),
         fetchImpl: fakeFetch(registroFetch),
+        inviaEmailRisposta: async (reclamoId, corpo) => {
+          emailVenditore.push({ reclamoId, corpo });
+          return { stato: "sent", motivo: "" };
+        },
       }
     );
     check("ok = true", esito.ok === true, JSON.stringify(esito));
@@ -260,6 +271,45 @@ async function main() {
     check("notifica con la risposta del cliente", registroFetch[0]?.body.includes("Sì, aspetto conferma"));
     check("notifica con link al pannello venditore", registroFetch[0]?.body.includes(`/merchant/${NEGOZIO_ID}/ordini/${ORDINE_ID}`));
     check("nessuna doppia slash", !registroFetch[0]?.body.includes("/merchant//ordini/"));
+    check("EMAIL al venditore inviata", emailVenditore.length === 1, String(emailVenditore.length));
+    check("email al venditore con il corpo della risposta", emailVenditore[0]?.corpo.includes("aspetto conferma"));
+  }
+
+  // ── T7b: cliente — mappaMessaggio gestisce anche chiavi camelCase (RPC) ────
+  console.log("\n[T7b] Cliente risponde — messaggio mappato da RPC (camelCase)");
+  {
+    const esito = await aggiungiMessaggioCliente(
+      CLIENTE_ID, RECLAMO_ID, "Risposta",
+      {
+        rpc: async () => ({
+          data: {
+            ok: true,
+            messaggio: {
+              id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+              reclamoId: RECLAMO_ID,
+              mittente: "cliente",
+              mittenteNome: "Mario Rossi",
+              corpo: "Risposta dal camelCase",
+              lettoAt: null,
+              createdAt: "2026-08-10T12:00:00.000Z",
+            },
+          },
+          error: null,
+        }),
+        db: fakeDbPerTabella({
+          ordine_reclami: { id: RECLAMO_ID, ordine_id: ORDINE_ID, negozio_id: NEGOZIO_ID },
+          ordini: { numero: "LH-000043", negozio_nome: "Salus Farma" },
+        }),
+        fetchImpl: fakeFetch([]),
+      }
+    );
+    check("ok = true", esito.ok === true, JSON.stringify(esito));
+    if (esito.ok) {
+      check("reclamoId valorizzato da chiave camelCase", esito.messaggio.reclamoId === RECLAMO_ID);
+      check("mittenteNome valorizzato da chiave camelCase", esito.messaggio.mittenteNome === "Mario Rossi");
+      check("createdAt valorizzato da chiave camelCase", esito.messaggio.createdAt.includes("2026-08-10"));
+      check("corpo valorizzato", esito.messaggio.corpo.includes("camelCase"));
+    }
   }
 
   // ── T8: cliente — ntfy KO → messaggio comunque salvato ─────────────────────
@@ -280,6 +330,26 @@ async function main() {
       }
     );
     check("ok = true nonostante ntfy KO", esito.ok === true, JSON.stringify(esito));
+  }
+
+  // ── T8b: cliente — EMAIL al venditore KO → messaggio comunque salvato ──────
+  console.log("\n[T8b] Cliente risponde — EMAIL venditore KO → messaggio comunque salvato");
+  {
+    const esito = await aggiungiMessaggioCliente(
+      CLIENTE_ID, RECLAMO_ID, "Risposta",
+      {
+        rpc: async () => ({ data: { ok: true, messaggio: messaggioRow({ mittente: "cliente" }) }, error: null }),
+        db: fakeDbPerTabella({
+          ordine_reclami: { id: RECLAMO_ID, ordine_id: ORDINE_ID, negozio_id: NEGOZIO_ID },
+          ordini: { numero: "LH-000043", negozio_nome: "Salus Farma" },
+        }),
+        fetchImpl: async () => new Response(JSON.stringify({ id: "x" }), { status: 200 }),
+        inviaEmailRisposta: async () => {
+          throw new Error("Resend down");
+        },
+      }
+    );
+    check("ok = true nonostante email venditore KO", esito.ok === true, JSON.stringify(esito));
   }
 
   // ── T9: getMessaggiReclamoCliente — reclamo NON proprio → [] ───────────────
@@ -363,6 +433,95 @@ async function main() {
     check("html contiene il negozio", html.includes("Salus Farma"));
     check("html contiene il link al dettaglio cliente", html.includes(`/cliente/ordini/${ORDINE_ID}`));
     check("html NON contiene l'UUID come numero", !html.includes(RECLAMO_ID));
+  }
+
+  // ── T15: email risposta cliente → VENDITORE (oggetto + HTML) ───────────────
+  console.log("\n[T15] Email risposta cliente → VENDITORE (oggetto + HTML)");
+  {
+    const oggetto = costruisciOggettoRispostaClienteVenditore("LH-000043", "Salus Farma");
+    check("oggetto con numero", oggetto.includes("LH-000043"));
+    check("oggetto con negozio", oggetto.includes("Salus Farma"));
+    check("oggetto indica la risposta del cliente", oggetto.toLowerCase().includes("cliente ha risposto"));
+
+    const html = costruisciHtmlRispostaClienteVenditore({
+      reclamoId: RECLAMO_ID,
+      ordineId: ORDINE_ID,
+      negozioId: NEGOZIO_ID,
+      numero: "LH-000043",
+      negozioNome: "Salus Farma",
+      venditoreEmail: "negozio@salusfarma.it",
+      clienteNome: "Mario Rossi",
+      corpo: "Sì, aspetto conferma",
+      createdAt: "2026-08-10T12:00:00.000Z",
+    });
+    check("html contiene il numero ordine", html.includes("LH-000043"));
+    check("html contiene il negozio", html.includes("Salus Farma"));
+    check("html contiene la risposta del cliente", html.includes("Sì, aspetto conferma"));
+    check("html contiene il nome del cliente", html.includes("Mario Rossi"));
+    check("html contiene il link al pannello venditore", html.includes(`/merchant/${NEGOZIO_ID}/ordini/${ORDINE_ID}`));
+    check("html NON contiene l'UUID come numero", !html.includes(RECLAMO_ID));
+    check("nessuna doppia slash nel link", !html.includes("/merchant//ordini/"));
+  }
+
+  // ── T16: loader email risposta → venditore (catena auth.users → email_negozio)
+  console.log("\n[T16] Loader email risposta → VENDITORE (catena fallback)");
+  {
+    // T16a: owner trovato in auth.users → invia all'email dell'owner
+    const inviateA: string[] = [];
+    const esitoA = await inviaEmailRispostaClienteReclamo(RECLAMO_ID, "Risposta test", "Mario Rossi", {
+      db: fakeDbPerTabella({
+        ordine_reclami: { id: RECLAMO_ID, ordine_id: ORDINE_ID, negozio_id: NEGOZIO_ID, cliente_nome: "Mario Rossi" },
+        ordini: { numero: "LH-000043", negozio_nome: "Salus Farma" },
+        negozi: { owner_user_id: MERCHANT_ID, email_negozio: "info@salusfarma.it" },
+        "auth.users": { email: "owner@salusfarma.it" },
+      }),
+      invia: async (dati) => {
+        inviateA.push(dati.venditoreEmail);
+      },
+    });
+    check("T16a stato = sent", esitoA.stato === "sent", JSON.stringify(esitoA));
+    check("T16a destinatario = email OWNER (auth.users)", inviateA.length === 1 && inviateA[0] === "owner@salusfarma.it", String(inviateA));
+
+    // T16b: owner assente → fallback email_negozio
+    const inviateB: string[] = [];
+    const esitoB = await inviaEmailRispostaClienteReclamo(RECLAMO_ID, "Risposta test", undefined, {
+      db: fakeDbPerTabella({
+        ordine_reclami: { id: RECLAMO_ID, ordine_id: ORDINE_ID, negozio_id: NEGOZIO_ID, cliente_nome: "Mario Rossi" },
+        ordini: { numero: "LH-000043", negozio_nome: "Salus Farma" },
+        negozi: { owner_user_id: null, email_negozio: "info@salusfarma.it" },
+        "auth.users": null,
+      }),
+      invia: async (dati) => {
+        inviateB.push(dati.venditoreEmail);
+      },
+    });
+    check("T16b stato = sent", esitoB.stato === "sent", JSON.stringify(esitoB));
+    check("T16b destinatario = fallback email_negozio", inviateB.length === 1 && inviateB[0] === "info@salusfarma.it", String(inviateB));
+
+    // T16c: email venditore assente → skipped (mai un errore)
+    const esitoC = await inviaEmailRispostaClienteReclamo(RECLAMO_ID, "Risposta test", undefined, {
+      db: fakeDbPerTabella({
+        ordine_reclami: { id: RECLAMO_ID, ordine_id: ORDINE_ID, negozio_id: NEGOZIO_ID, cliente_nome: "Mario Rossi" },
+        ordini: { numero: "LH-000043", negozio_nome: "Salus Farma" },
+        negozi: { owner_user_id: null, email_negozio: null },
+        "auth.users": null,
+      }),
+    });
+    check("T16c stato = skipped (email assente)", esitoC.stato === "skipped" && esitoC.motivo === "email_assente", JSON.stringify(esitoC));
+
+    // T16d: invio Resend KO → error, MAI throw
+    const esitoD = await inviaEmailRispostaClienteReclamo(RECLAMO_ID, "Risposta test", "Mario Rossi", {
+      db: fakeDbPerTabella({
+        ordine_reclami: { id: RECLAMO_ID, ordine_id: ORDINE_ID, negozio_id: NEGOZIO_ID, cliente_nome: "Mario Rossi" },
+        ordini: { numero: "LH-000043", negozio_nome: "Salus Farma" },
+        negozi: { owner_user_id: MERCHANT_ID, email_negozio: "info@salusfarma.it" },
+        "auth.users": { email: "owner@salusfarma.it" },
+      }),
+      invia: async () => {
+        throw new Error("Resend down");
+      },
+    });
+    check("T16d stato = error (Resend KO), nessun throw", esitoD.stato === "error", JSON.stringify(esitoD));
   }
 
   restoreEnv();
