@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { Camera } from "lucide-react";
+import { Camera, ChevronRight, ReceiptText } from "lucide-react";
 import MerchantDashboardCards from "@/components/merchant/MerchantDashboardCards";
 import MerchantEmptyState from "@/components/merchant/MerchantEmptyState";
 import MerchantQuickActions from "@/components/merchant/MerchantQuickActions";
 import { requireCurrentUser } from "@/lib/auth/session";
 import { getMerchantProductsForStore, getMerchantStoreForUser } from "@/lib/merchant/data";
+import { getOrdiniVenditore } from "@/lib/merchant/ordini";
 
 export default async function MerchantStorePage({
   params,
@@ -38,6 +39,24 @@ export default async function MerchantStorePage({
   const attivi = prodotti.filter((item) => item.attivo).length;
   const manuali = prodotti.filter((item) => (item.origine_pubblicazione ?? "manuale") === "manuale").length;
 
+  // Riepilogo ordini (best-effort: un errore qui non deve far fallire la dashboard).
+  let ordini: import("@/lib/merchant/ordini").OrdineVenditoreLista[] = [];
+  try {
+    ordini = await getOrdiniVenditore(user.id, negozioId);
+  } catch {
+    ordini = [];
+  }
+  const conteggioOrdini = {
+    nuovi: ordini.filter((o) => o.stato === "in_preparazione").length,
+    lavorazione: ordini.filter((o) =>
+      ["confermato", "in_lavorazione", "in_consegna"].includes(o.stato)
+    ).length,
+    pronti: ordini.filter((o) => o.stato === "pronto").length,
+    completati: ordini.filter((o) => o.stato === "consegnato").length,
+    annullati: ordini.filter((o) => o.stato === "cancellato").length,
+  };
+  const nonLetti = ordini.filter((o) => !o.lettoAt).length;
+
   return (
     <div className="space-y-4">
       {/* Header compatto */}
@@ -68,6 +87,54 @@ export default async function MerchantStorePage({
 
       {/* Altre azioni rapide */}
       <MerchantQuickActions storeId={negozioId} />
+
+      {/* Ordini — riepilogo + accesso diretto */}
+      <Link
+        href={`/merchant/${negozioId}/ordini`}
+        className="group block rounded-2xl border border-white/70 bg-white p-5 shadow-sm transition hover:border-blue-200 hover:shadow-md"
+      >
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
+              <ReceiptText className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold tracking-tight text-slate-900">
+                Gestisci ordini
+              </h2>
+              <p className="text-xs text-slate-500">
+                {ordini.length === 0
+                  ? "Nessun ordine ricevuto"
+                  : nonLetti > 0
+                    ? `${nonLetti} nuovo${nonLetti === 1 ? "" : "i"} da gestire`
+                    : `${ordini.length} ordini totali`}
+              </p>
+            </div>
+          </div>
+          <ChevronRight className="h-5 w-5 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-blue-600" />
+        </div>
+
+        {ordini.length > 0 && (
+          <div className="mt-4 grid grid-cols-2 gap-2 border-t border-slate-100 pt-4 sm:grid-cols-5">
+            {(
+              [
+                ["nuovi", "Nuovi", conteggioOrdini.nuovi],
+                ["lavorazione", "In lavorazione", conteggioOrdini.lavorazione],
+                ["pronti", "Pronti", conteggioOrdini.pronti],
+                ["completati", "Completati", conteggioOrdini.completati],
+                ["annullati", "Annullati", conteggioOrdini.annullati],
+              ] as const
+            ).map(([key, etichetta, valore]) => (
+              <div key={key} className="rounded-xl bg-slate-50 px-3 py-2.5">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  {etichetta}
+                </p>
+                <p className="mt-0.5 text-xl font-black tracking-tight text-slate-800">{valore}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </Link>
 
       {/* Statistiche — comprimibili */}
       <MerchantDashboardCards

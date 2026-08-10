@@ -22,6 +22,7 @@
 
 import { Resend } from "resend";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { etichettaMotivoAnnullamento } from "@/lib/merchant/ordini-stati";
 
 /** Mittente (stessa ENV del password reset). */
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? "InCittà <onboarding@resend.dev>";
@@ -97,11 +98,17 @@ export function costruisciOggettoOrdine(dati: Pick<DatiEmailOrdine, "numero">): 
 export function etichettaStatoEmail(stato: string | null | undefined): string {
   switch (stato) {
     case "in_preparazione":
-      return "In preparazione";
+      return "Nuovo";
+    case "confermato":
+      return "Confermato";
+    case "in_lavorazione":
+      return "In lavorazione";
+    case "pronto":
+      return "Pronto";
     case "in_consegna":
       return "In consegna";
     case "consegnato":
-      return "Consegnato";
+      return "Completato";
     case "cancellato":
       return "Annullato";
     default:
@@ -384,4 +391,213 @@ function maskEmail(email: string): string {
   if (!domain) return "***";
   const visible = local?.slice(0, 2) ?? "";
   return `${visible}***@${domain}`;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// EMAIL DI AGGIORNAMENTO STATO ORDINE (azione del venditore)
+// Invio BEST-EFFORT dopo un cambio stato riuscito: ordine/stato NON fallisce
+// mai per un errore email. Solo per stati "visibili al cliente" (confermato,
+// pronto, completato, annullato). Per l'annullamento include motivo e nota.
+// ═══════════════════════════════════════════════════════════════════════
+
+/** Stati per cui il cliente riceve l'email di aggiornamento. */
+const STATI_EMAIL_CLIENTE = new Set(["confermato", "pronto", "consegnato", "cancellato"]);
+
+/** Oggetto dell'email in base al nuovo stato. */
+export function costruisciOggettoStatoOrdine(
+  numero: string,
+  stato: string
+): string {
+  const n = (numero || "").trim() || "ordine";
+  switch (stato) {
+    case "confermato":
+      return `Ordine ${n} confermato — InCittà`;
+    case "pronto":
+      return `Il tuo ordine ${n} è pronto — InCittà`;
+    case "consegnato":
+      return `Ordine ${n} completato — InCittà`;
+    case "cancellato":
+      return `Ordine ${n} annullato — InCittà`;
+    default:
+      return `Aggiornamento ordine ${n} — InCittà`;
+  }
+}
+
+/** Messaggio introduttivo in base al nuovo stato. */
+function messaggioStato(stato: string): string {
+  switch (stato) {
+    case "confermato":
+      return "Il negozio ha confermato il tuo ordine e sta preparando i prodotti.";
+    case "pronto":
+      return "Il tuo ordine è pronto. Puoi recarti in negozio per il ritiro (o partiremo con la spedizione).";
+    case "consegnato":
+      return "Il tuo ordine è stato completato. Grazie per aver acquistato su InCittà!";
+    case "cancellato":
+      return "Purtroppo il negozio ha dovuto annullare il tuo ordine.";
+    default:
+      return "Lo stato del tuo ordine è stato aggiornato.";
+  }
+}
+
+/**
+ * HTML dell'email di aggiornamento stato (puro, testabile).
+ * `motivo`/`nota` sono inclusi solo per l'annullamento.
+ */
+export function costruisciHtmlStatoOrdine(
+  dati: DatiEmailOrdine,
+  stato: string,
+  motivo: string | null,
+  nota: string | null
+): string {
+  const motivoEtichetta = etichettaMotivoAnnullamento(motivo);
+  const motivoHtml = stato === "cancellato"
+    ? `
+      <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:14px;margin-top:16px;">
+        <p style="margin:0;font-size:13px;color:#991b1b;font-weight:700;">Motivo dell'annullamento</p>
+        ${motivoEtichetta ? `<p style="margin:6px 0 0;font-size:14px;color:#7f1d1d;">${escapeHtml(motivoEtichetta)}</p>` : ""}
+        ${nota && nota.trim() ? `<p style="margin:6px 0 0;font-size:13px;color:#7f1d1d;line-height:1.5;">${escapeHtml(nota.trim())}</p>` : ""}
+      </div>`
+    : "";
+
+  const linkOrdine = `${SITE_URL.replace(/\/+$/, "")}/ordini/conferma/${encodeURIComponent(dati.id)}`;
+
+  return `
+  <!DOCTYPE html>
+  <html lang="it">
+  <body style="margin:0;padding:0;background-color:#f1f5f9;font-family:Arial,Helvetica,sans-serif;">
+    <div style="max-width:560px;margin:0 auto;padding:24px 16px;">
+      <div style="background:#2563eb;border-radius:16px 16px 0 0;padding:24px;text-align:center;">
+        <p style="margin:0;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#dbeafe;font-weight:700;">Aggiornamento ordine</p>
+        <p style="margin:8px 0 0;font-size:20px;font-weight:800;color:#ffffff;">${escapeHtml(dati.numero)}</p>
+        <p style="margin:6px 0 0;display:inline-block;background:rgba(255,255,255,0.15);border-radius:999px;padding:6px 14px;font-size:12px;font-weight:700;color:#ffffff;">
+          ${etichettaStatoEmail(stato)}
+        </p>
+      </div>
+
+      <div style="background:#ffffff;border-radius:0 0 16px 16px;padding:24px;box-shadow:0 1px 3px rgba(15,23,42,0.06);">
+        <p style="margin:0;font-size:14px;color:#0f172a;line-height:1.6;">Ciao ${escapeHtml((dati.email || "").split("@")[0] || "")},</p>
+        <p style="margin:10px 0 0;font-size:14px;color:#334155;line-height:1.6;">${messaggioStato(stato)}</p>
+
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:16px;">
+          <tr>
+            <td style="font-size:14px;color:#0f172a;"><strong>🏪 ${escapeHtml(dati.negozioNome || "Negozio")}</strong></td>
+            <td align="right" style="font-size:12px;color:#64748b;">Totale: <strong>€${formattaEuroEmail(Number(dati.totale))}</strong></td>
+          </tr>
+        </table>
+
+        ${motivoHtml}
+
+        <div style="margin-top:24px;text-align:center;">
+          <a href="${linkOrdine}"
+             style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;padding:13px 28px;border-radius:12px;font-size:14px;font-weight:700;">
+            Visualizza ordine
+          </a>
+        </div>
+      </div>
+    </div>
+  </body>
+  </html>`;
+}
+
+/** Opzioni per i test dell'email di aggiornamento stato. */
+export type OpzioniEmailStatoOrdine = {
+  db?: DbLike;
+  invia?: (payload: {
+    dati: DatiEmailOrdine;
+    stato: string;
+    motivo: string | null;
+    nota: string | null;
+  }) => Promise<void>;
+};
+
+/**
+ * Invia l'email di aggiornamento stato al cliente.
+ * BEST-EFFORT: MAI throw; ordine/stato restano validi anche se Resend fallisce.
+ * Solo per gli stati "visibili al cliente"; skip silenzioso per gli altri.
+ */
+export async function inviaEmailAggiornamentoStatoOrdine(
+  ordineId: string,
+  opts: OpzioniEmailStatoOrdine = {}
+): Promise<EsitoEmailOrdine> {
+  try {
+    const db = (opts.db ?? createAdminSupabaseClient()) as {
+      from: (t: string) => any;
+    };
+
+    const { data: ordine, error: errOrdine } = await db
+      .from("ordini")
+      .select("*")
+      .eq("id", ordineId)
+      .single();
+    if (errOrdine || !ordine) {
+      console.error(`[ordine-email] ordine ${ordineId}: ordine non trovato (${errOrdine?.message ?? "null"})`);
+      return { stato: "error", motivo: "ordine_non_trovato" };
+    }
+
+    const stato = String(ordine.stato ?? "");
+    if (!STATI_EMAIL_CLIENTE.has(stato)) {
+      return { stato: "skipped", motivo: "stato_non_notificato" };
+    }
+
+    const email = String(ordine.cliente_email ?? "").trim();
+    if (!email) {
+      console.log(`[ordine-email] ordine ${ordine.numero ?? "?"}: email cliente assente, invio saltato`);
+      return { stato: "skipped", motivo: "email_assente" };
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      console.warn(`[ordine-email] ordine ${ordine.numero ?? "?"}: email non valida, invio saltato`);
+      return { stato: "skipped", motivo: "email_non_valida" };
+    }
+
+    const dati: DatiEmailOrdine = {
+      id: String(ordine.id ?? ordineId),
+      numero: String(ordine.numero ?? ""),
+      stato,
+      totale: Number(ordine.totale ?? 0),
+      costoSpedizione: Number(ordine.costo_spedizione ?? 0),
+      createdAt: String(ordine.created_at ?? ""),
+      modalita: ordine.modalita === "spedizione" ? "spedizione" : "ritiro",
+      negozioNome: String(ordine.negozio_nome ?? ""),
+      email,
+      ritiroData: ordine.ritiro_data ?? null,
+      ritiroFascia: ordine.ritiro_fascia ?? null,
+      spedizioneIndirizzo: ordine.spedizione_indirizzo ?? null,
+      spedizioneCap: ordine.spedizione_cap ?? null,
+      spedizioneCitta: ordine.spedizione_citta ?? null,
+      spedizioneProvincia: ordine.spedizione_provincia ?? null,
+      spedizioneNote: ordine.spedizione_note ?? null,
+      note: ordine.note ?? null,
+      righe: [],
+    };
+
+    await (opts.invia ??
+      (async (payload) => {
+        const apiKey = process.env.RESEND_API_KEY;
+        if (!apiKey) throw new Error("RESEND_API_KEY non configurata");
+        const resend = new Resend(apiKey);
+        const { error } = await conTimeout(
+          resend.emails.send({
+            from: FROM_EMAIL,
+            to: payload.dati.email,
+            subject: costruisciOggettoStatoOrdine(payload.dati.numero, payload.stato),
+            html: costruisciHtmlStatoOrdine(payload.dati, payload.stato, payload.motivo, payload.nota),
+          }),
+          RESEND_TIMEOUT_MS
+        );
+        if (error) throw new Error(`Resend: ${error.message}`);
+      }))({
+      dati,
+      stato,
+      motivo: (ordine.annullato_motivo as string | null) ?? null,
+      nota: (ordine.annullato_nota as string | null) ?? null,
+    });
+
+    console.log(`[ordine-email] ordine ${dati.numero || "?"}: email di stato inviata a ${maskEmail(email)}`);
+    return { stato: "sent", messageId: null };
+  } catch (err) {
+    console.error(
+      `[ordine-email] ordine ${ordineId}: invio stato fallito (best-effort): ${(err as Error)?.message ?? "sconosciuto"}`
+    );
+    return { stato: "error", motivo: "invio_fallito" };
+  }
 }

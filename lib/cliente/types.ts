@@ -32,9 +32,17 @@ export type ClienteProfiloInput = {
   provincia: string | null;
 };
 
-/** Stato di avanzamento di un ordine. */
+/**
+ * Stato di avanzamento di un ordine.
+ * Workflow venditore (migrazione 20260815): NUOVO (in_preparazione) →
+ * confermato → in_lavorazione → pronto → consegnato; cancellato da ogni
+ * fase compatibile. I valori legacy (in_consegna) restano supportati.
+ */
 export type StatoOrdine =
   | "in_preparazione"
+  | "confermato"
+  | "in_lavorazione"
+  | "pronto"
   | "in_consegna"
   | "consegnato"
   | "cancellato";

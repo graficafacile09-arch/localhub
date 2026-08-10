@@ -18,7 +18,10 @@
 
 import {
   costruisciHtmlConfermaOrdine,
+  costruisciHtmlStatoOrdine,
   costruisciOggettoOrdine,
+  costruisciOggettoStatoOrdine,
+  inviaEmailAggiornamentoStatoOrdine,
   inviaEmailConfermaOrdine,
   type DatiEmailOrdine,
 } from "../lib/cliente/ordine-email";
@@ -230,6 +233,77 @@ async function main() {
     check("html contiene indirizzo spedizione", html.includes("Via Roma 1, 87100, Cosenza, CS"));
     check("html contiene costo spedizione", html.includes("5,90"));
     check("html contiene 'Spedizione a domicilio'", html.includes("Spedizione a domicilio"));
+  }
+
+  // ── T17: EMAIL DI AGGIORNAMENTO STATO ────────────────────────────────────────
+  console.log("\n[T17] Email aggiornamento stato: inviata per stati visibili");
+  {
+    const inviato: { payload: { dati: DatiEmailOrdine; stato: string; motivo: string | null; nota: string | null } | null } = { payload: null };
+    const esito = await inviaEmailAggiornamentoStatoOrdine(ORDINE_ID, {
+      db: fakeDb(ordineValido({ stato: "confermato" }), [rigaDefault]),
+      invia: async (payload) => {
+        inviato.payload = payload;
+      },
+    });
+    check("stato = sent", esito.stato === "sent", JSON.stringify(esito));
+    check("invia chiamato con stato confermato", inviato.payload?.stato === "confermato");
+    check(
+      "subject conferma = 'Ordine LH-000043 confermato — InCittà'",
+      costruisciOggettoStatoOrdine("LH-000043", "confermato") === "Ordine LH-000043 confermato — InCittà"
+    );
+    check(
+      "subject pronto = 'Il tuo ordine LH-000043 è pronto — InCittà'",
+      costruisciOggettoStatoOrdine("LH-000043", "pronto") === "Il tuo ordine LH-000043 è pronto — InCittà"
+    );
+    check(
+      "subject annullato = 'Ordine LH-000043 annullato — InCittà'",
+      costruisciOggettoStatoOrdine("LH-000043", "cancellato") === "Ordine LH-000043 annullato — InCittà"
+    );
+
+    // HTML dell'annullamento include motivo + nota
+    const htmlAnn = costruisciHtmlStatoOrdine(
+      inviato.payload!.dati,
+      "cancellato",
+      "prodotto_non_disponibile",
+      "Non abbiamo più questo articolo."
+    );
+    check("html annullamento contiene motivo", htmlAnn.includes("Prodotto non disponibile"));
+    check("html annullamento contiene nota", htmlAnn.includes("Non abbiamo più questo articolo."));
+
+    // Stati NON notificabili → skipped, nessun invio
+    let inviato2 = false;
+    const esito2 = await inviaEmailAggiornamentoStatoOrdine(ORDINE_ID, {
+      db: fakeDb(ordineValido({ stato: "in_lavorazione" }), [rigaDefault]),
+      invia: async () => {
+        inviato2 = true;
+      },
+    });
+    check("in_lavorazione → skipped", esito2.stato === "skipped", JSON.stringify(esito2));
+    check("in_lavorazione → invia NON chiamato", !inviato2);
+  }
+
+  // ── T18: EMAIL STATO KO → stato restituito, MAI eccezione ────────────────────
+  console.log("\n[T18] Email stato KO → error controllato (ordine/stato resta valido)");
+  {
+    let esito: Awaited<ReturnType<typeof inviaEmailAggiornamentoStatoOrdine>> = { stato: "error", motivo: "eccezione" };
+    try {
+      esito = await inviaEmailAggiornamentoStatoOrdine(ORDINE_ID, {
+        db: fakeDb(ordineValido({ stato: "pronto" }), [rigaDefault]),
+        invia: async () => {
+          throw new Error("Resend: quota esaurita");
+        },
+      });
+    } catch (err) {
+      check("nessuna eccezione propagata", false, String(err));
+    }
+    check("stato = error (non throw)", esito.stato === "error", JSON.stringify(esito));
+
+    // Email assente → skipped
+    const esito2 = await inviaEmailAggiornamentoStatoOrdine(ORDINE_ID, {
+      db: fakeDb(ordineValido({ stato: "pronto", cliente_email: null }), [rigaDefault]),
+      invia: async () => {},
+    });
+    check("senza email → skipped", esito2.stato === "skipped", JSON.stringify(esito2));
   }
 
   // ── Riepilogo ────────────────────────────────────────────────────────────────

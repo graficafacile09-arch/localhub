@@ -30,11 +30,17 @@ export function etichettaModalita(modalita: "ritiro" | "spedizione"): string {
 export function etichettaStato(stato: StatoOrdine): string {
   switch (stato) {
     case "in_preparazione":
-      return "In preparazione";
+      return "Nuovo";
+    case "confermato":
+      return "Confermato";
+    case "in_lavorazione":
+      return "In lavorazione";
+    case "pronto":
+      return "Pronto";
     case "in_consegna":
       return "In consegna";
     case "consegnato":
-      return "Consegnato";
+      return "Completato";
     case "cancellato":
       return "Annullato";
     default:

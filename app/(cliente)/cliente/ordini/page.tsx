@@ -34,6 +34,9 @@ function BadgeStato({ stato }: { stato: StatoOrdine }) {
     "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold";
   const colori: Record<StatoOrdine, string> = {
     in_preparazione: "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
+    confermato: "bg-blue-50 text-blue-700 ring-1 ring-blue-200",
+    in_lavorazione: "bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200",
+    pronto: "bg-cyan-50 text-cyan-700 ring-1 ring-cyan-200",
     in_consegna: "bg-blue-50 text-blue-700 ring-1 ring-blue-200",
     consegnato: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200",
     cancellato: "bg-red-50 text-red-600 ring-1 ring-red-200",

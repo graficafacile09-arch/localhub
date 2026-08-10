@@ -7,6 +7,7 @@ import {
   LayoutGrid,
   LogOut,
   Package,
+  ReceiptText,
   Sparkles,
   Store,
   Trash2,
@@ -70,6 +71,12 @@ export function getMerchantStoreNavItems(storeId: string): MerchantNavItem[] {
       icon: Package,
     },
     {
+      key: "ordini",
+      label: "Ordini",
+      href: `${storePath}/ordini`,
+      icon: ReceiptText,
+    },
+    {
       key: "editor",
       label: "Editor",
       href: null,
@@ -123,6 +130,13 @@ export function getMerchantBottomNavItems(
       label: "Prodotti",
       href: storePath ? `${storePath}/prodotti` : baseHref,
       icon: Package,
+      requiresStore: true,
+    },
+    {
+      key: "ordini",
+      label: "Ordini",
+      href: storePath ? `${storePath}/ordini` : baseHref,
+      icon: ReceiptText,
       requiresStore: true,
     },
     {
@@ -210,6 +224,8 @@ export function getMerchantTopTitle(
   if (suffix === "/prodotti/nuovo") return "Nuovo prodotto";
   if (/^\/prodotti\/[^/]+$/.test(suffix)) return "Modifica prodotto";
   if (suffix === "/prodotti") return "Prodotti";
+  if (suffix === "/ordini") return "Ordini";
+  if (/^\/ordini\/[^/]+$/.test(suffix)) return "Dettaglio ordine";
   if (suffix === "/impostazioni") return "Impostazioni";
 
   return storeName ?? "Venditore";
