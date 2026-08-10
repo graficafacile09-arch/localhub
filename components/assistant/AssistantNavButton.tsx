@@ -1,11 +1,12 @@
 "use client";
 
 /**
- * Voce "Assistente AI" del menu di navigazione superiore.
+ * Voce "Assistente AI" del menu di navigazione superiore (componente non
+ * montato: l'accesso all'Assistente avviene dai pulsanti dedicati delle
+ * pagine, es. HomeAssistantButton in homepage).
  * Usa la STESSA logica degli altri pulsanti funzionanti
- * (AssistantFab, OpenAssistantButton, SearchForm): emette l'evento
+ * (OpenAssistantButton, SearchForm): emette l'evento
  * `assistant:open` a cui risponde AssistantPanel (montato nel layout root).
- * L'aspetto è identico alla vecchia voce di menu (nessun cambiamento grafico).
  */
 export default function AssistantNavButton() {
   return (

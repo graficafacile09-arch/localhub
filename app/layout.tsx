@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import AssistantFab from "../components/assistant/AssistantFab";
 import AssistantPanel from "../components/assistant/AssistantPanel";
 import { getImpostazioniPubbliche } from "@/lib/platform/settings";
 import { getSiteUrl } from "@/lib/site";
@@ -76,7 +75,9 @@ export default async function RootLayout({
           {footerText}
         </footer>
 
-        <AssistantFab />
+        {/* AssistantPanel risponde SOLO all'evento esplicito "assistant:open"
+            (pulsanti dedicati, es. homepage). Nessun pulsante flottante
+            globale: le bottom navigation mobile restano completamente libere. */}
         <AssistantPanel />
       </body>
     </html>

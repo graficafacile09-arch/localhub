@@ -1,6 +1,7 @@
 import Header from "@/components/Header/Header";
 import Link from "next/link";
 import { Search } from "lucide-react";
+import HomeAssistantButton from "@/components/assistant/HomeAssistantButton";
 import { getCategorieConNegozi, getNegoziInEvidenza, getProdottiInEvidenza } from "@/lib/negozi";
 import { getNegozioCardImmagine } from "@/lib/negozi-card-immagini";
 import { chiavePreferito, getStatoPreferitiPerPagina } from "@/lib/cliente/favorites";
@@ -53,28 +54,36 @@ export default async function Home() {
             Trova negozi, professionisti, offerte e servizi locali in pochi secondi.
           </p>
 
-          <form action="/ricerca" method="GET" className="mt-6 max-w-xl mx-auto">
-            <div className="relative group">
-              <div className="absolute -inset-1.5 bg-gradient-to-r from-blue-400 via-blue-500 to-cyan-400 rounded-full opacity-0 group-focus-within:opacity-100 blur-xl transition-all duration-500" />
-              <div className="relative flex items-center bg-gradient-to-b from-yellow-300 to-yellow-400 rounded-full shadow-lg shadow-yellow-400/30 ring-1 ring-yellow-300 focus-within:ring-2 focus-within:ring-blue-400/50 focus-within:shadow-blue-500/20 transition-all duration-300 before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/25 before:to-transparent before:rounded-full before:pointer-events-none">
-                <Search className="ml-5 h-5 w-5 text-blue-600 shrink-0" />
-                <input
-                  type="text"
-                  name="q"
-                  placeholder="Cerca prodotto, negozio o servizio..."
-                  className="flex-1 bg-transparent px-4 py-3.5 sm:py-4 text-sm sm:text-base text-slate-900 placeholder:text-slate-600 focus:outline-none min-w-0"
-                />
-                <div className="hidden sm:block h-7 w-px bg-yellow-300 shrink-0" />
-                <button type="submit" className="mr-2 my-2 hidden sm:inline-flex items-center gap-2 bg-gradient-to-b from-blue-500 to-blue-700 text-white font-semibold px-5 py-2 rounded-full text-sm transition-all duration-200 active:scale-95 shadow-[0_4px_12px_rgba(37,99,235,0.4)] hover:shadow-[0_6px_20px_rgba(37,99,235,0.55)] relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/20 before:to-transparent before:rounded-full">
-                  <Search className="h-4 w-4 relative" />
-                  <span className="relative">Cerca</span>
-                </button>
-                <button type="submit" className="sm:hidden mr-2 my-2 inline-flex items-center justify-center h-9 w-9 bg-gradient-to-b from-blue-500 to-blue-700 text-white rounded-full transition-all duration-200 active:scale-95 shadow-[0_4px_12px_rgba(37,99,235,0.4)] shrink-0 relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/20 before:to-transparent before:rounded-full">
-                  <Search className="h-4 w-4 relative" />
-                </button>
+          {/* Riga azioni homepage: ricerca + Assistente AI nello STESSO rigo
+              (flex-nowrap, niente wrapping su mobile). Il pulsante AI è una
+              normale azione della homepage: giallo, compatto, solo logo. */}
+          <div className="mt-6 mx-auto flex max-w-xl items-center gap-2 sm:gap-3">
+            <form action="/ricerca" method="GET" className="min-w-0 flex-1">
+              <div className="relative group">
+                <div className="absolute -inset-1.5 bg-gradient-to-r from-blue-400 via-blue-500 to-cyan-400 rounded-full opacity-0 group-focus-within:opacity-100 blur-xl transition-all duration-500" />
+                <div className="relative flex items-center bg-gradient-to-b from-yellow-300 to-yellow-400 rounded-full shadow-lg shadow-yellow-400/30 ring-1 ring-yellow-300 focus-within:ring-2 focus-within:ring-blue-400/50 focus-within:shadow-blue-500/20 transition-all duration-300 before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/25 before:to-transparent before:rounded-full before:pointer-events-none">
+                  <Search className="ml-5 h-5 w-5 text-blue-600 shrink-0" />
+                  <input
+                    type="text"
+                    name="q"
+                    placeholder="Cerca prodotto, negozio o servizio..."
+                    className="flex-1 bg-transparent px-4 py-3.5 sm:py-4 text-sm sm:text-base text-slate-900 placeholder:text-slate-600 focus:outline-none min-w-0"
+                  />
+                  <div className="hidden sm:block h-7 w-px bg-yellow-300 shrink-0" />
+                  <button type="submit" className="mr-2 my-2 hidden sm:inline-flex items-center gap-2 bg-gradient-to-b from-blue-500 to-blue-700 text-white font-semibold px-5 py-2 rounded-full text-sm transition-all duration-200 active:scale-95 shadow-[0_4px_12px_rgba(37,99,235,0.4)] hover:shadow-[0_6px_20px_rgba(37,99,235,0.55)] relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/20 before:to-transparent before:rounded-full">
+                    <Search className="h-4 w-4 relative" />
+                    <span className="relative">Cerca</span>
+                  </button>
+                  <button type="submit" className="sm:hidden mr-2 my-2 inline-flex items-center justify-center h-9 w-9 bg-gradient-to-b from-blue-500 to-blue-700 text-white rounded-full transition-all duration-200 active:scale-95 shadow-[0_4px_12px_rgba(37,99,235,0.4)] shrink-0 relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/20 before:to-transparent before:rounded-full">
+                    <Search className="h-4 w-4 relative" />
+                  </button>
+                </div>
               </div>
-            </div>
-          </form>
+            </form>
+
+            {/* Assistente AI — accessibile SOLO dalla homepage */}
+            <HomeAssistantButton />
+          </div>
         </div>
       </section>
 
