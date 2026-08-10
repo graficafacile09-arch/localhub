@@ -216,13 +216,14 @@ export default function MerchantProductResultCard({
             <Pencil className="h-3.5 w-3.5" />
             Modifica
           </button>
+          {/* Unica azione che può riaprire la fotocamera: mai "Modifica". */}
           <button
             type="button"
             onClick={onRetake}
             className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"
           >
             <RotateCcw className="h-3.5 w-3.5" />
-            Riprova
+            Nuova scansione
           </button>
         </div>
       </div>

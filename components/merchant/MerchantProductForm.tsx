@@ -46,6 +46,12 @@ type MerchantProductFormProps = {
     payload: MerchantProductPayload;
     productId: string | null;
   }) => void;
+  /**
+   * Notifica il chiamante quando il form ha modifiche non salvate (true) o
+   * quando torna a coincidere con i valori iniziali (false). Usato dal wizard
+   * AI per proteggere l'uscita dall'editor con un dialog di conferma.
+   */
+  onDirtyChange?: (dirty: boolean) => void;
 };
 
 const DEFAULT_PRODUCT_FORM = {
@@ -80,6 +86,7 @@ export default function MerchantProductForm({
   submitLabel = "Salva prodotto",
   onSuccessRedirect,
   onSuccess,
+  onDirtyChange,
 }: MerchantProductFormProps) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -87,6 +94,78 @@ export default function MerchantProductForm({
   const [showAdvanced, setShowAdvanced] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [newImageDataUrl, setNewImageDataUrl] = useState<string | null>(null);
+
+  // ── Rilevamento modifiche non salvate ────────────────────────────────────
+  const dirtyRef = useRef(false);
+  const snapshotRef = useRef<string | null>(null);
+
+  /** Normalizza in stringa anche i valori array (caratteristiche/parole_chiave). */
+  function str(v: unknown): string {
+    if (Array.isArray(v)) return v.join(", ");
+    return String(v ?? "").trim();
+  }
+
+  function snapshotIniziale(): string {
+    return JSON.stringify({
+      nome: str(initialValues.nome),
+      descrizione: str(initialValues.descrizione),
+      descrizione_completa: str(initialValues.descrizione_completa),
+      categoria: str(initialValues.categoria),
+      sottocategoria: str(initialValues.sottocategoria),
+      marca: str(initialValues.marca),
+      colore: str(initialValues.colore),
+      materiale: str(initialValues.materiale),
+      caratteristiche: str(initialValues.caratteristiche),
+      peso_volume: str(initialValues.peso_volume),
+      parole_chiave: str(initialValues.parole_chiave),
+      filtri_catalogo: str(initialValues.filtri_catalogo),
+      prezzo: str(initialValues.prezzo),
+      quantitaDisponibile: str(initialValues.quantitaDisponibile),
+      statoCondizione: str(initialValues.statoCondizione),
+      immaginePrincipale: str(initialValues.immaginePrincipale),
+      seo_title: str(initialValues.seo_title),
+      seo_description: str(initialValues.seo_description),
+      alt_text_immagine: str(initialValues.alt_text_immagine),
+    });
+  }
+
+  function getSnapshot(): string {
+    if (snapshotRef.current === null) snapshotRef.current = snapshotIniziale();
+    return snapshotRef.current;
+  }
+
+  function notifyDirty(next: boolean) {
+    if (dirtyRef.current === next) return;
+    dirtyRef.current = next;
+    onDirtyChange?.(next);
+  }
+
+  function handleFormChange(e: React.FormEvent<HTMLFormElement>) {
+    const fd = new FormData(e.currentTarget);
+    const get = (k: string) => String(fd.get(k) ?? "").trim();
+    const current = JSON.stringify({
+      nome: get("nome"),
+      descrizione: get("descrizione"),
+      descrizione_completa: get("descrizione_completa"),
+      categoria: get("categoria"),
+      sottocategoria: get("sottocategoria"),
+      marca: get("marca"),
+      colore: get("colore"),
+      materiale: get("materiale"),
+      caratteristiche: get("caratteristiche"),
+      peso_volume: get("peso_volume"),
+      parole_chiave: get("parole_chiave"),
+      filtri_catalogo: get("filtri_catalogo"),
+      prezzo: get("prezzo"),
+      quantitaDisponibile: get("quantitaDisponibile"),
+      statoCondizione: get("statoCondizione"),
+      immaginePrincipale: newImageDataUrl ?? get("immaginePrincipale"),
+      seo_title: get("seo_title"),
+      seo_description: get("seo_description"),
+      alt_text_immagine: get("alt_text_immagine"),
+    });
+    notifyDirty(current !== getSnapshot());
+  }
 
   const initialValues = initialData
     ? {
@@ -203,6 +282,10 @@ export default function MerchantProductForm({
       return;
     }
 
+    // Salvataggio riuscito: il form torna pulito (niente modifiche pendenti).
+    dirtyRef.current = false;
+    onDirtyChange?.(false);
+
     // Modalità "resta nella stessa vista" (es. annuncio del wizard AI): niente
     // redirect, il chiamante aggiorna il proprio stato con i dati salvati.
     if (onSuccess) {
@@ -220,7 +303,7 @@ export default function MerchantProductForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <form onSubmit={handleSubmit} onChange={handleFormChange} className="space-y-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
       {/* Errore */}
       {error ? (
         <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{error}</div>
@@ -254,7 +337,12 @@ export default function MerchantProductForm({
             const file = e.target.files?.[0];
             if (!file) return;
             const reader = new FileReader();
-            reader.onload = () => setNewImageDataUrl(reader.result as string);
+            reader.onload = () => {
+              const dataUrl = reader.result as string;
+              setNewImageDataUrl(dataUrl);
+              // Un'immagine diversa da quella iniziale è sempre una modifica.
+              notifyDirty(dataUrl !== initialValues.immaginePrincipale.trim());
+            };
             reader.readAsDataURL(file);
           }}
         />

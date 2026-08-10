@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import type { ProductVisionSuggestion } from "@/lib/product-assistant/vision";
 import type { CorrezioneCampo } from "@/lib/product-assistant/correggi-ai";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 type MessaggioChat = {
   ruolo: "utente" | "ai";
@@ -92,6 +93,7 @@ export default function MerchantCorreggiAiDialog({
   const [input, setInput] = useState("");
   const [inCaricamento, setInCaricamento] = useState(false);
   const [erroreInvio, setErroreInvio] = useState<string | null>(null);
+  const [uscitaConferma, setUscitaConferma] = useState(false);
 
   // ── Stato microfono ────────────────────────────────────────────────────────
   const [listening, setListening] = useState(false);
@@ -144,14 +146,31 @@ export default function MerchantCorreggiAiDialog({
     };
   }, []);
 
-  // ── Escape per chiudere ────────────────────────────────────────────────────
+  /**
+   * Chiudi il dialog: se sono state fatte correzioni non ancora confermate
+   * (o la conversazione è in corso) chiede conferma con un dialog controllato.
+   */
+  const richiediChiusura = useCallback(() => {
+    const haCorrezioniNonConfermate =
+      messaggi.length > 0 || JSON.stringify(draft) !== JSON.stringify(suggestion);
+    if (haCorrezioniNonConfermate) {
+      setUscitaConferma(true);
+      return;
+    }
+    onClose();
+  }, [messaggi.length, draft, suggestion, onClose]);
+
+  // ── Escape: mai chiudere senza conferma se ci sono correzioni non confermate ──
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        if (uscitaConferma) return;
+        richiediChiusura();
+      }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  }, [uscitaConferma, richiediChiusura]);
 
   // ── Nasconde la bottom nav mobile mentre il dialog è aperto ───────────────
   // La barra di navigazione inferiore (MerchantBottomNav, z-[60]) si sovrappone
@@ -408,10 +427,10 @@ export default function MerchantCorreggiAiDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      {/* Overlay */}
+      {/* Overlay: NON chiude mai direttamente se ci sono correzioni non confermate */}
       <div
         className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
-        onClick={onClose}
+        onClick={richiediChiusura}
         aria-hidden
       />
 
@@ -435,7 +454,7 @@ export default function MerchantCorreggiAiDialog({
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={richiediChiusura}
             aria-label="Chiudi"
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 transition hover:bg-white/20"
           >
@@ -687,7 +706,7 @@ export default function MerchantCorreggiAiDialog({
           <div className="flex-1" />
           <button
             type="button"
-            onClick={onClose}
+            onClick={richiediChiusura}
             className="rounded-xl px-3 py-2 text-xs font-semibold text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
           >
             Chiudi
@@ -703,6 +722,21 @@ export default function MerchantCorreggiAiDialog({
           </button>
         </div>
       </div>
+
+      {/* Dialog controllato di conferma uscita (mai alert nativo) */}
+      <ConfirmDialog
+        open={uscitaConferma}
+        title="Vuoi davvero uscire?"
+        message="Le correzioni non ancora confermate andranno perse."
+        confirmLabel="Esci senza salvare"
+        cancelLabel="Continua modifica"
+        destructive
+        onConfirm={() => {
+          setUscitaConferma(false);
+          onClose();
+        }}
+        onCancel={() => setUscitaConferma(false)}
+      />
     </div>
   );
 }
