@@ -221,8 +221,10 @@ async function main() {
       check("notifica contiene stato ordine", registroFetch[0]?.body.includes("⚠️ Stato ordine: Nuovo"));
       check("notifica contiene data reclamo", registroFetch[0]?.body.includes("📅 Data: 10/08/2026"));
       check("notifica contiene messaggio", registroFetch[0]?.body.includes("📝 Problema: Non è arrivato nulla"));
-      check("notifica contiene link gestione", registroFetch[0]?.body.includes("🔗 Gestisci reclamo:"));
+      check("notifica contiene link gestione", registroFetch[0]?.body.includes("🔗 Gestisci ordine:"));
       check("numero ordine LEGGIBILE usato", registroFetch[0]?.body.includes("🚨 RECLAMO ORDINE #LH-000043"));
+      check("link contiene negozioId REALE", registroFetch[0]?.body.includes(`/merchant/${NEGOZIO_ID}/ordini/${ORDINE_ID}`));
+      check("NON ci sono doppie slash (nessun ID vuoto)", !registroFetch[0]?.body.includes("/merchant//ordini/"));
       check("UUID presenti SOLO nel link (mai come numero ordine)", (registroFetch[0]?.body ?? "").split("\n").filter((l) => l.includes(ORDINE_ID) || l.includes(NEGOZIO_ID)).every((l) => l.trim().startsWith("https://")));
       check("notifica NON contiene riga Tipo", !registroFetch[0]?.body.includes("Tipo:"));
     }
@@ -377,9 +379,28 @@ async function main() {
     check("contiene ⚠️ Stato ordine", corpo.includes("⚠️ Stato ordine: Nuovo"));
     check("contiene 📝 Problema", corpo.includes("📝 Problema: Non è arrivato nulla"));
     check("contiene 📅 Data", corpo.includes("📅 Data: 10/08/2026 12:00"));
-    check("contiene 🔗 Gestisci reclamo su riga dedicata", corpo.includes("🔗 Gestisci reclamo:\nhttps://www.incitta.online/merchant/x/ordini/y"));
+    check("contiene 🔗 Gestisci ordine su riga dedicata", corpo.includes("🔗 Gestisci ordine:\nhttps://www.incitta.online/merchant/x/ordini/y"));
     check("NON contiene riga Tipo", !corpo.includes("Tipo:"));
     check("numero leggibile nel titolo (mai UUID)", corpo.includes("#LH-000043") && !corpo.includes(ORDINE_ID));
+  }
+
+  // ── T12d: link mancante → fallback leggibile, MAI doppie slash ───────────────
+  console.log("\n[T12d] Link mancante → fallback sicuro senza URL rotto");
+  {
+    const corpo = costruisciMessaggioReclamoNtfy({
+      numero: "LH-000043",
+      negozioNome: "Salus Farma",
+      clienteNome: "Mario Rossi",
+      statoOrdine: "Nuovo",
+      motivoAnnullamento: null,
+      notaAnnullamento: null,
+      dataOra: "10/08/2026 12:00",
+      messaggio: "Non è arrivato nulla",
+      linkOrdine: null,
+    });
+    check("fallback presente", corpo.includes("🔗 Gestione ordine: disponibile dal pannello venditore"));
+    check("nessun URL generato", !corpo.includes("https://www.incitta.online/merchant"));
+    check("nessuna doppia slash", !corpo.includes("/merchant//ordini/"));
   }
 
   // ── T12b: ordine ANNULLATO → stato esplicito + motivo + nota ─────────────────
@@ -518,6 +539,31 @@ async function main() {
     check("stato ANNULLATO esplicito", registroFetch[0]?.body.includes("⚠️ Stato ordine: ANNULLATO"));
     check("motivo con etichetta leggibile", registroFetch[0]?.body.includes("📌 Motivo: Prodotto non disponibile"));
     check("nota annullamento presente", registroFetch[0]?.body.includes("📌 Nota: Esaurito"));
+    check("link con ID reali presente", registroFetch[0]?.body.includes(`/merchant/${NEGOZIO_ID}/ordini/${ORDINE_ID}`));
+    check("nessuna doppia slash nel link", !registroFetch[0]?.body.includes("/merchant//ordini/"));
+  }
+
+  // ── T18: reclamo senza ID → fallback, MAI un URL rotto ──────────────────────
+  console.log("\n[T18] Reclamo senza negozioId/ordineId → fallback senza URL rotto");
+  {
+    const registroFetch: Array<{ url: string; title: string; tags: string; body: string }> = [];
+    await notificaReclamoNtfy(
+      {
+        id: RECLAMO_ID, ordineId: "", negozioId: "", clienteUserId: CLIENTE_ID,
+        clienteNome: "Mario Rossi", clienteEmail: null, clienteTelefono: null,
+        tipo: "ordine_non_arrivato", messaggio: "Non è arrivato nulla", stato: "aperto",
+        createdAt: "2026-08-10T10:00:00.000Z", updatedAt: "2026-08-10T10:00:00.000Z",
+        gestitoAt: null, gestitoDa: null, gestitoNota: null,
+      } satisfies ReclamoOrdine,
+      {
+        db: fakeDbOrdine(ordineNotifica()),
+        fetchImpl: fakeFetch(registroFetch),
+      }
+    );
+    check("1 invio", registroFetch.length === 1, String(registroFetch.length));
+    check("fallback leggibile presente", registroFetch[0]?.body.includes("🔗 Gestione ordine: disponibile dal pannello venditore"));
+    check("nessuna doppia slash", !registroFetch[0]?.body.includes("/merchant//ordini/"));
+    check("nessun URL di gestione rotto", !registroFetch[0]?.body.includes("https://www.incitta.online/merchant"));
   }
 
   restoreEnv();

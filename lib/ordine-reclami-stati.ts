@@ -159,8 +159,12 @@ export function costruisciMessaggioReclamoNtfy(dati: DatiNotificaReclamoNtfy): s
   righe.push(`📅 Data: ${(dati.dataOra || "").trim() || "—"}`);
   if (dati.linkOrdine) {
     righe.push("");
-    righe.push("🔗 Gestisci reclamo:");
+    righe.push("🔗 Gestisci ordine:");
     righe.push(dati.linkOrdine);
+  } else {
+    // Fallback sicuro e leggibile: MAI un URL rotto con doppie slash.
+    righe.push("");
+    righe.push("🔗 Gestione ordine: disponibile dal pannello venditore");
   }
   return righe.join("\n");
 }

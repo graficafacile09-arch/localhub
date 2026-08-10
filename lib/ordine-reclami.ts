@@ -434,7 +434,17 @@ export async function notificaReclamoNtfy(
       reclamo.clienteNome.trim() ||
       `${String(ordine?.cliente_nome ?? "")} ${String(ordine?.cliente_cognome ?? "")}`.trim();
 
-    const linkVenditore = `${SITE_URL.replace(/\/+$/, "")}/merchant/${encodeURIComponent(reclamo.negozioId)}/ordini/${encodeURIComponent(reclamo.ordineId)}`;
+    // Link alla gestione ordine nel pannello venditore. Gli ID sono quelli
+    // REALI del reclamo (ordine_id/negozio_id scritti dalla RPC lato server,
+    // MAI dal browser). Il link viene generato SOLO se entrambi gli ID sono
+    // valorizzati: altrimenti il messaggio mostra il fallback leggibile
+    // (mai un URL rotto con doppie slash tipo "/merchant//ordini/").
+    const negozioId = String(reclamo.negozioId ?? "").trim();
+    const ordineId = String(reclamo.ordineId ?? "").trim();
+    const linkVenditore =
+      negozioId && ordineId
+        ? `${SITE_URL.replace(/\/+$/, "")}/merchant/${encodeURIComponent(negozioId)}/ordini/${encodeURIComponent(ordineId)}`
+        : null;
 
     const corpo = costruisciMessaggioReclamoNtfy({
       numero,
