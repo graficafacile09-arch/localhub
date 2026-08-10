@@ -14,6 +14,8 @@ type ResultCardProps = {
   onEdit: () => void;
   /** Apre la correzione vocale/testuale con l'AI sul draft. */
   onCorreggi: () => void;
+  /** Prodotto già salvato/pubblicato dall'editor: nasconde "Pubblica" per evitare doppioni. */
+  giàSalvato?: { id: string } | null;
 };
 
 export default function MerchantProductResultCard({
@@ -24,6 +26,7 @@ export default function MerchantProductResultCard({
   onRetake,
   onEdit,
   onCorreggi,
+  giàSalvato = null,
 }: ResultCardProps) {
   const router = useRouter();
   const [publishing, setPublishing] = useState(false);
@@ -190,14 +193,21 @@ export default function MerchantProductResultCard({
 
         {/* Azioni */}
         <div className="mt-2 flex gap-2">
-          <button
-            type="button"
-            onClick={handlePublish}
-            disabled={publishing}
-            className="flex-1 rounded-xl bg-gradient-to-b from-blue-500 to-blue-700 px-3 py-2.5 text-sm font-bold text-white shadow shadow-blue-500/20 transition hover:shadow-md hover:shadow-blue-500/30 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {publishing ? "Pubblicazione..." : "Pubblica"}
-          </button>
+          {giàSalvato ? (
+            <div className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm font-bold text-emerald-800">
+              <CheckCircle2 className="h-4 w-4" />
+              Pubblicato nel catalogo
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={handlePublish}
+              disabled={publishing}
+              className="flex-1 rounded-xl bg-gradient-to-b from-blue-500 to-blue-700 px-3 py-2.5 text-sm font-bold text-white shadow shadow-blue-500/20 transition hover:shadow-md hover:shadow-blue-500/30 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {publishing ? "Pubblicazione..." : "Pubblica"}
+            </button>
+          )}
           <button
             type="button"
             onClick={onEdit}

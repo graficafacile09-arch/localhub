@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Home } from "lucide-react";
 import type { ProductVisionSuggestion } from "@/lib/product-assistant/vision";
+import type { MerchantProductPayload } from "@/components/merchant/MerchantProductForm";
 import MerchantProductAiUploader from "./MerchantProductAiUploader";
 import MerchantProductResultCard from "./MerchantProductResultCard";
 import MerchantProductForm from "@/components/merchant/MerchantProductForm";
@@ -15,36 +16,77 @@ type AnalysisResult = {
   photoUrl: string;
 };
 
+/** Prodotto già salvato/pubblicato: id (per i salvataggi successivi → PUT) e dati. */
+type ProdottoSalvato = {
+  id: string;
+  dati: MerchantProductPayload;
+};
+
 type MerchantProductAiWizardProps = {
   negozioId: string;
   /** Link di ritorno alla dashboard (default: pagina negozio venditore). */
   backHref?: string;
-  /** Redirect dopo il salvataggio (default: elenco prodotti venditore). */
+  /**
+   * Mantenuto per compatibilità con i chiamanti esistenti. Dopo il salvataggio
+   * il wizard NON effettua redirect: resta sull'annuncio con i dati aggiornati.
+   */
   onSuccessRedirect?: string;
 };
+
+/** Applica i valori appena salvati dal form sul suggestion dell'annuncio. */
+function applicaSalvataggio(
+  originale: ProductVisionSuggestion,
+  p: MerchantProductPayload
+): ProductVisionSuggestion {
+  return {
+    ...originale,
+    nome: p.nome,
+    descrizione: p.descrizione,
+    descrizioneCompleta: p.descrizioneCompleta ?? originale.descrizioneCompleta,
+    categoria: p.categoria,
+    sottocategoria: p.sottocategoria,
+    marca: p.marca ?? null,
+    colore: p.colore ?? null,
+    materiale: p.materiale ?? null,
+    caratteristiche: p.caratteristiche,
+    pesoVolume: p.pesoVolume ?? null,
+    paroleChiave: p.paroleChiave,
+    filtriCatalogo: p.filtriCatalogo ?? null,
+    prezzoSuggerito: p.prezzo,
+    quantitaSuggerita: p.quantitaDisponibile,
+    statoCondizione: p.statoCondizione,
+    immaginePrincipale: p.immaginePrincipale || originale.immaginePrincipale,
+    seoTitle: p.seoTitle ?? null,
+    seoDescription: p.seoDescription ?? null,
+    altTextImmagine: p.altTextImmagine ?? null,
+  };
+}
 
 export default function MerchantProductAiWizard({
   negozioId,
   backHref = `/merchant/${negozioId}`,
-  onSuccessRedirect = `/merchant/${negozioId}/prodotti`,
 }: MerchantProductAiWizardProps) {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [suggestion, setSuggestion] = useState<ProductVisionSuggestion | null>(null);
   const [editing, setEditing] = useState(false);
   const [correggiAperto, setCorreggiAperto] = useState(false);
+  const [prodottoSalvato, setProdottoSalvato] = useState<ProdottoSalvato | null>(null);
 
   function handleResult(value: AnalysisResult) {
     setResult(value);
     setSuggestion(value.suggestion);
   }
 
+  /** Unico reset esplicito: riporta allo scanner (Riprova / Aggiungi un altro prodotto). */
   function handleRetake() {
     setResult(null);
     setSuggestion(null);
     setEditing(false);
     setCorreggiAperto(false);
+    setProdottoSalvato(null);
   }
 
+  /** Apre l'editor NELLO STESSO annuncio: nessuna chiusura/redirect. */
   function handleEdit() {
     setEditing(true);
   }
@@ -54,6 +96,37 @@ export default function MerchantProductAiWizard({
     setSuggestion(aggiornata);
     setResult((prev) => (prev ? { ...prev, suggestion: aggiornata } : prev));
     setCorreggiAperto(false);
+  }
+
+  /**
+   * Salvataggio confermato dall'editor: NESSUN redirect, nessuna chiusura
+   * dell'annuncio. Aggiorna immediatamente i dati visualizzati con i valori
+   * appena salvati e torna alla visualizzazione dell'annuncio (editing=false).
+   * Se il prodotto è stato creato adesso, registra l'id: i salvataggi
+   * successivi usano PUT sullo stesso prodotto (niente duplicati).
+   */
+  function handleFormSuccess(esito: {
+    payload: MerchantProductPayload;
+    productId: string | null;
+  }) {
+    if (suggestion) {
+      const aggiornata = applicaSalvataggio(suggestion, esito.payload);
+      setSuggestion(aggiornata);
+      setResult((prev) =>
+        prev
+          ? {
+              ...prev,
+              suggestion: aggiornata,
+              // Se l'immagine è stata cambiata nell'editor, aggiorna anche la foto dell'annuncio.
+              photoUrl: esito.payload.immaginePrincipale || prev.photoUrl,
+            }
+          : prev
+      );
+    }
+    if (esito.productId) {
+      setProdottoSalvato({ id: esito.productId, dati: esito.payload });
+    }
+    setEditing(false);
   }
 
   const showScanner = !result && !editing;
@@ -90,6 +163,7 @@ export default function MerchantProductAiWizard({
           onRetake={handleRetake}
           onEdit={handleEdit}
           onCorreggi={() => setCorreggiAperto(true)}
+          giàSalvato={prodottoSalvato}
         />
       )}
 
@@ -117,6 +191,7 @@ export default function MerchantProductAiWizard({
 
           <MerchantProductForm
             negozioId={negozioId}
+            productId={prodottoSalvato?.id}
             key={JSON.stringify(suggestion)}
             initialData={{
               nome: suggestion.nome,
@@ -142,8 +217,8 @@ export default function MerchantProductAiWizard({
               attivo: true,
               origine_pubblicazione: "ai",
             }}
-            submitLabel="Pubblica prodotto"
-            onSuccessRedirect={onSuccessRedirect}
+            submitLabel={prodottoSalvato ? "Aggiorna prodotto" : "Pubblica prodotto"}
+            onSuccess={handleFormSuccess}
           />
 
           <button

@@ -5,12 +5,47 @@ import { useRouter } from "next/navigation";
 import { Camera, ChevronDown, ChevronUp } from "lucide-react";
 import type { MerchantProduct } from "@/lib/merchant/types";
 
+/** Valori salvati dal form, passati al chiamante quando non si fa redirect. */
+export type MerchantProductPayload = {
+  nome: string;
+  descrizione: string;
+  descrizioneCompleta?: string;
+  categoria: string;
+  sottocategoria: string | null;
+  marca?: string;
+  colore?: string;
+  materiale?: string;
+  caratteristiche: string[];
+  pesoVolume?: string;
+  paroleChiave: string[];
+  filtriCatalogo?: Record<string, string>;
+  prezzo: number;
+  prezzoSuggerito: number | null;
+  quantitaDisponibile: number;
+  statoCondizione: "nuovo" | "usato" | "ricondizionato";
+  immaginePrincipale: string;
+  seoTitle?: string;
+  seoDescription?: string;
+  altTextImmagine?: string;
+  attivo: boolean;
+  originePubblicazione: string;
+};
+
 type MerchantProductFormProps = {
   negozioId: string;
   productId?: string;
   initialData?: Partial<MerchantProduct>;
   submitLabel?: string;
   onSuccessRedirect?: string;
+  /**
+   * Se fornito, dopo il salvataggio NON viene eseguito alcun redirect: il
+   * chiamante resta nella stessa vista (es. annuncio prodotto del wizard AI)
+   * e riceve i valori salvati + l'id del prodotto creato/aggiornato.
+   */
+  onSuccess?: (esito: {
+    payload: MerchantProductPayload;
+    productId: string | null;
+  }) => void;
 };
 
 const DEFAULT_PRODUCT_FORM = {
@@ -44,6 +79,7 @@ export default function MerchantProductForm({
   initialData,
   submitLabel = "Salva prodotto",
   onSuccessRedirect,
+  onSuccess,
 }: MerchantProductFormProps) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -96,7 +132,7 @@ export default function MerchantProductForm({
     setError(null);
 
     const formData = new FormData(event.currentTarget);
-    const payload = {
+    const payload: MerchantProductPayload = {
       nome: String(formData.get("nome") ?? "").trim(),
       descrizione: String(formData.get("descrizione") ?? "").trim(),
       descrizioneCompleta: String(formData.get("descrizione_completa") ?? "").trim() || undefined,
@@ -158,10 +194,23 @@ export default function MerchantProductForm({
     const result = (await response.json()) as {
       success: boolean;
       error?: { message?: string };
+      product?: { id?: string };
     };
 
     if (!response.ok || !result.success) {
       setError(result.error?.message ?? "Impossibile salvare il prodotto.");
+      setSubmitting(false);
+      return;
+    }
+
+    // Modalità "resta nella stessa vista" (es. annuncio del wizard AI): niente
+    // redirect, il chiamante aggiorna il proprio stato con i dati salvati.
+    if (onSuccess) {
+      onSuccess({
+        payload,
+        productId: productId ?? result.product?.id ?? null,
+      });
+      router.refresh();
       setSubmitting(false);
       return;
     }
