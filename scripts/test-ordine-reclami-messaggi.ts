@@ -1,0 +1,383 @@
+/**
+ * Test COMUNICAZIONI RECLAMO — NESSUNA chiamata reale a Supabase/ntfy/Resend.
+ *
+ * Esegue i test su lib/ordine-reclami-messaggi.ts e sull'email del messaggio
+ * (lib/cliente/ordine-email.ts) con RPC/db/fetch/inviaEmail FAKE:
+ *   - validaCorpoMessaggio (puro);
+ *   - aggiungiMessaggioVenditore: successo (+email con corpo), email KO →
+ *     messaggio comunque salvato (best-effort), ownership rifiutata,
+ *     corpo vuoto → 422, reclamo chiuso → 409;
+ *   - aggiungiMessaggioCliente: successo (+ntfy best-effort), ntfy KO →
+ *     messaggio comunque salvato;
+ *   - getMessaggiReclamoCliente: reclamo NON proprio → []; proprio → lista;
+ *   - getMessaggiReclamoVenditore: ownership false → [], reclamo di altro
+ *     negozio → [], ok → lista mappata;
+ *   - email: oggetto + HTML con numero, corpo e link al dettaglio cliente.
+ *
+ * Esecuzione: npx tsx scripts/test-ordine-reclami-messaggi.ts
+ */
+
+import {
+  aggiungiMessaggioCliente,
+  aggiungiMessaggioVenditore,
+  getMessaggiReclamoCliente,
+  getMessaggiReclamoVenditore,
+  validaCorpoMessaggio,
+} from "../lib/ordine-reclami-messaggi";
+import {
+  costruisciHtmlMessaggioReclamo,
+  costruisciOggettoMessaggioReclamo,
+} from "../lib/cliente/ordine-email";
+
+const ORDINE_ID = "11111111-1111-1111-1111-111111111111";
+const NEGOZIO_ID = "22222222-2222-2222-2222-222222222222";
+const CLIENTE_ID = "33333333-3333-3333-3333-333333333333";
+const MERCHANT_ID = "44444444-4444-4444-4444-444444444444";
+const RECLAMO_ID = "55555555-5555-5555-5555-555555555555";
+
+function messaggioRow(over: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+    reclamo_id: RECLAMO_ID,
+    mittente: "venditore",
+    mittente_nome: "Negozio QA",
+    corpo: "Stiamo verificando, grazie per la segnalazione.",
+    letto_at: null,
+    created_at: "2026-08-10T12:00:00.000Z",
+    ...over,
+  };
+}
+
+/** FakeQuery: risponde a from("...").select().eq().maybeSingle()/order(). */
+class FakeQuery {
+  result: unknown;
+  constructor(result: unknown) {
+    this.result = result;
+  }
+  select() {
+    return this;
+  }
+  eq() {
+    return this;
+  }
+  in() {
+    return this;
+  }
+  order() {
+    return this;
+  }
+  maybeSingle() {
+    return { data: this.result, error: null };
+  }
+  then(resolve: (value: { data: unknown; error: null }) => void) {
+    resolve({ data: this.result, error: null });
+  }
+}
+
+/** DB FAKE per tabella: ogni tabella restituisce il proprio dato. */
+function fakeDbPerTabella(map: Record<string, unknown>) {
+  return {
+    from(tabella: string) {
+      return new FakeQuery(map[tabella] ?? null);
+    },
+  };
+}
+
+/** Fetch FAKE per ntfy: registra le chiamate e risponde 200. */
+function fakeFetch(registro: Array<{ url: string; title: string; body: string }>) {
+  return async (input: URL | RequestInfo, init?: RequestInit) => {
+    const headers = (init?.headers ?? {}) as Record<string, string>;
+    const body = new TextDecoder().decode(init?.body as Uint8Array);
+    registro.push({
+      url: String(input),
+      title: headers["X-Title"] ?? "",
+      body,
+    });
+    return new Response(JSON.stringify({ id: "msg-test" }), { status: 200 });
+  };
+}
+
+const saveEnv: Record<string, string | undefined> = {};
+function setNtfyEnv() {
+  saveEnv.NTFY_ENABLED = process.env.NTFY_ENABLED;
+  saveEnv.NTFY_SERVER_URL = process.env.NTFY_SERVER_URL;
+  saveEnv.NTFY_ORDERS_TOPIC = process.env.NTFY_ORDERS_TOPIC;
+  process.env.NTFY_ENABLED = "true";
+  process.env.NTFY_SERVER_URL = "https://ntfy.sh";
+  process.env.NTFY_ORDERS_TOPIC = "incitta-ordini-test";
+}
+function restoreEnv() {
+  for (const [k, v] of Object.entries(saveEnv)) {
+    if (v === undefined) delete process.env[k];
+    else process.env[k] = v;
+  }
+}
+
+async function main() {
+  let passati = 0;
+  let falliti = 0;
+  const errori: string[] = [];
+
+  function check(nome: string, condizione: boolean, dettaglio?: string) {
+    if (condizione) {
+      passati++;
+      console.log(`  PASS ${nome}`);
+    } else {
+      falliti++;
+      errori.push(nome);
+      console.log(`  FAIL ${nome} ${dettaglio ? "— " + dettaglio : ""}`);
+    }
+  }
+
+  // ── T1: validaCorpoMessaggio ────────────────────────────────────────────────
+  console.log("\n[T1] validaCorpoMessaggio");
+  check("testo valido", validaCorpoMessaggio("  ciao  ") === "ciao");
+  check("spazi → null", validaCorpoMessaggio("   ") === null);
+  check("non stringa → null", validaCorpoMessaggio(123) === null);
+  check("troppo lungo → troncato", (validaCorpoMessaggio("x".repeat(5000)) ?? "").length === 2000);
+
+  // ── T2: aggiungiMessaggioVenditore — successo + email con corpo ────────────
+  console.log("\n[T2] Venditore scrive — successo + email best-effort");
+  setNtfyEnv();
+  {
+    const chiamateRpc: Array<{ fn: string; params: Record<string, unknown> }> = [];
+    const emailInviate: Array<{ reclamoId: string; corpo: string }> = [];
+    const esito = await aggiungiMessaggioVenditore(
+      MERCHANT_ID, NEGOZIO_ID, RECLAMO_ID, "Stiamo verificando, grazie.",
+      {
+        puòGestire: true,
+        rpc: async (fn, params) => {
+          chiamateRpc.push({ fn, params });
+          return { data: { ok: true, messaggio: messaggioRow() }, error: null };
+        },
+        inviaEmail: async (reclamoId, corpo) => {
+          emailInviate.push({ reclamoId, corpo });
+          return { stato: "sent", motivo: "" };
+        },
+      }
+    );
+    check("ok = true", esito.ok === true, JSON.stringify(esito));
+    if (esito.ok) {
+      check("messaggio mappato (mittente venditore)", esito.messaggio.mittente === "venditore");
+      check("messaggio mappato (corpo)", esito.messaggio.corpo.includes("verificando"));
+      check("RPC chiamata con merchant della sessione", chiamateRpc[0]?.params.p_merchant_user_id === MERCHANT_ID);
+      check("email inviata al salvataggio", emailInviate.length === 1, String(emailInviate.length));
+      check("email con il CORPO del messaggio", emailInviate[0]?.corpo.includes("verificando"));
+    }
+  }
+
+  // ── T3: venditore — email KO → messaggio comunque ok ────────────────────────
+  console.log("\n[T3] Venditore scrive — email KO → messaggio comunque salvato");
+  {
+    const esito = await aggiungiMessaggioVenditore(
+      MERCHANT_ID, NEGOZIO_ID, RECLAMO_ID, "Messaggio di prova",
+      {
+        puòGestire: true,
+        rpc: async () => ({ data: { ok: true, messaggio: messaggioRow() }, error: null }),
+        inviaEmail: async () => {
+          throw new Error("Resend down");
+        },
+      }
+    );
+    check("ok = true (messaggio salvato nonostante email KO)", esito.ok === true, JSON.stringify(esito));
+  }
+
+  // ── T4: venditore — ownership rifiutata → 403, RPC non chiamata ────────────
+  console.log("\n[T4] Venditore — ownership rifiutata");
+  {
+    let rpcChiamata = false;
+    const esito = await aggiungiMessaggioVenditore(
+      MERCHANT_ID, NEGOZIO_ID, RECLAMO_ID, "Messaggio",
+      {
+        puòGestire: false,
+        rpc: async () => {
+          rpcChiamata = true;
+          return { data: null, error: null };
+        },
+      }
+    );
+    check("ok = false", esito.ok === false);
+    if (!esito.ok) check("codice = FORBIDDEN (403)", esito.codice === "FORBIDDEN" && esito.status === 403);
+    check("RPC NON chiamata", !rpcChiamata);
+  }
+
+  // ── T5: venditore — corpo vuoto → 422 ───────────────────────────────────────
+  console.log("\n[T5] Venditore — corpo vuoto → VALIDATION_ERROR");
+  {
+    let rpcChiamata = false;
+    const esito = await aggiungiMessaggioVenditore(
+      MERCHANT_ID, NEGOZIO_ID, RECLAMO_ID, "   ",
+      {
+        puòGestire: true,
+        rpc: async () => {
+          rpcChiamata = true;
+          return { data: null, error: null };
+        },
+      }
+    );
+    check("ok = false", esito.ok === false);
+    if (!esito.ok) check("codice = VALIDATION_ERROR (422)", esito.codice === "VALIDATION_ERROR" && esito.status === 422);
+    check("RPC NON chiamata", !rpcChiamata);
+  }
+
+  // ── T6: venditore — reclamo chiuso → 409 mappato ───────────────────────────
+  console.log("\n[T6] Venditore — reclamo chiuso → RECLAMO_CHIUSO (409)");
+  {
+    const esito = await aggiungiMessaggioVenditore(
+      MERCHANT_ID, NEGOZIO_ID, RECLAMO_ID, "Messaggio",
+      {
+        puòGestire: true,
+        rpc: async () => ({
+          data: { ok: false, codice: "RECLAMO_CHIUSO", messaggio: "Il reclamo è chiuso." },
+          error: null,
+        }),
+      }
+    );
+    check("ok = false", esito.ok === false);
+    if (!esito.ok) check("status = 409", esito.status === 409);
+  }
+
+  // ── T7: cliente — successo + ntfy best-effort al venditore ─────────────────
+  console.log("\n[T7] Cliente risponde — successo + ntfy al venditore");
+  {
+    const registroFetch: Array<{ url: string; title: string; body: string }> = [];
+    const esito = await aggiungiMessaggioCliente(
+      CLIENTE_ID, RECLAMO_ID, "Sì, aspetto conferma",
+      {
+        rpc: async () => ({ data: { ok: true, messaggio: messaggioRow({ mittente: "cliente", mittente_nome: "Mario Rossi", corpo: "Sì, aspetto conferma" }) }, error: null }),
+        db: fakeDbPerTabella({
+          ordine_reclami: { id: RECLAMO_ID, ordine_id: ORDINE_ID, negozio_id: NEGOZIO_ID },
+          ordini: { numero: "LH-000043", negozio_nome: "Salus Farma" },
+        }),
+        fetchImpl: fakeFetch(registroFetch),
+      }
+    );
+    check("ok = true", esito.ok === true, JSON.stringify(esito));
+    if (esito.ok) check("mittente = cliente", esito.messaggio.mittente === "cliente");
+    check("notifica ntfy inviata", registroFetch.length === 1, String(registroFetch.length));
+    check("notifica verso topic venditore", registroFetch[0]?.url.includes("incitta-ordini-test"));
+    check("notifica con numero ordine LEGGIBILE", registroFetch[0]?.body.includes("Reclamo #LH-000043"));
+    check("notifica con la risposta del cliente", registroFetch[0]?.body.includes("Sì, aspetto conferma"));
+    check("notifica con link al pannello venditore", registroFetch[0]?.body.includes(`/merchant/${NEGOZIO_ID}/ordini/${ORDINE_ID}`));
+    check("nessuna doppia slash", !registroFetch[0]?.body.includes("/merchant//ordini/"));
+  }
+
+  // ── T8: cliente — ntfy KO → messaggio comunque salvato ─────────────────────
+  console.log("\n[T8] Cliente risponde — ntfy KO → messaggio comunque salvato");
+  {
+    const esito = await aggiungiMessaggioCliente(
+      CLIENTE_ID, RECLAMO_ID, "Risposta",
+      {
+        rpc: async () => ({ data: { ok: true, messaggio: messaggioRow({ mittente: "cliente" }) }, error: null }),
+        db: {
+          from() {
+            throw new Error("db down");
+          },
+        },
+        fetchImpl: async () => {
+          throw new Error("rete down");
+        },
+      }
+    );
+    check("ok = true nonostante ntfy KO", esito.ok === true, JSON.stringify(esito));
+  }
+
+  // ── T9: getMessaggiReclamoCliente — reclamo NON proprio → [] ───────────────
+  console.log("\n[T9] Lettura cliente — reclamo di altro cliente → []");
+  {
+    // getReclamiOrdineCliente restituisce [] → nessun messaggio esposto.
+    const lista = await getMessaggiReclamoCliente(CLIENTE_ID, ORDINE_ID, RECLAMO_ID, {
+      from(tabella: string) {
+        if (tabella === "ordine_reclami") return new FakeQuery([]);
+        return new FakeQuery([]);
+      },
+    } as never);
+    check("lista vuota", lista.length === 0);
+  }
+
+  // ── T10: getMessaggiReclamoCliente — proprio → lista mappata ───────────────
+  console.log("\n[T10] Lettura cliente — reclamo proprio → lista mappata");
+  {
+    const lista = await getMessaggiReclamoCliente(CLIENTE_ID, ORDINE_ID, RECLAMO_ID, {
+      from(tabella: string) {
+        if (tabella === "ordine_reclami") return new FakeQuery([{ id: RECLAMO_ID, ordine_id: ORDINE_ID, negozio_id: NEGOZIO_ID, cliente_user_id: CLIENTE_ID, cliente_nome: "Mario Rossi", cliente_email: "mario@example.it", cliente_telefono: null, tipo: "ordine_non_arrivato", messaggio: "Non è arrivato nulla", stato: "aperto", created_at: "2026-08-10T10:00:00.000Z", updated_at: "2026-08-10T10:00:00.000Z", gestito_at: null, gestito_da: null, gestito_nota: null }]);
+        return new FakeQuery([messaggioRow(), messaggioRow({ id: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb", mittente: "cliente", mittente_nome: "Mario Rossi" })]);
+      },
+    } as never);
+    check("2 messaggi", lista.length === 2, String(lista.length));
+    check("ordinati per created_at (asc)", lista[0]?.mittente === "venditore" && lista[1]?.mittente === "cliente");
+  }
+
+  // ── T11: getMessaggiReclamoVenditore — ownership false → [] ────────────────
+  console.log("\n[T11] Lettura venditore — ownership false → []");
+  {
+    const lista = await getMessaggiReclamoVenditore(MERCHANT_ID, NEGOZIO_ID, RECLAMO_ID, { puòGestire: false });
+    check("lista vuota", lista.length === 0);
+  }
+
+  // ── T12: getMessaggiReclamoVenditore — reclamo di altro negozio → [] ───────
+  console.log("\n[T12] Lettura venditore — reclamo di ALTRO negozio → []");
+  {
+    const lista = await getMessaggiReclamoVenditore(MERCHANT_ID, NEGOZIO_ID, RECLAMO_ID, {
+      puòGestire: true,
+      client: fakeDbPerTabella({ ordine_reclami: null, reclamo_comunicazioni: [messaggioRow()] }),
+    });
+    check("lista vuota (reclamo non del negozio)", lista.length === 0);
+  }
+
+  // ── T13: getMessaggiReclamoVenditore — ok → lista mappata ──────────────────
+  console.log("\n[T13] Lettura venditore — ok → lista mappata");
+  {
+    const lista = await getMessaggiReclamoVenditore(MERCHANT_ID, NEGOZIO_ID, RECLAMO_ID, {
+      puòGestire: true,
+      client: fakeDbPerTabella({
+        ordine_reclami: { id: RECLAMO_ID },
+        reclamo_comunicazioni: [messaggioRow()],
+      }),
+    });
+    check("1 messaggio", lista.length === 1, String(lista.length));
+    check("mittente mappato", lista[0]?.mittente === "venditore");
+    check("corpo mappato", lista[0]?.corpo.includes("verificando"));
+  }
+
+  // ── T14: email — oggetto e HTML ─────────────────────────────────────────────
+  console.log("\n[T14] Email messaggio reclamo (oggetto + HTML)");
+  {
+    const oggetto = costruisciOggettoMessaggioReclamo("LH-000043", "Salus Farma");
+    check("oggetto con numero", oggetto.includes("LH-000043"));
+    check("oggetto con negozio", oggetto.includes("Salus Farma"));
+
+    const html = costruisciHtmlMessaggioReclamo({
+      reclamoId: RECLAMO_ID,
+      ordineId: ORDINE_ID,
+      numero: "LH-000043",
+      negozioNome: "Salus Farma",
+      clienteEmail: "mario@example.it",
+      clienteNome: "Mario",
+      mittenteNome: "Il negozio",
+      corpo: "Stiamo verificando, grazie.",
+      createdAt: "2026-08-10T12:00:00.000Z",
+    });
+    check("html contiene il numero ordine", html.includes("LH-000043"));
+    check("html contiene il corpo del messaggio", html.includes("Stiamo verificando, grazie."));
+    check("html contiene il negozio", html.includes("Salus Farma"));
+    check("html contiene il link al dettaglio cliente", html.includes(`/cliente/ordini/${ORDINE_ID}`));
+    check("html NON contiene l'UUID come numero", !html.includes(RECLAMO_ID));
+  }
+
+  restoreEnv();
+
+  // ── Riepilogo ────────────────────────────────────────────────────────────────
+  console.log(`\n═══════════════════════════════════════════════════════════`);
+  console.log(`ORDINE RECLAMI MESSAGGI TEST: ${passati} passati, ${falliti} falliti`);
+  if (falliti > 0) {
+    console.log(`Falliti: ${errori.join(", ")}`);
+    process.exit(1);
+  }
+  console.log("TUTTI I TEST PASSATI ✓");
+}
+
+main().catch((err) => {
+  console.error("Errore imprevisto nel test:", err);
+  process.exit(1);
+});

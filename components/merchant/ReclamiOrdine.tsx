@@ -9,7 +9,10 @@ import {
   Loader2,
   Mail,
   Phone,
+  Send,
+  Store,
   User,
+  X,
 } from "lucide-react";
 import {
   azioniReclamoDisponibili,
@@ -19,6 +22,7 @@ import {
   type ReclamoOrdine as ReclamoOrdineType,
   type StatoReclamo,
 } from "@/lib/ordine-reclami-stati";
+import type { MessaggioReclamo } from "@/lib/ordine-reclami-messaggi";
 
 type Props = {
   negozioId: string;
@@ -28,6 +32,8 @@ type Props = {
   /** Sintesi dei prodotti (nome o \"N prodotti\"). */
   sintesi: string;
   reclamiIniziali: ReclamoOrdineType[];
+  /** Comunicazioni iniziali lette server-side (per reclamo id). */
+  messaggiIniziali?: Record<string, MessaggioReclamo[]>;
 };
 
 const COLORI: Record<StatoReclamo, string> = {
@@ -37,7 +43,6 @@ const COLORI: Record<StatoReclamo, string> = {
   chiuso: "bg-slate-100 text-slate-600 ring-1 ring-slate-200",
 };
 
-/** Colore di riempimento dello step ATTIVO nel percorso del reclamo. */
 const CERCHIO_ATTIVO: Record<StatoReclamo, string> = {
   aperto: "bg-red-600",
   in_gestione: "bg-amber-500",
@@ -50,24 +55,18 @@ const PASSI_RECLAMO: StatoReclamo[] = ["aperto", "in_gestione", "risolto", "chiu
 /**
  * CENTRO GESTIONE RECLAMO — Area Venditore.
  *
- * Un reclamo NON è una normale informazione dentro l'ordine: è un problema
- * da gestire. Il componente lo presenta come una vera scheda operativa:
+ * Scheda operativa completa: segnale rosso, riferimento ordine/prodotto,
+ * cliente, problema, COSA FARE e STATO DEL RECLAMO (stepper). Include il
+ * DIALOGO REALE col cliente:
  *
- *   🚨 RECLAMO APERTO            [stato]
- *   #LH-000043 · Nome prodotto
- *   Cliente: Mario Rossi · tel
- *   \"Problema del cliente\"
+ *   RECLAMO APERTO → PRENDI IN CARICO → CONTATTA CLIENTE → messaggio →
+ *   storico della comunicazione → PROBLEMA RISOLTO → CHIUDI
  *
- *   COSA FARE
- *   [✉ Scrivi al cliente]  [✓ Segna come risolto]  [Prendi in carico]
- *
- *   STATO DEL RECLAMO
- *   ● Aperto → ● In gestione → ○ Risolto → ○ Chiuso
- *
- * Le azioni usano SOLO la macchina a stati esistente
- * (azioniReclamoDisponibili → PATCH alla stessa API di sempre, ri-validata
- * server-side). \"Scrivi al cliente\" è mostrato come NON DISPONIBILE: non
- * esiste alcun endpoint di contatto diretto, quindi nessuna funzione finta.
+ * - \"Contatta cliente\" apre un dialog controllato e salva il messaggio nel
+ *   DB tramite l'API dedicata (ownership verificata server-side); dopo il
+ *   salvataggio il cliente riceve l'email BEST-EFFORT.
+ * - Lo storico comunicazione mostra tutti i messaggi (venditore/cliente)
+ *   con data e mittente: il venditore sa sempre cosa è stato detto.
  */
 export default function ReclamiOrdine({
   negozioId,
@@ -75,12 +74,21 @@ export default function ReclamiOrdine({
   numero,
   sintesi,
   reclamiIniziali,
+  messaggiIniziali = {},
 }: Props) {
   const router = useRouter();
   const [reclami, setReclami] = useState<ReclamoOrdineType[]>(reclamiIniziali);
+  const [messaggi, setMessaggi] = useState<Record<string, MessaggioReclamo[]>>(
+    messaggiIniziali
+  );
   const [azioneAttiva, setAzioneAttiva] = useState<string | null>(null);
   const [errore, setErrore] = useState<string | null>(null);
   const [successo, setSuccesso] = useState<string | null>(null);
+
+  // Dialog \"Contatta cliente\"
+  const [contattaAperto, setContattaAperto] = useState<string | null>(null);
+  const [testoMessaggio, setTestoMessaggio] = useState("");
+  const [invioMessaggio, setInvioMessaggio] = useState(false);
 
   if (reclami.length === 0) return null;
 
@@ -120,6 +128,51 @@ export default function ReclamiOrdine({
     }
   }
 
+  async function inviaMessaggio(reclamoId: string) {
+    const corpo = testoMessaggio.trim();
+    if (!corpo) {
+      setErrore("Scrivi un messaggio prima di inviarlo.");
+      return;
+    }
+    setInvioMessaggio(true);
+    setErrore(null);
+    setSuccesso(null);
+    try {
+      const res = await fetch(
+        `/api/merchant/stores/${negozioId}/ordini/${ordineId}/reclami/${reclamoId}/messaggi`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ corpo }),
+        }
+      );
+      const data = (await res.json().catch(() => null)) as {
+        error?: { message?: string };
+        data?: { messaggio?: MessaggioReclamo };
+      } | null;
+
+      if (!res.ok) {
+        setErrore(data?.error?.message ?? "Impossibile inviare il messaggio.");
+        return;
+      }
+      if (data?.data?.messaggio) {
+        const msg = data.data.messaggio;
+        setMessaggi((prev) => ({
+          ...prev,
+          [reclamoId]: [...(prev[reclamoId] ?? []), msg],
+        }));
+      }
+      setSuccesso("Messaggio inviato al cliente. Verrà avvisato via email.");
+      setTestoMessaggio("");
+      setContattaAperto(null);
+      router.refresh();
+    } catch {
+      setErrore("Errore di rete. Riprova.");
+    } finally {
+      setInvioMessaggio(false);
+    }
+  }
+
   return (
     <div className="space-y-4">
       {errore && (
@@ -138,6 +191,8 @@ export default function ReclamiOrdine({
       {reclami.map((reclamo) => {
         const azioni = azioniReclamoDisponibili(reclamo.stato);
         const indiceAttivo = PASSI_RECLAMO.indexOf(reclamo.stato);
+        const storico = messaggi[reclamo.id] ?? [];
+        const reclamoChiuso = reclamo.stato === "chiuso";
         return (
           <article
             key={reclamo.id}
@@ -171,7 +226,6 @@ export default function ReclamiOrdine({
 
             {/* ── Riferimento ordine + cliente + problema ───────────────────── */}
             <div className="space-y-4 px-5 py-5">
-              {/* Riferimento ordine */}
               <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                 <span className="font-mono text-lg font-black tracking-tight text-slate-900 tabular-nums">
                   #{numero}
@@ -183,7 +237,6 @@ export default function ReclamiOrdine({
                 )}
               </div>
 
-              {/* Cliente */}
               <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600">
                 <span className="inline-flex items-center gap-1.5 font-semibold text-slate-800">
                   <User className="h-3.5 w-3.5 text-red-500" aria-hidden />
@@ -197,7 +250,6 @@ export default function ReclamiOrdine({
                 ) : null}
               </p>
 
-              {/* Problema */}
               <div className="rounded-xl border border-red-100 bg-red-50/60 px-4 py-3">
                 <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-red-700">
                   Problema segnalato
@@ -221,20 +273,25 @@ export default function ReclamiOrdine({
                   Cosa fare
                 </p>
                 <div className="mt-2.5 flex flex-wrap gap-2">
-                  {/* Scrivi al cliente — NON DISPONIBILE: nessun endpoint di
-                      contatto diretto esiste. Nessuna funzione finta. */}
+                  {/* CONTATTA CLIENTE — dialog reale (mai bottone finto) */}
                   <button
                     type="button"
-                    disabled
-                    aria-disabled="true"
-                    title="Non ancora disponibile"
-                    className="inline-flex h-10 cursor-not-allowed items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 text-xs font-bold text-slate-400"
+                    onClick={() => {
+                      setErrore(null);
+                      setSuccesso(null);
+                      setTestoMessaggio("");
+                      setContattaAperto(reclamo.id);
+                    }}
+                    disabled={reclamoChiuso}
+                    title={
+                      reclamoChiuso
+                        ? "Il reclamo è chiuso: non è possibile inviare messaggi"
+                        : undefined
+                    }
+                    className="inline-flex h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 text-xs font-bold text-white shadow-sm transition hover:bg-blue-700 active:scale-[0.98] disabled:opacity-50"
                   >
                     <Mail className="h-4 w-4" aria-hidden />
-                    Scrivi al cliente
-                    <span className="rounded-full bg-slate-200 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-slate-500">
-                      Presto
-                    </span>
+                    Contatta cliente
                   </button>
 
                   {azioni.map((azione) => {
@@ -251,7 +308,7 @@ export default function ReclamiOrdine({
                             ? "bg-emerald-600 text-white shadow-sm hover:bg-emerald-700"
                             : azione.stato === "chiuso"
                               ? "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                              : "bg-blue-600 text-white shadow-sm hover:bg-blue-700"
+                              : "border border-blue-200 bg-white text-blue-700 hover:bg-blue-50"
                         }`}
                       >
                         {attiva ? (
@@ -267,6 +324,57 @@ export default function ReclamiOrdine({
                   })}
                 </div>
               </div>
+
+              {/* ── STORICO DELLA COMUNICAZIONE ─────────────────────────────── */}
+              {storico.length > 0 && (
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
+                    Storico della comunicazione
+                  </p>
+                  <ol className="mt-2.5 space-y-2.5">
+                    {storico.map((msg) => {
+                      const èVenditore = msg.mittente === "venditore";
+                      return (
+                        <li
+                          key={msg.id}
+                          className={`flex items-start gap-2.5 ${èVenditore ? "" : "flex-row-reverse"}`}
+                        >
+                          <span
+                            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full shadow-sm ${
+                              èVenditore
+                                ? "bg-blue-600 text-white"
+                                : "bg-slate-700 text-white"
+                            }`}
+                          >
+                            {èVenditore ? (
+                              <Store className="h-4 w-4" aria-hidden />
+                            ) : (
+                              <User className="h-4 w-4" aria-hidden />
+                            )}
+                          </span>
+                          <div
+                            className={`min-w-0 max-w-[75%] rounded-xl px-3.5 py-2.5 ${
+                              èVenditore
+                                ? "bg-blue-50 ring-1 ring-blue-100"
+                                : "bg-slate-100 ring-1 ring-slate-200"
+                            }`}
+                          >
+                            <p className="flex flex-wrap items-center gap-x-2 text-[11px] font-bold text-slate-700">
+                              {èVenditore ? msg.mittenteNome || "Negozio" : "Cliente"}
+                              <span className="font-medium text-slate-400">
+                                {formattaDataOraReclamo(msg.createdAt) || ""}
+                              </span>
+                            </p>
+                            <p className="mt-0.5 whitespace-pre-wrap text-sm leading-5 text-slate-800">
+                              {msg.corpo}
+                            </p>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ol>
+                </div>
+              )}
 
               {/* ── STATO DEL RECLAMO — percorso operativo ──────────────────── */}
               <div>
@@ -324,6 +432,88 @@ export default function ReclamiOrdine({
           </article>
         );
       })}
+
+      {/* ── Dialog CONTATTA CLIENTE (controllato dallo stato, mai alert) ─── */}
+      {contattaAperto && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={() => setContattaAperto(null)}
+          />
+          <div className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                  <Mail className="h-5 w-5" aria-hidden />
+                </span>
+                <h2 className="text-sm font-black text-slate-900">
+                  Contatta il cliente — {numero}
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setContattaAperto(null)}
+                className="rounded-lg p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+                aria-label="Chiudi"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="space-y-4 px-5 py-4">
+              <p className="text-xs leading-5 text-slate-500">
+                Scrivi un messaggio al cliente: verrà avvisato via email e
+                potrà risponderti direttamente dal dettaglio del suo ordine.
+              </p>
+              <div>
+                <label
+                  htmlFor="messaggio-contatta"
+                  className="text-xs font-bold uppercase tracking-wider text-slate-500"
+                >
+                  Messaggio
+                </label>
+                <textarea
+                  id="messaggio-contatta"
+                  value={testoMessaggio}
+                  onChange={(e) => setTestoMessaggio(e.target.value)}
+                  rows={4}
+                  maxLength={2000}
+                  autoFocus
+                  placeholder="Spiega al cliente come intendi risolvere il problema…"
+                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                />
+                <p className="mt-1 text-right text-[10px] text-slate-400">
+                  {testoMessaggio.length}/2000
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 border-t border-slate-100 px-5 py-3">
+              <button
+                type="button"
+                onClick={() => setContattaAperto(null)}
+                disabled={invioMessaggio}
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+              >
+                Annulla
+              </button>
+              <button
+                type="button"
+                onClick={() => void inviaMessaggio(contattaAperto)}
+                disabled={invioMessaggio || !testoMessaggio.trim()}
+                className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-blue-700 disabled:opacity-50"
+              >
+                {invioMessaggio ? (
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                ) : (
+                  <Send className="h-4 w-4" aria-hidden />
+                )}
+                {invioMessaggio ? "Invio…" : "Invia messaggio"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

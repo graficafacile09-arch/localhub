@@ -14,6 +14,10 @@ import {
 } from "@/lib/cliente/ordini";
 import { getReclamiOrdineCliente } from "@/lib/ordine-reclami";
 import type { ReclamoOrdine as ReclamoOrdineType } from "@/lib/ordine-reclami";
+import {
+  getMessaggiReclamoCliente,
+  type MessaggioReclamo,
+} from "@/lib/ordine-reclami-messaggi";
 import type { OrdineClienteDettaglio } from "@/lib/cliente/types";
 import ReclamoOrdine from "@/components/cliente/ReclamoOrdine";
 import { Sezione, RigaDettaglio } from "@/components/ordini/Sezione";
@@ -54,11 +58,25 @@ export default async function OrdineDettaglioPage({ params }: { params: Promise<
   }
 
   let reclami: ReclamoOrdineType[] = [];
+  let messaggiReclami: Record<string, MessaggioReclamo[]> = {};
   if (ordine) {
     try {
       reclami = await getReclamiOrdineCliente(user.id, ordineId);
     } catch {
       reclami = [];
+    }
+    // Storico comunicazioni dei reclami (best-effort: mai far fallire il
+    // dettaglio ordine se la lettura dei messaggi non riesce).
+    try {
+      const elenchi = await Promise.all(
+        reclami.map(async (r) => [
+          r.id,
+          await getMessaggiReclamoCliente(user.id, ordineId, r.id),
+        ] as const)
+      );
+      messaggiReclami = Object.fromEntries(elenchi);
+    } catch {
+      messaggiReclami = {};
     }
   }
 
@@ -200,6 +218,7 @@ export default async function OrdineDettaglioPage({ params }: { params: Promise<
         ordineId={ordineId}
         puòReclamare={ordine.stato !== "cancellato"}
         reclamiIniziali={reclami}
+        messaggiIniziali={messaggiReclami}
       />
 
       {/* ── Azioni ──────────────────────────────────────────────────────────── */}

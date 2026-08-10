@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ShoppingBasket } from "lucide-react";
 import { clienteFooterItems, clienteNavItems } from "./navigation";
 
 /**
@@ -23,11 +24,14 @@ export default function ClienteSidebar({
   collapsed = false,
   onNavigate,
   ordiniInCorso = 0,
+  withHeader = false,
 }: {
   collapsed?: boolean;
   onNavigate?: () => void;
   /** Conteggio ordini in corso (badge sulla voce Ordini). */
   ordiniInCorso?: number;
+  /** Mostra il blocco brand in testa alla sidebar (desktop espansa). */
+  withHeader?: boolean;
 }) {
   const pathname = usePathname();
 
@@ -56,6 +60,21 @@ export default function ClienteSidebar({
 
   return (
     <nav aria-label="Menu Area Clienti" className="space-y-1">
+      {/* ── Blocco brand (solo sidebar desktop espansa) ───────────────────── */}
+      {withHeader && !collapsed && (
+        <div className="mb-4 flex items-center gap-3 rounded-2xl bg-linear-to-br from-teal-600 to-teal-500 px-4 py-3.5 text-white shadow-sm">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/20">
+            <ShoppingBasket className="h-5 w-5" aria-hidden />
+          </span>
+          <span className="min-w-0">
+            <span className="block text-sm font-black tracking-tight">Area Clienti</span>
+            <span className="block truncate text-[11px] text-teal-100">
+              Il tuo spazio personale su InCittà
+            </span>
+          </span>
+        </div>
+      )}
+
       {GRUPPI.map((gruppo) => (
         <div key={gruppo.key} className="space-y-1.5">
           {!collapsed && (

@@ -2,8 +2,17 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, CheckCircle2, Loader2, X } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Loader2,
+  Send,
+  Store,
+  User,
+  X,
+} from "lucide-react";
 import type { ReclamoOrdine as ReclamoOrdineType, StatoReclamo } from "@/lib/ordine-reclami-stati";
+import type { MessaggioReclamo } from "@/lib/ordine-reclami-messaggi";
 
 type Props = {
   ordineId: string;
@@ -11,6 +20,8 @@ type Props = {
   puòReclamare: boolean;
   /** Reclami già presenti (letto server-side). */
   reclamiIniziali: ReclamoOrdineType[];
+  /** Comunicazioni iniziali (per reclamo id), lette server-side. */
+  messaggiIniziali?: Record<string, MessaggioReclamo[]>;
 };
 
 const ETICHETTE: Record<StatoReclamo, string> = {
@@ -27,23 +38,48 @@ const COLORI: Record<StatoReclamo, string> = {
   chiuso: "bg-slate-100 text-slate-600 ring-1 ring-slate-200",
 };
 
+function formattaDataBreve(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleString("it-IT", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 /**
- * Pulsante + dialog "Ordine non arrivato" (Area Clienti).
- * - Il pulsante NON compare per ordini annullati (deciso dal parent).
- * - Se esiste già un reclamo ATTIVO (aperto/in gestione) il pulsante viene
- *   sostituito da un riquadro informativo con lo stato: mai un secondo
- *   reclamo duplicato.
- * - Al click NON si invia nulla: si apre un dialog CONTROLLATO con messaggio
- *   opzionale. Dopo l'invio: conferma visibile + stato aggiornato.
+ * Reclamo ordine — Area Clienti.
+ * - Se NON esiste un reclamo attivo: pulsante "Ordine non arrivato — Invia
+ *   reclamo" + dialog controllato (nessun alert JS, nessun duplicato).
+ * - Se esiste un reclamo ATTIVO: scheda operativa rossa con lo STATO, il
+ *   problema segnalato, lo STORICO DELLA COMUNICAZIONE col negozio e la
+ *   possibilità di RISPONDERE al venditore (salvato nel DB via API, con
+ *   ownership verificata server-side; il negozio riceve la notifica).
  */
-export default function ReclamoOrdine({ ordineId, puòReclamare, reclamiIniziali }: Props) {
+export default function ReclamoOrdine({
+  ordineId,
+  puòReclamare,
+  reclamiIniziali,
+  messaggiIniziali = {},
+}: Props) {
   const router = useRouter();
   const [reclami, setReclami] = useState<ReclamoOrdineType[]>(reclamiIniziali);
+  const [messaggi, setMessaggi] = useState<Record<string, MessaggioReclamo[]>>(
+    messaggiIniziali
+  );
   const [aperto, setAperto] = useState(false);
   const [messaggio, setMessaggio] = useState("");
   const [invio, setInvio] = useState(false);
   const [errore, setErrore] = useState<string | null>(null);
   const [conferma, setConferma] = useState<string | null>(null);
+
+  // Risposta al venditore (reclamo attivo)
+  const [risposta, setRisposta] = useState("");
+  const [invioRisposta, setInvioRisposta] = useState(false);
 
   const attivo = reclami.find((r) => r.stato === "aperto" || r.stato === "in_gestione") ?? null;
 
@@ -87,40 +123,183 @@ export default function ReclamoOrdine({ ordineId, puòReclamare, reclamiIniziali
     }
   }
 
-  // Reclamo attivo presente → scheda operativa ROSSA (stesso linguaggio
-  // del venditore): segnale evidente, stato e messaggio. Niente pulsante
-  // duplicato: un solo reclamo attivo per ordine (già garantito lato DB).
+  async function inviaRisposta(reclamoId: string) {
+    const corpo = risposta.trim();
+    if (!corpo) return;
+    setInvioRisposta(true);
+    setErrore(null);
+    try {
+      const res = await fetch(
+        `/api/cliente/ordini/${ordineId}/reclami/${reclamoId}/messaggi`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ corpo }),
+        }
+      );
+      const data = (await res.json().catch(() => null)) as {
+        error?: { message?: string };
+        data?: { messaggio?: MessaggioReclamo };
+      } | null;
+
+      if (!res.ok) {
+        setErrore(data?.error?.message ?? "Impossibile inviare la risposta.");
+        return;
+      }
+      if (data?.data?.messaggio) {
+        const msg = data.data.messaggio;
+        setMessaggi((prev) => ({
+          ...prev,
+          [reclamoId]: [...(prev[reclamoId] ?? []), msg],
+        }));
+      }
+      setConferma("La tua risposta è stata inviata al negozio.");
+      setRisposta("");
+      router.refresh();
+    } catch {
+      setErrore("Errore di rete. Riprova.");
+    } finally {
+      setInvioRisposta(false);
+    }
+  }
+
+  // Reclamo attivo presente → scheda operativa con dialogo e storico.
   if (attivo) {
+    const storico = messaggi[attivo.id] ?? [];
+    const puòRispondere = attivo.stato === "aperto" || attivo.stato === "in_gestione";
     return (
-      <div className="relative overflow-hidden rounded-[1.75rem] border border-red-200 bg-white shadow-sm">
-        <span
-          className="absolute inset-y-0 left-0 w-1.5 bg-linear-to-b from-red-500 to-red-700"
-          aria-hidden
-        />
-        <div className="flex items-center gap-3 px-5 py-4 pl-6">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-600 text-white shadow-sm shadow-red-600/30">
-            <AlertTriangle className="h-5 w-5" aria-hidden />
-          </span>
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <p className="text-sm font-black uppercase tracking-wide text-red-800">
-                {attivo.stato === "in_gestione"
-                  ? "Reclamo in gestione"
-                  : "Reclamo inviato"}
-              </p>
-              <span
-                className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${COLORI[attivo.stato]}`}
-              >
-                {ETICHETTE[attivo.stato]}
+      <div className="space-y-4">
+        {conferma && (
+          <p className="flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-xs font-medium text-emerald-700">
+            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+            {conferma}
+          </p>
+        )}
+        {errore && (
+          <p className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-xs font-medium text-red-700">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+            {errore}
+          </p>
+        )}
+
+        <div className="relative overflow-hidden rounded-[1.75rem] border border-red-200 bg-white shadow-sm">
+          <span
+            className="absolute inset-y-0 left-0 w-1.5 bg-linear-to-b from-red-500 to-red-700"
+            aria-hidden
+          />
+          <div className="space-y-4 px-5 py-5 pl-6">
+            {/* Intestazione reclamo */}
+            <div className="flex items-center gap-3">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-600 text-white shadow-sm shadow-red-600/30">
+                <AlertTriangle className="h-5 w-5" aria-hidden />
               </span>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-sm font-black uppercase tracking-wide text-red-800">
+                    {attivo.stato === "in_gestione"
+                      ? "Reclamo in gestione"
+                      : "Reclamo inviato"}
+                  </p>
+                  <span
+                    className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${COLORI[attivo.stato]}`}
+                  >
+                    {ETICHETTE[attivo.stato]}
+                  </span>
+                </div>
+                <p className="mt-1 text-xs leading-5 text-slate-600">
+                  {attivo.messaggio ? (
+                    <>“{attivo.messaggio}”</>
+                  ) : (
+                    "Hai segnalato un problema con questo ordine: il negozio è stato avvisato e sta gestendo la tua segnalazione."
+                  )}
+                </p>
+              </div>
             </div>
-            <p className="mt-1 text-xs leading-5 text-slate-600">
-              {attivo.messaggio ? (
-                <>“{attivo.messaggio}”</>
-              ) : (
-                "Hai segnalato un problema con questo ordine: il negozio è stato avvisato e sta gestendo la tua segnalazione."
-              )}
-            </p>
+
+            {/* Storico della comunicazione */}
+            {storico.length > 0 && (
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
+                  Comunicazioni con il negozio
+                </p>
+                <ol className="mt-2.5 space-y-2.5">
+                  {storico.map((msg) => {
+                    const èVenditore = msg.mittente === "venditore";
+                    return (
+                      <li
+                        key={msg.id}
+                        className={`flex items-start gap-2.5 ${èVenditore ? "" : "flex-row-reverse"}`}
+                      >
+                        <span
+                          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full shadow-sm ${
+                            èVenditore
+                              ? "bg-blue-600 text-white"
+                              : "bg-teal-600 text-white"
+                          }`}
+                        >
+                          {èVenditore ? (
+                            <Store className="h-4 w-4" aria-hidden />
+                          ) : (
+                            <User className="h-4 w-4" aria-hidden />
+                          )}
+                        </span>
+                        <div
+                          className={`min-w-0 max-w-[80%] rounded-xl px-3.5 py-2.5 ${
+                            èVenditore
+                              ? "bg-blue-50 ring-1 ring-blue-100"
+                              : "bg-teal-50 ring-1 ring-teal-100"
+                          }`}
+                        >
+                          <p className="flex flex-wrap items-center gap-x-2 text-[11px] font-bold text-slate-700">
+                            {èVenditore ? msg.mittenteNome || "Negozio" : "Tu"}
+                            <span className="font-medium text-slate-400">
+                              {formattaDataBreve(msg.createdAt) || ""}
+                            </span>
+                          </p>
+                          <p className="mt-0.5 whitespace-pre-wrap text-sm leading-5 text-slate-800">
+                            {msg.corpo}
+                          </p>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ol>
+              </div>
+            )}
+
+            {/* Risposta al venditore */}
+            {puòRispondere && (
+              <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-4">
+                <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
+                  Rispondi al negozio
+                </p>
+                <textarea
+                  value={risposta}
+                  onChange={(e) => setRisposta(e.target.value)}
+                  rows={3}
+                  maxLength={2000}
+                  placeholder="Scrivi qui la tua risposta al negozio…"
+                  aria-label="Risposta al negozio"
+                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-red-300 focus:ring-2 focus:ring-red-100"
+                />
+                <div className="mt-2 flex items-center justify-between gap-2">
+                  <p className="text-[10px] text-slate-400">{risposta.length}/2000</p>
+                  <button
+                    type="button"
+                    onClick={() => void inviaRisposta(attivo.id)}
+                    disabled={invioRisposta || !risposta.trim()}
+                    className="inline-flex items-center gap-2 rounded-xl bg-teal-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-teal-700 disabled:opacity-50"
+                  >
+                    {invioRisposta ? (
+                      <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                    ) : (
+                      <Send className="h-4 w-4" aria-hidden />
+                    )}
+                    {invioRisposta ? "Invio…" : "Invia risposta"}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

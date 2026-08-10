@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-
+import { Store } from "lucide-react";
 import DuplicaNegozioWizard from "@/components/merchant/media/DuplicaNegozioWizard";
 import { getMerchantStoreNavItems } from "./navigation";
 
@@ -48,6 +48,21 @@ export default function MerchantSidebarNav({
 
   return (
     <nav aria-label="Menu negozio" className="space-y-1.5 text-sm font-semibold">
+      {/* ── Blocco identità negozio (sidebar desktop) ─────────────────────── */}
+      <div className="mb-2 flex items-center gap-3 rounded-2xl border border-slate-100 bg-linear-to-br from-blue-50 to-blue-100/60 p-3.5">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm shadow-blue-600/30">
+          <Store className="h-5 w-5" aria-hidden />
+        </span>
+        <span className="min-w-0">
+          <span className="block truncate text-sm font-black tracking-tight text-slate-900">
+            {storeName}
+          </span>
+          <span className="block truncate text-[11px] font-medium text-slate-500">
+            Pannello venditore
+          </span>
+        </span>
+      </div>
+
       {showDuplica && (
         <DuplicaNegozioWizard
           storeId={storeId}

@@ -16,6 +16,10 @@ import { getMerchantStoreForUser } from "@/lib/merchant/data";
 import { getOrdineVenditore } from "@/lib/merchant/ordini";
 import { getReclamiVenditore } from "@/lib/ordine-reclami";
 import type { ReclamoOrdine as ReclamoOrdineType } from "@/lib/ordine-reclami";
+import {
+  getMessaggiReclamoVenditore,
+  type MessaggioReclamo,
+} from "@/lib/ordine-reclami-messaggi";
 import ReclamiOrdine from "@/components/merchant/ReclamiOrdine";
 import type { OrdineVenditoreDettaglio } from "@/lib/merchant/ordini";
 import { Sezione } from "@/components/ordini/Sezione";
@@ -71,11 +75,25 @@ export default async function MerchantOrdineDettaglioPage({
   }
 
   let reclami: ReclamoOrdineType[] = [];
+  let messaggiReclami: Record<string, MessaggioReclamo[]> = {};
   if (ordine) {
     try {
       reclami = await getReclamiVenditore(user.id, negozioId, ordineId);
     } catch {
       reclami = [];
+    }
+    // Storico comunicazioni di ogni reclamo (best-effort: mai far fallire
+    // il dettaglio ordine se la lettura dei messaggi non riesce).
+    try {
+      const elenchi = await Promise.all(
+        reclami.map(async (r) => [
+          r.id,
+          await getMessaggiReclamoVenditore(user.id, negozioId, r.id),
+        ] as const)
+      );
+      messaggiReclami = Object.fromEntries(elenchi);
+    } catch {
+      messaggiReclami = {};
     }
   }
 
@@ -245,6 +263,7 @@ export default async function MerchantOrdineDettaglioPage({
             numero={ordine.numero}
             sintesi={sintesi}
             reclamiIniziali={reclami}
+            messaggiIniziali={messaggiReclami}
           />
         </div>
       )}

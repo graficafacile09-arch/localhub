@@ -82,9 +82,28 @@ export function OrderCard({
       className={`group flex h-full flex-col rounded-[1.75rem] border bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg ${
         nonLetto && vista === "venditore"
           ? "border-red-200 ring-1 ring-red-100"
-          : "border-white/70 hover:border-slate-200"
+          : haReclamoAperto && vista === "venditore"
+            ? "border-red-200 ring-1 ring-red-100"
+            : "border-white/70 hover:border-slate-200"
       }`}
     >
+      {/* ── 0. RECLAMO APERTO — priorità visiva ASSOLUTA, sopra il numero ── */}
+      {haReclamoAperto && vista === "venditore" ? (
+        <div className="mb-4 flex items-center gap-2.5 overflow-hidden rounded-xl border border-red-200 bg-red-50/90 px-3 py-2.5">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-600 text-white shadow-sm shadow-red-600/30">
+            <AlertTriangle className="h-[18px] w-[18px]" aria-hidden />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-xs font-black uppercase tracking-wide text-red-800">
+              Reclamo aperto
+            </span>
+            <span className="block truncate text-[11px] leading-4 text-red-700/80">
+              Richiede la tua attenzione
+            </span>
+          </span>
+        </div>
+      ) : null}
+
       {/* ── 1. Numero + prodotto ───────────────────────────────────────────── */}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -121,22 +140,7 @@ export function OrderCard({
         ) : null}
       </div>
 
-      {/* ── 2bis. RECLAMO APERTO — segnale operativo a tutta larghezza (venditore) */}
-      {haReclamoAperto && vista === "venditore" ? (
-        <div className="mt-3 flex items-center gap-2.5 overflow-hidden rounded-xl border border-red-200 bg-red-50/80 px-3 py-2.5">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-600 text-white">
-            <AlertTriangle className="h-4 w-4" aria-hidden />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-[11px] font-black uppercase tracking-wide text-red-800">
-              Reclamo aperto
-            </span>
-            <span className="block truncate text-[11px] leading-4 text-red-700/80">
-              Il cliente ha segnalato un problema su questo ordine
-            </span>
-          </span>
-        </div>
-      ) : null}
+
 
       {/* ── 3. Identità + data/ora ──────────────────────────────────────────── */}
       <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">

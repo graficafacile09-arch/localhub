@@ -45,6 +45,12 @@ export default async function OrdiniPage({
   const filtro = isFiltroOrdiniCliente(filtroRaw) ? filtroRaw : "tutti";
   const ordiniFiltrati = errore ? [] : filtraOrdiniCliente(ordini, filtro);
 
+  // Conteggio per filtro (dati reali, mostrato come badge nel chip).
+  const conteggiFiltri = FILTRI_ORDINI_CLIENTE.map((f) => ({
+    ...f,
+    conteggio: errore ? 0 : filtraOrdiniCliente(ordini, f.key).length,
+  }));
+
   // Titolo dello stato vuoto, leggibile per ogni filtro.
   const titoloVuoto: Record<string, string> = {
     in_corso: "Nessun ordine in corso",
@@ -75,10 +81,10 @@ export default async function OrdiniPage({
         </div>
       </div>
 
-      {/* ── Filtri (solo se ci sono ordini) ─────────────────────────────────── */}
+      {/* ── Filtri moderni con conteggi (solo se ci sono ordini) ──────────── */}
       {!errore && ordini.length > 0 && (
         <div className="flex flex-wrap gap-2">
-          {FILTRI_ORDINI_CLIENTE.map((f) => {
+          {conteggiFiltri.map((f) => {
             const attivo = filtro === f.key;
             return (
               <Link
@@ -88,13 +94,25 @@ export default async function OrdiniPage({
                     ? "/cliente/ordini"
                     : `/cliente/ordini?filtro=${f.key}`
                 }
-                className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition ${
+                aria-current={attivo ? "page" : undefined}
+                className={`inline-flex h-9 items-center gap-2 rounded-full px-3.5 text-xs font-bold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-500 ${
                   attivo
                     ? "bg-teal-600 text-white shadow-sm"
                     : "border border-slate-200 bg-white text-slate-600 hover:border-teal-300 hover:text-teal-700"
                 }`}
               >
                 {f.etichetta}
+                {f.conteggio > 0 && (
+                  <span
+                    className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-black tabular-nums ${
+                      attivo
+                        ? "bg-white/20 text-white"
+                        : "bg-slate-100 text-slate-500"
+                    }`}
+                  >
+                    {f.conteggio > 99 ? "99+" : f.conteggio}
+                  </span>
+                )}
               </Link>
             );
           })}

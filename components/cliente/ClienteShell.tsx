@@ -75,12 +75,11 @@ export default function ClienteShell({
         <aside className="hidden md:block">
           <div className="sticky top-5 space-y-3">
             <div className="rounded-3xl border border-white/70 bg-white p-5 shadow-sm">
-              {!collapsed && (
-                <p className="mb-4 px-1 text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
-                  Area Clienti
-                </p>
-              )}
-              <ClienteSidebar collapsed={collapsed} ordiniInCorso={ordiniInCorso} />
+              <ClienteSidebar
+                collapsed={collapsed}
+                ordiniInCorso={ordiniInCorso}
+                withHeader
+              />
             </div>
 
             <button

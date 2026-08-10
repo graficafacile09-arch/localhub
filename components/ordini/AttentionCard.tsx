@@ -19,6 +19,7 @@ export function AttentionCard({
   descrizione,
   href,
   ctaLabel,
+  eyebrow = "Attenzione",
 }: {
   icon: LucideIcon;
   count: number;
@@ -26,6 +27,8 @@ export function AttentionCard({
   descrizione: string;
   href: string;
   ctaLabel: string;
+  /** Micro-label sopra il numero ("ATTENZIONE" di default). */
+  eyebrow?: string;
 }) {
   if (!count || count <= 0) return null;
 
@@ -51,7 +54,11 @@ export function AttentionCard({
 
       {/* Contenuto */}
       <div className="min-w-0 flex-1 py-5 pr-4">
-        <p className="font-mono text-5xl font-black leading-none tracking-tight text-red-700 tabular-nums sm:text-6xl">
+        <p className="inline-flex items-center gap-1.5 rounded-full bg-red-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-red-700">
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-red-600 motion-reduce:animate-none" aria-hidden />
+          {eyebrow}
+        </p>
+        <p className="mt-2.5 font-mono text-5xl font-black leading-none tracking-tight text-red-700 tabular-nums sm:text-6xl">
           {count}
         </p>
         <p className="mt-2 text-sm font-black uppercase tracking-wide text-slate-900">

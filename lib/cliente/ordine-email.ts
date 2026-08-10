@@ -394,6 +394,176 @@ function maskEmail(email: string): string {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
+// EMAIL MESSAGGIO RECLAMO (il venditore ha scritto al cliente)
+// Invio BEST-EFFORT dopo il salvataggio del messaggio sul reclamo: il
+// messaggio DB NON fallisce mai per un errore email (stesso principio di
+// ntfy/WhatsApp). Skip silenziosi: email assente o non valida.
+// ═══════════════════════════════════════════════════════════════════════
+
+/** Dati del messaggio reclamo necessari all'email (dal DB). */
+export type DatiMessaggioReclamo = {
+  reclamoId: string;
+  ordineId: string;
+  numero: string;
+  negozioNome: string;
+  clienteEmail: string;
+  clienteNome: string;
+  mittenteNome: string;
+  corpo: string;
+  createdAt: string;
+};
+
+/** Opzioni per i test dell'email messaggio reclamo. */
+export type OpzioniEmailMessaggioReclamo = {
+  db?: DbLike;
+  invia?: (dati: DatiMessaggioReclamo) => Promise<void>;
+};
+
+/** Oggetto dell'email: "Nuovo messaggio sul tuo ordine LH-XXXX — InCittà". */
+export function costruisciOggettoMessaggioReclamo(
+  numero: string,
+  negozioNome: string
+): string {
+  const n = (numero || "").trim() || "ordine";
+  const negozio = (negozioNome || "").trim();
+  return negozio
+    ? `${negozio} ti ha scritto sul tuo ordine ${n} — InCittà`
+    : `Nuovo messaggio sul tuo ordine ${n} — InCittà`;
+}
+
+/**
+ * HTML dell'email "il venditore ti ha scritto" (puro, testabile).
+ * Include il messaggio del negozio e il link al dettaglio ordine.
+ */
+export function costruisciHtmlMessaggioReclamo(dati: DatiMessaggioReclamo): string {
+  const linkOrdine = `${SITE_URL.replace(/\/+$/, "")}/cliente/ordini/${encodeURIComponent(dati.ordineId)}`;
+  return `
+  <!DOCTYPE html>
+  <html lang="it">
+  <body style="margin:0;padding:0;background-color:#f1f5f9;font-family:Arial,Helvetica,sans-serif;">
+    <div style="max-width:560px;margin:0 auto;padding:24px 16px;">
+      <div style="background:#dc2626;border-radius:16px 16px 0 0;padding:24px;text-align:center;">
+        <p style="margin:0;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#fecaca;font-weight:700;">Reclamo ordine</p>
+        <p style="margin:8px 0 0;font-size:20px;font-weight:800;color:#ffffff;">${escapeHtml(dati.numero)}</p>
+        <p style="margin:6px 0 0;font-size:13px;color:#fee2e2;">${escapeHtml(dati.negozioNome || "Il negozio")} ti ha scritto</p>
+      </div>
+
+      <div style="background:#ffffff;border-radius:0 0 16px 16px;padding:24px;box-shadow:0 1px 3px rgba(15,23,42,0.06);">
+        <p style="margin:0;font-size:14px;color:#0f172a;line-height:1.6;">
+          Ciao ${escapeHtml((dati.clienteNome || dati.clienteEmail || "").split(" ")[0] || "")},
+        </p>
+        <p style="margin:10px 0 0;font-size:14px;color:#334155;line-height:1.6;">
+          ${escapeHtml(dati.mittenteNome || "Il negozio")} ha risposto alla tua segnalazione:
+        </p>
+
+        <div style="margin-top:16px;background:#fef2f2;border:1px solid #fecaca;border-radius:12px;padding:14px;color:#7f1d1d;font-size:14px;line-height:1.6;">
+          “${escapeHtml(dati.corpo)}”
+        </div>
+
+        <div style="margin-top:24px;text-align:center;">
+          <a href="${linkOrdine}"
+             style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;padding:13px 28px;border-radius:12px;font-size:14px;font-weight:700;">
+            Visualizza il tuo ordine
+          </a>
+        </div>
+
+        <p style="margin:20px 0 0;font-size:11px;color:#94a3b8;text-align:center;line-height:1.6;">
+          Puoi rispondere direttamente dal dettaglio del tuo ordine.
+          <br/>Questa email riguarda la tua segnalazione su InCittà.
+        </p>
+      </div>
+    </div>
+  </body>
+  </html>`;
+}
+
+/**
+ * Invia al cliente l'email con il messaggio scritto dal venditore sul
+ * reclamo. MAI throw: ogni problema viene loggato e restituito come stato;
+ * il messaggio resta salvato nel DB a prescindere dall'esito dell'email.
+ * `corpo` è il testo del messaggio appena salvato (dal DB, mai dal browser).
+ */
+export async function inviaEmailMessaggioReclamo(
+  reclamoId: string,
+  corpo: string,
+  mittenteNome?: string,
+  opts: OpzioniEmailMessaggioReclamo = {}
+): Promise<EsitoEmailOrdine> {
+  try {
+    const db = (opts.db ?? createAdminSupabaseClient()) as {
+      from: (t: string) => any;
+    };
+
+    const { data: reclamo, error: errReclamo } = await db
+      .from("ordine_reclami")
+      .select("id, ordine_id, cliente_email, cliente_nome")
+      .eq("id", reclamoId)
+      .single();
+    if (errReclamo || !reclamo) {
+      console.error(`[ordine-email] reclamo ${reclamoId}: reclamo non trovato (${errReclamo?.message ?? "null"})`);
+      return { stato: "error", motivo: "reclamo_non_trovato" };
+    }
+
+    const ordineId = String(reclamo.ordine_id ?? "");
+    const { data: ordine, error: errOrdine } = await db
+      .from("ordini")
+      .select("numero, negozio_nome")
+      .eq("id", ordineId)
+      .maybeSingle();
+    if (errOrdine) {
+      console.error(`[ordine-email] reclamo ${reclamoId}: lettura ordine fallita: ${errOrdine.message}`);
+    }
+
+    const email = String(reclamo.cliente_email ?? "").trim();
+    if (!email) {
+      console.log(`[ordine-email] reclamo ${reclamoId}: email cliente assente, invio saltato`);
+      return { stato: "skipped", motivo: "email_assente" };
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      console.warn(`[ordine-email] reclamo ${reclamoId}: email non valida, invio saltato`);
+      return { stato: "skipped", motivo: "email_non_valida" };
+    }
+
+    const dati: DatiMessaggioReclamo = {
+      reclamoId,
+      ordineId,
+      numero: String(ordine?.numero ?? ""),
+      negozioNome: String(ordine?.negozio_nome ?? ""),
+      clienteEmail: email,
+      clienteNome: String(reclamo.cliente_nome ?? ""),
+      mittenteNome: (mittenteNome ?? "").trim() || "Il negozio",
+      corpo: (corpo || "").trim() || "Risposta del negozio.",
+      createdAt: new Date().toISOString(),
+    };
+
+    await (opts.invia ??
+      (async (d) => {
+        const apiKey = process.env.RESEND_API_KEY;
+        if (!apiKey) throw new Error("RESEND_API_KEY non configurata");
+        const resend = new Resend(apiKey);
+        const { error } = await conTimeout(
+          resend.emails.send({
+            from: FROM_EMAIL,
+            to: d.clienteEmail,
+            subject: costruisciOggettoMessaggioReclamo(d.numero, d.negozioNome),
+            html: costruisciHtmlMessaggioReclamo(d),
+          }),
+          RESEND_TIMEOUT_MS
+        );
+        if (error) throw new Error(`Resend: ${error.message}`);
+      }))(dati);
+
+    console.log(`[ordine-email] reclamo ${reclamoId}: email messaggio inviata a ${maskEmail(email)}`);
+    return { stato: "sent", messageId: null };
+  } catch (err) {
+    console.error(
+      `[ordine-email] reclamo ${reclamoId}: invio messaggio fallito (best-effort): ${(err as Error)?.message ?? "sconosciuto"}`
+    );
+    return { stato: "error", motivo: "invio_fallito" };
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
 // EMAIL DI AGGIORNAMENTO STATO ORDINE (azione del venditore)
 // Invio BEST-EFFORT dopo un cambio stato riuscito: ordine/stato NON fallisce
 // mai per un errore email. Solo per stati "visibili al cliente" (confermato,
