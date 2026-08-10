@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import { PanelLeftClose, PanelLeftOpen, ShoppingBasket, X } from "lucide-react";
 import ClienteHeader from "./ClienteHeader";
 import ClienteMobileTopBar from "./ClienteMobileTopBar";
@@ -18,6 +19,16 @@ import ClienteBottomNav from "./ClienteBottomNav";
 export default function ClienteShell({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const pathname = usePathname();
+
+  // Chiude il drawer a ogni cambio di route: dopo il click la destinazione
+  // deve essere COMPLETAMENTE visibile (mai contenuto renderizzato sotto il
+  // menu ancora aperto). Stesso pattern del drawer amministratore/venditore
+  // (AdminMobileMenuButton): senza questo, la navigazione interna mantiene
+  // il drawer aperto sopra la nuova pagina.
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
 
   // Blocca lo scroll quando il drawer mobile è aperto.
   useEffect(() => {
@@ -133,9 +144,9 @@ export default function ClienteShell({ children }: { children: ReactNode }) {
               </button>
             </div>
 
-            {/* Navigazione */}
+            {/* Navigazione — chiude il drawer al click di ogni voce */}
             <div className="flex-1">
-              <ClienteSidebar />
+              <ClienteSidebar onNavigate={() => setMobileOpen(false)} />
             </div>
           </div>
         </div>

@@ -8,8 +8,17 @@ import { clienteFooterItems, clienteNavItems } from "./navigation";
  * Menu laterale dell'Area Clienti.
  * Evidenzia la voce attiva in base al pathname corrente.
  * Usato sia nella sidebar desktop (collassabile) sia nel drawer mobile.
+ * `onNavigate` (opzionale) viene chiamato al click di ogni voce: nel drawer
+ * mobile serve a chiudere il menu PRIMA della navigazione, così la
+ * destinazione resta subito visibile.
  */
-export default function ClienteSidebar({ collapsed = false }: { collapsed?: boolean }) {
+export default function ClienteSidebar({
+  collapsed = false,
+  onNavigate,
+}: {
+  collapsed?: boolean;
+  onNavigate?: () => void;
+}) {
   const pathname = usePathname();
 
   function isActive(href: string): boolean {
@@ -25,6 +34,7 @@ export default function ClienteSidebar({ collapsed = false }: { collapsed?: bool
           <Link
             key={item.href}
             href={item.href}
+            onClick={onNavigate}
             aria-current={active ? "page" : undefined}
             title={collapsed ? item.label : undefined}
             className={`flex items-center gap-3 rounded-2xl px-4 py-3 transition-all duration-150 ${
@@ -51,6 +61,7 @@ export default function ClienteSidebar({ collapsed = false }: { collapsed?: bool
           <Link
             key={item.href}
             href={item.href}
+            onClick={onNavigate}
             aria-current={active ? "page" : undefined}
             title={collapsed ? item.label : undefined}
             className={`flex items-center gap-3 rounded-2xl px-4 py-3 transition-all duration-150 hover:bg-slate-50 ${
