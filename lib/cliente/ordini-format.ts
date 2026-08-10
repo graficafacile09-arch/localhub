@@ -122,6 +122,10 @@ export type ConfigStatoOrdine = {
   emoji: string;
   /** Etichetta maiuscola per il banner (es. "ORDINE ANNULLATO"). */
   etichettaBanner: string;
+  /** Riga descrittiva sotto il banner per l'area CLIENTE. */
+  descrizioneCliente: string;
+  /** Riga descrittiva sotto il banner per l'area VENDITORE. */
+  descrizioneVenditore: string;
   /** Classi del banner grande (sfondo, bordo). */
   banner: string;
   /** Classe del colore testo del banner. */
@@ -143,6 +147,8 @@ export function configStatoOrdine(stato: StatoOrdine): ConfigStatoOrdine {
         icona: "bell",
         emoji: "🆕",
         etichettaBanner: "ORDINE NUOVO",
+        descrizioneCliente: "Il negozio ha ricevuto il tuo ordine.",
+        descrizioneVenditore: "Ordine appena ricevuto: confermalo per iniziare la lavorazione.",
         banner: "border-amber-200 bg-amber-50/70",
         testo: "text-amber-950",
         badge: "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
@@ -155,6 +161,8 @@ export function configStatoOrdine(stato: StatoOrdine): ConfigStatoOrdine {
         icona: "badge-check",
         emoji: "🟢",
         etichettaBanner: "ORDINE CONFERMATO",
+        descrizioneCliente: "Il negozio ha confermato il tuo ordine.",
+        descrizioneVenditore: "Ordine confermato: puoi iniziare la lavorazione.",
         banner: "border-blue-200 bg-blue-50/70",
         testo: "text-blue-950",
         badge: "bg-blue-50 text-blue-700 ring-1 ring-blue-200",
@@ -167,6 +175,8 @@ export function configStatoOrdine(stato: StatoOrdine): ConfigStatoOrdine {
         icona: "hammer",
         emoji: "🔵",
         etichettaBanner: "IN LAVORAZIONE",
+        descrizioneCliente: "Il negozio sta preparando il tuo ordine.",
+        descrizioneVenditore: "Lavorazione in corso: segna l'ordine come pronto quando è pronto.",
         banner: "border-orange-200 bg-orange-50/70",
         testo: "text-orange-950",
         badge: "bg-orange-50 text-orange-700 ring-1 ring-orange-200",
@@ -179,6 +189,8 @@ export function configStatoOrdine(stato: StatoOrdine): ConfigStatoOrdine {
         icona: "package-check",
         emoji: "🟡",
         etichettaBanner: "ORDINE PRONTO",
+        descrizioneCliente: "Il tuo ordine è pronto.",
+        descrizioneVenditore: "Ordine pronto: completalo alla consegna.",
         banner: "border-green-200 bg-green-50/70",
         testo: "text-green-950",
         badge: "bg-green-50 text-green-700 ring-1 ring-green-200",
@@ -191,6 +203,8 @@ export function configStatoOrdine(stato: StatoOrdine): ConfigStatoOrdine {
         icona: "truck",
         emoji: "🚚",
         etichettaBanner: "IN CONSEGNA",
+        descrizioneCliente: "Il tuo ordine è in consegna.",
+        descrizioneVenditore: "Ordine in consegna al cliente.",
         banner: "border-sky-200 bg-sky-50/70",
         testo: "text-sky-950",
         badge: "bg-sky-50 text-sky-700 ring-1 ring-sky-200",
@@ -203,6 +217,8 @@ export function configStatoOrdine(stato: StatoOrdine): ConfigStatoOrdine {
         icona: "circle-check",
         emoji: "✅",
         etichettaBanner: "ORDINE COMPLETATO",
+        descrizioneCliente: "Il tuo ordine è stato completato.",
+        descrizioneVenditore: "Ordine completato: nessuna azione necessaria.",
         banner: "border-emerald-200 bg-emerald-50/70",
         testo: "text-emerald-950",
         badge: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200",
@@ -215,6 +231,8 @@ export function configStatoOrdine(stato: StatoOrdine): ConfigStatoOrdine {
         icona: "ban",
         emoji: "🔴",
         etichettaBanner: "ORDINE ANNULLATO",
+        descrizioneCliente: "Il negozio non ha potuto evadere il tuo ordine.",
+        descrizioneVenditore: "Ordine annullato: terminale, nessuna azione disponibile.",
         banner: "border-red-200 bg-red-50/70",
         testo: "text-red-950",
         badge: "bg-red-50 text-red-700 ring-1 ring-red-200",
@@ -224,5 +242,45 @@ export function configStatoOrdine(stato: StatoOrdine): ConfigStatoOrdine {
       };
     default:
       return configStatoOrdine("in_preparazione");
+  }
+}
+
+/**
+ * Filtri dell'elenco ordini dell'AREA CLIENTE (presentazione pura, nessuna
+ * query: i dati arrivano già dal servizio e vengono filtrati in pagina).
+ * Lo stato del DB resta l'unica fonte: nessuna logica duplicata.
+ */
+export type FiltroOrdiniCliente = "tutti" | "in_corso" | "completati" | "annullati";
+
+export const FILTRI_ORDINI_CLIENTE: ReadonlyArray<{
+  key: FiltroOrdiniCliente;
+  etichetta: string;
+}> = [
+  { key: "tutti", etichetta: "Tutti" },
+  { key: "in_corso", etichetta: "In corso" },
+  { key: "completati", etichetta: "Completati" },
+  { key: "annullati", etichetta: "Annullati" },
+];
+
+export function isFiltroOrdiniCliente(
+  value: string | null | undefined
+): value is FiltroOrdiniCliente {
+  return FILTRI_ORDINI_CLIENTE.some((f) => f.key === value);
+}
+
+/** Applica il filtro cliente a un elenco di ordini (dalla lista completa). */
+export function filtraOrdiniCliente<T extends { stato: StatoOrdine }>(
+  ordini: T[],
+  filtro: FiltroOrdiniCliente
+): T[] {
+  switch (filtro) {
+    case "in_corso":
+      return ordini.filter((o) => !["consegnato", "cancellato"].includes(o.stato));
+    case "completati":
+      return ordini.filter((o) => o.stato === "consegnato");
+    case "annullati":
+      return ordini.filter((o) => o.stato === "cancellato");
+    default:
+      return ordini;
   }
 }

@@ -14,8 +14,11 @@
 import {
   configStatoOrdine,
   etichettaStato,
+  FILTRI_ORDINI_CLIENTE,
+  filtraOrdiniCliente,
   formattaDataOraCard,
   formattaDataOraEvento,
+  isFiltroOrdiniCliente,
   sintesiProdotti,
 } from "../lib/cliente/ordini-format";
 import type { StatoOrdine } from "../lib/cliente/types";
@@ -87,6 +90,14 @@ async function main() {
     "7 colori icona distinti",
     new Set(banners.map((b) => b.cfg.iconaTesto)).size === 7
   );
+  check(
+    "7 descrizioni cliente distinte (non vuote)",
+    new Set(banners.map((b) => b.cfg.descrizioneCliente)).size === 7
+  );
+  check(
+    "7 descrizioni venditore distinte (non vuote)",
+    new Set(banners.map((b) => b.cfg.descrizioneVenditore)).size === 7
+  );
 
   // ── T4: stato → grafica specifica ───────────────────────────────────────────
   console.log("\n[T4] Stato DB → grafica corretta");
@@ -155,6 +166,64 @@ async function main() {
   check("separatore ' · ' presente", formattaDataOraCard("2026-08-10T16:42:00.000Z").includes(" · "));
   check("null → ''", formattaDataOraCard(null) === "");
   check("valore non valido → fallback", formattaDataOraCard("non-una-data") === "non-una-data");
+
+  // ── T9: descrizioni di ruolo nel banner (cliente/venditore) ─────────────────
+  console.log("\n[T9] Descrizioni di ruolo nel banner stato");
+  for (const s of STATI) {
+    const cfg = configStatoOrdine(s);
+    check(
+      `config(${s}).descrizioneCliente non vuota`,
+      typeof cfg.descrizioneCliente === "string" && cfg.descrizioneCliente.trim().length > 0
+    );
+    check(
+      `config(${s}).descrizioneVenditore non vuota`,
+      typeof cfg.descrizioneVenditore === "string" && cfg.descrizioneVenditore.trim().length > 0
+    );
+  }
+  check(
+    "cancellato cliente: 'non ha potuto evadere'",
+    configStatoOrdine("cancellato").descrizioneCliente.includes("non ha potuto evadere")
+  );
+  check(
+    "confermato cliente: 'ha confermato il tuo ordine'",
+    configStatoOrdine("confermato").descrizioneCliente.includes("ha confermato il tuo ordine")
+  );
+  check(
+    "descrizioni cliente ≠ venditore (annullato)",
+    configStatoOrdine("cancellato").descrizioneCliente !==
+      configStatoOrdine("cancellato").descrizioneVenditore
+  );
+
+  // ── T10: filtri elenco area cliente (presentazione pura) ───────────────────
+  console.log("\n[T10] Filtri elenco ordini area cliente");
+  check("4 filtri definiti", FILTRI_ORDINI_CLIENTE.length === 4, String(FILTRI_ORDINI_CLIENTE.length));
+  check("isFiltroOrdiniCliente('in_corso')", isFiltroOrdiniCliente("in_corso"));
+  check("isFiltroOrdiniCliente('x') false", !isFiltroOrdiniCliente("x"));
+  const campione = [
+    { id: "a", stato: "in_preparazione" as StatoOrdine },
+    { id: "b", stato: "confermato" as StatoOrdine },
+    { id: "c", stato: "pronto" as StatoOrdine },
+    { id: "d", stato: "consegnato" as StatoOrdine },
+    { id: "e", stato: "cancellato" as StatoOrdine },
+  ];
+  check("tutti → 5", filtraOrdiniCliente(campione, "tutti").length === 5);
+  check(
+    "in_corso → 3 (esclude completati e annullati)",
+    filtraOrdiniCliente(campione, "in_corso").length === 3,
+    String(filtraOrdiniCliente(campione, "in_corso").length)
+  );
+  check(
+    "completati → solo consegnato",
+    filtraOrdiniCliente(campione, "completati").every((o) => o.stato === "consegnato")
+  );
+  check(
+    "annullati → solo cancellato",
+    filtraOrdiniCliente(campione, "annullati").every((o) => o.stato === "cancellato")
+  );
+  check(
+    "annullato NON appare in 'in corso'",
+    !filtraOrdiniCliente(campione, "in_corso").some((o) => o.stato === "cancellato")
+  );
 
   // ── Riepilogo ───────────────────────────────────────────────────────────────
   console.log(`\n═══════════════════════════════════════════════════════════`);

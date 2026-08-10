@@ -2,6 +2,11 @@ import Link from "next/link";
 import { ArrowRight, PackageOpen, ReceiptText } from "lucide-react";
 import { requireCurrentUser } from "@/lib/auth/session";
 import { getOrdiniCliente } from "@/lib/cliente/ordini";
+import {
+  FILTRI_ORDINI_CLIENTE,
+  filtraOrdiniCliente,
+  isFiltroOrdiniCliente,
+} from "@/lib/cliente/ordini-format";
 import type { OrdineClienteLista } from "@/lib/cliente/types";
 import ClienteEmptyState from "@/components/cliente/ClienteEmptyState";
 import { OrderCard } from "@/components/ordini/OrderCard";
@@ -17,8 +22,15 @@ export const dynamic = "force-dynamic";
  * Card CONDIVISE (OrderCard) con il linguaggio visivo "Ordini InCittà":
  * numero + sintesi prodotto, negozio, data/ora, foto prodotto, totale e
  * stato. Dati REALI da Supabase, filtrati per cliente_user_id (server-side).
+ * Filtri di presentazione (Tutti / In corso / Completati / Annullati):
+ * applicati in pagina, lo stato del DB resta l'unica fonte.
  */
-export default async function OrdiniPage() {
+export default async function OrdiniPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ filtro?: string }>;
+}) {
+  const { filtro: filtroRaw } = await searchParams;
   const user = await requireCurrentUser("/login?area=cliente");
 
   let ordini: OrdineClienteLista[];
@@ -29,6 +41,16 @@ export default async function OrdiniPage() {
     errore = err instanceof Error ? err.message : "Errore sconosciuto";
     ordini = [];
   }
+
+  const filtro = isFiltroOrdiniCliente(filtroRaw) ? filtroRaw : "tutti";
+  const ordiniFiltrati = errore ? [] : filtraOrdiniCliente(ordini, filtro);
+
+  // Titolo dello stato vuoto, leggibile per ogni filtro.
+  const titoloVuoto: Record<string, string> = {
+    in_corso: "Nessun ordine in corso",
+    completati: "Nessun ordine completato",
+    annullati: "Nessun ordine annullato",
+  };
 
   return (
     <div className="space-y-5">
@@ -52,6 +74,32 @@ export default async function OrdiniPage() {
           </div>
         </div>
       </div>
+
+      {/* ── Filtri (solo se ci sono ordini) ─────────────────────────────────── */}
+      {!errore && ordini.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {FILTRI_ORDINI_CLIENTE.map((f) => {
+            const attivo = filtro === f.key;
+            return (
+              <Link
+                key={f.key}
+                href={
+                  f.key === "tutti"
+                    ? "/cliente/ordini"
+                    : `/cliente/ordini?filtro=${f.key}`
+                }
+                className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition ${
+                  attivo
+                    ? "bg-teal-600 text-white shadow-sm"
+                    : "border border-slate-200 bg-white text-slate-600 hover:border-teal-300 hover:text-teal-700"
+                }`}
+              >
+                {f.etichetta}
+              </Link>
+            );
+          })}
+        </div>
+      )}
 
       {/* ── Errore di lettura ────────────────────────────────────────────────── */}
       {errore ? (
@@ -86,10 +134,26 @@ export default async function OrdiniPage() {
             </Link>
           }
         />
+      ) : ordiniFiltrati.length === 0 ? (
+        /* ── Nessun ordine nel filtro ──────────────────────────────────────── */
+        <ClienteEmptyState
+          icon={PackageOpen}
+          title={titoloVuoto[filtro] ?? "Nessun ordine"}
+          description="Non ci sono ordini nello stato selezionato. Prova un altro filtro."
+          action={
+            <Link
+              href="/cliente/ordini"
+              className="inline-flex items-center gap-2 rounded-xl bg-teal-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-teal-700"
+            >
+              Mostra tutti gli ordini
+              <ArrowRight className="h-4 w-4" aria-hidden />
+            </Link>
+          }
+        />
       ) : (
         /* ── Elenco ordini (dal più recente al più vecchio) ─────────────────── */
         <div className="grid gap-4 lg:grid-cols-2">
-          {ordini.map((ordine) => (
+          {ordiniFiltrati.map((ordine) => (
             <OrderCard
               key={ordine.id}
               vista="cliente"

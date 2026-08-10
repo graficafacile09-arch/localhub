@@ -41,9 +41,17 @@ export function OrderHeader({
   /** Riga opzionale in fondo (es. link). */
   footer?: ReactNode;
 }) {
+  const èAnnullato = stato === "cancellato";
+
   return (
     <div className="overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-sm">
-      <div className="h-1.5 bg-linear-to-r from-slate-200 via-slate-300 to-slate-200" />
+      <div
+        className={`h-1.5 ${
+          èAnnullato
+            ? "bg-linear-to-r from-red-300 via-red-400 to-red-300"
+            : "bg-linear-to-r from-slate-200 via-slate-300 to-slate-200"
+        }`}
+      />
       <div className="p-6 md:p-8">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex min-w-0 items-start gap-4">
@@ -59,7 +67,11 @@ export function OrderHeader({
                 {eyebrow}
               </p>
               <h1 className="mt-1.5 break-words text-2xl font-black leading-tight tracking-tight text-slate-900 md:text-3xl">
-                <span className="whitespace-nowrap">{numero}</span>
+                <span
+                  className={`whitespace-nowrap ${èAnnullato ? "text-red-700" : "text-slate-900"}`}
+                >
+                  {numero}
+                </span>
                 {sintesi ? (
                   <span className="ml-2 font-bold text-slate-500">· {sintesi}</span>
                 ) : null}

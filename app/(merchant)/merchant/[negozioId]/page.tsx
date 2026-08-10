@@ -1,6 +1,5 @@
 import Link from "next/link";
 import {
-  AlertTriangle,
   BellRing,
   Camera,
   CheckCircle2,
@@ -13,6 +12,8 @@ import {
 import MerchantDashboardCards from "@/components/merchant/MerchantDashboardCards";
 import MerchantEmptyState from "@/components/merchant/MerchantEmptyState";
 import MerchantQuickActions from "@/components/merchant/MerchantQuickActions";
+import { AvvisoNuoviOrdini } from "@/components/ordini/AvvisoNuoviOrdini";
+import { AvvisoReclamiAperti } from "@/components/ordini/AvvisoReclamiAperti";
 import { requireCurrentUser } from "@/lib/auth/session";
 import { getMerchantProductsForStore, getMerchantStoreForUser } from "@/lib/merchant/data";
 import { getOrdiniVenditore } from "@/lib/merchant/ordini";
@@ -93,6 +94,24 @@ export default async function MerchantStorePage({
         )}
       </div>
 
+      {/* ── AVVISI URGENTI (prima cosa visibile) ── */}
+      {(nonLetti > 0 || reclamiAperti > 0) && (
+        <div className="space-y-3">
+          {nonLetti > 0 && (
+            <AvvisoNuoviOrdini
+              conteggio={nonLetti}
+              href={`/merchant/${negozioId}/ordini`}
+            />
+          )}
+          {reclamiAperti > 0 && (
+            <AvvisoReclamiAperti
+              conteggio={reclamiAperti}
+              href={`/merchant/${negozioId}/ordini?filtro=reclami`}
+            />
+          )}
+        </div>
+      )}
+
       {/* Scansione — azione principale, immediatamente visibile */}
       <Link
         href={`/merchant/${negozioId}/prodotti/ai`}
@@ -107,12 +126,13 @@ export default async function MerchantStorePage({
       {/* Altre azioni rapide */}
       <MerchantQuickActions storeId={negozioId} />
 
-      {/* Ordini — riepilogo + accesso diretto */}
-      <Link
-        href={`/merchant/${negozioId}/ordini`}
-        className="group block rounded-2xl border border-white/70 bg-white p-5 shadow-sm transition hover:border-blue-200 hover:shadow-md"
-      >
-        <div className="flex items-center justify-between gap-3">
+      {/* Ordini — riepilogo + accesso diretto (card NON link per evitare
+          anchor-in-anchor: il KPI grid interno resta una lista di Link) */}
+      <div className="rounded-2xl border border-white/70 bg-white p-5 shadow-sm transition hover:border-blue-200 hover:shadow-md">
+        <Link
+          href={`/merchant/${negozioId}/ordini`}
+          className="group flex items-center justify-between gap-3"
+        >
           <div className="flex items-center gap-3">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
               <ReceiptText className="h-5 w-5" />
@@ -141,7 +161,7 @@ export default async function MerchantStorePage({
             </div>
           </div>
           <ChevronRight className="h-5 w-5 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-blue-600" />
-        </div>
+        </Link>
 
         {ordini.length > 0 && (
           <div className="mt-5 grid grid-cols-2 gap-2.5 border-t border-slate-100 pt-4 sm:grid-cols-5">
@@ -207,16 +227,7 @@ export default async function MerchantStorePage({
             ))}
           </div>
         )}
-        {reclamiAperti > 0 && (
-          <Link
-            href={`/merchant/${negozioId}/ordini`}
-            className="mt-3 flex items-center gap-2.5 rounded-xl border border-red-100 bg-red-50/70 px-3.5 py-2.5 text-xs font-bold text-red-700 transition hover:border-red-200 hover:bg-red-50"
-          >
-            <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden />
-            {reclamiAperti} reclamo{reclamiAperti === 1 ? " aperto" : " aperti"} da gestire
-          </Link>
-        )}
-      </Link>
+      </div>
 
       {/* Statistiche — comprimibili */}
       <MerchantDashboardCards

@@ -23,13 +23,17 @@ export function StatoOrdineBanner({
   annullatoNota,
   annullatoAt,
   sottoTitolo,
+  ruolo = "cliente",
 }: {
   stato: StatoOrdine;
   annullatoMotivo?: string | null;
   annullatoNota?: string | null;
   annullatoAt?: string | null;
-  /** Riga opzionale sotto l'etichetta (es. data ordine). */
+  /** Riga opzionale sotto l'etichetta (es. data ordine). Se assente, viene
+   *  usata la descrizione di ruolo della configurazione (cliente/venditore). */
   sottoTitolo?: string;
+  /** Prospettiva: cliente o venditore (testi descrittivi diversi). */
+  ruolo?: "cliente" | "venditore";
 }) {
   const config = configStatoOrdine(stato);
   const èAnnullato = stato === "cancellato";
@@ -37,6 +41,9 @@ export function StatoOrdineBanner({
   const nota = èAnnullato ? (annullatoNota ?? "").trim() : "";
   const dataAnnullamento =
     èAnnullato && annullatoAt ? formattaDataOraEvento(annullatoAt) : "";
+  const descrizione =
+    sottoTitolo ??
+    (ruolo === "cliente" ? config.descrizioneCliente : config.descrizioneVenditore);
 
   return (
     <div className={`rounded-[1.75rem] border p-5 shadow-sm ${config.banner}`}>
@@ -50,8 +57,8 @@ export function StatoOrdineBanner({
           <p className={`text-lg font-black uppercase tracking-tight ${config.testo}`}>
             {config.etichettaBanner}
           </p>
-          {sottoTitolo ? (
-            <p className={`mt-1 text-sm ${config.testo} opacity-80`}>{sottoTitolo}</p>
+          {descrizione ? (
+            <p className={`mt-1 text-sm ${config.testo} opacity-80`}>{descrizione}</p>
           ) : null}
 
           {/* Dettagli dell'annullamento: motivo + nota (solo se presenti) */}

@@ -154,6 +154,7 @@ export default async function MerchantOrdineDettaglioPage({
         annullatoMotivo={ordine.annullatoMotivo}
         annullatoNota={ordine.annullatoNota}
         annullatoAt={ordine.annullatoAt}
+        ruolo="venditore"
         sottoTitolo={
           ordine.stato === "cancellato"
             ? "Ordine terminale: lo stock è stato ripristinato (se tracciato) e il cliente è stato avvisato via email."

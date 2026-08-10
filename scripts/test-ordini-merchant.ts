@@ -205,6 +205,10 @@ async function main() {
     statiPerFiltro("lavorazione").join()
   );
   check("filtro tutti → []", statiPerFiltro("tutti").length === 0);
+  // Il filtro Reclami non è legato a uno stato: si applica in memoria su
+  // haReclamoAperto, quindi statiPerFiltro restituisce [] (nessun filtro DB).
+  check("isFiltroOrdini('reclami')", isFiltroOrdini("reclami"));
+  check("filtro reclami → nessuno stato DB", statiPerFiltro("reclami").length === 0);
   check("isStatoOrdine('confermato')", isStatoOrdine("confermato"));
   check("isStatoOrdine('boh') false", !isStatoOrdine("boh"));
   check(

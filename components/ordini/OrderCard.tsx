@@ -72,6 +72,11 @@ export function OrderCard({
   const accentText =
     vista === "cliente" ? "text-teal-700 group-hover:text-teal-800" : "text-blue-700 group-hover:text-blue-800";
   const accentIcon = vista === "cliente" ? "text-teal-600" : "text-blue-600";
+  // Il codice ordine degli ordini che richiedono attenzione (non letto dal
+  // venditore, oppure ANNULLATO) è evidenziato in ROSSO: mai blu quando
+  // esiste un avviso operativo importante.
+  const numeroAttenzione =
+    (nonLetto && vista === "venditore") || stato === "cancellato";
 
   return (
     <Link
@@ -85,12 +90,19 @@ export function OrderCard({
       {/* ── 1. Numero + prodotto ───────────────────────────────────────────── */}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="text-base font-black tracking-wide text-slate-900">
+          <p className="flex min-w-0 items-center gap-x-2">
+            <span
+              className={`shrink-0 text-base font-black tracking-wide ${
+                numeroAttenzione ? "text-red-700" : "text-slate-900"
+              }`}
+            >
               {numero}
             </span>
             {sintesi ? (
-              <span className="truncate text-sm font-semibold text-slate-500">
+              <span
+                title={sintesi}
+                className="truncate text-sm font-semibold text-slate-500"
+              >
                 · {sintesi}
               </span>
             ) : null}
@@ -162,7 +174,10 @@ export function OrderCard({
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-bold text-slate-800">
+          <p
+            title={primo?.nomeProdotto ?? "Nessun prodotto registrato"}
+            className="truncate text-sm font-bold text-slate-800"
+          >
             {primo?.nomeProdotto ?? "Nessun prodotto registrato"}
           </p>
           <p className="mt-0.5 text-xs text-slate-500">

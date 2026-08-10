@@ -7,9 +7,11 @@ import { getOrdiniVenditore } from "@/lib/merchant/ordini";
 import {
   FILTRI_ORDINI,
   isFiltroOrdini,
+  statiPerFiltro,
 } from "@/lib/merchant/ordini-stati";
 import type { OrdineVenditoreLista } from "@/lib/merchant/ordini";
 import { AvvisoNuoviOrdini } from "@/components/ordini/AvvisoNuoviOrdini";
+import { KpiOrdini, type ConteggiOrdini } from "@/components/ordini/KpiOrdini";
 import { OrderCard } from "@/components/ordini/OrderCard";
 
 export const dynamic = "force-dynamic";
@@ -18,9 +20,9 @@ export const dynamic = "force-dynamic";
  * Pagina "Ordini" dell'area venditore.
  * Card CONDIVISE (OrderCard) con il linguaggio visivo "Ordini InCittà":
  * numero + sintesi prodotto, cliente, data/ora, foto prodotto, totale,
- * stato. Badge "NUOVO ORDINE" per gli ordini non letti (letto_at) + banner
- * rosso di riepilogo + filtro rapido. OWNERSHIP server-side (canManageStore
- * + negozio_id): mai ordini di altri negozi.
+ * stato. KPI per stato + banner "NUOVI ORDINI" + filtri (incluso Reclami,
+ * che filtra in memoria su haReclamoAperto). OWNERSHIP server-side
+ * (canManageStore + negozio_id): mai ordini di altri negozi.
  */
 export default async function MerchantOrdiniPage({
   params,
@@ -54,15 +56,36 @@ export default async function MerchantOrdiniPage({
 
   const filtro = isFiltroOrdini(filtroRaw) ? filtroRaw : "tutti";
 
+  // Carica TUTTI gli ordini (una sola query) così i KPI e il filtro Reclami
+  // restano coerenti indipendentemente dal filtro selezionato; poi si
+  // filtra in memoria sulla base dello stato (o di haReclamoAperto).
   let ordini: OrdineVenditoreLista[] = [];
   let errore: string | null = null;
   try {
-    ordini = await getOrdiniVenditore(user.id, negozioId, filtro);
+    ordini = await getOrdiniVenditore(user.id, negozioId);
   } catch (err) {
     errore = err instanceof Error ? err.message : "Errore sconosciuto";
   }
 
+  const ordiniFiltrati =
+    filtro === "reclami"
+      ? ordini.filter((o) => o.haReclamoAperto)
+      : (() => {
+          const st = statiPerFiltro(filtro);
+          return st.length > 0 ? ordini.filter((o) => st.includes(o.stato)) : ordini;
+        })();
+
+  const conteggi: ConteggiOrdini = {
+    nuovi: ordini.filter((o) => o.stato === "in_preparazione").length,
+    lavorazione: ordini.filter((o) =>
+      ["confermato", "in_lavorazione", "in_consegna"].includes(o.stato)
+    ).length,
+    pronti: ordini.filter((o) => o.stato === "pronto").length,
+    completati: ordini.filter((o) => o.stato === "consegnato").length,
+    annullati: ordini.filter((o) => o.stato === "cancellato").length,
+  };
   const nonLetti = ordini.filter((o) => !o.lettoAt).length;
+  const baseHref = `/merchant/${negozioId}/ordini`;
 
   return (
     <div className="space-y-5">
@@ -80,18 +103,21 @@ export default async function MerchantOrdiniPage({
               Ordini di {storeResult.data.nome}
             </h1>
             <p className="mt-3 max-w-xl text-sm leading-6 text-slate-600">
-              Ricevi, gestisci e traccia gli ordini arrivati dal sito: dalla
-              conferma fino alla consegna o all&apos;annullamento.
+              Gestisci e monitora gli ordini del tuo negozio: dalla conferma
+              fino alla consegna o all&apos;annullamento.
             </p>
           </div>
         </div>
       </div>
 
+      {/* ── KPI per stato (Nuovi in rosso se > 0) ───────────────────────────── */}
+      <KpiOrdini baseHref={baseHref} conteggi={conteggi} />
+
       {/* ── Banner nuovi ordini (letto_at, sistema esistente) ──────────────── */}
       {filtro === "tutti" && (
         <AvvisoNuoviOrdini
           conteggio={nonLetti}
-          href={`/merchant/${negozioId}/ordini?filtro=nuovi`}
+          href={`${baseHref}?filtro=nuovi`}
         />
       )}
 
@@ -104,8 +130,8 @@ export default async function MerchantOrdiniPage({
               key={f.key}
               href={
                 f.key === "tutti"
-                  ? `/merchant/${negozioId}/ordini`
-                  : `/merchant/${negozioId}/ordini?filtro=${f.key}`
+                  ? baseHref
+                  : `${baseHref}?filtro=${f.key}`
               }
               className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition ${
                 attivo
@@ -140,7 +166,7 @@ export default async function MerchantOrdiniPage({
           action={
             filtro !== "tutti" ? (
               <Link
-                href={`/merchant/${negozioId}/ordini`}
+                href={baseHref}
                 className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-blue-700"
               >
                 Mostra tutti gli ordini
@@ -148,10 +174,28 @@ export default async function MerchantOrdiniPage({
             ) : undefined
           }
         />
+      ) : ordiniFiltrati.length === 0 ? (
+        /* ── Nessun ordine nel filtro selezionato ─────────────────────────── */
+        <MerchantEmptyState
+          title={filtro === "reclami" ? "Nessun reclamo aperto" : "Nessun ordine in questo filtro"}
+          description={
+            filtro === "reclami"
+              ? "Quando un cliente segnala un problema su un ordine, il reclamo comparirà qui."
+              : "Non ci sono ordini nello stato selezionato. Prova un altro filtro."
+          }
+          action={
+            <Link
+              href={baseHref}
+              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-blue-700"
+            >
+              Mostra tutti gli ordini
+            </Link>
+          }
+        />
       ) : (
         /* ── Elenco ordini ─────────────────────────────────────────────────── */
         <div className="grid gap-4 lg:grid-cols-2">
-          {ordini.map((ordine) => (
+          {ordiniFiltrati.map((ordine) => (
             <OrderCard
               key={ordine.id}
               vista="venditore"

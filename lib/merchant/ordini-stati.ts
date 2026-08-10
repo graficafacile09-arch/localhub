@@ -32,7 +32,8 @@ export type FiltroOrdini =
   | "lavorazione"
   | "pronti"
   | "completati"
-  | "annullati";
+  | "annullati"
+  | "reclami";
 
 export const FILTRI_ORDINI: ReadonlyArray<{
   key: FiltroOrdini;
@@ -49,6 +50,9 @@ export const FILTRI_ORDINI: ReadonlyArray<{
   { key: "pronti", etichetta: "Pronti", stati: ["pronto"] },
   { key: "completati", etichetta: "Completati", stati: ["consegnato"] },
   { key: "annullati", etichetta: "Annullati", stati: ["cancellato"] },
+  // Il filtro "Reclami" non filtra per STATO: la pagina carica tutti gli
+  // ordini e filtra in memoria su haReclamoAperto (nessun stato associato).
+  { key: "reclami", etichetta: "Reclami", stati: [] },
 ];
 
 export function isFiltroOrdini(value: string | null | undefined): value is FiltroOrdini {
