@@ -225,6 +225,19 @@ async function main() {
       check("numero ordine LEGGIBILE usato", registroFetch[0]?.body.includes("🚨 RECLAMO ORDINE #LH-000043"));
       check("link contiene negozioId REALE", registroFetch[0]?.body.includes(`/merchant/${NEGOZIO_ID}/ordini/${ORDINE_ID}`));
       check("NON ci sono doppie slash (nessun ID vuoto)", !registroFetch[0]?.body.includes("/merchant//ordini/"));
+      {
+        // URL esattamente nel formato della route reale /merchant/{negozioId}/ordini/{ordineId}.
+        // Il dominio atteso rispecchia il fallback di SITE_URL in lib/ordine-reclami.ts
+        // (nessuna NEXT_PUBLIC_SITE_URL nei test → si usa https://www.incitta.online).
+        const rigaLink = (registroFetch[0]?.body ?? "")
+          .split("\n")
+          .find((l) => l.startsWith("https://www.incitta.online/merchant"));
+        check(
+          "URL esattamente nel formato route reale",
+          rigaLink === `https://www.incitta.online/merchant/${NEGOZIO_ID}/ordini/${ORDINE_ID}`,
+          rigaLink
+        );
+      }
       check("UUID presenti SOLO nel link (mai come numero ordine)", (registroFetch[0]?.body ?? "").split("\n").filter((l) => l.includes(ORDINE_ID) || l.includes(NEGOZIO_ID)).every((l) => l.trim().startsWith("https://")));
       check("notifica NON contiene riga Tipo", !registroFetch[0]?.body.includes("Tipo:"));
     }
@@ -564,6 +577,50 @@ async function main() {
     check("fallback leggibile presente", registroFetch[0]?.body.includes("🔗 Gestione ordine: disponibile dal pannello venditore"));
     check("nessuna doppia slash", !registroFetch[0]?.body.includes("/merchant//ordini/"));
     check("nessun URL di gestione rotto", !registroFetch[0]?.body.includes("https://www.incitta.online/merchant"));
+  }
+
+  // ── T19: fallback quando manca SOLO negozioId o SOLO ordineId ───────────────
+  console.log("\n[T19] Fallback con un solo ID mancante");
+  {
+    // (a) manca negozioId → il guard deve bloccare il link
+    const regA: Array<{ url: string; title: string; tags: string; body: string }> = [];
+    await notificaReclamoNtfy(
+      {
+        id: RECLAMO_ID, ordineId: ORDINE_ID, negozioId: "", clienteUserId: CLIENTE_ID,
+        clienteNome: "Mario Rossi", clienteEmail: null, clienteTelefono: null,
+        tipo: "ordine_non_arrivato", messaggio: null, stato: "aperto",
+        createdAt: "2026-08-10T10:00:00.000Z", updatedAt: "2026-08-10T10:00:00.000Z",
+        gestitoAt: null, gestitoDa: null, gestitoNota: null,
+      } satisfies ReclamoOrdine,
+      {
+        db: fakeDbOrdine(ordineNotifica()),
+        fetchImpl: fakeFetch(regA),
+      }
+    );
+    check("(a) manca negozioId → 1 invio", regA.length === 1, String(regA.length));
+    check("(a) fallback leggibile presente", regA[0]?.body.includes("🔗 Gestione ordine: disponibile dal pannello venditore"));
+    check("(a) nessuna doppia slash", !regA[0]?.body.includes("/merchant//ordini/"));
+    check("(a) nessun URL di gestione", !regA[0]?.body.includes("https://www.incitta.online/merchant"));
+
+    // (b) manca ordineId → il guard deve bloccare il link
+    const regB: Array<{ url: string; title: string; tags: string; body: string }> = [];
+    await notificaReclamoNtfy(
+      {
+        id: RECLAMO_ID, ordineId: "", negozioId: NEGOZIO_ID, clienteUserId: CLIENTE_ID,
+        clienteNome: "Mario Rossi", clienteEmail: null, clienteTelefono: null,
+        tipo: "ordine_non_arrivato", messaggio: null, stato: "aperto",
+        createdAt: "2026-08-10T10:00:00.000Z", updatedAt: "2026-08-10T10:00:00.000Z",
+        gestitoAt: null, gestitoDa: null, gestitoNota: null,
+      } satisfies ReclamoOrdine,
+      {
+        db: fakeDbOrdine(ordineNotifica()),
+        fetchImpl: fakeFetch(regB),
+      }
+    );
+    check("(b) manca ordineId → 1 invio", regB.length === 1, String(regB.length));
+    check("(b) fallback leggibile presente", regB[0]?.body.includes("🔗 Gestione ordine: disponibile dal pannello venditore"));
+    check("(b) nessuna doppia slash", !regB[0]?.body.includes("/merchant//ordini/"));
+    check("(b) nessun URL di gestione", !regB[0]?.body.includes("https://www.incitta.online/merchant"));
   }
 
   restoreEnv();
