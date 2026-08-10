@@ -1,7 +1,11 @@
 import type { ReactNode } from "react";
 import { ReceiptText } from "lucide-react";
 import type { StatoOrdine } from "@/lib/cliente/types";
-import { etichettaModalita, formattaDataOraCard } from "@/lib/cliente/ordini-format";
+import {
+  configStatoOrdine,
+  etichettaModalita,
+  formattaDataOraCard,
+} from "@/lib/cliente/ordini-format";
 import { StatoBadge } from "./StatoBadge";
 
 function formattaPrezzo(value: number): string {
@@ -42,15 +46,22 @@ export function OrderHeader({
   footer?: ReactNode;
 }) {
   const èAnnullato = stato === "cancellato";
+  // Banda superiore guidata dallo stato (colore professionale), MAI blu per
+  // gli annullati e MAI verde/confermato per un annullato.
+  const accentoBanda: Record<string, string> = {
+    in_preparazione: "bg-linear-to-r from-amber-300 via-amber-400 to-amber-300",
+    confermato: "bg-linear-to-r from-blue-300 via-blue-400 to-blue-300",
+    in_lavorazione: "bg-linear-to-r from-orange-300 via-orange-400 to-orange-300",
+    pronto: "bg-linear-to-r from-green-300 via-green-400 to-green-300",
+    in_consegna: "bg-linear-to-r from-sky-300 via-sky-400 to-sky-300",
+    consegnato: "bg-linear-to-r from-emerald-300 via-emerald-400 to-emerald-300",
+    cancellato: "bg-linear-to-r from-red-300 via-red-400 to-red-300",
+  };
 
   return (
     <div className="overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-sm">
       <div
-        className={`h-1.5 ${
-          èAnnullato
-            ? "bg-linear-to-r from-red-300 via-red-400 to-red-300"
-            : "bg-linear-to-r from-slate-200 via-slate-300 to-slate-200"
-        }`}
+        className={`h-1.5 ${accentoBanda[stato] ?? "bg-linear-to-r from-slate-200 via-slate-300 to-slate-200"}`}
       />
       <div className="p-6 md:p-8">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
@@ -66,14 +77,18 @@ export function OrderHeader({
               >
                 {eyebrow}
               </p>
-              <h1 className="mt-1.5 break-words text-2xl font-black leading-tight tracking-tight text-slate-900 md:text-3xl">
+              <h1 className="mt-1.5 break-words font-black leading-tight tracking-tight text-slate-900">
                 <span
-                  className={`whitespace-nowrap ${èAnnullato ? "text-red-700" : "text-slate-900"}`}
+                  className={`whitespace-nowrap font-mono text-2xl tabular-nums md:text-3xl ${
+                    èAnnullato ? "text-red-700" : "text-slate-900"
+                  }`}
                 >
                   {numero}
                 </span>
                 {sintesi ? (
-                  <span className="ml-2 font-bold text-slate-500">· {sintesi}</span>
+                  <span className="mt-0.5 block text-lg font-bold text-slate-500">
+                    · {sintesi}
+                  </span>
                 ) : null}
               </h1>
               <div className="mt-2 text-sm text-slate-600">{identita}</div>

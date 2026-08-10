@@ -69,8 +69,6 @@ export function OrderCard({
   const primo = righeLista[0];
   const altri = righeLista.length > 1 ? righeLista.length - 1 : 0;
   const èRitiro = modalita === "ritiro";
-  const accentText =
-    vista === "cliente" ? "text-teal-700 group-hover:text-teal-800" : "text-blue-700 group-hover:text-blue-800";
   const accentIcon = vista === "cliente" ? "text-teal-600" : "text-blue-600";
   // Il codice ordine degli ordini che richiedono attenzione (non letto dal
   // venditore, oppure ANNULLATO) è evidenziato in ROSSO: mai blu quando
@@ -92,7 +90,7 @@ export function OrderCard({
         <div className="min-w-0">
           <p className="flex min-w-0 items-center gap-x-2">
             <span
-              className={`shrink-0 text-base font-black tracking-wide ${
+              className={`shrink-0 font-mono text-[15px] font-black tracking-tight tabular-nums ${
                 numeroAttenzione ? "text-red-700" : "text-slate-900"
               }`}
             >
@@ -203,10 +201,14 @@ export function OrderCard({
           )}
         </div>
         <span
-          className={`inline-flex shrink-0 items-center gap-1.5 text-sm font-bold transition ${accentText}`}
+          className={`inline-flex shrink-0 items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold text-white shadow-sm transition group-hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400 ${
+            vista === "cliente"
+              ? "bg-teal-600 group-hover:bg-teal-700"
+              : "bg-blue-600 group-hover:bg-blue-700"
+          }`}
         >
           {ctaLabel}
-          <ArrowRight className="h-4 w-4 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-slate-500" aria-hidden />
+          <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" aria-hidden />
         </span>
       </div>
     </Link>

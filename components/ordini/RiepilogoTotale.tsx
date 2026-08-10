@@ -24,22 +24,24 @@ export function RiepilogoTotale({
   );
 
   return (
-    <div className="mt-4 space-y-2 rounded-xl bg-slate-50/80 px-4 py-3.5 ring-1 ring-slate-100">
+    <div className="mt-4 space-y-2 rounded-2xl bg-slate-50/80 px-4 py-4 ring-1 ring-slate-100">
       <div className="flex items-center justify-between text-sm text-slate-500">
         <span>Subtotale</span>
-        <span className="font-semibold text-slate-700">{formattaPrezzo(subtotale)}</span>
+        <span className="font-semibold text-slate-700 tabular-nums">{formattaPrezzo(subtotale)}</span>
       </div>
       {Number(costoSpedizione) > 0 && (
         <div className="flex items-center justify-between text-sm text-slate-500">
           <span>Spedizione</span>
-          <span className="font-semibold text-slate-700">
+          <span className="font-semibold text-slate-700 tabular-nums">
             {formattaPrezzo(costoSpedizione)}
           </span>
         </div>
       )}
-      <div className="flex items-center justify-between border-t border-slate-200/70 pt-2.5">
-        <span className="text-base font-black text-slate-900">Totale ordine</span>
-        <span className="text-2xl font-black tracking-tight text-slate-900">
+      <div className="flex items-center justify-between gap-3 rounded-xl bg-white px-3.5 py-3 ring-1 ring-slate-200/70">
+        <span className="text-sm font-black uppercase tracking-wide text-slate-900">
+          Totale ordine
+        </span>
+        <span className="font-mono text-3xl font-black leading-none tracking-tight text-slate-900 tabular-nums">
           {formattaPrezzo(totale)}
         </span>
       </div>

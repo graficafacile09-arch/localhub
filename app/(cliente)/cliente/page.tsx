@@ -58,12 +58,11 @@ export default async function ClienteDashboardPage() {
                   Area Clienti
                 </p>
                 <h1 className="mt-1.5 text-3xl font-black tracking-tight text-slate-900">
-                  Benvenuto in LocalHub
+                  Il mio account
                 </h1>
                 <p className="mt-3 max-w-xl text-sm leading-6 text-slate-600">
-                  Qui trovi il riepilogo della tua attività: ordini, preferiti,
-                  offerte ed eventi pensati per te. I moduli verranno attivati
-                  nelle prossime fasi.
+                  Il riepilogo della tua attività su InCittà: ordini, preferiti
+                  e ultimi acquisti, sempre a portata di mano.
                 </p>
               </div>
             </div>

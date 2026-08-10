@@ -22,11 +22,11 @@ export function Sezione({
   action?: ReactNode;
 }) {
   return (
-    <section className="rounded-[1.75rem] border border-white/70 bg-white p-5 shadow-sm md:p-6">
+    <section className="rounded-2xl border border-slate-100 bg-white p-5 md:p-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h2 className="flex items-center gap-2 text-sm font-black uppercase tracking-wide text-slate-900">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
+          <h2 className="flex items-center gap-2.5 text-xs font-black uppercase tracking-[0.14em] text-slate-500">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500 ring-1 ring-slate-200/60">
               <Icon className="h-4 w-4" aria-hidden />
             </span>
             {titolo}

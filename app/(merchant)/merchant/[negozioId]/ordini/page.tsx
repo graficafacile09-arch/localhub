@@ -75,11 +75,16 @@ export default async function MerchantOrdiniPage({
           return st.length > 0 ? ordini.filter((o) => st.includes(o.stato)) : ordini;
         })();
 
+  // Attenzione: il KPI "In lavorazione" conta lo STESSO insieme del filtro
+  // a cui rimanda (confermato+in_lavorazione+in_consegna), così il numero
+  // corrisponde sempre alla lista che si apre; "In consegna" resta il
+  // sotto-insieme dedicato.
   const conteggi: ConteggiOrdini = {
     nuovi: ordini.filter((o) => o.stato === "in_preparazione").length,
     lavorazione: ordini.filter((o) =>
       ["confermato", "in_lavorazione", "in_consegna"].includes(o.stato)
     ).length,
+    inConsegna: ordini.filter((o) => o.stato === "in_consegna").length,
     pronti: ordini.filter((o) => o.stato === "pronto").length,
     completati: ordini.filter((o) => o.stato === "consegnato").length,
     annullati: ordini.filter((o) => o.stato === "cancellato").length,
