@@ -133,17 +133,10 @@ export default async function MerchantOrdineDettaglioPage({
 
   const sintesi = sintesiProdotti(ordine.righe);
 
-  return (
+  // ── Dettaglio ordine completo (riusato sotto il toggle "Vedi ordine
+  //    completo" quando la pagina è una CONSOLE RECLAMO) ────────────────────
+  const dettaglioOrdine = (
     <div className="space-y-5">
-      {/* ── Breadcrumb ─────────────────────────────────────────────────────── */}
-      <nav className="flex items-center gap-1.5 text-xs text-slate-500">
-        <Link href={`/merchant/${negozioId}/ordini`} className="transition hover:text-blue-600">
-          Ordini
-        </Link>
-        <span>/</span>
-        <span className="font-medium text-slate-700">{ordine.numero}</span>
-      </nav>
-
       {/* ── Header ordine (componente condiviso) ────────────────────────────── */}
       <OrderHeader
         numero={ordine.numero}
@@ -180,7 +173,7 @@ export default async function MerchantOrdineDettaglioPage({
         }
       />
 
-      {/* ── Azioni venditore (in base allo stato reale) — sempre ben visibile ── */}
+      {/* ── Azioni venditore (in base allo stato reale) ────────────────────── */}
       {ordine.stato !== "cancellato" && ordine.stato !== "consegnato" && (
         <div className="rounded-[1.75rem] border border-blue-100 bg-white p-5 shadow-sm ring-1 ring-blue-50">
           <p className="mb-3 flex items-center gap-2 text-sm font-black uppercase tracking-wide text-slate-900">
@@ -245,27 +238,36 @@ export default async function MerchantOrdineDettaglioPage({
           )}
         </div>
       </div>
+    </div>
+  );
 
-      {/* ── RECLAMI — Centro gestione reclamo (scheda operativa completa) ──── */}
-      {reclami.length > 0 && (
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-red-100 text-red-600">
-              <AlertTriangle className="h-4 w-4" aria-hidden />
-            </span>
-            <h2 className="text-sm font-black uppercase tracking-wide text-slate-900">
-              Reclami del cliente
-            </h2>
-          </div>
-          <ReclamiOrdine
-            negozioId={negozioId}
-            ordineId={ordineId}
-            numero={ordine.numero}
-            sintesi={sintesi}
-            reclamiIniziali={reclami}
-            messaggiIniziali={messaggiReclami}
-          />
-        </div>
+  return (
+    <div className="space-y-5">
+      {/* ── Breadcrumb ─────────────────────────────────────────────────────── */}
+      <nav className="flex items-center gap-1.5 text-xs text-slate-500">
+        <Link href={`/merchant/${negozioId}/ordini`} className="transition hover:text-blue-600">
+          Ordini
+        </Link>
+        <span>/</span>
+        <span className="font-medium text-slate-700">{ordine.numero}</span>
+      </nav>
+
+      {reclami.length > 0 ? (
+        /* ── CONSOLE OPERATIVA RECLAMO: reclamo → chat → azioni, con il
+           dettaglio ordine completo SOLO dietro il toggle. Nessuna pagina
+           ordine interposta, nessuna informazione duplicata. ── */
+        <ReclamiOrdine
+          negozioId={negozioId}
+          ordineId={ordineId}
+          numero={ordine.numero}
+          sintesi={sintesi}
+          reclamiIniziali={reclami}
+          messaggiIniziali={messaggiReclami}
+          ordineCompleto={dettaglioOrdine}
+        />
+      ) : (
+        /* ── Nessun reclamo → la normale scheda ordine (invariata) ────────── */
+        dettaglioOrdine
       )}
 
       {/* ── Ritorno ─────────────────────────────────────────────────────────── */}
