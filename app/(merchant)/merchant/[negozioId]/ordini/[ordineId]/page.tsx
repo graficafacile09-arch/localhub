@@ -1,4 +1,3 @@
-import type { ComponentType, ReactNode } from "react";
 import Link from "next/link";
 import {
   AlertTriangle as AlertTriangleIcon,
@@ -21,18 +20,24 @@ import {
 import MerchantEmptyState from "@/components/merchant/MerchantEmptyState";
 import OrdineAzioni from "@/components/merchant/OrdineAzioni";
 import { requireCurrentUser } from "@/lib/auth/session";
-import { formattaDataOrdine, etichettaModalita } from "@/lib/cliente/ordini-format";
+import {
+  configStatoOrdine,
+  etichettaModalita,
+  etichettaStato,
+  formattaDataOrdine,
+  sintesiProdotti,
+} from "@/lib/cliente/ordini-format";
 import type { StatoOrdine } from "@/lib/cliente/types";
 import { getMerchantStoreForUser } from "@/lib/merchant/data";
 import { getOrdineVenditore } from "@/lib/merchant/ordini";
 import { getReclamiVenditore } from "@/lib/ordine-reclami";
 import type { ReclamoOrdine as ReclamoOrdineType } from "@/lib/ordine-reclami";
 import ReclamiOrdine from "@/components/merchant/ReclamiOrdine";
-import {
-  ETICHETTE_STATO,
-  etichettaMotivoAnnullamento,
-} from "@/lib/merchant/ordini-stati";
 import type { OrdineVenditoreDettaglio } from "@/lib/merchant/ordini";
+import { Sezione, RigaDettaglio } from "@/components/ordini/Sezione";
+import { StatoOrdineBanner } from "@/components/ordini/StatoOrdineBanner";
+import { RigheProdotto } from "@/components/ordini/RigheProdotto";
+import { StoricoEventi } from "@/components/ordini/StoricoEventi";
 
 export const dynamic = "force-dynamic";
 
@@ -40,84 +45,30 @@ function formattaPrezzo(value: number): string {
   return `€${(value || 0).toFixed(2).replace(".", ",")}`;
 }
 
+/** Badge compatto di stato (stesso linguaggio visivo del banner). */
 function BadgeStato({ stato }: { stato: StatoOrdine }) {
-  const base = "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold";
+  const base = "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold";
   const colori: Record<StatoOrdine, string> = {
-    in_preparazione: "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
-    confermato: "bg-blue-50 text-blue-700 ring-1 ring-blue-200",
-    in_lavorazione: "bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200",
-    pronto: "bg-cyan-50 text-cyan-700 ring-1 ring-cyan-200",
-    in_consegna: "bg-blue-50 text-blue-700 ring-1 ring-blue-200",
-    consegnato: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200",
-    cancellato: "bg-red-50 text-red-600 ring-1 ring-red-200",
+    in_preparazione: "bg-slate-100 text-slate-700 ring-1 ring-slate-200",
+    confermato: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200",
+    in_lavorazione: "bg-blue-50 text-blue-700 ring-1 ring-blue-200",
+    pronto: "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
+    in_consegna: "bg-sky-50 text-sky-700 ring-1 ring-sky-200",
+    consegnato: "bg-teal-50 text-teal-700 ring-1 ring-teal-200",
+    cancellato: "bg-red-50 text-red-700 ring-1 ring-red-200",
   };
-  return <span className={`${base} ${colori[stato]}`}>{ETICHETTE_STATO[stato]}</span>;
+  return <span className={`${base} ${colori[stato]}`}>{etichettaStato(stato)}</span>;
 }
 
-function Sezione({
-  icon: Icon,
-  titolo,
-  children,
-}: {
-  icon: ComponentType<{ className?: string }>;
-  titolo: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className="rounded-[1.75rem] border border-white/70 bg-white p-5 shadow-sm">
-      <h2 className="flex items-center gap-2 text-sm font-bold text-slate-900">
-        <Icon className="h-4 w-4 text-blue-600" aria-hidden />
-        {titolo}
-      </h2>
-      <div className="mt-3">{children}</div>
-    </div>
-  );
-}
-
-function RigaDettaglio({ etichetta, valore }: { etichetta: string; valore: ReactNode }) {
-  if (valore === null || valore === undefined || valore === "") return null;
-  return (
-    <div className="flex items-start justify-between gap-4 py-1.5">
-      <span className="text-sm text-slate-500">{etichetta}</span>
-      <span className="text-right text-sm font-semibold text-slate-800">{valore}</span>
-    </div>
-  );
-}
-
-/** Timeline dello storico eventi (più recente in alto). */
-function StoricoEventi({ eventi }: { eventi: OrdineVenditoreDettaglio["eventi"] }) {
-  const ordinati = [...eventi].sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
-  if (ordinati.length === 0) {
-    return <p className="text-sm text-slate-500">Nessun evento registrato.</p>;
-  }
-  return (
-    <ol className="relative space-y-4 border-l border-slate-200 pl-5">
-      {ordinati.map((ev) => (
-        <li key={ev.id} className="relative">
-          <span className="absolute -left-[26px] top-1 h-3 w-3 rounded-full border-2 border-white bg-blue-500 shadow" />
-          <p className="text-sm font-bold text-slate-800">
-            {ev.dettaglio ?? ev.evento}
-            {ev.evento === "cancellato" && ev.motivo ? (
-              <span className="ml-2 rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-700">
-                {etichettaMotivoAnnullamento(ev.motivo)}
-              </span>
-            ) : null}
-          </p>
-          <p className="mt-0.5 text-xs text-slate-400">
-            {new Date(ev.createdAt).toLocaleString("it-IT", {
-              day: "2-digit",
-              month: "2-digit",
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-          </p>
-          {ev.nota && <p className="mt-1 text-xs italic text-slate-500">“{ev.nota}”</p>}
-        </li>
-      ))}
-    </ol>
-  );
-}
-
+/**
+ * Pagina dettaglio ordine — Area Venditore ("scheda ordine").
+ * Stesso linguaggio visivo dell'area cliente (banner di stato guidato dal
+ * DB, identificazione #LH-XXXX · prodotto, sezioni condivise) con in più
+ * gli strumenti di gestione: azioni di stato (OrdineAzioni), dati cliente
+ * e gestione reclami. Un ordine ANNULLATO mostra sempre la grafica di
+ * annullamento con motivo/nota. OWNERSHIP server-side: canManageStore +
+ * filtro negozio_id (ordine altrui → non trovato).
+ */
 export default async function MerchantOrdineDettaglioPage({
   params,
 }: {
@@ -152,7 +103,6 @@ export default async function MerchantOrdineDettaglioPage({
     errore = err instanceof Error ? err.message : "Errore sconosciuto";
   }
 
-  // Reclami dell'ordine (best-effort: la pagina non deve rompersi).
   let reclami: ReclamoOrdineType[] = [];
   if (ordine) {
     try {
@@ -206,9 +156,12 @@ export default async function MerchantOrdineDettaglioPage({
     .filter((v): v is string => Boolean(v && v.trim()))
     .join(", ");
 
+  const sintesi = sintesiProdotti(ordine.righe);
+  const banner = configStatoOrdine(ordine.stato);
+
   return (
     <div className="space-y-5">
-      {/* ── Breadcrumb + intestazione ───────────────────────────────────────── */}
+      {/* ── Breadcrumb ─────────────────────────────────────────────────────── */}
       <nav className="flex items-center gap-1.5 text-xs text-slate-500">
         <Link href={`/merchant/${negozioId}/ordini`} className="transition hover:text-blue-600">
           Ordini
@@ -217,6 +170,7 @@ export default async function MerchantOrdineDettaglioPage({
         <span className="font-medium text-slate-700">{ordine.numero}</span>
       </nav>
 
+      {/* ── Header ordine: numero + prodotto, MAI l'UUID ────────────────────── */}
       <div className="rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm md:p-8">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex items-start gap-4">
@@ -227,17 +181,28 @@ export default async function MerchantOrdineDettaglioPage({
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
                 Dettaglio ordine
               </p>
-              <div className="mt-1.5 flex flex-wrap items-center gap-2">
-                <h1 className="text-2xl font-black tracking-tight text-slate-900 md:text-3xl">
-                  {ordine.numero}
-                </h1>
-                <BadgeStato stato={ordine.stato} />
-              </div>
-              <p className="mt-2 text-sm text-slate-600">
-                {ordine.clienteNome} {ordine.clienteCognome} ·{" "}
-                {formattaDataOrdine(ordine.createdAt)} ·{" "}
-                {etichettaModalita(ordine.modalita)}
+              <h1 className="mt-1.5 text-2xl font-black tracking-tight text-slate-900 md:text-3xl">
+                <span className="whitespace-nowrap">{ordine.numero}</span>
+                {sintesi ? (
+                  <span className="ml-2 font-bold text-slate-500">· {sintesi}</span>
+                ) : null}
+              </h1>
+              <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-600">
+                <span className="inline-flex items-center gap-1.5">
+                  <User className="h-4 w-4 text-slate-400" aria-hidden />
+                  <strong className="text-slate-800">
+                    {ordine.clienteNome} {ordine.clienteCognome}
+                  </strong>
+                </span>
+                <span className="text-slate-300">•</span>
+                <span>{formattaDataOrdine(ordine.createdAt)}</span>
+                <span className="text-slate-300">•</span>
+                <span>{etichettaModalita(ordine.modalita)}</span>
               </p>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <BadgeStato stato={ordine.stato} />
+                <span className="text-xs text-slate-400">Negozio: {ordine.negozioNome}</span>
+              </div>
             </div>
           </div>
           <div className="shrink-0 text-right">
@@ -245,9 +210,24 @@ export default async function MerchantOrdineDettaglioPage({
             <p className="mt-1 text-2xl font-black text-slate-900">{formattaPrezzo(ordine.totale)}</p>
           </div>
         </div>
+      </div>
 
-        {/* Azioni stato */}
-        <div className="mt-6 border-t border-slate-100 pt-5">
+      {/* ── Stato ordine (grafica guidata dal DB) ───────────────────────────── */}
+      <StatoOrdineBanner
+        stato={ordine.stato}
+        annullatoMotivo={ordine.annullatoMotivo}
+        annullatoNota={ordine.annullatoNota}
+        annullatoAt={ordine.annullatoAt}
+        sottoTitolo={
+          ordine.stato === "cancellato"
+            ? "Ordine terminale: lo stock è stato ripristinato (se tracciato) e il cliente è stato avvisato via email."
+            : undefined
+        }
+      />
+
+      {/* ── Azioni venditore (in base allo stato reale) ─────────────────────── */}
+      {!banner.terminale && (
+        <div className="rounded-[1.75rem] border border-white/70 bg-white p-5 shadow-sm">
           <OrdineAzioni
             negozioId={negozioId}
             ordineId={ordineId}
@@ -255,7 +235,7 @@ export default async function MerchantOrdineDettaglioPage({
             stato={ordine.stato}
           />
         </div>
-      </div>
+      )}
 
       {/* ── Cliente ─────────────────────────────────────────────────────────── */}
       <Sezione icon={User} titolo="Cliente">
@@ -290,38 +270,14 @@ export default async function MerchantOrdineDettaglioPage({
 
       {/* ── Prodotti ────────────────────────────────────────────────────────── */}
       <Sezione icon={Package} titolo="Prodotti">
-        <div className="divide-y divide-slate-100">
-          {ordine.righe.map((riga) => (
-            <div key={riga.prodottoId} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
-              <div className="min-w-0 pr-4">
-                <p className="truncate text-sm font-semibold text-slate-800">{riga.nomeProdotto}</p>
-                <p className="text-xs text-slate-500">
-                  {riga.quantita} × {formattaPrezzo(riga.prezzoUnitario)}
-                </p>
-              </div>
-              <span className="shrink-0 text-sm font-bold text-slate-900">
-                {formattaPrezzo(riga.prezzoUnitario * riga.quantita)}
-              </span>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-4 space-y-1.5 border-t border-slate-100 pt-4">
-          <RigaDettaglio
-            etichetta="Subtotale"
-            valore={formattaPrezzo(ordine.righe.reduce((acc, r) => acc + r.prezzoUnitario * r.quantita, 0))}
-          />
-          {ordine.costoSpedizione > 0 && (
-            <RigaDettaglio etichetta="Spedizione" valore={formattaPrezzo(ordine.costoSpedizione)} />
-          )}
-          <div className="flex items-center justify-between pt-2">
-            <span className="text-sm font-bold text-slate-900">Totale</span>
-            <span className="text-lg font-black text-slate-900">{formattaPrezzo(ordine.totale)}</span>
-          </div>
-        </div>
+        <RigheProdotto
+          righe={ordine.righe}
+          costoSpedizione={ordine.costoSpedizione}
+          totale={ordine.totale}
+        />
       </Sezione>
 
-      {/* ── Consegna ────────────────────────────────────────────────────────── */}
+      {/* ── Consegna / Ritiro ───────────────────────────────────────────────── */}
       <Sezione
         icon={èRitiro ? MapPin : Truck}
         titolo={èRitiro ? "Ritiro in negozio" : "Spedizione a domicilio"}
@@ -333,7 +289,7 @@ export default async function MerchantOrdineDettaglioPage({
               valore={
                 ordine.ritiroData ? (
                   <span className="inline-flex items-center gap-1.5">
-                    <CalendarDays className="h-4 w-4 text-blue-600" aria-hidden />
+                    <CalendarDays className="h-4 w-4 text-slate-500" aria-hidden />
                     {ordine.ritiroData}
                   </span>
                 ) : (
@@ -346,7 +302,7 @@ export default async function MerchantOrdineDettaglioPage({
                 etichetta="Fascia oraria"
                 valore={
                   <span className="inline-flex items-center gap-1.5">
-                    <Clock className="h-4 w-4 text-blue-600" aria-hidden />
+                    <Clock className="h-4 w-4 text-slate-500" aria-hidden />
                     {ordine.ritiroFascia}
                   </span>
                 }
@@ -363,7 +319,11 @@ export default async function MerchantOrdineDettaglioPage({
             {ordine.metodoSpedizione && (
               <RigaDettaglio
                 etichetta="Metodo spedizione"
-                valore={ordine.metodoSpedizione === "express" ? "Espresso (1-2 giorni)" : "Standard (3-5 giorni)"}
+                valore={
+                  ordine.metodoSpedizione === "express"
+                    ? "Espresso (1-2 giorni)"
+                    : "Standard (3-5 giorni)"
+                }
               />
             )}
             {ordine.metodoPagamento && (
@@ -386,45 +346,23 @@ export default async function MerchantOrdineDettaglioPage({
               />
             )}
             {ordine.spedizioneNote && (
-              <p className="mt-2 text-xs text-slate-500">Note consegna: {ordine.spedizioneNote}</p>
+              <p className="pt-1 text-xs text-slate-500">Note consegna: {ordine.spedizioneNote}</p>
             )}
           </div>
         )}
       </Sezione>
 
-      {/* ── Note cliente ────────────────────────────────────────────────────── */}
+      {/* ── Note cliente (solo se presenti) ─────────────────────────────────── */}
       {ordine.note && (
         <Sezione icon={MessageSquareText} titolo="Note del cliente">
           <p className="text-sm leading-6 text-slate-700">{ordine.note}</p>
         </Sezione>
       )}
 
-      {/* ── Annullamento ────────────────────────────────────────────────────── */}
-      {ordine.stato === "cancellato" && (
-        <Sezione icon={AlertTriangleIcon} titolo="Annullamento">
-          <div className="space-y-1.5">
-            <RigaDettaglio
-              etichetta="Motivo"
-              valore={etichettaMotivoAnnullamento(ordine.annullatoMotivo)}
-            />
-            {ordine.annullatoNota && (
-              <RigaDettaglio etichetta="Nota" valore={ordine.annullatoNota} />
-            )}
-            {ordine.annullatoAt && (
-              <RigaDettaglio
-                etichetta="Annullato il"
-                valore={new Date(ordine.annullatoAt).toLocaleString("it-IT", {
-                  day: "2-digit",
-                  month: "2-digit",
-                  year: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              />
-            )}
-          </div>
-        </Sezione>
-      )}
+      {/* ── Cronologia (dati reali da ordini_eventi) ────────────────────────── */}
+      <Sezione icon={History} titolo="Cronologia dell'ordine">
+        <StoricoEventi eventi={ordine.eventi} />
+      </Sezione>
 
       {/* ── Reclami del cliente ─────────────────────────────────────────────── */}
       {reclami.length > 0 && (
@@ -436,11 +374,6 @@ export default async function MerchantOrdineDettaglioPage({
           />
         </Sezione>
       )}
-
-      {/* ── Storico eventi ──────────────────────────────────────────────────── */}
-      <Sezione icon={History} titolo="Storico dell'ordine">
-        <StoricoEventi eventi={ordine.eventi} />
-      </Sezione>
 
       {/* ── Ritorno ─────────────────────────────────────────────────────────── */}
       <div className="flex flex-wrap gap-3">

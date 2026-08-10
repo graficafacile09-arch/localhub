@@ -1,11 +1,13 @@
-import type { ComponentType, ReactNode } from "react";
+import type { ReactNode } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
   Banknote,
   CalendarDays,
   CreditCard,
+  History,
   MapPin,
+  MessageSquareText,
   Package,
   Phone,
   ReceiptText,
@@ -18,11 +20,16 @@ import {
   etichettaStato,
   formattaDataOrdine,
   getOrdineCliente,
+  sintesiProdotti,
 } from "@/lib/cliente/ordini";
 import { getReclamiOrdineCliente } from "@/lib/ordine-reclami";
 import type { ReclamoOrdine as ReclamoOrdineType } from "@/lib/ordine-reclami";
 import type { OrdineClienteDettaglio, StatoOrdine } from "@/lib/cliente/types";
 import ReclamoOrdine from "@/components/cliente/ReclamoOrdine";
+import { Sezione, RigaDettaglio } from "@/components/ordini/Sezione";
+import { StatoOrdineBanner } from "@/components/ordini/StatoOrdineBanner";
+import { RigheProdotto } from "@/components/ordini/RigheProdotto";
+import { StoricoEventi } from "@/components/ordini/StoricoEventi";
 
 type Params = { ordineId: string };
 
@@ -36,58 +43,29 @@ function formattaPrezzo(value: number): string {
   return `€${(value || 0).toFixed(2).replace(".", ",")}`;
 }
 
+/** Badge compatto di stato (header e liste). Stesso linguaggio del banner. */
 function BadgeStato({ stato }: { stato: StatoOrdine }) {
-  const base =
-    "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold";
+  const base = "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold";
   const colori: Record<StatoOrdine, string> = {
-    in_preparazione: "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
-    confermato: "bg-blue-50 text-blue-700 ring-1 ring-blue-200",
-    in_lavorazione: "bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200",
-    pronto: "bg-cyan-50 text-cyan-700 ring-1 ring-cyan-200",
-    in_consegna: "bg-blue-50 text-blue-700 ring-1 ring-blue-200",
-    consegnato: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200",
-    cancellato: "bg-red-50 text-red-600 ring-1 ring-red-200",
+    in_preparazione: "bg-slate-100 text-slate-700 ring-1 ring-slate-200",
+    confermato: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200",
+    in_lavorazione: "bg-blue-50 text-blue-700 ring-1 ring-blue-200",
+    pronto: "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
+    in_consegna: "bg-sky-50 text-sky-700 ring-1 ring-sky-200",
+    consegnato: "bg-teal-50 text-teal-700 ring-1 ring-teal-200",
+    cancellato: "bg-red-50 text-red-700 ring-1 ring-red-200",
   };
   return <span className={`${base} ${colori[stato]}`}>{etichettaStato(stato)}</span>;
 }
 
-/** Blocco sezione della pagina dettaglio. */
-function Sezione({
-  icon: Icon,
-  titolo,
-  children,
-}: {
-  icon: ComponentType<{ className?: string }>;
-  titolo: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className="rounded-[1.75rem] border border-white/70 bg-white p-5 shadow-sm">
-      <h2 className="flex items-center gap-2 text-sm font-bold text-slate-900">
-        <Icon className="h-4 w-4 text-teal-600" aria-hidden />
-        {titolo}
-      </h2>
-      <div className="mt-3">{children}</div>
-    </div>
-  );
-}
-
-function RigaDettaglio({ etichetta, valore }: { etichetta: string; valore: ReactNode }) {
-  if (!valore || valore === "") return null;
-  return (
-    <div className="flex items-start justify-between gap-4 py-1.5">
-      <span className="text-sm text-slate-500">{etichetta}</span>
-      <span className="text-right text-sm font-semibold text-slate-800">{valore}</span>
-    </div>
-  );
-}
-
 /**
- * Pagina dettaglio ordine — Area Clienti.
- * VERIFICA DI OWNERSHIP SERVER-SIDE: l'ordine viene letto SOLO se
- * cliente_user_id = utente della sessione E id = ordineId. Un cliente che
- * modifica l'URL con l'UUID di un ordine altrui riceve \"Ordine non trovato\"
- * (nessuna informazione leak).
+ * Pagina dettaglio ordine — Area Clienti ("scheda ordine").
+ * LO STATO DEL DB COMANDA LA GRAFICA: il banner (StatoOrdineBanner) è
+ * derivato da ordine.stato e un ordine ANNULLATO mostra sempre e solo la
+ * grafica di annullamento con motivo/nota. L'identificativo principale è
+ * il numero leggibile (LH-XXXX) con la sintesi dei prodotti, MAI l'UUID.
+ * OWNERSHIP server-side: ordine restituito solo se cliente_user_id =
+ * utente della sessione.
  */
 export default async function OrdineDettaglioPage({ params }: { params: Promise<Params> }) {
   const { ordineId } = await params;
@@ -101,8 +79,6 @@ export default async function OrdineDettaglioPage({ params }: { params: Promise<
     errore = err instanceof Error ? err.message : "Errore sconosciuto";
   }
 
-  // Reclami dell'ordine (best-effort: se la tabella non esiste ancora la
-  // pagina non deve rompersi).
   let reclami: ReclamoOrdineType[] = [];
   if (ordine) {
     try {
@@ -112,7 +88,6 @@ export default async function OrdineDettaglioPage({ params }: { params: Promise<
     }
   }
 
-  // Errore di lettura (distinto dal non-trovato).
   if (errore) {
     return (
       <div className="rounded-[2rem] border border-red-100 bg-white p-8 text-center shadow-sm">
@@ -133,7 +108,6 @@ export default async function OrdineDettaglioPage({ params }: { params: Promise<
     );
   }
 
-  // Non trovato OPPURE appartenente a un altro cliente: stessa risposta.
   if (!ordine) {
     return (
       <div className="rounded-[2rem] border border-white/70 bg-white p-8 text-center shadow-sm">
@@ -166,9 +140,11 @@ export default async function OrdineDettaglioPage({ params }: { params: Promise<
     .filter((v): v is string => Boolean(v && v.trim()))
     .join(", ");
 
+  const sintesi = sintesiProdotti(ordine.righe);
+
   return (
     <div className="space-y-5">
-      {/* ── Intestazione ─────────────────────────────────────────────────────── */}
+      {/* ── Header ordine: numero + prodotto, MAI l'UUID ─────────────────────── */}
       <div className="rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm md:p-8">
         <div className="flex items-start gap-4">
           <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-teal-50 text-teal-600 ring-1 ring-teal-100">
@@ -178,15 +154,23 @@ export default async function OrdineDettaglioPage({ params }: { params: Promise<
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-teal-700">
               Area Clienti
             </p>
-            <div className="mt-1.5 flex flex-wrap items-center gap-2">
-              <h1 className="text-2xl font-black tracking-tight text-slate-900 md:text-3xl">
-                {ordine.numero}
-              </h1>
-              <BadgeStato stato={ordine.stato} />
-            </div>
-            <p className="mt-2 text-sm text-slate-600">
-              Ordinato il {formattaDataOrdine(ordine.createdAt)}
+            <h1 className="mt-1.5 text-2xl font-black tracking-tight text-slate-900 md:text-3xl">
+              <span className="whitespace-nowrap">{ordine.numero}</span>
+              {sintesi ? (
+                <span className="ml-2 font-bold text-slate-500">· {sintesi}</span>
+              ) : null}
+            </h1>
+            <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-600">
+              <span>Ordine presso <strong className="text-slate-800">{ordine.negozioNome}</strong></span>
+              <span className="text-slate-300">•</span>
+              <span>del {formattaDataOrdine(ordine.createdAt)}</span>
             </p>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <BadgeStato stato={ordine.stato} />
+              <span className="text-xs text-slate-400">
+                {etichettaModalita(ordine.modalita)}
+              </span>
+            </div>
           </div>
           <div className="shrink-0 text-right">
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
@@ -199,129 +183,122 @@ export default async function OrdineDettaglioPage({ params }: { params: Promise<
         </div>
       </div>
 
-      {/* ── Negozio ──────────────────────────────────────────────────────────── */}
-      <Sezione icon={Store} titolo="Negozio">
+      {/* ── Stato ordine (grafica guidata dal DB) ───────────────────────────── */}
+      <StatoOrdineBanner
+        stato={ordine.stato}
+        annullatoMotivo={ordine.annullatoMotivo}
+        annullatoNota={ordine.annullatoNota}
+        annullatoAt={ordine.annullatoAt}
+      />
+
+      {/* ── Prodotti ────────────────────────────────────────────────────────── */}
+      <Sezione icon={Package} titolo="Prodotti">
+        <RigheProdotto
+          righe={ordine.righe}
+          costoSpedizione={ordine.costoSpedizione}
+          totale={ordine.totale}
+        />
+      </Sezione>
+
+      {/* ── Negozio ─────────────────────────────────────────────────────────── */}
+      <Sezione
+        icon={Store}
+        titolo="Negozio"
+        action={
+          <Link
+            href={`/negozi?q=${encodeURIComponent(ordine.negozioNome)}`}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 transition hover:border-teal-300 hover:text-teal-700"
+          >
+            Visita il negozio
+          </Link>
+        }
+      >
         <p className="text-base font-semibold text-slate-800">{ordine.negozioNome}</p>
       </Sezione>
 
-      {/* ── Prodotti ─────────────────────────────────────────────────────────── */}
-      <Sezione icon={Package} titolo="Prodotti">
-        <div className="divide-y divide-slate-100">
-          {ordine.righe.map((riga) => (
-            <div key={riga.prodottoId} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
-              <div className="min-w-0 pr-4">
-                <p className="truncate text-sm font-semibold text-slate-800">
-                  {riga.nomeProdotto}
-                </p>
-                <p className="text-xs text-slate-500">
-                  {riga.quantita} × {formattaPrezzo(riga.prezzoUnitario)}
-                </p>
-              </div>
-              <span className="shrink-0 text-sm font-bold text-slate-900">
-                {formattaPrezzo(riga.prezzoUnitario * riga.quantita)}
-              </span>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-4 space-y-1.5 border-t border-slate-100 pt-4">
-          <RigaDettaglio
-            etichetta="Subtotale"
-            valore={formattaPrezzo(
-              ordine.righe.reduce((acc, r) => acc + r.prezzoUnitario * r.quantita, 0)
-            )}
-          />
-          {ordine.costoSpedizione > 0 && (
-            <RigaDettaglio etichetta="Spedizione" valore={formattaPrezzo(ordine.costoSpedizione)} />
-          )}
-          <div className="flex items-center justify-between pt-2">
-            <span className="text-sm font-bold text-slate-900">Totale</span>
-            <span className="text-lg font-black text-slate-900">
-              {formattaPrezzo(ordine.totale)}
-            </span>
-          </div>
-        </div>
-      </Sezione>
-
-      {/* ── Consegna ─────────────────────────────────────────────────────────── */}
+      {/* ── Consegna / Ritiro ───────────────────────────────────────────────── */}
       <Sezione
         icon={èRitiro ? MapPin : Truck}
         titolo={èRitiro ? "Ritiro in negozio" : "Spedizione a domicilio"}
       >
         {èRitiro ? (
-          <>
+          <div className="space-y-1.5">
             <p className="text-sm text-slate-600">
               Ritira il tuo ordine presso {ordine.negozioNome}.
             </p>
-            <div className="mt-3 space-y-1.5">
-              <RigaDettaglio
-                etichetta="Data ritiro"
-                valore={
-                  ordine.ritiroData ? (
-                    <span className="inline-flex items-center gap-1.5">
-                      <CalendarDays className="h-4 w-4 text-teal-600" aria-hidden />
-                      {ordine.ritiroData}
-                    </span>
-                  ) : (
-                    "Da definire con il negozio"
-                  )
-                }
-              />
-              {ordine.ritiroFascia && (
-                <RigaDettaglio etichetta="Fascia oraria" valore={ordine.ritiroFascia} />
-              )}
-            </div>
-          </>
+            <RigaDettaglio
+              etichetta="Data ritiro"
+              valore={
+                ordine.ritiroData ? (
+                  <span className="inline-flex items-center gap-1.5">
+                    <CalendarDays className="h-4 w-4 text-teal-600" aria-hidden />
+                    {ordine.ritiroData}
+                  </span>
+                ) : (
+                  "Da definire con il negozio"
+                )
+              }
+            />
+            {ordine.ritiroFascia && (
+              <RigaDettaglio etichetta="Fascia oraria" valore={ordine.ritiroFascia} />
+            )}
+          </div>
         ) : (
-          <>
+          <div className="space-y-1.5">
             {indirizzoSpedizione ? (
               <p className="text-sm leading-6 text-slate-700">{indirizzoSpedizione}</p>
             ) : (
               <p className="text-sm text-slate-600">Indirizzo di spedizione non indicato.</p>
             )}
-            <div className="mt-3 space-y-1.5">
-              {ordine.metodoSpedizione && (
-                <RigaDettaglio
-                  etichetta="Metodo spedizione"
-                  valore={
-                    ordine.metodoSpedizione === "express" ? "Espresso (1-2 giorni)" : "Standard (3-5 giorni)"
-                  }
-                />
-              )}
-              {ordine.metodoPagamento && (
-                <RigaDettaglio
-                  etichetta="Metodo pagamento"
-                  valore={
-                    <span className="inline-flex items-center gap-1.5">
-                      {ordine.metodoPagamento === "bonifico" ? (
-                        <Banknote className="h-4 w-4 text-slate-400" aria-hidden />
-                      ) : (
-                        <CreditCard className="h-4 w-4 text-slate-400" aria-hidden />
-                      )}
-                      {ordine.metodoPagamento === "carta"
-                        ? "Carta"
-                        : ordine.metodoPagamento === "paypal"
-                          ? "PayPal"
-                          : "Bonifico bancario"}
-                    </span>
-                  }
-                />
-              )}
-            </div>
-          </>
-        )}
-        {ordine.spedizioneNote && (
-          <p className="mt-3 text-xs text-slate-500">
-            Note consegna: {ordine.spedizioneNote}
-          </p>
+            {ordine.metodoSpedizione && (
+              <RigaDettaglio
+                etichetta="Metodo spedizione"
+                valore={
+                  ordine.metodoSpedizione === "express"
+                    ? "Espresso (1-2 giorni)"
+                    : "Standard (3-5 giorni)"
+                }
+              />
+            )}
+            {ordine.metodoPagamento && (
+              <RigaDettaglio
+                etichetta="Metodo pagamento"
+                valore={
+                  <span className="inline-flex items-center gap-1.5">
+                    {ordine.metodoPagamento === "bonifico" ? (
+                      <Banknote className="h-4 w-4 text-slate-400" aria-hidden />
+                    ) : (
+                      <CreditCard className="h-4 w-4 text-slate-400" aria-hidden />
+                    )}
+                    {ordine.metodoPagamento === "carta"
+                      ? "Carta"
+                      : ordine.metodoPagamento === "paypal"
+                        ? "PayPal"
+                        : "Bonifico bancario"}
+                  </span>
+                }
+              />
+            )}
+            {ordine.spedizioneNote && (
+              <p className="pt-1 text-xs text-slate-500">
+                Note consegna: {ordine.spedizioneNote}
+              </p>
+            )}
+          </div>
         )}
       </Sezione>
 
-      {/* ── Note e contatti ──────────────────────────────────────────────────── */}
-      {(ordine.note || ordine.telefono || ordine.email) && (
-        <Sezione icon={ReceiptText} titolo="Dettagli">
+      {/* ── Note cliente (solo se presenti) ─────────────────────────────────── */}
+      {ordine.note && (
+        <Sezione icon={MessageSquareText} titolo="Note">
+          <p className="text-sm leading-6 text-slate-700">{ordine.note}</p>
+        </Sezione>
+      )}
+
+      {/* ── Contatti ────────────────────────────────────────────────────────── */}
+      {(ordine.telefono || ordine.email) && (
+        <Sezione icon={Phone} titolo="Contatti">
           <div className="space-y-1.5">
-            {ordine.note && <RigaDettaglio etichetta="Note" valore={ordine.note} />}
             {ordine.telefono && (
               <RigaDettaglio
                 etichetta="Telefono"
@@ -333,18 +310,36 @@ export default async function OrdineDettaglioPage({ params }: { params: Promise<
                 }
               />
             )}
+            {ordine.email && (
+              <RigaDettaglio
+                etichetta="Email"
+                valore={
+                  <span className="inline-flex items-center gap-1.5">
+                    <ReceiptText className="h-4 w-4 text-slate-400" aria-hidden />
+                    {ordine.email}
+                  </span>
+                }
+              />
+            )}
           </div>
         </Sezione>
       )}
 
-      {/* ── Reclamo: ordine non arrivato (il componente decide visibilità) ──── */}
+      {/* ── Cronologia (dati reali da ordini_eventi) ────────────────────────── */}
+      {ordine.eventi.length > 0 && (
+        <Sezione icon={History} titolo="Cronologia dell'ordine">
+          <StoricoEventi eventi={ordine.eventi} />
+        </Sezione>
+      )}
+
+      {/* ── Reclamo: ordine non arrivato (il componente decide la visibilità) ── */}
       <ReclamoOrdine
         ordineId={ordineId}
         puòReclamare={ordine.stato !== "cancellato"}
         reclamiIniziali={reclami}
       />
 
-      {/* ── Azioni ───────────────────────────────────────────────────────────── */}
+      {/* ── Azioni ──────────────────────────────────────────────────────────── */}
       <div className="flex flex-wrap gap-3">
         <Link
           href="/cliente/ordini"

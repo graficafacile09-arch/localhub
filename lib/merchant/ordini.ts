@@ -30,9 +30,13 @@
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { inviaEmailAggiornamentoStatoOrdine } from "@/lib/cliente/ordine-email";
-import type { RigaOrdine, StatoOrdine } from "@/lib/cliente/types";
+import type { EventoOrdine, RigaOrdine, StatoOrdine } from "@/lib/cliente/types";
 import { canManageStore } from "./data";
 import { prioritaStato, statiPerFiltro, type FiltroOrdini } from "./ordini-stati";
+
+// Ri-esportazione del tipo condiviso (le pagine importano EventoOrdine da
+// questo modulo; la definizione canonica è in lib/cliente/types.ts).
+export type { EventoOrdine };
 
 /** Client DB strutturale minimo (per iniettare un fake nei test). */
 export type OrdiniVenditoreDbClient = {
@@ -62,16 +66,6 @@ export type OrdineVenditoreLista = {
   lettoAt: string | null;
   /** True se l'ordine ha almeno un reclamo ATTIVO (aperto/in gestione). */
   haReclamoAperto: boolean;
-};
-
-/** Evento dello storico ordine (tabella ordini_eventi). */
-export type EventoOrdine = {
-  id: string;
-  evento: string;
-  dettaglio: string | null;
-  motivo: string | null;
-  nota: string | null;
-  createdAt: string;
 };
 
 /** Dettaglio completo ordine (area venditore). */

@@ -111,6 +111,35 @@ const righeRow = [
   },
 ];
 
+const eventiRow = [
+  {
+    id: "e1",
+    ordine_id: "ord-A",
+    evento: "ordine_ricevuto",
+    dettaglio: "Ordine ricevuto",
+    motivo: null,
+    nota: null,
+    created_at: "2026-08-16T10:00:01.000Z",
+  },
+  {
+    id: "e2",
+    ordine_id: "ord-A",
+    evento: "confermato",
+    dettaglio: "Ordine confermato",
+    motivo: null,
+    nota: null,
+    created_at: "2026-08-16T10:05:00.000Z",
+  },
+];
+
+const ordineAnnullatoRow = {
+  ...ordineRow,
+  stato: "cancellato",
+  annullato_motivo: "prodotto_non_disponibile",
+  annullato_nota: "Esaurito in magazzino",
+  annullato_at: "2026-08-16T12:00:00.000Z",
+};
+
 async function main() {
   let passati = 0;
   let falliti = 0;
@@ -189,14 +218,14 @@ async function main() {
     check("usato maybeSingle", log[0]?.calls.includes("maybeSingle"));
   }
 
-  // ── T6: dettaglio corretto ───────────────────────────────────────────────────
-  console.log("\n[T6] getOrdineCliente: dettaglio mappa prodotti/totale/stato");
+  // ── T6: dettaglio corretto (prodotti + eventi) ──────────────────────────────
+  console.log("\n[T6] getOrdineCliente: dettaglio mappa prodotti/totale/stato/eventi");
   {
     const log: FakeQuery[] = [];
     const ordine = await getOrdineCliente(
       "user-1",
       "ord-A",
-      fakeDb({ ordini: ordineRow, ordini_righe: righeRow }, log)
+      fakeDb({ ordini: ordineRow, ordini_righe: righeRow, ordini_eventi: eventiRow }, log)
     );
     check("dettaglio restituito", ordine !== null);
     check("1 riga prodotto", ordine?.righe.length === 1, String(ordine?.righe.length));
@@ -208,6 +237,32 @@ async function main() {
     check("note", ordine?.note === "Grazie");
     check("data ritiro", ordine?.ritiroData === "2026-08-20");
     check("fascia ritiro", ordine?.ritiroFascia === "10:00–11:00");
+    check("2 eventi caricati", ordine?.eventi.length === 2, String(ordine?.eventi.length));
+    check("primo evento mappato", ordine?.eventi[0]?.evento === "ordine_ricevuto");
+    check("secondo evento mappato", ordine?.eventi[1]?.dettaglio === "Ordine confermato");
+  }
+
+  // ── T6b: ordine ANNULLATO → motivo/nota/data annullamento mappati ────────────
+  console.log("\n[T6b] getOrdineCliente: dettaglio ordine annullato");
+  {
+    const log: FakeQuery[] = [];
+    const ordine = await getOrdineCliente(
+      "user-1",
+      "ord-A",
+      fakeDb(
+        {
+          ordini: ordineAnnullatoRow,
+          ordini_righe: righeRow,
+          ordini_eventi: [{ ...eventiRow[0], evento: "cancellato", dettaglio: "Ordine annullato", motivo: "prodotto_non_disponibile", nota: "Esaurito in magazzino" }],
+        },
+        log
+      )
+    );
+    check("stato cancellato", ordine?.stato === "cancellato");
+    check("motivo annullamento mappato", ordine?.annullatoMotivo === "prodotto_non_disponibile");
+    check("nota annullamento mappata", ordine?.annullatoNota === "Esaurito in magazzino");
+    check("data annullamento mappata", ordine?.annullatoAt === "2026-08-16T12:00:00.000Z");
+    check("evento annullato presente", ordine?.eventi[0]?.evento === "cancellato");
   }
 
   // ── T9: recupero guest ───────────────────────────────────────────────────────
@@ -217,7 +272,7 @@ async function main() {
     const ordini = await recuperaOrdiniGuest(
       "Cliente@Example.IT",
       "3331234567",
-      fakeDb({ ordini: [ordineRow], ordini_righe: righeRow }, log)
+      fakeDb({ ordini: [ordineRow], ordini_righe: righeRow, ordini_eventi: eventiRow }, log)
     );
     check("ordine trovato", ordini.length === 1, String(ordini.length));
     check(
@@ -226,6 +281,7 @@ async function main() {
     );
     check("telefono in eq", log[0]?.calls.includes("eq:cliente_telefono=3331234567"));
     check("righe caricate", ordini[0]?.righe.length === 1, String(ordini[0]?.righe.length));
+    check("eventi guest caricati", ordini[0]?.eventi.length === 2, String(ordini[0]?.eventi.length));
   }
 
   // ── T10: dati errati → nessun ordine + escape wildcard ───────────────────────

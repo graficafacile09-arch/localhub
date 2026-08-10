@@ -87,6 +87,12 @@ export type OrdinePersistito = {
   /** Solo modalita='ritiro' */
   ritiroData: string | null;
   ritiroFascia: string | null;
+  /** Motivo dell'annullamento (solo se stato = cancellato). */
+  annullatoMotivo: string | null;
+  /** Nota del negoziante relativa all'annullamento. */
+  annullatoNota: string | null;
+  /** Data/ora dell'annullamento. */
+  annullatoAt: string | null;
   righe: RigaOrdine[];
 };
 
@@ -165,6 +171,9 @@ function assumiOrdine(riga: Record<string, unknown>, righe: RigaOrdine[]): Ordin
     negozioNome: String(riga.negozio_nome),
     ritiroData: (riga.ritiro_data as string | null) ?? null,
     ritiroFascia: (riga.ritiro_fascia as string | null) ?? null,
+    annullatoMotivo: (riga.annullato_motivo as string | null) ?? null,
+    annullatoNota: (riga.annullato_nota as string | null) ?? null,
+    annullatoAt: (riga.annullato_at as string | null) ?? null,
     righe,
   };
 }

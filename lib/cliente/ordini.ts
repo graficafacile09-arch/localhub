@@ -20,11 +20,15 @@
 
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import {
+  configStatoOrdine,
   etichettaModalita,
   etichettaStato,
+  formattaDataOraEvento,
   formattaDataOrdine,
+  sintesiProdotti,
 } from "./ordini-format";
 import type {
+  EventoOrdine,
   OrdineClienteDettaglio,
   OrdineClienteLista,
   RigaOrdine,
@@ -33,7 +37,14 @@ import type {
 
 // Ri-esportazione dei formattatori puri (i server component continuano a
 // importarli da qui; i client component li importano da ./ordini-format).
-export { etichettaModalita, etichettaStato, formattaDataOrdine };
+export {
+  configStatoOrdine,
+  etichettaModalita,
+  etichettaStato,
+  formattaDataOraEvento,
+  formattaDataOrdine,
+  sintesiProdotti,
+};
 
 export type { StatoOrdine } from "./types";
 
@@ -44,6 +55,7 @@ export type OrdiniDbClient = {
 
 type OrdineRow = Record<string, unknown>;
 type RigaRow = Record<string, unknown>;
+type EventoRow = Record<string, unknown>;
 
 /** Converte una riga ordini_righe nella forma tipizzata. */
 function mappaRiga(row: RigaRow): RigaOrdine {
@@ -53,6 +65,18 @@ function mappaRiga(row: RigaRow): RigaOrdine {
     prezzoUnitario: Number(row.prezzo_unitario ?? 0),
     quantita: Number(row.quantita ?? 1),
     immagineUrl: (row.immagine_url as string | null) ?? null,
+  };
+}
+
+/** Converte una riga ordini_eventi nella forma tipizzata. */
+function mappaEvento(row: EventoRow): EventoOrdine {
+  return {
+    id: String(row.id),
+    evento: String(row.evento ?? ""),
+    dettaglio: (row.dettaglio as string | null) ?? null,
+    motivo: (row.motivo as string | null) ?? null,
+    nota: (row.nota as string | null) ?? null,
+    createdAt: String(row.created_at ?? ""),
   };
 }
 
@@ -73,7 +97,11 @@ function mappaLista(row: OrdineRow): OrdineClienteLista {
 }
 
 /** Converte una riga ordini nella forma \"dettaglio\" (con righe). */
-function mappaDettaglio(row: OrdineRow, righe: RigaOrdine[]): OrdineClienteDettaglio {
+function mappaDettaglio(
+  row: OrdineRow,
+  righe: RigaOrdine[],
+  eventi: EventoOrdine[]
+): OrdineClienteDettaglio {
   return {
     ...mappaLista(row),
     email: (row.cliente_email as string | null) ?? null,
@@ -87,7 +115,11 @@ function mappaDettaglio(row: OrdineRow, righe: RigaOrdine[]): OrdineClienteDetta
     spedizioneProvincia: (row.spedizione_provincia as string | null) ?? null,
     spedizioneNote: (row.spedizione_note as string | null) ?? null,
     note: (row.note as string | null) ?? null,
+    annullatoMotivo: (row.annullato_motivo as string | null) ?? null,
+    annullatoNota: (row.annullato_nota as string | null) ?? null,
+    annullatoAt: (row.annullato_at as string | null) ?? null,
     righe,
+    eventi,
   };
 }
 
@@ -151,8 +183,13 @@ export async function getOrdineCliente(
   }
   if (!data) return null;
 
-  const righe = await caricaRighe(db, ordineId);
-  return mappaDettaglio(data as OrdineRow, righe);
+  // Righe + eventi (letture parallele indipendenti; la cronologia usa gli
+  // stessi dati reali del trigger ordini_eventi).
+  const [righe, eventi] = await Promise.all([
+    caricaRighe(db, ordineId),
+    caricaEventi(db, ordineId),
+  ]);
+  return mappaDettaglio(data as OrdineRow, righe, eventi);
 }
 
 /**
@@ -187,17 +224,43 @@ export async function recuperaOrdiniGuest(
     throw new Error(`Ricerca ordini fallita: ${error.message}`);
   }
 
-  const righe = await caricaRigheGuest(db, (data ?? []).map((r: OrdineRow) => String(r.id)));
+  const ordineIds = (data ?? []).map((r: OrdineRow) => String(r.id));
+  const [righe, eventi] = await Promise.all([
+    caricaRigheGuest(db, ordineIds),
+    caricaEventiGuest(db, ordineIds),
+  ]);
   const righePerOrdine = new Map<string, RigaOrdine[]>();
   for (const r of righe) {
     const lista = righePerOrdine.get(r.ordineId) ?? [];
     lista.push(r);
     righePerOrdine.set(r.ordineId, lista);
   }
+  const eventiPerOrdine = new Map<string, EventoOrdine[]>();
+  for (const e of eventi) {
+    const lista = eventiPerOrdine.get(e.ordineId) ?? [];
+    lista.push(e);
+    eventiPerOrdine.set(e.ordineId, lista);
+  }
 
   return (data ?? []).map((r: OrdineRow) =>
-    mappaDettaglio(r, righePerOrdine.get(String(r.id)) ?? [])
+    mappaDettaglio(r, righePerOrdine.get(String(r.id)) ?? [], eventiPerOrdine.get(String(r.id)) ?? [])
   );
+}
+
+/** Eventi di un ordine (per la cronologia del dettaglio). */
+async function caricaEventi(db: OrdiniDbClient, ordineId: string): Promise<EventoOrdine[]> {
+  const { data, error } = await db
+    .from("ordini_eventi")
+    .select("*")
+    .eq("ordine_id", ordineId)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    // Best-effort: la cronologia non deve mai far fallire il dettaglio.
+    console.error(`[ordini-cliente] lettura eventi fallita: ${error.message}`);
+    return [];
+  }
+  return (data ?? []).map((r: EventoRow) => mappaEvento(r));
 }
 
 /** Righe di più ordini in un'unica query (per il recupero guest). */
@@ -217,5 +280,26 @@ async function caricaRigheGuest(
   return (data ?? []).map((r: RigaRow) => ({
     ordineId: String(r.ordine_id),
     ...mappaRiga(r),
+  }));
+}
+
+/** Eventi di più ordini in un'unica query (per il recupero guest). */
+async function caricaEventiGuest(
+  db: OrdiniDbClient,
+  ordineIds: string[]
+): Promise<Array<EventoOrdine & { ordineId: string }>> {
+  if (ordineIds.length === 0) return [];
+  const { data, error } = await db
+    .from("ordini_eventi")
+    .select("*")
+    .in("ordine_id", ordineIds);
+
+  if (error) {
+    console.error(`[ordini-cliente] lettura eventi guest fallita: ${error.message}`);
+    return [];
+  }
+  return (data ?? []).map((r: EventoRow) => ({
+    ordineId: String(r.ordine_id),
+    ...mappaEvento(r),
   }));
 }

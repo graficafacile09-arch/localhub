@@ -56,6 +56,24 @@ export type RigaOrdine = {
   immagineUrl: string | null;
 };
 
+/**
+ * Evento dello storico ordine (tabella ordini_eventi, popolata dal trigger
+ * di ordini su insert/cambio stato). Usato dalla cronologia sia nell'area
+ * cliente sia nell'area venditore.
+ */
+export type EventoOrdine = {
+  id: string;
+  /** Valore di stato associato (es. "confermato", "cancellato"). */
+  evento: string;
+  /** Etichetta leggibile (es. "Ordine confermato"). */
+  dettaglio: string | null;
+  /** Motivo di annullamento (solo per l'evento di annullamento). */
+  motivo: string | null;
+  /** Nota del venditore (annullamento). */
+  nota: string | null;
+  createdAt: string;
+};
+
 /** Ordine effettuato dal cliente. */
 export type ClienteOrdine = {
   id: string;
@@ -85,7 +103,8 @@ export type OrdineClienteLista = {
 
 /**
  * Dettaglio completo di un ordine del cliente (Area Clienti).
- * Contiene i dati snapshot di spedizione/ritiro e le righe prodotto.
+ * Contiene i dati snapshot di spedizione/ritiro, le righe prodotto,
+ * l'annullamento (se presente) e lo storico eventi.
  */
 export type OrdineClienteDettaglio = OrdineClienteLista & {
   email: string | null;
@@ -98,7 +117,15 @@ export type OrdineClienteDettaglio = OrdineClienteLista & {
   spedizioneProvincia: string | null;
   spedizioneNote: string | null;
   note: string | null;
+  /** Motivo dell'annullamento (solo se stato = cancellato). */
+  annullatoMotivo: string | null;
+  /** Nota del negoziante relativa all'annullamento. */
+  annullatoNota: string | null;
+  /** Data/ora dell'annullamento. */
+  annullatoAt: string | null;
   righe: RigaOrdine[];
+  /** Storico eventi dell'ordine (dal più vecchio al più recente). */
+  eventi: EventoOrdine[];
 };
 
 /** Tipologia di un elemento salvato tra i preferiti. */
