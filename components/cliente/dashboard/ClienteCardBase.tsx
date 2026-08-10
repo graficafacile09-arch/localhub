@@ -14,6 +14,7 @@ export default function ClienteCardBase({
   href,
   hrefLabel,
   accent = "text-teal-600",
+  secondaryIcon: SecondaryIcon,
 }: {
   icon: LucideIcon;
   value: string;
@@ -22,6 +23,8 @@ export default function ClienteCardBase({
   href: string;
   hrefLabel: string;
   accent?: string;
+  /** Icona decorativa secondaria (gerarchia visiva della card). */
+  secondaryIcon?: LucideIcon;
 }) {
   return (
     <Link
@@ -32,8 +35,16 @@ export default function ClienteCardBase({
         <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-50 ring-1 ring-teal-100">
           <Icon className={`h-6 w-6 ${accent}`} aria-hidden />
         </span>
-        <span className="text-4xl font-black tracking-tight text-slate-900">
-          {value}
+        <span className="flex items-start gap-2">
+          {SecondaryIcon ? (
+            <SecondaryIcon
+              className="mt-1.5 h-4 w-4 text-slate-200"
+              aria-hidden
+            />
+          ) : null}
+          <span className="text-4xl font-black tracking-tight text-slate-900">
+            {value}
+          </span>
         </span>
       </div>
 

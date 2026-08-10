@@ -90,16 +90,23 @@ export default function ReclamoOrdine({ ordineId, puòReclamare, reclamiIniziali
   // Reclamo attivo presente → riquadro informativo (niente pulsante duplicato).
   if (attivo) {
     return (
-      <div className="rounded-[1.75rem] border border-amber-200 bg-amber-50/60 p-5">
-        <div className="flex items-center gap-2.5">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+      <div className="rounded-[1.75rem] border border-amber-200 bg-amber-50/60 p-5 shadow-sm">
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700 ring-1 ring-amber-200">
             <AlertTriangle className="h-5 w-5" aria-hidden />
           </span>
-          <div className="min-w-0">
-            <p className="text-sm font-bold text-amber-900">
-              🚨 Reclamo inviato — {ETICHETTE[attivo.stato]}
-            </p>
-            <p className="mt-0.5 text-xs leading-5 text-amber-700">
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-sm font-black uppercase tracking-wide text-amber-900">
+                Reclamo inviato
+              </p>
+              <span
+                className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${COLORI[attivo.stato]}`}
+              >
+                {ETICHETTE[attivo.stato]}
+              </span>
+            </div>
+            <p className="mt-1 text-xs leading-5 text-amber-700">
               {attivo.messaggio ? (
                 <>“{attivo.messaggio}”</>
               ) : (
@@ -107,11 +114,6 @@ export default function ReclamoOrdine({ ordineId, puòReclamare, reclamiIniziali
               )}
             </p>
           </div>
-          <span
-            className={`ml-auto shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ${COLORI[attivo.stato]}`}
-          >
-            {ETICHETTE[attivo.stato]}
-          </span>
         </div>
       </div>
     );

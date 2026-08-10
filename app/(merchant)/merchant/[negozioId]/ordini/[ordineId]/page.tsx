@@ -5,6 +5,7 @@ import {
   History,
   MessageSquareText,
   Package,
+  Settings2,
   Store,
 } from "lucide-react";
 import MerchantEmptyState from "@/components/merchant/MerchantEmptyState";
@@ -160,9 +161,15 @@ export default async function MerchantOrdineDettaglioPage({
         }
       />
 
-      {/* ── Azioni venditore (in base allo stato reale) ─────────────────────── */}
+      {/* ── Azioni venditore (in base allo stato reale) — sempre ben visibile ── */}
       {ordine.stato !== "cancellato" && ordine.stato !== "consegnato" && (
-        <div className="rounded-[1.75rem] border border-white/70 bg-white p-5 shadow-sm">
+        <div className="rounded-[1.75rem] border border-blue-100 bg-white p-5 shadow-sm ring-1 ring-blue-50">
+          <p className="mb-3 flex items-center gap-2 text-sm font-black uppercase tracking-wide text-slate-900">
+            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+              <Settings2 className="h-4 w-4" aria-hidden />
+            </span>
+            Pannello operativo
+          </p>
           <OrdineAzioni
             negozioId={negozioId}
             ordineId={ordineId}
@@ -172,49 +179,53 @@ export default async function MerchantOrdineDettaglioPage({
         </div>
       )}
 
-      {/* ── Cliente ─────────────────────────────────────────────────────────── */}
-      <InformazioniCliente
-        nome={ordine.clienteNome}
-        cognome={ordine.clienteCognome}
-        telefono={ordine.clienteTelefono}
-        email={ordine.clienteEmail}
-      />
+      {/* ── Layout due colonne (desktop) ────────────────────────────────────── */}
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+        {/* ── Colonna principale ────────────────────────────────────────────── */}
+        <div className="min-w-0 space-y-5">
+          <Sezione icon={Package} titolo="Prodotti" sottotitolo="Dettaglio delle righe dell'ordine">
+            <RigheProdotto
+              righe={ordine.righe}
+              costoSpedizione={ordine.costoSpedizione}
+              totale={ordine.totale}
+            />
+          </Sezione>
 
-      {/* ── Prodotti ────────────────────────────────────────────────────────── */}
-      <Sezione icon={Package} titolo="Prodotti">
-        <RigheProdotto
-          righe={ordine.righe}
-          costoSpedizione={ordine.costoSpedizione}
-          totale={ordine.totale}
-        />
-      </Sezione>
+          <Sezione icon={History} titolo="Cronologia dell'ordine">
+            <StoricoEventi eventi={ordine.eventi} />
+          </Sezione>
+        </div>
 
-      {/* ── Consegna / Ritiro ───────────────────────────────────────────────── */}
-      <InformazioniRitiroSpedizione
-        modalita={ordine.modalita}
-        negozioNome={ordine.negozioNome}
-        ritiroData={ordine.ritiroData}
-        ritiroFascia={ordine.ritiroFascia}
-        spedizioneIndirizzo={ordine.spedizioneIndirizzo}
-        spedizioneCap={ordine.spedizioneCap}
-        spedizioneCitta={ordine.spedizioneCitta}
-        spedizioneProvincia={ordine.spedizioneProvincia}
-        spedizioneNote={ordine.spedizioneNote}
-        metodoSpedizione={ordine.metodoSpedizione}
-        metodoPagamento={ordine.metodoPagamento}
-      />
+        {/* ── Colonna laterale ──────────────────────────────────────────────── */}
+        <div className="min-w-0 space-y-5">
+          <InformazioniCliente
+            nome={ordine.clienteNome}
+            cognome={ordine.clienteCognome}
+            telefono={ordine.clienteTelefono}
+            email={ordine.clienteEmail}
+          />
 
-      {/* ── Note cliente (solo se presenti) ─────────────────────────────────── */}
-      {ordine.note && (
-        <Sezione icon={MessageSquareText} titolo="Note del cliente">
-          <p className="text-sm leading-6 text-slate-700">{ordine.note}</p>
-        </Sezione>
-      )}
+          <InformazioniRitiroSpedizione
+            modalita={ordine.modalita}
+            negozioNome={ordine.negozioNome}
+            ritiroData={ordine.ritiroData}
+            ritiroFascia={ordine.ritiroFascia}
+            spedizioneIndirizzo={ordine.spedizioneIndirizzo}
+            spedizioneCap={ordine.spedizioneCap}
+            spedizioneCitta={ordine.spedizioneCitta}
+            spedizioneProvincia={ordine.spedizioneProvincia}
+            spedizioneNote={ordine.spedizioneNote}
+            metodoSpedizione={ordine.metodoSpedizione}
+            metodoPagamento={ordine.metodoPagamento}
+          />
 
-      {/* ── Cronologia (dati reali da ordini_eventi) ────────────────────────── */}
-      <Sezione icon={History} titolo="Cronologia dell'ordine">
-        <StoricoEventi eventi={ordine.eventi} />
-      </Sezione>
+          {ordine.note && (
+            <Sezione icon={MessageSquareText} titolo="Note del cliente">
+              <p className="text-sm leading-6 text-slate-700">{ordine.note}</p>
+            </Sezione>
+          )}
+        </div>
+      </div>
 
       {/* ── Reclami del cliente ─────────────────────────────────────────────── */}
       {reclami.length > 0 && (

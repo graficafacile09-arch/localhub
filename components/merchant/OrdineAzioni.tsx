@@ -2,7 +2,16 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, CheckCircle2, Loader2, X } from "lucide-react";
+import {
+  AlertTriangle,
+  Ban,
+  CheckCircle2,
+  Hammer,
+  Loader2,
+  PackageCheck,
+  Settings2,
+  X,
+} from "lucide-react";
 import type { StatoOrdine } from "@/lib/cliente/types";
 import {
   azioniDisponibili,
@@ -17,14 +26,23 @@ type Props = {
   stato: StatoOrdine;
 };
 
+/** Icona per ogni azione di avanzamento (pannello operativo professionale). */
+const ICONE_AZIONE: Record<string, React.ComponentType<{ className?: string }>> = {
+  confermato: CheckCircle2,
+  in_lavorazione: Hammer,
+  pronto: PackageCheck,
+  consegnato: CheckCircle2,
+  cancellato: Ban,
+};
+
 /**
- * Pulsanti azione del dettaglio ordine (area venditore).
- * - Azioni non distruttive → PATCH /api/merchant/stores/:negozioId/ordini/:ordineId
- *   con lo stato di destinazione; dopo il successo `router.refresh()` mantiene
- *   il venditore NEL dettaglio (nessun redirect, nessuna perdita di contesto).
- * - "Annulla ordine" → apre un dialog CONTROLLATO con motivo OBBLIGATORIO e
- *   nota opzionale (obbligatoria se motivo = "Altro"). Conferma → PATCH.
- * - Errori (es. transizione non consentita, motivo mancante) mostrati inline.
+ * Pulsanti azione del dettaglio ordine (area venditore) — pannello
+ * operativo professionale:
+ * - azioni NON distruttive con icona → PATCH (stato di destinazione); dopo
+ *   il successo `router.refresh()` mantiene il venditore NEL dettaglio;
+ * - "Annulla ordine" → dialog CONTROLLATO con motivo OBBLIGATORIO e nota
+ *   opzionale (obbligatoria se motivo = "Altro"); conferma rosso evidente;
+ * - errori inline (transizione non consentita, motivo mancante, …).
  */
 export default function OrdineAzioni({ negozioId, ordineId, numero, stato }: Props) {
   const router = useRouter();
@@ -41,8 +59,7 @@ export default function OrdineAzioni({ negozioId, ordineId, numero, stato }: Pro
   const motivoSelezionato = MOTIVI_ANNULLAMENTO.find((m) => m.valore === motivo);
 
   // Stati terminali (completato/annullato): nessuna azione, ma se c'è un
-  // messaggio di esito da mostrare (es. "Ordine annullato") lo rendiamo
-  // comunque visibile finché l'utente non naviga altrove.
+  // messaggio di esito da mostrare lo rendiamo comunque visibile.
   if (azioni.length === 0 && !successo && !errore) return null;
 
   async function eseguiStato(statoDestinazione: StatoOrdine, body: { motivo?: string; nota?: string }) {
@@ -127,26 +144,31 @@ export default function OrdineAzioni({ negozioId, ordineId, numero, stato }: Pro
         </p>
       )}
 
-      {/* Pulsanti azione */}
-      <div className="flex flex-wrap gap-2">
-        {azioni.map((azione) => (
-          <button
-            key={`${azione.stato}-${azione.etichetta}`}
-            type="button"
-            onClick={() => avviaAzione(azione)}
-            disabled={invio}
-            className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition disabled:opacity-50 ${
-              azione.distruttiva
-                ? "border border-red-200 bg-white text-red-600 hover:border-red-300 hover:bg-red-50"
-                : "bg-blue-600 text-white shadow-sm hover:bg-blue-700"
-            }`}
-          >
-            {invio && azioneAttiva?.stato === azione.stato ? (
-              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-            ) : null}
-            {azione.etichetta}
-          </button>
-        ))}
+      {/* Pulsanti azione — gerarchia chiara (azioni principali vs annulla) */}
+      <div className="flex flex-wrap gap-2.5">
+        {azioni.map((azione) => {
+          const Icon = ICONE_AZIONE[azione.stato] ?? Settings2;
+          return (
+            <button
+              key={`${azione.stato}-${azione.etichetta}`}
+              type="button"
+              onClick={() => avviaAzione(azione)}
+              disabled={invio}
+              className={`inline-flex h-11 items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition active:scale-[0.98] disabled:opacity-50 ${
+                azione.distruttiva
+                  ? "border border-red-200 bg-white text-red-600 hover:border-red-300 hover:bg-red-50"
+                  : "bg-blue-600 text-white shadow-sm hover:bg-blue-700"
+              }`}
+            >
+              {invio && azioneAttiva?.stato === azione.stato ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+              ) : (
+                <Icon className="h-4 w-4" aria-hidden />
+              )}
+              {azione.etichetta}
+            </button>
+          );
+        })}
       </div>
 
       {/* ── Dialog di annullamento (controllato dallo stato, mai alert JS) ── */}
@@ -158,9 +180,14 @@ export default function OrdineAzioni({ negozioId, ordineId, numero, stato }: Pro
           />
           <div className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-xl">
             <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-              <h2 className="text-sm font-bold text-slate-900">
-                Annulla ordine {numero}
-              </h2>
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-50 text-red-600">
+                  <Ban className="h-5 w-5" aria-hidden />
+                </span>
+                <h2 className="text-sm font-black text-slate-900">
+                  Annulla ordine {numero}
+                </h2>
+              </div>
               <button
                 type="button"
                 onClick={() => setAnnullaAperto(false)}
@@ -172,9 +199,10 @@ export default function OrdineAzioni({ negozioId, ordineId, numero, stato }: Pro
             </div>
 
             <div className="max-h-[60vh] space-y-4 overflow-y-auto px-5 py-4">
-              <p className="text-xs leading-5 text-slate-500">
-                Vuoi davvero annullare questo ordine? Il cliente riceverà
-                un&apos;email di avviso con il motivo indicato. L&apos;operazione
+              <p className="rounded-xl border border-red-100 bg-red-50/60 px-3.5 py-3 text-xs leading-5 text-red-800">
+                <strong>Attenzione:</strong> vuoi davvero annullare questo
+                ordine? Il cliente riceverà un&apos;email di avviso con il
+                motivo indicato e lo stock verrà ripristinato. L&apos;operazione
                 non può essere annullata.
               </p>
 
@@ -242,7 +270,7 @@ export default function OrdineAzioni({ negozioId, ordineId, numero, stato }: Pro
                 type="button"
                 onClick={() => setAnnullaAperto(false)}
                 disabled={invio}
-                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
               >
                 Torna indietro
               </button>
@@ -250,12 +278,12 @@ export default function OrdineAzioni({ negozioId, ordineId, numero, stato }: Pro
                 type="button"
                 onClick={confermaAnnullamento}
                 disabled={invio}
-                className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-red-700 disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-red-700 disabled:opacity-50"
               >
                 {invio ? (
                   <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
                 ) : (
-                  <AlertTriangle className="h-4 w-4" aria-hidden />
+                  <Ban className="h-4 w-4" aria-hidden />
                 )}
                 {invio ? "Annullamento…" : "Conferma annullamento"}
               </button>

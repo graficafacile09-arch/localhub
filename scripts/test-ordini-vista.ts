@@ -79,6 +79,14 @@ async function main() {
     "7 badge distinti",
     new Set(banners.map((b) => b.cfg.badge)).size === 7
   );
+  check(
+    "7 icone distinte",
+    new Set(banners.map((b) => b.cfg.icona)).size === 7
+  );
+  check(
+    "7 colori icona distinti",
+    new Set(banners.map((b) => b.cfg.iconaTesto)).size === 7
+  );
 
   // ── T4: stato → grafica specifica ───────────────────────────────────────────
   console.log("\n[T4] Stato DB → grafica corretta");
@@ -95,6 +103,15 @@ async function main() {
     check(`config(${s}).etichettaBanner = ${map[s]}`, configStatoOrdine(s).etichettaBanner === map[s]);
   }
 
+  // ── T4b: palette professionale per macro-gruppi ─────────────────────────────
+  console.log("\n[T4b] Palette professionale (verde positivo, ambra attenzione, rosso annullato)");
+  check("pronto → verde (badge)", configStatoOrdine("pronto").badge.includes("green"));
+  check("completato → smeraldo (badge)", configStatoOrdine("consegnato").badge.includes("emerald"));
+  check("confermato → blu (badge, informazione)", configStatoOrdine("confermato").badge.includes("blue"));
+  check("nuovo → ambra (badge, attenzione)", configStatoOrdine("in_preparazione").badge.includes("amber"));
+  check("in lavorazione → arancio (badge)", configStatoOrdine("in_lavorazione").badge.includes("orange"));
+  check("annullato → rosso (badge)", configStatoOrdine("cancellato").badge.includes("red"));
+
   // ── T5: ANNULLATO ≠ CONFERMATO (regola chiave) ──────────────────────────────
   console.log("\n[T5] ANNULLATO non può mai avere la grafica di CONFERMATO");
   const annullato = configStatoOrdine("cancellato");
@@ -103,11 +120,13 @@ async function main() {
   check("annullato: etichetta 'ORDINE ANNULLATO'", annullato.etichettaBanner === "ORDINE ANNULLATO");
   check("annullato: banner rosso", annullato.banner.includes("red"));
   check("annullato: badge rosso", annullato.badge.includes("red"));
+  check("annullato: icona 'ban'", annullato.icona === "ban");
   check("annullato: terminale", annullato.terminale === true);
   check("annullato ≠ confermato (etichetta)", annullato.etichettaBanner !== confermato.etichettaBanner);
   check("annullato ≠ confermato (banner)", annullato.banner !== confermato.banner);
   check("annullato ≠ confermato (badge)", annullato.badge !== confermato.badge);
   check("annullato ≠ confermato (emoji)", annullato.emoji !== confermato.emoji);
+  check("annullato ≠ confermato (icona)", annullato.icona !== confermato.icona);
   check("confermato NON è rosso", !confermato.banner.includes("red"));
   // Nessun altro stato può usare il banner di annullamento.
   for (const s of STATI) {

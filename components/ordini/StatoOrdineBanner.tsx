@@ -4,12 +4,14 @@ import {
   formattaDataOraEvento,
 } from "@/lib/cliente/ordini-format";
 import { etichettaMotivoAnnullamento } from "@/lib/merchant/ordini-stati";
+import { StatoIcona } from "./StatoIcona";
 
 /**
  * Banner di stato ORDINE — la grafica è GUIDATA dallo stato letto dal DB
  * (configStatoOrdine): ogni stato ha una rappresentazione visiva distinta e
  * un ordine ANNULLATO non può MAI ricevere la grafica di un ordine
- * confermato. Per lo stato "cancellato" mostra in evidenza motivo e nota
+ * confermato. Icona professionale + etichetta (lo stato non dipende dal solo
+ * colore). Per lo stato "cancellato" mostra in evidenza motivo e nota
  * dell'annullamento (e la data), quando disponibili.
  *
  * Usato da: Area Clienti, Area Venditore e pagina di conferma ordine
@@ -37,13 +39,12 @@ export function StatoOrdineBanner({
     èAnnullato && annullatoAt ? formattaDataOraEvento(annullatoAt) : "";
 
   return (
-    <div className={`rounded-[1.75rem] border p-5 ${config.banner}`}>
-      <div className="flex items-start gap-3.5">
+    <div className={`rounded-[1.75rem] border p-5 shadow-sm ${config.banner}`}>
+      <div className="flex items-start gap-4">
         <span
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/80 text-2xl shadow-sm ring-1 ring-black/5"
-          aria-hidden
+          className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/80 shadow-sm ring-1 ring-black/5 ${config.iconaTesto}`}
         >
-          {config.emoji}
+          <StatoIcona stato={stato} className="h-6 w-6" ariaHidden />
         </span>
         <div className="min-w-0 flex-1">
           <p className={`text-lg font-black uppercase tracking-tight ${config.testo}`}>
@@ -55,7 +56,7 @@ export function StatoOrdineBanner({
 
           {/* Dettagli dell'annullamento: motivo + nota (solo se presenti) */}
           {èAnnullato && (motivo || nota || dataAnnullamento) && (
-            <div className="mt-3 space-y-1.5 rounded-xl bg-white/70 px-3.5 py-3 text-sm ring-1 ring-red-100">
+            <div className="mt-3 space-y-1.5 rounded-xl bg-white/70 px-4 py-3 text-sm ring-1 ring-red-100">
               {motivo && (
                 <p className="text-red-800">
                   <span className="font-bold">Motivo:</span> {motivo}

@@ -14,6 +14,7 @@ import type { OrdinePersistito } from "@/lib/cliente/orders";
 import { etichettaStato, sintesiProdotti } from "@/lib/cliente/ordini-format";
 import { StatoOrdineBanner } from "@/components/ordini/StatoOrdineBanner";
 import { RigheProdotto } from "@/components/ordini/RigheProdotto";
+import { OrderHeader } from "@/components/ordini/OrderHeader";
 
 type Params = { ordineId: string };
 
@@ -63,23 +64,26 @@ export default async function ConfermaOrdinePage({ params }: { params: Promise<P
 
   const èAnnullato = ordine.stato === "cancellato";
   const sintesi = sintesiProdotti(ordine.righe);
+  const linkNegozio = `/negozi?q=${encodeURIComponent(ordine.negozioNome)}`;
 
   return (
     <main className="min-h-screen bg-gray-50 py-10 px-4">
       <div className="mx-auto max-w-2xl">
-        {/* Header: numero + sintesi prodotto, MAI l'UUID */}
-        <div className="rounded-2xl bg-white p-6 text-center shadow-sm ring-1 ring-slate-100">
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
-            {èAnnullato ? "Stato del tuo ordine" : "Riepilogo ordine"}
-          </p>
-          <h1 className="mt-2 text-2xl font-black tracking-tight text-slate-900 md:text-3xl">
-            {ordine.numero}
-            {sintesi ? <span className="ml-2 font-bold text-slate-500">· {sintesi}</span> : null}
-          </h1>
-          <p className="mt-2 text-sm text-slate-500">
-            Grazie {ordine.righe[0]?.nomeProdotto ? "per il tuo acquisto" : "per il tuo ordine"} — il negozio è stato avvisato.
-          </p>
-        </div>
+        {/* Header condiviso (OrderHeader): numero + prodotto, stato, totale */}
+        <OrderHeader
+          numero={ordine.numero}
+          sintesi={sintesi}
+          stato={ordine.stato}
+          totale={ordine.totale}
+          createdAt={ordine.createdAt}
+          modalita={ordine.modalita}
+          eyebrow={èAnnullato ? "Stato del tuo ordine" : "Riepilogo ordine"}
+          identita={
+            <p>
+              Ordine presso <strong className="text-slate-800">{ordine.negozioNome}</strong>
+            </p>
+          }
+        />
 
         {/* Banner stato: LO STATO DEL DB COMANDA LA GRAFICA (annullato → 🔴) */}
         <div className="mt-4">
@@ -92,26 +96,20 @@ export default async function ConfermaOrdinePage({ params }: { params: Promise<P
           <p className="mt-3 text-center text-sm text-slate-600">{messaggioStato(ordine)}</p>
         </div>
 
-        {/* Negozio */}
-        <div className="mt-4 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
-          <h2 className="flex items-center gap-2 text-sm font-bold text-slate-900">
-            <Store className="h-4 w-4 text-blue-500" /> Negozio
-          </h2>
-          <p className="mt-2 text-base font-semibold text-slate-800">{ordine.negozioNome}</p>
-        </div>
-
-        {/* Modalità */}
-        <div className="mt-4 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
-          <h2 className="flex items-center gap-2 text-sm font-bold text-slate-900">
-            {ordine.modalita === "ritiro" ? (
-              <MapPin className="h-4 w-4 text-blue-500" />
-            ) : (
-              <Truck className="h-4 w-4 text-blue-500" />
-            )}
+        {/* Modalità ritiro/spedizione */}
+        <div className="mt-4 rounded-[1.75rem] border border-white/70 bg-white p-5 shadow-sm">
+          <h2 className="flex items-center gap-2 text-sm font-black uppercase tracking-wide text-slate-900">
+            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
+              {ordine.modalita === "ritiro" ? (
+                <MapPin className="h-4 w-4" aria-hidden />
+              ) : (
+                <Truck className="h-4 w-4" aria-hidden />
+              )}
+            </span>
             {ordine.modalita === "ritiro" ? "Ritiro in negozio" : "Spedizione a domicilio"}
           </h2>
           {ordine.modalita === "ritiro" ? (
-            <div className="mt-2 space-y-1 text-sm text-slate-600">
+            <div className="mt-3 space-y-1 text-sm text-slate-600">
               <p>
                 {ordine.stato === "in_preparazione"
                   ? "Il negozio preparerà il tuo ordine per il ritiro."
@@ -125,7 +123,7 @@ export default async function ConfermaOrdinePage({ params }: { params: Promise<P
               )}
             </div>
           ) : (
-            <p className="mt-2 text-sm text-slate-600">
+            <p className="mt-3 text-sm text-slate-600">
               {ordine.stato === "cancellato"
                 ? "L'ordine è stato annullato: nessuna spedizione verrà effettuata."
                 : "Ti avviseremo appena il pacco parte."}
@@ -134,9 +132,12 @@ export default async function ConfermaOrdinePage({ params }: { params: Promise<P
         </div>
 
         {/* Prodotti */}
-        <div className="mt-4 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
-          <h2 className="flex items-center gap-2 text-sm font-bold text-slate-900">
-            <Package className="h-4 w-4 text-blue-500" /> Riepilogo prodotti
+        <div className="mt-4 rounded-[1.75rem] border border-white/70 bg-white p-5 shadow-sm">
+          <h2 className="flex items-center gap-2 text-sm font-black uppercase tracking-wide text-slate-900">
+            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
+              <Package className="h-4 w-4" aria-hidden />
+            </span>
+            Riepilogo prodotti
           </h2>
           <div className="mt-3">
             <RigheProdotto
@@ -148,39 +149,39 @@ export default async function ConfermaOrdinePage({ params }: { params: Promise<P
         </div>
 
         {/* Dettagli consegna + azioni post-ordine */}
-        <div className="mt-4 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
-          <h2 className="flex items-center gap-2 text-sm font-bold text-slate-900">
-            {utente ? (
-              <ReceiptText className="h-4 w-4 text-blue-500" />
-            ) : (
-              <PackageSearch className="h-4 w-4 text-blue-500" />
-            )}
-            {utente
-              ? "L'ordine è salvato sul tuo account"
-              : "Hai acquistato senza account?"}
+        <div className="mt-4 rounded-[1.75rem] border border-white/70 bg-white p-5 shadow-sm">
+          <h2 className="flex items-center gap-2 text-sm font-black uppercase tracking-wide text-slate-900">
+            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
+              {utente ? (
+                <ReceiptText className="h-4 w-4" aria-hidden />
+              ) : (
+                <PackageSearch className="h-4 w-4" aria-hidden />
+              )}
+            </span>
+            {utente ? "L'ordine è salvato sul tuo account" : "Hai acquistato senza account?"}
           </h2>
           {utente ? (
             <>
-              <p className="mt-2 text-sm text-slate-600">
+              <p className="mt-3 text-sm text-slate-600">
                 Puoi ritrovare questo ordine in qualsiasi momento dalla tua
                 area personale, anche dopo aver chiuso il browser.
               </p>
               <Link
                 href="/cliente/ordini"
-                className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-blue-700 sm:w-auto"
+                className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-blue-700 sm:w-auto"
               >
                 <ReceiptText className="h-4 w-4" /> Vai ai miei ordini
               </Link>
             </>
           ) : (
             <>
-              <p className="mt-2 text-sm text-slate-600">
+              <p className="mt-3 text-sm text-slate-600">
                 Puoi recuperare i tuoi ordini in qualsiasi momento inserendo
                 email e telefono usati al checkout.
               </p>
               <Link
                 href="/ordini/recupera"
-                className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-blue-700 sm:w-auto"
+                className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-blue-700 sm:w-auto"
               >
                 <PackageSearch className="h-4 w-4" /> Recupera i miei ordini
               </Link>
@@ -196,10 +197,10 @@ export default async function ConfermaOrdinePage({ params }: { params: Promise<P
             <Home className="h-4 w-4" /> Torna alla home
           </Link>
           <Link
-            href="/negozi"
+            href={linkNegozio}
             className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 transition hover:border-blue-300 hover:text-blue-700"
           >
-            Continua a esplorare
+            <Store className="h-4 w-4" /> Visita il negozio
           </Link>
         </div>
       </div>

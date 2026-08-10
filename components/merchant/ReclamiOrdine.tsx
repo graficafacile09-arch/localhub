@@ -98,25 +98,26 @@ export default function ReclamiOrdine({ negozioId, ordineId, reclamiIniziali }: 
         return (
           <div
             key={reclamo.id}
-            className="rounded-xl border border-red-100 bg-red-50/50 p-4"
+            className="overflow-hidden rounded-xl border border-red-200 bg-white shadow-sm"
           >
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-100 text-red-700">
+            <div className="flex flex-wrap items-center gap-2 border-b border-red-100 bg-red-50/70 px-4 py-3">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-600 text-white">
                 <AlertTriangle className="h-4 w-4" aria-hidden />
               </span>
-              <p className="text-sm font-bold text-red-800">
-                🚨 Reclamo — {ETICHETTA_TIPO_RECLAMO[reclamo.tipo] ?? reclamo.tipo}
+              <p className="text-sm font-black uppercase tracking-wide text-red-800">
+                Reclamo — {ETICHETTA_TIPO_RECLAMO[reclamo.tipo] ?? reclamo.tipo}
               </p>
               <span
-                className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${COLORI[reclamo.stato]}`}
+                className={`ml-auto rounded-full px-2.5 py-1 text-[11px] font-bold ${COLORI[reclamo.stato]}`}
               >
                 {ETICHETTE_STATO_RECLAMO[reclamo.stato]}
               </span>
             </div>
+            <div className="p-4">
 
-            <div className="mt-3 space-y-1.5 text-xs leading-5 text-slate-600">
+            <div className="space-y-1.5 text-xs leading-5 text-slate-600">
               {reclamo.messaggio && (
-                <p className="rounded-lg bg-white/80 px-3 py-2 text-slate-700">
+                <p className="rounded-lg bg-red-50/60 px-3 py-2 text-slate-700">
                   “{reclamo.messaggio}”
                 </p>
               )}
@@ -147,7 +148,7 @@ export default function ReclamiOrdine({ negozioId, ordineId, reclamiIniziali }: 
                     type="button"
                     onClick={() => void eseguiAzione(reclamo.id, azione.stato)}
                     disabled={azioneAttiva !== null}
-                    className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition disabled:opacity-50 ${
+                    className={`inline-flex h-9 items-center gap-1.5 rounded-lg px-3.5 text-xs font-bold transition active:scale-[0.98] disabled:opacity-50 ${
                       azione.stato === "risolto"
                         ? "bg-emerald-600 text-white hover:bg-emerald-700"
                         : azione.stato === "chiuso"
@@ -163,6 +164,7 @@ export default function ReclamiOrdine({ negozioId, ordineId, reclamiIniziali }: 
                 ))}
               </div>
             )}
+            </div>
           </div>
         );
       })}

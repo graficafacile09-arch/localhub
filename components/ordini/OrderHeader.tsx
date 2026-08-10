@@ -10,9 +10,9 @@ function formattaPrezzo(value: number): string {
 
 /**
  * HEADER ORDINE — card di testa condivisa tra Area Clienti e Area Venditore.
- * Identificazione: numero leggibile + sintesi prodotto (MAI UUID), poi la
- * riga di identità (negozio per il cliente / cliente per il venditore) e il
- * totale. Il badge stato usa configStatoOrdine (stessa identità visiva).
+ * Gerarchia professionale: numero ordine GRANDE, prodotto accanto, riga di
+ * identità, badge stato ben visibile, data/ora e totale a destra.
+ * Identificazione: numero leggibile + sintesi prodotto (MAI UUID).
  */
 export function OrderHeader({
   numero,
@@ -36,48 +36,56 @@ export function OrderHeader({
   eyebrow: string;
   eyebrowClass?: string;
   iconClass?: string;
-  /** Riga di identità (negozio o cliente + data/ora). */
+  /** Riga di identità (negozio o cliente). */
   identita: ReactNode;
-  /** Riga opzionale in fondo (es. link al negozio). */
+  /** Riga opzionale in fondo (es. link). */
   footer?: ReactNode;
 }) {
   return (
-    <div className="rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm md:p-8">
-      <div className="flex items-start gap-4">
-        <span
-          className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ring-1 ${iconClass}`}
-        >
-          <ReceiptText className="h-7 w-7" aria-hidden />
-        </span>
-        <div className="min-w-0 flex-1">
-          <p
-            className={`text-xs font-semibold uppercase tracking-[0.22em] ${eyebrowClass}`}
-          >
-            {eyebrow}
-          </p>
-          <h1 className="mt-1.5 text-2xl font-black tracking-tight text-slate-900 md:text-3xl">
-            <span className="whitespace-nowrap">{numero}</span>
-            {sintesi ? (
-              <span className="ml-2 font-bold text-slate-500">· {sintesi}</span>
-            ) : null}
-          </h1>
-          <div className="mt-2 text-sm text-slate-600">{identita}</div>
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <StatoBadge stato={stato} />
-            <span className="text-xs text-slate-400">
-              {etichettaModalita(modalita)} · {formattaDataOraCard(createdAt)}
+    <div className="overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-sm">
+      <div className="h-1.5 bg-linear-to-r from-slate-200 via-slate-300 to-slate-200" />
+      <div className="p-6 md:p-8">
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex min-w-0 items-start gap-4">
+            <span
+              className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ring-1 ${iconClass}`}
+            >
+              <ReceiptText className="h-7 w-7" aria-hidden />
             </span>
+            <div className="min-w-0">
+              <p
+                className={`text-xs font-semibold uppercase tracking-[0.22em] ${eyebrowClass}`}
+              >
+                {eyebrow}
+              </p>
+              <h1 className="mt-1.5 break-words text-2xl font-black leading-tight tracking-tight text-slate-900 md:text-3xl">
+                <span className="whitespace-nowrap">{numero}</span>
+                {sintesi ? (
+                  <span className="ml-2 font-bold text-slate-500">· {sintesi}</span>
+                ) : null}
+              </h1>
+              <div className="mt-2 text-sm text-slate-600">{identita}</div>
+            </div>
           </div>
-          {footer ? <div className="mt-3">{footer}</div> : null}
+
+          <div className="flex shrink-0 items-start justify-between gap-6 sm:flex-col sm:items-end">
+            <div className="text-right">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                Totale ordine
+              </p>
+              <p className="mt-0.5 text-3xl font-black tracking-tight text-slate-900">
+                {formattaPrezzo(totale)}
+              </p>
+            </div>
+            <div className="flex flex-col items-end gap-2">
+              <StatoBadge stato={stato} />
+              <span className="text-xs text-slate-400">
+                {etichettaModalita(modalita)} · {formattaDataOraCard(createdAt)}
+              </span>
+            </div>
+          </div>
         </div>
-        <div className="shrink-0 text-right">
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-            Totale
-          </p>
-          <p className="mt-1 text-2xl font-black text-slate-900">
-            {formattaPrezzo(totale)}
-          </p>
-        </div>
+        {footer ? <div className="mt-5 border-t border-slate-100 pt-4">{footer}</div> : null}
       </div>
     </div>
   );

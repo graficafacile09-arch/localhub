@@ -100,12 +100,25 @@ export function etichettaStato(stato: StatoOrdine): string {
  * Configurazione VISIVA dello stato ordine — UNICA fonte per banner e badge.
  *
  * LO STATO DEL DB COMANDA LA GRAFICA: questa funzione centralizza la mappa
- * stato → (emoji, etichetta banner, classi banner, classi badge, colore
- * puntino timeline) così che cliente e venditore usino lo STESSO linguaggio
- * visivo e che un ordine ANNULLATO non possa MAI ricevere la grafica di un
- * ordine confermato. Testabile in modo puro (scripts/test-ordini-vista.ts).
+ * stato → (icona lucide, emoji informativa, etichetta banner, classi banner,
+ * classi badge, colore puntino timeline) così che cliente e venditore usino
+ * lo STESSO linguaggio visivo e che un ordine ANNULLATO non possa MAI
+ * ricevere la grafica di un ordine confermato. Testabile in modo puro
+ * (scripts/test-ordini-vista.ts).
+ *
+ * Palette professionale coerente:
+ *   NUOVO          → ambra (attenzione)
+ *   CONFERMATO     → blu (informazione)
+ *   IN LAVORAZIONE → arancio (in corso)
+ *   PRONTO         → verde (positivo, distinto dal completato)
+ *   IN CONSEGNA    → azzurro (in transito)
+ *   COMPLETATO     → smeraldo (concluso, positivo)
+ *   ANNULLATO      → rosso (errore/annullamento) — MAI verde.
  */
 export type ConfigStatoOrdine = {
+  /** Nome dell'icona lucide (renderizzata via components/ordini/StatoIcona). */
+  icona: string;
+  /** Emoji informativa (solo dove ha funzione informativa). */
   emoji: string;
   /** Etichetta maiuscola per il banner (es. "ORDINE ANNULLATO"). */
   etichettaBanner: string;
@@ -115,6 +128,8 @@ export type ConfigStatoOrdine = {
   testo: string;
   /** Classi del badge compatto (liste e header). */
   badge: string;
+  /** Classe icona (testo) del banner. */
+  iconaTesto: string;
   /** Colore del puntino nella timeline. */
   dot: string;
   /** true solo per stati terminali (annullato/completato). */
@@ -125,71 +140,85 @@ export function configStatoOrdine(stato: StatoOrdine): ConfigStatoOrdine {
   switch (stato) {
     case "in_preparazione":
       return {
+        icona: "bell",
         emoji: "🆕",
         etichettaBanner: "ORDINE NUOVO",
-        banner: "border-slate-200 bg-slate-50",
-        testo: "text-slate-800",
-        badge: "bg-slate-100 text-slate-700 ring-1 ring-slate-200",
-        dot: "bg-slate-400",
+        banner: "border-amber-200 bg-amber-50/70",
+        testo: "text-amber-950",
+        badge: "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
+        iconaTesto: "text-amber-600",
+        dot: "bg-amber-500",
         terminale: false,
       };
     case "confermato":
       return {
+        icona: "badge-check",
         emoji: "🟢",
         etichettaBanner: "ORDINE CONFERMATO",
-        banner: "border-emerald-200 bg-emerald-50",
-        testo: "text-emerald-900",
-        badge: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200",
-        dot: "bg-emerald-500",
+        banner: "border-blue-200 bg-blue-50/70",
+        testo: "text-blue-950",
+        badge: "bg-blue-50 text-blue-700 ring-1 ring-blue-200",
+        iconaTesto: "text-blue-600",
+        dot: "bg-blue-500",
         terminale: false,
       };
     case "in_lavorazione":
       return {
+        icona: "hammer",
         emoji: "🔵",
         etichettaBanner: "IN LAVORAZIONE",
-        banner: "border-blue-200 bg-blue-50",
-        testo: "text-blue-900",
-        badge: "bg-blue-50 text-blue-700 ring-1 ring-blue-200",
-        dot: "bg-blue-500",
+        banner: "border-orange-200 bg-orange-50/70",
+        testo: "text-orange-950",
+        badge: "bg-orange-50 text-orange-700 ring-1 ring-orange-200",
+        iconaTesto: "text-orange-600",
+        dot: "bg-orange-500",
         terminale: false,
       };
     case "pronto":
       return {
+        icona: "package-check",
         emoji: "🟡",
         etichettaBanner: "ORDINE PRONTO",
-        banner: "border-amber-200 bg-amber-50",
-        testo: "text-amber-900",
-        badge: "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
-        dot: "bg-amber-500",
+        banner: "border-green-200 bg-green-50/70",
+        testo: "text-green-950",
+        badge: "bg-green-50 text-green-700 ring-1 ring-green-200",
+        iconaTesto: "text-green-600",
+        dot: "bg-green-500",
         terminale: false,
       };
     case "in_consegna":
       return {
+        icona: "truck",
         emoji: "🚚",
         etichettaBanner: "IN CONSEGNA",
-        banner: "border-sky-200 bg-sky-50",
-        testo: "text-sky-900",
+        banner: "border-sky-200 bg-sky-50/70",
+        testo: "text-sky-950",
         badge: "bg-sky-50 text-sky-700 ring-1 ring-sky-200",
+        iconaTesto: "text-sky-600",
         dot: "bg-sky-500",
         terminale: false,
       };
     case "consegnato":
       return {
+        icona: "circle-check",
         emoji: "✅",
         etichettaBanner: "ORDINE COMPLETATO",
-        banner: "border-teal-200 bg-teal-50",
-        testo: "text-teal-900",
-        badge: "bg-teal-50 text-teal-700 ring-1 ring-teal-200",
-        dot: "bg-teal-500",
+        banner: "border-emerald-200 bg-emerald-50/70",
+        testo: "text-emerald-950",
+        badge: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200",
+        iconaTesto: "text-emerald-600",
+        dot: "bg-emerald-500",
         terminale: true,
       };
     case "cancellato":
       return {
+        icona: "ban",
         emoji: "🔴",
         etichettaBanner: "ORDINE ANNULLATO",
-        banner: "border-red-200 bg-red-50",
-        testo: "text-red-900",
+        banner: "border-red-200 bg-red-50/70",
+        testo: "text-red-950",
         badge: "bg-red-50 text-red-700 ring-1 ring-red-200",
+        iconaTesto: "text-red-600",
         dot: "bg-red-500",
         terminale: true,
       };

@@ -135,60 +135,65 @@ export default async function OrdineDettaglioPage({ params }: { params: Promise<
         annullatoAt={ordine.annullatoAt}
       />
 
-      {/* ── Prodotti ────────────────────────────────────────────────────────── */}
-      <Sezione icon={Package} titolo="Prodotti">
-        <RigheProdotto
-          righe={ordine.righe}
-          costoSpedizione={ordine.costoSpedizione}
-          totale={ordine.totale}
-        />
-      </Sezione>
+      {/* ── Layout due colonne (desktop) ────────────────────────────────────── */}
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
+        {/* ── Colonna principale ────────────────────────────────────────────── */}
+        <div className="min-w-0 space-y-5">
+          {/* Prodotti + riepilogo totale */}
+          <Sezione icon={Package} titolo="Prodotti" sottotitolo="Dettaglio delle righe dell'ordine">
+            <RigheProdotto
+              righe={ordine.righe}
+              costoSpedizione={ordine.costoSpedizione}
+              totale={ordine.totale}
+            />
+          </Sezione>
 
-      {/* ── Negozio ─────────────────────────────────────────────────────────── */}
-      <InformazioniNegozio negozioNome={ordine.negozioNome} linkHref={linkNegozio} />
+          {/* Cronologia (dati reali da ordini_eventi) */}
+          {ordine.eventi.length > 0 && (
+            <Sezione icon={History} titolo="Cronologia dell'ordine">
+              <StoricoEventi eventi={ordine.eventi} />
+            </Sezione>
+          )}
+        </div>
 
-      {/* ── Consegna / Ritiro ───────────────────────────────────────────────── */}
-      <InformazioniRitiroSpedizione
-        modalita={ordine.modalita}
-        negozioNome={ordine.negozioNome}
-        ritiroData={ordine.ritiroData}
-        ritiroFascia={ordine.ritiroFascia}
-        spedizioneIndirizzo={ordine.spedizioneIndirizzo}
-        spedizioneCap={ordine.spedizioneCap}
-        spedizioneCitta={ordine.spedizioneCitta}
-        spedizioneProvincia={ordine.spedizioneProvincia}
-        spedizioneNote={ordine.spedizioneNote}
-        metodoSpedizione={ordine.metodoSpedizione}
-        metodoPagamento={ordine.metodoPagamento}
-      />
+        {/* ── Colonna laterale ──────────────────────────────────────────────── */}
+        <div className="min-w-0 space-y-5">
+          <InformazioniNegozio negozioNome={ordine.negozioNome} linkHref={linkNegozio} />
 
-      {/* ── Note cliente (solo se presenti) ─────────────────────────────────── */}
-      {ordine.note && (
-        <Sezione icon={MessageSquareText} titolo="Note">
-          <p className="text-sm leading-6 text-slate-700">{ordine.note}</p>
-        </Sezione>
-      )}
+          <InformazioniRitiroSpedizione
+            modalita={ordine.modalita}
+            negozioNome={ordine.negozioNome}
+            ritiroData={ordine.ritiroData}
+            ritiroFascia={ordine.ritiroFascia}
+            spedizioneIndirizzo={ordine.spedizioneIndirizzo}
+            spedizioneCap={ordine.spedizioneCap}
+            spedizioneCitta={ordine.spedizioneCitta}
+            spedizioneProvincia={ordine.spedizioneProvincia}
+            spedizioneNote={ordine.spedizioneNote}
+            metodoSpedizione={ordine.metodoSpedizione}
+            metodoPagamento={ordine.metodoPagamento}
+          />
 
-      {/* ── Contatti ────────────────────────────────────────────────────────── */}
-      {(ordine.telefono || ordine.email) && (
-        <Sezione icon={Phone} titolo="Contatti">
-          <div className="space-y-1.5">
-            {ordine.telefono && (
-              <RigaDettaglio etichetta="Telefono" valore={ordine.telefono} />
-            )}
-            {ordine.email && (
-              <RigaDettaglio etichetta="Email" valore={ordine.email} />
-            )}
-          </div>
-        </Sezione>
-      )}
+          {(ordine.telefono || ordine.email) && (
+            <Sezione icon={Phone} titolo="Contatti">
+              <div className="space-y-1.5">
+                {ordine.telefono && (
+                  <RigaDettaglio etichetta="Telefono" valore={ordine.telefono} />
+                )}
+                {ordine.email && (
+                  <RigaDettaglio etichetta="Email" valore={ordine.email} />
+                )}
+              </div>
+            </Sezione>
+          )}
 
-      {/* ── Cronologia (dati reali da ordini_eventi) ────────────────────────── */}
-      {ordine.eventi.length > 0 && (
-        <Sezione icon={History} titolo="Cronologia dell'ordine">
-          <StoricoEventi eventi={ordine.eventi} />
-        </Sezione>
-      )}
+          {ordine.note && (
+            <Sezione icon={MessageSquareText} titolo="Note">
+              <p className="text-sm leading-6 text-slate-700">{ordine.note}</p>
+            </Sezione>
+          )}
+        </div>
+      </div>
 
       {/* ── Reclamo: ordine non arrivato (il componente decide la visibilità) ── */}
       <ReclamoOrdine

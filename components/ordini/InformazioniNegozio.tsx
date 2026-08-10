@@ -27,7 +27,7 @@ export function InformazioniNegozio({
         ) : undefined
       }
     >
-      <p className="text-base font-semibold text-slate-800">{negozioNome}</p>
+      <p className="text-lg font-black tracking-tight text-slate-900">{negozioNome}</p>
     </Sezione>
   );
 }

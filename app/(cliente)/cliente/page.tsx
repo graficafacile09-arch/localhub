@@ -36,9 +36,11 @@ export default async function ClienteDashboardPage() {
       : Promise.resolve([] as OrdineClienteLista[]),
   ]);
 
+  const ultimoNumero = ordini[0]?.numero ?? "—";
   const ultimo = ordini[0]
     ? `${ordini[0].negozioNome} — ${formattaDataOrdine(ordini[0].createdAt)}`
     : "—";
+  const statoUltimo = ordini[0]?.stato ?? null;
 
   return (
     <div className="space-y-5">
@@ -79,9 +81,16 @@ export default async function ClienteDashboardPage() {
 
       {/* ── Griglia card ─────────────────────────────────────────────────────── */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <OrdiniCard conteggio={ordini.length} />
+        <OrdiniCard
+          conteggio={ordini.length}
+          descrizione={
+            statoUltimo
+              ? `Ultimo ordine: ${ultimo}`
+              : "Storico dei tuoi ordini e stato di spedizione e consegna."
+          }
+        />
         <PreferitiCard conteggio={totalePreferiti} />
-        <UltimoAcquistoCard descrizione={ultimo} />
+        <UltimoAcquistoCard numero={ultimoNumero} descrizione={ultimo} />
         <OfferteConsigliateCard />
         <NegoziPreferitiCard conteggio={negoziPreferiti} />
         <EventiConsigliatiCard />

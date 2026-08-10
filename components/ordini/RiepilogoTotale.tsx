@@ -6,7 +6,8 @@ function formattaPrezzo(value: number): string {
 
 /**
  * RIEPILOGO TOTALE — blocco condiviso (dettaglio cliente e venditore):
- * subtotale prodotti, eventuale costo spedizione e totale ordine.
+ * subtotale prodotti, eventuale costo spedizione e totale ordine MOLTO
+ * evidente (gerarchia: totale finale dominate).
  */
 export function RiepilogoTotale({
   righe,
@@ -23,7 +24,7 @@ export function RiepilogoTotale({
   );
 
   return (
-    <div className="mt-4 space-y-1.5 border-t border-slate-100 pt-4">
+    <div className="mt-4 space-y-2 rounded-xl bg-slate-50/80 px-4 py-3.5 ring-1 ring-slate-100">
       <div className="flex items-center justify-between text-sm text-slate-500">
         <span>Subtotale</span>
         <span className="font-semibold text-slate-700">{formattaPrezzo(subtotale)}</span>
@@ -36,9 +37,11 @@ export function RiepilogoTotale({
           </span>
         </div>
       )}
-      <div className="flex items-center justify-between pt-2">
-        <span className="text-sm font-bold text-slate-900">Totale ordine</span>
-        <span className="text-lg font-black text-slate-900">{formattaPrezzo(totale)}</span>
+      <div className="flex items-center justify-between border-t border-slate-200/70 pt-2.5">
+        <span className="text-base font-black text-slate-900">Totale ordine</span>
+        <span className="text-2xl font-black tracking-tight text-slate-900">
+          {formattaPrezzo(totale)}
+        </span>
       </div>
     </div>
   );

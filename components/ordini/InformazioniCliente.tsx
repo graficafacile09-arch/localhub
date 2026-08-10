@@ -19,7 +19,7 @@ export function InformazioniCliente({
   return (
     <Sezione icon={User} titolo="Cliente">
       <div className="space-y-1.5">
-        <p className="text-base font-semibold text-slate-800">
+        <p className="text-lg font-black tracking-tight text-slate-900">
           {nome} {cognome}
         </p>
         {telefono && (
