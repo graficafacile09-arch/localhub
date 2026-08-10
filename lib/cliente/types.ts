@@ -58,6 +58,41 @@ export type ClienteOrdine = {
   righe: RigaOrdine[];
 };
 
+/**
+ * Riga dell'elenco "I miei ordini" (Area Clienti): dati snapshot del DB,
+ * nessuna join. Tutti i campi provengono dalla tabella ordini.
+ */
+export type OrdineClienteLista = {
+  id: string;
+  numero: string;
+  stato: StatoOrdine;
+  totale: number;
+  costoSpedizione: number;
+  createdAt: string;
+  modalita: "ritiro" | "spedizione";
+  negozioNome: string;
+  ritiroData: string | null;
+  ritiroFascia: string | null;
+};
+
+/**
+ * Dettaglio completo di un ordine del cliente (Area Clienti).
+ * Contiene i dati snapshot di spedizione/ritiro e le righe prodotto.
+ */
+export type OrdineClienteDettaglio = OrdineClienteLista & {
+  email: string | null;
+  telefono: string | null;
+  metodoSpedizione: "standard" | "express" | null;
+  metodoPagamento: "carta" | "paypal" | "bonifico" | null;
+  spedizioneIndirizzo: string | null;
+  spedizioneCap: string | null;
+  spedizioneCitta: string | null;
+  spedizioneProvincia: string | null;
+  spedizioneNote: string | null;
+  note: string | null;
+  righe: RigaOrdine[];
+};
+
 /** Tipologia di un elemento salvato tra i preferiti. */
 export type TipoPreferito = "negozio" | "prodotto";
 

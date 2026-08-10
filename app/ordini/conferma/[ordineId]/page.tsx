@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { CheckCircle2, Package, Store, Truck, Calendar, MapPin, Home } from "lucide-react";
+import { CheckCircle2, Package, Store, Truck, Calendar, MapPin, Home, PackageSearch, ReceiptText } from "lucide-react";
+import { getCurrentUser } from "@/lib/auth/session";
 import { getOrdineConferma } from "@/lib/cliente/orders";
 
 type Params = { ordineId: string };
@@ -15,6 +16,9 @@ function formattaPrezzo(v: number): string {
 export default async function ConfermaOrdinePage({ params }: { params: Promise<Params> }) {
   const { ordineId } = await params;
   const ordine = await getOrdineConferma(ordineId);
+  // Cliente autenticato (sessione server-side): l'ordine è già associato al
+  // suo account → pulsante "Vai ai miei ordini". Guest → recupero ordine.
+  const utente = await getCurrentUser();
 
   if (!ordine) {
     return (
@@ -119,6 +123,47 @@ export default async function ConfermaOrdinePage({ params }: { params: Promise<P
           <p className="mt-2 text-sm text-slate-600">
             {ordine.modalita === "ritiro" ? "Ritiro presso il punto vendita." : "Spedizione all'indirizzo indicato al momento dell'ordine."}
           </p>
+          {/* Azioni post-ordine: area ordini per autenticati, recupero guest */}
+          <div className="mt-4 rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-100">
+            <h2 className="flex items-center gap-2 text-sm font-bold text-slate-900">
+              {utente ? (
+                <ReceiptText className="h-4 w-4 text-blue-500" />
+              ) : (
+                <PackageSearch className="h-4 w-4 text-blue-500" />
+              )}
+              {utente
+                ? "L'ordine è salvato sul tuo account"
+                : "Hai acquistato senza account?"}
+            </h2>
+            {utente ? (
+              <>
+                <p className="mt-2 text-sm text-slate-600">
+                  Puoi ritrovare questo ordine in qualsiasi momento dalla tua
+                  area personale, anche dopo aver chiuso il browser.
+                </p>
+                <Link
+                  href="/cliente/ordini"
+                  className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-blue-700 sm:w-auto"
+                >
+                  <ReceiptText className="h-4 w-4" /> Vai ai miei ordini
+                </Link>
+              </>
+            ) : (
+              <>
+                <p className="mt-2 text-sm text-slate-600">
+                  Puoi recuperare i tuoi ordini in qualsiasi momento inserendo
+                  email e telefono usati al checkout.
+                </p>
+                <Link
+                  href="/ordini/recupera"
+                  className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-blue-700 sm:w-auto"
+                >
+                  <PackageSearch className="h-4 w-4" /> Recupera i miei ordini
+                </Link>
+              </>
+            )}
+          </div>
+
           <div className="mt-4 flex flex-wrap gap-3">
             <Link
               href="/"

@@ -1,5 +1,6 @@
 import { apiError, apiOk } from "@/lib/api/response";
 import { creaOrdine, type CreaOrdineInput } from "@/lib/cliente/orders";
+import { getCurrentUser } from "@/lib/auth/session";
 import { checkRateLimit } from "@/lib/rate-limiter";
 
 /** IP del richiedente (pattern già usato da /api/assistente). */
@@ -49,6 +50,12 @@ export async function POST(request: Request) {
     return apiError("VALIDATION_ERROR", "Corpo della richiesta non valido.", 422);
   }
 
+  // ── Cliente autenticato (SERVER-SIDE): l'ordine viene associato
+  // all'account tramite la SESSIONE Supabase (cookie httpOnly), MAI da un
+  // user id inviato dal browser. Utente non loggato → ordine guest
+  // (cliente_user_id = NULL nella RPC).
+  const utenteAutenticato = await getCurrentUser();
+
   // Validazione esplicita dei valori: mai default silenziosi su valori non
   // validi (un input sbagliato va rifiutato, non riadattato).
   const modalita: "ritiro" | "spedizione" | null =
@@ -76,6 +83,17 @@ export async function POST(request: Request) {
     return apiError("VALIDATION_ERROR", "Metodo di pagamento non valido.", 422);
   }
 
+  // Email destinataria della conferma: se l'utente è autenticato si usa
+  // l'email dell'ACCOUNT (sessione), altrimenti quella raccolta nel checkout
+  // guest (se presente). L'email del body non viene mai fidato come prova
+  // di identità: l'associazione all'account avviene solo via sessione.
+  const emailAccount = utenteAutenticato?.email ?? null;
+  const emailBody =
+    typeof clienteRaw.email === "string" && clienteRaw.email.trim()
+      ? clienteRaw.email.trim()
+      : null;
+  const emailDestinataria = emailAccount ?? emailBody;
+
   const input: CreaOrdineInput = {
     idempotencyKey:
       typeof body.idempotencyKey === "string" ? body.idempotencyKey : "",
@@ -90,8 +108,9 @@ export async function POST(request: Request) {
       cognome: typeof clienteRaw.cognome === "string" ? clienteRaw.cognome : "",
       telefono:
         typeof clienteRaw.telefono === "string" ? clienteRaw.telefono : null,
-      email: typeof clienteRaw.email === "string" ? clienteRaw.email : null,
+      email: emailDestinataria,
     },
+    clienteUserId: utenteAutenticato?.id ?? null,
     ritiro:
       modalita === "spedizione"
         ? null

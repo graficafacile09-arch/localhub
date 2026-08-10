@@ -2,6 +2,8 @@ import Link from "next/link";
 import { ArrowRight, ShoppingBasket } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getConteggioPreferiti } from "@/lib/cliente/favorites";
+import { formattaDataOrdine, getOrdiniCliente } from "@/lib/cliente/ordini";
+import type { OrdineClienteLista } from "@/lib/cliente/types";
 import OrdiniCard from "@/components/cliente/dashboard/OrdiniCard";
 import PreferitiCard from "@/components/cliente/dashboard/PreferitiCard";
 import UltimoAcquistoCard from "@/components/cliente/dashboard/UltimoAcquistoCard";
@@ -26,10 +28,17 @@ export default async function ClienteDashboardPage() {
   // Conteggi reali per le card della dashboard (FASE 3): due query head
   // (conteggio esatto), nessun fetch della lista completa.
   const user = await getCurrentUser();
-  const [totalePreferiti, negoziPreferiti] = await Promise.all([
+  const [totalePreferiti, negoziPreferiti, ordini] = await Promise.all([
     user ? getConteggioPreferiti(user.id) : Promise.resolve(0),
     user ? getConteggioPreferiti(user.id, "negozio") : Promise.resolve(0),
+    user
+      ? getOrdiniCliente(user.id).catch((): OrdineClienteLista[] => [])
+      : Promise.resolve([] as OrdineClienteLista[]),
   ]);
+
+  const ultimo = ordini[0]
+    ? `${ordini[0].negozioNome} — ${formattaDataOrdine(ordini[0].createdAt)}`
+    : "—";
 
   return (
     <div className="space-y-5">
@@ -70,9 +79,9 @@ export default async function ClienteDashboardPage() {
 
       {/* ── Griglia card ─────────────────────────────────────────────────────── */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <OrdiniCard />
+        <OrdiniCard conteggio={ordini.length} />
         <PreferitiCard conteggio={totalePreferiti} />
-        <UltimoAcquistoCard />
+        <UltimoAcquistoCard descrizione={ultimo} />
         <OfferteConsigliateCard />
         <NegoziPreferitiCard conteggio={negoziPreferiti} />
         <EventiConsigliatiCard />
