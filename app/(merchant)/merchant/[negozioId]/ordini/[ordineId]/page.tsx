@@ -25,6 +25,9 @@ import { formattaDataOrdine, etichettaModalita } from "@/lib/cliente/ordini-form
 import type { StatoOrdine } from "@/lib/cliente/types";
 import { getMerchantStoreForUser } from "@/lib/merchant/data";
 import { getOrdineVenditore } from "@/lib/merchant/ordini";
+import { getReclamiVenditore } from "@/lib/ordine-reclami";
+import type { ReclamoOrdine as ReclamoOrdineType } from "@/lib/ordine-reclami";
+import ReclamiOrdine from "@/components/merchant/ReclamiOrdine";
 import {
   ETICHETTE_STATO,
   etichettaMotivoAnnullamento,
@@ -147,6 +150,16 @@ export default async function MerchantOrdineDettaglioPage({
     ordine = await getOrdineVenditore(user.id, negozioId, ordineId);
   } catch (err) {
     errore = err instanceof Error ? err.message : "Errore sconosciuto";
+  }
+
+  // Reclami dell'ordine (best-effort: la pagina non deve rompersi).
+  let reclami: ReclamoOrdineType[] = [];
+  if (ordine) {
+    try {
+      reclami = await getReclamiVenditore(user.id, negozioId, ordineId);
+    } catch {
+      reclami = [];
+    }
   }
 
   if (errore) {
@@ -410,6 +423,17 @@ export default async function MerchantOrdineDettaglioPage({
               />
             )}
           </div>
+        </Sezione>
+      )}
+
+      {/* ── Reclami del cliente ─────────────────────────────────────────────── */}
+      {reclami.length > 0 && (
+        <Sezione icon={AlertTriangleIcon} titolo="Reclami del cliente">
+          <ReclamiOrdine
+            negozioId={negozioId}
+            ordineId={ordineId}
+            reclamiIniziali={reclami}
+          />
         </Sezione>
       )}
 

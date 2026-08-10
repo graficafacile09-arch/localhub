@@ -150,18 +150,30 @@ export function costruisciMessaggioNtfy(dati: DatiOrdineNtfy): string {
   return righe.join("\n");
 }
 
+/** Messaggio ntfy generico (titolo ASCII, tags, priorità, corpo). */
+export type MessaggioNtfy = {
+  titolo: string;
+  tags?: string;
+  priorita?: string;
+  corpo: string;
+};
+
 /**
- * Invio effettivo (core puro, testabile con fetch mockata).
- * Applica le guardie e NON lancia MAI eccezioni.
+ * Invio effettivo di un messaggio ntfy (core puro, testabile con fetch
+ * mockata). Riutilizzato sia dagli ordini (costruisciMessaggioNtfy) sia dai
+ * reclami ordine (lib/ordine-reclami.ts). Applica le guardie e NON lancia
+ * MAI eccezioni: ogni problema viene loggato e restituito come stato.
+ * `ref` identifica il contesto nei log (es. "ordine LH-000001" o "reclamo").
  */
-export async function inviaNotificaConfigurataNtfy(
+export async function inviaMessaggioNtfy(
   config: ConfigNtfy,
-  dati: DatiOrdineNtfy,
+  messaggio: MessaggioNtfy,
+  ref: string,
   fetchImpl: typeof fetch = fetch
 ): Promise<EsitoNotificaNtfy> {
-  // ── Guardie (nessuna può far fallire l'ordine) ───────────────────────────
+  // ── Guardie (nessuna può far fallire l'operazione principale) ────────────
   const salta = (motivo: string): EsitoNotificaNtfy => {
-    console.log(`[ntfy] ordine ${dati.numero || "?"}: notifica saltata (${motivo})`);
+    console.log(`[ntfy] ${ref}: notifica saltata (${motivo})`);
     return { stato: "skipped", motivo };
   };
 
@@ -172,7 +184,6 @@ export async function inviaNotificaConfigurataNtfy(
   if (!serverUrl) return salta("configurazione_mancante");
 
   const url = `${serverUrl}/${topic}`;
-  const corpo = costruisciMessaggioNtfy(dati);
   const timeoutMs = config.timeoutMs ?? DEFAULT_TIMEOUT_MS;
 
   const controller = new AbortController();
@@ -188,11 +199,11 @@ export async function inviaNotificaConfigurataNtfy(
       method: "POST",
       headers: {
         "Content-Type": "text/plain; charset=utf-8",
-        "X-Title": `Nuovo ordine ${(dati.numero || "").trim() || ""}`.trim(),
-        "X-Priority": PRIORITA_ORDINE,
-        "X-Tags": "shopping_cart",
+        "X-Title": messaggio.titolo.trim(),
+        "X-Priority": messaggio.priorita ?? PRIORITA_ORDINE,
+        "X-Tags": messaggio.tags ?? "shopping_cart",
       },
-      body: new TextEncoder().encode(corpo),
+      body: new TextEncoder().encode(messaggio.corpo),
       signal: controller.signal,
     });
     clearTimeout(timer);
@@ -207,25 +218,48 @@ export async function inviaNotificaConfigurataNtfy(
       } catch {
         // corpo non JSON: la risposta 2xx resta comunque un successo
       }
-      console.log(`[ntfy] ordine ${dati.numero || "?"}: notifica inviata (HTTP ${res.status})`);
+      console.log(`[ntfy] ${ref}: notifica inviata (HTTP ${res.status})`);
       return { stato: "sent", messageId };
     }
 
     console.error(
-      `[ntfy] ordine ${dati.numero || "?"}: ntfy ha risposto HTTP ${res.status} (${(risposta || "").trim().slice(0, 120)})`
+      `[ntfy] ${ref}: ntfy ha risposto HTTP ${res.status} (${(risposta || "").trim().slice(0, 120)})`
     );
     return { stato: "error", motivo: `ntfy_http_${res.status}` };
   } catch (err) {
     clearTimeout(timer);
     if ((err as Error)?.name === "AbortError") {
-      console.error(`[ntfy] ordine ${dati.numero || "?"}: timeout dopo ${timeoutMs}ms`);
+      console.error(`[ntfy] ${ref}: timeout dopo ${timeoutMs}ms`);
       return { stato: "error", motivo: "timeout" };
     }
     console.error(
-      `[ntfy] ordine ${dati.numero || "?"}: errore di rete: ${(err as Error)?.message ?? "sconosciuto"}`
+      `[ntfy] ${ref}: errore di rete: ${(err as Error)?.message ?? "sconosciuto"}`
     );
     return { stato: "error", motivo: "rete" };
   }
+}
+
+/**
+ * Invio della notifica ordine (API pubblica storica, identica a prima).
+ * Il messaggio viene costruito con costruisciMessaggioNtfy e inviato dal
+ * core generico inviaMessaggioNtfy (una sola implementazione del send).
+ */
+export async function inviaNotificaConfigurataNtfy(
+  config: ConfigNtfy,
+  dati: DatiOrdineNtfy,
+  fetchImpl: typeof fetch = fetch
+): Promise<EsitoNotificaNtfy> {
+  return inviaMessaggioNtfy(
+    config,
+    {
+      titolo: `Nuovo ordine ${(dati.numero || "").trim() || ""}`.trim(),
+      tags: "shopping_cart",
+      priorita: PRIORITA_ORDINE,
+      corpo: costruisciMessaggioNtfy(dati),
+    },
+    `ordine ${(dati.numero || "").trim() || "?"}`,
+    fetchImpl
+  );
 }
 
 /** Opzioni per i test (iniezione di db e fetch). */

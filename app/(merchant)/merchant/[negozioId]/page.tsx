@@ -6,6 +6,7 @@ import MerchantQuickActions from "@/components/merchant/MerchantQuickActions";
 import { requireCurrentUser } from "@/lib/auth/session";
 import { getMerchantProductsForStore, getMerchantStoreForUser } from "@/lib/merchant/data";
 import { getOrdiniVenditore } from "@/lib/merchant/ordini";
+import { getConteggioReclamiApertiVenditore } from "@/lib/ordine-reclami";
 
 export default async function MerchantStorePage({
   params,
@@ -57,6 +58,14 @@ export default async function MerchantStorePage({
   };
   const nonLetti = ordini.filter((o) => !o.lettoAt).length;
 
+  // Reclami attivi (best-effort: un errore qui non deve far fallire la dashboard).
+  let reclamiAperti = 0;
+  try {
+    reclamiAperti = await getConteggioReclamiApertiVenditore(user.id, negozioId);
+  } catch {
+    reclamiAperti = 0;
+  }
+
   return (
     <div className="space-y-4">
       {/* Header compatto */}
@@ -98,17 +107,24 @@ export default async function MerchantStorePage({
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
               <ReceiptText className="h-5 w-5" />
             </div>
-            <div>
+            <div className="min-w-0">
               <h2 className="text-base font-bold tracking-tight text-slate-900">
                 Gestisci ordini
               </h2>
-              <p className="text-xs text-slate-500">
-                {ordini.length === 0
-                  ? "Nessun ordine ricevuto"
-                  : nonLetti > 0
-                    ? `${nonLetti} nuovo${nonLetti === 1 ? "" : "i"} da gestire`
-                    : `${ordini.length} ordini totali`}
-              </p>
+              <div className="mt-0.5 flex flex-wrap items-center gap-2">
+                <p className="text-xs text-slate-500">
+                  {ordini.length === 0
+                    ? "Nessun ordine ricevuto"
+                    : nonLetti > 0
+                      ? `${nonLetti} nuovo${nonLetti === 1 ? "" : "i"} da gestire`
+                      : `${ordini.length} ordini totali`}
+                </p>
+                {reclamiAperti > 0 && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-0.5 text-[11px] font-bold text-red-700 ring-1 ring-red-200">
+                    🚨 {reclamiAperti} {reclamiAperti === 1 ? "reclamo aperto" : "reclami aperti"}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
           <ChevronRight className="h-5 w-5 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-blue-600" />

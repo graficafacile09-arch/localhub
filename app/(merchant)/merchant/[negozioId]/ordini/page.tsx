@@ -66,6 +66,11 @@ function OrdineCard({ negozioId, ordine }: { negozioId: string; ordine: OrdineVe
             {ordine.numero}
           </span>
           <BadgeStato stato={ordine.stato} />
+          {ordine.haReclamoAperto && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-bold text-red-700 ring-1 ring-red-200">
+              🚨 Reclamo aperto
+            </span>
+          )}
         </div>
         <span className="shrink-0 text-lg font-black text-slate-900">
           {formattaPrezzo(ordine.totale)}

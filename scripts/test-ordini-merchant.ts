@@ -34,7 +34,7 @@ import {
   statiPerFiltro,
   transizioneConsentita,
 } from "../lib/merchant/ordini-stati";
-import { getOrdineVenditore, getOrdiniVenditore } from "../lib/merchant/ordini";
+import { aggiornaStatoOrdineVenditore, getOrdineVenditore, getOrdiniVenditore } from "../lib/merchant/ordini";
 
 /** Query FAKE che registra le chiamate e restituisce il risultato prefissato. */
 class FakeQuery {
@@ -252,6 +252,112 @@ async function main() {
     check("evento mappato", ordine?.eventi[0]?.evento === "ordine_ricevuto");
     check("email cliente", ordine?.clienteEmail === "cliente@example.it");
     check("data ritiro", ordine?.ritiroData === "2026-08-20");
+  }
+
+  // ── T16: EMAIL KO dopo annullamento → evento mancata consegna registrato ──
+  console.log("\n[T16] Email KO dopo annullamento → evento 'email_stato_non_inviata' registrato");
+  {
+    const log: FakeQuery[] = [];
+    const eventi: Array<Record<string, unknown>> = [];
+    const eventiClient = {
+      from(tabella: string) {
+        if (tabella === "ordini_eventi") {
+          return {
+            insert: async (riga: Record<string, unknown>) => {
+              eventi.push(riga);
+              return { error: null };
+            },
+          };
+        }
+        return new FakeQuery(null);
+      },
+    };
+
+    const esito = await aggiornaStatoOrdineVenditore(
+      "user-1",
+      "negozio-proprio",
+      "ord-M",
+      "cancellato",
+      {
+        motivo: "prodotto_non_disponibile",
+        nota: "Non abbiamo più il prodotto",
+        puòGestire: true,
+        rpc: async () => ({ data: { ok: true, cambiato: true, ordine: ordineRow }, error: null }),
+        inviaEmail: async () => ({ stato: "error", motivo: "invio_fallito" }),
+        eventiClient,
+        client: fakeDb({ ordini: ordineRow, ordini_righe: righeRow, ordini_eventi: eventiRow }, log),
+      }
+    );
+    check("cambio stato ok", esito.ok === true, JSON.stringify(esito));
+    check("cambiato = true", esito.ok && esito.cambiato === true);
+    check("evento mancata email registrato", eventi.length === 1, String(eventi.length));
+    check("evento = email_stato_non_inviata", eventi[0]?.evento === "email_stato_non_inviata", String(eventi[0]?.evento));
+    check("motivo evento = stato target", eventi[0]?.motivo === "cancellato", String(eventi[0]?.motivo));
+    check("nota evento = motivo errore email", eventi[0]?.nota === "invio_fallito", String(eventi[0]?.nota));
+
+    // Retry stessa transizione → RPC cambiato:false → NESSUNA email, nessun evento.
+    const eventi2: Array<Record<string, unknown>> = [];
+    const esito2 = await aggiornaStatoOrdineVenditore(
+      "user-1",
+      "negozio-proprio",
+      "ord-M",
+      "cancellato",
+      {
+        motivo: "prodotto_non_disponibile",
+        puòGestire: true,
+        rpc: async () => ({ data: { ok: true, cambiato: false, ordine: ordineRow }, error: null }),
+        inviaEmail: async () => {
+          throw new Error("non deve essere chiamata");
+        },
+        eventiClient: {
+          from(tabella: string) {
+            if (tabella === "ordini_eventi") {
+              return {
+                insert: async (riga: Record<string, unknown>) => {
+                  eventi2.push(riga);
+                  return { error: null };
+                },
+              };
+            }
+            return new FakeQuery(null);
+          },
+        },
+        client: fakeDb({ ordini: ordineRow, ordini_righe: righeRow, ordini_eventi: eventiRow }, log),
+      }
+    );
+    check("retry: ok = true", esito2.ok === true);
+    check("retry: cambiato = false", esito2.ok && esito2.cambiato === false);
+    check("retry: nessun evento duplicato", eventi2.length === 0, String(eventi2.length));
+
+    // Transizione a stato che NON prevede email (in_lavorazione) → la email
+    // torna "skipped: stato_non_notificato": NESSUN evento fuorviante.
+    const eventi3: Array<Record<string, unknown>> = [];
+    await aggiornaStatoOrdineVenditore(
+      "user-1",
+      "negozio-proprio",
+      "ord-M",
+      "in_lavorazione",
+      {
+        puòGestire: true,
+        rpc: async () => ({ data: { ok: true, cambiato: true, ordine: ordineRow }, error: null }),
+        inviaEmail: async () => ({ stato: "skipped", motivo: "stato_non_notificato" }),
+        eventiClient: {
+          from(tabella: string) {
+            if (tabella === "ordini_eventi") {
+              return {
+                insert: async (riga: Record<string, unknown>) => {
+                  eventi3.push(riga);
+                  return { error: null };
+                },
+              };
+            }
+            return new FakeQuery(null);
+          },
+        },
+        client: fakeDb({ ordini: ordineRow, ordini_righe: righeRow, ordini_eventi: eventiRow }, log),
+      }
+    );
+    check("stato non notificato → nessun evento fuorviante", eventi3.length === 0, String(eventi3.length));
   }
 
   // ── Riepilogo ─────────────────────────────────────────────────────────────

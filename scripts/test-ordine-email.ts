@@ -306,6 +306,69 @@ async function main() {
     check("senza email → skipped", esito2.stato === "skipped", JSON.stringify(esito2));
   }
 
+  // ── T19: EMAIL DI ANNULLAMENTO — motivo + nota dal DB nel payload inviato ────
+  console.log("\n[T19] Email annullamento: motivo + nota presenti nel payload reale");
+  {
+    const inviato: { payload: { dati: DatiEmailOrdine; stato: string; motivo: string | null; nota: string | null } | null } = { payload: null };
+    const esito = await inviaEmailAggiornamentoStatoOrdine(ORDINE_ID, {
+      db: fakeDb(
+        ordineValido({
+          stato: "cancellato",
+          annullato_motivo: "problema_spedizione",
+          annullato_nota: "Il corriere non riesce a consegnare.",
+          annullato_at: "2026-08-17T09:00:00.000Z",
+        }),
+        [rigaDefault]
+      ),
+      invia: async (payload) => {
+        inviato.payload = payload;
+      },
+    });
+    check("stato = sent", esito.stato === "sent", JSON.stringify(esito));
+    check("stato del payload = cancellato", inviato.payload?.stato === "cancellato");
+    check(
+      "motivo estratto dal DB (problema_spedizione)",
+      inviato.payload?.motivo === "problema_spedizione",
+      String(inviato.payload?.motivo)
+    );
+    check(
+      "nota estratta dal DB",
+      inviato.payload?.nota === "Il corriere non riesce a consegnare.",
+      String(inviato.payload?.nota)
+    );
+    const html = costruisciHtmlStatoOrdine(
+      inviato.payload!.dati,
+      "cancellato",
+      inviato.payload!.motivo,
+      inviato.payload!.nota
+    );
+    check("html contiene etichetta motivo", html.includes("Problema con la spedizione"));
+    check("html contiene nota del venditore", html.includes("Il corriere non riesce a consegnare."));
+    check("html contiene totale ordine", html.includes("14,90"));
+    check("html contiene link visualizza ordine", html.includes("/ordini/conferma/"));
+
+    // Ordine annullato SENZA email cliente → skipped (mai errore, mai throw).
+    const esito2 = await inviaEmailAggiornamentoStatoOrdine(ORDINE_ID, {
+      db: fakeDb(ordineValido({ stato: "cancellato", cliente_email: null }), [rigaDefault]),
+      invia: async () => {},
+    });
+    check("annullato senza email → skipped", esito2.stato === "skipped", JSON.stringify(esito2));
+
+    // Ordine annullato ma con Resend KO → error controllato (mai throw).
+    let esito3: Awaited<ReturnType<typeof inviaEmailAggiornamentoStatoOrdine>> = { stato: "error", motivo: "eccezione" };
+    try {
+      esito3 = await inviaEmailAggiornamentoStatoOrdine(ORDINE_ID, {
+        db: fakeDb(ordineValido({ stato: "cancellato" }), [rigaDefault]),
+        invia: async () => {
+          throw new Error("Resend: dominio mittente non verificato");
+        },
+      });
+    } catch (err) {
+      check("nessuna eccezione propagata", false, String(err));
+    }
+    check("Resend KO → stato error (ordine resta annullato)", esito3.stato === "error", JSON.stringify(esito3));
+  }
+
   // ── Riepilogo ────────────────────────────────────────────────────────────────
   console.log(`\n═══════════════════════════════════════════════════════════`);
   console.log(`ORDINE EMAIL TEST: ${passati} passati, ${falliti} falliti`);

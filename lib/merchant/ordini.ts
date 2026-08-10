@@ -60,6 +60,8 @@ export type OrdineVenditoreLista = {
   note: string | null;
   numeroRighe: number;
   lettoAt: string | null;
+  /** True se l'ordine ha almeno un reclamo ATTIVO (aperto/in gestione). */
+  haReclamoAperto: boolean;
 };
 
 /** Evento dello storico ordine (tabella ordini_eventi). */
@@ -147,6 +149,7 @@ function mappaLista(row: OrdineRow, numeroRighe = 0): OrdineVenditoreLista {
     note: (row.note as string | null) ?? null,
     numeroRighe,
     lettoAt: (row.letto_at as string | null) ?? null,
+    haReclamoAperto: false,
   };
 }
 
@@ -189,6 +192,22 @@ export type OpzioniOrdiniVenditore = {
   client?: OrdiniVenditoreDbClient;
   /** Override di canManageStore per i test (undefined → query reale). */
   puòGestire?: boolean;
+};
+
+/** Opzioni testabili del cambio stato (RPC, email, evento iniettati). */
+export type OpzioniAggiornaStatoOrdine = {
+  client?: OrdiniVenditoreDbClient;
+  /** Override di canManageStore per i test. */
+  puòGestire?: boolean;
+  /** Override della RPC aggiorna_stato_ordine per i test. */
+  rpc?: (
+    fn: string,
+    params: Record<string, unknown>
+  ) => Promise<{ data: unknown; error: { message: string } | null }>;
+  /** Override dell'email di aggiornamento stato per i test. */
+  inviaEmail?: (ordineId: string) => Promise<{ stato: string; motivo: string }>;
+  /** Client usato per registrare l'evento di email non inviata. */
+  eventiClient?: OrdiniVenditoreDbClient;
 };
 
 /** Verifica l'ownership: override testabile oppure query reale. */
@@ -234,6 +253,27 @@ export async function getOrdiniVenditore(
   }
 
   const lista = ordini.map((o) => mappaLista(o, conteggi.get(String(o.id)) ?? 0));
+
+  // Reclami ATTIVI degli ordini elencati (best-effort: se la tabella non
+  // esiste o la query fallisce, la lista non deve rompersi).
+  try {
+    if (lista.length > 0) {
+      const { data: reclamiIds } = await db
+        .from("ordine_reclami")
+        .select("ordine_id")
+        .in("ordine_id", lista.map((o) => o.id))
+        .in("stato", ["aperto", "in_gestione"]);
+      const conReclamo = new Set(
+        ((reclamiIds ?? []) as Array<{ ordine_id: unknown }>).map((r) => String(r.ordine_id))
+      );
+      for (const ordine of lista) {
+        ordine.haReclamoAperto = conReclamo.has(ordine.id);
+      }
+    }
+  } catch (err) {
+    console.error("[ordini-venditore] lettura reclami attivi fallita (best-effort):", (err as Error)?.message);
+  }
+
   // Ordinamento stabile: priorità di stato, poi più recenti (già ordinati).
   lista.sort((a, b) => {
     const diff = prioritaStato(a.stato) - prioritaStato(b.stato);
@@ -305,22 +345,27 @@ export async function getOrdineVenditore(
  *   ATOMICAMENTE: lock riga, macchina a stati, motivo obbligatorio per
  *   l'annullamento, ripristino stock e storico eventi;
  * - se la RPC riporta `cambiato: true`, invia l'email di aggiornamento al
- *   cliente (BEST-EFFORT: un errore email non fallisce mai l'operazione).
+ *   cliente (BEST-EFFORT: un errore email non fallisce mai l'operazione) e
+ *   se l'email non parte registra la mancata consegna in `ordini_eventi`.
  */
 export async function aggiornaStatoOrdineVenditore(
   userId: string,
   negozioId: string,
   ordineId: string,
   nuovoStato: StatoOrdine,
-  opts: { motivo?: string | null; nota?: string | null } = {}
+  opts: { motivo?: string | null; nota?: string | null } & OpzioniAggiornaStatoOrdine = {}
 ): Promise<EsitoAggiornamentoStato> {
-  const puòGestire = await canManageStore(userId, negozioId);
+  const puòGestire =
+    opts.puòGestire !== undefined ? opts.puòGestire : await canManageStore(userId, negozioId);
   if (!puòGestire) {
     return { ok: false, codice: "FORBIDDEN", messaggio: "Non puoi gestire questo ordine.", status: 403 };
   }
 
-  const adminDb = createAdminSupabaseClient();
-  const { data, error } = await adminDb.rpc("aggiorna_stato_ordine", {
+  const chiamaRpc =
+    opts.rpc ??
+    ((fn: string, params: Record<string, unknown>) =>
+      (createAdminSupabaseClient() as any).rpc(fn, params));
+  const { data, error } = await chiamaRpc("aggiorna_stato_ordine", {
     p_ordine_id: ordineId,
     p_nuovo_stato: nuovoStato,
     p_motivo: opts.motivo ?? null,
@@ -353,19 +398,91 @@ export async function aggiornaStatoOrdineVenditore(
 
   // ── Email al cliente (BEST-EFFORT, SOLO se lo stato è davvero cambiato:
   //    retry idempotente → cambiato:false → nessuna email duplicata). ──────
+  // L'esito NON viene mai ignorato: se l'email non parte (errore Resend,
+  // email cliente assente/non valida) la mancata consegna viene REGISTRATA
+  // in ordini_eventi, così non si perde mai l'informazione e il venditore
+  // la vede nello storico dell'ordine.
   const cambiato = esito.cambiato ?? false;
   if (cambiato) {
-    await inviaEmailAggiornamentoStatoOrdine(ordineId).catch(() => {});
+    const esitoEmail = opts.inviaEmail
+      ? await opts.inviaEmail(ordineId).catch((err) => {
+          console.error(`[ordini-venditore] eccezione email per ${ordineId}:`, (err as Error)?.message);
+          return { stato: "error", motivo: "eccezione" } as const;
+        })
+      : await inviaEmailAggiornamentoStatoOrdine(ordineId).catch((err) => {
+          console.error(`[ordini-venditore] eccezione email per ${ordineId}:`, (err as Error)?.message);
+          return { stato: "error", motivo: "eccezione" } as const;
+        });
+
+    if (esitoEmail.stato !== "sent") {
+      // Type guard esplicito: la union include un ramo con `stato: string`
+      // (override dei test) e uno "sent" senza `motivo` — mai assumere il
+      // narrowing automatico.
+      const motivoEmail = "motivo" in esitoEmail ? esitoEmail.motivo : "sconosciuto";
+
+      // Stati che NON prevedono email al cliente (es. in_lavorazione,
+      // in_consegna) → "stato_non_notificato" NON è una mancata consegna:
+      // nessun evento fuorviante nello storico. Si registra solo la mancata
+      // consegna REALE (errore Resend, email assente/non valida, ecc.).
+      if (motivoEmail !== "stato_non_notificato") {
+        console.error(
+          `[ordini-venditore] ordine ${ordineId}: email di stato NON inviata (${esitoEmail.stato}: ${motivoEmail})`
+        );
+        await registraEmailStatoNonInviata(
+          ordineId,
+          nuovoStato,
+          { stato: esitoEmail.stato, motivo: motivoEmail },
+          opts.eventiClient
+        ).catch(() => {});
+      }
+    }
   }
 
   // Ricarica il dettaglio aggiornato (marcato letto? no: lo stato nuovo va
   // restituito; il refresh della pagina farà comunque una nuova lettura).
   let dettaglio: OrdineVenditoreDettaglio | null = null;
   try {
-    dettaglio = await getOrdineVenditore(userId, negozioId, ordineId, { puòGestire: true });
+    dettaglio = await getOrdineVenditore(userId, negozioId, ordineId, {
+      puòGestire: true,
+      client: opts.client,
+    });
   } catch {
     dettaglio = null;
   }
 
   return { ok: true, cambiato, ordine: dettaglio };
+}
+
+/**
+ * REGISTRAZIONE DELLA MANCATA CONSEGNA EMAIL (mai persa):
+ * quando l'email di aggiornamento stato non parte, viene inserito un evento
+ * in `ordini_eventi` (la stessa tabella dello storico già visibile nel
+ * dettaglio venditore) con evento = "email_stato_non_inviata" e il motivo
+ * della mancata consegna. Best-effort: un errore qui NON fa fallire mai
+ * l'operazione di stato. Nessuna email duplicata nei retry: la RPC riporta
+ * cambiato=false per lo stesso stato → qui non si arriva.
+ */
+async function registraEmailStatoNonInviata(
+  ordineId: string,
+  stato: string,
+  esito: { stato: string; motivo: string },
+  eventiClient?: OrdiniVenditoreDbClient
+): Promise<void> {
+  try {
+    const adminDb = (eventiClient ?? createAdminSupabaseClient()) as OrdiniVenditoreDbClient;
+    await adminDb.from("ordini_eventi").insert({
+      ordine_id: ordineId,
+      evento: "email_stato_non_inviata",
+      dettaglio: `Email di stato non inviata (${esito.stato})`,
+      motivo: stato,
+      nota: esito.motivo,
+    });
+    console.warn(
+      `[ordini-venditore] ordine ${ordineId}: mancata consegna email registrata nello storico (motivo: ${esito.motivo})`
+    );
+  } catch (err) {
+    console.error(
+      `[ordini-venditore] ordine ${ordineId}: registrazione mancata email fallita: ${(err as Error)?.message}`
+    );
+  }
 }

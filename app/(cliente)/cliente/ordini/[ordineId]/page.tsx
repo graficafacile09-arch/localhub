@@ -19,7 +19,10 @@ import {
   formattaDataOrdine,
   getOrdineCliente,
 } from "@/lib/cliente/ordini";
+import { getReclamiOrdineCliente } from "@/lib/ordine-reclami";
+import type { ReclamoOrdine as ReclamoOrdineType } from "@/lib/ordine-reclami";
 import type { OrdineClienteDettaglio, StatoOrdine } from "@/lib/cliente/types";
+import ReclamoOrdine from "@/components/cliente/ReclamoOrdine";
 
 type Params = { ordineId: string };
 
@@ -96,6 +99,17 @@ export default async function OrdineDettaglioPage({ params }: { params: Promise<
     ordine = await getOrdineCliente(user.id, ordineId);
   } catch (err) {
     errore = err instanceof Error ? err.message : "Errore sconosciuto";
+  }
+
+  // Reclami dell'ordine (best-effort: se la tabella non esiste ancora la
+  // pagina non deve rompersi).
+  let reclami: ReclamoOrdineType[] = [];
+  if (ordine) {
+    try {
+      reclami = await getReclamiOrdineCliente(user.id, ordineId);
+    } catch {
+      reclami = [];
+    }
   }
 
   // Errore di lettura (distinto dal non-trovato).
@@ -322,6 +336,13 @@ export default async function OrdineDettaglioPage({ params }: { params: Promise<
           </div>
         </Sezione>
       )}
+
+      {/* ── Reclamo: ordine non arrivato (il componente decide visibilità) ──── */}
+      <ReclamoOrdine
+        ordineId={ordineId}
+        puòReclamare={ordine.stato !== "cancellato"}
+        reclamiIniziali={reclami}
+      />
 
       {/* ── Azioni ───────────────────────────────────────────────────────────── */}
       <div className="flex flex-wrap gap-3">
