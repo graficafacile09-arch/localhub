@@ -25,6 +25,7 @@ export default function MerchantShell({
   currentStoreId,
   banner,
   area = "merchant",
+  ordiniNonLettiPerNegozio,
   children,
 }: {
   user: User;
@@ -32,6 +33,8 @@ export default function MerchantShell({
   currentStoreId?: string;
   banner?: string | null;
   area?: "merchant" | "admin";
+  /** Conteggio ordini non letti per negozio (badge "Ordini [N]"). */
+  ordiniNonLettiPerNegozio?: Record<string, number>;
   children: ReactNode;
 }) {
   const currentStore = stores.find((store) => store.id === currentStoreId) ?? null;
@@ -108,6 +111,7 @@ export default function MerchantShell({
                 <MerchantSidebarNav
                   storeId={currentStore.id}
                   storeName={currentStore.nome}
+                  ordiniNonLetti={ordiniNonLettiPerNegozio?.[currentStore.id] ?? 0}
                 />
               </div>
             ) : null}
@@ -128,7 +132,11 @@ export default function MerchantShell({
       </div>
 
       {/* ── Bottom Navigation mobile ──────────────────────────────────────────── */}
-      <MerchantBottomNav storeId={currentStore?.id ?? null} area={area} />
+      <MerchantBottomNav
+        storeId={currentStore?.id ?? null}
+        area={area}
+        ordiniNonLettiPerNegozio={ordiniNonLettiPerNegozio}
+      />
     </main>
   );
 }

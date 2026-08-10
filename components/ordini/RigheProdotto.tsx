@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { Package } from "lucide-react";
 import type { RigaOrdine } from "@/lib/cliente/types";
+import { RiepilogoTotale } from "./RiepilogoTotale";
 
 function formattaPrezzo(value: number): string {
   return `€${(value || 0).toFixed(2).replace(".", ",")}`;
@@ -9,7 +10,7 @@ function formattaPrezzo(value: number): string {
 /**
  * Righe prodotto dell'ordine (identiche in Area Clienti e Area Venditore):
  * foto se disponibile, nome, quantità × prezzo unitario e totale riga;
- * in coda subtotale, spedizione e totale ordine. Solo dati snapshot del DB.
+ * in coda il riepilogo totale condiviso (RiepilogoTotale).
  */
 export function RigheProdotto({
   righe,
@@ -20,11 +21,6 @@ export function RigheProdotto({
   costoSpedizione: number;
   totale: number;
 }) {
-  const subtotale = (righe ?? []).reduce(
-    (acc, r) => acc + (Number(r.prezzoUnitario) || 0) * (Number(r.quantita) || 1),
-    0
-  );
-
   return (
     <div>
       <div className="divide-y divide-slate-100">
@@ -69,25 +65,12 @@ export function RigheProdotto({
         )}
       </div>
 
-      {/* Riepilogo importi */}
-      <div className="mt-4 space-y-1.5 border-t border-slate-100 pt-4">
-        <div className="flex items-center justify-between text-sm text-slate-500">
-          <span>Subtotale</span>
-          <span className="font-semibold text-slate-700">{formattaPrezzo(subtotale)}</span>
-        </div>
-        {Number(costoSpedizione) > 0 && (
-          <div className="flex items-center justify-between text-sm text-slate-500">
-            <span>Spedizione</span>
-            <span className="font-semibold text-slate-700">
-              {formattaPrezzo(costoSpedizione)}
-            </span>
-          </div>
-        )}
-        <div className="flex items-center justify-between pt-2">
-          <span className="text-sm font-bold text-slate-900">Totale ordine</span>
-          <span className="text-lg font-black text-slate-900">{formattaPrezzo(totale)}</span>
-        </div>
-      </div>
+      {/* Riepilogo importi (componente condiviso) */}
+      <RiepilogoTotale
+        righe={righe}
+        costoSpedizione={costoSpedizione}
+        totale={totale}
+      />
     </div>
   );
 }

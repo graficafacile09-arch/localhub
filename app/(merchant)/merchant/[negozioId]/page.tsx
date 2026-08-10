@@ -115,10 +115,13 @@ export default async function MerchantStorePage({
                 <p className="text-xs text-slate-500">
                   {ordini.length === 0
                     ? "Nessun ordine ricevuto"
-                    : nonLetti > 0
-                      ? `${nonLetti} nuovo${nonLetti === 1 ? "" : "i"} da gestire`
-                      : `${ordini.length} ordini totali`}
+                    : `${ordini.length} ordini totali`}
                 </p>
+                {nonLetti > 0 && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-red-600 px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wider text-white">
+                    🔴 {nonLetti} nuovo{nonLetti === 1 ? " ordine" : "i ordini"}
+                  </span>
+                )}
                 {reclamiAperti > 0 && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-0.5 text-[11px] font-bold text-red-700 ring-1 ring-red-200">
                     🚨 {reclamiAperti} {reclamiAperti === 1 ? "reclamo aperto" : "reclami aperti"}

@@ -4,6 +4,7 @@ import MerchantShell from "@/components/merchant/MerchantShell";
 import { areaToPath } from "@/lib/auth/area";
 import { getSessionArea } from "@/lib/auth/session-area";
 import { getMerchantStoresForUser } from "@/lib/merchant/data";
+import { getConteggiOrdiniNonLetti } from "@/lib/merchant/ordini";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 export default async function MerchantLayout({
@@ -42,11 +43,18 @@ export default async function MerchantLayout({
 
   const storesResult = await getMerchantStoresForUser(sessione.user.id);
 
+  // Badge "Ordini [N]" in sidebar e bottom nav: conteggio non letti per
+  // negozio (best-effort, il sistema letto_at già esistente).
+  const ordiniNonLettiPerNegozio = await getConteggiOrdiniNonLetti(
+    storesResult.data.map((s) => s.id)
+  );
+
   return (
     <MerchantShell
       user={sessione.user}
       stores={storesResult.data}
       banner={storesResult.setupRequired ? storesResult.errorMessage : storesResult.errorMessage}
+      ordiniNonLettiPerNegozio={ordiniNonLettiPerNegozio}
     >
       {children}
     </MerchantShell>

@@ -188,7 +188,7 @@ async function main() {
     check("clienteUserId = null", payload.clienteUserId === null, String(payload.clienteUserId));
   }
 
-  // ── T3: lista ordini → filtro per utente + ordinamento ───────────────────────
+  // ── T3: lista ordini → filtro per utente + ordinamento + righe batch ────────
   console.log("\n[T3] getOrdiniCliente filtra per cliente_user_id");
   {
     const log: FakeQuery[] = [];
@@ -204,6 +204,27 @@ async function main() {
     check("totale mappato", ordini[0]?.totale === 14.9);
     check("modalita mappata", ordini[0]?.modalita === "ritiro");
     check("stato mappato", ordini[0]?.stato === "in_preparazione");
+    check("righe vuote quando la tabella non risponde", ordini[0]?.righe.length === 0, String(ordini[0]?.righe.length));
+  }
+
+  // ── T3b: lista ordini → righe caricate in un'unica query batch (nessun N+1) ──
+  console.log("\n[T3b] getOrdiniCliente: righe in batch per la card");
+  {
+    const log: FakeQuery[] = [];
+    const ordini = await getOrdiniCliente(
+      "user-1",
+      fakeDb({ ordini: [ordineRow], ordini_righe: righeRow }, log)
+    );
+    check("1 ordine restituito", ordini.length === 1, String(ordini.length));
+    check("1 riga prodotto in lista", ordini[0]?.righe.length === 1, String(ordini[0]?.righe.length));
+    check("nome prodotto in lista", ordini[0]?.righe[0]?.nomeProdotto === "Crema viso");
+    check("prezzo unitario in lista", ordini[0]?.righe[0]?.prezzoUnitario === 14.9);
+    check("quantità in lista", ordini[0]?.righe[0]?.quantita === 1);
+    check(
+      "query batch con in(ordine_id) applicata",
+      log.some((q) => q.calls.some((c) => c.startsWith("in:ordine_id=")))
+    );
+    check("una sola query su ordini_righe", log.filter((q) => q.calls.includes("select") && q.calls.some((c) => c.startsWith("in:ordine_id="))).length === 1);
   }
 
   // ── T5: ownership dettaglio ──────────────────────────────────────────────────

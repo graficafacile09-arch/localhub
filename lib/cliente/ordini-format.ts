@@ -35,6 +35,26 @@ export function formattaDataOraEvento(value: string | null | undefined): string 
   });
 }
 
+/**
+ * Formatta data/ora ISO in formato card italiano (es. "10/08/2026 · 18:42").
+ * Separatore " · " come richiesto dal design system ordini.
+ */
+export function formattaDataOraCard(value: string | null | undefined): string {
+  if (!value) return "";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  const parti = d.toLocaleString("it-IT", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+  // it-IT usa la virgola (es. "10/08/2026, 18:42") → la sostituiamo con " · ".
+  return parti.replace(/,\s*/, " · ");
+}
+
 /** Etichetta leggibile della modalità di consegna. */
 export function etichettaModalita(modalita: "ritiro" | "spedizione"): string {
   return modalita === "ritiro" ? "Ritiro" : "Spedizione";

@@ -85,8 +85,9 @@ export type ClienteOrdine = {
 };
 
 /**
- * Riga dell'elenco "I miei ordini" (Area Clienti): dati snapshot del DB,
- * nessuna join. Tutti i campi provengono dalla tabella ordini.
+ * Riga dell'elenco "I miei ordini" (Area Clienti): dati snapshot del DB.
+ * Le righe prodotto vengono caricate in un'unica query batch dal servizio,
+ * così la card può mostrare nome, foto, quantità e prezzo dei prodotti.
  */
 export type OrdineClienteLista = {
   id: string;
@@ -99,6 +100,8 @@ export type OrdineClienteLista = {
   negozioNome: string;
   ritiroData: string | null;
   ritiroFascia: string | null;
+  /** Righe prodotto (per la sintesi in lista e il dettaglio). */
+  righe: RigaOrdine[];
 };
 
 /**

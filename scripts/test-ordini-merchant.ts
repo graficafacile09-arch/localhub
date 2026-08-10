@@ -34,7 +34,12 @@ import {
   statiPerFiltro,
   transizioneConsentita,
 } from "../lib/merchant/ordini-stati";
-import { aggiornaStatoOrdineVenditore, getOrdineVenditore, getOrdiniVenditore } from "../lib/merchant/ordini";
+import {
+  aggiornaStatoOrdineVenditore,
+  getConteggiOrdiniNonLetti,
+  getOrdineVenditore,
+  getOrdiniVenditore,
+} from "../lib/merchant/ordini";
 
 /** Query FAKE che registra le chiamate e restituisce il risultato prefissato. */
 class FakeQuery {
@@ -225,6 +230,10 @@ async function main() {
     check("cliente mappato", ordini[0]?.clienteNome === "Mario" && ordini[0]?.clienteCognome === "Rossi");
     check("numero righe conteggiato", ordini[0]?.numeroRighe === 1, String(ordini[0]?.numeroRighe));
     check("non letto (letto_at null)", ordini[0]?.lettoAt === null);
+    check("righe caricate in lista", ordini[0]?.righe.length === 1, String(ordini[0]?.righe.length));
+    check("nome prodotto in lista", ordini[0]?.righe[0]?.nomeProdotto === "Crema viso");
+    check("prezzo prodotto in lista", ordini[0]?.righe[0]?.prezzoUnitario === 29.9);
+    check("foto prodotto in lista (null)", ordini[0]?.righe[0]?.immagineUrl === null);
 
     // Ownership negata → lista vuota senza query.
     const log2: FakeQuery[] = [];
@@ -234,6 +243,24 @@ async function main() {
     });
     check("negozio altrui → lista vuota", vuoto.length === 0, String(vuoto.length));
     check("negozio altrui → nessuna query", log2.length === 0, String(log2.length));
+  }
+
+  // ── T1b: conteggio ordini NON LETTI per negozio (badge navigazione) ────────
+  console.log("\n[T1b] getConteggiOrdiniNonLetti: conteggio per negozio");
+  {
+    const log: FakeQuery[] = [];
+    const conteggi = await getConteggiOrdiniNonLetti(["negozio-proprio", "negozio-2"], fakeDb({
+      ordini: [
+        { id: "a", negozio_id: "negozio-proprio" },
+        { id: "b", negozio_id: "negozio-proprio" },
+        { id: "c", negozio_id: "negozio-2" },
+      ],
+    }, log));
+    check("negozio 1: 2 non letti", conteggi["negozio-proprio"] === 2, String(conteggi["negozio-proprio"]));
+    check("negozio 2: 1 non letto", conteggi["negozio-2"] === 1, String(conteggi["negozio-2"]));
+    check("filtro letto_at null applicato", log[0]?.calls.includes("is:letto_at=null"));
+    check("filtro in(negozio_id) applicato", log[0]?.calls.some((c) => c.startsWith("in:negozio_id=")));
+    check("nessun id → mappa vuota", (await getConteggiOrdiniNonLetti([], fakeDb({}, log)))["x"] === undefined);
   }
 
   // ── T15: dettaglio con righe + eventi ─────────────────────────────────────

@@ -9,9 +9,12 @@ import { getMerchantStoreNavItems } from "./navigation";
 export default function MerchantSidebarNav({
   storeId,
   storeName,
+  ordiniNonLetti = 0,
 }: {
   storeId: string;
   storeName: string;
+  /** Conteggio ordini non letti (badge "Ordini [N]", sistema letto_at). */
+  ordiniNonLetti?: number;
 }) {
   const pathname = usePathname();
   const [showDuplica, setShowDuplica] = useState(false);
@@ -66,6 +69,7 @@ export default function MerchantSidebarNav({
 
         // Voce standard (Link) — le icone/etichette/path arrivano da navigation.ts
         const active = item.href ? isActive(item.href, item.exactActive) : false;
+        const badge = item.key === "ordini" ? ordiniNonLetti : 0;
         return (
           <Link
             key={item.key}
@@ -76,6 +80,11 @@ export default function MerchantSidebarNav({
           >
             <Icon className="h-4 w-4 text-blue-600" />
             {item.label}
+            {badge > 0 && (
+              <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 text-[10px] font-black leading-none text-white">
+                {badge > 9 ? "9+" : badge}
+              </span>
+            )}
           </Link>
         );
       })}

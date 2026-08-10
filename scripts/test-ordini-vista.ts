@@ -14,6 +14,7 @@
 import {
   configStatoOrdine,
   etichettaStato,
+  formattaDataOraCard,
   formattaDataOraEvento,
   sintesiProdotti,
 } from "../lib/cliente/ordini-format";
@@ -128,6 +129,13 @@ async function main() {
   check("ISO → GG/MM/AAAA HH:MM", /^\d{2}\/\d{2}\/\d{4},? \d{2}:\d{2}$/.test(formattaDataOraEvento("2026-08-10T10:00:00.000Z")));
   check("null → ''", formattaDataOraEvento(null) === "");
   check("valore non valido → fallback", formattaDataOraEvento("non-una-data") === "non-una-data");
+
+  // ── T8: formattaDataOraCard (card ordini: "10/08/2026 · 18:42") ─────────────
+  console.log("\n[T8] formattaDataOraCard");
+  check("formato GG/MM/AAAA · HH:MM", /^\d{2}\/\d{2}\/\d{4} · \d{2}:\d{2}$/.test(formattaDataOraCard("2026-08-10T16:42:00.000Z")));
+  check("separatore ' · ' presente", formattaDataOraCard("2026-08-10T16:42:00.000Z").includes(" · "));
+  check("null → ''", formattaDataOraCard(null) === "");
+  check("valore non valido → fallback", formattaDataOraCard("non-una-data") === "non-una-data");
 
   // ── Riepilogo ───────────────────────────────────────────────────────────────
   console.log(`\n═══════════════════════════════════════════════════════════`);

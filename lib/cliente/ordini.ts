@@ -81,7 +81,7 @@ function mappaEvento(row: EventoRow): EventoOrdine {
 }
 
 /** Converte una riga ordini nella forma \"lista\" (Area Clienti). */
-function mappaLista(row: OrdineRow): OrdineClienteLista {
+function mappaLista(row: OrdineRow, righe: RigaOrdine[] = []): OrdineClienteLista {
   return {
     id: String(row.id),
     numero: String(row.numero ?? ""),
@@ -93,6 +93,7 @@ function mappaLista(row: OrdineRow): OrdineClienteLista {
     negozioNome: String(row.negozio_nome ?? ""),
     ritiroData: (row.ritiro_data as string | null) ?? null,
     ritiroFascia: (row.ritiro_fascia as string | null) ?? null,
+    righe,
   };
 }
 
@@ -103,7 +104,7 @@ function mappaDettaglio(
   eventi: EventoOrdine[]
 ): OrdineClienteDettaglio {
   return {
-    ...mappaLista(row),
+    ...mappaLista(row, righe),
     email: (row.cliente_email as string | null) ?? null,
     telefono: (row.cliente_telefono as string | null) ?? null,
     metodoSpedizione: (row.metodo_spedizione as "standard" | "express" | null) ?? null,
@@ -140,6 +141,8 @@ async function caricaRighe(db: OrdiniDbClient, ordineId: string): Promise<RigaOr
 /**
  * Elenco degli ordini del cliente autenticato, dal più recente al più
  * vecchio. Filtro server-side: SOLO cliente_user_id = utente della sessione.
+ * Le righe prodotto di TUTTI gli ordini vengono caricate in un'unica query
+ * batch (nessun N+1), così la card può mostrare nome, foto, quantità e prezzo.
  */
 export async function getOrdiniCliente(
   userId: string,
@@ -156,7 +159,25 @@ export async function getOrdiniCliente(
   if (error) {
     throw new Error(`Lettura ordini fallita: ${error.message}`);
   }
-  return (data ?? []).map((r: OrdineRow) => mappaLista(r));
+  const rows = (data ?? []) as OrdineRow[];
+
+  // Righe di tutti gli ordini in un'unica query (nessun N+1).
+  const righePerOrdine = new Map<string, RigaOrdine[]>();
+  try {
+    const batch = await caricaRigheBatch(db, rows.map((r) => String(r.id)));
+    for (const riga of batch) {
+      const lista = righePerOrdine.get(riga.ordineId) ?? [];
+      lista.push(riga);
+      righePerOrdine.set(riga.ordineId, lista);
+    }
+  } catch (err) {
+    // Best-effort: la lista NON deve fallire se le righe non sono leggibili.
+    console.error(`[ordini-cliente] lettura righe lista fallita: ${(err as Error)?.message}`);
+  }
+
+  return rows.map((r: OrdineRow) =>
+    mappaLista(r, righePerOrdine.get(String(r.id)) ?? [])
+  );
 }
 
 /**
@@ -263,8 +284,8 @@ async function caricaEventi(db: OrdiniDbClient, ordineId: string): Promise<Event
   return (data ?? []).map((r: EventoRow) => mappaEvento(r));
 }
 
-/** Righe di più ordini in un'unica query (per il recupero guest). */
-async function caricaRigheGuest(
+/** Righe di più ordini in un'unica query (per la lista). */
+async function caricaRigheBatch(
   db: OrdiniDbClient,
   ordineIds: string[]
 ): Promise<Array<RigaOrdine & { ordineId: string }>> {
@@ -272,7 +293,8 @@ async function caricaRigheGuest(
   const { data, error } = await db
     .from("ordini_righe")
     .select("*")
-    .in("ordine_id", ordineIds);
+    .in("ordine_id", ordineIds)
+    .order("created_at", { ascending: true });
 
   if (error) {
     throw new Error(`Lettura righe ordini fallita: ${error.message}`);
@@ -281,6 +303,14 @@ async function caricaRigheGuest(
     ordineId: String(r.ordine_id),
     ...mappaRiga(r),
   }));
+}
+
+/** Righe di più ordini in un'unica query (per il recupero guest). */
+async function caricaRigheGuest(
+  db: OrdiniDbClient,
+  ordineIds: string[]
+): Promise<Array<RigaOrdine & { ordineId: string }>> {
+  return caricaRigheBatch(db, ordineIds);
 }
 
 /** Eventi di più ordini in un'unica query (per il recupero guest). */

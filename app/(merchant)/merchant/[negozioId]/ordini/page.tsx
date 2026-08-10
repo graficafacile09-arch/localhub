@@ -1,132 +1,26 @@
 import Link from "next/link";
-import {
-  ArrowRight,
-  CalendarDays,
-  Inbox,
-  MapPin,
-  MessageSquareText,
-  Phone,
-  ReceiptText,
-  ShoppingBag,
-  Truck,
-} from "lucide-react";
+import { ReceiptText } from "lucide-react";
 import MerchantEmptyState from "@/components/merchant/MerchantEmptyState";
 import { requireCurrentUser } from "@/lib/auth/session";
-import { formattaDataOrdine, etichettaModalita } from "@/lib/cliente/ordini-format";
-import type { StatoOrdine } from "@/lib/cliente/types";
 import { getMerchantStoreForUser } from "@/lib/merchant/data";
 import { getOrdiniVenditore } from "@/lib/merchant/ordini";
 import {
-  ETICHETTE_STATO,
   FILTRI_ORDINI,
   isFiltroOrdini,
-  prioritaStato,
 } from "@/lib/merchant/ordini-stati";
 import type { OrdineVenditoreLista } from "@/lib/merchant/ordini";
+import { AvvisoNuoviOrdini } from "@/components/ordini/AvvisoNuoviOrdini";
+import { OrderCard } from "@/components/ordini/OrderCard";
 
 export const dynamic = "force-dynamic";
 
-function formattaPrezzo(value: number): string {
-  return `€${(value || 0).toFixed(2).replace(".", ",")}`;
-}
-
-/** Badge colorato in base allo stato. */
-function BadgeStato({ stato }: { stato: StatoOrdine }) {
-  const base = "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold";
-  const colori: Record<StatoOrdine, string> = {
-    in_preparazione: "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
-    confermato: "bg-blue-50 text-blue-700 ring-1 ring-blue-200",
-    in_lavorazione: "bg-indigo-50 text-indigo-700 ring-1 ring-indigo-200",
-    pronto: "bg-cyan-50 text-cyan-700 ring-1 ring-cyan-200",
-    in_consegna: "bg-blue-50 text-blue-700 ring-1 ring-blue-200",
-    consegnato: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200",
-    cancellato: "bg-red-50 text-red-600 ring-1 ring-red-200",
-  };
-  return <span className={`${base} ${colori[stato]}`}>{ETICHETTE_STATO[stato]}</span>;
-}
-
-/** Card di un ordine nella lista venditore. */
-function OrdineCard({ negozioId, ordine }: { negozioId: string; ordine: OrdineVenditoreLista }) {
-  const èRitiro = ordine.modalita === "ritiro";
-  const nonLetto = !ordine.lettoAt;
-
-  return (
-    <Link
-      href={`/merchant/${negozioId}/ordini/${ordine.id}`}
-      className={`group block rounded-[1.75rem] border bg-white p-5 shadow-sm transition hover:shadow-md ${
-        nonLetto ? "border-blue-200 ring-1 ring-blue-100" : "border-white/70 hover:border-blue-200"
-      }`}
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-2">
-          {nonLetto && (
-            <span className="mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full bg-blue-500" title="Nuovo ordine" />
-          )}
-          <span className="truncate text-sm font-black tracking-wide text-slate-900">
-            {ordine.numero}
-          </span>
-          <BadgeStato stato={ordine.stato} />
-          {ordine.haReclamoAperto && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-bold text-red-700 ring-1 ring-red-200">
-              🚨 Reclamo aperto
-            </span>
-          )}
-        </div>
-        <span className="shrink-0 text-lg font-black text-slate-900">
-          {formattaPrezzo(ordine.totale)}
-        </span>
-      </div>
-
-      <p className="mt-2 text-sm font-semibold text-slate-700">
-        {ordine.clienteNome} {ordine.clienteCognome}
-      </p>
-
-      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-slate-500">
-        <span className="inline-flex items-center gap-1.5">
-          <CalendarDays className="h-3.5 w-3.5 text-slate-400" aria-hidden />
-          {formattaDataOrdine(ordine.createdAt)}
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          {èRitiro ? (
-            <MapPin className="h-3.5 w-3.5 text-slate-400" aria-hidden />
-          ) : (
-            <Truck className="h-3.5 w-3.5 text-slate-400" aria-hidden />
-          )}
-          {etichettaModalita(ordine.modalita)}
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <ShoppingBag className="h-3.5 w-3.5 text-slate-400" aria-hidden />
-          {ordine.numeroRighe} {ordine.numeroRighe === 1 ? "prodotto" : "prodotti"}
-        </span>
-        {ordine.clienteTelefono && (
-          <span className="inline-flex items-center gap-1.5">
-            <Phone className="h-3.5 w-3.5 text-slate-400" aria-hidden />
-            {ordine.clienteTelefono}
-          </span>
-        )}
-        {ordine.note && (
-          <span className="inline-flex items-center gap-1.5" title={ordine.note}>
-            <MessageSquareText className="h-3.5 w-3.5 text-slate-400" aria-hidden />
-            Note
-          </span>
-        )}
-      </div>
-
-      <div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3">
-        <span className="text-xs font-semibold text-blue-700 transition group-hover:text-blue-800">
-          Gestisci ordine
-        </span>
-        <ArrowRight className="h-4 w-4 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-blue-600" aria-hidden />
-      </div>
-    </Link>
-  );
-}
-
 /**
  * Pagina "Ordini" dell'area venditore.
- * Lista REALE da Supabase, filtrata per negozio_id + ownership server-side.
- * Ordinamento: prima i nuovi, poi in lavorazione, poi conclusi, più recenti
- * prima (gestito dal servizio getOrdiniVenditore).
+ * Card CONDIVISE (OrderCard) con il linguaggio visivo "Ordini InCittà":
+ * numero + sintesi prodotto, cliente, data/ora, foto prodotto, totale,
+ * stato. Badge "NUOVO ORDINE" per gli ordini non letti (letto_at) + banner
+ * rosso di riepilogo + filtro rapido. OWNERSHIP server-side (canManageStore
+ * + negozio_id): mai ordini di altri negozi.
  */
 export default async function MerchantOrdiniPage({
   params,
@@ -168,6 +62,8 @@ export default async function MerchantOrdiniPage({
     errore = err instanceof Error ? err.message : "Errore sconosciuto";
   }
 
+  const nonLetti = ordini.filter((o) => !o.lettoAt).length;
+
   return (
     <div className="space-y-5">
       {/* ── Intestazione ─────────────────────────────────────────────────────── */}
@@ -190,6 +86,14 @@ export default async function MerchantOrdiniPage({
           </div>
         </div>
       </div>
+
+      {/* ── Banner nuovi ordini (letto_at, sistema esistente) ──────────────── */}
+      {filtro === "tutti" && (
+        <AvvisoNuoviOrdini
+          conteggio={nonLetti}
+          href={`/merchant/${negozioId}/ordini?filtro=nuovi`}
+        />
+      )}
 
       {/* ── Filtri ───────────────────────────────────────────────────────────── */}
       <div className="flex flex-wrap gap-2">
@@ -248,7 +152,23 @@ export default async function MerchantOrdiniPage({
         /* ── Elenco ordini ─────────────────────────────────────────────────── */
         <div className="grid gap-4 lg:grid-cols-2">
           {ordini.map((ordine) => (
-            <OrdineCard key={ordine.id} negozioId={negozioId} ordine={ordine} />
+            <OrderCard
+              key={ordine.id}
+              vista="venditore"
+              href={`/merchant/${negozioId}/ordini/${ordine.id}`}
+              numero={ordine.numero}
+              stato={ordine.stato}
+              totale={ordine.totale}
+              costoSpedizione={ordine.costoSpedizione}
+              createdAt={ordine.createdAt}
+              modalita={ordine.modalita}
+              righe={ordine.righe}
+              clienteNome={ordine.clienteNome}
+              clienteCognome={ordine.clienteCognome}
+              nonLetto={!ordine.lettoAt}
+              haReclamoAperto={ordine.haReclamoAperto}
+              ctaLabel="Apri ordine"
+            />
           ))}
         </div>
       )}

@@ -66,6 +66,8 @@ export type OrdineVenditoreLista = {
   lettoAt: string | null;
   /** True se l'ordine ha almeno un reclamo ATTIVO (aperto/in gestione). */
   haReclamoAperto: boolean;
+  /** Righe prodotto (per la sintesi in lista e il dettaglio). */
+  righe: RigaOrdine[];
 };
 
 /** Dettaglio completo ordine (area venditore). */
@@ -126,7 +128,7 @@ function mappaEvento(row: EventoRow): EventoOrdine {
 }
 
 /** Converte una riga ordini nella forma "lista" (area venditore). */
-function mappaLista(row: OrdineRow, numeroRighe = 0): OrdineVenditoreLista {
+function mappaLista(row: OrdineRow, righe: RigaOrdine[] = []): OrdineVenditoreLista {
   return {
     id: String(row.id),
     numero: String(row.numero ?? ""),
@@ -141,16 +143,17 @@ function mappaLista(row: OrdineRow, numeroRighe = 0): OrdineVenditoreLista {
     clienteCognome: String(row.cliente_cognome ?? ""),
     clienteTelefono: (row.cliente_telefono as string | null) ?? null,
     note: (row.note as string | null) ?? null,
-    numeroRighe,
+    numeroRighe: righe.length,
     lettoAt: (row.letto_at as string | null) ?? null,
     haReclamoAperto: false,
+    righe,
   };
 }
 
 /** Converte una riga ordini nella forma "dettaglio". */
 function mappaDettaglio(row: OrdineRow, righe: RigaOrdine[], eventi: EventoOrdine[]): OrdineVenditoreDettaglio {
   return {
-    ...mappaLista(row, righe.length),
+    ...mappaLista(row, righe),
     clienteEmail: (row.cliente_email as string | null) ?? null,
     ritiroData: (row.ritiro_data as string | null) ?? null,
     ritiroFascia: (row.ritiro_fascia as string | null) ?? null,
@@ -231,22 +234,28 @@ export async function getOrdiniVenditore(
   }
   const ordini = (data ?? []) as OrdineRow[];
 
-  // Conteggio righe in UN'UNICA query (nessun N+1).
-  const conteggi = new Map<string, number>();
+  // Righe di TUTTI gli ordini in un'unica query (nessun N+1): nome, foto,
+  // quantità e prezzo per la sintesi nelle card della lista.
+  const righePerOrdine = new Map<string, RigaOrdine[]>();
   if (ordini.length > 0) {
-    const { data: righeIds, error: errRighe } = await db
+    const { data: righeData, error: errRighe } = await db
       .from("ordini_righe")
-      .select("ordine_id")
-      .in("ordine_id", ordini.map((o) => String(o.id)));
+      .select("*")
+      .in("ordine_id", ordini.map((o) => String(o.id)))
+      .order("created_at", { ascending: true });
     if (!errRighe) {
-      for (const r of (righeIds ?? []) as Array<{ ordine_id: unknown }>) {
+      for (const r of (righeData ?? []) as RigaRow[]) {
         const id = String(r.ordine_id);
-        conteggi.set(id, (conteggi.get(id) ?? 0) + 1);
+        const lista = righePerOrdine.get(id) ?? [];
+        lista.push(mappaRiga(r));
+        righePerOrdine.set(id, lista);
       }
     }
   }
 
-  const lista = ordini.map((o) => mappaLista(o, conteggi.get(String(o.id)) ?? 0));
+  const lista = ordini.map((o) =>
+    mappaLista(o, righePerOrdine.get(String(o.id)) ?? [])
+  );
 
   // Reclami ATTIVI degli ordini elencati (best-effort: se la tabella non
   // esiste o la query fallisce, la lista non deve rompersi).
@@ -275,6 +284,42 @@ export async function getOrdiniVenditore(
     return String(b.createdAt).localeCompare(String(a.createdAt));
   });
   return lista;
+}
+
+/**
+ * Conteggio degli ordini NON LETTI (letto_at null) per ciascun negozio.
+ * Usato dai badge di navigazione ("Ordini [3]" in sidebar e bottom nav).
+ * Le query girano con RLS (client server): il venditore vede SOLO i propri
+ * ordini, quindi il conteggio è già limitato ai negozi di sua proprietà.
+ * Best-effort: un errore non deve far fallire la navigazione.
+ */
+export async function getConteggiOrdiniNonLetti(
+  negozioIds: string[],
+  client?: OrdiniVenditoreDbClient
+): Promise<Record<string, number>> {
+  const ids = (negozioIds ?? []).filter(Boolean);
+  if (ids.length === 0) return {};
+  try {
+    const db = (client ?? (await getReadDb())) as OrdiniVenditoreDbClient;
+    const { data, error } = await db
+      .from("ordini")
+      .select("negozio_id")
+      .in("negozio_id", ids)
+      .is("letto_at", null);
+    if (error) {
+      console.error(`[ordini-venditore] conteggio non letti fallito: ${error.message}`);
+      return {};
+    }
+    const conteggi: Record<string, number> = {};
+    for (const r of (data ?? []) as Array<{ negozio_id: unknown }>) {
+      const id = String(r.negozio_id);
+      conteggi[id] = (conteggi[id] ?? 0) + 1;
+    }
+    return conteggi;
+  } catch (err) {
+    console.error(`[ordini-venditore] conteggio non letti (eccezione): ${(err as Error)?.message}`);
+    return {};
+  }
 }
 
 /**
