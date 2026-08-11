@@ -23,6 +23,10 @@
 import { Resend } from "resend";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { etichettaMotivoAnnullamento } from "@/lib/merchant/ordini-stati";
+import {
+  caricaContestoReclamo,
+  type ProdottoNotifica,
+} from "@/lib/ordine-reclami";
 
 /** Mittente (stessa ENV del password reset). */
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? "InCittà <onboarding@resend.dev>";
@@ -400,6 +404,9 @@ function maskEmail(email: string): string {
 // ntfy/WhatsApp). Skip silenziosi: email assente o non valida.
 // ═══════════════════════════════════════════════════════════════════════
 
+/** Prodotto acquistato mostrato nelle email reclamo (tipo condiviso). */
+export type ProdottoEmailReclamo = ProdottoNotifica;
+
 /** Dati del messaggio reclamo necessari all'email (dal DB). */
 export type DatiMessaggioReclamo = {
   reclamoId: string;
@@ -411,6 +418,10 @@ export type DatiMessaggioReclamo = {
   mittenteNome: string;
   corpo: string;
   createdAt: string;
+  /** Prodotti acquistati nell'ordine (per identificare subito l'articolo). */
+  prodotti: ProdottoEmailReclamo[];
+  /** Link diretto alla conversazione/reclamo del cliente. */
+  linkReclamo: string;
 };
 
 /** Opzioni per i test dell'email messaggio reclamo. */
@@ -419,24 +430,56 @@ export type OpzioniEmailMessaggioReclamo = {
   invia?: (dati: DatiMessaggioReclamo) => Promise<void>;
 };
 
-/** Oggetto dell'email: "Nuovo messaggio sul tuo ordine LH-XXXX — InCittà". */
+/**
+ * Oggetto dell'email: "Il negozio ti ha scritto sul tuo reclamo — Ordine
+ * #LH-XXXX" (con nome negozio se noto, mai dati inventati).
+ */
 export function costruisciOggettoMessaggioReclamo(
   numero: string,
   negozioNome: string
 ): string {
   const n = (numero || "").trim() || "ordine";
   const negozio = (negozioNome || "").trim();
+  const ordine = `Ordine #${n.replace(/^#/, "")}`;
   return negozio
-    ? `${negozio} ti ha scritto sul tuo ordine ${n} — InCittà`
-    : `Nuovo messaggio sul tuo ordine ${n} — InCittà`;
+    ? `${negozio} ti ha scritto sul tuo reclamo — ${ordine}`
+    : `Il negozio ti ha scritto sul tuo reclamo — ${ordine}`;
 }
 
 /**
  * HTML dell'email "il venditore ti ha scritto" (puro, testabile).
- * Include il messaggio del negozio e il link al dettaglio ordine.
+ * Identifica subito: ordine (#LH-XXXX), prodotto con codice articolo e
+ * link all'annuncio, il messaggio del negozio e il pulsante APRI IL RECLAMO
+ * che porta direttamente alla conversazione del cliente.
  */
 export function costruisciHtmlMessaggioReclamo(dati: DatiMessaggioReclamo): string {
   const linkOrdine = `${SITE_URL.replace(/\/+$/, "")}/cliente/ordini/${encodeURIComponent(dati.ordineId)}`;
+  const linkReclamo = (dati.linkReclamo || "").trim() || linkOrdine;
+  const prodotti = Array.isArray(dati.prodotti) ? dati.prodotti : [];
+
+  // Prodotto primario + eventuali righe aggiuntive dell'ordine.
+  let prodottiHtml = "";
+  if (prodotti.length === 0) {
+    prodottiHtml = `
+      <p style="margin:0;font-size:14px;color:#475569;">—</p>`;
+  } else {
+    prodottiHtml = prodotti
+      .map((p) => {
+        const annuncio = (p.urlAnnuncio || "").trim();
+        const annuncioLink = annuncio
+          ? `<a href="${annuncio}" style="color:#2563eb;text-decoration:none;font-size:13px;">Apri annuncio →</a>`
+          : `<span style="color:#94a3b8;font-size:13px;">Annuncio non disponibile</span>`;
+        return `
+        <tr>
+          <td style="padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:14px;color:#0f172a;">
+            <strong>${escapeHtml(p.nomeProdotto || "Prodotto")}</strong>
+            <div style="color:#64748b;font-size:12px;margin-top:2px;">Codice articolo: ${escapeHtml((p.codiceArticolo || "").trim() || "—")} · ${annuncioLink}</div>
+          </td>
+        </tr>`;
+      })
+      .join("");
+  }
+
   return `
   <!DOCTYPE html>
   <html lang="it">
@@ -444,7 +487,7 @@ export function costruisciHtmlMessaggioReclamo(dati: DatiMessaggioReclamo): stri
     <div style="max-width:560px;margin:0 auto;padding:24px 16px;">
       <div style="background:#dc2626;border-radius:16px 16px 0 0;padding:24px;text-align:center;">
         <p style="margin:0;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#fecaca;font-weight:700;">Reclamo ordine</p>
-        <p style="margin:8px 0 0;font-size:20px;font-weight:800;color:#ffffff;">${escapeHtml(dati.numero)}</p>
+        <p style="margin:8px 0 0;font-size:20px;font-weight:800;color:#ffffff;">Ordine #${escapeHtml(dati.numero)}</p>
         <p style="margin:6px 0 0;font-size:13px;color:#fee2e2;">${escapeHtml(dati.negozioNome || "Il negozio")} ti ha scritto</p>
       </div>
 
@@ -460,10 +503,16 @@ export function costruisciHtmlMessaggioReclamo(dati: DatiMessaggioReclamo): stri
           “${escapeHtml(dati.corpo)}”
         </div>
 
+        <!-- Prodotto/i dell'ordine -->
+        <p style="margin:20px 0 4px;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#64748b;font-weight:700;">Articolo segnalato</p>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+          ${prodottiHtml}
+        </table>
+
         <div style="margin-top:24px;text-align:center;">
-          <a href="${linkOrdine}"
-             style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;padding:13px 28px;border-radius:12px;font-size:14px;font-weight:700;">
-            Visualizza il tuo ordine
+          <a href="${linkReclamo}"
+             style="display:inline-block;background:#dc2626;color:#ffffff;text-decoration:none;padding:13px 28px;border-radius:12px;font-size:14px;font-weight:700;">
+            APRI IL RECLAMO
           </a>
         </div>
 
@@ -482,6 +531,9 @@ export function costruisciHtmlMessaggioReclamo(dati: DatiMessaggioReclamo): stri
  * reclamo. MAI throw: ogni problema viene loggato e restituito come stato;
  * il messaggio resta salvato nel DB a prescindere dall'esito dell'email.
  * `corpo` è il testo del messaggio appena salvato (dal DB, mai dal browser).
+ * I dati descrittivi (prodotto, codice articolo, link annuncio, link
+ * reclamo) vengono recuperati qui dal DB con caricaContestoReclamo:
+ * nessun valore inviato dal browser.
  */
 export async function inviaEmailMessaggioReclamo(
   reclamoId: string,
@@ -490,31 +542,14 @@ export async function inviaEmailMessaggioReclamo(
   opts: OpzioniEmailMessaggioReclamo = {}
 ): Promise<EsitoEmailOrdine> {
   try {
-    const db = (opts.db ?? createAdminSupabaseClient()) as {
-      from: (t: string) => any;
-    };
-
-    const { data: reclamo, error: errReclamo } = await db
-      .from("ordine_reclami")
-      .select("id, ordine_id, cliente_email, cliente_nome")
-      .eq("id", reclamoId)
-      .single();
-    if (errReclamo || !reclamo) {
-      console.error(`[ordine-email] reclamo ${reclamoId}: reclamo non trovato (${errReclamo?.message ?? "null"})`);
+    const db = (opts.db ?? createAdminSupabaseClient()) as DbLike;
+    const contesto = await caricaContestoReclamo(reclamoId, { db });
+    if (!contesto) {
+      console.error(`[ordine-email] reclamo ${reclamoId}: reclamo non trovato`);
       return { stato: "error", motivo: "reclamo_non_trovato" };
     }
 
-    const ordineId = String(reclamo.ordine_id ?? "");
-    const { data: ordine, error: errOrdine } = await db
-      .from("ordini")
-      .select("numero, negozio_nome")
-      .eq("id", ordineId)
-      .maybeSingle();
-    if (errOrdine) {
-      console.error(`[ordine-email] reclamo ${reclamoId}: lettura ordine fallita: ${errOrdine.message}`);
-    }
-
-    const email = String(reclamo.cliente_email ?? "").trim();
+    const email = contesto.clienteEmail;
     if (!email) {
       console.log(`[ordine-email] reclamo ${reclamoId}: email cliente assente, invio saltato`);
       return { stato: "skipped", motivo: "email_assente" };
@@ -526,14 +561,16 @@ export async function inviaEmailMessaggioReclamo(
 
     const dati: DatiMessaggioReclamo = {
       reclamoId,
-      ordineId,
-      numero: String(ordine?.numero ?? ""),
-      negozioNome: String(ordine?.negozio_nome ?? ""),
+      ordineId: contesto.ordineId,
+      numero: contesto.numero,
+      negozioNome: contesto.negozioNome,
       clienteEmail: email,
-      clienteNome: String(reclamo.cliente_nome ?? ""),
+      clienteNome: contesto.clienteNome,
       mittenteNome: (mittenteNome ?? "").trim() || "Il negozio",
       corpo: (corpo || "").trim() || "Risposta del negozio.",
       createdAt: new Date().toISOString(),
+      prodotti: contesto.prodotti,
+      linkReclamo: contesto.linkCliente || "",
     };
 
     await (opts.invia ??
@@ -582,6 +619,8 @@ export type DatiRispostaClienteVenditore = {
   clienteNome: string;
   corpo: string;
   createdAt: string;
+  /** Prodotti acquistati (righe ordine) con codice e link annuncio. */
+  prodotti: ProdottoEmailReclamo[];
 };
 
 /** Opzioni per i test dell'email risposta cliente → venditore. */
@@ -604,7 +643,8 @@ export function costruisciOggettoRispostaClienteVenditore(
 
 /**
  * HTML dell'email "il cliente ha risposto al reclamo" (puro, testabile).
- * Include la risposta del cliente e il link al pannello venditore.
+ * Include la risposta del cliente, l'articolo segnalato (nome + codice +
+ * link annuncio) e il link diretto alla console operativa del venditore.
  */
 export function costruisciHtmlRispostaClienteVenditore(
   dati: DatiRispostaClienteVenditore
@@ -612,6 +652,25 @@ export function costruisciHtmlRispostaClienteVenditore(
   const linkVenditore = `${SITE_URL.replace(/\/+$/, "")}/merchant/${encodeURIComponent(
     dati.negozioId
   )}/ordini/${encodeURIComponent(dati.ordineId)}`;
+  const prodotti = Array.isArray(dati.prodotti) ? dati.prodotti : [];
+  const prodottiHtml =
+    prodotti.length === 0
+      ? `<p style="margin:0;font-size:14px;color:#475569;">—</p>`
+      : prodotti
+          .map((p) => {
+            const annuncio = (p.urlAnnuncio || "").trim();
+            const annuncioLink = annuncio
+              ? `<a href="${annuncio}" style="color:#2563eb;text-decoration:none;font-size:13px;">Apri annuncio →</a>`
+              : `<span style="color:#94a3b8;font-size:13px;">Annuncio non disponibile</span>`;
+            return `
+        <tr>
+          <td style="padding:8px 0;border-bottom:1px solid #f1f5f9;font-size:14px;color:#0f172a;">
+            <strong>${escapeHtml(p.nomeProdotto || "Prodotto")}</strong>
+            <div style="color:#64748b;font-size:12px;margin-top:2px;">Codice articolo: ${escapeHtml((p.codiceArticolo || "").trim() || "—")} · ${annuncioLink}</div>
+          </td>
+        </tr>`;
+          })
+          .join("");
   return `
   <!DOCTYPE html>
   <html lang="it">
@@ -619,7 +678,7 @@ export function costruisciHtmlRispostaClienteVenditore(
     <div style="max-width:560px;margin:0 auto;padding:24px 16px;">
       <div style="background:#2563eb;border-radius:16px 16px 0 0;padding:24px;text-align:center;">
         <p style="margin:0;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#dbeafe;font-weight:700;">Reclamo ordine</p>
-        <p style="margin:8px 0 0;font-size:20px;font-weight:800;color:#ffffff;">${escapeHtml(dati.numero)}</p>
+        <p style="margin:8px 0 0;font-size:20px;font-weight:800;color:#ffffff;">Ordine #${escapeHtml(dati.numero)}</p>
         <p style="margin:6px 0 0;font-size:13px;color:#dbeafe;">Il cliente ha risposto alla tua segnalazione</p>
       </div>
 
@@ -638,6 +697,12 @@ export function costruisciHtmlRispostaClienteVenditore(
         <div style="margin-top:16px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:14px;color:#1e3a8a;font-size:14px;line-height:1.6;">
           “${escapeHtml(dati.corpo)}”
         </div>
+
+        <!-- Articolo/i segnalato/i -->
+        <p style="margin:20px 0 4px;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#64748b;font-weight:700;">Articolo segnalato</p>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+          ${prodottiHtml}
+        </table>
 
         <div style="margin-top:24px;text-align:center;">
           <a href="${linkVenditore}"
@@ -661,6 +726,7 @@ export function costruisciHtmlRispostaClienteVenditore(
  * MAI throw: ogni problema viene loggato e restituito come stato; il
  * messaggio resta salvato nel DB a prescindere dall'esito dell'email.
  * `corpo` è il testo della risposta appena salvata (dal DB, mai dal browser).
+ * Il contesto (ordine, articoli, link) arriva da caricaContestoReclamo.
  */
 export async function inviaEmailRispostaClienteReclamo(
   reclamoId: string,
@@ -672,27 +738,14 @@ export async function inviaEmailRispostaClienteReclamo(
     const db = (opts.db ?? createAdminSupabaseClient()) as {
       from: (t: string) => any;
     };
-
-    const { data: reclamo, error: errReclamo } = await db
-      .from("ordine_reclami")
-      .select("id, ordine_id, negozio_id, cliente_nome")
-      .eq("id", reclamoId)
-      .single();
-    if (errReclamo || !reclamo) {
-      console.error(`[ordine-email] reclamo ${reclamoId}: reclamo non trovato (${errReclamo?.message ?? "null"})`);
+    const contesto = await caricaContestoReclamo(reclamoId, { db });
+    if (!contesto) {
+      console.error(`[ordine-email] reclamo ${reclamoId}: reclamo non trovato`);
       return { stato: "error", motivo: "reclamo_non_trovato" };
     }
 
-    const ordineId = String(reclamo.ordine_id ?? "");
-    const negozioId = String(reclamo.negozio_id ?? "");
-    const { data: ordine, error: errOrdine } = await db
-      .from("ordini")
-      .select("numero, negozio_nome")
-      .eq("id", ordineId)
-      .maybeSingle();
-    if (errOrdine) {
-      console.error(`[ordine-email] reclamo ${reclamoId}: lettura ordine fallita: ${errOrdine.message}`);
-    }
+    const ordineId = contesto.ordineId;
+    const negozioId = contesto.negozioId;
 
     // ── Email del VENDITORE: owner del negozio (auth.users), fallback
     //    negozi.email_negozio. Mai un valore inviato dal browser. ────────
@@ -734,12 +787,13 @@ export async function inviaEmailRispostaClienteReclamo(
       reclamoId,
       ordineId,
       negozioId,
-      numero: String(ordine?.numero ?? ""),
-      negozioNome: String(ordine?.negozio_nome ?? ""),
+      numero: contesto.numero,
+      negozioNome: contesto.negozioNome,
       venditoreEmail,
-      clienteNome: (clienteNome ?? reclamo.cliente_nome ?? "").toString().trim() || "Il cliente",
+      clienteNome: (clienteNome ?? contesto.clienteNome ?? "").toString().trim() || "Il cliente",
       corpo: (corpo || "").trim() || "Risposta del cliente.",
       createdAt: new Date().toISOString(),
+      prodotti: contesto.prodotti,
     };
 
     await (opts.invia ??

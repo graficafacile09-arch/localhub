@@ -25,10 +25,15 @@ import {
   validaCorpoMessaggio,
 } from "../lib/ordine-reclami-messaggi";
 import {
+  costruisciMessaggioRispostaClienteNtfy,
+  type DatiRispostaClienteNtfy,
+} from "../lib/ordine-reclami-stati";
+import {
   costruisciHtmlMessaggioReclamo,
   costruisciOggettoMessaggioReclamo,
   costruisciHtmlRispostaClienteVenditore,
   costruisciOggettoRispostaClienteVenditore,
+  inviaEmailMessaggioReclamo,
   inviaEmailRispostaClienteReclamo,
 } from "../lib/cliente/ordine-email";
 
@@ -243,8 +248,8 @@ async function main() {
     if (!esito.ok) check("status = 409", esito.status === 409);
   }
 
-  // ── T7: cliente — successo + ntfy best-effort al venditore ─────────────────
-  console.log("\n[T7] Cliente risponde — successo + ntfy al venditore");
+  // ── T7: cliente — successo + ntfy COMPLETO al venditore ────────────────────
+  console.log("\n[T7] Cliente risponde — successo + ntfy completo al venditore");
   {
     const registroFetch: Array<{ url: string; title: string; body: string }> = [];
     const emailVenditore: Array<{ reclamoId: string; corpo: string }> = [];
@@ -253,8 +258,12 @@ async function main() {
       {
         rpc: async () => ({ data: { ok: true, messaggio: messaggioRow({ mittente: "cliente", mittente_nome: "Mario Rossi", corpo: "Sì, aspetto conferma" }) }, error: null }),
         db: fakeDbPerTabella({
-          ordine_reclami: { id: RECLAMO_ID, ordine_id: ORDINE_ID, negozio_id: NEGOZIO_ID },
+          ordine_reclami: { id: RECLAMO_ID, ordine_id: ORDINE_ID, negozio_id: NEGOZIO_ID, cliente_nome: "Mario Rossi", cliente_email: "mario@example.it" },
           ordini: { numero: "LH-000043", negozio_nome: "Salus Farma" },
+          ordini_righe: [
+            { prodotto_id: 12, nome_prodotto: "Integratore Vitamina C" },
+          ],
+          prodotti: [{ id: 12, slug: "integratore-vitamina-c" }],
         }),
         fetchImpl: fakeFetch(registroFetch),
         inviaEmailRisposta: async (reclamoId, corpo) => {
@@ -267,10 +276,16 @@ async function main() {
     if (esito.ok) check("mittente = cliente", esito.messaggio.mittente === "cliente");
     check("notifica ntfy inviata", registroFetch.length === 1, String(registroFetch.length));
     check("notifica verso topic venditore", registroFetch[0]?.url.includes("incitta-ordini-test"));
-    check("notifica con numero ordine LEGGIBILE", registroFetch[0]?.body.includes("Reclamo #LH-000043"));
+    check("notifica NON è generica (intestazione richiesta)", registroFetch[0]?.body.includes("RISPOSTA RECLAMO — InCittà"));
+    check("notifica con NOME CLIENTE", registroFetch[0]?.body.includes("Cliente: Mario Rossi"));
+    check("notifica con CODICE ORDINE #LH", registroFetch[0]?.body.includes("Ordine: #LH-000043"));
+    check("notifica con CODICE ARTICOLO (prodotto_id, non UUID)", registroFetch[0]?.body.includes("Articolo: 12"));
+    check("notifica con NOME PRODOTTO", registroFetch[0]?.body.includes("Prodotto: Integratore Vitamina C"));
     check("notifica con la risposta del cliente", registroFetch[0]?.body.includes("Sì, aspetto conferma"));
-    check("notifica con link al pannello venditore", registroFetch[0]?.body.includes(`/merchant/${NEGOZIO_ID}/ordini/${ORDINE_ID}`));
+    check("notifica con LINK ANNUNCIO pubblico", registroFetch[0]?.body.includes("/prodotto/integratore-vitamina-c"));
+    check("notifica con LINK GESTIONE RECLAMO venditore", registroFetch[0]?.body.includes(`/merchant/${NEGOZIO_ID}/ordini/${ORDINE_ID}`));
     check("nessuna doppia slash", !registroFetch[0]?.body.includes("/merchant//ordini/"));
+    check("nessun UUID come numero/codice", !registroFetch[0]?.body.includes(RECLAMO_ID));
     check("EMAIL al venditore inviata", emailVenditore.length === 1, String(emailVenditore.length));
     check("email al venditore con il corpo della risposta", emailVenditore[0]?.corpo.includes("aspetto conferma"));
   }
@@ -410,12 +425,13 @@ async function main() {
     check("corpo mappato", lista[0]?.corpo.includes("verificando"));
   }
 
-  // ── T14: email — oggetto e HTML ─────────────────────────────────────────────
-  console.log("\n[T14] Email messaggio reclamo (oggetto + HTML)");
+  // ── T14: email — oggetto e HTML COMPLETI (prodotto, codice, CTA) ───────────
+  console.log("\n[T14] Email messaggio reclamo (oggetto + HTML completi)");
   {
     const oggetto = costruisciOggettoMessaggioReclamo("LH-000043", "Salus Farma");
-    check("oggetto con numero", oggetto.includes("LH-000043"));
+    check("oggetto con numero ordine #LH", oggetto.includes("Ordine #LH-000043"));
     check("oggetto con negozio", oggetto.includes("Salus Farma"));
+    check("oggetto parla del RECLAMO", oggetto.toLowerCase().includes("reclamo"));
 
     const html = costruisciHtmlMessaggioReclamo({
       reclamoId: RECLAMO_ID,
@@ -427,12 +443,45 @@ async function main() {
       mittenteNome: "Il negozio",
       corpo: "Stiamo verificando, grazie.",
       createdAt: "2026-08-10T12:00:00.000Z",
+      prodotti: [
+        { nomeProdotto: "Integratore Vitamina C", codiceArticolo: "12", urlAnnuncio: "https://www.incitta.online/prodotto/integratore-vitamina-c" },
+      ],
+      linkReclamo: `https://www.incitta.online/cliente/ordini/${ORDINE_ID}`,
     });
-    check("html contiene il numero ordine", html.includes("LH-000043"));
+    check("html contiene il numero ordine #LH", html.includes("Ordine #LH-000043"));
     check("html contiene il corpo del messaggio", html.includes("Stiamo verificando, grazie."));
     check("html contiene il negozio", html.includes("Salus Farma"));
-    check("html contiene il link al dettaglio cliente", html.includes(`/cliente/ordini/${ORDINE_ID}`));
+    check("html contiene il NOME PRODOTTO", html.includes("Integratore Vitamina C"));
+    check("html contiene il CODICE ARTICOLO", html.includes("Codice articolo: 12"));
+    check("html contiene il LINK ANNUNCIO pubblico", html.includes("/prodotto/integratore-vitamina-c"));
+    check("html contiene il pulsante APRI IL RECLAMO", html.includes("APRI IL RECLAMO"));
+    check("html contiene il link alla conversazione cliente", html.includes(`/cliente/ordini/${ORDINE_ID}`));
     check("html NON contiene l'UUID come numero", !html.includes(RECLAMO_ID));
+  }
+
+  // ── T14b: email — HTML con prodotti MULTIPLI (nessun dato nascosto) ────────
+  console.log("\n[T14b] Email messaggio reclamo — più prodotti nell'ordine");
+  {
+    const html = costruisciHtmlMessaggioReclamo({
+      reclamoId: RECLAMO_ID,
+      ordineId: ORDINE_ID,
+      numero: "LH-000043",
+      negozioNome: "Salus Farma",
+      clienteEmail: "mario@example.it",
+      clienteNome: "Mario",
+      mittenteNome: "Il negozio",
+      corpo: "Stiamo verificando, grazie.",
+      createdAt: "2026-08-10T12:00:00.000Z",
+      prodotti: [
+        { nomeProdotto: "Integratore Vitamina C", codiceArticolo: "12", urlAnnuncio: null },
+        { nomeProdotto: "Omega 3", codiceArticolo: "15", urlAnnuncio: null },
+      ],
+      linkReclamo: `https://www.incitta.online/cliente/ordini/${ORDINE_ID}`,
+    });
+    check("html contiene il primo prodotto", html.includes("Integratore Vitamina C"));
+    check("html contiene anche il secondo prodotto", html.includes("Omega 3"));
+    check("html contiene il codice del secondo prodotto", html.includes("Codice articolo: 15"));
+    check("html gestisce annuncio assente senza URL inventati", html.includes("Annuncio non disponibile") && !html.includes("/prodotto/null"));
   }
 
   // ── T15: email risposta cliente → VENDITORE (oggetto + HTML) ───────────────
@@ -453,14 +502,80 @@ async function main() {
       clienteNome: "Mario Rossi",
       corpo: "Sì, aspetto conferma",
       createdAt: "2026-08-10T12:00:00.000Z",
+      prodotti: [
+        { nomeProdotto: "Integratore Vitamina C", codiceArticolo: "12", urlAnnuncio: "https://www.incitta.online/prodotto/integratore-vitamina-c" },
+      ],
     });
-    check("html contiene il numero ordine", html.includes("LH-000043"));
+    check("html contiene il numero ordine #LH", html.includes("Ordine #LH-000043"));
     check("html contiene il negozio", html.includes("Salus Farma"));
     check("html contiene la risposta del cliente", html.includes("Sì, aspetto conferma"));
     check("html contiene il nome del cliente", html.includes("Mario Rossi"));
-    check("html contiene il link al pannello venditore", html.includes(`/merchant/${NEGOZIO_ID}/ordini/${ORDINE_ID}`));
+    check("html contiene il NOME PRODOTTO", html.includes("Integratore Vitamina C"));
+    check("html contiene il CODICE ARTICOLO", html.includes("Codice articolo: 12"));
+    check("html contiene il LINK ANNUNCIO", html.includes("/prodotto/integratore-vitamina-c"));
+    check("html contiene il link alla console venditore", html.includes(`/merchant/${NEGOZIO_ID}/ordini/${ORDINE_ID}`));
     check("html NON contiene l'UUID come numero", !html.includes(RECLAMO_ID));
     check("nessuna doppia slash nel link", !html.includes("/merchant//ordini/"));
+  }
+
+  // ── T14c: loader EMAIL al cliente — dati COMPLETI dal DB (fake) ────────────
+  console.log("\n[T14c] inviaEmailMessaggioReclamo — loader con prodotto + link reclamo");
+  {
+    const datiRicevuti: Array<Record<string, unknown>> = [];
+    const esito = await inviaEmailMessaggioReclamo(RECLAMO_ID, "Stiamo verificando, grazie.", "Salus Farma", {
+      db: fakeDbPerTabella({
+        ordine_reclami: { id: RECLAMO_ID, ordine_id: ORDINE_ID, negozio_id: NEGOZIO_ID, cliente_nome: "Mario Rossi", cliente_email: "mario@example.it" },
+        ordini: { numero: "LH-000043", negozio_nome: "Salus Farma" },
+        ordini_righe: [{ prodotto_id: 12, nome_prodotto: "Integratore Vitamina C" }],
+        prodotti: [{ id: 12, slug: "integratore-vitamina-c" }],
+      }),
+      invia: async (dati) => {
+        datiRicevuti.push(dati as unknown as Record<string, unknown>);
+      },
+    });
+    check("T14c stato = sent", esito.stato === "sent", JSON.stringify(esito));
+    check("T14c destinatario = email cliente", datiRicevuti[0]?.clienteEmail === "mario@example.it");
+    check("T14c numero ordine dal DB", datiRicevuti[0]?.numero === "LH-000043");
+    check("T14c link reclamo = pagina cliente", String(datiRicevuti[0]?.linkReclamo ?? "").includes(`/cliente/ordini/${ORDINE_ID}`));
+    check("T14c prodotto con nome dal DB", String(JSON.stringify(datiRicevuti[0]?.prodotti ?? "")).includes("Integratore Vitamina C"));
+    check("T14c prodotto con codice articolo dal DB", String(JSON.stringify(datiRicevuti[0]?.prodotti ?? "")).includes('"codiceArticolo":"12"'));
+    check("T14c prodotto con link annuncio dal DB", String(JSON.stringify(datiRicevuti[0]?.prodotti ?? "")).includes("/prodotto/integratore-vitamina-c"));
+
+    // Email KO → stato error, MAI throw (il messaggio resta salvato).
+    const esitoErr = await inviaEmailMessaggioReclamo(RECLAMO_ID, "Test", undefined, {
+      db: fakeDbPerTabella({
+        ordine_reclami: { id: RECLAMO_ID, ordine_id: ORDINE_ID, negozio_id: NEGOZIO_ID, cliente_nome: "Mario Rossi", cliente_email: "mario@example.it" },
+        ordini: { numero: "LH-000043", negozio_nome: "Salus Farma" },
+      }),
+      invia: async () => {
+        throw new Error("Resend down");
+      },
+    });
+    check("T14c email KO → stato error senza throw", esitoErr.stato === "error", JSON.stringify(esitoErr));
+  }
+
+  // ── T14d: builder puro ntfy risposta cliente (formato richiesto) ───────────
+  console.log("\n[T14d] costruisciMessaggioRispostaClienteNtfy — formato richiesto");
+  {
+    const corpo = costruisciMessaggioRispostaClienteNtfy({
+      numero: "LH-000043",
+      clienteNome: "Mario Rossi",
+      corpo: "Sì, aspetto conferma",
+      dataOra: "10/08/2026 12:00",
+      prodotti: [
+        { codiceArticolo: "12", nomeProdotto: "Integratore Vitamina C", urlAnnuncio: "https://www.incitta.online/prodotto/integratore-vitamina-c" },
+      ],
+      linkReclamo: `https://www.incitta.online/merchant/${NEGOZIO_ID}/ordini/${ORDINE_ID}`,
+    } as DatiRispostaClienteNtfy);
+    check("ntfy intestazione richiesta", corpo.includes("🔴 RISPOSTA RECLAMO — InCittà"));
+    check("ntfy nome cliente", corpo.includes("Cliente: Mario Rossi"));
+    check("ntfy codice ordine #LH", corpo.includes("Ordine: #LH-000043"));
+    check("ntfy codice articolo", corpo.includes("Articolo: 12"));
+    check("ntfy nome prodotto", corpo.includes("Prodotto: Integratore Vitamina C"));
+    check("ntfy messaggio", corpo.includes('"Sì, aspetto conferma"'));
+    check("ntfy link annuncio", corpo.includes("/prodotto/integratore-vitamina-c"));
+    check("ntfy link reclamo", corpo.includes(`/merchant/${NEGOZIO_ID}/ordini/${ORDINE_ID}`));
+    check("ntfy nessun UUID", !corpo.includes(RECLAMO_ID));
   }
 
   // ── T16: loader email risposta → venditore (catena auth.users → email_negozio)

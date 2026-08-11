@@ -39,6 +39,7 @@ import {
 import {
   azioniReclamoDisponibili,
   costruisciMessaggioReclamoNtfy,
+  costruisciMessaggioRispostaClienteNtfy,
   ETICHETTA_TIPO_RECLAMO,
   ETICHETTE_STATO_RECLAMO,
   formattaDataOraReclamo,
@@ -47,6 +48,8 @@ import {
   transizioneReclamoConsentita,
   type AzioneReclamo,
   type DatiNotificaReclamoNtfy,
+  type DatiRispostaClienteNtfy,
+  type ProdottoNotifica,
   type ReclamoOrdine,
   type StatoReclamo,
   type TipoReclamo,
@@ -55,6 +58,7 @@ import {
 export {
   azioniReclamoDisponibili,
   costruisciMessaggioReclamoNtfy,
+  costruisciMessaggioRispostaClienteNtfy,
   ETICHETTA_TIPO_RECLAMO,
   ETICHETTE_STATO_RECLAMO,
   formattaDataOraReclamo,
@@ -63,6 +67,8 @@ export {
   transizioneReclamoConsentita,
   type AzioneReclamo,
   type DatiNotificaReclamoNtfy,
+  type DatiRispostaClienteNtfy,
+  type ProdottoNotifica,
   type ReclamoOrdine,
   type StatoReclamo,
   type TipoReclamo,
@@ -90,6 +96,143 @@ const STATUS_DA_CODICE: Record<string, number> = {
   TRANSIZIONE_NON_CONSENTITA: 409,
   SAVE_FAILED: 500,
 };
+
+// ═══════════════════════════════════════════════════════════════════════
+// CONTESTO RECLAMO PER NOTIFICHE (email + ntfy) — dati dal DB, mai dal browser
+// ═══════════════════════════════════════════════════════════════════════
+
+// Helpers condivisi per i link delle notifiche (nessuna logica duplicata).
+function linkClienteOrdine(ordineId: string): string | null {
+  return ordineId
+    ? `${SITE_URL.replace(/\/+$/, "")}/cliente/ordini/${encodeURIComponent(ordineId)}`
+    : null;
+}
+
+function linkVenditoreOrdine(negozioId: string, ordineId: string): string | null {
+  return negozioId && ordineId
+    ? `${SITE_URL.replace(/\/+$/, "")}/merchant/${encodeURIComponent(negozioId)}/ordini/${encodeURIComponent(ordineId)}`
+    : null;
+}
+
+/**
+ * Contesto completo di un reclamo per le notifiche (email al cliente,
+ * ntfy/email al venditore). Tutto letto dal DB lato server: ordine
+ * (numero, negozio), snapshot cliente e prodotti con codice articolo e
+ * link annuncio. I link sono le pagine REALI del progetto.
+ * Il CODICE ARTICOLO è `prodotti.id` (bigint) — l'identificativo usato
+ * realmente nelle righe ordine e nel catalogo (ordini_righe.prodotto_id):
+ * MAI un UUID, mai lo slug. Lo `sku` esiste solo nello schema separato
+ * della pipeline LocalHub (products), NON nella tabella prodotti dell'app.
+ */
+export type ContestoReclamoNotifica = {
+  reclamoId: string;
+  ordineId: string;
+  negozioId: string;
+  numero: string;
+  negozioNome: string;
+  clienteNome: string;
+  clienteEmail: string;
+  prodotti: ProdottoNotifica[];
+  /** Link alla pagina cliente (/cliente/ordini/<ordineId>) o null. */
+  linkCliente: string | null;
+  /** Link alla console operativa venditore (/merchant/.../ordini/...) o null. */
+  linkVenditore: string | null;
+};
+
+/**
+ * Carica dal DB il contesto completo di un reclamo per email/ntfy.
+ * BEST-EFFORT: su errore restituisce null (il chiamante NON deve mai
+ * far fallire il salvataggio del messaggio per un problema di notifica).
+ * I dati descrittivi (nome cliente, prodotti, codice, link) vengono
+ * recuperati qui, lato server: mai fidarsi del browser.
+ */
+export async function caricaContestoReclamo(
+  reclamoId: string,
+  opts: { db?: ReclamiDbClient } = {}
+): Promise<ContestoReclamoNotifica | null> {
+  try {
+    const db = (opts.db ?? createAdminSupabaseClient()) as ReclamiDbClient;
+
+    const { data: reclamo } = await db
+      .from("ordine_reclami")
+      .select("id, ordine_id, negozio_id, cliente_nome, cliente_email")
+      .eq("id", reclamoId)
+      .maybeSingle();
+    if (!reclamo) {
+      console.error(`[ordine-reclami] reclamo ${reclamoId}: contesto non trovato`);
+      return null;
+    }
+
+    const ordineId = String(reclamo.ordine_id ?? "");
+    const negozioId = String(reclamo.negozio_id ?? "");
+    const clienteNome = String(reclamo.cliente_nome ?? "").trim();
+    const clienteEmail = String(reclamo.cliente_email ?? "").trim();
+
+    const { data: ordine } = await db
+      .from("ordini")
+      .select("numero, negozio_nome")
+      .eq("id", ordineId)
+      .maybeSingle();
+
+    const numero = String(ordine?.numero ?? "");
+    const negozioNome = String(ordine?.negozio_nome ?? "");
+
+    // Righe ordine: nome prodotto (snapshot) + prodotto_id (codice articolo).
+    const { data: righe } = await db
+      .from("ordini_righe")
+      .select("prodotto_id, nome_prodotto")
+      .eq("ordine_id", ordineId)
+      .order("created_at", { ascending: true });
+
+    const righeOrdine = Array.isArray(righe) ? (righe as Record<string, unknown>[]) : [];
+    const idProdotti = Array.from(
+      new Set(righeOrdine.map((r) => String(r.prodotto_id ?? "")).filter(Boolean))
+    );
+
+    // Slug dei prodotti → URL pubblico annuncio (/prodotto/<slug>).
+    const slugPerId = new Map<string, string>();
+    if (idProdotti.length > 0) {
+      const { data: prodotti } = await db
+        .from("prodotti")
+        .select("id, slug")
+        .in("id", idProdotti);
+      for (const p of (Array.isArray(prodotti) ? (prodotti as Record<string, unknown>[]) : [])) {
+        const slug = String(p.slug ?? "").trim();
+        if (slug) slugPerId.set(String(p.id), slug);
+      }
+    }
+
+    const baseUrl = SITE_URL.replace(/\/+$/, "");
+    const prodotti: ProdottoNotifica[] = righeOrdine.map((r) => {
+      const prodottoId = String(r.prodotto_id ?? "");
+      const slug = slugPerId.get(prodottoId);
+      return {
+        codiceArticolo: prodottoId,
+        nomeProdotto: String(r.nome_prodotto ?? "").trim(),
+        urlAnnuncio: slug ? `${baseUrl}/prodotto/${encodeURIComponent(slug)}` : null,
+      };
+    });
+
+    return {
+      reclamoId,
+      ordineId,
+      negozioId,
+      numero,
+      negozioNome,
+      clienteNome,
+      clienteEmail,
+      prodotti,
+      linkCliente: linkClienteOrdine(ordineId),
+      linkVenditore: linkVenditoreOrdine(negozioId, ordineId),
+    };
+  } catch (err) {
+    console.error(
+      `[ordine-reclami] reclamo ${reclamoId}: contesto non caricabile (best-effort): ${(err as Error)?.message ?? "sconosciuto"}`
+    );
+    return null;
+  }
+}
+
 
 // ═══════════════════════════════════════════════════════════════════════
 // HELPERS
@@ -441,10 +584,7 @@ export async function notificaReclamoNtfy(
     // (mai un URL rotto con doppie slash tipo "/merchant//ordini/").
     const negozioId = String(reclamo.negozioId ?? "").trim();
     const ordineId = String(reclamo.ordineId ?? "").trim();
-    const linkVenditore =
-      negozioId && ordineId
-        ? `${SITE_URL.replace(/\/+$/, "")}/merchant/${encodeURIComponent(negozioId)}/ordini/${encodeURIComponent(ordineId)}`
-        : null;
+    const linkVenditore = linkVenditoreOrdine(negozioId, ordineId);
 
     const corpo = costruisciMessaggioReclamoNtfy({
       numero,

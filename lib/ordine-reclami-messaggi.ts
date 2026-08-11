@@ -29,7 +29,12 @@ import {
   inviaEmailMessaggioReclamo,
   inviaEmailRispostaClienteReclamo,
 } from "@/lib/cliente/ordine-email";
-import { getReclamiOrdineCliente, type ReclamiDbClient } from "@/lib/ordine-reclami";
+import {
+  caricaContestoReclamo,
+  costruisciMessaggioRispostaClienteNtfy,
+  getReclamiOrdineCliente,
+  type ReclamiDbClient,
+} from "@/lib/ordine-reclami";
 
 // ═══════════════════════════════════════════════════════════════════════
 // TIPI E HELPERS PURI
@@ -89,8 +94,6 @@ const STATUS_DA_CODICE: Record<string, number> = {
   RECLAMO_CHIUSO: 409,
   SAVE_FAILED: 500,
 };
-
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.incitta.online";
 
 // ═══════════════════════════════════════════════════════════════════════
 // SCRITTURA
@@ -384,50 +387,32 @@ function formattaDataBreve(iso: string | null | undefined): string {
  * ntfy al VENDITORE quando il cliente risponde a un reclamo.
  * BEST-EFFORT: MAI throw (il messaggio DB è la fonte di verità). Usa il
  * topic ordini esistente (NTFY_ORDERS_TOPIC), MAI topic casuali nuovi.
- * Dati letti dal DB lato server (numero ordine LEGGIBILE, mai UUID).
+ * Dati letti dal DB lato server (numero ordine LEGGIBILE, mai UUID):
+ * la notifica identifica CHI (cliente), COSA (prodotto + codice articolo),
+ * QUALE ORDINE (#LH-XXXX), DOVE (link annuncio) e COSA FARE (link reclamo).
  */
 export async function notificaRispostaClienteNtfy(
   messaggio: MessaggioReclamo,
   opts: OpzioniNotificaRisposta = {}
 ): Promise<void> {
   try {
-    const db = (opts.db ?? createAdminSupabaseClient()) as ReclamiDbClient;
-    const { data: reclamo } = await db
-      .from("ordine_reclami")
-      .select("ordine_id, negozio_id")
-      .eq("id", messaggio.reclamoId)
-      .maybeSingle();
+    // Contesto completo (reclamo + ordine + righe + prodotti + link) dal DB.
+    const contesto = await caricaContestoReclamo(messaggio.reclamoId, { db: opts.db });
+    if (!contesto) return;
 
-    if (!reclamo) return;
+    // Nome cliente: snapshot del reclamo letto dal DB (mai email/UUID);
+    // fallback sul mittente già salvato dalla RPC, poi "—".
+    const clienteNome =
+      contesto.clienteNome.trim() || messaggio.mittenteNome.trim() || "—";
 
-    const ordineId = String(reclamo.ordine_id ?? "");
-    const negozioId = String(reclamo.negozio_id ?? "");
-    const { data: ordine } = await db
-      .from("ordini")
-      .select("numero, negozio_nome")
-      .eq("id", ordineId)
-      .maybeSingle();
-
-    const numero = String(ordine?.numero ?? "");
-    const negozioNome = String(ordine?.negozio_nome ?? "");
-
-    const link =
-      negozioId && ordineId
-        ? `${SITE_URL.replace(/\/+$/, "")}/merchant/${encodeURIComponent(negozioId)}/ordini/${encodeURIComponent(ordineId)}`
-        : null;
-
-    const righe: string[] = [];
-    righe.push(`💬 RISPOSTA DEL CLIENTE — Reclamo #${numero || "—"}`);
-    righe.push("");
-    righe.push(`🏪 Negozio: ${negozioNome || "—"}`);
-    righe.push(`👤 Cliente: ${messaggio.mittenteNome || "—"}`);
-    righe.push(`📝 Risposta: ${messaggio.corpo || "—"}`);
-    righe.push(`📅 Data: ${formattaDataBreve(messaggio.createdAt) || "—"}`);
-    if (link) {
-      righe.push("");
-      righe.push("🔗 Apri reclamo:");
-      righe.push(link);
-    }
+    const corpo = costruisciMessaggioRispostaClienteNtfy({
+      numero: contesto.numero,
+      clienteNome,
+      corpo: messaggio.corpo,
+      dataOra: formattaDataBreve(messaggio.createdAt),
+      prodotti: contesto.prodotti,
+      linkReclamo: contesto.linkVenditore,
+    });
 
     const configVenditore: ConfigNtfy = {
       enabled: process.env.NTFY_ENABLED !== "false",
@@ -437,10 +422,10 @@ export async function notificaRispostaClienteNtfy(
     await inviaMessaggioNtfy(
       configVenditore,
       {
-        titolo: `Risposta cliente — reclamo #${numero || ""}`.trim(),
+        titolo: `Risposta cliente — reclamo #${(contesto.numero || "").trim().replace(/^#/, "")}`.trim(),
         tags: "speech_balloon",
         priorita: "default",
-        corpo: righe.join("\n"),
+        corpo,
       },
       `reclamo ${messaggio.reclamoId.slice(0, 8)} risposta`,
       opts.fetchImpl

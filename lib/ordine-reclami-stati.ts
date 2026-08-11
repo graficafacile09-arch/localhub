@@ -168,3 +168,81 @@ export function costruisciMessaggioReclamoNtfy(dati: DatiNotificaReclamoNtfy): s
   }
   return righe.join("\n");
 }
+
+// ═══════════════════════════════════════════════════════════════════════
+// NTFY — RISPOSTA DEL CLIENTE (notifica al venditore)
+// ═══════════════════════════════════════════════════════════════════════
+
+/**
+ * Prodotto acquistato associato a un reclamo (nome + codice + link annuncio).
+ * Tipo CONDIVISO da ntfy ed email reclamo: codice articolo = prodotto_id
+ * dell'ordine (MAI un UUID), url annuncio pubblico (/prodotto/<slug>).
+ */
+export type ProdottoNotifica = {
+  /** Codice articolo LEGGIBILE (prodotto_id dell'ordine, MAI un UUID). */
+  codiceArticolo: string;
+  nomeProdotto: string;
+  /** URL pubblico dell'annuncio (/prodotto/<slug>) o null se non disponibile. */
+  urlAnnuncio: string | null;
+};
+
+/**
+ * Dati per la notifica ntfy al VENDITORE quando il CLIENTE risponde a un
+ * reclamo. Tutti derivati dal DB lato server (ordine + righe + prodotti):
+ * il venditore deve capire SUBITO chi ha scritto, su quale ordine/prodotto
+ * e dove intervenire (link annuncio + link gestione reclamo).
+ */
+export type DatiRispostaClienteNtfy = {
+  /** Numero ordine leggibile (es. "LH-00125", MAI l'UUID interno). */
+  numero: string;
+  /** Nome del cliente (snapshot dell'ordine/reclamo, mai email o UUID). */
+  clienteNome: string;
+  /** Testo della risposta del cliente. */
+  corpo: string;
+  /** Data/ora della risposta nel formato "GG/MM/AAAA HH:MM" (Europe/Rome). */
+  dataOra: string;
+  /** Prodotti acquistati (righe dell'ordine) con codice e link annuncio. */
+  prodotti: ProdottoNotifica[];
+  /** Link diretto alla console operativa del reclamo (pannello venditore). */
+  linkReclamo: string | null;
+};
+
+/**
+ * Costruisce il corpo della notifica ntfy di risposta del cliente
+ * (formato richiesto): chi (cliente), cosa (prodotto/articolo), quale
+ * ordine (#LH-XXXX), dove (link annuncio) e cosa fare (link reclamo).
+ * MAI UUID al posto dei codici: se un dato manca si usa "—".
+ */
+export function costruisciMessaggioRispostaClienteNtfy(
+  dati: DatiRispostaClienteNtfy
+): string {
+  const righe: string[] = [];
+  righe.push("🔴 RISPOSTA RECLAMO — InCittà");
+  righe.push("");
+  righe.push(`Cliente: ${(dati.clienteNome || "").trim() || "—"}`);
+  righe.push("");
+  const numero = (dati.numero || "").trim().replace(/^#/, "");
+  righe.push(`Ordine: ${numero ? `#${numero}` : "—"}`);
+  righe.push("");
+
+  const prodotti = Array.isArray(dati.prodotti) ? dati.prodotti : [];
+  const primario = prodotti[0];
+  if (primario) {
+    righe.push(`Articolo: ${(primario.codiceArticolo || "").trim() || "—"}`);
+    righe.push("");
+    righe.push(`Prodotto: ${(primario.nomeProdotto || "").trim() || "—"}`);
+    // Righe aggiuntive dell'ordine (se presenti): mai nasconderle.
+    for (const extra of prodotti.slice(1)) {
+      righe.push("");
+      righe.push(`  • ${(extra.nomeProdotto || "").trim() || "—"} (art. ${(extra.codiceArticolo || "").trim() || "—"})`);
+    }
+    righe.push("");
+  }
+
+  righe.push(`Messaggio: "${(dati.corpo || "").trim()}"`);
+  righe.push("");
+  righe.push(`Annuncio: ${(primario?.urlAnnuncio ?? "").trim() || "—"}`);
+  righe.push("");
+  righe.push(dati.linkReclamo ? `Reclamo: ${dati.linkReclamo}` : "Reclamo: disponibile dal pannello venditore");
+  return righe.join("\n");
+}
