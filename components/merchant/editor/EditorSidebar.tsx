@@ -6,7 +6,7 @@ import { useState } from "react";
 import {
   Building2, Image, Package, Sparkles, Tag, Calendar, Phone,
   MapPin, Clock, MessageCircle, Search, Bot, Settings,
-  LayoutDashboard, FolderOpen, Copy, ChevronDown, ChevronRight,
+  LayoutDashboard, FolderOpen, Copy, ChevronDown, ChevronRight, CreditCard,
 } from "lucide-react";
 import type { ModuleStatus } from "./StoreEditor";
 import DuplicaNegozioWizard from "@/components/merchant/media/DuplicaNegozioWizard";
@@ -39,6 +39,7 @@ const MODULE_GROUPS = [
     modules: [
       { slug: "social", label: "Social", icon: MessageCircle },
       { slug: "seo", label: "SEO", icon: Search },
+      { slug: "pagamenti", label: "Pagamenti", icon: CreditCard },
     ],
   },
   {

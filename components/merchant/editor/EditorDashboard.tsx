@@ -99,6 +99,7 @@ export default function EditorDashboard({ storeId, basePath = "/merchant", onMod
       orari: { complete: !!store.orari },
       social: { complete: !!(store.facebook || store.instagram || store.whatsapp || store.tiktok || store.youtube) },
       seo: { complete: !!(store.seo_title || store.seo_description) },
+      pagamenti: { complete: false },
       ai: { complete: !!(data as Record<string, unknown>)?.ai_data },
       impostazioni: { complete: true },
     };

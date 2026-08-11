@@ -31,6 +31,7 @@ register("orari", () => import("@/components/merchant/modules/OrariModule"));
 register("social", () => import("@/components/merchant/modules/SocialModule"));
 register("seo", () => import("@/components/merchant/modules/SeoModule"));
 register("ai", () => import("@/components/merchant/modules/AiModule"));
+register("pagamenti", () => import("@/components/merchant/modules/PagamentiModule"));
 register("impostazioni", () => import("@/components/merchant/modules/ImpostazioniModule"));
 
 export async function getModuleComponent(slug: string): Promise<React.ComponentType<ModuleComponentProps> | null> {
