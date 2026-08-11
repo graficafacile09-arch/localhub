@@ -2,6 +2,7 @@ import { calcolaPunteggioNegozio, filtraNegoziPerPertinenza } from "./ranking-ne
 import { estraiToken, normalizza, radice } from "./text-utils";
 import { createAdminSupabaseClient } from "./supabase/admin";
 import { isNumericId, isUuid, toSlug } from "./slug";
+import type { ProdottoRicerca } from "./ricerca-ai";
 import {
   patternIlikeTolleranti,
   punteggioFuzzy,
@@ -719,9 +720,124 @@ export async function getUltimiProdotti(limit = 12) {
   }));
 }
 
-export async function cercaProdotti(ricerca: string, limit = 20) {
+// ════════════════════════════════════════════════════════════════════════════
+// Ricerca prodotti pubblica (Fase C — discovery e filtri)
+// ════════════════════════════════════════════════════════════════════════════
+
+export type OrdinamentoProdottiPubblici = "rilevanza" | "prezzo_asc" | "prezzo_desc" | "novita";
+
+/**
+ * Opzioni di filtri/ordinamento/paginazione per la ricerca pubblica.
+ * Tutti i filtri sono applicati server-side sulle colonne DB esistenti.
+ */
+export type CercaProdottiOptions = {
+  /** Limita la ricerca al catalogo di un singolo negozio. */
+  negozioId?: string;
+  categoria?: string;
+  sottocategoria?: string;
+  marca?: string;
+  colore?: string;
+  prezzoMin?: number;
+  prezzoMax?: number;
+  soloDisponibili?: boolean;
+  filtriCatalogo?: Record<string, string>;
+  ordina?: OrdinamentoProdottiPubblici;
+  pagina?: number;
+  perPagina?: number;
+};
+
+export type RisultatoRicercaProdotti = {
+  prodotti: ProdottoRicerca[];
+  total: number;
+};
+
+export function isOrdinamentoProdottiPubblici(value: unknown): value is OrdinamentoProdottiPubblici {
+  return value === "rilevanza" || value === "prezzo_asc" || value === "prezzo_desc" || value === "novita";
+}
+
+// Select comune: include il join inner su negozi per escludere i prodotti di
+// negozi soft-deleted (deleted_at valorizzato) direttamente nella query.
+const SELECT_PRODOTTO_RICERCA =
+  "id, slug, negozio_id, nome, descrizione, categoria, sottocategoria, marca, colore, prezzo, immagine_principale, negozi!inner(id)";
+
+// Il query builder PostgREST ha tipi complessi e generici: usiamo un tipo
+// locale allentato per gli helper (coerente con lo stile del resto del file).
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type QueryProdotti = any;
+
+/** Applica ricerca testuale (or ilike) + filtri addizionali server-side. */
+function applicaFiltriRicercaProdotti(
+  query: QueryProdotti,
+  termini: string[],
+  opts: CercaProdottiOptions
+): QueryProdotti {
+  let q = query;
+
+  if (termini.length > 0) {
+    const filtri = termini
+      .flatMap((t) => {
+        const p = t.replace(/[,%]/g, " ").trim();
+        if (!p) return [];
+        return [
+          `nome.ilike.%${p}%`,
+          `descrizione.ilike.%${p}%`,
+          `categoria.ilike.%${p}%`,
+          `marca.ilike.%${p}%`,
+          `sottocategoria.ilike.%${p}%`,
+          `colore.ilike.%${p}%`,
+          `materiale.ilike.%${p}%`,
+        ];
+      })
+      .join(",");
+    if (filtri) q = q.or(filtri);
+  }
+
+  if (opts.negozioId) q = q.eq("negozio_id", opts.negozioId);
+  if (opts.categoria?.trim()) q = q.eq("categoria", opts.categoria.trim());
+  if (opts.sottocategoria?.trim()) q = q.eq("sottocategoria", opts.sottocategoria.trim());
+  if (opts.marca?.trim()) q = q.eq("marca", opts.marca.trim());
+  if (opts.colore?.trim()) q = q.eq("colore", opts.colore.trim());
+  if (opts.prezzoMin !== undefined && opts.prezzoMin > 0) q = q.gte("prezzo", opts.prezzoMin);
+  if (opts.prezzoMax !== undefined && opts.prezzoMax > 0) q = q.lte("prezzo", opts.prezzoMax);
+  if (opts.soloDisponibili) q = q.gt("quantita_disponibile", 0);
+  if (opts.filtriCatalogo && Object.keys(opts.filtriCatalogo).length > 0) {
+    q = q.filter("filtri_catalogo", "cs", JSON.stringify(opts.filtriCatalogo));
+  }
+
+  return q;
+}
+
+function haFiltriAddizionali(opts: CercaProdottiOptions): boolean {
+  return Boolean(
+    opts.negozioId ||
+      opts.categoria?.trim() ||
+      opts.sottocategoria?.trim() ||
+      opts.marca?.trim() ||
+      opts.colore?.trim() ||
+      (opts.prezzoMin !== undefined && opts.prezzoMin > 0) ||
+      (opts.prezzoMax !== undefined && opts.prezzoMax > 0) ||
+      opts.soloDisponibili ||
+      (opts.filtriCatalogo && Object.keys(opts.filtriCatalogo).length > 0)
+  );
+}
+
+/**
+ * Core condiviso della ricerca prodotti. Ritorna i risultati grezzi e il
+ * totale (count exact quando conCount). Gestisce la pagina fuori intervallo
+ * (PostgREST 416/PGRST103) restituendo pagina vuota con il total corretto.
+ */
+async function cercaProdottiCore(
+  ricerca: string,
+  opts: {
+    limite: number;
+    pagina?: number;
+    perPagina?: number;
+    conCount: boolean;
+    filtri: CercaProdottiOptions;
+  }
+): Promise<{ risultati: Record<string, unknown>[]; total: number | null }> {
   const db = getDb();
-  if (!db) return [];
+  if (!db) return { risultati: [], total: null };
 
   const termini = Array.from(
     new Set(
@@ -732,44 +848,78 @@ export async function cercaProdotti(ricerca: string, limit = 20) {
     )
   ).slice(0, 10);
 
-  if (termini.length === 0) return [];
+  const conFiltriExtra = haFiltriAddizionali(opts.filtri);
 
-  const filtri = termini
-    .flatMap((t) => {
-      const p = t.replace(/[,%]/g, " ").trim();
-      if (!p) return [];
-      return [
-        `nome.ilike.%${p}%`,
-        `descrizione.ilike.%${p}%`,
-        `categoria.ilike.%${p}%`,
-        `marca.ilike.%${p}%`,
-        `sottocategoria.ilike.%${p}%`,
-        `colore.ilike.%${p}%`,
-        `materiale.ilike.%${p}%`,
-      ];
-    })
-    .join(",");
-
-  const { data, error } = await db
+  let query = db
     .from("prodotti")
-    .select("id, slug, negozio_id, nome, descrizione, categoria, prezzo, immagine_principale")
+    .select(SELECT_PRODOTTO_RICERCA, opts.conCount ? { count: "exact" } : undefined)
     .eq("attivo", true)
-    .or(filtri)
-    .limit(limit);
+    .filter("negozi.deleted_at", "is", null);
 
-  if (error) return [];
+  query = applicaFiltriRicercaProdotti(query, termini, opts.filtri);
 
-  // Fase esatta insufficiente → ricerca tollerante (refusi, accenti, plurali,
-  // maiuscole/minuscole già coperte da ilike). Il ranking resta invariato:
-  // gli esatti precedono sempre i tolleranti, senza mai rimescolarli.
-  const esatti = (data ?? []) as Record<string, unknown>[];
-  let risultati = esatti;
-  if (esatti.length < limit) {
-    const tolleranti = await cercaProdottiTolleranti(db, ricerca, esatti, limit);
+  // Ordinamento (rilevanza = ordine DB naturale, ranking storico invariato).
+  switch (opts.filtri.ordina) {
+    case "prezzo_asc":
+      query = query.order("prezzo", { ascending: true });
+      break;
+    case "prezzo_desc":
+      query = query.order("prezzo", { ascending: false });
+      break;
+    case "novita":
+      query = query.order("created_at", { ascending: false });
+      break;
+    default:
+      break;
+  }
+
+  // Paginazione (range inclusivo) oppure limite semplice.
+  const { pagina, perPagina } = opts;
+  if (opts.conCount && pagina && perPagina) {
+    const from = (pagina - 1) * perPagina;
+    query = query.range(from, from + perPagina - 1);
+  } else {
+    query = query.limit(opts.limite);
+  }
+
+  const { data, count, error } = await query;
+  const total = typeof count === "number" ? count : null;
+
+  // Pagina fuori intervallo → PostgREST 416 (PGRST103): pagina vuota + total.
+  if (error && (String((error as { code?: string }).code) === "PGRST103" || /range/i.test(error.message ?? ""))) {
+    let countQuery = db
+      .from("prodotti")
+      .select("id", { head: true, count: "exact" })
+      .eq("attivo", true)
+      .filter("negozi.deleted_at", "is", null);
+    countQuery = applicaFiltriRicercaProdotti(countQuery, termini, opts.filtri);
+    const { count: totalCount } = await countQuery;
+    return { risultati: [], total: typeof totalCount === "number" ? totalCount : 0 };
+  }
+
+  if (error) return { risultati: [], total };
+
+  let risultati = (data ?? []) as Record<string, unknown>[];
+
+  // Fallback tollerante (refusi/accenti/plurali): solo senza filtri addizionali
+  // e a pagina 1 — identico al comportamento storico di cercaProdotti().
+  const paginaCorrente = pagina ?? 1;
+  if (!conFiltriExtra && paginaCorrente === 1 && risultati.length < opts.limite) {
+    const tolleranti = await cercaProdottiTolleranti(db, ricerca, risultati, opts.limite);
     if (tolleranti.length > 0) {
-      risultati = unisciEsattiETolleranti(esatti, tolleranti, limit);
+      risultati = unisciEsattiETolleranti(risultati, tolleranti, opts.limite);
     }
   }
+
+  return { risultati, total };
+}
+
+/** Arricchisce i risultati con il nome del negozio (una sola query). */
+async function mappaProdottoRicerca(
+  risultati: Record<string, unknown>[]
+): Promise<ProdottoRicerca[]> {
+  const db = getDb();
+  if (!db) return [];
 
   const negozioIds = Array.from(
     new Set(risultati.map((prodotto) => prodotto.negozio_id).filter(Boolean))
@@ -790,6 +940,90 @@ export async function cercaProdotti(ricerca: string, limit = 20) {
     immagine_principale: (p.immagine_principale as string) ?? null,
     negozio_nome: nomiNegozi.get(p.negozio_id as string) ?? "",
   }));
+}
+
+/**
+ * Ricerca pubblica storica: identica al comportamento precedente (nessun
+ * count, limite fisso, fallback tollerante). Backward-compatible.
+ */
+export async function cercaProdotti(ricerca: string, limit = 20): Promise<ProdottoRicerca[]> {
+  const { risultati } = await cercaProdottiCore(ricerca, {
+    limite: limit,
+    conCount: false,
+    filtri: {},
+  });
+  return mappaProdottoRicerca(risultati);
+}
+
+/**
+ * Ricerca pubblica con filtri/ordinamento/paginazione (Fase C).
+ * Ritorna prodotti + total (count exact).
+ */
+export async function cercaProdottiConOpzioni(
+  ricerca: string,
+  opts: CercaProdottiOptions = {}
+): Promise<RisultatoRicercaProdotti> {
+  const perPagina = opts.perPagina && opts.perPagina > 0 ? Math.min(opts.perPagina, 60) : 12;
+  const pagina = opts.pagina && opts.pagina > 0 ? Math.min(opts.pagina, 1000) : 1;
+
+  const { risultati, total } = await cercaProdottiCore(ricerca, {
+    limite: perPagina,
+    pagina,
+    perPagina,
+    conCount: true,
+    filtri: opts,
+  });
+
+  return {
+    prodotti: await mappaProdottoRicerca(risultati),
+    total: typeof total === "number" ? total : risultati.length,
+  };
+}
+
+/**
+ * Valori distinti per i filtri pubblici (categorie, sottocategorie, marche,
+ * colori) dai soli prodotti attivi di negozi non eliminati.
+ */
+export async function getFiltriDisponibiliProdotti(): Promise<{
+  categorie: string[];
+  sottocategorie: string[];
+  marche: string[];
+  colori: string[];
+}> {
+  const db = getDb();
+  if (!db) return { categorie: [], sottocategorie: [], marche: [], colori: [] };
+
+  const { data } = await db
+    .from("prodotti")
+    .select("categoria, sottocategoria, marca, colore, negozi!inner(id)")
+    .eq("attivo", true)
+    .filter("negozi.deleted_at", "is", null)
+    .limit(500);
+
+  const categorie = new Set<string>();
+  const sottocategorie = new Set<string>();
+  const marche = new Set<string>();
+  const colori = new Set<string>();
+
+  const aggiungi = (set: Set<string>, valore: unknown) => {
+    const s = String(valore ?? "").trim();
+    if (s) set.add(s);
+  };
+
+  for (const r of (data ?? []) as Record<string, unknown>[]) {
+    aggiungi(categorie, r.categoria);
+    aggiungi(sottocategorie, r.sottocategoria);
+    aggiungi(marche, r.marca);
+    aggiungi(colori, r.colore);
+  }
+
+  const ordina = (set: Set<string>) => Array.from(set).sort((a, b) => a.localeCompare(b, "it"));
+  return {
+    categorie: ordina(categorie),
+    sottocategorie: ordina(sottocategorie),
+    marche: ordina(marche),
+    colori: ordina(colori),
+  };
 }
 
 // ─── Ricerca tollerante (fallback) ───────────────────────────────────────────

@@ -4,7 +4,11 @@ import type { Metadata } from "next";
 import Header from "@/components/Header/Header";
 import StoreProductCard from "@/components/negozio/StoreProductCard";
 import { OpenAssistantLink } from "@/components/assistant/OpenAssistantButton";
-import { risolviNegozioPubblico, getProdottiNegozio } from "@/lib/negozi";
+import SearchFilters from "@/components/ricerca/SearchFilters";
+import SearchSort from "@/components/ricerca/SearchSort";
+import SearchPagination from "@/components/ricerca/SearchPagination";
+import { risolviNegozioPubblico, getFiltriDisponibiliProdotti, isOrdinamentoProdottiPubblici, type OrdinamentoProdottiPubblici } from "@/lib/negozi";
+import { search } from "@/lib/search-service";
 import { getNegozioCardImmagine } from "@/lib/negozi-card-immagini";
 import { chiavePreferito, getStatoPreferitiPerPagina } from "@/lib/cliente/favorites";
 import { getSiteUrl } from "@/lib/site";
@@ -16,6 +20,14 @@ import { MapPin, Phone, MessageCircle, Tag, Calendar, Clock, Globe } from "lucid
 import OpeningHoursDisplay from "@/components/negozio/OpeningHoursDisplay";
 
 type Params = { slug: string };
+
+const PER_PAGINA = 12;
+
+function parseNum(value: string | undefined): number | undefined {
+  if (!value) return undefined;
+  const n = Number(value);
+  return !Number.isNaN(n) && n > 0 ? n : undefined;
+}
 
 // ─── SEO ─────────────────────────────────────────────────────────────────────
 export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
@@ -45,8 +57,31 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   };
 }
 
-export default async function PaginaNegozio({ params }: { params: Promise<Params> }) {
+export default async function PaginaNegozio({
+  params,
+  searchParams,
+}: {
+  params: Promise<Params>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { slug } = await params;
+  const sp = await searchParams;
+  const get = (k: string) => {
+    const v = sp[k];
+    return Array.isArray(v) ? (v[0] ?? "") : (v ?? "");
+  };
+
+  const qCatalogo = get("q").trim();
+  const sottocategoria = get("sottocategoria").trim();
+  const marca = get("marca").trim();
+  const colore = get("colore").trim();
+  const prezzoMin = parseNum(get("prezzo_min"));
+  const prezzoMax = parseNum(get("prezzo_max"));
+  const soloDisponibili = get("disponibile") === "1";
+  const ordina: OrdinamentoProdottiPubblici = isOrdinamentoProdottiPubblici(get("ordina"))
+    ? (get("ordina") as OrdinamentoProdottiPubblici)
+    : "rilevanza";
+  const pagina = Math.max(1, Number.parseInt(get("pagina"), 10) || 1);
 
   // Risoluzione: slug canonico oppure UUID legacy (redirect 301/308).
   const { negozio, slugLegacy } = await risolviNegozioPubblico(slug);
@@ -57,7 +92,23 @@ export default async function PaginaNegozio({ params }: { params: Promise<Params
 
   const id = negozio.id as string;
   const slugCanonico = ((negozio.slug as string) ?? "").trim() || id;
-  const prodotti = await getProdottiNegozio(id);
+
+  // Catalogo del negozio: stessa query della ricerca pubblica, con negozioId.
+  const catalogo = await search(qCatalogo, {
+    negozioId: id,
+    sottocategoria: sottocategoria || undefined,
+    marca: marca || undefined,
+    colore: colore || undefined,
+    prezzoMin,
+    prezzoMax,
+    soloDisponibili: soloDisponibili || undefined,
+    ordina,
+    pagina,
+    perPagina: PER_PAGINA,
+  });
+  const prodotti = catalogo.prodotti as Record<string, unknown>[];
+  const totalCatalogo = catalogo.total;
+  const filtriDisponibili = await getFiltriDisponibiliProdotti();
 
   const moduliAttivi: string[] = Array.isArray(negozio.moduli_attivi)
     ? (negozio.moduli_attivi as string[])
@@ -239,17 +290,62 @@ export default async function PaginaNegozio({ params }: { params: Promise<Params
           )}
         </div>
 
-        {/* Prodotti */}
-        {prodotti.length > 0 && (
-          <section className="mt-4">
-            <div className="mb-2 flex items-center gap-2">
-              <h2 className="text-xs font-bold uppercase tracking-wide text-slate-500">
-                Prodotti
-              </h2>
-              <span className="rounded-full bg-slate-200/70 px-2 py-0.5 text-[10px] font-black text-slate-600">
-                {prodotti.length}
-              </span>
+        {/* Catalogo prodotti del negozio (Fase C: filtri/ordinamento/paginazione) */}
+        <section className="mt-4">
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <h2 className="text-xs font-bold uppercase tracking-wide text-slate-500">
+              Prodotti
+            </h2>
+            <span className="rounded-full bg-slate-200/70 px-2 py-0.5 text-[10px] font-black text-slate-600">
+              {totalCatalogo}
+            </span>
+            <span className="ml-auto">
+              <SearchSort basePath={`/negozio/${slugCanonico}`} value={ordina} />
+            </span>
+          </div>
+
+          {/* Filtri compatti (desktop inline, mobile sotto) */}
+          <div className="mb-3 hidden lg:block">
+            <SearchFilters
+              basePath={`/negozio/${slugCanonico}`}
+              current={{
+                q: qCatalogo,
+                sottocategoria: sottocategoria || undefined,
+                marca: marca || undefined,
+                colore: colore || undefined,
+                prezzoMin: prezzoMin !== undefined ? String(prezzoMin) : undefined,
+                prezzoMax: prezzoMax !== undefined ? String(prezzoMax) : undefined,
+                soloDisponibili: soloDisponibili || undefined,
+              }}
+              disponibili={filtriDisponibili}
+              showCategoria={false}
+              compact
+            />
+          </div>
+          <details className="mb-3 lg:hidden">
+            <summary className="flex cursor-pointer list-none items-center gap-1.5 text-xs font-bold text-slate-600 [&::-webkit-details-marker]:hidden">
+              Filtri e ricerca nel catalogo
+            </summary>
+            <div className="mt-2">
+              <SearchFilters
+                basePath={`/negozio/${slugCanonico}`}
+                current={{
+                  q: qCatalogo,
+                  sottocategoria: sottocategoria || undefined,
+                  marca: marca || undefined,
+                  colore: colore || undefined,
+                  prezzoMin: prezzoMin !== undefined ? String(prezzoMin) : undefined,
+                  prezzoMax: prezzoMax !== undefined ? String(prezzoMax) : undefined,
+                  soloDisponibili: soloDisponibili || undefined,
+                }}
+                disponibili={filtriDisponibili}
+                showCategoria={false}
+                compact
+              />
             </div>
+          </details>
+
+          {prodotti.length > 0 ? (
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
               {prodotti.map((prodotto: Record<string, unknown>) => {
                 const prodottoId = String(prodotto.id);
@@ -269,16 +365,33 @@ export default async function PaginaNegozio({ params }: { params: Promise<Params
                 );
               })}
             </div>
-          </section>
-        )}
+          ) : (
+            <div className="rounded-xl border border-slate-100 bg-white p-4 text-center">
+              <p className="text-xs text-slate-400">
+                {qCatalogo || sottocategoria || marca || colore || prezzoMin !== undefined || prezzoMax !== undefined || soloDisponibili
+                  ? "Nessun prodotto trovato con questi filtri."
+                  : "Nessun prodotto pubblicato. Torna a trovarci presto!"}
+              </p>
+            </div>
+          )}
 
-        {prodotti.length === 0 && (
-          <section className="mt-4 rounded-xl border border-slate-100 bg-white p-4 text-center">
-            <p className="text-xs text-slate-400">
-              Nessun prodotto pubblicato. Torna a trovarci presto!
-            </p>
-          </section>
-        )}
+          <SearchPagination
+            basePath={`/negozio/${slugCanonico}`}
+            params={{
+              q: qCatalogo || undefined,
+              sottocategoria: sottocategoria || undefined,
+              marca: marca || undefined,
+              colore: colore || undefined,
+              prezzo_min: prezzoMin !== undefined ? String(prezzoMin) : undefined,
+              prezzo_max: prezzoMax !== undefined ? String(prezzoMax) : undefined,
+              disponibile: soloDisponibili ? "1" : undefined,
+              ordina: ordina === "rilevanza" ? undefined : ordina,
+            }}
+            pagina={pagina}
+            totale={totalCatalogo}
+            perPagina={PER_PAGINA}
+          />
+        </section>
 
         {/* Offerte */}
         {offerte.length > 0 && (
