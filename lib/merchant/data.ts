@@ -1282,9 +1282,12 @@ export async function deleteVarianteForProduct(
   if (restano === 0) {
     // Ultima variante eliminata: il prodotto torna al comportamento legacy
     // (flag disattivato, stock non tracciato). Il prezzo resta invariato.
+    // NOTA DB: quantita_disponibile è nullable (NULL = non tracciato =
+    // disponibile, come i prodotti legacy); quantita_riservata è NOT NULL
+    // default 0 → resta 0.
     const { error: errLegacy } = await supabase
       .from("prodotti")
-      .update({ ha_varianti: false, quantita_disponibile: null, quantita_riservata: null })
+      .update({ ha_varianti: false, quantita_disponibile: null, quantita_riservata: 0 })
       .eq("id", productId)
       .eq("negozio_id", negozioId);
     if (errLegacy) {
