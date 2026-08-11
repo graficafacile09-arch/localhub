@@ -1,6 +1,7 @@
 import { permanentRedirect } from "next/navigation";
 import { risolviProdottoPubblico, getNegozio } from "@/lib/negozi";
 import { getProdottoImmagine } from "@/lib/prodotti-immagini";
+import { richiediVariantePerProdotto } from "@/lib/varianti-pubbliche";
 import Link from "next/link";
 
 function formatPrezzo(p: number): number {
@@ -8,9 +9,22 @@ function formatPrezzo(p: number): number {
 }
 
 type Params = { slug: string };
+type SearchParams = Record<string, string | string[] | undefined>;
 
-export default async function AcquistaChoicePage({ params }: { params: Promise<Params> }) {
+export default async function AcquistaChoicePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<Params>;
+  searchParams: Promise<SearchParams>;
+}) {
   const { slug } = await params;
+  const sp = await searchParams;
+  const varianteIdRaw = sp.varianteId;
+  const varianteId =
+    typeof varianteIdRaw === "string" && varianteIdRaw.trim()
+      ? varianteIdRaw.trim()
+      : null;
 
   const { prodotto, slugLegacy } = await risolviProdottoPubblico(slug);
   if (slugLegacy) permanentRedirect(`${slugLegacy}/acquista`);
@@ -29,6 +43,35 @@ export default async function AcquistaChoicePage({ params }: { params: Promise<P
     "prezzo" in prodotto ? Number(prodotto.prezzo) : 0,
   );
   const nome = "nome" in prodotto ? (prodotto.nome as string) : "Prodotto";
+
+  // FASE E4 — varianti: per i prodotti con varianti il varianteId è
+  // OBBLIGATORIO e viene validato server-side (esistenza, appartenenza al
+  // prodotto, variante attiva). I prodotti legacy non richiedono variante.
+  const esitoVariante = await richiediVariantePerProdotto(id, varianteId);
+  const varianteValida =
+    esitoVariante.stato === "valida" ||
+    esitoVariante.stato === "non_necessaria";
+
+  if (!varianteValida) {
+    return (
+      <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-8 text-center">
+        <p className="text-sm font-semibold text-amber-800">
+          Seleziona una variante del prodotto per continuare l&apos;acquisto.
+        </p>
+        <Link
+          href={`/prodotto/${slugProdotto}`}
+          className="mt-4 inline-block rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-blue-700"
+        >
+          Torna al prodotto
+        </Link>
+      </div>
+    );
+  }
+
+  const qs =
+    esitoVariante.stato === "valida"
+      ? `?varianteId=${encodeURIComponent(esitoVariante.variante.id)}`
+      : "";
 
   const imageUrl = getProdottoImmagine({
     immagine_principale: "immagine_principale" in prodotto
@@ -63,7 +106,7 @@ export default async function AcquistaChoicePage({ params }: { params: Promise<P
 
         <div className="flex flex-col gap-3">
           <Link
-            href={`/prodotto/${slugProdotto}/acquista/ritiro`}
+            href={`/prodotto/${slugProdotto}/acquista/ritiro${qs}`}
             className="group block rounded-xl border-2 border-slate-200 bg-white p-5 text-left transition hover:border-blue-400 hover:shadow-md"
           >
             <div className="flex items-start gap-3">
@@ -83,7 +126,7 @@ export default async function AcquistaChoicePage({ params }: { params: Promise<P
           </Link>
 
           <Link
-            href={`/prodotto/${slugProdotto}/acquista/spedizione`}
+            href={`/prodotto/${slugProdotto}/acquista/spedizione${qs}`}
             className="group block rounded-xl border-2 border-slate-200 bg-white p-5 text-left transition hover:border-blue-400 hover:shadow-md"
           >
             <div className="flex items-start gap-3">

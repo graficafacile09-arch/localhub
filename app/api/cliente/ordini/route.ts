@@ -94,6 +94,15 @@ export async function POST(request: Request) {
       : null;
   const emailDestinataria = emailAccount ?? emailBody;
 
+  // Variante selezionata (FASE E4): solo TRASPORTATA fino al servizio
+  // ordini. La validazione di appartenenza/attivo/obbligatorietà avviene
+  // server-side in lib/cliente/orders.ts (mai fidarsi del client).
+  const varianteIdRaw = body.varianteId;
+  const varianteId =
+    typeof varianteIdRaw === "string" && varianteIdRaw.trim()
+      ? varianteIdRaw.trim()
+      : null;
+
   const input: CreaOrdineInput = {
     idempotencyKey:
       typeof body.idempotencyKey === "string" ? body.idempotencyKey : "",
@@ -101,6 +110,7 @@ export async function POST(request: Request) {
       typeof body.prodottoId === "string" || typeof body.prodottoId === "number"
         ? String(body.prodottoId)
         : "",
+    varianteId,
     quantita: Number(body.quantita),
     modalita,
     cliente: {

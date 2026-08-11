@@ -16,6 +16,8 @@ export type ClienteCheckoutPayload = {
 export type CreaOrdinePayload = {
   idempotencyKey: string;
   prodottoId: string;
+  /** Variante selezionata (FASE E4): solo trasportata, validata dal server. */
+  varianteId?: string | null;
   quantita: number;
   modalita: "ritiro" | "spedizione";
   cliente: ClienteCheckoutPayload;
@@ -59,7 +61,10 @@ export async function creaOrdineViaApi(payload: CreaOrdinePayload): Promise<Esit
     const res = await fetch("/api/cliente/ordini", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        ...payload,
+        varianteId: payload.varianteId ?? null,
+      }),
     });
 
     const json = (await res.json()) as {

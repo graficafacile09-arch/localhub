@@ -18,12 +18,15 @@ export default function RitiroForm({
   nome,
   prezzo,
   imageUrl,
+  varianteId,
   negozio,
 }: {
   prodottoId: string;
   nome: string;
   prezzo: number;
   imageUrl: string;
+  /** Variante selezionata (FASE E4): solo trasportata, validata dal server. */
+  varianteId?: string | null;
   negozio: NegozioData | null;
 }) {
   const router = useRouter();
@@ -57,6 +60,7 @@ export default function RitiroForm({
       const esito = await creaOrdineViaApi({
         idempotencyKey: chiaveIdempotenza.current,
         prodottoId,
+        varianteId: varianteId ?? null,
         quantita,
         modalita: "ritiro",
         cliente: {

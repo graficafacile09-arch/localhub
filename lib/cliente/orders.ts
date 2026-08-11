@@ -2,6 +2,7 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { inviaNotificaNuovoOrdine } from "@/lib/notifiche/whatsapp";
 import { inviaNotificaNuovoOrdineNtfy } from "@/lib/notifiche/ntfy";
 import { inviaEmailConfermaOrdine } from "./ordine-email";
+import { richiediVariantePerProdotto } from "@/lib/varianti-pubbliche";
 import type {
   ClienteOrdine,
   RigaOrdine,
@@ -43,6 +44,13 @@ export type CreaOrdineInput = {
   idempotencyKey: string;
   /** id del prodotto (bigint, come stringa). */
   prodottoId: string;
+  /**
+   * Variante selezionata (FASE E4): solo TRASPORTATA fino all'ordine.
+   * Validazione server-side: deve esistere, appartenere al prodotto ed
+   * essere attiva; obbligatoria per i prodotti con varianti. Prezzo/stock
+   * della variante NON vengono ancora usati (sarà E5 con la RPC).
+   */
+  varianteId?: string | null;
   quantita: number;
   /** modalità di consegna */
   modalita: "ritiro" | "spedizione";
@@ -204,6 +212,10 @@ export function costruisciPayloadOrdine(input: CreaOrdineInput): PayloadCreaOrdi
   return {
     idempotencyKey: (input.idempotencyKey ?? "").trim(),
     prodottoId: String(input.prodottoId),
+    // Trasporto del varianteId: la RPC crea_ordine non lo usa ancora (E5).
+    varianteId: input.varianteId && String(input.varianteId).trim()
+      ? String(input.varianteId).trim()
+      : null,
     quantita,
     modalita: input.modalita,
     clienteNome: nome,
@@ -250,6 +262,32 @@ export async function creaOrdine(
   if (!input.prodottoId || !/^\d+$/.test(String(input.prodottoId))) {
     return { ok: false, errore: "Prodotto non valido.", codice: "VALIDATION_ERROR", status: 422 };
   }
+
+  // FASE E4 — variante: obbligatoria per i prodotti con varianti, validata
+  // (esistenza + appartenenza al prodotto + attiva) SENZA modificare la
+  // RPC crea_ordine. Per i prodotti legacy nessun vincolo (comportamento
+  // attuale invariato).
+  const esitoVariante = await richiediVariantePerProdotto(
+    String(input.prodottoId),
+    input.varianteId ?? null
+  );
+  if (esitoVariante.stato === "obbligatoria") {
+    return {
+      ok: false,
+      errore: "Seleziona una variante del prodotto.",
+      codice: "VARIANTE_OBBLIGATORIA",
+      status: 422,
+    };
+  }
+  if (esitoVariante.stato === "invalida") {
+    return {
+      ok: false,
+      errore: "Variante non valida o non più disponibile.",
+      codice: "VARIANTE_NON_VALIDA",
+      status: 422,
+    };
+  }
+
   const quantita = Number(input.quantita);
   if (!Number.isInteger(quantita) || quantita < 1 || quantita > 99) {
     return { ok: false, errore: "Quantità non valida (1-99).", codice: "VALIDATION_ERROR", status: 422 };

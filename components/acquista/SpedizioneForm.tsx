@@ -11,11 +11,14 @@ export default function SpedizioneForm({
   prezzo,
   imageUrl,
   prodottoId,
+  varianteId,
 }: {
   nome: string;
   prezzo: number;
   imageUrl: string;
   prodottoId: string;
+  /** Variante selezionata (FASE E4): solo trasportata, validata dal server. */
+  varianteId?: string | null;
 }) {
   const router = useRouter();
   const [quantita, setQuantita] = useState(1);
@@ -56,6 +59,7 @@ export default function SpedizioneForm({
       const esito = await creaOrdineViaApi({
         idempotencyKey: chiaveIdempotenza.current,
         prodottoId,
+        varianteId: varianteId ?? null,
         quantita,
         modalita: "spedizione",
         cliente: {

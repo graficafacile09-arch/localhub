@@ -6,7 +6,9 @@ import { risolviProdottoPubblico, getNegozio } from "@/lib/negozi";
 import { getProdottoImmagine } from "@/lib/prodotti-immagini";
 import { disponibilitaReale, prodottoEsaurito } from "@/lib/prodotti-disponibilita";
 import { getProductMediaPubbliche } from "@/lib/prodotti-media";
+import { getVariantiPubblicheProdotto } from "@/lib/varianti-pubbliche";
 import ProductGallery, { type GalleryImage } from "@/components/prodotto/ProductGallery";
+import ProductVariantSelector from "@/components/prodotto/ProductVariantSelector";
 import { chiavePreferito, getStatoPreferitiPerPagina } from "@/lib/cliente/favorites";
 import { getSiteUrl } from "@/lib/site";
 import { normalizzaNumeroWhatsApp } from "@/lib/telefono";
@@ -62,10 +64,19 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
     categoria: "categoria" in prodotto ? (prodotto.categoria as string | null) : null,
   });
 
-  // Galleria multi-immagine (product_media): vuota per i prodotti legacy.
-  // product_media non ha una colonna alt_text: l'alt testuale è il fallback
-  // alt_text_immagine del prodotto, passato al componente.
-  const media = await getProductMediaPubbliche(String(prodotto.id));
+  // FASE E4 — varianti prodotto: se ha_varianti=true la pagina mostra il
+  // selettore varianti al posto di immagine+prezzo+disponibilità+CTA legacy.
+  // Le varianti inattive sono escluse a monte dal data layer pubblico.
+  const haVarianti = Boolean((prodotto as Record<string, unknown>).ha_varianti);
+  const varianti = haVarianti ? await getVariantiPubblicheProdotto(id) : [];
+
+  // Galleria multi-immagine (product_media): SOLO per i prodotti legacy
+  // (per i prodotti con varianti l'immagine principale è gestita dal
+  // selettore varianti). product_media non ha una colonna alt_text: l'alt
+  // testuale è il fallback alt_text_immagine del prodotto.
+  const media = haVarianti
+    ? []
+    : await getProductMediaPubbliche(String(prodotto.id));
   const immaginiGalleria: GalleryImage[] = media.map((m) => ({
     id: m.id,
     url: m.public_url,
@@ -118,6 +129,33 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
           </Link>
         )}
 
+        {haVarianti ? (
+          <>
+            <ProductVariantSelector
+              slug={String(prodotto.slug ?? id)}
+              nome={prodotto.nome as string}
+              categoria={"categoria" in prodotto ? (prodotto.categoria as string | null) : null}
+              descrizione={"descrizione" in prodotto ? (prodotto.descrizione as string | null) : null}
+              statoCondizione={stato}
+              prezzoBase={prezzo}
+              immagineBase={imageUrl}
+              altText={"alt_text_immagine" in prodotto ? (prodotto.alt_text_immagine as string | null) : null}
+              varianti={varianti}
+            />
+            <div className="mt-4">
+              <FavoritoButton
+                tipo="prodotto"
+                riferimentoId={id}
+                attivo={statoPreferiti.chiavi.has(chiavePreferito("prodotto", id))}
+                autenticato={statoPreferiti.autenticato}
+                variante="inline"
+                className="w-full"
+                label={String(prodotto.nome ?? "")}
+              />
+            </div>
+          </>
+        ) : (
+          <>
         {/* Photo / galleria */}
         <ProductGallery
           immagini={immaginiGalleria}
@@ -192,7 +230,9 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
             className="w-full"
             label={String(prodotto.nome ?? "")}
           />
-        </div>
+          </div>
+          </>
+        )}
 
         {/* Store info */}
         {negozio && (
