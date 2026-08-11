@@ -160,9 +160,16 @@ export function credenzialiPubbliche(
     client_id: riga.client_id ? String(riga.client_id) : null,
     payee_email: riga.payee_email ? String(riga.payee_email) : null,
     iban: riga.iban ? String(riga.iban) : null,
-    has_secret: Boolean(
-      (typeof riga.secret_encrypted === "string" && riga.secret_encrypted.length > 0) ||
-      (typeof riga.webhook_secret_encrypted === "string" && riga.webhook_secret_encrypted.length > 0)
-    ),
+    // La RPC (pagamenti_credenziali_leggi) è la fonte autorevole per
+    // has_secret: calcola il flag sui secret cifrati nel DB senza MAI
+    // restituirli (write-only). Se il flag è presente nel payload lo
+    // rispettiamo; il calcolo diretto sui campi secret_encrypted resta
+    // solo come fallback per payload legacy che non lo espongono.
+    has_secret: riga.has_secret !== undefined
+      ? riga.has_secret === true
+      : Boolean(
+          (typeof riga.secret_encrypted === "string" && riga.secret_encrypted.length > 0) ||
+          (typeof riga.webhook_secret_encrypted === "string" && riga.webhook_secret_encrypted.length > 0)
+        ),
   };
 }
