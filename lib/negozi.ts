@@ -676,48 +676,48 @@ export async function getProdottiNegozio(negozioId: string) {
   return data ?? [];
 }
 
-export async function getProdottiInEvidenza(limit = 8) {
-  const db = getDb();
-  if (!db) return [];
+async function getProdottiPubbliciConNomi(
+  db: ReturnType<typeof createAdminSupabaseClient>,
+  limit: number
+): Promise<Record<string, unknown>[]> {
+  // Senza FK prodotti→negozi il join non è possibile: subquery via .in().
+  const negoziValidi = await getNegoziPubbliciIds(db);
+  if (negoziValidi.length === 0) return [];
 
   const { data, error } = await db
     .from("prodotti")
-    .select("*, negozi!inner(nome)")
+    .select("*")
     .eq("attivo", true)
-    .filter("negozi.deleted_at", "is", null)
+    .in("negozio_id", negoziValidi)
     .order("created_at", { ascending: false })
     .limit(limit);
 
-  if (error) {
-    return [];
-  }
+  if (error) return [];
 
-  return (data ?? []).map((p: Record<string, unknown>) => ({
-    ...(p as Prodotto),
-    negozio_nome: (p.negozi as { nome: string })?.nome ?? "",
+  const negozioIds = Array.from(
+    new Set(((data ?? []) as Record<string, unknown>[]).map((p) => p.negozio_id).filter(Boolean))
+  );
+  const { data: negozi } = negozioIds.length
+    ? await db.from("negozi").select("id, nome").in("id", negozioIds).is("deleted_at", null)
+    : { data: [] };
+  const nomiNegozi = new Map((negozi ?? []).map((n) => [n.id, n.nome]));
+
+  return ((data ?? []) as Record<string, unknown>[]).map((p) => ({
+    ...p,
+    negozio_nome: nomiNegozi.get(p.negozio_id as string) ?? "",
   }));
+}
+
+export async function getProdottiInEvidenza(limit = 8) {
+  const db = getDb();
+  if (!db) return [];
+  return getProdottiPubbliciConNomi(db, limit);
 }
 
 export async function getUltimiProdotti(limit = 12) {
   const db = getDb();
   if (!db) return [];
-
-  const { data, error } = await db
-    .from("prodotti")
-    .select("*, negozi!inner(nome)")
-    .eq("attivo", true)
-    .filter("negozi.deleted_at", "is", null)
-    .order("created_at", { ascending: false })
-    .limit(limit);
-
-  if (error) {
-    return [];
-  }
-
-  return (data ?? []).map((p: Record<string, unknown>) => ({
-    ...(p as Prodotto),
-    negozio_nome: (p.negozi as { nome: string })?.nome ?? "",
-  }));
+  return getProdottiPubbliciConNomi(db, limit);
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -755,10 +755,26 @@ export function isOrdinamentoProdottiPubblici(value: unknown): value is Ordiname
   return value === "rilevanza" || value === "prezzo_asc" || value === "prezzo_desc" || value === "novita";
 }
 
-// Select comune: include il join inner su negozi per escludere i prodotti di
-// negozi soft-deleted (deleted_at valorizzato) direttamente nella query.
+// Select comune della ricerca prodotti.
 const SELECT_PRODOTTO_RICERCA =
-  "id, slug, negozio_id, nome, descrizione, categoria, sottocategoria, marca, colore, prezzo, immagine_principale, negozi!inner(id)";
+  "id, slug, negozio_id, nome, descrizione, categoria, sottocategoria, marca, colore, prezzo, immagine_principale";
+
+/**
+ * Id dei negozi pubblici (deleted_at non valorizzato).
+ * NOTA: non esiste una FK tra prodotti.negozio_id e negozi.id nello schema,
+ * quindi NON è possibile il join PostgREST (PGRST200); escludiamo i negozi
+ * soft-deleted con una subquery manuale via .in().
+ */
+async function getNegoziPubbliciIds(
+  db: ReturnType<typeof createAdminSupabaseClient>
+): Promise<string[]> {
+  const { data } = await db
+    .from("negozi")
+    .select("id")
+    .is("deleted_at", null)
+    .limit(2000);
+  return ((data ?? []) as { id: string }[]).map((n) => n.id).filter(Boolean);
+}
 
 // Il query builder PostgREST ha tipi complessi e generici: usiamo un tipo
 // locale allentato per gli helper (coerente con lo stile del resto del file).
@@ -850,11 +866,15 @@ async function cercaProdottiCore(
 
   const conFiltriExtra = haFiltriAddizionali(opts.filtri);
 
+  // Negozi pubblici (non soft-deleted): senza join FK, filtro via .in().
+  const negoziValidi = await getNegoziPubbliciIds(db);
+  if (negoziValidi.length === 0) return { risultati: [], total: 0 };
+
   let query = db
     .from("prodotti")
     .select(SELECT_PRODOTTO_RICERCA, opts.conCount ? { count: "exact" } : undefined)
     .eq("attivo", true)
-    .filter("negozi.deleted_at", "is", null);
+    .in("negozio_id", negoziValidi);
 
   query = applicaFiltriRicercaProdotti(query, termini, opts.filtri);
 
@@ -891,7 +911,7 @@ async function cercaProdottiCore(
       .from("prodotti")
       .select("id", { head: true, count: "exact" })
       .eq("attivo", true)
-      .filter("negozi.deleted_at", "is", null);
+      .in("negozio_id", negoziValidi);
     countQuery = applicaFiltriRicercaProdotti(countQuery, termini, opts.filtri);
     const { count: totalCount } = await countQuery;
     return { risultati: [], total: typeof totalCount === "number" ? totalCount : 0 };
@@ -905,7 +925,7 @@ async function cercaProdottiCore(
   // e a pagina 1 — identico al comportamento storico di cercaProdotti().
   const paginaCorrente = pagina ?? 1;
   if (!conFiltriExtra && paginaCorrente === 1 && risultati.length < opts.limite) {
-    const tolleranti = await cercaProdottiTolleranti(db, ricerca, risultati, opts.limite);
+    const tolleranti = await cercaProdottiTolleranti(db, ricerca, risultati, opts.limite, negoziValidi);
     if (tolleranti.length > 0) {
       risultati = unisciEsattiETolleranti(risultati, tolleranti, opts.limite);
     }
@@ -993,11 +1013,16 @@ export async function getFiltriDisponibiliProdotti(): Promise<{
   const db = getDb();
   if (!db) return { categorie: [], sottocategorie: [], marche: [], colori: [] };
 
+  const negoziValidi = await getNegoziPubbliciIds(db);
+  if (negoziValidi.length === 0) {
+    return { categorie: [], sottocategorie: [], marche: [], colori: [] };
+  }
+
   const { data } = await db
     .from("prodotti")
-    .select("categoria, sottocategoria, marca, colore, negozi!inner(id)")
+    .select("categoria, sottocategoria, marca, colore")
     .eq("attivo", true)
-    .filter("negozi.deleted_at", "is", null)
+    .in("negozio_id", negoziValidi)
     .limit(500);
 
   const categorie = new Set<string>();
@@ -1054,7 +1079,8 @@ async function cercaProdottiTolleranti(
   db: ReturnType<typeof createAdminSupabaseClient>,
   ricerca: string,
   giaTrovati: Record<string, unknown>[],
-  limit: number
+  limit: number,
+  negoziValidi: string[]
 ): Promise<Record<string, unknown>[]> {
   const termini = terminiSignificativi(ricerca, 3);
   if (termini.length === 0) return [];
@@ -1084,6 +1110,7 @@ async function cercaProdottiTolleranti(
     .from("prodotti")
     .select("id, slug, negozio_id, nome, descrizione, categoria, marca, sottocategoria, prezzo, immagine_principale")
     .eq("attivo", true)
+    .in("negozio_id", negoziValidi)
     .or(filtri)
     .limit(50);
 
