@@ -28,6 +28,7 @@ import {
 } from "@/lib/pagamenti/stripe";
 import type { ContestoCheckout, CredenzialiGateway } from "@/lib/pagamenti/types";
 import { canTransitionPayment, transitionPayment, isFinalPaymentStatus } from "@/lib/pagamenti/stati";
+import { credenzialiPubbliche } from "@/lib/pagamenti/crypto";
 
 let passati = 0;
 let falliti = 0;
@@ -212,6 +213,48 @@ async function main() {
     }
   } finally {
     await mock.chiudi();
+  }
+
+  console.log("\n=== CREDENZIALI PUBBLICHE — has_secret (fix F1.1) ===\n");
+  {
+    // Caso che era rotto: la RPC restituisce has_secret calcolato sui
+    // secret cifrati MA senza MAI esporre i campi secret_encrypted
+    // (write-only). Il flag della RPC deve essere rispettato.
+    const daRpc = credenzialiPubbliche({
+      provider: "stripe",
+      attivo: true,
+      test_mode: true,
+      has_secret: true,
+    });
+    check("has_secret=true dalla RPC → true", daRpc?.has_secret === true);
+
+    const senzaSecret = credenzialiPubbliche({
+      provider: "stripe",
+      attivo: true,
+      test_mode: true,
+      has_secret: false,
+    });
+    check("has_secret=false dalla RPC → false", senzaSecret?.has_secret === false);
+
+    // Fallback legacy: payload senza flag ma con campi cifrati (pre-fix).
+    const legacy = credenzialiPubbliche({
+      provider: "stripe",
+      attivo: true,
+      test_mode: true,
+      secret_encrypted: "v1:abc:def:ghi",
+      webhook_secret_encrypted: "",
+    });
+    check("fallback: secret_encrypted presente → true", legacy?.has_secret === true);
+
+    const nessunSecret = credenzialiPubbliche({ provider: "stripe", attivo: false, test_mode: true });
+    check("nessun secret → false", nessunSecret?.has_secret === false);
+
+    // Nessun secret deve MAI comparire nei campi pubblici.
+    const campi = daRpc ? Object.keys(daRpc).join(",") : "";
+    check(
+      "campi pubblici non espongono secret_encrypted",
+      !campi.includes("secret_encrypted") && !campi.includes("webhook_secret_encrypted")
+    );
   }
 
   console.log("\n=== MACCHINA A STATI (coerenza con la RPC) ===\n");
