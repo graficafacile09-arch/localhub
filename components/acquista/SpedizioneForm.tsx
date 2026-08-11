@@ -2,9 +2,10 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Package, Truck, CreditCard, Building, Banknote, Loader2 } from "lucide-react";
+import { Package, Truck, CreditCard, Banknote, Loader2 } from "lucide-react";
 import QuantitySelector from "./QuantitySelector";
 import { creaOrdineViaApi, nuovaChiaveIdempotenza } from "@/lib/cliente/ordini-client";
+import type { MetodoPagamentoCheckout } from "@/lib/pagamenti/metodi-pubblici";
 
 export default function SpedizioneForm({
   nome,
@@ -12,6 +13,7 @@ export default function SpedizioneForm({
   imageUrl,
   prodottoId,
   varianteId,
+  metodiPagamento = [],
 }: {
   nome: string;
   prezzo: number;
@@ -19,11 +21,21 @@ export default function SpedizioneForm({
   prodottoId: string;
   /** Variante selezionata (FASE E4): solo trasportata, validata dal server. */
   varianteId?: string | null;
+  /** Metodi realmente disponibili per questo negozio (FASE F1). */
+  metodiPagamento?: MetodoPagamentoCheckout[];
 }) {
   const router = useRouter();
   const [quantita, setQuantita] = useState(1);
   const [metodoSpedizione, setMetodoSpedizione] = useState<"standard" | "express">("standard");
-  const [metodoPagamento, setMetodoPagamento] = useState<"carta" | "paypal" | "bonifico">("carta");
+  // FASE F1: default = primo metodo realmente disponibile; se nessuno è
+  // configurato resta "bonifico" (pagamento manuale/da concordare: mai
+  // fingere un pagamento online non funzionante).
+  const metodoIniziale = metodiPagamento.some((m) => m.metodo === "carta")
+    ? "carta"
+    : "bonifico";
+  const [metodoPagamento, setMetodoPagamento] = useState<"carta" | "paypal" | "bonifico">(
+    metodoIniziale
+  );
   const [inviando, setInviando] = useState(false);
   const [errore, setErrore] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
@@ -85,8 +97,17 @@ export default function SpedizioneForm({
         return;
       }
 
-      // Chiusura Assistente AI + navigazione alla conferma ordine.
+      // Chiusura Assistente AI.
       window.dispatchEvent(new Event("assistant:close"));
+
+      // FASE F1 — metodo "carta": l'API ha creato l'ordine e la sessione
+      // Stripe → reindirizza DAVVERO a Stripe (mai alla conferma "finta").
+      if (esito.pagamento?.redirectUrl) {
+        window.location.href = esito.pagamento.redirectUrl;
+        return;
+      }
+
+      // Altri metodi (bonifico/manuale): conferma ordine come oggi.
       router.push(`/ordini/conferma/${esito.ordineId}`);
     } catch {
       setErrore("Si è verificato un errore. Riprova.");
@@ -210,74 +231,59 @@ export default function SpedizioneForm({
           </div>
         </div>
 
-        {/* Metodo pagamento */}
+        {/* Metodo pagamento (FASE F1: SOLO metodi realmente disponibili) */}
         <div className="rounded-xl border border-slate-200 bg-white p-4">
           <h3 className="text-sm font-bold text-slate-900">
             <CreditCard className="mr-1.5 inline-block h-4 w-4 text-blue-500" />
             Metodo pagamento
           </h3>
-          <div className="mt-3 space-y-2">
-            <label
-              className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition ${
-                metodoPagamento === "carta"
-                  ? "border-blue-400 bg-blue-50/50"
-                  : "border-slate-200 bg-white hover:border-slate-300"
-              }`}
-            >
-              <input
-                type="radio"
-                name="pagamento"
-                value="carta"
-                checked={metodoPagamento === "carta"}
-                onChange={() => setMetodoPagamento("carta")}
-                className="h-4 w-4 accent-blue-600"
-              />
-              <div className="flex flex-1 items-center gap-2">
-                <CreditCard className="h-4 w-4 text-slate-500" />
-                <span className="text-sm font-semibold text-slate-900">Carta di credito/debito</span>
-              </div>
-            </label>
-            <label
-              className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition ${
-                metodoPagamento === "paypal"
-                  ? "border-blue-400 bg-blue-50/50"
-                  : "border-slate-200 bg-white hover:border-slate-300"
-              }`}
-            >
-              <input
-                type="radio"
-                name="pagamento"
-                value="paypal"
-                checked={metodoPagamento === "paypal"}
-                onChange={() => setMetodoPagamento("paypal")}
-                className="h-4 w-4 accent-blue-600"
-              />
-              <div className="flex flex-1 items-center gap-2">
-                <Building className="h-4 w-4 text-slate-500" />
-                <span className="text-sm font-semibold text-slate-900">PayPal</span>
-              </div>
-            </label>
-            <label
-              className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition ${
-                metodoPagamento === "bonifico"
-                  ? "border-blue-400 bg-blue-50/50"
-                  : "border-slate-200 bg-white hover:border-slate-300"
-              }`}
-            >
-              <input
-                type="radio"
-                name="pagamento"
-                value="bonifico"
-                checked={metodoPagamento === "bonifico"}
-                onChange={() => setMetodoPagamento("bonifico")}
-                className="h-4 w-4 accent-blue-600"
-              />
-              <div className="flex flex-1 items-center gap-2">
-                <Banknote className="h-4 w-4 text-slate-500" />
-                <span className="text-sm font-semibold text-slate-900">Bonifico bancario</span>
-              </div>
-            </label>
-          </div>
+          {metodiPagamento.length === 0 ? (
+            <p className="mt-3 text-sm text-slate-600">
+              Il negozio non ha configurato pagamenti online: il pagamento
+              verrà concordato direttamente con il negozio.
+            </p>
+          ) : (
+            <div className="mt-3 space-y-2">
+              {metodiPagamento.map((metodo) => {
+                const selezionato =
+                  metodo.metodo === "carta"
+                    ? metodoPagamento === "carta"
+                    : metodoPagamento === "bonifico";
+                return (
+                  <label
+                    key={metodo.metodo}
+                    className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition ${
+                      selezionato
+                        ? "border-blue-400 bg-blue-50/50"
+                        : "border-slate-200 bg-white hover:border-slate-300"
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="pagamento"
+                      value={metodo.metodo}
+                      checked={selezionato}
+                      onChange={() => setMetodoPagamento(metodo.metodo === "carta" ? "carta" : "bonifico")}
+                      className="h-4 w-4 accent-blue-600"
+                    />
+                    <div className="flex flex-1 items-center gap-2">
+                      {metodo.metodo === "carta" ? (
+                        <CreditCard className="h-4 w-4 text-slate-500" />
+                      ) : (
+                        <Banknote className="h-4 w-4 text-slate-500" />
+                      )}
+                      <div>
+                        <span className="text-sm font-semibold text-slate-900">
+                          {metodo.etichetta}
+                        </span>
+                        <p className="text-[11px] text-slate-500">{metodo.descrizione}</p>
+                      </div>
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Riepilogo ordine */}

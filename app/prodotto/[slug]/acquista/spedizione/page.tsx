@@ -3,6 +3,7 @@ import Link from "next/link";
 import { risolviProdottoPubblico } from "@/lib/negozi";
 import { getProdottoImmagine } from "@/lib/prodotti-immagini";
 import { richiediVariantePerProdotto } from "@/lib/varianti-pubbliche";
+import { getMetodiPagamentoPubblici } from "@/lib/pagamenti/metodi-pubblici";
 import SpedizioneForm from "@/components/acquista/SpedizioneForm";
 
 type Params = { slug: string };
@@ -73,6 +74,11 @@ export default async function SpedizionePage({
       : null,
   });
 
+  // FASE F1 — metodi di pagamento REALMENTE disponibili per questo negozio
+  // (carta solo se Stripe è configurato; bonifico solo se configurato).
+  const esitoMetodi = await getMetodiPagamentoPubblici(String(prodotto.negozio_id));
+  const metodiPagamento = esitoMetodi.ok ? esitoMetodi.metodi : [];
+
   return (
     <SpedizioneForm
         prodottoId={id}
@@ -80,6 +86,7 @@ export default async function SpedizionePage({
         prezzo={prezzo}
         imageUrl={imageUrl}
         varianteId={varianteIdProp}
+        metodiPagamento={metodiPagamento}
       />
   );
 }

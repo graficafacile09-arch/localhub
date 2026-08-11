@@ -15,6 +15,8 @@ import { etichettaStato, sintesiProdotti } from "@/lib/cliente/ordini-format";
 import { StatoOrdineBanner } from "@/components/ordini/StatoOrdineBanner";
 import { RigheProdotto } from "@/components/ordini/RigheProdotto";
 import { OrderHeader } from "@/components/ordini/OrderHeader";
+import { PagamentoStatoBanner } from "@/components/ordini/PagamentoStatoBanner";
+import { getMetodiPagamentoPubblici } from "@/lib/pagamenti/metodi-pubblici";
 
 type Params = { ordineId: string };
 
@@ -41,8 +43,19 @@ function messaggioStato(ordine: OrdinePersistito): string {
   }
 }
 
-export default async function ConfermaOrdinePage({ params }: { params: Promise<Params> }) {
+export default async function ConfermaOrdinePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<Params>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { ordineId } = await params;
+  const sp = await searchParams;
+  const esitoPagamento =
+    typeof sp.esito === "string" && (sp.esito === "ok" || sp.esito === "annullato")
+      ? sp.esito
+      : null;
   const ordine = await getOrdineConferma(ordineId);
   const utente = await getCurrentUser();
 
@@ -95,6 +108,20 @@ export default async function ConfermaOrdinePage({ params }: { params: Promise<P
           />
           <p className="mt-3 text-center text-sm text-slate-600">{messaggioStato(ordine)}</p>
         </div>
+
+        {/* Banner pagamento (FASE F1): lo stato reale del pagamento dal DB */}
+        <PagamentoStatoBanner
+          ordineId={ordine.id}
+          paymentStatus={ordine.paymentStatus}
+          paymentPaidAt={ordine.paymentPaidAt}
+          paymentRefundedAmount={ordine.paymentRefundedAmount}
+          esito={esitoPagamento}
+        />
+
+        {/* Bonifico (FASE F1): coordinate per il pagamento manuale, se configurate */}
+        {ordine.metodoPagamento === "bonifico" &&
+          ordine.stato !== "cancellato" &&
+          ordine.paymentStatus !== "paid" && <BonificoInfo negozioId={ordine.negozioId} />}
 
         {/* Modalità ritiro/spedizione */}
         <div className="mt-4 rounded-[1.75rem] border border-white/70 bg-white p-5 shadow-sm">
@@ -205,5 +232,30 @@ export default async function ConfermaOrdinePage({ params }: { params: Promise<P
         </div>
       </div>
     </main>
+  );
+}
+
+/** Coordinate bonifico del negozio (lettura pubblica server-side). */
+async function BonificoInfo({ negozioId }: { negozioId: string }) {
+  const esito = await getMetodiPagamentoPubblici(negozioId);
+  const bonifico = esito.ok
+    ? esito.metodi.find((m) => m.metodo === "bonifico")
+    : null;
+
+  return (
+    <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
+      <p className="text-sm font-bold text-blue-800">Pagamento tramite bonifico bancario</p>
+      <p className="mt-0.5 text-xs text-blue-700">
+        Il negozio preparerà l&apos;ordine e ti comunicherà quando versare l&apos;importo.
+      </p>
+      {bonifico?.iban && (
+        <p className="mt-2 rounded-lg bg-white px-3 py-2 text-sm font-semibold text-slate-800 ring-1 ring-blue-100">
+          IBAN: {bonifico.iban}
+          {bonifico.payeeEmail ? (
+            <span className="ml-2 font-normal text-slate-500">Intestatario: {bonifico.payeeEmail}</span>
+          ) : null}
+        </p>
+      )}
+    </div>
   );
 }

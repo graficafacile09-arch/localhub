@@ -2,6 +2,11 @@ import { apiError, apiOk } from "@/lib/api/response";
 import { creaOrdine, type CreaOrdineInput } from "@/lib/cliente/orders";
 import { getCurrentUser } from "@/lib/auth/session";
 import { checkRateLimit } from "@/lib/rate-limiter";
+import { cartaDisponibilePerProdotto } from "@/lib/pagamenti/config";
+import {
+  chiudiOrdineSenzaPagamento,
+  creaSessioneStripePerOrdine,
+} from "@/lib/pagamenti/sessioni";
 
 /** IP del richiedente (pattern già usato da /api/assistente). */
 function ipRichiedente(request: Request): string {
@@ -63,9 +68,30 @@ export async function POST(request: Request) {
   if (!modalita) {
     return apiError("VALIDATION_ERROR", "Modalità di consegna non valida.", 422);
   }
+
   const clienteRaw = (body.cliente ?? {}) as Record<string, unknown>;
   const ritiroRaw = (body.ritiro ?? {}) as Record<string, unknown>;
   const spedizioneRaw = (body.spedizione ?? {}) as Record<string, unknown>;
+
+  // ── FASE F1 — pre-flight "carta": il metodo carta apre DAVVERO Stripe. ──
+  // Se il negozio del prodotto non ha Stripe configurato e attivo, il
+  // checkout rifiuta PRIMA di creare l'ordine (mai ordini orfani).
+  const prodottoIdRaw =
+    typeof body.prodottoId === "string" || typeof body.prodottoId === "number"
+      ? String(body.prodottoId)
+      : "";
+  const vuoleCarta =
+    modalita === "spedizione" && spedizioneRaw.metodoPagamento === "carta";
+  if (vuoleCarta) {
+    const cartaPronta = await cartaDisponibilePerProdotto(prodottoIdRaw);
+    if (!cartaPronta) {
+      return apiError(
+        "CARTA_NON_DISPONIBILE",
+        "Il pagamento con carta non è disponibile per questo negozio.",
+        422
+      );
+    }
+  }
 
   if (
     spedizioneRaw.metodoSpedizione !== undefined &&
@@ -106,10 +132,7 @@ export async function POST(request: Request) {
   const input: CreaOrdineInput = {
     idempotencyKey:
       typeof body.idempotencyKey === "string" ? body.idempotencyKey : "",
-    prodottoId:
-      typeof body.prodottoId === "string" || typeof body.prodottoId === "number"
-        ? String(body.prodottoId)
-        : "",
+    prodottoId: prodottoIdRaw,
     varianteId,
     quantita: Number(body.quantita),
     modalita,
@@ -156,5 +179,27 @@ export async function POST(request: Request) {
     return apiError(esito.codice, esito.errore, esito.status);
   }
 
-  return apiOk({ ordine: esito.ordine, giaEsistente: esito.giaEsistente }, esito.giaEsistente ? 200 : 201);
+  // ── FASE F1 — metodo "carta": dopo la creazione ordine (stock decrementato
+  // = riserva) viene creata la sessione Stripe e il client viene reindirizzato.
+  // Se la creazione sessione fallisce l'ordine viene chiuso subito (stock
+  // ripristinato) e l'errore è chiaro: mai ordini orfani senza pagamento.
+  let pagamento: { redirectUrl: string } | null = null;
+  if (vuoleCarta) {
+    const sessione = await creaSessioneStripePerOrdine(esito.ordine.id);
+    if (sessione.ok) {
+      pagamento = { redirectUrl: sessione.redirectUrl };
+    } else {
+      await chiudiOrdineSenzaPagamento(esito.ordine.id).catch(() => {});
+      return apiError(sessione.codice, sessione.errore, 422);
+    }
+  }
+
+  return apiOk(
+    {
+      ordine: esito.ordine,
+      giaEsistente: esito.giaEsistente,
+      pagamento,
+    },
+    esito.giaEsistente ? 200 : 201
+  );
 }

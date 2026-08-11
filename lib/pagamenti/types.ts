@@ -33,6 +33,8 @@ export type PaymentStatus =
 export interface CredenzialiGateway {
   clientId?: string;
   secret?: string;
+  /** Webhook signing secret del negozio (FASE F1: verifica firma Stripe). */
+  webhookSecret?: string;
   testMode: boolean;
 }
 

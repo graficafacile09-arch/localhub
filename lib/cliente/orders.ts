@@ -3,6 +3,7 @@ import { inviaNotificaNuovoOrdine } from "@/lib/notifiche/whatsapp";
 import { inviaNotificaNuovoOrdineNtfy } from "@/lib/notifiche/ntfy";
 import { inviaEmailConfermaOrdine } from "./ordine-email";
 import { richiediVariantePerProdotto } from "@/lib/varianti-pubbliche";
+import type { PaymentStatus } from "@/lib/pagamenti/types";
 import type {
   ClienteOrdine,
   RigaOrdine,
@@ -101,6 +102,15 @@ export type OrdinePersistito = {
   annullatoNota: string | null;
   /** Data/ora dell'annullamento. */
   annullatoAt: string | null;
+  /** Metodo di pagamento selezionato al checkout (solo spedizione). */
+  metodoPagamento: "carta" | "paypal" | "bonifico" | null;
+  /** Stato del pagamento (FASE F1): null per gli ordini legacy senza pagamento. */
+  paymentStatus: PaymentStatus | null;
+  paymentProvider: string | null;
+  paymentPaidAt: string | null;
+  paymentExpiresAt: string | null;
+  paymentRefundedAt: string | null;
+  paymentRefundedAmount: number | null;
   righe: RigaOrdine[];
 };
 
@@ -187,6 +197,16 @@ function assumiOrdine(riga: Record<string, unknown>, righe: RigaOrdine[]): Ordin
     annullatoMotivo: (riga.annullato_motivo as string | null) ?? null,
     annullatoNota: (riga.annullato_nota as string | null) ?? null,
     annullatoAt: (riga.annullato_at as string | null) ?? null,
+    metodoPagamento: (riga.metodo_pagamento as "carta" | "paypal" | "bonifico" | null) ?? null,
+    paymentStatus: (riga.payment_status as PaymentStatus | null) ?? null,
+    paymentProvider: (riga.payment_provider as string | null) ?? null,
+    paymentPaidAt: (riga.payment_paid_at as string | null) ?? null,
+    paymentExpiresAt: (riga.payment_expires_at as string | null) ?? null,
+    paymentRefundedAt: (riga.payment_refunded_at as string | null) ?? null,
+    paymentRefundedAmount:
+      riga.payment_refunded_amount == null
+        ? null
+        : Number(riga.payment_refunded_amount),
     righe,
   };
 }
@@ -391,9 +411,16 @@ export async function creaOrdine(
   // atomica). Il .catch è una rete di sicurezza: i helper non lanciano mai,
   // ma qui non devono MAI interferire con la risposta al cliente.
   if (!giaEsistente && esito.ordine?.id) {
-    // Ordine creato → email di conferma al cliente (BEST-EFFORT, mai
-    // blocca la risposta: ordine OK + email KO = ordine comunque confermato).
-    await inviaEmailConfermaOrdine(esito.ordine.id).catch(() => {});
+    // FASE F1 — email di conferma: per gli ordini con pagamento online
+    // (carta) la conferma viene inviata SOLO DOPO che il webhook Stripe
+    // conferma il pagamento (mai dire "pagato" prima del pagamento).
+    // Per tutti gli altri metodi (bonifico/ritiro) l'email parte subito.
+    const pagamentoOnline =
+      input.spedizione?.metodoPagamento === "carta";
+    if (!pagamentoOnline) {
+      await inviaEmailConfermaOrdine(esito.ordine.id).catch(() => {});
+    }
+    // Notifiche al negoziante (BEST-EFFORT, mai bloccano la risposta).
     await inviaNotificaNuovoOrdine(esito.ordine.id).catch(() => {});
     await inviaNotificaNuovoOrdineNtfy(esito.ordine.id).catch(() => {});
   }

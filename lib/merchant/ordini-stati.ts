@@ -198,5 +198,8 @@ export function etichettaMotivoAnnullamento(motivo: string | null | undefined): 
   if (!motivo) return "";
   const found = MOTIVI_ANNULLAMENTO.find((m) => m.valore === motivo);
   if (found) return found.etichetta;
+  // Motivi di SISTEMA (mai selezionabili dal venditore): la scadenza del
+  // pagamento online (FASE F1) chiude l'ordine con questo motivo.
+  if (motivo === "pagamento_scaduto") return "Pagamento scaduto";
   return motivo;
 }

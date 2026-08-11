@@ -381,6 +381,28 @@ export default function PagamentiModule({ storeId }: Props) {
                               </div>
                             </div>
                           )}
+
+                          {/* FASE F1 — webhook Stripe: URL unico da impostare
+                              nel pannello Stripe (Developer → Webhooks). */}
+                          {key === "stripe" && (
+                            <div className="rounded-xl bg-slate-50 px-3 py-2.5 ring-1 ring-slate-100">
+                              <p className="text-[11px] font-semibold text-slate-600">
+                                Webhook da configurare in Stripe
+                              </p>
+                              <p className="mt-1 break-all font-mono text-[11px] text-slate-500">
+                                {typeof window !== "undefined"
+                                  ? `${window.location.origin}/api/webhook/pagamenti/stripe`
+                                  : "/api/webhook/pagamenti/stripe"}
+                              </p>
+                              <p className="mt-1 text-[10px] leading-4 text-slate-400">
+                                Imposta questo URL come endpoint webhook (Dashboard → Developers →
+                                Webhooks) e incolla il signing secret nel campo "Webhook secret".
+                                Eventi necessari: checkout.session.completed, checkout.session.expired,
+                                charge.refunded. Il pagamento con carta è attivo per i clienti SOLO
+                                dopo questa configurazione.
+                              </p>
+                            </div>
+                          )}
                         </>
                       ) : (
                         <div className="grid gap-3 sm:grid-cols-2">
@@ -437,7 +459,9 @@ export default function PagamentiModule({ storeId }: Props) {
             ))}
           </div>
           <p className="mt-2 text-[10px] leading-4 text-slate-400">
-            La configurazione verrà collegata al checkout in una fase successiva.
+            I metodi attivi vengono mostrati nel checkout dei clienti. Il metodo
+            "Carta" diventa visibile SOLO quando Stripe è configurato e attivo;
+            "Bonifico" solo quando IBAN/intestatario sono valorizzati.
           </p>
         </div>
 

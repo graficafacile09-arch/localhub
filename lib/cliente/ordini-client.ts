@@ -40,6 +40,8 @@ export type EsitoApi =
       ordineId: string;
       numero: string;
       giaEsistente: boolean;
+      /** FASE F1: presente quando il checkout deve aprire Stripe (metodo carta). */
+      pagamento?: { redirectUrl?: string } | null;
     }
   | {
       ok: false;
@@ -69,7 +71,11 @@ export async function creaOrdineViaApi(payload: CreaOrdinePayload): Promise<Esit
 
     const json = (await res.json()) as {
       success?: boolean;
-      data?: { ordine?: { id?: string; numero?: string }; giaEsistente?: boolean };
+      data?: {
+        ordine?: { id?: string; numero?: string };
+        giaEsistente?: boolean;
+        pagamento?: { redirectUrl?: string } | null;
+      };
       error?: { code?: string; message?: string };
     };
 
@@ -86,6 +92,7 @@ export async function creaOrdineViaApi(payload: CreaOrdinePayload): Promise<Esit
       ordineId: String(json.data.ordine.id),
       numero: String(json.data.ordine.numero ?? ""),
       giaEsistente: !!json.data.giaEsistente,
+      pagamento: json.data.pagamento ?? null,
     };
   } catch {
     return { ok: false, errore: "Errore di rete. Controlla la connessione.", codice: "NETWORK_ERROR" };
