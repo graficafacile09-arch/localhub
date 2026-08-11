@@ -113,6 +113,10 @@ const STATUS_DA_CODICE: Record<string, number> = {
   NEGOZIO_INATTIVO: 409,
   SCORTE_INSUFFICIENTI: 409,
   PREZZO_NON_VALIDO: 500,
+  // FASE E5 — la RPC crea_ordine è la fonte autorevole della variante:
+  // può restituire questi codici in difesa in profondità.
+  VARIANTE_NON_VALIDA: 422,
+  VARIANTE_OBBLIGATORIA: 422,
   SAVE_FAILED: 500,
 };
 
@@ -339,6 +343,14 @@ export async function creaOrdine(
   // decremento dello stock e associazione cliente_user_id. Qualunque errore
   // → rollback totale.
   const payload = costruisciPayloadOrdine(input);
+
+  // FASE E5 — il varianteId viaggia verso la RPC SOLO se la variante è stata
+  // validata (valida); per i prodotti legacy un varianteId spurio viene
+  // eliminato qui così la RPC segue il percorso legacy e non lo rifiuta.
+  // La RPC resta comunque la fonte autorevole (validazione difensiva).
+  if (esitoVariante.stato !== "valida") {
+    payload.varianteId = null;
+  }
 
   const { data, error } = await db.rpc("crea_ordine", { p_payload: payload });
 
