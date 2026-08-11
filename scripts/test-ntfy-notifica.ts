@@ -23,7 +23,9 @@
 import {
   inviaNotificaNuovoOrdineNtfy,
   inviaNotificaConfigurataNtfy,
+  inviaMessaggioNtfy,
   costruisciMessaggioNtfy,
+  sanitizzaHeaderNtfy,
   type DatiOrdineNtfy,
   type ConfigNtfy,
 } from "../lib/notifiche/ntfy";
@@ -95,6 +97,43 @@ function configBase(over: Partial<ConfigNtfy> = {}): ConfigNtfy {
 // ─── Mock fetch + fake DB ────────────────────────────────────────────────────
 
 type RichiestaCatturata = { url: string; method: string; body: string; headers: Record<string, string> };
+
+/**
+ * Fetch mock STRETTO come il runtime Vercel/undici: valida ogni header come
+ * ByteString (Latin-1) e lancia l'errore ESATTO di produzione se un carattere
+ * supera 255. Riproduce fedelmente il bug "Cannot convert argument to a
+ * ByteString ... greater than 255" del titolo con l'em dash (—, U+2014).
+ */
+function creaFetchMockStrict() {
+  const richieste: RichiestaCatturata[] = [];
+  const mock = (async (url: unknown, init?: { method?: string; headers?: Record<string, string>; body?: string | Uint8Array; signal?: AbortSignal }) => {
+    const headers = (init?.headers ?? {}) as Record<string, string>;
+    for (const [nome, valore] of Object.entries(headers)) {
+      for (let i = 0; i < String(valore).length; i++) {
+        const c = String(valore).charCodeAt(i);
+        if (c > 255) {
+          throw new Error(
+            `Cannot convert argument to a ByteString because the character at index ${i} has a value of ${c} which is greater than 255.`
+          );
+        }
+      }
+    }
+    const corpoDecodificato =
+      typeof init?.body === "string"
+        ? init.body
+        : init?.body instanceof Uint8Array
+          ? new TextDecoder("utf-8").decode(init.body)
+          : "";
+    richieste.push({
+      url: String(url),
+      method: init?.method ?? "GET",
+      body: corpoDecodificato,
+      headers,
+    });
+    return new Response(JSON.stringify({ id: "msg-strict" }), { status: 200 });
+  }) as typeof fetch;
+  return { mock, richieste };
+}
 
 function creaFetchMock(opzioni: { status?: number; body?: string; abbandona?: boolean } = {}) {
   const richieste: RichiestaCatturata[] = [];
@@ -319,6 +358,62 @@ async function main() {
     ok("T11 assenti → fallback sicuri (—), mai undefined/null");
   } else {
     ko("T11", { messaggio11 });
+  }
+
+  // ── T13 sanitizzaHeaderNtfy: caratteri tipografici → ASCII ─────────────────
+  console.log("\n── T13 sanitizzaHeaderNtfy (header ByteString-safe) ──");
+  {
+    const casi: Array<[string, string]> = [
+      ["Risposta cliente — reclamo #LH-000071", "Risposta cliente - reclamo #LH-000071"],
+      ["Virgolette “doppie” e ‘singole’", `Virgolette "doppie" e 'singole'`],
+      ["En dash – ed ellissi …", "En dash - ed ellissi ..."],
+      ["Con emoji 🔴 e accenti àèìòù", "Con emoji  e accenti "],
+      ["Solo ascii ok", "Solo ascii ok"],
+    ];
+    let tuttiOk = true;
+    for (const [input, atteso] of casi) {
+      const output = sanitizzaHeaderNtfy(input);
+      const soloAscii = Array.from(output).every((c) => c.charCodeAt(0) <= 127);
+      if (output !== atteso || !soloAscii) {
+        tuttiOk = false;
+        ko(`T13 sanitizza(${JSON.stringify(input)})`, { atteso, output });
+      }
+    }
+    if (tuttiOk) ok("T13 em dash/en dash/virgolette/ellissi/emoji → header ASCII");
+  }
+
+  // ── T14 scenario REALE: titolo con "—" (U+2014) → POST effettuato ──────────
+  // Riproduce esattamente l'errore di produzione (fetch mock che valida gli
+  // header come ByteString): PRIMA del fix lancia "...greater than 255" e la
+  // notifica non parte; DOPO il fix il POST viene eseguito con X-Title ASCII.
+  console.log("\n── T14 titolo con em dash (—) → richiesta costruita senza errore ──");
+  {
+    const t14 = creaFetchMockStrict();
+    const esito14 = await inviaMessaggioNtfy(
+      configBase(),
+      {
+        titolo: "Risposta cliente — reclamo #LH-000071",
+        tags: "speech_balloon",
+        priorita: "default",
+        corpo: "🔴 RISPOSTA RECLAMO — InCittà\nCliente: Mario Rossi\nOrdine: #LH-000071",
+      },
+      "reclamo 2dff0d6a risposta",
+      t14.mock
+    );
+    if (esito14.stato === "sent" && t14.richieste.length === 1) {
+      const title = t14.richieste[0].headers["X-Title"] ?? "";
+      const titleOk = title === "Risposta cliente - reclamo #LH-000071";
+      const asciiOk = Array.from(title).every((c) => c.charCodeAt(0) <= 127);
+      const bodyMantieneUnicode =
+        t14.richieste[0].body.includes("🔴") && t14.richieste[0].body.includes("—");
+      if (titleOk && asciiOk && bodyMantieneUnicode) {
+        ok("T14 em dash nel titolo → header X-Title ASCII, POST eseguito, unicode nel BODY");
+      } else {
+        ko("T14", { esito14, headers: t14.richieste[0].headers, body: t14.richieste[0].body });
+      }
+    } else {
+      ko("T14 invio con em dash", { esito14, richieste: t14.richieste.length });
+    }
   }
 
   // ── T12b server con slash finale → URL senza doppi slash ──────────────────

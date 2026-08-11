@@ -159,6 +159,50 @@ export type MessaggioNtfy = {
 };
 
 /**
+ * Caratteri tipografici → equivalenti ASCII per gli HTTP header.
+ * Gli header devono restare ASCII (RFC 7230): emoji e testo Unicode
+ * viaggiano nel BODY UTF-8, mai negli header.
+ */
+const HEADER_UNICODE_ASCII: Record<string, string> = {
+  "\u2010": "-", // ‐ hyphen
+  "\u2011": "-", // ‑ non-breaking hyphen
+  "\u2012": "-", // ‒ figure dash
+  "\u2013": "-", // – en dash
+  "\u2014": "-", // — em dash
+  "\u2015": "-", // ― horizontal bar
+  "\u2018": "'", // ‘ left single quote
+  "\u2019": "'", // ’ right single quote
+  "\u201A": "'", // ‚ low single quote
+  "\u201B": "'", // ‛ single high-reversed quote
+  "\u201C": "\"", // “ left double quote
+  "\u201D": "\"", // ” right double quote
+  "\u201E": "\"", // „ low double quote
+  "\u201F": "\"", // ‟ double high-reversed quote
+  "\u2026": "...", // … ellipsis
+  "\u00AB": "\"", // « left guillemet
+  "\u00BB": "\"", // » right guillemet
+};
+
+/**
+ * Sanitizza un valore destinato a un HTTP header (ByteString/Latin-1):
+ * i caratteri tipografici (—, –, “”, ‘’, …) vengono convertiti in ASCII e
+ * i caratteri non ASCII (>127) vengono rimossi. Emoji e testo Unicode
+ * restano nel BODY UTF-8, MAI negli header: senza questa sanificazione il
+ * runtime (undici/Vercel) lancia "Cannot convert argument to a ByteString
+ * because the character at index N has a value of X which is greater than 255"
+ * e la notifica non viene mai inviata.
+ */
+export function sanitizzaHeaderNtfy(value: string): string {
+  const mappato = String(value ?? "")
+    .split("")
+    .map((c) => HEADER_UNICODE_ASCII[c] ?? c)
+    .join("");
+  return Array.from(mappato)
+    .filter((c) => c.charCodeAt(0) <= 127)
+    .join("");
+}
+
+/**
  * Invio effettivo di un messaggio ntfy (core puro, testabile con fetch
  * mockata). Riutilizzato sia dagli ordini (costruisciMessaggioNtfy) sia dai
  * reclami ordine (lib/ordine-reclami.ts). Applica le guardie e NON lancia
@@ -193,15 +237,17 @@ export async function inviaMessaggioNtfy(
     // IMPORTANTE (runtime Vercel/undici): il body deve essere passato come
     // bytes UTF-8 espliciti (Uint8Array) perché una stringa JS con emoji
     // viene convertita come ByteString Latin-1 e lancia "character ... greater
-    // than 255". Gli header HTTP devono restare ASCII (spec RFC 7230):
-    // l'emoji del titolo è già veicolata dal corpo e dal tag X-Tags.
+    // than 255". Gli HTTP header devono restare ASCII (spec RFC 7230): tutti
+    // i valori passati agli header vengono sanificati (i caratteri tipografici
+    // tipo "—" verrebbero rifiutati da undici come ByteString non valido);
+    // emoji e testo Unicode restano nel BODY UTF-8.
     const res = await fetchImpl(url, {
       method: "POST",
       headers: {
         "Content-Type": "text/plain; charset=utf-8",
-        "X-Title": messaggio.titolo.trim(),
-        "X-Priority": messaggio.priorita ?? PRIORITA_ORDINE,
-        "X-Tags": messaggio.tags ?? "shopping_cart",
+        "X-Title": sanitizzaHeaderNtfy(messaggio.titolo.trim()),
+        "X-Priority": sanitizzaHeaderNtfy(messaggio.priorita ?? PRIORITA_ORDINE),
+        "X-Tags": sanitizzaHeaderNtfy(messaggio.tags ?? "shopping_cart"),
       },
       body: new TextEncoder().encode(messaggio.corpo),
       signal: controller.signal,

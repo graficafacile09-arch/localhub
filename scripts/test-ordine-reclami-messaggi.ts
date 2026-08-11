@@ -286,6 +286,17 @@ async function main() {
     check("notifica con LINK GESTIONE RECLAMO venditore", registroFetch[0]?.body.includes(`/merchant/${NEGOZIO_ID}/ordini/${ORDINE_ID}`));
     check("nessuna doppia slash", !registroFetch[0]?.body.includes("/merchant//ordini/"));
     check("nessun UUID come numero/codice", !registroFetch[0]?.body.includes(RECLAMO_ID));
+    // Regressione reale (produzione): il titolo "Risposta cliente — reclamo #LH…"
+    // contiene l'em dash (—, U+2014): l'header X-Title DEVE essere sanificato in
+    // ASCII (altrimenti undici lancia "...greater than 255" e la notifica non parte).
+    const xTitle = registroFetch[0]?.title ?? "";
+    check(
+      "X-Title header SOLO ASCII (em dash sanificato)",
+      xTitle === "Risposta cliente - reclamo #LH-000043" &&
+        Array.from(xTitle).every((c) => c.charCodeAt(0) <= 127),
+      JSON.stringify(xTitle)
+    );
+    check("BODY mantiene i caratteri Unicode (emoji + em dash)", !!registroFetch[0]?.body.includes("🔴") && !!registroFetch[0]?.body.includes("—"));
     check("EMAIL al venditore inviata", emailVenditore.length === 1, String(emailVenditore.length));
     check("email al venditore con il corpo della risposta", emailVenditore[0]?.corpo.includes("aspetto conferma"));
   }
