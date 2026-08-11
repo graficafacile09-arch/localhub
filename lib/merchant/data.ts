@@ -10,6 +10,7 @@ import type {
   MerchantQueryResult,
   MerchantRole,
   MerchantStoreSummary,
+  ProductQueryOptions,
 } from "./types";
 
 type QueryError = {
@@ -273,7 +274,8 @@ export async function getSlugNegozioGestibile(userId: string, negozioId: string)
 
 export async function getMerchantProductsForStore(
   userId: string,
-  negozioId: string
+  negozioId: string,
+  opts: ProductQueryOptions = {}
 ): Promise<MerchantQueryResult<MerchantProduct[]>> {
   const storeResult = await getMerchantStoreForUser(userId, negozioId);
 
@@ -286,15 +288,78 @@ export async function getMerchantProductsForStore(
   }
 
   const supabase = await getDbForUser(userId);
-  const query = await supabase
+
+  // Backward compatibility: senza parametri la query è identica a prima
+  // (tutti i prodotti, ordinati per created_at desc, senza paginazione).
+  const termine = opts.q?.trim() ?? "";
+  const conFiltri =
+    termine.length > 0 ||
+    opts.stato !== undefined ||
+    opts.ai === true ||
+    opts.ordina !== undefined ||
+    opts.pagina !== undefined ||
+    opts.perPagina !== undefined;
+
+  let query = supabase
     .from("prodotti")
     .select(
-      "id, negozio_id, nome, descrizione, descrizione_completa, categoria, sottocategoria, marca, colore, materiale, caratteristiche, peso_volume, parole_chiave, filtri_catalogo, prezzo, prezzo_suggerito, immagine_principale, quantita_disponibile, stato_condizione, seo_title, seo_description, alt_text_immagine, attivo, origine_pubblicazione, created_at, updated_at"
+      "id, negozio_id, nome, descrizione, descrizione_completa, categoria, sottocategoria, marca, colore, materiale, caratteristiche, peso_volume, parole_chiave, filtri_catalogo, prezzo, prezzo_suggerito, immagine_principale, quantita_disponibile, stato_condizione, seo_title, seo_description, alt_text_immagine, attivo, origine_pubblicazione, created_at, updated_at",
+      conFiltri ? { count: "exact" } : undefined
     )
-    .eq("negozio_id", negozioId)
-    .order("created_at", { ascending: false });
+    .eq("negozio_id", negozioId);
 
-  if (query.error && isSchemaError(query.error)) {
+  // ── Filtri ────────────────────────────────────────────────────────────
+  if (opts.stato === "attivo") query = query.eq("attivo", true);
+  else if (opts.stato === "bozza") query = query.eq("attivo", false);
+
+  if (opts.ai) query = query.eq("origine_pubblicazione", "ai");
+
+  if (termine) {
+    // Neutralizza wildcard ilike e caratteri speciali della sintassi .or()
+    // di PostgREST (virgola separa i predicati; parentesi/percentuale/underscore
+    // hanno significato), poi normalizza gli spazi.
+    const pulito = termine.replace(/[%_(),]/g, " ").replace(/\s+/g, " ").trim();
+    if (pulito) {
+      query = query.or(
+        `nome.ilike.%${pulito}%,descrizione.ilike.%${pulito}%,categoria.ilike.%${pulito}%,sottocategoria.ilike.%${pulito}%,marca.ilike.%${pulito}%`
+      );
+    }
+  }
+
+  // ── Ordinamento ───────────────────────────────────────────────────────
+  switch (opts.ordina) {
+    case "vecchi":
+      query = query.order("created_at", { ascending: true });
+      break;
+    case "prezzo_asc":
+      query = query.order("prezzo", { ascending: true });
+      break;
+    case "prezzo_desc":
+      query = query.order("prezzo", { ascending: false });
+      break;
+    case "nome_asc":
+      query = query.order("nome", { ascending: true });
+      break;
+    case "nome_desc":
+      query = query.order("nome", { ascending: false });
+      break;
+    default:
+      query = query.order("created_at", { ascending: false });
+  }
+
+  // ── Paginazione (range inclusivo [from, to]) ──────────────────────────
+  const perPagina = opts.perPagina && opts.perPagina > 0 ? opts.perPagina : undefined;
+  const pagina = opts.pagina && opts.pagina > 0 ? opts.pagina : undefined;
+  if (perPagina && pagina) {
+    const from = (pagina - 1) * perPagina;
+    query = query.range(from, from + perPagina - 1);
+  }
+
+  const { data, count, error } = await query;
+  const total = typeof count === "number" ? count : undefined;
+
+  if (error && isSchemaError(error)) {
+    // DB legacy senza le colonne arricchite: fallback minimale (senza filtri).
     const fallbackQuery = await supabase
       .from("prodotti")
       .select("id, negozio_id, nome, descrizione, categoria, prezzo, immagine_principale")
@@ -312,21 +377,23 @@ export async function getMerchantProductsForStore(
       data: ((fallbackQuery.data ?? []) as ProdottoRow[]).map(mapProduct),
       setupRequired: false,
       errorMessage: null,
+      total: total ?? (fallbackQuery.data ?? []).length,
     };
   }
 
-  if (query.error) {
+  if (error) {
     return {
       data: [],
       setupRequired: false,
-      errorMessage: query.error.message ?? "Impossibile recuperare i prodotti del negozio.",
+      errorMessage: error.message ?? "Impossibile recuperare i prodotti del negozio.",
     };
   }
 
   return {
-    data: ((query.data ?? []) as ProdottoRow[]).map(mapProduct),
+    data: ((data ?? []) as ProdottoRow[]).map(mapProduct),
     setupRequired: false,
     errorMessage: null,
+    total,
   };
 }
 

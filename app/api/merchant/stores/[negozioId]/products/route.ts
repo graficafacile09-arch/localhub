@@ -1,7 +1,17 @@
 import { apiError, apiOk } from "@/lib/api/response";
 import { requireApiArea } from "@/lib/auth/session-area";
 import { createMerchantProductForStore, getMerchantProductsForStore, getMerchantStoreForUser } from "@/lib/merchant/data";
-import type { MerchantProductInput } from "@/lib/merchant/types";
+import type { MerchantProductInput, OrdinamentoProdotti } from "@/lib/merchant/types";
+
+const STATI_CONDIZIONE_VALIDI = ["nuovo", "usato", "ricondizionato"] as const;
+const ORDINAMENTI_VALIDI: OrdinamentoProdotti[] = [
+  "recenti",
+  "vecchi",
+  "prezzo_asc",
+  "prezzo_desc",
+  "nome_asc",
+  "nome_desc",
+];
 
 function validateProductPayload(payload: Partial<MerchantProductInput>) {
   if (!payload.nome?.trim()) {
@@ -28,11 +38,53 @@ function validateProductPayload(payload: Partial<MerchantProductInput>) {
     return "Inserisci una quantità disponibile valida.";
   }
 
+  // ── Campi arricchiti (coerenti con MerchantProductInput/MerchantProductForm) ──
+  if (payload.descrizioneCompleta !== undefined && typeof payload.descrizioneCompleta !== "string") {
+    return "Formato descrizione completa non valido.";
+  }
+  if (payload.caratteristiche !== undefined && !Array.isArray(payload.caratteristiche)) {
+    return "Formato caratteristiche non valido.";
+  }
+  if (payload.pesoVolume !== undefined && typeof payload.pesoVolume !== "string") {
+    return "Formato peso/volume non valido.";
+  }
+  if (
+    payload.filtriCatalogo !== undefined &&
+    (payload.filtriCatalogo === null || typeof payload.filtriCatalogo !== "object" || Array.isArray(payload.filtriCatalogo))
+  ) {
+    return "Formato filtri catalogo non valido.";
+  }
+  if (payload.seoTitle !== undefined && typeof payload.seoTitle !== "string") {
+    return "Formato SEO title non valido.";
+  }
+  if (payload.seoTitle && payload.seoTitle.length > 60) {
+    return "Il SEO title non può superare 60 caratteri.";
+  }
+  if (payload.seoDescription !== undefined && typeof payload.seoDescription !== "string") {
+    return "Formato meta description non valido.";
+  }
+  if (payload.seoDescription && payload.seoDescription.length > 160) {
+    return "La meta description non può superare 160 caratteri.";
+  }
+  if (payload.altTextImmagine !== undefined && typeof payload.altTextImmagine !== "string") {
+    return "Formato alt text non valido.";
+  }
+  if (payload.sottocategoria !== undefined && payload.sottocategoria !== null && typeof payload.sottocategoria !== "string") {
+    return "Formato sottocategoria non valido.";
+  }
+  if (
+    payload.statoCondizione !== undefined &&
+    payload.statoCondizione !== null &&
+    !STATI_CONDIZIONE_VALIDI.includes(payload.statoCondizione as (typeof STATI_CONDIZIONE_VALIDI)[number])
+  ) {
+    return "Stato condizione non valido.";
+  }
+
   return null;
 }
 
 export async function GET(
-  _request: Request,
+  request: Request,
   context: { params: Promise<{ negozioId: string }> }
 ) {
   const { sessione, error } = await requireApiArea("merchant");
@@ -50,13 +102,35 @@ export async function GET(
     return apiError("FORBIDDEN", "Non puoi gestire questo negozio.", 403);
   }
 
-  const productsResult = await getMerchantProductsForStore(user.id, negozioId);
+  // Filtri/ordinamento/paginazione opzionali via query string (G2).
+  const url = new URL(request.url);
+  const stato = url.searchParams.get("stato") === "attivo" || url.searchParams.get("stato") === "bozza"
+    ? (url.searchParams.get("stato") as "attivo" | "bozza")
+    : undefined;
+  const ordinaRaw = url.searchParams.get("ordina") ?? "";
+  const ordina = ORDINAMENTI_VALIDI.includes(ordinaRaw as OrdinamentoProdotti)
+    ? (ordinaRaw as OrdinamentoProdotti)
+    : undefined;
+  const pagina = Number(url.searchParams.get("pagina") ?? 0) || undefined;
+  const perPagina = Number(url.searchParams.get("perPagina") ?? 0) || undefined;
+
+  const productsResult = await getMerchantProductsForStore(user.id, negozioId, {
+    q: url.searchParams.get("q")?.trim() || undefined,
+    stato,
+    ai: url.searchParams.get("ai") === "1" ? true : undefined,
+    ordina,
+    pagina,
+    perPagina,
+  });
 
   if (productsResult.errorMessage) {
     return apiError("PRODUCTS_FETCH_FAILED", productsResult.errorMessage, 500);
   }
 
-  return apiOk({ products: productsResult.data });
+  return apiOk({
+    products: productsResult.data,
+    total: productsResult.total ?? productsResult.data.length,
+  });
 }
 
 export async function POST(
@@ -101,6 +175,14 @@ export async function POST(
     immaginePrincipale: payload.immaginePrincipale?.trim() ?? "",
     attivo: payload.attivo ?? true,
     originePubblicazione: payload.originePubblicazione ?? "manuale",
+    // Campi arricchiti (G1): inoltrati al data layer, che li persiste.
+    descrizioneCompleta: payload.descrizioneCompleta,
+    caratteristiche: payload.caratteristiche,
+    pesoVolume: payload.pesoVolume,
+    filtriCatalogo: payload.filtriCatalogo,
+    seoTitle: payload.seoTitle,
+    seoDescription: payload.seoDescription,
+    altTextImmagine: payload.altTextImmagine,
   });
 
   if (createResult.setupRequired) {

@@ -4,6 +4,8 @@ import { deleteMerchantProductForStore, getMerchantProductForStore, getMerchantS
 import { deleteImageFromStorage } from "@/lib/supabase/storage";
 import type { MerchantProductInput } from "@/lib/merchant/types";
 
+const STATI_CONDIZIONE_VALIDI = ["nuovo", "usato", "ricondizionato"] as const;
+
 function validateProductPayload(payload: Partial<MerchantProductInput>) {
   if (!payload.nome?.trim()) {
     return "Il nome del prodotto è obbligatorio.";
@@ -27,6 +29,48 @@ function validateProductPayload(payload: Partial<MerchantProductInput>) {
     (typeof payload.quantitaDisponibile !== "number" || Number.isNaN(payload.quantitaDisponibile) || payload.quantitaDisponibile < 0)
   ) {
     return "Inserisci una quantità disponibile valida.";
+  }
+
+  // ── Campi arricchiti (coerenti con MerchantProductInput/MerchantProductForm) ──
+  if (payload.descrizioneCompleta !== undefined && typeof payload.descrizioneCompleta !== "string") {
+    return "Formato descrizione completa non valido.";
+  }
+  if (payload.caratteristiche !== undefined && !Array.isArray(payload.caratteristiche)) {
+    return "Formato caratteristiche non valido.";
+  }
+  if (payload.pesoVolume !== undefined && typeof payload.pesoVolume !== "string") {
+    return "Formato peso/volume non valido.";
+  }
+  if (
+    payload.filtriCatalogo !== undefined &&
+    (payload.filtriCatalogo === null || typeof payload.filtriCatalogo !== "object" || Array.isArray(payload.filtriCatalogo))
+  ) {
+    return "Formato filtri catalogo non valido.";
+  }
+  if (payload.seoTitle !== undefined && typeof payload.seoTitle !== "string") {
+    return "Formato SEO title non valido.";
+  }
+  if (payload.seoTitle && payload.seoTitle.length > 60) {
+    return "Il SEO title non può superare 60 caratteri.";
+  }
+  if (payload.seoDescription !== undefined && typeof payload.seoDescription !== "string") {
+    return "Formato meta description non valido.";
+  }
+  if (payload.seoDescription && payload.seoDescription.length > 160) {
+    return "La meta description non può superare 160 caratteri.";
+  }
+  if (payload.altTextImmagine !== undefined && typeof payload.altTextImmagine !== "string") {
+    return "Formato alt text non valido.";
+  }
+  if (payload.sottocategoria !== undefined && payload.sottocategoria !== null && typeof payload.sottocategoria !== "string") {
+    return "Formato sottocategoria non valido.";
+  }
+  if (
+    payload.statoCondizione !== undefined &&
+    payload.statoCondizione !== null &&
+    !STATI_CONDIZIONE_VALIDI.includes(payload.statoCondizione as (typeof STATI_CONDIZIONE_VALIDI)[number])
+  ) {
+    return "Stato condizione non valido.";
   }
 
   return null;
@@ -93,6 +137,7 @@ export async function PUT(
     nome: payload.nome!.trim(),
     descrizione: payload.descrizione!.trim(),
     categoria: payload.categoria!.trim(),
+    sottocategoria: payload.sottocategoria?.trim() || null,
     marca: payload.marca?.trim(),
     colore: payload.colore?.trim(),
     materiale: payload.materiale?.trim(),
@@ -100,9 +145,18 @@ export async function PUT(
     prezzo: payload.prezzo!,
     prezzoSuggerito: payload.prezzoSuggerito ?? null,
     quantitaDisponibile: payload.quantitaDisponibile ?? null,
+    statoCondizione: payload.statoCondizione ?? null,
     immaginePrincipale: payload.immaginePrincipale?.trim() ?? "",
     attivo: payload.attivo ?? true,
     originePubblicazione: payload.originePubblicazione ?? "manuale",
+    // Campi arricchiti (G1): inoltrati al data layer, che li persiste.
+    descrizioneCompleta: payload.descrizioneCompleta,
+    caratteristiche: payload.caratteristiche,
+    pesoVolume: payload.pesoVolume,
+    filtriCatalogo: payload.filtriCatalogo,
+    seoTitle: payload.seoTitle,
+    seoDescription: payload.seoDescription,
+    altTextImmagine: payload.altTextImmagine,
   });
 
   if (updateResult.setupRequired) {

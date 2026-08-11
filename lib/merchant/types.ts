@@ -71,4 +71,31 @@ export type MerchantQueryResult<T> = {
   data: T;
   setupRequired: boolean;
   errorMessage: string | null;
+  /** Numero totale di righe (senza paginazione), quando la query lo richiede. */
+  total?: number;
 };
+
+// ─── Ricerca/filtri/ordinamento/paginazione catalogo prodotti ───────────────
+
+export type OrdinamentoProdotti =
+  | "recenti"
+  | "vecchi"
+  | "prezzo_asc"
+  | "prezzo_desc"
+  | "nome_asc"
+  | "nome_desc";
+
+export interface ProductQueryOptions {
+  /** Ricerca testuale (nome, descrizione, categoria, sottocategoria, marca). */
+  q?: string;
+  /** Filtro stato pubblicazione: "attivo" (pubblicato) o "bozza" (non attivo). */
+  stato?: "attivo" | "bozza";
+  /** Filtro prodotti arricchiti dall'AI (origine_pubblicazione = "ai"). */
+  ai?: boolean;
+  /** Ordinamento. Default: "recenti" (created_at desc). */
+  ordina?: OrdinamentoProdotti;
+  /** Pagina (1-based). Richiede perPagina per attivare la paginazione. */
+  pagina?: number;
+  /** Elementi per pagina. */
+  perPagina?: number;
+}
