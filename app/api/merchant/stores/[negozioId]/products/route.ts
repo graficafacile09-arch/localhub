@@ -102,11 +102,12 @@ export async function GET(
     return apiError("FORBIDDEN", "Non puoi gestire questo negozio.", 403);
   }
 
-  // Filtri/ordinamento/paginazione opzionali via query string (G2).
+  // Filtri/ordinamento/paginazione opzionali via query string (G2 + Fase D).
   const url = new URL(request.url);
   const stato = url.searchParams.get("stato") === "attivo" || url.searchParams.get("stato") === "bozza"
     ? (url.searchParams.get("stato") as "attivo" | "bozza")
     : undefined;
+  const esaurito = url.searchParams.get("esaurito") === "1" || url.searchParams.get("esaurito") === "true";
   const ordinaRaw = url.searchParams.get("ordina") ?? "";
   const ordina = ORDINAMENTI_VALIDI.includes(ordinaRaw as OrdinamentoProdotti)
     ? (ordinaRaw as OrdinamentoProdotti)
@@ -118,6 +119,7 @@ export async function GET(
     q: url.searchParams.get("q")?.trim() || undefined,
     stato,
     ai: url.searchParams.get("ai") === "1" ? true : undefined,
+    esaurito: esaurito || undefined,
     ordina,
     pagina,
     perPagina,
