@@ -292,6 +292,10 @@ export async function getMerchantProductsForStore(
   // Backward compatibility: senza parametri la query è identica a prima
   // (tutti i prodotti, ordinati per created_at desc, senza paginazione).
   const termine = opts.q?.trim() ?? "";
+  // Neutralizza wildcard ilike e caratteri speciali della sintassi .or()
+  // di PostgREST (virgola separa i predicati; parentesi/percentuale/underscore
+  // hanno significato), poi normalizza gli spazi.
+  const pulito = termine ? termine.replace(/[%_(),]/g, " ").replace(/\s+/g, " ").trim() : "";
   const conFiltri =
     termine.length > 0 ||
     opts.stato !== undefined ||
@@ -314,16 +318,10 @@ export async function getMerchantProductsForStore(
 
   if (opts.ai) query = query.eq("origine_pubblicazione", "ai");
 
-  if (termine) {
-    // Neutralizza wildcard ilike e caratteri speciali della sintassi .or()
-    // di PostgREST (virgola separa i predicati; parentesi/percentuale/underscore
-    // hanno significato), poi normalizza gli spazi.
-    const pulito = termine.replace(/[%_(),]/g, " ").replace(/\s+/g, " ").trim();
-    if (pulito) {
-      query = query.or(
-        `nome.ilike.%${pulito}%,descrizione.ilike.%${pulito}%,categoria.ilike.%${pulito}%,sottocategoria.ilike.%${pulito}%,marca.ilike.%${pulito}%`
-      );
-    }
+  if (pulito) {
+    query = query.or(
+      `nome.ilike.%${pulito}%,descrizione.ilike.%${pulito}%,categoria.ilike.%${pulito}%,sottocategoria.ilike.%${pulito}%,marca.ilike.%${pulito}%`
+    );
   }
 
   // ── Ordinamento ───────────────────────────────────────────────────────
@@ -357,6 +355,32 @@ export async function getMerchantProductsForStore(
 
   const { data, count, error } = await query;
   const total = typeof count === "number" ? count : undefined;
+
+  // PostgREST risponde 416 (range non soddisfacibile) quando la pagina
+  // richiesta supera l'ultima riga (es. ?pagina=99): restituiamo una pagina
+  // vuota con il totale corretto invece di un errore, così il chiamante può
+  // redirigere all'ultima pagina valida.
+  if (error && perPagina && pagina && (error.code === "PGRST103" || /range/i.test(error.message ?? ""))) {
+    let countQuery = supabase
+      .from("prodotti")
+      .select("id", { head: true, count: "exact" })
+      .eq("negozio_id", negozioId);
+    if (opts.stato === "attivo") countQuery = countQuery.eq("attivo", true);
+    else if (opts.stato === "bozza") countQuery = countQuery.eq("attivo", false);
+    if (opts.ai) countQuery = countQuery.eq("origine_pubblicazione", "ai");
+    if (pulito) {
+      countQuery = countQuery.or(
+        `nome.ilike.%${pulito}%,descrizione.ilike.%${pulito}%,categoria.ilike.%${pulito}%,sottocategoria.ilike.%${pulito}%,marca.ilike.%${pulito}%`
+      );
+    }
+    const { count: totalCount } = await countQuery;
+    return {
+      data: [],
+      setupRequired: false,
+      errorMessage: null,
+      total: typeof totalCount === "number" ? totalCount : 0,
+    };
+  }
 
   if (error && isSchemaError(error)) {
     // DB legacy senza le colonne arricchite: fallback minimale (senza filtri).
