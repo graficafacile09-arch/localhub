@@ -2,7 +2,8 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, ChevronDown, ChevronUp } from "lucide-react";
+import { Camera, ChevronDown, ChevronUp, ImagePlus } from "lucide-react";
+import ProductGalleryManager from "@/components/merchant/products/ProductGalleryManager";
 import type { MerchantProduct } from "@/lib/merchant/types";
 
 /** Valori salvati dal form, passati al chiamante quando non si fa redirect. */
@@ -355,6 +356,20 @@ export default function MerchantProductForm({
           {initialValues.immaginePrincipale ? "Cambia immagine" : "Aggiungi immagine"}
         </button>
       </div>
+
+      {/* Galleria multi-immagine (solo per prodotti già salvati) */}
+      {productId ? (
+        <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+          <div className="mb-3 flex items-center gap-2">
+            <ImagePlus className="h-4 w-4 text-blue-600" />
+            <div>
+              <p className="text-xs font-bold text-slate-800">Galleria immagini</p>
+              <p className="text-[10px] text-slate-500">Aggiungi altre foto: la prima impostata come principale viene mostrata nel catalogo.</p>
+            </div>
+          </div>
+          <ProductGalleryManager negozioId={negozioId} productId={productId} />
+        </div>
+      ) : null}
 
       {/* Banner prezzo AI */}
       {initialValues.prezzoSuggerito !== null ? (

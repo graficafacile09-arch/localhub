@@ -4,6 +4,8 @@ import type { Metadata } from "next";
 import Header from "@/components/Header/Header";
 import { risolviProdottoPubblico, getNegozio } from "@/lib/negozi";
 import { getProdottoImmagine } from "@/lib/prodotti-immagini";
+import { getProductMediaPubbliche } from "@/lib/prodotti-media";
+import ProductGallery, { type GalleryImage } from "@/components/prodotto/ProductGallery";
 import { chiavePreferito, getStatoPreferitiPerPagina } from "@/lib/cliente/favorites";
 import { getSiteUrl } from "@/lib/site";
 import { normalizzaNumeroWhatsApp } from "@/lib/telefono";
@@ -59,6 +61,16 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
     categoria: "categoria" in prodotto ? (prodotto.categoria as string | null) : null,
   });
 
+  // Galleria multi-immagine (product_media): vuota per i prodotti legacy.
+  // product_media non ha una colonna alt_text: l'alt testuale è il fallback
+  // alt_text_immagine del prodotto, passato al componente.
+  const media = await getProductMediaPubbliche(String(prodotto.id));
+  const immaginiGalleria: GalleryImage[] = media.map((m) => ({
+    id: m.id,
+    url: m.public_url,
+    role: m.role,
+  }));
+
   const prezzo = "prezzo" in prodotto ? Number(prodotto.prezzo) : 0;
   const quantita = "quantita_disponibile" in prodotto ? (prodotto.quantita_disponibile as number | null) : null;
   const stato = "stato_condizione" in prodotto ? (prodotto.stato_condizione as string | null) : null;
@@ -102,17 +114,13 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
           </Link>
         )}
 
-        {/* Photo */}
-        <div className="overflow-hidden rounded-xl">
-          <div className="relative aspect-square max-h-[400px] overflow-hidden bg-slate-100">
-            <div
-              role="img"
-              aria-label={prodotto.nome as string}
-              className="h-full w-full bg-cover bg-center"
-              style={{ backgroundImage: `url(${imageUrl})` }}
-            />
-          </div>
-        </div>
+        {/* Photo / galleria */}
+        <ProductGallery
+          immagini={immaginiGalleria}
+          fallbackUrl={imageUrl}
+          altText={"alt_text_immagine" in prodotto ? (prodotto.alt_text_immagine as string | null) : null}
+          nomeProdotto={prodotto.nome as string}
+        />
 
         {/* Product info */}
         <div className="mt-4">
