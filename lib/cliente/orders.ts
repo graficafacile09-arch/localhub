@@ -167,6 +167,7 @@ function assumiRiga(riga: Record<string, unknown>): RigaOrdine {
     prezzoUnitario: Number(riga.prezzo_unitario),
     quantita: Number(riga.quantita),
     immagineUrl: (riga.immagine_url as string | null) ?? null,
+    varianteNome: (riga.variante_nome as string | null) ?? null,
   };
 }
 

@@ -53,6 +53,11 @@ export function RigheProdotto({
                 <p className="truncate text-sm font-semibold text-slate-800">
                   {riga.nomeProdotto}
                 </p>
+                {riga.varianteNome ? (
+                  <p className="truncate text-xs font-medium text-slate-500">
+                    Variante: {riga.varianteNome}
+                  </p>
+                ) : null}
                 <p className="text-xs text-slate-500">
                   {Number(riga.quantita) || 1} × {formattaPrezzo(riga.prezzoUnitario)}
                 </p>

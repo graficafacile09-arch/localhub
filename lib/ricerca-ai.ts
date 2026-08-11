@@ -42,6 +42,8 @@ export type ProdottoRicerca = {
   /** Disponibilità reale per il badge "Esaurito" nelle card pubbliche. */
   quantita_disponibile?: number | null;
   quantita_riservata?: number | null;
+  /** True se il prodotto ha varianti attive (prezzo "Da €"). */
+  ha_varianti?: boolean;
 };
 
 export type RisultatoRicercaAi = {

@@ -81,6 +81,11 @@ function OrdineRecuperato({ ordine }: { ordine: OrdineClienteDettaglio }) {
               <p className="truncate text-sm font-semibold text-slate-800">
                 {riga.nomeProdotto}
               </p>
+              {riga.varianteNome ? (
+                <p className="truncate text-xs font-medium text-slate-500">
+                  Variante: {riga.varianteNome}
+                </p>
+              ) : null}
               <p className="text-xs text-slate-500">
                 {riga.quantita} × {formattaPrezzo(riga.prezzoUnitario)}
               </p>

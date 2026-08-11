@@ -211,7 +211,7 @@ export default async function RicercaPage({
                               {prodotto.nome}
                             </h3>
                             <p className="mt-0.5 text-sm font-black text-blue-700">
-                              €{prodotto.prezzo}
+                              {prodotto.ha_varianti ? "Da " : ""}€{prodotto.prezzo}
                             </p>
                             <p className="mt-0.5 line-clamp-1 text-[10px] text-slate-400">
                               {prodotto.negozio_nome}

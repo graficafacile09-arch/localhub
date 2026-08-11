@@ -194,6 +194,11 @@ export function OrderCard({
           >
             {primo?.nomeProdotto ?? "Nessun prodotto registrato"}
           </p>
+          {primo?.varianteNome ? (
+            <p className="truncate text-[11px] font-medium text-slate-500">
+              Variante: {primo.varianteNome}
+            </p>
+          ) : null}
           <p className="mt-0.5 text-xs text-slate-500">
             {primo
               ? `${Number(primo.quantita) || 1} × ${formattaPrezzo(primo.prezzoUnitario)}`

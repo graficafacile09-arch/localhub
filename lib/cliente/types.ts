@@ -54,6 +54,8 @@ export type RigaOrdine = {
   prezzoUnitario: number;
   quantita: number;
   immagineUrl: string | null;
+  /** Snapshot storico della variante acquistata (Fase E5); null per i prodotti legacy. */
+  varianteNome: string | null;
 };
 
 /**

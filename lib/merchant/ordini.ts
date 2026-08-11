@@ -112,6 +112,7 @@ function mappaRiga(row: RigaRow): RigaOrdine {
     prezzoUnitario: Number(row.prezzo_unitario ?? 0),
     quantita: Number(row.quantita ?? 1),
     immagineUrl: (row.immagine_url as string | null) ?? null,
+    varianteNome: (row.variante_nome as string | null) ?? null,
   };
 }
 

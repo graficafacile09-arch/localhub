@@ -16,6 +16,8 @@ type Props = {
   autenticato?: boolean;
   /** Badge "Esaurito" (disponibilità reale <= 0). */
   esaurito?: boolean;
+  /** True se il prodotto ha varianti attive (prezzo "Da €"). */
+  haVarianti?: boolean;
 };
 
 export default function StoreProductCard({
@@ -29,6 +31,7 @@ export default function StoreProductCard({
   preferitoAttivo,
   autenticato,
   esaurito,
+  haVarianti,
 }: Props) {
   const imageUrl = getProdottoImmagine({ immagine_principale, categoria });
   const mostraPreferiti = id != null && preferitoAttivo !== undefined && autenticato !== undefined;
@@ -55,7 +58,9 @@ export default function StoreProductCard({
         <div className="p-2">
           <h3 className="truncate text-xs font-bold text-slate-900">{nome}</h3>
           {descrizione && <p className="mt-0.5 line-clamp-2 text-[10px] leading-4 text-slate-400">{descrizione}</p>}
-          <p className="mt-1 text-xs font-bold text-blue-600">&euro; {prezzo.toFixed(2)}</p>
+          <p className="mt-1 text-xs font-bold text-blue-600">
+            {haVarianti ? "Da " : ""}&euro; {prezzo.toFixed(2)}
+          </p>
         </div>
       </Link>
 

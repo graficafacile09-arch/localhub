@@ -45,6 +45,8 @@ export type RigaEmailOrdine = {
   nomeProdotto: string;
   prezzoUnitario: number;
   quantita: number;
+  /** Snapshot storico della variante (Fase E5); null per i prodotti legacy. */
+  varianteNome: string | null;
 };
 
 /** Dati dell'ordine necessari all'email (tutti derivati dal DB). */
@@ -129,10 +131,14 @@ export function costruisciHtmlConfermaOrdine(dati: DatiEmailOrdine): string {
   const righeHtml = dati.righe
     .map((r) => {
       const subtotale = (Number(r.prezzoUnitario) || 0) * (Number(r.quantita) || 1);
+      const varianteHtml = (r.varianteNome || "").trim()
+        ? `<div style="color:#64748b;font-size:12px;margin-top:2px;">Variante: ${escapeHtml((r.varianteNome || "").trim())}</div>`
+        : "";
       return `
         <tr>
           <td style="padding:10px 0;border-bottom:1px solid #eef2f7;font-size:14px;color:#0f172a;">
             <strong>${escapeHtml(r.nomeProdotto || "Prodotto")}</strong>
+            ${varianteHtml}
             <div style="color:#64748b;font-size:12px;margin-top:2px;">${Number(r.quantita) || 1} × €${formattaEuroEmail(Number(r.prezzoUnitario) || 0)}</div>
           </td>
           <td align="right" style="padding:10px 0;border-bottom:1px solid #eef2f7;font-size:14px;font-weight:700;color:#0f172a;white-space:nowrap;">
@@ -374,6 +380,7 @@ export async function inviaEmailConfermaOrdine(
         nomeProdotto: String(r.nome_prodotto ?? ""),
         prezzoUnitario: Number(r.prezzo_unitario ?? 0),
         quantita: Number(r.quantita ?? 1),
+        varianteNome: (r.variante_nome as string | null) ?? null,
       })),
     };
 

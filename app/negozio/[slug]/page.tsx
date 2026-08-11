@@ -364,6 +364,7 @@ export default async function PaginaNegozio({
                       prodotto.quantita_disponibile != null ? Number(prodotto.quantita_disponibile) : null,
                       prodotto.quantita_riservata != null ? Number(prodotto.quantita_riservata) : null
                     )}
+                    haVarianti={Boolean(prodotto.ha_varianti)}
                     preferitoAttivo={statoPreferiti.chiavi.has(chiavePreferito("prodotto", prodottoId))}
                     autenticato={statoPreferiti.autenticato}
                   />

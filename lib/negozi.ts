@@ -759,7 +759,7 @@ export function isOrdinamentoProdottiPubblici(value: unknown): value is Ordiname
 // quantita_disponibile/quantita_riservata: necessarie per il badge "Esaurito"
 // nelle card pubbliche (Fase D).
 const SELECT_PRODOTTO_RICERCA =
-  "id, slug, negozio_id, nome, descrizione, categoria, sottocategoria, marca, colore, prezzo, immagine_principale, quantita_disponibile, quantita_riservata";
+  "id, slug, negozio_id, nome, descrizione, categoria, sottocategoria, marca, colore, prezzo, immagine_principale, quantita_disponibile, quantita_riservata, ha_varianti";
 
 /**
  * Id dei negozi pubblici (deleted_at non valorizzato).
@@ -964,6 +964,7 @@ async function mappaProdottoRicerca(
       p.quantita_disponibile != null ? Number(p.quantita_disponibile) : null,
     quantita_riservata:
       p.quantita_riservata != null ? Number(p.quantita_riservata) : null,
+    ha_varianti: Boolean(p.ha_varianti),
     negozio_nome: nomiNegozi.get(p.negozio_id as string) ?? "",
   }));
 }
@@ -1114,7 +1115,7 @@ async function cercaProdottiTolleranti(
 
   const { data, error } = await db
     .from("prodotti")
-    .select("id, slug, negozio_id, nome, descrizione, categoria, marca, sottocategoria, prezzo, immagine_principale, quantita_disponibile, quantita_riservata")
+    .select("id, slug, negozio_id, nome, descrizione, categoria, marca, sottocategoria, prezzo, immagine_principale, quantita_disponibile, quantita_riservata, ha_varianti")
     .eq("attivo", true)
     .in("negozio_id", negoziValidi)
     .or(filtri)

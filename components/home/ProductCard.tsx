@@ -15,6 +15,8 @@ type ProductCardProps = {
   /** Stato iniziale del cuore calcolato dal server (opzionale). */
   preferitoAttivo?: boolean;
   autenticato?: boolean;
+  /** True se il prodotto ha varianti attive (prezzo "Da €"). */
+  haVarianti?: boolean;
 };
 
 export default function ProductCard({
@@ -28,6 +30,7 @@ export default function ProductCard({
   categoria,
   preferitoAttivo,
   autenticato,
+  haVarianti,
 }: ProductCardProps) {
   const imageUrl = getProdottoImmagine({ immagine_principale, categoria });
   const mostraPreferiti = preferitoAttivo !== undefined && autenticato !== undefined;
@@ -51,7 +54,7 @@ export default function ProductCard({
             {nome}
           </h3>
           <p className="mt-0.5 text-sm font-black text-blue-700">
-            €{prezzo}
+            {haVarianti ? "Da " : ""}€{prezzo}
           </p>
           <p className="mt-0.5 line-clamp-1 text-[10px] text-slate-400">
             {negozio_nome}

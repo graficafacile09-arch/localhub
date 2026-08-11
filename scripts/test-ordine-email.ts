@@ -227,12 +227,46 @@ async function main() {
       spedizioneProvincia: "CS",
       spedizioneNote: null,
       note: null,
-      righe: [{ nomeProdotto: "Scarpe", prezzoUnitario: 14.9, quantita: 1 }],
+      righe: [{ nomeProdotto: "Scarpe", prezzoUnitario: 14.9, quantita: 1, varianteNome: null }],
     };
     const html = costruisciHtmlConfermaOrdine(datiSpedizione);
     check("html contiene indirizzo spedizione", html.includes("Via Roma 1, 87100, Cosenza, CS"));
     check("html contiene costo spedizione", html.includes("5,90"));
     check("html contiene 'Spedizione a domicilio'", html.includes("Spedizione a domicilio"));
+  }
+
+  // ── T7c: EMAIL CON VARIANTE (Fase E6) ────────────────────────────────────────
+  console.log("\n[T7c] Email con variante → variante visibile sotto il prodotto");
+  {
+    const inviato: { dati: DatiEmailOrdine | null } = { dati: null };
+    const rigaConVariante: DatiRigaRow = {
+      ...rigaDefault,
+      nome_prodotto: "Maglietta Unisex",
+      variante_nome: "Taglia M, Colore Rosso",
+    };
+    const esito = await inviaEmailConfermaOrdine(ORDINE_ID, {
+      db: fakeDb(ordineValido(), [rigaConVariante]),
+      invia: async (dati) => {
+        inviato.dati = dati;
+      },
+    });
+    check("stato = sent", esito.stato === "sent", JSON.stringify(esito));
+    check("varianteNome mappato dal DB", inviato.dati?.righe[0]?.varianteNome === "Taglia M, Colore Rosso");
+    const html = costruisciHtmlConfermaOrdine(inviato.dati!);
+    check("html contiene nome prodotto", html.includes("Maglietta Unisex"));
+    check("html contiene la variante", html.includes("Variante: Taglia M, Colore Rosso"));
+
+    // Legacy: variante assente → nessuna riga "Variante:" nell'html.
+    const inviato2: { dati: DatiEmailOrdine | null } = { dati: null };
+    await inviaEmailConfermaOrdine(ORDINE_ID, {
+      db: fakeDb(ordineValido(), [rigaDefault]),
+      invia: async (dati) => {
+        inviato2.dati = dati;
+      },
+    });
+    const htmlLegacy = costruisciHtmlConfermaOrdine(inviato2.dati!);
+    check("legacy: varianteNome = null", inviato2.dati?.righe[0]?.varianteNome === null);
+    check("legacy: html NON contiene 'Variante:'", !htmlLegacy.includes("Variante:"));
   }
 
   // ── T17: EMAIL DI AGGIORNAMENTO STATO ────────────────────────────────────────
