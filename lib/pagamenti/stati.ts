@@ -38,7 +38,9 @@ export const TRANSIZIONI_PAGAMENTO: ReadonlyArray<{
   { da: "paid", a: "refunded" },
   { da: "paid", a: "partially_refunded" },
   { da: "partially_refunded", a: "refunded" },
-  { da: "partially_refunded", a: "partially_refunded" },
+  // NOTA: lo stato identico (es. partially_refunded → partially_refunded)
+  // non è in lista perché è già la regola di idempotenza in
+  // canTransitionPayment / transitionPayment (da === a → no-op).
 ];
 
 /** True se il valore è uno stato di pagamento valido. */
