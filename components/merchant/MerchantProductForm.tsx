@@ -2,8 +2,9 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, ChevronDown, ChevronUp, ImagePlus } from "lucide-react";
+import { Camera, ChevronDown, ChevronUp, ImagePlus, Layers } from "lucide-react";
 import ProductGalleryManager from "@/components/merchant/products/ProductGalleryManager";
+import VariantiManager from "@/components/merchant/products/VariantiManager";
 import type { MerchantProduct } from "@/lib/merchant/types";
 
 /** Valori salvati dal form, passati al chiamante quando non si fa redirect. */
@@ -371,6 +372,32 @@ export default function MerchantProductForm({
         </div>
       ) : null}
 
+      {/* Varianti (solo per prodotti già salvati, come la galleria) */}
+      {productId ? (
+        <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+          <div className="mb-3 flex items-center gap-2">
+            <Layers className="h-4 w-4 text-violet-600" />
+            <div>
+              <p className="text-xs font-bold text-slate-800">Varianti</p>
+              <p className="text-[10px] text-slate-500">
+                Crea combinazioni (taglia, colore, materiale…) con prezzo e quantità propri. Con varianti attive, prezzo e stock
+                del prodotto vengono calcolati automaticamente dal sistema.
+              </p>
+            </div>
+          </div>
+          <VariantiManager
+            negozioId={negozioId}
+            productId={productId}
+            prodotto={{
+              prezzo: initialData?.prezzo ?? null,
+              quantitaDisponibile: initialData?.quantita_disponibile ?? null,
+              quantitaRiservata: initialData?.quantita_riservata ?? null,
+              haVarianti: initialData?.ha_varianti ?? false,
+            }}
+          />
+        </div>
+      ) : null}
+
       {/* Banner prezzo AI */}
       {initialValues.prezzoSuggerito !== null ? (
         <div className="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-xs text-blue-700">
@@ -421,8 +448,12 @@ export default function MerchantProductForm({
             step="0.01"
             defaultValue={initialValues.prezzo}
             required
+            readOnly={initialData?.ha_varianti === true}
+            title={initialData?.ha_varianti === true ? "Calcolato automaticamente dalle varianti" : undefined}
             placeholder="0,00"
-            className="h-10 w-full rounded-lg border border-slate-200 pl-7 pr-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            className={`h-10 w-full rounded-lg border border-slate-200 pl-7 pr-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 ${
+              initialData?.ha_varianti === true ? "cursor-not-allowed bg-slate-100 text-slate-500" : ""
+            }`}
           />
         </div>
         <input
@@ -431,10 +462,19 @@ export default function MerchantProductForm({
           type="number"
           min="0"
           defaultValue={initialValues.quantitaDisponibile ?? 1}
+          readOnly={initialData?.ha_varianti === true}
+          title={initialData?.ha_varianti === true ? "Calcolata automaticamente dalle varianti" : undefined}
           placeholder="Quantit&agrave;"
-          className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+          className={`h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 ${
+            initialData?.ha_varianti === true ? "cursor-not-allowed bg-slate-100 text-slate-500" : ""
+          }`}
         />
       </div>
+      {initialData?.ha_varianti === true ? (
+        <p className="text-[10px] text-violet-500">
+          Prezzo e quantità sono calcolati automaticamente dalle varianti: modificali nella sezione Varianti qui sotto.
+        </p>
+      ) : null}
 
       {/* Descrizione */}
       <textarea
