@@ -1,5 +1,6 @@
 import Link from "next/link";
 import BackButton from "@/components/BackButton";
+import PasswordInput from "@/components/auth/PasswordInput";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { validaToken } from "@/lib/password-reset";
 
@@ -108,28 +109,26 @@ function ResetPasswordForm({ token }: { token: string }) {
         <label htmlFor="password" className="text-sm font-semibold text-slate-700">
           Nuova password
         </label>
-        <input
+        <PasswordInput
           id="password"
           name="password"
-          type="password"
           required
           autoComplete="new-password"
           placeholder="Minimo 6 caratteri"
-          className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+          className="h-12"
         />
       </div>
       <div className="space-y-2">
         <label htmlFor="password_confirm" className="text-sm font-semibold text-slate-700">
           Conferma nuova password
         </label>
-        <input
+        <PasswordInput
           id="password_confirm"
           name="password_confirm"
-          type="password"
           required
           autoComplete="new-password"
           placeholder="Ripeti la password"
-          className="h-11 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+          className="h-11"
         />
       </div>
 

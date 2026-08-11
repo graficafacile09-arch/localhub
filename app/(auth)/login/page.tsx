@@ -3,6 +3,7 @@
 import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import BackButton from "@/components/BackButton";
+import PasswordInput from "@/components/auth/PasswordInput";
 import { isPartitaIvaValida } from "@/lib/partita-iva";
 
 function LoginContent() {
@@ -106,10 +107,10 @@ function LoginForm({ area }: { area: string }) {
       </div>
       <div className="space-y-2">
         <label htmlFor="password" className="text-sm font-semibold text-slate-700">Password</label>
-        <input
-          id="password" name="password" type="password" required autoComplete="current-password"
+        <PasswordInput
+          id="password" name="password" required autoComplete="current-password"
           placeholder="Inserisci la password"
-          className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+          className="h-12"
         />
       </div>
       <div className="flex items-center justify-end">
@@ -152,18 +153,18 @@ function RegisterClienteForm() {
       </div>
       <div className="space-y-2">
         <label htmlFor="reg_password" className="text-sm font-semibold text-slate-700">Password</label>
-        <input
-          id="reg_password" name="password" type="password" required
+        <PasswordInput
+          id="reg_password" name="password" required
           placeholder="Minimo 6 caratteri"
-          className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+          className="h-12"
         />
       </div>
       <div className="space-y-2">
         <label htmlFor="password_confirm" className="text-sm font-semibold text-slate-700">Conferma Password</label>
-        <input
-          id="password_confirm" name="password_confirm" type="password" required
+        <PasswordInput
+          id="password_confirm" name="password_confirm" required
           placeholder="Ripeti la password"
-          className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+          className="h-12"
         />
       </div>
       <button
@@ -213,18 +214,18 @@ function RegisterVenditoreForm() {
       </div>
       <div className="space-y-2">
         <label htmlFor="reg_password" className="text-sm font-semibold text-slate-700">Password</label>
-        <input
-          id="reg_password" name="password" type="password" required
+        <PasswordInput
+          id="reg_password" name="password" required
           placeholder="Minimo 6 caratteri"
-          className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+          className="h-12"
         />
       </div>
       <div className="space-y-2">
         <label htmlFor="password_confirm" className="text-sm font-semibold text-slate-700">Conferma Password</label>
-        <input
-          id="password_confirm" name="password_confirm" type="password" required
+        <PasswordInput
+          id="password_confirm" name="password_confirm" required
           placeholder="Ripeti la password"
-          className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+          className="h-12"
         />
       </div>
       <div className="space-y-2">
