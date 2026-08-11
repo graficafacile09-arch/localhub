@@ -33,6 +33,8 @@ export type MerchantProduct = {
   immagine_principale: string | null;
   quantita_disponibile: number | null;
   quantita_riservata: number | null;
+  /** True se il prodotto usa varianti (Fase E1/E2). */
+  ha_varianti: boolean;
   stato_condizione: "nuovo" | "usato" | "ricondizionato" | null;
   seo_title: string | null;
   seo_description: string | null;
@@ -74,6 +76,43 @@ export type MerchantQueryResult<T> = {
   errorMessage: string | null;
   /** Numero totale di righe (senza paginazione), quando la query lo richiede. */
   total?: number;
+  /** Codice di errore applicativo (es. UNIQUE_CONFLICT, PRODUCT_NOT_FOUND). */
+  code?: string;
+};
+
+// ─── Varianti prodotto (Fase E2) ───────────────────────────────────────────
+
+/** Attributi della combinazione (es. { taglia: "M", colore: "Blu" }). */
+export type AttributiVariante = Record<string, string>;
+
+export type VarianteProdotto = {
+  id: string;
+  prodotto_id: string;
+  nome: string | null;
+  attributi: AttributiVariante;
+  /** NULL → eredita il prezzo del prodotto padre. */
+  prezzo: number | null;
+  quantita_disponibile: number;
+  /** Riserva gestita dal sistema (flusso pagamenti): NON modificabile dal merchant. */
+  quantita_riservata: number;
+  immagine_principale: string | null;
+  attivo: boolean;
+  created_at: string | null;
+  updated_at: string | null;
+};
+
+/**
+ * Input di una variante (lato merchant).
+ * NOTA: quantita_riservata NON è accettato: la riserva è gestita dal
+ * sistema e non è modificabile dal venditore.
+ */
+export type VarianteProdottoInput = {
+  nome?: string | null;
+  attributi?: AttributiVariante;
+  prezzo?: number | null;
+  quantitaDisponibile?: number;
+  immaginePrincipale?: string | null;
+  attivo?: boolean;
 };
 
 // ─── Ricerca/filtri/ordinamento/paginazione catalogo prodotti ───────────────

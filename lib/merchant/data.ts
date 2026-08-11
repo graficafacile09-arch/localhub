@@ -5,13 +5,17 @@ import { generaSlugUnivoco } from "@/lib/slug-server";
 import { getCurrentUser } from "@/lib/auth/session";
 import { utenteAdminAutorizzato } from "@/lib/auth/roles";
 import type {
+  AttributiVariante,
   MerchantProduct,
   MerchantProductInput,
   MerchantQueryResult,
   MerchantRole,
   MerchantStoreSummary,
   ProductQueryOptions,
+  VarianteProdotto,
+  VarianteProdottoInput,
 } from "./types";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 type QueryError = {
   code?: string;
@@ -58,6 +62,7 @@ type ProdottoRow = {
   immagine_principale?: string | null;
   quantita_disponibile?: number | null;
   quantita_riservata?: number | null;
+  ha_varianti?: boolean | null;
   stato_condizione?: string | null;
   seo_title?: string | null;
   seo_description?: string | null;
@@ -73,7 +78,11 @@ const SCHEMA_ERROR_CODES = new Set(["42P01", "42703", "PGRST204", "PGRST205"]);
 // Colonna usata per SELECT dei prodotti merchant (lista + patch parziale):
 // costante condivisa per evitare drift tra le due query.
 const SELECT_COLONNE_PRODOTTO =
-  "id, negozio_id, nome, descrizione, descrizione_completa, categoria, sottocategoria, marca, colore, materiale, caratteristiche, peso_volume, parole_chiave, filtri_catalogo, prezzo, prezzo_suggerito, immagine_principale, quantita_disponibile, quantita_riservata, stato_condizione, seo_title, seo_description, alt_text_immagine, attivo, origine_pubblicazione, created_at, updated_at";
+  "id, negozio_id, nome, descrizione, descrizione_completa, categoria, sottocategoria, marca, colore, materiale, caratteristiche, peso_volume, parole_chiave, filtri_catalogo, prezzo, prezzo_suggerito, immagine_principale, quantita_disponibile, quantita_riservata, ha_varianti, stato_condizione, seo_title, seo_description, alt_text_immagine, attivo, origine_pubblicazione, created_at, updated_at";
+
+// Colonne delle varianti prodotto (Fase E2).
+const SELECT_COLONNE_VARIANTE =
+  "id, prodotto_id, nome, attributi, prezzo, quantita_disponibile, quantita_riservata, immagine_principale, attivo, created_at, updated_at";
 
 function isSchemaError(error: QueryError | null) {
   return Boolean(error?.code && SCHEMA_ERROR_CODES.has(error.code));
@@ -139,6 +148,7 @@ function mapProduct(row: ProdottoRow): MerchantProduct {
     immagine_principale: row.immagine_principale ?? null,
     quantita_disponibile: row.quantita_disponibile ?? null,
     quantita_riservata: row.quantita_riservata ?? null,
+    ha_varianti: row.ha_varianti ?? false,
     stato_condizione: parseStatoCondizione(row.stato_condizione),
     seo_title: row.seo_title ?? null,
     seo_description: row.seo_description ?? null,
@@ -833,6 +843,474 @@ export async function bulkDeleteMerchantProductsForStore(
 
   return {
     data: { eliminati: count ?? ids.length },
+    setupRequired: false,
+    errorMessage: null,
+  };
+}
+
+// =================================================================
+// Varianti prodotto (Fase E2) — CRUD merchant
+// =================================================================
+// La tabella public.prodotto_varianti e il trigger di aggregazione
+// (aggiorna_prodotto_da_varianti, migration 20260821) gestiscono in modo
+// atomico prezzo/stock del prodotto padre per i prodotti con ha_varianti.
+// Queste funzioni NON aggiornano mai manualmente gli aggregati: il trigger
+// lo fa. Dopo ogni mutazione l'aggregazione viene VERIFICATA rileggendo
+// il prodotto (specchio fedele del trigger SQL).
+
+type VarianteRow = {
+  id: string;
+  prodotto_id?: string | number | null;
+  nome?: string | null;
+  attributi?: AttributiVariante | null;
+  prezzo?: number | string | null;
+  quantita_disponibile?: number | null;
+  quantita_riservata?: number | null;
+  immagine_principale?: string | null;
+  attivo?: boolean | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
+function mapVariante(row: VarianteRow): VarianteProdotto {
+  return {
+    id: String(row.id),
+    prodotto_id: String(row.prodotto_id ?? ""),
+    nome: row.nome ?? null,
+    attributi: row.attributi ?? {},
+    prezzo:
+      typeof row.prezzo === "number"
+        ? row.prezzo
+        : typeof row.prezzo === "string"
+          ? Number(row.prezzo)
+          : null,
+    quantita_disponibile: Number(row.quantita_disponibile ?? 0),
+    quantita_riservata: Number(row.quantita_riservata ?? 0),
+    immagine_principale: row.immagine_principale ?? null,
+    attivo: row.attivo ?? true,
+    created_at: row.created_at ?? null,
+    updated_at: row.updated_at ?? null,
+  };
+}
+
+/**
+ * Verifica SOLO l'esistenza di un negozio (senza ownership): serve alle
+ * route per distinguere "negozio inesistente" (404) da "negozio di un
+ * altro venditore" (403). L'accesso resta comunque bloccato da
+ * getMerchantStoreForUser/is_merchant_for_store.
+ */
+export async function negozioEsiste(negozioId: string): Promise<boolean> {
+  const supabase = createAdminSupabaseClient();
+  const { data } = await supabase.from("negozi").select("id").eq("id", negozioId).maybeSingle();
+  return Boolean(data);
+}
+
+/** Aggregati attesi = specchio del trigger SQL E1 (solo varianti attive). */
+async function aggregatiAttesiProdotto(
+  supabase: SupabaseClient,
+  productId: string
+): Promise<{ minPrezzo: number | null; sommaQta: number; sommaRis: number }> {
+  const { data } = await supabase
+    .from("prodotto_varianti")
+    .select("prezzo, quantita_disponibile, quantita_riservata, attivo")
+    .eq("prodotto_id", productId);
+
+  const attive = (data ?? []).filter((v) => v.attivo !== false);
+  const prezzi = attive
+    .map((v) => v.prezzo)
+    .filter((p): p is number => typeof p === "number" && !Number.isNaN(p));
+  const minPrezzo = prezzi.length > 0 ? Math.min(...prezzi) : null;
+  const sommaQta = attive.reduce((acc, v) => acc + (Number(v.quantita_disponibile) || 0), 0);
+  const sommaRis = attive.reduce((acc, v) => acc + (Number(v.quantita_riservata) || 0), 0);
+  return { minPrezzo, sommaQta, sommaRis };
+}
+
+/**
+ * Verifica che il trigger E1 abbia aggiornato il prodotto come atteso:
+ *   prezzo              = MIN(prezzo) varianti attive, se nessuna attiva ha
+ *                         un prezzo → resta il prezzo padre (prezzoPre);
+ *   quantita_disponibile = SUM(qta) varianti attive (0 se nessuna attiva).
+ * Ritorna anche il prodotto aggiornato (per la risposta API).
+ */
+async function verificaAggregazioneProdotto(
+  supabase: SupabaseClient,
+  productId: string,
+  prezzoPre: number | null
+): Promise<{ ok: boolean; prodotto: ProdottoRow | null }> {
+  const attesi = await aggregatiAttesiProdotto(supabase, productId);
+
+  const { data } = await supabase
+    .from("prodotti")
+    .select(SELECT_COLONNE_PRODOTTO)
+    .eq("id", productId)
+    .maybeSingle();
+
+  if (!data) return { ok: false, prodotto: null };
+  const prodotto = data as ProdottoRow;
+
+  const prezzoReale =
+    typeof prodotto.prezzo === "string"
+      ? Number(prodotto.prezzo)
+      : (prodotto.prezzo ?? null);
+  const prezzoAtteso = attesi.minPrezzo !== null ? attesi.minPrezzo : prezzoPre;
+  const prezzoOk =
+    prezzoReale === null && prezzoAtteso === null
+      ? true
+      : prezzoReale !== null &&
+        prezzoAtteso !== null &&
+        Math.abs(prezzoReale - prezzoAtteso) < 0.005;
+
+  // Il trigger scrive SEMPRE un numero sulle colonne stock dei prodotti con
+  // varianti: un NULL qui significa che il trigger NON è scattato → mismatch
+  // (evita falsi positivi quando la somma attesa è 0).
+  const qtaReale = prodotto.quantita_disponibile;
+  const qtaOk = typeof qtaReale === "number" && qtaReale === attesi.sommaQta;
+
+  return { ok: prezzoOk && qtaOk, prodotto };
+}
+
+/**
+ * Verifica di proprietà prodotto+negozio usata da TUTTE le funzioni varianti:
+ * NON si fida mai di negozioId/productId inviati dal client per autorizzare.
+ */
+async function verificaProdottoGestibile(
+  userId: string,
+  negozioId: string,
+  productId: string
+): Promise<MerchantQueryResult<MerchantProduct | null>> {
+  const storeResult = await getMerchantStoreForUser(userId, negozioId);
+
+  if (storeResult.setupRequired || !storeResult.data) {
+    return {
+      data: null,
+      setupRequired: storeResult.setupRequired,
+      errorMessage: storeResult.errorMessage ?? "Negozio non disponibile per questo venditore.",
+    };
+  }
+
+  const productResult = await getMerchantProductForStore(userId, negozioId, productId);
+  if (!productResult.data) {
+    return {
+      data: null,
+      setupRequired: false,
+      errorMessage: "Prodotto non trovato.",
+      code: "PRODUCT_NOT_FOUND",
+    };
+  }
+
+  return {
+    data: productResult.data,
+    setupRequired: false,
+    errorMessage: null,
+  };
+}
+
+/**
+ * Recupera le varianti di un prodotto del negozio (ordine stabile:
+ * created_at asc + id asc).
+ */
+export async function getVariantiForProduct(
+  userId: string,
+  negozioId: string,
+  productId: string
+): Promise<MerchantQueryResult<VarianteProdotto[]>> {
+  const ownership = await verificaProdottoGestibile(userId, negozioId, productId);
+  if (ownership.errorMessage) {
+    return {
+      data: [],
+      setupRequired: ownership.setupRequired,
+      errorMessage: ownership.errorMessage,
+      code: ownership.code,
+    };
+  }
+
+  const supabase = await getDbForUser(userId);
+
+  const { data, error } = await supabase
+    .from("prodotto_varianti")
+    .select(SELECT_COLONNE_VARIANTE)
+    .eq("prodotto_id", productId)
+    .order("created_at", { ascending: true })
+    .order("id", { ascending: true });
+
+  if (error) {
+    return {
+      data: [],
+      setupRequired: false,
+      errorMessage: error.message ?? "Impossibile recuperare le varianti.",
+    };
+  }
+
+  return {
+    data: ((data ?? []) as VarianteRow[]).map(mapVariante),
+    setupRequired: false,
+    errorMessage: null,
+  };
+}
+
+/**
+ * Crea una variante. Dopo la prima variante valida attiva products.ha_varianti
+ * (PRIMA dell'insert, così il trigger E1 aggrega correttamente). Gli aggregati
+ * prezzo/stock NON sono aggiornati manualmente: il trigger li aggiorna e la
+ * funzione li verifica.
+ */
+export async function createVarianteForProduct(
+  userId: string,
+  negozioId: string,
+  productId: string,
+  input: VarianteProdottoInput
+): Promise<MerchantQueryResult<{ variante: VarianteProdotto; prodotto: MerchantProduct } | null>> {
+  const ownership = await verificaProdottoGestibile(userId, negozioId, productId);
+  if (ownership.errorMessage) {
+    return { data: null, setupRequired: ownership.setupRequired, errorMessage: ownership.errorMessage, code: ownership.code };
+  }
+  const prezzoPre = ownership.data!.prezzo;
+
+  const supabase = await getDbForUser(userId);
+
+  // Conteggio varianti pre-esistenti: necessario per attivare il flag solo
+  // alla prima variante e per compensarlo se l'insert fallisce.
+  const { count: conteggioPre } = await supabase
+    .from("prodotto_varianti")
+    .select("id", { head: true, count: "exact" })
+    .eq("prodotto_id", productId);
+  const haGiaVarianti = typeof conteggioPre === "number" && conteggioPre > 0;
+
+  // Il trigger E1 aggrega SOLO con ha_varianti=true (nota operativa E1):
+  // attiva il flag PRIMA dell'insert. Se il flag è già attivo è un no-op.
+  if (!haGiaVarianti) {
+    const { error: flagError } = await supabase
+      .from("prodotti")
+      .update({ ha_varianti: true })
+      .eq("id", productId)
+      .eq("negozio_id", negozioId);
+    if (flagError) {
+      return { data: null, setupRequired: false, errorMessage: flagError.message ?? "Impossibile attivare le varianti." };
+    }
+  }
+
+  const payload: Record<string, unknown> = {
+    prodotto_id: productId,
+    nome: input.nome?.trim() || null,
+    attributi: input.attributi ?? {},
+    prezzo: input.prezzo ?? null,
+    quantita_disponibile: input.quantitaDisponibile ?? 0,
+    immagine_principale: input.immaginePrincipale?.trim() || null,
+    attivo: input.attivo ?? true,
+  };
+
+  const { data: inserted, error } = await supabase
+    .from("prodotto_varianti")
+    .insert(payload)
+    .select(SELECT_COLONNE_VARIANTE)
+    .single();
+
+  if (error) {
+    // Compensa il flag appena attivato SOLO se il prodotto è davvero senza
+    // varianti (evita di disattivare in caso di concorrenza).
+    if (!haGiaVarianti) {
+      const { count: conteggioPost } = await supabase
+        .from("prodotto_varianti")
+        .select("id", { head: true, count: "exact" })
+        .eq("prodotto_id", productId);
+      if (typeof conteggioPost === "number" && conteggioPost === 0) {
+        await supabase
+          .from("prodotti")
+          .update({ ha_varianti: false })
+          .eq("id", productId)
+          .eq("negozio_id", negozioId);
+      }
+    }
+    return {
+      data: null,
+      setupRequired: false,
+      errorMessage: error.message ?? "Impossibile creare la variante.",
+      code: error.code === "23505" ? "UNIQUE_CONFLICT" : undefined,
+    };
+  }
+
+  const verifica = await verificaAggregazioneProdotto(supabase, productId, prezzoPre);
+  if (!verifica.ok || !verifica.prodotto) {
+    return {
+      data: null,
+      setupRequired: false,
+      errorMessage: "L'aggregazione del trigger non è allineata al prodotto. Riprova o contatta l'assistenza.",
+      code: "AGGREGATION_MISMATCH",
+    };
+  }
+
+  return {
+    data: { variante: mapVariante(inserted as VarianteRow), prodotto: mapProduct(verifica.prodotto) },
+    setupRequired: false,
+    errorMessage: null,
+  };
+}
+
+/**
+ * Aggiornamento PARZIALE di una variante (nome, attributi, prezzo, quantità,
+ * immagine, attivo). quantita_riservata NON è mai aggiornabile dal merchant.
+ */
+export async function updateVarianteForProduct(
+  userId: string,
+  negozioId: string,
+  productId: string,
+  varianteId: string,
+  input: Partial<VarianteProdottoInput>
+): Promise<MerchantQueryResult<{ variante: VarianteProdotto; prodotto: MerchantProduct } | null>> {
+  const ownership = await verificaProdottoGestibile(userId, negozioId, productId);
+  if (ownership.errorMessage) {
+    return { data: null, setupRequired: ownership.setupRequired, errorMessage: ownership.errorMessage, code: ownership.code };
+  }
+  const prezzoPre = ownership.data!.prezzo;
+
+  const supabase = await getDbForUser(userId);
+
+  // La variante deve esistere E appartenere al prodotto: nessuna variante di
+  // un altro prodotto è raggiungibile anche fornendo un varianteId esterno.
+  const { data: esistente, error: errEsistente } = await supabase
+    .from("prodotto_varianti")
+    .select("id")
+    .eq("id", varianteId)
+    .eq("prodotto_id", productId)
+    .maybeSingle();
+
+  if (errEsistente) {
+    return { data: null, setupRequired: false, errorMessage: errEsistente.message ?? "Impossibile verificare la variante." };
+  }
+  if (!esistente) {
+    return { data: null, setupRequired: false, errorMessage: "Variante non trovata.", code: "VARIANT_NOT_FOUND" };
+  }
+
+  const payload: Record<string, unknown> = {};
+  if (input.nome !== undefined) payload.nome = input.nome?.trim() || null;
+  if (input.attributi !== undefined) payload.attributi = input.attributi;
+  if (input.prezzo !== undefined) payload.prezzo = input.prezzo;
+  if (input.quantitaDisponibile !== undefined) payload.quantita_disponibile = input.quantitaDisponibile;
+  if (input.immaginePrincipale !== undefined) payload.immagine_principale = input.immaginePrincipale?.trim() || null;
+  if (input.attivo !== undefined) payload.attivo = input.attivo;
+  // quantita_riservata: gestita dal sistema, mai dal merchant.
+
+  if (Object.keys(payload).length === 0) {
+    return { data: null, setupRequired: false, errorMessage: "Nessun campo da aggiornare.", code: "NO_FIELDS" };
+  }
+
+  const { data: updated, error } = await supabase
+    .from("prodotto_varianti")
+    .update(payload)
+    .eq("id", varianteId)
+    .eq("prodotto_id", productId)
+    .select(SELECT_COLONNE_VARIANTE)
+    .single();
+
+  if (error) {
+    return {
+      data: null,
+      setupRequired: false,
+      errorMessage: error.message ?? "Impossibile aggiornare la variante.",
+      code: error.code === "23505" ? "UNIQUE_CONFLICT" : undefined,
+    };
+  }
+
+  const verifica = await verificaAggregazioneProdotto(supabase, productId, prezzoPre);
+  if (!verifica.ok || !verifica.prodotto) {
+    return {
+      data: null,
+      setupRequired: false,
+      errorMessage: "L'aggregazione del trigger non è allineata al prodotto. Riprova o contatta l'assistenza.",
+      code: "AGGREGATION_MISMATCH",
+    };
+  }
+
+  return {
+    data: { variante: mapVariante(updated as VarianteRow), prodotto: mapProduct(verifica.prodotto) },
+    setupRequired: false,
+    errorMessage: null,
+  };
+}
+
+/**
+ * Elimina una variante (solo se appartiene al prodotto). Il trigger aggiorna
+ * automaticamente prezzo/stock del padre. Se viene eliminata l'ULTIMA
+ * variante, il prodotto torna al comportamento legacy: ha_varianti=false e
+ * stock non tracciato (NULL = disponibile, come i prodotti legacy esistenti);
+ * il prezzo NON viene alterato.
+ */
+export async function deleteVarianteForProduct(
+  userId: string,
+  negozioId: string,
+  productId: string,
+  varianteId: string
+): Promise<MerchantQueryResult<{ prodotto: MerchantProduct } | null>> {
+  const ownership = await verificaProdottoGestibile(userId, negozioId, productId);
+  if (ownership.errorMessage) {
+    return { data: null, setupRequired: ownership.setupRequired, errorMessage: ownership.errorMessage, code: ownership.code };
+  }
+  const prezzoPre = ownership.data!.prezzo;
+
+  const supabase = await getDbForUser(userId);
+
+  const { data: esistente, error: errEsistente } = await supabase
+    .from("prodotto_varianti")
+    .select("id")
+    .eq("id", varianteId)
+    .eq("prodotto_id", productId)
+    .maybeSingle();
+
+  if (errEsistente) {
+    return { data: null, setupRequired: false, errorMessage: errEsistente.message ?? "Impossibile verificare la variante." };
+  }
+  if (!esistente) {
+    return { data: null, setupRequired: false, errorMessage: "Variante non trovata.", code: "VARIANT_NOT_FOUND" };
+  }
+
+  const { error } = await supabase
+    .from("prodotto_varianti")
+    .delete()
+    .eq("id", varianteId)
+    .eq("prodotto_id", productId);
+
+  if (error) {
+    return { data: null, setupRequired: false, errorMessage: error.message ?? "Impossibile eliminare la variante." };
+  }
+
+  const { count } = await supabase
+    .from("prodotto_varianti")
+    .select("id", { head: true, count: "exact" })
+    .eq("prodotto_id", productId);
+  const restano = typeof count === "number" ? count : 0;
+
+  if (restano === 0) {
+    // Ultima variante eliminata: il prodotto torna al comportamento legacy
+    // (flag disattivato, stock non tracciato). Il prezzo resta invariato.
+    const { error: errLegacy } = await supabase
+      .from("prodotti")
+      .update({ ha_varianti: false, quantita_disponibile: null, quantita_riservata: null })
+      .eq("id", productId)
+      .eq("negozio_id", negozioId);
+    if (errLegacy) {
+      return { data: null, setupRequired: false, errorMessage: errLegacy.message ?? "Impossibile ripristinare il prodotto." };
+    }
+  } else {
+    const verifica = await verificaAggregazioneProdotto(supabase, productId, prezzoPre);
+    if (!verifica.ok || !verifica.prodotto) {
+      return {
+        data: null,
+        setupRequired: false,
+        errorMessage: "L'aggregazione del trigger non è allineata al prodotto. Riprova o contatta l'assistenza.",
+        code: "AGGREGATION_MISMATCH",
+      };
+    }
+    return { data: { prodotto: mapProduct(verifica.prodotto) }, setupRequired: false, errorMessage: null };
+  }
+
+  const { data: prodottoLegacy } = await supabase
+    .from("prodotti")
+    .select(SELECT_COLONNE_PRODOTTO)
+    .eq("id", productId)
+    .maybeSingle();
+
+  return {
+    data: { prodotto: mapProduct((prodottoLegacy ?? {}) as ProdottoRow) },
     setupRequired: false,
     errorMessage: null,
   };
