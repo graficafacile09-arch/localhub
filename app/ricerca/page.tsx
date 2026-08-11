@@ -7,6 +7,7 @@ import SearchSort from "@/components/ricerca/SearchSort";
 import SearchPagination from "@/components/ricerca/SearchPagination";
 import { getCategoriaShowcase, getFiltriDisponibiliProdotti, isOrdinamentoProdottiPubblici, type OrdinamentoProdottiPubblici } from "@/lib/negozi";
 import { search } from "@/lib/search-service";
+import { prodottoEsaurito } from "@/lib/prodotti-disponibilita";
 import { getNegozioCardImmagine } from "@/lib/negozi-card-immagini";
 import { getProdottoImmagine } from "@/lib/prodotti-immagini";
 import { chiavePreferito, getStatoPreferitiPerPagina } from "@/lib/cliente/favorites";
@@ -199,6 +200,11 @@ export default async function RicercaPage({
                                 })})`,
                               }}
                             />
+                            {prodottoEsaurito(prodotto.quantita_disponibile, prodotto.quantita_riservata) && (
+                              <span className="absolute inset-x-0 bottom-0 bg-red-600/90 py-1 text-center text-[9px] font-black uppercase tracking-wider text-white">
+                                Esaurito
+                              </span>
+                            )}
                           </div>
                           <div className="p-2">
                             <h3 className="line-clamp-2 text-xs font-bold leading-tight text-slate-900">

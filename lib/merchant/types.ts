@@ -32,6 +32,7 @@ export type MerchantProduct = {
   prezzo_suggerito: number | null;
   immagine_principale: string | null;
   quantita_disponibile: number | null;
+  quantita_riservata: number | null;
   stato_condizione: "nuovo" | "usato" | "ricondizionato" | null;
   seo_title: string | null;
   seo_description: string | null;
@@ -92,6 +93,8 @@ export interface ProductQueryOptions {
   stato?: "attivo" | "bozza";
   /** Filtro prodotti arricchiti dall'AI (origine_pubblicazione = "ai"). */
   ai?: boolean;
+  /** Filtro prodotti ESCLUSIVAMENTE esauriti (disponibilità reale <= 0). */
+  esaurito?: boolean;
   /** Ordinamento. Default: "recenti" (created_at desc). */
   ordina?: OrdinamentoProdotti;
   /** Pagina (1-based). Richiede perPagina per attivare la paginazione. */

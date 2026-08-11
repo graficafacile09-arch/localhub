@@ -14,6 +14,8 @@ type Props = {
   /** Stato iniziale del cuore calcolato dal server (opzionale). */
   preferitoAttivo?: boolean;
   autenticato?: boolean;
+  /** Badge "Esaurito" (disponibilità reale <= 0). */
+  esaurito?: boolean;
 };
 
 export default function StoreProductCard({
@@ -26,6 +28,7 @@ export default function StoreProductCard({
   id,
   preferitoAttivo,
   autenticato,
+  esaurito,
 }: Props) {
   const imageUrl = getProdottoImmagine({ immagine_principale, categoria });
   const mostraPreferiti = id != null && preferitoAttivo !== undefined && autenticato !== undefined;
@@ -36,13 +39,18 @@ export default function StoreProductCard({
         href={`/prodotto/${slug}`}
         className="group block"
       >
-        <div className="aspect-square overflow-hidden bg-slate-50">
+        <div className="relative aspect-square overflow-hidden bg-slate-50">
           <div
             role="img"
             aria-label={nome}
             className="h-full w-full bg-cover bg-center transition group-hover:scale-105"
             style={{ backgroundImage: `url(${imageUrl})` }}
           />
+          {esaurito && (
+            <span className="absolute inset-x-0 bottom-0 bg-red-600/90 py-1 text-center text-[9px] font-black uppercase tracking-wider text-white">
+              Esaurito
+            </span>
+          )}
         </div>
         <div className="p-2">
           <h3 className="truncate text-xs font-bold text-slate-900">{nome}</h3>

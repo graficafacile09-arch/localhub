@@ -9,6 +9,7 @@ import SearchSort from "@/components/ricerca/SearchSort";
 import SearchPagination from "@/components/ricerca/SearchPagination";
 import { risolviNegozioPubblico, getFiltriDisponibiliProdotti, isOrdinamentoProdottiPubblici, type OrdinamentoProdottiPubblici } from "@/lib/negozi";
 import { search } from "@/lib/search-service";
+import { prodottoEsaurito } from "@/lib/prodotti-disponibilita";
 import { getNegozioCardImmagine } from "@/lib/negozi-card-immagini";
 import { chiavePreferito, getStatoPreferitiPerPagina } from "@/lib/cliente/favorites";
 import { getSiteUrl } from "@/lib/site";
@@ -359,6 +360,10 @@ export default async function PaginaNegozio({
                     prezzo={prodotto.prezzo as number}
                     categoria={(prodotto.categoria as string) ?? null}
                     immagine_principale={(prodotto.immagine_principale as string) ?? null}
+                    esaurito={prodottoEsaurito(
+                      prodotto.quantita_disponibile != null ? Number(prodotto.quantita_disponibile) : null,
+                      prodotto.quantita_riservata != null ? Number(prodotto.quantita_riservata) : null
+                    )}
                     preferitoAttivo={statoPreferiti.chiavi.has(chiavePreferito("prodotto", prodottoId))}
                     autenticato={statoPreferiti.autenticato}
                   />

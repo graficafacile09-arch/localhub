@@ -39,6 +39,9 @@ export type ProdottoRicerca = {
   prezzo: number;
   negozio_nome: string;
   immagine_principale: string | null;
+  /** Disponibilità reale per il badge "Esaurito" nelle card pubbliche. */
+  quantita_disponibile?: number | null;
+  quantita_riservata?: number | null;
 };
 
 export type RisultatoRicercaAi = {

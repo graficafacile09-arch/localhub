@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import Header from "@/components/Header/Header";
 import { risolviProdottoPubblico, getNegozio } from "@/lib/negozi";
 import { getProdottoImmagine } from "@/lib/prodotti-immagini";
+import { disponibilitaReale, prodottoEsaurito } from "@/lib/prodotti-disponibilita";
 import { getProductMediaPubbliche } from "@/lib/prodotti-media";
 import ProductGallery, { type GalleryImage } from "@/components/prodotto/ProductGallery";
 import { chiavePreferito, getStatoPreferitiPerPagina } from "@/lib/cliente/favorites";
@@ -73,6 +74,9 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
 
   const prezzo = "prezzo" in prodotto ? Number(prodotto.prezzo) : 0;
   const quantita = "quantita_disponibile" in prodotto ? (prodotto.quantita_disponibile as number | null) : null;
+  const quantitaRiservata = "quantita_riservata" in prodotto ? (prodotto.quantita_riservata as number | null) : null;
+  const disponibile = disponibilitaReale(quantita, quantitaRiservata);
+  const esaurito = prodottoEsaurito(quantita, quantitaRiservata);
   const stato = "stato_condizione" in prodotto ? (prodotto.stato_condizione as string | null) : null;
 
   const buildWhatsAppUrl = () => {
@@ -159,12 +163,12 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
             </p>
           )}
 
-          {/* Availability */}
+          {/* Availability (disponibilità reale, considera la riserva) */}
           {quantita !== null && (
             <div className="mt-3 flex items-center gap-2">
-              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${quantita > 0 ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-600"}`}>
-                <span className={`inline-block h-1.5 w-1.5 rounded-full ${quantita > 0 ? "bg-emerald-500" : "bg-red-500"}`} />
-                {quantita > 0 ? `${quantita} disponibili` : "Non disponibile"}
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${!esaurito ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-600"}`}>
+                <span className={`inline-block h-1.5 w-1.5 rounded-full ${!esaurito ? "bg-emerald-500" : "bg-red-500"}`} />
+                {!esaurito ? `${disponibile} disponibili` : "Esaurito"}
               </span>
             </div>
           )}

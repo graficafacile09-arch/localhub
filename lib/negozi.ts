@@ -756,8 +756,10 @@ export function isOrdinamentoProdottiPubblici(value: unknown): value is Ordiname
 }
 
 // Select comune della ricerca prodotti.
+// quantita_disponibile/quantita_riservata: necessarie per il badge "Esaurito"
+// nelle card pubbliche (Fase D).
 const SELECT_PRODOTTO_RICERCA =
-  "id, slug, negozio_id, nome, descrizione, categoria, sottocategoria, marca, colore, prezzo, immagine_principale";
+  "id, slug, negozio_id, nome, descrizione, categoria, sottocategoria, marca, colore, prezzo, immagine_principale, quantita_disponibile, quantita_riservata";
 
 /**
  * Id dei negozi pubblici (deleted_at non valorizzato).
@@ -958,6 +960,10 @@ async function mappaProdottoRicerca(
     categoria: (p.categoria as string) ?? null,
     prezzo: p.prezzo as number,
     immagine_principale: (p.immagine_principale as string) ?? null,
+    quantita_disponibile:
+      p.quantita_disponibile != null ? Number(p.quantita_disponibile) : null,
+    quantita_riservata:
+      p.quantita_riservata != null ? Number(p.quantita_riservata) : null,
     negozio_nome: nomiNegozi.get(p.negozio_id as string) ?? "",
   }));
 }
@@ -1108,7 +1114,7 @@ async function cercaProdottiTolleranti(
 
   const { data, error } = await db
     .from("prodotti")
-    .select("id, slug, negozio_id, nome, descrizione, categoria, marca, sottocategoria, prezzo, immagine_principale")
+    .select("id, slug, negozio_id, nome, descrizione, categoria, marca, sottocategoria, prezzo, immagine_principale, quantita_disponibile, quantita_riservata")
     .eq("attivo", true)
     .in("negozio_id", negoziValidi)
     .or(filtri)

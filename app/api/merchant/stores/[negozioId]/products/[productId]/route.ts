@@ -1,6 +1,6 @@
 import { apiError, apiOk } from "@/lib/api/response";
 import { requireApiArea } from "@/lib/auth/session-area";
-import { deleteMerchantProductForStore, getMerchantProductForStore, getMerchantStoreForUser, updateMerchantProductForStore } from "@/lib/merchant/data";
+import { deleteMerchantProductForStore, getMerchantProductForStore, getMerchantStoreForUser, patchMerchantProductForStore, updateMerchantProductForStore } from "@/lib/merchant/data";
 import { deleteImageFromStorage } from "@/lib/supabase/storage";
 import type { MerchantProductInput } from "@/lib/merchant/types";
 
@@ -172,6 +172,78 @@ export async function PUT(
   }
 
   return apiOk({ product: updateResult.data });
+}
+
+/**
+ * PATCH — aggiornamento PARZIALE rapido (modifica rapida quantità/attivo
+ * dalla lista prodotti). Non richiede il payload completo del PUT.
+ */
+export async function PATCH(
+  request: Request,
+  context: { params: Promise<{ negozioId: string; productId: string }> }
+) {
+  const { sessione, error } = await requireApiArea("merchant");
+  if (error) return error;
+  const user = sessione.user;
+
+  const { negozioId, productId } = await context.params;
+  const storeResult = await getMerchantStoreForUser(user.id, negozioId);
+
+  if (storeResult.setupRequired) {
+    return apiError("SETUP_REQUIRED", storeResult.errorMessage ?? "Configurazione database non completata.", 503);
+  }
+
+  if (!storeResult.data) {
+    return apiError("FORBIDDEN", "Non puoi modificare prodotti per questo negozio.", 403);
+  }
+
+  const body = (await request.json().catch(() => null)) as Partial<{
+    quantitaDisponibile?: number | null;
+    attivo?: boolean;
+  }> | null;
+
+  if (!body || typeof body !== "object") {
+    return apiError("INVALID_BODY", "Body JSON non valido.", 422);
+  }
+
+  const productResult = await getMerchantProductForStore(user.id, negozioId, productId);
+
+  if (!productResult.data) {
+    return apiError("NOT_FOUND", "Prodotto non trovato.", 404);
+  }
+
+  const patch: { quantitaDisponibile?: number | null; attivo?: boolean } = {};
+
+  if (body.quantitaDisponibile !== undefined) {
+    const q = body.quantitaDisponibile;
+    if (q !== null && (typeof q !== "number" || Number.isNaN(q) || q < 0)) {
+      return apiError("INVALID_BODY", "Inserisci una quantità valida (0 o superiore).", 422);
+    }
+    patch.quantitaDisponibile = q;
+  }
+
+  if (body.attivo !== undefined) {
+    if (typeof body.attivo !== "boolean") {
+      return apiError("INVALID_BODY", "Il campo attivo deve essere booleano.", 422);
+    }
+    patch.attivo = body.attivo;
+  }
+
+  if (Object.keys(patch).length === 0) {
+    return apiError("INVALID_BODY", "Nessun campo valido da aggiornare.", 422);
+  }
+
+  const patchResult = await patchMerchantProductForStore(user.id, negozioId, productId, patch);
+
+  if (patchResult.setupRequired) {
+    return apiError("SETUP_REQUIRED", patchResult.errorMessage ?? "Configurazione database non completata.", 503);
+  }
+
+  if (!patchResult.data) {
+    return apiError("PRODUCT_UPDATE_FAILED", patchResult.errorMessage ?? "Impossibile aggiornare il prodotto.", 500);
+  }
+
+  return apiOk({ product: patchResult.data });
 }
 
 export async function DELETE(

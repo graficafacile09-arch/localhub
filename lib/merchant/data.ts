@@ -1,6 +1,6 @@
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { uploadDataUrlToStorage } from "@/lib/supabase/storage";
+import { deleteImageFromStorage, uploadDataUrlToStorage } from "@/lib/supabase/storage";
 import { generaSlugUnivoco } from "@/lib/slug-server";
 import { getCurrentUser } from "@/lib/auth/session";
 import { utenteAdminAutorizzato } from "@/lib/auth/roles";
@@ -57,6 +57,7 @@ type ProdottoRow = {
   prezzo_suggerito?: number | null;
   immagine_principale?: string | null;
   quantita_disponibile?: number | null;
+  quantita_riservata?: number | null;
   stato_condizione?: string | null;
   seo_title?: string | null;
   seo_description?: string | null;
@@ -68,6 +69,11 @@ type ProdottoRow = {
 };
 
 const SCHEMA_ERROR_CODES = new Set(["42P01", "42703", "PGRST204", "PGRST205"]);
+
+// Colonna usata per SELECT dei prodotti merchant (lista + patch parziale):
+// costante condivisa per evitare drift tra le due query.
+const SELECT_COLONNE_PRODOTTO =
+  "id, negozio_id, nome, descrizione, descrizione_completa, categoria, sottocategoria, marca, colore, materiale, caratteristiche, peso_volume, parole_chiave, filtri_catalogo, prezzo, prezzo_suggerito, immagine_principale, quantita_disponibile, quantita_riservata, stato_condizione, seo_title, seo_description, alt_text_immagine, attivo, origine_pubblicazione, created_at, updated_at";
 
 function isSchemaError(error: QueryError | null) {
   return Boolean(error?.code && SCHEMA_ERROR_CODES.has(error.code));
@@ -132,6 +138,7 @@ function mapProduct(row: ProdottoRow): MerchantProduct {
     prezzo_suggerito: row.prezzo_suggerito ?? null,
     immagine_principale: row.immagine_principale ?? null,
     quantita_disponibile: row.quantita_disponibile ?? null,
+    quantita_riservata: row.quantita_riservata ?? null,
     stato_condizione: parseStatoCondizione(row.stato_condizione),
     seo_title: row.seo_title ?? null,
     seo_description: row.seo_description ?? null,
@@ -300,16 +307,14 @@ export async function getMerchantProductsForStore(
     termine.length > 0 ||
     opts.stato !== undefined ||
     opts.ai === true ||
+    opts.esaurito === true ||
     opts.ordina !== undefined ||
     opts.pagina !== undefined ||
     opts.perPagina !== undefined;
 
   let query = supabase
     .from("prodotti")
-    .select(
-      "id, negozio_id, nome, descrizione, descrizione_completa, categoria, sottocategoria, marca, colore, materiale, caratteristiche, peso_volume, parole_chiave, filtri_catalogo, prezzo, prezzo_suggerito, immagine_principale, quantita_disponibile, stato_condizione, seo_title, seo_description, alt_text_immagine, attivo, origine_pubblicazione, created_at, updated_at",
-      conFiltri ? { count: "exact" } : undefined
-    )
+    .select(SELECT_COLONNE_PRODOTTO, conFiltri ? { count: "exact" } : undefined)
     .eq("negozio_id", negozioId);
 
   // ── Filtri ────────────────────────────────────────────────────────────
@@ -317,6 +322,12 @@ export async function getMerchantProductsForStore(
   else if (opts.stato === "bozza") query = query.eq("attivo", false);
 
   if (opts.ai) query = query.eq("origine_pubblicazione", "ai");
+
+  // Esaurito = disponibilità reale <= 0. Oggi quantita_riservata è sempre 0
+  // (colonna riservata al futuro flusso pagamenti/riserva stock), quindi il
+  // filtro server-side coincide con quantita_disponibile <= 0 (il NULL resta
+  // escluso: quantità non tracciata = disponibile).
+  if (opts.esaurito) query = query.lte("quantita_disponibile", 0);
 
   if (pulito) {
     query = query.or(
@@ -368,6 +379,7 @@ export async function getMerchantProductsForStore(
     if (opts.stato === "attivo") countQuery = countQuery.eq("attivo", true);
     else if (opts.stato === "bozza") countQuery = countQuery.eq("attivo", false);
     if (opts.ai) countQuery = countQuery.eq("origine_pubblicazione", "ai");
+    if (opts.esaurito) countQuery = countQuery.lte("quantita_disponibile", 0);
     if (pulito) {
       countQuery = countQuery.or(
         `nome.ilike.%${pulito}%,descrizione.ilike.%${pulito}%,categoria.ilike.%${pulito}%,sottocategoria.ilike.%${pulito}%,marca.ilike.%${pulito}%`
@@ -632,6 +644,195 @@ export async function deleteMerchantProductForStore(
 
   return {
     data: null,
+    setupRequired: false,
+    errorMessage: null,
+  };
+}
+
+// =================================================================
+// Operatività catalogo (Fase D) — patch rapida + azioni bulk
+// =================================================================
+
+/**
+ * Aggiornamento PARZIALE di un singolo prodotto (solo i campi forniti).
+ * Usato per la modifica rapida di quantità/attivo dalla lista prodotti.
+ * Ownership verificata come per il resto del CRUD.
+ */
+export async function patchMerchantProductForStore(
+  userId: string,
+  negozioId: string,
+  productId: string,
+  patch: {
+    quantitaDisponibile?: number | null;
+    attivo?: boolean;
+  }
+): Promise<MerchantQueryResult<MerchantProduct | null>> {
+  const storeResult = await getMerchantStoreForUser(userId, negozioId);
+
+  if (storeResult.setupRequired || !storeResult.data) {
+    return {
+      data: null,
+      setupRequired: storeResult.setupRequired,
+      errorMessage: storeResult.errorMessage ?? "Negozio non disponibile per questo venditore.",
+    };
+  }
+
+  const payload: Record<string, unknown> = {};
+  if (patch.quantitaDisponibile !== undefined) payload.quantita_disponibile = patch.quantitaDisponibile;
+  if (patch.attivo !== undefined) payload.attivo = patch.attivo;
+
+  if (Object.keys(payload).length === 0) {
+    return {
+      data: null,
+      setupRequired: false,
+      errorMessage: "Nessun campo da aggiornare.",
+    };
+  }
+
+  const supabase = await getDbForUser(userId);
+
+  const { data, error } = await supabase
+    .from("prodotti")
+    .update(payload)
+    .eq("id", productId)
+    .eq("negozio_id", negozioId)
+    .select(SELECT_COLONNE_PRODOTTO)
+    .single();
+
+  if (error) {
+    return {
+      data: null,
+      setupRequired: false,
+      errorMessage: error.message ?? "Impossibile aggiornare il prodotto.",
+    };
+  }
+
+  return {
+    data: mapProduct(data as ProdottoRow),
+    setupRequired: false,
+    errorMessage: null,
+  };
+}
+
+/**
+ * Aggiornamento BULK dei prodotti selezionati (attiva/disattiva, quantità).
+ * Ownership: update limitato a negozio_id + id IN (ids): nessun accesso
+ * cross-negozio possibile. Ritorna l'elenco degli id aggiornati.
+ */
+export async function bulkUpdateMerchantProductsForStore(
+  userId: string,
+  negozioId: string,
+  ids: string[],
+  patch: {
+    attivo?: boolean;
+    quantitaDisponibile?: number | null;
+  }
+): Promise<MerchantQueryResult<string[]>> {
+  const storeResult = await getMerchantStoreForUser(userId, negozioId);
+
+  if (storeResult.setupRequired || !storeResult.data) {
+    return {
+      data: [],
+      setupRequired: storeResult.setupRequired,
+      errorMessage: storeResult.errorMessage ?? "Negozio non disponibile per questo venditore.",
+    };
+  }
+
+  if (ids.length === 0) {
+    return { data: [], setupRequired: false, errorMessage: "Nessun prodotto selezionato." };
+  }
+
+  const payload: Record<string, unknown> = {};
+  if (patch.attivo !== undefined) payload.attivo = patch.attivo;
+  if (patch.quantitaDisponibile !== undefined) payload.quantita_disponibile = patch.quantitaDisponibile;
+
+  if (Object.keys(payload).length === 0) {
+    return { data: [], setupRequired: false, errorMessage: "Nessun campo da aggiornare." };
+  }
+
+  const supabase = await getDbForUser(userId);
+
+  const { data, error } = await supabase
+    .from("prodotti")
+    .update(payload)
+    .eq("negozio_id", negozioId)
+    .in("id", ids)
+    .select("id");
+
+  if (error) {
+    return {
+      data: [],
+      setupRequired: false,
+      errorMessage: error.message ?? "Impossibile aggiornare i prodotti.",
+    };
+  }
+
+  return {
+    data: ((data ?? []) as { id: string }[]).map((r) => String(r.id)),
+    setupRequired: false,
+    errorMessage: null,
+  };
+}
+
+/**
+ * Eliminazione BULK dei prodotti selezionati (con controllo negozio).
+ * Best-effort per le immagini nello Storage: un errore di storage NON
+ * impedisce l'eliminazione della riga (stesso pattern del DELETE singolo).
+ */
+export async function bulkDeleteMerchantProductsForStore(
+  userId: string,
+  negozioId: string,
+  ids: string[]
+): Promise<MerchantQueryResult<{ eliminati: number }>> {
+  const storeResult = await getMerchantStoreForUser(userId, negozioId);
+
+  if (storeResult.setupRequired || !storeResult.data) {
+    return {
+      data: { eliminati: 0 },
+      setupRequired: storeResult.setupRequired,
+      errorMessage: storeResult.errorMessage ?? "Negozio non disponibile per questo venditore.",
+    };
+  }
+
+  if (ids.length === 0) {
+    return { data: { eliminati: 0 }, setupRequired: false, errorMessage: "Nessun prodotto selezionato." };
+  }
+
+  // Recupera le immagini da ripulire PRIMA del delete (solo di questo negozio).
+  const supabase = createAdminSupabaseClient();
+  const { data: daEliminare } = await supabase
+    .from("prodotti")
+    .select("immagine_principale")
+    .eq("negozio_id", negozioId)
+    .in("id", ids);
+
+  const { count, error } = await supabase
+    .from("prodotti")
+    .delete()
+    .eq("negozio_id", negozioId)
+    .in("id", ids);
+
+  if (error) {
+    return {
+      data: { eliminati: 0 },
+      setupRequired: false,
+      errorMessage: error.message ?? "Impossibile eliminare i prodotti.",
+    };
+  }
+
+  // Best-effort: se la rimozione delle immagini fallisce il dato è già
+  // eliminato; l'immagine orfana verrà ripulita da un passaggio successivo.
+  if (!error && (daEliminare ?? []).length > 0) {
+    await Promise.allSettled(
+      (daEliminare ?? [])
+        .map((r) => (r as { immagine_principale?: string | null }).immagine_principale)
+        .filter(Boolean)
+        .map((img) => deleteImageFromStorage(img as string))
+    );
+  }
+
+  return {
+    data: { eliminati: count ?? ids.length },
     setupRequired: false,
     errorMessage: null,
   };
