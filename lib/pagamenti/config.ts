@@ -163,11 +163,14 @@ export async function isStripeProntoPerNegozio(negozioId: string): Promise<boole
 /**
  * Credenziali per il gateway (interfaccia CredenzialiGateway).
  * SOLO server-side; mai inviate al client.
+ * Include anche il webhook secret: serve a `verificaFirma` dei gateway
+ * HTTP (es. Klarna) per convalidare gli eventi in arrivo.
  */
 export function credenzialiGatewayDaConfig(cfg: ConfigProviderNegozio): CredenzialiGateway {
   return {
     clientId: cfg.clientId ?? undefined,
     secret: cfg.secretKey,
+    webhookSecret: cfg.webhookSecret || undefined,
     testMode: cfg.testMode,
   };
 }
