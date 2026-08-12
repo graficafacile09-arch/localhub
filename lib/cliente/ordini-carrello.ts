@@ -104,6 +104,16 @@ export type OrdineCarrelloNegozio = {
   createdAt: string;
   modalita: "ritiro" | "spedizione";
   righe: RigaOrdineCarrello[];
+  /**
+   * FASE F2.5 — sessione Stripe per questo ordine (solo metodo "carta"):
+   * popolato dal server subito dopo la creazione ordine, mai dal client.
+   * Assente/null per gli altri metodi (bonifico ecc.).
+   */
+  pagamento?: {
+    redirectUrl?: string | null;
+    sessioneId?: string | null;
+    giaEsistente?: boolean;
+  } | null;
 };
 
 /** Errore isolato di un singolo negozio. */
@@ -187,8 +197,8 @@ function validaCheckout(input: CheckoutCarrelloInput): { codice: string; messagg
   if (!key || key.length > 64) {
     return { codice: "VALIDATION_ERROR", messaggio: "Chiave di idempotenza non valida." };
   }
-  if (!Array.isArray(input.righe) || input.righe.length < 2 || input.righe.length > 50) {
-    return { codice: "VALIDATION_ERROR", messaggio: "Il carrello deve contenere da 2 a 50 prodotti." };
+  if (!Array.isArray(input.righe) || input.righe.length < 1 || input.righe.length > 50) {
+    return { codice: "VALIDATION_ERROR", messaggio: "Il carrello deve contenere da 1 a 50 prodotti." };
   }
   for (let i = 0; i < input.righe.length; i++) {
     const r = input.righe[i];

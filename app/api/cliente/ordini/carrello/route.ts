@@ -3,11 +3,16 @@ import {
   creaOrdiniCarrello,
   raggruppaPerNegozio,
   statusDaCodice,
+  type OrdineCarrelloNegozio,
   type RigaCarrelloInput,
 } from "@/lib/cliente/ordini-carrello";
 import { getCurrentUser } from "@/lib/auth/session";
 import { checkRateLimit } from "@/lib/rate-limiter";
 import { isStripeProntoPerNegozio } from "@/lib/pagamenti/config";
+import {
+  chiudiOrdineSenzaPagamento,
+  creaSessioneStripePerOrdine,
+} from "@/lib/pagamenti/sessioni";
 
 /** IP del richiedente (pattern già usato da /api/cliente/ordini). */
 function ipRichiedente(request: Request): string {
@@ -40,7 +45,13 @@ function ipRichiedente(request: Request): string {
  *   negozio non viene creato (atomicità RPC) ma quelli degli altri negozi
  *   restano validi e vengono restituiti insieme all'errore.
  *
- * NON crea Checkout Session Stripe (lo farà F2.3).
+ * FASE F2.5 — con metodo "carta" (spedizione) ogni ordine creato/riusato
+ * riceve la PROPRIA Checkout Session Stripe (mai una sessione multi-negozio):
+ *   - una sessione per ordine, ognuna con il proprio client_reference_id;
+ *   - la risposta arricchisce ogni ordine con pagamento.redirectUrl;
+ *   - se la sessione di UN negozio fallisce, quell'ordine viene chiuso
+ *     (stock ripristinato, stesso pattern del buy-now) senza toccare gli
+ *     ordini degli altri negozi.
  */
 export async function POST(request: Request) {
   // ── Rate limit per IP (prima di qualunque operazione costosa sul DB) ──
@@ -77,8 +88,8 @@ export async function POST(request: Request) {
   }
 
   const righeRaw = body.righe;
-  if (!Array.isArray(righeRaw) || righeRaw.length < 2 || righeRaw.length > 50) {
-    return apiError("VALIDATION_ERROR", "Il carrello deve contenere da 2 a 50 prodotti.", 422);
+  if (!Array.isArray(righeRaw) || righeRaw.length < 1 || righeRaw.length > 50) {
+    return apiError("VALIDATION_ERROR", "Il carrello deve contenere da 1 a 50 prodotti.", 422);
   }
   const righe: RigaCarrelloInput[] = [];
   for (let i = 0; i < righeRaw.length; i++) {
@@ -210,13 +221,53 @@ export async function POST(request: Request) {
     return apiError("SAVE_FAILED", "Impossibile completare il checkout.", 500);
   }
 
+  // ── FASE F2.5 — sessioni Stripe per negozio (solo metodo "carta") ──────
+  // Ogni ordine (creato O riusato da un retry idempotente) riceve la PROPRIA
+  // Checkout Session: mai una sessione multi-negozio. Se la sessione di un
+  // negozio fallisce, quell'ordine viene chiuso (stock ripristinato, stesso
+  // pattern del buy-now) e registrato come errore per negozio: gli ordini
+  // degli altri negozi restano validi con le loro sessioni.
+  const vuoleCarta =
+    modalita === "spedizione" && spedizioneRaw.metodoPagamento === "carta";
+  const ordiniArricchiti: OrdineCarrelloNegozio[] = [...esito.ordini];
+  const erroriAggiuntivi = [...esito.errori];
+
+  if (vuoleCarta) {
+    for (let i = 0; i < ordiniArricchiti.length; i++) {
+      const ordine = ordiniArricchiti[i];
+      const sessione = await creaSessioneStripePerOrdine(ordine.ordineId);
+      if (sessione.ok) {
+        ordine.pagamento = {
+          redirectUrl: sessione.redirectUrl,
+          sessioneId: sessione.sessioneId,
+          giaEsistente: sessione.giaEsistente,
+        };
+      } else {
+        // L'ordine non può essere pagato con carta: lo chiudiamo SOLO se è
+        // stato creato in questo checkout (retry di un ordine già esistente
+        // con sessione scaduta → non si chiude, resta tracciabile).
+        if (!ordine.giaEsistente) {
+          await chiudiOrdineSenzaPagamento(ordine.ordineId).catch(() => {});
+        }
+        erroriAggiuntivi.push({
+          negozioId: ordine.negozioId,
+          codice: sessione.codice,
+          messaggio: sessione.errore,
+        });
+        // L'ordine resta nella risposta (stato/campi dal DB, chiaro all'UI
+        // che il pagamento non è partito), ma senza redirectUrl.
+        ordine.pagamento = null;
+      }
+    }
+  }
+
   // Almeno un ordine REALMENTE nuovo → 201; tutti già esistenti (retry) → 200.
   const almenoNuovo = esito.ordini.some((o) => !o.giaEsistente);
   return apiOk(
     {
       checkoutKey: esito.checkoutKey,
-      ordini: esito.ordini,
-      errori: esito.errori,
+      ordini: ordiniArricchiti,
+      errori: erroriAggiuntivi,
     },
     almenoNuovo ? 201 : 200
   );

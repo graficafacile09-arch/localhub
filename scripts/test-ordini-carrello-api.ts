@@ -470,7 +470,6 @@ async function main() {
         { nome: "quantita 0", body: { checkoutKey: `f22-t5a-${ts}`, ...baseCheckout, righe: [{ prodottoId: ids.pLegacy1, varianteId: null, quantita: 0 }, { prodottoId: ids.pLegacy2, varianteId: null, quantita: 1 }] } },
         { nome: "quantita 100", body: { checkoutKey: `f22-t5b-${ts}`, ...baseCheckout, righe: [{ prodottoId: ids.pLegacy1, varianteId: null, quantita: 100 }, { prodottoId: ids.pLegacy2, varianteId: null, quantita: 1 }] } },
         { nome: "quantita 1.5", body: { checkoutKey: `f22-t5c-${ts}`, ...baseCheckout, righe: [{ prodottoId: ids.pLegacy1, varianteId: null, quantita: 1.5 }, { prodottoId: ids.pLegacy2, varianteId: null, quantita: 1 }] } },
-        { nome: "1 sola riga", body: { checkoutKey: `f22-t5d-${ts}`, ...baseCheckout, righe: [{ prodottoId: ids.pLegacy1, varianteId: null, quantita: 1 }] } },
         { nome: "checkoutKey vuota", body: { checkoutKey: "", ...baseCheckout, righe: [{ prodottoId: ids.pLegacy1, varianteId: null, quantita: 1 }, { prodottoId: ids.pLegacy2, varianteId: null, quantita: 1 }] } },
         { nome: "checkoutKey > 64", body: { checkoutKey: "x".repeat(65), ...baseCheckout, righe: [{ prodottoId: ids.pLegacy1, varianteId: null, quantita: 1 }, { prodottoId: ids.pLegacy2, varianteId: null, quantita: 1 }] } },
         { nome: "prodottoId non numerico", body: { checkoutKey: `f22-t5e-${ts}`, ...baseCheckout, righe: [{ prodottoId: "abc", varianteId: null, quantita: 1 }, { prodottoId: ids.pLegacy2, varianteId: null, quantita: 1 }] } },
@@ -485,6 +484,25 @@ async function main() {
         .select("id", { count: "exact", head: true })
         .like("idempotency_key", `f22-t5%-${ts}%`);
       check("nessun ordine creato dai casi T5", Number(count ?? 0) === 0, count);
+    }
+
+    // ── T5b: carrello con 1 sola riga (F2.5: il carrello può avere 1 solo
+    //        prodotto) → 201, ordine creato via crea_ordine legacy ────────
+    console.log("\n[T5b] Carrello con 1 sola riga → valido (F2.5)");
+    {
+      const key = `f22-t5b-${ts}`;
+      const esito = await postJson("/api/cliente/ordini/carrello", {
+        checkoutKey: key,
+        ...baseCheckout,
+        righe: [{ prodottoId: ids.pLegacy1, varianteId: null, quantita: 1 }],
+      });
+      check("HTTP 201 (1 riga ora valida)", esito.status === 201, esito.status);
+      const ordini = esito.data?.ordini ?? [];
+      check("1 ordine creato", ordini.length === 1, ordini);
+      check("1 riga nello snapshot", Array.isArray(ordini[0]?.righe) && ordini[0].righe.length === 1, ordini[0]?.righe);
+      const chiaveA = chiavePerNegozio(key, negozioAId!);
+      chiaviOrdini.push(chiaveA);
+      stockL1 -= 1;
     }
 
     // ── T6: prodotto / variante non valido → nessun ordine ───────────────
