@@ -17,6 +17,7 @@ import {
   Store,
   Truck,
   User,
+  Wallet,
 } from "lucide-react";
 import { useCarrello } from "@/lib/carrello/CartContext";
 import { chiaveDiRiga } from "@/lib/carrello/cart-core";
@@ -75,6 +76,8 @@ function messaggioErrore(codice?: string, messaggioServer?: string): string {
       return "Troppi tentativi in breve tempo. Riprova tra qualche minuto.";
     case "CARTA_NON_DISPONIBILE":
       return "Il pagamento con carta non è disponibile per tutti i negozi del carrello. Prova con il bonifico.";
+    case "KLARNA_NON_DISPONIBILE":
+      return "Klarna non è disponibile per tutti i negozi del carrello. Prova con la carta o il bonifico.";
     case "SCORTE_INSUFFICIENTI":
       return "Alcuni prodotti non hanno scorte sufficienti. Riduci la quantità o rimuovili.";
     case "PRODOTTO_NON_TROVATO":
@@ -133,9 +136,12 @@ export default function CheckoutCarrelloForm({ prefill }: { prefill: Prefill }) 
   const [provincia, setProvincia] = useState(prefill.provincia);
   const [noteConsegna, setNoteConsegna] = useState("");
   const [metodoSpedizione, setMetodoSpedizione] = useState<"standard" | "express">("standard");
-  // Default bonifico: sempre disponibile; la carta è verificata dal backend
-  // (pre-flight F2.2 fail-closed) — nessun controllo autoritativo nel client.
-  const [metodoPagamento, setMetodoPagamento] = useState<"carta" | "bonifico">("bonifico");
+  // Default bonifico: sempre disponibile; carta e Klarna sono verificate dal
+  // backend (pre-flight F2.2 fail-closed) — nessun controllo autoritativo nel
+  // client, né prezzi/totali/credenziali conosciuti qui.
+  const [metodoPagamento, setMetodoPagamento] = useState<"carta" | "bonifico" | "klarna">(
+    "bonifico"
+  );
   const [note, setNote] = useState("");
 
   const [inviando, setInviando] = useState(false);
@@ -471,6 +477,13 @@ export default function CheckoutCarrelloForm({ prefill }: { prefill: Prefill }) 
                   sotto="Pagamento sicuro con Stripe"
                 />
                 <OpzioneRadio
+                  selezionato={metodoPagamento === "klarna"}
+                  onClick={() => setMetodoPagamento("klarna")}
+                  icona={<Wallet className="h-4 w-4 text-slate-500" />}
+                  titolo="Klarna"
+                  sotto="Paga quando vuoi, in modo flessibile"
+                />
+                <OpzioneRadio
                   selezionato={metodoPagamento === "bonifico"}
                   onClick={() => setMetodoPagamento("bonifico")}
                   icona={<Banknote className="h-4 w-4 text-slate-500" />}
@@ -478,7 +491,7 @@ export default function CheckoutCarrelloForm({ prefill }: { prefill: Prefill }) 
                   sotto="Pagamento manuale: ti invieremo le coordinate"
                 />
               </div>
-              {metodoPagamento === "carta" && (
+              {(metodoPagamento === "carta" || metodoPagamento === "klarna") && (
                 <p className="mt-2 text-[11px] leading-4 text-slate-400">
                   Con più negozi ogni ordine ha la propria sessione di pagamento: ti mostreremo un pulsante per
                   negozio.
