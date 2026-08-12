@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ShoppingBag } from "lucide-react";
 import { disponibilitaReale, prodottoEsaurito } from "@/lib/prodotti-disponibilita";
 import type { VariantePubblica } from "@/lib/varianti-pubbliche";
+import AggiungiAlCarrelloButton from "@/components/carrello/AggiungiAlCarrelloButton";
 
 /**
  * Selettore varianti — pagina pubblica /prodotto/[slug] (FASE E4).
@@ -28,6 +29,11 @@ import type { VariantePubblica } from "@/lib/varianti-pubbliche";
 
 type Props = {
   slug: string;
+  /** Id del prodotto (per il carrello, FASE F2.4). */
+  prodottoId: string;
+  /** Snapshot UI negozio (mai autoritativo per prezzi/stock). */
+  negozioId: string;
+  negozioNome: string;
   nome: string;
   categoria: string | null;
   descrizione: string | null;
@@ -63,6 +69,9 @@ function selezioneIniziale(varianti: VariantePubblica[]): SelezioniAttributi {
 
 export default function ProductVariantSelector({
   slug,
+  prodottoId,
+  negozioId,
+  negozioNome,
   nome,
   categoria,
   descrizione,
@@ -251,7 +260,7 @@ export default function ProductVariantSelector({
         </p>
       </div>
 
-      {/* Acquista */}
+      {/* Acquista (buy-now invariato) + Aggiungi al carrello (FASE F2.4) */}
       <div className="mt-4 space-y-2">
         {acquistabile && hrefAcquista ? (
           <Link
@@ -272,6 +281,21 @@ export default function ProductVariantSelector({
             {nessunaAcquistabile || esaurito ? "Non disponibile" : "Seleziona una variante"}
           </button>
         )}
+
+        {/* Aggiungi al carrello: rispetta la variante selezionata. Solo snapshot
+            UI; prezzo/stock validati server-side (F2.1/F2.2). */}
+        <AggiungiAlCarrelloButton
+          prodottoId={prodottoId}
+          varianteId={varianteSelezionata?.id ?? null}
+          nome={nome}
+          prezzo={prezzoMostrato}
+          immagine={immagineMostrata}
+          variante={varianteSelezionata?.nome ?? null}
+          negozioId={negozioId}
+          negozioNome={negozioNome}
+          slug={slug}
+          disabled={!acquistabile}
+        />
       </div>
     </div>
   );

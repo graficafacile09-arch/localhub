@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ShieldCheck } from "lucide-react";
 import AccountMenu from "./AccountMenu";
+import CartBadge from "../carrello/CartBadge";
 import { getDatiAccount } from "./get-account-data";
 
 /**
@@ -72,6 +73,8 @@ export default async function Header() {
           >
             <ShieldCheck className="relative h-4 w-4" aria-hidden />
           </Link>
+
+          <CartBadge />
 
           <div className="hidden md:block">
             <AccountMenu account={account} />

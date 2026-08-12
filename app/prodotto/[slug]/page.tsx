@@ -13,6 +13,7 @@ import { chiavePreferito, getStatoPreferitiPerPagina } from "@/lib/cliente/favor
 import { getSiteUrl } from "@/lib/site";
 import { normalizzaNumeroWhatsApp } from "@/lib/telefono";
 import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
+import AggiungiAlCarrelloButton from "@/components/carrello/AggiungiAlCarrelloButton";
 import { MapPin, Phone, MessageCircle, ArrowLeft, ExternalLink, ShoppingBag } from "lucide-react";
 
 type Params = { slug: string };
@@ -133,6 +134,9 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
           <>
             <ProductVariantSelector
               slug={String(prodotto.slug ?? id)}
+              prodottoId={id}
+              negozioId={String(negozio?.id ?? "")}
+              negozioNome={String(negozio?.nome ?? "")}
               nome={prodotto.nome as string}
               categoria={"categoria" in prodotto ? (prodotto.categoria as string | null) : null}
               descrizione={"descrizione" in prodotto ? (prodotto.descrizione as string | null) : null}
@@ -221,6 +225,18 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
             <ShoppingBag className="h-5 w-5" />
             ACQUISTA
           </Link>
+          <AggiungiAlCarrelloButton
+            prodottoId={id}
+            varianteId={null}
+            nome={prodotto.nome as string}
+            prezzo={prezzo}
+            immagine={imageUrl}
+            variante={null}
+            negozioId={String(negozio?.id ?? "")}
+            negozioNome={String(negozio?.nome ?? "")}
+            slug={String(prodotto.slug ?? id)}
+            disabled={esaurito || !negozio}
+          />
           <FavoritoButton
             tipo="prodotto"
             riferimentoId={id}

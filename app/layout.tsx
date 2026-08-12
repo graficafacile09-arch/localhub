@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import AssistantPanel from "../components/assistant/AssistantPanel";
+import { CartProvider } from "@/lib/carrello/CartContext";
 import { getImpostazioniPubbliche } from "@/lib/platform/settings";
 import { getSiteUrl } from "@/lib/site";
 import "./globals.css";
@@ -69,7 +70,7 @@ export default async function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-slate-50">
-        {children}
+        <CartProvider>{children}</CartProvider>
 
         <footer className="border-t border-slate-200 bg-white py-3 text-center text-xs text-slate-400">
           {footerText}
