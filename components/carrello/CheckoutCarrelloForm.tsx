@@ -17,7 +17,6 @@ import {
   Store,
   Truck,
   User,
-  Wallet,
 } from "lucide-react";
 import { useCarrello } from "@/lib/carrello/CartContext";
 import { chiaveDiRiga } from "@/lib/carrello/cart-core";
@@ -476,12 +475,9 @@ export default function CheckoutCarrelloForm({ prefill }: { prefill: Prefill }) 
                   titolo="Carta di credito/debito"
                   sotto="Pagamento sicuro con Stripe"
                 />
-                <OpzioneRadio
+                <OpzioneKlarna
                   selezionato={metodoPagamento === "klarna"}
                   onClick={() => setMetodoPagamento("klarna")}
-                  icona={<Wallet className="h-4 w-4 text-slate-500" />}
-                  titolo="Klarna"
-                  sotto="Paga quando vuoi, in modo flessibile"
                 />
                 <OpzioneRadio
                   selezionato={metodoPagamento === "bonifico"}
@@ -803,6 +799,52 @@ function OpzioneRadio({
           <span className="block text-[11px] text-slate-500">{sotto}</span>
         </span>
         {prezzo && <span className="shrink-0 text-sm font-bold text-slate-900">{prezzo}</span>}
+      </span>
+    </button>
+  );
+}
+
+/**
+ * Opzione di pagamento Klarna: mostra il LOGO ufficiale (asset locale) e il
+ * messaggio "Paga in 3 rate". Nessun importo delle rate calcolato/mostrato
+ * lato frontend (il totale resta esclusivamente server-side). Il metodo
+ * inviato al backend resta "klarna".
+ */
+function OpzioneKlarna({
+  selezionato,
+  onClick,
+}: {
+  selezionato: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={selezionato}
+      className={`w-full rounded-lg border p-3 text-left transition ${
+        selezionato ? "border-blue-400 bg-blue-50/50" : "border-slate-200 bg-white hover:border-slate-300"
+      }`}
+    >
+      <span className="flex items-center justify-between gap-3">
+        {/* Logo ufficiale Klarna (wordmark nero su trasparente, asset locale). */}
+        <img
+          src="/loghi/klarna.svg"
+          alt="Klarna"
+          width={88}
+          height={20}
+          className="h-5 w-auto shrink-0 object-contain"
+        />
+        <span className="inline-flex shrink-0 items-center rounded-full bg-slate-900 px-2.5 py-1 text-[11px] font-bold text-white">
+          Paga in 3 rate
+        </span>
+      </span>
+      <span className="mt-2 block text-sm font-semibold text-slate-900">Klarna</span>
+      <span className="mt-0.5 block text-[11px] leading-4 text-slate-500">
+        Dividi il tuo acquisto in 3 rate, se disponibile.
+      </span>
+      <span className="mt-1 block text-[10px] leading-4 text-slate-400">
+        Soggetto ad approvazione e alle condizioni di Klarna.
       </span>
     </button>
   );
