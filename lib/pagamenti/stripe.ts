@@ -21,6 +21,67 @@ import type {
   PaymentStatus,
 } from "./types";
 
+/**
+ * Costruisce i line_item della Checkout Session (FASE F2.3).
+ * Quando il contesto porta le RIGHE dell'ordine (snapshot del DB, mai dal
+ * client), crea UN line_item per riga con prezzo unitario e quantità dalla
+ * riga DB (la variante è inclusa nel nome); aggiunge il costo spedizione
+ * come line item dedicato, così il totale della sessione coincide con
+ * ordine.totale (calcolato dal DB alla creazione). Senza righe → fallback
+ * legacy: line item unico pari al totale (usato dai test gateway esistenti
+ * e difesa in profondità per ordini senza righe caricate).
+ */
+function costruisciLineItems(
+  ctx: ContestoCheckout
+): Stripe.Checkout.SessionCreateParams.LineItem[] {
+  const valuta = ctx.valuta.toLowerCase() || "eur";
+
+  if (Array.isArray(ctx.righe) && ctx.righe.length > 0) {
+    const items: Stripe.Checkout.SessionCreateParams.LineItem[] = ctx.righe.map((riga) => ({
+      quantity: riga.quantita,
+      price_data: {
+        currency: valuta,
+        unit_amount: Math.round(riga.prezzoUnitario * 100),
+        product_data: {
+          name: riga.variante ? `${riga.nome} — ${riga.variante}` : riga.nome,
+          description: `Ordine InCittà ${ctx.numeroOrdine}`,
+        },
+      },
+    }));
+
+    const spedizione = Number(ctx.costoSpedizione ?? 0);
+    if (spedizione > 0) {
+      items.push({
+        quantity: 1,
+        price_data: {
+          currency: valuta,
+          unit_amount: Math.round(spedizione * 100),
+          product_data: {
+            name: "Spedizione",
+            description: `Consegna per l'ordine InCittà ${ctx.numeroOrdine}`,
+          },
+        },
+      });
+    }
+    return items;
+  }
+
+  // Fallback legacy: line item unico pari al totale (comportamento F1).
+  return [
+    {
+      quantity: 1,
+      price_data: {
+        currency: valuta,
+        unit_amount: Math.round(Number(ctx.importo) * 100),
+        product_data: {
+          name: `Ordine ${ctx.numeroOrdine}`,
+          description: `Ordine InCittà ${ctx.numeroOrdine} presso il negozio.`,
+        },
+      },
+    },
+  ];
+}
+
 /** Errore applicativo del gateway (mai esposto al client in chiaro). */
 export class PagamentoGatewayError extends Error {
   codice: string;
@@ -111,21 +172,11 @@ export class GatewayStripe implements PaymentGateway {
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       payment_method_types: ["card"],
-      // L'importo è SEMPRE quello calcolato dal DB (ordine.totale): il client
-      // non ha alcun controllo su prezzo/totale/spedizione.
-      line_items: [
-        {
-          quantity: 1,
-          price_data: {
-            currency: ctx.valuta.toLowerCase() || "eur",
-            unit_amount: Math.round(importo * 100),
-            product_data: {
-              name: `Ordine ${ctx.numeroOrdine}`,
-              description: `Ordine InCittà ${ctx.numeroOrdine} presso il negozio.`,
-            },
-          },
-        },
-      ],
+      // FASE F2.3 — un line_item per riga (prezzo/quantità dagli snapshot
+      // del DB via ContestoCheckout.righe): il client non ha alcun controllo
+      // su prezzi, quantità, totale o spedizione. Senza righe nel contesto
+      // resta il fallback legacy (line item unico sul totale del DB).
+      line_items: costruisciLineItems(ctx),
       success_url: `${ctx.returnUrl}${ctx.returnUrl.includes("?") ? "&" : "?"}esito=ok`,
       cancel_url: `${ctx.cancelUrl}${ctx.cancelUrl.includes("?") ? "&" : "?"}esito=annullato`,
       client_reference_id: ctx.ordineId,

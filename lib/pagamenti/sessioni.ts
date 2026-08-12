@@ -18,7 +18,7 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getSiteUrl } from "@/lib/site";
 import { getConfigStripeNegozio, credenzialiGatewayDaConfig } from "./config";
 import { GatewayStripe, type GatewayStripeOptions } from "./stripe";
-import type { ContestoCheckout } from "./types";
+import type { ContestoCheckout, RigaCheckout } from "./types";
 
 /** Dati dell'ordine necessari alla sessione (letti dal DB, mai dal client). */
 type OrdinePerSessione = {
@@ -28,6 +28,10 @@ type OrdinePerSessione = {
   totale: number;
   stato: string;
   paymentStatus: string | null;
+  /** Costo spedizione (una sola volta, F2.3): line item dedicato. */
+  costoSpedizione: number;
+  /** Righe dell'ordine (snapshot DB): un line_item Stripe per riga (F2.3). */
+  righe: RigaCheckout[];
 };
 
 export type EsitoSessioneStripe =
@@ -39,15 +43,28 @@ export type EsitoSessioneStripe =
     }
   | { ok: false; codice: string; errore: string };
 
-/** Carica l'ordine con SOLO i campi necessari (admin/service-role). */
+/**
+ * Carica l'ordine con i campi necessari (admin/service-role) INSIEME alle
+ * sue ordini_righe (FASE F2.3): la sessione Stripe nasce da questi snapshot
+ * (nome, prezzo unitario, quantità, variante) — mai da dati del client.
+ */
 async function caricaOrdine(ordineId: string): Promise<OrdinePerSessione | null> {
   const db = createAdminSupabaseClient();
   const { data, error } = await db
     .from("ordini")
-    .select("id, numero, negozio_id, totale, stato, payment_status")
+    .select(
+      "id, numero, negozio_id, totale, stato, payment_status, costo_spedizione"
+    )
     .eq("id", ordineId)
     .single();
   if (error || !data) return null;
+
+  const { data: righe } = await db
+    .from("ordini_righe")
+    .select("nome_prodotto, prezzo_unitario, quantita, variante_nome")
+    .eq("ordine_id", ordineId)
+    .order("created_at", { ascending: true });
+
   return {
     id: String(data.id),
     numero: String(data.numero ?? ""),
@@ -55,6 +72,13 @@ async function caricaOrdine(ordineId: string): Promise<OrdinePerSessione | null>
     totale: Number(data.totale ?? 0),
     stato: String(data.stato ?? ""),
     paymentStatus: (data.payment_status as string | null) ?? null,
+    costoSpedizione: Number(data.costo_spedizione ?? 0),
+    righe: ((righe ?? []) as Record<string, unknown>[]).map((r) => ({
+      nome: String(r.nome_prodotto ?? ""),
+      quantita: Number(r.quantita ?? 1),
+      prezzoUnitario: Number(r.prezzo_unitario ?? 0),
+      variante: r.variante_nome ? String(r.variante_nome) : null,
+    })),
   };
 }
 
@@ -165,6 +189,35 @@ export async function creaSessioneStripePerOrdine(
     };
   }
 
+  // ── FASE F2.3 — righe dell'ordine dal DB + coerenza totale ──────────────
+  // Ogni riga diventa un line_item Stripe (prezzo unitario e quantità dagli
+  // snapshot ordini_righe). Il totale della sessione (Σ righe + spedizione)
+  // deve corrispondere ESATTAMENTE a ordine.totale (calcolato dal DB alla
+  // creazione dell'ordine): se non coincide rifiutiamo (fail-closed) — mai
+  // una sessione con un importo diverso da quello persistito.
+  if (ordine.righe.length === 0) {
+    return {
+      ok: false,
+      codice: "ORDINE_SENZA_RIGHE",
+      errore: "L'ordine non ha prodotti: impossibile avviare il pagamento.",
+    };
+  }
+  const sommaRighe = ordine.righe.reduce(
+    (s, r) => s + Math.round(r.prezzoUnitario * r.quantita * 100) / 100,
+    0
+  );
+  const totaleAtteso = Math.round((sommaRighe + ordine.costoSpedizione) * 100) / 100;
+  if (Math.abs(totaleAtteso - ordine.totale) > 0.011) {
+    console.error(
+      `[pagamenti] totale incoerente ordine ${ordine.id}: righe=${totaleAtteso}, persistito=${ordine.totale}`
+    );
+    return {
+      ok: false,
+      codice: "TOTALE_NON_COERENTE",
+      errore: "Impossibile avviare il pagamento: totale dell'ordine non coerente.",
+    };
+  }
+
   const siteUrl = getSiteUrl();
   const ctx: ContestoCheckout = {
     ordineId: ordine.id,
@@ -175,6 +228,9 @@ export async function creaSessioneStripePerOrdine(
     metodo: "carta",
     returnUrl: `${siteUrl}/ordini/conferma/${ordine.id}`,
     cancelUrl: `${siteUrl}/ordini/conferma/${ordine.id}`,
+    // FASE F2.3 — un line_item per riga, spedizione come line item dedicato.
+    righe: ordine.righe,
+    costoSpedizione: ordine.costoSpedizione,
   };
 
   const gateway = new GatewayStripe(gatewayOpts);

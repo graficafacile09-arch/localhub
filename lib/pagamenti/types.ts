@@ -38,6 +38,22 @@ export interface CredenzialiGateway {
   testMode: boolean;
 }
 
+/**
+ * Riga dell'ordine da includere nella sessione (FASE F2.3).
+ * Tutti i valori provengono dagli SNAPSHOT del DB (ordini_righe), mai dal
+ * client: il gateway li usa per costruire un line_item Stripe per riga.
+ */
+export interface RigaCheckout {
+  /** Nome prodotto dallo snapshot DB (ordini_righe.nome_prodotto). */
+  nome: string;
+  /** Quantità dalla riga DB. */
+  quantita: number;
+  /** Prezzo unitario in euro dal DB (ordini_righe.prezzo_unitario). */
+  prezzoUnitario: number;
+  /** Variante (ordini_righe.variante_nome): inclusa nel nome quando presente. */
+  variante?: string | null;
+}
+
 /** Contesto di checkout necessario a creare una sessione di pagamento. */
 export interface ContestoCheckout {
   ordineId: string;
@@ -48,6 +64,17 @@ export interface ContestoCheckout {
   metodo: string;
   returnUrl: string;
   cancelUrl: string;
+  /**
+   * Righe dell'ordine (FASE F2.3): quando presente, il gateway crea UN
+   * line_item Stripe per riga (quantità e prezzo unitario dal DB). Assente
+   * → comportamento legacy (line item unico sul totale, difesa in profondità).
+   */
+  righe?: RigaCheckout[];
+  /**
+   * Costo spedizione (una sola volta per ordine, FASE F2.3): aggiunto come
+   * line item dedicato così il totale sessione coincide con ordine.totale.
+   */
+  costoSpedizione?: number;
 }
 
 /**
