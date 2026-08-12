@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Generator: Adobe Illustrator 19.2.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
-<!-- LOGO KLARNA (wordmark nero) -- asset vettoriale ufficiale del marchio Klarna, integrato localmente. Fonte: Wikimedia Commons (File:Klarna Logo black.svg), derivato dagli asset stampa ufficiali Klarna. Uso nominativo come metodo di pagamento nel checkout. -->
+<!-- LOGO KLARNA (wordmark ROSA) -- asset vettoriale ufficiale del marchio Klarna,
+     integrato localmente. Stessa geometria del wordmark ufficiale (File:Klarna Logo
+     black.svg su Wikimedia Commons, derivato dagli asset stampa ufficiali Klarna)
+     nella variante ufficiale Klarna Pink (#FFB3C7, da Klarna Brand Guidelines).
+     Uso nominativo come metodo di pagamento nel checkout. -->
 <svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
 	 viewBox="0 0 452.9 101.1" style="enable-background:new 0 0 452.9 101.1;" xml:space="preserve">
+<g fill="#FFB3C7">
 <path d="M79.7,0H57.4c0,18.3-8.4,35-23,46l-8.8,6.6l34.2,46.6h28.1L56.4,56.3C71.3,41.5,79.7,21.5,79.7,0z"/>
 <rect width="22.8" height="99.2"/>
 <rect x="94.5" width="21.5" height="99.2"/>
@@ -23,4 +28,5 @@
 </g>
 <path d="M440,74.9c-7.1,0-12.9,5.8-12.9,12.9c0,7.1,5.8,12.9,12.9,12.9c7.1,0,12.9-5.8,12.9-12.9C452.9,80.6,447.1,74.9,440,74.9z"
 	/>
+</g>
 </svg>
