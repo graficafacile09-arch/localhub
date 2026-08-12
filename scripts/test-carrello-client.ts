@@ -18,6 +18,7 @@ import {
   leggiCarrello,
   QUANTITA_MAX,
   QUANTITA_MIN,
+  quantitaDiRiga,
   raggruppaPerNegozio,
   rimuoviDalCarrello,
   serializzaCarrello,
@@ -217,6 +218,35 @@ console.log("\n[T9] Serializzazione round-trip + righe invalide scartate");
   check("riga invalida scartata", filtrati.length === 1 && filtrati[0].prodottoId === "ok");
 }
 
+// ── T10b. getItemQuantity / numeroRighe ─────────────────────────────────────
+console.log("\n[T10b] getItemQuantity (quantitaDiRiga) e numeroRighe");
+{
+  let carrello: RigaCarrello[] = [];
+  carrello = aggiungiAlCarrello(carrello, rigaBase({ prodottoId: "p1", varianteId: "v1", quantita: 2 }));
+  carrello = aggiungiAlCarrello(carrello, rigaBase({ prodottoId: "p1", varianteId: "v2", quantita: 1 }));
+  carrello = aggiungiAlCarrello(carrello, rigaBase({ prodottoId: "p2", varianteId: null, quantita: 5 }));
+
+  check("quantitaDiRiga p1+v1 = 2", quantitaDiRiga(carrello, "p1", "v1") === 2);
+  check("quantitaDiRiga p1+v2 = 1", quantitaDiRiga(carrello, "p1", "v2") === 1);
+  check("quantitaDiRiga p2 base = 5", quantitaDiRiga(carrello, "p2", null) === 5);
+  check("quantitaDiRiga assente = 0", quantitaDiRiga(carrello, "p1", "vX") === 0 && quantitaDiRiga(carrello, "p3", null) === 0);
+  check("numeroRighe = 3 righe distinte", carrello.length === 3);
+  carrello = aggiungiAlCarrello(carrello, rigaBase({ prodottoId: "p1", varianteId: "v1", quantita: 1 }));
+  check("incremento non crea riga: numeroRighe resta 3", carrello.length === 3);
+  check("quantitaDiRiga aggiornata a 3 dopo incremento", quantitaDiRiga(carrello, "p1", "v1") === 3);
+}
+
+// ── T10c. API Context richieste (verifica statica) ──────────────────────────
+console.log("\n[T10c] API Context: useCart, getItemQuantity, numeroRighe");
+{
+  const ctx = readFileSync(join(process.cwd(), "lib/carrello/CartContext.tsx"), "utf8");
+  check("export useCart alias presente", /export function useCart/.test(ctx));
+  check("getItemQuantity esposta nel tipo StatoCarrello", /getItemQuantity/.test(ctx));
+  check("numeroRighe esposta nel tipo StatoCarrello", /numeroRighe/.test(ctx));
+  check("chiave localStorage versionata (localhub.carrello.v1)",
+    readFileSync(join(process.cwd(), "lib/carrello/cart-core.ts"), "utf8").includes("localhub.carrello.v1"));
+}
+
 // ── T10. Buy-now invariato (verifica statica dei sorgenti) ──────────────────
 console.log("\n[T10] Buy-now ACQUISTA invariato (verifica statica)");
 {
@@ -238,6 +268,10 @@ console.log("\n[T10] Buy-now ACQUISTA invariato (verifica statica)");
     "nessuna modifica al flusso /acquista: nessun riferimento checkout nel core",
     !readFileSync(join(process.cwd(), "lib/carrello/cart-core.ts"), "utf8").includes("/acquista")
   );
+  const bottone = readFileSync(join(process.cwd(), "components/carrello/AggiungiAlCarrelloButton.tsx"), "utf8");
+  check("feedback aggiunta: link Vai al carrello presente", bottone.includes("Vai al carrello") && bottone.includes("href=\"/carrello\""));
+  const paginaCarrello = readFileSync(join(process.cwd(), "components/carrello/CarrelloPageClient.tsx"), "utf8");
+  check("pagina carrello: link Continua gli acquisti presente", paginaCarrello.includes("Continua gli acquisti"));
 }
 
 // ── Riepilogo ───────────────────────────────────────────────────────────────

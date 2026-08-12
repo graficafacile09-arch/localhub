@@ -116,6 +116,20 @@ export function contaPezzi(carrello: RigaCarrello[]): number {
   return carrello.reduce((somma, r) => somma + r.quantita, 0);
 }
 
+/**
+ * Quantità della combinazione prodotto+variante nel carrello
+ * (0 se assente). Utile per mostrare la quantità già in carrello.
+ */
+export function quantitaDiRiga(
+  carrello: RigaCarrello[],
+  prodottoId: string,
+  varianteId: string | null
+): number {
+  const chiave = chiaveRiga(prodottoId, varianteId);
+  const riga = carrello.find((r) => chiaveDiRiga(r) === chiave);
+  return riga?.quantita ?? 0;
+}
+
 export function subtotaleRighe(righe: RigaCarrello[]): number {
   return Math.round(
     righe.reduce((somma, r) => somma + r.prezzo * r.quantita, 0) * 100

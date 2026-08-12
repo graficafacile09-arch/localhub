@@ -16,6 +16,7 @@ import {
   chiaveRiga,
   contaPezzi,
   leggiCarrello,
+  quantitaDiRiga,
   raggruppaPerNegozio,
   rimuoviDalCarrello,
   scriviCarrello,
@@ -29,6 +30,8 @@ import {
 type StatoCarrello = {
   /** Righe ordinate per aggiunta (il raggruppamento è fatto in UI). */
   righe: RigaCarrello[];
+  /** Numero di righe (combinazioni prodotto+variante) nel carrello. */
+  numeroRighe: number;
   /** Totale pezzi (per il badge). */
   pezzi: number;
   /** Raggruppamento per negozio con subtotale (per la pagina carrello). */
@@ -41,6 +44,8 @@ type StatoCarrello = {
   aggiorna: (chiave: string, quantita: number) => void;
   rimuovi: (chiave: string) => void;
   svuota: () => void;
+  /** Quantità della combinazione prodotto+variante (0 se assente). */
+  getItemQuantity: (prodottoId: string, varianteId?: string | null) => number;
 };
 
 const CarrelloContext = createContext<StatoCarrello | null>(null);
@@ -81,9 +86,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setRighe(svuotaCarrello());
   }, []);
 
+  const getItemQuantity = useCallback(
+    (prodottoId: string, varianteId?: string | null) =>
+      quantitaDiRiga(righe, prodottoId, varianteId ?? null),
+    [righe]
+  );
+
   const valore = useMemo<StatoCarrello>(
     () => ({
       righe,
+      numeroRighe: righe.length,
       pezzi: contaPezzi(righe),
       gruppi: raggruppaPerNegozio(righe),
       totale: totaleCarrello(righe),
@@ -92,8 +104,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
       aggiorna,
       rimuovi,
       svuota,
+      getItemQuantity,
     }),
-    [righe, ultimoAggiunto, aggiungi, aggiorna, rimuovi, svuota]
+    [righe, ultimoAggiunto, aggiungi, aggiorna, rimuovi, svuota, getItemQuantity]
   );
 
   return <CarrelloContext.Provider value={valore}>{children}</CarrelloContext.Provider>;
@@ -105,6 +118,11 @@ export function useCarrello(): StatoCarrello {
     throw new Error("useCarrello deve essere usato dentro <CartProvider>");
   }
   return ctx;
+}
+
+/** Alias internazionale (spec F2.4): stesso hook di `useCarrello`. */
+export function useCart(): StatoCarrello {
+  return useCarrello();
 }
 
 /** Utile per costruire la chiave di una riga senza esportare interni. */

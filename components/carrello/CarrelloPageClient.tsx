@@ -52,14 +52,22 @@ export default function CarrelloPageClient() {
             ({pezzi} {pezzi === 1 ? "articolo" : "articoli"})
           </span>
         </h1>
-        <button
-          type="button"
-          onClick={svuota}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-red-600 transition hover:border-red-300 hover:bg-red-50"
-        >
-          <Trash2 className="h-3.5 w-3.5" aria-hidden />
-          Svuota carrello
-        </button>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/negozi"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 transition hover:border-blue-300 hover:text-blue-700"
+          >
+            Continua gli acquisti
+          </Link>
+          <button
+            type="button"
+            onClick={svuota}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-red-600 transition hover:border-red-300 hover:bg-red-50"
+          >
+            <Trash2 className="h-3.5 w-3.5" aria-hidden />
+            Svuota carrello
+          </button>
+        </div>
       </div>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_320px]">
