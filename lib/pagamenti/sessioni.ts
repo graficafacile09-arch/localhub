@@ -17,7 +17,7 @@
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getSiteUrl } from "@/lib/site";
 import { getConfigStripeNegozio, credenzialiGatewayDaConfig } from "./config";
-import { GatewayStripe } from "./stripe";
+import { GatewayStripe, type GatewayStripeOptions } from "./stripe";
 import type { ContestoCheckout } from "./types";
 
 /** Dati dell'ordine necessari alla sessione (letti dal DB, mai dal client). */
@@ -87,7 +87,9 @@ async function sessioneAttiva(
  * oppure dal retry (POST /api/pagamenti/sessioni).
  */
 export async function creaSessioneStripePerOrdine(
-  ordineId: string
+  ordineId: string,
+  /** SOLO TEST: consente di puntare il gateway a un server Stripe mock. */
+  gatewayOpts?: GatewayStripeOptions
 ): Promise<EsitoSessioneStripe> {
   if (!ordineId) {
     return { ok: false, codice: "VALIDATION_ERROR", errore: "Ordine non valido." };
@@ -127,6 +129,17 @@ export async function creaSessioneStripePerOrdine(
       ? new Date(attiva.expiresAt).getTime() <= Date.now()
       : false;
     if (!scaduta) {
+      // Retry con sessione attiva: garantisce payment_provider='stripe'
+      // anche per ordini pending creati PRIMA di questo fix (foundation
+      // 20260818). Best-effort: la sessione già attiva non va bloccata da
+      // un errore di marcatura (l'update idempotente è fail-soft qui).
+      const { error: reuseErr } = await db
+        .from("ordini")
+        .update({ payment_provider: "stripe" })
+        .eq("id", ordine.id);
+      if (reuseErr) {
+        console.error("[pagamenti] valorizzazione payment_provider (retry) fallita:", reuseErr.message);
+      }
       return {
         ok: true,
         redirectUrl: attiva.redirectUrl,
@@ -164,7 +177,7 @@ export async function creaSessioneStripePerOrdine(
     cancelUrl: `${siteUrl}/ordini/conferma/${ordine.id}`,
   };
 
-  const gateway = new GatewayStripe();
+  const gateway = new GatewayStripe(gatewayOpts);
   let sessione;
   try {
     sessione = await gateway.creaSessione(ctx, credenzialiGatewayDaConfig(config));
@@ -228,6 +241,29 @@ export async function creaSessioneStripePerOrdine(
     console.error("[pagamenti] aggiornamento payment_status fallito:", statoErr.message);
     // Best-effort: la sessione resta salvata; chiudiamola per non lasciare
     // una sessione attiva su un ordine non in pending.
+    await db
+      .from("pagamenti_sessioni")
+      .update({ status: "expired", updated_at: new Date().toISOString() })
+      .eq("id", String((sessioneInserita as { id?: string } | null)?.id ?? ""));
+    return { ok: false, codice: "SAVE_FAILED", errore: "Impossibile avviare il pagamento. Riprova." };
+  }
+
+  // ── FASE F1 — payment_provider: l'ordine è ora nel flusso Stripe ───────
+  // Gap chiuso: la colonna ordini.payment_provider esiste dalla foundation
+  // (20260818) ma NESSUN punto del flusso la valorizzava → ogni ordine
+  // pagato con carta restava payment_provider = NULL. La valorizziamo qui,
+  // nell'unico punto architetturale dove l'ordine entra davvero nel
+  // pagamento Stripe (sessione creata + payment_status = pending), sia per
+  // il checkout iniziale sia per il retry (/api/pagamenti/sessioni).
+  // Fail-closed come lo stato: se la marcatura fallisce non lasciamo un
+  // ordine pending senza provider (stessa gestione di statoErr). Nessuna
+  // migration: colonna e indice esistono già.
+  const { error: providerErr } = await db
+    .from("ordini")
+    .update({ payment_provider: "stripe" })
+    .eq("id", ordine.id);
+  if (providerErr) {
+    console.error("[pagamenti] valorizzazione payment_provider fallita:", providerErr.message);
     await db
       .from("pagamenti_sessioni")
       .update({ status: "expired", updated_at: new Date().toISOString() })
