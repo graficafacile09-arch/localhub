@@ -218,6 +218,52 @@ console.log("\n[T9] Serializzazione round-trip + righe invalide scartate");
   check("riga invalida scartata", filtrati.length === 1 && filtrati[0].prodottoId === "ok");
 }
 
+// ── T9b. FIX P1: prodottoId NUMERICO dal DB → normalizzato a stringa ──────
+//    Il DB (bigint) restituisce prodotto.id come number (es. 480). Il carrello
+//    deve salvarlo come STRINGA e accettare al load righe legacy con
+//    prodottoId numerico (mai scartarle). Senza il fix la riga sparisce al
+//    reload → carrello multi-prodotto perso.
+console.log("\n[T9b] FIX P1: prodottoId number dal DB → string in storage → reload");
+{
+  // 1) Aggiunta con prodottoId NUMERICO (come lo passa il DB) → storage stringa.
+  const { storage, dump } = storageMemoria();
+  let carrello: RigaCarrello[] = [];
+  carrello = aggiungiAlCarrello(
+    carrello,
+    rigaBase({ prodottoId: 480 as unknown as string, negozioId: "nA", negozioNome: "Negozio A", prezzo: 12.5, quantita: 1, slug: "verifica-f2-pane-leg" })
+  );
+  carrello = aggiungiAlCarrello(
+    carrello,
+    rigaBase({ prodottoId: 482 as unknown as string, negozioId: "nB", negozioNome: "Negozio B", prezzo: 4.9, quantita: 1, slug: "verifica-f2-dolce-b" })
+  );
+  check("2 righe (2 negozi) in memoria", carrello.length === 2);
+  scriviCarrello(storage, carrello);
+  const raw = dump() ?? "";
+  check("prodottoId salvato come STRINGA in storage", raw.includes('"prodottoId":"480"') && raw.includes('"prodottoId":"482"'), raw.slice(0, 120));
+
+  // 2) Reload: leggi → entrambe le righe devono restare (2 negozi).
+  const ripristinato = leggiCarrello(storage);
+  check("reload: 2 righe conservate (2 negozi)", ripristinato.length === 2, String(ripristinato.length));
+  check("reload: prodottoId normalizzato a stringa", ripristinato.every((r) => typeof r.prodottoId === "string"));
+  check("reload: entrambi i negozi presenti", ripristinato.some((r) => r.negozioId === "nA") && ripristinato.some((r) => r.negozioId === "nB"));
+  check("reload: raggruppamento = 2 gruppi negozio", raggruppaPerNegozio(ripristinato).length === 2);
+
+  // 3) Compatibilità legacy: riga GIÀ salvata con prodottoId numerico → migrata.
+  const legacy = '{"versione":1,"righe":[' +
+    '{"prodottoId":480,"varianteId":null,"quantita":1,"nome":"Pane","prezzo":12.5,"immagine":null,"variante":null,"negozioId":"nA","negozioNome":"Negozio A","slug":"pane"},' +
+    '{"prodottoId":"482","varianteId":null,"quantita":2,"nome":"Dolce","prezzo":4.9,"immagine":null,"variante":null,"negozioId":"nB","negozioNome":"Negozio B","slug":"dolce"}' +
+    "]}";
+  const legacyRipristinato = deserializzaCarrello(legacy);
+  check("legacy numerico: riga NON scartata (migrata a stringa)", legacyRipristinato.length === 2, String(legacyRipristinato.length));
+  check("legacy numerico: prodottoId 480 → '480'", legacyRipristinato[0]?.prodottoId === "480", legacyRipristinato[0]?.prodottoId);
+  check("legacy stringa: '482' resta '482'", legacyRipristinato[1]?.prodottoId === "482");
+  check("legacy: quantità e prezzi preservati", legacyRipristinato[0]?.quantita === 1 && legacyRipristinato[1]?.quantita === 2 && legacyRipristinato[0]?.prezzo === 12.5);
+
+  // 4) Chiave riga stabile dopo normalizzazione (incremento stessa combinazione).
+  const ancora = aggiungiAlCarrello(ripristinato, rigaBase({ prodottoId: 480 as unknown as string, negozioId: "nA", prezzo: 12.5, quantita: 1 }));
+  check("incremento dopo reload: stessa combinazione → 1 riga qta 2", ancora.filter((r) => r.negozioId === "nA").length === 1 && ancora.find((r) => r.negozioId === "nA")?.quantita === 2);
+}
+
 // ── T10b. getItemQuantity / numeroRighe ─────────────────────────────────────
 console.log("\n[T10b] getItemQuantity (quantitaDiRiga) e numeroRighe");
 {

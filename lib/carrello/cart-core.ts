@@ -54,7 +54,12 @@ function clampQuantita(q: number): number {
 
 function rigaCompleta(r: RigaInserimento): RigaCarrello {
   return {
-    prodottoId: r.prodottoId,
+    // FIX P1 — normalizza SEMPRE a stringa: il DB (bigint) può restituire
+    // prodotto.id come number; senza la conversione la serializzazione
+    // salva un numero e validaRiga (che esige string) scarterebbe la riga
+    // al reload → carrello multi-prodotto perso. La normalizzazione qui,
+    // nel punto centrale, rende il carrello indipendente dal tipo del DB.
+    prodottoId: String(r.prodottoId),
     varianteId: r.varianteId ?? null,
     quantita: clampQuantita(r.quantita ?? QUANTITA_MIN),
     nome: r.nome,
@@ -173,7 +178,14 @@ export type CarrelloPersistito = {
 function validaRiga(raw: unknown): RigaCarrello | null {
   if (!raw || typeof raw !== "object") return null;
   const r = raw as Record<string, unknown>;
-  if (typeof r.prodottoId !== "string" || !r.prodottoId) return null;
+  // FIX P1 — prodottoId può essere arrivato in localStorage come NUMBER
+  // (DB bigint, versioni precedenti del carrello): accettiamo string E
+  // number e normalizziamo a stringa. Righe legacy numeriche → migrate
+  // automaticamente al primo load (mai scartate).
+  const prodottoIdRaw = r.prodottoId;
+  if (typeof prodottoIdRaw !== "string" && typeof prodottoIdRaw !== "number") return null;
+  const prodottoId = String(prodottoIdRaw);
+  if (!prodottoId) return null;
   if (typeof r.negozioId !== "string" || !r.negozioId) return null;
   if (typeof r.nome !== "string") return null;
   const prezzo = Number(r.prezzo);
@@ -181,7 +193,7 @@ function validaRiga(raw: unknown): RigaCarrello | null {
   const quantita = Number(r.quantita);
   if (!Number.isFinite(quantita) || quantita < 1) return null;
   return {
-    prodottoId: r.prodottoId,
+    prodottoId,
     varianteId: typeof r.varianteId === "string" && r.varianteId ? r.varianteId : null,
     quantita: clampQuantita(quantita),
     nome: r.nome,
