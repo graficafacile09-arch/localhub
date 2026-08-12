@@ -7,11 +7,12 @@
  * specifico (contratto già dichiarato in lib/pagamenti/types.ts).
  *
  * Provider ammessi dall'architettura: stripe, klarna, scalapay, paypal.
- * In questa fase è implementato SOLO stripe: klarna/scalapay/paypal sono
- * ammessi dal registry ma senza factory (→ `getGatewayProvider` ritorna
- * null, fail-closed) finché non arriveranno i rispettivi gateway.
+ * Implementati: stripe e klarna. scalapay/paypal sono ammessi dal registry
+ * ma senza factory (→ `getGatewayProvider` ritorna null, fail-closed)
+ * finché non arriveranno i rispettivi gateway.
  */
 
+import { GatewayKlarna, type GatewayKlarnaOptions } from "./gateway-klarna";
 import { GatewayStripe, type GatewayStripeOptions } from "./stripe";
 import type { PaymentGateway } from "./types";
 
@@ -33,17 +34,23 @@ export function isProviderGatewayAmmesso(value: unknown): value is ProviderGatew
   );
 }
 
-type GatewayFactory = (opts?: GatewayStripeOptions) => PaymentGateway;
+/**
+ * Opzioni runtime per l'istanziazione di un gateway (SOLO TEST: consente di
+ * puntare al server mock del provider — host/port/protocol per Stripe SDK,
+ * baseUrl per il gateway HTTP Klarna).
+ */
+export type GatewayRuntimeOptions = GatewayStripeOptions | GatewayKlarnaOptions;
+
+type GatewayFactory = (opts?: GatewayRuntimeOptions) => PaymentGateway;
 
 /**
  * Factory per provider: `null` = provider ammesso ma NON ancora implementato
- * (Klarna, Scalapay, PayPal arriveranno come gateway dedicati in fase
- * successiva; fino ad allora l'unico provider utilizzabile è "stripe").
- * `opts` consente di puntare a un server mock (solo test, pattern F1/F2.3).
+ * (Scalapay, PayPal arriveranno come gateway dedicati in fase successiva).
+ * `opts` inoltrato al gateway (server mock, solo test — pattern F1/F2.3).
  */
 const FACTORY_GATEWAY: Readonly<Record<string, GatewayFactory | null>> = {
-  stripe: (opts) => new GatewayStripe(opts),
-  klarna: null,
+  stripe: (opts) => new GatewayStripe(opts as GatewayStripeOptions),
+  klarna: (opts) => new GatewayKlarna(opts as GatewayKlarnaOptions),
   scalapay: null,
   paypal: null,
 };
@@ -59,7 +66,7 @@ export function providerGatewayImplementato(provider: string): boolean {
  */
 export function getGatewayProvider(
   provider: string,
-  opts?: GatewayStripeOptions
+  opts?: GatewayRuntimeOptions
 ): PaymentGateway | null {
   const factory = FACTORY_GATEWAY[provider];
   return factory ? factory(opts) : null;

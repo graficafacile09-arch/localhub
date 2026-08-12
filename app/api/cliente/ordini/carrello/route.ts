@@ -8,15 +8,39 @@ import {
 } from "@/lib/cliente/ordini-carrello";
 import { getCurrentUser } from "@/lib/auth/session";
 import { checkRateLimit } from "@/lib/rate-limiter";
-import { isStripeProntoPerNegozio } from "@/lib/pagamenti/config";
+import { isProviderProntoPerNegozio } from "@/lib/pagamenti/config";
 import {
   chiudiOrdineSenzaPagamento,
-  creaSessioneStripePerOrdine,
+  creaSessionePagamentoPerOrdine,
 } from "@/lib/pagamenti/sessioni";
 
 /** IP del richiedente (pattern già usato da /api/cliente/ordini). */
 function ipRichiedente(request: Request): string {
   return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "anon";
+}
+
+/**
+ * Dispatch metodo di pagamento → provider gateway (fail-closed):
+ *   carta → stripe · klarna → klarna · altro (bonifico/paypal) → null.
+ * Il bonifico non ha sessione gateway; paypal NON è implementato → mai
+ * mappato (nessun fallback silenzioso).
+ */
+function providerDaMetodoPagamento(metodo: string | undefined): string | null {
+  if (metodo === "carta") return "stripe";
+  if (metodo === "klarna") return "klarna";
+  return null;
+}
+
+/** Codice errore "non disponibile" per provider (retrocompatibile carta). */
+function codiceNonDisponibile(provider: string): string {
+  return provider === "stripe" ? "CARTA_NON_DISPONIBILE" : `${provider.toUpperCase()}_NON_DISPONIBILE`;
+}
+
+/** Messaggio utente "non disponibile" per provider. */
+function messaggioNonDisponibile(provider: string): string {
+  return provider === "stripe"
+    ? "Il pagamento con carta non è disponibile per uno dei negozi del carrello."
+    : `Il pagamento con ${provider} non è disponibile per uno dei negozi del carrello.`;
 }
 
 /**
@@ -126,6 +150,7 @@ export async function POST(request: Request) {
     spedizioneRaw.metodoPagamento !== undefined &&
     spedizioneRaw.metodoPagamento !== "carta" &&
     spedizioneRaw.metodoPagamento !== "paypal" &&
+    spedizioneRaw.metodoPagamento !== "klarna" &&
     spedizioneRaw.metodoPagamento !== "bonifico"
   ) {
     return apiError("VALIDATION_ERROR", "Metodo di pagamento non valido.", 422);
@@ -155,17 +180,20 @@ export async function POST(request: Request) {
     );
   }
 
-  // ── PRE-FLIGHT "carta" (fail-closed, come /api/cliente/ordini F1) ──────
-  // Se il metodo è "carta", OGNI negozio del carrello deve avere Stripe
-  // configurato e attivo: altrimenti rifiuta PRIMA di creare qualunque
-  // ordine (mai ordini orfani senza pagamento possibile).
-  if (modalita === "spedizione" && spedizioneRaw.metodoPagamento === "carta") {
+  // ── PRE-FLIGHT per provider (fail-closed, come /api/cliente/ordini F1) ──
+  // Se il metodo richiede un gateway (carta→stripe, klarna→klarna), OGNI
+  // negozio del carrello deve avere quel provider configurato e attivo:
+  // altrimenti rifiuta PRIMA di creare qualunque ordine (mai ordini orfani
+  // senza pagamento possibile). Bonifico → nessun gateway → nessun check.
+  const providerRichiesto =
+    modalita === "spedizione" ? providerDaMetodoPagamento(spedizioneRaw.metodoPagamento) : null;
+  if (providerRichiesto) {
     for (const gruppo of raggruppamento.negozi) {
-      const pronta = await isStripeProntoPerNegozio(gruppo.negozioId);
+      const pronta = await isProviderProntoPerNegozio(gruppo.negozioId, providerRichiesto);
       if (!pronta) {
         return apiError(
-          "CARTA_NON_DISPONIBILE",
-          "Il pagamento con carta non è disponibile per uno dei negozi del carrello.",
+          codiceNonDisponibile(providerRichiesto),
+          messaggioNonDisponibile(providerRichiesto),
           422
         );
       }
@@ -221,21 +249,22 @@ export async function POST(request: Request) {
     return apiError("SAVE_FAILED", "Impossibile completare il checkout.", 500);
   }
 
-  // ── FASE F2.5 — sessioni Stripe per negozio (solo metodo "carta") ──────
-  // Ogni ordine (creato O riusato da un retry idempotente) riceve la PROPRIA
-  // Checkout Session: mai una sessione multi-negozio. Se la sessione di un
-  // negozio fallisce, quell'ordine viene chiuso (stock ripristinato, stesso
-  // pattern del buy-now) e registrato come errore per negozio: gli ordini
-  // degli altri negozi restano validi con le loro sessioni.
-  const vuoleCarta =
-    modalita === "spedizione" && spedizioneRaw.metodoPagamento === "carta";
+  // ── Sessioni per negozio (solo metodi con gateway: carta→stripe, ────────
+  //    klarna→klarna). Ogni ordine (creato O riusato da un retry idempotente)
+  //    riceve la PROPRIA sessione del provider: mai una sessione multi-negozio
+  //    né un fallback silenzioso su un altro provider. Se la sessione di un
+  //    negozio fallisce, quell'ordine viene chiuso (stock ripristinato, stesso
+  //    pattern del buy-now) e registrato come errore per negozio: gli ordini
+  //    degli altri negozi restano validi con le loro sessioni.
+  const providerRichiesto2 =
+    modalita === "spedizione" ? providerDaMetodoPagamento(spedizioneRaw.metodoPagamento) : null;
   const ordiniArricchiti: OrdineCarrelloNegozio[] = [...esito.ordini];
   const erroriAggiuntivi = [...esito.errori];
 
-  if (vuoleCarta) {
+  if (providerRichiesto2) {
     for (let i = 0; i < ordiniArricchiti.length; i++) {
       const ordine = ordiniArricchiti[i];
-      const sessione = await creaSessioneStripePerOrdine(ordine.ordineId);
+      const sessione = await creaSessionePagamentoPerOrdine(ordine.ordineId, providerRichiesto2);
       if (sessione.ok) {
         ordine.pagamento = {
           redirectUrl: sessione.redirectUrl,
@@ -243,9 +272,9 @@ export async function POST(request: Request) {
           giaEsistente: sessione.giaEsistente,
         };
       } else {
-        // L'ordine non può essere pagato con carta: lo chiudiamo SOLO se è
-        // stato creato in questo checkout (retry di un ordine già esistente
-        // con sessione scaduta → non si chiude, resta tracciabile).
+        // L'ordine non può essere pagato con il metodo scelto: lo chiudiamo
+        // SOLO se è stato creato in questo checkout (retry di un ordine già
+        // esistente con sessione scaduta → non si chiude, resta tracciabile).
         if (!ordine.giaEsistente) {
           await chiudiOrdineSenzaPagamento(ordine.ordineId).catch(() => {});
         }

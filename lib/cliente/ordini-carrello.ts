@@ -72,7 +72,7 @@ export type CheckoutCarrelloInput = {
     provincia: string;
     note?: string | null;
     metodoSpedizione: "standard" | "express";
-    metodoPagamento: "carta" | "paypal" | "bonifico";
+    metodoPagamento: "carta" | "paypal" | "klarna" | "bonifico";
   } | null;
   note?: string | null;
   /** IP del richiedente (rate limiting per IP, salvato su ordini.cliente_ip). */
@@ -237,6 +237,7 @@ function validaCheckout(input: CheckoutCarrelloInput): { codice: string; messagg
     if (
       sp.metodoPagamento !== "carta" &&
       sp.metodoPagamento !== "paypal" &&
+      sp.metodoPagamento !== "klarna" &&
       sp.metodoPagamento !== "bonifico"
     ) {
       return { codice: "VALIDATION_ERROR", messaggio: "Metodo di pagamento non valido." };
@@ -576,9 +577,12 @@ export async function creaOrdiniCarrello(
   const ordini = await arricchisciConPagamenti(db, risultati);
 
   // ── Notifiche (BEST-EFFORT, mai bloccano; solo ordini REALMENTE nuovi) ──
-  // Stesso pattern di creaOrdine: con carta l'email di conferma parte solo
-  // DOPO la conferma del webhook (F2.3); per gli altri metodi parte subito.
-  const pagamentoOnline = input.spedizione?.metodoPagamento === "carta";
+  // Stesso pattern di creaOrdine: con pagamento online (carta/klarna)
+  // l'email di conferma parte solo DOPO la conferma del webhook (F2.3/F2.x);
+  // per gli altri metodi (bonifico ecc.) parte subito.
+  const pagamentoOnline =
+    input.spedizione?.metodoPagamento === "carta" ||
+    input.spedizione?.metodoPagamento === "klarna";
   for (const ordine of ordini) {
     if (ordine.giaEsistente) continue;
     if (!pagamentoOnline) {
