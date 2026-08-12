@@ -81,7 +81,9 @@ export type OrdineVenditoreDettaglio = OrdineVenditoreLista & {
   spedizioneProvincia: string | null;
   spedizioneNote: string | null;
   metodoSpedizione: "standard" | "express" | null;
-  metodoPagamento: "carta" | "paypal" | "bonifico" | null;
+  metodoPagamento: "carta" | "paypal" | "bonifico" | "klarna" | null;
+  /** Marcatore autoritativo del provider (es. 'klarna'). */
+  paymentProvider: string | null;
   annullatoMotivo: string | null;
   annullatoNota: string | null;
   annullatoAt: string | null;
@@ -164,7 +166,9 @@ function mappaDettaglio(row: OrdineRow, righe: RigaOrdine[], eventi: EventoOrdin
     spedizioneProvincia: (row.spedizione_provincia as string | null) ?? null,
     spedizioneNote: (row.spedizione_note as string | null) ?? null,
     metodoSpedizione: (row.metodo_spedizione as "standard" | "express" | null) ?? null,
-    metodoPagamento: (row.metodo_pagamento as "carta" | "paypal" | "bonifico" | null) ?? null,
+    metodoPagamento:
+      (row.metodo_pagamento as "carta" | "paypal" | "bonifico" | "klarna" | null) ?? null,
+    paymentProvider: (row.payment_provider as string | null) ?? null,
     annullatoMotivo: (row.annullato_motivo as string | null) ?? null,
     annullatoNota: (row.annullato_nota as string | null) ?? null,
     annullatoAt: (row.annullato_at as string | null) ?? null,

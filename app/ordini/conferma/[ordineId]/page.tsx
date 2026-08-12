@@ -123,6 +123,30 @@ export default async function ConfermaOrdinePage({
           ordine.stato !== "cancellato" &&
           ordine.paymentStatus !== "paid" && <BonificoInfo negozioId={ordine.negozioId} />}
 
+        {/* Klarna: il pagamento verrà confermato dopo l'approvazione di Klarna.
+            Il marcatore autoritativo è payment_provider='klarna' (la colonna
+            metodo_pagamento resta 'carta' per compatibilità RPC, come nel
+            flusso carrello F2.2). */}
+        {ordine.paymentProvider === "klarna" &&
+          ordine.stato !== "cancellato" &&
+          ordine.paymentStatus !== "paid" && (
+            <div className="mt-4 rounded-xl border border-pink-200 bg-pink-50 px-4 py-3">
+              <p className="flex items-center gap-2 text-sm font-bold text-pink-800">
+                <img
+                  src="/loghi/klarna-pink.svg"
+                  alt="Klarna"
+                  width={56}
+                  height={12}
+                  className="h-3 w-auto object-contain"
+                />
+                Pagamento in 3 rate
+              </p>
+              <p className="mt-0.5 text-xs text-pink-700">
+                L&apos;ordine verrà confermato dopo l&apos;approvazione di Klarna.
+              </p>
+            </div>
+          )}
+
         {/* Modalità ritiro/spedizione */}
         <div className="mt-4 rounded-[1.75rem] border border-white/70 bg-white p-5 shadow-sm">
           <h2 className="flex items-center gap-2 text-sm font-black uppercase tracking-wide text-slate-900">

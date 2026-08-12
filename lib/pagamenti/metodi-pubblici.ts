@@ -5,18 +5,21 @@
  *   - solo i metodi con `negozio_metodi_pagamento.attivo = true`;
  *   - "carta" SOLO se Stripe è configurato, attivo e con webhook secret
  *     (senza, il metodo NON viene mostrato: niente finte);
+ *   - "klarna" SOLO se Klarna è configurato, attivo e con webhook secret
+ *     (stessa regola di "carta": disponibilità determinata SOLO server-side
+ *     dalla configurazione reale del negozio — mai mostrato "per default");
  *   - "bonifico" SOLO se il negozio ha configurato iban/payee_email;
- *   - paypal/klarna/scalapay → NON implementati in F1 → mai mostrati.
+ *   - paypal/scalapay → NON implementati → mai mostrati.
  *
  * Nessun secret viene letto o esposto (solo dati pubblici via RPC con
  * p_decifra = false). Usato dalle pagine server di checkout.
  */
 
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
-import { isStripeProntoPerNegozio } from "./config";
+import { isProviderProntoPerNegozio, isStripeProntoPerNegozio } from "./config";
 
 export type MetodoPagamentoCheckout = {
-  metodo: "carta" | "bonifico";
+  metodo: "carta" | "bonifico" | "klarna";
   etichetta: string;
   descrizione: string;
   /** iban/payee_email del negozio per il bonifico (dati pubblici configurativi). */
@@ -83,7 +86,7 @@ export async function getMetodiPagamentoPubblici(
     if (!error && data) {
       attivi = (data ?? [])
         .map((r) => String(r.metodo))
-        .filter((m) => m === "carta" || m === "bonifico");
+        .filter((m) => m === "carta" || m === "bonifico" || m === "klarna");
     }
   } catch {
     // Nessun metodo configurato → lista vuota.
@@ -98,6 +101,20 @@ export async function getMetodiPagamentoPubblici(
         metodo: "carta",
         etichetta: "Carta di credito/debito",
         descrizione: "Pagamento sicuro con Stripe (carte principali).",
+      });
+    }
+  }
+
+  if (attivi.includes("klarna")) {
+    // Disponibilità DETERMINATA SERVER-SIDE dalla configurazione reale del
+    // negozio (stessa regola di "carta"): senza Klarna configurato e attivo
+    // il metodo NON compare nel checkout. Mai mostrato "per default".
+    const klarnaPronto = await isProviderProntoPerNegozio(negozioId, "klarna");
+    if (klarnaPronto) {
+      metodi.push({
+        metodo: "klarna",
+        etichetta: "Klarna",
+        descrizione: "Paga in 3 rate, se disponibile.",
       });
     }
   }

@@ -190,6 +190,7 @@ export default async function OrdineDettaglioPage({ params }: { params: Promise<
             spedizioneNote={ordine.spedizioneNote}
             metodoSpedizione={ordine.metodoSpedizione}
             metodoPagamento={ordine.metodoPagamento}
+            paymentProvider={ordine.paymentProvider}
           />
 
           {(ordine.telefono || ordine.email) && (

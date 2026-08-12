@@ -18,6 +18,7 @@ export function InformazioniRitiroSpedizione({
   spedizioneNote,
   metodoSpedizione,
   metodoPagamento,
+  paymentProvider,
 }: {
   modalita: "ritiro" | "spedizione";
   negozioNome: string;
@@ -29,7 +30,12 @@ export function InformazioniRitiroSpedizione({
   spedizioneProvincia: string | null;
   spedizioneNote: string | null;
   metodoSpedizione: "standard" | "express" | null;
-  metodoPagamento: "carta" | "paypal" | "bonifico" | null;
+  metodoPagamento: "carta" | "paypal" | "bonifico" | "klarna" | null;
+  /** Marcatore autoritativo del provider (es. 'klarna'): la colonna
+   *  metodo_pagamento resta 'carta' per gli ordini Klarna (allowlist RPC,
+   *  stesso flusso del carrello F2.2), quindi la resa Klarna si basa su
+   *  payment_provider. */
+  paymentProvider?: string | null;
 }) {
   const èRitiro = modalita === "ritiro";
   const indirizzoSpedizione = [
@@ -93,21 +99,31 @@ export function InformazioniRitiroSpedizione({
               }
             />
           )}
-          {metodoPagamento && (
+          {(metodoPagamento || paymentProvider === "klarna") && (
             <RigaDettaglio
               etichetta="Metodo pagamento"
               valore={
                 <span className="inline-flex items-center gap-1.5">
-                  {metodoPagamento === "bonifico" ? (
+                  {paymentProvider === "klarna" ? (
+                    <img
+                      src="/loghi/klarna-pink.svg"
+                      alt=""
+                      width={48}
+                      height={11}
+                      className="h-3 w-auto object-contain"
+                    />
+                  ) : metodoPagamento === "bonifico" ? (
                     <Banknote className="h-4 w-4 text-slate-400" aria-hidden />
                   ) : (
                     <CreditCard className="h-4 w-4 text-slate-400" aria-hidden />
                   )}
-                  {metodoPagamento === "carta"
-                    ? "Carta"
-                    : metodoPagamento === "paypal"
-                      ? "PayPal"
-                      : "Bonifico bancario"}
+                  {paymentProvider === "klarna"
+                    ? "Klarna (3 rate)"
+                    : metodoPagamento === "carta"
+                      ? "Carta"
+                      : metodoPagamento === "paypal"
+                        ? "PayPal"
+                        : "Bonifico bancario"}
                 </span>
               }
             />

@@ -116,6 +116,10 @@ export type OrdineClienteDettaglio = OrdineClienteLista & {
   telefono: string | null;
   metodoSpedizione: "standard" | "express" | null;
   metodoPagamento: "carta" | "paypal" | "bonifico" | null;
+  /** Marcatore autoritativo del provider (es. 'klarna' per gli ordini
+   *  pagati via gateway Klarna: metodo_pagamento resta 'carta', come nel
+   *  flusso carrello F2.2). */
+  paymentProvider: string | null;
   spedizioneIndirizzo: string | null;
   spedizioneCap: string | null;
   spedizioneCitta: string | null;

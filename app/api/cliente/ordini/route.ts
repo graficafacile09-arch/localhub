@@ -2,9 +2,13 @@ import { apiError, apiOk } from "@/lib/api/response";
 import { creaOrdine, type CreaOrdineInput } from "@/lib/cliente/orders";
 import { getCurrentUser } from "@/lib/auth/session";
 import { checkRateLimit } from "@/lib/rate-limiter";
-import { cartaDisponibilePerProdotto } from "@/lib/pagamenti/config";
+import {
+  cartaDisponibilePerProdotto,
+  providerDisponibilePerProdotto,
+} from "@/lib/pagamenti/config";
 import {
   chiudiOrdineSenzaPagamento,
+  creaSessionePagamentoPerOrdine,
   creaSessioneStripePerOrdine,
 } from "@/lib/pagamenti/sessioni";
 
@@ -93,6 +97,23 @@ export async function POST(request: Request) {
     }
   }
 
+  // ── PRE-FLIGHT "klarna" (stessa regola di carta): se il negozio del
+  // prodotto non ha Klarna configurato e attivo, il checkout rifiuta PRIMA
+  // di creare l'ordine. Nessun fallback automatico su Stripe: se Klarna non
+  // è disponibile l'utente riceve un errore chiaro e può scegliere altro.
+  const vuoleKlarna =
+    modalita === "spedizione" && spedizioneRaw.metodoPagamento === "klarna";
+  if (vuoleKlarna) {
+    const klarnaPronta = await providerDisponibilePerProdotto(prodottoIdRaw, "klarna");
+    if (!klarnaPronta) {
+      return apiError(
+        "KLARNA_NON_DISPONIBILE",
+        "Il pagamento con Klarna non è disponibile per questo negozio.",
+        422
+      );
+    }
+  }
+
   if (
     spedizioneRaw.metodoSpedizione !== undefined &&
     spedizioneRaw.metodoSpedizione !== "standard" &&
@@ -104,7 +125,8 @@ export async function POST(request: Request) {
     spedizioneRaw.metodoPagamento !== undefined &&
     spedizioneRaw.metodoPagamento !== "carta" &&
     spedizioneRaw.metodoPagamento !== "paypal" &&
-    spedizioneRaw.metodoPagamento !== "bonifico"
+    spedizioneRaw.metodoPagamento !== "bonifico" &&
+    spedizioneRaw.metodoPagamento !== "klarna"
   ) {
     return apiError("VALIDATION_ERROR", "Metodo di pagamento non valido.", 422);
   }
@@ -161,6 +183,13 @@ export async function POST(request: Request) {
             note: typeof spedizioneRaw.note === "string" ? spedizioneRaw.note : null,
             metodoSpedizione:
               spedizioneRaw.metodoSpedizione === "express" ? "express" : "standard",
+            // NOTA (coerenza con /api/cliente/ordini/carrello F2.2): le RPC
+            // crea_ordine/crea_ordine_carrello accettano solo
+            // carta/paypal/bonifico come metodo_pagamento. Il flusso klarna
+            // (già in produzione per il carrello) salva 'carta' nella colonna
+            // e marca l'ordine con payment_provider='klarna' (marcatore
+            // autoritativo impostato dall'orchestratore al momento della
+            // sessione). Nessuna migration: stesso comportamento del carrello.
             metodoPagamento:
               spedizioneRaw.metodoPagamento === "paypal"
                 ? "paypal"
@@ -186,6 +215,17 @@ export async function POST(request: Request) {
   let pagamento: { redirectUrl: string } | null = null;
   if (vuoleCarta) {
     const sessione = await creaSessioneStripePerOrdine(esito.ordine.id);
+    if (sessione.ok) {
+      pagamento = { redirectUrl: sessione.redirectUrl };
+    } else {
+      await chiudiOrdineSenzaPagamento(esito.ordine.id).catch(() => {});
+      return apiError(sessione.codice, sessione.errore, 422);
+    }
+  } else if (vuoleKlarna) {
+    // Klarna: stessa orchestrazione del carrello (F2.5) — la sessione viene
+    // creata dal gateway Klarna (creaSessionePagamentoPerOrdine, provider
+    // 'klarna'): mai una sessione Stripe, mai un fallback silenzioso.
+    const sessione = await creaSessionePagamentoPerOrdine(esito.ordine.id, "klarna");
     if (sessione.ok) {
       pagamento = { redirectUrl: sessione.redirectUrl };
     } else {

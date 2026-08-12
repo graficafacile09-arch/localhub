@@ -66,7 +66,7 @@ export type CreaOrdineInput = {
     provincia: string;
     note?: string | null;
     metodoSpedizione: "standard" | "express";
-    metodoPagamento: "carta" | "paypal" | "bonifico";
+    metodoPagamento: "carta" | "paypal" | "bonifico" | "klarna";
   } | null;
   note?: string | null;
   /** IP del richiedente (rate limiting per IP, salvato su ordini.cliente_ip). */
@@ -103,7 +103,7 @@ export type OrdinePersistito = {
   /** Data/ora dell'annullamento. */
   annullatoAt: string | null;
   /** Metodo di pagamento selezionato al checkout (solo spedizione). */
-  metodoPagamento: "carta" | "paypal" | "bonifico" | null;
+  metodoPagamento: "carta" | "paypal" | "bonifico" | "klarna" | null;
   /** Stato del pagamento (FASE F1): null per gli ordini legacy senza pagamento. */
   paymentStatus: PaymentStatus | null;
   paymentProvider: string | null;
@@ -197,7 +197,8 @@ function assumiOrdine(riga: Record<string, unknown>, righe: RigaOrdine[]): Ordin
     annullatoMotivo: (riga.annullato_motivo as string | null) ?? null,
     annullatoNota: (riga.annullato_nota as string | null) ?? null,
     annullatoAt: (riga.annullato_at as string | null) ?? null,
-    metodoPagamento: (riga.metodo_pagamento as "carta" | "paypal" | "bonifico" | null) ?? null,
+    metodoPagamento:
+      (riga.metodo_pagamento as "carta" | "paypal" | "bonifico" | "klarna" | null) ?? null,
     paymentStatus: (riga.payment_status as PaymentStatus | null) ?? null,
     paymentProvider: (riga.payment_provider as string | null) ?? null,
     paymentPaidAt: (riga.payment_paid_at as string | null) ?? null,
@@ -344,7 +345,12 @@ export async function creaOrdine(
     if (sp.metodoSpedizione !== "standard" && sp.metodoSpedizione !== "express") {
       return { ok: false, errore: "Metodo di spedizione non valido.", codice: "VALIDATION_ERROR", status: 422 };
     }
-    if (sp.metodoPagamento !== "carta" && sp.metodoPagamento !== "paypal" && sp.metodoPagamento !== "bonifico") {
+    if (
+      sp.metodoPagamento !== "carta" &&
+      sp.metodoPagamento !== "paypal" &&
+      sp.metodoPagamento !== "bonifico" &&
+      sp.metodoPagamento !== "klarna"
+    ) {
       return { ok: false, errore: "Metodo di pagamento non valido.", codice: "VALIDATION_ERROR", status: 422 };
     }
   } else if (input.ritiro) {
@@ -412,11 +418,13 @@ export async function creaOrdine(
   // ma qui non devono MAI interferire con la risposta al cliente.
   if (!giaEsistente && esito.ordine?.id) {
     // FASE F1 — email di conferma: per gli ordini con pagamento online
-    // (carta) la conferma viene inviata SOLO DOPO che il webhook Stripe
-    // conferma il pagamento (mai dire "pagato" prima del pagamento).
-    // Per tutti gli altri metodi (bonifico/ritiro) l'email parte subito.
+    // (carta/klarna) la conferma viene inviata SOLO DOPO che il webhook del
+    // provider conferma il pagamento (mai dire "pagato" prima del
+    // pagamento). Per tutti gli altri metodi (bonifico/ritiro) l'email
+    // parte subito.
     const pagamentoOnline =
-      input.spedizione?.metodoPagamento === "carta";
+      input.spedizione?.metodoPagamento === "carta" ||
+      input.spedizione?.metodoPagamento === "klarna";
     if (!pagamentoOnline) {
       await inviaEmailConfermaOrdine(esito.ordine.id).catch(() => {});
     }

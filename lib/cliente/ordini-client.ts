@@ -29,7 +29,7 @@ export type CreaOrdinePayload = {
     provincia: string;
     note?: string | null;
     metodoSpedizione: "standard" | "express";
-    metodoPagamento: "carta" | "paypal" | "bonifico";
+    metodoPagamento: "carta" | "paypal" | "bonifico" | "klarna";
   } | null;
   note?: string | null;
 };

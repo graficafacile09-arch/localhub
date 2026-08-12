@@ -111,6 +111,7 @@ function mappaDettaglio(
     metodoSpedizione: (row.metodo_spedizione as "standard" | "express" | null) ?? null,
     metodoPagamento:
       (row.metodo_pagamento as "carta" | "paypal" | "bonifico" | null) ?? null,
+    paymentProvider: (row.payment_provider as string | null) ?? null,
     spedizioneIndirizzo: (row.spedizione_indirizzo as string | null) ?? null,
     spedizioneCap: (row.spedizione_cap as string | null) ?? null,
     spedizioneCitta: (row.spedizione_citta as string | null) ?? null,

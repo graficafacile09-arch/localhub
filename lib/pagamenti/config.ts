@@ -176,12 +176,17 @@ export function credenzialiGatewayDaConfig(cfg: ConfigProviderNegozio): Credenzi
 }
 
 /**
- * TRUE se il prodotto appartiene a un negozio che può accettare carte
- * (Stripe configurato e attivo). PRE-FLIGHT usato da POST /api/cliente/ordini
- * PRIMA di creare l'ordine: il client non può mai scegliere "carta" per un
- * negozio non pronto (defense in depth; la UI già filtra i metodi).
+ * TRUE se il prodotto appartiene a un negozio che può accettare pagamenti
+ * con il provider richiesto (configurato e attivo). PRE-FLIGHT usato dalle
+ * route checkout PRIMA di creare l'ordine: il client non può mai scegliere
+ * un metodo gateway per un negozio non pronto (defense in depth; la UI già
+ * filtra i metodi). Genericizzato per provider: il caso d'uso storico
+ * "carta" è servito dal wrapper retrocompatibile cartaDisponibilePerProdotto.
  */
-export async function cartaDisponibilePerProdotto(prodottoId: string): Promise<boolean> {
+export async function providerDisponibilePerProdotto(
+  prodottoId: string,
+  provider: string
+): Promise<boolean> {
   if (!prodottoId || !/^\d+$/.test(String(prodottoId))) return false;
   try {
     const db = createAdminSupabaseClient();
@@ -191,8 +196,17 @@ export async function cartaDisponibilePerProdotto(prodottoId: string): Promise<b
       .eq("id", Number(prodottoId))
       .single();
     if (!data?.negozio_id) return false;
-    return await isStripeProntoPerNegozio(String(data.negozio_id));
+    return await isProviderProntoPerNegozio(String(data.negozio_id), provider);
   } catch {
     return false;
   }
+}
+
+/**
+ * TRUE se il prodotto appartiene a un negozio che può accettare carte
+ * (Stripe configurato e attivo). WRAPPER retrocompatibile (F1) sul check
+ * generico per provider: il comportamento è identico.
+ */
+export async function cartaDisponibilePerProdotto(prodottoId: string): Promise<boolean> {
+  return providerDisponibilePerProdotto(prodottoId, "stripe");
 }

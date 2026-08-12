@@ -827,9 +827,9 @@ function OpzioneKlarna({
       }`}
     >
       <span className="flex items-center justify-between gap-3">
-        {/* Logo ufficiale Klarna (wordmark nero su trasparente, asset locale). */}
+        {/* Logo ufficiale Klarna rosa (wordmark ufficiale, asset locale versionato). */}
         <img
-          src="/loghi/klarna.svg"
+          src="/loghi/klarna-pink.svg"
           alt="Klarna"
           width={88}
           height={20}
