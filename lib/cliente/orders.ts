@@ -115,7 +115,7 @@ export type OrdinePersistito = {
 };
 
 /** HTTP status associato a ciascun codice d'errore della RPC. */
-const STATUS_DA_CODICE: Record<string, number> = {
+export const STATUS_DA_CODICE: Record<string, number> = {
   VALIDATION_ERROR: 422,
   PRODOTTO_NON_TROVATO: 404,
   NEGOZIO_NON_TROVATO: 404,
