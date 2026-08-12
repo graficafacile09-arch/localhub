@@ -77,6 +77,39 @@ export async function POST(request: Request) {
   const ritiroRaw = (body.ritiro ?? {}) as Record<string, unknown>;
   const spedizioneRaw = (body.spedizione ?? {}) as Record<string, unknown>;
 
+  // ── CONTRATTO BUY-NOW: metodo di pagamento esplicito e OBBLIGATORIO ─────
+  // Per la modalità spedizione il metodo deve essere SCELTO DALL'UTENTE:
+  // mai default/fallback (né bonifico, né carta, né klarna). Tre casi:
+  //   1) valore non ammesso ("paypal", "qualcosa", ...) → 422, zero ordini;
+  //   2) assente / null / "" con modalità spedizione       → 422, zero ordini;
+  //   3) valido → si prosegue con disponibilità + pre-flight provider.
+  const metodoScelto = spedizioneRaw.metodoPagamento;
+  const metodoValido =
+    metodoScelto === "carta" ||
+    metodoScelto === "bonifico" ||
+    metodoScelto === "klarna";
+  // Valore PRESENTE ma non ammesso ("paypal", "qualcosa", ...): rifiuto
+  // sempre, indipendentemente dalla modalità → mai un ordine con un metodo
+  // che il server non conosce.
+  if (
+    metodoScelto !== undefined &&
+    metodoScelto !== null &&
+    metodoScelto !== "" &&
+    !metodoValido
+  ) {
+    return apiError("VALIDATION_ERROR", "Metodo di pagamento non valido.", 422);
+  }
+  // Modalità SPEDIZIONE: il metodo deve essere stato SCELTO ESPLICITAMENTE
+  // dall'utente. Assente, null o "" → stessa risposta dedicata, zero ordini.
+  // (La modalità ritiro resta invariata: il pagamento si concorda in negozio.)
+  if (modalita === "spedizione" && !metodoValido) {
+    return apiError(
+      "METODO_PAGAMENTO_NON_SCELTO",
+      "Seleziona un metodo di pagamento per continuare.",
+      422
+    );
+  }
+
   // ── FASE F1 — pre-flight "carta": il metodo carta apre DAVVERO Stripe. ──
   // Se il negozio del prodotto non ha Stripe configurato e attivo, il
   // checkout rifiuta PRIMA di creare l'ordine (mai ordini orfani).
@@ -121,15 +154,7 @@ export async function POST(request: Request) {
   ) {
     return apiError("VALIDATION_ERROR", "Metodo di spedizione non valido.", 422);
   }
-  if (
-    spedizioneRaw.metodoPagamento !== undefined &&
-    spedizioneRaw.metodoPagamento !== "carta" &&
-    spedizioneRaw.metodoPagamento !== "paypal" &&
-    spedizioneRaw.metodoPagamento !== "bonifico" &&
-    spedizioneRaw.metodoPagamento !== "klarna"
-  ) {
-    return apiError("VALIDATION_ERROR", "Metodo di pagamento non valido.", 422);
-  }
+
 
   // Email destinataria della conferma: se l'utente è autenticato si usa
   // l'email dell'ACCOUNT (sessione), altrimenti quella raccolta nel checkout
@@ -190,12 +215,12 @@ export async function POST(request: Request) {
             // e marca l'ordine con payment_provider='klarna' (marcatore
             // autoritativo impostato dall'orchestratore al momento della
             // sessione). Nessuna migration: stesso comportamento del carrello.
+            // Dopo il contratto sopra il valore è garantito ∈ {carta, bonifico,
+            // klarna}: klarna si mappa a 'carta' per la colonna RPC (il
+            // marcatore autoritativo resta payment_provider='klarna'). Mai un
+            // default: un metodo assente è già stato rifiutato con 422.
             metodoPagamento:
-              spedizioneRaw.metodoPagamento === "paypal"
-                ? "paypal"
-                : spedizioneRaw.metodoPagamento === "bonifico"
-                  ? "bonifico"
-                  : "carta",
+              spedizioneRaw.metodoPagamento === "bonifico" ? "bonifico" : "carta",
           }
         : null,
     note: typeof body.note === "string" ? body.note : null,

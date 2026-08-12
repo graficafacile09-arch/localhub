@@ -83,6 +83,12 @@ function baseUrlEffettiva(
   opts?: GatewayKlarnaOptions
 ): string {
   if (opts?.baseUrl) return opts.baseUrl;
+  // Override SOLO per test E2E (mai impostato in produzione): permette ai
+  // test con HTTP Klarna mockato di esercitare il flusso COMPLETO della
+  // route (buy-now/carrello) senza colpire l'API reale. In produzione la
+  // variabile non è definita → base da testMode (playground/produzione).
+  const override = process.env.KLARNA_API_BASE_URL;
+  if (override && override.trim().length > 0) return override.trim();
   return cred.testMode ? KLARNA_BASE_TEST : KLARNA_BASE_PROD;
 }
 

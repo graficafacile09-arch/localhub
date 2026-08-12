@@ -27,15 +27,13 @@ export default function SpedizioneForm({
   const router = useRouter();
   const [quantita, setQuantita] = useState(1);
   const [metodoSpedizione, setMetodoSpedizione] = useState<"standard" | "express">("standard");
-  // FASE F1: default = primo metodo realmente disponibile; se nessuno è
-  // configurato resta "bonifico" (pagamento manuale/da concordare: mai
-  // fingere un pagamento online non funzionante).
-  const metodoIniziale = metodiPagamento.some((m) => m.metodo === "carta")
-    ? "carta"
-    : "bonifico";
+  // CONTRATTO BUY-NOW: il metodo di pagamento parte SEMPRE da null = NESSUNA
+  // scelta. Mai un metodo pre-selezionato (nemmeno quando ne esiste uno solo):
+  // "disponibile" NON significa "selezionato". Il submit è bloccato finché
+  // l'utente non sceglie esplicitamente un metodo (vedi pulsante disabilitato).
   const [metodoPagamento, setMetodoPagamento] = useState<
-    "carta" | "paypal" | "bonifico" | "klarna"
-  >(metodoIniziale);
+    "carta" | "bonifico" | "klarna" | null
+  >(null);
   const [inviando, setInviando] = useState(false);
   const [errore, setErrore] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
@@ -49,6 +47,13 @@ export default function SpedizioneForm({
 
   const procediAlPagamento = async () => {
     if (inviando) return; // anti doppio invio
+    // REGOLA ASSOLUTA: nessuna scelta esplicita di metodo di pagamento →
+    // submit bloccato, nessuna chiamata a /api/cliente/ordini. Difesa anche
+    // se il pulsante venisse attivato da stato/browser precedenti.
+    if (metodoPagamento === null) {
+      setErrore("Seleziona un metodo di pagamento per continuare.");
+      return;
+    }
     const form = formRef.current;
     if (!form) return;
 
@@ -338,11 +343,12 @@ export default function SpedizioneForm({
           </div>
         )}
 
-        {/* Procedi al pagamento */}
+        {/* Procedi al pagamento: disabilitato finché non c'è una SCELTA
+            ESPLICITA di metodo di pagamento (metodoPagamento !== null). */}
         <button
           type="button"
           onClick={procediAlPagamento}
-          disabled={inviando}
+          disabled={inviando || metodoPagamento === null}
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white shadow-md shadow-blue-500/25 transition hover:bg-blue-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {inviando ? (

@@ -114,7 +114,7 @@ export async function getMetodiPagamentoPubblici(
       metodi.push({
         metodo: "klarna",
         etichetta: "Klarna",
-        descrizione: "Paga in 3 rate, se disponibile.",
+        descrizione: "Dividi il tuo acquisto in 3 rate, se disponibile.",
       });
     }
   }

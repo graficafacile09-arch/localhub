@@ -292,6 +292,8 @@ async function main() {
   let pK: number | null = null;
   let pS: number | null = null;
   let pN: number | null = null;
+  let pV: number | null = null;
+  let vId: string | null = null;
   const ordiniCreati: string[] = [];
   let mockKlarna: Awaited<ReturnType<typeof avviaMockKlarna>> | null = null;
   let mockStripe: Awaited<ReturnType<typeof avviaMockStripe>> | null = null;
@@ -332,6 +334,20 @@ async function main() {
     pS = Number(qS!.id);
     const { data: qN } = await db.from("prodotti").insert({ negozio_id: negozioNId, nome: `KlarnaBN Dolce-${ts}`, prezzo: 3.0, quantita_disponibile: 100, attivo: true, ha_varianti: false }).select("id").single();
     pN = Number(qN!.id);
+
+    // Prodotto a variante nel negozio Klarna (T8: prezzo variante nel line item).
+    const { data: qV } = await db
+      .from("prodotti")
+      .insert({ negozio_id: negozioKId, nome: `KlarnaBN Variabile-${ts}`, prezzo: 8.0, quantita_disponibile: 0, attivo: true, ha_varianti: true })
+      .select("id")
+      .single();
+    pV = Number(qV!.id);
+    const { data: v1 } = await db
+      .from("prodotto_varianti")
+      .insert({ prodotto_id: pV, nome: "Variante XL", attributi: { taglia: "XL" }, prezzo: 12.5, quantita_disponibile: 30, quantita_riservata: 0, attivo: true })
+      .select("id")
+      .single();
+    vId = String(v1!.id);
 
     mockKlarna = await avviaMockKlarna();
     mockStripe = await avviaMockStripe();
@@ -507,6 +523,52 @@ async function main() {
       check("7g. stock ripristinato UNA sola volta (torna a base−1, mai oltre)", Number(dopo2?.quantita_disponibile ?? -1) === stockBase - 1, { base: stockBase, dopo: dopo2?.quantita_disponibile });
     }
 
+    // ── T8: variante → prezzo variante nel line item Klarna ──────────────
+    console.log("\n[T8] Buy-now variante: prezzo variante nel line item Klarna (snapshot DB)");
+    {
+      // Ordine di appoggio (bonifico) per esercitare l'orchestratore Klarna
+      // con mock: il payload buy-now trasporta varianteId (validato dal server).
+      const payloadV = payloadBuyNow(`bn-variant-t8-${ts}`, "bonifico", String(pV)) as {
+        varianteId: string | null;
+        [k: string]: unknown;
+      };
+      payloadV.varianteId = vId;
+      const esito = await postJson("/api/cliente/ordini", payloadV);
+      check("8a. ordine con variante creato (201)", esito.status === 201 && Boolean(esito.data?.ordine?.id), esito.status);
+      const ordineV = esito.data?.ordine?.id ? String(esito.data.ordine.id) : null;
+      if (ordineV) ordiniCreati.push(ordineV);
+      const sessione = ordineV ? await creaSessionePagamentoPerOrdine(ordineV, "klarna", klarnaOpts) : null;
+      check("8b. sessione Klarna creata (mock)", sessione?.ok === true, sessione);
+      const ultima = mockKlarna!.chiamate[mockKlarna!.chiamate.length - 1];
+      const lines = (ultima?.body?.order_lines ?? []) as Array<Record<string, unknown>>;
+      const prodLine = lines.find((l) => String(l.name).startsWith("KlarnaBN Variabile"));
+      // unit_price 1250 = prezzo VARIANTE 12.50 in centesimi (mai prezzo base 8.00).
+      check("8c. unit_price = prezzo variante DB (1250), mai 800", prodLine?.unit_price === 1250, prodLine);
+      check("8d. quantità = 1 dal payload", prodLine?.quantity === 1, prodLine);
+    }
+
+    // ── T10/T12/T13: metodi pubblici coerenti, testi UI, logo asset ──────
+    console.log("\n[T10/T12/T13] Metodi pubblici coerenti + testi Klarna + asset logo rosa");
+    {
+      const esito = await getMetodiPagamentoPubblici(negozioKId);
+      const metodi = esito.ok ? esito.metodi : [];
+      const klarna = metodi.find((m) => m.metodo === "klarna");
+      check("10a. descrizione Klarna = 'Dividi il tuo acquisto in 3 rate, se disponibile.'", klarna?.descrizione === "Dividi il tuo acquisto in 3 rate, se disponibile.", klarna?.descrizione);
+      // Nessun dato sensibile/credenziale nel payload pubblico.
+      const json = JSON.stringify(metodi);
+      check("10b. nessuna credenziale/secret nel payload pubblico", !/(secret|token|password|api_key)/i.test(json), json);
+      // Asset logo ufficiale rosa presente localmente.
+      const asset = readFileSync(join(PROGETTO, "public/loghi/klarna-pink.svg"), "utf8");
+      check("12a. public/loghi/klarna-pink.svg esiste e contiene fill rosa #FFB3C7", asset.includes("FFB3C7"), asset.slice(0, 120));
+      check("12b. nessun commento XML che blocca la rasterizzazione canvas", !asset.includes("<!--"), asset.slice(0, 120));
+      // Il badge 'Paga in 3 rate' è renderizzato dalla UI buy-now per il metodo klarna
+      // (componente SpedizioneForm): verifica statica del contratto UI.
+      const ui = readFileSync(join(PROGETTO, "components/acquista/SpedizioneForm.tsx"), "utf8");
+      check("13a. SpedizioneForm mostra il badge 'Paga in 3 rate'", ui.includes("Paga in 3 rate"), "badge assente");
+      check("13b. SpedizioneForm usa il logo rosa klarna-pink.svg", ui.includes("/loghi/klarna-pink.svg"), "logo assente");
+      check("13c. SpedizioneForm mostra il disclaimer Klarna", ui.includes("Soggetto ad approvazione e alle condizioni di Klarna."), "disclaimer assente");
+    }
+
     // ── Riepilogo ─────────────────────────────────────────────────────────
     console.log(`\n═══════════════════════════════════════════════════════`);
     console.log(`KLARNA BUY-NOW TEST: ${passati} passati, ${falliti} falliti`);
@@ -536,7 +598,8 @@ async function main() {
         console.log(`  Sweep residui ordini (bn-%-${ts}): ${residui}`);
       }
     }
-    for (const id of [pK, pS, pN]) {
+    if (vId !== null) await db.from("prodotto_varianti").delete().eq("id", vId);
+    for (const id of [pK, pS, pN, pV]) {
       if (id !== null) await db.from("prodotti").delete().eq("id", id);
     }
     for (const id of [negozioKId, negozioSId, negozioNId]) {

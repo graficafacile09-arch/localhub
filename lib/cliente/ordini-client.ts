@@ -29,7 +29,8 @@ export type CreaOrdinePayload = {
     provincia: string;
     note?: string | null;
     metodoSpedizione: "standard" | "express";
-    metodoPagamento: "carta" | "paypal" | "bonifico" | "klarna";
+    /** Metodo SCELTO ESPLICITAMENTE dall'utente (il server rifiuta un assente). */
+    metodoPagamento: "carta" | "bonifico" | "klarna";
   } | null;
   note?: string | null;
 };
@@ -40,7 +41,8 @@ export type EsitoApi =
       ordineId: string;
       numero: string;
       giaEsistente: boolean;
-      /** FASE F1: presente quando il checkout deve aprire Stripe (metodo carta). */
+      /** FASE F1/F2.5: presente quando il checkout apre un gateway
+       * (carta → Stripe, klarna → Klarna): il client reindirizza a redirectUrl. */
       pagamento?: { redirectUrl?: string } | null;
     }
   | {
