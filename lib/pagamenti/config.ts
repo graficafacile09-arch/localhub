@@ -1,28 +1,42 @@
 /**
- * PAGAMENTI — CONFIG NEGOZIO (FASE F1, solo server).
+ * PAGAMENTI — CONFIG NEGOZIO (FASE F1 + generalizzazione provider).
  *
- * Legge la configurazione Stripe di un negozio da `negozio_pagamenti`
- * passando ESCLUSIVAMENTE dalla RPC `pagamenti_credenziali_leggi`
- * (security definer, service-role) con decifratura (`p_decifra = true`):
+ * Legge la configurazione di UN provider per un negozio da
+ * `negozio_pagamenti` passando ESCLUSIVAMENTE dalla RPC
+ * `pagamenti_credenziali_leggi` (security definer, service-role) con
+ * decifratura (`p_decifra = true`):
  * - la chiave PAYMENTS_ENCRYPTION_KEY arriva da process.env (mai dal
  *   browser, mai nel codice, mai nei log);
  * - i secret NON vengono mai esposti da API pubbliche;
- * - negozio NON configurato / inattivo / senza secret → `null` (fail-closed:
- *   il checkout mostra "Carta non disponibile" invece di un errore opaco).
+ * - negozio NON configurato / provider inattivo / senza secret → `null`
+ *   (fail-closed: il checkout mostra "Carta non disponibile" invece di un
+ *   errore opaco).
+ *
+ * La RPC sottostante è già genericizzata per provider (`p_provider`): il
+ * core `getConfigProviderNegozio(negozioId, provider)` ne è la proiezione
+ * server; `getConfigStripeNegozio` / `isStripeProntoPerNegozio` restano
+ * come WRAPPER retrocompatibili (F1) — il comportamento Stripe è identico.
  */
 
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { isProviderPagamentoValido } from "./crypto";
 import type { CredenzialiGateway } from "./types";
 
-/** Configurazione Stripe di un negozio, risolta SERVER-SIDE. */
-export type ConfigStripeNegozio = {
+/** Configurazione di un provider per un negozio, risolta SERVER-SIDE. */
+export type ConfigProviderNegozio = {
   negozioId: string;
+  provider: string;
   testMode: boolean;
-  /** Secret key Stripe (sk_... o pk_... in test_mode): MAI esposta al client. */
+  /** Client id / merchant id del provider (es. Merchant ID Klarna): MAI esposto al client. */
+  clientId: string | null;
+  /** Secret key del provider (es. sk_... Stripe): MAI esposta al client. */
   secretKey: string;
-  /** Webhook signing secret (whsec_...): MAI esposta al client. */
+  /** Webhook signing secret del provider (es. whsec_... Stripe): MAI esposta al client. */
   webhookSecret: string;
 };
+
+/** Alias retrocompatibile (F1): la config Stripe è una config provider generica. */
+export type ConfigStripeNegozio = ConfigProviderNegozio;
 
 type EsitoRpcLettura = {
   ok?: boolean;
@@ -53,10 +67,20 @@ function chiaveCifraturaOrNull(): string | null {
  * Il webhook secret è opzionale (richiesto solo per ricevere webhook):
  * senza, la configurazione NON viene considerata pronta per il checkout.
  */
-export async function getConfigStripeNegozio(
-  negozioId: string
-): Promise<ConfigStripeNegozio | null> {
-  if (!negozioId) return null;
+/**
+ * Legge e decifra la configurazione di un provider per un negozio
+ * (service-role). `provider` deve essere nella allowlist
+ * (isProviderPagamentoValido — include bonifico oltre ai gateway online).
+ * Ritorna `null` se: RPC in errore, negozio non presente, provider non
+ * attivo, secret assente oppure chiave di cifratura mancante (fail-closed).
+ * Il webhook secret è opzionale (richiesto solo per ricevere webhook):
+ * senza, la configurazione NON viene considerata pronta per il checkout.
+ */
+export async function getConfigProviderNegozio(
+  negozioId: string,
+  provider: string
+): Promise<ConfigProviderNegozio | null> {
+  if (!negozioId || !isProviderPagamentoValido(provider)) return null;
   const chiave = chiaveCifraturaOrNull();
 
   let data: unknown;
@@ -64,17 +88,19 @@ export async function getConfigStripeNegozio(
     const db = createAdminSupabaseClient();
     const { data: rpcData, error } = await db.rpc("pagamenti_credenziali_leggi", {
       p_negozio_id: negozioId,
-      p_provider: "stripe",
+      p_provider: provider,
       p_decifra: true,
       p_chiave: chiave,
     });
     if (error) {
-      console.error(`[pagamenti] lettura config stripe (negozio ${negozioId}): ${error.message}`);
+      console.error(`[pagamenti] lettura config ${provider} (negozio ${negozioId}): ${error.message}`);
       return null;
     }
     data = rpcData;
   } catch (e) {
-    console.error("[pagamenti] lettura config stripe: impossibile inizializzare il client admin");
+    console.error(
+      `[pagamenti] lettura config ${provider}: impossibile inizializzare il client admin`
+    );
     return null;
   }
 
@@ -95,29 +121,52 @@ export async function getConfigStripeNegozio(
 
   return {
     negozioId,
+    provider,
     testMode: esito.test_mode !== false,
+    clientId:
+      typeof esito.client_id === "string" && esito.client_id.trim()
+        ? esito.client_id.trim()
+        : null,
     secretKey,
     webhookSecret: webhookSecret ?? "",
   };
 }
 
+/** Wrapper retrocompatibile (F1): configurazione Stripe del negozio. */
+export async function getConfigStripeNegozio(
+  negozioId: string
+): Promise<ConfigStripeNegozio | null> {
+  return getConfigProviderNegozio(negozioId, "stripe");
+}
+
 /**
- * TRUE se il negozio può realmente accettare pagamenti con carta (Stripe
- * configurato, attivo e con secret). Usato dal checkout per mostrare il
- * metodo "Carta" SOLO quando funziona davvero.
+ * TRUE se il negozio può realmente accettare pagamenti con il provider
+ * (configurato, attivo e con secret). Semantica comune a tutti i provider
+ * in questa fase: serve anche il webhook secret (senza non possiamo
+ * confermare il pagamento). Da affinare per provider quando arriveranno i
+ * gateway dedicati (es. Klarna/Scalapay potrebbero non richiederlo).
  */
-export async function isStripeProntoPerNegozio(negozioId: string): Promise<boolean> {
-  const cfg = await getConfigStripeNegozio(negozioId);
+export async function isProviderProntoPerNegozio(
+  negozioId: string,
+  provider: string
+): Promise<boolean> {
+  const cfg = await getConfigProviderNegozio(negozioId, provider);
   // Serve anche il webhook secret: senza non possiamo confermare il pagamento.
   return !!cfg && cfg.webhookSecret.length > 0;
+}
+
+/** Wrapper retrocompatibile (F1): TRUE se il negozio può accettare carte. */
+export async function isStripeProntoPerNegozio(negozioId: string): Promise<boolean> {
+  return isProviderProntoPerNegozio(negozioId, "stripe");
 }
 
 /**
  * Credenziali per il gateway (interfaccia CredenzialiGateway).
  * SOLO server-side; mai inviate al client.
  */
-export function credenzialiGatewayDaConfig(cfg: ConfigStripeNegozio): CredenzialiGateway {
+export function credenzialiGatewayDaConfig(cfg: ConfigProviderNegozio): CredenzialiGateway {
   return {
+    clientId: cfg.clientId ?? undefined,
     secret: cfg.secretKey,
     testMode: cfg.testMode,
   };
