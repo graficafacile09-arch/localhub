@@ -35,7 +35,7 @@ export default function LocalitaFields({
   onChange,
   nomi = {},
   required = false,
-  idPrefix = "loc",
+  idPrefix = "",
 }: {
   cap: string;
   citta: string;
@@ -48,6 +48,13 @@ export default function LocalitaFields({
   const nomeCap = nomi.cap ?? "cap";
   const nomeCitta = nomi.citta ?? "citta";
   const nomeProvincia = nomi.provincia ?? "provincia";
+  // Prefisso id: senza prefisso gli id restano "cap"/"citta"/"provincia" (come i
+  // FormField originali e come si aspettano i test browser); con un prefisso
+  // (es. "ck") diventano "ck-cap" ecc. (come i Campo del checkout).
+  const prefisso = idPrefix ? `${idPrefix}-` : "";
+  const idCap = `${prefisso}cap`;
+  const idCitta = `${prefisso}citta`;
+  const idProvincia = `${prefisso}provincia`;
 
   const [comuneSelezionato, setComuneSelezionato] = useState<Comune | null>(null);
   const [aperto, setAperto] = useState<"cap" | "citta" | null>(null);
@@ -56,6 +63,10 @@ export default function LocalitaFields({
   const [inCaricamento, setInCaricamento] = useState(false);
 
   const contenitoreRef = useRef<HTMLDivElement>(null);
+  // Guardia anti-race: una risposta asincrona obsoleta (es. il tipo è cambiato
+  // dopo il click su un'opzione) non deve mai sovrascrivere la selezione.
+  const ultimoCapRef = useRef("");
+  const ultimaCittaRef = useRef("");
 
   // Chiude il dropdown cliccando fuori o premendo Escape.
   useEffect(() => {
@@ -79,10 +90,15 @@ export default function LocalitaFields({
     setComuneSelezionato(comune);
     onChange("citta", comune.nome);
     onChange("provincia", comune.sigla);
+    setOpzioniCitta([]);
     if (capScelto) {
       onChange("cap", capScelto);
+      setOpzioniCap([]);
+      setAperto(null);
     } else if (comune.cap.length === 1) {
       onChange("cap", comune.cap[0]);
+      setOpzioniCap([]);
+      setAperto(null);
     } else if (comune.cap.length > 1) {
       // Più CAP per questa città → tendina con le opzioni disponibili.
       onChange("cap", "");
@@ -90,11 +106,13 @@ export default function LocalitaFields({
       setAperto("cap");
     } else {
       onChange("cap", "");
+      setOpzioniCap([]);
+      setAperto(null);
     }
-    setOpzioniCitta([]);
   }
 
   async function aggiornaCap(valore: string) {
+    ultimoCapRef.current = valore;
     onChange("cap", valore);
     const v = valore.trim();
     if (v.length < 2) {
@@ -105,7 +123,10 @@ export default function LocalitaFields({
     setInCaricamento(true);
     try {
       const comuni = await comuniPerCap(v);
-      // CAP completo che identifica UNA sola città → auto-compila città+provincia.
+      // Risposta obsoleta (il campo è cambiato nel frattempo) → ignora.
+      if (ultimoCapRef.current !== valore) return;
+      // CAP completo che identifica UNA sola città → auto-compila città+provincia
+      // (chiude la tendina: selezionaComune azzera opzioni e aperto).
       if (v.length === 5) {
         const esatti = comuni.filter((c) => c.cap.includes(v));
         if (esatti.length === 1) {
@@ -113,9 +134,9 @@ export default function LocalitaFields({
           return;
         }
       }
-      const opzioni = comuni
-        .flatMap((c) => c.cap.filter((x) => x.startsWith(v)).map((x) => ({ cap: x, comune: c })))
-        .slice(0, 12);
+      const opzioni = comuni.flatMap((c) =>
+        c.cap.filter((x) => x.startsWith(v)).map((x) => ({ cap: x, comune: c }))
+      );
       setOpzioniCap(opzioni);
       setAperto(opzioni.length ? "cap" : null);
     } catch {
@@ -126,6 +147,7 @@ export default function LocalitaFields({
   }
 
   async function aggiornaCitta(valore: string) {
+    ultimaCittaRef.current = valore;
     onChange("citta", valore);
     // Digitando una città diversa da quella selezionata la provincia non è più garantita.
     if (valore !== comuneSelezionato?.nome) {
@@ -141,6 +163,8 @@ export default function LocalitaFields({
     setInCaricamento(true);
     try {
       const lista = await ricercaComuni(v);
+      // Risposta obsoleta (il campo è cambiato nel frattempo) → ignora.
+      if (ultimaCittaRef.current !== valore) return;
       setOpzioniCitta(lista);
       setAperto(lista.length ? "citta" : null);
     } catch {
@@ -158,11 +182,11 @@ export default function LocalitaFields({
     <div ref={contenitoreRef} className="grid grid-cols-1 gap-3 sm:grid-cols-3">
       {/* CAP */}
       <div className="relative">
-        <label htmlFor={`${idPrefix}-cap`} className="block text-xs font-semibold text-slate-700">
+        <label htmlFor={idCap} className="block text-xs font-semibold text-slate-700">
           CAP{required && <span className="text-red-500"> *</span>}
         </label>
         <input
-          id={`${idPrefix}-cap`}
+          id={idCap}
           name={nomeCap}
           type="text"
           inputMode="numeric"
@@ -176,7 +200,7 @@ export default function LocalitaFields({
         {aperto === "cap" && opzioniCap.length > 0 && (
           <Dropdown onClose={() => setAperto(null)}>
             {opzioniCap.map((o, i) => (
-              <Opzione key={`${o.cap}-${i}`} onPick={() => selezionaComune(o.comune, o.cap)}>
+              <Opzione key={`${o.cap}-${i}`} onPick={() => selezionaComune(o.comune, o.cap)} testId="opt-cap">
                 <span className="font-semibold tabular-nums text-slate-900">{o.cap}</span>
                 <span className="truncate text-slate-500">
                   {" "}
@@ -190,11 +214,11 @@ export default function LocalitaFields({
 
       {/* Città */}
       <div className="relative">
-        <label htmlFor={`${idPrefix}-citta`} className="block text-xs font-semibold text-slate-700">
+        <label htmlFor={idCitta} className="block text-xs font-semibold text-slate-700">
           Città{required && <span className="text-red-500"> *</span>}
         </label>
         <input
-          id={`${idPrefix}-citta`}
+          id={idCitta}
           name={nomeCitta}
           type="text"
           autoComplete="address-level2"
@@ -206,7 +230,7 @@ export default function LocalitaFields({
         {aperto === "citta" && opzioniCitta.length > 0 && (
           <Dropdown onClose={() => setAperto(null)}>
             {opzioniCitta.map((c, i) => (
-              <Opzione key={`${c.codiceCatastale}-${i}`} onPick={() => selezionaComune(c)}>
+              <Opzione key={`${c.codiceCatastale}-${i}`} onPick={() => selezionaComune(c)} testId="opt-citta">
                 <span className="font-semibold text-slate-900">{c.nome}</span>
                 <span className="truncate text-slate-500">
                   {" "}
@@ -220,12 +244,12 @@ export default function LocalitaFields({
 
       {/* Provincia (derivata) */}
       <div className="relative">
-        <label htmlFor={`${idPrefix}-provincia`} className="block text-xs font-semibold text-slate-700">
+        <label htmlFor={idProvincia} className="block text-xs font-semibold text-slate-700">
           Provincia{required && <span className="text-red-500"> *</span>}
         </label>
         <div className="relative">
           <input
-            id={`${idPrefix}-provincia`}
+            id={idProvincia}
             type="text"
             readOnly
             value={provinciaVisibile}
@@ -258,11 +282,20 @@ function Dropdown({ children, onClose }: { children: React.ReactNode; onClose: (
   );
 }
 
-function Opzione({ children, onPick }: { children: React.ReactNode; onPick: () => void }) {
+function Opzione({
+  children,
+  onPick,
+  testId,
+}: {
+  children: React.ReactNode;
+  onPick: () => void;
+  testId?: string;
+}) {
   return (
     <button
       type="button"
       onClick={onPick}
+      data-testid={testId}
       className="flex w-full items-center gap-1 px-3 py-2 text-left text-xs leading-4 transition hover:bg-blue-50"
     >
       <span className="flex min-w-0 items-center gap-1 truncate">{children}</span>

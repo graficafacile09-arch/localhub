@@ -73,12 +73,19 @@ export async function caricaComuni(): Promise<Comune[]> {
   return caricamento;
 }
 
-/** Numero massimo di risultati restituiti dai suggerimenti (dropdown compatto). */
-const LIMITE_SUGGERIMENTI = 12;
+/**
+ * Numero massimo di risultati per la RICERCA PER NOME (autocomplete città):
+ * limitato per non affogare il dropdown quando si digita poco (es. "ca").
+ * Il CAP invece NON ha limiti: un CAP può avere molti comuni e vanno mostrati
+ * tutti.
+ */
+const LIMITE_RICERCA_COMUNE = 30;
 
 /**
  * Comuni il cui CAP inizia con il prefisso digitato (es. "870" → tutti i comuni
- * del comprensorio 870xx). Ordina per CAP crescente.
+ * del comprensorio 870xx). Restituisce TUTTE le combinazioni CAP+comune
+ * presenti nel dataset (nessun troncamento): per un CAP completo (5 cifre) è
+ * il match esatto su `cap`. Ordina per CAP crescente.
  */
 export async function comuniPerCap(prefisso: string): Promise<Comune[]> {
   const p = prefisso.trim();
@@ -86,30 +93,32 @@ export async function comuniPerCap(prefisso: string): Promise<Comune[]> {
   const comuni = await caricaComuni();
   return comuni
     .filter((c) => c.cap.some((cap) => cap.startsWith(p)))
-    .sort((a, b) => (a.cap[0] ?? "").localeCompare(b.cap[0] ?? ""))
-    .slice(0, LIMITE_SUGGERIMENTI);
+    .sort((a, b) => (a.cap[0] ?? "").localeCompare(b.cap[0] ?? ""));
 }
 
 /**
  * Ricerca comuni per nome (autocomplete città): match per inclusione su nome
- * o provincia, con priorità ai nomi che iniziano col termine digitato.
+ * o provincia. Priorità: match esatto → nomi che iniziano col termine → resto
+ * (ordinamento alfabetico it). Il match esatto non viene MAI troncato via.
  */
 export async function ricercaComuni(termine: string): Promise<Comune[]> {
   const t = termine.trim().toLowerCase();
   if (t.length < 2) return [];
   const comuni = await caricaComuni();
-  return comuni
-    .filter(
-      (c) =>
-        c.nome.toLowerCase().includes(t) || c.provincia.toLowerCase().includes(t)
-    )
-    .sort((a, b) => {
-      const aInizia = a.nome.toLowerCase().startsWith(t) ? 0 : 1;
-      const bInizia = b.nome.toLowerCase().startsWith(t) ? 0 : 1;
-      if (aInizia !== bInizia) return aInizia - bInizia;
-      return a.nome.localeCompare(b.nome, "it");
-    })
-    .slice(0, LIMITE_SUGGERIMENTI);
+  const filtrati = comuni.filter(
+    (c) => c.nome.toLowerCase().includes(t) || c.provincia.toLowerCase().includes(t)
+  );
+  filtrati.sort((a, b) => {
+    const aNome = a.nome.toLowerCase();
+    const bNome = b.nome.toLowerCase();
+    if (aNome === t) return -1;
+    if (bNome === t) return 1;
+    const aInizia = aNome.startsWith(t) ? 0 : 1;
+    const bInizia = bNome.startsWith(t) ? 0 : 1;
+    if (aInizia !== bInizia) return aInizia - bInizia;
+    return a.nome.localeCompare(b.nome, "it");
+  });
+  return filtrati.slice(0, LIMITE_RICERCA_COMUNE);
 }
 
 /** Etichetta provincia compatta (es. "Cosenza (CS)"). */
