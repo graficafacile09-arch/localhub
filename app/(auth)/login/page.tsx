@@ -5,6 +5,11 @@ import { useSearchParams } from "next/navigation";
 import BackButton from "@/components/BackButton";
 import PasswordInput from "@/components/auth/PasswordInput";
 import { isPartitaIvaValida } from "@/lib/partita-iva";
+import {
+  cancellaCredenzialiRicordate,
+  leggiCredenzialiRicordate,
+  salvaCredenzialiRicordate,
+} from "@/lib/auth/remember-credentials";
 
 function LoginContent() {
   const searchParams = useSearchParams();
@@ -94,14 +99,38 @@ function LoginContent() {
 }
 
 function LoginForm({ area }: { area: string }) {
+  // "Ricordami": al mount ricompila i campi con le credenziali salvate nel
+  // browser (se presenti) e tiene traccia della scelta per salvarle/cancellarle.
+  const [salvate] = useState(() => leggiCredenzialiRicordate());
+  const [email, setEmail] = useState(salvate?.email ?? "");
+  const [password, setPassword] = useState(salvate?.password ?? "");
+  const [remember, setRemember] = useState(Boolean(salvate));
+
+  const gestisciRemember = (selezionato: boolean) => {
+    setRemember(selezionato);
+    // Disattivazione esplicita → rimuove subito le credenziali salvate.
+    if (!selezionato) cancellaCredenzialiRicordate();
+  };
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    // Il POST nativo prosegue normalmente: qui gestiamo solo il "Ricordami".
+    if (remember) {
+      salvaCredenzialiRicordate({ email, password });
+    } else {
+      cancellaCredenzialiRicordate();
+    }
+  };
+
   return (
-    <form action="/api/auth/login" method="post" className="space-y-4">
+    <form action="/api/auth/login" method="post" onSubmit={handleSubmit} className="space-y-4">
       {area && <input type="hidden" name="area" value={area} />}
       <div className="space-y-2">
         <label htmlFor="email" className="text-sm font-semibold text-slate-700">Email</label>
         <input
           id="email" name="email" type="email" required autoComplete="email"
           placeholder="venditore@localhub.it"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           className="h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
         />
       </div>
@@ -111,13 +140,15 @@ function LoginForm({ area }: { area: string }) {
           id="password" name="password" required autoComplete="current-password"
           placeholder="Inserisci la password"
           className="h-12"
+          value={password}
+          onChange={setPassword}
         />
       </div>
       <label className="flex cursor-pointer select-none items-center gap-2.5">
         <input
           type="checkbox"
-          name="remember"
-          defaultChecked
+          checked={remember}
+          onChange={(e) => gestisciRemember(e.target.checked)}
           className="h-4 w-4 shrink-0 cursor-pointer rounded border-slate-300 text-blue-600 accent-blue-600 focus:ring-blue-500"
         />
         <span className="text-sm text-slate-600">Ricordami</span>

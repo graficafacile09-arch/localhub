@@ -11,7 +11,6 @@ import {
   risolviAreaAttiva,
   type AreaAttiva,
 } from "@/lib/auth/area";
-import { REMEMBER_COOKIE, senzaPersistenza } from "@/lib/auth/remember";
 
 export async function proxy(request: NextRequest) {
   if (!isSupabaseConfigured()) {
@@ -21,11 +20,6 @@ export async function proxy(request: NextRequest) {
   const { url, anonKey } = getSupabaseConfig();
   let response = NextResponse.next({ request });
 
-  // "Ricordami": se il cookie lh_remember vale "0", la sessione è NON
-  // persistente: ogni riscrittura dei cookie di sessione (refresh del token)
-  // deve mantenere i cookie come cookie di sessione, senza maxAge.
-  const persistente = request.cookies.get(REMEMBER_COOKIE)?.value !== "0";
-
   const supabase = createServerClient(url, anonKey, {
     cookies: {
       getAll() {
@@ -34,9 +28,7 @@ export async function proxy(request: NextRequest) {
       setAll(cookiesToSet) {
         cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
         response = NextResponse.next({ request });
-        cookiesToSet.forEach(({ name, value, options }) =>
-          response.cookies.set(name, value, persistente ? options : senzaPersistenza(options))
-        );
+        cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
       },
     },
     // Idem al client server: refresh/correzione della sessione mantengono i

@@ -23,6 +23,10 @@ type PasswordInputProps = {
   placeholder?: string;
   /** Classi extra (es. altezza h-11): vengono aggiunte a quelle di default. */
   className?: string;
+  /** Valore controllato (opzionale): se assente il campo resta non controllato. */
+  value?: string;
+  /** Handler per il valore controllato (opzionale). */
+  onChange?: (value: string) => void;
 };
 
 export default function PasswordInput({
@@ -32,6 +36,8 @@ export default function PasswordInput({
   autoComplete,
   placeholder,
   className = "",
+  value,
+  onChange,
 }: PasswordInputProps) {
   const [visibile, setVisibile] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -54,6 +60,8 @@ export default function PasswordInput({
         required={required}
         autoComplete={autoComplete}
         placeholder={placeholder}
+        value={value}
+        onChange={onChange ? (e) => onChange(e.target.value) : undefined}
         className={`w-full rounded-2xl border border-slate-200 pl-4 pr-12 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100 ${className}`}
       />
       <button
