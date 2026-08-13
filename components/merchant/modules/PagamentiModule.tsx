@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { CreditCard, CheckCircle2, AlertCircle, ShieldCheck, Lock } from "lucide-react";
+import { CreditCard, CheckCircle2, AlertCircle, ShieldCheck, Lock, Info } from "lucide-react";
 import ModuleShell from "./ModuleShell";
 import { Toggle, SaveBar } from "./ModuleFields";
 
@@ -24,39 +24,85 @@ type MetodoConfig = {
   ordine_mostra: number;
 };
 
-/** Etichetta e campi da mostrare per ogni provider. */
-const PROVIDER_INFO: Record<
-  string,
-  { nome: string; descrizione: string; campoId: string; haSecret: boolean }
-> = {
-  klarna: {
-    nome: "Klarna",
-    descrizione: "Paga in 3 o 4 rate — pay later",
-    campoId: "Merchant ID",
+/**
+ * Info di UN provider mostrato nel pannello.
+ * Ogni gateway ha etichette e URL webhook propri: il merchant deve capire
+ * esattamente quale campo va riempito e dove puntare il webhook.
+ */
+type ProviderInfoEntry = {
+  nome: string;
+  descrizione: string;
+  /** Etichetta del campo client_id (Stripe: Publishable Key, PayPal: Client ID, ...). */
+  campoId: string;
+  /** Etichetta del campo secret. */
+  campoSecret: string;
+  /** Etichetta del campo webhook (PayPal = Webhook ID, Klarna = Shared Secret HMAC). */
+  campoWebhook: string;
+  /** URL webhook relativo da registrare presso il provider (null = nessun webhook). */
+  webhookUrl: string | null;
+  /** Istruzioni webhook mostrate al merchant. */
+  webhookIstruzioni?: string;
+  /** Etichetta della modalità test. */
+  testLabel: string;
+  /** Etichetta della modalità live. */
+  liveLabel: string;
+  /** True se il provider richiede secret + webhook (false per bonifico). */
+  haSecret: boolean;
+  /** Nota informativa opzionale (es. Publishable Key Stripe non usata). */
+  nota?: string;
+};
+
+const PROVIDER_INFO: Record<string, ProviderInfoEntry> = {
+  stripe: {
+    nome: "Carta (Stripe)",
+    descrizione: "Carte di credito/debito + Apple Pay + Google Pay",
+    campoId: "Publishable Key (non necessaria)",
+    campoSecret: "Secret Key",
+    campoWebhook: "Webhook Secret",
+    webhookUrl: "/api/webhook/pagamenti/stripe",
+    webhookIstruzioni:
+      "Imposta questo URL come endpoint webhook nel Dashboard Stripe (Developers → Webhooks) e incolla il signing secret nel campo \"Webhook Secret\". Eventi necessari: checkout.session.completed, checkout.session.expired, charge.refunded.",
+    testLabel: "Test",
+    liveLabel: "Live",
     haSecret: true,
-  },
-  scalapay: {
-    nome: "Scalapay",
-    descrizione: "Paga in 3 rate senza interessi",
-    campoId: "Merchant Code",
-    haSecret: true,
+    nota:
+      "La Publishable Key non viene utilizzata dal flusso Stripe Checkout hosted: servono solo Secret Key e Webhook Secret. Apple Pay e Google Pay sono gestiti da Stripe (Dynamic Payment Methods): per mostrarli occorre abilitarli nel Dashboard Stripe (Apple Pay richiede anche la verifica del dominio).",
   },
   paypal: {
     nome: "PayPal",
     descrizione: "Pagamenti con account PayPal",
     campoId: "Client ID",
+    campoSecret: "Secret",
+    campoWebhook: "Webhook ID",
+    webhookUrl: "/api/webhook/pagamenti/paypal",
+    webhookIstruzioni:
+      "Nel PayPal Developer Dashboard crea un webhook su questo URL e incolla il suo \"Webhook ID\" nel campo \"Webhook ID\" (non un secret). Eventi necessari: PAYMENT.CAPTURE.COMPLETED, PAYMENT.CAPTURE.REFUNDED, PAYMENT.CAPTURE.DENIED, PAYMENT.CAPTURE.FAILED, CHECKOUT.ORDER.CANCELLED.",
+    testLabel: "Sandbox",
+    liveLabel: "Live",
     haSecret: true,
   },
-  stripe: {
-    nome: "Carta",
-    descrizione: "Carte di credito e debito (Stripe)",
-    campoId: "Publishable Key",
+  klarna: {
+    nome: "Klarna",
+    descrizione: "Paga in 3 o 4 rate — pay later",
+    campoId: "Client ID / Username",
+    campoSecret: "Secret / Password",
+    campoWebhook: "Shared Secret HMAC",
+    webhookUrl: "/api/webhook/pagamenti/klarna",
+    webhookIstruzioni:
+      "Registra questo URL come push URL Klarna e imposta lo stesso \"Shared Secret HMAC\" nel campo dedicato (Klarna firma gli eventi con HMAC-SHA256). Eventi gestiti: AUTHORIZED/CAPTURED, CANCELLED, EXPIRED, REFUNDED.",
+    testLabel: "Playground",
+    liveLabel: "Live",
     haSecret: true,
   },
   bonifico: {
     nome: "Bonifico bancario",
     descrizione: "Pagamento manuale tramite bonifico",
     campoId: "",
+    campoSecret: "",
+    campoWebhook: "",
+    webhookUrl: null,
+    testLabel: "",
+    liveLabel: "",
     haSecret: false,
   },
 };
@@ -65,7 +111,6 @@ const METODI_INFO: Record<string, { nome: string; descrizione: string }> = {
   carta: { nome: "Carta", descrizione: "Carte di credito e debito" },
   paypal: { nome: "PayPal", descrizione: "Account PayPal" },
   klarna: { nome: "Klarna", descrizione: "Paga in 3/4 rate" },
-  scalapay: { nome: "Scalapay", descrizione: "Paga in 3 rate" },
   bonifico: { nome: "Bonifico", descrizione: "Bonifico bancario" },
 };
 
@@ -256,6 +301,17 @@ export default function PagamentiModule({ storeId }: Props) {
         </p>
       </div>
 
+      <div className="mb-5 flex items-start gap-3 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3">
+        <Info className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+        <p className="text-xs leading-5 text-amber-900">
+          Ci sono <strong>due passaggi distinti</strong>: prima configura e attiva il{" "}
+          <strong>provider</strong> (collegando il gateway), poi abilita il relativo{" "}
+          <strong>metodo al checkout</strong> per renderlo selezionabile dai clienti.
+          Un metodo online è disponibile solo se il suo provider è configurato E il metodo
+          è abilitato.
+        </p>
+      </div>
+
       {errore && (
         <div className="mb-4 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-semibold text-red-700">
           <AlertCircle className="h-4 w-4 shrink-0" />
@@ -272,8 +328,12 @@ export default function PagamentiModule({ storeId }: Props) {
       <div className="space-y-6">
         {/* ── Provider ─────────────────────────────────────────────────── */}
         <div>
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-slate-500">
             Provider di pagamento
+          </p>
+          <p className="mb-3 text-[11px] leading-4 text-slate-400">
+            Collega il gateway al tuo account e attivalo. Il badge mostra se le credenziali
+            sono già salvate.
           </p>
           <div className="space-y-3">
             {Object.entries(PROVIDER_INFO).map(([key, info]) => {
@@ -297,7 +357,10 @@ export default function PagamentiModule({ storeId }: Props) {
                       </div>
                       <p className="mt-0.5 text-xs text-slate-500">{info.descrizione}</p>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-col items-end gap-1">
+                      <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+                        Provider
+                      </span>
                       <Toggle
                         label=""
                         description=""
@@ -333,8 +396,8 @@ export default function PagamentiModule({ storeId }: Props) {
                                 onChange={(e) => setProvider(key, { test_mode: e.target.value === "test" })}
                                 className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                               >
-                                <option value="test">Test (sandbox)</option>
-                                <option value="live">Live (produzione)</option>
+                                <option value="test">{info.testLabel}</option>
+                                <option value="live">{info.liveLabel}</option>
                               </select>
                             </div>
                           </div>
@@ -343,7 +406,7 @@ export default function PagamentiModule({ storeId }: Props) {
                             <div className="grid gap-3 sm:grid-cols-2">
                               <div>
                                 <label className="mb-1.5 flex items-center gap-1 text-xs font-semibold text-slate-500">
-                                  <Lock className="h-3 w-3 text-slate-400" /> Secret
+                                  <Lock className="h-3 w-3 text-slate-400" /> {info.campoSecret}
                                   <span className="font-normal text-slate-400">
                                     {p.has_secret ? " (configurato — lascia vuoto per non cambiarlo)" : ""}
                                   </span>
@@ -356,13 +419,13 @@ export default function PagamentiModule({ storeId }: Props) {
                                     setProvider(key, { secret: e.target.value });
                                     setSecretDirty((d) => ({ ...d, [key]: true }));
                                   }}
-                                  placeholder={p.has_secret ? "•••••••• (non modificare)" : "Inserisci il secret"}
+                                  placeholder={p.has_secret ? "•••••••• (non modificare)" : `Inserisci ${info.campoSecret.toLowerCase()}`}
                                   className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                                 />
                               </div>
                               <div>
                                 <label className="mb-1.5 flex items-center gap-1 text-xs font-semibold text-slate-500">
-                                  <Lock className="h-3 w-3 text-slate-400" /> Webhook secret
+                                  <Lock className="h-3 w-3 text-slate-400" /> {info.campoWebhook}
                                   <span className="font-normal text-slate-400">
                                     {p.has_secret ? " (opzionale)" : ""}
                                   </span>
@@ -375,32 +438,34 @@ export default function PagamentiModule({ storeId }: Props) {
                                     setProvider(key, { webhook_secret: e.target.value });
                                     setSecretDirty((d) => ({ ...d, [key]: true }));
                                   }}
-                                  placeholder={p.has_secret ? "•••••••• (non modificare)" : "Inserisci il webhook secret"}
+                                  placeholder={p.has_secret ? "•••••••• (non modificare)" : `Inserisci ${info.campoWebhook.toLowerCase()}`}
                                   className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                                 />
                               </div>
                             </div>
                           )}
 
-                          {/* FASE F1 — webhook Stripe: URL unico da impostare
-                              nel pannello Stripe (Developer → Webhooks). */}
-                          {key === "stripe" && (
+                          {info.webhookUrl && (
                             <div className="rounded-xl bg-slate-50 px-3 py-2.5 ring-1 ring-slate-100">
                               <p className="text-[11px] font-semibold text-slate-600">
-                                Webhook da configurare in Stripe
+                                Webhook da configurare ({info.nome})
                               </p>
                               <p className="mt-1 break-all font-mono text-[11px] text-slate-500">
                                 {typeof window !== "undefined"
-                                  ? `${window.location.origin}/api/webhook/pagamenti/stripe`
-                                  : "/api/webhook/pagamenti/stripe"}
+                                  ? `${window.location.origin}${info.webhookUrl}`
+                                  : info.webhookUrl}
                               </p>
-                              <p className="mt-1 text-[10px] leading-4 text-slate-400">
-                                Imposta questo URL come endpoint webhook (Dashboard → Developers →
-                                Webhooks) e incolla il signing secret nel campo "Webhook secret".
-                                Eventi necessari: checkout.session.completed, checkout.session.expired,
-                                charge.refunded. Il pagamento con carta è attivo per i clienti SOLO
-                                dopo questa configurazione.
-                              </p>
+                              {info.webhookIstruzioni && (
+                                <p className="mt-1 text-[10px] leading-4 text-slate-400">
+                                  {info.webhookIstruzioni}
+                                </p>
+                              )}
+                            </div>
+                          )}
+
+                          {info.nota && (
+                            <div className="rounded-xl bg-amber-50 px-3 py-2.5 ring-1 ring-amber-100">
+                              <p className="text-[10px] leading-4 text-amber-800">{info.nota}</p>
                             </div>
                           )}
                         </>
@@ -443,8 +508,13 @@ export default function PagamentiModule({ storeId }: Props) {
 
         {/* ── Metodi mostrati al checkout ─────────────────────────────── */}
         <div>
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
+          <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-slate-500">
             Metodi mostrati al checkout
+          </p>
+          <p className="mb-3 text-[11px] leading-4 text-slate-400">
+            Abilita i metodi che i clienti possono selezionare. Un metodo online diventa
+            realmente selezionabile solo se il relativo provider è configurato e attivo
+            (sezione sopra).
           </p>
           <div className="space-y-2">
             {Object.entries(METODI_INFO).map(([key, info]) => (
@@ -459,9 +529,8 @@ export default function PagamentiModule({ storeId }: Props) {
             ))}
           </div>
           <p className="mt-2 text-[10px] leading-4 text-slate-400">
-            I metodi attivi vengono mostrati nel checkout dei clienti. Il metodo
-            "Carta" diventa visibile SOLO quando Stripe è configurato e attivo;
-            "Bonifico" solo quando IBAN/intestatario sono valorizzati.
+            Bonifico non richiede un provider e resta sempre disponibile. Carta, PayPal e
+            Klarna richiedono sia la configurazione del provider sia l&apos;abilitazione del metodo.
           </p>
         </div>
 
