@@ -3,19 +3,24 @@ import { canManageStore } from "@/lib/merchant/data";
 import { getSiteUrl } from "@/lib/site";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import {
-  verificaStatoConnect,
+  estraiEVerificaStatoConnect,
   exchangeStripeOAuthCode,
   getStripeAccountName,
 } from "@/lib/pagamenti/stripe-connect";
 
 /**
- * GET /api/merchant/stores/[negozioId]/pagamenti/stripe/callback
+ * GET /api/merchant/pagamenti/stripe/callback
  *
- * Callback OAuth di Stripe Connect (redirect_uri). Verifica lo state firmato
- * (CSRF + binding al negozio), scambia il codice e salva SOLO l'account id
- * (`stripe_user_id`) + nome business. Nessun token/secret viene salvato.
- * Poi reindirizza alla dashboard del venditore.
+ * Callback OAuth Stripe Connect a PATH FISSO (redirect_uri registrato su
+ * Stripe con match esatto). Il negozio NON viene preso dal path: viene
+ * estratto ESCLUSIVAMENTE dallo `state` firmato (HMAC-SHA256, fail-closed),
+ * poi verificato con `canManageStore` (ownership). Completa lo scambio OAuth
+ * e salva SOLO `stripe_user_id` + nome business. Nessun token/secret salvato.
  */
+function redirectErrore(): Response {
+  return Response.redirect(`${getSiteUrl()}/merchant?stripe=error`, 302);
+}
+
 function redirectTo(negozioId: string, esito: string): Response {
   return Response.redirect(
     `${getSiteUrl()}/merchant/${negozioId}/impostazioni?stripe=${esito}`,
@@ -23,27 +28,26 @@ function redirectTo(negozioId: string, esito: string): Response {
   );
 }
 
-export async function GET(
-  request: Request,
-  context: { params: Promise<{ negozioId: string }> }
-) {
-  const { negozioId } = await context.params;
+export async function GET(request: Request) {
   const url = new URL(request.url);
 
   const errore = url.searchParams.get("error");
   const code = url.searchParams.get("code");
   const state = url.searchParams.get("state");
 
-  // Rifiuto esplicito da parte del venditore, o state assente/invalido.
-  if (errore || !code || !state || !verificaStatoConnect(state, negozioId)) {
-    return redirectTo(negozioId, "error");
+  // Unico punto autoritativo per il negozio: lo state firmato. Mai dal path.
+  const negozioId = state ? estraiEVerificaStatoConnect(state) : null;
+
+  // Rifiuto esplicito, codice assente o state invalido/manomesso → errore.
+  if (errore || !code || !negozioId) {
+    return negozioId ? redirectTo(negozioId, "error") : redirectErrore();
   }
 
-  // Ownership: il venditore deve poter gestire il negozio.
+  // Ownership: il venditore deve poter gestire il negozio estratto dallo state.
   const { sessione, error: errArea } = await requireApiArea("merchant");
-  if (errArea) return redirectTo(negozioId, "error");
+  if (errArea) return redirectErrore();
   const allowed = await canManageStore(sessione.user.id, negozioId);
-  if (!allowed) return redirectTo(negozioId, "error");
+  if (!allowed) return redirectErrore();
 
   try {
     const { accountId, livemode } = await exchangeStripeOAuthCode(code);

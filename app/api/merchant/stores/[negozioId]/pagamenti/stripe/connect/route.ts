@@ -2,7 +2,7 @@ import { apiError, apiOk } from "@/lib/api/response";
 import { requireApiArea } from "@/lib/auth/session-area";
 import { canManageStore } from "@/lib/merchant/data";
 import { getSiteUrl } from "@/lib/site";
-import { buildStripeConnectUrl } from "@/lib/pagamenti/stripe-connect";
+import { buildStripeConnectUrl, STRIPE_CONNECT_CALLBACK_PATH } from "@/lib/pagamenti/stripe-connect";
 
 /**
  * POST /api/merchant/stores/[negozioId]/pagamenti/stripe/connect
@@ -26,7 +26,9 @@ export async function POST(
   if (!allowed) return apiError("FORBIDDEN", "Non puoi gestire questo negozio.", 403);
 
   try {
-    const redirectUri = `${getSiteUrl()}/api/merchant/stores/${negozioId}/pagamenti/stripe/callback`;
+    // redirect_uri FISSO (registrato su Stripe con match esatto): il negozio
+    // è vincolato dallo state firmato, non dal path.
+    const redirectUri = `${getSiteUrl()}${STRIPE_CONNECT_CALLBACK_PATH}`;
     const { url } = buildStripeConnectUrl(negozioId, redirectUri);
     return apiOk({ url });
   } catch {

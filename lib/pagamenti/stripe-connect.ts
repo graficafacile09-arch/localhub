@@ -25,6 +25,15 @@ import Stripe from "stripe";
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import type { GatewayStripeOptions } from "./stripe";
 
+/**
+ * Path fisso del callback OAuth Stripe Connect (redirect_uri registrato su
+ * Stripe). È volutamente INDIPENDENTE dal negozioId: il negozio viene
+ * vincolato esclusivamente dallo `state` firmato (HMAC). Stripe OAuth
+ * richiede un match esatto del redirect_uri, quindi non può contenere un
+ * segmento dinamico per negozio.
+ */
+export const STRIPE_CONNECT_CALLBACK_PATH = "/api/merchant/pagamenti/stripe/callback";
+
 /** Client id dell'applicazione Connect della piattaforma (ca_…). */
 export function getStripeConnectClientId(): string {
   const id = (process.env.STRIPE_CONNECT_CLIENT_ID ?? "").trim();
@@ -60,21 +69,31 @@ export function firmaStatoConnect(negozioId: string): string {
   return `${payload}:${hmac}`;
 }
 
-/** Verifica lo state OAuth (integrità + binding al negozio). Fail-closed. */
-export function verificaStatoConnect(state: string, negozioId: string): boolean {
-  if (!state || !negozioId) return false;
+/**
+ * Estrae il negozioId dallo `state` firmato e ne verifica l'integrità HMAC.
+ * Ritorna il negozioId SOLO se la firma è valida, altrimenti null (fail-closed).
+ * È l'unico punto in cui il callback ricava il negozio: mai dal path/URL.
+ */
+export function estraiEVerificaStatoConnect(state: string): string | null {
+  if (!state) return null;
   const parts = state.split(":");
-  if (parts.length !== 3) return false;
-  if (parts[0] !== negozioId) return false;
+  if (parts.length !== 3) return null;
+  const negozioId = parts[0];
+  if (!negozioId) return null;
   const payload = `${parts[0]}:${parts[1]}`;
   const attesa = createHmac("sha256", chiaveState()).update(payload).digest("base64url");
   try {
     const a = Buffer.from(attesa, "utf8");
     const b = Buffer.from(parts[2], "utf8");
-    return a.length === b.length && timingSafeEqual(a, b);
+    return a.length === b.length && timingSafeEqual(a, b) ? negozioId : null;
   } catch {
-    return false;
+    return null;
   }
+}
+
+/** Verifica lo state OAuth (integrità + binding al negozio). Fail-closed. */
+export function verificaStatoConnect(state: string, negozioId: string): boolean {
+  return !!negozioId && estraiEVerificaStatoConnect(state) === negozioId;
 }
 
 /**

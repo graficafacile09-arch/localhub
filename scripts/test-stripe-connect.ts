@@ -24,7 +24,9 @@ import { GatewayStripe } from "../lib/pagamenti/stripe";
 import {
   firmaStatoConnect,
   verificaStatoConnect,
+  estraiEVerificaStatoConnect,
   buildStripeConnectUrl,
+  STRIPE_CONNECT_CALLBACK_PATH,
 } from "../lib/pagamenti/stripe-connect";
 import {
   getStripeConnectAccount,
@@ -115,7 +117,8 @@ async function main() {
   process.env.PAYMENTS_ENCRYPTION_KEY = process.env.PAYMENTS_ENCRYPTION_KEY ?? "chiave-test-stripe-connect-0001";
 
   const negozio = "10000000-0000-4000-8000-000000000002";
-  const redirectUri = "https://www.incitta.online/api/merchant/stores/10000000-0000-4000-8000-000000000002/pagamenti/stripe/callback";
+  // redirect_uri FISSO e indipendente dal negozio (match esatto Stripe).
+  const redirectUri = `https://www.incitta.online${STRIPE_CONNECT_CALLBACK_PATH}`;
 
   const ctx: ContestoCheckout = {
     ordineId: negozio,
@@ -140,6 +143,8 @@ async function main() {
     "T1d state di altro negozio → false",
     verificaStatoConnect(state, "99999999-9999-9999-9999-999999999999") === false
   );
+  check("T1e estrai negozioId dallo state", estraiEVerificaStatoConnect(state) === negozio);
+  check("T1f state manomesso → null", estraiEVerificaStatoConnect(`${state}x`) === null);
 
   // ── T2: URL di autorizzazione Connect ─────────────────────────────────
   console.log("\n[T2] URL autorizzazione Connect");
@@ -149,6 +154,11 @@ async function main() {
   check("T2c scope=read_write", authUrl.includes("scope=read_write"), authUrl);
   check("T2d redirect_uri presente", authUrl.includes(encodeURIComponent(redirectUri)), authUrl);
   check("T2e state riutilizzabile", verificaStatoConnect(state2, negozio) === true);
+  check(
+    "T2f redirect_uri NON contiene negozioId nel path",
+    !authUrl.includes(encodeURIComponent(`/stores/${negozio}/`)),
+    authUrl
+  );
 
   // ── T3: gateway Connect → Stripe-Account + platform key ───────────────
   console.log("\n[T3] GatewayStripe Connect (on-behalf-of, nessun secret merchant)");
