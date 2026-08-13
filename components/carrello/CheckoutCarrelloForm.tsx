@@ -21,6 +21,9 @@ import {
 import { useCarrello } from "@/lib/carrello/CartContext";
 import { chiaveDiRiga } from "@/lib/carrello/cart-core";
 import QuantitySelector from "@/components/acquista/QuantitySelector";
+import LocalitaFields, {
+  type CampoLocalita,
+} from "@/components/indirizzo/LocalitaFields";
 
 const formattaEuro = (v: number) =>
   `€${v.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -464,11 +467,18 @@ export default function CheckoutCarrelloForm({ prefill }: { prefill: Prefill }) 
             ) : (
               <div className="mt-4 space-y-3">
                 <Campo label="Indirizzo *" value={indirizzo} onChange={setIndirizzo} id="ck-indirizzo" />
-                <div className="grid grid-cols-3 gap-3">
-                  <Campo label="CAP *" value={cap} onChange={setCap} id="ck-cap" />
-                  <Campo label="Città *" value={citta} onChange={setCitta} id="ck-citta" />
-                  <Campo label="Provincia *" value={provincia} onChange={setProvincia} id="ck-provincia" />
-                </div>
+                <LocalitaFields
+                  cap={cap}
+                  citta={citta}
+                  provincia={provincia}
+                  onChange={(campo: CampoLocalita, valore: string) => {
+                    if (campo === "cap") setCap(valore);
+                    else if (campo === "citta") setCitta(valore);
+                    else setProvincia(valore);
+                  }}
+                  idPrefix="ck"
+                  required
+                />
                 <Campo label="Note consegna" value={noteConsegna} onChange={setNoteConsegna} id="ck-note-consegna" />
               </div>
             )}

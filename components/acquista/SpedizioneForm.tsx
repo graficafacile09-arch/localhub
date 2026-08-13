@@ -4,6 +4,9 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Package, Truck, CreditCard, Banknote, Loader2 } from "lucide-react";
 import QuantitySelector from "./QuantitySelector";
+import LocalitaFields, {
+  type CampoLocalita,
+} from "@/components/indirizzo/LocalitaFields";
 import { creaOrdineViaApi, nuovaChiaveIdempotenza } from "@/lib/cliente/ordini-client";
 import type { MetodoPagamentoCheckout } from "@/lib/pagamenti/metodi-pubblici";
 
@@ -36,6 +39,16 @@ export default function SpedizioneForm({
   >(null);
   const [inviando, setInviando] = useState(false);
   const [errore, setErrore] = useState<string | null>(null);
+  // CAP / Città / Provincia collegati (valori sincronizzati dal componente
+  // LocalitaFields; il submit continua a leggerli via FormData).
+  const [cap, setCap] = useState("");
+  const [citta, setCitta] = useState("");
+  const [provincia, setProvincia] = useState("");
+  const aggiornaLocalita = (campo: CampoLocalita, valore: string) => {
+    if (campo === "cap") setCap(valore);
+    else if (campo === "citta") setCitta(valore);
+    else setProvincia(valore);
+  };
   const formRef = useRef<HTMLFormElement>(null);
   // Chiave di idempotenza: generata UNA volta per pagina → un doppio click
   // (o retry) non crea mai due ordini.
@@ -170,10 +183,14 @@ export default function SpedizioneForm({
           <div className="mt-3">
             <FormField label="Indirizzo" id="indirizzo" required />
           </div>
-          <div className="mt-3 grid grid-cols-3 gap-3">
-            <FormField label="CAP" id="cap" required />
-            <FormField label="Città" id="citta" required />
-            <FormField label="Provincia" id="provincia" required />
+          <div className="mt-3">
+            <LocalitaFields
+              cap={cap}
+              citta={citta}
+              provincia={provincia}
+              onChange={aggiornaLocalita}
+              required
+            />
           </div>
           <div className="mt-3">
             <FormField label="Note consegna" id="note" />
