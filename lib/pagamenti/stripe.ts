@@ -171,7 +171,9 @@ export class GatewayStripe implements PaymentGateway {
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
-      payment_method_types: ["card"],
+      // Dynamic Payment Methods: omettendo `payment_method_types`, Stripe
+      // Checkout mostra i metodi abilitati nel Dashboard (carta di default)
+      // più i wallet Apple Pay / Google Pay quando disponibili e configurati.
       // FASE F2.3 — un line_item per riga (prezzo/quantità dagli snapshot
       // del DB via ContestoCheckout.righe): il client non ha alcun controllo
       // su prezzi, quantità, totale o spedizione. Senza righe nel contesto
