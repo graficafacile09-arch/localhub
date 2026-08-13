@@ -113,6 +113,15 @@ function LoginForm({ area }: { area: string }) {
           className="h-12"
         />
       </div>
+      <label className="flex cursor-pointer select-none items-center gap-2.5">
+        <input
+          type="checkbox"
+          name="remember"
+          defaultChecked
+          className="h-4 w-4 shrink-0 cursor-pointer rounded border-slate-300 text-blue-600 accent-blue-600 focus:ring-blue-500"
+        />
+        <span className="text-sm text-slate-600">Ricordami</span>
+      </label>
       <div className="flex items-center justify-end">
         <a
           href="/recupero-password"

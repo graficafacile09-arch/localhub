@@ -10,6 +10,11 @@ import {
   areaToPath,
   isAreaAttiva,
 } from "@/lib/auth/area";
+import {
+  REMEMBER_COOKIE,
+  REMEMBER_PERSIST,
+  rememberCookieOptions,
+} from "@/lib/auth/remember";
 
 /** Riporta l'area sul loginUrl se valida. */
 function preservaArea(loginUrl: URL, formData: FormData) {
@@ -30,6 +35,9 @@ export async function POST(request: Request) {
   const formData = await request.formData();
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
+  // "Ricordami": selezionato → sessione persistente; non selezionato → cookie
+  // di sessione (eliminati alla chiusura del browser).
+  const remember = formData.get("remember") === "on";
 
   if (!email || !password) {
     loginUrl.searchParams.set("error", "Inserisci email e password.");
@@ -37,7 +45,7 @@ export async function POST(request: Request) {
     return NextResponse.redirect(loginUrl);
   }
 
-  const supabase = await createServerSupabaseClient();
+  const supabase = await createServerSupabaseClient({ remember });
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
@@ -68,6 +76,11 @@ export async function POST(request: Request) {
     : "/";
 
   const response = NextResponse.redirect(new URL(destinazione, request.url));
+  response.cookies.set(
+    REMEMBER_COOKIE,
+    remember ? REMEMBER_PERSIST : "0",
+    rememberCookieOptions(remember)
+  );
   if (areaAttiva) {
     response.cookies.set(AREA_COOKIE, areaAttiva, areaCookieOptions());
   }
