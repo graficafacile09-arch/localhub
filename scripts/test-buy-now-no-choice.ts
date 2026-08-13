@@ -12,7 +12,8 @@
  *   + ZERO SESSIONI DI PAGAMENTO.
  *
  * Copre i TEST 1-7 richiesti:
- *   T1 zero metodi        → UI chiaro + pulsante disabilitato + nessun POST;
+ *   T1 zero metodi online → BONIFICO esplicito + pulsante disabilitato senza
+ *                           scelta + nessun POST; ordine bonifico solo dopo click;
  *   T2 solo bonifico      → bloccato senza click; dopo click esplicito ordine;
  *   T3 solo carta         → bloccato senza click; dopo click ordine (carta);
  *   T4 solo klarna        → bloccato senza click; dopo click ordine (klarna);
@@ -309,19 +310,33 @@ async function main() {
     await avviaServer();
     browser = await chromium.launch({ headless: true });
 
-    // ── TEST 1 — ZERO METODI (browser, percorso completo) ──────────────────
-    console.log("\n[T1] Negozi senza metodi: nessuna scelta possibile, zero POST");
+    // ── TEST 1 — ZERO METODI ONLINE: BONIFICO SEMPRE ESPLICITO E SELEZIONABILE ──
+    console.log("\n[T1] Nessun metodo online: BONIFICO visibile, zero POST senza scelta esplicita");
     {
       const { page, postOrdini } = await apriSpedizione(browser, slug.zero, true);
       const testo = await page.evaluate(() => document.body.innerText);
-      check("1a. UI: messaggio 'non ha configurato pagamenti online' visibile", testo.includes("non ha configurato pagamenti online"));
-      check("1b. UI: NESSUN radio di pagamento presente", (await page.locator('input[name="pagamento"]').count()) === 0);
+      check("1a. UI: BONIFICO presente come metodo esplicito", testo.includes("Bonifico"));
+      const radiosZero = await page.evaluate(() =>
+        [...document.querySelectorAll<HTMLInputElement>("input[name='pagamento']")].map((r) => r.value)
+      );
+      check("1b. UI: UN solo radio = bonifico", radiosZero.length === 1 && radiosZero[0] === "bonifico", radiosZero);
+      check("1c. UI: NESSUN radio pre-selezionato", (await radioSelezionati(page)).length === 0, await radioSelezionati(page));
       const bottone = page.getByRole("button", { name: /Procedi al pagamento/ });
-      check("1c. pulsante DISABILITATO", await bottone.isDisabled());
+      check("1d. pulsante DISABILITATO senza scelta", await bottone.isDisabled());
       await bottone.dispatchEvent("click"); // tentativo di click → nessun effetto
-      await page.waitForTimeout(1000);
-      check("1d. ZERO POST /api/cliente/ordini", postOrdini.length === 0, postOrdini);
-      check("1e. ZERO ordini nel DB per questo negozio", (await contaOrdini(db, negozi.zero)) === 0);
+      await page.waitForTimeout(800);
+      check("1e. click senza scelta → ZERO POST", postOrdini.length === 0, postOrdini);
+      check("1f. ZERO ordini nel DB per questo negozio (prima di qualsiasi selezione)", (await contaOrdini(db, negozi.zero)) === 0);
+
+      // Scelta ESPLICITA bonifico → ordine creato, NESSUNA sessione gateway.
+      const stockBase = (await db.from("prodotti").select("quantita_disponibile").eq("id", prodotti.zero).single()).data?.quantita_disponibile;
+      await compilaForm(page);
+      await selezionaEInvia(page, "bonifico");
+      check("1g. scelta esplicita bonifico → 1 POST", postOrdini.length === 1, postOrdini);
+      const ord = await ultimoOrdine(db, negozi.zero);
+      check("1h. ordine creato con metodo_pagamento='bonifico'", ord?.metodo_pagamento === "bonifico", ord);
+      check("1i. NESSUNA sessione gateway per bonifico", (Number((await db.from("pagamenti_sessioni").select("id", { count: "exact", head: true }).eq("ordine_id", String(ord?.id ?? ""))).count ?? 0)) === 0);
+      check("1j. stock decrementato una volta", Number((await db.from("prodotti").select("quantita_disponibile").eq("id", prodotti.zero).single()).data?.quantita_disponibile ?? -1) === Number(stockBase) - 1);
       await page.screenshot({ path: join(PROGETTO, "screenshots/no-choice-t1-zero-metodi.png"), fullPage: true }).catch(() => {});
       await page.close();
     }

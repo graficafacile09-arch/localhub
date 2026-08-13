@@ -8,7 +8,10 @@
  *   - "klarna" SOLO se Klarna è configurato, attivo e con webhook secret
  *     (stessa regola di "carta": disponibilità determinata SOLO server-side
  *     dalla configurazione reale del negozio — mai mostrato "per default");
- *   - "bonifico" SOLO se il negozio ha configurato iban/payee_email;
+ *   - "bonifico" SEMPRE presente (metodo base, non dipende da alcun gateway):
+ *     con iban/payee_email configurati mostra le coordinate, altrimenti resta
+ *     il metodo esplicito "da concordare in negozio" (stesso comportamento del
+ *     checkout carrello). Mai pre-selezionato: la scelta resta esplicita;
  *   - paypal/scalapay → NON implementati → mai mostrati.
  *
  * Nessun secret viene letto o esposto (solo dati pubblici via RPC con
@@ -119,17 +122,23 @@ export async function getMetodiPagamentoPubblici(
     }
   }
 
-  if (attivi.includes("bonifico")) {
+  // BONIFICO — metodo base, SEMPRE disponibile e selezionabile: non dipende
+  // da alcun gateway online. Con iban/payee_email configurati mostra le
+  // coordinate; altrimenti resta il metodo esplicito "da concordare in negozio"
+  // (stesso comportamento del checkout carrello, dove il bonifico è sempre
+  // selezionabile anche senza configurazione). Mai pre-selezionato: la scelta
+  // resta esplicita lato client (SpedizioneForm).
+  {
     const bonifico = await datiBonifico(negozioId);
-    if (bonifico.configurato) {
-      metodi.push({
-        metodo: "bonifico",
-        etichetta: "Bonifico bancario",
-        descrizione: "Pagamento manuale: ti invieremo le coordinate per il bonifico.",
-        iban: bonifico.iban,
-        payeeEmail: bonifico.payeeEmail,
-      });
-    }
+    metodi.push({
+      metodo: "bonifico",
+      etichetta: "Bonifico bancario",
+      descrizione: bonifico.configurato
+        ? "Pagamento manuale: ti invieremo le coordinate per il bonifico."
+        : "Pagamento da concordare direttamente con il negozio.",
+      iban: bonifico.iban,
+      payeeEmail: bonifico.payeeEmail,
+    });
   }
 
   return { ok: true, metodi };
