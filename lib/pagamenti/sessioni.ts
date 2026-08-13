@@ -24,7 +24,7 @@
 
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getSiteUrl } from "@/lib/site";
-import { getConfigProviderNegozio, credenzialiGatewayDaConfig } from "./config";
+import { risolviCredenzialiGateway } from "./config";
 import { getGatewayProvider, providerGatewayImplementato, type GatewayRuntimeOptions } from "./registry";
 import type { GatewayStripeOptions } from "./stripe";
 import type { ContestoCheckout, RigaCheckout } from "./types";
@@ -214,8 +214,10 @@ export async function creaSessionePagamentoPerOrdine(
   }
 
   // ── Config del provider sul negozio (fail-closed) ───────────────────────
-  const config = await getConfigProviderNegozio(ordine.negozioId, provider);
-  if (!config || !config.webhookSecret) {
+  // Gestisce entrambi i modelli: Stripe Connect (account collegato) e
+  // legacy/direct (secret + webhook secret per Stripe manuale/PayPal/Klarna).
+  const risolto = await risolviCredenzialiGateway(ordine.negozioId, provider);
+  if (!risolto.pronto || !risolto.cred) {
     const codice = provider === "stripe" ? "CARTA_NON_DISPONIBILE" : "PAGAMENTO_NON_DISPONIBILE";
     return {
       ok: false,
@@ -273,7 +275,7 @@ export async function creaSessionePagamentoPerOrdine(
 
   let sessione;
   try {
-    sessione = await gateway.creaSessione(ctx, credenzialiGatewayDaConfig(config));
+    sessione = await gateway.creaSessione(ctx, risolto.cred);
   } catch (e) {
     console.error(`[pagamenti] creazione sessione ${provider} fallita:`, e instanceof Error ? e.message : e);
     return {

@@ -15,6 +15,8 @@ type ProviderConfig = {
   client_id: string | null;
   payee_email: string | null;
   iban: string | null;
+  account_id: string | null;
+  account_name: string | null;
   has_secret: boolean;
 };
 
@@ -128,6 +130,8 @@ type ProviderForm = {
   secret: string;
   webhook_secret: string;
   has_secret: boolean;
+  account_id: string;
+  account_name: string;
 };
 
 function statoIniziale(): FormState {
@@ -142,6 +146,8 @@ function statoIniziale(): FormState {
       secret: "",
       webhook_secret: "",
       has_secret: false,
+      account_id: "",
+      account_name: "",
     };
   }
   const metodi: Record<string, { attivo: boolean }> = {};
@@ -159,6 +165,19 @@ export default function PagamentiModule({ storeId }: Props) {
   const [form, setForm] = useState<FormState>(statoIniziale);
   const [original, setOriginal] = useState("");
   const [secretDirty, setSecretDirty] = useState<Record<string, boolean>>({});
+  const [connectBusy, setConnectBusy] = useState(false);
+  const [stripeMsg, setStripeMsg] = useState<{ tipo: "ok" | "errore"; testo: string } | null>(null);
+
+  // Messaggio di ritorno dal flusso Stripe Connect (query param impostato dal callback).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const esito = new URLSearchParams(window.location.search).get("stripe");
+    if (esito === "connected") {
+      setStripeMsg({ tipo: "ok", testo: "Account Stripe collegato correttamente." });
+    } else if (esito === "error") {
+      setStripeMsg({ tipo: "errore", testo: "Collegamento Stripe non riuscito. Riprova." });
+    }
+  }, []);
 
   useEffect(() => {
     fetch(`/api/merchant/stores/${storeId}/pagamenti`)
@@ -177,6 +196,8 @@ export default function PagamentiModule({ storeId }: Props) {
               secret: "",
               webhook_secret: "",
               has_secret: p.has_secret ?? false,
+              account_id: p.account_id ?? "",
+              account_name: p.account_name ?? "",
             };
           }
           for (const m of json.data.metodi ?? []) {
@@ -206,12 +227,70 @@ export default function PagamentiModule({ storeId }: Props) {
     }));
   }
 
+  async function handleConnectStripe() {
+    setConnectBusy(true);
+    setStripeMsg(null);
+    try {
+      const res = await fetch(`/api/merchant/stores/${storeId}/pagamenti/stripe/connect`, {
+        method: "POST",
+      });
+      const json = await res.json();
+      if (json.success && json.data?.url) {
+        window.location.href = json.data.url;
+        return;
+      }
+      setStripeMsg({
+        tipo: "errore",
+        testo: json.error?.message ?? "Impossibile avviare il collegamento Stripe.",
+      });
+    } catch {
+      setStripeMsg({ tipo: "errore", testo: "Errore di rete durante il collegamento." });
+    } finally {
+      setConnectBusy(false);
+    }
+  }
+
+  async function handleDisconnectStripe() {
+    setConnectBusy(true);
+    setStripeMsg(null);
+    try {
+      const res = await fetch(`/api/merchant/stores/${storeId}/pagamenti/stripe/disconnect`, {
+        method: "POST",
+      });
+      const json = await res.json();
+      if (json.success) {
+        setStripeMsg({ tipo: "ok", testo: "Account Stripe scollegato." });
+        // Aggiorna lo stato locale senza ricaricare: nessun account collegato.
+        setForm((f) => ({
+          ...f,
+          providers: {
+            ...f.providers,
+            stripe: { ...f.providers.stripe, account_id: "", account_name: "", attivo: false },
+          },
+        }));
+      } else {
+        setStripeMsg({
+          tipo: "errore",
+          testo: json.error?.message ?? "Impossibile scollegare Stripe.",
+        });
+      }
+    } catch {
+      setStripeMsg({ tipo: "errore", testo: "Errore di rete durante lo scollegamento." });
+    } finally {
+      setConnectBusy(false);
+    }
+  }
+
   async function handleSave() {
     setSaving(true);
     setErrore(null);
     setSalvato(false);
 
-    const pagamenti = Object.entries(form.providers).map(([provider, p]) => {
+    // Stripe è gestito esclusivamente via Connect (collega/scollega): non
+    // viene incluso nel PUT manuale (mai secret/webhook per Stripe).
+    const pagamenti = Object.entries(form.providers)
+      .filter(([provider]) => provider !== "stripe")
+      .map(([provider, p]) => {
       const entry: Record<string, unknown> = {
         provider,
         attivo: p.attivo,
@@ -324,6 +403,22 @@ export default function PagamentiModule({ storeId }: Props) {
           Configurazione salvata.
         </div>
       )}
+      {stripeMsg && (
+        <div
+          className={`mb-4 flex items-center gap-2 rounded-xl border px-4 py-3 text-xs font-semibold ${
+            stripeMsg.tipo === "ok"
+              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+              : "border-red-200 bg-red-50 text-red-700"
+          }`}
+        >
+          {stripeMsg.tipo === "ok" ? (
+            <CheckCircle2 className="h-4 w-4 shrink-0" />
+          ) : (
+            <AlertCircle className="h-4 w-4 shrink-0" />
+          )}
+          {stripeMsg.testo}
+        </div>
+      )}
 
       <div className="space-y-6">
         {/* ── Provider ─────────────────────────────────────────────────── */}
@@ -339,6 +434,77 @@ export default function PagamentiModule({ storeId }: Props) {
             {Object.entries(PROVIDER_INFO).map(([key, info]) => {
               const p = form.providers[key];
               if (!p) return null;
+
+              // Stripe è collegato via Connect: nessuna credenziale manuale.
+              if (key === "stripe") {
+                const collegato = !!p.account_id;
+                return (
+                  <div key={key} className="rounded-2xl border border-slate-200 bg-white p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-bold text-slate-900">{info.nome}</p>
+                          {collegato ? (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                              <CheckCircle2 className="h-3 w-3" /> Collegato
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">
+                              <AlertCircle className="h-3 w-3" /> Non collegato
+                            </span>
+                          )}
+                        </div>
+                        <p className="mt-0.5 text-xs text-slate-500">{info.descrizione}</p>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 border-t border-slate-100 pt-4">
+                      {collegato ? (
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <p className="text-sm text-slate-700">
+                            Account collegato:{" "}
+                            <span className="font-semibold">{p.account_name || "Stripe"}</span>
+                          </p>
+                          <button
+                            type="button"
+                            disabled={connectBusy}
+                            onClick={handleDisconnectStripe}
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                          >
+                            Scollega
+                          </button>
+                        </div>
+                      ) : (
+                        <div>
+                          <p className="mb-3 text-xs text-slate-500">
+                            Collega il tuo account Stripe per accettare pagamenti con carta e,
+                            quando disponibili, Apple Pay e Google Pay. Non serve inserire
+                            alcuna chiave: Stripe gestisce accesso, registrazione e verifica.
+                          </p>
+                          <button
+                            type="button"
+                            disabled={connectBusy}
+                            onClick={handleConnectStripe}
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50"
+                          >
+                            {connectBusy ? "Reindirizzamento…" : "Collega Stripe"}
+                          </button>
+                        </div>
+                      )}
+
+                      <div className="mt-3 rounded-xl bg-slate-50 px-3 py-2.5 ring-1 ring-slate-100">
+                        <p className="text-[10px] leading-4 text-slate-500">
+                          Apple Pay e Google Pay sono gestiti da Stripe (Dynamic Payment
+                          Methods) e compaiono automaticamente quando abilitati nel Dashboard
+                          Stripe. Non vengono richiesti né mostrati Secret Key o Webhook Secret
+                          del venditore.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+
               return (
                 <div key={key} className="rounded-2xl border border-slate-200 bg-white p-4">
                   <div className="flex flex-wrap items-start justify-between gap-3">

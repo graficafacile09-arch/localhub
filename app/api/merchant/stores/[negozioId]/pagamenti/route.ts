@@ -92,6 +92,8 @@ export async function GET(
         client_id: null,
         payee_email: null,
         iban: null,
+        account_id: null,
+        account_name: null,
         has_secret: false,
       });
       continue;
@@ -112,6 +114,8 @@ export async function GET(
       client_id: pubblici?.client_id ?? null,
       payee_email: pubblici?.payee_email ?? null,
       iban: pubblici?.iban ?? null,
+      account_id: pubblici?.account_id ?? null,
+      account_name: pubblici?.account_name ?? null,
       has_secret: pubblici?.has_secret ?? false,
     });
   }

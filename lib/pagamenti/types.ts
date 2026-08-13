@@ -35,6 +35,13 @@ export interface CredenzialiGateway {
   secret?: string;
   /** Webhook signing secret del negozio (FASE F1: verifica firma Stripe). */
   webhookSecret?: string;
+  /**
+   * ID dell'account Stripe Connect collegato (stripe_user_id, `acct_…`).
+   * Quando presente il gateway usa la secret key DELLA PIATTAFORMA
+   * (STRIPE_SECRET_KEY) e inoltra ogni richiesta con l'header
+   * `Stripe-Account` (pattern Connect). Nessun token/secret del merchant.
+   */
+  stripeAccountId?: string;
   testMode: boolean;
 }
 

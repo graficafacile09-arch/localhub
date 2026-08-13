@@ -19,8 +19,9 @@
  */
 
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
-import { getConfigStripeNegozio } from "./config";
+import { getConfigStripeNegozio, getNegozioIdByStripeAccount } from "./config";
 import { verificaEventoStripe } from "./stripe";
+import { getStripePlatformWebhookSecret } from "./stripe-connect";
 import { inviaEmailConfermaOrdine } from "@/lib/cliente/ordine-email";
 
 export type EsitoWebhook = { status: number; body: string };
@@ -66,6 +67,28 @@ async function verificaFirmaMultiNegozio(
     if (evento) return { evento, negozioId };
   }
   return null;
+}
+
+/**
+ * Percorso Stripe CONNECT: verifica con il webhook signing secret DELLA
+ * PIATTAFORMA (STRIPE_WEBHOOK_SECRET) e risolve il negozio dall'account
+ * collegato (`event.account` → negozio_pagamenti.account_id).
+ * null = nessun percorso Connect (secret piattaforma assente, firma invalida
+ * o account non riconosciuto) → si ripiega sul percorso legacy multi-negozio.
+ */
+async function verificaFirmaConnect(
+  rawBody: string,
+  signature: string
+): Promise<{ evento: Awaited<ReturnType<typeof verificaEventoStripe>>; negozioId: string } | null> {
+  const platformSecret = getStripePlatformWebhookSecret();
+  if (!platformSecret) return null;
+  const evento = verificaEventoStripe(rawBody, signature, platformSecret);
+  if (!evento) return null;
+  const account = (evento as { account?: string | null }).account;
+  if (typeof account !== "string" || !account) return null;
+  const negozioId = await getNegozioIdByStripeAccount(account);
+  if (!negozioId) return null;
+  return { evento, negozioId };
 }
 
 /** Registra l'evento in pagamenti_eventi. false = evento già processato. */
@@ -188,7 +211,12 @@ export async function gestisciWebhookStripe(
     return { status: 400, body: "Firma mancante." };
   }
 
-  const verificato = await verificaFirmaMultiNegozio(rawBody, signature);
+  // 1) Stripe Connect (firma piattaforma + account collegato);
+  // 2) fallback legacy direct (firma per-negozio).
+  let verificato = await verificaFirmaConnect(rawBody, signature);
+  if (!verificato?.evento) {
+    verificato = await verificaFirmaMultiNegozio(rawBody, signature);
+  }
   if (!verificato?.evento) {
     return { status: 400, body: "Firma non valida." };
   }

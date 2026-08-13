@@ -143,6 +143,10 @@ export type CredenzialiPubbliche = {
   payee_email: string | null;
   iban: string | null;
   has_secret: boolean;
+  /** Account collegato (Stripe Connect: stripe_user_id `acct_…`). Non sensibile. */
+  account_id: string | null;
+  /** Nome business dell'account collegato (solo per la UI). Non sensibile. */
+  account_name: string | null;
 };
 
 /**
@@ -160,6 +164,8 @@ export function credenzialiPubbliche(
     client_id: riga.client_id ? String(riga.client_id) : null,
     payee_email: riga.payee_email ? String(riga.payee_email) : null,
     iban: riga.iban ? String(riga.iban) : null,
+    account_id: riga.account_id ? String(riga.account_id) : null,
+    account_name: riga.account_name ? String(riga.account_name) : null,
     // La RPC (pagamenti_credenziali_leggi) è la fonte autorevole per
     // has_secret: calcola il flag sui secret cifrati nel DB senza MAI
     // restituirli (write-only). Se il flag è presente nel payload lo

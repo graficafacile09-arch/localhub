@@ -102,11 +102,18 @@ export type GatewayStripeOptions = {
 };
 
 function clientStripe(cred: CredenzialiGateway, opts?: GatewayStripeOptions): Stripe {
-  const secret = (cred.secret ?? "").trim();
+  // Stripe Connect: la piattaforma usa la PROPRIA secret key e inoltra ogni
+  // richiesta con l'header `Stripe-Account` (vedi richiestaPer). MAI la
+  // secret key del merchant (non viene nemmeno salvata).
+  const secret = cred.stripeAccountId
+    ? (process.env.STRIPE_SECRET_KEY ?? "").trim()
+    : (cred.secret ?? "").trim();
   if (!secret) {
     throw new PagamentoGatewayError(
-      "STRIPE_NON_CONFIGURATO",
-      "Stripe non configurato per questo negozio."
+      cred.stripeAccountId ? "STRIPE_PLATFORM_NON_CONFIGURATA" : "STRIPE_NON_CONFIGURATO",
+      cred.stripeAccountId
+        ? "Stripe Connect non configurato a livello di piattaforma."
+        : "Stripe non configurato per questo negozio."
     );
   }
   if (!opts?.host) return new Stripe(secret);
@@ -115,6 +122,15 @@ function clientStripe(cred: CredenzialiGateway, opts?: GatewayStripeOptions): St
     port: opts.port,
     protocol: opts.protocol ?? "https",
   });
+}
+
+/**
+ * Opzioni di richiesta per account Connect: quando è presente un account
+ * collegato, ogni chiamata viene eseguita `on behalf of` quell'account
+ * (header `Stripe-Account`). undefined = integrazione direct (legacy).
+ */
+function richiestaPer(cred: CredenzialiGateway): { stripeAccount?: string } | undefined {
+  return cred.stripeAccountId ? { stripeAccount: cred.stripeAccountId } : undefined;
 }
 
 /**
@@ -192,7 +208,7 @@ export class GatewayStripe implements PaymentGateway {
       payment_intent_data: {
         description: `Ordine ${ctx.numeroOrdine} — ${ctx.negozioId}`,
       },
-    });
+    }, richiestaPer(cred));
 
     if (!session.url) {
       throw new PagamentoGatewayError(
@@ -226,7 +242,7 @@ export class GatewayStripe implements PaymentGateway {
 
   async statoPagamento(paymentId: string, cred: CredenzialiGateway): Promise<PaymentStatus> {
     const stripe = clientStripe(cred, this.opts);
-    const session = await stripe.checkout.sessions.retrieve(paymentId);
+    const session = await stripe.checkout.sessions.retrieve(paymentId, undefined, richiestaPer(cred));
     if (session.status === "expired") return "expired";
     if (session.status === "complete" && session.payment_status === "paid") return "paid";
     return "pending";
@@ -239,7 +255,7 @@ export class GatewayStripe implements PaymentGateway {
     cred: CredenzialiGateway
   ): Promise<{ transactionId: string }> {
     const stripe = clientStripe(cred, this.opts);
-    const session = await stripe.checkout.sessions.retrieve(paymentId);
+    const session = await stripe.checkout.sessions.retrieve(paymentId, undefined, richiestaPer(cred));
     const paymentIntent =
       typeof session.payment_intent === "string"
         ? session.payment_intent
@@ -250,7 +266,7 @@ export class GatewayStripe implements PaymentGateway {
   /** Annulla: scade la sessione Checkout non ancora completata. */
   async annulla(paymentId: string, cred: CredenzialiGateway): Promise<void> {
     const stripe = clientStripe(cred, this.opts);
-    await stripe.checkout.sessions.expire(paymentId);
+    await stripe.checkout.sessions.expire(paymentId, undefined, richiestaPer(cred));
   }
 
   /** Rimborso totale (importo undefined) o parziale sull'ordine. */
@@ -260,7 +276,7 @@ export class GatewayStripe implements PaymentGateway {
     cred: CredenzialiGateway
   ): Promise<{ refundId: string }> {
     const stripe = clientStripe(cred, this.opts);
-    const session = await stripe.checkout.sessions.retrieve(paymentId);
+    const session = await stripe.checkout.sessions.retrieve(paymentId, undefined, richiestaPer(cred));
     const paymentIntent =
       typeof session.payment_intent === "string"
         ? session.payment_intent
@@ -274,7 +290,7 @@ export class GatewayStripe implements PaymentGateway {
     const refund = await stripe.refunds.create({
       payment_intent: paymentIntent,
       amount: importo !== undefined && Number(importo) > 0 ? Math.round(Number(importo) * 100) : undefined,
-    });
+    }, richiestaPer(cred));
     return { refundId: refund.id };
   }
 }

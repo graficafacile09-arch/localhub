@@ -33,6 +33,10 @@ export type ConfigProviderNegozio = {
   secretKey: string;
   /** Webhook signing secret del provider (es. whsec_... Stripe): MAI esposta al client. */
   webhookSecret: string;
+  /** Account collegato (Stripe Connect: stripe_user_id `acct_…`). Non sensibile. */
+  accountId?: string;
+  /** Nome business dell'account collegato (solo per la UI). Non sensibile. */
+  accountName?: string | null;
 };
 
 /** Alias retrocompatibile (F1): la config Stripe è una config provider generica. */
@@ -46,6 +50,8 @@ type EsitoRpcLettura = {
   client_id?: string | null;
   payee_email?: string | null;
   iban?: string | null;
+  account_id?: string | null;
+  account_name?: string | null;
   has_secret?: boolean;
   secret?: string | null;
   webhook_secret?: string | null;
@@ -119,6 +125,15 @@ export async function getConfigProviderNegozio(
   // Fail-closed: senza secret key il gateway non può operare.
   if (!secretKey) return null;
 
+  const accountId =
+    typeof esito.account_id === "string" && esito.account_id.trim()
+      ? esito.account_id.trim()
+      : undefined;
+  const accountName =
+    typeof esito.account_name === "string" && esito.account_name.trim()
+      ? esito.account_name.trim()
+      : null;
+
   return {
     negozioId,
     provider,
@@ -129,6 +144,8 @@ export async function getConfigProviderNegozio(
         : null,
     secretKey,
     webhookSecret: webhookSecret ?? "",
+    accountId,
+    accountName,
   };
 }
 
@@ -140,19 +157,105 @@ export async function getConfigStripeNegozio(
 }
 
 /**
+ * Account Stripe Connect collegato al negozio (sola lettura, dati pubblici).
+ * Ritorna null se il negozio non ha collegato Stripe via Connect (nessun
+ * account_id, provider non attivo o assente).
+ */
+export async function getStripeConnectAccount(
+  negozioId: string
+): Promise<{ accountId: string; accountName: string | null; testMode: boolean } | null> {
+  if (!negozioId) return null;
+  try {
+    const db = createAdminSupabaseClient();
+    const { data, error } = await db
+      .from("negozio_pagamenti")
+      .select("account_id, account_name, test_mode")
+      .eq("negozio_id", negozioId)
+      .eq("provider", "stripe")
+      .eq("attivo", true)
+      .maybeSingle();
+    if (error || !data) return null;
+    const accountId = data.account_id ? String(data.account_id).trim() : "";
+    if (!accountId) return null;
+    return {
+      accountId,
+      accountName: data.account_name ? String(data.account_name) : null,
+      testMode: data.test_mode === true,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Negozio proprietario di un account Stripe Connect (per il webhook):
+ * mappa `stripe_user_id` → negozio_id. Usata dal webhook per risolvere
+ * il negozio mittente degli eventi Connect (fail-closed: null se ignoto).
+ */
+export async function getNegozioIdByStripeAccount(accountId: string): Promise<string | null> {
+  const id = (accountId ?? "").trim();
+  if (!id) return null;
+  try {
+    const db = createAdminSupabaseClient();
+    const { data } = await db
+      .from("negozio_pagamenti")
+      .select("negozio_id")
+      .eq("provider", "stripe")
+      .eq("account_id", id)
+      .eq("attivo", true)
+      .limit(1);
+    const negozioId = data?.[0]?.negozio_id;
+    return negozioId ? String(negozioId) : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Risolve le credenziali gateway per un negozio + provider, gestendo
+ * entrambi i modelli:
+ *   - Stripe Connect: account collegato (stripeAccountId, nessun secret);
+ *   - legacy/direct (Stripe manuale, PayPal, Klarna): secret + webhook secret.
+ * Ritorna `pronto=false` se il provider non è realmente utilizzabile.
+ */
+export async function risolviCredenzialiGateway(
+  negozioId: string,
+  provider: string
+): Promise<{ pronto: boolean; cred: CredenzialiGateway | null }> {
+  if (provider === "stripe") {
+    const connect = await getStripeConnectAccount(negozioId);
+    if (connect) {
+      return {
+        pronto: true,
+        cred: {
+          stripeAccountId: connect.accountId,
+          secret: undefined,
+          webhookSecret: undefined,
+          clientId: undefined,
+          testMode: connect.testMode,
+        },
+      };
+    }
+  }
+
+  const cfg = await getConfigProviderNegozio(negozioId, provider);
+  // Serve anche il webhook secret: senza non possiamo confermare il pagamento.
+  if (!cfg || cfg.webhookSecret.length === 0) {
+    return { pronto: false, cred: null };
+  }
+  return { pronto: true, cred: credenzialiGatewayDaConfig(cfg) };
+}
+
+/**
  * TRUE se il negozio può realmente accettare pagamenti con il provider
- * (configurato, attivo e con secret). Semantica comune a tutti i provider
- * in questa fase: serve anche il webhook secret (senza non possiamo
- * confermare il pagamento). Da affinare per provider quando arriveranno i
- * gateway dedicati (es. Klarna/Scalapay potrebbero non richiederlo).
+ * (Stripe Connect collegato, oppure configurato+attivo con secret e webhook
+ * secret). Semantica comune a tutti i provider.
  */
 export async function isProviderProntoPerNegozio(
   negozioId: string,
   provider: string
 ): Promise<boolean> {
-  const cfg = await getConfigProviderNegozio(negozioId, provider);
-  // Serve anche il webhook secret: senza non possiamo confermare il pagamento.
-  return !!cfg && cfg.webhookSecret.length > 0;
+  return (await risolviCredenzialiGateway(negozioId, provider)).pronto;
 }
 
 /** Wrapper retrocompatibile (F1): TRUE se il negozio può accettare carte. */
@@ -171,6 +274,7 @@ export function credenzialiGatewayDaConfig(cfg: ConfigProviderNegozio): Credenzi
     clientId: cfg.clientId ?? undefined,
     secret: cfg.secretKey,
     webhookSecret: cfg.webhookSecret || undefined,
+    stripeAccountId: cfg.accountId,
     testMode: cfg.testMode,
   };
 }
