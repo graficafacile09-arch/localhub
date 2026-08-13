@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -141,6 +141,13 @@ export default function CheckoutCarrelloForm({ prefill }: { prefill: Prefill }) 
   const [metodoPagamento, setMetodoPagamento] = useState<"carta" | "bonifico" | "klarna">(
     "bonifico"
   );
+  // Metodi di pagamento realmente disponibili per TUTTI i negozi del carrello
+  // (intersezione, stessa fonte del buy-now: getMetodiPagamentoPubblici via
+  // /api/cliente/ordini/carrello/metodi). Bonifico è sempre disponibile (metodo
+  // base) → valore iniziale sicuro; carta/klarna compaiono SOLO dopo la
+  // conferma server-side della disponibilità (fail-closed: senza risposta
+  // restano nascosti, mai mostrati "per default").
+  const [metodiDisponibili, setMetodiDisponibili] = useState<string[]>(["bonifico"]);
   const [note, setNote] = useState("");
 
   const [inviando, setInviando] = useState(false);
@@ -149,6 +156,37 @@ export default function CheckoutCarrelloForm({ prefill }: { prefill: Prefill }) 
 
   const oggi = useMemo(() => new Date().toISOString().split("T")[0], []);
   const costoSpedizioneUI = metodoSpedizione === "express" ? 12.9 : 5.9;
+
+  // Carica la disponibilità reale dei metodi per i negozi del carrello (fonte
+  // comune server-side). Il carrello è client-side (localStorage), quindi
+  // l'elenco negozi si conosce solo qui, dopo l'idratazione.
+  useEffect(() => {
+    const negozi = gruppi.map((g) => g.negozioId);
+    if (negozi.length === 0) {
+      setMetodiDisponibili(["bonifico"]);
+      return;
+    }
+    let attivo = true;
+    fetch("/api/cliente/ordini/carrello/metodi", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ negozi }),
+    })
+      .then((res) => res.json())
+      .then((json: { success?: boolean; data?: { metodi?: Array<{ metodo: string }> } }) => {
+        if (!attivo) return;
+        const metodi = (json?.data?.metodi ?? []).map((m) => m.metodo);
+        if (!metodi.includes("bonifico")) metodi.push("bonifico");
+        setMetodiDisponibili(metodi);
+      })
+      .catch(() => {
+        // Fail-closed: senza risposta restano visibili solo bonifico.
+        if (attivo) setMetodiDisponibili(["bonifico"]);
+      });
+    return () => {
+      attivo = false;
+    };
+  }, [gruppi]);
 
   // ── Carrello vuoto → nessun checkout possibile ───────────────────────────
   if (righe.length === 0 && !esito) {
@@ -468,17 +506,21 @@ export default function CheckoutCarrelloForm({ prefill }: { prefill: Prefill }) 
                 Metodo pagamento
               </h2>
               <div className="mt-3 space-y-2">
-                <OpzioneRadio
-                  selezionato={metodoPagamento === "carta"}
-                  onClick={() => setMetodoPagamento("carta")}
-                  icona={<CreditCard className="h-4 w-4 text-slate-500" />}
-                  titolo="Carta di credito/debito"
-                  sotto="Pagamento sicuro con Stripe"
-                />
-                <OpzioneKlarna
-                  selezionato={metodoPagamento === "klarna"}
-                  onClick={() => setMetodoPagamento("klarna")}
-                />
+                {metodiDisponibili.includes("carta") && (
+                  <OpzioneRadio
+                    selezionato={metodoPagamento === "carta"}
+                    onClick={() => setMetodoPagamento("carta")}
+                    icona={<CreditCard className="h-4 w-4 text-slate-500" />}
+                    titolo="Carta di credito/debito"
+                    sotto="Pagamento sicuro con Stripe"
+                  />
+                )}
+                {metodiDisponibili.includes("klarna") && (
+                  <OpzioneKlarna
+                    selezionato={metodoPagamento === "klarna"}
+                    onClick={() => setMetodoPagamento("klarna")}
+                  />
+                )}
                 <OpzioneRadio
                   selezionato={metodoPagamento === "bonifico"}
                   onClick={() => setMetodoPagamento("bonifico")}

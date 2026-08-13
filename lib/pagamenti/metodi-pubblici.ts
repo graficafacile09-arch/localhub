@@ -143,3 +143,41 @@ export async function getMetodiPagamentoPubblici(
 
   return { ok: true, metodi };
 }
+
+/**
+ * Metodi di pagamento disponibili per TUTTI i negozi indicati (intersezione):
+ * un metodo è disponibile solo se lo è in OGNI negozio. Riusa
+ * getMetodiPagamentoPubblici (fonte comune di disponibilità) senza duplicare
+ * la logica. Usata dal checkout carrello multi-negozio per mostrare la STESSA
+ * disponibilità reale del buy-now. Bonifico è sempre presente in ogni negozio
+ * (metodo base, mai filtrato) → sempre nell'intersezione.
+ */
+export async function getMetodiPagamentoPubbliciMulti(
+  negozioIds: string[]
+): Promise<MetodoPagamentoCheckout[]> {
+  const unici = [
+    ...new Set(
+      (negozioIds ?? []).map((id) => String(id ?? "").trim()).filter(Boolean)
+    ),
+  ];
+  if (unici.length === 0) return [];
+
+  const perNegozio = await Promise.all(
+    unici.map((id) => getMetodiPagamentoPubblici(id))
+  );
+
+  // Ordine canonico (identico a getMetodiPagamentoPubblici): carta, klarna, bonifico.
+  const ordine = ["carta", "klarna", "bonifico"] as const;
+  const risultato: MetodoPagamentoCheckout[] = [];
+  for (const metodo of ordine) {
+    const presenteOvunque = perNegozio.every(
+      (esito) => esito.ok && esito.metodi.some((m) => m.metodo === metodo)
+    );
+    if (!presenteOvunque) continue;
+    const primo = perNegozio
+      .find((esito) => esito.ok)
+      ?.metodi.find((m) => m.metodo === metodo);
+    if (primo) risultato.push(primo);
+  }
+  return risultato;
+}
