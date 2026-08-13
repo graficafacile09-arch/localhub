@@ -492,7 +492,6 @@ async function main() {
         { nome: "metodo null", payload: payloadSpedizione(`nc-null-${ts}`, String(prodotti.tre), null) },
         { nome: "metodo stringa vuota", payload: payloadSpedizione(`nc-empty-${ts}`, String(prodotti.tre), "") },
         { nome: "metodo 'qualcosa'", payload: payloadSpedizione(`nc-qualcosa-${ts}`, String(prodotti.tre), "qualcosa") },
-        { nome: "metodo 'paypal'", payload: payloadSpedizione(`nc-paypal-${ts}`, String(prodotti.tre), "paypal") },
       ];
       for (const c of casi) {
         const esito = await postJson("/api/cliente/ordini", c.payload);
@@ -512,6 +511,14 @@ async function main() {
       const assente = await postJson("/api/cliente/ordini", payloadSpedizione(`nc-check-${ts}`, String(prodotti.tre)));
       check("7d. errore dedicato METODO_PAGAMENTO_NON_SCELTO per metodo assente", assente.status === 422 && assente.error?.code === "METODO_PAGAMENTO_NON_SCELTO", assente.error);
       check("7e. messaggio leggibile 'Seleziona un metodo di pagamento per continuare.'", assente.error?.message === "Seleziona un metodo di pagamento per continuare.", assente.error?.message);
+
+      // PAYPAL (metodo VALIDO ma non configurato sul negozio): pre-flight
+      // fail-closed → 422 PAYPAL_NON_DISPONIBILE, zero ordini/stock/sessioni
+      // (nessun fallback su Stripe/Klarna/bonifico).
+      const paypal = await postJson("/api/cliente/ordini", payloadSpedizione(`nc-paypal-${ts}`, String(prodotti.tre), "paypal"));
+      check("7g. metodo 'paypal' non configurato → 422 PAYPAL_NON_DISPONIBILE", paypal.status === 422 && paypal.error?.code === "PAYPAL_NON_DISPONIBILE", paypal.error);
+      const { count: paypalOrdini } = await db.from("ordini").select("id", { count: "exact", head: true }).like("idempotency_key", `nc-paypal-${ts}%`);
+      check("7h. paypal non configurato → ZERO ordini creati", Number(paypalOrdini ?? 0) === 0, paypalOrdini);
 
       // Regressione: modalità RITIRO senza metodo resta valida (nessun pagamento online).
       const ritiro = await postJson("/api/cliente/ordini", {

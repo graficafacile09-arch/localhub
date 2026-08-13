@@ -577,12 +577,13 @@ export async function creaOrdiniCarrello(
   const ordini = await arricchisciConPagamenti(db, risultati);
 
   // ── Notifiche (BEST-EFFORT, mai bloccano; solo ordini REALMENTE nuovi) ──
-  // Stesso pattern di creaOrdine: con pagamento online (carta/klarna)
+  // Stesso pattern di creaOrdine: con pagamento online (carta/klarna/paypal)
   // l'email di conferma parte solo DOPO la conferma del webhook (F2.3/F2.x);
   // per gli altri metodi (bonifico ecc.) parte subito.
   const pagamentoOnline =
     input.spedizione?.metodoPagamento === "carta" ||
-    input.spedizione?.metodoPagamento === "klarna";
+    input.spedizione?.metodoPagamento === "klarna" ||
+    input.spedizione?.metodoPagamento === "paypal";
   for (const ordine of ordini) {
     if (ordine.giaEsistente) continue;
     if (!pagamentoOnline) {

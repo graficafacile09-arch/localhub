@@ -418,13 +418,14 @@ export async function creaOrdine(
   // ma qui non devono MAI interferire con la risposta al cliente.
   if (!giaEsistente && esito.ordine?.id) {
     // FASE F1 — email di conferma: per gli ordini con pagamento online
-    // (carta/klarna) la conferma viene inviata SOLO DOPO che il webhook del
-    // provider conferma il pagamento (mai dire "pagato" prima del
-    // pagamento). Per tutti gli altri metodi (bonifico/ritiro) l'email
+    // (carta/klarna/paypal) la conferma viene inviata SOLO DOPO che il
+    // webhook del provider conferma il pagamento (mai dire "pagato" prima
+    // del pagamento). Per tutti gli altri metodi (bonifico/ritiro) l'email
     // parte subito.
     const pagamentoOnline =
       input.spedizione?.metodoPagamento === "carta" ||
-      input.spedizione?.metodoPagamento === "klarna";
+      input.spedizione?.metodoPagamento === "klarna" ||
+      input.spedizione?.metodoPagamento === "paypal";
     if (!pagamentoOnline) {
       await inviaEmailConfermaOrdine(esito.ordine.id).catch(() => {});
     }

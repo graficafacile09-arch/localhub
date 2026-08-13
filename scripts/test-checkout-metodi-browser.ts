@@ -5,7 +5,9 @@
  * (fonte comune getMetodiPagamentoPubblici):
  *   T1  negozio SENZA gateway → solo BONIFICO (carta/klarna assenti);
  *   T2  negozio con carta+bonifico → carta + bonifico (klarna assente);
- *   T3  buy-now sullo stesso negozio senza gateway → solo BONIFICO (parità).
+ *   T3  buy-now sullo stesso negozio senza gateway → solo BONIFICO (parità);
+ *   T4  negozio con paypal+bonifico → paypal + bonifico (carta/klarna assenti);
+ *   T5  buy-now sullo stesso negozio paypal+bonifico → paypal + bonifico (parità).
  *
  * Nessun submit: zero ordini, zero POST d'ordine. Solo lettura del DOM.
  * Uso: npx tsx scripts/test-checkout-metodi-browser.ts
@@ -24,6 +26,10 @@ const PROGETTO = join(__dirname, "..");
 const CHIAVE_TEST = "chiave-checkout-metodi-browser-0001";
 const WH_SECRET_STRIPE = "whsec_stripe_metodi_browser";
 const STRIPE_SECRET = "sk_test_PLACEHOLDER_NON_VALIDA";
+// PayPal: clientId+secret (OAuth2) + webhook id (verifica firma).
+const PAYPAL_CLIENT_ID = "AfPaypalClientIdTest";
+const PAYPAL_SECRET = "EPaypalSecretTest";
+const PAYPAL_WEBHOOK_ID = "webhook_id_paypal_test";
 
 function loadEnv() {
   try {
@@ -105,13 +111,14 @@ async function apriCheckout(browser: Browser, riga: Record<string, unknown>): Pr
   return page;
 }
 
-async function testiSezione(page: Page): Promise<{ testo: string; carta: boolean; klarna: boolean; bonifico: boolean }> {
+async function testiSezione(page: Page): Promise<{ testo: string; carta: boolean; klarna: boolean; bonifico: boolean; paypal: boolean }> {
   const testo = await page.evaluate(() => document.body.innerText);
   return {
     testo,
     carta: testo.includes("Carta di credito/debito"),
     klarna: testo.includes("Paga in 3 rate"),
     bonifico: testo.includes("Bonifico bancario"),
+    paypal: testo.includes("PayPal"),
   };
 }
 
@@ -129,16 +136,20 @@ async function main() {
 
   let negozioZ: string | null = null; // zero gateway
   let negozioC: string | null = null; // carta + bonifico
+  let negozioP: string | null = null; // paypal + bonifico
   const slugZ = `metodi-z-${ts}`;
   const slugC = `metodi-c-${ts}`;
+  const slugP = `metodi-p-${ts}`;
   let browser: Browser | null = null;
 
   try {
-    console.log("\n[SETUP] negozio Z (zero gateway) + negozio C (carta+bonifico)");
+    console.log("\n[SETUP] negozio Z (zero gateway) + negozio C (carta+bonifico) + negozio P (paypal+bonifico)");
     const { data: nZ } = await db.from("negozi").insert({ nome: `MetodiZ-${ts}`, slug: slugZ, attivo: true, is_demo: true }).select("id").single();
     negozioZ = String(nZ!.id);
     const { data: nC } = await db.from("negozi").insert({ nome: `MetodiC-${ts}`, slug: slugC, attivo: true, is_demo: true }).select("id").single();
     negozioC = String(nC!.id);
+    const { data: nP } = await db.from("negozi").insert({ nome: `MetodiP-${ts}`, slug: slugP, attivo: true, is_demo: true }).select("id").single();
+    negozioP = String(nP!.id);
 
     // Negozio C: bonifico (iban) + carta (stripe placeholder) + righe metodi attive.
     await db.rpc("pagamenti_credenziali_salva", {
@@ -154,8 +165,23 @@ async function main() {
       { negozio_id: negozioC, metodo: "bonifico", attivo: true, ordine_mostra: 1 },
     ]);
 
+    // Negozio P: bonifico (iban) + paypal (OAuth2 + webhook id) + righe metodi attive.
+    await db.rpc("pagamenti_credenziali_salva", {
+      p_negozio_id: negozioP, p_provider: "bonifico", p_attivo: true, p_test_mode: true,
+      p_payee_email: "banca@negozio.test", p_iban: "IT60X0542811101000000123456", p_chiave: CHIAVE_TEST,
+    });
+    await db.rpc("pagamenti_credenziali_salva", {
+      p_negozio_id: negozioP, p_provider: "paypal", p_attivo: true, p_test_mode: true,
+      p_client_id: PAYPAL_CLIENT_ID, p_secret: PAYPAL_SECRET, p_webhook_secret: PAYPAL_WEBHOOK_ID, p_chiave: CHIAVE_TEST,
+    });
+    await db.from("negozio_metodi_pagamento").insert([
+      { negozio_id: negozioP, metodo: "paypal", attivo: true, ordine_mostra: 0 },
+      { negozio_id: negozioP, metodo: "bonifico", attivo: true, ordine_mostra: 1 },
+    ]);
+
     const { data: pZ } = await db.from("prodotti").insert({ negozio_id: negozioZ, nome: `MetodiZ-${ts}`, slug: slugZ, prezzo: 10, quantita_disponibile: 20, attivo: true, ha_varianti: false }).select("id").single();
     const { data: pC } = await db.from("prodotti").insert({ negozio_id: negozioC, nome: `MetodiC-${ts}`, slug: slugC, prezzo: 15, quantita_disponibile: 20, attivo: true, ha_varianti: false }).select("id").single();
+    const { data: pP } = await db.from("prodotti").insert({ negozio_id: negozioP, nome: `MetodiP-${ts}`, slug: slugP, prezzo: 18, quantita_disponibile: 20, attivo: true, ha_varianti: false }).select("id").single();
 
     await avviaServer();
     browser = await chromium.launch({ headless: true });
@@ -199,6 +225,34 @@ async function main() {
       await page.close();
     }
 
+    // ── T4: checkout su negozio con paypal+bonifico → paypal+bonifico ─────
+    console.log("\n[T4] /checkout — negozio con paypal+bonifico: paypal + bonifico (no carta/klarna)");
+    {
+      const page = await apriCheckout(browser, {
+        prodottoId: String(pP!.id), negozioId: negozioP!, negozioNome: "MetodiP", nome: "ProdottoP", prezzo: 18, slug: slugP,
+      });
+      const r = await testiSezione(page);
+      check("4a. BONIFICO visibile", r.bonifico);
+      check("4b. PAYPAL visibile", r.paypal);
+      check("4c. CARTA assente", !r.carta);
+      check("4d. KLARNA assente", !r.klarna);
+      await page.close();
+    }
+
+    // ── T5: buy-now sullo stesso negozio paypal+bonifico → parità ─────────
+    console.log("\n[T5] Buy-Now — stesso negozio paypal+bonifico: paypal + bonifico (parità)");
+    {
+      const page = await browser.newPage();
+      await page.goto(`${BASE}/prodotto/${slugP}/acquista/spedizione`, { waitUntil: "domcontentloaded", timeout: 60000 });
+      await page.waitForTimeout(1500);
+      const radios = await page.evaluate(() =>
+        [...document.querySelectorAll<HTMLInputElement>("input[name='pagamento']")].map((r) => r.value)
+      );
+      check("5a. radio = [paypal, bonifico]", radios.length === 2 && radios.includes("paypal") && radios.includes("bonifico"), radios);
+      check("5b. nessun metodo preselezionato", await page.evaluate(() => [...document.querySelectorAll<HTMLInputElement>("input[name='pagamento']")].every((r) => !r.checked)));
+      await page.close();
+    }
+
     console.log(`\n═══════════════════════════════════════════════════════`);
     console.log(`CHECKOUT/BUY-NOW METODI BROWSER: ${passati} passati, ${falliti} falliti`);
     if (falliti > 0) process.exitCode = 1;
@@ -206,7 +260,7 @@ async function main() {
   } finally {
     console.log("\n── CLEANUP ──");
     if (browser) await browser.close().catch(() => {});
-    for (const id of [negozioZ, negozioC]) {
+    for (const id of [negozioZ, negozioC, negozioP]) {
       if (!id) continue;
       const { data: ordini } = await db.from("ordini").select("id").eq("negozio_id", id);
       const ids = (ordini ?? []).map((o: any) => String(o.id));

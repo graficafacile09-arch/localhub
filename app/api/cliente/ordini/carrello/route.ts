@@ -21,13 +21,13 @@ function ipRichiedente(request: Request): string {
 
 /**
  * Dispatch metodo di pagamento → provider gateway (fail-closed):
- *   carta → stripe · klarna → klarna · altro (bonifico/paypal) → null.
- * Il bonifico non ha sessione gateway; paypal NON è implementato → mai
- * mappato (nessun fallback silenzioso).
+ *   carta → stripe · klarna → klarna · paypal → paypal · bonifico → null.
+ * Il bonifico non ha sessione gateway; nessun fallback silenzioso.
  */
 function providerDaMetodoPagamento(metodo: string | undefined): string | null {
   if (metodo === "carta") return "stripe";
   if (metodo === "klarna") return "klarna";
+  if (metodo === "paypal") return "paypal";
   return null;
 }
 

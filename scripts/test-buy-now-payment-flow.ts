@@ -6,8 +6,8 @@
  *   - la UI mostra i metodi SOLO se realmente disponibili (server-side);
  *   - l'ordine viene creato SOLO al submit con il metodo scelto dall'utente
  *     (mai prima della scelta, mai un submit automatico);
- *   - dispatch: carta → Stripe · klarna → Klarna · bonifico → nessuna
- *     sessione gateway; nessun fallback klarna→stripe;
+ *   - dispatch: carta → Stripe · klarna → Klarna · paypal → PayPal ·
+ *     bonifico → nessuna sessione gateway; nessun fallback tra provider;
  *   - prezzi/totali/stock/credenziali mai dal client.
  *
  * Questo script verifica i CONTRATTI statici dei file coinvolti (nessun
@@ -65,6 +65,7 @@ console.log("\n[T2-T5] Carta/Bonifico/Klarna: disponibilità determinata SOLO da
   check("2a. la UI itera la lista server (metodiPagamento.map), nessun metodo hardcoded", form.includes("metodiPagamento.map") && form.includes("metodo.metodo"));
   check("2b. metodi-pubblici: carta SOLO se Stripe pronto", metodiPub.includes("isStripeProntoPerNegozio"));
   check("2c. metodi-pubblici: klarna SOLO se configurato e attivo", metodiPub.includes("isProviderProntoPerNegozio"));
+  check("2c-bis. metodi-pubblici: paypal SOLO se configurato e attivo", metodiPub.includes('"paypal"') && metodiPub.includes("isProviderProntoPerNegozio"));
   check("2d. metodi-pubblici: bonifico SOLO se iban/payee_email configurati", metodiPub.includes("datiBonifico"));
   check("2e. nessun 'fallback silenzioso': lista vuota → messaggio esplicito", form.includes("non ha configurato pagamenti online"));
 }
@@ -84,6 +85,7 @@ console.log("\n[T7-T10] Dispatch server-side: carta→Stripe, klarna→Klarna, b
 {
   check("7a. carta → creaSessioneStripePerOrdine (sessione Stripe)", route.includes('creaSessioneStripePerOrdine'));
   check("7b. klarna → creaSessionePagamentoPerOrdine(..., 'klarna') (STESSO orchestratore del carrello)", /creaSessionePagamentoPerOrdine\(esito\.ordine\.id, "klarna"\)/.test(route));
+  check("7b-bis. paypal → creaSessionePagamentoPerOrdine(..., 'paypal') (stesso orchestratore)", /creaSessionePagamentoPerOrdine\(esito\.ordine\.id, "paypal"\)/.test(route));
   // Le sessioni nascono SOLO nei rami guardati carta/klarna: per bonifico il
   // pagamento resta null (nessun gateway). Verifica la STRUTTURA del dispatch.
   check(
@@ -95,12 +97,13 @@ console.log("\n[T7-T10] Dispatch server-side: carta→Stripe, klarna→Klarna, b
     "struttura dispatch attesa: default null + branch carta/klarna"
   );
   check("7d. pre-flight klarna: negozio non configurato → 422 PRIMA della creazione ordine", route.includes("KLARNA_NON_DISPONIBILE") && route.includes("providerDisponibilePerProdotto"));
+  check("7d-bis. pre-flight paypal: negozio non configurato → 422 PRIMA della creazione ordine", route.includes("PAYPAL_NON_DISPONIBILE"));
   check("7e. pre-flight carta: negozio senza Stripe → 422 prima dell'ordine", route.includes("CARTA_NON_DISPONIBILE") && route.includes("cartaDisponibilePerProdotto"));
   check("7f. MAI un fallback klarna→stripe nel routing", !/klarna[\s\S]{0,60}stripe/.test(route) && route.includes("mai un fallback"));
   check("7g. orchestratore fail-closed: provider non implementato → PROVIDER_NON_DISPONIBILE", sessioni.includes("PROVIDER_NON_DISPONIBILE"));
   check("7h. sessione usa SEMPRE il totale dal DB (mai dal client)", sessioni.includes("importo: ordine.totale"));
   check("7i. route: spedizione SENZA metodo esplicito → 422 METODO_PAGAMENTO_NON_SCELTO PRIMA dell'ordine", route.includes("METODO_PAGAMENTO_NON_SCELTO") && route.indexOf("METODO_PAGAMENTO_NON_SCELTO") < route.indexOf("creaOrdine(input)"), "validazione deve precedere la creazione");
-  check("7j. route: nessun fallback implicito (mai ?? / || 'bonifico', mai mapping da undefined→carta)", !/\?\? "bonifico"|\|\| "bonifico"/.test(route) && !/metodoPagamento === "paypal"/.test(route));
+  check("7j. route: nessun fallback implicito (mai ?? / || 'bonifico'/'paypal')", !/\?\? "bonifico"|\|\| "bonifico"|\?\? "paypal"|\|\| "paypal"/.test(route));
   check("7k. route: valore non ammesso → 422 VALIDATION_ERROR (nessun ordine)", route.includes("Metodo di pagamento non valido."));
 }
 

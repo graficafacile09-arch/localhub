@@ -30,7 +30,7 @@ export type CreaOrdinePayload = {
     note?: string | null;
     metodoSpedizione: "standard" | "express";
     /** Metodo SCELTO ESPLICITAMENTE dall'utente (il server rifiuta un assente). */
-    metodoPagamento: "carta" | "bonifico" | "klarna";
+    metodoPagamento: "carta" | "bonifico" | "klarna" | "paypal";
   } | null;
   note?: string | null;
 };

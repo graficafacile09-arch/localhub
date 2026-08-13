@@ -32,7 +32,7 @@ export default function SpedizioneForm({
   // "disponibile" NON significa "selezionato". Il submit è bloccato finché
   // l'utente non sceglie esplicitamente un metodo (vedi pulsante disabilitato).
   const [metodoPagamento, setMetodoPagamento] = useState<
-    "carta" | "bonifico" | "klarna" | null
+    "carta" | "bonifico" | "klarna" | "paypal" | null
   >(null);
   const [inviando, setInviando] = useState(false);
   const [errore, setErrore] = useState<string | null>(null);
@@ -278,6 +278,15 @@ export default function SpedizioneForm({
                           alt="Klarna"
                           width={64}
                           height={14}
+                          className="h-3.5 w-auto shrink-0 object-contain"
+                        />
+                      ) : metodo.metodo === "paypal" ? (
+                        // PayPal: logo ufficiale locale (wordmark).
+                        <img
+                          src="/loghi/paypal.svg"
+                          alt="PayPal"
+                          width={64}
+                          height={16}
                           className="h-3.5 w-auto shrink-0 object-contain"
                         />
                       ) : metodo.metodo === "carta" ? (

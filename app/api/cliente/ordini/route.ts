@@ -87,7 +87,8 @@ export async function POST(request: Request) {
   const metodoValido =
     metodoScelto === "carta" ||
     metodoScelto === "bonifico" ||
-    metodoScelto === "klarna";
+    metodoScelto === "klarna" ||
+    metodoScelto === "paypal";
   // Valore PRESENTE ma non ammesso ("paypal", "qualcosa", ...): rifiuto
   // sempre, indipendentemente dalla modalità → mai un ordine con un metodo
   // che il server non conosce.
@@ -142,6 +143,23 @@ export async function POST(request: Request) {
       return apiError(
         "KLARNA_NON_DISPONIBILE",
         "Il pagamento con Klarna non è disponibile per questo negozio.",
+        422
+      );
+    }
+  }
+
+  // ── PRE-FLIGHT "paypal" (stessa regola di carta/klarna): se il negozio del
+  // prodotto non ha PayPal configurato e attivo, il checkout rifiuta PRIMA di
+  // creare l'ordine. Nessun fallback automatico su Stripe/Klarna: se PayPal
+  // non è disponibile l'utente riceve un errore chiaro e può scegliere altro.
+  const vuolePaypal =
+    modalita === "spedizione" && spedizioneRaw.metodoPagamento === "paypal";
+  if (vuolePaypal) {
+    const paypalPronta = await providerDisponibilePerProdotto(prodottoIdRaw, "paypal");
+    if (!paypalPronta) {
+      return apiError(
+        "PAYPAL_NON_DISPONIBILE",
+        "Il pagamento con PayPal non è disponibile per questo negozio.",
         422
       );
     }
@@ -211,16 +229,18 @@ export async function POST(request: Request) {
             // NOTA (coerenza con /api/cliente/ordini/carrello F2.2): le RPC
             // crea_ordine/crea_ordine_carrello accettano solo
             // carta/paypal/bonifico come metodo_pagamento. Il flusso klarna
-            // (già in produzione per il carrello) salva 'carta' nella colonna
-            // e marca l'ordine con payment_provider='klarna' (marcatore
-            // autoritativo impostato dall'orchestratore al momento della
-            // sessione). Nessuna migration: stesso comportamento del carrello.
-            // Dopo il contratto sopra il valore è garantito ∈ {carta, bonifico,
-            // klarna}: klarna si mappa a 'carta' per la colonna RPC (il
-            // marcatore autoritativo resta payment_provider='klarna'). Mai un
-            // default: un metodo assente è già stato rifiutato con 422.
+            // salva 'carta' nella colonna e marca l'ordine con
+            // payment_provider='klarna' (marcatore autoritativo impostato
+            // dall'orchestratore al momento della sessione). PayPal è ammesso
+            // dalla RPC → 'paypal' viene salvato direttamente. Nessuna
+            // migration. Mai un default: un metodo assente è già stato
+            // rifiutato con 422.
             metodoPagamento:
-              spedizioneRaw.metodoPagamento === "bonifico" ? "bonifico" : "carta",
+              spedizioneRaw.metodoPagamento === "bonifico"
+                ? "bonifico"
+                : spedizioneRaw.metodoPagamento === "paypal"
+                  ? "paypal"
+                  : "carta",
           }
         : null,
     note: typeof body.note === "string" ? body.note : null,
@@ -251,6 +271,17 @@ export async function POST(request: Request) {
     // creata dal gateway Klarna (creaSessionePagamentoPerOrdine, provider
     // 'klarna'): mai una sessione Stripe, mai un fallback silenzioso.
     const sessione = await creaSessionePagamentoPerOrdine(esito.ordine.id, "klarna");
+    if (sessione.ok) {
+      pagamento = { redirectUrl: sessione.redirectUrl };
+    } else {
+      await chiudiOrdineSenzaPagamento(esito.ordine.id).catch(() => {});
+      return apiError(sessione.codice, sessione.errore, 422);
+    }
+  } else if (vuolePaypal) {
+    // PayPal: stessa orchestrazione del carrello — la sessione viene creata
+    // dal gateway PayPal (creaSessionePagamentoPerOrdine, provider 'paypal'):
+    // mai una sessione Stripe/Klarna, mai un fallback silenzioso.
+    const sessione = await creaSessionePagamentoPerOrdine(esito.ordine.id, "paypal");
     if (sessione.ok) {
       pagamento = { redirectUrl: sessione.redirectUrl };
     } else {

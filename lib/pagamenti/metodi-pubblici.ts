@@ -12,7 +12,9 @@
  *     con iban/payee_email configurati mostra le coordinate, altrimenti resta
  *     il metodo esplicito "da concordare in negozio" (stesso comportamento del
  *     checkout carrello). Mai pre-selezionato: la scelta resta esplicita;
- *   - paypal/scalapay → NON implementati → mai mostrati.
+ *   - "paypal" SOLO se PayPal è configurato, attivo e con webhook id
+ *     (stessa regola di carta/klarna);
+ *   - scalapay → NON implementato → mai mostrato.
  *
  * Nessun secret viene letto o esposto (solo dati pubblici via RPC con
  * p_decifra = false). Usato dalle pagine server di checkout.
@@ -22,7 +24,7 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { isProviderProntoPerNegozio, isStripeProntoPerNegozio } from "./config";
 
 export type MetodoPagamentoCheckout = {
-  metodo: "carta" | "bonifico" | "klarna";
+  metodo: "carta" | "bonifico" | "klarna" | "paypal";
   etichetta: string;
   descrizione: string;
   /** iban/payee_email del negozio per il bonifico (dati pubblici configurativi). */
@@ -89,7 +91,7 @@ export async function getMetodiPagamentoPubblici(
     if (!error && data) {
       attivi = (data ?? [])
         .map((r) => String(r.metodo))
-        .filter((m) => m === "carta" || m === "bonifico" || m === "klarna");
+        .filter((m) => m === "carta" || m === "bonifico" || m === "klarna" || m === "paypal");
     }
   } catch {
     // Nessun metodo configurato → lista vuota.
@@ -118,6 +120,21 @@ export async function getMetodiPagamentoPubblici(
         metodo: "klarna",
         etichetta: "Klarna",
         descrizione: "Dividi il tuo acquisto in 3 rate, se disponibile.",
+      });
+    }
+  }
+
+  if (attivi.includes("paypal")) {
+    // Disponibilità DETERMINATA SERVER-SIDE dalla configurazione reale del
+    // negozio (stessa regola di carta/klarna): senza PayPal configurato e
+    // attivo (client id + secret + webhook id) il metodo NON compare. Mai
+    // mostrato "per default", mai un fallback su Stripe/Klarna.
+    const paypalPronto = await isProviderProntoPerNegozio(negozioId, "paypal");
+    if (paypalPronto) {
+      metodi.push({
+        metodo: "paypal",
+        etichetta: "PayPal",
+        descrizione: "Paga con il tuo conto PayPal o con una carta.",
       });
     }
   }
@@ -166,8 +183,8 @@ export async function getMetodiPagamentoPubbliciMulti(
     unici.map((id) => getMetodiPagamentoPubblici(id))
   );
 
-  // Ordine canonico (identico a getMetodiPagamentoPubblici): carta, klarna, bonifico.
-  const ordine = ["carta", "klarna", "bonifico"] as const;
+  // Ordine canonico (identico a getMetodiPagamentoPubblici): carta, klarna, paypal, bonifico.
+  const ordine = ["carta", "klarna", "paypal", "bonifico"] as const;
   const risultato: MetodoPagamentoCheckout[] = [];
   for (const metodo of ordine) {
     const presenteOvunque = perNegozio.every(

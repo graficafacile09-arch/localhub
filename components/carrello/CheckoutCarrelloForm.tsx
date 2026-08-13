@@ -77,6 +77,8 @@ function messaggioErrore(codice?: string, messaggioServer?: string): string {
       return "Il pagamento con carta non è disponibile per tutti i negozi del carrello. Prova con il bonifico.";
     case "KLARNA_NON_DISPONIBILE":
       return "Klarna non è disponibile per tutti i negozi del carrello. Prova con la carta o il bonifico.";
+    case "PAYPAL_NON_DISPONIBILE":
+      return "PayPal non è disponibile per tutti i negozi del carrello. Prova con la carta o il bonifico.";
     case "SCORTE_INSUFFICIENTI":
       return "Alcuni prodotti non hanno scorte sufficienti. Riduci la quantità o rimuovili.";
     case "PRODOTTO_NON_TROVATO":
@@ -138,9 +140,9 @@ export default function CheckoutCarrelloForm({ prefill }: { prefill: Prefill }) 
   // Default bonifico: sempre disponibile; carta e Klarna sono verificate dal
   // backend (pre-flight F2.2 fail-closed) — nessun controllo autoritativo nel
   // client, né prezzi/totali/credenziali conosciuti qui.
-  const [metodoPagamento, setMetodoPagamento] = useState<"carta" | "bonifico" | "klarna">(
-    "bonifico"
-  );
+  const [metodoPagamento, setMetodoPagamento] = useState<
+    "carta" | "bonifico" | "klarna" | "paypal"
+  >("bonifico");
   // Metodi di pagamento realmente disponibili per TUTTI i negozi del carrello
   // (intersezione, stessa fonte del buy-now: getMetodiPagamentoPubblici via
   // /api/cliente/ordini/carrello/metodi). Bonifico è sempre disponibile (metodo
@@ -521,6 +523,12 @@ export default function CheckoutCarrelloForm({ prefill }: { prefill: Prefill }) 
                     onClick={() => setMetodoPagamento("klarna")}
                   />
                 )}
+                {metodiDisponibili.includes("paypal") && (
+                  <OpzionePaypal
+                    selezionato={metodoPagamento === "paypal"}
+                    onClick={() => setMetodoPagamento("paypal")}
+                  />
+                )}
                 <OpzioneRadio
                   selezionato={metodoPagamento === "bonifico"}
                   onClick={() => setMetodoPagamento("bonifico")}
@@ -529,7 +537,9 @@ export default function CheckoutCarrelloForm({ prefill }: { prefill: Prefill }) 
                   sotto="Pagamento manuale: ti invieremo le coordinate"
                 />
               </div>
-              {(metodoPagamento === "carta" || metodoPagamento === "klarna") && (
+              {(metodoPagamento === "carta" ||
+                metodoPagamento === "klarna" ||
+                metodoPagamento === "paypal") && (
                 <p className="mt-2 text-[11px] leading-4 text-slate-400">
                   Con più negozi ogni ordine ha la propria sessione di pagamento: ti mostreremo un pulsante per
                   negozio.
@@ -887,6 +897,45 @@ function OpzioneKlarna({
       </span>
       <span className="mt-1 block text-[10px] leading-4 text-slate-400">
         Soggetto ad approvazione e alle condizioni di Klarna.
+      </span>
+    </button>
+  );
+}
+
+/**
+ * Opzione di pagamento PayPal: mostra il LOGO ufficiale (asset locale). Il
+ * metodo inviato al backend resta "paypal". Nessun importo calcolato lato
+ * frontend (il totale resta esclusivamente server-side).
+ */
+function OpzionePaypal({
+  selezionato,
+  onClick,
+}: {
+  selezionato: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={selezionato}
+      className={`w-full rounded-lg border p-3 text-left transition ${
+        selezionato ? "border-blue-400 bg-blue-50/50" : "border-slate-200 bg-white hover:border-slate-300"
+      }`}
+    >
+      <span className="flex items-center justify-between gap-3">
+        {/* Logo ufficiale PayPal (wordmark, asset locale). */}
+        <img
+          src="/loghi/paypal.svg"
+          alt="PayPal"
+          width={88}
+          height={24}
+          className="h-5 w-auto shrink-0 object-contain"
+        />
+      </span>
+      <span className="mt-2 block text-sm font-semibold text-slate-900">PayPal</span>
+      <span className="mt-0.5 block text-[11px] leading-4 text-slate-500">
+        Paga con il tuo conto PayPal o con una carta.
       </span>
     </button>
   );

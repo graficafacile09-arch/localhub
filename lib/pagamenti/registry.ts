@@ -7,12 +7,13 @@
  * specifico (contratto già dichiarato in lib/pagamenti/types.ts).
  *
  * Provider ammessi dall'architettura: stripe, klarna, scalapay, paypal.
- * Implementati: stripe e klarna. scalapay/paypal sono ammessi dal registry
+ * Implementati: stripe, klarna e paypal. scalapay è ammesso dal registry
  * ma senza factory (→ `getGatewayProvider` ritorna null, fail-closed)
- * finché non arriveranno i rispettivi gateway.
+ * finché non arriverà il rispettivo gateway.
  */
 
 import { GatewayKlarna, type GatewayKlarnaOptions } from "./gateway-klarna";
+import { GatewayPaypal, type GatewayPaypalOptions } from "./gateway-paypal";
 import { GatewayStripe, type GatewayStripeOptions } from "./stripe";
 import type { PaymentGateway } from "./types";
 
@@ -39,7 +40,10 @@ export function isProviderGatewayAmmesso(value: unknown): value is ProviderGatew
  * puntare al server mock del provider — host/port/protocol per Stripe SDK,
  * baseUrl per il gateway HTTP Klarna).
  */
-export type GatewayRuntimeOptions = GatewayStripeOptions | GatewayKlarnaOptions;
+export type GatewayRuntimeOptions =
+  | GatewayStripeOptions
+  | GatewayKlarnaOptions
+  | GatewayPaypalOptions;
 
 type GatewayFactory = (opts?: GatewayRuntimeOptions) => PaymentGateway;
 
@@ -51,8 +55,8 @@ type GatewayFactory = (opts?: GatewayRuntimeOptions) => PaymentGateway;
 const FACTORY_GATEWAY: Readonly<Record<string, GatewayFactory | null>> = {
   stripe: (opts) => new GatewayStripe(opts as GatewayStripeOptions),
   klarna: (opts) => new GatewayKlarna(opts as GatewayKlarnaOptions),
+  paypal: (opts) => new GatewayPaypal(opts as GatewayPaypalOptions),
   scalapay: null,
-  paypal: null,
 };
 
 /** True se il provider ha un gateway implementato nel registry. */
