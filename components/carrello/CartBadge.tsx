@@ -22,7 +22,7 @@ export default function CartBadge() {
       {pezzi > 0 && (
         <span
           data-testid="cart-badge"
-          className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-600 px-1 text-[9px] font-black leading-none text-white ring-2 ring-white"
+          className="absolute -right-1 top-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-600 px-1 text-[9px] font-black leading-none text-white ring-2 ring-white"
         >
           {pezzi > 99 ? "99+" : pezzi}
         </span>
