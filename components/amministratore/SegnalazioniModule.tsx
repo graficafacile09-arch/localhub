@@ -625,7 +625,7 @@ export default function SegnalazioniModule() {
                   type="button"
                   onClick={salvaDettaglio}
                   disabled={salvandoDettaglio}
-                  className="h-11 px-5 rounded-xl bg-yellow-400 text-blue-800 text-sm font-bold hover:bg-yellow-300 transition disabled:opacity-50 flex items-center gap-2"
+                  className="btn-cta h-11 px-5 text-sm disabled:opacity-50"
                 >
                   {salvandoDettaglio && <Loader2 className="h-4 w-4 animate-spin" />}
                   Salva modifiche

@@ -352,7 +352,7 @@ export default function OfferteModule({ storeId }: Props) {
                 type="button"
                 onClick={salva}
                 disabled={saving}
-                className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-yellow-400 px-5 text-sm font-black text-blue-800 transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-60"
+                className="btn-cta h-11 flex-1 gap-2 px-5 text-sm disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {form.id ? "Salva modifiche" : "Pubblica offerta"}
               </button>

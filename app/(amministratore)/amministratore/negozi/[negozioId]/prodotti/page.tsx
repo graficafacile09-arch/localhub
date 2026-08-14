@@ -84,7 +84,7 @@ export default async function AdminStoreProdottiPage({
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <Link
               href={`/amministratore/negozi/${negozioId}/prodotti/ai`}
-              className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-yellow-400 px-5 text-sm font-bold text-blue-800 shadow-lg shadow-yellow-400/40 transition hover:bg-yellow-300"
+              className="btn-cta h-12 px-5 text-sm"
             >
               <Sparkles className="h-4 w-4" />
               Aggiungi con AI
@@ -135,7 +135,7 @@ export default async function AdminStoreProdottiPage({
             <div className="flex flex-wrap justify-center gap-3">
               <Link
                 href={`/amministratore/negozi/${negozioId}/prodotti/ai`}
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-yellow-400 px-5 text-sm font-semibold text-blue-800 transition hover:bg-yellow-300"
+                className="btn-cta h-11 px-5 text-sm"
               >
                 <Sparkles className="h-4 w-4" />
                 Aggiungi con AI

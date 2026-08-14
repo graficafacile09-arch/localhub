@@ -145,7 +145,7 @@ export function SaveBar({ saving, onSave, dirty }: SaveBarProps) {
         type="button"
         onClick={onSave}
         disabled={saving || !dirty}
-        className="inline-flex h-11 items-center gap-2 rounded-xl bg-yellow-400 px-6 text-sm font-bold text-blue-800 shadow-md shadow-blue-500/25 transition hover:bg-yellow-300 active:scale-[0.98] disabled:opacity-50"
+        className="btn-cta h-11 gap-2 px-6 text-sm disabled:opacity-50"
       >
         {saving ? "Salvataggio..." : "Salva modifiche"}
       </button>

@@ -35,7 +35,7 @@ export default function AssistenteAiError({
         <button
           type="button"
           onClick={reset}
-          className="inline-flex items-center gap-2 rounded-xl bg-yellow-400 px-5 py-2.5 text-sm font-bold text-blue-800 transition hover:bg-yellow-300"
+          className="btn-cta px-5 py-2.5 text-sm"
         >
           <RotateCcw className="h-4 w-4" aria-hidden />
           Riprova

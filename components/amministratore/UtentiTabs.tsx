@@ -51,7 +51,7 @@ export default function UtentiTabs({
             onClick={() => onChange(tab.id)}
             className={`inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-bold transition-all duration-150 ${
               selezionata
-                ? "bg-yellow-400 text-blue-800 shadow-md shadow-yellow-400/25"
+                ? "btn-cta"
                 : "border border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
             }`}
           >

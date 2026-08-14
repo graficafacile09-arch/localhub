@@ -166,7 +166,7 @@ export default function ZonaPericolosaDashboard() {
           <p className="text-sm font-bold text-blue-800">{successo}</p>
           <Link
             href="/amministratore/cestino"
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-yellow-400 px-4 py-2 text-xs font-bold text-blue-800 transition hover:bg-yellow-300"
+            className="btn-cta shrink-0 px-4 py-2 text-xs"
           >
             <Trash2 className="h-3.5 w-3.5" />
             Apri Cestino

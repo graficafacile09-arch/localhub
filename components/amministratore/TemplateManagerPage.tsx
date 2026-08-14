@@ -119,7 +119,7 @@ export default function TemplateManagerPage() {
             </div>
             <div className="mt-5 flex items-center justify-end gap-2">
               <button type="button" onClick={() => setEditing(null)} className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50">Annulla</button>
-              <button type="button" onClick={handleSaveEdit} className="inline-flex items-center gap-1.5 rounded-xl bg-yellow-400 px-4 py-2 text-xs font-bold text-blue-800 hover:bg-yellow-300">
+              <button type="button" onClick={handleSaveEdit} className="btn-cta px-4 py-2 text-xs">
                 <Check className="h-3.5 w-3.5" /> Salva
               </button>
             </div>
@@ -146,7 +146,7 @@ export default function TemplateManagerPage() {
         <button
           type="button"
           onClick={() => setShowCrea(true)}
-          className="ml-auto inline-flex items-center gap-1.5 rounded-xl bg-yellow-400 px-4 py-2.5 text-xs font-bold text-blue-800 transition hover:bg-yellow-300"
+          className="btn-cta ml-auto px-4 py-2.5 text-xs"
         >
           <Plus className="h-4 w-4" />
           Nuovo template

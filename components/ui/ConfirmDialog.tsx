@@ -92,7 +92,7 @@ export default function ConfirmDialog({
             type="button"
             onClick={onConfirm}
             disabled={loading}
-            className={`px-4 py-2 text-xs font-bold ${destructive ? "btn-danger" : "btn-cta"}`}
+            className={`px-4 py-2 text-xs ${destructive ? "btn-danger" : "btn-cta"}`}
           >
             {loading ? "Eliminazione..." : confirmLabel}
           </button>

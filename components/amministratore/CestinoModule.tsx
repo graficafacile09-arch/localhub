@@ -164,7 +164,7 @@ export default function CestinoModule() {
           <button
             type="button"
             onClick={fetchTrash}
-            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-yellow-400 px-4 py-2 text-xs font-bold text-blue-800 transition hover:bg-yellow-300"
+            className="btn-cta mt-4 px-4 py-2 text-xs"
           >
             <RefreshCw className="h-3.5 w-3.5" />
             Riprova
@@ -212,7 +212,7 @@ export default function CestinoModule() {
                   type="button"
                   onClick={() => handleRestore(store.id)}
                   disabled={restoringId === store.id || deletingId === store.id}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-yellow-400 px-4 py-2.5 text-xs font-bold text-blue-800 transition hover:bg-yellow-300 disabled:opacity-60"
+                  className="btn-cta px-4 py-2.5 text-xs disabled:opacity-60"
                 >
                   <RotateCcw className="h-3.5 w-3.5" />
                   {restoringId === store.id ? "Ripristino..." : "Ripristina"}
