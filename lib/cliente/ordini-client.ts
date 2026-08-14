@@ -32,6 +32,18 @@ export type CreaOrdinePayload = {
     /** Metodo SCELTO ESPLICITAMENTE dall'utente (il server rifiuta un assente). */
     metodoPagamento: "carta" | "bonifico" | "klarna" | "paypal";
   } | null;
+  /** Indirizzo di fatturazione opzionale (solo spedizione). */
+  fatturazione?: {
+    diversa: boolean;
+    nome?: string | null;
+    cognome?: string | null;
+    indirizzo?: string | null;
+    numeroCivico?: string | null;
+    cap?: string | null;
+    comune?: string | null;
+    provincia?: string | null;
+    nazione?: string | null;
+  } | null;
   note?: string | null;
 };
 

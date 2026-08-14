@@ -36,7 +36,12 @@ import { isUuid } from "@/lib/slug";
 import { inviaNotificaNuovoOrdine } from "@/lib/notifiche/whatsapp";
 import { inviaNotificaNuovoOrdineNtfy } from "@/lib/notifiche/ntfy";
 import { inviaEmailConfermaOrdine } from "./ordine-email";
-import { STATUS_DA_CODICE as STATUS_DA_CODICE_ORDINI } from "./orders";
+import {
+  STATUS_DA_CODICE as STATUS_DA_CODICE_ORDINI,
+  normalizzaFatturazione,
+  validaFatturazione,
+  type FatturazioneCheckout,
+} from "./orders";
 
 // ════════════════════════════════════════════════════════════════════
 // Tipi pubblici
@@ -74,6 +79,8 @@ export type CheckoutCarrelloInput = {
     metodoSpedizione: "standard" | "express";
     metodoPagamento: "carta" | "paypal" | "klarna" | "bonifico";
   } | null;
+  /** Indirizzo di fatturazione opzionale (solo modalità spedizione). */
+  fatturazione?: FatturazioneCheckout | null;
   note?: string | null;
   /** IP del richiedente (rate limiting per IP, salvato su ordini.cliente_ip). */
   clienteIp?: string | null;
@@ -241,6 +248,10 @@ function validaCheckout(input: CheckoutCarrelloInput): { codice: string; messagg
       sp.metodoPagamento !== "bonifico"
     ) {
       return { codice: "VALIDATION_ERROR", messaggio: "Metodo di pagamento non valido." };
+    }
+    const errFatt = validaFatturazione(input.fatturazione);
+    if (errFatt) {
+      return { codice: "VALIDATION_ERROR", messaggio: errFatt };
     }
   } else {
     // Modalità RITIRO: data e fascia oraria OBBLIGATORIE (come nome/cognome).
@@ -591,6 +602,22 @@ export async function creaOrdiniCarrello(
   }
 
   const ordini = await arricchisciConPagamenti(db, risultati);
+
+  // ── Persistenza indirizzo di fatturazione (idempotente, come creaOrdine) ─
+  // Un solo indirizzo di fatturazione per l'intero checkout (stesso valore su
+  // tutti gli ordini/negozi). UPDATE idempotente: riapplicato anche nei retry.
+  if (input.fatturazione !== undefined && input.fatturazione !== null) {
+    const fatt = normalizzaFatturazione(input.fatturazione);
+    for (const ordine of ordini) {
+      await db
+        .from("ordini")
+        .update(fatt)
+        .eq("id", ordine.ordineId)
+        .then(({ error }) => {
+          if (error) console.error("[ordini-carrello] salvataggio fatturazione fallito:", error.message);
+        });
+    }
+  }
 
   // ── Notifiche (BEST-EFFORT, mai bloccano; solo ordini REALMENTE nuovi) ──
   // Stesso pattern di creaOrdine: con pagamento online (carta/klarna/paypal)

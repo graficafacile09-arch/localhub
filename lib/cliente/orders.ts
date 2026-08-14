@@ -39,6 +39,78 @@ export type ClienteCheckout = {
   email?: string | null;
 };
 
+/**
+ * Indirizzo di fatturazione opzionale (solo modalità spedizione).
+ * `diversa = false` (o assente) → la fatturazione usa i dati di spedizione;
+ * `diversa = true` → tutti i campi sono obbligatori.
+ */
+export type FatturazioneCheckout = {
+  diversa: boolean;
+  nome?: string | null;
+  cognome?: string | null;
+  indirizzo?: string | null;
+  numeroCivico?: string | null;
+  cap?: string | null;
+  comune?: string | null;
+  provincia?: string | null;
+  nazione?: string | null;
+};
+
+/** Normalizza (trim + slice) i dati di fatturazione per l'UPDATE su ordini. */
+export function normalizzaFatturazione(
+  f: FatturazioneCheckout | null | undefined
+): Record<string, unknown> {
+  const diversa = f?.diversa === true;
+  const clean = (v: unknown): string | null =>
+    typeof v === "string" && v.trim() ? v.trim().slice(0, 120) : null;
+  return {
+    fatturazione_diversa: diversa,
+    fatturazione_nome: diversa ? clean(f?.nome) : null,
+    fatturazione_cognome: diversa ? clean(f?.cognome) : null,
+    fatturazione_indirizzo: diversa ? clean(f?.indirizzo) : null,
+    fatturazione_numero_civico: diversa ? clean(f?.numeroCivico) : null,
+    fatturazione_cap: diversa ? clean(f?.cap) : null,
+    fatturazione_comune: diversa ? clean(f?.comune) : null,
+    fatturazione_provincia: diversa ? clean(f?.provincia) : null,
+    fatturazione_nazione: diversa ? clean(f?.nazione) : null,
+  };
+}
+
+/** Converte il body grezzo in FatturazioneCheckout (mai fidarsi del client). */
+export function parseFatturazioneRaw(raw: unknown): FatturazioneCheckout | null {
+  if (!raw || typeof raw !== "object") return null;
+  const f = raw as Record<string, unknown>;
+  const str = (v: unknown): string | null =>
+    typeof v === "string" && v.trim() ? v.trim() : null;
+  return {
+    diversa: f.diversa === true,
+    nome: str(f.nome),
+    cognome: str(f.cognome),
+    indirizzo: str(f.indirizzo),
+    numeroCivico: str(f.numeroCivico),
+    cap: str(f.cap),
+    comune: str(f.comune),
+    provincia: str(f.provincia),
+    nazione: str(f.nazione),
+  };
+}
+
+/** Valida i dati di fatturazione quando `diversa = true`. Ritorna un messaggio d'errore o null. */
+export function validaFatturazione(
+  f: FatturazioneCheckout | null | undefined
+): string | null {
+  if (!f || f.diversa !== true) return null;
+  if (!f.nome?.trim()) return "Inserisci il nome per la fatturazione.";
+  if (!f.cognome?.trim()) return "Inserisci il cognome per la fatturazione.";
+  if (!f.indirizzo?.trim()) return "Inserisci l'indirizzo di fatturazione.";
+  if (!f.numeroCivico?.trim()) return "Inserisci il numero civico di fatturazione.";
+  if (!/^\d{5}$/.test((f.cap ?? "").trim())) return "Il CAP di fatturazione deve essere composto da 5 cifre.";
+  if (!f.comune?.trim()) return "Inserisci il comune di fatturazione.";
+  if (!f.provincia?.trim()) return "Inserisci la provincia di fatturazione.";
+  if (!f.nazione?.trim()) return "Inserisci la nazione di fatturazione.";
+  return null;
+}
+
 /** Input per la creazione di un ordine. */
 export type CreaOrdineInput = {
   /** Chiave di idempotenza generata dal client (anti doppio invio). */
@@ -68,6 +140,8 @@ export type CreaOrdineInput = {
     metodoSpedizione: "standard" | "express";
     metodoPagamento: "carta" | "paypal" | "bonifico" | "klarna";
   } | null;
+  /** Indirizzo di fatturazione opzionale (solo modalità spedizione). */
+  fatturazione?: FatturazioneCheckout | null;
   note?: string | null;
   /** IP del richiedente (rate limiting per IP, salvato su ordini.cliente_ip). */
   clienteIp?: string | null;
@@ -376,6 +450,14 @@ export async function creaOrdine(
       return { ok: false, errore: "Fascia oraria non valida.", codice: "VALIDATION_ERROR", status: 422 };
     }
   }
+
+  // Fatturazione: solo spedizione; se "diversa" tutti i campi sono obbligatori.
+  if (input.modalita === "spedizione") {
+    const errFatt = validaFatturazione(input.fatturazione);
+    if (errFatt) {
+      return { ok: false, errore: errFatt, codice: "VALIDATION_ERROR", status: 422 };
+    }
+  }
   const note = input.note ? String(input.note).trim().slice(0, 500) : null;
 
   // ── 2. Transazione atomica nel database (ordine + righe + stock) ────────
@@ -421,6 +503,22 @@ export async function creaOrdine(
   }
 
   const giaEsistente = esito.giaEsistente ?? false;
+
+  // ── 2bis. Persistenza indirizzo di fatturazione (idempotente) ────────────
+  // Le RPC creano l'ordine in modo atomico (stock/idempotenza); i campi di
+  // fatturazione sono metadati aggiuntivi scritti subito dopo, con lo stesso
+  // valore anche nei retry idempotenti (un UPDATE è idempotente). Se
+  // l'UPDATE fallisse, l'ordine resta valido con fatturazione = spedizione.
+  if (esito.ordine?.id) {
+    const fatt = normalizzaFatturazione(input.fatturazione);
+    await db
+      .from("ordini")
+      .update(fatt)
+      .eq("id", esito.ordine.id)
+      .then(({ error }) => {
+        if (error) console.error("[ordini] salvataggio fatturazione fallito:", error.message);
+      });
+  }
 
   // ── 3. Notifiche al negoziante (BEST-EFFORT, mai bloccano) ───────────────
   // Solo per un ordine REALMENTE nuovo (mai per i retry idempotenti con la

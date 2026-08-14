@@ -24,6 +24,11 @@ import QuantitySelector from "@/components/acquista/QuantitySelector";
 import LocalitaFields, {
   type CampoLocalita,
 } from "@/components/indirizzo/LocalitaFields";
+import FatturazioneForm, {
+  DATI_FATTURAZIONE_VUOTI,
+  validaDatiFatturazione,
+  type DatiFatturazione,
+} from "@/components/acquista/FatturazioneForm";
 
 const formattaEuro = (v: number) =>
   `€${v.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -160,6 +165,9 @@ export default function CheckoutCarrelloForm({ prefill }: { prefill: Prefill }) 
   const [esito, setEsito] = useState<EsitoCheckout | null>(null);
   // Errori per campo (ritiro: data e fascia oraria obbligatorie).
   const [erroriRitiro, setErroriRitiro] = useState<{ data?: string; fascia?: string }>({});
+  // Indirizzo di fatturazione (chiuso per default: si usano i dati spedizione).
+  const [fatturazione, setFatturazione] = useState<DatiFatturazione>(DATI_FATTURAZIONE_VUOTI);
+  const [erroriFatturazione, setErroriFatturazione] = useState<Record<string, string>>({});
 
   const oggi = useMemo(() => new Date().toISOString().split("T")[0], []);
   const costoSpedizioneUI = metodoSpedizione === "express" ? 12.9 : 5.9;
@@ -249,6 +257,15 @@ export default function CheckoutCarrelloForm({ prefill }: { prefill: Prefill }) 
       if (!indirizzo.trim() || !cap.trim() || !citta.trim() || !provincia.trim())
         return "Completa l'indirizzo di spedizione.";
       if (!/^\d{5}$/.test(cap.trim())) return "Il CAP deve essere composto da 5 cifre.";
+      // Fatturazione diversa: campi obbligatori, blocco invio se incompleti.
+      if (fatturazione.diversa) {
+        const errFatt = validaDatiFatturazione(fatturazione);
+        if (Object.keys(errFatt).length > 0) {
+          setErroriFatturazione(errFatt);
+          return "Completa l'indirizzo di fatturazione.";
+        }
+      }
+      setErroriFatturazione({});
       return null;
     }
     // modalita === "ritiro": data e fascia oraria OBBLIGATORIE (come nome/cognome).
@@ -307,6 +324,19 @@ export default function CheckoutCarrelloForm({ prefill }: { prefill: Prefill }) 
           metodoSpedizione,
           metodoPagamento,
         };
+        body.fatturazione = fatturazione.diversa
+          ? {
+              diversa: true,
+              nome: fatturazione.nome.trim() || null,
+              cognome: fatturazione.cognome.trim() || null,
+              indirizzo: fatturazione.indirizzo.trim() || null,
+              numeroCivico: fatturazione.numeroCivico.trim() || null,
+              cap: fatturazione.cap.trim() || null,
+              comune: fatturazione.comune.trim() || null,
+              provincia: fatturazione.provincia.trim() || null,
+              nazione: fatturazione.nazione.trim() || null,
+            }
+          : null;
       }
 
       const res = await fetch("/api/cliente/ordini/carrello", {
@@ -513,6 +543,11 @@ export default function CheckoutCarrelloForm({ prefill }: { prefill: Prefill }) 
                   required
                 />
                 <Campo label="Note consegna" value={noteConsegna} onChange={setNoteConsegna} id="ck-note-consegna" />
+                <FatturazioneForm
+                  value={fatturazione}
+                  onChange={setFatturazione}
+                  errori={erroriFatturazione}
+                />
               </div>
             )}
           </section>

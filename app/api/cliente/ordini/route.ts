@@ -1,5 +1,5 @@
 import { apiError, apiOk } from "@/lib/api/response";
-import { creaOrdine, type CreaOrdineInput } from "@/lib/cliente/orders";
+import { creaOrdine, parseFatturazioneRaw, type CreaOrdineInput } from "@/lib/cliente/orders";
 import { getCurrentUser } from "@/lib/auth/session";
 import { checkRateLimit } from "@/lib/rate-limiter";
 import {
@@ -243,6 +243,8 @@ export async function POST(request: Request) {
                   : "carta",
           }
         : null,
+    fatturazione:
+      modalita === "spedizione" ? parseFatturazioneRaw(body.fatturazione) : null,
     note: typeof body.note === "string" ? body.note : null,
     clienteIp: ip,
   };

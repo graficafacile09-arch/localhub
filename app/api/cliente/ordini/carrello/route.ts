@@ -6,6 +6,7 @@ import {
   type OrdineCarrelloNegozio,
   type RigaCarrelloInput,
 } from "@/lib/cliente/ordini-carrello";
+import { parseFatturazioneRaw } from "@/lib/cliente/orders";
 import { getCurrentUser } from "@/lib/auth/session";
 import { checkRateLimit } from "@/lib/rate-limiter";
 import { isProviderProntoPerNegozio } from "@/lib/pagamenti/config";
@@ -237,6 +238,8 @@ export async function POST(request: Request) {
                   : "carta",
           }
         : null,
+    fatturazione:
+      modalita === "spedizione" ? parseFatturazioneRaw(body.fatturazione) : null,
     note: typeof body.note === "string" ? body.note : null,
     clienteIp: ip,
   });

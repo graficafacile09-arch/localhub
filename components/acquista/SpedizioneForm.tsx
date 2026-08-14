@@ -9,6 +9,11 @@ import LocalitaFields, {
 } from "@/components/indirizzo/LocalitaFields";
 import { creaOrdineViaApi, nuovaChiaveIdempotenza } from "@/lib/cliente/ordini-client";
 import type { MetodoPagamentoCheckout } from "@/lib/pagamenti/metodi-pubblici";
+import FatturazioneForm, {
+  DATI_FATTURAZIONE_VUOTI,
+  validaDatiFatturazione,
+  type DatiFatturazione,
+} from "./FatturazioneForm";
 
 export default function SpedizioneForm({
   nome,
@@ -53,6 +58,9 @@ export default function SpedizioneForm({
   // Chiave di idempotenza: generata UNA volta per pagina → un doppio click
   // (o retry) non crea mai due ordini.
   const chiaveIdempotenza = useRef<string>(nuovaChiaveIdempotenza());
+  // Indirizzo di fatturazione (chiuso per default: si usano i dati spedizione).
+  const [fatturazione, setFatturazione] = useState<DatiFatturazione>(DATI_FATTURAZIONE_VUOTI);
+  const [erroriFatturazione, setErroriFatturazione] = useState<Record<string, string>>({});
 
   const costoSpedizione = metodoSpedizione === "express" ? 12.9 : 5.9;
   const subtotal = prezzo * quantita;
@@ -83,6 +91,17 @@ export default function SpedizioneForm({
       return;
     }
 
+    // Fatturazione diversa: campi obbligatori, blocco invio se incompleti.
+    if (fatturazione.diversa) {
+      const errFatt = validaDatiFatturazione(fatturazione);
+      if (Object.keys(errFatt).length > 0) {
+        setErroriFatturazione(errFatt);
+        setErrore("Completa l'indirizzo di fatturazione.");
+        return;
+      }
+    }
+    setErroriFatturazione({});
+
     setInviando(true);
     setErrore(null);
     try {
@@ -107,6 +126,19 @@ export default function SpedizioneForm({
           metodoSpedizione,
           metodoPagamento,
         },
+        fatturazione: fatturazione.diversa
+          ? {
+              diversa: true,
+              nome: fatturazione.nome.trim() || null,
+              cognome: fatturazione.cognome.trim() || null,
+              indirizzo: fatturazione.indirizzo.trim() || null,
+              numeroCivico: fatturazione.numeroCivico.trim() || null,
+              cap: fatturazione.cap.trim() || null,
+              comune: fatturazione.comune.trim() || null,
+              provincia: fatturazione.provincia.trim() || null,
+              nazione: fatturazione.nazione.trim() || null,
+            }
+          : null,
       });
 
       if (!esito.ok) {
@@ -196,6 +228,13 @@ export default function SpedizioneForm({
             <FormField label="Note consegna" id="note" />
           </div>
         </div>
+
+        {/* Indirizzo di fatturazione (chiuso per default) */}
+        <FatturazioneForm
+          value={fatturazione}
+          onChange={setFatturazione}
+          errori={erroriFatturazione}
+        />
 
         {/* Metodo spedizione */}
         <div className="rounded-xl border border-slate-200 bg-white p-4">
