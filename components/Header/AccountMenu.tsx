@@ -32,8 +32,6 @@ export type DatiAccount = {
   area: AreaAttiva | null;
   /** True se l'utente possiede almeno un negozio. */
   hasStores: boolean;
-  /** Id del primo negozio (per i link diretti dell'area venditore). */
-  firstStoreId: string | null;
 };
 
 type VoceMenu = {
@@ -127,9 +125,10 @@ export default function AccountMenu({ account }: { account: DatiAccount | null }
 
   const { nome, email, area } = account;
   const iniziale = (nome || email).charAt(0).toUpperCase();
-  const storeBase = account.firstStoreId
-    ? `/merchant/${account.firstStoreId}`
-    : "/merchant";
+  // "Area Venditore" apre SEMPRE l'elenco negozi (/merchant): nessun negozio
+  // viene aperto automaticamente. Si entra nel singolo negozio solo cliccando
+  // una riga dell'elenco (il badge ordini vive lì, accanto al nome).
+  const storeBase = "/merchant";
 
   /**
    * Il menu mostra ESCLUSIVAMENTE l'area attiva della sessione (cookie

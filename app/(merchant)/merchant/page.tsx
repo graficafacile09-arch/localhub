@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import MerchantEmptyState from "@/components/merchant/MerchantEmptyState";
 import EliminaNegozioButton from "@/components/amministratore/EliminaNegozioButton";
 import { requireCurrentUser } from "@/lib/auth/session";
@@ -29,13 +28,6 @@ export default async function MerchantHomePage({
         description={storesResult.errorMessage ?? "Esegui la migrazione SQL iniziale per attivare l'area amministratore."}
       />
     );
-  }
-
-  // SOLO la sessione merchant può entrare nelle pagine /merchant/*: per
-  // l'admin area la dashboard è un elenco informativo (evita il loop
-  // /amministratore → /merchant/{id} → /amministratore).
-  if (storesResult.data.length === 1 && area === "merchant") {
-    redirect(`/merchant/${storesResult.data[0].id}`);
   }
 
   if (storesResult.data.length === 0) {

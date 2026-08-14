@@ -21,14 +21,12 @@ export async function getDatiAccount(): Promise<DatiAccount | null> {
     String(user.email ?? "");
 
   let hasStores = false;
-  let firstStoreId: string | null = null;
 
   // I negozi interessano SOLO la sessione merchant: il menu mostra
   // esclusivamente l'area attiva.
   if (area === "merchant") {
     const storesResult = await getMerchantStoresForUser(user.id);
     hasStores = storesResult.data.length > 0;
-    firstStoreId = storesResult.data[0]?.id ?? null;
   }
 
   return {
@@ -38,6 +36,5 @@ export async function getDatiAccount(): Promise<DatiAccount | null> {
     ruoli,
     area,
     hasStores,
-    firstStoreId,
   };
 }
