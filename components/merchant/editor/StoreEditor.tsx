@@ -1,137 +1,156 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
-import { Menu, LayoutDashboard, AlertTriangle, RefreshCw } from "lucide-react";
+import { Menu, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import EditorSidebar from "./EditorSidebar";
-import EditorDashboard from "./EditorDashboard";
-import { getModuleComponent, type ModuleComponentProps } from "@/lib/modules/registry";
+import {
+  EDITOR_STEPS,
+  statoStep,
+  type StepId,
+  type StepStatus,
+  type StepCounts,
+  type StepProps,
+} from "./editor-steps";
+import type { Negozio } from "@/types/negozio";
+import StepIdentita from "./steps/StepIdentita";
+import StepContatti from "./steps/StepContatti";
+import StepPresentazione from "./steps/StepPresentazione";
+import StepCatalogo from "./steps/StepCatalogo";
+import StepOfferte from "./steps/StepOfferte";
+import StepCommerciale from "./steps/StepCommerciale";
+import StepAnteprima from "./steps/StepAnteprima";
+import StepPubblicazione from "./steps/StepPubblicazione";
 
-export type ModuleStatus = {
-  complete: boolean;
-  count?: number;
+const STEP_COMPONENTS: Record<StepId, React.ComponentType<StepProps>> = {
+  identita: StepIdentita,
+  contatti: StepContatti,
+  presentazione: StepPresentazione,
+  catalogo: StepCatalogo,
+  offerte: StepOfferte,
+  commerciale: StepCommerciale,
+  anteprima: StepAnteprima,
+  pubblicazione: StepPubblicazione,
 };
+
+function isStepId(v: string | null): v is StepId {
+  return !!v && EDITOR_STEPS.some((s) => s.id === v);
+}
 
 type Props = {
   storeId: string;
-  /**
-   * Percorso base dell'editor (per la URL bar):
-   * - venditore:  "/merchant"        → /merchant/{id}/edit
-   * - amministratore: "/amministratore/negozi" → /amministratore/negozi/{id}/edit
-   */
+  /** /merchant (venditore) oppure /amministratore/negozi (admin). */
   basePath?: string;
 };
 
 export default function StoreEditor({ storeId, basePath = "/merchant" }: Props) {
   const searchParams = useSearchParams();
-  const modulo = searchParams.get("modulo");
+  const initialStep = searchParams.get("step");
 
-  const [activeSlug, setActiveSlug] = useState<string>(modulo ?? "dashboard");
-  const [ModuleComponent, setModuleComponent] = useState<React.ComponentType<ModuleComponentProps> | null>(null);
+  const [activeStep, setActiveStep] = useState<StepId>(() =>
+    isStepId(initialStep) ? initialStep : "identita"
+  );
+  const [store, setStore] = useState<Negozio | null>(null);
+  const [counts, setCounts] = useState<StepCounts>({ prodotti: 0, offerte: 0 });
+  const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [moduleStatus, setModuleStatus] = useState<Record<string, ModuleStatus>>({});
-  const [storeName, setStoreName] = useState("");
   const [loadError, setLoadError] = useState(false);
-  const [retryKey, setRetryKey] = useState(0);
 
-  const handleModuleStatus = useCallback((status: Record<string, ModuleStatus>) => {
-    setModuleStatus(status);
-  }, []);
+  const refresh = useCallback(async () => {
+    try {
+      const [settingsRes, productsRes, offerteRes] = await Promise.all([
+        fetch(`/api/merchant/stores/${storeId}/settings`),
+        fetch(`/api/merchant/stores/${storeId}/products`),
+        fetch(`/api/merchant/stores/${storeId}/offerte`),
+      ]);
+      const settingsJson = await settingsRes.json();
+      const productsJson = await productsRes.json();
+      const offerteJson = await offerteRes.json();
 
-  // Sidebar click: ONLY update state. URL sync is done by the effect below.
-  const handleSelect = useCallback((slug: string) => {
-    setActiveSlug(slug);
-  }, []);
-
-  // Sync activeSlug → URL bar without triggering Next.js navigation/re-render
-  useEffect(() => {
-    const url =
-      activeSlug === "dashboard"
-        ? `${basePath}/${storeId}/edit`
-        : `${basePath}/${storeId}/edit?modulo=${activeSlug}`;
-    window.history.replaceState(null, "", url);
-  }, [activeSlug, storeId, basePath]);
-
-  useEffect(() => {
-    async function loadName() {
-      try {
-        const res = await fetch(`/api/merchant/stores/${storeId}/settings`);
-        const json = await res.json();
-        if (json.success && json.data?.settings?.nome) {
-          setStoreName(json.data.settings.nome);
-        }
-      } catch { /* non-critical */ }
+      if (settingsJson.success) {
+        setStore(settingsJson.data.settings as Negozio);
+        setLoadError(false);
+      } else {
+        setLoadError(true);
+      }
+      if (productsJson.success && Array.isArray(productsJson.data?.products)) {
+        setCounts((c) => ({ ...c, prodotti: productsJson.data.products.length }));
+      }
+      if (offerteJson.success && Array.isArray(offerteJson.data?.offerte)) {
+        setCounts((c) => ({ ...c, offerte: offerteJson.data.offerte.length }));
+      }
+    } catch {
+      setLoadError(true);
+    } finally {
+      setLoading(false);
     }
-    loadName();
   }, [storeId]);
 
-  // Load the module component for the active slug
   useEffect(() => {
-    let cancelled = false;
+    void refresh();
+  }, [refresh]);
 
-    async function load() {
-      setLoadError(false);
+  // Aggiorna i conteggi (prodotti/offerte) quando si cambia step, così lo
+  // stato della sidebar e il riepilogo restano sempre allineati.
+  useEffect(() => {
+    if (!loading) void refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeStep]);
 
-      if (activeSlug === "dashboard") {
-        if (!cancelled) setModuleComponent(null);
-        return;
-      }
+  // Sync step → URL senza navigazione completa.
+  useEffect(() => {
+    const url =
+      activeStep === "identita"
+        ? `${basePath}/${storeId}/edit`
+        : `${basePath}/${storeId}/edit?step=${activeStep}`;
+    window.history.replaceState(null, "", url);
+  }, [activeStep, storeId, basePath]);
 
-      try {
-        const Component = await getModuleComponent(activeSlug);
-        if (!cancelled) {
-          if (Component) {
-            setModuleComponent(() => Component);
-          } else {
-            setLoadError(true);
-          }
-        }
-      } catch {
-        if (!cancelled) setLoadError(true);
-      }
+  const statuses = useMemo(() => {
+    const out: Record<StepId, StepStatus> = {} as Record<StepId, StepStatus>;
+    for (const s of EDITOR_STEPS) {
+      out[s.id] = statoStep(s.id, store, counts);
     }
+    return out;
+  }, [store, counts]);
 
-    load();
+  const stepIndex = EDITOR_STEPS.findIndex((s) => s.id === activeStep);
+  const currentStep = EDITOR_STEPS[stepIndex];
+  const prevStep = stepIndex > 0 ? EDITOR_STEPS[stepIndex - 1] : null;
+  const nextStep = stepIndex < EDITOR_STEPS.length - 1 ? EDITOR_STEPS[stepIndex + 1] : null;
 
-    return () => {
-      cancelled = true;
-    };
-  }, [activeSlug, retryKey]);
+  const handleSelect = useCallback((id: StepId) => {
+    setActiveStep(id);
+    setSidebarOpen(false);
+  }, []);
 
-  const isDashboard = activeSlug === "dashboard";
+  const handleDataChanged = useCallback(() => {
+    void refresh();
+  }, [refresh]);
 
-  const handleSidebarClose = useCallback(() => setSidebarOpen(false), []);
-
-  const pageTitle = isDashboard ? "Dashboard" :
-    activeSlug.charAt(0).toUpperCase() + activeSlug.slice(1);
+  const StepComponent = STEP_COMPONENTS[activeStep];
 
   return (
     <div className="flex min-h-[calc(100vh-4rem)]">
-      {/* Mobile overlay */}
       {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-30 bg-black/30 md:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
+        <div className="fixed inset-0 z-30 bg-black/30 md:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 w-56 shrink-0 border-r border-slate-100 bg-white pt-16 transition-transform duration-200 md:relative md:inset-auto md:z-auto md:translate-x-0 md:pt-0 ${
+        className={`fixed inset-y-0 left-0 z-40 w-72 shrink-0 border-r border-slate-100 bg-white pt-16 transition-transform duration-200 md:relative md:inset-auto md:z-auto md:translate-x-0 md:pt-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         <EditorSidebar
-          activeSlug={isDashboard ? "dashboard" : activeSlug}
+          activeStep={activeStep}
           onSelect={handleSelect}
-          onClose={handleSidebarClose}
-          moduleStatus={moduleStatus}
-          storeName={storeName}
+          statuses={statuses}
+          storeName={store?.nome ?? ""}
           basePath={basePath}
+          storeId={storeId}
         />
       </aside>
 
-      {/* Main content */}
       <main className="min-w-0 flex-1 overflow-auto px-4 py-4 sm:px-6 lg:px-8">
         {/* Mobile header */}
         <div className="mb-4 flex items-center gap-3 md:hidden">
@@ -142,44 +161,74 @@ export default function StoreEditor({ storeId, basePath = "/merchant" }: Props) 
           >
             <Menu className="h-5 w-5" />
           </button>
-          <div className="flex items-center gap-2">
-            {isDashboard && <LayoutDashboard className="h-4 w-4 text-blue-500" />}
-            <h2 className="text-sm font-bold text-slate-900">{pageTitle}</h2>
-          </div>
+          <span className="text-sm font-bold text-slate-900">
+            {currentStep?.numero}. {currentStep?.titolo}
+          </span>
         </div>
 
-        {isDashboard ? (
-          <EditorDashboard
-            storeId={storeId}
-            basePath={basePath}
-            onModuleStatus={handleModuleStatus}
-            onSelectModule={handleSelect}
-          />
-        ) : loadError ? (
-          <div className="flex flex-col items-center justify-center gap-4 py-20">
-            <AlertTriangle className="h-8 w-8 text-amber-500" />
-            <p className="text-sm text-slate-500">Impossibile caricare il modulo &ldquo;{pageTitle}&rdquo;.</p>
+        {loading && !store ? (
+          <div className="flex items-center justify-center py-24">
+            <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
+          </div>
+        ) : loadError || !store ? (
+          <div className="flex flex-col items-center justify-center gap-3 py-24">
+            <p className="text-sm text-red-500">Impossibile caricare i dati del negozio.</p>
             <button
               type="button"
               onClick={() => {
-                setLoadError(false);
-                setModuleComponent(null);
-                setRetryKey((k) => k + 1);
+                setLoading(true);
+                void refresh();
               }}
-              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-blue-700"
+              className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-blue-700"
             >
-              <RefreshCw className="h-4 w-4" />
               Riprova
             </button>
           </div>
-        ) : ModuleComponent ? (
-          <ModuleComponent storeId={storeId} basePath={basePath} />
         ) : (
-          <div className="flex items-center justify-center py-20">
-            <p className="text-sm text-slate-400">
-              Caricamento modulo...
-            </p>
-          </div>
+          <>
+            {/* Header step */}
+            <div className="mb-5">
+              <p className="text-[11px] font-black uppercase tracking-[0.18em] text-blue-600">
+                Step {currentStep.numero} di {EDITOR_STEPS.length}
+              </p>
+              <h1 className="mt-1 text-xl font-black tracking-tight text-slate-900">
+                {currentStep.titolo}
+              </h1>
+              <p className="mt-1 text-sm text-slate-500">{currentStep.sottotitolo}</p>
+            </div>
+
+            <StepComponent
+              storeId={storeId}
+              store={store}
+              basePath={basePath}
+              counts={counts}
+              onDataChanged={handleDataChanged}
+            />
+
+            {/* Navigazione avanti/indietro */}
+            <div className="mt-8 flex items-center justify-between border-t border-slate-100 pt-4">
+              {prevStep ? (
+                <button
+                  type="button"
+                  onClick={() => setActiveStep(prevStep.id)}
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-600 transition hover:bg-slate-50"
+                >
+                  <ChevronLeft className="h-4 w-4" /> {prevStep.numero}. {prevStep.titolo}
+                </button>
+              ) : (
+                <span />
+              )}
+              {nextStep ? (
+                <button
+                  type="button"
+                  onClick={() => setActiveStep(nextStep.id)}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-blue-700"
+                >
+                  {nextStep.numero}. {nextStep.titolo} <ChevronRight className="h-4 w-4" />
+                </button>
+              ) : null}
+            </div>
+          </>
         )}
       </main>
     </div>

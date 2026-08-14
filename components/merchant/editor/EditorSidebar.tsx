@@ -1,89 +1,42 @@
 "use client";
 
-import Link from "next/link";
-import { useParams } from "next/navigation";
 import { useState } from "react";
-import {
-  Building2, Image, Package, Sparkles, Tag, Calendar, Phone,
-  MapPin, Clock, MessageCircle, Search, Bot, Settings,
-  LayoutDashboard, FolderOpen, Copy, ChevronDown, ChevronRight, CreditCard,
-} from "lucide-react";
-import type { ModuleStatus } from "./StoreEditor";
+import Link from "next/link";
+import { Check, AlertTriangle, Copy, FolderOpen, Store } from "lucide-react";
+import { EDITOR_STEPS, type StepId, type StepStatus } from "./editor-steps";
 import DuplicaNegozioWizard from "@/components/merchant/media/DuplicaNegozioWizard";
 
-const MODULE_GROUPS = [
-  {
-    label: "Dati Base",
-    icon: Building2,
-    modules: [
-      { slug: "informazioni", label: "Informazioni", icon: Building2 },
-      { slug: "immagini", label: "Immagini", icon: Image },
-      { slug: "contatti", label: "Contatti", icon: Phone },
-      { slug: "posizione", label: "Posizione", icon: MapPin },
-      { slug: "orari", label: "Orari", icon: Clock },
-    ],
-  },
-  {
-    label: "Catalogo",
-    icon: Package,
-    modules: [
-      { slug: "prodotti", label: "Prodotti", icon: Package },
-      { slug: "servizi", label: "Servizi", icon: Sparkles },
-      { slug: "offerte", label: "Offerte", icon: Tag },
-      { slug: "eventi", label: "Eventi", icon: Calendar },
-    ],
-  },
-  {
-    label: "Online",
-    icon: MessageCircle,
-    modules: [
-      { slug: "social", label: "Social", icon: MessageCircle },
-      { slug: "seo", label: "SEO", icon: Search },
-      { slug: "pagamenti", label: "Pagamenti", icon: CreditCard },
-    ],
-  },
-  {
-    label: "Altro",
-    icon: Settings,
-    modules: [
-      { slug: "ai", label: "AI", icon: Bot },
-      { slug: "impostazioni", label: "Impostazioni", icon: Settings },
-    ],
-  },
-];
-
 type Props = {
-  activeSlug: string;
-  onSelect: (slug: string) => void;
-  onClose?: () => void;
-  moduleStatus: Record<string, ModuleStatus>;
+  activeStep: StepId;
+  onSelect: (id: StepId) => void;
+  statuses: Record<StepId, StepStatus>;
   storeName?: string;
-  /** Percorso base dell'editor: "/merchant" (venditore) o "/amministratore/negozi" (admin). */
   basePath?: string;
+  storeId: string;
 };
 
-export default function EditorSidebar({ activeSlug, onSelect, onClose, moduleStatus, storeName, basePath = "/merchant" }: Props) {
-  const params = useParams<{ negozioId: string }>();
-  const storeId = params.negozioId;
+function StatusBadge({ status }: { status: StepStatus }) {
+  if (status === "completata") {
+    return (
+      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+        <Check className="h-3 w-3" strokeWidth={3} />
+      </span>
+    );
+  }
+  if (status === "attenzione") {
+    return (
+      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600">
+        <AlertTriangle className="h-3 w-3" />
+      </span>
+    );
+  }
+  return (
+    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-400" />
+  );
+}
+
+export default function EditorSidebar({ activeStep, onSelect, statuses, storeName, basePath = "/merchant", storeId }: Props) {
   const [showDuplica, setShowDuplica] = useState(false);
-  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
-    "Dati Base": true,
-    "Catalogo": true,
-    "Online": false,
-    "Altro": false,
-  });
-
-  function toggleGroup(label: string) {
-    setExpandedGroups((prev) => ({ ...prev, [label]: !prev[label] }));
-  }
-
-  function isGroupActive(group: { modules: { slug: string }[] }): boolean {
-    return group.modules.some((m) => activeSlug === m.slug);
-  }
-
-  function isGroupComplete(group: { modules: { slug: string }[] }): boolean {
-    return group.modules.every((m) => moduleStatus[m.slug]?.complete);
-  }
 
   return (
     <nav className="flex h-full flex-col">
@@ -96,131 +49,78 @@ export default function EditorSidebar({ activeSlug, onSelect, onClose, moduleSta
         />
       )}
 
-      <div className="flex-1 space-y-0.5 overflow-y-auto px-2 py-3">
-        {/* Dashboard link */}
-        <button
-          type="button"
-          onClick={() => { onSelect("dashboard"); onClose?.(); }}
-          className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-xs font-semibold transition-all duration-150 ${
-            activeSlug === "dashboard"
-              ? "bg-blue-50 text-blue-700 shadow-sm"
-              : "text-slate-600 hover:bg-slate-50 hover:text-slate-800"
-          }`}
-        >
-          <LayoutDashboard className={`h-4 w-4 shrink-0 ${activeSlug === "dashboard" ? "text-blue-600" : "text-slate-400"}`} />
-          Dashboard
-        </button>
+      {/* Intestazione negozio */}
+      <div className="flex items-center gap-2.5 border-b border-slate-100 px-4 py-3">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+          <Store className="h-4 w-4" />
+        </div>
+        <div className="min-w-0">
+          <p className="truncate text-xs font-bold text-slate-800">{storeName || "Negozio"}</p>
+          <p className="text-[10px] text-slate-400">Percorso guidato</p>
+        </div>
+      </div>
 
-        {/* Libreria Media (link esterno) */}
+      {/* Stepper numerato */}
+      <div className="flex-1 overflow-y-auto px-2 py-3">
+        <p className="mb-2 px-2 text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
+          Configura il negozio
+        </p>
+        <ol className="space-y-1">
+          {EDITOR_STEPS.map((s, i) => {
+            const isActive = activeStep === s.id;
+            const isPast = EDITOR_STEPS.findIndex((x) => x.id === activeStep) > i;
+            return (
+              <li key={s.id}>
+                <button
+                  type="button"
+                  onClick={() => onSelect(s.id)}
+                  className={`flex w-full items-center gap-3 rounded-xl px-2.5 py-2.5 text-left transition-all duration-150 ${
+                    isActive
+                      ? "bg-blue-50 text-blue-700 shadow-sm"
+                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-800"
+                  }`}
+                >
+                  <span
+                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[11px] font-black ${
+                      isActive
+                        ? "bg-blue-600 text-white"
+                        : isPast
+                          ? "bg-blue-100 text-blue-700"
+                          : "bg-slate-100 text-slate-500"
+                    }`}
+                  >
+                    {s.numero}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className={`block truncate text-xs font-semibold ${isActive ? "text-blue-700" : ""}`}>
+                      {s.titolo}
+                    </span>
+                  </span>
+                  <StatusBadge status={statuses[s.id]} />
+                </button>
+              </li>
+            );
+          })}
+        </ol>
+      </div>
+
+      {/* Collegamenti secondari */}
+      <div className="space-y-0.5 border-t border-slate-100 px-2 py-3">
         <Link
           href={`${basePath}/${storeId}/media`}
-          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-xs font-semibold text-slate-600 transition-all duration-150 hover:bg-slate-50 hover:text-slate-800"
+          className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-xs font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-800"
         >
           <FolderOpen className="h-4 w-4 shrink-0 text-slate-400" />
-          <span className="flex-1 truncate">Libreria Media</span>
+          <span className="flex-1 truncate">Libreria media</span>
         </Link>
-
-        <div className="my-2 border-t border-slate-100" />
-
-        {/* Moduli raggruppati */}
-        {MODULE_GROUPS.map((group) => {
-          const Icon = group.icon;
-          const isOpen = expandedGroups[group.label] ?? false;
-          const isActive = isGroupActive(group);
-          const isComplete = isGroupComplete(group);
-
-          return (
-            <div key={group.label}>
-              <button
-                type="button"
-                onClick={() => toggleGroup(group.label)}
-                className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-semibold transition-all duration-150 ${
-                  isActive
-                    ? "bg-blue-50 text-blue-700"
-                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-800"
-                }`}
-              >
-                <Icon className={`h-4 w-4 shrink-0 ${isActive ? "text-blue-600" : "text-slate-400"}`} />
-                <span className="flex-1 truncate">{group.label}</span>
-                {isComplete && <span className="text-emerald-500">✓</span>}
-                {isOpen ? (
-                  <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
-                ) : (
-                  <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
-                )}
-              </button>
-
-              {isOpen && (
-                <div className="ml-6 mt-0.5 space-y-0.5">
-                  {group.modules.map((mod) => {
-                    const isModActive = activeSlug === mod.slug;
-                    const status = moduleStatus[mod.slug];
-                    const hasCount = status && typeof status.count === "number" && status.count > 0;
-                    const isModComplete = status?.complete;
-
-                    return (
-                      <button
-                        key={mod.slug}
-                        type="button"
-                        onClick={() => { onSelect(mod.slug); onClose?.(); }}
-                        className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-xs font-semibold transition-all duration-150 ${
-                          isModActive
-                            ? "bg-blue-50 text-blue-700"
-                            : "text-slate-600 hover:bg-slate-50 hover:text-slate-800"
-                        }`}
-                      >
-                        <mod.icon className={`h-3.5 w-3.5 shrink-0 ${isModActive ? "text-blue-600" : "text-slate-400"}`} />
-                        <span className="flex-1 truncate">{mod.label}</span>
-                        <span className="flex items-center gap-1">
-                          {hasCount && (
-                            <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[9px] font-bold text-slate-500">
-                              {status.count}
-                            </span>
-                          )}
-                          {isModComplete && <span className="text-emerald-500">✓</span>}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          );
-        })}
-
-        <div className="my-2 border-t border-slate-100" />
-
-        {/* Manutenzione */}
-        <div>
-          <button
-            type="button"
-            onClick={() => toggleGroup("Manutenzione")}
-            className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-semibold text-slate-600 transition-all duration-150 hover:bg-slate-50 hover:text-slate-800"
-          >
-            <Settings className="h-4 w-4 shrink-0 text-slate-400" />
-            <span>Manutenzione</span>
-            {expandedGroups["Manutenzione"] ? (
-              <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
-            ) : (
-              <ChevronRight className="h-3.5 w-3.5 text-slate-400" />
-            )}
-          </button>
-
-          {expandedGroups["Manutenzione"] && (
-            <div className="ml-6 mt-0.5 space-y-0.5">
-              <button
-                type="button"
-                onClick={() => setShowDuplica(true)}
-                className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-xs font-semibold text-slate-600 transition-all duration-150 hover:bg-slate-50 hover:text-slate-800"
-              >
-                <Copy className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-                <span className="flex-1 truncate">Duplica negozio</span>
-              </button>
-            </div>
-          )}
-        </div>
-
-
+        <button
+          type="button"
+          onClick={() => setShowDuplica(true)}
+          className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-xs font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-slate-800"
+        >
+          <Copy className="h-4 w-4 shrink-0 text-slate-400" />
+          <span className="flex-1 truncate">Duplica negozio</span>
+        </button>
       </div>
     </nav>
   );

@@ -3,10 +3,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Store, LayoutTemplate, Copy, Loader2, Camera } from "lucide-react";
-import { getCategoriesConsigliate } from "./templates";
 import { getTemplates } from "./templates";
-
-const categories = getCategoriesConsigliate();
+import { CATEGORIE_NEGOZIO, CATEGORIA_PERSONALIZZATA_LABEL } from "@/lib/categorie-negozio";
 
 type UserTemplate = {
   id: string;
@@ -62,6 +60,7 @@ export default function WizardShell() {
     citta: "",
     logo: "",
   });
+  const [categoriaPersonalizzata, setCategoriaPersonalizzata] = useState(false);
 
   const [duplicaStoreId, setDuplicaStoreId] = useState("");
   const [stores, setStores] = useState<StoreSummary[]>([]);
@@ -143,11 +142,7 @@ export default function WizardShell() {
 
   function updateField(field: keyof typeof form, value: string) {
     setForm((f) => {
-      const next = { ...f, [field]: value };
-      if (field === "nome") {
-        next.categoria = form.categoria || categories[0] || "";
-      }
-      return next;
+      return { ...f, [field]: value };
     });
   }
 
@@ -431,18 +426,48 @@ export default function WizardShell() {
 
             <div>
               <label className="mb-1 block text-xs font-semibold text-slate-500">Categoria *</label>
-              <select
-                value={form.categoria}
-                onChange={(e) => updateField("categoria", e.target.value)}
-                className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-              >
-                <option value="">Seleziona categoria</option>
-                {categories.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
+              {categoriaPersonalizzata ? (
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    value={form.categoria}
+                    onChange={(e) => updateField("categoria", e.target.value)}
+                    placeholder="Scrivi la tua categoria"
+                    className="h-11 w-full rounded-xl border border-blue-200 bg-blue-50/40 px-4 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCategoriaPersonalizzata(false);
+                      updateField("categoria", "");
+                    }}
+                    className="text-[11px] font-semibold text-blue-600 hover:underline"
+                  >
+                    ← Scegli dall&apos;elenco
+                  </button>
+                </div>
+              ) : (
+                <select
+                  value={form.categoria}
+                  onChange={(e) => {
+                    if (e.target.value === "__personalizzata__") {
+                      setCategoriaPersonalizzata(true);
+                      updateField("categoria", "");
+                    } else {
+                      updateField("categoria", e.target.value);
+                    }
+                  }}
+                  className="h-11 w-full rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                >
+                  <option value="">Seleziona categoria</option>
+                  {CATEGORIE_NEGOZIO.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                  <option value="__personalizzata__">{CATEGORIA_PERSONALIZZATA_LABEL}</option>
+                </select>
+              )}
             </div>
 
             <div>
