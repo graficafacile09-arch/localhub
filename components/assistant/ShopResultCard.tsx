@@ -103,7 +103,7 @@ export default function ShopResultCard({ negozio, rank }: ShopResultCardProps) {
             href={buildWhatsAppUrl(negozio.telefono, negozio.nome)}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-[11px] font-bold text-blue-700 transition hover:bg-blue-100"
+            className="inline-flex items-center gap-1 rounded-lg border border-whatsapp/40 bg-whatsapp/10 px-2.5 py-1 text-[11px] font-bold text-whatsapp-dark transition hover:bg-whatsapp/20"
           >
             <MessageCircle className="h-3 w-3" />
             WA

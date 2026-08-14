@@ -314,7 +314,7 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
                   href={buildWhatsAppUrl()}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-blue-500 px-3 py-1.5 text-xs font-bold text-blue-800 transition hover:bg-yellow-300"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-whatsapp px-3 py-1.5 text-xs font-bold text-white transition hover:bg-whatsapp-dark"
                 >
                   <MessageCircle className="h-3.5 w-3.5" />
                   WhatsApp

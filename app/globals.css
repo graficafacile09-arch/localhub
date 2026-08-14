@@ -38,6 +38,11 @@
   --brand-blue-800: #1e40af;
   --brand-blue-900: #1e3a8a;
 
+  /* Verde WhatsApp — SOLO per il pulsante WhatsApp (identità terza parte,
+   * riconoscibilità del brand; unica eccezione alla palette giallo+blu). */
+  --brand-whatsapp: #25d366;
+  --brand-whatsapp-dark: #1da851;
+
   /*
    * SEMANTICA STATI (stesso design system, senza palette estranee):
    *   - successo/positivo/attivo  → BLU   (struttura, conferma)
@@ -77,6 +82,8 @@
   --color-brand-100: var(--brand-blue-100);
   --color-accent: var(--brand-yellow);
   --color-accent-light: var(--brand-yellow-light);
+  --color-whatsapp: var(--brand-whatsapp);
+  --color-whatsapp-dark: var(--brand-whatsapp-dark);
 }
 
 @media (prefers-color-scheme: dark) {

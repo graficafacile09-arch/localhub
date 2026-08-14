@@ -200,7 +200,7 @@ export default function RitiroForm({
                   href={buildWhatsAppUrl()}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-blue-700 transition hover:border-blue-300 hover:text-blue-800"
+                  className="inline-flex items-center gap-1 rounded-lg border border-whatsapp/40 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-whatsapp-dark transition hover:border-whatsapp hover:bg-whatsapp/10"
                 >
                   <MessageCircle className="h-3 w-3" />
                   WhatsApp
