@@ -164,7 +164,7 @@ export default function CestinoModule() {
           <button
             type="button"
             onClick={fetchTrash}
-            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-blue-700"
+            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-yellow-400 px-4 py-2 text-xs font-bold text-blue-800 transition hover:bg-yellow-300"
           >
             <RefreshCw className="h-3.5 w-3.5" />
             Riprova
@@ -212,7 +212,7 @@ export default function CestinoModule() {
                   type="button"
                   onClick={() => handleRestore(store.id)}
                   disabled={restoringId === store.id || deletingId === store.id}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-blue-700 disabled:opacity-60"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-yellow-400 px-4 py-2.5 text-xs font-bold text-blue-800 transition hover:bg-yellow-300 disabled:opacity-60"
                 >
                   <RotateCcw className="h-3.5 w-3.5" />
                   {restoringId === store.id ? "Ripristino..." : "Ripristina"}
@@ -225,7 +225,7 @@ export default function CestinoModule() {
                       type="button"
                       onClick={() => handleDeleteForever(store.id)}
                       disabled={deletingId === store.id}
-                      className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-1.5 text-[11px] font-bold text-white transition hover:bg-blue-700 disabled:opacity-60"
+                      className="inline-flex items-center gap-1 rounded-lg bg-blue-800 px-3 py-1.5 text-[11px] font-bold text-white transition hover:bg-blue-900 disabled:opacity-60"
                     >
                       {deletingId === store.id ? (
                         <Loader2 className="h-3 w-3 animate-spin" />

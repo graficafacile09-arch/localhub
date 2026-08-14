@@ -220,7 +220,7 @@ export default function CreaTemplateWizard({ onClose, onCreated }: Props) {
             type="button"
             onClick={handleSave}
             disabled={saving}
-            className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-blue-700 disabled:opacity-50"
+            className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-yellow-400 px-4 py-2 text-xs font-bold text-blue-800 transition hover:bg-yellow-300 disabled:opacity-50"
           >
             {saving ? (
               <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />

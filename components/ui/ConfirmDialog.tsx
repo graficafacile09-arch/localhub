@@ -92,11 +92,7 @@ export default function ConfirmDialog({
             type="button"
             onClick={onConfirm}
             disabled={loading}
-            className={`relative overflow-hidden rounded-full px-4 py-2 text-xs font-bold transition disabled:opacity-50 ${
-              destructive
-                ? "bg-gradient-to-b from-blue-800 to-blue-900 text-white shadow-md shadow-blue-900/30 ring-1 ring-blue-900 before:pointer-events-none before:absolute before:inset-0 before:rounded-full before:bg-gradient-to-b before:from-white/10 before:to-transparent hover:from-blue-700 hover:to-blue-800"
-                : "bg-gradient-to-b from-yellow-300 to-yellow-400 text-blue-700 shadow-md shadow-yellow-400/30 ring-1 ring-yellow-300 before:pointer-events-none before:absolute before:inset-0 before:rounded-full before:bg-gradient-to-b before:from-white/25 before:to-transparent hover:from-yellow-200 hover:to-yellow-300"
-            }`}
+            className={`px-4 py-2 text-xs font-bold ${destructive ? "btn-danger" : "btn-cta"}`}
           >
             {loading ? "Eliminazione..." : confirmLabel}
           </button>

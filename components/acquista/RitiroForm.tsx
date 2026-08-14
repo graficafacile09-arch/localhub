@@ -377,7 +377,7 @@ export default function RitiroForm({
           type="button"
           onClick={confermaRitiro}
           disabled={inviando || !ritiroCompleto}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white shadow-md shadow-blue-500/25 transition hover:bg-blue-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-yellow-400 px-6 py-3 text-sm font-bold text-blue-800 shadow-md shadow-blue-500/25 transition hover:bg-yellow-300 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {inviando ? (
             <>

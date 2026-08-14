@@ -67,12 +67,9 @@ export default async function ClienteDashboardPage() {
               </div>
             </div>
 
-            <Link
-              href="/negozi"
-              className="relative inline-flex shrink-0 items-center gap-2 overflow-hidden rounded-full bg-gradient-to-b from-yellow-300 to-yellow-400 px-6 py-3 text-sm font-bold text-blue-700 shadow-md shadow-yellow-400/30 ring-1 ring-yellow-300 transition-all duration-200 before:pointer-events-none before:absolute before:inset-0 before:rounded-full before:bg-gradient-to-b before:from-white/25 before:to-transparent hover:-translate-y-0.5 hover:from-yellow-200 hover:to-yellow-300 hover:shadow-lg hover:shadow-yellow-400/40 active:translate-y-0 active:scale-95 active:shadow-sm"
-            >
-              <span className="relative">Esplora i negozi</span>
-              <ArrowRight className="relative h-4 w-4" aria-hidden />
+            <Link href="/negozi" className="btn-cta shrink-0 px-6 py-3 text-sm">
+              Esplora i negozi
+              <ArrowRight className="h-4 w-4" aria-hidden />
             </Link>
           </div>
         </div>

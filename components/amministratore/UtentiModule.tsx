@@ -162,7 +162,7 @@ export default function UtentiModule({
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">Centro di gestione degli utenti LocalHub: amministratori, commercianti e clienti, con i loro ruoli e stati. I dati provengono dal database reale della piattaforma.</p>
             </div>
           </div>
-          <button type="button" onClick={() => setMostraNuovo((value) => !value)} className="inline-flex shrink-0 items-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-bold text-white shadow-md shadow-blue-600/25 transition hover:bg-blue-700"><Plus className="h-4 w-4" />Nuovo utente</button>
+          <button type="button" onClick={() => setMostraNuovo((value) => !value)} className="inline-flex shrink-0 items-center gap-2 rounded-2xl bg-yellow-400 px-5 py-3 text-sm font-bold text-blue-800 shadow-md shadow-yellow-400/40 transition hover:bg-yellow-300"><Plus className="h-4 w-4" />Nuovo utente</button>
         </div>
       </div>
 
@@ -200,7 +200,7 @@ export default function UtentiModule({
               {errore && <p role="alert" className="mt-3 rounded-xl bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700">{errore}</p>}
               <div className="mt-6 flex justify-end gap-2">
                 <button type="button" onClick={() => { setMostraNuovo(false); setErrore(null); }} className="rounded-xl px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-100">Annulla</button>
-                <button disabled={creando} type="submit" className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-blue-700 disabled:opacity-60">{creando ? "Creazione..." : "Crea utente"}</button>
+                <button disabled={creando} type="submit" className="inline-flex items-center gap-2 rounded-xl bg-yellow-400 px-4 py-2.5 text-sm font-bold text-blue-800 transition hover:bg-yellow-300 disabled:opacity-60">{creando ? "Creazione..." : "Crea utente"}</button>
               </div>
             </form>
           </div>

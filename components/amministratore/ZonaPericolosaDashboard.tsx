@@ -147,7 +147,7 @@ export default function ZonaPericolosaDashboard() {
           type="button"
           onClick={handleElimina}
           disabled={!selezionato || eliminando}
-          className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 text-sm font-bold text-white shadow-lg shadow-blue-500/30 transition hover:bg-blue-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-blue-800 px-6 text-sm font-bold text-white shadow-lg shadow-blue-900/30 transition hover:bg-blue-900 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Trash2 className="h-4 w-4" aria-hidden />
           {eliminando ? "Eliminazione..." : "Elimina negozio"}
@@ -166,7 +166,7 @@ export default function ZonaPericolosaDashboard() {
           <p className="text-sm font-bold text-blue-800">{successo}</p>
           <Link
             href="/amministratore/cestino"
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-blue-700"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-yellow-400 px-4 py-2 text-xs font-bold text-blue-800 transition hover:bg-yellow-300"
           >
             <Trash2 className="h-3.5 w-3.5" />
             Apri Cestino

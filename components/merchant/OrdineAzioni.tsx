@@ -157,7 +157,7 @@ export default function OrdineAzioni({ negozioId, ordineId, numero, stato }: Pro
               className={`inline-flex h-11 items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition active:scale-[0.98] disabled:opacity-50 ${
                 azione.distruttiva
                   ? "border border-blue-200 bg-white text-blue-600 hover:border-blue-300 hover:bg-blue-50"
-                  : "bg-blue-600 text-white shadow-sm hover:bg-blue-700"
+                  : "bg-yellow-400 text-blue-800 shadow-sm hover:bg-yellow-300"
               }`}
             >
               {invio && azioneAttiva?.stato === azione.stato ? (
@@ -278,7 +278,7 @@ export default function OrdineAzioni({ negozioId, ordineId, numero, stato }: Pro
                 type="button"
                 onClick={confermaAnnullamento}
                 disabled={invio}
-                className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-blue-700 disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-xl bg-yellow-400 px-4 py-2.5 text-xs font-bold text-blue-800 transition hover:bg-yellow-300 disabled:opacity-50"
               >
                 {invio ? (
                   <Loader2 className="h-4 w-4 animate-spin" aria-hidden />

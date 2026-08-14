@@ -134,7 +134,7 @@ export default function AttivitaCardGrid({
             <div className="mt-5 flex flex-col gap-2 border-t border-slate-100 pt-4 sm:flex-row">
               <Link
                 href={`/amministratore/negozi/${negozio.id}/edit`}
-                className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-black text-white transition hover:bg-blue-700"
+                className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-yellow-400 px-4 text-sm font-black text-blue-800 transition hover:bg-yellow-300"
               >
                 <Pencil className="h-4 w-4" aria-hidden />
                 Modifica

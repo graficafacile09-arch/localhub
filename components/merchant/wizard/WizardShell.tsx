@@ -523,7 +523,7 @@ export default function WizardShell() {
           type="button"
           onClick={handleSubmit}
           disabled={saving}
-          className="w-full rounded-xl bg-blue-600 px-6 py-3 text-xs font-bold text-white transition hover:bg-blue-700 disabled:opacity-50"
+          className="w-full rounded-xl bg-yellow-400 px-6 py-3 text-xs font-bold text-blue-800 transition hover:bg-yellow-300 disabled:opacity-50"
         >
           {saving ? (
             <div className="flex items-center justify-center gap-2">

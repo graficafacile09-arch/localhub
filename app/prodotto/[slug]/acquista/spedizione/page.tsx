@@ -54,7 +54,7 @@ export default async function SpedizionePage({
         </p>
         <Link
           href={`/prodotto/${slugProdotto}`}
-          className="mt-4 inline-block rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-blue-700"
+          className="mt-4 inline-block rounded-lg bg-yellow-400 px-5 py-2.5 text-sm font-bold text-blue-800 shadow-sm transition hover:bg-yellow-300"
         >
           Torna al prodotto
         </Link>

@@ -115,7 +115,7 @@ export default function StepPubblicazione({ storeId, store, counts, onDataChange
               type="button"
               onClick={() => handlePublish(true)}
               disabled={saving}
-              className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 text-sm font-black text-white shadow-md shadow-blue-500/25 transition hover:bg-blue-700 disabled:opacity-60"
+              className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-yellow-400 px-6 text-sm font-black text-blue-800 shadow-md shadow-blue-500/25 transition hover:bg-yellow-300 disabled:opacity-60"
             >
               {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}
               Aggiorna negozio
@@ -134,7 +134,7 @@ export default function StepPubblicazione({ storeId, store, counts, onDataChange
             type="button"
             onClick={() => handlePublish(true)}
             disabled={saving || !pronto}
-            className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 text-sm font-black text-white shadow-md shadow-blue-500/25 transition hover:bg-blue-700 disabled:opacity-60"
+            className="inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-yellow-400 px-6 text-sm font-black text-blue-800 shadow-md shadow-blue-500/25 transition hover:bg-yellow-300 disabled:opacity-60"
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}
             Pubblica negozio

@@ -142,7 +142,7 @@ export default function MerchantProductListManager({
                 type="button"
                 onClick={() => eseguiAzione("attiva")}
                 disabled={occupato}
-                className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-blue-600 px-3.5 text-xs font-bold text-white transition hover:bg-blue-700 disabled:opacity-50"
+                className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-yellow-400 px-3.5 text-xs font-bold text-blue-800 transition hover:bg-yellow-300 disabled:opacity-50"
               >
                 Attiva
               </button>

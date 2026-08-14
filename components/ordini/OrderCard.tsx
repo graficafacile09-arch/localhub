@@ -222,10 +222,10 @@ export function OrderCard({
           )}
         </div>
         <span
-          className={`inline-flex shrink-0 items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold text-white shadow-sm transition group-hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400 ${
+          className={`inline-flex shrink-0 items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold text-blue-800 shadow-sm transition group-hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400 ${
             vista === "cliente"
-              ? "bg-blue-600 group-hover:bg-blue-700"
-              : "bg-blue-600 group-hover:bg-blue-700"
+              ? "bg-yellow-400 group-hover:bg-yellow-300"
+              : "bg-yellow-400 group-hover:bg-yellow-300"
           }`}
         >
           {ctaLabel}

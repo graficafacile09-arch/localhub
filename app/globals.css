@@ -32,6 +32,11 @@
   /* Brand — accento/CTA */
   --brand-yellow: #facc15;
   --brand-yellow-light: #fde047;
+  --brand-yellow-deep: #eab308;
+
+  /* Blu scuro — testo su CTA gialla e azioni distruttive */
+  --brand-blue-800: #1e40af;
+  --brand-blue-900: #1e3a8a;
 
   /*
    * SEMANTICA STATI (stesso design system, senza palette estranee):
@@ -54,6 +59,8 @@
   --shadow-cta-blue-hover: 0 6px 20px rgba(37, 99, 235, 0.55);
   --shadow-cta-yellow: 0 4px 12px rgba(250, 204, 21, 0.35);
   --shadow-cta-yellow-hover: 0 6px 20px rgba(250, 204, 21, 0.5);
+  --shadow-cta-blue-deep: 0 4px 12px rgba(30, 58, 138, 0.35);
+  --shadow-cta-blue-deep-hover: 0 6px 20px rgba(30, 58, 138, 0.5);
 }
 
 @theme inline {
@@ -83,6 +90,86 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/*
+ * CTA CONDIVISE (identità homepage):
+ *   - .btn-cta    → azione principale: GIALLO pieno + testo BLU.
+ *                   Nessun gradiente, nessuna riga interna: rilievo tramite
+ *                   ombra + ring leggero. Hover più chiaro, active più profondo,
+ *                   focus visibile blu.
+ *   - .btn-danger → azione distruttiva: BLU intenso (non rosso) + icona/ring,
+ *                   differenziata per intensità e bordo.
+ */
+@layer components {
+  .btn-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 9999px;
+    background-color: var(--brand-yellow);
+    color: var(--brand-blue-800);
+    padding: 0.625rem 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+    line-height: 1.25rem;
+    box-shadow: inset 0 0 0 1px rgba(250, 204, 21, 0.55), var(--shadow-cta-yellow);
+    transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .btn-cta:hover {
+    background-color: var(--brand-yellow-light);
+    transform: translateY(-2px);
+    box-shadow: inset 0 0 0 1px rgba(250, 204, 21, 0.55), var(--shadow-cta-yellow-hover);
+  }
+  .btn-cta:active {
+    background-color: var(--brand-yellow-deep);
+    transform: translateY(0) scale(0.98);
+    box-shadow: inset 0 0 0 1px rgba(250, 204, 21, 0.55), 0 1px 2px 0 rgb(15 23 42 / 0.1);
+  }
+  .btn-cta:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--brand-blue), 0 0 0 6px rgb(255 255 255 / 0.9);
+  }
+  .btn-cta:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: inset 0 0 0 1px rgba(250, 204, 21, 0.4), var(--shadow-cta-yellow);
+  }
+
+  .btn-danger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 9999px;
+    background-color: var(--brand-blue-800);
+    color: #ffffff;
+    padding: 0.625rem 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+    line-height: 1.25rem;
+    box-shadow: inset 0 0 0 1px rgba(30, 64, 175, 0.5), var(--shadow-cta-blue-deep);
+    transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .btn-danger:hover {
+    background-color: var(--brand-blue-900);
+    transform: translateY(-2px);
+    box-shadow: inset 0 0 0 1px rgba(30, 64, 175, 0.5), var(--shadow-cta-blue-deep-hover);
+  }
+  .btn-danger:active {
+    transform: translateY(0) scale(0.98);
+  }
+  .btn-danger:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px var(--brand-blue), 0 0 0 6px rgb(255 255 255 / 0.9);
+  }
+  .btn-danger:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
 }
 
 /*

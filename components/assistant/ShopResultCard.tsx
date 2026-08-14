@@ -82,7 +82,7 @@ export default function ShopResultCard({ negozio, rank }: ShopResultCardProps) {
         <Link
           href={hrefNegozio}
           onClick={chiudiAssistente}
-          className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-2.5 py-1 text-[11px] font-bold text-white transition hover:bg-blue-700"
+          className="inline-flex items-center gap-1 rounded-lg bg-yellow-400 px-2.5 py-1 text-[11px] font-bold text-blue-800 transition hover:bg-yellow-300"
         >
           <ExternalLink className="h-3 w-3" />
           Scheda

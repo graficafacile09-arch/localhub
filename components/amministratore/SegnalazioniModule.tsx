@@ -494,7 +494,7 @@ export default function SegnalazioniModule() {
                   </div>
 
                   <div className="shrink-0 self-end md:self-center">
-                    <span className="inline-flex items-center gap-1 rounded-xl bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700 group-hover:bg-blue-600 group-hover:text-white transition">
+                    <span className="inline-flex items-center gap-1 rounded-xl bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700 group-hover:bg-yellow-300 group-hover:text-blue-800 transition">
                       Gestisci
                     </span>
                   </div>
@@ -625,7 +625,7 @@ export default function SegnalazioniModule() {
                   type="button"
                   onClick={salvaDettaglio}
                   disabled={salvandoDettaglio}
-                  className="h-11 px-5 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 transition disabled:opacity-50 flex items-center gap-2"
+                  className="h-11 px-5 rounded-xl bg-yellow-400 text-blue-800 text-sm font-bold hover:bg-yellow-300 transition disabled:opacity-50 flex items-center gap-2"
                 >
                   {salvandoDettaglio && <Loader2 className="h-4 w-4 animate-spin" />}
                   Salva modifiche

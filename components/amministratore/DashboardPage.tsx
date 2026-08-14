@@ -77,7 +77,7 @@ export default function DashboardPage() {
         <button
           type="button"
           onClick={() => { setLoading(true); void fetchDashboard(); }}
-          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-blue-700"
+          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-yellow-400 px-4 py-2 text-xs font-bold text-blue-800 transition hover:bg-yellow-300"
         >
           <RefreshCw className="h-3.5 w-3.5" />
           Riprova

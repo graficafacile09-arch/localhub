@@ -265,7 +265,7 @@ export default function ProductVariantSelector({
         {acquistabile && hrefAcquista ? (
           <Link
             href={hrefAcquista}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-base font-bold text-white shadow-sm transition hover:bg-blue-700"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-yellow-400 px-4 py-3 text-base font-bold text-blue-800 shadow-sm transition hover:bg-yellow-300"
           >
             <ShoppingBag className="h-5 w-5" />
             ACQUISTA

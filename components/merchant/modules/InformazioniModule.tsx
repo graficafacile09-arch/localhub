@@ -96,7 +96,7 @@ function SaveButton({ saving, onSave }: { saving: boolean; onSave: () => void })
       type="button"
       onClick={onSave}
       disabled={saving}
-      className="inline-flex h-10 items-center gap-2 rounded-xl bg-blue-600 px-5 text-sm font-bold text-white shadow-md shadow-blue-500/25 transition hover:bg-blue-700 active:scale-[0.98] disabled:opacity-50"
+      className="inline-flex h-10 items-center gap-2 rounded-xl bg-yellow-400 px-5 text-sm font-bold text-blue-800 shadow-md shadow-blue-500/25 transition hover:bg-yellow-300 active:scale-[0.98] disabled:opacity-50"
     >
       {saving ? "Salvataggio..." : "Salva modifiche"}
     </button>

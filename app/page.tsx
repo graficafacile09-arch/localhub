@@ -150,7 +150,7 @@ export default async function Home() {
                     </div>
 
                     <div className="p-5 pt-0">
-                      <span className="block w-full bg-blue-600 group-hover:bg-blue-700 text-white py-2.5 rounded-xl font-semibold text-sm transition text-center">
+                      <span className="block w-full bg-yellow-400 group-hover:bg-yellow-300 text-blue-800 py-2.5 rounded-xl font-semibold text-sm transition text-center">
                         Scopri
                       </span>
                     </div>

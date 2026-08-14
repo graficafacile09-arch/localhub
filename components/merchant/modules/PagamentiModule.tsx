@@ -485,7 +485,7 @@ export default function PagamentiModule({ storeId }: Props) {
                             type="button"
                             disabled={connectBusy}
                             onClick={handleConnectStripe}
-                            className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50"
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-yellow-400 px-3 py-2 text-xs font-semibold text-blue-800 transition hover:bg-yellow-300 disabled:opacity-50"
                           >
                             {connectBusy ? "Reindirizzamento…" : "Collega Stripe"}
                           </button>

@@ -252,7 +252,7 @@ export default async function PaginaNegozio({
               href={buildWhatsAppUrl()}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-xl bg-blue-500 px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-blue-600 hover:shadow-md"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-blue-500 px-3.5 py-2 text-xs font-bold text-blue-800 shadow-sm transition hover:bg-yellow-300 hover:shadow-md"
             >
               <MessageCircle className="h-4 w-4" />
               WhatsApp

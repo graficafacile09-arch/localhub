@@ -260,7 +260,7 @@ export default function ImpostazioniModule({
                   type="button"
                   onClick={() => salva(sezione.chiavi)}
                   disabled={Object.values(inSalvataggio).some(Boolean)}
-                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 text-sm font-black text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-yellow-400 px-6 text-sm font-black text-blue-800 transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <Save className="h-4 w-4" aria-hidden />
                   Salva

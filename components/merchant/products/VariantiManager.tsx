@@ -649,7 +649,7 @@ export default function VariantiManager({ negozioId, productId, prodotto }: Prop
           type="button"
           onClick={() => void creaCombinazioni()}
           disabled={creando || daCreare.length === 0}
-          className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-blue-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+          className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-yellow-400 px-3.5 py-2 text-xs font-bold text-blue-800 shadow-sm transition hover:bg-yellow-300 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
         >
           {creando ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
           {creando

@@ -84,7 +84,7 @@ export default async function AdminStoreProdottiPage({
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <Link
               href={`/amministratore/negozi/${negozioId}/prodotti/ai`}
-              className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-blue-600 to-blue-500 px-5 text-sm font-bold text-white shadow-lg shadow-blue-400/40 transition hover:from-blue-500 hover:to-blue-400"
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-yellow-400 px-5 text-sm font-bold text-blue-800 shadow-lg shadow-yellow-400/40 transition hover:bg-yellow-300"
             >
               <Sparkles className="h-4 w-4" />
               Aggiungi con AI
@@ -135,7 +135,7 @@ export default async function AdminStoreProdottiPage({
             <div className="flex flex-wrap justify-center gap-3">
               <Link
                 href={`/amministratore/negozi/${negozioId}/prodotti/ai`}
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 text-sm font-semibold text-white transition hover:bg-blue-700"
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-yellow-400 px-5 text-sm font-semibold text-blue-800 transition hover:bg-yellow-300"
               >
                 <Sparkles className="h-4 w-4" />
                 Aggiungi con AI

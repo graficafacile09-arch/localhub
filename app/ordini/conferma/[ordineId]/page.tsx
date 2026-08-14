@@ -66,7 +66,7 @@ export default async function ConfermaOrdinePage({
           <p className="text-sm font-semibold text-slate-600">Ordine non trovato.</p>
           <Link
             href="/"
-            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-blue-700"
+            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-yellow-400 px-5 py-2.5 text-sm font-bold text-blue-800 transition hover:bg-yellow-300"
           >
             <Home className="h-4 w-4" /> Torna alla home
           </Link>
@@ -219,7 +219,7 @@ export default async function ConfermaOrdinePage({
               </p>
               <Link
                 href="/cliente/ordini"
-                className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-blue-700 sm:w-auto"
+                className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-yellow-400 px-5 py-3 text-sm font-bold text-blue-800 transition hover:bg-yellow-300 sm:w-auto"
               >
                 <ReceiptText className="h-4 w-4" /> Vai ai miei ordini
               </Link>
@@ -232,7 +232,7 @@ export default async function ConfermaOrdinePage({
               </p>
               <Link
                 href="/ordini/recupera"
-                className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-blue-700 sm:w-auto"
+                className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-yellow-400 px-5 py-3 text-sm font-bold text-blue-800 transition hover:bg-yellow-300 sm:w-auto"
               >
                 <PackageSearch className="h-4 w-4" /> Recupera i miei ordini
               </Link>
@@ -243,7 +243,7 @@ export default async function ConfermaOrdinePage({
         <div className="mt-4 flex flex-wrap gap-3">
           <Link
             href="/"
-            className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-blue-700"
+            className="inline-flex items-center gap-2 rounded-xl bg-yellow-400 px-5 py-2.5 text-sm font-bold text-blue-800 transition hover:bg-yellow-300"
           >
             <Home className="h-4 w-4" /> Torna alla home
           </Link>

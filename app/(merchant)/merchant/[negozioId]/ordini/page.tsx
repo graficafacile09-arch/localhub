@@ -172,7 +172,7 @@ export default async function MerchantOrdiniPage({
             filtro !== "tutti" ? (
               <Link
                 href={baseHref}
-                className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-blue-700"
+                className="inline-flex items-center gap-2 rounded-xl bg-yellow-400 px-5 py-2.5 text-sm font-bold text-blue-800 transition hover:bg-yellow-300"
               >
                 Mostra tutti gli ordini
               </Link>
@@ -191,7 +191,7 @@ export default async function MerchantOrdiniPage({
           action={
             <Link
               href={baseHref}
-              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-blue-700"
+              className="inline-flex items-center gap-2 rounded-xl bg-yellow-400 px-5 py-2.5 text-sm font-bold text-blue-800 transition hover:bg-yellow-300"
             >
               Mostra tutti gli ordini
             </Link>

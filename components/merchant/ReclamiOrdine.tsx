@@ -358,7 +358,7 @@ export default function ReclamiOrdine({
                       type="button"
                       onClick={() => void inviaMessaggio(reclamo.id)}
                       disabled={invioMessaggio || reclamoChiuso}
-                      className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl bg-blue-600 px-4 text-xs font-bold text-white shadow-sm transition hover:bg-blue-700 active:scale-[0.98] disabled:opacity-50"
+                      className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl bg-yellow-400 px-4 text-xs font-bold text-blue-800 shadow-sm transition hover:bg-yellow-300 active:scale-[0.98] disabled:opacity-50"
                     >
                       {invioMessaggio ? (
                         <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
@@ -392,7 +392,7 @@ export default function ReclamiOrdine({
                           disabled={azioneAttiva !== null}
                           className={`inline-flex h-9 items-center gap-2 rounded-xl px-3.5 text-xs font-bold transition active:scale-[0.98] disabled:opacity-50 ${
                             risolvi
-                              ? "bg-blue-600 text-white shadow-sm hover:bg-blue-700"
+                              ? "bg-yellow-400 text-blue-800 shadow-sm hover:bg-yellow-300"
                               : azione.stato === "chiuso"
                                 ? "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
                                 : "border border-blue-200 bg-white text-blue-700 hover:bg-blue-50"

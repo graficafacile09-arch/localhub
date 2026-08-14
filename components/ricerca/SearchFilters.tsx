@@ -162,7 +162,7 @@ export default function SearchFilters({
         {campi}
         <button
           type="submit"
-          className="inline-flex h-8 items-center gap-1 rounded-lg bg-blue-600 px-3 text-xs font-bold text-white transition hover:bg-blue-700"
+          className="inline-flex h-8 items-center gap-1 rounded-lg bg-yellow-400 px-3 text-xs font-bold text-blue-800 transition hover:bg-yellow-300"
         >
           Applica
         </button>
@@ -189,7 +189,7 @@ export default function SearchFilters({
         <div className="flex gap-2 pt-1">
           <button
             type="submit"
-            className="h-8 flex-1 rounded-lg bg-blue-600 text-xs font-bold text-white transition hover:bg-blue-700"
+            className="h-8 flex-1 rounded-lg bg-yellow-400 text-xs font-bold text-blue-800 transition hover:bg-yellow-300"
           >
             Applica filtri
           </button>

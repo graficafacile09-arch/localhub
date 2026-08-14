@@ -179,7 +179,7 @@ export default function StoreEditor({ storeId, basePath = "/merchant" }: Props) 
                 setLoading(true);
                 void refresh();
               }}
-              className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-blue-700"
+              className="rounded-xl bg-yellow-400 px-4 py-2 text-xs font-bold text-blue-800 transition hover:bg-yellow-300"
             >
               Riprova
             </button>
@@ -222,7 +222,7 @@ export default function StoreEditor({ storeId, basePath = "/merchant" }: Props) 
                 <button
                   type="button"
                   onClick={() => setActiveStep(nextStep.id)}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-blue-700"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-yellow-400 px-4 py-2.5 text-xs font-bold text-blue-800 shadow-sm transition hover:bg-yellow-300"
                 >
                   {nextStep.numero}. {nextStep.titolo} <ChevronRight className="h-4 w-4" />
                 </button>

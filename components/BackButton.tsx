@@ -49,7 +49,7 @@ export default function BackButton({
     <button
       type="button"
       onClick={handleClick}
-      className={`inline-flex items-center gap-2 rounded-full border border-blue-600 px-5 py-2 font-semibold text-blue-600 transition hover:bg-blue-600 hover:text-white ${className}`}
+      className={`inline-flex items-center gap-2 rounded-full border border-blue-600 px-5 py-2 font-semibold text-blue-600 transition hover:bg-yellow-300 hover:text-blue-800 ${className}`}
     >
       <ArrowLeft className="h-4 w-4" aria-hidden />
       {label}

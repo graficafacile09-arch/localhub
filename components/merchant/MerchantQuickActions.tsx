@@ -101,7 +101,7 @@ export default function MerchantQuickActions({ storeId }: { storeId: string }) {
         disabled={preparing}
         className="group flex items-center gap-4 rounded-2xl border border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100/50 p-5 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-lg hover:shadow-blue-500/15 disabled:cursor-wait disabled:opacity-70 cursor-pointer"
       >
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white transition group-hover:bg-blue-700">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-yellow-400 text-blue-800 transition group-hover:bg-yellow-300">
           {preparing ? (
             <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
           ) : (

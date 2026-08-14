@@ -233,7 +233,7 @@ export default function CategorieModule({ categorie }: { categorie: CategoriaAdm
           <button
             type="button"
             onClick={apriCreazione}
-            className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 text-sm font-black text-white transition hover:bg-blue-700"
+            className="inline-flex h-12 items-center justify-center gap-2 rounded-xl bg-yellow-400 px-5 text-sm font-black text-blue-800 transition hover:bg-yellow-300"
           >
             <Plus className="h-4 w-4" aria-hidden />
             Nuova categoria
@@ -305,7 +305,7 @@ export default function CategorieModule({ categorie }: { categorie: CategoriaAdm
               type="button"
               onClick={salva}
               disabled={salvando}
-              className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 text-sm font-black text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-yellow-400 px-5 text-sm font-black text-blue-800 transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {salvando && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
               {inModifica ? "Salva modifiche" : "Crea categoria"}

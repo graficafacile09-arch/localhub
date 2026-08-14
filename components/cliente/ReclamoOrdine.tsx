@@ -288,7 +288,7 @@ export default function ReclamoOrdine({
                     type="button"
                     onClick={() => void inviaRisposta(attivo.id)}
                     disabled={invioRisposta || !risposta.trim()}
-                    className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-blue-700 disabled:opacity-50"
+                    className="inline-flex items-center gap-2 rounded-xl bg-yellow-400 px-4 py-2 text-xs font-bold text-blue-800 transition hover:bg-yellow-300 disabled:opacity-50"
                   >
                     {invioRisposta ? (
                       <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
@@ -398,7 +398,7 @@ export default function ReclamoOrdine({
                 type="button"
                 onClick={inviaReclamo}
                 disabled={invio}
-                className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-blue-700 disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-xl bg-yellow-400 px-4 py-2 text-xs font-bold text-blue-800 transition hover:bg-yellow-300 disabled:opacity-50"
               >
                 {invio ? (
                   <Loader2 className="h-4 w-4 animate-spin" aria-hidden />

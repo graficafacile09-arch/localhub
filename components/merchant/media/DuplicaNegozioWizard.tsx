@@ -120,7 +120,7 @@ export default function DuplicaNegozioWizard({ storeId, storeName, onClose, edit
             type="button"
             onClick={handleDuplica}
             disabled={saving}
-            className="w-full rounded-xl bg-blue-600 px-5 py-2.5 text-xs font-bold text-white transition hover:bg-blue-700 disabled:opacity-50"
+            className="w-full rounded-xl bg-yellow-400 px-5 py-2.5 text-xs font-bold text-blue-800 transition hover:bg-yellow-300 disabled:opacity-50"
           >
             {saving ? (
               <div className="flex items-center justify-center gap-2">

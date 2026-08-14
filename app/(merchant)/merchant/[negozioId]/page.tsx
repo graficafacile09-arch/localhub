@@ -166,7 +166,7 @@ export default async function MerchantStorePage({
       {/* Scansione — azione principale, immediatamente visibile */}
       <Link
         href={`/merchant/${negozioId}/prodotti/ai`}
-        className="flex items-center justify-center gap-3 rounded-2xl bg-gradient-to-b from-blue-500 to-blue-700 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-blue-500/30 transition-all hover:from-blue-400 hover:to-blue-600 active:scale-[0.98]"
+        className="flex items-center justify-center gap-3 rounded-2xl bg-yellow-400 px-5 py-3 text-sm font-bold text-blue-800 shadow-lg shadow-yellow-400/30 transition-all hover:bg-yellow-300 active:scale-[0.98]"
       >
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15">
           <Camera className="h-5 w-5" />

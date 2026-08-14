@@ -97,7 +97,7 @@ export default function AttivitaEliminaButton({
                   type="button"
                   onClick={handleElimina}
                   disabled={eliminando}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-blue-700 disabled:opacity-60"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-blue-800 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-blue-900 disabled:opacity-60"
                 >
                   {eliminando ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />

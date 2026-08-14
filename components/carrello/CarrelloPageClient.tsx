@@ -26,7 +26,7 @@ export default function CarrelloPageClient() {
           <div className="mt-6 flex flex-wrap justify-center gap-2">
             <Link
               href="/negozi"
-              className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-blue-700"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-yellow-400 px-4 py-2.5 text-sm font-bold text-blue-800 shadow-sm transition hover:bg-yellow-300"
             >
               <Store className="h-4 w-4" aria-hidden />
               Vai ai negozi
@@ -177,7 +177,7 @@ export default function CarrelloPageClient() {
 
           <Link
             href="/checkout"
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-base font-bold text-white shadow-sm transition hover:bg-blue-700 active:scale-[0.98]"
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-yellow-400 px-4 py-3 text-base font-bold text-blue-800 shadow-sm transition hover:bg-yellow-300 active:scale-[0.98]"
           >
             Procedi al checkout
             <ArrowRight className="h-5 w-5" aria-hidden />
