@@ -74,7 +74,7 @@ export default function StepIdentita({ storeId, store, onDataChanged }: StepProp
     setUploading(target);
     setError(null);
     try {
-      const url = await uploadStoreImage(storeId, file, target === "logo" ? "logo" : "copertina");
+      const url = await uploadStoreImage(storeId, file);
       if (target === "logo") setLogoUrl(url);
       else setCopertinaUrl(url);
     } catch (e) {

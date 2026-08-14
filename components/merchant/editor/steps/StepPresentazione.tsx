@@ -49,7 +49,7 @@ export default function StepPresentazione({ storeId, store, onDataChanged }: Ste
     setUploading(true);
     setError(null);
     try {
-      const url = await uploadStoreImage(storeId, file, "galleria");
+      const url = await uploadStoreImage(storeId, file);
       setGalleria((prev) => [...prev, url]);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Caricamento non riuscito.");
