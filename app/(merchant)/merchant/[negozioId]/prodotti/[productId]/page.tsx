@@ -4,6 +4,7 @@ import MerchantEmptyState from "@/components/merchant/MerchantEmptyState";
 import MerchantProductForm from "@/components/merchant/MerchantProductForm";
 import { requireCurrentUser } from "@/lib/auth/session";
 import { getMerchantProductForStore, getMerchantStoreForUser } from "@/lib/merchant/data";
+import { contaInteressati } from "@/lib/prodotti-avvisami";
 
 export default async function MerchantEditProductPage({
   params,
@@ -44,6 +45,7 @@ export default async function MerchantEditProductPage({
   }
 
   const product = productResult.data;
+  const interessati = await contaInteressati(productId);
 
   return (
     <div className="space-y-4">
@@ -78,6 +80,11 @@ export default async function MerchantEditProductPage({
             <p className="mt-1 text-sm text-slate-500">
               {product.categoria ?? "Categoria"} · {product.attivo ? "Attivo" : "Bozza"}
             </p>
+            {interessati > 0 && (
+              <p className="mt-1 text-sm font-semibold text-blue-700">
+                {interessati} {interessati === 1 ? "persona vuole essere avvisata" : "persone vogliono essere avvisate"} quando torna disponibile
+              </p>
+            )}
           </div>
         </div>
       </div>

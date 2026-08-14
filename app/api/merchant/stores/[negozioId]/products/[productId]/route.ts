@@ -2,6 +2,7 @@ import { apiError, apiOk } from "@/lib/api/response";
 import { requireApiArea } from "@/lib/auth/session-area";
 import { deleteMerchantProductForStore, getMerchantProductForStore, getMerchantStoreForUser, patchMerchantProductForStore, updateMerchantProductForStore } from "@/lib/merchant/data";
 import { deleteImageFromStorage } from "@/lib/supabase/storage";
+import { notificaSeTornatoDisponibile } from "@/lib/prodotti-avvisami";
 import type { MerchantProductInput } from "@/lib/merchant/types";
 
 const STATI_CONDIZIONE_VALIDI = ["nuovo", "usato", "ricondizionato"] as const;
@@ -167,6 +168,13 @@ export async function PUT(
     return apiError("PRODUCT_UPDATE_FAILED", updateResult.errorMessage ?? "Impossibile aggiornare il prodotto.", 500);
   }
 
+  // Ritorno di disponibilità (0 → >0): genera le notifiche "avvisami".
+  await notificaSeTornatoDisponibile(
+    productId,
+    oldProductResult.data?.quantita_disponibile,
+    updateResult.data.quantita_disponibile
+  );
+
   if (oldImmagine && payload.immaginePrincipale?.startsWith("data:")) {
     await deleteImageFromStorage(oldImmagine);
   }
@@ -241,6 +249,15 @@ export async function PATCH(
 
   if (!patchResult.data) {
     return apiError("PRODUCT_UPDATE_FAILED", patchResult.errorMessage ?? "Impossibile aggiornare il prodotto.", 500);
+  }
+
+  // Ritorno di disponibilità (0 → >0): genera le notifiche "avvisami".
+  if (patch.quantitaDisponibile !== undefined) {
+    await notificaSeTornatoDisponibile(
+      productId,
+      productResult.data?.quantita_disponibile,
+      patchResult.data.quantita_disponibile
+    );
   }
 
   return apiOk({ product: patchResult.data });
