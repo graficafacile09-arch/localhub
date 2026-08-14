@@ -11,22 +11,17 @@ import { getMerchantStoreNavItems } from "./navigation";
  * Navigazione del negozio selezionato (sidebar desktop, Area Venditore).
  *
  * Riga ricca con gerarchia chiara: [icona in chip] etichetta + descrizione.
- * Badge ROSSI per l'attenzione (mai blu):
- *   - Ordini [N]  → ordini NON LETTI (sistema letto_at, già esistente);
- *   - Reclami [N] → reclami APERTI/IN GESTIONE (badge rosso dedicato).
- * Le voci arrivano da navigation.ts (unica fonte), inclusa la voce
- * "Reclami" che apre la lista ordini filtrata (?filtro=reclami).
+ * Badge ROSSO solo per Reclami APERTI/IN GESTIONE. Il conteggio degli
+ * ordini NON LETTI NON compare più qui: ora è un badge rosso accanto al
+ * NOME del negozio nell'elenco "I tuoi negozi" (MerchantStoreSwitcher).
  */
 export default function MerchantSidebarNav({
   storeId,
   storeName,
-  ordiniNonLetti = 0,
   reclamiAperti = 0,
 }: {
   storeId: string;
   storeName: string;
-  /** Conteggio ordini non letti (badge \"Ordini [N]\", sistema letto_at). */
-  ordiniNonLetti?: number;
   /** Conteggio reclami attivi (badge rosso sulla voce Reclami). */
   reclamiAperti?: number;
 }) {
@@ -113,12 +108,9 @@ export default function MerchantSidebarNav({
           : item.href
             ? isActive(item.href, item.exactActive)
             : false;
-        const badge =
-          item.key === "ordini"
-            ? ordiniNonLetti
-            : item.key === "reclami"
-              ? reclamiAperti
-              : 0;
+        // Badge attenzione SOLO per Reclami: il badge ordini non letti ora
+        // vive accanto al nome del negozio nell'elenco "I tuoi negozi".
+        const badge = item.key === "reclami" ? reclamiAperti : 0;
         const mostraBadge = badge > 0;
 
         return (
@@ -153,11 +145,7 @@ export default function MerchantSidebarNav({
                 {mostraBadge && (
                   <span
                     className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-red-600 px-1.5 text-[10px] font-black leading-none text-white"
-                    title={
-                      item.key === "reclami"
-                        ? `${badge} ${badge === 1 ? "reclamo aperto" : "reclami aperti"}`
-                        : `${badge} ${badge === 1 ? "ordine non letto" : "ordini non letti"}`
-                    }
+                    title={`${badge} ${badge === 1 ? "reclamo aperto" : "reclami aperti"}`}
                   >
                     {badge > 9 ? "9+" : badge}
                   </span>

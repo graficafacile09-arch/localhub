@@ -4,6 +4,7 @@ import MerchantEmptyState from "@/components/merchant/MerchantEmptyState";
 import EliminaNegozioButton from "@/components/amministratore/EliminaNegozioButton";
 import { requireCurrentUser } from "@/lib/auth/session";
 import { getMerchantStoresForUser } from "@/lib/merchant/data";
+import { getConteggiOrdiniNonLetti } from "@/lib/merchant/ordini";
 
 /**
  * Home condivisa tra Area Venditore (default) e Area Amministratore.
@@ -67,6 +68,12 @@ export default async function MerchantHomePage({
     );
   }
 
+  // Badge rosso "avvisi ordini" accanto al nome di ogni negozio: il conteggio
+  // degli ordini NON LETTI per negozio (best-effort, sistema letto_at esistente).
+  const ordiniNonLettiPerNegozio = await getConteggiOrdiniNonLetti(
+    storesResult.data.map((s) => s.id)
+  );
+
   return (
     <div className="space-y-6">
       <div className="rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm">
@@ -101,8 +108,16 @@ export default async function MerchantHomePage({
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
                 Il mio negozio
               </p>
-              <h2 className="mt-3 text-2xl font-black tracking-tight text-slate-900">
+              <h2 className="mt-3 flex flex-wrap items-center gap-2 text-2xl font-black tracking-tight text-slate-900">
                 {store.nome}
+                {(ordiniNonLettiPerNegozio[store.id] ?? 0) > 0 && (
+                  <span
+                    className="inline-flex h-6 min-w-6 shrink-0 items-center justify-center rounded-full bg-red-600 px-2 text-xs font-black text-white"
+                    title={`${ordiniNonLettiPerNegozio[store.id]} ${ordiniNonLettiPerNegozio[store.id] === 1 ? "ordine non letto" : "ordini non letti"}`}
+                  >
+                    {ordiniNonLettiPerNegozio[store.id] > 9 ? "9+" : ordiniNonLettiPerNegozio[store.id]}
+                  </span>
+                )}
               </h2>
               <p className="mt-2 text-sm text-slate-600">
                 {store.categoria ?? "Categoria non definita"}

@@ -1,7 +1,22 @@
 import Link from "next/link";
 import type { MerchantStoreSummary } from "@/lib/merchant/types";
 
-export default function MerchantStoreSwitcher({ stores, currentStoreId }: { stores: MerchantStoreSummary[]; currentStoreId?: string }) {
+/**
+ * Elenco "I tuoi negozi" (sidebar).
+ * Accanto al NOME del negozio mostra un badge rosso con il numero di ordini
+ * NON LETTI (avvisi): il commerciante vede subito quale negozio ha ordini
+ * nuovi, poi clicca per entrare e gestirli.
+ */
+export default function MerchantStoreSwitcher({
+  stores,
+  currentStoreId,
+  ordiniNonLettiPerNegozio,
+}: {
+  stores: MerchantStoreSummary[];
+  currentStoreId?: string;
+  /** Conteggio ordini non letti per negozio (badge rosso accanto al nome). */
+  ordiniNonLettiPerNegozio?: Record<string, number>;
+}) {
   if (stores.length === 0) {
     return null;
   }
@@ -14,6 +29,7 @@ export default function MerchantStoreSwitcher({ stores, currentStoreId }: { stor
       <div className="mt-4 space-y-2">
         {stores.map((store) => {
           const active = store.id === currentStoreId;
+          const ordiniNonLetti = ordiniNonLettiPerNegozio?.[store.id] ?? 0;
 
           return (
             <Link
@@ -25,7 +41,17 @@ export default function MerchantStoreSwitcher({ stores, currentStoreId }: { stor
                   : "border-slate-200 bg-slate-50 text-slate-700 hover:border-blue-200 hover:bg-blue-50/60"
               }`}
             >
-              <div className="font-semibold">{store.nome}</div>
+              <div className="flex items-center gap-2">
+                <span className="min-w-0 flex-1 truncate font-semibold">{store.nome}</span>
+                {ordiniNonLetti > 0 && (
+                  <span
+                    className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-red-600 px-1.5 text-[10px] font-black leading-none text-white"
+                    title={`${ordiniNonLetti} ${ordiniNonLetti === 1 ? "ordine non letto" : "ordini non letti"}`}
+                  >
+                    {ordiniNonLetti > 9 ? "9+" : ordiniNonLetti}
+                  </span>
+                )}
+              </div>
               <div className="mt-1 text-xs text-slate-500">{store.categoria ?? "Categoria non definita"}</div>
             </Link>
           );

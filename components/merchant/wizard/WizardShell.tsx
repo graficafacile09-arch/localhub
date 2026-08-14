@@ -26,7 +26,6 @@ type SystemTemplate = {
   nome: string;
   descrizione: string;
   icone: string[];
-  categorieConsigliate: string[];
   moduli_attivi: string[];
   defaultColor?: { primary: string; secondary: string; accent: string };
 };

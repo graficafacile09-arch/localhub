@@ -114,14 +114,17 @@ export default function MerchantShell({
                 <MerchantSidebarNav
                   storeId={currentStore.id}
                   storeName={currentStore.nome}
-                  ordiniNonLetti={ordiniNonLettiPerNegozio?.[currentStore.id] ?? 0}
                   reclamiAperti={reclamiApertiPerNegozio?.[currentStore.id] ?? 0}
                 />
               </div>
             ) : null}
           </div>
 
-          <MerchantStoreSwitcher stores={stores} currentStoreId={currentStoreId} />
+          <MerchantStoreSwitcher
+            stores={stores}
+            currentStoreId={currentStoreId}
+            ordiniNonLettiPerNegozio={ordiniNonLettiPerNegozio}
+          />
         </aside>
 
         {/* Contenuto principale ──────────────────────────────────────────────── */}
