@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Store, LayoutTemplate, Copy, Loader2, Camera } from "lucide-react";
 import { getTemplates } from "./templates";
 import { CATEGORIE_NEGOZIO, CATEGORIA_PERSONALIZZATA_LABEL } from "@/lib/categorie-negozio";
+import { uploadStoreImage } from "@/components/merchant/editor/lib/upload-image";
 
 type UserTemplate = {
   id: string;
@@ -60,6 +61,8 @@ export default function WizardShell() {
     logo: "",
   });
   const [categoriaPersonalizzata, setCategoriaPersonalizzata] = useState(false);
+  /** File del logo selezionato (upload persistente dopo la creazione del negozio). */
+  const [logoFile, setLogoFile] = useState<File | null>(null);
 
   const [duplicaStoreId, setDuplicaStoreId] = useState("");
   const [stores, setStores] = useState<StoreSummary[]>([]);
@@ -167,20 +170,47 @@ export default function WizardShell() {
     setSaving(true);
 
     try {
-      let response: Response;
-
       if (mode === "blank") {
-        response = await fetch("/api/merchant/stores", {
+        // 1) Crea il negozio (SENZA logo: il logo viene caricato dopo, in
+        //    modo persistente, appena si dispone dell'ID reale).
+        const createRes = await fetch("/api/merchant/stores", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             nome: form.nome.trim(),
             categoria: form.categoria.trim(),
             citta: form.citta.trim(),
-            logo_url: form.logo || undefined,
           }),
         });
-      } else if (mode === "template") {
+        const createJson = await createRes.json();
+        if (!createJson.success || !createJson.data?.storeId) {
+          setError(createJson.error?.message ?? "Errore durante la creazione del negozio.");
+          return;
+        }
+        const storeId = createJson.data.storeId as string;
+
+        // 2) Logo persistente: upload reale nello Storage (multipart /media,
+        //    lo stesso meccanismo dell'editor) + salvataggio di logo_url.
+        if (logoFile) {
+          try {
+            const logoUrl = await uploadStoreImage(storeId, logoFile);
+            await fetch(`/api/merchant/stores/${storeId}/settings`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ logo_url: logoUrl }),
+            });
+          } catch {
+            // Best-effort: il negozio è già stato creato; il logo si può
+            // ricaricare dall'editor se l'upload fallisce.
+          }
+        }
+
+        router.push(`/merchant/${storeId}/edit`);
+        return;
+      }
+
+      let response: Response;
+      if (mode === "template") {
         const slug = toSlug(form.nome);
         response = await fetch(`/api/merchant/templates/${selectedTemplateId}/use`, {
           method: "POST",
@@ -242,6 +272,9 @@ export default function WizardShell() {
   function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    setLogoFile(file);
+    // Preview locale (data URL) solo per la visualizzazione immediata:
+    // il salvataggio persistente avviene via /media dopo la creazione.
     const reader = new FileReader();
     reader.onload = (ev) => {
       if (typeof ev.target?.result === "string") {

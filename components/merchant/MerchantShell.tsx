@@ -139,11 +139,7 @@ export default function MerchantShell({
       </div>
 
       {/* ── Bottom Navigation mobile ──────────────────────────────────────────── */}
-      <MerchantBottomNav
-        storeId={currentStore?.id ?? null}
-        area={area}
-        ordiniNonLettiPerNegozio={ordiniNonLettiPerNegozio}
-      />
+      <MerchantBottomNav storeId={currentStore?.id ?? null} area={area} />
     </main>
   );
 }

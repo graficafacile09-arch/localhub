@@ -13,14 +13,11 @@ import {
 type MerchantBottomNavProps = {
   storeId: string | null;
   area?: "merchant" | "admin";
-  /** Conteggio ordini non letti per negozio (badge "Ordini [N]"). */
-  ordiniNonLettiPerNegozio?: Record<string, number>;
 };
 
 export default function MerchantBottomNav({
   storeId: storeIdProp,
   area = "merchant",
-  ordiniNonLettiPerNegozio,
 }: MerchantBottomNavProps) {
   const pathname = usePathname();
 
@@ -38,9 +35,6 @@ export default function MerchantBottomNav({
       : storeIdProp;
 
   const hasStore = Boolean(storeId);
-
-  // Badge "Ordini [N]" per il negozio corrente (letto_at esistente).
-  const ordiniNonLetti = storeId ? (ordiniNonLettiPerNegozio?.[storeId] ?? 0) : 0;
 
   // Le voci (etichette, icone, path) arrivano da navigation.ts — unica fonte.
   const items = isAdmin
@@ -112,8 +106,9 @@ export default function MerchantBottomNav({
                 return <MerchantBottomNavAltro key={item.key} />;
               }
 
-              // ── Voci standard ─────────────────────────────────────────────
-              const badge = item.key === "ordini" && !isAdmin ? ordiniNonLetti : 0;
+              // ── Voci standard (nessun badge "Ordini [N]": il conteggio
+              //    degli ordini non letti compare SOLO accanto al nome del
+              //    negozio nell'elenco "I tuoi negozi"). ───────────────────
               return (
                 <Link
                   key={item.key}
@@ -134,11 +129,6 @@ export default function MerchantBottomNav({
                       `}
                       aria-hidden
                     />
-                    {badge > 0 && (
-                      <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[9px] font-black leading-none text-white ring-2 ring-white">
-                        {badge > 9 ? "9+" : badge}
-                      </span>
-                    )}
                   </span>
                   <span
                     className={`text-[10px] font-semibold leading-none tracking-wide transition-colors duration-150
