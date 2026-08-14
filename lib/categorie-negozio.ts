@@ -12,6 +12,35 @@
  * colonne o tabelle.
  */
 
+import { toSlug } from "./slug";
+
+/**
+ * Categoria del catalogo con il relativo slug pubblico.
+ * Lo slug coincide con la colonna `public.categorie.slug` (vedi migration
+ * 20260828_categorie_negozi_estese.sql), così i link `/categorie/<slug>`
+ * continuano a risolvere verso le pagine categoria già funzionanti.
+ */
+export type VoceCategoriaNegozio = {
+  nome: string;
+  slug: string;
+};
+
+/**
+ * Override dello slug per i nomi il cui slug in DB NON coincide con
+ * `toSlug(nome)`. Serve a mantenere gli slug esistenti (e i link relativi)
+ * senza rompere la navigazione pubblica.
+ */
+const SLUG_CATEGORIA_OVERRIDE: Record<string, string> = {
+  // toSlug("B&B") produrrebbe "b-b", ma in DB lo slug canonico è
+  // "bed-and-breakfast".
+  "B&B": "bed-and-breakfast",
+};
+
+/** Slug canonico (DB) di una categoria a partire dal suo nome. */
+export function slugCategoria(nome: string): string {
+  return SLUG_CATEGORIA_OVERRIDE[nome] ?? toSlug(nome);
+}
+
 export const CATEGORIE_NEGOZIO: string[] = [
   "Abbigliamento",
   "Calzature",
@@ -85,6 +114,18 @@ export const CATEGORIE_NEGOZIO: string[] = [
   "Servizi per aziende",
   "Altro",
 ].sort((a, b) => a.localeCompare(b, "it", { sensitivity: "base" }));
+
+/**
+ * Le 71 categorie dell'editor come coppie { nome, slug }, già ordinate
+ * alfabeticamente (stesso ordinamento di `CATEGORIE_NEGOZIO`). È la FONTE
+ * UNICA per la navigazione pubblica (homepage e pagina /categorie): ogni
+ * componente/helper che deve elencare le categorie pubbliche importa questo
+ * array invece di mantenere un secondo elenco hardcoded.
+ */
+export const CATEGORIE_NEGOZIO_META: VoceCategoriaNegozio[] = CATEGORIE_NEGOZIO.map((nome) => ({
+  nome,
+  slug: slugCategoria(nome),
+}));
 
 /** Etichetta dell'opzione per inserire una categoria personalizzata. */
 export const CATEGORIA_PERSONALIZZATA_LABEL = "+ Inserisci categoria personalizzata";

@@ -7,7 +7,6 @@ import { getNegozioCardImmagine } from "@/lib/negozi-card-immagini";
 import { chiavePreferito, getStatoPreferitiPerPagina } from "@/lib/cliente/favorites";
 import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
 import CategoryTile, { TutteCategorieTile } from "@/components/home/CategoryTile";
-import { normalizza } from "@/lib/text-utils";
 
 // La homepage deve riflettere in tempo reale i negozi in evidenza flaggati
 // dal merchant (il toggle "In evidenza" della dashboard), quindi non viene
@@ -25,19 +24,10 @@ export default async function Home() {
     getStatoPreferitiPerPagina(),
   ]);
 
-  // Categorie in ordine alfabetico crescente (A→Z) in base al NOME
-  // visualizzato, non all'ID o allo slug. L'ordinamento avviene qui, nel
-  // punto di visualizzazione, senza modificare i dati del database né il
-  // comportamento di getCategorieConNegozi (usato anche altrove).
-  // normalizza() rende il confronto case-insensitive e insensibile agli
-  // accenti (es. "Caffè" ≡ "caffe"), come già avviene nel resto del sito;
-  // il tie-break finale con localeCompare italiano garantisce stabilità.
-  const categorieOrdinate = [...categorieConNegozi].sort((a, b) => {
-    const nomeA = normalizza(a.categoria.nome);
-    const nomeB = normalizza(b.categoria.nome);
-    if (nomeA !== nomeB) return nomeA.localeCompare(nomeB, "it");
-    return a.categoria.nome.localeCompare(b.categoria.nome, "it");
-  });
+  // Le categorie arrivano GIÀ ordinate alfabeticamente (A→Z) dalla fonte
+  // unica lib/categorie-negozio.ts tramite getCategorieConNegozi(): nessun
+  // secondo ordinamento qui, lo stesso elenco ordinato vale per /categorie.
+  const categorieOrdinate = categorieConNegozi;
 
   return (
     <main className="min-h-screen bg-gray-50">

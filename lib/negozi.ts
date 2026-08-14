@@ -9,6 +9,7 @@ import {
   terminiSignificativi,
 } from "./search-tollerante";
 import type { Categoria } from "@/types/negozio";
+import { CATEGORIE_NEGOZIO_META } from "./categorie-negozio";
 
 const getDb = () => {
   try {
@@ -310,27 +311,41 @@ export type CategoriaConNegozi = {
   count: number;
 };
 
-// Categorie della pagina /categorie: SOLO quelle realmente usate dai negozi
-// attivi. Derivate dal DB tramite lo stesso criterio di matching già usato
-// da getConteggiNegoziPerCategoria / getCategoriaShowcase (uguaglianza
-// case-insensitive su nome + sinonimi): nessuna struttura dati parallela,
-// nessun dato hardcoded, ogni categoria compare una sola volta.
-// ESATTAMENTE 2 query SQL, zero N+1.
+// Categorie della navigazione pubblica (homepage + pagina /categorie).
+// FONTE UNICA: le 71 categorie dell'editor (lib/categorie-negozio.ts),
+// già ordinate alfabeticamente (A → Z, collazione italiana). Vengono sempre
+// mostrate TUTTE, anche quelle senza negozi (count = 0), a differenza della
+// vecchia logica che elencava solo le categorie realmente usate.
+// Il DB (public.categorie) arricchisce ogni voce con id/descrizione/sinonimi
+// e i conteggi reali; le categorie legacy presenti solo in DB restano intatte
+// ma non compaiono in questa lista (0 extra). ESATTAMENTE 2 query, zero N+1.
 export async function getCategorieConNegozi(): Promise<CategoriaConNegozi[]> {
   const db = getDb();
-  if (!db) return [];
 
-  const categorie = await getCategorie();
-  if (categorie.length === 0) return [];
+  const dbCategorie = await getCategorie();
+  const conteggi = dbCategorie.length
+    ? await getConteggiNegoziPerCategoria(dbCategorie)
+    : new Map<string, number>();
 
-  const conteggi = await getConteggiNegoziPerCategoria(categorie);
+  // Mappa slug → categoria DB (per id/descrizione/sinonimi e conteggi reali).
+  const perSlug = new Map(dbCategorie.map((c) => [c.slug, c]));
 
-  return categorie
-    .filter((categoria) => (conteggi.get(categoria.id) ?? 0) > 0)
-    .map((categoria) => ({
-      categoria,
-      count: conteggi.get(categoria.id) ?? 0,
-    }));
+  return CATEGORIE_NEGOZIO_META.map(({ nome, slug }) => {
+    const dbCat = perSlug.get(slug);
+    const categoria: Categoria = dbCat ?? {
+      id: slug,
+      nome,
+      slug,
+      descrizione: null,
+      icona: null,
+      immagine: null,
+      sinonimi: [],
+      ordine: 0,
+      attivo: true,
+    };
+    const count = dbCat ? (conteggi.get(dbCat.id) ?? 0) : 0;
+    return { categoria, count };
+  });
 }
 
 export async function getCategoriaBySlug(slug: string) {

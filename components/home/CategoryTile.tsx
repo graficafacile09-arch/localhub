@@ -1,83 +1,11 @@
 import Link from "next/link";
-import {
-  Baby,
-  CalendarDays,
-  Car,
-  Cat,
-  Coffee,
-  Croissant,
-  Dog,
-  Droplets,
-  Dumbbell,
-  Flower2,
-  Footprints,
-  Gem,
-  Hammer,
-  HeartPulse,
-  Home,
-  LayoutGrid,
-  PenLine,
-  Pizza,
-  Scissors,
-  Shirt,
-  Smartphone,
-  Store,
-  UtensilsCrossed,
-  Wrench,
-  Zap,
-  type LucideIcon,
-} from "lucide-react";
+import { LayoutGrid } from "lucide-react";
 import type { Categoria } from "@/types/negozio";
-
-// Simboli (icone) piccoli con sfondo pastello coordinato: un tocco di colore
-// per ogni categoria, senza immagini e senza icone giocattolose.
-type StileCategoria = {
-  icona: LucideIcon;
-  /** Seconda icona affiancata (es. cane + gatto). */
-  icona2?: LucideIcon;
-  bg: string;
-  text: string;
-};
-
-const FALLBACK: StileCategoria = { icona: Store, bg: "bg-blue-100", text: "text-blue-600" };
-
-const ICONE_CATEGORIE: ({ match: string[] } & StileCategoria)[] = [
-  { match: ["panificio", "bakery", "forno", "pane", "pasticceria", "panetteria"], icona: Croissant, bg: "bg-amber-100", text: "text-amber-600" },
-  { match: ["beauty", "bellezza", "parrucchiere", "estetista", "barbiere", "salone", "skincare", "makeup"], icona: Scissors, bg: "bg-fuchsia-100", text: "text-fuchsia-600" },
-  { match: ["casa", "arredo", "arredamento", "mobili", "interior", "decorazioni", "illuminazione", "cucina"], icona: Home, bg: "bg-orange-100", text: "text-orange-600" },
-  { match: ["auto", "officina", "meccanico", "carrozzeria", "concessionaria", "gomme", "macchina"], icona: Car, bg: "bg-sky-100", text: "text-sky-600" },
-  { match: ["salute", "farmacia", "parafarmacia", "benessere", "sanitaria", "medicinali", "wellness"], icona: HeartPulse, bg: "bg-rose-100", text: "text-rose-600" },
-  { match: ["tech", "elettronica", "tecnologia", "telefonia", "computer", "smartphone", "tablet", "informatica"], icona: Smartphone, bg: "bg-violet-100", text: "text-violet-600" },
-  { match: ["cartoleria", "cancelleria", "ufficio", "forniture"], icona: PenLine, bg: "bg-indigo-100", text: "text-indigo-600" },
-  { match: ["bimbi", "bambini", "giocattoli", "infanzia", "neonati", "scuola"], icona: Baby, bg: "bg-yellow-100", text: "text-yellow-600" },
-  { match: ["sport", "fitness", "palestra", "yoga", "training", "pilates", "running", "allenamento"], icona: Dumbbell, bg: "bg-emerald-100", text: "text-emerald-600" },
-  // NB: niente "shop" tra i match: "Pet Shop & Animali" lo intercetterebbe
-  // (il find prende il PRIMO match) e mostrerebbe la maglietta. Resta "shopping".
-  { match: ["abbigliamento", "moda", "boutique", "fashion", "vestiti", "shopping", "acquisti"], icona: Shirt, bg: "bg-pink-100", text: "text-pink-600" },
-  { match: ["pet", "animali", "cane", "gatto", "veterinario", "toelettatura", "mangime"], icona: Dog, icona2: Cat, bg: "bg-teal-100", text: "text-teal-600" },
-  { match: ["ristorante", "ristoranti", "trattoria", "osteria", "cucina", "tavola calda", "food"], icona: UtensilsCrossed, bg: "bg-red-100", text: "text-red-600" },
-  { match: ["bar", "caffe", "caffè", "caffetteria", "colazione", "coffee"], icona: Coffee, bg: "bg-lime-100", text: "text-lime-600" },
-  { match: ["pizzeria", "pizza", "focaccia"], icona: Pizza, bg: "bg-amber-100", text: "text-amber-600" },
-  { match: ["calzature", "scarpe", "footwear", "sneakers", "sandali", "stivali"], icona: Footprints, bg: "bg-cyan-100", text: "text-cyan-600" },
-  { match: ["fioraio", "fiori", "florist", "piante", "giardino", "composizioni"], icona: Flower2, bg: "bg-green-100", text: "text-green-600" },
-  { match: ["gioielleria", "gioielli", "orologeria", "oro", "argento", "pietre preziose"], icona: Gem, bg: "bg-purple-100", text: "text-purple-600" },
-  { match: ["elettricista", "elettricita", "impianti", "elettrico", "quadro elettrico"], icona: Zap, bg: "bg-yellow-100", text: "text-yellow-600" },
-  { match: ["idraulico", "idraulica", "caldaia", "termoidraulica", "riscaldamento"], icona: Droplets, bg: "bg-blue-100", text: "text-blue-600" },
-  { match: ["falegname", "falegnameria", "carpenteria", "legno", "mobilio"], icona: Hammer, bg: "bg-stone-100", text: "text-stone-600" },
-  { match: ["servizi", "services", "professionisti", "artigiani", "varie", "generico"], icona: Wrench, bg: "bg-cyan-100", text: "text-cyan-600" },
-  { match: ["eventi", "tempo libero", "event", "intrattenimento", "spettacolo", "cultura"], icona: CalendarDays, bg: "bg-fuchsia-100", text: "text-fuchsia-600" },
-  { match: ["gelateria", "gelato"], icona: Coffee, bg: "bg-pink-100", text: "text-pink-600" },
-];
-
-function stilePerCategoria(categoria: Categoria): StileCategoria {
-  const testo = `${categoria.slug} ${categoria.nome}`.toLowerCase();
-  const trovato = ICONE_CATEGORIE.find((stile) =>
-    stile.match.some((termine) => testo.includes(termine))
-  );
-  return trovato ?? FALLBACK;
-}
+import { stileCategoria } from "@/lib/categorie-icone";
 
 // Card pulita senza immagini: simbolo colorato + nome ben leggibile.
+// L'icona e i colori arrivano dalla FONTE UNICA lib/categorie-icone.ts
+// (stileCategoria(slug)): nessun elenco icone duplicato in questo componente.
 const CARD_CLASS =
   "group flex flex-col items-center gap-2 rounded-2xl bg-white p-3.5 ring-1 ring-slate-100 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md md:p-4";
 
@@ -93,7 +21,7 @@ export default function CategoryTile({
   index: number;
   count?: number;
 }) {
-  const stile = stilePerCategoria(categoria);
+  const stile = stileCategoria(categoria.slug);
   const Icona = stile.icona;
   const SecondaIcona = stile.icona2;
 
