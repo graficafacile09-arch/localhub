@@ -63,11 +63,11 @@ export default async function OrdiniPage({
       {/* ── Intestazione ─────────────────────────────────────────────────────── */}
       <div className="rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm md:p-8">
         <div className="flex items-start gap-4">
-          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-teal-50 text-teal-600 ring-1 ring-teal-100">
+          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 ring-1 ring-blue-100">
             <ReceiptText className="h-7 w-7" aria-hidden />
           </span>
           <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-teal-700">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
               Area Clienti
             </p>
             <h1 className="mt-1.5 text-2xl font-black tracking-tight text-slate-900 md:text-3xl">
@@ -95,10 +95,10 @@ export default async function OrdiniPage({
                     : `/cliente/ordini?filtro=${f.key}`
                 }
                 aria-current={attivo ? "page" : undefined}
-                className={`inline-flex h-9 items-center gap-2 rounded-full px-3.5 text-xs font-bold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-500 ${
+                className={`inline-flex h-9 items-center gap-2 rounded-full px-3.5 text-xs font-bold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 ${
                   attivo
-                    ? "bg-teal-600 text-white shadow-sm"
-                    : "border border-slate-200 bg-white text-slate-600 hover:border-teal-300 hover:text-teal-700"
+                    ? "bg-gradient-to-b from-yellow-300 to-yellow-400 text-slate-800 shadow-sm ring-1 ring-yellow-300"
+                    : "border border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:text-blue-700"
                 }`}
               >
                 {f.etichetta}
@@ -106,7 +106,7 @@ export default async function OrdiniPage({
                   <span
                     className={`inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-black tabular-nums ${
                       attivo
-                        ? "bg-white/20 text-white"
+                        ? "bg-white/40 text-slate-800"
                         : "bg-slate-100 text-slate-500"
                     }`}
                   >
@@ -131,7 +131,7 @@ export default async function OrdiniPage({
           </p>
           <Link
             href="/cliente/ordini"
-            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-teal-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-teal-700"
+            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-yellow-300 to-yellow-400 px-5 py-2.5 text-sm font-bold text-slate-800 shadow-md shadow-yellow-400/30 ring-1 ring-yellow-300 transition hover:from-yellow-200 hover:to-yellow-300"
           >
             Riprova
           </Link>
@@ -145,7 +145,7 @@ export default async function OrdiniPage({
           action={
             <Link
               href="/negozi"
-              className="inline-flex items-center gap-2 rounded-xl bg-teal-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-teal-700"
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-yellow-300 to-yellow-400 px-5 py-2.5 text-sm font-bold text-slate-800 shadow-md shadow-yellow-400/30 ring-1 ring-yellow-300 transition hover:from-yellow-200 hover:to-yellow-300"
             >
               Esplora i negozi
               <ArrowRight className="h-4 w-4" aria-hidden />
@@ -161,7 +161,7 @@ export default async function OrdiniPage({
           action={
             <Link
               href="/cliente/ordini"
-              className="inline-flex items-center gap-2 rounded-xl bg-teal-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-teal-700"
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-yellow-300 to-yellow-400 px-5 py-2.5 text-sm font-bold text-slate-800 shadow-md shadow-yellow-400/30 ring-1 ring-yellow-300 transition hover:from-yellow-200 hover:to-yellow-300"
             >
               Mostra tutti gli ordini
               <ArrowRight className="h-4 w-4" aria-hidden />

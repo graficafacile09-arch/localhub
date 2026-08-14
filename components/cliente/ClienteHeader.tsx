@@ -8,7 +8,7 @@ import ClienteUserMenu from "./ClienteUserMenu";
  */
 export default function ClienteHeader() {
   return (
-    <div className="hidden border-b border-teal-900/15 bg-[linear-gradient(180deg,#0f766e_0%,#0d9488_100%)] text-white shadow-lg md:block">
+    <div className="hidden border-b border-blue-900/15 bg-[linear-gradient(180deg,#1d4ed8_0%,#2563eb_100%)] text-white shadow-lg md:block">
       <div className="h-1 bg-linear-to-r from-cyan-300 via-white to-yellow-300" />
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-4">
         <div className="flex items-center gap-5">
@@ -32,7 +32,7 @@ export default function ClienteHeader() {
                 Area Clienti
               </span>
             </div>
-            <p className="mt-1 text-sm text-teal-100">
+            <p className="mt-1 text-sm text-blue-100">
               La tua area personale su LocalHub
             </p>
           </div>

@@ -168,7 +168,7 @@ export default function ClienteProfiloModule() {
           <button
             type="button"
             onClick={handleRiprova}
-            className="inline-flex items-center gap-2 rounded-xl bg-teal-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-teal-700"
+            className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-blue-700"
           >
             Riprova
           </button>
@@ -183,11 +183,11 @@ export default function ClienteProfiloModule() {
       <div className="rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm md:p-8">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-4">
-            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-teal-50 text-teal-600 ring-1 ring-teal-100">
+            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 ring-1 ring-blue-100">
               <UserRound className="h-7 w-7" aria-hidden />
             </span>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-teal-700">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
                 Area Clienti
               </p>
               <h1 className="mt-1.5 text-3xl font-black tracking-tight text-slate-900">
@@ -297,7 +297,7 @@ export default function ClienteProfiloModule() {
         {avatarSalvato && !salvato && (
           <p
             role="status"
-            className="mt-5 flex items-center gap-2 rounded-xl bg-teal-50 px-4 py-2.5 text-sm font-semibold text-teal-700"
+            className="mt-5 flex items-center gap-2 rounded-xl bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-700"
           >
             <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden />
             Avatar aggiornato.

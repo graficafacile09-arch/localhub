@@ -35,7 +35,7 @@ export default function ClienteError({
       <button
         type="button"
         onClick={unstable_retry}
-        className="mt-6 inline-flex items-center gap-2 rounded-xl bg-teal-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-teal-700"
+        className="mt-6 inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-yellow-300 to-yellow-400 px-5 py-2.5 text-sm font-bold text-slate-800 shadow-md shadow-yellow-400/30 ring-1 ring-yellow-300 transition hover:from-yellow-200 hover:to-yellow-300"
       >
         Riprova
       </button>

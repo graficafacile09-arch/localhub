@@ -78,19 +78,19 @@ export default function ClienteBottomNav() {
                 >
                   <span
                     className={`flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200
-                      ${active ? "bg-teal-50" : "bg-transparent"}
+                      ${active ? "bg-blue-50" : "bg-transparent"}
                     `}
                   >
                     <Icon
                       className={`h-5 w-5 transition-colors duration-150
-                        ${active ? "text-teal-600" : "text-slate-400"}
+                        ${active ? "text-blue-600" : "text-slate-400"}
                       `}
                       aria-hidden
                     />
                   </span>
                   <span
                     className={`text-[10px] font-semibold leading-none tracking-wide transition-colors duration-150
-                      ${active ? "text-teal-600" : "text-slate-400"}
+                      ${active ? "text-blue-600" : "text-slate-400"}
                     `}
                   >
                     {item.label}

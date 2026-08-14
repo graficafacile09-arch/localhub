@@ -1,8 +1,50 @@
 @import "tailwindcss";
 
+/*
+ * ═══════════════════════════════════════════════════════════════════════
+ * DESIGN SYSTEM LOCALHUB — unica fonte cromatica (homepage = riferimento)
+ * ═══════════════════════════════════════════════════════════════════════
+ *
+ * PALETTE UFFICIALE (identità InCittà):
+ *   - BLU      → struttura, navigazione, elementi principali, sfondi hero.
+ *                (blue-600 #2563eb, blue-700 #1d4ed8, blue-500 #3b82f6)
+ *   - GIALLO   → accento, CTA, elementi evidenziati, stati importanti.
+ *                (yellow-300 #fde047, yellow-400 #facc15)
+ *   - CYAN     → solo come dettaglio nel “gradiente arcobaleno” di accento
+ *                (striscia superiore di header/hero).
+ *
+ * EFFETTO “RILIEVO” (homepage): profondità tramite shadow + ring + una
+ * striscia di luce superiore (gradiente white/25 → trasparente), senza 3D.
+ * I valori qui sotto sono i TOKEN canonici; i componenti usano le stesse
+ * classi Tailwind, quindi questo blocco è la documentazione + fallback.
+ */
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* Brand — struttura */
+  --brand-blue: #2563eb;
+  --brand-blue-dark: #1d4ed8;
+  --brand-blue-light: #3b82f6;
+  --brand-blue-50: #eff6ff;
+  --brand-blue-100: #dbeafe;
+
+  /* Brand — accento/CTA */
+  --brand-yellow: #facc15;
+  --brand-yellow-light: #fde047;
+
+  /* Superfici */
+  --surface-page: #eef3f8;
+  --surface-card: #ffffff;
+  --surface-card-border: rgba(226, 232, 240, 0.6);
+
+  /* Ombre — rilievo leggero */
+  --shadow-card: 0 1px 2px 0 rgb(15 23 42 / 0.05);
+  --shadow-card-hover: 0 20px 40px -32px rgb(37 99 235 / 0.45);
+  --shadow-cta-blue: 0 4px 12px rgba(37, 99, 235, 0.4);
+  --shadow-cta-blue-hover: 0 6px 20px rgba(37, 99, 235, 0.55);
+  --shadow-cta-yellow: 0 4px 12px rgba(250, 204, 21, 0.35);
+  --shadow-cta-yellow-hover: 0 6px 20px rgba(250, 204, 21, 0.5);
 }
 
 @theme inline {
@@ -10,6 +52,15 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Token del design system esposti come colori Tailwind (brand / accent). */
+  --color-brand: var(--brand-blue);
+  --color-brand-dark: var(--brand-blue-dark);
+  --color-brand-light: var(--brand-blue-light);
+  --color-brand-50: var(--brand-blue-50);
+  --color-brand-100: var(--brand-blue-100);
+  --color-accent: var(--brand-yellow);
+  --color-accent-light: var(--brand-yellow-light);
 }
 
 @media (prefers-color-scheme: dark) {

@@ -20,7 +20,7 @@ export default function ClienteMobileTopBar({
 
   return (
     <div
-      className="sticky top-0 z-40 flex h-12 items-center gap-2 border-b border-teal-900/20 bg-[linear-gradient(180deg,#0f766e_0%,#0d9488_100%)] px-3 text-white md:hidden"
+      className="sticky top-0 z-40 flex h-12 items-center gap-2 border-b border-blue-900/20 bg-[linear-gradient(180deg,#1d4ed8_0%,#2563eb_100%)] px-3 text-white md:hidden"
       style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
     >
       {/* Home button — sempre visibile (stessa posizione della MerchantTopBar) */}

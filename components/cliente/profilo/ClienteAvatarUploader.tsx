@@ -84,7 +84,7 @@ export default function ClienteAvatarUploader({
           onClick={() => inputRef.current?.click()}
           disabled={uploading}
           aria-label="Carica una nuova immagine del profilo"
-          className="absolute -bottom-1 -right-1 flex h-9 w-9 items-center justify-center rounded-full bg-teal-600 text-white shadow-md transition hover:bg-teal-700 disabled:opacity-60"
+          className="absolute -bottom-1 -right-1 flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-b from-yellow-300 to-yellow-400 text-slate-800 shadow-md shadow-yellow-400/30 ring-1 ring-yellow-300 transition hover:from-yellow-200 hover:to-yellow-300 disabled:opacity-60"
         >
           {uploading ? (
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
@@ -107,7 +107,7 @@ export default function ClienteAvatarUploader({
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={uploading}
-          className="text-sm font-semibold text-teal-700 transition hover:text-teal-800 disabled:opacity-60"
+          className="text-sm font-semibold text-blue-700 transition hover:text-blue-800 disabled:opacity-60"
         >
           {uploading ? "Caricamento..." : "Cambia avatar"}
         </button>

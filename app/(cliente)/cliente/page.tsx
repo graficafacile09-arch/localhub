@@ -46,15 +46,15 @@ export default async function ClienteDashboardPage() {
     <div className="space-y-5">
       {/* ── Intestazione dashboard ───────────────────────────────────────────── */}
       <div className="overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-sm">
-        <div className="h-1.5 bg-linear-to-r from-cyan-300 via-teal-400 to-yellow-300" />
+        <div className="h-1.5 bg-linear-to-r from-cyan-300 via-blue-400 to-yellow-300" />
         <div className="p-6 md:p-8">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-4">
-              <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-teal-50 text-teal-600 ring-1 ring-teal-100">
+              <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 ring-1 ring-blue-100">
                 <ShoppingBasket className="h-7 w-7" aria-hidden />
               </span>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-teal-700">
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
                   Area Clienti
                 </p>
                 <h1 className="mt-1.5 text-3xl font-black tracking-tight text-slate-900">
@@ -69,7 +69,7 @@ export default async function ClienteDashboardPage() {
 
             <Link
               href="/negozi"
-              className="inline-flex shrink-0 items-center gap-2 rounded-2xl bg-teal-600 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-teal-700"
+              className="inline-flex shrink-0 items-center gap-2 rounded-2xl bg-gradient-to-b from-yellow-300 to-yellow-400 px-5 py-3 text-sm font-bold text-slate-800 shadow-md shadow-yellow-400/30 ring-1 ring-yellow-300 transition hover:from-yellow-200 hover:to-yellow-300"
             >
               Esplora i negozi
               <ArrowRight className="h-4 w-4" aria-hidden />

@@ -154,7 +154,7 @@ export default function DashboardPage() {
         <KpiCard icon={BadgePercent} label="Offerte attive" value={kpi.offerteAttive} sub="elementi pubblicati" accent={{ bg: "bg-pink-50", text: "text-pink-600" }} />
         <KpiCard icon={CalendarDays} label="Eventi" value={kpi.eventi} sub="elementi pubblicati" accent={{ bg: "bg-indigo-50", text: "text-indigo-600" }} />
         <KpiCard icon={Activity} label="Scansioni AI oggi" value={kpi.scansioniOggi} sub={`${totaleScansioni} negli ultimi 7 giorni`} accent={{ bg: "bg-slate-100", text: "text-slate-600" }} />
-        <KpiCard icon={ShieldCheck} label="Negozi reali" value={kpi.negoziAttivi + kpi.negoziSospesi} sub="dati demo esclusi" accent={{ bg: "bg-teal-50", text: "text-teal-600" }} />
+        <KpiCard icon={ShieldCheck} label="Negozi reali" value={kpi.negoziAttivi + kpi.negoziSospesi} sub="dati demo esclusi" accent={{ bg: "bg-blue-50", text: "text-blue-600" }} />
       </div>
 
       {/* ── Grafici ────────────────────────────────────────────────────── */}

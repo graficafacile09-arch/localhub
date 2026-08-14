@@ -92,7 +92,7 @@ export default async function OrdineDettaglioPage({ params }: { params: Promise<
         </p>
         <Link
           href="/cliente/ordini"
-          className="mt-6 inline-flex items-center gap-2 rounded-xl bg-teal-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-teal-700"
+          className="mt-6 inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-yellow-300 to-yellow-400 px-5 py-2.5 text-sm font-bold text-slate-800 shadow-md shadow-yellow-400/30 ring-1 ring-yellow-300 transition hover:from-yellow-200 hover:to-yellow-300"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden /> Torna ai miei ordini
         </Link>
@@ -114,7 +114,7 @@ export default async function OrdineDettaglioPage({ params }: { params: Promise<
         </p>
         <Link
           href="/cliente/ordini"
-          className="mt-6 inline-flex items-center gap-2 rounded-xl bg-teal-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-teal-700"
+          className="mt-6 inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-yellow-300 to-yellow-400 px-5 py-2.5 text-sm font-bold text-slate-800 shadow-md shadow-yellow-400/30 ring-1 ring-yellow-300 transition hover:from-yellow-200 hover:to-yellow-300"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden /> Torna ai miei ordini
         </Link>
@@ -226,13 +226,13 @@ export default async function OrdineDettaglioPage({ params }: { params: Promise<
       <div className="flex flex-wrap gap-3">
         <Link
           href="/cliente/ordini"
-          className="inline-flex items-center gap-2 rounded-xl bg-teal-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-teal-700"
+          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-yellow-300 to-yellow-400 px-5 py-2.5 text-sm font-bold text-slate-800 shadow-md shadow-yellow-400/30 ring-1 ring-yellow-300 transition hover:from-yellow-200 hover:to-yellow-300"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden /> Torna ai miei ordini
         </Link>
         <Link
           href={linkNegozio}
-          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 transition hover:border-teal-300 hover:text-teal-700"
+          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 transition hover:border-blue-300 hover:text-blue-700"
         >
           <ReceiptText className="h-4 w-4" aria-hidden /> Visita il negozio
         </Link>

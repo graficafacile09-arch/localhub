@@ -51,7 +51,7 @@ export default async function MerchantHomePage({
         <div className="text-center">
           <Link
             href="/merchant/nuovo"
-            className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white transition hover:bg-blue-700"
+            className="relative inline-flex items-center gap-2 overflow-hidden rounded-full bg-gradient-to-b from-yellow-300 to-yellow-400 px-6 py-3 text-sm font-bold text-slate-800 shadow-md shadow-yellow-400/30 ring-1 ring-yellow-300 transition-all duration-200 before:pointer-events-none before:absolute before:inset-0 before:rounded-full before:bg-gradient-to-b before:from-white/25 before:to-transparent hover:-translate-y-0.5 hover:from-yellow-200 hover:to-yellow-300 hover:shadow-lg hover:shadow-yellow-400/40 active:translate-y-0 active:scale-95"
           >
             Crea il tuo primo negozio
           </Link>
@@ -86,7 +86,7 @@ export default async function MerchantHomePage({
         <div className="mb-4">
           <Link
             href="/merchant/nuovo"
-            className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-blue-700"
+            className="relative inline-flex items-center gap-2 overflow-hidden rounded-full bg-gradient-to-b from-yellow-300 to-yellow-400 px-4 py-2 text-xs font-bold text-slate-800 shadow-md shadow-yellow-400/30 ring-1 ring-yellow-300 transition-all duration-200 before:pointer-events-none before:absolute before:inset-0 before:rounded-full before:bg-gradient-to-b before:from-white/25 before:to-transparent hover:-translate-y-0.5 hover:from-yellow-200 hover:to-yellow-300 hover:shadow-lg hover:shadow-yellow-400/40 active:translate-y-0 active:scale-95"
           >
             + Nuovo negozio
           </Link>

@@ -69,7 +69,7 @@ export function OrderCard({
   const primo = righeLista[0];
   const altri = righeLista.length > 1 ? righeLista.length - 1 : 0;
   const èRitiro = modalita === "ritiro";
-  const accentIcon = vista === "cliente" ? "text-teal-600" : "text-blue-600";
+  const accentIcon = vista === "cliente" ? "text-blue-600" : "text-blue-600";
   // Il codice ordine degli ordini che richiedono attenzione (non letto dal
   // venditore, oppure ANNULLATO) è evidenziato in ROSSO: mai blu quando
   // esiste un avviso operativo importante.
@@ -224,7 +224,7 @@ export function OrderCard({
         <span
           className={`inline-flex shrink-0 items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold text-white shadow-sm transition group-hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-400 ${
             vista === "cliente"
-              ? "bg-teal-600 group-hover:bg-teal-700"
+              ? "bg-blue-600 group-hover:bg-blue-700"
               : "bg-blue-600 group-hover:bg-blue-700"
           }`}
         >

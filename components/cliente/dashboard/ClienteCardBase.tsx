@@ -14,7 +14,7 @@ export default function ClienteCardBase({
   description,
   href,
   hrefLabel,
-  accent = "text-teal-600",
+  accent = "text-blue-600",
   secondaryIcon: SecondaryIcon,
   badge,
 }: {
@@ -33,10 +33,10 @@ export default function ClienteCardBase({
   return (
     <Link
       href={href}
-      className="group flex h-full flex-col rounded-[1.75rem] border border-white/70 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-teal-200 hover:shadow-[0_20px_40px_-32px_rgba(13,148,136,0.45)]"
+      className="group flex h-full flex-col rounded-[1.75rem] border border-white/70 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-[0_20px_40px_-32px_rgba(37,99,235,0.45)]"
     >
       <div className="flex items-start justify-between gap-4">
-        <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-50 ring-1 ring-teal-100">
+        <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 ring-1 ring-blue-100">
           <Icon className={`h-6 w-6 ${accent}`} aria-hidden />
         </span>
         <span className="flex items-start gap-2">
@@ -60,7 +60,7 @@ export default function ClienteCardBase({
         {description}
       </p>
 
-      <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-bold text-teal-700 transition group-hover:gap-2.5">
+      <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-bold text-blue-700 transition group-hover:gap-2.5">
         {hrefLabel}
         <ArrowRight className="h-4 w-4" aria-hidden />
       </span>

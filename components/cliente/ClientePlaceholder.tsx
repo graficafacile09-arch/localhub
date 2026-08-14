@@ -21,12 +21,12 @@ export default function ClientePlaceholder({
       {/* ── Intestazione modulo ─────────────────────────────────────────────── */}
       <div className="rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm md:p-8">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-teal-50 text-teal-600 ring-1 ring-teal-100">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 ring-1 ring-blue-100">
             <Icon className="h-7 w-7" aria-hidden />
           </div>
 
           <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-teal-700">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
               Area Clienti
             </p>
             <h1 className="mt-1.5 text-2xl font-black tracking-tight text-slate-900 md:text-3xl">

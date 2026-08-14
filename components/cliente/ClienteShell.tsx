@@ -86,7 +86,7 @@ export default function ClienteShell({
               type="button"
               onClick={() => setCollapsed((value) => !value)}
               aria-label={collapsed ? "Espandi il menu" : "Comprimi il menu"}
-              className={`flex items-center gap-2 rounded-2xl border border-white/70 bg-white px-3 py-2.5 text-xs font-semibold text-slate-600 shadow-sm transition hover:bg-teal-50 hover:text-teal-700 ${
+              className={`flex items-center gap-2 rounded-2xl border border-white/70 bg-white px-3 py-2.5 text-xs font-semibold text-slate-600 shadow-sm transition hover:bg-blue-50 hover:text-blue-700 ${
                 collapsed ? "mx-auto justify-center" : ""
               }`}
             >
@@ -131,11 +131,11 @@ export default function ClienteShell({
               <div className="flex items-center gap-3">
                 <span
                   aria-hidden
-                  className="flex h-8 w-8 items-center justify-center rounded-xl bg-teal-50"
+                  className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50"
                 >
-                  <ShoppingBasket className="h-4 w-4 text-teal-600" aria-hidden />
+                  <ShoppingBasket className="h-4 w-4 text-blue-600" aria-hidden />
                 </span>
-                <p className="text-xs font-semibold uppercase tracking-[0.15em] text-teal-700">
+                <p className="text-xs font-semibold uppercase tracking-[0.15em] text-blue-700">
                   Area Clienti
                 </p>
               </div>

@@ -62,13 +62,13 @@ export default function ClienteSidebar({
     <nav aria-label="Menu Area Clienti" className="space-y-1">
       {/* ── Blocco brand (solo sidebar desktop espansa) ───────────────────── */}
       {withHeader && !collapsed && (
-        <div className="mb-4 flex items-center gap-3 rounded-2xl bg-linear-to-br from-teal-600 to-teal-500 px-4 py-3.5 text-white shadow-sm">
+        <div className="mb-4 flex items-center gap-3 rounded-2xl bg-linear-to-br from-blue-600 to-blue-500 px-4 py-3.5 text-white shadow-sm">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/20">
             <ShoppingBasket className="h-5 w-5" aria-hidden />
           </span>
           <span className="min-w-0">
             <span className="block text-sm font-black tracking-tight">Area Clienti</span>
-            <span className="block truncate text-[11px] text-teal-100">
+            <span className="block truncate text-[11px] text-blue-100">
               Il tuo spazio personale su InCittà
             </span>
           </span>
@@ -98,14 +98,14 @@ export default function ClienteSidebar({
                   collapsed ? "justify-center px-0 py-3" : "px-3 py-2.5"
                 } ${
                   active
-                    ? "bg-teal-50 text-teal-800 ring-1 ring-teal-100"
+                    ? "bg-blue-50 text-blue-800 ring-1 ring-blue-100"
                     : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                 }`}
               >
                 {/* Barra di accento dello stato attivo */}
                 {active && !collapsed && (
                   <span
-                    className="absolute left-0 top-1/2 h-7 w-1 -translate-y-1/2 rounded-r-full bg-teal-600"
+                    className="absolute left-0 top-1/2 h-7 w-1 -translate-y-1/2 rounded-r-full bg-blue-600"
                     aria-hidden
                   />
                 )}
@@ -113,7 +113,7 @@ export default function ClienteSidebar({
                 <span
                   className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors ${
                     active
-                      ? "bg-teal-600 text-white shadow-sm"
+                      ? "bg-blue-600 text-white shadow-sm"
                       : "bg-slate-100 text-slate-500 group-hover:bg-slate-200 group-hover:text-slate-700"
                   }`}
                 >
@@ -127,7 +127,7 @@ export default function ClienteSidebar({
                         {item.label}
                       </span>
                       {mostraBadge && (
-                        <span className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-teal-600 px-1.5 text-[10px] font-black leading-none text-white">
+                        <span className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-blue-600 px-1.5 text-[10px] font-black leading-none text-white">
                           {badge > 9 ? "9+" : badge}
                         </span>
                       )}
@@ -162,7 +162,7 @@ export default function ClienteSidebar({
             <span
               className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
                 active
-                  ? "bg-teal-600 text-white"
+                  ? "bg-blue-600 text-white"
                   : "bg-slate-100 text-slate-500"
               }`}
             >

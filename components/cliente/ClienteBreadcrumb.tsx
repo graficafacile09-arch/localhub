@@ -23,7 +23,7 @@ export default function ClienteBreadcrumb() {
     >
       <Link
         href="/"
-        className="inline-flex items-center gap-1 transition hover:text-teal-700"
+        className="inline-flex items-center gap-1 transition hover:text-blue-700"
       >
         <Home className="h-3.5 w-3.5" aria-hidden />
         Home
@@ -32,7 +32,7 @@ export default function ClienteBreadcrumb() {
       <Link
         href="/cliente"
         aria-current={!sezione || sezione.href === "/cliente" ? "page" : undefined}
-        className={`transition hover:text-teal-700 ${
+        className={`transition hover:text-blue-700 ${
           !sezione || sezione.href === "/cliente" ? "text-slate-800" : ""
         }`}
       >

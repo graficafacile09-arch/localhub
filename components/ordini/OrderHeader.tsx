@@ -26,8 +26,8 @@ export function OrderHeader({
   createdAt,
   modalita,
   eyebrow,
-  eyebrowClass = "text-teal-700",
-  iconClass = "bg-teal-50 text-teal-600 ring-teal-100",
+  eyebrowClass = "text-blue-700",
+  iconClass = "bg-blue-50 text-blue-600 ring-blue-100",
   identita,
   footer,
 }: {

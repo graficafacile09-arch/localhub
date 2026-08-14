@@ -234,7 +234,7 @@ export default function ReclamoOrdine({
                           className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full shadow-sm ${
                             èVenditore
                               ? "bg-blue-600 text-white"
-                              : "bg-teal-600 text-white"
+                              : "bg-blue-600 text-white"
                           }`}
                         >
                           {èVenditore ? (
@@ -247,7 +247,7 @@ export default function ReclamoOrdine({
                           className={`min-w-0 max-w-[80%] rounded-xl px-3.5 py-2.5 ${
                             èVenditore
                               ? "bg-blue-50 ring-1 ring-blue-100"
-                              : "bg-teal-50 ring-1 ring-teal-100"
+                              : "bg-blue-50 ring-1 ring-blue-100"
                           }`}
                         >
                           <p className="flex flex-wrap items-center gap-x-2 text-[11px] font-bold text-slate-700">
@@ -288,7 +288,7 @@ export default function ReclamoOrdine({
                     type="button"
                     onClick={() => void inviaRisposta(attivo.id)}
                     disabled={invioRisposta || !risposta.trim()}
-                    className="inline-flex items-center gap-2 rounded-xl bg-teal-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-teal-700 disabled:opacity-50"
+                    className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-blue-700 disabled:opacity-50"
                   >
                     {invioRisposta ? (
                       <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
