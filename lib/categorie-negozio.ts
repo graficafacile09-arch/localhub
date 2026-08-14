@@ -1,7 +1,11 @@
 /**
  * CATEGORIE NEGOZIO — elenco ufficiale per l'editor e il wizard di creazione.
  *
- * Elenco ampio e professionale delle principali attività commerciali locali.
+ * Elenco ampio e professionale delle principali attività commerciali locali,
+ * ordinato alfabeticamente (A → Z, con collazione italiana: ignora maiuscole e
+ * accenti). L'ordinamento è centralizzato qui: ogni componente che importa
+ * `CATEGORIE_NEGOZIO` riceve già l'elenco ordinato.
+ *
  * Il valore è salvato nella colonna `negozi.categoria` (testo libero): una
  * categoria personalizzata scritta a mano dal commerciante viene salvata e
  * mostrata esattamente come una categoria predefinita, senza ulteriori
@@ -80,7 +84,7 @@ export const CATEGORIE_NEGOZIO: string[] = [
   "Servizi alla persona",
   "Servizi per aziende",
   "Altro",
-];
+].sort((a, b) => a.localeCompare(b, "it", { sensitivity: "base" }));
 
 /** Etichetta dell'opzione per inserire una categoria personalizzata. */
 export const CATEGORIA_PERSONALIZZATA_LABEL = "+ Inserisci categoria personalizzata";
