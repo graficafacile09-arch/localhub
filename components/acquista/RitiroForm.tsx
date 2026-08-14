@@ -41,18 +41,41 @@ export default function RitiroForm({
 
   const [inviando, setInviando] = useState(false);
   const [errore, setErrore] = useState<string | null>(null);
+  // Errori per singolo campo: per il ritiro sono obbligatori nome, cognome,
+  // data e fascia oraria. Il messaggio compare vicino al campo mancante.
+  const [errori, setErrori] = useState<{
+    nome?: string;
+    cognome?: string;
+    data?: string;
+    fascia?: string;
+  }>({});
   // Chiave di idempotenza: generata UNA volta per pagina → un doppio click
   // (o retry) non crea mai due ordini.
   const chiaveIdempotenza = useRef<string>(nuovaChiaveIdempotenza());
 
   const subtotal = prezzo * quantita;
 
+  // Il ritiro è confermabile SOLO con tutti e 4 i campi obbligatori compilati.
+  const ritiroCompleto =
+    nomeCliente.trim() !== "" &&
+    cognomeCliente.trim() !== "" &&
+    data !== "" &&
+    fascia !== "";
+
   const confermaRitiro = async () => {
     if (inviando) return; // anti doppio invio
-    if (!nomeCliente.trim() || !cognomeCliente.trim()) {
-      setErrore("Inserisci nome e cognome per il ritiro.");
+
+    const nuoviErrori: { nome?: string; cognome?: string; data?: string; fascia?: string } = {};
+    if (!nomeCliente.trim()) nuoviErrori.nome = "Inserisci il nome.";
+    if (!cognomeCliente.trim()) nuoviErrori.cognome = "Inserisci il cognome.";
+    if (!data) nuoviErrori.data = "Seleziona la data del ritiro.";
+    if (!fascia) nuoviErrori.fascia = "Seleziona la fascia oraria.";
+    if (Object.keys(nuoviErrori).length > 0) {
+      setErrori(nuoviErrori);
+      setErrore("Completa i campi obbligatori per il ritiro.");
       return;
     }
+    setErrori({});
 
     setInviando(true);
     setErrore(null);
@@ -200,9 +223,18 @@ export default function RitiroForm({
                 id="nome-ritiro"
                 type="text"
                 value={nomeCliente}
-                onChange={(e) => setNomeCliente(e.target.value)}
+                onChange={(e) => {
+                  setNomeCliente(e.target.value);
+                  setErrori((p) => ({ ...p, nome: undefined }));
+                }}
+                required
+                aria-required="true"
+                aria-invalid={!!errori.nome}
                 className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
               />
+              {errori.nome && (
+                <p className="mt-1 text-[11px] font-semibold text-red-600">{errori.nome}</p>
+              )}
             </div>
             <div>
               <label htmlFor="cognome-ritiro" className="block text-xs font-semibold text-slate-700">Cognome *</label>
@@ -210,9 +242,18 @@ export default function RitiroForm({
                 id="cognome-ritiro"
                 type="text"
                 value={cognomeCliente}
-                onChange={(e) => setCognomeCliente(e.target.value)}
+                onChange={(e) => {
+                  setCognomeCliente(e.target.value);
+                  setErrori((p) => ({ ...p, cognome: undefined }));
+                }}
+                required
+                aria-required="true"
+                aria-invalid={!!errori.cognome}
                 className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
               />
+              {errori.cognome && (
+                <p className="mt-1 text-[11px] font-semibold text-red-600">{errori.cognome}</p>
+              )}
             </div>
           </div>
           <div className="mt-3">
@@ -231,26 +272,41 @@ export default function RitiroForm({
         <div className="rounded-xl border border-slate-200 bg-white p-4">
           <h3 className="text-sm font-bold text-slate-900">
             <Calendar className="mr-1.5 inline-block h-4 w-4 text-blue-500" />
-            Data ritiro
+            Data ritiro *
           </h3>
           <input
             type="date"
             value={data}
-            onChange={(e) => setData(e.target.value)}
+            onChange={(e) => {
+              setData(e.target.value);
+              setErrori((p) => ({ ...p, data: undefined }));
+            }}
             min={oggi}
+            required
+            aria-required="true"
+            aria-invalid={!!errori.data}
             className="mt-2 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
           />
+          {errori.data && (
+            <p className="mt-1 text-[11px] font-semibold text-red-600">{errori.data}</p>
+          )}
         </div>
 
         {/* Selezione fascia oraria */}
         <div className="rounded-xl border border-slate-200 bg-white p-4">
           <h3 className="text-sm font-bold text-slate-900">
             <Clock className="mr-1.5 inline-block h-4 w-4 text-blue-500" />
-            Fascia oraria
+            Fascia oraria *
           </h3>
           <select
             value={fascia}
-            onChange={(e) => setFascia(e.target.value)}
+            onChange={(e) => {
+              setFascia(e.target.value);
+              setErrori((p) => ({ ...p, fascia: undefined }));
+            }}
+            required
+            aria-required="true"
+            aria-invalid={!!errori.fascia}
             className="mt-2 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
           >
             <option value="">Seleziona fascia oraria</option>
@@ -264,6 +320,9 @@ export default function RitiroForm({
             <option value="17:00–18:00">17:00 – 18:00</option>
             <option value="18:00–19:00">18:00 – 19:00</option>
           </select>
+          {errori.fascia && (
+            <p className="mt-1 text-[11px] font-semibold text-red-600">{errori.fascia}</p>
+          )}
         </div>
 
         {/* Note cliente */}
@@ -309,10 +368,15 @@ export default function RitiroForm({
         )}
 
         {/* Conferma ritiro */}
+        {!ritiroCompleto && (
+          <p className="text-[11px] leading-4 text-slate-500">
+            Compila nome, cognome, data e fascia oraria per confermare il ritiro.
+          </p>
+        )}
         <button
           type="button"
           onClick={confermaRitiro}
-          disabled={inviando}
+          disabled={inviando || !ritiroCompleto}
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white shadow-md shadow-blue-500/25 transition hover:bg-blue-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {inviando ? (

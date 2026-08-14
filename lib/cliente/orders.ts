@@ -250,8 +250,14 @@ export function costruisciPayloadOrdine(input: CreaOrdineInput): PayloadCreaOrdi
     clienteEmail: email,
     clienteUserId: userId,
     clienteIp: input.clienteIp ?? null,
-    ritiroData: input.modalita === "ritiro" ? (input.ritiro?.data ?? null) : null,
-    ritiroFascia: input.modalita === "ritiro" ? (input.ritiro?.fascia ?? null) : null,
+    ritiroData:
+      input.modalita === "ritiro" && input.ritiro?.data
+        ? String(input.ritiro.data).trim()
+        : null,
+    ritiroFascia:
+      input.modalita === "ritiro" && input.ritiro?.fascia
+        ? String(input.ritiro.fascia).trim()
+        : null,
     spedizioneIndirizzo: input.modalita === "spedizione" ? String(input.spedizione!.indirizzo).trim() : null,
     spedizioneCap: input.modalita === "spedizione" ? String(input.spedizione!.cap).trim() : null,
     spedizioneCitta: input.modalita === "spedizione" ? String(input.spedizione!.citta).trim() : null,
@@ -353,12 +359,20 @@ export async function creaOrdine(
     ) {
       return { ok: false, errore: "Metodo di pagamento non valido.", codice: "VALIDATION_ERROR", status: 422 };
     }
-  } else if (input.ritiro) {
-    // data/fascia opzionali ma con limiti di lunghezza
-    if (input.ritiro.data && String(input.ritiro.data).length > 20) {
+  } else {
+    // Modalità RITIRO: data e fascia oraria OBBLIGATORIE (come nome/cognome).
+    const dataRitiro = input.ritiro?.data ? String(input.ritiro.data).trim() : "";
+    const fasciaRitiro = input.ritiro?.fascia ? String(input.ritiro.fascia).trim() : "";
+    if (!dataRitiro) {
+      return { ok: false, errore: "La data del ritiro è obbligatoria.", codice: "VALIDATION_ERROR", status: 422 };
+    }
+    if (!fasciaRitiro) {
+      return { ok: false, errore: "La fascia oraria del ritiro è obbligatoria.", codice: "VALIDATION_ERROR", status: 422 };
+    }
+    if (dataRitiro.length > 20) {
       return { ok: false, errore: "Data di ritiro non valida.", codice: "VALIDATION_ERROR", status: 422 };
     }
-    if (input.ritiro.fascia && String(input.ritiro.fascia).length > 40) {
+    if (fasciaRitiro.length > 40) {
       return { ok: false, errore: "Fascia oraria non valida.", codice: "VALIDATION_ERROR", status: 422 };
     }
   }

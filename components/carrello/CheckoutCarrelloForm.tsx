@@ -158,6 +158,8 @@ export default function CheckoutCarrelloForm({ prefill }: { prefill: Prefill }) 
   const [inviando, setInviando] = useState(false);
   const [errore, setErrore] = useState<string | null>(null);
   const [esito, setEsito] = useState<EsitoCheckout | null>(null);
+  // Errori per campo (ritiro: data e fascia oraria obbligatorie).
+  const [erroriRitiro, setErroriRitiro] = useState<{ data?: string; fascia?: string }>({});
 
   const oggi = useMemo(() => new Date().toISOString().split("T")[0], []);
   const costoSpedizioneUI = metodoSpedizione === "express" ? 12.9 : 5.9;
@@ -247,11 +249,24 @@ export default function CheckoutCarrelloForm({ prefill }: { prefill: Prefill }) 
       if (!indirizzo.trim() || !cap.trim() || !citta.trim() || !provincia.trim())
         return "Completa l'indirizzo di spedizione.";
       if (!/^\d{5}$/.test(cap.trim())) return "Il CAP deve essere composto da 5 cifre.";
+      return null;
     }
-    if (modalita === "ritiro" && dataRitiro && dataRitiro < oggi)
-      return "La data di ritiro non può essere nel passato.";
+    // modalita === "ritiro": data e fascia oraria OBBLIGATORIE (come nome/cognome).
+    const nuoviErrori: { data?: string; fascia?: string } = {};
+    if (!dataRitiro) nuoviErrori.data = "Seleziona la data del ritiro.";
+    else if (dataRitiro < oggi) nuoviErrori.data = "La data di ritiro non può essere nel passato.";
+    if (!fascia) nuoviErrori.fascia = "Seleziona la fascia oraria.";
+    setErroriRitiro(nuoviErrori);
+    if (nuoviErrori.data) return nuoviErrori.data;
+    if (nuoviErrori.fascia) return nuoviErrori.fascia;
     return null;
   };
+
+  // Ritiro confermabile SOLO con nome, cognome, data e fascia compilati.
+  // (La spedizione non è toccata: nessun vincolo aggiuntivo.)
+  const ritiroIncompleto =
+    modalita === "ritiro" &&
+    (!nome.trim() || !cognome.trim() || !dataRitiro || !fascia);
 
   const invia = async () => {
     if (inviando) return; // anti doppio invio
@@ -425,26 +440,41 @@ export default function CheckoutCarrelloForm({ prefill }: { prefill: Prefill }) 
                   <div>
                     <label htmlFor="ck-data" className="block text-xs font-semibold text-slate-700">
                       <Calendar className="mr-1 inline h-3.5 w-3.5 text-blue-500" />
-                      Data ritiro
+                      Data ritiro *
                     </label>
                     <input
                       id="ck-data"
                       type="date"
                       value={dataRitiro}
                       min={oggi}
-                      onChange={(e) => setDataRitiro(e.target.value)}
+                      required
+                      aria-required="true"
+                      aria-invalid={!!erroriRitiro.data}
+                      onChange={(e) => {
+                        setDataRitiro(e.target.value);
+                        setErroriRitiro((p) => ({ ...p, data: undefined }));
+                      }}
                       className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
                     />
+                    {erroriRitiro.data && (
+                      <p className="mt-1 text-[11px] font-semibold text-red-600">{erroriRitiro.data}</p>
+                    )}
                   </div>
                   <div>
                     <label htmlFor="ck-fascia" className="block text-xs font-semibold text-slate-700">
                       <Clock className="mr-1 inline h-3.5 w-3.5 text-blue-500" />
-                      Fascia oraria
+                      Fascia oraria *
                     </label>
                     <select
                       id="ck-fascia"
                       value={fascia}
-                      onChange={(e) => setFascia(e.target.value)}
+                      required
+                      aria-required="true"
+                      aria-invalid={!!erroriRitiro.fascia}
+                      onChange={(e) => {
+                        setFascia(e.target.value);
+                        setErroriRitiro((p) => ({ ...p, fascia: undefined }));
+                      }}
                       className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
                     >
                       <option value="">Seleziona fascia</option>
@@ -458,6 +488,9 @@ export default function CheckoutCarrelloForm({ prefill }: { prefill: Prefill }) 
                       <option value="17:00–18:00">17:00 – 18:00</option>
                       <option value="18:00–19:00">18:00 – 19:00</option>
                     </select>
+                    {erroriRitiro.fascia && (
+                      <p className="mt-1 text-[11px] font-semibold text-red-600">{erroriRitiro.fascia}</p>
+                    )}
                   </div>
                 </div>
                 <p className="text-[11px] leading-4 text-slate-400">
@@ -580,10 +613,16 @@ export default function CheckoutCarrelloForm({ prefill }: { prefill: Prefill }) 
             </div>
           )}
 
+          {ritiroIncompleto && (
+            <p className="text-[11px] leading-4 text-slate-500">
+              Compila nome, cognome, data e fascia oraria per confermare il ritiro.
+            </p>
+          )}
+
           <button
             type="button"
             onClick={invia}
-            disabled={inviando}
+            disabled={inviando || ritiroIncompleto}
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3.5 text-base font-bold text-white shadow-md shadow-blue-500/25 transition hover:bg-blue-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {inviando ? (

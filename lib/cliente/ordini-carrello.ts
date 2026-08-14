@@ -242,6 +242,22 @@ function validaCheckout(input: CheckoutCarrelloInput): { codice: string; messagg
     ) {
       return { codice: "VALIDATION_ERROR", messaggio: "Metodo di pagamento non valido." };
     }
+  } else {
+    // Modalità RITIRO: data e fascia oraria OBBLIGATORIE (come nome/cognome).
+    const dataRitiro = input.ritiro?.data ? String(input.ritiro.data).trim() : "";
+    const fasciaRitiro = input.ritiro?.fascia ? String(input.ritiro.fascia).trim() : "";
+    if (!dataRitiro) {
+      return { codice: "VALIDATION_ERROR", messaggio: "La data del ritiro è obbligatoria." };
+    }
+    if (!fasciaRitiro) {
+      return { codice: "VALIDATION_ERROR", messaggio: "La fascia oraria del ritiro è obbligatoria." };
+    }
+    if (dataRitiro.length > 20) {
+      return { codice: "VALIDATION_ERROR", messaggio: "Data di ritiro non valida." };
+    }
+    if (fasciaRitiro.length > 40) {
+      return { codice: "VALIDATION_ERROR", messaggio: "Fascia oraria non valida." };
+    }
   }
   return null;
 }
@@ -392,8 +408,8 @@ function costruisciPayloadBase(input: CheckoutCarrelloInput, idempotencyKey: str
   };
 
   if (input.modalita === "ritiro") {
-    payload.ritiroData = input.ritiro?.data ?? null;
-    payload.ritiroFascia = input.ritiro?.fascia ?? null;
+    payload.ritiroData = input.ritiro?.data ? String(input.ritiro.data).trim() : null;
+    payload.ritiroFascia = input.ritiro?.fascia ? String(input.ritiro.fascia).trim() : null;
   } else {
     const sp = input.spedizione!;
     payload.spedizioneIndirizzo = String(sp.indirizzo).trim();
