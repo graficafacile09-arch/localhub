@@ -22,8 +22,8 @@ const formatData = new Intl.DateTimeFormat("it-IT", {
 function BadgeStato({ attivo }: { attivo: boolean }) {
   if (attivo) {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 ring-1 ring-emerald-200">
-        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-bold text-blue-700 ring-1 ring-blue-200">
+        <span className="h-1.5 w-1.5 rounded-full bg-blue-500" aria-hidden />
         Attiva
       </span>
     );
@@ -89,7 +89,7 @@ export default function AttivitaCardGrid({
                     {negozio.nome}
                   </h2>
                   {negozio.is_demo && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-2 py-0.5 text-[10px] font-bold tracking-wide text-violet-600 ring-1 ring-violet-200">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold tracking-wide text-blue-600 ring-1 ring-blue-200">
                       <Sparkles className="h-3 w-3" aria-hidden />
                       Demo
                     </span>

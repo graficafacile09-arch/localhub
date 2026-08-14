@@ -74,7 +74,7 @@ export default function MediaPickerDialog({ open, storeId, onClose, onSelect }: 
               <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
             </div>
           ) : error ? (
-            <p className="text-center text-sm text-red-500">{error}</p>
+            <p className="text-center text-sm text-blue-500">{error}</p>
           ) : items.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-slate-400">
               <ImageIcon className="mb-2 h-10 w-10" />

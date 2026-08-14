@@ -117,7 +117,7 @@ export default function ClienteAvatarUploader({
       </div>
 
       {error && (
-        <p role="alert" className="text-xs font-semibold text-red-600">
+        <p role="alert" className="text-xs font-semibold text-blue-600">
           {error}
         </p>
       )}

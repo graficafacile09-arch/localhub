@@ -53,7 +53,7 @@ export default function MerchantShell({
 
       {/* ── Header desktop — visibile solo su md+ ────────────────────────────── */}
       <div className="hidden border-b border-blue-900/15 bg-[linear-gradient(180deg,#1d4ed8_0%,#2563eb_100%)] text-white shadow-lg md:block">
-        <div className="h-1 bg-linear-to-r from-cyan-300 via-white to-yellow-300" />
+        <div className="h-1 bg-linear-to-r from-blue-300 via-white to-yellow-300" />
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-4">
           <div className="flex items-center gap-4">
             <Link
@@ -130,7 +130,7 @@ export default function MerchantShell({
         {/* Contenuto principale ──────────────────────────────────────────────── */}
         <section className="min-w-0 space-y-3">
           {banner ? (
-            <div className="rounded-3xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900">
+            <div className="rounded-3xl border border-yellow-200 bg-yellow-50 px-5 py-4 text-sm text-yellow-900">
               {banner}
             </div>
           ) : null}

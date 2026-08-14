@@ -18,14 +18,14 @@ type Props = {
 function StatusBadge({ status }: { status: StepStatus }) {
   if (status === "completata") {
     return (
-      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600">
         <Check className="h-3 w-3" strokeWidth={3} />
       </span>
     );
   }
   if (status === "attenzione") {
     return (
-      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600">
+      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-yellow-100 text-yellow-600">
         <AlertTriangle className="h-3 w-3" />
       </span>
     );

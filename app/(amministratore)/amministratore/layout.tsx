@@ -27,8 +27,8 @@ export default async function AmministratoreLayout({
   if (!isSupabaseConfigured()) {
     return (
       <main className="min-h-screen bg-[#eef3f8] px-4 py-10 text-slate-900 md:px-6">
-        <div className="mx-auto max-w-3xl rounded-[2rem] border border-amber-200 bg-white p-8 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-700">
+        <div className="mx-auto max-w-3xl rounded-[2rem] border border-yellow-200 bg-white p-8 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-yellow-700">
             Configurazione richiesta
           </p>
           <h1 className="mt-3 text-3xl font-black tracking-tight">

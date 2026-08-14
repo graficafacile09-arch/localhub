@@ -207,19 +207,19 @@ export default function AttivitaActionsMenu({
   if (confermaElimina) {
     return (
       <div className="relative" ref={menuRef}>
-        <div className="absolute right-0 top-full z-30 mt-1 w-72 rounded-2xl border border-red-200 bg-red-50 p-4 shadow-xl">
+        <div className="absolute right-0 top-full z-30 mt-1 w-72 rounded-2xl border border-blue-200 bg-blue-50 p-4 shadow-xl">
           <div className="flex items-start gap-2.5">
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" />
             <div>
-              <p className="text-sm font-bold text-red-800">
+              <p className="text-sm font-bold text-blue-800">
                 Eliminare &ldquo;{attivita.nome}&rdquo;?
               </p>
-              <p className="mt-1 text-xs leading-5 text-red-600">
+              <p className="mt-1 text-xs leading-5 text-blue-600">
                 Il negozio verrà spostato nel Cestino. Potrai ripristinarlo dalla
                 pagina Cestino. Questa azione è riservata agli amministratori.
               </p>
               {erroreElimina && (
-                <p className="mt-2 rounded-lg bg-red-100 px-2.5 py-1.5 text-xs font-semibold text-red-800">
+                <p className="mt-2 rounded-lg bg-blue-100 px-2.5 py-1.5 text-xs font-semibold text-blue-800">
                   {erroreElimina}
                 </p>
               )}
@@ -228,7 +228,7 @@ export default function AttivitaActionsMenu({
                   type="button"
                   onClick={handleElimina}
                   disabled={eliminando}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-red-700 disabled:opacity-60"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-blue-700 disabled:opacity-60"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                   {eliminando ? "Eliminazione..." : "Elimina"}
@@ -240,7 +240,7 @@ export default function AttivitaActionsMenu({
                     setErroreElimina(null);
                   }}
                   disabled={eliminando}
-                  className="rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-red-100 disabled:opacity-60"
+                  className="rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-blue-100 disabled:opacity-60"
                 >
                   Annulla
                 </button>
@@ -326,7 +326,7 @@ export default function AttivitaActionsMenu({
                 </>
               )}
               {erroreAzione && (
-                <p role="alert" className="mt-2 rounded-lg bg-red-50 px-2 py-1.5 text-[11px] font-semibold text-red-700">
+                <p role="alert" className="mt-2 rounded-lg bg-blue-50 px-2 py-1.5 text-[11px] font-semibold text-blue-700">
                   {erroreAzione}
                 </p>
               )}
@@ -404,7 +404,7 @@ export default function AttivitaActionsMenu({
                 role="menuitem"
                 onClick={cambiaEvidenza}
                 disabled={salvando !== null}
-                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-amber-700 transition hover:bg-amber-50 disabled:opacity-60"
+                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-yellow-700 transition hover:bg-yellow-50 disabled:opacity-60"
               >
                 {salvando === "evidenza" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Star className="h-4 w-4 shrink-0" aria-hidden />}
                 {attivita.in_evidenza ? "Togli evidenza" : "Metti in evidenza"}
@@ -415,14 +415,14 @@ export default function AttivitaActionsMenu({
                 role="menuitem"
                 onClick={cambiaStato}
                 disabled={salvando !== null}
-                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-amber-700 transition hover:bg-amber-50 disabled:opacity-60"
+                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-yellow-700 transition hover:bg-yellow-50 disabled:opacity-60"
               >
                 {salvando === "stato" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Ban className="h-4 w-4 shrink-0" aria-hidden />}
                 {attivita.attivo ? "Disattiva" : "Riattiva"}
               </button>
 
               {erroreAzione && (
-                <p role="alert" className="mx-2 mt-1 rounded-lg bg-red-50 px-2 py-1.5 text-[11px] font-semibold text-red-700">
+                <p role="alert" className="mx-2 mt-1 rounded-lg bg-blue-50 px-2 py-1.5 text-[11px] font-semibold text-blue-700">
                   {erroreAzione}
                 </p>
               )}
@@ -433,7 +433,7 @@ export default function AttivitaActionsMenu({
                 type="button"
                 role="menuitem"
                 onClick={() => setConfermaElimina(true)}
-                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50"
+                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-blue-600 transition hover:bg-blue-50"
               >
                 <Trash2 className="h-4 w-4 shrink-0" aria-hidden />
                 Elimina

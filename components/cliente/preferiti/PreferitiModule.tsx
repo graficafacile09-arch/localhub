@@ -153,10 +153,10 @@ export default function PreferitiModule() {
     <div className="space-y-5">
       {/* ── Intestazione ───────────────────────────────────────────────────── */}
       <div className="overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-sm">
-        <div className="h-1.5 bg-linear-to-r from-rose-300 via-pink-400 to-rose-500" />
+        <div className="h-1.5 bg-linear-to-r from-yellow-300 via-blue-400 to-yellow-500" />
         <div className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
-            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 ring-1 ring-rose-100">
+            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-yellow-50 text-yellow-600 ring-1 ring-yellow-100">
               <Heart className="h-7 w-7" aria-hidden />
             </span>
             <div>
@@ -184,7 +184,7 @@ export default function PreferitiModule() {
               onClick={() => cambiaFiltro(tipo)}
               className={`rounded-xl px-3.5 py-2 text-xs font-bold transition ${
                 filtroTipo === tipo
-                  ? "bg-rose-500 text-white shadow-sm"
+                  ? "bg-yellow-500 text-white shadow-sm"
                   : "bg-slate-100 text-slate-600 hover:bg-slate-200"
               }`}
             >
@@ -206,7 +206,7 @@ export default function PreferitiModule() {
               onChange={(event) => setRicerca(event.target.value)}
               placeholder="Cerca tra i preferiti..."
               aria-label="Cerca tra i preferiti"
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-rose-300 focus:bg-white focus:outline-none sm:w-56"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-yellow-300 focus:bg-white focus:outline-none sm:w-56"
             />
           </form>
 
@@ -217,7 +217,7 @@ export default function PreferitiModule() {
               cambiaOrdine(event.target.value as "recenti" | "nome")
             }
             aria-label="Ordina preferiti"
-            className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700 focus:border-rose-300 focus:bg-white focus:outline-none"
+            className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700 focus:border-yellow-300 focus:bg-white focus:outline-none"
           >
             <option value="recenti">Più recenti</option>
             <option value="nome">Nome A-Z</option>
@@ -227,7 +227,7 @@ export default function PreferitiModule() {
 
       {/* ── Errore ─────────────────────────────────────────────────────────── */}
       {errore && (
-        <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+        <div className="flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 p-3 text-sm text-blue-700">
           <AlertCircle className="h-4 w-4 shrink-0" aria-hidden />
           {errore}
         </div>
@@ -282,9 +282,9 @@ export default function PreferitiModule() {
           action={
             <Link
               href="/negozi"
-              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-blue-700"
+              className="relative inline-flex items-center gap-2 overflow-hidden rounded-full bg-gradient-to-b from-yellow-300 to-yellow-400 px-6 py-2.5 text-sm font-bold text-blue-700 shadow-md shadow-yellow-400/30 ring-1 ring-yellow-300 transition-all duration-200 before:pointer-events-none before:absolute before:inset-0 before:rounded-full before:bg-gradient-to-b before:from-white/25 before:to-transparent hover:-translate-y-0.5 hover:from-yellow-200 hover:to-yellow-300 hover:shadow-lg hover:shadow-yellow-400/40 active:translate-y-0 active:scale-95 active:shadow-sm"
             >
-              Esplora i negozi
+              <span className="relative">Esplora i negozi</span>
             </Link>
           }
         />
@@ -297,7 +297,7 @@ export default function PreferitiModule() {
             type="button"
             onClick={caricaAltri}
             disabled={caricamentoAltri}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition hover:border-rose-200 hover:text-rose-600 disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition hover:border-blue-200 hover:text-blue-600 disabled:opacity-60"
           >
             {caricamentoAltri ? "Caricamento..." : "Carica altri preferiti"}
           </button>

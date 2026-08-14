@@ -130,8 +130,8 @@ export default async function ConfermaOrdinePage({
         {ordine.paymentProvider === "klarna" &&
           ordine.stato !== "cancellato" &&
           ordine.paymentStatus !== "paid" && (
-            <div className="mt-4 rounded-xl border border-pink-200 bg-pink-50 px-4 py-3">
-              <p className="flex items-center gap-2 text-sm font-bold text-pink-800">
+            <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
+              <p className="flex items-center gap-2 text-sm font-bold text-blue-800">
                 <img
                   src="/loghi/klarna-pink.svg"
                   alt="Klarna"
@@ -141,7 +141,7 @@ export default async function ConfermaOrdinePage({
                 />
                 Pagamento in 3 rate
               </p>
-              <p className="mt-0.5 text-xs text-pink-700">
+              <p className="mt-0.5 text-xs text-blue-700">
                 L&apos;ordine verrà confermato dopo l&apos;approvazione di Klarna.
               </p>
             </div>

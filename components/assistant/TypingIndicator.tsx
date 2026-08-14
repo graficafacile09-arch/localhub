@@ -11,7 +11,7 @@ export default function TypingIndicator() {
   return (
     <div className="flex items-start gap-3" role="status" aria-label="L'AI sta pensando...">
       {/* Avatar AI */}
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-linear-to-r from-blue-600 to-cyan-500 text-white shadow-sm">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-2xl bg-linear-to-r from-blue-600 to-blue-500 text-white shadow-sm">
         <svg
           viewBox="0 0 24 24"
           fill="none"

@@ -106,7 +106,7 @@ export default function ImmaginiModule({ storeId }: Props) {
   return (
     <ModuleShell icon={<Image className="h-4 w-4" />} title="Immagini" subtitle="Logo, copertina e galleria foto" id="immagini">
       {message && (
-        <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-700">{message}</div>
+        <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-sm text-blue-700">{message}</div>
       )}
 
       <div className="mb-6 grid gap-4 sm:grid-cols-2">
@@ -135,7 +135,7 @@ export default function ImmaginiModule({ storeId }: Props) {
               <button
                 type="button"
                 onClick={() => removeGalleria(i)}
-                className="absolute right-1 top-1 hidden rounded-lg bg-red-500/90 p-1 text-white group-hover:block"
+                className="absolute right-1 top-1 hidden rounded-lg bg-blue-500/90 p-1 text-white group-hover:block"
               >
                 <X className="h-3 w-3" />
               </button>
@@ -168,7 +168,7 @@ function ImageUploadBox({ label, value, inputRef, onChange, onRemove }: {
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onRemove(); }}
-              className="absolute right-1.5 top-1.5 hidden rounded-lg bg-red-500/90 px-2 py-1 text-[10px] font-bold text-white group-hover:block"
+              className="absolute right-1.5 top-1.5 hidden rounded-lg bg-blue-500/90 px-2 py-1 text-[10px] font-bold text-white group-hover:block"
             >
               Elimina
             </button>

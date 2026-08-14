@@ -25,7 +25,7 @@ export default function StepCatalogo({ storeId, basePath, counts }: StepProps) {
         </div>
 
         {counts.prodotti === 0 && (
-          <div className="mt-4 flex items-start gap-2 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-xs text-amber-800">
+          <div className="mt-4 flex items-start gap-2 rounded-xl border border-yellow-100 bg-yellow-50 px-4 py-3 text-xs text-yellow-800">
             <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
             <p>
               Per rendere il negozio davvero pronto, aggiungi almeno un prodotto: è ciò che i
@@ -66,14 +66,14 @@ export default function StepCatalogo({ storeId, basePath, counts }: StepProps) {
 
         <Link
           href={`${base}/prodotti/ai`}
-          className="group rounded-2xl border border-slate-200 bg-white p-5 transition hover:border-violet-300 hover:shadow-md"
+          className="group rounded-2xl border border-slate-200 bg-white p-5 transition hover:border-blue-300 hover:shadow-md"
         >
-          <Camera className="h-6 w-6 text-slate-500 transition group-hover:text-violet-600" />
+          <Camera className="h-6 w-6 text-slate-500 transition group-hover:text-blue-600" />
           <p className="mt-3 text-sm font-black text-slate-900">Scansiona con AI</p>
           <p className="mt-1 text-[11px] leading-4 text-slate-500">
             Fotografa un prodotto e lascia che l&apos;AI compili i dati per te.
           </p>
-          <span className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-violet-600">
+          <span className="mt-3 inline-flex items-center gap-1 text-xs font-bold text-blue-600">
             Scansiona <ArrowRight className="h-3.5 w-3.5" />
           </span>
         </Link>

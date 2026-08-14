@@ -82,7 +82,7 @@ export default function AggiungiAlCarrelloButton({
       <div className="w-full space-y-2">
         <p
           data-testid="aggiunto-feedback"
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-3 text-base font-bold text-emerald-700"
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-blue-300 bg-blue-50 px-4 py-3 text-base font-bold text-blue-700"
         >
           <Check className="h-5 w-5" aria-hidden />
           Aggiunto al carrello

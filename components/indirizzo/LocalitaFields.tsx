@@ -183,7 +183,7 @@ export default function LocalitaFields({
       {/* CAP */}
       <div className="relative">
         <label htmlFor={idCap} className="block text-xs font-semibold text-slate-700">
-          CAP{required && <span className="text-red-500"> *</span>}
+          CAP{required && <span className="text-blue-500"> *</span>}
         </label>
         <input
           id={idCap}
@@ -215,7 +215,7 @@ export default function LocalitaFields({
       {/* Città */}
       <div className="relative">
         <label htmlFor={idCitta} className="block text-xs font-semibold text-slate-700">
-          Città{required && <span className="text-red-500"> *</span>}
+          Città{required && <span className="text-blue-500"> *</span>}
         </label>
         <input
           id={idCitta}
@@ -245,7 +245,7 @@ export default function LocalitaFields({
       {/* Provincia (derivata) */}
       <div className="relative">
         <label htmlFor={idProvincia} className="block text-xs font-semibold text-slate-700">
-          Provincia{required && <span className="text-red-500"> *</span>}
+          Provincia{required && <span className="text-blue-500"> *</span>}
         </label>
         <div className="relative">
           <input

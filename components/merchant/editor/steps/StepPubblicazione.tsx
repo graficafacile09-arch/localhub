@@ -56,11 +56,11 @@ export default function StepPubblicazione({ storeId, store, counts, onDataChange
                 <span className="w-7 shrink-0 text-[11px] font-black text-slate-400">{s.numero}</span>
                 <span className="min-w-0 flex-1 truncate text-xs font-semibold text-slate-700">{s.titolo}</span>
                 {stato === "completata" ? (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700">
                     <CheckCircle2 className="h-3 w-3" /> Completata
                   </span>
                 ) : stato === "attenzione" ? (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-yellow-50 px-2 py-0.5 text-[10px] font-bold text-yellow-700">
                     <AlertTriangle className="h-3 w-3" /> Da completare
                   </span>
                 ) : (
@@ -80,14 +80,14 @@ export default function StepPubblicazione({ storeId, store, counts, onDataChange
           {pronto ? "Tutto pronto!" : "Per pubblicare servono ancora:"}
         </h3>
         {mancanti.length === 0 ? (
-          <p className="flex items-center gap-2 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-xs font-semibold text-emerald-700">
+          <p className="flex items-center gap-2 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-xs font-semibold text-blue-700">
             <CheckCircle2 className="h-4 w-4" /> Il negozio ha tutti i contenuti essenziali.
           </p>
         ) : (
           <ul className="space-y-1.5">
             {mancanti.map((m) => (
               <li key={m} className="flex items-center gap-2 text-xs text-slate-600">
-                <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
+                <span className="h-1.5 w-1.5 rounded-full bg-yellow-400" />
                 {m}
               </li>
             ))}
@@ -96,12 +96,12 @@ export default function StepPubblicazione({ storeId, store, counts, onDataChange
       </section>
 
       {error && (
-        <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-semibold text-red-700">
+        <p className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs font-semibold text-blue-700">
           {error}
         </p>
       )}
       {done && (
-        <p className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-semibold text-emerald-700">
+        <p className="flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs font-semibold text-blue-700">
           <CheckCircle2 className="h-4 w-4" />
           {attivo ? "Negozio aggiornato e pubblicato." : "Negozio messo in bozza."}
         </p>

@@ -90,14 +90,14 @@ export default async function AdminProdottiPage() {
                     </div>
                     <div className="flex shrink-0 flex-wrap items-center gap-1.5">
                       {product.negozioDemo && (
-                        <span className="rounded-full bg-violet-50 px-2.5 py-0.5 text-[11px] font-semibold text-violet-700">
+                        <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-[11px] font-semibold text-blue-700">
                           Demo
                         </span>
                       )}
                       <span
                         className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
                           product.attivo
-                            ? "bg-emerald-50 text-emerald-700"
+                            ? "bg-blue-50 text-blue-700"
                             : "bg-slate-100 text-slate-500"
                         }`}
                       >

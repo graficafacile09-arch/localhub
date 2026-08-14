@@ -170,7 +170,7 @@ export default function AccountMenu({ account }: { account: DatiAccount | null }
       >
         <span
           aria-hidden
-          className="flex h-8 w-8 items-center justify-center rounded-full bg-linear-to-br from-cyan-400 to-blue-600 text-sm font-black text-white ring-2 ring-blue-100"
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-linear-to-br from-blue-400 to-blue-600 text-sm font-black text-white ring-2 ring-blue-100"
         >
           {iniziale}
         </span>
@@ -222,7 +222,7 @@ export default function AccountMenu({ account }: { account: DatiAccount | null }
               <button
                 type="submit"
                 role="menuitem"
-                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-red-600 transition hover:bg-red-50"
+                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-blue-600 transition hover:bg-blue-50"
               >
                 <LogOut className="h-4 w-4 shrink-0" aria-hidden />
                 Esci

@@ -147,7 +147,7 @@ export default function RitiroForm({
 
         <div>
           <h2 className="text-lg font-black text-slate-900">{nome}</h2>
-          <p className="text-2xl font-black text-emerald-700">
+          <p className="text-2xl font-black text-blue-700">
             €{prezzo.toFixed(2)}
           </p>
         </div>
@@ -200,7 +200,7 @@ export default function RitiroForm({
                   href={buildWhatsAppUrl()}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-emerald-700 transition hover:border-emerald-300 hover:text-emerald-800"
+                  className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-blue-700 transition hover:border-blue-300 hover:text-blue-800"
                 >
                   <MessageCircle className="h-3 w-3" />
                   WhatsApp
@@ -233,7 +233,7 @@ export default function RitiroForm({
                 className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
               />
               {errori.nome && (
-                <p className="mt-1 text-[11px] font-semibold text-red-600">{errori.nome}</p>
+                <p className="mt-1 text-[11px] font-semibold text-blue-600">{errori.nome}</p>
               )}
             </div>
             <div>
@@ -252,7 +252,7 @@ export default function RitiroForm({
                 className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
               />
               {errori.cognome && (
-                <p className="mt-1 text-[11px] font-semibold text-red-600">{errori.cognome}</p>
+                <p className="mt-1 text-[11px] font-semibold text-blue-600">{errori.cognome}</p>
               )}
             </div>
           </div>
@@ -288,7 +288,7 @@ export default function RitiroForm({
             className="mt-2 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
           />
           {errori.data && (
-            <p className="mt-1 text-[11px] font-semibold text-red-600">{errori.data}</p>
+            <p className="mt-1 text-[11px] font-semibold text-blue-600">{errori.data}</p>
           )}
         </div>
 
@@ -321,7 +321,7 @@ export default function RitiroForm({
             <option value="18:00–19:00">18:00 – 19:00</option>
           </select>
           {errori.fascia && (
-            <p className="mt-1 text-[11px] font-semibold text-red-600">{errori.fascia}</p>
+            <p className="mt-1 text-[11px] font-semibold text-blue-600">{errori.fascia}</p>
           )}
         </div>
 
@@ -362,7 +362,7 @@ export default function RitiroForm({
 
         {/* Errore di invio */}
         {errore && (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+          <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-700">
             {errore}
           </div>
         )}

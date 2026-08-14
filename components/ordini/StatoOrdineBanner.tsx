@@ -63,19 +63,19 @@ export function StatoOrdineBanner({
 
           {/* Dettagli dell'annullamento: motivo + nota (solo se presenti) */}
           {èAnnullato && (motivo || nota || dataAnnullamento) && (
-            <div className="mt-3 space-y-1.5 rounded-xl bg-white/70 px-4 py-3 text-sm ring-1 ring-red-100">
+            <div className="mt-3 space-y-1.5 rounded-xl bg-white/70 px-4 py-3 text-sm ring-1 ring-blue-100">
               {motivo && (
-                <p className="text-red-800">
+                <p className="text-blue-800">
                   <span className="font-bold">Motivo:</span> {motivo}
                 </p>
               )}
               {nota && (
-                <p className="text-red-800">
+                <p className="text-blue-800">
                   <span className="font-bold">Nota del negoziante:</span> {nota}
                 </p>
               )}
               {dataAnnullamento && (
-                <p className="text-xs text-red-700/80">
+                <p className="text-xs text-blue-700/80">
                   Annullato il {dataAnnullamento}
                 </p>
               )}

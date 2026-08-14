@@ -46,7 +46,7 @@ export default async function ClienteDashboardPage() {
     <div className="space-y-5">
       {/* ── Intestazione dashboard ───────────────────────────────────────────── */}
       <div className="overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-sm">
-        <div className="h-1.5 bg-linear-to-r from-cyan-300 via-blue-400 to-yellow-300" />
+        <div className="h-1.5 bg-linear-to-r from-blue-300 via-blue-400 to-yellow-300" />
         <div className="p-6 md:p-8">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-4">
@@ -69,10 +69,10 @@ export default async function ClienteDashboardPage() {
 
             <Link
               href="/negozi"
-              className="inline-flex shrink-0 items-center gap-2 rounded-2xl bg-gradient-to-b from-yellow-300 to-yellow-400 px-5 py-3 text-sm font-bold text-slate-800 shadow-md shadow-yellow-400/30 ring-1 ring-yellow-300 transition hover:from-yellow-200 hover:to-yellow-300"
+              className="relative inline-flex shrink-0 items-center gap-2 overflow-hidden rounded-full bg-gradient-to-b from-yellow-300 to-yellow-400 px-6 py-3 text-sm font-bold text-blue-700 shadow-md shadow-yellow-400/30 ring-1 ring-yellow-300 transition-all duration-200 before:pointer-events-none before:absolute before:inset-0 before:rounded-full before:bg-gradient-to-b before:from-white/25 before:to-transparent hover:-translate-y-0.5 hover:from-yellow-200 hover:to-yellow-300 hover:shadow-lg hover:shadow-yellow-400/40 active:translate-y-0 active:scale-95 active:shadow-sm"
             >
-              Esplora i negozi
-              <ArrowRight className="h-4 w-4" aria-hidden />
+              <span className="relative">Esplora i negozi</span>
+              <ArrowRight className="relative h-4 w-4" aria-hidden />
             </Link>
           </div>
         </div>

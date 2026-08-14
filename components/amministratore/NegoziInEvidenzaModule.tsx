@@ -11,8 +11,8 @@ const normalizza = (testo: string) => testo.trim().toLowerCase();
 function BadgeStato({ attivo }: { attivo: boolean }) {
   if (attivo) {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 ring-1 ring-emerald-200">
-        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-bold text-blue-700 ring-1 ring-blue-200">
+        <span className="h-1.5 w-1.5 rounded-full bg-blue-500" aria-hidden />
         Attivo
       </span>
     );
@@ -28,7 +28,7 @@ function BadgeStato({ attivo }: { attivo: boolean }) {
 function BadgeEvidenza({ inEvidenza }: { inEvidenza: boolean }) {
   if (!inEvidenza) return null;
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-700 ring-1 ring-amber-200">
+    <span className="inline-flex items-center gap-1 rounded-full bg-yellow-50 px-2.5 py-1 text-[11px] font-bold text-yellow-700 ring-1 ring-yellow-200">
       <Star className="h-3 w-3" aria-hidden />
       In evidenza
     </span>
@@ -134,11 +134,11 @@ export default function NegoziInEvidenzaModule({
         </nav>
 
         <div className="flex items-start gap-4">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 ring-1 ring-amber-100">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-yellow-50 text-yellow-600 ring-1 ring-yellow-100">
             <Star className="h-7 w-7" aria-hidden />
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-700">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-yellow-700">
               Homepage InCittà
             </p>
             <h1 className="mt-1.5 text-2xl font-black tracking-tight text-slate-900 md:text-3xl">
@@ -162,7 +162,7 @@ export default function NegoziInEvidenzaModule({
       />
 
       {errore && (
-        <div className="rounded-3xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-900">
+        <div className="rounded-3xl border border-blue-200 bg-blue-50 px-5 py-4 text-sm text-blue-900">
           {errore}
         </div>
       )}
@@ -171,7 +171,7 @@ export default function NegoziInEvidenzaModule({
         <p className="text-sm font-black text-slate-700">
           {visibili.length} {visibili.length === 1 ? "negozio" : "negozi"}
           {inEvidenzaCount > 0 && (
-            <span className="ml-2 font-semibold text-amber-700">
+            <span className="ml-2 font-semibold text-yellow-700">
               · {inEvidenzaCount} in evidenza
             </span>
           )}
@@ -214,7 +214,7 @@ export default function NegoziInEvidenzaModule({
                 key={negozio.id}
                 className={`flex flex-col rounded-3xl border bg-white p-5 shadow-sm transition ${
                   inEvidenza
-                    ? "border-amber-200 ring-1 ring-amber-100"
+                    ? "border-yellow-200 ring-1 ring-yellow-100"
                     : "border-white/70 hover:shadow-md"
                 }`}
               >
@@ -260,7 +260,7 @@ export default function NegoziInEvidenzaModule({
                     className={`inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-black transition ${
                       inEvidenza
                         ? "bg-slate-100 text-slate-700 hover:bg-slate-200"
-                        : "bg-amber-500 text-white hover:bg-amber-600"
+                        : "bg-yellow-500 text-white hover:bg-yellow-600"
                     } disabled:cursor-not-allowed disabled:opacity-60`}
                   >
                     {caricamento ? (
@@ -283,7 +283,7 @@ export default function NegoziInEvidenzaModule({
         </div>
       )}
 
-      <div className="rounded-3xl border border-amber-100 bg-amber-50/60 px-5 py-4 text-sm text-amber-900">
+      <div className="rounded-3xl border border-yellow-100 bg-yellow-50/60 px-5 py-4 text-sm text-yellow-900">
         <p className="leading-6">
           <span className="font-bold">Homepage:</span> i negozi attivati
           compaiono subito nella sezione &ldquo;⭐ Negozi in evidenza&rdquo;

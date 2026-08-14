@@ -18,7 +18,7 @@ export default function OfferteConsigliateCard({
       description="Promozioni e sconti selezionati per te dai negozi della piattaforma."
       href="/ricerca"
       hrefLabel="Scopri le offerte"
-      accent="text-amber-500"
+      accent="text-yellow-500"
     />
   );
 }

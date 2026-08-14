@@ -18,7 +18,7 @@ export default function EventiConsigliatiCard({
       description="Appuntamenti e manifestazioni selezionati per te nella tua zona."
       href="/negozi"
       hrefLabel="Esplora gli eventi"
-      accent="text-violet-600"
+      accent="text-blue-600"
     />
   );
 }

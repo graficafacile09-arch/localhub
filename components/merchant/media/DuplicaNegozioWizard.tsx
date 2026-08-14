@@ -113,7 +113,7 @@ export default function DuplicaNegozioWizard({ storeId, storeName, onClose, edit
           </div>
 
           {error && (
-            <p className="mb-4 text-xs font-semibold text-red-500">{error}</p>
+            <p className="mb-4 text-xs font-semibold text-blue-500">{error}</p>
           )}
 
           <button

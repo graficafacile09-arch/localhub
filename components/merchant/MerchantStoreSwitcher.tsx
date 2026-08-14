@@ -14,7 +14,7 @@ export default function MerchantStoreSwitcher({
 }: {
   stores: MerchantStoreSummary[];
   currentStoreId?: string;
-  /** Conteggio ordini non letti per negozio (badge rosso accanto al nome). */
+  /** Conteggio ordini non letti per negozio (badge giallo accanto al nome). */
   ordiniNonLettiPerNegozio?: Record<string, number>;
 }) {
   if (stores.length === 0) {
@@ -45,7 +45,7 @@ export default function MerchantStoreSwitcher({
                 <span className="min-w-0 flex-1 truncate font-semibold">{store.nome}</span>
                 {ordiniNonLetti > 0 && (
                   <span
-                    className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-red-600 px-1.5 text-[10px] font-black leading-none text-white"
+                    className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-gradient-to-b from-yellow-300 to-yellow-400 px-1.5 text-[10px] font-black leading-none text-blue-800 ring-1 ring-yellow-300"
                     title={`${ordiniNonLetti} ${ordiniNonLetti === 1 ? "ordine non letto" : "ordini non letti"}`}
                   >
                     {ordiniNonLetti > 9 ? "9+" : ordiniNonLetti}

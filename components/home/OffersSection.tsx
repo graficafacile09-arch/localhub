@@ -7,7 +7,7 @@ export default function OffersSection() {
           Offerte della settimana
         </h2>
       </div>
-      <div className="overflow-hidden rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 p-4 text-white">
+      <div className="overflow-hidden rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 p-4 text-white">
         <p className="text-xs font-bold uppercase tracking-wider text-blue-100">
           In arrivo
         </p>

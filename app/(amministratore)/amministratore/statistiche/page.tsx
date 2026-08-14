@@ -56,9 +56,9 @@ export default async function StatistichePage() {
 
       {/* Avvisi fonti dati */}
       {dati.avvisi.length > 0 && (
-        <div className="rounded-3xl border border-amber-200 bg-amber-50 p-5 text-amber-900 shadow-sm" role="status">
+        <div className="rounded-3xl border border-yellow-200 bg-yellow-50 p-5 text-yellow-900 shadow-sm" role="status">
           <div className="flex items-start gap-3">
-            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" aria-hidden />
+            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-yellow-600" aria-hidden />
             <div>
               <h2 className="text-sm font-black">Fonti dati parzialmente disponibili</h2>
               <ul className="mt-2 list-disc space-y-1 pl-5 text-xs leading-5">
@@ -71,11 +71,11 @@ export default async function StatistichePage() {
 
       {/* ── 1. Panoramica KPI ─────────────────────────────────────────────── */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        <KpiCard icon={Store} label="Negozi attivi" value={kpi.negoziAttivi} sub={`${kpi.negoziTotali} reali in piattaforma`} accent={{ bg: "bg-emerald-50", text: "text-emerald-600" }} />
-        <KpiCard icon={Package} label="Prodotti" value={kpi.prodottiAttivi} sub={`${kpi.prodottiTotali} totali · ${kpi.prodottiAi} via AI`} accent={{ bg: "bg-amber-50", text: "text-amber-600" }} />
-        <KpiCard icon={Users} label="Utenti" value={kpi.utentiTotali} sub="account registrati" accent={{ bg: "bg-violet-50", text: "text-violet-600" }} />
+        <KpiCard icon={Store} label="Negozi attivi" value={kpi.negoziAttivi} sub={`${kpi.negoziTotali} reali in piattaforma`} accent={{ bg: "bg-blue-50", text: "text-blue-600" }} />
+        <KpiCard icon={Package} label="Prodotti" value={kpi.prodottiAttivi} sub={`${kpi.prodottiTotali} totali · ${kpi.prodottiAi} via AI`} accent={{ bg: "bg-yellow-50", text: "text-yellow-600" }} />
+        <KpiCard icon={Users} label="Utenti" value={kpi.utentiTotali} sub="account registrati" accent={{ bg: "bg-blue-50", text: "text-blue-600" }} />
         <KpiCard icon={Activity} label="Scansioni AI" value={kpi.scansioniTotali} sub={`${kpi.scansioniOggi} oggi`} accent={{ bg: "bg-blue-50", text: "text-blue-600" }} />
-        <KpiCard icon={FolderTree} label="Categorie usate" value={kpi.categorieAttive} sub="con negozi attivi" accent={{ bg: "bg-cyan-50", text: "text-cyan-600" }} />
+        <KpiCard icon={FolderTree} label="Categorie usate" value={kpi.categorieAttive} sub="con negozi attivi" accent={{ bg: "bg-blue-50", text: "text-blue-600" }} />
       </div>
 
       {/* ── 2. Negozi ─────────────────────────────────────────────────────── */}
@@ -87,11 +87,11 @@ export default async function StatistichePage() {
         <div className="grid gap-4 lg:grid-cols-2">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <MiniStat label="Totale reali" value={negozi.totale} />
-            <MiniStat label="Attivi" value={negozi.attivi} color="text-emerald-600" />
+            <MiniStat label="Attivi" value={negozi.attivi} color="text-blue-600" />
             <MiniStat label="Disattivati" value={negozi.disattivati} />
             <MiniStat label="In evidenza" value={negozi.inEvidenza} color="text-blue-600" />
-            <MiniStat label="Demo (separati)" value={negozi.demo} color="text-violet-600" />
-            <MiniStat label="Nel cestino" value={negozi.cestino} color="text-rose-600" />
+            <MiniStat label="Demo (separati)" value={negozi.demo} color="text-blue-600" />
+            <MiniStat label="Nel cestino" value={negozi.cestino} color="text-yellow-600" />
           </div>
           <BarroneOrizzontale titolo="Per categoria" dati={negozi.perCategoria} vuoto="Nessuna categoria con negozi reali" />
         </div>
@@ -106,8 +106,8 @@ export default async function StatistichePage() {
         <div className="grid gap-4 lg:grid-cols-2">
           <div className="grid grid-cols-3 gap-3">
             <MiniStat label="Totale" value={prodotti.totale} />
-            <MiniStat label="Attivi" value={prodotti.attivi} color="text-emerald-600" />
-            <MiniStat label="Via AI" value={prodotti.ai} color="text-violet-600" />
+            <MiniStat label="Attivi" value={prodotti.attivi} color="text-blue-600" />
+            <MiniStat label="Via AI" value={prodotti.ai} color="text-blue-600" />
           </div>
           <div>
             <h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
@@ -142,8 +142,8 @@ export default async function StatistichePage() {
           <BarroneRuoli dati={utenti.perRuolo} />
           <div className="grid grid-cols-3 gap-3">
             <MiniStat label="Totale" value={utenti.totale} />
-            <MiniStat label="Attivi" value={utenti.attivi} color="text-emerald-600" />
-            <MiniStat label="Disattivati" value={utenti.disattivati} color="text-rose-600" />
+            <MiniStat label="Attivi" value={utenti.attivi} color="text-blue-600" />
+            <MiniStat label="Disattivati" value={utenti.disattivati} color="text-yellow-600" />
           </div>
         </div>
       </Sezione>
@@ -158,8 +158,8 @@ export default async function StatistichePage() {
           <div className="grid grid-cols-2 gap-3">
             <MiniStat label="Totale" value={scansioni.totale} />
             <MiniStat label="Oggi" value={scansioni.oggi} color="text-blue-600" />
-            <MiniStat label="Cache hit" value={scansioni.cacheHit} color="text-emerald-600" />
-            <MiniStat label="Provider attivi" value={scansioni.perProvider.length} color="text-violet-600" />
+            <MiniStat label="Cache hit" value={scansioni.cacheHit} color="text-blue-600" />
+            <MiniStat label="Provider attivi" value={scansioni.perProvider.length} color="text-blue-600" />
           </div>
           <div className="lg:col-span-2">
             <h3 className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
@@ -188,7 +188,7 @@ export default async function StatistichePage() {
             {categorie.map((c) => (
               <div key={c.chiave} className="flex items-center justify-between gap-3 rounded-2xl bg-slate-50 px-4 py-3">
                 <span className="truncate text-sm font-bold text-slate-800">{c.chiave}</span>
-                <span className="rounded-full bg-cyan-100 px-2 py-0.5 text-xs font-black tabular-nums text-cyan-700">
+                <span className="rounded-full bg-blue-100 px-2 py-0.5 text-xs font-black tabular-nums text-blue-700">
                   {c.count}
                 </span>
               </div>
@@ -324,7 +324,7 @@ function BarroneRuoli({ dati }: { dati: { chiave: string; count: number }[] }) {
               </span>
               <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-slate-100">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-violet-500 to-violet-600"
+                  className="h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-600"
                   style={{ width: `${Math.max(6, (d.count / max) * 100)}%` }}
                 />
               </div>

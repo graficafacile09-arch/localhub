@@ -172,7 +172,7 @@ export default async function PaginaNegozio({
             {/* Identità sovrapposta */}
             <div className="absolute inset-x-0 bottom-0 p-3.5 sm:p-5">
               {negozio.categoria && (
-                <span className="mb-1.5 inline-flex items-center gap-1.5 rounded-full bg-amber-400 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-amber-950 shadow-sm">
+                <span className="mb-1.5 inline-flex items-center gap-1.5 rounded-full bg-yellow-400 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-yellow-950 shadow-sm">
                   <Tag className="h-3 w-3" aria-hidden />
                   {negozio.categoria as string}
                 </span>
@@ -215,16 +215,16 @@ export default async function PaginaNegozio({
               rel="noopener noreferrer"
               className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-slate-200/80 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 shadow-sm transition hover:border-blue-300 hover:text-blue-700"
             >
-              <MapPin className="h-3 w-3 shrink-0 text-amber-500" aria-hidden />
+              <MapPin className="h-3 w-3 shrink-0 text-yellow-500" aria-hidden />
               <span className="min-w-0 truncate">{negozio.indirizzo as string}</span>
             </a>
           )}
           {negozio.telefono && (
             <a
               href={`tel:${negozio.telefono as string}`}
-              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/80 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 shadow-sm transition hover:border-emerald-300 hover:text-emerald-700"
+              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/80 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 shadow-sm transition hover:border-blue-300 hover:text-blue-700"
             >
-              <Phone className="h-3 w-3 text-amber-500" aria-hidden />
+              <Phone className="h-3 w-3 text-yellow-500" aria-hidden />
               {negozio.telefono as string}
             </a>
           )}
@@ -252,7 +252,7 @@ export default async function PaginaNegozio({
               href={buildWhatsAppUrl()}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-500 px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-emerald-600 hover:shadow-md"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-blue-500 px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-blue-600 hover:shadow-md"
             >
               <MessageCircle className="h-4 w-4" />
               WhatsApp
@@ -272,7 +272,7 @@ export default async function PaginaNegozio({
           {negozio.telefono && (
             <a
               href={`tel:${negozio.telefono as string}`}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:border-emerald-300 hover:text-emerald-700 hover:shadow"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:border-blue-300 hover:text-blue-700 hover:shadow"
             >
               <Phone className="h-4 w-4" />
               Chiama
@@ -404,10 +404,10 @@ export default async function PaginaNegozio({
           <section className="mt-4">
             <div className="mb-2 flex items-center gap-2">
               <h2 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-slate-500">
-                <Tag className="h-3.5 w-3.5 text-amber-500" />
+                <Tag className="h-3.5 w-3.5 text-yellow-500" />
                 Offerte
               </h2>
-              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-black text-amber-700">
+              <span className="rounded-full bg-yellow-100 px-2 py-0.5 text-[10px] font-black text-yellow-700">
                 {offerte.length}
               </span>
             </div>
@@ -415,11 +415,11 @@ export default async function PaginaNegozio({
               {offerte.map((offerta) => (
                 <article
                   key={offerta.id}
-                  className="overflow-hidden rounded-xl border border-amber-100 bg-gradient-to-br from-amber-50 to-white"
+                  className="overflow-hidden rounded-xl border border-yellow-100 bg-gradient-to-br from-yellow-50 to-white"
                 >
                   <div className="flex items-start gap-3 p-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-100">
-                      <Tag className="h-5 w-5 text-amber-600" />
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-yellow-100">
+                      <Tag className="h-5 w-5 text-yellow-600" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <h3 className="truncate text-sm font-black text-slate-900">
@@ -437,7 +437,7 @@ export default async function PaginaNegozio({
                           </span>
                         )}
                         {offerta.prezzo_offerta !== null && (
-                          <span className="rounded-md bg-amber-500 px-1.5 py-0.5 text-[11px] font-black text-white">
+                          <span className="rounded-md bg-yellow-500 px-1.5 py-0.5 text-[11px] font-black text-white">
                             €{Number(offerta.prezzo_offerta).toFixed(2)}
                           </span>
                         )}

@@ -132,13 +132,13 @@ export default function OrdineAzioni({ negozioId, ordineId, numero, stato }: Pro
     <div className="space-y-3">
       {/* Messaggi inline */}
       {errore && (
-        <p className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-xs font-medium text-red-700">
+        <p className="flex items-start gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2.5 text-xs font-medium text-blue-700">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
           {errore}
         </p>
       )}
       {successo && (
-        <p className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-xs font-medium text-emerald-700">
+        <p className="flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2.5 text-xs font-medium text-blue-700">
           <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden />
           {successo}
         </p>
@@ -156,7 +156,7 @@ export default function OrdineAzioni({ negozioId, ordineId, numero, stato }: Pro
               disabled={invio}
               className={`inline-flex h-11 items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition active:scale-[0.98] disabled:opacity-50 ${
                 azione.distruttiva
-                  ? "border border-red-200 bg-white text-red-600 hover:border-red-300 hover:bg-red-50"
+                  ? "border border-blue-200 bg-white text-blue-600 hover:border-blue-300 hover:bg-blue-50"
                   : "bg-blue-600 text-white shadow-sm hover:bg-blue-700"
               }`}
             >
@@ -181,7 +181,7 @@ export default function OrdineAzioni({ negozioId, ordineId, numero, stato }: Pro
           <div className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-xl">
             <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
               <div className="flex items-center gap-2.5">
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-50 text-red-600">
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
                   <Ban className="h-5 w-5" aria-hidden />
                 </span>
                 <h2 className="text-sm font-black text-slate-900">
@@ -199,7 +199,7 @@ export default function OrdineAzioni({ negozioId, ordineId, numero, stato }: Pro
             </div>
 
             <div className="max-h-[60vh] space-y-4 overflow-y-auto px-5 py-4">
-              <p className="rounded-xl border border-red-100 bg-red-50/60 px-3.5 py-3 text-xs leading-5 text-red-800">
+              <p className="rounded-xl border border-blue-100 bg-blue-50/60 px-3.5 py-3 text-xs leading-5 text-blue-800">
                 <strong>Attenzione:</strong> vuoi davvero annullare questo
                 ordine? Il cliente riceverà un&apos;email di avviso con il
                 motivo indicato e lo stock verrà ripristinato. L&apos;operazione
@@ -217,7 +217,7 @@ export default function OrdineAzioni({ negozioId, ordineId, numero, stato }: Pro
                       key={m.valore}
                       className={`flex cursor-pointer items-start gap-2.5 rounded-xl border px-3 py-2.5 text-sm transition ${
                         motivo === m.valore
-                          ? "border-red-300 bg-red-50"
+                          ? "border-blue-300 bg-blue-50"
                           : "border-slate-200 bg-white hover:border-slate-300"
                       }`}
                     >
@@ -227,7 +227,7 @@ export default function OrdineAzioni({ negozioId, ordineId, numero, stato }: Pro
                         value={m.valore}
                         checked={motivo === m.valore}
                         onChange={() => setMotivo(m.valore)}
-                        className="mt-0.5 h-4 w-4 accent-red-600"
+                        className="mt-0.5 h-4 w-4 accent-blue-600"
                       />
                       <span className="text-slate-700">{m.etichetta}</span>
                     </label>
@@ -253,12 +253,12 @@ export default function OrdineAzioni({ negozioId, ordineId, numero, stato }: Pro
                       ? "Descrivi il motivo dell'annullamento…"
                       : "Eventuali dettagli per il cliente…"
                   }
-                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-red-300 focus:ring-2 focus:ring-red-100"
+                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
                 />
               </div>
 
               {errore && (
-                <p className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-xs font-medium text-red-700">
+                <p className="flex items-start gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2.5 text-xs font-medium text-blue-700">
                   <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
                   {errore}
                 </p>
@@ -278,7 +278,7 @@ export default function OrdineAzioni({ negozioId, ordineId, numero, stato }: Pro
                 type="button"
                 onClick={confermaAnnullamento}
                 disabled={invio}
-                className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-red-700 disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-blue-700 disabled:opacity-50"
               >
                 {invio ? (
                   <Loader2 className="h-4 w-4 animate-spin" aria-hidden />

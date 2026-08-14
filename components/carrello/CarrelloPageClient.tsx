@@ -62,7 +62,7 @@ export default function CarrelloPageClient() {
           <button
             type="button"
             onClick={svuota}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-red-600 transition hover:border-red-300 hover:bg-red-50"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-blue-600 transition hover:border-blue-300 hover:bg-blue-50"
           >
             <Trash2 className="h-3.5 w-3.5" aria-hidden />
             Svuota carrello
@@ -86,7 +86,7 @@ export default function CarrelloPageClient() {
                   </p>
                 </div>
                 <p className="shrink-0 text-xs font-bold text-slate-500">
-                  Subtotale: <span className="text-emerald-700">{formattaEuro(gruppo.subtotale)}</span>
+                  Subtotale: <span className="text-blue-700">{formattaEuro(gruppo.subtotale)}</span>
                 </p>
               </header>
 
@@ -131,7 +131,7 @@ export default function CarrelloPageClient() {
                             type="button"
                             onClick={() => rimuovi(chiave)}
                             aria-label={`Rimuovi ${riga.nome} dal carrello`}
-                            className="shrink-0 rounded-lg p-1.5 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+                            className="shrink-0 rounded-lg p-1.5 text-slate-400 transition hover:bg-blue-50 hover:text-blue-600"
                           >
                             <Trash2 className="h-4 w-4" aria-hidden />
                           </button>
@@ -142,7 +142,7 @@ export default function CarrelloPageClient() {
                             value={riga.quantita}
                             onChange={(v) => aggiorna(chiave, v)}
                           />
-                          <p className="text-sm font-black text-emerald-700 tabular-nums">
+                          <p className="text-sm font-black text-blue-700 tabular-nums">
                             {formattaEuro(importoRiga)}
                           </p>
                         </div>
@@ -169,7 +169,7 @@ export default function CarrelloPageClient() {
             </div>
             <div className="mt-2 flex items-center justify-between border-t border-slate-100 pt-2">
               <dt className="text-base font-black text-slate-900">Totale</dt>
-              <dd className="text-lg font-black text-emerald-700 tabular-nums">
+              <dd className="text-lg font-black text-blue-700 tabular-nums">
                 {formattaEuro(totale)}
               </dd>
             </div>

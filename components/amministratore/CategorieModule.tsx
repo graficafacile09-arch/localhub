@@ -242,10 +242,10 @@ export default function CategorieModule({ categorie }: { categorie: CategoriaAdm
       </div>
 
       {errore && (
-        <div className="flex items-start gap-3 rounded-3xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-900">
+        <div className="flex items-start gap-3 rounded-3xl border border-blue-200 bg-blue-50 px-5 py-4 text-sm text-blue-900">
           <span className="mt-0.5 block text-base font-black" aria-hidden>!</span>
           <p className="leading-6">{errore}</p>
-          <button type="button" onClick={() => setErrore(null)} className="ml-auto rounded p-0.5 hover:bg-red-100" aria-label="Chiudi errore">
+          <button type="button" onClick={() => setErrore(null)} className="ml-auto rounded p-0.5 hover:bg-blue-100" aria-label="Chiudi errore">
             <X className="h-4 w-4" aria-hidden />
           </button>
         </div>
@@ -368,12 +368,12 @@ export default function CategorieModule({ categorie }: { categorie: CategoriaAdm
                       </h2>
                       {categoria.attivo
                         ? conNegozi ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 ring-1 ring-emerald-200">
-                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
+                          <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-bold text-blue-700 ring-1 ring-blue-200">
+                            <span className="h-1.5 w-1.5 rounded-full bg-blue-500" aria-hidden />
                             In uso
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-700 ring-1 ring-amber-200">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-yellow-50 px-2.5 py-1 text-[11px] font-bold text-yellow-700 ring-1 ring-yellow-200">
                             Senza negozi
                           </span>
                         )
@@ -436,7 +436,7 @@ export default function CategorieModule({ categorie }: { categorie: CategoriaAdm
                       type="button"
                       onClick={() => cambiaStato(categoria)}
                       disabled={salvando}
-                      className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-50 px-4 text-sm font-black text-emerald-700 ring-1 ring-emerald-200 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-blue-50 px-4 text-sm font-black text-blue-700 ring-1 ring-blue-200 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       Riattiva
                     </button>

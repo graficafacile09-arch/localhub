@@ -87,7 +87,7 @@ export default function AssistantInput({
         type="button"
         onClick={onSend}
         disabled={!canSend}
-        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-r from-blue-700 via-blue-600 to-cyan-500 text-white shadow-md ring-2 ring-blue-300 transition hover:brightness-110 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:ring-0"
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-r from-blue-700 via-blue-600 to-blue-500 text-white shadow-md ring-2 ring-blue-300 transition hover:brightness-110 active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:ring-0"
         aria-label={isLoading ? "Ricerca in corso…" : "Cerca"}
       >
         {isLoading ? (

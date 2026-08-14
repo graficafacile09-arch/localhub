@@ -155,9 +155,9 @@ export default function UtentiModule({
       <div className="rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm md:p-8">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-4">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-violet-50 text-violet-600 ring-1 ring-violet-100"><UserRound className="h-7 w-7" aria-hidden /></div>
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 ring-1 ring-blue-100"><UserRound className="h-7 w-7" aria-hidden /></div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-violet-700">Sistema Ruoli e Permessi</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">Sistema Ruoli e Permessi</p>
               <h1 className="mt-1.5 text-2xl font-black tracking-tight text-slate-900 md:text-3xl">Utenti</h1>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">Centro di gestione degli utenti LocalHub: amministratori, commercianti e clienti, con i loro ruoli e stati. I dati provengono dal database reale della piattaforma.</p>
             </div>
@@ -197,7 +197,7 @@ export default function UtentiModule({
                 <label className="text-sm font-semibold text-slate-700">Conferma password<input required minLength={8} type="password" value={form.confermaPassword} onChange={(event) => setForm((precedenti) => ({ ...precedenti, confermaPassword: event.target.value }))} placeholder="Ripeti la password" className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal" /></label>
                 <label className="text-sm font-semibold text-slate-700 sm:col-span-2">Ruolo<select value={form.ruolo} onChange={(event) => setForm((precedenti) => ({ ...precedenti, ruolo: event.target.value as RuoloCreabile }))} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal"><option value="utente">Utente</option><option value="commerciante">Commerciante</option><option value="amministratore">Amministratore</option></select></label>
               </div>
-              {errore && <p role="alert" className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{errore}</p>}
+              {errore && <p role="alert" className="mt-3 rounded-xl bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700">{errore}</p>}
               <div className="mt-6 flex justify-end gap-2">
                 <button type="button" onClick={() => { setMostraNuovo(false); setErrore(null); }} className="rounded-xl px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-100">Annulla</button>
                 <button disabled={creando} type="submit" className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-blue-700 disabled:opacity-60">{creando ? "Creazione..." : "Crea utente"}</button>
@@ -351,7 +351,7 @@ export default function UtentiModule({
           </div>
         </div>
       </div>
-      <div className="flex items-start gap-3 rounded-3xl border border-violet-100 bg-violet-50/60 px-5 py-4 text-sm text-violet-900"><Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-violet-600" aria-hidden /><p className="leading-6"><span className="font-bold">Dati reali:</span> elenco e gestione degli utenti registrati sulla piattaforma.</p></div>
+      <div className="flex items-start gap-3 rounded-3xl border border-blue-100 bg-blue-50/60 px-5 py-4 text-sm text-blue-900"><Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" aria-hidden /><p className="leading-6"><span className="font-bold">Dati reali:</span> elenco e gestione degli utenti registrati sulla piattaforma.</p></div>
     </div>
   );
 }

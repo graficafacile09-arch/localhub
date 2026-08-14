@@ -232,8 +232,8 @@ export default async function MerchantProductsPage({ params, searchParams }: Pro
                 href={buildUrl(base, correnti, { stato: f.chiave as string | undefined })}
                 className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${
                   attivo
-                    ? "bg-emerald-600 text-white shadow-sm"
-                    : "border border-slate-200 text-slate-600 hover:border-emerald-300 hover:text-emerald-700"
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "border border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-700"
                 }`}
               >
                 {f.label}
@@ -254,8 +254,8 @@ export default async function MerchantProductsPage({ params, searchParams }: Pro
                 href={buildUrl(base, correnti, { esaurito: f.chiave ? "1" : undefined })}
                 className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${
                   attivo
-                    ? "bg-red-600 text-white shadow-sm"
-                    : "border border-slate-200 text-slate-600 hover:border-red-300 hover:text-red-700"
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "border border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-700"
                 }`}
               >
                 {f.label}
@@ -276,8 +276,8 @@ export default async function MerchantProductsPage({ params, searchParams }: Pro
                 href={buildUrl(base, correnti, { ai: f.attivo ? "1" : undefined })}
                 className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${
                   attivo
-                    ? "bg-violet-600 text-white shadow-sm"
-                    : "border border-slate-200 text-slate-600 hover:border-violet-300 hover:text-violet-700"
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "border border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-700"
                 }`}
               >
                 <Sparkles className="mr-1 inline h-3 w-3" aria-hidden />
@@ -289,7 +289,7 @@ export default async function MerchantProductsPage({ params, searchParams }: Pro
           {filtriAttivi && (
             <Link
               href={base}
-              className="ml-auto inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-600 transition hover:bg-red-100"
+              className="ml-auto inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-600 transition hover:bg-blue-100"
             >
               <X className="h-3 w-3" aria-hidden />
               Azzera filtri

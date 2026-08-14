@@ -60,8 +60,8 @@ export default function AttivitaEliminaButton({
         title="Elimina (sposta nel Cestino)"
         className={
           expand
-            ? "inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 text-sm font-black text-red-600 transition hover:border-red-300 hover:bg-red-50"
-            : "flex h-9 w-9 items-center justify-center rounded-xl border border-red-200 bg-white text-red-600 transition hover:border-red-300 hover:bg-red-50"
+            ? "inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl border border-blue-200 bg-white px-4 text-sm font-black text-blue-600 transition hover:border-blue-300 hover:bg-blue-50"
+            : "flex h-9 w-9 items-center justify-center rounded-xl border border-blue-200 bg-white text-blue-600 transition hover:border-blue-300 hover:bg-blue-50"
         }
       >
         <Trash2 className="h-4 w-4" aria-hidden />
@@ -72,23 +72,23 @@ export default function AttivitaEliminaButton({
         <div
           className={
             expand
-              ? "absolute left-0 top-full z-50 mt-2 w-72 rounded-2xl border border-red-200 bg-red-50 p-4 text-left shadow-xl"
-              : "absolute right-0 top-full z-50 mt-2 w-72 rounded-2xl border border-red-200 bg-red-50 p-4 text-left shadow-xl"
+              ? "absolute left-0 top-full z-50 mt-2 w-72 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-left shadow-xl"
+              : "absolute right-0 top-full z-50 mt-2 w-72 rounded-2xl border border-blue-200 bg-blue-50 p-4 text-left shadow-xl"
           }
         >
           <div className="flex items-start gap-2.5">
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-600" />
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" />
             <div>
-              <p className="text-sm font-bold text-red-800">
+              <p className="text-sm font-bold text-blue-800">
                 Vuoi spostare questo negozio nel Cestino?
               </p>
-              <p className="mt-1 text-xs leading-5 text-red-600">
+              <p className="mt-1 text-xs leading-5 text-blue-600">
                 &ldquo;{storeName}&rdquo; verrà spostato nel Cestino. Potrai
                 ripristinarlo dalla pagina Cestino oppure eliminarlo
                 definitivamente.
               </p>
               {errore && (
-                <p className="mt-2 rounded-lg bg-red-100 px-2.5 py-1.5 text-xs font-semibold text-red-800">
+                <p className="mt-2 rounded-lg bg-blue-100 px-2.5 py-1.5 text-xs font-semibold text-blue-800">
                   {errore}
                 </p>
               )}
@@ -97,7 +97,7 @@ export default function AttivitaEliminaButton({
                   type="button"
                   onClick={handleElimina}
                   disabled={eliminando}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-red-700 disabled:opacity-60"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-blue-700 disabled:opacity-60"
                 >
                   {eliminando ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -113,7 +113,7 @@ export default function AttivitaEliminaButton({
                     setErrore(null);
                   }}
                   disabled={eliminando}
-                  className="rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-red-100 disabled:opacity-60"
+                  className="rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-blue-100 disabled:opacity-60"
                 >
                   Annulla
                 </button>

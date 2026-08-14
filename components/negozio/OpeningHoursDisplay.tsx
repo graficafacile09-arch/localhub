@@ -111,8 +111,8 @@ export default function OpeningHoursDisplay({ orari }: Props) {
     return (
       <div className={`${jakarta.className} rounded-2xl border border-white/70 bg-white p-3.5 shadow-sm sm:p-4`}>
         <div className="flex items-center gap-2.5">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-100">
-            <Clock className="h-4 w-4 text-amber-600" aria-hidden />
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-yellow-100">
+            <Clock className="h-4 w-4 text-yellow-600" aria-hidden />
           </span>
           <h2 className="text-[13px] font-extrabold tracking-tight text-slate-900">Orari di apertura</h2>
           <span className="ml-auto text-[12px] font-medium italic text-slate-400">Orari non disponibili</span>
@@ -130,8 +130,8 @@ export default function OpeningHoursDisplay({ orari }: Props) {
         aria-expanded={open}
         className="flex w-full items-center gap-2.5 text-left"
       >
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-100">
-          <Clock className="h-4 w-4 text-amber-600" aria-hidden />
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-yellow-100">
+          <Clock className="h-4 w-4 text-yellow-600" aria-hidden />
         </span>
         <h2 className="text-[13px] font-extrabold tracking-tight text-slate-900">Orari di apertura</h2>
 
@@ -139,12 +139,12 @@ export default function OpeningHoursDisplay({ orari }: Props) {
           <span
             className={`ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-extrabold ring-1 ${
               status.open
-                ? "bg-emerald-50 text-emerald-600 ring-emerald-100"
+                ? "bg-blue-50 text-blue-600 ring-blue-100"
                 : "bg-slate-100 text-slate-500 ring-slate-200"
             }`}
           >
             <span
-              className={`h-1.5 w-1.5 rounded-full ${status.open ? "bg-emerald-500" : "bg-slate-400"}`}
+              className={`h-1.5 w-1.5 rounded-full ${status.open ? "bg-blue-500" : "bg-slate-400"}`}
               aria-hidden
             />
             {status.text}
@@ -176,17 +176,17 @@ export default function OpeningHoursDisplay({ orari }: Props) {
                 <li
                   key={day}
                   className={`flex items-center justify-between gap-x-3 py-1.5 ${
-                    isToday ? "-mx-2 rounded-lg bg-amber-50/70 px-2" : ""
+                    isToday ? "-mx-2 rounded-lg bg-yellow-50/70 px-2" : ""
                   }`}
                 >
                   <span
                     className={`flex items-center gap-1.5 text-[13px] capitalize tracking-tight ${
-                      isToday ? "font-extrabold text-amber-900" : "font-semibold text-slate-700"
+                      isToday ? "font-extrabold text-yellow-900" : "font-semibold text-slate-700"
                     }`}
                   >
                     {day}
                     {isToday && (
-                      <span className="rounded-full bg-amber-500 px-1.5 py-0.5 text-[9px] font-bold leading-none text-white">
+                      <span className="rounded-full bg-yellow-500 px-1.5 py-0.5 text-[9px] font-bold leading-none text-white">
                         Oggi
                       </span>
                     )}

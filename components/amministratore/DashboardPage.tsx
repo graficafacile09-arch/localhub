@@ -70,14 +70,14 @@ export default function DashboardPage() {
 
   if (error && !data) {
     return (
-      <div className="rounded-3xl border border-red-200 bg-red-50 p-8 text-center">
-        <AlertTriangle className="mx-auto h-8 w-8 text-red-500" />
-        <p className="mt-2 text-sm font-semibold text-red-700">Errore</p>
-        <p className="mt-1 text-xs text-red-600">{error}</p>
+      <div className="rounded-3xl border border-blue-200 bg-blue-50 p-8 text-center">
+        <AlertTriangle className="mx-auto h-8 w-8 text-blue-500" />
+        <p className="mt-2 text-sm font-semibold text-blue-700">Errore</p>
+        <p className="mt-1 text-xs text-blue-600">{error}</p>
         <button
           type="button"
           onClick={() => { setLoading(true); void fetchDashboard(); }}
-          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-red-700"
+          className="mt-4 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-blue-700"
         >
           <RefreshCw className="h-3.5 w-3.5" />
           Riprova
@@ -130,9 +130,9 @@ export default function DashboardPage() {
       </div>
 
       {data.avvisi.length > 0 && (
-        <section className="rounded-3xl border border-amber-200 bg-amber-50 p-5 text-amber-900 shadow-sm" role="status">
+        <section className="rounded-3xl border border-yellow-200 bg-yellow-50 p-5 text-yellow-900 shadow-sm" role="status">
           <div className="flex items-start gap-3">
-            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" aria-hidden />
+            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-yellow-600" aria-hidden />
             <div>
               <h2 className="text-sm font-black">Fonti dati parzialmente disponibili</h2>
               <ul className="mt-2 list-disc space-y-1 pl-5 text-xs leading-5">
@@ -145,14 +145,14 @@ export default function DashboardPage() {
 
       {/* ── KPI ────────────────────────────────────────────────────────── */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        <KpiCard icon={Users} label="Utenti totali" value={kpi.utenti} sub="account registrati" accent={{ bg: "bg-violet-50", text: "text-violet-600" }} />
+        <KpiCard icon={Users} label="Utenti totali" value={kpi.utenti} sub="account registrati" accent={{ bg: "bg-blue-50", text: "text-blue-600" }} />
         <KpiCard icon={ShoppingBag} label="Commercianti" value={kpi.commercianti} sub="con ruolo venditore" accent={{ bg: "bg-blue-50", text: "text-blue-600" }} />
-        <KpiCard icon={UserRound} label="Clienti" value={kpi.clienti} sub="con ruolo cliente" accent={{ bg: "bg-cyan-50", text: "text-cyan-600" }} />
-        <KpiCard icon={Store} label="Negozi attivi" value={kpi.negoziAttivi} sub={`${kpi.negoziSospesi} sospesi`} accent={{ bg: "bg-emerald-50", text: "text-emerald-600" }} />
-        <KpiCard icon={Trash2} label="Nel cestino" value={kpi.negoziCestino} sub="ripristinabili" accent={{ bg: "bg-rose-50", text: "text-rose-600" }} />
-        <KpiCard icon={Package} label="Prodotti" value={kpi.prodotti} sub="pubblicati e attivi" accent={{ bg: "bg-amber-50", text: "text-amber-600" }} />
-        <KpiCard icon={BadgePercent} label="Offerte attive" value={kpi.offerteAttive} sub="elementi pubblicati" accent={{ bg: "bg-pink-50", text: "text-pink-600" }} />
-        <KpiCard icon={CalendarDays} label="Eventi" value={kpi.eventi} sub="elementi pubblicati" accent={{ bg: "bg-indigo-50", text: "text-indigo-600" }} />
+        <KpiCard icon={UserRound} label="Clienti" value={kpi.clienti} sub="con ruolo cliente" accent={{ bg: "bg-blue-50", text: "text-blue-600" }} />
+        <KpiCard icon={Store} label="Negozi attivi" value={kpi.negoziAttivi} sub={`${kpi.negoziSospesi} sospesi`} accent={{ bg: "bg-blue-50", text: "text-blue-600" }} />
+        <KpiCard icon={Trash2} label="Nel cestino" value={kpi.negoziCestino} sub="ripristinabili" accent={{ bg: "bg-yellow-50", text: "text-yellow-600" }} />
+        <KpiCard icon={Package} label="Prodotti" value={kpi.prodotti} sub="pubblicati e attivi" accent={{ bg: "bg-yellow-50", text: "text-yellow-600" }} />
+        <KpiCard icon={BadgePercent} label="Offerte attive" value={kpi.offerteAttive} sub="elementi pubblicati" accent={{ bg: "bg-blue-50", text: "text-blue-600" }} />
+        <KpiCard icon={CalendarDays} label="Eventi" value={kpi.eventi} sub="elementi pubblicati" accent={{ bg: "bg-blue-50", text: "text-blue-600" }} />
         <KpiCard icon={Activity} label="Scansioni AI oggi" value={kpi.scansioniOggi} sub={`${totaleScansioni} negli ultimi 7 giorni`} accent={{ bg: "bg-slate-100", text: "text-slate-600" }} />
         <KpiCard icon={ShieldCheck} label="Negozi reali" value={kpi.negoziAttivi + kpi.negoziSospesi} sub="dati demo esclusi" accent={{ bg: "bg-blue-50", text: "text-blue-600" }} />
       </div>
@@ -319,14 +319,14 @@ const etichettaRuolo: Record<string, string> = {
 };
 
 const stileRuolo: Record<string, string> = {
-  amministratore: "bg-violet-100 text-violet-700",
+  amministratore: "bg-blue-100 text-blue-700",
   commerciante: "bg-blue-100 text-blue-700",
   utente: "bg-slate-100 text-slate-600",
 };
 
 const iconaTipo: Record<string, { icon: React.ReactNode; bg: string }> = {
   negozio: { icon: <Store className="h-3.5 w-3.5 text-blue-600" aria-hidden />, bg: "bg-blue-50" },
-  prodotto: { icon: <Package className="h-3.5 w-3.5 text-amber-600" aria-hidden />, bg: "bg-amber-50" },
+  prodotto: { icon: <Package className="h-3.5 w-3.5 text-yellow-600" aria-hidden />, bg: "bg-yellow-50" },
   scansione: { icon: <Bot className="h-3.5 w-3.5 text-slate-600" aria-hidden />, bg: "bg-slate-100" },
 };
 
@@ -508,11 +508,11 @@ function StatoChip({ ok, etichetta }: { ok: boolean; etichetta: string }) {
     <span
       className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[11px] font-bold ring-1 ${
         ok
-          ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
-          : "bg-amber-50 text-amber-700 ring-amber-200"
+          ? "bg-blue-50 text-blue-700 ring-blue-200"
+          : "bg-yellow-50 text-yellow-700 ring-yellow-200"
       }`}
     >
-      <span className={`h-1.5 w-1.5 rounded-full ${ok ? "bg-emerald-500" : "bg-amber-500"}`} aria-hidden />
+      <span className={`h-1.5 w-1.5 rounded-full ${ok ? "bg-blue-500" : "bg-yellow-500"}`} aria-hidden />
       {etichetta}
     </span>
   );

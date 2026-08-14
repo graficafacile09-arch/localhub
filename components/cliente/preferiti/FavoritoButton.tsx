@@ -92,12 +92,12 @@ export default function FavoritoButton({
         aria-label={ariaEtichetta}
         className={`${base} gap-1.5 border px-3 py-2 text-xs font-bold ${
           attivoLocal
-            ? "border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-100"
-            : "border-slate-200 bg-white text-slate-600 hover:border-rose-200 hover:text-rose-600"
+            ? "border-yellow-200 bg-yellow-50 text-yellow-600 hover:bg-yellow-100"
+            : "border-slate-200 bg-white text-slate-600 hover:border-yellow-200 hover:text-yellow-600"
         } ${className}`}
       >
         <Heart
-          className={`h-4 w-4 ${attivoLocal ? "fill-rose-500 text-rose-500" : ""}`}
+          className={`h-4 w-4 ${attivoLocal ? "fill-yellow-500 text-yellow-500" : ""}`}
           aria-hidden
         />
         {attivoLocal ? "Salvato" : "Salva"}
@@ -114,8 +114,8 @@ export default function FavoritoButton({
       aria-label={ariaEtichetta}
       className={`${base} h-9 w-9 shadow-md ${
         attivoLocal
-          ? "bg-rose-500 text-white hover:bg-rose-600"
-          : "bg-white/95 text-slate-600 backdrop-blur hover:bg-white hover:text-rose-500"
+          ? "bg-yellow-500 text-white hover:bg-yellow-600"
+          : "bg-white/95 text-slate-600 backdrop-blur hover:bg-white hover:text-yellow-500"
       } ${className}`}
     >
       <Heart

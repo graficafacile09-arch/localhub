@@ -165,12 +165,12 @@ export default function MediaManagerPage({ storeId, backHref }: Props) {
           <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
         </div>
       ) : error ? (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+        <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-600">
           {error}
           <button
             type="button"
             onClick={loadMedia}
-            className="ml-2 underline transition hover:text-red-800"
+            className="ml-2 underline transition hover:text-blue-800"
           >
             Riprova
           </button>

@@ -78,8 +78,8 @@ export default function SegnalazioniClienteModule() {
           <div
             className={`mb-6 rounded-2xl p-4 text-sm font-semibold flex items-start gap-3 ${
               messaggio.tipo === "ok"
-                ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
-                : "bg-red-50 text-red-800 border border-red-200"
+                ? "bg-blue-50 text-blue-800 border border-blue-200"
+                : "bg-blue-50 text-blue-800 border border-blue-200"
             }`}
           >
             <ShieldAlert className="h-5 w-5 shrink-0 mt-0.5" />
@@ -107,7 +107,7 @@ export default function SegnalazioniClienteModule() {
 
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
-              Oggetto / Titolo <span className="text-red-500">*</span>
+              Oggetto / Titolo <span className="text-blue-500">*</span>
             </label>
             <input
               type="text"
@@ -122,7 +122,7 @@ export default function SegnalazioniClienteModule() {
 
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
-              Descrizione dettagliata <span className="text-red-500">*</span>
+              Descrizione dettagliata <span className="text-blue-500">*</span>
             </label>
             <textarea
               required

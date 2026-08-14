@@ -157,14 +157,14 @@ export default function CestinoModule() {
 
       {/* Errore */}
       {!loading && error && (
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center">
-          <AlertTriangle className="mx-auto h-8 w-8 text-red-500" />
-          <p className="mt-2 text-sm font-semibold text-red-700">Errore</p>
-          <p className="mt-1 text-xs text-red-600">{error}</p>
+        <div className="rounded-2xl border border-blue-200 bg-blue-50 p-6 text-center">
+          <AlertTriangle className="mx-auto h-8 w-8 text-blue-500" />
+          <p className="mt-2 text-sm font-semibold text-blue-700">Errore</p>
+          <p className="mt-1 text-xs text-blue-600">{error}</p>
           <button
             type="button"
             onClick={fetchTrash}
-            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-red-700"
+            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-blue-700"
           >
             <RefreshCw className="h-3.5 w-3.5" />
             Riprova
@@ -219,13 +219,13 @@ export default function CestinoModule() {
                 </button>
 
                 {confirmDeleteId === store.id ? (
-                  <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 p-2">
-                    <p className="text-[11px] font-semibold text-red-700">Irreversibile?</p>
+                  <div className="flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 p-2">
+                    <p className="text-[11px] font-semibold text-blue-700">Irreversibile?</p>
                     <button
                       type="button"
                       onClick={() => handleDeleteForever(store.id)}
                       disabled={deletingId === store.id}
-                      className="inline-flex items-center gap-1 rounded-lg bg-red-600 px-3 py-1.5 text-[11px] font-bold text-white transition hover:bg-red-700 disabled:opacity-60"
+                      className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-1.5 text-[11px] font-bold text-white transition hover:bg-blue-700 disabled:opacity-60"
                     >
                       {deletingId === store.id ? (
                         <Loader2 className="h-3 w-3 animate-spin" />
@@ -238,7 +238,7 @@ export default function CestinoModule() {
                       type="button"
                       onClick={() => setConfirmDeleteId(null)}
                       disabled={deletingId === store.id}
-                      className="rounded-lg px-2 py-1.5 text-[11px] font-semibold text-slate-600 transition hover:bg-red-100 disabled:opacity-60"
+                      className="rounded-lg px-2 py-1.5 text-[11px] font-semibold text-slate-600 transition hover:bg-blue-100 disabled:opacity-60"
                     >
                       Annulla
                     </button>
@@ -251,7 +251,7 @@ export default function CestinoModule() {
                       setConfirmDeleteId(store.id);
                     }}
                     disabled={restoringId === store.id || deletingId === store.id}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-xs font-bold text-red-600 transition hover:bg-red-50 disabled:opacity-60"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-blue-200 bg-white px-4 py-2.5 text-xs font-bold text-blue-600 transition hover:bg-blue-50 disabled:opacity-60"
                     title="Elimina definitivamente dal database (irreversibile)"
                   >
                     <Trash2 className="h-3.5 w-3.5" />

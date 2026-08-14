@@ -136,13 +136,13 @@ export default async function MerchantStorePage({
                     : `${ordini.length} ordini totali`}
                 </p>
                 {nonLetti > 0 && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-red-600 px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wider text-white">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-blue-600 px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wider text-white">
                     <BellRing className="h-3 w-3" aria-hidden />
                     {nonLetti} nuovo{nonLetti === 1 ? " ordine" : "i ordini"}
                   </span>
                 )}
                 {reclamiAperti > 0 && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-0.5 text-[11px] font-bold text-red-700 ring-1 ring-red-200">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 text-[11px] font-bold text-blue-700 ring-1 ring-blue-200">
                     <AlertTriangle className="h-3 w-3" aria-hidden />
                     {reclamiAperti} {reclamiAperti === 1 ? "reclamo aperto" : "reclami aperti"}
                   </span>

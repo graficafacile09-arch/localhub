@@ -308,7 +308,7 @@ export default function MerchantProductForm({
     <form onSubmit={handleSubmit} onChange={handleFormChange} className="space-y-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
       {/* Errore */}
       {error ? (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{error}</div>
+        <div className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700">{error}</div>
       ) : null}
 
       {/* Anteprima immagine + upload */}
@@ -376,7 +376,7 @@ export default function MerchantProductForm({
       {productId ? (
         <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
           <div className="mb-3 flex items-center gap-2">
-            <Layers className="h-4 w-4 text-violet-600" />
+            <Layers className="h-4 w-4 text-blue-600" />
             <div>
               <p className="text-xs font-bold text-slate-800">Varianti</p>
               <p className="text-[10px] text-slate-500">
@@ -471,7 +471,7 @@ export default function MerchantProductForm({
         />
       </div>
       {initialData?.ha_varianti === true ? (
-        <p className="text-[10px] text-violet-500">
+        <p className="text-[10px] text-blue-500">
           Prezzo e quantità sono calcolati automaticamente dalle varianti: modificali nella sezione Varianti qui sotto.
         </p>
       ) : null}

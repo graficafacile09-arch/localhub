@@ -40,7 +40,7 @@ function formatDate(dateStr: string): string {
 
 function FileIcon({ mime }: { mime: string }) {
   if (mime.startsWith("image/")) return <FileImage className="h-8 w-8 text-blue-400" />;
-  if (mime.startsWith("video/")) return <Video className="h-8 w-8 text-purple-400" />;
+  if (mime.startsWith("video/")) return <Video className="h-8 w-8 text-blue-400" />;
   return <File className="h-8 w-8 text-slate-400" />;
 }
 
@@ -122,7 +122,7 @@ export default function MediaGrid({ items, onDelete, onRename, onSelect }: Props
                   <button
                     type="button"
                     onClick={() => saveEdit(item.id)}
-                    className="shrink-0 rounded p-0.5 text-emerald-600 hover:bg-emerald-50"
+                    className="shrink-0 rounded p-0.5 text-blue-600 hover:bg-blue-50"
                   >
                     <Check className="h-3.5 w-3.5" />
                   </button>
@@ -163,7 +163,7 @@ export default function MediaGrid({ items, onDelete, onRename, onSelect }: Props
                 <button
                   type="button"
                   onClick={() => onDelete(item.id)}
-                  className="rounded-lg bg-white/90 p-1.5 text-slate-500 shadow-sm backdrop-blur transition hover:bg-white hover:text-red-600"
+                  className="rounded-lg bg-white/90 p-1.5 text-slate-500 shadow-sm backdrop-blur transition hover:bg-white hover:text-blue-600"
                   title="Elimina"
                 >
                   <Trash2 className="h-3.5 w-3.5" />

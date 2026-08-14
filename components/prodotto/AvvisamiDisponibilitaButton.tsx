@@ -84,7 +84,7 @@ export default function AvvisamiDisponibilitaButton({
 
   if (fase === "success") {
     return (
-      <div className="flex items-start gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">
+      <div className="flex items-start gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-800">
         <BellRing className="mt-0.5 h-4 w-4 shrink-0" />
         <span>Ti avviseremo quando sarà nuovamente disponibile.</span>
       </div>
@@ -130,7 +130,7 @@ export default function AvvisamiDisponibilitaButton({
           className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
         />
         {errore && (
-          <p className="mt-2 text-xs font-semibold text-red-600">{errore}</p>
+          <p className="mt-2 text-xs font-semibold text-blue-600">{errore}</p>
         )}
         <div className="mt-3 flex flex-wrap gap-2">
           <button
@@ -163,7 +163,7 @@ export default function AvvisamiDisponibilitaButton({
   return (
     <div>
       {errore && (
-        <p className="mb-2 text-xs font-semibold text-red-600">{errore}</p>
+        <p className="mb-2 text-xs font-semibold text-blue-600">{errore}</p>
       )}
       <button
         type="button"

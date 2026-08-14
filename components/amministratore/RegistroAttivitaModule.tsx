@@ -199,11 +199,11 @@ export default function RegistroAttivitaModule() {
         </nav>
 
         <div className="flex items-start gap-4">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 ring-1 ring-amber-100">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-yellow-50 text-yellow-600 ring-1 ring-yellow-100">
             <RotateCcw className="h-7 w-7" aria-hidden />
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-700">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-yellow-700">
               Amministrazione
             </p>
             <h1 className="mt-1.5 text-2xl font-black tracking-tight text-slate-900 md:text-3xl">
@@ -320,7 +320,7 @@ export default function RegistroAttivitaModule() {
       </div>
 
       {errore && (
-        <div className="rounded-3xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-900">
+        <div className="rounded-3xl border border-blue-200 bg-blue-50 px-5 py-4 text-sm text-blue-900">
           {errore}
         </div>
       )}
@@ -371,7 +371,7 @@ export default function RegistroAttivitaModule() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-sm text-slate-700">
-                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold text-amber-700 ring-1 ring-amber-100">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-yellow-50 px-2.5 py-0.5 text-[11px] font-semibold text-yellow-700 ring-1 ring-yellow-100">
                           {getTargetLabel(riga.target_type)}
                         </span>
                         {riga.target_name && (
@@ -380,7 +380,7 @@ export default function RegistroAttivitaModule() {
                       </td>
                       <td className="px-4 py-3 text-sm text-slate-700">
                         {riga.negozio_nome ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-100">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 text-[11px] font-semibold text-blue-700 ring-1 ring-blue-100">
                             {riga.negozio_nome}
                           </span>
                         ) : (
@@ -389,13 +389,13 @@ export default function RegistroAttivitaModule() {
                       </td>
                       <td className="px-4 py-3 text-sm">
                         {riga.result === "success" ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 ring-1 ring-emerald-200">
-                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
+                          <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 text-[11px] font-bold text-blue-700 ring-1 ring-blue-200">
+                            <span className="h-1.5 w-1.5 rounded-full bg-blue-500" aria-hidden />
                             Successo
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-0.5 text-[11px] font-bold text-red-700 ring-1 ring-red-200">
-                            <span className="h-1.5 w-1.5 rounded-full bg-red-500" aria-hidden />
+                          <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 text-[11px] font-bold text-blue-700 ring-1 ring-blue-200">
+                            <span className="h-1.5 w-1.5 rounded-full bg-blue-500" aria-hidden />
                             Errore
                           </span>
                         )}
@@ -444,7 +444,7 @@ export default function RegistroAttivitaModule() {
             )}
           </div>
 
-          <div className="mt-4 rounded-3xl border border-amber-100 bg-amber-50/60 px-5 py-4 text-sm text-amber-900">
+          <div className="mt-4 rounded-3xl border border-yellow-100 bg-yellow-50/60 px-5 py-4 text-sm text-yellow-900">
             <p className="leading-6">
               <span className="font-bold">Nota:</span> il registro mostra le operazioni eseguite
               dall&#8217;area amministratore. I dati vengono registrati automaticamente

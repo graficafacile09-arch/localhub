@@ -429,7 +429,7 @@ export default function WizardShell() {
                 <button
                   type="button"
                   onClick={() => updateField("logo", "")}
-                  className="ml-2 text-[10px] font-semibold text-red-500 hover:underline"
+                  className="ml-2 text-[10px] font-semibold text-blue-500 hover:underline"
                 >
                   Rimuovi
                 </button>
@@ -516,7 +516,7 @@ export default function WizardShell() {
         </div>
 
         {error && (
-          <p className="mb-4 text-xs font-semibold text-red-500">{error}</p>
+          <p className="mb-4 text-xs font-semibold text-blue-500">{error}</p>
         )}
 
         <button

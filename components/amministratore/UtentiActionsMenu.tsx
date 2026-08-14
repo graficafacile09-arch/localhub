@@ -83,20 +83,20 @@ export default function UtentiActionsMenu({
             {caricamento ? <Loader2 className="h-4 w-4 animate-spin" /> : <Pencil className="h-4 w-4" />}
             Ruolo: {prossimoRuolo === "commerciante" ? "Commerciante" : "Utente"}
           </button>
-          <button type="button" role="menuitem" disabled={caricamento} onClick={() => void aggiorna({ stato: prossimoStato }, { stato: prossimoStato })} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-amber-700 hover:bg-amber-50 disabled:opacity-60">
+          <button type="button" role="menuitem" disabled={caricamento} onClick={() => void aggiorna({ stato: prossimoStato }, { stato: prossimoStato })} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-yellow-700 hover:bg-yellow-50 disabled:opacity-60">
             <Ban className="h-4 w-4" />
             {utente.stato === "attivo" ? "Disattiva" : "Riattiva"}
           </button>
-          <button type="button" role="menuitem" disabled={caricamento} onClick={() => void aggiorna({ ruolo: "amministratore" }, { ruolo: "amministratore" })} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-violet-700 hover:bg-violet-50 disabled:opacity-60">
+          <button type="button" role="menuitem" disabled={caricamento} onClick={() => void aggiorna({ ruolo: "amministratore" }, { ruolo: "amministratore" })} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-60">
             <ShieldCheck className="h-4 w-4" />
             Rendi amministratore
           </button>
           <div className="my-1 border-t border-slate-100" />
-          <button type="button" role="menuitem" disabled={caricamento} onClick={() => void elimina()} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60">
+          <button type="button" role="menuitem" disabled={caricamento} onClick={() => void elimina()} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-blue-600 hover:bg-blue-50 disabled:opacity-60">
             <Trash2 className="h-4 w-4" />
             Elimina
           </button>
-          {errore && <p role="alert" className="mx-2 mt-1 rounded-lg bg-red-50 px-2 py-1.5 text-[11px] font-semibold text-red-700">{errore}</p>}
+          {errore && <p role="alert" className="mx-2 mt-1 rounded-lg bg-blue-50 px-2 py-1.5 text-[11px] font-semibold text-blue-700">{errore}</p>}
         </div>
       )}
     </div>

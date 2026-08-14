@@ -197,8 +197,8 @@ export default function OfferteModule({ offerte }: { offerte: OffertaAdmin[] }) 
         <div
           className={`flex items-start gap-3 rounded-3xl border px-5 py-4 text-sm ${
             errore
-              ? "border-red-200 bg-red-50 text-red-900"
-              : "border-emerald-200 bg-emerald-50 text-emerald-900"
+              ? "border-blue-200 bg-blue-50 text-blue-900"
+              : "border-blue-200 bg-blue-50 text-blue-900"
           }`}
         >
           <span className="mt-0.5 block text-base font-black" aria-hidden>
@@ -262,8 +262,8 @@ export default function OfferteModule({ offerte }: { offerte: OffertaAdmin[] }) 
                       {offerta.titolo}
                     </h2>
                     {offerta.attiva ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 ring-1 ring-emerald-200">
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
+                      <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-bold text-blue-700 ring-1 ring-blue-200">
+                        <span className="h-1.5 w-1.5 rounded-full bg-blue-500" aria-hidden />
                         Attiva
                       </span>
                     ) : (
@@ -318,7 +318,7 @@ export default function OfferteModule({ offerte }: { offerte: OffertaAdmin[] }) 
                     type="button"
                     onClick={() => cambiaStato(offerta, true)}
                     disabled={salvando}
-                    className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-50 px-4 text-sm font-black text-emerald-700 ring-1 ring-emerald-200 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-blue-50 px-4 text-sm font-black text-blue-700 ring-1 ring-blue-200 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <RotateCcw className="h-4 w-4" aria-hidden />
                     Riattiva
@@ -338,7 +338,7 @@ export default function OfferteModule({ offerte }: { offerte: OffertaAdmin[] }) 
                   type="button"
                   onClick={() => elimina(offerta)}
                   disabled={salvando}
-                  className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-red-50 px-2 text-red-600 ring-1 ring-red-100 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 px-2 text-blue-600 ring-1 ring-blue-100 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
                   aria-label="Elimina offerta"
                 >
                   <Trash2 className="h-4 w-4" aria-hidden />

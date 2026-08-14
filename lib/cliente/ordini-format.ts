@@ -106,14 +106,16 @@ export function etichettaStato(stato: StatoOrdine): string {
  * ricevere la grafica di un ordine confermato. Testabile in modo puro
  * (scripts/test-ordini-vista.ts).
  *
- * Palette professionale coerente:
- *   NUOVO          → ambra (attenzione)
- *   CONFERMATO     → blu (informazione)
- *   IN LAVORAZIONE → arancio (in corso)
- *   PRONTO         → verde (positivo, distinto dal completato)
- *   IN CONSEGNA    → azzurro (in transito)
- *   COMPLETATO     → smeraldo (concluso, positivo)
- *   ANNULLATO      → rosso (errore/annullamento) — MAI verde.
+ * Palette identità InCittà (blu struttura + giallo accento):
+ *   NUOVO          → giallo (attenzione)
+ *   CONFERMATO     → blu chiaro (informazione)
+ *   IN LAVORAZIONE → giallo (in corso, icona martello)
+ *   PRONTO         → giallo intenso (evidenziato)
+ *   IN CONSEGNA    → blu (in transito, icona camion)
+ *   COMPLETATO     → blu intenso (positivo, concluso)
+ *   ANNULLATO      → blu scuro + icona ban (errore) — MAI giallo/blu positivo.
+ * La differenziazione tra stati avviene tramite ICONA, bordo e intensità
+ * (mai rosso/verde/arancio): tutti i toni restano blu/giallo.
  */
 export type ConfigStatoOrdine = {
   /** Nome dell'icona lucide (renderizzata via components/ordini/StatoIcona). */
@@ -149,11 +151,11 @@ export function configStatoOrdine(stato: StatoOrdine): ConfigStatoOrdine {
         etichettaBanner: "ORDINE NUOVO",
         descrizioneCliente: "Il negozio ha ricevuto il tuo ordine.",
         descrizioneVenditore: "Ordine appena ricevuto: confermalo per iniziare la lavorazione.",
-        banner: "border-amber-200 bg-amber-50/70",
-        testo: "text-amber-950",
-        badge: "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
-        iconaTesto: "text-amber-600",
-        dot: "bg-amber-500",
+        banner: "border-yellow-200 bg-yellow-50/70",
+        testo: "text-yellow-950",
+        badge: "bg-yellow-50 text-yellow-700 ring-1 ring-yellow-200",
+        iconaTesto: "text-yellow-600",
+        dot: "bg-yellow-500",
         terminale: false,
       };
     case "confermato":
@@ -177,11 +179,11 @@ export function configStatoOrdine(stato: StatoOrdine): ConfigStatoOrdine {
         etichettaBanner: "IN LAVORAZIONE",
         descrizioneCliente: "Il negozio sta preparando il tuo ordine.",
         descrizioneVenditore: "Lavorazione in corso: segna l'ordine come pronto quando è pronto.",
-        banner: "border-orange-200 bg-orange-50/70",
-        testo: "text-orange-950",
-        badge: "bg-orange-50 text-orange-700 ring-1 ring-orange-200",
-        iconaTesto: "text-orange-600",
-        dot: "bg-orange-500",
+        banner: "border-yellow-200 bg-yellow-50/70",
+        testo: "text-yellow-950",
+        badge: "bg-yellow-50 text-yellow-700 ring-1 ring-yellow-200",
+        iconaTesto: "text-yellow-600",
+        dot: "bg-yellow-500",
         terminale: false,
       };
     case "pronto":
@@ -191,11 +193,11 @@ export function configStatoOrdine(stato: StatoOrdine): ConfigStatoOrdine {
         etichettaBanner: "ORDINE PRONTO",
         descrizioneCliente: "Il tuo ordine è pronto.",
         descrizioneVenditore: "Ordine pronto: completalo alla consegna.",
-        banner: "border-green-200 bg-green-50/70",
-        testo: "text-green-950",
-        badge: "bg-green-50 text-green-700 ring-1 ring-green-200",
-        iconaTesto: "text-green-600",
-        dot: "bg-green-500",
+        banner: "border-blue-200 bg-blue-50/70",
+        testo: "text-blue-950",
+        badge: "bg-blue-50 text-blue-700 ring-1 ring-blue-200",
+        iconaTesto: "text-blue-600",
+        dot: "bg-blue-500",
         terminale: false,
       };
     case "in_consegna":
@@ -205,11 +207,11 @@ export function configStatoOrdine(stato: StatoOrdine): ConfigStatoOrdine {
         etichettaBanner: "IN CONSEGNA",
         descrizioneCliente: "Il tuo ordine è in consegna.",
         descrizioneVenditore: "Ordine in consegna al cliente.",
-        banner: "border-sky-200 bg-sky-50/70",
-        testo: "text-sky-950",
-        badge: "bg-sky-50 text-sky-700 ring-1 ring-sky-200",
-        iconaTesto: "text-sky-600",
-        dot: "bg-sky-500",
+        banner: "border-blue-200 bg-blue-50/70",
+        testo: "text-blue-950",
+        badge: "bg-blue-50 text-blue-700 ring-1 ring-blue-200",
+        iconaTesto: "text-blue-600",
+        dot: "bg-blue-500",
         terminale: false,
       };
     case "consegnato":
@@ -219,25 +221,25 @@ export function configStatoOrdine(stato: StatoOrdine): ConfigStatoOrdine {
         etichettaBanner: "ORDINE COMPLETATO",
         descrizioneCliente: "Il tuo ordine è stato completato.",
         descrizioneVenditore: "Ordine completato: nessuna azione necessaria.",
-        banner: "border-emerald-200 bg-emerald-50/70",
-        testo: "text-emerald-950",
-        badge: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200",
-        iconaTesto: "text-emerald-600",
-        dot: "bg-emerald-500",
+        banner: "border-blue-300 bg-blue-100/70",
+        testo: "text-blue-950",
+        badge: "bg-blue-100 text-blue-800 ring-1 ring-blue-300",
+        iconaTesto: "text-blue-700",
+        dot: "bg-blue-600",
         terminale: true,
       };
     case "cancellato":
       return {
         icona: "ban",
-        emoji: "🔴",
+        emoji: "⛔",
         etichettaBanner: "ORDINE ANNULLATO",
         descrizioneCliente: "Il negozio non ha potuto evadere il tuo ordine.",
         descrizioneVenditore: "Ordine annullato: terminale, nessuna azione disponibile.",
-        banner: "border-red-200 bg-red-50/70",
-        testo: "text-red-950",
-        badge: "bg-red-50 text-red-700 ring-1 ring-red-200",
-        iconaTesto: "text-red-600",
-        dot: "bg-red-500",
+        banner: "border-blue-900/40 bg-blue-950/5",
+        testo: "text-blue-950",
+        badge: "bg-blue-950 text-blue-100 ring-1 ring-blue-900",
+        iconaTesto: "text-blue-900",
+        dot: "bg-blue-900",
         terminale: true,
       };
     default:

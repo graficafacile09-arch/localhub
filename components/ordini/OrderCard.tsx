@@ -81,23 +81,23 @@ export function OrderCard({
       href={href}
       className={`group flex h-full flex-col rounded-[1.75rem] border bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg ${
         nonLetto && vista === "venditore"
-          ? "border-red-200 ring-1 ring-red-100"
+          ? "border-blue-200 ring-1 ring-blue-100"
           : haReclamoAperto && vista === "venditore"
-            ? "border-red-200 ring-1 ring-red-100"
+            ? "border-blue-200 ring-1 ring-blue-100"
             : "border-white/70 hover:border-slate-200"
       }`}
     >
       {/* ── 0. RECLAMO APERTO — priorità visiva ASSOLUTA, sopra il numero ── */}
       {haReclamoAperto && vista === "venditore" ? (
-        <div className="mb-4 flex items-center gap-2.5 overflow-hidden rounded-xl border border-red-200 bg-red-50/90 px-3 py-2.5">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-600 text-white shadow-sm shadow-red-600/30">
+        <div className="mb-4 flex items-center gap-2.5 overflow-hidden rounded-xl border border-blue-200 bg-blue-50/90 px-3 py-2.5">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-600 text-white shadow-sm shadow-blue-600/30">
             <AlertTriangle className="h-[18px] w-[18px]" aria-hidden />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-xs font-black uppercase tracking-wide text-red-800">
+            <span className="block text-xs font-black uppercase tracking-wide text-blue-800">
               Reclamo aperto
             </span>
-            <span className="block truncate text-[11px] leading-4 text-red-700/80">
+            <span className="block truncate text-[11px] leading-4 text-blue-700/80">
               Richiede la tua attenzione
             </span>
           </span>
@@ -110,7 +110,7 @@ export function OrderCard({
           <p className="flex min-w-0 items-center gap-x-2">
             <span
               className={`shrink-0 font-mono text-[15px] font-black tracking-tight tabular-nums ${
-                numeroAttenzione ? "text-red-700" : "text-slate-900"
+                numeroAttenzione ? "text-blue-700" : "text-slate-900"
               }`}
             >
               {numero}
@@ -134,7 +134,7 @@ export function OrderCard({
       <div className="mt-2.5 flex flex-wrap items-center gap-2">
         <StatoBadge stato={stato} />
         {nonLetto && vista === "venditore" ? (
-          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-red-600 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-white">
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-blue-600 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-white">
             <BellRing className="h-3 w-3" aria-hidden /> Nuovo ordine
           </span>
         ) : null}

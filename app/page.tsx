@@ -50,7 +50,7 @@ export default async function Home() {
           <div className="mt-6 mx-auto flex max-w-xl items-center gap-2 sm:gap-3">
             <form action="/ricerca" method="GET" className="min-w-0 flex-1">
               <div className="relative group">
-                <div className="absolute -inset-1.5 bg-gradient-to-r from-blue-400 via-blue-500 to-cyan-400 rounded-full opacity-0 group-focus-within:opacity-100 blur-xl transition-all duration-500" />
+                <div className="absolute -inset-1.5 bg-gradient-to-r from-blue-400 via-blue-500 to-blue-400 rounded-full opacity-0 group-focus-within:opacity-100 blur-xl transition-all duration-500" />
                 <div className="relative flex items-center bg-gradient-to-b from-yellow-300 to-yellow-400 rounded-full shadow-lg shadow-yellow-400/30 ring-1 ring-yellow-300 focus-within:ring-2 focus-within:ring-blue-400/50 focus-within:shadow-blue-500/20 transition-all duration-300 before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/25 before:to-transparent before:rounded-full before:pointer-events-none">
                   <Search className="ml-5 h-5 w-5 text-blue-600 shrink-0" />
                   <input

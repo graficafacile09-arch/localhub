@@ -86,10 +86,10 @@ export default function ScansioniPage() {
 
   if (error) {
     return (
-      <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center">
-        <AlertTriangle className="mx-auto h-8 w-8 text-red-500" />
-        <p className="mt-2 text-sm font-semibold text-red-700">Errore</p>
-        <p className="mt-1 text-xs text-red-600">{error}</p>
+      <div className="rounded-2xl border border-blue-200 bg-blue-50 p-6 text-center">
+        <AlertTriangle className="mx-auto h-8 w-8 text-blue-500" />
+        <p className="mt-2 text-sm font-semibold text-blue-700">Errore</p>
+        <p className="mt-1 text-xs text-blue-600">{error}</p>
       </div>
     );
   }
@@ -139,21 +139,21 @@ export default function ScansioniPage() {
           label="Cache hit"
           value={`${oggi.cacheHitPercent}%`}
           sub={`${oggi.cacheHit} su ${oggi.totale} scansioni`}
-          accent="text-emerald-700"
+          accent="text-blue-700"
         />
         <StatCard
           icon={Clock}
           label="Tempo medio"
           value={oggi.tempoMedio > 0 ? `${(oggi.tempoMedio / 1000).toFixed(1)}s` : "—"}
           sub={`${oggi.totale > 0 ? "su scansioni riuscite" : "nessun dato"}`}
-          accent="text-amber-700"
+          accent="text-yellow-700"
         />
         <StatCard
           icon={AlertTriangle}
           label="Errori"
           value={`${oggi.errorPercent}%`}
           sub={`${oggi.errori} errori su ${oggi.totale} scansioni`}
-          accent={oggi.errori > 0 ? "text-red-700" : "text-slate-500"}
+          accent={oggi.errori > 0 ? "text-blue-700" : "text-slate-500"}
         />
       </div>
 
@@ -216,10 +216,10 @@ export default function ScansioniPage() {
                   <span
                     className={`inline-block h-2 w-2 rounded-full ${
                       s.status === "success"
-                        ? "bg-emerald-500"
+                        ? "bg-blue-500"
                         : s.status === "rate_limited"
-                          ? "bg-amber-500"
-                          : "bg-red-500"
+                          ? "bg-yellow-500"
+                          : "bg-blue-500"
                     }`}
                   />
                   <span className="font-medium text-slate-700">{s.provider}</span>
@@ -231,7 +231,7 @@ export default function ScansioniPage() {
                   {s.confidence !== null && (
                     <span
                       className={`font-semibold ${
-                        s.confidence >= 60 ? "text-emerald-600" : "text-amber-600"
+                        s.confidence >= 60 ? "text-blue-600" : "text-yellow-600"
                       }`}
                     >
                       {s.confidence}%
@@ -255,9 +255,9 @@ export default function ScansioniPage() {
       </div>
 
       {/* Info limiti */}
-      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-900">
+      <div className="rounded-2xl border border-yellow-200 bg-yellow-50 p-4 text-xs text-yellow-900">
         <p className="font-semibold">Limiti attuali</p>
-        <ul className="mt-2 list-inside list-disc space-y-1 text-amber-800">
+        <ul className="mt-2 list-inside list-disc space-y-1 text-yellow-800">
           <li>
             Rate limit:{" "}
             <strong>{process.env.NEXT_PUBLIC_RATE_LIMIT_MIN ?? 60}</strong> scan/minuto,

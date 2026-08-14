@@ -40,16 +40,16 @@ type Props = {
 };
 
 const COLORI: Record<StatoReclamo, string> = {
-  aperto: "bg-red-50 text-red-700 ring-1 ring-red-200",
-  in_gestione: "bg-amber-50 text-amber-700 ring-1 ring-amber-200",
-  risolto: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200",
+  aperto: "bg-blue-50 text-blue-700 ring-1 ring-blue-200",
+  in_gestione: "bg-yellow-50 text-yellow-700 ring-1 ring-yellow-200",
+  risolto: "bg-blue-50 text-blue-700 ring-1 ring-blue-200",
   chiuso: "bg-slate-100 text-slate-600 ring-1 ring-slate-200",
 };
 
 const CERCHIO_ATTIVO: Record<StatoReclamo, string> = {
-  aperto: "bg-red-600",
-  in_gestione: "bg-amber-500",
-  risolto: "bg-emerald-600",
+  aperto: "bg-blue-600",
+  in_gestione: "bg-yellow-500",
+  risolto: "bg-blue-600",
   chiuso: "bg-slate-500",
 };
 
@@ -186,13 +186,13 @@ export default function ReclamiOrdine({
   return (
     <div className="space-y-4">
       {errore && (
-        <p className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-xs font-medium text-red-700">
+        <p className="flex items-start gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2.5 text-xs font-medium text-blue-700">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
           {errore}
         </p>
       )}
       {successo && (
-        <p className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-xs font-medium text-emerald-700">
+        <p className="flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2.5 text-xs font-medium text-blue-700">
           <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden />
           {successo}
         </p>
@@ -206,20 +206,20 @@ export default function ReclamiOrdine({
         return (
           <article
             key={reclamo.id}
-            className="overflow-hidden rounded-[1.75rem] border border-red-200 bg-white shadow-sm"
+            className="overflow-hidden rounded-[1.75rem] border border-blue-200 bg-white shadow-sm"
           >
             {/* ── HEADER COMPATTO: 🔴 RECLAMO · #LH-XXXX · prodotto ─────────── */}
-            <div className="relative border-b border-red-100 bg-red-50/80 px-5 py-3.5">
+            <div className="relative border-b border-blue-100 bg-blue-50/80 px-5 py-3.5">
               <span
-                className="absolute inset-y-0 left-0 w-1.5 bg-linear-to-b from-red-500 to-red-700"
+                className="absolute inset-y-0 left-0 w-1.5 bg-linear-to-b from-blue-500 to-blue-700"
                 aria-hidden
               />
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 pl-2">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-600 text-white shadow-sm shadow-red-600/30">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm shadow-blue-600/30">
                   <AlertTriangle className="h-4.5 w-4.5" aria-hidden />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="flex flex-wrap items-baseline gap-x-2 text-[11px] font-black uppercase tracking-wide text-red-800">
+                  <p className="flex flex-wrap items-baseline gap-x-2 text-[11px] font-black uppercase tracking-wide text-blue-800">
                     Reclamo —{" "}
                     {ETICHETTA_TIPO_RECLAMO[reclamo.tipo] ?? reclamo.tipo}
                     <span className="font-mono text-sm font-black normal-case tracking-tight text-slate-900 tabular-nums">
@@ -231,7 +231,7 @@ export default function ReclamiOrdine({
                       </span>
                     )}
                   </p>
-                  <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-red-700/80">
+                  <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-blue-700/80">
                     <span className="inline-flex items-center gap-1">
                       <User className="h-3 w-3" aria-hidden />
                       {reclamo.clienteNome || "—"}
@@ -334,7 +334,7 @@ export default function ReclamiOrdine({
                   {erroreInvio && (
                     <p
                       role="alert"
-                      className="mb-2 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-700"
+                      className="mb-2 flex items-start gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-medium text-blue-700"
                     >
                       <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
                       {erroreInvio}
@@ -392,7 +392,7 @@ export default function ReclamiOrdine({
                           disabled={azioneAttiva !== null}
                           className={`inline-flex h-9 items-center gap-2 rounded-xl px-3.5 text-xs font-bold transition active:scale-[0.98] disabled:opacity-50 ${
                             risolvi
-                              ? "bg-emerald-600 text-white shadow-sm hover:bg-emerald-700"
+                              ? "bg-blue-600 text-white shadow-sm hover:bg-blue-700"
                               : azione.stato === "chiuso"
                                 ? "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
                                 : "border border-blue-200 bg-white text-blue-700 hover:bg-blue-50"

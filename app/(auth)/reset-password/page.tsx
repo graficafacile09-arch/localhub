@@ -57,7 +57,7 @@ export default async function ResetPasswordPage({
         className="absolute left-4 top-4 sm:left-6 sm:top-6"
       />
       <div className="w-full max-w-md overflow-hidden rounded-[2rem] border border-blue-200/70 bg-white shadow-[0_30px_70px_-40px_rgba(37,99,235,0.35)]">
-        <div className="h-1 bg-linear-to-r from-cyan-300 via-white to-yellow-300" />
+        <div className="h-1 bg-linear-to-r from-blue-300 via-white to-yellow-300" />
         <div className="space-y-6 p-8">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
@@ -75,7 +75,7 @@ export default async function ResetPasswordPage({
 
           {!mostraForm ? (
             <div className="space-y-4">
-              <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
                 {erroreLink}
               </div>
               <Link

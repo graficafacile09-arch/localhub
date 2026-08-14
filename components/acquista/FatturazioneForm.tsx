@@ -169,7 +169,7 @@ function CampoFatt({
     <div>
       <label className="block text-xs font-semibold text-slate-700">
         {label}
-        {required && <span className="text-red-500"> *</span>}
+        {required && <span className="text-blue-500"> *</span>}
       </label>
       <input
         type="text"
@@ -181,7 +181,7 @@ function CampoFatt({
         className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
       />
       {errore && (
-        <p className="mt-1 text-[11px] font-semibold text-red-600">{errore}</p>
+        <p className="mt-1 text-[11px] font-semibold text-blue-600">{errore}</p>
       )}
     </div>
   );

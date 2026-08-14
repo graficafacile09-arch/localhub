@@ -16,8 +16,8 @@ export default function MerchantDashboardCards({
 
   const cards = [
     { label: "Prodotti totali", value: totals.prodotti, accent: "text-blue-700" },
-    { label: "Prodotti attivi", value: totals.attivi, accent: "text-emerald-700" },
-    { label: "Pubblicati manualmente", value: totals.inVetrina, accent: "text-amber-700" },
+    { label: "Prodotti attivi", value: totals.attivi, accent: "text-blue-700" },
+    { label: "Pubblicati manualmente", value: totals.inVetrina, accent: "text-yellow-700" },
   ];
 
   return (

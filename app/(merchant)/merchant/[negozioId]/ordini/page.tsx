@@ -152,7 +152,7 @@ export default async function MerchantOrdiniPage({
 
       {/* ── Errore di lettura ────────────────────────────────────────────────── */}
       {errore ? (
-        <div className="rounded-[2rem] border border-red-100 bg-white p-8 text-center shadow-sm">
+        <div className="rounded-[2rem] border border-blue-100 bg-white p-8 text-center shadow-sm">
           <h2 className="text-base font-bold text-slate-700">Impossibile caricare gli ordini</h2>
           <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">
             Si è verificato un errore durante il recupero degli ordini. Riprova

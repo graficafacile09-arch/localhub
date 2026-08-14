@@ -129,7 +129,7 @@ export default function MerchantQuickActions({ storeId }: { storeId: string }) {
       </button>
 
       {imageError && (
-        <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-medium text-red-700">
+        <p className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-medium text-blue-700">
           {imageError}
         </p>
       )}

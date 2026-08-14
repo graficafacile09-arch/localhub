@@ -187,14 +187,14 @@ export default async function AdminStoreProdottiPage({
                       <span
                         className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
                           product.attivo
-                            ? "bg-emerald-50 text-emerald-700"
+                            ? "bg-blue-50 text-blue-700"
                             : "bg-slate-100 text-slate-500"
                         }`}
                       >
                         {product.attivo ? "Attivo" : "Bozza"}
                       </span>
                       {product.origine_pubblicazione === "ai" && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-2 py-0.5 text-[11px] font-semibold text-violet-700">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700">
                           <Sparkles className="h-3 w-3" />
                           AI
                         </span>
@@ -213,7 +213,7 @@ export default async function AdminStoreProdottiPage({
                           : "n/d"}
                       </span>
                       {product.stato_condizione && product.stato_condizione !== "nuovo" && (
-                        <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700">
+                        <span className="rounded-full bg-yellow-50 px-2 py-0.5 text-[11px] font-semibold text-yellow-700">
                           {product.stato_condizione}
                         </span>
                       )}

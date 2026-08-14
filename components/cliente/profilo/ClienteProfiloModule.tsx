@@ -288,7 +288,7 @@ export default function ClienteProfiloModule() {
         {salvato && (
           <p
             role="status"
-            className="mt-5 flex items-center gap-2 rounded-xl bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700"
+            className="mt-5 flex items-center gap-2 rounded-xl bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-700"
           >
             <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden />
             Profilo salvato con successo.
@@ -306,7 +306,7 @@ export default function ClienteProfiloModule() {
         {erroreSalvataggio && (
           <p
             role="alert"
-            className="mt-5 flex items-center gap-2 rounded-xl bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-700"
+            className="mt-5 flex items-center gap-2 rounded-xl bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-700"
           >
             <AlertCircle className="h-4 w-4 shrink-0" aria-hidden />
             {erroreSalvataggio}

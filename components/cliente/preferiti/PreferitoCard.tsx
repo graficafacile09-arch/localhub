@@ -58,7 +58,7 @@ export default function PreferitoCard({ preferito, onRimuovi, rimuovendo }: Prop
         onClick={() => onRimuovi(preferito.id)}
         disabled={rimuovendo}
         aria-label={`Rimuovi ${preferito.nome} dai preferiti`}
-        className="absolute right-2 top-2 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full bg-rose-500 text-white shadow-md transition hover:bg-rose-600 disabled:opacity-60"
+        className="absolute right-2 top-2 z-10 inline-flex h-9 w-9 items-center justify-center rounded-full bg-yellow-500 text-white shadow-md transition hover:bg-yellow-600 disabled:opacity-60"
       >
         <Heart className="h-4 w-4 fill-white" aria-hidden />
       </button>

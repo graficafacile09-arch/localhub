@@ -143,7 +143,7 @@ export default function ProductGalleryManager({ negozioId, productId }: Props) {
   return (
     <div className="space-y-3">
       {error ? (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{error}</div>
+        <div className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700">{error}</div>
       ) : null}
 
       {media.length > 0 ? (
@@ -195,7 +195,7 @@ export default function ProductGalleryManager({ negozioId, productId }: Props) {
                     disabled={busyId === item.id}
                     title="Elimina immagine"
                     aria-label="Elimina immagine"
-                    className="rounded p-0.5 transition hover:bg-red-500/80 disabled:opacity-50"
+                    className="rounded p-0.5 transition hover:bg-blue-500/80 disabled:opacity-50"
                   >
                     <Trash2 className="h-3 w-3" />
                   </button>

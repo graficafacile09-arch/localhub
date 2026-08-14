@@ -323,7 +323,7 @@ export default function MerchantProductAiWizard({
                 Torna al risultato
               </button>
               {formDirty && (
-                <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-amber-700">
+                <span className="rounded-full bg-yellow-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-yellow-700">
                   Modifiche non salvate
                 </span>
               )}

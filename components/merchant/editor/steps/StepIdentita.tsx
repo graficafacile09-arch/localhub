@@ -170,7 +170,7 @@ export default function StepIdentita({ storeId, store, onDataChanged }: StepProp
 
           <div>
             <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-500">
-              Categoria principale <span className="text-red-400">*</span>
+              Categoria principale <span className="text-blue-400">*</span>
             </label>
             {categoriaPersonalizzata ? (
               <div className="space-y-2">
@@ -242,12 +242,12 @@ export default function StepIdentita({ storeId, store, onDataChanged }: StepProp
       </div>
 
       {error && (
-        <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-semibold text-red-700">
+        <p className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs font-semibold text-blue-700">
           {error}
         </p>
       )}
       {saved && (
-        <p className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-semibold text-emerald-700">
+        <p className="flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs font-semibold text-blue-700">
           <Check className="h-4 w-4" /> Identità salvata.
         </p>
       )}
@@ -292,7 +292,7 @@ function ImageBox({
                 e.stopPropagation();
                 onRemove();
               }}
-              className="absolute right-1.5 top-1.5 rounded-lg bg-red-500/90 px-2 py-1 text-[10px] font-bold text-white opacity-0 transition group-hover:opacity-100"
+              className="absolute right-1.5 top-1.5 rounded-lg bg-blue-500/90 px-2 py-1 text-[10px] font-bold text-white opacity-0 transition group-hover:opacity-100"
             >
               Elimina
             </button>

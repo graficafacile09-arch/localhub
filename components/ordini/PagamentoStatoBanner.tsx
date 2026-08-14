@@ -58,11 +58,11 @@ export function PagamentoStatoBanner({
   // ── Pagato ──────────────────────────────────────────────────────────────
   if (paymentStatus === "paid") {
     return (
-      <div className="mt-4 flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
-        <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" />
+      <div className="mt-4 flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
+        <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-blue-600" />
         <div>
-          <p className="text-sm font-bold text-emerald-800">Pagamento confermato ✓</p>
-          <p className="mt-0.5 text-xs text-emerald-700">
+          <p className="text-sm font-bold text-blue-800">Pagamento confermato ✓</p>
+          <p className="mt-0.5 text-xs text-blue-700">
             Il pagamento di questo ordine è stato ricevuto
             {paymentPaidAt
               ? ` il ${new Date(paymentPaidAt).toLocaleString("it-IT", { dateStyle: "medium", timeStyle: "short" })}`
@@ -93,15 +93,15 @@ export function PagamentoStatoBanner({
   // ── Scaduto / fallito / annullato ────────────────────────────────────────
   if (paymentStatus === "expired" || paymentStatus === "failed" || paymentStatus === "canceled") {
     return (
-      <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
-        <p className="text-sm font-bold text-red-700">
+      <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
+        <p className="text-sm font-bold text-blue-700">
           {paymentStatus === "expired"
             ? "Pagamento scaduto"
             : paymentStatus === "failed"
               ? "Pagamento non riuscito"
               : "Pagamento annullato"}
         </p>
-        <p className="mt-0.5 text-xs text-red-600">
+        <p className="mt-0.5 text-xs text-blue-600">
           {paymentStatus === "expired"
             ? "L'ordine è stato annullato e le scorte liberate. Puoi effettuare un nuovo acquisto."
             : "Nessun importo è stato addebitato. Puoi riprovare o effettuare un nuovo acquisto."}
@@ -113,9 +113,9 @@ export function PagamentoStatoBanner({
   // ── In attesa (pending) ──────────────────────────────────────────────────
   const annullatoDalloStripe = esito === "annullato";
   return (
-    <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
-      <p className="text-sm font-bold text-amber-800">Pagamento in attesa di conferma</p>
-      <p className="mt-0.5 text-xs text-amber-700">
+    <div className="mt-4 rounded-xl border border-yellow-200 bg-yellow-50 px-4 py-3">
+      <p className="text-sm font-bold text-yellow-800">Pagamento in attesa di conferma</p>
+      <p className="mt-0.5 text-xs text-yellow-700">
         {annullatoDalloStripe
           ? "Hai interrotto il pagamento: nessun importo è stato addebitato."
           : esito === "ok"
@@ -123,13 +123,13 @@ export function PagamentoStatoBanner({
             : "Il pagamento verrà confermato in pochi istanti."}
       </p>
       {errore && (
-        <p className="mt-2 rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-700">{errore}</p>
+        <p className="mt-2 rounded-lg bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700">{errore}</p>
       )}
       <button
         type="button"
         onClick={riprovaPagamento}
         disabled={inviando}
-        className="mt-3 inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-amber-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+        className="mt-3 inline-flex items-center gap-2 rounded-lg bg-yellow-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-yellow-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
       >
         {inviando ? (
           <>

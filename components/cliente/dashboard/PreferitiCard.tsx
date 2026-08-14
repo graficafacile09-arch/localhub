@@ -14,7 +14,7 @@ export default function PreferitiCard({ conteggio = 0 }: { conteggio?: number })
       description="I negozi e i prodotti che hai salvato per non perderli di vista."
       href="/cliente/preferiti"
       hrefLabel="Vedi preferiti"
-      accent="text-rose-500"
+      accent="text-yellow-500"
     />
   );
 }

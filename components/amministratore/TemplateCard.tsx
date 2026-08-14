@@ -49,7 +49,7 @@ export default function TemplateCard({ item, onEdit, onDelete, onUse }: Props) {
           </span>
         )}
         {item.is_system && (
-          <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-[10px] font-semibold text-amber-600">
+          <span className="rounded-full bg-yellow-50 px-2.5 py-0.5 text-[10px] font-semibold text-yellow-600">
             Sistema
           </span>
         )}
@@ -84,7 +84,7 @@ export default function TemplateCard({ item, onEdit, onDelete, onUse }: Props) {
           <button
             type="button"
             onClick={() => onDelete(item.id)}
-            className="rounded-xl border border-slate-200 p-1.5 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+            className="rounded-xl border border-slate-200 p-1.5 text-slate-400 transition hover:bg-blue-50 hover:text-blue-600"
             title="Elimina"
           >
             <Trash2 className="h-3.5 w-3.5" />

@@ -442,13 +442,13 @@ export default function MerchantCorreggiAiDialog({
         className="relative flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-3xl bg-white shadow-2xl"
       >
         {/* Header */}
-        <div className="flex items-center gap-3 bg-gradient-to-b from-violet-600 to-fuchsia-600 px-5 py-4 text-white">
+        <div className="flex items-center gap-3 bg-gradient-to-b from-blue-600 to-blue-800 px-5 py-4 text-white">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15">
             <Sparkles className="h-5 w-5" />
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-black tracking-tight">Correggi con AI</p>
-            <p className="truncate text-[11px] font-medium text-violet-100">
+            <p className="truncate text-[11px] font-medium text-blue-100">
               Parla o scrivi le correzioni al prodotto riconosciuto
             </p>
           </div>
@@ -482,7 +482,7 @@ export default function MerchantCorreggiAiDialog({
                 "Nessun dettaglio"}
             </p>
           </div>
-          <span className="shrink-0 rounded-full bg-violet-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-violet-700">
+          <span className="shrink-0 rounded-full bg-blue-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-blue-700">
             Draft
           </span>
         </div>
@@ -491,12 +491,12 @@ export default function MerchantCorreggiAiDialog({
         <div ref={chatRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto px-5 py-4">
           {/* Messaggio di benvenuto */}
           <div className="flex items-start gap-2">
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-b from-violet-500 to-fuchsia-600">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-b from-blue-500 to-blue-700">
               <Sparkles className="h-3.5 w-3.5 text-white" />
             </div>
             <div className="max-w-[85%] rounded-2xl rounded-tl-sm border border-slate-200 bg-white px-3.5 py-2.5 text-[13px] leading-5 text-slate-700 shadow-sm">
               Ciao! Ho riconosciuto il prodotto dai dati della scansione. Dimmi cosa correggere,
-              ad esempio: <span className="font-semibold text-violet-700">«Il colore non è bianco, è grigio»</span>.
+              ad esempio: <span className="font-semibold text-blue-700">«Il colore non è bianco, è grigio»</span>.
             </div>
           </div>
 
@@ -509,7 +509,7 @@ export default function MerchantCorreggiAiDialog({
               </div>
             ) : (
               <div key={i} className="flex items-start gap-2">
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-b from-violet-500 to-fuchsia-600">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-b from-blue-500 to-blue-700">
                   <Sparkles className="h-3.5 w-3.5 text-white" />
                 </div>
                 <div className="max-w-[85%] rounded-2xl rounded-tl-sm border border-slate-200 bg-white px-3.5 py-2.5 text-[13px] leading-5 text-slate-700 shadow-sm">
@@ -521,12 +521,12 @@ export default function MerchantCorreggiAiDialog({
                       {ultimiCambi.map((c) => (
                         <div
                           key={c.chiave}
-                          className="rounded-xl bg-emerald-50 px-2.5 py-1.5 text-[12px]"
+                          className="rounded-xl bg-blue-50 px-2.5 py-1.5 text-[12px]"
                         >
-                          <span className="font-semibold text-emerald-900">{c.campo}:</span>{" "}
+                          <span className="font-semibold text-blue-900">{c.campo}:</span>{" "}
                           <span className="text-slate-500 line-through">{c.prima}</span>{" "}
-                          <ArrowRight className="inline h-3 w-3 text-emerald-600" />{" "}
-                          <span className="font-semibold text-emerald-700">{c.dopo}</span>
+                          <ArrowRight className="inline h-3 w-3 text-blue-600" />{" "}
+                          <span className="font-semibold text-blue-700">{c.dopo}</span>
                         </div>
                       ))}
                     </div>
@@ -545,19 +545,19 @@ export default function MerchantCorreggiAiDialog({
           {/* Indicatore di digitazione */}
           {inCaricamento && (
             <div className="flex items-start gap-2">
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-b from-violet-500 to-fuchsia-600">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-b from-blue-500 to-blue-700">
                 <Sparkles className="h-3.5 w-3.5 text-white" />
               </div>
               <div className="flex items-center gap-1.5 rounded-2xl rounded-tl-sm border border-slate-200 bg-white px-4 py-3 shadow-sm">
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-violet-500" />
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-violet-500 [animation-delay:120ms]" />
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-violet-500 [animation-delay:240ms]" />
+                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-blue-500" />
+                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-blue-500 [animation-delay:120ms]" />
+                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-blue-500 [animation-delay:240ms]" />
               </div>
             </div>
           )}
 
           {erroreInvio && (
-            <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+            <div className="flex items-start gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700">
               <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               <span>{erroreInvio}</span>
             </div>
@@ -566,7 +566,7 @@ export default function MerchantCorreggiAiDialog({
 
         {/* Banner microfono (solo casi eccezionali: il resto è sul pulsante) */}
         {supportoDeterminato && !microfonoDisponibile && (
-          <div className="mx-5 mb-1 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-4 text-amber-800">
+          <div className="mx-5 mb-1 flex items-start gap-2 rounded-xl border border-yellow-200 bg-yellow-50 px-3 py-2 text-[11px] leading-4 text-yellow-800">
             <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
             <span>
               La registrazione vocale non è disponibile su questo browser: puoi scrivere le
@@ -575,7 +575,7 @@ export default function MerchantCorreggiAiDialog({
           </div>
         )}
         {supportoDeterminato && microfonoDisponibile && permessoMicrofono === "denied" && (
-          <div className="mx-5 mb-1 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-[11px] leading-4 text-red-800">
+          <div className="mx-5 mb-1 flex items-start gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-[11px] leading-4 text-blue-800">
             <MicOff className="mt-0.5 h-3.5 w-3.5 shrink-0" />
             <span>
               Microfono bloccato: consenti l&apos;accesso dalle impostazioni del browser oppure
@@ -584,7 +584,7 @@ export default function MerchantCorreggiAiDialog({
           </div>
         )}
         {erroreVocale && (
-          <div className="mx-5 mb-1 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-4 text-amber-800">
+          <div className="mx-5 mb-1 flex items-start gap-2 rounded-xl border border-yellow-200 bg-yellow-50 px-3 py-2 text-[11px] leading-4 text-yellow-800">
             <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
             <span>{erroreVocale}</span>
           </div>
@@ -613,10 +613,10 @@ export default function MerchantCorreggiAiDialog({
             }
             className={`relative flex h-13 w-full items-center justify-center gap-2 rounded-2xl border text-sm font-bold tracking-tight transition active:scale-[0.98] disabled:cursor-not-allowed ${
               listening
-                ? "border-red-300 bg-red-500 text-white shadow-lg shadow-red-500/30"
+                ? "border-blue-300 bg-blue-500 text-white shadow-lg shadow-blue-500/30"
                 : trascrivendo || permessoInAttesa
-                  ? "border-violet-300 bg-violet-50 text-violet-700"
-                  : "border-slate-200 bg-white text-slate-700 hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+                  ? "border-blue-300 bg-blue-50 text-blue-700"
+                  : "border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
             } ${
               // Opacità ridotta solo quando il pulsante è inutilizzabile,
               // NON durante la richiesta permesso (deve restare ben visibile).
@@ -624,7 +624,7 @@ export default function MerchantCorreggiAiDialog({
             }`}
           >
             {listening && (
-              <span className="absolute inset-0 animate-ping rounded-2xl bg-red-400/40" />
+              <span className="absolute inset-0 animate-ping rounded-2xl bg-blue-400/40" />
             )}
             {permessoInAttesa ? (
               <>
@@ -663,7 +663,7 @@ export default function MerchantCorreggiAiDialog({
                 }
               }}
               placeholder="Scrivi la correzione..."
-              className="h-11 min-w-0 flex-1 rounded-xl border border-slate-200 px-3.5 text-sm outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+              className="h-11 min-w-0 flex-1 rounded-xl border border-slate-200 px-3.5 text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
             />
 
             <button
@@ -671,7 +671,7 @@ export default function MerchantCorreggiAiDialog({
               onClick={() => inviaCorrezione(input)}
               disabled={!input.trim() || inCaricamento || listening || trascrivendo}
               aria-label="Invia"
-              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-b from-violet-500 to-fuchsia-600 text-white shadow shadow-fuchsia-500/25 transition hover:shadow-md active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-b from-blue-500 to-blue-700 text-white shadow shadow-blue-500/25 transition hover:shadow-md active:scale-95 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {inCaricamento ? (
                 <Loader2 className="h-4.5 w-4.5 animate-spin" />
@@ -685,7 +685,7 @@ export default function MerchantCorreggiAiDialog({
             <button
               type="button"
               onClick={() => setInput(suggerimento)}
-              className="truncate rounded-full border border-dashed border-slate-300 px-2.5 py-1 text-[10.5px] text-slate-500 transition hover:border-violet-300 hover:bg-violet-50 hover:text-violet-700"
+              className="truncate rounded-full border border-dashed border-slate-300 px-2.5 py-1 text-[10.5px] text-slate-500 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
             >
               💡 {suggerimento}
             </button>
@@ -715,7 +715,7 @@ export default function MerchantCorreggiAiDialog({
             type="button"
             onClick={conferma}
             disabled={inCaricamento}
-            className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-b from-emerald-500 to-emerald-600 px-4 py-2 text-xs font-bold text-white shadow shadow-emerald-500/25 transition hover:shadow-md active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-b from-blue-500 to-blue-600 px-4 py-2 text-xs font-bold text-white shadow shadow-blue-500/25 transition hover:shadow-md active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Check className="h-3.5 w-3.5" />
             Conferma modifiche

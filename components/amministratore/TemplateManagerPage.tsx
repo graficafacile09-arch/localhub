@@ -185,9 +185,9 @@ export default function TemplateManagerPage() {
           <Loader2 className="h-6 w-6 animate-spin text-slate-400" />
         </div>
       ) : error ? (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+        <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-600">
           {error}
-          <button type="button" onClick={loadTemplates} className="ml-2 underline hover:text-red-800">Riprova</button>
+          <button type="button" onClick={loadTemplates} className="ml-2 underline hover:text-blue-800">Riprova</button>
         </div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-slate-400">

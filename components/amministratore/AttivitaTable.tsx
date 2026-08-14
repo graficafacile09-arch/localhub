@@ -13,8 +13,8 @@ const formatData = new Intl.DateTimeFormat("it-IT", {
 function BadgeStato({ attivo }: { attivo: boolean }) {
   if (attivo) {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 ring-1 ring-emerald-200">
-        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden />
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-bold text-blue-700 ring-1 ring-blue-200">
+        <span className="h-1.5 w-1.5 rounded-full bg-blue-500" aria-hidden />
         Attiva
       </span>
     );
@@ -114,7 +114,7 @@ export default function AttivitaTable({
                   </td>
                   <td className="px-5 py-4">
                     {negozio.in_evidenza ? (
-                      <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-700 ring-1 ring-amber-200">
+                      <span className="inline-flex items-center gap-1.5 rounded-full bg-yellow-50 px-2.5 py-1 text-[11px] font-bold text-yellow-700 ring-1 ring-yellow-200">
                         <Star className="h-3 w-3" aria-hidden />
                         In evidenza
                       </span>

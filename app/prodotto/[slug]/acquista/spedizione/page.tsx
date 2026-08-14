@@ -48,8 +48,8 @@ export default async function SpedizionePage({
 
   if (!varianteValida) {
     return (
-      <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-8 text-center">
-        <p className="text-sm font-semibold text-amber-800">
+      <div className="mt-4 rounded-xl border border-yellow-200 bg-yellow-50 px-4 py-8 text-center">
+        <p className="text-sm font-semibold text-yellow-800">
           Seleziona una variante del prodotto per continuare l&apos;acquisto.
         </p>
         <Link

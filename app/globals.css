@@ -33,6 +33,15 @@
   --brand-yellow: #facc15;
   --brand-yellow-light: #fde047;
 
+  /*
+   * SEMANTICA STATI (stesso design system, senza palette estranee):
+   *   - successo/positivo/attivo  → BLU   (struttura, conferma)
+   *   - attenzione/warning/info   → GIALLO (accento, da notare)
+   *   - errore/distruttivo        → BLU intenso (blue-800/900 + icona + ring
+   *                                 marcato): differenziazione tramite icona,
+   *                                 testo, bordo e intensità, MAI rosso/verde.
+   */
+
   /* Superfici */
   --surface-page: #eef3f8;
   --surface-card: #ffffff;

@@ -104,7 +104,7 @@ export default async function MerchantHomePage({
                 {store.nome}
                 {(ordiniNonLettiPerNegozio[store.id] ?? 0) > 0 && (
                   <span
-                    className="inline-flex h-6 min-w-6 shrink-0 items-center justify-center rounded-full bg-red-600 px-2 text-xs font-black text-white"
+                    className="inline-flex h-6 min-w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-b from-yellow-300 to-yellow-400 px-2 text-xs font-black text-blue-800 ring-1 ring-yellow-300"
                     title={`${ordiniNonLettiPerNegozio[store.id]} ${ordiniNonLettiPerNegozio[store.id] === 1 ? "ordine non letto" : "ordini non letti"}`}
                   >
                     {ordiniNonLettiPerNegozio[store.id] > 9 ? "9+" : ordiniNonLettiPerNegozio[store.id]}

@@ -240,8 +240,8 @@ export default function EventoModule({ storeId }: Props) {
           <div
             className={`flex items-start gap-2 rounded-xl border px-4 py-3 text-sm ${
               errore
-                ? "border-red-200 bg-red-50 text-red-900"
-                : "border-emerald-200 bg-emerald-50 text-emerald-900"
+                ? "border-blue-200 bg-blue-50 text-blue-900"
+                : "border-blue-200 bg-blue-50 text-blue-900"
             }`}
           >
             <span className="mt-0.5 font-black" aria-hidden>{errore ? "!" : "OK"}</span>
@@ -268,7 +268,7 @@ export default function EventoModule({ storeId }: Props) {
                       <span
                         className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
                           evento.attivo
-                            ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
+                            ? "bg-blue-50 text-blue-700 ring-1 ring-blue-200"
                             : "bg-slate-100 text-slate-500 ring-1 ring-slate-200"
                         }`}
                       >
@@ -326,7 +326,7 @@ export default function EventoModule({ storeId }: Props) {
                     type="button"
                     onClick={() => elimina(evento)}
                     disabled={saving}
-                    className="ml-auto inline-flex h-9 items-center gap-1 rounded-lg bg-red-50 px-3 text-xs font-bold text-red-600 ring-1 ring-red-100 transition hover:bg-red-100 disabled:opacity-60"
+                    className="ml-auto inline-flex h-9 items-center gap-1 rounded-lg bg-blue-50 px-3 text-xs font-bold text-blue-600 ring-1 ring-blue-100 transition hover:bg-blue-100 disabled:opacity-60"
                   >
                     <X className="h-3.5 w-3.5" aria-hidden />
                     Elimina

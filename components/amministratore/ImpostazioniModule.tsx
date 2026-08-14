@@ -65,7 +65,7 @@ function CampoImpostazione({
           onChange={(evento) => onModifica(chiave, evento.target.value)}
           className={`mt-3 w-full rounded-2xl border bg-white px-4 py-3 text-sm font-medium text-slate-800 transition focus:outline-none focus:ring-2 ${
             salvato
-              ? "border-emerald-300 focus:border-emerald-300 focus:ring-emerald-100"
+              ? "border-blue-300 focus:border-blue-300 focus:ring-blue-100"
               : "border-slate-200 focus:border-blue-300 focus:ring-blue-100"
           }`}
         />
@@ -73,7 +73,7 @@ function CampoImpostazione({
       <span
         className={`mt-10 inline-flex h-8 min-w-8 shrink-0 items-center justify-center rounded-full px-2 ring-1 ${
           salvato
-            ? "bg-emerald-50 text-emerald-600 ring-emerald-200"
+            ? "bg-blue-50 text-blue-600 ring-blue-200"
             : "bg-slate-50 text-slate-400 ring-slate-200"
         }`}
       >
@@ -189,8 +189,8 @@ export default function ImpostazioniModule({
           role="status"
           className={`flex items-center justify-between gap-3 rounded-3xl border px-5 py-4 text-sm shadow-sm ${
             risultato.ok
-              ? "border-emerald-200 bg-emerald-50 text-emerald-900"
-              : "border-red-200 bg-red-50 text-red-900"
+              ? "border-blue-200 bg-blue-50 text-blue-900"
+              : "border-blue-200 bg-blue-50 text-blue-900"
           }`}
         >
           <div className="flex items-center gap-2.5">
@@ -198,7 +198,7 @@ export default function ImpostazioniModule({
               <Check className="h-4 w-4" aria-hidden />
             ) : (
               <span
-                className="flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-black text-white"
+                className="flex h-4 w-4 items-center justify-center rounded-full bg-blue-500 text-[10px] font-black text-white"
                 aria-hidden
               >
                 !

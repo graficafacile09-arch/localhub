@@ -151,7 +151,7 @@ export default function CreaTemplateWizard({ onClose, onCreated }: Props) {
             </select>
             {loadingStores && <p className="mt-1 text-[11px] text-slate-400">Caricamento negozi...</p>}
             {!loadingStores && stores.length === 0 && (
-              <p className="mt-1 text-[11px] text-amber-600">Nessun negozio attivo disponibile.</p>
+              <p className="mt-1 text-[11px] text-yellow-600">Nessun negozio attivo disponibile.</p>
             )}
           </div>
 
@@ -205,7 +205,7 @@ export default function CreaTemplateWizard({ onClose, onCreated }: Props) {
             </div>
           </div>
 
-          {error && <p className="text-xs text-red-500">{error}</p>}
+          {error && <p className="text-xs text-blue-500">{error}</p>}
         </div>
 
         <div className="mt-6 flex gap-2">

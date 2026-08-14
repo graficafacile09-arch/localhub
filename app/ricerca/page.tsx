@@ -201,7 +201,7 @@ export default async function RicercaPage({
                               }}
                             />
                             {prodottoEsaurito(prodotto.quantita_disponibile, prodotto.quantita_riservata) && (
-                              <span className="absolute inset-x-0 bottom-0 bg-red-600/90 py-1 text-center text-[9px] font-black uppercase tracking-wider text-white">
+                              <span className="absolute inset-x-0 bottom-0 bg-blue-600/90 py-1 text-center text-[9px] font-black uppercase tracking-wider text-white">
                                 Esaurito
                               </span>
                             )}

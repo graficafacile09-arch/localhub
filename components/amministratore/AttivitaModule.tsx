@@ -90,8 +90,8 @@ export default function AttivitaModule({
 
       {/* Errori server (es. DB non raggiungibile) */}
       {errorMessage ? (
-        <div className="flex items-start gap-3 rounded-3xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-900">
-          <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-red-600" aria-hidden />
+        <div className="flex items-start gap-3 rounded-3xl border border-blue-200 bg-blue-50 px-5 py-4 text-sm text-blue-900">
+          <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" aria-hidden />
           <p className="leading-6">{errorMessage}</p>
         </div>
       ) : null}

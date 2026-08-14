@@ -82,7 +82,7 @@ export default async function OrdineDettaglioPage({ params }: { params: Promise<
 
   if (errore) {
     return (
-      <div className="rounded-[2rem] border border-red-100 bg-white p-8 text-center shadow-sm">
+      <div className="rounded-[2rem] border border-blue-100 bg-white p-8 text-center shadow-sm">
         <h1 className="text-xl font-black tracking-tight text-slate-900">
           Impossibile caricare l&apos;ordine
         </h1>

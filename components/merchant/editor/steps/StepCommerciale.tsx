@@ -46,7 +46,7 @@ export default function StepCommerciale({ storeId, store, onDataChanged }: StepP
           {saving ? (
             <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
           ) : saved ? (
-            <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+            <CheckCircle2 className="h-4 w-4 text-blue-500" />
           ) : null}
         </div>
         <p className="mb-4 text-xs text-slate-500">

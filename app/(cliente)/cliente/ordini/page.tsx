@@ -121,7 +121,7 @@ export default async function OrdiniPage({
 
       {/* ── Errore di lettura ────────────────────────────────────────────────── */}
       {errore ? (
-        <div className="rounded-[2rem] border border-red-100 bg-white p-8 text-center shadow-sm">
+        <div className="rounded-[2rem] border border-blue-100 bg-white p-8 text-center shadow-sm">
           <h2 className="text-base font-bold text-slate-700">
             Impossibile caricare gli ordini
           </h2>
@@ -145,10 +145,10 @@ export default async function OrdiniPage({
           action={
             <Link
               href="/negozi"
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-yellow-300 to-yellow-400 px-5 py-2.5 text-sm font-bold text-slate-800 shadow-md shadow-yellow-400/30 ring-1 ring-yellow-300 transition hover:from-yellow-200 hover:to-yellow-300"
+              className="relative inline-flex items-center gap-2 overflow-hidden rounded-full bg-gradient-to-b from-yellow-300 to-yellow-400 px-6 py-2.5 text-sm font-bold text-blue-700 shadow-md shadow-yellow-400/30 ring-1 ring-yellow-300 transition-all duration-200 before:pointer-events-none before:absolute before:inset-0 before:rounded-full before:bg-gradient-to-b before:from-white/25 before:to-transparent hover:-translate-y-0.5 hover:from-yellow-200 hover:to-yellow-300 hover:shadow-lg hover:shadow-yellow-400/40 active:translate-y-0 active:scale-95 active:shadow-sm"
             >
-              Esplora i negozi
-              <ArrowRight className="h-4 w-4" aria-hidden />
+              <span className="relative">Esplora i negozi</span>
+              <ArrowRight className="relative h-4 w-4" aria-hidden />
             </Link>
           }
         />

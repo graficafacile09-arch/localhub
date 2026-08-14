@@ -21,9 +21,9 @@ export default function ClienteError({
   }, [error]);
 
   return (
-    <div className="rounded-[2rem] border border-red-100 bg-white p-10 text-center shadow-sm">
-      <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-50">
-        <AlertTriangle className="h-8 w-8 text-red-500" aria-hidden />
+    <div className="rounded-[2rem] border border-blue-100 bg-white p-10 text-center shadow-sm">
+      <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-blue-50">
+        <AlertTriangle className="h-8 w-8 text-blue-500" aria-hidden />
       </span>
       <h1 className="mt-5 text-2xl font-black tracking-tight text-slate-900">
         Qualcosa è andato storto

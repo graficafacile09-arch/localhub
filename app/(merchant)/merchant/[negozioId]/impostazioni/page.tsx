@@ -51,8 +51,8 @@ export default async function MerchantSettingsPage({
               </h1>
               <div className="mt-2 flex items-center gap-3">
                 <span className="text-sm text-slate-500">{store.categoria ?? "Categoria non definita"}</span>
-                <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${store.attivo ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
-                  <span className={`h-1.5 w-1.5 rounded-full ${store.attivo ? "bg-emerald-500" : "bg-slate-400"}`} />
+                <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${store.attivo ? "bg-blue-50 text-blue-700" : "bg-slate-100 text-slate-500"}`}>
+                  <span className={`h-1.5 w-1.5 rounded-full ${store.attivo ? "bg-blue-500" : "bg-slate-400"}`} />
                   {store.attivo ? "Attivo" : "Non attivo"}
                 </span>
               </div>

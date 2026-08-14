@@ -380,9 +380,9 @@ export default function PagamentiModule({ storeId }: Props) {
         </p>
       </div>
 
-      <div className="mb-5 flex items-start gap-3 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3">
-        <Info className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
-        <p className="text-xs leading-5 text-amber-900">
+      <div className="mb-5 flex items-start gap-3 rounded-xl border border-yellow-100 bg-yellow-50 px-4 py-3">
+        <Info className="mt-0.5 h-4 w-4 shrink-0 text-yellow-600" />
+        <p className="text-xs leading-5 text-yellow-900">
           Ci sono <strong>due passaggi distinti</strong>: prima configura e attiva il{" "}
           <strong>provider</strong> (collegando il gateway), poi abilita il relativo{" "}
           <strong>metodo al checkout</strong> per renderlo selezionabile dai clienti.
@@ -392,13 +392,13 @@ export default function PagamentiModule({ storeId }: Props) {
       </div>
 
       {errore && (
-        <div className="mb-4 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-semibold text-red-700">
+        <div className="mb-4 flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs font-semibold text-blue-700">
           <AlertCircle className="h-4 w-4 shrink-0" />
           {errore}
         </div>
       )}
       {salvato && (
-        <div className="mb-4 flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs font-semibold text-emerald-700">
+        <div className="mb-4 flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs font-semibold text-blue-700">
           <CheckCircle2 className="h-4 w-4 shrink-0" />
           Configurazione salvata.
         </div>
@@ -407,8 +407,8 @@ export default function PagamentiModule({ storeId }: Props) {
         <div
           className={`mb-4 flex items-center gap-2 rounded-xl border px-4 py-3 text-xs font-semibold ${
             stripeMsg.tipo === "ok"
-              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-              : "border-red-200 bg-red-50 text-red-700"
+              ? "border-blue-200 bg-blue-50 text-blue-700"
+              : "border-blue-200 bg-blue-50 text-blue-700"
           }`}
         >
           {stripeMsg.tipo === "ok" ? (
@@ -445,7 +445,7 @@ export default function PagamentiModule({ storeId }: Props) {
                         <div className="flex items-center gap-2">
                           <p className="text-sm font-bold text-slate-900">{info.nome}</p>
                           {collegato ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700">
                               <CheckCircle2 className="h-3 w-3" /> Collegato
                             </span>
                           ) : (
@@ -512,7 +512,7 @@ export default function PagamentiModule({ storeId }: Props) {
                       <div className="flex items-center gap-2">
                         <p className="text-sm font-bold text-slate-900">{info.nome}</p>
                         {p.has_secret ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700">
                             <CheckCircle2 className="h-3 w-3" /> Configurato
                           </span>
                         ) : (
@@ -630,8 +630,8 @@ export default function PagamentiModule({ storeId }: Props) {
                           )}
 
                           {info.nota && (
-                            <div className="rounded-xl bg-amber-50 px-3 py-2.5 ring-1 ring-amber-100">
-                              <p className="text-[10px] leading-4 text-amber-800">{info.nota}</p>
+                            <div className="rounded-xl bg-yellow-50 px-3 py-2.5 ring-1 ring-yellow-100">
+                              <p className="text-[10px] leading-4 text-yellow-800">{info.nota}</p>
                             </div>
                           )}
                         </>

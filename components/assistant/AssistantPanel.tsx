@@ -184,7 +184,7 @@ export default function AssistantPanel() {
         {/* Header */}
         <div className="flex h-12 shrink-0 items-center justify-between border-b border-slate-100 px-4">
           <div className="flex items-center gap-2">
-            <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-r from-blue-600 to-cyan-500 text-white">
+            <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 text-white">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
               </svg>

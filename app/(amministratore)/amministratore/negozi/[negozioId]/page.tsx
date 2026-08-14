@@ -87,7 +87,7 @@ export default async function AdminNegozioDashboardPage({
           href={`/amministratore/negozi/${negozioId}/media`}
           className="group flex items-center gap-4 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md"
         >
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 text-white shadow-md">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-md">
             <FolderOpen className="h-5 w-5" aria-hidden />
           </span>
           <span>

@@ -49,13 +49,13 @@ export function OrderHeader({
   // Banda superiore guidata dallo stato (colore professionale), MAI blu per
   // gli annullati e MAI verde/confermato per un annullato.
   const accentoBanda: Record<string, string> = {
-    in_preparazione: "bg-linear-to-r from-amber-300 via-amber-400 to-amber-300",
+    in_preparazione: "bg-linear-to-r from-yellow-300 via-yellow-400 to-yellow-300",
     confermato: "bg-linear-to-r from-blue-300 via-blue-400 to-blue-300",
-    in_lavorazione: "bg-linear-to-r from-orange-300 via-orange-400 to-orange-300",
-    pronto: "bg-linear-to-r from-green-300 via-green-400 to-green-300",
-    in_consegna: "bg-linear-to-r from-sky-300 via-sky-400 to-sky-300",
-    consegnato: "bg-linear-to-r from-emerald-300 via-emerald-400 to-emerald-300",
-    cancellato: "bg-linear-to-r from-red-300 via-red-400 to-red-300",
+    in_lavorazione: "bg-linear-to-r from-yellow-300 via-yellow-400 to-yellow-300",
+    pronto: "bg-linear-to-r from-blue-300 via-blue-400 to-blue-300",
+    in_consegna: "bg-linear-to-r from-blue-300 via-blue-400 to-blue-300",
+    consegnato: "bg-linear-to-r from-blue-300 via-blue-400 to-blue-300",
+    cancellato: "bg-linear-to-r from-blue-300 via-blue-400 to-blue-300",
   };
 
   return (
@@ -80,7 +80,7 @@ export function OrderHeader({
               <h1 className="mt-1.5 break-words font-black leading-tight tracking-tight text-slate-900">
                 <span
                   className={`whitespace-nowrap font-mono text-2xl tabular-nums md:text-3xl ${
-                    èAnnullato ? "text-red-700" : "text-slate-900"
+                    èAnnullato ? "text-blue-700" : "text-slate-900"
                   }`}
                 >
                   {numero}

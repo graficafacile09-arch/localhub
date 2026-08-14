@@ -54,8 +54,8 @@ export default async function AcquistaChoicePage({
 
   if (!varianteValida) {
     return (
-      <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-8 text-center">
-        <p className="text-sm font-semibold text-amber-800">
+      <div className="mt-4 rounded-xl border border-yellow-200 bg-yellow-50 px-4 py-8 text-center">
+        <p className="text-sm font-semibold text-yellow-800">
           Seleziona una variante del prodotto per continuare l&apos;acquisto.
         </p>
         <Link
@@ -98,7 +98,7 @@ export default async function AcquistaChoicePage({
 
           <div>
             <h2 className="text-lg font-black text-slate-900">{nome}</h2>
-            <p className="text-2xl font-black text-emerald-700">
+            <p className="text-2xl font-black text-blue-700">
               €{prezzo.toFixed(2)}
             </p>
           </div>

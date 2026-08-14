@@ -49,15 +49,15 @@ function BadgeStato({ stato }: { stato: SegnalazioneStato }) {
       );
     case "presa_in_carico":
       return (
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-700 ring-1 ring-amber-200">
-          <Clock className="h-3 w-3 text-amber-600" aria-hidden />
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-yellow-50 px-2.5 py-1 text-[11px] font-bold text-yellow-700 ring-1 ring-yellow-200">
+          <Clock className="h-3 w-3 text-yellow-600" aria-hidden />
           In carico
         </span>
       );
     case "risolta":
       return (
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 ring-1 ring-emerald-200">
-          <CheckCircle2 className="h-3 w-3 text-emerald-600" aria-hidden />
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-bold text-blue-700 ring-1 ring-blue-200">
+          <CheckCircle2 className="h-3 w-3 text-blue-600" aria-hidden />
           Risolta
         </span>
       );
@@ -74,14 +74,14 @@ function BadgePriorita({ priorita }: { priorita: SegnalazionePriorita }) {
   switch (priorita) {
     case "urgente":
       return (
-        <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-1 text-[11px] font-black text-red-800 ring-1 ring-red-300">
-          <AlertTriangle className="h-3 w-3 text-red-600" aria-hidden />
+        <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-1 text-[11px] font-black text-blue-800 ring-1 ring-blue-300">
+          <AlertTriangle className="h-3 w-3 text-blue-600" aria-hidden />
           Urgente
         </span>
       );
     case "alta":
       return (
-        <span className="inline-flex items-center gap-1 rounded-full bg-orange-50 px-2.5 py-1 text-[11px] font-bold text-orange-700 ring-1 ring-orange-200">
+        <span className="inline-flex items-center gap-1 rounded-full bg-yellow-50 px-2.5 py-1 text-[11px] font-bold text-yellow-700 ring-1 ring-yellow-200">
           Alta
         </span>
       );
@@ -284,11 +284,11 @@ export default function SegnalazioniModule() {
         </nav>
 
         <div className="flex items-start gap-4">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-600 ring-1 ring-amber-100">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-yellow-50 text-yellow-600 ring-1 ring-yellow-100">
             <Inbox className="h-7 w-7" aria-hidden />
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-700">
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-yellow-700">
               Moderazione e supporto
             </p>
             <h1 className="mt-1.5 text-2xl font-black tracking-tight text-slate-900 md:text-3xl">
@@ -314,15 +314,15 @@ export default function SegnalazioniModule() {
                 {stats.perStato.find((s) => s.stato === "nuova")?.count ?? 0}
               </p>
             </div>
-            <div className="rounded-2xl bg-amber-50/70 p-3.5">
-              <p className="text-xs font-semibold text-amber-700">In carico</p>
-              <p className="mt-1 text-2xl font-black text-amber-900">
+            <div className="rounded-2xl bg-yellow-50/70 p-3.5">
+              <p className="text-xs font-semibold text-yellow-700">In carico</p>
+              <p className="mt-1 text-2xl font-black text-yellow-900">
                 {stats.perStato.find((s) => s.stato === "presa_in_carico")?.count ?? 0}
               </p>
             </div>
-            <div className="rounded-2xl bg-red-50/70 p-3.5">
-              <p className="text-xs font-semibold text-red-700">Urgenti / Alte</p>
-              <p className="mt-1 text-2xl font-black text-red-900">
+            <div className="rounded-2xl bg-blue-50/70 p-3.5">
+              <p className="text-xs font-semibold text-blue-700">Urgenti / Alte</p>
+              <p className="mt-1 text-2xl font-black text-blue-900">
                 {(stats.perPriorita.find((p) => p.priorita === "urgente")?.count ?? 0) +
                   (stats.perPriorita.find((p) => p.priorita === "alta")?.count ?? 0)}
               </p>
@@ -419,7 +419,7 @@ export default function SegnalazioniModule() {
       </div>
 
       {errore && (
-        <div className="rounded-3xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-900">
+        <div className="rounded-3xl border border-blue-200 bg-blue-50 px-5 py-4 text-sm text-blue-900">
           {errore}
         </div>
       )}
@@ -608,7 +608,7 @@ export default function SegnalazioniModule() {
               </div>
 
               {selezionata.resolved_at && (
-                <div className="rounded-xl bg-emerald-50 border border-emerald-100 p-3 text-xs text-emerald-800">
+                <div className="rounded-xl bg-blue-50 border border-blue-100 p-3 text-xs text-blue-800">
                   Risolta il {formattaData(selezionata.resolved_at)}
                 </div>
               )}

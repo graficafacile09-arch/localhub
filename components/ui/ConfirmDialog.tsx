@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { X } from "lucide-react";
+import { AlertTriangle, X } from "lucide-react";
 
 type ConfirmDialogProps = {
   open: boolean;
@@ -70,6 +70,12 @@ export default function ConfirmDialog({
             <X className="h-4 w-4" />
           </button>
         </div>
+        {destructive && (
+          <div className="flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-800">
+            <AlertTriangle className="h-4 w-4 shrink-0 text-blue-700" aria-hidden />
+            Operazione irreversibile
+          </div>
+        )}
         <div className="px-5 py-4">
           <p className="text-xs leading-5 text-slate-500">{message}</p>
         </div>
@@ -86,10 +92,10 @@ export default function ConfirmDialog({
             type="button"
             onClick={onConfirm}
             disabled={loading}
-            className={`rounded-xl px-4 py-2 text-xs font-bold text-white transition disabled:opacity-50 ${
+            className={`relative overflow-hidden rounded-full px-4 py-2 text-xs font-bold transition disabled:opacity-50 ${
               destructive
-                ? "bg-red-600 hover:bg-red-700"
-                : "bg-blue-600 hover:bg-blue-700"
+                ? "bg-gradient-to-b from-blue-800 to-blue-900 text-white shadow-md shadow-blue-900/30 ring-1 ring-blue-900 before:pointer-events-none before:absolute before:inset-0 before:rounded-full before:bg-gradient-to-b before:from-white/10 before:to-transparent hover:from-blue-700 hover:to-blue-800"
+                : "bg-gradient-to-b from-yellow-300 to-yellow-400 text-blue-700 shadow-md shadow-yellow-400/30 ring-1 ring-yellow-300 before:pointer-events-none before:absolute before:inset-0 before:rounded-full before:bg-gradient-to-b before:from-white/25 before:to-transparent hover:from-yellow-200 hover:to-yellow-300"
             }`}
           >
             {loading ? "Eliminazione..." : confirmLabel}

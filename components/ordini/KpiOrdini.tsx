@@ -35,7 +35,7 @@ const ITEM_KPI: ReadonlyArray<{
     micro: "Da confermare",
     filtro: "nuovi",
     icona: BellRing,
-    neutro: "bg-amber-50 text-amber-700",
+    neutro: "bg-yellow-50 text-yellow-700",
     urgente: true,
   },
   {
@@ -44,7 +44,7 @@ const ITEM_KPI: ReadonlyArray<{
     micro: "In preparazione",
     filtro: "lavorazione",
     icona: Hammer,
-    neutro: "bg-orange-50 text-orange-700",
+    neutro: "bg-yellow-50 text-yellow-700",
     urgente: false,
   },
   {
@@ -53,7 +53,7 @@ const ITEM_KPI: ReadonlyArray<{
     micro: "In transito",
     filtro: "lavorazione",
     icona: Truck,
-    neutro: "bg-sky-50 text-sky-700",
+    neutro: "bg-blue-50 text-blue-700",
     urgente: false,
   },
   {
@@ -62,7 +62,7 @@ const ITEM_KPI: ReadonlyArray<{
     micro: "Pronti al ritiro",
     filtro: "pronti",
     icona: PackageCheck,
-    neutro: "bg-green-50 text-green-700",
+    neutro: "bg-blue-50 text-blue-700",
     urgente: false,
   },
   {
@@ -71,7 +71,7 @@ const ITEM_KPI: ReadonlyArray<{
     micro: "Conclusi",
     filtro: "completati",
     icona: CheckCircle2,
-    neutro: "bg-emerald-50 text-emerald-700",
+    neutro: "bg-blue-50 text-blue-700",
     urgente: false,
   },
   {
@@ -80,7 +80,7 @@ const ITEM_KPI: ReadonlyArray<{
     micro: "Terminali",
     filtro: "annullati",
     icona: XCircle,
-    neutro: "bg-red-50 text-red-700",
+    neutro: "bg-blue-50 text-blue-700",
     urgente: false,
   },
 ];
@@ -109,7 +109,7 @@ export function KpiOrdini({
             href={`${baseHref}?filtro=${filtro}`}
             className={`group/kpi rounded-2xl px-3.5 py-3 ring-1 transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 ${
               rossa
-                ? "bg-red-600 text-white ring-red-700 shadow-md shadow-red-600/25"
+                ? "bg-blue-600 text-white ring-blue-700 shadow-md shadow-blue-600/25"
                 : "bg-white ring-slate-200"
             }`}
           >
@@ -129,14 +129,14 @@ export function KpiOrdini({
             </p>
             <p
               className={`mt-1.5 text-[11px] font-bold uppercase tracking-wide ${
-                rossa ? "text-red-100" : "text-slate-700"
+                rossa ? "text-blue-100" : "text-slate-700"
               }`}
             >
               {etichetta}
             </p>
             <p
               className={`mt-0.5 text-[10px] ${
-                rossa ? "text-red-100/80" : "text-slate-400"
+                rossa ? "text-blue-100/80" : "text-slate-400"
               }`}
             >
               {micro}

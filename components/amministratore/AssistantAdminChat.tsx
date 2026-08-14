@@ -140,7 +140,7 @@ export default function AssistantAdminChat() {
       >
         {showWelcome ? (
           <div className="flex h-full flex-col items-center justify-center gap-4 px-4 pb-4 sm:px-6">
-            <div className="flex h-12 w-12 items-center justify-center rounded-[1rem] bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-500/30">
+            <div className="flex h-12 w-12 items-center justify-center rounded-[1rem] bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-500/30">
               <svg
                 viewBox="0 0 24 24"
                 fill="none"

@@ -191,7 +191,7 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
               )}
             </div>
             <div className="shrink-0 text-right">
-              <p className="text-2xl font-black text-emerald-700">
+              <p className="text-2xl font-black text-blue-700">
                 €{prezzo.toFixed(2)}
               </p>
               {stato && (
@@ -217,8 +217,8 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
           {/* Availability (disponibilità reale, considera la riserva) */}
           {quantita !== null && (
             <div className="mt-3 flex items-center gap-2">
-              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${!esaurito ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-600"}`}>
-                <span className={`inline-block h-1.5 w-1.5 rounded-full ${!esaurito ? "bg-emerald-500" : "bg-red-500"}`} />
+              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${!esaurito ? "bg-blue-50 text-blue-700" : "bg-blue-50 text-blue-600"}`}>
+                <span className={`inline-block h-1.5 w-1.5 rounded-full ${!esaurito ? "bg-blue-500" : "bg-blue-500"}`} />
                 {!esaurito ? `${disponibile} disponibili` : "Esaurito"}
               </span>
             </div>
@@ -314,7 +314,7 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
                   href={buildWhatsAppUrl()}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-emerald-600"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-blue-500 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-blue-600"
                 >
                   <MessageCircle className="h-3.5 w-3.5" />
                   WhatsApp

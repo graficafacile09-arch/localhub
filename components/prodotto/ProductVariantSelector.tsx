@@ -169,7 +169,7 @@ export default function ProductVariantSelector({
             )}
           </div>
           <div className="shrink-0 text-right">
-            <p className="text-2xl font-black text-emerald-700">
+            <p className="text-2xl font-black text-blue-700">
               €{prezzoMostrato.toFixed(2)}
             </p>
             {statoCondizione && (
@@ -233,12 +233,12 @@ export default function ProductVariantSelector({
           <div className="mt-3 flex items-center gap-2">
             <span
               className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
-                !esaurito ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-600"
+                !esaurito ? "bg-blue-50 text-blue-700" : "bg-blue-50 text-blue-600"
               }`}
             >
               <span
                 className={`inline-block h-1.5 w-1.5 rounded-full ${
-                  !esaurito ? "bg-emerald-500" : "bg-red-500"
+                  !esaurito ? "bg-blue-500" : "bg-blue-500"
                 }`}
               />
               {!esaurito ? `${disponibile} disponibili` : "Esaurito"}
@@ -247,7 +247,7 @@ export default function ProductVariantSelector({
         )}
 
         {nessunaAcquistabile && (
-          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700">
+          <div className="mt-4 rounded-xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm font-semibold text-yellow-700">
             Prodotto non disponibile.
           </div>
         )}

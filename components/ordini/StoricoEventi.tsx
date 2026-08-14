@@ -77,9 +77,9 @@ export function StoricoEventi({ eventi }: { eventi: EventoOrdine[] }) {
             <span
               className={`relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-white shadow-sm ${
                 èAnnullato
-                  ? "bg-red-100 text-red-600"
+                  ? "bg-blue-100 text-blue-600"
                   : èNonInviata
-                    ? "bg-amber-100 text-amber-600"
+                    ? "bg-yellow-100 text-yellow-600"
                     : èStato
                       ? `${dot} text-white`
                       : "bg-slate-100 text-slate-500"
@@ -99,7 +99,7 @@ export function StoricoEventi({ eventi }: { eventi: EventoOrdine[] }) {
                   {ev.dettaglio ?? ev.evento}
                 </p>
                 {èAnnullato && ev.motivo ? (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-700 ring-1 ring-red-200">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700 ring-1 ring-blue-200">
                     <Ban className="h-3 w-3" aria-hidden />
                     {etichettaMotivoAnnullamento(ev.motivo)}
                   </span>

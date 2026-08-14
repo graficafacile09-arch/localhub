@@ -30,24 +30,24 @@ export default function MerchantProductAiForm({ negozioId }: MerchantProductAiFo
         <div className="space-y-4">
           {/* Banner avviso bassa confidenza */}
           {result.lowConfidence ? (
-            <div className="flex items-start gap-4 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4">
-              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" aria-hidden />
+            <div className="flex items-start gap-4 rounded-2xl border border-yellow-200 bg-yellow-50 px-5 py-4">
+              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-yellow-600" aria-hidden />
               <div>
-                <p className="text-sm font-bold text-amber-800">
+                <p className="text-sm font-bold text-yellow-800">
                   Riconoscimento a bassa confidenza ({result.suggestion.confidenza}%)
                 </p>
-                <p className="mt-1 text-sm leading-6 text-amber-700">
+                <p className="mt-1 text-sm leading-6 text-yellow-700">
                   L&apos;AI non è completamente sicura dell&apos;identificazione del prodotto.
                   Verifica attentamente tutti i campi prima di pubblicare e correggi eventuali errori.
                 </p>
               </div>
             </div>
           ) : (
-            <div className="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-3">
-              <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-xs font-bold text-white">
+            <div className="flex items-center gap-3 rounded-2xl border border-blue-200 bg-blue-50 px-5 py-3">
+              <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-500 text-xs font-bold text-white">
                 {result.suggestion.confidenza}%
               </span>
-              <p className="text-sm font-semibold text-emerald-800">
+              <p className="text-sm font-semibold text-blue-800">
                 Riconoscimento affidabile — controlla i campi e pubblica.
               </p>
             </div>

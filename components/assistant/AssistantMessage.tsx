@@ -62,7 +62,7 @@ const markdownComponents: Components = {
     <em className="font-medium text-blue-700">{children}</em>
   ),
   blockquote: ({ children }) => (
-    <blockquote className="mt-2 rounded-lg border-l-2 border-amber-400 bg-amber-50 px-3 py-2 text-[13px] text-slate-700">
+    <blockquote className="mt-2 rounded-lg border-l-2 border-yellow-400 bg-yellow-50 px-3 py-2 text-[13px] text-slate-700">
       {children}
     </blockquote>
   ),
@@ -101,7 +101,7 @@ export default function AssistantMessage({ message }: AssistantMessageProps) {
   return (
     <div className="flex items-start gap-2">
       <div
-        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-gradient-to-r from-blue-600 to-cyan-500 text-white"
+        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 text-white"
         aria-hidden
       >
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5">

@@ -172,7 +172,7 @@ export default function StoreEditor({ storeId, basePath = "/merchant" }: Props) 
           </div>
         ) : loadError || !store ? (
           <div className="flex flex-col items-center justify-center gap-3 py-24">
-            <p className="text-sm text-red-500">Impossibile caricare i dati del negozio.</p>
+            <p className="text-sm text-blue-500">Impossibile caricare i dati del negozio.</p>
             <button
               type="button"
               onClick={() => {

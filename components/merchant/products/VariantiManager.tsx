@@ -364,23 +364,23 @@ export default function VariantiManager({ negozioId, productId, prodotto }: Prop
   return (
     <div className="space-y-4">
       {/* Riepilogo aggregato (solo informativo) */}
-      <div className="rounded-lg border border-violet-100 bg-violet-50/60 px-3 py-2">
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-violet-500">Prodotto (aggregato automatico)</p>
+      <div className="rounded-lg border border-blue-100 bg-blue-50/60 px-3 py-2">
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-blue-500">Prodotto (aggregato automatico)</p>
         <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-700">
           <span className="rounded-full bg-white px-2 py-0.5 font-semibold shadow-sm">
             Prezzo: {prodottoInfo.prezzo === null ? "—" : `€${prodottoInfo.prezzo.toFixed(2)}`}
           </span>
-          <span className={`rounded-full px-2 py-0.5 font-semibold shadow-sm ${esaurito ? "bg-red-100 text-red-700" : "bg-white"}`}>
+          <span className={`rounded-full px-2 py-0.5 font-semibold shadow-sm ${esaurito ? "bg-blue-100 text-blue-700" : "bg-white"}`}>
             Stock: {prodottoInfo.quantitaDisponibile === null ? "non tracciato" : prodottoInfo.quantitaDisponibile}
             {esaurito ? " · Esaurito" : ""}
           </span>
           {prodottoInfo.quantitaRiservata ? (
-            <span className="rounded-full bg-amber-100 px-2 py-0.5 font-semibold text-amber-700 shadow-sm">
+            <span className="rounded-full bg-yellow-100 px-2 py-0.5 font-semibold text-yellow-700 shadow-sm">
               Riservata: {prodottoInfo.quantitaRiservata} (informazione)
             </span>
           ) : null}
         </div>
-        <p className="mt-1 text-[10px] leading-relaxed text-violet-500">
+        <p className="mt-1 text-[10px] leading-relaxed text-blue-500">
           Con le varianti attive, prezzo e stock del prodotto vengono calcolati automaticamente dal sistema
           (prezzo = il più basso tra le varianti attive, stock = somma delle varianti attive). Non modificare prezzo/stock
           del prodotto da qui.
@@ -388,13 +388,13 @@ export default function VariantiManager({ negozioId, productId, prodotto }: Prop
       </div>
 
       {error ? (
-        <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+        <div className="flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700">
           <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           <span>{error}</span>
         </div>
       ) : null}
       {successo ? (
-        <div className="flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
+        <div className="flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700">
           <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           <span>{successo}</span>
         </div>
@@ -438,7 +438,7 @@ export default function VariantiManager({ negozioId, productId, prodotto }: Prop
                         onChange={(e) => setDraft((prev) => ({ ...prev, [v.id]: { ...d, nome: e.target.value } }))}
                         onKeyDown={previeniInvio}
                         placeholder="Nome variante"
-                        className="h-8 w-full min-w-[120px] rounded-md border border-slate-200 px-2 text-xs outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+                        className="h-8 w-full min-w-[120px] rounded-md border border-slate-200 px-2 text-xs outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
                       />
                     </td>
                     <td className="px-3 py-2">
@@ -456,7 +456,7 @@ export default function VariantiManager({ negozioId, productId, prodotto }: Prop
                           type="number"
                           min="0"
                           step="0.01"
-                          className="h-8 w-24 rounded-md border border-slate-200 pl-5 pr-1 text-xs outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+                          className="h-8 w-24 rounded-md border border-slate-200 pl-5 pr-1 text-xs outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
                         />
                       </div>
                       <p className="mt-0.5 text-[9px] text-slate-400">vuoto = prezzo prodotto</p>
@@ -470,16 +470,16 @@ export default function VariantiManager({ negozioId, productId, prodotto }: Prop
                         type="number"
                         min="0"
                         step="1"
-                        className="h-8 w-20 rounded-md border border-slate-200 px-2 text-xs outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+                        className="h-8 w-20 rounded-md border border-slate-200 px-2 text-xs outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
                       />
                       {esaurita ? (
-                        <span className="ml-1.5 rounded-full bg-red-100 px-1.5 py-0.5 text-[9px] font-bold text-red-700">Esaurito</span>
+                        <span className="ml-1.5 rounded-full bg-blue-100 px-1.5 py-0.5 text-[9px] font-bold text-blue-700">Esaurito</span>
                       ) : null}
                     </td>
                     <td className="px-3 py-2">
                       <span
                         className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
-                          v.attivo ? "bg-emerald-100 text-emerald-700" : "bg-slate-200 text-slate-600"
+                          v.attivo ? "bg-blue-100 text-blue-700" : "bg-slate-200 text-slate-600"
                         }`}
                       >
                         {v.attivo ? "Attiva" : "Inattiva"}
@@ -493,7 +493,7 @@ export default function VariantiManager({ negozioId, productId, prodotto }: Prop
                           disabled={busyId === v.id}
                           title="Salva modifiche riga"
                           aria-label="Salva modifiche riga"
-                          className="rounded-md p-1.5 text-slate-500 transition hover:bg-violet-50 hover:text-violet-600 disabled:opacity-40"
+                          className="rounded-md p-1.5 text-slate-500 transition hover:bg-blue-50 hover:text-blue-600 disabled:opacity-40"
                         >
                           {busyId === v.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
                         </button>
@@ -503,7 +503,7 @@ export default function VariantiManager({ negozioId, productId, prodotto }: Prop
                           disabled={busyId === v.id}
                           title={v.attivo ? "Disattiva variante" : "Attiva variante"}
                           aria-label={v.attivo ? "Disattiva variante" : "Attiva variante"}
-                          className="rounded-md p-1.5 text-slate-500 transition hover:bg-amber-50 hover:text-amber-600 disabled:opacity-40"
+                          className="rounded-md p-1.5 text-slate-500 transition hover:bg-yellow-50 hover:text-yellow-600 disabled:opacity-40"
                         >
                           <Power className="h-3.5 w-3.5" />
                         </button>
@@ -513,7 +513,7 @@ export default function VariantiManager({ negozioId, productId, prodotto }: Prop
                           disabled={busyId === v.id}
                           title="Elimina variante"
                           aria-label="Elimina variante"
-                          className="rounded-md p-1.5 text-slate-500 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-40"
+                          className="rounded-md p-1.5 text-slate-500 transition hover:bg-blue-50 hover:text-blue-600 disabled:opacity-40"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
@@ -530,7 +530,7 @@ export default function VariantiManager({ negozioId, productId, prodotto }: Prop
       {/* ── Builder combinazioni ────────────────────────────────────────── */}
       <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-4">
         <div className="mb-3 flex items-center gap-2">
-          <Plus className="h-4 w-4 text-violet-600" />
+          <Plus className="h-4 w-4 text-blue-600" />
           <p className="text-xs font-bold text-slate-800">Crea nuove varianti</p>
         </div>
 
@@ -547,7 +547,7 @@ export default function VariantiManager({ negozioId, productId, prodotto }: Prop
                 }}
                 onKeyDown={previeniInvio}
                 placeholder="Attributo (es. Taglia)"
-                className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-100 sm:w-44"
+                className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100 sm:w-44"
               />
               <input
                 name={`vp-attributo-valori-${idx}`}
@@ -559,7 +559,7 @@ export default function VariantiManager({ negozioId, productId, prodotto }: Prop
                 }}
                 onKeyDown={previeniInvio}
                 placeholder="Valori separati da virgola (es. S, M, L)"
-                className="h-9 w-full flex-1 rounded-lg border border-slate-200 bg-white px-3 text-xs outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+                className="h-9 w-full flex-1 rounded-lg border border-slate-200 bg-white px-3 text-xs outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
               />
               {righeAttributo.length > 1 && (
                 <button
@@ -567,7 +567,7 @@ export default function VariantiManager({ negozioId, productId, prodotto }: Prop
                   onClick={() => setRigheAttributo((prev) => prev.filter((_, i) => i !== idx))}
                   title="Rimuovi attributo"
                   aria-label="Rimuovi attributo"
-                  className="rounded-md p-1.5 text-slate-400 transition hover:bg-red-50 hover:text-red-500"
+                  className="rounded-md p-1.5 text-slate-400 transition hover:bg-blue-50 hover:text-blue-500"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -600,7 +600,7 @@ export default function VariantiManager({ negozioId, productId, prodotto }: Prop
               min="0"
               step="0.01"
               placeholder="es. 19,90"
-              className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+              className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
             />
           </div>
           <div>
@@ -615,14 +615,14 @@ export default function VariantiManager({ negozioId, productId, prodotto }: Prop
               type="number"
               min="0"
               step="1"
-              className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs outline-none transition focus:border-violet-400 focus:ring-2 focus:ring-violet-100"
+              className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
             />
           </div>
         </div>
 
         {combinazioniGenerate.length > 0 ? (
-          <div className="mt-3 rounded-lg border border-violet-100 bg-white px-3 py-2">
-            <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-violet-500">
+          <div className="mt-3 rounded-lg border border-blue-100 bg-white px-3 py-2">
+            <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-blue-500">
               Combinazioni ({combinazioniGenerate.length})
             </p>
             <div className="flex flex-wrap gap-1.5">
@@ -633,7 +633,7 @@ export default function VariantiManager({ negozioId, productId, prodotto }: Prop
                   <span
                     key={k}
                     className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                      giaPresente ? "bg-slate-100 text-slate-400 line-through" : "bg-violet-100 text-violet-700"
+                      giaPresente ? "bg-slate-100 text-slate-400 line-through" : "bg-blue-100 text-blue-700"
                     }`}
                   >
                     {formattaAttributi(c)}
@@ -649,7 +649,7 @@ export default function VariantiManager({ negozioId, productId, prodotto }: Prop
           type="button"
           onClick={() => void creaCombinazioni()}
           disabled={creando || daCreare.length === 0}
-          className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-violet-600 px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-violet-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+          className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-blue-500 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
         >
           {creando ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
           {creando

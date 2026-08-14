@@ -17,7 +17,7 @@ export function Field({ label, value, onChange, type = "text", required, maxLeng
   return (
     <div>
       <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-500">
-        {label}{required && <span className="text-red-400">*</span>}
+        {label}{required && <span className="text-blue-400">*</span>}
       </label>
       <input
         type={type} value={value} onChange={(e) => onChange(e.target.value)}
@@ -40,7 +40,7 @@ export function SelectField({ label, value, onChange, options, required }: Selec
   return (
     <div>
       <label className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold text-slate-500">
-        {label}{required && <span className="text-red-400">*</span>}
+        {label}{required && <span className="text-blue-400">*</span>}
       </label>
       <select
         value={value} onChange={(e) => onChange(e.target.value)} required={required}
@@ -150,8 +150,8 @@ export function SaveBar({ saving, onSave, dirty }: SaveBarProps) {
         {saving ? "Salvataggio..." : "Salva modifiche"}
       </button>
       {dirty && !saving && (
-        <span className="flex items-center gap-1.5 text-xs font-medium text-amber-600">
-          <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+        <span className="flex items-center gap-1.5 text-xs font-medium text-yellow-600">
+          <span className="h-1.5 w-1.5 rounded-full bg-yellow-500" />
           Non salvato
         </span>
       )}

@@ -83,16 +83,16 @@ export default function MerchantProductResultCard({
 
   if (published) {
     return (
-      <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-6 text-center">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500">
+      <div className="rounded-2xl border border-blue-200 bg-blue-50 p-6 text-center">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-500">
           <CheckCircle2 className="h-6 w-6 text-white" />
         </div>
-        <p className="mt-3 text-base font-bold text-emerald-900">Prodotto pubblicato</p>
-        <p className="mt-1 text-sm text-emerald-700">{suggestion.nome} è ora nel catalogo.</p>
+        <p className="mt-3 text-base font-bold text-blue-900">Prodotto pubblicato</p>
+        <p className="mt-1 text-sm text-blue-700">{suggestion.nome} è ora nel catalogo.</p>
         <button
           type="button"
           onClick={onRetake}
-          className="mt-4 inline-flex items-center gap-2 rounded-xl border border-emerald-300 bg-white px-4 py-2.5 text-sm font-semibold text-emerald-800 transition hover:bg-emerald-50"
+          className="mt-4 inline-flex items-center gap-2 rounded-xl border border-blue-300 bg-white px-4 py-2.5 text-sm font-semibold text-blue-800 transition hover:bg-blue-50"
         >
           <RotateCcw className="h-4 w-4" />
           Aggiungi un altro prodotto
@@ -104,7 +104,7 @@ export default function MerchantProductResultCard({
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       {/* Confidenza banner — compatto */}
-      <div className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold ${lowConfidence ? "bg-amber-50 text-amber-800" : "bg-emerald-50 text-emerald-800"}`}>
+      <div className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold ${lowConfidence ? "bg-yellow-50 text-yellow-800" : "bg-blue-50 text-blue-800"}`}>
         {lowConfidence ? (
           <>
             <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
@@ -112,7 +112,7 @@ export default function MerchantProductResultCard({
           </>
         ) : (
           <>
-            <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-[10px] font-bold text-white">
+            <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-500 text-[10px] font-bold text-white">
               {suggestion.confidenza}%
             </span>
             <span>Prodotto riconosciuto</span>
@@ -157,11 +157,11 @@ export default function MerchantProductResultCard({
 
             {/* Prezzo — elemento principale */}
             {suggestion.prezzoSuggerito != null && (
-              <div className="mt-3 inline-flex items-baseline gap-1.5 rounded-lg bg-emerald-50 px-3 py-2 self-start">
-                <span className="text-xl font-black text-emerald-800">
+              <div className="mt-3 inline-flex items-baseline gap-1.5 rounded-lg bg-blue-50 px-3 py-2 self-start">
+                <span className="text-xl font-black text-blue-800">
                   €{suggestion.prezzoSuggerito.toFixed(2)}
                 </span>
-                <span className="text-[10px] font-medium text-emerald-600">prezzo indicativo</span>
+                <span className="text-[10px] font-medium text-blue-600">prezzo indicativo</span>
               </div>
             )}
           </div>
@@ -176,7 +176,7 @@ export default function MerchantProductResultCard({
 
         {/* Error */}
         {error && (
-          <div className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+          <div className="mt-3 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700">
             {error}
           </div>
         )}
@@ -185,7 +185,7 @@ export default function MerchantProductResultCard({
         <button
           type="button"
           onClick={onCorreggi}
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-500 to-fuchsia-600 px-3 py-2.5 text-sm font-bold text-white shadow shadow-fuchsia-500/20 transition hover:shadow-md hover:shadow-fuchsia-500/30 active:scale-[0.98]"
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-blue-700 px-3 py-2.5 text-sm font-bold text-white shadow shadow-blue-500/20 transition hover:shadow-md hover:shadow-blue-500/30 active:scale-[0.98]"
         >
           <Mic className="h-4 w-4" />
           Correggi con AI
@@ -194,7 +194,7 @@ export default function MerchantProductResultCard({
         {/* Azioni */}
         <div className="mt-2 flex gap-2">
           {giàSalvato ? (
-            <div className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm font-bold text-emerald-800">
+            <div className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2.5 text-sm font-bold text-blue-800">
               <CheckCircle2 className="h-4 w-4" />
               Pubblicato nel catalogo
             </div>

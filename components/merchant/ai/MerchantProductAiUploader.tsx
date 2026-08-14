@@ -361,7 +361,7 @@ export default function MerchantProductAiUploader({
   return (
     <div className="space-y-3">
       {error && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-xs text-red-700">
+        <div className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2.5 text-xs text-blue-700">
           {error}
         </div>
       )}
@@ -422,9 +422,9 @@ export default function MerchantProductAiUploader({
           </button>
           <label
             htmlFor="ai-file-upload"
-            className="group relative w-full cursor-pointer overflow-hidden rounded-[2rem] border-2 border-dashed border-emerald-300 bg-gradient-to-b from-emerald-50 to-emerald-50/60 px-4 py-8 text-center transition-all hover:border-emerald-400 hover:shadow-lg hover:shadow-emerald-200/50 active:scale-[0.99]"
+            className="group relative w-full cursor-pointer overflow-hidden rounded-[2rem] border-2 border-dashed border-blue-300 bg-gradient-to-b from-blue-50 to-blue-50/60 px-4 py-8 text-center transition-all hover:border-blue-400 hover:shadow-lg hover:shadow-blue-200/50 active:scale-[0.99]"
           >
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[1.5rem] bg-gradient-to-b from-emerald-500 to-emerald-700 shadow-lg shadow-emerald-300/50 transition-transform duration-300 group-hover:scale-110">
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-[1.5rem] bg-gradient-to-b from-blue-500 to-blue-700 shadow-lg shadow-blue-300/50 transition-transform duration-300 group-hover:scale-110">
               <ImageIcon className="h-7 w-7 text-white" />
             </div>
             <p className="mt-4 text-lg font-bold text-slate-800">

@@ -229,7 +229,7 @@ export default function MediaUploader({ onUpload, accept = "image/*", maxSize = 
           </div>
         ) : isOptimized ? (
           <div className="flex flex-col items-center gap-2">
-            <CheckCircle2 className="h-8 w-8 text-green-500" />
+            <CheckCircle2 className="h-8 w-8 text-blue-500" />
             <p className="text-xs font-medium text-slate-500">Immagine ottimizzata</p>
           </div>
         ) : isUploading ? (
@@ -261,13 +261,13 @@ export default function MediaUploader({ onUpload, accept = "image/*", maxSize = 
       </div>
 
       {error && (
-        <div className="mt-2 flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600">
+        <div className="mt-2 flex items-center gap-2 rounded-lg bg-blue-50 px-3 py-2 text-xs text-blue-600">
           <X className="h-3.5 w-3.5 shrink-0" />
           {error}
           <button
             type="button"
             onClick={() => setError(null)}
-            className="ml-auto rounded p-0.5 hover:bg-red-100"
+            className="ml-auto rounded p-0.5 hover:bg-blue-100"
           >
             <X className="h-3 w-3" />
           </button>

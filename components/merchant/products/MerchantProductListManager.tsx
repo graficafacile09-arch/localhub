@@ -142,7 +142,7 @@ export default function MerchantProductListManager({
                 type="button"
                 onClick={() => eseguiAzione("attiva")}
                 disabled={occupato}
-                className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 text-xs font-bold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+                className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-blue-600 px-3.5 text-xs font-bold text-white transition hover:bg-blue-700 disabled:opacity-50"
               >
                 Attiva
               </button>
@@ -158,7 +158,7 @@ export default function MerchantProductListManager({
                 type="button"
                 onClick={() => eseguiAzione("elimina")}
                 disabled={occupato}
-                className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-red-300 bg-white px-3.5 text-xs font-bold text-red-600 transition hover:border-red-400 hover:bg-red-50 disabled:opacity-50"
+                className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-blue-300 bg-white px-3.5 text-xs font-bold text-blue-600 transition hover:border-blue-400 hover:bg-blue-50 disabled:opacity-50"
               >
                 <Trash2 className="h-3.5 w-3.5" />
                 Elimina
@@ -217,7 +217,7 @@ export default function MerchantProductListManager({
                   sizes="80px"
                 />
                 {esaurito && (
-                  <span className="absolute bottom-0 inset-x-0 bg-red-600/90 py-0.5 text-center text-[9px] font-black uppercase tracking-wide text-white">
+                  <span className="absolute bottom-0 inset-x-0 bg-blue-600/90 py-0.5 text-center text-[9px] font-black uppercase tracking-wide text-white">
                     Esaurito
                   </span>
                 )}
@@ -239,19 +239,19 @@ export default function MerchantProductListManager({
                     <span
                       className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
                         product.attivo
-                          ? "bg-emerald-50 text-emerald-700"
+                          ? "bg-blue-50 text-blue-700"
                           : "bg-slate-100 text-slate-500"
                       }`}
                     >
                       {product.attivo ? "Attivo" : "Bozza"}
                     </span>
                     {esaurito && (
-                      <span className="rounded-full bg-red-50 px-2.5 py-0.5 text-[11px] font-semibold text-red-600">
+                      <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-[11px] font-semibold text-blue-600">
                         Esaurito
                       </span>
                     )}
                     {product.origine_pubblicazione === "ai" && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-2 py-0.5 text-[11px] font-semibold text-violet-700">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700">
                         <Sparkles className="h-3 w-3" />
                         AI
                       </span>
@@ -296,7 +296,7 @@ export default function MerchantProductListManager({
                     </div>
 
                     {esaurito && (
-                      <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-700">
+                      <span className="rounded-full bg-yellow-50 px-2 py-0.5 text-[11px] font-semibold text-yellow-700">
                         Da riordinare
                       </span>
                     )}

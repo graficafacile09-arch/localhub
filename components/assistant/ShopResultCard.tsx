@@ -63,7 +63,7 @@ export default function ShopResultCard({ negozio, rank }: ShopResultCardProps) {
                 </p>
               )}
             </div>
-            <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-700">
+            <span className="shrink-0 rounded-full bg-yellow-100 px-2 py-0.5 text-[10px] font-bold text-yellow-700">
               #{rank}
             </span>
           </div>
@@ -103,7 +103,7 @@ export default function ShopResultCard({ negozio, rank }: ShopResultCardProps) {
             href={buildWhatsAppUrl(negozio.telefono, negozio.nome)}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 transition hover:bg-emerald-100"
+            className="inline-flex items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-[11px] font-bold text-blue-700 transition hover:bg-blue-100"
           >
             <MessageCircle className="h-3 w-3" />
             WA

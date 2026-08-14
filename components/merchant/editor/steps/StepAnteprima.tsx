@@ -25,9 +25,9 @@ export default function StepAnteprima({ store }: StepProps) {
 
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="flex items-center gap-1.5 border-b border-slate-100 px-4 py-2.5">
-          <span className="h-2.5 w-2.5 rounded-full bg-red-400" />
-          <span className="h-2.5 w-2.5 rounded-full bg-amber-400" />
-          <span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
+          <span className="h-2.5 w-2.5 rounded-full bg-blue-400" />
+          <span className="h-2.5 w-2.5 rounded-full bg-yellow-400" />
+          <span className="h-2.5 w-2.5 rounded-full bg-blue-400" />
           <span className="ml-3 truncate rounded-md bg-slate-100 px-2 py-0.5 text-[10px] text-slate-500">
             {typeof window !== "undefined" ? `${window.location.origin}/negozio/${slug}` : `/negozio/${slug}`}
           </span>
