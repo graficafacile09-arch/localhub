@@ -87,16 +87,16 @@ export default function ZonaPericolosaDashboard() {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <section className="rounded-[2rem] border-2 border-blue-200 bg-blue-50/60 p-6 shadow-sm md:p-8">
+    <section className="rounded-[2rem] border-2 border-red-200 bg-red-50/60 p-6 shadow-sm md:p-8">
       <div className="flex items-center gap-3">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-blue-100 text-blue-600 ring-1 ring-blue-200">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-red-100 text-red-600 ring-1 ring-red-200">
           <AlertTriangle className="h-6 w-6" aria-hidden />
         </div>
         <div>
-          <h2 className="text-lg font-black tracking-tight text-blue-800">
+          <h2 className="text-lg font-black tracking-tight text-red-800">
             ZONA PERICOLOSA
           </h2>
-          <p className="mt-1 text-xs leading-5 text-blue-600">
+          <p className="mt-1 text-xs leading-5 text-red-600">
             L&apos;eliminazione sposta il negozio nel Cestino (soft delete). Puoi
             ripristinarlo dalla pagina Cestino. Operazione riservata
             all&apos;amministratore.
@@ -109,12 +109,12 @@ export default function ZonaPericolosaDashboard() {
         <div className="flex-1">
           <label
             htmlFor="zona-pericolosa-negozio"
-            className="mb-1 block text-xs font-semibold text-blue-700"
+            className="mb-1 block text-xs font-semibold text-red-700"
           >
             Seleziona il negozio da eliminare
           </label>
           {loadingNegozi ? (
-            <div className="flex h-11 items-center gap-2 rounded-xl border border-blue-200 bg-white px-4 text-sm text-slate-400">
+            <div className="flex h-11 items-center gap-2 rounded-xl border border-red-200 bg-white px-4 text-sm text-slate-400">
               <Loader2 className="h-4 w-4 animate-spin" />
               Caricamento negozi...
             </div>
@@ -127,7 +127,7 @@ export default function ZonaPericolosaDashboard() {
                 setErrore(null);
                 setSuccesso(null);
               }}
-              className="h-11 w-full rounded-xl border border-blue-200 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
+              className="h-11 w-full rounded-xl border border-red-200 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-red-400 focus:ring-4 focus:ring-red-100"
             >
               <option value="" disabled>
                 {negozi && negozi.length === 0
@@ -147,7 +147,7 @@ export default function ZonaPericolosaDashboard() {
           type="button"
           onClick={handleElimina}
           disabled={!selezionato || eliminando}
-          className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-blue-800 px-6 text-sm font-bold text-white shadow-lg shadow-blue-900/30 transition hover:bg-blue-900 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-xl bg-red-600 px-6 text-sm font-bold text-white shadow-lg shadow-red-500/30 transition hover:bg-red-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Trash2 className="h-4 w-4" aria-hidden />
           {eliminando ? "Eliminazione..." : "Elimina negozio"}
@@ -156,17 +156,17 @@ export default function ZonaPericolosaDashboard() {
 
       {/* Feedback */}
       {errore && (
-        <p className="mt-3 rounded-xl bg-blue-100 px-4 py-2.5 text-xs font-semibold text-blue-800">
+        <p className="mt-3 rounded-xl bg-red-100 px-4 py-2.5 text-xs font-semibold text-red-800">
           {errore}
         </p>
       )}
 
       {successo && (
-        <div className="mt-4 flex flex-col gap-3 rounded-2xl bg-blue-50 p-4 ring-1 ring-blue-200 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-sm font-bold text-blue-800">{successo}</p>
+        <div className="mt-4 flex flex-col gap-3 rounded-2xl bg-emerald-50 p-4 ring-1 ring-emerald-200 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm font-bold text-emerald-800">{successo}</p>
           <Link
             href="/amministratore/cestino"
-            className="btn-cta shrink-0 px-4 py-2 text-xs"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-emerald-700"
           >
             <Trash2 className="h-3.5 w-3.5" />
             Apri Cestino
