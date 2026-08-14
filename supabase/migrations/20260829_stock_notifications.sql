@@ -49,6 +49,34 @@ create index if not exists product_stock_notifications_prodotto_stato
 create index if not exists product_stock_notifications_negozio_stato
   on public.product_stock_notifications (negozio_id, stato);
 
+-- ── RLS: protezione delle email dei clienti ────────────────────────────
+-- Le query applicative usano il client ADMIN (service role, che bypassa
+-- RLS), quindi queste policy non ostacolano il funzionamento. Servono a
+-- impedire che la tabella (contenente email) sia leggibile/scrivibile
+-- tramite la chiave anon pubblica di PostgREST.
+alter table public.product_stock_notifications enable row level security;
+
+-- Iscrizione: chiunque può creare la PROPRIA richiesta (guest con email,
+-- oppure utente autenticato con il proprio user_id).
+create policy "stock notif insert own"
+  on public.product_stock_notifications for insert
+  with check (user_id is null or user_id = auth.uid());
+
+-- Un utente vede solo le proprie richieste (es. stato "già iscritto").
+create policy "stock notif select own"
+  on public.product_stock_notifications for select
+  using (user_id = auth.uid() or lower(email) = lower(auth.email()));
+
+-- Modifica/eliminazione solo delle proprie richieste.
+create policy "stock notif update own"
+  on public.product_stock_notifications for update
+  using (user_id = auth.uid() or lower(email) = lower(auth.email()))
+  with check (user_id = auth.uid() or lower(email) = lower(auth.email()));
+
+create policy "stock notif delete own"
+  on public.product_stock_notifications for delete
+  using (user_id = auth.uid() or lower(email) = lower(auth.email()));
+
 COMMIT;
 
 notify pgrst, 'reload schema';
