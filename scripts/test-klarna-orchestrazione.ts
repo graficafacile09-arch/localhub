@@ -352,13 +352,13 @@ async function main() {
     }
     check("Klarna configurato su A e Stripe su B (RPC salva)", true);
 
-    const { data: q1 } = await db.from("prodotti").insert({ negozio_id: negozioAId, nome: `KlarnaOrg Pane-${ts}`, prezzo: 10.0, quantita_disponibile: 40, attivo: true, ha_varianti: false }).select("id").single();
+    const { data: q1 } = await db.from("prodotti").insert({ negozio_id: negozioAId, nome: `KlarnaOrg Pane-${ts}`, prezzo: 10.0, quantita_disponibile: 40, attivo: true, ha_varianti: false, peso_grammi: 1000 }).select("id").single();
     p1 = Number(q1!.id);
-    const { data: qv } = await db.from("prodotti").insert({ negozio_id: negozioAId, nome: `KlarnaOrg Pizza-${ts}`, prezzo: 5.0, quantita_disponibile: 0, attivo: true, ha_varianti: true }).select("id").single();
+    const { data: qv } = await db.from("prodotti").insert({ negozio_id: negozioAId, nome: `KlarnaOrg Pizza-${ts}`, prezzo: 5.0, quantita_disponibile: 0, attivo: true, ha_varianti: true, peso_grammi: 1000 }).select("id").single();
     pV = Number(qv!.id);
     const { data: v1 } = await db.from("prodotto_varianti").insert({ prodotto_id: pV, nome: "KlarnaOrg Variante M", attributi: { taglia: "M" }, prezzo: 6.0, quantita_disponibile: 10, quantita_riservata: 0, attivo: true }).select("id").single();
     vM = String(v1!.id);
-    const { data: qB } = await db.from("prodotti").insert({ negozio_id: negozioBId, nome: `KlarnaOrg Dolce-${ts}`, prezzo: 3.0, quantita_disponibile: 100, attivo: true, ha_varianti: false }).select("id").single();
+    const { data: qB } = await db.from("prodotti").insert({ negozio_id: negozioBId, nome: `KlarnaOrg Dolce-${ts}`, prezzo: 3.0, quantita_disponibile: 100, attivo: true, ha_varianti: false, peso_grammi: 1000 }).select("id").single();
     pB = Number(qB!.id);
 
     const ids = { p1: String(p1), pV: String(pV), vM, pB: String(pB) };
@@ -368,7 +368,7 @@ async function main() {
       cliente: { nome: "Mario", cognome: "KlarnaOrg", telefono: "3331234567", email: "klarna-org@localhub.test" },
       spedizione: {
         indirizzo: "Via Test 1", cap: "87100", citta: "Cosenza", provincia: "CS",
-        metodoSpedizione: "standard" as const, metodoPagamento: "bonifico" as const,
+        carrier: "poste_italiane", servizio: "standard", metodoPagamento: "bonifico" as const,
       },
     };
 
@@ -438,7 +438,7 @@ async function main() {
       check("2 ordini (uno per negozio)", ordini.length === 2, ordini.map((o: any) => o.negozioId));
       const oA = ordini.find((o: any) => String(o.negozioId) === negozioAId);
       const oB = ordini.find((o: any) => String(o.negozioId) === negozioBId);
-      check("ordine A totale 31.90 (2 righe)", oA && Number(oA.totale) === 31.9, oA?.totale);
+      check("ordine A totale 32.70 (2 righe)", oA && Number(oA.totale) === 32.7, oA?.totale);
       check("ordine B totale 11.90", oB && Number(oB.totale) === 11.9, oB?.totale);
       ordineAId = String(oA?.ordineId ?? "");
       ordineBId = String(oB?.ordineId ?? "");
@@ -463,14 +463,14 @@ async function main() {
       const rigaPizza = lines.find((l) => String(l.name).includes("Pizza"));
       check("3g. variante M: 600×1 e variante nel nome", rigaPizza?.unit_price === 600 && rigaPizza?.quantity === 1 && String(rigaPizza?.name).includes("Variante M"), rigaPizza);
       const rigaSped = lines.find((l) => String(l.name) === "Spedizione");
-      check("3h. Spedizione 590×1", rigaSped?.unit_price === 590 && rigaSped?.quantity === 1, rigaSped);
-      check("3i. order_amount = 3190 = ordine.totale", Number(body.order_amount) === 3190, body.order_amount);
+      check("3h. Spedizione 670×1", rigaSped?.unit_price === 670 && rigaSped?.quantity === 1, rigaSped);
+      check("3i. order_amount = 3270 = ordine.totale", Number(body.order_amount) === 3270, body.order_amount);
 
       // ── DB: provider + stato ──
       const { data: ordineDb } = await db.from("ordini").select("payment_provider, payment_status, payment_id, payment_amount").eq("id", ordineAId).single();
       check("3j. ordine A: payment_provider='klarna'", ordineDb?.payment_provider === "klarna", ordineDb?.payment_provider);
       check("3k. ordine A: payment_status='pending'", ordineDb?.payment_status === "pending", ordineDb?.payment_status);
-      check("3l. payment_amount = 31.90", Number(ordineDb?.payment_amount ?? 0) === 31.9, ordineDb?.payment_amount);
+      check("3l. payment_amount = 32.70", Number(ordineDb?.payment_amount ?? 0) === 32.7, ordineDb?.payment_amount);
       const { data: sessioneDb } = await db.from("pagamenti_sessioni").select("provider, status, amount, payment_id").eq("ordine_id", ordineAId).single();
       check("3m. pagamenti_sessioni: provider='klarna', status='created'", sessioneDb?.provider === "klarna" && sessioneDb?.status === "created", sessioneDb);
       check("3n. payment_id = order_id Klarna", String(sessioneDb?.payment_id ?? "").startsWith("klarna_org_"), sessioneDb?.payment_id);
@@ -535,7 +535,7 @@ async function main() {
         cliente: { nome: "Anna", cognome: "KlarnaOrg", telefono: null, email: "klarna-bn@localhub.test" },
         spedizione: {
           indirizzo: "Via Test 2", cap: "87100", citta: "Cosenza", provincia: "CS",
-          metodoSpedizione: "standard", metodoPagamento: "bonifico",
+          carrier: "poste_italiane", servizio: "standard", metodoPagamento: "bonifico",
         },
       };
       const r1 = await postJson("/api/cliente/ordini", body);

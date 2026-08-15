@@ -227,6 +227,8 @@ export default async function MerchantOrdineDettaglioPage({
             spedizioneCitta={ordine.spedizioneCitta}
             spedizioneProvincia={ordine.spedizioneProvincia}
             spedizioneNote={ordine.spedizioneNote}
+            spedizioneCarrier={ordine.spedizioneCarrier}
+            spedizioneServizio={ordine.spedizioneServizio}
             metodoSpedizione={ordine.metodoSpedizione}
             metodoPagamento={ordine.metodoPagamento}
             paymentProvider={ordine.paymentProvider}

@@ -42,6 +42,21 @@ function validateProductPayload(payload: Partial<MerchantProductInput>) {
   if (payload.pesoVolume !== undefined && typeof payload.pesoVolume !== "string") {
     return "Formato peso/volume non valido.";
   }
+  // ── MOTORE TARIFFARIO: peso reale in grammi + tariffa corriere locale ──
+  if (
+    payload.pesoGrammi !== undefined &&
+    payload.pesoGrammi !== null &&
+    (typeof payload.pesoGrammi !== "number" || !Number.isInteger(payload.pesoGrammi) || payload.pesoGrammi < 0)
+  ) {
+    return "Inserisci un peso valido in grammi (numero intero ≥ 0).";
+  }
+  if (
+    payload.costoSpedizioneLocale !== undefined &&
+    payload.costoSpedizioneLocale !== null &&
+    (typeof payload.costoSpedizioneLocale !== "number" || Number.isNaN(payload.costoSpedizioneLocale) || payload.costoSpedizioneLocale < 0)
+  ) {
+    return "Inserisci un costo del corriere locale valido (≥ 0).";
+  }
   if (
     payload.filtriCatalogo !== undefined &&
     (payload.filtriCatalogo === null || typeof payload.filtriCatalogo !== "object" || Array.isArray(payload.filtriCatalogo))
@@ -154,6 +169,8 @@ export async function PUT(
     descrizioneCompleta: payload.descrizioneCompleta,
     caratteristiche: payload.caratteristiche,
     pesoVolume: payload.pesoVolume,
+    pesoGrammi: payload.pesoGrammi ?? null,
+    costoSpedizioneLocale: payload.costoSpedizioneLocale ?? null,
     filtriCatalogo: payload.filtriCatalogo,
     seoTitle: payload.seoTitle,
     seoDescription: payload.seoDescription,

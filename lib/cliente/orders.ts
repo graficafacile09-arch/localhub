@@ -4,6 +4,12 @@ import { inviaNotificaNuovoOrdineNtfy } from "@/lib/notifiche/ntfy";
 import { inviaEmailConfermaOrdine } from "./ordine-email";
 import { richiediVariantePerProdotto } from "@/lib/varianti-pubbliche";
 import type { PaymentStatus } from "@/lib/pagamenti/types";
+import {
+  isCarrierCodice,
+  isServizioValidoPerCarrier,
+  type CarrierCodice,
+  type ServizioCodice,
+} from "@/lib/spedizioni/catalogo";
 import type {
   ClienteOrdine,
   RigaOrdine,
@@ -137,7 +143,10 @@ export type CreaOrdineInput = {
     citta: string;
     provincia: string;
     note?: string | null;
-    metodoSpedizione: "standard" | "express";
+    /** Corriere scelto (poste_italiane | brt | locale). */
+    carrier: CarrierCodice;
+    /** Servizio del corriere (standard | express | online | locale). */
+    servizio: ServizioCodice;
     metodoPagamento: "carta" | "paypal" | "bonifico" | "klarna";
   } | null;
   /** Indirizzo di fatturazione opzionale (solo modalità spedizione). */
@@ -201,6 +210,13 @@ export const STATUS_DA_CODICE: Record<string, number> = {
   // può restituire questi codici in difesa in profondità.
   VARIANTE_NON_VALIDA: 422,
   VARIANTE_OBBLIGATORIA: 422,
+  // MOTORE TARIFFARIO (20260831): la RPC rifiuta corriere/servizio/peso non
+  // validi, tariffa non trovata e corriere locale non configurato.
+  CORRIERE_NON_VALIDO: 422,
+  SERVIZIO_NON_VALIDO: 422,
+  PESO_MANCANTE: 422,
+  TARIFFA_NON_TROVATA: 422,
+  CORRIERE_LOCALE_NON_DISPONIBILE: 422,
   SAVE_FAILED: 500,
 };
 
@@ -337,7 +353,8 @@ export function costruisciPayloadOrdine(input: CreaOrdineInput): PayloadCreaOrdi
     spedizioneCitta: input.modalita === "spedizione" ? String(input.spedizione!.citta).trim() : null,
     spedizioneProvincia: input.modalita === "spedizione" ? String(input.spedizione!.provincia).trim() : null,
     spedizioneNote: input.modalita === "spedizione" ? (input.spedizione!.note ? String(input.spedizione!.note).trim().slice(0, 500) : null) : null,
-    metodoSpedizione: input.modalita === "spedizione" ? input.spedizione!.metodoSpedizione : null,
+    spedizioneCarrier: input.modalita === "spedizione" ? input.spedizione!.carrier : null,
+    spedizioneServizio: input.modalita === "spedizione" ? input.spedizione!.servizio : null,
     metodoPagamento: input.modalita === "spedizione" ? input.spedizione!.metodoPagamento : null,
     note,
   };
@@ -422,8 +439,11 @@ export async function creaOrdine(
     if (!/^\d{5}$/.test(String(sp.cap).trim())) {
       return { ok: false, errore: "Il CAP deve essere composto da 5 cifre.", codice: "VALIDATION_ERROR", status: 422 };
     }
-    if (sp.metodoSpedizione !== "standard" && sp.metodoSpedizione !== "express") {
-      return { ok: false, errore: "Metodo di spedizione non valido.", codice: "VALIDATION_ERROR", status: 422 };
+    if (!isCarrierCodice(sp.carrier)) {
+      return { ok: false, errore: "Corriere di spedizione non valido.", codice: "CORRIERE_NON_VALIDO", status: 422 };
+    }
+    if (!isServizioValidoPerCarrier(sp.carrier, sp.servizio)) {
+      return { ok: false, errore: "Servizio di spedizione non valido per il corriere scelto.", codice: "SERVIZIO_NON_VALIDO", status: 422 };
     }
     if (
       sp.metodoPagamento !== "carta" &&

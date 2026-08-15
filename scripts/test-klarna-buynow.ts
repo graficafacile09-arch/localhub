@@ -262,7 +262,7 @@ function payloadBuyNow(idempotencyKey: string, metodoPagamento: string, prodotto
       citta: "Cosenza",
       provincia: "CS",
       note: null,
-      metodoSpedizione: "standard",
+      carrier: "poste_italiane", servizio: "standard",
       metodoPagamento,
     },
     note: null,
@@ -328,11 +328,11 @@ async function main() {
       { negozio_id: negozioNId, metodo: "klarna", attivo: true, ordine_mostra: 1 },
     ]);
 
-    const { data: qK } = await db.from("prodotti").insert({ negozio_id: negozioKId, nome: `KlarnaBN Pane-${ts}`, prezzo: 10.0, quantita_disponibile: 40, attivo: true, ha_varianti: false }).select("id").single();
+    const { data: qK } = await db.from("prodotti").insert({ negozio_id: negozioKId, nome: `KlarnaBN Pane-${ts}`, prezzo: 10.0, quantita_disponibile: 40, attivo: true, ha_varianti: false, peso_grammi: 1500 }).select("id").single();
     pK = Number(qK!.id);
-    const { data: qS } = await db.from("prodotti").insert({ negozio_id: negozioSId, nome: `KlarnaBN Latte-${ts}`, prezzo: 5.0, quantita_disponibile: 60, attivo: true, ha_varianti: false }).select("id").single();
+    const { data: qS } = await db.from("prodotti").insert({ negozio_id: negozioSId, nome: `KlarnaBN Latte-${ts}`, prezzo: 5.0, quantita_disponibile: 60, attivo: true, ha_varianti: false, peso_grammi: 1500 }).select("id").single();
     pS = Number(qS!.id);
-    const { data: qN } = await db.from("prodotti").insert({ negozio_id: negozioNId, nome: `KlarnaBN Dolce-${ts}`, prezzo: 3.0, quantita_disponibile: 100, attivo: true, ha_varianti: false }).select("id").single();
+    const { data: qN } = await db.from("prodotti").insert({ negozio_id: negozioNId, nome: `KlarnaBN Dolce-${ts}`, prezzo: 3.0, quantita_disponibile: 100, attivo: true, ha_varianti: false, peso_grammi: 1500 }).select("id").single();
     pN = Number(qN!.id);
 
     // Prodotto a variante nel negozio Klarna (T8: prezzo variante nel line item).

@@ -11,6 +11,12 @@ import {
   creaSessionePagamentoPerOrdine,
   creaSessioneStripePerOrdine,
 } from "@/lib/pagamenti/sessioni";
+import {
+  isCarrierCodice,
+  isServizioValidoPerCarrier,
+  type CarrierCodice,
+  type ServizioCodice,
+} from "@/lib/spedizioni/catalogo";
 
 /** IP del richiedente (pattern già usato da /api/assistente). */
 function ipRichiedente(request: Request): string {
@@ -165,12 +171,22 @@ export async function POST(request: Request) {
     }
   }
 
-  if (
-    spedizioneRaw.metodoSpedizione !== undefined &&
-    spedizioneRaw.metodoSpedizione !== "standard" &&
-    spedizioneRaw.metodoSpedizione !== "express"
-  ) {
-    return apiError("VALIDATION_ERROR", "Metodo di spedizione non valido.", 422);
+  // ── MOTORE TARIFFARIO — corriere + servizio (mai un prezzo dal browser) ──
+  // La RPC ricalcola sempre il costo; qui si valida SOLO che il corriere e il
+  // servizio indicati esistano davvero (niente default silenziosi).
+  const carrier: CarrierCodice | null = isCarrierCodice(spedizioneRaw.carrier)
+    ? spedizioneRaw.carrier
+    : null;
+  const servizio: ServizioCodice | null =
+    carrier !== null && isServizioValidoPerCarrier(carrier, spedizioneRaw.servizio)
+      ? spedizioneRaw.servizio
+      : null;
+  if (modalita === "spedizione" && (!carrier || !servizio)) {
+    return apiError(
+      "CORRIERE_NON_VALIDO",
+      "Seleziona un corriere di spedizione valido.",
+      422
+    );
   }
 
 
@@ -224,8 +240,8 @@ export async function POST(request: Request) {
             citta: typeof spedizioneRaw.citta === "string" ? spedizioneRaw.citta : "",
             provincia: typeof spedizioneRaw.provincia === "string" ? spedizioneRaw.provincia : "",
             note: typeof spedizioneRaw.note === "string" ? spedizioneRaw.note : null,
-            metodoSpedizione:
-              spedizioneRaw.metodoSpedizione === "express" ? "express" : "standard",
+            carrier: carrier as CarrierCodice,
+            servizio: servizio as ServizioCodice,
             // NOTA (coerenza con /api/cliente/ordini/carrello F2.2): le RPC
             // crea_ordine/crea_ordine_carrello accettano solo
             // carta/paypal/bonifico come metodo_pagamento. Il flusso klarna

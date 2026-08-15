@@ -156,7 +156,7 @@ function payloadSpedizione(idempotencyKey: string, prodottoId: string, metodoPag
       citta: "Cosenza",
       provincia: "CS",
       note: null,
-      metodoSpedizione: "standard",
+      carrier: "poste_italiane", servizio: "standard",
     },
     note: null,
   };
@@ -301,7 +301,7 @@ async function main() {
       }
       const { data: q } = await db
         .from("prodotti")
-        .insert({ negozio_id: negozi[d.chiave], nome: `NoChoice ${d.chiave}-${ts}`, slug: slug[d.chiave], prezzo: 10.0, quantita_disponibile: 50, attivo: true, ha_varianti: false })
+        .insert({ negozio_id: negozi[d.chiave], nome: `NoChoice ${d.chiave}-${ts}`, slug: slug[d.chiave], prezzo: 10.0, quantita_disponibile: 50, attivo: true, ha_varianti: false, peso_grammi: 1500 })
         .select("id")
         .single();
       prodotti[d.chiave] = Number(q!.id);

@@ -245,19 +245,19 @@ async function main() {
 
     const { data: p1 } = await db
       .from("prodotti")
-      .insert({ negozio_id: negozioAId, nome: `F22-ProdottoLegacy1-${ts}`, prezzo: 10.0, quantita_disponibile: 50, attivo: true, ha_varianti: false })
+      .insert({ negozio_id: negozioAId, nome: `F22-ProdottoLegacy1-${ts}`, prezzo: 10.0, quantita_disponibile: 50, attivo: true, ha_varianti: false, peso_grammi: 1000 })
       .select("id")
       .single();
     pLegacy1 = Number(p1!.id);
     const { data: p2 } = await db
       .from("prodotti")
-      .insert({ negozio_id: negozioAId, nome: `F22-ProdottoLegacy2-${ts}`, prezzo: 20.5, quantita_disponibile: 30, attivo: true, ha_varianti: false })
+      .insert({ negozio_id: negozioAId, nome: `F22-ProdottoLegacy2-${ts}`, prezzo: 20.5, quantita_disponibile: 30, attivo: true, ha_varianti: false, peso_grammi: 1000 })
       .select("id")
       .single();
     pLegacy2 = Number(p2!.id);
     const { data: pv } = await db
       .from("prodotti")
-      .insert({ negozio_id: negozioAId, nome: `F22-ProdottoVarianti-${ts}`, prezzo: 5.0, quantita_disponibile: 0, attivo: true, ha_varianti: true })
+      .insert({ negozio_id: negozioAId, nome: `F22-ProdottoVarianti-${ts}`, prezzo: 5.0, quantita_disponibile: 0, attivo: true, ha_varianti: true, peso_grammi: 1000 })
       .select("id")
       .single();
     pVariant = Number(pv!.id);
@@ -275,7 +275,7 @@ async function main() {
     v2Id = String(v2!.id);
     const { data: pB } = await db
       .from("prodotti")
-      .insert({ negozio_id: negozioBId, nome: `F22-ProdottoNegozioB-${ts}`, prezzo: 3.0, quantita_disponibile: 100, attivo: true, ha_varianti: false })
+      .insert({ negozio_id: negozioBId, nome: `F22-ProdottoNegozioB-${ts}`, prezzo: 3.0, quantita_disponibile: 100, attivo: true, ha_varianti: false, peso_grammi: 1000 })
       .select("id")
       .single();
     pAltro = Number(pB!.id);
@@ -297,7 +297,7 @@ async function main() {
         cap: "87100",
         citta: "Cosenza",
         provincia: "CS",
-        metodoSpedizione: "standard" as const,
+        carrier: "poste_italiane", servizio: "standard",
         metodoPagamento: "bonifico" as const,
       },
     };
@@ -327,7 +327,7 @@ async function main() {
       check("stato = in_preparazione", ordine?.stato === "in_preparazione", ordine?.stato);
       check("payment_status = null (nessun pagamento avviato)", ordine?.paymentStatus == null, ordine?.paymentStatus);
       check("payment_provider = null", ordine?.paymentProvider == null, ordine?.paymentProvider);
-      check("totale server-side = 31.90 (10×2 + 6×1 + 5.90)", Number(ordine?.totale) === 31.9, ordine?.totale);
+      check("totale server-side = 32.70 (10×2 + 6×1 + 6.70)", Number(ordine?.totale) === 32.7, ordine?.totale);
       check("2 righe nello snapshot", Array.isArray(ordine?.righe) && ordine.righe.length === 2, ordine?.righe);
       const rigaV = ordine?.righe?.find((r: any) => String(r.prodottoId) === ids.pVariant);
       check("snapshot variante: prezzo 6.00 dal DB", Number(rigaV?.prezzoUnitario) === 6.0, rigaV?.prezzoUnitario);
@@ -654,7 +654,7 @@ async function main() {
           cap: "87100",
           citta: "Cosenza",
           provincia: "CS",
-          metodoSpedizione: "standard",
+          carrier: "poste_italiane", servizio: "standard",
           metodoPagamento: "bonifico",
         },
       };

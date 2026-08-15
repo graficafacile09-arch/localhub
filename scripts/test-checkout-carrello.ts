@@ -250,15 +250,15 @@ async function main() {
     const { data: nB } = await db.from("negozi").insert({ nome: `F25-StoreB-${ts}`, slug: `f25-storeb-${ts}`, attivo: true, is_demo: true }).select("id").single();
     negozioBId = String(nB!.id);
 
-    const { data: q1 } = await db.from("prodotti").insert({ negozio_id: negozioAId, nome: `F25-ProdottoA1-${ts}`, prezzo: 10.0, quantita_disponibile: 40, attivo: true, ha_varianti: false }).select("id").single();
+    const { data: q1 } = await db.from("prodotti").insert({ negozio_id: negozioAId, nome: `F25-ProdottoA1-${ts}`, prezzo: 10.0, quantita_disponibile: 40, attivo: true, ha_varianti: false, peso_grammi: 1000 }).select("id").single();
     pA1 = Number(q1!.id);
-    const { data: q2 } = await db.from("prodotti").insert({ negozio_id: negozioAId, nome: `F25-ProdottoA2-${ts}`, prezzo: 20.5, quantita_disponibile: 25, attivo: true, ha_varianti: false }).select("id").single();
+    const { data: q2 } = await db.from("prodotti").insert({ negozio_id: negozioAId, nome: `F25-ProdottoA2-${ts}`, prezzo: 20.5, quantita_disponibile: 25, attivo: true, ha_varianti: false, peso_grammi: 1000 }).select("id").single();
     pA2 = Number(q2!.id);
-    const { data: qv } = await db.from("prodotti").insert({ negozio_id: negozioAId, nome: `F25-ProdottoVarianti-${ts}`, prezzo: 5.0, quantita_disponibile: 0, attivo: true, ha_varianti: true }).select("id").single();
+    const { data: qv } = await db.from("prodotti").insert({ negozio_id: negozioAId, nome: `F25-ProdottoVarianti-${ts}`, prezzo: 5.0, quantita_disponibile: 0, attivo: true, ha_varianti: true, peso_grammi: 1000 }).select("id").single();
     pVariant = Number(qv!.id);
     const { data: v1 } = await db.from("prodotto_varianti").insert({ prodotto_id: pVariant, nome: "F25-Variante M", attributi: { taglia: "M" }, prezzo: 6.0, quantita_disponibile: 10, quantita_riservata: 0, attivo: true }).select("id").single();
     v1Id = String(v1!.id);
-    const { data: qB } = await db.from("prodotti").insert({ negozio_id: negozioBId, nome: `F25-ProdottoB-${ts}`, prezzo: 3.0, quantita_disponibile: 100, attivo: true, ha_varianti: false }).select("id").single();
+    const { data: qB } = await db.from("prodotti").insert({ negozio_id: negozioBId, nome: `F25-ProdottoB-${ts}`, prezzo: 3.0, quantita_disponibile: 100, attivo: true, ha_varianti: false, peso_grammi: 1000 }).select("id").single();
     pB = Number(qB!.id);
 
     const ids = { pA1: String(pA1), pA2: String(pA2), pVariant: String(pVariant), v1: String(v1Id), pB: String(pB) };
@@ -268,7 +268,7 @@ async function main() {
       cliente: { nome: "Mario", cognome: "Rossi", telefono: "3331234567", email: "f25@localhub.test" },
       spedizione: {
         indirizzo: "Via Test 1", cap: "87100", citta: "Cosenza", provincia: "CS",
-        metodoSpedizione: "standard" as const, metodoPagamento: "bonifico" as const,
+        carrier: "poste_italiane", servizio: "standard", metodoPagamento: "bonifico" as const,
       },
     };
 
@@ -300,7 +300,7 @@ async function main() {
       const ordine = ordini[0];
       check("negozio risolto dal DB (A)", String(ordine?.negozioId) === negozioAId, ordine?.negozioId);
       check("stato = in_preparazione", ordine?.stato === "in_preparazione", ordine?.stato);
-      check("totale server-side = 31.90 (10×2 + 6×1 + 5.90 spedizione)", Number(ordine?.totale) === 31.9, ordine?.totale);
+      check("totale server-side = 32.70 (10×2 + 6×1 + 6.70 spedizione)", Number(ordine?.totale) === 32.7, ordine?.totale);
       check("2 righe nello snapshot", Array.isArray(ordine?.righe) && ordine.righe.length === 2, ordine?.righe);
       check("metodo bonifico → nessun pagamento/sessione", ordine?.pagamento == null, ordine?.pagamento);
       check("payment_status null", ordine?.paymentStatus == null, ordine?.paymentStatus);
@@ -415,7 +415,7 @@ async function main() {
     // ── T7: spedizione applicata una volta (verificato in T2/T3, check qui) ──
     console.log("\n[T7] Costo spedizione applicato una sola volta per ordine");
     {
-      check("T2: totale = prodotti + 5.90 (una spedizione)", true);
+      check("T2: totale = prodotti + 6.70 (una spedizione)", true);
       const { data: righeOrdine } = await db.from("ordini_righe").select("id").limit(0);
       check("tabelle ordini_righe accessibili", Array.isArray(righeOrdine));
     }
@@ -614,7 +614,7 @@ async function main() {
         cliente: { nome: "Anna", cognome: "Bianchi", telefono: null, email: "f25-bn@localhub.test" },
         spedizione: {
           indirizzo: "Via Test 2", cap: "87100", citta: "Cosenza", provincia: "CS",
-          metodoSpedizione: "standard", metodoPagamento: "bonifico",
+          carrier: "poste_italiane", servizio: "standard", metodoPagamento: "bonifico",
         },
       };
       const r1 = await postJson("/api/cliente/ordini", body);

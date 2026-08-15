@@ -328,12 +328,12 @@ async function main() {
     }
     check("config Klarna + Stripe salvate (RPC)", true);
 
-    const { data: q1 } = await db.from("prodotti").insert({ negozio_id: negozioKId, nome: `WhKlarna Pane-${ts}`, prezzo: 10.0, quantita_disponibile: 40, attivo: true, ha_varianti: false }).select("id").single();
+    const { data: q1 } = await db.from("prodotti").insert({ negozio_id: negozioKId, nome: `WhKlarna Pane-${ts}`, prezzo: 10.0, quantita_disponibile: 40, attivo: true, ha_varianti: false, peso_grammi: 1000 }).select("id").single();
     p1 = Number(q1!.id);
-    const { data: qS } = await db.from("prodotti").insert({ negozio_id: negozioSId, nome: `WhStripe Dolce-${ts}`, prezzo: 3.0, quantita_disponibile: 100, attivo: true, ha_varianti: false }).select("id").single();
+    const { data: qS } = await db.from("prodotti").insert({ negozio_id: negozioSId, nome: `WhStripe Dolce-${ts}`, prezzo: 3.0, quantita_disponibile: 100, attivo: true, ha_varianti: false, peso_grammi: 1000 }).select("id").single();
     pS = Number(qS!.id);
     // Prodotto DEDICATO al test EXPIRED: stock 40, nessun altro ordine lo tocca.
-    const { data: qStock } = await db.from("prodotti").insert({ negozio_id: negozioKId, nome: `WhKlarna Stock-${ts}`, prezzo: 10.0, quantita_disponibile: 40, attivo: true, ha_varianti: false }).select("id").single();
+    const { data: qStock } = await db.from("prodotti").insert({ negozio_id: negozioKId, nome: `WhKlarna Stock-${ts}`, prezzo: 10.0, quantita_disponibile: 40, attivo: true, ha_varianti: false, peso_grammi: 1000 }).select("id").single();
     pStock = Number(qStock!.id);
 
     mockKlarna = await avviaMockKlarna();
@@ -351,7 +351,7 @@ async function main() {
         cliente: { nome: "Mario", cognome: "WhKlarna", telefono: "3331234567", email: "wh-klarna@localhub.test" },
         spedizione: {
           indirizzo: "Via Test 1", cap: "87100", citta: "Cosenza", provincia: "CS",
-          metodoSpedizione: "standard", metodoPagamento: "bonifico",
+          carrier: "poste_italiane", servizio: "standard", metodoPagamento: "bonifico",
         },
         righe: [{ prodottoId: String(p1), varianteId: null, quantita }],
       });
@@ -516,7 +516,7 @@ async function main() {
         cliente: { nome: "Mario", cognome: "WhKlarna", telefono: "3331234567", email: "wh-klarna@localhub.test" },
         spedizione: {
           indirizzo: "Via Test 1", cap: "87100", citta: "Cosenza", provincia: "CS",
-          metodoSpedizione: "standard", metodoPagamento: "bonifico",
+          carrier: "poste_italiane", servizio: "standard", metodoPagamento: "bonifico",
         },
         righe: [{ prodottoId: String(pStock), varianteId: null, quantita }],
       });
@@ -603,7 +603,7 @@ async function main() {
         cliente: { nome: "Anna", cognome: "WhStripe", telefono: "3337654321", email: "wh-stripe@localhub.test" },
         spedizione: {
           indirizzo: "Via Stripe 2", cap: "87100", citta: "Cosenza", provincia: "CS",
-          metodoSpedizione: "standard", metodoPagamento: "bonifico",
+          carrier: "poste_italiane", servizio: "standard", metodoPagamento: "bonifico",
         },
         righe: [{ prodottoId: String(pS), varianteId: null, quantita: 1 }], // negozio Stripe
       });

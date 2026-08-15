@@ -75,7 +75,9 @@ type PayloadCarrello = {
   spedizioneCitta?: string | null;
   spedizioneProvincia?: string | null;
   spedizioneNote?: string | null;
-  metodoSpedizione?: string | null;
+  // MOTORE TARIFFARIO (20260831): corriere + servizio (mai un prezzo dal client).
+  spedizioneCarrier?: string | null;
+  spedizioneServizio?: string | null;
   metodoPagamento?: string | null;
   note?: string | null;
   righe: RigaCarrello[];
@@ -143,7 +145,7 @@ async function main() {
     // Prodotti legacy in A
     const { data: p1, error: e1 } = await db
       .from("prodotti")
-      .insert({ negozio_id: negozioAId, nome: `F21-ProdottoLegacy1-${ts}`, prezzo: 10.0, quantita_disponibile: 50, attivo: true, ha_varianti: false })
+      .insert({ negozio_id: negozioAId, nome: `F21-ProdottoLegacy1-${ts}`, prezzo: 10.0, quantita_disponibile: 50, attivo: true, ha_varianti: false, peso_grammi: 500 })
       .select("id")
       .single();
     if (e1 || !p1) fail("Creazione prodotto legacy 1 fallita");
@@ -151,7 +153,7 @@ async function main() {
 
     const { data: p2, error: e2 } = await db
       .from("prodotti")
-      .insert({ negozio_id: negozioAId, nome: `F21-ProdottoLegacy2-${ts}`, prezzo: 20.5, quantita_disponibile: 30, attivo: true, ha_varianti: false })
+      .insert({ negozio_id: negozioAId, nome: `F21-ProdottoLegacy2-${ts}`, prezzo: 20.5, quantita_disponibile: 30, attivo: true, ha_varianti: false, peso_grammi: 500 })
       .select("id")
       .single();
     if (e2 || !p2) fail("Creazione prodotto legacy 2 fallita");
@@ -160,7 +162,7 @@ async function main() {
     // Prodotto con varianti (padre) + 2 varianti
     const { data: pv, error: ev } = await db
       .from("prodotti")
-      .insert({ negozio_id: negozioAId, nome: `F21-ProdottoVarianti-${ts}`, prezzo: 5.0, quantita_disponibile: 0, attivo: true, ha_varianti: true })
+      .insert({ negozio_id: negozioAId, nome: `F21-ProdottoVarianti-${ts}`, prezzo: 5.0, quantita_disponibile: 0, attivo: true, ha_varianti: true, peso_grammi: 500 })
       .select("id")
       .single();
     if (ev || !pv) fail("Creazione prodotto con varianti fallita");
@@ -201,7 +203,7 @@ async function main() {
     // Prodotto in negozio B
     const { data: pB, error: eB } = await db
       .from("prodotti")
-      .insert({ negozio_id: negozioBId, nome: `F21-ProdottoAltroNegozio-${ts}`, prezzo: 3.0, quantita_disponibile: 100, attivo: true, ha_varianti: false })
+      .insert({ negozio_id: negozioBId, nome: `F21-ProdottoAltroNegozio-${ts}`, prezzo: 3.0, quantita_disponibile: 100, attivo: true, ha_varianti: false, peso_grammi: 500 })
       .select("id")
       .single();
     if (eB || !pB) fail("Creazione prodotto negozio B fallita");
@@ -227,7 +229,8 @@ async function main() {
         spedizioneCitta: "Cosenza",
         spedizioneProvincia: "CS",
         spedizioneNote: null,
-        metodoSpedizione: "standard",
+        spedizioneCarrier: "poste_italiane",
+        spedizioneServizio: "standard",
         metodoPagamento: "bonifico",
         note: null,
         righe: [
@@ -355,7 +358,8 @@ async function main() {
         spedizioneCap: "00100",
         spedizioneCitta: "Roma",
         spedizioneProvincia: "RM",
-        metodoSpedizione: "express",
+        spedizioneCarrier: "poste_italiane",
+        spedizioneServizio: "express",
         metodoPagamento: "bonifico",
         righe: [
           { prodottoId: ids.pLegacy2, varianteId: null, quantita: 1 },   // valida
@@ -471,7 +475,8 @@ async function main() {
         spedizioneCap: "20100",
         spedizioneCitta: "Milano",
         spedizioneProvincia: "MI",
-        metodoSpedizione: "express",
+        spedizioneCarrier: "poste_italiane",
+        spedizioneServizio: "express",
         metodoPagamento: "bonifico",
         righe: [
           { prodottoId: ids.pLegacy1, varianteId: null, quantita: 3 },  // 10.00×3 = 30.00
@@ -486,14 +491,14 @@ async function main() {
       const ordine = esito!.ordine!;
       ordiniCreati.push(String(ordine.id));
 
-      // Totale: 30.00 + 41.00 + 5.50 + 12.90 (express, UNA volta) = 89.40
-      check("totale = 89.40 (Σ + express 12.90 una volta)", Number(ordine.totale) === 89.4, ordine.totale);
+      // Totale: 30.00 + 41.00 + 5.50 + 7.70 (Poste Express 2-3kg, UNA volta) = 84.20
+      check("totale = 84.20 (Σ + Poste Express 2-3kg 7.70 una volta)", Number(ordine.totale) === 84.2, ordine.totale);
       const { data: costoDb } = await db
         .from("ordini")
         .select("costo_spedizione")
         .eq("id", String(ordine.id))
         .single();
-      check("costo_spedizione = 12.90 nel DB (una volta per ordine)", Number(costoDb?.costo_spedizione ?? 0) === 12.9, costoDb?.costo_spedizione);
+      check("costo_spedizione = 7.70 nel DB (una volta per ordine)", Number(costoDb?.costo_spedizione ?? 0) === 7.7, costoDb?.costo_spedizione);
       check("3 righe nell'ordine", Array.isArray(ordine.righe) && ordine.righe.length === 3, ordine.righe);
 
       const rigaL2 = ordine.righe?.find((r: any) => String(r.prodottoId) === ids.pLegacy2);
@@ -536,7 +541,8 @@ async function main() {
         spedizioneCap: "35100",
         spedizioneCitta: "Padova",
         spedizioneProvincia: "PD",
-        metodoSpedizione: "standard",
+        spedizioneCarrier: "poste_italiane",
+        spedizioneServizio: "standard",
         metodoPagamento: "carta",
         // Storia stock legacy1: 50 → T1(2)→48 → T2(1)→47 → T6(1)→46 → T7(3)→43.
         // T8 (qty 2) porta a 41 e la scadenza ripristina a 43.

@@ -1,5 +1,7 @@
 "use client";
 
+import type { CarrierCodice, ServizioCodice } from "@/lib/spedizioni/catalogo";
+
 /**
  * Helper client per la creazione di un ordine.
  * Usato da RitiroForm e SpedizioneForm.
@@ -28,7 +30,10 @@ export type CreaOrdinePayload = {
     citta: string;
     provincia: string;
     note?: string | null;
-    metodoSpedizione: "standard" | "express";
+    /** Corriere scelto (poste_italiane | brt | locale). */
+    carrier: CarrierCodice;
+    /** Servizio del corriere (standard | express | online | locale). */
+    servizio: ServizioCodice;
     /** Metodo SCELTO ESPLICITAMENTE dall'utente (il server rifiuta un assente). */
     metodoPagamento: "carta" | "bonifico" | "klarna" | "paypal";
   } | null;

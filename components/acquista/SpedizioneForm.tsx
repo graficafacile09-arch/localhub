@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Package, Truck, CreditCard, Banknote, Loader2 } from "lucide-react";
 import QuantitySelector from "./QuantitySelector";
@@ -9,11 +9,24 @@ import LocalitaFields, {
 } from "@/components/indirizzo/LocalitaFields";
 import { creaOrdineViaApi, nuovaChiaveIdempotenza } from "@/lib/cliente/ordini-client";
 import type { MetodoPagamentoCheckout } from "@/lib/pagamenti/metodi-pubblici";
+import type {
+  CarrierCodice,
+  OpzioneSpedizione,
+  ServizioCodice,
+  TierSpedizione,
+} from "@/lib/spedizioni/catalogo";
 import FatturazioneForm, {
   DATI_FATTURAZIONE_VUOTI,
   validaDatiFatturazione,
   type DatiFatturazione,
 } from "./FatturazioneForm";
+
+const TIER_LABEL: Record<TierSpedizione, string> = {
+  standard: "Standard",
+  express: "Express",
+  locale: "Corriere locale",
+};
+const TIER_ORDINE: TierSpedizione[] = ["standard", "express", "locale"];
 
 export default function SpedizioneForm({
   nome,
@@ -34,7 +47,15 @@ export default function SpedizioneForm({
 }) {
   const router = useRouter();
   const [quantita, setQuantita] = useState(1);
-  const [metodoSpedizione, setMetodoSpedizione] = useState<"standard" | "express">("standard");
+  // MOTORE TARIFFARIO — il prezzo della spedizione è calcolato da InCittà
+  // (server-side): qui si mostra SOLO il preventivo ricevuto e si trasporta la
+  // scelta corriere+servizio. Nessun prezzo inventato, nessun campo modificabile.
+  const [opzioniSpedizione, setOpzioniSpedizione] = useState<OpzioneSpedizione[]>([]);
+  const [caricamentoSpedizione, setCaricamentoSpedizione] = useState(true);
+  const [spedizioneScelta, setSpedizioneScelta] = useState<{
+    carrier: CarrierCodice;
+    servizio: ServizioCodice;
+  } | null>(null);
   // CONTRATTO BUY-NOW: il metodo di pagamento parte SEMPRE da null = NESSUNA
   // scelta. Mai un metodo pre-selezionato (nemmeno quando ne esiste uno solo):
   // "disponibile" NON significa "selezionato". Il submit è bloccato finché
@@ -62,9 +83,48 @@ export default function SpedizioneForm({
   const [fatturazione, setFatturazione] = useState<DatiFatturazione>(DATI_FATTURAZIONE_VUOTI);
   const [erroriFatturazione, setErroriFatturazione] = useState<Record<string, string>>({});
 
-  const costoSpedizione = metodoSpedizione === "express" ? 12.9 : 5.9;
+  const opzioneScelta = opzioniSpedizione.find(
+    (o) =>
+      o.carrier === spedizioneScelta?.carrier && o.servizio === spedizioneScelta?.servizio
+  );
+  const costoSpedizione = opzioneScelta?.prezzo ?? 0;
   const subtotal = prezzo * quantita;
   const totale = subtotal + costoSpedizione;
+
+  // Preventivo spedizione server-side: ricalcolato quando cambia la quantità.
+  useEffect(() => {
+    let attivo = true;
+    setCaricamentoSpedizione(true);
+    fetch("/api/cliente/ordini/spedizione/preventivo", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ prodottoId, quantita }),
+    })
+      .then((res) => res.json())
+      .then((json: { success?: boolean; data?: { opzioni?: OpzioneSpedizione[] } }) => {
+        if (!attivo) return;
+        const opzioni = json?.data?.opzioni ?? [];
+        setOpzioniSpedizione(opzioni);
+        // Se la scelta corrente non è più disponibile la si azzera (mai una
+        // selezione su un metodo non selezionabile).
+        setSpedizioneScelta((prev) => {
+          if (!prev) return null;
+          const ancora = opzioni.some(
+            (o) => o.carrier === prev.carrier && o.servizio === prev.servizio && o.disponibile
+          );
+          return ancora ? prev : null;
+        });
+      })
+      .catch(() => {
+        if (attivo) setOpzioniSpedizione([]);
+      })
+      .finally(() => {
+        if (attivo) setCaricamentoSpedizione(false);
+      });
+    return () => {
+      attivo = false;
+    };
+  }, [prodottoId, quantita]);
 
   const procediAlPagamento = async () => {
     if (inviando) return; // anti doppio invio
@@ -73,6 +133,10 @@ export default function SpedizioneForm({
     // se il pulsante venisse attivato da stato/browser precedenti.
     if (metodoPagamento === null) {
       setErrore("Seleziona un metodo di pagamento per continuare.");
+      return;
+    }
+    if (spedizioneScelta === null) {
+      setErrore("Seleziona un corriere di spedizione.");
       return;
     }
     const form = formRef.current;
@@ -123,7 +187,8 @@ export default function SpedizioneForm({
           citta: val("citta"),
           provincia: val("provincia"),
           note: val("note") || null,
-          metodoSpedizione,
+          carrier: spedizioneScelta.carrier,
+          servizio: spedizioneScelta.servizio,
           metodoPagamento,
         },
         fatturazione: fatturazione.diversa
@@ -236,60 +301,97 @@ export default function SpedizioneForm({
           errori={erroriFatturazione}
         />
 
-        {/* Metodo spedizione */}
+        {/* Spedizione — catalogo corrieri, prezzo calcolato da InCittà */}
         <div className="rounded-xl border border-slate-200 bg-white p-4">
           <h3 className="text-sm font-bold text-slate-900">
             <Package className="mr-1.5 inline-block h-4 w-4 text-blue-500" />
-            Metodo spedizione
+            Spedizione
           </h3>
-          <div className="mt-3 space-y-2">
-            <label
-              className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition ${
-                metodoSpedizione === "standard"
-                  ? "border-blue-400 bg-blue-50/50"
-                  : "border-slate-200 bg-white hover:border-slate-300"
-              }`}
-            >
-              <input
-                type="radio"
-                name="spedizione"
-                value="standard"
-                checked={metodoSpedizione === "standard"}
-                onChange={() => setMetodoSpedizione("standard")}
-                className="h-4 w-4 accent-blue-600"
-              />
-              <div className="flex flex-1 items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-slate-900">Standard</p>
-                  <p className="text-[11px] text-slate-500">Consegna in 3-5 giorni lavorativi</p>
-                </div>
-                <span className="text-sm font-bold text-slate-900">€5,90</span>
-              </div>
-            </label>
-            <label
-              className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition ${
-                metodoSpedizione === "express"
-                  ? "border-blue-400 bg-blue-50/50"
-                  : "border-slate-200 bg-white hover:border-slate-300"
-              }`}
-            >
-              <input
-                type="radio"
-                name="spedizione"
-                value="express"
-                checked={metodoSpedizione === "express"}
-                onChange={() => setMetodoSpedizione("express")}
-                className="h-4 w-4 accent-blue-600"
-              />
-              <div className="flex flex-1 items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-slate-900">Express</p>
-                  <p className="text-[11px] text-slate-500">Consegna in 1-2 giorni lavorativi</p>
-                </div>
-                <span className="text-sm font-bold text-slate-900">€12,90</span>
-              </div>
-            </label>
-          </div>
+          {caricamentoSpedizione ? (
+            <p className="mt-3 flex items-center gap-2 text-sm text-slate-500">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Calcolo tariffe...
+            </p>
+          ) : opzioniSpedizione.length === 0 ? (
+            <p className="mt-3 text-sm text-slate-600">Nessuna opzione di spedizione disponibile.</p>
+          ) : (
+            <div className="mt-3 space-y-3">
+              {TIER_ORDINE.map((tier) => {
+                const delTier = opzioniSpedizione.filter((o) => o.tier === tier);
+                if (delTier.length === 0) return null;
+                return (
+                  <div key={tier}>
+                    <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                      {TIER_LABEL[tier]}
+                    </p>
+                    <div className="space-y-2">
+                      {delTier.map((opzione) => {
+                        const selezionata =
+                          spedizioneScelta?.carrier === opzione.carrier &&
+                          spedizioneScelta?.servizio === opzione.servizio;
+                        return (
+                          <label
+                            key={`${opzione.carrier}:${opzione.servizio}`}
+                            className={`flex items-center gap-3 rounded-lg border p-3 transition ${
+                              selezionata
+                                ? "border-blue-400 bg-blue-50/50"
+                                : opzione.disponibile
+                                ? "cursor-pointer border-slate-200 bg-white hover:border-slate-300"
+                                : "cursor-not-allowed border-slate-200 bg-slate-50 opacity-70"
+                            }`}
+                          >
+                            <input
+                              type="radio"
+                              name="spedizione"
+                              checked={selezionata}
+                              disabled={!opzione.disponibile}
+                              onChange={() =>
+                                setSpedizioneScelta({
+                                  carrier: opzione.carrier,
+                                  servizio: opzione.servizio,
+                                })
+                              }
+                              className="h-4 w-4 accent-blue-600"
+                            />
+                            <div className="flex flex-1 items-center justify-between gap-2">
+                              <div className="min-w-0">
+                                <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-slate-900">
+                                  {opzione.carrierNome}
+                                  {opzione.servizioNome ? (
+                                    <span className="font-normal text-slate-500">{opzione.servizioNome}</span>
+                                  ) : null}
+                                  {!opzione.disponibile && (
+                                    <span className="inline-flex items-center rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-bold text-slate-500">
+                                      Non disponibile
+                                    </span>
+                                  )}
+                                </p>
+                                <p className="text-[11px] text-slate-500">
+                                  {opzione.tempoConsegna ?? "Consegna concordata con il negozio"}
+                                </p>
+                                {!opzione.disponibile && opzione.motivo && (
+                                  <p className="mt-0.5 text-[10px] leading-4 text-slate-400">{opzione.motivo}</p>
+                                )}
+                              </div>
+                              <span className="shrink-0 text-sm font-bold text-slate-900">
+                                {opzione.disponibile && opzione.prezzo !== null
+                                  ? `€${opzione.prezzo.toFixed(2)}`
+                                  : "—"}
+                              </span>
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+              <p className="text-[10px] leading-4 text-slate-400">
+                Tariffa di spedizione calcolata automaticamente da InCittà in base al corriere e alle
+                caratteristiche della spedizione.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Metodo pagamento (FASE F1: SOLO metodi realmente disponibili) */}
@@ -413,7 +515,7 @@ export default function SpedizioneForm({
         <button
           type="button"
           onClick={procediAlPagamento}
-          disabled={inviando || metodoPagamento === null}
+          disabled={inviando || metodoPagamento === null || spedizioneScelta === null}
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white shadow-md shadow-blue-500/25 transition hover:bg-blue-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {inviando ? (

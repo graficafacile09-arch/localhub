@@ -115,6 +115,11 @@ export type OrdineClienteDettaglio = OrdineClienteLista & {
   email: string | null;
   telefono: string | null;
   metodoSpedizione: "standard" | "express" | null;
+  /** Corriere scelto al checkout (motore tariffario 20260831); null per gli
+   *  ordini storici, che usano il fallback legacy `metodoSpedizione`. */
+  spedizioneCarrier: string | null;
+  /** Servizio del corriere (es. "standard", "express", "online", "locale"). */
+  spedizioneServizio: string | null;
   metodoPagamento: "carta" | "paypal" | "bonifico" | null;
   /** Marcatore autoritativo del provider (es. 'klarna' per gli ordini
    *  pagati via gateway Klarna: metodo_pagamento resta 'carta', come nel

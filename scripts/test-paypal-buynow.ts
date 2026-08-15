@@ -168,7 +168,7 @@ function payloadBuyNow(idempotencyKey: string, prodottoId: string, metodoPagamen
       citta: "Cosenza",
       provincia: "CS",
       note: null,
-      metodoSpedizione: "standard",
+      carrier: "poste_italiane", servizio: "standard",
       metodoPagamento,
     },
     note: null,
@@ -213,9 +213,9 @@ async function main() {
       { negozio_id: negozioP, metodo: "bonifico", attivo: true, ordine_mostra: 1 },
     ]);
 
-    const { data: pP } = await db.from("prodotti").insert({ negozio_id: negozioP, nome: `PaypalP-${ts}`, slug: `paypal-p-${ts}`, prezzo: 25, quantita_disponibile: 7, attivo: true, ha_varianti: false }).select("id").single();
+    const { data: pP } = await db.from("prodotti").insert({ negozio_id: negozioP, nome: `PaypalP-${ts}`, slug: `paypal-p-${ts}`, prezzo: 25, quantita_disponibile: 7, attivo: true, ha_varianti: false, peso_grammi: 1500 }).select("id").single();
     prodottoP = String(pP!.id);
-    const { data: pN } = await db.from("prodotti").insert({ negozio_id: negozioN, nome: `PaypalN-${ts}`, slug: `paypal-n-${ts}`, prezzo: 20, quantita_disponibile: 7, attivo: true, ha_varianti: false }).select("id").single();
+    const { data: pN } = await db.from("prodotti").insert({ negozio_id: negozioN, nome: `PaypalN-${ts}`, slug: `paypal-n-${ts}`, prezzo: 20, quantita_disponibile: 7, attivo: true, ha_varianti: false, peso_grammi: 1500 }).select("id").single();
     prodottoN = String(pN!.id);
 
     // ── T1: negozio SENZA paypal → 422 PAYPAL_NON_DISPONIBILE ────────────

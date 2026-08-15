@@ -26,6 +26,10 @@ export type MerchantProduct = {
   materiale: string | null;
   caratteristiche: string[] | null;
   peso_volume: string | null;
+  /** Peso reale del prodotto in GRAMMI (motore tariffario spedizioni). */
+  peso_grammi: number | null;
+  /** Tariffa CORRIERE LOCALE per questo prodotto (unica tariffa del venditore). */
+  costo_spedizione_locale: number | null;
   parole_chiave: string[] | null;
   filtri_catalogo: Record<string, string> | null;
   prezzo: number | null;
@@ -56,6 +60,10 @@ export type MerchantProductInput = {
   materiale?: string;
   caratteristiche?: string[];
   pesoVolume?: string;
+  /** Peso reale in GRAMMI (null = non configurato → Poste/BRT non disponibili). */
+  pesoGrammi?: number | null;
+  /** Tariffa corriere locale per prodotto (null = corriere locale non disponibile). */
+  costoSpedizioneLocale?: number | null;
   paroleChiave?: string[] | null;
   filtriCatalogo?: Record<string, string>;
   prezzo: number;

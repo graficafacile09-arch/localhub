@@ -303,17 +303,17 @@ async function main() {
     }
     check("Stripe attivo su entrambi i negozi P2", true);
 
-    const { data: q1 } = await db.from("prodotti").insert({ negozio_id: negozioAId, nome: `P2-ProdottoA1-${ts}`, prezzo: 10.0, quantita_disponibile: 40, attivo: true, ha_varianti: false }).select("id").single();
+    const { data: q1 } = await db.from("prodotti").insert({ negozio_id: negozioAId, nome: `P2-ProdottoA1-${ts}`, prezzo: 10.0, quantita_disponibile: 40, attivo: true, ha_varianti: false, peso_grammi: 1000 }).select("id").single();
     p1 = Number(q1!.id);
-    const { data: q2 } = await db.from("prodotti").insert({ negozio_id: negozioAId, nome: `P2-ProdottoA2-${ts}`, prezzo: 20.5, quantita_disponibile: 25, attivo: true, ha_varianti: false }).select("id").single();
+    const { data: q2 } = await db.from("prodotti").insert({ negozio_id: negozioAId, nome: `P2-ProdottoA2-${ts}`, prezzo: 20.5, quantita_disponibile: 25, attivo: true, ha_varianti: false, peso_grammi: 1000 }).select("id").single();
     p2 = Number(q2!.id);
-    const { data: qv } = await db.from("prodotti").insert({ negozio_id: negozioAId, nome: `P2-ProdottoVarianti-${ts}`, prezzo: 5.0, quantita_disponibile: 0, attivo: true, ha_varianti: true }).select("id").single();
+    const { data: qv } = await db.from("prodotti").insert({ negozio_id: negozioAId, nome: `P2-ProdottoVarianti-${ts}`, prezzo: 5.0, quantita_disponibile: 0, attivo: true, ha_varianti: true, peso_grammi: 1000 }).select("id").single();
     pV = Number(qv!.id);
     const { data: v1 } = await db.from("prodotto_varianti").insert({ prodotto_id: pV, nome: "P2-Variante M", attributi: { taglia: "M" }, prezzo: 6.0, quantita_disponibile: 10, quantita_riservata: 0, attivo: true }).select("id").single();
     vM = String(v1!.id);
     const { data: v2 } = await db.from("prodotto_varianti").insert({ prodotto_id: pV, nome: "P2-Variante L", attributi: { taglia: "L" }, prezzo: 5.5, quantita_disponibile: 8, quantita_riservata: 0, attivo: true }).select("id").single();
     vL = String(v2!.id);
-    const { data: qB } = await db.from("prodotti").insert({ negozio_id: negozioBId, nome: `P2-ProdottoB-${ts}`, prezzo: 3.0, quantita_disponibile: 100, attivo: true, ha_varianti: false }).select("id").single();
+    const { data: qB } = await db.from("prodotti").insert({ negozio_id: negozioBId, nome: `P2-ProdottoB-${ts}`, prezzo: 3.0, quantita_disponibile: 100, attivo: true, ha_varianti: false, peso_grammi: 1000 }).select("id").single();
     pB = Number(qB!.id);
 
     const ids = { p1: String(p1), p2: String(p2), pV: String(pV), vM: String(vM), vL: String(vL), pB: String(pB) };
@@ -323,7 +323,7 @@ async function main() {
       cliente: { nome: "Mario", cognome: "P2", telefono: "3331234567", email: "p2@localhub.test" },
       spedizione: {
         indirizzo: "Via Test 1", cap: "87100", citta: "Cosenza", provincia: "CS",
-        metodoSpedizione: "standard" as const, metodoPagamento: "bonifico" as const,
+        carrier: "poste_italiane", servizio: "standard", metodoPagamento: "bonifico" as const,
       },
     };
 
@@ -354,7 +354,7 @@ async function main() {
       const oA = ordini.find((o: any) => String(o.negozioId) === negozioAId);
       const oB = ordini.find((o: any) => String(o.negozioId) === negozioBId);
       check("ordine A: 2 righe (1 legacy + 1 variante)", Array.isArray(oA?.righe) && oA.righe.length === 2, oA?.righe);
-      check("ordine A: totale = 31.90 (10×2 + 6×1 + 5.90 spedizione)", oA && Number(oA.totale) === 31.9, oA?.totale);
+      check("ordine A: totale = 32.70 (10×2 + 6×1 + 6.70 spedizione)", oA && Number(oA.totale) === 32.7, oA?.totale);
       check("ordine B: totale = 11.90 (3×2 + 5.90)", oB && Number(oB.totale) === 11.9, oB?.totale);
       ordineAId = String(oA?.ordineId ?? "");
       ordineAIdTotale = Number(oA?.totale ?? 0);
@@ -379,8 +379,8 @@ async function main() {
       const rigaVM = items.find((i) => i.unitAmount === 600);
       check("variante M: 600 centesimi ×1 (prezzo VARIANTE, non padre)", rigaVM?.unitAmount === 600 && rigaVM?.quantity === 1, rigaVM);
       check("variante inclusa nel nome", String(rigaVM?.name ?? "").includes("P2-Variante M"), rigaVM?.name);
-      const rigaSped = items.find((i) => i.unitAmount === 590);
-      check("spedizione: 590 centesimi ×1", rigaSped?.unitAmount === 590 && rigaSped?.quantity === 1, rigaSped);
+      const rigaSped = items.find((i) => i.unitAmount === 670);
+      check("spedizione: 670 centesimi ×1", rigaSped?.unitAmount === 670 && rigaSped?.quantity === 1, rigaSped);
 
       // Totale sessione = somma line item = ordine.totale ESATTAMENTE.
       const totaleCentesimi = items.reduce((s, i) => s + i.unitAmount * i.quantity, 0);
@@ -505,7 +505,7 @@ async function main() {
         cliente: { nome: "Anna", cognome: "P2", telefono: null, email: "p2-bn@localhub.test" },
         spedizione: {
           indirizzo: "Via Test 2", cap: "87100", citta: "Cosenza", provincia: "CS",
-          metodoSpedizione: "standard", metodoPagamento: "bonifico",
+          carrier: "poste_italiane", servizio: "standard", metodoPagamento: "bonifico",
         },
       };
       const r1 = await postJson("/api/cliente/ordini", body);

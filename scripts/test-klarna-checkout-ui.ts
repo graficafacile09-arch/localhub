@@ -199,7 +199,7 @@ function payloadCheckout(checkoutKey: string, metodoPagamento: string, prodottoI
       citta: "Cosenza",
       provincia: "CS",
       note: null,
-      metodoSpedizione: "standard",
+      carrier: "poste_italiane", servizio: "standard",
       metodoPagamento,
     },
     righe: [{ prodottoId: String(prodottoId), varianteId: null, quantita: 1 }],
@@ -253,9 +253,9 @@ async function main() {
     }
     check("config Klarna sul negozio A (RPC)", true);
 
-    const { data: qK } = await db.from("prodotti").insert({ negozio_id: negozioKId, nome: `KlarnaUI Pane-${ts}`, prezzo: 10.0, quantita_disponibile: 40, attivo: true, ha_varianti: false }).select("id").single();
+    const { data: qK } = await db.from("prodotti").insert({ negozio_id: negozioKId, nome: `KlarnaUI Pane-${ts}`, prezzo: 10.0, quantita_disponibile: 40, attivo: true, ha_varianti: false, peso_grammi: 1500 }).select("id").single();
     pK = Number(qK!.id);
-    const { data: qN } = await db.from("prodotti").insert({ negozio_id: negozioNoKId, nome: `KlarnaUI Dolce-${ts}`, prezzo: 3.0, quantita_disponibile: 100, attivo: true, ha_varianti: false }).select("id").single();
+    const { data: qN } = await db.from("prodotti").insert({ negozio_id: negozioNoKId, nome: `KlarnaUI Dolce-${ts}`, prezzo: 3.0, quantita_disponibile: 100, attivo: true, ha_varianti: false, peso_grammi: 1500 }).select("id").single();
     pNoK = Number(qN!.id);
 
     mockKlarna = await avviaMockKlarna();

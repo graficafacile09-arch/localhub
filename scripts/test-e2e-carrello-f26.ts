@@ -275,15 +275,15 @@ async function main() {
     const { data: nB } = await db.from("negozi").insert({ nome: `F26-StoreB-${ts}`, slug: `f26-storeb-${ts}`, attivo: true, is_demo: true }).select("id").single();
     negozioBId = String(nB!.id);
 
-    const { data: q1 } = await db.from("prodotti").insert({ negozio_id: negozioAId, nome: `F26-ProdottoA1-${ts}`, prezzo: 10.0, quantita_disponibile: 40, attivo: true, ha_varianti: false }).select("id").single();
+    const { data: q1 } = await db.from("prodotti").insert({ negozio_id: negozioAId, nome: `F26-ProdottoA1-${ts}`, prezzo: 10.0, quantita_disponibile: 40, attivo: true, ha_varianti: false, peso_grammi: 1000 }).select("id").single();
     pA1 = Number(q1!.id);
-    const { data: q2 } = await db.from("prodotti").insert({ negozio_id: negozioAId, nome: `F26-ProdottoA2-${ts}`, prezzo: 20.5, quantita_disponibile: 25, attivo: true, ha_varianti: false }).select("id").single();
+    const { data: q2 } = await db.from("prodotti").insert({ negozio_id: negozioAId, nome: `F26-ProdottoA2-${ts}`, prezzo: 20.5, quantita_disponibile: 25, attivo: true, ha_varianti: false, peso_grammi: 1000 }).select("id").single();
     pA2 = Number(q2!.id);
-    const { data: qv } = await db.from("prodotti").insert({ negozio_id: negozioAId, nome: `F26-ProdottoVarianti-${ts}`, prezzo: 5.0, quantita_disponibile: 0, attivo: true, ha_varianti: true }).select("id").single();
+    const { data: qv } = await db.from("prodotti").insert({ negozio_id: negozioAId, nome: `F26-ProdottoVarianti-${ts}`, prezzo: 5.0, quantita_disponibile: 0, attivo: true, ha_varianti: true, peso_grammi: 1000 }).select("id").single();
     pAV = Number(qv!.id);
     const { data: v1 } = await db.from("prodotto_varianti").insert({ prodotto_id: pAV, nome: "F26-Variante M", attributi: { taglia: "M" }, prezzo: 6.0, quantita_disponibile: 10, quantita_riservata: 0, attivo: true }).select("id").single();
     v1Id = String(v1!.id);
-    const { data: qB } = await db.from("prodotti").insert({ negozio_id: negozioBId, nome: `F26-ProdottoB-${ts}`, prezzo: 3.0, quantita_disponibile: 100, attivo: true, ha_varianti: false }).select("id").single();
+    const { data: qB } = await db.from("prodotti").insert({ negozio_id: negozioBId, nome: `F26-ProdottoB-${ts}`, prezzo: 3.0, quantita_disponibile: 100, attivo: true, ha_varianti: false, peso_grammi: 1000 }).select("id").single();
     pB = Number(qB!.id);
 
     const ids = { pA1: String(pA1), pA2: String(pA2), pAV: String(pAV), v1: String(v1Id), pB: String(pB) };
@@ -293,7 +293,7 @@ async function main() {
       cliente: { nome: "Mario", cognome: "Rossi", telefono: "3331234567", email: "f26@localhub.test" },
       spedizione: {
         indirizzo: "Via Test 1", cap: "87100", citta: "Cosenza", provincia: "CS",
-        metodoSpedizione: "standard" as const, metodoPagamento: "bonifico" as const,
+        carrier: "poste_italiane", servizio: "standard", metodoPagamento: "bonifico" as const,
       },
     };
 
@@ -325,7 +325,7 @@ async function main() {
       check("1 ordine creato", ordini.length === 1, ordini);
       const ordine = ordini[0];
       check("negozio risolto dal DB (A)", String(ordine?.negozioId) === negozioAId, ordine?.negozioId);
-      check("totale server-side = 31.90 (10×2 + 6×1 + 5.90 spedizione)", Number(ordine?.totale) === 31.9, ordine?.totale);
+      check("totale server-side = 32.70 (10×2 + 6×1 + 6.70 spedizione)", Number(ordine?.totale) === 32.7, ordine?.totale);
       check("2 righe nello snapshot", Array.isArray(ordine?.righe) && ordine.righe.length === 2, ordine?.righe);
       check("bonifico → nessuna sessione (pagamento null)", ordine?.pagamento == null, ordine?.pagamento);
       const rigaV = ordine?.righe?.find((r: any) => r.prodottoId === ids.pAV);
@@ -756,7 +756,7 @@ async function main() {
         cliente: { nome: "Anna", cognome: "Bianchi", telefono: null, email: "f26-bn@localhub.test" },
         spedizione: {
           indirizzo: "Via Test 2", cap: "87100", citta: "Cosenza", provincia: "CS",
-          metodoSpedizione: "standard", metodoPagamento: "bonifico",
+          carrier: "poste_italiane", servizio: "standard", metodoPagamento: "bonifico",
         },
       };
       const r1 = await postJson("/api/cliente/ordini", body);

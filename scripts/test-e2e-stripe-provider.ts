@@ -143,6 +143,8 @@ async function main() {
   let ordineId: string | null = null;
   let sessioneId: string | null = null;
   let stockPre: number | null = null;
+  let pesoPre: number | null = null;
+  let pesoImpostato = false;
 
   // Dopo il salvataggio della config TEST, QUALSIASI errore va propagato
   // con throw (NON process.exit): il blocco finally DEVE sempre eseguire
@@ -171,7 +173,7 @@ async function main() {
     // ── 2. Ordine REALE via RPC crea_ordine (stesso payload del checkout) ──
     const { data: rigaProdotto, error: pErr } = await db
       .from("prodotti")
-      .select("id, prezzo, quantita_disponibile")
+      .select("id, prezzo, quantita_disponibile, peso_grammi")
       .eq("id", Number(PRODOTTO_E2E))
       .single();
     if (pErr || !rigaProdotto) {
@@ -179,6 +181,18 @@ async function main() {
     }
     // `fail` lancia sempre → da qui rigaProdotto è garantito non-null.
     stockPre = Number(rigaProdotto!.quantita_disponibile ?? 0);
+    pesoPre = (rigaProdotto as Record<string, unknown>).peso_grammi != null
+      ? Number((rigaProdotto as Record<string, unknown>).peso_grammi)
+      : null;
+
+    // MOTORE TARIFFARIO: il prodotto di test deve avere un peso per Poste/BRT.
+    // Valore temporaneo (ripristinato nel cleanup), coerente col resto del test.
+    const { error: pesoErr } = await db
+      .from("prodotti")
+      .update({ peso_grammi: 500 })
+      .eq("id", Number(PRODOTTO_E2E));
+    if (pesoErr) fail("Impostazione peso di test fallita: " + pesoErr.message);
+    pesoImpostato = true;
 
     const { data: esitoOrdine, error: oErr } = await db.rpc("crea_ordine", {
       p_payload: {
@@ -200,7 +214,8 @@ async function main() {
         spedizioneCitta: "Cosenza",
         spedizioneProvincia: "CS",
         spedizioneNote: null,
-        metodoSpedizione: "standard",
+        spedizioneCarrier: "poste_italiane",
+        spedizioneServizio: "standard",
         metodoPagamento: "carta",
         note: null,
       },
@@ -344,6 +359,14 @@ async function main() {
         .update({ quantita_disponibile: stockPre })
         .eq("id", Number(PRODOTTO_E2E));
       console.log(`  Stock prodotto ${PRODOTTO_E2E} ripristinato a ${stockPre}${stockErr ? " (ERRORE: " + stockErr.message + ")" : ""}`);
+    }
+    if (pesoImpostato) {
+      // Ripristino del peso del prodotto di test (motore tariffario).
+      const { error: pesoErr } = await db
+        .from("prodotti")
+        .update({ peso_grammi: pesoPre })
+        .eq("id", Number(PRODOTTO_E2E));
+      console.log(`  Peso prodotto ${PRODOTTO_E2E} ripristinato a ${pesoPre ?? "null"}${pesoErr ? " (ERRORE: " + pesoErr.message + ")" : ""}`);
     }
     // Config Stripe ORIGINALE ripristinata byte-for-byte.
     const { error: restoreErr } = await db

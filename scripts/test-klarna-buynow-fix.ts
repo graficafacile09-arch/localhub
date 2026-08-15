@@ -279,7 +279,7 @@ function payloadBuyNow(idempotencyKey: string, metodoPagamento: string, prodotto
       citta: "Cosenza",
       provincia: "CS",
       note: null,
-      metodoSpedizione: "standard",
+      carrier: "poste_italiane", servizio: "standard",
       metodoPagamento,
     },
     note: null,
@@ -361,15 +361,15 @@ async function main() {
 
     const slugK1 = `fixk-pane-${ts}`;
     const slugK2 = `fixk-vestito-${ts}`;
-    const { data: qK1 } = await db.from("prodotti").insert({ negozio_id: negozioKId, nome: `FixK Pane-${ts}`, slug: slugK1, prezzo: 10.0, quantita_disponibile: 40, attivo: true, ha_varianti: false }).select("id").single();
+    const { data: qK1 } = await db.from("prodotti").insert({ negozio_id: negozioKId, nome: `FixK Pane-${ts}`, slug: slugK1, prezzo: 10.0, quantita_disponibile: 40, attivo: true, ha_varianti: false, peso_grammi: 1500 }).select("id").single();
     pK1 = Number(qK1!.id);
-    const { data: qK2 } = await db.from("prodotti").insert({ negozio_id: negozioKId, nome: `FixK Vestito-${ts}`, slug: slugK2, prezzo: 20.0, quantita_disponibile: 10, attivo: true, ha_varianti: true }).select("id").single();
+    const { data: qK2 } = await db.from("prodotti").insert({ negozio_id: negozioKId, nome: `FixK Vestito-${ts}`, slug: slugK2, prezzo: 20.0, quantita_disponibile: 10, attivo: true, ha_varianti: true, peso_grammi: 1500 }).select("id").single();
     pK2 = Number(qK2!.id);
     const { data: v1 } = await db.from("prodotto_varianti").insert({ prodotto_id: pK2, nome: "Taglia M", attributi: { taglia: "M" }, prezzo: 12.0, quantita_disponibile: 10, attivo: true }).select("id").single();
     varianteId = String(v1!.id);
-    const { data: qS } = await db.from("prodotti").insert({ negozio_id: negozioSId, nome: `FixK Latte-${ts}`, slug: `fixk-latte-${ts}`, prezzo: 5.0, quantita_disponibile: 60, attivo: true, ha_varianti: false }).select("id").single();
+    const { data: qS } = await db.from("prodotti").insert({ negozio_id: negozioSId, nome: `FixK Latte-${ts}`, slug: `fixk-latte-${ts}`, prezzo: 5.0, quantita_disponibile: 60, attivo: true, ha_varianti: false, peso_grammi: 1500 }).select("id").single();
     pS = Number(qS!.id);
-    const { data: qN } = await db.from("prodotti").insert({ negozio_id: negozioNId, nome: `FixK Dolce-${ts}`, slug: `fixk-dolce-${ts}`, prezzo: 3.0, quantita_disponibile: 100, attivo: true, ha_varianti: false }).select("id").single();
+    const { data: qN } = await db.from("prodotti").insert({ negozio_id: negozioNId, nome: `FixK Dolce-${ts}`, slug: `fixk-dolce-${ts}`, prezzo: 3.0, quantita_disponibile: 100, attivo: true, ha_varianti: false, peso_grammi: 1500 }).select("id").single();
     pN = Number(qN!.id);
 
     mockKlarna = await avviaMockKlarna();

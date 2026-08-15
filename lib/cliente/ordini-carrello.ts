@@ -33,6 +33,12 @@
  */
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { isUuid } from "@/lib/slug";
+import {
+  isCarrierCodice,
+  isServizioValidoPerCarrier,
+  type CarrierCodice,
+  type ServizioCodice,
+} from "@/lib/spedizioni/catalogo";
 import { inviaNotificaNuovoOrdine } from "@/lib/notifiche/whatsapp";
 import { inviaNotificaNuovoOrdineNtfy } from "@/lib/notifiche/ntfy";
 import { inviaEmailConfermaOrdine } from "./ordine-email";
@@ -76,7 +82,10 @@ export type CheckoutCarrelloInput = {
     citta: string;
     provincia: string;
     note?: string | null;
-    metodoSpedizione: "standard" | "express";
+    /** Corriere scelto (poste_italiane | brt | locale). */
+    carrier: CarrierCodice;
+    /** Servizio del corriere (standard | express | online | locale). */
+    servizio: ServizioCodice;
     metodoPagamento: "carta" | "paypal" | "klarna" | "bonifico";
   } | null;
   /** Indirizzo di fatturazione opzionale (solo modalità spedizione). */
@@ -238,8 +247,11 @@ function validaCheckout(input: CheckoutCarrelloInput): { codice: string; messagg
     if (!/^\d{5}$/.test(String(sp.cap).trim())) {
       return { codice: "VALIDATION_ERROR", messaggio: "Il CAP deve essere composto da 5 cifre." };
     }
-    if (sp.metodoSpedizione !== "standard" && sp.metodoSpedizione !== "express") {
-      return { codice: "VALIDATION_ERROR", messaggio: "Metodo di spedizione non valido." };
+    if (!isCarrierCodice(sp.carrier)) {
+      return { codice: "CORRIERE_NON_VALIDO", messaggio: "Corriere di spedizione non valido." };
+    }
+    if (!isServizioValidoPerCarrier(sp.carrier, sp.servizio)) {
+      return { codice: "SERVIZIO_NON_VALIDO", messaggio: "Servizio di spedizione non valido per il corriere scelto." };
     }
     if (
       sp.metodoPagamento !== "carta" &&
@@ -428,7 +440,8 @@ function costruisciPayloadBase(input: CheckoutCarrelloInput, idempotencyKey: str
     payload.spedizioneCitta = String(sp.citta).trim();
     payload.spedizioneProvincia = String(sp.provincia).trim();
     payload.spedizioneNote = sp.note ? String(sp.note).trim().slice(0, 500) : null;
-    payload.metodoSpedizione = sp.metodoSpedizione;
+    payload.spedizioneCarrier = sp.carrier;
+    payload.spedizioneServizio = sp.servizio;
     payload.metodoPagamento = sp.metodoPagamento;
   }
 

@@ -55,6 +55,8 @@ type ProdottoRow = {
   materiale?: string | null;
   caratteristiche?: string[] | null;
   peso_volume?: string | null;
+  peso_grammi?: number | null;
+  costo_spedizione_locale?: number | null;
   parole_chiave?: string[] | null;
   filtri_catalogo?: Record<string, string> | null;
   prezzo?: number | string | null;
@@ -78,7 +80,7 @@ const SCHEMA_ERROR_CODES = new Set(["42P01", "42703", "PGRST204", "PGRST205"]);
 // Colonna usata per SELECT dei prodotti merchant (lista + patch parziale):
 // costante condivisa per evitare drift tra le due query.
 const SELECT_COLONNE_PRODOTTO =
-  "id, negozio_id, nome, descrizione, descrizione_completa, categoria, sottocategoria, marca, colore, materiale, caratteristiche, peso_volume, parole_chiave, filtri_catalogo, prezzo, prezzo_suggerito, immagine_principale, quantita_disponibile, quantita_riservata, ha_varianti, stato_condizione, seo_title, seo_description, alt_text_immagine, attivo, origine_pubblicazione, created_at, updated_at";
+  "id, negozio_id, nome, descrizione, descrizione_completa, categoria, sottocategoria, marca, colore, materiale, caratteristiche, peso_volume, peso_grammi, costo_spedizione_locale, parole_chiave, filtri_catalogo, prezzo, prezzo_suggerito, immagine_principale, quantita_disponibile, quantita_riservata, ha_varianti, stato_condizione, seo_title, seo_description, alt_text_immagine, attivo, origine_pubblicazione, created_at, updated_at";
 
 // Colonne delle varianti prodotto (Fase E2).
 const SELECT_COLONNE_VARIANTE =
@@ -136,6 +138,8 @@ function mapProduct(row: ProdottoRow): MerchantProduct {
     materiale: row.materiale ?? null,
     caratteristiche: row.caratteristiche ?? null,
     peso_volume: row.peso_volume ?? null,
+    peso_grammi: row.peso_grammi ?? null,
+    costo_spedizione_locale: row.costo_spedizione_locale ?? null,
     parole_chiave: row.parole_chiave ?? null,
     filtri_catalogo: row.filtri_catalogo ?? null,
     prezzo:
@@ -498,6 +502,8 @@ export async function createMerchantProductForStore(
   if (input.descrizioneCompleta !== undefined) payload.descrizione_completa = input.descrizioneCompleta.trim() || null;
   if (input.caratteristiche !== undefined) payload.caratteristiche = input.caratteristiche;
   if (input.pesoVolume !== undefined) payload.peso_volume = input.pesoVolume.trim() || null;
+  if (input.pesoGrammi !== undefined) payload.peso_grammi = input.pesoGrammi;
+  if (input.costoSpedizioneLocale !== undefined) payload.costo_spedizione_locale = input.costoSpedizioneLocale;
   if (input.filtriCatalogo !== undefined) payload.filtri_catalogo = input.filtriCatalogo;
   if (input.seoTitle !== undefined) payload.seo_title = input.seoTitle.trim() || null;
   if (input.seoDescription !== undefined) payload.seo_description = input.seoDescription.trim() || null;
@@ -593,6 +599,8 @@ export async function updateMerchantProductForStore(
   if (input.descrizioneCompleta !== undefined) payload.descrizione_completa = input.descrizioneCompleta.trim() || null;
   if (input.caratteristiche !== undefined) payload.caratteristiche = input.caratteristiche;
   if (input.pesoVolume !== undefined) payload.peso_volume = input.pesoVolume.trim() || null;
+  if (input.pesoGrammi !== undefined) payload.peso_grammi = input.pesoGrammi;
+  if (input.costoSpedizioneLocale !== undefined) payload.costo_spedizione_locale = input.costoSpedizioneLocale;
   if (input.filtriCatalogo !== undefined) payload.filtri_catalogo = input.filtriCatalogo;
   if (input.seoTitle !== undefined) payload.seo_title = input.seoTitle.trim() || null;
   if (input.seoDescription !== undefined) payload.seo_description = input.seoDescription.trim() || null;

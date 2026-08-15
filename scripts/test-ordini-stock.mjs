@@ -78,7 +78,9 @@ async function creaOrdineRpc(db, input) {
     spedizioneCitta: null,
     spedizioneProvincia: null,
     spedizioneNote: null,
-    metodoSpedizione: null,
+    // MOTORE TARIFFARIO (20260831): corriere + servizio (mai un prezzo dal client).
+    spedizioneCarrier: null,
+    spedizioneServizio: null,
     metodoPagamento: null,
     note: null,
   };

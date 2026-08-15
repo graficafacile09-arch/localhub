@@ -177,7 +177,9 @@ type PayloadCarrello = {
   spedizioneCap?: string | null;
   spedizioneCitta?: string | null;
   spedizioneProvincia?: string | null;
-  metodoSpedizione?: string | null;
+  // MOTORE TARIFFARIO (20260831): corriere + servizio (mai un prezzo dal client).
+  spedizioneCarrier?: string | null;
+  spedizioneServizio?: string | null;
   metodoPagamento?: string | null;
   righe: { prodottoId: string; varianteId?: string | null; quantita: number }[];
 };
@@ -220,19 +222,19 @@ async function main() {
 
     const { data: r1 } = await db
       .from("prodotti")
-      .insert({ negozio_id: negozioId, nome: `F23-ProdottoLegacy1-${ts}`, prezzo: 10.0, quantita_disponibile: 20, attivo: true, ha_varianti: false })
+      .insert({ negozio_id: negozioId, nome: `F23-ProdottoLegacy1-${ts}`, prezzo: 10.0, quantita_disponibile: 20, attivo: true, ha_varianti: false, peso_grammi: 500 })
       .select("id")
       .single();
     p1 = Number(r1!.id);
     const { data: r2 } = await db
       .from("prodotti")
-      .insert({ negozio_id: negozioId, nome: `F23-ProdottoLegacy2-${ts}`, prezzo: 20.5, quantita_disponibile: 15, attivo: true, ha_varianti: false })
+      .insert({ negozio_id: negozioId, nome: `F23-ProdottoLegacy2-${ts}`, prezzo: 20.5, quantita_disponibile: 15, attivo: true, ha_varianti: false, peso_grammi: 500 })
       .select("id")
       .single();
     p2 = Number(r2!.id);
     const { data: rv } = await db
       .from("prodotti")
-      .insert({ negozio_id: negozioId, nome: `F23-ProdottoVarianti-${ts}`, prezzo: 5.0, quantita_disponibile: 0, attivo: true, ha_varianti: true })
+      .insert({ negozio_id: negozioId, nome: `F23-ProdottoVarianti-${ts}`, prezzo: 5.0, quantita_disponibile: 0, attivo: true, ha_varianti: true, peso_grammi: 500 })
       .select("id")
       .single();
     pV = Number(rv!.id);
@@ -282,7 +284,8 @@ async function main() {
         spedizioneCap: "87100",
         spedizioneCitta: "Cosenza",
         spedizioneProvincia: "CS",
-        metodoSpedizione: "express",
+        spedizioneCarrier: "poste_italiane",
+        spedizioneServizio: "express",
         metodoPagamento: "carta",
         righe: [
           { prodottoId: String(p1), varianteId: null, quantita: 2 },        // 10.00×2
@@ -299,8 +302,8 @@ async function main() {
       ordine1Id = String(ordineJson.id);
       ordine1Totale = Number(ordineJson.totale);
       ordiniCreati.push(ordine1Id);
-      // Totale atteso: 20 + 20.5 + 12 + 12.9 (express) = 65.40
-      check("totale ordine DB = 65.40", ordine1Totale === 65.4, ordine1Totale);
+      // Totale atteso: 20 + 20.5 + 12 + 7.70 (Poste Express 2-3kg) = 60.20
+      check("totale ordine DB = 60.20", ordine1Totale === 60.2, ordine1Totale);
 
       // Sessione Stripe reale (orchestratore di produzione, gateway mock)
       const sessione = await creaSessioneStripePerOrdine(ordine1Id, gatewayOpts);
@@ -316,8 +319,8 @@ async function main() {
       check("prodotto 2: prezzo 2050 centesimi (20.50 DB) e quantità 1", rigaP2?.unitAmount === 2050 && rigaP2?.quantity === 1, rigaP2);
       const rigaVM = items.find((i) => i.unitAmount === 600);
       check("variante M: prezzo 600 centesimi (6.00 variante, non padre) e quantità 2", rigaVM?.unitAmount === 600 && rigaVM?.quantity === 2, rigaVM);
-      const rigaSped = items.find((i) => i.unitAmount === 1290);
-      check("spedizione express: line item 1290 centesimi, quantità 1", rigaSped?.unitAmount === 1290 && rigaSped?.quantity === 1, rigaSped);
+      const rigaSped = items.find((i) => i.unitAmount === 770);
+      check("spedizione express: line item 770 centesimi, quantità 1", rigaSped?.unitAmount === 770 && rigaSped?.quantity === 1, rigaSped);
 
       check("nome prodotto 1 dallo snapshot DB", String(rigaP1?.name ?? "").startsWith("F23-ProdottoLegacy1"), rigaP1?.name);
       check("variante inclusa nel nome", String(rigaVM?.name ?? "").includes("F23-Variante M"), rigaVM?.name);
@@ -388,7 +391,8 @@ async function main() {
         spedizioneCap: "00100",
         spedizioneCitta: "Roma",
         spedizioneProvincia: "RM",
-        metodoSpedizione: "standard",
+        spedizioneCarrier: "poste_italiane",
+        spedizioneServizio: "standard",
         metodoPagamento: "carta",
       };
       const { data, error } = await db.rpc("crea_ordine", { p_payload: payload });
@@ -400,8 +404,8 @@ async function main() {
       ordine2Id = String(ordineJson.id);
       ordine2Totale = Number(ordineJson.totale);
       ordiniCreati.push(ordine2Id);
-      // Totale atteso: 10 + 5.9 (standard) = 15.90
-      check("totale ordine DB = 15.90", ordine2Totale === 15.9, ordine2Totale);
+      // Totale atteso: 10 + 5.65 (Poste Standard 0-1kg) = 15.65
+      check("totale ordine DB = 15.65", ordine2Totale === 15.65, ordine2Totale);
 
       const sessione = await creaSessioneStripePerOrdine(ordine2Id, gatewayOpts);
       check("creaSessioneStripePerOrdine ok (mono-riga)", sessione.ok === true, sessione);
@@ -410,8 +414,8 @@ async function main() {
       check("2 line item (1 prodotto + spedizione standard)", items.length === 2, items);
       const rigaProd = items.find((i) => i.unitAmount === 1000);
       check("prodotto: 1000 centesimi, quantità 1", rigaProd?.unitAmount === 1000 && rigaProd?.quantity === 1, rigaProd);
-      const rigaSped = items.find((i) => i.unitAmount === 590);
-      check("spedizione standard: 590 centesimi", rigaSped?.unitAmount === 590 && rigaSped?.quantity === 1, rigaSped);
+      const rigaSped = items.find((i) => i.unitAmount === 565);
+      check("spedizione standard: 565 centesimi", rigaSped?.unitAmount === 565 && rigaSped?.quantity === 1, rigaSped);
       const totaleCentesimi = items.reduce((s, i) => s + i.unitAmount * i.quantity, 0);
       check(`totale sessione = totale ordine DB (${ordine2Totale * 100})`, totaleCentesimi === Math.round(ordine2Totale * 100), totaleCentesimi);
     }

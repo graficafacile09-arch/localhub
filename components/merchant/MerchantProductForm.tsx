@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, ChevronDown, ChevronUp, ImagePlus, Layers } from "lucide-react";
+import { Camera, ChevronDown, ChevronUp, ImagePlus, Layers, Truck } from "lucide-react";
 import ProductGalleryManager from "@/components/merchant/products/ProductGalleryManager";
 import VariantiManager from "@/components/merchant/products/VariantiManager";
 import type { MerchantProduct } from "@/lib/merchant/types";
@@ -19,6 +19,10 @@ export type MerchantProductPayload = {
   materiale?: string;
   caratteristiche: string[];
   pesoVolume?: string;
+  /** Peso reale in grammi (motore tariffario spedizioni). */
+  pesoGrammi?: number | null;
+  /** Tariffa corriere locale per prodotto (unica tariffa del venditore). */
+  costoSpedizioneLocale?: number | null;
   paroleChiave: string[];
   filtriCatalogo?: Record<string, string>;
   prezzo: number;
@@ -67,6 +71,8 @@ const DEFAULT_PRODUCT_FORM = {
   materiale: "",
   caratteristiche: "",
   peso_volume: "",
+  peso_grammi: null as number | null,
+  costo_spedizione_locale: null as number | null,
   parole_chiave: "",
   filtri_catalogo: "",
   prezzo: 0,
@@ -119,6 +125,8 @@ export default function MerchantProductForm({
       materiale: str(initialValues.materiale),
       caratteristiche: str(initialValues.caratteristiche),
       peso_volume: str(initialValues.peso_volume),
+      peso_grammi: str(initialValues.peso_grammi),
+      costo_spedizione_locale: str(initialValues.costo_spedizione_locale),
       parole_chiave: str(initialValues.parole_chiave),
       filtri_catalogo: str(initialValues.filtri_catalogo),
       prezzo: str(initialValues.prezzo),
@@ -156,6 +164,8 @@ export default function MerchantProductForm({
       materiale: get("materiale"),
       caratteristiche: get("caratteristiche"),
       peso_volume: get("peso_volume"),
+      peso_grammi: get("peso_grammi"),
+      costo_spedizione_locale: get("costo_spedizione_locale"),
       parole_chiave: get("parole_chiave"),
       filtri_catalogo: get("filtri_catalogo"),
       prezzo: get("prezzo"),
@@ -184,6 +194,8 @@ export default function MerchantProductForm({
             ? initialData.caratteristiche.join(", ")
             : (initialData.caratteristiche as string | null | undefined) ?? "",
         peso_volume: initialData.peso_volume ?? "",
+        peso_grammi: initialData.peso_grammi ?? null,
+        costo_spedizione_locale: initialData.costo_spedizione_locale ?? null,
         parole_chiave:
           Array.isArray(initialData.parole_chiave) && initialData.parole_chiave.length > 0
             ? initialData.parole_chiave.join(", ")
@@ -227,6 +239,12 @@ export default function MerchantProductForm({
         .map((item) => item.trim())
         .filter(Boolean),
       pesoVolume: String(formData.get("peso_volume") ?? "").trim() || undefined,
+      pesoGrammi: formData.get("peso_grammi")
+        ? Number(formData.get("peso_grammi"))
+        : null,
+      costoSpedizioneLocale: formData.get("costo_spedizione_locale")
+        ? Number(formData.get("costo_spedizione_locale"))
+        : null,
       paroleChiave: String(formData.get("parole_chiave") ?? "")
         .split(/[,;]\s*/)
         .map((item) => item.trim())
@@ -475,6 +493,53 @@ export default function MerchantProductForm({
           Prezzo e quantità sono calcolati automaticamente dalle varianti: modificali nella sezione Varianti qui sotto.
         </p>
       ) : null}
+
+      {/* Spedizione — motore tariffario InCittà (il peso abilita Poste/BRT) */}
+      <div className="rounded-xl border border-blue-100 bg-blue-50/40 p-4">
+        <div className="mb-3 flex items-center gap-2">
+          <Truck className="h-4 w-4 text-blue-600" />
+          <div>
+            <p className="text-xs font-bold text-slate-800">Spedizione</p>
+            <p className="text-[10px] leading-4 text-slate-500">
+              Le tariffe Poste Italiane e BRT sono determinate automaticamente da InCittà in base al peso.
+            </p>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="relative">
+            <input
+              id="peso_grammi"
+              name="peso_grammi"
+              type="number"
+              min="0"
+              step="1"
+              defaultValue={initialValues.peso_grammi ?? ""}
+              placeholder="Peso (grammi)"
+              className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            />
+            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">g</span>
+          </div>
+          <div className="relative">
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">&euro;</span>
+            <input
+              id="costo_spedizione_locale"
+              name="costo_spedizione_locale"
+              type="number"
+              min="0"
+              step="0.01"
+              defaultValue={initialValues.costo_spedizione_locale ?? ""}
+              placeholder="Corriere locale (€)"
+              className="h-10 w-full rounded-lg border border-slate-200 pl-7 pr-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+            />
+          </div>
+        </div>
+        {!initialValues.peso_grammi && (
+          <p className="mt-2 text-[10px] font-semibold leading-4 text-amber-600">
+            Peso non configurato: Poste Italiane e BRT non saranno disponibili al checkout. Il
+            corriere locale usa invece il costo qui indicato.
+          </p>
+        )}
+      </div>
 
       {/* Descrizione */}
       <textarea

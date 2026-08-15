@@ -188,6 +188,8 @@ export default async function OrdineDettaglioPage({ params }: { params: Promise<
             spedizioneCitta={ordine.spedizioneCitta}
             spedizioneProvincia={ordine.spedizioneProvincia}
             spedizioneNote={ordine.spedizioneNote}
+            spedizioneCarrier={ordine.spedizioneCarrier}
+            spedizioneServizio={ordine.spedizioneServizio}
             metodoSpedizione={ordine.metodoSpedizione}
             metodoPagamento={ordine.metodoPagamento}
             paymentProvider={ordine.paymentProvider}

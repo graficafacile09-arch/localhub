@@ -3,6 +3,34 @@ import { Sezione, RigaDettaglio } from "./Sezione";
 import { MapPin, Truck } from "lucide-react";
 
 /**
+ * Etichetta leggibile del metodo di spedizione.
+ *
+ * - ORDINI NUOVI (motore tariffario 20260831): usa i dati reali
+ *   `spedizione_carrier` + `spedizione_servizio`;
+ * - ORDINI STORICI (senza carrier/servizio): fallback legacy su
+ *   `metodo_spedizione` (standard/express), invariato.
+ */
+function etichettaSpedizione(
+  carrier: string | null,
+  servizio: string | null,
+  metodoSpedizione: "standard" | "express" | null
+): string | null {
+  if (carrier === "poste_italiane") {
+    if (servizio === "express") return "Poste Italiane — Express (1-2 giorni)";
+    if (servizio === "standard") return "Poste Italiane — Standard (3-5 giorni)";
+  }
+  if (carrier === "brt") {
+    if (servizio === "online") return "BRT (24/48 ore)";
+  }
+  if (carrier === "locale") {
+    return "Corriere locale";
+  }
+  if (metodoSpedizione === "express") return "Espresso (1-2 giorni)";
+  if (metodoSpedizione === "standard") return "Standard (3-5 giorni)";
+  return null;
+}
+
+/**
  * Sezione RITIRO / SPEDIZIONE condivisa (dettaglio cliente e venditore):
  * mostra SOLO i dati presenti (mai sezioni vuote) e solo la modalità reale.
  */
@@ -16,6 +44,8 @@ export function InformazioniRitiroSpedizione({
   spedizioneCitta,
   spedizioneProvincia,
   spedizioneNote,
+  spedizioneCarrier,
+  spedizioneServizio,
   metodoSpedizione,
   metodoPagamento,
   paymentProvider,
@@ -29,6 +59,11 @@ export function InformazioniRitiroSpedizione({
   spedizioneCitta: string | null;
   spedizioneProvincia: string | null;
   spedizioneNote: string | null;
+  /** Corriere scelto al checkout (motore tariffario 20260831); null per gli
+   *  ordini storici. */
+  spedizioneCarrier: string | null;
+  /** Servizio del corriere (es. "standard", "express", "online", "locale"). */
+  spedizioneServizio: string | null;
   metodoSpedizione: "standard" | "express" | null;
   metodoPagamento: "carta" | "paypal" | "bonifico" | "klarna" | null;
   /** Marcatore autoritativo del provider (es. 'klarna'): la colonna
@@ -89,16 +124,12 @@ export function InformazioniRitiroSpedizione({
           ) : (
             <p className="text-sm text-slate-600">Indirizzo di spedizione non indicato.</p>
           )}
-          {metodoSpedizione && (
-            <RigaDettaglio
-              etichetta="Metodo spedizione"
-              valore={
-                metodoSpedizione === "express"
-                  ? "Espresso (1-2 giorni)"
-                  : "Standard (3-5 giorni)"
-              }
-            />
-          )}
+          {(() => {
+            const etichetta = etichettaSpedizione(spedizioneCarrier, spedizioneServizio, metodoSpedizione);
+            return etichetta ? (
+              <RigaDettaglio etichetta="Metodo spedizione" valore={etichetta} />
+            ) : null;
+          })()}
           {(metodoPagamento || paymentProvider === "klarna") && (
             <RigaDettaglio
               etichetta="Metodo pagamento"

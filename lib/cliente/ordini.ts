@@ -109,6 +109,8 @@ function mappaDettaglio(
     email: (row.cliente_email as string | null) ?? null,
     telefono: (row.cliente_telefono as string | null) ?? null,
     metodoSpedizione: (row.metodo_spedizione as "standard" | "express" | null) ?? null,
+    spedizioneCarrier: (row.spedizione_carrier as string | null) ?? null,
+    spedizioneServizio: (row.spedizione_servizio as string | null) ?? null,
     metodoPagamento:
       (row.metodo_pagamento as "carta" | "paypal" | "bonifico" | null) ?? null,
     paymentProvider: (row.payment_provider as string | null) ?? null,

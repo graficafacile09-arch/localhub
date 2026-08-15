@@ -76,7 +76,9 @@ async function creaOrdine(db, input) {
     spedizioneCitta: input.spedizione?.citta ?? null,
     spedizioneProvincia: input.spedizione?.provincia ?? null,
     spedizioneNote: input.spedizione?.note ?? null,
-    metodoSpedizione: input.spedizione?.metodoSpedizione ?? null,
+    // MOTORE TARIFFARIO (20260831): corriere + servizio (mai un prezzo dal client).
+    spedizioneCarrier: input.spedizione?.carrier ?? null,
+    spedizioneServizio: input.spedizione?.servizio ?? null,
     metodoPagamento: input.spedizione?.metodoPagamento ?? null,
     note: input.note ?? null,
   };

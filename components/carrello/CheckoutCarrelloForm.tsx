@@ -29,9 +29,22 @@ import FatturazioneForm, {
   validaDatiFatturazione,
   type DatiFatturazione,
 } from "@/components/acquista/FatturazioneForm";
+import type {
+  CarrierCodice,
+  OpzioneSpedizione,
+  ServizioCodice,
+  TierSpedizione,
+} from "@/lib/spedizioni/catalogo";
 
 const formattaEuro = (v: number) =>
   `€${v.toLocaleString("it-IT", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+const TIER_LABEL: Record<TierSpedizione, string> = {
+  standard: "Standard",
+  express: "Express",
+  locale: "Corriere locale",
+};
+const TIER_ORDINE: TierSpedizione[] = ["standard", "express", "locale"];
 
 type Prefill = {
   nome: string;
@@ -144,7 +157,15 @@ export default function CheckoutCarrelloForm({ prefill }: { prefill: Prefill }) 
   const [citta, setCitta] = useState(prefill.citta);
   const [provincia, setProvincia] = useState(prefill.provincia);
   const [noteConsegna, setNoteConsegna] = useState("");
-  const [metodoSpedizione, setMetodoSpedizione] = useState<"standard" | "express">("standard");
+  // MOTORE TARIFFARIO — il prezzo della spedizione è calcolato da InCittà
+  // (server-side): qui si mostra SOLO il preventivo ricevuto e si trasporta la
+  // scelta corriere+servizio. Nessun prezzo inventato, nessun campo modificabile.
+  const [opzioniSpedizione, setOpzioniSpedizione] = useState<OpzioneSpedizione[]>([]);
+  const [caricamentoSpedizione, setCaricamentoSpedizione] = useState(true);
+  const [spedizioneScelta, setSpedizioneScelta] = useState<{
+    carrier: CarrierCodice;
+    servizio: ServizioCodice;
+  } | null>(null);
   // Default bonifico: sempre disponibile; carta e Klarna sono verificate dal
   // backend (pre-flight F2.2 fail-closed) — nessun controllo autoritativo nel
   // client, né prezzi/totali/credenziali conosciuti qui.
@@ -170,7 +191,11 @@ export default function CheckoutCarrelloForm({ prefill }: { prefill: Prefill }) 
   const [erroriFatturazione, setErroriFatturazione] = useState<Record<string, string>>({});
 
   const oggi = useMemo(() => new Date().toISOString().split("T")[0], []);
-  const costoSpedizioneUI = metodoSpedizione === "express" ? 12.9 : 5.9;
+  const opzioneScelta = opzioniSpedizione.find(
+    (o) =>
+      o.carrier === spedizioneScelta?.carrier && o.servizio === spedizioneScelta?.servizio
+  );
+  const costoSpedizioneUI = opzioneScelta?.prezzo ?? 0;
 
   // Carica la disponibilità reale dei metodi per i negozi del carrello (fonte
   // comune server-side). Il carrello è client-side (localStorage), quindi
@@ -202,6 +227,48 @@ export default function CheckoutCarrelloForm({ prefill }: { prefill: Prefill }) 
       attivo = false;
     };
   }, [gruppi]);
+
+  // Preventivo spedizione server-side (prezzo = SOMMA dei costi per negozio,
+  // ognuno genera un ordine/consegna separato). Ricalcolato al cambio carrello.
+  useEffect(() => {
+    if (modalita !== "spedizione" || righe.length === 0) {
+      setOpzioniSpedizione([]);
+      setSpedizioneScelta(null);
+      setCaricamentoSpedizione(false);
+      return;
+    }
+    let attivo = true;
+    setCaricamentoSpedizione(true);
+    fetch("/api/cliente/ordini/carrello/spedizione/preventivo", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        righe: righe.map((r) => ({ prodottoId: r.prodottoId, quantita: r.quantita })),
+      }),
+    })
+      .then((res) => res.json())
+      .then((json: { success?: boolean; data?: { opzioni?: OpzioneSpedizione[] } }) => {
+        if (!attivo) return;
+        const opzioni = json?.data?.opzioni ?? [];
+        setOpzioniSpedizione(opzioni);
+        setSpedizioneScelta((prev) => {
+          if (!prev) return null;
+          const ancora = opzioni.some(
+            (o) => o.carrier === prev.carrier && o.servizio === prev.servizio && o.disponibile
+          );
+          return ancora ? prev : null;
+        });
+      })
+      .catch(() => {
+        if (attivo) setOpzioniSpedizione([]);
+      })
+      .finally(() => {
+        if (attivo) setCaricamentoSpedizione(false);
+      });
+    return () => {
+      attivo = false;
+    };
+  }, [modalita, righe]);
 
   // ── Carrello vuoto → nessun checkout possibile ───────────────────────────
   if (righe.length === 0 && !esito) {
@@ -257,6 +324,7 @@ export default function CheckoutCarrelloForm({ prefill }: { prefill: Prefill }) 
       if (!indirizzo.trim() || !cap.trim() || !citta.trim() || !provincia.trim())
         return "Completa l'indirizzo di spedizione.";
       if (!/^\d{5}$/.test(cap.trim())) return "Il CAP deve essere composto da 5 cifre.";
+      if (!spedizioneScelta) return "Seleziona un corriere di spedizione.";
       // Fatturazione diversa: campi obbligatori, blocco invio se incompleti.
       if (fatturazione.diversa) {
         const errFatt = validaDatiFatturazione(fatturazione);
@@ -321,7 +389,8 @@ export default function CheckoutCarrelloForm({ prefill }: { prefill: Prefill }) 
           citta: citta.trim(),
           provincia: provincia.trim().toUpperCase(),
           note: noteConsegna.trim() || null,
-          metodoSpedizione,
+          carrier: spedizioneScelta!.carrier,
+          servizio: spedizioneScelta!.servizio,
           metodoPagamento,
         };
         body.fatturazione = fatturazione.diversa
@@ -552,29 +621,98 @@ export default function CheckoutCarrelloForm({ prefill }: { prefill: Prefill }) 
             )}
           </section>
 
-          {/* Metodo spedizione (solo modalità spedizione) */}
+          {/* Spedizione — catalogo corrieri, prezzo calcolato da InCittà */}
           {modalita === "spedizione" && (
             <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
               <h2 className="flex items-center gap-1.5 text-sm font-black uppercase tracking-wide text-slate-500">
                 <Truck className="h-4 w-4 text-blue-600" aria-hidden />
-                Metodo spedizione
+                Spedizione
               </h2>
-              <div className="mt-3 space-y-2">
-                <OpzioneRadio
-                  selezionato={metodoSpedizione === "standard"}
-                  onClick={() => setMetodoSpedizione("standard")}
-                  titolo="Standard"
-                  sotto="Consegna in 3-5 giorni lavorativi"
-                  prezzo="€5,90"
-                />
-                <OpzioneRadio
-                  selezionato={metodoSpedizione === "express"}
-                  onClick={() => setMetodoSpedizione("express")}
-                  titolo="Express"
-                  sotto="Consegna in 1-2 giorni lavorativi"
-                  prezzo="€12,90"
-                />
-              </div>
+              {caricamentoSpedizione ? (
+                <p className="mt-3 flex items-center gap-2 text-sm text-slate-500">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Calcolo tariffe...
+                </p>
+              ) : opzioniSpedizione.length === 0 ? (
+                <p className="mt-3 text-sm text-slate-600">Nessuna opzione di spedizione disponibile.</p>
+              ) : (
+                <div className="mt-3 space-y-3">
+                  {TIER_ORDINE.map((tier) => {
+                    const delTier = opzioniSpedizione.filter((o) => o.tier === tier);
+                    if (delTier.length === 0) return null;
+                    return (
+                      <div key={tier}>
+                        <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                          {TIER_LABEL[tier]}
+                        </p>
+                        <div className="space-y-2">
+                          {delTier.map((opzione) => {
+                            const selezionata =
+                              spedizioneScelta?.carrier === opzione.carrier &&
+                              spedizioneScelta?.servizio === opzione.servizio;
+                            return (
+                              <label
+                                key={`${opzione.carrier}:${opzione.servizio}`}
+                                className={`flex items-center gap-3 rounded-lg border p-3 transition ${
+                                  selezionata
+                                    ? "border-blue-400 bg-blue-50/50"
+                                    : opzione.disponibile
+                                    ? "cursor-pointer border-slate-200 bg-white hover:border-slate-300"
+                                    : "cursor-not-allowed border-slate-200 bg-slate-50 opacity-70"
+                                }`}
+                              >
+                                <input
+                                  type="radio"
+                                  name="spedizione"
+                                  checked={selezionata}
+                                  disabled={!opzione.disponibile}
+                                  onChange={() =>
+                                    setSpedizioneScelta({
+                                      carrier: opzione.carrier,
+                                      servizio: opzione.servizio,
+                                    })
+                                  }
+                                  className="h-4 w-4 accent-blue-600"
+                                />
+                                <div className="flex flex-1 items-center justify-between gap-2">
+                                  <div className="min-w-0">
+                                    <p className="flex flex-wrap items-center gap-2 text-sm font-semibold text-slate-900">
+                                      {opzione.carrierNome}
+                                      {opzione.servizioNome ? (
+                                        <span className="font-normal text-slate-500">{opzione.servizioNome}</span>
+                                      ) : null}
+                                      {!opzione.disponibile && (
+                                        <span className="inline-flex items-center rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-bold text-slate-500">
+                                          Non disponibile
+                                        </span>
+                                      )}
+                                    </p>
+                                    <p className="text-[11px] text-slate-500">
+                                      {opzione.tempoConsegna ?? "Consegna concordata con il negozio"}
+                                    </p>
+                                    {!opzione.disponibile && opzione.motivo && (
+                                      <p className="mt-0.5 text-[10px] leading-4 text-slate-400">{opzione.motivo}</p>
+                                    )}
+                                  </div>
+                                  <span className="shrink-0 text-sm font-bold text-slate-900">
+                                    {opzione.disponibile && opzione.prezzo !== null
+                                      ? `€${opzione.prezzo.toFixed(2)}`
+                                      : "—"}
+                                  </span>
+                                </div>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <p className="text-[10px] leading-4 text-slate-400">
+                    Tariffa di spedizione calcolata automaticamente da InCittà in base al corriere e alle
+                    caratteristiche della spedizione.
+                  </p>
+                </div>
+              )}
             </section>
           )}
 
@@ -704,12 +842,6 @@ export default function CheckoutCarrelloForm({ prefill }: { prefill: Prefill }) 
                   </li>
                 ))}
               </ul>
-              {modalita === "spedizione" && (
-                <div className="flex items-center justify-between border-t border-slate-100 px-4 py-2 text-xs text-slate-500">
-                  <span>Spedizione</span>
-                  <span className="font-semibold text-slate-700">{formattaEuro(costoSpedizioneUI)}</span>
-                </div>
-              )}
             </section>
           ))}
 
@@ -719,9 +851,12 @@ export default function CheckoutCarrelloForm({ prefill }: { prefill: Prefill }) 
               <span className="text-lg font-black text-emerald-700 tabular-nums">{formattaEuro(soloRighe)}</span>
             </div>
             {modalita === "spedizione" && (
-              <p className="mt-1 text-[11px] leading-4 text-slate-400">
-                + spedizione calcolata per negozio al momento dell&apos;ordine.
-              </p>
+              <div className="mt-2 flex items-center justify-between border-t border-slate-100 pt-2">
+                <span className="text-xs font-semibold text-slate-500">Spedizione</span>
+                <span className="text-sm font-bold text-slate-900 tabular-nums">
+                  {caricamentoSpedizione ? "…" : formattaEuro(costoSpedizioneUI)}
+                </span>
+              </div>
             )}
             <p className="mt-2 text-[11px] leading-4 text-slate-400">
               Prezzi, stock e totale vengono verificati dal sistema al momento dell&apos;ordine: i valori mostrati sono

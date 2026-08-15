@@ -81,6 +81,11 @@ export type OrdineVenditoreDettaglio = OrdineVenditoreLista & {
   spedizioneProvincia: string | null;
   spedizioneNote: string | null;
   metodoSpedizione: "standard" | "express" | null;
+  /** Corriere scelto al checkout (motore tariffario 20260831); null per gli
+   *  ordini storici, che usano il fallback legacy `metodoSpedizione`. */
+  spedizioneCarrier: string | null;
+  /** Servizio del corriere (es. "standard", "express", "online", "locale"). */
+  spedizioneServizio: string | null;
   metodoPagamento: "carta" | "paypal" | "bonifico" | "klarna" | null;
   /** Marcatore autoritativo del provider (es. 'klarna'). */
   paymentProvider: string | null;
@@ -166,6 +171,8 @@ function mappaDettaglio(row: OrdineRow, righe: RigaOrdine[], eventi: EventoOrdin
     spedizioneProvincia: (row.spedizione_provincia as string | null) ?? null,
     spedizioneNote: (row.spedizione_note as string | null) ?? null,
     metodoSpedizione: (row.metodo_spedizione as "standard" | "express" | null) ?? null,
+    spedizioneCarrier: (row.spedizione_carrier as string | null) ?? null,
+    spedizioneServizio: (row.spedizione_servizio as string | null) ?? null,
     metodoPagamento:
       (row.metodo_pagamento as "carta" | "paypal" | "bonifico" | "klarna" | null) ?? null,
     paymentProvider: (row.payment_provider as string | null) ?? null,
