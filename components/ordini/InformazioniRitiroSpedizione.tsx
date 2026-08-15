@@ -30,6 +30,14 @@ function etichettaSpedizione(
   return null;
 }
 
+/** Formatta un peso in grammi: "1,5 kg" oppure "500 g". */
+function formattaPesoGrammi(grammi: number): string {
+  if (grammi >= 1000) {
+    return `${(grammi / 1000).toLocaleString("it-IT", { maximumFractionDigits: 2 })} kg`;
+  }
+  return `${grammi} g`;
+}
+
 /**
  * Sezione RITIRO / SPEDIZIONE condivisa (dettaglio cliente e venditore):
  * mostra SOLO i dati presenti (mai sezioni vuote) e solo la modalità reale.
@@ -46,6 +54,8 @@ export function InformazioniRitiroSpedizione({
   spedizioneNote,
   spedizioneCarrier,
   spedizioneServizio,
+  spedizionePesoGrammi,
+  spedizioneTariffaVersione,
   metodoSpedizione,
   metodoPagamento,
   paymentProvider,
@@ -64,6 +74,10 @@ export function InformazioniRitiroSpedizione({
   spedizioneCarrier: string | null;
   /** Servizio del corriere (es. "standard", "express", "online", "locale"). */
   spedizioneServizio: string | null;
+  /** Peso in grammi della spedizione (motore tariffario 20260831). */
+  spedizionePesoGrammi: number | null;
+  /** Versione del listino tariffario applicata all'ordine. */
+  spedizioneTariffaVersione: string | null;
   metodoSpedizione: "standard" | "express" | null;
   metodoPagamento: "carta" | "paypal" | "bonifico" | "klarna" | null;
   /** Marcatore autoritativo del provider (es. 'klarna'): la colonna
@@ -130,6 +144,12 @@ export function InformazioniRitiroSpedizione({
               <RigaDettaglio etichetta="Metodo spedizione" valore={etichetta} />
             ) : null;
           })()}
+          {spedizionePesoGrammi != null && spedizionePesoGrammi > 0 && (
+            <RigaDettaglio etichetta="Peso" valore={formattaPesoGrammi(spedizionePesoGrammi)} />
+          )}
+          {spedizioneTariffaVersione ? (
+            <RigaDettaglio etichetta="Listino tariffario" valore={spedizioneTariffaVersione} />
+          ) : null}
           {(metodoPagamento || paymentProvider === "klarna") && (
             <RigaDettaglio
               etichetta="Metodo pagamento"

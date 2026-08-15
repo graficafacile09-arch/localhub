@@ -86,6 +86,10 @@ export type OrdineVenditoreDettaglio = OrdineVenditoreLista & {
   spedizioneCarrier: string | null;
   /** Servizio del corriere (es. "standard", "express", "online", "locale"). */
   spedizioneServizio: string | null;
+  /** Peso in grammi usato per il calcolo della tariffa (motore 20260831). */
+  spedizionePesoGrammi: number | null;
+  /** Versione del listino tariffario applicata all'ordine. */
+  spedizioneTariffaVersione: string | null;
   metodoPagamento: "carta" | "paypal" | "bonifico" | "klarna" | null;
   /** Marcatore autoritativo del provider (es. 'klarna'). */
   paymentProvider: string | null;
@@ -173,6 +177,8 @@ function mappaDettaglio(row: OrdineRow, righe: RigaOrdine[], eventi: EventoOrdin
     metodoSpedizione: (row.metodo_spedizione as "standard" | "express" | null) ?? null,
     spedizioneCarrier: (row.spedizione_carrier as string | null) ?? null,
     spedizioneServizio: (row.spedizione_servizio as string | null) ?? null,
+    spedizionePesoGrammi: (row.spedizione_peso_grammi as number | null) ?? null,
+    spedizioneTariffaVersione: (row.spedizione_tariffa_versione as string | null) ?? null,
     metodoPagamento:
       (row.metodo_pagamento as "carta" | "paypal" | "bonifico" | "klarna" | null) ?? null,
     paymentProvider: (row.payment_provider as string | null) ?? null,

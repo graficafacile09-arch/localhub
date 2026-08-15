@@ -120,6 +120,10 @@ export type OrdineClienteDettaglio = OrdineClienteLista & {
   spedizioneCarrier: string | null;
   /** Servizio del corriere (es. "standard", "express", "online", "locale"). */
   spedizioneServizio: string | null;
+  /** Peso in grammi usato per il calcolo della tariffa (motore 20260831). */
+  spedizionePesoGrammi: number | null;
+  /** Versione del listino tariffario applicata all'ordine. */
+  spedizioneTariffaVersione: string | null;
   metodoPagamento: "carta" | "paypal" | "bonifico" | null;
   /** Marcatore autoritativo del provider (es. 'klarna' per gli ordini
    *  pagati via gateway Klarna: metodo_pagamento resta 'carta', come nel

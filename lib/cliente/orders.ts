@@ -172,6 +172,8 @@ export type OrdinePersistito = {
   numero: string;
   stato: StatoOrdine;
   totale: number;
+  /** Costo di spedizione addebitato all'ordine (motore tariffario 20260831). */
+  costoSpedizione: number;
   createdAt: string;
   modalita: "ritiro" | "spedizione";
   negozioId: string;
@@ -278,6 +280,7 @@ function assumiOrdine(riga: Record<string, unknown>, righe: RigaOrdine[]): Ordin
     numero: String(riga.numero),
     stato: (riga.stato as StatoOrdine) ?? "in_preparazione",
     totale: Number(riga.totale),
+    costoSpedizione: Number(riga.costo_spedizione ?? 0),
     createdAt: String(riga.created_at),
     modalita: (riga.modalita as "ritiro" | "spedizione") ?? "ritiro",
     negozioId: String(riga.negozio_id),

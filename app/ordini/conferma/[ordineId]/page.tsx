@@ -193,7 +193,7 @@ export default async function ConfermaOrdinePage({
           <div className="mt-3">
             <RigheProdotto
               righe={ordine.righe}
-              costoSpedizione={0}
+              costoSpedizione={ordine.costoSpedizione}
               totale={ordine.totale}
             />
           </div>
