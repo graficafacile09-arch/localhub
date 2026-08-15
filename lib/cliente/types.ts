@@ -47,6 +47,18 @@ export type StatoOrdine =
   | "consegnato"
   | "cancellato";
 
+/**
+ * Stato operativo della SPEDIZIONE (migration 20260903). Indipendente dallo
+ * stato ORDINE: due macchine a stati distinte ma coerenti. `null` = ordini
+ * storici o spedizione non ancora gestita dal venditore.
+ */
+export type StatoSpedizione =
+  | "non_affidata"
+  | "affidata"
+  | "in_transito"
+  | "consegnata"
+  | "problema";
+
 /** Riga di un ordine (singolo prodotto). */
 export type RigaOrdine = {
   prodottoId: string;
@@ -124,6 +136,18 @@ export type OrdineClienteDettaglio = OrdineClienteLista & {
   spedizionePesoGrammi: number | null;
   /** Versione del listino tariffario applicata all'ordine. */
   spedizioneTariffaVersione: string | null;
+  /** Stato operativo della spedizione (V1 tracking); null per ordini storici. */
+  statoSpedizione: StatoSpedizione | null;
+  /** Codice di tracking del corriere. */
+  trackingCode: string | null;
+  /** URL di tracking (per il link "Segui spedizione"). */
+  trackingUrl: string | null;
+  /** Data/ora di affidamento al corriere. */
+  affidataAt: string | null;
+  /** Data/ora di consegna. */
+  consegnataAt: string | null;
+  /** Consegna stimata (testo libero, es. "1-2 giorni"). */
+  consegnaStimata: string | null;
   metodoPagamento: "carta" | "paypal" | "bonifico" | null;
   /** Marcatore autoritativo del provider (es. 'klarna' per gli ordini
    *  pagati via gateway Klarna: metodo_pagamento resta 'carta', come nel

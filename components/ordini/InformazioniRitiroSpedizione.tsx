@@ -1,6 +1,8 @@
-import { Banknote, CalendarDays, Clock, CreditCard } from "lucide-react";
+import { Banknote, CalendarDays, Clock, CreditCard, ExternalLink } from "lucide-react";
 import { Sezione, RigaDettaglio } from "./Sezione";
 import { MapPin, Truck } from "lucide-react";
+import type { StatoSpedizione } from "@/lib/cliente/types";
+import { etichettaStatoSpedizione } from "@/lib/merchant/ordini-spedizioni";
 
 /**
  * Etichetta leggibile del metodo di spedizione.
@@ -56,6 +58,10 @@ export function InformazioniRitiroSpedizione({
   spedizioneServizio,
   spedizionePesoGrammi,
   spedizioneTariffaVersione,
+  statoSpedizione,
+  trackingCode,
+  trackingUrl,
+  consegnaStimata,
   metodoSpedizione,
   metodoPagamento,
   paymentProvider,
@@ -78,6 +84,14 @@ export function InformazioniRitiroSpedizione({
   spedizionePesoGrammi: number | null;
   /** Versione del listino tariffario applicata all'ordine. */
   spedizioneTariffaVersione: string | null;
+  /** Stato operativo della spedizione (V1 tracking); null = non gestita. */
+  statoSpedizione: StatoSpedizione | null;
+  /** Codice di tracking del corriere. */
+  trackingCode: string | null;
+  /** URL di tracking (link "Segui spedizione"). */
+  trackingUrl: string | null;
+  /** Consegna stimata (testo libero). */
+  consegnaStimata: string | null;
   metodoSpedizione: "standard" | "express" | null;
   metodoPagamento: "carta" | "paypal" | "bonifico" | "klarna" | null;
   /** Marcatore autoritativo del provider (es. 'klarna'): la colonna
@@ -87,6 +101,7 @@ export function InformazioniRitiroSpedizione({
   paymentProvider?: string | null;
 }) {
   const èRitiro = modalita === "ritiro";
+  const etichettaStato = etichettaStatoSpedizione(statoSpedizione);
   const indirizzoSpedizione = [
     spedizioneIndirizzo,
     spedizioneCap,
@@ -149,6 +164,48 @@ export function InformazioniRitiroSpedizione({
           )}
           {spedizioneTariffaVersione ? (
             <RigaDettaglio etichetta="Listino tariffario" valore={spedizioneTariffaVersione} />
+          ) : null}
+          {etichettaStato && (
+            <RigaDettaglio
+              etichetta="Stato spedizione"
+              valore={
+                <span
+                  className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold ${
+                    statoSpedizione === "consegnata"
+                      ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
+                      : statoSpedizione === "problema"
+                        ? "bg-amber-50 text-amber-700 ring-1 ring-amber-200"
+                        : statoSpedizione === "in_transito" || statoSpedizione === "affidata"
+                          ? "bg-blue-50 text-blue-700 ring-1 ring-blue-200"
+                          : "bg-slate-100 text-slate-600 ring-1 ring-slate-200"
+                  }`}
+                >
+                  {etichettaStato}
+                </span>
+              }
+            />
+          )}
+          {trackingCode ? (
+            <RigaDettaglio
+              etichetta="Tracking"
+              valore={<span className="font-mono text-xs">{trackingCode}</span>}
+            />
+          ) : null}
+          {consegnaStimata ? (
+            <RigaDettaglio etichetta="Consegna stimata" valore={consegnaStimata} />
+          ) : null}
+          {trackingUrl ? (
+            <div className="pt-1.5">
+              <a
+                href={trackingUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 transition hover:text-blue-700"
+              >
+                <ExternalLink className="h-4 w-4" aria-hidden />
+                Segui spedizione
+              </a>
+            </div>
           ) : null}
           {(metodoPagamento || paymentProvider === "klarna") && (
             <RigaDettaglio

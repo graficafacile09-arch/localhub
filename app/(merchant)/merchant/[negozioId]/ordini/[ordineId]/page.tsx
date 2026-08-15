@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import MerchantEmptyState from "@/components/merchant/MerchantEmptyState";
 import OrdineAzioni from "@/components/merchant/OrdineAzioni";
+import { azioniDisponibili } from "@/lib/merchant/ordini-stati";
+import { azioniSpedizioneDisponibili } from "@/lib/merchant/ordini-spedizioni";
 import { requireCurrentUser } from "@/lib/auth/session";
 import { sintesiProdotti } from "@/lib/cliente/ordini-format";
 import { getMerchantStoreForUser } from "@/lib/merchant/data";
@@ -133,6 +135,16 @@ export default async function MerchantOrdineDettaglioPage({
 
   const sintesi = sintesiProdotti(ordine.righe);
 
+  // Azioni disponibili (ordine + spedizione): il pannello operativo è visibile
+  // quando almeno una delle due macchine a stati ha un'azione da proporre.
+  const azioniOrdine = azioniDisponibili(ordine.stato);
+  const azioniSpedizione =
+    ordine.modalita === "spedizione"
+      ? azioniSpedizioneDisponibili(ordine.statoSpedizione, ordine.stato)
+      : [];
+  const mostraPannello =
+    ordine.stato !== "cancellato" && (azioniOrdine.length > 0 || azioniSpedizione.length > 0);
+
   // ── Dettaglio ordine completo (riusato sotto il toggle "Vedi ordine
   //    completo" quando la pagina è una CONSOLE RECLAMO) ────────────────────
   const dettaglioOrdine = (
@@ -174,7 +186,7 @@ export default async function MerchantOrdineDettaglioPage({
       />
 
       {/* ── Azioni venditore (in base allo stato reale) ────────────────────── */}
-      {ordine.stato !== "cancellato" && ordine.stato !== "consegnato" && (
+      {mostraPannello && (
         <div className="rounded-[1.75rem] border border-blue-100 bg-white p-5 shadow-sm ring-1 ring-blue-50">
           <p className="mb-3 flex items-center gap-2 text-sm font-black uppercase tracking-wide text-slate-900">
             <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
@@ -187,6 +199,9 @@ export default async function MerchantOrdineDettaglioPage({
             ordineId={ordineId}
             numero={ordine.numero}
             stato={ordine.stato}
+            modalita={ordine.modalita}
+            statoSpedizione={ordine.statoSpedizione}
+            trackingUrl={ordine.trackingUrl}
           />
         </div>
       )}
@@ -231,6 +246,10 @@ export default async function MerchantOrdineDettaglioPage({
             spedizioneServizio={ordine.spedizioneServizio}
             spedizionePesoGrammi={ordine.spedizionePesoGrammi}
             spedizioneTariffaVersione={ordine.spedizioneTariffaVersione}
+            statoSpedizione={ordine.statoSpedizione}
+            trackingCode={ordine.trackingCode}
+            trackingUrl={ordine.trackingUrl}
+            consegnaStimata={ordine.consegnaStimata}
             metodoSpedizione={ordine.metodoSpedizione}
             metodoPagamento={ordine.metodoPagamento}
             paymentProvider={ordine.paymentProvider}

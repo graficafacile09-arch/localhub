@@ -33,6 +33,7 @@ import type {
   OrdineClienteLista,
   RigaOrdine,
   StatoOrdine,
+  StatoSpedizione,
 } from "./types";
 
 // Ri-esportazione dei formattatori puri (i server component continuano a
@@ -113,6 +114,12 @@ function mappaDettaglio(
     spedizioneServizio: (row.spedizione_servizio as string | null) ?? null,
     spedizionePesoGrammi: (row.spedizione_peso_grammi as number | null) ?? null,
     spedizioneTariffaVersione: (row.spedizione_tariffa_versione as string | null) ?? null,
+    statoSpedizione: (row.stato_spedizione as StatoSpedizione | null) ?? null,
+    trackingCode: (row.tracking_code as string | null) ?? null,
+    trackingUrl: (row.tracking_url as string | null) ?? null,
+    affidataAt: (row.affidata_at as string | null) ?? null,
+    consegnataAt: (row.consegnata_at as string | null) ?? null,
+    consegnaStimata: (row.consegna_stimata as string | null) ?? null,
     metodoPagamento:
       (row.metodo_pagamento as "carta" | "paypal" | "bonifico" | null) ?? null,
     paymentProvider: (row.payment_provider as string | null) ?? null,

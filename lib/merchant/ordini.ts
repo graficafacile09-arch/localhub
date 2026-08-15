@@ -30,9 +30,10 @@
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { inviaEmailAggiornamentoStatoOrdine } from "@/lib/cliente/ordine-email";
-import type { EventoOrdine, RigaOrdine, StatoOrdine } from "@/lib/cliente/types";
+import type { EventoOrdine, RigaOrdine, StatoOrdine, StatoSpedizione } from "@/lib/cliente/types";
 import { canManageStore } from "./data";
 import { prioritaStato, statiPerFiltro, type FiltroOrdini } from "./ordini-stati";
+import { isStatoSpedizione } from "./ordini-spedizioni";
 
 // Ri-esportazione del tipo condiviso (le pagine importano EventoOrdine da
 // questo modulo; la definizione canonica è in lib/cliente/types.ts).
@@ -90,6 +91,18 @@ export type OrdineVenditoreDettaglio = OrdineVenditoreLista & {
   spedizionePesoGrammi: number | null;
   /** Versione del listino tariffario applicata all'ordine. */
   spedizioneTariffaVersione: string | null;
+  /** Stato operativo della spedizione (V1 tracking); null per ordini storici. */
+  statoSpedizione: StatoSpedizione | null;
+  /** Codice di tracking del corriere. */
+  trackingCode: string | null;
+  /** URL di tracking (per il link "Segui spedizione"). */
+  trackingUrl: string | null;
+  /** Data/ora di affidamento al corriere. */
+  affidataAt: string | null;
+  /** Data/ora di consegna. */
+  consegnataAt: string | null;
+  /** Consegna stimata (testo libero). */
+  consegnaStimata: string | null;
   metodoPagamento: "carta" | "paypal" | "bonifico" | "klarna" | null;
   /** Marcatore autoritativo del provider (es. 'klarna'). */
   paymentProvider: string | null;
@@ -179,6 +192,12 @@ function mappaDettaglio(row: OrdineRow, righe: RigaOrdine[], eventi: EventoOrdin
     spedizioneServizio: (row.spedizione_servizio as string | null) ?? null,
     spedizionePesoGrammi: (row.spedizione_peso_grammi as number | null) ?? null,
     spedizioneTariffaVersione: (row.spedizione_tariffa_versione as string | null) ?? null,
+    statoSpedizione: (row.stato_spedizione as StatoSpedizione | null) ?? null,
+    trackingCode: (row.tracking_code as string | null) ?? null,
+    trackingUrl: (row.tracking_url as string | null) ?? null,
+    affidataAt: (row.affidata_at as string | null) ?? null,
+    consegnataAt: (row.consegnata_at as string | null) ?? null,
+    consegnaStimata: (row.consegna_stimata as string | null) ?? null,
     metodoPagamento:
       (row.metodo_pagamento as "carta" | "paypal" | "bonifico" | "klarna" | null) ?? null,
     paymentProvider: (row.payment_provider as string | null) ?? null,
@@ -542,4 +561,101 @@ async function registraEmailStatoNonInviata(
       `[ordini-venditore] ordine ${ordineId}: registrazione mancata email fallita: ${(err as Error)?.message}`
     );
   }
+}
+
+/** Esito di un aggiornamento dello stato spedizione. */
+export type EsitoAggiornamentoSpedizione =
+  | { ok: true; cambiato: boolean; ordine: OrdineVenditoreDettaglio | null }
+  | { ok: false; codice: string; messaggio: string; status: number };
+
+/** HTTP status associato a ciascun codice d'errore della RPC spedizione. */
+const STATUS_SPEDIZIONE_DA_CODICE: Record<string, number> = {
+  VALIDATION_ERROR: 422,
+  ORDINE_NON_TROVATO: 404,
+  FORBIDDEN: 403,
+  MODALITA_NON_SPEDIZIONE: 409,
+  ORDINE_CANCELLATO: 409,
+  TRANSIZIONE_NON_CONSENTITA: 409,
+  TRACKING_OBBLIGATORIO: 422,
+  TRACKING_URL_NON_VALIDA: 422,
+  SAVE_FAILED: 500,
+};
+
+/**
+ * Cambio stato SPEDIZIONE (area venditore, V1 tracking).
+ * - Verifica ownership (canManageStore);
+ * - chiama la RPC `aggiorna_stato_spedizione` (service role) che gestisce
+ *   ATOMICAMENTE: lock riga, ownership, macchina a stati, tracking
+ *   obbligatorio per "affidata", affidata_at/consegnata_at automatici e
+ *   storico eventi (via trigger esteso).
+ * - il client NON può mai aggiornare la tabella direttamente.
+ */
+export async function aggiornaStatoSpedizioneVenditore(
+  userId: string,
+  negozioId: string,
+  ordineId: string,
+  nuovoStato: StatoSpedizione,
+  opts: {
+    trackingCode?: string | null;
+    trackingUrl?: string | null;
+    consegnaStimata?: string | null;
+  } & OpzioniAggiornaStatoOrdine = {}
+): Promise<EsitoAggiornamentoSpedizione> {
+  if (!isStatoSpedizione(nuovoStato)) {
+    return { ok: false, codice: "VALIDATION_ERROR", messaggio: "Stato spedizione non valido.", status: 422 };
+  }
+
+  const puòGestire =
+    opts.puòGestire !== undefined ? opts.puòGestire : await canManageStore(userId, negozioId);
+  if (!puòGestire) {
+    return { ok: false, codice: "FORBIDDEN", messaggio: "Non puoi gestire questo ordine.", status: 403 };
+  }
+
+  const chiamaRpc =
+    opts.rpc ??
+    ((fn: string, params: Record<string, unknown>) =>
+      (createAdminSupabaseClient() as any).rpc(fn, params));
+  const { data, error } = await chiamaRpc("aggiorna_stato_spedizione", {
+    p_ordine_id: ordineId,
+    p_nuovo_stato: nuovoStato,
+    p_tracking_code: opts.trackingCode ?? null,
+    p_tracking_url: opts.trackingUrl ?? null,
+    p_consegna_stimata: opts.consegnaStimata ?? null,
+    p_merchant_user_id: userId,
+  });
+
+  if (error) {
+    console.error("[ordini-venditore] RPC aggiorna_stato_spedizione fallita:", error.message);
+    return { ok: false, codice: "SAVE_FAILED", messaggio: "Impossibile aggiornare la spedizione.", status: 500 };
+  }
+
+  const esito = data as unknown as {
+    ok: boolean;
+    cambiato?: boolean;
+    codice?: string;
+    messaggio?: string;
+  };
+
+  if (!esito || esito.ok !== true) {
+    const codice = String(esito?.codice ?? "SAVE_FAILED");
+    return {
+      ok: false,
+      codice,
+      messaggio: String(esito?.messaggio ?? "Impossibile aggiornare la spedizione."),
+      status: STATUS_SPEDIZIONE_DA_CODICE[codice] ?? 500,
+    };
+  }
+
+  // Ricarica il dettaglio aggiornato (stato spedizione/tracking inclusi).
+  let dettaglio: OrdineVenditoreDettaglio | null = null;
+  try {
+    dettaglio = await getOrdineVenditore(userId, negozioId, ordineId, {
+      puòGestire: true,
+      client: opts.client,
+    });
+  } catch {
+    dettaglio = null;
+  }
+
+  return { ok: true, cambiato: esito.cambiato ?? false, ordine: dettaglio };
 }

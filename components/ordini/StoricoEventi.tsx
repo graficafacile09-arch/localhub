@@ -1,10 +1,12 @@
 import {
+  AlertTriangle,
   Ban,
   Bell,
   CheckCircle2,
   Hammer,
   Inbox,
   Mail,
+  Package,
   PackageCheck,
   PackagePlus,
   Truck,
@@ -27,6 +29,12 @@ const ICONE_EVENTO: Record<string, LucideIcon> = {
   cancellato: Ban,
   email_stato_non_inviata: Mail,
   email_annullamento_non_inviata: Mail,
+  // Eventi SPEDIZIONE (migration 20260903).
+  spedizione_non_affidata: Package,
+  spedizione_affidata: Truck,
+  spedizione_in_transito: Truck,
+  spedizione_consegnata: PackageCheck,
+  spedizione_problema: AlertTriangle,
 };
 
 function iconaPerEvento(evento: string): LucideIcon {
