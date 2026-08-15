@@ -30,17 +30,17 @@ export default async function Home() {
   const categorieOrdinate = categorieConNegozi;
 
   return (
-    <main className="min-h-screen bg-gray-50">
+    <main className="min-h-screen bg-[#eef3f8]">
       <Header />
 
       {/* HERO COMPATTO ED ELEGANTE */}
-      <section className="relative overflow-hidden bg-gradient-to-r from-blue-700 to-blue-600 py-10 md:py-14 text-white px-4 rounded-b-[2.5rem] sm:rounded-b-[3.5rem] md:rounded-b-[4.5rem] shadow-xl shadow-blue-900/20">
+      <section className="relative overflow-hidden bg-blue-700 py-12 px-4 text-white md:py-16 rounded-b-[2rem] sm:rounded-b-[2.5rem] shadow-lg shadow-blue-900/10">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-2xl md:text-4xl font-black tracking-tight">
             Tutto quello che cerchi... è già nella tua città.
           </h1>
 
-          <p className="mt-2 text-xs md:text-sm text-blue-100 max-w-xl mx-auto">
+          <p className="mt-3 text-sm md:text-base text-blue-100 max-w-xl mx-auto">
             Trova negozi, professionisti, offerte e servizi locali in pochi secondi.
           </p>
 
@@ -49,25 +49,28 @@ export default async function Home() {
               normale azione della homepage: giallo, compatto, solo logo. */}
           <div className="mt-6 mx-auto flex max-w-xl items-center gap-2 sm:gap-3">
             <form action="/ricerca" method="GET" className="min-w-0 flex-1">
-              <div className="relative group">
-                <div className="absolute -inset-1.5 bg-gradient-to-r from-blue-400 via-blue-500 to-blue-400 rounded-full opacity-0 group-focus-within:opacity-100 blur-xl transition-all duration-500" />
-                <div className="relative flex items-center bg-gradient-to-b from-yellow-300 to-yellow-400 rounded-full shadow-lg shadow-yellow-400/30 ring-1 ring-yellow-300 focus-within:ring-2 focus-within:ring-blue-400/50 focus-within:shadow-blue-500/20 transition-all duration-300 before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/25 before:to-transparent before:rounded-full before:pointer-events-none">
-                  <Search className="ml-5 h-5 w-5 text-blue-600 shrink-0" />
-                  <input
-                    type="text"
-                    name="q"
-                    placeholder="Cerca prodotto, negozio o servizio..."
-                    className="flex-1 bg-transparent px-4 py-3.5 sm:py-4 text-sm sm:text-base text-slate-900 placeholder:text-slate-600 focus:outline-none min-w-0"
-                  />
-                  <div className="hidden sm:block h-7 w-px bg-yellow-300 shrink-0" />
-                  <button type="submit" className="mr-2 my-2 hidden sm:inline-flex items-center gap-2 bg-gradient-to-b from-blue-500 to-blue-700 text-white font-semibold px-5 py-2 rounded-full text-sm transition-all duration-200 active:scale-95 shadow-[0_4px_12px_rgba(37,99,235,0.4)] hover:shadow-[0_6px_20px_rgba(37,99,235,0.55)] relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/20 before:to-transparent before:rounded-full">
-                    <Search className="h-4 w-4 relative" />
-                    <span className="relative">Cerca</span>
-                  </button>
-                  <button type="submit" className="sm:hidden mr-2 my-2 inline-flex items-center justify-center h-9 w-9 bg-gradient-to-b from-blue-500 to-blue-700 text-white rounded-full transition-all duration-200 active:scale-95 shadow-[0_4px_12px_rgba(37,99,235,0.4)] shrink-0 relative overflow-hidden before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/20 before:to-transparent before:rounded-full">
-                    <Search className="h-4 w-4 relative" />
-                  </button>
-                </div>
+              <div className="flex items-center rounded-full bg-white p-1.5 shadow-lg shadow-blue-900/20 transition focus-within:ring-2 focus-within:ring-yellow-400">
+                <Search className="ml-3 h-5 w-5 shrink-0 text-slate-400" />
+                <input
+                  type="text"
+                  name="q"
+                  placeholder="Cerca prodotto, negozio o servizio..."
+                  className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm sm:text-base text-slate-900 placeholder:text-slate-400 focus:outline-none"
+                />
+                <button
+                  type="submit"
+                  className="hidden sm:inline-flex shrink-0 items-center gap-2 rounded-full bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 active:scale-95"
+                >
+                  <Search className="h-4 w-4" />
+                  Cerca
+                </button>
+                <button
+                  type="submit"
+                  aria-label="Cerca"
+                  className="sm:hidden inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white transition active:scale-95"
+                >
+                  <Search className="h-4 w-4" />
+                </button>
               </div>
             </form>
 
@@ -150,7 +153,7 @@ export default async function Home() {
                     </div>
 
                     <div className="p-5 pt-0">
-                      <span className="block w-full bg-yellow-400 group-hover:bg-yellow-300 text-blue-800 py-2.5 rounded-xl font-semibold text-sm transition text-center">
+                      <span className="block w-full rounded-xl bg-yellow-400 py-2.5 text-center text-sm font-bold text-blue-900 shadow-sm transition group-hover:bg-yellow-300">
                         Scopri
                       </span>
                     </div>

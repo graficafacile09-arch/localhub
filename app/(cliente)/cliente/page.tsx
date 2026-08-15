@@ -45,8 +45,7 @@ export default async function ClienteDashboardPage() {
   return (
     <div className="space-y-5">
       {/* ── Intestazione dashboard ───────────────────────────────────────────── */}
-      <div className="overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-sm">
-        <div className="h-1.5 bg-linear-to-r from-blue-300 via-blue-400 to-yellow-300" />
+      <div className="card overflow-hidden">
         <div className="p-6 md:p-8">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-4">

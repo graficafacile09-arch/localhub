@@ -1,82 +1,67 @@
 @import "tailwindcss";
 
 /*
- * ═══════════════════════════════════════════════════════════════════════
- * DESIGN SYSTEM LOCALHUB — unica fonte cromatica (homepage = riferimento)
- * ═══════════════════════════════════════════════════════════════════════
+ * ═══════════════════════════════════════════════════════════════════════════
+ * INCITTÀ — DESIGN SYSTEM (unica fonte grafica)
+ * ═══════════════════════════════════════════════════════════════════════════
  *
- * PALETTE UFFICIALE (identità InCittà):
- *   - BLU      → struttura, navigazione, elementi principali, sfondi hero.
- *                (blue-600 #2563eb, blue-700 #1d4ed8, blue-500 #3b82f6)
- *   - GIALLO   → accento, CTA, elementi evidenziati, stati importanti.
- *                (yellow-300 #fde047, yellow-400 #facc15)
- *   - CYAN     → solo come dettaglio nel “gradiente arcobaleno” di accento
- *                (striscia superiore di header/hero).
+ * Principio: BLU = struttura/navigazione, GIALLO = CTA/azione principale,
+ * BIANCO/neutro = superfici di lettura, COLORI SEMANTICI = significato reale
+ * (rosso = pericolo/eliminazione, verde WhatsApp = integrazione terza parte,
+ * verde/ambra = successo/attenzione). I colori semantici NON vengono mai
+ * riassorbiti nella palette di brand.
  *
- * EFFETTO “RILIEVO” (homepage): profondità tramite shadow + ring + una
- * striscia di luce superiore (gradiente white/25 → trasparente), senza 3D.
- * I valori qui sotto sono i TOKEN canonici; i componenti usano le stesse
- * classi Tailwind, quindi questo blocco è la documentazione + fallback.
+ * Niente gradienti "rilievo", niente strisce arcobaleno, niente pseudo-elementi
+ * di lucentezza: superfici piatte, ombre sottili, radius coerenti.
  */
+
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #0f172a;
 
-  /* Brand — struttura */
-  --brand-blue: #2563eb;
-  --brand-blue-dark: #1d4ed8;
-  --brand-blue-light: #3b82f6;
+  /* ── Brand · struttura (blu) ─────────────────────────────────────────── */
+  --brand-blue: #2563eb;      /* blue-600 */
+  --brand-blue-dark: #1d4ed8; /* blue-700 */
+  --brand-blue-deep: #1e40af; /* blue-800 — testo su CTA gialla */
   --brand-blue-50: #eff6ff;
   --brand-blue-100: #dbeafe;
+  --brand-blue-200: #bfdbfe;
 
-  /* Brand — accento/CTA */
-  --brand-yellow: #facc15;
-  --brand-yellow-light: #fde047;
-  --brand-yellow-deep: #eab308;
+  /* ── Brand · accento/CTA (giallo) ────────────────────────────────────── */
+  --brand-yellow: #facc15;        /* yellow-400 */
+  --brand-yellow-hover: #fde047;  /* yellow-300 */
+  --brand-yellow-active: #eab308; /* yellow-500 */
 
-  /* Blu scuro — testo su CTA gialla e azioni distruttive */
-  --brand-blue-800: #1e40af;
-  --brand-blue-900: #1e3a8a;
-
-  /* Verde WhatsApp — SOLO per il pulsante WhatsApp (identità terza parte,
-   * riconoscibilità del brand; unica eccezione alla palette giallo+blu). */
+  /* ── Semantico · WhatsApp (SOLO pulsante/collegamento WhatsApp) ───────── */
   --brand-whatsapp: #25d366;
   --brand-whatsapp-dark: #1da851;
 
-  /* Rosso distruttivo — SOLO per azioni di eliminazione/cancellazione
-   * (Zona Pericolosa, Cestino, Elimina): l'utente deve riconoscerlo subito
-   * come pericoloso, come nel design originale InCittà. */
-  --brand-danger: #dc2626;
-  --brand-danger-dark: #b91c1c;
+  /* ── Semantico · pericolo/distruttivo (SOLO azioni realmente pericolose) ─ */
+  --brand-danger: #dc2626;      /* red-600 */
+  --brand-danger-dark: #b91c1c; /* red-700 */
   --brand-danger-50: #fef2f2;
   --brand-danger-100: #fee2e2;
   --brand-danger-200: #fecaca;
-  --shadow-cta-danger: 0 4px 12px rgba(220, 38, 38, 0.35);
-  --shadow-cta-danger-hover: 0 6px 20px rgba(220, 38, 38, 0.5);
 
-  /*
-   * SEMANTICA STATI (stesso design system, senza palette estranee):
-   *   - successo/positivo/attivo  → BLU   (struttura, conferma)
-   *   - attenzione/warning/info   → GIALLO (accento, da notare)
-   *   - errore/distruttivo        → BLU intenso (blue-800/900 + icona + ring
-   *                                 marcato): differenziazione tramite icona,
-   *                                 testo, bordo e intensità, MAI rosso/verde.
-   */
-
-  /* Superfici */
+  /* ── Superfici ────────────────────────────────────────────────────────── */
   --surface-page: #eef3f8;
   --surface-card: #ffffff;
-  --surface-card-border: rgba(226, 232, 240, 0.6);
+  --border-card: #e2e8f0; /* slate-200 */
 
-  /* Ombre — rilievo leggero */
+  /* ── Radius ───────────────────────────────────────────────────────────── */
+  --radius-sm: 0.5rem;   /* badge/icone compatte */
+  --radius-md: 0.75rem;  /* pulsanti, input, select */
+  --radius-lg: 1rem;     /* card, pannelli */
+
+  /* ── Ombre (sottili, mai pesanti) ─────────────────────────────────────── */
   --shadow-card: 0 1px 2px 0 rgb(15 23 42 / 0.05);
-  --shadow-card-hover: 0 20px 40px -32px rgb(37 99 235 / 0.45);
-  --shadow-cta-blue: 0 4px 12px rgba(37, 99, 235, 0.4);
-  --shadow-cta-blue-hover: 0 6px 20px rgba(37, 99, 235, 0.55);
-  --shadow-cta-yellow: 0 4px 12px rgba(250, 204, 21, 0.35);
-  --shadow-cta-yellow-hover: 0 6px 20px rgba(250, 204, 21, 0.5);
-  --shadow-cta-blue-deep: 0 4px 12px rgba(30, 58, 138, 0.35);
-  --shadow-cta-blue-deep-hover: 0 6px 20px rgba(30, 58, 138, 0.5);
+  --shadow-card-hover: 0 10px 30px -18px rgb(37 99 235 / 0.35);
+  --shadow-cta-yellow: 0 4px 14px -4px rgb(202 138 4 / 0.45);
+  --shadow-cta-yellow-hover: 0 8px 22px -6px rgb(202 138 4 / 0.55);
+  --shadow-cta-blue: 0 4px 14px -4px rgb(37 99 235 / 0.4);
+  --shadow-cta-blue-hover: 0 8px 22px -6px rgb(37 99 235 / 0.5);
+  --shadow-cta-danger: 0 4px 14px -4px rgb(220 38 38 / 0.4);
+  --shadow-cta-danger-hover: 0 8px 22px -6px rgb(220 38 38 / 0.5);
 }
 
 @theme inline {
@@ -85,14 +70,12 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 
-  /* Token del design system esposti come colori Tailwind (brand / accent). */
+  /* Token esposti come utility Tailwind (usati nei componenti). */
   --color-brand: var(--brand-blue);
   --color-brand-dark: var(--brand-blue-dark);
-  --color-brand-light: var(--brand-blue-light);
   --color-brand-50: var(--brand-blue-50);
   --color-brand-100: var(--brand-blue-100);
   --color-accent: var(--brand-yellow);
-  --color-accent-light: var(--brand-yellow-light);
   --color-whatsapp: var(--brand-whatsapp);
   --color-whatsapp-dark: var(--brand-whatsapp-dark);
   --color-danger: var(--brand-danger);
@@ -110,57 +93,94 @@
 }
 
 body {
-  background: var(--background);
+  background: var(--surface-page);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  /* Tipografia unica: Geist (già caricata da next/font) con fallback di sistema. */
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
-/*
- * CTA CONDIVISE — IL MASTER è il pulsante giallo della homepage
- * ("Scopri" nelle card negozio): GIALLO pieno (yellow-400) + testo BLU
- * (blue-800), rounded-xl, hover yellow-300, ombra gialla morbida per il
- * rilievo. NESSUN gradiente, NESSUN ring/riga interna, NESSUNA doppia
- * superficie: deve essere visivamente LO STESSO pulsante della homepage.
- * Tutti i pulsanti di azione (Admin/Cliente/Venditore) passano da qui.
- *
- *   - .btn-cta    → azione principale: IDENTICA al master homepage.
- *   - .btn-danger → azione distruttiva: BLU intenso (non rosso) + icona,
- *                   differenziata per intensità (resta fuori dal giallo CTA).
- */
+/* ═══════════════════════════════════════════════════════════════════════
+ * COMPONENTI — unica fonte per pulsanti, card, form, badge.
+ * I componenti usano queste classi; le utility Tailwind restano per il layout.
+ * ═══════════════════════════════════════════════════════════════════════ */
 @layer components {
+  /* ── Pulsanti ────────────────────────────────────────────────────────────
+     PRIMARY (.btn-cta)     → giallo, testo blu, ombra gialla.
+     SECONDARY (.btn-secondary) → bianco, bordo blu, testo blu.
+     DANGER  (.btn-danger)  → rosso (SOLO distruttivo).
+     WHATSAPP(.btn-whatsapp)→ verde WhatsApp (SOLO WhatsApp).
+     GHOST   (.btn-ghost)   → minimale, azioni secondarie.
+     ─────────────────────────────────────────────────────────────────────── */
+
   .btn-cta {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    border-radius: 0.75rem;
+    border-radius: var(--radius-md);
     background-color: var(--brand-yellow);
-    color: var(--brand-blue-800);
+    color: var(--brand-blue-deep);
     padding: 0.625rem 1.25rem;
     font-size: 0.875rem;
-    font-weight: 600;
+    font-weight: 700;
     line-height: 1.25rem;
+    white-space: nowrap;
     box-shadow: var(--shadow-cta-yellow);
-    transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
   }
   .btn-cta:hover {
-    background-color: var(--brand-yellow-light);
+    background-color: var(--brand-yellow-hover);
     box-shadow: var(--shadow-cta-yellow-hover);
   }
   .btn-cta:active {
-    background-color: var(--brand-yellow-deep);
+    background-color: var(--brand-yellow-active);
     transform: translateY(0) scale(0.98);
     box-shadow: 0 1px 2px 0 rgb(15 23 42 / 0.1);
   }
   .btn-cta:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 3px var(--brand-blue), 0 0 0 6px rgb(255 255 255 / 0.9);
+    box-shadow: 0 0 0 3px #ffffff, 0 0 0 6px var(--brand-blue);
   }
   .btn-cta:disabled {
-    opacity: 0.6;
+    opacity: 0.55;
     cursor: not-allowed;
     transform: none;
     box-shadow: var(--shadow-cta-yellow);
+  }
+
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--brand-blue-200);
+    background-color: #ffffff;
+    color: var(--brand-blue-dark);
+    padding: 0.625rem 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.25rem;
+    white-space: nowrap;
+    box-shadow: var(--shadow-card);
+    transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .btn-secondary:hover {
+    background-color: var(--brand-blue-50);
+    border-color: #93c5fd;
+  }
+  .btn-secondary:active {
+    transform: translateY(0) scale(0.98);
+  }
+  .btn-secondary:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px #ffffff, 0 0 0 6px var(--brand-blue);
+  }
+  .btn-secondary:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
   }
 
   .btn-danger {
@@ -168,15 +188,16 @@ body {
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    border-radius: 0.75rem;
+    border-radius: var(--radius-md);
     background-color: var(--brand-danger);
     color: #ffffff;
     padding: 0.625rem 1.25rem;
     font-size: 0.875rem;
     font-weight: 700;
     line-height: 1.25rem;
+    white-space: nowrap;
     box-shadow: var(--shadow-cta-danger);
-    transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
   }
   .btn-danger:hover {
     background-color: var(--brand-danger-dark);
@@ -187,12 +208,168 @@ body {
   }
   .btn-danger:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 3px var(--brand-danger), 0 0 0 6px rgb(255 255 255 / 0.9);
+    box-shadow: 0 0 0 3px #ffffff, 0 0 0 6px var(--brand-danger);
   }
   .btn-danger:disabled {
-    opacity: 0.6;
+    opacity: 0.55;
     cursor: not-allowed;
     transform: none;
+  }
+
+  .btn-whatsapp {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: var(--radius-md);
+    background-color: var(--brand-whatsapp);
+    color: #ffffff;
+    padding: 0.625rem 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 700;
+    line-height: 1.25rem;
+    white-space: nowrap;
+    box-shadow: 0 4px 14px -4px rgb(37 211 102 / 0.45);
+    transition: background-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .btn-whatsapp:hover {
+    background-color: var(--brand-whatsapp-dark);
+  }
+  .btn-whatsapp:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px #ffffff, 0 0 0 6px var(--brand-whatsapp);
+  }
+  .btn-whatsapp:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: var(--radius-md);
+    background-color: transparent;
+    color: #475569;
+    padding: 0.5rem 0.875rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.25rem;
+    white-space: nowrap;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+  .btn-ghost:hover {
+    background-color: #f1f5f9;
+    color: #0f172a;
+  }
+  .btn-ghost:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px #ffffff, 0 0 0 6px var(--brand-blue);
+  }
+  .btn-ghost:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  /* ── Card / superfici ─────────────────────────────────────────────────── */
+  .card {
+    background: var(--surface-card);
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+  }
+  .card-hover {
+    transition: box-shadow 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+  }
+  .card-hover:hover {
+    border-color: var(--brand-blue-200);
+    box-shadow: var(--shadow-card-hover);
+  }
+
+  /* ── Form ─────────────────────────────────────────────────────────────── */
+  .input,
+  .select {
+    width: 100%;
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-md);
+    background-color: #ffffff;
+    padding: 0.625rem 0.875rem;
+    font-size: 0.875rem;
+    color: #0f172a;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+  .input::placeholder {
+    color: #94a3b8;
+  }
+  .input:focus,
+  .select:focus {
+    outline: none;
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 3px rgb(37 99 235 / 0.12);
+  }
+  .input:disabled,
+  .select:disabled {
+    background-color: #f8fafc;
+    color: #94a3b8;
+    cursor: not-allowed;
+  }
+
+  .field-label {
+    display: block;
+    margin-bottom: 0.375rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #334155;
+  }
+
+  .field-error {
+    margin-top: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--brand-danger);
+  }
+
+  /* ── Badge ────────────────────────────────────────────────────────────── */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    border-radius: 9999px;
+    padding: 0.25rem 0.625rem;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    line-height: 1rem;
+    white-space: nowrap;
+  }
+  .badge-blue {
+    background: var(--brand-blue-50);
+    color: var(--brand-blue-dark);
+  }
+  .badge-yellow {
+    background: #fef9c3;
+    color: #854d0e;
+  }
+  .badge-slate {
+    background: #f1f5f9;
+    color: #475569;
+  }
+  .badge-danger {
+    background: var(--brand-danger-50);
+    color: var(--brand-danger-dark);
+  }
+  .badge-success {
+    background: #ecfdf5;
+    color: #047857;
+  }
+
+  /* ── Etichetta di sezione (micro-caption) ─────────────────────────────── */
+  .section-label {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: #64748b;
   }
 }
 

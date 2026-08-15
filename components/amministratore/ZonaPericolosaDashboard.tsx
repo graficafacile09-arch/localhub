@@ -87,7 +87,7 @@ export default function ZonaPericolosaDashboard() {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <section className="rounded-[2rem] border-2 border-red-200 bg-red-50/60 p-6 shadow-sm md:p-8">
+    <section className="rounded-2xl border-2 border-red-200 bg-red-50 p-6 md:p-8">
       <div className="flex items-center gap-3">
         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-red-100 text-red-600 ring-1 ring-red-200">
           <AlertTriangle className="h-6 w-6" aria-hidden />

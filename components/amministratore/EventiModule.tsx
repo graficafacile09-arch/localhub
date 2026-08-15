@@ -115,7 +115,7 @@ export default function EventiModule({ eventi }: { eventi: EventoAdmin[] }) {
 
   return (
     <div className="space-y-5">
-      <div className="rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm md:p-8">
+      <div className="card p-6 md:p-8">
         <nav aria-label="Percorso" className="mb-5">
           <button
             type="button"
@@ -150,7 +150,7 @@ export default function EventiModule({ eventi }: { eventi: EventoAdmin[] }) {
         </div>
       </div>
 
-      <div className="rounded-[2rem] border border-white/70 bg-white p-4 shadow-sm md:p-5">
+      <div className="card p-4 md:p-5">
         <div className="flex flex-col gap-3 md:flex-row md:items-center">
           <div className="relative flex-1">
             <Search

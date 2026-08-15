@@ -51,7 +51,7 @@ export default async function MerchantHomePage({
         <div className="text-center">
           <Link
             href="/merchant/nuovo"
-            className="relative inline-flex items-center gap-2 overflow-hidden rounded-full bg-gradient-to-b from-yellow-300 to-yellow-400 px-6 py-3 text-sm font-bold text-slate-800 shadow-md shadow-yellow-400/30 ring-1 ring-yellow-300 transition-all duration-200 before:pointer-events-none before:absolute before:inset-0 before:rounded-full before:bg-gradient-to-b before:from-white/25 before:to-transparent hover:-translate-y-0.5 hover:from-yellow-200 hover:to-yellow-300 hover:shadow-lg hover:shadow-yellow-400/40 active:translate-y-0 active:scale-95"
+            className="inline-flex items-center gap-2 rounded-full bg-yellow-400 px-6 py-3 text-sm font-bold text-blue-900 transition-colors hover:bg-yellow-300 active:scale-95"
           >
             Crea il tuo primo negozio
           </Link>
@@ -68,7 +68,7 @@ export default async function MerchantHomePage({
 
   return (
     <div className="space-y-6">
-      <div className="rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm">
+      <div className="card p-6">
         <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
           {labelArea}
         </p>
@@ -86,7 +86,7 @@ export default async function MerchantHomePage({
         <div className="mb-4">
           <Link
             href="/merchant/nuovo"
-            className="relative inline-flex items-center gap-2 overflow-hidden rounded-full bg-gradient-to-b from-yellow-300 to-yellow-400 px-4 py-2 text-xs font-bold text-slate-800 shadow-md shadow-yellow-400/30 ring-1 ring-yellow-300 transition-all duration-200 before:pointer-events-none before:absolute before:inset-0 before:rounded-full before:bg-gradient-to-b before:from-white/25 before:to-transparent hover:-translate-y-0.5 hover:from-yellow-200 hover:to-yellow-300 hover:shadow-lg hover:shadow-yellow-400/40 active:translate-y-0 active:scale-95"
+            className="inline-flex items-center gap-2 rounded-full bg-yellow-400 px-4 py-2 text-xs font-bold text-blue-900 transition-colors hover:bg-yellow-300 active:scale-95"
           >
             + Nuovo negozio
           </Link>
@@ -104,7 +104,7 @@ export default async function MerchantHomePage({
                 {store.nome}
                 {(ordiniNonLettiPerNegozio[store.id] ?? 0) > 0 && (
                   <span
-                    className="inline-flex h-6 min-w-6 shrink-0 items-center justify-center rounded-full bg-gradient-to-b from-yellow-300 to-yellow-400 px-2 text-xs font-black text-blue-800 ring-1 ring-yellow-300"
+                    className="inline-flex h-6 min-w-6 shrink-0 items-center justify-center rounded-full bg-yellow-400 px-2 text-xs font-black text-blue-900"
                     title={`${ordiniNonLettiPerNegozio[store.id]} ${ordiniNonLettiPerNegozio[store.id] === 1 ? "ordine non letto" : "ordini non letti"}`}
                   >
                     {ordiniNonLettiPerNegozio[store.id] > 9 ? "9+" : ordiniNonLettiPerNegozio[store.id]}
@@ -130,7 +130,7 @@ export default async function MerchantHomePage({
             return (
               <div
                 key={store.id}
-                className="relative rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm"
+                className="relative card p-6"
               >
                 <div className="absolute right-4 top-4 z-10">
                   <EliminaNegozioButton storeId={store.id} storeName={store.nome} />
@@ -149,7 +149,7 @@ export default async function MerchantHomePage({
             <Link
               key={store.id}
               href={`/merchant/${store.id}`}
-              className="rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-[0_20px_40px_-32px_rgba(37,99,235,0.45)]"
+              className="card p-6 transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-[0_20px_40px_-32px_rgba(37,99,235,0.45)]"
             >
               {contenuto}
             </Link>

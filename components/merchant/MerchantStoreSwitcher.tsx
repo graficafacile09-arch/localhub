@@ -22,8 +22,8 @@ export default function MerchantStoreSwitcher({
   }
 
   return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
+    <div className="card p-5">
+      <p className="section-label">
         I tuoi negozi
       </p>
       <div className="mt-4 space-y-2">
@@ -45,7 +45,7 @@ export default function MerchantStoreSwitcher({
                 <span className="min-w-0 flex-1 truncate font-semibold">{store.nome}</span>
                 {ordiniNonLetti > 0 && (
                   <span
-                    className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-gradient-to-b from-yellow-300 to-yellow-400 px-1.5 text-[10px] font-black leading-none text-blue-800 ring-1 ring-yellow-300"
+                    className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-yellow-400 px-1.5 text-[10px] font-black leading-none text-blue-900"
                     title={`${ordiniNonLetti} ${ordiniNonLetti === 1 ? "ordine non letto" : "ordini non letti"}`}
                   >
                     {ordiniNonLetti > 9 ? "9+" : ordiniNonLetti}

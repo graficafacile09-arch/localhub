@@ -33,7 +33,7 @@ export default function ClienteCardBase({
   return (
     <Link
       href={href}
-      className="group flex h-full flex-col rounded-[1.75rem] border border-white/70 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-[0_20px_40px_-32px_rgba(37,99,235,0.45)]"
+      className="group flex h-full flex-col card card-hover p-6 hover:-translate-y-0.5"
     >
       <div className="flex items-start justify-between gap-4">
         <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 ring-1 ring-blue-100">

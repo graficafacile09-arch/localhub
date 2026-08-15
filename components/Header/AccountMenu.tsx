@@ -87,9 +87,9 @@ export default function AccountMenu({ account }: { account: DatiAccount | null }
           onClick={() => setOpen((value) => !value)}
           aria-expanded={open}
           aria-haspopup="menu"
-          className="relative inline-flex items-center gap-1.5 overflow-hidden rounded-full bg-gradient-to-b from-yellow-300 to-yellow-400 px-4 py-2.5 text-sm font-bold text-slate-800 shadow-md shadow-yellow-400/30 ring-1 ring-yellow-300 transition-all duration-200 before:pointer-events-none before:absolute before:inset-0 before:rounded-full before:bg-gradient-to-b before:from-white/25 before:to-transparent hover:-translate-y-0.5 hover:from-yellow-200 hover:to-yellow-300 hover:shadow-lg hover:shadow-yellow-400/40 active:translate-y-0 active:scale-95"
+          className="inline-flex items-center gap-1.5 rounded-full bg-yellow-400 px-4 py-2 text-sm font-bold text-blue-900 transition-colors hover:bg-yellow-300 active:scale-95"
         >
-          <LogIn className="relative h-4 w-4" aria-hidden />
+          <LogIn className="h-4 w-4" aria-hidden />
           Accedi
         </button>
 
@@ -170,7 +170,7 @@ export default function AccountMenu({ account }: { account: DatiAccount | null }
       >
         <span
           aria-hidden
-          className="flex h-8 w-8 items-center justify-center rounded-full bg-linear-to-br from-blue-400 to-blue-600 text-sm font-black text-white ring-2 ring-blue-100"
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-sm font-black text-white"
         >
           {iniziale}
         </span>

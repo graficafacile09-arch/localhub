@@ -6,7 +6,7 @@ export default function ClienteLoading() {
   return (
     <div className="space-y-5" aria-busy="true" aria-label="Caricamento Area Clienti">
       {/* Intestazione skeleton */}
-      <div className="rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm md:p-8">
+      <div className="card p-6 md:p-8">
         <div className="h-3 w-28 animate-pulse rounded-full bg-slate-200" />
         <div className="mt-4 h-8 w-64 animate-pulse rounded-full bg-slate-200" />
         <div className="mt-4 h-4 w-full max-w-md animate-pulse rounded-full bg-slate-100" />
@@ -18,7 +18,7 @@ export default function ClienteLoading() {
         {Array.from({ length: 6 }).map((_, index) => (
           <div
             key={index}
-            className="h-52 animate-pulse rounded-[1.75rem] border border-white/70 bg-white p-6 shadow-sm"
+            className="h-52 animate-pulse card p-6"
           >
             <div className="flex items-start justify-between gap-4">
               <div className="h-12 w-12 rounded-2xl bg-slate-200" />

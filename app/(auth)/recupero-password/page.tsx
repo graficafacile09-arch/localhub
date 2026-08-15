@@ -22,8 +22,7 @@ function RecuperoContent() {
         fallbackHref="/login"
         className="absolute left-4 top-4 sm:left-6 sm:top-6"
       />
-      <div className="w-full max-w-md overflow-hidden rounded-[2rem] border border-blue-200/70 bg-white shadow-[0_30px_70px_-40px_rgba(37,99,235,0.35)]">
-        <div className="h-1 bg-linear-to-r from-blue-300 via-white to-yellow-300" />
+      <div className="card w-full max-w-md overflow-hidden">
         <div className="space-y-6 p-8">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
@@ -71,7 +70,7 @@ function RecuperoContent() {
               </div>
               <button
                 type="submit"
-                className="inline-flex h-12 w-full items-center justify-center rounded-2xl bg-gradient-to-b from-blue-500 to-blue-700 text-sm font-bold text-white shadow-lg shadow-blue-500/30 transition hover:shadow-xl hover:shadow-blue-500/40 active:scale-[0.98]"
+                className="btn-cta h-12 w-full text-sm"
               >
                 Invia link di recupero
               </button>

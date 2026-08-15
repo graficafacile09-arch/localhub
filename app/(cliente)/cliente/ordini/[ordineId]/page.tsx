@@ -82,7 +82,7 @@ export default async function OrdineDettaglioPage({ params }: { params: Promise<
 
   if (errore) {
     return (
-      <div className="rounded-[2rem] border border-blue-100 bg-white p-8 text-center shadow-sm">
+      <div className="card p-8 text-center">
         <h1 className="text-xl font-black tracking-tight text-slate-900">
           Impossibile caricare l&apos;ordine
         </h1>
@@ -92,7 +92,7 @@ export default async function OrdineDettaglioPage({ params }: { params: Promise<
         </p>
         <Link
           href="/cliente/ordini"
-          className="mt-6 inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-yellow-300 to-yellow-400 px-5 py-2.5 text-sm font-bold text-slate-800 shadow-md shadow-yellow-400/30 ring-1 ring-yellow-300 transition hover:from-yellow-200 hover:to-yellow-300"
+          className="btn-cta mt-6 px-5 py-2.5 text-sm"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden /> Torna ai miei ordini
         </Link>
@@ -102,7 +102,7 @@ export default async function OrdineDettaglioPage({ params }: { params: Promise<
 
   if (!ordine) {
     return (
-      <div className="rounded-[2rem] border border-white/70 bg-white p-8 text-center shadow-sm">
+      <div className="card p-8 text-center">
         <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-slate-100">
           <Package className="h-8 w-8 text-slate-400" aria-hidden />
         </span>
@@ -114,7 +114,7 @@ export default async function OrdineDettaglioPage({ params }: { params: Promise<
         </p>
         <Link
           href="/cliente/ordini"
-          className="mt-6 inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-yellow-300 to-yellow-400 px-5 py-2.5 text-sm font-bold text-slate-800 shadow-md shadow-yellow-400/30 ring-1 ring-yellow-300 transition hover:from-yellow-200 hover:to-yellow-300"
+          className="btn-cta mt-6 px-5 py-2.5 text-sm"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden /> Torna ai miei ordini
         </Link>
@@ -226,7 +226,7 @@ export default async function OrdineDettaglioPage({ params }: { params: Promise<
       <div className="flex flex-wrap gap-3">
         <Link
           href="/cliente/ordini"
-          className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-yellow-300 to-yellow-400 px-5 py-2.5 text-sm font-bold text-slate-800 shadow-md shadow-yellow-400/30 ring-1 ring-yellow-300 transition hover:from-yellow-200 hover:to-yellow-300"
+          className="btn-cta px-5 py-2.5 text-sm"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden /> Torna ai miei ordini
         </Link>

@@ -52,8 +52,7 @@ export default function MerchantShell({
       <MerchantTopBar storeName={currentStore?.nome ?? null} area={area} />
 
       {/* ── Header desktop — visibile solo su md+ ────────────────────────────── */}
-      <div className="hidden border-b border-blue-900/15 bg-[linear-gradient(180deg,#1d4ed8_0%,#2563eb_100%)] text-white shadow-lg md:block">
-        <div className="h-1 bg-linear-to-r from-blue-300 via-white to-yellow-300" />
+      <div className="hidden border-b border-blue-800/20 bg-blue-700 text-white shadow-sm md:block">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-4">
           <div className="flex items-center gap-4">
             <Link
@@ -99,13 +98,13 @@ export default function MerchantShell({
               sidebar: il menu admin (Strumenti di piattaforma → Negozi → …) è la
               prima cosa che l'amministratore vede entrando in /amministratore. */}
           {isAdmin ? (
-            <div className="rounded-3xl border border-white/70 bg-white p-5 shadow-sm">
+            <div className="card p-5">
               <AdminSidebar />
             </div>
           ) : null}
 
-          <div className="rounded-3xl border border-white/70 bg-white p-5 shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
+          <div className="card p-5">
+            <p className="section-label">
               Navigazione
             </p>
             <MerchantGlobalNav area={area} />

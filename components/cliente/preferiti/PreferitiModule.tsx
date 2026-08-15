@@ -152,8 +152,7 @@ export default function PreferitiModule() {
   return (
     <div className="space-y-5">
       {/* ── Intestazione ───────────────────────────────────────────────────── */}
-      <div className="overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-sm">
-        <div className="h-1.5 bg-linear-to-r from-yellow-300 via-blue-400 to-yellow-500" />
+      <div className="card overflow-hidden">
         <div className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-4">
             <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-yellow-50 text-yellow-600 ring-1 ring-yellow-100">
@@ -172,7 +171,7 @@ export default function PreferitiModule() {
       </div>
 
       {/* ── Barra filtri ───────────────────────────────────────────────────── */}
-      <div className="flex flex-col gap-3 rounded-2xl border border-white/70 bg-white p-3 shadow-sm md:flex-row md:items-center md:justify-between">
+      <div className="card flex flex-col gap-3 p-3 md:flex-row md:items-center md:justify-between">
         {/* Tabs tipologia */}
         <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Filtra per tipologia">
           {(Object.keys(etichette) as FiltroTipo[]).map((tipo) => (
@@ -184,7 +183,7 @@ export default function PreferitiModule() {
               onClick={() => cambiaFiltro(tipo)}
               className={`rounded-xl px-3.5 py-2 text-xs font-bold transition ${
                 filtroTipo === tipo
-                  ? "bg-yellow-500 text-white shadow-sm"
+                  ? "bg-yellow-400 text-blue-900"
                   : "bg-slate-100 text-slate-600 hover:bg-slate-200"
               }`}
             >
@@ -239,7 +238,7 @@ export default function PreferitiModule() {
           {Array.from({ length: 6 }).map((_, index) => (
             <div
               key={index}
-              className="animate-pulse overflow-hidden rounded-2xl border border-white/70 bg-white shadow-sm"
+              className="animate-pulse card overflow-hidden"
             >
               <div className="aspect-[16/10] bg-slate-100" />
               <div className="space-y-2 p-3">
@@ -282,9 +281,9 @@ export default function PreferitiModule() {
           action={
             <Link
               href="/negozi"
-              className="relative inline-flex items-center gap-2 overflow-hidden rounded-full bg-gradient-to-b from-yellow-300 to-yellow-400 px-6 py-2.5 text-sm font-bold text-blue-700 shadow-md shadow-yellow-400/30 ring-1 ring-yellow-300 transition-all duration-200 before:pointer-events-none before:absolute before:inset-0 before:rounded-full before:bg-gradient-to-b before:from-white/25 before:to-transparent hover:-translate-y-0.5 hover:from-yellow-200 hover:to-yellow-300 hover:shadow-lg hover:shadow-yellow-400/40 active:translate-y-0 active:scale-95 active:shadow-sm"
+              className="btn-cta px-6 py-2.5 text-sm"
             >
-              <span className="relative">Esplora i negozi</span>
+              Esplora i negozi
             </Link>
           }
         />

@@ -24,7 +24,7 @@ export default function AttivitaToolbar({
     "rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700 transition focus:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-100";
 
   return (
-    <div className="rounded-[2rem] border border-white/70 bg-white p-4 shadow-sm md:p-5">
+    <div className="card p-4 md:p-5">
       <div className="flex flex-col gap-3 md:flex-row md:items-center">
         {/* Ricerca */}
         <div className="relative flex-1">

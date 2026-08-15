@@ -8,8 +8,7 @@ import ClienteUserMenu from "./ClienteUserMenu";
  */
 export default function ClienteHeader() {
   return (
-    <div className="hidden border-b border-blue-900/15 bg-[linear-gradient(180deg,#1d4ed8_0%,#2563eb_100%)] text-white shadow-lg md:block">
-      <div className="h-1 bg-linear-to-r from-blue-300 via-white to-yellow-300" />
+    <div className="hidden border-b border-blue-800/20 bg-blue-700 text-white shadow-sm md:block">
       <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-4">
         <div className="flex items-center gap-5">
           <Link

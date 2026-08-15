@@ -61,7 +61,7 @@ export default async function OrdiniPage({
   return (
     <div className="space-y-5">
       {/* ── Intestazione ─────────────────────────────────────────────────────── */}
-      <div className="rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm md:p-8">
+      <div className="card p-6 md:p-8">
         <div className="flex items-start gap-4">
           <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 ring-1 ring-blue-100">
             <ReceiptText className="h-7 w-7" aria-hidden />
@@ -97,7 +97,7 @@ export default async function OrdiniPage({
                 aria-current={attivo ? "page" : undefined}
                 className={`inline-flex h-9 items-center gap-2 rounded-full px-3.5 text-xs font-bold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 ${
                   attivo
-                    ? "bg-gradient-to-b from-yellow-300 to-yellow-400 text-slate-800 shadow-sm ring-1 ring-yellow-300"
+                    ? "bg-yellow-400 text-blue-900 shadow-sm"
                     : "border border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:text-blue-700"
                 }`}
               >
@@ -121,7 +121,7 @@ export default async function OrdiniPage({
 
       {/* ── Errore di lettura ────────────────────────────────────────────────── */}
       {errore ? (
-        <div className="rounded-[2rem] border border-blue-100 bg-white p-8 text-center shadow-sm">
+        <div className="card p-8 text-center">
           <h2 className="text-base font-bold text-slate-700">
             Impossibile caricare gli ordini
           </h2>
@@ -131,7 +131,7 @@ export default async function OrdiniPage({
           </p>
           <Link
             href="/cliente/ordini"
-            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-yellow-300 to-yellow-400 px-5 py-2.5 text-sm font-bold text-slate-800 shadow-md shadow-yellow-400/30 ring-1 ring-yellow-300 transition hover:from-yellow-200 hover:to-yellow-300"
+            className="btn-cta mt-6 px-5 py-2.5 text-sm"
           >
             Riprova
           </Link>
@@ -145,10 +145,10 @@ export default async function OrdiniPage({
           action={
             <Link
               href="/negozi"
-              className="relative inline-flex items-center gap-2 overflow-hidden rounded-full bg-gradient-to-b from-yellow-300 to-yellow-400 px-6 py-2.5 text-sm font-bold text-blue-700 shadow-md shadow-yellow-400/30 ring-1 ring-yellow-300 transition-all duration-200 before:pointer-events-none before:absolute before:inset-0 before:rounded-full before:bg-gradient-to-b before:from-white/25 before:to-transparent hover:-translate-y-0.5 hover:from-yellow-200 hover:to-yellow-300 hover:shadow-lg hover:shadow-yellow-400/40 active:translate-y-0 active:scale-95 active:shadow-sm"
+              className="btn-cta px-6 py-2.5 text-sm"
             >
-              <span className="relative">Esplora i negozi</span>
-              <ArrowRight className="relative h-4 w-4" aria-hidden />
+              <span>Esplora i negozi</span>
+              <ArrowRight className="h-4 w-4" aria-hidden />
             </Link>
           }
         />
@@ -161,7 +161,7 @@ export default async function OrdiniPage({
           action={
             <Link
               href="/cliente/ordini"
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-yellow-300 to-yellow-400 px-5 py-2.5 text-sm font-bold text-slate-800 shadow-md shadow-yellow-400/30 ring-1 ring-yellow-300 transition hover:from-yellow-200 hover:to-yellow-300"
+              className="btn-cta px-5 py-2.5 text-sm"
             >
               Mostra tutti gli ordini
               <ArrowRight className="h-4 w-4" aria-hidden />

@@ -83,7 +83,7 @@ export default function MerchantBottomNav({
                         ${
                           active
                             ? "bg-blue-700 shadow-blue-600/50"
-                            : "bg-linear-to-br from-blue-600 to-blue-500 shadow-blue-500/40"
+                            : "bg-blue-600 shadow-blue-500/30"
                         }
                         ${!available ? "opacity-40" : ""}
                       `}

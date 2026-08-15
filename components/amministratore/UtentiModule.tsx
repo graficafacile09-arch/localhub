@@ -152,7 +152,7 @@ export default function UtentiModule({
 
   return (
     <div className="space-y-5">
-      <div className="rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm md:p-8">
+      <div className="card p-6 md:p-8">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
           <div className="flex items-start gap-4">
             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 ring-1 ring-blue-100"><UserRound className="h-7 w-7" aria-hidden /></div>
@@ -207,7 +207,7 @@ export default function UtentiModule({
         </div>
       )}
 
-      <div className="rounded-[2rem] border border-white/70 bg-white p-4 shadow-sm md:p-5">
+      <div className="card p-4 md:p-5">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <label className="relative block min-w-0 flex-1 lg:max-w-md">
             <span className="sr-only">Cerca utenti per nome, email o ruolo</span>

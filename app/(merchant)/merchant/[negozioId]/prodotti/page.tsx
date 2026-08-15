@@ -304,7 +304,7 @@ export default async function MerchantProductsPage({ params, searchParams }: Pro
 
       {/* Banner promo AI — solo catalogo vuoto senza filtri */}
       {products.length === 0 && !filtriAttivi && (
-        <div className="overflow-hidden rounded-[2rem] border border-blue-200 bg-linear-to-r from-blue-600 to-blue-500 p-6 text-white shadow-lg shadow-blue-400/20">
+        <div className="overflow-hidden rounded-2xl border border-blue-200 bg-blue-600 p-6 text-white">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-blue-50">

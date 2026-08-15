@@ -145,7 +145,7 @@ export default async function PaginaNegozio({
   };
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="min-h-screen bg-[#eef3f8]">
       <Header />
 
       <div className="mx-auto max-w-5xl px-3 py-3 sm:px-5">

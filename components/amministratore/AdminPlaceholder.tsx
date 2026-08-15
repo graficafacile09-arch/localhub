@@ -25,7 +25,7 @@ export default function AdminPlaceholder({
   return (
     <div className="space-y-5">
       {/* ── Intestazione modulo ─────────────────────────────────────────────── */}
-      <div className="rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm md:p-8">
+      <div className="card p-6 md:p-8">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
           <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 ring-1 ring-blue-100">
             <Icon className="h-7 w-7" aria-hidden />
@@ -51,7 +51,7 @@ export default function AdminPlaceholder({
       </div>
 
       {/* ── Pannello struttura pronta ────────────────────────────────────────── */}
-      <div className="rounded-[2rem] border-2 border-dashed border-slate-200 bg-white/70 p-8 text-center shadow-sm">
+      <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-white p-8 text-center">
         <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 text-slate-400">
           <Construction className="h-8 w-8" aria-hidden />
         </div>
@@ -66,7 +66,7 @@ export default function AdminPlaceholder({
 
       {/* ── Anteprima dei blocchi futuri ─────────────────────────────────────── */}
       <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-3xl border border-white/70 bg-white p-5 shadow-sm">
+        <div className="card p-5">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
             <Database className="h-5 w-5" aria-hidden />
           </div>
@@ -78,7 +78,7 @@ export default function AdminPlaceholder({
           </p>
         </div>
 
-        <div className="rounded-3xl border border-white/70 bg-white p-5 shadow-sm">
+        <div className="card p-5">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
             <ListChecks className="h-5 w-5" aria-hidden />
           </div>
@@ -90,7 +90,7 @@ export default function AdminPlaceholder({
           </p>
         </div>
 
-        <div className="rounded-3xl border border-white/70 bg-white p-5 shadow-sm">
+        <div className="card p-5">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
             <Settings2 className="h-5 w-5" aria-hidden />
           </div>

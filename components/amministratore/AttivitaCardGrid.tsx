@@ -73,7 +73,7 @@ export default function AttivitaCardGrid({
         return (
           <article
             key={negozio.id}
-            className="flex flex-col rounded-3xl border border-white/70 bg-white p-5 shadow-sm transition hover:shadow-md"
+            className="flex flex-col card p-5 transition hover:shadow-md"
           >
             {/* Intestazione card */}
             <div className="flex items-start gap-4">

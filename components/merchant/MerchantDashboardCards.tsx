@@ -21,7 +21,7 @@ export default function MerchantDashboardCards({
   ];
 
   return (
-    <div className="rounded-2xl border border-white/70 bg-white shadow-sm">
+    <div className="card">
       <button
         type="button"
         onClick={() => setOpen(!open)}

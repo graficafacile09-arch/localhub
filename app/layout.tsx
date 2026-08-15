@@ -69,7 +69,7 @@ export default async function RootLayout({
       lang="it"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-slate-50">
+      <body className="min-h-full flex flex-col">
         <CartProvider>{children}</CartProvider>
 
         <footer className="border-t border-slate-200 bg-white py-3 text-center text-xs text-slate-400">

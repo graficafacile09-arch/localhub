@@ -18,7 +18,7 @@ export default function ClienteEmptyState({
   icon?: LucideIcon;
 }) {
   return (
-    <div className="rounded-[2rem] border-2 border-dashed border-slate-200 bg-white/70 p-8 text-center shadow-sm">
+    <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-white p-8 text-center">
       <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 text-slate-400">
         <Icon className="h-8 w-8" aria-hidden />
       </div>

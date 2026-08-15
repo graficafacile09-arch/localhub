@@ -33,7 +33,7 @@ export default async function StatistichePage() {
   return (
     <div className="space-y-5">
       {/* Intestazione modulo */}
-      <div className="rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm md:p-8">
+      <div className="card p-6 md:p-8">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
           <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 ring-1 ring-blue-100">
             <Icon className="h-7 w-7" aria-hidden />
@@ -216,7 +216,7 @@ function KpiCard({
   accent: { bg: string; text: string };
 }) {
   return (
-    <div className="rounded-3xl border border-white/70 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+    <div className="card p-5 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
       <div className="flex items-center justify-between gap-2">
         <p className="truncate text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-500">{label}</p>
         <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${accent.bg}`}>
@@ -250,7 +250,7 @@ function Sezione({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-3xl border border-white/70 bg-white p-5 shadow-sm">
+    <section className="card p-5">
       <header className="flex items-start gap-3">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
           <Icon className="h-5 w-5" aria-hidden />

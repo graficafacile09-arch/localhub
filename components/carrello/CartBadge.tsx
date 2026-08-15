@@ -16,9 +16,9 @@ export default function CartBadge() {
       href="/carrello"
       title="Carrello"
       aria-label={`Carrello, ${pezzi} ${pezzi === 1 ? "articolo" : "articoli"}`}
-      className="relative inline-flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-b from-yellow-300 to-yellow-400 text-slate-800 shadow-md shadow-yellow-400/30 ring-1 ring-yellow-300 transition-all duration-200 before:pointer-events-none before:absolute before:inset-0 before:rounded-full before:bg-gradient-to-b before:from-white/25 before:to-transparent hover:-translate-y-0.5 hover:from-yellow-200 hover:to-yellow-300 hover:shadow-lg hover:shadow-yellow-400/40 active:translate-y-0 active:scale-95"
+      className="relative inline-flex h-9 w-9 items-center justify-center rounded-full bg-yellow-400 text-blue-900 transition-colors hover:bg-yellow-300 active:scale-95"
     >
-      <ShoppingCart className="relative h-4 w-4" aria-hidden />
+      <ShoppingCart className="h-4 w-4" aria-hidden />
       {pezzi > 0 && (
         <span
           data-testid="cart-badge"

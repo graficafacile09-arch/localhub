@@ -121,7 +121,7 @@ export default function NegoziInEvidenzaModule({
 
   return (
     <div className="space-y-5">
-      <div className="rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm md:p-8">
+      <div className="card p-6 md:p-8">
         <nav aria-label="Percorso" className="mb-5">
           <button
             type="button"

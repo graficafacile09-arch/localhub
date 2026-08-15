@@ -62,7 +62,7 @@ export default function ClienteSidebar({
     <nav aria-label="Menu Area Clienti" className="space-y-1">
       {/* ── Blocco brand (solo sidebar desktop espansa) ───────────────────── */}
       {withHeader && !collapsed && (
-        <div className="mb-4 flex items-center gap-3 rounded-2xl bg-linear-to-br from-blue-600 to-blue-500 px-4 py-3.5 text-white shadow-sm">
+        <div className="mb-4 flex items-center gap-3 rounded-2xl bg-blue-600 px-4 py-3.5 text-white shadow-sm">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15 ring-1 ring-white/20">
             <ShoppingBasket className="h-5 w-5" aria-hidden />
           </span>

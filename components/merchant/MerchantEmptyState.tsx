@@ -10,7 +10,7 @@ export default function MerchantEmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="rounded-[2rem] border border-dashed border-slate-300 bg-white px-6 py-12 text-center shadow-sm">
+    <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
       <h2 className="text-2xl font-black tracking-tight text-slate-900">
         {title}
       </h2>

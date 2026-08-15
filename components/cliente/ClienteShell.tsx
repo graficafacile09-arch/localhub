@@ -74,7 +74,7 @@ export default function ClienteShell({
         {/* Sidebar desktop ─────────────────────────────────────────────────── */}
         <aside className="hidden md:block">
           <div className="sticky top-5 space-y-3">
-            <div className="rounded-3xl border border-white/70 bg-white p-5 shadow-sm">
+            <div className="card p-5">
               <ClienteSidebar
                 collapsed={collapsed}
                 ordiniInCorso={ordiniInCorso}
@@ -86,7 +86,7 @@ export default function ClienteShell({
               type="button"
               onClick={() => setCollapsed((value) => !value)}
               aria-label={collapsed ? "Espandi il menu" : "Comprimi il menu"}
-              className={`flex items-center gap-2 rounded-2xl border border-white/70 bg-white px-3 py-2.5 text-xs font-semibold text-slate-600 shadow-sm transition hover:bg-blue-50 hover:text-blue-700 ${
+              className={`flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-600 shadow-sm transition hover:bg-blue-50 hover:text-blue-700 ${
                 collapsed ? "mx-auto justify-center" : ""
               }`}
             >

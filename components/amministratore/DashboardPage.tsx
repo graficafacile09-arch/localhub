@@ -59,7 +59,7 @@ export default function DashboardPage() {
 
   if (loading && !data) {
     return (
-      <div className="flex min-h-[400px] items-center justify-center rounded-3xl border border-white/70 bg-white shadow-sm">
+      <div className="flex min-h-[400px] items-center justify-center card shadow-sm">
         <div className="flex flex-col items-center gap-3">
           <RefreshCw className="h-6 w-6 animate-spin text-blue-500" />
           <p className="text-sm text-slate-500">Caricamento dati piattaforma...</p>
@@ -94,10 +94,10 @@ export default function DashboardPage() {
   return (
     <div className="space-y-5">
       {/* ── Header ─────────────────────────────────────────────────────── */}
-      <div className="rounded-3xl border border-white/70 bg-white p-6 shadow-sm">
+      <div className="card p-6 shadow-sm">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-4">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 text-white shadow-md">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-white">
               <Activity className="h-7 w-7" aria-hidden />
             </div>
             <div>
@@ -160,7 +160,7 @@ export default function DashboardPage() {
       {/* ── Grafici ────────────────────────────────────────────────────── */}
       <div className="grid gap-4 xl:grid-cols-3">
         {/* Negozi per categoria */}
-        <section className="rounded-3xl border border-white/70 bg-white p-5 shadow-sm">
+        <section className="card p-5 shadow-sm">
           <header className="flex items-center gap-2">
             <Store className="h-4 w-4 text-slate-400" aria-hidden />
             <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
@@ -195,7 +195,7 @@ export default function DashboardPage() {
         </section>
 
         {/* Utenti per ruolo — donut */}
-        <section className="rounded-3xl border border-white/70 bg-white p-5 shadow-sm">
+        <section className="card p-5 shadow-sm">
           <header className="flex items-center gap-2">
             <Users className="h-4 w-4 text-slate-400" aria-hidden />
             <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
@@ -210,7 +210,7 @@ export default function DashboardPage() {
         </section>
 
         {/* Scansioni ultimi 7 giorni */}
-        <section className="rounded-3xl border border-white/70 bg-white p-5 shadow-sm">
+        <section className="card p-5 shadow-sm">
           <header className="flex items-center gap-2">
             <Activity className="h-4 w-4 text-slate-400" aria-hidden />
             <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
@@ -290,7 +290,7 @@ export default function DashboardPage() {
       </div>
 
       {/* ── Stato piattaforma ──────────────────────────────────────────── */}
-      <section className="rounded-3xl border border-white/70 bg-white p-5 shadow-sm">
+      <section className="card p-5 shadow-sm">
         <header className="flex items-center gap-2">
           <Database className="h-4 w-4 text-slate-400" aria-hidden />
           <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
@@ -344,7 +344,7 @@ function KpiCard({
   accent: { bg: string; text: string };
 }) {
   return (
-    <div className="rounded-3xl border border-white/70 bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
+    <div className="card p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md">
       <div className="flex items-center justify-between gap-2">
         <p className="truncate text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-500">
           {label}
@@ -486,7 +486,7 @@ function ListaCard({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-3xl border border-white/70 bg-white p-5 shadow-sm">
+    <section className="card p-5 shadow-sm">
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Icon className="h-4 w-4 text-slate-400" aria-hidden />

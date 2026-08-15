@@ -54,7 +54,7 @@ export default function SegnalazioniClienteModule() {
 
   return (
     <div className="space-y-5">
-      <div className="rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm md:p-8">
+      <div className="card p-6 md:p-8">
         <div className="flex items-start gap-4">
           <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-700 ring-1 ring-blue-100">
             <Flag className="h-7 w-7" aria-hidden />
@@ -73,7 +73,7 @@ export default function SegnalazioniClienteModule() {
         </div>
       </div>
 
-      <div className="rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm md:p-8">
+      <div className="card p-6 md:p-8">
         {messaggio && (
           <div
             className={`mb-6 rounded-2xl p-4 text-sm font-semibold flex items-start gap-3 ${
@@ -138,7 +138,7 @@ export default function SegnalazioniClienteModule() {
           <button
             type="submit"
             disabled={inviando || !titolo.trim() || !descrizione.trim()}
-            className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl bg-gradient-to-b from-yellow-300 to-yellow-400 px-6 text-sm font-bold text-slate-800 shadow-md shadow-yellow-400/30 ring-1 ring-yellow-300 transition hover:from-yellow-200 hover:to-yellow-300 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+            className="btn-cta h-12 px-6 text-sm"
           >
             {inviando ? (
               <Loader2 className="h-4 w-4 animate-spin" />

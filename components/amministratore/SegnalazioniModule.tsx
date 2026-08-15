@@ -271,7 +271,7 @@ export default function SegnalazioniModule() {
   return (
     <div className="space-y-5">
       {/* Header */}
-      <div className="rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm md:p-8">
+      <div className="card p-6 md:p-8">
         <nav aria-label="Percorso" className="mb-5">
           <button
             type="button"
@@ -332,7 +332,7 @@ export default function SegnalazioniModule() {
       </div>
 
       {/* Toolbar filtri */}
-      <div className="rounded-[2rem] border border-white/70 bg-white p-4 shadow-sm md:p-5">
+      <div className="card p-4 md:p-5">
         <div className="flex flex-col gap-3 md:flex-row md:items-end">
           <div className="relative flex-1">
             <Search
@@ -452,7 +452,7 @@ export default function SegnalazioniModule() {
               <article
                 key={s.id}
                 onClick={() => apriDettaglio(s)}
-                className="group cursor-pointer rounded-3xl border border-white/70 bg-white p-5 shadow-sm transition hover:border-blue-200 hover:shadow-md"
+                className="group cursor-pointer card p-5 transition hover:border-blue-200 hover:shadow-md"
               >
                 <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                   <div className="space-y-1.5 min-w-0 flex-1">

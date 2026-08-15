@@ -143,7 +143,7 @@ export default function PanoramicaPage() {
                 href={strumento.href}
                 className="group flex items-center gap-4 rounded-2xl border border-slate-100 bg-slate-50/50 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-100 hover:bg-white hover:shadow-md"
               >
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 text-white shadow-md transition-transform duration-200 group-hover:scale-105">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-white transition-transform duration-200 group-hover:scale-105">
                   <Icon className="h-5 w-5" aria-hidden />
                 </span>
                 <span className="min-w-0">
@@ -163,7 +163,7 @@ export default function PanoramicaPage() {
       {/* Amministrazione — Panoramica (dashboard con i numeri) in fondo */}
       <section className="rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm">
         <div className="flex items-center gap-3">
-          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 text-white shadow-md">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-white">
             <LayoutDashboard className="h-5 w-5" aria-hidden />
           </span>
           <div>
