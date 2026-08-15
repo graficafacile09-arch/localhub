@@ -461,10 +461,17 @@ export default function PagamentiModule({ storeId }: Props) {
                     <div className="mt-4 border-t border-slate-100 pt-4">
                       {collegato ? (
                         <div className="flex flex-wrap items-center justify-between gap-3">
-                          <p className="text-sm text-slate-700">
-                            Account collegato:{" "}
-                            <span className="font-semibold">{p.account_name || "Stripe"}</span>
-                          </p>
+                          <div className="min-w-0">
+                            <p className="text-sm text-slate-700">
+                              Account collegato:{" "}
+                              <span className="font-semibold">{p.account_name || "Stripe"}</span>
+                            </p>
+                            {p.account_id && (
+                              <p className="mt-1 font-mono text-[11px] text-slate-400">
+                                ID account Connect: {p.account_id}
+                              </p>
+                            )}
+                          </div>
                           <button
                             type="button"
                             disabled={connectBusy}

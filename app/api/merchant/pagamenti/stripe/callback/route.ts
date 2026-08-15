@@ -23,7 +23,7 @@ function redirectErrore(): Response {
 
 function redirectTo(negozioId: string, esito: string): Response {
   return Response.redirect(
-    `${getSiteUrl()}/merchant/${negozioId}/impostazioni?stripe=${esito}`,
+    `${getSiteUrl()}/merchant/${negozioId}/pagamenti?stripe=${esito}`,
     302
   );
 }

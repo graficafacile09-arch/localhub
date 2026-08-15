@@ -1,6 +1,7 @@
 import { ADMIN_BASE } from "@/components/amministratore/navigation";
 import {
   Copy,
+  CreditCard,
   Edit3,
   FolderOpen,
   Home,
@@ -97,6 +98,13 @@ export function getMerchantStoreNavItems(storeId: string): MerchantNavItem[] {
       description: "Netto da erogare per periodo",
       href: `${storePath}/payout`,
       icon: Coins,
+    },
+    {
+      key: "pagamenti",
+      label: "Pagamenti",
+      description: "Stripe Connect, provider e metodi",
+      href: `${storePath}/pagamenti`,
+      icon: CreditCard,
     },
     {
       key: "reclami",
@@ -259,6 +267,7 @@ export function getMerchantTopTitle(
   if (/^\/ordini\/[^/]+$/.test(suffix)) return "Dettaglio ordine";
   if (suffix === "/incassi") return "Incassi";
   if (suffix === "/payout") return "Payout";
+  if (suffix === "/pagamenti") return "Pagamenti";
   if (suffix === "/impostazioni") return "Impostazioni";
 
   return storeName ?? "Venditore";
