@@ -4,7 +4,7 @@ import { Home, LogOut } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import type { MerchantStoreSummary } from "@/lib/merchant/types";
 import MerchantStoreSwitcher from "./MerchantStoreSwitcher";
-import MerchantSidebarNav from "./MerchantSidebarNav";
+import MerchantStoreNavAuto from "./MerchantStoreNavAuto";
 import MerchantBottomNav from "./MerchantBottomNav";
 import MerchantTopBar from "./MerchantTopBar";
 import MerchantGlobalNav from "./MerchantGlobalNav";
@@ -108,15 +108,12 @@ export default function MerchantShell({
               Navigazione
             </p>
             <MerchantGlobalNav area={area} />
-            {currentStore ? (
-              <div className="mt-2">
-                <MerchantSidebarNav
-                  storeId={currentStore.id}
-                  storeName={currentStore.nome}
-                  reclamiAperti={reclamiApertiPerNegozio?.[currentStore.id] ?? 0}
-                />
-              </div>
-            ) : null}
+            <div className="mt-2">
+              <MerchantStoreNavAuto
+                stores={stores}
+                reclamiApertiPerNegozio={reclamiApertiPerNegozio}
+              />
+            </div>
           </div>
 
           <MerchantStoreSwitcher
