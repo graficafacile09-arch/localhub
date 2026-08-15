@@ -34,6 +34,14 @@ type Props = {
   modalita: "ritiro" | "spedizione";
   statoSpedizione: StatoSpedizione | null;
   trackingUrl: string | null;
+  /**
+   * Base dell'endpoint azioni. Default: endpoint merchant
+   * `/api/merchant/stores/<negozioId>/ordini/<ordineId>`. L'Area
+   * Amministratore riusa il componente passando
+   * `/api/amministratore/ordini/<ordineId>` (stesse RPC, stessa macchina
+   * a stati, autorizzazione admin server-side).
+   */
+  apiBase?: string;
 };
 
 /** Icona per ogni azione di avanzamento (pannello operativo professionale). */
@@ -74,8 +82,11 @@ export default function OrdineAzioni({
   modalita,
   statoSpedizione,
   trackingUrl,
+  apiBase,
 }: Props) {
   const router = useRouter();
+  const endpointBase =
+    apiBase ?? `/api/merchant/stores/${negozioId}/ordini/${ordineId}`;
   const azioni = azioniDisponibili(stato);
   const azioniSpedizione = modalita === "spedizione" ? azioniSpedizioneDisponibili(statoSpedizione, stato) : [];
 
@@ -105,7 +116,7 @@ export default function OrdineAzioni({
     setErrore(null);
     setSuccesso(null);
     try {
-      const res = await fetch(`/api/merchant/stores/${negozioId}/ordini/${ordineId}`, {
+      const res = await fetch(endpointBase, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ stato: statoDestinazione, ...body }),
@@ -188,7 +199,7 @@ export default function OrdineAzioni({
     setErrore(null);
     setSuccesso(null);
     try {
-      const res = await fetch(`/api/merchant/stores/${negozioId}/ordini/${ordineId}/spedizione`, {
+      const res = await fetch(`${endpointBase}/spedizione`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

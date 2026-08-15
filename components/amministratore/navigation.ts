@@ -10,6 +10,7 @@ import {
   LayoutTemplate,
   Newspaper,
   Package,
+  ReceiptText,
   ScrollText,
   Settings,
   Star,
@@ -61,6 +62,13 @@ export const adminNavItems: AdminNavItem[] = [
     description:
       "Gestione degli utenti registrati e dei loro profili.",
     icon: Users,
+  },
+  {
+    href: `${ADMIN_BASE}/ordini`,
+    label: "Ordini",
+    description:
+      "Supervisione centrale di tutti gli ordini di tutti i negozi della piattaforma.",
+    icon: ReceiptText,
   },
   {
     href: `${ADMIN_BASE}/prodotti`,
