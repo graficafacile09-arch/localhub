@@ -269,6 +269,34 @@ export default async function AdminOrdineDettaglioPage({
               )}
             </div>
           </Sezione>
+
+          {/* Commissione piattaforma + netto venditore (dati derivati) */}
+          <Sezione icon={ReceiptText} titolo="Commissione piattaforma">
+            {ordine.commissionePercentuale != null && ordine.commissioneImporto != null ? (
+              <div className="space-y-1.5">
+                <RigaDettaglio
+                  etichetta="Commissione"
+                  valore={`${ordine.commissionePercentuale.toLocaleString("it-IT", { maximumFractionDigits: 2 })}%`}
+                />
+                <RigaDettaglio etichetta="Totale ordine" valore={formattaEuro(ordine.totale)} />
+                <RigaDettaglio etichetta="Importo commissione" valore={formattaEuro(ordine.commissioneImporto)} />
+                <div className="mt-2 flex items-center justify-between rounded-lg bg-blue-50 px-3 py-2 ring-1 ring-blue-100">
+                  <span className="text-sm font-semibold text-blue-800">Netto venditore</span>
+                  <span className="text-sm font-bold text-blue-900">
+                    {formattaEuro(ordine.nettoVenditore)}
+                  </span>
+                </div>
+                <p className="text-[11px] leading-4 text-slate-400">
+                  Commissione calcolata alla creazione dell&apos;ordine (snapshot).
+                  Il netto è dato derivato: totale − commissione.
+                </p>
+              </div>
+            ) : (
+              <p className="text-sm text-slate-500">
+                Nessuna commissione registrata (ordine precedente all&apos;introduzione).
+              </p>
+            )}
+          </Sezione>
         </div>
       </div>
 

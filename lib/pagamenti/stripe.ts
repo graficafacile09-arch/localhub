@@ -205,8 +205,14 @@ export class GatewayStripe implements PaymentGateway {
       },
       expires_at: Math.floor(expiresAt.getTime() / 1000),
       // Tassonomia obbligatoria per Stripe: attività commerciale locale.
+      // Stripe Connect (direct charge): application_fee_amount con la
+      // commissione SNAPSHOT dell'ordine (in centesimi) — la piattaforma
+      // trattiene la commissione a monte, il resto incassa il venditore.
       payment_intent_data: {
         description: `Ordine ${ctx.numeroOrdine} — ${ctx.negozioId}`,
+        ...(this.commissioneCentesimi(ctx, cred) !== undefined
+          ? { application_fee_amount: this.commissioneCentesimi(ctx, cred) as number }
+          : {}),
       },
     }, richiestaPer(cred));
 
@@ -222,6 +228,29 @@ export class GatewayStripe implements PaymentGateway {
       redirectUrl: session.url,
       expiresAt: session.expires_at ? new Date(session.expires_at * 1000) : expiresAt,
     };
+  }
+
+  /**
+   * Commissione piattaforma in centesimi per Stripe Connect.
+   * Viene applicata SOLO se:
+   *   - il negozio ha un connected account collegato (cred.stripeAccountId),
+   *     quindi la Checkout Session è una DIRECT CHARGE sul suo account;
+   *   - lo snapshot della commissione (ordini.commissione_importo, letto dal
+   *     DB server-side in sessioni.ts) è > 0.
+   * Senza Connect → nessuna application fee (comportamento legacy invariato).
+   */
+  private commissioneCentesimi(
+    ctx: ContestoCheckout,
+    cred: CredenzialiGateway
+  ): number | undefined {
+    if (!cred.stripeAccountId) return undefined;
+    const importo = Number(ctx.commissioneImporto ?? 0);
+    if (!Number.isFinite(importo) || importo <= 0) return undefined;
+    // Clamp di sicurezza: la fee non può superare il totale (in centesimi).
+    const totaleCent = Math.round(Number(ctx.importo) * 100);
+    const feeCent = Math.round(importo * 100);
+    if (feeCent >= totaleCent) return totaleCent;
+    return feeCent;
   }
 
   async verificaFirma(

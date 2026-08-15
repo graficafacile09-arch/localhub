@@ -122,6 +122,9 @@ async function main() {
         slug: `f21-storea-${ts}`,
         attivo: true,
         is_demo: true,
+        // Compatibilità modello pacco (20260901): Poste/BRT richiedono
+        // negozi.pacco_peso_grammi > 0 (non più prodotti.peso_grammi).
+        pacco_peso_grammi: 1000,
       })
       .select("id")
       .single();
@@ -136,6 +139,7 @@ async function main() {
         slug: `f21-storeb-${ts}`,
         attivo: true,
         is_demo: true,
+        pacco_peso_grammi: 1000,
       })
       .select("id")
       .single();
@@ -213,6 +217,8 @@ async function main() {
 
     // ── T1: ordine multi-riga (2 legacy, spedizione standard) ────────────────
     console.log("\n[T1] Ordine multi-riga (2 prodotti legacy, spedizione standard)");
+    // Compatibilità pacco (20260901): pacco 1,5 kg → fascia Poste 1-2 kg (5,90 €).
+    await db.from("negozi").update({ pacco_peso_grammi: 1500 }).eq("id", negozioAId);
     {
       const key = `f21-t1-${ts}`;
       const payload: PayloadCarrello = {
@@ -460,6 +466,8 @@ async function main() {
 
     // ── T7: snapshot e totale server-side (mai dal client) ───────────────────
     console.log("\n[T7] Snapshot e totale calcolati dal DB");
+    // Compatibilità pacco (20260901): pacco 2,5 kg → fascia Poste Express 2-3 kg (7,70 €).
+    await db.from("negozi").update({ pacco_peso_grammi: 2500 }).eq("id", negozioAId);
     {
       const key = `f21-t7-${ts}`;
       const payload: PayloadCarrello = {

@@ -39,6 +39,8 @@ type OrdinePerSessione = {
   paymentStatus: string | null;
   /** Costo spedizione (una sola volta, F2.3): line item dedicato. */
   costoSpedizione: number;
+  /** Commissione piattaforma snapshot (ordini.commissione_importo), per Stripe Connect. */
+  commissioneImporto: number;
   /** Righe dell'ordine (snapshot DB): un line_item per riga (F2.3). */
   righe: RigaCheckout[];
 };
@@ -65,7 +67,7 @@ async function caricaOrdine(ordineId: string): Promise<OrdinePerSessione | null>
   const { data, error } = await db
     .from("ordini")
     .select(
-      "id, numero, negozio_id, totale, stato, payment_status, costo_spedizione"
+      "id, numero, negozio_id, totale, stato, payment_status, costo_spedizione, commissione_importo"
     )
     .eq("id", ordineId)
     .single();
@@ -85,6 +87,7 @@ async function caricaOrdine(ordineId: string): Promise<OrdinePerSessione | null>
     stato: String(data.stato ?? ""),
     paymentStatus: (data.payment_status as string | null) ?? null,
     costoSpedizione: Number(data.costo_spedizione ?? 0),
+    commissioneImporto: Number(data.commissione_importo ?? 0),
     righe: ((righe ?? []) as Record<string, unknown>[]).map((r) => ({
       nome: String(r.nome_prodotto ?? ""),
       quantita: Number(r.quantita ?? 1),
@@ -271,6 +274,8 @@ export async function creaSessionePagamentoPerOrdine(
     // FASE F2.3 — un line_item per riga, spedizione come line item dedicato.
     righe: ordine.righe,
     costoSpedizione: ordine.costoSpedizione,
+    // Commissione snapshot (solo Stripe Connect: application_fee_amount).
+    commissioneImporto: ordine.commissioneImporto,
   };
 
   let sessione;

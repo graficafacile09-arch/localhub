@@ -107,6 +107,15 @@ export type OrdineAdminDettaglio = {
   paymentPaidAt: string | null;
   paymentRefundedAt: string | null;
   paymentRefundedAmount: number | null;
+  // Commissione piattaforma (snapshot ordine; NULL sugli storici pre-20260904)
+  commissionePercentuale: number | null;
+  commissioneImporto: number | null;
+  /**
+   * Netto venditore (DATI DERIVATI): totale ordine − commissione piattaforma.
+   * Non è una colonna: calcolato dal read-side quando lo snapshot commissione
+   * è presente, altrimenti null (ordini storici senza commissione).
+   */
+  nettoVenditore: number | null;
   // Annullamento
   annullatoMotivo: string | null;
   annullatoNota: string | null;
@@ -272,6 +281,12 @@ function mappaDettaglio(
     paymentPaidAt: (row.payment_paid_at as string | null) ?? null,
     paymentRefundedAt: (row.payment_refunded_at as string | null) ?? null,
     paymentRefundedAmount: num(row.payment_refunded_amount),
+    commissionePercentuale: num(row.commissione_percentuale),
+    commissioneImporto: num(row.commissione_importo),
+    nettoVenditore:
+      row.commissione_importo === null || row.commissione_importo === undefined
+        ? null
+        : Math.round((Number(row.totale ?? 0) - Number(row.commissione_importo ?? 0)) * 100) / 100,
     annullatoMotivo: (row.annullato_motivo as string | null) ?? null,
     annullatoNota: (row.annullato_nota as string | null) ?? null,
     annullatoAt: (row.annullato_at as string | null) ?? null,

@@ -82,6 +82,13 @@ export interface ContestoCheckout {
    * line item dedicato così il totale sessione coincide con ordine.totale.
    */
   costoSpedizione?: number;
+  /**
+   * Commissione piattaforma SNAPSHOT dell'ordine (ordini.commissione_importo),
+   * letta dal DB server-side. Usata SOLO per Stripe Connect: impostata come
+   * application_fee_amount (in centesimi) quando il negozio ha un connected
+   * account. Mai calcolata/ricevuta dal client.
+   */
+  commissioneImporto?: number;
 }
 
 /**
