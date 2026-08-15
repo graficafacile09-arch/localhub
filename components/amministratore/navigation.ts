@@ -4,6 +4,7 @@ import {
   Bell,
   Bot,
   CalendarDays,
+  Coins,
   FolderTree,
   Home,
   LayoutDashboard,
@@ -77,6 +78,13 @@ export const adminNavItems: AdminNavItem[] = [
     description:
       "Rendicontazione economica globale: GMV, commissioni piattaforma, rimborsi e netto venditori.",
     icon: Wallet,
+  },
+  {
+    href: `${ADMIN_BASE}/payout`,
+    label: "Payout",
+    description:
+      "Supervisione dei payout interni dei negozi: calcolo per periodo, stato di erogazione e storico.",
+    icon: Coins,
   },
   {
     href: `${ADMIN_BASE}/prodotti`,

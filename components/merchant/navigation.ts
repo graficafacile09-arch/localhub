@@ -14,6 +14,7 @@ import {
   Trash2,
   Users,
   Wallet,
+  Coins,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -89,6 +90,13 @@ export function getMerchantStoreNavItems(storeId: string): MerchantNavItem[] {
       description: "Pagato, commissioni e netto",
       href: `${storePath}/incassi`,
       icon: Wallet,
+    },
+    {
+      key: "payout",
+      label: "Payout",
+      description: "Netto da erogare per periodo",
+      href: `${storePath}/payout`,
+      icon: Coins,
     },
     {
       key: "reclami",
@@ -250,6 +258,7 @@ export function getMerchantTopTitle(
   if (suffix === "/ordini") return "Ordini";
   if (/^\/ordini\/[^/]+$/.test(suffix)) return "Dettaglio ordine";
   if (suffix === "/incassi") return "Incassi";
+  if (suffix === "/payout") return "Payout";
   if (suffix === "/impostazioni") return "Impostazioni";
 
   return storeName ?? "Venditore";

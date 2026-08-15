@@ -356,6 +356,66 @@ export async function gestisciWebhookStripe(
         break;
       }
 
+      // ── Payout (tracking interno V1, SOLO percorsi Connect) ──────────────
+      // Gestione READ/TRACKING di payout.paid/failed/updated dei connected
+      // account: identifica il payout INTERNO tramite stripe_payout_id (per
+      // il negozio risolto da event.account) e aggiorna ESCLUSIVAMENTE
+      // tracking/stato/errore via RPC payout_segna_erogato. Non crea
+      // denaro, transfer o payout. FAIL-CLOSED: se la firma non è verificata
+      // (env Connect assente) o l'account è sconosciuto, l'evento non viene
+      // processato. Idempotenza: event_id UNIQUE in pagamenti_eventi.
+      case "payout.paid":
+      case "payout.failed":
+      case "payout.updated": {
+        const payoutObj = obj as {
+          id?: string;
+          status?: string;
+          failure_message?: string | null;
+        };
+        const stripePayoutId = typeof payoutObj.id === "string" ? payoutObj.id : null;
+        if (!stripePayoutId) {
+          throw new Error(`${evento.type} senza payout id`);
+        }
+        const { data: payoutInterno } = await db
+          .from("payout")
+          .select("id, stato, negozio_id")
+          .eq("negozio_id", negozioId)
+          .eq("stripe_payout_id", stripePayoutId)
+          .maybeSingle();
+        if (!payoutInterno) {
+          // Account/negozio sconosciuto o payout non ancora associato:
+          // fail-closed, nessuna scrittura.
+          console.warn(
+            `[pagamenti] payout ${stripePayoutId} non trovato per negozio ${negozioId} — ignorato.`
+          );
+          break;
+        }
+        const statoStripe = String(payoutObj.status ?? "");
+        const errore =
+          typeof payoutObj.failure_message === "string" && payoutObj.failure_message
+            ? payoutObj.failure_message.slice(0, 500)
+            : null;
+        // Mapping stato Stripe → stato interno (V1).
+        let nuovoStato: "in_erogazione" | "pagato" | "fallito";
+        if (statoStripe === "paid") nuovoStato = "pagato";
+        else if (statoStripe === "failed") nuovoStato = "fallito";
+        else nuovoStato = "in_erogazione";
+
+        const { error: payoutErr } = await db.rpc("payout_segna_erogato", {
+          p_payout_id: String(payoutInterno.id),
+          p_nuovo_stato: nuovoStato,
+          p_stripe_payout_id: stripePayoutId,
+          p_stripe_payout_status: statoStripe || null,
+          p_errore: errore,
+        });
+        if (payoutErr) {
+          console.error(
+            `[pagamenti] aggiornamento payout ${stripePayoutId} fallito: ${payoutErr.message}`
+          );
+        }
+        break;
+      }
+
       default:
         // Eventi non gestiti (es. payment_intent.*): registrati ma ignorati.
         break;
