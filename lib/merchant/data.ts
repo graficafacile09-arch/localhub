@@ -12,6 +12,7 @@ import type {
   MerchantQueryResult,
   MerchantRole,
   MerchantStoreSummary,
+  MetodoSpedizioneNegozioInput,
   ProductQueryOptions,
   VarianteProdotto,
   VarianteProdottoInput,
@@ -312,6 +313,73 @@ export async function updateConfigPaccoSpedizione(
     return { ok: false, errore: error.message ?? "Impossibile salvare la configurazione." };
   }
   return { ok: true, data: mapConfigPacco(data as Record<string, unknown>) };
+}
+
+// =================================================================
+// Metodi/servizi di spedizione ATTIVI per negozio
+// =================================================================
+
+/** Legge i servizi di spedizione configurati dal negozio (null se non accessibile). */
+export async function getMetodiSpedizioneNegozio(
+  userId: string,
+  negozioId: string
+): Promise<
+  | Array<{ carrier: string; servizio: string; attivo: boolean; ordine_mostra: number }>
+  | null
+> {
+  const puòGestire = await canManageStore(userId, negozioId);
+  if (!puòGestire) return null;
+
+  const supabase = await getDbForUser(userId);
+  const { data, error } = await supabase
+    .from("negozio_metodi_spedizione")
+    .select("carrier, servizio, attivo, ordine_mostra")
+    .eq("negozio_id", negozioId)
+    .order("ordine_mostra", { ascending: true });
+
+  if (error) return null;
+  return (data ?? []).map((r: Record<string, unknown>) => ({
+    carrier: String(r.carrier),
+    servizio: String(r.servizio),
+    attivo: r.attivo === true,
+    ordine_mostra: Number(r.ordine_mostra ?? 0),
+  }));
+}
+
+/**
+ * Upsert dei servizi di spedizione attivi del negozio (scrittura via
+ * service_role, come il pattern negozio_metodi_pagamento). Fail-closed:
+ * solo i servizi presenti nell'input vengono attivati/disattivati.
+ */
+export async function updateMetodiSpedizioneNegozio(
+  userId: string,
+  negozioId: string,
+  metodi: MetodoSpedizioneNegozioInput[]
+): Promise<{ ok: boolean; errore?: string }> {
+  const puòGestire = await canManageStore(userId, negozioId);
+  if (!puòGestire) return { ok: false, errore: "Non puoi gestire questo negozio." };
+
+  const supabase = createAdminSupabaseClient();
+  for (const m of metodi) {
+    const { error } = await supabase.from("negozio_metodi_spedizione").upsert(
+      {
+        negozio_id: negozioId,
+        carrier: m.carrier,
+        servizio: m.servizio,
+        attivo: m.attivo === true,
+        ordine_mostra: m.ordine_mostra,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "negozio_id,carrier,servizio" }
+    );
+    if (error) {
+      return {
+        ok: false,
+        errore: error.message ?? "Impossibile salvare i metodi di spedizione.",
+      };
+    }
+  }
+  return { ok: true };
 }
 
 // =================================================================

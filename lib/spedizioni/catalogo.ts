@@ -94,12 +94,57 @@ export type PreventivoSpedizione = {
   opzioni: OpzioneSpedizione[];
   /** Peso totale in grammi usato per il calcolo (null se sconosciuto). */
   pesoGrammi: number | null;
-  /** True se almeno un prodotto non ha peso configurato (blocca Poste/BRT). */
+  /** True se almeno un negozio non ha il pacco configurato (blocca Poste/BRT). */
   pesoMancante: boolean;
+  /**
+   * True se il negozio (o TUTTI i negozi del carrello) non ha attivato alcun
+   * servizio di spedizione in `negozio_metodi_spedizione` → nessuna opzione
+   * selezionabile, indipendentemente da pacco/tariffe (fail-closed).
+   */
+  nessunServizioAttivo: boolean;
   /** Codice d'errore (solo se ok === false). */
   codice?: string;
   messaggio?: string;
 };
+
+// ═══════════════════════════════════════════════════════════════════
+// Motivi di indisponibilità / messaggi (condivisi motore + checkout)
+// ═══════════════════════════════════════════════════════════════════
+
+/** Motivo: servizio disattivato dal venditore per il proprio negozio. */
+export const MOTIVO_SERVIZIO_NON_ATTIVO = "Servizio non attivato dal negozio.";
+/** Motivo: pacco del negozio non configurato (Poste/BRT non calcolabili). */
+export const MOTIVO_PACCO_NON_CONFIGURATO = "Pacco non configurato dal negozio.";
+/** Motivo: corriere locale non configurato su uno o più prodotti. */
+export const MOTIVO_LOCALE_NON_CONFIGURATO =
+  "Corriere locale non configurato per uno o più prodotti del carrello.";
+/** Motivo: nessuna fascia tariffaria per il peso richiesto. */
+export const MOTIVO_TARIFFA_NON_TROVATA =
+  "Nessuna tariffa disponibile per il peso della spedizione.";
+/** Messaggio riepilogativo quando nessun servizio è attivo per il negozio. */
+export const MESSAGGIO_NESSUNA_SPEDIZIONE =
+  "Nessuna spedizione disponibile per questo negozio.";
+
+/** Chiave canonica di un servizio ("carrier:servizio"). */
+export function chiaveServizio(carrier: CarrierCodice, servizio: ServizioCodice): string {
+  return `${carrier}:${servizio}`;
+}
+
+/**
+ * True se NESSUN servizio risulta attivo per l'intersezione dei negozi
+ * coinvolti (carrello multi-negozio): l'insieme dei servizi attivi comuni a
+ * tutti è vuoto. `attivi` = un Set di chiavi "carrier:servizio" per negozio.
+ */
+export function nessunServizioAttivo(attivi: ReadonlySet<string>[]): boolean {
+  if (attivi.length === 0) return true;
+  const comuni = new Set<string>(attivi[0]);
+  for (let i = 1; i < attivi.length; i++) {
+    for (const k of [...comuni]) {
+      if (!attivi[i].has(k)) comuni.delete(k);
+    }
+  }
+  return comuni.size === 0;
+}
 
 // ═══════════════════════════════════════════════════════════════════
 // Catalogo corrieri/servizi (ordine di visualizzazione canonico)

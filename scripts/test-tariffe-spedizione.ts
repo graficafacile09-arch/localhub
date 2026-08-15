@@ -26,9 +26,11 @@ import {
   TARIFFE_BRT_ONLINE,
   TARIFFE_POSTE_EXPRESS,
   TARIFFE_POSTE_STANDARD,
+  chiaveServizio,
   fascePerCorriere,
   isCarrierCodice,
   isServizioValidoPerCarrier,
+  nessunServizioAttivo,
   trovaFascia,
 } from "../lib/spedizioni/catalogo.ts";
 
@@ -94,6 +96,17 @@ check("isServizioValidoPerCarrier(poste, express) = true", isServizioValidoPerCa
 check("isServizioValidoPerCarrier(brt, online) = true", isServizioValidoPerCarrier("brt", "online") === true);
 check("isServizioValidoPerCarrier(brt, express) = false", isServizioValidoPerCarrier("brt", "express") === false);
 check("isServizioValidoPerCarrier(locale, locale) = true", isServizioValidoPerCarrier("locale", "locale") === true);
+
+// ── 5. Metodi spedizione: chiavi e intersezione servizi attivi ────────
+check("chiaveServizio(poste, standard) = 'poste_italiane:standard'",
+  chiaveServizio("poste_italiane", "standard") === "poste_italiane:standard");
+check("nessunServizioAttivo([]) = true (nessun negozio)", nessunServizioAttivo([]) === true);
+check("nessunServizioAttivo([vuoto]) = true", nessunServizioAttivo([new Set()]) === true);
+check("nessunServizioAttivo([{a}]) = false", nessunServizioAttivo([new Set(["a"])]) === false);
+check("nessunServizioAttivo([{a,b},{a}]) = false (intersezione {a})",
+  nessunServizioAttivo([new Set(["a", "b"]), new Set(["a"])]) === false);
+check("nessunServizioAttivo([{a},{b}]) = true (intersezione vuota)",
+  nessunServizioAttivo([new Set(["a"]), new Set(["b"])]) === true);
 
 // ── Riepilogo ──────────────────────────────────────────────────────────
 console.log(`\nTest tariffario spedizioni: ${passati} passati, ${falliti} falliti.`);

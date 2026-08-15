@@ -9,11 +9,12 @@ import LocalitaFields, {
 } from "@/components/indirizzo/LocalitaFields";
 import { creaOrdineViaApi, nuovaChiaveIdempotenza } from "@/lib/cliente/ordini-client";
 import type { MetodoPagamentoCheckout } from "@/lib/pagamenti/metodi-pubblici";
-import type {
-  CarrierCodice,
-  OpzioneSpedizione,
-  ServizioCodice,
-  TierSpedizione,
+import {
+  MESSAGGIO_NESSUNA_SPEDIZIONE,
+  type CarrierCodice,
+  type OpzioneSpedizione,
+  type ServizioCodice,
+  type TierSpedizione,
 } from "@/lib/spedizioni/catalogo";
 import FatturazioneForm, {
   DATI_FATTURAZIONE_VUOTI,
@@ -52,6 +53,7 @@ export default function SpedizioneForm({
   // scelta corriere+servizio. Nessun prezzo inventato, nessun campo modificabile.
   const [opzioniSpedizione, setOpzioniSpedizione] = useState<OpzioneSpedizione[]>([]);
   const [pesoGrammi, setPesoGrammi] = useState<number | null>(null);
+  const [nessunServizioAttivo, setNessunServizioAttivo] = useState(false);
   const [caricamentoSpedizione, setCaricamentoSpedizione] = useState(true);
   const [spedizioneScelta, setSpedizioneScelta] = useState<{
     carrier: CarrierCodice;
@@ -102,11 +104,12 @@ export default function SpedizioneForm({
       body: JSON.stringify({ prodottoId, quantita }),
     })
       .then((res) => res.json())
-      .then((json: { success?: boolean; data?: { opzioni?: OpzioneSpedizione[]; pesoGrammi?: number | null } }) => {
+      .then((json: { success?: boolean; data?: { opzioni?: OpzioneSpedizione[]; pesoGrammi?: number | null; nessunServizioAttivo?: boolean } }) => {
         if (!attivo) return;
         const opzioni = json?.data?.opzioni ?? [];
         setOpzioniSpedizione(opzioni);
         setPesoGrammi(json?.data?.pesoGrammi ?? null);
+        setNessunServizioAttivo(json?.data?.nessunServizioAttivo ?? false);
         // Se la scelta corrente non è più disponibile la si azzera (mai una
         // selezione su un metodo non selezionabile).
         setSpedizioneScelta((prev) => {
@@ -318,6 +321,11 @@ export default function SpedizioneForm({
             <p className="mt-3 text-sm text-slate-600">Nessuna opzione di spedizione disponibile.</p>
           ) : (
             <div className="mt-3 space-y-3">
+              {nessunServizioAttivo && (
+                <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">
+                  {MESSAGGIO_NESSUNA_SPEDIZIONE}
+                </p>
+              )}
               {TIER_ORDINE.map((tier) => {
                 const delTier = opzioniSpedizione.filter((o) => o.tier === tier);
                 if (delTier.length === 0) return null;

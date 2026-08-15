@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Loader2, Package, Save } from "lucide-react";
+import { ChevronDown, Loader2, Package, Save, Truck } from "lucide-react";
 import type { ConfigPaccoSpedizione } from "@/lib/merchant/types";
 
 /** Formatta i grammi in kg leggibili ("1200" → "1,2 kg"); null → "". */
@@ -12,7 +12,7 @@ function formattaKg(grammi: number | null): string {
   return `${kg.toLocaleString("it-IT", { maximumFractionDigits: 3 })} kg`;
 }
 
-/** Riepilogo compatto del pacco ("📦 Pacco: 1,2 kg · 30×20×15 cm"). */
+/** Riepilogo compatto del pacco ("Pacco: 1,2 kg · 30×20×15 cm"). */
 function riepilogoPacco(cfg: ConfigPaccoSpedizione): string | null {
   const peso = cfg.paccoPesoGrammi ? formattaKg(cfg.paccoPesoGrammi) : null;
   const dims = [cfg.paccoLunghezzaCm, cfg.paccoLarghezzaCm, cfg.paccoAltezzaCm]
@@ -22,12 +22,22 @@ function riepilogoPacco(cfg: ConfigPaccoSpedizione): string | null {
   return `Pacco: ${parti.join(" · ")}`;
 }
 
+type MetodoSpedizione = {
+  carrier: string;
+  servizio: string;
+  attivo: boolean;
+  ordine_mostra: number;
+  label: string;
+};
+
 /**
- * Accordion "Configura pacco e spedizione" (V1 stile eBay).
- * CHIUSO di default: mostra solo il riepilogo compatto del pacco (o "Pacco
- * non configurato"). Aperto: peso (kg), dimensioni (cm), peso massimo (kg) e
- * il salvataggio. Il peso in kg viene convertito in GRAMMI prima del salvataggio
- * (il DB e il motore tariffario usano grammi).
+ * Accordion "Configura pacco e spedizione" (stile eBay).
+ * CHIUSO di default: mostra il riepilogo compatto del pacco e dei servizi
+ * attivi (o i relativi avvisi). Aperto: PACCO (peso/dimensioni) + CORRIERI
+ * E SERVIZI (toggle ON/OFF). Il peso in kg viene convertito in GRAMMI prima
+ * del salvataggio (DB e motore tariffario usano grammi). I servizi sono
+ * attivati/disattivati singolarmente (fail-closed: nessuno attivo = nessuna
+ * spedizione selezionabile dal cliente).
  */
 export default function SpedizionePaccoConfig({
   negozioId,
@@ -55,11 +65,36 @@ export default function SpedizionePaccoConfig({
     initialConfig.paccoPesoMaxGrammi ? String(initialConfig.paccoPesoMaxGrammi / 1000) : ""
   );
 
+  const [metodi, setMetodi] = useState<MetodoSpedizione[]>([]);
+  const [caricamentoMetodi, setCaricamentoMetodi] = useState(true);
+  const [salvandoMetodo, setSalvandoMetodo] = useState<string | null>(null);
+
   const [salvando, setSalvando] = useState(false);
   const [errore, setErrore] = useState<string | null>(null);
   const [successo, setSuccesso] = useState(false);
 
   const riepilogo = riepilogoPacco(initialConfig);
+  const serviziAttivi = metodi.filter((m) => m.attivo).length;
+
+  // Carica i servizi di spedizione configurabili (catalogo + attivo reale).
+  useEffect(() => {
+    let attivo = true;
+    fetch(`/api/merchant/stores/${negozioId}/spedizione`)
+      .then((r) => r.json())
+      .then((json: { success?: boolean; data?: { metodi?: MetodoSpedizione[] } }) => {
+        if (!attivo) return;
+        setMetodi(json?.data?.metodi ?? []);
+      })
+      .catch(() => {
+        if (attivo) setMetodi([]);
+      })
+      .finally(() => {
+        if (attivo) setCaricamentoMetodi(false);
+      });
+    return () => {
+      attivo = false;
+    };
+  }, [negozioId]);
 
   function parseKg(v: string): number | null {
     const t = v.trim().replace(",", ".");
@@ -129,6 +164,55 @@ export default function SpedizionePaccoConfig({
     }
   }
 
+  /** Attiva/disattiva un servizio (salvataggio immediato, fail-closed). */
+  async function toggleServizio(carrier: string, servizio: string, attivo: boolean) {
+    const chiave = `${carrier}:${servizio}`;
+    setSalvandoMetodo(chiave);
+    setErrore(null);
+
+    const precedenti = metodi;
+    const prossimi = metodi.map((m) =>
+      m.carrier === carrier && m.servizio === servizio ? { ...m, attivo } : m
+    );
+    setMetodi(prossimi);
+
+    try {
+      const res = await fetch(`/api/merchant/stores/${negozioId}/spedizione`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          metodi: prossimi.map((m) => ({
+            carrier: m.carrier,
+            servizio: m.servizio,
+            attivo: m.attivo,
+            ordine_mostra: m.ordine_mostra,
+          })),
+        }),
+      });
+      if (!res.ok) {
+        setMetodi(precedenti);
+        const data = (await res.json().catch(() => null)) as {
+          error?: { message?: string };
+        } | null;
+        setErrore(data?.error?.message ?? "Impossibile aggiornare il servizio.");
+        return;
+      }
+      router.refresh();
+    } catch {
+      setMetodi(precedenti);
+      setErrore("Errore di rete. Riprova.");
+    } finally {
+      setSalvandoMetodo(null);
+    }
+  }
+
+  const riepilogoChiuso = [
+    riepilogo ?? "Pacco non configurato",
+    serviziAttivi === 0
+      ? "⚠️ Nessun servizio di spedizione attivo"
+      : `${serviziAttivi} servizio${serviziAttivi === 1 ? "" : "i"} attivo${serviziAttivi === 1 ? "" : "i"}`,
+  ].join(" · ");
+
   return (
     <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
       <button
@@ -144,9 +228,7 @@ export default function SpedizionePaccoConfig({
           <span className="block text-sm font-black text-slate-900">
             📦 Configura pacco e spedizione
           </span>
-          <span className="block text-[11px] text-slate-500">
-            {riepilogo ?? "Pacco non configurato"}
-          </span>
+          <span className="block text-[11px] text-slate-500">{riepilogoChiuso}</span>
         </span>
         <ChevronDown
           className={`h-4 w-4 shrink-0 text-slate-400 transition ${aperto ? "rotate-180" : ""}`}
@@ -155,54 +237,124 @@ export default function SpedizionePaccoConfig({
       </button>
 
       {aperto && (
-        <div className="space-y-3 border-t border-slate-100 px-4 py-4">
-          <p className="text-[11px] leading-4 text-slate-500">
-            Il peso del pacco determina la tariffa di Poste Italiane e BRT (calcolata
-            automaticamente da InCittà). Il corriere locale usa invece la tariffa
-            configurata su ogni prodotto.
-          </p>
+        <div className="space-y-4 border-t border-slate-100 px-4 py-4">
+          {/* ── PACCO ─────────────────────────────────────────────────── */}
+          <div>
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-slate-500">
+              Pacco
+            </p>
+            <p className="mb-3 text-[11px] leading-4 text-slate-500">
+              Il peso del pacco determina la tariffa di Poste Italiane e BRT (calcolata
+              automaticamente da InCittà). Il corriere locale usa invece la tariffa
+              configurata su ogni prodotto.
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              <Campo
+                id="pacco-peso"
+                label="Peso pacco (kg)"
+                value={pesoKg}
+                onChange={setPesoKg}
+                placeholder="es. 1,2"
+                suffix="kg"
+              />
+              <Campo
+                id="pacco-peso-max"
+                label="Peso massimo (kg)"
+                value={pesoMaxKg}
+                onChange={setPesoMaxKg}
+                placeholder="facoltativo"
+                suffix="kg"
+              />
+              <Campo
+                id="pacco-lunghezza"
+                label="Lunghezza (cm)"
+                value={lunghezza}
+                onChange={setLunghezza}
+                placeholder="es. 30"
+                suffix="cm"
+              />
+              <Campo
+                id="pacco-larghezza"
+                label="Larghezza (cm)"
+                value={larghezza}
+                onChange={setLarghezza}
+                placeholder="es. 20"
+                suffix="cm"
+              />
+              <Campo
+                id="pacco-altezza"
+                label="Altezza (cm)"
+                value={altezza}
+                onChange={setAltezza}
+                placeholder="es. 15"
+                suffix="cm"
+              />
+            </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <Campo
-              id="pacco-peso"
-              label="Peso pacco (kg)"
-              value={pesoKg}
-              onChange={setPesoKg}
-              placeholder="es. 1,2"
-              suffix="kg"
-            />
-            <Campo
-              id="pacco-peso-max"
-              label="Peso massimo (kg)"
-              value={pesoMaxKg}
-              onChange={setPesoMaxKg}
-              placeholder="facoltativo"
-              suffix="kg"
-            />
-            <Campo
-              id="pacco-lunghezza"
-              label="Lunghezza (cm)"
-              value={lunghezza}
-              onChange={setLunghezza}
-              placeholder="es. 30"
-              suffix="cm"
-            />
-            <Campo
-              id="pacco-larghezza"
-              label="Larghezza (cm)"
-              value={larghezza}
-              onChange={setLarghezza}
-              placeholder="es. 20"
-              suffix="cm"
-            />
-            <Campo
-              id="pacco-altezza"
-              label="Altezza (cm)"
-              value={altezza}
-              onChange={setAltezza}
-              placeholder="es. 15"
-              suffix="cm"
-            />
+            <button
+              type="button"
+              onClick={salva}
+              disabled={salvando}
+              className="mt-3 inline-flex h-10 items-center gap-2 rounded-xl bg-yellow-400 px-4 text-sm font-bold text-blue-800 shadow-sm transition hover:bg-yellow-300 disabled:opacity-50"
+            >
+              {salvando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              Salva pacco
+            </button>
+          </div>
+
+          {/* ── CORRIERI E SERVIZI ───────────────────────────────────── */}
+          <div className="border-t border-slate-100 pt-4">
+            <p className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-500">
+              <Truck className="h-3.5 w-3.5 text-slate-400" aria-hidden />
+              Corrieri e servizi
+            </p>
+            <p className="mb-3 text-[11px] leading-4 text-slate-500">
+              Attiva solo i servizi che vuoi offrire ai tuoi clienti. Un servizio non
+              attivato resta visibile ma non selezionabile al checkout.
+            </p>
+
+            {caricamentoMetodi ? (
+              <p className="flex items-center gap-2 text-xs text-slate-400">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Caricamento servizi...
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {metodi.map((m) => {
+                  const chiave = `${m.carrier}:${m.servizio}`;
+                  const busy = salvandoMetodo === chiave;
+                  return (
+                    <div
+                      key={chiave}
+                      className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 px-3 py-2.5"
+                    >
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-slate-900">{m.label}</p>
+                        {!m.attivo && (
+                          <p className="text-[11px] text-slate-400">Non attivo</p>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={m.attivo}
+                        disabled={busy}
+                        onClick={() => toggleServizio(m.carrier, m.servizio, !m.attivo)}
+                        className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition disabled:opacity-50 ${
+                          m.attivo ? "bg-blue-600" : "bg-slate-300"
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition ${
+                            m.attivo ? "translate-x-6" : "translate-x-1"
+                          }`}
+                        />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {errore && (
@@ -215,16 +367,6 @@ export default function SpedizionePaccoConfig({
               Configurazione salvata.
             </p>
           )}
-
-          <button
-            type="button"
-            onClick={salva}
-            disabled={salvando}
-            className="inline-flex h-10 items-center gap-2 rounded-xl bg-yellow-400 px-4 text-sm font-bold text-blue-800 shadow-sm transition hover:bg-yellow-300 disabled:opacity-50"
-          >
-            {salvando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            Salva pacco
-          </button>
         </div>
       )}
     </div>

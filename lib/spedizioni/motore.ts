@@ -31,7 +31,13 @@
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import {
   CATALOGO_SPEDIZIONE,
+  MOTIVO_LOCALE_NON_CONFIGURATO,
+  MOTIVO_PACCO_NON_CONFIGURATO,
+  MOTIVO_SERVIZIO_NON_ATTIVO,
+  MOTIVO_TARIFFA_NON_TROVATA,
+  chiaveServizio,
   fascePerCorriere,
+  nessunServizioAttivo,
   trovaFascia,
   type FasciaTariffaria,
   type OpzioneSpedizione,
@@ -146,6 +152,7 @@ export async function getPreventivoSpedizione(
       opzioni: [],
       pesoGrammi: null,
       pesoMancante: false,
+      nessunServizioAttivo: false,
       codice: "VALIDATION_ERROR",
       messaggio: "Nessun prodotto da spedire.",
     };
@@ -153,24 +160,26 @@ export async function getPreventivoSpedizione(
 
   for (const r of righe) {
     if (!r || !/^\d+$/.test(String(r.prodottoId))) {
-      return {
-        ok: false,
-        opzioni: [],
-        pesoGrammi: null,
-        pesoMancante: false,
-        codice: "VALIDATION_ERROR",
-        messaggio: "Prodotto non valido.",
-      };
+    return {
+      ok: false,
+      opzioni: [],
+      pesoGrammi: null,
+      pesoMancante: false,
+      nessunServizioAttivo: false,
+      codice: "VALIDATION_ERROR",
+      messaggio: "Prodotto non valido.",
+    };
     }
     if (!Number.isInteger(Number(r.quantita)) || Number(r.quantita) < 1 || Number(r.quantita) > 99) {
-      return {
-        ok: false,
-        opzioni: [],
-        pesoGrammi: null,
-        pesoMancante: false,
-        codice: "VALIDATION_ERROR",
-        messaggio: "Quantità non valida.",
-      };
+    return {
+      ok: false,
+      opzioni: [],
+      pesoGrammi: null,
+      pesoMancante: false,
+      nessunServizioAttivo: false,
+      codice: "VALIDATION_ERROR",
+      messaggio: "Quantità non valida.",
+    };
     }
   }
 
@@ -189,6 +198,7 @@ export async function getPreventivoSpedizione(
       opzioni: [],
       pesoGrammi: null,
       pesoMancante: false,
+      nessunServizioAttivo: false,
       codice: "DB_UNAVAILABLE",
       messaggio: "Impossibile calcolare la spedizione.",
     };
@@ -216,6 +226,7 @@ export async function getPreventivoSpedizione(
         opzioni: [],
         pesoGrammi: null,
         pesoMancante: false,
+        nessunServizioAttivo: false,
         codice: "DB_UNAVAILABLE",
         messaggio: "Impossibile calcolare la spedizione.",
       };
@@ -223,6 +234,34 @@ export async function getPreventivoSpedizione(
     for (const n of (negozi ?? []) as Record<string, unknown>[]) {
       const peso = typeof n.pacco_peso_grammi === "number" ? (n.pacco_peso_grammi as number) : null;
       paccoPerNegozio.set(String(n.id), peso);
+    }
+  }
+
+  // Servizi di spedizione ATTIVI per negozio (fail-closed: nessuna riga =
+  // nessun servizio attivato → nessuna opzione selezionabile).
+  const attiviPerNegozio = new Map<string, Set<string>>();
+  if (negozioIds.length > 0) {
+    const { data: metodi, error: errMetodi } = await db
+      .from("negozio_metodi_spedizione")
+      .select("negozio_id, carrier, servizio")
+      .eq("attivo", true)
+      .in("negozio_id", negozioIds);
+    if (errMetodi) {
+      return {
+        ok: false,
+        opzioni: [],
+        pesoGrammi: null,
+        pesoMancante: false,
+        nessunServizioAttivo: false,
+        codice: "DB_UNAVAILABLE",
+        messaggio: "Impossibile calcolare la spedizione.",
+      };
+    }
+    for (const m of (metodi ?? []) as Record<string, unknown>[]) {
+      const nid = String(m.negozio_id);
+      const set = attiviPerNegozio.get(nid) ?? new Set<string>();
+      set.add(chiaveServizio(m.carrier as CarrierCodice, m.servizio as ServizioCodice));
+      attiviPerNegozio.set(nid, set);
     }
   }
 
@@ -269,16 +308,29 @@ export async function getPreventivoSpedizione(
   const tariffeDb = await caricaTariffeDb();
 
   const opzioni: OpzioneSpedizione[] = CATALOGO_SPEDIZIONE.map((voce) => {
+    const chiave = chiaveServizio(voce.carrier, voce.servizio);
+
+    // Servizio ATTIVATO dal negozio? (fail-closed: nel carrello multi-negozio
+    // l'opzione è selezionabile solo se TUTTI i negozi l'hanno attivata).
+    let attivo = perNegozio.size > 0;
+    for (const negozioId of perNegozio.keys()) {
+      if (!(attiviPerNegozio.get(negozioId)?.has(chiave) ?? false)) {
+        attivo = false;
+        break;
+      }
+    }
+
     if (voce.fonte === "locale") {
-      let disponibile = perNegozio.size > 0;
+      let calcolabile = perNegozio.size > 0;
       let prezzo = 0;
       for (const g of perNegozio.values()) {
         if (g.localeMancante || g.localeMax === null) {
-          disponibile = false;
+          calcolabile = false;
           break;
         }
         prezzo += g.localeMax;
       }
+      const disponibile = attivo && calcolabile;
       return {
         carrier: voce.carrier,
         servizio: voce.servizio,
@@ -289,28 +341,31 @@ export async function getPreventivoSpedizione(
         tempoConsegna: voce.tempoConsegna,
         prezzo: disponibile ? round2(prezzo) : null,
         disponibile,
-        motivo: disponibile
-          ? null
-          : "Corriere locale non configurato per uno o più prodotti del carrello.",
+        motivo: !attivo
+          ? MOTIVO_SERVIZIO_NON_ATTIVO
+          : !calcolabile
+            ? MOTIVO_LOCALE_NON_CONFIGURATO
+            : null,
       };
     }
 
     // Poste Italiane / BRT: tariffa per fascia di peso.
-    let disponibile = perNegozio.size > 0;
+    let calcolabile = perNegozio.size > 0;
     let prezzo = 0;
     for (const g of perNegozio.values()) {
       if (g.pesoMancante || g.peso <= 0) {
-        disponibile = false;
+        calcolabile = false;
         break;
       }
       const fasce = risolviFasce(tariffeDb, voce.carrier, voce.servizio);
       const fascia = fasce ? trovaFascia(g.peso, fasce) : null;
       if (!fascia) {
-        disponibile = false;
+        calcolabile = false;
         break;
       }
       prezzo += fascia.prezzo;
     }
+    const disponibile = attivo && calcolabile;
     return {
       carrier: voce.carrier,
       servizio: voce.servizio,
@@ -321,18 +376,23 @@ export async function getPreventivoSpedizione(
       tempoConsegna: voce.tempoConsegna,
       prezzo: disponibile ? round2(prezzo) : null,
       disponibile,
-      motivo: disponibile
-        ? null
-        : pesoMancante
-          ? "Peso non ancora configurato dal negozio per uno o più prodotti."
-          : "Nessuna tariffa disponibile per il peso della spedizione.",
+      motivo: !attivo
+        ? MOTIVO_SERVIZIO_NON_ATTIVO
+        : !calcolabile
+          ? (pesoMancante ? MOTIVO_PACCO_NON_CONFIGURATO : MOTIVO_TARIFFA_NON_TROVATA)
+          : null,
     };
   });
+
+  const insiemiAttivi = [...perNegozio.keys()].map(
+    (id) => attiviPerNegozio.get(id) ?? new Set<string>()
+  );
 
   return {
     ok: true,
     opzioni,
     pesoGrammi: pesoTotale > 0 ? pesoTotale : null,
     pesoMancante,
+    nessunServizioAttivo: nessunServizioAttivo(insiemiAttivi),
   };
 }

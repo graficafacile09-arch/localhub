@@ -26,6 +26,17 @@ export type ConfigPaccoSpedizione = {
   paccoPesoMaxGrammi: number | null;
 };
 
+/**
+ * Servizio di spedizione (carrier+servizio) attivabile dal negozio per il
+ * proprio checkout (tabella negozio_metodi_spedizione, fail-closed).
+ */
+export type MetodoSpedizioneNegozioInput = {
+  carrier: string;
+  servizio: string;
+  attivo: boolean;
+  ordine_mostra: number;
+};
+
 export type MerchantProduct = {
   id: string;
   negozio_id: string;

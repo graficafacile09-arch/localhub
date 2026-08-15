@@ -29,11 +29,12 @@ import FatturazioneForm, {
   validaDatiFatturazione,
   type DatiFatturazione,
 } from "@/components/acquista/FatturazioneForm";
-import type {
-  CarrierCodice,
-  OpzioneSpedizione,
-  ServizioCodice,
-  TierSpedizione,
+import {
+  MESSAGGIO_NESSUNA_SPEDIZIONE,
+  type CarrierCodice,
+  type OpzioneSpedizione,
+  type ServizioCodice,
+  type TierSpedizione,
 } from "@/lib/spedizioni/catalogo";
 
 const formattaEuro = (v: number) =>
@@ -162,6 +163,7 @@ export default function CheckoutCarrelloForm({ prefill }: { prefill: Prefill }) 
   // scelta corriere+servizio. Nessun prezzo inventato, nessun campo modificabile.
   const [opzioniSpedizione, setOpzioniSpedizione] = useState<OpzioneSpedizione[]>([]);
   const [pesoGrammi, setPesoGrammi] = useState<number | null>(null);
+  const [nessunServizioAttivo, setNessunServizioAttivo] = useState(false);
   const [caricamentoSpedizione, setCaricamentoSpedizione] = useState(true);
   const [spedizioneScelta, setSpedizioneScelta] = useState<{
     carrier: CarrierCodice;
@@ -235,6 +237,7 @@ export default function CheckoutCarrelloForm({ prefill }: { prefill: Prefill }) 
     if (modalita !== "spedizione" || righe.length === 0) {
       setOpzioniSpedizione([]);
       setSpedizioneScelta(null);
+      setNessunServizioAttivo(false);
       setCaricamentoSpedizione(false);
       return;
     }
@@ -248,11 +251,12 @@ export default function CheckoutCarrelloForm({ prefill }: { prefill: Prefill }) 
       }),
     })
       .then((res) => res.json())
-      .then((json: { success?: boolean; data?: { opzioni?: OpzioneSpedizione[]; pesoGrammi?: number | null } }) => {
+      .then((json: { success?: boolean; data?: { opzioni?: OpzioneSpedizione[]; pesoGrammi?: number | null; nessunServizioAttivo?: boolean } }) => {
         if (!attivo) return;
         const opzioni = json?.data?.opzioni ?? [];
         setOpzioniSpedizione(opzioni);
         setPesoGrammi(json?.data?.pesoGrammi ?? null);
+        setNessunServizioAttivo(json?.data?.nessunServizioAttivo ?? false);
         setSpedizioneScelta((prev) => {
           if (!prev) return null;
           const ancora = opzioni.some(
@@ -639,6 +643,11 @@ export default function CheckoutCarrelloForm({ prefill }: { prefill: Prefill }) 
                 <p className="mt-3 text-sm text-slate-600">Nessuna opzione di spedizione disponibile.</p>
               ) : (
                 <div className="mt-3 space-y-3">
+                  {nessunServizioAttivo && (
+                    <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">
+                      {MESSAGGIO_NESSUNA_SPEDIZIONE}
+                    </p>
+                  )}
                   {TIER_ORDINE.map((tier) => {
                     const delTier = opzioniSpedizione.filter((o) => o.tier === tier);
                     if (delTier.length === 0) return null;
