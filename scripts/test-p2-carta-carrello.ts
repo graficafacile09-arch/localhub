@@ -283,9 +283,12 @@ async function main() {
   try {
     // ── T1: setup 2 negozi con Stripe attivo + prodotti (variante) ────────
     console.log("\n[T1] Setup: 2 negozi con Stripe attivo, prodotti e variante");
-    const { data: nA } = await db.from("negozi").insert({ nome: `P2-StoreA-${ts}`, slug: `p2-storea-${ts}`, attivo: true, is_demo: true }).select("id").single();
+    // MODELLO PACCO (20260901): Poste/BRT usano negozi.pacco_peso_grammi.
+    // Store A: pacco 2,5 kg → fascia Poste Standard 2-3 kg (6,70 €);
+    // Store B: pacco 1,5 kg → fascia Poste Standard 1-2 kg (5,90 €).
+    const { data: nA } = await db.from("negozi").insert({ nome: `P2-StoreA-${ts}`, slug: `p2-storea-${ts}`, attivo: true, is_demo: true, pacco_peso_grammi: 2500 }).select("id").single();
     negozioAId = String(nA!.id);
-    const { data: nB } = await db.from("negozi").insert({ nome: `P2-StoreB-${ts}`, slug: `p2-storeb-${ts}`, attivo: true, is_demo: true }).select("id").single();
+    const { data: nB } = await db.from("negozi").insert({ nome: `P2-StoreB-${ts}`, slug: `p2-storeb-${ts}`, attivo: true, is_demo: true, pacco_peso_grammi: 1500 }).select("id").single();
     negozioBId = String(nB!.id);
 
     // Stripe ATTIVO (test mode) su ENTRAMBI i negozi, cifrato con CHIAVE_P2.

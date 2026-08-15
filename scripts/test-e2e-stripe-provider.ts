@@ -49,9 +49,11 @@ function loadEnv() {
 // il test (mai quella reale di Vercel). La config originale viene ripristinata.
 const CHIAVE_E2E = "chiave-e2e-stripe-provider-test-0001";
 
-// Negozio E2E con config Stripe attiva (test_mode) già presente nel DB.
-const NEGOZIO_E2E = "00c4ec4b-e6a6-49e9-a83b-d14a041f856b";
-const PRODOTTO_E2E = "219"; // "Prodotto Test Notifiche E2E msonfol3fzn7" (prezzo 19.99)
+// Negozio di test: Panificio Rossi (demo, attivo, servizi spedizione già
+// attivi, pacco 1500g configurato dalla migration 20260907). Prodotto:
+// "Pane Casereccio 1,5 kg" (id 2, prezzo 3.50, stock 9).
+const NEGOZIO_E2E = "f3a82af7-dd47-482f-8a49-ea58e692238c";
+const PRODOTTO_E2E = "2"; // "Pane Casereccio 1,5 kg" (prezzo 3.50)
 
 let passati = 0;
 let falliti = 0;
@@ -125,26 +127,29 @@ async function main() {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  // ── 0. Backup config Stripe del negozio E2E (ripristino byte-for-byte) ──
-  const { data: configOrig, error: backupErr } = await db
+  // ── 0. Backup config Stripe del negozio E2E (ripristino byte-for-byte;
+  //    se il negozio NON ha una config preesistente, nel cleanup la riga
+  //    di TEST viene eliminata per tornare allo stato originario) ──────────
+  let configOrig: Record<string, unknown> | null = null;
+  const { data: configPre } = await db
     .from("negozio_pagamenti")
     .select("*")
     .eq("negozio_id", NEGOZIO_E2E)
-    .eq("provider", "stripe")
-    .single();
-  if (backupErr || !configOrig) {
-    console.error("Backup config Stripe fallito:", backupErr?.message ?? "riga non trovata");
-    process.exit(1);
+    .eq("provider", "stripe");
+  if ((configPre ?? []).length > 0) {
+    configOrig = (configPre ?? [])[0] as Record<string, unknown>;
+    console.log(`\nConfig Stripe E2E salvata (backup): id=${String(configOrig?.id)}`);
+  } else {
+    console.log(`\nNessuna config Stripe preesistente per il negozio E2E: la config di TEST verrà eliminata nel cleanup.`);
   }
-  console.log(`\nConfig Stripe E2E salvata (backup): id=${configOrig.id}`);
 
   // Ordine di test (idempotency unica) e righe pulite dopo il run.
   const idempotencyKey = `e2e-provider-${Date.now()}`;
   let ordineId: string | null = null;
   let sessioneId: string | null = null;
   let stockPre: number | null = null;
-  let pesoPre: number | null = null;
-  let pesoImpostato = false;
+  let paccoPre: number | null = null;
+  let paccoImpostato = false;
 
   // Dopo il salvataggio della config TEST, QUALSIASI errore va propagato
   // con throw (NON process.exit): il blocco finally DEVE sempre eseguire
@@ -181,18 +186,27 @@ async function main() {
     }
     // `fail` lancia sempre → da qui rigaProdotto è garantito non-null.
     stockPre = Number(rigaProdotto!.quantita_disponibile ?? 0);
-    pesoPre = (rigaProdotto as Record<string, unknown>).peso_grammi != null
-      ? Number((rigaProdotto as Record<string, unknown>).peso_grammi)
-      : null;
+    void (rigaProdotto as Record<string, unknown>).peso_grammi; // (compatibilità lettura riga prodotto)
 
-    // MOTORE TARIFFARIO: il prodotto di test deve avere un peso per Poste/BRT.
-    // Valore temporaneo (ripristinato nel cleanup), coerente col resto del test.
-    const { error: pesoErr } = await db
-      .from("prodotti")
-      .update({ peso_grammi: 500 })
-      .eq("id", Number(PRODOTTO_E2E));
-    if (pesoErr) fail("Impostazione peso di test fallita: " + pesoErr.message);
-    pesoImpostato = true;
+    // MOTORE TARIFFARIO (modello pacco 20260901): Poste/BRT richiedono
+    // negozi.pacco_peso_grammi > 0 (non più prodotti.peso_grammi). Valore
+    // temporaneo 1500 (coerente con la migration 20260907), ripristinato
+    // nel cleanup. Poste Standard 1-2 kg → 5,90 € → totale 3,50 + 5,90 = 9,40.
+    const { data: negozioPre } = await db
+      .from("negozi")
+      .select("pacco_peso_grammi")
+      .eq("id", NEGOZIO_E2E)
+      .single();
+    paccoPre =
+      negozioPre && negozioPre.pacco_peso_grammi != null
+        ? Number(negozioPre.pacco_peso_grammi)
+        : null;
+    const { error: paccoErr } = await db
+      .from("negozi")
+      .update({ pacco_peso_grammi: 1500 })
+      .eq("id", NEGOZIO_E2E);
+    if (paccoErr) fail("Impostazione pacco di test fallita: " + paccoErr.message);
+    paccoImpostato = true;
 
     const { data: esitoOrdine, error: oErr } = await db.rpc("crea_ordine", {
       p_payload: {
@@ -299,7 +313,7 @@ async function main() {
           client_reference_id: ordineIdTest,
           metadata: { ordine_id: ordineIdTest, negozio_id: NEGOZIO_E2E },
           payment_status: "paid",
-          amount_total: 1999,
+          amount_total: 940, // 3,50 + 5,90 spedizione Poste Standard 1-2kg
           currency: "eur",
           payment_intent: "pi_test_e2e_provider",
         },
@@ -360,28 +374,38 @@ async function main() {
         .eq("id", Number(PRODOTTO_E2E));
       console.log(`  Stock prodotto ${PRODOTTO_E2E} ripristinato a ${stockPre}${stockErr ? " (ERRORE: " + stockErr.message + ")" : ""}`);
     }
-    if (pesoImpostato) {
-      // Ripristino del peso del prodotto di test (motore tariffario).
-      const { error: pesoErr } = await db
-        .from("prodotti")
-        .update({ peso_grammi: pesoPre })
-        .eq("id", Number(PRODOTTO_E2E));
-      console.log(`  Peso prodotto ${PRODOTTO_E2E} ripristinato a ${pesoPre ?? "null"}${pesoErr ? " (ERRORE: " + pesoErr.message + ")" : ""}`);
+    if (paccoImpostato) {
+      // Ripristino del pacco del negozio di test (motore tariffario).
+      const { error: paccoErr } = await db
+        .from("negozi")
+        .update({ pacco_peso_grammi: paccoPre })
+        .eq("id", NEGOZIO_E2E);
+      console.log(`  Pacco negozio E2E ripristinato a ${paccoPre ?? "null"}${paccoErr ? " (ERRORE: " + paccoErr.message + ")" : ""}`);
     }
-    // Config Stripe ORIGINALE ripristinata byte-for-byte.
-    const { error: restoreErr } = await db
-      .from("negozio_pagamenti")
-      .update({
-        attivo: configOrig.attivo,
-        test_mode: configOrig.test_mode,
-        client_id: configOrig.client_id,
-        secret_encrypted: configOrig.secret_encrypted,
-        webhook_secret_encrypted: configOrig.webhook_secret_encrypted,
-        payee_email: configOrig.payee_email,
-        iban: configOrig.iban,
-      })
-      .eq("id", configOrig.id);
-    console.log(`  Config Stripe negozio E2E ripristinata (${restoreErr ? "ERRORE: " + restoreErr.message : "byte-for-byte"})`);
+    if (configOrig) {
+      // Config Stripe ORIGINALE ripristinata byte-for-byte.
+      const { error: restoreErr } = await db
+        .from("negozio_pagamenti")
+        .update({
+          attivo: configOrig.attivo,
+          test_mode: configOrig.test_mode,
+          client_id: configOrig.client_id,
+          secret_encrypted: configOrig.secret_encrypted,
+          webhook_secret_encrypted: configOrig.webhook_secret_encrypted,
+          payee_email: configOrig.payee_email,
+          iban: configOrig.iban,
+        })
+        .eq("id", String(configOrig.id));
+      console.log(`  Config Stripe negozio E2E ripristinata (${restoreErr ? "ERRORE: " + restoreErr.message : "byte-for-byte"})`);
+    } else {
+      // Nessuna config preesistente: elimina la riga di TEST (stato originario).
+      const { error: delErr } = await db
+        .from("negozio_pagamenti")
+        .delete()
+        .eq("negozio_id", NEGOZIO_E2E)
+        .eq("provider", "stripe");
+      console.log(`  Config Stripe di TEST eliminata (${delErr ? "ERRORE: " + delErr.message : "stato originario ripristinato"})`);
+    }
   }
 
   console.log(`\n═══════════════════════════════════════════════════════`);
