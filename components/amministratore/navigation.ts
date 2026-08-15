@@ -17,6 +17,7 @@ import {
   Store,
   Trash2,
   Users,
+  Wallet,
   Wrench,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -69,6 +70,13 @@ export const adminNavItems: AdminNavItem[] = [
     description:
       "Supervisione centrale di tutti gli ordini di tutti i negozi della piattaforma.",
     icon: ReceiptText,
+  },
+  {
+    href: `${ADMIN_BASE}/incassi`,
+    label: "Incassi",
+    description:
+      "Rendicontazione economica globale: GMV, commissioni piattaforma, rimborsi e netto venditori.",
+    icon: Wallet,
   },
   {
     href: `${ADMIN_BASE}/prodotti`,
