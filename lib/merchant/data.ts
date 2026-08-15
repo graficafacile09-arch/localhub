@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { utenteAdminAutorizzato } from "@/lib/auth/roles";
 import type {
   AttributiVariante,
+  ConfigPaccoSpedizione,
   MerchantProduct,
   MerchantProductInput,
   MerchantQueryResult,
@@ -245,6 +246,72 @@ export async function getMerchantStoreForUser(userId: string, negozioId: string)
     ...storesResult,
     data: store,
   };
+}
+
+// =================================================================
+// Configurazione PACCO / SPEDIZIONE del negozio (V1: un pacco per ordine)
+// =================================================================
+
+const SELECT_CAMPI_PACCO =
+  "id, pacco_peso_grammi, pacco_lunghezza_cm, pacco_larghezza_cm, pacco_altezza_cm, pacco_peso_max_grammi";
+
+function mapConfigPacco(row: Record<string, unknown> | null | undefined): ConfigPaccoSpedizione {
+  return {
+    paccoPesoGrammi: (row?.pacco_peso_grammi as number | null) ?? null,
+    paccoLunghezzaCm: (row?.pacco_lunghezza_cm as number | null) ?? null,
+    paccoLarghezzaCm: (row?.pacco_larghezza_cm as number | null) ?? null,
+    paccoAltezzaCm: (row?.pacco_altezza_cm as number | null) ?? null,
+    paccoPesoMaxGrammi: (row?.pacco_peso_max_grammi as number | null) ?? null,
+  };
+}
+
+/** Legge la configurazione pacco del negozio (null se non accessibile). */
+export async function getConfigPaccoSpedizione(
+  userId: string,
+  negozioId: string
+): Promise<ConfigPaccoSpedizione | null> {
+  const puòGestire = await canManageStore(userId, negozioId);
+  if (!puòGestire) return null;
+
+  const supabase = await getDbForUser(userId);
+  const { data, error } = await supabase
+    .from("negozi")
+    .select(SELECT_CAMPI_PACCO)
+    .eq("id", negozioId)
+    .maybeSingle();
+
+  if (error || !data) return null;
+  return mapConfigPacco(data as Record<string, unknown>);
+}
+
+/** Aggiorna la configurazione pacco del negozio (solo ownership verificata). */
+export async function updateConfigPaccoSpedizione(
+  userId: string,
+  negozioId: string,
+  input: ConfigPaccoSpedizione
+): Promise<{ ok: boolean; data?: ConfigPaccoSpedizione | null; errore?: string }> {
+  const puòGestire = await canManageStore(userId, negozioId);
+  if (!puòGestire) return { ok: false, errore: "Non puoi gestire questo negozio." };
+
+  const supabase = createAdminSupabaseClient();
+  const { data, error } = await supabase
+    .from("negozi")
+    .update({
+      pacco_peso_grammi: input.paccoPesoGrammi,
+      pacco_lunghezza_cm: input.paccoLunghezzaCm,
+      pacco_larghezza_cm: input.paccoLarghezzaCm,
+      pacco_altezza_cm: input.paccoAltezzaCm,
+      pacco_peso_max_grammi: input.paccoPesoMaxGrammi,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", negozioId)
+    .select(SELECT_CAMPI_PACCO)
+    .single();
+
+  if (error) {
+    return { ok: false, errore: error.message ?? "Impossibile salvare la configurazione." };
+  }
+  return { ok: true, data: mapConfigPacco(data as Record<string, unknown>) };
 }
 
 // =================================================================

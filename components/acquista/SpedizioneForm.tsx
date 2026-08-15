@@ -51,6 +51,7 @@ export default function SpedizioneForm({
   // (server-side): qui si mostra SOLO il preventivo ricevuto e si trasporta la
   // scelta corriere+servizio. Nessun prezzo inventato, nessun campo modificabile.
   const [opzioniSpedizione, setOpzioniSpedizione] = useState<OpzioneSpedizione[]>([]);
+  const [pesoGrammi, setPesoGrammi] = useState<number | null>(null);
   const [caricamentoSpedizione, setCaricamentoSpedizione] = useState(true);
   const [spedizioneScelta, setSpedizioneScelta] = useState<{
     carrier: CarrierCodice;
@@ -101,10 +102,11 @@ export default function SpedizioneForm({
       body: JSON.stringify({ prodottoId, quantita }),
     })
       .then((res) => res.json())
-      .then((json: { success?: boolean; data?: { opzioni?: OpzioneSpedizione[] } }) => {
+      .then((json: { success?: boolean; data?: { opzioni?: OpzioneSpedizione[]; pesoGrammi?: number | null } }) => {
         if (!attivo) return;
         const opzioni = json?.data?.opzioni ?? [];
         setOpzioniSpedizione(opzioni);
+        setPesoGrammi(json?.data?.pesoGrammi ?? null);
         // Se la scelta corrente non è più disponibile la si azzera (mai una
         // selezione su un metodo non selezionabile).
         setSpedizioneScelta((prev) => {
@@ -387,6 +389,9 @@ export default function SpedizioneForm({
                 );
               })}
               <p className="text-[10px] leading-4 text-slate-400">
+                {pesoGrammi && pesoGrammi > 0
+                  ? `Pacco: ${(pesoGrammi / 1000).toLocaleString("it-IT", { maximumFractionDigits: 2 })} kg · `
+                  : ""}
                 Tariffa di spedizione calcolata automaticamente da InCittà in base al corriere e alle
                 caratteristiche della spedizione.
               </p>

@@ -501,7 +501,8 @@ export default function MerchantProductForm({
           <div>
             <p className="text-xs font-bold text-slate-800">Spedizione</p>
             <p className="text-[10px] leading-4 text-slate-500">
-              Le tariffe Poste Italiane e BRT sono determinate automaticamente da InCittà in base al peso.
+              Le tariffe Poste Italiane e BRT sono determinate automaticamente da InCittà in base al
+              pacco configurato nelle impostazioni del negozio.
             </p>
           </div>
         </div>
@@ -533,12 +534,10 @@ export default function MerchantProductForm({
             />
           </div>
         </div>
-        {!initialValues.peso_grammi && (
-          <p className="mt-2 text-[10px] font-semibold leading-4 text-amber-600">
-            Peso non configurato: Poste Italiane e BRT non saranno disponibili al checkout. Il
-            corriere locale usa invece il costo qui indicato.
-          </p>
-        )}
+        <p className="mt-2 text-[10px] leading-4 text-slate-500">
+          Peso indicativo del prodotto (facoltativo). Poste Italiane e BRT usano il pacco configurato
+          nelle impostazioni del negozio; il corriere locale usa invece il costo qui indicato.
+        </p>
       </div>
 
       {/* Descrizione */}

@@ -13,6 +13,19 @@ export type MerchantStoreSummary = {
   role: MerchantRole;
 };
 
+/**
+ * Configurazione del PACCO di spedizione del negozio (V1: un pacco per
+ * ordine/negozio). Peso in grammi, dimensioni in centimetri. Tutti i campi
+ * possono essere null = "pacco non configurato".
+ */
+export type ConfigPaccoSpedizione = {
+  paccoPesoGrammi: number | null;
+  paccoLunghezzaCm: number | null;
+  paccoLarghezzaCm: number | null;
+  paccoAltezzaCm: number | null;
+  paccoPesoMaxGrammi: number | null;
+};
+
 export type MerchantProduct = {
   id: string;
   negozio_id: string;

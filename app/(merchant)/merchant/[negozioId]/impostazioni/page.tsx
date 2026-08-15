@@ -1,8 +1,10 @@
 import { Settings } from "lucide-react";
 import MerchantEmptyState from "@/components/merchant/MerchantEmptyState";
 import ModulesPage from "./ModulesPage";
+import SpedizionePaccoConfig from "@/components/merchant/SpedizionePaccoConfig";
 import { requireCurrentUser } from "@/lib/auth/session";
-import { getMerchantStoreForUser } from "@/lib/merchant/data";
+import { getConfigPaccoSpedizione, getMerchantStoreForUser } from "@/lib/merchant/data";
+import type { ConfigPaccoSpedizione } from "@/lib/merchant/types";
 
 export default async function MerchantSettingsPage({
   params,
@@ -33,6 +35,15 @@ export default async function MerchantSettingsPage({
 
   const store = storeResult.data;
 
+  const configPacco: ConfigPaccoSpedizione =
+    (await getConfigPaccoSpedizione(user.id, negozioId)) ?? {
+      paccoPesoGrammi: null,
+      paccoLunghezzaCm: null,
+      paccoLarghezzaCm: null,
+      paccoAltezzaCm: null,
+      paccoPesoMaxGrammi: null,
+    };
+
   return (
     <div className="mx-auto max-w-5xl px-3 py-3 sm:px-5">
       <div className="space-y-6">
@@ -59,6 +70,8 @@ export default async function MerchantSettingsPage({
             </div>
           </div>
         </div>
+
+        <SpedizionePaccoConfig negozioId={negozioId} initialConfig={configPacco} />
 
         <ModulesPage storeId={negozioId} />
       </div>

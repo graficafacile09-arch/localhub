@@ -2,7 +2,7 @@
  * SPEDIZIONI — MOTORE TARIFFARIO (server-side).
  *
  * Calcola il PREVENTIVO di spedizione leggendo SOLO dal database:
- *   - peso reale del prodotto (`prodotti.peso_grammi`, grammi);
+ *   - peso del PACCO configurato dal negozio (`negozi.pacco_peso_grammi`, grammi);
  *   - tariffa corriere locale (`prodotti.costo_spedizione_locale`, euro);
  *   - listini ufficiali versionati (`shipping_tariff_versions` + `shipping_tariffs`).
  *
@@ -15,9 +15,10 @@
  *
  * REGOLE DI CALCOLO:
  *   - Poste Italiane (standard/express) e BRT (online): tariffa per fascia di
- *     peso. Il peso complessivo = Σ(peso_grammi × quantità). Se un prodotto
- *     non ha peso (NULL o ≤0) → il corriere NON è disponibile (mai un peso o
- *     un prezzo inventato).
+ *     peso. V1 = UN PACCO PER ORDINE/NEGOZIO: il peso è `negozi.pacco_peso_grammi`
+ *     (mai Σ(peso prodotto × quantità)). Se il negozio non ha configurato il
+ *     pacco (NULL o ≤0) → il corriere NON è disponibile (mai un peso o un
+ *     prezzo inventato). `prodotti.peso_grammi` resta solo per compatibilità.
  *   - Corriere locale: prezzo configurato dal venditore PER SINGOLO PRODOTTO.
  *     In un carrello/ordine con più prodotti si applica il prezzo MASSIMO tra
  *     i prodotti dello STESSO negozio (una sola consegna per ordine, mai la
@@ -176,9 +177,10 @@ export async function getPreventivoSpedizione(
   const db = createAdminSupabaseClient();
   const ids = [...new Set(righe.map((r) => String(r.prodottoId)))];
 
+  // Prodotti → negozio + tariffa locale per prodotto (corriere locale).
   const { data: prodotti, error } = await db
     .from("prodotti")
-    .select("id, negozio_id, peso_grammi, costo_spedizione_locale")
+    .select("id, negozio_id, costo_spedizione_locale")
     .in("id", ids.map(Number));
 
   if (error) {
@@ -192,16 +194,36 @@ export async function getPreventivoSpedizione(
     };
   }
 
-  const mappa = new Map<
-    string,
-    { negozioId: string; pesoGrammi: number | null; locale: number | null }
-  >();
+  const mappa = new Map<string, { negozioId: string; locale: number | null }>();
   for (const p of (prodotti ?? []) as Record<string, unknown>[]) {
     mappa.set(String(p.id), {
       negozioId: String(p.negozio_id),
-      pesoGrammi: typeof p.peso_grammi === "number" ? (p.peso_grammi as number) : null,
       locale: typeof p.costo_spedizione_locale === "number" ? (p.costo_spedizione_locale as number) : null,
     });
+  }
+
+  // Pacchi configurati dai negozi (V1: un pacco per negozio, peso in grammi).
+  const negozioIds = [...new Set([...mappa.values()].map((x) => x.negozioId))];
+  const paccoPerNegozio = new Map<string, number | null>();
+  if (negozioIds.length > 0) {
+    const { data: negozi, error: errNegozi } = await db
+      .from("negozi")
+      .select("id, pacco_peso_grammi")
+      .in("id", negozioIds);
+    if (errNegozi) {
+      return {
+        ok: false,
+        opzioni: [],
+        pesoGrammi: null,
+        pesoMancante: false,
+        codice: "DB_UNAVAILABLE",
+        messaggio: "Impossibile calcolare la spedizione.",
+      };
+    }
+    for (const n of (negozi ?? []) as Record<string, unknown>[]) {
+      const peso = typeof n.pacco_peso_grammi === "number" ? (n.pacco_peso_grammi as number) : null;
+      paccoPerNegozio.set(String(n.id), peso);
+    }
   }
 
   // ── Raggruppamento per negozio ─────────────────────────────────────────
@@ -218,26 +240,30 @@ export async function getPreventivoSpedizione(
   for (const riga of righe) {
     const p = mappa.get(String(riga.prodottoId));
     if (!p) continue;
-    const q = Number(riga.quantita);
     const g = perNegozio.get(p.negozioId) ?? {
       peso: 0,
       pesoMancante: false,
       localeMax: null,
       localeMancante: false,
     };
-    if (p.pesoGrammi !== null && p.pesoGrammi > 0) {
-      g.peso += p.pesoGrammi * q;
-      pesoTotale += p.pesoGrammi * q;
-    } else {
-      g.pesoMancante = true;
-      pesoMancante = true;
-    }
     if (p.locale !== null && p.locale >= 0) {
       if (g.localeMax === null || p.locale > g.localeMax) g.localeMax = p.locale;
     } else {
       g.localeMancante = true;
     }
     perNegozio.set(p.negozioId, g);
+  }
+
+  // Peso pacco (Poste/BRT): V1 unico per negozio, MAI moltiplicato per quantità.
+  for (const [negozioId, g] of perNegozio) {
+    const paccoPeso = paccoPerNegozio.get(negozioId);
+    if (paccoPeso !== null && paccoPeso !== undefined && paccoPeso > 0) {
+      g.peso = paccoPeso;
+      pesoTotale += paccoPeso;
+    } else {
+      g.pesoMancante = true;
+      pesoMancante = true;
+    }
   }
 
   const tariffeDb = await caricaTariffeDb();
