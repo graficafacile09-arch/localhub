@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import OrdineAzioni from "@/components/merchant/OrdineAzioni";
 import MerchantEmptyState from "@/components/merchant/MerchantEmptyState";
+import RimborsoSection from "@/components/amministratore/ordini/RimborsoSection";
 import { getOrdineAdmin } from "@/lib/amministratore/ordini";
 import { sintesiProdotti } from "@/lib/cliente/ordini-format";
 import { azioniDisponibili } from "@/lib/merchant/ordini-stati";
@@ -269,6 +270,18 @@ export default async function AdminOrdineDettaglioPage({
               )}
             </div>
           </Sezione>
+
+          {/* Rimborso (admin): riepilogo + azione con dialog */}
+          <RimborsoSection
+            ordineId={ordine.id}
+            totale={ordine.totale}
+            paymentStatus={ordine.paymentStatus}
+            paymentAmount={ordine.paymentAmount}
+            paymentRefundedAmount={ordine.paymentRefundedAmount}
+            commissionePercentuale={ordine.commissionePercentuale}
+            commissioneImporto={ordine.commissioneImporto}
+            nettoVenditore={ordine.nettoVenditore}
+          />
 
           {/* Commissione piattaforma + netto venditore (dati derivati) */}
           <Sezione icon={ReceiptText} titolo="Commissione piattaforma">
