@@ -212,9 +212,12 @@ async function main() {
   let mock: Awaited<ReturnType<typeof avviaMockStripe>> | null = null;
 
   try {
+    // MODELLO PACCO (20260901): la tariffa Poste/BRT usa negozi.pacco_peso_grammi
+    // (un pacco per ordine/negozio). 2500 g → banda 2000–3000 g: Express 7.70,
+    // Standard 6.70. Nessun prezzo inventato: solo il peso del pacco del negozio.
     const { data: negozio, error: errNeg } = await db
       .from("negozi")
-      .insert({ nome: `F23-Store-${ts}`, slug: `f23-store-${ts}`, attivo: true, is_demo: true })
+      .insert({ nome: `F23-Store-${ts}`, slug: `f23-store-${ts}`, attivo: true, is_demo: true, pacco_peso_grammi: 2500 })
       .select("id")
       .single();
     if (errNeg || !negozio?.id) fail("Creazione negozio F23 fallita: " + (errNeg?.message ?? ""));
@@ -302,7 +305,7 @@ async function main() {
       ordine1Id = String(ordineJson.id);
       ordine1Totale = Number(ordineJson.totale);
       ordiniCreati.push(ordine1Id);
-      // Totale atteso: 20 + 20.5 + 12 + 7.70 (Poste Express 2-3kg) = 60.20
+      // Totale atteso: 20 + 20.5 + 12 + 7.70 (Poste Express 2-3kg, pacco 2500 g) = 60.20
       check("totale ordine DB = 60.20", ordine1Totale === 60.2, ordine1Totale);
 
       // Sessione Stripe reale (orchestratore di produzione, gateway mock)
@@ -404,8 +407,8 @@ async function main() {
       ordine2Id = String(ordineJson.id);
       ordine2Totale = Number(ordineJson.totale);
       ordiniCreati.push(ordine2Id);
-      // Totale atteso: 10 + 5.65 (Poste Standard 0-1kg) = 15.65
-      check("totale ordine DB = 15.65", ordine2Totale === 15.65, ordine2Totale);
+      // Totale atteso: 10 + 6.70 (Poste Standard 2-3kg, pacco 2500 g) = 16.70
+      check("totale ordine DB = 16.70", ordine2Totale === 16.7, ordine2Totale);
 
       const sessione = await creaSessioneStripePerOrdine(ordine2Id, gatewayOpts);
       check("creaSessioneStripePerOrdine ok (mono-riga)", sessione.ok === true, sessione);
@@ -414,8 +417,8 @@ async function main() {
       check("2 line item (1 prodotto + spedizione standard)", items.length === 2, items);
       const rigaProd = items.find((i) => i.unitAmount === 1000);
       check("prodotto: 1000 centesimi, quantità 1", rigaProd?.unitAmount === 1000 && rigaProd?.quantity === 1, rigaProd);
-      const rigaSped = items.find((i) => i.unitAmount === 565);
-      check("spedizione standard: 565 centesimi", rigaSped?.unitAmount === 565 && rigaSped?.quantity === 1, rigaSped);
+      const rigaSped = items.find((i) => i.unitAmount === 670);
+      check("spedizione standard: 670 centesimi (6.70, pacco 2500 g)", rigaSped?.unitAmount === 670 && rigaSped?.quantity === 1, rigaSped);
       const totaleCentesimi = items.reduce((s, i) => s + i.unitAmount * i.quantity, 0);
       check(`totale sessione = totale ordine DB (${ordine2Totale * 100})`, totaleCentesimi === Math.round(ordine2Totale * 100), totaleCentesimi);
     }
