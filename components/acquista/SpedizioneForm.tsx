@@ -43,7 +43,11 @@ export default function SpedizioneForm({
   prodottoId: string;
   /** Variante selezionata (FASE E4): solo trasportata, validata dal server. */
   varianteId?: string | null;
-  /** Metodi realmente disponibili per questo negozio (FASE F1). */
+  /**
+   * Catalogo dei metodi di pagamento supportati da InCittà, ognuno con il
+   * flag `disponibile` reale per questo negozio. La UI mostra SEMPRE l'intero
+   * catalogo; i metodi non disponibili restano visibili ma non selezionabili.
+   */
   metodiPagamento?: MetodoPagamentoCheckout[];
 }) {
   const router = useRouter();
@@ -407,85 +411,105 @@ export default function SpedizioneForm({
           )}
         </div>
 
-        {/* Metodo pagamento (FASE F1: SOLO metodi realmente disponibili) */}
+        {/* Metodo pagamento: SEMPRE l'intero catalogo supportato da InCittà.
+            Ogni metodo mostra se è realmente disponibile per questo negozio;
+            i non disponibili restano visibili ma non selezionabili. */}
         <div className="rounded-xl border border-slate-200 bg-white p-4">
           <h3 className="text-sm font-bold text-slate-900">
             <CreditCard className="mr-1.5 inline-block h-4 w-4 text-blue-500" />
             Metodo pagamento
           </h3>
-          {metodiPagamento.length === 0 ? (
-            <p className="mt-3 text-sm text-slate-600">
-              Il negozio non ha configurato pagamenti online: il pagamento
-              verrà concordato direttamente con il negozio.
-            </p>
-          ) : (
-            <div className="mt-3 space-y-2">
-              {metodiPagamento.map((metodo) => {
-                const selezionato = metodoPagamento === metodo.metodo;
-                return (
-                  <label
-                    key={metodo.metodo}
-                    className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition ${
-                      selezionato
-                        ? "border-blue-400 bg-blue-50/50"
-                        : "border-slate-200 bg-white hover:border-slate-300"
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="pagamento"
-                      value={metodo.metodo}
-                      checked={selezionato}
-                      onChange={() => setMetodoPagamento(metodo.metodo)}
-                      className="h-4 w-4 accent-blue-600"
-                    />
-                    <div className="flex flex-1 items-center gap-2">
-                      {metodo.metodo === "klarna" ? (
-                        // Klarna: logo ufficiale locale (wordmark rosa) — nessun
-                        // importo delle rate calcolato lato frontend (il totale
-                        // resta esclusivamente server-side).
-                        <img
-                          src="/loghi/klarna-pink.svg"
-                          alt="Klarna"
-                          width={64}
-                          height={14}
-                          className="h-3.5 w-auto shrink-0 object-contain"
-                        />
-                      ) : metodo.metodo === "paypal" ? (
-                        // PayPal: logo ufficiale locale (wordmark).
-                        <img
-                          src="/loghi/paypal.svg"
-                          alt="PayPal"
-                          width={64}
-                          height={16}
-                          className="h-3.5 w-auto shrink-0 object-contain"
-                        />
-                      ) : metodo.metodo === "carta" ? (
-                        <CreditCard className="h-4 w-4 shrink-0 text-slate-500" />
-                      ) : (
-                        <Banknote className="h-4 w-4 shrink-0 text-slate-500" />
-                      )}
-                      <div className="min-w-0">
-                        <span className="flex flex-wrap items-center gap-2 text-sm font-semibold text-slate-900">
-                          {metodo.etichetta}
-                          {metodo.metodo === "klarna" && (
-                            <span className="inline-flex shrink-0 items-center rounded-full bg-slate-900 px-2 py-0.5 text-[10px] font-bold text-white">
-                              Paga in 3 rate
-                            </span>
-                          )}
-                        </span>
-                        <p className="text-[11px] text-slate-500">{metodo.descrizione}</p>
-                        {metodo.metodo === "klarna" && (
-                          <p className="mt-0.5 text-[10px] leading-4 text-slate-400">
-                            Soggetto ad approvazione e alle condizioni di Klarna.
-                          </p>
+          <div className="mt-3 space-y-2">
+            {metodiPagamento.map((metodo) => {
+              const selezionato = metodoPagamento === metodo.metodo;
+              const selezionabile = metodo.disponibile;
+              return (
+                <label
+                  key={metodo.metodo}
+                  className={`flex items-center gap-3 rounded-lg border p-3 transition ${
+                    selezionato
+                      ? "border-blue-400 bg-blue-50/50"
+                      : selezionabile
+                      ? "cursor-pointer border-slate-200 bg-white hover:border-slate-300"
+                      : "cursor-not-allowed border-slate-200 bg-slate-50 opacity-70"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="pagamento"
+                    value={metodo.metodo}
+                    checked={selezionato}
+                    disabled={!selezionabile}
+                    onChange={() => setMetodoPagamento(metodo.metodo)}
+                    className="h-4 w-4 accent-blue-600"
+                  />
+                  <div className="flex flex-1 items-center gap-2">
+                    {metodo.metodo === "klarna" ? (
+                      // Klarna: logo ufficiale locale (wordmark rosa) — nessun
+                      // importo delle rate calcolato lato frontend (il totale
+                      // resta esclusivamente server-side).
+                      <img
+                        src="/loghi/klarna-pink.svg"
+                        alt="Klarna"
+                        width={64}
+                        height={14}
+                        className="h-3.5 w-auto shrink-0 object-contain"
+                      />
+                    ) : metodo.metodo === "paypal" ? (
+                      // PayPal: logo ufficiale locale (wordmark).
+                      <img
+                        src="/loghi/paypal.svg"
+                        alt="PayPal"
+                        width={64}
+                        height={16}
+                        className="h-3.5 w-auto shrink-0 object-contain"
+                      />
+                    ) : metodo.metodo === "carta" ? (
+                      <CreditCard className="h-4 w-4 shrink-0 text-slate-500" />
+                    ) : (
+                      <Banknote className="h-4 w-4 shrink-0 text-slate-500" />
+                    )}
+                    <div className="min-w-0">
+                      <span className="flex flex-wrap items-center gap-2 text-sm font-semibold text-slate-900">
+                        {metodo.etichetta}
+                        {metodo.metodo === "klarna" && selezionabile && (
+                          <span className="inline-flex shrink-0 items-center rounded-full bg-slate-900 px-2 py-0.5 text-[10px] font-bold text-white">
+                            Paga in 3 rate
+                          </span>
                         )}
-                      </div>
+                        {!selezionabile && (
+                          <span className="inline-flex shrink-0 items-center rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-bold text-slate-500">
+                            Non disponibile
+                          </span>
+                        )}
+                      </span>
+                      <p className="text-[11px] text-slate-500">{metodo.descrizione}</p>
+                      {metodo.metodo === "klarna" && selezionabile && (
+                        <p className="mt-0.5 text-[10px] leading-4 text-slate-400">
+                          Soggetto ad approvazione e alle condizioni di Klarna.
+                        </p>
+                      )}
+                      {!selezionabile && (
+                        <p className="mt-0.5 text-[10px] leading-4 text-slate-400">
+                          {metodo.nomeBreve} non disponibile per questo negozio.
+                        </p>
+                      )}
                     </div>
-                  </label>
-                );
-              })}
-            </div>
+                  </div>
+                </label>
+              );
+            })}
+          </div>
+          {metodiPagamento.some((m) => !m.disponibile) && (
+            <p className="mt-3 text-[11px] leading-4 text-slate-500">
+              Metodi disponibili per questo negozio:{" "}
+              <span className="font-semibold text-slate-700">
+                {metodiPagamento
+                  .filter((m) => m.disponibile)
+                  .map((m) => m.nomeBreve)
+                  .join(", ")}
+              </span>
+            </p>
           )}
         </div>
 

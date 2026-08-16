@@ -1,32 +1,46 @@
 /**
- * PAGAMENTI — METODI PUBBLICI CHECKOUT (FASE F1, solo server).
+ * PAGAMENTI — METODI PUBBLICI CHECKOUT (solo server).
  *
- * Calcola i metodi di pagamento che un negozio offre DAVVERO al checkout:
- *   - solo i metodi con `negozio_metodi_pagamento.attivo = true`;
- *   - "carta" SOLO se Stripe è configurato, attivo e con webhook secret
- *     (senza, il metodo NON viene mostrato: niente finte);
- *   - "klarna" SOLO se Klarna è configurato, attivo e con webhook secret
- *     (stessa regola di "carta": disponibilità determinata SOLO server-side
- *     dalla configurazione reale del negozio — mai mostrato "per default");
- *   - "bonifico" SEMPRE presente (metodo base, non dipende da alcun gateway):
- *     con iban/payee_email configurati mostra le coordinate, altrimenti resta
- *     il metodo esplicito "da concordare in negozio" (stesso comportamento del
- *     checkout carrello). Mai pre-selezionato: la scelta resta esplicita;
- *   - "paypal" SOLO se PayPal è configurato, attivo e con webhook id
- *     (stessa regola di carta/klarna);
- *   - scalapay → NON implementato → mai mostrato.
+ * Separa nettamente DUE concetti:
  *
- * Nessun secret viene letto o esposto (solo dati pubblici via RPC con
- * p_decifra = false). Usato dalle pagine server di checkout.
+ *   A) CATALOGO (lib/pagamenti/catalogo.ts) — cosa InCittà SUPPORTA.
+ *      Sempre restituito: ogni metodo del catalogo è presente nella risposta,
+ *      indipendentemente dalla configurazione del negozio.
+ *
+ *   B) DISPONIBILITÀ per il singolo negozio — se il negozio può DAVVERO
+ *      processare quel metodo. Calcolata con isProviderProntoPerNegozio()
+ *      (configurazione gateway reale, attiva, con webhook secret):
+ *        - carta   → Stripe configurato e attivo;
+ *        - paypal  → PayPal configurato e attivo (client id + secret + webhook id);
+ *        - klarna  → Klarna configurato e attivo;
+ *        - bonifico → SEMPRE disponibile (metodo manuale, nessun gateway).
+ *
+ * Ogni voce espone il flag `disponibile`. Nessun fallback automatico, nessun
+ * metodo pre-selezionato, nessun secret letto o esposto (solo dati pubblici
+ * via RPC con p_decifra = false). Usato dalle pagine server del buy-now e,
+ * tramite getMetodiPagamentoPubbliciMulti, dal checkout carrello.
  */
 
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
-import { isProviderProntoPerNegozio, isStripeProntoPerNegozio } from "./config";
+import { isProviderProntoPerNegozio } from "./config";
+import {
+  CATALOGO_METODI_PAGAMENTO,
+  type MetodoPagamento,
+  type VoceCatalogoMetodo,
+} from "./catalogo";
 
 export type MetodoPagamentoCheckout = {
-  metodo: "carta" | "bonifico" | "klarna" | "paypal";
+  metodo: MetodoPagamento;
   etichetta: string;
+  /** Nome breve (es. "Carta") per i messaggi di indisponibilità/alternative. */
+  nomeBreve: string;
   descrizione: string;
+  /**
+   * True se il negozio (o TUTTI i negozi del carrello, in `Multi`) può
+   * realmente processare il metodo. Un metodo supportato ma non configurato
+   * resta visibile con `disponibile = false` (mai rimosso dal catalogo).
+   */
+  disponibile: boolean;
   /** iban/payee_email del negozio per il bonifico (dati pubblici configurativi). */
   iban?: string | null;
   payeeEmail?: string | null;
@@ -70,15 +84,24 @@ async function datiBonifico(
 }
 
 /**
- * Metodi di pagamento realmente disponibili per il checkout del negozio.
- * I metodi attivi sono ordinati per `ordine_mostra`; carta/bonifico vengono
- * esclusi se non configurati (mai mostrare metodi non funzionanti).
+ * Metodi di pagamento per il checkout del negozio: SEMPRE l'intero catalogo
+ * supportato da InCittà, ognuno con il flag `disponibile` reale.
+ *
+ * - bonifico: `disponibile = true` (metodo base, non dipende da gateway);
+ *   se configurato mostra le coordinate, altrimenti "da concordare".
+ * - carta/paypal/klarna: `disponibile = true` SOLO se il metodo è attivo in
+ *   `negozio_metodi_pagamento` E il relativo gateway è pronto
+ *   (isProviderProntoPerNegozio). Altrimenti restano nel catalogo con
+ *   `disponibile = false` (mai mostrati come funzionanti, mai fallback).
  */
 export async function getMetodiPagamentoPubblici(
   negozioId: string
 ): Promise<EsitoMetodiPubblici> {
   if (!negozioId) return { ok: false, errore: "Negozio non valido." };
 
+  // Metodi ATTIVATI dal merchant (negozio_metodi_pagamento.attivo = true).
+  // È la scelta di attivazione del negozio, distinta dalla configurazione
+  // gateway: un metodo online è "disponibile" solo se attivato E configurato.
   let attivi: string[] = [];
   try {
     const db = createAdminSupabaseClient();
@@ -89,85 +112,62 @@ export async function getMetodiPagamentoPubblici(
       .eq("attivo", true)
       .order("ordine_mostra", { ascending: true });
     if (!error && data) {
-      attivi = (data ?? [])
-        .map((r) => String(r.metodo))
-        .filter((m) => m === "carta" || m === "bonifico" || m === "klarna" || m === "paypal");
+      attivi = (data ?? []).map((r) => String(r.metodo));
     }
   } catch {
-    // Nessun metodo configurato → lista vuota.
+    // Nessun metodo attivato → restano disponibili solo i metodi senza gateway.
   }
+
+  const bonifico = await datiBonifico(negozioId);
 
   const metodi: MetodoPagamentoCheckout[] = [];
+  for (const voce of CATALOGO_METODI_PAGAMENTO) {
+    const disponibile = await disponibilitaVoce(voce, negozioId, attivi);
 
-  if (attivi.includes("carta")) {
-    const stripePronto = await isStripeProntoPerNegozio(negozioId);
-    if (stripePronto) {
-      metodi.push({
-        metodo: "carta",
-        etichetta: "Carta di credito/debito",
-        descrizione: "Pagamento sicuro con Stripe (carte principali).",
-      });
-    }
-  }
+    const item: MetodoPagamentoCheckout = {
+      metodo: voce.metodo,
+      etichetta: voce.etichetta,
+      nomeBreve: voce.nomeBreve,
+      descrizione: voce.descrizione,
+      disponibile,
+    };
 
-  if (attivi.includes("klarna")) {
-    // Disponibilità DETERMINATA SERVER-SIDE dalla configurazione reale del
-    // negozio (stessa regola di "carta"): senza Klarna configurato e attivo
-    // il metodo NON compare nel checkout. Mai mostrato "per default".
-    const klarnaPronto = await isProviderProntoPerNegozio(negozioId, "klarna");
-    if (klarnaPronto) {
-      metodi.push({
-        metodo: "klarna",
-        etichetta: "Klarna",
-        descrizione: "Dividi il tuo acquisto in 3 rate, se disponibile.",
-      });
-    }
-  }
-
-  if (attivi.includes("paypal")) {
-    // Disponibilità DETERMINATA SERVER-SIDE dalla configurazione reale del
-    // negozio (stessa regola di carta/klarna): senza PayPal configurato e
-    // attivo (client id + secret + webhook id) il metodo NON compare. Mai
-    // mostrato "per default", mai un fallback su Stripe/Klarna.
-    const paypalPronto = await isProviderProntoPerNegozio(negozioId, "paypal");
-    if (paypalPronto) {
-      metodi.push({
-        metodo: "paypal",
-        etichetta: "PayPal",
-        descrizione: "Paga con il tuo conto PayPal o con una carta.",
-      });
-    }
-  }
-
-  // BONIFICO — metodo base, SEMPRE disponibile e selezionabile: non dipende
-  // da alcun gateway online. Con iban/payee_email configurati mostra le
-  // coordinate; altrimenti resta il metodo esplicito "da concordare in negozio"
-  // (stesso comportamento del checkout carrello, dove il bonifico è sempre
-  // selezionabile anche senza configurazione). Mai pre-selezionato: la scelta
-  // resta esplicita lato client (SpedizioneForm).
-  {
-    const bonifico = await datiBonifico(negozioId);
-    metodi.push({
-      metodo: "bonifico",
-      etichetta: "Bonifico bancario",
-      descrizione: bonifico.configurato
+    if (voce.metodo === "bonifico") {
+      item.iban = bonifico.iban;
+      item.payeeEmail = bonifico.payeeEmail;
+      item.descrizione = bonifico.configurato
         ? "Pagamento manuale: ti invieremo le coordinate per il bonifico."
-        : "Pagamento da concordare direttamente con il negozio.",
-      iban: bonifico.iban,
-      payeeEmail: bonifico.payeeEmail,
-    });
+        : voce.descrizione;
+    }
+
+    metodi.push(item);
   }
 
   return { ok: true, metodi };
 }
 
 /**
- * Metodi di pagamento disponibili per TUTTI i negozi indicati (intersezione):
- * un metodo è disponibile solo se lo è in OGNI negozio. Riusa
+ * Disponibilità reale di UNA voce di catalogo per un negozio.
+ * - senza gateway (bonifico): sempre true;
+ * - con gateway: true SOLO se attivato dal merchant E provider pronto.
+ */
+async function disponibilitaVoce(
+  voce: VoceCatalogoMetodo,
+  negozioId: string,
+  attivi: string[]
+): Promise<boolean> {
+  if (!voce.richiedeGateway) return true;
+  if (!attivi.includes(voce.metodo)) return false;
+  if (!voce.provider) return false;
+  return isProviderProntoPerNegozio(negozioId, voce.provider);
+}
+
+/**
+ * Metodi di pagamento per TUTTI i negozi indicati (intersezione): restituisce
+ * SEMPRE l'intero catalogo supportato, con `disponibile = true` solo se il
+ * metodo è realmente disponibile in OGNI negozio. Riusa
  * getMetodiPagamentoPubblici (fonte comune di disponibilità) senza duplicare
- * la logica. Usata dal checkout carrello multi-negozio per mostrare la STESSA
- * disponibilità reale del buy-now. Bonifico è sempre presente in ogni negozio
- * (metodo base, mai filtrato) → sempre nell'intersezione.
+ * la logica. Bonifico è sempre presente (metodo base, mai filtrato).
  */
 export async function getMetodiPagamentoPubbliciMulti(
   negozioIds: string[]
@@ -183,18 +183,36 @@ export async function getMetodiPagamentoPubbliciMulti(
     unici.map((id) => getMetodiPagamentoPubblici(id))
   );
 
-  // Ordine canonico (identico a getMetodiPagamentoPubblici): carta, klarna, paypal, bonifico.
-  const ordine = ["carta", "klarna", "paypal", "bonifico"] as const;
   const risultato: MetodoPagamentoCheckout[] = [];
-  for (const metodo of ordine) {
-    const presenteOvunque = perNegozio.every(
-      (esito) => esito.ok && esito.metodi.some((m) => m.metodo === metodo)
+  for (const voce of CATALOGO_METODI_PAGAMENTO) {
+    // Disponibile solo se OGNI negozio lo ha disponibile.
+    const disponibileOvunque = perNegozio.every(
+      (esito) =>
+        esito.ok && esito.metodi.some((m) => m.metodo === voce.metodo && m.disponibile)
     );
-    if (!presenteOvunque) continue;
+
+    // Dati bonifico: presi dal primo negozio che li espone (coordinate condivise
+    // solo se configurate; altrimenti resta la descrizione "da concordare").
     const primo = perNegozio
       .find((esito) => esito.ok)
-      ?.metodi.find((m) => m.metodo === metodo);
-    if (primo) risultato.push(primo);
+      ?.metodi.find((m) => m.metodo === voce.metodo);
+
+    const item: MetodoPagamentoCheckout = {
+      metodo: voce.metodo,
+      etichetta: voce.etichetta,
+      nomeBreve: voce.nomeBreve,
+      descrizione: voce.descrizione,
+      disponibile: voce.richiedeGateway ? disponibileOvunque : true,
+      iban: primo?.iban ?? null,
+      payeeEmail: primo?.payeeEmail ?? null,
+    };
+
+    if (voce.metodo === "bonifico" && (primo?.iban || primo?.payeeEmail)) {
+      item.descrizione = "Pagamento manuale: ti invieremo le coordinate per il bonifico.";
+    }
+
+    risultato.push(item);
   }
+
   return risultato;
 }

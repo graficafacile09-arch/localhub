@@ -29,6 +29,8 @@ import FatturazioneForm, {
   validaDatiFatturazione,
   type DatiFatturazione,
 } from "@/components/acquista/FatturazioneForm";
+import { CATALOGO_METODI_PAGAMENTO } from "@/lib/pagamenti/catalogo";
+import type { MetodoPagamentoCheckout } from "@/lib/pagamenti/metodi-pubblici";
 import {
   MESSAGGIO_NESSUNA_SPEDIZIONE,
   type CarrierCodice,
@@ -86,6 +88,27 @@ type RispostaApi = {
   data?: { checkoutKey?: string; ordini?: OrdineRisposta[]; errori?: ErroreNegozioRisposta[] };
   error?: { code?: string; message?: string };
 };
+
+/**
+ * Catalogo statico di fallback (fail-closed): ogni metodo del catalogo con
+ * `disponibile` true SOLO per i metodi senza gateway (bonifico). Usato come
+ * stato iniziale e quando la fonte server non risponde: mostra comunque
+ * l'intero catalogo, con i metodi online non selezionabili.
+ */
+const CATALOGO_DEFAULT: MetodoPagamentoCheckout[] = CATALOGO_METODI_PAGAMENTO.map((v) => ({
+  metodo: v.metodo,
+  etichetta: v.etichetta,
+  nomeBreve: v.nomeBreve,
+  descrizione: v.descrizione,
+  disponibile: !v.richiedeGateway,
+  iban: null,
+  payeeEmail: null,
+}));
+
+/** Messaggio di indisponibilità per un metodo non configurato dal negozio. */
+function messaggioNonDisponibile(nomeBreve: string): string {
+  return `${nomeBreve} non disponibile per questo negozio.`;
+}
 
 /** Messaggio utente per i codici d'errore del backend (mai tecnici). */
 function messaggioErrore(codice?: string, messaggioServer?: string): string {
@@ -175,13 +198,13 @@ export default function CheckoutCarrelloForm({ prefill }: { prefill: Prefill }) 
   const [metodoPagamento, setMetodoPagamento] = useState<
     "carta" | "bonifico" | "klarna" | "paypal"
   >("bonifico");
-  // Metodi di pagamento realmente disponibili per TUTTI i negozi del carrello
-  // (intersezione, stessa fonte del buy-now: getMetodiPagamentoPubblici via
-  // /api/cliente/ordini/carrello/metodi). Bonifico è sempre disponibile (metodo
-  // base) → valore iniziale sicuro; carta/klarna compaiono SOLO dopo la
-  // conferma server-side della disponibilità (fail-closed: senza risposta
-  // restano nascosti, mai mostrati "per default").
-  const [metodiDisponibili, setMetodiDisponibili] = useState<string[]>(["bonifico"]);
+  // Catalogo dei metodi di pagamento supportati da InCittà (STESSA fonte del
+  // buy-now: CATALOGO_METODI_PAGAMENTO + disponibilità via
+  // /api/cliente/ordini/carrello/metodi). Mostriamo SEMPRE l'intero catalogo,
+  // ognuno con il flag `disponibile` reale (intersezione multi-negozio); i
+  // metodi online non disponibili restano visibili ma non selezionabili.
+  // Bonifico è sempre disponibile (metodo base) → default selezionato sicuro.
+  const [catalogoMetodi, setCatalogoMetodi] = useState<MetodoPagamentoCheckout[]>(CATALOGO_DEFAULT);
   const [note, setNote] = useState("");
 
   const [inviando, setInviando] = useState(false);
@@ -206,7 +229,7 @@ export default function CheckoutCarrelloForm({ prefill }: { prefill: Prefill }) 
   useEffect(() => {
     const negozi = gruppi.map((g) => g.negozioId);
     if (negozi.length === 0) {
-      setMetodiDisponibili(["bonifico"]);
+      setCatalogoMetodi(CATALOGO_DEFAULT);
       return;
     }
     let attivo = true;
@@ -216,15 +239,17 @@ export default function CheckoutCarrelloForm({ prefill }: { prefill: Prefill }) 
       body: JSON.stringify({ negozi }),
     })
       .then((res) => res.json())
-      .then((json: { success?: boolean; data?: { metodi?: Array<{ metodo: string }> } }) => {
+      .then((json: { success?: boolean; data?: { metodi?: MetodoPagamentoCheckout[] } }) => {
         if (!attivo) return;
-        const metodi = (json?.data?.metodi ?? []).map((m) => m.metodo);
-        if (!metodi.includes("bonifico")) metodi.push("bonifico");
-        setMetodiDisponibili(metodi);
+        const metodi = json?.data?.metodi ?? [];
+        // Il server restituisce SEMPRE l'intero catalogo (ogni metodo con il
+        // proprio `disponibile` = intersezione per tutti i negozi del carrello).
+        // Se la risposta è vuota (errore), manteniamo il catalogo fail-closed.
+        setCatalogoMetodi(metodi.length > 0 ? metodi : CATALOGO_DEFAULT);
       })
       .catch(() => {
-        // Fail-closed: senza risposta restano visibili solo bonifico.
-        if (attivo) setMetodiDisponibili(["bonifico"]);
+        // Fail-closed: senza risposta restano selezionabili solo i metodi senza gateway.
+        if (attivo) setCatalogoMetodi(CATALOGO_DEFAULT);
       });
     return () => {
       attivo = false;
@@ -738,35 +763,70 @@ export default function CheckoutCarrelloForm({ prefill }: { prefill: Prefill }) 
                 Metodo pagamento
               </h2>
               <div className="mt-3 space-y-2">
-                {metodiDisponibili.includes("carta") && (
-                  <OpzioneRadio
-                    selezionato={metodoPagamento === "carta"}
-                    onClick={() => setMetodoPagamento("carta")}
-                    icona={<CreditCard className="h-4 w-4 text-slate-500" />}
-                    titolo="Carta di credito/debito"
-                    sotto="Pagamento sicuro con Stripe"
-                  />
-                )}
-                {metodiDisponibili.includes("klarna") && (
-                  <OpzioneKlarna
-                    selezionato={metodoPagamento === "klarna"}
-                    onClick={() => setMetodoPagamento("klarna")}
-                  />
-                )}
-                {metodiDisponibili.includes("paypal") && (
-                  <OpzionePaypal
-                    selezionato={metodoPagamento === "paypal"}
-                    onClick={() => setMetodoPagamento("paypal")}
-                  />
-                )}
-                <OpzioneRadio
-                  selezionato={metodoPagamento === "bonifico"}
-                  onClick={() => setMetodoPagamento("bonifico")}
-                  icona={<Banknote className="h-4 w-4 text-slate-500" />}
-                  titolo="Bonifico bancario"
-                  sotto="Pagamento manuale: ti invieremo le coordinate"
-                />
+                {catalogoMetodi.map((m) => {
+                  if (m.metodo === "carta") {
+                    return (
+                      <OpzioneRadio
+                        key="carta"
+                        selezionato={metodoPagamento === "carta"}
+                        onClick={() => setMetodoPagamento("carta")}
+                        icona={<CreditCard className="h-4 w-4 text-slate-500" />}
+                        titolo={m.etichetta}
+                        sotto={m.descrizione}
+                        disponibile={m.disponibile}
+                        nonDisponibileMessaggio={!m.disponibile ? messaggioNonDisponibile(m.nomeBreve) : undefined}
+                      />
+                    );
+                  }
+                  if (m.metodo === "klarna") {
+                    return (
+                      <OpzioneKlarna
+                        key="klarna"
+                        selezionato={metodoPagamento === "klarna"}
+                        onClick={() => setMetodoPagamento("klarna")}
+                        disponibile={m.disponibile}
+                        nonDisponibileMessaggio={!m.disponibile ? messaggioNonDisponibile(m.nomeBreve) : undefined}
+                      />
+                    );
+                  }
+                  if (m.metodo === "paypal") {
+                    return (
+                      <OpzionePaypal
+                        key="paypal"
+                        selezionato={metodoPagamento === "paypal"}
+                        onClick={() => setMetodoPagamento("paypal")}
+                        disponibile={m.disponibile}
+                        nonDisponibileMessaggio={!m.disponibile ? messaggioNonDisponibile(m.nomeBreve) : undefined}
+                      />
+                    );
+                  }
+                  if (m.metodo === "bonifico") {
+                    return (
+                      <OpzioneRadio
+                        key="bonifico"
+                        selezionato={metodoPagamento === "bonifico"}
+                        onClick={() => setMetodoPagamento("bonifico")}
+                        icona={<Banknote className="h-4 w-4 text-slate-500" />}
+                        titolo={m.etichetta}
+                        sotto={m.descrizione}
+                        disponibile={m.disponibile}
+                      />
+                    );
+                  }
+                  return null;
+                })}
               </div>
+              {catalogoMetodi.some((m) => !m.disponibile) && (
+                <p className="mt-2 text-[11px] leading-4 text-slate-500">
+                  Metodi disponibili:{" "}
+                  <span className="font-semibold text-slate-700">
+                    {catalogoMetodi
+                      .filter((m) => m.disponibile)
+                      .map((m) => m.nomeBreve)
+                      .join(", ")}
+                  </span>
+                </p>
+              )}
               {(metodoPagamento === "carta" ||
                 metodoPagamento === "klarna" ||
                 metodoPagamento === "paypal") && (
@@ -1060,6 +1120,8 @@ function OpzioneRadio({
   sotto,
   prezzo,
   icona,
+  disponibile = true,
+  nonDisponibileMessaggio,
 }: {
   selezionato: boolean;
   onClick: () => void;
@@ -1067,14 +1129,21 @@ function OpzioneRadio({
   sotto: string;
   prezzo?: string;
   icona?: React.ReactNode;
+  disponibile?: boolean;
+  nonDisponibileMessaggio?: string;
 }) {
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={disponibile ? onClick : undefined}
       aria-pressed={selezionato}
+      disabled={!disponibile}
       className={`flex w-full items-center gap-3 rounded-lg border p-3 text-left transition ${
-        selezionato ? "border-blue-400 bg-blue-50/50" : "border-slate-200 bg-white hover:border-slate-300"
+        selezionato
+          ? "border-blue-400 bg-blue-50/50"
+          : disponibile
+          ? "border-slate-200 bg-white hover:border-slate-300"
+          : "cursor-not-allowed border-slate-200 bg-slate-50 opacity-70"
       }`}
     >
       {icona && <span className="shrink-0">{icona}</span>}
@@ -1082,6 +1151,14 @@ function OpzioneRadio({
         <span>
           <span className="block text-sm font-semibold text-slate-900">{titolo}</span>
           <span className="block text-[11px] text-slate-500">{sotto}</span>
+          {!disponibile && (
+            <span className="mt-1 inline-flex items-center rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-bold text-slate-500">
+              Non disponibile
+            </span>
+          )}
+          {!disponibile && nonDisponibileMessaggio && (
+            <span className="mt-1 block text-[11px] leading-4 text-slate-500">{nonDisponibileMessaggio}</span>
+          )}
         </span>
         {prezzo && <span className="shrink-0 text-sm font-bold text-slate-900">{prezzo}</span>}
       </span>
@@ -1098,17 +1175,26 @@ function OpzioneRadio({
 function OpzioneKlarna({
   selezionato,
   onClick,
+  disponibile = true,
+  nonDisponibileMessaggio,
 }: {
   selezionato: boolean;
   onClick: () => void;
+  disponibile?: boolean;
+  nonDisponibileMessaggio?: string;
 }) {
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={disponibile ? onClick : undefined}
       aria-pressed={selezionato}
+      disabled={!disponibile}
       className={`w-full rounded-lg border p-3 text-left transition ${
-        selezionato ? "border-blue-400 bg-blue-50/50" : "border-slate-200 bg-white hover:border-slate-300"
+        selezionato
+          ? "border-blue-400 bg-blue-50/50"
+          : disponibile
+          ? "border-slate-200 bg-white hover:border-slate-300"
+          : "cursor-not-allowed border-slate-200 bg-slate-50 opacity-70"
       }`}
     >
       <span className="flex items-center justify-between gap-3">
@@ -1124,13 +1210,23 @@ function OpzioneKlarna({
           Paga in 3 rate
         </span>
       </span>
-      <span className="mt-2 block text-sm font-semibold text-slate-900">Klarna</span>
+      <span className="mt-2 flex items-center gap-2 text-sm font-semibold text-slate-900">
+        Klarna
+        {!disponibile && (
+          <span className="inline-flex items-center rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-bold text-slate-500">
+            Non disponibile
+          </span>
+        )}
+      </span>
       <span className="mt-0.5 block text-[11px] leading-4 text-slate-500">
         Dividi il tuo acquisto in 3 rate, se disponibile.
       </span>
       <span className="mt-1 block text-[10px] leading-4 text-slate-400">
         Soggetto ad approvazione e alle condizioni di Klarna.
       </span>
+      {!disponibile && nonDisponibileMessaggio && (
+        <span className="mt-1 block text-[11px] leading-4 text-slate-500">{nonDisponibileMessaggio}</span>
+      )}
     </button>
   );
 }
@@ -1143,17 +1239,26 @@ function OpzioneKlarna({
 function OpzionePaypal({
   selezionato,
   onClick,
+  disponibile = true,
+  nonDisponibileMessaggio,
 }: {
   selezionato: boolean;
   onClick: () => void;
+  disponibile?: boolean;
+  nonDisponibileMessaggio?: string;
 }) {
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={disponibile ? onClick : undefined}
       aria-pressed={selezionato}
+      disabled={!disponibile}
       className={`w-full rounded-lg border p-3 text-left transition ${
-        selezionato ? "border-blue-400 bg-blue-50/50" : "border-slate-200 bg-white hover:border-slate-300"
+        selezionato
+          ? "border-blue-400 bg-blue-50/50"
+          : disponibile
+          ? "border-slate-200 bg-white hover:border-slate-300"
+          : "cursor-not-allowed border-slate-200 bg-slate-50 opacity-70"
       }`}
     >
       <span className="flex items-center justify-between gap-3">
@@ -1166,10 +1271,20 @@ function OpzionePaypal({
           className="h-5 w-auto shrink-0 object-contain"
         />
       </span>
-      <span className="mt-2 block text-sm font-semibold text-slate-900">PayPal</span>
+      <span className="mt-2 flex items-center gap-2 text-sm font-semibold text-slate-900">
+        PayPal
+        {!disponibile && (
+          <span className="inline-flex items-center rounded-full bg-slate-200 px-2 py-0.5 text-[10px] font-bold text-slate-500">
+            Non disponibile
+          </span>
+        )}
+      </span>
       <span className="mt-0.5 block text-[11px] leading-4 text-slate-500">
         Paga con il tuo conto PayPal o con una carta.
       </span>
+      {!disponibile && nonDisponibileMessaggio && (
+        <span className="mt-1 block text-[11px] leading-4 text-slate-500">{nonDisponibileMessaggio}</span>
+      )}
     </button>
   );
 }
