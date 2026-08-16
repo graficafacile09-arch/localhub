@@ -21,6 +21,7 @@ function labelServizio(carrier: string, servizio: string): string {
     return servizio === "express" ? "Poste Italiane — Express" : "Poste Italiane — Standard";
   }
   if (carrier === "brt") return "BRT — Online";
+  if (carrier === "gls") return "GLS — Consegna nazionale";
   if (carrier === "locale") return "Corriere locale";
   return `${carrier} — ${servizio}`;
 }
@@ -49,10 +50,14 @@ export async function GET(
   }
 
   const righe = await getMetodiSpedizioneNegozio(user.id, negozioId);
-  const perChiave = new Map<string, { attivo: boolean; ordine_mostra: number }>();
+  const perChiave = new Map<
+    string,
+    { attivo: boolean; spedizione_gratuita: boolean; ordine_mostra: number }
+  >();
   for (const r of righe ?? []) {
     perChiave.set(`${r.carrier}:${r.servizio}`, {
       attivo: r.attivo,
+      spedizione_gratuita: r.spedizione_gratuita,
       ordine_mostra: r.ordine_mostra,
     });
   }
@@ -63,6 +68,7 @@ export async function GET(
       carrier: v.carrier,
       servizio: v.servizio,
       attivo: p?.attivo ?? false,
+      spedizione_gratuita: p?.spedizione_gratuita ?? false,
       ordine_mostra: p?.ordine_mostra ?? index,
       label: labelServizio(v.carrier, v.servizio),
     };
@@ -124,6 +130,7 @@ export async function PATCH(
       carrier: CarrierCodice;
       servizio: ServizioCodice;
       attivo: boolean;
+      spedizione_gratuita: boolean;
       ordine_mostra: number;
     }> = [];
     for (const entry of metodiRaw) {
@@ -144,6 +151,7 @@ export async function PATCH(
         carrier,
         servizio,
         attivo: e.attivo === true,
+        spedizione_gratuita: e.spedizione_gratuita === true,
         ordine_mostra: ordineMostra,
       });
     }

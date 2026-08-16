@@ -24,6 +24,9 @@ function etichettaSpedizione(
   if (carrier === "brt") {
     if (servizio === "online") return "BRT (24/48 ore)";
   }
+  if (carrier === "gls") {
+    if (servizio === "standard") return "GLS — Consegna nazionale (24/48 ore)";
+  }
   if (carrier === "locale") {
     return "Corriere locale";
   }

@@ -31,7 +31,7 @@
 // ═══════════════════════════════════════════════════════════════════
 
 /** Codice corriere (coerente con shipping_carriers.codice). */
-export type CarrierCodice = "poste_italiane" | "brt" | "locale";
+export type CarrierCodice = "poste_italiane" | "brt" | "locale" | "gls";
 
 /** Codice servizio (coerente con shipping_services.codice + "locale"). */
 export type ServizioCodice = "standard" | "express" | "online" | "locale";
@@ -52,6 +52,8 @@ export type VoceCatalogoSpedizione = {
   etichetta: string;
   /** Tempo di consegna stimato (null se non dichiarato dal corriere). */
   tempoConsegna: string | null;
+  /** Descrizione breve mostrata al cliente (es. "Consegna nazionale GLS"). */
+  descrizione: string | null;
   /** "tariffa" = prezzo calcolato da InCittà; "locale" = prezzo del prodotto. */
   fonte: "tariffa" | "locale";
 };
@@ -80,6 +82,10 @@ export type OpzioneSpedizione = {
   servizioNome: string;
   etichetta: string;
   tempoConsegna: string | null;
+  /** Descrizione breve mostrata al cliente (es. "Consegna nazionale GLS"). */
+  descrizione: string | null;
+  /** True se il negozio offre questo metodo a costo zero (spedizione gratuita). */
+  gratuita: boolean;
   /** Prezzo in euro (totale per l'intero checkout) calcolato dal server. */
   prezzo: number | null;
   /** True se realmente selezionabile per questo prodotto/carrello. */
@@ -159,6 +165,7 @@ export const CATALOGO_SPEDIZIONE: readonly VoceCatalogoSpedizione[] = [
     servizioNome: "Standard",
     etichetta: "Poste Italiane Standard",
     tempoConsegna: "3-5 giorni lavorativi",
+    descrizione: null,
     fonte: "tariffa",
   },
   {
@@ -169,6 +176,18 @@ export const CATALOGO_SPEDIZIONE: readonly VoceCatalogoSpedizione[] = [
     servizioNome: "Standard",
     etichetta: "BRT",
     tempoConsegna: "24/48 ore",
+    descrizione: null,
+    fonte: "tariffa",
+  },
+  {
+    carrier: "gls",
+    servizio: "standard",
+    tier: "standard",
+    carrierNome: "GLS",
+    servizioNome: "Standard",
+    etichetta: "GLS",
+    tempoConsegna: "24/48 ore",
+    descrizione: "Consegna nazionale GLS",
     fonte: "tariffa",
   },
   {
@@ -179,6 +198,7 @@ export const CATALOGO_SPEDIZIONE: readonly VoceCatalogoSpedizione[] = [
     servizioNome: "Express",
     etichetta: "Poste Italiane Express",
     tempoConsegna: "1-2 giorni lavorativi",
+    descrizione: null,
     fonte: "tariffa",
   },
   {
@@ -189,6 +209,7 @@ export const CATALOGO_SPEDIZIONE: readonly VoceCatalogoSpedizione[] = [
     servizioNome: "Locale",
     etichetta: "Corriere locale",
     tempoConsegna: null,
+    descrizione: null,
     fonte: "locale",
   },
 ] as const;
@@ -246,6 +267,20 @@ export const TARIFFE_BRT_ONLINE: readonly FasciaTariffaria[] = [
 ];
 
 /**
+ * GLS — Consegna nazionale (servizio standard, 24/48h).
+ * Preventivi MEDI NAZIONALI realistici configurati da InCittà (non il
+ * tariffario ufficiale GLS): nessun supplemento CAP/zona, nessuna IVA
+ * aggiuntiva, nessun peso volumetrico. Il prezzo mostrato al cliente è
+ * esattamente quello della fascia.
+ */
+export const TARIFFE_GLS_STANDARD: readonly FasciaTariffaria[] = [
+  { pesoMinG: 0, pesoMaxG: 2000, prezzo: 9.9 },
+  { pesoMinG: 2000, pesoMaxG: 5000, prezzo: 11.9 },
+  { pesoMinG: 5000, pesoMaxG: 10000, prezzo: 14.9 },
+  { pesoMinG: 10000, pesoMaxG: 20000, prezzo: 19.9 },
+];
+
+/**
  * Fasce tariffarie di RIFERIMENTO per un corriere+servizio, o null se il
  * corriere/servizio non è nel catalogo tariffario (es. corriere locale).
  */
@@ -256,6 +291,7 @@ export function fascePerCorriere(
   if (carrier === "poste_italiane" && servizio === "standard") return TARIFFE_POSTE_STANDARD;
   if (carrier === "poste_italiane" && servizio === "express") return TARIFFE_POSTE_EXPRESS;
   if (carrier === "brt" && servizio === "online") return TARIFFE_BRT_ONLINE;
+  if (carrier === "gls" && servizio === "standard") return TARIFFE_GLS_STANDARD;
   return null;
 }
 
@@ -285,13 +321,14 @@ export function voceCatalogoSpedizione(
 
 /** True se il valore è un codice corriere supportato (coerente con la RPC). */
 export function isCarrierCodice(v: unknown): v is CarrierCodice {
-  return v === "poste_italiane" || v === "brt" || v === "locale";
+  return v === "poste_italiane" || v === "brt" || v === "locale" || v === "gls";
 }
 
 /**
  * True se il servizio è valido PER quel corriere (coerente con la RPC):
  *   poste_italiane → standard | express;
  *   brt            → online (BRT non offre un servizio "express" distinto);
+ *   gls            → standard (consegna nazionale);
  *   locale         → locale.
  */
 export function isServizioValidoPerCarrier(
@@ -300,6 +337,7 @@ export function isServizioValidoPerCarrier(
 ): servizio is ServizioCodice {
   if (carrier === "poste_italiane") return servizio === "standard" || servizio === "express";
   if (carrier === "brt") return servizio === "online";
+  if (carrier === "gls") return servizio === "standard";
   if (carrier === "locale") return servizio === "locale";
   return false;
 }

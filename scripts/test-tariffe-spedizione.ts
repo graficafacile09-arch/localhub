@@ -24,6 +24,7 @@
 import {
   CATALOGO_SPEDIZIONE,
   TARIFFE_BRT_ONLINE,
+  TARIFFE_GLS_STANDARD,
   TARIFFE_POSTE_EXPRESS,
   TARIFFE_POSTE_STANDARD,
   chiaveServizio,
@@ -59,6 +60,10 @@ check("Poste Standard 1-2 kg (1500g) = €5,90", prezzo(1500, TARIFFE_POSTE_STAN
 check("Poste Express 1-2 kg (1500g) = €6,90", prezzo(1500, TARIFFE_POSTE_EXPRESS) === 6.9);
 check("BRT 0-2 kg (1000g) = €13,89", prezzo(1000, TARIFFE_BRT_ONLINE) === 13.89);
 check("BRT 2-5 kg (3000g) = €15,75", prezzo(3000, TARIFFE_BRT_ONLINE) === 15.75);
+check("GLS 0-2 kg (1000g) = €9,90", prezzo(1000, TARIFFE_GLS_STANDARD) === 9.9);
+check("GLS 2-5 kg (3000g) = €11,90", prezzo(3000, TARIFFE_GLS_STANDARD) === 11.9);
+check("GLS 5-10 kg (7000g) = €14,90", prezzo(7000, TARIFFE_GLS_STANDARD) === 14.9);
+check("GLS 10-20 kg (15000g) = €19,90", prezzo(15000, TARIFFE_GLS_STANDARD) === 19.9);
 
 // ── 2. Limiti di fascia ────────────────────────────────────────────────
 check("Poste Standard 1000g (limite fascia 0-1kg) = €5,65", prezzo(1000, TARIFFE_POSTE_STANDARD) === 5.65);
@@ -67,12 +72,17 @@ check("Poste Standard 50-70kg (60000g) = €39,70", prezzo(60000, TARIFFE_POSTE_
 check("Poste Standard oltre 70kg (70001g) → nessuna tariffa", prezzo(70001, TARIFFE_POSTE_STANDARD) === null);
 check("BRT 20-31,5kg (30000g) = €25,98", prezzo(30000, TARIFFE_BRT_ONLINE) === 25.98);
 check("BRT oltre 31,5kg (31501g) → nessuna tariffa", prezzo(31501, TARIFFE_BRT_ONLINE) === null);
+check("GLS 2000g (limite fascia 0-2kg) = €9,90", prezzo(2000, TARIFFE_GLS_STANDARD) === 9.9);
+check("GLS 2001g (fascia 2-5kg) = €11,90", prezzo(2001, TARIFFE_GLS_STANDARD) === 11.9);
+check("GLS oltre 20kg (20001g) → nessuna tariffa", prezzo(20001, TARIFFE_GLS_STANDARD) === null);
 check("Peso 0 → nessuna tariffa", prezzo(0, TARIFFE_POSTE_STANDARD) === null);
 check("Peso negativo → nessuna tariffa", prezzo(-1, TARIFFE_POSTE_STANDARD) === null);
 
 // ── 3. Modello corrieri/servizi ────────────────────────────────────────
 check("BRT NON offre un servizio 'express' (fasce → null)", fascePerCorriere("brt", "express") === null);
 check("BRT offre il servizio 'online'", fascePerCorriere("brt", "online") !== null);
+check("GLS offre il servizio 'standard'", fascePerCorriere("gls", "standard") !== null);
+check("GLS NON offre un servizio 'express' (fasce → null)", fascePerCorriere("gls", "express") === null);
 check("Corriere locale NON ha tariffa di sistema", fascePerCorriere("locale", "locale") === null);
 
 const voceBrt = CATALOGO_SPEDIZIONE.filter((v) => v.carrier === "brt");
@@ -86,11 +96,20 @@ check("Catalogo: Poste Italiane ha standard + express",
 const voceLocale = CATALOGO_SPEDIZIONE.find((v) => v.carrier === "locale");
 check("Catalogo: il corriere locale è presente e distinto", voceLocale?.servizio === "locale" && voceLocale?.tier === "locale");
 
+const voceGls = CATALOGO_SPEDIZIONE.filter((v) => v.carrier === "gls");
+check("Catalogo: GLS ha esattamente 1 servizio (standard, tier standard)",
+  voceGls.length === 1 && voceGls[0].servizio === "standard" && voceGls[0].tier === "standard");
+check("Catalogo: GLS nome visualizzato = 'GLS'", voceGls[0]?.carrierNome === "GLS");
+check("Catalogo: GLS descrizione = 'Consegna nazionale GLS'", voceGls[0]?.descrizione === "Consegna nazionale GLS");
+
 // ── 4. Validazione carrier/servizio (coerente con la RPC) ──────────────
 check("isCarrierCodice('poste_italiane') = true", isCarrierCodice("poste_italiane") === true);
 check("isCarrierCodice('brt') = true", isCarrierCodice("brt") === true);
 check("isCarrierCodice('locale') = true", isCarrierCodice("locale") === true);
+check("isCarrierCodice('gls') = true", isCarrierCodice("gls") === true);
 check("isCarrierCodice('dhl') = false (non implementato)", isCarrierCodice("dhl") === false);
+check("isServizioValidoPerCarrier(gls, standard) = true", isServizioValidoPerCarrier("gls", "standard") === true);
+check("isServizioValidoPerCarrier(gls, express) = false", isServizioValidoPerCarrier("gls", "express") === false);
 check("isServizioValidoPerCarrier(poste, standard) = true", isServizioValidoPerCarrier("poste_italiane", "standard") === true);
 check("isServizioValidoPerCarrier(poste, express) = true", isServizioValidoPerCarrier("poste_italiane", "express") === true);
 check("isServizioValidoPerCarrier(brt, online) = true", isServizioValidoPerCarrier("brt", "online") === true);

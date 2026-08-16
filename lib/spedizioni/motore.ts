@@ -240,28 +240,51 @@ export async function getPreventivoSpedizione(
   // Servizi di spedizione ATTIVI per negozio (fail-closed: nessuna riga =
   // nessun servizio attivato → nessuna opzione selezionabile).
   const attiviPerNegozio = new Map<string, Set<string>>();
+  // Metodi con "spedizione gratuita" attiva (per negozio): quando attiva, il
+  // prezzo è 0 senza richiedere pacco/fascia (stessa chiave "carrier:servizio").
+  const gratuitaPerNegozio = new Map<string, Set<string>>();
   if (negozioIds.length > 0) {
-    const { data: metodi, error: errMetodi } = await db
+    let metodi: Record<string, unknown>[] | null = null;
+    // Se la colonna spedizione_gratuita non esiste ancora (migration GLS non
+    // applicata), rileggiamo senza di essa: fail-safe, tutti i metodi restano
+    // a pagamento (nessuna regressione su Poste/BRT).
+    const { data: metodiFull, error: errFull } = await db
       .from("negozio_metodi_spedizione")
-      .select("negozio_id, carrier, servizio")
+      .select("negozio_id, carrier, servizio, spedizione_gratuita")
       .eq("attivo", true)
       .in("negozio_id", negozioIds);
-    if (errMetodi) {
-      return {
-        ok: false,
-        opzioni: [],
-        pesoGrammi: null,
-        pesoMancante: false,
-        nessunServizioAttivo: false,
-        codice: "DB_UNAVAILABLE",
-        messaggio: "Impossibile calcolare la spedizione.",
-      };
+    if (errFull) {
+      const { data: metodiBase, error: errBase } = await db
+        .from("negozio_metodi_spedizione")
+        .select("negozio_id, carrier, servizio")
+        .eq("attivo", true)
+        .in("negozio_id", negozioIds);
+      if (errBase) {
+        return {
+          ok: false,
+          opzioni: [],
+          pesoGrammi: null,
+          pesoMancante: false,
+          nessunServizioAttivo: false,
+          codice: "DB_UNAVAILABLE",
+          messaggio: "Impossibile calcolare la spedizione.",
+        };
+      }
+      metodi = (metodiBase ?? []) as Record<string, unknown>[];
+    } else {
+      metodi = (metodiFull ?? []) as Record<string, unknown>[];
     }
-    for (const m of (metodi ?? []) as Record<string, unknown>[]) {
+    for (const m of metodi) {
       const nid = String(m.negozio_id);
+      const chiave = chiaveServizio(m.carrier as CarrierCodice, m.servizio as ServizioCodice);
       const set = attiviPerNegozio.get(nid) ?? new Set<string>();
-      set.add(chiaveServizio(m.carrier as CarrierCodice, m.servizio as ServizioCodice));
+      set.add(chiave);
       attiviPerNegozio.set(nid, set);
+      if (m.spedizione_gratuita === true) {
+        const gset = gratuitaPerNegozio.get(nid) ?? new Set<string>();
+        gset.add(chiave);
+        gratuitaPerNegozio.set(nid, gset);
+      }
     }
   }
 
@@ -339,6 +362,8 @@ export async function getPreventivoSpedizione(
         servizioNome: voce.servizioNome,
         etichetta: voce.etichetta,
         tempoConsegna: voce.tempoConsegna,
+        descrizione: voce.descrizione,
+        gratuita: false,
         prezzo: disponibile ? round2(prezzo) : null,
         disponibile,
         motivo: !attivo
@@ -349,10 +374,20 @@ export async function getPreventivoSpedizione(
       };
     }
 
-    // Poste Italiane / BRT: tariffa per fascia di peso.
+    // Poste Italiane / BRT / GLS: tariffa per fascia di peso. Se il negozio
+    // ha attivato la "spedizione gratuita" per questo metodo, il costo è 0
+    // (senza richiedere pacco/fascia: il prezzo resta comunque 0). In un
+    // carrello multi-negozio l'opzione è "gratuita" solo se TUTTI i negozi
+    // l'hanno configurata gratuita (altrimenti si sommano le tariffe).
     let calcolabile = perNegozio.size > 0;
     let prezzo = 0;
-    for (const g of perNegozio.values()) {
+    let gratuita = perNegozio.size > 0;
+    for (const [negozioId, g] of perNegozio) {
+      const gratis = gratuitaPerNegozio.get(negozioId)?.has(chiave) ?? false;
+      if (gratis) {
+        continue;
+      }
+      gratuita = false;
       if (g.pesoMancante || g.peso <= 0) {
         calcolabile = false;
         break;
@@ -374,6 +409,8 @@ export async function getPreventivoSpedizione(
       servizioNome: voce.servizioNome,
       etichetta: voce.etichetta,
       tempoConsegna: voce.tempoConsegna,
+      descrizione: voce.descrizione,
+      gratuita: disponibile ? gratuita : false,
       prezzo: disponibile ? round2(prezzo) : null,
       disponibile,
       motivo: !attivo

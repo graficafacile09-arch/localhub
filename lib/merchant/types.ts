@@ -34,6 +34,8 @@ export type MetodoSpedizioneNegozioInput = {
   carrier: string;
   servizio: string;
   attivo: boolean;
+  /** True se il metodo è offerto a costo zero al cliente. */
+  spedizione_gratuita: boolean;
   ordine_mostra: number;
 };
 

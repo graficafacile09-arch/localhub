@@ -54,15 +54,23 @@ function check(nome: string, condizione: boolean, dettaglio?: unknown) {
   }
 }
 
-function opzione(preventivo: { opzioni: Array<{ carrier: string; servizio: string; disponibile: boolean; motivo: string | null; prezzo: number | null }> }, carrier: string, servizio: string) {
+function opzione(preventivo: { opzioni: Array<{ carrier: string; servizio: string; disponibile: boolean; motivo: string | null; prezzo: number | null; gratuita: boolean }> }, carrier: string, servizio: string) {
   return preventivo.opzioni.find((o) => o.carrier === carrier && o.servizio === servizio) ?? null;
 }
 
-async function setMetodi(negozioId: string, metodi: Array<{ carrier: string; servizio: string; attivo: boolean }>) {
+async function setMetodi(
+  negozioId: string,
+  metodi: Array<{ carrier: string; servizio: string; attivo: boolean; spedizione_gratuita?: boolean }>
+) {
   await db.from("negozio_metodi_spedizione").delete().eq("negozio_id", negozioId);
   if (metodi.length > 0) {
     await db.from("negozio_metodi_spedizione").insert(
-      metodi.map((m, i) => ({ negozio_id: negozioId, ...m, ordine_mostra: i }))
+      metodi.map((m, i) => ({
+        negozio_id: negozioId,
+        ...m,
+        spedizione_gratuita: m.spedizione_gratuita === true,
+        ordine_mostra: i,
+      }))
     );
   }
 }
@@ -159,6 +167,30 @@ async function main() {
     });
     const prezzoRpc = (rpcData as { prezzo?: number } | null)?.prezzo ?? null;
     check("G) prezzo motore = prezzo RPC (€5,90)", prezzoMotore === prezzoRpc && prezzoMotore === 5.9, { prezzoMotore, prezzoRpc });
+
+    // ── H) GLS attivo: tariffa per fascia ──────────────────────────────
+    await setPacco(negozioId, 3000);
+    await setMetodi(negozioId, [{ carrier: "gls", servizio: "standard", attivo: true }]);
+    const h = await getPreventivoSpedizione([{ prodottoId, quantita: 1 }]);
+    check("H) GLS selezionabile", opzione(h, "gls", "standard")?.disponibile === true);
+    check("H) GLS 3kg = €11,90", opzione(h, "gls", "standard")?.prezzo === 11.9, opzione(h, "gls", "standard")?.prezzo);
+    check("H) GLS non gratuita", opzione(h, "gls", "standard")?.gratuita === false);
+    const { data: rpcGls } = await db.rpc("calcola_tariffa_spedizione", {
+      p_carrier: "gls",
+      p_service: "standard",
+      p_peso_grammi: 3000,
+    });
+    check("H) RPC GLS 3kg = €11,90", (rpcGls as { prezzo?: number } | null)?.prezzo === 11.9, rpcGls);
+
+    // ── I) GLS gratuito: prezzo 0, flag gratuita, senza pacco ──────────
+    await setPacco(negozioId, null);
+    await setMetodi(negozioId, [
+      { carrier: "gls", servizio: "standard", attivo: true, spedizione_gratuita: true },
+    ]);
+    const i = await getPreventivoSpedizione([{ prodottoId, quantita: 1 }]);
+    check("I) GLS gratuito selezionabile (anche senza pacco)", opzione(i, "gls", "standard")?.disponibile === true);
+    check("I) GLS gratuito prezzo = 0", opzione(i, "gls", "standard")?.prezzo === 0, opzione(i, "gls", "standard")?.prezzo);
+    check("I) GLS gratuito flag gratuita = true", opzione(i, "gls", "standard")?.gratuita === true);
   } catch (err) {
     falliti++;
     console.error("  ❌ ERRORE nel test:", err instanceof Error ? err.message : String(err));

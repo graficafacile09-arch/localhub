@@ -724,16 +724,18 @@ export default function CheckoutCarrelloForm({ prefill }: { prefill: Prefill }) 
                                       )}
                                     </p>
                                     <p className="text-[11px] text-slate-500">
-                                      {opzione.tempoConsegna ?? "Consegna concordata con il negozio"}
+                                      {opzione.descrizione ?? opzione.tempoConsegna ?? "Consegna concordata con il negozio"}
                                     </p>
                                     {!opzione.disponibile && opzione.motivo && (
                                       <p className="mt-0.5 text-[10px] leading-4 text-slate-400">{opzione.motivo}</p>
                                     )}
                                   </div>
                                   <span className="shrink-0 text-sm font-bold text-slate-900">
-                                    {opzione.disponibile && opzione.prezzo !== null
-                                      ? `€${opzione.prezzo.toFixed(2)}`
-                                      : "—"}
+                                    {opzione.disponibile && opzione.gratuita
+                                      ? "Spedizione gratuita"
+                                      : opzione.disponibile && opzione.prezzo !== null
+                                        ? `€${opzione.prezzo.toFixed(2)}`
+                                        : "—"}
                                   </span>
                                 </div>
                               </label>

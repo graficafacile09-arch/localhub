@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronDown, Loader2, Package, Save, Truck } from "lucide-react";
 import type { ConfigPaccoSpedizione } from "@/lib/merchant/types";
+import { fascePerCorriere } from "@/lib/spedizioni/catalogo";
 
 /** Formatta i grammi in kg leggibili ("1200" → "1,2 kg"); null → "". */
 function formattaKg(grammi: number | null): string {
@@ -22,10 +23,18 @@ function riepilogoPacco(cfg: ConfigPaccoSpedizione): string | null {
   return `Pacco: ${parti.join(" · ")}`;
 }
 
+/** Etichetta leggibile di una fascia peso ("fino a 2 kg" / "2–5 kg"). */
+function etichettaFascia(pesoMinG: number, pesoMaxG: number): string {
+  const maxKg = (pesoMaxG / 1000).toLocaleString("it-IT");
+  if (pesoMinG <= 0) return `fino a ${maxKg} kg`;
+  return `${(pesoMinG / 1000).toLocaleString("it-IT")}–${maxKg} kg`;
+}
+
 type MetodoSpedizione = {
   carrier: string;
   servizio: string;
   attivo: boolean;
+  spedizione_gratuita: boolean;
   ordine_mostra: number;
   label: string;
 };
@@ -185,6 +194,52 @@ export default function SpedizionePaccoConfig({
             carrier: m.carrier,
             servizio: m.servizio,
             attivo: m.attivo,
+            spedizione_gratuita: m.spedizione_gratuita,
+            ordine_mostra: m.ordine_mostra,
+          })),
+        }),
+      });
+      if (!res.ok) {
+        setMetodi(precedenti);
+        const data = (await res.json().catch(() => null)) as {
+          error?: { message?: string };
+        } | null;
+        setErrore(data?.error?.message ?? "Impossibile aggiornare il servizio.");
+        return;
+      }
+      router.refresh();
+    } catch {
+      setMetodi(precedenti);
+      setErrore("Errore di rete. Riprova.");
+    } finally {
+      setSalvandoMetodo(null);
+    }
+  }
+
+  /** Attiva/disattiva la spedizione gratuita per un servizio (immediato). */
+  async function toggleGratuita(carrier: string, servizio: string, gratuita: boolean) {
+    const chiave = `${carrier}:${servizio}`;
+    setSalvandoMetodo(chiave);
+    setErrore(null);
+
+    const precedenti = metodi;
+    const prossimi = metodi.map((m) =>
+      m.carrier === carrier && m.servizio === servizio
+        ? { ...m, spedizione_gratuita: gratuita }
+        : m
+    );
+    setMetodi(prossimi);
+
+    try {
+      const res = await fetch(`/api/merchant/stores/${negozioId}/spedizione`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          metodi: prossimi.map((m) => ({
+            carrier: m.carrier,
+            servizio: m.servizio,
+            attivo: m.attivo,
+            spedizione_gratuita: m.spedizione_gratuita,
             ordine_mostra: m.ordine_mostra,
           })),
         }),
@@ -323,33 +378,74 @@ export default function SpedizionePaccoConfig({
                 {metodi.map((m) => {
                   const chiave = `${m.carrier}:${m.servizio}`;
                   const busy = salvandoMetodo === chiave;
+                  const fasceGls =
+                    m.carrier === "gls" ? (fascePerCorriere("gls", "standard") ?? []) : [];
                   return (
                     <div
                       key={chiave}
-                      className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 px-3 py-2.5"
+                      className="rounded-lg border border-slate-200 px-3 py-2.5"
                     >
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-slate-900">{m.label}</p>
-                        {!m.attivo && (
-                          <p className="text-[11px] text-slate-400">Non attivo</p>
-                        )}
-                      </div>
-                      <button
-                        type="button"
-                        role="switch"
-                        aria-checked={m.attivo}
-                        disabled={busy}
-                        onClick={() => toggleServizio(m.carrier, m.servizio, !m.attivo)}
-                        className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition disabled:opacity-50 ${
-                          m.attivo ? "bg-blue-600" : "bg-slate-300"
-                        }`}
-                      >
-                        <span
-                          className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition ${
-                            m.attivo ? "translate-x-6" : "translate-x-1"
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-slate-900">{m.label}</p>
+                          {!m.attivo && (
+                            <p className="text-[11px] text-slate-400">Non attivo</p>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={m.attivo}
+                          disabled={busy}
+                          onClick={() => toggleServizio(m.carrier, m.servizio, !m.attivo)}
+                          className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition disabled:opacity-50 ${
+                            m.attivo ? "bg-blue-600" : "bg-slate-300"
                           }`}
-                        />
-                      </button>
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition ${
+                              m.attivo ? "translate-x-6" : "translate-x-1"
+                            }`}
+                          />
+                        </button>
+                      </div>
+
+                      {m.attivo && m.carrier !== "locale" && (
+                        <div className="mt-2 border-t border-slate-100 pt-2">
+                          <label className="flex items-start gap-2">
+                            <input
+                              type="checkbox"
+                              checked={m.spedizione_gratuita}
+                              disabled={busy}
+                              onChange={() =>
+                                toggleGratuita(m.carrier, m.servizio, !m.spedizione_gratuita)
+                              }
+                              className="mt-0.5 h-4 w-4 accent-blue-600"
+                            />
+                            <span className="min-w-0">
+                              <span className="block text-xs font-semibold text-slate-700">
+                                Spedizione gratuita
+                              </span>
+                              <span className="block text-[11px] leading-4 text-slate-500">
+                                {m.spedizione_gratuita
+                                  ? "Il cliente non pagherà le spese di spedizione."
+                                  : "Se attiva, il cliente non pagherà le spese di spedizione per questo metodo."}
+                              </span>
+                            </span>
+                          </label>
+                          {m.carrier === "gls" && !m.spedizione_gratuita && fasceGls.length > 0 && (
+                            <p className="mt-2 text-[11px] leading-4 text-slate-500">
+                              Fasce GLS:{" "}
+                              {fasceGls
+                                .map(
+                                  (f) =>
+                                    `${etichettaFascia(f.pesoMinG, f.pesoMaxG)} → €${f.prezzo.toFixed(2)}`
+                                )
+                                .join(" · ")}
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })}

@@ -324,7 +324,13 @@ export async function getMetodiSpedizioneNegozio(
   userId: string,
   negozioId: string
 ): Promise<
-  | Array<{ carrier: string; servizio: string; attivo: boolean; ordine_mostra: number }>
+  | Array<{
+      carrier: string;
+      servizio: string;
+      attivo: boolean;
+      spedizione_gratuita: boolean;
+      ordine_mostra: number;
+    }>
   | null
 > {
   const puòGestire = await canManageStore(userId, negozioId);
@@ -333,7 +339,7 @@ export async function getMetodiSpedizioneNegozio(
   const supabase = await getDbForUser(userId);
   const { data, error } = await supabase
     .from("negozio_metodi_spedizione")
-    .select("carrier, servizio, attivo, ordine_mostra")
+    .select("carrier, servizio, attivo, spedizione_gratuita, ordine_mostra")
     .eq("negozio_id", negozioId)
     .order("ordine_mostra", { ascending: true });
 
@@ -342,6 +348,7 @@ export async function getMetodiSpedizioneNegozio(
     carrier: String(r.carrier),
     servizio: String(r.servizio),
     attivo: r.attivo === true,
+    spedizione_gratuita: r.spedizione_gratuita === true,
     ordine_mostra: Number(r.ordine_mostra ?? 0),
   }));
 }
@@ -367,6 +374,7 @@ export async function updateMetodiSpedizioneNegozio(
         carrier: m.carrier,
         servizio: m.servizio,
         attivo: m.attivo === true,
+        spedizione_gratuita: m.spedizione_gratuita === true,
         ordine_mostra: m.ordine_mostra,
         updated_at: new Date().toISOString(),
       },
