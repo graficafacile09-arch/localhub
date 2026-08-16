@@ -60,6 +60,10 @@ export type DatiEmailOrdine = {
   modalita: "ritiro" | "spedizione";
   negozioNome: string;
   email: string;
+  /** Metodo di pagamento (es. "carta", "paypal", "klarna", "bonifico");
+   *  usato nell'email di conferma pagamento. Opzionale: assente nelle email
+   *  legacy/di creazione che non lo costruiscono. */
+  metodoPagamento?: string | null;
   ritiroData: string | null;
   ritiroFascia: string | null;
   spedizioneIndirizzo: string | null;
@@ -98,6 +102,27 @@ export function formattaDataEmail(value: string | null | undefined): string {
 export function costruisciOggettoOrdine(dati: Pick<DatiEmailOrdine, "numero">): string {
   const numero = (dati.numero || "").trim() || "ordine";
   return `Conferma ordine ${numero} — InCittà`;
+}
+
+/** Oggetto dell'email di conferma pagamento (inviata post-webhook). */
+export function costruisciOggettoPagamento(dati: Pick<DatiEmailOrdine, "numero">): string {
+  const numero = (dati.numero || "").trim() || "ordine";
+  return `Pagamento ricevuto — ordine ${numero}`;
+}
+
+/** Etichetta leggibile del metodo di pagamento per l'email post-pagamento. */
+export function etichettaMetodoPagamento(metodo: string | null | undefined): string {
+  switch (metodo) {
+    case "paypal":
+      return "PayPal";
+    case "klarna":
+      return "Klarna";
+    case "bonifico":
+      return "Bonifico bancario";
+    case "carta":
+    default:
+      return "Carta di credito/debito (Stripe)";
+  }
 }
 
 /** Etichetta leggibile dello stato. */
@@ -250,6 +275,141 @@ export function costruisciHtmlConfermaOrdine(dati: DatiEmailOrdine): string {
   </html>`;
 }
 
+/**
+ * HTML dell'email di CONFERMA PAGAMENTO (post-webhook Stripe): indica
+ * esplicitamente che il pagamento è andato a buon fine, con importo e metodo.
+ * Stesso layout/responsive della conferma ordine; riusa gli helper condivisi
+ * (escapeHtml, formattaEuroEmail, formattaDataEmail, SITE_URL). Nessun dato
+ * sensibile oltre al necessario.
+ */
+export function costruisciHtmlConfermaPagamento(dati: DatiEmailOrdine): string {
+  const nome = (dati.email || "").split("@")[0] || "";
+  const metodo = etichettaMetodoPagamento(dati.metodoPagamento);
+
+  const righeHtml = dati.righe
+    .map((r) => {
+      const subtotale = (Number(r.prezzoUnitario) || 0) * (Number(r.quantita) || 1);
+      const varianteHtml = (r.varianteNome || "").trim()
+        ? `<div style="color:#64748b;font-size:12px;margin-top:2px;">Variante: ${escapeHtml((r.varianteNome || "").trim())}</div>`
+        : "";
+      return `
+        <tr>
+          <td style="padding:10px 0;border-bottom:1px solid #eef2f7;font-size:14px;color:#0f172a;">
+            <strong>${escapeHtml(r.nomeProdotto || "Prodotto")}</strong>
+            ${varianteHtml}
+            <div style="color:#64748b;font-size:12px;margin-top:2px;">${Number(r.quantita) || 1} × €${formattaEuroEmail(Number(r.prezzoUnitario) || 0)}</div>
+          </td>
+          <td align="right" style="padding:10px 0;border-bottom:1px solid #eef2f7;font-size:14px;font-weight:700;color:#0f172a;white-space:nowrap;">
+            €${formattaEuroEmail(subtotale)}
+          </td>
+        </tr>`;
+    })
+    .join("");
+
+  let consegnaHtml: string;
+  if (dati.modalita === "spedizione") {
+    const indirizzo = [
+      dati.spedizioneIndirizzo,
+      dati.spedizioneCap,
+      dati.spedizioneCitta,
+      dati.spedizioneProvincia,
+    ]
+      .filter((v): v is string => Boolean(v && v.trim()))
+      .join(", ");
+    consegnaHtml = `
+      <p style="margin:0;font-size:14px;color:#0f172a;font-weight:600;">Spedizione a domicilio</p>
+      ${indirizzo ? `<p style="margin:4px 0 0;font-size:14px;color:#475569;line-height:1.5;">${escapeHtml(indirizzo)}</p>` : ""}
+      ${dati.spedizioneNote ? `<p style="margin:4px 0 0;font-size:12px;color:#64748b;">Note consegna: ${escapeHtml(dati.spedizioneNote)}</p>` : ""}`;
+  } else {
+    const ritiro = [dati.ritiroData, dati.ritiroFascia].filter(Boolean).join(" — ");
+    consegnaHtml = `
+      <p style="margin:0;font-size:14px;color:#0f172a;font-weight:600;">Ritiro in negozio</p>
+      ${ritiro ? `<p style="margin:4px 0 0;font-size:14px;color:#475569;">📅 ${escapeHtml(ritiro)}</p>` : `<p style="margin:4px 0 0;font-size:14px;color:#475569;">📅 Data da definire con il negozio</p>`}`;
+  }
+
+  const noteTesto = (dati.note || "").trim();
+  const noteHtml = noteTesto
+    ? `<p style="margin:0;font-size:14px;color:#475569;line-height:1.5;">📝 ${escapeHtml(noteTesto)}</p>`
+    : "";
+
+  const linkOrdine = `${SITE_URL.replace(/\/+$/, "")}/ordini/conferma/${encodeURIComponent(dati.id)}`;
+
+  return `
+  <!DOCTYPE html>
+  <html lang="it">
+  <body style="margin:0;padding:0;background-color:#f1f5f9;font-family:Arial,Helvetica,sans-serif;">
+    <div style="max-width:560px;margin:0 auto;padding:24px 16px;">
+      <!-- Intestazione -->
+      <div style="background:#059669;border-radius:16px 16px 0 0;padding:24px;text-align:center;">
+        <p style="margin:0;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#a7f3d0;font-weight:700;">Pagamento ricevuto</p>
+        <p style="margin:8px 0 0;font-size:20px;font-weight:800;color:#ffffff;">${escapeHtml(dati.numero)}</p>
+        <p style="margin:6px 0 0;font-size:13px;color:#d1fae5;">Grazie ${escapeHtml(nome)} — il tuo pagamento è stato confermato.</p>
+      </div>
+
+      <div style="background:#ffffff;border-radius:0 0 16px 16px;padding:24px;box-shadow:0 1px 3px rgba(15,23,42,0.06);">
+
+        <!-- Negozio + data -->
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+          <tr>
+            <td style="font-size:14px;color:#0f172a;"><strong>🏪 ${escapeHtml(dati.negozioNome || "Negozio")}</strong></td>
+            <td align="right" style="font-size:12px;color:#64748b;">${formattaDataEmail(dati.createdAt)}</td>
+          </tr>
+        </table>
+
+        <!-- Pagamento ricevuto -->
+        <div style="margin-top:16px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px;padding:14px;">
+          <p style="margin:0;font-size:14px;font-weight:800;color:#047857;">✅ Pagamento ricevuto</p>
+          <p style="margin:6px 0 0;font-size:14px;color:#047857;line-height:1.5;">
+            Il pagamento di <strong>€${formattaEuroEmail(Number(dati.totale))}</strong> con ${escapeHtml(metodo)} è andato a buon fine.
+          </p>
+        </div>
+
+        <!-- Prodotti -->
+        <p style="margin:20px 0 4px;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#64748b;font-weight:700;">Prodotti</p>
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+          ${righeHtml}
+        </table>
+
+        <!-- Totale -->
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:12px;">
+          ${Number(dati.costoSpedizione) > 0
+            ? `<tr>
+                <td style="padding:6px 0;font-size:13px;color:#64748b;">Spedizione</td>
+                <td align="right" style="padding:6px 0;font-size:13px;color:#64748b;">€${formattaEuroEmail(Number(dati.costoSpedizione))}</td>
+              </tr>`
+            : ""}
+          <tr>
+            <td style="padding:8px 0;font-size:14px;color:#0f172a;font-weight:700;">Totale</td>
+            <td align="right" style="padding:8px 0;font-size:20px;font-weight:800;color:#0f172a;">€${formattaEuroEmail(Number(dati.totale))}</td>
+          </tr>
+        </table>
+
+        <!-- Consegna -->
+        <p style="margin:20px 0 4px;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#64748b;font-weight:700;">Consegna</p>
+        <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:14px;">
+          ${consegnaHtml}
+        </div>
+
+        ${noteHtml ? `<p style="margin:16px 0 0;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#64748b;font-weight:700;">Note</p><div style="margin-top:4px;">${noteHtml}</div>` : ""}
+
+        <!-- CTA -->
+        <div style="margin-top:24px;text-align:center;">
+          <a href="${linkOrdine}"
+             style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;padding:13px 28px;border-radius:12px;font-size:14px;font-weight:700;">
+            Visualizza ordine
+          </a>
+        </div>
+
+        <p style="margin:20px 0 0;font-size:11px;color:#94a3b8;text-align:center;line-height:1.6;">
+          Hai domande? Contatta direttamente ${escapeHtml(dati.negozioNome || "il negozio")}.
+          <br/>Questa email è un riepilogo del tuo ordine su InCittà.
+        </p>
+      </div>
+    </div>
+  </body>
+  </html>`;
+}
+
 /** Escape HTML dei valori provenienti dal DB (mai fidarsi del contenuto). */
 function escapeHtml(value: string): string {
   return String(value ?? "")
@@ -280,32 +440,119 @@ function conTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   });
 }
 
-/** Invio effettivo con Resend (sostituibile nei test con `opts.invia`). */
-async function inviaConResend(dati: DatiEmailOrdine): Promise<void> {
+/** Invio effettivo con Resend (sostituibile nei test con `opts.invia`).
+ *  Restituisce il messageId Resend se disponibile (mai secret nei log). */
+async function inviaConResend(
+  dati: DatiEmailOrdine,
+  oggetto: string,
+  html: string
+): Promise<string | null> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
     throw new Error("RESEND_API_KEY non configurata");
   }
   const resend = new Resend(apiKey);
-  const { error } = await conTimeout(
+  const { data, error } = await conTimeout(
     resend.emails.send({
       from: FROM_EMAIL,
       to: dati.email,
-      subject: costruisciOggettoOrdine(dati),
-      html: costruisciHtmlConfermaOrdine(dati),
+      subject: oggetto,
+      html,
     }),
     RESEND_TIMEOUT_MS
   );
   if (error) {
     throw new Error(`Resend: ${error.message}`);
   }
+  return data?.id ?? null;
 }
 
 /** Opzioni per i test (iniezione di db e funzione di invio). */
 export type OpzioniEmailOrdine = {
   db?: DbLike;
-  invia?: (dati: DatiEmailOrdine) => Promise<void>;
+  /** Restituisce il messageId Resend se disponibile (null/void nei test). */
+  invia?: (dati: DatiEmailOrdine) => Promise<string | null | void>;
 };
+
+/** Esito del caricamento dei dati ordine per una email (con motivo di skip/error). */
+type EsitoCaricaDatiEmail =
+  | { ok: true; dati: DatiEmailOrdine; email: string }
+  | { ok: false; stato: "skipped" | "error"; motivo: string };
+
+/**
+ * Recupera ordine + righe dal DB e costruisce DatiEmailOrdine applicando le
+ * guardie (email presente/valida). NON lancia MAI: gli errori sono loggati e
+ * restituiti come stato. Estratto per non duplicare la logica tra la conferma
+ * di creazione e la conferma di pagamento.
+ */
+async function caricaDatiEmailOrdine(
+  db: { from: (t: string) => any },
+  ordineId: string
+): Promise<EsitoCaricaDatiEmail> {
+  // ── Recupero dati ordine ────────────────────────────────────────────────
+  const { data: ordine, error: errOrdine } = await db
+    .from("ordini")
+    .select("*")
+    .eq("id", ordineId)
+    .single();
+  if (errOrdine || !ordine) {
+    console.error(
+      `[ordine-email] ordine ${ordineId}: ordine non trovato (${errOrdine?.message ?? "null"})`
+    );
+    return { ok: false, stato: "error", motivo: "ordine_non_trovato" };
+  }
+
+  const { data: righe, error: errRighe } = await db
+    .from("ordini_righe")
+    .select("*")
+    .eq("ordine_id", ordineId)
+    .order("created_at", { ascending: true });
+  if (errRighe) {
+    // Le righe mancanti non bloccano l'email: si invia il riepilogo con le
+    // sole informazioni disponibili, loggando il problema.
+    console.error(`[ordine-email] ordine ${ordineId}: lettura righe fallita: ${errRighe.message}`);
+  }
+
+  // ── Guardie: niente email → skipped (mai un errore per l'ordine) ────────
+  const email = String(ordine.cliente_email ?? "").trim();
+  if (!email) {
+    console.log(`[ordine-email] ordine ${ordine.numero ?? "?"}: email cliente assente, invio saltato`);
+    return { ok: false, stato: "skipped", motivo: "email_assente" };
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    console.warn(`[ordine-email] ordine ${ordine.numero ?? "?"}: email non valida, invio saltato`);
+    return { ok: false, stato: "skipped", motivo: "email_non_valida" };
+  }
+
+  const dati: DatiEmailOrdine = {
+    id: String(ordine.id ?? ordineId),
+    numero: String(ordine.numero ?? ""),
+    stato: String(ordine.stato ?? "in_preparazione"),
+    totale: Number(ordine.totale ?? 0),
+    costoSpedizione: Number(ordine.costo_spedizione ?? 0),
+    createdAt: String(ordine.created_at ?? ""),
+    modalita: ordine.modalita === "spedizione" ? "spedizione" : "ritiro",
+    negozioNome: String(ordine.negozio_nome ?? ""),
+    email,
+    metodoPagamento: (ordine.metodo_pagamento as string | null) ?? null,
+    ritiroData: ordine.ritiro_data ?? null,
+    ritiroFascia: ordine.ritiro_fascia ?? null,
+    spedizioneIndirizzo: ordine.spedizione_indirizzo ?? null,
+    spedizioneCap: ordine.spedizione_cap ?? null,
+    spedizioneCitta: ordine.spedizione_citta ?? null,
+    spedizioneProvincia: ordine.spedizione_provincia ?? null,
+    spedizioneNote: ordine.spedizione_note ?? null,
+    note: ordine.note ?? null,
+    righe: (righe ?? []).map((r: Record<string, unknown>) => ({
+      nomeProdotto: String(r.nome_prodotto ?? ""),
+      prezzoUnitario: Number(r.prezzo_unitario ?? 0),
+      quantita: Number(r.quantita ?? 1),
+      varianteNome: (r.variante_nome as string | null) ?? null,
+    })),
+  };
+
+  return { ok: true, dati, email };
+}
 
 /**
  * Invia l'email di conferma per un ordine appena creato.
@@ -322,75 +569,69 @@ export async function inviaEmailConfermaOrdine(
     const db = (opts.db ?? createAdminSupabaseClient()) as {
       from: (t: string) => any;
     };
-
-    // ── Recupero dati ordine ────────────────────────────────────────────────
-    const { data: ordine, error: errOrdine } = await db
-      .from("ordini")
-      .select("*")
-      .eq("id", ordineId)
-      .single();
-    if (errOrdine || !ordine) {
-      console.error(
-        `[ordine-email] ordine ${ordineId}: ordine non trovato (${errOrdine?.message ?? "null"})`
-      );
-      return { stato: "error", motivo: "ordine_non_trovato" };
+    const carico = await caricaDatiEmailOrdine(db, ordineId);
+    if (!carico.ok) {
+      return { stato: carico.stato, motivo: carico.motivo };
     }
+    const { dati, email } = carico;
 
-    const { data: righe, error: errRighe } = await db
-      .from("ordini_righe")
-      .select("*")
-      .eq("ordine_id", ordineId)
-      .order("created_at", { ascending: true });
-    if (errRighe) {
-      // Le righe mancanti non bloccano l'email: si invia il riepilogo con le
-      // sole informazioni disponibili, loggando il problema.
-      console.error(`[ordine-email] ordine ${ordineId}: lettura righe fallita: ${errRighe.message}`);
-    }
+    const invia: (d: DatiEmailOrdine) => Promise<string | null | void> =
+      opts.invia ??
+      ((d) => inviaConResend(d, costruisciOggettoOrdine(d), costruisciHtmlConfermaOrdine(d)));
+    const messageId = (await invia(dati)) ?? null;
 
-    // ── Guardie: niente email → skipped (mai un errore per l'ordine) ────────
-    const email = String(ordine.cliente_email ?? "").trim();
-    if (!email) {
-      console.log(`[ordine-email] ordine ${ordine.numero ?? "?"}: email cliente assente, invio saltato`);
-      return { stato: "skipped", motivo: "email_assente" };
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      console.warn(`[ordine-email] ordine ${ordine.numero ?? "?"}: email non valida, invio saltato`);
-      return { stato: "skipped", motivo: "email_non_valida" };
-    }
-
-    const dati: DatiEmailOrdine = {
-      id: String(ordine.id ?? ordineId),
-      numero: String(ordine.numero ?? ""),
-      stato: String(ordine.stato ?? "in_preparazione"),
-      totale: Number(ordine.totale ?? 0),
-      costoSpedizione: Number(ordine.costo_spedizione ?? 0),
-      createdAt: String(ordine.created_at ?? ""),
-      modalita: ordine.modalita === "spedizione" ? "spedizione" : "ritiro",
-      negozioNome: String(ordine.negozio_nome ?? ""),
-      email,
-      ritiroData: ordine.ritiro_data ?? null,
-      ritiroFascia: ordine.ritiro_fascia ?? null,
-      spedizioneIndirizzo: ordine.spedizione_indirizzo ?? null,
-      spedizioneCap: ordine.spedizione_cap ?? null,
-      spedizioneCitta: ordine.spedizione_citta ?? null,
-      spedizioneProvincia: ordine.spedizione_provincia ?? null,
-      spedizioneNote: ordine.spedizione_note ?? null,
-      note: ordine.note ?? null,
-      righe: (righe ?? []).map((r: Record<string, unknown>) => ({
-        nomeProdotto: String(r.nome_prodotto ?? ""),
-        prezzoUnitario: Number(r.prezzo_unitario ?? 0),
-        quantita: Number(r.quantita ?? 1),
-        varianteNome: (r.variante_nome as string | null) ?? null,
-      })),
-    };
-
-    await (opts.invia ?? inviaConResend)(dati);
-
-    console.log(`[ordine-email] ordine ${dati.numero || "?"}: email inviata a ${maskEmail(email)}`);
-    return { stato: "sent", messageId: null };
+    console.log(
+      `[ordine-email] ordine ${dati.numero || "?"}: conferma_ordine sent${messageId ? ` (messageId=${messageId})` : ""} a ${maskEmail(email)}`
+    );
+    return { stato: "sent", messageId };
   } catch (err) {
     console.error(
-      `[ordine-email] ordine ${ordineId}: invio fallito (best-effort): ${(err as Error)?.message ?? "sconosciuto"}`
+      `[ordine-email] ordine ${ordineId}: conferma_ordine error: ${(err as Error)?.message ?? "sconosciuto"}`
+    );
+    return { stato: "error", motivo: "invio_fallito" };
+  }
+}
+
+/**
+ * Invia l'email di CONFERMA PAGAMENTO al cliente. Deve essere chiamata SOLO
+ * dopo che il webhook del provider ha registrato il pagamento (marcaPagato
+ * ok). Oggetto/corpo specifici ("Pagamento ricevuto", importo + metodo).
+ *
+ * L'idempotenza NON è interna a questa funzione ma garantita a monte dal
+ * chiamante tramite pagamenti_eventi (UNIQUE event_id): lo stesso evento
+ * Stripe viene processato una sola volta, quindi questa email parte una sola
+ * volta anche in caso di retry. MAI throw: un errore email non fa mai fallire
+ * il webhook.
+ */
+export async function inviaEmailConfermaPagamento(
+  ordineId: string,
+  opts: OpzioniEmailOrdine = {}
+): Promise<EsitoEmailOrdine> {
+  try {
+    const db = (opts.db ?? createAdminSupabaseClient()) as {
+      from: (t: string) => any;
+    };
+    const carico = await caricaDatiEmailOrdine(db, ordineId);
+    if (!carico.ok) {
+      console.log(
+        `[ordine-email] ordine ${ordineId}: conferma_pagamento ${carico.stato} (${carico.motivo})`
+      );
+      return { stato: carico.stato, motivo: carico.motivo };
+    }
+    const { dati, email } = carico;
+
+    const invia: (d: DatiEmailOrdine) => Promise<string | null | void> =
+      opts.invia ??
+      ((d) => inviaConResend(d, costruisciOggettoPagamento(d), costruisciHtmlConfermaPagamento(d)));
+    const messageId = (await invia(dati)) ?? null;
+
+    console.log(
+      `[ordine-email] ordine ${dati.numero || "?"}: conferma_pagamento sent${messageId ? ` (messageId=${messageId})` : ""} a ${maskEmail(email)}`
+    );
+    return { stato: "sent", messageId };
+  } catch (err) {
+    console.error(
+      `[ordine-email] ordine ${ordineId}: conferma_pagamento error: ${(err as Error)?.message ?? "sconosciuto"}`
     );
     return { stato: "error", motivo: "invio_fallito" };
   }

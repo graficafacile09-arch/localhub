@@ -22,7 +22,7 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getConfigStripeNegozio, getNegozioIdByStripeAccount } from "./config";
 import { verificaEventoStripe } from "./stripe";
 import { getStripePlatformWebhookSecret } from "./stripe-connect";
-import { inviaEmailConfermaOrdine } from "@/lib/cliente/ordine-email";
+import { inviaEmailConfermaPagamento } from "@/lib/cliente/ordine-email";
 
 export type EsitoWebhook = { status: number; body: string };
 
@@ -280,9 +280,13 @@ export async function gestisciWebhookStripe(
         if (!esito.ok) {
           console.error("[pagamenti] elaborazione completed fallita:", esito.errore);
         } else {
-          // Email di conferma pagamento: per gli ordini carta la conferma
-          // viene inviata QUI (alla creazione era stata rimandata).
-          await inviaEmailConfermaOrdine(ordineId).catch(() => {});
+          // Email di CONFERMA PAGAMENTO al cliente: inviata SOLO qui, dopo che
+          // marcaPagato ha registrato payment_status=paid. L'idempotenza è a
+          // monte: registraEvento (pagamenti_eventi UNIQUE event_id) fa
+          // processare questo evento una sola volta → conferma pagamento
+          // inviata una sola volta anche in caso di retry Stripe. Un errore
+          // email NON fa fallire il webhook (best-effort + .catch).
+          await inviaEmailConfermaPagamento(ordineId).catch(() => {});
         }
         break;
       }
