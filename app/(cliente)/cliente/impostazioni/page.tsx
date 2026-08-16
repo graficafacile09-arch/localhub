@@ -1,17 +1,15 @@
-import ClientePlaceholder from "@/components/cliente/ClientePlaceholder";
-import { getClienteNavItem } from "@/components/cliente/navigation";
+import ImpostazioniClienteModule from "@/components/cliente/impostazioni/ImpostazioniClienteModule";
 
 export const metadata = {
   title: "Impostazioni — Area Clienti",
 };
 
+export const dynamic = "force-dynamic";
+
+/**
+ * Pagina Impostazioni dell'Area Clienti.
+ * Modulo reale: dati personali modificabili e cambio password (Supabase Auth).
+ */
 export default function ImpostazioniPage() {
-  const item = getClienteNavItem("/cliente/impostazioni");
-  return (
-    <ClientePlaceholder
-      icon={item.icon}
-      title={item.label}
-      description={item.description}
-    />
-  );
+  return <ImpostazioniClienteModule />;
 }
