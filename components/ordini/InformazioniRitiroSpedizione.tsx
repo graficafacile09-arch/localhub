@@ -210,7 +210,7 @@ export function InformazioniRitiroSpedizione({
               </a>
             </div>
           ) : null}
-          {(metodoPagamento || paymentProvider === "klarna") && (
+          {(metodoPagamento || paymentProvider === "klarna" || paymentProvider === "scalapay") && (
             <RigaDettaglio
               etichetta="Metodo pagamento"
               valore={
@@ -223,6 +223,10 @@ export function InformazioniRitiroSpedizione({
                       height={11}
                       className="h-3 w-auto object-contain"
                     />
+                  ) : paymentProvider === "scalapay" ? (
+                    <span className="inline-flex shrink-0 items-center rounded bg-slate-900 px-1.5 py-0.5 text-[9px] font-black tracking-wide text-white">
+                      Scalapay
+                    </span>
                   ) : metodoPagamento === "bonifico" ? (
                     <Banknote className="h-4 w-4 text-slate-400" aria-hidden />
                   ) : (
@@ -230,11 +234,13 @@ export function InformazioniRitiroSpedizione({
                   )}
                   {paymentProvider === "klarna"
                     ? "Klarna (3 rate)"
-                    : metodoPagamento === "carta"
-                      ? "Carta"
-                      : metodoPagamento === "paypal"
-                        ? "PayPal"
-                        : "Bonifico bancario"}
+                    : paymentProvider === "scalapay"
+                      ? "Scalapay (3 rate)"
+                      : metodoPagamento === "carta"
+                        ? "Carta"
+                        : metodoPagamento === "paypal"
+                          ? "PayPal"
+                          : "Bonifico bancario"}
                 </span>
               }
             />

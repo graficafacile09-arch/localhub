@@ -68,7 +68,7 @@ export default function SpedizioneForm({
   // "disponibile" NON significa "selezionato". Il submit è bloccato finché
   // l'utente non sceglie esplicitamente un metodo (vedi pulsante disabilitato).
   const [metodoPagamento, setMetodoPagamento] = useState<
-    "carta" | "bonifico" | "klarna" | "paypal" | null
+    "carta" | "bonifico" | "klarna" | "scalapay" | "paypal" | null
   >(null);
   const [inviando, setInviando] = useState(false);
   const [errore, setErrore] = useState<string | null>(null);
@@ -466,6 +466,10 @@ export default function SpedizioneForm({
                         height={16}
                         className="h-3.5 w-auto shrink-0 object-contain"
                       />
+                    ) : metodo.metodo === "scalapay" ? (
+                      <span className="inline-flex shrink-0 items-center rounded bg-slate-900 px-1.5 py-0.5 text-[9px] font-black tracking-wide text-white">
+                        Scalapay
+                      </span>
                     ) : metodo.metodo === "carta" ? (
                       <CreditCard className="h-4 w-4 shrink-0 text-slate-500" />
                     ) : (
@@ -474,7 +478,7 @@ export default function SpedizioneForm({
                     <div className="min-w-0">
                       <span className="flex flex-wrap items-center gap-2 text-sm font-semibold text-slate-900">
                         {metodo.etichetta}
-                        {metodo.metodo === "klarna" && selezionabile && (
+                        {(metodo.metodo === "klarna" || metodo.metodo === "scalapay") && selezionabile && (
                           <span className="inline-flex shrink-0 items-center rounded-full bg-slate-900 px-2 py-0.5 text-[10px] font-bold text-white">
                             Paga in 3 rate
                           </span>

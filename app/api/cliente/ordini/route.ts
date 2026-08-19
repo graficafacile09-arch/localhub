@@ -94,6 +94,7 @@ export async function POST(request: Request) {
     metodoScelto === "carta" ||
     metodoScelto === "bonifico" ||
     metodoScelto === "klarna" ||
+    metodoScelto === "scalapay" ||
     metodoScelto === "paypal";
   // Valore PRESENTE ma non ammesso ("paypal", "qualcosa", ...): rifiuto
   // sempre, indipendentemente dalla modalità → mai un ordine con un metodo
@@ -166,6 +167,22 @@ export async function POST(request: Request) {
       return apiError(
         "PAYPAL_NON_DISPONIBILE",
         "Il pagamento con PayPal non è disponibile per questo negozio.",
+        422
+      );
+    }
+  }
+
+  // ── PRE-FLIGHT "scalapay" (stessa regola di carta/klarna/paypal): se il
+  // negozio del prodotto non ha Scalapay configurato e attivo, il checkout
+  // rifiuta PRIMA di creare l'ordine. Nessun fallback automatico.
+  const vuoleScalapay =
+    modalita === "spedizione" && spedizioneRaw.metodoPagamento === "scalapay";
+  if (vuoleScalapay) {
+    const scalapayPronta = await providerDisponibilePerProdotto(prodottoIdRaw, "scalapay");
+    if (!scalapayPronta) {
+      return apiError(
+        "SCALAPAY_NON_DISPONIBILE",
+        "Il pagamento con Scalapay non è disponibile per questo negozio.",
         422
       );
     }
@@ -300,6 +317,17 @@ export async function POST(request: Request) {
     // dal gateway PayPal (creaSessionePagamentoPerOrdine, provider 'paypal'):
     // mai una sessione Stripe/Klarna, mai un fallback silenzioso.
     const sessione = await creaSessionePagamentoPerOrdine(esito.ordine.id, "paypal");
+    if (sessione.ok) {
+      pagamento = { redirectUrl: sessione.redirectUrl };
+    } else {
+      await chiudiOrdineSenzaPagamento(esito.ordine.id).catch(() => {});
+      return apiError(sessione.codice, sessione.errore, 422);
+    }
+  } else if (vuoleScalapay) {
+    // Scalapay: stessa orchestrazione del carrello — la sessione viene creata
+    // dal gateway Scalapay (creaSessionePagamentoPerOrdine, provider
+    // 'scalapay'): mai una sessione Stripe/Klarna/PayPal, mai un fallback.
+    const sessione = await creaSessionePagamentoPerOrdine(esito.ordine.id, "scalapay");
     if (sessione.ok) {
       pagamento = { redirectUrl: sessione.redirectUrl };
     } else {

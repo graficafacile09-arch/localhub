@@ -50,6 +50,8 @@ type ProviderInfoEntry = {
   liveLabel: string;
   /** True se il provider richiede secret + webhook (false per bonifico). */
   haSecret: boolean;
+  /** True se il provider ha UNA sola credenziale (API key, nessun client id né webhook separato). */
+  soloSecret?: boolean;
   /** Nota informativa opzionale (es. Publishable Key Stripe non usata). */
   nota?: string;
 };
@@ -96,6 +98,22 @@ const PROVIDER_INFO: Record<string, ProviderInfoEntry> = {
     liveLabel: "Live",
     haSecret: true,
   },
+  scalapay: {
+    nome: "Scalapay",
+    descrizione: "Paga in 3 rate — buy now, pay later",
+    campoId: "",
+    campoSecret: "API Key",
+    campoWebhook: "",
+    webhookUrl: "/api/webhook/pagamenti/scalapay",
+    webhookIstruzioni:
+      "Registra questo URL come endpoint webhook nel Merchant Portal Scalapay. Scalapay firma gli eventi con HMAC-SHA256 usando la stessa API Key (header x-scalapay-hmac-v1). Eventi gestiti: charged, authorized, refunded, expired.",
+    testLabel: "Sandbox",
+    liveLabel: "Live",
+    haSecret: true,
+    soloSecret: true,
+    nota:
+      "Scalapay richiede solo l'API Key (prefissata sp_, distinta tra Sandbox e Live): la stessa chiave autentica le chiamate API e firma i webhook. Non servono Client ID né un webhook secret separato.",
+  },
   bonifico: {
     nome: "Bonifico bancario",
     descrizione: "Pagamento manuale tramite bonifico",
@@ -113,6 +131,7 @@ const METODI_INFO: Record<string, { nome: string; descrizione: string }> = {
   carta: { nome: "Carta", descrizione: "Carte di credito e debito" },
   paypal: { nome: "PayPal", descrizione: "Account PayPal" },
   klarna: { nome: "Klarna", descrizione: "Paga in 3/4 rate" },
+  scalapay: { nome: "Scalapay", descrizione: "Paga in 3 rate" },
   bonifico: { nome: "Bonifico", descrizione: "Bonifico bancario" },
 };
 
@@ -548,6 +567,7 @@ export default function PagamentiModule({ storeId }: Props) {
                       {key !== "bonifico" ? (
                         <>
                           <div className="grid gap-3 sm:grid-cols-2">
+                            {!info.soloSecret && (
                             <div>
                               <label className="mb-1.5 flex items-center gap-1 text-xs font-semibold text-slate-500">
                                 {info.campoId}
@@ -559,8 +579,9 @@ export default function PagamentiModule({ storeId }: Props) {
                                 placeholder={info.campoId}
                                 className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                               />
-                            </div>
-                            <div>
+                              </div>
+                              )}
+                            <div className={info.soloSecret ? "sm:col-span-2" : ""}>
                               <label className="mb-1.5 flex items-center gap-1 text-xs font-semibold text-slate-500">
                                 Modalità
                               </label>
@@ -577,7 +598,7 @@ export default function PagamentiModule({ storeId }: Props) {
 
                           {info.haSecret && (
                             <div className="grid gap-3 sm:grid-cols-2">
-                              <div>
+                              <div className={info.soloSecret ? "sm:col-span-2" : ""}>
                                 <label className="mb-1.5 flex items-center gap-1 text-xs font-semibold text-slate-500">
                                   <Lock className="h-3 w-3 text-slate-400" /> {info.campoSecret}
                                   <span className="font-normal text-slate-400">
@@ -596,6 +617,7 @@ export default function PagamentiModule({ storeId }: Props) {
                                   className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                                 />
                               </div>
+                              {!info.soloSecret && (
                               <div>
                                 <label className="mb-1.5 flex items-center gap-1 text-xs font-semibold text-slate-500">
                                   <Lock className="h-3 w-3 text-slate-400" /> {info.campoWebhook}
@@ -615,6 +637,7 @@ export default function PagamentiModule({ storeId }: Props) {
                                   className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                                 />
                               </div>
+                              )}
                             </div>
                           )}
 
@@ -702,8 +725,9 @@ export default function PagamentiModule({ storeId }: Props) {
             ))}
           </div>
           <p className="mt-2 text-[10px] leading-4 text-slate-400">
-            Bonifico non richiede un provider e resta sempre disponibile. Carta, PayPal e
-            Klarna richiedono sia la configurazione del provider sia l&apos;abilitazione del metodo.
+            Bonifico non richiede un provider e resta sempre disponibile. Carta, PayPal,
+            Klarna e Scalapay richiedono sia la configurazione del provider sia
+            l&apos;abilitazione del metodo.
           </p>
         </div>
 

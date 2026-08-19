@@ -41,6 +41,8 @@ type OrdinePerSessione = {
   costoSpedizione: number;
   /** Commissione piattaforma snapshot (ordini.commissione_importo), per Stripe Connect. */
   commissioneImporto: number;
+  /** Dati consumatore (Scalapay): snapshot DB dell'ordine. */
+  consumer: NonNullable<ContestoCheckout["consumer"]>;
   /** Righe dell'ordine (snapshot DB): un line_item per riga (F2.3). */
   righe: RigaCheckout[];
 };
@@ -67,7 +69,7 @@ async function caricaOrdine(ordineId: string): Promise<OrdinePerSessione | null>
   const { data, error } = await db
     .from("ordini")
     .select(
-      "id, numero, negozio_id, totale, stato, payment_status, costo_spedizione, commissione_importo"
+      "id, numero, negozio_id, totale, stato, payment_status, costo_spedizione, commissione_importo, cliente_nome, cliente_cognome, cliente_email, cliente_telefono"
     )
     .eq("id", ordineId)
     .single();
@@ -88,6 +90,12 @@ async function caricaOrdine(ordineId: string): Promise<OrdinePerSessione | null>
     paymentStatus: (data.payment_status as string | null) ?? null,
     costoSpedizione: Number(data.costo_spedizione ?? 0),
     commissioneImporto: Number(data.commissione_importo ?? 0),
+    consumer: {
+      nome: String(data.cliente_nome ?? ""),
+      cognome: String(data.cliente_cognome ?? ""),
+      email: data.cliente_email ? String(data.cliente_email) : null,
+      telefono: data.cliente_telefono ? String(data.cliente_telefono) : null,
+    },
     righe: ((righe ?? []) as Record<string, unknown>[]).map((r) => ({
       nome: String(r.nome_prodotto ?? ""),
       quantita: Number(r.quantita ?? 1),
@@ -276,6 +284,8 @@ export async function creaSessionePagamentoPerOrdine(
     costoSpedizione: ordine.costoSpedizione,
     // Commissione snapshot (solo Stripe Connect: application_fee_amount).
     commissioneImporto: ordine.commissioneImporto,
+    // Dati consumatore (solo per i gateway che li richiedono, es. Scalapay).
+    consumer: ordine.consumer,
   };
 
   let sessione;

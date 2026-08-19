@@ -7,13 +7,13 @@
  * specifico (contratto già dichiarato in lib/pagamenti/types.ts).
  *
  * Provider ammessi dall'architettura: stripe, klarna, scalapay, paypal.
- * Implementati: stripe, klarna e paypal. scalapay è ammesso dal registry
- * ma senza factory (→ `getGatewayProvider` ritorna null, fail-closed)
- * finché non arriverà il rispettivo gateway.
+ * Tutti implementati: stripe, klarna, scalapay e paypal hanno ciascuno il
+ * proprio gateway (`getGatewayProvider` non ritorna mai null per questi).
  */
 
 import { GatewayKlarna, type GatewayKlarnaOptions } from "./gateway-klarna";
 import { GatewayPaypal, type GatewayPaypalOptions } from "./gateway-paypal";
+import { GatewayScalapay, type GatewayScalapayOptions } from "./gateway-scalapay";
 import { GatewayStripe, type GatewayStripeOptions } from "./stripe";
 import type { PaymentGateway } from "./types";
 
@@ -43,20 +43,21 @@ export function isProviderGatewayAmmesso(value: unknown): value is ProviderGatew
 export type GatewayRuntimeOptions =
   | GatewayStripeOptions
   | GatewayKlarnaOptions
-  | GatewayPaypalOptions;
+  | GatewayPaypalOptions
+  | GatewayScalapayOptions;
 
 type GatewayFactory = (opts?: GatewayRuntimeOptions) => PaymentGateway;
 
 /**
- * Factory per provider: `null` = provider ammesso ma NON ancora implementato
- * (Scalapay, PayPal arriveranno come gateway dedicati in fase successiva).
- * `opts` inoltrato al gateway (server mock, solo test — pattern F1/F2.3).
+ * Factory per provider: ogni provider ammesso ha la sua factory (gateway
+ * implementato). `opts` inoltrato al gateway (server mock, solo test —
+ * pattern F1/F2.3).
  */
 const FACTORY_GATEWAY: Readonly<Record<string, GatewayFactory | null>> = {
   stripe: (opts) => new GatewayStripe(opts as GatewayStripeOptions),
   klarna: (opts) => new GatewayKlarna(opts as GatewayKlarnaOptions),
   paypal: (opts) => new GatewayPaypal(opts as GatewayPaypalOptions),
-  scalapay: null,
+  scalapay: (opts) => new GatewayScalapay(opts as GatewayScalapayOptions),
 };
 
 /** True se il provider ha un gateway implementato nel registry. */

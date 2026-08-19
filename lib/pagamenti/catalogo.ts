@@ -21,7 +21,7 @@
  * è un catalogo statico puro (safe da importare lato client e server).
  */
 
-export type MetodoPagamento = "carta" | "paypal" | "klarna" | "bonifico";
+export type MetodoPagamento = "carta" | "paypal" | "klarna" | "scalapay" | "bonifico";
 
 export type VoceCatalogoMetodo = {
   metodo: MetodoPagamento;
@@ -36,7 +36,7 @@ export type VoceCatalogoMetodo = {
    * bonifico). Per i metodi gateway è il provider passato a
    * isProviderProntoPerNegozio / registry / creaSessionePagamentoPerOrdine.
    */
-  provider: "stripe" | "paypal" | "klarna" | null;
+  provider: "stripe" | "paypal" | "klarna" | "scalapay" | null;
   /** True se il metodo richiede un gateway online configurato per essere "disponibile". */
   richiedeGateway: boolean;
 };
@@ -68,6 +68,14 @@ export const CATALOGO_METODI_PAGAMENTO: readonly VoceCatalogoMetodo[] = [
     nomeBreve: "Klarna",
     descrizione: "Dividi il tuo acquisto in 3 rate, se disponibile.",
     provider: "klarna",
+    richiedeGateway: true,
+  },
+  {
+    metodo: "scalapay",
+    etichetta: "Scalapay",
+    nomeBreve: "Scalapay",
+    descrizione: "Dividi il tuo acquisto in 3 rate con Scalapay.",
+    provider: "scalapay",
     richiedeGateway: true,
   },
   {

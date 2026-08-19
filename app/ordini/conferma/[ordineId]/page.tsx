@@ -147,6 +147,26 @@ export default async function ConfermaOrdinePage({
             </div>
           )}
 
+        {/* Scalapay: il pagamento verrà confermato dopo l'approvazione di
+            Scalapay. Il marcatore autoritativo è payment_provider='scalapay'
+            (la colonna metodo_pagamento resta 'carta' per compatibilità RPC,
+            come nel flusso Klarna). */}
+        {ordine.paymentProvider === "scalapay" &&
+          ordine.stato !== "cancellato" &&
+          ordine.paymentStatus !== "paid" && (
+            <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
+              <p className="flex items-center gap-2 text-sm font-bold text-blue-800">
+                <span className="inline-flex items-center rounded bg-slate-900 px-1.5 py-0.5 text-[9px] font-black tracking-wide text-white">
+                  Scalapay
+                </span>
+                Pagamento in 3 rate
+              </p>
+              <p className="mt-0.5 text-xs text-blue-700">
+                L&apos;ordine verrà confermato dopo l&apos;approvazione di Scalapay.
+              </p>
+            </div>
+          )}
+
         {/* Modalità ritiro/spedizione */}
         <div className="mt-4 rounded-[1.75rem] border border-white/70 bg-white p-5 shadow-sm">
           <h2 className="flex items-center gap-2 text-sm font-black uppercase tracking-wide text-slate-900">

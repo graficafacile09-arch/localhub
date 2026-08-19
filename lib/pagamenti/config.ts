@@ -239,8 +239,10 @@ export async function risolviCredenzialiGateway(
   }
 
   const cfg = await getConfigProviderNegozio(negozioId, provider);
-  // Serve anche il webhook secret: senza non possiamo confermare il pagamento.
-  if (!cfg || cfg.webhookSecret.length === 0) {
+  // Scalapay firma i webhook con la STESSA API key usata come Bearer: non
+  // esiste un webhook secret separato. "Pronto" = secret key presente.
+  const webhookSecret = provider === "scalapay" ? cfg?.secretKey ?? "" : cfg?.webhookSecret ?? "";
+  if (!cfg || webhookSecret.length === 0) {
     return { pronto: false, cred: null };
   }
   return { pronto: true, cred: credenzialiGatewayDaConfig(cfg) };

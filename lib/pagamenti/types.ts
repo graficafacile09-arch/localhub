@@ -89,6 +89,17 @@ export interface ContestoCheckout {
    * account. Mai calcolata/ricevuta dal client.
    */
   commissioneImporto?: number;
+  /**
+   * Dati del consumatore per i gateway che li richiedono (Scalapay).
+   * Letti dallo snapshot DB dell'ordine (cliente_nome/cognome/email/telefono),
+   * mai dal browser. Assenti → il gateway Scalapay rifiuta fail-closed.
+   */
+  consumer?: {
+    nome: string;
+    cognome: string;
+    email: string | null;
+    telefono: string | null;
+  };
 }
 
 /**

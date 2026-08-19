@@ -43,7 +43,7 @@ export type StatoRimborso = "refunded" | "partially_refunded";
 export const MAX_MOTIVO_RIMBORSO = 200;
 
 /** Provider gateway rimborsabili via API. */
-const PROVIDER_RIMBORSABILI = ["stripe", "paypal", "klarna"] as const;
+const PROVIDER_RIMBORSABILI = ["stripe", "paypal", "klarna", "scalapay"] as const;
 
 export type EsitoRimborso =
   | {

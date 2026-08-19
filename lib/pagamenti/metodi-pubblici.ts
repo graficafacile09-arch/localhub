@@ -10,9 +10,10 @@
  *   B) DISPONIBILITÀ per il singolo negozio — se il negozio può DAVVERO
  *      processare quel metodo. Calcolata con isProviderProntoPerNegozio()
  *      (configurazione gateway reale, attiva, con webhook secret):
- *        - carta   → Stripe configurato e attivo;
- *        - paypal  → PayPal configurato e attivo (client id + secret + webhook id);
- *        - klarna  → Klarna configurato e attivo;
+ *        - carta    → Stripe configurato e attivo;
+ *        - paypal   → PayPal configurato e attivo (client id + secret + webhook id);
+ *        - klarna   → Klarna configurato e attivo;
+ *        - scalapay → Scalapay configurato e attivo (sola API key);
  *        - bonifico → SEMPRE disponibile (metodo manuale, nessun gateway).
  *
  * Ogni voce espone il flag `disponibile`. Nessun fallback automatico, nessun

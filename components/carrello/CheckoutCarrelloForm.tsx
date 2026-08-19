@@ -196,7 +196,7 @@ export default function CheckoutCarrelloForm({ prefill }: { prefill: Prefill }) 
   // backend (pre-flight F2.2 fail-closed) — nessun controllo autoritativo nel
   // client, né prezzi/totali/credenziali conosciuti qui.
   const [metodoPagamento, setMetodoPagamento] = useState<
-    "carta" | "bonifico" | "klarna" | "paypal"
+    "carta" | "bonifico" | "klarna" | "scalapay" | "paypal"
   >("bonifico");
   // Catalogo dei metodi di pagamento supportati da InCittà (STESSA fonte del
   // buy-now: CATALOGO_METODI_PAGAMENTO + disponibilità via
@@ -802,6 +802,24 @@ export default function CheckoutCarrelloForm({ prefill }: { prefill: Prefill }) 
                       />
                     );
                   }
+                  if (m.metodo === "scalapay") {
+                    return (
+                      <OpzioneRadio
+                        key="scalapay"
+                        selezionato={metodoPagamento === "scalapay"}
+                        onClick={() => setMetodoPagamento("scalapay")}
+                        icona={
+                          <span className="inline-flex shrink-0 items-center rounded bg-slate-900 px-1.5 py-0.5 text-[9px] font-black tracking-wide text-white">
+                            Scalapay
+                          </span>
+                        }
+                        titolo={m.etichetta}
+                        sotto={m.descrizione}
+                        disponibile={m.disponibile}
+                        nonDisponibileMessaggio={!m.disponibile ? messaggioNonDisponibile(m.nomeBreve) : undefined}
+                      />
+                    );
+                  }
                   if (m.metodo === "bonifico") {
                     return (
                       <OpzioneRadio
@@ -831,6 +849,7 @@ export default function CheckoutCarrelloForm({ prefill }: { prefill: Prefill }) 
               )}
               {(metodoPagamento === "carta" ||
                 metodoPagamento === "klarna" ||
+                metodoPagamento === "scalapay" ||
                 metodoPagamento === "paypal") && (
                 <p className="mt-2 text-[11px] leading-4 text-slate-400">
                   Con più negozi ogni ordine ha la propria sessione di pagamento: ti mostreremo un pulsante per

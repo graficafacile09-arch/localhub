@@ -28,12 +28,14 @@ function ipRichiedente(request: Request): string {
 
 /**
  * Dispatch metodo di pagamento → provider gateway (fail-closed):
- *   carta → stripe · klarna → klarna · paypal → paypal · bonifico → null.
+ *   carta → stripe · klarna → klarna · scalapay → scalapay ·
+ *   paypal → paypal · bonifico → null.
  * Il bonifico non ha sessione gateway; nessun fallback silenzioso.
  */
 function providerDaMetodoPagamento(metodo: string | undefined): string | null {
   if (metodo === "carta") return "stripe";
   if (metodo === "klarna") return "klarna";
+  if (metodo === "scalapay") return "scalapay";
   if (metodo === "paypal") return "paypal";
   return null;
 }
@@ -168,6 +170,7 @@ export async function POST(request: Request) {
     spedizioneRaw.metodoPagamento !== "carta" &&
     spedizioneRaw.metodoPagamento !== "paypal" &&
     spedizioneRaw.metodoPagamento !== "klarna" &&
+    spedizioneRaw.metodoPagamento !== "scalapay" &&
     spedizioneRaw.metodoPagamento !== "bonifico"
   ) {
     return apiError("VALIDATION_ERROR", "Metodo di pagamento non valido.", 422);
