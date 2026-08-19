@@ -41,7 +41,7 @@ const settingsItems = [
   { label: "Galleria", icon: Image, href: "/merchant/[storeId]/impostazioni#galleria", comingSoon: false },
   { label: "Spedizioni", icon: MapPin, href: false, comingSoon: true },
   { label: "Privacy", icon: Shield, href: false, comingSoon: true },
-  { label: "Pagamenti", icon: CreditCard, href: false, comingSoon: true },
+  { label: "Pagamenti", icon: CreditCard, href: "/merchant/[storeId]/pagamenti", comingSoon: false },
 
 ];
 
