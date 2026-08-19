@@ -73,7 +73,7 @@ export default function ClienteBottomNav() {
                 <Link
                   key={item.key}
                   href={item.href!}
-                  className={`flex flex-col items-center gap-1.5 rounded-xl px-3 py-1.5 transition-all duration-150 active:scale-95`}
+                  className={`flex min-w-0 flex-1 flex-col items-center gap-1.5 rounded-xl px-1 py-1.5 transition-all duration-150 active:scale-95`}
                   aria-current={active ? "page" : undefined}
                 >
                   <span
@@ -89,7 +89,7 @@ export default function ClienteBottomNav() {
                     />
                   </span>
                   <span
-                    className={`text-[10px] font-semibold leading-none tracking-wide transition-colors duration-150
+                    className={`max-w-full truncate text-[10px] font-semibold leading-none tracking-wide transition-colors duration-150
                       ${active ? "text-blue-600" : "text-slate-400"}
                     `}
                   >
@@ -116,16 +116,16 @@ export default function ClienteBottomNav() {
 
 function ClienteBottomNavEsci() {
   return (
-    <form action="/api/auth/signout" method="post" className="flex flex-col items-center">
+    <form action="/api/auth/signout" method="post" className="flex min-w-0 flex-1 flex-col items-center">
       <button
         type="submit"
-        className="flex flex-col items-center gap-1.5 rounded-xl px-3 py-1.5 transition-all duration-150 active:scale-95"
+        className="flex w-full min-w-0 flex-col items-center gap-1.5 rounded-xl px-1 py-1.5 transition-all duration-150 active:scale-95"
         aria-label="Esci dall'area clienti"
       >
         <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-transparent transition-all duration-200">
           <LogOut className="h-5 w-5 text-slate-400" aria-hidden />
         </span>
-        <span className="text-[10px] font-semibold leading-none tracking-wide text-slate-400">
+        <span className="max-w-full truncate text-[10px] font-semibold leading-none tracking-wide text-slate-400">
           Esci
         </span>
       </button>

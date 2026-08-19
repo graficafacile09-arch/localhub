@@ -170,7 +170,7 @@ export default async function OrdiniPage({
         />
       ) : (
         /* ── Elenco ordini (dal più recente al più vecchio) ─────────────────── */
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
           {ordiniFiltrati.map((ordine) => (
             <OrderCard
               key={ordine.id}

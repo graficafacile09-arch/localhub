@@ -79,7 +79,7 @@ export function OrderCard({
   return (
     <Link
       href={href}
-      className={`group flex h-full flex-col rounded-[1.75rem] border bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg ${
+      className={`group flex min-w-0 h-full flex-col rounded-[1.75rem] border bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg ${
         nonLetto && vista === "venditore"
           ? "border-blue-200 ring-1 ring-blue-100"
           : haReclamoAperto && vista === "venditore"

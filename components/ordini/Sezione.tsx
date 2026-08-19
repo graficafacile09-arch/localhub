@@ -53,8 +53,10 @@ export function RigaDettaglio({
   if (valore === null || valore === undefined || valore === "") return null;
   return (
     <div className="flex items-start justify-between gap-4 py-1.5">
-      <span className="text-sm text-slate-500">{etichetta}</span>
-      <span className="text-right text-sm font-semibold text-slate-800">{valore}</span>
+      <span className="shrink-0 text-sm text-slate-500">{etichetta}</span>
+      <span className="min-w-0 break-words text-right text-sm font-semibold text-slate-800">
+        {valore}
+      </span>
     </div>
   );
 }

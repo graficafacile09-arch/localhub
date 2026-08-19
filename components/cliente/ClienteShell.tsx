@@ -65,7 +65,7 @@ export default function ClienteShell({
 
       {/* ── Layout principale ─────────────────────────────────────────────────── */}
       <div
-        className={`mx-auto grid max-w-7xl gap-4 px-4 py-3 transition-[grid-template-columns] duration-300 md:px-6 md:py-5 ${
+        className={`mx-auto grid grid-cols-1 max-w-7xl gap-4 px-4 py-3 transition-[grid-template-columns] duration-300 md:px-6 md:py-5 ${
           collapsed
             ? "md:grid-cols-[84px_minmax(0,1fr)]"
             : "md:grid-cols-[280px_minmax(0,1fr)]"
