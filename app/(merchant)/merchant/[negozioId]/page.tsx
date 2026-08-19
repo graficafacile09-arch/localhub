@@ -1,17 +1,10 @@
 import Link from "next/link";
-import {
-  AlertTriangle,
-  BellRing,
-  Camera,
-  ChevronRight,
-  ReceiptText,
-} from "lucide-react";
+import { Camera } from "lucide-react";
 import MerchantDashboardCards from "@/components/merchant/MerchantDashboardCards";
+import MerchantDashboardOrdini from "@/components/merchant/MerchantDashboardOrdini";
 import MerchantEmptyState from "@/components/merchant/MerchantEmptyState";
 import MerchantQuickActions from "@/components/merchant/MerchantQuickActions";
-import { AvvisoNuoviOrdini } from "@/components/ordini/AvvisoNuoviOrdini";
-import { AvvisoReclamiAperti } from "@/components/ordini/AvvisoReclamiAperti";
-import { KpiOrdini, type ConteggiOrdini } from "@/components/ordini/KpiOrdini";
+import type { ConteggiOrdini } from "@/components/ordini/KpiOrdini";
 import { requireCurrentUser } from "@/lib/auth/session";
 import { getMerchantProductsForStore, getMerchantStoreForUser } from "@/lib/merchant/data";
 import { getOrdiniVenditore } from "@/lib/merchant/ordini";
@@ -95,73 +88,16 @@ export default async function MerchantStorePage({
         )}
       </div>
 
-      {/* ── 1. ATTENZIONE — AVVISI URGENTI (prima cosa visibile) ── */}
-      {(nonLetti > 0 || reclamiAperti > 0) && (
-        <div className="space-y-3">
-          {nonLetti > 0 && (
-            <AvvisoNuoviOrdini
-              conteggio={nonLetti}
-              href={`/merchant/${negozioId}/ordini`}
-            />
-          )}
-          {reclamiAperti > 0 && (
-            <AvvisoReclamiAperti
-              conteggio={reclamiAperti}
-              href={`/merchant/${negozioId}/ordini?filtro=reclami`}
-            />
-          )}
-        </div>
-      )}
-
-      {/* ── 2. ORDINI — riepilogo + accesso diretto (card NON link per
-          evitare anchor-in-anchor: il KPI grid interno resta una lista di
-          Link) ──────────────────────────────────────────────────────────────── */}
-      <div className="rounded-2xl border border-white/70 bg-white p-5 shadow-sm transition hover:border-blue-200 hover:shadow-md">
-        <Link
-          href={`/merchant/${negozioId}/ordini`}
-          className="group flex items-center justify-between gap-3"
-        >
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
-              <ReceiptText className="h-5 w-5" />
-            </div>
-            <div className="min-w-0">
-              <h2 className="text-base font-bold tracking-tight text-slate-900">
-                Gestisci ordini
-              </h2>
-              <div className="mt-0.5 flex flex-wrap items-center gap-2">
-                <p className="text-xs text-slate-500">
-                  {ordini.length === 0
-                    ? "Nessun ordine ricevuto"
-                    : `${ordini.length} ordini totali`}
-                </p>
-                {nonLetti > 0 && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-blue-600 px-2.5 py-0.5 text-[11px] font-black uppercase tracking-wider text-white">
-                    <BellRing className="h-3 w-3" aria-hidden />
-                    {nonLetti} nuovo{nonLetti === 1 ? " ordine" : "i ordini"}
-                  </span>
-                )}
-                {reclamiAperti > 0 && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 text-[11px] font-bold text-blue-700 ring-1 ring-blue-200">
-                    <AlertTriangle className="h-3 w-3" aria-hidden />
-                    {reclamiAperti} {reclamiAperti === 1 ? "reclamo aperto" : "reclami aperti"}
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-          <ChevronRight className="h-5 w-5 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-blue-600" />
-        </Link>
-
-        {ordini.length > 0 && (
-          <div className="mt-5 border-t border-slate-100 pt-4">
-            <KpiOrdini
-              baseHref={`/merchant/${negozioId}/ordini`}
-              conteggi={conteggioOrdini}
-            />
-          </div>
-        )}
-      </div>
+      {/* ── 1. ATTENZIONE + 2. ORDINI — avvisi urgenti + riepilogo
+          comprimibile (il riepilogo è chiuso all'avvio, si apre col pulsante
+          giallo dell'avviso). ─────────────────────────────────────────────── */}
+      <MerchantDashboardOrdini
+        negozioId={negozioId}
+        ordiniTotali={ordini.length}
+        nonLetti={nonLetti}
+        reclamiAperti={reclamiAperti}
+        conteggi={conteggioOrdini}
+      />
 
       {/* Scansione — azione principale, immediatamente visibile */}
       <Link
