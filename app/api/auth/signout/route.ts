@@ -10,8 +10,11 @@ export async function POST(request: Request) {
   }
 
   // Al logout l'area attiva viene CANCELLATA: la prossima sessione dovrà
-  // sceglierla di nuovo dall'ingresso corretto.
-  const response = NextResponse.redirect(new URL("/login", request.url));
+  // sceglierla di nuovo dall'ingresso corretto. Dopo la chiusura reale della
+  // sessione si mostra la pagina di saluto (mai memorizzata, così il tasto
+  // Back del browser non può riproporre contenuti autenticati).
+  const response = NextResponse.redirect(new URL("/logout-success", request.url));
+  response.headers.set("Cache-Control", "no-store");
   response.cookies.set(AREA_COOKIE, "", { ...areaCookieOptions(), maxAge: 0 });
   return response;
 }
