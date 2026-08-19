@@ -112,7 +112,7 @@ const PROVIDER_INFO: Record<string, ProviderInfoEntry> = {
     haSecret: true,
     soloSecret: true,
     nota:
-      "Scalapay richiede solo l'API Key (prefissata sp_, distinta tra Sandbox e Live): la stessa chiave autentica le chiamate API e firma i webhook. Non servono Client ID né un webhook secret separato.",
+      "Scalapay richiede solo l'API Key del TUO account Scalapay (prefissata sp_): devi procurartela autonomamente, la registrazione Scalapay è a tuo carico. Sandbox e Live usano ciascuna la rispettiva API Key. LocalHub non fornisce né utilizza un account Scalapay globale: la configurazione è gestita da te, per il tuo negozio. La stessa chiave autentica le chiamate API e firma i webhook; non servono Client ID né un webhook secret separato.",
   },
   bonifico: {
     nome: "Bonifico bancario",
