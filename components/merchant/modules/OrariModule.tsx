@@ -123,20 +123,20 @@ export default function OrariModule({ storeId }: Props) {
                     <div className="flex items-center gap-1.5 min-w-0">
                       <span className="w-12 shrink-0 text-[9px] font-medium uppercase tracking-wider text-slate-400">Mattina</span>
                       <input type="time" value={s.apertura1} onChange={(e) => updateDay(day, { apertura1: e.target.value })}
-                        className="h-6 flex-1 rounded border border-slate-100 bg-slate-50 px-1.5 text-[11px] text-slate-700 outline-none focus:border-blue-300" />
+                        className="h-6 min-w-0 flex-1 rounded border border-slate-100 bg-slate-50 px-1.5 text-[11px] text-slate-700 outline-none focus:border-blue-300" />
                       <span className="text-[10px] text-slate-300">&ndash;</span>
                       <input type="time" value={s.chiusura1} onChange={(e) => updateDay(day, { chiusura1: e.target.value })}
-                        className="h-6 flex-1 rounded border border-slate-100 bg-slate-50 px-1.5 text-[11px] text-slate-700 outline-none focus:border-blue-300" />
+                        className="h-6 min-w-0 flex-1 rounded border border-slate-100 bg-slate-50 px-1.5 text-[11px] text-slate-700 outline-none focus:border-blue-300" />
                     </div>
                     <div className="flex items-center gap-1.5 min-w-0">
                       <span className="w-12 shrink-0 text-[9px] font-medium uppercase tracking-wider text-slate-400">Pomeriggio</span>
                       {hasSecond ? (
                         <>
                           <input type="time" value={s.apertura2} onChange={(e) => updateDay(day, { apertura2: e.target.value })}
-                            className="h-6 flex-1 rounded border border-slate-100 bg-slate-50 px-1.5 text-[11px] text-slate-700 outline-none focus:border-blue-300" />
+                            className="h-6 min-w-0 flex-1 rounded border border-slate-100 bg-slate-50 px-1.5 text-[11px] text-slate-700 outline-none focus:border-blue-300" />
                           <span className="text-[10px] text-slate-300">&ndash;</span>
                           <input type="time" value={s.chiusura2} onChange={(e) => updateDay(day, { chiusura2: e.target.value })}
-                            className="h-6 flex-1 rounded border border-slate-100 bg-slate-50 px-1.5 text-[11px] text-slate-700 outline-none focus:border-blue-300" />
+                            className="h-6 min-w-0 flex-1 rounded border border-slate-100 bg-slate-50 px-1.5 text-[11px] text-slate-700 outline-none focus:border-blue-300" />
                         </>
                       ) : (
                         <button type="button" onClick={() => updateDay(day, { apertura2: "15:00", chiusura2: "19:00" })}

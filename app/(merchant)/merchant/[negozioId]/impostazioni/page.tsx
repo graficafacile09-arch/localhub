@@ -53,11 +53,11 @@ export default async function MerchantSettingsPage({
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
               <Settings className="h-5 w-5" />
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
                 Gestione negozio
               </p>
-              <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-900">
+              <h1 className="mt-2 break-words text-3xl font-black tracking-tight text-slate-900">
                 {store.nome ?? "Negozio"}
               </h1>
               <div className="mt-2 flex items-center gap-3">

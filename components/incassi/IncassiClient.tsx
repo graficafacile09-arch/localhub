@@ -231,20 +231,20 @@ export default function IncassiClient({
       {/* Barra filtri */}
       <div className="rounded-[1.75rem] border border-white/70 bg-white p-4 shadow-sm md:p-5">
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2">
             <input
               type="date"
               value={filtri.dataDa}
               onChange={(e) => setFiltro("dataDa", e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+              className="min-w-0 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
               aria-label="Data da"
             />
-            <span className="text-slate-400">→</span>
+            <span className="shrink-0 text-slate-400">→</span>
             <input
               type="date"
               value={filtri.dataA}
               onChange={(e) => setFiltro("dataA", e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+              className="min-w-0 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
               aria-label="Data a"
             />
           </div>
@@ -252,7 +252,7 @@ export default function IncassiClient({
           <select
             value={filtri.pagamento}
             onChange={(e) => setFiltro("pagamento", e.target.value)}
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+            className="min-w-0 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
           >
             <option value="">Pagamento: tutti</option>
             {STATI_PAGAMENTO.map((s) => (
@@ -263,7 +263,7 @@ export default function IncassiClient({
           <select
             value={filtri.provider}
             onChange={(e) => setFiltro("provider", e.target.value)}
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+            className="min-w-0 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
           >
             <option value="">Provider: tutti</option>
             {PROVIDER.map((p) => (
@@ -274,7 +274,7 @@ export default function IncassiClient({
           <select
             value={filtri.stato}
             onChange={(e) => setFiltro("stato", e.target.value)}
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+            className="min-w-0 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
           >
             <option value="">Stato ordine: tutti</option>
             {Object.entries(ETICHETTE_STATO).map(([k, v]) => (
@@ -286,7 +286,7 @@ export default function IncassiClient({
             <select
               value={filtri.negozioId}
               onChange={(e) => setFiltro("negozioId", e.target.value)}
-              className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+              className="min-w-0 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
             >
               <option value="">Negozio: tutti</option>
               {negozi.map((n) => (
@@ -298,7 +298,7 @@ export default function IncassiClient({
           <button
             type="button"
             onClick={azzera}
-            className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-blue-300 hover:text-blue-700"
+            className="inline-flex w-full min-w-0 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-blue-300 hover:text-blue-700"
           >
             <X className="h-4 w-4" aria-hidden />
             Azzera filtri
