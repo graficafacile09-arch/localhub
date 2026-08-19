@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { Camera } from "lucide-react";
 import MerchantDashboardCards from "@/components/merchant/MerchantDashboardCards";
-import MerchantDashboardOrdini from "@/components/merchant/MerchantDashboardOrdini";
 import MerchantEmptyState from "@/components/merchant/MerchantEmptyState";
 import MerchantQuickActions from "@/components/merchant/MerchantQuickActions";
-import type { ConteggiOrdini } from "@/components/ordini/KpiOrdini";
+import { AvvisoNuoviOrdini } from "@/components/ordini/AvvisoNuoviOrdini";
+import { AvvisoReclamiAperti } from "@/components/ordini/AvvisoReclamiAperti";
 import { requireCurrentUser } from "@/lib/auth/session";
 import { getMerchantProductsForStore, getMerchantStoreForUser } from "@/lib/merchant/data";
 import { getOrdiniVenditore } from "@/lib/merchant/ordini";
@@ -49,18 +49,6 @@ export default async function MerchantStorePage({
   } catch {
     ordini = [];
   }
-  // Il KPI "In lavorazione" conta lo STESSO insieme del filtro a cui rimanda
-  // (confermato+in_lavorazione+in_consegna): numero e lista coincidono.
-  const conteggioOrdini: ConteggiOrdini = {
-    nuovi: ordini.filter((o) => o.stato === "in_preparazione").length,
-    lavorazione: ordini.filter((o) =>
-      ["confermato", "in_lavorazione", "in_consegna"].includes(o.stato)
-    ).length,
-    inConsegna: ordini.filter((o) => o.stato === "in_consegna").length,
-    pronti: ordini.filter((o) => o.stato === "pronto").length,
-    completati: ordini.filter((o) => o.stato === "consegnato").length,
-    annullati: ordini.filter((o) => o.stato === "cancellato").length,
-  };
   const nonLetti = ordini.filter((o) => !o.lettoAt).length;
 
   // Reclami attivi (best-effort: un errore qui non deve far fallire la dashboard).
@@ -88,16 +76,23 @@ export default async function MerchantStorePage({
         )}
       </div>
 
-      {/* ── 1. ATTENZIONE + 2. ORDINI — avvisi urgenti + riepilogo
-          comprimibile (il riepilogo è chiuso all'avvio, si apre col pulsante
-          giallo dell'avviso). ─────────────────────────────────────────────── */}
-      <MerchantDashboardOrdini
-        negozioId={negozioId}
-        ordiniTotali={ordini.length}
-        nonLetti={nonLetti}
-        reclamiAperti={reclamiAperti}
-        conteggi={conteggioOrdini}
-      />
+      {/* ── ATTENZIONE — AVVISI URGENTI (prima cosa visibile) ── */}
+      {(nonLetti > 0 || reclamiAperti > 0) && (
+        <div className="space-y-3">
+          {nonLetti > 0 && (
+            <AvvisoNuoviOrdini
+              conteggio={nonLetti}
+              href={`/merchant/${negozioId}/ordini?filtro=nuovi`}
+            />
+          )}
+          {reclamiAperti > 0 && (
+            <AvvisoReclamiAperti
+              conteggio={reclamiAperti}
+              href={`/merchant/${negozioId}/ordini?filtro=reclami`}
+            />
+          )}
+        </div>
+      )}
 
       {/* Scansione — azione principale, immediatamente visibile */}
       <Link
@@ -113,7 +108,7 @@ export default async function MerchantStorePage({
       {/* Altre azioni rapide */}
       <MerchantQuickActions storeId={negozioId} />
 
-      {/* ── 4. Statistiche — comprimibili ──────────────────────────────────── */}
+      {/* ── Statistiche — comprimibili ──────────────────────────────────────── */}
       <MerchantDashboardCards
         totals={{
           prodotti: prodotti.length,

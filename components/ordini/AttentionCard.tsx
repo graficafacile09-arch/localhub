@@ -18,7 +18,6 @@ export function AttentionCard({
   titolo,
   descrizione,
   href,
-  onOpen,
   ctaLabel,
   eyebrow = "Attenzione",
 }: {
@@ -26,71 +25,18 @@ export function AttentionCard({
   count: number;
   titolo: string;
   descrizione: string;
-  href?: string;
-  /** Se presente, rende la card un bottone che apre/chiude un contenuto. */
-  onOpen?: () => void;
+  href: string;
   ctaLabel: string;
   /** Micro-label sopra il numero ("ATTENZIONE" di default). */
   eyebrow?: string;
 }) {
   if (!count || count <= 0) return null;
 
-  const cardClassName =
-    "group relative flex items-stretch gap-4 overflow-hidden rounded-[1.75rem] border border-yellow-300/70 bg-white shadow-sm transition hover:border-yellow-400 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 sm:gap-5";
-
-  // Variante "trigger" (bottone) — usata quando la card deve aprire/chiudere
-  // un contenuto invece di navigare (es. riepilogo ordini in dashboard).
-  if (onOpen) {
-    return (
-      <button
-        type="button"
-        onClick={onOpen}
-        className={`${cardClassName} w-full cursor-pointer text-left`}
-      >
-        <AttentionCardContent
-          Icon={Icon}
-          count={count}
-          titolo={titolo}
-          descrizione={descrizione}
-          ctaLabel={ctaLabel}
-          eyebrow={eyebrow}
-        />
-      </button>
-    );
-  }
-
   return (
-    <Link href={href ?? "#"} className={cardClassName}>
-      <AttentionCardContent
-        Icon={Icon}
-        count={count}
-        titolo={titolo}
-        descrizione={descrizione}
-        ctaLabel={ctaLabel}
-        eyebrow={eyebrow}
-      />
-    </Link>
-  );
-}
-
-/** Corpo grafico della card (condiviso tra variante Link e variante button). */
-function AttentionCardContent({
-  Icon,
-  count,
-  titolo,
-  descrizione,
-  ctaLabel,
-  eyebrow,
-}: {
-  Icon: LucideIcon;
-  count: number;
-  titolo: string;
-  descrizione: string;
-  ctaLabel: string;
-  eyebrow: string;
-}) {
-  return (
-    <>
+    <Link
+      href={href}
+      className="group relative flex items-stretch gap-4 overflow-hidden rounded-[1.75rem] border border-yellow-300/70 bg-white shadow-sm transition hover:border-yellow-400 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 sm:gap-5"
+    >
       {/* Accento laterale */}
       <span
         className="w-1.5 shrink-0 self-stretch bg-linear-to-b from-yellow-300 to-yellow-400"
@@ -126,6 +72,6 @@ function AttentionCardContent({
           <ArrowRight className="h-3.5 w-3.5 transition group-hover:translate-x-0.5" aria-hidden />
         </span>
       </div>
-    </>
+    </Link>
   );
 }
