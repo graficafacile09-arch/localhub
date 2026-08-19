@@ -79,7 +79,7 @@ export function OrderHeader({
               </p>
               <h1 className="mt-1.5 break-words font-black leading-tight tracking-tight text-slate-900">
                 <span
-                  className={`whitespace-nowrap font-mono text-2xl tabular-nums md:text-3xl ${
+                  className={`break-words font-mono text-2xl tabular-nums md:text-3xl ${
                     èAnnullato ? "text-blue-700" : "text-slate-900"
                   }`}
                 >

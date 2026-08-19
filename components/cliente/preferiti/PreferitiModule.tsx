@@ -234,7 +234,7 @@ export default function PreferitiModule() {
 
       {/* ── Skeleton ───────────────────────────────────────────────────────── */}
       {loading && (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, index) => (
             <div
               key={index}
@@ -252,7 +252,7 @@ export default function PreferitiModule() {
 
       {/* ── Griglia preferiti ──────────────────────────────────────────────── */}
       {!loading && !errore && preferiti.length > 0 && (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {preferiti.map((preferito) => (
             <PreferitoCard
               key={preferito.id}
