@@ -21,6 +21,20 @@ export function isAdminEmail(email: string): boolean {
 }
 
 /**
+ * ACCOUNT DI SUPERVISIONE — esente dalla restrizione di accesso tra aree.
+ * Corrisponde all'admin autorizzato del progetto (email + ruolo admin): in
+ * produzione è graficafacile09@gmail.com. Per questi account resta il
+ * comportamento storico (redirect silenzioso verso la propria area), senza
+ * alcun avviso di blocco.
+ */
+export function isAccountSupervisione(
+  email: string,
+  ruoli: readonly RuoloUtente[]
+): boolean {
+  return ruoli.includes("admin") && isAdminEmail(email);
+}
+
+/**
  * True se l'utente possiede il ruolo admin ED è l'email autorizzata.
  * È la verifica corretta per OGNI potere amministrativo: il solo ruolo
  * admin (senza l'email autorizzata) non concede alcun privilegio.

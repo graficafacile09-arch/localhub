@@ -1,8 +1,10 @@
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import ClienteShell from "@/components/cliente/ClienteShell";
+import AreaNonAutorizzata from "@/components/auth/AreaNonAutorizzata";
 import { areaToPath } from "@/lib/auth/area";
 import { getSessionArea } from "@/lib/auth/session-area";
+import { isAccountSupervisione } from "@/lib/auth/roles";
 import { getOrdiniCliente } from "@/lib/cliente/ordini";
 import { filtraOrdiniCliente } from "@/lib/cliente/ordini-format";
 import type { OrdineClienteLista } from "@/lib/cliente/types";
@@ -29,9 +31,14 @@ export default async function ClienteLayout({
   const sessione = await getSessionArea();
   if (!sessione) redirect("/login?area=cliente");
 
-  // Solo la sessione "cliente" entra in /cliente.
+  // Solo la sessione "cliente" entra in /cliente. Gli altri vedono l'avviso
+  // rosso "Area non autorizzata" (sessione intatta, nessun logout) — eccetto
+  // l'account di supervisione, che conserva il comportamento storico.
   if (sessione.area !== "cliente") {
-    redirect(areaToPath(sessione.area));
+    if (isAccountSupervisione(sessione.user.email ?? "", sessione.ruoli)) {
+      redirect(areaToPath(sessione.area));
+    }
+    return <AreaNonAutorizzata areaUtente={sessione.area} />;
   }
 
   // Badge "Ordini [N]" del menu: conteggio degli ordini IN CORSO (dati

@@ -1,8 +1,10 @@
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import MerchantShell from "@/components/merchant/MerchantShell";
+import AreaNonAutorizzata from "@/components/auth/AreaNonAutorizzata";
 import { areaToPath } from "@/lib/auth/area";
 import { getSessionArea } from "@/lib/auth/session-area";
+import { isAccountSupervisione } from "@/lib/auth/roles";
 import { getMerchantStoresForUser } from "@/lib/merchant/data";
 import { getConteggiOrdiniNonLetti } from "@/lib/merchant/ordini";
 import { getConteggioReclamiApertiVenditore } from "@/lib/ordine-reclami";
@@ -33,13 +35,18 @@ export default async function MerchantLayout({
 
   // L'accesso è determinato dall'AREA ATTIVA della sessione (cookie httpOnly
   // lh_area), scelta al login e fissa per tutta la sessione: entra SOLO chi
-  // ha una sessione "merchant". Gli altri vengono reindirizzati alla propria
-  // area, mai a /login (se autenticati). Helper centrale: getSessionArea.
+  // ha una sessione "merchant". Gli altri vedono l'avviso rosso "Area non
+  // autorizzata" (sessione intatta, nessun logout) — eccetto l'account di
+  // supervisione, che conserva il comportamento storico (redirect alla
+  // propria area). Helper centrale: getSessionArea.
   const sessione = await getSessionArea();
   if (!sessione) redirect("/login?area=merchant");
 
   if (sessione.area !== "merchant") {
-    redirect(areaToPath(sessione.area));
+    if (isAccountSupervisione(sessione.user.email ?? "", sessione.ruoli)) {
+      redirect(areaToPath(sessione.area));
+    }
+    return <AreaNonAutorizzata areaUtente={sessione.area} />;
   }
 
   const storesResult = await getMerchantStoresForUser(sessione.user.id);

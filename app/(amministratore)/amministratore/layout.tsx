@@ -1,8 +1,10 @@
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import MerchantShell from "@/components/merchant/MerchantShell";
+import AreaNonAutorizzata from "@/components/auth/AreaNonAutorizzata";
 import { areaToPath } from "@/lib/auth/area";
 import { getSessionArea } from "@/lib/auth/session-area";
+import { isAccountSupervisione } from "@/lib/auth/roles";
 import { getMerchantStoresForUser } from "@/lib/merchant/data";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
@@ -49,8 +51,15 @@ export default async function AmministratoreLayout({
   const sessione = await getSessionArea();
   if (!sessione) redirect("/login?area=admin");
 
+  // Solo la sessione "admin" entra in /amministratore. Gli altri vedono
+  // l'avviso rosso "Area non autorizzata" (sessione intatta, nessun logout)
+  // — eccetto l'account di supervisione, che conserva il comportamento
+  // storico (redirect alla propria area).
   if (sessione.area !== "admin") {
-    redirect(areaToPath(sessione.area));
+    if (isAccountSupervisione(sessione.user.email ?? "", sessione.ruoli)) {
+      redirect(areaToPath(sessione.area));
+    }
+    return <AreaNonAutorizzata areaUtente={sessione.area} />;
   }
 
   const storesResult = await getMerchantStoresForUser(sessione.user.id);
