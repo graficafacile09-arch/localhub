@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { getSupabaseConfig, isSupabaseConfigured } from "@/lib/supabase/config";
-import { getRuoliUtente } from "@/lib/auth/roles";
+import { getRuoliUtente, isAdminEmail } from "@/lib/auth/roles";
 import {
   AREA_COOKIE,
   areaCookieOptions,
@@ -105,11 +105,20 @@ export async function proxy(request: NextRequest) {
     return redirectConSessione(areaToPath(area), area);
   }
 
-  // Area della sessione diversa da quella richiesta → l'utente viene sempre
-  // reindirizzato alla PROPRIA area di sessione (mai a un'altra area, mai a
-  // /login se autenticato).
+  // Area della sessione diversa da quella richiesta → blocco visibile.
+  // - Account di supervisione (admin autorizzato): comportamento storico,
+  //   redirect silenzioso alla propria area di sessione.
+  // - API: comportamento storico invariato (redirect).
+  // - Pagine: pass-through — il layout dell'area renderizza l'avviso rosso
+  //   "Area non autorizzata" (sessione intatta, nessun logout).
   if (area !== areaRichiesta) {
-    return redirectConSessione(areaToPath(area));
+    if (ruoli.includes("admin") && isAdminEmail(email)) {
+      return redirectConSessione(areaToPath(area));
+    }
+    if (pathname.startsWith("/api")) {
+      return redirectConSessione(areaToPath(area));
+    }
+    return NextResponse.next({ request });
   }
 
   return response;
