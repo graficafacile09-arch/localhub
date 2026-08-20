@@ -95,19 +95,25 @@ export default async function Home() {
 
       {/* CATEGORIE */}
       <section className="max-w-4xl mx-auto px-4 py-10 md:px-6">
-        <div className="flex items-center gap-3 mb-6">
-          <span className="h-px flex-1 bg-slate-200" />
-          <h2 className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+        <div className="mb-6 flex items-center gap-3">
+          <span className="h-px flex-1 bg-slate-300" />
+          <h2 className="text-sm font-black uppercase tracking-[0.18em] text-blue-900">
             Categorie
           </h2>
-          <span className="h-px flex-1 bg-slate-200" />
+          <span className="h-px flex-1 bg-slate-300" />
         </div>
 
-        <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 md:gap-3 lg:grid-cols-6">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 md:grid-cols-5 md:gap-3 lg:grid-cols-6">
           {categorieOrdinate.slice(0, NUMERO_CATEGORIE_HOME).map(({ categoria, count }, index) => (
-            <CategoryTile key={categoria.id} categoria={categoria} index={index} count={count} />
+            <CategoryTile
+              key={categoria.id}
+              categoria={categoria}
+              index={index}
+              count={count}
+              variant="homepage"
+            />
           ))}
-          <TutteCategorieTile index={NUMERO_CATEGORIE_HOME} />
+          <TutteCategorieTile index={NUMERO_CATEGORIE_HOME} variant="homepage" />
         </div>
       </section>
 
