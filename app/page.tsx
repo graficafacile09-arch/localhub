@@ -51,7 +51,7 @@ export default async function Home() {
         />
 
         <div className="relative z-10 mx-auto max-w-4xl text-left">
-          <h1 className="text-2xl font-black tracking-tight drop-shadow-lg md:text-4xl">
+          <h1 className="relative -top-2 text-2xl font-black tracking-tight drop-shadow-lg md:text-4xl">
             Tutto quello che cerchi... <span className="text-yellow-300">è già</span> nella tua città.
           </h1>
 
