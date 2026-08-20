@@ -33,9 +33,9 @@ export default async function Home() {
     <main className="min-h-screen bg-[#eef3f8]">
       <Header />
 
-      {/* HERO FOTOGRAFICA — Via Roma, Castrovillari */}
-      <section className="relative overflow-hidden rounded-b-[2rem] sm:rounded-b-[2.5rem] text-white shadow-lg shadow-slate-900/10">
-        {/* Fotografia a tutta larghezza, valorizzata senza deformazioni */}
+      {/* HERO FOTOGRAFICA — stessa altezza della vecchia fascia blu */}
+      <section className="relative overflow-hidden rounded-b-[2rem] bg-slate-900 px-4 py-12 text-white shadow-lg shadow-slate-900/10 sm:rounded-b-[2.5rem] md:py-16">
+        {/* La foto copre tutta la HERO e non ne determina l'altezza. */}
         <img
           src="/hero-via-roma-castrovillari-1400x1050.jpg"
           alt="Via Roma a Castrovillari"
@@ -44,34 +44,35 @@ export default async function Home() {
           className="absolute inset-0 h-full w-full object-cover object-center"
         />
 
-        {/* Leggerissimo velo scuro SOLO per la leggibilità dei testi */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/20 to-black/40" />
+        {/* Gradiente leggero solo nella zona del testo: la parte bassa resta luminosa. */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 bg-gradient-to-b from-slate-950/55 via-slate-950/20 to-transparent"
+        />
 
-        <div className="relative z-10 mx-auto max-w-4xl px-4 py-16 text-center sm:py-20 md:py-24">
-          <h1 className="text-2xl font-black tracking-tight drop-shadow-md md:text-4xl">
-            Tutto quello che cerchi... è già nella tua città.
+        <div className="relative z-10 mx-auto max-w-4xl text-left">
+          <h1 className="text-2xl font-black tracking-tight drop-shadow-lg md:text-4xl">
+            Tutto quello che cerchi... <span className="text-yellow-300">è già</span> nella tua città.
           </h1>
 
-          <p className="mx-auto mt-3 max-w-xl text-sm text-white/95 drop-shadow md:text-base">
+          <p className="mt-3 max-w-xl text-sm text-white drop-shadow-md md:text-base">
             Trova negozi, professionisti, offerte e servizi locali in pochi secondi.
           </p>
 
-          {/* Riga azioni homepage: ricerca + Assistente AI nello STESSO rigo
-              (flex-nowrap, niente wrapping su mobile). Il pulsante AI è una
-              normale azione della homepage: giallo, compatto, solo logo. */}
-          <div className="mx-auto mt-6 flex max-w-xl items-center gap-2 sm:gap-3">
+          {/* Motore di ricerca invariato: stessa action GET e stesso parametro q. */}
+          <div className="mx-auto mt-6 flex max-w-xl items-center gap-2 sm:gap-3 md:mx-0">
             <form action="/ricerca" method="GET" className="min-w-0 flex-1">
-              <div className="flex items-center rounded-full bg-white p-1.5 shadow-lg shadow-black/25 transition focus-within:ring-2 focus-within:ring-yellow-400">
-                <Search className="ml-3 h-5 w-5 shrink-0 text-slate-400" />
+              <div className="flex items-center rounded-full bg-white/95 p-1.5 shadow-lg shadow-black/25 transition focus-within:ring-2 focus-within:ring-yellow-300">
+                <Search className="ml-3 h-5 w-5 shrink-0 text-slate-400 sm:ml-4" />
                 <input
                   type="text"
                   name="q"
                   placeholder="Cerca prodotto, negozio o servizio..."
-                  className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm sm:text-base text-slate-900 placeholder:text-slate-400 focus:outline-none"
+                  className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-500 focus:outline-none sm:px-4 sm:text-base"
                 />
                 <button
                   type="submit"
-                  className="hidden sm:inline-flex shrink-0 items-center gap-2 rounded-full bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 active:scale-95"
+                  className="hidden shrink-0 items-center gap-2 rounded-full bg-yellow-400 px-5 py-2.5 text-sm font-bold text-blue-900 transition hover:bg-yellow-300 active:scale-95 sm:inline-flex"
                 >
                   <Search className="h-4 w-4" />
                   Cerca
@@ -79,7 +80,7 @@ export default async function Home() {
                 <button
                   type="submit"
                   aria-label="Cerca"
-                  className="sm:hidden inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white transition active:scale-95"
+                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-yellow-400 text-blue-900 transition hover:bg-yellow-300 active:scale-95 sm:hidden"
                 >
                   <Search className="h-4 w-4" />
                 </button>
