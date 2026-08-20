@@ -33,8 +33,8 @@ export default async function Home() {
     <main className="min-h-screen bg-[#eef3f8]">
       <Header />
 
-      {/* HERO FOTOGRAFICA — Via Roma, Castrovillari */}
-      <section className="relative flex min-h-[540px] items-center overflow-hidden rounded-b-[2rem] text-white shadow-lg shadow-slate-900/10 sm:min-h-[580px] sm:rounded-b-[2.5rem] md:min-h-[640px]">
+{/* HERO FOTOGRAFICA — Via Roma, Castrovillari */}
+      <section className="relative overflow-hidden rounded-b-[2rem] sm:rounded-b-[2.5rem] text-white shadow-lg shadow-slate-900/10">
         {/* Fotografia a tutta larghezza, valorizzata senza deformazioni */}
         <img
           src="/hero-via-roma-castrovillari-1400x1050.jpg"
@@ -49,7 +49,7 @@ export default async function Home() {
             lasciare cielo, edifici e strada luminosi e visibili. */}
         <div aria-hidden className="hero-overlay absolute inset-0" />
 
-        <div className="relative z-10 mx-auto w-full max-w-4xl px-4 py-16 text-center sm:py-20 md:py-24">
+        <div className="relative z-10 mx-auto w-full max-w-4xl px-4 pt-6 pb-16 text-center sm:pt-8 sm:pb-20 md:pt-10 md:pb-24">
           <h1 className="mx-auto max-w-2xl text-[1.7rem] font-black leading-[1.15] tracking-tight text-white drop-shadow-[0_2px_14px_rgba(15,23,42,0.6)] sm:text-4xl sm:leading-[1.12] md:text-5xl">
             Tutto quello che cerchi... è già nella tua città.
           </h1>
@@ -58,10 +58,7 @@ export default async function Home() {
             Trova negozi, professionisti, offerte e servizi locali in pochi secondi.
           </p>
 
-          {/* Riga azioni homepage: ricerca + Assistente AI nello STESSO rigo
-              (flex-nowrap, niente wrapping su mobile). Il pulsante AI è una
-              normale azione della homepage: giallo, compatto, solo logo. */}
-          <div className="mx-auto mt-7 flex max-w-2xl items-center gap-2.5 sm:gap-3">
+          <div className="mx-auto mt-16 flex max-w-2xl items-center gap-2.5 sm:mt-[4.5rem] sm:gap-3 md:mt-20">
             <form action="/ricerca" method="GET" className="min-w-0 flex-1">
               <div className="flex h-14 items-center rounded-full border border-white/70 bg-white/95 p-1.5 shadow-[0_18px_45px_-15px_rgba(15,23,42,0.55)] transition duration-200 hover:border-brand/40 hover:shadow-[0_20px_50px_-15px_rgba(37,99,235,0.45)] focus-within:border-brand focus-within:ring-4 focus-within:ring-brand/25 sm:h-16">
                 <Search className="ml-3 h-5 w-5 shrink-0 text-slate-400 sm:ml-4 sm:h-6 sm:w-6" />
