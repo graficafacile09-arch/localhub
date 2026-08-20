@@ -33,23 +33,33 @@ export default async function Home() {
     <main className="min-h-screen bg-[#eef3f8]">
       <Header />
 
-      {/* HERO COMPATTO ED ELEGANTE */}
-      <section className="relative overflow-hidden bg-blue-700 py-12 px-4 text-white md:py-16 rounded-b-[2rem] sm:rounded-b-[2.5rem] shadow-lg shadow-blue-900/10">
-        <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-2xl md:text-4xl font-black tracking-tight">
+      {/* HERO FOTOGRAFICA — Via Roma, Castrovillari */}
+      <section className="relative overflow-hidden rounded-b-[2rem] sm:rounded-b-[2.5rem] text-white shadow-lg shadow-slate-900/10">
+        {/* Fotografia a tutta larghezza, valorizzata senza deformazioni */}
+        <img
+          src="/hero-via-roma-castrovillari-1400x1050.jpg"
+          alt="Via Roma a Castrovillari"
+          className="absolute inset-0 h-full w-full object-cover object-center"
+        />
+
+        {/* Leggerissimo velo scuro SOLO per la leggibilità dei testi */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/20 to-black/40" />
+
+        <div className="relative z-10 mx-auto max-w-4xl px-4 py-16 text-center sm:py-20 md:py-24">
+          <h1 className="text-2xl font-black tracking-tight drop-shadow-md md:text-4xl">
             Tutto quello che cerchi... è già nella tua città.
           </h1>
 
-          <p className="mt-3 text-sm md:text-base text-blue-100 max-w-xl mx-auto">
+          <p className="mx-auto mt-3 max-w-xl text-sm text-white/95 drop-shadow md:text-base">
             Trova negozi, professionisti, offerte e servizi locali in pochi secondi.
           </p>
 
           {/* Riga azioni homepage: ricerca + Assistente AI nello STESSO rigo
               (flex-nowrap, niente wrapping su mobile). Il pulsante AI è una
               normale azione della homepage: giallo, compatto, solo logo. */}
-          <div className="mt-6 mx-auto flex max-w-xl items-center gap-2 sm:gap-3">
+          <div className="mx-auto mt-6 flex max-w-xl items-center gap-2 sm:gap-3">
             <form action="/ricerca" method="GET" className="min-w-0 flex-1">
-              <div className="flex items-center rounded-full bg-white p-1.5 shadow-lg shadow-blue-900/20 transition focus-within:ring-2 focus-within:ring-yellow-400">
+              <div className="flex items-center rounded-full bg-white p-1.5 shadow-lg shadow-black/25 transition focus-within:ring-2 focus-within:ring-yellow-400">
                 <Search className="ml-3 h-5 w-5 shrink-0 text-slate-400" />
                 <input
                   type="text"
