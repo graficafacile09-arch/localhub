@@ -70,7 +70,7 @@ export default function SeoModule({ storeId }: Props) {
   }
 
   return (
-    <ModuleShell icon={<Search className="h-4 w-4" />} title="SEO" subtitle="Meta tag e keywords per motori di ricerca" id="seo">
+    <ModuleShell icon={<Search className="h-4 w-4" />} title="Visibilità su Google" subtitle="Come il tuo negozio viene trovato su Google" id="seo">
       <div className="space-y-4">
         <Field label="SEO Title" value={form.seo_title} onChange={(v) => setForm((f) => ({ ...f, seo_title: v }))} placeholder="Titolo per i motori di ricerca" />
         <TextArea label="SEO Description" value={form.seo_description} onChange={(v) => setForm((f) => ({ ...f, seo_description: v }))} rows={2} />

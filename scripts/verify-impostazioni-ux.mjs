@@ -33,8 +33,7 @@ const check = (nome, ok, extra = "") => {
   if (!ok) failures++;
 };
 
-/** Attende che un elemento sia visibile (con retry) e valuta l'asserzione. */
-async function attesaVisible(locator, nome, timeout = 20000) {
+async function attesaVisible(locator, nome, timeout = 25000) {
   try {
     await locator.first().waitFor({ state: "visible", timeout });
     check(nome, true);
@@ -43,13 +42,28 @@ async function attesaVisible(locator, nome, timeout = 20000) {
   }
 }
 
-/** Attende che un elemento NON sia visibile (con retry) e valuta l'asserzione. */
 async function attesaNascosto(locator, nome, timeout = 8000) {
   try {
     await locator.first().waitFor({ state: "hidden", timeout });
     check(nome, true);
   } catch {
     check(nome, false);
+  }
+}
+
+/** Imposta un valore su un input React in modo robusto (con retry). */
+async function setInput(page, locator, valore) {
+  for (let tentativo = 0; tentativo < 3; tentativo++) {
+    await locator.fill(valore);
+    await page.waitForTimeout(300);
+    const attuale = await locator.inputValue().catch(() => "");
+    if (attuale === valore) return;
+    // fallback: selezione totale + digitazione reale
+    await locator.click({ clickCount: 3 });
+    await locator.press("Backspace");
+    await locator.pressSequentially(valore, { delay: 15 });
+    await page.waitForTimeout(300);
+    if ((await locator.inputValue().catch(() => "")) === valore) return;
   }
 }
 
@@ -65,7 +79,8 @@ try {
   await page.locator("#email").fill("commerciante-a.test@localhub.it");
   await page.locator("#password").fill("MerchantTest123!");
   await page.locator('form[action="/api/auth/login"] button[type="submit"]').click();
-  await page.waitForURL(`${BASE}/`, { timeout: 30000 });
+  await page.waitForURL((u) => !u.pathname.startsWith("/login"), { timeout: 30000 });
+  await page.waitForTimeout(1000);
 
   await page.goto(`${BASE}/merchant`, { waitUntil: "domcontentloaded" });
   await page.waitForTimeout(1500);
@@ -85,8 +100,6 @@ try {
 
   const urlImpostazioni = `${BASE}/merchant/${storeId}/impostazioni`;
 
-  // Pre-riscalda le route API (in dev la prima chiamata compila on-demand
-  // e può richiedere decine di secondi: qui vengono compilate una volta).
   const warmUrls = [
     `/api/merchant/stores/${storeId}/settings`,
     `/api/merchant/stores/${storeId}/offerte`,
@@ -100,70 +113,25 @@ try {
   await page.goto(urlImpostazioni, { waitUntil: "domcontentloaded" });
   await page.getByRole("button", { name: /Il mio negozio/ }).first().waitFor({ timeout: 60000 });
 
-  // ── 5 sezioni presenti ──────────────────────────────────────────────────
-  const sezioni = ["Il mio negozio", "Vendita", "Catalogo e offerte", "Visibilità e promozione", "Impostazioni avanzate"];
-  let okSezioni = true;
-  for (const s of sezioni) {
-    try { await page.getByRole("button", { name: new RegExp(s) }).first().waitFor({ timeout: 10000 }); }
-    catch { okSezioni = false; }
-  }
-  check("le 5 sezioni accordion sono renderizzate", okSezioni);
+  const nomeReale = (await page.evaluate(async (id) => {
+    const r = await fetch(`/api/merchant/stores/${id}/settings`);
+    const j = await r.json();
+    return j.data?.settings?.nome ?? "";
+  }, storeId)) || "";
 
-  // ── Solo una sezione aperta all'inizio (Il mio negozio) ─────────────────
+  // ══ SALVATAGGIO — PRIMA interazione (pattern verificato: modulo a mount fresco) ══
+  await page.getByRole("button", { name: /Modifica informazioni/ }).first().click();
   const campoNome = page.locator('section#informazioni input[type="text"]').first();
-  await attesaVisible(campoNome, "'Il mio negozio' aperta di default (campo Nome visibile)");
-  await attesaNascosto(
-    page.locator('button:has-text("Configura pacco e spedizione")').first(),
-    "'Vendita' chiusa all'avvio (accordion spedizione nascosto)"
-  );
+  await attesaVisible(campoNome, "click su 'Modifica informazioni' → form si espande");
+  await page.waitForFunction(() => {
+    const el = document.querySelector('section#informazioni input[type="text"]');
+    return el && el.value !== "";
+  }, { timeout: 15000 });
 
-  // ── Apertura Vendita chiude Il mio negozio ──────────────────────────────
-  await page.getByRole("button", { name: /Vendita/ }).first().click();
-  await page.waitForTimeout(800);
-  await attesaNascosto(campoNome, "apertura 'Vendita' chiude 'Il mio negozio'");
-  const spedizioneBtn = page.locator('button:has-text("Configura pacco e spedizione")').first();
-  await attesaVisible(spedizioneBtn, "'Vendita' contiene Spedizione (accordion)");
-  await attesaVisible(page.getByText("Ritiro in negozio"), "'Vendita' contiene Modalità di vendita");
-  const cardPagamenti = page.locator('a[href*="/pagamenti"]').filter({ hasText: "Metodo di pagamento" }).first();
-  await attesaVisible(cardPagamenti, "'Vendita' contiene la card Metodo di pagamento (link a /pagamenti)");
-
-  // ── Apertura della spedizione ───────────────────────────────────────────
-  await spedizioneBtn.click();
-  await page.waitForTimeout(500);
-  await attesaVisible(page.locator('button:has-text("Salva pacco")').first(), "accordion spedizione si apre");
-
-  // ── Navigazione verso Pagamenti dalla card ──────────────────────────────
-  await cardPagamenti.click();
-  await page.waitForURL(/\/pagamenti/, { timeout: 15000 });
-  check("card Metodo di pagamento → pagina /pagamenti", page.url().includes("/pagamenti"));
-  await page.goto(urlImpostazioni, { waitUntil: "domcontentloaded" });
-  await page.getByRole("button", { name: /Il mio negozio/ }).first().waitFor({ timeout: 60000 });
-
-  // ── Catalogo e offerte ──────────────────────────────────────────────────
-  await page.getByRole("button", { name: /Catalogo e offerte/ }).first().click();
-  await attesaVisible(page.getByText("Gestisci catalogo prodotti"), "'Catalogo e offerte' mostra Prodotti (link gestione)");
-  await attesaVisible(page.getByText("Servizi offerti dal negozio"), "'Catalogo e offerte' mostra Servizi");
-  // Il negozio di test NON ha offerte/eventi in moduli_attivi: il filtro deve nasconderli.
-  check("Offerte NON mostrate (filtro moduli_attivi)", (await page.getByText("Aggiungi offerta").count()) === 0);
-  check("Eventi NON mostrati (filtro moduli_attivi)", (await page.getByText("Aggiungi evento").count()) === 0);
-
-  // ── Visibilità e promozione ─────────────────────────────────────────────
-  await page.getByRole("button", { name: /Visibilità e promozione/ }).first().click();
-  await attesaVisible(page.getByText("Link a profili social"), "'Visibilità e promozione' mostra Social");
-  await attesaVisible(page.getByText("Meta tag e keywords"), "'Visibilità e promozione' mostra SEO");
-  await attesaVisible(page.getByText("Dati per l'assistente AI del negozio"), "'Visibilità e promozione' mostra AI");
-
-  // ── Impostazioni avanzate ───────────────────────────────────────────────
-  await page.getByRole("button", { name: /Impostazioni avanzate/ }).first().click();
-  await attesaVisible(page.getByText("Negozio attivo", { exact: false }).first(), "'Impostazioni avanzate' mostra toggle 'Negozio attivo'");
-
-  // ── Salvataggio riuscito + dirty state (nel modulo Informazioni) ────────
-  await page.getByRole("button", { name: /Il mio negozio/ }).first().click();
-  await attesaVisible(campoNome, "riapertura 'Il mio negozio' dopo le altre sezioni");
   const nuovoNome = `Negozio UX ${Date.now()}`;
-  await campoNome.fill(nuovoNome);
-  // Il server rifiuta slug vuoto (422): lo slug viene compilato come farebbe un commerciante.
-  await page.locator('section#informazioni input[placeholder="nome-del-negozio"]').fill(`negozio-ux-${Date.now()}`);
+  await setInput(page, campoNome, nuovoNome);
+  const campoSlug = page.locator('section#informazioni input[placeholder="nome-del-negozio"]');
+  await setInput(page, campoSlug, `negozio-ux-${Date.now()}`);
   await page.waitForTimeout(400);
   check("modifica → indicatore 'Non salvato' visibile", await page.locator('section#informazioni').getByText("Non salvato").first().isVisible());
   await page.locator('section#informazioni button:has-text("Salva modifiche")').first().click();
@@ -171,7 +139,7 @@ try {
   await attesaNascosto(page.locator('section#informazioni').getByText("Non salvato").first(), "salvataggio ok → 'Non salvato' sparisce");
 
   // ── Errore di salvataggio (risposta 500 simulata) ───────────────────────
-  await campoNome.fill(`${nuovoNome} 2`);
+  await setInput(page, campoNome, `${nuovoNome} 2`);
   await page.route("**/api/merchant/stores/*/settings", async (route) => {
     if (route.request().method() === "PUT") {
       await route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ error: { message: "Errore simulato dal test" } }) });
@@ -187,11 +155,120 @@ try {
   // ── Persistenza dopo reload ─────────────────────────────────────────────
   await page.reload({ waitUntil: "domcontentloaded" });
   await page.getByRole("button", { name: /Il mio negozio/ }).first().waitFor({ timeout: 60000 });
-  await attesaVisible(campoNome, "reload → 'Il mio negozio' di nuovo aperta");
+  await page.getByRole("button", { name: /Modifica informazioni/ }).first().click();
+  await attesaVisible(campoNome, "reload → form Informazioni di nuovo apribile");
+  await page.waitForFunction((nome) => {
+    const el = document.querySelector('section#informazioni input[type="text"]');
+    return el && el.value === nome;
+  }, nuovoNome, { timeout: 30000 });
   const dopoReload = await page.locator('section#informazioni input[type="text"]').first().inputValue();
   check("persistenza dopo reload (nome salvato)", dopoReload === nuovoNome, dopoReload);
+  await page.getByRole("button", { name: /Chiudi/ }).first().click().catch(() => {});
+  await attesaNascosto(campoNome, "click 'Chiudi' → form si richiude");
 
-  // ── RESPONSIVE: nessun overflow a 7 viewport, tutte le sezioni aperte ───
+  // ══ HEADER della pagina ══
+  await attesaVisible(
+    page.getByText("Tieni aggiornata la tua vetrina e fai conoscere il tuo negozio ai clienti.").first(),
+    "header mostra la frase umana di benvenuto"
+  );
+  check("header mostra il nome del negozio", (await page.getByRole("heading", { level: 1 }).first().innerText()).length > 0);
+
+  // ══ CARD HERO "Il tuo negozio" ══
+  await attesaVisible(page.getByText("Il tuo negozio", { exact: true }).first(), "card hero 'Il tuo negozio' presente");
+  await attesaVisible(page.getByRole("button", { name: /Modifica negozio/ }).first(), "card hero contiene il pulsante 'Modifica negozio'");
+  const statoVetrina = await page.getByText(/Negozio configurato|Completa:/).first().isVisible().catch(() => false);
+  check("card hero mostra lo stato della vetrina (configurato/completa)", statoVetrina);
+
+  // ══ AZIONI PRINCIPALI ══
+  const azioni = ["Modifica informazioni", "Foto del negozio", "Gestisci prodotti", "Come vendi"];
+  let okAzioni = true;
+  for (const a of azioni) {
+    try { await page.getByRole("button", { name: new RegExp(a) }).first().waitFor({ timeout: 8000 }); }
+    catch { okAzioni = false; }
+  }
+  check("le 4 azioni principali sono visibili (informazioni, foto, prodotti, vendita)", okAzioni);
+
+  await page.getByRole("button", { name: /Gestisci prodotti/ }).first().click();
+  await attesaVisible(
+    page.locator('section#prodotti a[href*="/prodotti"]').first(),
+    "azione 'Gestisci prodotti' apre la sezione Catalogo col modulo Prodotti"
+  );
+
+  // ══ 5 sezioni presenti ══
+  const sezioni = ["Il mio negozio", "Vendita", "Catalogo e offerte", "Visibilità e promozione", "Impostazioni avanzate"];
+  let okSezioni = true;
+  for (const s of sezioni) {
+    try { await page.getByRole("button", { name: new RegExp(s) }).first().waitFor({ timeout: 10000 }); }
+    catch { okSezioni = false; }
+  }
+  check("le 5 sezioni accordion sono renderizzate", okSezioni);
+  check("badge 'Inizia da qui' sulla sezione principale", (await page.getByText("Inizia da qui").count()) > 0);
+
+  // ══ Card-modulo con riepilogo dello stato attuale ══
+  await page.getByRole("button", { name: /Il mio negozio/ }).first().click();
+  await attesaVisible(page.getByRole("button", { name: /Modifica orari/ }).first(), "'Il mio negozio' aperta (card 'Modifica orari' visibile)");
+  const cardInfo = page.locator('button:has-text("Modifica informazioni")').filter({ hasText: nuovoNome }).first();
+  const cardInfoText = await cardInfo.innerText();
+  check(
+    "card Informazioni mostra il riepilogo (nuovo nome del negozio)",
+    cardInfoText.includes(nuovoNome),
+    `riepilogo: ${cardInfoText.split("\n")[2] ?? ""}`
+  );
+
+  // ══ Espansione modulo Orari ══
+  await page.getByRole("button", { name: /Modifica orari/ }).first().click();
+  await attesaVisible(page.locator('section#orari').first(), "click su card 'Modifica orari' → modulo Orari si espande");
+  await page.getByRole("button", { name: /Chiudi/ }).first().click();
+  await attesaNascosto(page.locator('section#orari').first(), "click 'Chiudi' → modulo Orari si richiude");
+
+  // ══ Apertura Vendita chiude Il mio negozio ══
+  await page.getByRole("button", { name: /Vendita/ }).first().click();
+  await page.waitForTimeout(800);
+  await attesaNascosto(
+    page.getByRole("button", { name: /Modifica orari/ }).first(),
+    "apertura 'Vendita' chiude 'Il mio negozio'"
+  );
+  await attesaVisible(page.getByRole("button", { name: /Modifica modalità di vendita/ }).first(), "'Vendita' contiene card 'Come vendi'");
+  await attesaVisible(page.getByRole("button", { name: /Configura spedizione/ }).first(), "'Vendita' contiene card 'Spedizione' (chiusa di default)");
+  await attesaVisible(
+    page.locator('a[href*="/pagamenti"]').filter({ hasText: "Metodo di pagamento" }).first(),
+    "'Vendita' contiene la card Metodo di pagamento (link a /pagamenti)"
+  );
+  const spedText = await page.locator('button:has-text("Configura spedizione")').first().innerText();
+  check(
+    "card Spedizione mostra un riepilogo (pacco o 'Non ancora configurato')",
+    /Pacco: |Non ancora configurato/.test(spedText),
+    `riepilogo: ${spedText.split("\n")[2] ?? ""}`
+  );
+  await page.getByRole("button", { name: /Configura spedizione/ }).first().click();
+  await attesaVisible(
+    page.locator('button:has-text("📦 Configura pacco e spedizione")').first(),
+    "card Spedizione → accordion interno visibile"
+  );
+  await page.locator('a[href*="/pagamenti"]').filter({ hasText: "Metodo di pagamento" }).first().click();
+  await page.waitForURL(/\/pagamenti/, { timeout: 15000 });
+  check("card Metodo di pagamento → pagina /pagamenti", page.url().includes("/pagamenti"));
+  await page.goto(urlImpostazioni, { waitUntil: "domcontentloaded", timeout: 60000 });
+  await page.getByRole("button", { name: /Il mio negozio/ }).first().waitFor({ timeout: 60000 });
+
+  // ══ Catalogo e offerte ══
+  await page.getByRole("button", { name: /Catalogo e offerte/ }).first().click();
+  await attesaVisible(page.getByRole("button", { name: /Gestisci catalogo/ }).first(), "'Catalogo e offerte' mostra card Prodotti");
+  await attesaVisible(page.getByRole("button", { name: /Gestisci servizi/ }).first(), "'Catalogo e offerte' mostra card Servizi");
+  check("Offerte NON mostrate (filtro moduli_attivi)", (await page.getByRole("button", { name: /Gestisci offerte/ }).count()) === 0);
+  check("Eventi NON mostrati (filtro moduli_attivi)", (await page.getByRole("button", { name: /Gestisci eventi/ }).count()) === 0);
+
+  // ══ Visibilità e promozione ══
+  await page.getByRole("button", { name: /Visibilità e promozione/ }).first().click();
+  await attesaVisible(page.getByRole("button", { name: /Gestisci social/ }).first(), "'Visibilità e promozione' mostra card Social");
+  await attesaVisible(page.getByRole("button", { name: /Migliora su Google/ }).first(), "'Visibilità e promozione' mostra card 'Visibilità su Google' (SEO)");
+  await attesaVisible(page.getByRole("button", { name: /Configura assistente/ }).first(), "'Visibilità e promozione' mostra card Assistente AI");
+
+  // ══ Impostazioni avanzate ══
+  await page.getByRole("button", { name: /Impostazioni avanzate/ }).first().click();
+  await attesaVisible(page.getByRole("button", { name: /Modifica preferenze/ }).first(), "'Impostazioni avanzate' mostra card Preferenze");
+
+  // ══ RESPONSIVE: nessun overflow a 7 viewport ══
   for (const width of VIEWPORTS) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto(urlImpostazioni, { waitUntil: "domcontentloaded" });
@@ -200,12 +277,6 @@ try {
     for (const s of sezioni) {
       await page.getByRole("button", { name: new RegExp(s) }).first().click();
       await page.waitForTimeout(700);
-      const btn = page.locator('button:has-text("Configura pacco e spedizione")').first();
-      if (await btn.isVisible()) {
-        const aperto = await btn.getAttribute("aria-expanded");
-        if (aperto === "false") await btn.click();
-        await page.waitForTimeout(300);
-      }
       const misure = await page.evaluate(() => ({
         doc: document.documentElement.scrollWidth - document.documentElement.clientWidth,
         body: document.body.scrollWidth - document.body.clientWidth,

@@ -1,4 +1,4 @@
-import { Settings } from "lucide-react";
+import { Store } from "lucide-react";
 import MerchantEmptyState from "@/components/merchant/MerchantEmptyState";
 import SettingsSections from "./SettingsSections";
 import { requireCurrentUser } from "@/lib/auth/session";
@@ -46,24 +46,31 @@ export default async function MerchantSettingsPage({
   return (
     <div className="mx-auto max-w-5xl px-3 py-3 sm:px-5">
       <div className="space-y-6">
-        {/* Header */}
-        <div className="rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm">
-          <div className="flex items-start gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
-              <Settings className="h-5 w-5" />
+        {/* Header — la vetrina del commerciante, senza linguaggio tecnico */}
+        <div className="overflow-hidden rounded-[2rem] bg-gradient-to-br from-blue-700 via-blue-600 to-blue-500 p-6 shadow-lg shadow-blue-600/20 sm:p-8">
+          <div className="flex items-start gap-4 sm:gap-5">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-yellow-400 text-blue-900 shadow-md sm:h-14 sm:w-14">
+              <Store className="h-6 w-6 sm:h-7 sm:w-7" />
             </div>
             <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
+              <p className="text-xs font-bold uppercase tracking-[0.22em] text-blue-200">
                 Gestione negozio
               </p>
-              <h1 className="mt-2 break-words text-3xl font-black tracking-tight text-slate-900">
-                {store.nome ?? "Negozio"}
+              <h1 className="mt-1.5 break-words text-2xl font-black tracking-tight text-white sm:text-3xl">
+                {store.nome ?? "Il tuo negozio"}
               </h1>
-              <div className="mt-2 flex flex-wrap items-center gap-3">
-                <span className="text-sm text-slate-500">{store.categoria ?? "Categoria non definita"}</span>
-                <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${store.attivo ? "bg-blue-50 text-blue-700" : "bg-slate-100 text-slate-500"}`}>
-                  <span className={`h-1.5 w-1.5 rounded-full ${store.attivo ? "bg-blue-500" : "bg-slate-400"}`} />
-                  {store.attivo ? "Attivo" : "Non attivo"}
+              <p className="mt-2 max-w-xl text-sm leading-6 text-blue-100">
+                Tieni aggiornata la tua vetrina e fai conoscere il tuo negozio ai clienti.
+              </p>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                {store.categoria && (
+                  <span className="inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white">
+                    {store.categoria}
+                  </span>
+                )}
+                <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${store.attivo ? "bg-emerald-400/90 text-emerald-950" : "bg-white/15 text-white"}`}>
+                  <span className={`h-1.5 w-1.5 rounded-full ${store.attivo ? "bg-emerald-700" : "bg-white"}`} />
+                  {store.attivo ? "Il tuo negozio è online" : "Negozio non pubblicato"}
                 </span>
               </div>
             </div>

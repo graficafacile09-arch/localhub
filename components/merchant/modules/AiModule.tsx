@@ -74,7 +74,7 @@ export default function AiModule({ storeId }: Props) {
   }
 
   return (
-    <ModuleShell icon={<Bot className="h-4 w-4" />} title="Assistente AI" subtitle="Dati per l'assistente AI del negozio" id="ai">
+    <ModuleShell icon={<Bot className="h-4 w-4" />} title="Assistente AI" subtitle="Strumenti intelligenti per il tuo negozio" id="ai">
       <div className="space-y-4">
         <TextArea label="Istruzioni personalizzate" value={form.istruzioni}
           onChange={(v) => setForm((f) => ({ ...f, istruzioni: v }))} rows={4}
