@@ -1,14 +1,10 @@
 import Link from "next/link";
-import { ReceiptText } from "lucide-react";
+import { ArrowLeft, ReceiptText } from "lucide-react";
 import MerchantEmptyState from "@/components/merchant/MerchantEmptyState";
 import { requireCurrentUser } from "@/lib/auth/session";
 import { getMerchantStoreForUser } from "@/lib/merchant/data";
 import { getOrdiniVenditore } from "@/lib/merchant/ordini";
-import {
-  FILTRI_ORDINI,
-  isFiltroOrdini,
-  statiPerFiltro,
-} from "@/lib/merchant/ordini-stati";
+import { isFiltroOrdini, statiPerFiltro } from "@/lib/merchant/ordini-stati";
 import type { OrdineVenditoreLista } from "@/lib/merchant/ordini";
 import { AvvisoNuoviOrdini } from "@/components/ordini/AvvisoNuoviOrdini";
 import { KpiOrdini, type ConteggiOrdini } from "@/components/ordini/KpiOrdini";
@@ -75,19 +71,19 @@ export default async function MerchantOrdiniPage({
           return st.length > 0 ? ordini.filter((o) => st.includes(o.stato)) : ordini;
         })();
 
-  // Attenzione: il KPI "In lavorazione" conta lo STESSO insieme del filtro
-  // a cui rimanda (confermato+in_lavorazione+in_consegna), così il numero
-  // corrisponde sempre alla lista che si apre; "In consegna" resta il
-  // sotto-insieme dedicato.
+  // Attenzione: il riquadro "In lavorazione" conta lo STESSO insieme del
+  // filtro a cui rimanda (confermato+in_lavorazione+in_consegna), così il
+  // numero corrisponde sempre alla lista che si apre. "Reclami" filtra su
+  // haReclamoAperto (indipendente dallo stato), come il filtro omonimo.
   const conteggi: ConteggiOrdini = {
     nuovi: ordini.filter((o) => o.stato === "in_preparazione").length,
     lavorazione: ordini.filter((o) =>
       ["confermato", "in_lavorazione", "in_consegna"].includes(o.stato)
     ).length,
-    inConsegna: ordini.filter((o) => o.stato === "in_consegna").length,
     pronti: ordini.filter((o) => o.stato === "pronto").length,
     completati: ordini.filter((o) => o.stato === "consegnato").length,
     annullati: ordini.filter((o) => o.stato === "cancellato").length,
+    reclami: ordini.filter((o) => o.haReclamoAperto).length,
   };
   const nonLetti = ordini.filter((o) => !o.lettoAt).length;
   const baseHref = `/merchant/${negozioId}/ordini`;
@@ -115,8 +111,19 @@ export default async function MerchantOrdiniPage({
         </div>
       </div>
 
-      {/* ── KPI per stato (Nuovi in rosso se > 0) ───────────────────────────── */}
-      <KpiOrdini baseHref={baseHref} conteggi={conteggi} />
+      {/* ── Barra di navigazione per stato (attivo = blu, scroll alla lista) ── */}
+      <KpiOrdini baseHref={baseHref} conteggi={conteggi} filtroAttivo={filtro} />
+
+      {/* ── Ritorno alla lista completa quando è attivo un filtro ──────────── */}
+      {filtro !== "tutti" && (
+        <Link
+          href={baseHref}
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-700 transition hover:text-blue-800 hover:underline"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" aria-hidden />
+          Tutti gli ordini
+        </Link>
+      )}
 
       {/* ── Banner nuovi ordini (letto_at, sistema esistente) ──────────────── */}
       {filtro === "tutti" && (
@@ -126,30 +133,8 @@ export default async function MerchantOrdiniPage({
         />
       )}
 
-      {/* ── Filtri ───────────────────────────────────────────────────────────── */}
-      <div className="flex flex-wrap gap-2">
-        {FILTRI_ORDINI.map((f) => {
-          const attivo = filtro === f.key;
-          return (
-            <Link
-              key={f.key}
-              href={
-                f.key === "tutti"
-                  ? baseHref
-                  : `${baseHref}?filtro=${f.key}`
-              }
-              className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition ${
-                attivo
-                  ? "bg-blue-600 text-white shadow-sm"
-                  : "border border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:text-blue-700"
-              }`}
-            >
-              {f.etichetta}
-            </Link>
-          );
-        })}
-      </div>
-
+      {/* ── Sezione ordini (target dello scroll dai riquadri stato) ─────────── */}
+      <div id="lista-ordini" className="scroll-mt-24">
       {/* ── Errore di lettura ────────────────────────────────────────────────── */}
       {errore ? (
         <div className="rounded-[2rem] border border-blue-100 bg-white p-8 text-center shadow-sm">
@@ -221,6 +206,7 @@ export default async function MerchantOrdiniPage({
           ))}
         </div>
       )}
+      </div>
     </div>
   );
 }

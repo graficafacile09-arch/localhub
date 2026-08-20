@@ -1,32 +1,35 @@
+"use client";
+
+import { useEffect } from "react";
 import Link from "next/link";
 import {
   BellRing,
   CheckCircle2,
   Hammer,
+  MessageSquareWarning,
   PackageCheck,
-  Truck,
   XCircle,
   type LucideIcon,
 } from "lucide-react";
 
-/** Conteggi per stato della lista ordini venditore (KPI). */
+/** Conteggi per stato della lista ordini venditore (barra di navigazione). */
 export type ConteggiOrdini = {
   nuovi: number;
   lavorazione: number;
-  inConsegna: number;
   pronti: number;
   completati: number;
   annullati: number;
+  reclami: number;
 };
 
-const ITEM_KPI: ReadonlyArray<{
+const ITEM_NAV: ReadonlyArray<{
   key: keyof ConteggiOrdini;
   etichetta: string;
   micro: string;
   filtro: string;
   icona: LucideIcon;
   neutro: string;
-  /** true → diventa ROSSO pieno quando il valore è > 0 (attenzione). */
+  /** true → il conteggio diventa ROSSO quando > 0 (attenzione). */
   urgente: boolean;
 }> = [
   {
@@ -45,15 +48,6 @@ const ITEM_KPI: ReadonlyArray<{
     filtro: "lavorazione",
     icona: Hammer,
     neutro: "bg-yellow-50 text-yellow-700",
-    urgente: false,
-  },
-  {
-    key: "inConsegna",
-    etichetta: "In consegna",
-    micro: "In transito",
-    filtro: "lavorazione",
-    icona: Truck,
-    neutro: "bg-blue-50 text-blue-700",
     urgente: false,
   },
   {
@@ -77,73 +71,109 @@ const ITEM_KPI: ReadonlyArray<{
   {
     key: "annullati",
     etichetta: "Annullati",
-    micro: "Terminali",
+    micro: "Annullati",
     filtro: "annullati",
     icona: XCircle,
     neutro: "bg-blue-50 text-blue-700",
     urgente: false,
   },
+  {
+    key: "reclami",
+    etichetta: "Reclami",
+    micro: "Da gestire",
+    filtro: "reclami",
+    icona: MessageSquareWarning,
+    neutro: "bg-red-50 text-red-600",
+    urgente: false,
+  },
 ];
 
 /**
- * KPI ORDINI VENDITORE — striscia di KPI professionali per stato, ciascuno
- * con icona in chip, numero grande, etichetta e micro-descrizione, collegato
- * al relativo filtro della lista. Il KPI "Nuovi" riceve una forte evidenza
- * ROSSA quando > 0 (urgenza riservata: nuovi non letti, reclami, annullati).
+ * BARRA DI NAVIGAZIONE DEGLI STATI ORDINI (area venditore).
+ * Riquadri compatti e cliccabili: ognuno seleziona il proprio stato (il
+ * riquadro attivo diventa BLU, gli altri neutri) e porta la pagina alla
+ * sezione della lista che contiene quegli ordini (`#lista-ordini`), con
+ * scroll automatico. Il conteggio "Nuovi" resta evidenziato in ROSSO quando
+ * > 0 (attenzione), senza confliggere con il blu dello stato attivo.
  */
 export function KpiOrdini({
   baseHref,
   conteggi,
+  filtroAttivo,
 }: {
   baseHref: string;
   conteggi: ConteggiOrdini;
+  filtroAttivo: string;
 }) {
+  // Dopo ogni navigazione a un filtro, porta in vista la sezione della lista
+  // che contiene gli ordini dello stato selezionato (scroll-margin-top sul
+  // target gestisce l'offset dell'header mobile sticky).
+  useEffect(() => {
+    if (filtroAttivo === "tutti") return;
+    const el = document.getElementById("lista-ordini");
+    el?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [filtroAttivo]);
+
   return (
-    <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-6">
-      {ITEM_KPI.map(({ key, etichetta, micro, filtro, icona: Icona, neutro, urgente }) => {
-        const valore = conteggi[key] ?? 0;
-        const rossa = urgente && valore > 0;
-        return (
-          <Link
-            key={key}
-            href={`${baseHref}?filtro=${filtro}`}
-            className={`group/kpi rounded-2xl px-3.5 py-3 ring-1 transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 ${
-              rossa
-                ? "bg-blue-600 text-white ring-blue-700 shadow-md shadow-blue-600/25"
-                : "bg-white ring-slate-200"
-            }`}
-          >
-            <span
-              className={`inline-flex h-7 w-7 items-center justify-center rounded-lg ${
-                rossa ? "bg-white/20 text-white" : neutro
-              }`}
-            >
-              <Icona className="h-4 w-4" aria-hidden />
-            </span>
-            <p
-              className={`mt-2 font-mono text-2xl font-black leading-none tracking-tight tabular-nums ${
-                rossa ? "text-white" : "text-slate-900"
-              }`}
-            >
-              {valore}
-            </p>
-            <p
-              className={`mt-1.5 text-[11px] font-bold uppercase tracking-wide ${
-                rossa ? "text-blue-100" : "text-slate-700"
-              }`}
-            >
-              {etichetta}
-            </p>
-            <p
-              className={`mt-0.5 text-[10px] ${
-                rossa ? "text-blue-100/80" : "text-slate-400"
-              }`}
-            >
-              {micro}
-            </p>
-          </Link>
-        );
-      })}
-    </div>
+    <nav aria-label="Stati degli ordini">
+      <div className="grid grid-cols-3 gap-2 lg:grid-cols-6">
+        {ITEM_NAV.map(
+          ({ key, etichetta, micro, filtro, icona: Icona, neutro, urgente }) => {
+            const valore = conteggi[key] ?? 0;
+            const attivo = filtroAttivo === filtro;
+            const rossa = urgente && valore > 0 && !attivo;
+            return (
+              <Link
+                key={key}
+                href={`${baseHref}?filtro=${filtro}`}
+                aria-current={attivo ? "page" : undefined}
+                className={`group/nav min-w-0 rounded-xl px-2.5 py-2.5 ring-1 transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 ${
+                  attivo
+                    ? "bg-blue-600 text-white ring-blue-700 shadow-md shadow-blue-600/25"
+                    : rossa
+                      ? "bg-white ring-red-200"
+                      : "bg-white ring-slate-200"
+                }`}
+              >
+                <span className="flex items-center justify-between gap-1">
+                  <span
+                    className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-lg ${
+                      attivo
+                        ? "bg-white/20 text-white"
+                        : rossa
+                          ? "bg-red-50 text-red-600"
+                          : neutro
+                    }`}
+                  >
+                    <Icona className="h-3.5 w-3.5" aria-hidden />
+                  </span>
+                  <p
+                    className={`font-mono text-xl font-black leading-none tracking-tight tabular-nums ${
+                      attivo ? "text-white" : rossa ? "text-red-600" : "text-slate-900"
+                    }`}
+                  >
+                    {valore}
+                  </p>
+                </span>
+                <p
+                  className={`mt-1.5 text-[10px] font-bold uppercase leading-tight tracking-wide ${
+                    attivo ? "text-blue-100" : "text-slate-700"
+                  }`}
+                >
+                  {etichetta}
+                </p>
+                <p
+                  className={`mt-0.5 text-[9px] leading-tight ${
+                    attivo ? "text-blue-100/80" : "text-slate-400"
+                  }`}
+                >
+                  {micro}
+                </p>
+              </Link>
+            );
+          }
+        )}
+      </div>
+    </nav>
   );
 }
