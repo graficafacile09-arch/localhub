@@ -1,4 +1,5 @@
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { utentePossiedeNegozio } from "@/lib/merchant/data";
 import { inviaNotificaNuovoOrdine } from "@/lib/notifiche/whatsapp";
 import { inviaNotificaNuovoOrdineNtfy } from "@/lib/notifiche/ntfy";
 import { inviaEmailConfermaOrdine } from "./ordine-email";
@@ -219,6 +220,8 @@ export const STATUS_DA_CODICE: Record<string, number> = {
   PESO_MANCANTE: 422,
   TARIFFA_NON_TROVATA: 422,
   CORRIERE_LOCALE_NON_DISPONIBILE: 422,
+  // REGOLA AUTO-ACQUISTO: un venditore non può comprare i PROPRI prodotti.
+  PRODOTTO_DEL_PROPRIO_NEGOZIO: 403,
   SAVE_FAILED: 500,
 };
 
@@ -229,6 +232,20 @@ const getDb = () => {
     return null;
   }
 };
+
+/** Id del negozio a cui appartiene il prodotto (null se non trovato). */
+async function negozioDelProdotto(prodottoId: string): Promise<string | null> {
+  const db = getDb();
+  if (!db) return null;
+  const { data, error } = await db
+    .from("prodotti")
+    .select("negozio_id")
+    .eq("id", prodottoId)
+    .maybeSingle();
+  if (error || !data) return null;
+  const id = (data as Record<string, unknown>).negozio_id;
+  return id == null ? null : String(id);
+}
 
 /**
  * Recupera un ordine per la pagina di conferma (lettura pubblica con dati
@@ -482,6 +499,23 @@ export async function creaOrdine(
     }
   }
   const note = input.note ? String(input.note).trim().slice(0, 500) : null;
+
+  // ── 1bis. BLOCCO AUTO-ACQUISTO DEL VENDITORE (regola di sicurezza) ──────
+  // Un venditore può acquistare i prodotti degli ALTRI negozi, mai i PROPRI.
+  // La verifica è server-side (ownership su negozi.owner_user_id), quindi
+  // vale anche aggirando il frontend (richiesta diretta all'API). Solo per
+  // utenti AUTENTICATI: gli ordini guest restano invariati.
+  if (input.clienteUserId) {
+    const negozio = await negozioDelProdotto(String(input.prodottoId));
+    if (negozio && (await utentePossiedeNegozio(input.clienteUserId, negozio))) {
+      return {
+        ok: false,
+        errore: "Non puoi acquistare i prodotti del tuo negozio.",
+        codice: "PRODOTTO_DEL_PROPRIO_NEGOZIO",
+        status: 403,
+      };
+    }
+  }
 
   // ── 2. Transazione atomica nel database (ordine + righe + stock) ────────
   // La funzione PostgreSQL gestisce: idempotenza, lock del prodotto,

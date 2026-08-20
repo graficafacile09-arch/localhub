@@ -391,6 +391,32 @@ export async function updateMetodiSpedizioneNegozio(
 }
 
 // =================================================================
+// utentePossiedeNegozio — l'utente è il PROPRIETARIO del negozio
+// =================================================================
+/**
+ * True se l'utente è il PROPRIETARIO del negozio (negozi.owner_user_id).
+ * Differisce da canManageStore: qui l'admin AUTORIZZATO NON viene mai
+ * considerato proprietario (può gestire qualsiasi negozio, ma non è il
+ * titolare). Usata per il blocco dell'auto-acquisto del venditore: un
+ * venditore può acquistare dai negozi altrui, mai dal PROPRIO.
+ */
+export async function utentePossiedeNegozio(
+  userId: string,
+  negozioId: string
+): Promise<boolean> {
+  if (!userId || !negozioId) return false;
+  const supabase = createAdminSupabaseClient();
+  const { count, error } = await supabase
+    .from("negozi")
+    .select("id", { head: true, count: "exact" })
+    .eq("id", negozioId)
+    .eq("owner_user_id", userId)
+    .is("deleted_at", null);
+  if (error) return false;
+  return Boolean(count && count > 0);
+}
+
+// =================================================================
 // canManageStore — verifica se l'utente può gestire un negozio
 // =================================================================
 export async function canManageStore(userId: string, negozioId: string): Promise<boolean> {

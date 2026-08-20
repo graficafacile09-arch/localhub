@@ -1,4 +1,5 @@
 import { apiError, apiOk } from "@/lib/api/response";
+import { utentePossiedeNegozio } from "@/lib/merchant/data";
 import {
   creaOrdiniCarrello,
   raggruppaPerNegozio,
@@ -198,6 +199,28 @@ export async function POST(request: Request) {
       raggruppamento.messaggio,
       statusDaCodice(raggruppamento.codice)
     );
+  }
+
+  // ── BLOCCO AUTO-ACQUISTO DEL VENDITORE (regola di sicurezza) ───────────
+  // Se il carrello contiene prodotti del PROPRIO negozio, l'intero checkout
+  // viene rifiutato PRIMA di creare qualunque ordine: un venditore può
+  // acquistare dai negozi altrui, mai dai propri. Verifica server-side su
+  // negozi.owner_user_id: vale anche aggirando il frontend. Solo utenti
+  // autenticati; il checkout guest resta invariato.
+  if (utenteAutenticato) {
+    for (const gruppo of raggruppamento.negozi) {
+      const proprio = await utentePossiedeNegozio(
+        utenteAutenticato.id,
+        gruppo.negozioId
+      );
+      if (proprio) {
+        return apiError(
+          "PRODOTTO_DEL_PROPRIO_NEGOZIO",
+          "Non puoi acquistare i prodotti del tuo negozio: rimuovili dal carrello.",
+          403
+        );
+      }
+    }
   }
 
   // ── PRE-FLIGHT per provider (fail-closed, come /api/cliente/ordini F1) ──

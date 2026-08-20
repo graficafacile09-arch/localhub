@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ShoppingBag } from "lucide-react";
+import { ShoppingBag, Store } from "lucide-react";
 import { disponibilitaReale, prodottoEsaurito } from "@/lib/prodotti-disponibilita";
 import type { VariantePubblica } from "@/lib/varianti-pubbliche";
 import AggiungiAlCarrelloButton from "@/components/carrello/AggiungiAlCarrelloButton";
@@ -29,6 +29,13 @@ import AggiungiAlCarrelloButton from "@/components/carrello/AggiungiAlCarrelloBu
 
 type Props = {
   slug: string;
+  /**
+   * REGOLA AUTO-ACQUISTO: true se l'utente autenticato è il VENDITORE del
+   * negozio proprietario del prodotto → la CTA "Acquista" e "Aggiungi al
+   * carrello" vengono sostituite dall'etichetta "Il tuo prodotto" (il
+   * blocco vale anche server-side nelle API ordini).
+   */
+  eIlMioProdotto: boolean;
   /** Id del prodotto (per il carrello, FASE F2.4). */
   prodottoId: string;
   /** Snapshot UI negozio (mai autoritativo per prezzi/stock). */
@@ -69,6 +76,7 @@ function selezioneIniziale(varianti: VariantePubblica[]): SelezioniAttributi {
 
 export default function ProductVariantSelector({
   slug,
+  eIlMioProdotto,
   prodottoId,
   negozioId,
   negozioNome,
@@ -260,42 +268,52 @@ export default function ProductVariantSelector({
         </p>
       </div>
 
-      {/* Acquista (buy-now invariato) + Aggiungi al carrello (FASE F2.4) */}
+      {/* Acquista — sostituito da "Il tuo prodotto" per il venditore del
+          negozio proprietario (regola auto-acquisto, blocco anche API) */}
       <div className="mt-4 space-y-2">
-        {acquistabile && hrefAcquista ? (
-          <Link
-            href={hrefAcquista}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-yellow-400 px-4 py-3 text-base font-bold text-blue-800 shadow-sm transition hover:bg-yellow-300"
-          >
-            <ShoppingBag className="h-5 w-5" />
-            ACQUISTA
-          </Link>
+        {eIlMioProdotto ? (
+          <div className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-base font-bold text-slate-600">
+            <Store className="h-5 w-5 shrink-0" aria-hidden />
+            Il tuo prodotto
+          </div>
         ) : (
-          <button
-            type="button"
-            disabled
-            aria-disabled="true"
-            className="flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-xl bg-slate-300 px-4 py-3 text-base font-bold text-white"
-          >
-            <ShoppingBag className="h-5 w-5" />
-            {nessunaAcquistabile || esaurito ? "Non disponibile" : "Seleziona una variante"}
-          </button>
-        )}
+          <>
+            {acquistabile && hrefAcquista ? (
+              <Link
+                href={hrefAcquista}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-yellow-400 px-4 py-3 text-base font-bold text-blue-800 shadow-sm transition hover:bg-yellow-300"
+              >
+                <ShoppingBag className="h-5 w-5" />
+                ACQUISTA
+              </Link>
+            ) : (
+              <button
+                type="button"
+                disabled
+                aria-disabled="true"
+                className="flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-xl bg-slate-300 px-4 py-3 text-base font-bold text-white"
+              >
+                <ShoppingBag className="h-5 w-5" />
+                {nessunaAcquistabile || esaurito ? "Non disponibile" : "Seleziona una variante"}
+              </button>
+            )}
 
-        {/* Aggiungi al carrello: rispetta la variante selezionata. Solo snapshot
-            UI; prezzo/stock validati server-side (F2.1/F2.2). */}
-        <AggiungiAlCarrelloButton
-          prodottoId={prodottoId}
-          varianteId={varianteSelezionata?.id ?? null}
-          nome={nome}
-          prezzo={prezzoMostrato}
-          immagine={immagineMostrata}
-          variante={varianteSelezionata?.nome ?? null}
-          negozioId={negozioId}
-          negozioNome={negozioNome}
-          slug={slug}
-          disabled={!acquistabile}
-        />
+            {/* Aggiungi al carrello: rispetta la variante selezionata. Solo
+                snapshot UI; prezzo/stock validati server-side (F2.1/F2.2). */}
+            <AggiungiAlCarrelloButton
+              prodottoId={prodottoId}
+              varianteId={varianteSelezionata?.id ?? null}
+              nome={nome}
+              prezzo={prezzoMostrato}
+              immagine={immagineMostrata}
+              variante={varianteSelezionata?.nome ?? null}
+              negozioId={negozioId}
+              negozioNome={negozioNome}
+              slug={slug}
+              disabled={!acquistabile}
+            />
+          </>
+        )}
       </div>
     </div>
   );

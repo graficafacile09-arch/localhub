@@ -3,6 +3,8 @@ import { permanentRedirect, notFound } from "next/navigation";
 import type { Metadata } from "next";
 import Header from "@/components/Header/Header";
 import { risolviProdottoPubblico, getNegozio } from "@/lib/negozi";
+import { getSessionArea } from "@/lib/auth/session-area";
+import { utentePossiedeNegozio } from "@/lib/merchant/data";
 import { getProdottoImmagine } from "@/lib/prodotti-immagini";
 import { disponibilitaReale, prodottoEsaurito } from "@/lib/prodotti-disponibilita";
 import { getProductMediaPubbliche } from "@/lib/prodotti-media";
@@ -15,7 +17,7 @@ import { normalizzaNumeroWhatsApp } from "@/lib/telefono";
 import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
 import AggiungiAlCarrelloButton from "@/components/carrello/AggiungiAlCarrelloButton";
 import AvvisamiDisponibilitaButton from "@/components/prodotto/AvvisamiDisponibilitaButton";
-import { MapPin, Phone, MessageCircle, ArrowLeft, ExternalLink, ShoppingBag } from "lucide-react";
+import { MapPin, Phone, MessageCircle, ArrowLeft, ExternalLink, ShoppingBag, Store } from "lucide-react";
 
 type Params = { slug: string };
 
@@ -57,6 +59,23 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
 
   const id = prodotto.id as string;
   const negozio = await getNegozio(String(prodotto.negozio_id));
+
+  // REGOLA AUTO-ACQUISTO: se l'utente autenticato è un VENDITORE e il
+  // prodotto appartiene al SUO negozio (owner_user_id), la CTA "Acquista"
+  // viene sostituita dall'etichetta informativa "Il tuo prodotto" (il
+  // blocco è poi applicato anche server-side nelle API ordini).
+  const sessione = await getSessionArea();
+  let eIlMioProdotto = false;
+  if (sessione?.area === "merchant" && prodotto.negozio_id) {
+    try {
+      eIlMioProdotto = await utentePossiedeNegozio(
+        sessione.user.id,
+        String(prodotto.negozio_id)
+      );
+    } catch {
+      eIlMioProdotto = false;
+    }
+  }
 
   // Stato preferiti per il pulsante "Salva" del prodotto.
   const statoPreferiti = await getStatoPreferitiPerPagina();
@@ -134,6 +153,7 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
         {haVarianti ? (
           <>
             <ProductVariantSelector
+              eIlMioProdotto={eIlMioProdotto}
               slug={String(prodotto.slug ?? id)}
               prodottoId={id}
               negozioId={String(negozio?.id ?? "")}
@@ -225,27 +245,37 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
           )}
         </div>
 
-        {/* Buy button - always visible */}
+        {/* Acquista — sostituito da "Il tuo prodotto" per il venditore del
+            negozio proprietario (regola auto-acquisto, blocco anche API) */}
         <div className="mt-4 space-y-2">
-          <Link
-            href={`/prodotto/${prodotto.slug}/acquista`}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-yellow-400 px-4 py-3 text-base font-bold text-blue-800 shadow-sm transition hover:bg-yellow-300"
-          >
-            <ShoppingBag className="h-5 w-5" />
-            ACQUISTA
-          </Link>
-          <AggiungiAlCarrelloButton
-            prodottoId={id}
-            varianteId={null}
-            nome={prodotto.nome as string}
-            prezzo={prezzo}
-            immagine={imageUrl}
-            variante={null}
-            negozioId={String(negozio?.id ?? "")}
-            negozioNome={String(negozio?.nome ?? "")}
-            slug={String(prodotto.slug ?? id)}
-            disabled={esaurito || !negozio}
-          />
+          {eIlMioProdotto ? (
+            <div className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-base font-bold text-slate-600">
+              <Store className="h-5 w-5 shrink-0" aria-hidden />
+              Il tuo prodotto
+            </div>
+          ) : (
+            <>
+              <Link
+                href={`/prodotto/${prodotto.slug}/acquista`}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-yellow-400 px-4 py-3 text-base font-bold text-blue-800 shadow-sm transition hover:bg-yellow-300"
+              >
+                <ShoppingBag className="h-5 w-5" />
+                ACQUISTA
+              </Link>
+              <AggiungiAlCarrelloButton
+                prodottoId={id}
+                varianteId={null}
+                nome={prodotto.nome as string}
+                prezzo={prezzo}
+                immagine={imageUrl}
+                variante={null}
+                negozioId={String(negozio?.id ?? "")}
+                negozioNome={String(negozio?.nome ?? "")}
+                slug={String(prodotto.slug ?? id)}
+                disabled={esaurito || !negozio}
+              />
+            </>
+          )}
           {esaurito && (
             <AvvisamiDisponibilitaButton
               prodottoId={id}
@@ -302,13 +332,15 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
 
             {/* Actions */}
             <div className="mt-3 flex flex-wrap gap-2">
-              <Link
-                href={`/prodotto/${prodotto.slug}/acquista`}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-yellow-400 px-3 py-1.5 text-xs font-bold text-blue-800 transition hover:bg-yellow-300"
-              >
-                <ShoppingBag className="h-3.5 w-3.5" />
-                Acquista
-              </Link>
+              {!eIlMioProdotto && (
+                <Link
+                  href={`/prodotto/${prodotto.slug}/acquista`}
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-yellow-400 px-3 py-1.5 text-xs font-bold text-blue-800 transition hover:bg-yellow-300"
+                >
+                  <ShoppingBag className="h-3.5 w-3.5" />
+                  Acquista
+                </Link>
+              )}
               {negozio?.telefono && (
                 <a
                   href={buildWhatsAppUrl()}
