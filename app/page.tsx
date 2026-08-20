@@ -110,10 +110,9 @@ export default async function Home() {
               categoria={categoria}
               index={index}
               count={count}
-              variant="homepage"
             />
           ))}
-          <TutteCategorieTile index={NUMERO_CATEGORIE_HOME} variant="homepage" />
+          <TutteCategorieTile index={NUMERO_CATEGORIE_HOME} />
         </div>
       </section>
 
