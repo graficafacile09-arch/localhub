@@ -17,14 +17,18 @@ import { Sparkles } from "lucide-react";
  * risponde AssistantPanel, montato nel layout root): nessun secondo
  * Assistente, Gemini e /api/assistente restano invariati.
  */
-export default function HomeAssistantButton() {
+export default function HomeAssistantButton({
+  className = "",
+}: {
+  className?: string;
+}) {
   return (
     <button
       type="button"
       onClick={() => window.dispatchEvent(new Event("assistant:open"))}
       aria-label="Apri l'Assistente AI"
       title="Assistente AI"
-      className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-yellow-400 text-blue-900 transition-colors hover:bg-yellow-300 active:scale-95"
+      className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-yellow-400 text-blue-900 shadow-[0_14px_30px_-10px_rgba(202,138,4,0.6)] transition-colors hover:bg-yellow-300 active:scale-95 ${className}`}
     >
       <Sparkles className="h-5 w-5" aria-hidden />
     </button>

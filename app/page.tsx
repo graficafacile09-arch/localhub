@@ -34,7 +34,7 @@ export default async function Home() {
       <Header />
 
       {/* HERO FOTOGRAFICA — Via Roma, Castrovillari */}
-      <section className="relative overflow-hidden rounded-b-[2rem] sm:rounded-b-[2.5rem] text-white shadow-lg shadow-slate-900/10">
+      <section className="relative flex min-h-[540px] items-center overflow-hidden rounded-b-[2rem] text-white shadow-lg shadow-slate-900/10 sm:min-h-[580px] sm:rounded-b-[2.5rem] md:min-h-[640px]">
         {/* Fotografia a tutta larghezza, valorizzata senza deformazioni */}
         <img
           src="/hero-via-roma-castrovillari-1400x1050.jpg"
@@ -44,34 +44,36 @@ export default async function Home() {
           className="absolute inset-0 h-full w-full object-cover object-center"
         />
 
-        {/* Leggerissimo velo scuro SOLO per la leggibilità dei testi */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/45 via-black/20 to-black/40" />
+        {/* Overlay fotografico professionale: intenso solo nella fascia
+            centrale (titolo + ricerca), trasparente in alto e in basso per
+            lasciare cielo, edifici e strada luminosi e visibili. */}
+        <div aria-hidden className="hero-overlay absolute inset-0" />
 
-        <div className="relative z-10 mx-auto max-w-4xl px-4 py-16 text-center sm:py-20 md:py-24">
-          <h1 className="text-2xl font-black tracking-tight drop-shadow-md md:text-4xl">
+        <div className="relative z-10 mx-auto w-full max-w-4xl px-4 py-16 text-center sm:py-20 md:py-24">
+          <h1 className="mx-auto max-w-2xl text-[1.7rem] font-black leading-[1.15] tracking-tight text-white drop-shadow-[0_2px_14px_rgba(15,23,42,0.6)] sm:text-4xl sm:leading-[1.12] md:text-5xl">
             Tutto quello che cerchi... è già nella tua città.
           </h1>
 
-          <p className="mx-auto mt-3 max-w-xl text-sm text-white/95 drop-shadow md:text-base">
+          <p className="mx-auto mt-4 max-w-xl text-sm font-medium text-white/95 drop-shadow-[0_1px_8px_rgba(15,23,42,0.7)] md:text-base">
             Trova negozi, professionisti, offerte e servizi locali in pochi secondi.
           </p>
 
           {/* Riga azioni homepage: ricerca + Assistente AI nello STESSO rigo
               (flex-nowrap, niente wrapping su mobile). Il pulsante AI è una
               normale azione della homepage: giallo, compatto, solo logo. */}
-          <div className="mx-auto mt-6 flex max-w-xl items-center gap-2 sm:gap-3">
+          <div className="mx-auto mt-7 flex max-w-2xl items-center gap-2.5 sm:gap-3">
             <form action="/ricerca" method="GET" className="min-w-0 flex-1">
-              <div className="flex items-center rounded-full bg-white p-1.5 shadow-lg shadow-black/25 transition focus-within:ring-2 focus-within:ring-yellow-400">
-                <Search className="ml-3 h-5 w-5 shrink-0 text-slate-400" />
+              <div className="flex h-14 items-center rounded-full border border-white/70 bg-white/95 p-1.5 shadow-[0_18px_45px_-15px_rgba(15,23,42,0.55)] transition duration-200 hover:border-brand/40 hover:shadow-[0_20px_50px_-15px_rgba(37,99,235,0.45)] focus-within:border-brand focus-within:ring-4 focus-within:ring-brand/25 sm:h-16">
+                <Search className="ml-3 h-5 w-5 shrink-0 text-slate-400 sm:ml-4 sm:h-6 sm:w-6" />
                 <input
                   type="text"
                   name="q"
                   placeholder="Cerca prodotto, negozio o servizio..."
-                  className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm sm:text-base text-slate-900 placeholder:text-slate-400 focus:outline-none"
+                  className="h-full min-w-0 flex-1 bg-transparent px-3 text-[15px] text-slate-900 placeholder:text-slate-500 focus:outline-none sm:px-4 sm:text-base"
                 />
                 <button
                   type="submit"
-                  className="hidden sm:inline-flex shrink-0 items-center gap-2 rounded-full bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 active:scale-95"
+                  className="hidden h-full shrink-0 items-center gap-2 rounded-full bg-brand px-6 text-sm font-bold text-white transition hover:bg-brand-dark active:scale-95 sm:inline-flex"
                 >
                   <Search className="h-4 w-4" />
                   Cerca
@@ -79,15 +81,15 @@ export default async function Home() {
                 <button
                   type="submit"
                   aria-label="Cerca"
-                  className="sm:hidden inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white transition active:scale-95"
+                  className="inline-flex h-full w-12 shrink-0 items-center justify-center rounded-full bg-brand text-white transition hover:bg-brand-dark active:scale-95 sm:hidden"
                 >
-                  <Search className="h-4 w-4" />
+                  <Search className="h-5 w-5" />
                 </button>
               </div>
             </form>
 
             {/* Assistente AI — accessibile SOLO dalla homepage */}
-            <HomeAssistantButton />
+            <HomeAssistantButton className="h-14 w-14 sm:h-16 sm:w-16" />
           </div>
         </div>
       </section>
