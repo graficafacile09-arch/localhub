@@ -41,14 +41,14 @@ export default function CategoryTile({
       <span
         className={
           variant === "homepage"
-            ? "flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 ring-1 ring-blue-100 transition duration-200 group-hover:bg-yellow-50 group-hover:ring-yellow-200 group-hover:scale-105 md:h-14 md:w-14"
+            ? "flex h-12 w-12 items-center justify-center rounded-2xl bg-yellow-400 ring-1 ring-yellow-300 transition duration-200 group-hover:bg-yellow-300 group-hover:ring-yellow-200 group-hover:scale-105 md:h-14 md:w-14"
             : `flex h-10 w-10 items-center justify-center rounded-full transition-transform duration-200 group-hover:scale-110 md:h-11 md:w-11 ${stile.bg}`
         }
       >
         {SecondaIcona ? (
           <span
             className={`flex items-center gap-[2px] ${
-              variant === "homepage" ? "text-blue-600 group-hover:text-blue-700" : stile.text
+              variant === "homepage" ? "text-blue-900 group-hover:text-blue-950" : stile.text
             }`}
             aria-hidden
           >
@@ -58,7 +58,7 @@ export default function CategoryTile({
         ) : (
           <Icona
             className={`h-5 w-5 md:h-[22px] md:w-[22px] ${
-              variant === "homepage" ? "text-blue-600 group-hover:text-blue-700" : stile.text
+              variant === "homepage" ? "text-blue-900 group-hover:text-blue-950" : stile.text
             }`}
             aria-hidden
           />
@@ -84,13 +84,13 @@ export function TutteCategorieTile({ index = 0, variant }: { index?: number; var
       <span
         className={
           variant === "homepage"
-            ? "flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 ring-1 ring-blue-100 transition duration-200 group-hover:bg-yellow-50 group-hover:ring-yellow-200 group-hover:scale-105 md:h-14 md:w-14"
+            ? "flex h-12 w-12 items-center justify-center rounded-2xl bg-yellow-400 ring-1 ring-yellow-300 transition duration-200 group-hover:bg-yellow-300 group-hover:ring-yellow-200 group-hover:scale-105 md:h-14 md:w-14"
             : "flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 transition-transform duration-200 group-hover:scale-110 md:h-11 md:w-11"
         }
       >
         <LayoutGrid
           className={`h-5 w-5 md:h-[22px] md:w-[22px] ${
-            variant === "homepage" ? "text-blue-600 group-hover:text-blue-700" : "text-blue-600"
+            variant === "homepage" ? "text-blue-900 group-hover:text-blue-950" : "text-blue-600"
           }`}
           aria-hidden
         />

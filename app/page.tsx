@@ -94,7 +94,7 @@ export default async function Home() {
       </section>
 
       {/* CATEGORIE */}
-      <section className="max-w-4xl mx-auto px-4 py-10 md:px-6">
+      <section className="mx-auto max-w-4xl px-4 pb-10 pt-6 md:px-6 md:pt-8">
         <div className="mb-6 flex items-center gap-3">
           <span className="h-px flex-1 bg-slate-300" />
           <h2 className="text-sm font-black uppercase tracking-[0.18em] text-blue-900">
