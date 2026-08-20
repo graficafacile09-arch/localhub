@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Building2, FileText, Tag } from "lucide-react";
 import ModuleShell from "./ModuleShell";
-import { Field, SelectField, TextArea } from "./ModuleFields";
+import { Field, SelectField, TextArea, SaveBar, type StatoSalvataggio } from "./ModuleFields";
 import type { Categoria } from "@/types/negozio";
 
 type Props = { storeId: string };
@@ -12,6 +12,8 @@ export default function InformazioniModule({ storeId }: Props) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [categorie, setCategorie] = useState<Categoria[]>([]);
+  const [messaggio, setMessaggio] = useState<StatoSalvataggio>(null);
+  const [original, setOriginal] = useState("");
   const [form, setForm] = useState({
     nome: "",
     slug: "",
@@ -31,14 +33,16 @@ export default function InformazioniModule({ storeId }: Props) {
       const catJson = await catRes.json();
       if (storeJson.success) {
         const s = storeJson.data.settings;
-        setForm({
+        const vals = {
           nome: s.nome ?? "",
           slug: s.slug ?? "",
           categoria: s.categoria ?? "",
           sottocategoria: s.sottocategoria ?? "",
           descrizione: s.descrizione ?? "",
           descrizione_completa: s.descrizione_completa ?? "",
-        });
+        };
+        setForm(vals);
+        setOriginal(JSON.stringify(vals));
       }
       if (catJson.success) {
         setCategorie(catJson.data);
@@ -48,21 +52,42 @@ export default function InformazioniModule({ storeId }: Props) {
     load();
   }, [storeId]);
 
+  // Quando l'utente riprende a modificare, nasconde l'esito del salvataggio precedente.
+  useEffect(() => {
+    if (JSON.stringify(form) !== original) setMessaggio(null);
+  }, [form, original]);
+
   async function handleSave() {
     setSaving(true);
-    await fetch(`/api/merchant/stores/${storeId}/settings`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        nome: form.nome,
-        slug: form.slug,
-        categoria: form.categoria,
-        sottocategoria: form.sottocategoria,
-        descrizione: form.descrizione,
-        descrizione_completa: form.descrizione_completa,
-      }),
-    });
-    setSaving(false);
+    setMessaggio(null);
+    try {
+      const res = await fetch(`/api/merchant/stores/${storeId}/settings`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nome: form.nome,
+          slug: form.slug,
+          categoria: form.categoria,
+          sottocategoria: form.sottocategoria,
+          descrizione: form.descrizione,
+          descrizione_completa: form.descrizione_completa,
+        }),
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.success) {
+        setMessaggio({
+          tipo: "errore",
+          testo: json?.error?.message ?? "Salvataggio non riuscito. Riprova.",
+        });
+        return;
+      }
+      setOriginal(JSON.stringify(form));
+      setMessaggio({ tipo: "ok", testo: "Modifiche salvate." });
+    } catch {
+      setMessaggio({ tipo: "errore", testo: "Errore di rete. Riprova." });
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (loading) {
@@ -84,21 +109,13 @@ export default function InformazioniModule({ storeId }: Props) {
         <Field label="Sottocategoria" value={form.sottocategoria} onChange={(v) => setForm((f) => ({ ...f, sottocategoria: v }))} placeholder="es. Pasticceria, Skincare, Abbigliamento sportivo" />
         <TextArea label="Descrizione breve" value={form.descrizione} onChange={(v) => setForm((f) => ({ ...f, descrizione: v }))} rows={3} />
         <TextArea label="Descrizione completa" value={form.descrizione_completa} onChange={(v) => setForm((f) => ({ ...f, descrizione_completa: v }))} rows={5} />
-        <SaveButton saving={saving} onSave={handleSave} />
+        <SaveBar
+          saving={saving}
+          onSave={handleSave}
+          dirty={JSON.stringify(form) !== original}
+          messaggio={messaggio}
+        />
       </div>
     </ModuleShell>
-  );
-}
-
-function SaveButton({ saving, onSave }: { saving: boolean; onSave: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onSave}
-      disabled={saving}
-      className="btn-cta h-10 gap-2 px-5 text-sm disabled:opacity-50"
-    >
-      {saving ? "Salvataggio..." : "Salva modifiche"}
-    </button>
   );
 }

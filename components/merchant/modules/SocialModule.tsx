@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { MessageCircle, Music2, Video } from "lucide-react";
 import ModuleShell from "./ModuleShell";
-import { Field, SaveBar } from "./ModuleFields";
+import { Field, SaveBar, type StatoSalvataggio } from "./ModuleFields";
 
 type Props = { storeId: string };
 
@@ -12,6 +12,7 @@ export default function SocialModule({ storeId }: Props) {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ facebook: "", instagram: "", whatsapp: "", tiktok: "", youtube: "" });
   const [original, setOriginal] = useState({ ...form });
+  const [messaggio, setMessaggio] = useState<StatoSalvataggio>(null);
 
   useEffect(() => {
     fetch(`/api/merchant/stores/${storeId}/settings`)
@@ -35,16 +36,36 @@ export default function SocialModule({ storeId }: Props) {
 
   async function handleSave() {
     setSaving(true);
-    await fetch(`/api/merchant/stores/${storeId}/settings`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
-    setOriginal({ ...form });
-    setSaving(false);
+    setMessaggio(null);
+    try {
+      const res = await fetch(`/api/merchant/stores/${storeId}/settings`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.success) {
+        setMessaggio({
+          tipo: "errore",
+          testo: json?.error?.message ?? "Salvataggio non riuscito. Riprova.",
+        });
+        return;
+      }
+      setOriginal({ ...form });
+      setMessaggio({ tipo: "ok", testo: "Modifiche salvate." });
+    } catch {
+      setMessaggio({ tipo: "errore", testo: "Errore di rete. Riprova." });
+    } finally {
+      setSaving(false);
+    }
   }
 
   const dirty = JSON.stringify(form) !== JSON.stringify(original);
+
+  // Quando l'utente riprende a modificare, nasconde l'esito precedente.
+  useEffect(() => {
+    if (dirty) setMessaggio(null);
+  }, [dirty]);
 
   if (loading) {
     return (
@@ -62,7 +83,7 @@ export default function SocialModule({ storeId }: Props) {
         <SocialField icon={<InstagramIcon />} label="Instagram" value={form.instagram} onChange={(v) => setForm((f) => ({ ...f, instagram: v }))} prefix="instagram.com/" placeholder="nome.negozio" />
         <SocialField icon={<Music2 className="h-4 w-4 text-slate-700" />} label="TikTok" value={form.tiktok} onChange={(v) => setForm((f) => ({ ...f, tiktok: v }))} prefix="tiktok.com/@" placeholder="nome.negozio" />
         <SocialField icon={<Video className="h-4 w-4 text-blue-600" />} label="YouTube" value={form.youtube} onChange={(v) => setForm((f) => ({ ...f, youtube: v }))} prefix="youtube.com/@" placeholder="nome.negozio" />
-        <SaveBar saving={saving} onSave={handleSave} dirty={dirty} />
+        <SaveBar saving={saving} onSave={handleSave} dirty={dirty} messaggio={messaggio} />
       </div>
     </ModuleShell>
   );

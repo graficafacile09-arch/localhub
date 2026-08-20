@@ -1,7 +1,6 @@
 import { Settings } from "lucide-react";
 import MerchantEmptyState from "@/components/merchant/MerchantEmptyState";
-import ModulesPage from "./ModulesPage";
-import SpedizionePaccoConfig from "@/components/merchant/SpedizionePaccoConfig";
+import SettingsSections from "./SettingsSections";
 import { requireCurrentUser } from "@/lib/auth/session";
 import { getConfigPaccoSpedizione, getMerchantStoreForUser } from "@/lib/merchant/data";
 import type { ConfigPaccoSpedizione } from "@/lib/merchant/types";
@@ -53,14 +52,14 @@ export default async function MerchantSettingsPage({
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
               <Settings className="h-5 w-5" />
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
                 Gestione negozio
               </p>
-              <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-900">
+              <h1 className="mt-2 break-words text-3xl font-black tracking-tight text-slate-900">
                 {store.nome ?? "Negozio"}
               </h1>
-              <div className="mt-2 flex items-center gap-3">
+              <div className="mt-2 flex flex-wrap items-center gap-3">
                 <span className="text-sm text-slate-500">{store.categoria ?? "Categoria non definita"}</span>
                 <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${store.attivo ? "bg-blue-50 text-blue-700" : "bg-slate-100 text-slate-500"}`}>
                   <span className={`h-1.5 w-1.5 rounded-full ${store.attivo ? "bg-blue-500" : "bg-slate-400"}`} />
@@ -71,9 +70,7 @@ export default async function MerchantSettingsPage({
           </div>
         </div>
 
-        <SpedizionePaccoConfig negozioId={negozioId} initialConfig={configPacco} />
-
-        <ModulesPage storeId={negozioId} />
+        <SettingsSections storeId={negozioId} configPacco={configPacco} />
       </div>
     </div>
   );

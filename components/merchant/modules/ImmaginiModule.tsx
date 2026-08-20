@@ -14,7 +14,7 @@ export default function ImmaginiModule({ storeId }: Props) {
   const [galleria, setGalleria] = useState<string[]>([]);
   const logoInput = useRef<HTMLInputElement>(null);
   const copertinaInput = useRef<HTMLInputElement>(null);
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState<{ tipo: "ok" | "errore"; testo: string } | null>(null);
 
   useEffect(() => {
     fetch(`/api/merchant/stores/${storeId}/settings`)
@@ -43,7 +43,7 @@ export default function ImmaginiModule({ storeId }: Props) {
     });
     const json = await res.json();
     if (!res.ok || !json.success) {
-      setMessage(json.error?.message ?? "Upload fallito");
+      setMessage({ tipo: "errore", testo: json.error?.message ?? "Upload fallito" });
       return null;
     }
     return json.data?.url ?? null;
@@ -83,16 +83,31 @@ export default function ImmaginiModule({ storeId }: Props) {
     await saveField("galleria", nuova);
   }
 
-  async function saveField(field: string, value: unknown) {
+  async function saveField(field: string, value: unknown): Promise<boolean> {
     setSaving(true);
-    await fetch(`/api/merchant/stores/${storeId}/settings`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ [field]: value }),
-    });
-    setSaving(false);
-    setMessage("Immagine salvata");
-    setTimeout(() => setMessage(""), 2000);
+    try {
+      const res = await fetch(`/api/merchant/stores/${storeId}/settings`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [field]: value }),
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.success) {
+        setMessage({
+          tipo: "errore",
+          testo: json?.error?.message ?? "Salvataggio non riuscito. Riprova.",
+        });
+        return false;
+      }
+      setMessage({ tipo: "ok", testo: "Immagine salvata" });
+      setTimeout(() => setMessage(null), 2000);
+      return true;
+    } catch {
+      setMessage({ tipo: "errore", testo: "Errore di rete. Riprova." });
+      return false;
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (loading) {
@@ -106,7 +121,15 @@ export default function ImmaginiModule({ storeId }: Props) {
   return (
     <ModuleShell icon={<Image className="h-4 w-4" />} title="Immagini" subtitle="Logo, copertina e galleria foto" id="immagini">
       {message && (
-        <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-sm text-blue-700">{message}</div>
+        <div
+          className={`mb-4 rounded-xl border px-4 py-2 text-sm font-semibold ${
+            message.tipo === "ok"
+              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+              : "border-red-200 bg-red-50 text-red-700"
+          }`}
+        >
+          {message.testo}
+        </div>
       )}
 
       <div className="mb-6 grid gap-4 sm:grid-cols-2">

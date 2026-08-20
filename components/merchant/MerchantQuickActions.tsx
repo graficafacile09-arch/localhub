@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import MetodiPagamentoCard from "./MetodiPagamentoCard";
 import {
   ChevronDown,
   ChevronUp,
@@ -227,23 +228,8 @@ export default function MerchantQuickActions({ storeId }: { storeId: string }) {
         </div>
       </div>
 
-      {/* ── Metodo di pagamento — secondo accesso alla stessa route Pagamenti ── */}
-      <Link
-        href={`/merchant/${storeId}/pagamenti`}
-        className="group flex items-center gap-4 rounded-2xl border border-yellow-300 bg-gradient-to-br from-yellow-50 to-yellow-100/60 p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-yellow-400 hover:shadow-lg hover:shadow-yellow-500/15 cursor-pointer"
-      >
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-yellow-400 text-blue-800 transition group-hover:bg-yellow-300">
-          <CreditCard className="h-5 w-5" />
-        </div>
-        <div className="min-w-0">
-          <h2 className="text-base font-bold tracking-tight text-slate-900">
-            Metodo di pagamento
-          </h2>
-          <p className="mt-0.5 text-xs leading-5 text-slate-500">
-            Gestisci Stripe, PayPal, Klarna, Scalapay e Bonifico.
-          </p>
-        </div>
-      </Link>
+      {/* ── Metodo di pagamento — card condivisa verso la route Pagamenti ── */}
+      <MetodiPagamentoCard storeId={storeId} />
     </div>
   );
 }

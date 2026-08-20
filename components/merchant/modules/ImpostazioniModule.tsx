@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Settings, Eye, Smartphone, MapPin, Clock, MessageCircle, Star, Palette, Tag } from "lucide-react";
 import ModuleShell from "./ModuleShell";
-import { Toggle, TagsInput, SaveBar } from "./ModuleFields";
+import { Toggle, TagsInput, SaveBar, type StatoSalvataggio } from "./ModuleFields";
 
 type Props = { storeId: string };
 
@@ -21,6 +21,7 @@ export default function ImpostazioniModule({ storeId }: Props) {
     parole_chiave: [] as string[],
   });
   const [original, setOriginal] = useState("");
+  const [messaggio, setMessaggio] = useState<StatoSalvataggio>(null);
 
   useEffect(() => {
     fetch(`/api/merchant/stores/${storeId}/settings`)
@@ -47,16 +48,36 @@ export default function ImpostazioniModule({ storeId }: Props) {
 
   async function handleSave() {
     setSaving(true);
-    await fetch(`/api/merchant/stores/${storeId}/settings`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
-    setOriginal(JSON.stringify(form));
-    setSaving(false);
+    setMessaggio(null);
+    try {
+      const res = await fetch(`/api/merchant/stores/${storeId}/settings`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.success) {
+        setMessaggio({
+          tipo: "errore",
+          testo: json?.error?.message ?? "Salvataggio non riuscito. Riprova.",
+        });
+        return;
+      }
+      setOriginal(JSON.stringify(form));
+      setMessaggio({ tipo: "ok", testo: "Modifiche salvate." });
+    } catch {
+      setMessaggio({ tipo: "errore", testo: "Errore di rete. Riprova." });
+    } finally {
+      setSaving(false);
+    }
   }
 
   const dirty = JSON.stringify(form) !== original;
+
+  // Quando l'utente riprende a modificare, nasconde l'esito precedente.
+  useEffect(() => {
+    if (dirty) setMessaggio(null);
+  }, [dirty]);
 
   if (loading) {
     return (
@@ -93,7 +114,7 @@ export default function ImpostazioniModule({ storeId }: Props) {
           <TagsInput value={form.parole_chiave} onChange={(v) => setForm((f) => ({ ...f, parole_chiave: v }))} placeholder="Digita una parola chiave e premi Invio..." />
         </div>
 
-        <SaveBar saving={saving} onSave={handleSave} dirty={dirty} />
+        <SaveBar saving={saving} onSave={handleSave} dirty={dirty} messaggio={messaggio} />
       </div>
     </ModuleShell>
   );

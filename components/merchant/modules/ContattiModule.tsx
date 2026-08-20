@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Phone, Mail, Globe, MessageCircle } from "lucide-react";
 import ModuleShell from "./ModuleShell";
-import { Field, SaveBar } from "./ModuleFields";
+import { Field, SaveBar, type StatoSalvataggio } from "./ModuleFields";
 
 type Props = { storeId: string };
 
@@ -12,6 +12,7 @@ export default function ContattiModule({ storeId }: Props) {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ telefono: "", email_negozio: "", whatsapp: "", sito_web: "" });
   const [original, setOriginal] = useState({ ...form });
+  const [messaggio, setMessaggio] = useState<StatoSalvataggio>(null);
 
   useEffect(() => {
     fetch(`/api/merchant/stores/${storeId}/settings`)
@@ -34,16 +35,36 @@ export default function ContattiModule({ storeId }: Props) {
 
   async function handleSave() {
     setSaving(true);
-    await fetch(`/api/merchant/stores/${storeId}/settings`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
-    setOriginal({ ...form });
-    setSaving(false);
+    setMessaggio(null);
+    try {
+      const res = await fetch(`/api/merchant/stores/${storeId}/settings`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.success) {
+        setMessaggio({
+          tipo: "errore",
+          testo: json?.error?.message ?? "Salvataggio non riuscito. Riprova.",
+        });
+        return;
+      }
+      setOriginal({ ...form });
+      setMessaggio({ tipo: "ok", testo: "Modifiche salvate." });
+    } catch {
+      setMessaggio({ tipo: "errore", testo: "Errore di rete. Riprova." });
+    } finally {
+      setSaving(false);
+    }
   }
 
   const dirty = JSON.stringify(form) !== JSON.stringify(original);
+
+  // Quando l'utente riprende a modificare, nasconde l'esito precedente.
+  useEffect(() => {
+    if (dirty) setMessaggio(null);
+  }, [dirty]);
 
   if (loading) {
     return (
@@ -64,7 +85,7 @@ export default function ContattiModule({ storeId }: Props) {
           <Field label="Email" value={form.email_negozio} onChange={(v) => setForm((f) => ({ ...f, email_negozio: v }))} type="email" />
           <Field label="Sito web" value={form.sito_web} onChange={(v) => setForm((f) => ({ ...f, sito_web: v }))} type="url" placeholder="https://..." />
         </div>
-        <SaveBar saving={saving} onSave={handleSave} dirty={dirty} />
+        <SaveBar saving={saving} onSave={handleSave} dirty={dirty} messaggio={messaggio} />
       </div>
     </ModuleShell>
   );

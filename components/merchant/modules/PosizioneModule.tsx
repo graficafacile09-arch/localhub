@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { MapPin, Globe } from "lucide-react";
 import ModuleShell from "./ModuleShell";
-import { Field, SaveBar } from "./ModuleFields";
+import { Field, SaveBar, type StatoSalvataggio } from "./ModuleFields";
 
 type Props = { storeId: string };
 
@@ -12,6 +12,7 @@ export default function PosizioneModule({ storeId }: Props) {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ indirizzo: "", citta: "", cap: "", provincia: "", coordinate: "" });
   const [original, setOriginal] = useState({ ...form });
+  const [messaggio, setMessaggio] = useState<StatoSalvataggio>(null);
 
   useEffect(() => {
     fetch(`/api/merchant/stores/${storeId}/settings`)
@@ -35,16 +36,36 @@ export default function PosizioneModule({ storeId }: Props) {
 
   async function handleSave() {
     setSaving(true);
-    await fetch(`/api/merchant/stores/${storeId}/settings`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
-    setOriginal({ ...form });
-    setSaving(false);
+    setMessaggio(null);
+    try {
+      const res = await fetch(`/api/merchant/stores/${storeId}/settings`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.success) {
+        setMessaggio({
+          tipo: "errore",
+          testo: json?.error?.message ?? "Salvataggio non riuscito. Riprova.",
+        });
+        return;
+      }
+      setOriginal({ ...form });
+      setMessaggio({ tipo: "ok", testo: "Modifiche salvate." });
+    } catch {
+      setMessaggio({ tipo: "errore", testo: "Errore di rete. Riprova." });
+    } finally {
+      setSaving(false);
+    }
   }
 
   const dirty = JSON.stringify(form) !== JSON.stringify(original);
+
+  // Quando l'utente riprende a modificare, nasconde l'esito precedente.
+  useEffect(() => {
+    if (dirty) setMessaggio(null);
+  }, [dirty]);
 
   if (loading) {
     return (
@@ -64,7 +85,7 @@ export default function PosizioneModule({ storeId }: Props) {
           <Field label="Provincia" value={form.provincia} onChange={(v) => setForm((f) => ({ ...f, provincia: v }))} maxLength={2} placeholder="MI" />
         </div>
         <Field label="Coordinate mappa (facoltative)" value={form.coordinate} onChange={(v) => setForm((f) => ({ ...f, coordinate: v }))} placeholder="45.4642, 9.1900" />
-        <SaveBar saving={saving} onSave={handleSave} dirty={dirty} />
+        <SaveBar saving={saving} onSave={handleSave} dirty={dirty} messaggio={messaggio} />
       </div>
     </ModuleShell>
   );

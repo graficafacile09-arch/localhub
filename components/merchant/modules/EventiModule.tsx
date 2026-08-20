@@ -240,11 +240,11 @@ export default function EventoModule({ storeId }: Props) {
           <div
             className={`flex items-start gap-2 rounded-xl border px-4 py-3 text-sm ${
               errore
-                ? "border-blue-200 bg-blue-50 text-blue-900"
-                : "border-blue-200 bg-blue-50 text-blue-900"
+                ? "border-red-200 bg-red-50 text-red-700"
+                : "border-emerald-200 bg-emerald-50 text-emerald-700"
             }`}
           >
-            <span className="mt-0.5 font-black" aria-hidden>{errore ? "!" : "OK"}</span>
+            <span className="mt-0.5 font-black" aria-hidden>{errore ? "!" : "✓"}</span>
             <p className="leading-5">{errore ?? messaggio}</p>
             <button
               type="button"

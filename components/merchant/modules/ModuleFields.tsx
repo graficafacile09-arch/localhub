@@ -132,28 +132,49 @@ export function TagsInput({ value, onChange, placeholder }: TagsInputProps) {
   );
 }
 
+export type StatoSalvataggio =
+  | { tipo: "ok"; testo: string }
+  | { tipo: "errore"; testo: string }
+  | null;
+
 type SaveBarProps = {
   saving: boolean;
   onSave: () => void;
   dirty?: boolean;
+  /** Esito dell'ultimo salvataggio: conferma visiva (verde) o errore (rosso). */
+  messaggio?: StatoSalvataggio;
 };
 
-export function SaveBar({ saving, onSave, dirty }: SaveBarProps) {
+export function SaveBar({ saving, onSave, dirty, messaggio }: SaveBarProps) {
   return (
-    <div className="flex items-center gap-3 pt-2">
-      <button
-        type="button"
-        onClick={onSave}
-        disabled={saving || !dirty}
-        className="btn-cta h-11 gap-2 px-6 text-sm disabled:opacity-50"
-      >
-        {saving ? "Salvataggio..." : "Salva modifiche"}
-      </button>
-      {dirty && !saving && (
-        <span className="flex items-center gap-1.5 text-xs font-medium text-yellow-600">
-          <span className="h-1.5 w-1.5 rounded-full bg-yellow-500" />
-          Non salvato
-        </span>
+    <div className="pt-2">
+      <div className="flex items-center gap-3">
+        <button
+          type="button"
+          onClick={onSave}
+          disabled={saving || !dirty}
+          className="btn-cta h-11 gap-2 px-6 text-sm disabled:opacity-50"
+        >
+          {saving ? "Salvataggio..." : "Salva modifiche"}
+        </button>
+        {dirty && !saving && (
+          <span className="flex items-center gap-1.5 text-xs font-medium text-yellow-600">
+            <span className="h-1.5 w-1.5 rounded-full bg-yellow-500" />
+            Non salvato
+          </span>
+        )}
+      </div>
+      {messaggio && (
+        <p
+          className={`mt-2 flex items-start gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold ${
+            messaggio.tipo === "ok"
+              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+              : "border-red-200 bg-red-50 text-red-700"
+          }`}
+        >
+          <span aria-hidden>{messaggio.tipo === "ok" ? "✓" : "!"}</span>
+          <span>{messaggio.testo}</span>
+        </p>
       )}
     </div>
   );

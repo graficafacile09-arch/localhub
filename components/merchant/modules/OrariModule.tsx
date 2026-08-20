@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Clock, Copy } from "lucide-react";
 import ModuleShell from "./ModuleShell";
-import { SaveBar } from "./ModuleFields";
+import { SaveBar, type StatoSalvataggio } from "./ModuleFields";
 import { DAYS, EMPTY_DAY, CLOSED_DAY, DEFAULT_HOURS } from "@/types/negozio";
 import type { DaySchedule, Orari } from "@/types/negozio";
 
@@ -24,6 +24,7 @@ export default function OrariModule({ storeId }: Props) {
   const [orari, setOrari] = useState<Orari>(DEFAULT_HOURS);
   const [original, setOriginal] = useState<string>("");
   const [orariTab, setOrariTab] = useState<"tutti" | "oggi">("tutti");
+  const [messaggio, setMessaggio] = useState<StatoSalvataggio>(null);
 
   useEffect(() => {
     fetch(`/api/merchant/stores/${storeId}/settings`)
@@ -63,16 +64,36 @@ export default function OrariModule({ storeId }: Props) {
 
   async function handleSave() {
     setSaving(true);
-    await fetch(`/api/merchant/stores/${storeId}/settings`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ orari }),
-    });
-    setOriginal(JSON.stringify(orari));
-    setSaving(false);
+    setMessaggio(null);
+    try {
+      const res = await fetch(`/api/merchant/stores/${storeId}/settings`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orari }),
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.success) {
+        setMessaggio({
+          tipo: "errore",
+          testo: json?.error?.message ?? "Salvataggio non riuscito. Riprova.",
+        });
+        return;
+      }
+      setOriginal(JSON.stringify(orari));
+      setMessaggio({ tipo: "ok", testo: "Orari salvati." });
+    } catch {
+      setMessaggio({ tipo: "errore", testo: "Errore di rete. Riprova." });
+    } finally {
+      setSaving(false);
+    }
   }
 
   const dirty = JSON.stringify(orari) !== original;
+
+  // Quando l'utente riprende a modificare, nasconde l'esito precedente.
+  useEffect(() => {
+    if (dirty) setMessaggio(null);
+  }, [dirty]);
 
   if (loading) {
     return (
@@ -123,20 +144,20 @@ export default function OrariModule({ storeId }: Props) {
                     <div className="flex items-center gap-1.5 min-w-0">
                       <span className="w-12 shrink-0 text-[9px] font-medium uppercase tracking-wider text-slate-400">Mattina</span>
                       <input type="time" value={s.apertura1} onChange={(e) => updateDay(day, { apertura1: e.target.value })}
-                        className="h-6 flex-1 rounded border border-slate-100 bg-slate-50 px-1.5 text-[11px] text-slate-700 outline-none focus:border-blue-300" />
+                        className="h-6 min-w-0 flex-1 rounded border border-slate-100 bg-slate-50 px-1.5 text-[11px] text-slate-700 outline-none focus:border-blue-300" />
                       <span className="text-[10px] text-slate-300">&ndash;</span>
                       <input type="time" value={s.chiusura1} onChange={(e) => updateDay(day, { chiusura1: e.target.value })}
-                        className="h-6 flex-1 rounded border border-slate-100 bg-slate-50 px-1.5 text-[11px] text-slate-700 outline-none focus:border-blue-300" />
+                        className="h-6 min-w-0 flex-1 rounded border border-slate-100 bg-slate-50 px-1.5 text-[11px] text-slate-700 outline-none focus:border-blue-300" />
                     </div>
                     <div className="flex items-center gap-1.5 min-w-0">
                       <span className="w-12 shrink-0 text-[9px] font-medium uppercase tracking-wider text-slate-400">Pomeriggio</span>
                       {hasSecond ? (
                         <>
                           <input type="time" value={s.apertura2} onChange={(e) => updateDay(day, { apertura2: e.target.value })}
-                            className="h-6 flex-1 rounded border border-slate-100 bg-slate-50 px-1.5 text-[11px] text-slate-700 outline-none focus:border-blue-300" />
+                            className="h-6 min-w-0 flex-1 rounded border border-slate-100 bg-slate-50 px-1.5 text-[11px] text-slate-700 outline-none focus:border-blue-300" />
                           <span className="text-[10px] text-slate-300">&ndash;</span>
                           <input type="time" value={s.chiusura2} onChange={(e) => updateDay(day, { chiusura2: e.target.value })}
-                            className="h-6 flex-1 rounded border border-slate-100 bg-slate-50 px-1.5 text-[11px] text-slate-700 outline-none focus:border-blue-300" />
+                            className="h-6 min-w-0 flex-1 rounded border border-slate-100 bg-slate-50 px-1.5 text-[11px] text-slate-700 outline-none focus:border-blue-300" />
                         </>
                       ) : (
                         <button type="button" onClick={() => updateDay(day, { apertura2: "15:00", chiusura2: "19:00" })}
@@ -151,7 +172,7 @@ export default function OrariModule({ storeId }: Props) {
             );
           })}
         </div>
-        <SaveBar saving={saving} onSave={handleSave} dirty={dirty} />
+        <SaveBar saving={saving} onSave={handleSave} dirty={dirty} messaggio={messaggio} />
       </div>
     </ModuleShell>
   );
