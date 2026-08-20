@@ -39,6 +39,8 @@ export default async function Home() {
         <img
           src="/hero-via-roma-castrovillari-1400x1050.jpg"
           alt="Via Roma a Castrovillari"
+          loading="eager"
+          fetchPriority="high"
           className="absolute inset-0 h-full w-full object-cover object-center"
         />
 
