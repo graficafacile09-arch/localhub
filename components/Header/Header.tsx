@@ -36,7 +36,7 @@ export default async function Header() {
 
         {/* MENU */}
 
-        <nav className="flex flex-nowrap items-center justify-center gap-1.5 md:gap-3">
+        <nav className="flex flex-nowrap items-center justify-center gap-1 sm:gap-3 md:gap-3">
 
           <Link
             href="/"
