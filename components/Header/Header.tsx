@@ -36,25 +36,25 @@ export default async function Header() {
 
         {/* MENU */}
 
-        <nav className="flex flex-nowrap items-center justify-center gap-2 md:gap-3">
+        <nav className="flex flex-nowrap items-center justify-center gap-1.5 md:gap-3">
 
           <Link
             href="/"
-            className="inline-flex items-center rounded-full bg-yellow-400 px-3.5 py-1.5 text-sm font-bold text-blue-900 transition-colors hover:bg-yellow-300 active:scale-95"
+            className="inline-flex items-center rounded-full bg-yellow-400 px-3 py-1.5 text-sm font-bold text-blue-900 transition-colors hover:bg-yellow-300 active:scale-95 sm:px-3.5"
           >
             Home
           </Link>
 
           <Link
             href="/negozi"
-            className="inline-flex items-center rounded-full bg-yellow-400 px-3.5 py-1.5 text-sm font-bold text-blue-900 transition-colors hover:bg-yellow-300 active:scale-95"
+            className="inline-flex items-center rounded-full bg-yellow-400 px-3 py-1.5 text-sm font-bold text-blue-900 transition-colors hover:bg-yellow-300 active:scale-95 sm:px-3.5"
           >
             Negozi
           </Link>
 
           <Link
             href="/categorie"
-            className="inline-flex items-center rounded-full bg-yellow-400 px-3.5 py-1.5 text-sm font-bold text-blue-900 transition-colors hover:bg-yellow-300 active:scale-95"
+            className="inline-flex items-center rounded-full bg-yellow-400 px-3 py-1.5 text-sm font-bold text-blue-900 transition-colors hover:bg-yellow-300 active:scale-95 sm:px-3.5"
           >
             Categorie
           </Link>
