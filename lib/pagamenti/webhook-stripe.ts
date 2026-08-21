@@ -360,6 +360,100 @@ export async function gestisciWebhookStripe(
         break;
       }
 
+      // ── Tentativo di pagamento fallito (NON terminale per l'ordine) ────
+      // Stripe invia payment_intent.payment_failed quando un tentativo
+      // fallisce DENTRO una Checkout Session ancora aperta: il cliente può
+      // riprovare, quindi l'ordine resta pending (failed è uno stato
+      // terminale nella macchina a stati e bloccherebbe il retry). Si marca
+      // solo la sessione come "failed" (stato informativo, testo libero in
+      // pagamenti_sessioni); l'esito finale arriva da
+      // checkout.session.completed oppure checkout.session.expired. La
+      // riconciliazione con l'ordine usa il metadata ordine_id del
+      // PaymentIntent (impostato in lib/pagamenti/stripe.ts).
+      case "payment_intent.payment_failed": {
+        const pi = obj as { metadata?: Record<string, string> | null };
+        const ordineId =
+          typeof pi.metadata?.ordine_id === "string" &&
+          UUID_RE.test(pi.metadata.ordine_id)
+            ? pi.metadata.ordine_id
+            : null;
+        if (!ordineId) {
+          throw new Error("payment_intent.payment_failed senza ordine_id (metadata mancante)");
+        }
+        const { data: sess } = await db
+          .from("pagamenti_sessioni")
+          .select("id")
+          .eq("ordine_id", ordineId)
+          .eq("provider", "stripe")
+          .in("status", ["created", "pending"])
+          .order("created_at", { ascending: false })
+          .limit(1);
+        if (sess?.[0]) {
+          await db
+            .from("pagamenti_sessioni")
+            .update({ status: "failed", updated_at: new Date().toISOString() })
+            .eq("id", String(sess[0].id));
+        }
+        break;
+      }
+
+      // ── Dispute: storno IN SOSPESO, MAI un rimborso automatico ──────────
+      // Stripe apre una disputa quando il titolare contesta l'addebito. NON
+      // si inventa un rimborso né una transizione di stato (la macchina a
+      // stati non ha 'disputed'): l'evento viene registrato (già idempotente
+      // in pagamenti_eventi) e l'ordine viene marcato con payment_disputed_at.
+      // L'esito economico reale arriva da charge.refunded (disputa persa =
+      // Stripe rimborsa) oppure da charge.dispute.closed (marcatore liberato).
+      case "charge.dispute.created": {
+        const dispute = obj as { payment_intent?: string | { id?: string } | null };
+        const transactionId =
+          typeof dispute.payment_intent === "string"
+            ? dispute.payment_intent
+            : dispute.payment_intent?.id ?? null;
+        if (!transactionId) {
+          throw new Error("charge.dispute.created senza payment_intent");
+        }
+        const { data: ordini } = await db
+          .from("ordini")
+          .select("id")
+          .or(`payment_transaction_id.eq.${transactionId},payment_id.eq.${transactionId}`)
+          .limit(1);
+        const ordine = ordini?.[0];
+        if (!ordine) {
+          throw new Error("charge.dispute.created: ordine non trovato");
+        }
+        await db
+          .from("ordini")
+          .update({ payment_disputed_at: new Date().toISOString() })
+          .eq("id", String(ordine.id));
+        break;
+      }
+
+      case "charge.dispute.closed": {
+        const dispute = obj as { payment_intent?: string | { id?: string } | null };
+        const transactionId =
+          typeof dispute.payment_intent === "string"
+            ? dispute.payment_intent
+            : dispute.payment_intent?.id ?? null;
+        if (!transactionId) {
+          throw new Error("charge.dispute.closed senza payment_intent");
+        }
+        const { data: ordini } = await db
+          .from("ordini")
+          .select("id")
+          .or(`payment_transaction_id.eq.${transactionId},payment_id.eq.${transactionId}`)
+          .limit(1);
+        const ordine = ordini?.[0];
+        if (!ordine) {
+          throw new Error("charge.dispute.closed: ordine non trovato");
+        }
+        await db
+          .from("ordini")
+          .update({ payment_disputed_at: null })
+          .eq("id", String(ordine.id));
+        break;
+      }
+
       // ── Payout (tracking interno V1, SOLO percorsi Connect) ──────────────
       // Gestione READ/TRACKING di payout.paid/failed/updated dei connected
       // account: identifica il payout INTERNO tramite stripe_payout_id (per

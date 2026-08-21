@@ -210,6 +210,16 @@ export class GatewayStripe implements PaymentGateway {
       // trattiene la commissione a monte, il resto incassa il venditore.
       payment_intent_data: {
         description: `Ordine ${ctx.numeroOrdine} — ${ctx.negozioId}`,
+        // Metadata sul PaymentIntent: consente al webhook di riconciliare
+        // eventi `payment_intent.*` (es. payment_failed) con l'ordine anche
+        // prima che la sessione venga marcata pagata (l'ordine è altrimenti
+        // irraggiungibile perché payment_transaction_id è valorizzato solo
+        // su checkout.session.completed). Mai dati sensibili.
+        metadata: {
+          ordine_id: ctx.ordineId,
+          negozio_id: ctx.negozioId,
+          numero: ctx.numeroOrdine,
+        },
         ...(this.commissioneCentesimi(ctx, cred) !== undefined
           ? { application_fee_amount: this.commissioneCentesimi(ctx, cred) as number }
           : {}),

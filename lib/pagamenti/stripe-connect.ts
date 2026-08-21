@@ -165,3 +165,126 @@ export async function deauthorizeStripeAccount(
     stripe_user_id: accountId,
   });
 }
+
+// ═══════════════════════════════════════════════════════════════════════
+// STRIPE CONNECT EXPRESS — onboarding tramite Account Link.
+//
+// Il venditore NON passa da connect.stripe.com/oauth: la piattaforma crea
+// un account EXPRESS via API, genera un Account Link (onboarding hosted) e
+// reindirizza il browser del venditore sul portale Stripe. Stripe notifica
+// i progressi con il webhook `account.updated` (vedi
+// /api/pagamenti/connect/webhook) che aggiorna lo stato su Supabase.
+// ═══════════════════════════════════════════════════════════════════════
+
+/** Client Stripe con la secret key della PIATTAFORMA (mai quella del merchant). */
+function platformStripe(opts?: GatewayStripeOptions): Stripe {
+  return new Stripe(getStripePlatformSecretKey(), opts?.host ? {
+    host: opts.host,
+    port: opts.port,
+    protocol: opts.protocol ?? "https",
+  } : undefined);
+}
+
+/** Stato di onboarding di un connected account (fonte: account.retrieve). */
+export type StatoOnboardingStripe = {
+  chargesEnabled: boolean;
+  payoutsEnabled: boolean;
+  detailsSubmitted: boolean;
+  status: "pending" | "complete" | "restricted";
+  disabledReason: string | null;
+  /** Requisiti ancora da soddisfare (currently_due), per la UI. */
+  currentlyDue: string[];
+};
+
+/**
+ * Deriva lo stato onboarding LEGGIBILE dai flag dell'account Stripe.
+ *   - restricted: Stripe ha bloccato l'account (requirements.disabled_reason);
+ *   - complete:   pagamenti E payout abilitati;
+ *   - pending:    in ogni altro caso (KYC/IBAN in attesa).
+ */
+export function statoOnboardingDaAccount(account: Stripe.Account): StatoOnboardingStripe {
+  const disabledReason =
+    typeof account.requirements?.disabled_reason === "string"
+      ? account.requirements.disabled_reason
+      : null;
+  const currentlyDue = Array.isArray(account.requirements?.currently_due)
+    ? account.requirements.currently_due.filter((x): x is string => typeof x === "string")
+    : [];
+  const chargesEnabled = account.charges_enabled === true;
+  const payoutsEnabled = account.payouts_enabled === true;
+  const detailsSubmitted = account.details_submitted === true;
+
+  let status: StatoOnboardingStripe["status"];
+  if (disabledReason) status = "restricted";
+  else if (chargesEnabled && payoutsEnabled) status = "complete";
+  else status = "pending";
+
+  return {
+    chargesEnabled,
+    payoutsEnabled,
+    detailsSubmitted,
+    status,
+    disabledReason,
+    currentlyDue,
+  };
+}
+
+/**
+ * Crea un account Stripe Connect EXPRESS per la piattaforma.
+ * Prefill opzionale (email del venditore + nome business) per ridurre i
+ * campi da compilare nell'onboarding hosted. Nessuna credenziale merchant.
+ */
+export async function createStripeExpressAccount(
+  prefill: { email?: string | null; businessName?: string | null },
+  opts?: GatewayStripeOptions
+): Promise<{ accountId: string; livemode: boolean }> {
+  const stripe = platformStripe(opts);
+  // Gli account Express seguono SEMPRE la modalità della piattaforma:
+  // la secret key della piattaforma (sk_live_ / sk_test_) la determina.
+  const livemode = getStripePlatformSecretKey().startsWith("sk_live_");
+  const account = await stripe.accounts.create({
+    type: "express",
+    country: "IT",
+    ...(prefill.email ? { email: prefill.email } : {}),
+    ...(prefill.businessName ? { business_profile: { name: prefill.businessName } } : {}),
+    capabilities: {
+      card_payments: { requested: true },
+      transfers: { requested: true },
+    },
+  });
+  if (!account.id) throw new Error("Stripe non ha restituito l'id dell'account Express.");
+  return { accountId: account.id, livemode };
+}
+
+/**
+ * Crea un Account Link di onboarding per un connected account EXPRESS.
+ * Ritorna l'URL hosted (single-use) a cui reindirizzare il venditore.
+ * return_url → pagina di ritorno post-onboarding; refresh_url → riprova
+ * quando il link è scaduto/già visitato.
+ */
+export async function createStripeAccountLink(
+  accountId: string,
+  returnUrl: string,
+  refreshUrl: string,
+  opts?: GatewayStripeOptions
+): Promise<string> {
+  const stripe = platformStripe(opts);
+  const link = await stripe.accountLinks.create({
+    account: accountId,
+    type: "account_onboarding",
+    return_url: returnUrl,
+    refresh_url: refreshUrl,
+  });
+  if (!link.url) throw new Error("Stripe non ha restituito l'URL di onboarding.");
+  return link.url;
+}
+
+/** Stato di onboarding corrente di un connected account (per la pagina di ritorno). */
+export async function getStripeAccountOnboarding(
+  accountId: string,
+  opts?: GatewayStripeOptions
+): Promise<StatoOnboardingStripe> {
+  const stripe = platformStripe(opts);
+  const account = await stripe.accounts.retrieve(accountId);
+  return statoOnboardingDaAccount(account);
+}
