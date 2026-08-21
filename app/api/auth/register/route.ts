@@ -64,6 +64,26 @@ export async function POST(request: Request) {
   });
 
   if (error) {
+    // Email GIÀ registrata: GoTrue restituisce un errore e NON invia alcuna
+    // email di conferma. Mostrare "Controlla la tua email" sarebbe falso.
+    const isAlreadyRegistered =
+      error.code === "user_already_exists" ||
+      (typeof error.message === "string" && /already registered/i.test(error.message));
+
+    if (isAlreadyRegistered) {
+      console.warn(
+        "[auth/register] Email già registrata (nessuna email inviata)",
+        `code=${error.code ?? "n/a"} status=${error.status ?? "n/a"} email=${email}`,
+      );
+      const loginUrl = new URL("/login", request.url);
+      loginUrl.searchParams.set("area", "cliente");
+      loginUrl.searchParams.set(
+        "error",
+        "Questo indirizzo email è già registrato. Accedi con le tue credenziali o utilizza il recupero password.",
+      );
+      return NextResponse.redirect(loginUrl);
+    }
+
     // Rate limit Supabase (es. invio email di conferma):
     // il messaggio tecnico finisce SOLO nei log, all'utente uno amichevole.
     const isRateLimit =
@@ -84,6 +104,32 @@ export async function POST(request: Request) {
       verificaUrl.searchParams.set("error", error.message);
     }
     return NextResponse.redirect(verificaUrl);
+  }
+
+  // CRITICO: per un indirizzo GIÀ registrato GoTrue può rispondere 200 senza
+  // errore ma con `user.identities` VUOTA e NON invia alcuna email di
+  // conferma (anti-enumeration). `confirmation_sent_at` può risultare
+  // valorizzato nella risposta anche se la mail non parte davvero (caso
+  // osservato con indirizzi Outlook già esistenti: "successo" ma nessuna
+  // email in Resend). L'array `identities` vuoto è il discriminante
+  // documentato da Supabase: qui NON si mostra "Controlla la tua email" e
+  // NON si crea/assegna nulla.
+  const identities = signUpData?.user?.identities;
+  const giaRegistrato =
+    signUpData?.user != null && Array.isArray(identities) && identities.length === 0;
+
+  if (giaRegistrato) {
+    console.warn(
+      "[auth/register] Email già registrata (identities vuota, nessuna email inviata)",
+      `email=${email}`,
+    );
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("area", "cliente");
+    loginUrl.searchParams.set(
+      "error",
+      "Questo indirizzo email è già registrato. Accedi con le tue credenziali o utilizza il recupero password.",
+    );
+    return NextResponse.redirect(loginUrl);
   }
 
   // Il signUp può restituire l'utente o no a seconda della configurazione
