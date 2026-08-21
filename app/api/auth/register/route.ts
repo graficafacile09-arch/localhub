@@ -2,35 +2,29 @@ import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { AREA_COOKIE, areaCookieOptions } from "@/lib/auth/area";
+import { getSiteUrl } from "@/lib/site";
 
 /**
- * Registrazione CLIENTE (acquirente).
- * Crea un account con SOLO il ruolo customer: nessun negozio, nessuna
- * funzione da commerciante. Dopo la registrazione l'utente viene portato
- * alla homepage e potrà accedere all'Area Clienti (/cliente).
+ * Registrazione CLIENTE (acquirente) — flusso con CONFERMA EMAIL REALE.
  *
- * Flusso (ordine obbligatorio):
- *  1. signUp()
- *  2. verifica che l'utente sia stato realmente creato
- *  3. auto-conferma email tramite Admin API (email_confirm)
- *  4. verifica che la conferma sia riuscita
- *  5. assegnazione ruolo customer (idempotente)
- *  6. verifica che il ruolo sia stato assegnato
- *  7. signInWithPassword() (login automatico)
- *  8. cookie area cliente + redirect
+ * Sequenza:
+ *  1. signUp() crea l'account NON confermato e Supabase invia l'email di
+ *     conferma con emailRedirectTo verso /auth/callback;
+ *  2. NESSUNA auto-conferma amministrativa, NESSUN login automatico;
+ *  3. il ruolo customer viene assegnato lato server (service role, idempotente)
+ *     e viene NUOVAMENTE garantito nel callback /auth/callback prima di
+ *     concedere l'accesso all'area cliente;
+ *  4. redirect alla pagina "Controlla la tua email".
  *
- * Se un passaggio critico fallisce NON si prosegue fingendo che l'account
- * sia stato creato: nessun login automatico, messaggio umano all'utente e
- * log server con i dettagli diagnostici (mai chiavi/token/password).
+ * Quando il cliente clicca il link dell'email, Supabase conferma l'account e
+ * reindirizza il browser a /auth/callback?code=... che stabilisce la sessione.
  */
 export async function POST(request: Request) {
-  const loginUrl = new URL("/login", request.url);
-  loginUrl.searchParams.set("area", "cliente");
+  const verificaUrl = new URL("/verifica-email", request.url);
 
   if (!isSupabaseConfigured()) {
-    loginUrl.searchParams.set("error", "Configurazione Supabase mancante.");
-    return NextResponse.redirect(loginUrl);
+    verificaUrl.searchParams.set("error", "Configurazione Supabase mancante.");
+    return NextResponse.redirect(verificaUrl);
   }
 
   const formData = await request.formData();
@@ -40,31 +34,38 @@ export async function POST(request: Request) {
   const passwordConfirm = String(formData.get("password_confirm") ?? "");
 
   if (!name || !email || !password) {
-    loginUrl.searchParams.set("error", "Compila tutti i campi obbligatori.");
-    return NextResponse.redirect(loginUrl);
+    verificaUrl.searchParams.set("error", "Compila tutti i campi obbligatori.");
+    return NextResponse.redirect(verificaUrl);
   }
 
   if (password !== passwordConfirm) {
-    loginUrl.searchParams.set("error", "Le password non coincidono.");
-    return NextResponse.redirect(loginUrl);
+    verificaUrl.searchParams.set("error", "Le password non coincidono.");
+    return NextResponse.redirect(verificaUrl);
   }
 
   if (password.length < 6) {
-    loginUrl.searchParams.set("error", "La password deve essere di almeno 6 caratteri.");
-    return NextResponse.redirect(loginUrl);
+    verificaUrl.searchParams.set("error", "La password deve essere di almeno 6 caratteri.");
+    return NextResponse.redirect(verificaUrl);
   }
 
+  const siteUrl = getSiteUrl();
   const supabase = await createServerSupabaseClient();
+
   const { data: signUpData, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: { full_name: name } },
+    options: {
+      data: { full_name: name },
+      // Il link dell'email deve portare al callback dell'app, non alla
+      // homepage: lì Supabase ha già confermato l'account e il callback
+      // stabilisce la sessione ed entra nell'area cliente.
+      emailRedirectTo: `${siteUrl}/auth/callback`,
+    },
   });
 
   if (error) {
-    // Rate limit Supabase (es. email di conferma via provider built-in).
-    // Il messaggio tecnico finisce SOLO nei log server; all'utente un
-    // messaggio amichevole.
+    // Rate limit Supabase (es. invio email di conferma):
+    // il messaggio tecnico finisce SOLO nei log, all'utente uno amichevole.
     const isRateLimit =
       error.status === 429 ||
       (typeof error.code === "string" &&
@@ -75,56 +76,49 @@ export async function POST(request: Request) {
         "[auth/register] Rate limit Supabase raggiunto:",
         `code=${error.code ?? "n/a"} status=${error.status ?? "n/a"} message=${error.message}`,
       );
-      loginUrl.searchParams.set(
+      verificaUrl.searchParams.set(
         "error",
         "Al momento non è possibile completare la registrazione. Riprova tra qualche minuto.",
       );
     } else {
-      loginUrl.searchParams.set("error", error.message);
+      verificaUrl.searchParams.set("error", error.message);
     }
-    return NextResponse.redirect(loginUrl);
+    return NextResponse.redirect(verificaUrl);
   }
 
-  const userId = signUpData?.user?.id;
-
-  // Passo 2: senza un utente realmente creato non si può proseguire.
+  // Il signUp può restituire l'utente o no a seconda della configurazione
+  // GoTrue: se manca, lo si risolve via Admin API dall'email. Senza account
+  // creato NON si prosegue.
+  let userId = signUpData?.user?.id ?? null;
   if (!userId) {
-    console.error(
-      "[auth/register] Nessun utente restituito da signUp",
-      `email=${email}`,
-    );
-    loginUrl.searchParams.set(
+    try {
+      const adminClient = createAdminSupabaseClient();
+      const { data: perEmail } = await adminClient.auth.admin.listUsers({ page: 1, perPage: 1000 });
+      userId = perEmail?.users?.find((u) => u.email === email)?.id ?? null;
+    } catch (err) {
+      console.error(
+        "[auth/register] Ricerca utente per email fallita:",
+        err instanceof Error ? err.message : String(err),
+      );
+    }
+  }
+
+  if (!userId) {
+    console.error("[auth/register] Nessun utente creato da signUp", `email=${email}`);
+    verificaUrl.searchParams.set(
       "error",
       "Non è stato possibile completare la registrazione. Riprova tra poco o contatta l'assistenza.",
     );
-    return NextResponse.redirect(loginUrl);
+    return NextResponse.redirect(verificaUrl);
   }
 
-  // Fase admin: auto-conferma email + ruolo customer.
+  // Ruolo customer assegnato SUBITO lato server (prima della conferma), con
+  // logica idempotente. Se fallisce NON si blocca la registrazione (l'email è
+  // già partita): il callback /auth/callback RIGARANTISCE il ruolo prima di
+  // concedere l'accesso all'area cliente, quindi il cliente non riceverà mai
+  // "Account creato ma impossibile assegnare il ruolo".
   try {
     const adminClient = createAdminSupabaseClient();
-
-    // Passo 3-4: auto-conferma via Admin API. Se fallisce NON continuare
-    // come se l'account fosse attivo: un utente non confermato non deve
-    // fare login.
-    const { error: confirmError } = await adminClient.auth.admin.updateUserById(userId, {
-      email_confirm: true,
-    });
-
-    if (confirmError) {
-      console.error(
-        "[auth/register] Auto-conferma email fallita",
-        `userId=${userId} code=${confirmError.code ?? "n/a"} status=${confirmError.status ?? "n/a"} message=${confirmError.message}`,
-      );
-      loginUrl.searchParams.set(
-        "error",
-        "Non è stato possibile completare la registrazione. Riprova tra poco o contatta l'assistenza.",
-      );
-      return NextResponse.redirect(loginUrl);
-    }
-
-    // Passo 5-6: ruolo customer, logica idempotente (stesso approccio di
-    // register-merchant). Se il ruolo esiste già l'operazione è un successo.
     const { data: ruoloEsistente, error: ruoloEsistenteError } = await adminClient
       .from("user_roles")
       .select("id")
@@ -134,23 +128,14 @@ export async function POST(request: Request) {
 
     if (ruoloEsistenteError) {
       console.error(
-        "[auth/register] Verifica ruolo customer fallita",
+        "[auth/register] Verifica ruolo customer fallita (verrà ripetuta nel callback)",
         `userId=${userId} code=${ruoloEsistenteError.code ?? "n/a"} message=${ruoloEsistenteError.message}`,
       );
-      loginUrl.searchParams.set(
-        "error",
-        "Non è stato possibile completare la registrazione. Riprova tra poco o contatta l'assistenza.",
-      );
-      return NextResponse.redirect(loginUrl);
-    }
-
-    if (!ruoloEsistente) {
+    } else if (!ruoloEsistente) {
       const { error: roleError } = await adminClient
         .from("user_roles")
         .insert({ user_id: userId, role: "customer" });
 
-      // 23505 (duplicate key): il ruolo è stato assegnato tra la verifica
-      // e l'INSERT. Viene trattato come SUCCESSO, il flusso continua.
       const isDuplicateKey =
         roleError != null &&
         (roleError.code === "23505" ||
@@ -159,43 +144,19 @@ export async function POST(request: Request) {
 
       if (roleError && !isDuplicateKey) {
         console.error(
-          "[auth/register] Assegnazione ruolo customer fallita",
+          "[auth/register] Assegnazione ruolo customer fallita (verrà ripetuta nel callback)",
           `userId=${userId} code=${roleError.code ?? "n/a"} message=${roleError.message}`,
         );
-        loginUrl.searchParams.set(
-          "error",
-          "Non è stato possibile completare la registrazione. Riprova tra poco o contatta l'assistenza.",
-        );
-        return NextResponse.redirect(loginUrl);
       }
     }
-  } catch (adminError) {
-    // Service role mancante o non valido: l'admin client lancia un errore.
-    // Non mostrare MAI "Account creato" e non effettuare login automatico.
+  } catch (err) {
     console.error(
       "[auth/register] Errore fase admin (service role):",
-      adminError instanceof Error ? adminError.message : String(adminError),
+      err instanceof Error ? err.message : String(err),
     );
-    loginUrl.searchParams.set(
-      "error",
-      "Non è stato possibile completare la registrazione. Riprova tra poco o contatta l'assistenza.",
-    );
-    return NextResponse.redirect(loginUrl);
   }
 
-  // Passo 7: login automatico solo dopo conferma e ruolo riusciti.
-  const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-  if (signInError) {
-    console.error(
-      "[auth/register] Login automatico fallito",
-      `userId=${userId} code=${signInError.code ?? "n/a"} status=${signInError.status ?? "n/a"} message=${signInError.message}`,
-    );
-    loginUrl.searchParams.set("error", "Account creato ma accesso automatico fallito. Effettua il login.");
-    return NextResponse.redirect(loginUrl);
-  }
-
-  // Passo 8: la sessione nasce legata all'area cliente (sessione attiva httpOnly).
-  const response = NextResponse.redirect(new URL("/", request.url));
-  response.cookies.set(AREA_COOKIE, "cliente", areaCookieOptions());
-  return response;
+  // NIENTE login automatico: l'account non è ancora confermato.
+  verificaUrl.searchParams.set("email", email);
+  return NextResponse.redirect(verificaUrl);
 }

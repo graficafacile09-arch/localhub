@@ -41,7 +41,22 @@ export async function POST(request: Request) {
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
-    loginUrl.searchParams.set("error", error.message);
+    // Utente NON ancora confermato (email di conferma non cliccata): niente
+    // accesso, messaggio chiaro e umano (non l'errore tecnico di Supabase).
+    const nonConfermato =
+      (typeof error.code === "string" &&
+        (error.code === "email_not_confirmed" || error.code === "otp_expired")) ||
+      (typeof error.message === "string" &&
+        error.message.toLowerCase().includes("email not confirmed"));
+
+    if (nonConfermato) {
+      loginUrl.searchParams.set(
+        "error",
+        "Devi prima confermare il tuo indirizzo email. Controlla la posta in arrivo e la cartella spam.",
+      );
+    } else {
+      loginUrl.searchParams.set("error", error.message);
+    }
     preservaArea(loginUrl, formData);
     return NextResponse.redirect(loginUrl);
   }

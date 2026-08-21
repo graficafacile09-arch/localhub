@@ -15,8 +15,13 @@ function LoginContent() {
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
   const ok = searchParams.get("ok");
+  const reinviata = searchParams.get("reinviata");
   const area = searchParams.get("area") ?? "";
   const [tab, setTab] = useState<"login" | "register">("login");
+
+  // Il login fallisce perché l'email non è ancora stata confermata:
+  // mostriamo il pulsante per reinviare l'email di conferma.
+  const mostraReinvio = error != null && /conferm|spam/i.test(error);
 
   return (
     <main className="relative flex min-h-screen items-center justify-center bg-[#eef3f8] px-4 py-12">
@@ -84,8 +89,16 @@ function LoginContent() {
             </div>
           )}
 
+          {reinviata === "1" && (
+            <div className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-700">
+              Se l&apos;account esiste e non è ancora confermato, ti abbiamo
+              reinviato l&apos;email di conferma. Controlla la posta in arrivo e
+              la cartella spam.
+            </div>
+          )}
+
           {tab === "login" ? (
-            <LoginForm area={area} />
+            <LoginForm area={area} mostraReinvio={mostraReinvio} />
           ) : area === "merchant" ? (
             <RegisterVenditoreForm />
           ) : (
@@ -97,7 +110,7 @@ function LoginContent() {
   );
 }
 
-function LoginForm({ area }: { area: string }) {
+function LoginForm({ area, mostraReinvio }: { area: string; mostraReinvio: boolean }) {
   // "Ricordami": al mount ricompila i campi con le credenziali salvate nel
   // browser (se presenti) e tiene traccia della scelta per salvarle/cancellarle.
   const [salvate] = useState(() => leggiCredenzialiRicordate());
@@ -166,6 +179,20 @@ function LoginForm({ area }: { area: string }) {
       >
         Accedi
       </button>
+      {mostraReinvio && (
+        <form action="/api/auth/reinvia-conferma" method="post" className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+          <input type="hidden" name="email" value={email} />
+          <p className="text-xs leading-5 text-slate-600">
+            Non hai ricevuto l&apos;email di conferma?
+          </p>
+          <button
+            type="submit"
+            className="mt-2 text-xs font-bold text-blue-700 underline-offset-2 hover:underline"
+          >
+            Invia di nuovo l&apos;email di conferma
+          </button>
+        </form>
+      )}
     </form>
   );
 }
