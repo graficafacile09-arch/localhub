@@ -150,20 +150,24 @@ export async function getStripeAccountName(
   return name ? String(name) : null;
 }
 
-/** Revoca il collegamento dell'account Stripe Connect (deauthorize). */
-export async function deauthorizeStripeAccount(
+/**
+ * Scollega un connected account Stripe della piattaforma.
+ *
+ * Accounts v2: `stripe.oauth.deauthorize` è v1-only (richiede l'OAuth). Per
+ * gli account creati via API (v1 Express e v2) il meccanismo di scollegamento
+ * supportato è la CANCELLAZIONE dell'account (DELETE /v1/accounts/{id}), che
+ * funziona anche per account v2. Per gli account collegati via OAuth
+ * (Standard, vecchio flusso) Stripe non consente alla piattaforma di
+ * cancellarli (l'account appartiene al venditore): in quel caso l'errore
+ * viene ignorato dal chiamante e il collegamento viene rimosso SOLO a livello
+ * locale (comportamento identico al passato).
+ */
+export async function disconnectStripeAccount(
   accountId: string,
   opts?: GatewayStripeOptions
 ): Promise<void> {
-  const stripe = new Stripe(getStripePlatformSecretKey(), opts?.host ? {
-    host: opts.host,
-    port: opts.port,
-    protocol: opts.protocol ?? "https",
-  } : undefined);
-  await stripe.oauth.deauthorize({
-    client_id: getStripeConnectClientId(),
-    stripe_user_id: accountId,
-  });
+  const stripe = platformStripe(opts);
+  await stripe.accounts.del(accountId);
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -230,7 +234,19 @@ export function statoOnboardingDaAccount(account: Stripe.Account): StatoOnboardi
 }
 
 /**
- * Crea un account Stripe Connect EXPRESS per la piattaforma.
+ * Crea un connected account Stripe per la piattaforma via ACCOUNTS V2
+ * (POST /v2/core/accounts, configuration merchant).
+ *
+ * Accounts v1 (POST /v1/accounts) è bloccato da Stripe per le nuove
+ * integrazioni: la creazione passa dall'API v2, che è interoperabile con le
+ * API v1 del resto del flusso (Account Link, retrieve, eventi account.updated,
+ * direct charges con header Stripe-Account).
+ *
+ * Nota dashboard: la documentazione offre 'express' | 'full' | 'none', ma per
+ * questa piattaforma 'express' viene rifiutato da Stripe ("account
+ * configuration is not supported"); 'full' è verificato funzionante e dà al
+ * venditore l'accesso al dashboard del proprio account.
+ *
  * Prefill opzionale (email del venditore + nome business) per ridurre i
  * campi da compilare nell'onboarding hosted. Nessuna credenziale merchant.
  */
@@ -239,21 +255,32 @@ export async function createStripeExpressAccount(
   opts?: GatewayStripeOptions
 ): Promise<{ accountId: string; livemode: boolean }> {
   const stripe = platformStripe(opts);
-  // Gli account Express seguono SEMPRE la modalità della piattaforma:
-  // la secret key della piattaforma (sk_live_ / sk_test_) la determina.
-  const livemode = getStripePlatformSecretKey().startsWith("sk_live_");
-  const account = await stripe.accounts.create({
-    type: "express",
-    country: "IT",
-    ...(prefill.email ? { email: prefill.email } : {}),
-    ...(prefill.businessName ? { business_profile: { name: prefill.businessName } } : {}),
-    capabilities: {
-      card_payments: { requested: true },
-      transfers: { requested: true },
+  const account = await stripe.v2.core.accounts.create({
+    dashboard: "full",
+    ...(prefill.email ? { contact_email: prefill.email } : {}),
+    ...(prefill.businessName ? { display_name: prefill.businessName } : {}),
+    identity: { country: "IT" },
+    configuration: {
+      merchant: {
+        capabilities: {
+          card_payments: { requested: true },
+        },
+      },
+    },
+    defaults: {
+      currency: "eur",
+      responsibilities: {
+        // Direct charges: il venditore paga le proprie commissioni Stripe dal
+        // proprio saldo (fees_collector 'stripe'); la piattaforma trattiene la
+        // propria application_fee a monte.
+        fees_collector: "stripe",
+        losses_collector: "stripe",
+      },
     },
   });
-  if (!account.id) throw new Error("Stripe non ha restituito l'id dell'account Express.");
-  return { accountId: account.id, livemode };
+  const accountId = account.id;
+  if (!accountId) throw new Error("Stripe non ha restituito l'id dell'account.");
+  return { accountId, livemode: account.livemode === true };
 }
 
 /**
