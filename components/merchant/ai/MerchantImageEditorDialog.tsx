@@ -43,20 +43,26 @@ function clamp(v: number, min: number, max: number) {
   return Math.min(max, Math.max(min, v));
 }
 
-/** Disegna l'immagine trasformata (rotazione + riflessione) centrata nel canvas. */
+/**
+ * Disegna l'immagine trasformata (rotazione + riflessione) centrata nel canvas,
+ * scalata di `scale` (1 = dimensione naturale). Il canvas deve avere già le
+ * dimensioni dell'immagine trasformata × scale, così l'immagine lo riempie
+ * esattamente senza essere ritagliata.
+ */
 function drawTransformed(
   ctx: CanvasRenderingContext2D,
   img: HTMLImageElement,
   rot: number,
   fx: boolean,
-  fy: boolean
+  fy: boolean,
+  scale = 1
 ) {
   const w = img.naturalWidth;
   const h = img.naturalHeight;
   ctx.save();
   ctx.translate(ctx.canvas.width / 2, ctx.canvas.height / 2);
   ctx.rotate((rot * Math.PI) / 2);
-  ctx.scale(fx ? -1 : 1, fy ? -1 : 1);
+  ctx.scale(scale * (fx ? -1 : 1), scale * (fy ? -1 : 1));
   ctx.drawImage(img, -w / 2, -h / 2, w, h);
   ctx.restore();
 }
@@ -144,8 +150,11 @@ export default function MerchantImageEditorDialog({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     ctx.imageSmoothingQuality = "high";
-    drawTransformed(ctx, img, rot, fx, fy);
-  }, [img, rot, fx, fy, preview.w, preview.h]);
+    // Scala l'immagine per riempire il canvas: senza questo fattore l'immagine
+    // (dimensione naturale) trabocca dal canvas e l'anteprima mostrerebbe solo
+    // il centro, disallineando la selezione visiva dall'area esportata.
+    drawTransformed(ctx, img, rot, fx, fy, preview.w / tw);
+  }, [img, rot, fx, fy, preview.w, preview.h, tw]);
 
   // ── Anteprima del RISULTATO (ritaglio corrente) ──────────────────────────
   useEffect(() => {
@@ -164,12 +173,7 @@ export default function MerchantImageEditorDialog({
     const fctx = full.getContext("2d");
     if (!fctx) return;
     fctx.imageSmoothingQuality = "high";
-    fctx.save();
-    fctx.translate(tw2 / 2, th2 / 2);
-    fctx.rotate((rot * Math.PI) / 2);
-    fctx.scale(scale * (fx ? -1 : 1), scale * (fy ? -1 : 1));
-    fctx.drawImage(img, -W / 2, -H / 2, W, H);
-    fctx.restore();
+    drawTransformed(fctx, img, rot, fx, fy, scale);
 
     const cw = Math.max(1, Math.round(crop.w * tw2));
     const ch = Math.max(1, Math.round(crop.h * th2));
@@ -314,12 +318,7 @@ export default function MerchantImageEditorDialog({
         return;
       }
       fctx.imageSmoothingQuality = "high";
-      fctx.save();
-      fctx.translate(tw2 / 2, th2 / 2);
-      fctx.rotate((rot * Math.PI) / 2);
-      fctx.scale(scale * (fx ? -1 : 1), scale * (fy ? -1 : 1));
-      fctx.drawImage(img, -W / 2, -H / 2, W, H);
-      fctx.restore();
+      drawTransformed(fctx, img, rot, fx, fy, scale);
 
       const cw = Math.max(1, Math.round(crop.w * tw2));
       const ch = Math.max(1, Math.round(crop.h * th2));
@@ -421,9 +420,14 @@ export default function MerchantImageEditorDialog({
           {img && !loading && (
             <div className="space-y-4">
               {/* Anteprima grande + overlay ritaglio */}
-              <div className="mx-auto">
+              <div
+                data-editor-preview
+                className="relative mx-auto"
+                onPointerMove={cropMode ? onDragMove : undefined}
+                onPointerUp={cropMode ? endDrag : undefined}
+                onPointerCancel={cropMode ? endDrag : undefined}
+              >
                 <div
-                  data-editor-preview
                   className="relative overflow-hidden rounded-2xl bg-slate-100"
                   style={{
                     width: `${preview.w}px`,
@@ -433,12 +437,8 @@ export default function MerchantImageEditorDialog({
                 >
                   <canvas ref={previewRef} className="block h-full w-full" />
                   {cropMode && (
-                    <div
-                      className="absolute inset-0 cursor-crosshair touch-none select-none"
-                      onPointerMove={onDragMove}
-                      onPointerUp={endDrag}
-                      onPointerCancel={endDrag}
-                    >
+                    <div className="absolute inset-0 cursor-crosshair touch-none select-none">
+                      {/* Box di selezione: bordi + oscuramento (clippato dal container) */}
                       <div
                         className="absolute cursor-move border-2 border-white shadow-[0_0_0_9999px_rgba(0,0,0,0.45)]"
                         style={{
@@ -447,35 +447,46 @@ export default function MerchantImageEditorDialog({
                           width: `${crop.w * 100}%`,
                           height: `${crop.h * 100}%`,
                         }}
+                        data-test-crop={`${crop.x},${crop.y},${crop.w},${crop.h}`}
                         onPointerDown={(e) => startDrag(e, "move")}
-                      >
-                        {/* Maniglie angoli */}
-                        <span
-                          className="absolute -left-2 -top-2 h-4 w-4 cursor-nwse-resize rounded-sm border border-slate-400 bg-white"
-                          onPointerDown={(e) => startDrag(e, "nw")}
-                        />
-                        <span
-                          className="absolute -right-2 -top-2 h-4 w-4 cursor-nesw-resize rounded-sm border border-slate-400 bg-white"
-                          onPointerDown={(e) => startDrag(e, "ne")}
-                        />
-                        <span
-                          className="absolute -bottom-2 -left-2 h-4 w-4 cursor-nesw-resize rounded-sm border border-slate-400 bg-white"
-                          onPointerDown={(e) => startDrag(e, "sw")}
-                        />
-                        <span
-                          className="absolute -bottom-2 -right-2 h-4 w-4 cursor-nwse-resize rounded-sm border border-slate-400 bg-white"
-                          onPointerDown={(e) => startDrag(e, "se")}
-                        />
-                      </div>
+                      />
                     </div>
                   )}
                 </div>
+
                 {cropMode && (
-                  <p className="mt-2 text-center text-[11px] text-slate-400">
-                    Trascina per spostare il ritaglio, usa gli angoli per ridimensionarlo.
-                  </p>
+                  /* Maniglie su layer NON clippato: sempre visibili e afferrabili,
+                     anche a selezione piena (il container ha overflow-hidden + angoli
+                     arrotondati che taglierebbero le maniglie sugli angoli). */
+                  <div className="pointer-events-none absolute inset-0 touch-none select-none">
+                    <span
+                      className="pointer-events-auto absolute h-4 w-4 cursor-nwse-resize rounded-sm border border-slate-400 bg-white shadow-sm"
+                      style={{ left: `${crop.x * 100}%`, top: `${crop.y * 100}%`, transform: "translate(-50%, -50%)" }}
+                      onPointerDown={(e) => startDrag(e, "nw")}
+                    />
+                    <span
+                      className="pointer-events-auto absolute h-4 w-4 cursor-nesw-resize rounded-sm border border-slate-400 bg-white shadow-sm"
+                      style={{ left: `${(crop.x + crop.w) * 100}%`, top: `${crop.y * 100}%`, transform: "translate(-50%, -50%)" }}
+                      onPointerDown={(e) => startDrag(e, "ne")}
+                    />
+                    <span
+                      className="pointer-events-auto absolute h-4 w-4 cursor-nesw-resize rounded-sm border border-slate-400 bg-white shadow-sm"
+                      style={{ left: `${crop.x * 100}%`, top: `${(crop.y + crop.h) * 100}%`, transform: "translate(-50%, -50%)" }}
+                      onPointerDown={(e) => startDrag(e, "sw")}
+                    />
+                    <span
+                      className="pointer-events-auto absolute h-4 w-4 cursor-nwse-resize rounded-sm border border-slate-400 bg-white shadow-sm"
+                      style={{ left: `${(crop.x + crop.w) * 100}%`, top: `${(crop.y + crop.h) * 100}%`, transform: "translate(-50%, -50%)" }}
+                      onPointerDown={(e) => startDrag(e, "se")}
+                    />
+                  </div>
                 )}
               </div>
+              {cropMode && (
+                <p className="mt-2 text-center text-[11px] text-slate-400">
+                  Trascina per spostare il ritaglio, usa gli angoli per ridimensionarlo.
+                </p>
+              )}
 
               {/* Anteprima del risultato */}
               <div className="flex items-center justify-center gap-3 rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-3">
