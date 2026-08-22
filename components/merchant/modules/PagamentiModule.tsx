@@ -17,6 +17,9 @@ type ProviderConfig = {
   iban: string | null;
   account_id: string | null;
   account_name: string | null;
+  onboarding_status: string | null;
+  payouts_enabled: boolean;
+  charges_enabled: boolean;
   has_secret: boolean;
 };
 
@@ -151,6 +154,9 @@ type ProviderForm = {
   has_secret: boolean;
   account_id: string;
   account_name: string;
+  onboarding_status: string;
+  payouts_enabled: boolean;
+  charges_enabled: boolean;
 };
 
 function statoIniziale(): FormState {
@@ -167,6 +173,9 @@ function statoIniziale(): FormState {
       has_secret: false,
       account_id: "",
       account_name: "",
+      onboarding_status: "not_started",
+      payouts_enabled: false,
+      charges_enabled: false,
     };
   }
   const metodi: Record<string, { attivo: boolean }> = {};
@@ -217,6 +226,9 @@ export default function PagamentiModule({ storeId }: Props) {
               has_secret: p.has_secret ?? false,
               account_id: p.account_id ?? "",
               account_name: p.account_name ?? "",
+              onboarding_status: p.onboarding_status ?? "not_started",
+              payouts_enabled: p.payouts_enabled ?? false,
+              charges_enabled: p.charges_enabled ?? false,
             };
           }
           for (const m of json.data.metodi ?? []) {
@@ -250,8 +262,10 @@ export default function PagamentiModule({ storeId }: Props) {
     setConnectBusy(true);
     setStripeMsg(null);
     try {
-      const res = await fetch(`/api/merchant/stores/${storeId}/pagamenti/stripe/connect`, {
+      const res = await fetch(`/api/pagamenti/connect/crea`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ negozioId: storeId }),
       });
       const json = await res.json();
       if (json.success && json.data?.url) {
@@ -284,7 +298,15 @@ export default function PagamentiModule({ storeId }: Props) {
           ...f,
           providers: {
             ...f.providers,
-            stripe: { ...f.providers.stripe, account_id: "", account_name: "", attivo: false },
+            stripe: {
+              ...f.providers.stripe,
+              account_id: "",
+              account_name: "",
+              attivo: false,
+              onboarding_status: "not_started",
+              payouts_enabled: false,
+              charges_enabled: false,
+            },
           },
         }));
       } else {
@@ -454,24 +476,28 @@ export default function PagamentiModule({ storeId }: Props) {
               const p = form.providers[key];
               if (!p) return null;
 
-              // Stripe è collegato via Connect: nessuna credenziale manuale.
+              // Stripe è collegato via Connect Express (Account Link): nessuna
+              // credenziale manuale. Lo stato riflette l'onboarding hosted.
               if (key === "stripe") {
                 const collegato = !!p.account_id;
+                const status = p.onboarding_status || (collegato ? "pending" : "not_started");
+                const badge =
+                  status === "complete"
+                    ? { icon: <CheckCircle2 className="h-3 w-3" />, label: "Attivo", cls: "bg-green-50 text-green-700" }
+                    : status === "pending"
+                      ? { icon: <AlertCircle className="h-3 w-3" />, label: "Onboarding in corso", cls: "bg-yellow-50 text-yellow-700" }
+                      : status === "restricted"
+                        ? { icon: <AlertCircle className="h-3 w-3" />, label: "Limitato", cls: "bg-red-50 text-red-600" }
+                        : { icon: <AlertCircle className="h-3 w-3" />, label: "Non collegato", cls: "bg-slate-100 text-slate-500" };
                 return (
                   <div key={key} className="rounded-2xl border border-slate-200 bg-white p-4">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
                           <p className="text-sm font-bold text-slate-900">{info.nome}</p>
-                          {collegato ? (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700">
-                              <CheckCircle2 className="h-3 w-3" /> Collegato
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">
-                              <AlertCircle className="h-3 w-3" /> Non collegato
-                            </span>
-                          )}
+                          <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${badge.cls}`}>
+                            {badge.icon} {badge.label}
+                          </span>
                         </div>
                         <p className="mt-0.5 text-xs text-slate-500">{info.descrizione}</p>
                       </div>
@@ -490,30 +516,58 @@ export default function PagamentiModule({ storeId }: Props) {
                                 ID account Connect: {p.account_id}
                               </p>
                             )}
+                            {status === "complete" && (
+                              <p className="mt-1 text-[11px] font-semibold text-green-700">
+                                Incassi e pagamenti abilitati.
+                              </p>
+                            )}
+                            {status === "pending" && (
+                              <p className="mt-1 text-[11px] font-semibold text-yellow-700">
+                                Completa la verifica (documenti e IBAN) nel portale Stripe.
+                              </p>
+                            )}
+                            {status === "restricted" && (
+                              <p className="mt-1 text-[11px] font-semibold text-red-600">
+                                Account con restrizioni: controlla il portale Stripe.
+                              </p>
+                            )}
                           </div>
-                          <button
-                            type="button"
-                            disabled={connectBusy}
-                            onClick={handleDisconnectStripe}
-                            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
-                          >
-                            Scollega
-                          </button>
+                          <div className="flex flex-wrap items-center gap-2">
+                            {status !== "complete" && (
+                              <button
+                                type="button"
+                                disabled={connectBusy}
+                                onClick={handleConnectStripe}
+                                className="inline-flex items-center gap-1.5 rounded-xl bg-yellow-400 px-3 py-2 text-xs font-semibold text-blue-800 transition hover:bg-yellow-300 disabled:opacity-50"
+                              >
+                                {connectBusy ? "Reindirizzamento…" : "Riprendi onboarding"}
+                              </button>
+                            )}
+                            <button
+                              type="button"
+                              disabled={connectBusy}
+                              onClick={handleDisconnectStripe}
+                              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                            >
+                              Scollega
+                            </button>
+                          </div>
                         </div>
                       ) : (
                         <div>
                           <p className="mb-3 text-xs text-slate-500">
-                            Collega il tuo account Stripe per accettare pagamenti con carta e,
-                            quando disponibili, Apple Pay e Google Pay. Non serve inserire
-                            alcuna chiave: Stripe gestisce accesso, registrazione e verifica.
+                            Crea o collega il tuo account Stripe per accettare pagamenti con
+                            carta e, quando disponibili, Apple Pay e Google Pay. Non serve
+                            inserire alcuna chiave: Stripe gestisce creazione account,
+                            registrazione e verifica (KYC/IBAN) nel suo portale.
                           </p>
                           <button
                             type="button"
                             disabled={connectBusy}
                             onClick={handleConnectStripe}
-                            className="inline-flex items-center gap-1.5 rounded-xl bg-yellow-400 px-3 py-2 text-xs font-semibold text-blue-800 transition hover:bg-yellow-300 disabled:opacity-50"
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-yellow-400 px-4 py-2.5 text-sm font-semibold text-blue-800 transition hover:bg-yellow-300 disabled:opacity-50"
                           >
-                            {connectBusy ? "Reindirizzamento…" : "Collega Stripe"}
+                            {connectBusy ? "Reindirizzamento…" : "Crea o Collega il tuo conto Stripe"}
                           </button>
                         </div>
                       )}
@@ -523,7 +577,8 @@ export default function PagamentiModule({ storeId }: Props) {
                           Apple Pay e Google Pay sono gestiti da Stripe (Dynamic Payment
                           Methods) e compaiono automaticamente quando abilitati nel Dashboard
                           Stripe. Non vengono richiesti né mostrati Secret Key o Webhook Secret
-                          del venditore.
+                          del venditore. Al termine dell&apos;onboarding verrai riportato su
+                          /ritorno-stripe.
                         </p>
                       </div>
                     </div>

@@ -147,6 +147,12 @@ export type CredenzialiPubbliche = {
   account_id: string | null;
   /** Nome business dell'account collegato (solo per la UI). Non sensibile. */
   account_name: string | null;
+  /** Stato onboarding Connect Express (not_started/pending/complete/restricted). */
+  onboarding_status: string | null;
+  /** True se Stripe ha abilitato i payout sul connected account. */
+  payouts_enabled: boolean;
+  /** True se Stripe ha abilitato l'incasso (charges) sul connected account. */
+  charges_enabled: boolean;
 };
 
 /**
@@ -166,6 +172,9 @@ export function credenzialiPubbliche(
     iban: riga.iban ? String(riga.iban) : null,
     account_id: riga.account_id ? String(riga.account_id) : null,
     account_name: riga.account_name ? String(riga.account_name) : null,
+    onboarding_status: riga.onboarding_status ? String(riga.onboarding_status) : null,
+    payouts_enabled: riga.payouts_enabled === true,
+    charges_enabled: riga.charges_enabled === true,
     // La RPC (pagamenti_credenziali_leggi) è la fonte autorevole per
     // has_secret: calcola il flag sui secret cifrati nel DB senza MAI
     // restituirli (write-only). Se il flag è presente nel payload lo

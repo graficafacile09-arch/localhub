@@ -94,6 +94,9 @@ export async function GET(
         iban: null,
         account_id: null,
         account_name: null,
+        onboarding_status: null,
+        payouts_enabled: false,
+        charges_enabled: false,
         has_secret: false,
       });
       continue;
@@ -116,6 +119,9 @@ export async function GET(
       iban: pubblici?.iban ?? null,
       account_id: pubblici?.account_id ?? null,
       account_name: pubblici?.account_name ?? null,
+      onboarding_status: pubblici?.onboarding_status ?? null,
+      payouts_enabled: pubblici?.payouts_enabled ?? false,
+      charges_enabled: pubblici?.charges_enabled ?? false,
       has_secret: pubblici?.has_secret ?? false,
     });
   }

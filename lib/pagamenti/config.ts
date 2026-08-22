@@ -156,20 +156,32 @@ export async function getConfigStripeNegozio(
   return getConfigProviderNegozio(negozioId, "stripe");
 }
 
+/** Stato del collegamento Stripe Connect (pubblico, sola lettura). */
+export type StatoStripeConnect = {
+  accountId: string;
+  accountName: string | null;
+  testMode: boolean;
+  /** Onboarding Express: not_started / pending / complete / restricted. */
+  onboardingStatus: string;
+  payoutsEnabled: boolean;
+  chargesEnabled: boolean;
+};
+
 /**
  * Account Stripe Connect collegato al negozio (sola lettura, dati pubblici).
  * Ritorna null se il negozio non ha collegato Stripe via Connect (nessun
- * account_id, provider non attivo o assente).
+ * account_id, provider non attivo o assente). Include lo stato di onboarding
+ * Express (onboarding_status / payouts_enabled / charges_enabled).
  */
 export async function getStripeConnectAccount(
   negozioId: string
-): Promise<{ accountId: string; accountName: string | null; testMode: boolean } | null> {
+): Promise<StatoStripeConnect | null> {
   if (!negozioId) return null;
   try {
     const db = createAdminSupabaseClient();
     const { data, error } = await db
       .from("negozio_pagamenti")
-      .select("account_id, account_name, test_mode")
+      .select("account_id, account_name, test_mode, onboarding_status, payouts_enabled, charges_enabled")
       .eq("negozio_id", negozioId)
       .eq("provider", "stripe")
       .eq("attivo", true)
@@ -181,6 +193,9 @@ export async function getStripeConnectAccount(
       accountId,
       accountName: data.account_name ? String(data.account_name) : null,
       testMode: data.test_mode === true,
+      onboardingStatus: data.onboarding_status ? String(data.onboarding_status) : "pending",
+      payoutsEnabled: data.payouts_enabled === true,
+      chargesEnabled: data.charges_enabled === true,
     };
   } catch {
     return null;
