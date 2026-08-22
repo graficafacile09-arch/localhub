@@ -9,6 +9,7 @@ import MerchantProductAiUploader from "./MerchantProductAiUploader";
 import MerchantProductResultCard from "./MerchantProductResultCard";
 import MerchantProductForm from "@/components/merchant/MerchantProductForm";
 import MerchantCorreggiAiDialog from "./MerchantCorreggiAiDialog";
+import MerchantImageEditorDialog from "./MerchantImageEditorDialog";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 type AnalysisResult = {
@@ -71,6 +72,8 @@ export default function MerchantProductAiWizard({
   const [suggestion, setSuggestion] = useState<ProductVisionSuggestion | null>(null);
   const [editing, setEditing] = useState(false);
   const [correggiAperto, setCorreggiAperto] = useState(false);
+  /** Editor immagine post-generazione: si apre SOLO dal pulsante "Modifica immagine". */
+  const [editorImmagineAperto, setEditorImmagineAperto] = useState(false);
   const [prodottoSalvato, setProdottoSalvato] = useState<ProdottoSalvato | null>(null);
   /** True se l'editor ha modifiche non salvate. */
   const [formDirty, setFormDirty] = useState(false);
@@ -108,6 +111,51 @@ export default function MerchantProductAiWizard({
     setSuggestion(aggiornata);
     setResult((prev) => (prev ? { ...prev, suggestion: aggiornata } : prev));
     setCorreggiAperto(false);
+  }
+
+  /**
+   * "Modifica immagine" (post-generazione, separato dal flusso AI): aggiorna
+   * SOLO la foto dell'annuncio. Se il prodotto è già salvato/pubblicato
+   * persiste subito l'immagine con il meccanismo esistente (PATCH con la sola
+   * immagine → upload nello storage dei prodotti); se non è ancora pubblicato,
+   * la foto modificata viene usata alla pubblicazione. NESSUNA chiamata AI.
+   * Se la persistenza fallisce, l'eccezione tiene aperta la modal con l'errore.
+   */
+  async function handleSalvaImmagine(dataUrl: string) {
+    let urlFinale = dataUrl;
+
+    if (prodottoSalvato) {
+      const res = await fetch(
+        `/api/merchant/stores/${negozioId}/products/${prodottoSalvato.id}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ immaginePrincipale: dataUrl }),
+        }
+      );
+      const data = (await res.json().catch(() => ({}))) as {
+        success?: boolean;
+        data?: { product?: { immagine_principale?: string | null } };
+        error?: { message?: string };
+      };
+      if (!res.ok || !data.success) {
+        throw new Error(
+          data.error?.message ?? "Errore durante il salvataggio dell'immagine."
+        );
+      }
+      const persistita = data.data?.product?.immagine_principale;
+      if (persistita) urlFinale = persistita;
+      setProdottoSalvato((prev) =>
+        prev
+          ? { ...prev, dati: { ...prev.dati, immaginePrincipale: urlFinale } }
+          : prev
+      );
+    }
+
+    setSuggestion((prev) =>
+      prev ? { ...prev, immaginePrincipale: urlFinale } : prev
+    );
+    setResult((prev) => (prev ? { ...prev, photoUrl: urlFinale } : prev));
   }
 
   /** Salvataggio confermato dall'editor: NESSUN redirect, NESSUNA chiusura. */
@@ -226,6 +274,7 @@ export default function MerchantProductAiWizard({
             onRetake={handleRetake}
             onEdit={handleEdit}
             onCorreggi={() => setCorreggiAperto(true)}
+            onModificaImmagine={() => setEditorImmagineAperto(true)}
             giàSalvato={prodottoSalvato}
           />
         )}
@@ -351,6 +400,16 @@ export default function MerchantProductAiWizard({
           photoUrl={result.photoUrl}
           onClose={() => setCorreggiAperto(false)}
           onConfirm={handleCorreggiConfermata}
+        />
+      )}
+
+      {/* ── EDITOR IMMAGINE POST-GENERAZIONE: mai automatico, mai AI ── */}
+      {editorImmagineAperto && result?.photoUrl && (
+        <MerchantImageEditorDialog
+          key={result.photoUrl}
+          imageUrl={result.photoUrl}
+          onClose={() => setEditorImmagineAperto(false)}
+          onSave={handleSalvaImmagine}
         />
       )}
     </>

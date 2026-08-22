@@ -225,6 +225,7 @@ export async function PATCH(
   const body = (await request.json().catch(() => null)) as Partial<{
     quantitaDisponibile?: number | null;
     attivo?: boolean;
+    immaginePrincipale?: string | null;
   }> | null;
 
   if (!body || typeof body !== "object") {
@@ -237,7 +238,11 @@ export async function PATCH(
     return apiError("NOT_FOUND", "Prodotto non trovato.", 404);
   }
 
-  const patch: { quantitaDisponibile?: number | null; attivo?: boolean } = {};
+  const patch: {
+    quantitaDisponibile?: number | null;
+    attivo?: boolean;
+    immaginePrincipale?: string;
+  } = {};
 
   if (body.quantitaDisponibile !== undefined) {
     const q = body.quantitaDisponibile;
@@ -252,6 +257,15 @@ export async function PATCH(
       return apiError("INVALID_BODY", "Il campo attivo deve essere booleano.", 422);
     }
     patch.attivo = body.attivo;
+  }
+
+  // Aggiornamento della SOLA immagine (data URL o URL già persistito): usato
+  // dall'editor immagine post-generazione del wizard AI.
+  if (body.immaginePrincipale !== undefined) {
+    if (typeof body.immaginePrincipale !== "string" || !body.immaginePrincipale.trim()) {
+      return apiError("INVALID_BODY", "Immagine non valida.", 422);
+    }
+    patch.immaginePrincipale = body.immaginePrincipale.trim();
   }
 
   if (Object.keys(patch).length === 0) {
@@ -275,6 +289,16 @@ export async function PATCH(
       productResult.data?.quantita_disponibile,
       patchResult.data.quantita_disponibile
     );
+  }
+
+  // Nuova immagine arrivata come data URL: la vecchia è stata sostituita,
+  // rimuovila dallo storage (stesso pattern del PUT).
+  if (
+    patch.immaginePrincipale &&
+    patch.immaginePrincipale.startsWith("data:") &&
+    productResult.data.immagine_principale
+  ) {
+    await deleteImageFromStorage(productResult.data.immagine_principale);
   }
 
   return apiOk({ product: patchResult.data });

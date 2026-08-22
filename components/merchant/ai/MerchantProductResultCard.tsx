@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, CheckCircle2, Mic, Pencil, RotateCcw } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Crop, Mic, Pencil, RotateCcw } from "lucide-react";
 import type { ProductVisionSuggestion } from "@/lib/product-assistant/vision";
 
 type ResultCardProps = {
@@ -14,6 +14,8 @@ type ResultCardProps = {
   onEdit: () => void;
   /** Apre la correzione vocale/testuale con l'AI sul draft. */
   onCorreggi: () => void;
+  /** Apre l'editor immagine post-generazione (separato dal flusso AI). */
+  onModificaImmagine: () => void;
   /** Prodotto già salvato/pubblicato dall'editor: nasconde "Pubblica" per evitare doppioni. */
   giàSalvato?: { id: string } | null;
 };
@@ -26,6 +28,7 @@ export default function MerchantProductResultCard({
   onRetake,
   onEdit,
   onCorreggi,
+  onModificaImmagine,
   giàSalvato = null,
 }: ResultCardProps) {
   const router = useRouter();
@@ -134,6 +137,17 @@ export default function MerchantProductResultCard({
               <div className="flex h-[120px] w-[120px] items-center justify-center rounded-xl bg-slate-100 text-slate-400 text-sm font-semibold">
                 No img
               </div>
+            )}
+            {/* Editor immagine POST-generazione: separato dal flusso AI, mai automatico */}
+            {photoUrl && (
+              <button
+                type="button"
+                onClick={onModificaImmagine}
+                className="mt-2 flex w-[120px] items-center justify-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[11px] font-semibold text-slate-600 transition hover:border-blue-300 hover:text-blue-700"
+              >
+                <Crop className="h-3 w-3" />
+                Modifica immagine
+              </button>
             )}
           </div>
 

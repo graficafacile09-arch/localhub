@@ -852,6 +852,8 @@ export async function patchMerchantProductForStore(
   patch: {
     quantitaDisponibile?: number | null;
     attivo?: boolean;
+    /** Solo immagine: data URL (viene caricata nello storage) o URL già persistito. */
+    immaginePrincipale?: string;
   }
 ): Promise<MerchantQueryResult<MerchantProduct | null>> {
   const storeResult = await getMerchantStoreForUser(userId, negozioId);
@@ -867,6 +869,13 @@ export async function patchMerchantProductForStore(
   const payload: Record<string, unknown> = {};
   if (patch.quantitaDisponibile !== undefined) payload.quantita_disponibile = patch.quantitaDisponibile;
   if (patch.attivo !== undefined) payload.attivo = patch.attivo;
+  if (patch.immaginePrincipale !== undefined) {
+    // Stesso meccanismo di create/update: carica il data URL nel bucket
+    // product-images e salva l'URL pubblico (gli URL già persistiti restano tali).
+    payload.immagine_principale = await uploadDataUrlToStorage(
+      patch.immaginePrincipale.trim()
+    );
+  }
 
   if (Object.keys(payload).length === 0) {
     return {

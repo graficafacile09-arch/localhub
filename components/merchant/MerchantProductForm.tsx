@@ -294,6 +294,8 @@ export default function MerchantProductForm({
       success: boolean;
       error?: { message?: string };
       product?: { id?: string };
+      // Le route prodotti rispondono con { success, data: { product } }.
+      data?: { product?: { id?: string } };
     };
 
     if (!response.ok || !result.success) {
@@ -311,7 +313,9 @@ export default function MerchantProductForm({
     if (onSuccess) {
       onSuccess({
         payload,
-        productId: productId ?? result.product?.id ?? null,
+        // Id reale del prodotto creato: le route rispondono { success, data: { product } }.
+        // Il fallback piatto resta per compatibilità con eventuali risposte non incapsulate.
+        productId: productId ?? result.data?.product?.id ?? result.product?.id ?? null,
       });
       router.refresh();
       setSubmitting(false);
