@@ -4,6 +4,7 @@ import { requireCurrentUser } from "@/lib/auth/session";
 import { canManageStore } from "@/lib/merchant/data";
 import { getStripeConnectAccount } from "@/lib/pagamenti/config";
 import { getStripeAccountOnboarding } from "@/lib/pagamenti/stripe-connect";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -73,6 +74,29 @@ export default async function RitornoStripePage({
   const effettivo: "pending" | "complete" | "restricted" =
     liveStatus ?? (locale?.onboardingStatus === "restricted" ? "restricted" : locale?.onboardingStatus === "complete" ? "complete" : "pending");
   const refresh = sp.refresh === "1";
+
+  // Persisti nel DB lo stato LIVE restituito da Stripe (RPC già esistente):
+  // per gli account creati via API V2 l'evento account.updated non arriva al
+  // webhook classico, quindi senza questa scrittura il DB resterebbe fermo a
+  // "pending" e sia il badge dei pagamenti sia il gating checkout (fail-closed)
+  // non vedrebbero l'onboarding completato. Solo con esito LIVE valido; se la
+  // scrittura fallisce la pagina continua a mostrare lo stato live corretto.
+  if (locale && liveStatus) {
+    try {
+      const db = createAdminSupabaseClient();
+      const { error: saveErr } = await db.rpc("pagamenti_stripe_connect_stato_salva", {
+        p_account_id: locale.accountId,
+        p_onboarding_status: liveStatus,
+        p_payouts_enabled: livePayouts,
+        p_charges_enabled: liveCharges,
+      });
+      if (saveErr) {
+        console.error(`[ritorno-stripe] salvataggio stato account ${locale.accountId} fallito: ${saveErr.message}`);
+      }
+    } catch (e) {
+      console.error(`[ritorno-stripe] salvataggio stato account ${locale.accountId} fallito:`, e);
+    }
+  }
 
   if (!locale) {
     return (
