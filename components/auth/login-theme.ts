@@ -189,13 +189,14 @@ const temaMerchant: TemaLogin = {
   },
 };
 
-/** ADMIN — istituzionale, riservato, autorevole: accesso controllato. */
+/** ADMIN — istituzionale, luminoso, blu istituzionale con accenti LocalHub. */
 const temaAdmin: TemaLogin = {
   id: "admin",
   eyebrow: "Amministrazione · Accesso riservato",
-  eyebrowClass: "text-slate-500",
-  IconaBadge: null,
-  badgeClass: "",
+  eyebrowClass: "text-blue-700",
+  IconaBadge: ShieldCheck,
+  badgeClass:
+    "flex h-11 w-11 items-center justify-center rounded-lg bg-blue-900 text-white shadow-md shadow-blue-900/25",
   titoloLogin: "Area amministrativa",
   titoloRegistrati: "",
   sottotitoloLogin:
@@ -203,35 +204,35 @@ const temaAdmin: TemaLogin = {
   sottotitoloRegistrati: "",
   titoloClass: "text-2xl font-extrabold tracking-tight text-slate-900",
   sottotitoloClass: "text-sm leading-6 text-slate-500",
-  sfondoClass: "bg-slate-950",
+  sfondoClass: "bg-[#f0f5fa]",
   decorazioni: [
-    "absolute inset-0 bg-[radial-gradient(60%_50%_at_50%_0%,rgba(51,65,85,0.55),transparent)]",
-    "absolute inset-0 bg-[radial-gradient(40%_40%_at_85%_100%,rgba(30,64,175,0.16),transparent)]",
+    "absolute -left-32 -top-32 h-[28rem] w-[28rem] rounded-full bg-blue-100/60 blur-3xl",
+    "absolute -bottom-40 -right-32 h-[26rem] w-[26rem] rounded-full bg-amber-100/40 blur-3xl",
   ],
-  strisciaTopClasse: null,
+  strisciaTopClasse: "h-1.5 w-full bg-gradient-to-r from-blue-800 via-blue-600 to-amber-400",
   bandaHeader: {
     Icona: ShieldCheck,
     testo: "LocalHub · Amministrazione",
     classe:
-      "flex items-center gap-2.5 border-b border-slate-200 bg-slate-950 px-8 py-4 text-xs font-bold uppercase tracking-[0.18em] text-slate-200",
+      "flex items-center gap-2.5 border-b border-blue-800 bg-blue-900 px-8 py-4 text-xs font-bold uppercase tracking-[0.18em] text-blue-100",
   },
   cardClass:
-    "card w-full max-w-md overflow-hidden rounded-lg border-slate-700 shadow-[0_40px_90px_-40px_rgba(0,0,0,0.9)]",
+    "card w-full max-w-md overflow-hidden rounded-lg border-blue-200 shadow-[0_20px_50px_-30px_rgba(30,64,175,0.25)]",
   chips: [],
   tabsContainerClass: "",
   tabAttivoClass: "",
   tabInattivoClass: "",
   bannerClass:
-    "rounded-lg border border-slate-300 bg-slate-100 px-4 py-3 text-sm text-slate-800",
+    "rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800",
   labelFieldClass: "text-sm font-semibold text-slate-700",
-  inputFocusClass: "focus:border-blue-800 focus:ring-4 focus:ring-blue-900/15",
-  checkboxAccentClass: "accent-blue-900",
-  linkClass: "text-blue-800 underline-offset-2 hover:text-blue-950 hover:underline",
+  inputFocusClass: "focus:border-blue-500 focus:ring-4 focus:ring-blue-100",
+  checkboxAccentClass: "accent-blue-700",
+  linkClass: "text-blue-700 underline-offset-2 hover:text-blue-900 hover:underline",
   ctaClass:
-    "inline-flex items-center justify-center gap-2 rounded-lg bg-blue-900 text-sm font-bold text-white shadow-lg shadow-blue-950/40 transition hover:bg-blue-950 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-400/60 disabled:opacity-55",
+    "inline-flex items-center justify-center gap-2 rounded-lg bg-blue-700 text-sm font-bold text-white shadow-lg shadow-blue-700/25 transition hover:bg-blue-800 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-400/60 disabled:opacity-55",
   IconaCta: LockKeyhole,
   placeholderEmailLogin: "admin@localhub.it",
-  boxSecondarioClass: "rounded-lg border border-slate-300 bg-slate-100 px-4 py-3",
+  boxSecondarioClass: "rounded-lg border border-blue-200 bg-blue-50 px-4 py-3",
   erroreCampoClass: "text-xs font-semibold text-red-600",
   notaFooter: {
     testo: "Area protetta — gli accessi sono registrati e monitorati.",
