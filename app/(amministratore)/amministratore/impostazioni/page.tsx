@@ -5,6 +5,7 @@ import {
   CHIAVI_SALVABILI,
   getImpostazioniAdmin,
 } from "@/lib/platform/settings";
+import { getCommissionePercentuale } from "@/lib/pagamenti/commissione";
 
 export const metadata = {
   title: "Impostazioni piattaforma — Amministratore",
@@ -28,5 +29,13 @@ export default async function ImpostazioniPage() {
         impostazione.chiave,
     }));
 
-  return <ImpostazioniModule iniziali={modificabili} />;
+  // Commissione piattaforma: fonte autorevole piattaforma_config (default 10).
+  const commissionePercentuale = await getCommissionePercentuale();
+
+  return (
+    <ImpostazioniModule
+      iniziali={modificabili}
+      commissionePercentuale={commissionePercentuale}
+    />
+  );
 }

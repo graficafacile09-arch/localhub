@@ -9,6 +9,7 @@ import {
   Globe,
   Loader2,
   MapPinned,
+  Percent,
   Save,
   Settings,
 } from "lucide-react";
@@ -91,11 +92,16 @@ function CampoImpostazione({
 
 export default function ImpostazioniModule({
   iniziali,
+  commissionePercentuale,
 }: {
   iniziali: ImpostazioneEditoriale[];
+  commissionePercentuale: number;
 }) {
   const [valori, setValori] = useState<Record<string, string>>(() =>
     Object.fromEntries(iniziali.map((i) => [i.chiave, i.valore]))
+  );
+  const [commissione, setCommissione] = useState<string>(() =>
+    Number.isFinite(commissionePercentuale) ? String(commissionePercentuale) : "10"
   );
   const [salvati, setSalvati] = useState<Record<string, boolean>>({});
   const [inSalvataggio, setInSalvataggio] = useState<Record<string, boolean>>({});
@@ -140,6 +146,37 @@ export default function ImpostazioniModule({
       });
       setSalvati(prossiSalvati);
       setRisultato({ testo: "Impostazioni salvate con successo.", ok: true });
+    } catch (errore) {
+      setRisultato({
+        testo: errore instanceof Error ? errore.message : "Errore sconosciuto.",
+        ok: false,
+      });
+    } finally {
+      setInSalvataggio({});
+    }
+  };
+
+  const salvaCommissione = async () => {
+    setRisultato(null);
+    setInSalvataggio({ commissione_percentuale: true });
+
+    try {
+      const risposta = await fetch("/api/amministratore/impostazioni", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ commissione_percentuale: commissione }),
+      });
+      const json = (await risposta.json().catch(() => null)) as {
+        success?: boolean;
+        error?: { message?: string };
+      } | null;
+
+      if (!risposta.ok) {
+        throw new Error(json?.error?.message ?? "Impossibile salvare la commissione.");
+      }
+
+      setSalvati({ commissione_percentuale: true });
+      setRisultato({ testo: "Commissione piattaforma salvata con successo.", ok: true });
     } catch (errore) {
       setRisultato({
         testo: errore instanceof Error ? errore.message : "Errore sconosciuto.",
@@ -270,6 +307,73 @@ export default function ImpostazioniModule({
           </section>
         );
       })}
+
+      {/* Commissione piattaforma — fonte autorevole piattaforma_config */}
+      <section className="overflow-hidden rounded-[2rem] border border-white/70 bg-white shadow-sm">
+        <header className="flex items-center gap-3 border-b border-slate-100 px-6 py-5">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600 ring-1 ring-blue-100">
+            <Percent className="h-5 w-5" aria-hidden />
+          </span>
+          <h2 className="text-lg font-black tracking-tight text-slate-900">
+            Commissione piattaforma
+          </h2>
+        </header>
+
+        <div className="space-y-0 px-6 py-5">
+          <div className="flex items-start justify-between gap-4">
+            <label htmlFor="impostazione-commissione_percentuale" className="min-w-0 flex-1">
+              <span className="block text-sm font-black text-slate-800">
+                Percentuale commissione
+              </span>
+              <span className="mt-0.5 block text-xs leading-5 text-slate-400">
+                Commissione trattenuta dalla piattaforma sugli ordini pagati.
+                Valore consentito: 0%–10% (decimali inclusi, es. 7.5).
+              </span>
+              <div className="mt-3 flex items-center gap-2">
+                <input
+                  id="impostazione-commissione_percentuale"
+                  type="number"
+                  min={0}
+                  max={10}
+                  step={0.1}
+                  inputMode="decimal"
+                  value={commissione}
+                  onChange={(evento) => setCommissione(evento.target.value)}
+                  className="w-40 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-800 transition focus:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                />
+                <span className="text-sm font-semibold text-slate-500">%</span>
+              </div>
+            </label>
+            <span
+              className={`mt-10 inline-flex h-8 min-w-8 shrink-0 items-center justify-center rounded-full px-2 ring-1 ${
+                Boolean(salvati["commissione_percentuale"])
+                  ? "bg-blue-50 text-blue-600 ring-blue-200"
+                  : "bg-slate-50 text-slate-400 ring-slate-200"
+              }`}
+            >
+              {Boolean(inSalvataggio["commissione_percentuale"]) ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+              ) : Boolean(salvati["commissione_percentuale"]) ? (
+                <Check className="h-4 w-4" aria-hidden />
+              ) : (
+                <Save className="h-4 w-4" aria-hidden />
+              )}
+            </span>
+          </div>
+        </div>
+
+        <footer className="flex justify-end border-t border-slate-100 px-6 py-4">
+          <button
+            type="button"
+            onClick={salvaCommissione}
+            disabled={Object.values(inSalvataggio).some(Boolean)}
+            className="btn-cta h-11 px-6 text-sm disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <Save className="h-4 w-4" aria-hidden />
+            Salva
+          </button>
+        </footer>
+      </section>
 
       {/* Nota finale */}
       <p className="rounded-3xl border border-slate-200 bg-slate-50 px-5 py-4 text-xs leading-6 text-slate-500">
