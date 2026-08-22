@@ -23,6 +23,8 @@ type PasswordInputProps = {
   placeholder?: string;
   /** Classi extra (es. altezza h-11): vengono aggiunte a quelle di default. */
   className?: string;
+  /** Classi di focus del campo (tema dell'area); default: focus blu di brand. */
+  focusClassName?: string;
   /** Valore controllato (opzionale): se assente il campo resta non controllato. */
   value?: string;
   /** Handler per il valore controllato (opzionale). */
@@ -36,6 +38,7 @@ export default function PasswordInput({
   autoComplete,
   placeholder,
   className = "",
+  focusClassName = "focus:border-blue-500 focus:ring-4 focus:ring-blue-100",
   value,
   onChange,
 }: PasswordInputProps) {
@@ -62,7 +65,7 @@ export default function PasswordInput({
         placeholder={placeholder}
         value={value}
         onChange={onChange ? (e) => onChange(e.target.value) : undefined}
-        className={`w-full rounded-2xl border border-slate-200 pl-4 pr-12 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100 ${className}`}
+        className={`w-full rounded-2xl border border-slate-200 pl-4 pr-12 text-sm text-slate-900 outline-none transition ${focusClassName} ${className}`}
       />
       <button
         type="button"
