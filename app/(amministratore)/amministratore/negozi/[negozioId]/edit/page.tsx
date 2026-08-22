@@ -43,5 +43,5 @@ export default async function AdminEditNegozioPage({
     );
   }
 
-  return <StoreEditor storeId={negozioId} basePath="/amministratore/negozi" />;
+  return <StoreEditor storeId={negozioId} basePath="/amministratore/negozi" area="admin" />;
 }

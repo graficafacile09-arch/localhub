@@ -39,6 +39,8 @@ type StoreSettings = {
   mostra_orari?: boolean;
   accetta_whatsapp?: boolean;
   in_evidenza?: boolean;
+  /** Commissione per-negozio (0–10, %); null = globale. SOLO admin. */
+  commissione_percentuale?: number | null;
   servizi?: string[];
   colori?: { primary: string; secondary: string; accent: string };
   parole_chiave?: string[];
@@ -57,6 +59,7 @@ const SELECT_FIELDS =
   "orari, " +
   "facebook, instagram, tiktok, youtube, " +
   "attivo, mostra_telefono, mostra_indirizzo, mostra_orari, accetta_whatsapp, in_evidenza, " +
+  "commissione_percentuale, " +
   "servizi, colori, parole_chiave, " +
   "seo_title, seo_description, seo_keywords, " +
   "data, moduli_attivi, version, " +
@@ -170,6 +173,65 @@ export async function PUT(
   }
 
   const payload: Record<string, unknown> = {};
+
+  // ── Commissione piattaforma per-negozio (SOLO Area Amministratore) ────────
+  // Gate SERVER-SIDE (mai fidarsi del client): se il body contiene la
+  // proprietà e l'utente non è l'admin autorizzato → 403. Valori ammessi:
+  // null (= commissione globale), oppure numero finito 0–10 con al massimo
+  // 2 decimali (normalizzati prima del salvataggio). Stringa vuota → null.
+  if ("commissione_percentuale" in body) {
+    if (!(await utenteAdminAutorizzato(user.id, user.email ?? ""))) {
+      return apiError(
+        "FORBIDDEN",
+        "Solo l'amministratore può modificare la commissione piattaforma del negozio.",
+        403
+      );
+    }
+
+    // unknown: il body arriva dal client, il tipo TS (number|null) non è
+    // sufficiente per la validazione — ogni ramo deve essere controllato.
+    const raw: unknown = body.commissione_percentuale;
+    let normalizzata: number | null;
+    if (raw === null) {
+      normalizzata = null;
+    } else if (typeof raw === "string") {
+      const testo = raw.trim();
+      if (testo === "") {
+        normalizzata = null;
+      } else {
+        const n = Number(testo);
+        if (!Number.isFinite(n)) {
+          return apiError(
+            "VALIDATION_ERROR",
+            "Commissione piattaforma non valida: inserire un numero tra 0 e 10.",
+            422
+          );
+        }
+        normalizzata = n;
+      }
+    } else if (typeof raw === "number" && Number.isFinite(raw)) {
+      normalizzata = raw;
+    } else {
+      return apiError(
+        "VALIDATION_ERROR",
+        "Commissione piattaforma non valida: inserire un numero tra 0 e 10.",
+        422
+      );
+    }
+
+    if (normalizzata !== null && (normalizzata < 0 || normalizzata > 10)) {
+      return apiError(
+        "VALIDATION_ERROR",
+        "Commissione piattaforma non valida: consentito 0–10 (decimali fino a 2).",
+        422
+      );
+    }
+    if (normalizzata !== null) {
+      normalizzata = Math.round(normalizzata * 100) / 100;
+    }
+    payload.commissione_percentuale = normalizzata;
+  }
+
   const allowedFields = [
     "nome", "slug", "descrizione", "descrizione_completa", "categoria", "sottocategoria",
     "logo_url", "copertina_url", "galleria",

@@ -41,9 +41,15 @@ type Props = {
   storeId: string;
   /** /merchant (venditore) oppure /amministratore/negozi (admin). */
   basePath?: string;
+  /** Area di sessione: "admin" abilita i controlli riservati (es. commissione). */
+  area?: "admin" | "merchant";
 };
 
-export default function StoreEditor({ storeId, basePath = "/merchant" }: Props) {
+export default function StoreEditor({
+  storeId,
+  basePath = "/merchant",
+  area = "merchant",
+}: Props) {
   const searchParams = useSearchParams();
   const initialStep = searchParams.get("step");
 
@@ -201,6 +207,7 @@ export default function StoreEditor({ storeId, basePath = "/merchant" }: Props) 
               storeId={storeId}
               store={store}
               basePath={basePath}
+              area={area}
               counts={counts}
               onDataChanged={handleDataChanged}
             />

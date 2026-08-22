@@ -194,6 +194,8 @@ export type StepProps = {
   storeId: string;
   store: Negozio;
   basePath: string;
+  /** Area di sessione: "admin" abilita i controlli riservati (es. commissione). */
+  area: "admin" | "merchant";
   counts: StepCounts;
   /** Notifica che i dati sono cambiati (per aggiornare stato/riepilogo). */
   onDataChanged: () => void;

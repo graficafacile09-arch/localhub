@@ -58,6 +58,9 @@ export type Negozio = {
   accetta_whatsapp: boolean;
   in_evidenza: boolean;
 
+  /** Commissione piattaforma specifica del negozio (0–10, %); NULL = globale. */
+  commissione_percentuale: number | null;
+
   seo_title: string | null;
   seo_description: string | null;
   seo_keywords: string[];

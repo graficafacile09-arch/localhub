@@ -30,5 +30,5 @@ export default async function EditPage({
     );
   }
 
-  return <StoreEditor storeId={negozioId} />;
+  return <StoreEditor storeId={negozioId} area="merchant" />;
 }
