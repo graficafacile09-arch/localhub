@@ -49,7 +49,7 @@ export default function HeaderNav() {
       {/* Decorazione: linea orizzontale unica, sottile, con estremità
           sfumate (nessun segmento verticale). Il piccolo indicatore giallo
           vive SOTTO la linea, allineato alla voce attiva. Solo SVG/CSS. */}
-      <div aria-hidden="true" className="relative mx-auto h-[14px] w-full lg:w-[340px]">
+      <div aria-hidden="true" className="relative mx-auto h-[14px] w-full lg:w-[360px]">
         <svg
           viewBox="0 0 400 14"
           preserveAspectRatio="none"
@@ -89,7 +89,7 @@ export default function HeaderNav() {
           voce attiva. */}
       <nav
         aria-label="Navigazione principale"
-        className="relative mx-auto grid w-full max-w-[430px] grid-cols-4 items-center justify-items-center gap-x-2 lg:w-auto lg:gap-x-1"
+        className="relative mx-auto grid w-full max-w-[460px] grid-cols-4 items-center justify-items-center gap-x-2 lg:w-auto lg:gap-x-1.5"
       >
         {voci.map((voce) => {
           const Icona = voce.icona as ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
@@ -100,17 +100,17 @@ export default function HeaderNav() {
               href={voce.href}
               aria-label={voce.label}
               aria-current={voce.attiva ? "page" : undefined}
-              className="group relative flex min-w-0 flex-col items-center gap-0.5 rounded-2xl px-2 py-1.5 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 max-sm:px-1 max-sm:py-1"
+              className="group relative flex min-w-0 flex-col items-center gap-1 rounded-2xl px-2.5 py-2 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 max-sm:px-1.5 max-sm:py-1.5"
             >
               {/* Icona protagonista */}
               <span
-                className={`relative flex h-9 w-9 items-center justify-center rounded-full transition-colors duration-200 max-sm:h-8 max-sm:w-8 ${
+                className={`relative flex h-10 w-10 items-center justify-center rounded-full transition-colors duration-200 max-sm:h-9 max-sm:w-9 ${
                   voce.attiva ? "bg-yellow-100/70" : "group-hover:bg-yellow-100/50"
                 }`}
               >
                 <Icona
                   aria-hidden
-                  className={`h-5 w-5 transition-colors duration-200 max-sm:h-[18px] max-sm:w-[18px] ${
+                  className={`h-6 w-6 transition-colors duration-200 max-sm:h-[22px] max-sm:w-[22px] ${
                     voce.attiva ? "text-yellow-500" : "text-blue-900 group-hover:text-yellow-500"
                   }`}
                 />
@@ -124,9 +124,9 @@ export default function HeaderNav() {
                 )}
               </span>
 
-              {/* Testo piccolo e leggero */}
+              {/* Testo più grande e in grassetto */}
               <span
-                className={`whitespace-nowrap text-[11px] font-semibold leading-none transition-colors duration-200 sm:text-xs ${
+                className={`whitespace-nowrap text-xs font-bold leading-none tracking-tight transition-colors duration-200 sm:text-sm ${
                   voce.attiva ? "text-yellow-500" : "text-blue-900 group-hover:text-yellow-500"
                 }`}
               >
@@ -136,7 +136,7 @@ export default function HeaderNav() {
               {/* Sottile linea gialla sotto il testo (stato attivo) */}
               <span
                 aria-hidden
-                className={`mt-1 h-0.5 w-6 rounded-full bg-yellow-400 transition-opacity duration-200 max-sm:w-4 ${
+                className={`mt-1 h-1 w-6 rounded-full bg-yellow-400 transition-opacity duration-200 max-sm:w-5 ${
                   voce.attiva ? "opacity-100" : "opacity-0"
                 }`}
               />
