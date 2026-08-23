@@ -9,9 +9,10 @@ import { getDatiAccount } from "./get-account-data";
  * né su mobile (Home, Negozi, Categorie, Carrello, Account).
  * L'accesso amministratore avviene esclusivamente dall'ingresso dedicato /admin.
  *
- * - Desktop: logo a sinistra, navigazione al centro/destra nella stessa riga.
- * - Mobile: logo + Account nella prima riga; sotto, la riga delle quattro voci
- *   (icona sopra + testo sotto) compatta e responsive, senza overflow.
+ * - Riga superiore (bianca): logo a sinistra, Account a destra.
+ * - Fascia blu FULL-WIDTH sotto l'header: le quattro voci (icona sopra +
+ *   testo sotto), rettangolo dritto senza angoli arrotondati, separata
+ *   visivamente dall'header superiore.
  *
  * Il menu Account riflette l'AREA ATTIVA della sessione (cookie httpOnly
  * lh_area): cliente, venditore o amministratore.
@@ -39,13 +40,18 @@ export default async function Header() {
           </div>
         </div>
 
-        {/* NAV — visibile anche su mobile (nessun hamburger), compatta e senza overflow */}
-        <HeaderNav />
-
-        {/* Account: su desktop vive nella riga di navigazione; su mobile
-            nella riga del logo (sopra). Mai duplicato. */}
+        {/* Account: su desktop vive nella riga del logo (a destra). */}
         <div className="hidden lg:block">
           <AccountMenu account={account} />
+        </div>
+      </div>
+
+      {/* FASCIA BLU FULL-WIDTH — navigazione pubblica sotto l'header.
+          Rettangolo dritto (nessun angolo arrotondato), da bordo a bordo,
+          separata visivamente dall'header superiore. */}
+      <div className="w-full border-t border-white/10 bg-brand">
+        <div className="mx-auto w-full max-w-7xl px-4 py-2.5 md:px-6 sm:py-3 lg:py-3.5">
+          <HeaderNav />
         </div>
       </div>
     </header>
