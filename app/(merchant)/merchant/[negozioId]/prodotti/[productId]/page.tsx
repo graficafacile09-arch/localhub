@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ChevronRight, Pencil } from "lucide-react";
 import MerchantEmptyState from "@/components/merchant/MerchantEmptyState";
 import MerchantProductForm from "@/components/merchant/MerchantProductForm";
+import ProductTitleEditTarget from "@/components/merchant/ProductTitleEditTarget";
 import { requireCurrentUser } from "@/lib/auth/session";
 import { getMerchantProductForStore, getMerchantStoreForUser } from "@/lib/merchant/data";
 import { contaInteressati } from "@/lib/prodotti-avvisami";
@@ -74,9 +75,10 @@ export default async function MerchantEditProductPage({
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
               Modifica prodotto
             </p>
-            <h1 className="mt-2 max-w-full break-words text-xl font-black tracking-tight text-slate-900 line-clamp-2">
-              {product.nome}
-            </h1>
+            <ProductTitleEditTarget
+              nome={product.nome}
+              className="mt-2 max-w-full break-words text-xl font-black tracking-tight text-slate-900 line-clamp-2"
+            />
             <p className="mt-1 text-sm text-slate-500">
               {product.categoria ?? "Categoria"} · {product.attivo ? "Attivo" : "Bozza"}
             </p>

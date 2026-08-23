@@ -205,11 +205,18 @@ export default function ProductGalleryManager({ negozioId, productId }: Props) {
           ))}
         </div>
       ) : (
-        <div className="rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center">
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}
+          title="Aggiungi foto alla galleria"
+          aria-label="Aggiungi foto alla galleria"
+          className="w-full cursor-pointer rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-center transition hover:border-blue-300 hover:bg-blue-50/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 disabled:opacity-50"
+        >
           <p className="text-xs font-medium text-slate-500">
             Nessuna immagine in galleria. Aggiungi foto extra del prodotto.
           </p>
-        </div>
+        </button>
       )}
 
       <input

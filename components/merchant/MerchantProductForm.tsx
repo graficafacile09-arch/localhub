@@ -336,21 +336,33 @@ export default function MerchantProductForm({
       {/* Anteprima immagine + upload */}
       <div className="flex flex-col items-center gap-3">
         {newImageDataUrl || initialValues.immaginePrincipale ? (
-          <div className="relative">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            title="Sostituisci foto prodotto"
+            aria-label="Sostituisci foto prodotto"
+            className="group relative cursor-pointer rounded-2xl border-0 bg-transparent p-0 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2"
+          >
             <img
               src={newImageDataUrl || initialValues.immaginePrincipale}
-              alt="Anteprima"
-              className="h-40 w-40 rounded-2xl object-cover shadow-md"
+              alt=""
+              className="h-40 w-40 rounded-2xl object-cover shadow-md transition group-hover:opacity-90"
             />
-            <div className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-white shadow-md">
+            <span className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-white shadow-md">
               <Camera className="h-3 w-3 text-slate-600" />
-            </div>
-          </div>
+            </span>
+          </button>
         ) : (
-          <div className="flex h-32 w-32 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 text-slate-400 transition hover:border-blue-300 hover:bg-blue-50/50">
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            title="Aggiungi foto prodotto"
+            aria-label="Aggiungi foto prodotto"
+            className="flex h-32 w-32 cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 text-slate-400 transition hover:border-blue-300 hover:bg-blue-50/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2"
+          >
             <Camera className="h-8 w-8" />
             <span className="text-[10px] font-medium">Nessuna foto</span>
-          </div>
+          </button>
         )}
         <input
           ref={fileInputRef}
