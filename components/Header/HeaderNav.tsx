@@ -46,7 +46,7 @@ export default function HeaderNav() {
           continua, senza trasformare le voci in box. */}
       <nav
         aria-label="Navigazione principale"
-        className="relative mx-auto grid w-full max-w-[440px] grid-cols-4 items-center justify-items-center border-y border-slate-200 lg:w-auto lg:gap-1"
+        className="relative mx-auto grid w-full max-w-[440px] grid-cols-4 items-center justify-items-center border-y border-yellow-400 lg:w-auto lg:gap-1"
       >
         {/* Separatori verticali sottili tra le voci (molto discreti, danno
             struttura senza essere protagonisti). */}
@@ -100,7 +100,7 @@ export default function HeaderNav() {
                   il testo (blu, come nel mockup) */}
               <span
                 aria-hidden
-                className={`mt-1 h-[3px] w-8 rounded-full transition-opacity duration-200 max-sm:w-6 ${
+                className={`mt-1 h-1 w-8 rounded-full transition-opacity duration-200 max-sm:w-6 ${
                   voce.attiva ? "bg-brand opacity-100" : "bg-transparent opacity-0"
                 }`}
               />

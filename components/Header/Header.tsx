@@ -20,8 +20,8 @@ export default async function Header() {
   const account = await getDatiAccount();
 
   return (
-    <header className="border-b border-slate-200 bg-white shadow-sm">
-      <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 py-4 md:px-6 lg:flex-row lg:gap-4">
+    <header className="border-b border-slate-200 bg-[#FFF9E6] shadow-sm">
+      <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 py-3 md:px-6 lg:flex-row lg:gap-3">
         {/* LOGO + azioni (carrello, account) — su mobile in riga con il logo */}
         <div className="flex w-full items-center justify-between gap-2 lg:w-auto">
           <Link href="/" aria-label="LocalHub — Home">
