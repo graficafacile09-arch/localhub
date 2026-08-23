@@ -32,7 +32,7 @@ export default async function Header() {
               width={170}
               height={55}
               priority
-              className="h-auto w-[110px] sm:w-[160px] lg:w-[220px]"
+              className="h-auto w-[130px] sm:w-[160px] lg:w-[220px]"
             />
           </Link>
           <WeatherWidget />
@@ -44,11 +44,7 @@ export default async function Header() {
         {/* NAV — visibile anche su mobile (nessun hamburger), compatta e senza overflow */}
         <HeaderNav />
 
-        {/* Account: su desktop vive nella riga di navigazione; su mobile
-            nella riga del logo (sopra). Mai duplicato. */}
-        <div className="hidden lg:block">
-          <AccountMenu account={account} />
-        </div>
+
       </div>
     </header>
   );
