@@ -1,12 +1,22 @@
 import Header from "@/components/Header/Header";
 import Link from "next/link";
-import { Search } from "lucide-react";
+import {
+  ArrowRight,
+  LayoutGrid,
+  MapPin,
+  Package,
+  Search,
+  SearchCheck,
+  Store,
+  Tag,
+} from "lucide-react";
 import HomeAssistantButton from "@/components/assistant/HomeAssistantButton";
 import { getCategorieConNegozi, getNegoziInEvidenza, getProdottiInEvidenza } from "@/lib/negozi";
 import { getNegozioCardImmagine } from "@/lib/negozi-card-immagini";
 import { chiavePreferito, getStatoPreferitiPerPagina } from "@/lib/cliente/favorites";
 import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
 import CategoryTile, { TutteCategorieTile } from "@/components/home/CategoryTile";
+import ProductCard from "@/components/home/ProductCard";
 
 // La homepage deve riflettere in tempo reale i negozi in evidenza flaggati
 // dal merchant (il toggle "In evidenza" della dashboard), quindi non viene
@@ -15,6 +25,42 @@ export const dynamic = "force-dynamic";
 
 // Numero di categorie mostrate in homepage (le altre sono in /categorie).
 const NUMERO_CATEGORIE_HOME = 8;
+
+/**
+ * Intestazione di sezione coerente (label + titolo + eventuale link):
+ * un solo pattern visivo per tutte le sezioni della homepage.
+ */
+function SezioneHeader({
+  label,
+  titolo,
+  href,
+  linkLabel,
+}: {
+  label: string;
+  titolo: string;
+  href?: string;
+  linkLabel?: string;
+}) {
+  return (
+    <div className="mb-6 flex items-end justify-between gap-4">
+      <div>
+        <p className="section-label">{label}</p>
+        <h2 className="mt-1 text-2xl font-black tracking-tight text-slate-900 md:text-3xl">
+          {titolo}
+        </h2>
+      </div>
+      {href && linkLabel && (
+        <Link
+          href={href}
+          className="inline-flex shrink-0 items-center gap-1 text-sm font-bold text-blue-700 transition hover:text-blue-900 hover:underline"
+        >
+          {linkLabel}
+          <ArrowRight className="h-4 w-4" aria-hidden />
+        </Link>
+      )}
+    </div>
+  );
+}
 
 export default async function Home() {
   const [negozi, prodottiInEvidenza, categorieConNegozi, statoPreferiti] = await Promise.all([
@@ -29,12 +75,17 @@ export default async function Home() {
   // secondo ordinamento qui, lo stesso elenco ordinato vale per /categorie.
   const categorieOrdinate = categorieConNegozi;
 
+  // Statistiche reali, calcolate dai dati già caricati (nessuna query extra).
+  const totaleNegozi = categorieOrdinate.reduce((somma, { count }) => somma + count, 0);
+
   return (
     <main className="min-h-screen bg-[#eef3f8]">
       <Header />
 
-      {/* HERO FOTOGRAFICA — stessa altezza della vecchia fascia blu */}
-      <section className="relative overflow-hidden rounded-b-[2rem] bg-slate-900 px-4 py-12 text-white shadow-lg shadow-slate-900/10 sm:rounded-b-[2.5rem] md:py-16">
+      {/* ═══════════════════════════════════════════════════════════════════
+          HERO — fotografica, messaggio immediato, ricerca + AI
+          ═══════════════════════════════════════════════════════════════════ */}
+      <section className="relative overflow-hidden rounded-b-[2rem] bg-slate-900 shadow-lg shadow-slate-900/10 sm:rounded-b-[2.5rem]">
         {/* La foto copre tutta la HERO e non ne determina l'altezza. */}
         <img
           src="/hero-via-roma-castrovillari-1400x1050.jpg"
@@ -47,20 +98,26 @@ export default async function Home() {
         {/* Gradiente leggero solo nella zona del testo: la parte bassa resta luminosa. */}
         <div
           aria-hidden="true"
-          className="absolute inset-0 bg-gradient-to-b from-slate-950/55 via-slate-950/20 to-transparent"
+          className="absolute inset-0 bg-gradient-to-b from-slate-950/60 via-slate-950/25 to-transparent"
         />
 
-        <div className="relative z-10 mx-auto max-w-4xl text-left">
-          <h1 className="relative -top-6 text-2xl font-black tracking-tight drop-shadow-lg md:text-4xl">
+        <div className="relative z-10 mx-auto max-w-5xl px-4 py-14 text-left md:px-6 md:py-20">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/10 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.14em] text-white backdrop-blur-sm">
+            <MapPin className="h-3.5 w-3.5 text-yellow-300" aria-hidden />
+            La vetrina del commercio di Castrovillari
+          </span>
+
+          <h1 className="mt-4 max-w-2xl text-3xl font-black leading-tight tracking-tight text-white drop-shadow-lg md:text-5xl">
             Tutto quello che cerchi... <span className="text-yellow-300">è già</span> nella tua città.
           </h1>
 
-          <p className="mt-3 max-w-xl text-sm text-white drop-shadow-md md:text-base">
-            Trova negozi, professionisti, offerte e servizi locali in pochi secondi.
+          <p className="mt-3 max-w-xl text-sm text-white/90 drop-shadow-md md:text-lg">
+            Negozi, professionisti, offerte e servizi locali: cercali, confrontali e acquista
+            restando nella tua città.
           </p>
 
           {/* Motore di ricerca invariato: stessa action GET e stesso parametro q. */}
-          <div className="mx-auto mt-6 flex max-w-xl items-center gap-2 sm:gap-3 md:mx-0">
+          <div className="mt-7 flex max-w-xl items-center gap-2 sm:gap-3">
             <form action="/ricerca" method="GET" className="min-w-0 flex-1">
               <div className="flex items-center rounded-full bg-white/95 p-1.5 shadow-lg shadow-black/25 transition focus-within:ring-2 focus-within:ring-yellow-300">
                 <Search className="ml-3 h-5 w-5 shrink-0 text-slate-400 sm:ml-4" />
@@ -90,20 +147,91 @@ export default async function Home() {
             {/* Assistente AI — accessibile SOLO dalla homepage */}
             <HomeAssistantButton />
           </div>
+
+          {/* Statistiche reali (calcolate dai dati della pagina) */}
+          {totaleNegozi > 0 && (
+            <dl className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3 text-white">
+              <div className="flex items-center gap-2">
+                <Store className="h-4 w-4 text-yellow-300" aria-hidden />
+                <dt className="sr-only">Negozi e servizi</dt>
+                <dd className="text-sm font-bold drop-shadow">
+                  {totaleNegozi} negozi e servizi
+                </dd>
+              </div>
+              <div className="flex items-center gap-2">
+                <LayoutGrid className="h-4 w-4 text-yellow-300" aria-hidden />
+                <dt className="sr-only">Categorie</dt>
+                <dd className="text-sm font-bold drop-shadow">
+                  {categorieOrdinate.length} categorie
+                </dd>
+              </div>
+              {prodottiInEvidenza.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <Package className="h-4 w-4 text-yellow-300" aria-hidden />
+                  <dt className="sr-only">Prodotti in evidenza</dt>
+                  <dd className="text-sm font-bold drop-shadow">
+                    {prodottiInEvidenza.length} prodotti in evidenza
+                  </dd>
+                </div>
+              )}
+            </dl>
+          )}
         </div>
       </section>
 
-      {/* CATEGORIE */}
-      <section className="mx-auto max-w-4xl px-4 pb-10 pt-6 md:px-6 md:pt-8">
-        <div className="mb-6 flex items-center gap-3">
-          <span className="h-px flex-1 bg-slate-300" />
-          <h2 className="text-sm font-black uppercase tracking-[0.18em] text-blue-900">
-            Categorie
-          </h2>
-          <span className="h-px flex-1 bg-slate-300" />
+      {/* ═══════════════════════════════════════════════════════════════════
+          VALUE STRIP — perché LocalHub (3 promesse, nessuna duplicazione)
+          ═══════════════════════════════════════════════════════════════════ */}
+      <section className="border-b border-slate-100 bg-white">
+        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-8 sm:grid-cols-3 md:px-6 md:py-10">
+          <div className="flex items-start gap-3.5">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-yellow-400 text-blue-900 shadow-[0_4px_14px_-4px_rgba(202,138,4,0.45)]">
+              <Store className="h-5 w-5" aria-hidden />
+            </span>
+            <div>
+              <h2 className="text-sm font-black text-slate-900">Sostieni il commercio locale</h2>
+              <p className="mt-1 text-[13px] leading-5 text-slate-500">
+                Ogni acquisto resta nella tua città e sostiene chi la fa vivere.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3.5">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-yellow-400 text-blue-900 shadow-[0_4px_14px_-4px_rgba(202,138,4,0.45)]">
+              <SearchCheck className="h-5 w-5" aria-hidden />
+            </span>
+            <div>
+              <h2 className="text-sm font-black text-slate-900">Trova tutto in un unico posto</h2>
+              <p className="mt-1 text-[13px] leading-5 text-slate-500">
+                Negozi, professionisti, prodotti e servizi: una ricerca, zero code.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3.5">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-yellow-400 text-blue-900 shadow-[0_4px_14px_-4px_rgba(202,138,4,0.45)]">
+              <Tag className="h-5 w-5" aria-hidden />
+            </span>
+            <div>
+              <h2 className="text-sm font-black text-slate-900">Offerte dal territorio</h2>
+              <p className="mt-1 text-[13px] leading-5 text-slate-500">
+                Promozioni e novità dai negozi vicini, sempre aggiornate.
+              </p>
+            </div>
+          </div>
         </div>
+      </section>
 
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 md:grid-cols-5 md:gap-3 lg:grid-cols-6">
+      {/* ═══════════════════════════════════════════════════════════════════
+          CATEGORIE
+          ═══════════════════════════════════════════════════════════════════ */}
+      <section className="mx-auto max-w-7xl px-4 py-12 md:px-6 md:py-14">
+        <SezioneHeader
+          label="Esplora"
+          titolo="Categorie"
+          href="/categorie"
+          linkLabel="Tutte le categorie"
+        />
+
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 md:gap-4 lg:grid-cols-5">
           {categorieOrdinate.slice(0, NUMERO_CATEGORIE_HOME).map(({ categoria, count }, index) => (
             <CategoryTile
               key={categoria.id}
@@ -116,82 +244,228 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ⭐ NEGOZI IN EVIDENZA (solo se ce ne sono) */}
+      {/* ═══════════════════════════════════════════════════════════════════
+          NEGOZI IN EVIDENZA (solo se ce ne sono)
+          ═══════════════════════════════════════════════════════════════════ */}
       {negozi.length > 0 && (
-        <section className="bg-white py-12 border-t border-slate-100">
-          <div className="max-w-7xl mx-auto px-4 md:px-6">
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-2xl font-bold text-slate-900">
-                ⭐ Negozi in evidenza
-              </h2>
-              <Link
-                href="/negozi?featured=1"
-                className="text-blue-600 font-semibold text-sm hover:underline"
-              >
-                Vedi tutti &rarr;
-              </Link>
-            </div>
+        <section className="border-y border-slate-100 bg-white py-12 md:py-14">
+          <div className="mx-auto max-w-7xl px-4 md:px-6">
+            <SezioneHeader
+              label="Scopri"
+              titolo="Negozi in evidenza"
+              href="/negozi?featured=1"
+              linkLabel="Vedi tutti"
+            />
 
-          <div className="grid md:grid-cols-3 gap-6">
-            {negozi.map((negozio) => {
-              const imageUrl = getNegozioCardImmagine({
-                logo_url: negozio.logo_url,
-                categoria: negozio.categoria,
-              });
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {negozi.map((negozio) => {
+                const imageUrl = getNegozioCardImmagine({
+                  logo_url: negozio.logo_url,
+                  categoria: negozio.categoria,
+                });
 
-              return (
-                <div
-                  key={negozio.id}
-                  className="relative flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md"
-                >
-                  <Link
-                    href={`/negozio/${negozio.slug}`}
-                    aria-label={`Vai al negozio ${negozio.nome}`}
-                    className="group flex flex-1 flex-col justify-between"
+                return (
+                  <div
+                    key={negozio.id}
+                    className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md"
                   >
-                    <div>
-                      <div className="relative w-full h-48 bg-slate-100 overflow-hidden">
-                        <div
-                          role="img"
-                          aria-label={negozio.nome}
-                          className="absolute inset-0 bg-cover bg-center transition duration-300 group-hover:scale-105"
-                          style={{ backgroundImage: `url(${imageUrl})` }}
-                        />
+                    <Link
+                      href={`/negozio/${negozio.slug}`}
+                      aria-label={`Vai al negozio ${negozio.nome}`}
+                      className="flex flex-1 flex-col justify-between"
+                    >
+                      <div>
+                        <div className="relative h-48 w-full overflow-hidden bg-slate-100">
+                          <div
+                            role="img"
+                            aria-label={negozio.nome}
+                            className="absolute inset-0 bg-cover bg-center transition duration-300 group-hover:scale-105"
+                            style={{ backgroundImage: `url(${imageUrl})` }}
+                          />
+                          {negozio.categoria && (
+                            <span className="absolute left-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-blue-900 shadow-sm">
+                              {negozio.categoria}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="p-5">
+                          <h3 className="text-xl font-bold text-slate-900 transition group-hover:text-blue-700">
+                            {negozio.nome}
+                          </h3>
+
+                          <p className="mt-2 text-sm text-slate-600 line-clamp-2">
+                            {negozio.descrizione || "Scopri le migliori offerte e prodotti selezionati."}
+                          </p>
+                        </div>
                       </div>
 
-                      <div className="p-5">
-                        <h3 className="text-xl font-bold text-slate-900 transition group-hover:text-blue-700">
-                          {negozio.nome}
-                        </h3>
-
-                        <p className="mt-2 text-sm text-slate-600 line-clamp-2">
-                          {negozio.descrizione || "Scopri le migliori offerte e prodotti selezionati."}
-                        </p>
+                      <div className="p-5 pt-0">
+                        <span className="flex w-full items-center justify-center gap-2 rounded-xl bg-yellow-400 py-2.5 text-center text-sm font-bold text-blue-900 shadow-sm transition group-hover:bg-yellow-300">
+                          Scopri il negozio
+                          <ArrowRight className="h-4 w-4" aria-hidden />
+                        </span>
                       </div>
-                    </div>
+                    </Link>
 
-                    <div className="p-5 pt-0">
-                      <span className="block w-full rounded-xl bg-yellow-400 py-2.5 text-center text-sm font-bold text-blue-900 shadow-sm transition group-hover:bg-yellow-300">
-                        Scopri
-                      </span>
-                    </div>
-                  </Link>
-
-                  <FavoritoButton
-                    tipo="negozio"
-                    riferimentoId={negozio.id}
-                    attivo={statoPreferiti.chiavi.has(chiavePreferito("negozio", negozio.id))}
-                    autenticato={statoPreferiti.autenticato}
-                    className="absolute right-2.5 top-2.5 z-10"
-                    label={negozio.nome}
-                  />
-                </div>
-              );
-            })}
-          </div>
+                    <FavoritoButton
+                      tipo="negozio"
+                      riferimentoId={negozio.id}
+                      attivo={statoPreferiti.chiavi.has(chiavePreferito("negozio", negozio.id))}
+                      autenticato={statoPreferiti.autenticato}
+                      className="absolute right-2.5 top-2.5 z-10"
+                      label={negozio.nome}
+                    />
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </section>
       )}
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          PRODOTTI IN EVIDENZA (solo se ce ne sono)
+          ═══════════════════════════════════════════════════════════════════ */}
+      {prodottiInEvidenza.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 py-12 md:px-6 md:py-14">
+          <SezioneHeader
+            label="Novità"
+            titolo="Prodotti in evidenza"
+            href="/negozi"
+            linkLabel="Esplora i negozi"
+          />
+
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-5 lg:grid-cols-4">
+            {prodottiInEvidenza.map((prodotto) => {
+              const prodottoId = String(prodotto.id);
+              return (
+                <ProductCard
+                  key={prodottoId}
+                  id={prodottoId}
+                  slug={(prodotto.slug as string) ?? prodottoId}
+                  nome={prodotto.nome as string}
+                  prezzo={prodotto.prezzo as number}
+                  categoria={(prodotto.categoria as string) ?? null}
+                  negozio_nome={(prodotto.negozio_nome as string) ?? ""}
+                  negozio_id={String(prodotto.negozio_id ?? "")}
+                  immagine_principale={(prodotto.immagine_principale as string) ?? null}
+                  haVarianti={Boolean(prodotto.ha_varianti)}
+                  preferitoAttivo={statoPreferiti.chiavi.has(chiavePreferito("prodotto", prodottoId))}
+                  autenticato={statoPreferiti.autenticato}
+                />
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          TERRITORIO — il valore del commercio locale (banda blu)
+          ═══════════════════════════════════════════════════════════════════ */}
+      <section className="bg-gradient-to-br from-blue-800 via-blue-900 to-blue-950 text-white">
+        <div className="mx-auto max-w-7xl px-4 py-16 text-center md:px-6 md:py-20">
+          <p className="section-label !text-blue-200">Per i commercianti</p>
+          <h2 className="mx-auto mt-3 max-w-2xl text-3xl font-black leading-tight tracking-tight md:text-4xl">
+            Metti in vetrina la tua attività
+          </h2>
+          <p className="mx-auto mt-4 max-w-xl text-sm leading-6 text-blue-100 md:text-base">
+            Un negozio digitale con vetrina, catalogo prodotti, ordini e pagamenti: tutto in un
+            unico posto, pensato per chi fa impresa nella propria città.
+          </p>
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+            <Link
+              href="/login?area=merchant"
+              className="inline-flex items-center gap-2 rounded-xl bg-yellow-400 px-6 py-3 text-sm font-black text-blue-900 shadow-[0_4px_14px_-4px_rgba(202,138,4,0.45)] transition hover:bg-yellow-300 hover:shadow-[0_8px_22px_-6px_rgba(202,138,4,0.55)] active:scale-95"
+            >
+              <Store className="h-4 w-4" aria-hidden />
+              Apri il tuo negozio
+            </Link>
+            <Link
+              href="/negozi"
+              className="inline-flex items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-6 py-3 text-sm font-bold text-white backdrop-blur-sm transition hover:bg-white/20 active:scale-95"
+            >
+              Esplora i negozi
+              <ArrowRight className="h-4 w-4" aria-hidden />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          FOOTER HOMEPAGE — ordinato e non ridondante
+          (il footer globale con la riga legale resta nel layout root)
+          ═══════════════════════════════════════════════════════════════════ */}
+      <footer className="bg-slate-950 text-slate-300">
+        <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:grid-cols-2 md:px-6 lg:grid-cols-4">
+          <div>
+            <p className="text-lg font-black tracking-tight text-white">
+              Local<span className="text-yellow-400">Hub</span>
+            </p>
+            <p className="mt-2 max-w-xs text-[13px] leading-5 text-slate-400">
+              La vetrina digitale del commercio di Castrovillari: negozi, professionisti, prodotti
+              e servizi della tua città in un unico posto.
+            </p>
+          </div>
+
+          <div>
+            <h3 className="text-xs font-black uppercase tracking-[0.14em] text-slate-500">
+              Esplora
+            </h3>
+            <ul className="mt-3 space-y-2.5 text-sm">
+              <li>
+                <Link href="/" className="transition hover:text-yellow-300">Home</Link>
+              </li>
+              <li>
+                <Link href="/negozi" className="transition hover:text-yellow-300">Negozi</Link>
+              </li>
+              <li>
+                <Link href="/categorie" className="transition hover:text-yellow-300">Categorie</Link>
+              </li>
+              <li>
+                <Link href="/negozi?featured=1" className="transition hover:text-yellow-300">
+                  Negozi in evidenza
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="text-xs font-black uppercase tracking-[0.14em] text-slate-500">
+              Le tue aree
+            </h3>
+            <ul className="mt-3 space-y-2.5 text-sm">
+              <li>
+                <Link href="/login?area=cliente" className="transition hover:text-yellow-300">
+                  Area Clienti
+                </Link>
+              </li>
+              <li>
+                <Link href="/login?area=merchant" className="transition hover:text-yellow-300">
+                  Area Venditore
+                </Link>
+              </li>
+              <li>
+                <Link href="/login?area=admin" className="transition hover:text-yellow-300">
+                  Amministrazione
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="text-xs font-black uppercase tracking-[0.14em] text-slate-500">
+              Assistente
+            </h3>
+            <div className="mt-3 flex items-center gap-3">
+              <HomeAssistantButton className="h-10 w-10" />
+              <p className="text-[13px] leading-5 text-slate-400">
+                Chiedi tutto quello che vuoi: ti aiutiamo a trovare ciò che cerchi.
+              </p>
+            </div>
+          </div>
+        </div>
+      </footer>
     </main>
   );
 }
