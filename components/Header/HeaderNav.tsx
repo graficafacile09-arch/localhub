@@ -51,23 +51,23 @@ export default function HeaderNav() {
           la posizione del gancio giallo allineata alla voce attiva. */}
       <svg
         aria-hidden="true"
-        viewBox="0 0 400 6"
+        viewBox="0 0 400 7"
         preserveAspectRatio="none"
-        className="mx-auto block h-[5px] w-full lg:w-[340px]"
+        className="mx-auto block h-[7px] w-full lg:w-[340px]"
       >
         <line
           x1="4"
-          y1="3"
+          y1="3.5"
           x2="396"
-          y2="3"
+          y2="3.5"
           stroke="url(#lh-nav-line)"
-          strokeWidth="1"
+          strokeWidth="1.75"
         />
         <defs>
           <linearGradient id="lh-nav-line" x1="0" y1="0" x2="1" y2="0">
             <stop offset="0%" stopColor="transparent" />
-            <stop offset="18%" stopColor="#c7d2e2" stopOpacity="0.9" />
-            <stop offset="82%" stopColor="#c7d2e2" stopOpacity="0.9" />
+            <stop offset="16%" stopColor="#8fa3bd" stopOpacity="0.95" />
+            <stop offset="84%" stopColor="#8fa3bd" stopOpacity="0.95" />
             <stop offset="100%" stopColor="transparent" />
           </linearGradient>
         </defs>
@@ -97,7 +97,7 @@ export default function HeaderNav() {
               {voce.attiva && indiceAttivo === indice && (
                 <span
                   aria-hidden
-                  className="absolute -top-[7px] left-1/2 h-[7px] w-[7px] -translate-x-1/2 rounded-full bg-yellow-400 shadow-[0_0_6px_rgba(250,204,21,0.45)]"
+                  className="absolute -top-[8px] left-1/2 h-[9px] w-[9px] -translate-x-1/2 rounded-full bg-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.55)]"
                 />
               )}
 
