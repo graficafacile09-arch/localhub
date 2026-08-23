@@ -46,7 +46,7 @@ export default function HeaderNav() {
           continua, senza trasformare le voci in box. */}
       <nav
         aria-label="Navigazione principale"
-        className="relative mx-auto grid w-full max-w-[440px] grid-cols-4 items-center justify-items-center border-y border-yellow-400 lg:w-auto lg:gap-1"
+        className="relative mx-auto grid w-full max-w-[440px] grid-cols-4 items-center justify-items-center border-y border-slate-200 bg-white lg:w-auto lg:gap-1"
       >
         {/* Separatori verticali sottili tra le voci (molto discreti, danno
             struttura senza essere protagonisti). */}
