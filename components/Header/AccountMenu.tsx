@@ -72,8 +72,8 @@ export default function AccountMenu({ account }: { account: DatiAccount | null }
 
   // ── Non loggato: pulsante Accedi con menu a tendina ─────────────────────
   // Il menu offre ESCLUSIVAMENTE l'ingresso Cliente e Venditore (flussi di
-  // login esistenti). L'accesso Amministratore resta solo dallo scudetto
-  // nella barra di navigazione.
+  // login esistenti). L'accesso Amministratore avviene dall'ingresso
+  // dedicato /admin.
   if (!account) {
     return (
       <div className="relative" ref={menuRef}>
