@@ -8,10 +8,10 @@ import { stileCategoria } from "@/lib/categorie-icone";
 // lib/categorie-icone.ts (stileCategoria(slug)): nessun elenco icone
 // duplicato in questo componente.
 const CARD_CLASS =
-  "group flex min-h-[108px] flex-col items-center justify-center gap-2 rounded-2xl border border-slate-200/80 bg-white px-2 py-3.5 text-center shadow-[0_2px_8px_rgba(15,23,42,0.04)] transition duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-[0_10px_24px_-14px_rgba(37,99,235,0.55)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:ring-offset-2 sm:min-h-[112px] md:min-h-[122px] md:px-3 md:py-4";
+  "group flex min-h-[108px] flex-col items-center justify-center gap-3 rounded-2xl border-0 bg-white px-3 py-5 text-center shadow-[0_2px_10px_rgba(0,0,0,0.06)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.10)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:ring-offset-2 sm:min-h-[112px] md:min-h-[122px] md:px-4 md:py-6";
 
 const NOME_CLASS =
-  "block break-words text-xs font-bold leading-tight text-slate-800 transition-colors group-hover:text-blue-700 sm:text-sm";
+  "block break-words text-sm font-medium leading-tight text-slate-700 transition-colors group-hover:text-slate-900";
 
 export default function CategoryTile({
   categoria,
@@ -31,18 +31,19 @@ export default function CategoryTile({
       href={`/categorie/${categoria.slug}`}
       className={CARD_CLASS}
     >
-      <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-yellow-400 ring-1 ring-yellow-300 transition duration-200 group-hover:scale-105 group-hover:bg-yellow-300 group-hover:ring-yellow-200 md:h-14 md:w-14">
+      <span className="flex h-14 w-14 items-center justify-center transition duration-200 group-hover:scale-105 md:h-16 md:w-16">
         {SecondaIcona ? (
           <span
-            className="flex items-center gap-[2px] text-blue-900 group-hover:text-blue-950"
+            className="flex items-center gap-[3px] text-yellow-500 group-hover:text-yellow-600"
             aria-hidden
           >
-            <Icona className="h-[18px] w-[18px] md:h-5 md:w-5" />
-            <SecondaIcona className="h-[18px] w-[18px] md:h-5 md:w-5" />
+            <Icona className="h-6 w-6 md:h-7 md:w-7" strokeWidth={1.75} />
+            <SecondaIcona className="h-6 w-6 md:h-7 md:w-7" strokeWidth={1.75} />
           </span>
         ) : (
           <Icona
-            className="h-5 w-5 text-blue-900 group-hover:text-blue-950 md:h-[22px] md:w-[22px]"
+            className="h-7 w-7 text-yellow-500 group-hover:text-yellow-600 md:h-8 md:w-8"
+            strokeWidth={1.75}
             aria-hidden
           />
         )}
@@ -62,9 +63,10 @@ export default function CategoryTile({
 export function TutteCategorieTile({ index = 0 }: { index?: number }) {
   return (
     <Link href="/categorie" className={CARD_CLASS}>
-      <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-yellow-400 ring-1 ring-yellow-300 transition duration-200 group-hover:scale-105 group-hover:bg-yellow-300 group-hover:ring-yellow-200 md:h-14 md:w-14">
+      <span className="flex h-14 w-14 items-center justify-center transition duration-200 group-hover:scale-105 md:h-16 md:w-16">
         <LayoutGrid
-          className="h-5 w-5 text-blue-900 group-hover:text-blue-950 md:h-[22px] md:w-[22px]"
+          className="h-7 w-7 text-yellow-500 group-hover:text-yellow-600 md:h-8 md:w-8"
+          strokeWidth={1.75}
           aria-hidden
         />
       </span>
