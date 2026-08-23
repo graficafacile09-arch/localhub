@@ -1,18 +1,17 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ShieldCheck } from "lucide-react";
 import AccountMenu from "./AccountMenu";
 import CartBadge from "../carrello/CartBadge";
+import HeaderNav from "./HeaderNav";
 import { getDatiAccount } from "./get-account-data";
 
 /**
- * Header pubblico: navigazione SEMPRE visibile, senza hamburger né su desktop
- * né su mobile (Home, Negozi, Categorie, Amministrazione, Carrello, Account).
+ * Header pubblico — barra marketplace blu profonda, pulita e sempre leggibile.
  *
- * - Desktop: logo a sinistra, tasti di navigazione a destra nella stessa riga.
- * - Mobile: logo + Carrello + Account nella prima riga; sotto, la riga dei
- *   tasti principali (Home, Negozi, Categorie, Amministrazione) compatta e
- *   responsive, senza overflow orizzontale.
+ * - Desktop: un'unica riga [LOGO in box bianco] | [Home] [Negozi] [Categorie]
+ *   [Amministrazione] (nav centrata) | [Carrello] [Account giallo].
+ * - Mobile: prima riga logo + Carrello + Account; seconda riga con le 4 voci
+ *   distribuite uniformemente. Nessun hamburger, nessun drawer.
  *
  * Il menu Account riflette l'AREA ATTIVA della sessione (cookie httpOnly
  * lh_area): cliente, venditore o amministratore.
@@ -21,76 +20,45 @@ export default async function Header() {
   const account = await getDatiAccount();
 
   return (
-    <header className="border-b border-slate-200 bg-white shadow-sm">
-      <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-4 py-4 md:px-6 lg:flex-row lg:gap-4">
-        {/* LOGO + azioni (carrello, account) — su mobile in riga con il logo */}
-        <div className="flex w-full items-center justify-between gap-2 lg:w-auto">
-          <Link href="/" aria-label="LocalHub — Home">
-            <Image
-              src="/logo.png"
-              alt="LocalHub"
-              width={170}
-              height={55}
-              priority
-              className="h-auto w-[120px] sm:w-[170px] lg:w-[220px]"
-            />
-          </Link>
-          <div className="flex items-center gap-2 lg:hidden">
+    <header className="bg-blue-950 shadow-[0_12px_30px_-18px_rgba(15,23,42,0.55)] sm:mx-3 sm:mt-3 sm:rounded-2xl md:mx-4 md:mt-4">
+      <div className="mx-auto max-w-7xl px-2.5 py-2.5 sm:px-4 sm:py-3">
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2.5 md:flex-nowrap md:gap-x-4">
+          {/* LOGO (box bianco) + azioni mobile: riga 1 su smartphone */}
+          <div className="flex shrink-0 items-center justify-between gap-2 md:justify-start">
+            <Link
+              href="/"
+              aria-label="LocalHub — Home"
+              className="shrink-0 rounded-lg bg-white p-1 shadow-sm transition hover:shadow-md sm:rounded-xl sm:p-1.5"
+            >
+              <Image
+                src="/logo.png"
+                alt="LocalHub"
+                width={1536}
+                height={1024}
+                priority
+                className="h-8 w-auto sm:h-9 lg:h-10"
+              />
+            </Link>
+
+            {/* Carrello + Account su mobile (in riga con il logo) */}
+            <div className="flex shrink-0 items-center gap-2 md:hidden">
+              <CartBadge />
+              <AccountMenu account={account} />
+            </div>
+          </div>
+
+          {/* Nav centrata (desktop) */}
+          <HeaderNav account={account} layout="desktop" />
+
+          {/* Carrello + Account (desktop) */}
+          <div className="hidden shrink-0 items-center gap-2 md:flex">
             <CartBadge />
             <AccountMenu account={account} />
           </div>
         </div>
 
-        {/* NAV — visibile anche su mobile (nessun hamburger), compatta e senza overflow */}
-        <nav
-          aria-label="Navigazione principale"
-          className="flex w-full flex-nowrap items-center justify-center gap-1.5 sm:gap-2 md:gap-3 lg:w-auto"
-        >
-          <Link
-            href="/"
-            className="inline-flex items-center rounded-full bg-yellow-400 px-3 py-1.5 text-sm font-bold text-blue-900 transition-colors hover:bg-yellow-300 active:scale-95 max-sm:px-2.5 max-sm:text-[13px]"
-          >
-            Home
-          </Link>
-
-          <Link
-            href="/negozi"
-            className="inline-flex items-center rounded-full bg-yellow-400 px-3 py-1.5 text-sm font-bold text-blue-900 transition-colors hover:bg-yellow-300 active:scale-95 max-sm:px-2.5 max-sm:text-[13px]"
-          >
-            Negozi
-          </Link>
-
-          <Link
-            href="/categorie"
-            className="inline-flex items-center rounded-full bg-yellow-400 px-3 py-1.5 text-sm font-bold text-blue-900 transition-colors hover:bg-yellow-300 active:scale-95 max-sm:px-2.5 max-sm:text-[13px]"
-          >
-            Categorie
-          </Link>
-
-          {/* Icona Amministrazione (scudetto) — visibile accanto alle voci
-              principali. Click:
-              - non autenticato  → /login?area=admin
-              - autenticato come admin → /amministratore
-              L'area di sessione resta protetta da proxy + layout: qualunque
-              altro utente viene reindirizzato alla propria area. */}
-          <Link
-            href={account && account.area === "admin" ? "/amministratore" : "/login?area=admin"}
-            title="Amministrazione"
-            aria-label="Amministrazione"
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-yellow-400 text-blue-900 transition-colors hover:bg-yellow-300 active:scale-95"
-          >
-            <ShieldCheck className="h-4 w-4" aria-hidden />
-          </Link>
-
-          {/* Carrello + Account: su desktop vivono nella riga di navigazione;
-              su mobile nella riga del logo (sopra). Mai duplicati. */}
-          <div className="hidden lg:block">
-            <CartBadge />
-          </div>
-          <div className="hidden lg:block">
-            <AccountMenu account={account} />
-          </div>
-        </nav>
+        {/* Nav mobile: seconda riga con le 4 voci sempre visibili */}
+        <HeaderNav account={account} layout="mobile" />
       </div>
     </header>
   );

@@ -4,11 +4,11 @@ import { useEffect, useRef, useState, type ComponentType } from "react";
 import Link from "next/link";
 import {
   ChevronDown,
-  LogIn,
   LogOut,
   ShieldCheck,
   ShoppingBasket,
   Store,
+  UserRound,
 } from "lucide-react";
 import type { RuoloUtente } from "@/lib/auth/roles";
 import type { AreaAttiva } from "@/lib/auth/area";
@@ -82,10 +82,15 @@ export default function AccountMenu({ account }: { account: DatiAccount | null }
           onClick={() => setOpen((value) => !value)}
           aria-expanded={open}
           aria-haspopup="menu"
-          className="inline-flex items-center gap-1.5 rounded-full bg-yellow-400 px-4 py-2 text-sm font-bold text-blue-900 transition-colors hover:bg-yellow-300 active:scale-95"
+          aria-label="Account"
+          className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-yellow-400 px-3 text-sm font-bold text-blue-950 shadow-[0_4px_14px_-4px_rgba(202,138,4,0.55)] transition hover:bg-yellow-300 active:scale-95"
         >
-          <LogIn className="h-4 w-4" aria-hidden />
-          Accedi
+          <UserRound className="h-4 w-4" aria-hidden />
+          Account
+          <ChevronDown
+            className={`h-4 w-4 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
+            aria-hidden
+          />
         </button>
 
         {open && (
@@ -119,7 +124,6 @@ export default function AccountMenu({ account }: { account: DatiAccount | null }
   }
 
   const { nome, email, area } = account;
-  const iniziale = (nome || email).charAt(0).toUpperCase();
   // "Area Venditore" apre SEMPRE l'elenco negozi (/merchant): nessun negozio
   // viene aperto automaticamente. Si entra nel singolo negozio solo cliccando
   // una riga dell'elenco (il badge ordini vive lì, accanto al nome).
@@ -155,27 +159,13 @@ export default function AccountMenu({ account }: { account: DatiAccount | null }
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
         aria-haspopup="menu"
-        aria-label={`Menu utente di ${nome || email}`}
-        className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-sm shadow-sm transition hover:border-blue-300 hover:shadow"
+        aria-label={`Menu account di ${nome || email}`}
+        className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-yellow-400 px-3 text-sm font-bold text-blue-950 shadow-[0_4px_14px_-4px_rgba(202,138,4,0.55)] transition hover:bg-yellow-300 active:scale-95"
       >
-        <span
-          aria-hidden
-          className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-sm font-black text-white"
-        >
-          {iniziale}
-        </span>
-        <span className="hidden text-left sm:block">
-          <span className="block max-w-[140px] truncate text-sm font-bold leading-tight text-slate-900">
-            {nome || email}
-          </span>
-          <span className="block text-[11px] text-slate-500">
-            {area ? ETICHETTE_AREA[area] : ETICHETTE_RUOLO[account.role]}
-          </span>
-        </span>
+        <UserRound className="h-4 w-4" aria-hidden />
+        Account
         <ChevronDown
-          className={`hidden h-4 w-4 text-slate-400 transition-transform duration-200 sm:block ${
-            open ? "rotate-180" : ""
-          }`}
+          className={`h-4 w-4 transition-transform duration-200 ${open ? "rotate-180" : ""}`}
           aria-hidden
         />
       </button>
