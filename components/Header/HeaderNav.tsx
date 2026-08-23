@@ -40,10 +40,13 @@ export default function HeaderNav() {
   return (
     <div className="w-full lg:w-auto">
       {/* BARRA NAVIGAZIONE — griglia 4 colonne su mobile, flex centrato su
-          desktop; nessun riquadro attorno alle voci. */}
+          desktop; nessun riquadro attorno alle voci. Linea orizzontale
+          superiore e inferiore CONTINUE (border-y, stesso tono dei
+          separatori verticali) che strutturano la barra come una fascia
+          continua, senza trasformare le voci in box. */}
       <nav
         aria-label="Navigazione principale"
-        className="relative mx-auto grid w-full max-w-[440px] grid-cols-4 items-center justify-items-center lg:w-auto lg:gap-1"
+        className="relative mx-auto grid w-full max-w-[440px] grid-cols-4 items-center justify-items-center border-y border-slate-200 lg:w-auto lg:gap-1"
       >
         {/* Separatori verticali sottili tra le voci (molto discreti, danno
             struttura senza essere protagonisti). */}
