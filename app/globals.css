@@ -73,6 +73,7 @@
   /* Token esposti come utility Tailwind (usati nei componenti). */
   --color-brand: var(--brand-blue);
   --color-brand-dark: var(--brand-blue-dark);
+  --color-brand-deep: var(--brand-blue-deep);
   --color-brand-50: var(--brand-blue-50);
   --color-brand-100: var(--brand-blue-100);
   --color-accent: var(--brand-yellow);
