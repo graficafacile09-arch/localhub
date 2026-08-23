@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import AccountMenu from "./AccountMenu";
 import HeaderNav from "./HeaderNav";
+import WeatherWidget from "./WeatherWidget";
 import { getDatiAccount } from "./get-account-data";
 
 /**
@@ -37,6 +38,7 @@ export default async function Header() {
           <div className="flex items-center gap-2 lg:hidden">
             <AccountMenu account={account} />
           </div>
+          <WeatherWidget />
         </div>
 
         {/* NAV — visibile anche su mobile (nessun hamburger), compatta e senza overflow */}
