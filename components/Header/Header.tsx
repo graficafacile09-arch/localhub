@@ -22,7 +22,7 @@ export default async function Header() {
 
   return (
     <header className="border-b border-slate-200 bg-white shadow-sm">
-      <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 py-3 md:px-6 lg:flex-row lg:gap-3">
+      <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-3 py-3 sm:px-4 md:px-6 lg:flex-row lg:items-center lg:gap-3">
         {/* LOGO + METEO + ACCOUNT — stessa riga sia desktop sia mobile */}
         <div className="flex w-full items-center gap-1.5 sm:gap-2 lg:w-auto">
           <Link href="/" aria-label="LocalHub — Home" className="shrink-0">
@@ -32,7 +32,7 @@ export default async function Header() {
               width={170}
               height={55}
               priority
-              className="h-auto max-h-10 w-[90px] sm:max-h-12 sm:w-[140px] lg:max-h-14 lg:w-[220px]"
+              className="h-auto w-[110px] sm:w-[160px] lg:w-[220px]"
             />
           </Link>
           <WeatherWidget />
