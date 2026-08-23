@@ -46,32 +46,52 @@ export default function HeaderNav() {
 
   return (
     <div className="w-full lg:w-auto">
-      {/* Decorazione: sottile linea sfumata sopra la navigazione (blu/grigio
-          chiarissimo, alleggerita ai bordi). La griglia 4 colonne mantiene
-          la posizione del gancio giallo allineata alla voce attiva. */}
-      <svg
+      {/* Decorazione: fascia di navigazione — linea orizzontale sottile ma
+          ben visibile (blu/grigio della palette, 1.5px), con piccoli segmenti
+          verticali discreti tra una voce e l'altra (stessa struttura della
+          griglia 4 colonne) e gancio giallo sulla voce attiva. Solo SVG/CSS:
+          nessuna barra piena, rettangolo, gradiente o contenitore con sfondo. */}
+      <div
         aria-hidden="true"
-        viewBox="0 0 400 7"
-        preserveAspectRatio="none"
-        className="mx-auto block h-[7px] w-full lg:w-[340px]"
+        className="relative mx-auto h-[11px] w-full lg:w-[340px]"
       >
-        <line
-          x1="4"
-          y1="3.5"
-          x2="396"
-          y2="3.5"
-          stroke="url(#lh-nav-line)"
-          strokeWidth="1.75"
-        />
-        <defs>
-          <linearGradient id="lh-nav-line" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="transparent" />
-            <stop offset="16%" stopColor="#8fa3bd" stopOpacity="0.95" />
-            <stop offset="84%" stopColor="#8fa3bd" stopOpacity="0.95" />
-            <stop offset="100%" stopColor="transparent" />
-          </linearGradient>
-        </defs>
-      </svg>
+        <svg
+          viewBox="0 0 400 11"
+          preserveAspectRatio="none"
+          className="block h-full w-full"
+        >
+          {/* Linea principale (1.5px, alleggerita solo alle estremità) */}
+          <line
+            x1="12"
+            y1="5.5"
+            x2="388"
+            y2="5.5"
+            stroke="url(#lh-nav-line)"
+            strokeWidth="1.5"
+          />
+          {/* Segmenti verticali tra le voci (sottili, simmetrici, stessi
+              colori della linea) */}
+          <line x1="110" y1="2" x2="110" y2="9" stroke="#8fa3bd" strokeWidth="1.5" />
+          <line x1="200" y1="2" x2="200" y2="9" stroke="#8fa3bd" strokeWidth="1.5" />
+          <line x1="290" y1="2" x2="290" y2="9" stroke="#8fa3bd" strokeWidth="1.5" />
+          <defs>
+            <linearGradient id="lh-nav-line" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="transparent" />
+              <stop offset="10%" stopColor="#8fa3bd" />
+              <stop offset="90%" stopColor="#8fa3bd" />
+              <stop offset="100%" stopColor="transparent" />
+            </linearGradient>
+          </defs>
+        </svg>
+
+        {/* Gancio giallo sulla voce attiva (accento, non riempimento) */}
+        {indiceAttivo >= 0 && (
+          <span
+            className="absolute -top-[1px] h-[9px] w-[9px] -translate-x-1/2 rounded-full bg-yellow-400 shadow-[0_0_6px_rgba(250,204,21,0.4)]"
+            style={{ left: `calc(12.5% + ${indiceAttivo * 25}%)` }}
+          />
+        )}
+      </div>
 
       {/* NAV — visibile anche su mobile (nessun hamburger), compatta e senza
           overflow. Griglia 4 colonne (uguale su mobile e desktop: la griglia
@@ -81,7 +101,7 @@ export default function HeaderNav() {
         aria-label="Navigazione principale"
         className="relative mx-auto grid w-full max-w-[430px] grid-cols-4 items-center justify-items-center gap-x-2 lg:w-auto lg:gap-x-1"
       >
-        {voci.map((voce, indice) => {
+        {voci.map((voce) => {
           const Icona = voce.icona as ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
           const isCart = voce.href === "/carrello";
           return (
@@ -92,15 +112,6 @@ export default function HeaderNav() {
               aria-current={voce.attiva ? "page" : undefined}
               className="group relative flex min-w-0 flex-col items-center gap-0.5 rounded-2xl px-2 py-1.5 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 max-sm:px-1 max-sm:py-1"
             >
-              {/* Gancio giallo: piccolo dettaglio sulla linea, in
-                  corrispondenza della voce attiva (stesso giallo CTA). */}
-              {voce.attiva && indiceAttivo === indice && (
-                <span
-                  aria-hidden
-                  className="absolute -top-[8px] left-1/2 h-[9px] w-[9px] -translate-x-1/2 rounded-full bg-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.55)]"
-                />
-              )}
-
               {/* Icona protagonista */}
               <span
                 className={`relative flex h-9 w-9 items-center justify-center rounded-full transition-colors duration-200 max-sm:h-8 max-sm:w-8 ${
