@@ -46,48 +46,38 @@ export default function HeaderNav() {
 
   return (
     <div className="w-full lg:w-auto">
-      {/* Decorazione: fascia di navigazione — linea orizzontale sottile ma
-          ben visibile (blu/grigio della palette, 1.5px), con piccoli segmenti
-          verticali discreti tra una voce e l'altra (stessa struttura della
-          griglia 4 colonne) e gancio giallo sulla voce attiva. Solo SVG/CSS:
-          nessuna barra piena, rettangolo, gradiente o contenitore con sfondo. */}
-      <div
-        aria-hidden="true"
-        className="relative mx-auto h-[11px] w-full lg:w-[340px]"
-      >
+      {/* Decorazione: linea orizzontale unica, sottile, con estremità
+          sfumate (nessun segmento verticale). Il piccolo indicatore giallo
+          vive SOTTO la linea, allineato alla voce attiva. Solo SVG/CSS. */}
+      <div aria-hidden="true" className="relative mx-auto h-[14px] w-full lg:w-[340px]">
         <svg
-          viewBox="0 0 400 11"
+          viewBox="0 0 400 14"
           preserveAspectRatio="none"
           className="block h-full w-full"
         >
-          {/* Linea principale (1.5px, alleggerita solo alle estremità) */}
           <line
-            x1="12"
-            y1="5.5"
-            x2="388"
-            y2="5.5"
+            x1="10"
+            y1="3.5"
+            x2="390"
+            y2="3.5"
             stroke="url(#lh-nav-line)"
             strokeWidth="1.5"
           />
-          {/* Segmenti verticali tra le voci (sottili, simmetrici, stessi
-              colori della linea) */}
-          <line x1="110" y1="2" x2="110" y2="9" stroke="#8fa3bd" strokeWidth="1.5" />
-          <line x1="200" y1="2" x2="200" y2="9" stroke="#8fa3bd" strokeWidth="1.5" />
-          <line x1="290" y1="2" x2="290" y2="9" stroke="#8fa3bd" strokeWidth="1.5" />
           <defs>
             <linearGradient id="lh-nav-line" x1="0" y1="0" x2="1" y2="0">
               <stop offset="0%" stopColor="transparent" />
-              <stop offset="10%" stopColor="#8fa3bd" />
-              <stop offset="90%" stopColor="#8fa3bd" />
+              <stop offset="12%" stopColor="#8fa3bd" />
+              <stop offset="88%" stopColor="#8fa3bd" />
               <stop offset="100%" stopColor="transparent" />
             </linearGradient>
           </defs>
         </svg>
 
-        {/* Gancio giallo sulla voce attiva (accento, non riempimento) */}
+        {/* Indicatore giallo sotto la linea, in corrispondenza della voce
+            attiva (accento discreto, stesso giallo CTA del sito). */}
         {indiceAttivo >= 0 && (
           <span
-            className="absolute -top-[1px] h-[9px] w-[9px] -translate-x-1/2 rounded-full bg-yellow-400 shadow-[0_0_6px_rgba(250,204,21,0.4)]"
+            className="absolute top-[7px] h-[5px] w-[5px] -translate-x-1/2 rounded-full bg-yellow-400"
             style={{ left: `calc(12.5% + ${indiceAttivo * 25}%)` }}
           />
         )}
