@@ -70,11 +70,11 @@ export default async function MerchantEditProductPage({
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
             <Pencil className="h-5 w-5" />
           </div>
-          <div>
+          <div className="min-w-0 flex-1">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
               Modifica prodotto
             </p>
-            <h1 className="mt-2 text-xl font-black tracking-tight text-slate-900 truncate">
+            <h1 className="mt-2 max-w-full break-words text-xl font-black tracking-tight text-slate-900 line-clamp-2">
               {product.nome}
             </h1>
             <p className="mt-1 text-sm text-slate-500">

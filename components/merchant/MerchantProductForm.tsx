@@ -435,7 +435,7 @@ export default function MerchantProductForm({
           defaultValue={initialValues.nome}
           required
           placeholder="Nome prodotto *"
-          className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+          className="h-10 min-w-0 w-full max-w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
         />
       </div>
 
