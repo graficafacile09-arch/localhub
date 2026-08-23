@@ -7,8 +7,8 @@ import MerchantStoreSwitcher from "./MerchantStoreSwitcher";
 import MerchantStoreNavAuto from "./MerchantStoreNavAuto";
 import MerchantBottomNav from "./MerchantBottomNav";
 import MerchantTopBar from "./MerchantTopBar";
-import MerchantGlobalNav from "./MerchantGlobalNav";
 import AdminSidebar from "@/components/amministratore/AdminSidebar";
+import AdminStoreNavAuto from "@/components/amministratore/AdminStoreNavAuto";
 
 /**
  * Shell condivisa tra Area Venditore e Area Amministratore.
@@ -49,7 +49,13 @@ export default function MerchantShell({
     <main className="min-h-screen bg-[#eef3f8] text-slate-900">
 
       {/* ── Top App Bar mobile — sticky, visibile solo su mobile ─────────────── */}
-      <MerchantTopBar storeName={currentStore?.nome ?? null} area={area} />
+      <MerchantTopBar
+        storeName={currentStore?.nome ?? null}
+        area={area}
+        stores={stores}
+        ordiniNonLettiPerNegozio={ordiniNonLettiPerNegozio}
+        reclamiApertiPerNegozio={reclamiApertiPerNegozio}
+      />
 
       {/* ── Header desktop — visibile solo su md+ ────────────────────────────── */}
       <div className="hidden border-b border-blue-800/20 bg-blue-700 text-white shadow-sm md:block">
@@ -98,28 +104,25 @@ export default function MerchantShell({
               sidebar: il menu admin (Strumenti di piattaforma → Negozi → …) è la
               prima cosa che l'amministratore vede entrando in /amministratore. */}
           {isAdmin ? (
-            <div className="card p-5">
-              <AdminSidebar />
-            </div>
-          ) : null}
-
-          <div className="card p-5">
-            <p className="section-label">
-              Navigazione
-            </p>
-            <MerchantGlobalNav area={area} />
-            <div className="mt-2">
-              <MerchantStoreNavAuto
-                stores={stores}
-                reclamiApertiPerNegozio={reclamiApertiPerNegozio}
-              />
-            </div>
-          </div>
+            <>
+              {/* Contesto negozio: visibile quando l'admin è dentro un negozio */}
+              <AdminStoreNavAuto />
+              <div className="card p-5">
+                <AdminSidebar />
+              </div>
+            </>
+          ) : (
+            <MerchantStoreNavAuto
+              stores={stores}
+              reclamiApertiPerNegozio={reclamiApertiPerNegozio}
+            />
+          )}
 
           <MerchantStoreSwitcher
             stores={stores}
             currentStoreId={currentStoreId}
             ordiniNonLettiPerNegozio={ordiniNonLettiPerNegozio}
+            baseHref={isAdmin ? "/amministratore/negozi" : "/merchant"}
           />
         </aside>
 

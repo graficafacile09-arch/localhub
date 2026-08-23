@@ -4,16 +4,11 @@ import { useEffect, useRef, useState, type ComponentType } from "react";
 import Link from "next/link";
 import {
   ChevronDown,
-  Globe,
-  Heart,
   LogIn,
   LogOut,
-  Settings,
   ShieldCheck,
-  ShoppingBag,
   ShoppingBasket,
   Store,
-  UserRound,
 } from "lucide-react";
 import type { RuoloUtente } from "@/lib/auth/roles";
 import type { AreaAttiva } from "@/lib/auth/area";
@@ -133,11 +128,15 @@ export default function AccountMenu({ account }: { account: DatiAccount | null }
   /**
    * Il menu mostra ESCLUSIVAMENTE l'area attiva della sessione (cookie
    * httpOnly lh_area), scelta al login e fissa per tutta la sessione:
-   * - sessione admin → solo Area Amministratore (+ Impostazioni)
+   * - sessione admin → solo Area Amministratore
    * - sessione merchant → solo Area Venditore
-   * - sessione cliente → solo Area Clienti (Profilo, Preferiti, Ordini)
+   * - sessione cliente → solo Area Clienti
    * Le altre aree sono INVISIBILI anche se l'account possiede altri ruoli:
    * per cambiarle serve logout e rientro dall'ingresso corretto.
+   *
+   * UNA FUNZIONE = UNA VOCE: Profilo, Preferiti e Ordini NON sono duplicati
+   * qui (sono nella navigazione dell'area); il ritorno al sito avviene dal
+   * logo e dal pulsante Home, non da una voce del menu account.
    */
   const voci: VoceMenu[] = [];
 
@@ -147,15 +146,6 @@ export default function AccountMenu({ account }: { account: DatiAccount | null }
     voci.push({ label: "Area Venditore", href: storeBase, icon: Store });
   } else if (area === "cliente") {
     voci.push({ label: "Area Clienti", href: "/cliente", icon: ShoppingBasket });
-    voci.push({ label: "Profilo", href: "/cliente/profilo", icon: UserRound });
-    voci.push({ label: "Preferiti", href: "/cliente/preferiti", icon: Heart });
-    voci.push({ label: "Ordini", href: "/cliente/ordini", icon: ShoppingBag });
-  }
-
-  voci.push({ label: "Vai al sito", href: "/", icon: Globe });
-
-  if (area === "admin") {
-    voci.push({ label: "Impostazioni", href: "/amministratore/impostazioni", icon: Settings });
   }
 
   return (

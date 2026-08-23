@@ -1,21 +1,17 @@
 import { ADMIN_BASE } from "@/components/amministratore/navigation";
 import {
+  Coins,
   Copy,
   CreditCard,
-  Edit3,
   FolderOpen,
   Home,
   LayoutGrid,
-  LogOut,
-  MessageSquareWarning,
   Package,
   ReceiptText,
+  Settings,
   Sparkles,
   Store,
-  Trash2,
   Users,
-  Wallet,
-  Coins,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -33,8 +29,6 @@ export type MerchantNavItem = {
   section?: boolean;
   /** Voce azione (apre un flusso, es. Duplica negozio). */
   action?: boolean;
-  /** Voce menu utente (es. "Esci" → signout). */
-  isMenu?: boolean;
   /** Disponibile solo quando un negozio è selezionato. */
   requiresStore?: boolean;
   /** Attiva solo con path esatto (non i sotto-percorsi). */
@@ -50,15 +44,17 @@ export type MerchantBottomNavItem = {
   requiresStore?: boolean;
   /** Pulsante centrale prominente (AI). */
   ai?: boolean;
-  /** Voce menu utente (Esci → signout form). */
-  isMenu?: boolean;
 };
 
 /**
- * Voci della sidebar dell'Area Venditore/Amministratore relative al negozio
- * selezionato (Dashboard, Prodotti, Editor, Media, Duplica).
- * Unica fonte per la navigazione "store" lato venditore: AdminSidebar
- * (viste di piattaforma) è già separata in components/amministratore/navigation.ts.
+ * Voci della sidebar del negozio selezionato (Area Venditore).
+ * Una funzione = una voce = una destinazione:
+ * - Incassi + Payout sono accorpati in "Guadagni" (/guadagni);
+ * - Reclami non è una voce autonoma: il badge vive su "Ordini";
+ * - "Gestione negozio" (/edit) è stata unificata in "Impostazioni negozio"
+ *   (/impostazioni); /edit resta funzionante solo per i flussi guidati
+ *   (onboarding wizard, duplica, media) — non è più una voce di menu;
+ * - "Duplica negozio" resta come azione secondaria.
  */
 export function getMerchantStoreNavItems(storeId: string): MerchantNavItem[] {
   const storePath = `${MERCHANT_BASE}/${storeId}`;
@@ -86,17 +82,10 @@ export function getMerchantStoreNavItems(storeId: string): MerchantNavItem[] {
       icon: ReceiptText,
     },
     {
-      key: "incassi",
-      label: "Incassi",
-      description: "Pagato, commissioni e netto",
-      href: `${storePath}/incassi`,
-      icon: Wallet,
-    },
-    {
-      key: "payout",
-      label: "Payout",
-      description: "Netto da erogare per periodo",
-      href: `${storePath}/payout`,
+      key: "guadagni",
+      label: "Guadagni",
+      description: "Incassi e payout del negozio",
+      href: `${storePath}/guadagni`,
       icon: Coins,
     },
     {
@@ -107,32 +96,18 @@ export function getMerchantStoreNavItems(storeId: string): MerchantNavItem[] {
       icon: CreditCard,
     },
     {
-      key: "reclami",
-      label: "Reclami",
-      description: "Problemi dei clienti aperti",
-      href: `${storePath}/ordini?filtro=reclami`,
-      icon: MessageSquareWarning,
-    },
-    {
-      key: "editor",
-      label: "Editor",
-      href: null,
-      icon: Edit3,
-      section: true,
-    },
-    {
-      key: "gestione-negozio",
-      label: "Gestione negozio",
-      description: "Dati e informazioni",
-      href: `${storePath}/edit`,
-      icon: Edit3,
-    },
-    {
       key: "media",
       label: "Libreria Media",
       description: "Immagini e file",
       href: `${storePath}/media`,
       icon: FolderOpen,
+    },
+    {
+      key: "impostazioni",
+      label: "Impostazioni negozio",
+      description: "Dati, foto, contatti e vendita",
+      href: `${storePath}/impostazioni`,
+      icon: Settings,
     },
     {
       key: "duplica",
@@ -186,20 +161,6 @@ export function getMerchantBottomNavItems(
       requiresStore: true,
       ai: true,
     },
-    {
-      key: "gestione",
-      label: "Gestione",
-      href: storePath ? `${storePath}/impostazioni` : baseHref,
-      icon: Store,
-      requiresStore: true,
-    },
-    {
-      key: "altro",
-      label: "Esci",
-      href: null,
-      icon: LogOut,
-      isMenu: true,
-    },
   ];
 }
 
@@ -219,23 +180,16 @@ export function getAdminBottomNavItems(): MerchantBottomNavItem[] {
       icon: Store,
     },
     {
-      key: "cestino",
-      label: "Cestino",
-      href: `${ADMIN_BASE}/cestino`,
-      icon: Trash2,
+      key: "ordini",
+      label: "Ordini",
+      href: `${ADMIN_BASE}/ordini`,
+      icon: ReceiptText,
     },
     {
       key: "utenti",
       label: "Utenti",
       href: `${ADMIN_BASE}/utenti`,
       icon: Users,
-    },
-    {
-      key: "altro",
-      label: "Esci",
-      href: null,
-      icon: LogOut,
-      isMenu: true,
     },
   ];
 }
@@ -265,10 +219,12 @@ export function getMerchantTopTitle(
   if (suffix === "/prodotti") return "Prodotti";
   if (suffix === "/ordini") return "Ordini";
   if (/^\/ordini\/[^/]+$/.test(suffix)) return "Dettaglio ordine";
-  if (suffix === "/incassi") return "Incassi";
-  if (suffix === "/payout") return "Payout";
+  if (suffix === "/guadagni") return "Guadagni";
+  if (suffix === "/incassi") return "Guadagni";
+  if (suffix === "/payout") return "Guadagni";
   if (suffix === "/pagamenti") return "Pagamenti";
-  if (suffix === "/impostazioni") return "Impostazioni";
+  if (suffix === "/impostazioni") return "Impostazioni negozio";
+  if (suffix === "/edit") return "Editor negozio";
 
   return storeName ?? "Venditore";
 }

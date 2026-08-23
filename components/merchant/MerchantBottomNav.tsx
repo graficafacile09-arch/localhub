@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogOut } from "lucide-react";
 import { ADMIN_BASE } from "@/components/amministratore/navigation";
 import {
   MERCHANT_BASE,
@@ -57,7 +56,7 @@ export default function MerchantBottomNav({
       {/* ── Bottom Navigation Bar ─────────────────────────────────────────────── */}
       <nav
         className="merchant-bottom-nav fixed bottom-0 left-0 right-0 z-[60] md:hidden"
-        aria-label="Navigazione area amministratore mobile"
+        aria-label="Navigazione area mobile"
       >
         <div
           className="border-t border-slate-200/80 bg-white/95 shadow-[0_-1px_0_0_rgba(0,0,0,0.06),0_-8px_32px_rgba(15,23,42,0.10)] backdrop-blur-md"
@@ -99,11 +98,6 @@ export default function MerchantBottomNav({
                     </span>
                   </Link>
                 );
-              }
-
-              // ── Voce "Esci" — apre signout via form ─────────────────────
-              if (item.isMenu) {
-                return <MerchantBottomNavAltro key={item.key} />;
               }
 
               // ── Voci standard (nessun badge "Ordini [N]": il conteggio
@@ -153,24 +147,5 @@ export default function MerchantBottomNav({
         aria-hidden
       />
     </>
-  );
-}
-
-function MerchantBottomNavAltro() {
-  return (
-    <form action="/api/auth/signout" method="post" className="flex flex-col items-center">
-      <button
-        type="submit"
-        className="flex flex-col items-center gap-1.5 rounded-xl px-3 py-1.5 transition-all duration-150 active:scale-95"
-        aria-label="Esci dall'area amministratore"
-      >
-        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-transparent transition-all duration-200">
-          <LogOut className="h-5 w-5 text-slate-400" aria-hidden />
-        </span>
-        <span className="text-[10px] font-semibold leading-none tracking-wide text-slate-400">
-          Esci
-        </span>
-      </button>
-    </form>
   );
 }

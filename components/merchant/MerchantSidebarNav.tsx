@@ -2,18 +2,20 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { Store } from "lucide-react";
 import DuplicaNegozioWizard from "@/components/merchant/media/DuplicaNegozioWizard";
 import { getMerchantStoreNavItems } from "./navigation";
 
 /**
- * Navigazione del negozio selezionato (sidebar desktop, Area Venditore).
+ * Navigazione del negozio selezionato (sidebar desktop + drawer mobile,
+ * Area Venditore).
  *
  * Riga ricca con gerarchia chiara: [icona in chip] etichetta + descrizione.
- * Badge ROSSO solo per Reclami APERTI/IN GESTIONE. Il conteggio degli
- * ordini NON LETTI NON compare più qui: ora è un badge rosso accanto al
- * NOME del negozio nell'elenco "I tuoi negozi" (MerchantStoreSwitcher).
+ * I RECLAMI APERTI non sono una voce autonoma: il badge giallo vive sulla
+ * voce ORDINI (il filtro resta su /ordini?filtro=reclami). Il conteggio
+ * degli ordini NON LETTI compare accanto al NOME del negozio nell'elenco
+ * "I tuoi negozi" (MerchantStoreSwitcher).
  */
 export default function MerchantSidebarNav({
   storeId,
@@ -26,10 +28,8 @@ export default function MerchantSidebarNav({
   reclamiAperti?: number;
 }) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const [showDuplica, setShowDuplica] = useState(false);
   const items = getMerchantStoreNavItems(storeId);
-  const storePath = `/merchant/${storeId}`;
 
   function isActive(href: string | null, exactActive = false): boolean {
     if (!href) return false;
@@ -98,19 +98,12 @@ export default function MerchantSidebarNav({
           );
         }
 
-        // Voce standard (Link) — badge di attenzione per Ordini/Reclami.
-        // La voce Reclami è ATTIVA solo sul filtro "?filtro=reclami" della
-        // lista ordini (path + query): così Ordini e Reclami non risultano
-        // mai entrambe attive sulla stessa pagina.
-        const active = item.key === "reclami"
-          ? pathname.startsWith(`${storePath}/ordini`) &&
-            searchParams.get("filtro") === "reclami"
-          : item.href
-            ? isActive(item.href, item.exactActive)
-            : false;
-        // Badge attenzione SOLO per Reclami: il badge ordini non letti ora
-        // vive accanto al nome del negozio nell'elenco "I tuoi negozi".
-        const badge = item.key === "reclami" ? reclamiAperti : 0;
+        // Voce standard (Link). I reclami APERTI sono segnalati con un badge
+        // sulla voce ORDINI: una sola voce, filtro dedicato dentro la pagina.
+        const active = item.href
+          ? isActive(item.href, item.exactActive)
+          : false;
+        const badge = item.key === "ordini" ? reclamiAperti : 0;
         const mostraBadge = badge > 0;
 
         return (

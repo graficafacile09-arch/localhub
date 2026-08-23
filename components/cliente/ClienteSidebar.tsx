@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ShoppingBasket } from "lucide-react";
-import { clienteFooterItems, clienteNavItems } from "./navigation";
+import { clienteNavItems } from "./navigation";
 
 /**
  * Menu laterale dell'Area Clienti (design system moderno).
@@ -143,44 +143,9 @@ export default function ClienteSidebar({
         </div>
       ))}
 
-      {/* Separatore footer */}
+      {/* Separatore finale: il ritorno al sito avviene dal logo (desktop) e
+          dal pulsante Home della top bar (mobile) — nessuna voce duplicata. */}
       <div className="my-2 border-t border-slate-100" />
-
-      {clienteFooterItems.map((item) => {
-        const active = isActive(item.href);
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            onClick={onNavigate}
-            aria-current={active ? "page" : undefined}
-            title={collapsed ? item.label : undefined}
-            className={`flex items-center gap-3 rounded-2xl px-3 py-2.5 transition-all duration-150 hover:bg-slate-50 ${
-              collapsed ? "justify-center px-0 py-3" : ""
-            }`}
-          >
-            <span
-              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
-                active
-                  ? "bg-blue-600 text-white"
-                  : "bg-slate-100 text-slate-500"
-              }`}
-            >
-              <item.icon className="h-[18px] w-[18px]" aria-hidden />
-            </span>
-            {!collapsed && (
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-bold">
-                  {item.label}
-                </span>
-                <span className="mt-0.5 block truncate text-[11px] font-medium leading-4 text-slate-400">
-                  {item.description}
-                </span>
-              </span>
-            )}
-          </Link>
-        );
-      })}
     </nav>
   );
 }

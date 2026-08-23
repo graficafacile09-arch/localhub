@@ -3,8 +3,6 @@ import {
   Heart,
   LayoutDashboard,
   Package,
-  Settings,
-  ShoppingBasket,
   UserRound,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -15,7 +13,7 @@ export type ClienteNavItem = {
   description: string;
   icon: LucideIcon;
   /** Gruppo di sezione nella sidebar (separazione logica del menu). */
-  gruppo: "ordini" | "account" | "footer";
+  gruppo: "ordini" | "account";
   /** true = voce solo UI, senza navigazione reale ancora. */
   placeholder?: boolean;
 };
@@ -23,7 +21,15 @@ export type ClienteNavItem = {
 /** Base path dell'Area Clienti. */
 export const CLIENTE_BASE = "/cliente";
 
-/** Voci del menu laterale (ordine di visualizzazione). */
+/**
+ * Voci del menu laterale (ordine di visualizzazione).
+ * Massimo 5 voci: Dashboard, Ordini, Preferiti, Profilo, Segnalazioni.
+ * Profilo è il punto UNICO per dati personali, indirizzo, avatar e password
+ * (le ex "Impostazioni" sono state fuse in Profilo: /cliente/impostazioni
+ * reindirizza a /cliente/profilo). Il ritorno al sito avviene dal logo
+ * (desktop) e dal pulsante Home della top bar (mobile): nessuna voce
+ * "Torna al sito" duplicata nel menu.
+ */
 export const clienteNavItems: ClienteNavItem[] = [
   {
     href: CLIENTE_BASE,
@@ -50,7 +56,7 @@ export const clienteNavItems: ClienteNavItem[] = [
   {
     href: `${CLIENTE_BASE}/profilo`,
     label: "Profilo",
-    description: "I tuoi dati personali, la tua immagine e le preferenze dell'account.",
+    description: "Dati personali, indirizzo, avatar e sicurezza del tuo account.",
     icon: UserRound,
     gruppo: "account",
   },
@@ -59,13 +65,6 @@ export const clienteNavItems: ClienteNavItem[] = [
     label: "Segnalazioni",
     description: "Invia una segnalazione o un report al team di supporto.",
     icon: Flag,
-    gruppo: "account",
-  },
-  {
-    href: `${CLIENTE_BASE}/impostazioni`,
-    label: "Impostazioni",
-    description: "Preferenze, notifiche e sicurezza del tuo account.",
-    icon: Settings,
     gruppo: "account",
   },
 ];
@@ -78,14 +77,3 @@ export function getClienteNavItem(href: string): ClienteNavItem {
   }
   return item;
 }
-
-/** Voci della sezione footer della sidebar (navigazione rapida). */
-export const clienteFooterItems: ClienteNavItem[] = [
-  {
-    href: "/",
-    label: "Torna al sito",
-    description: "Apri la homepage pubblica di LocalHub.",
-    icon: ShoppingBasket,
-    gruppo: "footer",
-  },
-];

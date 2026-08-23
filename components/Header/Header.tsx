@@ -2,12 +2,15 @@ import Image from "next/image";
 import Link from "next/link";
 import { ShieldCheck } from "lucide-react";
 import AccountMenu from "./AccountMenu";
+import MobileMenu from "./MobileMenu";
 import CartBadge from "../carrello/CartBadge";
 import { getDatiAccount } from "./get-account-data";
 
 /**
  * Header pubblico: mostra il menu Account che riflette l'AREA ATTIVA della
  * sessione (cookie httpOnly lh_area): cliente, venditore o amministratore.
+ * Su mobile: logo + carrello + account + hamburger (Home, Negozi,
+ * Categorie, Assistente e accesso alle aree) — nessuna riga compressa.
  */
 export default async function Header() {
   const account = await getDatiAccount();
@@ -16,7 +19,7 @@ export default async function Header() {
     <header className="bg-white border-b border-slate-200 shadow-sm">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between px-4 md:px-6 py-4 gap-4">
 
-        {/* LOGO */}
+        {/* LOGO + azioni mobile (carrello, account, hamburger) */}
 
         <div className="flex items-center justify-between w-full md:w-auto">
           <Link href="/">
@@ -26,17 +29,19 @@ export default async function Header() {
               width={170}
               height={55}
               priority
-              className="w-[170px] md:w-[220px] h-auto"
+              className="w-[150px] md:w-[220px] h-auto"
             />
           </Link>
-          <div className="md:hidden">
+          <div className="flex items-center gap-2 md:hidden">
+            <CartBadge />
             <AccountMenu account={account} />
+            <MobileMenu account={account} />
           </div>
         </div>
 
-        {/* MENU */}
+        {/* MENU desktop — invariato */}
 
-        <nav className="flex flex-nowrap items-center justify-center gap-1 sm:gap-3 md:gap-3">
+        <nav className="hidden md:flex flex-nowrap items-center justify-center gap-1 sm:gap-3 md:gap-3">
 
           <Link
             href="/"
@@ -76,9 +81,7 @@ export default async function Header() {
 
           <CartBadge />
 
-          <div className="hidden md:block">
-            <AccountMenu account={account} />
-          </div>
+          <AccountMenu account={account} />
 
         </nav>
 

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { usePathname } from "next/navigation";
-import { PanelLeftClose, PanelLeftOpen, ShoppingBasket, X } from "lucide-react";
+import { LogOut, PanelLeftClose, PanelLeftOpen, ShoppingBasket, X } from "lucide-react";
 import ClienteHeader from "./ClienteHeader";
 import ClienteMobileTopBar from "./ClienteMobileTopBar";
 import ClienteSidebar from "./ClienteSidebar";
@@ -156,6 +156,19 @@ export default function ClienteShell({
                 onNavigate={() => setMobileOpen(false)}
                 ordiniInCorso={ordiniInCorso}
               />
+
+              {/* Esci — nel drawer, MAI nella bottom nav */}
+              <form action="/api/auth/signout" method="post" className="mt-4 border-t border-slate-100 pt-4">
+                <button
+                  type="submit"
+                  className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-blue-700"
+                >
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
+                    <LogOut className="h-[18px] w-[18px]" aria-hidden />
+                  </span>
+                  Esci
+                </button>
+              </form>
             </div>
           </div>
         </div>

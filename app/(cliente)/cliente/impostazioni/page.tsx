@@ -1,15 +1,15 @@
-import ImpostazioniClienteModule from "@/components/cliente/impostazioni/ImpostazioniClienteModule";
+import { permanentRedirect } from "next/navigation";
 
 export const metadata = {
-  title: "Impostazioni — Area Clienti",
+  title: "Impostazioni — LocalHub",
 };
 
-export const dynamic = "force-dynamic";
-
 /**
- * Pagina Impostazioni dell'Area Clienti.
- * Modulo reale: dati personali modificabili e cambio password (Supabase Auth).
+ * Le Impostazioni dell'Area Clienti sono state FUSE nel Profilo
+ * (/cliente/profilo): dati personali, indirizzo, avatar e cambio password
+ * vivono ora in un'unica pagina. Redirect permanente per non spezzare
+ * vecchi link e segnalibri.
  */
-export default function ImpostazioniPage() {
-  return <ImpostazioniClienteModule />;
+export default function ImpostazioniLegacyPage() {
+  permanentRedirect("/cliente/profilo");
 }

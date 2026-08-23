@@ -6,16 +6,22 @@ import type { MerchantStoreSummary } from "@/lib/merchant/types";
  * Accanto al NOME del negozio mostra un badge rosso con il numero di ordini
  * NON LETTI (avvisi): il commerciante vede subito quale negozio ha ordini
  * nuovi, poi clicca per entrare e gestirli.
+ * `baseHref` permette di cambiare la destinazione: per l'amministratore
+ * i link portano alla dashboard negozio dell'area admin
+ * (/amministratore/negozi/{id}) invece di /merchant/{id}.
  */
 export default function MerchantStoreSwitcher({
   stores,
   currentStoreId,
   ordiniNonLettiPerNegozio,
+  baseHref = "/merchant",
 }: {
   stores: MerchantStoreSummary[];
   currentStoreId?: string;
   /** Conteggio ordini non letti per negozio (badge giallo accanto al nome). */
   ordiniNonLettiPerNegozio?: Record<string, number>;
+  /** Prefisso dei link ai negozi ("merchant" o "amministratore/negozi"). */
+  baseHref?: string;
 }) {
   if (stores.length === 0) {
     return null;
@@ -34,7 +40,7 @@ export default function MerchantStoreSwitcher({
           return (
             <Link
               key={store.id}
-              href={`/merchant/${store.id}`}
+              href={`${baseHref}/${store.id}`}
               className={`block rounded-2xl border px-4 py-3 text-sm transition ${
                 active
                   ? "border-blue-300 bg-blue-50 text-blue-800"

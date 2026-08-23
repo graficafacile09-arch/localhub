@@ -2,46 +2,55 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogOut } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { CLIENTE_BASE, clienteNavItems } from "./navigation";
+import { LayoutDashboard, Package, Heart, UserRound } from "lucide-react";
+import { CLIENTE_BASE } from "./navigation";
 
 type ClienteBottomNavItem = {
   key: string;
   label: string;
-  href: string | null;
+  href: string;
   icon: LucideIcon;
-  isMenu?: boolean;
 };
 
 /**
  * Bottom Navigation mobile dell'Area Clienti (visibile solo su mobile).
- * Stesso pattern di MerchantBottomNav (Venditore/Amministratore):
- * barra fissa in basso con le voci di navigazione dell'area + "Esci".
- * La voce "Home" NON è qui: è già il pulsante Home della top bar mobile
- * (come nelle altre aree). I dati arrivano da navigation.ts — unica fonte.
+ * Massimo 4 destinazioni realmente importanti: Dashboard, Ordini,
+ * Preferiti, Profilo. NIENTE "Esci" qui: si esce dal menu account/drawer.
+ * Le funzioni meno frequenti (es. Segnalazioni) restano nella sidebar e nel
+ * drawer del menu (hamburger della top bar).
  */
+const ITEMS: ClienteBottomNavItem[] = [
+  {
+    key: "dashboard",
+    label: "Dashboard",
+    href: CLIENTE_BASE,
+    icon: LayoutDashboard,
+  },
+  {
+    key: "ordini",
+    label: "Ordini",
+    href: `${CLIENTE_BASE}/ordini`,
+    icon: Package,
+  },
+  {
+    key: "preferiti",
+    label: "Preferiti",
+    href: `${CLIENTE_BASE}/preferiti`,
+    icon: Heart,
+  },
+  {
+    key: "profilo",
+    label: "Profilo",
+    href: `${CLIENTE_BASE}/profilo`,
+    icon: UserRound,
+  },
+];
+
 export default function ClienteBottomNav() {
   const pathname = usePathname();
 
-  const items: ClienteBottomNavItem[] = [
-    ...clienteNavItems.map((item) => ({
-      key: item.href,
-      label: item.label,
-      href: item.href,
-      icon: item.icon,
-    })),
-    {
-      key: "esci",
-      label: "Esci",
-      href: null,
-      icon: LogOut,
-      isMenu: true,
-    },
-  ];
-
-  function isActive(href: string | null): boolean {
-    if (!href) return false;
+  function isActive(href: string): boolean {
     if (href === "/") return pathname === "/";
     if (href === CLIENTE_BASE) return pathname === CLIENTE_BASE;
     return pathname.startsWith(href);
@@ -59,20 +68,14 @@ export default function ClienteBottomNav() {
           style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
         >
           <div className="flex items-end justify-around px-1 pt-2 pb-2 touch-manipulation">
-            {items.map((item) => {
+            {ITEMS.map((item) => {
               const Icon = item.icon;
-              const active = item.href ? isActive(item.href) : false;
+              const active = isActive(item.href);
 
-              // ── Voce "Esci" — apre signout via form ─────────────────────
-              if (item.isMenu) {
-                return <ClienteBottomNavEsci key={item.key} />;
-              }
-
-              // ── Voci standard ─────────────────────────────────────────────
               return (
                 <Link
                   key={item.key}
-                  href={item.href!}
+                  href={item.href}
                   className={`flex min-w-0 flex-1 flex-col items-center gap-1.5 rounded-xl px-1 py-1.5 transition-all duration-150 active:scale-95`}
                   aria-current={active ? "page" : undefined}
                 >
@@ -111,24 +114,5 @@ export default function ClienteBottomNav() {
         aria-hidden
       />
     </>
-  );
-}
-
-function ClienteBottomNavEsci() {
-  return (
-    <form action="/api/auth/signout" method="post" className="flex min-w-0 flex-1 flex-col items-center">
-      <button
-        type="submit"
-        className="flex w-full min-w-0 flex-col items-center gap-1.5 rounded-xl px-1 py-1.5 transition-all duration-150 active:scale-95"
-        aria-label="Esci dall'area clienti"
-      >
-        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-transparent transition-all duration-200">
-          <LogOut className="h-5 w-5 text-slate-400" aria-hidden />
-        </span>
-        <span className="max-w-full truncate text-[10px] font-semibold leading-none tracking-wide text-slate-400">
-          Esci
-        </span>
-      </button>
-    </form>
   );
 }
