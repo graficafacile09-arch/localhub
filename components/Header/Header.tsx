@@ -23,22 +23,22 @@ export default async function Header() {
   return (
     <header className="border-b border-slate-200 bg-white shadow-sm">
       <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 py-3 md:px-6 lg:flex-row lg:gap-3">
-        {/* LOGO + azioni (carrello, account) — su mobile in riga con il logo */}
-        <div className="flex w-full items-center justify-between gap-2 lg:w-auto">
-          <Link href="/" aria-label="LocalHub — Home">
+        {/* LOGO + METEO + ACCOUNT — stessa riga sia desktop sia mobile */}
+        <div className="flex w-full items-center gap-1.5 sm:gap-2 lg:w-auto">
+          <Link href="/" aria-label="LocalHub — Home" className="shrink-0">
             <Image
               src="/logo-transparent.png"
               alt="LocalHub"
               width={170}
               height={55}
               priority
-              className="h-auto w-[140px] sm:w-[195px] lg:w-[260px]"
+              className="h-auto max-h-10 w-[90px] sm:max-h-12 sm:w-[140px] lg:max-h-14 lg:w-[220px]"
             />
           </Link>
-          <div className="flex items-center gap-2 lg:hidden">
+          <WeatherWidget />
+          <div className="ml-auto shrink-0 lg:ml-0">
             <AccountMenu account={account} />
           </div>
-          <WeatherWidget />
         </div>
 
         {/* NAV — visibile anche su mobile (nessun hamburger), compatta e senza overflow */}

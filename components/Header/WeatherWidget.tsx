@@ -91,13 +91,13 @@ export default function WeatherWidget() {
   const { Icon, label } = resolveWeather(code);
 
   return (
-    <div className="flex items-center gap-1.5 text-sm sm:gap-2" aria-label="Meteo Castrovillari">
+    <div className="flex items-center gap-1 text-[11px] leading-tight sm:gap-1.5 sm:text-sm" aria-label="Meteo Castrovillari">
       <Icon className="h-4 w-4 text-yellow-500 sm:h-5 sm:w-5" strokeWidth={1.75} aria-hidden />
-      <div className="flex flex-col leading-tight">
-        <span className="text-sm font-bold tabular-nums text-slate-800 sm:text-base">
+      <div className="flex flex-col">
+        <span className="font-bold tabular-nums text-slate-800">
           {temp}°
         </span>
-        <span className="hidden text-[10px] font-medium text-slate-400 sm:block">
+        <span className="font-medium text-slate-400">
           Castrovillari{label ? ` · ${label}` : ""}
         </span>
       </div>
