@@ -20,7 +20,7 @@ export default async function Header() {
   const account = await getDatiAccount();
 
   return (
-    <header className="border-b border-slate-200 bg-[#FFF9E6] shadow-sm">
+    <header className="border-b border-slate-200 bg-white shadow-sm">
       <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 py-3 md:px-6 lg:flex-row lg:gap-3">
         {/* LOGO + azioni (carrello, account) — su mobile in riga con il logo */}
         <div className="flex w-full items-center justify-between gap-2 lg:w-auto">
@@ -31,7 +31,7 @@ export default async function Header() {
               width={170}
               height={55}
               priority
-              className="h-auto w-[120px] sm:w-[170px] lg:w-[220px]"
+              className="h-auto w-[140px] sm:w-[195px] lg:w-[260px]"
             />
           </Link>
           <div className="flex items-center gap-2 lg:hidden">
