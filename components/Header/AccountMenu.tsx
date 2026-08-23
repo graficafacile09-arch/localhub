@@ -160,7 +160,7 @@ export default function AccountMenu({ account }: { account: DatiAccount | null }
       >
         <span
           aria-hidden
-          className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-sm font-black text-white"
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-yellow-400 text-sm font-black text-blue-900"
         >
           {iniziale}
         </span>
