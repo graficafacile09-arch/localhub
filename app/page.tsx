@@ -2,9 +2,6 @@ import Header from "@/components/Header/Header";
 import Link from "next/link";
 import {
   ArrowRight,
-  LayoutGrid,
-  MapPin,
-  Package,
   Search,
   SearchCheck,
   Store,
@@ -75,9 +72,6 @@ export default async function Home() {
   // secondo ordinamento qui, lo stesso elenco ordinato vale per /categorie.
   const categorieOrdinate = categorieConNegozi;
 
-  // Statistiche reali, calcolate dai dati già caricati (nessuna query extra).
-  const totaleNegozi = categorieOrdinate.reduce((somma, { count }) => somma + count, 0);
-
   return (
     <main className="min-h-screen bg-[#eef3f8]">
       <Header />
@@ -102,12 +96,7 @@ export default async function Home() {
         />
 
         <div className="relative z-10 mx-auto max-w-5xl px-4 py-14 text-left md:px-6 md:py-20">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/10 px-3 py-1.5 text-[11px] font-black uppercase tracking-[0.14em] text-white backdrop-blur-sm">
-            <MapPin className="h-3.5 w-3.5 text-yellow-300" aria-hidden />
-            La vetrina del commercio di Castrovillari
-          </span>
-
-          <h1 className="mt-4 max-w-2xl text-3xl font-black leading-tight tracking-tight text-white drop-shadow-lg md:text-5xl">
+          <h1 className="max-w-2xl text-3xl font-black leading-tight tracking-tight text-white drop-shadow-lg md:text-5xl">
             Tutto quello che cerchi... <span className="text-yellow-300">è già</span> nella tua città.
           </h1>
 
@@ -147,35 +136,6 @@ export default async function Home() {
             {/* Assistente AI — accessibile SOLO dalla homepage */}
             <HomeAssistantButton />
           </div>
-
-          {/* Statistiche reali (calcolate dai dati della pagina) */}
-          {totaleNegozi > 0 && (
-            <dl className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3 text-white">
-              <div className="flex items-center gap-2">
-                <Store className="h-4 w-4 text-yellow-300" aria-hidden />
-                <dt className="sr-only">Negozi e servizi</dt>
-                <dd className="text-sm font-bold drop-shadow">
-                  {totaleNegozi} negozi e servizi
-                </dd>
-              </div>
-              <div className="flex items-center gap-2">
-                <LayoutGrid className="h-4 w-4 text-yellow-300" aria-hidden />
-                <dt className="sr-only">Categorie</dt>
-                <dd className="text-sm font-bold drop-shadow">
-                  {categorieOrdinate.length} categorie
-                </dd>
-              </div>
-              {prodottiInEvidenza.length > 0 && (
-                <div className="flex items-center gap-2">
-                  <Package className="h-4 w-4 text-yellow-300" aria-hidden />
-                  <dt className="sr-only">Prodotti in evidenza</dt>
-                  <dd className="text-sm font-bold drop-shadow">
-                    {prodottiInEvidenza.length} prodotti in evidenza
-                  </dd>
-                </div>
-              )}
-            </dl>
-          )}
         </div>
       </section>
 
