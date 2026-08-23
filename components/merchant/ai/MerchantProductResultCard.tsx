@@ -153,7 +153,7 @@ export default function MerchantProductResultCard({
 
           <div className="flex min-w-0 flex-1 flex-col justify-between">
             <div className="min-w-0">
-              <h2 className="text-base font-black tracking-tight text-slate-900 truncate">
+              <h2 className="min-w-0 max-w-full break-words text-base font-black tracking-tight text-slate-900 line-clamp-2">
                 {suggestion.nome}
               </h2>
               {suggestion.marca && (
