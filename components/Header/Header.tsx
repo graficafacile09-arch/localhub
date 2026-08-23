@@ -26,7 +26,7 @@ export default async function Header() {
         <div className="flex w-full items-center justify-between gap-2 lg:w-auto">
           <Link href="/" aria-label="LocalHub — Home">
             <Image
-              src="/logo.png"
+              src="/logo-transparent.png"
               alt="LocalHub"
               width={170}
               height={55}
