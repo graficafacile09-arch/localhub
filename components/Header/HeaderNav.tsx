@@ -13,14 +13,15 @@ import { useCarrello } from "@/lib/carrello/CartContext";
  * Ogni voce è un elemento visivo (icona grande + testo piccolo e leggero),
  * NON un pulsante/pill: nessun rettangolo, bordo o sfondo pieno.
  *
- * - Stato normale: icona e testo blu scuro (colore principale), sfondo
- *   trasparente.
- * - Stato attivo (via usePathname): icona gialla (stesso giallo CTA del
- *   sito), testo giallo, piccolo highlight circolare molto leggero dietro
+ * - Stato normale: icona e testo GIALLO (stesso giallo brand del sito),
+ *   sfondo trasparente.
+ * - Stato attivo (via usePathname): icona e testo BLU (stesso blu
+ *   principale del sito), piccolo highlight circolare molto leggero dietro
  *   l'icona, sottile linea gialla sotto il testo e piccolo gancio giallo
- *   sulla linea decorativa in alto.
- * - Hover (desktop): icona e testo virano gradualmente al giallo, senza
- *   spostare gli altri elementi.
+ *   sulla linea decorativa in alto (accenti che restano invariati).
+ * - Hover (desktop): icona e testo virano gradualmente al blu (lo stato
+ *   che l'elemento assumerebbe da attivo), senza spostare gli altri
+ *   elementi.
  * - Carrello: stesso trattamento grafico; il badge numerico resta vicino
  *   all'icona senza rompere l'allineamento.
  * - Mobile: le quattro voci restano SEMPRE visibili e distribuite
@@ -105,19 +106,19 @@ export default function HeaderNav() {
               {/* Icona protagonista */}
               <span
                 className={`relative flex h-10 w-10 items-center justify-center rounded-full transition-colors duration-200 max-sm:h-9 max-sm:w-9 ${
-                  voce.attiva ? "bg-yellow-100/70" : "group-hover:bg-yellow-100/50"
+                  voce.attiva ? "bg-blue-100/70" : "group-hover:bg-blue-100/50"
                 }`}
               >
                 <Icona
                   aria-hidden
                   className={`h-6 w-6 transition-colors duration-200 max-sm:h-[22px] max-sm:w-[22px] ${
-                    voce.attiva ? "text-yellow-500" : "text-blue-900 group-hover:text-yellow-500"
+                    voce.attiva ? "text-blue-900" : "text-yellow-500 group-hover:text-blue-900"
                   }`}
                 />
                 {isCart && pezzi > 0 && (
                   <span
                     data-testid="cart-badge"
-                    className="absolute -right-1 -top-1 z-10 flex h-4 min-w-4 items-center justify-center rounded-full bg-yellow-400 px-1 text-[9px] font-black leading-none text-blue-900 ring-2 ring-white"
+                    className="absolute -right-1 -top-1 z-10 flex h-4 min-w-4 items-center justify-center rounded-full bg-blue-900 px-1 text-[9px] font-black leading-none text-white ring-2 ring-white"
                   >
                     {pezzi > 99 ? "99+" : pezzi}
                   </span>
@@ -127,7 +128,7 @@ export default function HeaderNav() {
               {/* Testo più grande e in grassetto */}
               <span
                 className={`whitespace-nowrap text-xs font-bold leading-none tracking-tight transition-colors duration-200 sm:text-sm ${
-                  voce.attiva ? "text-yellow-500" : "text-blue-900 group-hover:text-yellow-500"
+                  voce.attiva ? "text-blue-900" : "text-yellow-500 group-hover:text-blue-900"
                 }`}
               >
                 {voce.label}
