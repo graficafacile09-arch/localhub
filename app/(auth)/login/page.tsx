@@ -95,7 +95,12 @@ function LoginContent() {
               )}
             </div>
 
-            {/* TABS (nascosti nell'area admin: nessuna registrazione) */}
+            {/* SCELTA Accedi/Registrati — l'"Accedi" SUPERIORE è un vero submit
+                del form login (stessa route e logica del pulsante inferiore):
+                niente più doppio "Accedi" con comportamenti diversi. In vista
+                Registrati il pulsante superiore diventa "Crea account" e
+                invia il form di registrazione. (Nascosto nell'area admin:
+                nessuna registrazione.) */}
             {!isAdmin && (
               <div
                 role="tablist"
@@ -103,7 +108,8 @@ function LoginContent() {
                 className={tema.tabsContainerClass}
               >
                 <button
-                  type="button"
+                  type={tabEffettivo === "login" ? "submit" : "button"}
+                  form={tabEffettivo === "login" ? "login-form" : undefined}
                   role="tab"
                   aria-selected={tabEffettivo === "login"}
                   onClick={() => setTab("login")}
@@ -116,7 +122,8 @@ function LoginContent() {
                   Accedi
                 </button>
                 <button
-                  type="button"
+                  type={tabEffettivo === "register" ? "submit" : "button"}
+                  form={tabEffettivo === "register" ? "register-form" : undefined}
                   role="tab"
                   aria-selected={tabEffettivo === "register"}
                   onClick={() => setTab("register")}
@@ -126,7 +133,7 @@ function LoginContent() {
                       : tema.tabInattivoClass
                   }`}
                 >
-                  Registrati
+                  {tabEffettivo === "register" ? "Crea account" : "Registrati"}
                 </button>
               </div>
             )}
@@ -203,7 +210,13 @@ function LoginForm({
   };
 
   return (
-    <form action="/api/auth/login" method="post" onSubmit={handleSubmit} className="space-y-4">
+    <form
+      id="login-form"
+      action="/api/auth/login"
+      method="post"
+      onSubmit={handleSubmit}
+      className="space-y-4"
+    >
       {area && <input type="hidden" name="area" value={area} />}
       <div className="space-y-2">
         <label htmlFor="email" className={tema.labelFieldClass}>Email</label>
@@ -273,7 +286,12 @@ function LoginForm({
 /** Registrazione CLIENTE: solo i campi del Cliente, nessun riferimento al Venditore. */
 function RegisterClienteForm({ tema }: { tema: TemaLogin }) {
   return (
-    <form action="/api/auth/register" method="post" className="space-y-4">
+    <form
+      id="register-form"
+      action="/api/auth/register"
+      method="post"
+      className="space-y-4"
+    >
       <div className="space-y-2">
         <label htmlFor="name" className={tema.labelFieldClass}>Nome e Cognome</label>
         <input
@@ -339,7 +357,13 @@ function RegisterVenditoreForm({ tema }: { tema: TemaLogin }) {
   };
 
   return (
-    <form action="/api/auth/register-merchant" method="post" onSubmit={handleSubmit} className="space-y-4">
+    <form
+      id="register-form"
+      action="/api/auth/register-merchant"
+      method="post"
+      onSubmit={handleSubmit}
+      className="space-y-4"
+    >
       <div className="space-y-2">
         <label htmlFor="name" className={tema.labelFieldClass}>Nome e Cognome</label>
         <input
