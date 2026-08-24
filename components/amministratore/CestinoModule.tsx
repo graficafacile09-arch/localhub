@@ -124,7 +124,7 @@ export default function CestinoModule() {
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
               Pannello Amministratore
             </p>
-            <h1 className="mt-1 flex items-center gap-2 text-2xl font-black tracking-tight text-slate-900">
+            <h1 className="mt-1 flex items-center gap-2 text-3xl font-black tracking-tight text-slate-900">
               <Trash2 className="h-5 w-5 text-slate-500" />
               Cestino
             </h1>

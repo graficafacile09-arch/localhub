@@ -297,7 +297,7 @@ export default function ImpostazioniModule({
                   type="button"
                   onClick={() => salva(sezione.chiavi)}
                   disabled={Object.values(inSalvataggio).some(Boolean)}
-                  className="btn-cta h-11 px-6 text-sm disabled:cursor-not-allowed disabled:opacity-60"
+                  className="btn-cta px-6 text-sm disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <Save className="h-4 w-4" aria-hidden />
                   Salva
@@ -367,7 +367,7 @@ export default function ImpostazioniModule({
             type="button"
             onClick={salvaCommissione}
             disabled={Object.values(inSalvataggio).some(Boolean)}
-            className="btn-cta h-11 px-6 text-sm disabled:cursor-not-allowed disabled:opacity-60"
+            className="btn-cta px-6 text-sm disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Save className="h-4 w-4" aria-hidden />
             Salva

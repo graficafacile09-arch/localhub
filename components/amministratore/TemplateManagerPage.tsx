@@ -140,7 +140,7 @@ export default function TemplateManagerPage() {
           <LayoutGrid className="h-5 w-5 text-blue-600" />
         </div>
         <div>
-          <h1 className="text-lg font-bold text-slate-800">Template di piattaforma</h1>
+          <h1 className="text-3xl font-black tracking-tight text-slate-900">Template di piattaforma</h1>
           <p className="text-xs text-slate-400">Gestione riservata all&apos;amministratore: i commercianti possono solo sceglierli</p>
         </div>
         <button

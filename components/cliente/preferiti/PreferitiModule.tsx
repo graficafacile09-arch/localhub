@@ -159,7 +159,7 @@ export default function PreferitiModule() {
               <Heart className="h-7 w-7" aria-hidden />
             </span>
             <div>
-              <h1 className="text-2xl font-black tracking-tight text-slate-900">
+              <h1 className="text-3xl font-black tracking-tight text-slate-900">
                 I tuoi preferiti
               </h1>
               <p className="mt-1 text-sm text-slate-500">

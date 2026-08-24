@@ -165,7 +165,7 @@ export default function PayoutAdminDetailClient({ payoutId }: { payoutId: string
               <ArrowLeft className="h-4 w-4" aria-hidden /> Payout
             </Link>
             <div className="mt-2 flex flex-wrap items-center gap-2">
-              <h1 className="text-2xl font-black tracking-tight text-slate-900 md:text-3xl">
+              <h1 className="text-3xl font-black tracking-tight text-slate-900">
                 Payout {d.negozioNome}
               </h1>
               <BadgeStato stato={d.stato} />

@@ -162,7 +162,7 @@ export default function UtentiModule({
               <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">Centro di gestione degli utenti LocalHub: amministratori, commercianti e clienti, con i loro ruoli e stati. I dati provengono dal database reale della piattaforma.</p>
             </div>
           </div>
-          <button type="button" onClick={() => setMostraNuovo((value) => !value)} className="btn-cta shrink-0 px-5 py-3 text-sm"><Plus className="h-4 w-4" />Nuovo utente</button>
+          <button type="button" onClick={() => setMostraNuovo((value) => !value)} className="btn-cta shrink-0 px-5 py-2.5 text-sm"><Plus className="h-4 w-4" />Nuovo utente</button>
         </div>
       </div>
 

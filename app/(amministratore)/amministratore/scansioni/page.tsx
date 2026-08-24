@@ -107,7 +107,7 @@ export default function ScansioniPage() {
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
               Amministrazione
             </p>
-            <h1 className="mt-1 text-2xl font-black tracking-tight text-slate-900">
+            <h1 className="mt-1 text-3xl font-black tracking-tight text-slate-900">
               Scansioni AI
             </h1>
             <p className="mt-1 text-sm text-slate-500">

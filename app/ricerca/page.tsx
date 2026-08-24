@@ -136,7 +136,13 @@ export default async function RicercaPage({
             chiaviPreferiti={statoPreferiti.chiavi}
             autenticato={statoPreferiti.autenticato}
           />
-        ) : ricercaAttiva ? (
+        ) : (
+          <>
+            {/* Titolo pagina — H1 coerente con la scala 10C */}
+            <h1 className="mb-3 text-3xl font-black tracking-tight text-slate-900">
+              Ricerca
+            </h1>
+            {ricercaAttiva ? (
           <div className="lg:grid lg:grid-cols-[250px,1fr] lg:gap-5">
             {/* Sidebar filtri (desktop) */}
             <aside className="hidden lg:block">
@@ -178,7 +184,7 @@ export default async function RicercaPage({
               {/* ═══ PRODOTTI ═══ */}
               {prodotti.length > 0 ? (
                 <section className="mb-4">
-                  <h2 className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">
+                  <h2 className="mb-2 text-lg font-black tracking-tight text-slate-900">
                     Prodotti ({prodotti.length})
                   </h2>
                   <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
@@ -247,7 +253,7 @@ export default async function RicercaPage({
               {/* ═══ NEGOZI (solo ricerca base senza filtri) ═══ */}
               {negozi.length > 0 && (
                 <section className="mb-4">
-                  <h2 className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">
+                  <h2 className="mb-2 text-lg font-black tracking-tight text-slate-900">
                     Negozi ({negozi.length})
                   </h2>
                   <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -324,12 +330,14 @@ export default async function RicercaPage({
               )}
             </div>
           </div>
-        ) : (
-          <div className="py-12 text-center">
-            <p className="text-sm text-slate-500">
-              Inserisci un termine nella barra di ricerca.
-            </p>
-          </div>
+            ) : (
+              <div className="py-12 text-center">
+                <p className="text-sm text-slate-500">
+                  Inserisci un termine nella barra di ricerca.
+                </p>
+              </div>
+            )}
+          </>
         )}
       </div>
     </main>

@@ -227,13 +227,13 @@ export default function CategorieModule({ categorie }: { categorie: CategoriaAdm
               onChange={(event) => setRicerca(event.target.value)}
               placeholder="Cerca categoria per nome, slug o sinonimo..."
               aria-label="Cerca categoria"
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-3 pl-10 pr-4 text-sm font-medium text-slate-700 placeholder:text-slate-400 transition focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 pl-10 pr-4 text-sm font-medium text-slate-700 placeholder:text-slate-400 transition focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100"
             />
           </div>
           <button
             type="button"
             onClick={apriCreazione}
-            className="btn-cta h-12 px-5 text-sm"
+            className="btn-cta px-5 text-sm"
           >
             <Plus className="h-4 w-4" aria-hidden />
             Nuova categoria
@@ -305,7 +305,7 @@ export default function CategorieModule({ categorie }: { categorie: CategoriaAdm
               type="button"
               onClick={salva}
               disabled={salvando}
-              className="btn-cta h-11 flex-1 px-5 text-sm disabled:cursor-not-allowed disabled:opacity-60"
+              className="btn-cta flex-1 px-5 text-sm disabled:cursor-not-allowed disabled:opacity-60"
             >
               {salvando && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
               {inModifica ? "Salva modifiche" : "Crea categoria"}
@@ -314,7 +314,7 @@ export default function CategorieModule({ categorie }: { categorie: CategoriaAdm
               type="button"
               onClick={chiudi}
               disabled={salvando}
-              className="inline-flex h-11 items-center justify-center rounded-xl bg-slate-100 px-5 text-sm font-bold text-slate-600 transition hover:bg-slate-200"
+              className="inline-flex h-10 items-center justify-center rounded-xl bg-slate-100 px-5 text-sm font-bold text-slate-600 transition hover:bg-slate-200"
             >
               Annulla
             </button>

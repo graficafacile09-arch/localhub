@@ -171,7 +171,7 @@ export default function OfferteModule({ offerte }: { offerte: OffertaAdmin[] }) 
               onChange={(event) => setRicerca(event.target.value)}
               placeholder="Cerca offerta per titolo, descrizione o negozio..."
               aria-label="Cerca offerta"
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-3 pl-10 pr-4 text-sm font-medium text-slate-700 placeholder:text-slate-400 transition focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 pl-10 pr-4 text-sm font-medium text-slate-700 placeholder:text-slate-400 transition focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100"
             />
           </div>
           <div className="flex flex-wrap gap-2">

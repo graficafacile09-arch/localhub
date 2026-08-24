@@ -63,7 +63,7 @@ export default function SegnalazioniClienteModule() {
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
               Supporto & Segnalazioni
             </p>
-            <h1 className="mt-1.5 text-2xl font-black tracking-tight text-slate-900 md:text-3xl">
+            <h1 className="mt-1.5 text-3xl font-black tracking-tight text-slate-900">
               Segnala un problema
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
@@ -95,7 +95,7 @@ export default function SegnalazioniClienteModule() {
             <select
               value={tipo}
               onChange={(e) => setTipo(e.target.value as SegnalazioneTipo)}
-              className="w-full h-11 rounded-xl border border-slate-200 bg-slate-50/50 px-3 text-sm font-medium text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100"
+              className="w-full h-10 rounded-xl border border-slate-200 bg-slate-50/50 px-3 text-sm font-medium text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100"
             >
               {Object.entries(TIPO_LABELS).map(([val, label]) => (
                 <option key={val} value={val}>
@@ -116,7 +116,7 @@ export default function SegnalazioniClienteModule() {
               value={titolo}
               onChange={(e) => setTitolo(e.target.value)}
               placeholder="Es. Orari errati per la Pizzeria Da Luigi"
-              className="w-full h-11 rounded-xl border border-slate-200 bg-slate-50/50 px-4 text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100"
+              className="w-full h-10 rounded-xl border border-slate-200 bg-slate-50/50 px-4 text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100"
             />
           </div>
 
