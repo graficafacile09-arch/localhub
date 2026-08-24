@@ -66,7 +66,7 @@ export default async function ClienteDashboardPage() {
               </div>
             </div>
 
-            <Link href="/negozi" className="btn-cta shrink-0 px-6 py-3 text-sm">
+            <Link href="/negozi" className="btn-cta shrink-0 px-6 py-2.5 text-sm">
               Esplora i negozi
               <ArrowRight className="h-4 w-4" aria-hidden />
             </Link>

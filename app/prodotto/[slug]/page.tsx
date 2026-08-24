@@ -201,7 +201,7 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
         <div className="mt-4">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0 flex-1">
-              <h1 className="text-xl font-black tracking-tight text-slate-900">
+              <h1 className="text-3xl font-black tracking-tight text-slate-900">
                 {prodotto.nome as string}
               </h1>
               {"categoria" in prodotto && prodotto.categoria && (

@@ -19,7 +19,7 @@ export default function CarrelloPageClient() {
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-blue-50">
             <ShoppingBag className="h-7 w-7 text-blue-600" aria-hidden />
           </div>
-          <h1 className="mt-4 text-lg font-black text-slate-900">Il tuo carrello è vuoto</h1>
+          <h1 className="mt-4 text-3xl font-black text-slate-900">Il tuo carrello è vuoto</h1>
           <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500">
             Sfoglia i negozi della tua città e aggiungi i prodotti che ti interessano.
           </p>
@@ -46,7 +46,7 @@ export default function CarrelloPageClient() {
   return (
     <div className="mx-auto max-w-5xl px-3 py-5 sm:px-5">
       <div className="flex items-center justify-between gap-2">
-        <h1 className="text-lg font-black tracking-tight text-slate-900">
+        <h1 className="text-3xl font-black tracking-tight text-slate-900">
           Carrello{" "}
           <span className="text-sm font-semibold text-slate-400">
             ({pezzi} {pezzi === 1 ? "articolo" : "articoli"})

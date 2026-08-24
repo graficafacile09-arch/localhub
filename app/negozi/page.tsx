@@ -32,7 +32,7 @@ export default async function NegoziPage({
       <Header />
 
       <div className="mx-auto max-w-7xl px-3 py-3 sm:px-5">
-        <h1 className="mb-3 text-lg font-black tracking-tight text-slate-900">
+        <h1 className="mb-3 text-3xl font-black tracking-tight text-slate-900">
           {soloEvidenziati ? "⭐ Negozi in evidenza" : `Negozi di ${citta}`}
         </h1>
 

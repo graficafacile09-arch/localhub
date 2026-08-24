@@ -18,7 +18,7 @@ export default async function AcquistaLayout({
           className="mb-3 px-4 py-2"
         />
 
-        <h1 className="text-lg font-black text-slate-900">Completa l&apos;acquisto</h1>
+        <h1 className="text-3xl font-black text-slate-900">Completa l&apos;acquisto</h1>
 
         {children}
       </div>

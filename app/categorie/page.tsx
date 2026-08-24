@@ -13,7 +13,7 @@ export default async function CategoriePage() {
 
       <div className="mx-auto max-w-4xl px-4 py-8 md:px-6">
         <div className="mb-6">
-          <h1 className="text-xl font-black tracking-tight text-slate-900">
+          <h1 className="text-3xl font-black tracking-tight text-slate-900">
             Tutte le categorie
           </h1>
           <p className="mt-1 text-xs text-slate-500">
