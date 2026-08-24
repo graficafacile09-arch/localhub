@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import type { StatoOrdine } from "@/lib/cliente/types";
 import { ETICHETTE_STATO } from "@/lib/merchant/ordini-stati";
+import FiltroDataRange from "@/components/ui/FiltroDataRange";
 import { ETICHETTE_STATO_SPEDIZIONE } from "@/lib/merchant/ordini-spedizioni";
 import type { OrdineAdminLista, RisultatoOrdiniAdmin } from "@/lib/amministratore/ordini";
 
@@ -195,9 +196,9 @@ export default function OrdiniAdminClient() {
 
       {/* Barra filtri */}
       <div className="rounded-[1.75rem] border border-white/70 bg-white p-4 shadow-sm md:p-5">
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-3 md:grid-cols-[repeat(2,minmax(0,1fr))] xl:grid-cols-[repeat(4,minmax(0,1fr))]">
           {/* Ricerca */}
-          <div className="relative md:col-span-2 xl:col-span-2">
+          <div className="relative min-w-0 md:col-span-2 xl:col-span-2">
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden />
             <input
               type="search"
@@ -211,7 +212,7 @@ export default function OrdiniAdminClient() {
           <select
             value={filtri.stato}
             onChange={(e) => setFiltro("stato", e.target.value)}
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+            className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
           >
             <option value="">Stato ordine: tutti</option>
             {STORICO_STATI.map((s) => (
@@ -222,7 +223,7 @@ export default function OrdiniAdminClient() {
           <select
             value={filtri.pagamento}
             onChange={(e) => setFiltro("pagamento", e.target.value)}
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+            className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
           >
             <option value="">Pagamento: tutti</option>
             {STATI_PAGAMENTO.map((s) => (
@@ -233,7 +234,7 @@ export default function OrdiniAdminClient() {
           <select
             value={filtri.statoSpedizione}
             onChange={(e) => setFiltro("statoSpedizione", e.target.value)}
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+            className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
           >
             <option value="">Spedizione: tutte</option>
             {STATI_SPEDIZIONE.map((s) => (
@@ -244,7 +245,7 @@ export default function OrdiniAdminClient() {
           <select
             value={filtri.modalita}
             onChange={(e) => setFiltro("modalita", e.target.value)}
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+            className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
           >
             <option value="">Modalità: tutte</option>
             <option value="ritiro">Ritiro</option>
@@ -254,7 +255,7 @@ export default function OrdiniAdminClient() {
           <select
             value={filtri.negozioId}
             onChange={(e) => setFiltro("negozioId", e.target.value)}
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+            className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
           >
             <option value="">Negozio: tutti</option>
             {negozi.map((n) => (
@@ -262,28 +263,17 @@ export default function OrdiniAdminClient() {
             ))}
           </select>
 
-          <div className="flex items-center gap-2">
-            <input
-              type="date"
-              value={filtri.dataDa}
-              onChange={(e) => setFiltro("dataDa", e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
-              aria-label="Data da"
-            />
-            <span className="text-slate-400">→</span>
-            <input
-              type="date"
-              value={filtri.dataA}
-              onChange={(e) => setFiltro("dataA", e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
-              aria-label="Data a"
-            />
-          </div>
+          <FiltroDataRange
+            dataDa={filtri.dataDa}
+            dataA={filtri.dataA}
+            onDataDa={(v) => setFiltro("dataDa", v)}
+            onDataA={(v) => setFiltro("dataA", v)}
+          />
 
           <button
             type="button"
             onClick={azzera}
-            className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-blue-300 hover:text-blue-700"
+            className="inline-flex min-w-0 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-blue-300 hover:text-blue-700"
           >
             <X className="h-4 w-4" aria-hidden />
             Azzera filtri

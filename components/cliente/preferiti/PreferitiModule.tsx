@@ -171,7 +171,7 @@ export default function PreferitiModule() {
       </div>
 
       {/* ── Barra filtri ───────────────────────────────────────────────────── */}
-      <div className="card flex flex-col gap-3 p-3 md:flex-row md:items-center md:justify-between">
+      <div className="card flex flex-col gap-3 p-3 md:flex-row md:flex-wrap md:items-center md:justify-between">
         {/* Tabs tipologia */}
         <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Filtra per tipologia">
           {(Object.keys(etichette) as FiltroTipo[]).map((tipo) => (
@@ -192,7 +192,7 @@ export default function PreferitiModule() {
           ))}
         </div>
 
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:ml-auto sm:min-w-0">
           {/* Ricerca */}
           <form onSubmit={applicaRicerca} className="relative">
             <Search

@@ -135,7 +135,7 @@ export default function TemplateManagerPage() {
       )}
 
       {/* Header */}
-      <div className="mb-6 flex items-center gap-3">
+      <div className="mb-6 flex flex-wrap items-center gap-3">
         <div className="rounded-xl bg-blue-50 p-2.5">
           <LayoutGrid className="h-5 w-5 text-blue-600" />
         </div>

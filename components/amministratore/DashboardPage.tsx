@@ -160,9 +160,9 @@ export default function DashboardPage() {
       {/* ── Grafici ────────────────────────────────────────────────────── */}
       <div className="grid gap-4 xl:grid-cols-3">
         {/* Negozi per categoria */}
-        <section className="card p-5 shadow-sm">
+        <section className="card min-w-0 p-5 shadow-sm">
           <header className="flex items-center gap-2">
-            <Store className="h-4 w-4 text-slate-400" aria-hidden />
+            <Store className="h-4 w-4 shrink-0 text-slate-400" aria-hidden />
             <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
               Negozi per categoria
             </h2>
@@ -195,9 +195,9 @@ export default function DashboardPage() {
         </section>
 
         {/* Utenti per ruolo — donut */}
-        <section className="card p-5 shadow-sm">
+        <section className="card min-w-0 p-5 shadow-sm">
           <header className="flex items-center gap-2">
-            <Users className="h-4 w-4 text-slate-400" aria-hidden />
+            <Users className="h-4 w-4 shrink-0 text-slate-400" aria-hidden />
             <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
               Utenti per ruolo
             </h2>
@@ -210,9 +210,9 @@ export default function DashboardPage() {
         </section>
 
         {/* Scansioni ultimi 7 giorni */}
-        <section className="card p-5 shadow-sm">
+        <section className="card min-w-0 p-5 shadow-sm">
           <header className="flex items-center gap-2">
-            <Activity className="h-4 w-4 text-slate-400" aria-hidden />
+            <Activity className="h-4 w-4 shrink-0 text-slate-400" aria-hidden />
             <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
               Scansioni AI — ultimi 7 giorni
             </h2>
@@ -290,9 +290,9 @@ export default function DashboardPage() {
       </div>
 
       {/* ── Stato piattaforma ──────────────────────────────────────────── */}
-      <section className="card p-5 shadow-sm">
+      <section className="card min-w-0 p-5 shadow-sm">
         <header className="flex items-center gap-2">
-          <Database className="h-4 w-4 text-slate-400" aria-hidden />
+          <Database className="h-4 w-4 shrink-0 text-slate-400" aria-hidden />
           <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
             Stato generale piattaforma
           </h2>
@@ -486,15 +486,15 @@ function ListaCard({
   children: React.ReactNode;
 }) {
   return (
-    <section className="card p-5 shadow-sm">
-      <header className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Icon className="h-4 w-4 text-slate-400" aria-hidden />
-          <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
+    <section className="card min-w-0 p-5 shadow-sm">
+      <header className="flex items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <Icon className="h-4 w-4 shrink-0 text-slate-400" aria-hidden />
+          <h2 className="truncate text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
             {title}
           </h2>
         </div>
-        <a href={href} className="text-[11px] font-bold text-blue-600 transition hover:text-blue-700 hover:underline">
+        <a href={href} className="shrink-0 text-[11px] font-bold text-blue-600 transition hover:text-blue-700 hover:underline">
           Vedi tutto
         </a>
       </header>

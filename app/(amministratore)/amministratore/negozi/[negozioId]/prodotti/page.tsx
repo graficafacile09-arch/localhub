@@ -61,8 +61,8 @@ export default async function AdminStoreProdottiPage({
 
       {/* Intestazione */}
       <div className="rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm">
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div>
+        <div className="flex flex-col gap-4 md:flex-row md:flex-wrap md:items-start md:justify-between">
+          <div className="min-w-0">
             <Link
               href={`/amministratore/negozi/${negozioId}/edit`}
               className="mb-3 inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 transition hover:text-blue-700"
@@ -81,7 +81,7 @@ export default async function AdminStoreProdottiPage({
             </p>
           </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center md:shrink md:min-w-0 md:justify-end">
             <Link
               href={`/amministratore/negozi/${negozioId}/prodotti/ai`}
               className="btn-cta h-12 px-5 text-sm"
@@ -183,7 +183,7 @@ export default async function AdminStoreProdottiPage({
                         {product.sottocategoria && ` · ${product.sottocategoria}`}
                       </p>
                     </div>
-                    <div className="flex shrink-0 flex-wrap items-center gap-1.5">
+                    <div className="flex min-w-0 flex-wrap items-center justify-end gap-1.5">
                       <span
                         className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${
                           product.attivo
@@ -219,7 +219,7 @@ export default async function AdminStoreProdottiPage({
                       )}
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <Link
                         href={`/amministratore/negozi/${negozioId}/prodotti/${product.id}`}
                         className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-blue-300 hover:text-blue-700"

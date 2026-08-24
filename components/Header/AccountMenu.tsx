@@ -82,7 +82,7 @@ export default function AccountMenu({ account }: { account: DatiAccount | null }
           onClick={() => setOpen((value) => !value)}
           aria-expanded={open}
           aria-haspopup="menu"
-          className="inline-flex items-center gap-1.5 rounded-full bg-yellow-400 px-4 py-2 text-sm font-bold text-blue-900 transition-colors hover:bg-yellow-300 active:scale-95"
+          className="inline-flex items-center gap-1.5 rounded-full bg-yellow-400 px-3 py-2 text-sm font-bold text-blue-900 transition-colors hover:bg-yellow-300 active:scale-95 sm:px-4"
         >
           <LogIn className="h-4 w-4" aria-hidden />
           Accedi

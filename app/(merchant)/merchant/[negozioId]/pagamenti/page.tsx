@@ -51,15 +51,15 @@ export default async function MerchantPagamentiPage({
       <div className="space-y-6">
         {/* Header */}
         <div className="rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm">
-          <div className="flex items-start gap-4">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
+          <div className="flex items-start gap-3 sm:gap-4">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700 sm:h-12 sm:w-12">
               <CreditCard className="h-5 w-5" />
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
                 Pagamenti
               </p>
-              <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-900">
+              <h1 className="mt-2 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
                 {store.nome ?? "Negozio"}
               </h1>
               <p className="mt-1 text-sm text-slate-500">

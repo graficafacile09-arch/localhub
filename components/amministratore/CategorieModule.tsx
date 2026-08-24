@@ -353,7 +353,7 @@ export default function CategorieModule({ categorie }: { categorie: CategoriaAdm
             return (
               <article
                 key={categoria.id}
-                className={`flex flex-col rounded-3xl border bg-white p-5 shadow-sm transition hover:shadow-md ${
+                className={`flex min-w-0 flex-col rounded-3xl border bg-white p-5 shadow-sm transition hover:shadow-md ${
                   categoria.attivo ? "border-white/70" : "border-slate-100 opacity-80"
                 }`}
               >
@@ -413,7 +413,7 @@ export default function CategorieModule({ categorie }: { categorie: CategoriaAdm
                   </div>
                 )}
 
-                <div className="mt-5 flex flex-col gap-2 border-t border-slate-100 pt-4 sm:flex-row">
+                <div className="mt-5 flex flex-col gap-2 border-t border-slate-100 pt-4 sm:flex-row sm:flex-wrap">
                   <button
                     type="button"
                     onClick={() => apriModifica(categoria)}

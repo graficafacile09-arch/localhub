@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Wallet, X } from "lucide-react";
+import FiltroDataRange from "@/components/ui/FiltroDataRange";
 import type { RiepilogoIncassi, EconomiaOrdine } from "@/lib/incassi";
 import type { RigaIncassoAdmin } from "@/lib/amministratore/incassi";
 import type { RigaIncassoVenditore } from "@/lib/merchant/incassi";
@@ -230,29 +231,18 @@ export default function IncassiClient({
 
       {/* Barra filtri */}
       <div className="rounded-[1.75rem] border border-white/70 bg-white p-4 shadow-sm md:p-5">
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-          <div className="flex items-center gap-2">
-            <input
-              type="date"
-              value={filtri.dataDa}
-              onChange={(e) => setFiltro("dataDa", e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
-              aria-label="Data da"
-            />
-            <span className="text-slate-400">→</span>
-            <input
-              type="date"
-              value={filtri.dataA}
-              onChange={(e) => setFiltro("dataA", e.target.value)}
-              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
-              aria-label="Data a"
-            />
-          </div>
+        <div className="grid gap-3 md:grid-cols-[repeat(2,minmax(0,1fr))] xl:grid-cols-[repeat(4,minmax(0,1fr))]">
+          <FiltroDataRange
+            dataDa={filtri.dataDa}
+            dataA={filtri.dataA}
+            onDataDa={(v) => setFiltro("dataDa", v)}
+            onDataA={(v) => setFiltro("dataA", v)}
+          />
 
           <select
             value={filtri.pagamento}
             onChange={(e) => setFiltro("pagamento", e.target.value)}
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+            className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
           >
             <option value="">Pagamento: tutti</option>
             {STATI_PAGAMENTO.map((s) => (
@@ -263,7 +253,7 @@ export default function IncassiClient({
           <select
             value={filtri.provider}
             onChange={(e) => setFiltro("provider", e.target.value)}
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+            className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
           >
             <option value="">Provider: tutti</option>
             {PROVIDER.map((p) => (
@@ -274,7 +264,7 @@ export default function IncassiClient({
           <select
             value={filtri.stato}
             onChange={(e) => setFiltro("stato", e.target.value)}
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+            className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
           >
             <option value="">Stato ordine: tutti</option>
             {Object.entries(ETICHETTE_STATO).map(([k, v]) => (
@@ -286,7 +276,7 @@ export default function IncassiClient({
             <select
               value={filtri.negozioId}
               onChange={(e) => setFiltro("negozioId", e.target.value)}
-              className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+              className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
             >
               <option value="">Negozio: tutti</option>
               {negozi.map((n) => (
@@ -298,7 +288,7 @@ export default function IncassiClient({
           <button
             type="button"
             onClick={azzera}
-            className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-blue-300 hover:text-blue-700"
+            className="inline-flex min-w-0 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-blue-300 hover:text-blue-700"
           >
             <X className="h-4 w-4" aria-hidden />
             Azzera filtri
@@ -380,7 +370,7 @@ function RigaCard({
       href={`${dettaglioBase}/${ordine.id}`}
       className="block rounded-[1.5rem] border border-white/70 bg-white p-4 shadow-sm transition hover:shadow-md"
     >
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+      <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center md:justify-between">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-mono text-sm font-bold text-slate-900">{ordine.numero}</span>
@@ -404,7 +394,7 @@ function RigaCard({
             <p className="mt-0.5 text-[11px] text-slate-400">Provider: {ordine.paymentProvider}</p>
           )}
         </div>
-        <div className="grid shrink-0 grid-cols-3 gap-3 text-right md:grid-cols-4">
+        <div className="grid min-w-0 grid-cols-3 gap-3 text-right md:grid-cols-4">
           <Cella label="Pagato" valore={formattaEuro(e.importoPagato)} />
           <Cella label="Commissione" valore={formattaEuro(e.commissioneEffettiva)} colore="text-blue-700" />
           <Cella label="Rimborsato" valore={formattaEuro(e.importoRimborsato)} colore={e.importoRimborsato > 0 ? "text-red-600" : undefined} />

@@ -125,8 +125,8 @@ export default async function MerchantProductsPage({ params, searchParams }: Pro
     <div className="space-y-6">
       {/* Header con titolo e pulsanti azione */}
       <div className="rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm">
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div>
+        <div className="flex flex-col gap-4 md:flex-row md:flex-wrap md:items-start md:justify-between">
+          <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
               Catalogo merchant
             </p>
@@ -138,7 +138,7 @@ export default async function MerchantProductsPage({ params, searchParams }: Pro
             </p>
           </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center md:shrink md:min-w-0 md:justify-end">
             <Link
               href={`/merchant/${negozioId}/prodotti/ai`}
               className="btn-cta h-12 gap-2 px-5 text-sm"
