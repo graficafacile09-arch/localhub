@@ -40,7 +40,7 @@ export default function MerchantBottomNav({
     ? getAdminBottomNavItems()
     : getMerchantBottomNavItems(storeId, baseHref);
 
-  function isActive(href: string | null): boolean {
+  function isActive(href: string | null, key?: string): boolean {
     if (!href) return false;
     if (href === "/") return pathname === "/";
     if (href === `/merchant/${storeId}`) {
@@ -48,6 +48,16 @@ export default function MerchantBottomNav({
     }
     // "Negozio" (senza negozio selezionato) è attivo solo sulla home dell'area
     if (href === baseHref) return pathname === baseHref;
+    // Guadagni copre anche Incassi e Payout (stessa area economica): la voce
+    // resta evidenziata su /guadagni, /incassi e /payout.
+    if (key === "guadagni" && storeId) {
+      const storePath = `/merchant/${storeId}`;
+      return [
+        `${storePath}/guadagni`,
+        `${storePath}/incassi`,
+        `${storePath}/payout`,
+      ].some((p) => pathname === p || pathname.startsWith(`${p}/`));
+    }
     return pathname.startsWith(href);
   }
 
@@ -65,7 +75,9 @@ export default function MerchantBottomNav({
           <div className="flex items-end justify-around px-1 pt-2 pb-2 touch-manipulation">
             {items.map((item) => {
               const Icon = item.icon;
-              const active = item.href ? isActive(item.href) : false;
+              const active = item.href
+                ? isActive(item.href, item.key)
+                : false;
               const available = item.requiresStore ? hasStore : true;
 
               // ── Pulsante AI — prominente e sollevato ──────────────────────

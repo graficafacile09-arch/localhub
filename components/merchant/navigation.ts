@@ -12,6 +12,7 @@ import {
   Sparkles,
   Store,
   Users,
+  Wrench,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -95,6 +96,16 @@ export function getMerchantStoreNavItems(storeId: string): MerchantNavItem[] {
       href: `${storePath}/pagamenti`,
       icon: CreditCard,
     },
+    // ── Sezione strumenti: separa le funzioni SECONDARIE dalle principali.
+    //    Pattern "section" già supportato da MerchantSidebarNav: intestazione
+    //    + separatore; nessun href, nessuna voce eliminata. ────────────────
+    {
+      key: "strumenti",
+      label: "Strumenti",
+      href: null,
+      icon: Wrench,
+      section: true,
+    },
     {
       key: "media",
       label: "Libreria Media",
@@ -119,7 +130,15 @@ export function getMerchantStoreNavItems(storeId: string): MerchantNavItem[] {
   ];
 }
 
-/** Voci della bottom navigation mobile dell'Area Venditore. */
+/**
+ * Voci della bottom navigation mobile dell'Area Venditore.
+ *
+ * "Home" NON è più una voce della barra: il pulsante Home della top bar
+ * mobile (MerchantTopBar) è SEMPRE visibile e porta a "/" — la destinazione
+ * resta raggiungibile senza duplicarla nella barra. Al suo posto entra
+ * GUADAGNI (funzione economica principale): la barra resta a 5 voci senza
+ * sovraffollamento e senza eliminare alcuna destinazione.
+ */
 export function getMerchantBottomNavItems(
   storeId: string | null,
   baseHref: string
@@ -127,12 +146,6 @@ export function getMerchantBottomNavItems(
   const hasStore = Boolean(storeId);
   const storePath = hasStore ? `${MERCHANT_BASE}/${storeId}` : null;
   return [
-    {
-      key: "home",
-      label: "Home",
-      href: "/",
-      icon: Home,
-    },
     {
       key: "negozio",
       label: "Negozio",
@@ -151,6 +164,13 @@ export function getMerchantBottomNavItems(
       label: "Ordini",
       href: storePath ? `${storePath}/ordini` : baseHref,
       icon: ReceiptText,
+      requiresStore: true,
+    },
+    {
+      key: "guadagni",
+      label: "Guadagni",
+      href: storePath ? `${storePath}/guadagni` : baseHref,
+      icon: Coins,
       requiresStore: true,
     },
     {
