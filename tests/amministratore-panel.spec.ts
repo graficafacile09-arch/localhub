@@ -139,6 +139,65 @@ const ROUTE_NON_PLACEHOLDER = [
   "/amministratore/scansioni",
 ];
 
+/**
+ * Struttura a GRUPPI della sidebar admin (Fase 10A). I gruppi sono accordion
+ * chiusi di default: il test li apre uno a uno e verifica voci + href.
+ * Include TUTTE le voci reali (Negozi, Ordini, Incassi, Payout, …).
+ */
+const GRUPPI: Array<{ nome: string; voci: Array<[string, string]> }> = [
+  {
+    nome: "Panoramica",
+    voci: [["Panoramica", "/amministratore"]],
+  },
+  {
+    nome: "Negozi & Catalogo",
+    voci: [
+      ["Negozi", "/amministratore/attivita"],
+      ["Prodotti", "/amministratore/prodotti"],
+      ["Categorie", "/amministratore/categorie"],
+      ["Negozi in evidenza", "/amministratore/negozi-in-evidenza"],
+    ],
+  },
+  {
+    nome: "Ordini & Pagamenti",
+    voci: [
+      ["Ordini", "/amministratore/ordini"],
+      ["Incassi", "/amministratore/incassi"],
+      ["Payout", "/amministratore/payout"],
+    ],
+  },
+  {
+    nome: "Contenuti & Promozioni",
+    voci: [
+      ["Offerte", "/amministratore/offerte"],
+      ["Eventi", "/amministratore/eventi"],
+      ["Contenuti", "/amministratore/contenuti"],
+      ["Template", "/amministratore/template"],
+    ],
+  },
+  {
+    nome: "Piattaforma",
+    voci: [
+      ["Utenti", "/amministratore/utenti"],
+      ["Segnalazioni", "/amministratore/segnalazioni"],
+      ["Statistiche", "/amministratore/statistiche"],
+    ],
+  },
+  {
+    nome: "Strumenti",
+    voci: [
+      ["Assistente AI", "/amministratore/assistente-ai"],
+      ["Scansioni AI", "/amministratore/scansioni"],
+      ["Registro attività", "/amministratore/registro-attivita"],
+      ["Impostazioni", "/amministratore/impostazioni"],
+    ],
+  },
+  {
+    nome: "Recupero",
+    voci: [["Cestino", "/amministratore/cestino"]],
+  },
+];
+
 test.describe("PANNELLO AMMINISTRATORE — struttura", () => {
   test("la Panoramica è la dashboard di piattaforma con KPI reali + Zona Pericolosa", async ({
     page,
@@ -155,16 +214,19 @@ test.describe("PANNELLO AMMINISTRATORE — struttura", () => {
     await expect(page.locator("body")).toContainText("Utenti totali");
     await expect(page.locator("body")).toContainText("Negozi attivi");
 
-    // Strumenti di piattaforma (esclusivi dell'admin)
+    // Strumenti di piattaforma (esclusivi dell'admin): le voci Cestino e
+    // Utenti sono presenti nella sidebar admin. Con la Fase 10A i gruppi
+    // sono accordion chiusi di default: qui si verifica la PRESENZA delle
+    // voci (si aprono navigando sulla pagina corrispondente).
+    const navAdmin = page.getByRole("navigation", {
+      name: "Menu Amministratore",
+    });
     await expect(
-      page.getByRole("heading", { name: "Amministrazione" })
-    ).toBeVisible();
+      navAdmin.getByRole("link", { name: "Cestino", exact: true })
+    ).toBeAttached();
     await expect(
-      page.getByRole("link", { name: /Cestino/ }).first()
-    ).toBeVisible();
-    await expect(
-      page.getByRole("link", { name: /Utenti/ }).first()
-    ).toBeVisible();
+      navAdmin.getByRole("link", { name: "Utenti", exact: true })
+    ).toBeAttached();
 
     // Zona Pericolosa (esclusiva dell'admin). Le card negozio hanno i propri
     // bottoni "Elimina <nome>": il bottone "Elimina negozio" è quello del
@@ -310,20 +372,51 @@ test.describe("PANNELLO AMMINISTRATORE — struttura", () => {
     }
   });
 
-  test("il menu laterale elenca tutte le voci con le route corrette", async ({
+  test("il menu laterale elenca tutte le voci nei gruppi con le route corrette", async ({
     page,
   }) => {
     await page.goto(`${BASE}/amministratore`, { waitUntil: "networkidle" });
 
     const nav = page.getByRole("navigation", { name: "Menu Amministratore" });
-    for (const [label, href] of VOCI) {
-      const link = nav.getByRole("link", { name: label, exact: true });
-      await expect(link, `voce «${label}»`).toBeVisible();
-      await expect(link).toHaveAttribute("href", href);
+
+    // Gruppi chiusi di default: solo quello della pagina attiva (Panoramica)
+    // è espanso all'apertura della sidebar.
+    await expect(
+      nav.getByRole("button", { name: "Panoramica", exact: true })
+    ).toHaveAttribute("aria-expanded", "true");
+    for (const gruppo of GRUPPI) {
+      if (gruppo.nome === "Panoramica") continue;
+      await expect(
+        nav.getByRole("button", { name: gruppo.nome, exact: true }),
+        `gruppo «${gruppo.nome}» chiuso di default`
+      ).toHaveAttribute("aria-expanded", "false");
     }
+
+    // Apre ogni gruppo e verifica voci presenti + href corretti.
+    for (const gruppo of GRUPPI) {
+      const btn = nav.getByRole("button", { name: gruppo.nome, exact: true });
+      if ((await btn.getAttribute("aria-expanded")) === "false") {
+        await btn.click();
+      }
+      for (const [label, href] of gruppo.voci) {
+        const link = nav.getByRole("link", { name: label, exact: true });
+        await expect(
+          link,
+          `voce «${label}» nel gruppo «${gruppo.nome}»`
+        ).toBeVisible();
+        await expect(link).toHaveAttribute("href", href);
+      }
+    }
+
+    // La sezione negozi è SEPARATA dalla navigazione principale: per
+    // l'admin ha etichetta "Negozi gestiti" (non è una voce del menu).
+    const sezioneNegozi = page
+      .locator("aside")
+      .getByText("Negozi gestiti", { exact: true });
+    await expect(sezioneNegozi).toBeVisible();
   });
 
-  test("la sezione footer della sidebar ha Torna al sito e Impostazioni", async ({
+  test("la sezione footer della sidebar ha solo Torna al sito; Impostazioni vive nel gruppo Strumenti", async ({
     page,
   }) => {
     await page.goto(`${BASE}/amministratore`, { waitUntil: "networkidle" });
@@ -332,14 +425,27 @@ test.describe("PANNELLO AMMINISTRATORE — struttura", () => {
       name: "Navigazione rapida",
     });
 
+    // Il footer contiene SOLO "Torna al sito" (separato dalla navigazione).
     const tornaAlSito = footer.getByRole("link", {
       name: "Torna al sito",
       exact: true,
     });
     await expect(tornaAlSito).toBeVisible();
     await expect(tornaAlSito).toHaveAttribute("href", "/");
+    await expect(
+      footer.getByRole("link", { name: "Impostazioni", exact: true })
+    ).toHaveCount(0);
 
-    const impostazioni = footer.getByRole("link", {
+    // Impostazioni NON è nel footer: vive nel gruppo STRUMENTI (Fase 10A).
+    const nav = page.getByRole("navigation", { name: "Menu Amministratore" });
+    const btnStrumenti = nav.getByRole("button", {
+      name: "Strumenti",
+      exact: true,
+    });
+    if ((await btnStrumenti.getAttribute("aria-expanded")) === "false") {
+      await btnStrumenti.click();
+    }
+    const impostazioni = nav.getByRole("link", {
       name: "Impostazioni",
       exact: true,
     });
@@ -381,21 +487,40 @@ test.describe("PANNELLO AMMINISTRATORE — struttura", () => {
     ).toBeVisible();
   });
 
-  test("la sidebar ha La mia area verso /amministratore e la card Amministrazione", async ({
+  test("la sidebar admin ha Panoramica verso /amministratore e le voci sono raggiungibili aprendo i gruppi", async ({
     page,
   }) => {
     await page.goto(`${BASE}/amministratore`, { waitUntil: "networkidle" });
 
-    const laMiaArea = page.getByRole("link", { name: "La mia area" });
-    await expect(laMiaArea).toBeVisible();
-    await expect(laMiaArea).toHaveAttribute("href", "/amministratore");
-
     const nav = page.getByRole("navigation", {
       name: "Menu Amministratore",
     });
+
+    // La voce Panoramica (gruppo attivo, aperto di default) porta alla
+    // dashboard amministratore.
+    const panoramica = nav.getByRole("link", {
+      name: "Panoramica",
+      exact: true,
+    });
+    await expect(panoramica).toBeVisible();
+    await expect(panoramica).toHaveAttribute("href", "/amministratore");
+
+    // Cestino (gruppo Recupero) e Utenti (gruppo Piattaforma) sono
+    // raggiungibili aprendo i rispettivi gruppi dell'accordion.
+    const btnRecupero = nav.getByRole("button", {
+      name: "Recupero",
+      exact: true,
+    });
+    await btnRecupero.click();
     await expect(
       nav.getByRole("link", { name: "Cestino", exact: true })
     ).toBeVisible();
+
+    const btnPiattaforma = nav.getByRole("button", {
+      name: "Piattaforma",
+      exact: true,
+    });
+    await btnPiattaforma.click();
     await expect(
       nav.getByRole("link", { name: "Utenti", exact: true })
     ).toBeVisible();

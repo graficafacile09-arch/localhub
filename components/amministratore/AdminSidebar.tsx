@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, ShieldCheck } from "lucide-react";
@@ -9,10 +9,12 @@ import { adminFooterItems, adminNavGroups } from "./navigation";
 
 /**
  * Menu laterale del pannello Amministratore, organizzato per GRUPPI logici
- * (accordion fluidi, tutti aperti di default). In modalità "collapsed"
- * mostra solo le icone (con tooltip), altrimenti l'etichetta completa.
- * Lo stato attivo segue la route corrente. In fondo una sezione separata
- * con la navigazione rapida (solo "Torna al sito").
+ * (accordion). I gruppi sono CHIUSI di default tranne quello della pagina
+ * attiva, che si apre automaticamente e non può essere richiuso: l'utente
+ * capisce sempre dove si trova. Il chevron mostra lo stato e la transizione
+ * di apertura è breve e pulita. In modalità "collapsed" mostra solo le icone
+ * (con tooltip), altrimenti l'etichetta completa. In fondo una sezione
+ * separata con la navigazione rapida (solo "Torna al sito").
  */
 export default function AdminSidebar({
   collapsed = false,
@@ -21,15 +23,38 @@ export default function AdminSidebar({
 }) {
   const pathname = usePathname();
 
-  // Tutti i gruppi sono APERTI di default: il menu è subito completo.
-  const [aperti, setAperti] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(adminNavGroups.map((g) => [g.key, true]))
-  );
-
   function isActive(href: string): boolean {
     if (href === "/") return false;
     if (href === "/amministratore") return pathname === href;
     return pathname.startsWith(href);
+  }
+
+  // Gruppo che contiene la voce della pagina attiva (se esiste).
+  const gruppoAttivo = useMemo(() => {
+    return (
+      adminNavGroups.find((group) =>
+        group.items.some((item) => isActive(item.href))
+      )?.key ?? null
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
+
+  // Tutti i gruppi sono CHIUSI di default. Il gruppo della pagina attiva
+  // resta SEMPRE aperto (derivato nel render: nessun effect, nessun setState):
+  // l'utente può chiudere gli altri gruppi, ma la voce attiva resta visibile.
+  const [aperti, setAperti] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(adminNavGroups.map((g) => [g.key, false]))
+  );
+
+  function isAperto(key: string): boolean {
+    return key === gruppoAttivo || aperti[key] === true;
+  }
+
+  function toggleGruppo(key: string) {
+    // Il gruppo della pagina attiva non si chiude mai: la voce attiva
+    // deve restare visibile per orientarsi.
+    if (key === gruppoAttivo) return;
+    setAperti((prev) => ({ ...prev, [key]: !prev[key] }));
   }
 
   function renderItem(item: { href: string; label: string; icon: LucideIcon }) {
@@ -103,22 +128,35 @@ export default function AdminSidebar({
   return (
     <div className="space-y-1">
       <nav aria-label="Menu Amministratore" className="space-y-2">
-        {adminNavGroups.map((group) => {
+        {adminNavGroups.map((group, indice) => {
           const Icon = group.icon;
-          const aperto = aperti[group.key] === true;
+          const aperto = isAperto(group.key);
           const items = group.items;
+          const eGruppoAttivo = group.key === gruppoAttivo;
 
           return (
-            <div key={group.key} className="rounded-2xl">
+            <div
+              key={group.key}
+              className={`rounded-2xl ${indice > 0 ? "border-t border-slate-100 pt-2" : ""}`}
+            >
               <button
                 type="button"
-                onClick={() =>
-                  setAperti((prev) => ({ ...prev, [group.key]: !aperto }))
-                }
+                onClick={() => toggleGruppo(group.key)}
                 aria-expanded={aperto}
-                className="flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-left text-[10px] font-black uppercase tracking-[0.16em] text-slate-500 transition hover:bg-slate-50"
+                className={`flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-left text-[10px] font-black uppercase tracking-[0.16em] transition hover:bg-slate-50 ${
+                  eGruppoAttivo
+                    ? "text-blue-700"
+                    : aperto
+                      ? "text-slate-600"
+                      : "text-slate-400"
+                }`}
               >
-                <Icon className="h-4 w-4 shrink-0 text-slate-400" aria-hidden />
+                <Icon
+                  className={`h-4 w-4 shrink-0 ${
+                    eGruppoAttivo ? "text-blue-600" : "text-slate-400"
+                  }`}
+                  aria-hidden
+                />
                 <span className="truncate">{group.label}</span>
                 <ChevronDown
                   className={`ml-auto h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200 ${

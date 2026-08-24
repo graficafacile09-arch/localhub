@@ -1,4 +1,5 @@
 import {
+  ArchiveRestore,
   BadgePercent,
   BarChart3,
   Bell,
@@ -6,6 +7,7 @@ import {
   CalendarDays,
   Coins,
   FolderTree,
+  Globe,
   Home,
   LayoutDashboard,
   LayoutTemplate,
@@ -42,9 +44,10 @@ export const ADMIN_BASE = "/amministratore";
 
 /**
  * Menu laterale dell'Area Amministratore organizzato per GRUPPI logici
- * (accordion nella sidebar): poche voci per gruppo, nessuna duplicazione.
- * "Impostazioni" esiste una sola volta (gruppo Piattaforma), "La mia area"
- * è stata rimossa (il titolo dell'header porta già alla Panoramica).
+ * (accordion nella sidebar, chiusi di default): la gerarchia distingue le
+ * funzioni primarie (Negozi, Prodotti, Ordini, …) dagli strumenti secondari
+ * (Strumenti) e dalle funzioni di recupero (Cestino). Nessuna voce è stata
+ * eliminata: ogni href è identico alla versione precedente.
  */
 export const adminNavGroups: AdminNavGroup[] = [
   {
@@ -72,13 +75,6 @@ export const adminNavGroups: AdminNavGroup[] = [
         description:
           "Tutti i negozi della piattaforma: visualizza, modifica, duplica ed elimina le attività commerciali e professionali registrate.",
         icon: Store,
-      },
-      {
-        href: `${ADMIN_BASE}/cestino`,
-        label: "Cestino",
-        description:
-          "Negozi eliminati dalla piattaforma: ripristino o eliminazione definitiva (solo amministratore).",
-        icon: Trash2,
       },
       {
         href: `${ADMIN_BASE}/prodotti`,
@@ -168,7 +164,7 @@ export const adminNavGroups: AdminNavGroup[] = [
   {
     key: "piattaforma",
     label: "Piattaforma",
-    icon: Wrench,
+    icon: Globe,
     items: [
       {
         href: `${ADMIN_BASE}/utenti`,
@@ -190,6 +186,13 @@ export const adminNavGroups: AdminNavGroup[] = [
           "Analisi dei dati di traffico e delle performance della piattaforma.",
         icon: BarChart3,
       },
+    ],
+  },
+  {
+    key: "strumenti",
+    label: "Strumenti",
+    icon: Wrench,
+    items: [
       {
         href: `${ADMIN_BASE}/assistente-ai`,
         label: "Assistente AI",
@@ -219,6 +222,20 @@ export const adminNavGroups: AdminNavGroup[] = [
       },
     ],
   },
+  {
+    key: "recupero",
+    label: "Recupero",
+    icon: ArchiveRestore,
+    items: [
+      {
+        href: `${ADMIN_BASE}/cestino`,
+        label: "Cestino",
+        description:
+          "Negozi eliminati dalla piattaforma: ripristino o eliminazione definitiva (solo amministratore).",
+        icon: Trash2,
+      },
+    ],
+  },
 ];
 
 /** Voci flattenate (per retrocompatibilità e placeholder). */
@@ -237,8 +254,7 @@ export function getAdminNavItem(href: string): AdminNavItem {
 
 /**
  * Voci della sezione footer della sidebar (navigazione rapida).
- * Solo "Torna al sito": "Impostazioni" NON è duplicata qui (è già nel
- * gruppo Piattaforma).
+ * Solo "Torna al sito": resta separata dalla navigazione principale.
  */
 export const adminFooterItems: AdminNavItem[] = [
   {

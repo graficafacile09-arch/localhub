@@ -1,6 +1,14 @@
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import MerchantShell from "@/components/merchant/MerchantShell";
+
+// Titolo coerente con l'Area Venditore: sostituisce il default pubblico
+// ("I negozi di Castrovillari on-line") nel tab del browser.
+export const metadata = {
+  title: "Area Venditore — InCittà",
+  description:
+    "La tua area venditore su LocalHub: negozi, prodotti, ordini, incassi e guadagni.",
+};
 import AreaNonAutorizzata from "@/components/auth/AreaNonAutorizzata";
 import { areaToPath } from "@/lib/auth/area";
 import { getSessionArea } from "@/lib/auth/session-area";

@@ -118,11 +118,15 @@ export default function MerchantShell({
             />
           )}
 
+          {/* Sezione SEPARATA dalla navigazione principale: i link ai negozi
+              non sono voci del menu admin. Per l'admin l'etichetta è
+              "Negozi gestiti", con stile visivamente distinto (card a parte). */}
           <MerchantStoreSwitcher
             stores={stores}
             currentStoreId={currentStoreId}
             ordiniNonLettiPerNegozio={ordiniNonLettiPerNegozio}
             baseHref={isAdmin ? "/amministratore/negozi" : "/merchant"}
+            label={isAdmin ? "Negozi gestiti" : "I tuoi negozi"}
           />
         </aside>
 

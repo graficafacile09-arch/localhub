@@ -2,7 +2,9 @@ import Link from "next/link";
 import type { MerchantStoreSummary } from "@/lib/merchant/types";
 
 /**
- * Elenco "I tuoi negozi" (sidebar).
+ * Elenco negozi della sidebar ("I tuoi negozi" per il venditore,
+ * "Negozi gestiti" per l'amministratore). È una sezione SEPARATA dalla
+ * navigazione principale: i link ai negozi non sono voci del menu.
  * Accanto al NOME del negozio mostra un badge rosso con il numero di ordini
  * NON LETTI (avvisi): il commerciante vede subito quale negozio ha ordini
  * nuovi, poi clicca per entrare e gestirli.
@@ -15,6 +17,7 @@ export default function MerchantStoreSwitcher({
   currentStoreId,
   ordiniNonLettiPerNegozio,
   baseHref = "/merchant",
+  label = "I tuoi negozi",
 }: {
   stores: MerchantStoreSummary[];
   currentStoreId?: string;
@@ -22,6 +25,8 @@ export default function MerchantStoreSwitcher({
   ordiniNonLettiPerNegozio?: Record<string, number>;
   /** Prefisso dei link ai negozi ("merchant" o "amministratore/negozi"). */
   baseHref?: string;
+  /** Etichetta della sezione (per l'admin: "Negozi gestiti"). */
+  label?: string;
 }) {
   if (stores.length === 0) {
     return null;
@@ -30,7 +35,7 @@ export default function MerchantStoreSwitcher({
   return (
     <div className="card p-5">
       <p className="section-label">
-        I tuoi negozi
+        {label}
       </p>
       <div className="mt-4 space-y-2">
         {stores.map((store) => {
