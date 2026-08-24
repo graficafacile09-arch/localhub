@@ -138,7 +138,7 @@ export default function SegnalazioniClienteModule() {
           <button
             type="submit"
             disabled={inviando || !titolo.trim() || !descrizione.trim()}
-            className="btn-cta h-12 px-6 text-sm"
+            className="btn-cta px-6 text-sm"
           >
             {inviando ? (
               <Loader2 className="h-4 w-4 animate-spin" />
