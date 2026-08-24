@@ -94,7 +94,7 @@ function mappaPayout(row: PayoutRow): PayoutAdminRiga {
     stripePayoutId: (row.stripe_payout_id as string | null) ?? null,
     stripePayoutStatus: (row.stripe_payout_status as string | null) ?? null,
     errore: (row.errore as string | null) ?? null,
-    creatoAt: String(row.created_at ?? ""),
+    creatoAt: String(row.creato_at ?? ""),
     erogatoAt: (row.erogato_at as string | null) ?? null,
   };
 }
@@ -139,7 +139,7 @@ export async function getPayoutAdmin(
     db.from("payout").select("*, negozi(nome)"),
     filtri
   )
-    .order("created_at", { ascending: false })
+    .order("creato_at", { ascending: false })
     .range((pagina - 1) * perPagina, pagina * perPagina - 1);
   const { data, error } = await listaQuery;
   if (error) {

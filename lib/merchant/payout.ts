@@ -99,7 +99,7 @@ function mappaPayout(row: PayoutRow): PayoutRiga {
     stripePayoutId: (row.stripe_payout_id as string | null) ?? null,
     stripePayoutStatus: (row.stripe_payout_status as string | null) ?? null,
     errore: (row.errore as string | null) ?? null,
-    creatoAt: String(row.created_at ?? ""),
+    creatoAt: String(row.creato_at ?? ""),
     erogatoAt: (row.erogato_at as string | null) ?? null,
   };
 }
@@ -147,7 +147,7 @@ export async function getRiepilogoPayoutVenditore(
     .from("payout")
     .select("*")
     .eq("negozio_id", negozioId)
-    .order("created_at", { ascending: false });
+    .order("creato_at", { ascending: false });
   if (errPayout) {
     throw new Error(`Lettura payout fallita: ${errPayout.message}`);
   }
@@ -177,7 +177,7 @@ export async function getPayoutVenditore(
     .from("payout")
     .select("*")
     .eq("negozio_id", negozioId)
-    .order("created_at", { ascending: false });
+    .order("creato_at", { ascending: false });
   if (error) {
     throw new Error(`Lettura payout fallita: ${error.message}`);
   }
