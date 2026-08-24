@@ -26,7 +26,7 @@ function loadEnv() {
     if (!trimmed || trimmed.startsWith("#")) continue;
     const idx = trimmed.indexOf("=");
     if (idx === -1) continue;
-    env[trimmed.slice(0, idx).trim()] = trimmed.slice(idx + 1).trim();
+    env[trimmed.slice(0, idx).trim()] = trimmed.slice(idx + 1).trim().replace(/^"|"$/g, "");
   }
   return env;
 }
