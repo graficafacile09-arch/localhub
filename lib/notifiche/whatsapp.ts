@@ -3,8 +3,10 @@
  * Platform).
  *
  * SOLO server-side: importato esclusivamente da codice server
- * (lib/cliente/orders.ts → app/api/cliente/ordini). I token Meta non sono
- * MAI esposti al browser né stampati nei log (Authorization header incluso).
+ * (lib/cliente/orders.ts e lib/cliente/ordini-carrello.ts per gli ordini
+ * confermati subito; lib/pagamenti/webhook-*.ts per i pagamenti online
+ * confermati dal webhook del provider). I token Meta non sono MAI esposti
+ * al browser né stampati nei log (Authorization header incluso).
  *
  * Principio fondamentale: la notifica è BEST-EFFORT — non può MAI
  * determinare il successo dell'ordine. Qualunque errore (Meta 4xx/5xx,
@@ -281,6 +283,8 @@ export async function inviaNotificaNuovoOrdine(
 ): Promise<EsitoNotificaWhatsApp> {
   try {
     const db = (opts.db ?? createAdminSupabaseClient()) as {
+      // Il client Supabase reale è tipizzato; il fake di test resta libero.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       from: (t: string) => any;
     };
 

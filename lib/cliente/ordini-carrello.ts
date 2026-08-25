@@ -633,9 +633,10 @@ export async function creaOrdiniCarrello(
   }
 
   // ── Notifiche (BEST-EFFORT, mai bloccano; solo ordini REALMENTE nuovi) ──
-  // Stesso pattern di creaOrdine: con pagamento online (carta/klarna/paypal)
-  // l'email di conferma parte solo DOPO la conferma del webhook (F2.3/F2.x);
-  // per gli altri metodi (bonifico ecc.) parte subito.
+  // Stesso pattern di creaOrdine: con pagamento online (carta/klarna/paypal/
+  // scalapay — le RPC salvano 'carta' per klarna/scalapay) email E WhatsApp
+  // partono SOLO DOPO la conferma del webhook (F2.3/F2.x, mai duplicata);
+  // per gli altri metodi (bonifico ecc.) partono subito qui.
   const pagamentoOnline =
     input.spedizione?.metodoPagamento === "carta" ||
     input.spedizione?.metodoPagamento === "klarna" ||
@@ -644,8 +645,8 @@ export async function creaOrdiniCarrello(
     if (ordine.giaEsistente) continue;
     if (!pagamentoOnline) {
       await inviaEmailConfermaOrdine(ordine.ordineId).catch(() => {});
+      await inviaNotificaNuovoOrdine(ordine.ordineId).catch(() => {});
     }
-    await inviaNotificaNuovoOrdine(ordine.ordineId).catch(() => {});
     await inviaNotificaNuovoOrdineNtfy(ordine.ordineId).catch(() => {});
   }
 

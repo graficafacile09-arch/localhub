@@ -587,9 +587,10 @@ export async function creaOrdine(
   // ma qui non devono MAI interferire con la risposta al cliente.
   if (!giaEsistente && esito.ordine?.id) {
     // FASE F1 — email di conferma: per gli ordini con pagamento online
-    // (carta/klarna/paypal) la conferma viene inviata SOLO DOPO che il
-    // webhook del provider conferma il pagamento (mai dire "pagato" prima
-    // del pagamento). Per tutti gli altri metodi (bonifico/ritiro) l'email
+    // (carta/klarna/paypal/scalapay — le RPC salvano 'carta' per
+    // klarna/scalapay) la conferma viene inviata SOLO DOPO che il webhook
+    // del provider conferma il pagamento (mai dire "pagato" prima del
+    // pagamento). Per tutti gli altri metodi (bonifico/ritiro) l'email
     // parte subito.
     const pagamentoOnline =
       input.spedizione?.metodoPagamento === "carta" ||
@@ -597,9 +598,12 @@ export async function creaOrdine(
       input.spedizione?.metodoPagamento === "paypal";
     if (!pagamentoOnline) {
       await inviaEmailConfermaOrdine(esito.ordine.id).catch(() => {});
+      // WhatsApp al negoziante: per gli ordini GIÀ confermati subito
+      // (bonifico/ritiro) parte qui; per i pagamenti online parte SOLO dal
+      // webhook di conferma del provider (mai duplicata, best-effort).
+      await inviaNotificaNuovoOrdine(esito.ordine.id).catch(() => {});
     }
-    // Notifiche al negoziante (BEST-EFFORT, mai bloccano la risposta).
-    await inviaNotificaNuovoOrdine(esito.ordine.id).catch(() => {});
+    // ntfy: canale indipendente, resta al momento della creazione.
     await inviaNotificaNuovoOrdineNtfy(esito.ordine.id).catch(() => {});
   }
 

@@ -34,6 +34,7 @@ import {
 } from "./stripe-connect";
 import type Stripe from "stripe";
 import { inviaEmailConfermaPagamento } from "@/lib/cliente/ordine-email";
+import { inviaNotificaNuovoOrdine } from "@/lib/notifiche/whatsapp";
 
 export type EsitoWebhook = { status: number; body: string };
 
@@ -298,6 +299,12 @@ export async function gestisciWebhookStripe(
           // inviata una sola volta anche in caso di retry Stripe. Un errore
           // email NON fa fallire il webhook (best-effort + .catch).
           await inviaEmailConfermaPagamento(ordineId).catch(() => {});
+          // WhatsApp al negoziante: parte SOLO qui (pagamento CONFERMATO).
+          // L'idempotenza è garantita da pagamenti_eventi UNIQUE + dalla
+          // transizione paid→paid = no-op di marcaPagato: mai due notifiche
+          // per lo stesso ordine. Best-effort: un errore WhatsApp NON tocca
+          // lo stato dell'ordine né l'esito del webhook.
+          await inviaNotificaNuovoOrdine(ordineId).catch(() => {});
         }
         break;
       }

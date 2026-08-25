@@ -47,6 +47,7 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getConfigProviderNegozio, credenzialiGatewayDaConfig } from "./config";
 import { getGatewayProvider } from "./registry";
 import { inviaEmailConfermaOrdine } from "@/lib/cliente/ordine-email";
+import { inviaNotificaNuovoOrdine } from "@/lib/notifiche/whatsapp";
 
 export type EsitoWebhook = { status: number; body: string };
 
@@ -390,6 +391,12 @@ export async function gestisciWebhookScalapay(
         } else {
           await marcaSessione(paymentId, "paid");
           await inviaEmailConfermaOrdine(ordine.id).catch(() => {});
+          // WhatsApp al negoziante: SOLO dopo la conferma del pagamento
+          // (evento "charged"). Idempotenza: event_id (SHA-256 del body)
+          // UNIQUE in pagamenti_eventi + transizione paid→paid = no-op →
+          // una sola notifica per ordine. Best-effort: un errore WhatsApp
+          // non tocca ordine né webhook.
+          await inviaNotificaNuovoOrdine(ordine.id).catch(() => {});
         }
         break;
       }
