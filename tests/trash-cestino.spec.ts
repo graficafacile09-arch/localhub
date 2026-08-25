@@ -1,5 +1,54 @@
 import { test, expect } from "@playwright/test";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { createClient } from "@supabase/supabase-js";
 import { BASE, UTENTI, loginUtente } from "./fixtures/auth";
+
+// Il runner Playwright NON carica .env.local: la carichiamo manualmente
+// (stesso pattern di scripts/test-*.ts) per poter inserire/verificare dati
+// con la service role (es. ordini) e provare l'integrità referenziale.
+const envRaw = readFileSync(join(process.cwd(), ".env.local"), "utf8");
+for (const m of envRaw.matchAll(/^([A-Za-z0-9_]+)=(.*)$/gm)) {
+  if (m[1] && !process.env[m[1]]) {
+    process.env[m[1]] = m[2].replace(/^["']|["']$/g, "");
+  }
+}
+
+/** Client service-role per inserire/verificare dati di test (ordini). */
+function adminDb() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL ?? "",
+    process.env.SUPABASE_SERVICE_ROLE_KEY ?? "",
+    { auth: { persistSession: false, autoRefreshToken: false } }
+  );
+}
+
+/**
+ * Inserisce un ordine REALE per il negozio: è la FK RESTRICT
+ * ordini.negozio_id che in passato bloccava l'eliminazione definitiva.
+ */
+async function inserisciOrdineDiTest(negozioId: string, negozioNome: string) {
+  const { error } = await adminDb().from("ordini").insert({
+    idempotency_key: `qa-trash-${Date.now()}-${negozioId.slice(0, 8)}`,
+    modalita: "ritiro",
+    totale: 9.99,
+    negozio_id: negozioId,
+    negozio_nome: negozioNome,
+    cliente_nome: "QA",
+    cliente_cognome: "Test",
+  });
+  expect(error, "insert ordine must succeed").toBeNull();
+}
+
+/** Conta gli ordini rimasti per il negozio (0 dopo l'eliminazione). */
+async function contaOrdiniNegozio(negozioId: string): Promise<number> {
+  const { count, error } = await adminDb()
+    .from("ordini")
+    .select("id", { count: "exact", head: true })
+    .eq("negozio_id", negozioId);
+  expect(error, "count ordini must not fail").toBeNull();
+  return count ?? 0;
+}
 
 // Fixture merchant dedicata a QUESTA suite (merchantC): nessun altro test
 // concorrente la usa, quindi i flussi delete/restore non confliggono.
@@ -213,6 +262,11 @@ test.describe("CESTINO DI PIATTAFORMA — solo amministratore", () => {
       expect(del.status, "merchant DELETE should be 200").toBe(200);
     }
 
+    // Ordini REALI per entrambi i negozi nel Cestino: la FK RESTRICT
+    // ordini.negozio_id è ciò che prima bloccava l'eliminazione bulk.
+    await inserisciOrdineDiTest(storeAId, nomeA);
+    await inserisciOrdineDiTest(storeBId, nomeB);
+
     /* ── 2. Admin: pulsante "Elimina tutto" visibile (cestino pieno) ── */
     await loginAdmin(page);
     await page.goto(`${BASE}/amministratore/cestino`, { waitUntil: "networkidle" });
@@ -254,6 +308,10 @@ test.describe("CESTINO DI PIATTAFORMA — solo amministratore", () => {
     const trashIds = (trashJson.data.stores as { id: string }[]).map((s) => s.id);
     expect(trashIds, "bulk-deleted stores must be gone from trash").not.toContain(storeAId);
     expect(trashIds, "bulk-deleted stores must be gone from trash").not.toContain(storeBId);
+
+    // I negozi E i loro ordini sono stati eliminati DAVVERO (FK gestita).
+    expect(await contaOrdiniNegozio(storeAId), "orders of store A must be gone").toBe(0);
+    expect(await contaOrdiniNegozio(storeBId), "orders of store B must be gone").toBe(0);
 
     /* ── 6. Il negozio ATTIVO è sopravvissuto all'eliminazione bulk ── */
     await loginMerchant(page);
@@ -312,6 +370,125 @@ test.describe("CESTINO DI PIATTAFORMA — solo amministratore", () => {
     });
     const trashIds = (trashJson.data.stores as { id: string }[]).map((s) => s.id);
     expect(trashIds, "active store must not be in trash").not.toContain(storeId);
+  });
+
+  test("Eliminazione DEFINITIVA singola: negozio con ordine eliminato davvero", async ({
+    page,
+  }) => {
+    test.setTimeout(180_000);
+
+    /* ── 1. Merchant: crea negozio + soft-delete ─────────────────── */
+    await loginMerchant(page);
+    const nome = `QA Delete Singolo ${Date.now()}`;
+    const createJson = await page.evaluate(async (n) => {
+      const r = await fetch("/api/merchant/stores", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nome: n, categoria: "Bar", citta: "Castrovillari" }),
+      });
+      return r.json();
+    }, nome);
+    const storeId: string = createJson.data?.storeId;
+    expect(storeId, "create must return storeId").toBeTruthy();
+    await page.evaluate(async (id) => {
+      await fetch(`/api/merchant/stores/${id}`, { method: "DELETE" });
+    }, storeId);
+
+    /* ── 2. Ordine REALE: era il blocco FK ordini.negozio_id ──────── */
+    await inserisciOrdineDiTest(storeId, nome);
+    expect(await contaOrdiniNegozio(storeId), "order must exist before delete").toBe(1);
+
+    /* ── 3. Admin: eliminazione definitiva singola via API ─────────── */
+    await loginAdmin(page);
+    const del = await page.evaluate(async (id) => {
+      const r = await fetch(`/api/amministratore/negozi/${id}/definitivo`, { method: "DELETE" });
+      return { status: r.status, json: await r.json() };
+    }, storeId);
+    expect(del.status, "permanent delete must succeed (no FK error)").toBe(200);
+    expect(del.json.data.deleted).toBe(true);
+
+    /* ── 4. Verifica REALE: ordine + negozio spariti dal DB ───────── */
+    expect(await contaOrdiniNegozio(storeId), "order must be deleted with the store").toBe(0);
+
+    const trashJson = await page.evaluate(async () => {
+      const r = await fetch("/api/amministratore/cestino");
+      return r.json();
+    });
+    const trashIds = (trashJson.data.stores as { id: string }[]).map((s) => s.id);
+    expect(trashIds, "deleted store must not be in trash").not.toContain(storeId);
+
+    await loginMerchant(page);
+    const listJson = await page.evaluate(async () => {
+      const r = await fetch("/api/merchant/stores");
+      return r.json();
+    });
+    const listIds = (listJson.data.stores as { id: string }[]).map((s) => s.id);
+    expect(listIds, "deleted store must be gone from merchant list").not.toContain(storeId);
+  });
+
+  test("Zero overflow orizzontale del modulo Cestino a 1280px e 375px", async ({
+    page,
+  }) => {
+    test.setTimeout(180_000);
+
+    /* ── 1. Merchant: negozio nel Cestino ─────────────────────────── */
+    await loginMerchant(page);
+    const nome = `QA Overflow E2E ${Date.now()}`;
+    const createJson = await page.evaluate(async (n) => {
+      const r = await fetch("/api/merchant/stores", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nome: n, categoria: "Beauty", citta: "Castrovillari" }),
+      });
+      return r.json();
+    }, nome);
+    const storeId: string = createJson.data?.storeId;
+    expect(storeId, "create must return storeId").toBeTruthy();
+    await page.evaluate(async (id) => {
+      await fetch(`/api/merchant/stores/${id}`, { method: "DELETE" });
+    }, storeId);
+
+    /* ── 2. Admin: lista senza overflow a 1280 e 375 ──────────────── */
+    await loginAdmin(page);
+
+    const controllaOverflow = async (width: number, height: number) => {
+      await page.setViewportSize({ width, height });
+      await page.goto(`${BASE}/amministratore/cestino`, { waitUntil: "networkidle" });
+      await expect(page.getByRole("heading", { level: 1, name: "Cestino" })).toBeVisible();
+      const overflow = await page.evaluate(() => {
+        const doc = document.documentElement;
+        return doc.scrollWidth - doc.clientWidth;
+      });
+      expect(overflow, `no horizontal overflow at ${width}px (list)`).toBeLessThanOrEqual(0);
+    };
+
+    await controllaOverflow(1280, 800);
+    await controllaOverflow(375, 812);
+
+    /* ── 3. Conferma "Elimina tutto" aperta: ancora zero overflow ─── */
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto(`${BASE}/amministratore/cestino`, { waitUntil: "networkidle" });
+    await page.getByRole("button", { name: "Elimina tutto" }).click();
+    await expect(page.getByText(/Questa operazione è irreversibile/)).toBeVisible();
+
+    const overflowConfirm1280 = await page.evaluate(() => {
+      const doc = document.documentElement;
+      return doc.scrollWidth - doc.clientWidth;
+    });
+    expect(overflowConfirm1280, "no overflow at 1280px with confirm open").toBeLessThanOrEqual(0);
+
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.waitForTimeout(400);
+    const overflowConfirm375 = await page.evaluate(() => {
+      const doc = document.documentElement;
+      return doc.scrollWidth - doc.clientWidth;
+    });
+    expect(overflowConfirm375, "no overflow at 375px with confirm open").toBeLessThanOrEqual(0);
+
+    /* ── 4. Cleanup: svuota il Cestino ────────────────────────────── */
+    await page.evaluate(async () => {
+      await fetch("/api/amministratore/cestino", { method: "DELETE" });
+    });
   });
 
   test("un commerciante NON può leggere né ripristinare dal Cestino admin", async ({

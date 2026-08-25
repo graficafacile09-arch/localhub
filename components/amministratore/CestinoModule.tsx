@@ -144,8 +144,8 @@ export default function CestinoModule() {
     <div className="space-y-4">
       {/* Header */}
       <div className="rounded-2xl border border-white/70 bg-white p-5 shadow-sm">
-        <div className="flex items-start justify-between gap-4">
-          <div>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
               Pannello Amministratore
             </p>
@@ -158,16 +158,16 @@ export default function CestinoModule() {
               all&apos;amministratore; l&apos;eliminazione definitiva è irreversibile.
             </p>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
+          <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto">
             {/* Elimina tutto — visibile solo se il Cestino contiene negozi */}
             {stores !== null && stores.length > 0 &&
               (confirmDeleteAll ? (
-                <div className="flex flex-col items-end gap-2 rounded-xl border border-red-200 bg-red-50 p-3 sm:flex-row sm:items-center">
+                <div className="flex w-full flex-col items-end gap-2 rounded-xl border border-red-200 bg-red-50 p-3 lg:w-auto lg:flex-row lg:items-center">
                   <p className="max-w-[260px] text-[11px] font-semibold text-red-700">
                     Eliminare definitivamente tutti i negozi presenti nel Cestino?
                     Questa operazione è irreversibile.
                   </p>
-                  <div className="flex shrink-0 items-center gap-2">
+                  <div className="flex flex-wrap items-center justify-end gap-2">
                     <button
                       type="button"
                       onClick={handleDeleteAll}

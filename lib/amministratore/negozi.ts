@@ -169,14 +169,73 @@ export async function ripristinaNegozio(negozioId: string): Promise<void> {
 }
 
 /**
+ * Elimina i dati collegati ai negozi nell'ordine richiesto dalle FOREIGN KEY
+ * reali (supabase/migrations). Ogni passo verifica l'errore: se uno fallisce
+ * viene lanciato un errore (l'operazione è segnalata, mai silenziosa).
+ *
+ * Ordine necessario:
+ *   1. ordini  — negozio_id ON DELETE RESTRICT → PRIMA di negozi
+ *      (cascata su ordini_righe, ordini_eventi, ordine_reclami,
+ *       reclamo_comunicazioni e pagamenti CASCADE; pagamenti SET NULL
+ *       azzera solo ordine_id);
+ *   2. prodotti — negozio_id (cascata su prodotto_varianti e
+ *      stock_notifications; ordini_righe.prodotto_id è SET NULL);
+ *   3. media   — negozio_id ON DELETE CASCADE.
+ * Tutte le altre dipendenze di negozi (eventi, offerte, segnalazioni,
+ * pagamenti, metodi_spedizione_negozio, payout, ...) sono CASCADE o
+ * SET NULL: vengono gestite dalla cancellazione del negozio stesso.
+ */
+async function eliminaDatiCollegatiANegozi(
+  supabase: ReturnType<typeof createAdminSupabaseClient>,
+  negozioIds: string[]
+): Promise<void> {
+  // 1. Ordini (unica FK RESTRICT su negozi: va eliminata per prima).
+  const { error: errOrdini } = await supabase
+    .from("ordini")
+    .delete()
+    .in("negozio_id", negozioIds);
+  if (errOrdini) {
+    throw new Error(
+      errOrdini.message ?? "Impossibile eliminare gli ordini del negozio."
+    );
+  }
+
+  // 2. Prodotti (cascata su varianti e stock notifications).
+  const { error: errProdotti } = await supabase
+    .from("prodotti")
+    .delete()
+    .in("negozio_id", negozioIds);
+  if (errProdotti) {
+    throw new Error(
+      errProdotti.message ?? "Impossibile eliminare i prodotti del negozio."
+    );
+  }
+
+  // 3. Media.
+  const { error: errMedia } = await supabase
+    .from("media")
+    .delete()
+    .in("negozio_id", negozioIds);
+  if (errMedia) {
+    throw new Error(
+      errMedia.message ?? "Impossibile eliminare i media del negozio."
+    );
+  }
+}
+
+/**
  * Elimina DEFINITIVAMENTE un negozio dal database — SOLO se è nel Cestino
- * (deleted_at non null). Elimina anche prodotti e media collegati.
+ * (deleted_at non null). Elimina prima i dati collegati (ordini, prodotti,
+ * media) nell'ordine corretto per l'integrità referenziale.
  * Azione distruttiva e irreversibile, riservata all'amministratore.
  */
 export async function eliminaDefinitivamenteNegozio(
   negozioId: string
 ): Promise<void> {
   const supabase = createAdminSupabaseClient();
+
+  // Dati collegati PRIMA del negozio (FK RESTRICT su ordini).
+  await eliminaDatiCollegatiANegozi(supabase, [negozioId]);
 
   // Soltanto dal Cestino: il negozio DEVE avere deleted_at impostato.
   const { error } = await supabase
@@ -190,10 +249,6 @@ export async function eliminaDefinitivamenteNegozio(
       error.message ?? "Impossibile eliminare definitivamente il negozio."
     );
   }
-
-  // Pulizia dei dati collegati (best effort: se una tabella manca, si ignora).
-  await supabase.from("prodotti").delete().eq("negozio_id", negozioId);
-  await supabase.from("media").delete().eq("negozio_id", negozioId);
 }
 
 /** Riga di negozio eliminato dal Cestino (per il log attività). */
@@ -226,6 +281,10 @@ export async function eliminaTuttiDalCestino(): Promise<NegozioEliminatoCestino[
 
   const ids = negozi.map((n) => n.id);
 
+  // Dati collegati PRIMA dei negozi (FK RESTRICT su ordini), sicuro
+  // anche con più negozi: ogni passo verifica l'errore.
+  await eliminaDatiCollegatiANegozi(supabase, ids);
+
   // Elimina SOLO i negozi ancora nel Cestino (deleted_at non null):
   // un negozio ripristinato nel frattempo non viene mai toccato.
   const { data: eliminati, error } = await supabase
@@ -240,10 +299,6 @@ export async function eliminaTuttiDalCestino(): Promise<NegozioEliminatoCestino[
       error.message ?? "Impossibile eliminare definitivamente i negozi."
     );
   }
-
-  // Pulizia dei dati collegati (best effort, come l'eliminazione singola).
-  await supabase.from("prodotti").delete().in("negozio_id", ids);
-  await supabase.from("media").delete().in("negozio_id", ids);
 
   const eliminatiIds = new Set((eliminati ?? []).map((r) => r.id));
   return negozi.filter((n) => eliminatiIds.has(n.id));
