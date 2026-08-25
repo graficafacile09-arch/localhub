@@ -195,3 +195,56 @@ export async function eliminaDefinitivamenteNegozio(
   await supabase.from("prodotti").delete().eq("negozio_id", negozioId);
   await supabase.from("media").delete().eq("negozio_id", negozioId);
 }
+
+/** Riga di negozio eliminato dal Cestino (per il log attività). */
+export type NegozioEliminatoCestino = {
+  id: string;
+  nome: string | null;
+};
+
+/**
+ * Elimina DEFINITIVAMENTE TUTTI i negozi presenti nel Cestino
+ * (deleted_at non null), con prodotti e media collegati.
+ * Stesse protezioni dell'eliminazione singola: un negozio attivo (o
+ * ripristinato nel frattempo) non viene MAI toccato.
+ */
+export async function eliminaTuttiDalCestino(): Promise<NegozioEliminatoCestino[]> {
+  const supabase = createAdminSupabaseClient();
+
+  // Recupera i negozi nel Cestino (id + nome per il log attività).
+  const { data: cestino, error: erroreLista } = await supabase
+    .from("negozi")
+    .select("id, nome")
+    .not("deleted_at", "is", null);
+
+  if (erroreLista) {
+    throw new Error(erroreLista.message ?? "Impossibile recuperare il cestino.");
+  }
+
+  const negozi = (cestino ?? []) as NegozioEliminatoCestino[];
+  if (negozi.length === 0) return [];
+
+  const ids = negozi.map((n) => n.id);
+
+  // Elimina SOLO i negozi ancora nel Cestino (deleted_at non null):
+  // un negozio ripristinato nel frattempo non viene mai toccato.
+  const { data: eliminati, error } = await supabase
+    .from("negozi")
+    .delete()
+    .in("id", ids)
+    .not("deleted_at", "is", null)
+    .select("id");
+
+  if (error) {
+    throw new Error(
+      error.message ?? "Impossibile eliminare definitivamente i negozi."
+    );
+  }
+
+  // Pulizia dei dati collegati (best effort, come l'eliminazione singola).
+  await supabase.from("prodotti").delete().in("negozio_id", ids);
+  await supabase.from("media").delete().in("negozio_id", ids);
+
+  const eliminatiIds = new Set((eliminati ?? []).map((r) => r.id));
+  return negozi.filter((n) => eliminatiIds.has(n.id));
+}

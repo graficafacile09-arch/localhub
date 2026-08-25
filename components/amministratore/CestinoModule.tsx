@@ -48,9 +48,12 @@ export default function CestinoModule() {
   const [restoringId, setRestoringId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [deletingAll, setDeletingAll] = useState(false);
+  const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
 
   const fetchTrash = useCallback(async () => {
     setError(null);
+    setConfirmDeleteAll(false);
     try {
       const res = await fetch("/api/amministratore/cestino");
       if (!res.ok) {
@@ -88,6 +91,28 @@ export default function CestinoModule() {
       setError(caught instanceof Error ? caught.message : "Errore durante il ripristino.");
     } finally {
       setRestoringId(null);
+    }
+  }
+
+  /** Eliminazione DEFINITIVA di TUTTI i negozi del Cestino (irreversibile). */
+  async function handleDeleteAll() {
+    if (deletingAll) return;
+    setDeletingAll(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/amministratore/cestino", { method: "DELETE" });
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        throw new Error(err?.error?.message ?? "Impossibile eliminare definitivamente i negozi.");
+      }
+      setConfirmDeleteAll(false);
+      // Cestino svuotato: la lista sparisce immediatamente.
+      setStores([]);
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Errore durante l'eliminazione definitiva.");
+      setConfirmDeleteAll(false);
+    } finally {
+      setDeletingAll(false);
     }
   }
 
@@ -133,15 +158,64 @@ export default function CestinoModule() {
               all&apos;amministratore; l&apos;eliminazione definitiva è irreversibile.
             </p>
           </div>
-          <button
-            type="button"
-            onClick={fetchTrash}
-            disabled={loading}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500 transition hover:bg-slate-200 disabled:opacity-50"
-            title="Aggiorna"
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-          </button>
+          <div className="flex shrink-0 items-center gap-2">
+            {/* Elimina tutto — visibile solo se il Cestino contiene negozi */}
+            {stores !== null && stores.length > 0 &&
+              (confirmDeleteAll ? (
+                <div className="flex flex-col items-end gap-2 rounded-xl border border-red-200 bg-red-50 p-3 sm:flex-row sm:items-center">
+                  <p className="max-w-[260px] text-[11px] font-semibold text-red-700">
+                    Eliminare definitivamente tutti i negozi presenti nel Cestino?
+                    Questa operazione è irreversibile.
+                  </p>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleDeleteAll}
+                      disabled={deletingAll || restoringId !== null || deletingId !== null}
+                      className="inline-flex items-center gap-1 rounded-lg bg-red-600 px-3 py-1.5 text-[11px] font-bold text-white transition hover:bg-red-700 disabled:opacity-60"
+                    >
+                      {deletingAll ? (
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-3 w-3" />
+                      )}
+                      {deletingAll ? "Eliminazione..." : "Elimina tutto"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmDeleteAll(false)}
+                      disabled={deletingAll}
+                      className="rounded-lg px-2 py-1.5 text-[11px] font-semibold text-slate-600 transition hover:bg-red-100 disabled:opacity-60"
+                    >
+                      Annulla
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setError(null);
+                    setConfirmDeleteAll(true);
+                  }}
+                  disabled={deletingAll || restoringId !== null || deletingId !== null}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-xs font-bold text-red-600 transition hover:bg-red-50 disabled:opacity-60"
+                  title="Elimina definitivamente tutti i negozi dal database (irreversibile)"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Elimina tutto
+                </button>
+              ))}
+            <button
+              type="button"
+              onClick={fetchTrash}
+              disabled={loading}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500 transition hover:bg-slate-200 disabled:opacity-50"
+              title="Aggiorna"
+            >
+              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -211,7 +285,7 @@ export default function CestinoModule() {
                 <button
                   type="button"
                   onClick={() => handleRestore(store.id)}
-                  disabled={restoringId === store.id || deletingId === store.id}
+                  disabled={restoringId === store.id || deletingId === store.id || deletingAll}
                   className="btn-cta px-4 py-2.5 text-xs disabled:opacity-60"
                 >
                   <RotateCcw className="h-3.5 w-3.5" />
@@ -224,7 +298,7 @@ export default function CestinoModule() {
                     <button
                       type="button"
                       onClick={() => handleDeleteForever(store.id)}
-                      disabled={deletingId === store.id}
+                      disabled={deletingId === store.id || deletingAll}
                       className="inline-flex items-center gap-1 rounded-lg bg-red-600 px-3 py-1.5 text-[11px] font-bold text-white transition hover:bg-red-700 disabled:opacity-60"
                     >
                       {deletingId === store.id ? (
@@ -237,7 +311,7 @@ export default function CestinoModule() {
                     <button
                       type="button"
                       onClick={() => setConfirmDeleteId(null)}
-                      disabled={deletingId === store.id}
+                      disabled={deletingId === store.id || deletingAll}
                       className="rounded-lg px-2 py-1.5 text-[11px] font-semibold text-slate-600 transition hover:bg-red-100 disabled:opacity-60"
                     >
                       Annulla
@@ -250,7 +324,7 @@ export default function CestinoModule() {
                       setError(null);
                       setConfirmDeleteId(store.id);
                     }}
-                    disabled={restoringId === store.id || deletingId === store.id}
+                    disabled={restoringId === store.id || deletingId === store.id || deletingAll}
                     className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-xs font-bold text-red-600 transition hover:bg-red-50 disabled:opacity-60"
                     title="Elimina definitivamente dal database (irreversibile)"
                   >

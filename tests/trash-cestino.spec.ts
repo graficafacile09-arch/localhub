@@ -175,6 +175,145 @@ test.describe("CESTINO DI PIATTAFORMA — solo amministratore", () => {
     }, storeId);
   });
 
+  test("UI: 'Elimina tutto' — conferma obbligatoria e svuotamento del Cestino", async ({
+    page,
+  }) => {
+    test.setTimeout(240_000);
+
+    /* ── 1. Merchant: crea 1 negozio ATTIVO + 2 da cestinare ──────── */
+    await loginMerchant(page);
+    const nomeAttivo = `QA Bulk Attivo ${Date.now()}`;
+    const nomeA = `QA Bulk Cestino A ${Date.now()}`;
+    const nomeB = `QA Bulk Cestino B ${Date.now()}`;
+
+    const crea = async (nome: string) => {
+      const json = await page.evaluate(async (n) => {
+        const r = await fetch("/api/merchant/stores", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ nome: n, categoria: "Bar", citta: "Castrovillari" }),
+        });
+        return r.json();
+      }, nome);
+      const id: string = json.data?.storeId;
+      expect(id, "create must return storeId").toBeTruthy();
+      return id;
+    };
+
+    const storeAttivoId = await crea(nomeAttivo);
+    const storeAId = await crea(nomeA);
+    const storeBId = await crea(nomeB);
+
+    // Soft-delete dei due negozi da cestinare (il terzo resta ATTIVO).
+    for (const id of [storeAId, storeBId]) {
+      const del = await page.evaluate(async (sid) => {
+        const r = await fetch(`/api/merchant/stores/${sid}`, { method: "DELETE" });
+        return { status: r.status };
+      }, id);
+      expect(del.status, "merchant DELETE should be 200").toBe(200);
+    }
+
+    /* ── 2. Admin: pulsante "Elimina tutto" visibile (cestino pieno) ── */
+    await loginAdmin(page);
+    await page.goto(`${BASE}/amministratore/cestino`, { waitUntil: "networkidle" });
+    await expect(page).toHaveURL(/\/amministratore\/cestino/);
+    await expect(page.getByRole("heading", { level: 1, name: "Cestino" })).toBeVisible();
+
+    const eliminaTutto = page.getByRole("button", { name: "Elimina tutto" });
+    await expect(eliminaTutto, "button must be visible with trash non-empty").toBeVisible();
+    await expect(page.locator("body")).toContainText(nomeA);
+    await expect(page.locator("body")).toContainText(nomeB);
+
+    /* ── 3. Conferma OBBLIGATORIA: senza conferma non si elimina ───── */
+    await eliminaTutto.click();
+    await expect(page.getByText(/Questa operazione è irreversibile/)).toBeVisible();
+    // La lista è ancora presente: nessuna eliminazione è avvenuta.
+    await expect(page.locator("body")).toContainText(nomeA);
+
+    // Annulla: torna al pulsante, lista intatta.
+    await page.getByRole("button", { name: "Annulla" }).click();
+    await expect(eliminaTutto).toBeVisible();
+    await expect(page.locator("body")).toContainText(nomeA);
+
+    /* ── 4. Conferma → eliminazione bulk + lista svuotata ──────────── */
+    await eliminaTutto.click();
+    await expect(page.getByText(/Questa operazione è irreversibile/)).toBeVisible();
+    await page.getByRole("button", { name: "Elimina tutto" }).click();
+
+    // Dopo il successo la lista sparisce immediatamente e il pulsante pure.
+    await expect(page.getByText("Il cestino è vuoto")).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole("button", { name: "Elimina tutto" })).toHaveCount(0);
+    await expect(page.locator("body")).not.toContainText(nomeA);
+    await expect(page.locator("body")).not.toContainText(nomeB);
+
+    /* ── 5. API: i due negozi NON sono più nel Cestino ─────────────── */
+    const trashJson = await page.evaluate(async () => {
+      const r = await fetch("/api/amministratore/cestino");
+      return r.json();
+    });
+    const trashIds = (trashJson.data.stores as { id: string }[]).map((s) => s.id);
+    expect(trashIds, "bulk-deleted stores must be gone from trash").not.toContain(storeAId);
+    expect(trashIds, "bulk-deleted stores must be gone from trash").not.toContain(storeBId);
+
+    /* ── 6. Il negozio ATTIVO è sopravvissuto all'eliminazione bulk ── */
+    await loginMerchant(page);
+    const listJson = await page.evaluate(async () => {
+      const r = await fetch("/api/merchant/stores");
+      return r.json();
+    });
+    const listIds = (listJson.data.stores as { id: string }[]).map((s) => s.id);
+    expect(listIds, "active store must survive bulk delete").toContain(storeAttivoId);
+  });
+
+  test("API: DELETE /api/amministratore/cestino non tocca mai negozi attivi", async ({
+    page,
+  }) => {
+    test.setTimeout(180_000);
+
+    /* ── 1. Merchant: crea un negozio ATTIVO (mai cestinato) ──────── */
+    await loginMerchant(page);
+    const nome = `QA Bulk Api ${Date.now()}`;
+    const createJson = await page.evaluate(async (n) => {
+      const r = await fetch("/api/merchant/stores", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nome: n, categoria: "Bar", citta: "Castrovillari" }),
+      });
+      return r.json();
+    }, nome);
+    const storeId: string = createJson.data?.storeId;
+    expect(storeId, "create must return storeId").toBeTruthy();
+
+    /* ── 2. Admin: bulk delete → il negozio attivo NON è tra i colpiti ── */
+    await loginAdmin(page);
+    const bulk = await page.evaluate(async () => {
+      const r = await fetch("/api/amministratore/cestino", { method: "DELETE" });
+      return { status: r.status, json: await r.json() };
+    });
+    expect(bulk.status, "admin bulk DELETE should be 200").toBe(200);
+    expect(
+      bulk.json.data.storeIds as string[],
+      "active store must never be in the bulk deletion"
+    ).not.toContain(storeId);
+
+    /* ── 3. Il negozio è ancora attivo e NON è finito nel Cestino ─── */
+    await loginMerchant(page);
+    const listJson = await page.evaluate(async () => {
+      const r = await fetch("/api/merchant/stores");
+      return r.json();
+    });
+    const listIds = (listJson.data.stores as { id: string }[]).map((s) => s.id);
+    expect(listIds, "active store must survive bulk delete").toContain(storeId);
+
+    await loginAdmin(page);
+    const trashJson = await page.evaluate(async () => {
+      const r = await fetch("/api/amministratore/cestino");
+      return r.json();
+    });
+    const trashIds = (trashJson.data.stores as { id: string }[]).map((s) => s.id);
+    expect(trashIds, "active store must not be in trash").not.toContain(storeId);
+  });
+
   test("un commerciante NON può leggere né ripristinare dal Cestino admin", async ({
     page,
   }) => {
@@ -189,10 +328,13 @@ test.describe("CESTINO DI PIATTAFORMA — solo amministratore", () => {
     });
     expect(adminTrash.status, "merchant reading admin trash must be 403").toBe(403);
 
-    /* La pagina /amministratore è protetta: il merchant viene reindirizzato
-       direttamente alla propria area /merchant (che può auto-redirectare
-       al negozio unico del merchant). */
+    /* La pagina /amministratore è protetta: il merchant vede l'avviso
+       "Area non autorizzata" (sessione intatta, nessun logout) e nessun
+       contenuto admin. */
     await page.goto(`${BASE}/amministratore`, { waitUntil: "networkidle" });
-    await expect(page).toHaveURL(/\/merchant/);
+    await expect(
+      page.getByRole("heading", { name: "Area non autorizzata" })
+    ).toBeVisible();
+    await expect(page.locator("body")).not.toContainText("Pannello Amministratore");
   });
 });
