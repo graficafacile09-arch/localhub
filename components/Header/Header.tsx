@@ -39,7 +39,7 @@ export default async function Header() {
                 width={1536}
                 height={1024}
                 priority
-                className="h-auto w-[min(48vw,200px)] lg:w-[300px]"
+                className="h-auto w-[min(56vw,240px)] lg:w-[300px]"
               />
             </Link>
             <div className="ml-auto flex shrink-0 flex-col items-end gap-1.5 lg:ml-0 lg:flex-row lg:items-center lg:gap-2">
