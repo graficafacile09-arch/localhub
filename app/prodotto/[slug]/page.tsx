@@ -87,7 +87,7 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
   // blocco è poi applicato anche server-side nelle API ordini).
   const sessione = await getSessionArea();
   let eIlMioProdotto = false;
-  if (sessione?.area === "merchant" && prodotto.negozio_id) {
+  if (sessione && prodotto.negozio_id) {
     try {
       eIlMioProdotto = await utentePossiedeNegozio(
         sessione.user.id,
