@@ -19,6 +19,9 @@ type ProductCardProps = {
   haVarianti?: boolean;
   /** True se il prodotto appartiene alla vetrina "Prodotti tipici" (badge). */
   prodottoTipico?: boolean;
+  /** Variante compatta (griglie dense tipo Eccellenze Calabresi): immagine
+   *  più bassa e padding/testi ridotti. Nessun cambio di colori o stile. */
+  compatto?: boolean;
 };
 
 /**
@@ -38,6 +41,7 @@ export default function ProductCard({
   autenticato,
   haVarianti,
   prodottoTipico,
+  compatto,
 }: ProductCardProps) {
   const imageUrl = getProdottoImmagine({ immagine_principale, categoria });
   const mostraPreferiti = preferitoAttivo !== undefined && autenticato !== undefined;
@@ -49,7 +53,11 @@ export default function ProductCard({
         href={`/prodotto/${slug}`}
         className="block"
       >
-        <div className="relative aspect-square overflow-hidden bg-slate-100">
+        <div
+          className={`relative overflow-hidden bg-slate-100 ${
+            compatto ? "aspect-[4/3]" : "aspect-square"
+          }`}
+        >
           <div
             role="img"
             aria-label={nome}
@@ -58,7 +66,10 @@ export default function ProductCard({
           />
           {prodottoTipico && (
             <span className="absolute left-2.5 top-2.5 rounded-full bg-blue-900/90 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-white">
-              Prodotto tipico
+              {/* Su mobile la card è stretta: badge compatto per non sovrapporsi
+                  al cuore preferiti. Da sm (griglia 3+ colonne) testo completo. */}
+              <span className="sm:hidden">Tipico</span>
+              <span className="hidden sm:inline">Prodotto tipico</span>
             </span>
           )}
           {haVarianti && !prodottoTipico && (
@@ -67,11 +78,19 @@ export default function ProductCard({
             </span>
           )}
         </div>
-        <div className="p-3 md:p-4">
-          <h3 className="line-clamp-2 text-sm font-bold leading-snug text-slate-900 transition group-hover:text-blue-700">
+        <div className={compatto ? "p-2.5 md:p-3" : "p-3 md:p-4"}>
+          <h3
+            className={`line-clamp-2 font-bold leading-snug text-slate-900 transition group-hover:text-blue-700 ${
+              compatto ? "text-[13px]" : "text-sm"
+            }`}
+          >
             {nome}
           </h3>
-          <p className="mt-1.5 text-base font-black text-blue-700">
+          <p
+            className={`font-black text-blue-700 ${
+              compatto ? "mt-1 text-sm" : "mt-1.5 text-base"
+            }`}
+          >
             {haVarianti ? "Da " : ""}€{prezzoFormattato}
           </p>
           <p className="mt-1 flex items-center gap-1 line-clamp-1 text-[11px] text-slate-400">
