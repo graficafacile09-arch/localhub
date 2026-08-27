@@ -28,7 +28,7 @@ export default async function ProdottiTipiciPage() {
               Sapori del territorio
             </p>
             <h1 className="mt-1 text-3xl font-black tracking-tight text-slate-900">
-              Eccellenze calabresi
+              ECCELLENZE CALABRESI
             </h1>
             <p className="mt-1 text-sm text-slate-500">
               Le eccellenze di Castrovillari e del Pollino, selezionate dai negozi della tua città.
