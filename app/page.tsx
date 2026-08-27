@@ -37,20 +37,25 @@ function SezioneHeader({
   titolo,
   href,
   linkLabel,
+  titoloClassName,
 }: {
   label?: string;
   titolo: string;
   href?: string;
   linkLabel?: string;
+  titoloClassName?: string;
 }) {
   return (
     <div className="mb-6 flex items-end justify-between gap-4">
       <div>
         {label && <p className="section-label">{label}</p>}
         <h2
-          className={`mt-1 font-black tracking-tight text-slate-900 ${
-            label ? "text-2xl md:text-3xl" : "text-xl md:text-2xl"
-          }`}
+          className={
+            titoloClassName ??
+            `mt-1 font-black tracking-tight text-slate-900 ${
+              label ? "text-2xl md:text-3xl" : "text-xl md:text-2xl"
+            }`
+          }
         >
           {titolo}
         </h2>
@@ -205,6 +210,7 @@ export default async function Home() {
             titolo="ECCELLENZE CALABRESI"
             href="/prodotti-tipici"
             linkLabel="Vedi tutti"
+            titoloClassName="mt-1 inline-block whitespace-nowrap rounded-lg bg-yellow-400 px-2 py-1 text-[13px] font-black tracking-tight text-blue-900 shadow-sm sm:text-base md:px-3 md:py-1.5 md:text-2xl"
           />
 
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-5 lg:grid-cols-4">
