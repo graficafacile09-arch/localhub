@@ -24,7 +24,7 @@ export default async function ProdottiTipiciPage() {
       <div className="mx-auto max-w-7xl px-3 py-3 sm:px-5">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
+            <h1 className="inline-block whitespace-nowrap rounded-lg bg-yellow-400 px-2 py-1 text-[13px] font-black tracking-tight text-blue-900 shadow-sm sm:text-base md:px-3 md:py-1.5 md:text-2xl">
               ECCELLENZE CALABRESI
             </h1>
             <p className="mt-1 text-sm text-slate-500">
