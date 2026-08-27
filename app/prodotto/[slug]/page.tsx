@@ -33,16 +33,37 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
       .slice(0, 155) || `${nome} disponibile su InCittà.`;
   const canonical = `${getSiteUrl()}/prodotto/${prodotto.slug as string}`;
 
+  // Immagine Open Graph: sempre URL ASSOLUTO (Meta/abbonati richiedono URL
+  // assoluti). getProdottoImmagine può restituire un percorso Pexels assoluto
+  // oppure un percorso relativo /negozi/… : in quel caso lo anteponiamo al base.
+  const immagineOg = (() => {
+    const src = getProdottoImmagine({
+      immagine_principale: prodotto.immagine_principale as string | null,
+      categoria: prodotto.categoria as string | null,
+    });
+    if (src.startsWith("http://") || src.startsWith("https://")) return src;
+    return `${getSiteUrl()}${src?.startsWith("/") ? src : `/${src}`}`;
+  })();
+
+  // title/og:title senza il suffisso "| InCittà": il template del layout
+  // ("%s | InCittà") lo aggiunge, evitando il duplicato "… | InCittà | InCittà".
   return {
-    title: `${nome} | InCittà`,
+    title: nome,
     description: descrizione,
     alternates: { canonical },
     openGraph: {
-      title: `${nome} | InCittà`,
+      title: nome,
       description: descrizione,
       url: canonical,
       type: "website",
       siteName: "InCittà",
+      images: [{ url: immagineOg, alt: nome }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: nome,
+      description: descrizione,
+      images: [immagineOg],
     },
   };
 }

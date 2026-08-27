@@ -1,7 +1,9 @@
+import type { Metadata } from "next";
 import Header from "@/components/Header/Header";
 import ProductCard from "@/components/home/ProductCard";
 import { getProdottiTipici } from "@/lib/negozi";
 import { chiavePreferito, getStatoPreferitiPerPagina } from "@/lib/cliente/favorites";
+import { getSiteUrl } from "@/lib/site";
 import Link from "next/link";
 import { ArrowLeft, Wheat } from "lucide-react";
 
@@ -10,6 +12,35 @@ import { ArrowLeft, Wheat } from "lucide-react";
 // catalogo dei negozi, con flag prodotto_tipico = true: il click apre la
 // stessa pagina /prodotto/[slug] già esistente.
 export const dynamic = "force-dynamic";
+
+// Metadata dedicati: la pagina non deve ereditare il default generico del
+// layout, ma veicolare la vetrina territoriale "Eccellenze Calabresi" sia
+// nel title/description sia nell'Open Graph (URL assoluti su incitta.online).
+export async function generateMetadata(): Promise<Metadata> {
+  const canonical = `${getSiteUrl()}/prodotti-tipici`;
+  // title/og:title senza suffisso "| InCittà": il template del layout lo
+  // aggiunge (title: { template: "%s | InCittà" }), evitando il duplicato.
+  return {
+    title: "Eccellenze Calabresi",
+    description:
+      "Le eccellenze di Castrovillari e del Pollino: cipolle bianche, mieli e prodotti tipici selezionati dai negozi della tua città.",
+    alternates: { canonical },
+    openGraph: {
+      title: "Eccellenze Calabresi",
+      description:
+        "Le eccellenze di Castrovillari e del Pollino: cipolle bianche, mieli e prodotti tipici selezionati dai negozi della tua città.",
+      url: canonical,
+      type: "website",
+      siteName: "InCittà",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: "Eccellenze Calabresi",
+      description:
+        "Le eccellenze di Castrovillari e del Pollino: cipolle bianche, mieli e prodotti tipici selezionati dai negozi della tua città.",
+    },
+  };
+}
 
 export default async function ProdottiTipiciPage() {
   const [prodottiTipici, statoPreferiti] = await Promise.all([
