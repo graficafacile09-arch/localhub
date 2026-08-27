@@ -107,6 +107,7 @@ export default async function ProdottiTipiciPage() {
                   immagine_principale={(prodotto.immagine_principale as string) ?? null}
                   haVarianti={Boolean(prodotto.ha_varianti)}
                   prodottoTipico
+                  compatto
                   preferitoAttivo={statoPreferiti.chiavi.has(chiavePreferito("prodotto", prodottoId))}
                   autenticato={statoPreferiti.autenticato}
                 />
