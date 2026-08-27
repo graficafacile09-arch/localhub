@@ -199,7 +199,7 @@ export default async function Home() {
         <section className="mx-auto max-w-7xl px-4 py-12 md:px-6 md:py-14">
           <SezioneHeader
             label="Sapori del territorio"
-            titolo="Eccellenze calabresi"
+            titolo="ECCELLENZE CALABRESI"
             href="/prodotti-tipici"
             linkLabel="Vedi tutti"
           />
@@ -432,7 +432,7 @@ export default async function Home() {
                 <Link href="/categorie" className="transition hover:text-yellow-300">Categorie</Link>
               </li>
               <li>
-                <Link href="/prodotti-tipici" className="transition hover:text-yellow-300">Eccellenze calabresi</Link>
+                <Link href="/prodotti-tipici" className="transition hover:text-yellow-300">ECCELLENZE CALABRESI</Link>
               </li>
               <li>
                 <Link href="/negozi?featured=1" className="transition hover:text-yellow-300">
