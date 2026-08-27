@@ -24,10 +24,7 @@ export default async function ProdottiTipiciPage() {
       <div className="mx-auto max-w-7xl px-3 py-3 sm:px-5">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
-              Sapori del territorio
-            </p>
-            <h1 className="mt-1 text-3xl font-black tracking-tight text-slate-900">
+            <h1 className="text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
               ECCELLENZE CALABRESI
             </h1>
             <p className="mt-1 text-sm text-slate-500">

@@ -46,8 +46,12 @@ function SezioneHeader({
   return (
     <div className="mb-6 flex items-end justify-between gap-4">
       <div>
-        <p className="section-label">{label}</p>
-        <h2 className="mt-1 text-2xl font-black tracking-tight text-slate-900 md:text-3xl">
+        {label && <p className="section-label">{label}</p>}
+        <h2
+          className={`mt-1 font-black tracking-tight text-slate-900 ${
+            label ? "text-2xl md:text-3xl" : "text-xl md:text-2xl"
+          }`}
+        >
           {titolo}
         </h2>
       </div>
@@ -198,7 +202,6 @@ export default async function Home() {
       {prodottiTipici.length > 0 && (
         <section className="mx-auto max-w-7xl px-4 py-12 md:px-6 md:py-14">
           <SezioneHeader
-            label="Sapori del territorio"
             titolo="ECCELLENZE CALABRESI"
             href="/prodotti-tipici"
             linkLabel="Vedi tutti"
