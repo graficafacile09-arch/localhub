@@ -38,7 +38,7 @@ function SezioneHeader({
   href,
   linkLabel,
 }: {
-  label: string;
+  label?: string;
   titolo: string;
   href?: string;
   linkLabel?: string;
