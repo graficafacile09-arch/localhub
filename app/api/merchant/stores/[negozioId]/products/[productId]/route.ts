@@ -78,6 +78,9 @@ function validateProductPayload(payload: Partial<MerchantProductInput>) {
   if (payload.altTextImmagine !== undefined && typeof payload.altTextImmagine !== "string") {
     return "Formato alt text non valido.";
   }
+  if (payload.prodottoTipico !== undefined && typeof payload.prodottoTipico !== "boolean") {
+    return "Il campo prodotto_tipico deve essere booleano.";
+  }
   if (payload.sottocategoria !== undefined && payload.sottocategoria !== null && typeof payload.sottocategoria !== "string") {
     return "Formato sottocategoria non valido.";
   }
@@ -165,6 +168,7 @@ export async function PUT(
     immaginePrincipale: payload.immaginePrincipale?.trim() ?? "",
     attivo: payload.attivo ?? true,
     originePubblicazione: payload.originePubblicazione ?? "manuale",
+    prodottoTipico: payload.prodottoTipico ?? false,
     // Campi arricchiti (G1): inoltrati al data layer, che li persiste.
     descrizioneCompleta: payload.descrizioneCompleta,
     caratteristiche: payload.caratteristiche,

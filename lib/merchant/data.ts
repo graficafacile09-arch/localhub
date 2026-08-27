@@ -73,6 +73,7 @@ type ProdottoRow = {
   alt_text_immagine?: string | null;
   attivo?: boolean | null;
   origine_pubblicazione?: string | null;
+  prodotto_tipico?: boolean | null;
   created_at?: string | null;
   updated_at?: string | null;
 };
@@ -82,7 +83,7 @@ const SCHEMA_ERROR_CODES = new Set(["42P01", "42703", "PGRST204", "PGRST205"]);
 // Colonna usata per SELECT dei prodotti merchant (lista + patch parziale):
 // costante condivisa per evitare drift tra le due query.
 const SELECT_COLONNE_PRODOTTO =
-  "id, negozio_id, nome, descrizione, descrizione_completa, categoria, sottocategoria, marca, colore, materiale, caratteristiche, peso_volume, peso_grammi, costo_spedizione_locale, parole_chiave, filtri_catalogo, prezzo, prezzo_suggerito, immagine_principale, quantita_disponibile, quantita_riservata, ha_varianti, stato_condizione, seo_title, seo_description, alt_text_immagine, attivo, origine_pubblicazione, created_at, updated_at";
+  "id, negozio_id, nome, descrizione, descrizione_completa, categoria, sottocategoria, marca, colore, materiale, caratteristiche, peso_volume, peso_grammi, costo_spedizione_locale, parole_chiave, filtri_catalogo, prezzo, prezzo_suggerito, immagine_principale, quantita_disponibile, quantita_riservata, ha_varianti, stato_condizione, seo_title, seo_description, alt_text_immagine, attivo, origine_pubblicazione, prodotto_tipico, created_at, updated_at";
 
 // Colonne delle varianti prodotto (Fase E2).
 const SELECT_COLONNE_VARIANTE =
@@ -161,6 +162,7 @@ function mapProduct(row: ProdottoRow): MerchantProduct {
     alt_text_immagine: row.alt_text_immagine ?? null,
     attivo: row.attivo ?? true,
     origine_pubblicazione: row.origine_pubblicazione ?? null,
+    prodotto_tipico: row.prodotto_tipico ?? false,
     created_at: row.created_at ?? null,
     updated_at: row.updated_at ?? null,
   };
@@ -490,6 +492,7 @@ export async function getMerchantProductsForStore(
     termine.length > 0 ||
     opts.stato !== undefined ||
     opts.ai === true ||
+    opts.tipico !== undefined ||
     opts.esaurito === true ||
     opts.ordina !== undefined ||
     opts.pagina !== undefined ||
@@ -505,6 +508,10 @@ export async function getMerchantProductsForStore(
   else if (opts.stato === "bozza") query = query.eq("attivo", false);
 
   if (opts.ai) query = query.eq("origine_pubblicazione", "ai");
+
+  // Vetrina Prodotti Tipici (flag booleano prodotto_tipico).
+  if (opts.tipico === true) query = query.eq("prodotto_tipico", true);
+  else if (opts.tipico === false) query = query.eq("prodotto_tipico", false);
 
   // Esaurito = disponibilità reale <= 0. Oggi quantita_riservata è sempre 0
   // (colonna riservata al futuro flusso pagamenti/riserva stock), quindi il
@@ -562,6 +569,8 @@ export async function getMerchantProductsForStore(
     if (opts.stato === "attivo") countQuery = countQuery.eq("attivo", true);
     else if (opts.stato === "bozza") countQuery = countQuery.eq("attivo", false);
     if (opts.ai) countQuery = countQuery.eq("origine_pubblicazione", "ai");
+    if (opts.tipico === true) countQuery = countQuery.eq("prodotto_tipico", true);
+    else if (opts.tipico === false) countQuery = countQuery.eq("prodotto_tipico", false);
     if (opts.esaurito) countQuery = countQuery.lte("quantita_disponibile", 0);
     if (pulito) {
       countQuery = countQuery.or(
@@ -666,6 +675,7 @@ export async function createMerchantProductForStore(
     stato_condizione: input.statoCondizione ?? null,
     attivo: input.attivo,
     origine_pubblicazione: input.originePubblicazione?.trim() || "manuale",
+    prodotto_tipico: input.prodottoTipico ?? false,
   };
 
   if (input.descrizioneCompleta !== undefined) payload.descrizione_completa = input.descrizioneCompleta.trim() || null;
@@ -763,6 +773,7 @@ export async function updateMerchantProductForStore(
     stato_condizione: input.statoCondizione ?? null,
     attivo: input.attivo,
     origine_pubblicazione: input.originePubblicazione?.trim() || "manuale",
+    prodotto_tipico: input.prodottoTipico ?? false,
   };
 
   if (input.descrizioneCompleta !== undefined) payload.descrizione_completa = input.descrizioneCompleta.trim() || null;

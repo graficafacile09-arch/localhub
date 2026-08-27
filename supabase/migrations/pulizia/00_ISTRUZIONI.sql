@@ -1,0 +1,45 @@
+-- ============================================================================
+-- PULIZIA DATI DI TEST / DEMO / PROBE / E2E — DB CONDIRVISO InCittà/LocalHub
+-- ============================================================================
+--  Cartella: supabase/migrations/pulizia/  (fuori dall'index delle migration:
+--  i file qui NON hanno prefisso temporale, quindi `supabase db push` li ignora)
+--
+--  Origine: audit READ-ONLY del 17/08/2026 (report consegnato: sezioni A/B/C).
+--  NESSUNA query di questo pacchetto è mai stata eseguita.
+--
+--  COME USARLI
+--  1. BACKUP OBBLIGATORIO prima di qualunque DELETE:
+--     - Supabase Studio -> Database -> Backups -> take a backup; oppure
+--     - `supabase db dump --data-only -f backup_20260817.sql` (se linkato), oppure
+--     - pg_dump con la connection string del progetto.
+--  2. Esegui in ordine, nel SQL editor di Supabase Studio (con service_role)
+--     oppure con:  supabase db execute --file supabase/migrations/pulizia/NN_...
+--  3. Ogni file è autosufficiente: PREVIEW (SELECT) prima, poi DELETE nello
+--     stesso ordine di dipendenza FK (figli -> padre).
+--  4. Ogni file è racchiuso in BEGIN/COMMIT: se una DELETE fallisce, esegui
+--     ROLLBACK e segnala l'errore; non forzare.
+--  5. I file 07 e 08 contengono SOLO istruzioni COMMENTATE (categoria B:
+--     da confermare) e igiene opzionale: si attivano solo dopo conferma.
+--  6. Dopo l'esecuzione, lancia 09_verifica_finale.sql (read-only).
+--
+--  ORDINE CONSIGLIATO
+--   01_preflight          (read-only: conteggi prima)
+--   02_prodotti_orfani    (prodotti E2E/KlarnaBN/test notifiche/192)
+--   03_negozi_cat_A       (6 negozi chiaramente di test + intera catena)
+--   04_ordini_test        (ordini test su demo seed + Panificio, cat. A)
+--   05_webhook_fake       (11 webhook klarna falsi + scan_log orfano)
+--   06_utenti_ephemeral   (8 utenti di test creati da script)
+--   07_conferme_B         (COMMENTATO: Barone #1, Tech Store 2, Fashion,
+--                          Bar dei Capoccioni, casa dei sogni, ordini B
+--                          Panificio/demo, seed QA, charge.refunded)
+--   08_igiene_opzionale   (COMMENTATO: scan_log/vision_cache/reset_tokens)
+--   09_verifica_finale    (read-only: conteggi dopo)
+-- ============================================================================
+--  DA NON TOCCARE (categoria C):
+--   - negozio Panificio Rossi (f3a82af7...) e tutta la sua configurazione
+--     pagamenti/spedizioni (negozio operativo di collaudo)
+--   - i 9 negozi demo seed (10000000-...-002..009) e il loro contenuto
+--   - utenti reali: 3ec07260..., 08954628..., 476e4be7...
+--   - segnalazioni reali, preferiti di utenti reali, config piattaforma,
+--     shipping (carriers/servizi/tariffe), categorie, admin_activity_log
+-- ============================================================================

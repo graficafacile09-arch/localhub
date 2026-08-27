@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ShoppingBasket } from "lucide-react";
 import ClienteUserMenu from "./ClienteUserMenu";
 
@@ -14,12 +15,16 @@ export default function ClienteHeader() {
           <Link
             href="/"
             aria-label="LocalHub — torna al sito"
-            className="flex items-center gap-2 rounded-2xl px-2 py-1.5 transition hover:bg-white/10"
+            className="flex items-center rounded-2xl bg-white p-2 shadow-sm transition hover:bg-blue-50"
           >
-            <ShoppingBasket className="h-6 w-6 text-blue-200" aria-hidden />
-            <span className="text-lg font-black tracking-tight text-white">
-              LocalHub
-            </span>
+            <Image
+              src="/logo-transparent.png"
+              alt="LocalHub"
+              width={1536}
+              height={1024}
+              priority
+              className="h-auto w-[140px]"
+            />
           </Link>
 
           <span className="h-8 w-px bg-white/20" aria-hidden />

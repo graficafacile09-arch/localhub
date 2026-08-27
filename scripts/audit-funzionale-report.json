@@ -1,0 +1,707 @@
+{
+  "base": "http://localhost:3100",
+  "generato": "2026-08-24T17:46:59.671Z",
+  "totali": {
+    "test": 98,
+    "ok": 97,
+    "ko": 0,
+    "warn": 1
+  },
+  "risultati": [
+    {
+      "sezione": "NAVIGAZIONE",
+      "nome": "Nav \"Home\" → /",
+      "esito": "OK",
+      "route": "/",
+      "dettaglio": "console=0 page=0 http=0"
+    },
+    {
+      "sezione": "NAVIGAZIONE",
+      "nome": "Nav \"Negozi\" → /negozi",
+      "esito": "OK",
+      "route": "/negozi",
+      "dettaglio": "console=0 page=0 http=0"
+    },
+    {
+      "sezione": "NAVIGAZIONE",
+      "nome": "Nav \"Categorie\" → /categorie",
+      "esito": "OK",
+      "route": "/categorie",
+      "dettaglio": "console=0 page=0 http=0"
+    },
+    {
+      "sezione": "NAVIGAZIONE",
+      "nome": "Nav \"Carrello\" → /carrello",
+      "esito": "OK",
+      "route": "/carrello",
+      "dettaglio": "console=0 page=0 http=0"
+    },
+    {
+      "sezione": "NAVIGAZIONE",
+      "nome": "Logo → Home",
+      "esito": "OK",
+      "route": "/",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "NAVIGAZIONE",
+      "nome": "Widget meteo visibile (temperatura+Castrovillari)",
+      "esito": "OK",
+      "route": "/",
+      "dettaglio": "27°Castrovillari · Sereno"
+    },
+    {
+      "sezione": "NAVIGAZIONE",
+      "nome": "Pulsante \"Accedi\" in alto apre il menu",
+      "esito": "OK",
+      "route": "/",
+      "dettaglio": "voci=2"
+    },
+    {
+      "sezione": "NAVIGAZIONE",
+      "nome": "\"Accedi\" alto → Entra come Cliente",
+      "esito": "OK",
+      "route": "/login?area=cliente",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "NAVIGAZIONE",
+      "nome": "\"Accedi\" alto → Entra come Venditore",
+      "esito": "OK",
+      "route": "/login?area=merchant",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "NAVIGAZIONE",
+      "nome": "Footer \"Home\" → /",
+      "esito": "OK",
+      "route": "/",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "NAVIGAZIONE",
+      "nome": "Footer \"Negozi\" → /negozi",
+      "esito": "OK",
+      "route": "/negozi",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "NAVIGAZIONE",
+      "nome": "Footer \"Categorie\" → /categorie",
+      "esito": "OK",
+      "route": "/categorie",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "NAVIGAZIONE",
+      "nome": "Footer \"Negozi in evidenza\" → /negozi?featured=1",
+      "esito": "OK",
+      "route": "/negozi?featured=1",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "NAVIGAZIONE",
+      "nome": "Footer contiene ingresso Amministrazione → /login?area=admin",
+      "esito": "OK",
+      "route": "/login?area=admin",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "NAVIGAZIONE",
+      "nome": "Ricerca homepage → /ricerca?q=",
+      "esito": "OK",
+      "route": "/ricerca?q=pizza",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "NAVIGAZIONE",
+      "nome": "Assistente AI apre il pannello",
+      "esito": "OK",
+      "route": "/",
+      "dettaglio": "elementi=23"
+    },
+    {
+      "sezione": "NAVIGAZIONE",
+      "nome": "/assistant renderizza",
+      "esito": "OK",
+      "route": "/assistant",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "NAVIGAZIONE",
+      "nome": "Card categoria homepage → /categorie/[slug]",
+      "esito": "OK",
+      "route": "/categorie/abbigliamento",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "NAVIGAZIONE",
+      "nome": "CTA negozi in evidenza",
+      "esito": "OK",
+      "route": "/negozi?featured=1",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "AUTH",
+      "nome": "Login valido customer → /cliente",
+      "esito": "OK",
+      "route": "/login?area=cliente",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "AUTH",
+      "nome": "Accesso diretto customer → /cliente",
+      "esito": "OK",
+      "route": "/cliente",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "AUTH",
+      "nome": "Login valido merchant → /merchant",
+      "esito": "OK",
+      "route": "/login?area=merchant",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "AUTH",
+      "nome": "Accesso diretto merchant → /merchant",
+      "esito": "OK",
+      "route": "/merchant",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "AUTH",
+      "nome": "Login valido admin → /amministratore",
+      "esito": "OK",
+      "route": "/login?area=admin",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "AUTH",
+      "nome": "Accesso diretto admin → /amministratore",
+      "esito": "OK",
+      "route": "/amministratore",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "AUTH",
+      "nome": "Login non valido mostra errore e resta su /login",
+      "esito": "OK",
+      "route": "/login?error=Invalid+login+credentials&area=cliente",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "AUTH",
+      "nome": "Logout dall'area cliente (Esci) invalida la sessione",
+      "esito": "OK",
+      "route": "/logout-success",
+      "dettaglio": "URL=/logout-success"
+    },
+    {
+      "sezione": "AUTH",
+      "nome": "Dopo logout /cliente → login",
+      "esito": "OK",
+      "route": "/login?area=cliente",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "AUTH",
+      "nome": "Logout dal menu header → sessione invalidata (Accedi di nuovo visibile)",
+      "esito": "OK",
+      "route": "/logout-success → /",
+      "dettaglio": "suLogout=true accedi=1"
+    },
+    {
+      "sezione": "AUTH",
+      "nome": "/admin non autenticato → /login?area=admin",
+      "esito": "OK",
+      "route": "/login?area=admin",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "AUTH",
+      "nome": "/admin admin autenticato → /amministratore",
+      "esito": "OK",
+      "route": "/amministratore",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "AUTH",
+      "nome": "/admin merchant autenticato → propria area /merchant",
+      "esito": "OK",
+      "route": "/merchant",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "AREA CLIENTE",
+      "nome": "Dashboard cliente",
+      "esito": "OK",
+      "route": "/cliente",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "AREA CLIENTE",
+      "nome": "Profilo cliente",
+      "esito": "OK",
+      "route": "/cliente/profilo",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "AREA CLIENTE",
+      "nome": "Preferiti cliente",
+      "esito": "OK",
+      "route": "/cliente/preferiti",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "AREA CLIENTE",
+      "nome": "Ordini cliente",
+      "esito": "OK",
+      "route": "/cliente/ordini",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "AREA CLIENTE",
+      "nome": "Impostazioni cliente",
+      "esito": "OK",
+      "route": "/cliente/profilo",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "AREA CLIENTE",
+      "nome": "Dettaglio ordine",
+      "esito": "WARN",
+      "route": "/cliente/ordini",
+      "dettaglio": "nessun ordine nel profilo di test (dato assente)"
+    },
+    {
+      "sezione": "AREA VENDITORE",
+      "nome": "Elenco negozi merchant (login ok)",
+      "esito": "OK",
+      "route": "/merchant",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "AREA VENDITORE",
+      "nome": "Negozio fixture cestinato → accesso negato",
+      "esito": "OK",
+      "route": "/merchant/82713069-38ca-43c8-bfd6-dd39c2f94a40/prodotti",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "AREA VENDITORE",
+      "nome": "Guadagni negozio cestinato → accesso negato",
+      "esito": "OK",
+      "route": "/merchant/82713069-38ca-43c8-bfd6-dd39c2f94a40/guadagni",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "AREA VENDITORE",
+      "nome": "Dashboard negozio reale (Panificio Rossi)",
+      "esito": "OK",
+      "route": "/amministratore",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "AREA VENDITORE",
+      "nome": "Prodotti negozio reale",
+      "esito": "OK",
+      "route": "/amministratore",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "AREA VENDITORE",
+      "nome": "Nuovo prodotto (form, non inviato)",
+      "esito": "OK",
+      "route": "/amministratore",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "AREA VENDITORE",
+      "nome": "Ordini negozio reale",
+      "esito": "OK",
+      "route": "/amministratore",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "AREA VENDITORE",
+      "nome": "Incassi negozio reale",
+      "esito": "OK",
+      "route": "/amministratore",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "AREA VENDITORE",
+      "nome": "Guadagni negozio reale",
+      "esito": "OK",
+      "route": "/amministratore",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "AREA VENDITORE",
+      "nome": "Impostazioni negozio reale",
+      "esito": "OK",
+      "route": "/amministratore",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "AREA VENDITORE",
+      "nome": "API incassi venditore (negozio reale) → 200",
+      "esito": "OK",
+      "route": "/api/merchant/stores/f3a82af7-dd47-482f-8a49-ea58e692238c/incassi",
+      "dettaglio": "status=200"
+    },
+    {
+      "sezione": "AREA ADMIN",
+      "nome": "Dashboard admin",
+      "esito": "OK",
+      "route": "/amministratore",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "AREA ADMIN",
+      "nome": "Negozi admin (attivita)",
+      "esito": "OK",
+      "route": "/amministratore/attivita",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "AREA ADMIN",
+      "nome": "Dettaglio negozio admin (sola lettura)",
+      "esito": "OK",
+      "route": "/amministratore/negozi/f3a82af7-dd47-482f-8a49-ea58e692238c",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "AREA ADMIN",
+      "nome": "Categorie admin",
+      "esito": "OK",
+      "route": "/amministratore/categorie",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "AREA ADMIN",
+      "nome": "Prodotti admin",
+      "esito": "OK",
+      "route": "/amministratore/prodotti",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "AREA ADMIN",
+      "nome": "Ordini admin",
+      "esito": "OK",
+      "route": "/amministratore/ordini",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "AREA ADMIN",
+      "nome": "Incassi admin",
+      "esito": "OK",
+      "route": "/amministratore/incassi",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "AREA ADMIN",
+      "nome": "Payout admin (pagina)",
+      "esito": "OK",
+      "route": "/amministratore/payout",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "AREA ADMIN",
+      "nome": "API payout admin → 200",
+      "esito": "OK",
+      "route": "/api/amministratore/payout",
+      "dettaglio": "status=200 {\"success\":true,\"data\":{\"riepilogo\":{\"daErogare\":0,\"inErogazione\":0,\"pagato\":0,\"falliti\":0,\"importoFalliti\":0,\"totalePayout\":0},\"payout\":[],"
+    },
+    {
+      "sezione": "AREA ADMIN",
+      "nome": "Utenti admin",
+      "esito": "OK",
+      "route": "/amministratore/utenti",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "AREA ADMIN",
+      "nome": "Cestino admin",
+      "esito": "OK",
+      "route": "/amministratore/cestino",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "AREA ADMIN",
+      "nome": "Template admin",
+      "esito": "OK",
+      "route": "/amministratore/template",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "AREA ADMIN",
+      "nome": "Impostazioni admin",
+      "esito": "OK",
+      "route": "/amministratore/impostazioni",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "AREA ADMIN",
+      "nome": "Eventi admin",
+      "esito": "OK",
+      "route": "/amministratore/eventi",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "AREA ADMIN",
+      "nome": "Offerte admin",
+      "esito": "OK",
+      "route": "/amministratore/offerte",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "AREA ADMIN",
+      "nome": "Segnalazioni admin",
+      "esito": "OK",
+      "route": "/amministratore/segnalazioni",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "AREA ADMIN",
+      "nome": "Statistiche admin",
+      "esito": "OK",
+      "route": "/amministratore/statistiche",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "AREA ADMIN",
+      "nome": "Sidebar admin presente con link",
+      "esito": "OK",
+      "route": "/amministratore",
+      "dettaglio": "link=24"
+    },
+    {
+      "sezione": "AREA ADMIN",
+      "nome": "Cestino presente nella sidebar admin",
+      "esito": "OK",
+      "route": "/amministratore",
+      "dettaglio": "/amministratore, /amministratore/attivita, /amministratore/cestino, /amministratore/prodotti, /amministratore/categorie, /amministratore/negozi-in-evidenza, /amministratore/ordini, /amministratore/incassi, /amministratore/payout, /amministratore/offerte, /amministratore/eventi, /amministratore/contenuti, /amministratore/template, /amministratore/utenti, /amministratore/segnalazioni, /amministratore/statistiche, /amministratore/assistente-ai, /amministratore/scansioni, /amministratore/registro-attivita, /amministratore/impostazioni, /, /amministratore/negozi/f3a82af7-dd47-482f-8a49-ea58e692238c, /amministratore/negozi/cd45ea2b-ec22-4bd8-a214-0e7cc47c1f67, /amministratore/negozi/11d677f1-5b22-464d-b57e-2fa20a74fde3"
+    },
+    {
+      "sezione": "AREA ADMIN",
+      "nome": "Click Cestino dalla sidebar → /amministratore/cestino",
+      "esito": "OK",
+      "route": "/amministratore/cestino",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "CARRELLO",
+      "nome": "Aggiunta prodotto → badge carrello",
+      "esito": "OK",
+      "route": "/prodotto/anello-con-pietra-centrale-incastonata",
+      "dettaglio": "badge=\"1\""
+    },
+    {
+      "sezione": "CARRELLO",
+      "nome": "Persistenza localStorage (localhub.carrello.v1)",
+      "esito": "OK",
+      "route": "/prodotto/anello-con-pietra-centrale-incastonata",
+      "dettaglio": "righe=1"
+    },
+    {
+      "sezione": "CARRELLO",
+      "nome": "Pagina carrello mostra l'articolo",
+      "esito": "OK",
+      "route": "/carrello",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "CARRELLO",
+      "nome": "Quantità + → badge aggiornato",
+      "esito": "OK",
+      "route": "/carrello",
+      "dettaglio": "badge=\"2\""
+    },
+    {
+      "sezione": "CARRELLO",
+      "nome": "Rimozione articolo → carrello vuoto",
+      "esito": "OK",
+      "route": "/carrello",
+      "dettaglio": "badge=0 righe=0"
+    },
+    {
+      "sezione": "ORDINE",
+      "nome": "Catena Home → negozio → prodotto",
+      "esito": "OK",
+      "route": "/negozio/panificio-rossi → /prodotto/pane-casereccio-1-5-kg",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "ORDINE",
+      "nome": "Checkout raggiungibile (punto sicuro pre-pagamento)",
+      "esito": "OK",
+      "route": "/checkout",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "PERMESSI",
+      "nome": "Non autenticato /cliente → /login?area=cliente",
+      "esito": "OK",
+      "route": "/login?area=cliente",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "PERMESSI",
+      "nome": "Non autenticato /merchant → /login?area=merchant",
+      "esito": "OK",
+      "route": "/login?area=merchant",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "PERMESSI",
+      "nome": "Non autenticato /amministratore → /login?area=admin",
+      "esito": "OK",
+      "route": "/login?area=admin",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "PERMESSI",
+      "nome": "Cliente /merchant/f3a82af7-dd47-482f-8a49-ea58e692238c → negato",
+      "esito": "OK",
+      "route": "/merchant/f3a82af7-dd47-482f-8a49-ea58e692238c",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "PERMESSI",
+      "nome": "Cliente /merchant → negato",
+      "esito": "OK",
+      "route": "/merchant",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "PERMESSI",
+      "nome": "Cliente /amministratore → negato",
+      "esito": "OK",
+      "route": "/amministratore",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "PERMESSI",
+      "nome": "Cliente /amministratore/ordini → negato",
+      "esito": "OK",
+      "route": "/amministratore/ordini",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "PERMESSI",
+      "nome": "/admin cliente → propria area /cliente",
+      "esito": "OK",
+      "route": "/cliente",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "PERMESSI",
+      "nome": "Merchant /amministratore → negato",
+      "esito": "OK",
+      "route": "/amministratore",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "PERMESSI",
+      "nome": "Merchant /amministratore/ordini → negato",
+      "esito": "OK",
+      "route": "/amministratore/ordini",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "PERMESSI",
+      "nome": "Merchant /cliente → negato",
+      "esito": "OK",
+      "route": "/cliente",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "PERMESSI",
+      "nome": "API protette senza sessione → rifiutate (401/403/405)",
+      "esito": "OK",
+      "route": "",
+      "dettaglio": "{\"/api/merchant/me\":401,\"/api/cliente/ordini\":405,\"/api/cliente/preferiti\":401,\"/api/amministratore/dashboard\":401}"
+    },
+    {
+      "sezione": "RESPONSIVE",
+      "nome": "Home @320px (nav 4 voci, Accedi, no overflow)",
+      "esito": "OK",
+      "route": "/",
+      "dettaglio": "{\"docOverflow\":0,\"navLinks\":4,\"accedi\":true}"
+    },
+    {
+      "sezione": "RESPONSIVE",
+      "nome": "Home @375px (nav 4 voci, Accedi, no overflow)",
+      "esito": "OK",
+      "route": "/",
+      "dettaglio": "{\"docOverflow\":0,\"navLinks\":4,\"accedi\":true}"
+    },
+    {
+      "sezione": "RESPONSIVE",
+      "nome": "Home @768px (nav 4 voci, Accedi, no overflow)",
+      "esito": "OK",
+      "route": "/",
+      "dettaglio": "{\"docOverflow\":0,\"navLinks\":4,\"accedi\":true}"
+    },
+    {
+      "sezione": "RESPONSIVE",
+      "nome": "Home @1280px (nav 4 voci, Accedi, no overflow)",
+      "esito": "OK",
+      "route": "/",
+      "dettaglio": "{\"docOverflow\":0,\"navLinks\":4,\"accedi\":true}"
+    },
+    {
+      "sezione": "REGRESSIONE",
+      "nome": "Nav icona sopra + testo sotto @1280",
+      "esito": "OK",
+      "route": "/",
+      "dettaglio": "{\"count\":4,\"hasIconSopra\":true,\"hasTextSotto\":true}"
+    },
+    {
+      "sezione": "REGRESSIONE",
+      "nome": "Nav icona sopra + testo sotto @320",
+      "esito": "OK",
+      "route": "/",
+      "dettaglio": "{\"count\":4,\"hasIconSopra\":true,\"hasTextSotto\":true}"
+    },
+    {
+      "sezione": "REGRESSIONE",
+      "nome": "Nessun 'Amministrazione' nell'header (accesso via /admin)",
+      "esito": "OK",
+      "route": "/",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "REGRESSIONE",
+      "nome": "Header mobile @320: logo+meteo+account in riga senza overflow",
+      "esito": "OK",
+      "route": "/",
+      "dettaglio": "{\"logo\":110,\"meteo\":126.234375,\"account\":93.28125,\"inViewport\":true,\"meteoCastrovillari\":true}"
+    },
+    {
+      "sezione": "REGRESSIONE",
+      "nome": "Login \"Accedi\" in alto apre /login?area=cliente",
+      "esito": "OK",
+      "route": "/login?area=cliente",
+      "dettaglio": ""
+    },
+    {
+      "sezione": "REGRESSIONE",
+      "nome": "Card categorie in homepage (restyle)",
+      "esito": "OK",
+      "route": "/",
+      "dettaglio": "card=8"
+    }
+  ],
+  "erroriGlobali": {
+    "console": {},
+    "http": {},
+    "page": [],
+    "failed": [
+      "https://api.open-meteo.com/v1/forecast?latitude=39.817&longitude=16.202&current=temperature_2m,weather_code",
+      "http://localhost:3100/cliente/profilo"
+    ]
+  }
+}

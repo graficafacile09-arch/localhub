@@ -71,6 +71,8 @@ export type MerchantProduct = {
   alt_text_immagine: string | null;
   attivo: boolean;
   origine_pubblicazione: string | null;
+  /** True se il prodotto appare anche nella vetrina "Prodotti tipici" (homepage). */
+  prodotto_tipico: boolean;
   created_at: string | null;
   updated_at: string | null;
 };
@@ -102,6 +104,8 @@ export type MerchantProductInput = {
   altTextImmagine?: string;
   attivo: boolean;
   originePubblicazione?: string;
+  /** True se il prodotto appare anche nella vetrina "Prodotti tipici" (homepage). */
+  prodottoTipico?: boolean;
 };
 
 export type MerchantQueryResult<T> = {
@@ -166,6 +170,8 @@ export interface ProductQueryOptions {
   stato?: "attivo" | "bozza";
   /** Filtro prodotti arricchiti dall'AI (origine_pubblicazione = "ai"). */
   ai?: boolean;
+  /** Filtro prodotti per appartenenza alla vetrina "Prodotti tipici". */
+  tipico?: boolean;
   /** Filtro prodotti ESCLUSIVAMENTE esauriti (disponibilità reale <= 0). */
   esaurito?: boolean;
   /** Ordinamento. Default: "recenti" (created_at desc). */

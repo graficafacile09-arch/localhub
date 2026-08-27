@@ -250,6 +250,11 @@ export default function MerchantProductListManager({
                         Esaurito
                       </span>
                     )}
+                    {product.prodotto_tipico && (
+                      <span className="rounded-full bg-yellow-100 px-2.5 py-0.5 text-[11px] font-bold text-yellow-800">
+                        TIPICO
+                      </span>
+                    )}
                     {product.origine_pubblicazione === "ai" && (
                       <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[11px] font-semibold text-blue-700">
                         <Sparkles className="h-3 w-3" />

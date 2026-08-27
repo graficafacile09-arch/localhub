@@ -8,7 +8,12 @@ import {
   Tag,
 } from "lucide-react";
 import HomeAssistantButton from "@/components/assistant/HomeAssistantButton";
-import { getCategorieConNegozi, getNegoziInEvidenza, getProdottiInEvidenza } from "@/lib/negozi";
+import {
+  getCategorieConNegozi,
+  getNegoziInEvidenza,
+  getProdottiInEvidenza,
+  getProdottiTipici,
+} from "@/lib/negozi";
 import { getNegozioCardImmagine } from "@/lib/negozi-card-immagini";
 import { chiavePreferito, getStatoPreferitiPerPagina } from "@/lib/cliente/favorites";
 import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
@@ -60,9 +65,16 @@ function SezioneHeader({
 }
 
 export default async function Home() {
-  const [negozi, prodottiInEvidenza, categorieConNegozi, statoPreferiti] = await Promise.all([
+  const [
+    negozi,
+    prodottiInEvidenza,
+    prodottiTipici,
+    categorieConNegozi,
+    statoPreferiti,
+  ] = await Promise.all([
     getNegoziInEvidenza(8),
     getProdottiInEvidenza(8),
+    getProdottiTipici(8),
     getCategorieConNegozi(),
     getStatoPreferitiPerPagina(),
   ]);
@@ -179,6 +191,43 @@ export default async function Home() {
           </div>
         </div>
       </section>
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          PRODOTTI TIPICI (solo se ce ne sono) — vetrina territoriale
+          ═══════════════════════════════════════════════════════════════════ */}
+      {prodottiTipici.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 py-12 md:px-6 md:py-14">
+          <SezioneHeader
+            label="Sapori del territorio"
+            titolo="Prodotti tipici"
+            href="/prodotti-tipici"
+            linkLabel="Vedi tutti"
+          />
+
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-5 lg:grid-cols-4">
+            {prodottiTipici.map((prodotto) => {
+              const prodottoId = String(prodotto.id);
+              return (
+                <ProductCard
+                  key={prodottoId}
+                  id={prodottoId}
+                  slug={(prodotto.slug as string) ?? prodottoId}
+                  nome={prodotto.nome as string}
+                  prezzo={prodotto.prezzo as number}
+                  categoria={(prodotto.categoria as string) ?? null}
+                  negozio_nome={(prodotto.negozio_nome as string) ?? ""}
+                  negozio_id={String(prodotto.negozio_id ?? "")}
+                  immagine_principale={(prodotto.immagine_principale as string) ?? null}
+                  haVarianti={Boolean(prodotto.ha_varianti)}
+                  prodottoTipico
+                  preferitoAttivo={statoPreferiti.chiavi.has(chiavePreferito("prodotto", prodottoId))}
+                  autenticato={statoPreferiti.autenticato}
+                />
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* ═══════════════════════════════════════════════════════════════════
           CATEGORIE
@@ -381,6 +430,9 @@ export default async function Home() {
               </li>
               <li>
                 <Link href="/categorie" className="transition hover:text-yellow-300">Categorie</Link>
+              </li>
+              <li>
+                <Link href="/prodotti-tipici" className="transition hover:text-yellow-300">Prodotti tipici</Link>
               </li>
               <li>
                 <Link href="/negozi?featured=1" className="transition hover:text-yellow-300">

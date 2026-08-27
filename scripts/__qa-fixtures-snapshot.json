@@ -1,0 +1,50 @@
+{
+  "negozi": [
+    {
+      "id": "82713069-38ca-43c8-bfd6-dd39c2f94a40",
+      "nome": "Negozio QA Commerciante A",
+      "deleted_at": null
+    },
+    {
+      "id": "cc22a7cb-d5d1-461e-b4c5-082e2d6cbfa7",
+      "nome": "Negozio QA Commerciante B",
+      "deleted_at": null
+    },
+    {
+      "id": "4198082c-7b0b-425f-bd2e-9dcfae88361a",
+      "nome": "Negozio QA Commerciante C",
+      "deleted_at": null
+    },
+    {
+      "id": "b91ed5d8-abae-43c1-90c2-751fad263763",
+      "nome": "Negozio QA Commerciante D",
+      "deleted_at": null
+    }
+  ],
+  "payout": [
+    {
+      "id": "99e50e94-fb83-4fcf-8de9-f43ece3519b7",
+      "idempotency_key": "qa-fixture-payout"
+    }
+  ],
+  "ordini": [
+    {
+      "id": "255aadd2-41b3-4143-a721-13e37683cffa",
+      "idempotency_key": "qa-fixture-ordine"
+    }
+  ],
+  "prodotti": [
+    {
+      "id": 1363,
+      "nome": "Prodotto QA Fixture 2"
+    },
+    {
+      "id": 1364,
+      "nome": "Prodotto QA Fixture B1"
+    },
+    {
+      "id": 1362,
+      "nome": "Prodotto QA Fixture 1"
+    }
+  ]
+}

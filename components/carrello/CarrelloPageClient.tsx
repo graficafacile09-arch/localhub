@@ -70,7 +70,12 @@ export default function CarrelloPageClient() {
         </div>
       </div>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_320px]">
+      {/* Colonna esplicita minmax(0,1fr) anche su mobile: senza, la griglia
+          usa una colonna implicita auto che cresce col contenuto (i nomi
+          prodotto con truncate hanno min-content = testo intero) e provoca
+          overflow orizzontale a destra. min-w-0 sui figli evita che il
+          min-content dei contenuti gonfi la colonna. */}
+      <div className="mt-4 grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
         {/* Raggruppamento per negozio */}
         <div className="space-y-4">
           {gruppi.map((gruppo) => (

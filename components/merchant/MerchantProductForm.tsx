@@ -2,9 +2,10 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, ChevronDown, ChevronUp, ImagePlus, Layers, Truck } from "lucide-react";
+import { Camera, ChevronDown, ChevronUp, ImagePlus, Layers, Truck, Wheat } from "lucide-react";
 import ProductGalleryManager from "@/components/merchant/products/ProductGalleryManager";
 import VariantiManager from "@/components/merchant/products/VariantiManager";
+import { Toggle } from "@/components/merchant/modules/ModuleFields";
 import type { MerchantProduct } from "@/lib/merchant/types";
 
 /** Valori salvati dal form, passati al chiamante quando non si fa redirect. */
@@ -35,6 +36,7 @@ export type MerchantProductPayload = {
   altTextImmagine?: string;
   attivo: boolean;
   originePubblicazione: string;
+  prodottoTipico: boolean;
 };
 
 type MerchantProductFormProps = {
@@ -85,6 +87,7 @@ const DEFAULT_PRODUCT_FORM = {
   alt_text_immagine: "",
   attivo: true,
   originePubblicazione: "manuale",
+  prodotto_tipico: false,
 };
 
 export default function MerchantProductForm({
@@ -102,6 +105,8 @@ export default function MerchantProductForm({
   const [showAdvanced, setShowAdvanced] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [newImageDataUrl, setNewImageDataUrl] = useState<string | null>(null);
+  // True se il prodotto appartiene alla vetrina "Prodotti tipici" (homepage).
+  const [prodottoTipico, setProdottoTipico] = useState(Boolean(initialData?.prodotto_tipico));
 
   // ── Rilevamento modifiche non salvate ────────────────────────────────────
   const dirtyRef = useRef(false);
@@ -136,6 +141,7 @@ export default function MerchantProductForm({
       seo_title: str(initialValues.seo_title),
       seo_description: str(initialValues.seo_description),
       alt_text_immagine: str(initialValues.alt_text_immagine),
+      prodotto_tipico: String(Boolean(initialValues.prodotto_tipico)),
     });
   }
 
@@ -175,6 +181,7 @@ export default function MerchantProductForm({
       seo_title: get("seo_title"),
       seo_description: get("seo_description"),
       alt_text_immagine: get("alt_text_immagine"),
+      prodotto_tipico: String(prodottoTipico),
     });
     notifyDirty(current !== getSnapshot());
   }
@@ -216,6 +223,7 @@ export default function MerchantProductForm({
         alt_text_immagine: initialData.alt_text_immagine ?? "",
         attivo: initialData.attivo ?? true,
         originePubblicazione: initialData.origine_pubblicazione ?? "manuale",
+        prodotto_tipico: initialData.prodotto_tipico ?? false,
       }
     : DEFAULT_PRODUCT_FORM;
 
@@ -276,6 +284,7 @@ export default function MerchantProductForm({
       altTextImmagine: String(formData.get("alt_text_immagine") ?? "").trim() || undefined,
       attivo: true,
       originePubblicazione: String(formData.get("originePubblicazione") ?? initialValues.originePubblicazione),
+      prodottoTipico: prodottoTipico,
     };
 
     const route = productId
@@ -431,6 +440,20 @@ export default function MerchantProductForm({
           />
         </div>
       ) : null}
+
+      {/* Prodotto tipico — vetrina territoriale della homepage */}
+      <div>
+        <Toggle
+          icon={<Wheat className="h-4 w-4 text-blue-600" aria-hidden />}
+          label="Prodotto tipico"
+          description="Mostra questo prodotto nella vetrina &quot;Prodotti tipici&quot; di LocalHub. Il prodotto resta nel normale catalogo del negozio."
+          checked={prodottoTipico}
+          onChange={(v) => {
+            setProdottoTipico(v);
+            notifyDirty(v !== Boolean(initialValues.prodotto_tipico));
+          }}
+        />
+      </div>
 
       {/* Banner prezzo AI */}
       {initialValues.prezzoSuggerito !== null ? (

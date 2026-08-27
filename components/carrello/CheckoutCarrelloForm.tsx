@@ -511,7 +511,10 @@ export default function CheckoutCarrelloForm({ prefill }: { prefill: Prefill }) 
         </span>
       </h1>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_340px]">
+      {/* Colonna esplicita minmax(0,1fr) anche su mobile: senza, la griglia
+          usa una colonna implicita auto che cresce col contenuto (nomi
+          prodotto con truncate) e provoca overflow orizzontale a destra. */}
+      <div className="mt-4 grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
         {/* ── Colonna sinistra: form ─────────────────────────────────────── */}
         <div className="space-y-4">
           {/* Dati cliente */}

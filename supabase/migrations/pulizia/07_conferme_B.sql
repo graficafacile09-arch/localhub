@@ -1,0 +1,212 @@
+-- ============================================================================
+-- 07_CONFERME_B — CATEGORIA B (TUTTO COMMENTATO: attivare SOLO dopo conferma)
+-- ============================================================================
+-- Contiene i candidati "probabili test ma da confermare". NIENTE viene
+-- eseguito: ogni istruzione è preceduta da "--". Per attivare una sezione:
+-- seleziona le righe della sezione ed esegui come blocco unico (BEGIN/COMMIT).
+--
+-- Punti di decisione:
+--  B1 Barone Gioielli #1: esiste un ordine LH-000161 (200 €) da account reale
+--     e un reclamo APERTO (1d8b14b5) -> confermare che sia solo collaudo.
+--  B2/B3 Tech Store 2 e Fashion Style: is_demo=true ma con ordini (anche da
+--     account reale: LH-000850, LH-000514).
+--  B4/B5 Bar dei Capoccioni e La casa dei tuoi sogni: 0 ordini, probabile
+--     sessione di test del 14/08.
+--  B6 Panificio: ordini da account reale (Marianna/owner) e i 5 "paid" del
+--     collaudo Stripe TEST (evidenza del collaudo del 16/08): eliminare
+--     SOLO dopo la chiusura formale del collaudo.
+--  B7 Ordini su negozi demo seed (account reale marianna.sidoti).
+--  B9 Utenti seed QA (admin/commercianti/customer .test): usati dalle suite
+--     E2E (tests/fixtures/users.ts) e ricreabili con scripts/setup-test-users.mjs.
+--     Dopo la loro rimozione, E2E/regression dovranno ricrearli al primo run.
+--  (B10 evento/offerta Atelier spostato nella sezione C: contenuto demo, NON
+--     toccare.)
+-- ----------------------------------------------------------------------------
+-- ATTENZIONE: esegui SOLO dopo il backup (vedi 00_ISTRUZIONI.sql).
+
+-- ============================================================================
+-- B1 — BARONE GIOIELLI #1 (cd45ea2b-ec22-4bd8-a214-0e7cc47c1f67)
+--      prodotto 218, ordine LH-000161, reclamo APERTO 1d8b14b5, 1 scan_log
+-- ============================================================================
+-- BEGIN;
+-- DELETE FROM reclamo_comunicazioni WHERE reclamo_id IN (
+--   SELECT id FROM ordine_reclami WHERE ordine_id = '84e27855-540e-46d6-8c0a-404faee0d2d5');
+-- DELETE FROM ordine_reclami WHERE ordine_id = '84e27855-540e-46d6-8c0a-404faee0d2d5';
+-- DELETE FROM ordini_righe WHERE ordine_id = '84e27855-540e-46d6-8c0a-404faee0d2d5';
+-- DELETE FROM ordini_eventi WHERE ordine_id = '84e27855-540e-46d6-8c0a-404faee0d2d5';
+-- DELETE FROM ordini WHERE id = '84e27855-540e-46d6-8c0a-404faee0d2d5';
+-- DELETE FROM prodotti WHERE id = 218;
+-- DELETE FROM scan_log WHERE negozio_id = 'cd45ea2b-ec22-4bd8-a214-0e7cc47c1f67';
+-- DELETE FROM negozi WHERE id = 'cd45ea2b-ec22-4bd8-a214-0e7cc47c1f67';
+-- COMMIT;
+
+-- ============================================================================
+-- B2 — TECH STORE 2 (e92a474a-b5bf-4ffe-bda2-d4b9bdf650fa, is_demo)
+--      prodotti 13/191, ordini LH-000009/LH-000010, 1 scan_log
+-- ============================================================================
+-- BEGIN;
+-- DELETE FROM ordini_righe WHERE ordine_id IN (
+--   'fa99d0e9-2a6e-49e8-be55-2cff3f7be452', 'b50ceebf-ab81-4ea8-bcd6-f6327c3e7fec');
+-- DELETE FROM ordini_eventi WHERE ordine_id IN (
+--   'fa99d0e9-2a6e-49e8-be55-2cff3f7be452', 'b50ceebf-ab81-4ea8-bcd6-f6327c3e7fec');
+-- DELETE FROM ordini WHERE id IN (
+--   'fa99d0e9-2a6e-49e8-be55-2cff3f7be452', 'b50ceebf-ab81-4ea8-bcd6-f6327c3e7fec');
+-- DELETE FROM prodotti WHERE id IN (13, 191);
+-- DELETE FROM scan_log WHERE negozio_id = 'e92a474a-b5bf-4ffe-bda2-d4b9bdf650fa';
+-- DELETE FROM negozi WHERE id = 'e92a474a-b5bf-4ffe-bda2-d4b9bdf650fa';
+-- COMMIT;
+
+-- ============================================================================
+-- B3 — FASHION STYLE (1f90b145-3acd-4cc1-b365-dfaac944da6d, is_demo)
+--      prodotti 199/204, ordini LH-000043/LH-000850/LH-000514,
+--      4 metodi spedizione disattivati, 1 scan_log
+-- ============================================================================
+-- BEGIN;
+-- DELETE FROM ordini_righe WHERE ordine_id IN (
+--   'fde76270-8243-4594-8749-42ef32e57106',
+--   '21d55ea2-bb3b-4661-9afc-fa63ac865c06',
+--   'b69d9a04-2142-4802-8e76-32bf56e455dc');
+-- DELETE FROM ordini_eventi WHERE ordine_id IN (
+--   'fde76270-8243-4594-8749-42ef32e57106',
+--   '21d55ea2-bb3b-4661-9afc-fa63ac865c06',
+--   'b69d9a04-2142-4802-8e76-32bf56e455dc');
+-- DELETE FROM ordini WHERE id IN (
+--   'fde76270-8243-4594-8749-42ef32e57106',
+--   '21d55ea2-bb3b-4661-9afc-fa63ac865c06',
+--   'b69d9a04-2142-4802-8e76-32bf56e455dc');
+-- DELETE FROM prodotti WHERE id IN (199, 204);
+-- DELETE FROM negozio_metodi_spedizione WHERE negozio_id = '1f90b145-3acd-4cc1-b365-dfaac944da6d';
+-- DELETE FROM scan_log WHERE negozio_id = '1f90b145-3acd-4cc1-b365-dfaac944da6d';
+-- DELETE FROM negozi WHERE id = '1f90b145-3acd-4cc1-b365-dfaac944da6d';
+-- COMMIT;
+
+-- ============================================================================
+-- B4 — BAR DEI CAPOCCIONI (11d677f1-5b22-464d-b57e-2fa20a74fde3)
+--      0 prodotti/ordini; 1 preferito dell'owner (7da3ee60)
+-- ============================================================================
+-- BEGIN;
+-- DELETE FROM preferiti WHERE id = '7da3ee60-742c-4680-a512-69ad26100a09';
+-- DELETE FROM negozi WHERE id = '11d677f1-5b22-464d-b57e-2fa20a74fde3';
+-- COMMIT;
+
+-- ============================================================================
+-- B5 — LA CASA DEI TUOI SOGNI (17503b5a-5979-4bce-9728-88a389d60f65)
+--      0 relazioni (dati contatto clonati da Casa Moderna demo)
+-- ============================================================================
+-- BEGIN;
+-- DELETE FROM negozi WHERE id = '17503b5a-5979-4bce-9728-88a389d60f65';
+-- COMMIT;
+
+-- ============================================================================
+-- B6 — PANIFICIO ROSSI: ordini da account reali + collaudo Stripe "paid"
+--      LH-000063, 064, 065, 851, 852, 1406, 1584, 1585, 1586, 1587, 1588, 1589
+--      reclamo chiuso dce40a27 (LH-000064) + 3 comunicazioni
+--      5 sessioni paid + 5 eventi checkout.session.completed
+-- ============================================================================
+-- BEGIN;
+-- DELETE FROM reclamo_comunicazioni WHERE reclamo_id = 'dce40a27-24db-430a-8c38-30bdc8e06df3';
+-- DELETE FROM ordine_reclami WHERE ordine_id = 'ffe4ea0f-4786-437b-855c-fc0fe68a51fc';
+-- DELETE FROM ordini_righe WHERE ordine_id IN (
+--   '6a95b31d-dbe2-4a28-9787-32dc2d2c7b44', 'ffe4ea0f-4786-437b-855c-fc0fe68a51fc',
+--   'd5ea0794-d8da-4298-90db-496e7473eb95', 'c718f600-2588-4bde-bfb6-09068c4bdda4',
+--   'caca6dee-d792-473b-ac5d-5f3dd6f3493a', '6dacb7ee-a557-456a-88fb-15730361d709',
+--   '3c38730e-66ff-4048-96fb-a1e738fcbd9a', '8efe07bb-c90a-466b-8656-900eb391f641',
+--   '74865166-f9fb-4234-9bd8-f9495a66d6e6', '9bf4f9ad-4174-4a44-a9db-244f6ec111a2',
+--   'ddbca7c9-c58c-45dc-9432-23232c096756', '7de5cce8-98db-4450-874e-f4335933f418');
+-- DELETE FROM ordini_eventi WHERE ordine_id IN (
+--   '6a95b31d-dbe2-4a28-9787-32dc2d2c7b44', 'ffe4ea0f-4786-437b-855c-fc0fe68a51fc',
+--   'd5ea0794-d8da-4298-90db-496e7473eb95', 'c718f600-2588-4bde-bfb6-09068c4bdda4',
+--   'caca6dee-d792-473b-ac5d-5f3dd6f3493a', '6dacb7ee-a557-456a-88fb-15730361d709',
+--   '3c38730e-66ff-4048-96fb-a1e738fcbd9a', '8efe07bb-c90a-466b-8656-900eb391f641',
+--   '74865166-f9fb-4234-9bd8-f9495a66d6e6', '9bf4f9ad-4174-4a44-a9db-244f6ec111a2',
+--   'ddbca7c9-c58c-45dc-9432-23232c096756', '7de5cce8-98db-4450-874e-f4335933f418');
+-- DELETE FROM pagamenti_sessioni WHERE ordine_id IN (
+--   '74865166-f9fb-4234-9bd8-f9495a66d6e6', '9bf4f9ad-4174-4a44-a9db-244f6ec111a2',
+--   '8efe07bb-c90a-466b-8656-900eb391f641', 'ddbca7c9-c58c-45dc-9432-23232c096756',
+--   '7de5cce8-98db-4450-874e-f4335933f418', '3c38730e-66ff-4048-96fb-a1e738fcbd9a');
+-- DELETE FROM pagamenti_eventi WHERE ordine_id IN (
+--   '74865166-f9fb-4234-9bd8-f9495a66d6e6', '9bf4f9ad-4174-4a44-a9db-244f6ec111a2',
+--   '8efe07bb-c90a-466b-8656-900eb391f641', 'ddbca7c9-c58c-45dc-9432-23232c096756',
+--   '7de5cce8-98db-4450-874e-f4335933f418');
+-- DELETE FROM ordini WHERE id IN (
+--   '6a95b31d-dbe2-4a28-9787-32dc2d2c7b44', 'ffe4ea0f-4786-437b-855c-fc0fe68a51fc',
+--   'd5ea0794-d8da-4298-90db-496e7473eb95', 'c718f600-2588-4bde-bfb6-09068c4bdda4',
+--   'caca6dee-d792-473b-ac5d-5f3dd6f3493a', '6dacb7ee-a557-456a-88fb-15730361d709',
+--   '3c38730e-66ff-4048-96fb-a1e738fcbd9a', '8efe07bb-c90a-466b-8656-900eb391f641',
+--   '74865166-f9fb-4234-9bd8-f9495a66d6e6', '9bf4f9ad-4174-4a44-a9db-244f6ec111a2',
+--   'ddbca7c9-c58c-45dc-9432-23232c096756', '7de5cce8-98db-4450-874e-f4335933f418');
+-- COMMIT;
+
+-- ============================================================================
+-- B7 — ORDINI SU NEGOZI DEMO SEED (account reale marianna.sidoti)
+--      LH-000160 Auto Point + reclamo 1ced3f52 + 2 comunicazioni
+--      LH-000178 Mondo Bimbi + reclamo d780f213
+--      LH-000177 Atelier Bellezza
+-- ============================================================================
+-- BEGIN;
+-- DELETE FROM reclamo_comunicazioni WHERE reclamo_id IN (
+--   '1ced3f52-eee1-4261-9830-e7168bd1c965', 'd780f213-1741-4ffd-9ace-86c375c338bc');
+-- DELETE FROM ordine_reclami WHERE ordine_id IN (
+--   '30b836d9-7d0f-4217-b008-9933ceaf1547', '39ffdd03-661b-47fc-aa31-5e2cb7da5ec6');
+-- DELETE FROM ordini_righe WHERE ordine_id IN (
+--   '30b836d9-7d0f-4217-b008-9933ceaf1547', '39ffdd03-661b-47fc-aa31-5e2cb7da5ec6',
+--   'c9b660f8-2f50-4a1b-8c5f-1a2ef6ac10fb');
+-- DELETE FROM ordini_eventi WHERE ordine_id IN (
+--   '30b836d9-7d0f-4217-b008-9933ceaf1547', '39ffdd03-661b-47fc-aa31-5e2cb7da5ec6',
+--   'c9b660f8-2f50-4a1b-8c5f-1a2ef6ac10fb');
+-- DELETE FROM ordini WHERE id IN (
+--   '30b836d9-7d0f-4217-b008-9933ceaf1547', '39ffdd03-661b-47fc-aa31-5e2cb7da5ec6',
+--   'c9b660f8-2f50-4a1b-8c5f-1a2ef6ac10fb');
+-- COMMIT;
+
+-- ============================================================================
+-- B8 — EVENTO PAGAMENTO "charge.refunded" su ordine NULL
+--      (d48f3098-d057-4bb8-99a8-407a6eabe158, ch_3U3Nzs...) — probabile test
+--      di rimborso: confermare prima di eliminare
+-- ============================================================================
+-- BEGIN;
+-- DELETE FROM pagamenti_eventi WHERE id = 'd48f3098-d057-4bb8-99a8-407a6eabe158';
+-- COMMIT;
+
+-- ============================================================================
+-- B9 — UTENTI SEED QA (ricreabili con scripts/setup-test-users.mjs)
+--      admin.test@localhub.it (ruolo admin), commercianti-a/b/c/d.test,
+--      customer-a/b/c.test. Usati dalle suite E2E (tests/fixtures/users.ts).
+--      ecfbb11d ha anche il profilo cliente "Mario Rossi".
+--      ATTENZIONE: dopo la rimozione, E2E/regression dovranno ricrearli
+--      (script setup-test-users) prima del prossimo run.
+-- ============================================================================
+-- BEGIN;
+-- DELETE FROM user_roles WHERE user_id IN (
+--   '2c9f2f4e-7e00-45e0-8ad9-49955338d952', '7c59d246-eac0-4b78-b93c-03d0e053b852',
+--   '468bfc70-bb70-43af-a2b9-522421c4bc89', 'bcbaf259-56b6-461c-91ae-ffcdc05c147c',
+--   '8db3d990-7c0f-400a-a2ed-cdf321e780bd', 'ecfbb11d-8065-4e89-9512-8f4439c77ae5',
+--   'a7e57527-b679-4a88-b4c5-f1aee330d14c', 'b15b2364-0302-40d0-8f71-f271a6d63563');
+-- DELETE FROM cliente_profili WHERE user_id IN (
+--   '2c9f2f4e-7e00-45e0-8ad9-49955338d952', '7c59d246-eac0-4b78-b93c-03d0e053b852',
+--   '468bfc70-bb70-43af-a2b9-522421c4bc89', 'bcbaf259-56b6-461c-91ae-ffcdc05c147c',
+--   '8db3d990-7c0f-400a-a2ed-cdf321e780bd', 'ecfbb11d-8065-4e89-9512-8f4439c77ae5',
+--   'a7e57527-b679-4a88-b4c5-f1aee330d14c', 'b15b2364-0302-40d0-8f71-f271a6d63563');
+-- DELETE FROM reset_tokens WHERE user_id IN (
+--   '2c9f2f4e-7e00-45e0-8ad9-49955338d952', '7c59d246-eac0-4b78-b93c-03d0e053b852',
+--   '468bfc70-bb70-43af-a2b9-522421c4bc89', 'bcbaf259-56b6-461c-91ae-ffcdc05c147c',
+--   '8db3d990-7c0f-400a-a2ed-cdf321e780bd', 'ecfbb11d-8065-4e89-9512-8f4439c77ae5',
+--   'a7e57527-b679-4a88-b4c5-f1aee330d14c', 'b15b2364-0302-40d0-8f71-f271a6d63563');
+-- DELETE FROM preferiti WHERE user_id IN (
+--   '2c9f2f4e-7e00-45e0-8ad9-49955338d952', '7c59d246-eac0-4b78-b93c-03d0e053b852',
+--   '468bfc70-bb70-43af-a2b9-522421c4bc89', 'bcbaf259-56b6-461c-91ae-ffcdc05c147c',
+--   '8db3d990-7c0f-400a-a2ed-cdf321e780bd', 'ecfbb11d-8065-4e89-9512-8f4439c77ae5',
+--   'a7e57527-b679-4a88-b4c5-f1aee330d14c', 'b15b2364-0302-40d0-8f71-f271a6d63563');
+-- DELETE FROM auth.users WHERE id IN (
+--   '2c9f2f4e-7e00-45e0-8ad9-49955338d952', '7c59d246-eac0-4b78-b93c-03d0e053b852',
+--   '468bfc70-bb70-43af-a2b9-522421c4bc89', 'bcbaf259-56b6-461c-91ae-ffcdc05c147c',
+--   '8db3d990-7c0f-400a-a2ed-cdf321e780bd', 'ecfbb11d-8065-4e89-9512-8f4439c77ae5',
+--   'a7e57527-b679-4a88-b4c5-f1aee330d14c', 'b15b2364-0302-40d0-8f71-f271a6d63563');
+-- COMMIT;
+
+-- ============================================================================
+-- C — NON TOCCARE (contenuto demo ufficiale dei seed)
+--      Evento "Open Day Bellezza" (c8654670-e28f-438c-9671-bb54aa7e767f) +
+--      Offerta "Sconto Apertura -20%" (b4799dd0-1726-439f-9d6c-7fa38896b63d)
+--      sull'Atelier Bellezza (demo seed 10000000-...-002): fanno parte del
+--      contenuto demo del seed. NON eliminarli.
