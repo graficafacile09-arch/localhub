@@ -9,7 +9,6 @@ import {
 } from "lucide-react";
 import HomeAssistantButton from "@/components/assistant/HomeAssistantButton";
 import {
-  getCategorieConNegozi,
   getNegoziInEvidenza,
   getProdottiInEvidenza,
   getProdottiTipici,
@@ -17,7 +16,6 @@ import {
 import { getNegozioCardImmagine } from "@/lib/negozi-card-immagini";
 import { chiavePreferito, getStatoPreferitiPerPagina } from "@/lib/cliente/favorites";
 import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
-import CategoryTile, { TutteCategorieTile } from "@/components/home/CategoryTile";
 import ProductCard from "@/components/home/ProductCard";
 import EccellenzeCalabresiGrid from "@/components/home/EccellenzeCalabresiGrid";
 
@@ -25,9 +23,6 @@ import EccellenzeCalabresiGrid from "@/components/home/EccellenzeCalabresiGrid";
 // dal merchant (il toggle "In evidenza" della dashboard), quindi non viene
 // prerenderizzata staticamente a build.
 export const dynamic = "force-dynamic";
-
-// Numero di categorie mostrate in homepage (le altre sono in /categorie).
-const NUMERO_CATEGORIE_HOME = 8;
 
 /**
  * Intestazione di sezione coerente (label + titolo + eventuale link):
@@ -75,24 +70,13 @@ function SezioneHeader({
 }
 
 export default async function Home() {
-  const [
-    negozi,
-    prodottiInEvidenza,
-    prodottiTipici,
-    categorieConNegozi,
-    statoPreferiti,
-  ] = await Promise.all([
-    getNegoziInEvidenza(8),
-    getProdottiInEvidenza(8),
-    getProdottiTipici(60),
-    getCategorieConNegozi(),
-    getStatoPreferitiPerPagina(),
-  ]);
-
-  // Le categorie arrivano GIÀ ordinate alfabeticamente (A→Z) dalla fonte
-  // unica lib/categorie-negozio.ts tramite getCategorieConNegozi(): nessun
-  // secondo ordinamento qui, lo stesso elenco ordinato vale per /categorie.
-  const categorieOrdinate = categorieConNegozi;
+  const [negozi, prodottiInEvidenza, prodottiTipici, statoPreferiti] =
+    await Promise.all([
+      getNegoziInEvidenza(8),
+      getProdottiInEvidenza(8),
+      getProdottiTipici(60),
+      getStatoPreferitiPerPagina(),
+    ]);
 
   return (
     <main className="min-h-screen bg-[#eef3f8]">
@@ -203,31 +187,9 @@ export default async function Home() {
       </section>
 
       {/* ═══════════════════════════════════════════════════════════════════
-          CATEGORIE
-          ═══════════════════════════════════════════════════════════════════ */}
-      <section className="mx-auto max-w-7xl px-4 py-12 md:px-6 md:py-14">
-        <SezioneHeader
-          label="Esplora"
-          titolo="Categorie"
-          href="/categorie"
-          linkLabel="Tutte le categorie"
-        />
-
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 md:gap-4 lg:grid-cols-5">
-          {categorieOrdinate.slice(0, NUMERO_CATEGORIE_HOME).map(({ categoria, count }, index) => (
-            <CategoryTile
-              key={categoria.id}
-              categoria={categoria}
-              index={index}
-              count={count}
-            />
-          ))}
-          <TutteCategorieTile index={NUMERO_CATEGORIE_HOME} />
-        </div>
-      </section>
-
-      {/* ═══════════════════════════════════════════════════════════════════
-          PRODOTTI TIPICI (solo se ce ne sono) — vetrina territoriale
+          ECCELLENZE CALABRESI (solo se ce ne sono) — vetrina territoriale.
+          Le categorie restano nella navigazione (barra Home/Negozi/Categorie):
+          non vengono più duplicate nella pagina.
           ═══════════════════════════════════════════════════════════════════ */}
       {prodottiTipici.length > 0 && (
         <section className="mx-auto max-w-7xl px-4 py-12 md:px-6 md:py-14">
