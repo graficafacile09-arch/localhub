@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import AccountMenu from "./AccountMenu";
+import FarmacieTurnoWidget from "./FarmacieTurnoWidget";
 import HeaderNav from "./HeaderNav";
 import WeatherWidget from "./WeatherWidget";
 import { getDatiAccount } from "./get-account-data";
@@ -22,23 +23,26 @@ export default async function Header() {
 
   return (
     <header className="border-b border-slate-200 bg-white shadow-sm">
-      <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-3 py-3 sm:px-4 md:px-6 lg:flex-row lg:items-center lg:gap-3">
-        {/* LOGO + METEO + ACCOUNT — stessa riga sia desktop sia mobile */}
-        <div className="flex w-full flex-wrap items-center gap-1 sm:gap-2 lg:w-auto">
-          <Link href="/" aria-label="LocalHub — Home" className="shrink-0">
+      <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-1.5 py-3 sm:px-4 md:px-6 lg:flex-row lg:items-start lg:gap-3">
+        {/* Colonna sinistra: riga LOGO+METEO+ACCOUNT sopra, widget farmacie sotto */}
+        <div className="flex w-full flex-col lg:w-auto">
+          <div className="flex w-full flex-wrap items-center gap-0.5 sm:gap-2">
+            <Link href="/" aria-label="LocalHub — Home" className="shrink-0">
             <Image
               src="/logo-transparent.png"
               alt="LocalHub"
-              width={170}
-              height={55}
+              width={1536}
+              height={1024}
               priority
-              className="h-auto w-[110px] sm:w-[160px] lg:w-[220px]"
+              className="h-auto w-[138px] sm:w-[180px] lg:w-[300px]"
             />
-          </Link>
-          <WeatherWidget />
-          <div className="ml-auto shrink-0 lg:ml-0">
-            <AccountMenu account={account} />
+            </Link>
+            <WeatherWidget />
+            <div className="ml-auto shrink-0 lg:ml-0">
+              <AccountMenu account={account} />
+            </div>
           </div>
+          <FarmacieTurnoWidget />
         </div>
 
         {/* NAV — visibile anche su mobile (nessun hamburger), compatta e senza overflow */}

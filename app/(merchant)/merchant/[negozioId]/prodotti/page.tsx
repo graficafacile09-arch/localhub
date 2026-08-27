@@ -38,6 +38,7 @@ type Props = {
     q?: string;
     stato?: string;
     ai?: string;
+    tipico?: string;
     esaurito?: string;
     ordina?: string;
     pagina?: string;
@@ -52,13 +53,14 @@ export default async function MerchantProductsPage({ params, searchParams }: Pro
   const q = sp.q?.trim() || undefined;
   const stato = sp.stato === "attivo" || sp.stato === "bozza" ? sp.stato : undefined;
   const ai = sp.ai === "1";
+  const tipico = sp.tipico === "1" ? true : sp.tipico === "0" ? false : undefined;
   const esaurito = sp.esaurito === "1";
   const ordina = ORDINAMENTI.some((o) => o.chiave === sp.ordina)
     ? (sp.ordina as OrdinamentoProdotti)
     : undefined;
   const pagina = Math.max(1, Number(sp.pagina ?? 1) || 1);
 
-  const filtriAttivi = Boolean(q || stato || ai || esaurito);
+  const filtriAttivi = Boolean(q || stato || ai || tipico !== undefined || esaurito);
 
   const user = await requireCurrentUser("/login");
   const storeResult = await getMerchantStoreForUser(user.id, negozioId);
@@ -85,6 +87,7 @@ export default async function MerchantProductsPage({ params, searchParams }: Pro
     q,
     stato,
     ai: ai || undefined,
+    tipico,
     esaurito: esaurito || undefined,
     ordina,
     pagina,
@@ -110,6 +113,7 @@ export default async function MerchantProductsPage({ params, searchParams }: Pro
     q,
     stato,
     ai: ai ? "1" : undefined,
+    tipico: tipico === undefined ? undefined : tipico ? "1" : "0",
     esaurito: esaurito ? "1" : undefined,
     ordina,
   };
@@ -179,6 +183,7 @@ export default async function MerchantProductsPage({ params, searchParams }: Pro
             {/* Preserva gli altri filtri sulla nuova ricerca */}
             {stato && <input type="hidden" name="stato" value={stato} />}
             {ai && <input type="hidden" name="ai" value="1" />}
+            {tipico !== undefined && <input type="hidden" name="tipico" value={tipico ? "1" : "0"} />}
             {esaurito && <input type="hidden" name="esaurito" value="1" />}
             {ordina && <input type="hidden" name="ordina" value={ordina} />}
             <button
@@ -281,6 +286,30 @@ export default async function MerchantProductsPage({ params, searchParams }: Pro
                 }`}
               >
                 <Sparkles className="mr-1 inline h-3 w-3" aria-hidden />
+                {f.label}
+              </Link>
+            );
+          })}
+
+          <span className="mx-1 h-4 w-px bg-slate-200" aria-hidden />
+          {(
+            [
+              { chiave: undefined, label: "Tutti" },
+              { chiave: true, label: "Tipici" },
+              { chiave: false, label: "Non tipici" },
+            ] as const
+          ).map((f) => {
+            const attivo = tipico === f.chiave;
+            return (
+              <Link
+                key={f.label}
+                href={buildUrl(base, correnti, { tipico: f.chiave === undefined ? undefined : f.chiave ? "1" : "0" })}
+                className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${
+                  attivo
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "border border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-700"
+                }`}
+              >
                 {f.label}
               </Link>
             );

@@ -1,0 +1,5636 @@
+[
+  {
+    "nome": "pubblico-home",
+    "vw": 1280,
+    "url": "/",
+    "titolo": "InCittà | I negozi di Castrovillari on-line",
+    "h1": "Tutto quello che cerchi... è già nella tua città.",
+    "headerNav": [
+      {
+        "testo": "Home",
+        "href": "/",
+        "cls": "group relative flex min-w-0 flex-col items-center gap-1 px-3"
+      },
+      {
+        "testo": "Negozi",
+        "href": "/negozi",
+        "cls": "group relative flex min-w-0 flex-col items-center gap-1 px-3"
+      },
+      {
+        "testo": "Categorie",
+        "href": "/categorie",
+        "cls": "group relative flex min-w-0 flex-col items-center gap-1 px-3"
+      },
+      {
+        "testo": "Carrello",
+        "href": "/carrello",
+        "cls": "group relative flex min-w-0 flex-col items-center gap-1 px-3"
+      }
+    ],
+    "asideNav": [],
+    "h1Font": "48px",
+    "h2Font": "14px",
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": {
+      "testo": "Accedi",
+      "bg": "lab(83.2664 8.65132 106.895)",
+      "fontSize": "14px",
+      "h": 36
+    },
+    "cardCount": 24,
+    "cardRadius": "16px",
+    "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.06) 0px 2px 10px 0px",
+    "tabella": null
+  },
+  {
+    "nome": "pubblico-home",
+    "vw": 375,
+    "url": "/",
+    "titolo": "InCittà | I negozi di Castrovillari on-line",
+    "h1": "Tutto quello che cerchi... è già nella tua città.",
+    "headerNav": [
+      {
+        "testo": "Home",
+        "href": "/",
+        "cls": "group relative flex min-w-0 flex-col items-center gap-1 px-3"
+      },
+      {
+        "testo": "Negozi",
+        "href": "/negozi",
+        "cls": "group relative flex min-w-0 flex-col items-center gap-1 px-3"
+      },
+      {
+        "testo": "Categorie",
+        "href": "/categorie",
+        "cls": "group relative flex min-w-0 flex-col items-center gap-1 px-3"
+      },
+      {
+        "testo": "Carrello",
+        "href": "/carrello",
+        "cls": "group relative flex min-w-0 flex-col items-center gap-1 px-3"
+      }
+    ],
+    "asideNav": [],
+    "h1Font": "30px",
+    "h2Font": "14px",
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": {
+      "testo": "Accedi",
+      "bg": "lab(83.2664 8.65132 106.895)",
+      "fontSize": "14px",
+      "h": 36
+    },
+    "cardCount": 24,
+    "cardRadius": "16px",
+    "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.06) 0px 2px 10px 0px",
+    "tabella": null
+  },
+  {
+    "nome": "pubblico-negozi",
+    "vw": 1280,
+    "url": "/negozi",
+    "titolo": "InCittà | I negozi di Castrovillari on-line",
+    "h1": "Negozi di Castrovillari",
+    "headerNav": [
+      {
+        "testo": "Home",
+        "href": "/",
+        "cls": "group relative flex min-w-0 flex-col items-center gap-1 px-3"
+      },
+      {
+        "testo": "Negozi",
+        "href": "/negozi",
+        "cls": "group relative flex min-w-0 flex-col items-center gap-1 px-3"
+      },
+      {
+        "testo": "Categorie",
+        "href": "/categorie",
+        "cls": "group relative flex min-w-0 flex-col items-center gap-1 px-3"
+      },
+      {
+        "testo": "Carrello",
+        "href": "/carrello",
+        "cls": "group relative flex min-w-0 flex-col items-center gap-1 px-3"
+      }
+    ],
+    "asideNav": [],
+    "h1Font": "18px",
+    "h2Font": "12px",
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": {
+      "testo": "Accedi",
+      "bg": "lab(83.2664 8.65132 106.895)",
+      "fontSize": "14px",
+      "h": 36
+    },
+    "cardCount": 3,
+    "cardRadius": null,
+    "shadow": null,
+    "tabella": null
+  },
+  {
+    "nome": "pubblico-negozi",
+    "vw": 375,
+    "url": "/negozi",
+    "titolo": "InCittà | I negozi di Castrovillari on-line",
+    "h1": "Negozi di Castrovillari",
+    "headerNav": [
+      {
+        "testo": "Home",
+        "href": "/",
+        "cls": "group relative flex min-w-0 flex-col items-center gap-1 px-3"
+      },
+      {
+        "testo": "Negozi",
+        "href": "/negozi",
+        "cls": "group relative flex min-w-0 flex-col items-center gap-1 px-3"
+      },
+      {
+        "testo": "Categorie",
+        "href": "/categorie",
+        "cls": "group relative flex min-w-0 flex-col items-center gap-1 px-3"
+      },
+      {
+        "testo": "Carrello",
+        "href": "/carrello",
+        "cls": "group relative flex min-w-0 flex-col items-center gap-1 px-3"
+      }
+    ],
+    "asideNav": [],
+    "h1Font": "18px",
+    "h2Font": "12px",
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": {
+      "testo": "Accedi",
+      "bg": "lab(83.2664 8.65132 106.895)",
+      "fontSize": "14px",
+      "h": 36
+    },
+    "cardCount": 3,
+    "cardRadius": null,
+    "shadow": null,
+    "tabella": null
+  },
+  {
+    "nome": "pubblico-categorie",
+    "vw": 1280,
+    "url": "/categorie",
+    "titolo": "InCittà | I negozi di Castrovillari on-line",
+    "h1": "Tutte le categorie",
+    "headerNav": [
+      {
+        "testo": "Home",
+        "href": "/",
+        "cls": "group relative flex min-w-0 flex-col items-center gap-1 px-3"
+      },
+      {
+        "testo": "Negozi",
+        "href": "/negozi",
+        "cls": "group relative flex min-w-0 flex-col items-center gap-1 px-3"
+      },
+      {
+        "testo": "Categorie",
+        "href": "/categorie",
+        "cls": "group relative flex min-w-0 flex-col items-center gap-1 px-3"
+      },
+      {
+        "testo": "Carrello",
+        "href": "/carrello",
+        "cls": "group relative flex min-w-0 flex-col items-center gap-1 px-3"
+      }
+    ],
+    "asideNav": [],
+    "h1Font": "20px",
+    "h2Font": null,
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": {
+      "testo": "Accedi",
+      "bg": "lab(83.2664 8.65132 106.895)",
+      "fontSize": "14px",
+      "h": 36
+    },
+    "cardCount": 71,
+    "cardRadius": "16px",
+    "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.06) 0px 2px 10px 0px",
+    "tabella": null
+  },
+  {
+    "nome": "pubblico-categorie",
+    "vw": 375,
+    "url": "/categorie",
+    "titolo": "InCittà | I negozi di Castrovillari on-line",
+    "h1": "Tutte le categorie",
+    "headerNav": [
+      {
+        "testo": "Home",
+        "href": "/",
+        "cls": "group relative flex min-w-0 flex-col items-center gap-1 px-3"
+      },
+      {
+        "testo": "Negozi",
+        "href": "/negozi",
+        "cls": "group relative flex min-w-0 flex-col items-center gap-1 px-3"
+      },
+      {
+        "testo": "Categorie",
+        "href": "/categorie",
+        "cls": "group relative flex min-w-0 flex-col items-center gap-1 px-3"
+      },
+      {
+        "testo": "Carrello",
+        "href": "/carrello",
+        "cls": "group relative flex min-w-0 flex-col items-center gap-1 px-3"
+      }
+    ],
+    "asideNav": [],
+    "h1Font": "20px",
+    "h2Font": null,
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": {
+      "testo": "Accedi",
+      "bg": "lab(83.2664 8.65132 106.895)",
+      "fontSize": "14px",
+      "h": 36
+    },
+    "cardCount": 71,
+    "cardRadius": "16px",
+    "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.06) 0px 2px 10px 0px",
+    "tabella": null
+  },
+  {
+    "nome": "pubblico-carrello",
+    "vw": 1280,
+    "url": "/carrello",
+    "titolo": "Carrello | InCittà",
+    "h1": "Il tuo carrello è vuoto",
+    "headerNav": [
+      {
+        "testo": "Home",
+        "href": "/",
+        "cls": "group relative flex min-w-0 flex-col items-center gap-1 px-3"
+      },
+      {
+        "testo": "Negozi",
+        "href": "/negozi",
+        "cls": "group relative flex min-w-0 flex-col items-center gap-1 px-3"
+      },
+      {
+        "testo": "Categorie",
+        "href": "/categorie",
+        "cls": "group relative flex min-w-0 flex-col items-center gap-1 px-3"
+      },
+      {
+        "testo": "Carrello",
+        "href": "/carrello",
+        "cls": "group relative flex min-w-0 flex-col items-center gap-1 px-3"
+      }
+    ],
+    "asideNav": [],
+    "h1Font": "18px",
+    "h2Font": null,
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": {
+      "testo": "Accedi",
+      "bg": "lab(83.2664 8.65132 106.895)",
+      "fontSize": "14px",
+      "h": 36
+    },
+    "cardCount": 3,
+    "cardRadius": "16px",
+    "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.1) 0px 1px 3px 0px, rgba(0, 0, 0, 0.1) 0px 1px 2px -1px",
+    "tabella": null
+  },
+  {
+    "nome": "pubblico-carrello",
+    "vw": 375,
+    "url": "/carrello",
+    "titolo": "Carrello | InCittà",
+    "h1": "Il tuo carrello è vuoto",
+    "headerNav": [
+      {
+        "testo": "Home",
+        "href": "/",
+        "cls": "group relative flex min-w-0 flex-col items-center gap-1 px-3"
+      },
+      {
+        "testo": "Negozi",
+        "href": "/negozi",
+        "cls": "group relative flex min-w-0 flex-col items-center gap-1 px-3"
+      },
+      {
+        "testo": "Categorie",
+        "href": "/categorie",
+        "cls": "group relative flex min-w-0 flex-col items-center gap-1 px-3"
+      },
+      {
+        "testo": "Carrello",
+        "href": "/carrello",
+        "cls": "group relative flex min-w-0 flex-col items-center gap-1 px-3"
+      }
+    ],
+    "asideNav": [],
+    "h1Font": "18px",
+    "h2Font": null,
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": {
+      "testo": "Accedi",
+      "bg": "lab(83.2664 8.65132 106.895)",
+      "fontSize": "14px",
+      "h": 36
+    },
+    "cardCount": 3,
+    "cardRadius": "16px",
+    "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0.1) 0px 1px 3px 0px, rgba(0, 0, 0, 0.1) 0px 1px 2px -1px",
+    "tabella": null
+  },
+  {
+    "nome": "pubblico-ricerca",
+    "vw": 1280,
+    "url": "/ricerca",
+    "titolo": "InCittà | I negozi di Castrovillari on-line",
+    "h1": null,
+    "headerNav": [
+      {
+        "testo": "Home",
+        "href": "/",
+        "cls": "group relative flex min-w-0 flex-col items-center gap-1 px-3"
+      },
+      {
+        "testo": "Negozi",
+        "href": "/negozi",
+        "cls": "group relative flex min-w-0 flex-col items-center gap-1 px-3"
+      },
+      {
+        "testo": "Categorie",
+        "href": "/categorie",
+        "cls": "group relative flex min-w-0 flex-col items-center gap-1 px-3"
+      },
+      {
+        "testo": "Carrello",
+        "href": "/carrello",
+        "cls": "group relative flex min-w-0 flex-col items-center gap-1 px-3"
+      }
+    ],
+    "asideNav": [
+      {
+        "testo": "Applica filtri",
+        "href": null,
+        "cls": "h-8 flex-1 rounded-lg bg-yellow-400 text-xs font-bold text-b"
+      },
+      {
+        "testo": "Reset",
+        "href": "/ricerca?q=pizza",
+        "cls": "inline-flex h-8 items-center gap-1 rounded-lg border border-"
+      }
+    ],
+    "h1Font": null,
+    "h2Font": "12px",
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": {
+      "testo": "Accedi",
+      "bg": "lab(83.2664 8.65132 106.895)",
+      "fontSize": "14px",
+      "h": 36
+    },
+    "cardCount": 6,
+    "cardRadius": null,
+    "shadow": null,
+    "tabella": null
+  },
+  {
+    "nome": "pubblico-ricerca",
+    "vw": 375,
+    "url": "/ricerca",
+    "titolo": "InCittà | I negozi di Castrovillari on-line",
+    "h1": null,
+    "headerNav": [
+      {
+        "testo": "Home",
+        "href": "/",
+        "cls": "group relative flex min-w-0 flex-col items-center gap-1 px-3"
+      },
+      {
+        "testo": "Negozi",
+        "href": "/negozi",
+        "cls": "group relative flex min-w-0 flex-col items-center gap-1 px-3"
+      },
+      {
+        "testo": "Categorie",
+        "href": "/categorie",
+        "cls": "group relative flex min-w-0 flex-col items-center gap-1 px-3"
+      },
+      {
+        "testo": "Carrello",
+        "href": "/carrello",
+        "cls": "group relative flex min-w-0 flex-col items-center gap-1 px-3"
+      }
+    ],
+    "asideNav": [
+      {
+        "testo": "Applica filtri",
+        "href": null,
+        "cls": "h-8 flex-1 rounded-lg bg-yellow-400 text-xs font-bold text-b"
+      },
+      {
+        "testo": "Reset",
+        "href": "/ricerca?q=pizza",
+        "cls": "inline-flex h-8 items-center gap-1 rounded-lg border border-"
+      }
+    ],
+    "h1Font": null,
+    "h2Font": "12px",
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": {
+      "testo": "Accedi",
+      "bg": "lab(83.2664 8.65132 106.895)",
+      "fontSize": "14px",
+      "h": 36
+    },
+    "cardCount": 6,
+    "cardRadius": null,
+    "shadow": null,
+    "tabella": null
+  },
+  {
+    "nome": "pubblico-login",
+    "vw": 1280,
+    "url": "/login",
+    "titolo": "InCittà | I negozi di Castrovillari on-line",
+    "h1": "Bentornato!",
+    "headerNav": [],
+    "asideNav": [],
+    "h1Font": "30px",
+    "h2Font": null,
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": {
+      "testo": "Torna al sito",
+      "bg": "rgba(0, 0, 0, 0)",
+      "fontSize": "16px",
+      "h": 42
+    },
+    "cardCount": 7,
+    "cardRadius": "24px",
+    "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(234, 88, 12, 0.4) 0px 24px 60px -30px",
+    "tabella": null
+  },
+  {
+    "nome": "pubblico-login",
+    "vw": 375,
+    "url": "/login",
+    "titolo": "InCittà | I negozi di Castrovillari on-line",
+    "h1": "Bentornato!",
+    "headerNav": [],
+    "asideNav": [],
+    "h1Font": "30px",
+    "h2Font": null,
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": {
+      "testo": "Torna al sito",
+      "bg": "rgba(0, 0, 0, 0)",
+      "fontSize": "16px",
+      "h": 42
+    },
+    "cardCount": 7,
+    "cardRadius": "24px",
+    "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(234, 88, 12, 0.4) 0px 24px 60px -30px",
+    "tabella": null
+  },
+  {
+    "nome": "cliente-dashboard",
+    "vw": 1280,
+    "url": "/cliente",
+    "titolo": "Dashboard — Area Clienti | InCittà",
+    "h1": "Il mio account",
+    "headerNav": [],
+    "asideNav": [
+      {
+        "testo": "DashboardIl tuo riepilogo personale: ord",
+        "href": "/cliente",
+        "cls": "group relative flex items-center gap-3 rounded-2xl transitio"
+      },
+      {
+        "testo": "OrdiniStorico dei tuoi ordini con lo sta",
+        "href": "/cliente/ordini",
+        "cls": "group relative flex items-center gap-3 rounded-2xl transitio"
+      },
+      {
+        "testo": "PreferitiI negozi e i prodotti che hai s",
+        "href": "/cliente/preferiti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl transitio"
+      },
+      {
+        "testo": "ProfiloDati personali, indirizzo, avatar",
+        "href": "/cliente/profilo",
+        "cls": "group relative flex items-center gap-3 rounded-2xl transitio"
+      },
+      {
+        "testo": "SegnalazioniInvia una segnalazione o un ",
+        "href": "/cliente/segnalazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl transitio"
+      },
+      {
+        "testo": "Comprimi menu",
+        "href": null,
+        "cls": "flex items-center gap-2 rounded-2xl border border-slate-200 "
+      }
+    ],
+    "h1Font": "30px",
+    "h2Font": null,
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": {
+      "testo": "Esplora i negozi",
+      "bg": "rgb(250, 204, 21)",
+      "fontSize": "14px",
+      "h": 44
+    },
+    "cardCount": 41,
+    "cardRadius": "16px",
+    "shadow": "none",
+    "tabella": null
+  },
+  {
+    "nome": "cliente-dashboard",
+    "vw": 375,
+    "url": "/cliente",
+    "titolo": "Dashboard — Area Clienti | InCittà",
+    "h1": "Il mio account",
+    "headerNav": [],
+    "asideNav": [
+      {
+        "testo": "DashboardIl tuo riepilogo personale: ord",
+        "href": "/cliente",
+        "cls": "group relative flex items-center gap-3 rounded-2xl transitio"
+      },
+      {
+        "testo": "OrdiniStorico dei tuoi ordini con lo sta",
+        "href": "/cliente/ordini",
+        "cls": "group relative flex items-center gap-3 rounded-2xl transitio"
+      },
+      {
+        "testo": "PreferitiI negozi e i prodotti che hai s",
+        "href": "/cliente/preferiti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl transitio"
+      },
+      {
+        "testo": "ProfiloDati personali, indirizzo, avatar",
+        "href": "/cliente/profilo",
+        "cls": "group relative flex items-center gap-3 rounded-2xl transitio"
+      },
+      {
+        "testo": "SegnalazioniInvia una segnalazione o un ",
+        "href": "/cliente/segnalazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl transitio"
+      },
+      {
+        "testo": "Comprimi menu",
+        "href": null,
+        "cls": "flex items-center gap-2 rounded-2xl border border-slate-200 "
+      }
+    ],
+    "h1Font": "30px",
+    "h2Font": null,
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": {
+      "testo": "Esplora i negozi",
+      "bg": "rgb(250, 204, 21)",
+      "fontSize": "14px",
+      "h": 44
+    },
+    "cardCount": 41,
+    "cardRadius": "16px",
+    "shadow": "none",
+    "tabella": null
+  },
+  {
+    "nome": "cliente-preferiti",
+    "vw": 1280,
+    "url": "/cliente/preferiti",
+    "titolo": "Preferiti — Area Clienti",
+    "h1": "I tuoi preferiti",
+    "headerNav": [],
+    "asideNav": [
+      {
+        "testo": "DashboardIl tuo riepilogo personale: ord",
+        "href": "/cliente",
+        "cls": "group relative flex items-center gap-3 rounded-2xl transitio"
+      },
+      {
+        "testo": "OrdiniStorico dei tuoi ordini con lo sta",
+        "href": "/cliente/ordini",
+        "cls": "group relative flex items-center gap-3 rounded-2xl transitio"
+      },
+      {
+        "testo": "PreferitiI negozi e i prodotti che hai s",
+        "href": "/cliente/preferiti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl transitio"
+      },
+      {
+        "testo": "ProfiloDati personali, indirizzo, avatar",
+        "href": "/cliente/profilo",
+        "cls": "group relative flex items-center gap-3 rounded-2xl transitio"
+      },
+      {
+        "testo": "SegnalazioniInvia una segnalazione o un ",
+        "href": "/cliente/segnalazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl transitio"
+      },
+      {
+        "testo": "Comprimi menu",
+        "href": null,
+        "cls": "flex items-center gap-2 rounded-2xl border border-slate-200 "
+      }
+    ],
+    "h1Font": "24px",
+    "h2Font": "16px",
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": {
+      "testo": "Tutti",
+      "bg": "lab(83.2664 8.65132 106.895)",
+      "fontSize": "12px",
+      "h": 32
+    },
+    "cardCount": 36,
+    "cardRadius": "16px",
+    "shadow": "none",
+    "tabella": null
+  },
+  {
+    "nome": "cliente-preferiti",
+    "vw": 375,
+    "url": "/cliente/preferiti",
+    "titolo": "Preferiti — Area Clienti",
+    "h1": "I tuoi preferiti",
+    "headerNav": [],
+    "asideNav": [
+      {
+        "testo": "DashboardIl tuo riepilogo personale: ord",
+        "href": "/cliente",
+        "cls": "group relative flex items-center gap-3 rounded-2xl transitio"
+      },
+      {
+        "testo": "OrdiniStorico dei tuoi ordini con lo sta",
+        "href": "/cliente/ordini",
+        "cls": "group relative flex items-center gap-3 rounded-2xl transitio"
+      },
+      {
+        "testo": "PreferitiI negozi e i prodotti che hai s",
+        "href": "/cliente/preferiti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl transitio"
+      },
+      {
+        "testo": "ProfiloDati personali, indirizzo, avatar",
+        "href": "/cliente/profilo",
+        "cls": "group relative flex items-center gap-3 rounded-2xl transitio"
+      },
+      {
+        "testo": "SegnalazioniInvia una segnalazione o un ",
+        "href": "/cliente/segnalazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl transitio"
+      },
+      {
+        "testo": "Comprimi menu",
+        "href": null,
+        "cls": "flex items-center gap-2 rounded-2xl border border-slate-200 "
+      }
+    ],
+    "h1Font": "24px",
+    "h2Font": "16px",
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": {
+      "testo": "Tutti",
+      "bg": "lab(83.2664 8.65132 106.895)",
+      "fontSize": "12px",
+      "h": 32
+    },
+    "cardCount": 36,
+    "cardRadius": "16px",
+    "shadow": "none",
+    "tabella": null
+  },
+  {
+    "nome": "cliente-ordini",
+    "vw": 1280,
+    "url": "/cliente/ordini",
+    "titolo": "I miei ordini — Area Clienti",
+    "h1": "I miei ordini",
+    "headerNav": [],
+    "asideNav": [
+      {
+        "testo": "DashboardIl tuo riepilogo personale: ord",
+        "href": "/cliente",
+        "cls": "group relative flex items-center gap-3 rounded-2xl transitio"
+      },
+      {
+        "testo": "OrdiniStorico dei tuoi ordini con lo sta",
+        "href": "/cliente/ordini",
+        "cls": "group relative flex items-center gap-3 rounded-2xl transitio"
+      },
+      {
+        "testo": "PreferitiI negozi e i prodotti che hai s",
+        "href": "/cliente/preferiti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl transitio"
+      },
+      {
+        "testo": "ProfiloDati personali, indirizzo, avatar",
+        "href": "/cliente/profilo",
+        "cls": "group relative flex items-center gap-3 rounded-2xl transitio"
+      },
+      {
+        "testo": "SegnalazioniInvia una segnalazione o un ",
+        "href": "/cliente/segnalazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl transitio"
+      },
+      {
+        "testo": "Comprimi menu",
+        "href": null,
+        "cls": "flex items-center gap-2 rounded-2xl border border-slate-200 "
+      }
+    ],
+    "h1Font": "30px",
+    "h2Font": "16px",
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": {
+      "testo": "Esplora i negozi",
+      "bg": "rgb(250, 204, 21)",
+      "fontSize": "14px",
+      "h": 40
+    },
+    "cardCount": 30,
+    "cardRadius": "16px",
+    "shadow": "none",
+    "tabella": null
+  },
+  {
+    "nome": "cliente-ordini",
+    "vw": 375,
+    "url": "/cliente/ordini",
+    "titolo": "I miei ordini — Area Clienti",
+    "h1": "I miei ordini",
+    "headerNav": [],
+    "asideNav": [
+      {
+        "testo": "DashboardIl tuo riepilogo personale: ord",
+        "href": "/cliente",
+        "cls": "group relative flex items-center gap-3 rounded-2xl transitio"
+      },
+      {
+        "testo": "OrdiniStorico dei tuoi ordini con lo sta",
+        "href": "/cliente/ordini",
+        "cls": "group relative flex items-center gap-3 rounded-2xl transitio"
+      },
+      {
+        "testo": "PreferitiI negozi e i prodotti che hai s",
+        "href": "/cliente/preferiti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl transitio"
+      },
+      {
+        "testo": "ProfiloDati personali, indirizzo, avatar",
+        "href": "/cliente/profilo",
+        "cls": "group relative flex items-center gap-3 rounded-2xl transitio"
+      },
+      {
+        "testo": "SegnalazioniInvia una segnalazione o un ",
+        "href": "/cliente/segnalazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl transitio"
+      },
+      {
+        "testo": "Comprimi menu",
+        "href": null,
+        "cls": "flex items-center gap-2 rounded-2xl border border-slate-200 "
+      }
+    ],
+    "h1Font": "24px",
+    "h2Font": "16px",
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": {
+      "testo": "Esplora i negozi",
+      "bg": "rgb(250, 204, 21)",
+      "fontSize": "14px",
+      "h": 40
+    },
+    "cardCount": 30,
+    "cardRadius": "16px",
+    "shadow": "none",
+    "tabella": null
+  },
+  {
+    "nome": "cliente-profilo",
+    "vw": 1280,
+    "url": "/cliente/profilo",
+    "titolo": "Profilo — Area Clienti",
+    "h1": "Profilo",
+    "headerNav": [],
+    "asideNav": [
+      {
+        "testo": "DashboardIl tuo riepilogo personale: ord",
+        "href": "/cliente",
+        "cls": "group relative flex items-center gap-3 rounded-2xl transitio"
+      },
+      {
+        "testo": "OrdiniStorico dei tuoi ordini con lo sta",
+        "href": "/cliente/ordini",
+        "cls": "group relative flex items-center gap-3 rounded-2xl transitio"
+      },
+      {
+        "testo": "PreferitiI negozi e i prodotti che hai s",
+        "href": "/cliente/preferiti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl transitio"
+      },
+      {
+        "testo": "ProfiloDati personali, indirizzo, avatar",
+        "href": "/cliente/profilo",
+        "cls": "group relative flex items-center gap-3 rounded-2xl transitio"
+      },
+      {
+        "testo": "SegnalazioniInvia una segnalazione o un ",
+        "href": "/cliente/segnalazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl transitio"
+      },
+      {
+        "testo": "Comprimi menu",
+        "href": null,
+        "cls": "flex items-center gap-2 rounded-2xl border border-slate-200 "
+      }
+    ],
+    "h1Font": "30px",
+    "h2Font": "18px",
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": {
+      "testo": "",
+      "bg": "rgba(0, 0, 0, 0)",
+      "fontSize": "16px",
+      "h": 36
+    },
+    "cardCount": 40,
+    "cardRadius": "16px",
+    "shadow": "none",
+    "tabella": null
+  },
+  {
+    "nome": "cliente-profilo",
+    "vw": 375,
+    "url": "/cliente/profilo",
+    "titolo": "Profilo — Area Clienti",
+    "h1": "Profilo",
+    "headerNav": [],
+    "asideNav": [
+      {
+        "testo": "DashboardIl tuo riepilogo personale: ord",
+        "href": "/cliente",
+        "cls": "group relative flex items-center gap-3 rounded-2xl transitio"
+      },
+      {
+        "testo": "OrdiniStorico dei tuoi ordini con lo sta",
+        "href": "/cliente/ordini",
+        "cls": "group relative flex items-center gap-3 rounded-2xl transitio"
+      },
+      {
+        "testo": "PreferitiI negozi e i prodotti che hai s",
+        "href": "/cliente/preferiti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl transitio"
+      },
+      {
+        "testo": "ProfiloDati personali, indirizzo, avatar",
+        "href": "/cliente/profilo",
+        "cls": "group relative flex items-center gap-3 rounded-2xl transitio"
+      },
+      {
+        "testo": "SegnalazioniInvia una segnalazione o un ",
+        "href": "/cliente/segnalazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl transitio"
+      },
+      {
+        "testo": "Comprimi menu",
+        "href": null,
+        "cls": "flex items-center gap-2 rounded-2xl border border-slate-200 "
+      }
+    ],
+    "h1Font": "30px",
+    "h2Font": "18px",
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": {
+      "testo": "",
+      "bg": "rgba(0, 0, 0, 0)",
+      "fontSize": "16px",
+      "h": 36
+    },
+    "cardCount": 40,
+    "cardRadius": "16px",
+    "shadow": "none",
+    "tabella": null
+  },
+  {
+    "nome": "merchant-elenco",
+    "vw": 1280,
+    "url": "/merchant",
+    "titolo": "InCittà | I negozi di Castrovillari on-line",
+    "h1": null,
+    "headerNav": [],
+    "asideNav": [],
+    "h1Font": null,
+    "h2Font": "24px",
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": {
+      "testo": "Crea il tuo primo negozio",
+      "bg": "lab(83.2664 8.65132 106.895)",
+      "fontSize": "14px",
+      "h": 44
+    },
+    "cardCount": 16,
+    "cardRadius": "16px",
+    "shadow": "none",
+    "tabella": null
+  },
+  {
+    "nome": "merchant-elenco",
+    "vw": 375,
+    "url": "/merchant",
+    "titolo": "InCittà | I negozi di Castrovillari on-line",
+    "h1": null,
+    "headerNav": [],
+    "asideNav": [],
+    "h1Font": null,
+    "h2Font": "24px",
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": {
+      "testo": "Crea il tuo primo negozio",
+      "bg": "lab(83.2664 8.65132 106.895)",
+      "fontSize": "14px",
+      "h": 44
+    },
+    "cardCount": 16,
+    "cardRadius": "16px",
+    "shadow": "none",
+    "tabella": null
+  },
+  {
+    "nome": "merchant-dashboard",
+    "vw": 1280,
+    "url": "/amministratore",
+    "titolo": "Amministratore — Panoramica | InCittà",
+    "h1": "Panoramica",
+    "headerNav": [],
+    "asideNav": [
+      {
+        "testo": "Panoramica",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Panoramica",
+        "href": "/amministratore",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi & Catalogo",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Negozi",
+        "href": "/amministratore/attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Cestino",
+        "href": "/amministratore/cestino",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Prodotti",
+        "href": "/amministratore/prodotti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Categorie",
+        "href": "/amministratore/categorie",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi in evidenza",
+        "href": "/amministratore/negozi-in-evidenza",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Ordini & Pagamenti",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Ordini",
+        "href": "/amministratore/ordini",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Incassi",
+        "href": "/amministratore/incassi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Payout",
+        "href": "/amministratore/payout",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti & Promozioni",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Offerte",
+        "href": "/amministratore/offerte",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Eventi",
+        "href": "/amministratore/eventi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti",
+        "href": "/amministratore/contenuti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Template",
+        "href": "/amministratore/template",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Piattaforma",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Utenti",
+        "href": "/amministratore/utenti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Segnalazioni",
+        "href": "/amministratore/segnalazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Statistiche",
+        "href": "/amministratore/statistiche",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Assistente AI",
+        "href": "/amministratore/assistente-ai",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Scansioni AI",
+        "href": "/amministratore/scansioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Registro attività",
+        "href": "/amministratore/registro-attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Impostazioni",
+        "href": "/amministratore/impostazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Torna al sito",
+        "href": "/",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Panificio RossiPanificio",
+        "href": "/amministratore/negozi/f3a82af7-dd47-482f-8a49-ea58e692238c",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Barone GioielliGioielleria",
+        "href": "/amministratore/negozi/cd45ea2b-ec22-4bd8-a214-0e7cc47c1f67",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Bar dei CapoccioniBar",
+        "href": "/amministratore/negozi/11d677f1-5b22-464d-b57e-2fa20a74fde3",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      }
+    ],
+    "h1Font": "30px",
+    "h2Font": "12px",
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": null,
+    "cardCount": 96,
+    "cardRadius": "16px",
+    "shadow": "none",
+    "tabella": null
+  },
+  {
+    "nome": "merchant-dashboard",
+    "vw": 375,
+    "url": "/amministratore",
+    "titolo": "Amministratore — Panoramica | InCittà",
+    "h1": "Panoramica",
+    "headerNav": [],
+    "asideNav": [
+      {
+        "testo": "Panoramica",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Panoramica",
+        "href": "/amministratore",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi & Catalogo",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Negozi",
+        "href": "/amministratore/attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Cestino",
+        "href": "/amministratore/cestino",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Prodotti",
+        "href": "/amministratore/prodotti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Categorie",
+        "href": "/amministratore/categorie",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi in evidenza",
+        "href": "/amministratore/negozi-in-evidenza",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Ordini & Pagamenti",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Ordini",
+        "href": "/amministratore/ordini",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Incassi",
+        "href": "/amministratore/incassi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Payout",
+        "href": "/amministratore/payout",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti & Promozioni",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Offerte",
+        "href": "/amministratore/offerte",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Eventi",
+        "href": "/amministratore/eventi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti",
+        "href": "/amministratore/contenuti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Template",
+        "href": "/amministratore/template",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Piattaforma",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Utenti",
+        "href": "/amministratore/utenti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Segnalazioni",
+        "href": "/amministratore/segnalazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Statistiche",
+        "href": "/amministratore/statistiche",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Assistente AI",
+        "href": "/amministratore/assistente-ai",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Scansioni AI",
+        "href": "/amministratore/scansioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Registro attività",
+        "href": "/amministratore/registro-attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Impostazioni",
+        "href": "/amministratore/impostazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Torna al sito",
+        "href": "/",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Panificio RossiPanificio",
+        "href": "/amministratore/negozi/f3a82af7-dd47-482f-8a49-ea58e692238c",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Barone GioielliGioielleria",
+        "href": "/amministratore/negozi/cd45ea2b-ec22-4bd8-a214-0e7cc47c1f67",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Bar dei CapoccioniBar",
+        "href": "/amministratore/negozi/11d677f1-5b22-464d-b57e-2fa20a74fde3",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      }
+    ],
+    "h1Font": "24px",
+    "h2Font": "12px",
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": null,
+    "cardCount": 96,
+    "cardRadius": "16px",
+    "shadow": "none",
+    "tabella": null
+  },
+  {
+    "nome": "merchant-prodotti",
+    "vw": 1280,
+    "url": "/amministratore",
+    "titolo": "Amministratore — Panoramica | InCittà",
+    "h1": "Panoramica",
+    "headerNav": [],
+    "asideNav": [
+      {
+        "testo": "Panoramica",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Panoramica",
+        "href": "/amministratore",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi & Catalogo",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Negozi",
+        "href": "/amministratore/attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Cestino",
+        "href": "/amministratore/cestino",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Prodotti",
+        "href": "/amministratore/prodotti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Categorie",
+        "href": "/amministratore/categorie",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi in evidenza",
+        "href": "/amministratore/negozi-in-evidenza",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Ordini & Pagamenti",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Ordini",
+        "href": "/amministratore/ordini",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Incassi",
+        "href": "/amministratore/incassi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Payout",
+        "href": "/amministratore/payout",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti & Promozioni",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Offerte",
+        "href": "/amministratore/offerte",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Eventi",
+        "href": "/amministratore/eventi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti",
+        "href": "/amministratore/contenuti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Template",
+        "href": "/amministratore/template",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Piattaforma",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Utenti",
+        "href": "/amministratore/utenti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Segnalazioni",
+        "href": "/amministratore/segnalazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Statistiche",
+        "href": "/amministratore/statistiche",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Assistente AI",
+        "href": "/amministratore/assistente-ai",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Scansioni AI",
+        "href": "/amministratore/scansioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Registro attività",
+        "href": "/amministratore/registro-attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Impostazioni",
+        "href": "/amministratore/impostazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Torna al sito",
+        "href": "/",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Panificio RossiPanificio",
+        "href": "/amministratore/negozi/f3a82af7-dd47-482f-8a49-ea58e692238c",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Barone GioielliGioielleria",
+        "href": "/amministratore/negozi/cd45ea2b-ec22-4bd8-a214-0e7cc47c1f67",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Bar dei CapoccioniBar",
+        "href": "/amministratore/negozi/11d677f1-5b22-464d-b57e-2fa20a74fde3",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      }
+    ],
+    "h1Font": "30px",
+    "h2Font": "12px",
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": null,
+    "cardCount": 96,
+    "cardRadius": "16px",
+    "shadow": "none",
+    "tabella": null
+  },
+  {
+    "nome": "merchant-prodotti",
+    "vw": 375,
+    "url": "/amministratore",
+    "titolo": "Amministratore — Panoramica | InCittà",
+    "h1": "Panoramica",
+    "headerNav": [],
+    "asideNav": [
+      {
+        "testo": "Panoramica",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Panoramica",
+        "href": "/amministratore",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi & Catalogo",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Negozi",
+        "href": "/amministratore/attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Cestino",
+        "href": "/amministratore/cestino",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Prodotti",
+        "href": "/amministratore/prodotti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Categorie",
+        "href": "/amministratore/categorie",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi in evidenza",
+        "href": "/amministratore/negozi-in-evidenza",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Ordini & Pagamenti",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Ordini",
+        "href": "/amministratore/ordini",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Incassi",
+        "href": "/amministratore/incassi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Payout",
+        "href": "/amministratore/payout",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti & Promozioni",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Offerte",
+        "href": "/amministratore/offerte",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Eventi",
+        "href": "/amministratore/eventi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti",
+        "href": "/amministratore/contenuti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Template",
+        "href": "/amministratore/template",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Piattaforma",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Utenti",
+        "href": "/amministratore/utenti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Segnalazioni",
+        "href": "/amministratore/segnalazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Statistiche",
+        "href": "/amministratore/statistiche",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Assistente AI",
+        "href": "/amministratore/assistente-ai",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Scansioni AI",
+        "href": "/amministratore/scansioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Registro attività",
+        "href": "/amministratore/registro-attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Impostazioni",
+        "href": "/amministratore/impostazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Torna al sito",
+        "href": "/",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Panificio RossiPanificio",
+        "href": "/amministratore/negozi/f3a82af7-dd47-482f-8a49-ea58e692238c",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Barone GioielliGioielleria",
+        "href": "/amministratore/negozi/cd45ea2b-ec22-4bd8-a214-0e7cc47c1f67",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Bar dei CapoccioniBar",
+        "href": "/amministratore/negozi/11d677f1-5b22-464d-b57e-2fa20a74fde3",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      }
+    ],
+    "h1Font": "24px",
+    "h2Font": "12px",
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": null,
+    "cardCount": 96,
+    "cardRadius": "16px",
+    "shadow": "none",
+    "tabella": null
+  },
+  {
+    "nome": "merchant-guadagni",
+    "vw": 1280,
+    "url": "/amministratore",
+    "titolo": "Amministratore — Panoramica | InCittà",
+    "h1": "Panoramica",
+    "headerNav": [],
+    "asideNav": [
+      {
+        "testo": "Panoramica",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Panoramica",
+        "href": "/amministratore",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi & Catalogo",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Negozi",
+        "href": "/amministratore/attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Cestino",
+        "href": "/amministratore/cestino",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Prodotti",
+        "href": "/amministratore/prodotti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Categorie",
+        "href": "/amministratore/categorie",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi in evidenza",
+        "href": "/amministratore/negozi-in-evidenza",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Ordini & Pagamenti",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Ordini",
+        "href": "/amministratore/ordini",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Incassi",
+        "href": "/amministratore/incassi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Payout",
+        "href": "/amministratore/payout",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti & Promozioni",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Offerte",
+        "href": "/amministratore/offerte",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Eventi",
+        "href": "/amministratore/eventi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti",
+        "href": "/amministratore/contenuti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Template",
+        "href": "/amministratore/template",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Piattaforma",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Utenti",
+        "href": "/amministratore/utenti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Segnalazioni",
+        "href": "/amministratore/segnalazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Statistiche",
+        "href": "/amministratore/statistiche",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Assistente AI",
+        "href": "/amministratore/assistente-ai",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Scansioni AI",
+        "href": "/amministratore/scansioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Registro attività",
+        "href": "/amministratore/registro-attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Impostazioni",
+        "href": "/amministratore/impostazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Torna al sito",
+        "href": "/",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Panificio RossiPanificio",
+        "href": "/amministratore/negozi/f3a82af7-dd47-482f-8a49-ea58e692238c",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Barone GioielliGioielleria",
+        "href": "/amministratore/negozi/cd45ea2b-ec22-4bd8-a214-0e7cc47c1f67",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Bar dei CapoccioniBar",
+        "href": "/amministratore/negozi/11d677f1-5b22-464d-b57e-2fa20a74fde3",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      }
+    ],
+    "h1Font": "30px",
+    "h2Font": "12px",
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": null,
+    "cardCount": 96,
+    "cardRadius": "16px",
+    "shadow": "none",
+    "tabella": null
+  },
+  {
+    "nome": "merchant-guadagni",
+    "vw": 375,
+    "url": "/amministratore",
+    "titolo": "Amministratore — Panoramica | InCittà",
+    "h1": "Panoramica",
+    "headerNav": [],
+    "asideNav": [
+      {
+        "testo": "Panoramica",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Panoramica",
+        "href": "/amministratore",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi & Catalogo",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Negozi",
+        "href": "/amministratore/attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Cestino",
+        "href": "/amministratore/cestino",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Prodotti",
+        "href": "/amministratore/prodotti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Categorie",
+        "href": "/amministratore/categorie",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi in evidenza",
+        "href": "/amministratore/negozi-in-evidenza",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Ordini & Pagamenti",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Ordini",
+        "href": "/amministratore/ordini",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Incassi",
+        "href": "/amministratore/incassi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Payout",
+        "href": "/amministratore/payout",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti & Promozioni",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Offerte",
+        "href": "/amministratore/offerte",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Eventi",
+        "href": "/amministratore/eventi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti",
+        "href": "/amministratore/contenuti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Template",
+        "href": "/amministratore/template",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Piattaforma",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Utenti",
+        "href": "/amministratore/utenti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Segnalazioni",
+        "href": "/amministratore/segnalazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Statistiche",
+        "href": "/amministratore/statistiche",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Assistente AI",
+        "href": "/amministratore/assistente-ai",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Scansioni AI",
+        "href": "/amministratore/scansioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Registro attività",
+        "href": "/amministratore/registro-attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Impostazioni",
+        "href": "/amministratore/impostazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Torna al sito",
+        "href": "/",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Panificio RossiPanificio",
+        "href": "/amministratore/negozi/f3a82af7-dd47-482f-8a49-ea58e692238c",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Barone GioielliGioielleria",
+        "href": "/amministratore/negozi/cd45ea2b-ec22-4bd8-a214-0e7cc47c1f67",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Bar dei CapoccioniBar",
+        "href": "/amministratore/negozi/11d677f1-5b22-464d-b57e-2fa20a74fde3",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      }
+    ],
+    "h1Font": "24px",
+    "h2Font": "12px",
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": null,
+    "cardCount": 96,
+    "cardRadius": "16px",
+    "shadow": "none",
+    "tabella": null
+  },
+  {
+    "nome": "merchant-ordini",
+    "vw": 1280,
+    "url": "/amministratore",
+    "titolo": "Amministratore — Panoramica | InCittà",
+    "h1": "Panoramica",
+    "headerNav": [],
+    "asideNav": [
+      {
+        "testo": "Panoramica",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Panoramica",
+        "href": "/amministratore",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi & Catalogo",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Negozi",
+        "href": "/amministratore/attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Cestino",
+        "href": "/amministratore/cestino",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Prodotti",
+        "href": "/amministratore/prodotti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Categorie",
+        "href": "/amministratore/categorie",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi in evidenza",
+        "href": "/amministratore/negozi-in-evidenza",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Ordini & Pagamenti",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Ordini",
+        "href": "/amministratore/ordini",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Incassi",
+        "href": "/amministratore/incassi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Payout",
+        "href": "/amministratore/payout",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti & Promozioni",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Offerte",
+        "href": "/amministratore/offerte",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Eventi",
+        "href": "/amministratore/eventi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti",
+        "href": "/amministratore/contenuti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Template",
+        "href": "/amministratore/template",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Piattaforma",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Utenti",
+        "href": "/amministratore/utenti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Segnalazioni",
+        "href": "/amministratore/segnalazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Statistiche",
+        "href": "/amministratore/statistiche",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Assistente AI",
+        "href": "/amministratore/assistente-ai",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Scansioni AI",
+        "href": "/amministratore/scansioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Registro attività",
+        "href": "/amministratore/registro-attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Impostazioni",
+        "href": "/amministratore/impostazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Torna al sito",
+        "href": "/",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Panificio RossiPanificio",
+        "href": "/amministratore/negozi/f3a82af7-dd47-482f-8a49-ea58e692238c",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Barone GioielliGioielleria",
+        "href": "/amministratore/negozi/cd45ea2b-ec22-4bd8-a214-0e7cc47c1f67",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Bar dei CapoccioniBar",
+        "href": "/amministratore/negozi/11d677f1-5b22-464d-b57e-2fa20a74fde3",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      }
+    ],
+    "h1Font": "30px",
+    "h2Font": "12px",
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": null,
+    "cardCount": 96,
+    "cardRadius": "16px",
+    "shadow": "none",
+    "tabella": null
+  },
+  {
+    "nome": "merchant-ordini",
+    "vw": 375,
+    "url": "/amministratore",
+    "titolo": "Amministratore — Panoramica | InCittà",
+    "h1": "Panoramica",
+    "headerNav": [],
+    "asideNav": [
+      {
+        "testo": "Panoramica",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Panoramica",
+        "href": "/amministratore",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi & Catalogo",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Negozi",
+        "href": "/amministratore/attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Cestino",
+        "href": "/amministratore/cestino",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Prodotti",
+        "href": "/amministratore/prodotti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Categorie",
+        "href": "/amministratore/categorie",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi in evidenza",
+        "href": "/amministratore/negozi-in-evidenza",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Ordini & Pagamenti",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Ordini",
+        "href": "/amministratore/ordini",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Incassi",
+        "href": "/amministratore/incassi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Payout",
+        "href": "/amministratore/payout",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti & Promozioni",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Offerte",
+        "href": "/amministratore/offerte",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Eventi",
+        "href": "/amministratore/eventi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti",
+        "href": "/amministratore/contenuti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Template",
+        "href": "/amministratore/template",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Piattaforma",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Utenti",
+        "href": "/amministratore/utenti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Segnalazioni",
+        "href": "/amministratore/segnalazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Statistiche",
+        "href": "/amministratore/statistiche",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Assistente AI",
+        "href": "/amministratore/assistente-ai",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Scansioni AI",
+        "href": "/amministratore/scansioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Registro attività",
+        "href": "/amministratore/registro-attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Impostazioni",
+        "href": "/amministratore/impostazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Torna al sito",
+        "href": "/",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Panificio RossiPanificio",
+        "href": "/amministratore/negozi/f3a82af7-dd47-482f-8a49-ea58e692238c",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Barone GioielliGioielleria",
+        "href": "/amministratore/negozi/cd45ea2b-ec22-4bd8-a214-0e7cc47c1f67",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Bar dei CapoccioniBar",
+        "href": "/amministratore/negozi/11d677f1-5b22-464d-b57e-2fa20a74fde3",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      }
+    ],
+    "h1Font": "24px",
+    "h2Font": "12px",
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": null,
+    "cardCount": 96,
+    "cardRadius": "16px",
+    "shadow": "none",
+    "tabella": null
+  },
+  {
+    "nome": "admin-dashboard",
+    "vw": 1280,
+    "url": "/amministratore",
+    "titolo": "Amministratore — Panoramica | InCittà",
+    "h1": "Panoramica",
+    "headerNav": [],
+    "asideNav": [
+      {
+        "testo": "Panoramica",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Panoramica",
+        "href": "/amministratore",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi & Catalogo",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Negozi",
+        "href": "/amministratore/attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Cestino",
+        "href": "/amministratore/cestino",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Prodotti",
+        "href": "/amministratore/prodotti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Categorie",
+        "href": "/amministratore/categorie",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi in evidenza",
+        "href": "/amministratore/negozi-in-evidenza",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Ordini & Pagamenti",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Ordini",
+        "href": "/amministratore/ordini",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Incassi",
+        "href": "/amministratore/incassi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Payout",
+        "href": "/amministratore/payout",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti & Promozioni",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Offerte",
+        "href": "/amministratore/offerte",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Eventi",
+        "href": "/amministratore/eventi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti",
+        "href": "/amministratore/contenuti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Template",
+        "href": "/amministratore/template",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Piattaforma",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Utenti",
+        "href": "/amministratore/utenti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Segnalazioni",
+        "href": "/amministratore/segnalazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Statistiche",
+        "href": "/amministratore/statistiche",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Assistente AI",
+        "href": "/amministratore/assistente-ai",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Scansioni AI",
+        "href": "/amministratore/scansioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Registro attività",
+        "href": "/amministratore/registro-attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Impostazioni",
+        "href": "/amministratore/impostazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Torna al sito",
+        "href": "/",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Panificio RossiPanificio",
+        "href": "/amministratore/negozi/f3a82af7-dd47-482f-8a49-ea58e692238c",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Barone GioielliGioielleria",
+        "href": "/amministratore/negozi/cd45ea2b-ec22-4bd8-a214-0e7cc47c1f67",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Bar dei CapoccioniBar",
+        "href": "/amministratore/negozi/11d677f1-5b22-464d-b57e-2fa20a74fde3",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      }
+    ],
+    "h1Font": "30px",
+    "h2Font": "12px",
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": null,
+    "cardCount": 96,
+    "cardRadius": "16px",
+    "shadow": "none",
+    "tabella": null
+  },
+  {
+    "nome": "admin-dashboard",
+    "vw": 375,
+    "url": "/amministratore",
+    "titolo": "Amministratore — Panoramica | InCittà",
+    "h1": "Panoramica",
+    "headerNav": [],
+    "asideNav": [
+      {
+        "testo": "Panoramica",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Panoramica",
+        "href": "/amministratore",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi & Catalogo",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Negozi",
+        "href": "/amministratore/attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Cestino",
+        "href": "/amministratore/cestino",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Prodotti",
+        "href": "/amministratore/prodotti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Categorie",
+        "href": "/amministratore/categorie",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi in evidenza",
+        "href": "/amministratore/negozi-in-evidenza",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Ordini & Pagamenti",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Ordini",
+        "href": "/amministratore/ordini",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Incassi",
+        "href": "/amministratore/incassi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Payout",
+        "href": "/amministratore/payout",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti & Promozioni",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Offerte",
+        "href": "/amministratore/offerte",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Eventi",
+        "href": "/amministratore/eventi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti",
+        "href": "/amministratore/contenuti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Template",
+        "href": "/amministratore/template",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Piattaforma",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Utenti",
+        "href": "/amministratore/utenti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Segnalazioni",
+        "href": "/amministratore/segnalazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Statistiche",
+        "href": "/amministratore/statistiche",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Assistente AI",
+        "href": "/amministratore/assistente-ai",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Scansioni AI",
+        "href": "/amministratore/scansioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Registro attività",
+        "href": "/amministratore/registro-attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Impostazioni",
+        "href": "/amministratore/impostazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Torna al sito",
+        "href": "/",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Panificio RossiPanificio",
+        "href": "/amministratore/negozi/f3a82af7-dd47-482f-8a49-ea58e692238c",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Barone GioielliGioielleria",
+        "href": "/amministratore/negozi/cd45ea2b-ec22-4bd8-a214-0e7cc47c1f67",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Bar dei CapoccioniBar",
+        "href": "/amministratore/negozi/11d677f1-5b22-464d-b57e-2fa20a74fde3",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      }
+    ],
+    "h1Font": "24px",
+    "h2Font": "12px",
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": null,
+    "cardCount": 96,
+    "cardRadius": "16px",
+    "shadow": "none",
+    "tabella": null
+  },
+  {
+    "nome": "admin-negozi",
+    "vw": 1280,
+    "url": "/amministratore/attivita",
+    "titolo": "Negozi — Amministratore",
+    "h1": "Gestione Negozi",
+    "headerNav": [],
+    "asideNav": [
+      {
+        "testo": "Panoramica",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Panoramica",
+        "href": "/amministratore",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi & Catalogo",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Negozi",
+        "href": "/amministratore/attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Cestino",
+        "href": "/amministratore/cestino",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Prodotti",
+        "href": "/amministratore/prodotti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Categorie",
+        "href": "/amministratore/categorie",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi in evidenza",
+        "href": "/amministratore/negozi-in-evidenza",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Ordini & Pagamenti",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Ordini",
+        "href": "/amministratore/ordini",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Incassi",
+        "href": "/amministratore/incassi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Payout",
+        "href": "/amministratore/payout",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti & Promozioni",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Offerte",
+        "href": "/amministratore/offerte",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Eventi",
+        "href": "/amministratore/eventi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti",
+        "href": "/amministratore/contenuti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Template",
+        "href": "/amministratore/template",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Piattaforma",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Utenti",
+        "href": "/amministratore/utenti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Segnalazioni",
+        "href": "/amministratore/segnalazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Statistiche",
+        "href": "/amministratore/statistiche",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Assistente AI",
+        "href": "/amministratore/assistente-ai",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Scansioni AI",
+        "href": "/amministratore/scansioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Registro attività",
+        "href": "/amministratore/registro-attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Impostazioni",
+        "href": "/amministratore/impostazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Torna al sito",
+        "href": "/",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Panificio RossiPanificio",
+        "href": "/amministratore/negozi/f3a82af7-dd47-482f-8a49-ea58e692238c",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Barone GioielliGioielleria",
+        "href": "/amministratore/negozi/cd45ea2b-ec22-4bd8-a214-0e7cc47c1f67",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Bar dei CapoccioniBar",
+        "href": "/amministratore/negozi/11d677f1-5b22-464d-b57e-2fa20a74fde3",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      }
+    ],
+    "h1Font": "30px",
+    "h2Font": "18px",
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": {
+      "testo": "Modifica",
+      "bg": "rgb(250, 204, 21)",
+      "fontSize": "14px",
+      "h": 48
+    },
+    "cardCount": 64,
+    "cardRadius": "16px",
+    "shadow": "none",
+    "tabella": null
+  },
+  {
+    "nome": "admin-negozi",
+    "vw": 375,
+    "url": "/amministratore/attivita",
+    "titolo": "Negozi — Amministratore",
+    "h1": "Gestione Negozi",
+    "headerNav": [],
+    "asideNav": [
+      {
+        "testo": "Panoramica",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Panoramica",
+        "href": "/amministratore",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi & Catalogo",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Negozi",
+        "href": "/amministratore/attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Cestino",
+        "href": "/amministratore/cestino",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Prodotti",
+        "href": "/amministratore/prodotti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Categorie",
+        "href": "/amministratore/categorie",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi in evidenza",
+        "href": "/amministratore/negozi-in-evidenza",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Ordini & Pagamenti",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Ordini",
+        "href": "/amministratore/ordini",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Incassi",
+        "href": "/amministratore/incassi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Payout",
+        "href": "/amministratore/payout",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti & Promozioni",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Offerte",
+        "href": "/amministratore/offerte",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Eventi",
+        "href": "/amministratore/eventi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti",
+        "href": "/amministratore/contenuti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Template",
+        "href": "/amministratore/template",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Piattaforma",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Utenti",
+        "href": "/amministratore/utenti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Segnalazioni",
+        "href": "/amministratore/segnalazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Statistiche",
+        "href": "/amministratore/statistiche",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Assistente AI",
+        "href": "/amministratore/assistente-ai",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Scansioni AI",
+        "href": "/amministratore/scansioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Registro attività",
+        "href": "/amministratore/registro-attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Impostazioni",
+        "href": "/amministratore/impostazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Torna al sito",
+        "href": "/",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Panificio RossiPanificio",
+        "href": "/amministratore/negozi/f3a82af7-dd47-482f-8a49-ea58e692238c",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Barone GioielliGioielleria",
+        "href": "/amministratore/negozi/cd45ea2b-ec22-4bd8-a214-0e7cc47c1f67",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Bar dei CapoccioniBar",
+        "href": "/amministratore/negozi/11d677f1-5b22-464d-b57e-2fa20a74fde3",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      }
+    ],
+    "h1Font": "24px",
+    "h2Font": "18px",
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": {
+      "testo": "Modifica",
+      "bg": "rgb(250, 204, 21)",
+      "fontSize": "14px",
+      "h": 40
+    },
+    "cardCount": 64,
+    "cardRadius": "16px",
+    "shadow": "none",
+    "tabella": null
+  },
+  {
+    "nome": "admin-categorie",
+    "vw": 1280,
+    "url": "/amministratore/categorie",
+    "titolo": "Categorie — Amministratore",
+    "h1": "Categorie",
+    "headerNav": [],
+    "asideNav": [
+      {
+        "testo": "Panoramica",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Panoramica",
+        "href": "/amministratore",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi & Catalogo",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Negozi",
+        "href": "/amministratore/attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Cestino",
+        "href": "/amministratore/cestino",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Prodotti",
+        "href": "/amministratore/prodotti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Categorie",
+        "href": "/amministratore/categorie",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi in evidenza",
+        "href": "/amministratore/negozi-in-evidenza",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Ordini & Pagamenti",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Ordini",
+        "href": "/amministratore/ordini",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Incassi",
+        "href": "/amministratore/incassi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Payout",
+        "href": "/amministratore/payout",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti & Promozioni",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Offerte",
+        "href": "/amministratore/offerte",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Eventi",
+        "href": "/amministratore/eventi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti",
+        "href": "/amministratore/contenuti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Template",
+        "href": "/amministratore/template",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Piattaforma",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Utenti",
+        "href": "/amministratore/utenti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Segnalazioni",
+        "href": "/amministratore/segnalazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Statistiche",
+        "href": "/amministratore/statistiche",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Assistente AI",
+        "href": "/amministratore/assistente-ai",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Scansioni AI",
+        "href": "/amministratore/scansioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Registro attività",
+        "href": "/amministratore/registro-attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Impostazioni",
+        "href": "/amministratore/impostazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Torna al sito",
+        "href": "/",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Panificio RossiPanificio",
+        "href": "/amministratore/negozi/f3a82af7-dd47-482f-8a49-ea58e692238c",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Barone GioielliGioielleria",
+        "href": "/amministratore/negozi/cd45ea2b-ec22-4bd8-a214-0e7cc47c1f67",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Bar dei CapoccioniBar",
+        "href": "/amministratore/negozi/11d677f1-5b22-464d-b57e-2fa20a74fde3",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      }
+    ],
+    "h1Font": "30px",
+    "h2Font": "18px",
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": {
+      "testo": "Nuova categoria",
+      "bg": "rgb(250, 204, 21)",
+      "fontSize": "14px",
+      "h": 48
+    },
+    "cardCount": 305,
+    "cardRadius": "16px",
+    "shadow": "none",
+    "tabella": null
+  },
+  {
+    "nome": "admin-categorie",
+    "vw": 375,
+    "url": "/amministratore/categorie",
+    "titolo": "Categorie — Amministratore",
+    "h1": "Categorie",
+    "headerNav": [],
+    "asideNav": [
+      {
+        "testo": "Panoramica",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Panoramica",
+        "href": "/amministratore",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi & Catalogo",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Negozi",
+        "href": "/amministratore/attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Cestino",
+        "href": "/amministratore/cestino",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Prodotti",
+        "href": "/amministratore/prodotti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Categorie",
+        "href": "/amministratore/categorie",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi in evidenza",
+        "href": "/amministratore/negozi-in-evidenza",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Ordini & Pagamenti",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Ordini",
+        "href": "/amministratore/ordini",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Incassi",
+        "href": "/amministratore/incassi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Payout",
+        "href": "/amministratore/payout",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti & Promozioni",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Offerte",
+        "href": "/amministratore/offerte",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Eventi",
+        "href": "/amministratore/eventi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti",
+        "href": "/amministratore/contenuti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Template",
+        "href": "/amministratore/template",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Piattaforma",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Utenti",
+        "href": "/amministratore/utenti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Segnalazioni",
+        "href": "/amministratore/segnalazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Statistiche",
+        "href": "/amministratore/statistiche",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Assistente AI",
+        "href": "/amministratore/assistente-ai",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Scansioni AI",
+        "href": "/amministratore/scansioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Registro attività",
+        "href": "/amministratore/registro-attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Impostazioni",
+        "href": "/amministratore/impostazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Torna al sito",
+        "href": "/",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Panificio RossiPanificio",
+        "href": "/amministratore/negozi/f3a82af7-dd47-482f-8a49-ea58e692238c",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Barone GioielliGioielleria",
+        "href": "/amministratore/negozi/cd45ea2b-ec22-4bd8-a214-0e7cc47c1f67",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Bar dei CapoccioniBar",
+        "href": "/amministratore/negozi/11d677f1-5b22-464d-b57e-2fa20a74fde3",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      }
+    ],
+    "h1Font": "24px",
+    "h2Font": "18px",
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": {
+      "testo": "Nuova categoria",
+      "bg": "rgb(250, 204, 21)",
+      "fontSize": "14px",
+      "h": 48
+    },
+    "cardCount": 305,
+    "cardRadius": "16px",
+    "shadow": "none",
+    "tabella": null
+  },
+  {
+    "nome": "admin-prodotti",
+    "vw": 1280,
+    "url": "/amministratore/prodotti",
+    "titolo": "Prodotti — Amministratore",
+    "h1": "Prodotti",
+    "headerNav": [],
+    "asideNav": [
+      {
+        "testo": "Panoramica",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Panoramica",
+        "href": "/amministratore",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi & Catalogo",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Negozi",
+        "href": "/amministratore/attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Cestino",
+        "href": "/amministratore/cestino",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Prodotti",
+        "href": "/amministratore/prodotti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Categorie",
+        "href": "/amministratore/categorie",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi in evidenza",
+        "href": "/amministratore/negozi-in-evidenza",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Ordini & Pagamenti",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Ordini",
+        "href": "/amministratore/ordini",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Incassi",
+        "href": "/amministratore/incassi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Payout",
+        "href": "/amministratore/payout",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti & Promozioni",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Offerte",
+        "href": "/amministratore/offerte",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Eventi",
+        "href": "/amministratore/eventi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti",
+        "href": "/amministratore/contenuti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Template",
+        "href": "/amministratore/template",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Piattaforma",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Utenti",
+        "href": "/amministratore/utenti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Segnalazioni",
+        "href": "/amministratore/segnalazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Statistiche",
+        "href": "/amministratore/statistiche",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Assistente AI",
+        "href": "/amministratore/assistente-ai",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Scansioni AI",
+        "href": "/amministratore/scansioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Registro attività",
+        "href": "/amministratore/registro-attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Impostazioni",
+        "href": "/amministratore/impostazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Torna al sito",
+        "href": "/",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Panificio RossiPanificio",
+        "href": "/amministratore/negozi/f3a82af7-dd47-482f-8a49-ea58e692238c",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Barone GioielliGioielleria",
+        "href": "/amministratore/negozi/cd45ea2b-ec22-4bd8-a214-0e7cc47c1f67",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Bar dei CapoccioniBar",
+        "href": "/amministratore/negozi/11d677f1-5b22-464d-b57e-2fa20a74fde3",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      }
+    ],
+    "h1Font": "30px",
+    "h2Font": null,
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": null,
+    "cardCount": 91,
+    "cardRadius": "16px",
+    "shadow": "none",
+    "tabella": null
+  },
+  {
+    "nome": "admin-prodotti",
+    "vw": 375,
+    "url": "/amministratore/prodotti",
+    "titolo": "Prodotti — Amministratore",
+    "h1": "Prodotti",
+    "headerNav": [],
+    "asideNav": [
+      {
+        "testo": "Panoramica",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Panoramica",
+        "href": "/amministratore",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi & Catalogo",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Negozi",
+        "href": "/amministratore/attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Cestino",
+        "href": "/amministratore/cestino",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Prodotti",
+        "href": "/amministratore/prodotti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Categorie",
+        "href": "/amministratore/categorie",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi in evidenza",
+        "href": "/amministratore/negozi-in-evidenza",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Ordini & Pagamenti",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Ordini",
+        "href": "/amministratore/ordini",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Incassi",
+        "href": "/amministratore/incassi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Payout",
+        "href": "/amministratore/payout",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti & Promozioni",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Offerte",
+        "href": "/amministratore/offerte",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Eventi",
+        "href": "/amministratore/eventi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti",
+        "href": "/amministratore/contenuti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Template",
+        "href": "/amministratore/template",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Piattaforma",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Utenti",
+        "href": "/amministratore/utenti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Segnalazioni",
+        "href": "/amministratore/segnalazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Statistiche",
+        "href": "/amministratore/statistiche",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Assistente AI",
+        "href": "/amministratore/assistente-ai",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Scansioni AI",
+        "href": "/amministratore/scansioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Registro attività",
+        "href": "/amministratore/registro-attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Impostazioni",
+        "href": "/amministratore/impostazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Torna al sito",
+        "href": "/",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Panificio RossiPanificio",
+        "href": "/amministratore/negozi/f3a82af7-dd47-482f-8a49-ea58e692238c",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Barone GioielliGioielleria",
+        "href": "/amministratore/negozi/cd45ea2b-ec22-4bd8-a214-0e7cc47c1f67",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Bar dei CapoccioniBar",
+        "href": "/amministratore/negozi/11d677f1-5b22-464d-b57e-2fa20a74fde3",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      }
+    ],
+    "h1Font": "24px",
+    "h2Font": null,
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": null,
+    "cardCount": 91,
+    "cardRadius": "16px",
+    "shadow": "none",
+    "tabella": null
+  },
+  {
+    "nome": "admin-ordini",
+    "vw": 1280,
+    "url": "/amministratore/ordini",
+    "titolo": "Ordini — Amministratore",
+    "h1": "Ordini",
+    "headerNav": [],
+    "asideNav": [
+      {
+        "testo": "Panoramica",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Panoramica",
+        "href": "/amministratore",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi & Catalogo",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Negozi",
+        "href": "/amministratore/attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Cestino",
+        "href": "/amministratore/cestino",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Prodotti",
+        "href": "/amministratore/prodotti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Categorie",
+        "href": "/amministratore/categorie",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi in evidenza",
+        "href": "/amministratore/negozi-in-evidenza",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Ordini & Pagamenti",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Ordini",
+        "href": "/amministratore/ordini",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Incassi",
+        "href": "/amministratore/incassi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Payout",
+        "href": "/amministratore/payout",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti & Promozioni",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Offerte",
+        "href": "/amministratore/offerte",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Eventi",
+        "href": "/amministratore/eventi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti",
+        "href": "/amministratore/contenuti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Template",
+        "href": "/amministratore/template",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Piattaforma",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Utenti",
+        "href": "/amministratore/utenti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Segnalazioni",
+        "href": "/amministratore/segnalazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Statistiche",
+        "href": "/amministratore/statistiche",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Assistente AI",
+        "href": "/amministratore/assistente-ai",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Scansioni AI",
+        "href": "/amministratore/scansioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Registro attività",
+        "href": "/amministratore/registro-attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Impostazioni",
+        "href": "/amministratore/impostazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Torna al sito",
+        "href": "/",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Panificio RossiPanificio",
+        "href": "/amministratore/negozi/f3a82af7-dd47-482f-8a49-ea58e692238c",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Barone GioielliGioielleria",
+        "href": "/amministratore/negozi/cd45ea2b-ec22-4bd8-a214-0e7cc47c1f67",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Bar dei CapoccioniBar",
+        "href": "/amministratore/negozi/11d677f1-5b22-464d-b57e-2fa20a74fde3",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      }
+    ],
+    "h1Font": "30px",
+    "h2Font": null,
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": null,
+    "cardCount": 62,
+    "cardRadius": "16px",
+    "shadow": "none",
+    "tabella": null
+  },
+  {
+    "nome": "admin-ordini",
+    "vw": 375,
+    "url": "/amministratore/ordini",
+    "titolo": "Ordini — Amministratore",
+    "h1": "Ordini",
+    "headerNav": [],
+    "asideNav": [
+      {
+        "testo": "Panoramica",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Panoramica",
+        "href": "/amministratore",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi & Catalogo",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Negozi",
+        "href": "/amministratore/attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Cestino",
+        "href": "/amministratore/cestino",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Prodotti",
+        "href": "/amministratore/prodotti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Categorie",
+        "href": "/amministratore/categorie",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi in evidenza",
+        "href": "/amministratore/negozi-in-evidenza",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Ordini & Pagamenti",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Ordini",
+        "href": "/amministratore/ordini",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Incassi",
+        "href": "/amministratore/incassi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Payout",
+        "href": "/amministratore/payout",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti & Promozioni",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Offerte",
+        "href": "/amministratore/offerte",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Eventi",
+        "href": "/amministratore/eventi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti",
+        "href": "/amministratore/contenuti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Template",
+        "href": "/amministratore/template",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Piattaforma",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Utenti",
+        "href": "/amministratore/utenti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Segnalazioni",
+        "href": "/amministratore/segnalazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Statistiche",
+        "href": "/amministratore/statistiche",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Assistente AI",
+        "href": "/amministratore/assistente-ai",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Scansioni AI",
+        "href": "/amministratore/scansioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Registro attività",
+        "href": "/amministratore/registro-attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Impostazioni",
+        "href": "/amministratore/impostazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Torna al sito",
+        "href": "/",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Panificio RossiPanificio",
+        "href": "/amministratore/negozi/f3a82af7-dd47-482f-8a49-ea58e692238c",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Barone GioielliGioielleria",
+        "href": "/amministratore/negozi/cd45ea2b-ec22-4bd8-a214-0e7cc47c1f67",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Bar dei CapoccioniBar",
+        "href": "/amministratore/negozi/11d677f1-5b22-464d-b57e-2fa20a74fde3",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      }
+    ],
+    "h1Font": "24px",
+    "h2Font": null,
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": null,
+    "cardCount": 62,
+    "cardRadius": "16px",
+    "shadow": "none",
+    "tabella": null
+  },
+  {
+    "nome": "admin-incassi",
+    "vw": 1280,
+    "url": "/amministratore/incassi",
+    "titolo": "Incassi — Amministratore",
+    "h1": "Incassi",
+    "headerNav": [],
+    "asideNav": [
+      {
+        "testo": "Panoramica",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Panoramica",
+        "href": "/amministratore",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi & Catalogo",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Negozi",
+        "href": "/amministratore/attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Cestino",
+        "href": "/amministratore/cestino",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Prodotti",
+        "href": "/amministratore/prodotti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Categorie",
+        "href": "/amministratore/categorie",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi in evidenza",
+        "href": "/amministratore/negozi-in-evidenza",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Ordini & Pagamenti",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Ordini",
+        "href": "/amministratore/ordini",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Incassi",
+        "href": "/amministratore/incassi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Payout",
+        "href": "/amministratore/payout",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti & Promozioni",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Offerte",
+        "href": "/amministratore/offerte",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Eventi",
+        "href": "/amministratore/eventi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti",
+        "href": "/amministratore/contenuti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Template",
+        "href": "/amministratore/template",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Piattaforma",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Utenti",
+        "href": "/amministratore/utenti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Segnalazioni",
+        "href": "/amministratore/segnalazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Statistiche",
+        "href": "/amministratore/statistiche",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Assistente AI",
+        "href": "/amministratore/assistente-ai",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Scansioni AI",
+        "href": "/amministratore/scansioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Registro attività",
+        "href": "/amministratore/registro-attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Impostazioni",
+        "href": "/amministratore/impostazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Torna al sito",
+        "href": "/",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Panificio RossiPanificio",
+        "href": "/amministratore/negozi/f3a82af7-dd47-482f-8a49-ea58e692238c",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Barone GioielliGioielleria",
+        "href": "/amministratore/negozi/cd45ea2b-ec22-4bd8-a214-0e7cc47c1f67",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Bar dei CapoccioniBar",
+        "href": "/amministratore/negozi/11d677f1-5b22-464d-b57e-2fa20a74fde3",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      }
+    ],
+    "h1Font": "30px",
+    "h2Font": null,
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": null,
+    "cardCount": 60,
+    "cardRadius": "16px",
+    "shadow": "none",
+    "tabella": null
+  },
+  {
+    "nome": "admin-incassi",
+    "vw": 375,
+    "url": "/amministratore/incassi",
+    "titolo": "Incassi — Amministratore",
+    "h1": "Incassi",
+    "headerNav": [],
+    "asideNav": [
+      {
+        "testo": "Panoramica",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Panoramica",
+        "href": "/amministratore",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi & Catalogo",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Negozi",
+        "href": "/amministratore/attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Cestino",
+        "href": "/amministratore/cestino",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Prodotti",
+        "href": "/amministratore/prodotti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Categorie",
+        "href": "/amministratore/categorie",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi in evidenza",
+        "href": "/amministratore/negozi-in-evidenza",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Ordini & Pagamenti",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Ordini",
+        "href": "/amministratore/ordini",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Incassi",
+        "href": "/amministratore/incassi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Payout",
+        "href": "/amministratore/payout",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti & Promozioni",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Offerte",
+        "href": "/amministratore/offerte",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Eventi",
+        "href": "/amministratore/eventi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti",
+        "href": "/amministratore/contenuti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Template",
+        "href": "/amministratore/template",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Piattaforma",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Utenti",
+        "href": "/amministratore/utenti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Segnalazioni",
+        "href": "/amministratore/segnalazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Statistiche",
+        "href": "/amministratore/statistiche",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Assistente AI",
+        "href": "/amministratore/assistente-ai",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Scansioni AI",
+        "href": "/amministratore/scansioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Registro attività",
+        "href": "/amministratore/registro-attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Impostazioni",
+        "href": "/amministratore/impostazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Torna al sito",
+        "href": "/",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Panificio RossiPanificio",
+        "href": "/amministratore/negozi/f3a82af7-dd47-482f-8a49-ea58e692238c",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Barone GioielliGioielleria",
+        "href": "/amministratore/negozi/cd45ea2b-ec22-4bd8-a214-0e7cc47c1f67",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Bar dei CapoccioniBar",
+        "href": "/amministratore/negozi/11d677f1-5b22-464d-b57e-2fa20a74fde3",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      }
+    ],
+    "h1Font": "24px",
+    "h2Font": null,
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": null,
+    "cardCount": 60,
+    "cardRadius": "16px",
+    "shadow": "none",
+    "tabella": null
+  },
+  {
+    "nome": "admin-payout",
+    "vw": 1280,
+    "url": "/amministratore/payout",
+    "titolo": "Payout — Amministratore",
+    "h1": "Payout",
+    "headerNav": [],
+    "asideNav": [
+      {
+        "testo": "Panoramica",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Panoramica",
+        "href": "/amministratore",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi & Catalogo",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Negozi",
+        "href": "/amministratore/attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Cestino",
+        "href": "/amministratore/cestino",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Prodotti",
+        "href": "/amministratore/prodotti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Categorie",
+        "href": "/amministratore/categorie",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi in evidenza",
+        "href": "/amministratore/negozi-in-evidenza",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Ordini & Pagamenti",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Ordini",
+        "href": "/amministratore/ordini",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Incassi",
+        "href": "/amministratore/incassi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Payout",
+        "href": "/amministratore/payout",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti & Promozioni",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Offerte",
+        "href": "/amministratore/offerte",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Eventi",
+        "href": "/amministratore/eventi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti",
+        "href": "/amministratore/contenuti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Template",
+        "href": "/amministratore/template",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Piattaforma",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Utenti",
+        "href": "/amministratore/utenti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Segnalazioni",
+        "href": "/amministratore/segnalazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Statistiche",
+        "href": "/amministratore/statistiche",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Assistente AI",
+        "href": "/amministratore/assistente-ai",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Scansioni AI",
+        "href": "/amministratore/scansioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Registro attività",
+        "href": "/amministratore/registro-attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Impostazioni",
+        "href": "/amministratore/impostazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Torna al sito",
+        "href": "/",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Panificio RossiPanificio",
+        "href": "/amministratore/negozi/f3a82af7-dd47-482f-8a49-ea58e692238c",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Barone GioielliGioielleria",
+        "href": "/amministratore/negozi/cd45ea2b-ec22-4bd8-a214-0e7cc47c1f67",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Bar dei CapoccioniBar",
+        "href": "/amministratore/negozi/11d677f1-5b22-464d-b57e-2fa20a74fde3",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      }
+    ],
+    "h1Font": "30px",
+    "h2Font": null,
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": null,
+    "cardCount": 56,
+    "cardRadius": "16px",
+    "shadow": "none",
+    "tabella": null
+  },
+  {
+    "nome": "admin-payout",
+    "vw": 375,
+    "url": "/amministratore/payout",
+    "titolo": "Payout — Amministratore",
+    "h1": "Payout",
+    "headerNav": [],
+    "asideNav": [
+      {
+        "testo": "Panoramica",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Panoramica",
+        "href": "/amministratore",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi & Catalogo",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Negozi",
+        "href": "/amministratore/attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Cestino",
+        "href": "/amministratore/cestino",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Prodotti",
+        "href": "/amministratore/prodotti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Categorie",
+        "href": "/amministratore/categorie",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi in evidenza",
+        "href": "/amministratore/negozi-in-evidenza",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Ordini & Pagamenti",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Ordini",
+        "href": "/amministratore/ordini",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Incassi",
+        "href": "/amministratore/incassi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Payout",
+        "href": "/amministratore/payout",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti & Promozioni",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Offerte",
+        "href": "/amministratore/offerte",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Eventi",
+        "href": "/amministratore/eventi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti",
+        "href": "/amministratore/contenuti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Template",
+        "href": "/amministratore/template",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Piattaforma",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Utenti",
+        "href": "/amministratore/utenti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Segnalazioni",
+        "href": "/amministratore/segnalazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Statistiche",
+        "href": "/amministratore/statistiche",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Assistente AI",
+        "href": "/amministratore/assistente-ai",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Scansioni AI",
+        "href": "/amministratore/scansioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Registro attività",
+        "href": "/amministratore/registro-attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Impostazioni",
+        "href": "/amministratore/impostazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Torna al sito",
+        "href": "/",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Panificio RossiPanificio",
+        "href": "/amministratore/negozi/f3a82af7-dd47-482f-8a49-ea58e692238c",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Barone GioielliGioielleria",
+        "href": "/amministratore/negozi/cd45ea2b-ec22-4bd8-a214-0e7cc47c1f67",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Bar dei CapoccioniBar",
+        "href": "/amministratore/negozi/11d677f1-5b22-464d-b57e-2fa20a74fde3",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      }
+    ],
+    "h1Font": "24px",
+    "h2Font": null,
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": null,
+    "cardCount": 56,
+    "cardRadius": "16px",
+    "shadow": "none",
+    "tabella": null
+  },
+  {
+    "nome": "admin-cestino",
+    "vw": 1280,
+    "url": "/amministratore/cestino",
+    "titolo": "Cestino — Amministratore",
+    "h1": "Cestino",
+    "headerNav": [],
+    "asideNav": [
+      {
+        "testo": "Panoramica",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Panoramica",
+        "href": "/amministratore",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi & Catalogo",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Negozi",
+        "href": "/amministratore/attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Cestino",
+        "href": "/amministratore/cestino",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Prodotti",
+        "href": "/amministratore/prodotti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Categorie",
+        "href": "/amministratore/categorie",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi in evidenza",
+        "href": "/amministratore/negozi-in-evidenza",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Ordini & Pagamenti",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Ordini",
+        "href": "/amministratore/ordini",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Incassi",
+        "href": "/amministratore/incassi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Payout",
+        "href": "/amministratore/payout",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti & Promozioni",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Offerte",
+        "href": "/amministratore/offerte",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Eventi",
+        "href": "/amministratore/eventi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti",
+        "href": "/amministratore/contenuti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Template",
+        "href": "/amministratore/template",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Piattaforma",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Utenti",
+        "href": "/amministratore/utenti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Segnalazioni",
+        "href": "/amministratore/segnalazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Statistiche",
+        "href": "/amministratore/statistiche",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Assistente AI",
+        "href": "/amministratore/assistente-ai",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Scansioni AI",
+        "href": "/amministratore/scansioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Registro attività",
+        "href": "/amministratore/registro-attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Impostazioni",
+        "href": "/amministratore/impostazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Torna al sito",
+        "href": "/",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Panificio RossiPanificio",
+        "href": "/amministratore/negozi/f3a82af7-dd47-482f-8a49-ea58e692238c",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Barone GioielliGioielleria",
+        "href": "/amministratore/negozi/cd45ea2b-ec22-4bd8-a214-0e7cc47c1f67",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Bar dei CapoccioniBar",
+        "href": "/amministratore/negozi/11d677f1-5b22-464d-b57e-2fa20a74fde3",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      }
+    ],
+    "h1Font": "24px",
+    "h2Font": null,
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": {
+      "testo": "Ripristina",
+      "bg": "rgb(250, 204, 21)",
+      "fontSize": "12px",
+      "h": 38
+    },
+    "cardCount": 60,
+    "cardRadius": "16px",
+    "shadow": "none",
+    "tabella": null
+  },
+  {
+    "nome": "admin-cestino",
+    "vw": 375,
+    "url": "/amministratore/cestino",
+    "titolo": "Cestino — Amministratore",
+    "h1": "Cestino",
+    "headerNav": [],
+    "asideNav": [
+      {
+        "testo": "Panoramica",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Panoramica",
+        "href": "/amministratore",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi & Catalogo",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Negozi",
+        "href": "/amministratore/attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Cestino",
+        "href": "/amministratore/cestino",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Prodotti",
+        "href": "/amministratore/prodotti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Categorie",
+        "href": "/amministratore/categorie",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi in evidenza",
+        "href": "/amministratore/negozi-in-evidenza",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Ordini & Pagamenti",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Ordini",
+        "href": "/amministratore/ordini",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Incassi",
+        "href": "/amministratore/incassi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Payout",
+        "href": "/amministratore/payout",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti & Promozioni",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Offerte",
+        "href": "/amministratore/offerte",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Eventi",
+        "href": "/amministratore/eventi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti",
+        "href": "/amministratore/contenuti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Template",
+        "href": "/amministratore/template",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Piattaforma",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Utenti",
+        "href": "/amministratore/utenti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Segnalazioni",
+        "href": "/amministratore/segnalazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Statistiche",
+        "href": "/amministratore/statistiche",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Assistente AI",
+        "href": "/amministratore/assistente-ai",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Scansioni AI",
+        "href": "/amministratore/scansioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Registro attività",
+        "href": "/amministratore/registro-attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Impostazioni",
+        "href": "/amministratore/impostazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Torna al sito",
+        "href": "/",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Panificio RossiPanificio",
+        "href": "/amministratore/negozi/f3a82af7-dd47-482f-8a49-ea58e692238c",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Barone GioielliGioielleria",
+        "href": "/amministratore/negozi/cd45ea2b-ec22-4bd8-a214-0e7cc47c1f67",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Bar dei CapoccioniBar",
+        "href": "/amministratore/negozi/11d677f1-5b22-464d-b57e-2fa20a74fde3",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      }
+    ],
+    "h1Font": "24px",
+    "h2Font": null,
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": {
+      "testo": "Ripristina",
+      "bg": "rgb(250, 204, 21)",
+      "fontSize": "12px",
+      "h": 36
+    },
+    "cardCount": 60,
+    "cardRadius": "16px",
+    "shadow": "none",
+    "tabella": null
+  },
+  {
+    "nome": "admin-utenti",
+    "vw": 1280,
+    "url": "/amministratore/utenti",
+    "titolo": "Utenti — Amministratore",
+    "h1": "Utenti",
+    "headerNav": [],
+    "asideNav": [
+      {
+        "testo": "Panoramica",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Panoramica",
+        "href": "/amministratore",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi & Catalogo",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Negozi",
+        "href": "/amministratore/attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Cestino",
+        "href": "/amministratore/cestino",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Prodotti",
+        "href": "/amministratore/prodotti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Categorie",
+        "href": "/amministratore/categorie",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi in evidenza",
+        "href": "/amministratore/negozi-in-evidenza",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Ordini & Pagamenti",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Ordini",
+        "href": "/amministratore/ordini",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Incassi",
+        "href": "/amministratore/incassi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Payout",
+        "href": "/amministratore/payout",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti & Promozioni",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Offerte",
+        "href": "/amministratore/offerte",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Eventi",
+        "href": "/amministratore/eventi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti",
+        "href": "/amministratore/contenuti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Template",
+        "href": "/amministratore/template",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Piattaforma",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Utenti",
+        "href": "/amministratore/utenti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Segnalazioni",
+        "href": "/amministratore/segnalazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Statistiche",
+        "href": "/amministratore/statistiche",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Assistente AI",
+        "href": "/amministratore/assistente-ai",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Scansioni AI",
+        "href": "/amministratore/scansioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Registro attività",
+        "href": "/amministratore/registro-attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Impostazioni",
+        "href": "/amministratore/impostazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Torna al sito",
+        "href": "/",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Panificio RossiPanificio",
+        "href": "/amministratore/negozi/f3a82af7-dd47-482f-8a49-ea58e692238c",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Barone GioielliGioielleria",
+        "href": "/amministratore/negozi/cd45ea2b-ec22-4bd8-a214-0e7cc47c1f67",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Bar dei CapoccioniBar",
+        "href": "/amministratore/negozi/11d677f1-5b22-464d-b57e-2fa20a74fde3",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      }
+    ],
+    "h1Font": "30px",
+    "h2Font": null,
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": {
+      "testo": "Nuovo utente",
+      "bg": "rgb(250, 204, 21)",
+      "fontSize": "14px",
+      "h": 44
+    },
+    "cardCount": 75,
+    "cardRadius": "16px",
+    "shadow": "none",
+    "tabella": {
+      "n": 11,
+      "font": "14px"
+    }
+  },
+  {
+    "nome": "admin-utenti",
+    "vw": 375,
+    "url": "/amministratore/utenti",
+    "titolo": "Utenti — Amministratore",
+    "h1": "Utenti",
+    "headerNav": [],
+    "asideNav": [
+      {
+        "testo": "Panoramica",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Panoramica",
+        "href": "/amministratore",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi & Catalogo",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Negozi",
+        "href": "/amministratore/attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Cestino",
+        "href": "/amministratore/cestino",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Prodotti",
+        "href": "/amministratore/prodotti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Categorie",
+        "href": "/amministratore/categorie",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi in evidenza",
+        "href": "/amministratore/negozi-in-evidenza",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Ordini & Pagamenti",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Ordini",
+        "href": "/amministratore/ordini",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Incassi",
+        "href": "/amministratore/incassi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Payout",
+        "href": "/amministratore/payout",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti & Promozioni",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Offerte",
+        "href": "/amministratore/offerte",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Eventi",
+        "href": "/amministratore/eventi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti",
+        "href": "/amministratore/contenuti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Template",
+        "href": "/amministratore/template",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Piattaforma",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Utenti",
+        "href": "/amministratore/utenti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Segnalazioni",
+        "href": "/amministratore/segnalazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Statistiche",
+        "href": "/amministratore/statistiche",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Assistente AI",
+        "href": "/amministratore/assistente-ai",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Scansioni AI",
+        "href": "/amministratore/scansioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Registro attività",
+        "href": "/amministratore/registro-attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Impostazioni",
+        "href": "/amministratore/impostazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Torna al sito",
+        "href": "/",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Panificio RossiPanificio",
+        "href": "/amministratore/negozi/f3a82af7-dd47-482f-8a49-ea58e692238c",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Barone GioielliGioielleria",
+        "href": "/amministratore/negozi/cd45ea2b-ec22-4bd8-a214-0e7cc47c1f67",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Bar dei CapoccioniBar",
+        "href": "/amministratore/negozi/11d677f1-5b22-464d-b57e-2fa20a74fde3",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      }
+    ],
+    "h1Font": "24px",
+    "h2Font": null,
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": {
+      "testo": "Nuovo utente",
+      "bg": "rgb(250, 204, 21)",
+      "fontSize": "14px",
+      "h": 44
+    },
+    "cardCount": 75,
+    "cardRadius": "16px",
+    "shadow": "none",
+    "tabella": {
+      "n": 11,
+      "font": "14px"
+    }
+  },
+  {
+    "nome": "admin-template",
+    "vw": 1280,
+    "url": "/amministratore/template",
+    "titolo": "Template — Amministratore",
+    "h1": "Template di piattaforma",
+    "headerNav": [],
+    "asideNav": [
+      {
+        "testo": "Panoramica",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Panoramica",
+        "href": "/amministratore",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi & Catalogo",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Negozi",
+        "href": "/amministratore/attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Cestino",
+        "href": "/amministratore/cestino",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Prodotti",
+        "href": "/amministratore/prodotti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Categorie",
+        "href": "/amministratore/categorie",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi in evidenza",
+        "href": "/amministratore/negozi-in-evidenza",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Ordini & Pagamenti",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Ordini",
+        "href": "/amministratore/ordini",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Incassi",
+        "href": "/amministratore/incassi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Payout",
+        "href": "/amministratore/payout",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti & Promozioni",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Offerte",
+        "href": "/amministratore/offerte",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Eventi",
+        "href": "/amministratore/eventi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti",
+        "href": "/amministratore/contenuti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Template",
+        "href": "/amministratore/template",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Piattaforma",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Utenti",
+        "href": "/amministratore/utenti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Segnalazioni",
+        "href": "/amministratore/segnalazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Statistiche",
+        "href": "/amministratore/statistiche",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Assistente AI",
+        "href": "/amministratore/assistente-ai",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Scansioni AI",
+        "href": "/amministratore/scansioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Registro attività",
+        "href": "/amministratore/registro-attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Impostazioni",
+        "href": "/amministratore/impostazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Torna al sito",
+        "href": "/",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Panificio RossiPanificio",
+        "href": "/amministratore/negozi/f3a82af7-dd47-482f-8a49-ea58e692238c",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Barone GioielliGioielleria",
+        "href": "/amministratore/negozi/cd45ea2b-ec22-4bd8-a214-0e7cc47c1f67",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Bar dei CapoccioniBar",
+        "href": "/amministratore/negozi/11d677f1-5b22-464d-b57e-2fa20a74fde3",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      }
+    ],
+    "h1Font": "18px",
+    "h2Font": null,
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": {
+      "testo": "Nuovo template",
+      "bg": "rgb(250, 204, 21)",
+      "fontSize": "12px",
+      "h": 36
+    },
+    "cardCount": 52,
+    "cardRadius": "16px",
+    "shadow": "none",
+    "tabella": null
+  },
+  {
+    "nome": "admin-template",
+    "vw": 375,
+    "url": "/amministratore/template",
+    "titolo": "Template — Amministratore",
+    "h1": "Template di piattaforma",
+    "headerNav": [],
+    "asideNav": [
+      {
+        "testo": "Panoramica",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Panoramica",
+        "href": "/amministratore",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi & Catalogo",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Negozi",
+        "href": "/amministratore/attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Cestino",
+        "href": "/amministratore/cestino",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Prodotti",
+        "href": "/amministratore/prodotti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Categorie",
+        "href": "/amministratore/categorie",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Negozi in evidenza",
+        "href": "/amministratore/negozi-in-evidenza",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Ordini & Pagamenti",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Ordini",
+        "href": "/amministratore/ordini",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Incassi",
+        "href": "/amministratore/incassi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Payout",
+        "href": "/amministratore/payout",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti & Promozioni",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Offerte",
+        "href": "/amministratore/offerte",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Eventi",
+        "href": "/amministratore/eventi",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Contenuti",
+        "href": "/amministratore/contenuti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Template",
+        "href": "/amministratore/template",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Piattaforma",
+        "href": null,
+        "cls": "flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-"
+      },
+      {
+        "testo": "Utenti",
+        "href": "/amministratore/utenti",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Segnalazioni",
+        "href": "/amministratore/segnalazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Statistiche",
+        "href": "/amministratore/statistiche",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Assistente AI",
+        "href": "/amministratore/assistente-ai",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Scansioni AI",
+        "href": "/amministratore/scansioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Registro attività",
+        "href": "/amministratore/registro-attivita",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Impostazioni",
+        "href": "/amministratore/impostazioni",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Torna al sito",
+        "href": "/",
+        "cls": "group relative flex items-center gap-3 rounded-2xl px-4 py-3"
+      },
+      {
+        "testo": "Panificio RossiPanificio",
+        "href": "/amministratore/negozi/f3a82af7-dd47-482f-8a49-ea58e692238c",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Barone GioielliGioielleria",
+        "href": "/amministratore/negozi/cd45ea2b-ec22-4bd8-a214-0e7cc47c1f67",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      },
+      {
+        "testo": "Bar dei CapoccioniBar",
+        "href": "/amministratore/negozi/11d677f1-5b22-464d-b57e-2fa20a74fde3",
+        "cls": "block rounded-2xl border px-4 py-3 text-sm transition border"
+      }
+    ],
+    "h1Font": "18px",
+    "h2Font": null,
+    "bodyFont": "16px",
+    "bodyColore": "rgb(15, 23, 42)",
+    "btnPrimary": {
+      "testo": "Nuovo template",
+      "bg": "rgb(250, 204, 21)",
+      "fontSize": "12px",
+      "h": 36
+    },
+    "cardCount": 52,
+    "cardRadius": "16px",
+    "shadow": "none",
+    "tabella": null
+  }
+]

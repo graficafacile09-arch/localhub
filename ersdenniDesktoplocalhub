@@ -1,0 +1,514 @@
+[1mdiff --git a/components/merchant/modules/PagamentiModule.tsx b/components/merchant/modules/PagamentiModule.tsx[m
+[1mindex ca4f227..47ccdb0 100644[m
+[1m--- a/components/merchant/modules/PagamentiModule.tsx[m
+[1m+++ b/components/merchant/modules/PagamentiModule.tsx[m
+[36m@@ -17,6 +17,9 @@[m [mtype ProviderConfig = {[m
+   iban: string | null;[m
+   account_id: string | null;[m
+   account_name: string | null;[m
+[32m+[m[32m  onboarding_status: string | null;[m
+[32m+[m[32m  payouts_enabled: boolean;[m
+[32m+[m[32m  charges_enabled: boolean;[m
+   has_secret: boolean;[m
+ };[m
+ [m
+[36m@@ -50,6 +53,8 @@[m [mtype ProviderInfoEntry = {[m
+   liveLabel: string;[m
+   /** True se il provider richiede secret + webhook (false per bonifico). */[m
+   haSecret: boolean;[m
+[32m+[m[32m  /** True se il provider ha UNA sola credenziale (API key, nessun client id né webhook separato). */[m
+[32m+[m[32m  soloSecret?: boolean;[m
+   /** Nota informativa opzionale (es. Publishable Key Stripe non usata). */[m
+   nota?: string;[m
+ };[m
+[36m@@ -96,6 +101,22 @@[m [mconst PROVIDER_INFO: Record<string, ProviderInfoEntry> = {[m
+     liveLabel: "Live",[m
+     haSecret: true,[m
+   },[m
+[32m+[m[32m  scalapay: {[m
+[32m+[m[32m    nome: "Scalapay",[m
+[32m+[m[32m    descrizione: "Paga in 3 rate — buy now, pay later",[m
+[32m+[m[32m    campoId: "",[m
+[32m+[m[32m    campoSecret: "API Key",[m
+[32m+[m[32m    campoWebhook: "",[m
+[32m+[m[32m    webhookUrl: "/api/webhook/pagamenti/scalapay",[m
+[32m+[m[32m    webhookIstruzioni:[m
+[32m+[m[32m      "Registra questo URL come endpoint webhook nel Merchant Portal Scalapay. Scalapay firma gli eventi con HMAC-SHA256 usando la stessa API Key (header x-scalapay-hmac-v1). Eventi gestiti: charged, authorized, refunded, expired.",[m
+[32m+[m[32m    testLabel: "Sandbox",[m
+[32m+[m[32m    liveLabel: "Live",[m
+[32m+[m[32m    haSecret: true,[m
+[32m+[m[32m    soloSecret: true,[m
+[32m+[m[32m    nota:[m
+[32m+[m[32m      "Scalapay richiede solo l'API Key (prefissata sp_, distinta tra Sandbox e Live): la stessa chiave autentica le chiamate API e firma i webhook. Non servono Client ID né un webhook secret separato.",[m
+[32m+[m[32m  },[m
+   bonifico: {[m
+     nome: "Bonifico bancario",[m
+     descrizione: "Pagamento manuale tramite bonifico",[m
+[36m@@ -113,6 +134,7 @@[m [mconst METODI_INFO: Record<string, { nome: string; descrizione: string }> = {[m
+   carta: { nome: "Carta", descrizione: "Carte di credito e debito" },[m
+   paypal: { nome: "PayPal", descrizione: "Account PayPal" },[m
+   klarna: { nome: "Klarna", descrizione: "Paga in 3/4 rate" },[m
+[32m+[m[32m  scalapay: { nome: "Scalapay", descrizione: "Paga in 3 rate" },[m
+   bonifico: { nome: "Bonifico", descrizione: "Bonifico bancario" },[m
+ };[m
+ [m
+[36m@@ -132,6 +154,9 @@[m [mtype ProviderForm = {[m
+   has_secret: boolean;[m
+   account_id: string;[m
+   account_name: string;[m
+[32m+[m[32m  onboarding_status: string;[m
+[32m+[m[32m  payouts_enabled: boolean;[m
+[32m+[m[32m  charges_enabled: boolean;[m
+ };[m
+ [m
+ function statoIniziale(): FormState {[m
+[36m@@ -148,6 +173,9 @@[m [mfunction statoIniziale(): FormState {[m
+       has_secret: false,[m
+       account_id: "",[m
+       account_name: "",[m
+[32m+[m[32m      onboarding_status: "not_started",[m
+[32m+[m[32m      payouts_enabled: false,[m
+[32m+[m[32m      charges_enabled: false,[m
+     };[m
+   }[m
+   const metodi: Record<string, { attivo: boolean }> = {};[m
+[36m@@ -198,6 +226,9 @@[m [mexport default function PagamentiModule({ storeId }: Props) {[m
+               has_secret: p.has_secret ?? false,[m
+               account_id: p.account_id ?? "",[m
+               account_name: p.account_name ?? "",[m
+[32m+[m[32m              onboarding_status: p.onboarding_status ?? "not_started",[m
+[32m+[m[32m              payouts_enabled: p.payouts_enabled ?? false,[m
+[32m+[m[32m              charges_enabled: p.charges_enabled ?? false,[m
+             };[m
+           }[m
+           for (const m of json.data.metodi ?? []) {[m
+[36m@@ -231,8 +262,10 @@[m [mexport default function PagamentiModule({ storeId }: Props) {[m
+     setConnectBusy(true);[m
+     setStripeMsg(null);[m
+     try {[m
+[31m-      const res = await fetch(`/api/merchant/stores/${storeId}/pagamenti/stripe/connect`, {[m
+[32m+[m[32m      const res = await fetch(`/api/pagamenti/connect/crea`, {[m
+         method: "POST",[m
+[32m+[m[32m        headers: { "Content-Type": "application/json" },[m
+[32m+[m[32m        body: JSON.stringify({ negozioId: storeId }),[m
+       });[m
+       const json = await res.json();[m
+       if (json.success && json.data?.url) {[m
+[36m@@ -265,7 +298,15 @@[m [mexport default function PagamentiModule({ storeId }: Props) {[m
+           ...f,[m
+           providers: {[m
+             ...f.providers,[m
+[31m-            stripe: { ...f.providers.stripe, account_id: "", account_name: "", attivo: false },[m
+[32m+[m[32m            stripe: {[m
+[32m+[m[32m              ...f.providers.stripe,[m
+[32m+[m[32m              account_id: "",[m
+[32m+[m[32m              account_name: "",[m
+[32m+[m[32m              attivo: false,[m
+[32m+[m[32m              onboarding_status: "not_started",[m
+[32m+[m[32m              payouts_enabled: false,[m
+[32m+[m[32m              charges_enabled: false,[m
+[32m+[m[32m            },[m
+           },[m
+         }));[m
+       } else {[m
+[36m@@ -435,24 +476,28 @@[m [mexport default function PagamentiModule({ storeId }: Props) {[m
+               const p = form.providers[key];[m
+               if (!p) return null;[m
+ [m
+[31m-              // Stripe è collegato via Connect: nessuna credenziale manuale.[m
+[32m+[m[32m              // Stripe è collegato via Connect Express (Account Link): nessuna[m
+[32m+[m[32m              // credenziale manuale. Lo stato riflette l'onboarding hosted.[m
+               if (key === "stripe") {[m
+                 const collegato = !!p.account_id;[m
+[32m+[m[32m                const status = p.onboarding_status || (collegato ? "pending" : "not_started");[m
+[32m+[m[32m                const badge =[m
+[32m+[m[32m                  status === "complete"[m
+[32m+[m[32m                    ? { icon: <CheckCircle2 className="h-3 w-3" />, label: "Attivo", cls: "bg-green-50 text-green-700" }[m
+[32m+[m[32m                    : status === "pending"[m
+[32m+[m[32m                      ? { icon: <AlertCircle className="h-3 w-3" />, label: "Onboarding in corso", cls: "bg-yellow-50 text-yellow-700" }[m
+[32m+[m[32m                      : status === "restricted"[m
+[32m+[m[32m                        ? { icon: <AlertCircle className="h-3 w-3" />, label: "Limitato", cls: "bg-red-50 text-red-600" }[m
+[32m+[m[32m                        : { icon: <AlertCircle className="h-3 w-3" />, label: "Non collegato", cls: "bg-slate-100 text-slate-500" };[m
+                 return ([m
+                   <div key={key} className="rounded-2xl border border-slate-200 bg-white p-4">[m
+                     <div className="flex flex-wrap items-start justify-between gap-3">[m
+                       <div className="min-w-0">[m
+                         <div className="flex items-center gap-2">[m
+                           <p className="text-sm font-bold text-slate-900">{info.nome}</p>[m
+[31m-                          {collegato ? ([m
+[31m-                            <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700">[m
+[31m-                              <CheckCircle2 className="h-3 w-3" /> Collegato[m
+[31m-                            </span>[m
+[31m-                          ) : ([m
+[31m-                            <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">[m
+[31m-                              <AlertCircle className="h-3 w-3" /> Non collegato[m
+[31m-                            </span>[m
+[31m-                          )}[m
+[32m+[m[32m                          <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${badge.cls}`}>[m
+[32m+[m[32m                            {badge.icon} {badge.label}[m
+[32m+[m[32m                          </span>[m
+                         </div>[m
+                         <p className="mt-0.5 text-xs text-slate-500">{info.descrizione}</p>[m
+                       </div>[m
+[36m@@ -471,30 +516,58 @@[m [mexport default function PagamentiModule({ storeId }: Props) {[m
+                                 ID account Connect: {p.account_id}[m
+                               </p>[m
+                             )}[m
+[32m+[m[32m                            {status === "complete" && ([m
+[32m+[m[32m                              <p className="mt-1 text-[11px] font-semibold text-green-700">[m
+[32m+[m[32m                                Incassi e pagamenti abilitati.[m
+[32m+[m[32m                              </p>[m
+[32m+[m[32m                            )}[m
+[32m+[m[32m                            {status === "pending" && ([m
+[32m+[m[32m                              <p className="mt-1 text-[11px] font-semibold text-yellow-700">[m
+[32m+[m[32m                                Completa la verifica (documenti e IBAN) nel portale Stripe.[m
+[32m+[m[32m                              </p>[m
+[32m+[m[32m                            )}[m
+[32m+[m[32m                            {status === "restricted" && ([m
+[32m+[m[32m                              <p className="mt-1 text-[11px] font-semibold text-red-600">[m
+[32m+[m[32m                                Account con restrizioni: controlla il portale Stripe.[m
+[32m+[m[32m                              </p>[m
+[32m+[m[32m                            )}[m
+[32m+[m[32m                          </div>[m
+[32m+[m[32m                          <div className="flex flex-wrap items-center gap-2">[m
+[32m+[m[32m                            {status !== "complete" && ([m
+[32m+[m[32m                              <button[m
+[32m+[m[32m                                type="button"[m
+[32m+[m[32m                                disabled={connectBusy}[m
+[32m+[m[32m                                onClick={handleConnectStripe}[m
+[32m+[m[32m                                className="inline-flex items-center gap-1.5 rounded-xl bg-yellow-400 px-3 py-2 text-xs font-semibold text-blue-800 transition hover:bg-yellow-300 disabled:opacity-50"[m
+[32m+[m[32m                              >[m
+[32m+[m[32m                                {connectBusy ? "Reindirizzamento…" : "Riprendi onboarding"}[m
+[32m+[m[32m                              </button>[m
+[32m+[m[32m                            )}[m
+[32m+[m[32m                            <button[m
+[32m+[m[32m                              type="button"[m
+[32m+[m[32m                              disabled={connectBusy}[m
+[32m+[m[32m                              onClick={handleDisconnectStripe}[m
+[32m+[m[32m                              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"[m
+[32m+[m[32m                            >[m
+[32m+[m[32m                              Scollega[m
+[32m+[m[32m                            </button>[m
+                           </div>[m
+[31m-                          <button[m
+[31m-                            type="button"[m
+[31m-                            disabled={connectBusy}[m
+[31m-                            onClick={handleDisconnectStripe}[m
+[31m-                            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"[m
+[31m-                          >[m
+[31m-                            Scollega[m
+[31m-                          </button>[m
+                         </div>[m
+                       ) : ([m
+                         <div>[m
+                           <p className="mb-3 text-xs text-slate-500">[m
+[31m-                            Collega il tuo account Stripe per accettare pagamenti con carta e,[m
+[31m-                            quando disponibili, Apple Pay e Google Pay. Non serve inserire[m
+[31m-                            alcuna chiave: Stripe gestisce accesso, registrazione e verifica.[m
+[32m+[m[32m                            Crea o collega il tuo account Stripe per accettare pagamenti con[m
+[32m+[m[32m                            carta e, quando disponibili, Apple Pay e Google Pay. Non serve[m
+[32m+[m[32m                            inserire alcuna chiave: Stripe gestisce creazione account,[m
+[32m+[m[32m                            registrazione e verifica (KYC/IBAN) nel suo portale.[m
+                           </p>[m
+                           <button[m
+                             type="button"[m
+                             disabled={connectBusy}[m
+                             onClick={handleConnectStripe}[m
+[31m-                            className="inline-flex items-center gap-1.5 rounded-xl bg-yellow-400 px-3 py-2 text-xs font-semibold text-blue-800 transition hover:bg-yellow-300 disabled:opacity-50"[m
+[32m+[m[32m                            className="inline-flex items-center gap-1.5 rounded-xl bg-yellow-400 px-4 py-2.5 text-sm font-semibold text-blue-800 transition hover:bg-yellow-300 disabled:opacity-50"[m
+                           >[m
+[31m-                            {connectBusy ? "Reindirizzamento…" : "Collega Stripe"}[m
+[32m+[m[32m                            {connectBusy ? "Reindirizzamento…" : "Crea o Collega il tuo conto Stripe"}[m
+                           </button>[m
+                         </div>[m
+                       )}[m
+[36m@@ -504,7 +577,8 @@[m [mexport default function PagamentiModule({ storeId }: Props) {[m
+                           Apple Pay e Google Pay sono gestiti da Stripe (Dynamic Payment[m
+                           Methods) e compaiono automaticamente quando abilitati nel Dashboard[m
+                           Stripe. Non vengono richiesti né mostrati Secret Key o Webhook Secret[m
+[31m-                          del venditore.[m
+[32m+[m[32m                          del venditore. Al termine dell&apos;onboarding verrai riportato su[m
+[32m+[m[32m                          /ritorno-stripe.[m
+                         </p>[m
+                       </div>[m
+                     </div>[m
+[36m@@ -548,6 +622,7 @@[m [mexport default function PagamentiModule({ storeId }: Props) {[m
+                       {key !== "bonifico" ? ([m
+                         <>[m
+                           <div className="grid gap-3 sm:grid-cols-2">[m
+[32m+[m[32m                            {!info.soloSecret && ([m
+                             <div>[m
+                               <label className="mb-1.5 flex items-center gap-1 text-xs font-semibold text-slate-500">[m
+                                 {info.campoId}[m
+[36m@@ -559,8 +634,9 @@[m [mexport default function PagamentiModule({ storeId }: Props) {[m
+                                 placeholder={info.campoId}[m
+                                 className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"[m
+                               />[m
+[31m-                            </div>[m
+[31m-                            <div>[m
+[32m+[m[32m                              </div>[m
+[32m+[m[32m                              )}[m
+[32m+[m[32m                            <div className={info.soloSecret ? "sm:col-span-2" : ""}>[m
+                               <label className="mb-1.5 flex items-center gap-1 text-xs font-semibold text-slate-500">[m
+                                 Modalità[m
+                               </label>[m
+[36m@@ -577,7 +653,7 @@[m [mexport default function PagamentiModule({ storeId }: Props) {[m
+ [m
+                           {info.haSecret && ([m
+                             <div className="grid gap-3 sm:grid-cols-2">[m
+[31m-                              <div>[m
+[32m+[m[32m                              <div className={info.soloSecret ? "sm:col-span-2" : ""}>[m
+                                 <label className="mb-1.5 flex items-center gap-1 text-xs font-semibold text-slate-500">[m
+                                   <Lock className="h-3 w-3 text-slate-400" /> {info.campoSecret}[m
+                                   <span className="font-normal text-slate-400">[m
+[36m@@ -596,6 +672,7 @@[m [mexport default function PagamentiModule({ storeId }: Props) {[m
+                                   className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"[m
+                                 />[m
+                               </div>[m
+[32m+[m[32m                              {!info.soloSecret && ([m
+                               <div>[m
+                                 <label className="mb-1.5 flex items-center gap-1 text-xs font-semibold text-slate-500">[m
+                                   <Lock className="h-3 w-3 text-slate-400" /> {info.campoWebhook}[m
+[36m@@ -615,6 +692,7 @@[m [mexport default function PagamentiModule({ storeId }: Props) {[m
+                                   className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"[m
+                                 />[m
+                               </div>[m
+[32m+[m[32m                              )}[m
+                             </div>[m
+                           )}[m
+ [m
+[36m@@ -702,8 +780,9 @@[m [mexport default function PagamentiModule({ storeId }: Props) {[m
+             ))}[m
+           </div>[m
+           <p className="mt-2 text-[10px] leading-4 text-slate-400">[m
+[31m-            Bonifico non richiede un provider e resta sempre disponibile. Carta, PayPal e[m
+[31m-            Klarna richiedono sia la configurazione del provider sia l&apos;abilitazione del metodo.[m
+[32m+[m[32m            Bonifico non richiede un provider e resta sempre disponibile. Carta, PayPal,[m
+[32m+[m[32m            Klarna e Scalapay richiedono sia la configurazione del provider sia[m
+[32m+[m[32m            l&apos;abilitazione del metodo.[m
+           </p>[m
+         </div>[m
+ [m
+[1mdiff --git a/lib/pagamenti/catalogo.ts b/lib/pagamenti/catalogo.ts[m
+[1mindex 5a319d2..c197a5e 100644[m
+[1m--- a/lib/pagamenti/catalogo.ts[m
+[1m+++ b/lib/pagamenti/catalogo.ts[m
+[36m@@ -21,7 +21,7 @@[m
+  * è un catalogo statico puro (safe da importare lato client e server).[m
+  */[m
+ [m
+[31m-export type MetodoPagamento = "carta" | "paypal" | "klarna" | "bonifico";[m
+[32m+[m[32mexport type MetodoPagamento = "carta" | "paypal" | "klarna" | "scalapay" | "bonifico";[m
+ [m
+ export type VoceCatalogoMetodo = {[m
+   metodo: MetodoPagamento;[m
+[36m@@ -36,7 +36,7 @@[m [mexport type VoceCatalogoMetodo = {[m
+    * bonifico). Per i metodi gateway è il provider passato a[m
+    * isProviderProntoPerNegozio / registry / creaSessionePagamentoPerOrdine.[m
+    */[m
+[31m-  provider: "stripe" | "paypal" | "klarna" | null;[m
+[32m+[m[32m  provider: "stripe" | "paypal" | "klarna" | "scalapay" | null;[m
+   /** True se il metodo richiede un gateway online configurato per essere "disponibile". */[m
+   richiedeGateway: boolean;[m
+ };[m
+[36m@@ -70,6 +70,14 @@[m [mexport const CATALOGO_METODI_PAGAMENTO: readonly VoceCatalogoMetodo[] = [[m
+     provider: "klarna",[m
+     richiedeGateway: true,[m
+   },[m
+[32m+[m[32m  {[m
+[32m+[m[32m    metodo: "scalapay",[m
+[32m+[m[32m    etichetta: "Scalapay",[m
+[32m+[m[32m    nomeBreve: "Scalapay",[m
+[32m+[m[32m    descrizione: "Dividi il tuo acquisto in 3 rate con Scalapay.",[m
+[32m+[m[32m    provider: "scalapay",[m
+[32m+[m[32m    richiedeGateway: true,[m
+[32m+[m[32m  },[m
+   {[m
+     metodo: "bonifico",[m
+     etichetta: "Bonifico bancario",[m
+[1mdiff --git a/lib/pagamenti/config.ts b/lib/pagamenti/config.ts[m
+[1mindex f67dab2..65d304b 100644[m
+[1m--- a/lib/pagamenti/config.ts[m
+[1m+++ b/lib/pagamenti/config.ts[m
+[36m@@ -156,20 +156,32 @@[m [mexport async function getConfigStripeNegozio([m
+   return getConfigProviderNegozio(negozioId, "stripe");[m
+ }[m
+ [m
+[32m+[m[32m/** Stato del collegamento Stripe Connect (pubblico, sola lettura). */[m
+[32m+[m[32mexport type StatoStripeConnect = {[m
+[32m+[m[32m  accountId: string;[m
+[32m+[m[32m  accountName: string | null;[m
+[32m+[m[32m  testMode: boolean;[m
+[32m+[m[32m  /** Onboarding Express: not_started / pending / complete / restricted. */[m
+[32m+[m[32m  onboardingStatus: string;[m
+[32m+[m[32m  payoutsEnabled: boolean;[m
+[32m+[m[32m  chargesEnabled: boolean;[m
+[32m+[m[32m};[m
+[32m+[m
+ /**[m
+  * Account Stripe Connect collegato al negozio (sola lettura, dati pubblici).[m
+  * Ritorna null se il negozio non ha collegato Stripe via Connect (nessun[m
+[31m- * account_id, provider non attivo o assente).[m
+[32m+[m[32m * account_id, provider non attivo o assente). Include lo stato di onboarding[m
+[32m+[m[32m * Express (onboarding_status / payouts_enabled / charges_enabled).[m
+  */[m
+ export async function getStripeConnectAccount([m
+   negozioId: string[m
+[31m-): Promise<{ accountId: string; accountName: string | null; testMode: boolean } | null> {[m
+[32m+[m[32m): Promise<StatoStripeConnect | null> {[m
+   if (!negozioId) return null;[m
+   try {[m
+     const db = createAdminSupabaseClient();[m
+     const { data, error } = await db[m
+       .from("negozio_pagamenti")[m
+[31m-      .select("account_id, account_name, test_mode")[m
+[32m+[m[32m      .select("account_id, account_name, test_mode, onboarding_status, payouts_enabled, charges_enabled")[m
+       .eq("negozio_id", negozioId)[m
+       .eq("provider", "stripe")[m
+       .eq("attivo", true)[m
+[36m@@ -181,6 +193,9 @@[m [mexport async function getStripeConnectAccount([m
+       accountId,[m
+       accountName: data.account_name ? String(data.account_name) : null,[m
+       testMode: data.test_mode === true,[m
+[32m+[m[32m      onboardingStatus: data.onboarding_status ? String(data.onboarding_status) : "pending",[m
+[32m+[m[32m      payoutsEnabled: data.payouts_enabled === true,[m
+[32m+[m[32m      chargesEnabled: data.charges_enabled === true,[m
+     };[m
+   } catch {[m
+     return null;[m
+[36m@@ -239,8 +254,10 @@[m [mexport async function risolviCredenzialiGateway([m
+   }[m
+ [m
+   const cfg = await getConfigProviderNegozio(negozioId, provider);[m
+[31m-  // Serve anche il webhook secret: senza non possiamo confermare il pagamento.[m
+[31m-  if (!cfg || cfg.webhookSecret.length === 0) {[m
+[32m+[m[32m  // Scalapay firma i webhook con la STESSA API key usata come Bearer: non[m
+[32m+[m[32m  // esiste un webhook secret separato. "Pronto" = secret key presente.[m
+[32m+[m[32m  const webhookSecret = provider === "scalapay" ? cfg?.secretKey ?? "" : cfg?.webhookSecret ?? "";[m
+[32m+[m[32m  if (!cfg || webhookSecret.length === 0) {[m
+     return { pronto: false, cred: null };[m
+   }[m
+   return { pronto: true, cred: credenzialiGatewayDaConfig(cfg) };[m
+[1mdiff --git a/lib/pagamenti/metodi-pubblici.ts b/lib/pagamenti/metodi-pubblici.ts[m
+[1mindex 5aa5a99..3823b58 100644[m
+[1m--- a/lib/pagamenti/metodi-pubblici.ts[m
+[1m+++ b/lib/pagamenti/metodi-pubblici.ts[m
+[36m@@ -10,9 +10,10 @@[m
+  *   B) DISPONIBILITÀ per il singolo negozio — se il negozio può DAVVERO[m
+  *      processare quel metodo. Calcolata con isProviderProntoPerNegozio()[m
+  *      (configurazione gateway reale, attiva, con webhook secret):[m
+[31m- *        - carta   → Stripe configurato e attivo;[m
+[31m- *        - paypal  → PayPal configurato e attivo (client id + secret + webhook id);[m
+[31m- *        - klarna  → Klarna configurato e attivo;[m
+[32m+[m[32m *        - carta    → Stripe configurato e attivo;[m
+[32m+[m[32m *        - paypal   → PayPal configurato e attivo (client id + secret + webhook id);[m
+[32m+[m[32m *        - klarna   → Klarna configurato e attivo;[m
+[32m+[m[32m *        - scalapay → Scalapay configurato e attivo (sola API key);[m
+  *        - bonifico → SEMPRE disponibile (metodo manuale, nessun gateway).[m
+  *[m
+  * Ogni voce espone il flag `disponibile`. Nessun fallback automatico, nessun[m
+[1mdiff --git a/lib/pagamenti/registry.ts b/lib/pagamenti/registry.ts[m
+[1mindex 80d178b..cc3cac9 100644[m
+[1m--- a/lib/pagamenti/registry.ts[m
+[1m+++ b/lib/pagamenti/registry.ts[m
+[36m@@ -7,13 +7,13 @@[m
+  * specifico (contratto già dichiarato in lib/pagamenti/types.ts).[m
+  *[m
+  * Provider ammessi dall'architettura: stripe, klarna, scalapay, paypal.[m
+[31m- * Implementati: stripe, klarna e paypal. scalapay è ammesso dal registry[m
+[31m- * ma senza factory (→ `getGatewayProvider` ritorna null, fail-closed)[m
+[31m- * finché non arriverà il rispettivo gateway.[m
+[32m+[m[32m * Tutti implementati: stripe, klarna, scalapay e paypal hanno ciascuno il[m
+[32m+[m[32m * proprio gateway (`getGatewayProvider` non ritorna mai null per questi).[m
+  */[m
+ [m
+ import { GatewayKlarna, type GatewayKlarnaOptions } from "./gateway-klarna";[m
+ import { GatewayPaypal, type GatewayPaypalOptions } from "./gateway-paypal";[m
+[32m+[m[32mimport { GatewayScalapay, type GatewayScalapayOptions } from "./gateway-scalapay";[m
+ import { GatewayStripe, type GatewayStripeOptions } from "./stripe";[m
+ import type { PaymentGateway } from "./types";[m
+ [m
+[36m@@ -43,20 +43,21 @@[m [mexport function isProviderGatewayAmmesso(value: unknown): value is ProviderGatew[m
+ export type GatewayRuntimeOptions =[m
+   | GatewayStripeOptions[m
+   | GatewayKlarnaOptions[m
+[31m-  | GatewayPaypalOptions;[m
+[32m+[m[32m  | GatewayPaypalOptions[m
+[32m+[m[32m  | GatewayScalapayOptions;[m
+ [m
+ type GatewayFactory = (opts?: GatewayRuntimeOptions) => PaymentGateway;[m
+ [m
+ /**[m
+[31m- * Factory per provider: `null` = provider ammesso ma NON ancora implementato[m
+[31m- * (Scalapay, PayPal arriveranno come gateway dedicati in fase successiva).[m
+[31m- * `opts` inoltrato al gateway (server mock, solo test — pattern F1/F2.3).[m
+[32m+[m[32m * Factory per provider: ogni provider ammesso ha la sua factory (gateway[m
+[32m+[m[32m * implementato). `opts` inoltrato al gateway (server mock, solo test —[m
+[32m+[m[32m * pattern F1/F2.3).[m
+  */[m
+ const FACTORY_GATEWAY: Readonly<Record<string, GatewayFactory | null>> = {[m
+   stripe: (opts) => new GatewayStripe(opts as GatewayStripeOptions),[m
+   klarna: (opts) => new GatewayKlarna(opts as GatewayKlarnaOptions),[m
+   paypal: (opts) => new GatewayPaypal(opts as GatewayPaypalOptions),[m
+[31m-  scalapay: null,[m
+[32m+[m[32m  scalapay: (opts) => new GatewayScalapay(opts as GatewayScalapayOptions),[m
+ };[m
+ [m
+ /** True se il provider ha un gateway implementato nel registry. */[m
+[1mdiff --git a/lib/pagamenti/rimborsi.ts b/lib/pagamenti/rimborsi.ts[m
+[1mindex 76e569c..15c3c7d 100644[m
+[1m--- a/lib/pagamenti/rimborsi.ts[m
+[1m+++ b/lib/pagamenti/rimborsi.ts[m
+[36m@@ -43,7 +43,7 @@[m [mexport type StatoRimborso = "refunded" | "partially_refunded";[m
+ export const MAX_MOTIVO_RIMBORSO = 200;[m
+ [m
+ /** Provider gateway rimborsabili via API. */[m
+[31m-const PROVIDER_RIMBORSABILI = ["stripe", "paypal", "klarna"] as const;[m
+[32m+[m[32mconst PROVIDER_RIMBORSABILI = ["stripe", "paypal", "klarna", "scalapay"] as const;[m
+ [m
+ export type EsitoRimborso =[m
+   | {[m
+[1mdiff --git a/lib/pagamenti/sessioni.ts b/lib/pagamenti/sessioni.ts[m
+[1mindex ff2292c..9472c04 100644[m
+[1m--- a/lib/pagamenti/sessioni.ts[m
+[1m+++ b/lib/pagamenti/sessioni.ts[m
+[36m@@ -41,6 +41,8 @@[m [mtype OrdinePerSessione = {[m
+   costoSpedizione: number;[m
+   /** Commissione piattaforma snapshot (ordini.commissione_importo), per Stripe Connect. */[m
+   commissioneImporto: number;[m
+[32m+[m[32m  /** Dati consumatore (Scalapay): snapshot DB dell'ordine. */[m
+[32m+[m[32m  consumer: NonNullable<ContestoCheckout["consumer"]>;[m
+   /** Righe dell'ordine (snapshot DB): un line_item per riga (F2.3). */[m
+   righe: RigaCheckout[];[m
+ };[m
+[36m@@ -67,7 +69,7 @@[m [masync function caricaOrdine(ordineId: string): Promise<OrdinePerSessione | null>[m
+   const { data, error } = await db[m
+     .from("ordini")[m
+     .select([m
+[31m-      "id, numero, negozio_id, totale, stato, payment_status, costo_spedizione, commissione_importo"[m
+[32m+[m[32m      "id, numero, negozio_id, totale, stato, payment_status, costo_spedizione, commissione_importo, cliente_nome, cliente_cognome, cliente_email, cliente_telefono"[m
+     )[m
+     .eq("id", ordineId)[m
+     .single();[m
+[36m@@ -88,6 +90,12 @@[m [masync function caricaOrdine(ordineId: string): Promise<OrdinePerSessione | null>[m
+     paymentStatus: (data.payment_status as string | null) ?? null,[m
+     costoSpedizione: Number(data.costo_spedizione ?? 0),[m
+     commissioneImporto: Number(data.commissione_importo ?? 0),[m
+[32m+[m[32m    consumer: {[m
+[32m+[m[32m      nome: String(data.cliente_nome ?? ""),[m
+[32m+[m[32m      cognome: String(data.cliente_cognome ?? ""),[m
+[32m+[m[32m      email: data.cliente_email ? String(data.cliente_email) : null,[m
+[32m+[m[32m      telefono: data.cliente_telefono ? String(data.cliente_telefono) : null,[m
+[32m+[m[32m    },[m
+     righe: ((righe ?? []) as Record<string, unknown>[]).map((r) => ({[m
+       nome: String(r.nome_prodotto ?? ""),[m
+       quantita: Number(r.quantita ?? 1),[m
+[36m@@ -276,6 +284,8 @@[m [mexport async function creaSessionePagamentoPerOrdine([m
+     costoSpedizione: ordine.costoSpedizione,[m
+     // Commissione snapshot (solo Stripe Connect: application_fee_amount).[m
+     commissioneImporto: ordine.commissioneImporto,[m
+[32m+[m[32m    // Dati consumatore (solo per i gateway che li richiedono, es. Scalapay).[m
+[32m+[m[32m    consumer: ordine.consumer,[m
+   };[m
+ [m
+   let sessione;[m

@@ -17,6 +17,8 @@ type ProductCardProps = {
   autenticato?: boolean;
   /** True se il prodotto ha varianti attive (prezzo "Da €"). */
   haVarianti?: boolean;
+  /** True se il prodotto appartiene alla vetrina "Prodotti tipici" (badge). */
+  prodottoTipico?: boolean;
 };
 
 /**
@@ -35,6 +37,7 @@ export default function ProductCard({
   preferitoAttivo,
   autenticato,
   haVarianti,
+  prodottoTipico,
 }: ProductCardProps) {
   const imageUrl = getProdottoImmagine({ immagine_principale, categoria });
   const mostraPreferiti = preferitoAttivo !== undefined && autenticato !== undefined;
@@ -53,7 +56,12 @@ export default function ProductCard({
             className="h-full w-full bg-cover bg-center transition duration-300 group-hover:scale-105"
             style={{ backgroundImage: `url(${imageUrl})` }}
           />
-          {haVarianti && (
+          {prodottoTipico && (
+            <span className="absolute left-2.5 top-2.5 rounded-full bg-blue-900/90 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-white">
+              Prodotto tipico
+            </span>
+          )}
+          {haVarianti && !prodottoTipico && (
             <span className="absolute left-2.5 top-2.5 rounded-full bg-blue-900/90 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-white">
               Da
             </span>
