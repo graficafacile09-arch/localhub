@@ -9,6 +9,7 @@ import {
 } from "@/lib/cliente/ordini-carrello";
 import { parseFatturazioneRaw } from "@/lib/cliente/orders";
 import { getCurrentUser } from "@/lib/auth/session";
+import { getGuestMode } from "@/lib/auth/guest";
 import { checkRateLimit } from "@/lib/rate-limiter";
 import { isProviderProntoPerNegozio } from "@/lib/pagamenti/config";
 import {
@@ -179,6 +180,37 @@ export async function POST(request: Request) {
 
   // ── Cliente autenticato (SERVER-SIDE): MAI un user id dal browser ──────
   const utenteAutenticato = await getCurrentUser();
+
+  // ── Modalità GUEST ESPLICITA: solo utenti che hanno scelto "ACQUISTA SENZA ACCOUNT"
+  // possono creare ordini senza essere autenticati.
+  const guestMode = await getGuestMode();
+
+  // BLOCCO: utente anonimo SENZA modalità guest esplicita → 403
+  if (!utenteAutenticato && !guestMode) {
+    return apiError(
+      "GUEST_REQUIRED",
+      "Per acquistare devi accedere al tuo account o scegliere \"ACQUISTA SENZA ACCOUNT\" dal menu.",
+      403
+    );
+  }
+
+  // ── VALIDAZIONE GUEST: email e telefono OBBLIGATORI per modalità guest ──────
+  // Se l'utente NON è autenticato (quindi è in modalità guest esplicita),
+  // email e telefono sono obbligatori sia per spedizione che per ritiro.
+  if (!utenteAutenticato) {
+    const email = typeof clienteRaw.email === "string" ? clienteRaw.email.trim() : "";
+    const telefono = typeof clienteRaw.telefono === "string" ? clienteRaw.telefono.trim() : "";
+    if (!email) {
+      return apiError("VALIDATION_ERROR", "L'email è obbligatoria per l'acquisto come ospite.", 422);
+    }
+    if (!telefono) {
+      return apiError("VALIDATION_ERROR", "Il telefono è obbligatorio per l'acquisto come ospite.", 422);
+    }
+    // Validazione formato email base
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return apiError("VALIDATION_ERROR", "Formato email non valido.", 422);
+    }
+  }
 
   // Email destinataria della conferma: account (sessione) se autenticato,
   // altrimenti email raccolta nel checkout guest (se presente).

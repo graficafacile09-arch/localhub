@@ -11,6 +11,7 @@ import {
   risolviAreaAttiva,
   type AreaAttiva,
 } from "@/lib/auth/area";
+import { GUEST_COOKIE } from "@/lib/auth/guest";
 
 export async function proxy(request: NextRequest) {
   if (!isSupabaseConfigured()) {
@@ -44,6 +45,14 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const pathname = request.nextUrl.pathname;
+
+  // ── Pulizia modalità guest: se l'utente accede alla pagina di login
+  // (scelta esplicita di fare login), rimuoviamo il cookie guest.
+  // Questo evita una sessione guest parallela dopo il login.
+  if (pathname === "/login") {
+    response.cookies.delete(GUEST_COOKIE);
+  }
+
   const areaRichiesta: AreaAttiva | null =
     pathname.startsWith("/amministratore") ? "admin"
     : pathname.startsWith("/merchant") ? "merchant"
@@ -77,6 +86,10 @@ export async function proxy(request: NextRequest) {
         if (area) {
           response.cookies.set(AREA_COOKIE, area, areaCookieOptions());
         }
+      }
+      // Utente autenticato → pulisci cookie guest (non serve più)
+      if (request.cookies.has(GUEST_COOKIE)) {
+        response.cookies.delete(GUEST_COOKIE);
       }
     }
     return response;
@@ -118,7 +131,7 @@ export async function proxy(request: NextRequest) {
     if (pathname.startsWith("/api")) {
       return redirectConSessione(areaToPath(area));
     }
-    return NextResponse.next({ request });
+    return response;
   }
 
   return response;

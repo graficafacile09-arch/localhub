@@ -4,10 +4,34 @@ import { risolviProdottoPubblico } from "@/lib/negozi";
 import { getProdottoImmagine } from "@/lib/prodotti-immagini";
 import { richiediVariantePerProdotto } from "@/lib/varianti-pubbliche";
 import { getMetodiPagamentoPubblici } from "@/lib/pagamenti/metodi-pubblici";
+import { getCurrentUser } from "@/lib/auth/session";
+import { getGuestMode } from "@/lib/auth/guest";
+import { getProfilo } from "@/lib/cliente/profile";
 import SpedizioneForm from "@/components/acquista/SpedizioneForm";
 
 type Params = { slug: string };
 type SearchParams = Record<string, string | string[] | undefined>;
+
+/**
+ * Pre-fill sicuro del checkout buy-now: il profilo viene letto SOLO
+ * server-side dall'utente autenticato (mai da un id passato dal browser),
+ * così il form riparte precompilato con i dati del cliente. Se l'utente non è
+ * autenticato o non ha un profilo, PRE_FILL resta vuoto e il checkout si
+ * comporta come oggi.
+ */
+function PRE_FILL_VUOTO() {
+  return {
+    nome: "",
+    cognome: "",
+    email: "",
+    telefono: "",
+    indirizzo: "",
+    cap: "",
+    citta: "",
+    provincia: "",
+    autenticato: false,
+  };
+}
 
 export default async function SpedizionePage({
   params,
@@ -74,19 +98,44 @@ export default async function SpedizionePage({
       : null,
   });
 
+  // ── BLOCCO: utente anonimo SENZA modalità guest esplicita ─────────────────
+  const utente = await getCurrentUser();
+  const guestMode = await getGuestMode();
+  if (!utente && !guestMode) {
+    permanentRedirect("/login?area=cliente");
+  }
+
   // FASE F1 — metodi di pagamento REALMENTE disponibili per questo negozio
   // (carta solo se Stripe è configurato; bonifico solo se configurato).
   const esitoMetodi = await getMetodiPagamentoPubblici(String(prodotto.negozio_id));
   const metodiPagamento = esitoMetodi.ok ? esitoMetodi.metodi : [];
 
+  // PROFILE PREFILL — server-side, solo utente autenticato.
+  let prefill = PRE_FILL_VUOTO();
+  if (utente) {
+    const profilo = await getProfilo(utente.id).catch(() => null);
+    prefill = {
+      nome: profilo?.nome ?? "",
+      cognome: profilo?.cognome ?? "",
+      email: utente.email ?? "",
+      telefono: profilo?.telefono ?? "",
+      indirizzo: profilo?.indirizzo ?? "",
+      cap: profilo?.cap ?? "",
+      citta: profilo?.citta ?? "",
+      provincia: profilo?.provincia ?? "",
+      autenticato: true,
+    };
+  }
+
   return (
     <SpedizioneForm
-        prodottoId={id}
-        nome={nome}
-        prezzo={prezzo}
-        imageUrl={imageUrl}
-        varianteId={varianteIdProp}
-        metodiPagamento={metodiPagamento}
-      />
+      prodottoId={id}
+      nome={nome}
+      prezzo={prezzo}
+      imageUrl={imageUrl}
+      varianteId={varianteIdProp}
+      metodiPagamento={metodiPagamento}
+      prefill={prefill}
+    />
   );
-}
+}

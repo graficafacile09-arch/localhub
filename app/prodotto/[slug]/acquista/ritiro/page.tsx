@@ -3,6 +3,9 @@ import Link from "next/link";
 import { risolviProdottoPubblico, getNegozio } from "@/lib/negozi";
 import { getProdottoImmagine } from "@/lib/prodotti-immagini";
 import { richiediVariantePerProdotto } from "@/lib/varianti-pubbliche";
+import { getCurrentUser } from "@/lib/auth/session";
+import { getGuestMode } from "@/lib/auth/guest";
+import { getProfilo } from "@/lib/cliente/profile";
 import RitiroForm from "@/components/acquista/RitiroForm";
 
 type Params = { slug: string };
@@ -74,6 +77,17 @@ export default async function RitiroPage({
       : null,
   });
 
+  // ── BLOCCO: utente anonimo SENZA modalità guest esplicita ─────────────────
+  const utente = await getCurrentUser();
+  const guestMode = await getGuestMode();
+  if (!utente && !guestMode) {
+    permanentRedirect("/login?area=cliente");
+  }
+
+  // PROFILE PREFILL — server-side, solo utente autenticato (per il ritiro
+  // precompiliamo nome/cognome/telefono; l'indirizzo non serve per il ritiro).
+  const profilo = utente ? await getProfilo(utente.id).catch(() => null) : null;
+
   return (
     <RitiroForm
         prodottoId={id}
@@ -87,6 +101,12 @@ export default async function RitiroPage({
           telefono: (negozio.telefono as string) ?? null,
           whatsapp: (negozio.whatsapp as string) ?? null,
         } : null}
+        prefill={{
+          nome: profilo?.nome ?? "",
+          cognome: profilo?.cognome ?? "",
+          telefono: profilo?.telefono ?? "",
+          autenticato: !!utente,
+        }}
       />
   );
 }

@@ -9,6 +9,8 @@ import {
   ShieldCheck,
   ShoppingBasket,
   Store,
+  User,
+  UserPlus,
 } from "lucide-react";
 import type { RuoloUtente } from "@/lib/auth/roles";
 import type { AreaAttiva } from "@/lib/auth/area";
@@ -49,7 +51,27 @@ const ETICHETTE_AREA: Record<AreaAttiva, string> = {
   admin: "Amministratore",
 };
 
-export default function AccountMenu({ account }: { account: DatiAccount | null }) {
+/**
+ * Compila il campo `referer` con l'URL corrente PRIMA dell'invio nativo del
+ * form: la POST naviga davvero verso /api/auth/guest, che risponde 303 verso
+ * questa pagina (cookie già impostato). Se il campo resta vuoto, la route
+ * usa l'header HTTP Referer, e in ultima istanza torna alla home.
+ */
+function compilaReferer(event: React.FormEvent<HTMLFormElement>) {
+  const campo = event.currentTarget.elements.namedItem("referer");
+  if (campo instanceof HTMLInputElement) {
+    campo.value = window.location.href;
+  }
+}
+
+export default function AccountMenu({
+  account,
+  guestMode = false,
+}: {
+  account: DatiAccount | null;
+  /** Modalità ospite attiva (cookie httpOnly lh_guest, letto server-side). */
+  guestMode?: boolean;
+}) {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -70,11 +92,13 @@ export default function AccountMenu({ account }: { account: DatiAccount | null }
     };
   }, []);
 
-  // ── Non loggato: pulsante Accedi con menu a tendina ─────────────────────
-  // Il menu offre ESCLUSIVAMENTE l'ingresso Cliente e Venditore (flussi di
-  // login esistenti). L'accesso Amministratore avviene dall'ingresso
-  // dedicato /admin.
-  if (!account) {
+  // ── Non loggato SENZA modalità ospite: pulsante Accedi con menu a tendina ─
+  // Il menu offre tre ingressi:
+  // 1. ENTRA COME CLIENTE
+  // 2. ENTRA COME VENDITORE
+  // 3. ACQUISTA SENZA ACCOUNT (attiva modalità guest esplicita)
+  // L'accesso Amministratore avviene dall'ingresso dedicato /admin.
+  if (!account && !guestMode) {
     return (
       <div className="relative" ref={menuRef}>
         <button
@@ -112,6 +136,115 @@ export default function AccountMenu({ account }: { account: DatiAccount | null }
               <Store className="h-4 w-4 shrink-0 text-blue-600" aria-hidden />
               Entra come Venditore
             </Link>
+            <hr className="my-1.5 border-slate-100" />
+            {/* ATTIVAZIONE OSPITE: form POST NATIVO (no fetch) verso
+                /api/auth/guest. La route risponde 303 verso la pagina di
+                provenienza con il cookie lh_guest impostato AL REDIRECT:
+                il browser ricarica la pagina già in modalità ospite. */}
+            <form action="/api/auth/guest" method="post" onSubmit={compilaReferer}>
+              <input type="hidden" name="intent" value="activate" />
+              <input type="hidden" name="referer" defaultValue="" />
+              <button
+                type="submit"
+                role="menuitem"
+                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50"
+              >
+                <UserPlus className="h-4 w-4 shrink-0 text-emerald-600" aria-hidden />
+                ACQUISTA SENZA ACCOUNT
+              </button>
+            </form>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ── Modalità ospite attiva: indicatore discreto con menu dedicato ────────
+  // NON è un ruolo (niente area venditore/admin): è una modalità temporanea
+  // di acquisto. Dal menu si ESCE dalla modalità oppure si entra col login
+  // (il login rimuove il cookie guest, vedi proxy.ts).
+  // L'anonimo SENZA modalità ospite è già uscito sopra: qui `!account`
+  // implica necessariamente guestMode === true (così TS restringe il tipo e
+  // il ramo loggato sotto resta raggiunto solo con un account reale).
+  if (!account) {
+    return (
+      <div className="relative" ref={menuRef}>
+        <button
+          type="button"
+          onClick={() => setOpen((value) => !value)}
+          aria-expanded={open}
+          aria-haspopup="menu"
+          aria-label="Modalità ospite attiva: stai acquistando senza account"
+          data-testid="ospite-indicatore"
+          className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-sm font-bold text-slate-600 shadow-sm transition hover:border-blue-300 hover:shadow"
+        >
+          <span
+            aria-hidden
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500"
+          >
+            <User className="h-4 w-4" />
+          </span>
+          <span className="text-left">
+            <span className="block text-sm font-bold leading-tight text-slate-600">OSPITE</span>
+            <span className="block text-[11px] leading-tight text-slate-400">senza account</span>
+          </span>
+          <ChevronDown
+            className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${
+              open ? "rotate-180" : ""
+            }`}
+            aria-hidden
+          />
+        </button>
+
+        {open && (
+          <div
+            role="menu"
+            aria-label="Modalità ospite"
+            className="absolute right-0 top-full z-50 mt-2 w-64 rounded-2xl border border-slate-100 bg-white p-2 text-slate-700 shadow-xl"
+          >
+            <p className="border-b border-slate-100 px-3 pb-2 pt-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
+              Modalità ospite · acquisto senza account
+            </p>
+            <p className="px-3 pb-2 pt-2 text-xs leading-4 text-slate-500">
+              Stai acquistando come ospite. Nome, email e telefono ti verranno
+              chiesti nell&apos;ordine.
+            </p>
+
+            <div className="mt-1 border-t border-slate-100 pt-1">
+              <form action="/api/auth/guest" method="post" onSubmit={compilaReferer}>
+                <input type="hidden" name="intent" value="exit" />
+                <input type="hidden" name="referer" defaultValue="" />
+                <button
+                  type="submit"
+                  role="menuitem"
+                  className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-blue-700"
+                >
+                  <LogOut className="h-4 w-4 shrink-0" aria-hidden />
+                  ESCI DALLA MODALITÀ OSPITE
+                </button>
+              </form>
+            </div>
+
+            <div className="mt-1 border-t border-slate-100 pt-1">
+              <Link
+                href="/login?area=cliente"
+                role="menuitem"
+                onClick={() => setOpen(false)}
+                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition hover:bg-slate-50 hover:text-blue-700"
+              >
+                <ShoppingBasket className="h-4 w-4 shrink-0 text-blue-600" aria-hidden />
+                Entra come Cliente
+              </Link>
+              <Link
+                href="/login?area=merchant"
+                role="menuitem"
+                onClick={() => setOpen(false)}
+                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition hover:bg-slate-50 hover:text-blue-700"
+              >
+                <Store className="h-4 w-4 shrink-0 text-blue-600" aria-hidden />
+                Entra come Venditore
+              </Link>
+            </div>
           </div>
         )}
       </div>

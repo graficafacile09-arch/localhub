@@ -181,6 +181,13 @@ export default function CheckoutCarrelloForm({ prefill }: { prefill: Prefill }) 
   const [citta, setCitta] = useState(prefill.citta);
   const [provincia, setProvincia] = useState(prefill.provincia);
   const [noteConsegna, setNoteConsegna] = useState("");
+  // Indirizzo proveniente dal profilo (precompilato). All'avvio resta in stato
+  // "riepilogo" finché l'utente non clicca "CAMBIA INDIRIZZO": da quel momento
+  // i campi diventano modificabili per SOLO questo ordine, senza toccare il profilo.
+  const [cambiaIndirizzo, setCambiaIndirizzo] = useState(false);
+  // true quando il checkout è precompilato con un indirizzo del profilo.
+  const indirizzoDaProfilo =
+    prefill.autenticato && (prefill.indirizzo || "").trim().length > 0;
   // MOTORE TARIFFARIO — il prezzo della spedizione è calcolato da InCittà
   // (server-side): qui si mostra SOLO il preventivo ricevuto e si trasporta la
   // scelta corriere+servizio. Nessun prezzo inventato, nessun campo modificabile.
@@ -523,9 +530,14 @@ export default function CheckoutCarrelloForm({ prefill }: { prefill: Prefill }) 
               <User className="h-4 w-4 text-blue-600" aria-hidden />
               Dati del cliente
             </h2>
-            {prefill.autenticato && (
+            {prefill.autenticato ? (
               <p className="mt-1 text-[11px] text-slate-400">
                 Precompilati dal tuo profilo (puoi modificarli per questo ordine).
+              </p>
+            ) : (
+              <p className="mt-1 text-[11px] leading-4 text-slate-500">
+                Stai acquistando come ospite: non è richiesta la registrazione, compila i tuoi
+                dati per l&apos;ordine.
               </p>
             )}
             <div className="mt-3 grid grid-cols-2 gap-3">
@@ -632,25 +644,59 @@ export default function CheckoutCarrelloForm({ prefill }: { prefill: Prefill }) 
               </div>
             ) : (
               <div className="mt-4 space-y-3">
-                <Campo label="Indirizzo *" value={indirizzo} onChange={setIndirizzo} id="ck-indirizzo" />
-                <LocalitaFields
-                  cap={cap}
-                  citta={citta}
-                  provincia={provincia}
-                  onChange={(campo: CampoLocalita, valore: string) => {
-                    if (campo === "cap") setCap(valore);
-                    else if (campo === "citta") setCitta(valore);
-                    else setProvincia(valore);
-                  }}
-                  idPrefix="ck"
-                  required
-                />
-                <Campo label="Note consegna" value={noteConsegna} onChange={setNoteConsegna} id="ck-note-consegna" />
-                <FatturazioneForm
-                  value={fatturazione}
-                  onChange={setFatturazione}
-                  errori={erroriFatturazione}
-                />
+                {/* Riepilogo indirizzo precompilato dal profilo → CAMBIA INDIRIZZO */}
+                {indirizzoDaProfilo && !cambiaIndirizzo ? (
+                  <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                          <MapPin className="h-3.5 w-3.5 text-blue-500" aria-hidden />
+                          Indirizzo di consegna (dal tuo profilo)
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-slate-900">{indirizzo}</p>
+                        <p className="text-sm text-slate-700">
+                          {citta}
+                          {cap ? `, ${cap}` : ""}
+                          {provincia ? ` (${provincia})` : ""}
+                        </p>
+                        <p className="mt-1 text-[11px] leading-4 text-slate-400">
+                          Usiamo l&apos;indirizzo del tuo profilo. Puoi cambiarlo solo per questo ordine senza
+                          modificare il profilo.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setCambiaIndirizzo(true)}
+                        className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-bold text-blue-700 shadow-sm transition hover:border-blue-400 hover:bg-blue-50"
+                      >
+                        <MapPin className="h-3.5 w-3.5" aria-hidden />
+                        CAMBIA INDIRIZZO
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <Campo label="Indirizzo *" value={indirizzo} onChange={setIndirizzo} id="ck-indirizzo" />
+                    <LocalitaFields
+                      cap={cap}
+                      citta={citta}
+                      provincia={provincia}
+                      onChange={(campo: CampoLocalita, valore: string) => {
+                        if (campo === "cap") setCap(valore);
+                        else if (campo === "citta") setCitta(valore);
+                        else setProvincia(valore);
+                      }}
+                      idPrefix="ck"
+                      required
+                    />
+                    <Campo label="Note consegna" value={noteConsegna} onChange={setNoteConsegna} id="ck-note-consegna" />
+                    <FatturazioneForm
+                      value={fatturazione}
+                      onChange={setFatturazione}
+                      errori={erroriFatturazione}
+                    />
+                  </>
+                )}
               </div>
             )}
           </section>

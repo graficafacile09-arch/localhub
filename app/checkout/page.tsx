@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import Header from "@/components/Header/Header";
 import CheckoutCarrelloForm from "@/components/carrello/CheckoutCarrelloForm";
 import { getCurrentUser } from "@/lib/auth/session";
+import { getGuestMode } from "@/lib/auth/guest";
 import { getProfilo } from "@/lib/cliente/profile";
+import { permanentRedirect } from "next/navigation";
 
 export const metadata: Metadata = {
   title: "Checkout",
@@ -16,9 +18,17 @@ export const metadata: Metadata = {
  * il PRE-FILL dei dati del cliente SOLO se l'utente è autenticato (profilo +
  * email account). L'utente autenticato non viene MAI inviato dal browser come
  * autoritativo: clienteUserId è risolto server-side dalla route F2.2.
+ *
+ * BLOCCO: utente anonimo SENZA modalità guest esplicita → redirect al login.
  */
 export default async function PaginaCheckout() {
   const utente = await getCurrentUser();
+  const guestMode = await getGuestMode();
+
+  // BLOCCO: utente anonimo SENZA modalità guest esplicita
+  if (!utente && !guestMode) {
+    permanentRedirect("/login?area=cliente");
+  }
 
   let prefill: {
     nome: string;
