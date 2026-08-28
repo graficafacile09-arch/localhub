@@ -2,6 +2,8 @@ import { permanentRedirect } from "next/navigation";
 import { risolviProdottoPubblico, getNegozio } from "@/lib/negozi";
 import { getProdottoImmagine } from "@/lib/prodotti-immagini";
 import { richiediVariantePerProdotto } from "@/lib/varianti-pubbliche";
+import { getCurrentUser } from "@/lib/auth/session";
+import { getGuestMode } from "@/lib/auth/guest";
 import Link from "next/link";
 
 function formatPrezzo(p: number): number {
@@ -34,6 +36,13 @@ export default async function AcquistaChoicePage({
         <p className="text-slate-600">Prodotto non trovato.</p>
       </div>
     );
+  }
+
+  // ── BLOCCO: utente anonimo SENZA modalità guest esplicita ─────────────────
+  const utente = await getCurrentUser();
+  const guestMode = await getGuestMode();
+  if (!utente && !guestMode) {
+    permanentRedirect("/login?area=cliente");
   }
 
   const id = prodotto.id as string;
@@ -105,6 +114,16 @@ export default async function AcquistaChoicePage({
         </div>
 
         <div className="flex flex-col gap-3">
+          {/* SCELTA DI ACQUISTO (modalità ospite) — non bloccante: puoi
+              proseguire come ospite senza account; il login resta solo un
+              modo comodo per precompilare i dati dal profilo. */}
+          <div className="rounded-xl border border-slate-200 bg-blue-50/40 p-4 text-left">
+            <p className="text-sm font-semibold text-slate-900">Acquista come vuoi</p>
+            <p className="mt-0.5 text-xs leading-4 text-slate-600">
+              Puoi continuare come ospite senza account: compili i tuoi dati alla prossima
+              schermata. Se hai un account, <Link href="/login?area=cliente" className="font-semibold text-blue-700 underline underline-offset-2 hover:text-blue-800">accedi</Link> per precompilare profilo e indirizzo.
+            </p>
+          </div>
           <Link
             href={`/prodotto/${slugProdotto}/acquista/ritiro${qs}`}
             className="group block rounded-xl border-2 border-slate-200 bg-white p-5 text-left transition hover:border-blue-400 hover:shadow-md"

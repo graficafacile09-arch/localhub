@@ -13,6 +13,13 @@ type NegozioData = {
   whatsapp: string | null;
 };
 
+type PrefillProfilo = {
+  nome: string;
+  cognome: string;
+  telefono: string;
+  autenticato: boolean;
+};
+
 export default function RitiroForm({
   prodottoId,
   nome,
@@ -20,6 +27,7 @@ export default function RitiroForm({
   imageUrl,
   varianteId,
   negozio,
+  prefill,
 }: {
   prodottoId: string;
   nome: string;
@@ -28,16 +36,20 @@ export default function RitiroForm({
   /** Variante selezionata (FASE E4): solo trasportata, validata dal server. */
   varianteId?: string | null;
   negozio: NegozioData | null;
+  /** Precompilazione dal profilo cliente (autenticato). Default: vuoto. */
+  prefill?: PrefillProfilo;
 }) {
   const router = useRouter();
+  const p = prefill ?? { nome: "", cognome: "", telefono: "", autenticato: false };
   const [quantita, setQuantita] = useState(1);
   const [data, setData] = useState("");
   const [fascia, setFascia] = useState("");
   const [note, setNote] = useState("");
-  // Dati del cliente (obbligatori per identificare il ritirante)
-  const [nomeCliente, setNomeCliente] = useState("");
-  const [cognomeCliente, setCognomeCliente] = useState("");
-  const [telefonoCliente, setTelefonoCliente] = useState("");
+  // Dati del cliente (obbligatori per identificare il ritirante) precompilati
+  // dal profilo per SOLO questo ordine: il profilo resta invariato.
+  const [nomeCliente, setNomeCliente] = useState(p.nome);
+  const [cognomeCliente, setCognomeCliente] = useState(p.cognome);
+  const [telefonoCliente, setTelefonoCliente] = useState(p.telefono);
 
   const [inviando, setInviando] = useState(false);
   const [errore, setErrore] = useState<string | null>(null);
@@ -216,6 +228,16 @@ export default function RitiroForm({
             <User className="mr-1.5 inline-block h-4 w-4 text-blue-500" />
             Chi ritira
           </h3>
+          {p.autenticato ? (
+            <p className="mt-1 text-[11px] text-slate-400">
+              Precompilati dal tuo profilo (puoi modificarli per questo ordine).
+            </p>
+          ) : (
+            <p className="mt-1 text-[11px] leading-4 text-slate-500">
+              Stai acquistando come ospite: non è richiesta la registrazione, indica solo chi
+              ritira.
+            </p>
+          )}
           <div className="mt-3 grid grid-cols-2 gap-3">
             <div>
               <label htmlFor="nome-ritiro" className="block text-xs font-semibold text-slate-700">Nome *</label>

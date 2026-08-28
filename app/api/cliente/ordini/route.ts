@@ -1,6 +1,7 @@
 import { apiError, apiOk } from "@/lib/api/response";
 import { creaOrdine, parseFatturazioneRaw, type CreaOrdineInput } from "@/lib/cliente/orders";
 import { getCurrentUser } from "@/lib/auth/session";
+import { getGuestMode } from "@/lib/auth/guest";
 import { checkRateLimit } from "@/lib/rate-limiter";
 import {
   cartaDisponibilePerProdotto,
@@ -67,9 +68,22 @@ export async function POST(request: Request) {
 
   // ── Cliente autenticato (SERVER-SIDE): l'ordine viene associato
   // all'account tramite la SESSIONE Supabase (cookie httpOnly), MAI da un
-  // user id inviato dal browser. Utente non loggato → ordine guest
-  // (cliente_user_id = NULL nella RPC).
+  // user id inviato dal browser.
   const utenteAutenticato = await getCurrentUser();
+
+  // ── Modalità GUEST ESPLICITA: solo utenti che hanno scelto "ACQUISTA SENZA ACCOUNT"
+  // possono creare ordini senza essere autenticati. Il cookie httpOnly lh_guest
+  // viene impostato SOLO tramite la route /api/auth/guest (click esplicito).
+  const guestMode = await getGuestMode();
+
+  // BLOCCO: utente anonimo SENZA modalità guest esplicita → 403
+  if (!utenteAutenticato && !guestMode) {
+    return apiError(
+      "GUEST_REQUIRED",
+      "Per acquistare devi accedere al tuo account o scegliere \"ACQUISTA SENZA ACCOUNT\" dal menu.",
+      403
+    );
+  }
 
   // Validazione esplicita dei valori: mai default silenziosi su valori non
   // validi (un input sbagliato va rifiutato, non riadattato).
@@ -82,6 +96,24 @@ export async function POST(request: Request) {
   const clienteRaw = (body.cliente ?? {}) as Record<string, unknown>;
   const ritiroRaw = (body.ritiro ?? {}) as Record<string, unknown>;
   const spedizioneRaw = (body.spedizione ?? {}) as Record<string, unknown>;
+
+  // ── VALIDAZIONE GUEST: email e telefono OBBLIGATORI per modalità guest ──────
+  // Se l'utente NON è autenticato (quindi è in modalità guest esplicita),
+  // email e telefono sono obbligatori sia per spedizione che per ritiro.
+  if (!utenteAutenticato) {
+    const email = typeof clienteRaw.email === "string" ? clienteRaw.email.trim() : "";
+    const telefono = typeof clienteRaw.telefono === "string" ? clienteRaw.telefono.trim() : "";
+    if (!email) {
+      return apiError("VALIDATION_ERROR", "L'email è obbligatoria per l'acquisto come ospite.", 422);
+    }
+    if (!telefono) {
+      return apiError("VALIDATION_ERROR", "Il telefono è obbligatorio per l'acquisto come ospite.", 422);
+    }
+    // Validazione formato email base
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return apiError("VALIDATION_ERROR", "Formato email non valido.", 422);
+    }
+  }
 
   // ── CONTRATTO BUY-NOW: metodo di pagamento esplicito e OBBLIGATORIO ─────
   // Per la modalità spedizione il metodo deve essere SCELTO DALL'UTENTE:

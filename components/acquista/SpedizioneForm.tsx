@@ -29,6 +29,22 @@ const TIER_LABEL: Record<TierSpedizione, string> = {
 };
 const TIER_ORDINE: TierSpedizione[] = ["standard", "express", "locale"];
 
+/**
+ * Dati del cliente precompilati dal profilo (server-side, mai dal browser).
+ * `autenticato: false` → form vuoto, comportamento attuale.
+ */
+type PrefillProfilo = {
+  nome: string;
+  cognome: string;
+  email: string;
+  telefono: string;
+  indirizzo: string;
+  cap: string;
+  citta: string;
+  provincia: string;
+  autenticato: boolean;
+};
+
 export default function SpedizioneForm({
   nome,
   prezzo,
@@ -36,6 +52,7 @@ export default function SpedizioneForm({
   prodottoId,
   varianteId,
   metodiPagamento = [],
+  prefill,
 }: {
   nome: string;
   prezzo: number;
@@ -49,8 +66,14 @@ export default function SpedizioneForm({
    * catalogo; i metodi non disponibili restano visibili ma non selezionabili.
    */
   metodiPagamento?: MetodoPagamentoCheckout[];
+  /** Precompilazione dal profilo cliente (autenticato). Default: vuoto. */
+  prefill?: PrefillProfilo;
 }) {
   const router = useRouter();
+  const p = prefill ?? {
+    nome: "", cognome: "", email: "", telefono: "",
+    indirizzo: "", cap: "", citta: "", provincia: "", autenticato: false,
+  };
   const [quantita, setQuantita] = useState(1);
   // MOTORE TARIFFARIO — il prezzo della spedizione è calcolato da InCittà
   // (server-side): qui si mostra SOLO il preventivo ricevuto e si trasporta la
@@ -73,15 +96,33 @@ export default function SpedizioneForm({
   const [inviando, setInviando] = useState(false);
   const [errore, setErrore] = useState<string | null>(null);
   // CAP / Città / Provincia collegati (valori sincronizzati dal componente
-  // LocalitaFields; il submit continua a leggerli via FormData).
-  const [cap, setCap] = useState("");
-  const [citta, setCitta] = useState("");
-  const [provincia, setProvincia] = useState("");
+  // LocalitaFields; il submit li legge dallo stato).
+  const [cap, setCap] = useState(p.cap);
+  const [citta, setCitta] = useState(p.citta);
+  const [provincia, setProvincia] = useState(p.provincia);
   const aggiornaLocalita = (campo: CampoLocalita, valore: string) => {
     if (campo === "cap") setCap(valore);
     else if (campo === "citta") setCitta(valore);
     else setProvincia(valore);
   };
+  // DATI CLIENTE precompilati dal profilo (controllati): inizializzati con i
+  // valori reali del profilo, mai lasciati vuoti. Il profilo NON viene mai
+  // modificato: questi state vivono SOLO nel checkout.
+  const [datiCliente, setDatiCliente] = useState({
+    nome: p.nome,
+    cognome: p.cognome,
+    telefono: p.telefono,
+    email: p.email,
+    indirizzo: p.indirizzo,
+  });
+  const aggiornaDato = (campo: "nome" | "cognome" | "telefono" | "email" | "indirizzo", valore: string) =>
+    setDatiCliente((prev) => ({ ...prev, [campo]: valore }));
+  // Indirizzo proveniente dal profilo. All'avvio resta "riepilogo" finché
+  // l'utente non clicca "CAMBIA INDIRIZZO", che attiva i campi modificabili
+  // per SOLO questo ordine (il profilo resta invariato).
+  const [cambiaIndirizzo, setCambiaIndirizzo] = useState(false);
+  const indirizzoDaProfilo =
+    p.autenticato && (p.indirizzo || "").trim().length > 0;
   const formRef = useRef<HTMLFormElement>(null);
   // Chiave di idempotenza: generata UNA volta per pagina → un doppio click
   // (o retry) non crea mai due ordini.
@@ -151,15 +192,23 @@ export default function SpedizioneForm({
     const form = formRef.current;
     if (!form) return;
 
-    // Legge i campi del modulo (FormField sono input uncontrolled con id).
-    const dati = new FormData(form);
-    const val = (chiave: string) => String(dati.get(chiave) ?? "").trim();
+    // Note consegna: campo uncontrolled letta via FormData (le voci cliente
+    // autoritative sono gli state reattivi qui sotto).
+    const datiForm = new FormData(form);
+    const val = (chiave: string) => String(datiForm.get(chiave) ?? "").trim();
 
-    if (!val("nome") || !val("cognome")) {
+    // DATI CLIENTE autoritativi = stato React (precompilato dal profilo o
+    // modificato dall'utente). Leggere dallo stato garantisce che l'ordine
+    // usi DAVVERO ciò che il cliente ha ora nel form (mai il profilo riletto).
+    const nomeC = datiCliente.nome.trim();
+    const cognomeC = datiCliente.cognome.trim();
+    const indirizzoC = datiCliente.indirizzo.trim();
+
+    if (!nomeC || !cognomeC) {
       setErrore("Inserisci nome e cognome.");
       return;
     }
-    if (!val("indirizzo") || !val("cap") || !val("citta") || !val("provincia")) {
+    if (!indirizzoC || !cap.trim() || !citta.trim() || !provincia.trim()) {
       setErrore("Completa l'indirizzo di spedizione.");
       return;
     }
@@ -185,16 +234,16 @@ export default function SpedizioneForm({
         quantita,
         modalita: "spedizione",
         cliente: {
-          nome: val("nome"),
-          cognome: val("cognome"),
-          telefono: val("telefono") || null,
-          email: val("email") || null,
+          nome: nomeC,
+          cognome: cognomeC,
+          telefono: datiCliente.telefono.trim() || null,
+          email: datiCliente.email.trim() || null,
         },
         spedizione: {
-          indirizzo: val("indirizzo"),
-          cap: val("cap"),
-          citta: val("citta"),
-          provincia: val("provincia"),
+          indirizzo: indirizzoC,
+          cap: cap.trim(),
+          citta: citta.trim(),
+          provincia: provincia.trim().toUpperCase(),
           note: val("note") || null,
           carrier: spedizioneScelta.carrier,
           servizio: spedizioneScelta.servizio,
@@ -278,26 +327,97 @@ export default function SpedizioneForm({
             <Truck className="mr-1.5 inline-block h-4 w-4 text-blue-500" />
             Indirizzo di spedizione
           </h3>
+          {!p.autenticato && (
+            <p className="mt-1.5 text-[11px] leading-4 text-slate-500">
+              Stai acquistando come ospite: compila i tuoi dati qui sotto. Non è richiesta la
+              registrazione.
+            </p>
+          )}
           <div className="mt-3 grid grid-cols-2 gap-3">
-            <FormField label="Nome" id="nome" required />
-            <FormField label="Cognome" id="cognome" required />
-          </div>
-          <div className="mt-3 grid grid-cols-2 gap-3">
-            <FormField label="Telefono" id="telefono" type="tel" required />
-            <FormField label="Email" id="email" type="email" required />
-          </div>
-          <div className="mt-3">
-            <FormField label="Indirizzo" id="indirizzo" required />
-          </div>
-          <div className="mt-3">
-            <LocalitaFields
-              cap={cap}
-              citta={citta}
-              provincia={provincia}
-              onChange={aggiornaLocalita}
+            <CampoProfilo
+              label="Nome"
+              id="nome"
+              value={datiCliente.nome}
+              onChange={(v) => aggiornaDato("nome", v)}
+              required
+            />
+            <CampoProfilo
+              label="Cognome"
+              id="cognome"
+              value={datiCliente.cognome}
+              onChange={(v) => aggiornaDato("cognome", v)}
               required
             />
           </div>
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <CampoProfilo
+              label="Telefono"
+              id="telefono"
+              type="tel"
+              value={datiCliente.telefono}
+              onChange={(v) => aggiornaDato("telefono", v)}
+              required
+            />
+            <CampoProfilo
+              label="Email"
+              id="email"
+              type="email"
+              value={datiCliente.email}
+              onChange={(v) => aggiornaDato("email", v)}
+              required
+            />
+          </div>
+          {p.autenticato && (
+            <p className="mt-2 text-[11px] text-slate-400">
+              Precompilati dal tuo profilo (puoi modificarli per questo ordine).
+            </p>
+          )}
+          {/* Riepilogo indirizzo dal profilo → CAMBIA INDIRIZZO */}
+          {indirizzoDaProfilo && !cambiaIndirizzo ? (
+            <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50/60 p-3">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                    Indirizzo di consegna (dal tuo profilo)
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-slate-900">{datiCliente.indirizzo}</p>
+                  <p className="text-sm text-slate-700">
+                    {citta}
+                    {cap ? `, ${cap}` : ""}
+                    {provincia ? ` (${provincia})` : ""}
+                  </p>
+                  <p className="mt-1 text-[11px] leading-4 text-slate-400">
+                    Puoi cambiarlo solo per questo ordine senza modificare il profilo.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setCambiaIndirizzo(true)}
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-bold text-blue-700 shadow-sm transition hover:border-blue-400 hover:bg-blue-50"
+                >
+                  <Truck className="h-3.5 w-3.5" aria-hidden />
+                  CAMBIA INDIRIZZO
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-3">
+              <CampoProfilo
+                label="Indirizzo"
+                id="indirizzo"
+                value={datiCliente.indirizzo}
+                onChange={(v) => aggiornaDato("indirizzo", v)}
+                required
+              />
+              <LocalitaFields
+                cap={cap}
+                citta={citta}
+                provincia={provincia}
+                onChange={aggiornaLocalita}
+                required
+              />
+            </div>
+          )}
           <div className="mt-3">
             <FormField label="Note consegna" id="note" />
           </div>
@@ -599,6 +719,48 @@ function FormField({
         type={type}
         id={id}
         name={id}
+        required={required}
+        className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
+      />
+    </div>
+  );
+}
+
+/**
+ * Campo CONTROLLED del checkout buy-now: lo stato React (precompilato dal
+ * profilo o modificato dall'utente) è autorevole. Mantiene `name`/`id` così
+ * che il FormData (note ecc.) continui a funzionare insieme ai valori.
+ */
+function CampoProfilo({
+  label,
+  id,
+  value,
+  onChange,
+  type = "text",
+  required = false,
+}: {
+  label: string;
+  id: string;
+  value: string;
+  onChange: (v: string) => void;
+  type?: string;
+  required?: boolean;
+}) {
+  return (
+    <div>
+      <label
+        htmlFor={id}
+        className="block text-xs font-semibold text-slate-700"
+      >
+        {label}
+        {required && <span className="text-red-500"> *</span>}
+      </label>
+      <input
+        type={type}
+        id={id}
+        name={id}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
         required={required}
         className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
       />
