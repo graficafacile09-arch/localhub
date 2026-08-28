@@ -10,7 +10,6 @@ import {
   ShoppingBasket,
   Store,
   User,
-  UserPlus,
 } from "lucide-react";
 import type { RuoloUtente } from "@/lib/auth/roles";
 import type { AreaAttiva } from "@/lib/auth/area";
@@ -57,13 +56,6 @@ const ETICHETTE_AREA: Record<AreaAttiva, string> = {
  * questa pagina (cookie già impostato). Se il campo resta vuoto, la route
  * usa l'header HTTP Referer, e in ultima istanza torna alla home.
  */
-function compilaReferer(event: React.FormEvent<HTMLFormElement>) {
-  const campo = event.currentTarget.elements.namedItem("referer");
-  if (campo instanceof HTMLInputElement) {
-    campo.value = window.location.href;
-  }
-}
-
 export default function AccountMenu({
   account,
   guestMode = false,
@@ -136,23 +128,6 @@ export default function AccountMenu({
               <Store className="h-4 w-4 shrink-0 text-blue-600" aria-hidden />
               Entra come Venditore
             </Link>
-            <hr className="my-1.5 border-slate-100" />
-            {/* ATTIVAZIONE OSPITE: form POST NATIVO (no fetch) verso
-                /api/auth/guest. La route risponde 303 verso la pagina di
-                provenienza con il cookie lh_guest impostato AL REDIRECT:
-                il browser ricarica la pagina già in modalità ospite. */}
-            <form action="/api/auth/guest" method="post" onSubmit={compilaReferer}>
-              <input type="hidden" name="intent" value="activate" />
-              <input type="hidden" name="referer" defaultValue="" />
-              <button
-                type="submit"
-                role="menuitem"
-                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-50"
-              >
-                <UserPlus className="h-4 w-4 shrink-0 text-emerald-600" aria-hidden />
-                ACQUISTA SENZA ACCOUNT
-              </button>
-            </form>
           </div>
         )}
       </div>
@@ -211,9 +186,8 @@ export default function AccountMenu({
             </p>
 
             <div className="mt-1 border-t border-slate-100 pt-1">
-              <form action="/api/auth/guest" method="post" onSubmit={compilaReferer}>
+              <form action="/api/auth/guest" method="post">
                 <input type="hidden" name="intent" value="exit" />
-                <input type="hidden" name="referer" defaultValue="" />
                 <button
                   type="submit"
                   role="menuitem"

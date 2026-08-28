@@ -5,6 +5,7 @@ import { richiediVariantePerProdotto } from "@/lib/varianti-pubbliche";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getGuestMode } from "@/lib/auth/guest";
 import Link from "next/link";
+import GuestPurchaseButton from "@/components/acquista/GuestPurchaseButton";
 
 function formatPrezzo(p: number): number {
   return Number(p);
@@ -42,7 +43,23 @@ export default async function AcquistaChoicePage({
   const utente = await getCurrentUser();
   const guestMode = await getGuestMode();
   if (!utente && !guestMode) {
-    permanentRedirect("/login?area=cliente");
+    return (
+      <div className="mt-4 rounded-xl border border-slate-200 bg-white p-5 text-center">
+        <h2 className="text-xl font-black text-slate-900">Come vuoi procedere?</h2>
+        <p className="mt-2 text-sm text-slate-600">
+          Acquista senza account oppure accedi per usare i dati del tuo profilo.
+        </p>
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:justify-center">
+          <GuestPurchaseButton />
+          <Link
+            href="/login?area=cliente"
+            className="inline-flex items-center justify-center rounded-xl border border-slate-300 px-5 py-3 text-sm font-bold text-blue-700 transition hover:bg-slate-50"
+          >
+            REGISTRATI / ACCEDI
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   const id = prodotto.id as string;
@@ -117,13 +134,6 @@ export default async function AcquistaChoicePage({
           {/* SCELTA DI ACQUISTO (modalità ospite) — non bloccante: puoi
               proseguire come ospite senza account; il login resta solo un
               modo comodo per precompilare i dati dal profilo. */}
-          <div className="rounded-xl border border-slate-200 bg-blue-50/40 p-4 text-left">
-            <p className="text-sm font-semibold text-slate-900">Acquista come vuoi</p>
-            <p className="mt-0.5 text-xs leading-4 text-slate-600">
-              Puoi continuare come ospite senza account: compili i tuoi dati alla prossima
-              schermata. Se hai un account, <Link href="/login?area=cliente" className="font-semibold text-blue-700 underline underline-offset-2 hover:text-blue-800">accedi</Link> per precompilare profilo e indirizzo.
-            </p>
-          </div>
           <Link
             href={`/prodotto/${slugProdotto}/acquista/ritiro${qs}`}
             className="group block rounded-xl border-2 border-slate-200 bg-white p-5 text-left transition hover:border-blue-400 hover:shadow-md"
