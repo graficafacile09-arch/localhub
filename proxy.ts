@@ -49,7 +49,12 @@ export async function proxy(request: NextRequest) {
   // ── Pulizia modalità guest: se l'utente accede alla pagina di login
   // (scelta esplicita di fare login), rimuoviamo il cookie guest.
   // Questo evita una sessione guest parallela dopo il login.
-  if (pathname === "/login") {
+  const isRscRequest =
+    request.headers.get("rsc") === "1" ||
+    request.headers.get("next-router-prefetch") === "1" ||
+    request.headers.get("next-router-segment-prefetch") !== null;
+
+  if (pathname === "/login" && request.method === "GET" && !isRscRequest) {
     response.cookies.delete(GUEST_COOKIE);
   }
 
