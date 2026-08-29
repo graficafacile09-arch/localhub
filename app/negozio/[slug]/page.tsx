@@ -17,8 +17,11 @@ import { normalizzaNumeroWhatsApp } from "@/lib/telefono";
 import { getOffertePubblicheNegozio, type Offerta } from "@/lib/offerte";
 import { getEventiPubbliciNegozio, type Evento } from "@/lib/eventi";
 import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
-import { MapPin, Phone, MessageCircle, Tag, Calendar, Clock, Globe } from "lucide-react";
+import { MapPin, Phone, MessageCircle, Tag, Calendar, Clock, Globe, Sparkles } from "lucide-react";
 import OpeningHoursDisplay from "@/components/negozio/OpeningHoursDisplay";
+import RichiestaInfoButton from "@/components/negozio/RichiestaInfoButton";
+import { getConfigRichiestaInfo } from "@/lib/negozio/richiesta-info";
+import type { ServizioStrutturato } from "@/types/negozio";
 
 type Params = { slug: string };
 
@@ -123,6 +126,30 @@ export default async function PaginaNegozio({
   if (moduliAttivi.includes("eventi")) {
     eventi = await getEventiPubbliciNegozio(id);
   }
+
+  // Richiesta informazioni (negozi.data.richiesta_info): CTA solo se il
+  // modulo è attivo nei moduli_attivi E la configurazione ha attiva === true.
+  const configRichiestaInfo = moduliAttivi.includes("richiesta_info")
+    ? getConfigRichiestaInfo((negozio.data ?? {}) as Record<string, unknown> | null)
+    : null;
+  const mostraRichiestaInfo =
+    !!configRichiestaInfo && configRichiestaInfo.attiva === true;
+
+  // Servizi strutturati (negozi.data.servizi_strutturati): solo attivi,
+  // ordinati per `ordinamento` (fallback: ordine dell'array, sort stabile).
+  const serviziStrutturati: ServizioStrutturato[] = (() => {
+    const raw = (negozio.data as Record<string, unknown> | null | undefined)
+      ?.servizi_strutturati;
+    if (!Array.isArray(raw)) return [];
+    return (raw as unknown[])
+      .filter((s): s is Record<string, unknown> => !!s && typeof s === "object")
+      .filter((s) => s.attivo !== false)
+      .sort((a, b) => {
+        const oa = typeof a.ordinamento === "number" ? a.ordinamento : Number.MAX_SAFE_INTEGER;
+        const ob = typeof b.ordinamento === "number" ? b.ordinamento : Number.MAX_SAFE_INTEGER;
+        return oa - ob;
+      }) as unknown as ServizioStrutturato[];
+  })();
 
   // Stato preferiti per il pulsante "Salva negozio" e per le card prodotto.
   const statoPreferiti = await getStatoPreferitiPerPagina();
@@ -257,6 +284,17 @@ export default async function PaginaNegozio({
               <MessageCircle className="h-4 w-4" />
               WhatsApp
             </a>
+          )}
+          {mostraRichiestaInfo && configRichiestaInfo && (
+            <RichiestaInfoButton
+              slug={slugCanonico ?? slug}
+              titolo={configRichiestaInfo.titolo}
+              testo={configRichiestaInfo.testo}
+              tipo={configRichiestaInfo.tipo}
+              emailObbligatoria={configRichiestaInfo.email_obbligatoria}
+              telefonoObbligatoria={configRichiestaInfo.telefono_obbligatorio}
+              messaggioObbligatoria={configRichiestaInfo.messaggio_obbligatorio}
+            />
           )}
           {negozio.indirizzo && (
             <a
@@ -518,6 +556,67 @@ export default async function PaginaNegozio({
                             {evento.data_fine && evento.data_inizio && evento.data_fine !== evento.data_inizio
                               ? " → " + new Date(evento.data_fine).toLocaleDateString("it-IT", { day: "2-digit", month: "2-digit", year: "2-digit" })
                               : ""}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Servizi strutturati */}
+        {moduliAttivi.includes("servizi") && serviziStrutturati.length > 0 && (
+          <section className="mt-4">
+            <div className="mb-2 flex items-center gap-2">
+              <h2 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-slate-500">
+                <Sparkles className="h-3.5 w-3.5 text-blue-500" />
+                Servizi
+              </h2>
+              <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-black text-blue-700">
+                {serviziStrutturati.length}
+              </span>
+            </div>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {serviziStrutturati.map((servizio) => (
+                <article
+                  key={servizio.id ?? servizio.nome}
+                  className="overflow-hidden rounded-xl border border-blue-100 bg-gradient-to-br from-blue-50 to-white"
+                >
+                  <div className="flex items-start gap-3 p-3">
+                    {servizio.immagine ? (
+                      <img
+                        src={servizio.immagine}
+                        alt=""
+                        className="h-12 w-12 shrink-0 rounded-lg border border-white object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-100">
+                        <Sparkles className="h-5 w-5 text-blue-600" />
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <h3 className="truncate text-sm font-black text-slate-900">
+                        {servizio.nome}
+                      </h3>
+                      {servizio.descrizione && (
+                        <p className="mt-0.5 line-clamp-2 text-[11px] leading-4 text-slate-600">
+                          {servizio.descrizione}
+                        </p>
+                      )}
+                      <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+                        {servizio.prezzo != null && (
+                          <span className="rounded-md bg-blue-600 px-1.5 py-0.5 text-[11px] font-black text-white">
+                            {servizio.prezzo_da ? "A partire da €" : "€"}
+                            {Number(servizio.prezzo).toFixed(2)}
+                          </span>
+                        )}
+                        {servizio.durata_min != null && servizio.durata_min > 0 && (
+                          <span className="flex items-center gap-1 text-[11px] text-slate-500">
+                            <Clock className="h-3 w-3" />
+                            {servizio.durata_min} min
                           </span>
                         )}
                       </div>

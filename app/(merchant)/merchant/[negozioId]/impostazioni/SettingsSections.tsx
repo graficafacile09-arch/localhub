@@ -22,6 +22,7 @@ import {
   Tag,
   Calendar,
   Truck,
+  MessageSquare,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { getModuleComponent } from "@/lib/modules/registry";
@@ -49,6 +50,7 @@ const MODULI_REGISTRO: ModuloRegistro[] = [
   { id: "11", slug: "seo", nome: "SEO", descrizione: "Meta tag e keywords", icona: "Search", ordinamento: 11, attivo: true, default_in_template: true },
   { id: "12", slug: "ai", nome: "AI", descrizione: "Dati assistente AI", icona: "Bot", ordinamento: 12, attivo: true, default_in_template: true },
   { id: "13", slug: "impostazioni", nome: "Impostazioni", descrizione: "Visibilità e preferenze", icona: "Settings", ordinamento: 13, attivo: true, default_in_template: true },
+  { id: "14", slug: "richiesta_info", nome: "Richiesta informazioni", descrizione: "Ricevi richieste dai clienti", icona: "MessageSquare", ordinamento: 14, attivo: true, default_in_template: true },
 ];
 
 /** Moduli che non fanno parte del CMS ma sono sempre disponibili in Vendita. */
@@ -84,6 +86,7 @@ const MODULI_UX: Record<string, ModuloUx> = {
   eventi: { titolo: "Eventi", descrizione: "Eventi in programma", azione: "Gestisci eventi", icona: Calendar },
   "modalita-vendita": { titolo: "Come vendi", descrizione: "Ritiro in negozio, consegna o spedizione", azione: "Modifica modalità di vendita", icona: Store },
   spedizione: { titolo: "Spedizione", descrizione: "Pacco, corrieri e costi", azione: "Configura spedizione", icona: Truck },
+  richiesta_info: { titolo: "Richiesta informazioni", descrizione: "Ricevi richieste dai clienti dalla tua pagina", azione: "Configura richieste", icona: MessageSquare },
 };
 
 type Sezione = {
@@ -103,8 +106,8 @@ const SEZIONI: Sezione[] = [
     icona: Store,
     titolo: "Il mio negozio",
     descrizione: "Tieni aggiornate le informazioni che i clienti vedono sul tuo negozio.",
-    riepilogo: "Informazioni · Foto · Contatti · Posizione · Orari",
-    moduli: ["informazioni", "immagini", "contatti", "posizione", "orari"],
+    riepilogo: "Informazioni · Foto · Contatti · Posizione · Orari · Richieste",
+    moduli: ["informazioni", "immagini", "contatti", "posizione", "orari", "richiesta_info"],
     peso: "primaria",
   },
   {
@@ -211,6 +214,13 @@ function generaRiepilogo(
       const servizi = (s?.servizi as string[] | null) ?? [];
       if (servizi.length === 0) return { testo: "Nessun servizio", vuoto: true };
       return { testo: servizi.slice(0, 3).join(" · ") + (servizi.length > 3 ? ` +${servizi.length - 3}` : "") };
+    }
+    case "richiesta_info": {
+      const dati = ((s?.data as Record<string, unknown> | null)?.richiesta_info as Record<string, unknown> | null) ?? null;
+      const attiva = dati?.attiva === true;
+      if (!attiva) return { testo: "Disattivate", vuoto: true };
+      const titolo = typeof dati.titolo === "string" && dati.titolo ? dati.titolo : "Richiedi informazioni";
+      return { testo: `Attive · ${titolo}` };
     }
     case "prodotti":
       return { testo: "Catalogo e aggiunta prodotti" };
