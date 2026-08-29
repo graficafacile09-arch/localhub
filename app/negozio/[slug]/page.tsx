@@ -8,6 +8,7 @@ import SearchFilters from "@/components/ricerca/SearchFilters";
 import SearchSort from "@/components/ricerca/SearchSort";
 import SearchPagination from "@/components/ricerca/SearchPagination";
 import { risolviNegozioPubblico, getFiltriDisponibiliProdotti, isOrdinamentoProdottiPubblici, type OrdinamentoProdottiPubblici } from "@/lib/negozi";
+import { getModuliAttiviNegozio } from "@/lib/profili-attivita";
 import { search } from "@/lib/search-service";
 import { prodottoEsaurito } from "@/lib/prodotti-disponibilita";
 import { getNegozioCardImmagine } from "@/lib/negozi-card-immagini";
@@ -23,7 +24,7 @@ import RichiestaInfoButton from "@/components/negozio/RichiestaInfoButton";
 import PrenotazioneButton from "@/components/negozio/PrenotazioneButton";
 import { getConfigRichiestaInfo } from "@/lib/negozio/richiesta-info";
 import { getConfigPrenotazioni } from "@/lib/prenotazioni";
-import type { ServizioStrutturato } from "@/types/negozio";
+import type { Negozio, ServizioStrutturato } from "@/types/negozio";
 
 type Params = { slug: string };
 
@@ -116,9 +117,12 @@ export default async function PaginaNegozio({
   const totalCatalogo = catalogo.total;
   const filtriDisponibili = await getFiltriDisponibiliProdotti();
 
-  const moduliAttivi: string[] = Array.isArray(negozio.moduli_attivi)
-    ? (negozio.moduli_attivi as string[])
-    : [];
+  // Moduli attivi effettivi: STESSA risoluzione dell'editor
+  // (getModuliAttiviNegozio dà priorità a data.tipo_attivita → profilo,
+  // con fallback su negozi.moduli_attivi). Evita che un servizio salvato
+  // dall'editor (es. profilo "medico" con modulo servizi) resti nascosto
+  // nella scheda pubblica perché assente nei moduli_attivi grezzi.
+  const moduliAttivi: string[] = getModuliAttiviNegozio(negozio as Negozio) ?? [];
 
   let offerte: Offerta[] = [];
   let eventi: Evento[] = [];
