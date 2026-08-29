@@ -2,9 +2,11 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Store, LayoutTemplate, Copy, Loader2, Camera } from "lucide-react";
+import { Store, LayoutTemplate, Copy, Loader2, Camera, Check } from "lucide-react";
 import { getTemplates } from "./templates";
 import { CATEGORIE_NEGOZIO, CATEGORIA_PERSONALIZZATA_LABEL } from "@/lib/categorie-negozio";
+import { PROFILI_ATTIVITA, getProfiloAttivita, getProfiloPerTemplate } from "@/lib/profili-attivita";
+import { orariPerProfilo } from "@/lib/orari";
 import { uploadStoreImage } from "@/components/merchant/editor/lib/upload-image";
 
 type UserTemplate = {
@@ -61,6 +63,8 @@ export default function WizardShell() {
     logo: "",
   });
   const [categoriaPersonalizzata, setCategoriaPersonalizzata] = useState(false);
+  /** Profilo attività selezionato (solo modalità "Da zero"). Determina il preset di moduli_attivi e data.tipo_attivita. */
+  const [profiloAttivita, setProfiloAttivita] = useState<string>("ecommerce");
   /** File del logo selezionato (upload persistente dopo la creazione del negozio). */
   const [logoFile, setLogoFile] = useState<File | null>(null);
 
@@ -189,20 +193,38 @@ export default function WizardShell() {
         }
         const storeId = createJson.data.storeId as string;
 
-        // 2) Logo persistente: upload reale nello Storage (multipart /media,
-        //    lo stesso meccanismo dell'editor) + salvataggio di logo_url.
-        if (logoFile) {
-          try {
-            const logoUrl = await uploadStoreImage(storeId, logoFile);
+        // 2) Profilo attività + logo persistiti via PUT settings (API
+        //    esistente: accetta moduli_attivi e data jsonb con merge).
+        //    Best-effort: il negozio è già stato creato; in caso di errore
+        //    si può riapplicare il profilo dall'editor.
+        try {
+          const profilo = getProfiloAttivita(profiloAttivita);
+          const settingsPayload: Record<string, unknown> = {};
+          if (profilo) {
+            settingsPayload.moduli_attivi = profilo.moduli_attivi;
+            settingsPayload.data = {
+              tipo_attivita: profilo.id,
+              operativita: profilo.operativita,
+            };
+          }
+          // Orari iniziali: il nuovo negozio parte con il preset del profilo
+          // (o DEFAULT_HOURS), così la griglia non è mai vuota né incoerente
+          // con il tipo di attività. Il commerciante potrà modificarli.
+          const profiloId = profilo?.id ?? null;
+          settingsPayload.orari = orariPerProfilo(null, profiloId);
+          if (logoFile) {
+            settingsPayload.logo_url = await uploadStoreImage(storeId, logoFile);
+          }
+          if (Object.keys(settingsPayload).length > 0) {
             await fetch(`/api/merchant/stores/${storeId}/settings`, {
               method: "PUT",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ logo_url: logoUrl }),
+              body: JSON.stringify(settingsPayload),
             });
-          } catch {
-            // Best-effort: il negozio è già stato creato; il logo si può
-            // ricaricare dall'editor se l'upload fallisce.
           }
+        } catch {
+          // Best-effort: il logo si può ricaricare e il profilo riapplicare
+          // dall'editor se la chiamata fallisce.
         }
 
         router.push(`/merchant/${storeId}/edit`);
@@ -256,6 +278,28 @@ export default function WizardShell() {
 
       const json = await response.json();
       if (json.success) {
+        // Profilo derivato dal template (solo template di sistema con
+        // mapping): i moduli_attivi sono già quelli del template, qui si
+        // persiste solo data.tipo_attivita/operativita. Best-effort.
+        if (mode === "template") {
+          const profiloTemplate = getProfiloPerTemplate(selectedTemplateId ?? "");
+          if (profiloTemplate) {
+            try {
+              await fetch(`/api/merchant/stores/${json.data.storeId}/settings`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  data: {
+                    tipo_attivita: profiloTemplate.id,
+                    operativita: profiloTemplate.operativita,
+                  },
+                }),
+              });
+            } catch {
+              // Best-effort.
+            }
+          }
+        }
         router.push(`/merchant/${json.data.storeId}/edit`);
       } else {
         setError(json.error?.message ?? "Errore durante la creazione.");
@@ -335,6 +379,46 @@ export default function WizardShell() {
             <span className="text-xs font-semibold">Duplica negozio</span>
           </button>
         </div>
+
+        {mode === "blank" && (
+          <div className="mb-6">
+            <h3 className="mb-1 text-xs font-semibold text-slate-500">Tipo di attività</h3>
+            <p className="mb-2 text-[11px] text-slate-400">
+              Il profilo determina quali funzionalità saranno attive nel tuo negozio.
+            </p>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {PROFILI_ATTIVITA.map((p) => {
+                const isSelected = profiloAttivita === p.id;
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    data-profilo={p.id}
+                    onClick={() => setProfiloAttivita(p.id)}
+                    className={`flex items-start gap-2 rounded-xl border-2 p-3 text-left transition-all ${
+                      isSelected
+                        ? "border-blue-500 bg-blue-50"
+                        : "border-slate-200 bg-white hover:border-blue-200"
+                    }`}
+                  >
+                    <span className="text-lg leading-none">{p.icona}</span>
+                    <span className="min-w-0">
+                      <span className="block text-sm font-bold text-slate-900">{p.nome}</span>
+                      <span className="block text-[11px] leading-snug text-slate-500">
+                        {p.descrizione}
+                      </span>
+                    </span>
+                    {isSelected && (
+                      <span className="ml-auto mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-blue-500 text-white">
+                        <Check className="h-3 w-3" />
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {mode === "template" && (
           <div className="mb-6">

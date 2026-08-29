@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Images, Camera, X, Loader2, Check, Sparkles, ListChecks } from "lucide-react";
+import { Images, Camera, X, Loader2, Sparkles, ListChecks } from "lucide-react";
 import { TextArea, TagsInput, SaveBar } from "@/components/merchant/modules/ModuleFields";
 import { uploadStoreImage } from "../lib/upload-image";
 import type { StepProps } from "../editor-steps";
@@ -11,9 +11,10 @@ export default function StepPresentazione({ storeId, store, onDataChanged }: Ste
   const [galleria, setGalleria] = useState<string[]>(
     Array.isArray(store?.galleria) ? [...(store.galleria as string[])] : []
   );
-  const [servizi, setServizi] = useState<string[]>(
-    Array.isArray(store?.servizi) ? [...(store.servizi as string[])] : []
-  );
+  // NOTA: non gestiamo più i "servizi" come TagsInput qui. I servizi prenotabili
+  // sono gestiti esclusivamente dal modulo strutturato (ServiziModule →
+  // data.servizi_strutturati). Qui restano solo le caratteristiche
+  // (parole_chiave), che sono dati descrittivi e non servizi prenotabili.
   const [caratteristiche, setCaratteristiche] = useState<string[]>(
     Array.isArray(store?.parole_chiave) ? [...(store.parole_chiave as string[])] : []
   );
@@ -28,13 +29,11 @@ export default function StepPresentazione({ storeId, store, onDataChanged }: Ste
     const s = store;
     setDescrizioneCompleta(s?.descrizione_completa ?? "");
     setGalleria(Array.isArray(s?.galleria) ? [...(s.galleria as string[])] : []);
-    setServizi(Array.isArray(s?.servizi) ? [...(s.servizi as string[])] : []);
     setCaratteristiche(Array.isArray(s?.parole_chiave) ? [...(s.parole_chiave as string[])] : []);
     setOriginal(
       JSON.stringify({
         descrizioneCompleta: s?.descrizione_completa ?? "",
         galleria: Array.isArray(s?.galleria) ? s.galleria : [],
-        servizi: Array.isArray(s?.servizi) ? s.servizi : [],
         caratteristiche: Array.isArray(s?.parole_chiave) ? s.parole_chiave : [],
       })
     );
@@ -42,7 +41,7 @@ export default function StepPresentazione({ storeId, store, onDataChanged }: Ste
   }, [storeId]);
 
   const dirty =
-    JSON.stringify({ descrizioneCompleta, galleria, servizi, caratteristiche }) !== original;
+    JSON.stringify({ descrizioneCompleta, galleria, caratteristiche }) !== original;
 
   async function handleAddImage(file: File | undefined) {
     if (!file) return;
@@ -72,7 +71,6 @@ export default function StepPresentazione({ storeId, store, onDataChanged }: Ste
         body: JSON.stringify({
           descrizione_completa: descrizioneCompleta.trim(),
           galleria,
-          servizi,
           parole_chiave: caratteristiche,
         }),
       });
@@ -81,7 +79,7 @@ export default function StepPresentazione({ storeId, store, onDataChanged }: Ste
         setError(json.error?.message ?? "Salvataggio non riuscito.");
         return;
       }
-      setOriginal(JSON.stringify({ descrizioneCompleta, galleria, servizi, caratteristiche }));
+      setOriginal(JSON.stringify({ descrizioneCompleta, galleria, caratteristiche }));
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
       onDataChanged();
@@ -147,19 +145,12 @@ export default function StepPresentazione({ storeId, store, onDataChanged }: Ste
 
       <section className="rounded-2xl border border-slate-200 bg-white p-5">
         <h3 className="mb-4 flex items-center gap-2 text-sm font-bold text-slate-900">
-          <Check className="h-4 w-4 text-blue-500" /> Servizi offerti
-        </h3>
-        <TagsInput
-          value={servizi}
-          onChange={setServizi}
-          placeholder="es. Consegna a domicilio, Parcheggio, Wi-Fi… (premi Invio)"
-        />
-      </section>
-
-      <section className="rounded-2xl border border-slate-200 bg-white p-5">
-        <h3 className="mb-4 flex items-center gap-2 text-sm font-bold text-slate-900">
           <ListChecks className="h-4 w-4 text-blue-500" /> Caratteristiche del negozio
         </h3>
+        <p className="mb-3 text-xs text-slate-500">
+          Inserisci caratteristiche descrittive (es. Artigianale, Bio, Aperto la domenica). I
+          servizi prenotabili si gestiscono nella sezione &quot;Catalogo e servizi&quot;.
+        </p>
         <TagsInput
           value={caratteristiche}
           onChange={setCaratteristiche}

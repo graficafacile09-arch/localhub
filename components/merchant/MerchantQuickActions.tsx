@@ -1,31 +1,80 @@
 "use client";
 
 import Link from "next/link";
-import { LayoutList, Settings } from "lucide-react";
+import {
+  LayoutList,
+  Settings,
+  Building2,
+  Image as ImageIcon,
+  Sparkles,
+  CalendarCheck,
+  Store,
+} from "lucide-react";
 import MetodiPagamentoCard from "./MetodiPagamentoCard";
-
-const actions = [
-  {
-    key: "catalog",
-    title: "Gestisci prodotti",
-    description: "Vedi e modifica il catalogo.",
-    icon: LayoutList,
-    href: (storeId: string) => `/merchant/${storeId}/prodotti`,
-  },
-];
 
 /**
  * Azioni rapide della Dashboard negozio.
- * Poche card realmente utili, senza creare una seconda architettura di
- * navigazione: il flusso AI (scansione) resta nella CTA della dashboard e
- * nella bottom nav; "Impostazioni negozio" punta all'unica pagina canonica
- * (la stessa della sidebar); i metodi di pagamento mostrano lo stato con
- * link alla pagina Pagamenti.
+ *
+ * Le card puntano alle sezioni/blocchi specifici del nuovo editor
+ * (`/merchant/:id/edit?step=…&block=…`), così ogni voce apre direttamente
+ * il blocco giusto invece di una pagina generica. Le destinazioni concrete:
+ * - Informazioni      → 01 Attività (blocco identità);
+ * - Foto               → 03 Presentazione (blocco presentazione);
+ * - Prodotti           → 04 Catalogo e servizi (blocco prodotti) / gestione catalogo;
+ * - Servizi            → 04 Catalogo e servizi (blocco servizi strutturati);
+ * - Come vendi         → 05 Vendita e prenotazioni (blocco commerciale);
+ * - Prenotazioni       → 05 Vendita e prenotazioni (blocco prenotazioni);
+ * - Impostazioni negozio → pagina canonica /impostazioni.
  */
+const azioni = [
+  {
+    key: "informazioni",
+    title: "Informazioni",
+    description: "Nome, categoria e descrizione.",
+    icon: Building2,
+    href: (storeId: string) => `/merchant/${storeId}/edit?step=attivita&block=identita`,
+  },
+  {
+    key: "foto",
+    title: "Foto del negozio",
+    description: "Logo, copertina e galleria.",
+    icon: ImageIcon,
+    href: (storeId: string) => `/merchant/${storeId}/edit?step=presentazione&block=presentazione`,
+  },
+  {
+    key: "prodotti",
+    title: "Gestisci prodotti",
+    description: "Vedi e modifica il catalogo.",
+    icon: LayoutList,
+    href: (storeId: string) => `/merchant/${storeId}/edit?step=catalogo&block=catalogo-prodotti`,
+  },
+  {
+    key: "servizi",
+    title: "Servizi offerti",
+    description: "I servizi che offri ai clienti.",
+    icon: Sparkles,
+    href: (storeId: string) => `/merchant/${storeId}/edit?step=catalogo&block=servizi-strutturati`,
+  },
+  {
+    key: "come-vendi",
+    title: "Come vendi",
+    description: "Ritiro, consegna o spedizione.",
+    icon: Store,
+    href: (storeId: string) => `/merchant/${storeId}/edit?step=vendita&block=vendita-commerciale`,
+  },
+  {
+    key: "prenotazioni",
+    title: "Prenotazioni",
+    description: "Appuntamenti dei clienti.",
+    icon: CalendarCheck,
+    href: (storeId: string) => `/merchant/${storeId}/edit?step=vendita&block=prenotazioni`,
+  },
+];
+
 export default function MerchantQuickActions({ storeId }: { storeId: string }) {
   return (
     <div className="grid gap-4 lg:grid-cols-2">
-      {actions.map((action) => {
+      {azioni.map((action) => {
         const Icon = action.icon;
 
         return (

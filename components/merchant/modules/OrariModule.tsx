@@ -4,8 +4,9 @@ import { useState, useEffect, useCallback } from "react";
 import { Clock, Copy } from "lucide-react";
 import ModuleShell from "./ModuleShell";
 import { SaveBar, type StatoSalvataggio } from "./ModuleFields";
-import { DAYS, EMPTY_DAY, CLOSED_DAY, DEFAULT_HOURS } from "@/types/negozio";
+import { DAYS, EMPTY_DAY, CLOSED_DAY } from "@/types/negozio";
 import type { DaySchedule, Orari } from "@/types/negozio";
+import { orariIniziali, ORARI_PRESET_LABELS, ORARI_PRESETS } from "@/lib/orari";
 
 type Props = { storeId: string };
 
@@ -21,7 +22,7 @@ function cloneDay(d: DaySchedule): DaySchedule {
 export default function OrariModule({ storeId }: Props) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [orari, setOrari] = useState<Orari>(DEFAULT_HOURS);
+  const [orari, setOrari] = useState<Orari>(() => orariIniziali(null));
   const [original, setOriginal] = useState<string>("");
   const [orariTab, setOrariTab] = useState<"tutti" | "oggi">("tutti");
   const [messaggio, setMessaggio] = useState<StatoSalvataggio>(null);
@@ -61,6 +62,10 @@ export default function OrariModule({ storeId }: Props) {
     }
     setOrari(nuovi);
   }, [orari]);
+
+  function applyPreset(preset: keyof typeof ORARI_PRESETS) {
+    setOrari(ORARI_PRESETS[preset]);
+  }
 
   async function handleSave() {
     setSaving(true);
@@ -109,6 +114,18 @@ export default function OrariModule({ storeId }: Props) {
   return (
     <ModuleShell icon={<Clock className="h-4 w-4" />} title="Orari" subtitle="Orari di apertura del negozio" id="orari">
       <div className="space-y-4">
+        <div className="mb-2 flex flex-wrap gap-2">
+          {ORARI_PRESET_LABELS.map((preset) => (
+            <button
+              key={preset.id}
+              type="button"
+              onClick={() => applyPreset(preset.id)}
+              className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-600 transition hover:border-blue-300 hover:text-blue-600"
+            >
+              {preset.nome}
+            </button>
+          ))}
+        </div>
         <div className="flex items-center justify-between">
           <div className="flex gap-1">
             <button type="button" onClick={() => setOrariTab("tutti")}

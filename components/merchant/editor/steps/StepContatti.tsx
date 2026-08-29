@@ -10,6 +10,7 @@ import {
   type DaySchedule,
   type Orari,
 } from "@/types/negozio";
+import { orariIniziali, ORARI_PRESET_LABELS, ORARI_PRESETS } from "@/lib/orari";
 import type { StepProps } from "../editor-steps";
 
 const SHORT: Record<string, string> = {
@@ -54,8 +55,12 @@ export default function StepContatti({ storeId, store, onDataChanged }: StepProp
     tiktok: store?.tiktok ?? "",
     youtube: store?.youtube ?? "",
   }));
-  const [orari, setOrari] = useState<Orari>(
-    () => (store?.orari && typeof store.orari === "object" ? { ...store.orari } : {})
+  /** Id profilo attività (da data.tipo_attivita), per il preset orari automatico. */
+  const profiloId =
+    typeof store?.data?.tipo_attivita === "string" ? (store.data.tipo_attivita as string) : null;
+
+  const [orari, setOrari] = useState<Orari>(() =>
+    orariIniziali(store?.orari, null, profiloId)
   );
   const [original, setOriginal] = useState("");
   const [saving, setSaving] = useState(false);
@@ -79,7 +84,9 @@ export default function StepContatti({ storeId, store, onDataChanged }: StepProp
       tiktok: s?.tiktok ?? "",
       youtube: s?.youtube ?? "",
     };
-    const o = s?.orari && typeof s.orari === "object" ? { ...s.orari } : {};
+    const sProfiloId =
+      typeof s?.data?.tipo_attivita === "string" ? (s.data.tipo_attivita as string) : null;
+    const o = orariIniziali(s?.orari, null, sProfiloId);
     setForm(vals);
     setOrari(o);
     setOriginal(JSON.stringify({ ...vals, orari: o }));
@@ -111,6 +118,10 @@ export default function StepContatti({ storeId, store, onDataChanged }: StepProp
     const nuovi: Orari = {};
     for (const d of DAYS) nuovi[d] = { ...lunedi };
     setOrari(nuovi);
+  }
+
+  function applyPreset(preset: keyof typeof ORARI_PRESETS) {
+    setOrari(ORARI_PRESETS[preset]);
   }
 
   async function handleSave() {
@@ -199,6 +210,20 @@ export default function StepContatti({ storeId, store, onDataChanged }: StepProp
           >
             <Copy className="h-3 w-3" /> Copia dal lunedì
           </button>
+        </div>
+
+        {/* Preset di orari per tipo di attività (un click) */}
+        <div className="mb-3 flex flex-wrap gap-2">
+          {ORARI_PRESET_LABELS.map((preset) => (
+            <button
+              key={preset.id}
+              type="button"
+              onClick={() => applyPreset(preset.id)}
+              className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-600 transition hover:border-blue-300 hover:text-blue-600"
+            >
+              {preset.nome}
+            </button>
+          ))}
         </div>
         <div className="space-y-1">
           {DAYS.map((day) => {
