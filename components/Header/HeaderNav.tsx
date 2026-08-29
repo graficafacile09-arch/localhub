@@ -2,12 +2,19 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Grid2X2, Home, ShoppingCart, Store } from "lucide-react";
+import { Grid2X2, Home, Store, Tag } from "lucide-react";
 import type { ComponentType } from "react";
-import { useCarrello } from "@/lib/carrello/CartContext";
 
 /**
- * Navigazione pubblica — UNICA fonte delle voci Home/Negozi/Categorie/Carrello.
+ * Navigazione pubblica — UNICA fonte delle voci Home/Negozi/Offerte/Categorie.
+ *
+ * La voce "Carrello" NON è più qui: è rappresentata dalla piccola icona
+ * compatta accanto al logo nell'header (vedi HeaderCartIcon), con lo stesso
+ * badge numerico della vecchia rappresentazione.
+ *
+ * "OFFERTE" è la voce dedicata alle promozioni (→ /offerte), posizionata
+ * tra Negozi e Categorie. Stesso identico trattamento grafico delle altre
+ * voci: nessuna differenza di stile, altezza, tipografia o hover.
  *
  * Concept approvato (mockup "V4"): barra di navigazione compatta e moderna,
  * icona sopra + testo sotto, separatori verticali sottili tra le voci e
@@ -23,27 +30,26 @@ import { useCarrello } from "@/lib/carrello/CartContext";
  *   struttura senza essere protagonisti.
  * - Carrello: stesso trattamento; badge numerico GIALLO con numero a
  *   contrasto, ancorato alla parte superiore dell'icona. Logica invariata.
+ *   (Il Carrello ora vive come piccola icona accanto al logo.)
  * - Mobile: le quattro voci restano SEMPRE visibili e distribuite
  *   orizzontalmente, con icona sopra e testo sotto, senza overflow.
  */
 export default function HeaderNav() {
   const pathname = usePathname();
-  const { pezzi } = useCarrello();
 
+  // La voce "Offerte" resta GIALLA come le altre (stesso stile, dimensione,
+  // font, padding), ma ha un PICCOLO BADGE ROSSO "SALDI" come richiamo
+  // discreto accanto al testo. Nessun pulsante rosso pieno, nessuna
+  // differenza di layout o dimensioni rispetto alle altre voci.
   const voci = [
-    { label: "Home", href: "/", icona: Home, attiva: pathname === "/" },
-    { label: "Negozi", href: "/negozi", icona: Store, attiva: pathname === "/negozi" || pathname.startsWith("/negozi/") },
-    { label: "Categorie", href: "/categorie", icona: Grid2X2, attiva: pathname === "/categorie" || pathname.startsWith("/categorie/") },
-    { label: "Carrello", href: "/carrello", icona: ShoppingCart, attiva: pathname === "/carrello" || pathname.startsWith("/carrello/") },
+    { label: "Home", href: "/", icona: Home, badge: null, attiva: pathname === "/" },
+    { label: "Negozi", href: "/negozi", icona: Store, badge: null, attiva: pathname === "/negozi" || pathname.startsWith("/negozi/") },
+    { label: "Offerte", href: "/offerte", icona: Tag, badge: "SALDI", attiva: pathname === "/offerte" || pathname.startsWith("/offerte/") },
+    { label: "Categorie", href: "/categorie", icona: Grid2X2, badge: null, attiva: pathname === "/categorie" || pathname.startsWith("/categorie/") },
   ];
 
   return (
     <div className="w-full lg:w-auto">
-      {/* BARRA NAVIGAZIONE — griglia 4 colonne su mobile, flex centrato su
-          desktop; nessun riquadro attorno alle voci. Linea orizzontale
-          superiore e inferiore CONTINUE (border-y, stesso tono dei
-          separatori verticali) che strutturano la barra come una fascia
-          continua, senza trasformare le voci in box. */}
       <nav
         aria-label="Navigazione principale"
         className="relative mx-auto grid w-full max-w-[440px] grid-cols-4 items-center justify-items-center border-y border-slate-200 bg-white lg:w-auto lg:gap-1"
@@ -60,7 +66,6 @@ export default function HeaderNav() {
         ))}
         {voci.map((voce) => {
           const Icona = voce.icona as ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
-          const isCart = voce.href === "/carrello";
           return (
             <Link
               key={voce.href}
@@ -74,26 +79,32 @@ export default function HeaderNav() {
                 <Icona
                   aria-hidden
                   className={`h-6 w-6 transition-colors duration-200 max-sm:h-[22px] max-sm:w-[22px] ${
-                    voce.attiva ? "text-brand-dark" : "text-yellow-400 group-hover:text-yellow-500"
+                    voce.attiva
+                      ? "text-brand-dark"
+                      : "text-yellow-400 group-hover:text-yellow-500"
                   }`}
                 />
-                {isCart && pezzi > 0 && (
-                  <span
-                    data-testid="cart-badge"
-                    className="absolute -right-1 -top-1 z-10 flex h-4 min-w-4 items-center justify-center rounded-full bg-yellow-400 px-1 text-[9px] font-black leading-none text-brand-deep ring-2 ring-white"
-                  >
-                    {pezzi > 99 ? "99+" : pezzi}
-                  </span>
-                )}
               </span>
 
-              {/* Testo sotto l'icona */}
+              {/* Testo sotto l'icona — sempre GIALLO come le altre voci */}
               <span
                 className={`whitespace-nowrap text-xs font-bold leading-none tracking-tight transition-colors duration-200 sm:text-sm ${
-                  voce.attiva ? "text-brand-dark" : "text-yellow-500 group-hover:text-yellow-600"
+                  voce.attiva
+                    ? "text-brand-dark"
+                    : "text-yellow-500 group-hover:text-yellow-600"
                 }`}
               >
                 {voce.label}
+                {/* Piccolo badge ROSSO discreto accanto a "OFFERTE" (richiamo
+                    non invasivo, la voce resta gialla). */}
+                {voce.badge && (
+                  <span
+                    aria-hidden
+                    className="ml-1 inline-block rounded-full bg-red-600 px-1.5 py-[1px] text-[8px] font-black uppercase leading-none tracking-wide text-white align-middle"
+                  >
+                    {voce.badge}
+                  </span>
+                )}
               </span>
 
               {/* Indicatore attivo: semplice linea orizzontale sottile sotto
@@ -108,7 +119,6 @@ export default function HeaderNav() {
           );
         })}
       </nav>
-      {/* La linea orizzontale sottile sotto la barra è il border-b dell'header. */}
     </div>
   );
 }

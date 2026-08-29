@@ -17,8 +17,10 @@ type ProductCardProps = {
   autenticato?: boolean;
   /** True se il prodotto ha varianti attive (prezzo "Da €"). */
   haVarianti?: boolean;
-  /** True se il prodotto appartiene alla vetrina "Prodotti tipici" (badge). */
+  /** True se il prodotto appartiene alla vetrina "Prodotti tipici" (badge blu). */
   prodottoTipico?: boolean;
+  /** True se il prodotto è in offerta (badge rosso "OFFERTA"). */
+  prodottoInOfferta?: boolean;
   /** Variante compatta (griglie dense tipo Eccellenze Calabresi): immagine
    *  più bassa e padding/testi ridotti. Nessun cambio di colori o stile. */
   compatto?: boolean;
@@ -41,6 +43,7 @@ export default function ProductCard({
   autenticato,
   haVarianti,
   prodottoTipico,
+  prodottoInOfferta,
   compatto,
 }: ProductCardProps) {
   const imageUrl = getProdottoImmagine({ immagine_principale, categoria });
@@ -72,7 +75,14 @@ export default function ProductCard({
               <span className="hidden sm:inline">Prodotto tipico</span>
             </span>
           )}
-          {haVarianti && !prodottoTipico && (
+          {prodottoInOfferta && (
+            /* Stesso badge di "Tipico", stesso posizionamento e dimensioni,
+                colore ROSSO per segnalare l'offerta. */
+            <span className="absolute left-2.5 top-2.5 rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-white shadow-sm">
+              Offerta
+            </span>
+          )}
+          {haVarianti && !prodottoTipico && !prodottoInOfferta && (
             <span className="absolute left-2.5 top-2.5 rounded-full bg-blue-900/90 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-white">
               Da
             </span>
