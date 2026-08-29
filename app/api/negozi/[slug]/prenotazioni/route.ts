@@ -1,5 +1,7 @@
 import { apiError, apiOk } from "@/lib/api/response";
 import { risolviNegozioPubblico } from "@/lib/negozi";
+import { getModuliAttiviNegozio } from "@/lib/profili-attivita";
+import type { Negozio } from "@/types/negozio";
 import { getCurrentUser } from "@/lib/auth/session";
 import { notificaMerchantPrenotazione } from "@/lib/negozio/prenotazione-email";
 import {
@@ -87,10 +89,9 @@ export async function POST(
     return apiError("STORE_NOT_FOUND", "Negozio non trovato.", 404);
   }
 
-  // Modulo prenotazioni attivo.
-  const moduliAttivi: string[] = Array.isArray(negozio.moduli_attivi)
-    ? (negozio.moduli_attivi as string[])
-    : [];
+  // Modulo prenotazioni attivo (STESSA risoluzione dell'editor: priorità a
+  // data.tipo_attivita → profilo, fallback su moduli_attivi grezzi).
+  const moduliAttivi: string[] = getModuliAttiviNegozio(negozio as Negozio) ?? [];
   if (!moduliAttivi.includes("prenotazioni")) {
     return apiError(
       "BOOKING_MODULE_DISABLED",

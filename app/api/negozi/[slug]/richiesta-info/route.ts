@@ -1,5 +1,7 @@
 import { apiError, apiOk } from "@/lib/api/response";
 import { risolviNegozioPubblico } from "@/lib/negozi";
+import { getModuliAttiviNegozio } from "@/lib/profili-attivita";
+import type { Negozio } from "@/types/negozio";
 import {
   getConfigRichiestaInfo,
   inviaRichiestaInfoEmail,
@@ -84,9 +86,9 @@ export async function POST(
     return apiError("NOT_FOUND", "Negozio non trovato.", 404);
   }
 
-  const moduliAttivi: string[] = Array.isArray(negozio.moduli_attivi)
-    ? (negozio.moduli_attivi as string[])
-    : [];
+  // Modulo richiesta-info attivo (STESSA risoluzione dell'editor: priorità a
+  // data.tipo_attivita → profilo, fallback su moduli_attivi grezzi).
+  const moduliAttivi: string[] = getModuliAttiviNegozio(negozio as Negozio) ?? [];
   if (!moduliAttivi.includes("richiesta_info")) {
     return apiError(
       "MODULE_INACTIVE",
