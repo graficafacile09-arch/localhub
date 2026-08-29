@@ -147,3 +147,62 @@ export function formatTime(minutes: number): string {
   const m = minutes % 60;
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
+
+/**
+ * Stato di una prenotazione (Fase 6a, fondamenti). Coerente con lo schema
+ * DB progettato: `confermata` è lo default; `cancellata`/`effettuata`/`no_show`
+ * sono terminali. Nessuna logica di transizione in questa fase.
+ */
+export type PrenotazioneStato =
+  | "confermata"
+  | "cancellata"
+  | "effettuata"
+  | "no_show";
+
+/**
+ * Prenotazione di un servizio (Fase 6a, fondamenti). Specchia la tabella
+ * `prenotazioni` progettata: una riga = un appuntamento confermato su un
+ * giorno/ora (inizio) di un servizio del negozio. `idempotency_key` previene
+ * il doppio invio; giorno/ora sono in timezone civile (Europe/Rome) la cui
+ * logica verrà implementata in fasi successive.
+ */
+export type Prenotazione = {
+  id: string;
+  numero: string;
+  idempotency_key: string;
+  negozio_id: string;
+  servizio_id: string;
+  servizio_nome: string;
+  durata_min: number;
+  giorno: string;
+  ora_inizio: string;
+  ora_fine: string;
+  cliente_user_id: string | null;
+  cliente_nome: string;
+  cliente_cognome: string;
+  cliente_telefono: string | null;
+  cliente_email: string | null;
+  note: string | null;
+  stato: PrenotazioneStato;
+  motivo_annullo: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+/**
+ * Configurazione prenotazioni del negozio (Fase 6a, fondamenti). Persistita in
+ * `negozi.data.prenotazioni_config` (jsonb). SOLO le opzioni necessarie alla
+ * v1 progettata; la logica di applicazione arriverà nelle fasi successive.
+ * Tutto nullabile dove il modello lo richiede (es. `limite_giornaliero`):
+ * `null` = nessun limite. Grandezze temporali: `anticipo_min_ore`/
+ * `anticipo_max_giorni` definiscono la finestra di prenotazione in
+ * timezone operativa (Europe/Rome, logica futura).
+ */
+export type ConfigPrenotazioni = {
+  attiva: boolean;
+  anticipo_min_ore: number;
+  anticipo_max_giorni: number;
+  buffer_min: number;
+  limite_giornaliero: number | null;
+  passo_slot_min: number;
+};
