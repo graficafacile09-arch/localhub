@@ -155,16 +155,20 @@ export default function AccountMenu({
         >
           <span
             aria-hidden
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500"
           >
             <User className="h-4 w-4" />
           </span>
-          <span className="text-left">
+          {/* Testo nascosto su mobile (max-sm): come per il pulsante Accedi,
+              evita che l'indicatore OSPITE superi la larghezza del viewport
+              accanto al logo (overflow orizzontale a 390px). Restano avatar
+              + chevron, il bottone resta cliccabile. */}
+          <span className="text-left max-sm:hidden">
             <span className="block text-sm font-bold leading-tight text-slate-600">OSPITE</span>
             <span className="block text-[11px] leading-tight text-slate-400">senza account</span>
           </span>
           <ChevronDown
-            className={`h-4 w-4 text-slate-400 transition-transform duration-200 ${
+            className={`h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200 ${
               open ? "rotate-180" : ""
             }`}
             aria-hidden
