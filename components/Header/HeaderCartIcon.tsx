@@ -24,16 +24,16 @@ export default function HeaderCartIcon() {
     <Link
       href="/carrello"
       aria-label={`Carrello${pezzi > 0 ? ` (${pezzi} articoli)` : ""}`}
-      className="group relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:border-blue-300 hover:text-brand-dark hover:shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 max-sm:h-9 max-sm:w-9"
+      className="group relative inline-flex h-8 w-8 shrink-0 items-center justify-center transition-colors duration-200 hover:text-yellow-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 max-sm:h-7 max-sm:w-7"
     >
       <ShoppingCart
         aria-hidden
-        className="h-5 w-5 transition-colors duration-200 max-sm:h-[18px] max-sm:w-[18px]"
+        className="h-[22px] w-[22px] text-yellow-400 transition-colors duration-200 group-hover:text-yellow-500 max-sm:h-5 max-sm:w-5"
       />
       {pezzi > 0 && (
         <span
           data-testid="cart-badge"
-          className="absolute -right-1 -top-1 z-10 flex h-4 min-w-4 items-center justify-center rounded-full bg-yellow-400 px-1 text-[9px] font-black leading-none text-brand-deep ring-2 ring-white"
+          className="absolute -right-1.5 -top-1 z-10 flex h-4 min-w-4 items-center justify-center rounded-full bg-yellow-400 px-1 text-[9px] font-black leading-none text-brand-deep ring-2 ring-white"
         >
           {pezzi > 99 ? "99+" : pezzi}
         </span>
