@@ -4,44 +4,37 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { Menu, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import EditorSidebar from "./EditorSidebar";
-import {
-  EDITOR_STEPS,
-  statoStep,
-  type StepId,
-  type StepStatus,
-  type StepCounts,
-  type StepProps,
-} from "./editor-steps";
+import { getSezioniVisibili, type SezioneId } from "./editor-sections";
+import SezioneEditor from "./SezioneEditor";
+import { getSezioneDiBlocco, type BloccoId } from "./editor-sections";
 import type { Negozio } from "@/types/negozio";
-import StepIdentita from "./steps/StepIdentita";
-import StepContatti from "./steps/StepContatti";
-import StepPresentazione from "./steps/StepPresentazione";
-import StepCatalogo from "./steps/StepCatalogo";
-import StepOfferte from "./steps/StepOfferte";
-import StepCommerciale from "./steps/StepCommerciale";
-import StepAnteprima from "./steps/StepAnteprima";
-import StepPubblicazione from "./steps/StepPubblicazione";
 
-const STEP_COMPONENTS: Record<StepId, React.ComponentType<StepProps>> = {
-  identita: StepIdentita,
-  contatti: StepContatti,
-  presentazione: StepPresentazione,
-  catalogo: StepCatalogo,
-  offerte: StepOfferte,
-  commerciale: StepCommerciale,
-  anteprima: StepAnteprima,
-  pubblicazione: StepPubblicazione,
+/** Mappa compatibilità: vecchi id step (8-step) → nuove sezioni (6). */
+const STEP_TO_SEZIONE: Record<string, SezioneId> = {
+  identita: "attivita",
+  contatti: "contatti-orari",
+  presentazione: "presentazione",
+  catalogo: "catalogo",
+  offerte: "catalogo",
+  commerciale: "vendita",
+  anteprima: "pubblicazione",
+  pubblicazione: "pubblicazione",
 };
 
-function isStepId(v: string | null): v is StepId {
-  return !!v && EDITOR_STEPS.some((s) => s.id === v);
+function isSezioneId(v: string | null): v is SezioneId {
+  return !!v && ["attivita", "contatti-orari", "presentazione", "catalogo", "vendita", "pubblicazione"].includes(v);
+}
+
+/** Normalizza un query step: accetta sezioni nuove O alias vecchi (8-step). */
+function normalizzaSezione(v: string | null): SezioneId | null {
+  if (!v) return null;
+  if (isSezioneId(v)) return v;
+  return STEP_TO_SEZIONE[v] ?? null;
 }
 
 type Props = {
   storeId: string;
-  /** /merchant (venditore) oppure /amministratore/negozi (admin). */
   basePath?: string;
-  /** Area di sessione: "admin" abilita i controlli riservati (es. commissione). */
   area?: "admin" | "merchant";
 };
 
@@ -52,12 +45,23 @@ export default function StoreEditor({
 }: Props) {
   const searchParams = useSearchParams();
   const initialStep = searchParams.get("step");
+  const initialBlockRaw = searchParams.get("block");
+  const initialBlock = (
+    ["identita","contatti-orari","presentazione","catalogo-prodotti","servizi-strutturati","offerte","vendita-commerciale","prenotazioni","richiesta-info","anteprima","pubblicazione"] as const
+  ).find((b) => b === initialBlockRaw) as BloccoId | undefined;
+  // Se c'è un blocco richiesto, apri direttamente la sua sezione.
+  const sezioneDaBlocco = initialBlock ? getSezioneDiBlocco(initialBlock) : null;
 
-  const [activeStep, setActiveStep] = useState<StepId>(() =>
-    isStepId(initialStep) ? initialStep : "identita"
+  const [activeSezione, setActiveSezione] = useState<SezioneId>(
+    () =>
+      (normalizzaSezione(initialStep) ?? sezioneDaBlocco?.id) ?? "attivita"
   );
+  const [activeBlock, setActiveBlock] = useState<BloccoId | null>(initialBlock ?? null);
   const [store, setStore] = useState<Negozio | null>(null);
-  const [counts, setCounts] = useState<StepCounts>({ prodotti: 0, offerte: 0 });
+  const [counts, setCounts] = useState<{ prodotti: number; offerte: number }>({
+    prodotti: 0,
+    offerte: 0,
+  });
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loadError, setLoadError] = useState(false);
@@ -96,37 +100,30 @@ export default function StoreEditor({
     void refresh();
   }, [refresh]);
 
-  // Aggiorna i conteggi (prodotti/offerte) quando si cambia step, così lo
-  // stato della sidebar e il riepilogo restano sempre allineati.
+  // Aggiorna i conteggi quando si cambia sezione (dati restano allineati).
   useEffect(() => {
     if (!loading) void refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeStep]);
+  }, [activeSezione]);
 
-  // Sync step → URL senza navigazione completa.
+  // Sync sezione → URL senza navigazione completa.
   useEffect(() => {
     const url =
-      activeStep === "identita"
+      activeSezione === "attivita"
         ? `${basePath}/${storeId}/edit`
-        : `${basePath}/${storeId}/edit?step=${activeStep}`;
+        : `${basePath}/${storeId}/edit?step=${activeSezione}`;
     window.history.replaceState(null, "", url);
-  }, [activeStep, storeId, basePath]);
+  }, [activeSezione, storeId, basePath]);
 
-  const statuses = useMemo(() => {
-    const out: Record<StepId, StepStatus> = {} as Record<StepId, StepStatus>;
-    for (const s of EDITOR_STEPS) {
-      out[s.id] = statoStep(s.id, store, counts);
-    }
-    return out;
-  }, [store, counts]);
+  const sezioni = useMemo(() => getSezioniVisibili(store), [store]);
 
-  const stepIndex = EDITOR_STEPS.findIndex((s) => s.id === activeStep);
-  const currentStep = EDITOR_STEPS[stepIndex];
-  const prevStep = stepIndex > 0 ? EDITOR_STEPS[stepIndex - 1] : null;
-  const nextStep = stepIndex < EDITOR_STEPS.length - 1 ? EDITOR_STEPS[stepIndex + 1] : null;
+  const current = sezioni.find((s) => s.sezione.id === activeSezione) ?? sezioni[0];
+  const currentIdx = sezioni.findIndex((s) => s.sezione.id === current.sezione.id);
+  const prev = currentIdx > 0 ? sezioni[currentIdx - 1] : null;
+  const next = currentIdx < sezioni.length - 1 ? sezioni[currentIdx + 1] : null;
 
-  const handleSelect = useCallback((id: StepId) => {
-    setActiveStep(id);
+  const handleSelect = useCallback((id: SezioneId) => {
+    setActiveSezione(id);
     setSidebarOpen(false);
   }, []);
 
@@ -134,7 +131,10 @@ export default function StoreEditor({
     void refresh();
   }, [refresh]);
 
-  const StepComponent = STEP_COMPONENTS[activeStep];
+  // Quando il blocco richiesto è stato caricato, azzera la richiesta di focus
+  // così il prossimo cambio sezione non lo rilancia. La gestione dello scroll
+  // avviene in SezioneEditor (dove i blocchi sono renderizzati).
+  const blockTarget = activeBlock ?? undefined;
 
   return (
     <div className="flex min-h-[calc(100vh-4rem)]">
@@ -148,9 +148,9 @@ export default function StoreEditor({
         }`}
       >
         <EditorSidebar
-          activeStep={activeStep}
+          activeSezione={activeSezione}
           onSelect={handleSelect}
-          statuses={statuses}
+          sezioni={sezioni}
           storeName={store?.nome ?? ""}
           basePath={basePath}
           storeId={storeId}
@@ -168,7 +168,7 @@ export default function StoreEditor({
             <Menu className="h-5 w-5" />
           </button>
           <span className="text-sm font-bold text-slate-900">
-            {currentStep?.numero}. {currentStep?.titolo}
+            {current?.sezione.numero}. {current?.sezione.titolo}
           </span>
         </div>
 
@@ -192,46 +192,49 @@ export default function StoreEditor({
           </div>
         ) : (
           <>
-            {/* Header step */}
+            {/* Header sezione */}
             <div className="mb-5">
               <p className="text-[11px] font-black uppercase tracking-[0.18em] text-blue-600">
-                Step {currentStep.numero} di {EDITOR_STEPS.length}
+                Sezione {current.sezione.numero} di {sezioni.length}
               </p>
               <h1 className="mt-1 text-xl font-black tracking-tight text-slate-900">
-                {currentStep.titolo}
+                {current.sezione.titolo}
               </h1>
-              <p className="mt-1 text-sm text-slate-500">{currentStep.sottotitolo}</p>
+              <p className="mt-1 text-sm text-slate-500">{current.sezione.sottotitolo}</p>
             </div>
 
-            <StepComponent
+            <SezioneEditor
               storeId={storeId}
               store={store}
               basePath={basePath}
               area={area}
               counts={counts}
               onDataChanged={handleDataChanged}
+              sezione={current.sezione}
+              blocchi={current.blocchi}
+              targetBlocco={blockTarget}
             />
 
             {/* Navigazione avanti/indietro */}
             <div className="mt-8 flex items-center justify-between border-t border-slate-100 pt-4">
-              {prevStep ? (
+              {prev ? (
                 <button
                   type="button"
-                  onClick={() => setActiveStep(prevStep.id)}
+                  onClick={() => setActiveSezione(prev.sezione.id)}
                   className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-600 transition hover:bg-slate-50"
                 >
-                  <ChevronLeft className="h-4 w-4" /> {prevStep.numero}. {prevStep.titolo}
+                  <ChevronLeft className="h-4 w-4" /> {prev.sezione.numero}. {prev.sezione.titolo}
                 </button>
               ) : (
                 <span />
               )}
-              {nextStep ? (
+              {next ? (
                 <button
                   type="button"
-                  onClick={() => setActiveStep(nextStep.id)}
+                  onClick={() => setActiveSezione(next.sezione.id)}
                   className="inline-flex items-center gap-1.5 rounded-xl bg-yellow-400 px-4 py-2.5 text-xs font-bold text-blue-800 shadow-sm transition hover:bg-yellow-300"
                 >
-                  {nextStep.numero}. {nextStep.titolo} <ChevronRight className="h-4 w-4" />
+                  {next.sezione.numero}. {next.sezione.titolo} <ChevronRight className="h-4 w-4" />
                 </button>
               ) : null}
             </div>

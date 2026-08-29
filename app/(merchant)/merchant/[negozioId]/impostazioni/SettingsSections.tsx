@@ -509,11 +509,6 @@ export default function SettingsSections({
               <span className="min-w-0 flex-1">
                 <span className="block text-base font-black tracking-tight text-slate-900">
                   {s.titolo}
-                  {primaria && (
-                    <span className="ml-2 inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 align-middle text-[10px] font-bold uppercase tracking-wide text-blue-700">
-                      Inizia da qui
-                    </span>
-                  )}
                 </span>
                 <span className="mt-0.5 block text-xs leading-4 text-slate-500">
                   {isAperta ? s.descrizione : s.riepilogo}

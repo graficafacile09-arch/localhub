@@ -267,17 +267,28 @@ test.describe("MERCHANT REGRESSION TEST (DB-synced + build-fixed)", () => {
       await expect(cardProdotto).toHaveCount(0, { timeout: 20000 });
     });
 
-    /* ── 10. Servizi ──────────────────────────────────────────────────────── */
-    await test.step("10. Servizi", async () => {
+    /* ── 10. Servizi offerti (strutturati) ────────────────────────────────── */
+    await test.step("10. Servizi offerti", async () => {
       if (!storeId) { test.skip(true, "requires a store"); return; }
-      log("Step 10: Servizi");
-      await page.goto(`${BASE}/merchant/${storeId}/edit?modulo=servizi`, { waitUntil: "domcontentloaded" });
+      log("Step 10: Servizi offerti (strutturati)");
+      await page.goto(
+        `${BASE}/merchant/${storeId}/edit?step=catalogo&block=servizi-strutturati`,
+        { waitUntil: "domcontentloaded" }
+      );
       await expect(page.locator("body")).toContainText("Servizi");
-      const tag = page.getByPlaceholder("Digita un servizio e premi Invio...");
-      await tag.fill("Consegna a domicilio");
-      await tag.press("Enter");
-      await expect(page.locator("body")).toContainText("Consegna a domicilio");
+      // Aggiungi un servizio strutturato (campo Nome servizio).
+      const nomeServizio = page.locator('input[placeholder="es. Pulizia dentale"]');
+      if ((await nomeServizio.count()) > 0) {
+        await nomeServizio.first().fill("Consegna a domicilio");
+      } else {
+        await page.getByRole("button", { name: "+ Aggiungi servizio" }).click();
+        await expect
+          .poll(async () => page.locator('input[placeholder="es. Pulizia dentale"]').count())
+          .toBeGreaterThan(0);
+        await page.locator('input[placeholder="es. Pulizia dentale"]').first().fill("Consegna a domicilio");
+      }
       await saveModule(storeId);
+      await expect(page.locator("body")).toContainText("Consegna a domicilio");
     });
 
     /* ── 11. Offerte ──────────────────────────────────────────────────────── */
@@ -442,6 +453,7 @@ test.describe("MERCHANT REGRESSION TEST (DB-synced + build-fixed)", () => {
             descrizione: string;
             servizi: string[];
             data?: {
+              servizi_strutturati?: Array<{ nome?: string }>;
               offerte?: Array<{ titolo?: string }>;
               eventi?: Array<{ titolo?: string }>;
               ai_data?: { tono?: string };
@@ -460,7 +472,11 @@ test.describe("MERCHANT REGRESSION TEST (DB-synced + build-fixed)", () => {
       );
       expect(s.nome).toMatch(/Rinominato/);
       expect(s.descrizione).toMatch(/Descrizione aggiornata/);
-      expect(Array.isArray(s.servizi) && s.servizi.includes("Consegna a domicilio"), "servizi persisted").toBe(true);
+      const serviziStrutturati = s.data?.servizi_strutturati ?? [];
+      expect(
+        Array.isArray(serviziStrutturati) && serviziStrutturati.some((x) => x.nome === "Consegna a domicilio"),
+        "servizi strutturati persisted"
+      ).toBe(true);
       expect(s.data?.offerte?.[0]?.titolo).toBe("Sconto E2E");
       expect(s.data?.eventi?.[0]?.titolo).toBe("Degustazione E2E");
       expect(s.data?.ai_data?.tono).toBe("amichevole");

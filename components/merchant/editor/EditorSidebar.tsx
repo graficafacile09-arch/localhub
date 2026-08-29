@@ -2,40 +2,29 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Check, AlertTriangle, Copy, FolderOpen, Store } from "lucide-react";
-import { EDITOR_STEPS, type StepId, type StepStatus } from "./editor-steps";
+import { Copy, FolderOpen, Store } from "lucide-react";
+import type { SezioneId } from "./editor-sections";
+import type { EditorSezione } from "./editor-sections";
 import DuplicaNegozioWizard from "@/components/merchant/media/DuplicaNegozioWizard";
 
 type Props = {
-  activeStep: StepId;
-  onSelect: (id: StepId) => void;
-  statuses: Record<StepId, StepStatus>;
+  activeSezione: SezioneId;
+  onSelect: (id: SezioneId) => void;
+  /** Sezioni con i rispettivi blocchi visibili. */
+  sezioni: { sezione: EditorSezione; blocchi: unknown[] }[];
   storeName?: string;
   basePath?: string;
   storeId: string;
 };
 
-function StatusBadge({ status }: { status: StepStatus }) {
-  if (status === "completata") {
-    return (
-      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-100 text-blue-600">
-        <Check className="h-3 w-3" strokeWidth={3} />
-      </span>
-    );
-  }
-  if (status === "attenzione") {
-    return (
-      <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-yellow-100 text-yellow-600">
-        <AlertTriangle className="h-3 w-3" />
-      </span>
-    );
-  }
-  return (
-    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-400" />
-  );
-}
-
-export default function EditorSidebar({ activeStep, onSelect, statuses, storeName, basePath = "/merchant", storeId }: Props) {
+export default function EditorSidebar({
+  activeSezione,
+  onSelect,
+  sezioni,
+  storeName,
+  basePath = "/merchant",
+  storeId,
+}: Props) {
   const [showDuplica, setShowDuplica] = useState(false);
 
   return (
@@ -56,24 +45,23 @@ export default function EditorSidebar({ activeStep, onSelect, statuses, storeNam
         </div>
         <div className="min-w-0">
           <p className="truncate text-xs font-bold text-slate-800">{storeName || "Negozio"}</p>
-          <p className="text-[10px] text-slate-400">Percorso guidato</p>
+          <p className="text-[10px] text-slate-400">Editor semplificato</p>
         </div>
       </div>
 
-      {/* Stepper numerato */}
+      {/* Sezioni */}
       <div className="flex-1 overflow-y-auto px-2 py-3">
         <p className="mb-2 px-2 text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
           Configura il negozio
         </p>
         <ol className="space-y-1">
-          {EDITOR_STEPS.map((s, i) => {
-            const isActive = activeStep === s.id;
-            const isPast = EDITOR_STEPS.findIndex((x) => x.id === activeStep) > i;
+          {sezioni.map(({ sezione, blocchi }) => {
+            const isActive = activeSezione === sezione.id;
             return (
-              <li key={s.id}>
+              <li key={sezione.id}>
                 <button
                   type="button"
-                  onClick={() => onSelect(s.id)}
+                  onClick={() => onSelect(sezione.id)}
                   className={`flex w-full items-center gap-3 rounded-xl px-2.5 py-2.5 text-left transition-all duration-150 ${
                     isActive
                       ? "bg-blue-50 text-blue-700 shadow-sm"
@@ -82,21 +70,23 @@ export default function EditorSidebar({ activeStep, onSelect, statuses, storeNam
                 >
                   <span
                     className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-[11px] font-black ${
-                      isActive
-                        ? "bg-blue-600 text-white"
-                        : isPast
-                          ? "bg-blue-100 text-blue-700"
-                          : "bg-slate-100 text-slate-500"
+                      isActive ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-500"
                     }`}
                   >
-                    {s.numero}
+                    {sezione.numero}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className={`block truncate text-xs font-semibold ${isActive ? "text-blue-700" : ""}`}>
-                      {s.titolo}
+                    <span
+                      className={`block truncate text-xs font-semibold ${
+                        isActive ? "text-blue-700" : ""
+                      }`}
+                    >
+                      {sezione.titolo}
                     </span>
+                    {blocchi.length === 0 && (
+                      <span className="block text-[10px] text-slate-400">Non richiesta</span>
+                    )}
                   </span>
-                  <StatusBadge status={statuses[s.id]} />
                 </button>
               </li>
             );

@@ -1,4 +1,5 @@
 import type { Negozio } from "@/types/negozio";
+import { getModuliAttiviNegozio, getProfiloAttivita } from "@/lib/profili-attivita";
 
 /**
  * NUOVA ARCHITETTURA EDITOR — percorso numerato e sequenziale (01–08).
@@ -74,6 +75,39 @@ export const EDITOR_STEPS: EditorStep[] = [
     sottotitolo: "Riepilogo e stato del negozio",
   },
 ];
+
+/**
+ * Step dell'editor pertinenti al negozio (editor condizionale).
+ *
+ * Determina quali step mostrare in base ai moduli attivi del negozio
+ * (profilo da `data.tipo_attivita`, altrimenti `moduli_attivi`):
+ * - catalogo     → solo se il modulo "prodotti" è attivo;
+ * - offerte      → solo se il modulo "offerte" è attivo;
+ * - commerciale  → solo se i moduli commerciali ("prodotti" o "pagamenti") sono attivi;
+ * - identita / contatti / presentazione / anteprima / pubblicazione → sempre.
+ *
+ * Il filtro si applica SOLO ai negozi con profilo attività (data.tipo_attivita).
+ * I negozi esistenti senza profilo NON vengono modificati retroattivamente:
+ * comportamento attuale, tutti gli step.
+ */
+export function getStepVisibili(store: Negozio | null | undefined): EditorStep[] {
+  const tipo = (store?.data as Record<string, unknown> | null | undefined)?.tipo_attivita;
+  const profilo = typeof tipo === "string" ? getProfiloAttivita(tipo) : undefined;
+  if (!profilo) return EDITOR_STEPS;
+  const moduli = profilo.moduli_attivi;
+  return EDITOR_STEPS.filter((s) => {
+    switch (s.id) {
+      case "catalogo":
+        return moduli.includes("prodotti");
+      case "offerte":
+        return moduli.includes("offerte");
+      case "commerciale":
+        return moduli.includes("prodotti") || moduli.includes("pagamenti");
+      default:
+        return true;
+    }
+  });
+}
 
 export type StepCounts = {
   prodotti: number;
@@ -180,7 +214,12 @@ export function getElementiMancanti(store: Negozio | null | undefined, counts: S
   if (!(store?.nome ?? "").trim()) mancanti.push("Nome del negozio");
   if (!(store?.categoria ?? "").trim()) mancanti.push("Categoria");
   if (!store?.logo_url && !store?.copertina_url) mancanti.push("Logo o immagine di copertina");
-  if (counts.prodotti === 0) mancanti.push("Almeno un prodotto nel catalogo");
+  // Il prerequisito "almeno un prodotto" vale SOLO se il modulo prodotti è
+  // attivo (profilo/moduli del negozio). Senza profilo: comportamento
+  // attuale, il prodotto resta richiesto.
+  const moduli = getModuliAttiviNegozio(store);
+  const prodottiRichiesti = moduli ? moduli.includes("prodotti") : true;
+  if (prodottiRichiesti && counts.prodotti === 0) mancanti.push("Almeno un prodotto nel catalogo");
   if (!(store?.telefono || store?.email_negozio || store?.whatsapp)) mancanti.push("Un contatto (telefono, email o WhatsApp)");
   return mancanti;
 }

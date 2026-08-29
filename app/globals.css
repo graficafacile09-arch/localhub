@@ -386,3 +386,10 @@ body.correggi-ai-aperto .merchant-bottom-nav,
 body.correggi-ai-aperto .merchant-bottom-nav-spacer {
   display: none !important;
 }
+
+/* Editor negozio — evidenziazione del blocco puntato dalla navigazione mirata (CTA). */
+.editor-blocco-target {
+  border-radius: 1rem;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.45);
+  transition: box-shadow 0.15s ease;
+}
