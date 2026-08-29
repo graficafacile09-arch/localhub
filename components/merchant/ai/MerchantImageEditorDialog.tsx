@@ -12,7 +12,10 @@ import {
   RotateCw,
   Undo2,
   X,
+  ZoomIn,
+  ZoomOut,
 } from "lucide-react";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 
 /** Rettangolo di ritaglio NORMALIZZATO (0..1) sull'immagine trasformata (rotata/riflessa). */
 type CropRect = { x: number; y: number; w: number; h: number };
@@ -30,9 +33,11 @@ type MerchantImageEditorDialogProps = {
 
 const CROP_MIN = 0.08; // dimensione minima del ritaglio (normalizzata)
 const MAX_EXPORT = 1200; // lato massimo dell'immagine esportata (evita output enormi)
-const PREVIEW_MAX_W = 560; // anteprima editor
+const PREVIEW_MAX_W = 560; // anteprima editor (a zoom 1×)
 const PREVIEW_MAX_H = 420;
 const QUALITY = 0.85; // stessa qualità dell'acquisizione fotocamera (captureFrame)
+/** Livelli di zoom SOLO visuale: non toccano coordinate normalizzate né export. */
+const ZOOM_LEVELS = [1, 1.5, 2] as const;
 
 function fit(w: number, h: number, maxW: number, maxH: number) {
   const s = Math.min(maxW / w, maxH / h, 1);
@@ -81,9 +86,20 @@ export default function MerchantImageEditorDialog({
   const [fx, setFx] = useState(false); // riflessione orizzontale
   const [fy, setFy] = useState(false); // riflessione verticale
   const [crop, setCrop] = useState<CropRect>({ x: 0, y: 0, w: 1, h: 1 });
-  const [cropMode, setCropMode] = useState(false);
+  // Crop ATTIVO SUBITO all'apertura: selezione piena (nessun contenuto perso),
+  // l'utente non deve scoprire un toggle nascosto.
+  const [cropMode, setCropMode] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  /** Maniglia/area attualmente trascinata: feedback visivo immediato. */
+  const [dragActive, setDragActive] = useState<DragMode | null>(null);
+  /** Zoom SOLO display (1×/1.5×/2×): non entra mai nelle coordinate né nell'export. */
+  const [zoomIndex, setZoomIndex] = useState(0);
+  /** True se l'utente ha modificato immagine/crop/rotazione: blocca chiusura silenziosa. */
+  const [dirty, setDirty] = useState(false);
+  const [confermaChiusura, setConfermaChiusura] = useState(false);
+
+  const zoom = ZOOM_LEVELS[zoomIndex];
 
   const previewRef = useRef<HTMLCanvasElement>(null);
   const resultRef = useRef<HTMLCanvasElement>(null);
@@ -95,6 +111,15 @@ export default function MerchantImageEditorDialog({
     startCrop: CropRect;
     rect: DOMRect;
   } | null>(null);
+  /** Cache del canvas "full" (immagine trasformata): ricreato solo su rot/fx/fy. */
+  const fullCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const fullKeyRef = useRef("");
+  /** Ultimo crop letto dal redraw rAF (evita closure stantie durante il drag). */
+  const cropRef = useRef(crop);
+
+  useEffect(() => {
+    cropRef.current = crop;
+  }, [crop]);
 
   // ── Caricamento dell'immagine iniziale ───────────────────────────────────
   useEffect(() => {
@@ -118,15 +143,16 @@ export default function MerchantImageEditorDialog({
     };
   }, [imageUrl]);
 
-  // ── ESC = Annulla ────────────────────────────────────────────────────────
+  // ── ESC = Annulla (con conferma se ci sono modifiche non salvate) ────────
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.key !== "Escape" || saving) return;
-      onClose();
+      if (e.key !== "Escape" || saving || confermaChiusura) return;
+      richiediChiusura();
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose, saving]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onClose, saving, dirty, confermaChiusura]);
 
   // ── Nasconde la bottom nav mobile (stesso pattern delle altre modal) ─────
   useEffect(() => {
@@ -141,44 +167,59 @@ export default function MerchantImageEditorDialog({
   const th = swap ? W : H;
   const preview = fit(tw, th, PREVIEW_MAX_W, PREVIEW_MAX_H);
 
-  // ── Anteprima grande (immagine trasformata) ──────────────────────────────
+  // ── Anteprima grande (immagine trasformata, scala = zoom display) ────────
   useEffect(() => {
     if (!img || !previewRef.current) return;
     const canvas = previewRef.current;
-    canvas.width = preview.w;
-    canvas.height = preview.h;
+    canvas.width = Math.round(preview.w * zoom);
+    canvas.height = Math.round(preview.h * zoom);
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     ctx.imageSmoothingQuality = "high";
     // Scala l'immagine per riempire il canvas: senza questo fattore l'immagine
     // (dimensione naturale) trabocca dal canvas e l'anteprima mostrerebbe solo
     // il centro, disallineando la selezione visiva dall'area esportata.
-    drawTransformed(ctx, img, rot, fx, fy, preview.w / tw);
-  }, [img, rot, fx, fy, preview.w, preview.h, tw]);
+    drawTransformed(ctx, img, rot, fx, fy, (preview.w / tw) * zoom);
+  }, [img, rot, fx, fy, preview.w, preview.h, tw, zoom]);
 
-  // ── Anteprima del RISULTATO (ritaglio corrente) ──────────────────────────
-  useEffect(() => {
-    if (!img || !resultRef.current) return;
-    const canvas = resultRef.current;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
+  // ── Anteprima del RISULTATO (ritaglio corrente), fluida ──────────────────
+  // Il canvas "full" è CACHED per rot/fx/fy: durante il drag non viene mai
+  // ricreato, si ridisegna solo la porzione ritagliata (max 1 volta per frame
+  // grazie a requestAnimationFrame).
+  function getFullCanvas(): HTMLCanvasElement | null {
+    if (!img) return null;
+    const key = `${rot}|${fx}|${fy}`;
+    if (fullCanvasRef.current && fullKeyRef.current === key) {
+      return fullCanvasRef.current;
+    }
     const scale = Math.min(1, MAX_EXPORT / Math.max(tw, th));
     const tw2 = Math.round(tw * scale);
     const th2 = Math.round(th * scale);
-
     const full = document.createElement("canvas");
     full.width = tw2;
     full.height = th2;
     const fctx = full.getContext("2d");
-    if (!fctx) return;
+    if (!fctx) return null;
     fctx.imageSmoothingQuality = "high";
     drawTransformed(fctx, img, rot, fx, fy, scale);
+    fullCanvasRef.current = full;
+    fullKeyRef.current = key;
+    return full;
+  }
 
-    const cw = Math.max(1, Math.round(crop.w * tw2));
-    const ch = Math.max(1, Math.round(crop.h * th2));
-    const cx = Math.min(tw2 - cw, Math.round(crop.x * tw2));
-    const cy = Math.min(th2 - ch, Math.round(crop.y * th2));
+  function drawResultPreview() {
+    const canvas = resultRef.current;
+    if (!img || !canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const full = getFullCanvas();
+    if (!full) return;
+
+    const c = cropRef.current;
+    const cw = Math.max(1, Math.round(c.w * full.width));
+    const ch = Math.max(1, Math.round(c.h * full.height));
+    const cx = Math.min(full.width - cw, Math.round(c.x * full.width));
+    const cy = Math.min(full.height - ch, Math.round(c.y * full.height));
 
     const rs = Math.min(96 / cw, 96 / ch, 1);
     const rw = Math.max(1, Math.round(cw * rs));
@@ -187,10 +228,18 @@ export default function MerchantImageEditorDialog({
     canvas.height = rh;
     ctx.imageSmoothingQuality = "high";
     ctx.drawImage(full, cx, cy, cw, ch, 0, 0, rw, rh);
-  }, [img, rot, fx, fy, crop, tw, th, W, H]);
+  }
+
+  // Ad ogni cambiamento di crop/rotazione si pianifica UN redraw al frame:
+  // i cambi rapidi durante il drag si fondono nell'ultimo stato disponibile.
+  useEffect(() => {
+    const id = requestAnimationFrame(() => drawResultPreview());
+    return () => cancelAnimationFrame(id);
+  }, [img, rot, fx, fy, tw, th, crop]);
 
   function resetCrop() {
     setCrop({ x: 0, y: 0, w: 1, h: 1 });
+    setDirty(true);
   }
 
   function ruotaSinistra() {
@@ -224,8 +273,10 @@ export default function MerchantImageEditorDialog({
         setFx(false);
         setFy(false);
         resetCrop();
-        setCropMode(false);
+        setCropMode(true);
+        setZoomIndex(0);
         setLoadError(null);
+        setDirty(true);
       };
       el.onerror = () => setLoadError("Immagine non valida.");
       el.src = reader.result as string;
@@ -234,6 +285,9 @@ export default function MerchantImageEditorDialog({
   }
 
   // ── Drag del ritaglio (pointer events, coordinate normalizzate) ──────────
+  // Priorità hit-test: MANIGLIA > BOX > AREA IMMAGINE (il pointerdown sull'area
+  // o sul box muove la selezione; le maniglie ridimensionano e fermano il
+  // bubbling, quindi non scattano mai in contemporanea).
   function startDrag(e: React.PointerEvent, mode: DragMode) {
     if (!cropMode || !img) return;
     e.preventDefault();
@@ -253,6 +307,8 @@ export default function MerchantImageEditorDialog({
       startCrop: { ...crop },
       rect: container.getBoundingClientRect(),
     };
+    setDragActive(mode);
+    setDirty(true);
   }
 
   function onDragMove(e: React.PointerEvent) {
@@ -291,11 +347,28 @@ export default function MerchantImageEditorDialog({
   function endDrag(e: React.PointerEvent) {
     if (!dragRef.current) return;
     dragRef.current = null;
+    setDragActive(null);
     try {
       (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
     } catch {
       /* ignore */
     }
+  }
+
+  /** Chiudi: se ci sono modifiche chiedi conferma (mai perdita silenziosa). */
+  function richiediChiusura() {
+    if (saving) return;
+    if (dirty) {
+      setConfermaChiusura(true);
+      return;
+    }
+    onClose();
+  }
+
+  /** "Conferma ritaglio": applica la selezione ed esce dalla modalità crop. */
+  function confermaRitaglio() {
+    setDragActive(null);
+    setCropMode(false);
   }
 
   /** Esporta il risultato: immagine trasformata + ritaglio, JPEG 0.85. */
@@ -377,8 +450,8 @@ export default function MerchantImageEditorDialog({
       aria-modal="true"
       aria-label="Modifica immagine"
     >
-      {/* Backdrop: chiude senza salvare (come Annulla) */}
-      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={onClose} aria-hidden />
+      {/* Backdrop: chiude senza salvare, MA con conferma se ci sono modifiche */}
+      <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={richiediChiusura} aria-hidden />
 
       <div className="relative flex max-h-[94vh] w-full max-w-xl flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl">
         {/* Header */}
@@ -394,7 +467,7 @@ export default function MerchantImageEditorDialog({
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={richiediChiusura}
             disabled={saving}
             aria-label="Annulla e chiudi"
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 transition hover:bg-white/20 disabled:opacity-50"
@@ -419,7 +492,7 @@ export default function MerchantImageEditorDialog({
 
           {img && !loading && (
             <div className="space-y-4">
-              {/* Anteprima grande + overlay ritaglio */}
+              {/* Anteprima grande + overlay ritaglio (scroll orizzontale se zoom > viewport) */}
               <div
                 data-editor-preview
                 className="relative mx-auto"
@@ -430,17 +503,19 @@ export default function MerchantImageEditorDialog({
                 <div
                   className="relative overflow-hidden rounded-2xl bg-slate-100"
                   style={{
-                    width: `${preview.w}px`,
-                    maxWidth: "100%",
+                    width: `${Math.round(preview.w * zoom)}px`,
                     aspectRatio: `${tw} / ${th}`,
                   }}
+                  onPointerDown={(e) => startDrag(e, "move")}
                 >
                   <canvas ref={previewRef} className="block h-full w-full" />
                   {cropMode && (
                     <div className="absolute inset-0 cursor-crosshair touch-none select-none">
                       {/* Box di selezione: bordi + oscuramento (clippato dal container) */}
                       <div
-                        className="absolute cursor-move border-2 border-white shadow-[0_0_0_9999px_rgba(0,0,0,0.45)]"
+                        className={`absolute cursor-move border-2 shadow-[0_0_0_9999px_rgba(0,0,0,0.45)] transition-colors ${
+                          dragActive ? "border-blue-400" : "border-white"
+                        }`}
                         style={{
                           left: `${crop.x * 100}%`,
                           top: `${crop.y * 100}%`,
@@ -456,64 +531,106 @@ export default function MerchantImageEditorDialog({
 
                 {cropMode && (
                   /* Maniglie su layer NON clippato: sempre visibili e afferrabili,
-                     anche a selezione piena (il container ha overflow-hidden + angoli
-                     arrotondati che taglierebbero le maniglie sugli angoli). */
+                     anche a selezione piena. L'area tattile è 32px (facile su touch),
+                     il quadratino grafico resta 16px elegante. */
                   <div className="pointer-events-none absolute inset-0 touch-none select-none">
                     <span
-                      className="pointer-events-auto absolute h-4 w-4 cursor-nwse-resize rounded-sm border border-slate-400 bg-white shadow-sm"
+                      className="pointer-events-auto absolute z-10 flex h-8 w-8 cursor-nwse-resize touch-none items-center justify-center"
                       style={{ left: `${crop.x * 100}%`, top: `${crop.y * 100}%`, transform: "translate(-50%, -50%)" }}
+                      data-crop-handle="nw"
                       onPointerDown={(e) => startDrag(e, "nw")}
-                    />
+                    >
+                      <span
+                        className={`h-5 w-5 rounded-full border-2 border-white bg-blue-600 shadow-sm transition-transform ${
+                          dragActive === "nw" ? "scale-110 ring-2 ring-white ring-offset-2 ring-offset-blue-600" : ""
+                        }`}
+                      />
+                    </span>
                     <span
-                      className="pointer-events-auto absolute h-4 w-4 cursor-nesw-resize rounded-sm border border-slate-400 bg-white shadow-sm"
+                      className="pointer-events-auto absolute z-10 flex h-8 w-8 cursor-nesw-resize touch-none items-center justify-center"
                       style={{ left: `${(crop.x + crop.w) * 100}%`, top: `${crop.y * 100}%`, transform: "translate(-50%, -50%)" }}
+                      data-crop-handle="ne"
                       onPointerDown={(e) => startDrag(e, "ne")}
-                    />
+                    >
+                      <span
+                        className={`h-5 w-5 rounded-full border-2 border-white bg-blue-600 shadow-sm transition-transform ${
+                          dragActive === "ne" ? "scale-110 ring-2 ring-white ring-offset-2 ring-offset-blue-600" : ""
+                        }`}
+                      />
+                    </span>
                     <span
-                      className="pointer-events-auto absolute h-4 w-4 cursor-nesw-resize rounded-sm border border-slate-400 bg-white shadow-sm"
+                      className="pointer-events-auto absolute z-10 flex h-8 w-8 cursor-nesw-resize touch-none items-center justify-center"
                       style={{ left: `${crop.x * 100}%`, top: `${(crop.y + crop.h) * 100}%`, transform: "translate(-50%, -50%)" }}
+                      data-crop-handle="sw"
                       onPointerDown={(e) => startDrag(e, "sw")}
-                    />
+                    >
+                      <span
+                        className={`h-5 w-5 rounded-full border-2 border-white bg-blue-600 shadow-sm transition-transform ${
+                          dragActive === "sw" ? "scale-110 ring-2 ring-white ring-offset-2 ring-offset-blue-600" : ""
+                        }`}
+                      />
+                    </span>
                     <span
-                      className="pointer-events-auto absolute h-4 w-4 cursor-nwse-resize rounded-sm border border-slate-400 bg-white shadow-sm"
+                      className="pointer-events-auto absolute z-10 flex h-8 w-8 cursor-nwse-resize touch-none items-center justify-center"
                       style={{ left: `${(crop.x + crop.w) * 100}%`, top: `${(crop.y + crop.h) * 100}%`, transform: "translate(-50%, -50%)" }}
+                      data-crop-handle="se"
                       onPointerDown={(e) => startDrag(e, "se")}
-                    />
+                    >
+                      <span
+                        className={`h-5 w-5 rounded-full border-2 border-white bg-blue-600 shadow-sm transition-transform ${
+                          dragActive === "se" ? "scale-110 ring-2 ring-white ring-offset-2 ring-offset-blue-600" : ""
+                        }`}
+                      />
+                    </span>
                   </div>
                 )}
               </div>
-              {cropMode && (
+              {cropMode ? (
                 <p className="mt-2 text-center text-[11px] text-slate-400">
-                  Trascina per spostare il ritaglio, usa gli angoli per ridimensionarlo.
+                  Trascina l&apos;immagine per spostare il ritaglio, usa gli angoli per ridimensionarlo.
+                  Rotazione e riflessione ripristinano il ritaglio.
+                </p>
+              ) : (
+                <p className="mt-2 text-center text-[11px] text-slate-400">
+                  Ritaglio applicato: premi &quot;Ritaglia di nuovo&quot; per modificarlo.
                 </p>
               )}
 
-              {/* Anteprima del risultato */}
+              {/* CTA esplicita: conferma il ritaglio (poi "Salva modifiche" persiste) */}
+              {cropMode ? (
+                <button
+                  type="button"
+                  onClick={confermaRitaglio}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-blue-500 to-blue-700 px-4 py-2.5 text-sm font-bold text-white shadow shadow-blue-500/20 transition hover:shadow-md hover:shadow-blue-500/30 active:scale-[0.98]"
+                >
+                  <Check className="h-4 w-4" />
+                  Conferma ritaglio
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setCropMode(true)}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-blue-300 bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-700 transition hover:bg-blue-100"
+                >
+                  <Crop className="h-4 w-4" />
+                  Ritaglia di nuovo
+                </button>
+              )}
+
+              {/* Anteprima del risultato: mai intercetta i pointer events */}
               <div className="flex items-center justify-center gap-3 rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-3">
                 <span className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
                   Risultato
                 </span>
                 <canvas
                   ref={resultRef}
-                  className="rounded-lg border border-slate-200 bg-white shadow-sm"
+                  className="pointer-events-none rounded-lg border border-slate-200 bg-white shadow-sm"
                   style={{ maxWidth: 96, maxHeight: 96 }}
                 />
               </div>
 
               {/* Toolbar */}
               <div className="flex flex-wrap justify-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setCropMode((v) => !v)}
-                  className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-xs font-semibold transition ${
-                    cropMode
-                      ? "border-blue-500 bg-blue-50 text-blue-700"
-                      : "border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:text-blue-700"
-                  }`}
-                >
-                  <Crop className="h-3.5 w-3.5" />
-                  Ritaglia
-                </button>
                 <button
                   type="button"
                   onClick={resetCrop}
@@ -563,6 +680,30 @@ export default function MerchantImageEditorDialog({
                   <ImagePlus className="h-3.5 w-3.5" />
                   Sostituisci
                 </button>
+                {/* Zoom SOLO display: non tocca coordinate né export */}
+                <div className="flex items-center gap-0.5 rounded-xl border border-slate-200 bg-white px-1 py-1">
+                  <button
+                    type="button"
+                    onClick={() => setZoomIndex((i) => Math.max(0, i - 1))}
+                    disabled={zoomIndex === 0}
+                    aria-label="Riduci zoom"
+                    className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <ZoomOut className="h-3.5 w-3.5" />
+                  </button>
+                  <span className="min-w-9 text-center text-[11px] font-bold text-slate-600">
+                    {zoom}×
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setZoomIndex((i) => Math.min(ZOOM_LEVELS.length - 1, i + 1))}
+                    disabled={zoomIndex === ZOOM_LEVELS.length - 1}
+                    aria-label="Aumenta zoom"
+                    className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-600 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    <ZoomIn className="h-3.5 w-3.5" />
+                  </button>
+                </div>
               </div>
 
               {/* Input nascosto per sostituire l'immagine */}
@@ -591,7 +732,7 @@ export default function MerchantImageEditorDialog({
         <div className="flex items-center justify-between gap-3 border-t border-slate-100 px-5 py-3">
           <button
             type="button"
-            onClick={onClose}
+            onClick={richiediChiusura}
             disabled={saving}
             className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 transition hover:text-slate-800 disabled:opacity-50"
           >
@@ -613,6 +754,21 @@ export default function MerchantImageEditorDialog({
           </button>
         </div>
       </div>
+
+      {/* Conferma di chiusura con modifiche non salvate (ConfirmDialog riusabile) */}
+      <ConfirmDialog
+        open={confermaChiusura}
+        title="Annullare le modifiche?"
+        message="Le modifiche all'immagine non sono state salvate. Se esci ora le perderai."
+        confirmLabel="Esci senza salvare"
+        cancelLabel="Continua modifica"
+        destructive
+        onConfirm={() => {
+          setConfermaChiusura(false);
+          onClose();
+        }}
+        onCancel={() => setConfermaChiusura(false)}
+      />
     </div>
   );
 }
