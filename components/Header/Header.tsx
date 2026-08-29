@@ -29,7 +29,7 @@ export default async function Header() {
 
   return (
     <header className="border-b border-slate-200 bg-white shadow-sm">
-      <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-1.5 py-3 sm:px-4 md:px-6 lg:flex-row lg:items-start lg:gap-3">
+      <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-1 px-1.5 py-1.5 sm:px-4 md:px-6 lg:flex-row lg:items-start lg:gap-3">
         {/* Colonna sinistra: riga LOGO + (METEO sopra ACCEDI) sopra, widget farmacie sotto */}
         <div className="flex w-full flex-col lg:w-auto">
           {/*
