@@ -20,7 +20,9 @@ import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
 import { MapPin, Phone, MessageCircle, Tag, Calendar, Clock, Globe, Sparkles } from "lucide-react";
 import OpeningHoursDisplay from "@/components/negozio/OpeningHoursDisplay";
 import RichiestaInfoButton from "@/components/negozio/RichiestaInfoButton";
+import PrenotazioneButton from "@/components/negozio/PrenotazioneButton";
 import { getConfigRichiestaInfo } from "@/lib/negozio/richiesta-info";
+import { getConfigPrenotazioni } from "@/lib/prenotazioni";
 import type { ServizioStrutturato } from "@/types/negozio";
 
 type Params = { slug: string };
@@ -150,6 +152,21 @@ export default async function PaginaNegozio({
         return oa - ob;
       }) as unknown as ServizioStrutturato[];
   })();
+
+  // Prenotazioni (negozi.data.prenotazioni_config): CTA solo se il modulo è
+  // attivo nei moduli_attivi E la configurazione ha attiva === true E c'è
+  // almeno un servizio attivo prenotabile (durata_min 5–480).
+  const configPrenotazioni = moduliAttivi.includes("prenotazioni")
+    ? getConfigPrenotazioni((negozio.data ?? {}) as Record<string, unknown> | null)
+    : null;
+  const prenotazioniAttive =
+    !!configPrenotazioni && configPrenotazioni.attiva === true;
+  const serviziPrenotabili = prenotazioniAttive
+    ? serviziStrutturati.filter((s) => {
+        const d = s.durata_min;
+        return typeof d === "number" && Number.isFinite(d) && d >= 5 && d <= 480;
+      })
+    : [];
 
   // Stato preferiti per il pulsante "Salva negozio" e per le card prodotto.
   const statoPreferiti = await getStatoPreferitiPerPagina();
@@ -294,6 +311,14 @@ export default async function PaginaNegozio({
               emailObbligatoria={configRichiestaInfo.email_obbligatoria}
               telefonoObbligatoria={configRichiestaInfo.telefono_obbligatorio}
               messaggioObbligatoria={configRichiestaInfo.messaggio_obbligatorio}
+            />
+          )}
+          {serviziPrenotabili.length > 0 && configPrenotazioni && (
+            <PrenotazioneButton
+              slug={slugCanonico ?? slug}
+              servizi={serviziPrenotabili}
+              config={configPrenotazioni}
+              etichetta="Prenota ora"
             />
           )}
           {negozio.indirizzo && (
@@ -621,6 +646,21 @@ export default async function PaginaNegozio({
                         )}
                       </div>
                     </div>
+                    {(() => {
+                      const d = servizio.durata_min;
+                      const prenotabile =
+                        typeof d === "number" && Number.isFinite(d) && d >= 5 && d <= 480;
+                      return prenotabile && configPrenotazioni ? (
+                        <PrenotazioneButton
+                          slug={slugCanonico ?? slug}
+                          servizi={serviziPrenotabili}
+                          config={configPrenotazioni}
+                          servizioIniziale={servizio.id}
+                          etichetta="Prenota"
+                          compatto
+                        />
+                      ) : null;
+                    })()}
                   </div>
                 </article>
               ))}

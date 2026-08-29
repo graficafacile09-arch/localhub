@@ -34,6 +34,7 @@ register("ai", () => import("@/components/merchant/modules/AiModule"));
 register("pagamenti", () => import("@/components/merchant/modules/PagamentiModule"));
 register("impostazioni", () => import("@/components/merchant/modules/ImpostazioniModule"));
 register("richiesta_info", () => import("@/components/merchant/modules/RichiestaInfoModule"));
+register("prenotazioni", () => import("@/components/merchant/modules/PrenotazioniModule"));
 
 export async function getModuleComponent(slug: string): Promise<React.ComponentType<ModuleComponentProps> | null> {
   const loader = MODULES.get(slug);
