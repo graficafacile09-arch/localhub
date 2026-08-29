@@ -90,6 +90,23 @@ export type Categoria = {
   attivo: boolean;
 };
 
+/**
+ * Servizio strutturato di un negozio, persistito in `negozi.data.servizi_strutturati`
+ * (array jsonb). NON è un prodotto: non ha carrello/checkout/disponibilità.
+ * `negozi.servizi` (tag, text[]) resta separato e invariato per compatibilità.
+ */
+export type ServizioStrutturato = {
+  id: string;
+  nome: string;
+  descrizione?: string | null;
+  prezzo?: number | null;
+  prezzo_da?: boolean;
+  durata_min?: number | null;
+  immagine?: string | null;
+  ordinamento?: number;
+  attivo?: boolean;
+};
+
 export type ModuloRegistro = {
   id: string;
   slug: string;
