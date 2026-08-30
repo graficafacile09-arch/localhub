@@ -64,7 +64,7 @@ const azioni = [
   },
   {
     key: "prenotazioni",
-    title: "Prenotazioni",
+    title: "Agenda",
     description: "Appuntamenti dei clienti.",
     icon: CalendarCheck,
     href: (storeId: string) => `/merchant/${storeId}/edit?step=vendita&block=prenotazioni`,

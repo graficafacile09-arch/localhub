@@ -451,8 +451,7 @@ export default function PrenotazioneForm({
       {slotOccupato && (
         <p className="flex items-start gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-semibold leading-4 text-amber-800">
           <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          Questo orario è stato appena prenotato da un&apos;altra persona. Aggiorna
-          gli orari disponibili e scegli un nuovo slot.
+          Questo orario è già occupato. Scegli un altro orario.
         </p>
       )}
       {errore && !slotOccupato && (

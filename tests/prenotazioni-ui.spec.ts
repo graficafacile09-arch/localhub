@@ -229,7 +229,7 @@ test.describe("FASE 6f — UI PUBBLICA PRENOTAZIONI", () => {
     await dialog.getByRole("button", { name: "Conferma prenotazione" }).click();
 
     // Messaggio SLOT_OCCUPATO comprensibile.
-    await expect(dialog.getByText(/appena prenotato da un'altra persona/)).toBeVisible({ timeout: 10000 });
+    await expect(dialog.getByText(/già occupato/)).toBeVisible({ timeout: 10000 });
   });
 
   test("14. doppio click submit → un solo POST", async ({ page }) => {

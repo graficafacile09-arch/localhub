@@ -52,7 +52,7 @@ const MODULI_REGISTRO: ModuloRegistro[] = [
   { id: "12", slug: "ai", nome: "AI", descrizione: "Dati assistente AI", icona: "Bot", ordinamento: 12, attivo: true, default_in_template: true },
   { id: "13", slug: "impostazioni", nome: "Impostazioni", descrizione: "Visibilità e preferenze", icona: "Settings", ordinamento: 13, attivo: true, default_in_template: true },
   { id: "14", slug: "richiesta_info", nome: "Richiesta informazioni", descrizione: "Ricevi richieste dai clienti", icona: "MessageSquare", ordinamento: 14, attivo: true, default_in_template: true },
-  { id: "15", slug: "prenotazioni", nome: "Prenotazioni", descrizione: "Appuntamenti dei clienti", icona: "CalendarCheck", ordinamento: 15, attivo: true, default_in_template: true },
+  { id: "15", slug: "prenotazioni", nome: "Agenda", descrizione: "Appuntamenti dei clienti", icona: "CalendarCheck", ordinamento: 15, attivo: true, default_in_template: true },
 ];
 
 /** Moduli che non fanno parte del CMS ma sono sempre disponibili in Vendita. */
@@ -89,7 +89,7 @@ const MODULI_UX: Record<string, ModuloUx> = {
   "modalita-vendita": { titolo: "Come vendi", descrizione: "Ritiro in negozio, consegna o spedizione", azione: "Modifica modalità di vendita", icona: Store },
   spedizione: { titolo: "Spedizione", descrizione: "Pacco, corrieri e costi", azione: "Configura spedizione", icona: Truck },
   richiesta_info: { titolo: "Richiesta informazioni", descrizione: "Ricevi richieste dai clienti dalla tua pagina", azione: "Configura richieste", icona: MessageSquare },
-  prenotazioni: { titolo: "Prenotazioni", descrizione: "Ricevi e gestisci gli appuntamenti dei clienti", azione: "Configura prenotazioni", icona: CalendarCheck },
+  prenotazioni: { titolo: "Agenda", descrizione: "Ricevi e gestisci gli appuntamenti dei clienti", azione: "Configura agenda", icona: CalendarCheck },
 };
 
 type Sezione = {
@@ -109,7 +109,7 @@ const SEZIONI: Sezione[] = [
     icona: Store,
     titolo: "Il mio negozio",
     descrizione: "Tieni aggiornate le informazioni che i clienti vedono sul tuo negozio.",
-    riepilogo: "Informazioni · Foto · Contatti · Posizione · Orari · Richieste · Prenotazioni",
+    riepilogo: "Informazioni · Foto · Contatti · Posizione · Orari · Richieste · Agenda",
     moduli: ["informazioni", "immagini", "contatti", "posizione", "orari", "richiesta_info", "prenotazioni"],
     peso: "primaria",
   },
