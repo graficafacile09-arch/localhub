@@ -7,6 +7,7 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { canManageStore } from "@/lib/merchant/data";
 import { toSlug } from "@/lib/slug";
 import { normalizzaOrari } from "@/lib/orari";
+import { normalizzaEccezioni } from "@/lib/agenda";
 import type { Orari } from "@/types/negozio";
 
 const GALLERY_BUCKET = "store-images";
@@ -296,7 +297,24 @@ export async function PUT(
       .eq("id", negozioId)
       .single();
     const existing = (oldRow?.data ?? {}) as Record<string, unknown>;
-    payload.data = { ...existing, ...(payload.data as Record<string, unknown>) };
+    const nuovoData = payload.data as Record<string, unknown>;
+
+    // AGENDA ANNUALE: `agenda_eccezioni` è un oggetto interamente posseduto
+    // dal modulo Agenda → viene SOSTITUITO (replace) e normalizzato, mai fuso
+    // come le altre chiavi: così sia l'aggiornamento di una singola data sia
+    // la RIMOZIONE di una data funzionano davvero (un merge shallow non
+    // eliminerebbe mai una chiave esistente). `null` = cancella la mappa.
+    if (nuovoData.agenda_eccezioni !== undefined) {
+      const raw = nuovoData.agenda_eccezioni;
+      if (raw === null) {
+        delete existing.agenda_eccezioni;
+      } else {
+        existing.agenda_eccezioni = normalizzaEccezioni(raw);
+      }
+      delete nuovoData.agenda_eccezioni;
+    }
+
+    payload.data = { ...existing, ...nuovoData };
   }
 
   const { data: oldRow } = await supabase

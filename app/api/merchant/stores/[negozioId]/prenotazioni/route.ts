@@ -35,18 +35,26 @@ export async function GET(
 
   const url = new URL(request.url);
   const giorno = url.searchParams.get("giorno");
+  const da = url.searchParams.get("da");
+  const a = url.searchParams.get("a");
   const stato = url.searchParams.get("stato");
   const paginaRaw = Number(url.searchParams.get("pagina") ?? "1");
   const perPaginaRaw = Number(url.searchParams.get("perPagina") ?? "50");
   const pagina = Number.isInteger(paginaRaw) && paginaRaw > 0 ? paginaRaw : 1;
   const perPagina =
     Number.isInteger(perPaginaRaw) && perPaginaRaw > 0
-      ? Math.min(perPaginaRaw, 200)
+      ? Math.min(perPaginaRaw, 366) // 366 = un intero mese (vista calendario)
       : 50;
   const from = (pagina - 1) * perPagina;
 
   if (giorno && !DATA_RE.test(giorno)) {
     return apiError("INVALID_DATE", "Data non valida.", 422);
+  }
+  if (da && !DATA_RE.test(da)) {
+    return apiError("INVALID_DATE", "Data di inizio intervallo non valida.", 422);
+  }
+  if (a && !DATA_RE.test(a)) {
+    return apiError("INVALID_DATE", "Data di fine intervallo non valida.", 422);
   }
   if (stato && !STATI_VALIDI.includes(stato)) {
     return apiError("VALIDATION_ERROR", "Stato non valido.", 422);
@@ -64,6 +72,11 @@ export async function GET(
 
   let query = base();
   if (giorno) query = query.eq("giorno", giorno);
+  // Intervallo (per la vista calendario annuale dell'Agenda): `da` e `a`
+  // inclusivi; NON combinabile con `giorno` (l'API applica entrambi, ma il
+  // calendario usa solo l'intervallo).
+  if (da) query = query.gte("giorno", da);
+  if (a) query = query.lte("giorno", a);
   if (stato) query = query.eq("stato", stato);
 
   const { data, count, error } = await query

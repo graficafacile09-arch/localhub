@@ -12,12 +12,13 @@
  */
 
 import {
-  ITALIAN_DAYS,
   type ConfigPrenotazioni,
-  type DaySchedule,
-  type Orari,
 } from "@/types/negozio";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+// Risoluzione del giorno (settimana + eccezioni Agenda annuale): l'unico punto
+// è `risolviGiorno`/`getDaySchedule` in lib/agenda.ts (funzioni pure, riusate
+// da route e client). Qui vengono solo ri-esportate per compatibilità.
+export { getDaySchedule, risolviGiorno } from "@/lib/agenda";
 
 /** Default di configurazione prenotazioni (coerente con Fase 6a/6c). */
 export const PRENOTAZIONI_CONFIG_DEFAULT: ConfigPrenotazioni = {
@@ -52,33 +53,7 @@ export function getConfigPrenotazioni(
   };
 }
 
-/**
- * DaySchedule del giorno (negzi.orari è jsonb con chiavi giorno italiane).
- * `giorno` è civile YYYY-MM-DD; il dow segue extract(dow) di PostgreSQL
- * (0=domenica … 6=sabato) come nelle RPC: viene usato ITALIAN_DAYS.
- * Se il negozio non ha orari o manca il giorno → giorno chiuso (0 slot).
- */
-export function getDaySchedule(
-  orari: Orari | null | undefined,
-  giorno: string
-): DaySchedule {
-  if (!orari || typeof orari !== "object") {
-    return { chiuso: true, apertura1: "", chiusura1: "", apertura2: "", chiusura2: "" };
-  }
-  const dow = new Date(`${giorno}T00:00:00Z`).getUTCDay();
-  const chiave = ITALIAN_DAYS[dow];
-  const day = orari[chiave];
-  if (!day || typeof day !== "object") {
-    return { chiuso: true, apertura1: "", chiusura1: "", apertura2: "", chiusura2: "" };
-  }
-  return {
-    chiuso: day.chiuso === true,
-    apertura1: day.apertura1 ?? "",
-    chiusura1: day.chiusura1 ?? "",
-    apertura2: day.apertura2 ?? "",
-    chiusura2: day.chiusura2 ?? "",
-  };
-}
+
 
 /** Esito RPC restituito dalle funzioni SQL (jsonb). */
 export type EsitoRpc =
