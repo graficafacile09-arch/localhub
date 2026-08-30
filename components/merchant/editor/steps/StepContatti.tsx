@@ -1,27 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { MapPin, Phone, Share2, Clock, Copy } from "lucide-react";
+import { MapPin, Phone, Share2, Clock } from "lucide-react";
 import { Field, SaveBar } from "@/components/merchant/modules/ModuleFields";
-import {
-  DAYS,
-  EMPTY_DAY,
-  CLOSED_DAY,
-  type DaySchedule,
-  type Orari,
-} from "@/types/negozio";
-import { orariIniziali, ORARI_PRESET_LABELS, ORARI_PRESETS } from "@/lib/orari";
+import type { Orari } from "@/types/negozio";
+import { orariIniziali, normalizzaOrari } from "@/lib/orari";
 import type { StepProps } from "../editor-steps";
-
-const SHORT: Record<string, string> = {
-  lunedì: "Lun",
-  martedì: "Mar",
-  mercoledì: "Mer",
-  giovedì: "Gio",
-  venerdì: "Ven",
-  sabato: "Sab",
-  domenica: "Dom",
-};
+import OrariEditor from "@/components/merchant/orari/OrariEditor";
 
 type ContattiForm = {
   indirizzo: string;
@@ -60,7 +45,7 @@ export default function StepContatti({ storeId, store, onDataChanged }: StepProp
     typeof store?.data?.tipo_attivita === "string" ? (store.data.tipo_attivita as string) : null;
 
   const [orari, setOrari] = useState<Orari>(() =>
-    orariIniziali(store?.orari, null, profiloId)
+    normalizzaOrari(orariIniziali(store?.orari, null, profiloId))
   );
   const [original, setOriginal] = useState("");
   const [saving, setSaving] = useState(false);
@@ -86,7 +71,7 @@ export default function StepContatti({ storeId, store, onDataChanged }: StepProp
     };
     const sProfiloId =
       typeof s?.data?.tipo_attivita === "string" ? (s.data.tipo_attivita as string) : null;
-    const o = orariIniziali(s?.orari, null, sProfiloId);
+    const o = normalizzaOrari(orariIniziali(s?.orari, null, sProfiloId));
     setForm(vals);
     setOrari(o);
     setOriginal(JSON.stringify({ ...vals, orari: o }));
@@ -99,46 +84,25 @@ export default function StepContatti({ storeId, store, onDataChanged }: StepProp
     setForm((f) => ({ ...f, [key]: value }));
   }
 
-  function updateDay(day: string, patch: Partial<DaySchedule>) {
-    setOrari((prev) => {
-      const current = prev[day] ? { ...prev[day] } : { ...EMPTY_DAY };
-      return { ...prev, [day]: { ...current, ...patch } };
-    });
-  }
-
-  function toggleChiuso(day: string, aperto: boolean) {
-    setOrari((prev) => ({
-      ...prev,
-      [day]: aperto ? { ...EMPTY_DAY } : { ...CLOSED_DAY },
-    }));
-  }
-
-  function copiaDalLunedi() {
-    const lunedi = orari["lunedì"] ?? { ...EMPTY_DAY };
-    const nuovi: Orari = {};
-    for (const d of DAYS) nuovi[d] = { ...lunedi };
-    setOrari(nuovi);
-  }
-
-  function applyPreset(preset: keyof typeof ORARI_PRESETS) {
-    setOrari(ORARI_PRESETS[preset]);
-  }
-
   async function handleSave() {
     setSaving(true);
     setError(null);
     try {
+      // Normalizza SEMPRE prima dell'invio (stessa logica del backend):
+      // niente fasce sovrapposte nei dati persistiti.
+      const orariNormalizzati = normalizzaOrari(orari);
       const res = await fetch(`/api/merchant/stores/${storeId}/settings`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, orari }),
+        body: JSON.stringify({ ...form, orari: orariNormalizzati }),
       });
       const json = await res.json();
       if (!res.ok || !json.success) {
         setError(json.error?.message ?? "Salvataggio non riuscito.");
         return;
       }
-      setOriginal(JSON.stringify({ ...form, orari }));
+      const normalizzato = JSON.stringify({ ...form, orari: orariNormalizzati });
+      setOriginal(normalizzato);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
       onDataChanged();
@@ -197,101 +161,12 @@ export default function StepContatti({ storeId, store, onDataChanged }: StepProp
         </div>
       </section>
 
-      {/* Orari */}
+      {/* Orari — componente universale condiviso (idem per QUALSIASI attività) */}
       <section className="rounded-2xl border border-slate-200 bg-white p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900">
-            <Clock className="h-4 w-4 text-blue-500" /> Orari di apertura
-          </h3>
-          <button
-            type="button"
-            onClick={copiaDalLunedi}
-            className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[10px] font-semibold text-slate-500 transition hover:border-blue-300 hover:text-blue-600"
-          >
-            <Copy className="h-3 w-3" /> Copia dal lunedì
-          </button>
-        </div>
-
-        {/* Preset di orari per tipo di attività (un click) */}
-        <div className="mb-3 flex flex-wrap gap-2">
-          {ORARI_PRESET_LABELS.map((preset) => (
-            <button
-              key={preset.id}
-              type="button"
-              onClick={() => applyPreset(preset.id)}
-              className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-600 transition hover:border-blue-300 hover:text-blue-600"
-            >
-              {preset.nome}
-            </button>
-          ))}
-        </div>
-        <div className="space-y-1">
-          {DAYS.map((day) => {
-            const scheda = orari[day] ?? EMPTY_DAY;
-            return (
-              <div key={day} className={`rounded-lg px-3 py-1.5 ${scheda.chiuso ? "bg-slate-50" : "bg-white"}`}>
-                <div className="flex items-center gap-3">
-                  <label className="flex w-14 shrink-0 items-center gap-1.5">
-                    <input
-                      type="checkbox"
-                      checked={!scheda.chiuso}
-                      onChange={(e) => toggleChiuso(day, e.target.checked)}
-                      className="h-3.5 w-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-400"
-                    />
-                    <span className={`text-[11px] font-semibold ${scheda.chiuso ? "text-slate-400" : "text-slate-700"}`}>
-                      {SHORT[day]}
-                    </span>
-                  </label>
-                  {scheda.chiuso ? (
-                    <span className="text-[10px] italic text-slate-400">Chiuso</span>
-                  ) : (
-                    <div className="flex flex-1 flex-wrap items-center gap-2">
-                      <input
-                        type="time"
-                        value={scheda.apertura1}
-                        onChange={(e) => updateDay(day, { apertura1: e.target.value })}
-                        className="h-7 rounded border border-slate-100 bg-slate-50 px-1.5 text-[11px] text-slate-700 outline-none focus:border-blue-300"
-                      />
-                      <span className="text-[10px] text-slate-300">–</span>
-                      <input
-                        type="time"
-                        value={scheda.chiusura1}
-                        onChange={(e) => updateDay(day, { chiusura1: e.target.value })}
-                        className="h-7 rounded border border-slate-100 bg-slate-50 px-1.5 text-[11px] text-slate-700 outline-none focus:border-blue-300"
-                      />
-                      {(scheda.apertura2 || scheda.chiusura2) ? (
-                        <>
-                          <span className="text-[10px] text-slate-300">&amp;</span>
-                          <input
-                            type="time"
-                            value={scheda.apertura2}
-                            onChange={(e) => updateDay(day, { apertura2: e.target.value })}
-                            className="h-7 rounded border border-slate-100 bg-slate-50 px-1.5 text-[11px] text-slate-700 outline-none focus:border-blue-300"
-                          />
-                          <span className="text-[10px] text-slate-300">–</span>
-                          <input
-                            type="time"
-                            value={scheda.chiusura2}
-                            onChange={(e) => updateDay(day, { chiusura2: e.target.value })}
-                            className="h-7 rounded border border-slate-100 bg-slate-50 px-1.5 text-[11px] text-slate-700 outline-none focus:border-blue-300"
-                          />
-                        </>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => updateDay(day, { apertura2: "15:00", chiusura2: "19:00" })}
-                          className="text-[10px] font-medium text-slate-400 transition hover:text-blue-500"
-                        >
-                          + seconda fascia
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <h3 className="mb-4 flex items-center gap-2 text-sm font-bold text-slate-900">
+          <Clock className="h-4 w-4 text-blue-500" /> Orari di apertura
+        </h3>
+        <OrariEditor orari={orari} onChange={setOrari} />
       </section>
 
       {error && (
