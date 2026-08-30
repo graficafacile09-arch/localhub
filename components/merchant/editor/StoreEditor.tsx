@@ -139,11 +139,11 @@ export default function StoreEditor({
   return (
     <div className="flex min-h-[calc(100vh-4rem)]">
       {sidebarOpen && (
-        <div className="fixed inset-0 z-30 bg-black/30 md:hidden" onClick={() => setSidebarOpen(false)} />
+        <div className="fixed inset-0 z-30 bg-black/30 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-40 w-72 shrink-0 border-r border-slate-100 bg-white pt-16 transition-transform duration-200 md:relative md:inset-auto md:z-auto md:translate-x-0 md:pt-0 ${
+        className={`fixed inset-y-0 left-0 z-40 w-72 shrink-0 border-r border-slate-100 bg-white pt-16 transition-transform duration-200 lg:relative lg:inset-auto lg:z-auto lg:translate-x-0 lg:pt-0 ${
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -159,7 +159,7 @@ export default function StoreEditor({
 
       <main className="min-w-0 flex-1 overflow-auto px-4 py-4 sm:px-6 lg:px-8">
         {/* Mobile header */}
-        <div className="mb-4 flex items-center gap-3 md:hidden">
+        <div className="mb-4 flex items-center gap-3 lg:hidden">
           <button
             type="button"
             onClick={() => setSidebarOpen(true)}

@@ -393,3 +393,13 @@ body.correggi-ai-aperto .merchant-bottom-nav-spacer {
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.45);
   transition: box-shadow 0.15s ease;
 }
+
+/* Editor negozio — i figli diretti delle griglie dei moduli devono poter
+   restringersi sotto il proprio min-content (default CSS Grid: min-width:auto).
+   Senza questo, input/textarea w-full con placeholder lunghi gonfiano la
+   colonna implicita del grid oltre la larghezza del pannello su mobile,
+   creando overflow orizzontale interno all'editor. Vale per qualunque
+   modulo/negozio: fix generico a livello del container condiviso dei blocchi. */
+.editor-blocco .grid > * {
+  min-width: 0;
+}
