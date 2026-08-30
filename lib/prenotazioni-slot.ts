@@ -227,5 +227,19 @@ export function generaSlotDisponibili({
 
   // deterministico: ordina per inizio
   risultato.sort((a, b) => a.inizioMin - b.inizioMin);
-  return risultato;
+
+  // ── 17. Deduplica SEMPRE per inizio ───────────────────────────────────────
+  // Se nel DB esistono ancora vecchi orari sovrapposti (due fasce che coprono
+  // la stessa fascia), ogni finestra genererebbe gli stessi inizio → duplicati.
+  // Garanzia: MASSIMO UNO slot per ogni ora di inizio, a prescindere da quante
+  // fasce lo abbiano prodotto. Non cambia la durata, non cambia la timezone,
+  // non altera le prenotazioni esistenti.
+  const visti = new Set<number>();
+  const unici: SlotDisponibile[] = [];
+  for (const s of risultato) {
+    if (visti.has(s.inizioMin)) continue;
+    visti.add(s.inizioMin);
+    unici.push(s);
+  }
+  return unici;
 }

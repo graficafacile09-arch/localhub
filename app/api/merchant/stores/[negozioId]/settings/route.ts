@@ -6,6 +6,8 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { canManageStore } from "@/lib/merchant/data";
 import { toSlug } from "@/lib/slug";
+import { normalizzaOrari } from "@/lib/orari";
+import type { Orari } from "@/types/negozio";
 
 const GALLERY_BUCKET = "store-images";
 
@@ -250,6 +252,16 @@ export async function PUT(
     if (field in body) {
       payload[field] = (body as Record<string, unknown>)[field];
     }
+  }
+
+  // ── Normalizzazione orari (mai pass-through cieco) ───────────────────────
+  // Gli orari vengono SEMPRE fatti passare da `normalizzaOrari` prima del
+  // salvataggio: elimina fasce incomplete, ordina, fonde le sovrapposte,
+  // scarta quelle contenute e mantiene il formato JSONB. Così il DB non
+  // contiene MAI due fasce ambigue sullo stesso giorno (doppio livello di
+  // sicurezza: UI + backend), anche se il client invia dati sporchi.
+  if ("orari" in payload && payload.orari && typeof payload.orari === "object") {
+    payload.orari = normalizzaOrari(payload.orari as Orari);
   }
 
   if (Object.keys(payload).length === 0) {

@@ -7,6 +7,7 @@
 import { test, expect } from "@playwright/test";
 import type { ConfigPrenotazioni, DaySchedule, Prenotazione } from "@/types/negozio";
 import { generaSlotDisponibili, TIMEZONE } from "@/lib/prenotazioni-slot";
+import { normalizzaGiorno } from "@/lib/orari";
 
 // ── helper ───────────────────────────────────────────────────────────────
 const GIORNO = "2026-08-31"; // lunedì (data civile, solo per confronti)
@@ -316,4 +317,79 @@ test("U — DST/timezone Europe/Rome: nessun offset manuale", () => {
   expect(Array.isArray(a)).toBe(true);
   // e il timezone è quello esposto
   expect(TIMEZONE).toBe("Europe/Rome");
+});
+
+test("V — finestre sovrapposte (09–20 + 15–19) → MASSIMO UNO slot per inizio, nessun duplicato", () => {
+  // Caso critico reale: senza deduplica, la seconda finestra (15–19, interna a
+  // 09–20) produce gli stessi inizio della prima → duplicati. Ora dedupe.
+  const r = chiama({
+    daySchedule: day({ chiusura1: "20:00", apertura2: "15:00", chiusura2: "19:00" }),
+  });
+  const o = orari(r);
+  // garantisce massimo uno slot per ogni inizio
+  expect(new Set(o).size).toBe(o.length);
+  // 09:00..19:30 a passo 30 (durata 30) → 22 slot unici
+  expect(o).toEqual([
+    "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
+    "12:00", "12:30", "13:00", "13:30", "14:00", "14:30",
+    "15:00", "15:30", "16:00", "16:30", "17:00", "17:30",
+    "18:00", "18:30", "19:00", "19:30",
+  ]);
+});
+
+test("W — finestre identiche → nessun duplicato di inizio", () => {
+  const r = chiama({
+    daySchedule: day({ apertura2: "09:00", chiusura2: "13:00" }),
+  });
+  const o = orari(r);
+  expect(new Set(o).size).toBe(o.length);
+  expect(o).toEqual(["09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "12:00", "12:30"]);
+});
+
+test("X — dopo la normalizzazione backend, gli slot restano identici e senza duplicati", () => {
+  // Simula ciò che avviene dopo che `normalizzaOrari` ha fuso 09–20 + 15–19
+  // in una sola fascia 09–20: il generatore produce gli stessi slot unici.
+  const normalizzato = normalizzaGiorno(
+    day({ chiusura1: "20:00", apertura2: "15:00", chiusura2: "19:00" })
+  );
+  expect(normalizzato.apertura1).toBe("09:00");
+  expect(normalizzato.chiusura1).toBe("20:00");
+  expect(normalizzato.apertura2).toBe("");
+
+  const r = chiama({ daySchedule: normalizzato });
+  const o = orari(r);
+  expect(new Set(o).size).toBe(o.length);
+  expect(o[0]).toBe("09:00");
+  expect(o[o.length - 1]).toBe("19:30");
+});
+
+test("Y — prenotazione già confermata → slot occupato ESCLUSO (nessun duplicato)", () => {
+  const r = chiama({
+    daySchedule: day({ chiusura1: "20:00", apertura2: "15:00", chiusura2: "19:00" }),
+    prenotazioni: [
+      prenotazione({ ora_inizio: "11:00", ora_fine: "11:30", stato: "confermata" }),
+    ],
+  });
+  const o = orari(r);
+  expect(new Set(o).size).toBe(o.length);
+  expect(o).not.toContain("11:00");
+  expect(o).toContain("10:30");
+});
+
+test("Z — caso reale Dott. Bianchi: durata 30 / passo 15 su 09–20 + 15–19 → da 58 a slot UNICI", () => {
+  // Senza deduplica: 43 slot dalla fascia 09–20 + 15 slot duplicati dalla
+  // 15–19 = 58 voci con 15 doppioni. Con la deduplica → 43 slot unici.
+  const r = chiama({
+    durataMin: 30,
+    config: config({ passo_slot_min: 15 }),
+    daySchedule: day({ chiusura1: "20:00", apertura2: "15:00", chiusura2: "19:00" }),
+  });
+  const o = orari(r);
+  expect(o.length).toBe(43); // NON 58
+  expect(new Set(o).size).toBe(o.length);
+  expect(o).toContain("09:00");
+  expect(o).toContain("11:15");
+  expect(o).toContain("15:00");
+  expect(o).toContain("19:30");
+  expect(o).not.toContain("20:00"); // non oltre la chiusura
 });
