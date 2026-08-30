@@ -3,10 +3,11 @@ import { risolviNegozioPubblico } from "@/lib/negozi";
 import { generaSlotDisponibili, TIMEZONE } from "@/lib/prenotazioni-slot";
 import {
   getConfigPrenotazioni,
-  getDaySchedule,
 } from "@/lib/prenotazioni";
+import { normalizzaEccezioni, risolviGiorno } from "@/lib/agenda";
+import { getModuliAttiviNegozio } from "@/lib/profili-attivita";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
-import type { Prenotazione } from "@/types/negozio";
+import type { Negozio, Orari, Prenotazione } from "@/types/negozio";
 
 const DATA_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -34,9 +35,9 @@ export async function GET(
     return apiError("STORE_NOT_FOUND", "Negozio non trovato.", 404);
   }
 
-  const moduliAttivi: string[] = Array.isArray(negozio.moduli_attivi)
-    ? (negozio.moduli_attivi as string[])
-    : [];
+  // STESSA risoluzione centralizzata dell'editor e del POST: profilo
+  // data.tipo_attivita → moduli_attivi (mai `if categoria === ...`).
+  const moduliAttivi = getModuliAttiviNegozio(negozio as Negozio) ?? [];
   if (!moduliAttivi.includes("prenotazioni")) {
     return apiError("BOOKING_MODULE_DISABLED", "Questo negozio non accetta prenotazioni.", 403);
   }
@@ -81,8 +82,14 @@ export async function GET(
     return apiError("VALIDATION_ERROR", "Durata del servizio non valida.", 422);
   }
 
-  const daySchedule = getDaySchedule(
-    (negozio.orari ?? null) as Record<string, import("@/types/negozio").DaySchedule> | null,
+  // Agenda annuale: l'eccezione della data (se presente) prevale sul
+  // calendario settimanale. `risolviGiorno` è l'UNICO punto di risoluzione,
+  // identico a quello delle RPC crea/sposta_prenotazione.
+  const dataNegozio = (negozio.data ?? {}) as Record<string, unknown>;
+  const eccezioni = normalizzaEccezioni(dataNegozio.agenda_eccezioni);
+  const daySchedule = risolviGiorno(
+    (negozio.orari ?? null) as Orari | null,
+    eccezioni,
     giorno
   );
 

@@ -4,7 +4,9 @@ import { useState, useEffect, useRef } from "react";
 import { CalendarCheck, CalendarClock, ChevronDown, ChevronUp, X } from "lucide-react";
 import ModuleShell from "./ModuleShell";
 import { Field, Toggle, SaveBar, type StatoSalvataggio } from "./ModuleFields";
-import type { ConfigPrenotazioni } from "@/types/negozio";
+import AgendaCalendario from "./AgendaCalendario";
+import type { AgendaEccezioni, ConfigPrenotazioni, Orari } from "@/types/negozio";
+import { normalizzaEccezioni } from "@/lib/agenda";
 
 type Props = { storeId: string };
 
@@ -76,6 +78,9 @@ export default function PrenotazioniModule({ storeId }: Props) {
   const [config, setConfig] = useState<ConfigPrenotazioni>({ ...DEFAULT });
   const [original, setOriginal] = useState(JSON.stringify({ ...DEFAULT }));
   const [messaggio, setMessaggio] = useState<StatoSalvataggio>(null);
+  // Agenda annuale: orari settimanali + eccezioni per singola data
+  const [orari, setOrari] = useState<Orari | null>(null);
+  const [eccezioni, setEccezioni] = useState<AgendaEccezioni>({});
 
   // Elenco prenotazioni (API Fase 6d)
   const [prenotazioni, setPrenotazioni] = useState<PrenotazioneRow[]>([]);
@@ -128,6 +133,8 @@ export default function PrenotazioniModule({ storeId }: Props) {
         const configNormalizzata = normalizza(data.prenotazioni_config);
         setConfig(configNormalizzata);
         setOriginal(JSON.stringify(configNormalizzata));
+        setOrari((json.data.settings.orari ?? null) as Orari | null);
+        setEccezioni(normalizzaEccezioni(data.agenda_eccezioni));
       })
       .catch(() => {
         if (attivo) setLoading(false);
@@ -177,6 +184,20 @@ export default function PrenotazioniModule({ storeId }: Props) {
     } finally {
       setSaving(false);
     }
+  }
+
+  /** Salva l'Agenda annuale (PUT /settings, replace di agenda_eccezioni). */
+  async function salvaEccezioni(eccezioniAggiornate: AgendaEccezioni) {
+    const res = await fetch(`/api/merchant/stores/${storeId}/settings`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ data: { agenda_eccezioni: eccezioniAggiornate } }),
+    });
+    const json = await res.json().catch(() => null);
+    if (!res.ok || !json?.success) {
+      throw new Error(json?.error?.message ?? "Salvataggio non riuscito.");
+    }
+    setEccezioni(eccezioniAggiornate);
   }
 
   /** Annulla una prenotazione (PUT azione annulla). */
@@ -293,6 +314,14 @@ export default function PrenotazioniModule({ storeId }: Props) {
             </p>
           </div>
         )}
+
+        {/* ── Calendario annuale (eccezioni per singola data) ────────── */}
+        <AgendaCalendario
+          storeId={storeId}
+          orari={orari}
+          eccezioni={eccezioni}
+          onSalva={salvaEccezioni}
+        />
 
         {/* ── Elenco prenotazioni ─────────────────────────────────────── */}
         <div className="rounded-xl border border-slate-100 bg-white p-4">

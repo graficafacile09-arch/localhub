@@ -223,3 +223,27 @@ export type ConfigPrenotazioni = {
   limite_giornaliero: number | null;
   passo_slot_min: number;
 };
+
+/**
+ * Eccezione dell'Agenda annuale per UNA singola data civile
+ * (`negozi.data.agenda_eccezioni`), chiave `YYYY-MM-DD` (Europe/Rome).
+ *
+ * Prevale sul calendario settimanale:
+ *  - `chiuso: true` → giorno non prenotabile (nessuno slot);
+ *  - altrimenti le fasce speciali (apertura1/chiusura1 + eventuale
+ *    apertura2/chiusura2) sostituiscono quelle settimanali; fasce incomplete
+ *    o sovrapposte vengono normalizzate come gli orari (mai slot duplicati);
+ *  - `motivo` opzionale (ferie, festività, chiusura straordinaria...).
+ */
+export type AgendaEccezione = {
+  chiuso?: boolean;
+  apertura1?: string;
+  chiusura1?: string;
+  apertura2?: string;
+  chiusura2?: string;
+  motivo?: string | null;
+};
+
+/** Mappa data civile (YYYY-MM-DD) → eccezione. Nessuna tabella slot: è solo
+ *  un overlay jsonb sul calendario settimanale. */
+export type AgendaEccezioni = Record<string, AgendaEccezione>;
