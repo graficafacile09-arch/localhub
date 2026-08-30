@@ -95,6 +95,23 @@ export function getSezioneDiBlocco(blocco: BloccoId): EditorSezione | undefined 
   return EDITOR_SEZIONI.find((s) => s.blocchi.includes(blocco));
 }
 
+/**
+ * Ordina i blocchi mettendo PRIMO il blocco di destinazione. Quando la
+ * navigazione punta a un blocco (es. quick action "Agenda" → `prenotazioni`),
+ * quel blocco diventa la PRIMA UI visibile della sezione, anche se nella
+ * sezione ci sono blocchi che in ordine statico lo precederebbero (es. attività
+ * miste con `vendita-commerciale` prima di `prenotazioni`). L'ordine relativo
+ * degli altri blocchi è preservato; senza target (o target non presente)
+ * l'ordine resta invariato.
+ */
+export function blocchiConDestinazioneInPrimo(
+  blocchi: BloccoId[],
+  target?: BloccoId | null
+): BloccoId[] {
+  if (!target || !blocchi.includes(target)) return blocchi;
+  return [target, ...blocchi.filter((b) => b !== target)];
+}
+
 /** Conteggi necessari ai controlli di pubblicazione. */
 export type ConteggiEditor = {
   prodotti: number;
