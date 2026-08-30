@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { Menu, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import EditorSidebar from "./EditorSidebar";
@@ -66,6 +66,18 @@ export default function StoreEditor({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loadError, setLoadError] = useState(false);
 
+  /** Container scrollabile reale dell'editor (cresce oltre il viewport su
+   *  tutte le viewport: lo scroll avviene sul documento). */
+  const mainRef = useRef<HTMLElement | null>(null);
+  /** Root della sezione attiva: viene portato all'inizio della viewport
+   *  a ogni cambio sezione (compreso il primo caricamento con ?block=). */
+  const sectionRef = useRef<HTMLDivElement | null>(null);
+
+  /** True quando il contenuto della sezione è realmente montato (dati
+   *  caricati). Lo scroll va fatto SOLO a contenuto presente: al mount
+   *  con deep-link la sezione arriva in modo asincrono dopo il fetch. */
+  const contentReady = !loading && !!store && !loadError;
+
   const refresh = useCallback(async () => {
     try {
       const [settingsRes, productsRes, offerteRes] = await Promise.all([
@@ -115,6 +127,22 @@ export default function StoreEditor({
     window.history.replaceState(null, "", url);
   }, [activeSezione, storeId, basePath]);
 
+  // Quando la sezione attiva cambia (sidebar, drawer mobile, Avanti,
+  // Indietro, deep-link con ?step= o ?block=), porta il ROOT della nuova
+  // sezione all'inizio della viewport, così il titolo e i primi campi sono
+  // subito visibili. Il root è riferito da sectionRef: scrollIntoView agisce
+  // sul vero contenitore scrollabile (documento) e lo scroll-margin compensa
+  // la top bar sticky dell'area merchant/admin su mobile. Esegue solo quando
+  // il contenuto è montato: al primo caricamento con ?block= la sezione
+  // arriva in modo asincrono, quindi l'effetto è agganciato a contentReady.
+  useEffect(() => {
+    if (!contentReady) return;
+    // Azzera anche lo scroll interno del main dell'editor, per robustezza
+    // in qualunque layout.
+    mainRef.current?.scrollTo({ top: 0, behavior: "auto" });
+    sectionRef.current?.scrollIntoView({ block: "start", behavior: "auto" });
+  }, [activeSezione, contentReady]);
+
   const sezioni = useMemo(() => getSezioniVisibili(store), [store]);
 
   const current = sezioni.find((s) => s.sezione.id === activeSezione) ?? sezioni[0];
@@ -157,7 +185,7 @@ export default function StoreEditor({
         />
       </aside>
 
-      <main className="min-w-0 flex-1 overflow-auto px-4 py-4 sm:px-6 lg:px-8">
+      <main ref={mainRef} className="min-w-0 flex-1 overflow-auto px-4 py-4 sm:px-6 lg:px-8">
         {/* Mobile header */}
         <div className="mb-4 flex items-center gap-3 lg:hidden">
           <button
@@ -191,7 +219,7 @@ export default function StoreEditor({
             </button>
           </div>
         ) : (
-          <>
+          <div ref={sectionRef} data-section-root className="scroll-mt-12 md:scroll-mt-0">
             {/* Header sezione */}
             <div className="mb-5">
               <p className="text-[11px] font-black uppercase tracking-[0.18em] text-blue-600">
@@ -238,7 +266,7 @@ export default function StoreEditor({
                 </button>
               ) : null}
             </div>
-          </>
+          </div>
         )}
       </main>
     </div>

@@ -58,12 +58,14 @@ export default function SezioneEditor({
   const bloccoRef = useRef<Map<BloccoId, HTMLDivElement>>(new Map());
 
   // Focus mirato: quando un blocco viene puntato (es. da una CTA esterna)
-  // porta lo scroll fino a quel blocco e lo evidenzia brevemente.
+  // lo evidenzia brevemente. NON esegue scrollIntoView: lo scroll di apertura
+  // sezione è gestito da StoreEditor, che porta SEMPRE il root della nuova
+  // sezione all'inizio (un blocco puntato è contenuto nella sezione attiva,
+  // quindi il suo scroll avrebbe portato il contenuto a metà pagina).
   useEffect(() => {
     if (!targetBlocco) return;
     const el = bloccoRef.current.get(targetBlocco);
     if (!el) return;
-    el.scrollIntoView({ behavior: "smooth", block: "start" });
     el.classList.add("editor-blocco-target");
     const t = setTimeout(() => el.classList.remove("editor-blocco-target"), 1600);
     return () => clearTimeout(t);
