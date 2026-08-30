@@ -260,6 +260,16 @@ export default function PrenotazioniModule({ storeId }: Props) {
       id="prenotazioni"
     >
       <div className="space-y-4">
+        {/* ── Calendario annuale (eccezioni per singola data) — PRIMA VISTA ──
+            Aprendo l'Agenda dalla dashboard si vede subito il calendario;
+            configurazione e appuntamenti restano disponibili sotto. */}
+        <AgendaCalendario
+          storeId={storeId}
+          orari={orari}
+          eccezioni={eccezioni}
+          onSalva={salvaEccezioni}
+        />
+
         <Toggle
           icon={<CalendarCheck className="h-4 w-4 text-blue-600" />}
           label="Attiva agenda"
@@ -314,14 +324,6 @@ export default function PrenotazioniModule({ storeId }: Props) {
             </p>
           </div>
         )}
-
-        {/* ── Calendario annuale (eccezioni per singola data) ────────── */}
-        <AgendaCalendario
-          storeId={storeId}
-          orari={orari}
-          eccezioni={eccezioni}
-          onSalva={salvaEccezioni}
-        />
 
         {/* ── Elenco prenotazioni ─────────────────────────────────────── */}
         <div className="rounded-xl border border-slate-100 bg-white p-4">
