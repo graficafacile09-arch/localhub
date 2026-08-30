@@ -34,13 +34,20 @@ export default function AssistantPanel() {
   const sessionIdRef = useRef<string>(
     `ass-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
   );
+  // Query iniziale passata dalla barra di ricerca (pulsante ✨): viene inviata
+  // automaticamente all'apertura, così l'utente non deve riscriverla.
+  const pendingInitialRef = useRef<string | null>(null);
 
   useEffect(() => {
     messagesRef.current = messages;
   }, [messages]);
 
   useEffect(() => {
-    const handleOpen = () => setIsOpen(true);
+    const handleOpen = (e: Event) => {
+      setIsOpen(true);
+      const query = (e as CustomEvent<{ initialQuery?: string }>).detail?.initialQuery?.trim();
+      if (query) pendingInitialRef.current = query;
+    };
     window.addEventListener("assistant:open", handleOpen);
     return () => window.removeEventListener("assistant:open", handleOpen);
   }, []);
@@ -156,6 +163,16 @@ export default function AssistantPanel() {
       setIsLoading(false);
     }
   }, []);
+
+  // Al primo render con il pannello aperto e una query in attesa, inviala.
+  useEffect(() => {
+    if (!isOpen) return;
+    const q = pendingInitialRef.current;
+    if (q) {
+      pendingInitialRef.current = null;
+      sendMessage(q);
+    }
+  }, [isOpen, sendMessage]);
 
   const handleSend = useCallback(() => {
     sendMessage(inputValue);

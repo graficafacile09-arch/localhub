@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import { Search, Sparkles } from "lucide-react";
 
 type SearchFormProps = {
@@ -22,8 +23,15 @@ type SearchFormProps = {
  * il pulsante ✨ apre solo l'Assistente (azione esplicita dell'utente).
  */
 export default function SearchForm({ initialQuery = "", compact = false }: SearchFormProps) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  // ✨ AI: passa la query digitata all'Assistente (che la invia subito), così
+  // l'utente non deve riscriverla nel pannello condiviso.
   const handleAI = () => {
-    window.dispatchEvent(new Event("assistant:open"));
+    const query = inputRef.current?.value?.trim() ?? initialQuery;
+    window.dispatchEvent(
+      new CustomEvent("assistant:open", { detail: { initialQuery: query } })
+    );
   };
 
   return (
@@ -31,6 +39,7 @@ export default function SearchForm({ initialQuery = "", compact = false }: Searc
       <div className="flex items-center gap-2">
         <div className="relative flex min-w-0 flex-1 items-center">
           <input
+            ref={inputRef}
             type="text"
             name="q"
             defaultValue={initialQuery}
