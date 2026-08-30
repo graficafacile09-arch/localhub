@@ -1,11 +1,17 @@
-import { calcolaPunteggioNegozio, filtraNegoziPerPertinenza } from "./ranking-negozi";
-import { estraiToken, normalizza, radice } from "./text-utils";
+import {
+  calcolaPunteggioNegozioConEspansione,
+  filtraNegoziPerPertinenzaConEspansione,
+  terminiOriginali,
+} from "./ranking-negozi";
+import { estraiToken, normalizza } from "./text-utils";
+import { espandiQueryConSinonimi, espandiQueryConSinonimiBase } from "./ricerca-semantica";
 import { createAdminSupabaseClient } from "./supabase/admin";
 import { isNumericId, isUuid, toSlug } from "./slug";
 import type { ProdottoRicerca } from "./ricerca-ai";
 import {
   patternIlikeTolleranti,
   punteggioFuzzy,
+  similaritaLevenshtein,
   terminiSignificativi,
 } from "./search-tollerante";
 import type { Categoria } from "@/types/negozio";
@@ -53,60 +59,19 @@ async function assicuraSlugNegozio(
 }
 
 
-const sinonimiRicerca: Record<string, string[]> = {
-  panificio: ["panificio", "forno", "pane", "pasticceria", "pasticcere", "bakery", "bakery shop", "cornetti", "pizza al taglio", "focaccia", "grissini", "biscotti", "torte", "dolci", "lievitati", "panetteria", "pane casereccio"],
-  beauty: ["beauty", "bellezza", "parrucchiere", "parrucchieri", "barber", "barbiere", "estetica", "estetista", "trucco", "makeup", "make-up", "benessere", "capelli", "taglio", "piega", "barba", "skincare"],
-  casa: ["casa", "arredo", "arredamento", "mobili", "interior", "decorazioni", "illuminazione", "cucina", "salotto", "camera", "divano", "tavolo"],
-  auto: ["auto", "macchina", "officina", "gomme", "pneumatici", "tagliando", "meccanico", "carrozzeria", "revisione", "olio", "freni", "batteria", "concessionaria"],
-  salute: ["salute", "farmacia", "parafarmacia", "medicinali", "integratori", "benessere", "sanitaria", "febbre", "raffreddore", "mal", "testa", "dolore", "ricetta", "analisi", "antibiotico"],
-  tech: ["tech", "tecnologia", "tecnologico", "tecnologici", "tecnologica", "elettronica", "telefonia", "cellulari", "cellulare", "smartphone", "telefonino", "telefonini", "computer", "pc", "tablet", "accessori", "riparazioni", "monitor", "stampante", "ricarica"],
-  bimbi: ["bimbi", "bambini", "giocattoli", "giocattolo", "infanzia", "scuola", "cartoleria", "neonati", "prima", "infanzia", "zaino", "pannolini", "didattico"],
-  sport: ["sport", "fitness", "palestra", "allenamento", "running", "yoga", "pilates", "abbigliamento", "sportivo", "workout", "tapis", "roulant", "pesi", "training"],
-  moda: ["moda", "abbigliamento", "boutique", "vestiti", "vestito", "scarpe", "calzature", "elegante", "eleganti", "outfit"],
-  ristorazione: ["mangiare", "ristorante", "ristorazione", "ristoranti", "trattoria", "trattorie", "cena", "cene", "pranzo", "pranzi", "cibo", "aperitivo", "aperitivi", "pizzeria", "pizzerie", "cucina", "panificio", "panifici", "forno", "pane", "bakery"],
-  promozioni: ["offerte", "offerta", "promozioni", "promozione", "sconti", "sconto", "saldo", "saldi", "affari"],
-  regalo: ["regalo", "regali", "regalare", "dono", "doni", "omaggio", "omaggi"],
-  pet: ["pet", "animali", "animale", "cani", "cane", "gatti", "gatto", "veterinario", "veterinaria", "toelettatura", "crocchette", "shop", "zecche", "zecca", "pulci", "pulce", "antiparassitario", "antiparassitari", "cucciolo", "croccantini", "lettiera", "guinzaglio", "mangime"],
+// Espansione semantica (sinonimi base + per profilo attività + normalizzazione)
+// implementata in lib/ricerca-semantica.ts — qui solo re-export per compatibilità.
+export { espandiQueryConSinonimi } from "./ricerca-semantica";
+
+/** Opzioni aggiuntive per cercaNegozi (filtri semantici). */
+export type CercaNegoziOptions = {
+  categoria?: string;
+  tipo?: string;
+  citta?: string;
+  limit?: number;
+  /** Termini di ricerca espliciti (da intent AI): bypassa l'espansione. */
+  termini?: string[];
 };
-
-const stopWordsRicerca = new Set([
-  "a", "ad", "al", "alla", "alle", "allo", "ai", "agli", "all",
-  "che", "chi", "con", "da", "dei", "del", "della", "delle", "dello",
-  "di", "e", "gli", "ha", "hai", "ho", "i", "il", "in", "io",
-  "la", "le", "lo", "mia", "mio", "mie", "miei", "mi",
-  "nelle", "nella", "nel", "nei", "per", "serve", "servono", "servire",
-  "se", "sul", "sulla", "sulle", "sui", "su", "tra",
-  "devo", "fare", "un", "una", "uno",
-]);
-
-function attivaGruppo(termine: string, voce: string) {
-  const termineNorm = normalizza(termine).trim();
-  const voceNorm = normalizza(voce).trim();
-  if (!termineNorm || !voceNorm) return false;
-  if (termineNorm === voceNorm) return true;
-  return radice(termineNorm) === radice(voceNorm);
-}
-
-function normalizzaTermini(query: string) {
-  const terminiBase = normalizza(query)
-    .split(/[^a-z0-9]+/)
-    .map((termine) => termine.trim())
-    .filter((termine) => termine && !stopWordsRicerca.has(termine));
-
-  const terminiEspansi = new Set(terminiBase);
-  for (const termine of terminiBase) {
-    for (const gruppo of Object.values(sinonimiRicerca)) {
-      if (gruppo.some((voce) => attivaGruppo(termine, voce))) {
-        gruppo.forEach((voce) => terminiEspansi.add(voce));
-      }
-    }
-  }
-  return Array.from(terminiEspansi);
-}
-
-export function espandiQueryConSinonimi(query: string) {
-  return normalizzaTermini(query).join(" ");
-}
 
 // ─── Negozi ──────────────────────────────────────────────────────────────────
 
@@ -916,6 +881,124 @@ function applicaFiltriRicercaProdotti(
   return q;
 }
 
+// ─── Ranking di rilevanza prodotti ───────────────────────────────────────────
+// Pesi per campo: i campi "primari" (nome, categoria, sottocategoria) pesano
+// molto più di quelli secondari (descrizione, marca, colore, materiale). Un
+// termine ORIGINALE (digitato dall'utente) vale 1x; un sinonimo ESPANSO vale
+// di meno. La soglia di pertinenza esclude i prodotti spuri (es. "Anello con
+// pietra" che matcha solo "taglio" nella descrizione per la ricerca "pane").
+const PESO_CAMPO_PRODOTTO: Record<string, number> = {
+  nome: 30,
+  categoria: 16,
+  sottocategoria: 13,
+  marca: 10,
+  descrizione: 6,
+  colore: 4,
+  materiale: 4,
+  tag: 8,
+};
+
+// Un sinonimo espanso (es. "taglio" da "pizza al taglio") pesa solo una
+// frazione di un termine originale ("pane"). Impossibile per un sinonimo in
+// un campo secondario superare la soglia di pertinenza.
+const FATTORE_SINONIMO_PRODOTTO = 0.45;
+
+/** Punteggio di rilevanza di un prodotto per i termini dati. */
+function calcolaPunteggioProdotto(
+  prodotto: Record<string, unknown>,
+  originali: string[],
+  espansi: string[]
+): number {
+  const setOriginali = new Set(originali.map((t) => normalizza(t).trim()).filter(Boolean));
+  let punteggio = 0;
+
+  const campi = [
+    "nome",
+    "categoria",
+    "sottocategoria",
+    "marca",
+    "descrizione",
+    "colore",
+    "materiale",
+    "tag",
+  ];
+
+  for (const campo of campi) {
+    const valore = String(prodotto[campo] ?? "");
+    if (!valore) continue;
+    const norma = normalizza(valore);
+    const peso = PESO_CAMPO_PRODOTTO[campo] ?? 4;
+    for (const termine of espansi) {
+      const tnorm = normalizza(termine).trim();
+      if (!tnorm || tnorm.length < 3) continue;
+      if (!norma.includes(tnorm)) continue;
+      const originale = setOriginali.has(tnorm) || originali.some((o) => norma.includes(o));
+      const fattore = originale ? 1 : FATTORE_SINONIMO_PRODOTTO;
+      punteggio += peso * fattore;
+    }
+  }
+  return punteggio;
+}
+
+/** Vero requisito di rilevanza: un termine originale ovunque, oppure un
+ *  sinonimo espanso in un campo PRIMARIO. Un sinonimo in un campo secondario
+ *  (descrizione/marca/materiale/colore) da solo NON basta. */
+function prodottoRilevante(
+  prodotto: Record<string, unknown>,
+  originali: string[],
+  espansi: string[]
+): boolean {
+  const normaCampo = (c: string) => normalizza(String(prodotto[c] ?? ""));
+  const inCampo = (c: string, t: string) => normaCampo(c).includes(t);
+  const primari = ["nome", "categoria", "sottocategoria", "tag"];
+
+  // 1) Un termine ORIGINALE in qualsiasi campo ⇒ rilevante.
+  for (const o of originali) {
+    const on = normalizza(o).trim();
+    if (!on) continue;
+    if (Object.keys(PESO_CAMPO_PRODOTTO).some((c) => inCampo(c, on))) return true;
+  }
+
+  // 2) Un sinonimo ESPANSO in un campo primario ⇒ rilevante.
+  for (const e of espansi) {
+    const en = normalizza(e).trim();
+    if (!en || en.length < 3) continue;
+    if (primari.some((c) => inCampo(c, en))) return true;
+  }
+
+  return false;
+}
+
+/** Riordina per punteggio, scarta gli spuri, taglia al limite. */
+function ordinaFiltraProdottiPerRilevanza(
+  risultati: Record<string, unknown>[],
+  ricerca: string,
+  terminiEspansi: string[],
+  limite: number
+): Record<string, unknown>[] {
+  const originali = terminiSignificativi(ricerca, 10);
+  // Termini originali presenti anche espansi gestiti sopra.
+  const conPunteggio = risultati
+    .map((p) => ({
+      p,
+      punteggio: calcolaPunteggioProdotto(p, originali, terminiEspansi),
+      rilevante: prodottoRilevante(p, originali, terminiEspansi),
+    }))
+    .filter(({ punteggio, rilevante }) => punteggio > 0 && rilevante);
+
+  // Soglia relativa al miglior risultato (con un minimo assoluto) per escludere
+  // i match deboli. Se però esiste un match esatto/forte il top resta sempre.
+  if (conPunteggio.length === 0) return [];
+  conPunteggio.sort((a, b) => b.punteggio - a.punteggio);
+  const topScore = conPunteggio[0].punteggio;
+  const soglia = Math.max(8, Math.ceil(topScore * 0.35));
+  const filtrati = conPunteggio
+    .filter(({ punteggio }) => punteggio >= soglia)
+    .map(({ p }) => p);
+
+  return (filtrati.length > 0 ? filtrati : conPunteggio.slice(0, 1).map(({ p }) => p)).slice(0, limite);
+}
+
 function haFiltriAddizionali(opts: CercaProdottiOptions): boolean {
   return Boolean(
     opts.negozioId ||
@@ -948,9 +1031,11 @@ async function cercaProdottiCore(
   const db = getDb();
   if (!db) return { risultati: [], total: null };
 
+  // Prodotti: solo sinonimi di categoria/commercio (NON il vocabolario dei
+  // profili attività) per evitare falsi positivi (es. "dottore" → latte).
   const termini = Array.from(
     new Set(
-      espandiQueryConSinonimi(ricerca)
+      espandiQueryConSinonimiBase(ricerca)
         .split(/\s+/)
         .map((t) => t.trim())
         .filter(Boolean)
@@ -1013,6 +1098,20 @@ async function cercaProdottiCore(
   if (error) return { risultati: [], total };
 
   let risultati = (data ?? []) as Record<string, unknown>[];
+
+  // RANKING di rilevanza prodotti (ricerca libera, senza filtri): un match
+  // esatto/nei campi principali vince; quelli SPURI (sinonimo espanso in un
+  // campo secondario, es. "taglio" nella descrizione di un anello per la
+  // ricerca "pane") vengono scartati alla fonte. I dati vengono riordinati
+  // per punteggio e filtrati sotto la soglia di pertinenza.
+  if (!conFiltriExtra && ricerca.trim()) {
+    risultati = ordinaFiltraProdottiPerRilevanza(
+      risultati,
+      ricerca,
+      termini,
+      opts.limite
+    );
+  }
 
   // Fallback tollerante (refusi/accenti/plurali): solo senza filtri addizionali
   // e a pagina 1 — identico al comportamento storico di cercaProdotti().
@@ -1171,6 +1270,52 @@ function unisciEsattiETolleranti<T extends Record<string, unknown>>(
   return [...esatti, ...aggiunti].slice(0, limit);
 }
 
+// Vero requisito di rilevanza per il fallback fuzzy: almeno un termine
+// significativo deve comparire come SOTTOSTRINGA in uno dei campi (soglia di
+// precisione). Impedisce che il fallback restituisca risultati spazzatura
+// quando la similarità Levenshtein è solo debole (es. "problemi alle orecchie"
+// → cipolla/cornetto).
+// ─── Predicato di rilevanza del fallback fuzzy ───────────────────────────────
+// Un risultato tollerante è accettabile SOLO se c'è un vero appiglio al
+// termine significativo: una sottostringa (anche con accenti) OPPURE un token
+// molto vicino per edit-distance (refuso, plurale). Esclude i falsi positivi
+// del wildcard `_` (es. "problemi alle orecchie" → cipolla/cornetto).
+
+// Sottostringa accent-insensitive (usa normalizza = NFD + lowercase).
+function haSottostringaSignificativa(termini: string[], campi: unknown[]): boolean {
+  for (const termine of termini) {
+    if (!termine) continue;
+    const t = normalizza(termine);
+    for (const campo of campi) {
+      if (campo == null) continue;
+      if (normalizza(String(campo)).includes(t)) return true;
+    }
+  }
+  return false;
+}
+
+// Token vicino per distanza di edit (refuso ragionevole): similarità più alta
+// sui termini CORTI per evitare match semantici lontani ("pizza" → "pinza").
+// Esempi mantenuti: "panifcio" ≈ "panificio" (sim ~0.89), "pizeria" ≈
+// "pizzeria" (~0.88). Ridotti manualmente i falsi come "pizza"→"pinza" (~0.8).
+function haTermineVicino(termini: string[], campi: unknown[]): boolean {
+  for (const termine of termini) {
+    if (!termine || termine.length < 4) continue;
+    const soglia = termine.length <= 6 ? 0.85 : 0.8;
+    for (const campo of campi) {
+      if (campo == null) continue;
+      for (const tok of normalizza(String(campo)).split(/[^a-z0-9]+/)) {
+        if (tok.length >= 4 && similaritaLevenshtein(tok, termine) >= soglia) return true;
+      }
+    }
+  }
+  return false;
+}
+
+function rilevanteFallback(termini: string[], campi: unknown[]): boolean {
+  return haSottostringaSignificativa(termini, campi) || haTermineVicino(termini, campi);
+}
+
 // Query tollerante sui prodotti: pattern con varianti accentate e wildcard di
 // tolleranza sui termini significativi, poi punteggio fuzzy in memoria.
 async function cercaProdottiTolleranti(
@@ -1221,7 +1366,19 @@ async function cercaProdottiTolleranti(
       riga: r as Record<string, unknown>,
       punteggio: punteggioFuzzy([r.nome, r.descrizione, r.categoria, r.marca, r.sottocategoria], termini),
     }))
-    .filter((x) => x.punteggio > 0)
+    // Pertinenza: sottostringa (anche con accenti) o token vicino per edit-
+    // distance. Esclude spazzatura dal wildcard `_` ("problemi alle orecchie"
+    // → cipolla/cornetto) ma mantiene i refusi ragionevoli ("panifcio").
+    .filter((x) =>
+      x.punteggio > 0 &&
+        rilevanteFallback(termini, [
+          x.riga.nome,
+          x.riga.descrizione,
+          x.riga.categoria,
+          x.riga.marca,
+          x.riga.sottocategoria,
+        ])
+    )
     .sort((a, b) => b.punteggio - a.punteggio)
     .slice(0, limit)
     .map((x) => x.riga);
@@ -1229,29 +1386,97 @@ async function cercaProdottiTolleranti(
 
 // ─── Ricerca negozi ──────────────────────────────────────────────────────────
 
-export async function cercaNegozi(ricerca: string) {
+export async function cercaNegozi(
+  ricerca: string,
+  opts: CercaNegoziOptions = {}
+) {
   const db = getDb();
   if (!db) return [];
 
+  const espansa = opts.termini && opts.termini.length > 0
+    ? opts.termini.join(" ")
+    : espandiQueryConSinonimi(ricerca);
   const terminiEspansi = Array.from(
     new Set(
-      espandiQueryConSinonimi(ricerca)
+      espansa
         .split(/\s+/)
         .map((termine) => termine.trim())
         .filter(Boolean)
     )
-  ).slice(0, 12);
+  ).slice(0, 16);
 
-  // servizi e parole_chiave sono colonne text[]: il filtro ilike fallisce
-  // ("operator does not exist: text[] ~~* unknown") e il cast ::text non è
-  // supportato nei logical tree di PostgREST. Usiamo l'operatore `cs`
-  // (array contains) per l'elemento esatto; il matching per radice/affinità
-  // resta comunque coperto dal ranking in memoria (filtraNegoziPerPertinenza,
-  // che ora gestisce gli array in sicurezza).
+  const termini = (terminiEspansi.length > 0 ? terminiEspansi : [ricerca.trim()])
+    .filter(Boolean);
+  if (termini.length === 0) return [];
+
+  // Termini ORIGINALI digitati dall'utente: dominano il ranking (vedi ranking-negozi).
+  const terminiOriginaliNegozi = terminiOriginali(ricerca);
+
+  const categoria = opts.categoria?.trim() || null;
+  const tipo = opts.tipo?.trim() || null;
+  const citta = opts.citta?.trim() || null;
+
+  let righe: any[] = [];
+
+  // RECALL via RPC PostgreSQL (multi-campo, incluso data.tipo_attivita e
+  // servizi_strutturati). Se la RPC non è ancora installata (migration non
+  // applicata) oppure fallisce, ripiegamento sicuro sulla ricerca ilike storica.
+  try {
+    const { data, error } = await db.rpc("cerca_negozi_semantico", {
+      p_termini: termini,
+      p_categoria: categoria,
+      p_tipo: tipo,
+      p_citta: citta,
+      p_limit: opts.limit ?? 40,
+      p_min_score: 6,
+    });
+    if (error) throw error;
+    righe = (data ?? []);
+
+  } catch (err) {
+    console.warn(
+      "[cercaNegozi] RPC non disponibile, fallback ilike:",
+      (err as { message?: string })?.message ?? err
+    );
+    righe = (await cercaNegoziLegacy(db, espansa, ricerca)) as any[];
+  }
+
+  // Nessun candidato → ricerca tollerante (refusi, accenti, plurali).
+  if (righe.length === 0) return cercaNegoziTolleranti(db, ricerca);
+
+  // RANKING finale in TypeScript: i termini ORIGINALI dominano, i sinonimi
+  // espansi pesano meno. I match generici di profilo (es. "salute" in un
+  // negozio "Salute e benessere") non superano mai un negozio che matcha
+  // davvero il termine digitato (es. "farmacia" in una farmacia).
+  const conPunteggio = righe.filter(
+    (negozio) => calcolaPunteggioNegozioConEspansione(negozio, terminiOriginaliNegozi, terminiEspansi) > 0
+  );
+  const esatti = filtraNegoziPerPertinenzaConEspansione(
+    conPunteggio.length > 0 ? conPunteggio : righe,
+    terminiOriginaliNegozi,
+    terminiEspansi
+  );
+
+  if (esatti.length > 0) return esatti;
+  return cercaNegoziTolleranti(db, ricerca);
+}
+
+/**
+ * Fallback storico senza RPC: ricerca ilike su nome/categoria/descrizione +
+ * array `cs` su servizi/parole_chiave (non copre data.tipo_attivita né
+ * servizi_strutturati in jsonb). Serve solo quando la migration non è
+ * applicata; il ranking finale (filtraNegoziPerPertinenza) resta identico.
+ */
+async function cercaNegoziLegacy(
+  db: ReturnType<typeof createAdminSupabaseClient>,
+  espansa: string,
+  ricerca: string
+): Promise<unknown[]> {
+  const termini = Array.from(new Set(espansa.split(/\s+/).filter(Boolean))).slice(0, 12);
   const elemento = (p: string) =>
     /^[A-Za-z0-9_.\-]+$/.test(p) ? p : `"${p.replace(/"/g, '\\"')}"`;
 
-  const filtriRicerca = (terminiEspansi.length > 0 ? terminiEspansi : [ricerca.trim()])
+  const filtriRicerca = (termini.length > 0 ? termini : [ricerca.trim()])
     .flatMap((termine) => {
       const pulito = termine.replace(/[,%]/g, " ").trim();
       if (!pulito) return [];
@@ -1261,6 +1486,11 @@ export async function cercaNegozi(ricerca: string) {
         `descrizione.ilike.%${pulito}%`,
         `servizi.cs.{${elemento(pulito)}}`,
         `parole_chiave.cs.{${elemento(pulito)}}`,
+        // Matching sul profilo attività (jsonb data.tipo_attivita): consente di
+        // trovare gli studi professionali per tipo anche senza la RPC (es.
+        // "medico"/"dottore" → data.tipo_attivita = "medico").
+        `data->>tipo_attivita.ilike.%${pulito}%`,
+        `sottocategoria.ilike.%${pulito}%`,
       ];
     })
     .join(",");
@@ -1277,18 +1507,18 @@ export async function cercaNegozi(ricerca: string) {
     return [];
   }
 
-  // Fase esatta: ranking esistente invariato (filtraNegoziPerPertinenza).
-  const esatti = filtraNegoziPerPertinenza(
-    (data ?? []).filter(
-      (negozio) => calcolaPunteggioNegozio(negozio, espandiQueryConSinonimi(ricerca)) > 0
-    ),
-    espandiQueryConSinonimi(ricerca)
+  const terminiOrig = terminiOriginali(ricerca);
+  const espansiArray = Array.from(
+    new Set(espansa.split(/\s+/).map((t) => t.trim()).filter(Boolean))
   );
-
-  // Nessun risultato esatto → ricerca tollerante (refusi, accenti, plurali).
-  // Il ranking non viene alterato: questa fase scatta solo a risultati vuoti.
-  if (esatti.length > 0) return esatti;
-  return cercaNegoziTolleranti(db, ricerca);
+  const esatti = filtraNegoziPerPertinenzaConEspansione(
+    (data ?? []).filter(
+      (negozio) => calcolaPunteggioNegozioConEspansione(negozio, terminiOrig, espansiArray) > 0
+    ),
+    terminiOrig,
+    espansiArray
+  );
+  return esatti;
 }
 
 // Query tollerante sui negozi: pattern con varianti accentate e wildcard di
@@ -1330,7 +1560,12 @@ async function cercaNegoziTolleranti(
       negozio: n as Record<string, unknown>,
       punteggio: punteggioFuzzy([n.nome, n.categoria, n.descrizione], termini),
     }))
-    .filter((x) => x.punteggio > 0)
+    // Pertinenza: sottostringa (anche con accenti) o token vicino per edit-
+    // distance. Niente spazzatura dal fallback fuzzy, ma refusi mantenuti.
+    .filter((x) =>
+      x.punteggio > 0 &&
+        rilevanteFallback(termini, [x.negozio.nome, x.negozio.categoria, x.negozio.descrizione])
+    )
     .sort((a, b) => b.punteggio - a.punteggio)
     .slice(0, 10)
     .map((x) => x.negozio);

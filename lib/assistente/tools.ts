@@ -47,6 +47,16 @@ export type ToolParams = {
   maxPrice?: number | null;
   minPrice?: number | null;
   limit?: number;
+  /** Termini espliciti (da intent AI) — nessuna espansione automatica. */
+  termini?: string[];
+  /** Filtro categoria (es. "salute e benessere"). */
+  categoria?: string;
+  /** Filtro sottocategoria. */
+  sottocategoria?: string;
+  /** Filtro tipo attività / profilo (es. "medico"). */
+  tipo?: string;
+  /** Filtro città. */
+  citta?: string;
 };
 
 export type RisultatoRicercaCompleta = {
@@ -77,14 +87,23 @@ function testoIncluso(testo: string | null | undefined, query: string): boolean 
 
 // ─── searchStores ────────────────────────────────────────────────────────────
 
-export async function searchStores(query: string, limit = 6): Promise<NegozioRicerca[]> {
+export async function searchStores(
+  query: string,
+  opts: ToolParams = {}
+): Promise<NegozioRicerca[]> {
   const q = (query ?? "").trim();
-  if (!q) return [];
+  if (!q && !(opts?.termini?.length) && !opts?.categoria && !opts?.tipo) return [];
 
-  const righe = await cercaNegozi(q);
+  const righe = await cercaNegozi(q, {
+    limit: limita(opts?.limit, 6, 8),
+    categoria: opts?.categoria,
+    tipo: opts?.tipo,
+    citta: opts?.citta,
+    termini: opts?.termini?.length ? opts.termini : undefined,
+  });
   const attivi = (righe ?? [])
     .filter((n: Record<string, unknown>) => n.attivo !== false)
-    .slice(0, limita(limit, 6, 8));
+    .slice(0, limita(opts?.limit, 6, 8));
 
   return attivi.map((n: Record<string, unknown>) => ({
     id: String(n.id),
@@ -107,12 +126,18 @@ export async function searchProducts(
   const q = (query ?? "").trim();
   if (!q) return [];
 
-  const righe = await cercaProdotti(q, 30);
+  const righe = await cercaProdotti(q, 60);
+  // Filtri in memoria su categoria/sottocategoria/tipo-se-pertinente.
+  let filtrate = righe;
+  if (opts?.categoria?.trim()) {
+    const c = opts.categoria.trim().toLowerCase();
+    filtrate = filtrate.filter((p) => (p.categoria ?? "").toLowerCase().includes(c));
+  }
   const maxPrice = opts.maxPrice != null ? Number(opts.maxPrice) : null;
   const minPrice = opts.minPrice != null ? Number(opts.minPrice) : null;
 
   // Escludiamo i prodotti senza prezzo reale (es. prezzo 0 da dati demo).
-  const conPrezzo = righe.filter((p) => {
+  const conPrezzo = filtrate.filter((p) => {
     const prezzo = Number(p.prezzo);
     return Number.isFinite(prezzo) && prezzo > 0;
   });
@@ -235,7 +260,7 @@ export async function searchAll(
   }
 
   const [negozi, prodotti, offerte, eventi, categorie] = await Promise.all([
-    searchStores(q, 6),
+    searchStores(q, { limit: 6 }),
     searchProducts(q, { ...opts, limit: 8 }),
     searchOffers(q, 5),
     searchEvents(q, 5),

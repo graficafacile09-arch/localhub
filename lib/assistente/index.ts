@@ -102,14 +102,23 @@ async function eseguiTool(
       // Se l'LLM non riporta il soggetto nei follow-up ("sotto 500 euro") o
       // passa una query che è solo un vincolo di prezzo, usiamo la query
       // sostanziale della conversazione (es. "cerco una TV").
-      const q = eQuerySostanziale(params?.query ?? "") || fallbackQuery;
+      const q = params?.termini?.length
+        ? (params.termini.join(" ") || fallbackQuery)
+        : eQuerySostanziale(params?.query ?? "") || fallbackQuery;
       if (!q) return vuoto;
       if (nome === "searchStores") {
-        return { ...vuoto, negozi: await searchStores(q, limit) };
+        return {
+          ...vuoto,
+          negozi: await searchStores(q, { ...params, limit }),
+        };
       }
       return {
         ...vuoto,
-        prodotti: await searchProducts(q, { ...params, limit }),
+        prodotti: await searchProducts(q, {
+          ...params,
+          limit,
+          termini: undefined,
+        }),
       };
     }
     case "searchOffers":
@@ -120,6 +129,9 @@ async function eseguiTool(
       return { ...vuoto, eventi: await searchEvents(params?.query?.trim() || undefined, limit) };
     case "getCategories":
       return { ...vuoto, categorie: await getCategoriesList() };
+    case "searchOffers":
+    case "searchEvents":
+    case "getCategories":
     default:
       return vuoto;
   }
@@ -238,6 +250,27 @@ function pianoPredefinito(
               tool: "searchProducts",
               params: { query: soggetto, maxPrice: parseInt(prezzo, 10) },
             },
+          ],
+        };
+      }
+    }
+  }
+
+  // Follow-up con vincolo di città ("solo a Castrovillari"): riusa il SOGGETTO
+  // precedente filtrando per città (mantiene il contesto della ricerca).
+  if (utenti.length >= 2) {
+    const precedente = utenti[utenti.length - 2] ?? "";
+    const mCitta = ultimo.match(/solo\s+a\s+([a-zà-ù0-9\s-]+)/i);
+    const citta = mCitta
+      ? mCitta[1].trim().replace(/\s+.*/, "").toLowerCase()
+      : "";
+    if (citta && citta.length >= 3) {
+      const soggetto = eQuerySostanziale(precedente) ?? precedente;
+      if (soggetto) {
+        return {
+          directReply: null,
+          tools: [
+            { tool: "searchStores", params: { query: soggetto, citta } },
           ],
         };
       }

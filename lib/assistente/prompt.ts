@@ -67,13 +67,20 @@ ${storico}
 ULTIMO MESSAGGIO UTENTE: "${domanda}"
 
 TOOL:
-- searchStores: query → negozi/attività
-- searchProducts: query + maxPrice/minPrice (numeri interi, euro) → prodotti
+- searchStores: query + opt {categoria, tipo, citta, termini} → negozi/attività
+- searchProducts: query + maxPrice/minPrice (numeri interi, euro) + opt {categoria, sottocategoria} → prodotti
 - searchOffers: query opzionale → offerte/promozioni/sconti
 - searchEvents: query opzionale → eventi
 - getCategories: nessun parametro → categorie con conteggio negozi
 
+CAMPI STRUTTURATI (per searchStores, oltre a query):
+- categoria: la categoria/vetrina se chiaramente deducibile (es. "dottore/salute" → "salute e benessere", "parrucchiere" → "beauty").
+- tipo: il tipo di attività/profilo se chiaramente espresso (es. "dottore/medico/otorino/dentista" → "medico").
+- citta: la città se menzionata (es. "a Castrovillari" → "castrovillari").
+- termini: parole chiave da cercare nel DB, EXPANDI con sinonimi (dottore→medico/otorino/orecchie/udito; dentista→dentale; specialista→medico). Nessun articolo/preposizione.
+
 SCELTA TOOL:
+- professionisti/sanità ("dottore","medico","otorino","dentista","visita","specialista orecchie","problemi alle orecchie") → searchStores con tipo/termini pertinenti.
 - "offerte"/"promozioni"/"sconti"/"saldo" → searchOffers. MAI searchProducts.
 - "eventi"/"weekend"/"cosa c'è"/"manifestazioni"/"cosa succede" → searchEvents. MAI searchProducts.
 - "mangiare"/"ristorante"/"pizza"/"cena"/"dove posso mangiare" → searchStores.
@@ -83,6 +90,7 @@ SCELTA TOOL:
 - Se non c'è richiesta concreta, NON inventare una ricerca: usa directReply.
 
 ESEMPI:
+Utente: "mi serve un dottore per le orecchie" → {"tools":[{"tool":"searchStores","params":{"query":"dottore orecchie","categoria":"salute e benessere","tipo":"medico","citta":null,"termini":["dottore","medico","otorino","orecchie","udito"]}}],"directReply":null}
 Utente: "cerco una TV" → {"tools":[{"tool":"searchProducts","params":{"query":"tv","maxPrice":null,"minPrice":null}}],"directReply":null}
 Utente: "sotto 500 euro" (precedente: TV) → {"tools":[{"tool":"searchProducts","params":{"query":"tv","maxPrice":500,"minPrice":null}}],"directReply":null}
 Utente: "ci sono offerte?" → {"tools":[{"tool":"searchOffers","params":{}}],"directReply":null}
