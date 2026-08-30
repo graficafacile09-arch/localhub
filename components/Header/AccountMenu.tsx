@@ -267,7 +267,7 @@ export default function AccountMenu({
         aria-expanded={open}
         aria-haspopup="menu"
         aria-label={`Menu utente di ${nome || email}`}
-        className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-sm shadow-sm transition hover:border-blue-300 hover:shadow"
+        className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-2 py-1.5 text-sm shadow-sm transition hover:border-blue-300 hover:shadow sm:px-2.5"
       >
         <span
           aria-hidden
