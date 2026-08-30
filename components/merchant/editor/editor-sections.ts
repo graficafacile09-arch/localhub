@@ -45,7 +45,7 @@ export const EDITOR_SEZIONI: EditorSezione[] = [
   { id: "contatti-orari", numero: "02", titolo: "Contatti e orari", sottotitolo: "Indirizzo, telefono, email, social e orari di apertura", blocchi: ["contatti-orari"] },
   { id: "presentazione", numero: "03", titolo: "Presentazione", sottotitolo: "Galleria, descrizione estesa e caratteristiche", blocchi: ["presentazione"] },
   { id: "catalogo", numero: "04", titolo: "Catalogo e servizi", sottotitolo: "Prodotti e servizi offerti", blocchi: ["catalogo-prodotti", "servizi-strutturati", "offerte"] },
-  { id: "vendita", numero: "05", titolo: "Vendita e prenotazioni", sottotitolo: "Modalità di vendita, pagamenti, prenotazioni e richieste", blocchi: ["vendita-commerciale", "prenotazioni", "richiesta-info"] },
+  { id: "vendita", numero: "05", titolo: "Vendita e agenda", sottotitolo: "Modalità di vendita, pagamenti, agenda e richieste", blocchi: ["vendita-commerciale", "prenotazioni", "richiesta-info"] },
   { id: "pubblicazione", numero: "06", titolo: "Anteprima e pubblicazione", sottotitolo: "Riepilogo, controlli e pubblicazione", blocchi: ["anteprima", "pubblicazione"] },
 ];
 

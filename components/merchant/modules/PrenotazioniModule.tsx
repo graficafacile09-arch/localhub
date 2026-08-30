@@ -222,7 +222,7 @@ export default function PrenotazioniModule({ storeId }: Props) {
     return (
       <ModuleShell
         icon={<CalendarCheck className="h-4 w-4" />}
-        title="Prenotazioni"
+        title="Agenda"
         subtitle="Ricevi e gestisci gli appuntamenti dei clienti."
         id="prenotazioni"
       >
@@ -234,14 +234,14 @@ export default function PrenotazioniModule({ storeId }: Props) {
   return (
     <ModuleShell
       icon={<CalendarCheck className="h-4 w-4" />}
-      title="Prenotazioni"
+      title="Agenda"
       subtitle="Ricevi e gestisci gli appuntamenti dei clienti."
       id="prenotazioni"
     >
       <div className="space-y-4">
         <Toggle
           icon={<CalendarCheck className="h-4 w-4 text-blue-600" />}
-          label="Attiva prenotazioni"
+          label="Attiva agenda"
           description="Consenti ai clienti di prenotare i tuoi servizi"
           checked={config.attiva}
           onChange={(v) => update({ attiva: v })}
@@ -250,7 +250,7 @@ export default function PrenotazioniModule({ storeId }: Props) {
         {config.attiva && (
           <div className="space-y-4 rounded-xl border border-slate-100 bg-slate-50/50 p-4">
             <p className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-400">
-              Parametri prenotazione
+              Parametri della prenotazione
             </p>
 
             <Field
@@ -299,7 +299,7 @@ export default function PrenotazioniModule({ storeId }: Props) {
           <div className="mb-3 flex items-center gap-2">
             <CalendarClock className="h-4 w-4 text-blue-600" />
             <p className="text-sm font-bold tracking-tight text-slate-900">
-              Prenotazioni ricevute
+              Appuntamenti
             </p>
           </div>
 

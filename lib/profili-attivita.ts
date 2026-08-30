@@ -154,7 +154,7 @@ export const PROFILI_ATTIVITA: ProfiloAttivita[] = [
   {
     id: "immobiliare",
     nome: "Immobiliare",
-    descrizione: "Agenzie immobiliari con servizi, foto e richieste informazioni.",
+    descrizione: "Agenzie immobiliari con servizi, foto, richieste e appuntamenti.",
     icona: "🏠",
     moduli_attivi: [
       "informazioni",
@@ -167,8 +167,9 @@ export const PROFILI_ATTIVITA: ProfiloAttivita[] = [
       "seo",
       "impostazioni",
       "richiesta_info",
+      "prenotazioni",
     ],
-    operativita: "informazioni",
+    operativita: "prenotazione",
   },
   {
     id: "artigiano",
@@ -218,7 +219,7 @@ export const PROFILI_ATTIVITA: ProfiloAttivita[] = [
   {
     id: "professionista",
     nome: "Professionista",
-    descrizione: "Studi professionali e liberi professionisti con servizi e contatti.",
+    descrizione: "Studi professionali e liberi professionisti con servizi, consultenze e appuntamenti.",
     icona: "💼",
     moduli_attivi: [
       "informazioni",
@@ -231,8 +232,9 @@ export const PROFILI_ATTIVITA: ProfiloAttivita[] = [
       "seo",
       "impostazioni",
       "richiesta_info",
+      "prenotazioni",
     ],
-    operativita: "informazioni",
+    operativita: "prenotazione",
   },
   {
     id: "altro",
@@ -315,4 +317,21 @@ export function getModuliAttiviNegozio(
     return store.moduli_attivi;
   }
   return null;
+}
+
+/**
+ * AGENDA — determina in modo centralizzato se l'attività dispone del modulo
+ * prenotazioni/agenda. NON usa `if categoria === "medico"` né elenchi
+ * paralleli: la decisione deriva dalla classificazione già esistente
+ * (`getModuliAttiviNegozio` → profilo `data.tipo_attivita`, altrimenti
+ * `negozi.moduli_attivi`), controllando la presenza dello slug "prenotazioni".
+ *
+ * Le attività commerciali al dettaglio (ecommerce/alimentari, es. panificio,
+ * gioielleria, bar) NON hanno "prenotazioni" nei moduli → niente Agenda,
+ * anche se dispongono di orari universali. Lo stesso helper va usato ovunque
+ * si debba decidere se mostrare l'Agenda.
+ */
+export function attivitaHaAgenda(store: Negozio | null | undefined): boolean {
+  const moduli = getModuliAttiviNegozio(store);
+  return !!moduli && moduli.includes("prenotazioni");
 }
