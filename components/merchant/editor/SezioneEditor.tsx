@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import type { Negozio } from "@/types/negozio";
 import {
+  blocchiConDestinazioneInPrimo,
   EDITOR_SEZIONI,
   type BloccoId,
   type EditorSezione,
@@ -132,7 +133,12 @@ export default function SezioneEditor({
 
   if (blocchi.length === 0) return <EmptySection sezione={sezione} />;
 
-  return <div className="space-y-6">{blocchi.map(renderBlocco)}</div>;
+  // Il blocco di destinazione (es. "Agenda" → prenotazioni) viene reso PRIMO:
+  // aprendo la sezione dalla quick action il calendario annuale è subito
+  // visibile, anche se l'ordine statico metterebbe altri blocchi davanti.
+  const blocchiOrdinati = blocchiConDestinazioneInPrimo(blocchi, targetBlocco);
+
+  return <div className="space-y-6">{blocchiOrdinati.map(renderBlocco)}</div>;
 }
 
 export { EDITOR_SEZIONI, type SezioneId };
