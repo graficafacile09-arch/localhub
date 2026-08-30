@@ -614,40 +614,42 @@ export default async function PaginaNegozio({
                   key={servizio.id ?? servizio.nome}
                   className="overflow-hidden rounded-xl border border-blue-100 bg-gradient-to-br from-blue-50 to-white"
                 >
-                  <div className="flex items-start gap-3 p-3">
-                    {servizio.immagine ? (
-                      <img
-                        src={servizio.immagine}
-                        alt=""
-                        className="h-12 w-12 shrink-0 rounded-lg border border-white object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-100">
-                        <Sparkles className="h-5 w-5 text-blue-600" />
-                      </div>
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <h3 className="truncate text-sm font-black text-slate-900">
-                        {servizio.nome}
-                      </h3>
-                      {servizio.descrizione && (
-                        <p className="mt-0.5 line-clamp-2 text-[11px] leading-4 text-slate-600">
-                          {servizio.descrizione}
-                        </p>
+                  <div className="p-3">
+                    <div className="flex items-start gap-3">
+                      {servizio.immagine ? (
+                        <img
+                          src={servizio.immagine}
+                          alt=""
+                          className="h-12 w-12 shrink-0 rounded-lg border border-white object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-100">
+                          <Sparkles className="h-5 w-5 text-blue-600" />
+                        </div>
                       )}
-                      <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
-                        {servizio.prezzo != null && (
-                          <span className="rounded-md bg-blue-600 px-1.5 py-0.5 text-[11px] font-black text-white">
-                            {servizio.prezzo_da ? "A partire da €" : "€"}
-                            {Number(servizio.prezzo).toFixed(2)}
-                          </span>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="truncate text-sm font-black text-slate-900">
+                          {servizio.nome}
+                        </h3>
+                        {servizio.descrizione && (
+                          <p className="mt-0.5 line-clamp-2 text-[11px] leading-4 text-slate-600">
+                            {servizio.descrizione}
+                          </p>
                         )}
-                        {servizio.durata_min != null && servizio.durata_min > 0 && (
-                          <span className="flex items-center gap-1 text-[11px] text-slate-500">
-                            <Clock className="h-3 w-3" />
-                            {servizio.durata_min} min
-                          </span>
-                        )}
+                        <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+                          {servizio.prezzo != null && (
+                            <span className="rounded-md bg-blue-600 px-1.5 py-0.5 text-[11px] font-black text-white">
+                              {servizio.prezzo_da ? "A partire da €" : "€"}
+                              {Number(servizio.prezzo).toFixed(2)}
+                            </span>
+                          )}
+                          {servizio.durata_min != null && servizio.durata_min > 0 && (
+                            <span className="flex items-center gap-1 text-[11px] text-slate-500">
+                              <Clock className="h-3 w-3" />
+                              {servizio.durata_min} min
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                     {(() => {
