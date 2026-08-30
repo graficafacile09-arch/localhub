@@ -71,7 +71,14 @@ const azioni = [
   },
 ];
 
-export default function MerchantQuickActions({ storeId }: { storeId: string }) {
+export default function MerchantQuickActions({
+  storeId,
+  nuoviAppuntamenti = 0,
+}: {
+  storeId: string;
+  /** Appuntamenti NUOVI (non ancora visti) → badge numerico sulla card Agenda. */
+  nuoviAppuntamenti?: number;
+}) {
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       {azioni.map((action) => {
@@ -81,8 +88,17 @@ export default function MerchantQuickActions({ storeId }: { storeId: string }) {
           <Link
             key={action.key}
             href={action.href(storeId)}
-            className="group flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-lg hover:shadow-blue-500/10 cursor-pointer"
+            className="group relative flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-lg hover:shadow-blue-500/10 cursor-pointer"
           >
+            {/* Badge appuntamenti nuovi (solo card Agenda, solo se > 0) */}
+            {action.key === "prenotazioni" && nuoviAppuntamenti > 0 && (
+              <span
+                className="absolute right-3 top-3 inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-red-500 px-1.5 text-[11px] font-black leading-none text-white shadow-sm"
+                aria-label={`${nuoviAppuntamenti} nuovi appuntamenti`}
+              >
+                {nuoviAppuntamenti > 99 ? "99+" : nuoviAppuntamenti}
+              </span>
+            )}
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700 transition group-hover:bg-blue-100">
               <Icon className="h-5 w-5" />
             </div>

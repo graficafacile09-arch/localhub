@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import { CalendarCheck, CalendarClock, ChevronDown, ChevronUp, X } from "lucide-react";
 import ModuleShell from "./ModuleShell";
 import { Field, Toggle, SaveBar, type StatoSalvataggio } from "./ModuleFields";
@@ -73,6 +74,10 @@ function oraShort(ora: string): string {
 }
 
 export default function PrenotazioniModule({ storeId }: Props) {
+  const searchParams = useSearchParams();
+  // Segna gli appuntamenti come letti UNA SOLA volta per apertura Agenda.
+  const marcatoLetto = useRef(false);
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [config, setConfig] = useState<ConfigPrenotazioni>({ ...DEFAULT });
@@ -112,6 +117,8 @@ export default function PrenotazioniModule({ storeId }: Props) {
         return;
       }
       setPrenotazioni((json.data?.prenotazioni ?? []) as PrenotazioneRow[]);
+      // Dopo aver caricato l'elenco, gli appuntamenti visti risultano letti.
+      void segnaAppuntamentiLetti();
     } catch {
       setErroreElenco("Errore di rete. Riprova.");
       setPrenotazioni([]);
@@ -183,6 +190,31 @@ export default function PrenotazioniModule({ storeId }: Props) {
       setMessaggio({ tipo: "errore", testo: "Errore di rete. Riprova." });
     } finally {
       setSaving(false);
+    }
+  }
+
+  /**
+   * Segna gli appuntamenti come LETTI quando il merchant ENTRA nell'Agenda
+   * dalla dashboard (?block=prenotazioni): aggiorna negozi.data.agenda_ultima_lettura
+   * (best-effort, mai bloccante). Il badge della dashboard (nuovi appuntamenti
+   * con created_at > ultima lettura) si azzera al prossimo render. NON viene
+   * chiamato caricando semplicemente la dashboard né navigando alla sezione
+   * dell'editor senza il blocco Agenda.
+   */
+  async function segnaAppuntamentiLetti() {
+    if (marcatoLetto.current) return;
+    if (searchParams.get("block") !== "prenotazioni") return;
+    marcatoLetto.current = true;
+    try {
+      await fetch(`/api/merchant/stores/${storeId}/settings`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          data: { agenda_ultima_lettura: new Date().toISOString() },
+        }),
+      });
+    } catch {
+      // best-effort: un errore non deve mai bloccare la vista Agenda
     }
   }
 
