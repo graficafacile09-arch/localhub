@@ -39,7 +39,7 @@ export default function MerchantProductDeleteButton({
       type="button"
       onClick={handleDelete}
       disabled={deleting}
-      className="inline-flex items-center gap-1.5 rounded-xl border border-blue-200 bg-white px-3 py-1.5 text-xs font-semibold text-blue-600 transition hover:border-blue-300 hover:bg-blue-50 disabled:opacity-50"
+      className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 bg-white px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:border-red-300 hover:bg-red-50 disabled:opacity-50"
     >
       <Trash2 className="h-3.5 w-3.5" />
       {deleting ? "Eliminazione..." : "Elimina"}

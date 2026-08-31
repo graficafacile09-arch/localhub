@@ -387,8 +387,8 @@ export default function PrenotazioneForm({
                 onClick={() => setSlot(s)}
                 className={`rounded-xl border px-2 py-2 text-xs font-bold transition ${
                   slot?.oraInizio === s.oraInizio
-                    ? "border-blue-500 bg-blue-600 text-white"
-                    : "border-slate-200 bg-white text-slate-700 hover:border-blue-300"
+                    ? "border-yellow-400 bg-yellow-400 text-blue-900"
+                    : "border-slate-200 bg-white text-slate-700 hover:border-yellow-300 hover:bg-yellow-50"
                 }`}
               >
                 {s.oraInizio.slice(0, 5)}
@@ -495,7 +495,7 @@ export default function PrenotazioneForm({
       <button
         type="submit"
         disabled={inviando || !puòProcedereDati}
-        className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-xs font-bold text-white transition hover:bg-blue-700 disabled:opacity-50"
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-yellow-400 px-6 py-3 text-xs font-bold text-blue-900 transition hover:bg-yellow-300 disabled:opacity-50"
       >
         {inviando ? (
           <>

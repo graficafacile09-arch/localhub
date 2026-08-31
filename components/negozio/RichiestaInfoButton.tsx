@@ -102,7 +102,7 @@ export default function RichiestaInfoButton({
       <button
         type="button"
         onClick={() => setAperto(true)}
-        className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-blue-700 hover:shadow-md"
+        className="inline-flex items-center gap-1.5 rounded-xl bg-yellow-400 px-3.5 py-2 text-xs font-bold text-blue-900 shadow-sm transition hover:bg-yellow-300 hover:shadow-md"
       >
         <MessageSquare className="h-4 w-4" />
         {titolo}
@@ -132,7 +132,7 @@ export default function RichiestaInfoButton({
                 type="button"
                 onClick={chiudi}
                 aria-label="Chiudi"
-                className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+                className="rounded-lg p-1.5 text-slate-400 transition hover:bg-yellow-100 hover:text-yellow-800"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -147,7 +147,7 @@ export default function RichiestaInfoButton({
                 <button
                   type="button"
                   onClick={chiudi}
-                  className="mt-2 rounded-xl border border-slate-200 bg-white px-5 py-2 text-xs font-bold text-slate-600 transition hover:bg-slate-50"
+                  className="mt-2 rounded-xl border border-slate-200 bg-white px-5 py-2 text-xs font-bold text-slate-600 transition hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-800"
                 >
                   Chiudi
                 </button>
@@ -171,7 +171,7 @@ export default function RichiestaInfoButton({
                     onChange={(e) => setNome(e.target.value)}
                     required
                     maxLength={200}
-                    className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-yellow-500 focus:ring-2 focus:ring-yellow-100"
                   />
                 </div>
 
@@ -185,7 +185,7 @@ export default function RichiestaInfoButton({
                     onChange={(e) => setEmail(e.target.value)}
                     required={emailObbligatoria}
                     maxLength={200}
-                    className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-yellow-500 focus:ring-2 focus:ring-yellow-100"
                   />
                 </div>
 
@@ -199,7 +199,7 @@ export default function RichiestaInfoButton({
                     onChange={(e) => setTelefono(e.target.value)}
                     required={telefonoObbligatoria}
                     maxLength={30}
-                    className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-yellow-500 focus:ring-2 focus:ring-yellow-100"
                   />
                 </div>
 
@@ -213,7 +213,7 @@ export default function RichiestaInfoButton({
                     required={messaggioObbligatoria}
                     rows={3}
                     maxLength={5000}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-yellow-500 focus:ring-2 focus:ring-yellow-100"
                   />
                 </div>
 
@@ -227,7 +227,7 @@ export default function RichiestaInfoButton({
                 <button
                   type="submit"
                   disabled={inviando}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-xs font-bold text-white transition hover:bg-blue-700 disabled:opacity-50"
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-yellow-400 px-6 py-3 text-xs font-bold text-blue-900 transition hover:bg-yellow-300 disabled:opacity-50"
                 >
                   {inviando ? (
                     <>

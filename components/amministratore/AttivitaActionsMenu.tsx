@@ -240,7 +240,7 @@ export default function AttivitaActionsMenu({
                     setErroreElimina(null);
                   }}
                   disabled={eliminando}
-                  className="rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-blue-100 disabled:opacity-60"
+                  className="rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-yellow-100 disabled:opacity-60"
                 >
                   Annulla
                 </button>
@@ -268,7 +268,7 @@ export default function AttivitaActionsMenu({
         aria-label={`Azioni per ${attivita.nome}`}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+        className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-800"
       >
         <MoreHorizontal className="h-4 w-4" aria-hidden />
       </button>
@@ -285,7 +285,7 @@ export default function AttivitaActionsMenu({
                 <button
                   type="button"
                   onClick={() => setOwnerPanel(false)}
-                  className="rounded-lg px-2 py-1 text-xs font-semibold text-slate-500 hover:bg-slate-100"
+                  className="rounded-lg px-2 py-1 text-xs font-semibold text-slate-500 hover:bg-yellow-100 hover:text-yellow-800"
                 >
                   Indietro
                 </button>
@@ -340,7 +340,7 @@ export default function AttivitaActionsMenu({
                   rel="noopener noreferrer"
                   role="menuitem"
                   onClick={() => setOpen(false)}
-                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-yellow-50"
                 >
                   <Eye className="h-4 w-4 shrink-0" aria-hidden />
                   Visualizza
@@ -354,7 +354,7 @@ export default function AttivitaActionsMenu({
                   setOpen(false);
                   router.push(`/amministratore/negozi/${attivita.id}`);
                 }}
-                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-yellow-50"
               >
                 <ExternalLink className="h-4 w-4 shrink-0" aria-hidden />
                 Apri dashboard
@@ -367,7 +367,7 @@ export default function AttivitaActionsMenu({
                   setOpen(false);
                   router.push(`/amministratore/negozi/${attivita.id}/edit`);
                 }}
-                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-yellow-50"
               >
                 <Pencil className="h-4 w-4 shrink-0" aria-hidden />
                 Modifica
@@ -380,7 +380,7 @@ export default function AttivitaActionsMenu({
                   setOpen(false);
                   setShowDuplica(true);
                 }}
-                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 transition hover:bg-yellow-50"
               >
                 <Copy className="h-4 w-4 shrink-0" aria-hidden />
                 Duplica negozio
@@ -393,7 +393,7 @@ export default function AttivitaActionsMenu({
                 role="menuitem"
                 onClick={apriGestioneProprietario}
                 disabled={salvando !== null}
-                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-50 disabled:opacity-60"
+                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-yellow-800 transition hover:bg-yellow-50 disabled:opacity-60"
               >
                 <UserCog className="h-4 w-4 shrink-0" aria-hidden />
                 Gestisci proprietario
@@ -433,7 +433,7 @@ export default function AttivitaActionsMenu({
                 type="button"
                 role="menuitem"
                 onClick={() => setConfermaElimina(true)}
-                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-blue-600 transition hover:bg-blue-50"
+                className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50"
               >
                 <Trash2 className="h-4 w-4 shrink-0" aria-hidden />
                 Elimina

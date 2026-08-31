@@ -393,7 +393,7 @@ export default function SpedizioneForm({
                 <button
                   type="button"
                   onClick={() => setCambiaIndirizzo(true)}
-                  className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-bold text-blue-700 shadow-sm transition hover:border-blue-400 hover:bg-blue-50"
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-yellow-200 bg-white px-3 py-2 text-xs font-bold text-yellow-800 shadow-sm transition hover:border-yellow-400 hover:bg-yellow-50"
                 >
                   <Truck className="h-3.5 w-3.5" aria-hidden />
                   CAMBIA INDIRIZZO
@@ -468,9 +468,9 @@ export default function SpedizioneForm({
                             key={`${opzione.carrier}:${opzione.servizio}`}
                             className={`flex items-center gap-3 rounded-lg border p-3 transition ${
                               selezionata
-                                ? "border-blue-400 bg-blue-50/50"
+                                ? "border-yellow-400 bg-yellow-50"
                                 : opzione.disponibile
-                                ? "cursor-pointer border-slate-200 bg-white hover:border-slate-300"
+                                ? "cursor-pointer border-slate-200 bg-white hover:border-yellow-300"
                                 : "cursor-not-allowed border-slate-200 bg-slate-50 opacity-70"
                             }`}
                           >
@@ -550,9 +550,9 @@ export default function SpedizioneForm({
                   key={metodo.metodo}
                   className={`flex items-center gap-3 rounded-lg border p-3 transition ${
                     selezionato
-                      ? "border-blue-400 bg-blue-50/50"
+                      ? "border-yellow-400 bg-yellow-50"
                       : selezionabile
-                      ? "cursor-pointer border-slate-200 bg-white hover:border-slate-300"
+                      ? "cursor-pointer border-slate-200 bg-white hover:border-yellow-300"
                       : "cursor-not-allowed border-slate-200 bg-slate-50 opacity-70"
                   }`}
                 >
@@ -679,7 +679,7 @@ export default function SpedizioneForm({
           type="button"
           onClick={procediAlPagamento}
           disabled={inviando || metodoPagamento === null || spedizioneScelta === null}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white shadow-md shadow-blue-500/25 transition hover:bg-blue-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+          className="btn-cta w-full py-3 text-sm disabled:cursor-not-allowed disabled:opacity-60"
         >
           {inviando ? (
             <>
@@ -720,7 +720,7 @@ function FormField({
         id={id}
         name={id}
         required={required}
-        className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
+        className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-100"
       />
     </div>
   );
@@ -762,7 +762,7 @@ function CampoProfilo({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         required={required}
-        className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
+        className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-100"
       />
     </div>
   );

@@ -398,7 +398,7 @@ export default function PrenotazioniModule({ storeId, markReadAgenda = false }: 
                   setFiltroGiorno("");
                   setFiltroStato("");
                 }}
-                className="inline-flex items-center gap-1 rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600 transition hover:bg-slate-50"
+                className="inline-flex items-center gap-1 rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-600 transition hover:bg-yellow-50"
               >
                 <X className="h-3.5 w-3.5" /> Azzera filtri
               </button>
@@ -460,7 +460,7 @@ export default function PrenotazioniModule({ storeId, markReadAgenda = false }: 
                         <button
                           type="button"
                           onClick={() => setRilassato((r) => ({ ...r, [p.id]: !r[p.id] }))}
-                          className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-bold text-slate-600 transition hover:bg-slate-50"
+                          className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-bold text-slate-600 transition hover:bg-yellow-50"
                         >
                           Sposta
                           {rilassato[p.id] ? (
@@ -495,7 +495,7 @@ export default function PrenotazioniModule({ storeId, markReadAgenda = false }: 
                         <button
                           type="button"
                           onClick={() => void spostaPrenotazione(p.id)}
-                          className="h-10 shrink-0 rounded-xl bg-blue-600 px-4 text-xs font-bold text-white transition hover:bg-blue-700"
+                          className="h-10 shrink-0 rounded-xl bg-yellow-400 px-4 text-xs font-bold text-blue-900 transition hover:bg-yellow-300"
                         >
                           Conferma spostamento
                         </button>

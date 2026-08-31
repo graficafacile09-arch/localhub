@@ -214,8 +214,8 @@ export default function ProductVariantSelector({
                           aria-pressed={attivo}
                           className={`rounded-lg border px-3 py-1.5 text-sm font-semibold transition ${
                             attivo
-                              ? "border-blue-600 bg-blue-600 text-white shadow-sm"
-                              : "border-slate-200 bg-white text-slate-700 hover:border-blue-400 hover:text-blue-700"
+                              ? "border-yellow-400 bg-yellow-400 text-blue-900 shadow-sm"
+                              : "border-slate-200 bg-white text-slate-700 hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-800"
                           }`}
                         >
                           {valore}
