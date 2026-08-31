@@ -633,3 +633,143 @@ export async function ripristinaOrdineAdmin(ordineId: string): Promise<void> {
     throw new Error(error.message ?? "Impossibile ripristinare l'ordine.");
   }
 }
+
+// ── Eliminazione DEFINITIVA dal Cestino (pattern negozi) ─────────────────────
+
+/** Riga minima di ordine eliminato definitivamente (per il log attività). */
+export type OrdineEliminatoDefinitivo = {
+  id: string;
+  numero: string | null;
+};
+
+/**
+ * Elimina i dati collegati agli ordini nell'ordine richiesto dalle FK reali
+ * (stesso pattern di eliminaDatiCollegatiANegozi):
+ *   1. ordini_righe           (FK CASCADE)
+ *   2. ordini_eventi          (FK CASCADE)
+ *   3. ordine_reclami         (FK CASCADE → trascina reclamo_comunicazioni)
+ *   4. pagamenti_sessioni     (FK CASCADE)
+ *   5. pagamenti_eventi       (FK SET NULL: qui DELETE ESPLICITO perché è una
+ *      vera eliminazione definitiva dal Cestino)
+ * Ogni passo verifica l'errore: se uno fallisce viene lanciato un errore
+ * (l'operazione è segnalata, mai silenziosa).
+ */
+async function eliminaDatiCollegatiAdOrdini(
+  supabase: ReturnType<typeof createAdminSupabaseClient>,
+  ordineIds: string[]
+): Promise<void> {
+  const { error: errRighe } = await supabase
+    .from("ordini_righe")
+    .delete()
+    .in("ordine_id", ordineIds);
+  if (errRighe) {
+    throw new Error(errRighe.message ?? "Impossibile eliminare le righe dell'ordine.");
+  }
+
+  const { error: errEventi } = await supabase
+    .from("ordini_eventi")
+    .delete()
+    .in("ordine_id", ordineIds);
+  if (errEventi) {
+    throw new Error(errEventi.message ?? "Impossibile eliminare gli eventi dell'ordine.");
+  }
+
+  const { error: errReclami } = await supabase
+    .from("ordine_reclami")
+    .delete()
+    .in("ordine_id", ordineIds);
+  if (errReclami) {
+    throw new Error(errReclami.message ?? "Impossibile eliminare i reclami dell'ordine.");
+  }
+
+  const { error: errSessioni } = await supabase
+    .from("pagamenti_sessioni")
+    .delete()
+    .in("ordine_id", ordineIds);
+  if (errSessioni) {
+    throw new Error(errSessioni.message ?? "Impossibile eliminare le sessioni di pagamento.");
+  }
+
+  const { error: errEventiPagamento } = await supabase
+    .from("pagamenti_eventi")
+    .delete()
+    .in("ordine_id", ordineIds);
+  if (errEventiPagamento) {
+    throw new Error(errEventiPagamento.message ?? "Impossibile eliminare gli eventi di pagamento.");
+  }
+}
+
+/**
+ * Elimina DEFINITIVAMENTE un ordine dal database — SOLO se è nel Cestino
+ * (deleted_at non null). Elimina prima i dati collegati (righe, eventi,
+ * reclami, pagamenti) nell'ordine corretto per l'integrità referenziale.
+ * Azione distruttiva e irreversibile, riservata all'amministratore.
+ * Un ordine attivo (non cestinato) non viene MAI toccato.
+ */
+export async function eliminaOrdineDefinitivo(ordineId: string): Promise<void> {
+  const supabase = createAdminSupabaseClient();
+
+  // Guardia PRIMA di eliminare i dipendenti: se l'ordine non è nel Cestino
+  // non si cancella nulla (evita figli orfani su un ordine attivo).
+  const { data: verifica } = await supabase
+    .from("ordini")
+    .select("id")
+    .eq("id", ordineId)
+    .not("deleted_at", "is", null)
+    .maybeSingle();
+  if (!verifica) {
+    throw new Error("L'ordine non è nel Cestino o non esiste.");
+  }
+
+  await eliminaDatiCollegatiAdOrdini(supabase, [ordineId]);
+
+  const { error } = await supabase
+    .from("ordini")
+    .delete()
+    .eq("id", ordineId)
+    .not("deleted_at", "is", null);
+  if (error) {
+    throw new Error(error.message ?? "Impossibile eliminare definitivamente l'ordine.");
+  }
+}
+
+/**
+ * Elimina DEFINITIVAMENTE TUTTI gli ordini presenti nel Cestino
+ * (deleted_at non null), con i dati collegati. Stesse protezioni
+ * dell'eliminazione singola: un ordine attivo (o ripristinato nel
+ * frattempo) non viene MAI toccato. Ritorna gli ordini realmente eliminati
+ * (id + numero) per il log attività.
+ */
+export async function eliminaOrdiniDalCestino(): Promise<OrdineEliminatoDefinitivo[]> {
+  const supabase = createAdminSupabaseClient();
+
+  // Recupera gli ordini nel Cestino (id + numero per il log attività).
+  const { data: cestino, error: erroreLista } = await supabase
+    .from("ordini")
+    .select("id, numero")
+    .not("deleted_at", "is", null);
+  if (erroreLista) {
+    throw new Error(erroreLista.message ?? "Impossibile recuperare il cestino ordini.");
+  }
+
+  const ordini = (cestino ?? []) as OrdineEliminatoDefinitivo[];
+  if (ordini.length === 0) return [];
+
+  const ids = ordini.map((o) => o.id);
+  await eliminaDatiCollegatiAdOrdini(supabase, ids);
+
+  // Elimina SOLO gli ordini ancora nel Cestino (deleted_at non null):
+  // un ordine ripristinato nel frattempo non viene mai toccato.
+  const { data: eliminati, error } = await supabase
+    .from("ordini")
+    .delete()
+    .in("id", ids)
+    .not("deleted_at", "is", null)
+    .select("id");
+  if (error) {
+    throw new Error(error.message ?? "Impossibile eliminare definitivamente gli ordini.");
+  }
+
+  const eliminatiIds = new Set((eliminati ?? []).map((r) => r.id));
+  return ordini.filter((o) => eliminatiIds.has(o.id));
+}
