@@ -36,13 +36,24 @@ const stopWordsRicerca = new Set([
 // ─── Gruppi base di sinonimi (categorie / commercio) ────────────────────────
 // Ereditati dalla precedente implementazione; coprono commercio e servizi
 // trasversali. Ogni gruppo è un array di termini EQUIVALENTI.
+//
+// V7 — lemmi "ponte" rimossi dall'espansione automatica (fix del leak
+// tassonomico "benessere"). "benessere" era condiviso tra i domini salute e
+// beauty: un negozio con categoria generica "Salute e benessere" (es. un
+// medico) veniva intercettato sia da "farmacia" sia da "tagliarmi i capelli"
+// (falsi positivi). "salute" era il ponte analogo per "farmacia" verso
+// qualsiasi attività classificata genericamente "Salute e benessere".
+// I termini rimossi restano SEMPRE validi come query originali (terminiBase
+// non viene mai toccato): "benessere"/"salute" espliciti continuano a
+// cercare. L'espansione automatica semplicemente non li usa più per saltare
+// da un dominio all'altro.
 
 const gruppiBase: Record<string, string[]> = {
   panificio: ["panificio", "forno", "pane", "pasticceria", "pasticcere", "bakery", "bakery shop", "cornetti", "pizza al taglio", "focaccia", "grissini", "biscotti", "torte", "dolci", "lievitati", "panetteria", "pane casereccio"],
-  beauty: ["beauty", "bellezza", "parrucchiere", "parrucchieri", "barber", "barbiere", "estetica", "estetista", "trucco", "makeup", "make-up", "benessere", "capelli", "taglio", "piega", "barba", "skincare"],
+  beauty: ["beauty", "bellezza", "parrucchiere", "parrucchieri", "barber", "barbiere", "estetica", "estetista", "trucco", "makeup", "make-up", "capelli", "taglio", "piega", "barba", "skincare"],
   casa: ["casa", "arredo", "arredamento", "mobili", "interior", "decorazioni", "illuminazione", "cucina", "salotto", "camera", "divano", "tavolo"],
   auto: ["auto", "macchina", "officina", "gomme", "pneumatici", "tagliando", "meccanico", "carrozzeria", "revisione", "olio", "freni", "batteria", "concessionaria"],
-  salute: ["salute", "farmacia", "parafarmacia", "medicinali", "integratori", "benessere", "sanitaria", "febbre", "raffreddore", "mal", "testa", "dolore", "ricetta", "analisi", "antibiotico"],
+  salute: ["farmacia", "parafarmacia", "medicinali", "integratori", "sanitaria", "febbre", "raffreddore", "mal", "testa", "dolore", "ricetta", "analisi", "antibiotico"],
   tech: ["tech", "tecnologia", "tecnologico", "tecnologici", "tecnologica", "elettronica", "telefonia", "cellulari", "cellulare", "smartphone", "telefonino", "telefonini", "computer", "pc", "tablet", "accessori", "riparazioni", "monitor", "stampante", "ricarica"],
   bimbi: ["bimbi", "bambini", "giocattoli", "giocattolo", "infanzia", "scuola", "cartoleria", "neonati", "prima", "infanzia", "zaino", "pannolini", "didattico"],
   sport: ["sport", "fitness", "palestra", "allenamento", "running", "yoga", "pilates", "abbigliamento", "sportivo", "workout", "tapis", "roulant", "pesi", "training"],
@@ -67,7 +78,7 @@ export const SINONIMI_TIPO_ATTIVITA: Record<string, string[]> = {
   ],
   beauty: [
     "parrucchiere", "barbiere", "estetista", "bellezza", "capelli", "taglio",
-    "piega", "barba", "unghie", "makeup", "trucco", "skincare", "benessere",
+    "piega", "barba", "unghie", "makeup", "trucco", "skincare",
     "centro estetico", "acconciature",
   ],
   immobiliare: [
