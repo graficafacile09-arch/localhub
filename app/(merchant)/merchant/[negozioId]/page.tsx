@@ -11,6 +11,7 @@ import { getOrdiniVenditore } from "@/lib/merchant/ordini";
 import { getConteggioReclamiApertiVenditore } from "@/lib/ordine-reclami";
 import {
   contaNuoviAppuntamenti,
+  getBaselineAgenda,
   getUltimaLetturaAgenda,
   rigaPrenotazionePerBadge,
 } from "@/lib/merchant/agenda-badge";
@@ -78,7 +79,7 @@ export default async function MerchantStorePage({
     // `moduli_attivi` direttamente per il gating centralizzato e la lettura.
     const { data: rigaNegozio } = await supabase
       .from("negozi")
-      .select("data, moduli_attivi")
+      .select("data, moduli_attivi, created_at")
       .eq("id", negozioId)
       .single();
 
@@ -92,8 +93,14 @@ export default async function MerchantStorePage({
       } as unknown as Negozio;
 
       if (attivitaHaAgenda(negozioMinimo)) {
-        const ultimaLettura = getUltimaLetturaAgenda(dataNegozio);
-        if (ultimaLettura) {
+        // Soglia = ultima lettura Agenda se esiste, altrimenti la creazione
+        // del negozio: così una prenotazione confermata successiva produce
+        // subito il badge [N] anche prima della prima apertura dell'Agenda.
+        const baseline = getBaselineAgenda(
+          getUltimaLetturaAgenda(dataNegozio),
+          rigaNegozio.created_at
+        );
+        if (baseline) {
           const { data: righe } = await supabase
             .from("prenotazioni")
             .select("negozio_id, stato, created_at")
@@ -101,7 +108,7 @@ export default async function MerchantStorePage({
           nuoviAppuntamenti = contaNuoviAppuntamenti(
             (righe ?? []).map(rigaPrenotazionePerBadge),
             negozioId,
-            ultimaLettura
+            baseline
           );
         }
       }
