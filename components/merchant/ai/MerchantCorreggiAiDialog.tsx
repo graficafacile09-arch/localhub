@@ -616,7 +616,7 @@ export default function MerchantCorreggiAiDialog({
                 ? "border-blue-300 bg-blue-500 text-white shadow-lg shadow-blue-500/30"
                 : trascrivendo || permessoInAttesa
                   ? "border-blue-300 bg-blue-50 text-blue-700"
-                  : "border-slate-200 bg-white text-slate-700 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
+                  : "border border-blue-300 bg-white text-blue-700 hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-800"
             } ${
               // Opacità ridotta solo quando il pulsante è inutilizzabile,
               // NON durante la richiesta permesso (deve restare ben visibile).

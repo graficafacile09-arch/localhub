@@ -55,7 +55,7 @@ export default async function ProdottiTipiciPage() {
       <div className="mx-auto max-w-7xl px-3 py-3 sm:px-5">
         <div className="flex items-center justify-between gap-3">
           <div>
-            <h1 className="inline-block whitespace-nowrap rounded-lg bg-yellow-400 px-2 py-1 text-[13px] font-black tracking-tight text-blue-900 shadow-sm sm:text-base md:px-3 md:py-1.5 md:text-2xl">
+            <h1 className="inline-block whitespace-nowrap rounded-lg bg-blue-600 px-2 py-1 text-[13px] font-black tracking-tight text-blue-900 shadow-sm sm:text-base md:px-3 md:py-1.5 md:text-2xl">
               ECCELLENZE CALABRESI
             </h1>
             <p className="mt-1 text-sm text-slate-500">
@@ -84,7 +84,7 @@ export default async function ProdottiTipiciPage() {
             </p>
             <Link
               href="/negozi"
-              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-yellow-400 px-6 py-3 text-sm font-bold text-blue-800 transition hover:bg-yellow-300"
+              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white transition hover:bg-yellow-400 hover:text-blue-900"
             >
               <ArrowLeft className="h-4 w-4" aria-hidden />
               Vedi i negozi

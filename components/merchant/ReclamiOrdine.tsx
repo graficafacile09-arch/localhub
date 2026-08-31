@@ -352,13 +352,13 @@ export default function ReclamiOrdine({
                           ? "Reclamo chiuso: non è possibile inviare messaggi."
                           : "Scrivi una risposta al cliente…"
                       }
-                      className="min-w-0 flex-1 resize-none rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
+                      className="min-w-0 flex-1 resize-none rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
                     />
                     <button
                       type="button"
                       onClick={() => void inviaMessaggio(reclamo.id)}
                       disabled={invioMessaggio || reclamoChiuso}
-                      className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl bg-yellow-400 px-4 text-xs font-bold text-blue-800 shadow-sm transition hover:bg-yellow-300 active:scale-[0.98] disabled:opacity-50"
+                      className="inline-flex h-11 shrink-0 items-center gap-2 rounded-xl bg-blue-600 px-4 text-xs font-bold text-white shadow-sm transition hover:bg-yellow-400 hover:text-blue-900 active:scale-[0.98] disabled:opacity-50"
                     >
                       {invioMessaggio ? (
                         <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
@@ -392,10 +392,10 @@ export default function ReclamiOrdine({
                           disabled={azioneAttiva !== null}
                           className={`inline-flex h-9 items-center gap-2 rounded-xl px-3.5 text-xs font-bold transition active:scale-[0.98] disabled:opacity-50 ${
                             risolvi
-                              ? "bg-yellow-400 text-blue-800 shadow-sm hover:bg-yellow-300"
+                              ? "bg-blue-600 text-white shadow-sm hover:bg-yellow-300"
                               : azione.stato === "chiuso"
-                                ? "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
-                                : "border border-blue-200 bg-white text-blue-700 hover:bg-blue-50"
+                                ? "border border-blue-300 bg-white text-blue-700 hover:bg-yellow-50"
+                                : "border border-yellow-300 bg-yellow-50 text-yellow-800"
                           }`}
                         >
                           {attiva ? (
@@ -476,7 +476,7 @@ export default function ReclamiOrdine({
           <button
             type="button"
             onClick={() => setMostraOrdine((v) => !v)}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 transition hover:border-blue-300 hover:text-blue-700"
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-700 transition hover:border-yellow-300 hover:text-yellow-800"
           >
             {mostraOrdine ? (
               <ChevronUp className="h-4 w-4" aria-hidden />

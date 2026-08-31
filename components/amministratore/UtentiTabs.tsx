@@ -52,7 +52,7 @@ export default function UtentiTabs({
             className={`inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-sm font-bold transition-all duration-150 ${
               selezionata
                 ? "btn-cta"
-                : "border border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                : "border border-blue-300 bg-white text-blue-700 hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-800"
             }`}
           >
             <Icon className="h-4 w-4" aria-hidden />

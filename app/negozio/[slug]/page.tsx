@@ -224,7 +224,7 @@ export default async function PaginaNegozio({
             {/* Identità sovrapposta */}
             <div className="absolute inset-x-0 bottom-0 p-3.5 sm:p-5">
               {negozio.categoria && (
-                <span className="mb-1.5 inline-flex items-center gap-1.5 rounded-full bg-yellow-400 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-yellow-950 shadow-sm">
+                <span className="mb-1.5 inline-flex items-center gap-1.5 rounded-full bg-blue-600 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-yellow-950 shadow-sm">
                   <Tag className="h-3 w-3" aria-hidden />
                   {negozio.categoria as string}
                 </span>
@@ -355,7 +355,7 @@ export default async function PaginaNegozio({
               href={(negozio.sito_web as string).startsWith("http") ? (negozio.sito_web as string) : `https://${negozio.sito_web as string}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:border-slate-300 hover:text-slate-900 hover:shadow"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-blue-300 bg-white px-3.5 py-2 text-xs font-bold text-blue-700 shadow-sm transition hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-800 hover:shadow"
             >
               <Globe className="h-4 w-4" />
               Sito web

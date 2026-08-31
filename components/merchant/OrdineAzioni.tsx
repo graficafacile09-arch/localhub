@@ -273,8 +273,8 @@ export default function OrdineAzioni({
                 disabled={invio}
                 className={`inline-flex h-11 items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition active:scale-[0.98] disabled:opacity-50 ${
                   azione.distruttiva
-                    ? "border border-blue-200 bg-white text-blue-600 hover:border-blue-300 hover:bg-blue-50"
-                    : "bg-yellow-400 text-blue-800 shadow-sm hover:bg-yellow-300"
+                    ? "border border-yellow-300 bg-yellow-50 text-yellow-800"
+                    : "bg-blue-600 text-white shadow-sm hover:bg-yellow-300"
                 }`}
               >
                 {invio && azioneAttiva?.stato === azione.stato ? (
@@ -310,7 +310,7 @@ export default function OrdineAzioni({
                   type="button"
                   onClick={() => apriSpedizione(azione)}
                   disabled={invioSpedizione}
-                  className="inline-flex h-10 items-center gap-2 rounded-xl border border-blue-200 bg-white px-3.5 py-2 text-sm font-bold text-blue-700 transition hover:border-blue-300 hover:bg-blue-50 active:scale-[0.98] disabled:opacity-50"
+                  className="inline-flex h-10 items-center gap-2 rounded-xl border border-yellow-200 bg-white px-3.5 py-2 text-sm font-bold text-yellow-800 transition hover:border-yellow-300 hover:bg-yellow-50 active:scale-[0.98] disabled:opacity-50"
                 >
                   {invioSpedizione && spedizioneAperta?.azione === azione.azione ? (
                     <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
@@ -356,7 +356,7 @@ export default function OrdineAzioni({
               <button
                 type="button"
                 onClick={() => setAnnullaAperto(false)}
-                className="rounded-lg p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+                className="rounded-lg p-1 text-slate-400 transition hover:bg-yellow-100 hover:text-yellow-800"
                 aria-label="Chiudi"
               >
                 <X className="h-4 w-4" />
@@ -382,8 +382,8 @@ export default function OrdineAzioni({
                       key={m.valore}
                       className={`flex cursor-pointer items-start gap-2.5 rounded-xl border px-3 py-2.5 text-sm transition ${
                         motivo === m.valore
-                          ? "border-blue-300 bg-blue-50"
-                          : "border-slate-200 bg-white hover:border-slate-300"
+                          ? "border-yellow-300 bg-yellow-50"
+                          : "border-slate-200 bg-white hover:border-yellow-300"
                       }`}
                     >
                       <input
@@ -418,7 +418,7 @@ export default function OrdineAzioni({
                       ? "Descrivi il motivo dell'annullamento…"
                       : "Eventuali dettagli per il cliente…"
                   }
-                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100"
                 />
               </div>
 
@@ -435,7 +435,7 @@ export default function OrdineAzioni({
                 type="button"
                 onClick={() => setAnnullaAperto(false)}
                 disabled={invio}
-                className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 transition hover:bg-yellow-50 disabled:opacity-50"
               >
                 Torna indietro
               </button>
@@ -443,7 +443,7 @@ export default function OrdineAzioni({
                 type="button"
                 onClick={confermaAnnullamento}
                 disabled={invio}
-                className="inline-flex items-center gap-2 rounded-xl bg-yellow-400 px-4 py-2.5 text-xs font-bold text-blue-800 transition hover:bg-yellow-300 disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-yellow-400 hover:text-blue-900 disabled:opacity-50"
               >
                 {invio ? (
                   <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
@@ -477,7 +477,7 @@ export default function OrdineAzioni({
               <button
                 type="button"
                 onClick={() => setSpedizioneAperta(null)}
-                className="rounded-lg p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+                className="rounded-lg p-1 text-slate-400 transition hover:bg-yellow-100 hover:text-yellow-800"
                 aria-label="Chiudi"
               >
                 <X className="h-4 w-4" />
@@ -497,7 +497,7 @@ export default function OrdineAzioni({
                   value={trackingCode}
                   onChange={(e) => setTrackingCode(e.target.value)}
                   placeholder="Es. 1234567890"
-                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100"
                 />
               </div>
 
@@ -514,7 +514,7 @@ export default function OrdineAzioni({
                   onChange={(e) => setTrackingUrlInput(e.target.value)}
                   placeholder="https://…"
                   inputMode="url"
-                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100"
                 />
               </div>
 
@@ -530,7 +530,7 @@ export default function OrdineAzioni({
                   value={consegnaStimata}
                   onChange={(e) => setConsegnaStimata(e.target.value)}
                   placeholder="Es. 1-2 giorni"
-                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100"
                 />
               </div>
 
@@ -547,7 +547,7 @@ export default function OrdineAzioni({
                 type="button"
                 onClick={() => setSpedizioneAperta(null)}
                 disabled={invioSpedizione}
-                className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 transition hover:bg-yellow-50 disabled:opacity-50"
               >
                 Annulla
               </button>
@@ -555,7 +555,7 @@ export default function OrdineAzioni({
                 type="button"
                 onClick={confermaSpedizione}
                 disabled={invioSpedizione}
-                className="inline-flex items-center gap-2 rounded-xl bg-yellow-400 px-4 py-2.5 text-xs font-bold text-blue-800 transition hover:bg-yellow-300 disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-yellow-400 hover:text-blue-900 disabled:opacity-50"
               >
                 {invioSpedizione ? (
                   <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
