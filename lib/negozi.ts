@@ -5,6 +5,7 @@ import {
 } from "./ranking-negozi";
 import { estraiToken, normalizza } from "./text-utils";
 import { espandiQueryConSinonimi, espandiQueryConSinonimiBase } from "./ricerca-semantica";
+import { concettiIntento } from "./ricerca-intento";
 import { createAdminSupabaseClient } from "./supabase/admin";
 import { isNumericId, isUuid, toSlug } from "./slug";
 import type { ProdottoRicerca } from "./ricerca-ai";
@@ -1031,16 +1032,20 @@ async function cercaProdottiCore(
   const db = getDb();
   if (!db) return { risultati: [], total: null };
 
-  // Prodotti: solo sinonimi di categoria/commercio (NON il vocabolario dei
-  // profili attività) per evitare falsi positivi (es. "dottore" → latte).
+  // Prodotti: sinonimi di categoria/commercio (NON il vocabolario dei profili
+  // attività per evitare falsi positivi es. "dottore" → latte) + concetti
+  // d'intento ADDITIVI (es. "ho sete" → bevande/acqua/bar). La query originale
+  // resta comunque rappresentata dai token base in espandiQueryConSinonimiBase
+  // (i concetti aggiungono, mai restringono).
+  const espansaBase = `${concettiIntento(ricerca)} ${espandiQueryConSinonimiBase(ricerca)}`;
   const termini = Array.from(
     new Set(
-      espandiQueryConSinonimiBase(ricerca)
+      espansaBase
         .split(/\s+/)
         .map((t) => t.trim())
         .filter(Boolean)
     )
-  ).slice(0, 10);
+  ).slice(0, 16);
 
   const conFiltriExtra = haFiltriAddizionali(opts.filtri);
 
@@ -1393,9 +1398,13 @@ export async function cercaNegozi(
   const db = getDb();
   if (!db) return [];
 
+  // Espansione ADDITIVA: sinonimi esistenti + concetti d'intento (es. "ho sete" →
+  // bevande/bar/caffetteria). I termini ORIGINALI significativi sono già dentro
+  // espandiQueryConSinonimi (che mantiene i token base), quindi la query non va
+  // persa; i concetti si aggiungono (OR), mai come filtro AND restrittivo.
   const espansa = opts.termini && opts.termini.length > 0
-    ? opts.termini.join(" ")
-    : espandiQueryConSinonimi(ricerca);
+    ? `${opts.termini.join(" ")} ${concettiIntento(ricerca)}`
+    : `${concettiIntento(ricerca)} ${espandiQueryConSinonimi(ricerca)}`;
   const terminiEspansi = Array.from(
     new Set(
       espansa
@@ -1403,7 +1412,7 @@ export async function cercaNegozi(
         .map((termine) => termine.trim())
         .filter(Boolean)
     )
-  ).slice(0, 16);
+  ).slice(0, 24);
 
   const termini = (terminiEspansi.length > 0 ? terminiEspansi : [ricerca.trim()])
     .filter(Boolean);
