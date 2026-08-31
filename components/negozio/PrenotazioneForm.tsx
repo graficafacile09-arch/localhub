@@ -6,8 +6,13 @@ import {
   Loader2,
   CheckCircle2,
   AlertTriangle,
+  MessageCircle,
 } from "lucide-react";
 import type { ConfigPrenotazioni, ServizioStrutturato } from "@/types/negozio";
+import {
+  linkWhatsAppVerificaPrenotazione,
+  type DatiVerificaWhatsAppPrenotazione,
+} from "@/lib/prenotazione-verifica-whatsapp";
 
 const TIMEZONE = "Europe/Rome";
 
@@ -20,6 +25,11 @@ type Props = {
   config: ConfigPrenotazioni;
   /** Servizio già preselezionato (es. dalla card). */
   servizioIniziale?: string;
+  /**
+   * Numero WhatsApp del negozio corrente (negozi.whatsapp, fallback
+   * negozi.telefono). Vuoto → il pulsante "VERIFICA SU WHATSAPP" non compare.
+   */
+  whatsapp?: string;
 };
 
 /** Data civile YYYY-MM-DD in Europe/Rome per un Date assoluto. */
@@ -50,6 +60,7 @@ export default function PrenotazioneForm({
   servizi,
   config,
   servizioIniziale,
+  whatsapp = "",
 }: Props) {
   const oggi = useMemo(() => dataCivileDaDate(new Date()), []);
   // min: oggi + anticipo_min_ore (arrotondato al giorno successivo se >0)
@@ -231,6 +242,15 @@ export default function PrenotazioneForm({
 
   // ── Schermata di conferma ──────────────────────────────────────────────
   if (fatto) {
+    // Link di verifica via WhatsApp SOLO se il negozio corrente ha un numero.
+    const datiVerifica: DatiVerificaWhatsAppPrenotazione = {
+      numero: fatto.numero,
+      servizio: fatto.servizioNome,
+      giorno: fatto.giorno,
+      ora: fatto.ora,
+    };
+    const whatsappUrl = linkWhatsAppVerificaPrenotazione(whatsapp, datiVerifica);
+
     return (
       <div className="flex flex-col items-center gap-3 px-5 py-8 text-center">
         <CheckCircle2 className="h-11 w-11 text-emerald-500" />
@@ -259,6 +279,17 @@ export default function PrenotazioneForm({
             {fatto.cliente}
           </p>
         </div>
+        {whatsappUrl && (
+          <a
+            href={whatsappUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-whatsapp px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-whatsapp-dark hover:shadow-md"
+          >
+            <MessageCircle className="h-4 w-4" aria-hidden />
+            VERIFICA SU WHATSAPP
+          </a>
+        )}
         <p className="text-[11px] leading-4 text-slate-400">
           Il negozio ti ricontatterà per confermare i dettagli.
         </p>
