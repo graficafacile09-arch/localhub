@@ -569,24 +569,53 @@ export async function getOrdiniCestino(): Promise<OrdineCestino[]> {
   }));
 }
 
+/** Esito del cestinamento multiplo (soft delete batch). */
+export type EsitoCestinaBatch = {
+  /** Id degli ordini effettivamente spostati nel Cestino. */
+  successi: string[];
+  /** Id NON cestinati (già nel Cestino o non trovati). */
+  errori: string[];
+};
+
+/**
+ * Cestinamento MULTIPLO (soft delete) — stesso meccanismo del singolo:
+ * imposta deleted_at/deleted_by, NON modifica stato/stock, NON cancella
+ * fisicamente. Esclude gli ordini già nel Cestino (deleted_at non null) e
+ * restituisce il conteggio reale successi/errori (mai un esito silenzioso).
+ */
+export async function cestinaOrdiniAdmin(
+  ordineIds: string[],
+  userId: string
+): Promise<EsitoCestinaBatch> {
+  if (ordineIds.length === 0) return { successi: [], errori: [] };
+  const db = createAdminSupabaseClient();
+  const { data, error } = await db
+    .from("ordini")
+    .update({ deleted_at: new Date().toISOString(), deleted_by: userId })
+    .in("id", ordineIds)
+    .is("deleted_at", null)
+    .select("id");
+  if (error) {
+    throw new Error(error.message ?? "Impossibile spostare gli ordini nel cestino.");
+  }
+  const cestinati = new Set((data ?? []).map((r) => String(r.id)));
+  return {
+    successi: ordineIds.filter((id) => cestinati.has(id)),
+    errori: ordineIds.filter((id) => !cestinati.has(id)),
+  };
+}
+
 /**
  * Sposta un ordine nel Cestino (soft delete) — azione di piattaforma, SOLO
  * admin (verificato da requireApiArea("admin")). Non cancella fisicamente:
- * setta deleted_at/deleted_by, esattamente come cestinaNegozio().
+ * setta deleted_at/deleted_by, esattamente come cestinaNegozio(). Riusa il
+ * cestinamento multiplo (idempotente: ordine già nel Cestino = no-op).
  */
 export async function cestinaOrdineAdmin(
   ordineId: string,
   userId: string
 ): Promise<void> {
-  const db = createAdminSupabaseClient();
-  const { error } = await db
-    .from("ordini")
-    .update({ deleted_at: new Date().toISOString(), deleted_by: userId })
-    .eq("id", ordineId)
-    .is("deleted_at", null);
-  if (error) {
-    throw new Error(error.message ?? "Impossibile spostare l'ordine nel cestino.");
-  }
+  await cestinaOrdiniAdmin([ordineId], userId);
 }
 
 /**
