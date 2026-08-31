@@ -250,6 +250,72 @@ test("search.normale: esempi richiesti espandono correttamente", () => {
   expect(analizzaRichiesta("visita al cuore").topic.join(" ")).toContain("cuore");
 });
 
+// ── BISOGNO / INTENTO NATURALE → CONCETTI REALI (fix "ho sete") ─────────────
+
+test("bisogno: 'ho sete' → classificata come bisogno e NON come query restrittiva", () => {
+  const a = analizzaRichiesta("ho sete");
+  expect(a.bisogni).toContain("sete");
+  // la frase naturale non resta una query letterale priva di recall.
+  expect(a.ricerca).not.toContain("sete");
+  // produce concetti reali (bar/caffetteria/acqua...) per il retrieval.
+  expect(a.ricerca).toContain("bar");
+  expect(a.ricerca).toContain("acqua");
+  expect(a.topic.join(" ")).toContain("caffetteria");
+  expect(dovrebbeUsareMotoreRobusto(a, false)).toBe(true);
+  expect(espandiQueryIbrida("ho sete")).toContain("aperitivo");
+  expect(variantiQuery("ho sete").length).toBeGreaterThan(0);
+});
+
+test("bisogno: 'ho fame' → intendo alimentare con concetti reali", () => {
+  const a = analizzaRichiesta("ho fame");
+  expect(a.bisogni).toContain("fame");
+  expect(a.ricerca).not.toContain("fame");
+  expect(a.ricerca).toContain("ristorante");
+  expect(a.tipoAttivita).toContain("ristorante");
+  expect(dovrebbeUsareMotoreRobusto(a, false)).toBe(true);
+});
+
+test("bisogno: 'devo fare un regalo' → intento regalo", () => {
+  const a = analizzaRichiesta("devo fare un regalo");
+  expect(a.bisogni).toContain("regalo");
+  expect(a.ricerca).toContain("regalo");
+  expect(espandiQueryIbrida("devo fare un regalo")).toContain("cesto");
+  expect(dovrebbeUsareMotoreRobusto(a, false)).toBe(true);
+});
+
+test("bisogno: 'voglio tagliarmi i capelli' → intendo capelli/parrucchiere", () => {
+  const a = analizzaRichiesta("voglio tagliarmi i capelli");
+  expect(a.bisogni).toContain("capelli");
+  expect(a.topic.join(" ")).toContain("parrucchiere");
+  expect(dovrebbeUsareMotoreRobusto(a, false)).toBe(true);
+});
+
+test("bisogno: 'mi serve un medico' → intendo medico/ambulatorio", () => {
+  const a = analizzaRichiesta("mi serve un medico");
+  expect(a.bisogni).toContain("medico");
+  expect(a.tipoAttivita).toContain("medico");
+  expect(a.ricerca).toContain("medico");
+  expect(dovrebbeUsareMotoreRobusto(a, false)).toBe(true);
+});
+
+test("bisogno: 'visita per il cuore' → cardiologia/cuore", () => {
+  const a = analizzaRichiesta("visita per il cuore");
+  expect(a.bisogni).toContain("cuore");
+  expect(a.topic.join(" ")).toContain("cardiologia");
+  expect(a.topic.join(" ")).toContain("cuore");
+  expect(dovrebbeUsareMotoreRobusto(a, false)).toBe(true);
+});
+
+test("bisogno: query completamente sconosciuta → nessun concetto inventato", () => {
+  const a = analizzaRichiesta("zxqwv aplmn");
+  expect(a.bisogni).toEqual([]);
+  expect(a.topic).toEqual([]);
+  expect(a.ricerca).toBe("zxqwv aplmn");
+  // nessuna allucinazione: il motore restituisce zero risultati onesti.
+  const vuoto = buildContextoRisultati({ negozi: [], prodotti: [], offerte: [], eventi: [], categorie: [] });
+  expect(vuoto).toContain("Nessun risultato trovato");
+});
+
 test("base sinonimi prodotti: la ricerca prodotti espande senza il vocabolario medico", () => {
   // Per i PRODOTTI non si includono i sinonimi dei profili (evita falsi
   // positivi tipo "dottore" → latte): la funzione base del prodotto è solo
