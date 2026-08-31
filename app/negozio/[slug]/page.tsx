@@ -180,8 +180,12 @@ export default async function PaginaNegozio({
     categoria: (negozio.categoria as string) ?? null,
   });
 
+  // Numero WhatsApp del negozio corrente (fallback: telefono), usato per il
+  // link "VERIFICA SU WHATSAPP" nelle prenotazioni del cliente.
+  const whatsappNegozio = (negozio.whatsapp as string) || (negozio.telefono as string);
+
   const buildWhatsAppUrl = () => {
-    const number = normalizzaNumeroWhatsApp((negozio.whatsapp as string) || (negozio.telefono as string));
+    const number = normalizzaNumeroWhatsApp(whatsappNegozio);
     const msg = encodeURIComponent(
       `Ciao! Ho trovato "${negozio.nome as string}" su InCittà e vorrei informazioni.`
     );
@@ -323,6 +327,7 @@ export default async function PaginaNegozio({
               servizi={serviziPrenotabili}
               config={configPrenotazioni}
               etichetta="Prenota ora"
+              whatsapp={whatsappNegozio}
             />
           )}
           {negozio.indirizzo && (
@@ -664,6 +669,7 @@ export default async function PaginaNegozio({
                           servizioIniziale={servizio.id}
                           etichetta="Prenota"
                           compatto
+                          whatsapp={whatsappNegozio}
                         />
                       ) : null;
                     })()}

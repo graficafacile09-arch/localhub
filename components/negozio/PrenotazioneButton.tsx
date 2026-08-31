@@ -16,6 +16,8 @@ type Props = {
   etichetta?: string;
   /** Stile compatto per le card dei singoli servizi. */
   compatto?: boolean;
+  /** Numero WhatsApp del negozio corrente (fallback: telefono). */
+  whatsapp?: string;
 };
 
 export default function PrenotazioneButton({
@@ -25,6 +27,7 @@ export default function PrenotazioneButton({
   servizioIniziale,
   etichetta = "Prenota ora",
   compatto = false,
+  whatsapp = "",
 }: Props) {
   const [aperto, setAperto] = useState(false);
 
@@ -82,6 +85,7 @@ export default function PrenotazioneButton({
               servizi={servizi}
               config={config}
               servizioIniziale={serviceId}
+              whatsapp={whatsapp}
             />
           </div>
         </div>
