@@ -1,4 +1,5 @@
 import CestinoModule from "@/components/amministratore/CestinoModule";
+import OrdiniCestinoSection from "@/components/amministratore/ordini/OrdiniCestinoSection";
 
 export const metadata = {
   title: "Cestino — Amministratore",
@@ -12,5 +13,12 @@ export const dynamic = "force-dynamic";
  * (e la gestione del cestino) è esclusivamente dell'amministratore.
  */
 export default function CestinoPage() {
-  return <CestinoModule />;
+  return (
+    <>
+      <CestinoModule />
+      {/* Ordini nel Cestino: complemento della gestione ordini —
+          "Elimina ordine" (soft delete) sposta qui l'ordine. */}
+      <OrdiniCestinoSection />
+    </>
+  );
 }

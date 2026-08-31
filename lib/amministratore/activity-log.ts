@@ -262,6 +262,10 @@ export const OPERATION_TYPES = {
   CATEGORIA_MODIFICATA: "categoria_modificata",
   CATEGORIA_ELIMINATA: "categoria_eliminata",
 
+  // Ordini
+  ORDINE_CESTINATO: "ordine_cestinato",
+  ORDINE_RIPRISTINATO: "ordine_ripristinato",
+
   // Impostazioni / Utenti / In Evidenza / Template
   IMPOSTAZIONI_MODIFICATE: "impostazioni_modificate",
   UTENTE_MODIFICATO: "utente_modificato",
@@ -290,4 +294,5 @@ export const TARGET_TYPES = {
   NEGOZIO_IN_EVIDENZA: "negozio_in_evidenza",
   TEMPLATE: "template",
   SEGNALAZIONE: "segnalazione",
+  ORDINE: "ordine",
 } as const;

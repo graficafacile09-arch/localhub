@@ -10,8 +10,8 @@ import { isStatoOrdine } from "@/lib/merchant/ordini-stati";
 /**
  * GET /api/amministratore/ordini/[ordineId]
  *
- * Dettaglio ordine READ-ONLY (solo sessione admin). RLS admin: l'admin vede
- * qualunque ordine; id inesistente → 404.
+ * Dettaglio ordine READ-ONLY (solo sessione admin). Admin client (service
+ * role) dietro il gate admin: id inesistente → 404.
  */
 export async function GET(
   _request: Request,
