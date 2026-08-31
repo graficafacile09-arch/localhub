@@ -265,6 +265,7 @@ export const OPERATION_TYPES = {
   // Ordini
   ORDINE_CESTINATO: "ordine_cestinato",
   ORDINE_RIPRISTINATO: "ordine_ripristinato",
+  ORDINE_ELIMINATO_DEFINITIVO: "ordine_eliminato_definitivo",
 
   // Impostazioni / Utenti / In Evidenza / Template
   IMPOSTAZIONI_MODIFICATE: "impostazioni_modificate",

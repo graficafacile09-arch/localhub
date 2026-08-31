@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { AlertTriangle, CalendarClock, Loader2, RefreshCw, RotateCcw, Trash2 } from "lucide-react";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import type { OrdineCestino } from "@/lib/amministratore/ordini";
 import { ETICHETTE_STATO } from "@/lib/merchant/ordini-stati";
 
@@ -35,7 +36,12 @@ export default function OrdiniCestinoSection() {
   const [ordini, setOrdini] = useState<OrdineCestino[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<string | null>(null);
   const [restoringId, setRestoringId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deletingAll, setDeletingAll] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
 
   const fetchCestino = useCallback(async () => {
     setLoading(true);
@@ -65,6 +71,7 @@ export default function OrdiniCestinoSection() {
     if (restoringId) return;
     setRestoringId(ordineId);
     setError(null);
+    setFeedback(null);
     try {
       const res = await fetch(`/api/amministratore/ordini/${ordineId}/ripristina`, { method: "POST" });
       if (!res.ok) {
@@ -72,10 +79,63 @@ export default function OrdiniCestinoSection() {
         throw new Error(err?.error?.message ?? "Impossibile ripristinare l'ordine.");
       }
       setOrdini((prev) => (prev ?? []).filter((o) => o.id !== ordineId));
+      setFeedback("Ordine ripristinato nell'elenco ordini.");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Errore durante il ripristino.");
     } finally {
       setRestoringId(null);
+    }
+  }
+
+  /** Eliminazione DEFINITIVA di un singolo ordine (irreversibile). */
+  async function handleDeleteForever(ordineId: string) {
+    if (deletingId) return;
+    setDeletingId(ordineId);
+    setError(null);
+    setFeedback(null);
+    try {
+      const res = await fetch(`/api/amministratore/ordini/${ordineId}/definitivo`, { method: "DELETE" });
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        throw new Error(err?.error?.message ?? "Impossibile eliminare definitivamente l'ordine.");
+      }
+      setConfirmDeleteId(null);
+      setOrdini((prev) => (prev ?? []).filter((o) => o.id !== ordineId));
+      setFeedback("1 ordine eliminato definitivamente.");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Errore durante l'eliminazione definitiva.");
+      setConfirmDeleteId(null);
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
+  /** Eliminazione DEFINITIVA di TUTTI gli ordini del Cestino (irreversibile). */
+  async function handleDeleteAll() {
+    if (deletingAll) return;
+    setDeletingAll(true);
+    setError(null);
+    setFeedback(null);
+    try {
+      const res = await fetch("/api/amministratore/ordini/cestino", { method: "DELETE" });
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        throw new Error(err?.error?.message ?? "Impossibile svuotare il cestino ordini.");
+      }
+      const json = await res.json();
+      const eliminati = Number(json.data?.deleted ?? 0);
+      setConfirmDeleteAll(false);
+      setOrdini([]);
+      setFeedback(
+        eliminati === 0
+          ? "Nessun ordine nel Cestino da eliminare."
+          : `${eliminati} ${eliminati === 1 ? "ordine eliminato" : "ordini eliminati"} definitivamente.`
+      );
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Errore durante l'eliminazione definitiva.");
+      setConfirmDeleteAll(false);
+    } finally {
+      setDeletingAll(false);
     }
   }
 
@@ -91,16 +151,41 @@ export default function OrdiniCestinoSection() {
             Gli ordini eliminati dall&apos;Area Amministratore finiscono qui e restano recuperabili.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={fetchCestino}
-          disabled={loading}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500 transition hover:bg-slate-200 disabled:opacity-50"
-          title="Aggiorna"
-        >
-          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Elimina tutto — visibile solo se il Cestino contiene ordini */}
+          {ordini !== null && ordini.length > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                setError(null);
+                setConfirmDeleteAll(true);
+              }}
+              disabled={deletingAll || deletingId !== null || restoringId !== null}
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2 text-xs font-bold text-red-600 transition hover:bg-red-50 disabled:opacity-60"
+              title="Elimina definitivamente tutti gli ordini dal database (irreversibile)"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Elimina tutto
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={fetchCestino}
+            disabled={loading}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500 transition hover:bg-slate-200 disabled:opacity-50"
+            title="Aggiorna"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+          </button>
+        </div>
       </div>
+
+      {/* Feedback dopo un'operazione riuscita */}
+      {feedback && (
+        <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-4 text-center">
+          <p className="text-sm font-semibold text-emerald-700">{feedback}</p>
+        </div>
+      )}
 
       {loading && ordini === null && (
         <div className="flex min-h-[140px] items-center justify-center rounded-2xl border border-white/70 bg-white shadow-sm">
@@ -173,17 +258,59 @@ export default function OrdiniCestinoSection() {
                 <button
                   type="button"
                   onClick={() => handleRestore(o.id)}
-                  disabled={restoringId === o.id}
+                  disabled={restoringId === o.id || deletingId === o.id || deletingAll}
                   className="inline-flex items-center justify-center gap-2 rounded-xl bg-yellow-400 px-4 py-2.5 text-xs font-bold text-blue-800 transition hover:bg-yellow-300 disabled:opacity-60"
                 >
                   <RotateCcw className="h-3.5 w-3.5" />
                   {restoringId === o.id ? "Ripristino..." : "Ripristina"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setError(null);
+                    setFeedback(null);
+                    setConfirmDeleteId(o.id);
+                  }}
+                  disabled={deletingId === o.id || restoringId === o.id || deletingAll}
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 py-2.5 text-xs font-bold text-red-600 transition hover:bg-red-50 disabled:opacity-60"
+                  title="Elimina definitivamente dal database (irreversibile)"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  {deletingId === o.id ? "Eliminazione..." : "Elimina definitivamente"}
                 </button>
               </div>
             </div>
           ))}
         </div>
       )}
+
+      {/* Conferma eliminazione DEFINITIVA singola (irreversibile) */}
+      <ConfirmDialog
+        open={confirmDeleteId !== null}
+        title="Eliminare definitivamente questo ordine?"
+        message="L'ordine verrà eliminato definitivamente dal database insieme a righe, eventi, reclami e pagamenti collegati. Questa operazione è IRREVERSIBILE e l'ordine non potrà più essere ripristinato."
+        confirmLabel="Elimina definitivamente"
+        destructive
+        loading={deletingId !== null}
+        onConfirm={() => confirmDeleteId && handleDeleteForever(confirmDeleteId)}
+        onCancel={() => setConfirmDeleteId(null)}
+      />
+
+      {/* Conferma svuotamento DEFINITIVO dell'intero Cestino (irreversibile) */}
+      <ConfirmDialog
+        open={confirmDeleteAll}
+        title="Svuotare il Cestino ordini?"
+        message={
+          ordini && ordini.length > 0
+            ? `${ordini.length} ${ordini.length === 1 ? "ordine verrà" : "ordini verranno"} eliminato${ordini.length === 1 ? "" : "i"} definitivamente dal database. Questa operazione è DEFINITIVA e NON REVERSIBILE: gli ordini non potranno più essere ripristinati.`
+            : "Nessun ordine nel Cestino."
+        }
+        confirmLabel="Elimina tutto"
+        destructive
+        loading={deletingAll}
+        onConfirm={handleDeleteAll}
+        onCancel={() => setConfirmDeleteAll(false)}
+      />
     </div>
   );
 }

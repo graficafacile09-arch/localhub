@@ -36,6 +36,7 @@ const OPERATION_LABELS: Record<string, string> = {
   template_eliminato: "Template eliminato",
   ordine_cestinato: "Ordine cestinato",
   ordine_ripristinato: "Ordine ripristinato",
+  ordine_eliminato_definitivo: "Ordine eliminato definitivamente",
 };
 
 const TARGET_LABELS: Record<string, string> = {
