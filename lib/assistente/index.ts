@@ -22,9 +22,10 @@ import {
   searchOffers,
   searchEvents,
   getCategoriesList,
-  searchAll,
   type ToolParams,
 } from "./tools";
+import { cercaCompletaRobusta } from "./ricerca-estesa";
+import { analizzaRichiesta, espandiQueryIbrida } from "./interprete";
 import {
   SYSTEM_PROMPT,
   buildToolSelectionPrompt,
@@ -280,6 +281,79 @@ function pianoPredefinito(
   return null;
 }
 
+// ─── Piano deterministico dal query-understanding ───────────────────────────
+// Per le richieste strutturate o multi-criterio (profilo, categoria, città,
+// concetti descrittivi come regalo/pesce/tipico) scegliamo i tool in modo
+// deterministico dai dati estratti (lib/assistente/interprete.ts), senza
+// affidarci esclusivamente alla disciplina del modello. Il query-understanding
+// NON inventa nulla: produce unicamente i parametri di ricerca reali.
+function pianoInterprete(
+  storico: MessaggioAssistente[]
+): { directReply: string | null; tools: ToolInvocation[] } | null {
+  const utenti = storico.filter((m) => m.role === "user").map((m) => m.content);
+  const ultimo = (utenti[utenti.length - 1] ?? "").trim();
+  if (!ultimo || ultimo.length < 2) return null;
+
+  const analisi = analizzaRichiesta(ultimo);
+  if (!analisi.ricerca) return null;
+
+  const haSoggettoAttivita =
+    analisi.tipoAttivita.length > 0 ||
+    analisi.categorieRilevanti.length > 0 ||
+    Boolean(analisi.citta) ||
+    analisi.topic.length > 0;
+
+  const prezzo = analisi.vincoliPrezzo;
+
+  // Intento PRODOTTO puro (con vincolo di prezzo o con soggetto generico di
+  // prodotto es. "regalo") senza profilo/città → cerca i prodotti.
+  if (analisi.intento === "prodotto" && !haSoggettoAttivita) {
+    return {
+      directReply: null,
+      tools: [
+        {
+          tool: "searchProducts",
+          params: {
+            query: analisi.ricerca,
+            maxPrice: prezzo?.max ?? null,
+            minPrice: prezzo?.min ?? null,
+          },
+        },
+      ],
+    };
+  }
+
+  // Richiesta di ATTIVITÀ esplicita / multi-criterio (profilo, categoria,
+  // città, topic descrittivi): cerchiamo i negozi in modo deterministico.
+  if (
+    haSoggettoAttivita &&
+    analisi.intento !== "offerta" &&
+    analisi.intento !== "evento" &&
+    analisi.intento !== "piattaforma"
+  ) {
+    const queryTool = espandiQueryIbrida(ultimo) || analisi.ricerca;
+    const termini = Array.from(
+      new Set(analisi.terminiPuliti.concat(analisi.topic))
+    ).filter(Boolean);
+    return {
+      directReply: null,
+      tools: [
+        {
+          tool: "searchStores",
+          params: {
+            query: queryTool,
+            tipo: analisi.tipoAttivita[0] ?? undefined,
+            citta: analisi.citta ?? undefined,
+            termini: termini.length ? termini : undefined,
+          },
+        },
+      ],
+    };
+  }
+
+  return null;
+}
+
 // ─── Fallback testuale quando la risposta finale LLM fallisce ────────────────
 
 function fallbackTestuale(
@@ -366,10 +440,17 @@ export async function chatConAssistente(
   // (offerte, eventi, mangiare, chiacchiera, domande su InCittà); per tutto
   // il resto la selezione dei tool la fa l'LLM.
   const piano = pianoPredefinito(storico);
+  // Piano deterministico dal query-understanding (solo se quello statico non
+  // ha già coperto la richiesta: offerte, eventi, cibo, chiacchiera, piattaforma).
+  const pianoIbrido = piano ? null : pianoInterprete(storico);
 
   if (piano) {
     directReply = piano.directReply;
     invocazioni = piano.tools.filter((t) => typeof t.tool === "string" && t.tool.trim());
+    selezioneOk = true;
+  } else if (pianoIbrido) {
+    directReply = pianoIbrido.directReply;
+    invocazioni = pianoIbrido.tools.filter((t) => typeof t.tool === "string" && t.tool.trim());
     selezioneOk = true;
   } else {
     try {
@@ -448,7 +529,7 @@ export async function chatConAssistente(
   // contesto), NON inventiamo una ricerca: rispondiamo in modo naturale.
   const toolsEseguiti = invocazioni.length > 0;
   if (!selezioneOk) {
-    const tutto = await searchAll(domanda, {});
+    const tutto = await cercaCompletaRobusta(domanda, {});
     negozi = tutto.negozi;
     prodotti = tutto.prodotti;
     offerte = tutto.offerte;
@@ -463,6 +544,20 @@ export async function chatConAssistente(
       processingMs: Date.now() - inizio,
       source: "assistente",
     };
+  }
+
+  // CASCADE robusta: i tool scelti (piano o LLM) non hanno trovato NIENTE →
+  // retrieval multi-variante sulla domanda. Allarga il recall (sinonimi,
+  // topic descrittivi, fuzzy interno) SENZA MAI inventare risultati: l'AI
+  // continuerà a rispondere SOLO sui dati qui recuperati.
+  const vuotoCompleto = negozi.length + prodotti.length + offerte.length + eventi.length === 0;
+  if (selezioneOk && toolsEseguiti && vuotoCompleto && domanda.trim().length > 0) {
+    const ripescaggio = await cercaCompletaRobusta(domanda, {});
+    negozi = ripescaggio.negozi;
+    prodotti = ripescaggio.prodotti;
+    offerte = ripescaggio.offerte;
+    eventi = ripescaggio.eventi;
+    categorie = ripescaggio.categorie;
   }
 
   // 4) Contesto strutturato per la risposta finale
