@@ -13,6 +13,7 @@
 import { test, expect } from "@playwright/test";
 import {
   contaNuoviAppuntamenti,
+  getBaselineAgenda,
   getUltimaLetturaAgenda,
   rigaPrenotazionePerBadge,
 } from "@/lib/merchant/agenda-badge";
@@ -102,6 +103,25 @@ test("Agenda mai aperta (ultimaLettura null) → 0, mai lo storico", () => {
   expect(contaNuoviAppuntamenti(righe, NEGOZIO, "")).toBe(0);
   // timestamp non valido → 0
   expect(contaNuoviAppuntamenti(righe, NEGOZIO, "non-una-data")).toBe(0);
+});
+
+test("getBaselineAgenda: prende l'ultima lettura (dopo che il merchant ha aperto Agenda)", () => {
+  const ultima = "2026-08-31T08:00:00.000Z";
+  const creatoNegozio = "2026-08-25T08:00:00.000Z";
+  expect(getBaselineAgenda(ultima, creatoNegozio)).toBe(ultima);
+});
+
+test("getBaselineAgenda: agenda mai aperta → baseline = data creazione negozio (badge secondo dopo la prima prenotazione)", () => {
+  const creatoNegozio = "2026-08-25T08:00:00.000Z";
+  // null (mai aperta) → fallback su created_at del negozio
+  expect(getBaselineAgenda(null, creatoNegozio)).toBe(creatoNegozio);
+  expect(getBaselineAgenda("", creatoNegozio)).toBe(creatoNegozio);
+});
+
+test("getBaselineAgenda: nessuna sorgente → null (nessun conteggio)", () => {
+  expect(getBaselineAgenda(null, null)).toBeNull();
+  expect(getBaselineAgenda(null, undefined)).toBeNull();
+  expect(getBaselineAgenda(null, "")).toBeNull();
 });
 
 test("getUltimaLetturaAgenda legge data.agenda_ultima_lettura", () => {

@@ -32,6 +32,29 @@ export function getUltimaLetturaAgenda(
 }
 
 /**
+ * Soglia del badge appuntamenti nuovi.
+ *
+ * Priorità:
+ *   1. `agenda_ultima_lettura` (merchant ha aperto l'Agenda → da qui in poi
+ *      conta ciò che è NUOVO)
+ *   2. altrimenti `negozi.created_at` (baseline: una prenotazione confermata
+ *      creata DOPO che l'attività esiste è NUOVA e visibile — il badge NON
+ *      resta forzato a 0 appena si crea la prima prenotazione)
+ *
+ * Ritorna null solo se nessuna delle due è disponibile (nessun conteggio).
+ */
+export function getBaselineAgenda(
+  ultimaLettura: string | null,
+  negozioCreatedAt: string | null | undefined
+): string | null {
+  if (ultimaLettura) return ultimaLettura;
+  if (typeof negozioCreatedAt === "string" && negozioCreatedAt.trim() !== "") {
+    return negozioCreatedAt;
+  }
+  return null;
+}
+
+/**
  * Conteggio appuntamenti NUOVI per il SOLO `negozioId` corrente.
  *
  * `prenotazioni` è l'elenco (snapshot DB) del negozio; ogni riga deve avere

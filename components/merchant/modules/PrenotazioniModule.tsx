@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useSearchParams } from "next/navigation";
 import { CalendarCheck, CalendarClock, ChevronDown, ChevronUp, X } from "lucide-react";
 import ModuleShell from "./ModuleShell";
 import { Field, Toggle, SaveBar, type StatoSalvataggio } from "./ModuleFields";
@@ -9,7 +8,15 @@ import AgendaCalendario from "./AgendaCalendario";
 import type { AgendaEccezioni, ConfigPrenotazioni, Orari } from "@/types/negozio";
 import { normalizzaEccezioni } from "@/lib/agenda";
 
-type Props = { storeId: string };
+type Props = {
+  storeId: string;
+  /** true quando questo blocco Agenda è stato raggiunto come destinazione
+   *  esplicita (es. click sulla card Agenda della dashboard). In quel caso gli
+   *  appuntamenti visualizzati vengono marcati come letti (agenda_ultima_lettura).
+   *  NON dipende da useSearchParams: StoreEditor riscrive l'URL (replaceState)}
+   *  e il query param `block` non resta affidabile nel client. */
+  markReadAgenda?: boolean;
+};
 
 /** Default v1 della configurazione prenotazioni (Fase 6e). */
 const DEFAULT: ConfigPrenotazioni = {
@@ -73,8 +80,7 @@ function oraShort(ora: string): string {
   return String(ora ?? "").slice(0, 5);
 }
 
-export default function PrenotazioniModule({ storeId }: Props) {
-  const searchParams = useSearchParams();
+export default function PrenotazioniModule({ storeId, markReadAgenda = false }: Props) {
   // Segna gli appuntamenti come letti UNA SOLA volta per apertura Agenda.
   const marcatoLetto = useRef(false);
 
@@ -203,7 +209,7 @@ export default function PrenotazioniModule({ storeId }: Props) {
    */
   async function segnaAppuntamentiLetti() {
     if (marcatoLetto.current) return;
-    if (searchParams.get("block") !== "prenotazioni") return;
+    if (!markReadAgenda) return;
     marcatoLetto.current = true;
     try {
       await fetch(`/api/merchant/stores/${storeId}/settings`, {

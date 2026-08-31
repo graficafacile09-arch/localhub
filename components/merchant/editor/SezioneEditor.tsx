@@ -106,7 +106,10 @@ export default function SezioneEditor({
           case "prenotazioni":
             return (
               <div className="rounded-2xl border border-slate-200 bg-white p-5">
-                <PrenotazioniModule storeId={storeId} />
+                <PrenotazioniModule
+                  storeId={storeId}
+                  markReadAgenda={targetBlocco === "prenotazioni"}
+                />
               </div>
             );
           case "richiesta-info":
