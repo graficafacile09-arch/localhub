@@ -41,8 +41,8 @@ export default function PrenotazioneButton({
         onClick={() => setAperto(true)}
         className={
           compatto
-            ? "mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-blue-600 px-3 py-2 text-[11px] font-bold text-white shadow-sm transition hover:bg-blue-700 hover:shadow"
-            : "inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-blue-700 hover:shadow-md"
+            ? "mt-2 inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-yellow-400 px-3 py-2 text-[11px] font-bold text-blue-900 shadow-sm transition hover:bg-yellow-300 hover:shadow"
+            : "inline-flex items-center gap-1.5 rounded-xl bg-yellow-400 px-3.5 py-2 text-xs font-bold text-blue-900 shadow-sm transition hover:bg-yellow-300 hover:shadow-md"
         }
       >
         <CalendarCheck className="h-4 w-4" />
@@ -75,7 +75,7 @@ export default function PrenotazioneButton({
                 type="button"
                 onClick={() => setAperto(false)}
                 aria-label="Chiudi"
-                className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+                className="rounded-lg p-1.5 text-slate-400 transition hover:bg-yellow-100 hover:text-yellow-800"
               >
                 <X className="h-4 w-4" />
               </button>

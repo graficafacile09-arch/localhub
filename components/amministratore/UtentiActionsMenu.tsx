@@ -69,17 +69,17 @@ export default function UtentiActionsMenu({
         aria-haspopup="menu"
         aria-expanded={aperto}
         onClick={() => setAperto((value) => !value)}
-        className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+        className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-800"
       >
         <MoreHorizontal className="h-4 w-4" aria-hidden />
       </button>
       {aperto && (
         <div role="menu" className="absolute right-0 top-full z-30 mt-1 w-56 rounded-2xl border border-slate-100 bg-white p-1.5 shadow-xl">
-          <button type="button" role="menuitem" onClick={() => { onDettaglio?.(utente); setAperto(false); }} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50">
+          <button type="button" role="menuitem" onClick={() => { onDettaglio?.(utente); setAperto(false); }} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-yellow-800 hover:bg-yellow-50">
             <Eye className="h-4 w-4" />
             Visualizza
           </button>
-          <button type="button" role="menuitem" disabled={caricamento} onClick={() => void aggiorna({ ruolo: prossimoRuolo }, { ruolo: prossimoRuolo })} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60">
+          <button type="button" role="menuitem" disabled={caricamento} onClick={() => void aggiorna({ ruolo: prossimoRuolo }, { ruolo: prossimoRuolo })} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-yellow-50 disabled:opacity-60">
             {caricamento ? <Loader2 className="h-4 w-4 animate-spin" /> : <Pencil className="h-4 w-4" />}
             Ruolo: {prossimoRuolo === "commerciante" ? "Commerciante" : "Utente"}
           </button>
@@ -87,12 +87,12 @@ export default function UtentiActionsMenu({
             <Ban className="h-4 w-4" />
             {utente.stato === "attivo" ? "Disattiva" : "Riattiva"}
           </button>
-          <button type="button" role="menuitem" disabled={caricamento} onClick={() => void aggiorna({ ruolo: "amministratore" }, { ruolo: "amministratore" })} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-60">
+          <button type="button" role="menuitem" disabled={caricamento} onClick={() => void aggiorna({ ruolo: "amministratore" }, { ruolo: "amministratore" })} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-yellow-800 hover:bg-yellow-50 disabled:opacity-60">
             <ShieldCheck className="h-4 w-4" />
             Rendi amministratore
           </button>
           <div className="my-1 border-t border-slate-100" />
-          <button type="button" role="menuitem" disabled={caricamento} onClick={() => void elimina()} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-blue-600 hover:bg-blue-50 disabled:opacity-60">
+          <button type="button" role="menuitem" disabled={caricamento} onClick={() => void elimina()} className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60">
             <Trash2 className="h-4 w-4" />
             Elimina
           </button>
