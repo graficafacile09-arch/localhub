@@ -48,15 +48,15 @@ export default function MerchantStoreSwitcher({
               href={`${baseHref}/${store.id}`}
               className={`block rounded-2xl border px-4 py-3 text-sm transition ${
                 active
-                  ? "border-blue-300 bg-blue-50 text-blue-800"
-                  : "border-slate-200 bg-slate-50 text-slate-700 hover:border-blue-200 hover:bg-blue-50/60"
+                  ? "border-yellow-300 bg-yellow-50 text-yellow-800"
+                  : "border border-blue-300 bg-white text-blue-700 hover:border-yellow-300 hover:bg-yellow-50"
               }`}
             >
               <div className="flex items-center gap-2">
                 <span className="min-w-0 flex-1 truncate font-semibold">{store.nome}</span>
                 {ordiniNonLetti > 0 && (
                   <span
-                    className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-yellow-400 px-1.5 text-[10px] font-black leading-none text-blue-900"
+                    className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-blue-600 px-1.5 text-[10px] font-black leading-none text-blue-900"
                     title={`${ordiniNonLetti} ${ordiniNonLetti === 1 ? "ordine non letto" : "ordini non letti"}`}
                   >
                     {ordiniNonLetti > 9 ? "9+" : ordiniNonLetti}

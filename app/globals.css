@@ -5,11 +5,14 @@
  * INCITTÀ — DESIGN SYSTEM (unica fonte grafica)
  * ═══════════════════════════════════════════════════════════════════════════
  *
- * Principio: BLU = struttura/navigazione, GIALLO = CTA/azione principale,
- * BIANCO/neutro = superfici di lettura, COLORI SEMANTICI = significato reale
+ * Principio: BLU = colore BASE dei pulsanti e dei controlli (presenza visiva
+ * a riposo), GIALLO = INTERAZIONE (hover, active, selected, focus), BIANCO/
+ * neutro = superfici di lettura, COLORI SEMANTICI = significato reale
  * (rosso = pericolo/eliminazione, verde WhatsApp = integrazione terza parte,
  * verde/ambra = successo/attenzione). I colori semantici NON vengono mai
- * riassorbiti nella palette di brand.
+ * riassorbiti nella palette di brand. Il grigio resta SOLO per disabled,
+ * testo secondario, bordi, divider, placeholder e superfici non interattive
+ * — mai come fondo predefinito dei controlli interattivi.
  *
  * Niente gradienti "rilievo", niente strisce arcobaleno, niente pseudo-elementi
  * di lucentezza: superfici piatte, ombre sottili, radius coerenti.
@@ -31,6 +34,12 @@
   --brand-yellow: #facc15;        /* yellow-400 */
   --brand-yellow-hover: #fde047;  /* yellow-300 */
   --brand-yellow-active: #eab308; /* yellow-500 */
+  --brand-yellow-50: #fefce8;     /* yellow-50 — sfondi tinta interattivi */
+  --brand-yellow-100: #fef9c3;    /* yellow-100 — hover/highlight leggero */
+  --brand-yellow-200: #fef08a;    /* yellow-200 — bordi di selezione */
+  --brand-yellow-700: #a16207;    /* yellow-700 — testo su tinta gialla */
+  --brand-yellow-800: #854d0e;    /* yellow-800 — testo forte su tinta gialla */
+  --brand-yellow-900: #713f12;    /* yellow-900 — testo hover su sfondi chiari */
 
   /* ── Semantico · WhatsApp (SOLO pulsante/collegamento WhatsApp) ───────── */
   --brand-whatsapp: #25d366;
@@ -77,6 +86,12 @@
   --color-brand-50: var(--brand-blue-50);
   --color-brand-100: var(--brand-blue-100);
   --color-accent: var(--brand-yellow);
+  --color-accent-50: var(--brand-yellow-50);
+  --color-accent-100: var(--brand-yellow-100);
+  --color-accent-200: var(--brand-yellow-200);
+  --color-accent-700: var(--brand-yellow-700);
+  --color-accent-800: var(--brand-yellow-800);
+  --color-accent-900: var(--brand-yellow-900);
   --color-whatsapp: var(--brand-whatsapp);
   --color-whatsapp-dark: var(--brand-whatsapp-dark);
   --color-danger: var(--brand-danger);
@@ -121,18 +136,19 @@ body {
     justify-content: center;
     gap: 0.5rem;
     border-radius: var(--radius-md);
-    background-color: var(--brand-yellow);
-    color: var(--brand-blue-deep);
+    background-color: var(--brand-blue);
+    color: #ffffff;
     padding: 0.625rem 1.25rem;
     font-size: 0.875rem;
     font-weight: 700;
     line-height: 1.25rem;
     white-space: nowrap;
-    box-shadow: var(--shadow-cta-yellow);
+    box-shadow: var(--shadow-cta-blue);
     transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
   }
   .btn-cta:hover {
-    background-color: var(--brand-yellow-hover);
+    background-color: var(--brand-yellow);
+    color: var(--brand-blue-deep);
     box-shadow: var(--shadow-cta-yellow-hover);
   }
   .btn-cta:active {
@@ -142,13 +158,13 @@ body {
   }
   .btn-cta:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 3px #ffffff, 0 0 0 6px var(--brand-blue);
+    box-shadow: 0 0 0 3px #ffffff, 0 0 0 6px var(--brand-yellow);
   }
   .btn-cta:disabled {
     opacity: 0.55;
     cursor: not-allowed;
     transform: none;
-    box-shadow: var(--shadow-cta-yellow);
+    box-shadow: var(--shadow-cta-blue);
   }
 
   .btn-secondary {
@@ -169,8 +185,9 @@ body {
     transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
   }
   .btn-secondary:hover {
-    background-color: var(--brand-blue-50);
-    border-color: #93c5fd;
+    background-color: var(--brand-yellow-50);
+    border-color: var(--brand-yellow-200);
+    color: var(--brand-yellow-800);
   }
   .btn-secondary:active {
     transform: translateY(0) scale(0.98);
@@ -252,7 +269,7 @@ body {
     gap: 0.5rem;
     border-radius: var(--radius-md);
     background-color: transparent;
-    color: #475569;
+    color: var(--brand-blue-dark);
     padding: 0.5rem 0.875rem;
     font-size: 0.875rem;
     font-weight: 600;
@@ -261,8 +278,8 @@ body {
     transition: background-color 0.15s ease, color 0.15s ease;
   }
   .btn-ghost:hover {
-    background-color: #f1f5f9;
-    color: #0f172a;
+    background-color: var(--brand-yellow-50);
+    color: var(--brand-yellow-800);
   }
   .btn-ghost:focus-visible {
     outline: none;
@@ -284,8 +301,8 @@ body {
     transition: box-shadow 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
   }
   .card-hover:hover {
-    border-color: var(--brand-blue-200);
-    box-shadow: var(--shadow-card-hover);
+    border-color: var(--brand-yellow-200);
+    box-shadow: 0 10px 30px -18px rgb(202 138 4 / 0.4);
   }
 
   /* ── Form ─────────────────────────────────────────────────────────────── */
@@ -306,8 +323,8 @@ body {
   .input:focus,
   .select:focus {
     outline: none;
-    border-color: #60a5fa;
-    box-shadow: 0 0 0 3px rgb(37 99 235 / 0.12);
+    border-color: var(--brand-yellow-active);
+    box-shadow: 0 0 0 3px rgb(234 179 8 / 0.16);
   }
   .input:disabled,
   .select:disabled {

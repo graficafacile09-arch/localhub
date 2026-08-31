@@ -37,7 +37,7 @@ export default function GlobalError({
           <button
             type="button"
             onClick={unstable_retry}
-            className="inline-flex items-center gap-2 rounded-xl bg-yellow-400 px-5 py-2.5 text-sm font-bold text-blue-800 transition hover:bg-yellow-300"
+            className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-yellow-400 hover:text-blue-900"
           >
             Riprova
           </button>

@@ -93,7 +93,7 @@ export default function FavoritoButton({
         className={`${base} gap-1.5 border px-3 py-2 text-xs font-bold ${
           attivoLocal
             ? "border-yellow-200 bg-yellow-50 text-yellow-600 hover:bg-yellow-100"
-            : "border-slate-200 bg-white text-slate-600 hover:border-yellow-200 hover:text-yellow-600"
+            : "border border-blue-300 bg-white text-blue-700 hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-800"
         } ${className}`}
       >
         <Heart

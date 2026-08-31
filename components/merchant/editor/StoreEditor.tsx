@@ -191,7 +191,7 @@ export default function StoreEditor({
           <button
             type="button"
             onClick={() => setSidebarOpen(true)}
-            className="rounded-xl border border-slate-200 bg-white p-2 text-slate-600 transition hover:bg-slate-50"
+            className="rounded-xl border border-slate-200 bg-white p-2 text-slate-600 transition hover:bg-yellow-50"
           >
             <Menu className="h-5 w-5" />
           </button>
@@ -213,7 +213,7 @@ export default function StoreEditor({
                 setLoading(true);
                 void refresh();
               }}
-              className="rounded-xl bg-yellow-400 px-4 py-2 text-xs font-bold text-blue-800 transition hover:bg-yellow-300"
+              className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-yellow-400 hover:text-blue-900"
             >
               Riprova
             </button>
@@ -249,7 +249,7 @@ export default function StoreEditor({
                 <button
                   type="button"
                   onClick={() => setActiveSezione(prev.sezione.id)}
-                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-600 transition hover:bg-slate-50"
+                  className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-bold text-slate-600 transition hover:bg-yellow-50"
                 >
                   <ChevronLeft className="h-4 w-4" /> {prev.sezione.numero}. {prev.sezione.titolo}
                 </button>
@@ -260,7 +260,7 @@ export default function StoreEditor({
                 <button
                   type="button"
                   onClick={() => setActiveSezione(next.sezione.id)}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-yellow-400 px-4 py-2.5 text-xs font-bold text-blue-800 shadow-sm transition hover:bg-yellow-300"
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-yellow-400 hover:text-blue-900"
                 >
                   {next.sezione.numero}. {next.sezione.titolo} <ChevronRight className="h-4 w-4" />
                 </button>

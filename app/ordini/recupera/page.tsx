@@ -212,7 +212,7 @@ export default function RecuperaOrdiniPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="nome@esempio.it"
-                  className="block w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-3 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
+                  className="block w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-3 text-sm text-slate-900 outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-100"
                 />
               </div>
             </div>
@@ -232,7 +232,7 @@ export default function RecuperaOrdiniPage() {
                   value={telefono}
                   onChange={(e) => setTelefono(e.target.value)}
                   placeholder="333 1234567"
-                  className="block w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-3 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
+                  className="block w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-3 text-sm text-slate-900 outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-100"
                 />
               </div>
             </div>
@@ -248,7 +248,7 @@ export default function RecuperaOrdiniPage() {
             type="button"
             onClick={cerca}
             disabled={caricamento}
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-yellow-400 px-6 py-3 text-sm font-bold text-blue-800 shadow-md shadow-blue-500/25 transition hover:bg-yellow-300 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white shadow-md shadow-blue-500/25 transition hover:bg-yellow-400 hover:text-blue-900 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
           >
             {caricamento ? (
               <>

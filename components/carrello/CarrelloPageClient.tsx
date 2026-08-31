@@ -26,14 +26,14 @@ export default function CarrelloPageClient() {
           <div className="mt-6 flex flex-wrap justify-center gap-2">
             <Link
               href="/negozi"
-              className="inline-flex items-center gap-1.5 rounded-xl bg-yellow-400 px-4 py-2.5 text-sm font-bold text-blue-800 shadow-sm transition hover:bg-yellow-300"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-yellow-400 hover:text-blue-900"
             >
               <Store className="h-4 w-4" aria-hidden />
               Vai ai negozi
             </Link>
             <Link
               href="/categorie"
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-blue-300 hover:text-blue-700"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-800"
             >
               Esplora le categorie
             </Link>
@@ -55,14 +55,14 @@ export default function CarrelloPageClient() {
         <div className="flex items-center gap-2">
           <Link
             href="/negozi"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 transition hover:border-blue-300 hover:text-blue-700"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-600 transition hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-800"
           >
             Continua gli acquisti
           </Link>
           <button
             type="button"
             onClick={svuota}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-blue-600 transition hover:border-blue-300 hover:bg-blue-50"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-yellow-800 transition hover:border-yellow-300 hover:bg-yellow-50"
           >
             <Trash2 className="h-3.5 w-3.5" aria-hidden />
             Svuota carrello
@@ -136,7 +136,7 @@ export default function CarrelloPageClient() {
                             type="button"
                             onClick={() => rimuovi(chiave)}
                             aria-label={`Rimuovi ${riga.nome} dal carrello`}
-                            className="shrink-0 rounded-lg p-1.5 text-slate-400 transition hover:bg-blue-50 hover:text-blue-600"
+                            className="shrink-0 rounded-lg p-1.5 text-slate-400 transition hover:bg-yellow-50 hover:text-yellow-700"
                           >
                             <Trash2 className="h-4 w-4" aria-hidden />
                           </button>
@@ -182,7 +182,7 @@ export default function CarrelloPageClient() {
 
           <Link
             href="/checkout"
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-yellow-400 px-4 py-3 text-base font-bold text-blue-800 shadow-sm transition hover:bg-yellow-300 active:scale-[0.98]"
+            className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-base font-bold text-white shadow-sm transition hover:bg-yellow-400 hover:text-blue-900 active:scale-[0.98]"
           >
             Procedi al checkout
             <ArrowRight className="h-5 w-5" aria-hidden />

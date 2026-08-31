@@ -305,7 +305,7 @@ export default function AttivitaActionsMenu({
                     aria-label="Seleziona proprietario"
                     value={proprietarioSelezionato}
                     onChange={(event) => setProprietarioSelezionato(event.target.value)}
-                    className="w-full rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-xs font-semibold text-slate-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-xs font-semibold text-slate-700 outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100"
                   >
                     <option value="">Non assegnato</option>
                     {proprietari.map((proprietario) => (

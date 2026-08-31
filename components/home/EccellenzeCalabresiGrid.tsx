@@ -71,7 +71,7 @@ export default function EccellenzeCalabresiGrid({
           <button
             type="button"
             onClick={() => setEspanso((v) => !v)}
-            className="inline-flex items-center gap-2 rounded-xl bg-yellow-400 px-6 py-2.5 text-sm font-black text-blue-900 shadow-sm transition hover:bg-yellow-300 active:scale-95"
+            className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-black text-white shadow-sm transition hover:bg-yellow-400 hover:text-blue-900 active:scale-95"
           >
             {espanso ? (
               <>
