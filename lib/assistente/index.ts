@@ -35,6 +35,7 @@ import {
 import { extractJsonFromText } from "@/lib/product-assistant/providers/utils";
 import { callGeminiText } from "@/lib/ai/gemini-text";
 import type { NegozioRicerca, ProdottoRicerca } from "@/lib/ricerca-ai";
+import { analizzaRichiesta } from "@/lib/ricerca-intento";
 
 // ─── Tipi pubblici ───────────────────────────────────────────────────────────
 
@@ -231,6 +232,23 @@ function pianoPredefinito(
       directReply:
         "Va bene, sono qui! Posso aiutarti a trovare negozi, prodotti, offerte ed eventi nella tua città. Dimmi pure cosa cerchi.",
       tools: [],
+    };
+  }
+
+  // Bisogno/intento ("ho sete", "ho fame", "devo fare un regalo", ...): piano
+  // DETERMINISTICO sui concetti dell'interprete (lib/ricerca-intento). La query
+  // originale resta il soggetto: il retrieval di searchStores/prodotti espande
+  // additivamente i concetti. A differenza del passato, NON si affidano spanne
+  // restrittive: se non ci sono risultati reali, la risposta finale lo dirà
+  // onestamente (grounding). Se l'intento non produce concetti, NON forziamo.
+  const intento = analizzaRichiesta(ultimo);
+  if (intento.tipo === "bisogno" && intento.concetti.length > 0) {
+    return {
+      directReply: null,
+      tools: [
+        { tool: "searchStores", params: { query: ultimo } },
+        { tool: "searchProducts", params: { query: ultimo, limit: 8 } },
+      ],
     };
   }
 
