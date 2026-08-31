@@ -6,10 +6,12 @@ import {
   Package,
   ReceiptText,
   Settings2,
+  Trash2,
 } from "lucide-react";
 import OrdineAzioni from "@/components/merchant/OrdineAzioni";
 import MerchantEmptyState from "@/components/merchant/MerchantEmptyState";
 import RimborsoSection from "@/components/amministratore/ordini/RimborsoSection";
+import EliminaOrdineAdminButton from "@/components/amministratore/ordini/EliminaOrdineAdminButton";
 import { getOrdineAdmin } from "@/lib/amministratore/ordini";
 import { sintesiProdotti } from "@/lib/cliente/ordini-format";
 import { azioniDisponibili } from "@/lib/merchant/ordini-stati";
@@ -47,7 +49,7 @@ function formattaEuro(v: number | null): string {
  * Dettaglio ordine nell'Area Amministratore: supervisione read-only con le
  * azioni operative (stato ordine + stato spedizione) riusate dalle RPC e dalle
  * macchine a stati esistenti. L'accesso è garantito dal layout admin (area
- * risolta server-side) e dalla RLS admin sul read-side.
+ * risolta server-side); le letture usano l'admin client (service role).
  */
 export default async function AdminOrdineDettaglioPage({
   params,
@@ -180,6 +182,24 @@ export default async function AdminOrdineDettaglioPage({
           />
         </div>
       )}
+
+      {/* Elimina ordine — SEPARATO da "Annulla": soft delete verso il Cestino
+          (stesso pattern dei negozi). Disponibile SEMPRE per l'admin, anche su
+          ordini annullati. Non annulla, non cancella fisicamente: l'ordine
+          resta recuperabile dal Cestino. */}
+      <div className="rounded-[1.75rem] border border-red-100 bg-white p-5 shadow-sm ring-1 ring-red-50">
+        <p className="mb-2 flex items-center gap-2 text-sm font-black uppercase tracking-wide text-slate-900">
+          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-red-50 text-red-600">
+            <Trash2 className="h-4 w-4" aria-hidden />
+          </span>
+          Gestione cestino
+        </p>
+        <p className="mb-3 text-xs text-slate-500">
+          Elimina sposta l&apos;ordine nel Cestino (recuperabile), separato
+          dall&apos;annullamento e dalla cancellazione fisica.
+        </p>
+        <EliminaOrdineAdminButton ordineId={ordine.id} numero={ordine.numero} />
+      </div>
 
       {/* Layout due colonne */}
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">

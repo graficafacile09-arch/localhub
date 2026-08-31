@@ -9,7 +9,7 @@ import {
  * GET /api/amministratore/ordini
  *
  * Elenco GLOBALE degli ordini (tutti i negozi), SOLO sessione admin.
- * Filtri e paginazione interamente SERVER-SIDE (RLS admin):
+ * Filtri e paginazione interamente SERVER-SIDE (admin client):
  *   q, stato, pagamento, stato_spedizione, negozio_id, modalita,
  *   data_da, data_a, pagina, per_pagina
  */

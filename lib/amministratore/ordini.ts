@@ -2,10 +2,11 @@
  * SERVIZIO ORDINI AREA AMMINISTRATORE — LETTURA GLOBALE + AZIONI.
  *
  * Fonte definitiva: Supabase (ordini + ordini_righe + ordini_eventi).
- * La LETTURA usa createServerSupabaseClient() (RLS): l'admin vede TUTTI gli
- * ordini grazie alla policy "ordini admin select all" (migration 20260812),
- * MAI un bypass service-role. Nessun filtro negozio imposto oltre ai filtri
- * richiesti: è la RLS a delimitare l'accesso, non il codice.
+ * La LETTURA usa createAdminSupabaseClient() (service role) dietro il gate
+ * applicativo admin (requireApiArea("admin") nelle API, layout dell'area):
+ * stesso pattern del cestino negozi e del cestino ordini. Nessun filtro
+ * negozio imposto oltre ai filtri richiesti. La policy RLS "ordini admin
+ * select all" resta intatta per l'accesso diretto via client pubblico.
  *
  * Le AZIONI (cambio stato ordine / stato spedizione) riusano le RPC esistenti
  * `aggiorna_stato_ordine` e `aggiorna_stato_spedizione` (SECURITY DEFINER,
@@ -15,7 +16,6 @@
  */
 
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
-import { createServerSupabaseClient } from "@/lib/supabase/server";
 import type {
   EventoOrdine,
   RigaOrdine,
@@ -295,17 +295,42 @@ function mappaDettaglio(
   };
 }
 
-// ── Lettura (RLS admin) ─────────────────────────────────────────────────────
+// ── Lettura (admin, service role) ─────────────────────────────────────────────
 
 /**
  * Elenco GLOBALE degli ordini (tutti i negozi) con filtri e paginazione
- * SERVER-SIDE. La lettura gira con la sessione admin (RLS "ordini admin
- * select all"): nessun filtro negozio aggiuntivo, nessun filtro client-side.
+ * SERVER-SIDE. La lettura usa l'admin client (service role) dietro il gate
+ * applicativo admin: nessun filtro negozio aggiuntivo, nessun filtro
+ * client-side. Gli ordini nel Cestino (deleted_at non null) sono esclusi.
  */
+// ── Schema cestino ORDINI ────────────────────────────────────────────────────
+// La migration (20260917_ordini_cestino.sql) aggiunge deleted_at/deleted_by a
+// ordini. Fino ad applicazione (in attesa di approvazione) la colonna NON esiste:
+// un filtro `.is("deleted_at", null)` su colonna mancante rende PostgREST che
+// restituisce un ESITO VUOTO SILENZIOSO (senza errore), NON 42703. Quindi NON
+// possiamo distinguere per errore: rileviamo la presenza della colonna una sola
+// volta (schema probe memoizzato sul service-role) e condizioniamo il filtro.
+let _ordineColonnaDeletedAt: boolean | null = null;
+
+/** true se la colonna ordini.deleted_at esiste nel DB corrente. */
+async function ordineHaColonnaDeletedAt(): Promise<boolean> {
+  if (_ordineColonnaDeletedAt !== null) return _ordineColonnaDeletedAt;
+  try {
+    const db = createAdminSupabaseClient();
+    // `select` su colonna inesistente → errore 42703 attendibile (a differenza
+    // del filtro `.is` che è silenzioso).
+    const { error } = await db.from("ordini").select("deleted_at").limit(1);
+    _ordineColonnaDeletedAt = !error;
+  } catch {
+    _ordineColonnaDeletedAt = false;
+  }
+  return _ordineColonnaDeletedAt;
+}
+
 export async function getOrdiniAdmin(
   filtri: FiltriOrdiniAdmin = {}
 ): Promise<RisultatoOrdiniAdmin> {
-  const db = await createServerSupabaseClient();
+  const db = createAdminSupabaseClient();
 
   const perPagina = Math.min(
     Math.max(1, Number(filtri.perPagina) || DEFAULT_PER_PAGINA),
@@ -314,18 +339,30 @@ export async function getOrdiniAdmin(
   const pagina = Math.max(1, Number(filtri.pagina) || 1);
 
   // Conteggio totale (per la paginazione), con gli stessi filtri.
-  const countQuery = applicaFiltri(
-    db.from("ordini").select("id", { head: true, count: "exact" }),
-    filtri
-  );
-  const { count, error: erroreCount } = await countQuery;
-  if (erroreCount) {
-    throw new Error(`Conteggio ordini fallito: ${erroreCount.message}`);
-  }
-  const totale = count ?? 0;
+  // Gli ordini nel Cestino (deleted_at non null) non compaiono nell'elenco
+  // ordinario, ma restano recuperabili da getOrdiniCestino().
+  const usaCestino = await ordineHaColonnaDeletedAt();
+  const totale = await (async () => {
+    if (usaCestino) {
+      const { count, error } = await applicaFiltri(
+        db.from("ordini").select("id", { head: true, count: "exact" }).is("deleted_at", null),
+        filtri
+      );
+      if (error) throw new Error(`Conteggio ordini fallito: ${error.message}`);
+      return count ?? 0;
+    }
+    const { count, error } = await applicaFiltri(
+      db.from("ordini").select("id", { head: true, count: "exact" }),
+      filtri
+    );
+    if (error) throw new Error(`Conteggio ordini fallito: ${error.message}`);
+    return count ?? 0;
+  })();
 
-  // Pagina corrente (ordini dal più recente).
-  const listaQuery = applicaFiltri(db.from("ordini").select("*"), filtri)
+  // Pagina corrente (ordini dal più recente), esclusi quelli del Cestino.
+  let baseLista = db.from("ordini").select("*");
+  if (usaCestino) baseLista = baseLista.is("deleted_at", null);
+  const listaQuery = applicaFiltri(baseLista, filtri)
     .order("created_at", { ascending: false })
     .range((pagina - 1) * perPagina, pagina * perPagina - 1);
   const { data, error } = await listaQuery;
@@ -357,17 +394,17 @@ export async function getOrdiniAdmin(
 }
 
 /**
- * Dettaglio completo di un ordine (read-only, admin). RLS admin: l'admin
- * vede qualunque ordine; un id inesistente restituisce null.
+ * Dettaglio completo di un ordine (read-only, admin). Admin client (service
+ * role) dietro il gate applicativo admin; id inesistente → null.
  */
 export async function getOrdineAdmin(ordineId: string): Promise<OrdineAdminDettaglio | null> {
-  const db = await createServerSupabaseClient();
+  const db = createAdminSupabaseClient();
 
-  const { data, error } = await db
-    .from("ordini")
-    .select("*")
-    .eq("id", ordineId)
-    .maybeSingle();
+  let query = db.from("ordini").select("*").eq("id", ordineId);
+  if (await ordineHaColonnaDeletedAt()) {
+    query = query.is("deleted_at", null);
+  }
+  const { data, error } = await query.maybeSingle();
 
   if (error) {
     throw new Error(`Lettura ordine fallita: ${error.message}`);
@@ -483,4 +520,87 @@ export async function aggiornaStatoSpedizioneAdmin(
 
   const ordine = await getOrdineAdmin(ordineId).catch(() => null);
   return { ok: true, cambiato: esito.cambiato ?? false, ordine };
+}
+
+// ── Cestino ORDINI (soft delete, pattern negozi) ──────────────────────────────────
+
+/** Riga minima di ordine nel Cestino (per lista/ripristino). */
+export type OrdineCestino = {
+  id: string;
+  numero: string;
+  stato: StatoOrdine;
+  totale: number;
+  negozioId: string;
+  negozioNome: string;
+  clienteNome: string;
+  clienteCognome: string;
+  createdAt: string;
+  deletedAt: string | null;
+};
+
+/**
+ * Elenco degli ordini nel Cestino (soft deleted: deleted_at non null),
+ * ordinati dal più recente. Azione di piattaforma, solo admin.
+ */
+export async function getOrdiniCestino(): Promise<OrdineCestino[]> {
+  // Se la migration cestino non è ancora applicata (colonna mancante) il
+  // cestino ordini è vuoto: nessun ordine è mai stato cestinato.
+  if (!(await ordineHaColonnaDeletedAt())) return [];
+  const db = createAdminSupabaseClient();
+  const { data, error } = await db
+    .from("ordini")
+    .select("*")
+    .not("deleted_at", "is", null)
+    .order("deleted_at", { ascending: false });
+  if (error) {
+    throw new Error(error.message ?? "Impossibile recuperare il cestino ordini.");
+  }
+  return ((data ?? []) as OrdineRow[]).map((o) => ({
+    id: String(o.id),
+    numero: String(o.numero ?? ""),
+    stato: (o.stato as StatoOrdine) ?? "in_preparazione",
+    totale: Number(o.totale ?? 0),
+    negozioId: String(o.negozio_id ?? ""),
+    negozioNome: String(o.negozio_nome ?? ""),
+    clienteNome: String(o.cliente_nome ?? ""),
+    clienteCognome: String(o.cliente_cognome ?? ""),
+    createdAt: String(o.created_at ?? ""),
+    deletedAt: (o.deleted_at as string | null) ?? null,
+  }));
+}
+
+/**
+ * Sposta un ordine nel Cestino (soft delete) — azione di piattaforma, SOLO
+ * admin (verificato da requireApiArea("admin")). Non cancella fisicamente:
+ * setta deleted_at/deleted_by, esattamente come cestinaNegozio().
+ */
+export async function cestinaOrdineAdmin(
+  ordineId: string,
+  userId: string
+): Promise<void> {
+  const db = createAdminSupabaseClient();
+  const { error } = await db
+    .from("ordini")
+    .update({ deleted_at: new Date().toISOString(), deleted_by: userId })
+    .eq("id", ordineId)
+    .is("deleted_at", null);
+  if (error) {
+    throw new Error(error.message ?? "Impossibile spostare l'ordine nel cestino.");
+  }
+}
+
+/**
+ * Ripristina un ordine dal Cestino — ESCLUSIVAMENTE amministratore.
+ * Azzera deleted_at/deleted_by (stesso pattern di ripristinaNegozio()).
+ */
+export async function ripristinaOrdineAdmin(ordineId: string): Promise<void> {
+  const db = createAdminSupabaseClient();
+  const { error } = await db
+    .from("ordini")
+    .update({ deleted_at: null, deleted_by: null })
+    .eq("id", ordineId)
+    .not("deleted_at", "is", null);
+  if (error) {
+    throw new Error(error.message ?? "Impossibile ripristinare l'ordine.");
+  }
 }

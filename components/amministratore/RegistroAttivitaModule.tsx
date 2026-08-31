@@ -34,6 +34,8 @@ const OPERATION_LABELS: Record<string, string> = {
   template_creato: "Template creato",
   template_modificato: "Template modificato",
   template_eliminato: "Template eliminato",
+  ordine_cestinato: "Ordine cestinato",
+  ordine_ripristinato: "Ordine ripristinato",
 };
 
 const TARGET_LABELS: Record<string, string> = {
@@ -46,6 +48,7 @@ const TARGET_LABELS: Record<string, string> = {
   impostazioni: "Impostazioni",
   negozio_in_evidenza: "In evidenza",
   template: "Template",
+  ordine: "Ordine",
 };
 
 function formattaData(value: string): string {

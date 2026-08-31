@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 /**
  * Console ORDINI dell'Area Amministratore: elenco globale con ricerca, filtri
  * e paginazione SERVER-SIDE. L'accesso è garantito dal layout amministratore
- * (area "admin" risolta server-side) e, a valle, dalla RLS admin sulle letture.
+ * (area "admin" risolta server-side) e, a valle, dall'admin client sulle letture.
  */
 export default function AdminOrdiniPage() {
   return <OrdiniAdminClient />;
