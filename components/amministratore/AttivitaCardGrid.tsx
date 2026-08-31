@@ -45,9 +45,15 @@ function BadgeStato({ attivo }: { attivo: boolean }) {
 export default function AttivitaCardGrid({
   attivita,
   onElimina,
+  selezionati,
+  onToggleSelezione,
 }: {
   attivita: AttivitaRow[];
   onElimina?: (id: string) => void;
+  /** Id dei negozi selezionati (selezione multipla batch). */
+  selezionati?: ReadonlySet<string>;
+  /** Toggle della selezione di un negozio (checkbox fuori dal Link). */
+  onToggleSelezione?: (id: string, selezionato: boolean) => void;
 }) {
   if (attivita.length === 0) {
     return (
@@ -77,6 +83,15 @@ export default function AttivitaCardGrid({
           >
             {/* Intestazione card */}
             <div className="flex items-start gap-4">
+              {onToggleSelezione && (
+                <input
+                  type="checkbox"
+                  aria-label={`Seleziona ${negozio.nome}`}
+                  checked={selezionati?.has(negozio.id) ?? false}
+                  onChange={(e) => onToggleSelezione(negozio.id, e.target.checked)}
+                  className="mt-1 h-4 w-4 shrink-0 accent-blue-600"
+                />
+              )}
               <span
                 role="img"
                 aria-label={`Logo di ${negozio.nome}`}

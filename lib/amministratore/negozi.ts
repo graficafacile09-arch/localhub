@@ -133,22 +133,51 @@ export async function getNegoziAttiviSintesi(): Promise<NegozioSintesi[]> {
   return (esito.data ?? []) as NegozioSintesi[];
 }
 
+/** Esito del cestinamento multiplo: id effettivamente cestinati / scartati. */
+export type EsitoCestinaBatchNegozi = {
+  /** Id dei negozi realmente spostati nel Cestino (deleted_at impostato). */
+  successi: string[];
+  /** Id NON cestinati (già nel Cestino o non trovati). */
+  errori: string[];
+};
+
+/**
+ * Cestinamento MULTIPLO (soft delete) — stesso meccanismo del singolo:
+ * imposta deleted_at/deleted_by, NON modifica altri dati del negozio, NON
+ * cancella fisicamente. Esclude i negozi già nel Cestino (deleted_at non
+ * null) e restituisce il conteggio reale successi/errori (mai un esito
+ * silenzioso). Stesso pattern di cestinaOrdiniAdmin per gli ordini.
+ */
+export async function cestinaNegoziAdmin(
+  negozioIds: string[],
+  userId: string
+): Promise<EsitoCestinaBatchNegozi> {
+  if (negozioIds.length === 0) return { successi: [], errori: [] };
+  const supabase = createAdminSupabaseClient();
+  const { data, error } = await supabase
+    .from("negozi")
+    .update({ deleted_at: new Date().toISOString(), deleted_by: userId })
+    .in("id", negozioIds)
+    .is("deleted_at", null)
+    .select("id");
+  if (error) {
+    throw new Error(error.message ?? "Impossibile spostare i negozi nel cestino.");
+  }
+  const cestinati = new Set((data ?? []).map((r) => String(r.id)));
+  return {
+    successi: negozioIds.filter((id) => cestinati.has(id)),
+    errori: negozioIds.filter((id) => !cestinati.has(id)),
+  };
+}
+
 /**
  * Sposta un negozio nel Cestino (soft delete) — azione di piattaforma.
  * A differenza del soft-delete del commerciante (solo sui propri negozi),
- * qui l'amministratore può cestinare QUALSIASI negozio.
+ * qui l'amministratore può cestinare QUALSIASI negozio. Riusa il
+ * cestinamento multiplo (idempotente: negozio già nel Cestino = no-op).
  */
 export async function cestinaNegozio(negozioId: string, userId: string): Promise<void> {
-  const supabase = createAdminSupabaseClient();
-  const { error } = await supabase
-    .from("negozi")
-    .update({ deleted_at: new Date().toISOString(), deleted_by: userId })
-    .eq("id", negozioId)
-    .is("deleted_at", null);
-
-  if (error) {
-    throw new Error(error.message ?? "Impossibile spostare il negozio nel cestino.");
-  }
+  await cestinaNegoziAdmin([negozioId], userId);
 }
 
 /**
@@ -178,9 +207,11 @@ export async function ripristinaNegozio(negozioId: string): Promise<void> {
  *      (cascata su ordini_righe, ordini_eventi, ordine_reclami,
  *       reclamo_comunicazioni e pagamenti CASCADE; pagamenti SET NULL
  *       azzera solo ordine_id);
- *   2. prodotti — negozio_id (cascata su prodotto_varianti e
+ *   2. prenotazioni — negozio_id ON DELETE RESTRICT → PRIMA di negozi
+ *      (prenotazioni_negozio_id_fkey);
+ *   3. prodotti — negozio_id (cascata su prodotto_varianti e
  *      stock_notifications; ordini_righe.prodotto_id è SET NULL);
- *   3. media   — negozio_id ON DELETE CASCADE.
+ *   4. media   — negozio_id ON DELETE CASCADE.
  * Tutte le altre dipendenze di negozi (eventi, offerte, segnalazioni,
  * pagamenti, metodi_spedizione_negozio, payout, ...) sono CASCADE o
  * SET NULL: vengono gestite dalla cancellazione del negozio stesso.
@@ -189,7 +220,7 @@ async function eliminaDatiCollegatiANegozi(
   supabase: ReturnType<typeof createAdminSupabaseClient>,
   negozioIds: string[]
 ): Promise<void> {
-  // 1. Ordini (unica FK RESTRICT su negozi: va eliminata per prima).
+  // 1. Ordini (FK RESTRICT su negozi: va eliminata per prima).
   const { error: errOrdini } = await supabase
     .from("ordini")
     .delete()
@@ -200,7 +231,20 @@ async function eliminaDatiCollegatiANegozi(
     );
   }
 
-  // 2. Prodotti (cascata su varianti e stock notifications).
+  // 2. Prenotazioni (FK RESTRICT su negozi: prenotazioni_negozio_id_fkey).
+  //    Devono essere rimosse PRIMA dei negozi, altrimenti la cancellazione
+  //    fallisce con violazione di vincolo.
+  const { error: errPrenotazioni } = await supabase
+    .from("prenotazioni")
+    .delete()
+    .in("negozio_id", negozioIds);
+  if (errPrenotazioni) {
+    throw new Error(
+      errPrenotazioni.message ?? "Impossibile eliminare le prenotazioni del negozio."
+    );
+  }
+
+  // 3. Prodotti (cascata su varianti e stock notifications).
   const { error: errProdotti } = await supabase
     .from("prodotti")
     .delete()
@@ -281,8 +325,8 @@ export async function eliminaTuttiDalCestino(): Promise<NegozioEliminatoCestino[
 
   const ids = negozi.map((n) => n.id);
 
-  // Dati collegati PRIMA dei negozi (FK RESTRICT su ordini), sicuro
-  // anche con più negozi: ogni passo verifica l'errore.
+  // Dati collegati PRIMA dei negozi (FK RESTRICT su ordini e prenotazioni),
+  // sicuro anche con più negozi: ogni passo verifica l'errore.
   await eliminaDatiCollegatiANegozi(supabase, ids);
 
   // Elimina SOLO i negozi ancora nel Cestino (deleted_at non null):
