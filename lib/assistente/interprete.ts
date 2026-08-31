@@ -51,6 +51,8 @@ export type AnalisiRichiesta = {
   vincoliPrezzo: { min?: number; max?: number } | null;
   /** Concetti descrittivi attivati → lexemi di ricerca reali. */
   topic: string[];
+  /** Bisogni/intenti naturali attivati (es. "sete", "fame", "regalo"). */
+  bisogni: string[];
 };
 
 // ─── Vocabolario descrittivo → lexemi di ricerca ────────────────────────────
@@ -97,6 +99,81 @@ const TOPIC_TERMINI: Array<{
     lexica: ["parrucchiere", "barbiere", "estetista", "capelli", "unghie", "makeup", "skincare"],
     categorie: ["parrucchiere", "barbiere", "estetica"],
     profili: ["beauty"],
+  },
+];
+
+// ─── Bisogni / intenti naturali → concetti reali ─────────────────────────────
+// Differenza chiave rispetto ai TOPIC: un bisogno è una FRASE di intento che
+// NON contiene la parola esatta della categoria ("ho sete", "ho fame", "mi
+// serve un medico"). Il motore la riconosce e la trasforma in CONCETTI di
+// ricerca reali (quelle attività/prodotti che rispondono al bisogno).
+// Estendibile AGGIUNGENDO una voce: chiavi naturali → lexemi/categorie/profili.
+export type BisognoDef = {
+  id: string;
+  /** Parole/frasi che esprimono il bisogno (normalizzate, senza accenti). */
+  chiavi: string[];
+  /** Concetti di ricerca REALI (trovano attività/prodotti che rispondono). */
+  lexica: string[];
+  /** Categorie ufficiali pertinenti (debug / segnali, non filtro rigido). */
+  categorie?: string[];
+  /** id profili attività pertinenti (chiavi di SINONIMI_TIPO_ATTIVITA). */
+  profili?: string[];
+};
+
+export const BISOGNI: BisognoDef[] = [
+  {
+    id: "sete",
+    chiavi: ["sete", "bere", "bevanda", "bevande", "disidratat", "disidrat"],
+    lexica: ["bere", "bevande", "acqua", "bar", "caffetteria", "aperitivo", "bibita"],
+    categorie: ["bar"],
+  },
+  {
+    id: "fame",
+    chiavi: ["fame", "affamato", "mangiare", "mangiar", "cena", "pranzo", "stomaco", "famecanao"],
+    lexica: ["mangiare", "ristorante", "pizzeria", "gastronomia", "alimentari", "cibo", "trattoria", "aperitivo"],
+    categorie: ["ristorante", "pizzeria", "gastronomia", "alimentari"],
+    profili: ["ristorante", "alimentari"],
+  },
+  {
+    id: "dolce",
+    chiavi: ["dolce", "dolci", "dessert", "zucchero", "cioccolato", "gelato"],
+    lexica: ["dolci", "pasticceria", "gelateria", "cioccolato", "dessert"],
+    categorie: ["pasticceria", "gelateria"],
+  },
+  {
+    id: "regalo",
+    chiavi: ["regalo", "regali", "regalare", "dono", "doni", "omaggio"],
+    lexica: ["regalo", "regali", "cesto", "cesti", "idea regalo", "cofanetto"],
+    categorie: ["regali", "gioielleria", "artigianato"],
+    profili: ["artigiano"],
+  },
+  {
+    id: "medico",
+    chiavi: ["medico", "dottore", "dottoressa", "specialista", "visita medica", "controllo"],
+    lexica: ["medico", "ambulatorio", "studio medico", "specialista", "visita"],
+    categorie: ["salute e benessere"],
+    profili: ["medico"],
+  },
+  {
+    id: "cuore",
+    chiavi: ["cuore", "cardio", "cardiologia", "cardiologo", "cardiopatico"],
+    lexica: ["cardiologia", "cardiologo", "cuore"],
+    categorie: ["salute e benessere"],
+    profili: ["medico"],
+  },
+  {
+    id: "capelli",
+    chiavi: ["capelli", "tagliarmi", "taglio", "piega", "barba", "barbiere"],
+    lexica: ["parrucchiere", "barbiere", "capelli", "estetista"],
+    categorie: ["parrucchiere", "barbiere", "estetica"],
+    profili: ["beauty"],
+  },
+  {
+    id: "mangiare_fuori",
+    chiavi: ["mangiare fuori", "fuori a cena", "stasera", "uscire a cena", "dove mangiare", "un posto dove mangiare", "locali", "serata"],
+    lexica: ["ristorante", "pizzeria", "trattoria", "bar", "locale", "aperitivo"],
+    categorie: ["ristorante", "pizzeria", "bar"],
+    profili: ["ristorante"],
   },
 ];
 
@@ -193,7 +270,7 @@ export function analizzaRichiesta(query: string): AnalisiRichiesta {
 
   // Soggetto di ricerca: token puliti esclusa la città (gestita dal filtro
   // `citta` del retrieval), così i token geografici non inquinano il ranking.
-  const ricerca = tokens.filter((t) => t !== citta).join(" ");
+  let ricerca = tokens.filter((t) => t !== citta).join(" ");
 
   // Tipo di attività / profilo.
   const tipoAttivita: string[] = [];
@@ -201,12 +278,16 @@ export function analizzaRichiesta(query: string): AnalisiRichiesta {
     for (const id of profiliPerTermine(t)) if (!tipoAttivita.includes(id)) tipoAttivita.push(id);
   }
 
-  // Categorie rivelanti (dall'elenco ufficiale).
+  // Categorie rivelanti (dall'elenco ufficiale). Il match per sottostringa
+  // esige un token >= 3 caratteri, altrimenti parole comuni corte ("ho", "mi",
+  // "fa") matchano per caso nomi di categoria (es. "Hotel" contiene "ho")
+  // e inquinerebbero il riconoscimento del bisogno. Il match sul radice o sul
+  // token esatto resta attivo anche per token corti.
   const categorieRilevanti: string[] = [];
   for (const t of tokens) {
     for (const cat of CATEGORIE_NEGOZIO_META) {
       const nome = normalizza(cat.nome);
-      if (!categorieRilevanti.includes(nome) && (radice(nome) === radice(t) || nome.includes(t) || t.length > 2 && nome.split(" ").some((w) => w === t))) {
+      if (!categorieRilevanti.includes(nome) && (radice(nome) === radice(t) || (t.length >= 3 && nome.includes(t)) || t.length > 2 && nome.split(" ").some((w) => w === t))) {
         categorieRilevanti.push(nome);
       }
     }
@@ -226,6 +307,49 @@ export function analizzaRichiesta(query: string): AnalisiRichiesta {
     }
   }
 
+  // ── Bisogni / intenti naturali → concetti reali ──────────────────────
+  // Una frase "ho sete" non va usata come query letterale restrittiva: va
+  // riconosciuta come bisogno e trasformata in concetti ricercabili.
+  const bisogni: string[] = [];
+  const concettiBisogno: string[] = [];
+  const categorieBisogno: string[] = [];
+  const profiliBisogno: string[] = [];
+  for (const bis of BISOGNI) {
+    const attivo = bis.chiavi.some((c) => {
+      const cn = normalizza(c);
+      const èFrase = c.includes(" ");
+      if (èFrase) return queryNorm.includes(cn);
+      return tokens.some((t) => radice(t) === radice(cn));
+    });
+    if (!attivo) continue;
+    bisogni.push(bis.id);
+    for (const lx of bis.lexica) if (!concettiBisogno.includes(lx)) concettiBisogno.push(lx);
+    for (const c of bis.categorie ?? []) if (!categorieBisogno.includes(c)) categorieBisogno.push(c);
+    for (const p of bis.profili ?? []) if (p && !profiliBisogno.includes(p)) profiliBisogno.push(p);
+  }
+  for (const c of concettiBisogno) if (!topic.includes(c)) topic.push(c);
+  for (const c of categorieBisogno) if (!categorieRilevanti.includes(c)) categorieRilevanti.push(c);
+  for (const p of profiliBisogno) if (!tipoAttivita.includes(p)) tipoAttivita.push(p);
+
+  // Se la frase esprime UN BISOGNO e NON contiene un termine "concreto"
+  // (una parola che corrisponde davvero a una categoria/profilo/con concetto
+  // del dizionario), il soggetto di ricerca diventa i CONCETTI del bisogno:
+  // "ho sete" → "bere bevande acqua bar caffetteria ...". Così una frase
+  // naturale non produce MAI una query restrittiva con zero risultati.
+  if (bisogni.length > 0) {
+    const hasTermineConcreto = tokens.some(
+      (t) =>
+        categorieRilevanti.some((c) => c === t || c.includes(t) || radice(c) === radice(t)) ||
+        profiliPerTermine(t).length > 0 ||
+        TOPIC_TERMINI.some(
+          (e) => e.chiavi.includes(t) || e.lexica.includes(t) || BISOGNI.some((b) => b.lexica.includes(t))
+        )
+    );
+    if (!hasTermineConcreto && concettiBisogno.length > 0) {
+      ricerca = concettiBisogno.join(" ");
+    }
+  }
+
   // Intento prevalente.
   let intento: IntentoRichiesta;
   if (RE_CHIACCHIERA.test(queryNorm.trim())) intento = "chiacchiera";
@@ -233,7 +357,7 @@ export function analizzaRichiesta(query: string): AnalisiRichiesta {
   else if (RE_OFFERTA.test(queryNorm)) intento = "offerta";
   else if (RE_EVENTO.test(queryNorm)) intento = "evento";
   else if (vincoliPrezzo || RE_PRODOTTO.test(queryNorm)) intento = "prodotto";
-  else if (citta || tipoAttivita.length > 0 || categorieRilevanti.length > 0 || topic.length > 0) intento = "attivita";
+  else if (citta || tipoAttivita.length > 0 || categorieRilevanti.length > 0 || topic.length > 0 || bisogni.length > 0) intento = "attivita";
   else intento = "generico";
 
   return {
@@ -246,6 +370,7 @@ export function analizzaRichiesta(query: string): AnalisiRichiesta {
     citta,
     vincoliPrezzo,
     topic,
+    bisogni,
   };
 }
 
@@ -311,5 +436,6 @@ export function dovrebbeUsareMotoreRobusto(
   if (primarioVuoto) return true;
   if (analisi.citta) return true;
   if (analisi.topic.length > 0) return true;
+  if (analisi.bisogni.length > 0) return true; // bisogno/intento spiegato naturalmente
   return false;
 }

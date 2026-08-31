@@ -332,8 +332,10 @@ function pianoInterprete(
     analisi.intento !== "piattaforma"
   ) {
     const queryTool = espandiQueryIbrida(ultimo) || analisi.ricerca;
+    // Termini con cui interroghiamo il DB: i CONCETTI ricavati (non le parole
+    // riempitive del bisogno, es. "ho sete" → "bere bevande acqua bar ...").
     const termini = Array.from(
-      new Set(analisi.terminiPuliti.concat(analisi.topic))
+      new Set(analisi.ricerca.split(/\s+/).concat(analisi.topic))
     ).filter(Boolean);
     return {
       directReply: null,
