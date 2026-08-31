@@ -1,14 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
   ArrowRight,
   Search,
+  Trash2,
   Truck,
   X,
 } from "lucide-react";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import type { StatoOrdine } from "@/lib/cliente/types";
 import { ETICHETTE_STATO } from "@/lib/merchant/ordini-stati";
 import FiltroDataRange from "@/components/ui/FiltroDataRange";
@@ -106,6 +108,17 @@ export default function OrdiniAdminClient() {
   const [risultato, setRisultato] = useState<RisultatoOrdiniAdmin | null>(null);
   const [caricando, setCaricando] = useState(true);
   const [errore, setErrore] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<string | null>(null);
+
+  // Selezione multipla (soft delete batch). Gli id restano in un Set: la
+  // selezione sopravvive a ricerca/filtri/paginazione; "Seleziona tutti"
+  // agisce sugli ordini della pagina corrente.
+  const [selezionati, setSelezionati] = useState<Set<string>>(new Set());
+  const [confermaAperta, setConfermaAperta] = useState(false);
+  const [eliminando, setEliminando] = useState(false);
+  const selectAllRef = useRef<HTMLInputElement>(null);
+
+  const ordini = risultato?.ordini ?? [];
 
   // Negozi per il filtro a discesa (una sola volta).
   useEffect(() => {
@@ -153,6 +166,71 @@ export default function OrdiniAdminClient() {
     void carica();
   }, [carica]);
 
+  // "Seleziona tutti": stato indeterminato quando solo parte degli ordini
+  // della pagina corrente è selezionata.
+  useEffect(() => {
+    if (!selectAllRef.current) return;
+    const idsPagina = ordini.map((o) => o.id);
+    const nSel = idsPagina.filter((id) => selezionati.has(id)).length;
+    selectAllRef.current.indeterminate = nSel > 0 && nSel < idsPagina.length;
+  }, [ordini, selezionati]);
+
+  function toggleSelezione(id: string, selezionato: boolean) {
+    setSelezionati((prev) => {
+      const next = new Set(prev);
+      if (selezionato) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  }
+
+  function toggleTutti() {
+    setSelezionati((prev) => {
+      const idsPagina = ordini.map((o) => o.id);
+      const tutti = idsPagina.every((id) => prev.has(id));
+      const next = new Set(prev);
+      for (const id of idsPagina) {
+        if (tutti) next.delete(id);
+        else next.add(id);
+      }
+      return next;
+    });
+  }
+
+  async function eseguiEliminazione() {
+    if (selezionati.size === 0) return;
+    setEliminando(true);
+    try {
+      const res = await fetch("/api/amministratore/ordini/cestina-batch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ordineIds: Array.from(selezionati) }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        setErrore(data?.error?.message ?? "Impossibile eliminare gli ordini selezionati.");
+        setConfermaAperta(false);
+        return;
+      }
+      const esito = data?.data ?? {};
+      const trashed = Number(esito.trashed ?? 0);
+      const errori = Array.isArray(esito.errori) ? esito.errori.length : 0;
+      setSelezionati(new Set());
+      setConfermaAperta(false);
+      await carica();
+      setFeedback(
+        errori > 0
+          ? `${trashed} ${trashed === 1 ? "ordine spostato" : "ordini spostati"} nel Cestino; ${errori} ${errori === 1 ? "non eliminato" : "non eliminati"}.`
+          : `${trashed} ${trashed === 1 ? "ordine spostato" : "ordini spostati"} nel Cestino.`
+      );
+    } catch {
+      setErrore("Errore di rete. Riprova.");
+      setConfermaAperta(false);
+    } finally {
+      setEliminando(false);
+    }
+  }
+
   function setFiltro(chiave: keyof FiltriLocal, valore: string) {
     setFiltri((prev) => ({ ...prev, [chiave]: valore }));
     setPagina(1);
@@ -163,7 +241,6 @@ export default function OrdiniAdminClient() {
     setPagina(1);
   }
 
-  const ordini = risultato?.ordini ?? [];
   const pagineTotali = risultato?.pagineTotali ?? 0;
 
   return (
@@ -282,6 +359,11 @@ export default function OrdiniAdminClient() {
       </div>
 
       {/* Stati */}
+      {feedback && (
+        <div className="rounded-[1.75rem] border border-emerald-100 bg-emerald-50 p-6 text-center">
+          <p className="text-sm font-semibold text-emerald-700">{feedback}</p>
+        </div>
+      )}
       {errore && (
         <div className="rounded-[1.75rem] border border-blue-100 bg-blue-50 p-6 text-center">
           <p className="text-sm font-semibold text-blue-700">{errore}</p>
@@ -305,12 +387,65 @@ export default function OrdiniAdminClient() {
 
       {ordini.length > 0 && (
         <div className="space-y-3">
+          {/* Selezione multipla: "Seleziona tutti" + conteggio selezionati */}
+          <div className="flex items-center justify-between rounded-[1.5rem] border border-white/70 bg-white px-4 py-3 shadow-sm">
+            <label className="inline-flex cursor-pointer items-center gap-2 text-sm font-semibold text-slate-700">
+              <input
+                ref={selectAllRef}
+                type="checkbox"
+                checked={ordini.length > 0 && ordini.every((o) => selezionati.has(o.id))}
+                onChange={toggleTutti}
+                className="h-4 w-4 accent-blue-600"
+              />
+              Seleziona tutti
+            </label>
+            <span className="text-xs font-semibold text-slate-500">
+              {selezionati.size} {selezionati.size === 1 ? "ordine selezionato" : "ordini selezionati"}
+            </span>
+          </div>
+
+          {/* Barra azioni: visibile SOLO con almeno un ordine selezionato */}
+          {selezionati.size > 0 && (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[1.5rem] border border-red-200 bg-red-50 p-4 shadow-sm">
+              <p className="text-sm font-bold text-red-700">
+                {selezionati.size} {selezionati.size === 1 ? "ordine selezionato" : "ordini selezionati"}
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSelezionati(new Set())}
+                  className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-red-300 hover:text-red-600"
+                >
+                  Deseleziona
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfermaAperta(true)}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-red-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-red-700"
+                >
+                  <Trash2 className="h-4 w-4" aria-hidden />
+                  Elimina selezionati ({selezionati.size})
+                </button>
+              </div>
+            </div>
+          )}
+
           {ordini.map((o: OrdineAdminLista) => (
-            <Link
+            <div
               key={o.id}
-              href={`/amministratore/ordini/${o.id}`}
-              className="block rounded-[1.5rem] border border-white/70 bg-white p-4 shadow-sm transition hover:shadow-md"
+              className="flex items-start gap-3 rounded-[1.5rem] border border-white/70 bg-white p-4 shadow-sm transition hover:shadow-md"
             >
+              <input
+                type="checkbox"
+                aria-label={`Seleziona ${o.numero}`}
+                checked={selezionati.has(o.id)}
+                onChange={(e) => toggleSelezione(o.id, e.target.checked)}
+                className="mt-1.5 h-4 w-4 shrink-0 accent-blue-600"
+              />
+              <Link
+                href={`/amministratore/ordini/${o.id}`}
+                className="block min-w-0 flex-1"
+              >
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
@@ -351,7 +486,8 @@ export default function OrdiniAdminClient() {
                   </div>
                 </div>
               </div>
-            </Link>
+              </Link>
+            </div>
           ))}
         </div>
       )}
@@ -380,6 +516,22 @@ export default function OrdiniAdminClient() {
           </button>
         </div>
       )}
+
+      {/* Conferma eliminazione multipla (soft delete nel Cestino) */}
+      <ConfirmDialog
+        open={confermaAperta}
+        title="Eliminare gli ordini selezionati?"
+        message={
+          selezionati.size === 1
+            ? "L'ordine selezionato verrà spostato nel Cestino e non sarà più visibile nell'elenco degli ordini."
+            : `${selezionati.size} ordini verranno spostati nel Cestino e non saranno più visibili nell'elenco degli ordini.`
+        }
+        confirmLabel="Elimina selezionati"
+        destructive
+        loading={eliminando}
+        onConfirm={eseguiEliminazione}
+        onCancel={() => setConfermaAperta(false)}
+      />
     </div>
   );
 }
