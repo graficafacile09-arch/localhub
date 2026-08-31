@@ -97,14 +97,20 @@ export function patternIlikeTolleranti(termine: string, maxErrori = 1): string[]
   const base = pulisciTermine(termine);
   if (!base) return [];
 
-  // Ordine importante: base, poi wildcard di tolleranza (sostituzioni e
-  // inserzioni), infine le varianti accentate. I consumer applicano un cap
-  // ai pattern: se le varianti accentate venissero prima, i wildcard di
-  // tolleranza verrebbero tagliati e i refusi non verrebbero trovati.
+  // Ordine importante: base, poi wildcard di tolleranza (rimozione, sostituzione
+  // e inserzione), infine le varianti accentate. I consumer applicano un cap ma
+  // qui i pattern di tolleranza vengono PRIMA delle varianti accentate, così i
+  // refusi da carattere duplicato/mancante non vengono mai tagliati.
   const pattern: string[] = [`%${base}%`];
 
   if (maxErrori >= 1 && base.length >= 4 && base.length <= 12) {
-    // Sostituzione: un carattere qualsiasi al posto di uno del termine.
+    // Rimozione (carattere duplicato o in più nel termine): il DB ha un
+    // carattere in MENO del termine. Es. "panifffio" → pattern senza una "f"
+    // matcha il DB con "panificio"; "panificioo" → senza l'ultima "o".
+    for (let i = 0; i < base.length; i++) {
+      pattern.push(`%${base.slice(0, i)}${base.slice(i + 1)}%`);
+    }
+    // Sostituzione: il DB ha un carattere diverso nella stessa posizione.
     for (let i = 0; i < base.length; i++) {
       pattern.push(`%${base.slice(0, i)}_${base.slice(i + 1)}%`);
     }

@@ -941,9 +941,16 @@ function calcolaPunteggioProdotto(
   return punteggio;
 }
 
-/** Vero requisito di rilevanza: un termine originale ovunque, oppure un
- *  sinonimo espanso in un campo PRIMARIO. Un sinonimo in un campo secondario
- *  (descrizione/marca/materiale/colore) da solo NON basta. */
+/** Vero requisito di rilevanza per un prodotto:
+ *  1) un termine ORIGINALE in CAMPIONIAMO qualunque campo ⇒ rilevante;
+ *  2) un sinonimo ESPANSO vale SOLO in campi STRUTTURATI/di classificazione
+ *     (categoria, sottocategoria, marca), NON nel lemma libero nome/descrizione.
+ *
+ * Evita il falso positivo reale: per "parrucchiere" il sinonimo espanso "taglio"
+ * appare solo nel NOME libero di "Pizza Margherita al Taglio" (un anacronismo di
+ * food), quindi NON deve bastare a restituire quel prodotto. Un prodotto di una
+ * categoria pertinente matcha invece ancora su `categoria`/`sottocategoria`.
+ */
 function prodottoRilevante(
   prodotto: Record<string, unknown>,
   originali: string[],
@@ -951,20 +958,22 @@ function prodottoRilevante(
 ): boolean {
   const normaCampo = (c: string) => normalizza(String(prodotto[c] ?? ""));
   const inCampo = (c: string, t: string) => normaCampo(c).includes(t);
-  const primari = ["nome", "categoria", "sottocategoria", "tag"];
+  // Campi in cui un sinonimo ESPANSO è una prova reale della classificazione
+  // del prodotto. Il nome/descrizione (testo libero) non bastano per un sinonimo.
+  const campiStrutturati = ["categoria", "sottocategoria", "marca"];
 
-  // 1) Un termine ORIGINALE in qualsiasi campo ⇒ rilevante.
+  // 1) Termine ORIGINALE in qualsiasi campo ⇒ rilevante (query diretta intatta).
   for (const o of originali) {
     const on = normalizza(o).trim();
     if (!on) continue;
     if (Object.keys(PESO_CAMPO_PRODOTTO).some((c) => inCampo(c, on))) return true;
   }
 
-  // 2) Un sinonimo ESPANSO in un campo primario ⇒ rilevante.
+  // 2) Sinonimo ESPANSO in un campo strutturato di classificazione ⇒ rilevante.
   for (const e of espansi) {
     const en = normalizza(e).trim();
     if (!en || en.length < 3) continue;
-    if (primari.some((c) => inCampo(c, en))) return true;
+    if (campiStrutturati.some((c) => inCampo(c, en))) return true;
   }
 
   return false;
@@ -1333,15 +1342,16 @@ async function cercaProdottiTolleranti(
   const termini = terminiSignificativi(ricerca, 3);
   if (termini.length === 0) return [];
 
-  // Pattern per ogni termine: esatto + tolleranza a 1 errore + accenti.
-  // Cap per termine (14) e totale (42): limita le condizioni di PostgREST
-  // garantendo comunque pattern per tutti i termini significativi.
+  // Pattern per ogni termine: esatto + rimozione/sostituzione/inserzione
+  // (1 errore) + accenti. Cap per termine (26) e totale (70): copre anche i
+  // refusi da carattere duplicato/mancante ("panifffio"→"panificio") senza
+  // esplodere le condizioni di PostgREST.
   const pattern = new Set<string>();
   for (const t of termini) {
-    for (const p of patternIlikeTolleranti(t).slice(0, 14)) pattern.add(p);
-    if (pattern.size >= 42) break;
+    for (const p of patternIlikeTolleranti(t).slice(0, 26)) pattern.add(p);
+    if (pattern.size >= 70) break;
   }
-  const patternList = Array.from(pattern).slice(0, 42);
+  const patternList = Array.from(pattern).slice(0, 70);
   if (patternList.length === 0) return [];
 
   const filtri = patternList
@@ -1541,10 +1551,10 @@ async function cercaNegoziTolleranti(
 
   const pattern = new Set<string>();
   for (const t of termini) {
-    for (const p of patternIlikeTolleranti(t).slice(0, 14)) pattern.add(p);
-    if (pattern.size >= 42) break;
+    for (const p of patternIlikeTolleranti(t).slice(0, 26)) pattern.add(p);
+    if (pattern.size >= 70) break;
   }
-  const patternList = Array.from(pattern).slice(0, 42);
+  const patternList = Array.from(pattern).slice(0, 70);
   if (patternList.length === 0) return [];
 
   const filtri = patternList
