@@ -101,3 +101,34 @@ test("sinonimo pertinente viene espanso mentre il generico con più criteri vinc
   expect(beauty).toContain("parrucchiere");
   expect(beauty.trim()).not.toBe("");
 });
+
+// ─── V3: recall dei refusi da carattere duplicato/mancante ──────────────────
+
+test("V3 pattern fuzzy coprono la RIMOZIONE di un carattere ('panifficio' → 'panificio')", () => {
+  const pattern = patternIlikeTolleranti("panifficio");
+  // Grazie ai pattern di rimozione, il DB può tornare "panificio".
+  expect(pattern).toContain("%panificio%");
+  // E il matching in memoria dà la similarità giusta (≥0.88).
+  expect(similaritaLevenshtein("panifficio", "panificio")).toBeGreaterThan(0.85);
+});
+
+test("V3 'panifcio' → 'panificio' (carattere mancante) resta nei pattern + fuzzy", () => {
+  const pattern = patternIlikeTolleranti("panifcio");
+  // inserzione: %panif_cio% matcha "panificio" (la _ è il carattere 'i' in più nel DB).
+  expect(pattern.some((p) => p === "%panif_cio%")).toBe(true);
+  expect(similaritaLevenshtein("panifcio", "panificio")).toBeGreaterThan(0.85);
+});
+
+test("V3 'panificioo' → 'panificio' (carattere in più) coperto da rimozione", () => {
+  // rimozione dell'ultima 'o' → %panificio%
+  const pattern = patternIlikeTolleranti("panificioo");
+  expect(pattern.some((p) => p === "%panificio%")).toBe(true);
+  expect(similaritaLevenshtein("panificioo", "panificio")).toBeGreaterThan(0.85);
+});
+
+test("V3 'pizeria' → 'pizzeria' (inserzione doppia-z) coperta", () => {
+  const pattern = patternIlikeTolleranti("pizeria");
+  // %piz_eria% matcha "pizzeria" (la _ è la z doppia nel DB).
+  expect(pattern.some((p) => p === "%piz_eria%")).toBe(true);
+  expect(similaritaLevenshtein("pizeria", "pizzeria")).toBeGreaterThan(0.8);
+});

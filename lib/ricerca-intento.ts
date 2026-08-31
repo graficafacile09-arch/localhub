@@ -56,8 +56,11 @@ interface DefinizioneIntento {
 // ("farmacia", "parrucchiere", "pizza", "medico cardiologo") è una ricerca
 // DIRETTA e NON deve essere gonfiato in bisogno: i concetti d'intento scattano
 // SOLO se la frase esprime davvero un bisogno/richiesta ("mi serve un medico",
-// "ho sete", "voglio tagliarmi i capelli", "devo fare un regalo").
-const RE_FRAMING_NEED = /\b(ho\s|hai|voglio|vorrei|devo|occore|serve|servire|cerco|cerchi|cercando|trovo|trovare|qualcuno|qualcosa|un\s+medic|una\s+visita|dove\s|andiamo|bisogno|mi\s+serve|per\s+|devo\s)/i;
+// "ho sete", "voglio tagliarmi i capelli", "devo fare un regalo") OPPURE una
+// descrizione tipica/regionale multi-parole ("regalo tipico calabrese",
+// "prodotti tipici") che da sola non è una singola categoria.
+const RE_FRAMING_NEED =
+  /\b(ho\s|hai|voglio|vorrei|devo|occore|serve|servire|cerco|cerchi|cercando|trovo|trovare|qualcuno|qualcosa|un\s+medic|una\s+visita|dove\s|andiamo|bisogno|mi\s+serve|per\s+|devo\s|tipic|calabres|artigianat|pollino)|prodotti\s+tipic|regalo\s+tipic/i;
 
 const DEFINIZIONI_INTENTI: DefinizioneIntento[] = [
   // ── ALIMENTAZIONE / BERE ──

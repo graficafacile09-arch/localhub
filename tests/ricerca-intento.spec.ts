@@ -185,3 +185,86 @@ test("confidenza: bisogno riconosciuto è alta o media, esplicita nulla", () => 
 test("concettiIntento per bisogno multiplo target: beve/bevanda/regalo", () => {
   expect(concettiIntento("devo fare un regalo")).toContain("regalo");
 });
+
+// ─── V2: copertura estesa dello spec §12 ────────────────────────────────────
+
+test("V2 'cerco qualcosa per cena' → bisogno mangiare con concetti", () => {
+  const r = analizzaRichiesta("cerco qualcosa per cena");
+  expect(r.tipo).toBe("bisogno");
+  expect(r.intento).toBe("mangiare");
+  expect(r.concetti.length).toBeGreaterThan(0);
+});
+
+test("V2 'voglio mangiare pesce' → bisogno mangiare (pesce resta nella query)", () => {
+  const r = analizzaRichiesta("voglio mangiare pesce");
+  expect(r.tipo).toBe("bisogno");
+  expect(r.intento).toBe("mangiare");
+  // Il concetto specifico 'pesce' NON viene perso dal testo.
+  expect(r.queryOriginale).toContain("pesce");
+});
+
+test("V2 'cerco un medico cardiologo' → bisogno accantono (cardiologo/cuore)", () => {
+  const r = analizzaRichiesta("cerco un medico cardiologo");
+  expect(r.tipo).toBe("bisogno");
+  // Intent cuore (cardiologo) E la radice medico restano nella query originale.
+  expect(r.queryOriginale).toContain("medico");
+  expect(concettiIntento("cerco un medico cardiologo")).toMatch(/cardio|cuore/i);
+});
+
+test("V2 'voglio una visita al cuore' → bisogno cuore/cardiologia", () => {
+  const r = analizzaRichiesta("voglio una visita al cuore");
+  expect(r.tipo).toBe("bisogno");
+  expect(r.intento).toBe("cuore");
+  expect(r.concetti).toContain("cardiologo");
+});
+
+test("V2 'prodotti tipici' → bisogno tipico (concetti regionali)", () => {
+  const r = analizzaRichiesta("prodotti tipici");
+  expect(r.tipo).toBe("bisogno");
+  expect(r.concetti.length).toBeGreaterThan(0);
+  expect(concettiIntento("prodotti tipici")).toMatch(/artigianato|tipico/i);
+});
+
+test("V2 'regalo tipico calabrese' → bisogno regalo + tipico + Calabria (query originale mantiene 'calabrese')", () => {
+  const r = analizzaRichiesta("regalo tipico calabrese");
+  expect(r.tipo).toBe("bisogno");
+  expect(r.concetti.length).toBeGreaterThan(0);
+  expect(r.queryOriginale).toContain("calabrese");
+  expect(concettiIntento("regalo tipico calabrese")).toMatch(/artigianato|prodotti tipici/i);
+});
+
+test("V2 'pesce a Castrovillari' è esplicita con località (niente concetti gonfiati)", () => {
+  const r = analizzaRichiesta("pesce a Castrovillari");
+  expect(r.tipo).toBe("esplicita");
+  expect(r.queryOriginale.toLowerCase()).toContain("castrovillari");
+});
+
+test("V2 'negozio a Cosenza' è esplicita con Cosenza", () => {
+  const r = analizzaRichiesta("negozio a Cosenza");
+  expect(r.tipo).toBe("esplicita");
+  expect(r.queryOriginale.toLowerCase()).toContain("cosenza");
+});
+
+test("V2 località + intento: 'voglio mangiare pesce a Castrovillari' resta bisogno mangiare con città in query", () => {
+  const r = analizzaRichiesta("voglio mangiare pesce a Castrovillari");
+  expect(r.tipo).toBe("bisogno");
+  expect(r.intento).toBe("mangiare");
+  // La città non azzera né viene persa.
+  expect(r.queryOriginale.toLowerCase()).toContain("castrovillari");
+  expect(r.concetti.length).toBeGreaterThan(0);
+});
+
+test("V2 query generica 'qualcosa per cena senza specifica' NON inventa categoria stringente", () => {
+  const r = analizzaRichiesta("boh");
+  expect(r.concetti.length).toBe(0);
+  expect(r.tipo).toBe("ambigua");
+});
+
+test("V2 ranking: intento non 'gonfia' una query diretta semplice (regressione pre-fe8252e)", () => {
+  // 'pizza' resta esplicita e veloce: nessun concetto introdotto.
+  expect(analizzaRichiesta("pizza").tipo).toBe("esplicita");
+  expect(concettiIntento("pizza")).toBe("");
+  // 'farmacia' resta esplicita (categoria diretta), non gonfiata.
+  expect(analizzaRichiesta("farmacia").tipo).toBe("esplicita");
+  expect(concettiIntento("farmacia")).toBe("");
+});

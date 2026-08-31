@@ -7,6 +7,7 @@ type NegozioIndicizzabile = {
   sottocategoria?: string | null;
   descrizione?: string | null;
   indirizzo?: string | null;
+  citta?: string | null;
   sito_web?: string | null;
   servizi?: string[] | string | null;
   parole_chiave?: string[] | string | null;
@@ -84,6 +85,7 @@ const PESO_ORIGINALE = {
   serviziStrutturati: 16,
   paroleChiave: 12,
   servizi: 10,
+  citta: 12,
   descrizione: 6,
   indirizzo: 3,
   sito: 1,
@@ -102,6 +104,7 @@ function estraiCampi(negozio: NegozioIndicizzabile) {
     sottocategoria: negozio.sottocategoria ?? "",
     descrizione: negozio.descrizione ?? "",
     indirizzo: negozio.indirizzo ?? "",
+    citta: negozio.citta ?? "",
     sito: negozio.sito_web ?? "",
     servizi: serviziComeTesto(negozio.servizi),
     paroleChiave: paroleChiaveComeTesto(negozio.parole_chiave),
@@ -139,11 +142,18 @@ export function calcolaPunteggioNegozioConEspansione(
   // ORIGINALE nel nome/categoria/tipo batta sempre l'accumulo di sinonimi.
   let punteggioOriginale = 0;
   let punteggioEspanso = 0;
+  // Termini ORIGINALI (digitati) che matchano almeno un campo: conta QUANTI
+  // criteri distinti della richiesta sono soddisfatti (es. "pesce" E
+  // "Castrovillari", "tipico" E "calabrese"). Usato per il bonus di coerenza.
+  const criteriOriginaliSoddisfatti =
+    new Set<string>();
   const assume = (campo: string, peso: number, termine: string) => {
     if (!campo) return;
     if (contieneTermineRilevante(campo, termine)) {
-      if (originali.has(normalizza(termine).trim())) {
+      const t = normalizza(termine).trim();
+      if (originali.has(t)) {
         punteggioOriginale += peso;
+        criteriOriginaliSoddisfatti.add(t);
       } else {
         punteggioEspanso += peso * FATTORE_ESPANSO;
       }
@@ -162,12 +172,20 @@ export function calcolaPunteggioNegozioConEspansione(
     assume(campi.servizi, PESO_ORIGINALE.servizi, t);
     assume(campi.descrizione, PESO_ORIGINALE.descrizione, t);
     assume(campi.indirizzo, PESO_ORIGINALE.indirizzo, t);
+    assume(campi.citta, PESO_ORIGINALE.citta, t);
     assume(campi.sito, PESO_ORIGINALE.sito, t);
   }
 
   // Tetto ai sinonimi espansi: contributo massimo ai match di sola espansione.
   const TETTO_ESPANSO = 18;
-  return punteggioOriginale + Math.min(punteggioEspanso, TETTO_ESPANSO);
+
+  // Bonus di COERENZA multi-criterio: se il negozio soddisfa PIÙ termini
+  // originali distinti della richiesta (es. "pesce" + "castrovillari"), sale
+  // sopra un risultato che ne soddisfa uno solo. Additivo e conservativo:
+  // il bonus è zero con un solo criterio, quindi le query semplici non cambiano.
+  const criteri = criteriOriginaliSoddisfatti.size;
+  const bonusCoerenza = criteri > 1 ? 3 * (criteri - 1) : 0;
+  return punteggioOriginale + Math.min(punteggioEspanso, TETTO_ESPANSO) + bonusCoerenza;
 }
 
 /** Compat: dato solo il testo espanso, ogni termine è "originale" (1x). */
