@@ -10,6 +10,7 @@ import {
   esclusioniNegazione,
   haQualificatoreEconomico,
 } from "./ricerca-intento";
+import { estraiCitta } from "./localita";
 import { createAdminSupabaseClient } from "./supabase/admin";
 import { isNumericId, isUuid, toSlug } from "./slug";
 import type { ProdottoRicerca } from "./ricerca-ai";
@@ -29,6 +30,36 @@ const getDb = () => {
     return null;
   }
 };
+
+// ─── Località (V8) ────────────────────────────────────────────────────────────
+// Un negozio "è" in una città se il campo citta O l'indirizzo contengono la
+// località normalizzata (stessa semantica del filtro p_citta della RPC).
+function negozioMatchaCitta(negozio: Record<string, unknown>, citta: string): boolean {
+  const target = normalizza(citta);
+  if (!target) return false;
+  const cittaCampo = normalizza(String((negozio as { citta?: unknown }).citta ?? ""));
+  const indirizzo = normalizza(String((negozio as { indirizzo?: unknown }).indirizzo ?? ""));
+  return cittaCampo.includes(target) || indirizzo.includes(target);
+}
+
+/** Filtra i prodotti ai soli appartenenti a negozi nella città richiesta
+ *  (i prodotti non hanno una città propria: la derivano dal negozio). */
+async function filtraProdottiPerCitta(
+  db: ReturnType<typeof createAdminSupabaseClient>,
+  risultati: Record<string, unknown>[],
+  citta: string
+): Promise<Record<string, unknown>[]> {
+  if (risultati.length === 0) return risultati;
+  const ids = Array.from(new Set(risultati.map((p) => p.negozio_id as string).filter(Boolean)));
+  if (ids.length === 0) return risultati;
+  const { data } = await db.from("negozi").select("id, citta, indirizzo").in("id", ids);
+  const inCitta = new Set(
+    (data ?? [])
+      .filter((n) => negozioMatchaCitta(n as Record<string, unknown>, citta))
+      .map((n) => n.id)
+  );
+  return risultati.filter((p) => inCitta.has(p.negozio_id as string));
+}
 
 // Assicura che un record negozio abbia uno slug pubblico valido.
 // Se slug è null/vuoto: genera slug=toSlug(nome)+suffix se duplicato,
@@ -1125,7 +1156,7 @@ async function cercaProdottiCore(
   // resta comunque rappresentata dai token base in espandiQueryConSinonimiBase
   // (i concetti aggiungono, mai restringono).
   const espansaBase = `${concettiIntento(ricerca)} ${espandiQueryConSinonimiBase(ricerca)}`;
-  const termini = Array.from(
+  let termini = Array.from(
     new Set(
       espansaBase
         .split(/\s+/)
@@ -1133,6 +1164,17 @@ async function cercaProdottiCore(
         .filter(Boolean)
     )
   ).slice(0, 16);
+
+  // V8 — LOCALITÀ: il token città viene rimosso dai termini prodotto (è un
+  // vincolo applicato sul negozio proprietario in fondo, non una keyword da
+  // far matchare nei nomi prodotto: evita che "Cipolla di Castrovillari" o
+  // "Ciotaredda di Castrovillari" rispondano a "pizza a Castrovillari").
+  const cittaProdotto = estraiCitta(ricerca);
+  if (cittaProdotto) {
+    const tokenCittaP = normalizza(cittaProdotto);
+    const senzaCitta = termini.filter((t) => normalizza(t) !== tokenCittaP);
+    if (senzaCitta.length > 0) termini = senzaCitta;
+  }
 
   const conFiltriExtra = haFiltriAddizionali(opts.filtri);
 
@@ -1235,6 +1277,12 @@ async function cercaProdottiCore(
     risultati = [...risultati].sort(
       (a, b) => Number(a.prezzo ?? 0) - Number(b.prezzo ?? 0)
     );
+  }
+
+  // V8 — vincolo città sul negozio proprietario dei prodotti (i prodotti non
+  // hanno una città propria: la derivano dal negozio, citta OR indirizzo).
+  if (cittaProdotto) {
+    risultati = await filtraProdottiPerCitta(db, risultati, cittaProdotto);
   }
 
   return { risultati, total };
@@ -1524,16 +1572,30 @@ export async function cercaNegozi(
     )
   ).slice(0, 24);
 
-  const termini = (terminiEspansi.length > 0 ? terminiEspansi : [ricerca.trim()])
+  let termini = (terminiEspansi.length > 0 ? terminiEspansi : [normalizza(ricerca).trim()])
     .filter(Boolean);
-  if (termini.length === 0) return [];
-
-  // Termini ORIGINALI digitati dall'utente: dominano il ranking (vedi ranking-negozi).
-  const terminiOriginaliNegozi = terminiOriginali(ricerca);
 
   const categoria = opts.categoria?.trim() || null;
   const tipo = opts.tipo?.trim() || null;
-  const citta = opts.citta?.trim() || null;
+  // V8 — LOCALITÀ: la città diventa un VINCOLO reale (p_citta sulla RPC), non
+  // una keyword. Se opts.citta non viene passato, la riconosciamo nel testo.
+  const citta = opts.citta?.trim() || estraiCitta(ricerca) || null;
+  const tokenCitta = citta ? normalizza(citta) : "";
+
+  // Rimuoviamo il token città dai termini di recall (sarebbe una keyword a
+  // basso peso) e dal ranking. Se dopo la rimozione non resta nulla (query di
+  // sola città), la città resta come unico termine e la RPC filtra per p_citta.
+  const terminiSenzaCitta = termini.filter((t) => normalizza(t) !== tokenCitta);
+  if (terminiSenzaCitta.length > 0) termini = terminiSenzaCitta;
+  if (termini.length === 0) return [];
+
+  // Termini ORIGINALI digitati dall'utente: dominano il ranking (vedi ranking-negozi).
+  // Il token città è escluso per non far dominare un negozio che ha la città
+  // nel nome (es. "Sapori di Castrovillari" per "pizza a Castrovillari").
+  let terminiOriginaliNegozi = terminiOriginali(ricerca);
+  if (tokenCitta) terminiOriginaliNegozi = terminiOriginaliNegozi.filter((t) => t !== tokenCitta);
+  let terminiEspansiRanking = terminiEspansi;
+  if (tokenCitta) terminiEspansiRanking = terminiEspansi.filter((t) => normalizza(t) !== tokenCitta);
 
   let righe: any[] = [];
 
@@ -1569,11 +1631,19 @@ export async function cercaNegozi(
   if (negatiNegozi.length > 0) {
     righe = escludiNegoziPerNegazione(righe, negatiNegozi);
   }
+  // V8 — vincolo città sui candidati (copre anche il fallback ilike, dove la
+  // RPC non applica p_citta).
+  if (citta) {
+    righe = righe.filter((n) => negozioMatchaCitta(n, citta));
+  }
 
   // Nessun candidato → ricerca tollerante (refusi, accenti, plurali).
   if (righe.length === 0) {
     const tollerantiZero = await cercaNegoziTolleranti(db, ricerca);
-    return escludiNegoziPerNegazione(tollerantiZero, negatiNegozi);
+    const filtratiZero = citta
+      ? tollerantiZero.filter((n) => negozioMatchaCitta(n, citta))
+      : tollerantiZero;
+    return escludiNegoziPerNegazione(filtratiZero, negatiNegozi);
   }
 
   // RANKING finale in TypeScript: i termini ORIGINALI dominano, i sinonimi
@@ -1581,17 +1651,20 @@ export async function cercaNegozi(
   // negozio "Salute e benessere") non superano mai un negozio che matcha
   // davvero il termine digitato (es. "farmacia" in una farmacia).
   const conPunteggio = righe.filter(
-    (negozio) => calcolaPunteggioNegozioConEspansione(negozio, terminiOriginaliNegozi, terminiEspansi) > 0
+    (negozio) => calcolaPunteggioNegozioConEspansione(negozio, terminiOriginaliNegozi, terminiEspansiRanking) > 0
   );
   const esatti = filtraNegoziPerPertinenzaConEspansione(
     conPunteggio.length > 0 ? conPunteggio : righe,
     terminiOriginaliNegozi,
-    terminiEspansi
+    terminiEspansiRanking
   );
 
   if (esatti.length > 0) return esatti;
   const tolleranti = await cercaNegoziTolleranti(db, ricerca);
-  return escludiNegoziPerNegazione(tolleranti, negatiNegozi);
+  const filtratiToll = citta
+    ? tolleranti.filter((n) => negozioMatchaCitta(n, citta))
+    : tolleranti;
+  return escludiNegoziPerNegazione(filtratiToll, negatiNegozi);
 }
 
 /**
