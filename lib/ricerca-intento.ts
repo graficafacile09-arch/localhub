@@ -284,7 +284,12 @@ export function analizzaRichiesta(query: string): IntentoRicerca {
   // Un termine-categoria isolato ("farmacia", "medico cardiologo") NON è un
   // bisogno dichiarato: senza marcatore di bisogno lo trattiamo come ricerca
   // diretta per non allargare inutilmente il recall né toccare le query semplici.
-  if (!RE_FRAMING_NEED.test(q)) {
+  // MA una negazione NON deve sopprimere l'intento positivo: "regalo non
+  // alimentare" resta comunque un bisogno regalo (espansione positiva sulla
+  // gioielleria/artigianato), e la negazione viene applicata solo in esclusione
+  // finale. Altrimenti Barone Gioielli marcerebbe senza concetti e sparirebbe.
+  const haNegazione = /\b(non|senza|niente|nulla|nullific)\b/i.test(q);
+  if (!RE_FRAMING_NEED.test(q) && !haNegazione) {
     return { queryOriginale: q, tipo: "esplicita", intento: null, concetti: [], confidence: null };
   }
 
@@ -317,4 +322,75 @@ export function espandiQueryIbrida(query: string): string {
 export function concettiIntento(query: string): string {
   const concetti = analizzaRichiesta(query).concetti;
   return concetti.join(" ").trim();
+}
+
+// ─── NEGAZIONI / VINCOLI NEGATIVI (V6-A) ────────────────────────────────────
+// Le negazioni NON toccano la query originale (che resta sempre al retrieval):
+// producono solo un VINCOLO di ESCLUSIONE applicato DOPO il recupero. Se non
+// si riesce a determinare con affidabilità cosa escludere, non si esclude nulla.
+
+// Le parole che NON sono mai il "concetto" negato: marcatori e funtori.
+const STOP_NEGAZIONE: ReadonlySet<string> = new Set([
+  "non", "senza", "niente", "nulla", "nullo", "voglio", "vorrei", "cerco",
+  "cercando", "cerchiamo", "desidero", "ho", "abbiamo", "serve", "servire",
+  "mi", "ti", "un", "una", "uno", "dei", "delle", "degli", "della", "del",
+  "di", "da", "a", "per", "con", "in", "su", "al", "alla", "alle", "allo",
+  "ai", "agli", "tra", "fra", "ma", "e", "ed", "o", "che", "posso", "voglio",
+  "andare", "andiamo", "più", "piu", "ancora", "quindi", "proprio", "quello",
+  "quella", "questi", "queste", "questo", "questa", "il", "lo", "la", "le", "gli",
+  "i", "di", "della", "delle", "dei", "degli", "del", "punto", "ne",
+]);
+
+// Termini "sostanziali" della frase dopo il marcatore di negazione. Es.
+// "regalo non alimentare" → dopo "non" ⇒ ["alimentare"];
+// "non voglio una pizzeria" → dopo "non" ⇒ ["pizzeria"];
+// "senza pesce" → dopo "senza" ⇒ ["pesce"].
+function terminiDopoNegatore(q: string): string[] {
+  const m = q.match(/\b(non|senza|niente|nulla|nulli)\b/i);
+  if (!m || m.index === undefined) return [];
+  const dopo = (m.index ?? 0) + m[0].length;
+  const token = q
+    .slice(dopo)
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .map((t) => t.trim())
+    .filter((t) => t && !STOP_NEGAZIONE.has(t))
+    .slice(0, 5);
+  // Tiene il TERMINE TESTA (l'ultimo sostantivo sostanziale dopo il negatore):
+  // "non voglio prodotti alimentari" → "alimentari", non il generico "prodotti".
+  // Conservativo: un solo concetto negato, il più specifico.
+  return token.length > 0 ? [token[token.length - 1]] : [];
+}
+
+/**
+ * V6-A: i termini da ESCLUDERE (vincolo negativo), NORMALIZZATI. Vuoto = nessun
+ * vincolo. La query originale non viene mai modificata: questi termini servono
+ * solo al filtraggio POST-retrieval. Conservativo: si esclude solo ciò che in
+ * modo affidabile corrisponde al concetto negato (match nei campi strutturati).
+ */
+export function esclusioniNegazione(query: string): string[] {
+  const q = (query ?? "").trim();
+  if (!q) return [];
+  // Negazione esplicita presente?
+  if (!/\b(non|senza|niente|nulla|nullific)\b/i.test(q)) return [];
+  return terminiDopoNegatore(q);
+}
+
+/** Se la query contiene un qualificatore di budget (prodotto economico). */
+export function haQualificatoreEconomico(query: string): boolean {
+  return /(economi?c?\w*|convenient\w*|a\s+basso\s+prezzo|poco\s+caro|sotto\s+prezzo|price)/i.test(
+    (query ?? "").trim()
+  );
+}
+
+/** Se la query contiene un qualificatore "tranquillo" (senza segnale affidabile). */
+export function haQualificatoreTranquillo(query: string): boolean {
+  return /\btranquill/i.test((query ?? "").trim());
+}
+
+/** Se la query esprime un vincolo di recipiente/persona per regalo (dati mancanti). */
+export function haQualificatoreDestinatario(query: string): boolean {
+  return /\b(per)\s+(mia\s+madre|mia\s+mamma|mio\s+padre|papà|papa|bambin[oa]i?|ragazz[oi]|amico|amica)\b/i.test(
+    (query ?? "").trim()
+  );
 }

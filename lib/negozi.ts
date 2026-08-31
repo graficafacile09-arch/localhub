@@ -5,7 +5,11 @@ import {
 } from "./ranking-negozi";
 import { estraiToken, normalizza } from "./text-utils";
 import { espandiQueryConSinonimi, espandiQueryConSinonimiBase } from "./ricerca-semantica";
-import { concettiIntento } from "./ricerca-intento";
+import {
+  concettiIntento,
+  esclusioniNegazione,
+  haQualificatoreEconomico,
+} from "./ricerca-intento";
 import { createAdminSupabaseClient } from "./supabase/admin";
 import { isNumericId, isUuid, toSlug } from "./slug";
 import type { ProdottoRicerca } from "./ricerca-ai";
@@ -979,6 +983,80 @@ function prodottoRilevante(
   return false;
 }
 
+// ─── V6-A: esclusione dei risultati per vincolo negativo ─────────────────────
+// La negazione è applicata SOLO DOPO il retrieval, mai alla query di ricerca:
+// la query originale resta sempre al recupero e la negazione diventa un filtro
+// di esclusione finale. Conservativo: si esclude un negozio/prodotto solo se il
+// concetto negato corrisponde in modo affidabile ai suoi campi strutturati
+// (nome/categoria/sottocategoria/tipo) tramite la stessa matching di rilevanza
+// già usata per il positive ranking. Niente invenzione: se il match non è
+// affidabile, il record NON viene escluso.
+
+// Un record (negozio o prodotto) è "negato" se il vocabolo negato compare nei
+// campi strutturati come token rilevante (radice/prefisso, come in ranking).
+function matchNegato(valore: unknown, termineNegato: string): boolean {
+  const campo = normalizza(String(valore ?? ""));
+  const t = normalizza(termineNegato).trim();
+  if (!campo || !t || t.length < 3) return false;
+  if (campo.includes(t)) return true;
+  return estraiToken(campo).some((token) => {
+    const radiceNegato = t.slice(0, 4);
+    return token.length >= 3 && token.startsWith(radiceNegato);
+  });
+}
+
+/** Campi "identità" di un negozio usati per valutare il vincolo negativo. */
+function campiNegazioneNegozio(n: Record<string, unknown>): unknown[] {
+  const tipo =
+    n.tipo_attivita ??
+    (n.data as { tipo_attivita?: unknown } | null | undefined)?.tipo_attivita ??
+    "";
+  return [n.nome, n.categoria, n.sottocategoria, tipo, n.parole_chiave, n.servizi];
+}
+
+/** Espande un termine negato nel suo GRUPPO di sinonimi reale (es. "alimentare"
+ *  → panificio/forno/pane/gastronomia...). Così la negazione esclude anche le
+ *  attività il cui nome/categoria non contiene il vocabolo letterale ma è comunque
+ *  del concetto negato. Riusa la tassonomia esistente: nessun dizionario nuovo. */
+function terminiNegatiEspansi(negati: string[]): string[] {
+  const set = new Set<string>();
+  for (const neg of negati) {
+    set.add(neg);
+    const grp = espandiQueryConSinonimi(neg).split(/\s+/).map((t) => t.trim()).filter(Boolean);
+    for (const t of grp) set.add(t);
+  }
+  return Array.from(set).filter((t) => t.length >= 3);
+}
+
+/** Filtra i negozi rimuovendo quelli che matchano in modo affidabile la negazione. */
+function escludiNegoziPerNegazione(
+  negozi: Record<string, unknown>[],
+  negati: string[]
+): Record<string, unknown>[] {
+  if (!negati || negati.length === 0) return negozi;
+  const espansi = terminiNegatiEspansi(negati);
+  return negozi.filter(
+    (n) => !espansi.some((neg) => campiNegazioneNegozio(n).some((c) => matchNegato(c, neg)))
+  );
+}
+
+/** Campi "identità" di un prodotto usati per il vincolo negativo. */
+function campiNegazioneProdotto(p: Record<string, unknown>): unknown[] {
+  return [p.nome, p.categoria, p.sottocategoria, p.marca];
+}
+
+/** Filtra i prodotti rimuovendo quelli che matchano in modo affidabile la negazione. */
+function escludiProdottiPerNegazione(
+  prodotti: Record<string, unknown>[],
+  negati: string[]
+): Record<string, unknown>[] {
+  if (!negati || negati.length === 0) return prodotti;
+  const espansi = terminiNegatiEspansi(negati);
+  return prodotti.filter(
+    (p) => !espansi.some((neg) => campiNegazioneProdotto(p).some((c) => matchNegato(c, neg)))
+  );
+}
+
 /** Riordina per punteggio, scarta gli spuri, taglia al limite. */
 function ordinaFiltraProdottiPerRilevanza(
   risultati: Record<string, unknown>[],
@@ -1135,6 +1213,28 @@ async function cercaProdottiCore(
     if (tolleranti.length > 0) {
       risultati = unisciEsattiETolleranti(risultati, tolleranti, opts.limite);
     }
+  }
+
+  // V6-A: vincolo negativo applicato SOLO sui risultati finali (query intatta).
+  const negatiProdotti = esclusioniNegazione(ricerca);
+  if (negatiProdotti.length > 0) {
+    risultati = escludiProdottiPerNegazione(risultati, negatiProdotti);
+  }
+
+  // V6-B: qualificatore "economico/conveniente" → segnale REALE di prezzo.
+  // Solo prodotti rilevanti già recuperati, senza filtri espliciti di prezzo
+  // (chi ha scelto un range non vuole un ulteriore riordino). Prezzo più basso
+  // davanti — è un dato realmente presente nel DB, non una categoria inventata.
+  if (
+    !conFiltriExtra &&
+    ricerca.trim() &&
+    haQualificatoreEconomico(ricerca) &&
+    opts.filtri.prezzoMin === undefined &&
+    opts.filtri.prezzoMax === undefined
+  ) {
+    risultati = [...risultati].sort(
+      (a, b) => Number(a.prezzo ?? 0) - Number(b.prezzo ?? 0)
+    );
   }
 
   return { risultati, total };
@@ -1460,8 +1560,21 @@ export async function cercaNegozi(
     righe = (await cercaNegoziLegacy(db, espansa, ricerca)) as any[];
   }
 
+  // V6-A: vincolo negativo estratto una sola volta (mai tocca la query di
+  // retrieval sopra). Applicato ai CANDIDATI PRIMA del ranking-threshold:
+  // così i negozi negati (food) non gonfiano il top-score e non fanno cadere
+  // sotto soglia un risultato pertinente (es. Barone Gioielli in "regalo non
+  // alimentare"). Esclusione finale anche su tolleranti.
+  const negatiNegozi = esclusioniNegazione(ricerca);
+  if (negatiNegozi.length > 0) {
+    righe = escludiNegoziPerNegazione(righe, negatiNegozi);
+  }
+
   // Nessun candidato → ricerca tollerante (refusi, accenti, plurali).
-  if (righe.length === 0) return cercaNegoziTolleranti(db, ricerca);
+  if (righe.length === 0) {
+    const tollerantiZero = await cercaNegoziTolleranti(db, ricerca);
+    return escludiNegoziPerNegazione(tollerantiZero, negatiNegozi);
+  }
 
   // RANKING finale in TypeScript: i termini ORIGINALI dominano, i sinonimi
   // espansi pesano meno. I match generici di profilo (es. "salute" in un
@@ -1477,7 +1590,8 @@ export async function cercaNegozi(
   );
 
   if (esatti.length > 0) return esatti;
-  return cercaNegoziTolleranti(db, ricerca);
+  const tolleranti = await cercaNegoziTolleranti(db, ricerca);
+  return escludiNegoziPerNegazione(tolleranti, negatiNegozi);
 }
 
 /**

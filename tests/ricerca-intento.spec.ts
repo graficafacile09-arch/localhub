@@ -4,7 +4,11 @@ import {
   analizzaRichiesta,
   concettiIntento,
   espandiQueryIbrida,
+  esclusioniNegazione,
   haConcetti,
+  haQualificatoreDestinatario,
+  haQualificatoreEconomico,
+  haQualificatoreTranquillo,
   type IntentoRicerca,
 } from "../lib/ricerca-intento";
 
@@ -259,7 +263,6 @@ test("V2 query generica 'qualcosa per cena senza specifica' NON inventa categori
   expect(r.concetti.length).toBe(0);
   expect(r.tipo).toBe("ambigua");
 });
-
 test("V2 ranking: intento non 'gonfia' una query diretta semplice (regressione pre-fe8252e)", () => {
   // 'pizza' resta esplicita e veloce: nessun concetto introdotto.
   expect(analizzaRichiesta("pizza").tipo).toBe("esplicita");
@@ -267,4 +270,101 @@ test("V2 ranking: intento non 'gonfia' una query diretta semplice (regressione p
   // 'farmacia' resta esplicita (categoria diretta), non gonfiata.
   expect(analizzaRichiesta("farmacia").tipo).toBe("esplicita");
   expect(concettiIntento("farmacia")).toBe("");
+});
+
+// ─── V6-A: NEGAZIONI / VINCOLI NEGATIVI ──────────────────────────────────────
+
+test("V6-A 'regalo non alimentare' → esclusione 'alimentare' (query originale intatta)", () => {
+  const r = analizzaRichiesta("regalo non alimentare");
+  // La negazione NON tocca la query: resta integra al retrieval.
+  expect(r.queryOriginale).toBe("regalo non alimentare");
+  // Ma produce un vincolo di esclusione affabile per il post-retrieval.
+  expect(esclusioniNegazione("regalo non alimentare")).toEqual(["alimentare"]);
+});
+
+test("V6-A 'non voglio prodotti alimentari' → esclude il termine TESTA 'alimentari'", () => {
+  // Prende l'ultimo sostantivo sostanziale (il concetto), non il generico 'prodotti'.
+  expect(esclusioniNegazione("non voglio prodotti alimentari")).toEqual(["alimentari"]);
+});
+
+test("V6-A 'non voglio una pizzeria' → esclusione 'pizzeria'", () => {
+  expect(esclusioniNegazione("non voglio una pizzeria")).toEqual(["pizzeria"]);
+});
+
+test("V6-A 'senza pesce' → esclusione 'pesce'", () => {
+  expect(esclusioniNegazione("senza pesce")).toEqual(["pesce"]);
+});
+
+test("V6-A 'non medico' → esclusione 'medico'", () => {
+  expect(esclusioniNegazione("non medico")).toEqual(["medico"]);
+});
+
+test("V6-A 'non cerco un parrucchiere' → esclusione 'parrucchiere'", () => {
+  expect(esclusioniNegazione("non cerco un parrucchiere")).toEqual(["parrucchiere"]);
+});
+
+test("V6-A query senza negazione → nessuna esclusione (zero invenzione)", () => {
+  expect(esclusioniNegazione("pizza")).toEqual([]);
+  expect(esclusioniNegazione("devo fare un regalo")).toEqual([]);
+  expect(esclusioniNegazione("mangiare pesce a Castrovillari")).toEqual([]);
+});
+
+// ─── V6-B: QUALIFICATORI ─────────────────────────────────────────────────────
+
+test("V6-B 'qualcosa di economico' → rileva qualificatore di prezzo (segnale reale)", () => {
+  expect(haQualificatoreEconomico("qualcosa di economico")).toBe(true);
+});
+
+test("V6-B 'qualcosa di economico per cena' → qualificatore budget presente", () => {
+  expect(haQualificatoreEconomico("qualcosa di economico per cena")).toBe(true);
+});
+
+test("V6-B 'un regalo economico' → qualificatore budget presente (senza gonfiare categoria)", () => {
+  expect(haQualificatoreEconomico("un regalo economico")).toBe(true);
+  // resta una ricerca esplicita: 'economico' NON diventa una categoria inventata.
+  expect(concettiIntento("un regalo economico")).toBe("");
+});
+
+test("V6-B 'pizza' NON ha qualificatore budget (query semplici invariate)", () => {
+  expect(haQualificatoreEconomico("pizza")).toBe(false);
+});
+
+test("V6-B 'un posto tranquillo' → qualificatore tranquillo senza categoria inventata", () => {
+  expect(haQualificatoreTranquillo("un posto tranquillo")).toBe(true);
+  expect(concettiIntento("un posto tranquillo")).toBe("");
+});
+
+test("V6-B destinatario per regalo riconosciuto ma senza segnale DB (grounded)", () => {
+  expect(haQualificatoreDestinatario("un regalo per mia madre")).toBe(true);
+  expect(haQualificatoreDestinatario("un regalo")).toBe(false);
+});
+
+test("V6-B qualificatori non inventano risultati per 'boh'", () => {
+  expect(analizzaRichiesta("boh").tipo).toBe("ambigua");
+  expect(esclusioniNegazione("boh")).toEqual([]);
+  expect(haQualificatoreEconomico("boh")).toBe(false);
+});
+
+// ─── V6-C: REGRESSIONI ranking (invarianza query semplici) ──────────────────
+
+test("V6-C 'pizza' non viene gonfiata inutilmente", () => {
+  expect(analizzaRichiesta("pizza").tipo).toBe("esplicita");
+  expect(esclusioniNegazione("pizza")).toEqual([]);
+});
+
+test("V6-C 'mangiare pesce a Castrovillari' mantiene località E intento senza negazione", () => {
+  const r = analizzaRichiesta("mangiare pesce a Castrovillari");
+  expect(r.queryOriginale.toLowerCase()).toContain("castrovillari");
+  expect(esclusioniNegazione("mangiare pesce a Castrovillari")).toEqual([]);
+});
+
+test("V6-C 'parrucchiere' resta esplicita senza esclusioni né qualificatori", () => {
+  expect(analizzaRichiesta("parrucchiere").tipo).toBe("esplicita");
+  expect(esclusioniNegazione("parrucchiere")).toEqual([]);
+  expect(haQualificatoreEconomico("parrucchiere")).toBe(false);
+});
+
+test("V6-C 'panifficio' resta esplicita (refuso gestito da fuzzy, niente negazione)", () => {
+  expect(analizzaRichiesta("panifficio").tipo).toBe("esplicita");
+  expect(esclusioniNegazione("panifficio")).toEqual([]);
 });
