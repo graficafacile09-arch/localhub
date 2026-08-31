@@ -32,6 +32,16 @@ import {
   type OrdinamentoProdottiPubblici,
 } from "./negozi";
 import type { NegozioRicerca, ProdottoRicerca } from "./ricerca-ai";
+import {
+  analizzaRichiesta,
+  dovrebbeUsareMotoreRobusto,
+  espandiQueryIbrida,
+} from "./assistente/interprete";
+import {
+  cercaNegoziRobusti,
+  cercaProdottiRobusti,
+  unisciPerId,
+} from "./assistente/ricerca-estesa";
 
 // ─── Tipi pubblici ────────────────────────────────────────────────────────────
 
@@ -131,6 +141,7 @@ export async function search(
   let negozi: NegozioRicerca[] = [];
   let prodotti: ProdottoRicerca[] = [];
   let total = 0;
+  let queryExpandedRv: string | null = null;
 
   if (usaOpzioni) {
     const ordina: OrdinamentoProdottiPubblici = isOrdinamentoProdottiPubblici(opts.ordina)
@@ -157,6 +168,7 @@ export async function search(
       negozi = (await cercaNegozi(termine)) as NegozioRicerca[];
     }
   } else {
+    // 1) Retrieval diretto (veloce, compatibile con il comportamento storico).
     const [n, p] = await Promise.all([
       cercaNegozi(termine),
       cercaProdotti(termine, 20),
@@ -164,6 +176,31 @@ export async function search(
     negozi = (n ?? []) as NegozioRicerca[];
     prodotti = (p ?? []) as ProdottoRicerca[];
     total = prodotti.length;
+
+    // 2) Motore ROBUSTO condiviso (stesso interprete + ricerca-estesa
+    //    dell'Assistente, nessuna duplicazione né chiamata AI): impiegato solo
+    //    quando serve davvero — cascade su zero risultati, oppure query
+    //    descrittive/ambigue con località o concetto chiaro. Le query semplici
+    //    con risultati restano immediate e identiche.
+    const analisi = analizzaRichiesta(termine);
+    const primarioVuoto = negozi.length === 0 && prodotti.length === 0;
+    if (dovrebbeUsareMotoreRobusto(analisi, primarioVuoto)) {
+      const [rn, rp] = await Promise.all([
+        cercaNegoziRobusti({
+          query: termine,
+          citta: analisi.citta ?? undefined,
+          tipo: analisi.tipoAttivita?.[0] ?? undefined,
+          limit: 8,
+        }),
+        cercaProdottiRobusti({ query: termine, limit: 10 }),
+      ]);
+      // Fusione con dedup per id: prima i risultati diretti (ordine invariato),
+      // poi solo quelli nuovi dal recall multi-variante.
+      negozi = unisciPerId<NegozioRicerca>(negozi, rn ?? []).slice(0, 12);
+      prodotti = unisciPerId<ProdottoRicerca>(prodotti, rp ?? []).slice(0, 20);
+      total = prodotti.length;
+      queryExpandedRv = espandiQueryIbrida(termine);
+    }
   }
 
   return {
@@ -174,7 +211,7 @@ export async function search(
     source: "fallback",
     intent: null,
     intentConfidence: null,
-    queryExpanded: null,
+    queryExpanded: queryExpandedRv,
     processingMs: Date.now() - startTime,
   };
 }
