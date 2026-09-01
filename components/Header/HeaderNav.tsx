@@ -80,7 +80,7 @@ export default function HeaderNav() {
                   aria-hidden
                   className={`h-6 w-6 transition-colors duration-200 max-sm:h-[22px] max-sm:w-[22px] ${
                     voce.attiva
-                      ? "text-brand-dark"
+                      ? "text-yellow-400"
                       : "text-yellow-400 group-hover:text-yellow-500"
                   }`}
                 />
@@ -90,7 +90,7 @@ export default function HeaderNav() {
               <span
                 className={`whitespace-nowrap text-xs font-bold leading-none tracking-tight transition-colors duration-200 sm:text-sm ${
                   voce.attiva
-                    ? "text-brand-dark"
+                    ? "text-yellow-500"
                     : "text-yellow-500 group-hover:text-yellow-600"
                 }`}
               >
@@ -112,7 +112,7 @@ export default function HeaderNav() {
               <span
                 aria-hidden
                 className={`mt-1 h-1 w-8 rounded-full transition-opacity duration-200 max-sm:w-6 ${
-                  voce.attiva ? "bg-brand opacity-100" : "bg-transparent opacity-0"
+                  voce.attiva ? "bg-yellow-400 opacity-100" : "bg-transparent opacity-0"
                 }`}
               />
             </Link>
