@@ -265,7 +265,7 @@ export default async function PaginaNegozio({
               href={buildMapsUrl()}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-slate-200/80 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 shadow-sm transition hover:border-blue-300 hover:text-blue-700"
+              className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-blue-200/80 bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700 shadow-sm transition hover:border-blue-300 hover:bg-blue-100 hover:text-blue-800"
             >
               <MapPin className="h-3 w-3 shrink-0 text-yellow-500" aria-hidden />
               <span className="min-w-0 truncate">{negozio.indirizzo as string}</span>
@@ -274,7 +274,7 @@ export default async function PaginaNegozio({
           {negozio.telefono && (
             <a
               href={`tel:${negozio.telefono as string}`}
-              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/80 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 shadow-sm transition hover:border-blue-300 hover:text-blue-700"
+              className="inline-flex items-center gap-1.5 rounded-full border border-blue-200/80 bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-700 shadow-sm transition hover:border-blue-300 hover:bg-blue-100 hover:text-blue-800"
             >
               <Phone className="h-3 w-3 text-yellow-500" aria-hidden />
               {negozio.telefono as string}

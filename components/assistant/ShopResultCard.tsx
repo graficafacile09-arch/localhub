@@ -92,7 +92,7 @@ export default function ShopResultCard({ negozio, rank }: ShopResultCardProps) {
             href={buildMapsUrl(negozio.indirizzo)}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold text-slate-600 transition hover:border-blue-300 hover:text-blue-700"
+            className="inline-flex items-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1 text-[11px] font-bold text-blue-700 transition hover:border-blue-300 hover:bg-blue-100 hover:text-blue-800"
           >
             <Navigation className="h-3 w-3" />
             Mappa
