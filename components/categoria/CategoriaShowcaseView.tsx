@@ -35,7 +35,7 @@ export default function CategoriaShowcaseView({
         </p>
         <Link
           href="/categorie"
-          className="mt-6 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white transition hover:bg-yellow-400 hover:text-blue-900"
+          className="mt-6 inline-flex items-center gap-2 rounded-xl bg-yellow-400 px-6 py-3 text-sm font-bold text-blue-800 transition hover:bg-yellow-300"
         >
           <ArrowLeft className="h-4 w-4" />
           Torna alle categorie
@@ -80,7 +80,7 @@ export default function CategoriaShowcaseView({
           </p>
           <Link
             href="/categorie"
-            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white transition hover:bg-yellow-400 hover:text-blue-900"
+            className="mt-6 inline-flex items-center gap-2 rounded-xl bg-yellow-400 px-6 py-3 text-sm font-bold text-blue-800 transition hover:bg-yellow-300"
           >
             <ArrowLeft className="h-4 w-4" />
             Torna alle categorie

@@ -82,7 +82,7 @@ export default function ShopResultCard({ negozio, rank }: ShopResultCardProps) {
         <Link
           href={hrefNegozio}
           onClick={chiudiAssistente}
-          className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-2.5 py-1 text-[11px] font-bold text-white transition hover:bg-yellow-400 hover:text-blue-900"
+          className="inline-flex items-center gap-1 rounded-lg bg-yellow-400 px-2.5 py-1 text-[11px] font-bold text-blue-800 transition hover:bg-yellow-300"
         >
           <ExternalLink className="h-3 w-3" />
           Scheda
@@ -92,7 +92,7 @@ export default function ShopResultCard({ negozio, rank }: ShopResultCardProps) {
             href={buildMapsUrl(negozio.indirizzo)}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold text-slate-600 transition hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-800"
+            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold text-slate-600 transition hover:border-blue-300 hover:text-blue-700"
           >
             <Navigation className="h-3 w-3" />
             Mappa

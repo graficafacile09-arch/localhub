@@ -346,7 +346,7 @@ export default function SegnalazioniModule() {
               onKeyDown={(e) => e.key === "Enter" && applicaFiltri()}
               placeholder="Cerca per titolo, descrizione, email, oggetto..."
               aria-label="Cerca segnalazioni"
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 pl-10 pr-4 text-sm font-medium text-slate-700 placeholder:text-slate-400 transition focus:border-yellow-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-yellow-100"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 pl-10 pr-4 text-sm font-medium text-slate-700 placeholder:text-slate-400 transition focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100"
             />
           </div>
 
@@ -355,7 +355,7 @@ export default function SegnalazioniModule() {
               value={stato}
               onChange={(e) => setStato(e.target.value)}
               onBlur={applicaFiltri}
-              className="h-10 rounded-xl border border-slate-200 bg-slate-50/50 px-3 text-sm font-medium text-slate-700 transition focus:border-yellow-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-yellow-100"
+              className="h-10 rounded-xl border border-slate-200 bg-slate-50/50 px-3 text-sm font-medium text-slate-700 transition focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100"
             >
               <option value="">Tutti gli stati</option>
               {Object.entries(STATO_LABELS).map(([val, label]) => (
@@ -369,7 +369,7 @@ export default function SegnalazioniModule() {
               value={priorita}
               onChange={(e) => setPriorita(e.target.value)}
               onBlur={applicaFiltri}
-              className="h-10 rounded-xl border border-slate-200 bg-slate-50/50 px-3 text-sm font-medium text-slate-700 transition focus:border-yellow-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-yellow-100"
+              className="h-10 rounded-xl border border-slate-200 bg-slate-50/50 px-3 text-sm font-medium text-slate-700 transition focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100"
             >
               <option value="">Tutte le priorità</option>
               {Object.entries(PRIORITA_LABELS).map(([val, label]) => (
@@ -383,7 +383,7 @@ export default function SegnalazioniModule() {
               value={tipo}
               onChange={(e) => setTipo(e.target.value)}
               onBlur={applicaFiltri}
-              className="h-10 rounded-xl border border-slate-200 bg-slate-50/50 px-3 text-sm font-medium text-slate-700 transition focus:border-yellow-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-yellow-100"
+              className="h-10 rounded-xl border border-slate-200 bg-slate-50/50 px-3 text-sm font-medium text-slate-700 transition focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100"
             >
               <option value="">Tutti i tipi</option>
               {Object.entries(TIPO_LABELS).map(([val, label]) => (
@@ -398,8 +398,8 @@ export default function SegnalazioniModule() {
               onClick={() => ordinaPer("priorita")}
               className={`inline-flex h-10 items-center gap-1.5 rounded-xl border px-3 text-xs font-bold transition ${
                 filtri.orderBy === "priorita"
-                  ? "border-yellow-300 bg-yellow-50 text-yellow-800"
-                  : "border-slate-200 bg-white text-slate-600 hover:border-yellow-200 hover:bg-yellow-50 hover:text-yellow-800"
+                  ? "border-blue-300 bg-blue-50 text-blue-700"
+                  : "border-slate-200 bg-slate-50/50 text-slate-600 hover:bg-slate-100"
               }`}
             >
               Ordina per priorità
@@ -516,7 +516,7 @@ export default function SegnalazioniModule() {
             <button
               type="button"
               onClick={() => setSelezionata(null)}
-              className="absolute right-5 top-5 flex h-9 w-9 items-center justify-center rounded-xl bg-yellow-100 text-yellow-700 transition hover:bg-yellow-200"
+              className="absolute right-5 top-5 flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-500 transition hover:bg-slate-200"
             >
               <X className="h-5 w-5" aria-hidden />
             </button>
@@ -566,7 +566,7 @@ export default function SegnalazioniModule() {
                   <select
                     value={modificaStato}
                     onChange={(e) => setModificaStato(e.target.value as SegnalazioneStato)}
-                    className="w-full h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-800 focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100"
+                    className="w-full h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                   >
                     {Object.entries(STATO_LABELS).map(([val, label]) => (
                       <option key={val} value={val}>
@@ -583,7 +583,7 @@ export default function SegnalazioniModule() {
                   <select
                     value={modificaPriorita}
                     onChange={(e) => setModificaPriorita(e.target.value as SegnalazionePriorita)}
-                    className="w-full h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-800 focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100"
+                    className="w-full h-11 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                   >
                     {Object.entries(PRIORITA_LABELS).map(([val, label]) => (
                       <option key={val} value={val}>
@@ -603,7 +603,7 @@ export default function SegnalazioniModule() {
                   value={modificaNote}
                   onChange={(e) => setModificaNote(e.target.value)}
                   placeholder="Aggiungi note ad uso interno degli amministratori..."
-                  className="w-full rounded-xl border border-slate-200 bg-white p-3 text-sm font-medium text-slate-800 focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100"
+                  className="w-full rounded-xl border border-slate-200 bg-white p-3 text-sm font-medium text-slate-800 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                 />
               </div>
 
@@ -617,7 +617,7 @@ export default function SegnalazioniModule() {
                 <button
                   type="button"
                   onClick={() => setSelezionata(null)}
-                  className="h-11 px-4 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:border-yellow-200 hover:bg-yellow-50 hover:text-yellow-800 transition"
+                  className="h-11 px-4 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition"
                 >
                   Annulla
                 </button>

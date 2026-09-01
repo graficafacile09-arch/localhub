@@ -184,7 +184,7 @@ export default function UtentiModule({
                 type="button"
                 aria-label="Chiudi nuovo utente"
                 onClick={() => { setMostraNuovo(false); setErrore(null); }}
-                className="rounded-xl px-3 py-2 text-sm font-bold text-slate-500 transition hover:bg-yellow-100 hover:text-yellow-800"
+                className="rounded-xl px-3 py-2 text-sm font-bold text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
               >
                 Chiudi
               </button>
@@ -199,7 +199,7 @@ export default function UtentiModule({
               </div>
               {errore && <p role="alert" className="mt-3 rounded-xl bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700">{errore}</p>}
               <div className="mt-6 flex justify-end gap-2">
-                <button type="button" onClick={() => { setMostraNuovo(false); setErrore(null); }} className="rounded-xl px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-yellow-100 hover:text-yellow-800">Annulla</button>
+                <button type="button" onClick={() => { setMostraNuovo(false); setErrore(null); }} className="rounded-xl px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-100">Annulla</button>
                 <button disabled={creando} type="submit" className="btn-cta px-4 py-2.5 text-sm disabled:opacity-60">{creando ? "Creazione..." : "Crea utente"}</button>
               </div>
             </form>
@@ -217,7 +217,7 @@ export default function UtentiModule({
               value={ricerca}
               onChange={(event) => setRicerca(event.target.value)}
               placeholder="Cerca nome, email o ruolo..."
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-yellow-400 focus:bg-white focus:ring-2 focus:ring-yellow-100"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100"
             />
           </label>
           <div className="flex flex-wrap items-center gap-2">
@@ -226,7 +226,7 @@ export default function UtentiModule({
               <select
                 value={ordinamento}
                 onChange={(event) => cambiaOrdinamento(event.target.value as OrdinamentoUtenti)}
-                className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100"
+                className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
               >
                 <option value="nome">Nome</option>
                 <option value="email">Email</option>
@@ -240,7 +240,7 @@ export default function UtentiModule({
               onClick={() => setDirezione((precedente) => (precedente === "asc" ? "desc" : "asc"))}
               aria-label={`Ordinamento ${direzione === "asc" ? "crescente" : "decrescente"}`}
               title={`Ordine ${direzione === "asc" ? "crescente" : "decrescente"}`}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-800"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
             >
               <ChevronsUpDown className="h-4 w-4" aria-hidden />
             </button>
@@ -249,7 +249,7 @@ export default function UtentiModule({
               <select
                 value={perPagina}
                 onChange={(event) => setPerPagina(Number(event.target.value))}
-                className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100"
+                className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
               >
                 <option value={10}>10</option>
                 <option value={25}>25</option>
@@ -284,7 +284,7 @@ export default function UtentiModule({
                 type="button"
                 aria-label="Chiudi dettaglio utente"
                 onClick={() => setUtenteDettaglio(null)}
-                className="rounded-xl p-2 text-slate-400 transition hover:bg-yellow-100 hover:text-yellow-700"
+                className="rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
               >
                 <X className="h-5 w-5" aria-hidden />
               </button>
@@ -332,7 +332,7 @@ export default function UtentiModule({
               onClick={() => setPagina((precedente) => Math.max(1, precedente - 1))}
               disabled={paginaEffettiva <= 1}
               aria-label="Pagina precedente"
-              className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-800 disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
             >
               <ChevronLeft className="h-4 w-4" aria-hidden />
             </button>
@@ -344,7 +344,7 @@ export default function UtentiModule({
               onClick={() => setPagina((precedente) => Math.min(numeroPagine, precedente + 1))}
               disabled={paginaEffettiva >= numeroPagine}
               aria-label="Pagina successiva"
-              className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-800 disabled:cursor-not-allowed disabled:opacity-40"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
             >
               <ChevronRight className="h-4 w-4" aria-hidden />
             </button>

@@ -89,7 +89,7 @@ export default function AggiungiAlCarrelloButton({
         </p>
         <Link
           href="/carrello"
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-base font-bold text-white shadow-sm transition hover:bg-yellow-400 hover:text-blue-900 active:scale-[0.98]"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-yellow-400 px-4 py-3 text-base font-bold text-blue-800 shadow-sm transition hover:bg-yellow-300 active:scale-[0.98]"
         >
           <ShoppingCart className="h-5 w-5" aria-hidden />
           Vai al carrello
@@ -108,7 +108,7 @@ export default function AggiungiAlCarrelloButton({
       className={`flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-3 text-base font-bold shadow-sm transition ${
         disabled
           ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400 opacity-60"
-          : "border-yellow-300 bg-yellow-50 text-yellow-800 hover:border-yellow-400 hover:bg-yellow-100 active:scale-[0.98]"
+          : "border-blue-200 bg-white text-blue-700 hover:border-blue-400 hover:bg-blue-50 active:scale-[0.98]"
       }`}
     >
       <ShoppingCart className="h-5 w-5" aria-hidden />

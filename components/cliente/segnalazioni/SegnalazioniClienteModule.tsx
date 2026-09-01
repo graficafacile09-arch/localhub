@@ -95,7 +95,7 @@ export default function SegnalazioniClienteModule() {
             <select
               value={tipo}
               onChange={(e) => setTipo(e.target.value as SegnalazioneTipo)}
-              className="w-full h-10 rounded-xl border border-slate-200 bg-slate-50/50 px-3 text-sm font-medium text-slate-800 focus:border-yellow-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-yellow-100"
+              className="w-full h-10 rounded-xl border border-slate-200 bg-slate-50/50 px-3 text-sm font-medium text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100"
             >
               {Object.entries(TIPO_LABELS).map(([val, label]) => (
                 <option key={val} value={val}>
@@ -116,7 +116,7 @@ export default function SegnalazioniClienteModule() {
               value={titolo}
               onChange={(e) => setTitolo(e.target.value)}
               placeholder="Es. Orari errati per la Pizzeria Da Luigi"
-              className="w-full h-10 rounded-xl border border-slate-200 bg-slate-50/50 px-4 text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:border-yellow-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-yellow-100"
+              className="w-full h-10 rounded-xl border border-slate-200 bg-slate-50/50 px-4 text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100"
             />
           </div>
 
@@ -131,7 +131,7 @@ export default function SegnalazioniClienteModule() {
               value={descrizione}
               onChange={(e) => setDescrizione(e.target.value)}
               placeholder="Descrivi in dettaglio il problema riscontrato..."
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 p-4 text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:border-yellow-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-yellow-100"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 p-4 text-sm font-medium text-slate-800 placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100"
             />
           </div>
 

@@ -29,7 +29,7 @@ export default function HeroSearchBar() {
           />
           <button
             type="submit"
-            className="hidden shrink-0 items-center gap-2 rounded-full bg-blue-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-yellow-400 hover:text-blue-900 active:scale-95 sm:inline-flex"
+            className="hidden shrink-0 items-center gap-2 rounded-full bg-yellow-400 px-5 py-2.5 text-sm font-bold text-blue-900 transition hover:bg-yellow-300 active:scale-95 sm:inline-flex"
           >
             <Search className="h-4 w-4" />
             Cerca
@@ -37,7 +37,7 @@ export default function HeroSearchBar() {
           <button
             type="submit"
             aria-label="Cerca"
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white transition hover:bg-yellow-300 active:scale-95 sm:hidden"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-yellow-400 text-blue-900 transition hover:bg-yellow-300 active:scale-95 sm:hidden"
           >
             <Search className="h-4 w-4" />
           </button>

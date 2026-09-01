@@ -98,7 +98,7 @@ export default async function OrdiniPage({
                 className={`inline-flex h-9 items-center gap-2 rounded-full px-3.5 text-xs font-bold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500 ${
                   attivo
                     ? "bg-yellow-400 text-blue-900 shadow-sm"
-                    : "border border-blue-300 bg-white text-blue-700 hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-800"
+                    : "border border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:text-blue-700"
                 }`}
               >
                 {f.etichetta}

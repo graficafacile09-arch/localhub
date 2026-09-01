@@ -13,7 +13,7 @@ export default function AssistantNavButton() {
     <button
       type="button"
       onClick={() => window.dispatchEvent(new Event("assistant:open"))}
-      className="inline-flex items-center rounded-full bg-blue-600 px-3.5 py-1.5 text-sm font-bold text-white transition-colors hover:bg-yellow-400 hover:text-blue-900 active:scale-95"
+      className="inline-flex items-center rounded-full bg-yellow-400 px-3.5 py-1.5 text-sm font-bold text-blue-900 transition-colors hover:bg-yellow-300 active:scale-95"
     >
       <span>Assistente AI</span>
     </button>

@@ -201,7 +201,7 @@ export default function ClienteProfiloModule() {
           <button
             type="button"
             onClick={handleRiprova}
-            className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-yellow-400 hover:text-blue-900"
+            className="inline-flex items-center gap-2 rounded-xl bg-yellow-400 px-5 py-2.5 text-sm font-bold text-blue-800 transition hover:bg-yellow-300"
           >
             Riprova
           </button>
@@ -411,7 +411,7 @@ export default function ClienteProfiloModule() {
             type="button"
             onClick={handleCambiaPassword}
             disabled={salvandoPassword || password.length < 6 || password !== confermaPassword}
-            className="inline-flex h-11 items-center gap-2 rounded-xl bg-blue-600 px-6 text-sm font-bold text-white shadow-md shadow-blue-500/25 transition hover:bg-yellow-400 hover:text-blue-900 active:scale-[0.98] disabled:opacity-50"
+            className="inline-flex h-11 items-center gap-2 rounded-xl bg-yellow-400 px-6 text-sm font-bold text-blue-800 shadow-md shadow-blue-500/25 transition hover:bg-yellow-300 active:scale-[0.98] disabled:opacity-50"
           >
             {salvandoPassword ? "Aggiornamento..." : "Cambia password"}
           </button>

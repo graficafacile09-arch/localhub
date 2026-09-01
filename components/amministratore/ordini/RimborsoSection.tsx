@@ -183,7 +183,7 @@ export default function RimborsoSection({
             <button
               type="button"
               onClick={() => !inviando && setAperto(false)}
-              className="absolute right-3 top-3 rounded-lg p-1.5 text-slate-400 transition hover:bg-yellow-100 hover:text-yellow-800"
+              className="absolute right-3 top-3 rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
               aria-label="Chiudi"
             >
               <X className="h-4 w-4" />
@@ -210,7 +210,7 @@ export default function RimborsoSection({
                   value={importo}
                   onChange={(e) => setImporto(e.target.value)}
                   disabled={inviando}
-                  className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-100"
+                  className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
                 />
                 <p className="mt-1 text-[11px] text-slate-400">
                   Importo massimo rimborsabile: {formattaEuro(residuo)}
@@ -229,7 +229,7 @@ export default function RimborsoSection({
                   rows={2}
                   maxLength={200}
                   placeholder="Es. articolo non disponibile, richiesta cliente…"
-                  className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-100"
+                  className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
                 />
               </div>
 
@@ -263,7 +263,7 @@ export default function RimborsoSection({
                   type="button"
                   onClick={() => !inviando && setAperto(false)}
                   disabled={inviando}
-                  className="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-800"
+                  className="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-slate-300"
                 >
                   Annulla
                 </button>

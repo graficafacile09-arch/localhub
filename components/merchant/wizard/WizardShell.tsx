@@ -505,7 +505,7 @@ export default function WizardShell() {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-yellow-50"
+                className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
               >
                 Carica logo
               </button>
@@ -607,7 +607,7 @@ export default function WizardShell() {
           type="button"
           onClick={handleSubmit}
           disabled={saving}
-          className="w-full rounded-xl bg-blue-600 px-6 py-3 text-xs font-bold text-white transition hover:bg-yellow-400 hover:text-blue-900 disabled:opacity-50"
+          className="w-full rounded-xl bg-yellow-400 px-6 py-3 text-xs font-bold text-blue-800 transition hover:bg-yellow-300 disabled:opacity-50"
         >
           {saving ? (
             <div className="flex items-center justify-center gap-2">

@@ -278,7 +278,7 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
             <>
               <Link
                 href={`/prodotto/${prodotto.slug}/acquista`}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-base font-bold text-white shadow-sm transition hover:bg-yellow-400 hover:text-blue-900"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-yellow-400 px-4 py-3 text-base font-bold text-blue-800 shadow-sm transition hover:bg-yellow-300"
               >
                 <ShoppingBag className="h-5 w-5" />
                 ACQUISTA
@@ -356,7 +356,7 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
               {!eIlMioProdotto && (
                 <Link
                   href={`/prodotto/${prodotto.slug}/acquista`}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-yellow-400 hover:text-blue-900"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-yellow-400 px-3 py-1.5 text-xs font-bold text-blue-800 transition hover:bg-yellow-300"
                 >
                   <ShoppingBag className="h-3.5 w-3.5" />
                   Acquista

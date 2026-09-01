@@ -39,7 +39,7 @@ type Props = {
 };
 
 const selectCls =
-  "h-8 w-full rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-700 focus:border-yellow-400 focus:outline-none focus:ring-1 focus:ring-yellow-200";
+  "h-8 w-full rounded-lg border border-slate-200 bg-white px-2 text-xs text-slate-700 focus:border-blue-300 focus:outline-none focus:ring-1 focus:ring-blue-300";
 const labelCls = "mb-1 block text-[10px] font-bold uppercase tracking-wide text-slate-500";
 
 function Select({
@@ -148,7 +148,7 @@ export default function SearchFilters({
           name="disponibile"
           value="1"
           defaultChecked={current.soloDisponibili ?? false}
-          className="h-3.5 w-3.5 rounded border-slate-300 text-yellow-500 focus:ring-yellow-300"
+          className="h-3.5 w-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-300"
         />
         Solo disponibili
       </label>
@@ -162,13 +162,13 @@ export default function SearchFilters({
         {campi}
         <button
           type="submit"
-          className="inline-flex h-8 items-center gap-1 rounded-lg bg-blue-600 px-3 text-xs font-bold text-white transition hover:bg-yellow-400 hover:text-blue-900"
+          className="inline-flex h-8 items-center gap-1 rounded-lg bg-yellow-400 px-3 text-xs font-bold text-blue-800 transition hover:bg-yellow-300"
         >
           Applica
         </button>
         <a
           href={resetUrl}
-          className="inline-flex h-8 items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 transition hover:border-yellow-200 hover:bg-yellow-50 hover:text-yellow-800"
+          className="inline-flex h-8 items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 transition hover:bg-slate-50"
         >
           <RotateCcw className="h-3 w-3" />
           Reset
@@ -189,13 +189,13 @@ export default function SearchFilters({
         <div className="flex gap-2 pt-1">
           <button
             type="submit"
-            className="h-8 flex-1 rounded-lg bg-blue-600 text-white xs font-bold text-white transition hover:bg-yellow-400 hover:text-blue-900"
+            className="h-8 flex-1 rounded-lg bg-yellow-400 text-xs font-bold text-blue-800 transition hover:bg-yellow-300"
           >
             Applica filtri
           </button>
           <a
             href={resetUrl}
-            className="inline-flex h-8 items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 transition hover:border-yellow-200 hover:bg-yellow-50 hover:text-yellow-800"
+            className="inline-flex h-8 items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 transition hover:bg-slate-50"
           >
             <RotateCcw className="h-3 w-3" />
             Reset

@@ -128,7 +128,7 @@ export default function CreaTemplateWizard({ onClose, onCreated }: Props) {
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1 text-slate-400 hover:bg-yellow-100 hover:text-yellow-800"
+            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
           >
             <X className="h-4 w-4" />
           </button>
@@ -140,7 +140,7 @@ export default function CreaTemplateWizard({ onClose, onCreated }: Props) {
             <select
               value={sourceStoreId}
               onChange={(e) => setSourceStoreId(e.target.value)}
-              className="mt-1 h-10 w-full rounded-lg border border-slate-200 px-3 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-yellow-400"
+              className="mt-1 h-10 w-full rounded-lg border border-slate-200 px-3 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Seleziona un negozio...</option>
               {stores.map((s) => (
@@ -161,7 +161,7 @@ export default function CreaTemplateWizard({ onClose, onCreated }: Props) {
               type="text"
               value={nome}
               onChange={(e) => setNome(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-yellow-400"
+              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Nome template"
             />
           </div>
@@ -171,7 +171,7 @@ export default function CreaTemplateWizard({ onClose, onCreated }: Props) {
             <textarea
               value={descrizione}
               onChange={(e) => setDescrizione(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-yellow-400"
+              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Breve descrizione..."
               rows={2}
             />
@@ -183,7 +183,7 @@ export default function CreaTemplateWizard({ onClose, onCreated }: Props) {
               type="text"
               value={categoria}
               onChange={(e) => setCategoria(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-yellow-400"
+              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="es. Ristorazione"
             />
           </div>
@@ -197,7 +197,7 @@ export default function CreaTemplateWizard({ onClose, onCreated }: Props) {
                     type="checkbox"
                     checked={options[key]}
                     onChange={() => toggleOption(key)}
-                    className="h-4 w-4 rounded border-slate-300 text-yellow-600 focus:ring-yellow-400"
+                    className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                   />
                   <span className="text-slate-700">{OPTION_LABELS[key]}</span>
                 </label>
@@ -212,7 +212,7 @@ export default function CreaTemplateWizard({ onClose, onCreated }: Props) {
           <button
             type="button"
             onClick={onClose}
-            className="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-600 transition hover:bg-yellow-50"
+            className="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-600 transition hover:bg-slate-50"
           >
             Annulla
           </button>
