@@ -73,7 +73,7 @@ export default function CategoryStoreCard({ negozio, preferitoAttivo, autenticat
         {/* Corpo */}
         <div className="flex flex-1 flex-col gap-2 p-4">
           <div>
-            <h3 className="line-clamp-1 text-sm font-black tracking-tight text-slate-900 transition group-hover:text-yellow-800">
+            <h3 className="line-clamp-1 text-sm font-black tracking-tight text-slate-900 transition group-hover:text-blue-700">
               {negozio.nome}
             </h3>
             {negozio.categoria && (
@@ -99,7 +99,7 @@ export default function CategoryStoreCard({ negozio, preferitoAttivo, autenticat
 
           {/* Pulsante */}
           {haProdotti ? (
-            <span className="mt-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2.5 text-xs font-bold text-white transition group-hover:bg-yellow-400 group-hover:text-blue-900">
+            <span className="mt-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-yellow-400 px-4 py-2.5 text-xs font-bold text-blue-800 transition group-hover:bg-yellow-300">
               Entra nel negozio
               <ArrowRight className="h-3.5 w-3.5" />
             </span>

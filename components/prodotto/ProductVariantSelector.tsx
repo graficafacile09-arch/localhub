@@ -215,7 +215,7 @@ export default function ProductVariantSelector({
                           className={`rounded-lg border px-3 py-1.5 text-sm font-semibold transition ${
                             attivo
                               ? "border-yellow-400 bg-yellow-400 text-blue-900 shadow-sm"
-                              : "border border-blue-300 bg-white text-blue-700 hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-800"
+                              : "border-slate-200 bg-white text-slate-700 hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-800"
                           }`}
                         >
                           {valore}
@@ -281,7 +281,7 @@ export default function ProductVariantSelector({
             {acquistabile && hrefAcquista ? (
               <Link
                 href={hrefAcquista}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-base font-bold text-white shadow-sm transition hover:bg-yellow-400 hover:text-blue-900"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-yellow-400 px-4 py-3 text-base font-bold text-blue-800 shadow-sm transition hover:bg-yellow-300"
               >
                 <ShoppingBag className="h-5 w-5" />
                 ACQUISTA

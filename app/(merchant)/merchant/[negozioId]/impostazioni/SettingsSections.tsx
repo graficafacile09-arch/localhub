@@ -437,7 +437,7 @@ export default function SettingsSections({
             <button
               type="button"
               onClick={() => apriSezione("negozio", "informazioni")}
-              className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-yellow-400 hover:text-blue-900 active:scale-[0.98]"
+              className="inline-flex items-center gap-2 rounded-full bg-yellow-400 px-5 py-2.5 text-sm font-bold text-blue-900 shadow-sm transition hover:bg-yellow-300 active:scale-[0.98]"
             >
               <Building2 className="h-4 w-4" aria-hidden />
               Modifica negozio
@@ -489,12 +489,12 @@ export default function SettingsSections({
                 setAperteOnce((o) => ({ ...o, [s.id]: true }));
               }}
               aria-expanded={isAperta}
-              className="flex w-full items-center gap-3 px-4 py-4 text-left transition hover:bg-yellow-50/70 sm:gap-4 sm:px-5"
+              className="flex w-full items-center gap-3 px-4 py-4 text-left transition hover:bg-slate-50/70 sm:gap-4 sm:px-5"
             >
               <span
                 className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl transition ${
                   primaria && isAperta
-                    ? "bg-blue-600 text-white"
+                    ? "bg-yellow-400 text-blue-900"
                     : primaria
                       ? "bg-yellow-100 text-blue-800"
                       : isAperta
@@ -545,7 +545,7 @@ export default function SettingsSections({
                           type="button"
                           onClick={() => toggleModulo(s.id, slug)}
                           aria-expanded={isModuloAperto}
-                          className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition hover:bg-yellow-50/70"
+                          className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition hover:bg-slate-50/70"
                         >
                           <span
                             className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition ${

@@ -51,7 +51,7 @@ export default async function MerchantHomePage({
         <div className="text-center">
           <Link
             href="/merchant/nuovo"
-            className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-yellow-400 hover:text-blue-900 active:scale-95"
+            className="inline-flex items-center gap-2 rounded-full bg-yellow-400 px-6 py-3 text-sm font-bold text-blue-900 transition-colors hover:bg-yellow-300 active:scale-95"
           >
             Crea il tuo primo negozio
           </Link>
@@ -86,7 +86,7 @@ export default async function MerchantHomePage({
         <div className="mb-4">
           <Link
             href="/merchant/nuovo"
-            className="inline-flex items-center gap-2 rounded-full bg-blue-600 px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-yellow-400 hover:text-blue-900 active:scale-95"
+            className="inline-flex items-center gap-2 rounded-full bg-yellow-400 px-4 py-2 text-xs font-bold text-blue-900 transition-colors hover:bg-yellow-300 active:scale-95"
           >
             + Nuovo negozio
           </Link>
@@ -104,7 +104,7 @@ export default async function MerchantHomePage({
                 {store.nome}
                 {(ordiniNonLettiPerNegozio[store.id] ?? 0) > 0 && (
                   <span
-                    className="inline-flex h-6 min-w-6 shrink-0 items-center justify-center rounded-full bg-blue-600 px-2 text-xs font-black text-blue-900"
+                    className="inline-flex h-6 min-w-6 shrink-0 items-center justify-center rounded-full bg-yellow-400 px-2 text-xs font-black text-blue-900"
                     title={`${ordiniNonLettiPerNegozio[store.id]} ${ordiniNonLettiPerNegozio[store.id] === 1 ? "ordine non letto" : "ordini non letti"}`}
                   >
                     {ordiniNonLettiPerNegozio[store.id] > 9 ? "9+" : ordiniNonLettiPerNegozio[store.id]}

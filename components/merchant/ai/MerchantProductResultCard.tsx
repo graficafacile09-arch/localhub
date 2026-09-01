@@ -143,7 +143,7 @@ export default function MerchantProductResultCard({
               <button
                 type="button"
                 onClick={onModificaImmagine}
-                className="mt-2 flex w-[120px] items-center justify-center gap-1 rounded-lg bg-blue-600 px-2 py-1.5 text-[11px] font-semibold text-white shadow-sm transition hover:bg-yellow-400 hover:text-blue-900"
+                className="mt-2 flex w-[120px] items-center justify-center gap-1 rounded-lg bg-yellow-400 px-2 py-1.5 text-[11px] font-semibold text-blue-800 shadow-sm transition hover:bg-yellow-300"
               >
                 <Crop className="h-3 w-3" />
                 Modifica immagine

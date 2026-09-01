@@ -113,12 +113,12 @@ export default function TemplateManagerPage() {
           <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl">
             <h3 className="text-sm font-bold text-slate-800">Modifica template</h3>
             <div className="mt-4 space-y-3">
-              <input type="text" value={editNome} onChange={(e) => setEditNome(e.target.value)} placeholder="Nome" className="h-10 w-full rounded-xl border border-slate-200 px-4 text-sm outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100" />
-              <textarea value={editDesc} onChange={(e) => setEditDesc(e.target.value)} placeholder="Descrizione" rows={2} className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100" />
-              <input type="text" value={editCat} onChange={(e) => setEditCat(e.target.value)} placeholder="Categoria" className="h-10 w-full rounded-xl border border-slate-200 px-4 text-sm outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100" />
+              <input type="text" value={editNome} onChange={(e) => setEditNome(e.target.value)} placeholder="Nome" className="h-10 w-full rounded-xl border border-slate-200 px-4 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
+              <textarea value={editDesc} onChange={(e) => setEditDesc(e.target.value)} placeholder="Descrizione" rows={2} className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
+              <input type="text" value={editCat} onChange={(e) => setEditCat(e.target.value)} placeholder="Categoria" className="h-10 w-full rounded-xl border border-slate-200 px-4 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
             </div>
             <div className="mt-5 flex items-center justify-end gap-2">
-              <button type="button" onClick={() => setEditing(null)} className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-yellow-50">Annulla</button>
+              <button type="button" onClick={() => setEditing(null)} className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50">Annulla</button>
               <button type="button" onClick={handleSaveEdit} className="btn-cta px-4 py-2 text-xs">
                 <Check className="h-3.5 w-3.5" /> Salva
               </button>
@@ -162,14 +162,14 @@ export default function TemplateManagerPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Cerca template..."
-            className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-4 text-sm text-slate-900 outline-none transition focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100"
+            className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-4 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
           />
         </div>
         {allCategories.length > 0 && (
           <select
             value={filterCategoria}
             onChange={(e) => setFilterCategoria(e.target.value)}
-            className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 outline-none focus:border-yellow-400"
+            className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 outline-none focus:border-blue-500"
           >
             <option value="">Tutte le categorie</option>
             {allCategories.map((cat) => (

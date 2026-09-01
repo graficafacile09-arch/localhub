@@ -495,7 +495,7 @@ export default function PrenotazioniModule({ storeId, markReadAgenda = false }: 
                         <button
                           type="button"
                           onClick={() => void spostaPrenotazione(p.id)}
-                          className="h-10 shrink-0 rounded-xl bg-blue-600 px-4 text-xs font-bold text-white transition hover:bg-yellow-400 hover:text-blue-900"
+                          className="h-10 shrink-0 rounded-xl bg-yellow-400 px-4 text-xs font-bold text-blue-900 transition hover:bg-yellow-300"
                         >
                           Conferma spostamento
                         </button>

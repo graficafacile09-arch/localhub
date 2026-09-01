@@ -94,14 +94,14 @@ export default function MerchantMobileMenu({
                         className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-sm transition ${
                           active
                             ? "border-blue-300 bg-blue-50 text-blue-800"
-                            : "border border-blue-300 bg-white text-blue-700 hover:border-yellow-300 hover:bg-yellow-50"
+                            : "border-slate-200 bg-slate-50 text-slate-700 hover:border-blue-200 hover:bg-blue-50/60"
                         }`}
                       >
                         <Store className="h-4 w-4 shrink-0 text-blue-600" aria-hidden />
                         <span className="min-w-0 flex-1 truncate font-semibold">{store.nome}</span>
                         {ordiniNonLetti > 0 && (
                           <span
-                            className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-blue-600 px-1.5 text-[10px] font-black leading-none text-blue-900"
+                            className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-yellow-400 px-1.5 text-[10px] font-black leading-none text-blue-900"
                             title={`${ordiniNonLetti} ${ordiniNonLetti === 1 ? "ordine non letto" : "ordini non letti"}`}
                           >
                             {ordiniNonLetti > 9 ? "9+" : ordiniNonLetti}
@@ -121,7 +121,7 @@ export default function MerchantMobileMenu({
       <form action="/api/auth/signout" method="post" className="mt-4 border-t border-slate-100 pt-4">
         <button
           type="submit"
-          className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-yellow-50 hover:text-yellow-800"
+          className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-blue-700"
         >
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
             <LogOut className="h-[18px] w-[18px]" aria-hidden />

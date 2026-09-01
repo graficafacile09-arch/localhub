@@ -350,7 +350,7 @@ export default function SpedizionePaccoConfig({
               type="button"
               onClick={salva}
               disabled={salvando}
-              className="mt-3 inline-flex h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 text-sm font-bold text-white shadow-sm transition hover:bg-yellow-400 hover:text-blue-900 disabled:opacity-50"
+              className="mt-3 inline-flex h-10 items-center gap-2 rounded-xl bg-yellow-400 px-4 text-sm font-bold text-blue-800 shadow-sm transition hover:bg-yellow-300 disabled:opacity-50"
             >
               {salvando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               Salva pacco

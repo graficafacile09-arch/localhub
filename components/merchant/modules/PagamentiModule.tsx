@@ -538,7 +538,7 @@ export default function PagamentiModule({ storeId }: Props) {
                                 type="button"
                                 disabled={connectBusy}
                                 onClick={handleConnectStripe}
-                                className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-yellow-400 hover:text-blue-900 disabled:opacity-50"
+                                className="inline-flex items-center gap-1.5 rounded-xl bg-yellow-400 px-3 py-2 text-xs font-semibold text-blue-800 transition hover:bg-yellow-300 disabled:opacity-50"
                               >
                                 {connectBusy ? "Reindirizzamento…" : "Riprendi onboarding"}
                               </button>
@@ -547,7 +547,7 @@ export default function PagamentiModule({ storeId }: Props) {
                               type="button"
                               disabled={connectBusy}
                               onClick={handleDisconnectStripe}
-                              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-yellow-50 disabled:opacity-50"
+                              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
                             >
                               Scollega
                             </button>
@@ -565,7 +565,7 @@ export default function PagamentiModule({ storeId }: Props) {
                             type="button"
                             disabled={connectBusy}
                             onClick={handleConnectStripe}
-                            className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-yellow-400 hover:text-blue-900 disabled:opacity-50"
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-yellow-400 px-4 py-2.5 text-sm font-semibold text-blue-800 transition hover:bg-yellow-300 disabled:opacity-50"
                           >
                             {connectBusy ? "Reindirizzamento…" : "Crea o Collega il tuo conto Stripe"}
                           </button>

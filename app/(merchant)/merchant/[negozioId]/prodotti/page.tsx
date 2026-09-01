@@ -153,7 +153,7 @@ export default async function MerchantProductsPage({ params, searchParams }: Pro
 
             <Link
               href={`/merchant/${negozioId}/prodotti/nuovo?manual=1`}
-              className="inline-flex h-12 items-center justify-center rounded-2xl border border-blue-300 bg-white px-5 text-sm font-semibold text-blue-700 transition hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-800"
+              className="inline-flex h-12 items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
             >
               Aggiungi manualmente
             </Link>
@@ -177,7 +177,7 @@ export default async function MerchantProductsPage({ params, searchParams }: Pro
                 name="q"
                 defaultValue={q ?? ""}
                 placeholder="Cerca nel catalogo…"
-                className="h-10 w-full rounded-xl border border-slate-200 pl-9 pr-3 text-sm outline-none transition focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100"
+                className="h-10 w-full rounded-xl border border-slate-200 pl-9 pr-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
               />
             </div>
             {/* Preserva gli altri filtri sulla nuova ricerca */}
@@ -207,8 +207,8 @@ export default async function MerchantProductsPage({ params, searchParams }: Pro
                   href={buildUrl(base, correnti, { ordina: o.chiave })}
                   className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${
                     attivo
-                      ? "bg-yellow-400 text-blue-900 shadow-sm"
-                      : "border border-blue-300 text-blue-700 hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-800"
+                      ? "bg-blue-600 text-white shadow-sm"
+                      : "border border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-700"
                   }`}
                 >
                   {o.label}
@@ -237,8 +237,8 @@ export default async function MerchantProductsPage({ params, searchParams }: Pro
                 href={buildUrl(base, correnti, { stato: f.chiave as string | undefined })}
                 className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${
                   attivo
-                    ? "bg-yellow-400 text-blue-900 shadow-sm"
-                    : "border border-blue-300 text-blue-700 hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-800"
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "border border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-700"
                 }`}
               >
                 {f.label}
@@ -259,8 +259,8 @@ export default async function MerchantProductsPage({ params, searchParams }: Pro
                 href={buildUrl(base, correnti, { esaurito: f.chiave ? "1" : undefined })}
                 className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${
                   attivo
-                    ? "bg-yellow-400 text-blue-900 shadow-sm"
-                    : "border border-blue-300 text-blue-700 hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-800"
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "border border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-700"
                 }`}
               >
                 {f.label}
@@ -281,8 +281,8 @@ export default async function MerchantProductsPage({ params, searchParams }: Pro
                 href={buildUrl(base, correnti, { ai: f.attivo ? "1" : undefined })}
                 className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${
                   attivo
-                    ? "bg-yellow-400 text-blue-900 shadow-sm"
-                    : "border border-blue-300 text-blue-700 hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-800"
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "border border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-700"
                 }`}
               >
                 <Sparkles className="mr-1 inline h-3 w-3" aria-hidden />
@@ -306,8 +306,8 @@ export default async function MerchantProductsPage({ params, searchParams }: Pro
                 href={buildUrl(base, correnti, { tipico: f.chiave === undefined ? undefined : f.chiave ? "1" : "0" })}
                 className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${
                   attivo
-                    ? "bg-yellow-400 text-blue-900 shadow-sm"
-                    : "border border-blue-300 text-blue-700 hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-800"
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "border border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-700"
                 }`}
               >
                 {f.label}
@@ -367,7 +367,7 @@ export default async function MerchantProductsPage({ params, searchParams }: Pro
             action={
               <Link
                 href={base}
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-blue-300 bg-white px-5 text-sm font-semibold text-blue-700 transition hover:bg-yellow-50 hover:text-yellow-800"
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
               >
                 <X className="h-4 w-4" />
                 Azzera filtri
@@ -389,7 +389,7 @@ export default async function MerchantProductsPage({ params, searchParams }: Pro
                 </Link>
                 <Link
                   href={`/merchant/${negozioId}/prodotti/nuovo?manual=1`}
-                  className="inline-flex h-11 items-center justify-center rounded-2xl border border-blue-300 bg-white px-5 text-sm font-semibold text-blue-700 transition hover:bg-yellow-50 hover:text-yellow-800"
+                  className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
                 >
                   Aggiungi manualmente
                 </Link>
@@ -419,7 +419,7 @@ export default async function MerchantProductsPage({ params, searchParams }: Pro
                   className={`inline-flex h-9 items-center justify-center rounded-xl border px-3.5 text-xs font-semibold transition ${
                     paginaCorrente <= 1
                       ? "pointer-events-none border-slate-100 text-slate-300"
-                      : "border border-blue-300 bg-white text-blue-700 hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-800"
+                      : "border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:text-blue-700"
                   }`}
                 >
                   ← Precedente
@@ -430,7 +430,7 @@ export default async function MerchantProductsPage({ params, searchParams }: Pro
                   className={`inline-flex h-9 items-center justify-center rounded-xl border px-3.5 text-xs font-semibold transition ${
                     paginaCorrente >= totalePagine
                       ? "pointer-events-none border-slate-100 text-slate-300"
-                      : "border border-blue-300 bg-white text-blue-700 hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-800"
+                      : "border-slate-200 bg-white text-slate-700 hover:border-blue-300 hover:text-blue-700"
                   }`}
                 >
                   Successiva →

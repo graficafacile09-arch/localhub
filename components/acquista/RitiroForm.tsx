@@ -192,7 +192,7 @@ export default function RitiroForm({
                   href={buildMapsUrl()}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 transition hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-800"
+                  className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 transition hover:border-blue-300 hover:text-blue-700"
                 >
                   <MapPin className="h-3 w-3" />
                   Google Maps
@@ -201,7 +201,7 @@ export default function RitiroForm({
               {negozio.telefono && (
                 <a
                   href={`tel:${negozio.telefono}`}
-                  className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 transition hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-800"
+                  className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 transition hover:border-blue-300 hover:text-blue-700"
                 >
                   <Phone className="h-3 w-3" />
                   {negozio.telefono}
@@ -252,7 +252,7 @@ export default function RitiroForm({
                 required
                 aria-required="true"
                 aria-invalid={!!errori.nome}
-                className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-100"
+                className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
               />
               {errori.nome && (
                 <p className="mt-1 text-[11px] font-semibold text-blue-600">{errori.nome}</p>
@@ -271,7 +271,7 @@ export default function RitiroForm({
                 required
                 aria-required="true"
                 aria-invalid={!!errori.cognome}
-                className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-100"
+                className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
               />
               {errori.cognome && (
                 <p className="mt-1 text-[11px] font-semibold text-blue-600">{errori.cognome}</p>
@@ -285,7 +285,7 @@ export default function RitiroForm({
               type="tel"
               value={telefonoCliente}
               onChange={(e) => setTelefonoCliente(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-100"
+              className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
             />
           </div>
         </div>
@@ -307,7 +307,7 @@ export default function RitiroForm({
             required
             aria-required="true"
             aria-invalid={!!errori.data}
-            className="mt-2 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-100"
+            className="mt-2 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
           />
           {errori.data && (
             <p className="mt-1 text-[11px] font-semibold text-blue-600">{errori.data}</p>
@@ -329,7 +329,7 @@ export default function RitiroForm({
             required
             aria-required="true"
             aria-invalid={!!errori.fascia}
-            className="mt-2 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-100"
+            className="mt-2 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
           >
             <option value="">Seleziona fascia oraria</option>
             <option value="09:00–10:00">09:00 – 10:00</option>
@@ -355,7 +355,7 @@ export default function RitiroForm({
             onChange={(e) => setNote(e.target.value)}
             rows={3}
             placeholder="Eventuali note per il ritiro..."
-            className="mt-2 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-100 placeholder:text-slate-400"
+            className="mt-2 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100 placeholder:text-slate-400"
           />
         </div>
 
@@ -399,7 +399,7 @@ export default function RitiroForm({
           type="button"
           onClick={confermaRitiro}
           disabled={inviando || !ritiroCompleto}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-bold text-white shadow-md shadow-blue-500/25 transition hover:bg-yellow-400 hover:text-blue-900 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-yellow-400 px-6 py-3 text-sm font-bold text-blue-800 shadow-md shadow-blue-500/25 transition hover:bg-yellow-300 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {inviando ? (
             <>

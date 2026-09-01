@@ -280,7 +280,7 @@ export default function ReclamoOrdine({
                   maxLength={2000}
                   placeholder="Scrivi qui la tua risposta al negozio…"
                   aria-label="Risposta al negozio"
-                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-yellow-300 focus:ring-2 focus:ring-yellow-100"
+                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
                 />
                 <div className="mt-2 flex items-center justify-between gap-2">
                   <p className="text-[10px] text-slate-400">{risposta.length}/2000</p>
@@ -288,7 +288,7 @@ export default function ReclamoOrdine({
                     type="button"
                     onClick={() => void inviaRisposta(attivo.id)}
                     disabled={invioRisposta || !risposta.trim()}
-                    className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-yellow-400 hover:text-blue-900 disabled:opacity-50"
+                    className="inline-flex items-center gap-2 rounded-xl bg-yellow-400 px-4 py-2 text-xs font-bold text-blue-800 transition hover:bg-yellow-300 disabled:opacity-50"
                   >
                     {invioRisposta ? (
                       <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
@@ -349,7 +349,7 @@ export default function ReclamoOrdine({
               <button
                 type="button"
                 onClick={() => setAperto(false)}
-                className="rounded-lg p-1 text-slate-400 transition hover:bg-yellow-100 hover:text-yellow-800"
+                className="rounded-lg p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
                 aria-label="Chiudi"
               >
                 <X className="h-4 w-4" />
@@ -377,7 +377,7 @@ export default function ReclamoOrdine({
                   rows={3}
                   maxLength={1000}
                   placeholder="Descrivi il problema, ad esempio la data prevista di consegna…"
-                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-yellow-300 focus:ring-2 focus:ring-yellow-100"
+                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
                 />
                 <p className="mt-1 text-right text-[10px] text-slate-400">
                   {messaggio.length}/1000
@@ -390,7 +390,7 @@ export default function ReclamoOrdine({
                 type="button"
                 onClick={() => setAperto(false)}
                 disabled={invio}
-                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition hover:bg-yellow-50 disabled:opacity-50"
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
               >
                 Annulla
               </button>
@@ -398,7 +398,7 @@ export default function ReclamoOrdine({
                 type="button"
                 onClick={inviaReclamo}
                 disabled={invio}
-                className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-yellow-400 hover:text-blue-900 disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-xl bg-yellow-400 px-4 py-2 text-xs font-bold text-blue-800 transition hover:bg-yellow-300 disabled:opacity-50"
               >
                 {invio ? (
                   <Loader2 className="h-4 w-4 animate-spin" aria-hidden />

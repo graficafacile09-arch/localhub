@@ -91,7 +91,7 @@ export default async function AdminStoreProdottiPage({
             </Link>
             <Link
               href={`/amministratore/negozi/${negozioId}/prodotti/nuovo${productsResult.data.length > 0 ? "?manual=1" : ""}`}
-              className="inline-flex h-12 items-center justify-center rounded-2xl border border-blue-300 bg-white px-5 text-sm font-semibold text-blue-700 transition hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-800"
+              className="inline-flex h-12 items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
             >
               Aggiungi manualmente
             </Link>
@@ -142,7 +142,7 @@ export default async function AdminStoreProdottiPage({
               </Link>
               <Link
                 href={`/amministratore/negozi/${negozioId}/prodotti/nuovo?manual=1`}
-                className="inline-flex h-11 items-center justify-center rounded-2xl border border-blue-300 bg-white px-5 text-sm font-semibold text-blue-700 transition hover:bg-yellow-50 hover:text-yellow-800"
+                className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
               >
                 Aggiungi manualmente
               </Link>

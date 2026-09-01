@@ -53,7 +53,7 @@ export default async function AcquistaChoicePage({
           <GuestPurchaseButton />
           <Link
             href="/login?area=cliente"
-            className="inline-flex items-center justify-center rounded-xl border border-slate-300 px-5 py-3 text-sm font-bold text-blue-700 transition hover:bg-yellow-50"
+            className="inline-flex items-center justify-center rounded-xl border border-slate-300 px-5 py-3 text-sm font-bold text-blue-700 transition hover:bg-slate-50"
           >
             REGISTRATI / ACCEDI
           </Link>
@@ -86,7 +86,7 @@ export default async function AcquistaChoicePage({
         </p>
         <Link
           href={`/prodotto/${slugProdotto}`}
-          className="mt-4 inline-block rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-yellow-400 hover:text-blue-900"
+          className="mt-4 inline-block rounded-lg bg-yellow-400 px-5 py-2.5 text-sm font-bold text-blue-800 shadow-sm transition hover:bg-yellow-300"
         >
           Torna al prodotto
         </Link>
