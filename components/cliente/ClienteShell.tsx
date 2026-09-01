@@ -86,7 +86,7 @@ export default function ClienteShell({
               type="button"
               onClick={() => setCollapsed((value) => !value)}
               aria-label={collapsed ? "Espandi il menu" : "Comprimi il menu"}
-              className={`flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-600 shadow-sm transition hover:bg-blue-50 hover:text-blue-700 ${
+              className={`flex items-center gap-2 rounded-2xl border border-blue-200 bg-blue-50 px-3 py-2.5 text-xs font-semibold text-blue-700 shadow-sm transition hover:border-blue-300 hover:bg-blue-100 hover:text-blue-800 ${
                 collapsed ? "mx-auto justify-center" : ""
               }`}
             >
@@ -144,7 +144,7 @@ export default function ClienteShell({
                 onClick={() => setMobileOpen(false)}
                 aria-label="Chiudi il menu"
                 autoFocus
-                className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 text-slate-500 transition active:bg-slate-200"
+                className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition active:bg-blue-100"
               >
                 <X className="h-4 w-4" aria-hidden />
               </button>
@@ -161,9 +161,9 @@ export default function ClienteShell({
               <form action="/api/auth/signout" method="post" className="mt-4 border-t border-slate-100 pt-4">
                 <button
                   type="submit"
-                  className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 hover:text-blue-700"
+                  className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-sm font-semibold text-blue-700 transition hover:bg-yellow-50 hover:text-yellow-800"
                 >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
                     <LogOut className="h-[18px] w-[18px]" aria-hidden />
                   </span>
                   Esci

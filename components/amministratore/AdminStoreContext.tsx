@@ -76,8 +76,8 @@ export default function AdminStoreContext({
               aria-current={active ? "page" : undefined}
               className={`inline-flex shrink-0 items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold transition-all duration-150 ${
                 active
-                  ? "bg-blue-600 text-white shadow-sm"
-                  : "text-slate-600 hover:bg-slate-50 hover:text-blue-700"
+                  ? "bg-yellow-400 text-blue-900 shadow-sm"
+                  : "text-blue-700 hover:bg-yellow-50 hover:text-yellow-800"
               }`}
             >
               <Icon className="h-3.5 w-3.5" aria-hidden />

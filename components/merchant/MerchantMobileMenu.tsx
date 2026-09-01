@@ -44,7 +44,7 @@ export default function MerchantMobileMenu({
           type="button"
           onClick={onClose}
           aria-label="Chiudi"
-          className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 text-slate-500 transition active:bg-slate-200"
+          className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition active:bg-blue-100"
         >
           <X className="h-4 w-4" aria-hidden />
         </button>
@@ -93,8 +93,8 @@ export default function MerchantMobileMenu({
                         onClick={onClose}
                         className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-sm transition ${
                           active
-                            ? "border-blue-300 bg-blue-50 text-blue-800"
-                            : "border-slate-200 bg-slate-50 text-slate-700 hover:border-blue-200 hover:bg-blue-50/60"
+                            ? "border-yellow-300 bg-yellow-50 text-yellow-800"
+                            : "border-blue-200 bg-blue-50/60 text-blue-700 hover:border-blue-300 hover:bg-blue-100"
                         }`}
                       >
                         <Store className="h-4 w-4 shrink-0 text-blue-600" aria-hidden />
@@ -123,7 +123,7 @@ export default function MerchantMobileMenu({
           type="submit"
           className="flex w-full items-center gap-3 rounded-2xl border border-blue-200 bg-blue-50 px-3 py-2.5 text-sm font-semibold text-blue-700 transition hover:border-blue-300 hover:bg-blue-100 hover:text-blue-800"
         >
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
             <LogOut className="h-[18px] w-[18px]" aria-hidden />
           </span>
           Esci

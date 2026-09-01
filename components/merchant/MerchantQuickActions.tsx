@@ -119,7 +119,7 @@ export default function MerchantQuickActions({
         href={`/merchant/${storeId}/impostazioni`}
         className="group flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-lg hover:shadow-blue-500/10 cursor-pointer"
       >
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600 transition group-hover:bg-blue-100 group-hover:text-blue-700">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700 transition group-hover:bg-yellow-100 group-hover:text-yellow-800">
           <Settings className="h-5 w-5" />
         </div>
         <div className="min-w-0">

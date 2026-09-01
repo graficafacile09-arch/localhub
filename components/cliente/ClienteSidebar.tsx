@@ -98,14 +98,14 @@ export default function ClienteSidebar({
                   collapsed ? "justify-center px-0 py-3" : "px-3 py-2.5"
                 } ${
                   active
-                    ? "bg-blue-50 text-blue-800 ring-1 ring-blue-100"
-                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                    ? "bg-yellow-50 text-yellow-800 ring-1 ring-yellow-200"
+                    : "text-blue-700 hover:bg-yellow-50 hover:text-yellow-800"
                 }`}
               >
                 {/* Barra di accento dello stato attivo */}
                 {active && !collapsed && (
                   <span
-                    className="absolute left-0 top-1/2 h-7 w-1 -translate-y-1/2 rounded-r-full bg-blue-600"
+                    className="absolute left-0 top-1/2 h-7 w-1 -translate-y-1/2 rounded-r-full bg-yellow-400"
                     aria-hidden
                   />
                 )}
@@ -113,8 +113,8 @@ export default function ClienteSidebar({
                 <span
                   className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors ${
                     active
-                      ? "bg-blue-600 text-white shadow-sm"
-                      : "bg-slate-100 text-slate-500 group-hover:bg-slate-200 group-hover:text-slate-700"
+                      ? "bg-yellow-400 text-blue-900 shadow-sm"
+                      : "bg-blue-50 text-blue-600 group-hover:bg-yellow-100 group-hover:text-yellow-800"
                   }`}
                 >
                   <item.icon className="h-[18px] w-[18px]" aria-hidden />
@@ -127,7 +127,7 @@ export default function ClienteSidebar({
                         {item.label}
                       </span>
                       {mostraBadge && (
-                        <span className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-blue-600 px-1.5 text-[10px] font-black leading-none text-white">
+                        <span className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-blue-600 px-1.5 text-[10px] font-black leading-none text-blue-900">
                           {badge > 9 ? "9+" : badge}
                         </span>
                       )}
