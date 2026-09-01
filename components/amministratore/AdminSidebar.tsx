@@ -72,7 +72,7 @@ export default function AdminSidebar({
           className={`flex h-11 w-11 items-center justify-center rounded-2xl transition-all duration-150 ${
             active
               ? "bg-yellow-50 text-yellow-800 shadow-sm"
-              : "text-slate-700 hover:bg-blue-50 hover:text-blue-800"
+              : "text-blue-700 hover:bg-blue-50 hover:text-blue-800"
           }`}
         >
           <Icon className="h-5 w-5" aria-hidden />
@@ -88,7 +88,7 @@ export default function AdminSidebar({
         className={`group relative flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition-all duration-150 ${
           active
             ? "bg-yellow-50 text-yellow-800 shadow-sm"
-            : "text-slate-700 hover:bg-blue-50 hover:text-blue-800"
+            : "text-blue-700 hover:bg-blue-50 hover:text-blue-800"
         }`}
       >
         {active && (
@@ -98,7 +98,7 @@ export default function AdminSidebar({
           />
         )}
         <Icon
-          className={`h-4 w-4 shrink-0 ${active ? "text-yellow-700" : "text-slate-400"}`}
+          className={`h-4 w-4 shrink-0 ${active ? "text-yellow-700" : "text-blue-600"}`}
           aria-hidden
         />
         <span className="truncate">{item.label}</span>
@@ -147,13 +147,13 @@ export default function AdminSidebar({
                   eGruppoAttivo
                     ? "text-yellow-800"
                     : aperto
-                      ? "text-slate-600"
-                      : "text-slate-400"
+                      ? "text-blue-700"
+                      : "text-blue-600"
                 }`}
               >
                 <Icon
                   className={`h-4 w-4 shrink-0 ${
-                    eGruppoAttivo ? "text-yellow-700" : "text-slate-400"
+                    eGruppoAttivo ? "text-yellow-700" : "text-blue-600"
                   }`}
                   aria-hidden
                 />

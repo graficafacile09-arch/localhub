@@ -81,23 +81,30 @@ export default function ClienteBottomNav() {
                 >
                   <span
                     className={`flex h-9 w-9 items-center justify-center rounded-xl transition-all duration-200
-                      ${active ? "bg-blue-50" : "bg-transparent"}
+                      ${active ? "bg-yellow-100" : "bg-transparent"}
                     `}
                   >
                     <Icon
                       className={`h-5 w-5 transition-colors duration-150
-                        ${active ? "text-blue-600" : "text-slate-400"}
+                        ${active ? "text-yellow-700" : "text-blue-600"}
                       `}
                       aria-hidden
                     />
                   </span>
                   <span
                     className={`max-w-full truncate text-[10px] font-semibold leading-none tracking-wide transition-colors duration-150
-                      ${active ? "text-blue-600" : "text-slate-400"}
+                      ${active ? "text-yellow-700" : "text-blue-600"}
                     `}
                   >
                     {item.label}
                   </span>
+                  {/* Indicatore selezione: trattino giallo sotto la voce attiva */}
+                  <span
+                    aria-hidden
+                    className={`absolute -bottom-1 left-1/2 h-1 w-8 -translate-x-1/2 rounded-full transition-opacity duration-200 ${
+                      active ? "bg-yellow-400 opacity-100" : "bg-transparent opacity-0"
+                    }`}
+                  />
                 </Link>
               );
             })}
