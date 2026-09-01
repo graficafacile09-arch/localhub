@@ -71,8 +71,8 @@ export default function AdminSidebar({
           aria-current={active ? "page" : undefined}
           className={`flex h-11 w-11 items-center justify-center rounded-2xl transition-all duration-150 ${
             active
-              ? "bg-blue-50 text-blue-700 shadow-sm"
-              : "text-slate-500 hover:bg-slate-50 hover:text-blue-600"
+              ? "bg-yellow-50 text-yellow-800 shadow-sm"
+              : "text-slate-700 hover:bg-blue-50 hover:text-blue-800"
           }`}
         >
           <Icon className="h-5 w-5" aria-hidden />
@@ -87,18 +87,18 @@ export default function AdminSidebar({
         aria-current={active ? "page" : undefined}
         className={`group relative flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition-all duration-150 ${
           active
-            ? "bg-blue-50 text-blue-700 shadow-sm"
-            : "text-slate-700 hover:bg-slate-50 hover:text-blue-600"
+            ? "bg-yellow-50 text-yellow-800 shadow-sm"
+            : "text-slate-700 hover:bg-blue-50 hover:text-blue-800"
         }`}
       >
         {active && (
           <span
-            className="absolute left-0 top-1/2 h-7 w-1 -translate-y-1/2 rounded-r-full bg-blue-600"
+            className="absolute left-0 top-1/2 h-7 w-1 -translate-y-1/2 rounded-r-full bg-yellow-400"
             aria-hidden
           />
         )}
         <Icon
-          className={`h-4 w-4 shrink-0 ${active ? "text-blue-600" : "text-slate-400"}`}
+          className={`h-4 w-4 shrink-0 ${active ? "text-yellow-700" : "text-slate-400"}`}
           aria-hidden
         />
         <span className="truncate">{item.label}</span>
@@ -143,9 +143,9 @@ export default function AdminSidebar({
                 type="button"
                 onClick={() => toggleGruppo(group.key)}
                 aria-expanded={aperto}
-                className={`flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-left text-[10px] font-black uppercase tracking-[0.16em] transition hover:bg-slate-50 ${
+                className={`flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-left text-[10px] font-black uppercase tracking-[0.16em] transition hover:bg-blue-50 ${
                   eGruppoAttivo
-                    ? "text-blue-700"
+                    ? "text-yellow-800"
                     : aperto
                       ? "text-slate-600"
                       : "text-slate-400"
@@ -153,7 +153,7 @@ export default function AdminSidebar({
               >
                 <Icon
                   className={`h-4 w-4 shrink-0 ${
-                    eGruppoAttivo ? "text-blue-600" : "text-slate-400"
+                    eGruppoAttivo ? "text-yellow-700" : "text-slate-400"
                   }`}
                   aria-hidden
                 />

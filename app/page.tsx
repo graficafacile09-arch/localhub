@@ -170,7 +170,7 @@ export default async function Home() {
             titolo="ECCELLENZE CALABRESI"
             href="/prodotti-tipici"
             linkLabel="Vedi tutti"
-            titoloClassName="mt-1 inline-block whitespace-nowrap rounded-lg bg-yellow-400 px-2 py-1 text-[13px] font-black tracking-tight text-blue-900 shadow-sm sm:text-base md:px-3 md:py-1.5 md:text-2xl"
+            titoloClassName="mt-1 inline-block whitespace-nowrap rounded-lg bg-yellow-400 px-2 py-1 text-[13px] font-black tracking-tight text-blue-900 shadow-sm transition hover:bg-yellow-300 sm:text-base md:px-3 md:py-1.5 md:text-2xl"
           />
 
           <EccellenzeCalabresiGrid
@@ -312,7 +312,7 @@ export default async function Home() {
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link
               href="/login?area=merchant"
-              className="inline-flex items-center gap-2 rounded-xl bg-yellow-400 px-6 py-3 text-sm font-black text-blue-900 shadow-[0_4px_14px_-4px_rgba(202,138,4,0.45)] transition hover:bg-yellow-300 hover:shadow-[0_8px_22px_-6px_rgba(202,138,4,0.55)] active:scale-95"
+              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-black text-blue-900 shadow-[0_4px_14px_-4px_rgba(202,138,4,0.45)] transition hover:bg-yellow-300 hover:shadow-[0_8px_22px_-6px_rgba(202,138,4,0.55)] active:scale-95"
             >
               <Store className="h-4 w-4" aria-hidden />
               Apri il tuo negozio

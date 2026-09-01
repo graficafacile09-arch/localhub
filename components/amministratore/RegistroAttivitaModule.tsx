@@ -195,7 +195,7 @@ export default function RegistroAttivitaModule() {
           <button
             type="button"
             onClick={() => (window.location.href = "/amministratore")}
-            className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 transition hover:text-blue-800"
+            className="inline-flex items-center gap-1 text-xs font-semibold text-yellow-700 transition hover:text-yellow-900"
           >
             <ChevronLeft className="h-3.5 w-3.5" aria-hidden />
             Torna al pannello
