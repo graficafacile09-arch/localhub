@@ -35,14 +35,16 @@ async function idNegoziDemo(db: AdminDb): Promise<string[]> {
   const { data: conColonna, error } = await db
     .from("negozi")
     .select("id")
-    .eq("is_demo", true);
+    .eq("is_demo", true)
+    .is("deleted_at", null);
 
   if (!error) return (conColonna ?? []).map((r) => String(r.id));
 
   if (èErroreSchema(error)) {
     const { data: senzaColonna } = await db
       .from("negozi")
-      .select("id, nome, slug");
+      .select("id, nome, slug")
+      .is("deleted_at", null);
     return (senzaColonna ?? [])
       .filter((r) =>
         eNegozioDaEscludere({
