@@ -74,7 +74,7 @@ export default function PasswordInput({
         // preventDefault su mousedown: il click non ruba il focus all'input.
         onMouseDown={(e) => e.preventDefault()}
         onClick={toggle}
-        className="absolute inset-y-0 right-0 flex w-12 items-center justify-center rounded-r-2xl text-slate-400 transition hover:text-slate-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        className="absolute inset-y-0 right-0 flex w-12 items-center justify-center rounded-r-2xl text-slate-400 transition hover:text-blue-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
       >
         {visibile ? (
           <EyeOff className="h-5 w-5" aria-hidden="true" />
