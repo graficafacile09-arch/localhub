@@ -151,7 +151,7 @@ export default function AvvisamiDisponibilitaButton({
               setFase("idle");
               setErrore(null);
             }}
-            className="inline-flex items-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-300"
+            className="inline-flex items-center rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-2 text-sm font-semibold text-yellow-800 transition hover:border-yellow-300 hover:bg-yellow-100"
           >
             Annulla
           </button>
@@ -176,7 +176,7 @@ export default function AvvisamiDisponibilitaButton({
           }
         }}
         disabled={loading}
-        className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition hover:border-blue-400 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+        className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-blue-200 bg-blue-50 px-4 py-3 text-sm font-bold text-blue-700 transition hover:border-blue-400 hover:bg-blue-100 hover:text-blue-800 disabled:cursor-not-allowed disabled:opacity-60"
       >
         {loading ? (
           <Loader2 className="h-4 w-4 animate-spin" />

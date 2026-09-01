@@ -21,7 +21,7 @@ export default function AttivitaToolbar({
   onCategoria: (value: string) => void;
 }) {
   const selectClass =
-    "rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700 transition focus:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-100";
+    "rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700 transition focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-100";
 
   return (
     <div className="card p-4 md:p-5">
@@ -38,7 +38,7 @@ export default function AttivitaToolbar({
             onChange={(event) => onRicerca(event.target.value)}
             placeholder="Cerca negozio..."
             aria-label="Cerca negozio"
-            className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 pl-10 pr-4 text-sm font-medium text-slate-700 placeholder:text-slate-400 transition focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100"
+            className="w-full rounded-xl border border-yellow-200 bg-yellow-50/50 py-2.5 pl-10 pr-4 text-sm font-medium text-yellow-900 placeholder:text-slate-400 transition focus:border-yellow-400 focus:bg-yellow-50 focus:outline-none focus:ring-2 focus:ring-yellow-100"
           />
         </div>
 

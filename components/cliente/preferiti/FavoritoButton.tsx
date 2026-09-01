@@ -93,7 +93,7 @@ export default function FavoritoButton({
         className={`${base} gap-1.5 border px-3 py-2 text-xs font-bold ${
           attivoLocal
             ? "border-yellow-200 bg-yellow-50 text-yellow-600 hover:bg-yellow-100"
-            : "border-slate-200 bg-white text-slate-600 hover:border-yellow-200 hover:text-yellow-600"
+            : "border-yellow-300 bg-yellow-50 text-yellow-800 hover:border-yellow-400 hover:bg-yellow-100"
         } ${className}`}
       >
         <Heart
@@ -115,7 +115,7 @@ export default function FavoritoButton({
       className={`${base} h-9 w-9 shadow-md ${
         attivoLocal
           ? "bg-yellow-500 text-white hover:bg-yellow-600"
-          : "bg-white/95 text-slate-600 backdrop-blur hover:bg-white hover:text-yellow-500"
+          : "bg-yellow-50 text-yellow-700 backdrop-blur hover:bg-yellow-100 hover:text-yellow-800"
       } ${className}`}
     >
       <Heart

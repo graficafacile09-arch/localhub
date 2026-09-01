@@ -394,7 +394,7 @@ export default function ReclamiOrdine({
                             risolvi
                               ? "bg-yellow-400 text-blue-800 shadow-sm hover:bg-yellow-300"
                               : azione.stato === "chiuso"
-                                ? "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                                ? "border border-blue-200 bg-blue-50 text-blue-700 hover:border-blue-300 hover:bg-blue-100 hover:text-blue-800"
                                 : "border border-blue-200 bg-white text-blue-700 hover:bg-blue-50"
                           }`}
                         >

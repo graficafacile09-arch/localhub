@@ -316,8 +316,8 @@ export default function PrenotazioneForm({
                 key={s.id ?? s.nome}
                 className={`flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 text-sm font-semibold transition ${
                   servizioId === s.id
-                    ? "border-blue-400 bg-blue-50 text-blue-800"
-                    : "border-slate-200 bg-white text-slate-700 hover:border-blue-200"
+                    ? "border-yellow-400 bg-yellow-50 text-yellow-900"
+                    : "border-yellow-200 bg-yellow-50/40 text-yellow-800 hover:border-yellow-300 hover:bg-yellow-50"
                 }`}
               >
                 <input

@@ -236,7 +236,7 @@ export default function RegistroAttivitaModule() {
               onKeyDown={(e) => e.key === "Enter" && applicaFiltri()}
               placeholder="Cerca per operazione, risorsa, email, negozio..."
               aria-label="Cerca nel registro"
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 pl-10 pr-4 text-sm font-medium text-slate-700 placeholder:text-slate-400 transition focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100"
+              className="w-full rounded-xl border border-yellow-200 bg-yellow-50/50 py-2.5 pl-10 pr-4 text-sm font-medium text-yellow-900 placeholder:text-slate-400 transition focus:border-yellow-400 focus:bg-yellow-50 focus:outline-none focus:ring-2 focus:ring-yellow-100"
             />
           </div>
 
@@ -245,7 +245,7 @@ export default function RegistroAttivitaModule() {
               value={operationType}
               onChange={(e) => setOperationType(e.target.value)}
               onBlur={applicaFiltri}
-              className="h-10 rounded-xl border border-slate-200 bg-slate-50/50 px-3 text-sm font-medium text-slate-700 transition focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100"
+              className="h-10 rounded-xl border border-yellow-200 bg-yellow-50/50 px-3 text-sm font-medium text-yellow-900 transition focus:border-yellow-400 focus:bg-yellow-50 focus:outline-none focus:ring-2 focus:ring-yellow-100"
             >
               <option value="">Tutte le operazioni</option>
               {tipiOperazione.map((t) => (
@@ -259,7 +259,7 @@ export default function RegistroAttivitaModule() {
               value={targetType}
               onChange={(e) => setTargetType(e.target.value)}
               onBlur={applicaFiltri}
-              className="h-10 rounded-xl border border-slate-200 bg-slate-50/50 px-3 text-sm font-medium text-slate-700 transition focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100"
+              className="h-10 rounded-xl border border-yellow-200 bg-yellow-50/50 px-3 text-sm font-medium text-yellow-900 transition focus:border-yellow-400 focus:bg-yellow-50 focus:outline-none focus:ring-2 focus:ring-yellow-100"
             >
               <option value="">Tutte le risorse</option>
               {tipiRisorsa.map((t) => (
@@ -273,7 +273,7 @@ export default function RegistroAttivitaModule() {
               value={result}
               onChange={(e) => setResult(e.target.value as "success" | "error" | "")}
               onBlur={applicaFiltri}
-              className="h-10 rounded-xl border border-slate-200 bg-slate-50/50 px-3 text-sm font-medium text-slate-700 transition focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100"
+              className="h-10 rounded-xl border border-yellow-200 bg-yellow-50/50 px-3 text-sm font-medium text-yellow-900 transition focus:border-yellow-400 focus:bg-yellow-50 focus:outline-none focus:ring-2 focus:ring-yellow-100"
             >
               <option value="">Tutti i risultati</option>
               <option value="success">✓ Successo</option>
@@ -291,7 +291,7 @@ export default function RegistroAttivitaModule() {
                 onChange={(e) => setDataDa(e.target.value)}
                 onBlur={applicaFiltri}
                 placeholder="Dal"
-                className="h-10 w-full sm:w-[150px] rounded-xl border border-slate-200 bg-slate-50/50 pl-10 pr-4 text-sm font-medium text-slate-700 transition focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100"
+                className="h-10 w-full sm:w-[150px] rounded-xl border border-yellow-200 bg-yellow-50/50 pl-10 pr-4 text-sm font-medium text-yellow-900 transition focus:border-yellow-400 focus:bg-yellow-50 focus:outline-none focus:ring-2 focus:ring-yellow-100"
               />
             </div>
 
@@ -306,7 +306,7 @@ export default function RegistroAttivitaModule() {
                 onChange={(e) => setDataA(e.target.value)}
                 onBlur={applicaFiltri}
                 placeholder="Al"
-                className="h-10 w-full sm:w-[150px] rounded-xl border border-slate-200 bg-slate-50/50 pl-10 pr-4 text-sm font-medium text-slate-700 transition focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100"
+                className="h-10 w-full sm:w-[150px] rounded-xl border border-yellow-200 bg-yellow-50/50 pl-10 pr-4 text-sm font-medium text-yellow-900 transition focus:border-yellow-400 focus:bg-yellow-50 focus:outline-none focus:ring-2 focus:ring-yellow-100"
               />
             </div>
           </div>
@@ -361,7 +361,7 @@ export default function RegistroAttivitaModule() {
                 </thead>
                 <tbody>
                   {attivita.map((riga) => (
-                    <tr key={riga.id} className="border-b border-slate-100/50 hover:bg-slate-50/50">
+                    <tr key={riga.id} className="border-b border-slate-100/50 hover:bg-yellow-50/50">
                       <td className="px-4 py-3 text-sm font-mono text-slate-700 whitespace-nowrap">
                         {formattaData(riga.created_at)}
                       </td>
@@ -429,7 +429,7 @@ export default function RegistroAttivitaModule() {
                     type="button"
                     onClick={paginaPrecedente}
                     disabled={(filtri.offset ?? 0) === 0}
-                    className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                    className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-yellow-300 bg-yellow-50 px-3 text-sm font-semibold text-yellow-800 transition hover:border-yellow-400 hover:bg-yellow-100 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     <ChevronLeft className="h-4 w-4" aria-hidden />
                     Precedente
@@ -438,7 +438,7 @@ export default function RegistroAttivitaModule() {
                     type="button"
                     onClick={paginaSuccessiva}
                     disabled={(filtri.offset ?? 0) + (filtri.limit ?? 50) >= totale}
-                    className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-slate-200 px-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                    className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-yellow-300 bg-yellow-50 px-3 text-sm font-semibold text-yellow-800 transition hover:border-yellow-400 hover:bg-yellow-100 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     Successiva
                     <ChevronLeft className="h-4 w-4 rotate-180" aria-hidden />

@@ -184,7 +184,7 @@ export default function UtentiModule({
                 type="button"
                 aria-label="Chiudi nuovo utente"
                 onClick={() => { setMostraNuovo(false); setErrore(null); }}
-                className="rounded-xl px-3 py-2 text-sm font-bold text-slate-500 transition hover:bg-slate-100 hover:text-slate-800"
+                className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700 transition hover:border-blue-300 hover:bg-blue-100 hover:text-blue-800"
               >
                 Chiudi
               </button>
@@ -199,7 +199,7 @@ export default function UtentiModule({
               </div>
               {errore && <p role="alert" className="mt-3 rounded-xl bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700">{errore}</p>}
               <div className="mt-6 flex justify-end gap-2">
-                <button type="button" onClick={() => { setMostraNuovo(false); setErrore(null); }} className="rounded-xl px-4 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-100">Annulla</button>
+                <button type="button" onClick={() => { setMostraNuovo(false); setErrore(null); }} className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm font-bold text-blue-700 transition hover:border-blue-300 hover:bg-blue-100 hover:text-blue-800">Annulla</button>
                 <button disabled={creando} type="submit" className="btn-cta px-4 py-2.5 text-sm disabled:opacity-60">{creando ? "Creazione..." : "Crea utente"}</button>
               </div>
             </form>
@@ -284,7 +284,7 @@ export default function UtentiModule({
                 type="button"
                 aria-label="Chiudi dettaglio utente"
                 onClick={() => setUtenteDettaglio(null)}
-                className="rounded-xl p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                className="rounded-xl border border-blue-200 bg-blue-50 p-2 text-blue-600 transition hover:border-blue-300 hover:bg-blue-100 hover:text-blue-800"
               >
                 <X className="h-5 w-5" aria-hidden />
               </button>

@@ -399,7 +399,7 @@ export default function SegnalazioniModule() {
               className={`inline-flex h-10 items-center gap-1.5 rounded-xl border px-3 text-xs font-bold transition ${
                 filtri.orderBy === "priorita"
                   ? "border-blue-300 bg-blue-50 text-blue-700"
-                  : "border-slate-200 bg-slate-50/50 text-slate-600 hover:bg-slate-100"
+                  : "border-blue-200 bg-blue-50 text-blue-700 hover:border-blue-300 hover:bg-blue-100 hover:text-blue-800"
               }`}
             >
               Ordina per priorità
@@ -452,7 +452,7 @@ export default function SegnalazioniModule() {
               <article
                 key={s.id}
                 onClick={() => apriDettaglio(s)}
-                className="group cursor-pointer card p-5 transition hover:border-blue-200 hover:shadow-md"
+                className="group cursor-pointer card p-5 transition hover:border-yellow-300 hover:shadow-md"
               >
                 <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                   <div className="space-y-1.5 min-w-0 flex-1">
@@ -494,7 +494,7 @@ export default function SegnalazioniModule() {
                   </div>
 
                   <div className="shrink-0 self-end md:self-center">
-                    <span className="inline-flex items-center gap-1 rounded-xl bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700 group-hover:bg-yellow-300 group-hover:text-blue-800 transition">
+                    <span className="inline-flex items-center gap-1 rounded-xl bg-yellow-100 px-3 py-2 text-xs font-bold text-yellow-800 transition group-hover:bg-yellow-300 group-hover:text-blue-900">
                       Gestisci
                     </span>
                   </div>
@@ -516,7 +516,7 @@ export default function SegnalazioniModule() {
             <button
               type="button"
               onClick={() => setSelezionata(null)}
-              className="absolute right-5 top-5 flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-500 transition hover:bg-slate-200"
+              className="absolute right-5 top-5 flex h-9 w-9 items-center justify-center rounded-xl border border-blue-200 bg-blue-50 text-blue-600 transition hover:border-blue-300 hover:bg-blue-100 hover:text-blue-800"
             >
               <X className="h-5 w-5" aria-hidden />
             </button>
@@ -617,7 +617,7 @@ export default function SegnalazioniModule() {
                 <button
                   type="button"
                   onClick={() => setSelezionata(null)}
-                  className="h-11 px-4 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition"
+                  className="h-11 rounded-xl border border-blue-200 bg-blue-50 px-4 text-sm font-semibold text-blue-700 transition hover:border-blue-300 hover:bg-blue-100 hover:text-blue-800"
                 >
                   Annulla
                 </button>
