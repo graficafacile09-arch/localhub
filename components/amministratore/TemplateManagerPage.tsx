@@ -118,7 +118,7 @@ export default function TemplateManagerPage() {
               <input type="text" value={editCat} onChange={(e) => setEditCat(e.target.value)} placeholder="Categoria" className="h-10 w-full rounded-xl border border-slate-200 px-4 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100" />
             </div>
             <div className="mt-5 flex items-center justify-end gap-2">
-              <button type="button" onClick={() => setEditing(null)} className="rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50">Annulla</button>
+              <button type="button" onClick={() => setEditing(null)} className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-semibold text-blue-700 transition hover:border-blue-300 hover:bg-blue-100 hover:text-blue-800">Annulla</button>
               <button type="button" onClick={handleSaveEdit} className="btn-cta px-4 py-2 text-xs">
                 <Check className="h-3.5 w-3.5" /> Salva
               </button>

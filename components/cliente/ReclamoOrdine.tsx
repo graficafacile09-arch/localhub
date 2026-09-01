@@ -349,7 +349,7 @@ export default function ReclamoOrdine({
               <button
                 type="button"
                 onClick={() => setAperto(false)}
-                className="rounded-lg p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+                className="rounded-lg border border-blue-200 bg-blue-50 p-1 text-blue-600 transition hover:border-blue-300 hover:bg-blue-100 hover:text-blue-800"
                 aria-label="Chiudi"
               >
                 <X className="h-4 w-4" />
@@ -390,7 +390,7 @@ export default function ReclamoOrdine({
                 type="button"
                 onClick={() => setAperto(false)}
                 disabled={invio}
-                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-semibold text-blue-700 transition hover:border-blue-300 hover:bg-blue-100 hover:text-blue-800 disabled:opacity-50"
               >
                 Annulla
               </button>

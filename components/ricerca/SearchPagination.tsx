@@ -39,7 +39,7 @@ export default function SearchPagination({ basePath, params, pagina, totale, per
         className={`inline-flex h-8 w-8 items-center justify-center rounded-lg border text-slate-600 transition ${
           pagina <= 1
             ? "pointer-events-none border-slate-100 text-slate-300"
-            : "border-slate-200 bg-white hover:bg-slate-50"
+            : "border-yellow-300 bg-yellow-50 text-yellow-800 hover:border-yellow-400 hover:bg-yellow-100"
         }`}
         aria-label="Pagina precedente"
       >
@@ -54,7 +54,7 @@ export default function SearchPagination({ basePath, params, pagina, totale, per
         className={`inline-flex h-8 w-8 items-center justify-center rounded-lg border text-slate-600 transition ${
           pagina >= totalePagine
             ? "pointer-events-none border-slate-100 text-slate-300"
-            : "border-slate-200 bg-white hover:bg-slate-50"
+            : "border-yellow-300 bg-yellow-50 text-yellow-800 hover:border-yellow-400 hover:bg-yellow-100"
         }`}
         aria-label="Pagina successiva"
       >

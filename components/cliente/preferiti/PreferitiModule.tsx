@@ -183,8 +183,8 @@ export default function PreferitiModule() {
               onClick={() => cambiaFiltro(tipo)}
               className={`rounded-xl px-3.5 py-2 text-xs font-bold transition ${
                 filtroTipo === tipo
-                  ? "bg-yellow-400 text-blue-900"
-                  : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                  ? "bg-yellow-400 text-blue-900 shadow-sm"
+                  : "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
               }`}
             >
               {etichette[tipo]}
@@ -205,7 +205,7 @@ export default function PreferitiModule() {
               onChange={(event) => setRicerca(event.target.value)}
               placeholder="Cerca tra i preferiti..."
               aria-label="Cerca tra i preferiti"
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2 pl-9 pr-3 text-sm text-slate-700 placeholder:text-slate-400 focus:border-yellow-300 focus:bg-white focus:outline-none sm:w-56"
+              className="w-full rounded-xl border border-yellow-200 bg-yellow-50/50 py-2 pl-9 pr-3 text-sm text-yellow-900 placeholder:text-slate-400 focus:border-yellow-300 focus:bg-yellow-50 focus:outline-none sm:w-56"
             />
           </form>
 
@@ -216,7 +216,7 @@ export default function PreferitiModule() {
               cambiaOrdine(event.target.value as "recenti" | "nome")
             }
             aria-label="Ordina preferiti"
-            className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-700 focus:border-yellow-300 focus:bg-white focus:outline-none"
+            className="rounded-xl border border-yellow-200 bg-yellow-50/50 px-3 py-2 text-sm font-semibold text-yellow-900 focus:border-yellow-300 focus:bg-yellow-50 focus:outline-none"
           >
             <option value="recenti">Più recenti</option>
             <option value="nome">Nome A-Z</option>
@@ -296,7 +296,7 @@ export default function PreferitiModule() {
             type="button"
             onClick={caricaAltri}
             disabled={caricamentoAltri}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition hover:border-blue-200 hover:text-blue-600 disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-xl border border-yellow-300 bg-yellow-50 px-5 py-2.5 text-sm font-bold text-yellow-800 shadow-sm transition hover:border-yellow-400 hover:bg-yellow-100 disabled:opacity-60"
           >
             {caricamentoAltri ? "Caricamento..." : "Carica altri preferiti"}
           </button>

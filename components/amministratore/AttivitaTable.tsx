@@ -72,7 +72,7 @@ export default function AttivitaTable({
               return (
                 <tr
                   key={negozio.id}
-                  className="border-b border-slate-50 transition-colors last:border-0 hover:bg-slate-50/50"
+                  className="border-b border-slate-50 transition-colors last:border-0 hover:bg-yellow-50/70"
                 >
                   <td className="px-5 py-4">
                     <span

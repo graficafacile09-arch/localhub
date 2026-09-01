@@ -53,7 +53,7 @@ export default async function AcquistaChoicePage({
           <GuestPurchaseButton />
           <Link
             href="/login?area=cliente"
-            className="inline-flex items-center justify-center rounded-xl border border-slate-300 px-5 py-3 text-sm font-bold text-blue-700 transition hover:bg-slate-50"
+            className="inline-flex items-center justify-center rounded-xl border border-blue-200 bg-blue-50 px-5 py-3 text-sm font-bold text-blue-700 transition hover:border-blue-300 hover:bg-blue-100 hover:text-blue-800"
           >
             REGISTRATI / ACCEDI
           </Link>

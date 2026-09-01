@@ -40,7 +40,7 @@ export default function SearchSort({ basePath = "/ricerca", value }: Props) {
         value={value}
         onChange={(e) => onChange(e.target.value)}
         aria-label="Ordina risultati"
-        className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-xs font-medium text-slate-700 focus:border-blue-300 focus:outline-none focus:ring-1 focus:ring-blue-300"
+        className="h-8 rounded-lg border border-yellow-300 bg-yellow-50 px-2 text-xs font-medium text-yellow-900 focus:border-yellow-400 focus:outline-none focus:ring-1 focus:ring-yellow-200"
       >
         {OPZIONI.map((o) => (
           <option key={o.value} value={o.value}>

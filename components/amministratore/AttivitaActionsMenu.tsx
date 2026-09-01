@@ -240,7 +240,7 @@ export default function AttivitaActionsMenu({
                     setErroreElimina(null);
                   }}
                   disabled={eliminando}
-                  className="rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-yellow-100 disabled:opacity-60"
+                  className="rounded-lg border border-yellow-200 bg-yellow-50 px-3 py-1.5 text-xs font-semibold text-yellow-800 transition hover:border-yellow-300 hover:bg-yellow-100 disabled:opacity-60"
                 >
                   Annulla
                 </button>
@@ -268,7 +268,7 @@ export default function AttivitaActionsMenu({
         aria-label={`Azioni per ${attivita.nome}`}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 transition hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-800"
+        className="flex h-9 w-9 items-center justify-center rounded-xl border border-yellow-300 bg-yellow-50 text-yellow-700 transition hover:border-yellow-400 hover:bg-yellow-100 hover:text-yellow-900"
       >
         <MoreHorizontal className="h-4 w-4" aria-hidden />
       </button>

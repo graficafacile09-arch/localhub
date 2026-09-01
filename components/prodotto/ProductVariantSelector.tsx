@@ -272,7 +272,7 @@ export default function ProductVariantSelector({
           negozio proprietario (regola auto-acquisto, blocco anche API) */}
       <div className="mt-4 space-y-2">
         {eIlMioProdotto ? (
-          <div className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-100 px-4 py-3 text-base font-bold text-slate-600">
+          <div className="flex w-full items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-base font-bold text-blue-700">
             <Store className="h-5 w-5 shrink-0" aria-hidden />
             Il tuo prodotto
           </div>
