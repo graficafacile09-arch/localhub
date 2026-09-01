@@ -37,9 +37,22 @@ type AnyTemplate = SystemTemplate | UserTemplate;
 
 type Mode = "blank" | "template" | "duplica";
 
-export default function WizardShell() {
+export default function WizardShell({
+  area = "merchant",
+}: {
+  /** area="admin" → l'admin crea negozi dall'Area Amministratore e viene
+   *  portato nell'editor condiviso in modalità admin. Il flusso resta
+   *  IDENTICO a quello del venditore (stessi wizard, template e API). */
+  area?: "merchant" | "admin";
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  // Destinazione post-creazione: editor condiviso nella propria area.
+  const editPath = (storeId: string) =>
+    area === "admin"
+      ? `/amministratore/negozi/${storeId}/edit`
+      : `/merchant/${storeId}/edit`;
 
   // Preselezione dal query param ?template=…: letta UNA volta all'avvio
   // (lazy initializer), senza effetti che settano stato. I template di
@@ -227,7 +240,7 @@ export default function WizardShell() {
           // dall'editor se la chiamata fallisce.
         }
 
-        router.push(`/merchant/${storeId}/edit`);
+        router.push(editPath(storeId));
         return;
       }
 
@@ -300,7 +313,7 @@ export default function WizardShell() {
             }
           }
         }
-        router.push(`/merchant/${json.data.storeId}/edit`);
+        router.push(editPath(json.data.storeId as string));
       } else {
         setError(json.error?.message ?? "Errore durante la creazione.");
       }

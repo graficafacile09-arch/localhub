@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ShieldCheck, Store, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { ChevronLeft, Plus, ShieldCheck, Store, Trash2 } from "lucide-react";
 import type { AttivitaRow } from "@/lib/amministratore/attivita-types";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import AttivitaCardGrid from "./AttivitaCardGrid";
@@ -153,23 +154,35 @@ export default function AttivitaModule({
           </button>
         </nav>
 
-        <div className="flex items-start gap-4">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 ring-1 ring-blue-100">
-            <Store className="h-7 w-7" aria-hidden />
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex items-start gap-4">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 ring-1 ring-blue-100">
+              <Store className="h-7 w-7" aria-hidden />
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
+                Centro di controllo
+              </p>
+              <h1 className="mt-1.5 text-2xl font-black tracking-tight text-slate-900 md:text-3xl">
+                Gestione Negozi
+              </h1>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
+                Gestisci tutti i negozi presenti sulla piattaforma. Usa la ricerca
+                o il filtro per categoria, apri un negozio per modificarlo oppure
+                sposta nel Cestino una scheda non più attiva.
+              </p>
+            </div>
           </div>
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
-              Centro di controllo
-            </p>
-            <h1 className="mt-1.5 text-2xl font-black tracking-tight text-slate-900 md:text-3xl">
-              Gestione Negozi
-            </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-              Gestisci tutti i negozi presenti sulla piattaforma. Usa la ricerca
-              o il filtro per categoria, apri un negozio per modificarlo oppure
-              sposta nel Cestino una scheda non più attiva.
-            </p>
-          </div>
+
+          {/* CTA "Crea negozio": riusa lo STESSO wizard del venditore
+              (/amministratore/negozi/nuovo → WizardShell area admin). */}
+          <Link
+            href="/amministratore/negozi/nuovo"
+            className="inline-flex shrink-0 items-center gap-2 rounded-full bg-yellow-400 px-4 py-2 text-xs font-bold text-blue-900 transition-colors hover:bg-yellow-300 active:scale-95"
+          >
+            <Plus className="h-4 w-4" aria-hidden />
+            Crea negozio
+          </Link>
         </div>
       </div>
 
