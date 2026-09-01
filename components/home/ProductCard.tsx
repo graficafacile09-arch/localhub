@@ -51,7 +51,7 @@ export default function ProductCard({
   const prezzoFormattato = Number.isFinite(prezzo) ? prezzo.toFixed(2) : String(prezzo);
 
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md">
+    <div className="group relative overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-yellow-300 hover:shadow-md">
       <Link
         href={`/prodotto/${slug}`}
         className="block"
@@ -90,7 +90,7 @@ export default function ProductCard({
         </div>
         <div className={compatto ? "p-2.5 md:p-3" : "p-3 md:p-4"}>
           <h3
-            className={`line-clamp-2 font-bold leading-snug text-slate-900 transition group-hover:text-blue-700 ${
+            className={`line-clamp-2 font-bold leading-snug text-slate-900 transition group-hover:text-yellow-800 ${
               compatto ? "text-[13px]" : "text-sm"
             }`}
           >
@@ -104,7 +104,7 @@ export default function ProductCard({
             {haVarianti ? "Da " : ""}€{prezzoFormattato}
           </p>
           <p className="mt-1 flex items-center gap-1 line-clamp-1 text-[11px] text-slate-400">
-            <Store className="h-3 w-3 shrink-0" aria-hidden />
+            <Store className="h-3 w-3 shrink-0 text-yellow-500" aria-hidden />
             {negozio_nome}
           </p>
         </div>
