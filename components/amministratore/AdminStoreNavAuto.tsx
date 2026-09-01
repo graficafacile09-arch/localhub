@@ -17,6 +17,9 @@ export default function AdminStoreNavAuto() {
   if (!match) return null;
 
   const storeId = match[1];
+  // La rotta statica /amministratore/negozi/nuovo (creazione negozio) non è
+  // un negozio reale: la nav contestuale non deve comparire (link morti).
+  if (storeId === "nuovo") return null;
   const base = `${ADMIN_BASE}/negozi/${storeId}`;
 
   const voci = [
