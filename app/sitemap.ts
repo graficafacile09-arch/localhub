@@ -15,6 +15,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/negozi`, lastModified: now, changeFrequency: "daily", priority: 0.9 },
     { url: `${SITE_URL}/ricerca`, lastModified: now, changeFrequency: "daily", priority: 0.7 },
     { url: `${SITE_URL}/categorie`, lastModified: now, changeFrequency: "weekly", priority: 0.7 },
+    { url: `${SITE_URL}/contenuti`, lastModified: now, changeFrequency: "weekly", priority: 0.6 },
   ];
 
   // Negozi attivi (URL pubbliche SOLO con slug).
@@ -47,6 +48,22 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: new Date(prodotto.updated_at ?? now),
       changeFrequency: "weekly",
       priority: 0.7,
+    });
+  }
+
+  // Contenuti editoriali SOLO pubblicati (bozze/archiviati MAI nella sitemap).
+  const { data: contenuti } = await db
+    .from("contenuti")
+    .select("slug, updated_at")
+    .eq("stato", "pubblicato")
+    .not("slug", "is", null);
+
+  for (const contenuto of contenuti ?? []) {
+    urls.push({
+      url: `${SITE_URL}/contenuti/${contenuto.slug}`,
+      lastModified: new Date(contenuto.updated_at ?? now),
+      changeFrequency: "monthly",
+      priority: 0.5,
     });
   }
 

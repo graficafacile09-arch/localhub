@@ -33,7 +33,7 @@
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getConfigProviderNegozio, credenzialiGatewayDaConfig } from "./config";
 import { getGatewayProvider } from "./registry";
-import { inviaEmailConfermaOrdine } from "@/lib/cliente/ordine-email";
+import { inviaEmailConfermaPagamento } from "@/lib/cliente/ordine-email";
 import { inviaNotificaNuovoOrdine } from "@/lib/notifiche/whatsapp";
 import { notificaNuovoOrdineAdmin } from "@/lib/amministratore/notifiche";
 
@@ -327,7 +327,7 @@ export async function gestisciWebhookPaypal(
           console.error("[pagamenti] elaborazione paypal paid fallita:", esito.errore);
         } else {
           await marcaSessione(paymentId, "paid");
-          await inviaEmailConfermaOrdine(ordine.id).catch(() => {});
+          await inviaEmailConfermaPagamento(ordine.id).catch(() => {});
           // WhatsApp al negoziante: SOLO dopo la conferma del pagamento.
           // Idempotenza: event_id UNIQUE in pagamenti_eventi + transizione
           // paid→paid = no-op → una sola notifica per ordine. Best-effort:
