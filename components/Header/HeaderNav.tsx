@@ -50,7 +50,7 @@ export default function HeaderNav() {
     { label: "Negozi", href: "/negozi", icona: Store, badge: null, micro: null, attiva: pathname === "/negozi" || pathname.startsWith("/negozi/") },
     { label: "Offerte", href: "/offerte", icona: Tag, badge: "SALDI", micro: null, attiva: pathname === "/offerte" || pathname.startsWith("/offerte/") },
     { label: "Categorie", href: "/categorie", icona: Grid2X2, badge: null, micro: null, attiva: pathname === "/categorie" || pathname.startsWith("/categorie/") },
-    { label: "Notizie", href: "/contenuti", icona: Newspaper, badge: null, micro: "CV", attiva: pathname === "/contenuti" || pathname.startsWith("/contenuti/") },
+    { label: "Notizie", href: "/notizie", icona: Newspaper, badge: null, micro: "CV", attiva: pathname === "/notizie" || pathname.startsWith("/notizie/") },
   ];
 
   return (

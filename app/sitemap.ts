@@ -16,6 +16,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/ricerca`, lastModified: now, changeFrequency: "daily", priority: 0.7 },
     { url: `${SITE_URL}/categorie`, lastModified: now, changeFrequency: "weekly", priority: 0.7 },
     { url: `${SITE_URL}/contenuti`, lastModified: now, changeFrequency: "weekly", priority: 0.6 },
+    { url: `${SITE_URL}/notizie`, lastModified: now, changeFrequency: "hourly", priority: 0.7 },
   ];
 
   // Negozi attivi (URL pubbliche SOLO con slug).
