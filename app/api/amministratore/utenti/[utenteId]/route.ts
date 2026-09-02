@@ -27,8 +27,12 @@ import { inviaEmailResetPassword } from "@/lib/password-reset-email";
  * Protezioni (server-side, mai fidarsi del client):
  *  - solo sessione admin autorizzata (requireApiArea);
  *  - l'account amministratore AUTORIZZATO (email autorizzata) non può essere
- *    modificato/eliminato dal pannello in nessun modo;
- *  - il ruolo amministratore può essere assegnato SOLO all'email autorizzata;
+ *    eliminato né può MAI perdere il ruolo amministratore (admin PERMANENTE:
+ *    niente rimozione, niente sostituzione/legacy senza admin); Cliente e
+ *    Venditore restano invece normalmente gestibili anche su quell'account;
+ *  - il ruolo amministratore è gestibile per qualunque altro account: il SOLO
+ *    ruolo non concede accesso all'area admin (serve l'email autorizzata:
+ *    gate applicativo lib/auth/area.ts + gate DB is_admin_authorized());
  *  - un utente deve mantenere almeno un ruolo;
  *  - ogni modifica viene registrata in admin_activity_log.
  */
@@ -114,19 +118,18 @@ export async function PATCH(
     return apiError("VALIDATION_ERROR", "Nessun campo da aggiornare.", 422);
   }
 
-  // ── Destinatario: deve esistere e NON essere l'account admin autorizzato.
+  // ── Destinatario: deve esistere. Reale e "protetto" è l'account admin
+  //     autorizzato (email autorizzata): le guardie specifiche applicate
+  //     sotto lo proteggono (admin permanente, niente eliminazione/stato/
+  //     reset/profilo), senza bloccarne la gestione di Cliente/Venditore.
   const { data: target, error: erroreTarget } = await db.auth.admin.getUserById(utenteId);
   if (erroreTarget || !target.user) return apiError("NOT_FOUND", "Utente non trovato.", 404);
 
   const emailTarget = target.user.email ?? "";
-  const èAccountProtetto = isAdminEmail(emailTarget);
-  if (èAccountProtetto) {
-    return apiError(
-      "PROTECTED_USER",
-      "L'account amministratore autorizzato non può essere modificato dal pannello.",
-      422
-    );
-  }
+  // Nota: l'account autorizzato NON è più bloccato in blocco. La protezione è
+  // mirata al ruolo amministratore (permanente) e all'eliminazione (vietata);
+  // Cliente/Venditore restano gestibili anche su quell'account.
+  const èProtetto = isAdminEmail(emailTarget);
 
   const operazioni: string[] = [];
   const bodyPresente = (chiave: string) =>
@@ -145,6 +148,15 @@ export async function PATCH(
   if (bodyPresente("ruolo")) {
     if (!ruoloValido(body.ruolo)) {
       return apiError("VALIDATION_ERROR", "Ruolo non valido.", 422);
+    }
+    // Sostituzione = l'account perde TUTTI gli altri ruoli: per l'account
+    // autorizzato è ammessa SOLO se conserva il ruolo amministratore.
+    if (èProtetto && body.ruolo !== "amministratore") {
+      return apiError(
+        "PROTECTED_ROLE",
+        "L'account amministratore autorizzato deve mantenere sempre il ruolo amministratore.",
+        422
+      );
     }
     const ruoloDb = RUOLI_DB[body.ruolo];
     const { error: deleteRoleError } = await db
@@ -171,16 +183,12 @@ export async function PATCH(
   }
 
   // ── 2) Aggiunta di un ruolo singolo (multi-ruolo ESPLICITO). ────────────
+  // Il ruolo amministratore è assegnabile a qualunque account: da solo NON
+  // concede accesso all'area admin né poteri DB (gate email autorizzata).
+  // Per l'account autorizzato è comunque un no-op: lo possiede sempre.
   if (bodyPresente("aggiungiRuolo")) {
     if (!ruoloValido(body.aggiungiRuolo)) {
       return apiError("VALIDATION_ERROR", "Ruolo non valido.", 422);
-    }
-    if (body.aggiungiRuolo === "amministratore" && !isAdminEmail(emailTarget)) {
-      return apiError(
-        "VALIDATION_ERROR",
-        "Il ruolo amministratore è riservato all'account autorizzato.",
-        422
-      );
     }
     const ruoloDb = RUOLI_DB[body.aggiungiRuolo];
     if (!ruoliAggiornati.has(ruoloDb)) {
@@ -206,6 +214,14 @@ export async function PATCH(
       return apiError("VALIDATION_ERROR", "Ruolo non valido.", 422);
     }
     const ruoloDb = RUOLI_DB[body.rimuoviRuolo];
+    // L'account autorizzato non può MAI perdere il ruolo amministratore.
+    if (èProtetto && ruoloDb === "admin") {
+      return apiError(
+        "PROTECTED_ROLE",
+        "Il ruolo amministratore dell'account autorizzato non può essere rimosso.",
+        422
+      );
+    }
     if (ruoliAggiornati.has(ruoloDb)) {
       // L'utente deve mantenere almeno un ruolo (mai un account senza area).
       if (ruoliAggiornati.size < 2) {
@@ -275,6 +291,16 @@ export async function PATCH(
   } else if (statoLegacy === "disattivato") {
     // "disattivato" legacy → ban permanente (stesso significato storico).
     azioneStato = "banna";
+  }
+
+  // Stato solo per account NON protetti: l'account autorizzato non può mai
+  // essere sospeso/bannato (e non può sospendere sé stesso).
+  if (azioneStato !== null && èProtetto) {
+    return apiError(
+      "PROTECTED_USER",
+      "L'account amministratore autorizzato non può essere sospeso, bannato o riattivato dal pannello.",
+      422
+    );
   }
 
   if (azioneStato === "riattiva") {
@@ -347,6 +373,13 @@ export async function PATCH(
 
   // ── 5) Reset password: invia il link di reset via email. ────────────────
   if (bodyPresente("resetPassword") && body.resetPassword === true) {
+    if (èProtetto) {
+      return apiError(
+        "PROTECTED_USER",
+        "Il reset password dell'account autorizzato non è gestibile dal pannello.",
+        422
+      );
+    }
     try {
       await invalidaTokenPrecedenti(utenteId);
       const token = await creaTokenReset(utenteId);
@@ -367,6 +400,15 @@ export async function PATCH(
   // separati gestiti dall'utente nell'area cliente (usati da checkout e
   // profilo); sovrascriverli con un nome completo svuoterebbe cognome.
   if (bodyPresente("profilo")) {
+    // Il nome di identità dell'account autorizzato resta fuori dalla gestione
+    // del pannello (comportamento storico conservato).
+    if (èProtetto) {
+      return apiError(
+        "PROTECTED_USER",
+        "Il profilo dell'account amministratore autorizzato non può essere modificato dal pannello.",
+        422
+      );
+    }
     const profilo =
       body.profilo && typeof body.profilo === "object"
         ? (body.profilo as Record<string, unknown>)

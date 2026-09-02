@@ -242,7 +242,7 @@ export default function UtentiModule({
                 <label className="text-sm font-semibold text-slate-700">Email<input required type="email" value={form.email} onChange={(event) => setForm((precedenti) => ({ ...precedenti, email: event.target.value }))} placeholder="nome@email.it" className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal" /></label>
                 <label className="text-sm font-semibold text-slate-700">Password<input required minLength={8} type="password" value={form.password} onChange={(event) => setForm((precedenti) => ({ ...precedenti, password: event.target.value }))} placeholder="Almeno 8 caratteri" className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal" /></label>
                 <label className="text-sm font-semibold text-slate-700">Conferma password<input required minLength={8} type="password" value={form.confermaPassword} onChange={(event) => setForm((precedenti) => ({ ...precedenti, confermaPassword: event.target.value }))} placeholder="Ripeti la password" className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal" /></label>
-                <label className="text-sm font-semibold text-slate-700 sm:col-span-2">Ruolo<select value={form.ruolo} onChange={(event) => setForm((precedenti) => ({ ...precedenti, ruolo: event.target.value as RuoloCreabile }))} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal"><option value="utente">Utente (cliente)</option><option value="commerciante">Commerciante</option></select><span className="mt-1 block text-xs text-slate-400">La registrazione assegna un solo ruolo; il ruolo amministratore è riservato all&apos;account autorizzato.</span></label>
+                <label className="text-sm font-semibold text-slate-700 sm:col-span-2">Ruolo<select value={form.ruolo} onChange={(event) => setForm((precedenti) => ({ ...precedenti, ruolo: event.target.value as RuoloCreabile }))} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal"><option value="utente">Utente (cliente)</option><option value="commerciante">Venditore</option></select><span className="mt-1 block text-xs text-slate-400">La registrazione assegna un solo ruolo; il ruolo amministratore è riservato all&apos;account autorizzato.</span></label>
               </div>
               {errore && <p role="alert" className="mt-3 rounded-xl bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700">{errore}</p>}
               <div className="mt-6 flex justify-end gap-2">
@@ -380,10 +380,10 @@ export default function UtentiModule({
       <div className="flex items-start gap-3 rounded-3xl border border-blue-100 bg-blue-50/60 px-5 py-4 text-sm text-blue-900">
         <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-blue-600" aria-hidden />
         <p className="leading-6">
-          <span className="font-bold">Protezioni attive:</span> l&apos;account
-          amministratore autorizzato non può essere modificato dal pannello; il
-          ruolo amministratore non è assegnabile ad altre email; ogni operazione
-          è verificata lato server e registrata nel registro attività.
+          <span className="font-bold">Protezioni attive:</span> il ruolo
+          Amministratore dell&apos;account autorizzato è permanente e l&apos;account non
+          è eliminabile; ogni operazione è verificata lato server e registrata
+          nel registro attività.
         </p>
       </div>
 

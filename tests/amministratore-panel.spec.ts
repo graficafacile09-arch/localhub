@@ -788,7 +788,7 @@ test.describe("MODULO UTENTI — ruoli e permessi", () => {
       page.getByRole("tab", { name: /Amministratori/ })
     ).toBeVisible();
     await expect(
-      page.getByRole("tab", { name: /Commercianti/ })
+      page.getByRole("tab", { name: /Venditori/ })
     ).toBeVisible();
     await expect(
       page.getByRole("tab", { name: /^Utenti/ })
@@ -831,7 +831,7 @@ test.describe("MODULO UTENTI — ruoli e permessi", () => {
     await expect(tabella.getByText("admin.test@localhub.it")).toHaveCount(0);
   });
 
-  test("il filtro Commercianti esclude gli account di test", async ({
+  test("il filtro Venditori esclude gli account di test", async ({
     page,
   }) => {
     await page.goto(`${BASE}/amministratore/utenti`, {
@@ -839,7 +839,7 @@ test.describe("MODULO UTENTI — ruoli e permessi", () => {
     });
 
     const tabella = page.locator("table");
-    await page.getByRole("tab", { name: /Commercianti/ }).click();
+    await page.getByRole("tab", { name: /Venditori/ }).click();
     // Gli account della suite (marcati "test") non compaiono mai in admin.
     await expect(tabella.getByText("admin.test@localhub.it")).toHaveCount(0);
     await expect(

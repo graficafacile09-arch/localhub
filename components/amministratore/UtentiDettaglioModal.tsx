@@ -42,7 +42,9 @@ type StatoRisultato =
 /**
  * Dettaglio account — modulo /amministratore/utenti.
  * Centralizza TUTTE le azioni amministrative sull'account:
- *  - ruoli: aggiungi/rimuovi (multi-ruolo ESPLICITO, mai il ruolo admin);
+ *  - ruoli: aggiungi/rimuovi (multi-ruolo ESPLICITO sui 3 ruoli; per
+ *    l'account autorizzato il ruolo amministratore è permanente e non
+ *    rimovibile, mentre Cliente/Venditore restano gestibili);
  *  - stato account: sospendi (motivo + durata giorni) / banna (motivo) /
  *    riattiva;
  *  - reset password (link inviato via email all'utente);
@@ -110,14 +112,25 @@ export default function UtentiDettaglioModal({
     }
   }
 
+  // Tutti e tre i ruoli sono gestibili dal pannello (le protezioni restano
+  // server-side). Per l'account autorizzato il ruolo amministratore è
+  // permanente: non compare MAI tra i ruoli aggiungibili.
   const ruoliMancanti = useMemo(() => {
     const posseduti = new Set(utente.ruoli);
-    // Il ruolo amministratore NON è mai assegnabile dal pannello (il server
-    // lo riserva all'email autorizzata, che è anche l'unico account protetto).
-    return (["commerciante", "utente"] as RuoloUtente[]).filter(
-      (ruolo) => !posseduti.has(ruolo)
+    return (["amministratore", "commerciante", "utente"] as RuoloUtente[]).filter(
+      (ruolo) =>
+        !posseduti.has(ruolo) &&
+        !(utente.protetto && ruolo === "amministratore")
     );
-  }, [utente.ruoli]);
+  }, [utente.ruoli, utente.protetto]);
+
+  // Un ruolo è rimovibile solo se l'account mantiene almeno un altro ruolo
+  // (vincolo server-side) e — per l'account autorizzato — mai il ruolo
+  // amministratore.
+  function ruoloRimovibile(ruolo: RuoloUtente): boolean {
+    if (utente.protetto && ruolo === "amministratore") return false;
+    return utente.ruoli.length > 1;
+  }
 
   async function aggiungiRuolo(ruolo: RuoloUtente) {
     const ok = await patch({ aggiungiRuolo: ruolo }, `aggiungi:${ruolo}`);
@@ -319,7 +332,8 @@ export default function UtentiDettaglioModal({
             <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-blue-600" aria-hidden />
             <p className="leading-6">
               Questo è l&apos;account amministratore autorizzato della piattaforma:
-              ruolo, stato e account non possono essere modificati dal pannello.
+              il ruolo Amministratore è permanente e l&apos;account non può essere
+              eliminato. I ruoli Cliente e Venditore restano gestibili.
             </p>
           </div>
         )}
@@ -395,7 +409,7 @@ export default function UtentiDettaglioModal({
                   className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ring-1 ${RUOLI_UTENTE[ruolo].chip}`}
                 >
                   {RUOLI_UTENTE[ruolo].label}
-                  {!protetto && utente.ruoli.length > 1 && (
+                  {ruoloRimovibile(ruolo) && (
                     <button
                       type="button"
                       disabled={operando !== null}
@@ -410,7 +424,7 @@ export default function UtentiDettaglioModal({
                 </span>
               ))}
             </div>
-            {!protetto && ruoliMancanti.length > 0 && (
+            {ruoliMancanti.length > 0 && (
               <div className="mt-3">
                 <p className="text-[11px] font-bold uppercase tracking-wide text-slate-400">
                   Aggiungi ruolo
@@ -429,8 +443,8 @@ export default function UtentiDettaglioModal({
                   ))}
                 </div>
                 <p className="mt-2 text-[11px] leading-4 text-slate-400">
-                  Il ruolo amministratore è riservato all&apos;account autorizzato
-                  e non è assegnabile dal pannello.
+                  Un account può avere più ruoli contemporaneamente. Per
+                  l&apos;account autorizzato il ruolo Amministratore è permanente.
                 </p>
               </div>
             )}
