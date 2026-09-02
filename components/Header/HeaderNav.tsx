@@ -31,16 +31,20 @@ import type { ComponentType } from "react";
  * - Carrello: stesso trattamento; badge numerico GIALLO con numero a
  *   contrasto, ancorato alla parte superiore dell'icona. Logica invariata.
  *   (Il Carrello ora vive come piccola icona accanto al logo.)
- * - Mobile: le quattro voci restano SEMPRE visibili e distribuite
- *   orizzontalmente, con icona sopra e testo sotto, senza overflow.
+ * - Mobile: le voci restano SEMPRE visibili e distribuite orizzontalmente,
+ *   con icona sopra e testo sotto, senza overflow.
+ *
+ * Spaziatura: i tasti hanno margini orizzontali leggeri (mx-1, più ampi su
+ * sm/lg) per restare ariosi senza allargare la barra; i separatori verticali
+ * restano allineati ai bordi delle celle della griglia.
  */
 export default function HeaderNav() {
   const pathname = usePathname();
 
-  // La voce "Offerte" resta GIALLA come le altre (stesso stile, dimensione,
-  // font, padding), ma ha un PICCOLO BADGE ROSSO "SALDI" come richiamo
-  // discreto accanto al testo. Nessun pulsante rosso pieno, nessuna
-  // differenza di layout o dimensioni rispetto alle altre voci.
+  // La voce "Offerte" resta IDENTICA alle altre (stessa struttura, larghezza,
+  // font, padding): "SALDI" è un micro-badge rosso compatto ancorato
+  // all'angolo dell'icona (il simbolo), visivamente subordinato a "Offerte"
+  // e che NON allarga il tasto rispetto agli altri.
   const voci = [
     { label: "Home", href: "/", icona: Home, badge: null, attiva: pathname === "/" },
     { label: "Negozi", href: "/negozi", icona: Store, badge: null, attiva: pathname === "/negozi" || pathname.startsWith("/negozi/") },
@@ -53,7 +57,7 @@ export default function HeaderNav() {
     <div className="w-full lg:w-auto">
       <nav
         aria-label="Navigazione principale"
-        className="relative mx-auto grid w-full max-w-[550px] grid-cols-5 items-center justify-items-center border-y border-slate-200 bg-white lg:w-auto lg:gap-1"
+        className="relative mx-auto grid w-full max-w-[550px] grid-cols-5 items-center justify-items-center border-y border-slate-200 bg-white lg:w-auto"
       >
         {/* Separatori verticali sottili tra le voci (molto discreti, danno
             struttura senza essere protagonisti). */}
@@ -73,9 +77,11 @@ export default function HeaderNav() {
               href={voce.href}
               aria-label={voce.label}
               aria-current={voce.attiva ? "page" : undefined}
-              className="group relative flex min-w-0 flex-col items-center gap-1 px-3 py-1 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 max-sm:px-1.5"
+              className="group relative mx-1 flex min-w-0 flex-col items-center gap-1 px-3 py-1 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 sm:mx-1.5 lg:mx-2 max-sm:px-1.5"
             >
-              {/* Icona protagonista */}
+              {/* Icona protagonista — "SALDI" è un micro-badge compatto
+                  ancorato all'angolo del simbolo (accanto all'icona), senza
+                  aumentare la larghezza del tasto. */}
               <span className="relative flex h-10 w-10 items-center justify-center max-sm:h-9 max-sm:w-9">
                 <Icona
                   aria-hidden
@@ -85,9 +91,18 @@ export default function HeaderNav() {
                       : "text-yellow-400 group-hover:text-yellow-500"
                   }`}
                 />
+                {voce.badge && (
+                  <span
+                    aria-hidden
+                    className="absolute -right-1 -top-1 inline-flex items-center rounded-full bg-red-600 px-1 py-px text-[7px] font-black uppercase leading-none tracking-tight text-white"
+                  >
+                    {voce.badge}
+                  </span>
+                )}
               </span>
 
-              {/* Testo sotto l'icona — sempre GIALLO come le altre voci */}
+              {/* Testo sotto l'icona — sempre GIALLO e identico per tutte le
+                  voci (nessun badge nel testo: larghezza coerente). */}
               <span
                 className={`whitespace-nowrap text-xs font-bold leading-none tracking-tight transition-colors duration-200 sm:text-sm ${
                   voce.attiva
@@ -96,16 +111,6 @@ export default function HeaderNav() {
                 }`}
               >
                 {voce.label}
-                {/* Piccolo badge ROSSO discreto accanto a "OFFERTE" (richiamo
-                    non invasivo, la voce resta gialla). */}
-                {voce.badge && (
-                  <span
-                    aria-hidden
-                    className="ml-1 inline-block rounded-full bg-red-600 px-1.5 py-[1px] text-[8px] font-black uppercase leading-none tracking-wide text-white align-middle"
-                  >
-                    {voce.badge}
-                  </span>
-                )}
               </span>
 
               {/* Indicatore attivo: semplice linea orizzontale sottile sotto
