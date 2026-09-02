@@ -46,11 +46,11 @@ export default function HeaderNav() {
   // all'angolo dell'icona (il simbolo), visivamente subordinato a "Offerte"
   // e che NON allarga il tasto rispetto agli altri.
   const voci = [
-    { label: "Home", href: "/", icona: Home, badge: null, attiva: pathname === "/" },
-    { label: "Negozi", href: "/negozi", icona: Store, badge: null, attiva: pathname === "/negozi" || pathname.startsWith("/negozi/") },
-    { label: "Offerte", href: "/offerte", icona: Tag, badge: "SALDI", attiva: pathname === "/offerte" || pathname.startsWith("/offerte/") },
-    { label: "Categorie", href: "/categorie", icona: Grid2X2, badge: null, attiva: pathname === "/categorie" || pathname.startsWith("/categorie/") },
-    { label: "Contenuti", href: "/contenuti", icona: Newspaper, badge: null, attiva: pathname === "/contenuti" || pathname.startsWith("/contenuti/") },
+    { label: "Home", href: "/", icona: Home, badge: null, micro: null, attiva: pathname === "/" },
+    { label: "Negozi", href: "/negozi", icona: Store, badge: null, micro: null, attiva: pathname === "/negozi" || pathname.startsWith("/negozi/") },
+    { label: "Offerte", href: "/offerte", icona: Tag, badge: "SALDI", micro: null, attiva: pathname === "/offerte" || pathname.startsWith("/offerte/") },
+    { label: "Categorie", href: "/categorie", icona: Grid2X2, badge: null, micro: null, attiva: pathname === "/categorie" || pathname.startsWith("/categorie/") },
+    { label: "Notizie", href: "/contenuti", icona: Newspaper, badge: null, micro: "CV", attiva: pathname === "/contenuti" || pathname.startsWith("/contenuti/") },
   ];
 
   return (
@@ -79,9 +79,11 @@ export default function HeaderNav() {
               aria-current={voce.attiva ? "page" : undefined}
               className="group relative mx-1 flex min-w-0 flex-col items-center gap-1 px-3 py-1 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 sm:mx-1.5 lg:mx-2 max-sm:px-1.5"
             >
-              {/* Icona protagonista — "SALDI" è un micro-badge compatto
-                  ancorato all'angolo del simbolo (accanto all'icona), senza
-                  aumentare la larghezza del tasto. */}
+              {/* Icona protagonista — "SALDI" (Offerte) è un micro-badge
+                  compatto ancorato all'angolo del simbolo; "CV" (Notizie) è
+                  un micro-elemento rosso ancora più discreto, aderente
+                  all'icona. Entrambi in position:absolute: NON aumentano la
+                  larghezza del tasto. */}
               <span className="relative flex h-10 w-10 items-center justify-center max-sm:h-9 max-sm:w-9">
                 <Icona
                   aria-hidden
@@ -99,10 +101,19 @@ export default function HeaderNav() {
                     {voce.badge}
                   </span>
                 )}
+                {voce.micro && (
+                  <span
+                    aria-hidden
+                    className="absolute -right-0.5 -top-1 text-[8px] font-black uppercase leading-none tracking-tight text-red-600"
+                  >
+                    {voce.micro}
+                  </span>
+                )}
               </span>
 
               {/* Testo sotto l'icona — sempre GIALLO e identico per tutte le
-                  voci (nessun badge nel testo: larghezza coerente). */}
+                  voci ("Notizie" come le altre: nessun badge nel testo,
+                  larghezza coerente). */}
               <span
                 className={`whitespace-nowrap text-xs font-bold leading-none tracking-tight transition-colors duration-200 sm:text-sm ${
                   voce.attiva
