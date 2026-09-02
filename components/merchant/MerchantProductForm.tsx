@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, ChevronDown, ChevronUp, ImagePlus, Layers, Truck, Wheat } from "lucide-react";
+import { Camera, ChevronDown, ChevronUp, ImagePlus, Layers, Tag, Truck, Wheat } from "lucide-react";
 import ProductGalleryManager from "@/components/merchant/products/ProductGalleryManager";
 import VariantiManager from "@/components/merchant/products/VariantiManager";
 import { Toggle } from "@/components/merchant/modules/ModuleFields";
@@ -37,6 +37,8 @@ export type MerchantProductPayload = {
   attivo: boolean;
   originePubblicazione: string;
   prodottoTipico: boolean;
+  /** True se il prodotto è in offerta (vetrina "Offerte", badge rosso). */
+  prodottoOfferta: boolean;
 };
 
 type MerchantProductFormProps = {
@@ -88,6 +90,7 @@ const DEFAULT_PRODUCT_FORM = {
   attivo: true,
   originePubblicazione: "manuale",
   prodotto_tipico: false,
+  prodotto_offerta: false,
 };
 
 export default function MerchantProductForm({
@@ -107,6 +110,8 @@ export default function MerchantProductForm({
   const [newImageDataUrl, setNewImageDataUrl] = useState<string | null>(null);
   // True se il prodotto appartiene alla vetrina "Prodotti tipici" (homepage).
   const [prodottoTipico, setProdottoTipico] = useState(Boolean(initialData?.prodotto_tipico));
+  // True se il prodotto è in offerta (vetrina "Offerte", badge rosso).
+  const [prodottoOfferta, setProdottoOfferta] = useState(Boolean(initialData?.prodotto_offerta));
 
   // ── Rilevamento modifiche non salvate ────────────────────────────────────
   const dirtyRef = useRef(false);
@@ -142,6 +147,7 @@ export default function MerchantProductForm({
       seo_description: str(initialValues.seo_description),
       alt_text_immagine: str(initialValues.alt_text_immagine),
       prodotto_tipico: String(Boolean(initialValues.prodotto_tipico)),
+      prodotto_offerta: String(Boolean(initialValues.prodotto_offerta)),
     });
   }
 
@@ -182,6 +188,7 @@ export default function MerchantProductForm({
       seo_description: get("seo_description"),
       alt_text_immagine: get("alt_text_immagine"),
       prodotto_tipico: String(prodottoTipico),
+      prodotto_offerta: String(prodottoOfferta),
     });
     notifyDirty(current !== getSnapshot());
   }
@@ -224,6 +231,7 @@ export default function MerchantProductForm({
         attivo: initialData.attivo ?? true,
         originePubblicazione: initialData.origine_pubblicazione ?? "manuale",
         prodotto_tipico: initialData.prodotto_tipico ?? false,
+        prodotto_offerta: initialData.prodotto_offerta ?? false,
       }
     : DEFAULT_PRODUCT_FORM;
 
@@ -285,6 +293,7 @@ export default function MerchantProductForm({
       attivo: true,
       originePubblicazione: String(formData.get("originePubblicazione") ?? initialValues.originePubblicazione),
       prodottoTipico: prodottoTipico,
+      prodottoOfferta: prodottoOfferta,
     };
 
     const route = productId
@@ -367,7 +376,7 @@ export default function MerchantProductForm({
             onClick={() => fileInputRef.current?.click()}
             title="Aggiungi foto prodotto"
             aria-label="Aggiungi foto prodotto"
-            className="flex h-32 w-32 cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 text-slate-400 transition hover:border-blue-300 hover:bg-blue-50/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2"
+            className="flex h-32 w-32 cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 text-slate-400 transition hover:border-yellow-300 hover:bg-yellow-50/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2"
           >
             <Camera className="h-8 w-8" />
             <span className="text-[10px] font-medium">Nessuna foto</span>
@@ -394,7 +403,7 @@ export default function MerchantProductForm({
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-slate-50"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-yellow-50"
         >
           <Camera className="h-3.5 w-3.5" />
           {initialValues.immaginePrincipale ? "Cambia immagine" : "Aggiungi immagine"}
@@ -455,6 +464,20 @@ export default function MerchantProductForm({
         />
       </div>
 
+      {/* Prodotto in offerta — vetrina Offerte */}
+      <div>
+        <Toggle
+          icon={<Tag className="h-4 w-4 text-red-600" aria-hidden />}
+          label="Prodotto in offerta"
+          description="Mostra questo prodotto nella pagina &quot;Offerte&quot; di InCittà con il badge rosso OFFERTA. Il prodotto resta nel normale catalogo del negozio."
+          checked={prodottoOfferta}
+          onChange={(v) => {
+            setProdottoOfferta(v);
+            notifyDirty(v !== Boolean(initialValues.prodotto_offerta));
+          }}
+        />
+      </div>
+
       {/* Banner prezzo AI */}
       {initialValues.prezzoSuggerito !== null ? (
         <div className="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-xs text-blue-700">
@@ -470,7 +493,7 @@ export default function MerchantProductForm({
           defaultValue={initialValues.nome}
           required
           placeholder="Nome prodotto *"
-          className="h-10 min-w-0 w-full max-w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+          className="h-10 min-w-0 w-full max-w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-yellow-500 focus:ring-2 focus:ring-yellow-100"
         />
       </div>
 
@@ -482,14 +505,14 @@ export default function MerchantProductForm({
           defaultValue={initialValues.categoria}
           required
           placeholder="Categoria *"
-          className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+          className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-yellow-500 focus:ring-2 focus:ring-yellow-100"
         />
         <input
           id="marca"
           name="marca"
           defaultValue={initialValues.marca}
           placeholder="Marca"
-          className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+          className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-yellow-500 focus:ring-2 focus:ring-yellow-100"
         />
       </div>
 
@@ -508,7 +531,7 @@ export default function MerchantProductForm({
             readOnly={initialData?.ha_varianti === true}
             title={initialData?.ha_varianti === true ? "Calcolato automaticamente dalle varianti" : undefined}
             placeholder="0,00"
-            className={`h-10 w-full rounded-lg border border-slate-200 pl-7 pr-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 ${
+            className={`h-10 w-full rounded-lg border border-slate-200 pl-7 pr-3 text-sm outline-none transition focus:border-yellow-500 focus:ring-2 focus:ring-yellow-100 ${
               initialData?.ha_varianti === true ? "cursor-not-allowed bg-slate-100 text-slate-500" : ""
             }`}
           />
@@ -522,7 +545,7 @@ export default function MerchantProductForm({
           readOnly={initialData?.ha_varianti === true}
           title={initialData?.ha_varianti === true ? "Calcolata automaticamente dalle varianti" : undefined}
           placeholder="Quantit&agrave;"
-          className={`h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 ${
+          className={`h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-yellow-500 focus:ring-2 focus:ring-yellow-100 ${
             initialData?.ha_varianti === true ? "cursor-not-allowed bg-slate-100 text-slate-500" : ""
           }`}
         />
@@ -555,7 +578,7 @@ export default function MerchantProductForm({
               step="1"
               defaultValue={initialValues.peso_grammi ?? ""}
               placeholder="Peso (grammi)"
-              className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-yellow-500 focus:ring-2 focus:ring-yellow-100"
             />
             <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">g</span>
           </div>
@@ -569,7 +592,7 @@ export default function MerchantProductForm({
               step="0.01"
               defaultValue={initialValues.costo_spedizione_locale ?? ""}
               placeholder="Corriere locale (€)"
-              className="h-10 w-full rounded-lg border border-slate-200 pl-7 pr-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              className="h-10 w-full rounded-lg border border-slate-200 pl-7 pr-3 text-sm outline-none transition focus:border-yellow-500 focus:ring-2 focus:ring-yellow-100"
             />
           </div>
         </div>
@@ -587,7 +610,7 @@ export default function MerchantProductForm({
         defaultValue={initialValues.descrizione}
         required
         placeholder="Descrizione breve *"
-        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-yellow-500 focus:ring-2 focus:ring-yellow-100"
       />
 
       {/* Immagine (URL) - hidden */}
@@ -603,7 +626,7 @@ export default function MerchantProductForm({
         <button
           type="button"
           onClick={() => setShowAdvanced(!showAdvanced)}
-          className="flex w-full items-center justify-between px-4 py-2.5 text-xs font-semibold text-slate-500 transition hover:bg-slate-50"
+          className="flex w-full items-center justify-between px-4 py-2.5 text-xs font-semibold text-slate-500 transition hover:bg-yellow-50"
         >
           Dettagli avanzati
           {showAdvanced ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
@@ -617,13 +640,13 @@ export default function MerchantProductForm({
                 name="sottocategoria"
                 defaultValue={initialValues.sottocategoria}
                 placeholder="Sottocategoria"
-                className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-yellow-500 focus:ring-2 focus:ring-yellow-100"
               />
               <select
                 id="statoCondizione"
                 name="statoCondizione"
                 defaultValue={initialValues.statoCondizione}
-                className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none transition focus:border-yellow-500 focus:ring-2 focus:ring-yellow-100"
               >
                 <option value="nuovo">Nuovo</option>
                 <option value="usato">Usato</option>
@@ -636,14 +659,14 @@ export default function MerchantProductForm({
                 name="colore"
                 defaultValue={initialValues.colore}
                 placeholder="Colore"
-                className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-yellow-500 focus:ring-2 focus:ring-yellow-100"
               />
               <input
                 id="materiale"
                 name="materiale"
                 defaultValue={initialValues.materiale}
                 placeholder="Materiale"
-                className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-yellow-500 focus:ring-2 focus:ring-yellow-100"
               />
             </div>
             <input
@@ -651,7 +674,7 @@ export default function MerchantProductForm({
               name="peso_volume"
               defaultValue={initialValues.peso_volume}
               placeholder="Peso / Volume (es. 500g, 1.5L)"
-              className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-yellow-500 focus:ring-2 focus:ring-yellow-100"
             />
             <textarea
               id="descrizione_completa"
@@ -659,28 +682,28 @@ export default function MerchantProductForm({
               rows={2}
               defaultValue={initialValues.descrizione_completa}
               placeholder="Descrizione completa"
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-yellow-500 focus:ring-2 focus:ring-yellow-100"
             />
             <input
               id="caratteristiche"
               name="caratteristiche"
               defaultValue={initialValues.caratteristiche}
               placeholder="Caratteristiche (separate da virgola)"
-              className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-yellow-500 focus:ring-2 focus:ring-yellow-100"
             />
             <input
               id="parole_chiave"
               name="parole_chiave"
               defaultValue={initialValues.parole_chiave}
               placeholder="Tag SEO (separati da virgola)"
-              className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-yellow-500 focus:ring-2 focus:ring-yellow-100"
             />
             <input
               id="filtri_catalogo"
               name="filtri_catalogo"
               defaultValue={initialValues.filtri_catalogo}
               placeholder='Filtri (es. "taglia: M, stagione: estate")'
-              className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-yellow-500 focus:ring-2 focus:ring-yellow-100"
             />
             <div className="grid grid-cols-2 gap-3">
               <input
@@ -689,14 +712,14 @@ export default function MerchantProductForm({
                 defaultValue={initialValues.seo_title}
                 placeholder="SEO title"
                 maxLength={60}
-                className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-yellow-500 focus:ring-2 focus:ring-yellow-100"
               />
               <input
                 id="alt_text_immagine"
                 name="alt_text_immagine"
                 defaultValue={initialValues.alt_text_immagine}
                 placeholder="Alt text foto"
-                className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-yellow-500 focus:ring-2 focus:ring-yellow-100"
               />
             </div>
             <textarea
@@ -706,7 +729,7 @@ export default function MerchantProductForm({
               defaultValue={initialValues.seo_description}
               maxLength={160}
               placeholder="Meta description SEO"
-              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+              className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-yellow-500 focus:ring-2 focus:ring-yellow-100"
             />
           </div>
         )}

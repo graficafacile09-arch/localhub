@@ -1,6 +1,7 @@
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { utenteAdminAutorizzato } from "@/lib/auth/roles";
+import { creaNotificaAdmin } from "@/lib/amministratore/notifiche";
 
 /** Tipo evento della tabella eventi. */
 export type Evento = {
@@ -27,6 +28,79 @@ export type EventoInput = {
   data_fine?: string | null;
   attivo?: boolean;
 };
+
+/** Campi di un evento modificabili dal pannello (senza il negozio). */
+export type CampiEvento = Partial<Omit<EventoInput, "negozio_id">>;
+
+export type EsitoValidazioneEvento<T> =
+  | { valore: T; errore: null }
+  | { valore: null; errore: string };
+
+/**
+ * Validazione condivisa dei campi evento (titolo/descrizione/luogo/immagine/
+ * date/attivo), coerente con i flussi del venditore. Usata dalle route
+ * amministrative (POST crea e PATCH modifica) senza duplicare logica.
+ */
+export function validaCampiEvento(
+  body: Record<string, unknown>,
+  opts: { parziale: boolean }
+): EsitoValidazioneEvento<CampiEvento> {
+  const input: CampiEvento = {};
+
+  if ("titolo" in body) {
+    const titolo = typeof body.titolo === "string" ? body.titolo.trim() : "";
+    if (!titolo) {
+      return { valore: null, errore: "Il titolo dell'evento è obbligatorio." };
+    }
+    input.titolo = titolo;
+  } else if (!opts.parziale) {
+    return { valore: null, errore: "Il titolo dell'evento è obbligatorio." };
+  }
+
+  for (const [campo, etichetta] of [
+    ["descrizione", "La descrizione"],
+    ["immagine_url", "immagine_url"],
+    ["luogo", "Il luogo"],
+  ] as const) {
+    if (!(campo in body) || body[campo] === undefined) continue;
+    if (body[campo] === null) {
+      input[campo] = null;
+    } else if (typeof body[campo] === "string") {
+      input[campo] = (body[campo] as string).trim() || null;
+    } else {
+      return { valore: null, errore: `${etichetta} deve essere testo.` };
+    }
+  }
+
+  for (const campo of ["data_inizio", "data_fine"] as const) {
+    if (!(campo in body) || body[campo] === undefined) continue;
+    if (body[campo] === null) {
+      input[campo] = null;
+      continue;
+    }
+    if (typeof body[campo] !== "string") {
+      return { valore: null, errore: `"${campo}" deve essere una data ISO valida.` };
+    }
+    const data = new Date(body[campo] as string);
+    if (Number.isNaN(data.getTime())) {
+      return { valore: null, errore: `"${campo}" non è una data valida.` };
+    }
+    input[campo] = data.toISOString();
+  }
+
+  if ("attivo" in body && body.attivo !== undefined && body.attivo !== null) {
+    if (typeof body.attivo !== "boolean") {
+      return { valore: null, errore: "attivo deve essere booleano." };
+    }
+    input.attivo = body.attivo;
+  }
+
+  if (opts.parziale && Object.keys(input).length === 0) {
+    return { valore: null, errore: "Nessun campo da aggiornare." };
+  }
+
+  return { valore: input, errore: null };
+}
 
 /** Evento con riferimenti del negozio per il pannello amministratore. */
 export type EventoAdmin = Evento & {
@@ -124,6 +198,17 @@ export async function creaEventoNegozio(
   if (error || !data) {
     return { ok: false, errore: error?.message ?? "Impossibile creare l'evento." };
   }
+
+  // Notifica admin — BEST-EFFORT, creazione evento riuscita. Mai
+  // bloccante: un errore qui non tocca l'esito della creazione.
+  await creaNotificaAdmin({
+    tipo: "evento_creato",
+    titolo: "Nuovo evento pubblicato",
+    corpo: data.titolo,
+    gravita: "info",
+    href: "/amministratore/eventi",
+  });
+
   return { ok: true, data: assumiEvento(data as Record<string, unknown>) };
 }
 
@@ -171,6 +256,70 @@ export async function eliminaEventoNegozio(
 // ════════════════════════════════════════════════════
 // EVENTI AMMINISTRATORE (globale)
 // ════════════════════════════════════════════════════
+
+/** Negozi attivi (non cestinati) tra cui l'admin può scegliere alla creazione. */
+export async function getNegoziPerEventoAdmin(): Promise<{ id: string; nome: string }[]> {
+  const db = getDb();
+  if (!db) return [];
+  const { data, error } = await db
+    .from("negozi")
+    .select("id, nome")
+    .is("deleted_at", null)
+    .order("nome", { ascending: true });
+  if (error || !data) return [];
+  return (data ?? []).map((riga) => ({
+    id: String(riga.id),
+    nome: String(riga.nome ?? "Negozio senza nome"),
+  }));
+}
+
+/** Legge un evento nella forma EventoAdmin (con i riferimenti del negozio). */
+export async function getEventoAdminById(
+  eventoId: string
+): Promise<EventoAdmin | null> {
+  const db = getDb();
+  if (!db) return null;
+  const { data, error } = await db
+    .from("eventi")
+    .select(`${COLONNE_EVENTI}, negozi(nome, slug, attivo)`)
+    .eq("id", eventoId)
+    .maybeSingle();
+  if (error || !data) return null;
+  return estraiEventoAdmin(data as Record<string, unknown>);
+}
+
+/** Crea un evento dal pannello Amministratore (per un negozio scelto). */
+export async function creaEventoAdmin(
+  input: Omit<EventoInput, "negozio_id"> & { negozio_id: string }
+): Promise<{ ok: true; data: EventoAdmin } | { ok: false; errore: string }> {
+  const db = getDb();
+  if (!db) return { ok: false, errore: "Database non disponibile." };
+
+  const { data, error } = await db
+    .from("eventi")
+    .insert({
+      negozio_id: input.negozio_id,
+      titolo: input.titolo,
+      descrizione: input.descrizione ?? null,
+      immagine_url: input.immagine_url ?? null,
+      luogo: input.luogo ?? null,
+      data_inizio: input.data_inizio ?? null,
+      data_fine: input.data_fine ?? null,
+      attivo: input.attivo ?? true,
+    })
+    .select(COLONNE_EVENTI)
+    .single();
+
+  if (error || !data) {
+    return { ok: false, errore: error?.message ?? "Impossibile creare l'evento." };
+  }
+
+  const completo = await getEventoAdminById(String(data.id));
+  if (!completo) {
+    return { ok: false, errore: "Evento creato ma non leggibile dal pannello." };
+  }
+  return { ok: true, data: completo };
+}
 
 export async function getEventiAdmin(filtri?: FiltriEventi): Promise<EventoAdmin[]> {
   const db = getDb();

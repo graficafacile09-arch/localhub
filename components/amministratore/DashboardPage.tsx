@@ -122,7 +122,7 @@ export default function DashboardPage() {
             onClick={() => { setLoading(true); void fetchDashboard(); }}
             disabled={loading}
             title="Aggiorna i dati"
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500 transition hover:bg-slate-200 disabled:opacity-50"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-yellow-100 text-yellow-700 transition hover:bg-yellow-200 disabled:opacity-50"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           </button>

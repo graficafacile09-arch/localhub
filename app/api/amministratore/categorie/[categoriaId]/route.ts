@@ -3,6 +3,7 @@ import { apiError, apiOk } from "@/lib/api/response";
 import { requireApiArea } from "@/lib/auth/session-area";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { registraAttivitaAdmin, OPERATION_TYPES, TARGET_TYPES } from "@/lib/amministratore/activity-log";
+import { getConteggiNegoziPerCategoria } from "@/lib/negozi";
 
 const SLUG_REGEX = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
@@ -60,6 +61,16 @@ export async function PATCH(
     payload.sinonimi = body.sinonimi
       .map((s) => (typeof s === "string" ? s.trim() : ""))
       .filter(Boolean);
+  }
+
+  if ("descrizione" in body) {
+    if (body.descrizione !== null && body.descrizione !== undefined && typeof body.descrizione !== "string") {
+      return apiError("VALIDATION_ERROR", "La descrizione deve essere testo.", 422);
+    }
+    payload.descrizione =
+      body.descrizione === null || body.descrizione === undefined
+        ? null
+        : (body.descrizione as string).trim() || null;
   }
 
   if ("ordine" in body) {
@@ -125,11 +136,49 @@ export async function DELETE(_request: Request, context: { params: Promise<{ cat
 
   const { data: esistente, error: erroreEsistente } = await db
     .from("categorie")
-    .select("id, nome")
+    .select("*")
     .eq("id", categoriaId)
     .single();
   if (erroreEsistente || !esistente) {
     return apiError("NOT_FOUND", "Categoria non trovata.", 404);
+  }
+
+  // Protezione: una categoria usata da negozi ATTIVI non può essere eliminata.
+  // Le categorie NON sono colonne FK: i negozi conservano la propria categoria
+  // come testo e il matching usa nome+sinonimi (stesso criterio di conteggio
+  // della piattaforma). Eliminarla lascerebbe negozi attivi fuori dalle pagine
+  // categoria, quindi qui il conteggio attivo viene verificato lato SERVER.
+  const categoriaRiga = esistente as unknown as {
+    id: string;
+    nome: string;
+    slug: string;
+    descrizione: string | null;
+    icona: string | null;
+    immagine: string | null;
+    sinonimi: string[];
+    ordine: number;
+    attivo: boolean;
+  };
+  const conteggi = await getConteggiNegoziPerCategoria([
+    {
+      id: categoriaRiga.id,
+      nome: categoriaRiga.nome,
+      slug: categoriaRiga.slug,
+      descrizione: categoriaRiga.descrizione,
+      icona: categoriaRiga.icona,
+      immagine: categoriaRiga.immagine,
+      sinonimi: categoriaRiga.sinonimi,
+      ordine: categoriaRiga.ordine,
+      attivo: categoriaRiga.attivo,
+    },
+  ]);
+  const negoziCollegati = conteggi.get(categoriaRiga.id) ?? 0;
+  if (negoziCollegati > 0) {
+    return apiError(
+      "CATEGORIA_IN_USO",
+      `Impossibile eliminare: la categoria è usata da ${negoziCollegati} ${negoziCollegati === 1 ? "negozio attivo" : "negozi attivi"}. Rimuovila prima dai negozi.`,
+      422
+    );
   }
 
   const { error: erroreDelete } = await db.from("categorie").delete().eq("id", categoriaId);

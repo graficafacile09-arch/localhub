@@ -68,6 +68,16 @@ export async function POST(request: Request) {
     return apiError("VALIDATION_ERROR", "I sinonimi devono essere un elenco di testi.", 422);
   }
 
+  const descrizione =
+    body.descrizione === undefined || body.descrizione === null
+      ? null
+      : typeof body.descrizione === "string"
+        ? body.descrizione.trim() || null
+        : undefined;
+  if (descrizione === undefined) {
+    return apiError("VALIDATION_ERROR", "La descrizione deve essere testo.", 422);
+  }
+
   const db = getDb();
   if (!db) {
     return apiError("DB_UNAVAILABLE", "Database non disponibile.", 500);
@@ -79,6 +89,7 @@ export async function POST(request: Request) {
       nome,
       slug,
       sinonimi,
+      descrizione,
       ordine: typeof body.ordine === "number" ? body.ordine : 0,
       attivo: typeof body.attivo === "boolean" ? body.attivo : true,
     })

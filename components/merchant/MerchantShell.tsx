@@ -27,6 +27,7 @@ export default function MerchantShell({
   area = "merchant",
   ordiniNonLettiPerNegozio,
   reclamiApertiPerNegozio,
+  adminNotificheNonLette,
   children,
 }: {
   user: User;
@@ -34,6 +35,8 @@ export default function MerchantShell({
   currentStoreId?: string;
   banner?: string | null;
   area?: "merchant" | "admin";
+  /** Badge notifiche admin non lette (SOLO area admin, calcolato server-side). */
+  adminNotificheNonLette?: number;
   /** Conteggio ordini non letti per negozio (badge "Ordini [N]"). */
   ordiniNonLettiPerNegozio?: Record<string, number>;
   /** Conteggio reclami ATTIVI per negozio (badge rosso "Reclami [N]"). */
@@ -108,7 +111,7 @@ export default function MerchantShell({
               {/* Contesto negozio: visibile quando l'admin è dentro un negozio */}
               <AdminStoreNavAuto />
               <div className="card p-5">
-                <AdminSidebar />
+                <AdminSidebar nonLetteNotifiche={adminNotificheNonLette ?? 0} />
               </div>
             </>
           ) : (

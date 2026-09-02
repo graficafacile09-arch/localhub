@@ -1,6 +1,14 @@
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { isAdminEmail } from "@/lib/auth/roles";
 import { eNegozioDaEscludere } from "./negozi";
-import type { FiltroRuoloUtente, RuoloUtente, Utente } from "./types";
+import type {
+  BloccoUtente,
+  FiltroRuoloUtente,
+  NegozioUtente,
+  RuoloUtente,
+  StatoAccount,
+  Utente,
+} from "./types";
 
 /**
  * Elenco utenti REALE della piattaforma per il modulo /amministratore/utenti.
@@ -8,8 +16,12 @@ import type { FiltroRuoloUtente, RuoloUtente, Utente } from "./types";
  *   - auth.admin.listUsers() (Auth Admin API, service role: legge auth.users
  *     anche dove PostgREST non espone lo schema "auth");
  *   - user_roles (ruoli, tabella public);
- *   - cliente_profili (nome e cognome dove presenti);
- *   - negozi (conteggio per proprietario, demo esclusi).
+ *   - nome di identità: user_metadata.full_name (registrazione + modifica
+ *     admin), con fallback su cliente_profili (nome e cognome) ed email;
+ *   - negozi (negozi per proprietario, demo esclusi);
+ *   - user_account_stati (stato sospeso/bannato con motivo e durate; tabella
+ *     aggiunta dalla migrazione 20260918 — se assente il modulo degrada a
+ *     "bannato" dedotto da auth.users.banned_until).
  * Nessun dato demo: tutto viene letto dal database.
  */
 
@@ -61,10 +73,88 @@ export function nomeDaEmail(email: string): string {
     .join(" ");
 }
 
+type RigaStatoAccount = {
+  user_id: string;
+  stato: string;
+  motivo: string | null;
+  iniziato_il: string | null;
+  fino_al: string | null;
+};
+
+/** mappa user_id → riga user_account_stati (best effort, tabella opzionale). */
+async function leggeStatiAccount(
+  db: NonNullable<ReturnType<typeof getDb>>
+): Promise<Map<string, RigaStatoAccount>> {
+  const mappa = new Map<string, RigaStatoAccount>();
+  try {
+    const { data, error } = await db.from("user_account_stati").select(
+      "user_id, stato, motivo, iniziato_il, fino_al"
+    );
+    if (error) return mappa;
+    for (const riga of data ?? []) {
+      mappa.set(String(riga.user_id), riga as unknown as RigaStatoAccount);
+    }
+  } catch {
+    // Tabella assente (migrazione non applicata): nessun dettaglio blocco.
+  }
+  return mappa;
+}
+
+/**
+ * Stato account + blocco dedotti da banned_until (auth) e dalla riga
+ * user_account_stati (semantica sospeso/bannato). La fonte AUTOREVOLE del
+ * blocco resta banned_until: se scaduto l'account è di nuovo attivo anche
+ * se la riga di dettaglio non è stata ripulita.
+ */
+function statoAccountDa(
+  bannedUntil: string | null,
+  rigaStato: RigaStatoAccount | undefined,
+  ora: number
+): { stato: StatoAccount; blocco: BloccoUtente | null } {
+  const bannatoFinoA = bannedUntil ? new Date(bannedUntil).getTime() : null;
+  const èBloccato = bannatoFinoA !== null && bannatoFinoA > ora;
+
+  if (!èBloccato) {
+    return { stato: "attivo", blocco: null };
+  }
+
+  // Sospensione = riga dedicata con stato "sospeso" e fine nel futuro.
+  // Ogni blocco futuro senza riga (account precedenti alla migrazione)
+  // viene classificato come ban permanente (stesso significato storico
+  // del vecchio "disattivato").
+  const èSospensione =
+    rigaStato?.stato === "sospeso" &&
+    (!rigaStato.fino_al ||
+      new Date(rigaStato.fino_al).getTime() >= ora);
+
+  if (èSospensione) {
+    return {
+      stato: "sospeso",
+      blocco: {
+        tipo: "sospeso",
+        motivo: rigaStato.motivo ?? null,
+        iniziatoIl: rigaStato.iniziato_il ?? null,
+        finoAl: rigaStato.fino_al ?? bannedUntil,
+      },
+    };
+  }
+
+  return {
+    stato: "bannato",
+    blocco: {
+      tipo: "bannato",
+      motivo: rigaStato?.motivo ?? null,
+      iniziatoIl: rigaStato?.iniziato_il ?? null,
+      finoAl: rigaStato?.fino_al ?? bannedUntil,
+    },
+  };
+}
+
 /**
  * Elenco utenti reali della piattaforma (Auth Admin API + user_roles +
- * cliente_profili + conteggio negozi reali). In caso di errore (es. chiave
+ * cliente_profili + negozi + stati account). In caso di errore (es. chiave
  * service role non configurata) ritorna [].
+ * Il filtro per ruolo è sul ruolo PRIMARIO (comportamento storico).
  */
 export async function getUtentiReali(
   filtro: FiltroRuoloUtente = "tutti"
@@ -76,10 +166,12 @@ export async function getUtentiReali(
   let utentiAuth: {
     id: string;
     email?: string | null;
+    email_confirmed_at?: string | null;
     created_at?: string;
     last_sign_in_at?: string | null;
     banned_until?: string | null;
     deleted_at?: string | null;
+    user_metadata?: Record<string, unknown> | null;
   }[] = [];
   try {
     // Auth Admin API restituisce al massimo 1000 utenti per pagina: carichiamo
@@ -93,10 +185,12 @@ export async function getUtentiReali(
         ...data.users.map((u) => ({
           id: u.id,
           email: u.email ?? null,
+          email_confirmed_at: u.email_confirmed_at ?? null,
           created_at: u.created_at ?? new Date().toISOString(),
           last_sign_in_at: u.last_sign_in_at ?? null,
           banned_until: u.banned_until ?? null,
           deleted_at: u.deleted_at ?? null,
+          user_metadata: u.user_metadata ?? null,
         }))
       );
       if (data.users.length < perPage) break;
@@ -111,17 +205,22 @@ export async function getUtentiReali(
   // Q2 — ruoli di tutti gli utenti (una sola query sulla tabella public).
   const { data: ruoli } = await db.from("user_roles").select("user_id, role");
 
-  // Q3 — nomi dai profili cliente (dove presenti).
+  // Q3 — nomi dai profili cliente (dove presenti). Il nome "di identità"
+  // resta user_metadata.full_name (scritto alla registrazione e modificabile
+  // dall'admin): qui si raccoglie solo il profilo cliente come fallback.
   const { data: profili } = await db
     .from("cliente_profili")
     .select("user_id, nome, cognome");
 
-  // Q4 — negozi non eliminati per conteggio per proprietario.
-  // I negozi demo vengono esclusi dal conteggio (mai nell'Area Admin).
+  // Q4 — negozi non eliminati (per la lista associata al venditore).
+  // I negozi demo vengono esclusi (mai nell'Area Admin).
   const { data: negozi } = await db
     .from("negozi")
-    .select("owner_user_id, nome, slug")
+    .select("id, owner_user_id, nome, slug, attivo")
     .is("deleted_at", null);
+
+  // Q5 — stati account (sospeso/bannato con motivo e durate), best effort.
+  const statiAccount = await leggeStatiAccount(db);
 
   const ruoliPerUtente = new Map<string, string[]>();
   for (const r of ruoli ?? []) {
@@ -140,7 +239,7 @@ export async function getUtentiReali(
     if (nome) nomePerUtente.set(String(p.user_id), nome);
   }
 
-  const negoziPerUtente = new Map<string, number>();
+  const negoziPerUtente = new Map<string, NegozioUtente[]>();
   for (const n of negozi ?? []) {
     if (!n.owner_user_id) continue;
     const proprietario = String(n.owner_user_id);
@@ -152,7 +251,14 @@ export async function getUtentiReali(
     ) {
       continue;
     }
-    negoziPerUtente.set(proprietario, (negoziPerUtente.get(proprietario) ?? 0) + 1);
+    const lista = negoziPerUtente.get(proprietario) ?? [];
+    lista.push({
+      id: String(n.id),
+      nome: String(n.nome ?? "Negozio"),
+      slug: (n.slug as string | null) ?? null,
+      attivo: (n.attivo as boolean) ?? true,
+    });
+    negoziPerUtente.set(proprietario, lista);
   }
 
   const ora = Date.now();
@@ -162,33 +268,60 @@ export async function getUtentiReali(
     // non compaiono MAI nel pannello Amministratore.
     .filter((riga) => !èUtenteTest(ruoliPerUtente.get(riga.id) ?? []))
     .map((riga) => {
-    const email = riga.email ?? "";
-    const ruoliUtente = ruoliPerUtente.get(riga.id) ?? [];
+      const email = riga.email ?? "";
+      const ruoliUtente = ruoliPerUtente.get(riga.id) ?? [];
 
-    // Ruolo primario: priorità massima tra i ruoli posseduti.
-    const ruoloArea = ruoloPrimario(ruoliUtente);
+      // Nome di identità: full_name (registrazione + modifica admin), poi il
+      // profilo cliente (nome/cognome) e infine il nome derivato dall'email.
+      const nomeMetadati = String(
+        riga.user_metadata?.full_name ?? ""
+      ).trim();
 
-    const disattivato =
-      Boolean(riga.deleted_at) ||
-      (Boolean(riga.banned_until) &&
-        new Date(String(riga.banned_until)).getTime() > ora);
+      // Ruolo primario: priorità massima tra i ruoli posseduti.
+      const ruoloPrimarioArea = ruoloPrimario(ruoliUtente);
 
-    const utente: Utente = {
-      id: riga.id,
-      nome: nomePerUtente.get(riga.id) ?? nomeDaEmail(email),
-      email,
-      ruolo: ruoloArea,
-      stato: disattivato ? "disattivato" : "attivo",
-      ultimoAccesso: riga.last_sign_in_at ?? null,
-      registratoIl: riga.created_at ?? new Date().toISOString(),
-    };
+      const { stato, blocco } = statoAccountDa(
+        riga.banned_until ?? null,
+        statiAccount.get(riga.id),
+        ora
+      );
 
-    const negoziUtente = negoziPerUtente.get(riga.id);
-    if (negoziUtente !== undefined) utente.negozi = negoziUtente;
+      const negoziUtente = negoziPerUtente.get(riga.id) ?? [];
 
-    return utente;
-  });
+      const utente: Utente = {
+        id: riga.id,
+        nome: nomeMetadati || (nomePerUtente.get(riga.id) ?? nomeDaEmail(email)),
+        email,
+        ruoli: ruoliUtente
+          .map((ruolo) => RUOLO_AREA[ruolo])
+          .filter((ruolo): ruolo is RuoloUtente => Boolean(ruolo)),
+        ruolo: ruoloPrimarioArea,
+        stato,
+        emailVerificata: Boolean(riga.email_confirmed_at),
+        ultimoAccesso: riga.last_sign_in_at ?? null,
+        negozi: negoziUtente,
+        numeroNegozi: negoziUtente.length,
+        registratoIl: riga.created_at ?? new Date().toISOString(),
+        blocco,
+        protetto: isAdminEmail(email),
+      };
+
+      return utente;
+    });
 
   if (filtro === "tutti") return utenti;
   return utenti.filter((u) => u.ruolo === filtro);
+}
+
+/**
+ * Ritorna il record completo di un singolo utente (per aggiornare la UI dopo
+ * una mutazione amministrativa). Usa la stessa lettura dell'elenco, così la
+ * risposta dell'API coincide ESATTAMENTE con ciò che mostra la tabella.
+ * Null se l'utente non esiste o è un account di test.
+ */
+export async function getUtenteAdminById(
+  utenteId: string
+): Promise<Utente | null> {
+  const utenti = await getUtentiReali("tutti");
+  return utenti.find((utente) => utente.id === utenteId) ?? null;
 }

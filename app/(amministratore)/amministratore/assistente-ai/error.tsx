@@ -45,7 +45,7 @@ export default function AssistenteAiError({
           onClick={() => {
             window.location.href = "/amministratore/assistente-ai";
           }}
-          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-yellow-50"
         >
           <Bot className="h-4 w-4" aria-hidden />
           Ricarica la pagina

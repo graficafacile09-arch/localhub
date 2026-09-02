@@ -142,7 +142,7 @@ export default function MerchantProductListManager({
                 type="button"
                 onClick={() => eseguiAzione("attiva")}
                 disabled={occupato}
-                className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-yellow-400 px-3.5 text-xs font-bold text-blue-800 transition hover:bg-yellow-300 disabled:opacity-50"
+                className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-blue-600 px-3.5 text-xs font-bold text-white transition hover:bg-yellow-400 hover:text-blue-900 disabled:opacity-50"
               >
                 Attiva
               </button>
@@ -150,7 +150,7 @@ export default function MerchantProductListManager({
                 type="button"
                 onClick={() => eseguiAzione("disattiva")}
                 disabled={occupato}
-                className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 text-xs font-bold text-slate-600 transition hover:border-slate-400 hover:bg-slate-50 disabled:opacity-50"
+                className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3.5 text-xs font-bold text-slate-600 transition hover:border-yellow-300 hover:bg-yellow-50 disabled:opacity-50"
               >
                 Disattiva
               </button>
@@ -253,6 +253,11 @@ export default function MerchantProductListManager({
                     {product.prodotto_tipico && (
                       <span className="rounded-full bg-yellow-100 px-2.5 py-0.5 text-[11px] font-bold text-yellow-800">
                         TIPICO
+                      </span>
+                    )}
+                    {product.prodotto_offerta && (
+                      <span className="rounded-full bg-red-100 px-2.5 py-0.5 text-[11px] font-bold text-red-700">
+                        OFFERTA
                       </span>
                     )}
                     {product.origine_pubblicazione === "ai" && (

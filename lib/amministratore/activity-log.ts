@@ -266,6 +266,9 @@ export const OPERATION_TYPES = {
   ORDINE_CESTINATO: "ordine_cestinato",
   ORDINE_RIPRISTINATO: "ordine_ripristinato",
   ORDINE_ELIMINATO_DEFINITIVO: "ordine_eliminato_definitivo",
+  ORDINE_STATO_MODIFICATO: "ordine_stato_modificato",
+  ORDINE_SPEDIZIONE_MODIFICATA: "ordine_spedizione_modificata",
+  ORDINE_RIMBORSATO: "ordine_rimborsato",
 
   // Impostazioni / Utenti / In Evidenza / Template
   IMPOSTAZIONI_MODIFICATE: "impostazioni_modificate",
@@ -282,6 +285,15 @@ export const OPERATION_TYPES = {
   SEGNALAZIONE_RISOLTA: "segnalazione_risolta",
   SEGNALAZIONE_ARCHIVIATA: "segnalazione_archiviata",
   SEGNALAZIONE_RIAPERTA: "segnalazione_riaperta",
+
+  // Contenuti
+  CONTENUTO_CREATO: "contenuto_creato",
+  CONTENUTO_MODIFICATO: "contenuto_modificato",
+  CONTENUTO_ELIMINATO: "contenuto_eliminato",
+
+  // Payout
+  PAYOUT_STATO_MODIFICATO: "payout_stato_modificato",
+  PAYOUT_ANNULLATO: "payout_annullato",
 } as const;
 
 export const TARGET_TYPES = {
@@ -296,4 +308,6 @@ export const TARGET_TYPES = {
   TEMPLATE: "template",
   SEGNALAZIONE: "segnalazione",
   ORDINE: "ordine",
+  CONTENUTO: "contenuto",
+  PAYOUT: "payout",
 } as const;

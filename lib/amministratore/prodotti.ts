@@ -14,6 +14,10 @@ export type ProdottoAdminRow = {
   prezzo: number | null;
   quantitaDisponibile: number | null;
   attivo: boolean;
+  /** Flag vetrina: prodotto tipico (pagina pubblica "Prodotti tipici"). */
+  prodottoTipico: boolean;
+  /** Flag vetrina: prodotto in offerta (pagina pubblica "Offerte"). */
+  prodottoOfferta: boolean;
   originePubblicazione: string | null;
   statoCondizione: string | null;
   immaginePrincipale: string | null;
@@ -57,7 +61,7 @@ export async function getProdottiAmministrazione(): Promise<ProdottoAdminRow[]> 
   const { data: prodotti } = await db
     .from("prodotti")
     .select(
-      "id, negozio_id, nome, categoria, prezzo, quantita_disponibile, attivo, origine_pubblicazione, stato_condizione, immagine_principale, created_at"
+      "id, negozio_id, nome, categoria, prezzo, quantita_disponibile, attivo, prodotto_tipico, prodotto_offerta, origine_pubblicazione, stato_condizione, immagine_principale, created_at"
     )
     .in("negozio_id", ids)
     .order("created_at", { ascending: false });
@@ -79,6 +83,8 @@ export async function getProdottiAmministrazione(): Promise<ProdottoAdminRow[]> 
             : null,
       quantitaDisponibile: (p.quantita_disponibile as number | null) ?? null,
       attivo: (p.attivo as boolean) ?? true,
+      prodottoTipico: Boolean(p.prodotto_tipico),
+      prodottoOfferta: Boolean(p.prodotto_offerta),
       originePubblicazione: (p.origine_pubblicazione as string | null) ?? null,
       statoCondizione: (p.stato_condizione as string | null) ?? null,
       immaginePrincipale: (p.immagine_principale as string | null) ?? null,

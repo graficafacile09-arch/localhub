@@ -35,6 +35,7 @@ import { getConfigProviderNegozio, credenzialiGatewayDaConfig } from "./config";
 import { getGatewayProvider } from "./registry";
 import { inviaEmailConfermaOrdine } from "@/lib/cliente/ordine-email";
 import { inviaNotificaNuovoOrdine } from "@/lib/notifiche/whatsapp";
+import { notificaNuovoOrdineAdmin } from "@/lib/amministratore/notifiche";
 
 export type EsitoWebhook = { status: number; body: string };
 
@@ -332,6 +333,10 @@ export async function gestisciWebhookPaypal(
           // paid→paid = no-op → una sola notifica per ordine. Best-effort:
           // un errore WhatsApp non tocca ordine né webhook.
           await inviaNotificaNuovoOrdine(ordine.id).catch(() => {});
+          // Notifica admin — BEST-EFFORT, SOLO a pagamento confermato.
+          // Guardie idempotenti a monte (pagamenti_eventi UNIQUE + paid→paid
+          // no-op): mai due notifiche per lo stesso ordine.
+          await notificaNuovoOrdineAdmin(ordine.id).catch(() => {});
         }
         break;
       }

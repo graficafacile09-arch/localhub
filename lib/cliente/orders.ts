@@ -2,6 +2,7 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { utentePossiedeNegozio } from "@/lib/merchant/data";
 import { inviaNotificaNuovoOrdine } from "@/lib/notifiche/whatsapp";
 import { inviaNotificaNuovoOrdineNtfy } from "@/lib/notifiche/ntfy";
+import { notificaNuovoOrdineAdmin } from "@/lib/amministratore/notifiche";
 import { inviaEmailConfermaOrdine } from "./ordine-email";
 import { richiediVariantePerProdotto } from "@/lib/varianti-pubbliche";
 import type { PaymentStatus } from "@/lib/pagamenti/types";
@@ -602,6 +603,9 @@ export async function creaOrdine(
       // (bonifico/ritiro) parte qui; per i pagamenti online parte SOLO dal
       // webhook di conferma del provider (mai duplicata, best-effort).
       await inviaNotificaNuovoOrdine(esito.ordine.id).catch(() => {});
+      // Notifica admin — BEST-EFFORT, stesso momento di conferma di
+      // WhatsApp (ordini non online: confermati subito alla creazione).
+      await notificaNuovoOrdineAdmin(esito.ordine.id).catch(() => {});
     }
     // ntfy: canale indipendente, resta al momento della creazione.
     await inviaNotificaNuovoOrdineNtfy(esito.ordine.id).catch(() => {});

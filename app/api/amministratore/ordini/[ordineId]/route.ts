@@ -6,6 +6,11 @@ import {
   getOrdineAdmin,
 } from "@/lib/amministratore/ordini";
 import { isStatoOrdine } from "@/lib/merchant/ordini-stati";
+import {
+  registraAttivitaAdmin,
+  OPERATION_TYPES,
+  TARGET_TYPES,
+} from "@/lib/amministratore/activity-log";
 
 /**
  * GET /api/amministratore/ordini/[ordineId]
@@ -71,6 +76,26 @@ export async function PATCH(
   if (!esito.ok) {
     return apiError(esito.codice, esito.messaggio, esito.status);
   }
+
+  // Registra l'operazione amministrativa SOLO dopo il successo (stesso
+  // pattern degli altri moduli: nessun log senza mutazione riuscita).
+  const ordine = esito.ordine;
+  await registraAttivitaAdmin({
+    adminUserId: sessione.user.id,
+    adminEmail: sessione.user.email ?? "",
+    operationType: OPERATION_TYPES.ORDINE_STATO_MODIFICATO,
+    targetType: TARGET_TYPES.ORDINE,
+    targetId: ordineId,
+    targetName: ordine?.numero ?? ordineId,
+    negozioId: ordine?.negozioId ?? null,
+    negozioNome: ordine?.negozioNome ?? null,
+    result: "success",
+    detail: {
+      stato_nuovo: body.stato,
+      motivo,
+      nota,
+    },
+  });
 
   revalidatePath("/amministratore/ordini");
   revalidatePath(`/amministratore/ordini/${ordineId}`);

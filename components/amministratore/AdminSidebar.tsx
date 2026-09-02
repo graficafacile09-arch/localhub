@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, ShieldCheck } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { adminFooterItems, adminNavGroups } from "./navigation";
+import { EVENTO_AGGIORNA_NOTIFICHE } from "./notifiche-eventi";
 
 /**
  * Menu laterale del pannello Amministratore, organizzato per GRUPPI logici
@@ -18,10 +19,42 @@ import { adminFooterItems, adminNavGroups } from "./navigation";
  */
 export default function AdminSidebar({
   collapsed = false,
+  nonLetteNotifiche = 0,
 }: {
   collapsed?: boolean;
+  /** Conteggio notifiche admin non lette, calcolato lato SERVER (layout). */
+  nonLetteNotifiche?: number;
 }) {
   const pathname = usePathname();
+
+  // Badge "Notifiche": valore iniziale dal server; sincronizzato DOPO le
+  // azioni di lettura/archiviazione del modulo (evento puntuale, nessun
+  // polling/Realtime) e quando il layout ri-calcola il conteggio. Quando la
+  // prop server-side cambia (nuova navigazione), lo stato locale viene
+  // riallineato durante il render (pattern React "adjust state when prop
+  // changes"): nessun setState sincrono dentro un effect.
+  const [nonLetteNotificheLocal, setNonLetteNotificheLocal] = useState(nonLetteNotifiche);
+  const [nonLetteDaServerside, setNonLetteDaServerside] = useState(nonLetteNotifiche);
+
+  if (nonLetteDaServerside !== nonLetteNotifiche) {
+    setNonLetteDaServerside(nonLetteNotifiche);
+    setNonLetteNotificheLocal(nonLetteNotifiche);
+  }
+
+  useEffect(() => {
+    function onAggiorna(evento: Event) {
+      const dettaglio = (evento as CustomEvent<number>).detail;
+      if (
+        typeof dettaglio === "number" &&
+        Number.isFinite(dettaglio) &&
+        dettaglio >= 0
+      ) {
+        setNonLetteNotificheLocal(dettaglio);
+      }
+    }
+    window.addEventListener(EVENTO_AGGIORNA_NOTIFICHE, onAggiorna);
+    return () => window.removeEventListener(EVENTO_AGGIORNA_NOTIFICHE, onAggiorna);
+  }, []);
 
   function isActive(href: string): boolean {
     if (href === "/") return false;
@@ -102,6 +135,16 @@ export default function AdminSidebar({
           aria-hidden
         />
         <span className="truncate">{item.label}</span>
+        {item.href === "/amministratore/notifiche" && nonLetteNotificheLocal > 0 && (
+          <span
+            className="ml-auto inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-yellow-400 px-1.5 text-[10px] font-black leading-none text-blue-900"
+            title={`${nonLetteNotificheLocal} ${
+              nonLetteNotificheLocal === 1 ? "notifica non letta" : "notifiche non lette"
+            }`}
+          >
+            {nonLetteNotificheLocal > 9 ? "9+" : nonLetteNotificheLocal}
+          </span>
+        )}
       </Link>
     );
   }

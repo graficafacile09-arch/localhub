@@ -96,18 +96,26 @@ export async function GET(request: Request) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Ruolo customer GARANTITO lato server (idempotente). L'utente non può
-  // assegnarsi ruoli dal frontend: qui il ruolo è fissato a "customer".
+  // Ruolo customer GARANTITO lato server (idempotente) SOLO per gli account
+  // senza altri ruoli: il callback appartiene al flusso di registrazione
+  // CLIENTE e non deve MAI aggiungere automaticamente customer a un account
+  // che possiede già un altro ruolo (merchant/admin). Il multi-ruolo resta
+  // un'azione ESPLICITA dell'amministratore (modulo Utenti): se un venditore
+  // (o un admin) raggiunge questo link di conferma, il suo account NON
+  // acquisisce customer.
   try {
     const adminClient = createAdminSupabaseClient();
-    const { data: esistente } = await adminClient
+    const { data: ruoliEsistenti } = await adminClient
       .from("user_roles")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("role", "customer")
-      .maybeSingle();
+      .select("role")
+      .eq("user_id", user.id);
 
-    if (!esistente) {
+    const ruoli = new Set((ruoliEsistenti ?? []).map((r) => String(r.role)));
+    const haAltriRuoli =
+      ruoli.has("merchant") ||
+      ruoli.has("admin");
+
+    if (!ruoli.has("customer") && !haAltriRuoli) {
       const { error: roleError } = await adminClient
         .from("user_roles")
         .insert({ user_id: user.id, role: "customer" });

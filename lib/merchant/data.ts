@@ -74,6 +74,7 @@ type ProdottoRow = {
   attivo?: boolean | null;
   origine_pubblicazione?: string | null;
   prodotto_tipico?: boolean | null;
+  prodotto_offerta?: boolean | null;
   created_at?: string | null;
   updated_at?: string | null;
 };
@@ -83,7 +84,7 @@ const SCHEMA_ERROR_CODES = new Set(["42P01", "42703", "PGRST204", "PGRST205"]);
 // Colonna usata per SELECT dei prodotti merchant (lista + patch parziale):
 // costante condivisa per evitare drift tra le due query.
 const SELECT_COLONNE_PRODOTTO =
-  "id, negozio_id, nome, descrizione, descrizione_completa, categoria, sottocategoria, marca, colore, materiale, caratteristiche, peso_volume, peso_grammi, costo_spedizione_locale, parole_chiave, filtri_catalogo, prezzo, prezzo_suggerito, immagine_principale, quantita_disponibile, quantita_riservata, ha_varianti, stato_condizione, seo_title, seo_description, alt_text_immagine, attivo, origine_pubblicazione, prodotto_tipico, created_at, updated_at";
+  "id, negozio_id, nome, descrizione, descrizione_completa, categoria, sottocategoria, marca, colore, materiale, caratteristiche, peso_volume, peso_grammi, costo_spedizione_locale, parole_chiave, filtri_catalogo, prezzo, prezzo_suggerito, immagine_principale, quantita_disponibile, quantita_riservata, ha_varianti, stato_condizione, seo_title, seo_description, alt_text_immagine, attivo, origine_pubblicazione, prodotto_tipico, prodotto_offerta, created_at, updated_at";
 
 // Colonne delle varianti prodotto (Fase E2).
 const SELECT_COLONNE_VARIANTE =
@@ -163,6 +164,7 @@ function mapProduct(row: ProdottoRow): MerchantProduct {
     attivo: row.attivo ?? true,
     origine_pubblicazione: row.origine_pubblicazione ?? null,
     prodotto_tipico: row.prodotto_tipico ?? false,
+    prodotto_offerta: row.prodotto_offerta ?? false,
     created_at: row.created_at ?? null,
     updated_at: row.updated_at ?? null,
   };
@@ -493,6 +495,7 @@ export async function getMerchantProductsForStore(
     opts.stato !== undefined ||
     opts.ai === true ||
     opts.tipico !== undefined ||
+    opts.offerta !== undefined ||
     opts.esaurito === true ||
     opts.ordina !== undefined ||
     opts.pagina !== undefined ||
@@ -512,6 +515,10 @@ export async function getMerchantProductsForStore(
   // Vetrina Prodotti Tipici (flag booleano prodotto_tipico).
   if (opts.tipico === true) query = query.eq("prodotto_tipico", true);
   else if (opts.tipico === false) query = query.eq("prodotto_tipico", false);
+
+  // Vetrina Offerte (flag booleano prodotto_offerta).
+  if (opts.offerta === true) query = query.eq("prodotto_offerta", true);
+  else if (opts.offerta === false) query = query.eq("prodotto_offerta", false);
 
   // Esaurito = disponibilità reale <= 0. Oggi quantita_riservata è sempre 0
   // (colonna riservata al futuro flusso pagamenti/riserva stock), quindi il
@@ -571,6 +578,8 @@ export async function getMerchantProductsForStore(
     if (opts.ai) countQuery = countQuery.eq("origine_pubblicazione", "ai");
     if (opts.tipico === true) countQuery = countQuery.eq("prodotto_tipico", true);
     else if (opts.tipico === false) countQuery = countQuery.eq("prodotto_tipico", false);
+    if (opts.offerta === true) countQuery = countQuery.eq("prodotto_offerta", true);
+    else if (opts.offerta === false) countQuery = countQuery.eq("prodotto_offerta", false);
     if (opts.esaurito) countQuery = countQuery.lte("quantita_disponibile", 0);
     if (pulito) {
       countQuery = countQuery.or(
@@ -676,6 +685,7 @@ export async function createMerchantProductForStore(
     attivo: input.attivo,
     origine_pubblicazione: input.originePubblicazione?.trim() || "manuale",
     prodotto_tipico: input.prodottoTipico ?? false,
+    prodotto_offerta: input.prodottoOfferta ?? false,
   };
 
   if (input.descrizioneCompleta !== undefined) payload.descrizione_completa = input.descrizioneCompleta.trim() || null;
@@ -774,6 +784,7 @@ export async function updateMerchantProductForStore(
     attivo: input.attivo,
     origine_pubblicazione: input.originePubblicazione?.trim() || "manuale",
     prodotto_tipico: input.prodottoTipico ?? false,
+    prodotto_offerta: input.prodottoOfferta ?? false,
   };
 
   if (input.descrizioneCompleta !== undefined) payload.descrizione_completa = input.descrizioneCompleta.trim() || null;

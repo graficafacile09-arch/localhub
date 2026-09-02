@@ -1,5 +1,5 @@
 import EventiModule from "@/components/amministratore/EventiModule";
-import { getEventiAdmin } from "@/lib/eventi";
+import { getEventiAdmin, getNegoziPerEventoAdmin } from "@/lib/eventi";
 
 export const metadata = {
   title: "Eventi — Amministratore",
@@ -9,6 +9,9 @@ export const metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function EventiPage() {
-  const eventi = await getEventiAdmin();
-  return <EventiModule eventi={eventi} />;
+  const [eventi, negozi] = await Promise.all([
+    getEventiAdmin(),
+    getNegoziPerEventoAdmin(),
+  ]);
+  return <EventiModule eventi={eventi} negozi={negozi} />;
 }

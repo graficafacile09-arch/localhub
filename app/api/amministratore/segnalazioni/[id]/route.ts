@@ -57,6 +57,20 @@ export async function PATCH(
     patch.resolved_by = body.resolved_by as string | null;
   }
 
+  // Coerenza del workflow lato SERVER (mai fidarsi del client): quando lo stato
+  // diventa "risolta" la risoluzione viene registrata con l'admin che opera;
+  // quando la segnalazione viene riaperta (nuova/presa_in_carico) i dati di
+  // risoluzione vengono azzerati.
+  if ("stato" in patch) {
+    if (patch.stato === "risolta") {
+      patch.resolved_at = new Date().toISOString();
+      patch.resolved_by = sessione.user.id;
+    } else if (patch.stato === "nuova" || patch.stato === "presa_in_carico") {
+      patch.resolved_at = null;
+      patch.resolved_by = null;
+    }
+  }
+
   if (Object.keys(patch).length === 0) {
     return apiError("VALIDATION_ERROR", "Nessun campo da aggiornare.", 422);
   }

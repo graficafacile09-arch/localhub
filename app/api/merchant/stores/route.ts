@@ -4,6 +4,7 @@ import { getMerchantStoresForUser } from "@/lib/merchant/data";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { toSlug } from "@/lib/slug";
 import { generaSlugUnivoco } from "@/lib/slug-server";
+import { creaNotificaAdmin } from "@/lib/amministratore/notifiche";
 
 export async function GET() {
   const { sessione, error } = await requireApiArea("merchant");
@@ -54,6 +55,16 @@ export async function POST(request: Request) {
   if (error) {
     return apiError("CREATE_FAILED", error.message ?? "Impossibile creare il negozio.", 500);
   }
+
+  // Notifica admin — BEST-EFFORT, creazione negozio riuscita. Mai
+  // bloccante: un errore qui non tocca l'esito della creazione.
+  await creaNotificaAdmin({
+    tipo: "negozio_creato",
+    titolo: "Nuovo negozio creato",
+    corpo: nome,
+    gravita: "info",
+    href: `/amministratore/negozi/${data.id}`,
+  });
 
   return apiOk({ storeId: data.id });
 }

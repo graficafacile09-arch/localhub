@@ -30,7 +30,7 @@ function formatDate(dateStr: string): string {
 
 export default function TemplateCard({ item, onEdit, onDelete, onUse }: Props) {
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 transition-all duration-150 hover:border-blue-200 hover:shadow-md">
+    <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 transition-all duration-150 hover:border-yellow-300 hover:shadow-md">
       <div className="flex items-start justify-between">
         <div className="min-w-0 flex-1">
           <h3 className="text-sm font-bold text-slate-900 truncate">{item.nome}</h3>
@@ -74,7 +74,7 @@ export default function TemplateCard({ item, onEdit, onDelete, onUse }: Props) {
           <button
             type="button"
             onClick={() => onEdit(item)}
-            className="rounded-xl border border-slate-200 p-1.5 text-slate-400 transition hover:bg-slate-50 hover:text-blue-600"
+            className="rounded-xl border border-slate-200 p-1.5 text-slate-400 transition hover:bg-yellow-50 hover:text-yellow-800"
             title="Modifica"
           >
             <Pencil className="h-3.5 w-3.5" />
@@ -84,7 +84,7 @@ export default function TemplateCard({ item, onEdit, onDelete, onUse }: Props) {
           <button
             type="button"
             onClick={() => onDelete(item.id)}
-            className="rounded-xl border border-slate-200 p-1.5 text-slate-400 transition hover:bg-blue-50 hover:text-blue-600"
+            className="rounded-xl border border-slate-200 p-1.5 text-slate-400 transition hover:bg-yellow-50 hover:text-yellow-800"
             title="Elimina"
           >
             <Trash2 className="h-3.5 w-3.5" />

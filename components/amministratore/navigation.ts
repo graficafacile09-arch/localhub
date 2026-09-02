@@ -180,6 +180,13 @@ export const adminNavGroups: AdminNavGroup[] = [
         icon: Bell,
       },
       {
+        href: `${ADMIN_BASE}/notifiche`,
+        label: "Notifiche",
+        description:
+          "Centro notifiche del back office: eventi amministrativi generati automaticamente.",
+        icon: Bell,
+      },
+      {
         href: `${ADMIN_BASE}/statistiche`,
         label: "Statistiche",
         description:

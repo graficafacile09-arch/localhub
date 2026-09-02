@@ -206,7 +206,8 @@ export async function getDatiStatistiche(): Promise<DatiStatistiche> {
   // ── Utenti (utenti-queries: già senza account test) ─────────────────────
   dati.utenti.totale = utenti.length;
   dati.utenti.attivi = utenti.filter((u) => u.stato === "attivo").length;
-  dati.utenti.disattivati = utenti.filter((u) => u.stato === "disattivato").length;
+  // Il vecchio "disattivato" ora è rappresentato da sospeso + bannato.
+  dati.utenti.disattivati = utenti.filter((u) => u.stato !== "attivo").length;
   dati.utenti.perRuolo = mappaConteggi(raggruppa((u) => (u as { ruolo: string }).ruolo, utenti), 5);
 
   dati.kpi.utentiTotali = dati.utenti.totale;

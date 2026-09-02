@@ -182,7 +182,7 @@ export default function PayoutAdminClient() {
           <select
             value={filtri.stato}
             onChange={(e) => setFiltro("stato", e.target.value)}
-            className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+            className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100"
           >
             <option value="">Stato: tutti</option>
             {STATI.map((s) => (
@@ -193,7 +193,7 @@ export default function PayoutAdminClient() {
           <select
             value={filtri.negozioId}
             onChange={(e) => setFiltro("negozioId", e.target.value)}
-            className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+            className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100"
           >
             <option value="">Negozio: tutti</option>
             {negozi.map((n) => (
@@ -207,7 +207,7 @@ export default function PayoutAdminClient() {
               setFiltri({ stato: "", negozioId: "", dataDa: "", dataA: "" });
               setPagina(1);
             }}
-            className="inline-flex min-w-0 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-blue-300 hover:text-blue-700"
+            className="inline-flex min-w-0 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-800"
           >
             <X className="h-4 w-4" aria-hidden />
             Azzera filtri
@@ -287,7 +287,7 @@ export default function PayoutAdminClient() {
             type="button"
             onClick={() => setPagina((p) => Math.max(1, p - 1))}
             disabled={pagina <= 1 || caricando}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 transition hover:border-blue-300 hover:text-blue-700 disabled:opacity-40"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 transition hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-800 disabled:opacity-40"
           >
             <ArrowLeft className="h-4 w-4" aria-hidden /> Precedente
           </button>
@@ -298,7 +298,7 @@ export default function PayoutAdminClient() {
             type="button"
             onClick={() => setPagina((p) => Math.min(pagineTotali, p + 1))}
             disabled={pagina >= pagineTotali || caricando}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 transition hover:border-blue-300 hover:text-blue-700 disabled:opacity-40"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 transition hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-800 disabled:opacity-40"
           >
             Successiva <ArrowRight className="h-4 w-4" aria-hidden />
           </button>

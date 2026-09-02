@@ -184,7 +184,8 @@ export async function getAssistantContext(): Promise<AssistantContext> {
 
     ctx.piattaforma.utentiTotali = utenti.length;
     ctx.piattaforma.utentiAttivi = utenti.filter((u) => u.stato === "attivo").length;
-    ctx.piattaforma.utentiDisattivati = utenti.filter((u) => u.stato === "disattivato").length;
+    // Il vecchio "disattivato" ora è rappresentato da sospeso + bannato.
+    ctx.piattaforma.utentiDisattivati = utenti.filter((u) => u.stato !== "attivo").length;
 
     ctx.piattaforma.scansioniTotali = scansioni.totale;
     ctx.piattaforma.scansioniOggi = scansioni.oggi;

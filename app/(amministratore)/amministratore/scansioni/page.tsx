@@ -117,7 +117,7 @@ export default function ScansioniPage() {
           <button
             type="button"
             onClick={fetchStats}
-            className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-100 text-slate-500 transition hover:bg-slate-200"
+            className="flex h-9 w-9 items-center justify-center rounded-xl bg-yellow-100 text-yellow-700 transition hover:bg-yellow-200"
             title="Aggiorna"
           >
             <RefreshCw className="h-4 w-4" />
@@ -210,7 +210,7 @@ export default function ScansioniPage() {
             {recenti.map((s) => (
               <div
                 key={s.id}
-                className="flex items-center justify-between rounded-xl px-3 py-2 text-xs transition hover:bg-slate-50"
+                className="flex items-center justify-between rounded-xl px-3 py-2 text-xs transition hover:bg-yellow-50"
               >
                 <div className="flex items-center gap-3">
                   <span
