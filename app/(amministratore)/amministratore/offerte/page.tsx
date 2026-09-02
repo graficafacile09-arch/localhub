@@ -1,5 +1,5 @@
 import OfferteModule from "@/components/amministratore/OfferteModule";
-import { getOfferteAdmin } from "@/lib/offerte";
+import { getNegoziPerOffertaAdmin, getOfferteAdmin } from "@/lib/offerte";
 
 export const metadata = {
   title: "Offerte — Amministratore",
@@ -9,6 +9,9 @@ export const metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function OffertePage() {
-  const offerte = await getOfferteAdmin();
-  return <OfferteModule offerte={offerte} />;
+  const [offerte, negozi] = await Promise.all([
+    getOfferteAdmin(),
+    getNegoziPerOffertaAdmin(),
+  ]);
+  return <OfferteModule offerte={offerte} negozi={negozi} />;
 }

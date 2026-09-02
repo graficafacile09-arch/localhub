@@ -282,14 +282,14 @@ export default function OrdiniAdminClient() {
               value={filtri.q}
               onChange={(e) => setFiltro("q", e.target.value)}
               placeholder="Cerca numero, cliente o negozio…"
-              className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+              className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-3 text-sm text-slate-700 outline-none transition focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100"
             />
           </div>
 
           <select
             value={filtri.stato}
             onChange={(e) => setFiltro("stato", e.target.value)}
-            className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+            className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100"
           >
             <option value="">Stato ordine: tutti</option>
             {STORICO_STATI.map((s) => (
@@ -300,7 +300,7 @@ export default function OrdiniAdminClient() {
           <select
             value={filtri.pagamento}
             onChange={(e) => setFiltro("pagamento", e.target.value)}
-            className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+            className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100"
           >
             <option value="">Pagamento: tutti</option>
             {STATI_PAGAMENTO.map((s) => (
@@ -311,7 +311,7 @@ export default function OrdiniAdminClient() {
           <select
             value={filtri.statoSpedizione}
             onChange={(e) => setFiltro("statoSpedizione", e.target.value)}
-            className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+            className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100"
           >
             <option value="">Spedizione: tutte</option>
             {STATI_SPEDIZIONE.map((s) => (
@@ -322,7 +322,7 @@ export default function OrdiniAdminClient() {
           <select
             value={filtri.modalita}
             onChange={(e) => setFiltro("modalita", e.target.value)}
-            className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+            className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100"
           >
             <option value="">Modalità: tutte</option>
             <option value="ritiro">Ritiro</option>
@@ -332,7 +332,7 @@ export default function OrdiniAdminClient() {
           <select
             value={filtri.negozioId}
             onChange={(e) => setFiltro("negozioId", e.target.value)}
-            className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+            className="min-w-0 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100"
           >
             <option value="">Negozio: tutti</option>
             {negozi.map((n) => (
@@ -350,7 +350,7 @@ export default function OrdiniAdminClient() {
           <button
             type="button"
             onClick={azzera}
-            className="inline-flex min-w-0 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-blue-300 hover:text-blue-700"
+            className="inline-flex min-w-0 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-800"
           >
             <X className="h-4 w-4" aria-hidden />
             Azzera filtri
@@ -499,7 +499,7 @@ export default function OrdiniAdminClient() {
             type="button"
             onClick={() => setPagina((p) => Math.max(1, p - 1))}
             disabled={pagina <= 1 || caricando}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 transition hover:border-blue-300 hover:text-blue-700 disabled:opacity-40"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 transition hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-800 disabled:opacity-40"
           >
             <ArrowLeft className="h-4 w-4" aria-hidden /> Precedente
           </button>
@@ -510,7 +510,7 @@ export default function OrdiniAdminClient() {
             type="button"
             onClick={() => setPagina((p) => Math.min(pagineTotali, p + 1))}
             disabled={pagina >= pagineTotali || caricando}
-            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 transition hover:border-blue-300 hover:text-blue-700 disabled:opacity-40"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 transition hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-800 disabled:opacity-40"
           >
             Successiva <ArrowRight className="h-4 w-4" aria-hidden />
           </button>
@@ -542,7 +542,7 @@ function BadgeStato({ stato }: { stato: StatoOrdine }) {
       ? "bg-slate-100 text-slate-600 ring-1 ring-slate-200"
       : stato === "consegnato"
         ? "bg-blue-50 text-blue-700 ring-1 ring-blue-200"
-        : "bg-yellow-50 text-yellow-800 ring-1 ring-yellow-200";
+        : "bg-blue-50 text-blue-700 ring-1 ring-blue-200";
   return (
     <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-bold ${classe}`}>
       {ETICHETTE_STATO[stato]}
@@ -572,7 +572,7 @@ function BadgeSpedizione({ stato }: { stato: string }) {
       ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200"
       : stato === "problema"
         ? "bg-red-50 text-red-700 ring-1 ring-red-200"
-        : "bg-blue-50 text-blue-700 ring-1 ring-blue-200";
+        : "bg-yellow-50 text-yellow-800 ring-1 ring-yellow-200";
   return (
     <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-bold ${classe}`}>
       {ETICHETTE_STATO_SPEDIZIONE[stato as keyof typeof ETICHETTE_STATO_SPEDIZIONE] ?? stato}

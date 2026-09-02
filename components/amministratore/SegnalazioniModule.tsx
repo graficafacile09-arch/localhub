@@ -1,14 +1,19 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import {
   AlertTriangle,
   CheckCircle2,
   ChevronLeft,
+  ChevronRight,
   Clock,
+  ExternalLink,
   Inbox,
   Loader2,
+  Power,
   Search,
+  ShieldBan,
   X,
 } from "lucide-react";
 import type {
@@ -100,12 +105,80 @@ function BadgePriorita({ priorita }: { priorita: SegnalazionePriorita }) {
   }
 }
 
+type AzioneModerazione = {
+  valore: "disattiva_negozio" | "disattiva_prodotto" | "sospendi_utente" | "banna_utente";
+  etichetta: string;
+  dettaglio: string;
+};
+
+function linkOggetto(segnalazione: SegnalazioneAdmin): { href: string; label: string } | null {
+  if (segnalazione.negozio_id) {
+    return {
+      href: `/amministratore/negozi/${segnalazione.negozio_id}`,
+      label: "Apri il negozio nel back office",
+    };
+  }
+  if (segnalazione.target_type === "prodotto" && segnalazione.target_id) {
+    return {
+      href: `/amministratore/prodotti/${segnalazione.target_id}`,
+      label: "Apri il prodotto nel back office",
+    };
+  }
+  if (segnalazione.target_type === "utente" && segnalazione.target_id) {
+    return { href: "/amministratore/utenti", label: "Gestione utenti (elenco)" };
+  }
+  return null;
+}
+
+function azioniModerazione(segnalazione: SegnalazioneAdmin): AzioneModerazione[] {
+  const azioni: AzioneModerazione[] = [];
+  const negozioId =
+    segnalazione.negozio_id ??
+    (segnalazione.target_type === "negozio" ? segnalazione.target_id : null);
+  if (negozioId) {
+    azioni.push({
+      valore: "disattiva_negozio",
+      etichetta: "Disattiva il negozio",
+      dettaglio: "Nasconde il negozio e i suoi contenuti dalle pagine pubbliche.",
+    });
+  }
+  if (segnalazione.target_type === "prodotto" && segnalazione.target_id) {
+    azioni.push({
+      valore: "disattiva_prodotto",
+      etichetta: "Disattiva il prodotto",
+      dettaglio: "Rende il prodotto non più visibile pubblicamente.",
+    });
+  }
+  if (segnalazione.target_type === "utente" && segnalazione.target_id) {
+    azioni.push({
+      valore: "sospendi_utente",
+      etichetta: "Sospendi l'utente (7 giorni)",
+      dettaglio: "Blocco temporaneo dell'account segnalato.",
+    });
+    azioni.push({
+      valore: "banna_utente",
+      etichetta: "Banna l'utente",
+      dettaglio: "Blocco permanente dell'account segnalato.",
+    });
+  }
+  return azioni;
+}
+
+const AZIONE_LABELS: Record<string, string> = {
+  disattiva_negozio: "negozio disattivato",
+  disattiva_prodotto: "prodotto disattivato",
+  sospendi_utente: "utente sospeso",
+  banna_utente: "utente bannato",
+};
+
 export default function SegnalazioniModule() {
   const [segnalazioni, setSegnalazioni] = useState<SegnalazioneAdmin[]>([]);
   const [stats, setStats] = useState<SegnalazioneStats | null>(null);
   const [totale, setTotale] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [errore, setErrore] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<string | null>(null);
   const [selezionata, setSelezionata] = useState<SegnalazioneAdmin | null>(null);
 
   // Form stato modal
@@ -113,6 +186,7 @@ export default function SegnalazioniModule() {
   const [modificaPriorita, setModificaPriorita] = useState<SegnalazionePriorita>("normale");
   const [modificaNote, setModificaNote] = useState("");
   const [salvandoDettaglio, setSalvandoDettaglio] = useState(false);
+  const [azioneInCorso, setAzioneInCorso] = useState<string | null>(null);
 
   const [filtri, setFiltri] = useState<SegnalazioneFiltri>({
     limit: 50,
@@ -120,11 +194,15 @@ export default function SegnalazioniModule() {
     orderBy: "created_at",
     orderDirection: "desc",
   });
+  const [pagina, setPagina] = useState(0);
 
   const [ricerca, setRicerca] = useState("");
   const [stato, setStato] = useState("");
   const [priorita, setPriorita] = useState("");
   const [tipo, setTipo] = useState("");
+
+  const numeroPagine = Math.max(1, Math.ceil(totale / (filtri.limit ?? 50)));
+  const paginaEffettiva = Math.min(pagina, numeroPagine - 1);
 
   const caricaDati = useCallback(async () => {
     setIsLoading(true);
@@ -145,18 +223,19 @@ export default function SegnalazioniModule() {
       const json = (await res.json()) as {
         segnalazioni?: SegnalazioneAdmin[];
         totale?: number;
+        hasMore?: boolean;
         stats?: SegnalazioneStats | null;
         data?: {
           segnalazioni?: SegnalazioneAdmin[];
           totale?: number;
+          hasMore?: boolean;
           stats?: SegnalazioneStats | null;
         };
       };
-      // L'API restituisce { success: true, data: { segnalazioni, totale, stats } }.
-      // Fallback sulla vecchia forma piatta per compatibilità.
       const payload = json?.data ?? json;
       setSegnalazioni(payload.segnalazioni ?? []);
       setTotale(payload.totale ?? 0);
+      setHasMore(Boolean(payload.hasMore));
       setStats(payload.stats ?? null);
     } catch (err) {
       setErrore(err instanceof Error ? err.message : "Errore caricamento segnalazioni");
@@ -171,6 +250,7 @@ export default function SegnalazioniModule() {
   }, [caricaDati]);
 
   const applicaFiltri = useCallback(() => {
+    setPagina(0);
     setFiltri((prev) => ({
       ...prev,
       ricerca: ricerca || undefined,
@@ -186,6 +266,7 @@ export default function SegnalazioniModule() {
     setStato("");
     setPriorita("");
     setTipo("");
+    setPagina(0);
     setFiltri((prev) => ({
       ...prev,
       ricerca: undefined,
@@ -196,7 +277,25 @@ export default function SegnalazioniModule() {
     }));
   }, []);
 
+  const vaiAPagina = useCallback(
+    (prossima: number) => {
+      const limite = filtri.limit ?? 50;
+      const nuova = Math.max(0, Math.min(prossima, Math.max(0, numeroPagine - 1)));
+      if (nuova === paginaEffettiva && nuova === pagina) return;
+      setPagina(nuova);
+      setFiltri((prev) => ({ ...prev, offset: nuova * limite }));
+    },
+    [filtri.limit, numeroPagine, pagina, paginaEffettiva]
+  );
+
+  const cambiaPerPagina = useCallback((valore: number) => {
+    setPagina(0);
+    setFiltri((prev) => ({ ...prev, limit: valore, offset: 0 }));
+  }, []);
+
   const apriDettaglio = (item: SegnalazioneAdmin) => {
+    setErrore(null);
+    setFeedback(null);
     setSelezionata(item);
     setModificaStato(item.stato);
     setModificaPriorita(item.priorita);
@@ -207,15 +306,12 @@ export default function SegnalazioniModule() {
     if (!selezionata) return;
     setSalvandoDettaglio(true);
     setErrore(null);
+    setFeedback(null);
 
     const patch: Record<string, unknown> = {};
     if (modificaStato !== selezionata.stato) patch.stato = modificaStato;
     if (modificaPriorita !== selezionata.priorita) patch.priorita = modificaPriorita;
     if (modificaNote !== (selezionata.note_admin ?? "")) patch.note_admin = modificaNote;
-
-    if (modificaStato === "risolta" && selezionata.stato !== "risolta") {
-      patch.resolved_at = new Date().toISOString();
-    }
 
     if (Object.keys(patch).length === 0) {
       setSalvandoDettaglio(false);
@@ -244,10 +340,9 @@ export default function SegnalazioniModule() {
         throw new Error("Risposta senza segnalazione aggiornata.");
       }
 
-      setSegnalazioni((prev) =>
-        prev.map((s) => (s.id === aggiornata.id ? aggiornata : s))
-      );
+      setSegnalazioni((prev) => prev.map((s) => (s.id === aggiornata.id ? aggiornata : s)));
       setSelezionata(null);
+      setFeedback("Segnalazione aggiornata.");
       caricaDati();
     } catch (err) {
       setErrore(err instanceof Error ? err.message : "Errore aggiornamento segnalazione");
@@ -256,9 +351,42 @@ export default function SegnalazioniModule() {
     }
   };
 
+  const eseguiModerazione = async (azione: AzioneModerazione) => {
+    if (!selezionata) return;
+    if (!window.confirm(`Eseguire l'azione "${azione.etichetta}" sull'oggetto della segnalazione?`)) {
+      return;
+    }
+    setAzioneInCorso(azione.valore);
+    setErrore(null);
+    setFeedback(null);
+    try {
+      const res = await fetch(`/api/amministratore/segnalazioni/${selezionata.id}/azione`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ azione: azione.valore }),
+      });
+      const json = (await res.json().catch(() => null)) as {
+        success?: boolean;
+        error?: { message?: string };
+      } | null;
+      if (!res.ok) {
+        throw new Error(json?.error?.message ?? "Impossibile eseguire l'azione.");
+      }
+      setFeedback(
+        `Azione eseguita: ${AZIONE_LABELS[azione.valore]}. Aggiorna lo stato della segnalazione quando la moderazione è conclusa.`
+      );
+      caricaDati();
+    } catch (err) {
+      setErrore(err instanceof Error ? err.message : "Errore sconosciuto.");
+    } finally {
+      setAzioneInCorso(null);
+    }
+  };
+
   const haFiltriAttivi = ricerca || stato || priorita || tipo;
 
   const ordinaPer = (campo: "created_at" | "priorita") => {
+    setPagina(0);
     setFiltri((prev) => ({
       ...prev,
       orderBy: campo,
@@ -295,8 +423,9 @@ export default function SegnalazioniModule() {
               Segnalazioni utenti
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-              Gestisci i problemi, i contenuti inopportuni e i ticket inviati dagli utenti.
-              Cambia stato, assegna priorità e aggiungi note amministrative.
+              Gestisci i problemi, i contenuti inopportuni e i ticket inviati dagli
+              utenti: cambia stato, assegna priorità, aggiungi note e applica le
+              azioni di moderazione disponibili sull&apos;oggetto segnalato.
             </p>
           </div>
         </div>
@@ -355,6 +484,7 @@ export default function SegnalazioniModule() {
               value={stato}
               onChange={(e) => setStato(e.target.value)}
               onBlur={applicaFiltri}
+              aria-label="Filtra per stato"
               className="h-10 rounded-xl border border-slate-200 bg-slate-50/50 px-3 text-sm font-medium text-slate-700 transition focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100"
             >
               <option value="">Tutti gli stati</option>
@@ -369,6 +499,7 @@ export default function SegnalazioniModule() {
               value={priorita}
               onChange={(e) => setPriorita(e.target.value)}
               onBlur={applicaFiltri}
+              aria-label="Filtra per priorità"
               className="h-10 rounded-xl border border-slate-200 bg-slate-50/50 px-3 text-sm font-medium text-slate-700 transition focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100"
             >
               <option value="">Tutte le priorità</option>
@@ -383,6 +514,7 @@ export default function SegnalazioniModule() {
               value={tipo}
               onChange={(e) => setTipo(e.target.value)}
               onBlur={applicaFiltri}
+              aria-label="Filtra per tipo"
               className="h-10 rounded-xl border border-slate-200 bg-slate-50/50 px-3 text-sm font-medium text-slate-700 transition focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100"
             >
               <option value="">Tutti i tipi</option>
@@ -404,6 +536,17 @@ export default function SegnalazioniModule() {
             >
               Ordina per priorità
             </button>
+
+            <select
+              value={String(filtri.limit ?? 50)}
+              onChange={(e) => cambiaPerPagina(Number(e.target.value))}
+              aria-label="Segnalazioni per pagina"
+              className="h-10 rounded-xl border border-slate-200 bg-slate-50/50 px-3 text-sm font-medium text-slate-700 transition focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100"
+            >
+              <option value="20">20 per pagina</option>
+              <option value="50">50 per pagina</option>
+              <option value="100">100 per pagina</option>
+            </select>
           </div>
         </div>
 
@@ -419,8 +562,31 @@ export default function SegnalazioniModule() {
       </div>
 
       {errore && (
-        <div className="rounded-3xl border border-blue-200 bg-blue-50 px-5 py-4 text-sm text-blue-900">
-          {errore}
+        <div className="flex items-start gap-3 rounded-3xl border border-blue-200 bg-blue-50 px-5 py-4 text-sm text-blue-900">
+          <p className="leading-6">{errore}</p>
+          <button
+            type="button"
+            onClick={() => setErrore(null)}
+            className="ml-auto rounded p-0.5 hover:bg-blue-100"
+            aria-label="Chiudi messaggio"
+          >
+            <X className="h-4 w-4" aria-hidden />
+          </button>
+        </div>
+      )}
+
+      {feedback && (
+        <div className="flex items-start gap-3 rounded-3xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-900">
+          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+          <p className="leading-6">{feedback}</p>
+          <button
+            type="button"
+            onClick={() => setFeedback(null)}
+            className="ml-auto rounded p-0.5 hover:bg-emerald-100"
+            aria-label="Chiudi messaggio"
+          >
+            <X className="h-4 w-4" aria-hidden />
+          </button>
         </div>
       )}
 
@@ -502,6 +668,39 @@ export default function SegnalazioniModule() {
               </article>
             ))}
           </div>
+
+          {/* Paginazione */}
+          {numeroPagine > 1 && (
+            <div className="flex flex-col gap-3 rounded-2xl border border-slate-100 bg-white px-4 py-3 text-sm text-slate-500 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+              <p>
+                {segnalazioni.length === 0
+                  ? "Nessun risultato"
+                  : `Pagina ${paginaEffettiva + 1} di ${numeroPagine}`}
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => vaiAPagina(paginaEffettiva - 1)}
+                  disabled={paginaEffettiva <= 0 || isLoading}
+                  aria-label="Pagina precedente"
+                  className="inline-flex h-9 items-center gap-1 rounded-xl border border-slate-200 px-3 text-xs font-bold text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" aria-hidden />
+                  Precedente
+                </button>
+                <button
+                  type="button"
+                  onClick={() => vaiAPagina(paginaEffettiva + 1)}
+                  disabled={paginaEffettiva >= numeroPagine - 1 || !hasMore || isLoading}
+                  aria-label="Pagina successiva"
+                  className="inline-flex h-9 items-center gap-1 rounded-xl border border-slate-200 px-3 text-xs font-bold text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Successiva
+                  <ChevronRight className="h-3.5 w-3.5" aria-hidden />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -551,6 +750,55 @@ export default function SegnalazioniModule() {
                 {selezionata.descrizione}
               </p>
             </div>
+
+            {/* Oggetto segnalato: link utilizzabile al back office */}
+            {linkOggetto(selezionata) && (
+              <div className="mt-4 flex flex-wrap items-center gap-2 rounded-2xl border border-blue-100 bg-blue-50/50 px-4 py-3">
+                <Link
+                  href={linkOggetto(selezionata)!.href}
+                  className="inline-flex items-center gap-1.5 text-sm font-bold text-blue-700 transition hover:text-blue-900"
+                >
+                  <ExternalLink className="h-4 w-4" aria-hidden />
+                  {linkOggetto(selezionata)!.label}
+                </Link>
+              </div>
+            )}
+
+            {/* Azioni di moderazione sull'oggetto segnalato */}
+            {azioniModerazione(selezionata).length > 0 && (
+              <div className="mt-4 rounded-2xl border border-yellow-200 bg-yellow-50/60 p-4">
+                <h3 className="text-sm font-black text-yellow-900 uppercase tracking-wider">
+                  Azioni di moderazione
+                </h3>
+                <p className="mt-1 text-xs leading-5 text-yellow-800">
+                  Le azioni agiscono sull&apos;oggetto segnalato (verificato lato
+                  server) e vengono registrate nel registro attività. Dopo
+                  l&apos;esecuzione aggiorna lo stato della segnalazione.
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {azioniModerazione(selezionata).map((azione) => (
+                    <button
+                      key={azione.valore}
+                      type="button"
+                      disabled={azioneInCorso !== null || salvandoDettaglio}
+                      onClick={() => void eseguiModerazione(azione)}
+                      title={azione.dettaglio}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-yellow-300 bg-white px-3 py-2 text-xs font-bold text-yellow-800 transition hover:bg-yellow-100 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {azione.valore === "banna_utente" ? (
+                        <ShieldBan className="h-3.5 w-3.5" aria-hidden />
+                      ) : (
+                        <Power className="h-3.5 w-3.5" aria-hidden />
+                      )}
+                      {azioneInCorso === azione.valore ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden />
+                      ) : null}
+                      {azione.etichetta}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Form gestione admin */}
             <div className="mt-6 pt-5 border-t border-slate-100 space-y-4">

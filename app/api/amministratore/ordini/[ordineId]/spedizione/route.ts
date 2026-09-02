@@ -6,6 +6,11 @@ import {
   azioneVersoStato,
   isAzioneSpedizione,
 } from "@/lib/merchant/ordini-spedizioni";
+import {
+  registraAttivitaAdmin,
+  OPERATION_TYPES,
+  TARGET_TYPES,
+} from "@/lib/amministratore/activity-log";
 
 /** Valida un URL di tracking opzionale: vuoto oppure http(s) valido. */
 function urlTrackingValido(url: string | null): boolean {
@@ -72,16 +77,39 @@ export async function PATCH(
     return apiError("TRACKING_URL_NON_VALIDA", "URL di tracking non valido.", 422);
   }
 
+  const statoSpedizioneNuovo = azioneVersoStato(body.azione);
+
   const esito = await aggiornaStatoSpedizioneAdmin(
     sessione.user.id,
     ordineId,
-    azioneVersoStato(body.azione),
+    statoSpedizioneNuovo,
     { trackingCode, trackingUrl, consegnaStimata }
   );
 
   if (!esito.ok) {
     return apiError(esito.codice, esito.messaggio, esito.status);
   }
+
+  // Registra l'operazione amministrativa SOLO dopo il successo (stesso
+  // pattern degli altri moduli: nessun log senza mutazione riuscita).
+  const ordine = esito.ordine;
+  await registraAttivitaAdmin({
+    adminUserId: sessione.user.id,
+    adminEmail: sessione.user.email ?? "",
+    operationType: OPERATION_TYPES.ORDINE_SPEDIZIONE_MODIFICATA,
+    targetType: TARGET_TYPES.ORDINE,
+    targetId: ordineId,
+    targetName: ordine?.numero ?? ordineId,
+    negozioId: ordine?.negozioId ?? null,
+    negozioNome: ordine?.negozioNome ?? null,
+    result: "success",
+    detail: {
+      azione: body.azione,
+      stato_spedizione: statoSpedizioneNuovo,
+      tracking_code: trackingCode,
+      consegna_stimata: consegnaStimata,
+    },
+  });
 
   revalidatePath("/amministratore/ordini");
   revalidatePath(`/amministratore/ordini/${ordineId}`);

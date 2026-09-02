@@ -269,7 +269,7 @@ export default function PayoutAdminDetailClient({ payoutId }: { payoutId: string
                 type="button"
                 disabled={azione !== null}
                 onClick={() => setConferma(null)}
-                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-300"
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-800"
               >
                 Annulla
               </button>

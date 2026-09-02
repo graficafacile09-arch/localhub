@@ -1,4 +1,5 @@
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { creaNotificaAdmin } from "@/lib/amministratore/notifiche";
 
 import type {
   Segnalazione,
@@ -98,6 +99,16 @@ export async function creaSegnalazione(
     if (error) {
       return { ok: false, errore: error.message ?? "Impossibile creare la segnalazione." };
     }
+
+    // Notifica admin — BEST-EFFORT: la segnalazione è stata davvero creata.
+    // Mai bloccante: un errore qui non deve far fallire la segnalazione.
+    await creaNotificaAdmin({
+      tipo: "segnalazione_nuova",
+      titolo: "Nuova segnalazione ricevuta",
+      corpo: input.titolo || "Segnalazione inviata da un utente",
+      gravita: "attenzione",
+      href: "/amministratore/segnalazioni",
+    });
 
     return { ok: true, id: data as string };
   } catch (err) {

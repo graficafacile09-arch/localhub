@@ -10,6 +10,7 @@ import {
   Search,
   Sparkles,
   Tags,
+  Trash2,
   X,
 } from "lucide-react";
 import type { CategoriaAdmin } from "@/lib/amministratore/categorie-queries";
@@ -20,6 +21,8 @@ type CategoriaForm = {
   nome: string;
   slug: string;
   sinonimi: string;
+  descrizione: string;
+  ordine: string;
 };
 
 export default function CategorieModule({ categorie }: { categorie: CategoriaAdmin[] }) {
@@ -27,7 +30,13 @@ export default function CategorieModule({ categorie }: { categorie: CategoriaAdm
   const [locali, setLocali] = useState<CategoriaAdmin[]>(categorie);
   const [inModifica, setInModifica] = useState<CategoriaAdmin | null>(null);
   const [creazione, setCreazione] = useState(false);
-  const [form, setForm] = useState<CategoriaForm>({ nome: "", slug: "", sinonimi: "" });
+  const [form, setForm] = useState<CategoriaForm>({
+    nome: "",
+    slug: "",
+    sinonimi: "",
+    descrizione: "",
+    ordine: "",
+  });
   const [salvando, setSalvando] = useState(false);
   const [errore, setErrore] = useState<string | null>(null);
 
@@ -42,11 +51,11 @@ export default function CategorieModule({ categorie }: { categorie: CategoriaAdm
           .toLowerCase();
         return testo.includes(termine);
       })
+      // Ordinamento per posizione (ordine) come nelle pagine pubbliche:
+      // l'admin vede l'ordine reale e può modificarlo numericamente.
       .sort((a, b) => {
-        const utA = (a.negozi ?? 0) > 0 ? 1 : 0;
-        const utB = (b.negozi ?? 0) > 0 ? 1 : 0;
-        if (utA !== utB) return utB - utA;
-        return a.ordine - b.ordine;
+        if (a.ordine !== b.ordine) return a.ordine - b.ordine;
+        return a.nome.localeCompare(b.nome, "it", { sensitivity: "base" });
       });
   }, [locali, ricerca]);
 
@@ -54,10 +63,13 @@ export default function CategorieModule({ categorie }: { categorie: CategoriaAdm
 
   const apriCreazione = useCallback(() => {
     setErrore(null);
-    setForm({ nome: "", slug: "", sinonimi: "" });
+    // Suggerimento: prossima posizione libera (max ordine + 1).
+    const prossimoOrdine =
+      locali.reduce((massimo, categoria) => Math.max(massimo, categoria.ordine ?? 0), 0) + 1;
+    setForm({ nome: "", slug: "", sinonimi: "", descrizione: "", ordine: String(prossimoOrdine) });
     setInModifica(null);
     setCreazione(true);
-  }, []);
+  }, [locali]);
 
   const apriModifica = useCallback((categoria: CategoriaAdmin) => {
     setErrore(null);
@@ -66,6 +78,8 @@ export default function CategorieModule({ categorie }: { categorie: CategoriaAdm
       nome: categoria.nome,
       slug: categoria.slug,
       sinonimi: (categoria.sinonimi ?? []).join(", "),
+      descrizione: categoria.descrizione ?? "",
+      ordine: String(categoria.ordine ?? 0),
     });
     setInModifica(categoria);
   }, []);
@@ -81,6 +95,9 @@ export default function CategorieModule({ categorie }: { categorie: CategoriaAdm
     if (!form.slug.trim()) return "Lo slug è obbligatorio.";
     if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(form.slug.trim().toLowerCase())) {
       return "Slug non valido: usa solo minuscole, numeri e trattini (es. panificio, tech-elettronica).";
+    }
+    if (form.ordine.trim() !== "" && !/^\d+$/.test(form.ordine.trim())) {
+      return "L'ordine deve essere un numero intero non negativo.";
     }
     return null;
   }, [form]);
@@ -98,7 +115,13 @@ export default function CategorieModule({ categorie }: { categorie: CategoriaAdm
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean);
-      const payload = { nome: form.nome.trim(), slug: form.slug.trim().toLowerCase(), sinonimi };
+      const payload = {
+        nome: form.nome.trim(),
+        slug: form.slug.trim().toLowerCase(),
+        sinonimi,
+        descrizione: form.descrizione.trim() || null,
+        ordine: Number(form.ordine.trim() || "0"),
+      };
 
       const url = inModifica
         ? `/api/amministratore/categorie/${inModifica.id}`
@@ -176,8 +199,38 @@ export default function CategorieModule({ categorie }: { categorie: CategoriaAdm
     }
   }, []);
 
+  const elimina = useCallback(async (categoria: CategoriaAdmin) => {
+    if ((categoria.negozi ?? 0) > 0) {
+      setErrore(
+        "Impossibile eliminare: la categoria è usata da negozi attivi. Rimuovila prima dai negozi."
+      );
+      return;
+    }
+    if (!window.confirm(`Eliminare definitivamente la categoria "${categoria.nome}"?`)) return;
+    setErrore(null);
+    setSalvando(true);
+    try {
+      const res = await fetch(`/api/amministratore/categorie/${categoria.id}`, {
+        method: "DELETE",
+      });
+      const json = (await res.json().catch(() => null)) as {
+        success?: boolean;
+        error?: { message?: string };
+      } | null;
+      if (!res.ok) {
+        throw new Error(json?.error?.message ?? "Impossibile eliminare la categoria.");
+      }
+      setLocali((prev) => prev.filter((c) => c.id !== categoria.id));
+      if (inModifica?.id === categoria.id) chiudi();
+    } catch (caught) {
+      setErrore(caught instanceof Error ? caught.message : "Errore sconosciuto.");
+    } finally {
+      setSalvando(false);
+    }
+  }, [chiudi, inModifica]);
+
   const inputClass =
-    "w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm font-medium text-slate-700 placeholder:text-slate-400 transition focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100";
+    "w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm font-medium text-slate-700 placeholder:text-slate-400 transition focus:border-yellow-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-yellow-100";
 
   return (
     <div className="space-y-5">
@@ -227,7 +280,7 @@ export default function CategorieModule({ categorie }: { categorie: CategoriaAdm
               onChange={(event) => setRicerca(event.target.value)}
               placeholder="Cerca categoria per nome, slug o sinonimo..."
               aria-label="Cerca categoria"
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 pl-10 pr-4 text-sm font-medium text-slate-700 placeholder:text-slate-400 transition focus:border-blue-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-100"
+              className="w-full rounded-xl border border-slate-200 bg-slate-50/50 py-2.5 pl-10 pr-4 text-sm font-medium text-slate-700 placeholder:text-slate-400 transition focus:border-yellow-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-yellow-100"
             />
           </div>
           <button
@@ -282,6 +335,25 @@ export default function CategorieModule({ categorie }: { categorie: CategoriaAdm
                 className={inputClass}
               />
             </div>
+            <div>
+              <label htmlFor="categoria-ordine" className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">
+                Posizione / ordine
+              </label>
+              <input
+                id="categoria-ordine"
+                type="number"
+                min={0}
+                step={1}
+                value={form.ordine}
+                onChange={(event) => setForm((f) => ({ ...f, ordine: event.target.value }))}
+                placeholder="0"
+                className={inputClass}
+              />
+              <p className="mt-1.5 text-[11px] leading-5 text-slate-500">
+                Valore numerico della posizione nelle pagine pubbliche (più
+                piccolo = prima).
+              </p>
+            </div>
           </div>
           <div className="mt-4">
             <label htmlFor="categoria-sinonimi" className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">
@@ -300,6 +372,19 @@ export default function CategorieModule({ categorie }: { categorie: CategoriaAdm
               comparire nella categoria.
             </p>
           </div>
+          <div className="mt-4">
+            <label htmlFor="categoria-descrizione" className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-500">
+              Descrizione
+            </label>
+            <textarea
+              id="categoria-descrizione"
+              value={form.descrizione}
+              onChange={(event) => setForm((f) => ({ ...f, descrizione: event.target.value }))}
+              rows={2}
+              placeholder="Breve descrizione della categoria (facoltativa)"
+              className={inputClass}
+            />
+          </div>
           <div className="mt-5 flex flex-col gap-2 sm:flex-row">
             <button
               type="button"
@@ -314,7 +399,7 @@ export default function CategorieModule({ categorie }: { categorie: CategoriaAdm
               type="button"
               onClick={chiudi}
               disabled={salvando}
-              className="inline-flex h-10 items-center justify-center rounded-xl bg-slate-100 px-5 text-sm font-bold text-slate-600 transition hover:bg-slate-200"
+              className="inline-flex h-10 items-center justify-center rounded-xl bg-yellow-100 px-5 text-sm font-bold text-yellow-800 transition hover:bg-yellow-200"
             >
               Annulla
             </button>
@@ -384,13 +469,21 @@ export default function CategorieModule({ categorie }: { categorie: CategoriaAdm
                         )}
                     </div>
 
-                    <p className="mt-2 text-xs text-slate-500">
-                      /{categoria.slug}
+                    <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
+                      <span>/{categoria.slug}</span>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-slate-50 px-2 py-0.5 font-bold text-slate-500 ring-1 ring-slate-200">
+                        Ordine {categoria.ordine ?? 0}
+                      </span>
                     </p>
 
                     <p className="mt-2 text-xs font-bold text-slate-700">
                       {categoria.negozi ?? 0} {categoria.negozi === 1 ? "negozio" : "negozi"}
                     </p>
+                    {categoria.descrizione && (
+                      <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">
+                        {categoria.descrizione}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -417,7 +510,7 @@ export default function CategorieModule({ categorie }: { categorie: CategoriaAdm
                   <button
                     type="button"
                     onClick={() => apriModifica(categoria)}
-                    className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-blue-50 px-4 text-sm font-black text-blue-700 ring-1 ring-blue-100 transition hover:bg-blue-100"
+                    className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-yellow-50 px-4 text-sm font-black text-yellow-800 ring-1 ring-yellow-200 transition hover:bg-yellow-100"
                   >
                     <Pencil className="h-4 w-4" aria-hidden />
                     Modifica
@@ -427,7 +520,7 @@ export default function CategorieModule({ categorie }: { categorie: CategoriaAdm
                       type="button"
                       onClick={() => cambiaStato(categoria)}
                       disabled={salvando}
-                      className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-slate-100 px-4 text-sm font-bold text-slate-600 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-yellow-100 px-4 text-sm font-bold text-yellow-800 transition hover:bg-yellow-200 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       Disattiva
                     </button>
@@ -436,7 +529,7 @@ export default function CategorieModule({ categorie }: { categorie: CategoriaAdm
                       type="button"
                       onClick={() => cambiaStato(categoria)}
                       disabled={salvando}
-                      className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-blue-50 px-4 text-sm font-black text-blue-700 ring-1 ring-blue-200 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
+                      className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-yellow-50 px-4 text-sm font-black text-yellow-800 ring-1 ring-yellow-200 transition hover:bg-yellow-100 disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       Riattiva
                     </button>
@@ -446,10 +539,22 @@ export default function CategorieModule({ categorie }: { categorie: CategoriaAdm
                       href={`/categorie/${categoria.slug}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 text-sm font-bold text-slate-600 transition hover:border-blue-300 hover:text-blue-700"
+                      className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 text-sm font-bold text-slate-600 transition hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-800"
                     >
                       Negozi
                     </a>
+                  )}
+                  {!conNegozi && (
+                    <button
+                      type="button"
+                      onClick={() => elimina(categoria)}
+                      disabled={salvando}
+                      title={conNegozi ? "Rimuovi la categoria dai negozi prima di eliminarla" : "Elimina definitivamente la categoria"}
+                      className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl border border-red-200 bg-white px-4 text-sm font-bold text-red-600 transition hover:border-red-300 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <Trash2 className="h-4 w-4" aria-hidden />
+                      Elimina
+                    </button>
                   )}
                 </div>
               </article>

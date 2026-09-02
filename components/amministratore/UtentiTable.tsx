@@ -1,6 +1,12 @@
-import { Mail, ShieldAlert, Store } from "lucide-react";
-import type { RuoloUtente, StatoUtente, Utente } from "@/lib/amministratore/types";
-import { RUOLI_UTENTE } from "@/lib/amministratore/types";
+import {
+  BadgeCheck,
+  MailX,
+  ShieldAlert,
+  Store,
+} from "lucide-react";
+import type { RuoloUtente, Utente } from "@/lib/amministratore/types";
+import { RUOLI_UTENTE, STATO_ACCOUNT } from "@/lib/amministratore/types";
+import UtentiActionsMenu from "./UtentiActionsMenu";
 
 const formatData = new Intl.DateTimeFormat("it-IT", {
   day: "2-digit",
@@ -8,35 +14,26 @@ const formatData = new Intl.DateTimeFormat("it-IT", {
   year: "numeric",
 });
 
-const STILE_RUOLO: Record<RuoloUtente, string> = {
-  amministratore: "bg-blue-50 text-blue-700 ring-blue-200",
-  commerciante: "bg-blue-50 text-blue-700 ring-blue-200",
-  utente: "bg-slate-100 text-slate-600 ring-slate-200",
-};
-
-function BadgeRuolo({ ruolo }: { ruolo: RuoloUtente }) {
+function ChipRuolo({ ruolo }: { ruolo: RuoloUtente }) {
+  const stile = RUOLI_UTENTE[ruolo].chip;
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-bold ring-1 ${STILE_RUOLO[ruolo]}`}
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-bold ring-1 ${stile}`}
     >
       {RUOLI_UTENTE[ruolo].label}
     </span>
   );
 }
 
-function BadgeStato({ stato }: { stato: StatoUtente }) {
-  if (stato === "attivo") {
-    return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-bold text-blue-700 ring-1 ring-blue-200">
-        <span className="h-1.5 w-1.5 rounded-full bg-blue-500" aria-hidden />
-        Attivo
-      </span>
-    );
-  }
+function ChipStato({ utente }: { utente: Utente }) {
+  const stile = STATO_ACCOUNT[utente.stato];
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-500 ring-1 ring-slate-200">
-      <span className="h-1.5 w-1.5 rounded-full bg-slate-400" aria-hidden />
-      Disattivato
+    <span
+      title={utente.blocco?.motivo ?? undefined}
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold ring-1 ${stile.chip}`}
+    >
+      <span className={`h-1.5 w-1.5 rounded-full ${stile.dot}`} aria-hidden />
+      {stile.label}
     </span>
   );
 }
@@ -60,32 +57,27 @@ function Avatar({ nome }: { nome: string }) {
 
 /**
  * Tabella utenti del modulo /amministratore/utenti — dati reali dal DB.
- * Colonne: Nome, Email, Ruolo, Stato, Ultimo accesso, Azioni.
+ * Colonne: Utente, Email (con verifica), Ruoli (multi), Stato account,
+ * Ultimo accesso, Azioni.
  */
-import UtentiActionsMenu from "./UtentiActionsMenu";
-
-type AggiornamentoUtente = Partial<Pick<Utente, "ruolo" | "stato">>;
-
 export default function UtentiTable({
   utenti,
-  onAggiorna,
   onDettaglio,
   onElimina,
 }: {
   utenti: Utente[];
-  onAggiorna?: (id: string, aggiornamento: AggiornamentoUtente) => void;
   onDettaglio?: (utente: Utente) => void;
   onElimina?: (id: string) => void;
 }) {
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[760px] text-left text-sm">
+        <table className="w-full min-w-[860px] text-left text-sm">
           <thead>
             <tr className="border-b border-slate-100 bg-slate-50/60 text-[11px] uppercase tracking-[0.12em] text-slate-400">
-              <th className="px-5 py-3.5 font-semibold">Nome</th>
+              <th className="px-5 py-3.5 font-semibold">Utente</th>
               <th className="px-5 py-3.5 font-semibold">Email</th>
-              <th className="px-5 py-3.5 font-semibold">Ruolo</th>
+              <th className="px-5 py-3.5 font-semibold">Ruoli</th>
               <th className="px-5 py-3.5 font-semibold">Stato</th>
               <th className="px-5 py-3.5 font-semibold">Ultimo accesso</th>
               <th className="px-5 py-3.5 text-right font-semibold">Azioni</th>
@@ -95,18 +87,26 @@ export default function UtentiTable({
             {utenti.map((utente) => (
               <tr
                 key={utente.id}
-                className="border-b border-slate-50 transition-colors last:border-0 hover:bg-slate-50/50"
+                className="border-b border-slate-50 transition-colors last:border-0 hover:bg-yellow-50/50"
               >
                 <td className="px-5 py-4">
                   <div className="flex items-center gap-3">
                     <Avatar nome={utente.nome} />
                     <div>
-                      <p className="font-bold text-slate-800">{utente.nome}</p>
-                      {utente.negozi != null && (
+                      <p className="flex items-center gap-1.5 font-bold text-slate-800">
+                        {utente.nome}
+                        {utente.protetto && (
+                          <ShieldAlert
+                            className="h-3.5 w-3.5 text-blue-500"
+                            aria-label="Account amministratore autorizzato"
+                          />
+                        )}
+                      </p>
+                      {utente.numeroNegozi > 0 && (
                         <p className="mt-0.5 flex items-center gap-1 text-[11px] text-slate-400">
                           <Store className="h-3 w-3" aria-hidden />
-                          {utente.negozi}{" "}
-                          {utente.negozi === 1 ? "negozio" : "negozi"}
+                          {utente.numeroNegozi}{" "}
+                          {utente.numeroNegozi === 1 ? "negozio" : "negozi"}
                         </p>
                       )}
                     </div>
@@ -114,15 +114,29 @@ export default function UtentiTable({
                 </td>
                 <td className="px-5 py-4">
                   <span className="inline-flex items-center gap-1.5 text-slate-500">
-                    <Mail className="h-3.5 w-3.5 text-slate-300" aria-hidden />
+                    {utente.emailVerificata ? (
+                      <BadgeCheck
+                        className="h-3.5 w-3.5 text-emerald-500"
+                        aria-label="Email verificata"
+                      />
+                    ) : (
+                      <MailX
+                        className="h-3.5 w-3.5 text-amber-500"
+                        aria-label="Email non verificata"
+                      />
+                    )}
                     {utente.email}
                   </span>
                 </td>
                 <td className="px-5 py-4">
-                  <BadgeRuolo ruolo={utente.ruolo} />
+                  <div className="flex flex-wrap gap-1.5">
+                    {utente.ruoli.map((ruolo) => (
+                      <ChipRuolo key={ruolo} ruolo={ruolo} />
+                    ))}
+                  </div>
                 </td>
                 <td className="px-5 py-4">
-                  <BadgeStato stato={utente.stato} />
+                  <ChipStato utente={utente} />
                 </td>
                 <td className="px-5 py-4 text-slate-500">
                   {utente.ultimoAccesso
@@ -132,7 +146,6 @@ export default function UtentiTable({
                 <td className="px-5 py-4 text-right">
                   <UtentiActionsMenu
                     utente={utente}
-                    onAggiorna={onAggiorna}
                     onDettaglio={onDettaglio}
                     onElimina={onElimina}
                   />
@@ -147,10 +160,10 @@ export default function UtentiTable({
         <div className="flex flex-col items-center px-6 py-14 text-center">
           <ShieldAlert className="h-8 w-8 text-slate-200" aria-hidden />
           <p className="mt-3 text-sm font-semibold text-slate-500">
-            Nessun utente con questo ruolo
+            Nessun utente trovato
           </p>
           <p className="mt-1 text-xs text-slate-400">
-            Prova a selezionare un&apos;altra tab.
+            Modifica i filtri o la ricerca per vedere altri risultati.
           </p>
         </div>
       )}

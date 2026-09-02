@@ -2,6 +2,7 @@ import { apiError, apiOk } from "@/lib/api/response";
 import { requireApiArea } from "@/lib/auth/session-area";
 import { createMerchantProductForStore, getMerchantProductsForStore, getMerchantStoreForUser } from "@/lib/merchant/data";
 import type { MerchantProductInput, OrdinamentoProdotti } from "@/lib/merchant/types";
+import { creaNotificaAdmin } from "@/lib/amministratore/notifiche";
 
 const STATI_CONDIZIONE_VALIDI = ["nuovo", "usato", "ricondizionato"] as const;
 const ORDINAMENTI_VALIDI: OrdinamentoProdotti[] = [
@@ -87,6 +88,9 @@ function validateProductPayload(payload: Partial<MerchantProductInput>) {
   if (payload.prodottoTipico !== undefined && typeof payload.prodottoTipico !== "boolean") {
     return "Il campo prodotto_tipico deve essere booleano.";
   }
+  if (payload.prodottoOfferta !== undefined && typeof payload.prodottoOfferta !== "boolean") {
+    return "Il campo prodotto_offerta deve essere booleano.";
+  }
   if (payload.sottocategoria !== undefined && payload.sottocategoria !== null && typeof payload.sottocategoria !== "string") {
     return "Formato sottocategoria non valido.";
   }
@@ -133,10 +137,21 @@ export async function GET(
   const pagina = Number(url.searchParams.get("pagina") ?? 0) || undefined;
   const perPagina = Number(url.searchParams.get("perPagina") ?? 0) || undefined;
 
+  // Vetrina Prodotti Tipici: ?tipico=true / ?tipico=false. Se assente
+  // (o non booleano) il filtro non viene applicato: comportamento invariato.
+  const tipicoRaw = url.searchParams.get("tipico");
+  const tipico = tipicoRaw === "true" ? true : tipicoRaw === "false" ? false : undefined;
+
+  // Vetrina Offerte: ?offerta=true / ?offerta=false (stesso pattern di tipico).
+  const offertaRaw = url.searchParams.get("offerta");
+  const offerta = offertaRaw === "true" ? true : offertaRaw === "false" ? false : undefined;
+
   const productsResult = await getMerchantProductsForStore(user.id, negozioId, {
     q: url.searchParams.get("q")?.trim() || undefined,
     stato,
     ai: url.searchParams.get("ai") === "1" ? true : undefined,
+    tipico,
+    offerta,
     esaurito: esaurito || undefined,
     ordina,
     pagina,
@@ -196,6 +211,7 @@ export async function POST(
     attivo: payload.attivo ?? true,
     originePubblicazione: payload.originePubblicazione ?? "manuale",
     prodottoTipico: payload.prodottoTipico ?? false,
+    prodottoOfferta: payload.prodottoOfferta ?? false,
     // Campi arricchiti (G1): inoltrati al data layer, che li persiste.
     descrizioneCompleta: payload.descrizioneCompleta,
     caratteristiche: payload.caratteristiche,
@@ -215,6 +231,16 @@ export async function POST(
   if (!createResult.data) {
     return apiError("PRODUCT_CREATE_FAILED", createResult.errorMessage ?? "Impossibile creare il prodotto.", 500);
   }
+
+  // Notifica admin — BEST-EFFORT, creazione prodotto riuscita. Mai
+  // bloccante: un errore qui non tocca l'esito della creazione.
+  await creaNotificaAdmin({
+    tipo: "prodotto_creato",
+    titolo: "Nuovo prodotto pubblicato",
+    corpo: payload.nome!.trim(),
+    gravita: "info",
+    href: `/amministratore/prodotti/${createResult.data.id}`,
+  });
 
   return apiOk({ product: createResult.data }, 201);
 }

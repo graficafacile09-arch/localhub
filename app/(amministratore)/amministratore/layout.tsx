@@ -7,6 +7,7 @@ import { getSessionArea } from "@/lib/auth/session-area";
 import { isAccountSupervisione } from "@/lib/auth/roles";
 import { getMerchantStoresForUser } from "@/lib/merchant/data";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
+import { contaNotificheAdminNonLette } from "@/lib/amministratore/notifiche";
 
 export const metadata = {
   title: "Amministratore — InCittà",
@@ -64,12 +65,17 @@ export default async function AmministratoreLayout({
 
   const storesResult = await getMerchantStoresForUser(sessione.user.id);
 
+  // Badge notifiche non lette: calcolato qui (server-side), mai dal client.
+  // Best-effort: in caso di errore o DB non disponibile ritorna 0.
+  const adminNotificheNonLette = await contaNotificheAdminNonLette();
+
   return (
     <MerchantShell
       area="admin"
       user={sessione.user}
       stores={storesResult.data}
       banner={storesResult.errorMessage}
+      adminNotificheNonLette={adminNotificheNonLette}
     >
       {children}
     </MerchantShell>

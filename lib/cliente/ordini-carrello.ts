@@ -41,6 +41,7 @@ import {
 } from "@/lib/spedizioni/catalogo";
 import { inviaNotificaNuovoOrdine } from "@/lib/notifiche/whatsapp";
 import { inviaNotificaNuovoOrdineNtfy } from "@/lib/notifiche/ntfy";
+import { notificaNuovoOrdineAdmin } from "@/lib/amministratore/notifiche";
 import { inviaEmailConfermaOrdine } from "./ordine-email";
 import {
   STATUS_DA_CODICE as STATUS_DA_CODICE_ORDINI,
@@ -646,6 +647,9 @@ export async function creaOrdiniCarrello(
     if (!pagamentoOnline) {
       await inviaEmailConfermaOrdine(ordine.ordineId).catch(() => {});
       await inviaNotificaNuovoOrdine(ordine.ordineId).catch(() => {});
+      // Notifica admin — BEST-EFFORT, stesso momento di conferma di
+      // WhatsApp (ordini non online: confermati subito alla creazione).
+      await notificaNuovoOrdineAdmin(ordine.ordineId).catch(() => {});
     }
     await inviaNotificaNuovoOrdineNtfy(ordine.ordineId).catch(() => {});
   }

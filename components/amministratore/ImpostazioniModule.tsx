@@ -66,8 +66,8 @@ function CampoImpostazione({
           onChange={(evento) => onModifica(chiave, evento.target.value)}
           className={`mt-3 w-full rounded-2xl border bg-white px-4 py-3 text-sm font-medium text-slate-800 transition focus:outline-none focus:ring-2 ${
             salvato
-              ? "border-blue-300 focus:border-blue-300 focus:ring-blue-100"
-              : "border-slate-200 focus:border-blue-300 focus:ring-blue-100"
+              ? "border-yellow-400 focus:border-yellow-400 focus:ring-yellow-100"
+              : "border-slate-200 focus:border-yellow-400 focus:ring-yellow-100"
           }`}
         />
       </label>
@@ -226,8 +226,8 @@ export default function ImpostazioniModule({
           role="status"
           className={`flex items-center justify-between gap-3 rounded-3xl border px-5 py-4 text-sm shadow-sm ${
             risultato.ok
-              ? "border-blue-200 bg-blue-50 text-blue-900"
-              : "border-blue-200 bg-blue-50 text-blue-900"
+              ? "border-yellow-300 bg-yellow-50 text-yellow-900"
+              : "border-yellow-300 bg-yellow-50 text-yellow-900"
           }`}
         >
           <div className="flex items-center gap-2.5">
@@ -339,7 +339,7 @@ export default function ImpostazioniModule({
                   inputMode="decimal"
                   value={commissione}
                   onChange={(evento) => setCommissione(evento.target.value)}
-                  className="w-40 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-800 transition focus:border-blue-300 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                  className="w-40 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-medium text-slate-800 transition focus:border-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-100"
                 />
                 <span className="text-sm font-semibold text-slate-500">%</span>
               </div>

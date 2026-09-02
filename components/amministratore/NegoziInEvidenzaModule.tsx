@@ -259,7 +259,7 @@ export default function NegoziInEvidenzaModule({
                     disabled={caricamento}
                     className={`inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl px-4 text-sm font-black transition ${
                       inEvidenza
-                        ? "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                        ? "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
                         : "bg-yellow-500 text-white hover:bg-yellow-600"
                     } disabled:cursor-not-allowed disabled:opacity-60`}
                   >

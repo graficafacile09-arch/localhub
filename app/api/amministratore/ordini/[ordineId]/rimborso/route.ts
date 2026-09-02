@@ -1,6 +1,12 @@
 import { apiError, apiOk } from "@/lib/api/response";
 import { requireApiArea } from "@/lib/auth/session-area";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { rimborsaOrdine, MAX_MOTIVO_RIMBORSO } from "@/lib/pagamenti/rimborsi";
+import {
+  registraAttivitaAdmin,
+  OPERATION_TYPES,
+  TARGET_TYPES,
+} from "@/lib/amministratore/activity-log";
 
 /**
  * POST /api/amministratore/ordini/[ordineId]/rimborso
@@ -53,6 +59,43 @@ export async function POST(
 
   if (!esito.ok) {
     return apiError(esito.codice, esito.errore, esito.status);
+  }
+
+  // Registra l'operazione amministrativa SOLO dopo che il rimborso è stato
+  // preparato con successo. Snapshot minimo dell'ordine (numero/negozio)
+  // letto dal DB: mai dati di pagamento completi.
+  try {
+    const db = createAdminSupabaseClient();
+    const { data: ordine } = await db
+      .from("ordini")
+      .select("numero, negozio_nome, negozio_id")
+      .eq("id", esito.ordineId)
+      .single();
+
+    await registraAttivitaAdmin({
+      adminUserId: sessione.user.id,
+      adminEmail: sessione.user.email ?? "",
+      operationType: OPERATION_TYPES.ORDINE_RIMBORSATO,
+      targetType: TARGET_TYPES.ORDINE,
+      targetId: esito.ordineId,
+      targetName: ordine?.numero ?? esito.ordineId,
+      negozioId: ordine?.negozio_id ?? null,
+      negozioNome: ordine?.negozio_nome ?? null,
+      result: "success",
+      detail: {
+        importo_richiesto: esito.importoRichiesto,
+        importo_rimborsato: esito.importoRimborsato,
+        payment_status: esito.paymentStatus,
+        refund_id: esito.refundId ?? null,
+        motivo: reason,
+      },
+    });
+  } catch (err) {
+    // Best-effort: un errore nel LOG non deve far fallire il rimborso.
+    console.error(
+      "[ordini-admin] registrazione rimborso fallita:",
+      err instanceof Error ? err.message : String(err)
+    );
   }
 
   return apiOk({

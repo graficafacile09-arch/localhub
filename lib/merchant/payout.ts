@@ -18,6 +18,7 @@
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { canManageStore } from "./data";
+import { creaNotificaAdmin } from "@/lib/amministratore/notifiche";
 import {
   calcolaEconomiaOrdine,
   sommaIncassi,
@@ -279,6 +280,19 @@ export async function calcolaPayoutVenditore(
       status: codice === "FORBIDDEN" ? 403 : 422,
     };
   }
+  // Notifica admin — BEST-EFFORT: payout realmente nuovo nello stato
+  // "calcolato" (= da erogare). I ricalcoli idempotenti (giaEsistente)
+  // vengono saltati: una sola notifica per payout. Mai bloccante.
+  if (esito.giaEsistente !== true) {
+    await creaNotificaAdmin({
+      tipo: "payout_da_erogare",
+      titolo: "Payout da erogare",
+      corpo: `Payout calcolato per il periodo ${periodoDa} – ${periodoA}`,
+      gravita: "attenzione",
+      href: "/amministratore/payout",
+    });
+  }
+
   return {
     ok: true,
     giaEsistente: esito.giaEsistente === true,

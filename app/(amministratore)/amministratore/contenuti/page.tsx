@@ -1,17 +1,18 @@
-import AdminPlaceholder from "@/components/amministratore/AdminPlaceholder";
-import { getAdminNavItem } from "@/components/amministratore/navigation";
+import ContenutiModule from "@/components/amministratore/ContenutiModule";
 
 export const metadata = {
   title: "Contenuti — Amministratore",
 };
 
-export default function ContenutiPage() {
-  const item = getAdminNavItem("/amministratore/contenuti");
-  return (
-    <AdminPlaceholder
-      icon={item.icon}
-      title={item.label}
-      description={item.description}
-    />
-  );
+export const dynamic = "force-dynamic";
+
+/**
+ * Contenuti editoriali nell'Area Amministratore: creazione, modifica,
+ * pubblicazione e archiviazione degli articoli del portale. L'accesso è
+ * garantito dal layout amministratore (area "admin" risolta server-side) e
+ * ogni mutazione passa dalle API guardate (requireApiArea("admin")) con
+ * registrazione in admin_activity_log.
+ */
+export default function AdminContenutiPage() {
+  return <ContenutiModule />;
 }

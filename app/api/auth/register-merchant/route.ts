@@ -4,6 +4,7 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { AREA_COOKIE, areaCookieOptions } from "@/lib/auth/area";
 import { isPartitaIvaValida, normalizzaPartitaIva } from "@/lib/partita-iva";
+import { creaNotificaAdmin } from "@/lib/amministratore/notifiche";
 
 /**
  * Registrazione COMMERCIANTE (venditore).
@@ -49,9 +50,16 @@ export async function POST(request: Request) {
 
   // 2) Anti-duplicazione: la stessa Partita IVA non può essere registrata
   //    due volte. Nessun account Venditore viene creato se esiste già.
+  // 3) Email GIÀ registrata: un account esistente (es. cliente) NON può
+  //    acquisire il ruolo merchant attraverso la registrazione Venditore.
+  //    Il multi-ruolo è riservato a un'azione ESPLICITA dell'amministratore
+  //    (modulo Utenti). Senza questo controllo signUp/Admin API risolverebbero
+  //    l'userId dell'account già esistente e l'endpoint gli assegnerebbe
+  //    merchant automaticamente (→ stesso utente con customer+merchant).
   const adminClient = createAdminSupabaseClient();
   let paginaUtenti = 1;
   let partitaIvaGiaRegistrata = false;
+  let emailGiaRegistrata = false;
 
   for (;;) {
     const { data: utentiEsistenti, error: listError } =
@@ -59,13 +67,16 @@ export async function POST(request: Request) {
 
     if (listError || !utentiEsistenti) break;
 
-    if (
-      utentiEsistenti.users.some(
-        (utente) => utente.user_metadata?.partita_iva === partitaIva,
-      )
-    ) {
-      partitaIvaGiaRegistrata = true;
-      break;
+    if (emailGiaRegistrata && partitaIvaGiaRegistrata) break;
+
+    for (const utente of utentiEsistenti.users) {
+      if (!emailGiaRegistrata && utente.email?.toLowerCase() === email.toLowerCase()) {
+        emailGiaRegistrata = true;
+      }
+      if (!partitaIvaGiaRegistrata && utente.user_metadata?.partita_iva === partitaIva) {
+        partitaIvaGiaRegistrata = true;
+      }
+      if (emailGiaRegistrata && partitaIvaGiaRegistrata) break;
     }
 
     if (utentiEsistenti.users.length < 1000) break;
@@ -74,6 +85,14 @@ export async function POST(request: Request) {
 
   if (partitaIvaGiaRegistrata) {
     loginUrl.searchParams.set("error", "Esiste già un account associato a questa Partita IVA.");
+    return NextResponse.redirect(loginUrl);
+  }
+
+  if (emailGiaRegistrata) {
+    loginUrl.searchParams.set(
+      "error",
+      "Questo indirizzo email è già registrato. Accedi con le tue credenziali o utilizza il recupero password.",
+    );
     return NextResponse.redirect(loginUrl);
   }
 
@@ -124,14 +143,43 @@ export async function POST(request: Request) {
     return NextResponse.redirect(loginUrl);
   }
 
-  const userId = signUpData?.user?.id;
+  let userId = signUpData?.user?.id ?? null;
+
+  // CRITICO: signUp può restituire user: null quando "Enable email confirmations"
+  // è attivo in Supabase e non viene passato emailRedirectTo. In questo caso
+  // l'utente È stato creato ma non viene restituito nella risposta.
+  // Recuperiamo l'ID via Admin API usando l'email (stesso pattern di register/route.ts).
+  if (!userId) {
+    try {
+      const adminClientForLookup = createAdminSupabaseClient();
+      const { data: perEmail } = await adminClientForLookup.auth.admin.listUsers({
+        page: 1,
+        perPage: 1000,
+      });
+      userId = perEmail?.users?.find((u) => u.email === email)?.id ?? null;
+    } catch (err) {
+      console.error(
+        "[register-merchant] Ricerca utente per email fallita:",
+        err instanceof Error ? err.message : String(err),
+      );
+    }
+  }
+
+  if (!userId) {
+    console.error("[register-merchant] Nessun utente creato da signUp", `email=${email}`);
+    loginUrl.searchParams.set(
+      "error",
+      "Non è stato possibile completare la registrazione. Riprova tra poco o contatta l'assistenza.",
+    );
+    return NextResponse.redirect(loginUrl);
+  }
 
   // Auto-conferma utente tramite admin client (disabilita verifica email in sviluppo)
-  if (userId) {
-    try {
-      await adminClient.auth.admin.updateUserById(userId, {
-        email_confirm: true,
-      });
+  // Il blocco è garantito avere userId valorizzato qui.
+  try {
+    await adminClient.auth.admin.updateUserById(userId, {
+      email_confirm: true,
+    });
 
       // Crea automaticamente il negozio per il nuovo merchant
       const { error: storeError } = await adminClient
@@ -184,13 +232,22 @@ export async function POST(request: Request) {
       loginUrl.searchParams.set("error", "Errore durante la creazione dell'account. Riprova.");
       return NextResponse.redirect(loginUrl);
     }
-  }
-
   const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
   if (signInError) {
     loginUrl.searchParams.set("error", "Account creato ma accesso automatico fallito. Effettua il login.");
     return NextResponse.redirect(loginUrl);
   }
+
+  // Notifica admin — BEST-EFFORT: SOLO dopo che utente creato, email
+  // confermata, negozio creato e ruolo merchant assegnato sono riusciti.
+  // Mai bloccante: un errore qui non deve far fallire la registrazione.
+  await creaNotificaAdmin({
+    tipo: "venditore_registrato",
+    titolo: "Nuovo venditore registrato",
+    corpo: `${name} ha registrato il negozio “${storeName}”`,
+    gravita: "info",
+    href: "/amministratore/attivita",
+  });
 
   // La sessione nasce legata all'area merchant (sessione attiva httpOnly).
   const response = NextResponse.redirect(new URL("/", request.url));

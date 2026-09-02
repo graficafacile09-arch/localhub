@@ -35,6 +35,7 @@ import {
 import type Stripe from "stripe";
 import { inviaEmailConfermaPagamento } from "@/lib/cliente/ordine-email";
 import { inviaNotificaNuovoOrdine } from "@/lib/notifiche/whatsapp";
+import { notificaNuovoOrdineAdmin } from "@/lib/amministratore/notifiche";
 
 export type EsitoWebhook = { status: number; body: string };
 
@@ -305,6 +306,10 @@ export async function gestisciWebhookStripe(
           // per lo stesso ordine. Best-effort: un errore WhatsApp NON tocca
           // lo stato dell'ordine né l'esito del webhook.
           await inviaNotificaNuovoOrdine(ordineId).catch(() => {});
+          // Notifica admin — BEST-EFFORT, SOLO a pagamento confermato.
+          // Guardie idempotenti a monte (pagamenti_eventi UNIQUE + paid→paid
+          // no-op): mai due notifiche per lo stesso ordine.
+          await notificaNuovoOrdineAdmin(ordineId).catch(() => {});
         }
         break;
       }

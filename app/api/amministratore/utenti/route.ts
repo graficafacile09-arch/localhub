@@ -2,7 +2,8 @@ import { apiError, apiOk } from "@/lib/api/response";
 import { requireApiArea } from "@/lib/auth/session-area";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { isAdminEmail } from "@/lib/auth/roles";
-import type { RuoloUtente, Utente } from "@/lib/amministratore/types";
+import { registraAttivitaAdmin, OPERATION_TYPES, TARGET_TYPES } from "@/lib/amministratore/activity-log";
+import { getUtenteAdminById } from "@/lib/amministratore/utenti-queries";
 
 const RUOLI_DB = {
   amministratore: "admin",
@@ -16,17 +17,8 @@ function ruoloValido(value: unknown): value is RuoloArea {
   return value === "amministratore" || value === "commerciante" || value === "utente";
 }
 
-function nomeDaEmail(email: string): string {
-  return email
-    .split("@")[0]
-    .split(/[._+\-]/)
-    .filter(Boolean)
-    .map((parte) => parte.charAt(0).toUpperCase() + parte.slice(1))
-    .join(" ") || "Utente";
-}
-
 export async function POST(request: Request) {
-  const { error } = await requireApiArea("admin");
+  const { sessione, error } = await requireApiArea("admin");
   if (error) return error;
 
   const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
@@ -78,15 +70,26 @@ export async function POST(request: Request) {
     return apiError("ROLE_FAILED", erroreRuolo.message ?? "Impossibile assegnare il ruolo.", 422);
   }
 
-  const utente: Utente = {
-    id: userId,
-    nome: nome || nomeDaEmail(email),
-    email,
-    ruolo: ruolo as RuoloUtente,
-    stato: "attivo",
-    ultimoAccesso: null,
-    registratoIl: creato.user.created_at ?? new Date().toISOString(),
-  };
+  // Ritorna il record COMPLETO nella stessa forma della tabella (stessa
+  // lettura getUtenteAdminById): la UI riceve lo stesso oggetto che
+  // mostrerebbe dopo un refresh.
+  const utente = await getUtenteAdminById(userId);
+  if (!utente) {
+    await db.auth.admin.deleteUser(userId);
+    return apiError("CREATE_FAILED", "Utente creato ma non leggibile dal pannello.", 422);
+  }
+
+  // Registra l'attività (creazione account).
+  await registraAttivitaAdmin({
+    adminUserId: sessione.user.id,
+    adminEmail: sessione.user.email ?? "",
+    operationType: OPERATION_TYPES.UTENTE_MODIFICATO,
+    targetType: TARGET_TYPES.UTENTE,
+    targetId: userId,
+    targetName: email,
+    result: "success",
+    detail: { azione: "creato", ruolo },
+  });
 
   return apiOk({ utente }, 201);
 }
