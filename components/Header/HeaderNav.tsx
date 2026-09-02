@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Grid2X2, Home, Store, Tag } from "lucide-react";
+import { Grid2X2, Home, Newspaper, Store, Tag } from "lucide-react";
 import type { ComponentType } from "react";
 
 /**
@@ -46,22 +46,23 @@ export default function HeaderNav() {
     { label: "Negozi", href: "/negozi", icona: Store, badge: null, attiva: pathname === "/negozi" || pathname.startsWith("/negozi/") },
     { label: "Offerte", href: "/offerte", icona: Tag, badge: "SALDI", attiva: pathname === "/offerte" || pathname.startsWith("/offerte/") },
     { label: "Categorie", href: "/categorie", icona: Grid2X2, badge: null, attiva: pathname === "/categorie" || pathname.startsWith("/categorie/") },
+    { label: "Contenuti", href: "/contenuti", icona: Newspaper, badge: null, attiva: pathname === "/contenuti" || pathname.startsWith("/contenuti/") },
   ];
 
   return (
     <div className="w-full lg:w-auto">
       <nav
         aria-label="Navigazione principale"
-        className="relative mx-auto grid w-full max-w-[440px] grid-cols-4 items-center justify-items-center border-y border-slate-200 bg-white lg:w-auto lg:gap-1"
+        className="relative mx-auto grid w-full max-w-[550px] grid-cols-5 items-center justify-items-center border-y border-slate-200 bg-white lg:w-auto lg:gap-1"
       >
         {/* Separatori verticali sottili tra le voci (molto discreti, danno
             struttura senza essere protagonisti). */}
-        {[0, 1, 2].map((i) => (
+        {[0, 1, 2, 3].map((i) => (
           <span
             key={i}
             aria-hidden
             className="pointer-events-none absolute top-1/2 h-9 w-px -translate-y-1/2 bg-slate-200 max-sm:h-8"
-            style={{ left: `calc(25% + ${i * 25}%)` }}
+            style={{ left: `calc(20% + ${i * 20}%)` }}
           />
         ))}
         {voci.map((voce) => {
