@@ -19,6 +19,20 @@ const MAX_BYTES = 1024 * 1024; // ~1 MB
 const USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36 IncittaNotizie/1.0";
 
+/*
+ * Google News RSS (fonti discovery) può rispondere HTTP 200 con un channel
+ * VALIDO ma SENZA item (rate limit/cache intermittente osservata in analisi).
+ * Un feed vuoto non va interpretato come "nessuna notizia": si ritenta con
+ * backoff prima di arrendersi (best-effort, come tutte le altre fonti).
+ */
+const GOOGLE_TENTATIVI_MAX = 4;
+const GOOGLE_BACKOFF_MS_BASE = 1500;
+
+/** Pausa tra un tentativo e il successivo (retry con backoff). */
+function attesa(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 /** Voce acquisita grezza da una fonte, prima della normalizzazione. */
 export interface VoceAcquisita {
   title: string;
@@ -29,6 +43,11 @@ export interface VoceAcquisita {
   data: string | null;
   /** Identificativo stabile presso la fonte (guid/id) o null. */
   externalId: string | null;
+  /**
+   * Nome della testata originale (solo item Google News discovery, dal tag
+   * RSS `<source>`). Le fonti V1 non lo valorizzano: si usa fonte.nome.
+   */
+  source?: string | null;
 }
 
 /** Errore interno non fatale (fonte non raggiungibile, formato inatteso). */
@@ -240,6 +259,114 @@ export function parseRss(
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
+   PARSER GOOGLE NEWS RSS — fonti di discovery (V2)
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/** Rimuove dal link Google News il parametro di navigazione `oc` (es. ?oc=5). */
+export function linkGooglePulito(raw: string): string {
+  try {
+    const u = new URL(raw);
+    if (u.hostname !== "news.google.com") return raw;
+    u.searchParams.delete("oc");
+    u.hash = "";
+    return u.href;
+  } catch {
+    // Best-effort: se l'URL non è parsabile toglie solo il suffisso noto.
+    return raw.replace(/\?oc=\d+$/, "");
+  }
+}
+
+/**
+ * Rimuove dal titolo Google News il suffisso ` - <nome testata>` (il feed
+ * lo appende a quasi tutti i titoli). Il confronto è case-insensitive e
+ * SOLO se la coda corrisponde davvero al `<source>` dell'item.
+ */
+export function titoloSenzaSuffissoFonte(
+  title: string,
+  sourceName: string | null | undefined
+): string {
+  const t = title.trim();
+  const fonte = sourceName?.trim();
+  if (!fonte) return t;
+  const suffisso = ` - ${fonte}`;
+  if (t.length > suffisso.length && t.toLowerCase().endsWith(suffisso.toLowerCase())) {
+    return t.slice(0, -suffisso.length).trim();
+  }
+  return t;
+}
+
+/**
+ * Parsa un feed RSS di Google News in voci acquisite.
+ *
+ * Per ogni item:
+ * - title: ripulito dal suffisso finale " - <testata>" (il feed lo appende);
+ * - source: nome della testata originale (tag `<source>`);
+ * - url: link Google News pulito da `?oc=5` (redirector verso l'articolo);
+ * - excerpt: NULL (la `<description>` Google duplica solo titolo+fonte);
+ * - externalId: il `<guid>` (token stabile dell'articolo);
+ * - data: dal `<pubDate>` (RFC822).
+ */
+export function parseGoogleNewsRss(xml: string): VoceAcquisita[] {
+  let parsed: unknown;
+  try {
+    const parser = new XMLParser({
+      ignoreAttributes: false,
+      attributeNamePrefix: "@_",
+      removeNSPrefix: true,
+      isArray: (name) => name === "item" || name === "entry",
+      trimValues: true,
+      processEntities: true,
+      htmlEntities: true,
+    });
+    parsed = parser.parse(xml);
+  } catch {
+    throw new ErroreFonte("XML Google News non valido");
+  }
+
+  const root = (parsed as { rss?: { channel?: unknown } })?.rss?.channel;
+  const items = Array.isArray((root as { item?: unknown[] })?.item)
+    ? ((root as { item: unknown[] }).item)
+    : [];
+
+  const voci: VoceAcquisita[] = [];
+  for (const it of items as Record<string, unknown>[]) {
+    const titleRaw = String(it.title ?? "").trim();
+    const linkRaw = String(it.link ?? "").trim();
+    if (!titleRaw && !linkRaw) continue;
+
+    // Nome della testata dal tag <source url="...">Nome</source>.
+    const srcEl = it.source as
+      | string
+      | { "#text"?: string; "@_url"?: string }
+      | undefined;
+    const sourceName =
+      typeof srcEl === "string"
+        ? srcEl.trim()
+        : String(srcEl?.["#text"] ?? "").trim() || null;
+
+    const title = titoloSenzaSuffissoFonte(titleRaw, sourceName) || titleRaw;
+    const url = linkRaw ? linkGooglePulito(linkRaw) : "";
+    if (!title && !url) continue;
+
+    const guid =
+      typeof it.guid === "string"
+        ? it.guid.trim()
+        : (it.guid as { "#text"?: string })?.["#text"]?.trim();
+    const dataRaw = String(it.pubDate ?? "").trim();
+
+    voci.push({
+      title,
+      url: url || linkRaw,
+      excerpt: null, // Google News non fornisce un riassunto: solo titolo+fonte.
+      data: normalizzaData(dataRaw),
+      externalId: guid || url || null,
+      source: sourceName,
+    });
+  }
+  return voci;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
    PARSER HTML — Comune di Castrovillari (piattaforma "Design Comuni")
    ═══════════════════════════════════════════════════════════════════════ */
 
@@ -324,14 +451,58 @@ export function parseProvinciaNotizie(html: string, urlBase: string): VoceAcquis
    ═══════════════════════════════════════════════════════════════════════ */
 
 /**
+ * Acquisisce una fonte Google News (discovery). Ritenta con backoff sia gli
+ * errori di rete sia il caso HTTP 200 con feed vuoto (rate limit osservato).
+ * MAI throw: dopo i tentativi ritorna [] (best-effort, come le altre fonti).
+ */
+export async function acquisisciGoogleNews(
+  fonte: FonteNotizie,
+  hostConsentiti: ReadonlySet<string>
+): Promise<VoceAcquisita[]> {
+  if (!fonte.urlFeed) return [];
+
+  for (let tentativo = 1; tentativo <= GOOGLE_TENTATIVI_MAX; tentativo++) {
+    try {
+      const { testo } = await scaricaTesto(fonte.urlFeed, hostConsentiti);
+      const voci = parseGoogleNewsRss(testo);
+      // Feed HTTP 200 ma SENZA item: ritenta (non significa "nessuna notizia").
+      if (voci.length > 0) return voci;
+      console.warn(
+        `[notizie] ${fonte.nome}: feed valido ma vuoto (tentativo ${tentativo}/${GOOGLE_TENTATIVI_MAX}), retry`
+      );
+    } catch (err) {
+      console.error(
+        `[notizie] ${fonte.nome}: fetch fallito (tentativo ${tentativo}/${GOOGLE_TENTATIVI_MAX}):`,
+        (err as Error)?.message
+      );
+    }
+    if (tentativo < GOOGLE_TENTATIVI_MAX) {
+      // Backoff esponenziale, con tetto per non allungare troppo il job.
+      const ms = Math.min(
+        GOOGLE_BACKOFF_MS_BASE * 2 ** (tentativo - 1),
+        10_000
+      );
+      await attesa(ms);
+    }
+  }
+  return [];
+}
+
+/**
  * Acquisisce le voci di una fonte. Per le fonti RSS con url_lista (es.
  * Provincia) tenta prima il feed e in caso di errore/vuoto ripiega
- * sull'HTML. MAI throw: ritorna [] se la fonte è irraggiungibile.
+ * sull'HTML. Le fonti di discovery (Google News) hanno un percorso dedicato
+ * con retry/backoff. MAI throw: ritorna [] se la fonte è irraggiungibile.
  */
 export async function acquisisciFonte(
   fonte: FonteNotizie,
   hostConsentiti: ReadonlySet<string>
 ): Promise<VoceAcquisita[]> {
+  // Fonti discovery V2 (Google News): feed RSS con retry sui vuoti.
+  if (fonte.scoperta) {
+    return acquisisciGoogleNews(fonte, hostConsentiti);
+  }
+
   const base = fonte.urlBase;
 
   if (fonte.tipo === "rss") {
