@@ -22,6 +22,7 @@
  * silenzioso su un altro provider).
  */
 
+import { createOrderConfirmationUrl } from "@/lib/cliente/order-access";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getSiteUrl } from "@/lib/site";
 import { risolviCredenzialiGateway } from "./config";
@@ -277,8 +278,8 @@ export async function creaSessionePagamentoPerOrdine(
     importo: ordine.totale, // SEMPRE dal DB
     valuta: "EUR",
     metodo: provider === "stripe" ? "carta" : provider,
-    returnUrl: `${siteUrl}/ordini/conferma/${ordine.id}`,
-    cancelUrl: `${siteUrl}/ordini/conferma/${ordine.id}`,
+    returnUrl: createOrderConfirmationUrl(siteUrl, ordine.id),
+    cancelUrl: createOrderConfirmationUrl(siteUrl, ordine.id),
     // FASE F2.3 — un line_item per riga, spedizione come line item dedicato.
     righe: ordine.righe,
     costoSpedizione: ordine.costoSpedizione,

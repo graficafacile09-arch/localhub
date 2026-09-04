@@ -1,5 +1,23 @@
 import { apiError, apiOk } from "@/lib/api/response";
 import { recuperaOrdiniGuest } from "@/lib/cliente/ordini";
+import { setOrderAccessCookie } from "@/lib/cliente/order-access";
+import { checkRateLimit } from "@/lib/rate-limiter";
+
+/** Limiti anti-enumerazione: per IP, 10 richieste/minuto e 60/ora. */
+const RECUPERO_RATE_LIMIT_PER_MINUTE = 10;
+const RECUPERO_RATE_LIMIT_PER_HOUR = 60;
+
+function ipRichiedente(request: Request): string {
+  return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "anon";
+}
+
+/**
+ * Chiave condivisa per IP: il rate limit non può essere aggirato cambiando
+ * email/telefono e protegge anche i tentativi con credenziali errate.
+ */
+function chiaveRateLimit(request: Request): string {
+  return `ordini-recupera:${ipRichiedente(request)}`;
+}
 
 /**
  * API Recupero ordini GUEST.
@@ -14,6 +32,19 @@ import { recuperaOrdiniGuest } from "@/lib/cliente/ordini";
  * una query o una lista di ordini altrui.
  */
 export async function POST(request: Request) {
+  const rateCheck = await checkRateLimit(chiaveRateLimit(request), {
+    subject: "scan_log",
+    useSharedCounter: true,
+    perMinute: RECUPERO_RATE_LIMIT_PER_MINUTE,
+    perHour: RECUPERO_RATE_LIMIT_PER_HOUR,
+    reasonLabel: "recuperi ordine",
+  });
+  if (!rateCheck.allowed) {
+    return apiError("RATE_LIMITED", rateCheck.reason, 429, {
+      retryAfter: rateCheck.retryAfter,
+    });
+  }
+
   let body: Record<string, unknown>;
   try {
     body = (await request.json()) as Record<string, unknown>;
@@ -43,9 +74,21 @@ export async function POST(request: Request) {
 
     // Minima esposizione di dati: il client non ha bisogno di email/telefono
     // dell'ordine (l'utente li ha appena digitati per la ricerca).
-    const ordiniPubblici = ordini.map(({ email: _email, telefono: _telefono, ...rest }) => rest);
+    const ordiniPubblici = ordini.map((ordine) => {
+      const { email, telefono, ...rest } = ordine;
+      void email;
+      void telefono;
+      return rest;
+    });
 
-    return apiOk({ ordini: ordiniPubblici });
+    // Il recupero ha già verificato email + telefono lato server. Un cookie
+    // separato per ordine consente di aprire la conferma senza rendere l'UUID
+    // un bearer implicito e senza esporre il token nell'URL/browser history.
+    const response = apiOk({ ordini: ordiniPubblici });
+    for (const ordine of ordini) {
+      setOrderAccessCookie(response, String(ordine.id));
+    }
+    return response;
   } catch (err) {
     console.error("[ordini/recupera] errore:", (err as Error)?.message ?? "sconosciuto");
     return apiError("INTERNAL_ERROR", "Impossibile cercare gli ordini. Riprova.", 500);

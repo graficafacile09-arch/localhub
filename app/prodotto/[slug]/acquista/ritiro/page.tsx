@@ -105,6 +105,7 @@ export default async function RitiroPage({
           nome: profilo?.nome ?? "",
           cognome: profilo?.cognome ?? "",
           telefono: profilo?.telefono ?? "",
+          email: utente?.email ?? "",
           autenticato: !!utente,
         }}
       />

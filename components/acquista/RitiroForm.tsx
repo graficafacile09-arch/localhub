@@ -17,6 +17,7 @@ type PrefillProfilo = {
   nome: string;
   cognome: string;
   telefono: string;
+  email: string;
   autenticato: boolean;
 };
 
@@ -40,7 +41,7 @@ export default function RitiroForm({
   prefill?: PrefillProfilo;
 }) {
   const router = useRouter();
-  const p = prefill ?? { nome: "", cognome: "", telefono: "", autenticato: false };
+  const p = prefill ?? { nome: "", cognome: "", telefono: "", email: "", autenticato: false };
   const [quantita, setQuantita] = useState(1);
   const [data, setData] = useState("");
   const [fascia, setFascia] = useState("");
@@ -50,6 +51,7 @@ export default function RitiroForm({
   const [nomeCliente, setNomeCliente] = useState(p.nome);
   const [cognomeCliente, setCognomeCliente] = useState(p.cognome);
   const [telefonoCliente, setTelefonoCliente] = useState(p.telefono);
+  const [emailCliente, setEmailCliente] = useState(p.email);
 
   const [inviando, setInviando] = useState(false);
   const [errore, setErrore] = useState<string | null>(null);
@@ -60,6 +62,7 @@ export default function RitiroForm({
     cognome?: string;
     data?: string;
     fascia?: string;
+    email?: string;
   }>({});
   // Chiave di idempotenza: generata UNA volta per pagina → un doppio click
   // (o retry) non crea mai due ordini.
@@ -72,16 +75,18 @@ export default function RitiroForm({
     nomeCliente.trim() !== "" &&
     cognomeCliente.trim() !== "" &&
     data !== "" &&
-    fascia !== "";
+    fascia !== "" &&
+    (p.autenticato || emailCliente.trim() !== "");
 
   const confermaRitiro = async () => {
     if (inviando) return; // anti doppio invio
 
-    const nuoviErrori: { nome?: string; cognome?: string; data?: string; fascia?: string } = {};
+    const nuoviErrori: { nome?: string; cognome?: string; data?: string; fascia?: string; email?: string } = {};
     if (!nomeCliente.trim()) nuoviErrori.nome = "Inserisci il nome.";
     if (!cognomeCliente.trim()) nuoviErrori.cognome = "Inserisci il cognome.";
     if (!data) nuoviErrori.data = "Seleziona la data del ritiro.";
     if (!fascia) nuoviErrori.fascia = "Seleziona la fascia oraria.";
+    if (!p.autenticato && !emailCliente.trim()) nuoviErrori.email = "Inserisci l'email.";
     if (Object.keys(nuoviErrori).length > 0) {
       setErrori(nuoviErrori);
       setErrore("Completa i campi obbligatori per il ritiro.");
@@ -102,6 +107,7 @@ export default function RitiroForm({
           nome: nomeCliente.trim(),
           cognome: cognomeCliente.trim(),
           telefono: telefonoCliente.trim() || null,
+          email: emailCliente.trim() || null,
         },
         ritiro: {
           data: data || null,
@@ -287,6 +293,25 @@ export default function RitiroForm({
               onChange={(e) => setTelefonoCliente(e.target.value)}
               className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
             />
+          </div>
+          <div className="mt-3">
+            <label htmlFor="email-ritiro" className="block text-xs font-semibold text-slate-700">Email *</label>
+            <input
+              id="email-ritiro"
+              type="email"
+              value={emailCliente}
+              onChange={(e) => {
+                setEmailCliente(e.target.value);
+                setErrori((p) => ({ ...p, email: undefined }));
+              }}
+              required
+              aria-required="true"
+              aria-invalid={!!errori.email}
+              className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
+            />
+            {errori.email && (
+              <p className="mt-1 text-[11px] font-semibold text-blue-600">{errori.email}</p>
+            )}
           </div>
         </div>
 

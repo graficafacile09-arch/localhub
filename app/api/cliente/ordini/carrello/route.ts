@@ -11,6 +11,7 @@ import { parseFatturazioneRaw } from "@/lib/cliente/orders";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getGuestMode } from "@/lib/auth/guest";
 import { checkRateLimit } from "@/lib/rate-limiter";
+import { setOrderAccessCookie } from "@/lib/cliente/order-access";
 import { isProviderProntoPerNegozio } from "@/lib/pagamenti/config";
 import {
   chiudiOrdineSenzaPagamento,
@@ -369,7 +370,7 @@ export async function POST(request: Request) {
 
   // Almeno un ordine REALMENTE nuovo → 201; tutti già esistenti (retry) → 200.
   const almenoNuovo = esito.ordini.some((o) => !o.giaEsistente);
-  return apiOk(
+  const response = apiOk(
     {
       checkoutKey: esito.checkoutKey,
       ordini: ordiniArricchiti,
@@ -377,4 +378,10 @@ export async function POST(request: Request) {
     },
     almenoNuovo ? 201 : 200
   );
+  if (!utenteAutenticato) {
+    for (const ordine of ordiniArricchiti) {
+      if (ordine.ordineId) setOrderAccessCookie(response, ordine.ordineId);
+    }
+  }
+  return response;
 }

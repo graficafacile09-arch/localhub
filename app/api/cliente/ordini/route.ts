@@ -3,6 +3,7 @@ import { creaOrdine, parseFatturazioneRaw, type CreaOrdineInput } from "@/lib/cl
 import { getCurrentUser } from "@/lib/auth/session";
 import { getGuestMode } from "@/lib/auth/guest";
 import { checkRateLimit } from "@/lib/rate-limiter";
+import { setOrderAccessCookie } from "@/lib/cliente/order-access";
 import {
   cartaDisponibilePerProdotto,
   providerDisponibilePerProdotto,
@@ -368,7 +369,7 @@ export async function POST(request: Request) {
     }
   }
 
-  return apiOk(
+  const response = apiOk(
     {
       ordine: esito.ordine,
       giaEsistente: esito.giaEsistente,
@@ -376,4 +377,8 @@ export async function POST(request: Request) {
     },
     esito.giaEsistente ? 200 : 201
   );
+  if (!utenteAutenticato && esito.ordine?.id) {
+    setOrderAccessCookie(response, esito.ordine.id);
+  }
+  return response;
 }

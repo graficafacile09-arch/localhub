@@ -273,7 +273,15 @@ export default function RecuperaOrdiniPage() {
                 : `Trovati ${ordini.length} ordini`}
             </p>
             {ordini.map((ordine) => (
-              <OrdineRecuperato key={ordine.id} ordine={ordine} />
+              <div key={ordine.id}>
+                <OrdineRecuperato ordine={ordine} />
+                <Link
+                  href={`/ordini/conferma/${encodeURIComponent(ordine.id)}`}
+                  className="mt-2 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:border-blue-300 hover:text-blue-700"
+                >
+                  Visualizza conferma ordine
+                </Link>
+              </div>
             ))}
             <div className="rounded-2xl border border-blue-200 bg-blue-50 p-5 text-sm leading-6 text-blue-800">
               <p className="font-bold">Hai un account? I tuoi ordini restano qui per sempre.</p>
