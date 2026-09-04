@@ -102,8 +102,14 @@ export interface ContestoCheckout {
   };
 }
 
+export type RefundRequestOptions = {
+  /** Chiave persistita nella refund operation e riutilizzata nei retry. */
+  idempotencyKey: string;
+  /** ID interno dell'operazione, usato per riconciliare il refund provider. */
+  operationId: string;
+};
+
 /**
- * Interfaccia comune di un provider di pagamento.
  * Ogni gateway (gateway-klarna.ts, gateway-scalapay.ts, ...) implementa
  * QUESTA interfaccia: l'app orchestrale usa solo `PaymentGateway` e il
  * registry, senza mai importare implementazioni specifiche.
@@ -146,7 +152,9 @@ export interface PaymentGateway {
   rimborsa(
     paymentId: string,
     importo: number | undefined,
-    cred: CredenzialiGateway
+    cred: CredenzialiGateway,
+    options?: RefundRequestOptions
   ): Promise<{ refundId: string }>;
+
 }
 
