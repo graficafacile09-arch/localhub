@@ -254,7 +254,7 @@ export default async function PaginaNegozio({
               image: imageUrl,
               address: negozio.indirizzo ? { "@type": "PostalAddress", streetAddress: negozio.indirizzo } : undefined,
               telephone: negozio.telefono ?? undefined,
-            }),
+            }).replace(/</g, "\\u003c"),
           }}
         />
 
