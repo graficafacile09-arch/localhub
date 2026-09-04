@@ -1,6 +1,7 @@
 import { apiError, apiOk } from "@/lib/api/response";
 import { requireApiArea } from "@/lib/auth/session-area";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { RATE_LIMIT_PROVIDER } from "@/lib/rate-limiter";
 
 /**
  * Monitoraggio GLOBALE delle scansioni AI (scan_log di piattaforma).
@@ -34,24 +35,28 @@ export async function GET() {
         .from("scan_log")
         .select("id", { head: true, count: "exact" })
         .gte("created_at", todayStart)
-        .lt("created_at", todayEnd),
+        .lt("created_at", todayEnd)
+                .neq("provider", RATE_LIMIT_PROVIDER),
 
       supabase
         .from("scan_log")
         .select("id", { head: true, count: "exact" })
-        .gte("created_at", oneHourAgo),
+        .gte("created_at", oneHourAgo)
+                .neq("provider", RATE_LIMIT_PROVIDER),
 
       supabase
         .from("scan_log")
         .select("id", { head: true, count: "exact" })
         .gte("created_at", todayStart)
         .lt("created_at", todayEnd)
+        .neq("provider", RATE_LIMIT_PROVIDER)
         .eq("cache_hit", true),
 
       supabase
         .from("scan_log")
         .select("provider, response_time_ms, confidence, cache_hit, status, created_at")
         .gte("created_at", todayStart)
+        .neq("provider", RATE_LIMIT_PROVIDER)
         .lt("created_at", todayEnd)
         .order("created_at", { ascending: false }),
 
@@ -60,11 +65,13 @@ export async function GET() {
         .select("id", { head: true, count: "exact" })
         .gte("created_at", todayStart)
         .lt("created_at", todayEnd)
+        .neq("provider", RATE_LIMIT_PROVIDER)
         .neq("status", "success"),
 
       supabase
         .from("scan_log")
         .select("id, provider, response_time_ms, confidence, cache_hit, status, error_code, created_at")
+        .neq("provider", RATE_LIMIT_PROVIDER)
         .order("created_at", { ascending: false })
         .limit(20),
     ]);

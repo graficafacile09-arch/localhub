@@ -1,4 +1,5 @@
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { RATE_LIMIT_PROVIDER } from "@/lib/rate-limiter";
 import { getAttivitaAdmin } from "./attivita-queries";
 import { getProdottiAmministrazione } from "./prodotti";
 import { getNegoziCestino } from "./negozi";
@@ -153,10 +154,11 @@ export async function getDatiStatistiche(): Promise<DatiStatistiche> {
         .from("scan_log")
         .select("provider, status, cache_hit, created_at")
         .gte("created_at", trentaGiorniFa)
+        .neq("provider", RATE_LIMIT_PROVIDER)
         .order("created_at", { ascending: false })
         .range(0, 4999),
-      db.from("scan_log").select("id", { head: true, count: "exact" }),
-      db.from("scan_log").select("id", { head: true, count: "exact" }).gte("created_at", inizioOggi),
+      db.from("scan_log").select("id", { head: true, count: "exact" }).neq("provider", RATE_LIMIT_PROVIDER),
+      db.from("scan_log").select("id", { head: true, count: "exact" }).gte("created_at", inizioOggi).neq("provider", RATE_LIMIT_PROVIDER),
     ]);
 
   if (scansioniTotali.error) dati.avvisi.push(`Scansioni: ${scansioniTotali.error.message}.`);

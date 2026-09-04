@@ -19,45 +19,29 @@
 
 import { NextResponse } from "next/server";
 import { chatConAssistente, type MessaggioAssistente } from "@/lib/assistente";
+import { checkRateLimit } from "@/lib/rate-limiter";
 
-// ─── Rate limit in-memory per IP (guardia leggera anti-abuso) ───────────────
+// ─── Rate limit CONDIVISO DB-backed per IP (guardia anti-abuso) ────────────
 // L'endpoint è pubblico e ogni messaggio consuma token Gemini (chiave con
-// quota giornaliera): limitiamo le richieste per IP con una finestra
-// scorrevole in memoria. Non usa DB né scan_log (legato all'auth merchant),
-// e non richiede modifiche allo schema. Essendo per-istanza serverless è una
-// prima difesa, non un limite assoluto.
+// quota giornaliera): limitiamo le richieste per IP con il meccanismo
+// condiviso (contatore su scan_log via lib/rate-limiter.ts, `checkRateLimit`).
+// Il contatore vive sul DB, non in memoria: è condiviso tra le istanze
+// serverless e sopravvive ai cold start.
 const MAX_PER_MINUTO = 20;
 const MAX_PER_ORA = 120;
-
-const richiestePerIp = new Map<string, number[]>();
-
-function rateLimitOk(ip: string): boolean {
-  const ora = Date.now();
-  const finestra = 3_600_000; // 1h
-
-  // Pulizia occasionale per non far crescere la mappa all'infinito.
-  if (richiestePerIp.size > 10_000) {
-    for (const [chiave, arr] of richiestePerIp) {
-      const vivi = arr.filter((t) => ora - t < finestra);
-      if (vivi.length === 0) richiestePerIp.delete(chiave);
-    }
-  }
-
-  const arr = (richiestePerIp.get(ip) ?? []).filter((t) => ora - t < finestra);
-  arr.push(ora);
-  richiestePerIp.set(ip, arr);
-
-  if (arr.length > MAX_PER_ORA) return false;
-  const ultimoMinuto = arr.filter((t) => ora - t < 60_000).length;
-  return ultimoMinuto <= MAX_PER_MINUTO;
-}
 
 function ipRichiedente(request: Request): string {
   return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "anon";
 }
 
 export async function POST(request: Request) {
-  if (!rateLimitOk(ipRichiedente(request))) {
+  const rateCheck = await checkRateLimit(`assistente:${ipRichiedente(request)}`, {
+    perMinute: MAX_PER_MINUTO,
+    perHour: MAX_PER_ORA,
+    reasonLabel: "messaggi",
+    useSharedCounter: true,
+  });
+  if (!rateCheck.allowed) {
     return NextResponse.json(
       {
         error:

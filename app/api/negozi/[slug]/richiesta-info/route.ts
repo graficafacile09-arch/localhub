@@ -7,31 +7,11 @@ import {
   inviaRichiestaInfoEmail,
   type TipoRichiestaInfo,
 } from "@/lib/negozio/richiesta-info";
+import { checkRateLimit } from "@/lib/rate-limiter";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const TIPI: TipoRichiestaInfo[] = ["informazioni", "preventivo", "consulenza"];
 const MAX_RICHIESTE_PER_ORA_IP = 5;
-
-/** Rate limit in-memory per IP (stesso pattern di /api/assistente). */
-const richiestePerIp = new Map<string, number[]>();
-
-function rateLimitOk(ip: string): boolean {
-  const ora = Date.now();
-  const finestra = 3_600_000; // 1h
-
-  if (richiestePerIp.size > 10_000) {
-    for (const [chiave, arr] of richiestePerIp) {
-      const vivi = arr.filter((t) => ora - t < finestra);
-      if (vivi.length === 0) richiestePerIp.delete(chiave);
-    }
-  }
-
-  const vivi = (richiestePerIp.get(ip) ?? []).filter((t) => ora - t < finestra);
-  if (vivi.length >= MAX_RICHIESTE_PER_ORA_IP) return false;
-  vivi.push(ora);
-  richiestePerIp.set(ip, vivi);
-  return true;
-}
 
 function ipRichiedente(request: Request): string {
   return (
@@ -56,8 +36,13 @@ export async function POST(
 ) {
   const { slug } = await context.params;
 
-  // Rate limit per IP (best-effort).
-  if (!rateLimitOk(ipRichiedente(request))) {
+  // Rate limit CONDIVISO per IP (best-effort): contatore DB su scan_log,
+  // condiviso tra istanze serverless (sostituisce il Map in-memory).
+  const rateCheck = await checkRateLimit(
+    `richiesta-info:${ipRichiedente(request)}`,
+    { perHour: MAX_RICHIESTE_PER_ORA_IP, reasonLabel: "richieste di informazioni", useSharedCounter: true }
+  );
+  if (!rateCheck.allowed) {
     return apiError(
       "RATE_LIMITED",
       "Troppe richieste in poco tempo. Riprova tra qualche minuto.",
