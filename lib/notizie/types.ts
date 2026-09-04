@@ -30,6 +30,11 @@ export type TipoFonte = "rss" | "html";
  * Configurazione di una fonte (specchio della tabella notizie_fonti).
  * `url_feed` è la sorgente RSS/XML; `url_lista` la pagina HTML di fallback
  * (per le fonti html è la pagina da parsare).
+ *
+ * `scoperta` = fonte di DISCOVERY (V2, es. Google News RSS): i risultati non
+ * sono emessi dalla fonte stessa ma trovati tramite ricerca. Per queste fonti
+ * valgono regole dedicate: finestra temporale, dedup intra-run e
+ * attribuzione per-testata. Le fonti istituzionali V1 hanno `scoperta=false`.
  */
 export interface FonteNotizie {
   id: string;
@@ -41,6 +46,8 @@ export interface FonteNotizie {
   categoriaDefault: CategoriaNotizia;
   attiva: boolean;
   frequenzaMinuti: number;
+  /** Fonte di discovery (Google News): true solo per le nuove fonti V2. */
+  scoperta: boolean;
   /** Ultima esecuzione del job (da notizie_fonti.ultima_esecuzione). */
   ultimaEsecuzione?: string | null;
 }
@@ -73,6 +80,8 @@ export interface FonteDb {
   categoria_default: CategoriaNotizia;
   attiva: boolean;
   frequenza_minuti: number;
+  /** Specchia la colonna notizie_fonti.scoperta (V2, discovery). */
+  scoperta: boolean;
   ultima_esecuzione: string | null;
 }
 
