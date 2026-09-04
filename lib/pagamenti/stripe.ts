@@ -312,7 +312,8 @@ export class GatewayStripe implements PaymentGateway {
   async rimborsa(
     paymentId: string,
     importo: number | undefined,
-    cred: CredenzialiGateway
+    cred: CredenzialiGateway,
+    options?: { idempotencyKey: string; operationId: string }
   ): Promise<{ refundId: string }> {
     const stripe = clientStripe(cred, this.opts);
     const session = await stripe.checkout.sessions.retrieve(paymentId, undefined, richiestaPer(cred));
@@ -329,7 +330,74 @@ export class GatewayStripe implements PaymentGateway {
     const refund = await stripe.refunds.create({
       payment_intent: paymentIntent,
       amount: importo !== undefined && Number(importo) > 0 ? Math.round(Number(importo) * 100) : undefined,
-    }, richiestaPer(cred));
+      ...(options?.operationId ? { metadata: { refund_operation_id: options.operationId } } : {}),
+    }, {
+      ...(richiestaPer(cred) ?? {}),
+      ...(options?.idempotencyKey ? { idempotencyKey: options.idempotencyKey } : {}),
+    });
     return { refundId: refund.id };
+  }
+
+  /**
+   * Cerca un refund già creato per l'operazione. La ricerca è limitata al
+   * PaymentIntent della sessione e all'operation ID scritto nei metadata:
+   * nessun retry può creare un secondo refund dopo una risposta persa.
+   */
+  /** Recupera il Charge e tutti i Refund necessari alla riconciliazione webhook. */
+  async refundsDaCharge(
+    chargeId: string,
+    cred: CredenzialiGateway
+  ): Promise<{
+    paymentIntent: string | null;
+    amountRefunded: number;
+    amountCaptured: number;
+    currency: string;
+    refunds: Stripe.Refund[];
+  }> {
+    const stripe = clientStripe(cred, this.opts);
+    const charge = await stripe.charges.retrieve(chargeId, undefined, richiestaPer(cred));
+    const refunds = await stripe.refunds.list(
+      { charge: chargeId, limit: 100 },
+      richiestaPer(cred)
+    );
+    const paymentIntent =
+      typeof charge.payment_intent === "string"
+        ? charge.payment_intent
+        : charge.payment_intent?.id ?? null;
+    return {
+      paymentIntent,
+      amountRefunded: charge.amount_refunded,
+      amountCaptured: charge.amount_captured,
+      currency: charge.currency,
+      refunds: refunds.data,
+    };
+  }
+
+  async riconciliaRimborso(
+    paymentId: string,
+    importo: number,
+    cred: CredenzialiGateway,
+    operationId: string
+  ): Promise<{ refundId: string } | null> {
+    const stripe = clientStripe(cred, this.opts);
+    const session = await stripe.checkout.sessions.retrieve(paymentId, undefined, richiestaPer(cred));
+    const paymentIntent =
+      typeof session.payment_intent === "string"
+        ? session.payment_intent
+        : session.payment_intent?.id;
+    if (!paymentIntent) return null;
+
+    const refunds = await stripe.refunds.list(
+      { payment_intent: paymentIntent, limit: 100 },
+      richiestaPer(cred)
+    );
+    const amountCents = Math.round(importo * 100);
+    const match = refunds.data.find(
+      (refund) =>
+        refund.metadata?.refund_operation_id === operationId &&
+        (refund.amount === amountCents || importo <= 0)
+    );
+    if (!match || match.status !== "succeeded") return null;
+    return { refundId: match.id };
   }
 }
