@@ -1,5 +1,6 @@
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { eNegozioDaEscludere } from "./negozi";
+import { RATE_LIMIT_PROVIDER } from "@/lib/rate-limiter";
 import {
   èUtenteTest,
   nomeDaEmail,
@@ -344,6 +345,7 @@ async function listaScansioni(
       .from("scan_log")
       .select("id, provider, status, created_at")
       .gte("created_at", dal)
+      .neq("provider", RATE_LIMIT_PROVIDER)
       .order("created_at", { ascending: true })
       .range(pagina * PAGE_SIZE, (pagina + 1) * PAGE_SIZE - 1);
 
@@ -419,7 +421,8 @@ export async function getDatiDashboard(): Promise<DatiDashboard> {
     db
       .from("scan_log")
       .select("id", { head: true, count: "exact" })
-      .gte("created_at", inizioOggi),
+      .gte("created_at", inizioOggi)
+            .neq("provider", RATE_LIMIT_PROVIDER),
     db
       .from("product_vision_cache")
       .select("id", { head: true, count: "exact" }),
@@ -582,6 +585,7 @@ export async function getDatiDashboard(): Promise<DatiDashboard> {
   const { data: ultimeScansioni, error: erroreUltimaScansione } = await db
     .from("scan_log")
     .select("id, provider, status, created_at")
+    .neq("provider", RATE_LIMIT_PROVIDER)
     .order("created_at", { ascending: false })
     .limit(1);
   if (erroreUltimaScansione && !scansioniSettimanaResult.error) {

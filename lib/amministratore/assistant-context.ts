@@ -6,6 +6,7 @@ import { getCategorieConNegozi } from "@/lib/negozi";
 import { getOfferteAdmin } from "@/lib/offerte";
 import { getEventiAdmin } from "@/lib/eventi";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { RATE_LIMIT_PROVIDER } from "@/lib/rate-limiter";
 
 const getDb = () => {
   try {
@@ -126,9 +127,9 @@ async function contaScansioni() {
   const trentaGiorniFa = new Date(now.getTime() - 30 * 24 * 3_600_000).toISOString();
 
   const [scansioni30gg, scansioniTotali, scansioniOggi] = await Promise.all([
-    db.from("scan_log").select("provider, status, cache_hit, created_at").gte("created_at", trentaGiorniFa).order("created_at", { ascending: false }).range(0, 4999),
-    db.from("scan_log").select("id", { head: true, count: "exact" }),
-    db.from("scan_log").select("id", { head: true, count: "exact" }).gte("created_at", inizioOggi),
+    db.from("scan_log").select("provider, status, cache_hit, created_at").gte("created_at", trentaGiorniFa).neq("provider", RATE_LIMIT_PROVIDER).order("created_at", { ascending: false }).range(0, 4999),
+    db.from("scan_log").select("id", { head: true, count: "exact" }).neq("provider", RATE_LIMIT_PROVIDER),
+    db.from("scan_log").select("id", { head: true, count: "exact" }).gte("created_at", inizioOggi).neq("provider", RATE_LIMIT_PROVIDER),
   ]);
 
   const righe = (scansioni30gg.data ?? []) as { provider: string | null; status: string | null; cache_hit: boolean | null; created_at: string | null }[];
