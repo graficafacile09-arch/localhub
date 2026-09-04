@@ -8,8 +8,10 @@ import {
   Store,
   Truck,
 } from "lucide-react";
+import { cookies } from "next/headers";
 import { getCurrentUser } from "@/lib/auth/session";
 import { getOrdineConferma } from "@/lib/cliente/orders";
+import { orderAccessCookieName } from "@/lib/cliente/order-access";
 import type { OrdinePersistito } from "@/lib/cliente/orders";
 import { etichettaStato, sintesiProdotti } from "@/lib/cliente/ordini-format";
 import { StatoOrdineBanner } from "@/components/ordini/StatoOrdineBanner";
@@ -56,8 +58,15 @@ export default async function ConfermaOrdinePage({
     typeof sp.esito === "string" && (sp.esito === "ok" || sp.esito === "annullato")
       ? sp.esito
       : null;
-  const ordine = await getOrdineConferma(ordineId);
+  const accessToken =
+    typeof sp.token === "string"
+      ? sp.token
+      : (await cookies()).get(orderAccessCookieName(ordineId))?.value ?? null;
   const utente = await getCurrentUser();
+  const ordine = await getOrdineConferma(ordineId, {
+    userId: utente?.id ?? null,
+    token: accessToken,
+  });
 
   if (!ordine) {
     return (

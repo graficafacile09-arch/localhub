@@ -21,6 +21,7 @@
  */
 
 import { Resend } from "resend";
+import { createOrderConfirmationUrl } from "@/lib/cliente/order-access";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { etichettaMotivoAnnullamento } from "@/lib/merchant/ordini-stati";
 import {
@@ -200,7 +201,7 @@ export function costruisciHtmlConfermaOrdine(dati: DatiEmailOrdine): string {
     ? `<p style="margin:0;font-size:14px;color:#475569;line-height:1.5;">📝 ${escapeHtml(noteTesto)}</p>`
     : "";
 
-  const linkOrdine = `${SITE_URL.replace(/\/+$/, "")}/ordini/conferma/${encodeURIComponent(dati.id)}`;
+  const linkOrdine = createOrderConfirmationUrl(SITE_URL, dati.id);
 
   return `
   <!DOCTYPE html>
@@ -332,7 +333,7 @@ export function costruisciHtmlConfermaPagamento(dati: DatiEmailOrdine): string {
     ? `<p style="margin:0;font-size:14px;color:#475569;line-height:1.5;">📝 ${escapeHtml(noteTesto)}</p>`
     : "";
 
-  const linkOrdine = `${SITE_URL.replace(/\/+$/, "")}/ordini/conferma/${encodeURIComponent(dati.id)}`;
+  const linkOrdine = createOrderConfirmationUrl(SITE_URL, dati.id);
 
   return `
   <!DOCTYPE html>
@@ -1137,7 +1138,7 @@ export function costruisciHtmlStatoOrdine(
       </div>`
     : "";
 
-  const linkOrdine = `${SITE_URL.replace(/\/+$/, "")}/ordini/conferma/${encodeURIComponent(dati.id)}`;
+  const linkOrdine = createOrderConfirmationUrl(SITE_URL, dati.id);
 
   return `
   <!DOCTYPE html>

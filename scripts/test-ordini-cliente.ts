@@ -42,6 +42,10 @@ class FakeQuery {
     this.calls.push(`eq:${col}=${String(val)}`);
     return this;
   }
+  is(col: string, val: unknown) {
+    this.calls.push(`is:${col}=${String(val)}`);
+    return this;
+  }
   ilike(col: string, val: string) {
     this.calls.push(`ilike:${col}=${val}`);
     return this;

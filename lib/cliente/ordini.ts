@@ -14,10 +14,13 @@
  * L'RLS della tabella è una rete di sicurezza aggiuntiva (self select); la
  * verifica esplicita qui garantisce l'ownership anche se le policy cambiassero.
  *
- * Il client Supabase usa la sessione dell'utente (cookie httpOnly): le query
- * girano con i permessi dell'utente loggato, mai con il service role.
+ * Le letture dei clienti autenticati usano il client Supabase con sessione
+ * dell'utente (cookie httpOnly). Il recupero guest è invece un'operazione
+ * server-side autorizzata: usa il client admin già incapsulato nel backend,
+ * ma mantiene sempre i filtri applicativi email + telefono + ordine guest.
  */
 
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import {
   configStatoOrdine,
@@ -238,7 +241,7 @@ export async function recuperaOrdiniGuest(
   telefono: string,
   client?: OrdiniDbClient
 ): Promise<OrdineClienteDettaglio[]> {
-  const db = (client ?? (await createServerSupabaseClient())) as OrdiniDbClient;
+  const db = (client ?? createAdminSupabaseClient()) as OrdiniDbClient;
 
   const emailPulita = String(email ?? "").trim().toLowerCase();
   const telefonoPulito = String(telefono ?? "").trim();
@@ -252,6 +255,7 @@ export async function recuperaOrdiniGuest(
     .select("*")
     .ilike("cliente_email", escapeLike(emailPulita))
     .eq("cliente_telefono", telefonoPulito)
+    .is("cliente_user_id", null)
     .order("created_at", { ascending: false });
 
   if (error) {

@@ -1,4 +1,5 @@
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { verifyOrderAccessToken } from "@/lib/cliente/order-access";
 import { utentePossiedeNegozio } from "@/lib/merchant/data";
 import { inviaNotificaNuovoOrdine } from "@/lib/notifiche/whatsapp";
 import { inviaNotificaNuovoOrdineNtfy } from "@/lib/notifiche/ntfy";
@@ -254,7 +255,10 @@ async function negozioDelProdotto(prodottoId: string): Promise<string | null> {
  * Il checkout è pubblico, quindi si usa il client admin (mai esposto al
  * client browser) per leggere l'ordine appena creato.
  */
-export async function getOrdineConferma(ordineId: string): Promise<OrdinePersistito | null> {
+export async function getOrdineConferma(
+  ordineId: string,
+  access: { userId: string | null; token: string | null },
+): Promise<OrdinePersistito | null> {
   const db = getDb();
   if (!db) return null;
 
@@ -265,7 +269,14 @@ export async function getOrdineConferma(ordineId: string): Promise<OrdinePersist
     .single();
   if (error || !ordineRow) return null;
 
-  // Se la lettura delle righe fallisce, mostriamo comunque l'ordine
+  // La pagina di conferma è pubblica per i guest solo tramite il token
+  // firmato e limitato a questo ordine. Per gli utenti autenticati la
+  // relazione server-side cliente_user_id resta l'unica autorizzazione.
+  const ownerUserId = ordineRow.cliente_user_id == null ? null : String(ordineRow.cliente_user_id);
+  const autorizzato = access.userId !== null
+    ? ownerUserId === access.userId
+    : verifyOrderAccessToken(access.token, ordineId);
+  if (!autorizzato) return null;
   // (con righe vuote) invece di "Ordine non trovato": l'ordine esiste.
   const { data: righeRow } = await db
     .from("ordini_righe")
