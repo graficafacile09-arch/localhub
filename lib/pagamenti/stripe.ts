@@ -20,6 +20,7 @@ import type {
   PaymentGateway,
   PaymentStatus,
 } from "./types";
+import { PAYMENT_SESSION_TTL_MS } from "./expiration";
 
 /**
  * Costruisce i line_item della Checkout Session (FASE F2.3).
@@ -90,9 +91,6 @@ export class PagamentoGatewayError extends Error {
     this.codice = codice;
   }
 }
-
-/** Durata della sessione Stripe (minimo consentito: 30 minuti). */
-const SESSIONE_MINUTI = 30;
 
 /** Opzioni del gateway (solo per TEST: server HTTP locale al posto di api.stripe.com). */
 export type GatewayStripeOptions = {
@@ -183,7 +181,7 @@ export class GatewayStripe implements PaymentGateway {
       throw new PagamentoGatewayError("IMPORTO_NON_VALIDO", "Importo dell'ordine non valido.");
     }
 
-    const expiresAt = new Date(Date.now() + SESSIONE_MINUTI * 60_000);
+    const expiresAt = new Date(Date.now() + PAYMENT_SESSION_TTL_MS);
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",

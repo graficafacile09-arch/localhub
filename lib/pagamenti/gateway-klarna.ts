@@ -50,6 +50,7 @@ import type {
   PaymentGateway,
   PaymentStatus,
 } from "./types";
+import { PAYMENT_SESSION_TTL_MS } from "./expiration";
 
 /** Base URL Klarna per ambiente (API UE). */
 export const KLARNA_BASE_TEST = "https://api.playground.klarna.com";
@@ -330,6 +331,7 @@ export class GatewayKlarna implements PaymentGateway {
       redirectUrl: String(esito.redirect_url),
       // Klarna non espone una scadenza esplicita della sessione checkout:
       // la gestione scadenze resta orchestrata dall'app (payment_expires_at).
+      expiresAt: new Date(Date.now() + PAYMENT_SESSION_TTL_MS),
     };
   }
 
