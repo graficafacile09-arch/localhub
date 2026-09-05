@@ -19,6 +19,8 @@ import { apiError, apiOk } from "@/lib/api/response";
  *   stessa identica chiamata Resend usata dal flusso ordini) e riporta la
  *   risposta di Resend. Se il dominio del mittente non è verificato, la
  *   risposta contiene l'errore esatto: la verifica definitiva del fix.
+ *   Il destinatario deve essere presente in TEST_EMAIL_ADDRESSES (whitelist
+ *   esplicita, variabile d'ambiente comma-separated).
  */
 
 function estraiDominio(from: string): string | null {
@@ -75,6 +77,19 @@ export async function GET(request: Request) {
   if (testEmail) {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(testEmail)) {
       return apiError("VALIDATION_ERROR", "Indirizzo di prova non valido.", 422);
+    }
+    // Whitelist destinatari di test (variabile d'ambiente comma-separated)
+    const whitelistRaw = process.env.TEST_EMAIL_ADDRESSES ?? "";
+    const whitelist = whitelistRaw
+      .split(",")
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean);
+    if (whitelist.length > 0 && !whitelist.includes(testEmail.toLowerCase())) {
+      return apiError(
+        "FORBIDDEN",
+        "Destinatario non autorizzato per il test. Configurare TEST_EMAIL_ADDRESSES.",
+        403
+      );
     }
     const esitoTest = await chiamaResend("/emails", {
       method: "POST",

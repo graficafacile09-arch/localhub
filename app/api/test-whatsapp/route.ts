@@ -12,11 +12,13 @@ import { inviaNotificaConfigurata } from "@/lib/notifiche/whatsapp";
  * che template e token funzionino end-to-end senza toccare gli ordini.
  *
  * Parametri (opzionali):
- *   ?to=393519501328   — numero di destinazione (default: 393519501328)
+ *   ?to=393519501328   — numero di destinazione (deve essere in TEST_WHATSAPP_NUMBERS)
  *
  * L'endpoint è protetto da requireApiArea("admin"): solo una sessione admin
  * autenticata può triggerare l'invio (mai esposto a chiamate anonime).
- * Best-effort: la risposta è l'esito di Meta, senza mai esporre il token.
+ * Il destinatario deve essere presente in TEST_WHATSAPP_NUMBERS (whitelist
+ * esplicita, variabile d'ambiente comma-separated). Best-effort: la risposta
+ * è l'esito di Meta, senza mai esporre il token.
  */
 export async function GET(request: Request) {
   const { error } = await requireApiArea("admin");
@@ -27,6 +29,20 @@ export async function GET(request: Request) {
   const destinatario = normalizzaNumeroWhatsApp(destinatarioRaw);
   if (!destinatario) {
     return apiError("VALIDATION_ERROR", "Numero di destinazione non valido.", 422);
+  }
+
+  // Whitelist destinatari di test (variabile d'ambiente comma-separated)
+  const whitelistRaw = process.env.TEST_WHATSAPP_NUMBERS ?? "";
+  const whitelist = whitelistRaw
+    .split(",")
+    .map((n) => normalizzaNumeroWhatsApp(n.trim()))
+    .filter(Boolean);
+  if (whitelist.length > 0 && !whitelist.includes(destinatario)) {
+    return apiError(
+      "FORBIDDEN",
+      "Destinatario non autorizzato per il test. Configurare TEST_WHATSAPP_NUMBERS.",
+      403
+    );
   }
 
   const risultato = await inviaNotificaConfigurata(
