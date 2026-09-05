@@ -29,8 +29,24 @@ import { risolviCredenzialiGateway } from "./config";
 import { getGatewayProvider, providerGatewayImplementato, type GatewayRuntimeOptions } from "./registry";
 import type { GatewayStripeOptions } from "./stripe";
 import type { ContestoCheckout, RigaCheckout } from "./types";
+import { PAYMENT_SESSION_TTL_MS } from "./expiration";
 
 /** Dati dell'ordine necessari alla sessione (letti dal DB, mai dal client). */
+
+export type SweepPagamentiScadutiResult =
+  | { ok: true; candidati: number; processati: number; falliti: number }
+  | { ok: false; candidati: number; processati: number; falliti: number; errore: string };
+
+type RpcPaymentResult = {
+  ok?: boolean;
+  codice?: string;
+  messaggio?: string;
+};
+
+function rpcPaymentSucceeded(data: unknown): data is RpcPaymentResult & { ok: true } {
+  return !!data && typeof data === "object" && (data as RpcPaymentResult).ok === true;
+}
+
 type OrdinePerSessione = {
   id: string;
   numero: string;
@@ -304,6 +320,9 @@ export async function creaSessionePagamentoPerOrdine(
   }
 
   // ── Persistenza sessione + stato ordine (atomico lato applicativo) ──────
+  // Stripe returns its provider deadline; the other providers use the same
+  // application TTL so order/session expiration remains consistent locally.
+  const expiresAt = sessione.expiresAt ?? new Date(Date.now() + PAYMENT_SESSION_TTL_MS);
   const idempotencyKey = `${provider}:${ordine.id}:${crypto.randomUUID()}`;
   const { data: sessioneInserita, error: insertErr } = await db
     .from("pagamenti_sessioni")
@@ -316,7 +335,7 @@ export async function creaSessionePagamentoPerOrdine(
       redirect_url: sessione.redirectUrl,
       amount: ordine.totale,
       currency: "EUR",
-      expires_at: sessione.expiresAt?.toISOString() ?? null,
+      expires_at: expiresAt.toISOString(),
       idempotency_key: idempotencyKey,
     })
     .select("id")
@@ -338,18 +357,19 @@ export async function creaSessionePagamentoPerOrdine(
     return { ok: false, codice: "SAVE_FAILED", errore: "Impossibile salvare la sessione di pagamento." };
   }
 
-  const { error: statoErr } = await db.rpc("aggiorna_payment_status", {
+  const { data: statoData, error: statoErr } = await db.rpc("aggiorna_payment_status", {
     p_ordine_id: ordine.id,
     p_nuovo_stato: "pending",
     p_payment_id: sessione.paymentId,
     p_transaction_id: null,
     p_importo: ordine.totale,
     p_valuta: "EUR",
-    p_expires_at: sessione.expiresAt?.toISOString() ?? null,
+    p_expires_at: expiresAt.toISOString(),
   });
 
-  if (statoErr) {
-    console.error("[pagamenti] aggiornamento payment_status fallito:", statoErr.message);
+  if (statoErr || !rpcPaymentSucceeded(statoData)) {
+    const statoMessage = statoErr?.message ?? (statoData as RpcPaymentResult | null)?.messaggio ?? "stato pagamento rifiutato";
+    console.error("[pagamenti] aggiornamento payment_status fallito:", statoMessage);
     // Best-effort: la sessione resta salvata; chiudiamola per non lasciare
     // una sessione attiva su un ordine non in pending.
     await db
@@ -421,31 +441,48 @@ export async function creaSessioneStripePerOrdine(
  * pagamento e lo scade subito → ripristino stock + ordine annullato
  * "pagamento scaduto". Best-effort, mai lancia.
  */
+export async function chiudiOrdinePagamento(
+  ordineId: string,
+  stato: "expired" | "canceled"
+): Promise<{ ok: boolean; errore?: string }> {
+  const db = createAdminSupabaseClient();
+  const { data, error } = await db.rpc("pagamenti_ordine_chiuso", {
+    p_ordine_id: ordineId,
+    p_payment_status: stato,
+  });
+  if (error) return { ok: false, errore: error.message };
+  if (!rpcPaymentSucceeded(data)) {
+    return {
+      ok: false,
+      errore: (data as RpcPaymentResult | null)?.messaggio ?? "chiusura pagamento rifiutata",
+    };
+  }
+  return { ok: true };
+}
+
 export async function chiudiOrdineSenzaPagamento(ordineId: string): Promise<void> {
   try {
     const db = createAdminSupabaseClient();
-    await db.rpc("aggiorna_payment_status", {
+    const { data, error } = await db.rpc("aggiorna_payment_status", {
       p_ordine_id: ordineId,
       p_nuovo_stato: "pending",
       p_payment_id: null,
       p_transaction_id: null,
       p_importo: null,
       p_valuta: null,
-      p_expires_at: null,
+      p_expires_at: new Date(Date.now() + PAYMENT_SESSION_TTL_MS).toISOString(),
     });
-    await db.rpc("pagamenti_ordine_scaduto", { p_ordine_id: ordineId });
+    if (error || !rpcPaymentSucceeded(data)) return;
+    await chiudiOrdinePagamento(ordineId, "expired");
   } catch {
-    // Best-effort: l'ordine resta comunque tracciabile (payment_status NULL).
+    // Best-effort: the order remains traceable and no client-side state is trusted.
   }
 }
 
-/**
- * Sweep best-effort degli ordini con pagamento scaduto (payment_expires_at
- * nel passato e payment_status pending/authorized). Chiamato dai punti
- * server (webhook, retry) per la consistenza eventuale: la fonte primaria
- * resta il webhook di scadenza del provider.
- */
-export async function elaboraPagamentiScaduti(limite = 20): Promise<number> {
+/** Detailed sweep result used by the protected cron endpoint. */
+export async function elaboraPagamentiScadutiDettagli(
+  limite = 20
+): Promise<SweepPagamentiScadutiResult> {
   const db = createAdminSupabaseClient();
   const ora = new Date().toISOString();
 
@@ -458,15 +495,29 @@ export async function elaboraPagamentiScaduti(limite = 20): Promise<number> {
 
   if (error || !data) {
     if (error) console.error("[pagamenti] sweep scaduti: query fallita:", error.message);
-    return 0;
+    return { ok: false, candidati: 0, processati: 0, falliti: 0, errore: error?.message ?? "query scaduti fallita" };
   }
 
   let processati = 0;
+  let falliti = 0;
   for (const row of data) {
-    const { error: rpcErr } = await db.rpc("pagamenti_ordine_scaduto", {
+    const { data: rpcData, error: rpcErr } = await db.rpc("pagamenti_ordine_scaduto", {
       p_ordine_id: row.id,
     });
-    if (!rpcErr) processati++;
+    if (rpcErr || !rpcPaymentSucceeded(rpcData)) {
+      falliti++;
+      console.error("[pagamenti] sweep scaduti: chiusura fallita", rpcErr?.message ?? (rpcData as RpcPaymentResult | null)?.messaggio ?? "rpc rifiutata");
+    } else {
+      processati++;
+    }
   }
-  return processati;
+  return falliti > 0
+    ? { ok: false, candidati: data.length, processati, falliti, errore: "uno o più ordini scaduti non sono stati chiusi" }
+    : { ok: true, candidati: data.length, processati, falliti };
+}
+
+/** Backward-compatible count API used by existing scripts/tests. */
+export async function elaboraPagamentiScaduti(limite = 20): Promise<number> {
+  const result = await elaboraPagamentiScadutiDettagli(limite);
+  return result.processati;
 }

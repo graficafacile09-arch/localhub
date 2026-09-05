@@ -40,6 +40,7 @@ import type Stripe from "stripe";
 import { inviaEmailConfermaPagamento } from "@/lib/cliente/ordine-email";
 import { inviaNotificaNuovoOrdine } from "@/lib/notifiche/whatsapp";
 import { notificaNuovoOrdineAdmin } from "@/lib/amministratore/notifiche";
+import { gestisciPagamentoTardivo } from "./late-payment";
 
 export type EsitoWebhook = { status: number; body: string };
 
@@ -627,7 +628,7 @@ async function marcaPagato(
   transactionId: string | null,
   importo: number,
   valuta: string
-): Promise<{ ok: boolean; errore?: string }> {
+): Promise<{ ok: boolean; errore?: string; codice?: string }> {
   const db = createAdminSupabaseClient();
   const payload = {
     p_ordine_id: ordineId,
@@ -640,9 +641,9 @@ async function marcaPagato(
   };
   const { data, error } = await db.rpc("aggiorna_payment_status", payload);
   if (error) {
-    return { ok: false, errore: error.message };
+    return { ok: false, errore: error.message, codice: "RPC_ERROR" };
   }
-  const esito = data as { ok?: boolean; codice?: string } | null;
+  const esito = data as { ok?: boolean; codice?: string; messaggio?: string } | null;
   if (esito?.ok === true) {
     const { error: sessionError } = await db
       .from("pagamenti_sessioni")
@@ -651,7 +652,7 @@ async function marcaPagato(
       .eq("provider", "stripe")
       .eq("payment_id", paymentId);
     if (sessionError) {
-      return { ok: false, errore: sessionError.message };
+      return { ok: false, errore: sessionError.message, codice: "SESSION_UPDATE_FAILED" };
     }
     return { ok: true };
   }
@@ -662,11 +663,12 @@ async function marcaPagato(
       p_nuovo_stato: "pending",
     });
     if (init.error || (init.data as { ok?: boolean } | null)?.ok !== true) {
-      return { ok: false, errore: init.error?.message ?? "inizializzazione stato pagamento fallita" };
+      return { ok: false, errore: init.error?.message ?? "inizializzazione stato pagamento fallita", codice: "INIT_FAILED" };
     }
     const retry = await db.rpc("aggiorna_payment_status", payload);
     if (retry.error || (retry.data as { ok?: boolean } | null)?.ok !== true) {
-      return { ok: false, errore: retry.error?.message ?? "transizione pagamento fallita" };
+      const retryResult = retry.data as { ok?: boolean; codice?: string; messaggio?: string } | null;
+      return { ok: false, errore: retry.error?.message ?? retryResult?.messaggio ?? "transizione pagamento fallita", codice: retryResult?.codice ?? "TRANSIZIONE_NON_CONSENTITA" };
     }
     const { error: sessionError } = await db
       .from("pagamenti_sessioni")
@@ -675,14 +677,14 @@ async function marcaPagato(
       .eq("provider", "stripe")
       .eq("payment_id", paymentId);
     if (sessionError) {
-      return { ok: false, errore: sessionError.message };
+      return { ok: false, errore: sessionError.message, codice: "SESSION_UPDATE_FAILED" };
     }
     return { ok: true };
   }
   // paid→paid = no-op idempotente; altre transizioni → errore.
   return esito?.codice
-    ? { ok: false, errore: String(esito.codice) }
-    : { ok: false, errore: "transizione non riuscita" };
+    ? { ok: false, errore: String(esito.messaggio ?? esito.codice), codice: String(esito.codice) }
+    : { ok: false, errore: "transizione non riuscita", codice: "TRANSIZIONE_NON_CONSENTITA" };
 }
 
 /** Estrae ordineId dall'oggetto sessione (client_reference_id / metadata). */
@@ -800,7 +802,20 @@ export async function gestisciWebhookStripe(
           valuta(session.currency) ?? ""
         );
         if (!esito.ok) {
-          throw new Error(`elaborazione completed fallita: ${esito.errore ?? "transizione non riuscita"}`);
+          if (esito.codice === "PAGAMENTO_SCADUTO") {
+            const tardivo = await gestisciPagamentoTardivo({
+              ordineId,
+              negozioId,
+              provider: "stripe",
+              paymentId,
+              importo: validazione.importo,
+              eventId: evento.id,
+              payload: evento,
+            });
+            if (!tardivo.ok) throw new Error(`late payment Stripe non gestito: ${tardivo.errore}`);
+          } else {
+            throw new Error(`elaborazione completed fallita: ${esito.errore ?? "transizione non riuscita"}`);
+          }
         } else {
           // Email di CONFERMA PAGAMENTO al cliente: inviata SOLO qui, dopo che
           // marcaPagato ha registrato payment_status=paid. L'idempotenza è a
@@ -835,11 +850,12 @@ export async function gestisciWebhookStripe(
           .update({ status: "expired", updated_at: new Date().toISOString() })
           .eq("payment_id", paymentId);
         if (sessionError) throw new Error(`aggiornamento sessione scaduta fallito: ${sessionError.message}`);
-        const { error: scadErr } = await db.rpc("pagamenti_ordine_scaduto", {
+        const { data: scadData, error: scadErr } = await db.rpc("pagamenti_ordine_scaduto", {
           p_ordine_id: ordineId,
         });
-        if (scadErr) {
-          throw new Error(`elaborazione scadenza fallita: ${scadErr.message}`);
+        if (scadErr || (scadData as { ok?: boolean } | null)?.ok !== true) {
+          const msg = scadErr?.message ?? (scadData as { messaggio?: string } | null)?.messaggio ?? "scadenza rifiutata";
+          throw new Error(`elaborazione scadenza fallita: ${msg}`);
         }
         break;
       }

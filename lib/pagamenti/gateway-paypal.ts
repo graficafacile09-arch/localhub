@@ -49,6 +49,7 @@ import type {
   PaymentGateway,
   PaymentStatus,
 } from "./types";
+import { PAYMENT_SESSION_TTL_MS } from "./expiration";
 
 /** Base URL PayPal per ambiente. */
 export const PAYPAL_BASE_TEST = "https://api-m.sandbox.paypal.com";
@@ -318,6 +319,7 @@ export class GatewayPaypal implements PaymentGateway {
     return {
       paymentId: String(esito.id),
       redirectUrl: approve,
+      expiresAt: new Date(Date.now() + PAYMENT_SESSION_TTL_MS),
     };
   }
 

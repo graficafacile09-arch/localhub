@@ -54,6 +54,7 @@ import type {
   PaymentGateway,
   PaymentStatus,
 } from "./types";
+import { PAYMENT_SESSION_TTL_MS } from "./expiration";
 
 /** Base URL Scalapay per ambiente (API UE). */
 export const SCALAPAY_BASE_TEST = "https://integration.api.scalapay.com";
@@ -287,6 +288,7 @@ export class GatewayScalapay implements PaymentGateway {
       // pagamenti_sessioni.payment_id e usata dai webhook per la riconciliazione).
       paymentId: String(esito.token),
       redirectUrl: String(esito.checkoutUrl),
+      expiresAt: new Date(Date.now() + PAYMENT_SESSION_TTL_MS),
     };
   }
 

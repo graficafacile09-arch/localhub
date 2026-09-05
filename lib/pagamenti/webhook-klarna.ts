@@ -41,6 +41,8 @@ import { getGatewayProvider } from "./registry";
 import { inviaEmailConfermaPagamento } from "@/lib/cliente/ordine-email";
 import { inviaNotificaNuovoOrdine } from "@/lib/notifiche/whatsapp";
 import { notificaNuovoOrdineAdmin } from "@/lib/amministratore/notifiche";
+import { chiudiOrdinePagamento } from "./sessioni";
+import { gestisciPagamentoTardivo } from "./late-payment";
 
 export type EsitoWebhook = { status: number; body: string };
 
@@ -195,7 +197,7 @@ async function aggiornaStato(
     transactionId?: string | null;
     importo?: number | null;
   } = {}
-): Promise<{ ok: boolean; errore?: string }> {
+): Promise<{ ok: boolean; errore?: string; codice?: string }> {
   const db = createAdminSupabaseClient();
   const payload = {
     p_ordine_id: ordineId,
@@ -207,8 +209,8 @@ async function aggiornaStato(
     p_expires_at: null,
   };
   const { data, error } = await db.rpc("aggiorna_payment_status", payload);
-  if (error) return { ok: false, errore: error.message };
-  const esito = data as { ok?: boolean; codice?: string } | null;
+  if (error) return { ok: false, errore: error.message, codice: "RPC_ERROR" };
+  const esito = data as { ok?: boolean; codice?: string; messaggio?: string } | null;
   if (esito?.ok === true) return { ok: true };
   if (esito?.codice === "STATO_LEGACY_DA_INIZIALIZZARE") {
     // Ordine senza payment_status: inizializza a pending e riprova.
@@ -217,15 +219,20 @@ async function aggiornaStato(
       p_nuovo_stato: "pending",
     });
     if (init.error || (init.data as { ok?: boolean } | null)?.ok !== true) {
-      return { ok: false, errore: "inizializzazione stato pagamento fallita" };
+      return { ok: false, errore: init.error?.message ?? "inizializzazione stato pagamento fallita", codice: "INIT_FAILED" };
     }
     const retry = await db.rpc("aggiorna_payment_status", payload);
-    if (retry.error) return { ok: false, errore: retry.error.message };
+    if (retry.error) return { ok: false, errore: retry.error.message, codice: "RPC_ERROR" };
+    const retryResult = retry.data as { ok?: boolean; codice?: string; messaggio?: string } | null;
+    if (retryResult?.ok !== true) {
+      return { ok: false, errore: retryResult?.messaggio ?? "transizione pagamento fallita", codice: retryResult?.codice ?? "TRANSIZIONE_NON_CONSENTITA" };
+    }
+    return { ok: true };
     return { ok: true };
   }
   return esito?.codice
-    ? { ok: false, errore: String(esito.codice) }
-    : { ok: false, errore: "transizione non riuscita" };
+    ? { ok: false, errore: String(esito.messaggio ?? esito.codice), codice: String(esito.codice) }
+    : { ok: false, errore: "transizione non riuscita", codice: "TRANSIZIONE_NON_CONSENTITA" };
 }
 
 /** Marca la sessione Klarna con lo stato finale (best-effort). */
@@ -348,7 +355,20 @@ export async function gestisciWebhookKlarna(
           importo: ordine.totale,
         });
         if (!esito.ok) {
-          console.error("[pagamenti] elaborazione klarna paid fallita:", esito.errore);
+          if (esito.codice === "PAGAMENTO_SCADUTO") {
+            const tardivo = await gestisciPagamentoTardivo({
+              ordineId: ordine.id,
+              negozioId,
+              provider: "klarna",
+              paymentId,
+              importo: ordine.totale,
+              eventId,
+              payload,
+            });
+            if (!tardivo.ok) throw new Error(`late payment Klarna non gestito: ${tardivo.errore}`);
+          } else {
+            throw new Error(`elaborazione klarna paid fallita: ${esito.errore}`);
+          }
         } else {
           await marcaSessione(paymentId, "paid");
           // Email di conferma: per gli ordini con pagamento online la
@@ -368,16 +388,9 @@ export async function gestisciWebhookKlarna(
       }
 
       case "canceled": {
-        const esito = await aggiornaStato(ordine.id, "canceled", {
-          paymentId,
-          transactionId: null,
-          importo: null,
-        });
-        if (!esito.ok) {
-          console.error("[pagamenti] elaborazione klarna cancel fallita:", esito.errore);
-        } else {
-          await marcaSessione(paymentId, "canceled");
-        }
+        const chiusura = await chiudiOrdinePagamento(ordine.id, "canceled");
+        if (!chiusura.ok) throw new Error(`elaborazione klarna cancel fallita: ${chiusura.errore}`);
+        await marcaSessione(paymentId, "canceled");
         break;
       }
 
@@ -385,13 +398,9 @@ export async function gestisciWebhookKlarna(
         // Marca la sessione scaduta e delega alla RPC il ripristino stock
         // (con guardia anti-retry: se esiste una sessione attiva più
         // recente l'ordine NON viene annullato).
+        const chiusura = await chiudiOrdinePagamento(ordine.id, "expired");
+        if (!chiusura.ok) throw new Error(`elaborazione klarna expired fallita: ${chiusura.errore}`);
         await marcaSessione(paymentId, "expired");
-        const { error: scadErr } = await db.rpc("pagamenti_ordine_scaduto", {
-          p_ordine_id: ordine.id,
-        });
-        if (scadErr) {
-          console.error("[pagamenti] elaborazione klarna expired fallita:", scadErr.message);
-        }
         break;
       }
 
@@ -410,7 +419,7 @@ export async function gestisciWebhookKlarna(
           importo: null,
         });
         if (!esito.ok) {
-          console.error("[pagamenti] elaborazione klarna refund fallita:", esito.errore);
+          throw new Error(`elaborazione klarna refund fallita: ${esito.errore}`);
         } else {
           await marcaSessione(paymentId, "refunded");
           await db
