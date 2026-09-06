@@ -83,9 +83,19 @@ export default async function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <CartProvider>{children}</CartProvider>
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-3 focus:top-3 focus:z-[100] focus:rounded-lg focus:bg-yellow-400 focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:text-blue-900 focus:shadow-lg"
+        >
+          Salta al contenuto
+        </a>
+        <CartProvider>
+          <div id="main" tabIndex={-1} className="flex w-full flex-1 flex-col outline-none">
+            {children}
+          </div>
+        </CartProvider>
 
-        <footer className="border-t border-slate-200 bg-white py-3 text-center text-xs text-slate-400">
+        <footer className="border-t border-slate-200 bg-white py-3 text-center text-xs text-slate-600">
           {footerText}
         </footer>
 

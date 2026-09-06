@@ -91,7 +91,9 @@ export default async function ProdottiTipiciPage() {
             </Link>
           </div>
         ) : (
-          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-5 lg:grid-cols-4">
+          <>
+            <h2 className="sr-only">Prodotti tipici del territorio</h2>
+            <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-5 lg:grid-cols-4">
             {prodottiTipici.map((prodotto) => {
               const prodottoId = String(prodotto.id);
               return (
@@ -113,7 +115,8 @@ export default async function ProdottiTipiciPage() {
                 />
               );
             })}
-          </div>
+            </div>
+          </>
         )}
       </div>
     </main>

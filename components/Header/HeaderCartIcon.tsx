@@ -24,11 +24,11 @@ export default function HeaderCartIcon() {
     <Link
       href="/carrello"
       aria-label={`Carrello${pezzi > 0 ? ` (${pezzi} articoli)` : ""}`}
-      className="group relative inline-flex h-8 w-8 shrink-0 items-center justify-center transition-colors duration-200 hover:text-yellow-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 max-sm:h-7 max-sm:w-7"
+      className="group relative inline-flex h-8 w-8 shrink-0 items-center justify-center transition-colors duration-200 hover:text-yellow-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 max-sm:h-7 max-sm:w-7 after:absolute after:-inset-1.5 after:content-['']"
     >
       <ShoppingCart
         aria-hidden
-        className="h-[22px] w-[22px] text-yellow-400 transition-colors duration-200 group-hover:text-yellow-500 max-sm:h-5 max-sm:w-5"
+        className="h-[22px] w-[22px] text-yellow-700 transition-colors duration-200 group-hover:text-yellow-800 max-sm:h-5 max-sm:w-5"
       />
       {pezzi > 0 && (
         <span

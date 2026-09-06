@@ -97,9 +97,9 @@ export default function WeatherWidget() {
       className="flex items-center gap-1 text-[11px] leading-tight sm:gap-1.5 sm:text-sm"
       aria-label="Meteo Castrovillari"
     >
-      <Icon className="h-4 w-4 shrink-0 text-yellow-500 sm:h-5 sm:w-5" strokeWidth={1.75} aria-hidden />
+      <Icon className="h-4 w-4 shrink-0 text-yellow-700 sm:h-5 sm:w-5" strokeWidth={1.75} aria-hidden />
       <span className="font-bold tabular-nums text-slate-800">{temp}°</span>
-      <span className="hidden whitespace-nowrap font-medium text-slate-400 sm:inline">
+      <span className="hidden whitespace-nowrap font-medium text-slate-600 sm:inline">
         Castrovillari{label ? ` · ${label}` : ""}
       </span>
     </div>

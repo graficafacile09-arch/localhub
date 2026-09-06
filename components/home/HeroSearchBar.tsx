@@ -25,6 +25,7 @@ export default function HeroSearchBar() {
             type="text"
             name="q"
             placeholder="Cerca prodotto, negozio o servizio..."
+            aria-label="Cerca prodotto, negozio o servizio"
             className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm text-slate-900 placeholder:text-slate-500 focus:outline-none sm:px-4 sm:text-base"
           />
           <button

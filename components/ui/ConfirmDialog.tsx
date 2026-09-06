@@ -27,6 +27,7 @@ export default function ConfirmDialog({
   onCancel,
 }: ConfirmDialogProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -36,6 +37,33 @@ export default function ConfirmDialog({
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
   }, [open, onCancel]);
+
+  // Focus management: salva il trigger all'apertura, sposta il focus sul
+  // primo elemento interattivo del dialog e lo ripristina alla chiusura.
+  useEffect(() => {
+    if (!open) return;
+    triggerRef.current = document.activeElement as HTMLElement | null;
+    const timer = window.setTimeout(() => {
+      if (!dialogRef.current) return;
+      const focusables = dialogRef.current.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      const primo = focusables[0];
+      if (primo) {
+        primo.focus();
+      } else {
+        dialogRef.current.focus();
+      }
+    }, 0);
+    return () => {
+      window.clearTimeout(timer);
+      const trigger = triggerRef.current;
+      if (trigger && document.contains(trigger)) {
+        trigger.focus();
+      }
+      triggerRef.current = null;
+    };
+  }, [open]);
 
   useEffect(() => {
     if (open) {
@@ -58,16 +86,23 @@ export default function ConfirmDialog({
       />
       <div
         ref={dialogRef}
-        className="relative w-full max-w-md rounded-xl bg-white shadow-xl"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="confirm-dialog-title"
+        tabIndex={-1}
+        className="relative w-full max-w-md rounded-xl bg-white shadow-xl outline-none"
       >
         <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-          <h2 className="text-sm font-bold text-slate-900">{title}</h2>
+          <h2 id="confirm-dialog-title" className="text-sm font-bold text-slate-900">
+            {title}
+          </h2>
           <button
             type="button"
             onClick={onCancel}
-            className="rounded-lg p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+            aria-label="Chiudi"
+            className="rounded-lg p-1 text-slate-400 transition hover:bg-yellow-100 hover:text-yellow-800"
           >
-            <X className="h-4 w-4" />
+            <X className="h-4 w-4" aria-hidden />
           </button>
         </div>
         {destructive && (
@@ -84,7 +119,7 @@ export default function ConfirmDialog({
             type="button"
             onClick={onCancel}
             disabled={loading}
-            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+            className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 transition hover:bg-yellow-50 disabled:opacity-50"
           >
             {cancelLabel}
           </button>

@@ -103,8 +103,8 @@ export default function ProductCard({
           >
             {haVarianti ? "Da " : ""}€{prezzoFormattato}
           </p>
-          <p className="mt-1 flex items-center gap-1 line-clamp-1 text-[11px] text-slate-400">
-            <Store className="h-3 w-3 shrink-0 text-yellow-500" aria-hidden />
+          <p className="mt-1 flex items-center gap-1 line-clamp-1 text-[11px] text-slate-600">
+            <Store className="h-3 w-3 shrink-0 text-yellow-700" aria-hidden />
             {negozio_nome}
           </p>
         </div>

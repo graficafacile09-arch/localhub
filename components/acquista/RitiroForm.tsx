@@ -330,6 +330,7 @@ export default function RitiroForm({
             }}
             min={oggi}
             required
+            aria-label="Data ritiro"
             aria-required="true"
             aria-invalid={!!errori.data}
             className="mt-2 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
@@ -352,6 +353,7 @@ export default function RitiroForm({
               setErrori((p) => ({ ...p, fascia: undefined }));
             }}
             required
+            aria-label="Fascia oraria di ritiro"
             aria-required="true"
             aria-invalid={!!errori.fascia}
             className="mt-2 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
@@ -379,6 +381,7 @@ export default function RitiroForm({
             value={note}
             onChange={(e) => setNote(e.target.value)}
             rows={3}
+            aria-label="Note per il ritiro"
             placeholder="Eventuali note per il ritiro..."
             className="mt-2 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100 placeholder:text-slate-400"
           />

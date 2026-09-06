@@ -86,7 +86,9 @@ export default async function OffertePage() {
             </Link>
           </div>
         ) : (
-          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-5 lg:grid-cols-4">
+          <>
+            <h2 className="sr-only">Prodotti in offerta</h2>
+            <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-5 lg:grid-cols-4">
             {prodottiOfferta.map((prodotto) => {
               const prodottoId = String(prodotto.id);
               return (
@@ -108,7 +110,8 @@ export default async function OffertePage() {
                 />
               );
             })}
-          </div>
+            </div>
+          </>
         )}
       </div>
     </main>
