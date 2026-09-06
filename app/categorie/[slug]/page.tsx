@@ -5,6 +5,7 @@ import CategoriaShowcaseView from "@/components/categoria/CategoriaShowcaseView"
 import { getCategoriaShowcase, getCategoriaBySlug } from "@/lib/negozi";
 import { getStatoPreferitiPerPagina } from "@/lib/cliente/favorites";
 import { getImpostazioniPubbliche } from "@/lib/platform/settings";
+import { getSiteUrl } from "@/lib/site";
 import { ArrowLeft } from "lucide-react";
 
 type Params = { slug: string };
@@ -12,13 +13,25 @@ type Params = { slug: string };
 export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
   const { slug } = await params;
   const categoria = await getCategoriaBySlug(slug);
-  if (!categoria) return { title: "Categoria non trovata | InCittà" };
+  if (!categoria) return { title: "Categoria non trovata" };
 
   const impostazioni = await getImpostazioniPubbliche();
   const citta = impostazioni.city_name?.trim() || "Castrovillari";
+  const canonical = `${getSiteUrl()}/categorie/${slug}`;
+  const descrizione =
+    categoria.descrizione ?? `Negozi e attività della categoria ${categoria.nome} a ${citta}.`;
   return {
-    title: `${categoria.nome} | InCittà`,
-    description: categoria.descrizione ?? `Negozi e attività della categoria ${categoria.nome} a ${citta}.`,
+    // title senza suffisso "| InCittà": lo aggiunge il template del layout.
+    title: categoria.nome,
+    description: descrizione,
+    alternates: { canonical },
+    openGraph: {
+      title: categoria.nome,
+      description: descrizione,
+      url: canonical,
+      type: "website",
+      siteName: "InCittà",
+    },
   };
 }
 

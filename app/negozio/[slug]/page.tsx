@@ -51,11 +51,13 @@ export async function generateMetadata({ params }: { params: Promise<Params> }):
   const canonical = `${getSiteUrl()}/negozio/${slugOrId}`;
 
   return {
-    title: `${nome} | InCittà`,
+    // title senza suffisso "| InCittà": lo aggiunge il template del layout
+    // (title: { template: "%s | InCittà" }), evitando il duplicato.
+    title: nome,
     description: descrizione,
     alternates: { canonical },
     openGraph: {
-      title: `${nome} | InCittà`,
+      title: nome,
       description: descrizione,
       url: canonical,
       type: "website",

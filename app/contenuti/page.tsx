@@ -3,11 +3,16 @@ import Link from "next/link";
 import { Newspaper } from "lucide-react";
 import Header from "@/components/Header/Header";
 import { getContenutiPubblici, formattaDataPubblicazione } from "@/lib/contenuti-pubblici";
+import { getSiteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Contenuti | InCittà",
+  // title senza suffisso "| InCittà": lo aggiunge il template del layout.
+  title: "Contenuti",
   description:
     "Articoli e contenuti editoriali della città: storie, approfondimenti e notizie dal territorio.",
+  alternates: {
+    canonical: `${getSiteUrl()}/contenuti`,
+  },
 };
 
 export const dynamic = "force-dynamic";

@@ -26,11 +26,12 @@ export async function generateMetadata({
   const canonical = `${getSiteUrl()}/contenuti/${contenuto.slug}`;
 
   return {
-    title: `${titolo} | InCittà`,
+    // title senza suffisso "| InCittà": lo aggiunge il template del layout.
+    title: titolo,
     description: descrizione,
     alternates: { canonical },
     openGraph: {
-      title: `${titolo} | InCittà`,
+      title: titolo,
       description: descrizione,
       url: canonical,
       type: "article",

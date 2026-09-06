@@ -35,6 +35,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const impostazioni = await getImpostazioniPubbliche();
   const nome = impostazioni.site_name?.trim() || DEFAULTS.site_name;
   const tagline = impostazioni.site_tagline?.trim() || DEFAULTS.site_tagline;
+  const ogImageUrl = `${SITE_URL}/hero-via-roma-castrovillari-1400x1050.jpg`;
 
   return {
     metadataBase: new URL(SITE_URL),
@@ -48,6 +49,18 @@ export async function generateMetadata(): Promise<Metadata> {
       siteName: nome,
       locale: "it_IT",
       type: "website",
+      images: [
+        {
+          url: ogImageUrl,
+          width: 1400,
+          height: 1050,
+          alt: `Via Roma a Castrovillari — ${nome}`,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      images: [ogImageUrl],
     },
     robots: {
       index: true,

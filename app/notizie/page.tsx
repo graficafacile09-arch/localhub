@@ -7,11 +7,16 @@ import {
   getNotiziePubbliche,
 } from "@/lib/notizie-pubbliche";
 import { CATEGORIE_NOTIZIE } from "@/lib/notizie/types";
+import { getSiteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
-  title: "Notizie CV | InCittà",
+  // title senza suffisso "| InCittà": lo aggiunge il template del layout.
+  title: "Notizie CV",
   description:
     "Le notizie di Castrovillari raccolte automaticamente da fonti istituzionali e pubbliche: Comune, Provincia, Regione, Parco del Pollino e Protezione Civile.",
+  alternates: {
+    canonical: `${getSiteUrl()}/notizie`,
+  },
 };
 
 export const revalidate = 900;

@@ -4,20 +4,38 @@ import { getSiteUrl } from "@/lib/site";
 
 const SITE_URL = getSiteUrl();
 
-export const dynamic = "force-dynamic";
+// La sitemap è rigenerata al massimo ogni ora (ISR): le tre query Supabase
+// non vengono rieseguite a ogni richiesta.
+export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const db = createAdminSupabaseClient();
-  const now = new Date();
 
   const urls: MetadataRoute.Sitemap = [
-    { url: SITE_URL, lastModified: now, changeFrequency: "daily", priority: 1 },
-    { url: `${SITE_URL}/negozi`, lastModified: now, changeFrequency: "daily", priority: 0.9 },
-    { url: `${SITE_URL}/ricerca`, lastModified: now, changeFrequency: "daily", priority: 0.7 },
-    { url: `${SITE_URL}/categorie`, lastModified: now, changeFrequency: "weekly", priority: 0.7 },
-    { url: `${SITE_URL}/contenuti`, lastModified: now, changeFrequency: "weekly", priority: 0.6 },
-    { url: `${SITE_URL}/notizie`, lastModified: now, changeFrequency: "hourly", priority: 0.7 },
+    { url: SITE_URL, changeFrequency: "daily", priority: 1 },
+    { url: `${SITE_URL}/negozi`, changeFrequency: "daily", priority: 0.9 },
+    { url: `${SITE_URL}/ricerca`, changeFrequency: "daily", priority: 0.7 },
+    { url: `${SITE_URL}/categorie`, changeFrequency: "weekly", priority: 0.7 },
+    { url: `${SITE_URL}/offerte`, changeFrequency: "weekly", priority: 0.6 },
+    { url: `${SITE_URL}/prodotti-tipici`, changeFrequency: "weekly", priority: 0.6 },
+    { url: `${SITE_URL}/contenuti`, changeFrequency: "weekly", priority: 0.6 },
+    { url: `${SITE_URL}/notizie`, changeFrequency: "hourly", priority: 0.7 },
   ];
+
+  // Categorie attive con slug (stesse URL pubbliche di /categorie/[slug]).
+  const { data: categorie } = await db
+    .from("categorie")
+    .select("slug")
+    .eq("attivo", true)
+    .not("slug", "is", null);
+
+  for (const categoria of categorie ?? []) {
+    urls.push({
+      url: `${SITE_URL}/categorie/${categoria.slug}`,
+      changeFrequency: "weekly",
+      priority: 0.6,
+    });
+  }
 
   // Negozi attivi (URL pubbliche SOLO con slug).
   const { data: negozi } = await db
@@ -30,7 +48,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   for (const negozio of negozi ?? []) {
     urls.push({
       url: `${SITE_URL}/negozio/${negozio.slug}`,
-      lastModified: new Date(negozio.updated_at ?? now),
+      ...(negozio.updated_at
+        ? { lastModified: new Date(negozio.updated_at) }
+        : {}),
       changeFrequency: "weekly",
       priority: 0.8,
     });
@@ -46,7 +66,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   for (const prodotto of prodotti ?? []) {
     urls.push({
       url: `${SITE_URL}/prodotto/${prodotto.slug}`,
-      lastModified: new Date(prodotto.updated_at ?? now),
+      ...(prodotto.updated_at
+        ? { lastModified: new Date(prodotto.updated_at) }
+        : {}),
       changeFrequency: "weekly",
       priority: 0.7,
     });
@@ -62,7 +84,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   for (const contenuto of contenuti ?? []) {
     urls.push({
       url: `${SITE_URL}/contenuti/${contenuto.slug}`,
-      lastModified: new Date(contenuto.updated_at ?? now),
+      ...(contenuto.updated_at
+        ? { lastModified: new Date(contenuto.updated_at) }
+        : {}),
       changeFrequency: "monthly",
       priority: 0.5,
     });

@@ -5,10 +5,23 @@ const SITE_URL = getSiteUrl();
 
 export default function robots(): MetadataRoute.Robots {
   return {
-    rules: {
-      userAgent: "*",
-      allow: "/",
-    },
+    rules: [
+      {
+        userAgent: "*",
+        allow: "/",
+        disallow: [
+          "/amministratore/",
+          "/merchant/",
+          "/cliente/",
+          "/api/",
+          "/checkout",
+          "/ordini/",
+          "/profilo",
+          "/carrello",
+          "/auth",
+        ],
+      },
+    ],
     sitemap: `${SITE_URL}/sitemap.xml`,
   };
 }

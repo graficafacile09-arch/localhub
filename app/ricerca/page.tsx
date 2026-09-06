@@ -14,6 +14,8 @@ import { chiavePreferito, getStatoPreferitiPerPagina } from "@/lib/cliente/favor
 import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
 import type { ProdottoRicerca, NegozioRicerca } from "@/lib/ricerca-ai";
 import type { CategoriaShowcase } from "@/lib/negozi";
+import type { Metadata } from "next";
+import { getSiteUrl } from "@/lib/site";
 import Link from "next/link";
 import { MapPin, Phone, SlidersHorizontal } from "lucide-react";
 
@@ -23,6 +25,80 @@ function parseNum(value: string | undefined): number | undefined {
   if (!value) return undefined;
   const n = Number(value);
   return !Number.isNaN(n) && n > 0 ? n : undefined;
+}
+
+// ─── SEO ─────────────────────────────────────────────────────────────────────
+// La pagina /ricerca accetta molti parametri (q, categoria, filtri tecnici,
+// ordinamento, paginazione). Per evitare che Google indicizzi infinite
+// combinazioni di query string:
+//   - canonical: usa SOLO i parametri semantici (q, categoria); i filtri
+//     tecnici/ordinamento/paginazione vengono esclusi dal canonical.
+//   - robots index=false: pagine con soli filtri tecnici senza q/categoria
+//     e pagine oltre la prima (contenuto instabile/duplicato).
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}): Promise<Metadata> {
+  const sp = await searchParams;
+  const get = (k: string) => {
+    const v = sp[k];
+    return Array.isArray(v) ? (v[0] ?? "") : (v ?? "");
+  };
+
+  const termine = get("q").trim();
+  const categoria = get("categoria").trim();
+  const haFiltriTecnici = Boolean(
+    get("sottocategoria").trim() ||
+      get("marca").trim() ||
+      get("colore").trim() ||
+      parseNum(get("prezzo_min")) !== undefined ||
+      parseNum(get("prezzo_max")) !== undefined ||
+      get("disponibile") === "1"
+  );
+  const ordina = isOrdinamentoProdottiPubblici(get("ordina"))
+    ? get("ordina")
+    : "rilevanza";
+  const pagina = Math.max(1, Number.parseInt(get("pagina"), 10) || 1);
+  const soloOrdina = ordina !== "rilevanza";
+
+  // Vetrina categoria: /ricerca?categoria=X da sola (senza testo né filtri)
+  // mostra lo stesso contenuto di /categorie/[slug] → canonical alla pagina
+  // categoria reale, evitando il duplicato.
+  const usaVetrina =
+    Boolean(categoria) && !termine && !haFiltriTecnici && !soloOrdina && pagina <= 1;
+  if (usaVetrina) {
+    return {
+      title: "Ricerca",
+      alternates: {
+        canonical: `${getSiteUrl()}/categorie/${encodeURIComponent(categoria)}`,
+      },
+      robots: { index: true, follow: true },
+    };
+  }
+
+  // Pagine con soli parametri tecnici (nessun q/categoria semantico) oppure
+  // oltre la prima pagina: contenuto non canonicalizzabile → noindex.
+  const soloParametriTecnici =
+    !termine && !categoria && (haFiltriTecnici || soloOrdina);
+  const indicizzabile = !soloParametriTecnici && pagina <= 1;
+
+  // Canonical deterministico: solo q e categoria, niente filtri/ordina/pagina.
+  const parametriCanonici = new URLSearchParams();
+  if (termine) parametriCanonici.set("q", termine);
+  if (categoria) parametriCanonici.set("categoria", categoria);
+  const qs = parametriCanonici.toString();
+  const canonical = `${getSiteUrl()}/ricerca${qs ? `?${qs}` : ""}`;
+
+  return {
+    // title senza suffisso "| InCittà": lo aggiunge il template del layout.
+    title: termine ? `Ricerca: ${termine}` : "Ricerca",
+    description: termine
+      ? `Risultati per “${termine}” nei negozi e nei prodotti di InCittà.`
+      : "Cerca negozi, prodotti e servizi della tua città su InCittà.",
+    alternates: { canonical },
+    robots: { index: indicizzabile, follow: true },
+  };
 }
 
 export default async function RicercaPage({
