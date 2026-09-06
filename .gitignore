@@ -42,6 +42,7 @@ next-env.d.ts
 
 .vercel
 .env*
+!.env.example
 
 # test output artifacts
 /playwright-report/

@@ -1,36 +1,56 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# InCittà
 
-## Getting Started
+## Cos'è
 
-First, run the development server:
+InCittà è una piattaforma e-commerce locale (CMS) che mette in contatto negozi di prossimità e clienti: i negozi gestiscono vetrina, prodotti, orari, prenotazioni e pagamenti; i clienti cercano negozi e prodotti, acquistano online (carta, Klarna, PayPal, Scalapay) oppure ritirano in negozio.
+
+Il progetto include anche un'area amministratore per la gestione della piattaforma e un assistente AI per i clienti.
+
+## Stack
+
+- **Next.js** (App Router) — framework
+- **React** — UI
+- **TypeScript** — linguaggio
+- **Supabase** — database PostgreSQL, autenticazione e storage
+- **Stripe** (incl. Stripe Connect) — pagamenti online e collegamento conti negozi
+- **Resend** — email transazionali
+- **Gemini / Cloudflare Workers AI / OpenRouter / Groq** — AI (riconoscimento prodotti, assistente, trascrizione audio)
+- **ntfy + WhatsApp (Meta Cloud API)** — notifiche ordini e reclami
+
+## Prerequisiti
+
+- Node.js (versione compatibile con il `package.json`)
+- Un progetto Supabase (URL + anon key + service role key)
+- Account Resend per le email
+- Chiavi dei provider che si intende usare (Stripe, AI, ecc.)
+
+## Configurazione locale
+
+Copia il file di esempio e inserisci i valori reali **solo** localmente:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.example .env.local
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+I secret reali (token, chiavi, password) non devono mai essere committati: vanno inseriti nel `.env.local` oppure nell'ambiente di deploy (es. Vercel). Il file `.env.example` contiene solo placeholder.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Avvio
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm install
+npm run dev
+```
 
-## Learn More
+L'app è disponibile su `http://localhost:3000`.
 
-To learn more about Next.js, take a look at the following resources:
+## Struttura principale
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `app/` — route Next.js (pagine pubbliche, aree cliente/merchant/amministratore, API route)
+- `components/` — componenti React riutilizzabili
+- `lib/` — logica applicativa lato server (supabase, pagamenti, notifiche, AI, ricerca)
+- `supabase/` — migration SQL e configurazione locale
+- `scripts/` — script di utilità, fixture e test manuali
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Documentazione
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [ARCHITETTURA-NEGOZI.md](./ARCHITETTURA-NEGOZI.md) — architettura database e CMS dei negozi
