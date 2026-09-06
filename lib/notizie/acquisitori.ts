@@ -1,4 +1,5 @@
 import { XMLParser } from "fast-xml-parser";
+import { rimuoviSuffissoTestata } from "./dedup";
 import type { FonteNotizie } from "./types";
 
 /**
@@ -277,22 +278,16 @@ export function linkGooglePulito(raw: string): string {
 }
 
 /**
- * Rimuove dal titolo Google News il suffisso ` - <nome testata>` (il feed
- * lo appende a quasi tutti i titoli). Il confronto è case-insensitive e
- * SOLO se la coda corrisponde davvero al `<source>` dell'item.
+ * Rimuove dal titolo Google News il suffisso della testata (il feed lo
+ * appende a quasi tutti i titoli). Sono riconosciuti i separatori
+ * " - ", " · " e " • " (case-insensitive, SOLO se la coda corrisponde
+ * davvero al `<source>` dell'item).
  */
 export function titoloSenzaSuffissoFonte(
   title: string,
   sourceName: string | null | undefined
 ): string {
-  const t = title.trim();
-  const fonte = sourceName?.trim();
-  if (!fonte) return t;
-  const suffisso = ` - ${fonte}`;
-  if (t.length > suffisso.length && t.toLowerCase().endsWith(suffisso.toLowerCase())) {
-    return t.slice(0, -suffisso.length).trim();
-  }
-  return t;
+  return rimuoviSuffissoTestata(title, sourceName);
 }
 
 /**

@@ -1,3 +1,4 @@
+import { calcolaTitoloFonteHash } from "@/lib/notizie/dedup";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
 /**
@@ -44,8 +45,19 @@ function assumiNotiziaPubblica(riga: Record<string, unknown>): NotiziaPubblica {
   };
 }
 
+/** Margine extra di righe lette per compensare le notizie fuse dalla dedup. */
+const DEDUP_SLACK = 25;
+
 /**
  * Ultime notizie pubblicate, dalla più recente alla più vecchia.
+ *
+ * Dedup lato lettura (P1): una sola copia per notizia, usando lo stesso
+ * criterio dell'inserimento — SHA-256 di "source_name | titolo normalizzato"
+ * (MAI il solo titolo: testate diverse sullo stesso argomento restano
+ * tutte visibili). Le righe arrivano ordinate per published_at DESC, quindi
+ * la prima riga per hash è la più recente e viene conservata. Nessuna riga
+ * viene cancellata dal database.
+ *
  * Restituisce sempre un array (vuoto se DB non disponibile, errore o
  * nessuna notizia pubblicata).
  */
@@ -60,14 +72,26 @@ export async function getNotiziePubbliche(limit = 60): Promise<NotiziaPubblica[]
     )
     .eq("stato", "published")
     .order("published_at", { ascending: false, nullsFirst: false })
-    .limit(limit);
+    .limit(limit + DEDUP_SLACK);
 
   if (error || !data) {
     console.error("[notizie-pubbliche] elenco fallito:", error?.message ?? "data null");
     return [];
   }
 
-  return (data as Record<string, unknown>[]).map(assumiNotiziaPubblica);
+  const righe = (data as Record<string, unknown>[]).map(assumiNotiziaPubblica);
+
+  // Dedup: si tiene la prima (più recente) riga per ogni titolo_fonte_hash.
+  const visti = new Set<string>();
+  const deduplicate: NotiziaPubblica[] = [];
+  for (const notizia of righe) {
+    const chiave = calcolaTitoloFonteHash(notizia.sourceName, notizia.title);
+    if (visti.has(chiave)) continue;
+    visti.add(chiave);
+    deduplicate.push(notizia);
+  }
+
+  return deduplicate.slice(0, limit);
 }
 
 /** Formatta la data di pubblicazione in formato italiano leggibile. */

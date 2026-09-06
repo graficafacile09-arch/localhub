@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { calcolaExtHash, calcolaTitoloFonteHash, calcolaUrlHash } from "./dedup";
 import { acquisisciFonte } from "./acquisitori";
 import type { VoceAcquisita } from "./acquisitori";
 import { HOST_WHITELIST, fonteDaDb } from "./fonti";
@@ -10,7 +11,8 @@ import type { FonteDb, FonteNotizie, NotiziaNormalizzata, RiepilogoImport } from
  * IMPORT — orchestrazione del job di aggiornamento notizie.
  *
  * Flusso per ogni fonte attiva (con frequenza scaduta):
- *   acquisizione → normalizzazione → filtro Castrovillari → dedup → upsert.
+ *   acquisizione → normalizzazione → filtro Castrovillari → dedup →
+ *   inserimento atomico (RPC PostgreSQL, ON CONFLICT DO NOTHING).
  *
  * V2 (fonti di discovery Google News, `fonte.scoperta = true`):
  * - finestra temporale di 30 giorni: NON si importa mai l'archivio storico;
@@ -81,10 +83,12 @@ export function normalizzaVoce(
   fonte: FonteNotizie,
   voce: VoceAcquisita
 ): NotiziaNormalizzata {
+  const sourceName = voce.source?.trim() || fonte.nome;
+  const title = voce.title.slice(0, 500);
   return {
     fonteId: fonte.id,
-    sourceName: voce.source?.trim() || fonte.nome,
-    title: voce.title.slice(0, 500),
+    sourceName,
+    title,
     excerpt: voce.excerpt ? voce.excerpt.slice(0, 600) : null,
     originalUrl: voce.url,
     externalId: voce.externalId,
@@ -92,6 +96,10 @@ export function normalizzaVoce(
     category: assegnaCategoria(voce.title, voce.excerpt, fonte.categoriaDefault),
     imageUrl: null, // V1/V2: nessuna immagine (non chiaramente riutilizzabile).
     dedupHash: calcolaDedupHash(voce.title),
+    // Chiavi di dedup P1: vedi lib/notizie/dedup.ts.
+    urlHash: calcolaUrlHash(voce.url),
+    extHash: calcolaExtHash(sourceName, voce.externalId),
+    titoloFonteHash: calcolaTitoloFonteHash(sourceName, title),
   };
 }
 
@@ -171,7 +179,13 @@ export async function eseguiImportFonti(options: {
   dettagli?: boolean;
 }): Promise<RiepilogoImport> {
   const { fonti, db = null, dryRun = false, dettagli = false } = options;
-  const riepilogo: RiepilogoImport = { imported: 0, skipped: 0, errors: 0, perFonte: {} };
+  const riepilogo: RiepilogoImport = {
+    imported: 0,
+    skipped: 0,
+    duplicati: 0,
+    errors: 0,
+    perFonte: {},
+  };
   if (dettagli) riepilogo.dettagli = [];
 
   if (fonti.length === 0) {
@@ -233,7 +247,11 @@ export async function eseguiImportFonti(options: {
         continue;
       }
 
-      // 4. Upsert con dedup (unique fonte_id+external_id e dedup_hash).
+      // 4. Inserimento atomico con dedup multi-chiave: la RPC PostgreSQL
+      //    esegue INSERT ... ON CONFLICT DO NOTHING (senza target specifico),
+      //    quindi QUALSIASI vincolo UNIQUE (url_hash, ext_hash,
+      //    titolo_fonte_hash, dedup_hash, fonte_id+external_id) blocca
+      //    l'inserimento in modo atomico, anche con cron concorrenti.
       if (dryRun) {
         esito.imported += normalizzate.length;
         riepilogo.imported += normalizzate.length;
@@ -248,28 +266,22 @@ export async function eseguiImportFonti(options: {
         throw new Error("db mancante: import non-dry richiede il client Supabase");
       }
 
-      const righe = normalizzate.map((n) => ({
-        fonte_id: n.fonteId,
-        source_name: n.sourceName,
-        title: n.title,
-        excerpt: n.excerpt,
-        original_url: n.originalUrl,
-        external_id: n.externalId,
-        published_at: n.publishedAt,
-        category: n.category,
-        image_url: n.imageUrl,
-        dedup_hash: n.dedupHash,
-        stato: "published",
-      }));
-
-      const { error } = await upsertNotizie(db, righe);
-      if (error) {
-        throw new Error(`upsert fallito: ${error.message}`);
-      }
-      esito.imported += normalizzate.length;
-      riepilogo.imported += normalizzate.length;
-      if (dettagli) {
-        for (const n of normalizzate) riepilogo.dettagli!.push(`[${fonte.nome}] ${n.title}`);
+      for (const n of normalizzate) {
+        const res = await inserisciNotizia(db, n);
+        if (res.esito === "inserted") {
+          esito.imported += 1;
+          riepilogo.imported += 1;
+          if (dettagli) riepilogo.dettagli!.push(`[${fonte.nome}] ${n.title}`);
+        } else if (res.esito === "duplicate") {
+          esito.duplicati = (esito.duplicati ?? 0) + 1;
+          riepilogo.duplicati += 1;
+        } else {
+          // Errore su una singola riga: non blocca le altre (best-effort).
+          esito.errors = (esito.errors ?? 0) + 1;
+          esito.error = res.message;
+          riepilogo.errors += 1;
+          console.error(`[notizie] inserimento fallito (${fonte.nome}):`, res.message);
+        }
       }
 
       // Aggiorna l'ultima esecuzione della fonte.
@@ -292,18 +304,41 @@ export async function eseguiImportFonti(options: {
 }
 
 /**
- * Upsert delle notizie con dedup:
- * - external_id null (feed senza guid): univocità garantita da dedup_hash;
- * - stesso titolo normalizzato da fonti diverse: dedup_hash lo blocca.
+ * Inserimento atomico di una notizia con dedup multi-chiave.
+ *
+ * Chiama la RPC PostgreSQL `notizie_inserisci` (migration P1), che esegue
+ * `INSERT ... ON CONFLICT DO NOTHING` senza target specifico: se QUALSIASI
+ * vincolo UNIQUE della tabella viene violato (url_hash, ext_hash,
+ * titolo_fonte_hash, dedup_hash, fonte_id+external_id) la riga NON viene
+ * inserita e la funzione ritorna false. La decisione è quindi atomica a
+ * livello PostgreSQL: due esecuzioni concorrenti del cron non possono
+ * creare due copie della stessa notizia.
+ *
+ * Ritorna "inserted", "duplicate" (già presente) oppure "error".
  */
-export async function upsertNotizie(
+export async function inserisciNotizia(
   db: SupabaseClient,
-  righe: unknown[]
-): Promise<{ error: { message: string } | null }> {
-  // upsert con ignoreDuplicates: se dedup_hash esiste già (stessa notizia
-  // da questa o da un'altra fonte) la riga viene ignorata, non sovrascritta.
-  return db.from("notizie").upsert(righe, {
-    onConflict: "dedup_hash",
-    ignoreDuplicates: true,
+  n: NotiziaNormalizzata
+): Promise<
+  | { esito: "inserted" }
+  | { esito: "duplicate" }
+  | { esito: "error"; message: string }
+> {
+  const { data, error } = await db.rpc("notizie_inserisci", {
+    p_fonte_id: n.fonteId,
+    p_source_name: n.sourceName,
+    p_title: n.title,
+    p_excerpt: n.excerpt,
+    p_original_url: n.originalUrl,
+    p_external_id: n.externalId,
+    p_published_at: n.publishedAt,
+    p_category: n.category,
+    p_image_url: n.imageUrl,
+    p_dedup_hash: n.dedupHash,
+    p_url_hash: n.urlHash,
+    p_ext_hash: n.extHash,
+    p_titolo_fonte_hash: n.titoloFonteHash,
   });
+  if (error) return { esito: "error", message: error.message };
+  return data === true ? { esito: "inserted" } : { esito: "duplicate" };
 }

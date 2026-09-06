@@ -53,8 +53,12 @@ export interface FonteNotizie {
 }
 
 /**
- * Notizia normalizzata — formato unico interno (prima dell'upsert).
+ * Notizia normalizzata — formato unico interno (prima dell'inserimento).
  * Contiene SOLO metadati/titolo + excerpt breve: mai il corpo integrale.
+ *
+ * Chiavi di dedup (P1): oltre al `dedupHash` storico (titolo), ogni notizia
+ * porta `urlHash`, `extHash` e `titoloFonteHash` (vedi lib/notizie/dedup.ts),
+ * ciascuna protetta da un vincolo UNIQUE nel database.
  */
 export interface NotiziaNormalizzata {
   fonteId: string;
@@ -67,6 +71,12 @@ export interface NotiziaNormalizzata {
   category: CategoriaNotizia;
   imageUrl: string | null;
   dedupHash: string;
+  /** SHA-256 della URL canonica normalizzata (dedup per URL). */
+  urlHash: string;
+  /** SHA-256 di "source_name | external_id"; null se l'external_id manca. */
+  extHash: string | null;
+  /** SHA-256 di "source_name | titolo normalizzato" (fallback deterministico). */
+  titoloFonteHash: string;
 }
 
 /** Riga di notizie_fonti come letta dal DB dal job. */
@@ -89,9 +99,20 @@ export interface FonteDb {
 export interface RiepilogoImport {
   imported: number;
   skipped: number;
+  /** Notizie riconosciute come già presenti (dedup): NON inserite. */
+  duplicati: number;
   errors: number;
   /** Dettaglio per fonte (nome → conteggi). */
-  perFonte: Record<string, { imported: number; skipped: number; errors?: number; error?: string }>;
+  perFonte: Record<
+    string,
+    {
+      imported: number;
+      skipped: number;
+      duplicati?: number;
+      errors?: number;
+      error?: string;
+    }
+  >;
   /** Elenco dei titoli importati (utile per debug/dry-run). */
   dettagli?: string[];
 }
