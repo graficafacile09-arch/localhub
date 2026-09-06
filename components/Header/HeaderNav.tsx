@@ -89,8 +89,8 @@ export default function HeaderNav() {
                   aria-hidden
                   className={`h-6 w-6 transition-colors duration-200 max-sm:h-[22px] max-sm:w-[22px] ${
                     voce.attiva
-                      ? "text-yellow-700"
-                      : "text-yellow-700 group-hover:text-yellow-800"
+                      ? "text-yellow-400"
+                      : "text-yellow-400 group-hover:text-yellow-500"
                   }`}
                 />
                 {voce.badge && (
@@ -117,8 +117,8 @@ export default function HeaderNav() {
               <span
                 className={`whitespace-nowrap text-xs font-bold leading-none tracking-tight transition-colors duration-200 sm:text-sm ${
                   voce.attiva
-                    ? "text-yellow-700"
-                    : "text-yellow-700 group-hover:text-yellow-800"
+                    ? "text-yellow-500"
+                    : "text-yellow-500 group-hover:text-yellow-600"
                 }`}
               >
                 {voce.label}
