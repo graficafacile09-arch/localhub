@@ -290,6 +290,91 @@ export async function getOrdineConferma(
   );
 }
 
+/** Stato di un checkout INTENTO (sessione senza ordine) per la pagina risultato. */
+export type CheckoutConfermaStato = {
+  status: string;
+  provider: string;
+  importo: number;
+};
+
+export type EsitoConfermaCheckout =
+  | { tipo: "ordine"; ordine: OrdinePersistito }
+  | { tipo: "intento"; checkout: CheckoutConfermaStato }
+  | { tipo: "non_trovato" };
+
+/**
+ * P5 — Risolve la pagina /ordini/conferma/[checkoutId] per il flusso
+ * PAYMENT-FIRST:
+ *  - l'id è una SESSIONE/intento (pagamenti_sessioni.id, ordine_id NULL):
+ *    se la conferma P2 è avvenuta → ordine collegato (ordine_id valorizzato);
+ *    altrimenti → stato dell'intento (created/pending/expired/refunded...)
+ *    SENZA ordine (mai "ordine creato" prima del pagamento);
+ *  - l'id non è né un ordine né una sessione → non_trovato (fail-closed).
+ *
+ * Autorizzazione (stesso criterio di getOrdineConferma): utente autenticato
+ * = proprietario (checkout_payload.clienteUserId impostato SOLO server-side),
+ * guest = token firmato scoped all'id SESSIONE (la return URL del checkout
+ * firma checkoutId, non un ordine che ancora non esiste).
+ */
+export async function getCheckoutConferma(
+  checkoutId: string,
+  access: { userId: string | null; token: string | null }
+): Promise<EsitoConfermaCheckout> {
+  const db = getDb();
+  if (!db) return { tipo: "non_trovato" };
+
+  const { data: sessione } = await db
+    .from("pagamenti_sessioni")
+    .select("id, ordine_id, provider, status, amount, checkout_payload")
+    .eq("id", checkoutId)
+    .maybeSingle();
+  if (!sessione) return { tipo: "non_trovato" };
+
+  // Fail-closed: mai dati di checkout altrui.
+  const payload = (sessione.checkout_payload as { clienteUserId?: unknown } | null) ?? null;
+  const ownerUserId = payload?.clienteUserId ? String(payload.clienteUserId) : null;
+  const autorizzato =
+    access.userId !== null
+      ? ownerUserId === access.userId
+      : verifyOrderAccessToken(access.token, checkoutId);
+  if (!autorizzato) return { tipo: "non_trovato" };
+
+  // Pagato (P2): la sessione è collegata all'ordine creato dopo il pagamento
+  // (catena di autorizzazione già verificata sul checkout → ordine sicuro).
+  if (sessione.ordine_id) {
+    const ordineId = String(sessione.ordine_id);
+    const { data: ordineRow } = await db
+      .from("ordini")
+      .select("*")
+      .eq("id", ordineId)
+      .maybeSingle();
+    if (ordineRow) {
+      const { data: righeRow } = await db
+        .from("ordini_righe")
+        .select("*")
+        .eq("ordine_id", ordineId)
+        .order("created_at", { ascending: true });
+      return {
+        tipo: "ordine",
+        ordine: assumiOrdine(
+          ordineRow as Record<string, unknown>,
+          (righeRow ?? []).map((r) => assumiRiga(r as Record<string, unknown>))
+        ),
+      };
+    }
+  }
+
+  // Intento senza ordine: solo lo stato necessario alla UX (mai payload).
+  return {
+    tipo: "intento",
+    checkout: {
+      status: String(sessione.status ?? ""),
+      provider: sessione.provider ? String(sessione.provider) : "",
+      importo: Number(sessione.amount ?? 0),
+    },
+  };
+}
+
 /** Converte una riga ordini del DB nella forma pubblica. */
 function assumiRiga(riga: Record<string, unknown>): RigaOrdine {
   return {

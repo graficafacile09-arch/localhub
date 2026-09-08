@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import {
   Home,
   MapPin,
@@ -10,7 +11,11 @@ import {
 } from "lucide-react";
 import { cookies } from "next/headers";
 import { getCurrentUser } from "@/lib/auth/session";
-import { getOrdineConferma } from "@/lib/cliente/orders";
+import {
+  getCheckoutConferma,
+  getOrdineConferma,
+  type CheckoutConfermaStato,
+} from "@/lib/cliente/orders";
 import { orderAccessCookieName } from "@/lib/cliente/order-access";
 import type { OrdinePersistito } from "@/lib/cliente/orders";
 import { etichettaStato, sintesiProdotti } from "@/lib/cliente/ordini-format";
@@ -18,6 +23,7 @@ import { StatoOrdineBanner } from "@/components/ordini/StatoOrdineBanner";
 import { RigheProdotto } from "@/components/ordini/RigheProdotto";
 import { OrderHeader } from "@/components/ordini/OrderHeader";
 import { PagamentoStatoBanner } from "@/components/ordini/PagamentoStatoBanner";
+import { CheckoutInAttesa } from "@/components/ordini/CheckoutInAttesa";
 import { getMetodiPagamentoPubblici } from "@/lib/pagamenti/metodi-pubblici";
 
 type Params = { ordineId: string };
@@ -63,12 +69,25 @@ export default async function ConfermaOrdinePage({
       ? sp.token
       : (await cookies()).get(orderAccessCookieName(ordineId))?.value ?? null;
   const utente = await getCurrentUser();
-  const ordine = await getOrdineConferma(ordineId, {
-    userId: utente?.id ?? null,
-    token: accessToken,
-  });
+  const access = { userId: utente?.id ?? null, token: accessToken };
+
+  // P5 — il parametro può essere un ORDINE (flusso legacy bonifico/ritiro) o
+  // una SESSIONE/intento (payment-first online, dove l'ordine nasce SOLO dopo
+  // il pagamento). Si prova prima l'ordine, poi il checkout.
+  const ordineLegacy = await getOrdineConferma(ordineId, access);
+  const checkout = ordineLegacy ? null : await getCheckoutConferma(ordineId, access);
+  const ordine = ordineLegacy ?? (checkout?.tipo === "ordine" ? checkout.ordine : null);
 
   if (!ordine) {
+    if (checkout?.tipo === "intento") {
+      return (
+        <ConfermaIntentoView
+          checkoutId={ordineId}
+          checkout={checkout.checkout}
+          esito={esitoPagamento}
+        />
+      );
+    }
     return (
       <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
         <div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-sm ring-1 ring-slate-100">
@@ -281,6 +300,89 @@ export default async function ConfermaOrdinePage({
             className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 transition hover:border-blue-300 hover:text-blue-700"
           >
             <Store className="h-4 w-4" /> Visita il negozio
+          </Link>
+        </div>
+      </div>
+    </main>
+  );
+}
+
+/**
+ * P5 — Vista risultato per un checkout PAYMENT-FIRST SENZA ordine (intento).
+ * Rappresenta correttamente gli stati del pagamento: MAI "ordine creato"
+ * prima della conferma. Lo stato reale arriva da pagamenti_sessioni.
+ */
+async function ConfermaIntentoView({
+  checkoutId,
+  checkout,
+  esito,
+}: {
+  checkoutId: string;
+  checkout: CheckoutConfermaStato;
+  esito?: string | null;
+}) {
+  const importo = `${Number(checkout.importo).toFixed(2)} €`;
+
+  let statoCard: ReactNode;
+  if (checkout.status === "created" || checkout.status === "pending") {
+    statoCard = <CheckoutInAttesa checkoutId={checkoutId} esito={esito} />;
+  } else if (checkout.status === "expired") {
+    statoCard = (
+      <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
+        <p className="text-sm font-bold text-blue-700">Pagamento scaduto</p>
+        <p className="mt-0.5 text-xs text-blue-600">
+          Il tempo per completare il pagamento è terminato: nessun ordine è stato creato e le
+          scorte sono state liberate. Puoi effettuare un nuovo acquisto.
+        </p>
+      </div>
+    );
+  } else if (checkout.status === "refunded") {
+    statoCard = (
+      <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+        <p className="text-sm font-bold text-slate-700">Pagamento rimborsato</p>
+        <p className="mt-0.5 text-xs text-slate-500">
+          Il pagamento è stato rimborsato: nessun nuovo ordine verrà creato.
+        </p>
+      </div>
+    );
+  } else if (checkout.status === "failed" || checkout.status === "canceled") {
+    statoCard = (
+      <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
+        <p className="text-sm font-bold text-blue-700">Pagamento non riuscito</p>
+        <p className="mt-0.5 text-xs text-blue-600">
+          Nessun importo è stato addebitato e nessun ordine è stato creato.
+        </p>
+      </div>
+    );
+  } else {
+    statoCard = <CheckoutInAttesa checkoutId={checkoutId} esito={esito} />;
+  }
+
+  return (
+    <main className="min-h-screen bg-gray-50 py-10 px-4">
+      <div className="mx-auto max-w-2xl">
+        <div className="rounded-[1.75rem] border border-white/70 bg-white p-5 shadow-sm">
+          <h1 className="flex items-center gap-2 text-sm font-black uppercase tracking-wide text-slate-900">
+            <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
+              <ReceiptText className="h-4 w-4" aria-hidden />
+            </span>
+            Stato del pagamento
+          </h1>
+          <p className="mt-2 text-sm text-slate-600">
+            Importo: <strong className="text-slate-900">{importo}</strong>
+          </p>
+          {statoCard}
+          <p className="mt-3 text-center text-xs text-slate-500">
+            L&apos;ordine verrà creato e inviato al negozio solo dopo la conferma del pagamento.
+          </p>
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-3">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 rounded-xl bg-yellow-400 px-5 py-2.5 text-sm font-bold text-blue-800 transition hover:bg-yellow-300"
+          >
+            <Home className="h-4 w-4" /> Torna alla home
           </Link>
         </div>
       </div>
