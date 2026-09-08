@@ -49,8 +49,13 @@ import { getGatewayProvider } from "./registry";
 import { inviaEmailConfermaPagamento } from "@/lib/cliente/ordine-email";
 import { inviaNotificaNuovoOrdine } from "@/lib/notifiche/whatsapp";
 import { notificaNuovoOrdineAdmin } from "@/lib/amministratore/notifiche";
-import { chiudiOrdinePagamento } from "./sessioni";
-import { gestisciPagamentoTardivo } from "./late-payment";
+import { notificaOrdineOnlineConfermato } from "@/lib/notifiche/ordine-confermato";
+import {
+  chiudiOrdinePagamento,
+  confermaIntentoCheckout,
+  intentoDaPaymentId,
+} from "./sessioni";
+import { gestisciPagamentoTardivo, gestisciPagamentoTardivoIntento } from "./late-payment";
 
 export type EsitoWebhook = { status: number; body: string };
 
@@ -339,6 +344,10 @@ export async function gestisciWebhookScalapay(
 
   const ordine = await ordineDaPaymentId(paymentId, negozioId);
 
+  // ── P2 PAYMENT-FIRST — sessione senza ordine (intento): l'ordine nasce
+  // SOLO alla conferma del pagamento (evento "charged" → paid).
+  const intento = ordine ? null : await intentoDaPaymentId(paymentId, negozioId, "scalapay");
+
   const inserito = await registraEvento(
     { eventId, eventType, negozioId, ordineId: ordine?.id ?? null, paymentId },
     payload
@@ -350,7 +359,7 @@ export async function gestisciWebhookScalapay(
   try {
     const stato = statoDaEvento(eventType);
 
-    // Evento non riconosciuto (created/altri) o ordine non risolvibile:
+    // Evento non riconosciuto (created/altri) o checkout non risolvibile:
     // registrato ma ignorato (mai errori, mai modifiche).
     if (!stato) {
       await segnaProcessato(eventId, true);
@@ -360,8 +369,10 @@ export async function gestisciWebhookScalapay(
     // ── authorized → auto-capture (addebita davvero il cliente) ──────────
     // Scalapay: creazione → autorizzazione → cattura → "charged". Qui la
     // cattura è automatica (come la cattura automatica di Stripe Checkout).
+    // Vale anche per gli INTENTI (nessun ordine ancora): la cattura è
+    // necessaria perché arrivi l'evento "charged" che creerà l'ordine.
     if (stato === "authorized") {
-      if (!ordine) {
+      if (!ordine && !intento) {
         await segnaProcessato(eventId, true);
         return { status: 200, body: "OK" };
       }
@@ -378,6 +389,64 @@ export async function gestisciWebhookScalapay(
       }
     }
 
+    if (!ordine && !intento) {
+      await segnaProcessato(eventId, true);
+      return { status: 200, body: "OK" };
+    }
+
+    // ── P2 — INTENTO: l'ordine nasce SOLO a pagamento confermato ────────
+    // Intento con esito NON pagato (expire/refund): nessun ordine da
+    // aggiornare; registrato e ignorato (chiusura/riserve = P3).
+    if (intento) {
+      if (stato !== "paid") {
+        await segnaProcessato(eventId, true);
+        return { status: 200, body: "OK" };
+      }
+      const conferma = await confermaIntentoCheckout(intento.checkoutId, {
+        paymentId,
+        transactionId: paymentId,
+        importo: intento.importo,
+        valuta: "EUR",
+      });
+      if (!conferma.ok) {
+        if (conferma.codice === "CHECKOUT_NON_DISPONIBILE") {
+          // ── P3 — PAGAMENTO DOPO SCADENZA: MAI ordine, refund ──
+          // Sessione già chiusa/scaduta: flusso late-payment sull'intento
+          // (refund idempotente + sessione refunded, nessun ordine).
+          const tardivo = await gestisciPagamentoTardivoIntento({
+            checkoutId: intento.checkoutId,
+            negozioId,
+            provider: "scalapay",
+            paymentId,
+            importo: intento.importo,
+            eventId,
+            payload,
+          });
+          if (!tardivo.ok) {
+            // NON 2xx → Scalapay ritenta; nessun ordine creato.
+            throw new Error(`late payment intento Scalapay non gestito: ${tardivo.errore}`);
+          }
+          await segnaProcessato(eventId, true);
+          return { status: 200, body: "OK" };
+        }
+        // Errore DB/applicativo: NON 2xx → Scalapay ritenta; la transazione
+        // della RPC è già stata rollbackata (nessun ordine parziale).
+        throw new Error(`conferma intento Scalapay fallita: ${conferma.errore}`);
+      }
+      // P4 — Notifiche SOLO dopo l'ordine creato e il COMMIT (email cliente
+      // + WhatsApp + ntfy + admin), centralizzate in
+      // notificaOrdineOnlineConfermato. La guardia !giaEsistente evita
+      // notifiche duplicate quando un secondo evento "paid" dello stesso
+      // pagamento trova l'ordine già creato (idempotenza conferma + event_id
+      // UNIQUE). Errori di notifica isolati (best-effort, mai 5xx).
+      if (!conferma.giaEsistente) {
+        await notificaOrdineOnlineConfermato(conferma.ordineId);
+      }
+      await segnaProcessato(eventId, true);
+      return { status: 200, body: "OK" };
+    }
+
+    // Legacy: qui intento è null → ordine presente (guardia difensiva).
     if (!ordine) {
       await segnaProcessato(eventId, true);
       return { status: 200, body: "OK" };

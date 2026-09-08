@@ -40,7 +40,13 @@ import type Stripe from "stripe";
 import { inviaEmailConfermaPagamento } from "@/lib/cliente/ordine-email";
 import { inviaNotificaNuovoOrdine } from "@/lib/notifiche/whatsapp";
 import { notificaNuovoOrdineAdmin } from "@/lib/amministratore/notifiche";
-import { gestisciPagamentoTardivo } from "./late-payment";
+import { notificaOrdineOnlineConfermato } from "@/lib/notifiche/ordine-confermato";
+import {
+  annullaIntentoCheckout,
+  confermaIntentoCheckout,
+  intentoDaId,
+} from "./sessioni";
+import { gestisciPagamentoTardivo, gestisciPagamentoTardivoIntento } from "./late-payment";
 
 export type EsitoWebhook = { status: number; body: string };
 
@@ -763,7 +769,7 @@ export async function gestisciWebhookStripe(
     switch (evento.type) {
       case "checkout.session.completed": {
         if (!ordineId) {
-          throw new Error("checkout.session.completed senza ordine_id");
+          throw new Error("checkout.session.completed senza riferimento checkout");
         }
         const session = obj as {
           id?: string;
@@ -774,6 +780,80 @@ export async function gestisciWebhookStripe(
           currency?: string | null;
           payment_intent?: string | { id?: string } | null;
         };
+
+        // ── P2 PAYMENT-FIRST — riferimento = INTENTO (ordine_id NULL) ──
+        // Per i checkout P1 client_reference_id/metadata.ordine_id è l'ID
+        // della SESSIONE (pagamenti_sessioni.id), NON un ordine. Se il
+        // riferimento è un intento: il pagamento confermato crea l'ordine
+        // con checkout_intento_conferma (mai prima del paid). Il legacy
+        // (riferimento = ordine.id) resta invariato sotto.
+        const intento = await intentoDaId(ordineId, negozioId);
+        if (intento) {
+          if (session.payment_status !== "paid") {
+            throw new Error("checkout.session.completed (intento): pagamento non confermato");
+          }
+          const amountTotalCents = stripeMinorUnits(session.amount_total);
+          const expectedCents = euroInCentesimi(intento.importo);
+          if (
+            amountTotalCents === null ||
+            expectedCents === null ||
+            amountTotalCents !== expectedCents
+          ) {
+            throw new Error("checkout.session.completed (intento): importo non coerente");
+          }
+          const currency = valuta(session.currency);
+          if (!currency || currency !== "EUR") {
+            throw new Error("checkout.session.completed (intento): valuta non coerente");
+          }
+          const transactionId = stringaNonVuota(
+            typeof session.payment_intent === "string"
+              ? session.payment_intent
+              : (session.payment_intent as { id?: unknown } | null)?.id
+          );
+          const conferma = await confermaIntentoCheckout(intento.checkoutId, {
+            paymentId,
+            transactionId,
+            importo: intento.importo,
+            valuta: currency,
+          });
+          if (!conferma.ok) {
+            if (conferma.codice === "CHECKOUT_NON_DISPONIBILE") {
+              // ── P3 — PAGAMENTO DOPO SCADENZA: MAI ordine, refund ──
+              // Il pagamento è arrivato su una sessione già chiusa/scaduta:
+              // checkout_intento_conferma (lock) ha rifiutato → flusso
+              // late-payment: refund idempotente + sessione refunded, nessun
+              // ordine, nessuna notifica di nuovo ordine.
+              const tardivo = await gestisciPagamentoTardivoIntento({
+                checkoutId: intento.checkoutId,
+                negozioId,
+                provider: "stripe",
+                paymentId,
+                importo: intento.importo,
+                eventId: evento.id,
+                payload: evento,
+              });
+              if (!tardivo.ok) {
+                throw new Error(`late payment intento Stripe non gestito: ${tardivo.errore}`);
+              }
+              console.warn(
+                `[pagamenti] intento ${intento.checkoutId} pagato dopo la scadenza: ${tardivo.action}`
+              );
+              break;
+            }
+            throw new Error(`conferma intento Stripe fallita: ${conferma.errore}`);
+          }
+          // P4 — Notifiche SOLO dopo l'ordine creato e il COMMIT (email cliente
+          // + WhatsApp + ntfy + admin), centralizzate in
+          // notificaOrdineOnlineConfermato. La guardia !giaEsistente evita
+          // notifiche duplicate quando un secondo evento "paid" dello stesso
+          // pagamento trova l'ordine già creato (idempotenza conferma + event_id
+          // UNIQUE). Errori di notifica isolati (best-effort, mai 5xx).
+          if (!conferma.giaEsistente) {
+            await notificaOrdineOnlineConfermato(conferma.ordineId);
+          }
+          break;
+        }
+
         const binding = await caricaBindingCheckout(db, ordineId, negozioId, paymentId);
         if (!binding) {
           throw new Error("checkout.session.completed senza binding locale univoco");
@@ -840,11 +920,25 @@ export async function gestisciWebhookStripe(
 
       case "checkout.session.expired": {
         if (!ordineId) {
-          throw new Error("checkout.session.expired senza ordine_id");
+          throw new Error("checkout.session.expired senza riferimento checkout");
         }
-        // Marca la sessione scaduta e delega alla RPC il ripristino stock
-        // (con guardia anti-retry: se esiste una sessione attiva più recente
-        // l'ordine NON viene annullato).
+
+        // ── P2 — INTENTO scaduto: nessun ordine da annullare; la riserva
+        // stock viene rilasciata (checkout_intento_annulla) e la sessione
+        // portata a expired. Il ripristino programmato resta compito della
+        // sweep P3.
+        const intento = await intentoDaId(ordineId, negozioId);
+        if (intento) {
+          const annullato = await annullaIntentoCheckout(intento.checkoutId);
+          if (!annullato.ok) {
+            throw new Error(`rilascio riserva intento scaduto fallito: ${annullato.errore}`);
+          }
+          break;
+        }
+
+        // Legacy: marcare la sessione scaduta e delegare alla RPC il
+        // ripristino stock (con guardia anti-retry: se esiste una sessione
+        // attiva più recente l'ordine NON viene annullato).
         const { error: sessionError } = await db
           .from("pagamenti_sessioni")
           .update({ status: "expired", updated_at: new Date().toISOString() })

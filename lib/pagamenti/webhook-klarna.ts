@@ -41,8 +41,13 @@ import { getGatewayProvider } from "./registry";
 import { inviaEmailConfermaPagamento } from "@/lib/cliente/ordine-email";
 import { inviaNotificaNuovoOrdine } from "@/lib/notifiche/whatsapp";
 import { notificaNuovoOrdineAdmin } from "@/lib/amministratore/notifiche";
-import { chiudiOrdinePagamento } from "./sessioni";
-import { gestisciPagamentoTardivo } from "./late-payment";
+import { notificaOrdineOnlineConfermato } from "@/lib/notifiche/ordine-confermato";
+import {
+  chiudiOrdinePagamento,
+  confermaIntentoCheckout,
+  intentoDaPaymentId,
+} from "./sessioni";
+import { gestisciPagamentoTardivo, gestisciPagamentoTardivoIntento } from "./late-payment";
 
 export type EsitoWebhook = { status: number; body: string };
 
@@ -303,6 +308,10 @@ export async function gestisciWebhookKlarna(
   //    stesso negozio firmatario) ─────────────────────────────────────────
   const ordine = await ordineDaPaymentId(paymentId, negozioId);
 
+  // ── P2 PAYMENT-FIRST — sessione senza ordine (intento): l'ordine nasce
+  // SOLO alla conferma del pagamento (evento realmente conclusivo → paid).
+  const intento = ordine ? null : await intentoDaPaymentId(paymentId, negozioId, "klarna");
+
   // ── Idempotenza: duplicato → 200 senza riprocessare ────────────────────
   const confronto = {
     eventId,
@@ -319,24 +328,86 @@ export async function gestisciWebhookKlarna(
   try {
     const stato = statoDaEvento(eventType);
 
-    // ── Importo: coerenza con ordine.totale (fail-closed) ────────────────
-    // L'ordine può essere assente (es. order_id di un altro provider o
-    // sessione non trovata): in tal caso l'evento viene solo registrato,
+    // ── Importo: coerenza con ordine.totale / importo intento (fail-closed)
+    // Se né ordine né intento sono risolvibili (es. order_id di un altro
+    // provider o sessione non trovata) l'evento viene solo registrato,
     // MAI applicato a ordini sconosciuti.
-    if (ordine) {
+    if (ordine || intento) {
       if (typeof payload.order_amount === "number") {
-        const atteso = Math.round(ordine.totale * 100);
+        const atteso = Math.round((ordine?.totale ?? intento!.importo) * 100);
         if (Math.abs(payload.order_amount - atteso) > 0) {
           throw new Error(
-            `importo incoerente: evento=${payload.order_amount}, ordine=${atteso}`
+            `importo incoerente: evento=${payload.order_amount}, atteso=${atteso}`
           );
         }
       }
     }
 
-    if (!ordine || !stato) {
-      // Evento non riconosciuto / ordine non risolvibile: registrato ma
+    if ((!ordine && !intento) || !stato) {
+      // Evento non riconosciuto / checkout non risolvibile: registrato ma
       // ignorato (mai errori per eventi sconosciuti, mai modifiche).
+      await segnaProcessato(eventId, true);
+      return { status: 200, body: "OK" };
+    }
+
+    // ── P2 — INTENTO: l'ordine nasce SOLO a pagamento confermato ────────
+    // Intento con esito NON pagato (cancel/expire/refund): nessun ordine
+    // da aggiornare; registrato e ignorato (chiusura/riserve = P3).
+    if (intento) {
+      if (stato !== "paid") {
+        await segnaProcessato(eventId, true);
+        return { status: 200, body: "OK" };
+      }
+      const captureId =
+        typeof payload.capture_id === "string" && payload.capture_id
+          ? String(payload.capture_id)
+          : null;
+      const conferma = await confermaIntentoCheckout(intento.checkoutId, {
+        paymentId,
+        transactionId: captureId,
+        importo: intento.importo,
+        valuta: "EUR",
+      });
+      if (!conferma.ok) {
+        if (conferma.codice === "CHECKOUT_NON_DISPONIBILE") {
+          // ── P3 — PAGAMENTO DOPO SCADENZA: MAI ordine, refund ──
+          // Sessione già chiusa/scaduta: flusso late-payment sull'intento
+          // (refund idempotente + sessione refunded, nessun ordine).
+          const tardivo = await gestisciPagamentoTardivoIntento({
+            checkoutId: intento.checkoutId,
+            negozioId,
+            provider: "klarna",
+            paymentId,
+            importo: intento.importo,
+            eventId,
+            payload,
+          });
+          if (!tardivo.ok) {
+            // NON 2xx → Klarna ritenta; nessun ordine creato.
+            throw new Error(`late payment intento Klarna non gestito: ${tardivo.errore}`);
+          }
+          await segnaProcessato(eventId, true);
+          return { status: 200, body: "OK" };
+        }
+        // Errore DB/applicativo: NON 2xx → Klarna ritenta; la transazione
+        // della RPC è già stata rollbackata (nessun ordine parziale).
+        throw new Error(`conferma intento Klarna fallita: ${conferma.errore}`);
+      }
+      // P4 — Notifiche SOLO dopo l'ordine creato e il COMMIT (email cliente
+      // + WhatsApp + ntfy + admin), centralizzate in
+      // notificaOrdineOnlineConfermato. La guardia !giaEsistente evita
+      // notifiche duplicate quando un secondo evento "paid" dello stesso
+      // pagamento trova l'ordine già creato (idempotenza conferma + event_id
+      // UNIQUE). Errori di notifica isolati (best-effort, mai 5xx).
+      if (!conferma.giaEsistente) {
+        await notificaOrdineOnlineConfermato(conferma.ordineId);
+      }
+      await segnaProcessato(eventId, true);
+      return { status: 200, body: "OK" };
+    }
+
+    // Legacy: qui intento è null → ordine presente (guardia difensiva).
+    if (!ordine) {
       await segnaProcessato(eventId, true);
       return { status: 200, body: "OK" };
     }
