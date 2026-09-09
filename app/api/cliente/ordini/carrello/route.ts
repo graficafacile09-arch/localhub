@@ -1,9 +1,11 @@
 import { apiError, apiOk } from "@/lib/api/response";
 import { utentePossiedeNegozio } from "@/lib/merchant/data";
 import {
+  chiavePerNegozio,
   creaOrdiniCarrello,
   raggruppaPerNegozio,
   statusDaCodice,
+  type ErroreNegozio,
   type OrdineCarrelloNegozio,
   type RigaCarrelloInput,
 } from "@/lib/cliente/ordini-carrello";
@@ -14,8 +16,10 @@ import { checkRateLimit } from "@/lib/rate-limiter";
 import { setOrderAccessCookie } from "@/lib/cliente/order-access";
 import { isProviderProntoPerNegozio } from "@/lib/pagamenti/config";
 import {
-  chiudiOrdineSenzaPagamento,
-  creaSessionePagamentoPerOrdine,
+  annullaIntentoCheckout,
+  costruisciPayloadIntentoCheckout,
+  creaIntentoCheckout,
+  creaSessionePagamentoPerIntento,
 } from "@/lib/pagamenti/sessioni";
 import {
   isCarrierCodice,
@@ -276,6 +280,118 @@ export async function POST(request: Request) {
     }
   }
 
+  // ── P1 PAYMENT-FIRST — metodi ONLINE: un INTENTO per gruppo negozio ────
+  // Stripe/PayPal/Klarna/Scalapay NON creano ordini prima del pagamento:
+  // per ogni negozio del carrello la RPC checkout_intento_crea valida e
+  // RISERVA SOLO lo stock di quel gruppo (quantita_riservata), creando una
+  // sessione con ordine_id = NULL. La risposta riusa il contratto `ordini[]`
+  // esistente (il client reindirizza via pagamento.redirectUrl e mostra
+  // totale/negozio): ogni voce è l'INTENTO del gruppo, NON un ordine. Se la
+  // sessione provider di un gruppo fallisce → intento annullato (riserva
+  // rilasciata), errore per negozio, gli altri gruppi restano validi.
+  if (providerRichiesto) {
+    const intenti: OrdineCarrelloNegozio[] = [];
+    const erroriIntenti: ErroreNegozio[] = [];
+    for (const gruppo of raggruppamento.negozi) {
+      const intento = await creaIntentoCheckout(
+        costruisciPayloadIntentoCheckout({
+          checkoutKey: chiavePerNegozio(checkoutKey, gruppo.negozioId),
+          provider: providerRichiesto,
+          // Gli intenti online esistono SOLO per la modalità spedizione.
+          modalita: "spedizione",
+          righe: gruppo.righe,
+          cliente: {
+            nome: typeof clienteRaw.nome === "string" ? clienteRaw.nome : "",
+            cognome: typeof clienteRaw.cognome === "string" ? clienteRaw.cognome : "",
+            telefono:
+              typeof clienteRaw.telefono === "string" ? clienteRaw.telefono : null,
+            email: emailDestinataria,
+          },
+          clienteUserId: utenteAutenticato?.id ?? null,
+          clienteIp: ip,
+          spedizione: {
+            indirizzo:
+              typeof spedizioneRaw.indirizzo === "string" ? spedizioneRaw.indirizzo : "",
+            cap: typeof spedizioneRaw.cap === "string" ? spedizioneRaw.cap : "",
+            citta: typeof spedizioneRaw.citta === "string" ? spedizioneRaw.citta : "",
+            provincia:
+              typeof spedizioneRaw.provincia === "string" ? spedizioneRaw.provincia : "",
+            note: typeof spedizioneRaw.note === "string" ? spedizioneRaw.note : null,
+            carrier: carrier as string,
+            servizio: servizio as string,
+            metodoPagamento: String(spedizioneRaw.metodoPagamento),
+          },
+          fatturazione: parseFatturazioneRaw(body.fatturazione),
+          note: typeof body.note === "string" ? body.note : null,
+        })
+      );
+      if (!intento.ok) {
+        erroriIntenti.push({
+          negozioId: gruppo.negozioId,
+          codice: intento.codice,
+          messaggio: intento.errore,
+        });
+        continue;
+      }
+
+      const sessione = await creaSessionePagamentoPerIntento(
+        intento.checkoutId,
+        providerRichiesto
+      );
+      if (!sessione.ok) {
+        // Riserva rilasciata: nessun ordine, nessuna riserva fantasma.
+        await annullaIntentoCheckout(intento.checkoutId).catch(() => {});
+        erroriIntenti.push({
+          negozioId: gruppo.negozioId,
+          codice: sessione.codice,
+          messaggio: sessione.errore,
+        });
+        continue;
+      }
+
+      intenti.push({
+        ordineId: intento.checkoutId,
+        numero: intento.checkoutId.slice(0, 8).toUpperCase(),
+        stato: "in_attesa_pagamento",
+        totale: intento.totale,
+        paymentStatus: null,
+        paymentProvider: providerRichiesto,
+        giaEsistente: intento.giaEsistente,
+        negozioId: intento.negozioId,
+        negozioNome: intento.negozioNome,
+        createdAt: new Date().toISOString(),
+        modalita: "spedizione",
+        righe: [],
+        pagamento: {
+          redirectUrl: sessione.redirectUrl,
+          sessioneId: sessione.sessioneId,
+          giaEsistente: sessione.giaEsistente,
+        },
+      });
+    }
+
+    // Almeno un intento REALMENTE nuovo → 201; tutti già esistenti (retry) → 200.
+    const almenoNuovo = intenti.some((i) => !i.giaEsistente);
+    const response = apiOk(
+      {
+        checkoutKey,
+        ordini: intenti,
+        errori: erroriIntenti,
+      },
+      almenoNuovo ? 201 : 200
+    );
+    if (!utenteAutenticato) {
+      for (const intento of intenti) {
+        if (intento.ordineId) setOrderAccessCookie(response, intento.ordineId);
+      }
+    }
+    return response;
+  }
+
+  // ── BONIFICO / RITIRO — comportamento INVARIATO: ordini creati subito ──
+  // Nessun gateway: le RPC esistenti creano un ordine per negozio con le
+  // notifiche attuali. Nessuna sessione provider (mai un gateway per questi
+  // metodi).
   const esito = await creaOrdiniCarrello({
     checkoutKey,
     righe,
@@ -327,59 +443,18 @@ export async function POST(request: Request) {
     return apiError("SAVE_FAILED", "Impossibile completare il checkout.", 500);
   }
 
-  // ── Sessioni per negozio (solo metodi con gateway: carta→stripe, ────────
-  //    klarna→klarna). Ogni ordine (creato O riusato da un retry idempotente)
-  //    riceve la PROPRIA sessione del provider: mai una sessione multi-negozio
-  //    né un fallback silenzioso su un altro provider. Se la sessione di un
-  //    negozio fallisce, quell'ordine viene chiuso (stock ripristinato, stesso
-  //    pattern del buy-now) e registrato come errore per negozio: gli ordini
-  //    degli altri negozi restano validi con le loro sessioni.
-  const providerRichiesto2 =
-    modalita === "spedizione" ? providerDaMetodoPagamento(spedizioneRaw.metodoPagamento) : null;
-  const ordiniArricchiti: OrdineCarrelloNegozio[] = [...esito.ordini];
-  const erroriAggiuntivi = [...esito.errori];
-
-  if (providerRichiesto2) {
-    for (let i = 0; i < ordiniArricchiti.length; i++) {
-      const ordine = ordiniArricchiti[i];
-      const sessione = await creaSessionePagamentoPerOrdine(ordine.ordineId, providerRichiesto2);
-      if (sessione.ok) {
-        ordine.pagamento = {
-          redirectUrl: sessione.redirectUrl,
-          sessioneId: sessione.sessioneId,
-          giaEsistente: sessione.giaEsistente,
-        };
-      } else {
-        // L'ordine non può essere pagato con il metodo scelto: lo chiudiamo
-        // SOLO se è stato creato in questo checkout (retry di un ordine già
-        // esistente con sessione scaduta → non si chiude, resta tracciabile).
-        if (!ordine.giaEsistente) {
-          await chiudiOrdineSenzaPagamento(ordine.ordineId).catch(() => {});
-        }
-        erroriAggiuntivi.push({
-          negozioId: ordine.negozioId,
-          codice: sessione.codice,
-          messaggio: sessione.errore,
-        });
-        // L'ordine resta nella risposta (stato/campi dal DB, chiaro all'UI
-        // che il pagamento non è partito), ma senza redirectUrl.
-        ordine.pagamento = null;
-      }
-    }
-  }
-
   // Almeno un ordine REALMENTE nuovo → 201; tutti già esistenti (retry) → 200.
   const almenoNuovo = esito.ordini.some((o) => !o.giaEsistente);
   const response = apiOk(
     {
       checkoutKey: esito.checkoutKey,
-      ordini: ordiniArricchiti,
-      errori: erroriAggiuntivi,
+      ordini: esito.ordini,
+      errori: esito.errori,
     },
     almenoNuovo ? 201 : 200
   );
   if (!utenteAutenticato) {
-    for (const ordine of ordiniArricchiti) {
+    for (const ordine of esito.ordini) {
       if (ordine.ordineId) setOrderAccessCookie(response, ordine.ordineId);
     }
   }

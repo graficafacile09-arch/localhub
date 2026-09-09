@@ -63,11 +63,11 @@ console.log("\n[T1] Scheda prodotto → ACQUISTA → scelta → spedizione: la U
 console.log("\n[T2-T5] Carta/Bonifico/Klarna: disponibilità determinata SOLO dal server");
 {
   check("2a. la UI itera la lista server (metodiPagamento.map), nessun metodo hardcoded", form.includes("metodiPagamento.map") && form.includes("metodo.metodo"));
-  check("2b. metodi-pubblici: carta SOLO se Stripe pronto", metodiPub.includes("isStripeProntoPerNegozio"));
-  check("2c. metodi-pubblici: klarna SOLO se configurato e attivo", metodiPub.includes("isProviderProntoPerNegozio"));
-  check("2c-bis. metodi-pubblici: paypal SOLO se configurato e attivo", metodiPub.includes('"paypal"') && metodiPub.includes("isProviderProntoPerNegozio"));
+  check("2b. metodi-pubblici: carta/klarna/paypal SOLO se il provider è pronto (isProviderProntoPerNegozio)", metodiPub.includes("isProviderProntoPerNegozio"));
+  check("2c. metodi-pubblici: klarna incluso nel catalogo", metodiPub.includes("klarna"));
+  check("2c-bis. metodi-pubblici: paypal incluso nel catalogo", metodiPub.includes("paypal") && metodiPub.includes("isProviderProntoPerNegozio"));
   check("2d. metodi-pubblici: bonifico SOLO se iban/payee_email configurati", metodiPub.includes("datiBonifico"));
-  check("2e. nessun 'fallback silenzioso': lista vuota → messaggio esplicito", form.includes("non ha configurato pagamenti online"));
+  check("2e. nessun 'fallback silenzioso': metodo non selezionabile → badge esplicito", form.includes("non disponibile per questo negozio"));
 }
 
 // ── T6: NESSUNA scelta esplicita → submit bloccato (contratto assoluto) ─
@@ -75,34 +75,33 @@ console.log("\n[T6] Nessuna scelta esplicita → submit bloccato, zero ordini");
 {
   const useStateMetodo = form.match(/const \[metodoPagamento[^\]]*\] = useState<([^>]*)>\(([^)]*)\)/);
   check("6a. stato iniziale = null (nessuna scelta implicita, nemmeno con un solo metodo)", Boolean(useStateMetodo) && String(useStateMetodo?.[2]).trim() === "null" && !form.includes("metodoIniziale"), useStateMetodo?.[0]);
-  check("6b. pulsante disabilitato finché metodoPagamento === null", form.includes("disabled={inviando || metodoPagamento === null}"));
+  check("6b. pulsante disabilitato finché metodoPagamento === null (o spedizione non scelta)", form.includes("disabled={inviando || metodoPagamento === null || spedizioneScelta === null}"));
   check("6c. guardia client nel submit: blocca e mostra errore dedicato", form.includes("Seleziona un metodo di pagamento per continuare."));
   check("6d. nessun useEffect che crea ordini all'apertura della pagina", !/useEffect[\s\S]{0,80}creaOrdine/.test(form));
 }
 
-// ── T7/T8/T9/T10: dispatch per metodo, mai fallback klarna→stripe ────────
-console.log("\n[T7-T10] Dispatch server-side: carta→Stripe, klarna→Klarna, bonifico→nessuna sessione");
+// ── T7/T8/T9/T10: dispatch per metodo (P1: INTENTO, mai ordine online) ───
+console.log("\n[T7-T10] Dispatch server-side P1: carta→Stripe, klarna→Klarna, bonifico→nessun intento/gateway");
 {
-  check("7a. carta → creaSessioneStripePerOrdine (sessione Stripe)", route.includes('creaSessioneStripePerOrdine'));
-  check("7b. klarna → creaSessionePagamentoPerOrdine(..., 'klarna') (STESSO orchestratore del carrello)", /creaSessionePagamentoPerOrdine\(esito\.ordine\.id, "klarna"\)/.test(route));
-  check("7b-bis. paypal → creaSessionePagamentoPerOrdine(..., 'paypal') (stesso orchestratore)", /creaSessionePagamentoPerOrdine\(esito\.ordine\.id, "paypal"\)/.test(route));
-  // Le sessioni nascono SOLO nei rami guardati carta/klarna: per bonifico il
-  // pagamento resta null (nessun gateway). Verifica la STRUTTURA del dispatch.
+  check("7a. carta → INTENTO + creaSessionePagamentoPerIntento (provider striato dal dispatch)", route.includes("creaSessionePagamentoPerIntento") && sessioni.includes('if (metodo === "carta") return "stripe"'));
+  check("7b. klarna → STESSO orchestratore intento, provider 'klarna' (mai sessione Stripe)", route.includes("creaSessionePagamentoPerIntento(") && route.includes("intento.checkoutId") && route.includes("providerOnline") && sessioni.includes('if (metodo === "klarna") return "klarna"'));
+  check("7b-bis. paypal → orchestratore intento, provider 'paypal'", sessioni.includes('if (metodo === "paypal") return "paypal"'));
+  // P1: per i metodi ONLINE il ramo intento ritorna PRIMA di creaOrdine; per
+  // bonifico/ritiro il flusso ordine resta quello storico (nessun gateway).
   check(
-    "7c. bonifico → nessuna sessione gateway (sessioni SOLO nei rami carta/klarna, default pagamento=null)",
-    route.includes("if (vuoleCarta)") &&
-      route.includes("else if (vuoleKlarna)") &&
-      route.includes("let pagamento: { redirectUrl: string } | null = null;") &&
-      route.includes("pagamento = { redirectUrl: sessione.redirectUrl };"),
-    "struttura dispatch attesa: default null + branch carta/klarna"
+    "7c. bonifico → nessun intento/nessuna sessione gateway (creaOrdine storico, risposta senza pagamento)",
+    route.includes("await creaOrdine(input)") &&
+      route.indexOf("if (providerOnline)") < route.indexOf("await creaOrdine(input)") &&
+      sessioni.includes("return null;"),
+    "bonifico non deve entrare nel ramo intento né creare gateway"
   );
-  check("7d. pre-flight klarna: negozio non configurato → 422 PRIMA della creazione ordine", route.includes("KLARNA_NON_DISPONIBILE") && route.includes("providerDisponibilePerProdotto"));
-  check("7d-bis. pre-flight paypal: negozio non configurato → 422 PRIMA della creazione ordine", route.includes("PAYPAL_NON_DISPONIBILE"));
+  check("7d. pre-flight klarna: negozio non configurato → 422 PRIMA della creazione", route.includes("KLARNA_NON_DISPONIBILE") && route.includes("providerDisponibilePerProdotto"));
+  check("7d-bis. pre-flight paypal: negozio non configurato → 422 PRIMA della creazione", route.includes("PAYPAL_NON_DISPONIBILE"));
   check("7e. pre-flight carta: negozio senza Stripe → 422 prima dell'ordine", route.includes("CARTA_NON_DISPONIBILE") && route.includes("cartaDisponibilePerProdotto"));
-  check("7f. MAI un fallback klarna→stripe nel routing", !/klarna[\s\S]{0,60}stripe/.test(route) && route.includes("mai un fallback"));
+  check("7f. MAI un fallback klarna→stripe: il provider dell'intento è AUTORITATIVO (intento.provider)", sessioni.includes("intento.provider || provider") && !/klarna[\s\S]{0,60}stripe/.test(route));
   check("7g. orchestratore fail-closed: provider non implementato → PROVIDER_NON_DISPONIBILE", sessioni.includes("PROVIDER_NON_DISPONIBILE"));
-  check("7h. sessione usa SEMPRE il totale dal DB (mai dal client)", sessioni.includes("importo: ordine.totale"));
-  check("7i. route: spedizione SENZA metodo esplicito → 422 METODO_PAGAMENTO_NON_SCELTO PRIMA dell'ordine", route.includes("METODO_PAGAMENTO_NON_SCELTO") && route.indexOf("METODO_PAGAMENTO_NON_SCELTO") < route.indexOf("creaOrdine(input)"), "validazione deve precedere la creazione");
+  check("7h. sessione usa SEMPRE il totale dal DB (mai dal client): intento → payload.totale", sessioni.includes("importo: Number(payload.totale ?? 0)"));
+  check("7i. route: spedizione SENZA metodo esplicito → 422 METODO_PAGAMENTO_NON_SCELTO PRIMA di ogni creazione", route.includes("METODO_PAGAMENTO_NON_SCELTO") && route.indexOf("METODO_PAGAMENTO_NON_SCELTO") < route.indexOf("creaOrdine(input)"), "validazione deve precedere la creazione");
   check("7j. route: nessun fallback implicito (mai ?? / || 'bonifico'/'paypal')", !/\?\? "bonifico"|\|\| "bonifico"|\?\? "paypal"|\|\| "paypal"/.test(route));
   check("7k. route: valore non ammesso → 422 VALIDATION_ERROR (nessun ordine)", route.includes("Metodo di pagamento non valido."));
 }

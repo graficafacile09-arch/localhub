@@ -9,9 +9,11 @@ import {
   providerDisponibilePerProdotto,
 } from "@/lib/pagamenti/config";
 import {
-  chiudiOrdineSenzaPagamento,
-  creaSessionePagamentoPerOrdine,
-  creaSessioneStripePerOrdine,
+  annullaIntentoCheckout,
+  costruisciPayloadIntentoCheckout,
+  creaIntentoCheckout,
+  creaSessionePagamentoPerIntento,
+  providerDaMetodoPagamento,
 } from "@/lib/pagamenti/sessioni";
 import {
   isCarrierCodice,
@@ -315,65 +317,103 @@ export async function POST(request: Request) {
     clienteIp: ip,
   };
 
+  // ── P1 PAYMENT-FIRST — metodi ONLINE: INTENTO, mai un ordine ────────────
+  // Stripe/PayPal/Klarna/Scalapay NON creano più una riga in `ordini` prima
+  // del pagamento: la RPC checkout_intento_crea valida, RISERVA lo stock
+  // (quantita_riservata) e crea la sessione con ordine_id = NULL; poi la
+  // sessione del provider viene creata sull'intento. Se la creazione della
+  // sessione provider fallisce → l'intento viene annullato (riserva
+  // rilasciata): mai un ordine, mai una riserva fantasma.
+  const providerOnline =
+    modalita === "spedizione"
+      ? providerDaMetodoPagamento(
+          typeof spedizioneRaw.metodoPagamento === "string"
+            ? spedizioneRaw.metodoPagamento
+            : undefined
+        )
+      : null;
+
+  if (providerOnline) {
+    const intento = await creaIntentoCheckout(
+      costruisciPayloadIntentoCheckout({
+        checkoutKey: input.idempotencyKey,
+        provider: providerOnline,
+        // Gli intenti online esistono SOLO per la modalità spedizione.
+        modalita: "spedizione",
+        righe: [
+          {
+            prodottoId: input.prodottoId,
+            varianteId: input.varianteId ?? null,
+            quantita: input.quantita,
+          },
+        ],
+        cliente: input.cliente,
+        clienteUserId: utenteAutenticato?.id ?? null,
+        clienteIp: ip,
+        spedizione: {
+          indirizzo: input.spedizione!.indirizzo,
+          cap: input.spedizione!.cap,
+          citta: input.spedizione!.citta,
+          provincia: input.spedizione!.provincia,
+          note: input.spedizione!.note ?? null,
+          carrier: input.spedizione!.carrier as string,
+          servizio: input.spedizione!.servizio as string,
+          metodoPagamento: String(spedizioneRaw.metodoPagamento),
+        },
+        fatturazione: input.fatturazione ?? null,
+        note: input.note ?? null,
+      })
+    );
+    if (!intento.ok) {
+      return apiError(intento.codice, intento.errore, intento.status);
+    }
+
+    const sessione = await creaSessionePagamentoPerIntento(
+      intento.checkoutId,
+      providerOnline
+    );
+    if (!sessione.ok) {
+      // Riserva rilasciata: nessun ordine, nessuna riserva fantasma.
+      await annullaIntentoCheckout(intento.checkoutId).catch(() => {});
+      return apiError(sessione.codice, sessione.errore, 422);
+    }
+
+    const checkoutId = intento.checkoutId;
+    const response = apiOk(
+      {
+        checkoutId,
+        checkoutKey: intento.checkoutKey,
+        negozioId: intento.negozioId,
+        negozioNome: intento.negozioNome,
+        totale: intento.totale,
+        // Compatibilità risposta client: per i metodi online il redirect al
+        // provider avviene via pagamento.redirectUrl; `ordine.id` resta il
+        // riferimento (id sessione/intento) richiesto dal contratto esistente.
+        ordine: { id: checkoutId, numero: checkoutId.slice(0, 8).toUpperCase() },
+        giaEsistente: intento.giaEsistente,
+        pagamento: { redirectUrl: sessione.redirectUrl },
+      },
+      intento.giaEsistente ? 200 : 201
+    );
+    if (!utenteAutenticato) {
+      setOrderAccessCookie(response, checkoutId);
+    }
+    return response;
+  }
+
+  // ── BONIFICO / RITIRO — comportamento INVARIATO: ordine creato subito ──
+  // Il pagamento avviene fuori piattaforma (bonifico) o in negozio (ritiro),
+  // quindi l'ordine nasce subito con le notifiche esistenti: nessun intento.
   const esito = await creaOrdine(input);
 
   if (!esito.ok) {
     return apiError(esito.codice, esito.errore, esito.status);
   }
 
-  // ── FASE F1 — metodo "carta": dopo la creazione ordine (stock decrementato
-  // = riserva) viene creata la sessione Stripe e il client viene reindirizzato.
-  // Se la creazione sessione fallisce l'ordine viene chiuso subito (stock
-  // ripristinato) e l'errore è chiaro: mai ordini orfani senza pagamento.
-  let pagamento: { redirectUrl: string } | null = null;
-  if (vuoleCarta) {
-    const sessione = await creaSessioneStripePerOrdine(esito.ordine.id);
-    if (sessione.ok) {
-      pagamento = { redirectUrl: sessione.redirectUrl };
-    } else {
-      await chiudiOrdineSenzaPagamento(esito.ordine.id).catch(() => {});
-      return apiError(sessione.codice, sessione.errore, 422);
-    }
-  } else if (vuoleKlarna) {
-    // Klarna: stessa orchestrazione del carrello (F2.5) — la sessione viene
-    // creata dal gateway Klarna (creaSessionePagamentoPerOrdine, provider
-    // 'klarna'): mai una sessione Stripe, mai un fallback silenzioso.
-    const sessione = await creaSessionePagamentoPerOrdine(esito.ordine.id, "klarna");
-    if (sessione.ok) {
-      pagamento = { redirectUrl: sessione.redirectUrl };
-    } else {
-      await chiudiOrdineSenzaPagamento(esito.ordine.id).catch(() => {});
-      return apiError(sessione.codice, sessione.errore, 422);
-    }
-  } else if (vuolePaypal) {
-    // PayPal: stessa orchestrazione del carrello — la sessione viene creata
-    // dal gateway PayPal (creaSessionePagamentoPerOrdine, provider 'paypal'):
-    // mai una sessione Stripe/Klarna, mai un fallback silenzioso.
-    const sessione = await creaSessionePagamentoPerOrdine(esito.ordine.id, "paypal");
-    if (sessione.ok) {
-      pagamento = { redirectUrl: sessione.redirectUrl };
-    } else {
-      await chiudiOrdineSenzaPagamento(esito.ordine.id).catch(() => {});
-      return apiError(sessione.codice, sessione.errore, 422);
-    }
-  } else if (vuoleScalapay) {
-    // Scalapay: stessa orchestrazione del carrello — la sessione viene creata
-    // dal gateway Scalapay (creaSessionePagamentoPerOrdine, provider
-    // 'scalapay'): mai una sessione Stripe/Klarna/PayPal, mai un fallback.
-    const sessione = await creaSessionePagamentoPerOrdine(esito.ordine.id, "scalapay");
-    if (sessione.ok) {
-      pagamento = { redirectUrl: sessione.redirectUrl };
-    } else {
-      await chiudiOrdineSenzaPagamento(esito.ordine.id).catch(() => {});
-      return apiError(sessione.codice, sessione.errore, 422);
-    }
-  }
-
   const response = apiOk(
     {
       ordine: esito.ordine,
       giaEsistente: esito.giaEsistente,
-      pagamento,
     },
     esito.giaEsistente ? 200 : 201
   );

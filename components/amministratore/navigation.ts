@@ -6,6 +6,7 @@ import {
   Bot,
   CalendarDays,
   Coins,
+  CreditCard,
   FolderTree,
   Globe,
   Home,
@@ -15,6 +16,7 @@ import {
   Package,
   ReceiptText,
   ScrollText,
+  Send,
   Settings,
   Star,
   Store,
@@ -124,6 +126,20 @@ export const adminNavGroups: AdminNavGroup[] = [
         description:
           "Supervisione dei payout interni dei negozi: calcolo per periodo, stato di erogazione e storico.",
         icon: Coins,
+      },
+      {
+        href: `${ADMIN_BASE}/pagamenti/stripe`,
+        label: "Stripe Connect",
+        description:
+          "Supervisione dei connected account Stripe dei negozi: stato onboarding, incassi/payout abilitati, verifica live e riapertura del flusso.",
+        icon: CreditCard,
+      },
+      {
+        href: `${ADMIN_BASE}/test-invio-ordine`,
+        label: "Test invio ordine",
+        description:
+          "Verifica end-to-end delle notifiche ordine (email, WhatsApp, ntfy, notifica admin) senza creare ordini reali, senza toccare lo stock e senza generare pagamenti.",
+        icon: Send,
       },
     ],
   },
