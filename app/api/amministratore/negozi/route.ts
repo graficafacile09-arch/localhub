@@ -14,7 +14,11 @@ export async function GET() {
     const stores = await getNegoziAttiviSintesi();
     return apiOk({ stores });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Errore sconosciuto.";
-    return apiError("FETCH_FAILED", message, 500);
+    console.error("[/api/amministratore/negozi] Errore:", err);
+    return apiError(
+      "FETCH_FAILED",
+      "Impossibile caricare i negozi. Riprova tra poco.",
+      500
+    );
   }
 }

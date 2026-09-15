@@ -1,5 +1,5 @@
 /**
- * FASE 10 BLOCCO 3A — TEST LIFECYCLE EVENTI WEBHOOK
+ * FASE 10 BLOCCO 3 — STEP 1 — TEST LIFECYCLE EVENTI WEBHOOK
  *
  * Testa le RPC reali su PostgreSQL locale disposable. Non invoca Stripe,
  * non modifica il database remoto e non esegue i business handler.
@@ -16,7 +16,6 @@ const EVENT_RECEIVED = `${PREFIX}-received`;
 const EVENT_STALE = `${PREFIX}-stale`;
 const EVENT_LIVE = `${PREFIX}-live`;
 const EVENT_CONCURRENT = `${PREFIX}-concurrent`;
-const EVENT_DB_ERROR = `${PREFIX}-db-error`;
 
 let passati = 0;
 let falliti = 0;
@@ -65,11 +64,13 @@ function psqlAsync(sql: string): Promise<{ code: number | null; stdout: string; 
 }
 
 function installMigration(): void {
-  const migration = readFileSync(
-    "supabase/migrations/20260926_webhook_event_lifecycle.sql",
+  // Installa solo la migration dello step: il database locale deve già
+  // contenere le tabelle della foundation e il lifecycle base.
+  const hardeningMigration = readFileSync(
+    "supabase/migrations/20261012_webhook_event_lifecycle_retry_hardening.sql",
     "utf8"
   );
-  psql(migration);
+  psql(hardeningMigration);
 }
 
 function cleanup(): void {
@@ -80,47 +81,64 @@ function cleanup(): void {
   }
 }
 
+function acquire(eventId: string, paymentId: string, payload = "{}", eventType = "test.event"): Record<string, unknown> {
+  return json(`select public.pagamenti_evento_acquisisci('${eventId}', '${eventType}', null, null, '${paymentId}', '${payload}'::jsonb);`);
+}
+
+function finalize(eventId: string, success: boolean, attempt: number, errorMessage = "errore sintetico"): Record<string, unknown> {
+  const errorSql = errorMessage === "null" ? "null" : `'${errorMessage}'`;
+  return json(`select public.pagamenti_evento_finalizza('${eventId}', ${success ? "true" : "false"}, ${errorSql}, ${attempt});`);
+}
+
 function runLifecycle(): void {
   console.log("\n=== POSTGRESQL REALE — WEBHOOK EVENT LIFECYCLE ===\n");
 
-  const created = json(`select public.pagamenti_evento_acquisisci('${EVENT_PROCESSED}', 'test.event', null, null, 'evt-processed', '{"case":"processed"}'::jsonb);`);
-  check("nuovo event_id acquisito", created.acquired === true && created.stato === "processing");
-  check("nuovo event_id parte da attempts=1", created.attempts === 1, created);
+  const created = acquire(EVENT_PROCESSED, "evt-processed", '{"case":"processed"}');
+  check("nuovo event → NEW_EVENT", created.ok === true && created.esito === "NEW_EVENT");
+  check("nuovo event parte dall'iniziale received", created.stato_iniziale === "received", created);
+  check("nuovo event acquisito in processing", created.acquired === true && created.stato === "processing", created);
+  check("nuovo event incrementa attempts a 1", created.attempts === 1, created);
 
-  const finalized = json(`select public.pagamenti_evento_finalizza('${EVENT_PROCESSED}', true, null);`);
-  check("processing → processed solo dopo successo", finalized.ok === true && finalized.stato === "processed");
+  const finalized = finalize(EVENT_PROCESSED, true, 1);
+  check("processing riuscito → processed", finalized.ok === true && finalized.esito === "PROCESSED" && finalized.stato === "processed", finalized);
   check("processed_at valorizzato", scalar(`select (processed_at is not null)::text from public.pagamenti_eventi where event_id = '${EVENT_PROCESSED}';`) === "true");
 
-  const duplicate = json(`select public.pagamenti_evento_acquisisci('${EVENT_PROCESSED}', 'test.event', null, null, 'evt-processed', '{}'::jsonb);`);
-  check("exact duplicate processed è terminale", duplicate.terminal === true && duplicate.acquired === false, duplicate);
-  check("exact duplicate processed non incrementa attempts", duplicate.attempts === 1, duplicate);
+  const duplicate = acquire(EVENT_PROCESSED, "evt-processed", "{}");
+  check("duplicate processed → DUPLICATE_PROCESSED/no-op", duplicate.ok === true && duplicate.esito === "DUPLICATE_PROCESSED" && duplicate.terminal === true, duplicate);
+  check("duplicate processed non incrementa attempts", duplicate.attempts === 1, duplicate);
 
-  const errored = json(`select public.pagamenti_evento_acquisisci('${EVENT_ERROR}', 'test.event', null, null, 'evt-error', '{}'::jsonb);`);
-  json(`select public.pagamenti_evento_finalizza('${EVENT_ERROR}', false, 'errore provider sintetico');`);
-  const errorRetry = json(`select public.pagamenti_evento_acquisisci('${EVENT_ERROR}', 'test.event', null, null, 'evt-error', '{}'::jsonb);`);
-  check("processing → error dopo failure", scalar(`select status from public.pagamenti_eventi where event_id = '${EVENT_ERROR}';`) === "processing" || errorRetry.acquired === true, { errored, errorRetry });
-  check("duplicate error è retryable", errorRetry.acquired === true && errorRetry.attempts === 2, errorRetry);
-  check("retry dopo error può finalizzare", json(`select public.pagamenti_evento_finalizza('${EVENT_ERROR}', true, null);`).stato === "processed");
+  const errored = acquire(EVENT_ERROR, "evt-error");
+  check("evento errore iniziale acquisito", errored.esito === "NEW_EVENT" && errored.attempts === 1, errored);
+  const failure = finalize(EVENT_ERROR, false, 1, "errore provider sintetico");
+  check("failure processing → RETRYABLE_ERROR", failure.ok === true && failure.esito === "RETRYABLE_ERROR" && failure.stato === "error", failure);
+  check("failure processing non marca processed", scalar(`select status from public.pagamenti_eventi where event_id = '${EVENT_ERROR}';`) === "error");
+  const errorRetry = acquire(EVENT_ERROR, "evt-error");
+  check("duplicate error → RETRYABLE_EXISTING", errorRetry.ok === true && errorRetry.esito === "RETRYABLE_EXISTING" && errorRetry.acquired === true, errorRetry);
+  check("retry dopo error incrementa attempts", errorRetry.attempts === 2, errorRetry);
+  const recovered = finalize(EVENT_ERROR, true, 2);
+  check("retry dopo errore può arrivare a processed", recovered.ok === true && recovered.esito === "PROCESSED" && recovered.stato === "processed", recovered);
 
   psql(`insert into public.pagamenti_eventi (provider, event_id, event_type, payment_id, payload, status, attempts, processing_at) values ('stripe', '${EVENT_RECEIVED}', 'test.event', 'evt-received', '{}'::jsonb, 'received', 0, null);`);
-  const receivedRetry = json(`select public.pagamenti_evento_acquisisci('${EVENT_RECEIVED}', 'test.event', null, null, 'evt-received', '{}'::jsonb);`);
-  check("received è retryable", receivedRetry.acquired === true && receivedRetry.attempts === 1, receivedRetry);
-  check("retry dopo received può finalizzare", json(`select public.pagamenti_evento_finalizza('${EVENT_RECEIVED}', true, null);`).stato === "processed");
+  const receivedRetry = acquire(EVENT_RECEIVED, "evt-received");
+  check("duplicate received → RETRYABLE_EXISTING", receivedRetry.ok === true && receivedRetry.esito === "RETRYABLE_EXISTING" && receivedRetry.acquired === true, receivedRetry);
+  check("received retry incrementa attempts", receivedRetry.attempts === 1, receivedRetry);
+  check("received retry può finalizzare", finalize(EVENT_RECEIVED, true, 1).esito === "PROCESSED");
 
   psql(`insert into public.pagamenti_eventi (provider, event_id, event_type, payment_id, payload, status, attempts, processing_at) values ('stripe', '${EVENT_STALE}', 'test.event', 'evt-stale', '{}'::jsonb, 'processing', 1, now() - interval '11 minutes');`);
-  const staleRetry = json(`select public.pagamenti_evento_acquisisci('${EVENT_STALE}', 'test.event', null, null, 'evt-stale', '{}'::jsonb);`);
-  check("processing stale è recuperabile", staleRetry.acquired === true && staleRetry.attempts === 2, staleRetry);
-  const staleFailure = json(`select public.pagamenti_evento_finalizza('${EVENT_STALE}', false, 'failure retryable');`);
-  check("failure mantiene l'evento retryable", staleFailure.ok === true && staleFailure.stato === "error");
+  const staleRetry = acquire(EVENT_STALE, "evt-stale");
+  check("processing stale → RETRYABLE_EXISTING/recovery", staleRetry.ok === true && staleRetry.esito === "RETRYABLE_EXISTING" && staleRetry.attempts === 2, staleRetry);
+  check("stale attempt failure resta error/retryable", finalize(EVENT_STALE, false, 2, "failure retryable").esito === "RETRYABLE_ERROR");
 
   psql(`insert into public.pagamenti_eventi (provider, event_id, event_type, payment_id, payload, status, attempts, processing_at) values ('stripe', '${EVENT_LIVE}', 'test.event', 'evt-live', '{}'::jsonb, 'processing', 1, now());`);
-  const liveDuplicate = json(`select public.pagamenti_evento_acquisisci('${EVENT_LIVE}', 'test.event', null, null, 'evt-live', '{}'::jsonb);`);
-  check("processing live non viene acquisito due volte", liveDuplicate.in_corso === true && liveDuplicate.acquired === false, liveDuplicate);
+  const liveDuplicate = acquire(EVENT_LIVE, "evt-live");
+  check("processing live → IN_PROGRESS/no-op", liveDuplicate.ok === true && liveDuplicate.esito === "IN_PROGRESS" && liveDuplicate.acquired === false, liveDuplicate);
   check("processing live non incrementa attempts", liveDuplicate.attempts === 1, liveDuplicate);
 
-  psql(`select public.pagamenti_evento_acquisisci('${EVENT_DB_ERROR}', 'test.event', null, null, 'evt-db-error', '{}'::jsonb);`);
-  const malformed = json(`select public.pagamenti_evento_acquisisci(null, 'test.event', null, null, null, '{}'::jsonb);`);
-  check("parametro DB non valido non è classificato come duplicate", malformed.ok === false && malformed.codice === "VALIDATION_ERROR", malformed);
+  const invalid = json("select public.pagamenti_evento_acquisisci(null, 'test.event', null, null, null, '{}'::jsonb);");
+  check("errore DB/validazione distinto da duplicate", invalid.ok === false && invalid.esito === "DATABASE_ERROR" && invalid.codice === "VALIDATION_ERROR", invalid);
+
+  const staleFinalize = finalize(EVENT_LIVE, true, 0);
+  check("finalizzazione non confermata non produce falso successo", staleFinalize.ok === false && staleFinalize.esito === "DATABASE_ERROR", staleFinalize);
 }
 
 async function runConcurrency(): Promise<void> {
@@ -130,7 +148,7 @@ async function runConcurrency(): Promise<void> {
   check("due consegne concorrenti completano senza errore", a.code === 0 && b.code === 0, { a: a.stderr, b: b.stderr });
   const rows = psql(`select status, attempts from public.pagamenti_eventi where event_id = '${EVENT_CONCURRENT}';`, ["-At"]).trim();
   const parts = rows.split("|");
-  check("una sola riga per event_id", scalar(`select count(*) from public.pagamenti_eventi where event_id = '${EVENT_CONCURRENT}';`) === "1");
+  check("stesso event_id non crea seconda riga", scalar(`select count(*) from public.pagamenti_eventi where event_id = '${EVENT_CONCURRENT}';`) === "1");
   check("una sola acquisizione processing e attempts=1", parts[0] === "processing" && parts[1] === "1", rows);
 }
 

@@ -10,7 +10,12 @@ export async function GET() {
     .order("ordine", { ascending: true });
 
   if (error) {
-    return apiError("FETCH_FAILED", error.message, 500);
+    console.error("[/api/categories] Errore lettura categorie:", error);
+    return apiError(
+      "FETCH_FAILED",
+      "Impossibile caricare le categorie. Riprova tra poco.",
+      500
+    );
   }
 
   return apiOk(data ?? []);

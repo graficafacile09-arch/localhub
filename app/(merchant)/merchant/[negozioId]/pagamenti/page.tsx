@@ -2,18 +2,16 @@ import { CreditCard } from "lucide-react";
 import MerchantEmptyState from "@/components/merchant/MerchantEmptyState";
 import PagamentiModule from "@/components/merchant/modules/PagamentiModule";
 import { requireCurrentUser } from "@/lib/auth/session";
-import { getMerchantStoreForUser } from "@/lib/merchant/data";
+import { canManageStorePayments, getMerchantStoreForUser } from "@/lib/merchant/data";
 
 export const dynamic = "force-dynamic";
 
 /**
  * Pagina "Pagamenti" dell'area venditore: stato del collegamento Stripe
  * Connect (collega/scollega account), configurazione provider e attivazione
- * dei metodi mostrati al checkout. OWNERSHIP server-side (canManageStore +
- * RLS): il venditore gestisce solo i propri negozi. Stripe Connect è
- * per-negozio: il collegamento avviene via OAuth con callback a path fisso
- * (/api/merchant/pagamenti/stripe/callback) e binding allo store dallo
- * `state` firmato HMAC.
+ * dei metodi mostrati al checkout. L'accesso è consentito server-side solo ai
+ * negozi con il modulo prodotti attivo e al relativo proprietario. Stripe
+ * Connect Express usa Account Link e ritorna a /ritorno-stripe.
  */
 export default async function MerchantPagamentiPage({
   params,
@@ -45,6 +43,14 @@ export default async function MerchantPagamentiPage({
   }
 
   const store = storeResult.data;
+  if (!(await canManageStorePayments(user.id, negozioId))) {
+    return (
+      <MerchantEmptyState
+        title="Pagamenti non disponibili"
+        description="La configurazione dei pagamenti è disponibile solo per i negozi che vendono prodotti."
+      />
+    );
+  }
 
   return (
     <div className="mx-auto max-w-5xl px-3 py-3 sm:px-5">

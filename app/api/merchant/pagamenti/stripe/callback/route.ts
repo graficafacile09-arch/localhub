@@ -1,5 +1,5 @@
 import { requireApiArea } from "@/lib/auth/session-area";
-import { canManageStore } from "@/lib/merchant/data";
+import { canManageStorePayments } from "@/lib/merchant/data";
 import { getSiteUrl } from "@/lib/site";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import {
@@ -46,7 +46,7 @@ export async function GET(request: Request) {
   // Ownership: il venditore deve poter gestire il negozio estratto dallo state.
   const { sessione, error: errArea } = await requireApiArea("merchant");
   if (errArea) return redirectErrore();
-  const allowed = await canManageStore(sessione.user.id, negozioId);
+  const allowed = await canManageStorePayments(sessione.user.id, negozioId);
   if (!allowed) return redirectErrore();
 
   try {

@@ -61,7 +61,7 @@ export type DatiEmailOrdine = {
   modalita: "ritiro" | "spedizione";
   negozioNome: string;
   email: string;
-  /** Metodo di pagamento (es. "carta", "paypal", "klarna", "bonifico");
+  /** Metodo di pagamento (es. "carta", "klarna", "bonifico");
    *  usato nell'email di conferma pagamento. Opzionale: assente nelle email
    *  legacy/di creazione che non lo costruiscono. */
   metodoPagamento?: string | null;
@@ -114,8 +114,6 @@ export function costruisciOggettoPagamento(dati: Pick<DatiEmailOrdine, "numero">
 /** Etichetta leggibile del metodo di pagamento per l'email post-pagamento. */
 export function etichettaMetodoPagamento(metodo: string | null | undefined): string {
   switch (metodo) {
-    case "paypal":
-      return "PayPal";
     case "klarna":
       return "Klarna";
     case "bonifico":

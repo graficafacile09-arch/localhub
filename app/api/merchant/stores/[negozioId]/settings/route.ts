@@ -150,7 +150,8 @@ export async function GET(
     .single();
 
   if (error) {
-    return apiError("FETCH_FAILED", error.message ?? "Impossibile caricare le impostazioni.", 500);
+    console.error("[/api/merchant/stores/[negozioId]/settings] Errore lettura:", error);
+    return apiError("FETCH_FAILED", "Impossibile caricare le impostazioni. Riprova tra poco.", 500);
   }
 
   return apiOk({ settings: data });
@@ -331,7 +332,8 @@ export async function PUT(
     .single();
 
   if (error) {
-    return apiError("UPDATE_FAILED", error.message ?? "Impossibile aggiornare le impostazioni.", 500);
+    console.error("[/api/merchant/stores/[negozioId]/settings] Errore aggiornamento:", error);
+    return apiError("UPDATE_FAILED", "Impossibile aggiornare le impostazioni. Riprova tra poco.", 500);
   }
 
   if (oldRow) {

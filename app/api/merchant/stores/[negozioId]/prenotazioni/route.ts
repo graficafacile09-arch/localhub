@@ -85,7 +85,8 @@ export async function GET(
     .range(from, from + perPagina - 1);
 
   if (error) {
-    return apiError("FETCH_FAILED", error.message ?? "Impossibile leggere le prenotazioni.", 500);
+    console.error("[/api/merchant/stores/[negozioId]/prenotazioni] Errore:", error);
+    return apiError("FETCH_FAILED", "Impossibile leggere le prenotazioni. Riprova tra poco.", 500);
   }
 
   return apiOk({ prenotazioni: data ?? [], total: count ?? 0, pagina, perPagina });

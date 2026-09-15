@@ -282,7 +282,7 @@ async function main(): Promise<void> {
 
     await reset(db);
     op = await operation(db, ORDER_A, 30, "provider-mismatch");
-    await db.from("ordini").update({ payment_provider: "paypal" }).eq("id", ORDER_A);
+    await db.from("ordini").update({ payment_provider: "stripe" }).eq("id", ORDER_A);
     const providerMismatch = await rpc(db, "pagamenti_webhook_rimborso_operazione_finalizza", {
       p_ordine_id: ORDER_A, p_negozio_id: STORE_A, p_payment_intent: PI_A, p_operation_id: op.id, p_refund_id: "re_provider_mismatch", p_refund_amount: 30, p_amount_refunded: 30, p_amount_captured: 100, p_currency: "EUR",
     });

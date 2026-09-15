@@ -21,27 +21,23 @@ type ProviderConfig = {
   payouts_enabled: boolean;
   charges_enabled: boolean;
   has_secret: boolean;
+  // Stripe capabilities
+  klarna_enabled?: boolean;
 };
 
 type MetodoConfig = {
   metodo: string;
   attivo: boolean;
   ordine_mostra: number;
-};
-
-/**
- * Info di UN provider mostrato nel pannello.
- * Ogni gateway ha etichette e URL webhook propri: il merchant deve capire
- * esattamente quale campo va riempito e dove puntare il webhook.
- */
+};  /** Info di Stripe o del bonifico manuale mostrati nel pannello. */
 type ProviderInfoEntry = {
   nome: string;
   descrizione: string;
-  /** Etichetta del campo client_id (Stripe: Publishable Key, PayPal: Client ID, ...). */
+  /** Etichetta del campo client_id. */
   campoId: string;
   /** Etichetta del campo secret. */
   campoSecret: string;
-  /** Etichetta del campo webhook (PayPal = Webhook ID, Klarna = Shared Secret HMAC). */
+  /** Etichetta del campo webhook. */
   campoWebhook: string;
   /** URL webhook relativo da registrare presso il provider (null = nessun webhook). */
   webhookUrl: string | null;
@@ -61,61 +57,19 @@ type ProviderInfoEntry = {
 
 const PROVIDER_INFO: Record<string, ProviderInfoEntry> = {
   stripe: {
-    nome: "Carta (Stripe)",
-    descrizione: "Carte di credito/debito + Apple Pay + Google Pay",
-    campoId: "Publishable Key (non necessaria)",
-    campoSecret: "Secret Key",
-    campoWebhook: "Webhook Secret",
+    nome: "Stripe",
+    descrizione: "Carte di credito/debito + Apple Pay + Google Pay + Klarna (capabilities Stripe)",
+    campoId: "",
+    campoSecret: "",
+    campoWebhook: "",
     webhookUrl: "/api/webhook/pagamenti/stripe",
     webhookIstruzioni:
       "Imposta questo URL come endpoint webhook nel Dashboard Stripe (Developers → Webhooks) e incolla il signing secret nel campo \"Webhook Secret\". Eventi necessari: checkout.session.completed, checkout.session.expired, charge.refunded.",
     testLabel: "Test",
     liveLabel: "Live",
-    haSecret: true,
+    haSecret: false,
     nota:
-      "La Publishable Key non viene utilizzata dal flusso Stripe Checkout hosted: servono solo Secret Key e Webhook Secret. Apple Pay e Google Pay sono gestiti da Stripe (Dynamic Payment Methods): per mostrarli occorre abilitarli nel Dashboard Stripe (Apple Pay richiede anche la verifica del dominio).",
-  },
-  paypal: {
-    nome: "PayPal",
-    descrizione: "Pagamenti con account PayPal",
-    campoId: "Client ID",
-    campoSecret: "Secret",
-    campoWebhook: "Webhook ID",
-    webhookUrl: "/api/webhook/pagamenti/paypal",
-    webhookIstruzioni:
-      "Nel PayPal Developer Dashboard crea un webhook su questo URL e incolla il suo \"Webhook ID\" nel campo \"Webhook ID\" (non un secret). Eventi necessari: PAYMENT.CAPTURE.COMPLETED, PAYMENT.CAPTURE.REFUNDED, PAYMENT.CAPTURE.DENIED, PAYMENT.CAPTURE.FAILED, CHECKOUT.ORDER.CANCELLED.",
-    testLabel: "Sandbox",
-    liveLabel: "Live",
-    haSecret: true,
-  },
-  klarna: {
-    nome: "Klarna",
-    descrizione: "Paga in 3 o 4 rate — pay later",
-    campoId: "Client ID / Username",
-    campoSecret: "Secret / Password",
-    campoWebhook: "Shared Secret HMAC",
-    webhookUrl: "/api/webhook/pagamenti/klarna",
-    webhookIstruzioni:
-      "Registra questo URL come push URL Klarna e imposta lo stesso \"Shared Secret HMAC\" nel campo dedicato (Klarna firma gli eventi con HMAC-SHA256). Eventi gestiti: AUTHORIZED/CAPTURED, CANCELLED, EXPIRED, REFUNDED.",
-    testLabel: "Playground",
-    liveLabel: "Live",
-    haSecret: true,
-  },
-  scalapay: {
-    nome: "Scalapay",
-    descrizione: "Paga in 3 rate — buy now, pay later",
-    campoId: "",
-    campoSecret: "API Key",
-    campoWebhook: "",
-    webhookUrl: "/api/webhook/pagamenti/scalapay",
-    webhookIstruzioni:
-      "Registra questo URL come endpoint webhook nel Merchant Portal Scalapay. Scalapay firma gli eventi con HMAC-SHA256 usando la stessa API Key (header x-scalapay-hmac-v1). Eventi gestiti: charged, authorized, refunded, expired.",
-    testLabel: "Sandbox",
-    liveLabel: "Live",
-    haSecret: true,
-    soloSecret: true,
-    nota:
-      "Scalapay richiede solo l'API Key del TUO account Scalapay (prefissata sp_): devi procurartela autonomamente, la registrazione Scalapay è a tuo carico. Sandbox e Live usano ciascuna la rispettiva API Key. LocalHub non fornisce né utilizza un account Scalapay globale: la configurazione è gestita da te, per il tuo negozio. La stessa chiave autentica le chiamate API e firma i webhook; non servono Client ID né un webhook secret separato.",
+      "Nessuna chiave API richiesta: Stripe gestisce creazione account, registrazione e verifica (KYC/IBAN) nel suo portale. Apple Pay, Google Pay e Klarna sono gestiti da Stripe quando disponibili sull'account Connect.",
   },
   bonifico: {
     nome: "Bonifico bancario",
@@ -132,9 +86,8 @@ const PROVIDER_INFO: Record<string, ProviderInfoEntry> = {
 
 const METODI_INFO: Record<string, { nome: string; descrizione: string }> = {
   carta: { nome: "Carta", descrizione: "Carte di credito e debito" },
-  paypal: { nome: "PayPal", descrizione: "Account PayPal" },
   klarna: { nome: "Klarna", descrizione: "Paga in 3/4 rate" },
-  scalapay: { nome: "Scalapay", descrizione: "Paga in 3 rate" },
+  bonifico_istantaneo: { nome: "Bonifico istantaneo", descrizione: "Pagamento tramite Stripe" },
   bonifico: { nome: "Bonifico", descrizione: "Bonifico bancario" },
 };
 
@@ -157,6 +110,8 @@ type ProviderForm = {
   onboarding_status: string;
   payouts_enabled: boolean;
   charges_enabled: boolean;
+  // Stripe capabilities
+  klarna_enabled?: boolean;
 };
 
 function statoIniziale(): FormState {
@@ -176,6 +131,7 @@ function statoIniziale(): FormState {
       onboarding_status: "not_started",
       payouts_enabled: false,
       charges_enabled: false,
+      klarna_enabled: false,
     };
   }
   const metodi: Record<string, { attivo: boolean }> = {};
@@ -189,6 +145,7 @@ export default function PagamentiModule({ storeId }: Props) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [errore, setErrore] = useState<string | null>(null);
+  const [configErrore, setConfigErrore] = useState<string | null>(null);
   const [salvato, setSalvato] = useState(false);
   const [form, setForm] = useState<FormState>(statoIniziale);
   const [original, setOriginal] = useState("");
@@ -208,11 +165,17 @@ export default function PagamentiModule({ storeId }: Props) {
   }, []);
 
   useEffect(() => {
+    setConfigErrore(null);
     fetch(`/api/merchant/stores/${storeId}/pagamenti`)
-      .then((r) => r.json())
+      .then(async (r) => {
+        const json = await r.json().catch(() => null);
+        if (!r.ok || !json?.success) {
+          throw new Error("Impossibile caricare la configurazione dei pagamenti.");
+        }
+        return json;
+      })
       .then((json) => {
-        if (json.success) {
-          const prossimo = statoIniziale();
+        const prossimo = statoIniziale();
           for (const p of json.data.pagamenti ?? []) {
             if (!prossimo.providers[p.provider]) continue;
             prossimo.providers[p.provider] = {
@@ -229,6 +192,7 @@ export default function PagamentiModule({ storeId }: Props) {
               onboarding_status: p.onboarding_status ?? "not_started",
               payouts_enabled: p.payouts_enabled ?? false,
               charges_enabled: p.charges_enabled ?? false,
+              klarna_enabled: p.klarna_enabled ?? false,
             };
           }
           for (const m of json.data.metodi ?? []) {
@@ -236,12 +200,14 @@ export default function PagamentiModule({ storeId }: Props) {
               prossimo.metodi[m.metodo] = { attivo: m.attivo ?? false };
             }
           }
-          setForm(prossimo);
-          setOriginal(JSON.stringify(prossimo));
-        }
+        setForm(prossimo);
+        setOriginal(JSON.stringify(prossimo));
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch(() => {
+        setConfigErrore("Impossibile caricare la configurazione dei pagamenti. Riprova più tardi.");
+        setLoading(false);
+      });
   }, [storeId]);
 
   function setProvider(key: string, patch: Partial<ProviderForm>) {
@@ -327,8 +293,8 @@ export default function PagamentiModule({ storeId }: Props) {
     setErrore(null);
     setSalvato(false);
 
-    // Stripe è gestito esclusivamente via Connect (collega/scollega): non
-    // viene incluso nel PUT manuale (mai secret/webhook per Stripe).
+    // Stripe è gestito esclusivamente via onboarding hosted e non viene incluso
+    // nel PUT manuale.
     const pagamenti = Object.entries(form.providers)
       .filter(([provider]) => provider !== "stripe")
       .map(([provider, p]) => {
@@ -445,19 +411,19 @@ export default function PagamentiModule({ storeId }: Props) {
         </div>
       )}
       {stripeMsg && (
-        <div
-          className={`mb-4 flex items-center gap-2 rounded-xl border px-4 py-3 text-xs font-semibold ${
-            stripeMsg.tipo === "ok"
-              ? "border-blue-200 bg-blue-50 text-blue-700"
-              : "border-blue-200 bg-blue-50 text-blue-700"
-          }`}
-        >
+        <div className="mb-4 flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs font-semibold text-blue-700">
           {stripeMsg.tipo === "ok" ? (
             <CheckCircle2 className="h-4 w-4 shrink-0" />
           ) : (
             <AlertCircle className="h-4 w-4 shrink-0" />
           )}
           {stripeMsg.testo}
+        </div>
+      )}
+      {configErrore && (
+        <div className="mb-4 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-semibold text-red-700" role="alert">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          {configErrore}
         </div>
       )}
 
@@ -580,6 +546,17 @@ export default function PagamentiModule({ storeId }: Props) {
                           del venditore. Al termine dell&apos;onboarding verrai riportato su
                           /ritorno-stripe.
                         </p>
+                      </div>
+
+                      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                        <div className={`rounded-xl px-3 py-2.5 ring-1 ${p.charges_enabled ? "bg-green-50 text-green-800 ring-green-100" : "bg-slate-50 text-slate-500 ring-slate-100"}`}>
+                          <p className="text-[11px] font-semibold">Carta</p>
+                          <p className="mt-0.5 text-[10px]">{p.charges_enabled ? "Disponibile" : "In attesa della verifica Stripe"}</p>
+                        </div>
+                        <div className={`rounded-xl px-3 py-2.5 ring-1 ${p.klarna_enabled ? "bg-green-50 text-green-800 ring-green-100" : "bg-slate-50 text-slate-500 ring-slate-100"}`}>
+                          <p className="text-[11px] font-semibold">Klarna</p>
+                          <p className="mt-0.5 text-[10px]">{p.klarna_enabled ? "Disponibile sul tuo account Stripe" : "Non disponibile sul tuo account Stripe"}</p>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -780,9 +757,8 @@ export default function PagamentiModule({ storeId }: Props) {
             ))}
           </div>
           <p className="mt-2 text-[10px] leading-4 text-slate-400">
-            Bonifico non richiede un provider e resta sempre disponibile. Carta, PayPal,
-            Klarna e Scalapay richiedono sia la configurazione del provider sia
-            l&apos;abilitazione del metodo.
+            Bonifico non richiede un provider e resta sempre disponibile. Carta, Klarna
+            e bonifico istantaneo richiedono Stripe e l&apos;abilitazione del metodo.
           </p>
         </div>
 

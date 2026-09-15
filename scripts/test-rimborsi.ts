@@ -1,10 +1,10 @@
 /**
- * TEST RIMBORSI V1 — puri + mock gateway (Stripe/PayPal/Klarna/Connect).
+ * TEST RIMBORSI V1 — regole pure + mock Stripe Connect.
  *
  * Copre: A/B/C/D/E/F/K/L/S (regole residuo + stato), G (decimali), H
  * (importo non manipolabile), I (idempotenza = residuo), N (senza provider),
  * O/P (Stripe Connect + application fee: header Stripe-Account, nessun
- * reversal commissione), Q (PayPal), R (Klarna). Nessuna rete reale:
+ * reversal commissione). Nessuna rete reale:
  * server HTTP mock locale. Nessun dato modificato.
  *
  * Uso: npx tsx scripts/test-rimborsi.ts
@@ -13,8 +13,6 @@
 import { createServer, type Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import { GatewayStripe } from "@/lib/pagamenti/stripe";
-import { GatewayPaypal } from "@/lib/pagamenti/gateway-paypal";
-import { GatewayKlarna } from "@/lib/pagamenti/gateway-klarna";
 import {
   validaImportoRimborso,
   statoDopoRimborso,
@@ -102,18 +100,12 @@ async function main() {
   {
     // Regola: ordine bonifico / legacy (payment_provider null o non gateway)
     // → non rimborsabile. Il check è nella RPC + servizio.
-    check("N) provider bonifico non è nei gateway rimborsabili", !["stripe", "paypal", "klarna"].includes("bonifico"));
-    check("N) provider null non è rimborsabile", !["stripe", "paypal", "klarna"].includes(""));
+    check("N) provider bonifico non è nei gateway rimborsabili", !["stripe"].includes("bonifico"));
+    check("N) provider null non è rimborsabile", !["stripe"].includes(""));
   }
 
   console.log("\n=== O/P) STRIPE CONNECT — refund + application fee ===\n");
   await testStripeConnect();
-
-  console.log("\n=== Q) PAYPAL — refund ===\n");
-  await testPaypal();
-
-  console.log("\n=== R) KLARNA — refund ===\n");
-  await testKlarna();
 
   console.log(`\nRimborsi: ${passati} passati, ${falliti} falliti.`);
   process.exit(falliti === 0 ? 0 : 1);
@@ -140,20 +132,6 @@ async function avviaMock() {
       }
       if (req.method === "GET" && url.includes("/v1/checkout/sessions/cs_")) {
         return rispondi({ id: "cs_test_x", status: "complete", payment_status: "paid", payment_intent: "pi_test_x" });
-      }
-      // PayPal: oauth + ordine + refund
-      if (req.method === "POST" && url.includes("/v1/oauth2/token")) {
-        return rispondi({ access_token: "test_token", token_type: "Bearer", expires_in: 3600 });
-      }
-      if (req.method === "GET" && url.includes("/v2/checkout/orders/PAYID")) {
-        return rispondi({ id: "PAYID-123", status: "COMPLETED", purchase_units: [{ payments: { captures: [{ id: "capture_1", status: "COMPLETED" }] } }] });
-      }
-      if (req.method === "POST" && url.includes("/v2/payments/captures/")) {
-        return rispondi({ id: "refund_paypal_1", status: "COMPLETED" });
-      }
-      // Klarna: refund
-      if (req.method === "POST" && url.includes("/ordermanagement/v1/orders/")) {
-        return rispondi({ refund_id: "klarna_refund_1" });
       }
       rispondi({}, 404);
     });
@@ -184,31 +162,6 @@ async function testStripeConnect() {
     delete process.env.STRIPE_SECRET_KEY;
     await mock.chiudi();
   }
-}
-
-async function testPaypal() {
-  const mock = await avviaMock();
-  const gateway = new GatewayPaypal({ baseUrl: `http://127.0.0.1:${mock.port}` });
-  const cred: CredenzialiGateway = { clientId: "client_test", secret: "secret_test", testMode: true };
-  const esito = await gateway.rimborsa("PAYID-123", 7.5, cred);
-  check("Q) refundId PayPal", esito.refundId === "refund_paypal_1", esito.refundId);
-  const refund = mock.chiamate.find((c) => c.url.includes("/v2/payments/captures/"));
-  check("Q) POST refund sulla capture", Boolean(refund && refund.url.includes("capture_1") && refund.url.includes("/refund")), refund?.url);
-  const body = refund?.body ?? "";
-  check("Q) importo EUR 7.50 nel body", body.includes("\"value\":\"7.50\"") && body.includes("EUR"));
-  await mock.chiudi();
-}
-
-async function testKlarna() {
-  const mock = await avviaMock();
-  const gateway = new GatewayKlarna({ baseUrl: `http://127.0.0.1:${mock.port}` });
-  const cred: CredenzialiGateway = { clientId: "k_username", secret: "k_password", testMode: true };
-  const esito = await gateway.rimborsa("klarna_order_1", 4.25, cred);
-  check("R) refundId Klarna", esito.refundId === "klarna_order_1", esito.refundId);
-  const refund = mock.chiamate.find((c) => c.url.includes("/ordermanagement/v1/orders/klarna_order_1/refunds"));
-  check("R) POST refunds su ordine Klarna", Boolean(refund), refund?.url);
-  check("R) importo in minor units (425)", (refund?.body ?? "").includes("\"refunded_amount\":425"));
-  await mock.chiudi();
 }
 
 main().catch((e) => {

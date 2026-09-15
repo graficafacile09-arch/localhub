@@ -148,7 +148,7 @@ export type OrdineClienteDettaglio = OrdineClienteLista & {
   consegnataAt: string | null;
   /** Consegna stimata (testo libero, es. "1-2 giorni"). */
   consegnaStimata: string | null;
-  metodoPagamento: "carta" | "paypal" | "bonifico" | null;
+  metodoPagamento: "carta" | "klarna" | "bonifico_istantaneo" | "bonifico" | null;
   /** Marcatore autoritativo del provider (es. 'klarna' per gli ordini
    *  pagati via gateway Klarna: metodo_pagamento resta 'carta', come nel
    *  flusso carrello F2.2). */

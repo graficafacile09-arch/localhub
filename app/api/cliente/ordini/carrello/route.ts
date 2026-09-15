@@ -14,13 +14,14 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { getGuestMode } from "@/lib/auth/guest";
 import { checkRateLimit } from "@/lib/rate-limiter";
 import { setOrderAccessCookie } from "@/lib/cliente/order-access";
-import { isProviderProntoPerNegozio } from "@/lib/pagamenti/config";
+import { isMetodoDisponibile } from "@/lib/pagamenti/metodi-pubblici";
 import {
   annullaIntentoCheckout,
   costruisciPayloadIntentoCheckout,
   creaIntentoCheckout,
   creaSessionePagamentoPerIntento,
 } from "@/lib/pagamenti/sessioni";
+import { providerDaMetodoPagamento } from "@/lib/pagamenti/registry";
 import {
   isCarrierCodice,
   isServizioValidoPerCarrier,
@@ -31,20 +32,6 @@ import {
 /** IP del richiedente (pattern già usato da /api/cliente/ordini). */
 function ipRichiedente(request: Request): string {
   return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "anon";
-}
-
-/**
- * Dispatch metodo di pagamento → provider gateway (fail-closed):
- *   carta → stripe · klarna → klarna · scalapay → scalapay ·
- *   paypal → paypal · bonifico → null.
- * Il bonifico non ha sessione gateway; nessun fallback silenzioso.
- */
-function providerDaMetodoPagamento(metodo: string | undefined): string | null {
-  if (metodo === "carta") return "stripe";
-  if (metodo === "klarna") return "klarna";
-  if (metodo === "scalapay") return "scalapay";
-  if (metodo === "paypal") return "paypal";
-  return null;
 }
 
 /** Codice errore "non disponibile" per provider (retrocompatibile carta). */
@@ -175,9 +162,8 @@ export async function POST(request: Request) {
   if (
     spedizioneRaw.metodoPagamento !== undefined &&
     spedizioneRaw.metodoPagamento !== "carta" &&
-    spedizioneRaw.metodoPagamento !== "paypal" &&
     spedizioneRaw.metodoPagamento !== "klarna" &&
-    spedizioneRaw.metodoPagamento !== "scalapay" &&
+    spedizioneRaw.metodoPagamento !== "bonifico_istantaneo" &&
     spedizioneRaw.metodoPagamento !== "bonifico"
   ) {
     return apiError("VALIDATION_ERROR", "Metodo di pagamento non valido.", 422);
@@ -260,16 +246,18 @@ export async function POST(request: Request) {
     }
   }
 
-  // ── PRE-FLIGHT per provider (fail-closed, come /api/cliente/ordini F1) ──
-  // Se il metodo richiede un gateway (carta→stripe, klarna→klarna), OGNI
-  // negozio del carrello deve avere quel provider configurato e attivo:
-  // altrimenti rifiuta PRIMA di creare qualunque ordine (mai ordini orfani
-  // senza pagamento possibile). Bonifico → nessun gateway → nessun check.
+  // ── PRE-FLIGHT per METODO (fail-closed, come /api/cliente/ordini F1) ────
+  // B2 — per carta/klarna/bonifico_istantaneo il percorso è STRIPE e la disponibilità
+  // è PER-METODO (metodo attivato + capability Stripe ACTIVE per klarna/
+  // bonifico_istantaneo). OGNI negozio del carrello deve
+  // avere il metodo disponibile: altrimenti rifiuta PRIMA di creare
+  // qualunque intento (mai ordini orfani). Bonifico → nessun check.
   const providerRichiesto =
     modalita === "spedizione" ? providerDaMetodoPagamento(spedizioneRaw.metodoPagamento) : null;
   if (providerRichiesto) {
+    const metodoRichiesto = String(spedizioneRaw.metodoPagamento);
     for (const gruppo of raggruppamento.negozi) {
-      const pronta = await isProviderProntoPerNegozio(gruppo.negozioId, providerRichiesto);
+      const pronta = await isMetodoDisponibile(gruppo.negozioId, metodoRichiesto);
       if (!pronta) {
         return apiError(
           codiceNonDisponibile(providerRichiesto),
@@ -281,7 +269,7 @@ export async function POST(request: Request) {
   }
 
   // ── P1 PAYMENT-FIRST — metodi ONLINE: un INTENTO per gruppo negozio ────
-  // Stripe/PayPal/Klarna/Scalapay NON creano ordini prima del pagamento:
+  // I metodi online Stripe NON creano ordini prima del pagamento:
   // per ogni negozio del carrello la RPC checkout_intento_crea valida e
   // RISERVA SOLO lo stock di quel gruppo (quantita_riservata), creando una
   // sessione con ordine_id = NULL. La risposta riusa il contratto `ordini[]`
@@ -422,11 +410,7 @@ export async function POST(request: Request) {
             carrier: carrier as CarrierCodice,
             servizio: servizio as ServizioCodice,
             metodoPagamento:
-              spedizioneRaw.metodoPagamento === "paypal"
-                ? "paypal"
-                : spedizioneRaw.metodoPagamento === "bonifico"
-                  ? "bonifico"
-                  : "carta",
+              spedizioneRaw.metodoPagamento === "bonifico" ? "bonifico" : "carta",
           }
         : null,
     fatturazione:

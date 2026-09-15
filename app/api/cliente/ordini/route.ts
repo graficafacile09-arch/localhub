@@ -5,16 +5,13 @@ import { getGuestMode } from "@/lib/auth/guest";
 import { checkRateLimit } from "@/lib/rate-limiter";
 import { setOrderAccessCookie } from "@/lib/cliente/order-access";
 import {
-  cartaDisponibilePerProdotto,
-  providerDisponibilePerProdotto,
-} from "@/lib/pagamenti/config";
-import {
   annullaIntentoCheckout,
   costruisciPayloadIntentoCheckout,
   creaIntentoCheckout,
   creaSessionePagamentoPerIntento,
   providerDaMetodoPagamento,
 } from "@/lib/pagamenti/sessioni";
+import { metodoDisponibilePerProdotto } from "@/lib/pagamenti/metodi-pubblici";
 import {
   isCarrierCodice,
   isServizioValidoPerCarrier,
@@ -121,17 +118,16 @@ export async function POST(request: Request) {
   // ── CONTRATTO BUY-NOW: metodo di pagamento esplicito e OBBLIGATORIO ─────
   // Per la modalità spedizione il metodo deve essere SCELTO DALL'UTENTE:
   // mai default/fallback (né bonifico, né carta, né klarna). Tre casi:
-  //   1) valore non ammesso ("paypal", "qualcosa", ...) → 422, zero ordini;
+  //   1) valore non ammesso → 422, zero ordini;
   //   2) assente / null / "" con modalità spedizione       → 422, zero ordini;
   //   3) valido → si prosegue con disponibilità + pre-flight provider.
   const metodoScelto = spedizioneRaw.metodoPagamento;
   const metodoValido =
     metodoScelto === "carta" ||
     metodoScelto === "bonifico" ||
-    metodoScelto === "klarna" ||
-    metodoScelto === "scalapay" ||
-    metodoScelto === "paypal";
-  // Valore PRESENTE ma non ammesso ("paypal", "qualcosa", ...): rifiuto
+    metodoScelto === "bonifico_istantaneo" ||
+    metodoScelto === "klarna";
+  // Valore PRESENTE ma non ammesso: rifiuto
   // sempre, indipendentemente dalla modalità → mai un ordine con un metodo
   // che il server non conosce.
   if (
@@ -163,7 +159,7 @@ export async function POST(request: Request) {
   const vuoleCarta =
     modalita === "spedizione" && spedizioneRaw.metodoPagamento === "carta";
   if (vuoleCarta) {
-    const cartaPronta = await cartaDisponibilePerProdotto(prodottoIdRaw);
+    const cartaPronta = await metodoDisponibilePerProdotto(prodottoIdRaw, "carta");
     if (!cartaPronta) {
       return apiError(
         "CARTA_NON_DISPONIBILE",
@@ -173,14 +169,14 @@ export async function POST(request: Request) {
     }
   }
 
-  // ── PRE-FLIGHT "klarna" (stessa regola di carta): se il negozio del
-  // prodotto non ha Klarna configurato e attivo, il checkout rifiuta PRIMA
-  // di creare l'ordine. Nessun fallback automatico su Stripe: se Klarna non
-  // è disponibile l'utente riceve un errore chiaro e può scegliere altro.
+  // ── B2 — PRE-FLIGHT "klarna" (metodo → Stripe): disponibile SOLO se il
+  // metodo è attivato dal negozio E la capability klarna_payments è ACTIVE
+  // sul connected account (isMetodoDisponibile). Nessun fallback: se Klarna
+  // non è disponibile l'utente riceve un errore chiaro e può scegliere altro.
   const vuoleKlarna =
     modalita === "spedizione" && spedizioneRaw.metodoPagamento === "klarna";
   if (vuoleKlarna) {
-    const klarnaPronta = await providerDisponibilePerProdotto(prodottoIdRaw, "klarna");
+    const klarnaPronta = await metodoDisponibilePerProdotto(prodottoIdRaw, "klarna");
     if (!klarnaPronta) {
       return apiError(
         "KLARNA_NON_DISPONIBILE",
@@ -190,34 +186,14 @@ export async function POST(request: Request) {
     }
   }
 
-  // ── PRE-FLIGHT "paypal" (stessa regola di carta/klarna): se il negozio del
-  // prodotto non ha PayPal configurato e attivo, il checkout rifiuta PRIMA di
-  // creare l'ordine. Nessun fallback automatico su Stripe/Klarna: se PayPal
-  // non è disponibile l'utente riceve un errore chiaro e può scegliere altro.
-  const vuolePaypal =
-    modalita === "spedizione" && spedizioneRaw.metodoPagamento === "paypal";
-  if (vuolePaypal) {
-    const paypalPronta = await providerDisponibilePerProdotto(prodottoIdRaw, "paypal");
-    if (!paypalPronta) {
+  const vuoleBonificoIstantaneo =
+    modalita === "spedizione" && spedizioneRaw.metodoPagamento === "bonifico_istantaneo";
+  if (vuoleBonificoIstantaneo) {
+    const pronto = await metodoDisponibilePerProdotto(prodottoIdRaw, "bonifico_istantaneo");
+    if (!pronto) {
       return apiError(
-        "PAYPAL_NON_DISPONIBILE",
-        "Il pagamento con PayPal non è disponibile per questo negozio.",
-        422
-      );
-    }
-  }
-
-  // ── PRE-FLIGHT "scalapay" (stessa regola di carta/klarna/paypal): se il
-  // negozio del prodotto non ha Scalapay configurato e attivo, il checkout
-  // rifiuta PRIMA di creare l'ordine. Nessun fallback automatico.
-  const vuoleScalapay =
-    modalita === "spedizione" && spedizioneRaw.metodoPagamento === "scalapay";
-  if (vuoleScalapay) {
-    const scalapayPronta = await providerDisponibilePerProdotto(prodottoIdRaw, "scalapay");
-    if (!scalapayPronta) {
-      return apiError(
-        "SCALAPAY_NON_DISPONIBILE",
-        "Il pagamento con Scalapay non è disponibile per questo negozio.",
+        "BONIFICO_ISTANTANEO_NON_DISPONIBILE",
+        "Il bonifico istantaneo non è disponibile per questo negozio.",
         422
       );
     }
@@ -294,21 +270,10 @@ export async function POST(request: Request) {
             note: typeof spedizioneRaw.note === "string" ? spedizioneRaw.note : null,
             carrier: carrier as CarrierCodice,
             servizio: servizio as ServizioCodice,
-            // NOTA (coerenza con /api/cliente/ordini/carrello F2.2): le RPC
-            // crea_ordine/crea_ordine_carrello accettano solo
-            // carta/paypal/bonifico come metodo_pagamento. Il flusso klarna
-            // salva 'carta' nella colonna e marca l'ordine con
-            // payment_provider='klarna' (marcatore autoritativo impostato
-            // dall'orchestratore al momento della sessione). PayPal è ammesso
-            // dalla RPC → 'paypal' viene salvato direttamente. Nessuna
-            // migration. Mai un default: un metodo assente è già stato
-            // rifiutato con 422.
+            // Le RPC storiche persistono i metodi online Stripe come carta;
+            // bonifico manuale resta il solo metodo non-gateway.
             metodoPagamento:
-              spedizioneRaw.metodoPagamento === "bonifico"
-                ? "bonifico"
-                : spedizioneRaw.metodoPagamento === "paypal"
-                  ? "paypal"
-                  : "carta",
+              spedizioneRaw.metodoPagamento === "bonifico" ? "bonifico" : "carta",
           }
         : null,
     fatturazione:
@@ -318,7 +283,7 @@ export async function POST(request: Request) {
   };
 
   // ── P1 PAYMENT-FIRST — metodi ONLINE: INTENTO, mai un ordine ────────────
-  // Stripe/PayPal/Klarna/Scalapay NON creano più una riga in `ordini` prima
+  // I metodi online Stripe NON creano più una riga in `ordini` prima
   // del pagamento: la RPC checkout_intento_crea valida, RISERVA lo stock
   // (quantita_riservata) e crea la sessione con ordine_id = NULL; poi la
   // sessione del provider viene creata sull'intento. Se la creazione della

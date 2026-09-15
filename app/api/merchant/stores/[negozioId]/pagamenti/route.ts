@@ -1,6 +1,6 @@
 import { apiError, apiOk } from "@/lib/api/response";
 import { requireApiArea } from "@/lib/auth/session-area";
-import { canManageStore } from "@/lib/merchant/data";
+import { canManageStorePayments } from "@/lib/merchant/data";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import {
   getPaymentsEncryptionKey,
@@ -64,8 +64,14 @@ export async function GET(
   const user = sessione.user;
 
   const { negozioId } = await context.params;
-  const allowed = await canManageStore(user.id, negozioId);
-  if (!allowed) return apiError("FORBIDDEN", "Non puoi gestire questo negozio.", 403);
+  const allowed = await canManageStorePayments(user.id, negozioId);
+  if (!allowed) {
+    return apiError(
+      "PAYMENTS_MODULE_INACTIVE",
+      "La configurazione dei pagamenti è disponibile solo per i negozi che vendono prodotti.",
+      403
+    );
+  }
 
   const supabase = createAdminSupabaseClient();
 
@@ -84,26 +90,14 @@ export async function GET(
 
     if (error) {
       console.error(`[api-merchant-pagamenti] lettura provider ${provider}: ${error.message}`);
-      providerRisultati.push({
-        provider,
-        presente: false,
-        attivo: false,
-        test_mode: true,
-        client_id: null,
-        payee_email: null,
-        iban: null,
-        account_id: null,
-        account_name: null,
-        onboarding_status: null,
-        payouts_enabled: false,
-        charges_enabled: false,
-        has_secret: false,
-      });
-      continue;
+      return apiError("PAYMENTS_CONFIG_READ_FAILED", "Impossibile caricare la configurazione dei pagamenti.", 500);
     }
 
     const esito = data as { ok?: boolean; presente?: boolean } | null;
-    const presente = esito?.ok === true && esito.presente === true;
+    if (!esito || esito.ok !== true) {
+      return apiError("PAYMENTS_CONFIG_READ_FAILED", "Impossibile caricare la configurazione dei pagamenti.", 500);
+    }
+    const presente = esito.presente === true;
     const pubblici = credenzialiPubbliche(
       presente
         ? (data as Record<string, unknown>)
@@ -122,16 +116,25 @@ export async function GET(
       onboarding_status: pubblici?.onboarding_status ?? null,
       payouts_enabled: pubblici?.payouts_enabled ?? false,
       charges_enabled: pubblici?.charges_enabled ?? false,
+      klarna_enabled: pubblici?.klarna_enabled ?? false,
+      merchant_id: pubblici?.merchant_id ?? null,
+      payments_receivable: pubblici?.payments_receivable ?? false,
+      primary_email_confirmed: pubblici?.primary_email_confirmed ?? false,
       has_secret: pubblici?.has_secret ?? false,
     });
   }
 
   // ── Metodi attivi per il checkout ─────────────────────────────────────
-  const { data: metodiRow } = await supabase
+  const { data: metodiRow, error: metodiError } = await supabase
     .from("negozio_metodi_pagamento")
     .select("metodo, attivo, ordine_mostra")
     .eq("negozio_id", negozioId)
     .order("ordine_mostra", { ascending: true });
+
+  if (metodiError) {
+    console.error(`[api-merchant-pagamenti] lettura metodi fallita: ${metodiError.message}`);
+    return apiError("PAYMENTS_CONFIG_READ_FAILED", "Impossibile caricare la configurazione dei pagamenti.", 500);
+  }
 
   const metodiPresenti = new Map<string, { attivo: boolean; ordine_mostra: number }>();
   for (const m of metodiRow ?? []) {
@@ -165,8 +168,14 @@ export async function PUT(
   const user = sessione.user;
 
   const { negozioId } = await context.params;
-  const allowed = await canManageStore(user.id, negozioId);
-  if (!allowed) return apiError("FORBIDDEN", "Non puoi gestire questo negozio.", 403);
+  const allowed = await canManageStorePayments(user.id, negozioId);
+  if (!allowed) {
+    return apiError(
+      "PAYMENTS_MODULE_INACTIVE",
+      "La configurazione dei pagamenti è disponibile solo per i negozi che vendono prodotti.",
+      403
+    );
+  }
 
   let body: BodyPagamenti;
   try {

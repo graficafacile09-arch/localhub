@@ -1,0 +1,75 @@
+{
+  "snapshot_name": "fase13a-pre-provision-v2",
+  "snapshot_version": 2,
+  "target": "http://127.0.0.1:54321",
+  "captured_at": "2026-09-04",
+  "credentials_included": false,
+  "auth_users": [
+    {
+      "email": "admin.test@localhub.it",
+      "legacy_emails": [],
+      "state": "absent_before_provisioning"
+    },
+    {
+      "email": "commerciante-a.test@localhub.it",
+      "legacy_emails": ["merchant-a.test@localhub.it"],
+      "state": "absent_before_provisioning"
+    },
+    {
+      "email": "commerciante-b.test@localhub.it",
+      "legacy_emails": ["merchant-b.test@localhub.it"],
+      "state": "absent_before_provisioning"
+    },
+    {
+      "email": "customer-a.test@localhub.it",
+      "legacy_emails": [],
+      "state": "absent_before_provisioning"
+    },
+    {
+      "email": "commerciante-c.test@localhub.it",
+      "legacy_emails": ["merchant-c.test@localhub.it"],
+      "state": "absent_before_provisioning"
+    },
+    {
+      "email": "commerciante-d.test@localhub.it",
+      "legacy_emails": ["merchant-d.test@localhub.it"],
+      "state": "absent_before_provisioning"
+    },
+    {
+      "email": "customer-b.test@localhub.it",
+      "legacy_emails": [],
+      "state": "absent_before_provisioning"
+    },
+    {
+      "email": "customer-c.test@localhub.it",
+      "legacy_emails": [],
+      "state": "absent_before_provisioning"
+    }
+  ],
+  "user_roles": {
+    "state": "no_target_rows_before_provisioning",
+    "rows": []
+  },
+  "owned_stores": {
+    "state": "no_target_owner_rows_before_provisioning",
+    "rows": [],
+    "mutable_fields": ["nome"]
+  },
+  "qa_or_test_named_stores": {
+    "state": "none_found_before_provisioning",
+    "rows": []
+  },
+  "admin_setting": {
+    "key": "admin_email",
+    "state": "absent_before_provisioning",
+    "row": null
+  },
+  "restore_contract": {
+    "created_auth_users": "delete only users matching this snapshot's target emails and absent-before state",
+    "created_user_roles": "delete only roles for users created during this provisioning run",
+    "created_stores": "delete only stores created for users absent before this snapshot",
+    "modified_stores": "none in the pre-provisioning baseline",
+    "admin_setting": "remove only the admin_email row created after this snapshot",
+    "fixture_data": "handled later by setup-qa-fixtures.mjs and its separate snapshot"
+  }
+}

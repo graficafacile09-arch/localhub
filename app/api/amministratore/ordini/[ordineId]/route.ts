@@ -34,8 +34,12 @@ export async function GET(
     }
     return apiOk({ ordine });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Errore sconosciuto.";
-    return apiError("ORDINE_READ_FAILED", message, 500);
+    console.error("[/api/amministratore/ordini/[ordineId]] Errore:", err);
+    return apiError(
+      "ORDINE_READ_FAILED",
+      "Impossibile caricare il dettaglio dell'ordine. Riprova tra poco.",
+      500
+    );
   }
 }
 

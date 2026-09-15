@@ -38,7 +38,7 @@ export async function GET(request: Request) {
     const risultato = await getIncassiAdmin(filtri);
     return apiOk(risultato);
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Errore sconosciuto.";
-    return apiError("FETCH_FAILED", message, 500);
+    console.error("[/api/amministratore/incassi] Errore:", err);
+    return apiError("FETCH_FAILED", "Impossibile caricare gli incassi. Riprova tra poco.", 500);
   }
 }

@@ -71,7 +71,7 @@ BEGIN
       -- Fashion Style → Abbigliamento (attività reale: boutique)
       ('1f90b145-3acd-4cc1-b365-dfaac944da6d', 'Abbigliamento')
     ) AS m(negozio_id, categoria_ufficiale)
-   WHERE n.id = m.negozio_id;
+   WHERE n.id = m.negozio_id::uuid;
   GET DIAGNOSTICS n_assegnati = ROW_COUNT;
 
   RAISE NOTICE 'Normalizzazione: % negozi demo aggiornati', n_assegnati;

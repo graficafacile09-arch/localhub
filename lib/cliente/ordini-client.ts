@@ -35,7 +35,7 @@ export type CreaOrdinePayload = {
     /** Servizio del corriere (standard | express | online | locale). */
     servizio: ServizioCodice;
     /** Metodo SCELTO ESPLICITAMENTE dall'utente (il server rifiuta un assente). */
-    metodoPagamento: "carta" | "bonifico" | "klarna" | "scalapay" | "paypal";
+    metodoPagamento: "carta" | "klarna" | "bonifico_istantaneo" | "bonifico";
   } | null;
   /** Indirizzo di fatturazione opzionale (solo spedizione). */
   fatturazione?: {
@@ -59,7 +59,7 @@ export type EsitoApi =
       numero: string;
       giaEsistente: boolean;
       /** FASE F1/F2.5: presente quando il checkout apre un gateway
-       * (carta → Stripe, klarna → Klarna): il client reindirizza a redirectUrl. */
+       * (carta/Klarna/bonifico istantaneo → Stripe): il client reindirizza a redirectUrl. */
       pagamento?: { redirectUrl?: string } | null;
     }
   | {

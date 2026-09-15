@@ -8,13 +8,8 @@
  *      indipendentemente dalla configurazione del negozio.
  *
  *   B) DISPONIBILITÀ per il singolo negozio — se il negozio può DAVVERO
- *      processare quel metodo. Calcolata con isProviderProntoPerNegozio()
- *      (configurazione gateway reale, attiva, con webhook secret):
- *        - carta    → Stripe configurato e attivo;
- *        - paypal   → PayPal configurato e attivo (client id + secret + webhook id);
- *        - klarna   → Klarna configurato e attivo;
- *        - scalapay → Scalapay configurato e attivo (sola API key);
- *        - bonifico → SEMPRE disponibile (metodo manuale, nessun gateway).
+ *      processare quel metodo. I metodi online usano esclusivamente Stripe;
+ *      il bonifico manuale non richiede un gateway.
  *
  * Ogni voce espone il flag `disponibile`. Nessun fallback automatico, nessun
  * metodo pre-selezionato, nessun secret letto o esposto (solo dati pubblici
@@ -23,7 +18,7 @@
  */
 
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
-import { isProviderProntoPerNegozio } from "./config";
+import { getStripeConnectAccount } from "./config";
 import {
   CATALOGO_METODI_PAGAMENTO,
   type MetodoPagamento,
@@ -51,7 +46,58 @@ export type EsitoMetodiPubblici =
   | { ok: true; metodi: MetodoPagamentoCheckout[] }
   | { ok: false; errore: string };
 
-/** Legge iban/payee_email del provider bonifico (senza decifratura). */
+/**
+ * B2 — Disponibilità REAL per-metodo per un negozio (fail-closed):
+ *
+ *   carta    → connected account pronto (charges+payouts) E attivo
+ *              (metodo 'carta' in negozio_metodi_pagamento);
+ *   klarna   → connected account pronto E capability klarna_payments ACTIVE
+ *              (flag B1 klarna_enabled) E metodo 'klarna' attivo;
+ *   bonifico_istantaneo → connected account pronto e metodo attivo;
+ *   bonifico → sempre disponibile (nessun gateway).
+ *
+ * Solo "active" abilita: requested/pending/inactive/restricted → false.
+ */
+export async function isMetodoDisponibile(
+  negozioId: string,
+  metodo: string,
+  _opts?: { importo?: number }
+): Promise<boolean> {
+  if (!negozioId) return false;
+
+  if (metodo === "bonifico") return true;
+
+  if (metodo === "carta" || metodo === "klarna" || metodo === "bonifico_istantaneo") {
+    // 1. Il metodo deve essere ATTIVATO dal negozio
+    //    (negozio_metodi_pagamento.attivo = true).
+    if (!(await metodoAttivatoDalNegozio(negozioId, metodo))) return false;
+    // 2. Il connected account Stripe deve essere PRONTO (charges+payouts).
+    const connect = await getStripeConnectAccount(negozioId);
+    if (!connect || !connect.chargesEnabled || !connect.payoutsEnabled) return false;
+    // 3. Gating per capability (stato REALE Stripe, fail-closed).
+    if (metodo === "klarna" && !connect.klarnaEnabled) return false;
+    return true;
+  }
+
+  return false;
+}
+
+/** Metodo attivato dal merchant (negozio_metodi_pagamento.attivo = true). */
+async function metodoAttivatoDalNegozio(negozioId: string, metodo: string): Promise<boolean> {
+  try {
+    const db = createAdminSupabaseClient();
+    const { data, error } = await db
+      .from("negozio_metodi_pagamento")
+      .select("metodo")
+      .eq("negozio_id", negozioId)
+      .eq("metodo", metodo)
+      .eq("attivo", true)
+      .limit(1);
+    return !error && (data?.length ?? 0) > 0;
+  } catch {
+    return false;
+  }
+}
 async function datiBonifico(
   negozioId: string
 ): Promise<{ iban: string | null; payeeEmail: string | null; configurato: boolean }> {
@@ -90,10 +136,8 @@ async function datiBonifico(
  *
  * - bonifico: `disponibile = true` (metodo base, non dipende da gateway);
  *   se configurato mostra le coordinate, altrimenti "da concordare".
- * - carta/paypal/klarna: `disponibile = true` SOLO se il metodo è attivo in
- *   `negozio_metodi_pagamento` E il relativo gateway è pronto
- *   (isProviderProntoPerNegozio). Altrimenti restano nel catalogo con
- *   `disponibile = false` (mai mostrati come funzionanti, mai fallback).
+ * - carta/klarna/bonifico_istantaneo: `disponibile = true` SOLO se il metodo
+ *   è attivo e il connected account Stripe è pronto.
  */
 export async function getMetodiPagamentoPubblici(
   negozioId: string
@@ -150,7 +194,8 @@ export async function getMetodiPagamentoPubblici(
 /**
  * Disponibilità reale di UNA voce di catalogo per un negozio.
  * - senza gateway (bonifico): sempre true;
- * - con gateway: true SOLO se attivato dal merchant E provider pronto.
+ * - con gateway Stripe: true SOLO se il metodo è attivo e il connected account
+ *   è pronto; Klarna richiede inoltre la capability Stripe attiva.
  */
 async function disponibilitaVoce(
   voce: VoceCatalogoMetodo,
@@ -160,7 +205,34 @@ async function disponibilitaVoce(
   if (!voce.richiedeGateway) return true;
   if (!attivi.includes(voce.metodo)) return false;
   if (!voce.provider) return false;
-  return isProviderProntoPerNegozio(negozioId, voce.provider);
+  return isMetodoDisponibile(negozioId, voce.metodo);
+}
+
+/**
+ * B2 — TRUE se il prodotto appartiene a un negozio che può accettare il
+ * METODO richiesto (carta/klarna/bonifico_istantaneo/bonifico). PRE-FLIGHT
+ * usato dalle route checkout PRIMA di creare l'intento: il client non può
+ * mai selezionare un metodo non realmente disponibile (defense in depth;
+ * la UI già filtra i metodi). Fail-closed: errore DB → false.
+ */
+export async function metodoDisponibilePerProdotto(
+  prodottoId: string,
+  metodo: string,
+  _opts?: { importo?: number }
+): Promise<boolean> {
+  if (!prodottoId || !/^\d+$/.test(String(prodottoId))) return false;
+  try {
+    const db = createAdminSupabaseClient();
+    const { data } = await db
+      .from("prodotti")
+      .select("negozio_id")
+      .eq("id", Number(prodottoId))
+      .single();
+    if (!data?.negozio_id) return false;
+    return isMetodoDisponibile(String(data.negozio_id), metodo, _opts);
+  } catch {
+    return false;
+  }
 }
 
 /**

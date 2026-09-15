@@ -63,14 +63,15 @@ export default async function AdminOrdineDettaglioPage({
   try {
     ordine = await getOrdineAdmin(ordineId);
   } catch (err) {
-    errore = err instanceof Error ? err.message : "Errore sconosciuto";
+    console.error("[admin-ordine-dettaglio] Errore lettura ordine:", err);
+    errore = "errore";
   }
 
   if (errore) {
     return (
       <MerchantEmptyState
         title="Impossibile caricare l'ordine"
-        description={errore}
+        description="Non è stato possibile caricare il dettaglio dell'ordine. Riprova tra qualche istante."
         action={
           <Link
             href="/amministratore/ordini"
@@ -244,7 +245,7 @@ export default async function AdminOrdineDettaglioPage({
             trackingUrl={ordine.trackingUrl}
             consegnaStimata={ordine.consegnaStimata}
             metodoSpedizione={ordine.metodoSpedizione}
-            metodoPagamento={ordine.metodoPagamento as "carta" | "paypal" | "bonifico" | "klarna" | null}
+            metodoPagamento={ordine.metodoPagamento as "carta" | "klarna" | "bonifico_istantaneo" | "bonifico" | null}
             paymentProvider={ordine.paymentProvider}
           />
 

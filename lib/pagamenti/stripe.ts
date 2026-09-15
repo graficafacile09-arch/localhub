@@ -83,6 +83,12 @@ function costruisciLineItems(
   ];
 }
 
+/** Metodi supportati dalla Checkout Session Stripe. */
+const PAYMENT_METHOD_TYPES: Stripe.Checkout.SessionCreateParams.PaymentMethodType[] = [
+  "card",
+  "klarna",
+];
+
 /** Errore applicativo del gateway (mai esposto al client in chiaro). */
 export class PagamentoGatewayError extends Error {
   codice: string;
@@ -183,46 +189,46 @@ export class GatewayStripe implements PaymentGateway {
 
     const expiresAt = new Date(Date.now() + PAYMENT_SESSION_TTL_MS);
 
-    const session = await stripe.checkout.sessions.create({
-      mode: "payment",
-      // Dynamic Payment Methods: omettendo `payment_method_types`, Stripe
-      // Checkout mostra i metodi abilitati nel Dashboard (carta di default)
-      // più i wallet Apple Pay / Google Pay quando disponibili e configurati.
-      // FASE F2.3 — un line_item per riga (prezzo/quantità dagli snapshot
-      // del DB via ContestoCheckout.righe): il client non ha alcun controllo
-      // su prezzi, quantità, totale o spedizione. Senza righe nel contesto
-      // resta il fallback legacy (line item unico sul totale del DB).
-      line_items: costruisciLineItems(ctx),
-      success_url: `${ctx.returnUrl}${ctx.returnUrl.includes("?") ? "&" : "?"}esito=ok`,
-      cancel_url: `${ctx.cancelUrl}${ctx.cancelUrl.includes("?") ? "&" : "?"}esito=annullato`,
-      client_reference_id: ctx.ordineId,
-      metadata: {
-        ordine_id: ctx.ordineId,
-        negozio_id: ctx.negozioId,
-        numero: ctx.numeroOrdine,
-      },
-      expires_at: Math.floor(expiresAt.getTime() / 1000),
-      // Tassonomia obbligatoria per Stripe: attività commerciale locale.
-      // Stripe Connect (direct charge): application_fee_amount con la
-      // commissione SNAPSHOT dell'ordine (in centesimi) — la piattaforma
-      // trattiene la commissione a monte, il resto incassa il venditore.
-      payment_intent_data: {
-        description: `Ordine ${ctx.numeroOrdine} — ${ctx.negozioId}`,
-        // Metadata sul PaymentIntent: consente al webhook di riconciliare
-        // eventi `payment_intent.*` (es. payment_failed) con l'ordine anche
-        // prima che la sessione venga marcata pagata (l'ordine è altrimenti
-        // irraggiungibile perché payment_transaction_id è valorizzato solo
-        // su checkout.session.completed). Mai dati sensibili.
+    const session = await stripe.checkout.sessions.create(
+      {
+        mode: "payment",
+        // Tutti i pagamenti online sono centralizzati su Stripe.
+        payment_method_types: PAYMENT_METHOD_TYPES,
+        // FASE F2.3 — un line_item per riga (prezzo/quantità dagli snapshot
+        // del DB via ContestoCheckout.righe): il client non ha alcun controllo
+        // su prezzi, quantità, totale o spedizione. Senza righe nel contesto
+        // resta il fallback legacy (line item unico sul totale del DB).
+        line_items: costruisciLineItems(ctx),
+        success_url: `${ctx.returnUrl}${ctx.returnUrl.includes("?") ? "&" : "?"}esito=ok`,
+        cancel_url: `${ctx.cancelUrl}${ctx.cancelUrl.includes("?") ? "&" : "?"}esito=annullato`,
+        client_reference_id: ctx.ordineId,
         metadata: {
           ordine_id: ctx.ordineId,
           negozio_id: ctx.negozioId,
           numero: ctx.numeroOrdine,
         },
-        ...(this.commissioneCentesimi(ctx, cred) !== undefined
-          ? { application_fee_amount: this.commissioneCentesimi(ctx, cred) as number }
-          : {}),
-      },
-    }, richiestaPer(cred));
+        expires_at: Math.floor(expiresAt.getTime() / 1000),
+        // Tassonomia obbligatoria per Stripe: attività commerciale locale.
+        // Stripe Connect (direct charge): application_fee_amount con la
+        // commissione SNAPSHOT dell'ordine (in centesimi) — la piattaforma
+        // trattiene la commissione a monte, il resto incassa il venditore.
+        payment_intent_data: {
+          description: `Ordine ${ctx.numeroOrdine} — ${ctx.negozioId}`,
+          // Metadata sul PaymentIntent: consente al webhook di riconciliare
+          // eventi `payment_intent.*` (es. payment_failed) con l'ordine anche
+          // prima che la sessione venga marcata pagata (l'ordine è altrimenti
+          // irraggiungibile perché payment_transaction_id è valorizzato solo
+          // su checkout.session.completed). Mai dati sensibili.
+          metadata: {
+            ordine_id: ctx.ordineId,
+            negozio_id: ctx.negozioId,
+            numero: ctx.numeroOrdine,
+          },
+          ...(this.commissioneCentesimi(ctx, cred) !== undefined
+            ? { application_fee_amount: this.commissioneCentesimi(ctx, cred) as number }
+            : {}),
+        },
+      }, richiestaPer(cred));
 
     if (!session.url) {
       throw new PagamentoGatewayError(
@@ -344,12 +350,15 @@ export class GatewayStripe implements PaymentGateway {
   /** Recupera il Charge e tutti i Refund necessari alla riconciliazione webhook. */
   async refundsDaCharge(
     chargeId: string,
-    cred: CredenzialiGateway
+    cred: CredenzialiGateway,
+    options?: { includePaymentIntentMetadata?: boolean }
   ): Promise<{
     paymentIntent: string | null;
+    amount: number;
     amountRefunded: number;
     amountCaptured: number;
     currency: string;
+    paymentIntentMetadata?: Record<string, string>;
     refunds: Stripe.Refund[];
   }> {
     const stripe = clientStripe(cred, this.opts);
@@ -362,11 +371,16 @@ export class GatewayStripe implements PaymentGateway {
       typeof charge.payment_intent === "string"
         ? charge.payment_intent
         : charge.payment_intent?.id ?? null;
+    const paymentIntentObject = options?.includePaymentIntentMetadata && paymentIntent
+      ? await stripe.paymentIntents.retrieve(paymentIntent, undefined, richiestaPer(cred))
+      : null;
     return {
       paymentIntent,
+      amount: charge.amount,
       amountRefunded: charge.amount_refunded,
       amountCaptured: charge.amount_captured,
       currency: charge.currency,
+      ...(paymentIntentObject ? { paymentIntentMetadata: { ...paymentIntentObject.metadata } } : {}),
       refunds: refunds.data,
     };
   }

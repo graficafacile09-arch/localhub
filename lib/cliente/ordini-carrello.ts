@@ -87,7 +87,7 @@ export type CheckoutCarrelloInput = {
     carrier: CarrierCodice;
     /** Servizio del corriere (standard | express | online | locale). */
     servizio: ServizioCodice;
-    metodoPagamento: "carta" | "paypal" | "klarna" | "bonifico";
+    metodoPagamento: "carta" | "klarna" | "bonifico_istantaneo" | "bonifico";
   } | null;
   /** Indirizzo di fatturazione opzionale (solo modalità spedizione). */
   fatturazione?: FatturazioneCheckout | null;
@@ -256,8 +256,8 @@ function validaCheckout(input: CheckoutCarrelloInput): { codice: string; messagg
     }
     if (
       sp.metodoPagamento !== "carta" &&
-      sp.metodoPagamento !== "paypal" &&
       sp.metodoPagamento !== "klarna" &&
+      sp.metodoPagamento !== "bonifico_istantaneo" &&
       sp.metodoPagamento !== "bonifico"
     ) {
       return { codice: "VALIDATION_ERROR", messaggio: "Metodo di pagamento non valido." };
@@ -634,14 +634,13 @@ export async function creaOrdiniCarrello(
   }
 
   // ── Notifiche (BEST-EFFORT, mai bloccano; solo ordini REALMENTE nuovi) ──
-  // Stesso pattern di creaOrdine: con pagamento online (carta/klarna/paypal/
-  // scalapay — le RPC salvano 'carta' per klarna/scalapay) email E WhatsApp
+  // Stesso pattern di creaOrdine: con pagamento online via Stripe email E WhatsApp
   // partono SOLO DOPO la conferma del webhook (F2.3/F2.x, mai duplicata);
   // per gli altri metodi (bonifico ecc.) partono subito qui.
   const pagamentoOnline =
     input.spedizione?.metodoPagamento === "carta" ||
     input.spedizione?.metodoPagamento === "klarna" ||
-    input.spedizione?.metodoPagamento === "paypal";
+    input.spedizione?.metodoPagamento === "bonifico_istantaneo";
   for (const ordine of ordini) {
     if (ordine.giaEsistente) continue;
     if (!pagamentoOnline) {

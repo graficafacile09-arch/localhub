@@ -1,0 +1,46 @@
+"use client";
+
+import { useEffect } from "react";
+import { AlertTriangle } from "lucide-react";
+import BackButton from "@/components/BackButton";
+
+/**
+ * Error boundary della sezione Prodotti Venditore.
+ * Mostra un messaggio professionale e consente di riprovare.
+ */
+export default function ProdottiVenditoreError({
+  error,
+  unstable_retry,
+}: {
+  error: Error & { digest?: string };
+  unstable_retry: () => void;
+}) {
+  useEffect(() => {
+    console.error(error);
+  }, [error]);
+
+  return (
+    <div className="card p-10 text-center">
+      <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-blue-50">
+        <AlertTriangle className="h-8 w-8 text-blue-500" aria-hidden />
+      </span>
+      <h1 className="mt-5 text-2xl font-black tracking-tight text-slate-900">
+        Qualcosa è andato storto
+      </h1>
+      <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-slate-600">
+        Si è verificato un errore durante il caricamento dei prodotti.
+        Riprova tra qualche istante.
+      </p>
+      <button
+        type="button"
+        onClick={unstable_retry}
+        className="btn-cta mt-6 px-5 py-2.5 text-sm"
+      >
+        Riprova
+      </button>
+      <div className="mt-3">
+        <BackButton label="Torna alla dashboard" />
+      </div>
+    </div>
+  );
+}

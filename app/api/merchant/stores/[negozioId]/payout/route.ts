@@ -32,8 +32,8 @@ export async function GET(
     ]);
     return apiOk({ payout: storico, riepilogo });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Errore sconosciuto.";
-    return apiError("FETCH_FAILED", message, 500);
+    console.error("[/api/merchant/stores/[negozioId]/payout] Errore:", err);
+    return apiError("FETCH_FAILED", "Impossibile caricare i payout. Riprova tra poco.", 500);
   }
 }
 

@@ -160,7 +160,9 @@ export default function RecuperaOrdiniPage() {
 
       if (!res.ok || !json.success || !json.data?.ordini) {
         setErrore(
-          json.error?.message ?? "Nessun ordine trovato con questi dati."
+          res.status === 404
+            ? "Nessun ordine trovato con questi dati."
+            : "Non è stato possibile recuperare gli ordini. Riprova tra poco."
         );
         return;
       }

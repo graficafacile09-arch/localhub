@@ -159,7 +159,8 @@ export async function GET(
   });
 
   if (productsResult.errorMessage) {
-    return apiError("PRODUCTS_FETCH_FAILED", productsResult.errorMessage, 500);
+    console.error("[/api/merchant/stores/[negozioId]/products] Errore lettura prodotti:", productsResult.errorMessage);
+    return apiError("PRODUCTS_FETCH_FAILED", "Impossibile caricare i prodotti. Riprova tra poco.", 500);
   }
 
   return apiOk({

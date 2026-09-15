@@ -1,6 +1,6 @@
 import { apiError, apiOk } from "@/lib/api/response";
 import { requireApiArea } from "@/lib/auth/session-area";
-import { canManageStore } from "@/lib/merchant/data";
+import { canManageStorePayments } from "@/lib/merchant/data";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getSiteUrl } from "@/lib/site";
 import { getStripeConnectAccount } from "@/lib/pagamenti/config";
@@ -48,8 +48,14 @@ export async function POST(request: Request) {
     return apiError("VALIDATION_ERROR", "negozioId mancante.", 422);
   }
 
-  const allowed = await canManageStore(user.id, negozioId);
-  if (!allowed) return apiError("FORBIDDEN", "Non puoi gestire questo negozio.", 403);
+  const allowed = await canManageStorePayments(user.id, negozioId);
+  if (!allowed) {
+    return apiError(
+      "PAYMENTS_MODULE_INACTIVE",
+      "La configurazione dei pagamenti è disponibile solo per i negozi che vendono prodotti.",
+      403
+    );
+  }
 
   try {
     // Nome business del negozio per il prefill dell'account Express.

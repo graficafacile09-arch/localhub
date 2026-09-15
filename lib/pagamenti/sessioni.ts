@@ -29,7 +29,13 @@ import {
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getSiteUrl } from "@/lib/site";
 import { risolviCredenzialiGateway } from "./config";
-import { getGatewayProvider, providerGatewayImplementato, type GatewayRuntimeOptions } from "./registry";
+import { isMetodoDisponibile } from "./metodi-pubblici";
+import {
+  getGatewayProvider,
+  providerGatewayImplementato,
+  providerDaMetodoPagamento,
+  type GatewayRuntimeOptions,
+} from "./registry";
 import type { GatewayStripeOptions } from "./stripe";
 import type { ContestoCheckout, RigaCheckout } from "./types";
 import { PAYMENT_SESSION_TTL_MS } from "./expiration";
@@ -61,7 +67,7 @@ type OrdinePerSessione = {
   costoSpedizione: number;
   /** Commissione piattaforma snapshot (ordini.commissione_importo), per Stripe Connect. */
   commissioneImporto: number;
-  /** Dati consumatore (Scalapay): snapshot DB dell'ordine. */
+  /** Dati consumatore snapshot dell'ordine. */
   consumer: NonNullable<ContestoCheckout["consumer"]>;
   /** Righe dell'ordine (snapshot DB): un line_item per riga (F2.3). */
   righe: RigaCheckout[];
@@ -246,7 +252,7 @@ export async function creaSessionePagamentoPerOrdine(
 
   // ── Config del provider sul negozio (fail-closed) ───────────────────────
   // Gestisce entrambi i modelli: Stripe Connect (account collegato) e
-  // legacy/direct (secret + webhook secret per Stripe manuale/PayPal/Klarna).
+  // legacy/direct Stripe (secret + webhook secret).
   const risolto = await risolviCredenzialiGateway(ordine.negozioId, provider);
   if (!risolto.pronto || !risolto.cred) {
     const codice = provider === "stripe" ? "CARTA_NON_DISPONIBILE" : "PAGAMENTO_NON_DISPONIBILE";
@@ -304,7 +310,7 @@ export async function creaSessionePagamentoPerOrdine(
     costoSpedizione: ordine.costoSpedizione,
     // Commissione snapshot (solo Stripe Connect: application_fee_amount).
     commissioneImporto: ordine.commissioneImporto,
-    // Dati consumatore (solo per i gateway che li richiedono, es. Scalapay).
+    // Dati consumatore snapshot per la sessione Stripe.
     consumer: ordine.consumer,
   };
 
@@ -570,14 +576,12 @@ export async function elaboraPagamentiScaduti(limite = 20): Promise<number> {
 // P1 PAYMENT-FIRST — INTENTO DI CHECKOUT (ordine NON ancora creato)
 // ═══════════════════════════════════════════════════════════════════════
 
-/** Dispatch metodo → provider gateway (fail-closed; bonifico → null). */
-export function providerDaMetodoPagamento(metodo: string | undefined | null): string | null {
-  if (metodo === "carta") return "stripe";
-  if (metodo === "klarna") return "klarna";
-  if (metodo === "scalapay") return "scalapay";
-  if (metodo === "paypal") return "paypal";
-  return null;
-}
+/**
+ * Dispatch metodo → provider gateway (fail-closed; bonifico → null).
+ * Tutti i metodi online sono instradati nel gateway Stripe; il bonifico
+ * manuale non crea una sessione provider.
+ */
+export { providerDaMetodoPagamento };
 
 /** HTTP status associato ai codici d'errore dell'intento (RPC). */
 const STATUS_INTENTO_DA_CODICE: Record<string, number> = {
@@ -816,7 +820,7 @@ export async function intentoAutorizzato(
 export type IntentoCheckoutInput = {
   /** Chiave di idempotenza del cliente (≤64, per negozio nel carrello). */
   checkoutKey: string;
-  /** Provider gateway (stripe | paypal | klarna | scalapay). */
+  /** Provider gateway (solo stripe per i metodi online). */
   provider: string;
   modalita: "spedizione";
   righe: Array<{
@@ -981,6 +985,46 @@ export async function creaSessionePagamentoPerIntento(
     };
   }
 
+  // B2 — VERIFICA SERVER-SIDE DEL METODO (mai fidarsi del browser):
+  // il metodo effettivo è quello dello SNAPSHOT dell'intento
+  // (checkout_payload, scritto dalla RPC checkout_intento_crea), non un
+  // valore inviato dal client. Un client non può trasformare carta →    // klarna/bonifico istantaneo modificando la richiesta: il metodo che arriva
+    // qui è quello validato alla creazione dell'intento.
+  const metodoIntento = payload.metodoPagamento ?? null;
+  if (providerEffettivo === "stripe") {
+    // Coerenza provider↔metodo: carta/klarna/bonifico_istantaneo su Stripe.
+    // Un metodo diverso su intento Stripe = snapshot malformato
+    // → fail-closed. Un intento stripe SENZA metodo (legacy/ordine) resta
+    // permesso: il gateway mappa il default carta (retrocompatibilità).
+    if (
+      metodoIntento !== null &&
+      metodoIntento !== "carta" &&
+      metodoIntento !== "klarna" &&
+      metodoIntento !== "bonifico_istantaneo"
+    ) {
+      return {
+        ok: false,
+        codice: "METODO_NON_DISPONIBILE",
+        errore: "Il metodo di pagamento di questo checkout non è disponibile.",
+      };
+    }
+    // Capability gating server-side (indipendente dalla UI): per gli intenti
+    // I metodi Stripe esistono SOLO se il negozio li ha attivati e il
+    // connected account è pronto; Klarna richiede inoltre la capability ACTIVE.
+    if (metodoIntento !== null) {
+      const disponibile = await isMetodoDisponibile(intento.negozioId, metodoIntento, {
+        importo: Number(payload.totale ?? 0),
+      });
+      if (!disponibile) {
+        return {
+          ok: false,
+          codice: "METODO_NON_DISPONIBILE",
+          errore: "Il metodo di pagamento di questo checkout non è disponibile.",
+        };
+      }
+    }
+  }
+
   // Riusa la sessione provider attiva NON scaduta (idempotenza / retry).
   if (intento.redirectUrl) {
     const scaduta = intento.expiresAt
@@ -1020,7 +1064,10 @@ export async function creaSessionePagamentoPerIntento(
     numeroOrdine: riferimento,
     importo: Number(payload.totale ?? 0),
     valuta: "EUR",
-    metodo: providerEffettivo === "stripe" ? "carta" : providerEffettivo,
+    // B2 — il metodo dell'INTENTO (snapshot DB) decide la Checkout Session:
+    // carta → ["card"], klarna → ["klarna"], bonifico_istantaneo → ["pay_by_bank"].
+    // MAI un valore dal client: qui si riflette lo snapshot verificato sopra.
+    metodo: providerEffettivo === "stripe" ? (metodoIntento ?? "carta") : providerEffettivo,
     returnUrl: createOrderConfirmationUrl(siteUrl, checkoutId),
     cancelUrl: createOrderConfirmationUrl(siteUrl, checkoutId),
     righe: payload.righe.map((r) => ({
@@ -1087,8 +1134,11 @@ export type IntentoWebhook = {
   checkoutId: string;
   negozioId: string;
   provider: string;
+  status: string;
   /** Importo autoritativo dello snapshot (pagamenti_sessioni.amount). */
   importo: number;
+  /** Valuta persistita sull'intento (fonte locale per il confronto Stripe). */
+  valuta: string;
 };
 
 /**
@@ -1103,7 +1153,7 @@ export async function intentoDaId(
   const db = createAdminSupabaseClient();
   const { data } = await db
     .from("pagamenti_sessioni")
-    .select("id, negozio_id, provider, amount, status, ordine_id")
+    .select("id, negozio_id, provider, amount, currency, status, ordine_id")
     .eq("id", sessioneId)
     .eq("negozio_id", negozioId)
     .is("ordine_id", null)
@@ -1113,13 +1163,42 @@ export async function intentoDaId(
     checkoutId: String(data.id),
     negozioId: String(data.negozio_id ?? ""),
     provider: String(data.provider ?? ""),
+    status: String(data.status ?? ""),
     importo: Number(data.amount ?? 0),
+    valuta: String(data.currency ?? "EUR"),
+  };
+}
+
+/**
+ * P2 — Cerca un intento Stripe per ID sessione senza prefiltrare il negozio.
+ * Il webhook Connect usa questo percorso per poter confrontare esplicitamente
+ * il negozio dell'intento con l'account collegato presente in event.account.
+ */
+export async function intentoDaIdSenzaNegozio(
+  sessioneId: string
+): Promise<IntentoWebhook | null> {
+  if (!sessioneId) return null;
+  const db = createAdminSupabaseClient();
+  const { data } = await db
+    .from("pagamenti_sessioni")
+    .select("id, negozio_id, provider, amount, currency, status, ordine_id")
+    .eq("id", sessioneId)
+    .is("ordine_id", null)
+    .maybeSingle();
+  if (!data) return null;
+  return {
+    checkoutId: String(data.id),
+    negozioId: String(data.negozio_id ?? ""),
+    provider: String(data.provider ?? ""),
+    status: String(data.status ?? ""),
+    importo: Number(data.amount ?? 0),
+    valuta: String(data.currency ?? "EUR"),
   };
 }
 
 /**
  * P2 — Cerca l'INTENTO tramite il payment reference del provider
- * (PayPal/Klarna/Scalapay: pagamenti_sessioni.payment_id con ordine_id NULL).
+ * (Stripe: pagamenti_sessioni.payment_id con ordine_id NULL).
  */
 export async function intentoDaPaymentId(
   paymentId: string,
@@ -1130,7 +1209,7 @@ export async function intentoDaPaymentId(
   const db = createAdminSupabaseClient();
   const { data } = await db
     .from("pagamenti_sessioni")
-    .select("id, negozio_id, provider, amount, status, ordine_id")
+    .select("id, negozio_id, provider, amount, currency, status, ordine_id")
     .eq("provider", provider)
     .eq("payment_id", paymentId)
     .eq("negozio_id", negozioId)
@@ -1142,7 +1221,9 @@ export async function intentoDaPaymentId(
     checkoutId: String(row.id),
     negozioId: String(row.negozio_id ?? ""),
     provider: String(row.provider ?? provider),
+    status: String(row.status ?? ""),
     importo: Number(row.amount ?? 0),
+    valuta: String(row.currency ?? "EUR"),
   };
 }
 

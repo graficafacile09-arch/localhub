@@ -222,7 +222,7 @@ async function main(): Promise<void> {
     check("payment_status no_payment_required rifiutato", validaCheckoutSessionCompletata({ ...valid, paymentStatus: "no_payment_required" }, STORE_ID, base).ok === false);
     check("payment_status mancante rifiutato", validaCheckoutSessionCompletata({ ...valid, paymentStatus: undefined }, STORE_ID, base).ok === false);
     check("merchant mismatch rifiutato", validaCheckoutSessionCompletata(valid, "b3000000-0000-4000-8000-000000000099", base).ok === false);
-    check("provider mismatch rifiutato", validaCheckoutSessionCompletata(valid, STORE_ID, { ...base, ordine: { ...base.ordine, paymentProvider: "paypal" } }).ok === false);
+    check("provider mismatch rifiutato", validaCheckoutSessionCompletata(valid, STORE_ID, { ...base, ordine: { ...base.ordine, paymentProvider: "bonifico" } }).ok === false);
     check("client_reference_id e metadata divergenti rifiutati", validaCheckoutSessionCompletata({ ...valid, clientReferenceId: "b3000000-0000-4000-8000-000000000099" }, STORE_ID, base).ok === false);
     check("Checkout Session diversa rifiutata", validaCheckoutSessionCompletata({ ...valid, id: "cs_other" }, STORE_ID, base).ok === false);
     check("PaymentIntent diverso rifiutato", validaCheckoutSessionCompletata({ ...valid, paymentIntent: "pi_other" }, STORE_ID, { ...base, ordine: { ...base.ordine, paymentTransactionId: PAYMENT_INTENT } }).ok === false);

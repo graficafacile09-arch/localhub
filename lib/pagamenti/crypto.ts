@@ -24,20 +24,13 @@ import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:
 export const PAYMENTS_ENCRYPTION_KEY_ENV = "PAYMENTS_ENCRYPTION_KEY";
 
 /** Provider configurabili da un negozio (tabella negozio_pagamenti). */
-export const PROVIDER_PAGAMENTO_VALIDI = [
-  "klarna",
-  "scalapay",
-  "paypal",
-  "stripe",
-  "bonifico",
-] as const;
+export const PROVIDER_PAGAMENTO_VALIDI = ["stripe", "bonifico"] as const;
 
 /** Metodi mostrabili al checkout (tabella negozio_metodi_pagamento). */
 export const METODI_PAGAMENTO_VALIDI = [
   "carta",
-  "paypal",
   "klarna",
-  "scalapay",
+  "bonifico_istantaneo",
   "bonifico",
 ] as const;
 
@@ -153,6 +146,14 @@ export type CredenzialiPubbliche = {
   payouts_enabled: boolean;
   /** True se Stripe ha abilitato l'incasso (charges) sul connected account. */
   charges_enabled: boolean;
+  /** B1 — capability Stripe attiva per Klarna. */
+  klarna_enabled: boolean;
+  /** B4 — PayPal seller merchant identifier (mai una credenziale). */
+  merchant_id: string | null;
+  /** B4 — stato reale persistito dell'onboarding seller PayPal. */
+  payments_receivable: boolean;
+  /** B4 — stato reale persistito della verifica email PayPal. */
+  primary_email_confirmed: boolean;
 };
 
 /**
@@ -175,6 +176,10 @@ export function credenzialiPubbliche(
     onboarding_status: riga.onboarding_status ? String(riga.onboarding_status) : null,
     payouts_enabled: riga.payouts_enabled === true,
     charges_enabled: riga.charges_enabled === true,
+    klarna_enabled: riga.klarna_enabled === true,
+    merchant_id: riga.merchant_id ? String(riga.merchant_id) : null,
+    payments_receivable: riga.payments_receivable === true,
+    primary_email_confirmed: riga.primary_email_confirmed === true,
     // La RPC (pagamenti_credenziali_leggi) è la fonte autorevole per
     // has_secret: calcola il flag sui secret cifrati nel DB senza MAI
     // restituirli (write-only). Se il flag è presente nel payload lo

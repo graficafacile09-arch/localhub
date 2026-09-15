@@ -15,7 +15,11 @@ export async function GET() {
     const dashboard = await getDatiDashboard();
     return apiOk({ dashboard });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Errore sconosciuto";
-    return apiError("DASHBOARD_ERROR", message, 500);
+    console.error("[/api/amministratore/dashboard] Errore:", err);
+    return apiError(
+      "DASHBOARD_ERROR",
+      "Impossibile caricare la dashboard. Riprova tra poco.",
+      500
+    );
   }
 }

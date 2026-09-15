@@ -80,7 +80,7 @@ const STATI_PAGAMENTO = [
   "canceled",
 ];
 
-const PROVIDER = ["stripe", "paypal", "klarna", "bonifico"];
+const PROVIDER = ["stripe", "bonifico"];
 
 type Props = {
   /** Endpoint API (server-side, protetto) che restituisce riepilogo + elenco. */

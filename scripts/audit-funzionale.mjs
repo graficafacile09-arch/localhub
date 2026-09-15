@@ -705,7 +705,7 @@ const browser = await chromium.launch();
       await page.waitForTimeout(1500);
       const u = new URL(page.url());
       const body = await page.evaluate(() => document.body.innerText);
-      const paymentUI = /carta|paypal|scalapay|klarna|bonifico|metodo di pagamento|pagamento/i.test(body);
+      const paymentUI = /carta|klarna|bonifico|metodo di pagamento|pagamento/i.test(body);
       add(sez, "Checkout raggiungibile (punto sicuro pre-pagamento)", u.pathname === "/checkout" && paymentUI ? "OK" : "KO", u.pathname, !paymentUI ? body.slice(-200) : "");
       // NON si procede oltre (nessun pagamento reale)
     } else {

@@ -240,7 +240,7 @@ async function main(): Promise<void> {
     check("merchant mismatch rifiutato", result.error === null && result.data?.ok === false && result.data?.codice === "REFUND_BINDING_MISMATCH", result);
 
     await resetOrder(db);
-    await db.from("ordini").update({ payment_provider: "paypal" }).eq("id", ORDER_ID);
+    await db.from("ordini").update({ payment_provider: "stripe" }).eq("id", ORDER_ID);
     result = await rpcRefund(db, { refunded: 30 });
     check("provider mismatch rifiutato", result.error === null && result.data?.ok === false && result.data?.codice === "REFUND_PROVIDER_MISMATCH", result);
     await db.from("ordini").update({ payment_provider: "stripe" }).eq("id", ORDER_ID);

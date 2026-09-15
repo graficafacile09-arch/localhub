@@ -108,7 +108,10 @@ export async function POST(request: Request) {
     return apiOk({ risposta });
   } catch (err) {
     console.error("[/api/amministratore/assistente-ai] Errore:", err);
-    const message = err instanceof Error ? err.message : "Errore interno.";
-    return apiError("INTERNAL_ERROR", message, 500);
+    return apiError(
+      "INTERNAL_ERROR",
+      "Impossibile completare la richiesta dell'assistente. Riprova tra poco.",
+      500
+    );
   }
 }

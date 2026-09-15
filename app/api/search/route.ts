@@ -105,11 +105,9 @@ export async function POST(request: Request) {
     return NextResponse.json(result);
   } catch (error: unknown) {
     console.error("[/api/search] Errore:", error);
-    const message =
-      error instanceof Error
-        ? error.message
-        : "Si è verificato un errore interno.";
-
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json(
+      { error: "Si è verificato un errore interno. Riprova tra poco." },
+      { status: 500 }
+    );
   }
 }

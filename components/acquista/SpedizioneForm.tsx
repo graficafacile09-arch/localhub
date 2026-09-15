@@ -91,7 +91,7 @@ export default function SpedizioneForm({
   // "disponibile" NON significa "selezionato". Il submit è bloccato finché
   // l'utente non sceglie esplicitamente un metodo (vedi pulsante disabilitato).
   const [metodoPagamento, setMetodoPagamento] = useState<
-    "carta" | "bonifico" | "klarna" | "scalapay" | "paypal" | null
+    "carta" | "klarna" | "bonifico_istantaneo" | "bonifico" | null
   >(null);
   const [inviando, setInviando] = useState(false);
   const [errore, setErrore] = useState<string | null>(null);
@@ -137,7 +137,12 @@ export default function SpedizioneForm({
   );
   const costoSpedizione = opzioneScelta?.prezzo ?? 0;
   const subtotal = prezzo * quantita;
+  // Il totale qui è il preventivo corrente (prodotto + spedizione ricevuta dal
+  // server); il server ricalcola e verifica il totale canonico nell'intento.
   const totale = subtotal + costoSpedizione;
+  const metodoDisponibilePerTotale = (metodo: MetodoPagamentoCheckout) => metodo.disponibile;
+
+  const metodoPagamentoEffettivo = metodoPagamento;
 
   // Preventivo spedizione server-side: ricalcolato quando cambia la quantità.
   useEffect(() => {
@@ -181,7 +186,7 @@ export default function SpedizioneForm({
     // REGOLA ASSOLUTA: nessuna scelta esplicita di metodo di pagamento →
     // submit bloccato, nessuna chiamata a /api/cliente/ordini. Difesa anche
     // se il pulsante venisse attivato da stato/browser precedenti.
-    if (metodoPagamento === null) {
+    if (metodoPagamentoEffettivo === null) {
       setErrore("Seleziona un metodo di pagamento per continuare.");
       return;
     }
@@ -247,7 +252,7 @@ export default function SpedizioneForm({
           note: val("note") || null,
           carrier: spedizioneScelta.carrier,
           servizio: spedizioneScelta.servizio,
-          metodoPagamento,
+          metodoPagamento: metodoPagamentoEffettivo,
         },
         fatturazione: fatturazione.diversa
           ? {
@@ -543,8 +548,8 @@ export default function SpedizioneForm({
           </h3>
           <div className="mt-3 space-y-2">
             {metodiPagamento.map((metodo) => {
-              const selezionato = metodoPagamento === metodo.metodo;
-              const selezionabile = metodo.disponibile;
+              const selezionato = metodoPagamentoEffettivo === metodo.metodo;
+              const selezionabile = metodoDisponibilePerTotale(metodo);
               return (
                 <label
                   key={metodo.metodo}
@@ -577,19 +582,6 @@ export default function SpedizioneForm({
                         height={14}
                         className="h-3.5 w-auto shrink-0 object-contain"
                       />
-                    ) : metodo.metodo === "paypal" ? (
-                      // PayPal: logo ufficiale locale (wordmark).
-                      <img
-                        src="/loghi/paypal.svg"
-                        alt="PayPal"
-                        width={64}
-                        height={16}
-                        className="h-3.5 w-auto shrink-0 object-contain"
-                      />
-                    ) : metodo.metodo === "scalapay" ? (
-                      <span className="inline-flex shrink-0 items-center rounded bg-slate-900 px-1.5 py-0.5 text-[9px] font-black tracking-wide text-white">
-                        Scalapay
-                      </span>
                     ) : metodo.metodo === "carta" ? (
                       <CreditCard className="h-4 w-4 shrink-0 text-slate-500" />
                     ) : (
@@ -598,7 +590,7 @@ export default function SpedizioneForm({
                     <div className="min-w-0">
                       <span className="flex flex-wrap items-center gap-2 text-sm font-semibold text-slate-900">
                         {metodo.etichetta}
-                        {(metodo.metodo === "klarna" || metodo.metodo === "scalapay") && selezionabile && (
+                        {metodo.metodo === "klarna" && selezionabile && (
                           <span className="inline-flex shrink-0 items-center rounded-full bg-slate-900 px-2 py-0.5 text-[10px] font-bold text-white">
                             Paga in 3 rate
                           </span>
@@ -626,12 +618,12 @@ export default function SpedizioneForm({
               );
             })}
           </div>
-          {metodiPagamento.some((m) => !m.disponibile) && (
+          {metodiPagamento.some((m) => !metodoDisponibilePerTotale(m)) && (
             <p className="mt-3 text-[11px] leading-4 text-slate-500">
               Metodi disponibili per questo negozio:{" "}
               <span className="font-semibold text-slate-700">
                 {metodiPagamento
-                  .filter((m) => m.disponibile)
+                  .filter((m) => metodoDisponibilePerTotale(m))
                   .map((m) => m.nomeBreve)
                   .join(", ")}
               </span>
@@ -678,7 +670,7 @@ export default function SpedizioneForm({
         <button
           type="button"
           onClick={procediAlPagamento}
-          disabled={inviando || metodoPagamento === null || spedizioneScelta === null}
+          disabled={inviando || metodoPagamentoEffettivo === null || spedizioneScelta === null}
           className="btn-cta w-full py-3 text-sm disabled:cursor-not-allowed disabled:opacity-60"
         >
           {inviando ? (

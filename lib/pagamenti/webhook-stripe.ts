@@ -45,6 +45,8 @@ import {
   annullaIntentoCheckout,
   confermaIntentoCheckout,
   intentoDaId,
+  intentoDaIdSenzaNegozio,
+  type IntentoWebhook,
 } from "./sessioni";
 import { gestisciPagamentoTardivo, gestisciPagamentoTardivoIntento } from "./late-payment";
 
@@ -62,12 +64,40 @@ type EventoConfronto = {
 };
 
 type EsitoAcquisizioneEvento =
-  | { ok: true; acquired: boolean; terminal: boolean; inCorso: boolean; attempts: number }
-  | { ok: false; errore: string };
+  | {
+      ok: true;
+      esito: "NEW_EVENT" | "RETRYABLE_EXISTING";
+      acquired: true;
+      terminal: false;
+      inCorso: false;
+      attempts: number;
+    }
+  | {
+      ok: true;
+      esito: "DUPLICATE_PROCESSED";
+      acquired: false;
+      terminal: true;
+      inCorso: false;
+      attempts: number;
+    }
+  | {
+      ok: true;
+      esito: "IN_PROGRESS";
+      acquired: false;
+      terminal: false;
+      inCorso: true;
+      attempts: number;
+    }
+  | { ok: false; esito: "DATABASE_ERROR"; errore: string };
 
 type EsitoFinalizzazioneEvento =
-  | { ok: true; stato: "processed" | "error"; giaProcessato?: boolean }
-  | { ok: false; errore: string };
+  | {
+      ok: true;
+      esito: "PROCESSED" | "RETRYABLE_ERROR" | "DUPLICATE_PROCESSED";
+      stato: "processed" | "error";
+      giaProcessato?: boolean;
+    }
+  | { ok: false; esito: "DATABASE_ERROR"; errore: string };
 
 type CheckoutSessionLocalBinding = {
   session: {
@@ -93,15 +123,27 @@ type CheckoutSessionLocalBinding = {
   };
 };
 
-type CheckoutSessionCompletedPayload = {
+export type CheckoutSessionCompletedPayload = {
   id: unknown;
   clientReferenceId: unknown;
   metadata: Record<string, unknown> | null;
+  status?: unknown;
   paymentStatus: unknown;
   amountTotal: unknown;
   currency: unknown;
   paymentIntent: unknown;
 };
+
+export type ValidazioneIntentoStripeInput = {
+  eventAccount: unknown;
+  intento: IntentoWebhook | null;
+  accountConfigurato: unknown;
+  session: CheckoutSessionCompletedPayload;
+};
+
+export type EsitoValidazioneIntentoStripe =
+  | { ok: true; importo: number; transactionId: string | null }
+  | { ok: false; errore: string };
 
 type EsitoValidazioneCheckout =
   | { ok: true; importo: number; transactionId: string | null }
@@ -116,6 +158,38 @@ type RefundCandidate = {
   charge?: unknown;
   currency?: unknown;
 };
+
+export type ChargeRefundedValidationInput = {
+  eventAccount: unknown;
+  configuredAccount: unknown;
+  charge: {
+    id: unknown;
+    paymentIntent: unknown;
+    amount: unknown;
+    amountRefunded: unknown;
+    amountCaptured: unknown;
+    currency: unknown;
+    refunded: unknown;
+    refunds: unknown;
+  };
+  expectedPaymentIntent?: unknown;
+  expectedAmount?: unknown;
+  expectedCurrency?: unknown;
+};
+
+export type ChargeRefundedValidationResult =
+  | {
+      ok: true;
+      chargeId: string;
+      paymentIntentId: string;
+      amountRefundedMinor: number;
+      amountPaidMinor: number;
+      amountCapturedMinor: number | null;
+      currency: string;
+      refundIds: string[];
+      refundType: "partial" | "full";
+    }
+  | { ok: false; errore: string };
 
 type RefundMatch =
   | { kind: "matched"; operationId: string; refundId: string; amount: number }
@@ -163,6 +237,127 @@ function uuid(value: unknown): string | null {
 function refundCandidatesDaCharge(charge: Record<string, unknown>): RefundCandidate[] {
   const refunds = charge.refunds as { data?: RefundCandidate[] } | null | undefined;
   return Array.isArray(refunds?.data) ? refunds.data : [];
+}
+
+function idPagamentoDaValore(value: unknown): string | null {
+  if (typeof value === "string") return stringaNonVuota(value);
+  if (value && typeof value === "object") {
+    return stringaNonVuota((value as { id?: unknown }).id);
+  }
+  return null;
+}
+
+/**
+ * Valida il Charge e i Refund Stripe prima di qualsiasi scrittura economica.
+ * Tutti i confronti monetari avvengono in minor units intere; la conversione
+ * a decimal string è riservata ai parametri numeric delle RPC.
+ */
+export function validaChargeRefundedStripe(
+  input: ChargeRefundedValidationInput
+): ChargeRefundedValidationResult {
+  const eventAccount = stringaNonVuota(input.eventAccount);
+  const configuredAccount = stringaNonVuota(input.configuredAccount);
+  if (!eventAccount) return { ok: false, errore: "event.account mancante" };
+  if (!configuredAccount || configuredAccount !== eventAccount) {
+    return { ok: false, errore: "connected account refund non associato al negozio" };
+  }
+
+  const chargeId = stringaNonVuota(input.charge.id);
+  const paymentIntentId = idPagamentoDaValore(input.charge.paymentIntent);
+  if (!chargeId) return { ok: false, errore: "Charge ID mancante" };
+  if (!paymentIntentId) return { ok: false, errore: "PaymentIntent mancante" };
+  if (paymentIntentId === chargeId) return { ok: false, errore: "Charge ID e PaymentIntent non sono intercambiabili" };
+
+  const amountPaidMinor = stripeMinorUnits(input.charge.amount);
+  const amountRefundedMinor = stripeMinorUnits(input.charge.amountRefunded);
+  const amountCapturedMinor = input.charge.amountCaptured == null
+    ? null
+    : stripeMinorUnits(input.charge.amountCaptured);
+  if (amountPaidMinor === null || amountPaidMinor <= 0) {
+    return { ok: false, errore: "Importo Charge non valido" };
+  }
+  if (amountRefundedMinor === null || amountRefundedMinor <= 0) {
+    return { ok: false, errore: "Importo rimborsato non valido" };
+  }
+  if (amountCapturedMinor !== null && (amountCapturedMinor <= 0 || amountCapturedMinor > amountPaidMinor)) {
+    return { ok: false, errore: "Importo catturato non coerente" };
+  }
+  if (amountRefundedMinor > (amountCapturedMinor ?? amountPaidMinor)) {
+    return { ok: false, errore: "Rimborso superiore all'importo catturato" };
+  }
+
+  const currency = valuta(input.charge.currency);
+  const expectedCurrency = input.expectedCurrency == null ? currency : valuta(input.expectedCurrency);
+  if (!currency || currency !== "EUR" || !expectedCurrency || currency !== expectedCurrency) {
+    return { ok: false, errore: "Valuta refund non coerente" };
+  }
+  const expectedPaymentIntent = input.expectedPaymentIntent == null
+    ? paymentIntentId
+    : idPagamentoDaValore(input.expectedPaymentIntent);
+  if (!expectedPaymentIntent || expectedPaymentIntent !== paymentIntentId) {
+    return { ok: false, errore: "PaymentIntent refund diverso dal pagamento locale" };
+  }
+
+  const expectedAmountMinor = input.expectedAmount == null ? amountPaidMinor : euroInCentesimi(input.expectedAmount);
+  if (expectedAmountMinor === null || expectedAmountMinor !== amountPaidMinor) {
+    return { ok: false, errore: "Importo Charge diverso dal pagamento locale" };
+  }
+  if (typeof input.charge.refunded !== "boolean") {
+    return { ok: false, errore: "Flag Charge refunded mancante" };
+  }
+  const fullRefund = amountRefundedMinor === expectedAmountMinor;
+  if (input.charge.refunded !== fullRefund) {
+    return { ok: false, errore: "Flag Charge refunded incoerente con il cumulativo" };
+  }
+
+  const refunds = input.charge.refunds;
+  if (!Array.isArray(refunds) || refunds.length === 0) {
+    return { ok: false, errore: "Refund Stripe non espansi o senza elementi" };
+  }
+  const refundIds: string[] = [];
+  let refundSumMinor = 0;
+  for (const raw of refunds) {
+    if (!raw || typeof raw !== "object") continue;
+    const refund = raw as RefundCandidate;
+    if (refund.status !== "succeeded") continue;
+    const refundId = stringaNonVuota(refund.id);
+    const refundAmount = stripeMinorUnits(refund.amount);
+    if (!refundId || refundId === chargeId || refundId === paymentIntentId || refundIds.includes(refundId)) {
+      return { ok: false, errore: "Refund ID mancante, duplicato o non distinto dal Charge" };
+    }
+    if (refundAmount === null || refundAmount <= 0 || refundAmount > amountRefundedMinor) {
+      return { ok: false, errore: "Importo Refund individuale non valido" };
+    }
+    const refundPaymentIntent: string | null = refund.payment_intent == null
+      ? paymentIntentId
+      : idPagamentoDaValore(refund.payment_intent);
+    const refundCharge: string | null = refund.charge == null
+      ? chargeId
+      : idPagamentoDaValore(refund.charge);
+    if (refundPaymentIntent !== paymentIntentId || refundCharge !== chargeId) {
+      return { ok: false, errore: "Refund non associato al Charge/PaymentIntent" };
+    }
+    if (refund.currency != null && valuta(refund.currency) !== currency) {
+      return { ok: false, errore: "Valuta Refund diversa dal Charge" };
+    }
+    refundIds.push(refundId);
+    refundSumMinor += refundAmount;
+  }
+  if (refundIds.length === 0 || refundSumMinor !== amountRefundedMinor) {
+    return { ok: false, errore: "Refund succeeded non coerenti con amount_refunded" };
+  }
+
+  return {
+    ok: true,
+    chargeId,
+    paymentIntentId,
+    amountRefundedMinor,
+    amountPaidMinor,
+    amountCapturedMinor,
+    currency,
+    refundIds,
+    refundType: amountRefundedMinor === amountPaidMinor ? "full" : "partial",
+  };
 }
 
 function metadataOperationBinding(refund: RefundCandidate): { present: boolean; operationId: string | null } {
@@ -302,8 +497,14 @@ async function arricchisciChargeStripe(
   charge: Record<string, unknown>
 ): Promise<Record<string, unknown> | null> {
   const embedded = refundCandidatesDaCharge(charge);
-  if (embedded.length > 0) return charge;
-
+  if (
+    embedded.length > 0 &&
+    stripeMinorUnits(charge.amount) !== null &&
+    stripeMinorUnits(charge.amount_refunded) !== null &&
+    stripeMinorUnits(charge.amount_captured) !== null
+  ) {
+    return charge;
+  }
   try {
     let cred: { secret?: string; webhookSecret?: string; stripeAccountId?: string; testMode: boolean } | null = null;
     const config = await getConfigStripeNegozio(negozioId);
@@ -328,16 +529,22 @@ async function arricchisciChargeStripe(
     // of downgrading a local operation to an external refund.
     if (!cred) return null;
 
-    const details = await new GatewayStripe(opzioniLookupStripe()).refundsDaCharge(chargeId, cred);
-    if (details.paymentIntent && details.paymentIntent !== String(charge.payment_intent ?? "")) {
+    const details = await new GatewayStripe(opzioniLookupStripe()).refundsDaCharge(chargeId, cred, {
+      includePaymentIntentMetadata: true,
+    });
+    const originalPaymentIntent = idPagamentoDaValore(charge.payment_intent);
+    if (details.paymentIntent && originalPaymentIntent && details.paymentIntent !== originalPaymentIntent) {
       throw new Error("Charge lookup con PaymentIntent divergente");
     }
     return {
       ...charge,
+      amount: details.amount,
       amount_refunded: details.amountRefunded,
       amount_captured: details.amountCaptured,
       currency: details.currency,
+      refunded: details.amountRefunded >= details.amount,
       refunds: { data: details.refunds },
+      _payment_intent_metadata: details.paymentIntentMetadata ?? {},
     };
   } catch (error) {
     console.warn(`[pagamenti] impossibile arricchire Charge ${chargeId}: ${error instanceof Error ? error.message : "errore"}`);
@@ -574,25 +781,59 @@ async function registraEvento(
 
   if (error) {
     console.error("[pagamenti] acquisizione evento fallita:", error.message);
-    return { ok: false, errore: error.message };
+    return { ok: false, esito: "DATABASE_ERROR", errore: error.message };
   }
 
   const result = (data ?? null) as {
     ok?: boolean;
+    esito?: string;
     acquired?: boolean;
     terminal?: boolean;
     in_corso?: boolean;
     attempts?: number;
   } | null;
+  const attempts = Number(result?.attempts ?? 0);
   if (result?.ok !== true) {
-    return { ok: false, errore: "acquisizione evento rifiutata" };
+    return {
+      ok: false,
+      esito: "DATABASE_ERROR",
+      errore: String(result?.esito ?? "acquisizione evento rifiutata"),
+    };
+  }
+  if (result.esito === "DUPLICATE_PROCESSED") {
+    return {
+      ok: true,
+      esito: "DUPLICATE_PROCESSED",
+      acquired: false,
+      terminal: true,
+      inCorso: false,
+      attempts,
+    };
+  }
+  if (result.esito === "IN_PROGRESS") {
+    return {
+      ok: true,
+      esito: "IN_PROGRESS",
+      acquired: false,
+      terminal: false,
+      inCorso: true,
+      attempts,
+    };
+  }
+  if (result.esito === "NEW_EVENT" || result.esito === "RETRYABLE_EXISTING") {
+    return {
+      ok: true,
+      esito: result.esito,
+      acquired: true,
+      terminal: false,
+      inCorso: false,
+      attempts,
+    };
   }
   return {
-    ok: true,
-    acquired: result.acquired === true,
-    terminal: result.terminal === true,
-    inCorso: result.in_corso === true,
-    attempts: Number(result.attempts ?? 0),
+    ok: false,
+    esito: "DATABASE_ERROR",
+    errore: "acquisizione evento con esito sconosciuto",
   };
 }
 
@@ -600,6 +841,7 @@ async function registraEvento(
 async function segnaProcessato(
   eventId: string,
   success: boolean,
+  attempt: number,
   errMessage?: string
 ): Promise<EsitoFinalizzazioneEvento> {
   const db = createAdminSupabaseClient();
@@ -607,21 +849,31 @@ async function segnaProcessato(
     p_event_id: eventId,
     p_success: success,
     p_error: errMessage ?? null,
+    p_attempt: attempt,
   });
   if (error) {
     console.error("[pagamenti] finalizzazione evento fallita:", error.message);
-    return { ok: false, errore: error.message };
+    return { ok: false, esito: "DATABASE_ERROR", errore: error.message };
   }
   const result = (data ?? null) as {
     ok?: boolean;
+    esito?: string;
     stato?: "processed" | "error";
     already_processed?: boolean;
   } | null;
   if (result?.ok !== true || (result.stato !== "processed" && result.stato !== "error")) {
-    return { ok: false, errore: "finalizzazione evento rifiutata" };
+    return { ok: false, esito: "DATABASE_ERROR", errore: "finalizzazione evento rifiutata" };
+  }
+  if (
+    result.esito !== "PROCESSED" &&
+    result.esito !== "RETRYABLE_ERROR" &&
+    result.esito !== "DUPLICATE_PROCESSED"
+  ) {
+    return { ok: false, esito: "DATABASE_ERROR", errore: "esito finalizzazione sconosciuto" };
   }
   return {
     ok: true,
+    esito: result.esito,
     stato: result.stato,
     giaProcessato: result.already_processed === true,
   };
@@ -694,13 +946,72 @@ async function marcaPagato(
 }
 
 /** Estrae ordineId dall'oggetto sessione (client_reference_id / metadata). */
-function ordineIdDaSessione(obj: {
-  client_reference_id?: string | null;
-  metadata?: Record<string, string> | null;
+function riferimentoCheckoutDaSessione(obj: {
+  client_reference_id?: unknown;
+  metadata?: Record<string, unknown> | null;
 }): string | null {
-  const ref = obj.client_reference_id ?? obj.metadata?.ordine_id;
-  if (typeof ref === "string" && UUID_RE.test(ref)) return ref;
-  return null;
+  const clientReference = stringaNonVuota(obj.client_reference_id);
+  const metadataReference = obj.metadata && Object.prototype.hasOwnProperty.call(obj.metadata, "ordine_id")
+    ? stringaNonVuota(obj.metadata.ordine_id)
+    : null;
+  if (clientReference && metadataReference && clientReference !== metadataReference) return null;
+  const reference = clientReference ?? metadataReference;
+  return reference && UUID_RE.test(reference) ? reference : null;
+}
+
+/**
+ * Validazione completa dell'evento P1 Stripe Connect prima della RPC P2.
+ * È pura e fail-closed: non legge né modifica il database e non crea ordini.
+ */
+export function validaCheckoutSessionIntentoStripe(
+  input: ValidazioneIntentoStripeInput
+): EsitoValidazioneIntentoStripe {
+  const eventAccount = stringaNonVuota(input.eventAccount);
+  if (!eventAccount) return { ok: false, errore: "event.account mancante" };
+  if (!input.intento) return { ok: false, errore: "intento checkout non trovato" };
+  const configuredAccount = stringaNonVuota(input.accountConfigurato);
+  if (!configuredAccount || configuredAccount !== eventAccount) {
+    return { ok: false, errore: "connected account non associato al negozio dell'intento" };
+  }
+  if (input.intento.provider !== "stripe") {
+    return { ok: false, errore: "provider dell'intento non Stripe" };
+  }
+  if (!["created", "pending"].includes(input.intento.status)) {
+    return { ok: false, errore: "intento non più confermabile" };
+  }
+  if (input.session.status !== "complete") {
+    return { ok: false, errore: "Checkout Session Stripe non completata" };
+  }
+  if (input.session.paymentStatus !== "paid") {
+    return { ok: false, errore: "payment_status Stripe non paid" };
+  }
+
+  const amountTotalCents = stripeMinorUnits(input.session.amountTotal);
+  const expectedCents = euroInCentesimi(input.intento.importo);
+  if (amountTotalCents === null || expectedCents === null || amountTotalCents !== expectedCents) {
+    return { ok: false, errore: "importo Checkout Session diverso dall'intento" };
+  }
+
+  const stripeCurrency = valuta(input.session.currency);
+  const intentCurrency = valuta(input.intento.valuta);
+  if (!stripeCurrency || !intentCurrency || stripeCurrency !== intentCurrency) {
+    return { ok: false, errore: "valuta Checkout Session diversa dall'intento" };
+  }
+  if (stripeCurrency !== "EUR") {
+    return { ok: false, errore: "valuta non supportata da checkout_intento_conferma" };
+  }
+
+  let transactionId: string | null = null;
+  if (input.session.paymentIntent !== null && input.session.paymentIntent !== undefined) {
+    transactionId = stringaNonVuota(
+      typeof input.session.paymentIntent === "string"
+        ? input.session.paymentIntent
+        : (input.session.paymentIntent as { id?: unknown } | null)?.id
+    );
+    if (!transactionId) return { ok: false, errore: "PaymentIntent Stripe non valido" };
+  }
+
+  return { ok: true, importo: amountTotalCents / 100, transactionId };
 }
 
 /**
@@ -739,7 +1050,7 @@ export async function gestisciWebhookStripe(
 
   let ordineId: string | null = null;
   if (evento.type.startsWith("checkout.session.")) {
-    ordineId = ordineIdDaSessione(obj ?? {});
+    ordineId = riferimentoCheckoutDaSessione(obj ?? {});
   }
 
   const paymentId =
@@ -748,7 +1059,13 @@ export async function gestisciWebhookStripe(
     eventId: evento.id,
     eventType: evento.type,
     negozioId,
-    ordineId,
+    // PAYMENT-FIRST: per gli eventi checkout.session.* il riferimento
+    // (client_reference_id / metadata.ordine_id) è l'ID dell'INTENTO
+    // (pagamenti_sessioni.id), NON un ordine: l'ordine non esiste ancora e
+    // pagamenti_eventi.ordine_id ha FK su ordini(id). L'insert dell'evento
+    // deve quindi usare NULL; l'intento è risolto dal business handler
+    // (intentoDaId) dalla variabile locale `ordineId`.
+    ordineId: null,
     paymentId,
   };
 
@@ -775,6 +1092,7 @@ export async function gestisciWebhookStripe(
           id?: string;
           client_reference_id?: string | null;
           metadata?: Record<string, unknown> | null;
+          status?: string;
           payment_status?: string;
           amount_total?: number | null;
           currency?: string | null;
@@ -787,34 +1105,36 @@ export async function gestisciWebhookStripe(
         // riferimento è un intento: il pagamento confermato crea l'ordine
         // con checkout_intento_conferma (mai prima del paid). Il legacy
         // (riferimento = ordine.id) resta invariato sotto.
-        const intento = await intentoDaId(ordineId, negozioId);
+        if (session.status !== "complete") {
+          throw new Error("checkout.session.completed con stato Session inatteso");
+        }
+        const intento = await intentoDaIdSenzaNegozio(ordineId);
         if (intento) {
-          if (session.payment_status !== "paid") {
-            throw new Error("checkout.session.completed (intento): pagamento non confermato");
-          }
-          const amountTotalCents = stripeMinorUnits(session.amount_total);
-          const expectedCents = euroInCentesimi(intento.importo);
-          if (
-            amountTotalCents === null ||
-            expectedCents === null ||
-            amountTotalCents !== expectedCents
-          ) {
-            throw new Error("checkout.session.completed (intento): importo non coerente");
+          const accountConfigurato = await getStripeConnectAccount(intento.negozioId);
+          const validazioneIntento = validaCheckoutSessionIntentoStripe({
+            eventAccount: (evento as { account?: unknown }).account,
+            intento,
+            accountConfigurato: accountConfigurato?.accountId,
+            session: {
+              id: session.id,
+              clientReferenceId: session.client_reference_id,
+              metadata: session.metadata ?? null,
+              status: session.status,
+              paymentStatus: session.payment_status,
+              amountTotal: session.amount_total,
+              currency: session.currency,
+              paymentIntent: session.payment_intent,
+            },
+          });
+          if (!validazioneIntento.ok) {
+            throw new Error(`checkout.session.completed intento rifiutato: ${validazioneIntento.errore}`);
           }
           const currency = valuta(session.currency);
-          if (!currency || currency !== "EUR") {
-            throw new Error("checkout.session.completed (intento): valuta non coerente");
-          }
-          const transactionId = stringaNonVuota(
-            typeof session.payment_intent === "string"
-              ? session.payment_intent
-              : (session.payment_intent as { id?: unknown } | null)?.id
-          );
           const conferma = await confermaIntentoCheckout(intento.checkoutId, {
             paymentId,
-            transactionId,
-            importo: intento.importo,
-            valuta: currency,
+            transactionId: validazioneIntento.transactionId,
+            importo: validazioneIntento.importo,
+            valuta: currency ?? "",
           });
           if (!conferma.ok) {
             if (conferma.codice === "CHECKOUT_NON_DISPONIBILE") {
@@ -825,7 +1145,7 @@ export async function gestisciWebhookStripe(
               // ordine, nessuna notifica di nuovo ordine.
               const tardivo = await gestisciPagamentoTardivoIntento({
                 checkoutId: intento.checkoutId,
-                negozioId,
+                negozioId: intento.negozioId,
                 provider: "stripe",
                 paymentId,
                 importo: intento.importo,
@@ -863,6 +1183,7 @@ export async function gestisciWebhookStripe(
             id: session.id,
             clientReferenceId: session.client_reference_id,
             metadata: session.metadata ?? null,
+            status: session.status,
             paymentStatus: session.payment_status,
             amountTotal: session.amount_total,
             currency: session.currency,
@@ -956,10 +1277,14 @@ export async function gestisciWebhookStripe(
 
       case "charge.refunded": {
         const chargeOriginale = obj as Record<string, unknown>;
-        const transactionId =
-          typeof chargeOriginale.payment_intent === "string"
-            ? chargeOriginale.payment_intent
-            : (chargeOriginale.payment_intent as { id?: string } | null)?.id ?? null;
+        const eventAccount = stringaNonVuota((evento as { account?: unknown }).account);
+        if (!eventAccount) throw new Error("charge.refunded senza event.account");
+        const accountConfigurato = await getStripeConnectAccount(negozioId);
+        if (!accountConfigurato || accountConfigurato.accountId !== eventAccount) {
+          throw new Error("charge.refunded connected account non associato al negozio");
+        }
+
+        const transactionId = idPagamentoDaValore(chargeOriginale.payment_intent);
         const chargeId = stringaNonVuota(chargeOriginale.id);
         if (!transactionId || !chargeId) throw new Error("charge.refunded senza PaymentIntent o Charge ID");
 
@@ -970,24 +1295,64 @@ export async function gestisciWebhookStripe(
           .eq("payment_provider", "stripe")
           .eq("payment_transaction_id", transactionId);
         if (ordineError) throw new Error(`charge.refunded: ricerca ordine fallita: ${ordineError.message}`);
-        if (!ordini || ordini.length !== 1) throw new Error("charge.refunded: ordine non associato in modo univoco");
+        if (!ordini || ordini.length === 0) {
+          // Un Charge senza ordine locale completo è transitorio o ambiguo:
+          // non esiste una catena verificabile Charge → PaymentIntent → ordine
+          // (né un refund locale già associato). Non ACKare e non aggiornare
+          // un'altra sessione solo perché appartiene allo stesso negozio.
+          throw new Error("charge.refunded: ordine non associato in modo univoco");
+        }
+        if (ordini.length !== 1) throw new Error("charge.refunded: ordine non associato in modo univoco");
 
         const orderId = String(ordini[0].id);
+        const { data: orderForRefund, error: orderForRefundError } = await db
+          .from("ordini")
+          .select("payment_amount, payment_currency, payment_transaction_id")
+          .eq("id", orderId)
+          .maybeSingle();
+        if (orderForRefundError || !orderForRefund) {
+          throw new Error(`charge.refunded: lettura pagamento ordine fallita: ${orderForRefundError?.message ?? "ordine non trovato"}`);
+        }
         const { data: operations, error: operationsError } = await db
           .from("pagamenti_rimborso_operazioni")
           .select("id, importo, stato, refund_id")
           .eq("ordine_id", orderId)
           .eq("provider", "stripe");
         if (operationsError) throw new Error(`charge.refunded: lookup operation fallito: ${operationsError.message}`);
-        const charge = (operations ?? []).length > 0
-          ? await arricchisciChargeStripe(negozioId, chargeId, chargeOriginale)
-          : chargeOriginale;
-        if (!charge) throw new Error("charge.refunded: impossibile recuperare i Refund Stripe");
-        const amountRefunded = stripeMinorUnitsToEuro(charge.amount_refunded);
-        const amountCaptured = charge.amount_captured == null ? null : stripeMinorUnitsToEuro(charge.amount_captured);
-        if (amountRefunded === null || (charge.amount_captured != null && amountCaptured === null)) {
-          throw new Error("charge.refunded con importi Stripe non validi");
+        const charge = await arricchisciChargeStripe(negozioId, chargeId, chargeOriginale);
+        if (!charge) throw new Error("charge.refunded: impossibile recuperare Charge e Refund Stripe");
+        const validazioneRefund = validaChargeRefundedStripe({
+          eventAccount,
+          configuredAccount: accountConfigurato.accountId,
+          charge: {
+            id: charge.id,
+            paymentIntent: charge.payment_intent,
+            amount: charge.amount,
+            amountRefunded: charge.amount_refunded,
+            amountCaptured: charge.amount_captured,
+            currency: charge.currency,
+            refunded: charge.refunded,
+            refunds: refundCandidatesDaCharge(charge),
+          },
+          expectedPaymentIntent: orderForRefund.payment_transaction_id,
+          expectedAmount: orderForRefund.payment_amount,
+          expectedCurrency: orderForRefund.payment_currency,
+        });
+        if (!validazioneRefund.ok) {
+          console.warn("[pagamenti] charge.refunded rifiutato", {
+            eventId: evento.id,
+            eventType: evento.type,
+            accountId: eventAccount,
+            chargeId,
+            paymentIntentId: transactionId,
+            orderId,
+          });
+          throw new Error(`charge.refunded rifiutato: ${validazioneRefund.errore}`);
         }
+        const amountRefunded = validazioneRefund.amountRefundedMinor / 100;
+        const amountCaptured = validazioneRefund.amountCapturedMinor === null
+          ? null
+          : validazioneRefund.amountCapturedMinor / 100;
         const previousAttributes = (evento as unknown as { data?: { previous_attributes?: Record<string, unknown> } }).data?.previous_attributes;
         const previousRefunded = previousAttributes?.amount_refunded == null
           ? null
@@ -1015,7 +1380,7 @@ export async function gestisciWebhookStripe(
           chargeId,
           Number(ordini[0].payment_refunded_amount ?? 0),
           refundDelta,
-          valuta(charge.currency) ?? "EUR"
+          validazioneRefund.currency
         );
 
         if (match.kind === "unmatched_external") {
@@ -1248,14 +1613,18 @@ export async function gestisciWebhookStripe(
         break;
     }
 
-    const finalizzazione = await segnaProcessato(evento.id, true);
-    if (!finalizzazione.ok || finalizzazione.stato !== "processed") {
+    const finalizzazione = await segnaProcessato(evento.id, true, acquisizione.attempts);
+    if (
+      !finalizzazione.ok ||
+      finalizzazione.stato !== "processed" ||
+      finalizzazione.esito !== "PROCESSED"
+    ) {
       return { status: 503, body: "Impossibile finalizzare l'evento; Stripe ritenterà." };
     }
     return { status: 200, body: "OK" };
   } catch (e) {
     const msg = e instanceof Error ? e.message : "errore sconosciuto";
-    const finalizzazione = await segnaProcessato(evento.id, false, msg);
+    const finalizzazione = await segnaProcessato(evento.id, false, acquisizione.attempts, msg);
     console.error("[pagamenti] webhook non elaborato:", msg);
     if (!finalizzazione.ok) {
       return { status: 503, body: "Impossibile registrare l'errore dell'evento; Stripe ritenterà." };

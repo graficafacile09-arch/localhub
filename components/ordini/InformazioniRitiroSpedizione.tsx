@@ -96,11 +96,8 @@ export function InformazioniRitiroSpedizione({
   /** Consegna stimata (testo libero). */
   consegnaStimata: string | null;
   metodoSpedizione: "standard" | "express" | null;
-  metodoPagamento: "carta" | "paypal" | "bonifico" | "klarna" | null;
-  /** Marcatore autoritativo del provider (es. 'klarna'): la colonna
-   *  metodo_pagamento resta 'carta' per gli ordini Klarna (allowlist RPC,
-   *  stesso flusso del carrello F2.2), quindi la resa Klarna si basa su
-   *  payment_provider. */
+  metodoPagamento: "carta" | "klarna" | "bonifico_istantaneo" | "bonifico" | null;
+  /** Marcatore autoritativo del provider Stripe (es. 'klarna'). */
   paymentProvider?: string | null;
 }) {
   const èRitiro = modalita === "ritiro";
@@ -210,7 +207,7 @@ export function InformazioniRitiroSpedizione({
               </a>
             </div>
           ) : null}
-          {(metodoPagamento || paymentProvider === "klarna" || paymentProvider === "scalapay") && (
+          {(metodoPagamento || paymentProvider === "klarna") && (
             <RigaDettaglio
               etichetta="Metodo pagamento"
               valore={
@@ -223,10 +220,6 @@ export function InformazioniRitiroSpedizione({
                       height={11}
                       className="h-3 w-auto object-contain"
                     />
-                  ) : paymentProvider === "scalapay" ? (
-                    <span className="inline-flex shrink-0 items-center rounded bg-slate-900 px-1.5 py-0.5 text-[9px] font-black tracking-wide text-white">
-                      Scalapay
-                    </span>
                   ) : metodoPagamento === "bonifico" ? (
                     <Banknote className="h-4 w-4 text-slate-400" aria-hidden />
                   ) : (
@@ -234,13 +227,11 @@ export function InformazioniRitiroSpedizione({
                   )}
                   {paymentProvider === "klarna"
                     ? "Klarna (3 rate)"
-                    : paymentProvider === "scalapay"
-                      ? "Scalapay (3 rate)"
-                      : metodoPagamento === "carta"
-                        ? "Carta"
-                        : metodoPagamento === "paypal"
-                          ? "PayPal"
-                          : "Bonifico bancario"}
+                    : metodoPagamento === "carta"
+                      ? "Carta"
+                      : metodoPagamento === "bonifico_istantaneo"
+                        ? "Bonifico istantaneo"
+                        : "Bonifico bancario"}
                 </span>
               }
             />

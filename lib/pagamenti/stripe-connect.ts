@@ -1,9 +1,9 @@
 /**
- * PAGAMENTI — STRIPE CONNECT (Fase 1): helper OAuth/account connection.
+ * PAGAMENTI — STRIPE CONNECT: helper Express/Account Link e compatibilità OAuth.
  *
- * Il venditore collega il proprio account Stripe SENZA inserire credenziali
- * tecniche: la piattaforma usa Stripe Connect OAuth (flusso
- * `connect.stripe.com/oauth/authorize` → authorization code → token).
+ * Il flusso ufficiale della UI crea account Connect Express/V2 e Account Link
+ * hosted: il venditore non inserisce credenziali tecniche. Le funzioni OAuth
+ * legacy restano disponibili solo per compatibilità con integrazioni esistenti.
  *
  * Dati richiesti a livello PIATTAFORMA (env, mai del merchant):
  *   - STRIPE_CONNECT_CLIENT_ID  (ca_…, Connect application client id);
@@ -26,11 +26,11 @@ import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 import type { GatewayStripeOptions } from "./stripe";
 
 /**
- * Path fisso del callback OAuth Stripe Connect (redirect_uri registrato su
- * Stripe). È volutamente INDIPENDENTE dal negozioId: il negozio viene
- * vincolato esclusivamente dallo `state` firmato (HMAC). Stripe OAuth
- * richiede un match esatto del redirect_uri, quindi non può contenere un
- * segmento dinamico per negozio.
+
+/**
+ * Path fisso del callback OAuth Stripe Connect legacy (non usato dal flusso
+ * UI Express/Account Link). È volutamente INDIPENDENTE dal negozioId: il
+ * negozio viene vincolato esclusivamente dallo `state` firmato (HMAC).
  */
 export const STRIPE_CONNECT_CALLBACK_PATH = "/api/merchant/pagamenti/stripe/callback";
 
@@ -97,8 +97,8 @@ export function verificaStatoConnect(state: string, negozioId: string): boolean 
 }
 
 /**
- * Costruisce l'URL di autorizzazione Stripe Connect (login O creazione
- * account). Ritorna anche lo `state` firmato (utile per i test).
+ * Costruisce l'URL OAuth Stripe Connect legacy. Il flusso UI ufficiale usa
+ * `createStripeExpressAccount()` + `createStripeAccountLink()` più sotto.
  */
 export function buildStripeConnectUrl(
   negozioId: string,
@@ -200,7 +200,23 @@ export type StatoOnboardingStripe = {
   disabledReason: string | null;
   /** Requisiti ancora da soddisfare (currently_due), per la UI. */
   currentlyDue: string[];
+  /** Capability Klarna Stripe: true solo se effettivamente ACTIVE. */
+  klarnaEnabled: boolean;
 };
+
+/**
+ * B1 — Capability attiva = stato esattamente "active".
+ * Il record delle capability viene letto in modo difensivo perché la shape
+ * può variare tra le versioni dell'SDK Stripe.
+ */
+function capabilityAttiva(
+  caps: unknown,
+  capability: "klarna_payments"
+): boolean {
+  if (!caps || typeof caps !== "object") return false;
+  const voce = (caps as Record<string, { status?: unknown } | undefined>)[capability];
+  return voce?.status === "active";
+}
 
 /**
  * Deriva lo stato onboarding LEGGIBILE da un connected account Stripe.
@@ -238,6 +254,7 @@ export function statoOnboardingDaAccount(
       status,
       disabledReason: null,
       currentlyDue: [],
+      klarnaEnabled: capabilityAttiva(caps, "klarna_payments"),
     };
   }
 
@@ -265,6 +282,8 @@ export function statoOnboardingDaAccount(
     status,
     disabledReason,
     currentlyDue,
+    // Gli account v1 non espongono la capability Klarna V2: fail-closed.
+    klarnaEnabled: false,
   };
 }
 

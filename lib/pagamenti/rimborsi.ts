@@ -7,7 +7,7 @@
  *   1. `pagamenti_prepara_rimborso` (RPC SECURITY DEFINER, FOR UPDATE):
  *      valida ownership/status/residuo, PRENOTA l'importo (incrementa
  *      payment_refunded_amount) e restituisce i dati pagamento;
- *   2. chiamata al GATEWAY del provider (Stripe/PayPal/Klarna) via
+ *   2. chiamata al gateway Stripe via
  *      `gateway.rimborsa()` — il provider è la fonte del rimborso (refundId);
  *   3. `aggiorna_payment_status` (RPC esistente, macchina a stati già in
  *      produzione) porta lo stato a refunded/partially_refunded;
@@ -43,7 +43,7 @@ export type StatoRimborso = "refunded" | "partially_refunded";
 export const MAX_MOTIVO_RIMBORSO = 200;
 
 /** Provider gateway rimborsabili via API. */
-const PROVIDER_RIMBORSABILI = ["stripe", "paypal", "klarna", "scalapay"] as const;
+const PROVIDER_RIMBORSABILI = ["stripe"] as const;
 
 export type EsitoRimborso =
   | {

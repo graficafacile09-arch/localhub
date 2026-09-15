@@ -1,0 +1,31 @@
+{
+  "purpose": "Fase 13A temporary pre-provision snapshot",
+  "target": "http://127.0.0.1:54321",
+  "captured_at": "2026-09-04",
+  "secret_fields_excluded": true,
+  "users": [],
+  "roles": [],
+  "stores_owned_by_target_users": [],
+  "qa_or_test_named_stores": [],
+  "admin_setting": null,
+  "provisioning_targets": [
+    "admin.test@localhub.it",
+    "commerciante-a.test@localhub.it",
+    "merchant-a.test@localhub.it",
+    "commerciante-b.test@localhub.it",
+    "merchant-b.test@localhub.it",
+    "commerciante-c.test@localhub.it",
+    "merchant-c.test@localhub.it",
+    "commerciante-d.test@localhub.it",
+    "merchant-d.test@localhub.it",
+    "customer-a.test@localhub.it",
+    "customer-b.test@localhub.it",
+    "customer-c.test@localhub.it"
+  ],
+  "restore_plan": {
+    "created_users": "delete only users created after this snapshot",
+    "roles": "delete only roles assigned to users created after this snapshot; restore pre-existing rows when present",
+    "stores": "delete only stores created after this snapshot or restore captured fields for pre-existing stores",
+    "admin_setting": "restore captured row or remove only a row created after this snapshot"
+  }
+}

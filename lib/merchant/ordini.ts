@@ -103,7 +103,7 @@ export type OrdineVenditoreDettaglio = OrdineVenditoreLista & {
   consegnataAt: string | null;
   /** Consegna stimata (testo libero). */
   consegnaStimata: string | null;
-  metodoPagamento: "carta" | "paypal" | "bonifico" | "klarna" | null;
+  metodoPagamento: "carta" | "klarna" | "bonifico_istantaneo" | "bonifico" | null;
   /** Marcatore autoritativo del provider (es. 'klarna'). */
   paymentProvider: string | null;
   annullatoMotivo: string | null;
@@ -199,7 +199,7 @@ function mappaDettaglio(row: OrdineRow, righe: RigaOrdine[], eventi: EventoOrdin
     consegnataAt: (row.consegnata_at as string | null) ?? null,
     consegnaStimata: (row.consegna_stimata as string | null) ?? null,
     metodoPagamento:
-      (row.metodo_pagamento as "carta" | "paypal" | "bonifico" | "klarna" | null) ?? null,
+      (row.metodo_pagamento as "carta" | "klarna" | "bonifico_istantaneo" | "bonifico" | null) ?? null,
     paymentProvider: (row.payment_provider as string | null) ?? null,
     annullatoMotivo: (row.annullato_motivo as string | null) ?? null,
     annullatoNota: (row.annullato_nota as string | null) ?? null,

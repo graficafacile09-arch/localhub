@@ -53,7 +53,8 @@ export async function POST(request: Request) {
     .single();
 
   if (error) {
-    return apiError("CREATE_FAILED", error.message ?? "Impossibile creare il negozio.", 500);
+    console.error("[/api/merchant/stores] Errore creazione negozio:", error);
+    return apiError("CREATE_FAILED", "Impossibile creare il negozio. Riprova tra poco.", 500);
   }
 
   // Notifica admin — BEST-EFFORT, creazione negozio riuscita. Mai

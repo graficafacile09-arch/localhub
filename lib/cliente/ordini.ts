@@ -124,7 +124,7 @@ function mappaDettaglio(
     consegnataAt: (row.consegnata_at as string | null) ?? null,
     consegnaStimata: (row.consegna_stimata as string | null) ?? null,
     metodoPagamento:
-      (row.metodo_pagamento as "carta" | "paypal" | "bonifico" | null) ?? null,
+      (row.metodo_pagamento as "carta" | "klarna" | "bonifico_istantaneo" | "bonifico" | null) ?? null,
     paymentProvider: (row.payment_provider as string | null) ?? null,
     spedizioneIndirizzo: (row.spedizione_indirizzo as string | null) ?? null,
     spedizioneCap: (row.spedizione_cap as string | null) ?? null,

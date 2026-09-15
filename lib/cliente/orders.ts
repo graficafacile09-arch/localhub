@@ -150,7 +150,7 @@ export type CreaOrdineInput = {
     carrier: CarrierCodice;
     /** Servizio del corriere (standard | express | online | locale). */
     servizio: ServizioCodice;
-    metodoPagamento: "carta" | "paypal" | "bonifico" | "klarna";
+    metodoPagamento: "carta" | "klarna" | "bonifico_istantaneo" | "bonifico";
   } | null;
   /** Indirizzo di fatturazione opzionale (solo modalità spedizione). */
   fatturazione?: FatturazioneCheckout | null;
@@ -191,7 +191,7 @@ export type OrdinePersistito = {
   /** Data/ora dell'annullamento. */
   annullatoAt: string | null;
   /** Metodo di pagamento selezionato al checkout (solo spedizione). */
-  metodoPagamento: "carta" | "paypal" | "bonifico" | "klarna" | null;
+  metodoPagamento: "carta" | "klarna" | "bonifico_istantaneo" | "bonifico" | null;
   /** Stato del pagamento (FASE F1): null per gli ordini legacy senza pagamento. */
   paymentStatus: PaymentStatus | null;
   paymentProvider: string | null;
@@ -405,7 +405,7 @@ function assumiOrdine(riga: Record<string, unknown>, righe: RigaOrdine[]): Ordin
     annullatoNota: (riga.annullato_nota as string | null) ?? null,
     annullatoAt: (riga.annullato_at as string | null) ?? null,
     metodoPagamento:
-      (riga.metodo_pagamento as "carta" | "paypal" | "bonifico" | "klarna" | null) ?? null,
+      (riga.metodo_pagamento as "carta" | "klarna" | "bonifico_istantaneo" | "bonifico" | null) ?? null,
     paymentStatus: (riga.payment_status as PaymentStatus | null) ?? null,
     paymentProvider: (riga.payment_provider as string | null) ?? null,
     paymentPaidAt: (riga.payment_paid_at as string | null) ?? null,
@@ -564,7 +564,7 @@ export async function creaOrdine(
     }
     if (
       sp.metodoPagamento !== "carta" &&
-      sp.metodoPagamento !== "paypal" &&
+      sp.metodoPagamento !== "bonifico_istantaneo" &&
       sp.metodoPagamento !== "bonifico" &&
       sp.metodoPagamento !== "klarna"
     ) {
@@ -684,15 +684,14 @@ export async function creaOrdine(
   // ma qui non devono MAI interferire con la risposta al cliente.
   if (!giaEsistente && esito.ordine?.id) {
     // FASE F1 — email di conferma: per gli ordini con pagamento online
-    // (carta/klarna/paypal/scalapay — le RPC salvano 'carta' per
-    // klarna/scalapay) la conferma viene inviata SOLO DOPO che il webhook
+    // (carta/klarna/bonifico_istantaneo via Stripe) la conferma viene inviata SOLO DOPO che il webhook
     // del provider conferma il pagamento (mai dire "pagato" prima del
     // pagamento). Per tutti gli altri metodi (bonifico/ritiro) l'email
     // parte subito.
     const pagamentoOnline =
       input.spedizione?.metodoPagamento === "carta" ||
       input.spedizione?.metodoPagamento === "klarna" ||
-      input.spedizione?.metodoPagamento === "paypal";
+      input.spedizione?.metodoPagamento === "bonifico_istantaneo";
     if (!pagamentoOnline) {
       await inviaEmailConfermaOrdine(esito.ordine.id).catch(() => {});
       // WhatsApp al negoziante: per gli ordini GIÀ confermati subito

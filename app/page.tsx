@@ -1,5 +1,7 @@
 import Header from "@/components/Header/Header";
 import Link from "next/link";
+import Image from "next/image";
+
 import {
   ArrowRight,
   SearchCheck,
@@ -87,11 +89,12 @@ export default async function Home() {
           ═══════════════════════════════════════════════════════════════════ */}
       <section className="relative overflow-hidden rounded-b-[2rem] bg-slate-900 shadow-lg shadow-slate-900/10 sm:rounded-b-[2.5rem]">
         {/* La foto copre tutta la HERO e non ne determina l'altezza. */}
-        <img
+        <Image
           src="/hero-via-roma-castrovillari-1400x1050.jpg"
           alt="Via Roma a Castrovillari"
-          loading="eager"
-          fetchPriority="high"
+          fill
+          sizes="100vw"
+          priority
           className="absolute inset-0 h-full w-full object-cover object-center"
         />
 

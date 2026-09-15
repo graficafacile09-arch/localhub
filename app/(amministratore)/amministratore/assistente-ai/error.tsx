@@ -10,10 +10,10 @@ import { AlertTriangle, Bot, RotateCcw } from "lucide-react";
  */
 export default function AssistenteAiError({
   error,
-  reset,
+  unstable_retry,
 }: {
   error: Error & { digest?: string };
-  reset: () => void;
+  unstable_retry: () => void;
 }) {
   useEffect(() => {
     console.error("[assistente-ai] Errore pagina:", error);
@@ -34,7 +34,7 @@ export default function AssistenteAiError({
       <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
         <button
           type="button"
-          onClick={reset}
+          onClick={unstable_retry}
           className="btn-cta px-5 py-2.5 text-sm"
         >
           <RotateCcw className="h-4 w-4" aria-hidden />

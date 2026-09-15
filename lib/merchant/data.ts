@@ -4,6 +4,8 @@ import { deleteImageFromStorage, uploadDataUrlToStorage } from "@/lib/supabase/s
 import { generaSlugUnivoco } from "@/lib/slug-server";
 import { getCurrentUser } from "@/lib/auth/session";
 import { utenteAdminAutorizzato } from "@/lib/auth/roles";
+import { getModuliAttiviNegozio } from "@/lib/profili-attivita";
+import type { Negozio } from "@/types/negozio";
 import type {
   AttributiVariante,
   ConfigPaccoSpedizione,
@@ -437,6 +439,36 @@ export async function canManageStore(userId: string, negozioId: string): Promise
 
   if (error || !count || count === 0) return false;
   return true;
+}
+
+/**
+ * True solo per i negozi che hanno il modulo commerciale `prodotti` attivo.
+ * Usa la stessa risoluzione centralizzata dei profili attività/editor:
+ * `data.tipo_attivita` ha precedenza su `moduli_attivi`.
+ * Fail-closed: ownership, lettura o classificazione non disponibili negano
+ * l'accesso alla configurazione dei pagamenti.
+ */
+export async function canManageStorePayments(
+  userId: string,
+  negozioId: string
+): Promise<boolean> {
+  if (!(await canManageStore(userId, negozioId))) return false;
+
+  const supabase = await getDbForUser(userId);
+  const { data, error } = await supabase
+    .from("negozi")
+    .select("data, moduli_attivi")
+    .eq("id", negozioId)
+    .is("deleted_at", null)
+    .maybeSingle();
+
+  if (error || !data) return false;
+
+  const moduli = getModuliAttiviNegozio({
+    data: data.data,
+    moduli_attivi: data.moduli_attivi,
+  } as unknown as Negozio);
+  return !!moduli?.includes("prodotti");
 }
 
 export async function getSlugNegozioGestibile(userId: string, negozioId: string): Promise<string | null> {

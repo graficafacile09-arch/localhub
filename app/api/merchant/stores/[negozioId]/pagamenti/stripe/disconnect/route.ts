@@ -1,6 +1,6 @@
 import { apiError, apiOk } from "@/lib/api/response";
 import { requireApiArea } from "@/lib/auth/session-area";
-import { canManageStore } from "@/lib/merchant/data";
+import { canManageStorePayments } from "@/lib/merchant/data";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getStripeConnectAccount } from "@/lib/pagamenti/config";
 import { disconnectStripeAccount } from "@/lib/pagamenti/stripe-connect";
@@ -22,8 +22,14 @@ export async function POST(
   const user = sessione.user;
 
   const { negozioId } = await context.params;
-  const allowed = await canManageStore(user.id, negozioId);
-  if (!allowed) return apiError("FORBIDDEN", "Non puoi gestire questo negozio.", 403);
+  const allowed = await canManageStorePayments(user.id, negozioId);
+  if (!allowed) {
+    return apiError(
+      "PAYMENTS_MODULE_INACTIVE",
+      "La configurazione dei pagamenti è disponibile solo per i negozi che vendono prodotti.",
+      403
+    );
+  }
 
   const connect = await getStripeConnectAccount(negozioId);
   if (connect) {
