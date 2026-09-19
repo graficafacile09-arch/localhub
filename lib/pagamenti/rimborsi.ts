@@ -48,37 +48,58 @@ const PROVIDER_RIMBORSABILI = ["stripe"] as const;
 export type EsitoRimborso =
   | {
       ok: true;
+      pending: false;
       ordineId: string;
       importoRichiesto: number;
       importoRimborsato: number;
       paymentStatus: string;
       residuo: number;
       refundId: string | null;
+      nuovaOperazione: boolean;
+    }
+  | {
+      ok: true;
+      pending: true;
+      ordineId: string;
+      importoRichiesto: number;
+      paymentStatus: string;
+      residuo: number;
+      refundId: string | null;
+      nuovaOperazione: boolean;
     }
   | { ok: false; codice: string; errore: string; status: number };
 
-type RispostaPrepara = {
+type RispostaOperazione = {
   ok?: boolean;
   codice?: string;
   messaggio?: string;
+  esistente?: boolean;
+  operazione_id?: string;
   ordine_id?: string;
   provider?: string | null;
   payment_id?: string | null;
-  payment_amount?: number | null;
-  payment_refunded_amount?: number | null;
+  idempotency_key?: string | null;
   importo_richiesto?: number | null;
+  payment_status?: string | null;
+  payment_refunded_amount?: number | null;
   residuo?: number | null;
-  stato_nuovo?: string | null;
+  stato?: string | null;
+  refund_id?: string | null;
 };
 
-/**
- * Valida l'importo del rimborso lato server:
- *   - numerico finito;
- *   - > 0;
- *   - al massimo 2 decimali (normalizzazione EUR);
- *   - non oltre il residuo (controllato anche atomicamente dalla RPC).
- * `null` quando NON valido. Nessun valore dal client è mai fidato.
- */
+type RispostaFinalizzazione = {
+  ok?: boolean;
+  codice?: string;
+  messaggio?: string;
+  stato?: string | null;
+  refund_id?: string | null;
+  payment_status?: string | null;
+  residuo?: number | null;
+  importo_rimborsato?: number | null;
+};
+
+const PROVIDER_RIMBORSABILI = ["stripe"] as const;
+
 export function validaImportoRimborso(
   importo: unknown,
   residuo: number
@@ -107,21 +128,41 @@ export function statoDopoRimborso(
 }
 
 /** Rilascia la prenotazione se la chiamata al provider fallisce. */
-async function rilasciaPrenotazione(ordineId: string, importo: number): Promise<void> {
+async function aggiornaStatoOperazione(
+  db: ReturnType<typeof createAdminSupabaseClient>,
+  operationId: string,
+  stato: "failed" | "reconciliation_required",
+  codice: string,
+  dettaglio: string
+): Promise<void> {
   try {
-    const db = createAdminSupabaseClient();
-    await db.rpc("pagamenti_rimborso_annulla", {
-      p_ordine_id: ordineId,
-      p_importo: importo,
+    await db.rpc("pagamenti_rimborso_operazione_fallita", {
+      p_operazione_id: operationId,
+      p_stato: stato,
+      p_codice: codice.trim().slice(0, 100) || "RIMBORSO_PROVIDER_FALLITO",
+      p_dettaglio: dettaglio.slice(0, 1000),
     });
   } catch {
-    // Best-effort: la prenotazione resta; il webhook/riconciliazione è la
-    // fonte definitiva e non sono mai stati addebitati importi al provider.
+    // La reconciliation successiva può recuperare l'operation dallo stato
+    // ancora presente nel DB.
   }
 }
 
-/** Registra l'operazione nello storico ordine (ordini_eventi, non duplicato
- *  con pagamenti_eventi: quello è il timeline del provider via webhook). */
+function erroreProviderDeterministico(error: unknown): boolean {
+  const e = error as { statusCode?: unknown };
+  const statusCode = Number(e?.statusCode);
+  return Number.isFinite(statusCode) && statusCode >= 400 && statusCode < 500;
+}
+
+function messaggioErroreProvider(error: unknown): string {
+  const e = error as { message?: unknown; type?: unknown; code?: unknown };
+  const message = typeof e?.message === "string" ? e.message : "";
+  const type = typeof e?.type === "string" ? e.type : "";
+  const code = typeof e?.code === "string" ? e.code : "";
+  return [type, code, message].filter(Boolean).join(": ").slice(0, 1000) ||
+    "Errore del provider di pagamento.";
+}
+
 async function registraEventoStorico(opts: {
   ordineId: string;
   importo: number;
@@ -154,35 +195,46 @@ export async function rimborsaOrdine(opts: {
   importo: unknown;
   motivo?: string | null;
   userId: string;
+  idempotencyKey: string;
 }): Promise<EsitoRimborso> {
   if (!opts.ordineId) {
     return { ok: false, codice: "VALIDATION_ERROR", errore: "Ordine non valido.", status: 422 };
+  }
+  if (!opts.idempotencyKey || opts.idempotencyKey.length > 128) {
+    return { ok: false, codice: "VALIDATION_ERROR", errore: "Chiave di idempotenza non valida.", status: 422 };
   }
   if (opts.motivo && opts.motivo.length > MAX_MOTIVO_RIMBORSO) {
     return {
       ok: false,
       codice: "VALIDATION_ERROR",
-      errore: `Il motivo supera ${MAX_MOTIVO_RIMBORSO} caratteri.`,
+      errore: "Il motivo supera " + MAX_MOTIVO_RIMBORSO + " caratteri.",
       status: 422,
     };
   }
 
   const db = createAdminSupabaseClient();
 
-  // ── 1. Prenotazione atomica (validazioni + residuo + over-refund) ─────
-  const { data: prepara, error: rpcErr } = await db.rpc("pagamenti_prepara_rimborso", {
-    p_ordine_id: opts.ordineId,
-    p_importo: opts.importo,
-    p_merchant_user_id: opts.userId,
-  });
-  if (rpcErr) {
+  // 1. Operation durevole: nessun incremento preventivo di payment_refunded_amount.
+  const { data: preparata, error: preparaError } = await db.rpc(
+    "pagamenti_rimborso_operazione_prepara",
+    {
+      p_ordine_id: opts.ordineId,
+      p_importo: opts.importo,
+      p_merchant_user_id: opts.userId,
+      p_idempotency_key: opts.idempotencyKey,
+    }
+  );
+  if (preparaError) {
     return { ok: false, codice: "SAVE_FAILED", errore: "Impossibile preparare il rimborso.", status: 500 };
   }
-  const prep = (prepara ?? null) as RispostaPrepara | null;
+
+  const prep = (preparata ?? null) as RispostaOperazione | null;
   if (!prep || prep.ok !== true) {
     const codice = String(prep?.codice ?? "SAVE_FAILED");
     const status =
-      codice === "FORBIDDEN" ? 403 : codice === "ORDINE_NON_TROVATO" ? 404 : 422;
+      codice === "FORBIDDEN" ? 403 :
+      codice === "ORDINE_NON_TROVATO" ? 404 :
+      codice === "IDEMPOTENCY_CONFLICT" ? 409 : 422;
     return {
       ok: false,
       codice,
@@ -192,15 +244,36 @@ export async function rimborsaOrdine(opts: {
   }
 
   const ordineId = String(prep.ordine_id ?? opts.ordineId);
+  const operationId = String(prep.operazione_id ?? "");
   const provider = String(prep.provider ?? "");
   const paymentId = String(prep.payment_id ?? "");
-  const importoRichiesto = Number(prep.importo_richiesto ?? opts.importo);
-  const residuoNuovo = Number(prep.residuo ?? 0);
-  const statoAtteso = (prep.stato_nuovo ?? "partially_refunded") as StatoRimborso;
+  const operationImporto = Number(prep.importo_richiesto ?? opts.importo);
+  const residuo = Number(prep.residuo ?? 0);
+  const stato = String(prep.stato ?? "");
+  const refundIdEsistente = prep.refund_id ? String(prep.refund_id) : null;
+  const operationEsistente = prep.esistente === true;
 
-  // ── 2. Provider gateway + credenziali (fail-closed) ───────────────────
-  if (!provider || !PROVIDER_RIMBORSABILI.includes(provider as never) || !paymentId) {
-    await rilasciaPrenotazione(ordineId, importoRichiesto);
+  if (!operationId || !Number.isFinite(operationImporto) || operationImporto <= 0) {
+    return { ok: false, codice: "SAVE_FAILED", errore: "Operazione di rimborso non valida.", status: 500 };
+  }
+
+  if (stato === "succeeded") {
+    return {
+      ok: true,
+      pending: false,
+      ordineId,
+      importoRichiesto: operationImporto,
+      importoRimborsato: operationImporto,
+      paymentStatus: String(prep.payment_status ?? "refunded"),
+      residuo,
+      refundId: refundIdEsistente,
+      nuovaOperazione: false,
+    };
+  }
+
+  if (!PROVIDER_RIMBORSABILI.includes(provider as (typeof PROVIDER_RIMBORSABILI)[number]) || !paymentId) {
+    await aggiornaStatoOperazione(db, operationId, "failed", "PAGAMENTO_NON_RIMBORSABILE",
+      "Nessun pagamento Stripe rimborsabile associato all'operation.");
     return {
       ok: false,
       codice: "PAGAMENTO_NON_RIMBORSABILE",
@@ -208,18 +281,11 @@ export async function rimborsaOrdine(opts: {
       status: 422,
     };
   }
-  if (!providerGatewayImplementato(provider)) {
-    await rilasciaPrenotazione(ordineId, importoRichiesto);
-    return {
-      ok: false,
-      codice: "PROVIDER_NON_DISPONIBILE",
-      errore: "Il provider di pagamento non è disponibile.",
-      status: 422,
-    };
-  }
+
   const gateway = getGatewayProvider(provider);
   if (!gateway) {
-    await rilasciaPrenotazione(ordineId, importoRichiesto);
+    await aggiornaStatoOperazione(db, operationId, "failed", "PROVIDER_NON_DISPONIBILE",
+      "Gateway non disponibile.");
     return {
       ok: false,
       codice: "PROVIDER_NON_DISPONIBILE",
@@ -228,19 +294,35 @@ export async function rimborsaOrdine(opts: {
     };
   }
 
-  // Credenziali: Stripe Connect (account collegato) oppure direct (secret).
-  // Il negozioId serve per risolvere la config; lo leggiamo dall'ordine.
-  const { data: ordineRow } = await db
+  // 2. Connected account risolto server-side.
+  const { data: ordineRow, error: ordineError } = await db
     .from("ordini")
     .select("negozio_id")
     .eq("id", ordineId)
     .maybeSingle();
+  if (ordineError) {
+    await aggiornaStatoOperazione(db, operationId, "reconciliation_required",
+      "ORDINE_LOOKUP_FAILED", ordineError.message);
+    return {
+      ok: true,
+      pending: true,
+      ordineId,
+      importoRichiesto: operationImporto,
+      paymentStatus: String(prep.payment_status ?? "pending"),
+      residuo,
+      refundId: refundIdEsistente,
+      nuovaOperazione: !operationEsistente,
+    };
+  }
+
   const negozioId = ordineRow?.negozio_id ? String(ordineRow.negozio_id) : "";
   const risolto = negozioId
     ? await risolviCredenzialiGateway(negozioId, provider)
     : { pronto: false as const, cred: null };
+
   if (!risolto.pronto || !risolto.cred) {
-    await rilasciaPrenotazione(ordineId, importoRichiesto);
+    await aggiornaStatoOperazione(db, operationId, "failed", "PROVIDER_NON_CONFIGURATO",
+      "Il metodo di pagamento non è più configurato per il negozio.");
     return {
       ok: false,
       codice: "PROVIDER_NON_CONFIGURATO",
@@ -249,67 +331,191 @@ export async function rimborsaOrdine(opts: {
     };
   }
 
-  // ── 3. Chiamata al provider (fonte del rimborso) ──────────────────────
+  // 3. Claim atomico. Un lease scaduto può essere ripreso con la stessa
+  // idempotency key Stripe.
+  const { data: claimData, error: claimError } = await db.rpc(
+    "pagamenti_rimborso_operazione_claim",
+    { p_operazione_id: operationId }
+  );
+  if (claimError) {
+    return {
+      ok: true,
+      pending: true,
+      ordineId,
+      importoRichiesto: operationImporto,
+      paymentStatus: String(prep.payment_status ?? "pending"),
+      residuo,
+      refundId: refundIdEsistente,
+      nuovaOperazione: !operationEsistente,
+    };
+  }
+
+  const claim = (claimData ?? null) as {
+    ok?: boolean;
+    claimed?: boolean;
+    stato?: string;
+    refund_id?: string | null;
+  } | null;
+
+  if (!claim || claim.ok !== true) {
+    return { ok: false, codice: "CLAIM_FAILED", errore: "Impossibile prendere in carico il rimborso.", status: 500 };
+  }
+
+  if (claim.claimed !== true) {
+    if (claim.stato === "succeeded") {
+      return {
+        ok: true,
+        pending: false,
+        ordineId,
+        importoRichiesto: operationImporto,
+        importoRimborsato: operationImporto,
+        paymentStatus: "refunded",
+        residuo,
+        refundId: claim.refund_id ? String(claim.refund_id) : refundIdEsistente,
+        nuovaOperazione: false,
+      };
+    }
+    return {
+      ok: true,
+      pending: true,
+      ordineId,
+      importoRichiesto: operationImporto,
+      paymentStatus: String(prep.payment_status ?? "pending"),
+      residuo,
+      refundId: refundIdEsistente,
+      nuovaOperazione: !operationEsistente,
+    };
+  }
+
+  // 4. Stripe Direct Charge: application fee rimborsata nello stesso refund.
   let refundId: string | null = null;
   try {
-    const esito = await gateway.rimborsa(paymentId, importoRichiesto, risolto.cred);
+    const esito = await gateway.rimborsa(
+      paymentId,
+      operationImporto,
+      risolto.cred,
+      {
+        idempotencyKey: String(prep.idempotency_key ?? opts.idempotencyKey),
+        operationId,
+      }
+    );
     refundId = esito.refundId ?? null;
-  } catch {
-    await rilasciaPrenotazione(ordineId, importoRichiesto);
-    return {
-      ok: false,
-      codice: "RIMBORSO_PROVIDER_FALLITO",
-      errore: "Il provider ha rifiutato il rimborso. Nessun importo è stato addebitato.",
-      status: 502,
-    };
+  } catch (error) {
+    // Esito indeterminato: prima cerchiamo su Stripe lo stesso operation_id.
+    try {
+      const giaCreato = gateway.riconciliaRimborso
+        ? await gateway.riconciliaRimborso(paymentId, operationImporto, risolto.cred, operationId)
+        : null;
+      if (giaCreato?.refundId) refundId = giaCreato.refundId;
+    } catch {
+      // Resta reconciliation_required: il webhook o un retry con la stessa
+      // idempotency key possono chiudere l'operation senza doppio refund.
+    }
+
+    if (!refundId) {
+      const dettaglio = messaggioErroreProvider(error);
+      const statoErrore = erroreProviderDeterministico(error) ? "failed" : "reconciliation_required";
+      await aggiornaStatoOperazione(db, operationId, statoErrore,
+        "RIMBORSO_PROVIDER_FALLITO", dettaglio);
+
+      if (statoErrore === "reconciliation_required") {
+        return {
+          ok: true,
+          pending: true,
+          ordineId,
+          importoRichiesto: operationImporto,
+          paymentStatus: String(prep.payment_status ?? "pending"),
+          residuo,
+          refundId: null,
+          nuovaOperazione: !operationEsistente,
+        };
+      }
+
+      return {
+        ok: false,
+        codice: "RIMBORSO_PROVIDER_FALLITO",
+        errore: "Il provider ha rifiutato il rimborso.",
+        status: 502,
+      };
+    }
   }
 
-  // ── 4. Stato pagamento via RPC esistente (macchina a stati) ───────────
-  const { data: statoRes, error: statoErr } = await db.rpc("aggiorna_payment_status", {
-    p_ordine_id: ordineId,
-    p_nuovo_stato: statoAtteso,
-    p_payment_id: null,
-    p_transaction_id: refundId,
-    p_importo: null,
-    p_valuta: null,
-    p_expires_at: null,
-  });
-  if (statoErr || (statoRes as { ok?: boolean } | null)?.ok !== true) {
-    // Il rimborso al provider È avvenuto: NON rilasciamo la prenotazione
-    // (l'importo risulta già rimborsato al provider). Registriamo l'evento
-    // e ritorniamo un errore transitorio: il webhook del provider farà la
-    // riconciliazione definitiva.
-    await registraEventoStorico({
+  if (!refundId) {
+    await aggiornaStatoOperazione(db, operationId, "reconciliation_required",
+      "REFUND_ID_MANCANTE", "Stripe ha risposto senza un Refund ID.");
+    return {
+      ok: true,
+      pending: true,
       ordineId,
-      importo: importoRichiesto,
-      stato: statoAtteso,
-      motivo: opts.motivo,
-      autoreId: opts.userId,
-    });
-    return {
-      ok: false,
-      codice: "STATO_NON_AGGIORNATO",
-      errore: "Rimborso eseguito dal provider ma stato non aggiornato: verrà riconciliato dal webhook.",
-      status: 502,
+      importoRichiesto: operationImporto,
+      paymentStatus: String(prep.payment_status ?? "pending"),
+      residuo,
+      refundId: null,
+      nuovaOperazione: !operationEsistente,
     };
   }
 
-  // ── 5. Storico ordine (operazione admin) + risposta ───────────────────
+  // 5. Finalizzazione atomica: operation + ordine + payment_status.
+  const { data: finalData, error: finalError } = await db.rpc(
+    "pagamenti_rimborso_operazione_completa",
+    {
+      p_operazione_id: operationId,
+      p_refund_id: refundId,
+    }
+  );
+
+  if (finalError) {
+    return {
+      ok: true,
+      pending: true,
+      ordineId,
+      importoRichiesto: operationImporto,
+      paymentStatus: String(prep.payment_status ?? "pending"),
+      residuo,
+      refundId,
+      nuovaOperazione: !operationEsistente,
+    };
+  }
+
+  const finale = (finalData ?? null) as RispostaFinalizzazione | null;
+  if (!finale || finale.ok !== true) {
+    return {
+      ok: true,
+      pending: true,
+      ordineId,
+      importoRichiesto: operationImporto,
+      paymentStatus: String(finale?.payment_status ?? prep.payment_status ?? "pending"),
+      residuo: Number(finale?.residuo ?? residuo),
+      refundId,
+      nuovaOperazione: !operationEsistente,
+    };
+  }
+
+  const paymentStatus = String(
+    finale.payment_status ??
+      (Number(finale.residuo ?? 0) <= 0 ? "refunded" : "partially_refunded")
+  );
+  const importoRimborsato = Number(finale.importo_rimborsato ?? operationImporto);
+  const residuoFinale = Number(finale.residuo ?? Math.max(0, residuo));
+
   await registraEventoStorico({
     ordineId,
-    importo: importoRichiesto,
-    stato: statoAtteso,
+    importo: importoRimborsato,
+    stato: paymentStatus === "refunded" ? "refunded" : "partially_refunded",
     motivo: opts.motivo,
     autoreId: opts.userId,
   });
 
   return {
     ok: true,
+    pending: false,
     ordineId,
-    importoRichiesto,
-    importoRimborsato: importoRichiesto,
-    paymentStatus: statoAtteso,
-    residuo: residuoNuovo,
-    refundId,
+    importoRichiesto: operationImporto,
+    importoRimborsato,
+    paymentStatus,
+    residuo: residuoFinale,
+    refundId: String(finale.refund_id ?? refundId),
+    nuovaOperazione: !operationEsistente,
   };
 }
+
