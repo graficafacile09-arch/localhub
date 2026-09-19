@@ -4,6 +4,7 @@ import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import BackButton from "@/components/BackButton";
 import PasswordInput from "@/components/auth/PasswordInput";
+import { Apple } from "lucide-react";
 import { isPartitaIvaValida } from "@/lib/partita-iva";
 import {
   cancellaCredenzialiRicordate,
@@ -21,12 +22,14 @@ function LoginContent() {
   const ok = searchParams.get("ok");
   const reinviata = searchParams.get("reinviata");
   const area = searchParams.get("area") ?? "";
+  const oauth = searchParams.get("oauth") ?? "";
+  const isVendorOAuthCompletion = area === "merchant" && oauth === "vendor";
   // Il parametro ?area= guida SOLO l'estetica della pagina: la vera
   // autorizzazione resta server-side (lib/auth/*), qui nessuna logica auth.
   const tema = risolviTemaLogin(area);
   const banda = tema.bandaHeader;
   const isAdmin = tema.id === "admin";
-  const [tab, setTab] = useState<"login" | "register">("login");
+  const [tab, setTab] = useState<"login" | "register">(isVendorOAuthCompletion ? "register" : "login");
   // L'amministrazione non prevede registrazione: esperienza solo di accesso.
   const tabEffettivo = isAdmin ? ("login" as const) : tab;
 
@@ -160,6 +163,8 @@ function LoginContent() {
                 mostraReinvio={mostraReinvio}
                 tema={tema}
               />
+            ) : isVendorOAuthCompletion ? (
+              <RegisterVenditoreOAuthCompletionForm tema={tema} />
             ) : area === "merchant" ? (
               <RegisterVenditoreForm tema={tema} />
             ) : (
@@ -293,10 +298,20 @@ function RegisterClienteForm({ tema }: { tema: TemaLogin }) {
       className="space-y-4"
     >
       <div className="space-y-2">
-        <label htmlFor="name" className={tema.labelFieldClass}>Nome e Cognome</label>
+        <label htmlFor="reg_nome" className={tema.labelFieldClass}>Nome</label>
         <input
-          id="name" name="name" type="text" required
-          placeholder="Mario Rossi"
+          id="reg_nome" name="name" type="text" required
+          autoComplete="given-name"
+          placeholder="Mario"
+          className={`h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-900 outline-none transition ${tema.inputFocusClass}`}
+        />
+      </div>
+      <div className="space-y-2">
+        <label htmlFor="reg_cognome" className={tema.labelFieldClass}>Cognome</label>
+        <input
+          id="reg_cognome" name="surname" type="text" required
+          autoComplete="family-name"
+          placeholder="Rossi"
           className={`h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-900 outline-none transition ${tema.inputFocusClass}`}
         />
       </div>
@@ -325,6 +340,48 @@ function RegisterClienteForm({ tema }: { tema: TemaLogin }) {
           className="h-12"
           focusClassName={tema.inputFocusClass}
         />
+      </div>
+      <div className="space-y-3 pt-1">
+        <div className="flex items-center gap-3">
+          <span className="h-px flex-1 bg-slate-200" />
+          <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">oppure</span>
+          <span className="h-px flex-1 bg-slate-200" />
+        </div>
+        <a
+          href={`/api/auth/oauth/start?area=${area}&flow=register&provider=google`}
+          className="inline-flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-slate-300 bg-white text-sm font-bold text-slate-800 shadow-sm transition hover:bg-slate-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-200"
+        >
+          <span className="text-lg font-black leading-none text-[#4285F4]" aria-hidden="true">G</span>
+          Continua con Google
+        </a>
+        <a
+          href={`/api/auth/oauth/start?area=${area}&flow=register&provider=apple`}
+          className="inline-flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-slate-800 bg-slate-900 text-sm font-bold text-white shadow-sm transition hover:bg-black active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-300"
+        >
+          <Apple className="h-5 w-5 fill-current" aria-hidden="true" />
+          Continua con Apple
+        </a>
+      </div>
+      <div className="space-y-3 pt-1">
+        <div className="flex items-center gap-3">
+          <span className="h-px flex-1 bg-slate-200" />
+          <span className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400">oppure</span>
+          <span className="h-px flex-1 bg-slate-200" />
+        </div>
+        <a
+          href={`/api/auth/oauth/start?area=${area}&flow=register&provider=google`}
+          className="inline-flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-slate-300 bg-white text-sm font-bold text-slate-800 shadow-sm transition hover:bg-slate-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-200"
+        >
+          <span className="text-lg font-black leading-none text-[#4285F4]" aria-hidden="true">G</span>
+          Continua con Google
+        </a>
+        <a
+          href={`/api/auth/oauth/start?area=${area}&flow=register&provider=apple`}
+          className="inline-flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-slate-800 bg-slate-900 text-sm font-bold text-white shadow-sm transition hover:bg-black active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-300"
+        >
+          <Apple className="h-5 w-5 fill-current" aria-hidden="true" />
+          Continua con Apple
+        </a>
       </div>
       <button
         type="submit"
@@ -365,10 +422,20 @@ function RegisterVenditoreForm({ tema }: { tema: TemaLogin }) {
       className="space-y-4"
     >
       <div className="space-y-2">
-        <label htmlFor="name" className={tema.labelFieldClass}>Nome e Cognome</label>
+        <label htmlFor="reg_nome" className={tema.labelFieldClass}>Nome</label>
         <input
-          id="name" name="name" type="text" required
-          placeholder="Mario Rossi"
+          id="reg_nome" name="name" type="text" required
+          autoComplete="given-name"
+          placeholder="Mario"
+          className={`h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-900 outline-none transition ${tema.inputFocusClass}`}
+        />
+      </div>
+      <div className="space-y-2">
+        <label htmlFor="reg_cognome" className={tema.labelFieldClass}>Cognome</label>
+        <input
+          id="reg_cognome" name="surname" type="text" required
+          autoComplete="family-name"
+          placeholder="Rossi"
           className={`h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-900 outline-none transition ${tema.inputFocusClass}`}
         />
       </div>
@@ -437,6 +504,72 @@ function RegisterVenditoreForm({ tema }: { tema: TemaLogin }) {
   );
 }
 
+function RegisterVenditoreOAuthCompletionForm({ tema }: { tema: TemaLogin }) {
+  const [partitaIva, setPartitaIva] = useState("");
+  const [partitaIvaError, setPartitaIvaError] = useState("");
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    if (!isPartitaIvaValida(partitaIva)) {
+      e.preventDefault();
+      setPartitaIvaError(partitaIva.trim() === "" ? "Partita IVA obbligatoria." : "Partita IVA non valida.");
+    }
+  };
+
+  return (
+    <form
+      action="/api/auth/register-merchant/oauth"
+      method="post"
+      onSubmit={handleSubmit}
+      className="space-y-4"
+    >
+      <div className={tema.bannerClass}>
+        Account Google/Apple autenticato. Completa solo i dati dell’attività per concludere la registrazione.
+      </div>
+      <div className="space-y-2">
+        <label htmlFor="oauth_partita_iva" className={tema.labelFieldClass}>Partita IVA</label>
+        <input
+          id="oauth_partita_iva"
+          name="partita_iva"
+          type="text"
+          inputMode="numeric"
+          autoComplete="off"
+          maxLength={13}
+          placeholder="es. 01234567890"
+          value={partitaIva}
+          onChange={(e) => {
+            setPartitaIva(e.target.value);
+            if (partitaIvaError) setPartitaIvaError("");
+          }}
+          aria-invalid={partitaIvaError ? true : undefined}
+          className={`h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-900 outline-none transition ${tema.inputFocusClass}`}
+        />
+        {partitaIvaError && (
+          <p className={tema.erroreCampoClass} role="alert">{partitaIvaError}</p>
+        )}
+      </div>
+      <div className="space-y-2">
+        <label htmlFor="oauth_store_name" className={tema.labelFieldClass}>Nome attività</label>
+        <input
+          id="oauth_store_name"
+          name="store_name"
+          type="text"
+          required
+          placeholder="es. Pizzeria Da Mario"
+          className={`h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-900 outline-none transition ${tema.inputFocusClass}`}
+        />
+      </div>
+      <button
+        type="submit"
+        className={`h-12 w-full ${tema.ctaClass}`}
+      >
+        Completa registrazione
+        {tema.IconaCta && (
+          <tema.IconaCta className="h-4 w-4" aria-hidden="true" />
+        )}
+      </button>
+    </form>
+  );
+}
 export default function LoginPage() {
   return (
     <Suspense>
