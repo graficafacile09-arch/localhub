@@ -79,6 +79,7 @@ export default function ReclamiOrdine({
   sintesi,
   reclamiIniziali,
   messaggiIniziali = {},
+  eventiIniziali = {},
   ordineCompleto,
 }: Props) {
   const router = useRouter();
