@@ -4,7 +4,6 @@ import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import BackButton from "@/components/BackButton";
 import PasswordInput from "@/components/auth/PasswordInput";
-import { Apple } from "lucide-react";
 import { isPartitaIvaValida } from "@/lib/partita-iva";
 import {
   cancellaCredenzialiRicordate,
@@ -359,13 +358,6 @@ function RegisterClienteForm({ tema }: { tema: TemaLogin }) {
           </svg>
           Continua con Google
         </a>
-        <a
-          href="/api/auth/oauth/start?area=cliente&flow=register&provider=apple"
-          className="inline-flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-slate-300 bg-white text-sm font-bold text-slate-900 shadow-sm transition hover:bg-slate-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-300"
-        >
-          <Apple className="h-5 w-5 fill-current text-black" aria-hidden="true" />
-          Continua con Apple
-        </a>
       </div>
 
       <button
@@ -494,13 +486,6 @@ function RegisterVenditoreForm({ tema }: { tema: TemaLogin }) {
           </svg>
           Continua con Google
         </a>
-        <a
-          href="/api/auth/oauth/start?area=merchant&flow=register&provider=apple"
-          className="inline-flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-slate-300 bg-white text-sm font-bold text-slate-900 shadow-sm transition hover:bg-slate-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-300"
-        >
-          <Apple className="h-5 w-5 fill-current text-black" aria-hidden="true" />
-          Continua con Apple
-        </a>
       </div>
       <button
         type="submit"
@@ -534,7 +519,7 @@ function RegisterVenditoreOAuthCompletionForm({ tema }: { tema: TemaLogin }) {
       className="space-y-4"
     >
       <div className={tema.bannerClass}>
-        Account Google/Apple autenticato. Completa solo i dati dell’attività per concludere la registrazione.
+        Account Google autenticato. Completa solo i dati dell’attività per concludere la registrazione.
       </div>
       <div className="space-y-2">
         <label htmlFor="oauth_partita_iva" className={tema.labelFieldClass}>Partita IVA</label>
