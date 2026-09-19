@@ -209,6 +209,10 @@ export default function CheckoutCarrelloForm({ prefill}
 `
   );
 
+  // Ogni gruppo del carrello corrisponde a un negozio venditore distinto.
+  // InCittà resta la piattaforma digitale e il checkout.
+  const venditoriCarrello = gruppi.map((g) => g.negozioNome).filter(Boolean);
+
   // ── Dati form (prefill dal profilo per utente autenticato) ───────────────
   const [nome, setNome] = useState(prefill.nome);
   const [cognome, setCognome] = useState(prefill.cognome);
@@ -401,10 +405,28 @@ export default function CheckoutCarrelloForm({ prefill}
 
 , [modalita, righe]);
 
+  const avvisoVenditore = venditoriCarrello.length > 0 ? (
+    <div className="mx-auto mb-4 max-w-3xl rounded-xl border border-slate-200 bg-white px-4 py-3 text-xs leading-5 text-slate-600">
+      <div className="font-bold text-slate-800">Venditore dell'ordine</div>
+      <div className="mt-1">
+        {venditoriCarrello.map((nome, i) => (
+          <span key={`venditore-${i}-${nome}`} className="font-semibold text-slate-800">
+            {nome}{i < venditoriCarrello.length - 1 ? ", " : ""}
+          </span>
+        ))}
+      </div>
+      <div className="mt-1 text-slate-500">
+        Il negozio indicato è il venditore dei prodotti presenti nel relativo ordine.
+        InCittà mette a disposizione la piattaforma digitale e il checkout.
+      </div>
+    </div>
+  ) : null;
+
   // ── Carrello vuoto → nessun checkout possibile ───────────────────────────
   if (righe.length === 0 && !esito) {
     return (
       <div className="mx-auto max-w-3xl px-3 py-10 sm:px-5">
+      {avvisoVenditore}
         <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-blue-50">
             <ShoppingBag className="h-7 w-7 text-blue-600" aria-hidden />
