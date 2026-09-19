@@ -299,6 +299,7 @@ export default async function MerchantOrdineDettaglioPage({
           ordineId={ordineId}
           numero={ordine.numero}
           sintesi={sintesi}
+          clienteNome={`${ordine.clienteNome} ${ordine.clienteCognome}`.trim()}
           reclamiIniziali={reclami}
           messaggiIniziali={messaggiReclami}
           eventiIniziali={eventiReclami}
