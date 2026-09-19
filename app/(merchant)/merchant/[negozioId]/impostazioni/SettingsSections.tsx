@@ -24,6 +24,7 @@ import {
   Truck,
   MessageSquare,
   CalendarCheck,
+  FileText,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { getModuleComponent } from "@/lib/modules/registry";
