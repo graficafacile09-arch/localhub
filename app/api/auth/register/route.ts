@@ -29,11 +29,12 @@ export async function POST(request: Request) {
 
   const formData = await request.formData();
   const name = String(formData.get("name") ?? "").trim();
+  const surname = String(formData.get("surname") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const passwordConfirm = String(formData.get("password_confirm") ?? "");
 
-  if (!name || !email || !password) {
+  if (!name || !surname || !email || !password) {
     verificaUrl.searchParams.set("error", "Compila tutti i campi obbligatori.");
     return NextResponse.redirect(verificaUrl);
   }
@@ -55,7 +56,7 @@ export async function POST(request: Request) {
     email,
     password,
     options: {
-      data: { full_name: name },
+      data: { first_name: name, last_name: surname, full_name: `${name} ${surname}`.trim() },
       // Il link dell'email deve portare al callback dell'app, non alla
       // homepage: lì Supabase ha già confermato l'account e il callback
       // stabilisce la sessione ed entra nell'area cliente.

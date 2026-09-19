@@ -33,6 +33,9 @@ export async function GET(request: Request) {
   const code = url.searchParams.get("code");
   const tokenHash = url.searchParams.get("token_hash");
   const type = url.searchParams.get("type");
+  const area = url.searchParams.get("area") ?? "";
+  const flow = url.searchParams.get("flow") ?? "";
+  const provider = url.searchParams.get("provider") ?? "";
 
   // Errore riportato da GoTrue (es. link scaduto/invalidato).
   const errMsg = url.searchParams.get("error_description") ?? url.searchParams.get("error");
@@ -96,6 +99,107 @@ export async function GET(request: Request) {
     return NextResponse.redirect(loginUrl);
   }
 
+  // ── Registrazione social Cliente/Venditore ───────────────────────────
+  // Amministrazione esclusa: il relativo accesso resta invariato e non
+  // viene mai creato tramite OAuth.
+  if (flow === "oauth-register" && (area === "cliente" || area === "merchant")) {
+    const socialProvider = provider === "google" || provider === "apple" ? provider : null;
+    const identityProviderValido = socialProvider != null &&
+      (user.identities ?? []).some((identity) => identity.provider === socialProvider);
+
+    if (!identityProviderValido) {
+      await supabase.auth.signOut();
+      loginUrl.searchParams.set("error", "Registrazione social non valida.");
+      return NextResponse.redirect(loginUrl);
+    }
+
+    const adminClient = createAdminSupabaseClient();
+    const { data: ruoliEsistenti, error: ruoliError } = await adminClient
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id);
+
+    if (ruoliError) {
+      await supabase.auth.signOut();
+      loginUrl.searchParams.set("error", "Impossibile verificare lo stato dell’account. Riprova.");
+      return NextResponse.redirect(loginUrl);
+    }
+
+    const ruoli = new Set((ruoliEsistenti ?? []).map((item) => String(item.role)));
+
+    if (area === "cliente") {
+      // Un account già venditore/admin non acquisisce automaticamente il ruolo
+      // Cliente tramite un pulsante pensato per la nuova registrazione.
+      if (ruoli.has("merchant") || ruoli.has("admin")) {
+        await supabase.auth.signOut();
+        loginUrl.searchParams.set("error", "Questo account è già associato a un ruolo diverso. Accedi dall’area prevista.");
+        return NextResponse.redirect(loginUrl);
+      }
+
+      if (!ruoli.has("customer")) {
+        const { error: roleError } = await adminClient
+          .from("user_roles")
+          .insert({ user_id: user.id, role: "customer" });
+
+        const isDuplicateKey = roleError != null &&
+          (roleError.code === "23505" ||
+            (typeof roleError.message === "string" && roleError.message.includes("duplicate key")));
+
+        if (roleError && !isDuplicateKey) {
+          await supabase.auth.signOut();
+          loginUrl.searchParams.set("error", "Account autenticato ma impossibile completare la registrazione. Riprova.");
+          return NextResponse.redirect(loginUrl);
+        }
+      }
+
+      const socialUserName = String(user.user_metadata?.full_name ?? user.user_metadata?.name ?? "").trim();
+      const firstName = String(user.user_metadata?.first_name ?? user.user_metadata?.given_name ?? "").trim();
+      const lastName = String(user.user_metadata?.last_name ?? user.user_metadata?.family_name ?? "").trim();
+      const fullName = [firstName, lastName].filter(Boolean).join(" ") || socialUserName;
+
+      if (fullName) {
+        await adminClient.auth.admin.updateUserById(user.id, {
+          user_metadata: {
+            first_name: firstName || undefined,
+            last_name: lastName || undefined,
+            full_name: fullName,
+          },
+        });
+      }
+
+      const response = NextResponse.redirect(new URL("/cliente", request.url));
+      response.cookies.set(AREA_COOKIE, "cliente", areaCookieOptions());
+      return response;
+    }
+
+    // Venditore: l’identità social è autenticata, ma Partita IVA e Nome
+    // attività vengono raccolti nella schermata successiva. Nessun ruolo
+    // merchant e nessun negozio viene creato prima del completamento.
+    if (ruoli.size > 0) {
+      await supabase.auth.signOut();
+      loginUrl.searchParams.set("error", "Questo account è già associato a un ruolo. Accedi invece di registrarti di nuovo.");
+      return NextResponse.redirect(loginUrl);
+    }
+
+    const firstName = String(user.user_metadata?.first_name ?? user.user_metadata?.given_name ?? "").trim();
+    const lastName = String(user.user_metadata?.last_name ?? user.user_metadata?.family_name ?? "").trim();
+    const socialUserName = String(user.user_metadata?.full_name ?? user.user_metadata?.name ?? "").trim();
+    const fullName = [firstName, lastName].filter(Boolean).join(" ") || socialUserName;
+
+    if (fullName) {
+      await adminClient.auth.admin.updateUserById(user.id, {
+        user_metadata: {
+          first_name: firstName || undefined,
+          last_name: lastName || undefined,
+          full_name: fullName,
+        },
+      });
+    }
+
+    const response = NextResponse.redirect(new URL("/login?area=merchant&oauth=vendor", request.url));
+    response.cookies.set(AREA_COOKIE, "merchant", areaCookieOptions());
+    return response;
+  }
   // Ruolo customer GARANTITO lato server (idempotente) SOLO per gli account
   // senza altri ruoli: il callback appartiene al flusso di registrazione
   // CLIENTE e non deve MAI aggiungere automaticamente customer a un account
