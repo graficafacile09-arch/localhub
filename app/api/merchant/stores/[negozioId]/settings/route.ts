@@ -56,7 +56,7 @@ type StoreSettings = {
   forma_giuridica?: string;
   partita_iva?: string;
   codice_fiscale?: string;
-  pec?: string;
+  email_legale?: string;
   sede_legale?: string;
 };
 
@@ -71,7 +71,7 @@ const SELECT_FIELDS =
   "commissione_percentuale, " +
   "servizi, colori, parole_chiave, " +
   "seo_title, seo_description, seo_keywords, " +
-  "data, moduli_attivi, denominazione_legale, forma_giuridica, partita_iva, codice_fiscale, pec, sede_legale, legal_identity_verified_at, version, " +
+  "data, moduli_attivi, denominazione_legale, forma_giuridica, partita_iva, codice_fiscale, email_negozio, sede_legale, legal_identity_verified_at, version, " +
   "deleted_at, deleted_by, created_at, updated_at";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -101,7 +101,7 @@ function validate(body: StoreSettings): string | null {
     return "Il CAP deve essere composto da 5 cifre.";
   }
   if ("partita_iva" in body && body.partita_iva && !/^\\d{11}$/.test(body.partita_iva.trim())) return "La partita IVA deve contenere 11 cifre.";
-  if ("pec" in body && body.pec && !EMAIL_RE.test(body.pec.trim())) return "Formato PEC non valido.";
+  if ("email_legale" in body && body.email_legale && !EMAIL_RE.test(body.email_legale.trim())) return "Formato email non valido.";
   if ("denominazione_legale" in body && body.denominazione_legale && body.denominazione_legale.trim().length > 200) return "La denominazione legale è troppo lunga.";
   if ("sede_legale" in body && body.sede_legale && body.sede_legale.trim().length > 300) return "La sede legale è troppo lunga.";
   if ("coordinate" in body && body.coordinate && !COORDS_RE.test(body.coordinate)) {
@@ -257,7 +257,7 @@ export async function PUT(
     "accetta_whatsapp", "in_evidenza",
     "servizi", "colori", "parole_chiave",
     "seo_title", "seo_description", "seo_keywords",
-    "data", "moduli_attivi", "denominazione_legale", "forma_giuridica", "partita_iva", "codice_fiscale", "pec", "sede_legale",
+    "data", "moduli_attivi", "denominazione_legale", "forma_giuridica", "partita_iva", "codice_fiscale", "email_legale", "sede_legale",
   ];
 
   for (const field of allowedFields) {
