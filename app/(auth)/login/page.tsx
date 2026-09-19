@@ -351,14 +351,19 @@ function RegisterClienteForm({ tema }: { tema: TemaLogin }) {
           href="/api/auth/oauth/start?area=cliente&flow=register&provider=google"
           className="inline-flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-slate-300 bg-white text-sm font-bold text-slate-800 shadow-sm transition hover:bg-slate-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-200"
         >
-          <span className="text-lg font-black leading-none text-[#4285F4]" aria-hidden="true">G</span>
+                    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 shrink-0">
+            <path fill="#4285F4" d="M21.35 12.27c0-.74-.07-1.45-.2-2.13H12v4.03h5.22a4.47 4.47 0 0 1-1.94 2.93v2.42h3.14c1.84-1.69 2.93-4.18 2.93-7.25Z"/>
+            <path fill="#34A853" d="M12 21.75c2.63 0 4.84-.87 6.45-2.35l-3.14-2.42c-.87.58-1.98.92-3.31.92-2.54 0-4.69-1.71-5.46-4.02H3.3v2.5A9.75 9.75 0 0 0 12 21.75Z"/>
+            <path fill="#FBBC05" d="M6.54 13.88A5.86 5.86 0 0 1 6.23 12c0-.65.11-1.28.31-1.88v-2.5H3.3A9.74 9.74 0 0 0 2.25 12c0 1.57.38 3.06 1.05 4.38l3.24-2.5Z"/>
+            <path fill="#EA4335" d="M12 6.1c1.43 0 2.71.49 3.72 1.45l2.79-2.79C16.84 3.2 14.63 2.25 12 2.25A9.75 9.75 0 0 0 3.3 7.62l3.24 2.5C7.31 7.81 9.46 6.1 12 6.1Z"/>
+          </svg>
           Continua con Google
         </a>
         <a
           href="/api/auth/oauth/start?area=cliente&flow=register&provider=apple"
-          className="inline-flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-slate-800 bg-slate-900 text-sm font-bold text-white shadow-sm transition hover:bg-black active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-300"
+          className="inline-flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-slate-300 bg-white text-sm font-bold text-slate-900 shadow-sm transition hover:bg-slate-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-300"
         >
-          <Apple className="h-5 w-5 fill-current" aria-hidden="true" />
+          <Apple className="h-5 w-5 fill-current text-black" aria-hidden="true" />
           Continua con Apple
         </a>
       </div>
@@ -481,14 +486,19 @@ function RegisterVenditoreForm({ tema }: { tema: TemaLogin }) {
           href="/api/auth/oauth/start?area=merchant&flow=register&provider=google"
           className="inline-flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-slate-300 bg-white text-sm font-bold text-slate-800 shadow-sm transition hover:bg-slate-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-200"
         >
-          <span className="text-lg font-black leading-none text-[#4285F4]" aria-hidden="true">G</span>
+                    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 shrink-0">
+            <path fill="#4285F4" d="M21.35 12.27c0-.74-.07-1.45-.2-2.13H12v4.03h5.22a4.47 4.47 0 0 1-1.94 2.93v2.42h3.14c1.84-1.69 2.93-4.18 2.93-7.25Z"/>
+            <path fill="#34A853" d="M12 21.75c2.63 0 4.84-.87 6.45-2.35l-3.14-2.42c-.87.58-1.98.92-3.31.92-2.54 0-4.69-1.71-5.46-4.02H3.3v2.5A9.75 9.75 0 0 0 12 21.75Z"/>
+            <path fill="#FBBC05" d="M6.54 13.88A5.86 5.86 0 0 1 6.23 12c0-.65.11-1.28.31-1.88v-2.5H3.3A9.74 9.74 0 0 0 2.25 12c0 1.57.38 3.06 1.05 4.38l3.24-2.5Z"/>
+            <path fill="#EA4335" d="M12 6.1c1.43 0 2.71.49 3.72 1.45l2.79-2.79C16.84 3.2 14.63 2.25 12 2.25A9.75 9.75 0 0 0 3.3 7.62l3.24 2.5C7.31 7.81 9.46 6.1 12 6.1Z"/>
+          </svg>
           Continua con Google
         </a>
         <a
           href="/api/auth/oauth/start?area=merchant&flow=register&provider=apple"
-          className="inline-flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-slate-800 bg-slate-900 text-sm font-bold text-white shadow-sm transition hover:bg-black active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-300"
+          className="inline-flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-slate-300 bg-white text-sm font-bold text-slate-900 shadow-sm transition hover:bg-slate-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-300"
         >
-          <Apple className="h-5 w-5 fill-current" aria-hidden="true" />
+          <Apple className="h-5 w-5 fill-current text-black" aria-hidden="true" />
           Continua con Apple
         </a>
       </div>
