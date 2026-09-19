@@ -97,6 +97,19 @@ export default async function MerchantOrdineDettaglioPage({
     } catch {
       messaggiReclami = {};
     }
+
+    // Cronologia audit del reclamo (best-effort).
+    try {
+      const elenchiEventi = await Promise.all(
+        reclami.map(async (r) => [
+          r.id,
+          await getEventiReclamoVenditore(user.id, negozioId, r.id),
+        ] as const)
+      );
+      eventiReclami = Object.fromEntries(elenchiEventi);
+    } catch {
+      eventiReclami = {};
+    }
   }
 
   if (errore) {
@@ -287,6 +300,7 @@ export default async function MerchantOrdineDettaglioPage({
           sintesi={sintesi}
           reclamiIniziali={reclami}
           messaggiIniziali={messaggiReclami}
+          eventiIniziali={eventiReclami}
           ordineCompleto={dettaglioOrdine}
         />
       ) : (
