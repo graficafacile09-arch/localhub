@@ -51,12 +51,15 @@ export default function RimborsoSection({
   const [inviando, setInviando] = useState(false);
   const [errore, setErrore] = useState<string | null>(null);
   const [successo, setSuccesso] = useState<string | null>(null);
+  // One key per logical refund attempt; retries of the same attempt reuse it.
+  const [idempotencyKey, setIdempotencyKey] = useState("");
 
   const apriDialog = useCallback(() => {
     setImporto(residuo.toFixed(2));
     setMotivo("");
     setErrore(null);
     setSuccesso(null);
+    setIdempotencyKey(crypto.randomUUID());
     setAperto(true);
   }, [residuo]);
 
@@ -75,7 +78,10 @@ export default function RimborsoSection({
     try {
       const res = await fetch(`/api/amministratore/ordini/${ordineId}/rimborso`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": idempotencyKey,
+        },
         body: JSON.stringify({
           amount: Math.round(importoNum * 100) / 100,
           reason: motivo.trim() || undefined,
@@ -85,6 +91,8 @@ export default function RimborsoSection({
         error?: { code?: string; message?: string };
         data?: {
           success?: boolean;
+          pending?: boolean;
+          message?: string;
           importoRimborsato?: number;
           paymentStatus?: string;
           residuo?: number;
@@ -92,6 +100,10 @@ export default function RimborsoSection({
       };
       if (!res.ok || !json.data?.success) {
         setErrore(json.error?.message ?? "Rimborso non riuscito.");
+        return;
+      }
+      if (json.data.pending) {
+        setSuccesso(json.data.message ?? "Rimborso in corso di riconciliazione. Puoi riprovare con la stessa operazione.");
         return;
       }
       setSuccesso(
