@@ -33,6 +33,7 @@ type Props = {
   numero: string;
   /** Sintesi dei prodotti (nome o "N prodotti"). */
   sintesi: string;
+  clienteNome: string;
   reclamiIniziali: ReclamoOrdineType[];
   /** Comunicazioni iniziali lette server-side (per reclamo id). */
   messaggiIniziali?: Record<string, MessaggioReclamo[]>;
@@ -78,6 +79,7 @@ export default function ReclamiOrdine({
   ordineId,
   numero,
   sintesi,
+  clienteNome,
   reclamiIniziali,
   messaggiIniziali = {},
   eventiIniziali = {},
@@ -238,7 +240,7 @@ export default function ReclamiOrdine({
                   <p className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-blue-700/80">
                     <span className="inline-flex items-center gap-1">
                       <User className="h-3 w-3" aria-hidden />
-                      {reclamo.clienteNome || "—"}
+                      {clienteNome || reclamo.clienteNome || "—"}
                     </span>
                     {reclamo.clienteTelefono ? (
                       <span className="inline-flex items-center gap-1">
@@ -273,7 +275,7 @@ export default function ReclamiOrdine({
                     </span>
                     <div className="min-w-0 max-w-[85%] rounded-xl bg-slate-100 px-3.5 py-2.5 ring-1 ring-slate-200">
                       <p className="text-[11px] font-bold text-slate-700">
-                        {reclamo.clienteNome || "Cliente"}
+                        {clienteNome || reclamo.clienteNome || "Cliente"}
                         <span className="ml-2 font-medium text-slate-400">
                           segnalazione iniziale
                         </span>
