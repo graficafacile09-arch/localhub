@@ -3,8 +3,7 @@
 export type MetodoPagamento =
   | "carta"
   | "klarna"
-  | "bonifico_istantaneo"
-  | "bonifico";
+  | "bonifico_istantaneo";
 
 export type VoceCatalogoMetodo = {
   metodo: MetodoPagamento;
@@ -39,14 +38,6 @@ export const CATALOGO_METODI_PAGAMENTO: readonly VoceCatalogoMetodo[] = [
     descrizione: "Paga tramite il tuo conto bancario con Stripe, se disponibile.",
     provider: "stripe",
     richiedeGateway: true,
-  },
-  {
-    metodo: "bonifico",
-    etichetta: "Bonifico bancario",
-    nomeBreve: "Bonifico",
-    descrizione: "Pagamento da concordare direttamente con il negozio.",
-    provider: null,
-    richiedeGateway: false,
   },
 ] as const;
 
