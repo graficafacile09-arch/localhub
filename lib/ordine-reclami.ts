@@ -607,6 +607,12 @@ export async function notificaReclamoNtfy(
     const numero = String(ordine?.numero ?? "");
     const negozioNome = String(ordine?.negozio_nome ?? "");
 
+    // Contesto prodotto completo: nome prodotto + codice articolo + link annuncio.
+    // Viene letto lato server dall'ordine reale, così la notifica ntfy
+    // identifica immediatamente cosa è stato acquistato.
+    const contesto = await caricaContestoReclamo(reclamo.id, { db: adminDb });
+    const prodotti = contesto?.prodotti ?? [];
+
     // Stato ordine ATTUALE con etichetta leggibile; ANNULLATO esplicito e
     // maiuscolo come richiesto, con motivo + nota se disponibili.
     const statoValue = ordine?.stato;
@@ -640,7 +646,17 @@ export async function notificaReclamoNtfy(
     const ordineId = String(reclamo.ordineId ?? "").trim();
     const linkVenditore = linkVenditoreOrdine(negozioId, ordineId);
 
-    const corpo = costruisciMessaggioReclamoNtfy({
+    const righeProdotti = prodotti.length > 0
+      ? prodotti
+          .map((p) => {
+            const nome = p.nomeProdotto.trim() || "—";
+            const codice = p.codiceArticolo.trim() || "—";
+            return `🛍️ Prodotto: ${nome} (art. ${codice})`;
+          })
+          .join("\n")
+      : "🛍️ Prodotto: —";
+
+    const corpoBase = costruisciMessaggioReclamoNtfy({
       numero,
       negozioNome,
       clienteNome,
@@ -651,6 +667,10 @@ export async function notificaReclamoNtfy(
       messaggio: reclamo.messaggio,
       linkOrdine: linkVenditore,
     });
+    const corpo = corpoBase.replace(
+      `⚠️ Stato ordine: ${(statoOrdine || "").trim() || "—"}`,
+      `⚠️ Stato ordine: ${(statoOrdine || "").trim() || "—"}\\n${righeProdotti}`
+    );
     const titolo = `Reclamo ordine #${numero || ""}`.trim();
     const ref = `reclamo ${reclamo.ordineId.slice(0, 8)}`;
 
