@@ -460,8 +460,7 @@ export default function CheckoutCarrelloForm({ prefill}
       if (!email.trim()) return "Inserisci l'email per ricevere la conferma dell'ordine.";
       if (!indirizzo.trim() || !cap.trim() || !citta.trim() || !provincia.trim())
         return "Completa l'indirizzo di spedizione.";
-      if (!/^\d{5}
-$/.test(cap.trim())) return "Il CAP deve essere composto da 5 cifre.";
+      if (!/^\d{5}$/.test(cap.trim())) return "Il CAP deve essere composto da 5 cifre.";
       if (!spedizioneScelta) return "Seleziona un corriere di spedizione.";
       // Fatturazione diversa: campi obbligatori, blocco invio se incompleti.
       if (fatturazione.diversa) {
