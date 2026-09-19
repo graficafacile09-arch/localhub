@@ -96,7 +96,11 @@ export default async function RootLayout({
         </CartProvider>
 
         <footer className="border-t border-slate-200 bg-white py-3 text-center text-xs text-slate-600">
-          {footerText}
+          <span>{footerText}</span>
+          <span aria-hidden="true" className="mx-2">·</span>
+          <a href="/privacy" className="font-semibold text-blue-700 underline-offset-2 hover:underline">
+            Privacy
+          </a>
         </footer>
 
         {/* AssistantPanel risponde SOLO all'evento esplicito "assistant:open"
