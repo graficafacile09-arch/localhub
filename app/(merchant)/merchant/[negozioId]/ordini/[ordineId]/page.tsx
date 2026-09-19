@@ -16,8 +16,8 @@ import { requireCurrentUser } from "@/lib/auth/session";
 import { sintesiProdotti } from "@/lib/cliente/ordini-format";
 import { getMerchantStoreForUser } from "@/lib/merchant/data";
 import { getOrdineVenditore } from "@/lib/merchant/ordini";
-import { getReclamiVenditore } from "@/lib/ordine-reclami";
-import type { ReclamoOrdine as ReclamoOrdineType } from "@/lib/ordine-reclami";
+import { getReclamiVenditore, getEventiReclamoVenditore } from "@/lib/ordine-reclami";
+import type { ReclamoOrdine as ReclamoOrdineType, EventoReclamo } from "@/lib/ordine-reclami";
 import {
   getMessaggiReclamoVenditore,
   type MessaggioReclamo,
@@ -77,7 +77,7 @@ export default async function MerchantOrdineDettaglioPage({
   }
 
   let reclami: ReclamoOrdineType[] = [];
-  let messaggiReclami: Record<string, MessaggioReclamo[]> = {};
+  let messaggiReclami: Record<string, MessaggioReclamo[]> = {};\n  let eventiReclami: Record<string, EventoReclamo[]> = {};
   if (ordine) {
     try {
       reclami = await getReclamiVenditore(user.id, negozioId, ordineId);
