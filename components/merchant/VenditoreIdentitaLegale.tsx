@@ -16,7 +16,7 @@ export default function VenditoreIdentitaLegale({ storeId }: { storeId: string }
   useEffect(()=>{ let mounted=true; fetch(`/api/merchant/stores/${storeId}/settings`).then(r=>r.json()).then(j=>{
     if(!mounted)return; const s=j?.data?.settings??{}; setForm({
       denominazione_legale:s.denominazione_legale??"", forma_giuridica:s.forma_giuridica??"",
-      partita_iva:s.partita_iva??"", codice_fiscale:s.codice_fiscale??"", email:s.email_negozio??"", sede_legale:s.sede_legale??""
+      partita_iva:s.partita_iva??"", codice_fiscale:s.codice_fiscale??"", email:s.email??s.email_negozio??"", sede_legale:s.sede_legale??""
     });
   }).catch(()=>mounted&&setError("Impossibile caricare i dati del venditore.")).finally(()=>mounted&&setLoading(false)); return()=>{mounted=false}},[storeId]);
   const complete=Boolean(form.denominazione_legale.trim()&&form.partita_iva.trim()&&form.sede_legale.trim());
@@ -25,7 +25,7 @@ export default function VenditoreIdentitaLegale({ storeId }: { storeId: string }
     const r=await fetch(`/api/merchant/stores/${storeId}/settings`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({
       denominazione_legale:form.denominazione_legale.trim(), forma_giuridica:form.forma_giuridica.trim(),
       partita_iva:form.partita_iva.trim().toUpperCase(), codice_fiscale:form.codice_fiscale.trim().toUpperCase(),
-      email_negozio:form.email.trim().toLowerCase(), sede_legale:form.sede_legale.trim()
+      email:form.email.trim().toLowerCase(), sede_legale:form.sede_legale.trim()
     })}); const j=await r.json(); if(!r.ok||!j?.success)throw new Error(j?.error?.message??"Impossibile salvare i dati.");
     setMessage("Dati legali salvati.");
   }catch(e){setError(e instanceof Error?e.message:"Impossibile salvare i dati.");}finally{setSaving(false)}}
