@@ -132,8 +132,12 @@ export default function OrdineAzioni({
       }
       setSuccesso(
         statoDestinazione === "cancellato"
-          ? "Ordine annullato. Il cliente riceverà un'email."
-          : "Stato aggiornato con successo."
+          ? stato === "in_preparazione"
+            ? "Ordine rifiutato per prodotto non disponibile. Il cliente riceverà un'email."
+            : "Ordine annullato. Il cliente riceverà un'email."
+          : stato === "in_preparazione" && statoDestinazione === "in_lavorazione"
+            ? "Ordine accettato. La preparazione è iniziata."
+            : "Stato aggiornato con successo."
       );
       router.refresh();
       return true;
@@ -150,7 +154,13 @@ export default function OrdineAzioni({
     setSuccesso(null);
     setAzioneAttiva(azione);
     if (azione.distruttiva) {
-      setMotivo(MOTIVI_ANNULLAMENTO[0]?.valore ?? "altro");
+      // Sul NUOVO ordine il rifiuto ha un solo motivo possibile:
+      // prodotto non disponibile. Nessun elenco di motivazioni da compilare.
+      setMotivo(
+        stato === "in_preparazione"
+          ? "prodotto_non_disponibile"
+          : MOTIVI_ANNULLAMENTO[0]?.valore ?? "altro"
+      );
       setNota("");
       setAnnullaAperto(true);
     } else {
@@ -160,7 +170,7 @@ export default function OrdineAzioni({
 
   async function confermaAnnullamento() {
     if (!motivo) {
-      setErrore("Seleziona un motivo per l'annullamento.");
+      setErrore("Indica il motivo del rifiuto.");
       return;
     }
     if (motivoSelezionato?.richiedeNota && !nota.trim()) {
@@ -260,7 +270,9 @@ export default function OrdineAzioni({
         </p>
       )}
 
-      {/* Pulsanti azione ordine — gerarchia chiara (azioni principali vs annulla) */}
+      {/* Pulsanti azione ordine — il NUOVO ordine mostra solo:
+          1) Accetta l'ordine e avvia la preparazione
+          2) Rifiuta per prodotto non disponibile */}
       {azioni.length > 0 && (
         <div className="flex flex-wrap gap-2.5">
           {azioni.map((azione) => {
@@ -271,7 +283,7 @@ export default function OrdineAzioni({
                 type="button"
                 onClick={() => avviaAzione(azione)}
                 disabled={invio}
-                className={`inline-flex h-11 items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition active:scale-[0.98] disabled:opacity-50 ${
+                className={`inline-flex min-h-11 items-center gap-2 rounded-xl px-4 py-2.5 text-left text-sm font-bold leading-5 transition active:scale-[0.98] disabled:opacity-50 ${
                   azione.distruttiva
                     ? "border border-blue-200 bg-white text-blue-600 hover:border-blue-300 hover:bg-blue-50"
                     : "bg-yellow-400 text-blue-800 shadow-sm hover:bg-yellow-300"
@@ -350,7 +362,9 @@ export default function OrdineAzioni({
                   <Ban className="h-5 w-5" aria-hidden />
                 </span>
                 <h2 className="text-sm font-black text-slate-900">
-                  Annulla ordine {numero}
+                  {stato === "in_preparazione"
+                    ? `Rifiuta ordine ${numero}`
+                    : `Annulla ordine ${numero}`}
                 </h2>
               </div>
               <button
@@ -365,61 +379,79 @@ export default function OrdineAzioni({
 
             <div className="max-h-[60vh] space-y-4 overflow-y-auto px-5 py-4">
               <p className="rounded-xl border border-blue-100 bg-blue-50/60 px-3.5 py-3 text-xs leading-5 text-blue-800">
-                <strong>Attenzione:</strong> vuoi davvero annullare questo
-                ordine? Il cliente riceverà un&apos;email di avviso con il
-                motivo indicato e lo stock verrà ripristinato. L&apos;operazione
-                non può essere annullata.
+                <strong>Attenzione:</strong>{" "}
+                {stato === "in_preparazione"
+                  ? "stai rifiutando l'ordine perché il prodotto non è disponibile. Il cliente riceverà un'email e l'eventuale stock tracciato verrà ripristinato."
+                  : "vuoi davvero annullare questo ordine? Il cliente riceverà un'email di avviso con il motivo indicato e lo stock verrà ripristinato."}
+                {" "}L&apos;operazione non può essere annullata.
               </p>
 
-              {/* Motivazioni rapide (obbligatorie) */}
-              <div>
-                <label className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                  Motivo
-                </label>
-                <div className="mt-2 space-y-2">
-                  {MOTIVI_ANNULLAMENTO.map((m) => (
-                    <label
-                      key={m.valore}
-                      className={`flex cursor-pointer items-start gap-2.5 rounded-xl border px-3 py-2.5 text-sm transition ${
-                        motivo === m.valore
-                          ? "border-blue-300 bg-blue-50"
-                          : "border-slate-200 bg-white hover:border-slate-300"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="motivo"
-                        value={m.valore}
-                        checked={motivo === m.valore}
-                        onChange={() => setMotivo(m.valore)}
-                        className="mt-0.5 h-4 w-4 accent-blue-600"
-                      />
-                      <span className="text-slate-700">{m.etichetta}</span>
-                    </label>
-                  ))}
+              {stato === "in_preparazione" ? (
+                <div className="rounded-xl border border-yellow-200 bg-yellow-50 px-3.5 py-3">
+                  <p className="text-xs font-bold uppercase tracking-wider text-yellow-900">
+                    Motivo del rifiuto
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-yellow-950">
+                    Prodotto non disponibile
+                  </p>
                 </div>
-              </div>
+              ) : (
+                <>
+                  {/* Motivazioni rapide (obbligatorie) */}
+                  <div>
+                    <label className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                      Motivo
+                    </label>
+                    <div className="mt-2 space-y-2">
+                      {MOTIVI_ANNULLAMENTO.map((m) => (
+                        <label
+                          key={m.valore}
+                          className={`flex cursor-pointer items-start gap-2.5 rounded-xl border px-3 py-2.5 text-sm transition ${
+                            motivo === m.valore
+                              ? "border-blue-300 bg-blue-50"
+                              : "border-slate-200 bg-white hover:border-slate-300"
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="motivo"
+                            value={m.valore}
+                            checked={motivo === m.valore}
+                            onChange={() => setMotivo(m.valore)}
+                            className="mt-0.5 h-4 w-4 accent-blue-600"
+                          />
+                          <span className="text-slate-700">{m.etichetta}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
 
               {/* Nota (obbligatoria se "Altro") */}
               <div>
-                <label
-                  htmlFor="nota-annullamento"
-                  className="text-xs font-bold uppercase tracking-wider text-slate-500"
-                >
-                  Nota {motivoSelezionato?.richiedeNota ? "(obbligatoria)" : "(opzionale)"}
-                </label>
-                <textarea
-                  id="nota-annullamento"
-                  value={nota}
-                  onChange={(e) => setNota(e.target.value)}
-                  rows={3}
-                  placeholder={
-                    motivoSelezionato?.richiedeNota
-                      ? "Descrivi il motivo dell'annullamento…"
-                      : "Eventuali dettagli per il cliente…"
-                  }
-                  className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
-                />
+                {stato !== "in_preparazione" && (
+                  <label
+                    htmlFor="nota-annullamento"
+                    className="text-xs font-bold uppercase tracking-wider text-slate-500"
+                  >
+                    Nota {motivoSelezionato?.richiedeNota ? "(obbligatoria)" : "(opzionale)"}
+                  </label>
+                )}
+                {stato !== "in_preparazione" && (
+                  <textarea
+                    id="nota-annullamento"
+                    value={nota}
+                    onChange={(e) => setNota(e.target.value)}
+                    rows={3}
+                    placeholder={
+                      motivoSelezionato?.richiedeNota
+                        ? "Descrivi il motivo dell'annullamento…"
+                        : "Eventuali dettagli per il cliente…"
+                    }
+                    className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
+                  />
+                )}
               </div>
 
               {errore && (
@@ -450,7 +482,9 @@ export default function OrdineAzioni({
                 ) : (
                   <Ban className="h-4 w-4" aria-hidden />
                 )}
-                {invio ? "Annullamento…" : "Conferma annullamento"}
+                {invio
+                  ? stato === "in_preparazione" ? "Rifiuto…" : "Annullamento…"
+                  : stato === "in_preparazione" ? "Conferma rifiuto" : "Conferma annullamento"}
               </button>
             </div>
           </div>
