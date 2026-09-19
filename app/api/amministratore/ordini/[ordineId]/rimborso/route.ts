@@ -70,7 +70,7 @@ export async function POST(
 
   if (esito.pending) {
     return apiOk({
-      success: false,
+      success: true,
       pending: true,
       ordineId: esito.ordineId,
       importoRichiesto: esito.importoRichiesto,
