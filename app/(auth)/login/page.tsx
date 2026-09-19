@@ -348,7 +348,7 @@ function RegisterClienteForm({ tema }: { tema: TemaLogin }) {
         </div>
         <a
           href="/api/auth/oauth/start?area=cliente&flow=register&provider=google"
-          className="inline-flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-slate-300 bg-white text-sm font-bold text-slate-800 shadow-sm transition hover:bg-slate-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-200"
+          className="inline-flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-slate-300 bg-white text-sm font-bold text-slate-800 shadow-sm transition hover:bg-slate-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-200" aria-label="Continua con Google"
         >
                     <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 shrink-0">
             <path fill="#4285F4" d="M21.35 12.27c0-.74-.07-1.45-.2-2.13H12v4.03h5.22a4.47 4.47 0 0 1-1.94 2.93v2.42h3.14c1.84-1.69 2.93-4.18 2.93-7.25Z"/>
@@ -476,7 +476,7 @@ function RegisterVenditoreForm({ tema }: { tema: TemaLogin }) {
         </div>
         <a
           href="/api/auth/oauth/start?area=merchant&flow=register&provider=google"
-          className="inline-flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-slate-300 bg-white text-sm font-bold text-slate-800 shadow-sm transition hover:bg-slate-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-200"
+          className="inline-flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-slate-300 bg-white text-sm font-bold text-slate-800 shadow-sm transition hover:bg-slate-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-200" aria-label="Continua con Google"
         >
                     <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5 shrink-0">
             <path fill="#4285F4" d="M21.35 12.27c0-.74-.07-1.45-.2-2.13H12v4.03h5.22a4.47 4.47 0 0 1-1.94 2.93v2.42h3.14c1.84-1.69 2.93-4.18 2.93-7.25Z"/>
