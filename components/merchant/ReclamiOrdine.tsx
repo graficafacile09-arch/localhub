@@ -35,7 +35,8 @@ type Props = {
   sintesi: string;
   reclamiIniziali: ReclamoOrdineType[];
   /** Comunicazioni iniziali lette server-side (per reclamo id). */
-  messaggiIniziali?: Record<string, MessaggioReclamo[]>;\n  eventiIniziali?: Record<string, EventoReclamo[]>;
+  messaggiIniziali?: Record<string, MessaggioReclamo[]>;
+  eventiIniziali?: Record<string, EventoReclamo[]>;
   /** Dettaglio ordine completo: mostrato SOLO dietro il toggle. */
   ordineCompleto?: ReactNode;
 };
@@ -203,7 +204,8 @@ export default function ReclamiOrdine({
       {reclami.map((reclamo) => {
         const azioni = azioniReclamoDisponibili(reclamo.stato);
         const indiceAttivo = PASSI_RECLAMO.indexOf(reclamo.stato);
-        const storico = messaggi[reclamo.id] ?? [];\n        const eventi = eventiIniziali[reclamo.id] ?? [];
+        const storico = messaggi[reclamo.id] ?? [];
+        const eventi = eventiIniziali[reclamo.id] ?? [];
         const reclamoChiuso = reclamo.stato === "chiuso";
         return (
           <article
