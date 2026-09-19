@@ -348,14 +348,14 @@ function RegisterClienteForm({ tema }: { tema: TemaLogin }) {
           <span className="h-px flex-1 bg-slate-200" />
         </div>
         <a
-          href={`/api/auth/oauth/start?area=${area}&flow=register&provider=google`}
+          href="/api/auth/oauth/start?area=cliente&flow=register&provider=google"
           className="inline-flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-slate-300 bg-white text-sm font-bold text-slate-800 shadow-sm transition hover:bg-slate-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-200"
         >
           <span className="text-lg font-black leading-none text-[#4285F4]" aria-hidden="true">G</span>
           Continua con Google
         </a>
         <a
-          href={`/api/auth/oauth/start?area=${area}&flow=register&provider=apple`}
+          href="/api/auth/oauth/start?area=cliente&flow=register&provider=apple"
           className="inline-flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-slate-800 bg-slate-900 text-sm font-bold text-white shadow-sm transition hover:bg-black active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-300"
         >
           <Apple className="h-5 w-5 fill-current" aria-hidden="true" />
@@ -369,15 +369,13 @@ function RegisterClienteForm({ tema }: { tema: TemaLogin }) {
           <span className="h-px flex-1 bg-slate-200" />
         </div>
         <a
-          href={`/api/auth/oauth/start?area=${area}&flow=register&provider=google`}
-          className="inline-flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-slate-300 bg-white text-sm font-bold text-slate-800 shadow-sm transition hover:bg-slate-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-200"
+          href="/api/auth/oauth/start?area=merchant&flow=register&provider=google"         className="inline-flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-slate-300 bg-white text-sm font-bold text-slate-800 shadow-sm transition hover:bg-slate-50 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-200"
         >
           <span className="text-lg font-black leading-none text-[#4285F4]" aria-hidden="true">G</span>
           Continua con Google
         </a>
         <a
-          href={`/api/auth/oauth/start?area=${area}&flow=register&provider=apple`}
-          className="inline-flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-slate-800 bg-slate-900 text-sm font-bold text-white shadow-sm transition hover:bg-black active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-300"
+          href="/api/auth/oauth/start?area=merchant&flow=register&provider=apple"         className="inline-flex h-12 w-full items-center justify-center gap-3 rounded-xl border border-slate-800 bg-slate-900 text-sm font-bold text-white shadow-sm transition hover:bg-black active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-300"
         >
           <Apple className="h-5 w-5 fill-current" aria-hidden="true" />
           Continua con Apple
