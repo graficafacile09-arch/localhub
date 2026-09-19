@@ -319,12 +319,28 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
         {/* Store info */}
         {negozio && (
           <div className="mt-6 rounded-xl border border-slate-200 bg-white p-4">
+            <div className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+              Venditore
+            </div>
             <Link
               href={`/negozio/${negozio.slug}`}
               className="text-sm font-bold text-slate-900 transition hover:text-blue-600"
             >
               {negozio.nome as string}
             </Link>
+            {(negozio.denominazione_legale || negozio.partita_iva || negozio.sede_legale) && (
+              <div className="mt-2 rounded-lg bg-slate-50 px-3 py-2 text-[11px] leading-5 text-slate-600">
+                {negozio.denominazione_legale && (
+                  <div><span className="font-semibold text-slate-700">Denominazione:</span> {negozio.denominazione_legale as string}</div>
+                )}
+                {negozio.partita_iva && (
+                  <div><span className="font-semibold text-slate-700">Partita IVA:</span> {negozio.partita_iva as string}</div>
+                )}
+                {negozio.sede_legale && (
+                  <div><span className="font-semibold text-slate-700">Sede legale:</span> {negozio.sede_legale as string}</div>
+                )}
+              </div>
+            )}
             {negozio.categoria && (
               <p className="mt-px text-[11px] font-semibold text-blue-600">
                 {negozio.categoria as string}
