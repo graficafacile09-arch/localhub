@@ -2,9 +2,8 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, ChevronDown, ChevronUp, ImagePlus, Layers, Tag, Truck, Wheat } from "lucide-react";
+import { Camera, ChevronDown, ChevronUp, ImagePlus, Tag, Truck, Wheat } from "lucide-react";
 import ProductGalleryManager from "@/components/merchant/products/ProductGalleryManager";
-import VariantiManager from "@/components/merchant/products/VariantiManager";
 import { Toggle } from "@/components/merchant/modules/ModuleFields";
 import type { MerchantProduct } from "@/lib/merchant/types";
 
@@ -424,32 +423,6 @@ export default function MerchantProductForm({
         </div>
       ) : null}
 
-      {/* Varianti (solo per prodotti già salvati, come la galleria) */}
-      {productId ? (
-        <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
-          <div className="mb-3 flex items-center gap-2">
-            <Layers className="h-4 w-4 text-blue-600" />
-            <div>
-              <p className="text-xs font-bold text-slate-800">Varianti</p>
-              <p className="text-[10px] text-slate-500">
-                Crea combinazioni (taglia, colore, materiale…) con prezzo e quantità propri. Con varianti attive, prezzo e stock
-                del prodotto vengono calcolati automaticamente dal sistema.
-              </p>
-            </div>
-          </div>
-          <VariantiManager
-            negozioId={negozioId}
-            productId={productId}
-            prodotto={{
-              prezzo: initialData?.prezzo ?? null,
-              quantitaDisponibile: initialData?.quantita_disponibile ?? null,
-              quantitaRiservata: initialData?.quantita_riservata ?? null,
-              haVarianti: initialData?.ha_varianti ?? false,
-            }}
-          />
-        </div>
-      ) : null}
-
       {/* Prodotto tipico — vetrina territoriale della homepage */}
       <div>
         <Toggle
@@ -484,6 +457,48 @@ export default function MerchantProductForm({
           AI suggerisce €{initialValues.prezzoSuggerito.toFixed(2)}
         </div>
       ) : null}
+
+      {/* Peso di spedizione — campo prioritario */}
+      <div className="rounded-xl border-2 border-blue-200 bg-blue-50/60 p-4">
+        <div className="mb-3 flex items-start gap-2">
+          <Truck className="mt-0.5 h-5 w-5 shrink-0 text-blue-600" />
+          <div>
+            <p className="text-sm font-bold text-slate-900">Peso del prodotto per la spedizione</p>
+            <p className="mt-0.5 text-[11px] leading-4 text-slate-600">
+              Inserisci il peso reale del prodotto in grammi. InCittà usa questo dato per determinare automaticamente la fascia tariffaria compatibile per Poste Italiane e BRT.
+            </p>
+          </div>
+        </div>
+        <div className="relative">
+          <input
+            id="peso_grammi"
+            name="peso_grammi"
+            type="number"
+            min="0"
+            step="1"
+            defaultValue={initialValues.peso_grammi ?? ""}
+            placeholder="Es. 1000"
+            className="h-12 w-full rounded-lg border-2 border-blue-200 bg-white px-3 pr-10 text-base font-semibold outline-none transition focus:border-yellow-500 focus:ring-2 focus:ring-yellow-100"
+          />
+          <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm font-semibold text-slate-400">g</span>
+        </div>
+        <p className="mt-2 text-[10px] leading-4 text-slate-500">
+          Senza peso, le tariffe che dipendono dal peso restano non disponibili. Il corriere locale continua a usare il costo configurato dal negozio.
+        </p>
+        <div className="mt-3 relative">
+          <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">&euro;</span>
+          <input
+            id="costo_spedizione_locale"
+            name="costo_spedizione_locale"
+            type="number"
+            min="0"
+            step="0.01"
+            defaultValue={initialValues.costo_spedizione_locale ?? ""}
+            placeholder="Costo corriere locale (opzionale)"
+            className="h-10 w-full rounded-lg border border-slate-200 bg-white pl-7 pr-3 text-sm outline-none transition focus:border-yellow-500 focus:ring-2 focus:ring-yellow-100"
+          />
+        </div>
+      </div>
 
       {/* Nome */}
       <div>
@@ -552,55 +567,9 @@ export default function MerchantProductForm({
       </div>
       {initialData?.ha_varianti === true ? (
         <p className="text-[10px] text-blue-500">
-          Prezzo e quantità sono calcolati automaticamente dalle varianti: modificali nella sezione Varianti qui sotto.
+          Questo prodotto utilizza varianti già presenti nel sistema: prezzo e quantità restano calcolati automaticamente.
         </p>
       ) : null}
-
-      {/* Spedizione — motore tariffario InCittà (il peso abilita Poste/BRT) */}
-      <div className="rounded-xl border border-blue-100 bg-blue-50/40 p-4">
-        <div className="mb-3 flex items-center gap-2">
-          <Truck className="h-4 w-4 text-blue-600" />
-          <div>
-            <p className="text-xs font-bold text-slate-800">Spedizione</p>
-            <p className="text-[10px] leading-4 text-slate-500">
-              Le tariffe Poste Italiane e BRT sono determinate automaticamente da InCittà in base al
-              pacco configurato nelle impostazioni del negozio.
-            </p>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="relative">
-            <input
-              id="peso_grammi"
-              name="peso_grammi"
-              type="number"
-              min="0"
-              step="1"
-              defaultValue={initialValues.peso_grammi ?? ""}
-              placeholder="Peso (grammi)"
-              className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-yellow-500 focus:ring-2 focus:ring-yellow-100"
-            />
-            <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">g</span>
-          </div>
-          <div className="relative">
-            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">&euro;</span>
-            <input
-              id="costo_spedizione_locale"
-              name="costo_spedizione_locale"
-              type="number"
-              min="0"
-              step="0.01"
-              defaultValue={initialValues.costo_spedizione_locale ?? ""}
-              placeholder="Corriere locale (€)"
-              className="h-10 w-full rounded-lg border border-slate-200 pl-7 pr-3 text-sm outline-none transition focus:border-yellow-500 focus:ring-2 focus:ring-yellow-100"
-            />
-          </div>
-        </div>
-        <p className="mt-2 text-[10px] leading-4 text-slate-500">
-          Peso indicativo del prodotto (facoltativo). Poste Italiane e BRT usano il pacco configurato
-          nelle impostazioni del negozio; il corriere locale usa invece il costo qui indicato.
-        </p>
-      </div>
 
       {/* Descrizione */}
       <textarea
