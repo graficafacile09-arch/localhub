@@ -87,4 +87,13 @@ export interface PaymentGateway {
     cred: CredenzialiGateway,
     options?: RefundRequestOptions
   ): Promise<{ refundId: string }>;
+
+  /** Verifica se un refund è già stato creato dal provider dopo un errore
+   * di rete/risposta indeterminata, usando il binding durevole dell'operation. */
+  riconciliaRimborso?(
+    paymentId: string,
+    importo: number,
+    cred: CredenzialiGateway,
+    operationId: string
+  ): Promise<{ refundId: string } | null>;
 }
