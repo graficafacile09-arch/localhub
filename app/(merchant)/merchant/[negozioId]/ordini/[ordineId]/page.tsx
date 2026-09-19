@@ -77,7 +77,8 @@ export default async function MerchantOrdineDettaglioPage({
   }
 
   let reclami: ReclamoOrdineType[] = [];
-  let messaggiReclami: Record<string, MessaggioReclamo[]> = {};\n  let eventiReclami: Record<string, EventoReclamo[]> = {};
+  let messaggiReclami: Record<string, MessaggioReclamo[]> = {};
+  let eventiReclami: Record<string, EventoReclamo[]> = {};
   if (ordine) {
     try {
       reclami = await getReclamiVenditore(user.id, negozioId, ordineId);
