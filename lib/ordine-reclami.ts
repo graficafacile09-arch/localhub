@@ -445,6 +445,60 @@ export async function getConteggioReclamiApertiVenditore(
   return count ?? 0;
 }
 
+export type EventoReclamo = {
+  id: string;
+  reclamoId: string;
+  tipo: "creato" | "stato" | "messaggio" | "nota";
+  autoreUserId: string | null;
+  statoPrecedente: string | null;
+  statoNuovo: string | null;
+  messaggio: string | null;
+  metadata: Record<string, unknown>;
+  createdAt: string;
+};
+
+export async function getEventiReclamoVenditore(
+  userId: string,
+  negozioId: string,
+  reclamoId: string,
+  opts: OpzioniReclamiVenditore = {}
+): Promise<EventoReclamo[]> {
+  const puòGestire = await verificaOwnershipReclami(opts, userId, negozioId);
+  if (!puòGestire) return [];
+
+  const db = (opts.client ?? (await createServerSupabaseClient())) as ReclamiDbClient;
+  const { data: reclamo } = await db
+    .from("ordine_reclami")
+    .select("id")
+    .eq("id", reclamoId)
+    .eq("negozio_id", negozioId)
+    .maybeSingle();
+  if (!reclamo) return [];
+
+  const { data, error } = await db
+    .from("ordine_reclami_eventi")
+    .select("id, reclamo_id, tipo, autore_user_id, stato_precedente, stato_nuovo, messaggio, metadata, created_at")
+    .eq("reclamo_id", reclamoId)
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.error("[ordine-reclami] lettura audit fallita:", error.message);
+    return [];
+  }
+
+  return (data ?? []).map((row: Record<string, unknown>) => ({
+    id: String(row.id ?? ""),
+    reclamoId: String(row.reclamo_id ?? ""),
+    tipo: (row.tipo as EventoReclamo["tipo"]) ?? "nota",
+    autoreUserId: (row.autore_user_id as string | null) ?? null,
+    statoPrecedente: (row.stato_precedente as string | null) ?? null,
+    statoNuovo: (row.stato_nuovo as string | null) ?? null,
+    messaggio: (row.messaggio as string | null) ?? null,
+    metadata: (row.metadata as Record<string, unknown>) ?? {},
+    createdAt: String(row.created_at ?? ""),
+  }));
+}
+
 // ═══════════════════════════════════════════════════════════════════════
 // GESTIONE VENDITORE (cambio stato)
 // ═══════════════════════════════════════════════════════════════════════
