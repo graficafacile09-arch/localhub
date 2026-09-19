@@ -150,14 +150,20 @@ async function testStripeConnect() {
   process.env.STRIPE_SECRET_KEY = "sk_test_piattaforma_mock";
   try {
     const cred: CredenzialiGateway = { stripeAccountId: "acct_merchant", testMode: true };
-    const esito = await gateway.rimborsa("cs_test_x", 10.0, cred);
+    const esito = await gateway.rimborsa("cs_test_x", 10.0, cred, {
+      idempotencyKey: "refund-test-idempotency-1",
+      operationId: "00000000-0000-0000-0000-000000000001",
+    });
     check("O) refundId restituito", esito.refundId === "re_test_refund", esito.refundId);
     const refund = mock.chiamate.find((c) => c.url.startsWith("/v1/refunds"));
     check("O) POST /v1/refunds eseguito", Boolean(refund));
     check("O) header Stripe-Account presente (Connect)", refund?.headers["stripe-account"] === "acct_merchant", refund?.headers["stripe-account"]);
     check("O) importo in centesimi (1000)", (refund?.body ?? "").includes("amount=1000"));
-    check("P) commissione NON rimborsata manualmente: nessuna chiamata transfer/reversal",
-      !mock.chiamate.some((c) => /transfer|reversal|application_fee/i.test(c.url)));
+    check("O) application fee refund=true", (refund?.body ?? "").includes("refund_application_fee=true"));
+    check("O) metadata operation id presente", (refund?.body ?? "").includes("refund_operation_id=00000000-0000-0000-0000-000000000001"));
+    check("P) Idempotency-Key Stripe presente", refund?.headers["idempotency-key"] === "refund-test-idempotency-1");
+    check("P) nessuna chiamata manuale transfer/reversal",
+      !mock.chiamate.some((c) => /transfer|reversal/i.test(c.url)));
   } finally {
     delete process.env.STRIPE_SECRET_KEY;
     await mock.chiudi();
