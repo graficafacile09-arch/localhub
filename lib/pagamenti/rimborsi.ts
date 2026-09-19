@@ -34,7 +34,7 @@
 
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { risolviCredenzialiGateway } from "./config";
-import { getGatewayProvider, providerGatewayImplementato } from "./registry";
+import { getGatewayProvider } from "./registry";
 
 /** Stato di pagamento finale/parziale di un rimborso (macchina a stati esistente). */
 export type StatoRimborso = "refunded" | "partially_refunded";
@@ -98,8 +98,6 @@ type RispostaFinalizzazione = {
   importo_rimborsato?: number | null;
 };
 
-const PROVIDER_RIMBORSABILI = ["stripe"] as const;
-
 export function validaImportoRimborso(
   importo: unknown,
   residuo: number
@@ -127,7 +125,7 @@ export function statoDopoRimborso(
   return residuoPrima - importo <= 1e-9 ? "refunded" : "partially_refunded";
 }
 
-/** Rilascia la prenotazione se la chiamata al provider fallisce. */
+/** Registra lo stato durevole dell'operation dopo un errore provider. */
 async function aggiornaStatoOperazione(
   db: ReturnType<typeof createAdminSupabaseClient>,
   operationId: string,
