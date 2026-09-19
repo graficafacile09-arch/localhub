@@ -1,35 +1,23 @@
 /**
- * PAGAMENTI — SERVIZIO RIMBORSI V1 (solo server).
+ * PAGAMENTI — SERVIZIO RIMBORSI (solo server).
  *
- * Orchestrazione del rimborso totale/parziale end-to-end riusando
- * l'architettura esistente:
+ * Orchestrazione durevole del rimborso totale/parziale:
+ *   1. crea/recupera una refund operation in PostgreSQL;
+ *   2. claim atomico dell'operation;
+ *   3. chiamata Stripe Direct Charge con idempotency key e operation metadata;
+ *   4. in caso di errore indeterminato, ricerca del Refund già creato;
+ *   5. finalizzazione atomica di operation + ordine + payment_status.
  *
- *   1. `pagamenti_prepara_rimborso` (RPC SECURITY DEFINER, FOR UPDATE):
- *      valida ownership/status/residuo, PRENOTA l'importo (incrementa
- *      payment_refunded_amount) e restituisce i dati pagamento;
- *   2. chiamata al gateway Stripe via
- *      `gateway.rimborsa()` — il provider è la fonte del rimborso (refundId);
- *   3. `aggiorna_payment_status` (RPC esistente, macchina a stati già in
- *      produzione) porta lo stato a refunded/partially_refunded;
- *   4. in caso di errore del provider: `pagamenti_rimborso_annulla` rilascia
- *      la prenotazione (niente stato fittizio "rimborsato").
- *
- * Il webhook del provider resta la fonte AUTOREVOLE definitiva (evento
- * idempotente in pagamenti_eventi): l'API qui è sincrona perché i tre
- * gateway confermano il refund in risposta; un eventuale evento webhook
- * successivo è idempotente (stesso stato → no-op, importo sovrascritto con
- * quello autoritativo del provider).
+ * La tabella pagamenti_rimborso_operazioni e le RPC dedicate sono la fonte
+ * durevole dell'idempotenza applicativa. Il webhook Stripe resta la fonte
+ * autorevole per la riconciliazione degli eventi charge.refunded.
  *
  * Regole:
- *   - importi SEMPRE validati server-side (mai dal browser);
- *   - residuo rimborsabile = payment_amount − payment_refunded_amount;
- *   - 0 < importo ≤ residuo; massimo 2 decimali (EUR);
- *   - idempotenza: la prenotazione atomica rende un retry identico un
- *     OVER_REFUND (il residuo è già diminuito) → niente doppio rimborso;
- *   - ordine NON rimborsabile (stato/provider/legacy) → rifiutato;
- *   - Stripe Connect: il refund passa dall'header Stripe-Account; Stripe
- *     rimborsa automaticamente anche l'application_fee (nessun reversal
- *     manuale della commissione — nessun doppio conteggio).
+ *   - importi validati server-side;
+ *   - nessun incremento preventivo di payment_refunded_amount;
+ *   - Stripe Direct Charge usa refund_application_fee=true;
+ *   - refund parziali restituiscono proporzionalmente la application fee;
+ *   - retry della stessa operation riusa la stessa idempotency key Stripe.
  */
 
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
