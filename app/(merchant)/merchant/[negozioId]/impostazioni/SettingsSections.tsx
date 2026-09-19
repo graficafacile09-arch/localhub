@@ -532,9 +532,32 @@ export default function SettingsSections({
                 <div className="space-y-3 border-t border-slate-100 p-4 sm:p-5">
                   {s.moduli.map((slug) => {
                     if (slug === "identita-legale") {
-                      return <div key="identita-legale" className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"><button type="button" onClick={() => toggleModulo(s.id, slug)} aria-expanded={isModuloAperto} className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition hover:bg-slate-50/70"><span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${isModuloAperto ? "bg-blue-600 text-white" : "bg-blue-50 text-blue-700"}`}><Building2 className="h-5 w-5"/></span><span className="min-w-0 flex-1"><span className="block text-sm font-bold tracking-tight text-slate-900">Identità del venditore</span><span className="mt-0.5 block text-xs leading-4 text-slate-500">Dati legali del soggetto che vende</span></span><ChevronDown className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${isModuloAperto ? "rotate-180" : ""}`}/></button><div className={isModuloAperto ? "border-t border-slate-100 p-4 sm:p-5" : "hidden"}><VenditoreIdentitaLegale storeId={storeId}/></div></div>;
+                      const isModuloAperto = aperto === slug;
+                      return (
+                        <div key="identita-legale" className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                          <button type="button" onClick={() => toggleModulo(s.id, slug)} aria-expanded={isModuloAperto} className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition hover:bg-slate-50/70">
+                            <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${isModuloAperto ? "bg-blue-600 text-white" : "bg-blue-50 text-blue-700"}`}><Building2 className="h-5 w-5" /></span>
+                            <span className="min-w-0 flex-1"><span className="block text-sm font-bold tracking-tight text-slate-900">Identità del venditore</span><span className="mt-0.5 block text-xs leading-4 text-slate-500">Dati legali del soggetto che vende</span></span>
+                            <ChevronDown className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${isModuloAperto ? "rotate-180" : ""}`} />
+                          </button>
+                          <div className={isModuloAperto ? "border-t border-slate-100 p-4 sm:p-5" : "hidden"}><VenditoreIdentitaLegale storeId={storeId} /></div>
+                        </div>
+                      );
                     }
-                    if (slug === "termini-venditore") {\n                      const isModuloAperto = aperto === slug;\n                      return <div key="termini-venditore" className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"><button type="button" onClick={() => toggleModulo(s.id, slug)} aria-expanded={isModuloAperto} className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition hover:bg-slate-50/70"><span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${isModuloAperto ? "bg-blue-600 text-white" : "bg-blue-50 text-blue-700"}`}><FileText className="h-5 w-5"/></span><span className="min-w-0 flex-1"><span className="block text-sm font-bold tracking-tight text-slate-900">Condizioni del venditore</span><span className="mt-0.5 block text-xs leading-4 text-slate-500">Accettazione e versione delle condizioni operative</span></span><ChevronDown className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${isModuloAperto ? "rotate-180" : ""}`}/></button><div className={isModuloAperto ? "border-t border-slate-100 p-4 sm:p-5" : "hidden"}><VenditoreTermini storeId={storeId}/></div></div>;\n                    }\n                    if (slug === "pagamenti") {
+                    if (slug === "termini-venditore") {
+                      const isModuloAperto = aperto === slug;
+                      return (
+                        <div key="termini-venditore" className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                          <button type="button" onClick={() => toggleModulo(s.id, slug)} aria-expanded={isModuloAperto} className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition hover:bg-slate-50/70">
+                            <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${isModuloAperto ? "bg-blue-600 text-white" : "bg-blue-50 text-blue-700"}`}><FileText className="h-5 w-5" /></span>
+                            <span className="min-w-0 flex-1"><span className="block text-sm font-bold tracking-tight text-slate-900">Condizioni del venditore</span><span className="mt-0.5 block text-xs leading-4 text-slate-500">Accettazione e versione delle condizioni operative</span></span>
+                            <ChevronDown className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${isModuloAperto ? "rotate-180" : ""}`} />
+                          </button>
+                          <div className={isModuloAperto ? "border-t border-slate-100 p-4 sm:p-5" : "hidden"}><VenditoreTermini storeId={storeId} /></div>
+                        </div>
+                      );
+                    }
+                    if (slug === "pagamenti") {
                       return <MetodiPagamentoCard key="pagamenti" storeId={storeId} />;
                     }
                     const ux = MODULI_UX[slug];
