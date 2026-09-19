@@ -8,10 +8,11 @@
  * client Supabase FAKE.
  *
  * Copre:
- *   T4  NUOVO → CONFERMATO (transizione consentita);
- *   T5  CONFERMATO → IN_LAVORAZIONE;
- *   T6  IN_LAVORAZIONE → PRONTO;
- *   T7  PRONTO → COMPLETATO;
+ *   T4  NUOVO → IN_LAVORAZIONE (nuovo flusso: accetta + avvia preparazione);
+ *   T5  NUOVO → CONFERMATO (compatibilità con ordini storici);
+ *   T6  CONFERMATO → IN_LAVORAZIONE;
+ *   T7  IN_LAVORAZIONE → PRONTO;
+ *   T8  PRONTO → COMPLETATO;
  *   T8  annullamento con conferma (azione distruttiva richiede motivo);
  *   T9  annullamento richiede motivo (la RPC lo impone; la UI richiede nota);
  *   T10 ordine annullato è terminale (nessuna transizione in uscita);
@@ -145,9 +146,13 @@ async function main() {
     }
   }
 
-  // ── T4–T7: transizioni progressive ────────────────────────────────────────
-  console.log("\n[T4–T7] Transizioni progressive NUOVO→CONFERMATO→LAVORAZIONE→PRONTO→COMPLETATO");
-  check("NUOVO → CONFERMATO", transizioneConsentita("in_preparazione", "confermato"));
+  // ── T4–T8: transizioni progressive ────────────────────────────────────────
+  console.log("\n[T4–T8] Nuovo flusso NUOVO→LAVORAZIONE→PRONTO→COMPLETATO");
+  check(
+    "NUOVO → IN_LAVORAZIONE (accetta + avvia preparazione)",
+    transizioneConsentita("in_preparazione", "in_lavorazione")
+  );
+  check("NUOVO → CONFERMATO (compatibilità legacy)", transizioneConsentita("in_preparazione", "confermato"));
   check("CONFERMATO → IN_LAVORAZIONE", transizioneConsentita("confermato", "in_lavorazione"));
   check("IN_LAVORAZIONE → PRONTO", transizioneConsentita("in_lavorazione", "pronto"));
   check("PRONTO → COMPLETATO", transizioneConsentita("pronto", "consegnato"));
@@ -156,11 +161,12 @@ async function main() {
   console.log("\n[T8/T9] Annullamento: azione disponibile + motivo obbligatorio");
   const azioniNuovo = azioniDisponibili("in_preparazione");
   check(
-    "NUOVO → azioni [Conferma, Annulla distruttivo]",
+    "NUOVO → azioni [Accetta+prepara, Rifiuta]",
     azioniNuovo.length === 2 &&
-      azioniNuovo.some((a) => a.stato === "confermato") &&
-      azioniNuovo.some((a) => a.stato === "cancellato" && a.distruttiva),
-    JSON.stringify(azioniNuovo.map((a) => a.stato))
+      azioniNuovo.some((a) => a.stato === "in_lavorazione") &&
+      azioniNuovo.some((a) => a.stato === "cancellato" && a.distruttiva) &&
+      azioniNuovo.some((a) => a.etichetta.includes("Accetta l'ordine")),
+    JSON.stringify(azioniNuovo.map((a) => a.etichetta))
   );
   check("annullamento consentito da NUOVO", transizioneConsentita("in_preparazione", "cancellato"));
   check("annullamento consentito da IN_LAVORAZIONE", transizioneConsentita("in_lavorazione", "cancellato"));
@@ -200,7 +206,7 @@ async function main() {
   check("isFiltroOrdini('x') false", !isFiltroOrdini("x"));
   check("filtro nuovi → [in_preparazione]", statiPerFiltro("nuovi").join() === "in_preparazione");
   check(
-    "filtro lavorazione → 3 stati",
+    "filtro preparazione → 3 stati legacy/attuali",
     statiPerFiltro("lavorazione").length === 3,
     statiPerFiltro("lavorazione").join()
   );

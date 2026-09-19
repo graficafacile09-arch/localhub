@@ -6,9 +6,10 @@
  * di fatto, ma una proiezione TS usata da UI (filtri, azioni, etichette) e
  * dai test. Le transizioni vengono SEMPRE validate di nuovo lato DB.
  *
- * Workflow:
- *   NUOVO (in_preparazione) → CONFERMATO → IN_LAVORAZIONE → PRONTO →
- *   COMPLETATO (consegnato); ANNULLATO (cancellato) da ogni fase compatibile.
+ * Workflow venditore semplificato per i nuovi ordini:
+ *   NUOVO (in_preparazione) → IN_LAVORAZIONE → PRONTO → COMPLETATO
+ *   (consegnato); ANNULLATO (cancellato) da ogni fase compatibile.
+ *   Il vecchio stato CONFERMATO resta supportato per gli ordini storici.
  *   COMPLETATO e ANNULLATO sono terminali.
  */
 
@@ -44,7 +45,7 @@ export const FILTRI_ORDINI: ReadonlyArray<{
   { key: "nuovi", etichetta: "Nuovi", stati: ["in_preparazione"] },
   {
     key: "lavorazione",
-    etichetta: "In lavorazione",
+    etichetta: "In preparazione",
     stati: ["confermato", "in_lavorazione", "in_consegna"],
   },
   { key: "pronti", etichetta: "Pronti", stati: ["pronto"] },
@@ -90,7 +91,9 @@ export function transizioneConsentita(da: StatoOrdine, a: StatoOrdine): boolean 
   if (da === a) return true;
   switch (da) {
     case "in_preparazione":
-      return a === "confermato" || a === "cancellato";
+      // Nuovo flusso: un solo click accetta l'ordine e avvia subito la preparazione.
+      // CONFERMATO resta consentito solo per compatibilità con ordini storici.
+      return a === "in_lavorazione" || a === "confermato" || a === "cancellato";
     case "confermato":
       return a === "in_lavorazione" || a === "cancellato";
     case "in_lavorazione":
@@ -118,10 +121,10 @@ export type AzioneOrdine = {
 
 /**
  * Azioni disponibili per uno stato (pulsanti del dettaglio ordine).
- * - NUOVO:         [Conferma ordine] [Annulla ordine]
- * - CONFERMATO:    [Inizia lavorazione] [Annulla ordine]
- * - IN_LAVORAZIONE:[Segna come pronto] [Annulla ordine]
- * - PRONTO:        [Segna come completato]
+ * - NUOVO:          [Accetta l'ordine e prepara la spedizione] [Rifiuta ordine]
+ * - CONFERMATO:     [Continua preparazione] [Annulla ordine] (solo storico)
+ * - IN_LAVORAZIONE: [Segna come pronto] [Annulla ordine]
+ * - PRONTO:         [Segna come completato]
  * - COMPLETATO:    nessuna azione distruttiva
  * - ANNULLATO:     sola consultazione
  */
@@ -129,12 +132,16 @@ export function azioniDisponibili(stato: StatoOrdine): AzioneOrdine[] {
   switch (stato) {
     case "in_preparazione":
       return [
-        { stato: "confermato", etichetta: "Conferma ordine" },
-        { stato: "cancellato", etichetta: "Annulla ordine", distruttiva: true },
+        { stato: "in_lavorazione", etichetta: "Accetta l'ordine e prepara la spedizione" },
+        {
+          stato: "cancellato",
+          etichetta: "Rifiuta ordine — prodotto non disponibile",
+          distruttiva: true,
+        },
       ];
     case "confermato":
       return [
-        { stato: "in_lavorazione", etichetta: "Inizia lavorazione" },
+        { stato: "in_lavorazione", etichetta: "Continua preparazione" },
         { stato: "cancellato", etichetta: "Annulla ordine", distruttiva: true },
       ];
     case "in_lavorazione":
