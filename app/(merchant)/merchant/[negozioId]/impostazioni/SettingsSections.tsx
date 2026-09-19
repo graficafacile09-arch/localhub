@@ -31,6 +31,7 @@ import type { ModuloRegistro } from "@/types/negozio";
 import { DAYS } from "@/types/negozio";
 import SpedizionePaccoConfig from "@/components/merchant/SpedizionePaccoConfig";
 import VenditoreIdentitaLegale from "@/components/merchant/VenditoreIdentitaLegale";
+import VenditoreTermini from "@/components/merchant/VenditoreTermini";
 import ModalitaVenditaConfig from "@/components/merchant/modules/ModalitaVenditaConfig";
 import MetodiPagamentoCard from "@/components/merchant/MetodiPagamentoCard";
 import type { ConfigPaccoSpedizione } from "@/lib/merchant/types";
@@ -57,7 +58,7 @@ const MODULI_REGISTRO: ModuloRegistro[] = [
 ];
 
 /** Moduli che non fanno parte del CMS ma sono sempre disponibili in Vendita. */
-const MODULI_SPECIALI = new Set(["modalita-vendita", "spedizione", "pagamenti", "identita-legale"]);
+const MODULI_SPECIALI = new Set(["modalita-vendita", "spedizione", "pagamenti", "identita-legale", "termini-venditore"]);
 
 /** Fallback se il negozio non ha ancora `moduli_attivi` salvati. */
 const MODULI_DEFAULT = [
@@ -89,6 +90,7 @@ const MODULI_UX: Record<string, ModuloUx> = {
   eventi: { titolo: "Eventi", descrizione: "Eventi in programma", azione: "Gestisci eventi", icona: Calendar },
   "modalita-vendita": { titolo: "Come vendi", descrizione: "Ritiro in negozio, consegna o spedizione", azione: "Modifica modalità di vendita", icona: Store },
   "identita-legale": { titolo: "Identità del venditore", descrizione: "Dati legali del soggetto che vende", azione: "Completa dati legali", icona: Building2 },
+  "termini-venditore": { titolo: "Condizioni del venditore", descrizione: "Accettazione e versione delle condizioni operative", azione: "Gestisci condizioni", icona: FileText },
   spedizione: { titolo: "Spedizione", descrizione: "Pacco, corrieri e costi", azione: "Configura spedizione", icona: Truck },
   richiesta_info: { titolo: "Richiesta informazioni", descrizione: "Ricevi richieste dai clienti dalla tua pagina", azione: "Configura richieste", icona: MessageSquare },
   prenotazioni: { titolo: "Agenda", descrizione: "Ricevi e gestisci gli appuntamenti dei clienti", azione: "Configura agenda", icona: CalendarCheck },
@@ -120,8 +122,8 @@ const SEZIONI: Sezione[] = [
     icona: ShoppingCart,
     titolo: "Vendita",
     descrizione: "Come i clienti ti comprano e come ricevono i prodotti.",
-    riepilogo: "Identità del venditore · Modalità di vendita · Spedizione · Metodi di pagamento",
-    moduli: ["identita-legale", "modalita-vendita", "spedizione", "pagamenti"],
+    riepilogo: "Identità del venditore · Condizioni · Modalità di vendita · Spedizione · Metodi di pagamento",
+    moduli: ["identita-legale", "termini-venditore", "modalita-vendita", "spedizione", "pagamenti"],
   },
   {
     id: "catalogo",
@@ -531,7 +533,7 @@ export default function SettingsSections({
                     if (slug === "identita-legale") {
                       return <div key="identita-legale" className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"><button type="button" onClick={() => toggleModulo(s.id, slug)} aria-expanded={isModuloAperto} className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition hover:bg-slate-50/70"><span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${isModuloAperto ? "bg-blue-600 text-white" : "bg-blue-50 text-blue-700"}`}><Building2 className="h-5 w-5"/></span><span className="min-w-0 flex-1"><span className="block text-sm font-bold tracking-tight text-slate-900">Identità del venditore</span><span className="mt-0.5 block text-xs leading-4 text-slate-500">Dati legali del soggetto che vende</span></span><ChevronDown className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${isModuloAperto ? "rotate-180" : ""}`}/></button><div className={isModuloAperto ? "border-t border-slate-100 p-4 sm:p-5" : "hidden"}><VenditoreIdentitaLegale storeId={storeId}/></div></div>;
                     }
-                    if (slug === "pagamenti") {
+                    if (slug === "termini-venditore") {\n                      const isModuloAperto = aperto === slug;\n                      return <div key="termini-venditore" className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"><button type="button" onClick={() => toggleModulo(s.id, slug)} aria-expanded={isModuloAperto} className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition hover:bg-slate-50/70"><span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${isModuloAperto ? "bg-blue-600 text-white" : "bg-blue-50 text-blue-700"}`}><FileText className="h-5 w-5"/></span><span className="min-w-0 flex-1"><span className="block text-sm font-bold tracking-tight text-slate-900">Condizioni del venditore</span><span className="mt-0.5 block text-xs leading-4 text-slate-500">Accettazione e versione delle condizioni operative</span></span><ChevronDown className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${isModuloAperto ? "rotate-180" : ""}`}/></button><div className={isModuloAperto ? "border-t border-slate-100 p-4 sm:p-5" : "hidden"}><VenditoreTermini storeId={storeId}/></div></div>;\n                    }\n                    if (slug === "pagamenti") {
                       return <MetodiPagamentoCard key="pagamenti" storeId={storeId} />;
                     }
                     const ux = MODULI_UX[slug];
