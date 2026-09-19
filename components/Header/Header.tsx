@@ -2,9 +2,11 @@ import Image from "next/image";
 import Link from "next/link";
 import AccountMenu from "./AccountMenu";
 import FarmacieTurnoWidget from "./FarmacieTurnoWidget";
+import HeaderCartIcon from "./HeaderCartIcon";
 import HeaderNav from "./HeaderNav";
 import WeatherWidget from "./WeatherWidget";
 import { getDatiAccount } from "./get-account-data";
+import { getGuestMode } from "@/lib/auth/guest";
 
 /**
  * Header pubblico: navigazione SEMPRE visibile, senza hamburger né su desktop
@@ -20,10 +22,14 @@ import { getDatiAccount } from "./get-account-data";
  */
 export default async function Header() {
   const account = await getDatiAccount();
+  // Modalità ospite: cookie httpOnly lh_guest letto SOLO lato server e
+  // rilevante solo per l'utente anonimo (per l'autenticato il proxy la
+  // cancella). L'AccountMenu mostra allora l'indicatore OSPITE.
+  const guestMode = !account ? await getGuestMode() : false;
 
   return (
     <header className="border-b border-slate-200 bg-white shadow-sm">
-      <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-1.5 py-3 sm:px-4 md:px-6 lg:flex-row lg:items-start lg:gap-3">
+      <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-1 px-1.5 py-1.5 sm:px-4 md:px-6 lg:flex-row lg:items-start lg:gap-3">
         {/* Colonna sinistra: riga LOGO + (METEO sopra ACCEDI) sopra, widget farmacie sotto */}
         <div className="flex w-full flex-col lg:w-auto">
           {/*
@@ -44,7 +50,12 @@ export default async function Header() {
             </Link>
             <div className="ml-auto flex shrink-0 flex-col items-end gap-1.5 lg:ml-0 lg:flex-row lg:items-center lg:gap-2">
               <WeatherWidget />
-              <AccountMenu account={account} />
+              {/* Icona Carrello compatta accanto al logo (stessa funzione e
+                  stesso badge numerico del vecchio Carrello in nav). */}
+              <div className="flex items-center gap-1.5">
+                <HeaderCartIcon />
+                <AccountMenu account={account} guestMode={guestMode} />
+              </div>
             </div>
           </div>
           <FarmacieTurnoWidget />
