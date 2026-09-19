@@ -24,6 +24,7 @@ import {
   type StatoReclamo,
 } from "@/lib/ordine-reclami-stati";
 import type { MessaggioReclamo } from "@/lib/ordine-reclami-messaggi";
+import type { EventoReclamo } from "@/lib/ordine-reclami";
 
 type Props = {
   negozioId: string;
