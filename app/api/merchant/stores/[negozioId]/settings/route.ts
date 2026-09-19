@@ -24,6 +24,7 @@ type StoreSettings = {
   galleria?: string[];
   telefono?: string;
   email_negozio?: string;
+  email?: string;
   whatsapp?: string;
   sito_web?: string;
   indirizzo?: string;
@@ -249,7 +250,7 @@ export async function PUT(
   const allowedFields = [
     "nome", "slug", "descrizione", "descrizione_completa", "categoria", "sottocategoria",
     "logo_url", "copertina_url", "galleria",
-    "telefono", "email_negozio", "whatsapp", "sito_web",
+    "telefono", "email_negozio", "email", "whatsapp", "sito_web",
     "indirizzo", "citta", "cap", "provincia", "coordinate",
     "orari",
     "facebook", "instagram", "tiktok", "youtube",
