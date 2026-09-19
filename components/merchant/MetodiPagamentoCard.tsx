@@ -21,7 +21,7 @@ export default function MetodiPagamentoCard({ storeId }: { storeId: string }) {
           Metodo di pagamento
         </h2>
         <p className="mt-0.5 text-xs leading-5 text-slate-500">
-          Gestisci Stripe, PayPal, Klarna, Scalapay e Bonifico.
+          Gestisci Stripe, PayPal, Klarna e Scalapay.
         </p>
       </div>
     </Link>
