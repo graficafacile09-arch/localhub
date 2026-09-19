@@ -43,8 +43,8 @@ const ITEM_NAV: ReadonlyArray<{
   },
   {
     key: "lavorazione",
-    etichetta: "In lavorazione",
-    micro: "In preparazione",
+    etichetta: "In preparazione",
+    micro: "Ordini accettati",
     filtro: "lavorazione",
     icona: Hammer,
     neutro: "bg-yellow-50 text-yellow-700",
