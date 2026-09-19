@@ -34,7 +34,7 @@ type Props = {
   sintesi: string;
   reclamiIniziali: ReclamoOrdineType[];
   /** Comunicazioni iniziali lette server-side (per reclamo id). */
-  messaggiIniziali?: Record<string, MessaggioReclamo[]>;
+  messaggiIniziali?: Record<string, MessaggioReclamo[]>;\n  eventiIniziali?: Record<string, EventoReclamo[]>;
   /** Dettaglio ordine completo: mostrato SOLO dietro il toggle. */
   ordineCompleto?: ReactNode;
 };
@@ -201,7 +201,7 @@ export default function ReclamiOrdine({
       {reclami.map((reclamo) => {
         const azioni = azioniReclamoDisponibili(reclamo.stato);
         const indiceAttivo = PASSI_RECLAMO.indexOf(reclamo.stato);
-        const storico = messaggi[reclamo.id] ?? [];
+        const storico = messaggi[reclamo.id] ?? [];\n        const eventi = eventiIniziali[reclamo.id] ?? [];
         const reclamoChiuso = reclamo.stato === "chiuso";
         return (
           <article
@@ -410,6 +410,44 @@ export default function ReclamiOrdine({
                       );
                     })}
                   </div>
+                </div>
+              )}
+
+              {/* ── CRONOLOGIA GESTIONE — audit trail server-side ──────────────── */}
+              {eventi.length > 0 && (
+                <div>
+                  <p className="mb-2 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500">
+                    <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
+                    Cronologia gestione
+                  </p>
+                  <ol className="space-y-2 border-l border-slate-200 pl-4">
+                    {eventi.map((evento) => {
+                      const stato =
+                        evento.tipo === "stato" && evento.statoNuovo
+                          ? ETICHETTE_STATO_RECLAMO[evento.statoNuovo as StatoReclamo] ?? evento.statoNuovo
+                          : null;
+                      const testo =
+                        evento.tipo === "creato"
+                          ? "Reclamo creato"
+                          : evento.tipo === "stato"
+                            ? `Stato aggiornato${stato ? ` → ${stato}` : ""}`
+                            : evento.tipo === "messaggio"
+                              ? "Messaggio registrato"
+                              : "Nota registrata";
+                      return (
+                        <li key={evento.id} className="relative text-xs text-slate-600">
+                          <span className="absolute -left-[21px] top-1.5 h-2.5 w-2.5 rounded-full bg-slate-300 ring-2 ring-white" aria-hidden />
+                          <p className="font-semibold text-slate-700">{testo}</p>
+                          <p className="mt-0.5 text-[10px] text-slate-400">
+                            {formattaDataOraReclamo(evento.createdAt)}
+                          </p>
+                          {evento.messaggio && (
+                            <p className="mt-1 whitespace-pre-wrap text-[11px] text-slate-500">{evento.messaggio}</p>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ol>
                 </div>
               )}
 
