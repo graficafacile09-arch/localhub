@@ -334,6 +334,10 @@ export class GatewayStripe implements PaymentGateway {
     const refund = await stripe.refunds.create({
       payment_intent: paymentIntent,
       amount: importo !== undefined && Number(importo) > 0 ? Math.round(Number(importo) * 100) : undefined,
+      // Direct Charge: return the corresponding application fee to the
+      // connected account as part of the same refund. Stripe refunds the
+      // proportional share of the application fee for partial refunds.
+      refund_application_fee: true,
       ...(options?.operationId ? { metadata: { refund_operation_id: options.operationId } } : {}),
     }, {
       ...(richiestaPer(cred) ?? {}),
