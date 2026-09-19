@@ -37,9 +37,6 @@ export type MetodoPagamentoCheckout = {
    * resta visibile con `disponibile = false` (mai rimosso dal catalogo).
    */
   disponibile: boolean;
-  /** iban/payee_email del negozio per il bonifico (dati pubblici configurativi). */
-  iban?: string | null;
-  payeeEmail?: string | null;
 };
 
 export type EsitoMetodiPubblici =
@@ -64,8 +61,6 @@ export async function isMetodoDisponibile(
   _opts?: { importo?: number }
 ): Promise<boolean> {
   if (!negozioId) return false;
-
-  if (metodo === "bonifico") return true;
 
   if (metodo === "carta" || metodo === "klarna" || metodo === "bonifico_istantaneo") {
     // 1. Il metodo deve essere ATTIVATO dal negozio
@@ -98,44 +93,10 @@ async function metodoAttivatoDalNegozio(negozioId: string, metodo: string): Prom
     return false;
   }
 }
-async function datiBonifico(
-  negozioId: string
-): Promise<{ iban: string | null; payeeEmail: string | null; configurato: boolean }> {
-  try {
-    const db = createAdminSupabaseClient();
-    const { data } = await db.rpc("pagamenti_credenziali_leggi", {
-      p_negozio_id: negozioId,
-      p_provider: "bonifico",
-      p_decifra: false,
-      p_chiave: null,
-    });
-    const esito = data as {
-      ok?: boolean;
-      presente?: boolean;
-      attivo?: boolean;
-      iban?: string | null;
-      payee_email?: string | null;
-    } | null;
-    if (!esito || esito.ok !== true || esito.presente !== true) {
-      return { iban: null, payeeEmail: null, configurato: false };
-    }
-    const iban = typeof esito.iban === "string" && esito.iban.trim() ? esito.iban.trim() : null;
-    const payeeEmail =
-      typeof esito.payee_email === "string" && esito.payee_email.trim()
-        ? esito.payee_email.trim()
-        : null;
-    return { iban, payeeEmail, configurato: !!iban || !!payeeEmail };
-  } catch {
-    return { iban: null, payeeEmail: null, configurato: false };
-  }
-}
-
 /**
  * Metodi di pagamento per il checkout del negozio: SEMPRE l'intero catalogo
  * supportato da InCittà, ognuno con il flag `disponibile` reale.
  *
- * - bonifico: `disponibile = true` (metodo base, non dipende da gateway);
- *   se configurato mostra le coordinate, altrimenti "da concordare".
  * - carta/klarna/bonifico_istantaneo: `disponibile = true` SOLO se il metodo
  *   è attivo e il connected account Stripe è pronto.
  */
@@ -163,8 +124,6 @@ export async function getMetodiPagamentoPubblici(
     // Nessun metodo attivato → restano disponibili solo i metodi senza gateway.
   }
 
-  const bonifico = await datiBonifico(negozioId);
-
   const metodi: MetodoPagamentoCheckout[] = [];
   for (const voce of CATALOGO_METODI_PAGAMENTO) {
     const disponibile = await disponibilitaVoce(voce, negozioId, attivi);
@@ -177,14 +136,6 @@ export async function getMetodiPagamentoPubblici(
       disponibile,
     };
 
-    if (voce.metodo === "bonifico") {
-      item.iban = bonifico.iban;
-      item.payeeEmail = bonifico.payeeEmail;
-      item.descrizione = bonifico.configurato
-        ? "Pagamento manuale: ti invieremo le coordinate per il bonifico."
-        : voce.descrizione;
-    }
-
     metodi.push(item);
   }
 
@@ -193,7 +144,6 @@ export async function getMetodiPagamentoPubblici(
 
 /**
  * Disponibilità reale di UNA voce di catalogo per un negozio.
- * - senza gateway (bonifico): sempre true;
  * - con gateway Stripe: true SOLO se il metodo è attivo e il connected account
  *   è pronto; Klarna richiede inoltre la capability Stripe attiva.
  */
@@ -210,7 +160,7 @@ async function disponibilitaVoce(
 
 /**
  * B2 — TRUE se il prodotto appartiene a un negozio che può accettare il
- * METODO richiesto (carta/klarna/bonifico_istantaneo/bonifico). PRE-FLIGHT
+ * METODO richiesto (carta/klarna/bonifico_istantaneo). PRE-FLIGHT
  * usato dalle route checkout PRIMA di creare l'intento: il client non può
  * mai selezionare un metodo non realmente disponibile (defense in depth;
  * la UI già filtra i metodi). Fail-closed: errore DB → false.
@@ -276,13 +226,8 @@ export async function getMetodiPagamentoPubbliciMulti(
       nomeBreve: voce.nomeBreve,
       descrizione: voce.descrizione,
       disponibile: voce.richiedeGateway ? disponibileOvunque : true,
-      iban: primo?.iban ?? null,
-      payeeEmail: primo?.payeeEmail ?? null,
     };
 
-    if (voce.metodo === "bonifico" && (primo?.iban || primo?.payeeEmail)) {
-      item.descrizione = "Pagamento manuale: ti invieremo le coordinate per il bonifico.";
-    }
 
     risultato.push(item);
   }
