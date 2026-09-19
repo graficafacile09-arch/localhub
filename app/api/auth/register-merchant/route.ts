@@ -23,13 +23,14 @@ export async function POST(request: Request) {
 
   const formData = await request.formData();
   const name = String(formData.get("name") ?? "").trim();
+  const surname = String(formData.get("surname") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const passwordConfirm = String(formData.get("password_confirm") ?? "");
   const storeName = String(formData.get("store_name") ?? "").trim();
   const partitaIvaRaw = String(formData.get("partita_iva") ?? "").trim();
 
-  if (!name || !email || !password || !storeName) {
+  if (!name || !surname || !email || !password || !storeName) {
     loginUrl.searchParams.set("error", "Compila tutti i campi obbligatori.");
     return NextResponse.redirect(loginUrl);
   }
@@ -112,7 +113,9 @@ export async function POST(request: Request) {
     password,
     options: {
       data: {
-        full_name: name,
+        first_name: name,
+        last_name: surname,
+        full_name: `${name} ${surname}`.trim(),
         store_name: storeName,
         partita_iva: partitaIva,
       },
@@ -244,7 +247,7 @@ export async function POST(request: Request) {
   await creaNotificaAdmin({
     tipo: "venditore_registrato",
     titolo: "Nuovo venditore registrato",
-    corpo: `${name} ha registrato il negozio “${storeName}”`,
+    corpo: `${name} ${surname}`.trim() + ` ha registrato il negozio “${storeName}”`,
     gravita: "info",
     href: "/amministratore/attivita",
   });
