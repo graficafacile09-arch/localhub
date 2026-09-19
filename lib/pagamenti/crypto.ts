@@ -24,14 +24,13 @@ import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:
 export const PAYMENTS_ENCRYPTION_KEY_ENV = "PAYMENTS_ENCRYPTION_KEY";
 
 /** Provider configurabili da un negozio (tabella negozio_pagamenti). */
-export const PROVIDER_PAGAMENTO_VALIDI = ["stripe", "bonifico"] as const;
+export const PROVIDER_PAGAMENTO_VALIDI = ["stripe"] as const;
 
 /** Metodi mostrabili al checkout (tabella negozio_metodi_pagamento). */
 export const METODI_PAGAMENTO_VALIDI = [
   "carta",
   "klarna",
   "bonifico_istantaneo",
-  "bonifico",
 ] as const;
 
 export type ProviderPagamentoValido = (typeof PROVIDER_PAGAMENTO_VALIDI)[number];
