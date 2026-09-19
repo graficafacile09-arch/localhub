@@ -13,7 +13,7 @@ import { useCarrello } from "@/lib/carrello/CartContext";
  * di conteggio, nessun duplicato: si riusa la stessa fonte dati.
  *
  * - Visivamente piccola e discreta, proporzionata al logo.
- * - Badge giallo con numero (stessa logica del badge precedente).
+ * - Badge rosso ad alto contrasto con numero bianco.
  * - Slot-only da usare sia con utente loggato sia non loggato: si adatta
  *   allo spazio disponibile senza spingere o sovrapporre gli elementi.
  */
@@ -33,7 +33,7 @@ export default function HeaderCartIcon() {
       {pezzi > 0 && (
         <span
           data-testid="cart-badge"
-          className="absolute -right-1.5 -top-1 z-10 flex h-4 min-w-4 items-center justify-center rounded-full bg-yellow-400 px-1 text-[9px] font-black leading-none text-brand-deep ring-2 ring-white"
+          className="absolute -right-1.5 -top-1 z-10 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[9px] font-black leading-none text-white ring-2 ring-white"
         >
           {pezzi > 99 ? "99+" : pezzi}
         </span>
