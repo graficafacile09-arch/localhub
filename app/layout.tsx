@@ -114,6 +114,13 @@ export default async function RootLayout({
             </a>
             <span aria-hidden="true">·</span>
             <a
+              href="/acquirenti"
+              className="font-semibold text-slate-700 underline-offset-2 transition hover:text-blue-600 hover:underline"
+            >
+              Termini per gli Acquirenti
+            </a>
+            <span aria-hidden="true">·</span>
+            <a
               href="/venditori"
               className="font-semibold text-slate-700 underline-offset-2 transition hover:text-blue-600 hover:underline"
             >
