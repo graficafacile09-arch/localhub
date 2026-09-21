@@ -13,7 +13,35 @@ export const metadata: Metadata = {
 
 const sezioni = [
   {
-    titolo: "1. Premessa",
+    titolo: "1. Natura e ruolo della Piattaforma",
+    contenuto: (
+      <>
+        <p>
+          La società [Inserisci Nome Azienda/Ditta] (di seguito, il “Gestore”) mette a disposizione degli utenti una piattaforma tecnologica web e i relativi servizi digitali e di comunicazione (di seguito, il “Sito” o la “Piattaforma”), finalizzati a consentire l'incontro, l'interazione e la conclusione di rapporti commerciali tra venditori indipendenti (di seguito, i “Venditori”) e potenziali acquirenti (di seguito, gli “Acquirenti”).
+        </p>
+        <p>
+          Il Gestore fornisce l'infrastruttura tecnologica della Piattaforma e gli strumenti digitali attraverso i quali i Venditori possono pubblicare le proprie offerte e gli Acquirenti possono consultarle e, ove previsto, effettuare ordini.
+        </p>
+        <p>
+          Il Gestore non acquista, non rivende e non commercializza in proprio i prodotti o i servizi offerti dai Venditori.
+        </p>
+        <p>
+          Il rapporto commerciale relativo alla vendita di un prodotto o alla prestazione di un servizio intercorre tra il Venditore e l'Acquirente. Il Venditore opera autonomamente e rimane responsabile delle informazioni relative alle proprie offerte, dei prezzi, della disponibilità, dei prodotti o servizi offerti, dell'esecuzione dell'ordine, della consegna o prestazione, della documentazione fiscale e degli obblighi previsti dalla normativa applicabile al rapporto commerciale.
+        </p>
+        <p>
+          Il Gestore non assume la qualità di venditore, produttore, distributore, agente o mandatario del Venditore e non assume la titolarità dei prodotti o dei servizi offerti attraverso la Piattaforma.
+        </p>
+        <p>
+          Il Gestore fornisce esclusivamente gli strumenti tecnologici previsti dalla Piattaforma e non sostituisce il Venditore nell'adempimento dei suoi obblighi commerciali verso l'Acquirente.
+        </p>
+        <p>
+          La presente definizione del ruolo del Gestore non esclude né limita gli obblighi inderogabili previsti dalla normativa applicabile, compresi quelli relativi ai servizi digitali, al Digital Services Act, alla tutela dei consumatori, alla sicurezza dei prodotti, alla protezione dei dati personali e agli ordini delle autorità competenti.
+        </p>
+      </>
+    ),
+  },
+  {
+    titolo: "2. Premessa",
     contenuto: (
       <>
         <p>
@@ -30,11 +58,11 @@ const sezioni = [
     ),
   },
   {
-    titolo: "2. Definizioni",
+    titolo: "3. Definizioni",
     contenuto: (
       <ul>
-        <li><strong>InCittà</strong>: la piattaforma e l'infrastruttura tecnologica gestita da [DENOMINAZIONE DEL GESTORE].</li>
-        <li><strong>Gestore</strong>: [DENOMINAZIONE DEL GESTORE], con sede in [SEDE LEGALE], P.IVA [P.IVA].</li>
+        <li><strong>InCittà</strong>: la piattaforma e l'infrastruttura tecnologica gestita da [Inserisci Nome Azienda/Ditta].</li>
+        <li><strong>Gestore</strong>: [Inserisci Nome Azienda/Ditta], con sede in [SEDE LEGALE], P.IVA [P.IVA].</li>
         <li><strong>Venditore</strong>: il soggetto che pubblica un'offerta e propone al cliente un prodotto, un servizio o altra prestazione.</li>
         <li><strong>Cliente</strong>: la persona che utilizza la piattaforma e può acquistare dal venditore.</li>
         <li><strong>Piattaforma</strong>: il sito, il checkout, le aree account e gli strumenti tecnici collegati a InCittà.</li>
@@ -44,7 +72,7 @@ const sezioni = [
     ),
   },
   {
-    titolo: "3. Cos'è InCittà",
+    titolo: "4. Cos'è InCittà",
     contenuto: (
       <>
         <p>
@@ -60,51 +88,81 @@ const sezioni = [
     ),
   },
   {
-    titolo: "4. Ruolo di InCittà",
+    titolo: "5. Ruolo di InCittà",
     contenuto: (
       <>
         <p>
           InCittà mette a disposizione strumenti tecnologici per il funzionamento del
           marketplace, tra cui pubblicazione e consultazione delle offerte, checkout,
-          gestione tecnica degli ordini, comunicazioni operative, tracciamento tecnico dello
-          stato dell'ordine, strumenti per comunicazioni e reclami e misure di sicurezza.
+          gestione tecnica degli ordini, comunicazioni operative, strumenti per comunicazioni
+          e reclami, sicurezza e supporto tecnico ai flussi di pagamento disponibili.
+        </p>
+        <p>
+          Il sistema della Piattaforma può consentire al Venditore di aggiornare lo stato
+          operativo dell'ordine. Gli aggiornamenti relativi a evasione, preparazione,
+          spedizione, consegna, ritiro o prestazione sono inseriti e gestiti dal Venditore
+          sotto la propria responsabilità.
+        </p>
+        <p>
+          Il Gestore fornisce esclusivamente lo strumento tecnologico attraverso il quale tali
+          informazioni possono essere registrate e visualizzate. Il Gestore non garantisce
+          l'esattezza, la completezza o la tempestività delle informazioni inserite dal
+          Venditore e non assume il controllo operativo della spedizione, della consegna o
+          della prestazione, fermo restando quanto previsto dalla legge e la possibilità di
+          intervenire sugli strumenti tecnici quando necessario.
         </p>
         <p>
           InCittà può inoltre interfacciarsi tecnicamente con provider di pagamento e altri
           fornitori necessari al funzionamento della piattaforma. Le attività tecniche svolte
           dalla piattaforma non modificano, da sole, la natura del rapporto commerciale tra
-          cliente e venditore.
+          Acquirente e Venditore.
         </p>
         <p>
           Restano fermi gli obblighi eventualmente attribuiti direttamente a InCittà dalla
-          normativa applicabile e i diritti inderogabili riconosciuti al cliente.
+          normativa applicabile e i diritti inderogabili riconosciuti all'Acquirente.
         </p>
       </>
     ),
   },
   {
-    titolo: "5. Ruolo del Venditore",
+    titolo: "6. Ruolo del Venditore",
     contenuto: (
       <>
         <p>
-          Il venditore è il soggetto che presenta l'offerta e propone al cliente il
-          prodotto, il servizio o la prestazione descritta nella piattaforma.
+          Il Venditore è il soggetto che presenta l'offerta e propone all'Acquirente il
+          prodotto, il servizio o la prestazione descritta nella Piattaforma.
         </p>
         <p>
-          Il venditore cura, secondo il rapporto applicabile e la normativa vigente, le
-          informazioni sulla propria offerta, la disponibilità, l'esecuzione della
-          prestazione, la consegna o il ritiro, la conformità, la garanzia, i reclami
-          commerciali, i resi e le richieste di rimborso di propria competenza.
+          Il Venditore è responsabile, secondo la normativa applicabile, della correttezza
+          delle informazioni fornite, della liceità dell'offerta, del prezzo, della
+          disponibilità, delle caratteristiche, della conformità e della sicurezza del
+          prodotto o servizio, nonché dell'esecuzione dell'ordine, della consegna o
+          prestazione e della documentazione fiscale.
         </p>
         <p>
-          Le condizioni specifiche del venditore possono integrare i presenti Termini e sono
-          rese disponibili nei punti pertinenti della piattaforma.
+          Il Venditore gestisce inoltre, nei limiti previsti dalla legge, il recesso, i resi,
+          la garanzia legale, i reclami commerciali, i rimborsi e i rapporti con il vettore da
+          esso incaricato. Le condizioni specifiche del Venditore possono integrare i presenti
+          Termini e sono rese disponibili nei punti pertinenti della Piattaforma.
+        </p>
+        <p>
+          Il Venditore è responsabile degli adempimenti fiscali e della documentazione relativa
+          alla vendita o alla prestazione effettuata nei confronti dell'Acquirente, secondo la
+          normativa applicabile. Il Gestore non emette la documentazione fiscale relativa alla
+          vendita del prodotto o alla prestazione del servizio del Venditore, salvo che una
+          specifica operazione o servizio del Gestore sia autonomamente soggetto a documentazione
+          fiscale da parte del Gestore stesso.
+        </p>
+        <p>
+          Questa attribuzione di responsabilità non limita gli obblighi della Piattaforma,
+          inclusi quelli relativi alle informazioni e alla tracciabilità dei Venditori previsti
+          dalla normativa applicabile.
         </p>
       </>
     ),
   },
   {
-    titolo: "6. Rapporto commerciale tra Cliente e Venditore",
+    titolo: "7. Rapporto commerciale tra Cliente e Venditore",
     contenuto: (
       <>
         <p>
@@ -123,7 +181,7 @@ const sezioni = [
     ),
   },
   {
-    titolo: "7. Registrazione e utilizzo della piattaforma",
+    titolo: "8. Registrazione e utilizzo della piattaforma",
     contenuto: (
       <>
         <p>
@@ -140,7 +198,7 @@ const sezioni = [
     ),
   },
   {
-    titolo: "8. Account e sicurezza",
+    titolo: "9. Account e sicurezza",
     contenuto: (
       <>
         <p>
@@ -155,7 +213,7 @@ const sezioni = [
     ),
   },
   {
-    titolo: "9. Utilizzo corretto della piattaforma",
+    titolo: "10. Utilizzo corretto della piattaforma",
     contenuto: (
       <p>
         L'utente deve utilizzare InCittà in modo lecito, corretto e conforme alla sua
@@ -166,7 +224,7 @@ const sezioni = [
     ),
   },
   {
-    titolo: "10. Offerte, prodotti e servizi pubblicati dai Venditori",
+    titolo: "11. Offerte, prodotti e servizi pubblicati dai Venditori",
     contenuto: (
       <>
         <p>
@@ -183,7 +241,7 @@ const sezioni = [
     ),
   },
   {
-    titolo: "11. Ordini e checkout",
+    titolo: "12. Ordini e checkout",
     contenuto: (
       <>
         <p>
@@ -192,44 +250,80 @@ const sezioni = [
           condizioni prima di accettare la richiesta.
         </p>
         <p>
-          Il riepilogo dell'ordine indica, per quanto applicabile, il venditore, i prodotti
+          Il riepilogo dell'ordine indica, per quanto applicabile, il Venditore, i prodotti
           o servizi, gli importi, la modalità di consegna o ritiro e il metodo di pagamento
           selezionato. La formazione e gli effetti della vendita sono disciplinati dalle
           condizioni applicabili alla specifica offerta.
         </p>
         <p>
           Per i flussi in cui il pagamento viene avviato prima della creazione dell'ordine,
-          la piattaforma può conservare tecnicamente un intento di checkout fino alla conferma
+          la Piattaforma può conservare tecnicamente un intento di checkout fino alla conferma
           dell'esito del pagamento, secondo il flusso applicabile.
+        </p>
+        <p>
+          <strong>Estraneità del Gestore alla logistica.</strong> La spedizione, il trasporto,
+          la consegna e l'eventuale ritiro dei prodotti sono organizzati dal Venditore secondo
+          le modalità da esso stabilite e indicate all'Acquirente.
+        </p>
+        <p>
+          Il Gestore non organizza direttamente il trasporto della merce e non seleziona né
+          incarica i vettori utilizzati dal Venditore, salvo eventuali servizi specificamente
+          indicati come forniti dal Gestore. Il Venditore rimane responsabile dei rapporti con
+          il vettore da esso incaricato e delle informazioni relative alla spedizione.
+        </p>
+        <p>
+          Eventuali ritardi, smarrimenti, danneggiamenti o mancata consegna devono essere
+          gestiti dall'Acquirente nei confronti del Venditore secondo le condizioni applicabili
+          alla vendita, fermo restando quanto previsto dalla normativa inderogabile.
         </p>
       </>
     ),
   },
   {
-    titolo: "12. Pagamenti e provider di pagamento",
+    titolo: "13. Pagamenti e provider di pagamento",
     contenuto: (
       <>
         <p>
-          Il pagamento può essere gestito tramite il provider e il metodo mostrati nel
-          checkout. Il provider esegue le operazioni tecniche relative al metodo selezionato,
-          secondo le proprie condizioni e procedure.
+          <strong>Pagamenti elettronici.</strong> I pagamenti elettronici disponibili sulla
+          Piattaforma sono elaborati attraverso provider di pagamento terzi integrati con
+          l'infrastruttura tecnologica del Sito. Il Gestore non è il Venditore dei prodotti o
+          servizi acquistati e l'utilizzo di un provider di pagamento non modifica il rapporto
+          commerciale tra Acquirente e Venditore.
         </p>
         <p>
-          InCittà può trasmettere al provider i dati necessari e aggiornare tecnicamente lo
-          stato dell'ordine sulla base delle informazioni ricevute. La presenza di un
-          provider nel checkout non attribuisce a InCittà la vendita del prodotto o del
-          servizio.
+          Quando la configurazione del servizio di pagamento prevede l'utilizzo di account
+          collegati del Venditore, le somme relative alla vendita sono gestite secondo il
+          flusso finanziario previsto dal provider e dall'architettura di pagamento applicabile.
+          Il Gestore percepisce esclusivamente gli eventuali corrispettivi o commissioni
+          tecnologiche ad esso spettanti secondo gli accordi con il Venditore e secondo la
+          configurazione del servizio.
+        </p>
+        <p>
+          Quando disponibile, Klarna opera quale provider autonomo dei servizi di pagamento o
+          finanziamento offerti all'Acquirente. Le condizioni relative all'eventuale
+          finanziamento, rateizzazione o pagamento differito sono disciplinate dal rapporto tra
+          Acquirente e Klarna e dalle condizioni applicabili del relativo provider. Il Gestore
+          non decide l'approvazione del finanziamento o della rateizzazione.
+        </p>
+        <p>
+          <strong>Bonifico bancario diretto al Venditore.</strong> Qualora questa modalità sia
+          resa disponibile, il pagamento viene effettuato dall'Acquirente direttamente sul conto
+          indicato dal Venditore. Il Gestore non esegue il trasferimento delle somme tra
+          Acquirente e Venditore e non assume il ruolo di beneficiario del prezzo della vendita.
+          Le coordinate bancarie sono fornite dal Venditore, che rimane responsabile della loro
+          correttezza e aggiornamento. Il pagamento mediante bonifico diretto può richiedere la
+          verifica dell'avvenuto accredito da parte del Venditore prima dell'evasione dell'ordine.
         </p>
         <p>
           Eventuali richieste relative al prodotto, alla prestazione o alla soluzione
-          commerciale devono essere indirizzate al venditore, salvo il supporto tecnico che
+          commerciale devono essere indirizzate al Venditore, salvo il supporto tecnico che
           InCittà può fornire attraverso i propri canali.
         </p>
       </>
     ),
   },
   {
-    titolo: "13. Comunicazioni relative agli ordini",
+    titolo: "14. Comunicazioni relative agli ordini",
     contenuto: (
       <p>
         InCittà può inviare comunicazioni tecniche relative alla ricezione, allo stato, al
@@ -240,39 +334,63 @@ const sezioni = [
     ),
   },
   {
-    titolo: "14. Reclami e comunicazioni tra Cliente e Venditore",
+    titolo: "15. Reclami e comunicazioni tra Cliente e Venditore",
     contenuto: (
       <>
         <p>
-          InCittà può fornire strumenti tecnici per aprire un reclamo, conservare le
-          comunicazioni, notificare il venditore e consentire lo scambio di messaggi.
+          Gli strumenti di messaggistica e reclamo eventualmente messi a disposizione dalla
+          Piattaforma costituiscono strumenti tecnici destinati a facilitare la comunicazione
+          tra Acquirente e Venditore.
         </p>
         <p>
-          Il venditore è il referente della questione commerciale relativa al prodotto o
-          servizio. L'apertura di un reclamo non determina automaticamente un rimborso, un
-          reso, una sostituzione, una decisione sulla garanzia o la chiusura dell'ordine.
+          Il Gestore non assume il ruolo di arbitro, conciliatore o decisore della controversia
+          commerciale tra le parti e non decide ordinariamente in merito alla fondatezza delle
+          pretese dell'Acquirente o del Venditore. La gestione commerciale della richiesta
+          rimane affidata al Venditore, secondo la natura della contestazione e la normativa
+          applicabile.
         </p>
         <p>
-          Eventuali operazioni tecniche di rimborso sono eseguite secondo il workflow
-          applicabile e dopo le autorizzazioni previste; ciò non sostituisce la determinazione
-          della soluzione commerciale da parte del soggetto competente.
+          Il Gestore può intervenire sugli strumenti tecnici della Piattaforma, sulla sicurezza,
+          sulla disponibilità del servizio e negli ulteriori casi previsti dalla legge o dai
+          presenti Termini. L'apertura di un reclamo non determina automaticamente un rimborso,
+          un reso, una sostituzione, una decisione sulla garanzia o la chiusura dell'ordine.
         </p>
       </>
     ),
   },
   {
-    titolo: "15. Contenuti pubblicati dagli utenti e dai Venditori",
+    titolo: "16. Servizi digitali, contenuti degli utenti e segnalazioni",
     contenuto: (
-      <p>
-        Gli utenti e i venditori devono pubblicare contenuti pertinenti, accurati e leciti e
-        devono disporre dei diritti necessari per utilizzarli. Il contenuto dell'offerta e
-        delle comunicazioni resta riferito al soggetto che lo pubblica, fatti salvi i controlli
-        e gli interventi tecnici previsti dalla piattaforma o dalla legge.
-      </p>
+      <>
+        <p>
+          La Piattaforma può ospitare informazioni, offerte, contenuti e comunicazioni
+          pubblicati o forniti dai Venditori e dagli altri utenti.
+        </p>
+        <p>
+          Il Gestore non svolge un controllo preventivo generale su tutti i contenuti pubblicati
+          dagli utenti e non ha un obbligo generale di sorveglianza o di ricerca attiva di fatti
+          e circostanze indicativi di attività illecite, nei limiti e secondo quanto previsto
+          dal Regolamento (UE) 2022/2065 (Digital Services Act) e dalla normativa applicabile.
+        </p>
+        <p>
+          La circostanza che il Gestore non effettui un controllo preventivo generale non esclude
+          gli specifici obblighi applicabili alla Piattaforma, compresi quelli relativi alla
+          gestione delle segnalazioni, alla rimozione o disabilitazione dell'accesso ai contenuti
+          illegali quando previsto dalla legge, alla tracciabilità dei Venditori, alla
+          cooperazione con le autorità competenti e agli ulteriori obblighi applicabili.
+        </p>
+        <p>
+          I Venditori rimangono responsabili della liceità e della conformità delle proprie
+          offerte e dei contenuti da essi pubblicati, nei limiti previsti dalla legge. Il Gestore
+          può adottare le misure previste dalla legge e dai presenti Termini nei confronti di
+          contenuti o account che risultino illeciti, non conformi o utilizzati in violazione
+          delle regole della Piattaforma.
+        </p>
+      </>
     ),
   },
   {
-    titolo: "16. Segnalazioni di contenuti o attività illecite",
+    titolo: "17. Segnalazioni di contenuti o attività illecite",
     contenuto: (
       <p>
         Segnalazioni relative a contenuti, offerte o attività potenzialmente illecite possono
@@ -283,7 +401,7 @@ const sezioni = [
     ),
   },
   {
-    titolo: "17. Sospensione o limitazione degli account",
+    titolo: "18. Sospensione o limitazione degli account",
     contenuto: (
       <p>
         In presenza di motivi tecnici, di sicurezza, di violazioni delle regole applicabili,
@@ -295,7 +413,7 @@ const sezioni = [
     ),
   },
   {
-    titolo: "18. Disponibilità e funzionamento tecnico della piattaforma",
+    titolo: "19. Disponibilità e funzionamento tecnico della piattaforma",
     contenuto: (
       <p>
         InCittà adotta misure ragionevoli per mantenere disponibili e sicuri i propri servizi,
@@ -306,7 +424,7 @@ const sezioni = [
     ),
   },
   {
-    titolo: "19. Collegamenti e servizi di terze parti",
+    titolo: "20. Collegamenti e servizi di terze parti",
     contenuto: (
       <p>
         La piattaforma può collegarsi a servizi di terzi, inclusi provider di pagamento,
@@ -317,7 +435,7 @@ const sezioni = [
     ),
   },
   {
-    titolo: "20. Proprietà intellettuale",
+    titolo: "21. Proprietà intellettuale",
     contenuto: (
       <p>
         I segni distintivi, il software, la struttura, i contenuti e gli elementi grafici di
@@ -329,7 +447,7 @@ const sezioni = [
     ),
   },
   {
-    titolo: "21. Protezione dei dati personali",
+    titolo: "22. Protezione dei dati personali",
     contenuto: (
       <p>
         Il trattamento dei dati personali è descritto nella Privacy Policy di InCittà.
@@ -339,7 +457,7 @@ const sezioni = [
     ),
   },
   {
-    titolo: "22. Cookie",
+    titolo: "23. Cookie",
     contenuto: (
       <p>
         L'uso di cookie e altri strumenti di tracciamento è descritto nella Cookie Policy.
@@ -347,7 +465,7 @@ const sezioni = [
     ),
   },
   {
-    titolo: "23. Modifiche ai Termini",
+    titolo: "24. Modifiche ai Termini",
     contenuto: (
       <p>
         I presenti Termini possono essere aggiornati per esigenze tecniche, organizzative,
@@ -359,7 +477,7 @@ const sezioni = [
     ),
   },
   {
-    titolo: "24. Legge applicabile e foro",
+    titolo: "25. Legge applicabile e foro",
     contenuto: (
       <p>
         La legge applicabile e l'eventuale foro competente saranno indicati nel rispetto delle
@@ -369,10 +487,10 @@ const sezioni = [
     ),
   },
   {
-    titolo: "25. Contatti",
+    titolo: "26. Contatti",
     contenuto: (
       <ul>
-        <li><strong>Gestore:</strong> [DENOMINAZIONE DEL GESTORE]</li>
+        <li><strong>Gestore:</strong> [Inserisci Nome Azienda/Ditta]</li>
         <li><strong>Sede:</strong> [SEDE LEGALE]</li>
         <li><strong>P.IVA:</strong> [P.IVA]</li>
         <li><strong>PEC:</strong> [PEC]</li>
@@ -382,7 +500,7 @@ const sezioni = [
     ),
   },
   {
-    titolo: "26. Data e versione del documento",
+    titolo: "27. Data e versione del documento",
     contenuto: (
       <dl className="grid gap-2 sm:grid-cols-[180px_1fr]">
         <dt className="font-semibold text-slate-900">Versione</dt>
