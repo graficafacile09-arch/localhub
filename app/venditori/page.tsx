@@ -18,8 +18,7 @@ const sezioni = [
       <>
         <p>
           I presenti Termini e condizioni disciplinano l'utilizzo della piattaforma InCittà
-          da parte dei soggetti che pubblicano e gestiscono offerte rivolte ai clienti. Il
-          documento è una bozza operativa predisposta per la successiva revisione legale.
+          da parte dei soggetti che pubblicano e gestiscono offerte rivolte ai clienti.
         </p>
         <p>
           I Termini si applicano alle funzioni rese disponibili al Venditore, insieme alle
@@ -280,10 +279,6 @@ const sezioni = [
           provider. L'esecuzione tecnica non sostituisce la valutazione commerciale del
           soggetto competente.
         </p>
-        <p>
-          Eccezioni, termini, modalità di restituzione e condizioni del rimborso devono essere
-          determinati nella documentazione applicabile e sottoposti a revisione legale.
-        </p>
       </>
     ),
   },
@@ -293,9 +288,7 @@ const sezioni = [
       <p>
         Il Venditore gestisce gli obblighi relativi alla garanzia legale, alla conformità e ai
         rimedi applicabili ai propri prodotti, servizi o prestazioni, nei casi e nei termini
-        previsti dalla normativa applicabile. Il Venditore deve fornire al Cliente informazioni
-        corrette e collaborare alla gestione delle richieste. Non vengono introdotti in questa
-        bozza termini, durate o eccezioni non ancora definiti legalmente.
+        previsti dalla normativa applicabile. Il Venditore deve fornire al Cliente informazioni corrette e collaborare alla gestione delle richieste.
       </p>
     ),
   },
@@ -351,8 +344,7 @@ const sezioni = [
         <p>
           Il Venditore autorizza InCittà a trattare e visualizzare tecnicamente tali materiali
           nella misura necessaria per pubblicare le offerte, mostrare il negozio, gestire gli
-          ordini e fornire le funzioni richieste. La portata di eventuali licenze ulteriori sarà
-          definita nella versione sottoposta a revisione legale.
+          ordini e fornire le funzioni richieste.
         </p>
       </>
     ),
@@ -435,7 +427,7 @@ const sezioni = [
         nelle condizioni commerciali o nelle configurazioni applicabili al Venditore. Il
         calcolo e il trattamento tecnico degli importi seguono i flussi della piattaforma e dei
         provider coinvolti. Le condizioni economiche specifiche e il relativo trattamento
-        fiscale devono essere verificati prima della pubblicazione definitiva.
+        fiscale devono essere verificati.
       </p>
     ),
   },
@@ -479,9 +471,9 @@ const sezioni = [
     titolo: "32. Legge applicabile e foro",
     contenuto: (
       <p>
-        La legge applicabile e l'eventuale foro competente saranno indicati nella versione
-        sottoposta a revisione legale, tenendo conto della natura del Venditore, del rapporto
-        con InCittà e delle norme inderogabili eventualmente applicabili.
+        La legge applicabile e l'eventuale foro competente saranno indicati tenendo conto della
+        natura del Venditore, del rapporto con InCittà e delle norme inderogabili eventualmente
+        applicabili.
       </p>
     ),
   },
@@ -502,8 +494,6 @@ const sezioni = [
     titolo: "34. Versione e data del documento",
     contenuto: (
       <dl className="grid gap-2 sm:grid-cols-[180px_1fr]">
-        <dt className="font-semibold text-slate-900">Stato</dt>
-        <dd>Bozza operativa soggetta a revisione legale</dd>
         <dt className="font-semibold text-slate-900">Versione</dt>
         <dd>[VERSIONE DEL DOCUMENTO]</dd>
         <dt className="font-semibold text-slate-900">Data pubblicazione</dt>
@@ -536,9 +526,6 @@ export default function TerminiVenditoriPage() {
             <h1 className="mt-3 text-3xl font-black leading-tight tracking-tight text-slate-900 md:text-4xl">
               Termini e condizioni per i Venditori
             </h1>
-            <p className="mt-4 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm leading-6 text-blue-900">
-              Documento in bozza soggetto a revisione legale prima della pubblicazione definitiva.
-            </p>
           </header>
 
           <div className="space-y-8 px-6 py-7 text-[15px] leading-7 text-slate-700 md:px-10 md:py-9">

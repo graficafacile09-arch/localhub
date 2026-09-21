@@ -18,8 +18,7 @@ const sezioni = [
       <>
         <p>
           I presenti Termini e condizioni descrivono le regole generali di utilizzo della
-          piattaforma InCittà e dei relativi strumenti tecnologici. Il documento è una bozza
-          operativa predisposta per la successiva revisione legale.
+          piattaforma InCittà e dei relativi strumenti tecnologici.
         </p>
         <p>
           L'utilizzo della piattaforma può coinvolgere rapporti distinti tra InCittà,
@@ -325,8 +324,7 @@ const sezioni = [
         InCittà sono utilizzabili nei limiti consentiti dalla piattaforma e dalla normativa
         applicabile. Gli utenti e i venditori conservano i diritti di cui dispongono sui propri
         contenuti, concedendo soltanto gli utilizzi tecnici necessari alla pubblicazione e al
-        funzionamento dei servizi, secondo quanto dovrà essere definito nella versione legale
-        definitiva.
+        funzionamento dei servizi.
       </p>
     ),
   },
@@ -334,8 +332,7 @@ const sezioni = [
     titolo: "21. Protezione dei dati personali",
     contenuto: (
       <p>
-        Il trattamento dei dati personali è descritto nella Privacy Policy di InCittà, che
-        dovrà essere pubblicata separatamente e validata prima dell'utilizzo definitivo.
+        Il trattamento dei dati personali è descritto nella Privacy Policy di InCittà.
         Le informazioni presenti nei presenti Termini non sostituiscono l'informativa privacy
         né eventuali consensi separati richiesti dalla normativa.
       </p>
@@ -345,10 +342,7 @@ const sezioni = [
     titolo: "22. Cookie",
     contenuto: (
       <p>
-        L'uso di cookie e altri strumenti di tracciamento è descritto nella Cookie Policy e,
-        quando previsto, nel relativo strumento per la gestione delle preferenze. La Cookie
-        Policy dovrà essere predisposta separatamente e validata prima della pubblicazione
-        definitiva.
+        L'uso di cookie e altri strumenti di tracciamento è descritto nella Cookie Policy.
       </p>
     ),
   },
@@ -368,9 +362,9 @@ const sezioni = [
     titolo: "24. Legge applicabile e foro",
     contenuto: (
       <p>
-        La legge applicabile e l'eventuale foro competente saranno indicati nella versione
-        sottoposta a revisione legale, nel rispetto delle norme inderogabili applicabili ai
-        consumatori e degli eventuali diritti riconosciuti dalla normativa vigente.
+        La legge applicabile e l'eventuale foro competente saranno indicati nel rispetto delle
+        norme inderogabili applicabili ai consumatori e degli eventuali diritti riconosciuti
+        dalla normativa vigente.
       </p>
     ),
   },
@@ -391,8 +385,6 @@ const sezioni = [
     titolo: "26. Data e versione del documento",
     contenuto: (
       <dl className="grid gap-2 sm:grid-cols-[180px_1fr]">
-        <dt className="font-semibold text-slate-900">Stato</dt>
-        <dd>Bozza operativa soggetta a revisione legale</dd>
         <dt className="font-semibold text-slate-900">Versione</dt>
         <dd>[VERSIONE DEL DOCUMENTO]</dd>
         <dt className="font-semibold text-slate-900">Data pubblicazione</dt>
@@ -425,9 +417,6 @@ export default function TerminiPage() {
             <h1 className="mt-3 text-3xl font-black leading-tight tracking-tight text-slate-900 md:text-4xl">
               Termini e Condizioni della Piattaforma InCittà
             </h1>
-            <p className="mt-4 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm leading-6 text-blue-900">
-              Documento in bozza soggetto a revisione legale prima della pubblicazione definitiva.
-            </p>
           </header>
 
           <div className="space-y-8 px-6 py-7 text-[15px] leading-7 text-slate-700 md:px-10 md:py-9">
