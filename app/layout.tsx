@@ -133,6 +133,13 @@ export default async function RootLayout({
             >
               Termini per i Venditori
             </a>
+            <span aria-hidden="true">·</span>
+            <a
+              href="/cookie"
+              className="font-semibold text-slate-700 underline-offset-2 transition hover:text-blue-600 hover:underline"
+            >
+              Cookie Policy
+            </a>
           </div>
         </footer>
 
