@@ -150,7 +150,7 @@ export type CreaOrdineInput = {
     carrier: CarrierCodice;
     /** Servizio del corriere (standard | express | online | locale). */
     servizio: ServizioCodice;
-    metodoPagamento: "carta" | "klarna" | "paypal" | "sepa_debit" | "bonifico_istantaneo" | "bonifico";
+    metodoPagamento: "carta" | "klarna" | "paypal" | "sepa_debit" | "bonifico_istantaneo" | "bonifico_diretto_venditore" | "bonifico";
   } | null;
   /** Indirizzo di fatturazione opzionale (solo modalità spedizione). */
   fatturazione?: FatturazioneCheckout | null;
