@@ -47,7 +47,7 @@ function resolveWeather(code: number): WeatherInfo {
 
 /* ── Component ──────────────────────────────────────────────────────────── */
 
-export default function WeatherWidget() {
+export default function WeatherWidget({ mobileExtended = false }: { mobileExtended?: boolean }) {
   const [temp, setTemp] = useState<number | null>(null);
   const [code, setCode] = useState<number>(0);
   const [loaded, setLoaded] = useState(false);
@@ -99,7 +99,7 @@ export default function WeatherWidget() {
     >
       <Icon className="h-4 w-4 shrink-0 text-yellow-700 sm:h-5 sm:w-5" strokeWidth={1.75} aria-hidden />
       <span className="font-bold tabular-nums text-slate-800">{temp}°</span>
-      <span className="hidden whitespace-nowrap font-medium text-slate-600 sm:inline">
+      <span className={`${mobileExtended ? "inline" : "hidden sm:inline"} whitespace-nowrap font-medium text-slate-600`}>
         Castrovillari{label ? ` · ${label}` : ""}
       </span>
     </div>
