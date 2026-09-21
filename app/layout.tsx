@@ -96,35 +96,30 @@ export default async function RootLayout({
         </CartProvider>
 
         <footer className="border-t border-slate-200 bg-white py-3 text-center text-xs text-slate-600">
-          <span>{footerText}</span>
-          <span aria-hidden="true" className="mx-2">·</span>
-          <a href="/privacy" className="font-semibold text-blue-700 underline-offset-2 hover:underline">
-            Privacy
-          </a>
-          <span aria-hidden="true" className="mx-2">·</span>
-          <a href="/termini" className="font-semibold text-blue-700 underline-offset-2 hover:underline">
-            Termini e condizioni
-          </a>
-          <span aria-hidden="true" className="mx-2">·</span>
-          <a href="/venditori" className="font-semibold text-blue-700 underline-offset-2 hover:underline">
-            Termini per i Venditori
-          </a>
-          <span aria-hidden="true" className="mx-2">·</span>
-          <a href="/termini" className="font-semibold text-blue-700 underline-offset-2 hover:underline">
-            Termini e condizioni
-          </a>
-          <span aria-hidden="true" className="mx-2">·</span>
-          <a href="/venditori" className="font-semibold text-blue-700 underline-offset-2 hover:underline">
-            Termini per i Venditori
-          </a>
-            <span aria-hidden="true" className="mx-2">·</span>
-            <a href="/termini" className="font-semibold text-blue-700 underline-offset-2 hover:underline">
+          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 px-4">
+            <span>{footerText}</span>
+            <span aria-hidden="true">·</span>
+            <a
+              href="/privacy"
+              className="font-semibold text-slate-700 underline-offset-2 transition hover:text-blue-600 hover:underline"
+            >
+              Privacy
+            </a>
+            <span aria-hidden="true">·</span>
+            <a
+              href="/termini"
+              className="font-semibold text-slate-700 underline-offset-2 transition hover:text-blue-600 hover:underline"
+            >
               Termini e condizioni
             </a>
-            <span aria-hidden="true" className="mx-2">·</span>
-            <a href="/venditori" className="font-semibold text-blue-700 underline-offset-2 hover:underline">
+            <span aria-hidden="true">·</span>
+            <a
+              href="/venditori"
+              className="font-semibold text-slate-700 underline-offset-2 transition hover:text-blue-600 hover:underline"
+            >
               Termini per i Venditori
             </a>
+          </div>
         </footer>
 
         {/* AssistantPanel risponde SOLO all'evento esplicito "assistant:open"
