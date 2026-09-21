@@ -46,6 +46,7 @@ import type { MetodoPagamentoCheckout}
  from "@/lib/pagamenti/metodi-pubblici";
 import {
   MESSAGGIO_NESSUNA_SPEDIZIONE,
+  ordinaOpzioniSpedizione,
   type CarrierCodice,
   type OpzioneSpedizione,
   type ServizioCodice,
@@ -65,7 +66,6 @@ const TIER_LABEL: Record<TierSpedizione, string> = {
   locale: "Corriere locale",
 }
 ;
-const TIER_ORDINE: TierSpedizione[] = ["standard", "express", "locale"];
 
 type Prefill = {
   nome: string;
@@ -120,10 +120,9 @@ type RispostaApi = {
 ;
 
 /**
- * Catalogo statico di fallback (fail-closed): ogni metodo del catalogo con
- * `disponibile` true SOLO per i metodi senza gateway (bonifico). Usato come
- * stato iniziale e quando la fonte server non risponde: mostra comunque
- * l'intero catalogo, con i metodi online non selezionabili.
+ * Catalogo statico di fallback (fail-closed): nessun metodo gateway è
+ * disponibile senza risposta server. Usato come stato iniziale e quando la
+ * fonte server non risponde.
  */
 const CATALOGO_DEFAULT: MetodoPagamentoCheckout[] = CATALOGO_METODI_PAGAMENTO.map((v) => ({
   metodo: v.metodo,
@@ -152,9 +151,9 @@ function messaggioErrore(codice?: string, messaggioServer?: string): string {
     case "RATE_LIMITED":
       return "Troppi tentativi in breve tempo. Riprova tra qualche minuto.";
     case "CARTA_NON_DISPONIBILE":
-      return "Il pagamento con carta non è disponibile per tutti i negozi del carrello. Prova con il bonifico.";
+      return "Il pagamento con carta non è disponibile per tutti i negozi del carrello. Prova con un altro metodo disponibile.";
     case "KLARNA_NON_DISPONIBILE":
-      return "Klarna non è disponibile per tutti i negozi del carrello. Prova con la carta o il bonifico.";
+      return "Klarna non è disponibile per tutti i negozi del carrello. Prova con un altro metodo disponibile.";
     case "SCORTE_INSUFFICIENTI":
       return "Alcuni prodotti non hanno scorte sufficienti. Riduci la quantità o rimuovili.";
     case "PRODOTTO_NON_TROVATO":
@@ -242,18 +241,18 @@ export default function CheckoutCarrelloForm({ prefill}
  }
 
  | null>(null);
-  // Default bonifico: sempre disponibile; carta e Klarna sono verificate dal
-  // backend (pre-flight F2.2 fail-closed) — nessun controllo autoritativo nel
-  // client, né prezzi/totali/credenziali conosciuti qui.
+  // Carta e Klarna sono verificate dal backend (pre-flight F2.2 fail-closed):
+  // nessun controllo autoritativo nel client, né prezzi/totali/credenziali
+  // conosciuti qui.
   const [metodoPagamento, setMetodoPagamento] = useState<
-    "carta" | "bonifico" | "klarna"
-  >("bonifico");
+    "carta" | "klarna" | "paypal" | "sepa_debit" | null
+  >(null);
   // Catalogo dei metodi di pagamento supportati da InCittà (STESSA fonte del
   // buy-now: CATALOGO_METODI_PAGAMENTO + disponibilità via
-  // /api/cliente/ordini/carrello/metodi). Mostriamo SEMPRE l'intero catalogo,
-  // ognuno con il flag `disponibile` reale (intersezione multi-negozio); i
-  // metodi online non disponibili restano visibili ma non selezionabili.
-  // Bonifico è sempre disponibile (metodo base) → default selezionato sicuro.
+  // /api/cliente/ordini/carrello/metodi). Mostriamo solo le voci con
+  // `disponibile = true` nell'intersezione multi-negozio.
+  // Nessun metodo viene preselezionato: la scelta deve provenire dal catalogo
+  // server-side e restare esplicita per il checkout.
   const [catalogoMetodi, setCatalogoMetodi] = useState<MetodoPagamentoCheckout[]>(CATALOGO_DEFAULT);
   const [note, setNote] = useState("");
 
@@ -276,6 +275,7 @@ export default function CheckoutCarrelloForm({ prefill}
       o.carrier === spedizioneScelta?.carrier && o.servizio === spedizioneScelta?.servizio
   );
   const costoSpedizioneUI = opzioneScelta?.prezzo ?? 0;
+  const opzioniSpedizioneOrdinate = ordinaOpzioniSpedizione(opzioniSpedizione);
 
   // Carica la disponibilità reale dei metodi per i negozi del carrello (fonte
   // comune server-side). Il carrello è client-side (localStorage), quindi
@@ -308,8 +308,9 @@ export default function CheckoutCarrelloForm({ prefill}
 ) => {
         if (!attivo) return;
         const metodi = json?.data?.metodi ?? [];
-        // Il server restituisce SEMPRE l'intero catalogo (ogni metodo con il
-        // proprio `disponibile` = intersezione per tutti i negozi del carrello).
+        // Il server restituisce l'intero catalogo con il flag `disponibile`
+        // calcolato come intersezione per tutti i negozi del carrello; il
+        // rendering filtra le voci non disponibili.
         // Se la risposta è vuota (errore), manteniamo il catalogo fail-closed.
         setCatalogoMetodi(metodi.length > 0 ? metodi : CATALOGO_DEFAULT);
      }
@@ -457,6 +458,9 @@ export default function CheckoutCarrelloForm({ prefill}
   const valida = (): string | null => {
     if (!nome.trim() || !cognome.trim()) return "Inserisci nome e cognome.";
     if (modalita === "spedizione") {
+      if (!catalogoMetodi.some((m) => m.metodo === metodoPagamento && m.disponibile)) {
+        return "Seleziona un metodo di pagamento disponibile.";
+      }
       if (!email.trim()) return "Inserisci l'email per ricevere la conferma dell'ordine.";
       if (!indirizzo.trim() || !cap.trim() || !citta.trim() || !provincia.trim())
         return "Completa l'indirizzo di spedizione.";
@@ -941,23 +945,20 @@ export default function CheckoutCarrelloForm({ prefill}
                     </p>
                   )}
 
-                  {TIER_ORDINE.map((tier) => {
-                    const delTier = opzioniSpedizione.filter((o) => o.tier === tier);
-                    if (delTier.length === 0) return null;
-                    return (
-                      <div key={tier}
->
-                        <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-400">
-                          {TIER_LABEL[tier]}
-
-                        </p>
-                        <div className="space-y-2">
-                          {delTier.map((opzione) => {
-                            const selezionata =
-                              spedizioneScelta?.carrier === opzione.carrier &&
-                              spedizioneScelta?.servizio === opzione.servizio;
-                            return (
-                              <label
+                  <div className="space-y-2">
+                    {opzioniSpedizioneOrdinate.map((opzione, indice) => {
+                      const tierPrecedente = opzioniSpedizioneOrdinate[indice - 1]?.tier;
+                      const selezionata =
+                        spedizioneScelta?.carrier === opzione.carrier &&
+                        spedizioneScelta?.servizio === opzione.servizio;
+                      return (
+                        <div key={`${opzione.carrier}:${opzione.servizio}`}>
+                          {(indice === 0 || tierPrecedente !== opzione.tier) && (
+                            <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                              {TIER_LABEL[opzione.tier]}
+                            </p>
+                          )}
+                          <label
                                 key={`${opzione.carrier}
 :${opzione.servizio}
 `}
@@ -1011,6 +1012,9 @@ export default function CheckoutCarrelloForm({ prefill}
                                     </p>
                                     <p className="text-[11px] text-slate-500">
                                       {opzione.descrizione ?? opzione.tempoConsegna ?? "Consegna concordata con il negozio"}
+                                      {opzione.pesoMassimoGrammi !== null
+                                        ? ` · fino a ${(opzione.pesoMassimoGrammi / 1000).toLocaleString("it-IT")} kg`
+                                        : ""}
 
                                     </p>
                                     {!opzione.disponibile && opzione.motivo && (
@@ -1030,17 +1034,11 @@ export default function CheckoutCarrelloForm({ prefill}
                                   </span>
                                 </div>
                               </label>
-                            );
-                         }
-
-)}
-
                         </div>
-                      </div>
-                    );
-                 }
 
-)}
+                      );
+                    })}
+                  </div>
 
                   <p className="text-[10px] leading-4 text-slate-400">
                     {pesoGrammi && pesoGrammi > 0
@@ -1069,7 +1067,7 @@ export default function CheckoutCarrelloForm({ prefill}
                 Metodo pagamento
               </h2>
               <div className="mt-3 space-y-2">
-                {catalogoMetodi.map((m) => {
+                {catalogoMetodi.filter((m) => m.disponibile).map((m) => {
                   if (m.metodo === "carta") {
                     return (
                       <OpzioneRadio
@@ -1110,25 +1108,35 @@ export default function CheckoutCarrelloForm({ prefill}
                  }
 
 
-                  if (m.metodo === "bonifico") {
+                  if (m.metodo === "paypal") {
                     return (
                       <OpzioneRadio
-                        key="bonifico"
-                        selezionato={metodoPagamento === "bonifico"}
-
-                        onClick={() => setMetodoPagamento("bonifico")}
-
+                        key="paypal"
+                        selezionato={metodoPagamento === "paypal"}
+                        onClick={() => setMetodoPagamento("paypal")}
                         icona={<Banknote className="h-4 w-4 text-slate-500" />}
-
                         titolo={m.etichetta}
-
                         sotto={m.descrizione}
-
                         disponibile={m.disponibile}
-
+                        nonDisponibileMessaggio={!m.disponibile ? messaggioNonDisponibile(m.nomeBreve) : undefined}
                       />
                     );
-                 }
+                  }
+
+                  if (m.metodo === "sepa_debit") {
+                    return (
+                      <OpzioneRadio
+                        key="sepa_debit"
+                        selezionato={metodoPagamento === "sepa_debit"}
+                        onClick={() => setMetodoPagamento("sepa_debit")}
+                        icona={<Banknote className="h-4 w-4 text-slate-500" />}
+                        titolo={m.etichetta}
+                        sotto={m.descrizione}
+                        disponibile={m.disponibile}
+                        nonDisponibileMessaggio={!m.disponibile ? messaggioNonDisponibile(m.nomeBreve) : undefined}
+                      />
+                    );
+                  }
 
 
                   return null;
@@ -1151,7 +1159,7 @@ export default function CheckoutCarrelloForm({ prefill}
                 </p>
               )}
 
-              {(metodoPagamento === "carta" || metodoPagamento === "klarna") && (
+              {(metodoPagamento === "carta" || metodoPagamento === "klarna" || metodoPagamento === "paypal" || metodoPagamento === "sepa_debit") && (
                 <p className="mt-2 text-[11px] leading-4 text-slate-400">
                   Con più negozi ogni ordine ha la propria sessione di pagamento: ti mostreremo un pulsante per
                   negozio.
@@ -1306,6 +1314,7 @@ function EsitoCheckoutView({
 }
 ) {
   const sessioni = esito.ordini.filter((o) => o.pagamento?.redirectUrl);
+  const paymentFirst = sessioni.some((o) => o.stato === "in_attesa_pagamento");
   const soloRiusciti = esito.ordini.filter((o) => !esito.errori.some((e) => e.negozioId === o.negozioId));
   const primoPagamento = sessioni[0];
 
@@ -1318,7 +1327,11 @@ function EsitoCheckoutView({
           </div>
           <div>
             <h1 className="text-lg font-black text-slate-900">
-              {sessioni.length > 0 ? "Ordini creati — pagamenti da completare" : "Ordine completato"}
+              {paymentFirst
+                ? "Checkout avviati — pagamenti da completare"
+                : esito.ordini.length > 1
+                  ? "Ordini ricevuti"
+                  : "Ordine ricevuto"}
 
             </h1>
             <p className="text-sm text-slate-500">
@@ -1372,7 +1385,7 @@ function EsitoCheckoutView({
 `}
 
                   >
-                    {erroreNegozio ? "Pagamento non avviato" : "Ordine creato"}
+                    {erroreNegozio ? "Pagamento non avviato" : paymentFirst ? "Checkout avviato" : "Ordine ricevuto"}
 
                   </span>
                 )}

@@ -2,8 +2,8 @@
  * SPEDIZIONI — MOTORE TARIFFARIO (server-side).
  *
  * Calcola il PREVENTIVO di spedizione leggendo SOLO dal database:
- *   - peso del PACCO configurato dal negozio (`negozi.pacco_peso_grammi`, grammi);
- *   - tariffa corriere locale (`prodotti.costo_spedizione_locale`, euro);
+ *   - peso dei prodotti (`prodotti.peso_grammi`, grammi) moltiplicato per quantità;
+ *   - tariffa corriere locale (`negozio_metodi_spedizione.costo_euro`, con fallback prodotto);
  *   - listini ufficiali versionati (`shipping_tariff_versions` + `shipping_tariffs`).
  *
  * IL PREZZO È DETERMINATO DA INCITTÀ: questo modulo è la fonte autorevole del
@@ -14,11 +14,10 @@
  * `shipping_price` inviato dal browser viene ignorato.
  *
  * REGOLE DI CALCOLO:
- *   - Poste Italiane (standard/express) e BRT (online): tariffa per fascia di
- *     peso. V1 = UN PACCO PER ORDINE/NEGOZIO: il peso è `negozi.pacco_peso_grammi`
- *     (mai Σ(peso prodotto × quantità)). Se il negozio non ha configurato il
- *     pacco (NULL o ≤0) → il corriere NON è disponibile (mai un peso o un
- *     prezzo inventato). `prodotti.peso_grammi` resta solo per compatibilità.
+ *   - Poste Italiane (standard/express), BRT (online) e GLS (standard): tariffa
+ *     per fascia usando Σ(`prodotti.peso_grammi × quantità`) per negozio. Se un
+ *     prodotto manca di peso o supera tutte le fasce → il metodo resta non
+ *     disponibile, senza peso o prezzo inventato.
  *   - Corriere locale: prezzo configurato dal venditore PER SINGOLO PRODOTTO.
  *     In un carrello/ordine con più prodotti si applica il prezzo MASSIMO tra
  *     i prodotti dello STESSO negozio (una sola consegna per ordine, mai la
@@ -189,7 +188,7 @@ export async function getPreventivoSpedizione(
   // Prodotti → negozio + tariffa locale per prodotto (corriere locale).
   const { data: prodotti, error } = await db
     .from("prodotti")
-    .select("id, negozio_id, costo_spedizione_locale")
+    .select("id, negozio_id, peso_grammi, costo_spedizione_locale")
     .in("id", ids.map(Number));
 
   if (error) {
@@ -204,42 +203,23 @@ export async function getPreventivoSpedizione(
     };
   }
 
-  const mappa = new Map<string, { negozioId: string; locale: number | null }>();
+  const mappa = new Map<string, { negozioId: string; pesoGrammi: number | null; locale: number | null }>();
   for (const p of (prodotti ?? []) as Record<string, unknown>[]) {
     mappa.set(String(p.id), {
       negozioId: String(p.negozio_id),
-      locale: typeof p.costo_spedizione_locale === "number" ? (p.costo_spedizione_locale as number) : null,
+      pesoGrammi: Number.isFinite(Number(p.peso_grammi)) ? Number(p.peso_grammi) : null,
+      locale: Number.isFinite(Number(p.costo_spedizione_locale)) ? Number(p.costo_spedizione_locale) : null,
     });
   }
 
-  // Pacchi configurati dai negozi (V1: un pacco per negozio, peso in grammi).
   const negozioIds = [...new Set([...mappa.values()].map((x) => x.negozioId))];
-  const paccoPerNegozio = new Map<string, number | null>();
-  if (negozioIds.length > 0) {
-    const { data: negozi, error: errNegozi } = await db
-      .from("negozi")
-      .select("id, pacco_peso_grammi")
-      .in("id", negozioIds);
-    if (errNegozi) {
-      return {
-        ok: false,
-        opzioni: [],
-        pesoGrammi: null,
-        pesoMancante: false,
-        nessunServizioAttivo: false,
-        codice: "DB_UNAVAILABLE",
-        messaggio: "Impossibile calcolare la spedizione.",
-      };
-    }
-    for (const n of (negozi ?? []) as Record<string, unknown>[]) {
-      const peso = typeof n.pacco_peso_grammi === "number" ? (n.pacco_peso_grammi as number) : null;
-      paccoPerNegozio.set(String(n.id), peso);
-    }
-  }
 
   // Servizi di spedizione ATTIVI per negozio (fail-closed: nessuna riga =
   // nessun servizio attivato → nessuna opzione selezionabile).
   const attiviPerNegozio = new Map<string, Set<string>>();
+  // Costo amministrativo del Corriere locale per negozio. Il valore è la
+  // fonte primaria; il campo prodotto resta solo fallback legacy.
+  const costoLocalePerNegozio = new Map<string, number>();
   // Metodi con "spedizione gratuita" attiva (per negozio): quando attiva, il
   // prezzo è 0 senza richiedere pacco/fascia (stessa chiave "carrier:servizio").
   const gratuitaPerNegozio = new Map<string, Set<string>>();
@@ -250,7 +230,7 @@ export async function getPreventivoSpedizione(
     // a pagamento (nessuna regressione su Poste/BRT).
     const { data: metodiFull, error: errFull } = await db
       .from("negozio_metodi_spedizione")
-      .select("negozio_id, carrier, servizio, spedizione_gratuita")
+      .select("negozio_id, carrier, servizio, spedizione_gratuita, costo_euro")
       .eq("attivo", true)
       .in("negozio_id", negozioIds);
     if (errFull) {
@@ -280,6 +260,10 @@ export async function getPreventivoSpedizione(
       const set = attiviPerNegozio.get(nid) ?? new Set<string>();
       set.add(chiave);
       attiviPerNegozio.set(nid, set);
+      if (m.carrier === "locale" && m.servizio === "locale" && m.costo_euro != null) {
+        const costo = Number(m.costo_euro);
+        if (Number.isFinite(costo) && costo >= 0) costoLocalePerNegozio.set(nid, costo);
+      }
       if (m.spedizione_gratuita === true) {
         const gset = gratuitaPerNegozio.get(nid) ?? new Set<string>();
         gset.add(chiave);
@@ -293,6 +277,7 @@ export async function getPreventivoSpedizione(
     peso: number;
     pesoMancante: boolean;
     localeMax: number | null;
+    localeCostoNegozio: number | null;
     localeMancante: boolean;
   };
   const perNegozio = new Map<string, Gruppo>();
@@ -306,8 +291,15 @@ export async function getPreventivoSpedizione(
       peso: 0,
       pesoMancante: false,
       localeMax: null,
+      localeCostoNegozio: costoLocalePerNegozio.get(p.negozioId) ?? null,
       localeMancante: false,
     };
+    if (p.pesoGrammi !== null && p.pesoGrammi > 0) {
+      g.peso += p.pesoGrammi * riga.quantita;
+    } else {
+      g.pesoMancante = true;
+      pesoMancante = true;
+    }
     if (p.locale !== null && p.locale >= 0) {
       if (g.localeMax === null || p.locale > g.localeMax) g.localeMax = p.locale;
     } else {
@@ -316,16 +308,8 @@ export async function getPreventivoSpedizione(
     perNegozio.set(p.negozioId, g);
   }
 
-  // Peso pacco (Poste/BRT): V1 unico per negozio, MAI moltiplicato per quantità.
-  for (const [negozioId, g] of perNegozio) {
-    const paccoPeso = paccoPerNegozio.get(negozioId);
-    if (paccoPeso !== null && paccoPeso !== undefined && paccoPeso > 0) {
-      g.peso = paccoPeso;
-      pesoTotale += paccoPeso;
-    } else {
-      g.pesoMancante = true;
-      pesoMancante = true;
-    }
+  for (const g of perNegozio.values()) {
+    pesoTotale += g.peso;
   }
 
   const tariffeDb = await caricaTariffeDb();
@@ -347,11 +331,16 @@ export async function getPreventivoSpedizione(
       let calcolabile = perNegozio.size > 0;
       let prezzo = 0;
       for (const g of perNegozio.values()) {
-        if (g.localeMancante || g.localeMax === null) {
+        const costo = g.localeCostoNegozio ?? g.localeMax;
+        if (g.localeMancante && g.localeCostoNegozio === null) {
           calcolabile = false;
           break;
         }
-        prezzo += g.localeMax;
+        if (costo === null || costo < 0) {
+          calcolabile = false;
+          break;
+        }
+        prezzo += costo;
       }
       const disponibile = attivo && calcolabile;
       return {
@@ -365,6 +354,7 @@ export async function getPreventivoSpedizione(
         descrizione: voce.descrizione,
         gratuita: false,
         prezzo: disponibile ? round2(prezzo) : null,
+        pesoMassimoGrammi: null,
         disponibile,
         motivo: !attivo
           ? MOTIVO_SERVIZIO_NON_ATTIVO
@@ -382,6 +372,7 @@ export async function getPreventivoSpedizione(
     let calcolabile = perNegozio.size > 0;
     let prezzo = 0;
     let gratuita = perNegozio.size > 0;
+    const limitiFascia = new Set<number>();
     for (const [negozioId, g] of perNegozio) {
       const gratis = gratuitaPerNegozio.get(negozioId)?.has(chiave) ?? false;
       if (gratis) {
@@ -399,6 +390,7 @@ export async function getPreventivoSpedizione(
         break;
       }
       prezzo += fascia.prezzo;
+      limitiFascia.add(fascia.pesoMaxG);
     }
     const disponibile = attivo && calcolabile;
     return {
@@ -412,6 +404,7 @@ export async function getPreventivoSpedizione(
       descrizione: voce.descrizione,
       gratuita: disponibile ? gratuita : false,
       prezzo: disponibile ? round2(prezzo) : null,
+      pesoMassimoGrammi: limitiFascia.size === 1 ? [...limitiFascia][0] : null,
       disponibile,
       motivo: !attivo
         ? MOTIVO_SERVIZIO_NON_ATTIVO

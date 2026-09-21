@@ -35,12 +35,20 @@ function ipRichiedente(request: Request): string {
 }
 
 /** Codice errore "non disponibile" per provider (retrocompatibile carta). */
-function codiceNonDisponibile(provider: string): string {
+function codiceNonDisponibile(provider: string, metodo?: string): string {
+  if (provider === "stripe" && metodo === "paypal") return "PAYPAL_NON_DISPONIBILE";
+  if (provider === "stripe" && metodo === "sepa_debit") return "SEPA_NON_DISPONIBILE";
   return provider === "stripe" ? "CARTA_NON_DISPONIBILE" : `${provider.toUpperCase()}_NON_DISPONIBILE`;
 }
 
 /** Messaggio utente "non disponibile" per provider. */
-function messaggioNonDisponibile(provider: string): string {
+function messaggioNonDisponibile(provider: string, metodo?: string): string {
+  if (provider === "stripe" && metodo === "paypal") {
+    return "Il pagamento con PayPal tramite Stripe non è disponibile per uno dei negozi del carrello.";
+  }
+  if (provider === "stripe" && metodo === "sepa_debit") {
+    return "Il pagamento SEPA Direct Debit non è disponibile per uno dei negozi del carrello.";
+  }
   return provider === "stripe"
     ? "Il pagamento con carta non è disponibile per uno dei negozi del carrello."
     : `Il pagamento con ${provider} non è disponibile per uno dei negozi del carrello.`;
@@ -164,7 +172,8 @@ export async function POST(request: Request) {
     spedizioneRaw.metodoPagamento !== "carta" &&
     spedizioneRaw.metodoPagamento !== "klarna" &&
     spedizioneRaw.metodoPagamento !== "bonifico_istantaneo" &&
-    spedizioneRaw.metodoPagamento !== "bonifico"
+    spedizioneRaw.metodoPagamento !== "paypal" &&
+    spedizioneRaw.metodoPagamento !== "sepa_debit"
   ) {
     return apiError("VALIDATION_ERROR", "Metodo di pagamento non valido.", 422);
   }
@@ -260,8 +269,8 @@ export async function POST(request: Request) {
       const pronta = await isMetodoDisponibile(gruppo.negozioId, metodoRichiesto);
       if (!pronta) {
         return apiError(
-          codiceNonDisponibile(providerRichiesto),
-          messaggioNonDisponibile(providerRichiesto),
+          codiceNonDisponibile(providerRichiesto, metodoRichiesto),
+          messaggioNonDisponibile(providerRichiesto, metodoRichiesto),
           422
         );
       }
@@ -409,8 +418,7 @@ export async function POST(request: Request) {
             note: typeof spedizioneRaw.note === "string" ? spedizioneRaw.note : null,
             carrier: carrier as CarrierCodice,
             servizio: servizio as ServizioCodice,
-            metodoPagamento:
-              spedizioneRaw.metodoPagamento === "bonifico" ? "bonifico" : "carta",
+            metodoPagamento: "carta",
           }
         : null,
     fatturazione:

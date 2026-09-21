@@ -314,9 +314,17 @@ export async function creaSessionePagamentoPerOrdine(
     consumer: ordine.consumer,
   };
 
+  // Chiave deterministica dell'operazione create: l'ordine identifica la
+  // stessa operazione anche dopo un retry. È disponibile prima del gateway;
+  // Stripe la ignora, PayPal la propaga come PayPal-Request-Id.
+  const idempotencyKey = `incitta:v1:${provider}:order:${ordine.id}`;
   let sessione;
   try {
-    sessione = await gateway.creaSessione(ctx, risolto.cred);
+    sessione = await gateway.creaSessione(ctx, risolto.cred, {
+      idempotencyKey,
+      seller: risolto.cred.paypalSeller,
+      platformFee: ordine.commissioneImporto,
+    });
   } catch (e) {
     console.error(`[pagamenti] creazione sessione ${provider} fallita:`, e instanceof Error ? e.message : e);
     return {
@@ -332,7 +340,6 @@ export async function creaSessionePagamentoPerOrdine(
   // Stripe returns its provider deadline; the other providers use the same
   // application TTL so order/session expiration remains consistent locally.
   const expiresAt = sessione.expiresAt ?? new Date(Date.now() + PAYMENT_SESSION_TTL_MS);
-  const idempotencyKey = `${provider}:${ordine.id}:${crypto.randomUUID()}`;
   const { data: sessioneInserita, error: insertErr } = await db
     .from("pagamenti_sessioni")
     .insert({
@@ -992,7 +999,7 @@ export async function creaSessionePagamentoPerIntento(
     // qui è quello validato alla creazione dell'intento.
   const metodoIntento = payload.metodoPagamento ?? null;
   if (providerEffettivo === "stripe") {
-    // Coerenza provider↔metodo: carta/klarna/bonifico_istantaneo su Stripe.
+    // Coerenza provider↔metodo: carta/klarna/paypal/sepa_debit/bonifico_istantaneo su Stripe.
     // Un metodo diverso su intento Stripe = snapshot malformato
     // → fail-closed. Un intento stripe SENZA metodo (legacy/ordine) resta
     // permesso: il gateway mappa il default carta (retrocompatibilità).
@@ -1000,6 +1007,8 @@ export async function creaSessionePagamentoPerIntento(
       metodoIntento !== null &&
       metodoIntento !== "carta" &&
       metodoIntento !== "klarna" &&
+      metodoIntento !== "paypal" &&
+      metodoIntento !== "sepa_debit" &&
       metodoIntento !== "bonifico_istantaneo"
     ) {
       return {
@@ -1086,9 +1095,17 @@ export async function creaSessionePagamentoPerIntento(
     },
   };
 
+  // Il checkoutId identifica stabilmente l'operazione create dell'intento.
+  // La chiave resta uguale tra retry e viene propagata al gateway prima della
+  // chiamata HTTP; non viene usato un UUID casuale.
+  const idempotencyKey = `incitta:v1:${providerEffettivo}:checkout:${checkoutId}`;
   let sessione;
   try {
-    sessione = await gateway.creaSessione(ctx, risolto.cred);
+    sessione = await gateway.creaSessione(ctx, risolto.cred, {
+      idempotencyKey,
+      seller: risolto.cred.paypalSeller,
+      platformFee: Number(payload.commissioneImporto ?? 0),
+    });
   } catch (e) {
     console.error(
       `[pagamenti] creazione sessione ${providerEffettivo} (intento ${checkoutId}) fallita:`,

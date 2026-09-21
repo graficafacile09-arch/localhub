@@ -9,7 +9,6 @@
  *
  *   B) DISPONIBILITÀ per il singolo negozio — se il negozio può DAVVERO
  *      processare quel metodo. I metodi online usano esclusivamente Stripe;
- *      il bonifico manuale non richiede un gateway.
  *
  * Ogni voce espone il flag `disponibile`. Nessun fallback automatico, nessun
  * metodo pre-selezionato, nessun secret letto o esposto (solo dati pubblici
@@ -17,6 +16,7 @@
  * tramite getMetodiPagamentoPubbliciMulti, dal checkout carrello.
  */
 
+import Stripe from "stripe";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getStripeConnectAccount } from "./config";
 import {
@@ -53,8 +53,10 @@ export type EsitoMetodiPubblici =
  *              (metodo 'carta' in negozio_metodi_pagamento);
  *   klarna   → connected account pronto E capability klarna_payments ACTIVE
  *              (flag B1 klarna_enabled) E metodo 'klarna' attivo;
+ *   paypal  → connected account pronto, metodo 'paypal' attivo E PayPal
+ *              disponibile nella Payment Method Configuration Stripe;
+ *   sepa_debit → connected account pronto e metodo 'sepa_debit' attivo;
  *   bonifico_istantaneo → connected account pronto e metodo attivo;
- *   bonifico → sempre disponibile (nessun gateway).
  *
  * Solo "active" abilita: requested/pending/inactive/restricted → false.
  */
@@ -65,9 +67,13 @@ export async function isMetodoDisponibile(
 ): Promise<boolean> {
   if (!negozioId) return false;
 
-  if (metodo === "bonifico") return true;
-
-  if (metodo === "carta" || metodo === "klarna" || metodo === "bonifico_istantaneo") {
+  if (
+    metodo === "carta" ||
+    metodo === "klarna" ||
+    metodo === "paypal" ||
+    metodo === "sepa_debit" ||
+    metodo === "bonifico_istantaneo"
+  ) {
     // 1. Il metodo deve essere ATTIVATO dal negozio
     //    (negozio_metodi_pagamento.attivo = true).
     if (!(await metodoAttivatoDalNegozio(negozioId, metodo))) return false;
@@ -76,10 +82,81 @@ export async function isMetodoDisponibile(
     if (!connect || !connect.chargesEnabled || !connect.payoutsEnabled) return false;
     // 3. Gating per capability (stato REALE Stripe, fail-closed).
     if (metodo === "klarna" && !connect.klarnaEnabled) return false;
+    if (metodo === "paypal" && !(await paypalDisponibileInConfigurazioneStripe(connect.accountId))) {
+      return false;
+    }
+    if (metodo === "sepa_debit" && !(await sepaDisponibileInConfigurazioneStripe(connect.accountId))) {
+      return false;
+    }
+    if (
+      metodo === "bonifico_istantaneo" &&
+      !(await bonificoIstantaneoDisponibileInConfigurazioneStripe(connect.accountId))
+    ) {
+      return false;
+    }
     return true;
   }
 
   return false;
+}
+
+/**
+ * Verifica la configurazione Stripe effettiva per il connected account.
+ * Nessuna scrittura: un errore o una configurazione non disponibile chiude
+ * il metodo (fail-closed), lasciando a Stripe la selezione dinamica finale.
+ */
+async function paypalDisponibileInConfigurazioneStripe(accountId: string): Promise<boolean> {
+  const secret = (process.env.STRIPE_SECRET_KEY ?? "").trim();
+  if (!secret || !accountId) return false;
+  try {
+    const stripe = new Stripe(secret);
+    const configurazioni = await stripe.paymentMethodConfigurations.list(
+      { limit: 100 },
+      { stripeAccount: accountId }
+    );
+    const configurazioneDefault = configurazioni.data.find(
+      (configurazione) => configurazione.active && configurazione.is_default && configurazione.parent
+    );
+    return configurazioneDefault?.paypal?.available === true;
+  } catch {
+    return false;
+  }
+}
+
+async function sepaDisponibileInConfigurazioneStripe(accountId: string): Promise<boolean> {
+  const secret = (process.env.STRIPE_SECRET_KEY ?? "").trim();
+  if (!secret || !accountId) return false;
+  try {
+    const stripe = new Stripe(secret);
+    const configurazioni = await stripe.paymentMethodConfigurations.list(
+      { limit: 100 },
+      { stripeAccount: accountId }
+    );
+    const configurazioneDefault = configurazioni.data.find(
+      (configurazione) => configurazione.active && configurazione.is_default && configurazione.parent
+    );
+    return configurazioneDefault?.sepa_debit?.available === true;
+  } catch {
+    return false;
+  }
+}
+
+async function bonificoIstantaneoDisponibileInConfigurazioneStripe(accountId: string): Promise<boolean> {
+  const secret = (process.env.STRIPE_SECRET_KEY ?? "").trim();
+  if (!secret || !accountId) return false;
+  try {
+    const stripe = new Stripe(secret);
+    const configurazioni = await stripe.paymentMethodConfigurations.list(
+      { limit: 100 },
+      { stripeAccount: accountId }
+    );
+    const configurazioneDefault = configurazioni.data.find(
+      (configurazione) => configurazione.active && configurazione.is_default && configurazione.parent
+    );
+    return configurazioneDefault?.pay_by_bank?.available === true;
+  } catch {
+    return false;
+  }
 }
 
 /** Metodo attivato dal merchant (negozio_metodi_pagamento.attivo = true). */
@@ -98,46 +175,14 @@ async function metodoAttivatoDalNegozio(negozioId: string, metodo: string): Prom
     return false;
   }
 }
-async function datiBonifico(
-  negozioId: string
-): Promise<{ iban: string | null; payeeEmail: string | null; configurato: boolean }> {
-  try {
-    const db = createAdminSupabaseClient();
-    const { data } = await db.rpc("pagamenti_credenziali_leggi", {
-      p_negozio_id: negozioId,
-      p_provider: "bonifico",
-      p_decifra: false,
-      p_chiave: null,
-    });
-    const esito = data as {
-      ok?: boolean;
-      presente?: boolean;
-      attivo?: boolean;
-      iban?: string | null;
-      payee_email?: string | null;
-    } | null;
-    if (!esito || esito.ok !== true || esito.presente !== true) {
-      return { iban: null, payeeEmail: null, configurato: false };
-    }
-    const iban = typeof esito.iban === "string" && esito.iban.trim() ? esito.iban.trim() : null;
-    const payeeEmail =
-      typeof esito.payee_email === "string" && esito.payee_email.trim()
-        ? esito.payee_email.trim()
-        : null;
-    return { iban, payeeEmail, configurato: !!iban || !!payeeEmail };
-  } catch {
-    return { iban: null, payeeEmail: null, configurato: false };
-  }
-}
-
 /**
  * Metodi di pagamento per il checkout del negozio: SEMPRE l'intero catalogo
  * supportato da InCittà, ognuno con il flag `disponibile` reale.
  *
- * - bonifico: `disponibile = true` (metodo base, non dipende da gateway);
- *   se configurato mostra le coordinate, altrimenti "da concordare".
  * - carta/klarna/bonifico_istantaneo: `disponibile = true` SOLO se il metodo
- *   è attivo e il connected account Stripe è pronto.
+ *   è attivo e il connected account Stripe è pronto;
+ * - PayPal richiede inoltre la disponibilità nella configurazione Stripe;
+ * - il bonifico ordinario non appartiene al catalogo checkout.
  */
 export async function getMetodiPagamentoPubblici(
   negozioId: string
@@ -163,8 +208,6 @@ export async function getMetodiPagamentoPubblici(
     // Nessun metodo attivato → restano disponibili solo i metodi senza gateway.
   }
 
-  const bonifico = await datiBonifico(negozioId);
-
   const metodi: MetodoPagamentoCheckout[] = [];
   for (const voce of CATALOGO_METODI_PAGAMENTO) {
     const disponibile = await disponibilitaVoce(voce, negozioId, attivi);
@@ -177,14 +220,6 @@ export async function getMetodiPagamentoPubblici(
       disponibile,
     };
 
-    if (voce.metodo === "bonifico") {
-      item.iban = bonifico.iban;
-      item.payeeEmail = bonifico.payeeEmail;
-      item.descrizione = bonifico.configurato
-        ? "Pagamento manuale: ti invieremo le coordinate per il bonifico."
-        : voce.descrizione;
-    }
-
     metodi.push(item);
   }
 
@@ -193,7 +228,6 @@ export async function getMetodiPagamentoPubblici(
 
 /**
  * Disponibilità reale di UNA voce di catalogo per un negozio.
- * - senza gateway (bonifico): sempre true;
  * - con gateway Stripe: true SOLO se il metodo è attivo e il connected account
  *   è pronto; Klarna richiede inoltre la capability Stripe attiva.
  */
@@ -240,7 +274,7 @@ export async function metodoDisponibilePerProdotto(
  * SEMPRE l'intero catalogo supportato, con `disponibile = true` solo se il
  * metodo è realmente disponibile in OGNI negozio. Riusa
  * getMetodiPagamentoPubblici (fonte comune di disponibilità) senza duplicare
- * la logica. Bonifico è sempre presente (metodo base, mai filtrato).
+ * la logica; il bonifico ordinario non appartiene al catalogo checkout.
  */
 export async function getMetodiPagamentoPubbliciMulti(
   negozioIds: string[]
@@ -264,25 +298,13 @@ export async function getMetodiPagamentoPubbliciMulti(
         esito.ok && esito.metodi.some((m) => m.metodo === voce.metodo && m.disponibile)
     );
 
-    // Dati bonifico: presi dal primo negozio che li espone (coordinate condivise
-    // solo se configurate; altrimenti resta la descrizione "da concordare").
-    const primo = perNegozio
-      .find((esito) => esito.ok)
-      ?.metodi.find((m) => m.metodo === voce.metodo);
-
     const item: MetodoPagamentoCheckout = {
       metodo: voce.metodo,
       etichetta: voce.etichetta,
       nomeBreve: voce.nomeBreve,
       descrizione: voce.descrizione,
       disponibile: voce.richiedeGateway ? disponibileOvunque : true,
-      iban: primo?.iban ?? null,
-      payeeEmail: primo?.payeeEmail ?? null,
     };
-
-    if (voce.metodo === "bonifico" && (primo?.iban || primo?.payeeEmail)) {
-      item.descrizione = "Pagamento manuale: ti invieremo le coordinate per il bonifico.";
-    }
 
     risultato.push(item);
   }

@@ -88,6 +88,8 @@ export type OpzioneSpedizione = {
   gratuita: boolean;
   /** Prezzo in euro (totale per l'intero checkout) calcolato dal server. */
   prezzo: number | null;
+  /** Limite massimo della fascia applicata; null se più negozi usano fasce diverse. */
+  pesoMassimoGrammi: number | null;
   /** True se realmente selezionabile per questo prodotto/carrello. */
   disponibile: boolean;
   /** Motivo di indisponibilità (es. "Peso non configurato dal negozio"). */
@@ -113,14 +115,46 @@ export type PreventivoSpedizione = {
   messaggio?: string;
 };
 
+/**
+ * Ordina le opzioni del preventivo per costo numerico effettivo.
+ *
+ * Le opzioni disponibili con un prezzo numerico vengono prima; le opzioni
+ * non disponibili restano in coda nell'ordine originale e non vengono mai
+ * trattate come gratuite. L'indice originale rende esplicito il tie-break
+ * stabile anche in ambienti dove Array.prototype.sort non fosse stabile.
+ */
+export function ordinaOpzioniSpedizione(
+  opzioni: readonly OpzioneSpedizione[]
+): OpzioneSpedizione[] {
+  return opzioni
+    .map((opzione, indice) => ({ opzione, indice }))
+    .sort((a, b) => {
+      const aOrdinabile =
+        a.opzione.disponibile &&
+        a.opzione.prezzo !== null &&
+        Number.isFinite(a.opzione.prezzo);
+      const bOrdinabile =
+        b.opzione.disponibile &&
+        b.opzione.prezzo !== null &&
+        Number.isFinite(b.opzione.prezzo);
+
+      if (aOrdinabile !== bOrdinabile) return aOrdinabile ? -1 : 1;
+      if (!aOrdinabile || !bOrdinabile) return a.indice - b.indice;
+
+      const differenza = a.opzione.prezzo! - b.opzione.prezzo!;
+      return differenza !== 0 ? differenza : a.indice - b.indice;
+    })
+    .map(({ opzione }) => opzione);
+}
+
 // ═══════════════════════════════════════════════════════════════════
 // Motivi di indisponibilità / messaggi (condivisi motore + checkout)
 // ═══════════════════════════════════════════════════════════════════
 
 /** Motivo: servizio disattivato dal venditore per il proprio negozio. */
 export const MOTIVO_SERVIZIO_NON_ATTIVO = "Servizio non attivato dal negozio.";
-/** Motivo: pacco del negozio non configurato (Poste/BRT non calcolabili). */
-export const MOTIVO_PACCO_NON_CONFIGURATO = "Pacco non configurato dal negozio.";
+/** Motivo: peso prodotto mancante (tariffa automatica non calcolabile). */
+export const MOTIVO_PACCO_NON_CONFIGURATO = "Peso prodotto non configurato dal negozio.";
 /** Motivo: corriere locale non configurato su uno o più prodotti. */
 export const MOTIVO_LOCALE_NON_CONFIGURATO =
   "Corriere locale non configurato per uno o più prodotti del carrello.";

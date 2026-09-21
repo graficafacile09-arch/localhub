@@ -17,8 +17,10 @@ import Stripe from "stripe";
 import type {
   ContestoCheckout,
   CredenzialiGateway,
+  GatewayOperationContext,
   PaymentGateway,
   PaymentStatus,
+  RefundRequestOptions,
 } from "./types";
 import { PAYMENT_SESSION_TTL_MS } from "./expiration";
 
@@ -82,12 +84,6 @@ function costruisciLineItems(
     },
   ];
 }
-
-/** Metodi supportati dalla Checkout Session Stripe. */
-const PAYMENT_METHOD_TYPES: Stripe.Checkout.SessionCreateParams.PaymentMethodType[] = [
-  "card",
-  "klarna",
-];
 
 /** Errore applicativo del gateway (mai esposto al client in chiaro). */
 export class PagamentoGatewayError extends Error {
@@ -178,7 +174,8 @@ export class GatewayStripe implements PaymentGateway {
 
   async creaSessione(
     ctx: ContestoCheckout,
-    cred: CredenzialiGateway
+    cred: CredenzialiGateway,
+    _operation?: GatewayOperationContext
   ): Promise<{ paymentId: string; redirectUrl: string; expiresAt?: Date }> {
     const stripe = clientStripe(cred, this.opts);
 
@@ -193,7 +190,6 @@ export class GatewayStripe implements PaymentGateway {
       {
         mode: "payment",
         // Tutti i pagamenti online sono centralizzati su Stripe.
-        payment_method_types: PAYMENT_METHOD_TYPES,
         // FASE F2.3 — un line_item per riga (prezzo/quantità dagli snapshot
         // del DB via ContestoCheckout.righe): il client non ha alcun controllo
         // su prezzi, quantità, totale o spedizione. Senza righe nel contesto
@@ -283,7 +279,11 @@ export class GatewayStripe implements PaymentGateway {
     };
   }
 
-  async statoPagamento(paymentId: string, cred: CredenzialiGateway): Promise<PaymentStatus> {
+  async statoPagamento(
+    paymentId: string,
+    cred: CredenzialiGateway,
+    _operation?: GatewayOperationContext
+  ): Promise<PaymentStatus> {
     const stripe = clientStripe(cred, this.opts);
     const session = await stripe.checkout.sessions.retrieve(paymentId, undefined, richiestaPer(cred));
     if (session.status === "expired") return "expired";
@@ -295,7 +295,8 @@ export class GatewayStripe implements PaymentGateway {
   async cattura(
     paymentId: string,
     _importo: number | undefined,
-    cred: CredenzialiGateway
+    cred: CredenzialiGateway,
+    _operation?: GatewayOperationContext
   ): Promise<{ transactionId: string }> {
     const stripe = clientStripe(cred, this.opts);
     const session = await stripe.checkout.sessions.retrieve(paymentId, undefined, richiestaPer(cred));
@@ -307,7 +308,11 @@ export class GatewayStripe implements PaymentGateway {
   }
 
   /** Annulla: scade la sessione Checkout non ancora completata. */
-  async annulla(paymentId: string, cred: CredenzialiGateway): Promise<void> {
+  async annulla(
+    paymentId: string,
+    cred: CredenzialiGateway,
+    _operation?: GatewayOperationContext
+  ): Promise<void> {
     const stripe = clientStripe(cred, this.opts);
     await stripe.checkout.sessions.expire(paymentId, undefined, richiestaPer(cred));
   }
@@ -317,7 +322,7 @@ export class GatewayStripe implements PaymentGateway {
     paymentId: string,
     importo: number | undefined,
     cred: CredenzialiGateway,
-    options?: { idempotencyKey: string; operationId: string }
+    options?: RefundRequestOptions
   ): Promise<{ refundId: string }> {
     const stripe = clientStripe(cred, this.opts);
     const session = await stripe.checkout.sessions.retrieve(paymentId, undefined, richiestaPer(cred));
@@ -334,6 +339,7 @@ export class GatewayStripe implements PaymentGateway {
     const refund = await stripe.refunds.create({
       payment_intent: paymentIntent,
       amount: importo !== undefined && Number(importo) > 0 ? Math.round(Number(importo) * 100) : undefined,
+      refund_application_fee: true,
       ...(options?.operationId ? { metadata: { refund_operation_id: options.operationId } } : {}),
     }, {
       ...(richiestaPer(cred) ?? {}),

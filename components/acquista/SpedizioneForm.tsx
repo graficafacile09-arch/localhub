@@ -11,6 +11,7 @@ import { creaOrdineViaApi, nuovaChiaveIdempotenza } from "@/lib/cliente/ordini-c
 import type { MetodoPagamentoCheckout } from "@/lib/pagamenti/metodi-pubblici";
 import {
   MESSAGGIO_NESSUNA_SPEDIZIONE,
+  ordinaOpzioniSpedizione,
   type CarrierCodice,
   type OpzioneSpedizione,
   type ServizioCodice,
@@ -27,7 +28,6 @@ const TIER_LABEL: Record<TierSpedizione, string> = {
   express: "Express",
   locale: "Corriere locale",
 };
-const TIER_ORDINE: TierSpedizione[] = ["standard", "express", "locale"];
 
 /**
  * Dati del cliente precompilati dal profilo (server-side, mai dal browser).
@@ -62,8 +62,8 @@ export default function SpedizioneForm({
   varianteId?: string | null;
   /**
    * Catalogo dei metodi di pagamento supportati da InCittà, ognuno con il
-   * flag `disponibile` reale per questo negozio. La UI mostra SEMPRE l'intero
-   * catalogo; i metodi non disponibili restano visibili ma non selezionabili.
+   * flag `disponibile` reale per questo negozio. La UI mostra solo le voci
+   * con `disponibile = true`.
    */
   metodiPagamento?: MetodoPagamentoCheckout[];
   /** Precompilazione dal profilo cliente (autenticato). Default: vuoto. */
@@ -91,7 +91,7 @@ export default function SpedizioneForm({
   // "disponibile" NON significa "selezionato". Il submit è bloccato finché
   // l'utente non sceglie esplicitamente un metodo (vedi pulsante disabilitato).
   const [metodoPagamento, setMetodoPagamento] = useState<
-    "carta" | "klarna" | "bonifico_istantaneo" | "bonifico" | null
+    "carta" | "klarna" | "paypal" | "sepa_debit" | "bonifico_istantaneo" | "bonifico" | null
   >(null);
   const [inviando, setInviando] = useState(false);
   const [errore, setErrore] = useState<string | null>(null);
@@ -136,6 +136,7 @@ export default function SpedizioneForm({
       o.carrier === spedizioneScelta?.carrier && o.servizio === spedizioneScelta?.servizio
   );
   const costoSpedizione = opzioneScelta?.prezzo ?? 0;
+  const opzioniSpedizioneOrdinate = ordinaOpzioniSpedizione(opzioniSpedizione);
   const subtotal = prezzo * quantita;
   // Il totale qui è il preventivo corrente (prodotto + spedizione ricevuta dal
   // server); il server ricalcola e verifica il totale canonico nell'intento.
@@ -455,22 +456,20 @@ export default function SpedizioneForm({
                   {MESSAGGIO_NESSUNA_SPEDIZIONE}
                 </p>
               )}
-              {TIER_ORDINE.map((tier) => {
-                const delTier = opzioniSpedizione.filter((o) => o.tier === tier);
-                if (delTier.length === 0) return null;
-                return (
-                  <div key={tier}>
-                    <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-400">
-                      {TIER_LABEL[tier]}
-                    </p>
-                    <div className="space-y-2">
-                      {delTier.map((opzione) => {
-                        const selezionata =
-                          spedizioneScelta?.carrier === opzione.carrier &&
-                          spedizioneScelta?.servizio === opzione.servizio;
-                        return (
-                          <label
-                            key={`${opzione.carrier}:${opzione.servizio}`}
+              <div className="space-y-2">
+                {opzioniSpedizioneOrdinate.map((opzione, indice) => {
+                  const tierPrecedente = opzioniSpedizioneOrdinate[indice - 1]?.tier;
+                  const selezionata =
+                    spedizioneScelta?.carrier === opzione.carrier &&
+                    spedizioneScelta?.servizio === opzione.servizio;
+                  return (
+                    <div key={`${opzione.carrier}:${opzione.servizio}`}>
+                      {(indice === 0 || tierPrecedente !== opzione.tier) && (
+                        <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                          {TIER_LABEL[opzione.tier]}
+                        </p>
+                      )}                      <label
+
                             className={`flex items-center gap-3 rounded-lg border p-3 transition ${
                               selezionata
                                 ? "border-yellow-400 bg-yellow-50"
@@ -507,6 +506,9 @@ export default function SpedizioneForm({
                                 </p>
                                 <p className="text-[11px] text-slate-500">
                                   {opzione.descrizione ?? opzione.tempoConsegna ?? "Consegna concordata con il negozio"}
+                                  {opzione.pesoMassimoGrammi !== null
+                                    ? ` · fino a ${(opzione.pesoMassimoGrammi / 1000).toLocaleString("it-IT")} kg`
+                                    : ""}
                                 </p>
                                 {!opzione.disponibile && opzione.motivo && (
                                   <p className="mt-0.5 text-[10px] leading-4 text-slate-400">{opzione.motivo}</p>
@@ -520,13 +522,11 @@ export default function SpedizioneForm({
                                     : "—"}
                               </span>
                             </div>
-                          </label>
-                        );
-                      })}
+                      </label>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
               <p className="text-[10px] leading-4 text-slate-400">
                 {pesoGrammi && pesoGrammi > 0
                   ? `Pacco: ${(pesoGrammi / 1000).toLocaleString("it-IT", { maximumFractionDigits: 2 })} kg · `
@@ -538,16 +538,15 @@ export default function SpedizioneForm({
           )}
         </div>
 
-        {/* Metodo pagamento: SEMPRE l'intero catalogo supportato da InCittà.
-            Ogni metodo mostra se è realmente disponibile per questo negozio;
-            i non disponibili restano visibili ma non selezionabili. */}
+        {/* Metodo pagamento: mostra solo le voci del catalogo realmente disponibili
+            per questo negozio, secondo il flag restituito dal backend. */}
         <div className="rounded-xl border border-slate-200 bg-white p-4">
           <h3 className="text-sm font-bold text-slate-900">
             <CreditCard className="mr-1.5 inline-block h-4 w-4 text-blue-500" />
             Metodo pagamento
           </h3>
           <div className="mt-3 space-y-2">
-            {metodiPagamento.map((metodo) => {
+            {metodiPagamento.filter((metodo) => metodo.disponibile).map((metodo) => {
               const selezionato = metodoPagamentoEffettivo === metodo.metodo;
               const selezionabile = metodoDisponibilePerTotale(metodo);
               return (

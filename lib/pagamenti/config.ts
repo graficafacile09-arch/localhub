@@ -2,7 +2,12 @@
 
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { isProviderPagamentoValido } from "./crypto";
-import type { CredenzialiGateway } from "./types";
+import type {
+  CredenzialiGateway,
+  PaypalPlatformConfig,
+  PaypalSellerContext,
+} from "./types";
+import { paypalSellerPronto } from "./types";
 
 export type ConfigProviderNegozio = {
   negozioId: string;
@@ -34,6 +39,30 @@ type EsitoRpcLettura = {
 function chiaveCifraturaOrNull(): string | null {
   const key = process.env.PAYMENTS_ENCRYPTION_KEY;
   return key?.trim() || null;
+}
+
+/** Configurazione PayPal platform-level, letta esclusivamente server-side. */
+export function getConfigPaypalPiattaforma(): PaypalPlatformConfig | null {
+  const clientId = (process.env.PAYPAL_PARTNER_CLIENT_ID ?? "").trim();
+  const clientSecret = (process.env.PAYPAL_PARTNER_SECRET ?? "").trim();
+  const apiBaseUrl = (process.env.PAYPAL_API_BASE_URL ?? "").trim().replace(/\/+$/, "");
+  const webhookId = (process.env.PAYPAL_WEBHOOK_ID ?? "").trim() || null;
+
+  if (!clientId || !clientSecret || !apiBaseUrl) return null;
+  try {
+    const parsed = new URL(apiBaseUrl);
+    if (parsed.protocol !== "https:") return null;
+  } catch {
+    return null;
+  }
+
+  return {
+    clientId,
+    clientSecret,
+    apiBaseUrl,
+    webhookId,
+    testMode: apiBaseUrl.toLowerCase().includes("sandbox"),
+  };
 }
 
 export async function getConfigProviderNegozio(
@@ -132,6 +161,79 @@ export async function getStripeConnectAccount(
   }
 }
 
+export type EsitoStripeConnectRelink =
+  | {
+      ok: true;
+      id: string;
+      negozioId: string;
+      accountId: string;
+      accountName: string | null;
+      testMode: boolean;
+      onboardingStatus: string;
+      payoutsEnabled: boolean;
+      chargesEnabled: boolean;
+      klarnaEnabled: boolean;
+    }
+  | {
+      ok: false;
+      codice: "NOT_FOUND" | "AMBIGUOUS" | "FETCH_FAILED";
+    };
+
+/**
+ * Lookup opt-in per il solo re-link: cerca un account Stripe locale inattivo.
+ * Non viene usato dalla readiness ordinaria, dal checkout o dai webhook.
+ */
+export async function getStripeConnectAccountForRelink(
+  negozioId: string
+): Promise<EsitoStripeConnectRelink> {
+  if (!negozioId) return { ok: false, codice: "NOT_FOUND" };
+
+  try {
+    const db = createAdminSupabaseClient();
+    const { data, error } = await db
+      .from("negozio_pagamenti")
+      .select(
+        "id, negozio_id, account_id, account_name, test_mode, onboarding_status, payouts_enabled, charges_enabled, klarna_enabled"
+      )
+      .eq("negozio_id", negozioId)
+      .eq("provider", "stripe")
+      .eq("attivo", false)
+      .not("account_id", "is", null)
+      .maybeSingle();
+
+    if (error) return { ok: false, codice: "FETCH_FAILED" };
+    if (!data?.account_id) return { ok: false, codice: "NOT_FOUND" };
+
+    const accountId = String(data.account_id).trim();
+    if (!accountId) return { ok: false, codice: "NOT_FOUND" };
+
+    const { data: collegamenti, error: collegamentiError } = await db
+      .from("negozio_pagamenti")
+      .select("negozio_id")
+      .eq("provider", "stripe")
+      .eq("account_id", accountId);
+
+    if (collegamentiError || (collegamenti ?? []).length !== 1 || String(collegamenti?.[0]?.negozio_id) !== negozioId) {
+      return { ok: false, codice: "AMBIGUOUS" };
+    }
+
+    return {
+      ok: true,
+      id: String(data.id),
+      negozioId,
+      accountId,
+      accountName: data.account_name ? String(data.account_name) : null,
+      testMode: data.test_mode === true,
+      onboardingStatus: data.onboarding_status ? String(data.onboarding_status) : "pending",
+      payoutsEnabled: data.payouts_enabled === true,
+      chargesEnabled: data.charges_enabled === true,
+      klarnaEnabled: data.klarna_enabled === true,
+    };
+  } catch {
+    return { ok: false, codice: "FETCH_FAILED" };
+  }
+}
+
 export async function getNegozioIdByStripeAccount(accountId: string): Promise<string | null> {
   const id = (accountId ?? "").trim();
   if (!id) return null;
@@ -150,10 +252,60 @@ export async function getNegozioIdByStripeAccount(accountId: string): Promise<st
   }
 }
 
+export async function getPaypalSellerContext(
+  negozioId: string
+): Promise<PaypalSellerContext | null> {
+  if (!negozioId) return null;
+  try {
+    const db = createAdminSupabaseClient();
+    const { data, error } = await db
+      .from("negozio_pagamenti")
+      .select("merchant_id, onboarding_status, payments_receivable, primary_email_confirmed, test_mode")
+      .eq("negozio_id", negozioId)
+      .eq("provider", "paypal")
+      .eq("attivo", true)
+      .maybeSingle();
+    if (error || !data || typeof data.merchant_id !== "string" || !data.merchant_id.trim()) {
+      return null;
+    }
+
+    const status = String(data.onboarding_status ?? "not_started");
+    if (status !== "not_started" && status !== "pending" && status !== "complete" && status !== "restricted") {
+      return null;
+    }
+
+    return {
+      merchantId: data.merchant_id.trim(),
+      onboardingStatus: status,
+      paymentsReceivable: data.payments_receivable === true,
+      primaryEmailConfirmed: data.primary_email_confirmed === true,
+      testMode: data.test_mode !== false,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function risolviCredenzialiGateway(
   negozioId: string,
   provider: string
 ): Promise<{ pronto: boolean; cred: CredenzialiGateway | null }> {
+  if (provider === "paypal") {
+    const paypal = getConfigPaypalPiattaforma();
+    const paypalSeller = await getPaypalSellerContext(negozioId);
+    if (!paypal || !paypalSeller) return { pronto: false, cred: null };
+    if (!paypalSellerPronto(paypalSeller)) {
+      return { pronto: false, cred: null };
+    }
+    return {
+      pronto: true,
+      cred: {
+        testMode: paypal.testMode,
+        paypal,
+        paypalSeller,
+      },
+    };
+  }
   if (provider !== "stripe") return { pronto: false, cred: null };
 
   const connect = await getStripeConnectAccount(negozioId);

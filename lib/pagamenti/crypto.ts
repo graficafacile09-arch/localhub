@@ -30,8 +30,8 @@ export const PROVIDER_PAGAMENTO_VALIDI = ["stripe", "bonifico"] as const;
 export const METODI_PAGAMENTO_VALIDI = [
   "carta",
   "klarna",
+  "sepa_debit",
   "bonifico_istantaneo",
-  "bonifico",
 ] as const;
 
 export type ProviderPagamentoValido = (typeof PROVIDER_PAGAMENTO_VALIDI)[number];

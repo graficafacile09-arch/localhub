@@ -3,6 +3,8 @@
 export type MetodoPagamento =
   | "carta"
   | "klarna"
+  | "paypal"
+  | "sepa_debit"
   | "bonifico_istantaneo"
   | "bonifico";
 
@@ -33,20 +35,28 @@ export const CATALOGO_METODI_PAGAMENTO: readonly VoceCatalogoMetodo[] = [
     richiedeGateway: true,
   },
   {
+    metodo: "paypal",
+    etichetta: "PayPal",
+    nomeBreve: "PayPal",
+    descrizione: "Paga con PayPal tramite Stripe Checkout, se disponibile.",
+    provider: "stripe",
+    richiedeGateway: true,
+  },
+  {
+    metodo: "sepa_debit",
+    etichetta: "SEPA Direct Debit",
+    nomeBreve: "SEPA",
+    descrizione: "Addebito diretto SEPA tramite Stripe Checkout, se disponibile.",
+    provider: "stripe",
+    richiedeGateway: true,
+  },
+  {
     metodo: "bonifico_istantaneo",
     etichetta: "Bonifico istantaneo",
     nomeBreve: "Bonifico istantaneo",
     descrizione: "Paga tramite il tuo conto bancario con Stripe, se disponibile.",
     provider: "stripe",
     richiedeGateway: true,
-  },
-  {
-    metodo: "bonifico",
-    etichetta: "Bonifico bancario",
-    nomeBreve: "Bonifico",
-    descrizione: "Pagamento da concordare direttamente con il negozio.",
-    provider: null,
-    richiedeGateway: false,
   },
 ] as const;
 

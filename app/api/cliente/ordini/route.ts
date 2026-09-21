@@ -117,16 +117,17 @@ export async function POST(request: Request) {
 
   // ── CONTRATTO BUY-NOW: metodo di pagamento esplicito e OBBLIGATORIO ─────
   // Per la modalità spedizione il metodo deve essere SCELTO DALL'UTENTE:
-  // mai default/fallback (né bonifico, né carta, né klarna). Tre casi:
+  // mai default/fallback (né carta, né klarna). Tre casi:
   //   1) valore non ammesso → 422, zero ordini;
   //   2) assente / null / "" con modalità spedizione       → 422, zero ordini;
   //   3) valido → si prosegue con disponibilità + pre-flight provider.
   const metodoScelto = spedizioneRaw.metodoPagamento;
   const metodoValido =
     metodoScelto === "carta" ||
-    metodoScelto === "bonifico" ||
     metodoScelto === "bonifico_istantaneo" ||
-    metodoScelto === "klarna";
+    metodoScelto === "klarna" ||
+    metodoScelto === "paypal" ||
+    metodoScelto === "sepa_debit";
   // Valore PRESENTE ma non ammesso: rifiuto
   // sempre, indipendentemente dalla modalità → mai un ordine con un metodo
   // che il server non conosce.
@@ -181,6 +182,32 @@ export async function POST(request: Request) {
       return apiError(
         "KLARNA_NON_DISPONIBILE",
         "Il pagamento con Klarna non è disponibile per questo negozio.",
+        422
+      );
+    }
+  }
+
+  const vuolePayPal =
+    modalita === "spedizione" && spedizioneRaw.metodoPagamento === "paypal";
+  if (vuolePayPal) {
+    const paypalPronto = await metodoDisponibilePerProdotto(prodottoIdRaw, "paypal");
+    if (!paypalPronto) {
+      return apiError(
+        "PAYPAL_NON_DISPONIBILE",
+        "Il pagamento con PayPal tramite Stripe non è disponibile per questo negozio.",
+        422
+      );
+    }
+  }
+
+  const vuoleSepa =
+    modalita === "spedizione" && spedizioneRaw.metodoPagamento === "sepa_debit";
+  if (vuoleSepa) {
+    const sepaPronto = await metodoDisponibilePerProdotto(prodottoIdRaw, "sepa_debit");
+    if (!sepaPronto) {
+      return apiError(
+        "SEPA_NON_DISPONIBILE",
+        "Il pagamento SEPA Direct Debit non è disponibile per questo negozio.",
         422
       );
     }
