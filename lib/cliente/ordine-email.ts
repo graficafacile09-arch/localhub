@@ -625,6 +625,27 @@ export async function inviaEmailConfermaOrdine(
  * volta anche in caso di retry. MAI throw: un errore email non fa mai fallire
  * il webhook.
  */
+export async function inviaEmailConfermaBonificoDiretto(
+  ordineId: string,
+  opts: OpzioniEmailOrdine = {}
+): Promise<EsitoEmailOrdine> {
+  try {
+    const db = (opts.db ?? createAdminSupabaseClient()) as { from: (t: string) => any };
+    const carico = await caricaDatiEmailOrdine(db, ordineId);
+    if (!carico.ok) return { stato: carico.stato, motivo: carico.motivo };
+    const { dati } = carico;
+    const html = costruisciHtmlConfermaPagamento(dati)
+      .replace(/Pagamento ricevuto/g, "Bonifico diretto confermato")
+      .replace(/Il pagamento di ([^<]+) con [^<]+ è andato a buon fine\./, "Il venditore ha confermato la ricezione del bonifico diretto di $1.")
+      .replace(/gestito dal provider selezionato \([^)]*\)/g, "confermato dal venditore");
+    const invia = opts.invia ?? ((d: DatiEmailOrdine) => inviaConResend(d, `Bonifico ricevuto — ordine ${d.numero}`, html));
+    const messageId = (await invia(dati)) ?? null;
+    return { stato: "sent", messageId };
+  } catch {
+    return { stato: "error", motivo: "invio_fallito" };
+  }
+}
+
 export async function inviaEmailConfermaPagamento(
   ordineId: string,
   opts: OpzioniEmailOrdine = {}
