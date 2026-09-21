@@ -50,12 +50,16 @@ const sezioni = [
         <p>
           Il Venditore determina i prodotti, i servizi o le prestazioni che intende offrire
           tramite il proprio spazio sulla piattaforma, nei limiti delle regole di InCittà e
-          della normativa applicabile.
+          della normativa applicabile. È responsabile dei dati identificativi, delle
+          informazioni dell'offerta, dei prezzi, della disponibilità, delle caratteristiche,
+          della conformità e della sicurezza di ciò che pubblica.
         </p>
         <p>
-          Il Venditore cura le informazioni commerciali relative alle proprie offerte, la
-          disponibilità, la gestione degli ordini e l'esecuzione della prestazione dovuta al
-          Cliente secondo il rapporto applicabile.
+          Il Venditore cura la gestione degli ordini, l'esecuzione della vendita o della
+          prestazione, la consegna o il ritiro, la documentazione fiscale, i reclami, il
+          recesso, i resi e la garanzia secondo la normativa applicabile. Deve inoltre
+          collaborare con InCittà per gli aspetti tecnici, documentali e di sicurezza necessari
+          al funzionamento della piattaforma.
         </p>
       </>
     ),
@@ -234,20 +238,25 @@ const sezioni = [
     contenuto: (
       <>
         <p>
-          InCittà può mettere a disposizione un checkout e interfacciarsi tecnicamente con i
-          provider di pagamento utilizzati dalla piattaforma. Il provider selezionato gestisce
-          tecnicamente le operazioni relative al metodo mostrato nel checkout secondo le proprie
-          condizioni.
+          InCittà mette a disposizione un checkout e si interfaccia tecnicamente con Stripe e,
+          quando previsto, Stripe Connect sui relativi account collegati del Venditore. Il
+          catalogo può comprendere carta, Klarna, PayPal, SEPA Direct Debit e bonifico
+          istantaneo, soltanto quando il metodo è attivo e disponibile per il negozio secondo il
+          flusso applicabile. Il provider selezionato gestisce tecnicamente le operazioni e le
+          proprie condizioni.
         </p>
         <p>
           Gli importi, gli stati tecnici, le commissioni e gli eventuali payout sono gestiti
-          secondo le configurazioni e i flussi applicabili al negozio e alla piattaforma. Il
+          secondo la configurazione applicabile. L'eventuale commissione spettante a InCittà è
+          distinta dal prezzo della vendita secondo gli accordi e il flusso del provider. Il
           Venditore deve collaborare per le verifiche tecniche e fornire le informazioni
           necessarie quando richiesto.
         </p>
         <p>
-          Questa sezione non introduce modalità di pagamento ulteriori né modifica i flussi
-          tecnici esistenti.
+          Il bonifico istantaneo è il metodo integrato tramite provider e non è un bonifico
+          bancario ordinario eseguito direttamente dall'Acquirente al Venditore. Il vecchio
+          metodo di bonifico ordinario non appartiene al catalogo checkout attuale e non viene
+          reintrodotto da questi Termini.
         </p>
       </>
     ),
@@ -271,7 +280,8 @@ const sezioni = [
         <p>
           Il Venditore gestisce le richieste relative a recesso, reso e rimborso commerciale
           nei casi e nei termini previsti dalla normativa applicabile e dalle condizioni della
-          specifica vendita.
+          specifica vendita. La decisione commerciale resta distinta dall'esecuzione tecnica
+          del pagamento.
         </p>
         <p>
           InCittà può fornire strumenti tecnici per comunicare una richiesta e, dopo le
@@ -424,10 +434,12 @@ const sezioni = [
     contenuto: (
       <p>
         Eventuali commissioni, costi o importi dovuti alla piattaforma sono quelli comunicati
-        nelle condizioni commerciali o nelle configurazioni applicabili al Venditore. Il
-        calcolo e il trattamento tecnico degli importi seguono i flussi della piattaforma e dei
-        provider coinvolti. Le condizioni economiche specifiche e il relativo trattamento
-        fiscale devono essere verificati.
+        nelle condizioni commerciali o nelle configurazioni applicabili al Venditore. Per i
+        pagamenti Stripe/Stripe Connect, l'eventuale commissione tecnica di InCittà è distinta
+        dal prezzo della vendita e viene gestita secondo la configurazione effettiva del
+        provider e gli accordi applicabili. Il calcolo e il trattamento tecnico degli importi
+        seguono i flussi della piattaforma e dei provider coinvolti; il relativo trattamento
+        fiscale deve essere verificato.
       </p>
     ),
   },

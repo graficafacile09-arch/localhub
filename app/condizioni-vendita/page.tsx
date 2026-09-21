@@ -147,10 +147,12 @@ const sezioni = [
     titolo: "13. Pagamenti",
     contenuto: (
       <p>
-        Il pagamento può essere gestito tramite provider integrati nella piattaforma e secondo
-        il metodo mostrato nel checkout. Il provider esegue le operazioni tecniche relative al
-        pagamento selezionato. InCittà fornisce l'infrastruttura tecnica del relativo processo e
-        non è descritta come il Venditore o come creditore del prezzo della vendita.
+        Il pagamento elettronico può essere gestito tramite Stripe e, quando previsto dalla
+        configurazione, tramite Stripe Connect sui relativi account collegati del Venditore,
+        secondo il metodo mostrato nel checkout. Il catalogo tecnico può comprendere carta,
+        Klarna, PayPal, SEPA Direct Debit e bonifico istantaneo quando disponibili per il
+        negozio interessato. InCittà fornisce l'infrastruttura tecnica del processo e non è il
+        Venditore né il creditore del prezzo della vendita.
       </p>
     ),
   },
@@ -159,9 +161,13 @@ const sezioni = [
     contenuto: (
       <p>
         InCittà può trasmettere al provider i dati necessari, ricevere gli esiti tecnici e
-        aggiornare lo stato dell'ordine o del checkout. Eventuali verifiche, autorizzazioni,
-        rifiuti o ritardi dipendenti dal provider seguono le procedure del provider e il flusso
-        applicabile.
+        aggiornare lo stato dell'ordine o del checkout. PayPal, Klarna, SEPA Direct Debit e
+        bonifico istantaneo sono utilizzati, quando disponibili, attraverso l'integrazione
+        Stripe; il bonifico istantaneo non è un bonifico bancario ordinario diretto al Venditore.
+        Eventuali verifiche, autorizzazioni, rifiuti o ritardi dipendenti dal provider seguono le
+        procedure del provider e il flusso applicabile. Le commissioni eventualmente spettanti a
+        InCittà sono distinte dal prezzo della vendita secondo la configurazione applicabile e
+        gli accordi con il Venditore.
       </p>
     ),
   },
@@ -245,8 +251,9 @@ const sezioni = [
       <p>
         Il Venditore gestisce la decisione commerciale sul rimborso nei casi applicabili. Dopo
         le autorizzazioni previste dal workflow, InCittà può eseguire tecnicamente il rimborso
-        tramite il provider e comunicare l'esito tecnico. Un reclamo o una richiesta non
-        comportano automaticamente un rimborso.
+        tramite il provider, secondo la configurazione del pagamento, e comunicare l'esito
+        tecnico. Un reclamo o una richiesta non comportano automaticamente un rimborso e
+        l'esecuzione tecnica non sostituisce la decisione commerciale del soggetto competente.
       </p>
     ),
   },

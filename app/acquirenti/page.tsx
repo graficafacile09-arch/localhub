@@ -155,14 +155,24 @@ const sezioni = [
     contenuto: (
       <>
         <p>
-          Il pagamento è avviato tramite il provider e il metodo mostrati nel checkout. Il
-          provider gestisce tecnicamente l'autorizzazione e le operazioni relative al metodo
-          selezionato secondo le proprie procedure e condizioni.
+          Il pagamento elettronico è avviato tramite il provider e il metodo mostrati nel
+          checkout. Il flusso attualmente integrato utilizza Stripe e, quando previsto, Stripe
+          Connect sui relativi account collegati del Venditore. Il catalogo può comprendere
+          carta, Klarna, PayPal, SEPA Direct Debit e bonifico istantaneo, soltanto quando il
+          metodo è disponibile per il negozio interessato.
+        </p>
+        <p>
+          Klarna, PayPal, SEPA Direct Debit e bonifico istantaneo sono esposti tramite
+          l'integrazione Stripe; il bonifico istantaneo non è un bonifico bancario ordinario
+          diretto al Venditore. Il provider gestisce tecnicamente autorizzazione, eventuale
+          finanziamento o altre operazioni relative al metodo secondo le proprie condizioni.
         </p>
         <p>
           InCittà può trasmettere al provider i dati necessari e aggiornare tecnicamente lo
           stato del checkout o dell'ordine sulla base delle informazioni ricevute. Il ruolo
-          tecnico di InCittà non la rende il Venditore del prodotto o del servizio.
+          tecnico di InCittà non la rende il Venditore del prodotto o del servizio. Eventuali
+          commissioni della piattaforma sono distinte dal prezzo della vendita secondo la
+          configurazione applicabile e gli accordi con il Venditore.
         </p>
       </>
     ),

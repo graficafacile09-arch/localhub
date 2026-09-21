@@ -285,39 +285,46 @@ const sezioni = [
       <>
         <p>
           <strong>Pagamenti elettronici.</strong> I pagamenti elettronici disponibili sulla
-          Piattaforma sono elaborati attraverso provider di pagamento terzi integrati con
-          l'infrastruttura tecnologica del Sito. Il Gestore non è il Venditore dei prodotti o
-          servizi acquistati e l'utilizzo di un provider di pagamento non modifica il rapporto
-          commerciale tra Acquirente e Venditore.
+          Piattaforma sono elaborati tramite Stripe e, quando previsto dalla configurazione,
+          tramite Stripe Connect sui relativi account collegati del Venditore. Il Gestore fornisce
+          l'infrastruttura tecnica e non è il Venditore dei prodotti o servizi acquistati.
         </p>
         <p>
-          Quando la configurazione del servizio di pagamento prevede l'utilizzo di account
-          collegati del Venditore, le somme relative alla vendita sono gestite secondo il
-          flusso finanziario previsto dal provider e dall'architettura di pagamento applicabile.
-          Il Gestore percepisce esclusivamente gli eventuali corrispettivi o commissioni
-          tecnologiche ad esso spettanti secondo gli accordi con il Venditore e secondo la
-          configurazione del servizio.
+          Il catalogo tecnico può comprendere carta, Klarna, PayPal, SEPA Direct Debit e
+          bonifico istantaneo, sempre quando il metodo risulta effettivamente disponibile nel
+          checkout per il negozio interessato. PayPal, Klarna, SEPA Direct Debit e il bonifico
+          istantaneo sono esposti attraverso l'integrazione Stripe; il bonifico istantaneo
+          corrisponde alla relativa configurazione provider e non al bonifico bancario ordinario
+          effettuato direttamente al Venditore.
         </p>
         <p>
-          Quando disponibile, Klarna opera quale provider autonomo dei servizi di pagamento o
-          finanziamento offerti all'Acquirente. Le condizioni relative all'eventuale
-          finanziamento, rateizzazione o pagamento differito sono disciplinate dal rapporto tra
-          Acquirente e Klarna e dalle condizioni applicabili del relativo provider. Il Gestore
-          non decide l'approvazione del finanziamento o della rateizzazione.
+          Quando la configurazione prevede un account collegato del Venditore, le somme relative
+          alla vendita e l'eventuale commissione spettante al Gestore sono gestite secondo il
+          flusso finanziario previsto da Stripe, dall'architettura di pagamento applicabile e
+          dagli accordi con il Venditore. La configurazione concreta può variare in base al
+          metodo e al negozio; i presenti Termini non descrivono trasferimenti o payout ulteriori
+          rispetto a quelli effettivamente applicabili.
         </p>
         <p>
-          <strong>Bonifico bancario diretto al Venditore.</strong> Qualora questa modalità sia
-          resa disponibile, il pagamento viene effettuato dall'Acquirente direttamente sul conto
-          indicato dal Venditore. Il Gestore non esegue il trasferimento delle somme tra
-          Acquirente e Venditore e non assume il ruolo di beneficiario del prezzo della vendita.
-          Le coordinate bancarie sono fornite dal Venditore, che rimane responsabile della loro
-          correttezza e aggiornamento. Il pagamento mediante bonifico diretto può richiedere la
-          verifica dell'avvenuto accredito da parte del Venditore prima dell'evasione dell'ordine.
+          Klarna opera, quando disponibile, quale provider dei servizi di pagamento o
+          finanziamento offerti all'Acquirente. Le condizioni relative a eventuale
+          rateizzazione o pagamento differito sono disciplinate dal rapporto con Klarna e dalle
+          condizioni del relativo provider. Il Gestore non decide l'approvazione del finanziamento
+          o della rateizzazione.
         </p>
         <p>
-          Eventuali richieste relative al prodotto, alla prestazione o alla soluzione
-          commerciale devono essere indirizzate al Venditore, salvo il supporto tecnico che
-          InCittà può fornire attraverso i propri canali.
+          Il catalogo checkout attuale non comprende il bonifico bancario ordinario diretto al
+          Venditore. Qualora in futuro fosse resa disponibile una modalità di pagamento bancario
+          diretto, essa sarebbe eseguita dall'Acquirente sul conto indicato dal Venditore, che
+          resterebbe responsabile delle coordinate e della verifica dell'accredito; tale modalità
+          non deve essere confusa con il bonifico istantaneo elaborato tramite il provider.
+        </p>
+        <p>
+          La decisione commerciale su annullamenti, resi e rimborsi spetta al soggetto competente
+          nel rapporto tra Acquirente e Venditore. Quando previsto dal workflow, InCittà può
+          eseguire tecnicamente un rimborso tramite il provider, registrare l'esito e fornire il
+          supporto tecnico necessario, senza trasformare tale esecuzione nella decisione
+          commerciale sul rimborso.
         </p>
       </>
     ),
