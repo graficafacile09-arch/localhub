@@ -57,7 +57,7 @@ export default function HeaderNav() {
     <div className="w-full lg:w-auto">
       <nav
         aria-label="Navigazione principale"
-        className="relative mx-auto grid w-full max-w-[550px] grid-cols-5 items-center justify-items-center border-y border-slate-200 bg-white lg:w-auto"
+        className="relative mx-auto grid w-full max-w-[550px] grid-cols-5 items-center justify-items-center border-y border-slate-200 bg-white py-1 md:py-1 xl:w-auto"
       >
         {/* Separatori verticali sottili tra le voci (molto discreti, danno
             struttura senza essere protagonisti). */}
@@ -65,7 +65,7 @@ export default function HeaderNav() {
           <span
             key={i}
             aria-hidden
-            className="pointer-events-none absolute top-1/2 h-9 w-px -translate-y-1/2 bg-slate-200 max-sm:h-8"
+            className="pointer-events-none absolute top-1/2 h-8 w-px -translate-y-1/2 bg-slate-200"
             style={{ left: `calc(20% + ${i * 20}%)` }}
           />
         ))}
@@ -77,21 +77,17 @@ export default function HeaderNav() {
               href={voce.href}
               aria-label={voce.label}
               aria-current={voce.attiva ? "page" : undefined}
-              className="group relative mx-1 flex min-w-0 flex-col items-center gap-1 px-3 py-1 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 sm:mx-1.5 lg:mx-2 max-sm:px-1.5"
+              className="group relative mx-1 flex min-w-0 flex-col items-center gap-1 px-1.5 py-1 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 sm:mx-1.5 sm:px-2 md:py-1 lg:mx-1 lg:px-1.5"
             >
               {/* Icona protagonista — "SALDI" (Offerte) è un micro-badge
                   compatto ancorato all'angolo del simbolo; "CV" (Notizie) è
                   un micro-elemento rosso ancora più discreto, aderente
                   all'icona. Entrambi in position:absolute: NON aumentano la
                   larghezza del tasto. */}
-              <span className="relative flex h-10 w-10 items-center justify-center max-sm:h-9 max-sm:w-9">
+              <span className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-yellow-400">
                 <Icona
                   aria-hidden
-                  className={`h-6 w-6 transition-colors duration-200 max-sm:h-[22px] max-sm:w-[22px] ${
-                    voce.attiva
-                      ? "text-yellow-400"
-                      : "text-yellow-400 group-hover:text-yellow-500"
-                  }`}
+                  className="h-[22px] w-[22px] text-white transition-colors duration-200"
                 />
                 {voce.badge && (
                   <span
@@ -114,13 +110,7 @@ export default function HeaderNav() {
               {/* Testo sotto l'icona — sempre GIALLO e identico per tutte le
                   voci ("Notizie" come le altre: nessun badge nel testo,
                   larghezza coerente). */}
-              <span
-                className={`whitespace-nowrap text-xs font-bold leading-none tracking-tight transition-colors duration-200 sm:text-sm ${
-                  voce.attiva
-                    ? "text-yellow-500"
-                    : "text-yellow-500 group-hover:text-yellow-600"
-                }`}
-              >
+              <span className="whitespace-nowrap text-xs font-bold leading-none tracking-tight text-slate-900 transition-colors duration-200 sm:text-sm">
                 {voce.label}
               </span>
 
@@ -128,8 +118,8 @@ export default function HeaderNav() {
                   il testo (blu, come nel mockup) */}
               <span
                 aria-hidden
-                className={`mt-1 h-1 w-8 rounded-full transition-opacity duration-200 max-sm:w-6 ${
-                  voce.attiva ? "bg-yellow-400 opacity-100" : "bg-transparent opacity-0"
+                className={`mt-0.5 h-1 w-6 rounded-full transition-opacity duration-200 ${
+                  voce.attiva ? "bg-blue-600 opacity-100" : "bg-transparent opacity-0"
                 }`}
               />
             </Link>

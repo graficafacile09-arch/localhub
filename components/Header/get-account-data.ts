@@ -19,19 +19,37 @@ export async function getDatiAccount(): Promise<DatiAccount | null> {
   const nome =
     String(user.user_metadata?.full_name ?? "").trim() ||
     String(user.email ?? "");
+  const storeName = String(user.user_metadata?.store_name ?? "").trim();
+  const partitaIva = String(user.user_metadata?.partita_iva ?? "").trim();
 
   let hasStores = false;
 
-  // I negozi interessano SOLO la sessione merchant: il menu mostra
-  // esclusivamente l'area attiva.
-  if (area === "merchant") {
+  // Per una richiesta venditore pendente occorre verificare anche l'assenza
+  // di negozi, pur restando nella sessione cliente. Per le altre sessioni si
+  // conserva il caricamento precedente, limitato all'area merchant.
+  const deveVerificareRichiesta =
+    Boolean(storeName) && Boolean(partitaIva) && !ruoli.includes("merchant");
+  if (area === "merchant" || deveVerificareRichiesta) {
     const storesResult = await getMerchantStoresForUser(user.id);
     hasStores = storesResult.data.length > 0;
   }
 
+  const richiestaVenditore =
+    Boolean(storeName) &&
+    Boolean(partitaIva) &&
+    !ruoli.includes("merchant") &&
+    !hasStores;
+  const profilo =
+    role === "admin"
+      ? "amministratore"
+      : role === "merchant" || richiestaVenditore
+        ? "venditore"
+        : "acquirente";
+
   return {
     nome,
     email: user.email ?? "",
+    profilo,
     role,
     ruoli,
     area,

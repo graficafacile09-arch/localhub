@@ -14,12 +14,16 @@ import {
 import type { RuoloUtente } from "@/lib/auth/roles";
 import type { AreaAttiva } from "@/lib/auth/area";
 
+export type ProfiloCommerciale = "acquirente" | "venditore" | "amministratore";
+
 export type DatiAccount = {
   nome: string;
   email: string;
-  /** Ruolo a priorità maggiore (solo informativo, non determina l'accesso). */
+  /** Profilo commerciale derivato dalla richiesta/approvazione, solo informativo. */
+  profilo: ProfiloCommerciale;
+  /** Ruolo tecnico a priorità maggiore (non determina da solo l'area attiva). */
   role: RuoloUtente;
-  /** TUTTI i ruoli posseduti (solo informativo, non determina l'accesso). */
+  /** TUTTI i ruoli tecnici posseduti (solo informativi, non determinano l'accesso). */
   ruoli: RuoloUtente[];
   /**
    * Area ATTIVA della sessione (cookie httpOnly lh_area): è lei che determina
@@ -36,18 +40,11 @@ type VoceMenu = {
   icon: ComponentType<{ className?: string }>;
 };
 
-/** Etichette italiane dei ruoli mostrate all'utente (mai i valori tecnici). */
-const ETICHETTE_RUOLO: Record<RuoloUtente, string> = {
-  customer: "Acquirente",
-  merchant: "Venditore",
-  admin: "Amministratore",
-};
-
-/** Etichetta dell'area ATTIVA: è la sessione, non il ruolo, a qualificare l'utente. */
-const ETICHETTE_AREA: Record<AreaAttiva, string> = {
-  cliente: "Acquirente",
-  merchant: "Venditore",
-  admin: "Amministratore",
+/** Etichette del profilo commerciale, distinto dai ruoli tecnici. */
+const ETICHETTE_PROFILO: Record<ProfiloCommerciale, string> = {
+  acquirente: "Acquirente",
+  venditore: "Venditore",
+  amministratore: "Amministratore",
 };
 
 /**
@@ -99,10 +96,9 @@ export default function AccountMenu({
           aria-expanded={open}
           aria-haspopup="menu"
           aria-label="Accedi"
-          className="inline-flex items-center gap-1.5 rounded-full bg-yellow-400 px-2.5 py-2 text-sm font-bold text-blue-900 transition-colors hover:bg-yellow-300 active:scale-95 sm:px-4"
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-yellow-400 shadow-md transition-colors hover:bg-blue-700 active:scale-95 max-[374px]:h-9 max-[374px]:w-9"
         >
-          <LogIn className="h-4 w-4" aria-hidden />
-          <span className="max-sm:hidden">Accedi</span>
+          <LogIn className="h-6 w-6" aria-hidden />
         </button>
 
         {open && (
@@ -268,28 +264,15 @@ export default function AccountMenu({
         aria-expanded={open}
         aria-haspopup="menu"
         aria-label={`Menu utente di ${nome || email}`}
-        className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-2 py-1.5 text-sm shadow-sm transition hover:border-blue-300 hover:shadow sm:px-2.5"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-sm shadow-md transition hover:bg-blue-700 hover:shadow max-[374px]:h-9 max-[374px]:w-9"
       >
         <span
           aria-hidden
-          className="flex h-8 w-8 items-center justify-center rounded-full bg-yellow-400 text-sm font-black text-blue-900"
+          className="flex h-full w-full items-center justify-center rounded-xl bg-transparent text-xl font-black leading-none text-yellow-400 max-[374px]:text-lg"
         >
           {iniziale}
         </span>
-        <span className="hidden text-left sm:block">
-          <span className="block max-w-[140px] truncate text-sm font-bold leading-tight text-slate-900">
-            {nome || email}
-          </span>
-          <span className="block text-[11px] text-slate-500">
-            {area ? ETICHETTE_AREA[area] : ETICHETTE_RUOLO[account.role]}
-          </span>
-        </span>
-        <ChevronDown
-          className={`hidden h-4 w-4 text-slate-400 transition-transform duration-200 sm:block ${
-            open ? "rotate-180" : ""
-          }`}
-          aria-hidden
-        />
+
       </button>
 
       {open && (
@@ -299,7 +282,7 @@ export default function AccountMenu({
           className="absolute right-0 top-full z-50 mt-2 w-64 rounded-2xl border border-slate-100 bg-white p-2 text-slate-700 shadow-xl"
         >
           <p className="border-b border-slate-100 px-3 pb-2 pt-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">
-            {nome || email} · {area ? ETICHETTE_AREA[area] : ETICHETTE_RUOLO[account.role]}
+            {nome || email} · {ETICHETTE_PROFILO[account.profilo]}
           </p>
 
           <div className="py-1">

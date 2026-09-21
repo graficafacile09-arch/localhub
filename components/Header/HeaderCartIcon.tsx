@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ShoppingCart } from "lucide-react";
+import { ShoppingBasket } from "lucide-react";
 import { useCarrello } from "@/lib/carrello/CartContext";
 
 /**
@@ -13,7 +13,7 @@ import { useCarrello } from "@/lib/carrello/CartContext";
  * di conteggio, nessun duplicato: si riusa la stessa fonte dati.
  *
  * - Visivamente piccola e discreta, proporzionata al logo.
- * - Badge rosso ad alto contrasto con numero bianco.
+ * - Badge giallo con numero (stessa logica del badge precedente).
  * - Slot-only da usare sia con utente loggato sia non loggato: si adatta
  *   allo spazio disponibile senza spingere o sovrapporre gli elementi.
  */
@@ -24,11 +24,11 @@ export default function HeaderCartIcon() {
     <Link
       href="/carrello"
       aria-label={`Carrello${pezzi > 0 ? ` (${pezzi} articoli)` : ""}`}
-      className="group relative inline-flex h-8 w-8 shrink-0 items-center justify-center transition-colors duration-200 hover:text-yellow-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 max-sm:h-7 max-sm:w-7 after:absolute after:-inset-1.5 after:content-['']"
+      className="group relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-yellow-400 shadow-md transition-colors duration-200 hover:bg-yellow-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 max-[374px]:h-9 max-[374px]:w-9 after:absolute after:-inset-1.5 after:content-['']"
     >
-      <ShoppingCart
+      <ShoppingBasket
         aria-hidden
-        className="h-[22px] w-[22px] text-yellow-400 transition-colors duration-200 group-hover:text-yellow-500 max-sm:h-5 max-sm:w-5"
+        className="h-6 w-6 text-white transition-colors duration-200 group-hover:text-slate-100 max-[374px]:h-5 max-[374px]:w-5"
       />
       {pezzi > 0 && (
         <span
