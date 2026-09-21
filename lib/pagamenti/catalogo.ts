@@ -6,6 +6,7 @@ export type MetodoPagamento =
   | "paypal"
   | "sepa_debit"
   | "bonifico_istantaneo"
+  | "bonifico_diretto_venditore"
   | "bonifico";
 
 export type VoceCatalogoMetodo = {
@@ -57,6 +58,14 @@ export const CATALOGO_METODI_PAGAMENTO: readonly VoceCatalogoMetodo[] = [
     descrizione: "Paga tramite il tuo conto bancario con Stripe, se disponibile.",
     provider: "stripe",
     richiedeGateway: true,
+  },
+  {
+    metodo: "bonifico_diretto_venditore",
+    etichetta: "Bonifico bancario diretto al venditore",
+    nomeBreve: "Bonifico diretto al venditore",
+    descrizione: "Esegui manualmente il bonifico sul conto indicato dal venditore.",
+    provider: null,
+    richiedeGateway: false,
   },
 ] as const;
 

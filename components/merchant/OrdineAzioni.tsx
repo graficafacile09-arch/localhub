@@ -34,6 +34,8 @@ type Props = {
   modalita: "ritiro" | "spedizione";
   statoSpedizione: StatoSpedizione | null;
   trackingUrl: string | null;
+  metodoPagamento?: string | null;
+  paymentStatus?: string | null;
   /**
    * Base dell'endpoint azioni. Default: endpoint merchant
    * `/api/merchant/stores/<negozioId>/ordini/<ordineId>`. L'Area
@@ -74,6 +76,43 @@ const ICONE_AZIONE_SPEDIZIONE: Record<string, React.ComponentType<{ className?: 
  *   dialog compatto con tracking OBBLIGATORIO, URL e consegna stimata.
  * - errori inline (transizione non consentita, tracking mancante, …).
  */
+function BonificoDirettoConferma({ endpoint, onDone }: { endpoint: string; onDone: () => void }) {
+  const [conferma, setConferma] = useState(false);
+  const [invio, setInvio] = useState(false);
+  const [errore, setErrore] = useState<string | null>(null);
+  async function invia() {
+    setInvio(true);
+    setErrore(null);
+    try {
+      const res = await fetch(endpoint, { method: "POST" });
+      const data = (await res.json().catch(() => null)) as { error?: { message?: string } } | null;
+      if (!res.ok) { setErrore(data?.error?.message ?? "Conferma non riuscita."); return; }
+      onDone();
+    } catch { setErrore("Errore di rete. Riprova."); }
+    finally { setInvio(false); }
+  }
+  return (
+    <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+      <p className="text-sm font-bold text-amber-900">Pagamento tramite bonifico diretto al venditore</p>
+      <p className="mt-1 text-xs leading-5 text-amber-800">Conferma solo dopo aver verificato l&apos;effettivo accredito sul conto indicato.</p>
+      {!conferma ? (
+        <button type="button" onClick={() => setConferma(true)} className="mt-3 rounded-xl bg-yellow-400 px-4 py-2.5 text-xs font-bold text-blue-800 hover:bg-yellow-300">
+          Ho ricevuto il bonifico, sblocca la spedizione
+        </button>
+      ) : (
+        <div className="mt-3 space-y-2">
+          <p className="text-xs font-semibold text-amber-900">Confermi di aver verificato l&apos;effettivo accredito del bonifico sul conto indicato?</p>
+          <div className="flex gap-2">
+            <button type="button" onClick={() => setConferma(false)} disabled={invio} className="rounded-xl border border-amber-300 bg-white px-3 py-2 text-xs font-semibold text-amber-900">Annulla</button>
+            <button type="button" onClick={invia} disabled={invio} className="rounded-xl bg-blue-700 px-3 py-2 text-xs font-bold text-white disabled:opacity-50">{invio ? "Conferma…" : "Conferma ricezione"}</button>
+          </div>
+          {errore && <p className="text-xs font-semibold text-red-700">{errore}</p>}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function OrdineAzioni({
   negozioId,
   ordineId,
@@ -82,6 +121,8 @@ export default function OrdineAzioni({
   modalita,
   statoSpedizione,
   trackingUrl,
+  metodoPagamento,
+  paymentStatus,
   apiBase,
 }: Props) {
   const router = useRouter();
@@ -268,6 +309,10 @@ export default function OrdineAzioni({
           <CheckCircle2 className="h-4 w-4 shrink-0" aria-hidden />
           {successo}
         </p>
+      )}
+
+      {metodoPagamento === "bonifico_diretto_venditore" && paymentStatus === "pending" && (
+        <BonificoDirettoConferma endpoint={`${endpointBase}/bonifico-diretto/conferma`} onDone={() => router.refresh()} />
       )}
 
       {/* Pulsanti azione ordine — il NUOVO ordine mostra solo:

@@ -15,6 +15,9 @@ type ProviderConfig = {
   client_id: string | null;
   payee_email: string | null;
   iban: string | null;
+  bic_swift: string | null;
+  bank_account_name: string | null;
+  bank_name: string | null;
   account_id: string | null;
   account_name: string | null;
   onboarding_status: string | null;
@@ -71,9 +74,9 @@ const PROVIDER_INFO: Record<string, ProviderInfoEntry> = {
     nota:
       "Nessuna chiave API richiesta: Stripe gestisce creazione account, registrazione e verifica (KYC/IBAN) nel suo portale. Apple Pay, Google Pay e Klarna sono gestiti da Stripe quando disponibili sull'account Connect.",
   },
-  bonifico: {
-    nome: "Bonifico bancario",
-    descrizione: "Pagamento manuale tramite bonifico",
+  bonifico_diretto_venditore: {
+    nome: "Bonifico bancario diretto al venditore",
+    descrizione: "Pagamento manuale sul conto bancario del Venditore",
     campoId: "",
     campoSecret: "",
     campoWebhook: "",
@@ -88,7 +91,10 @@ const METODI_INFO: Record<string, { nome: string; descrizione: string }> = {
   carta: { nome: "Carta", descrizione: "Carte di credito e debito" },
   klarna: { nome: "Klarna", descrizione: "Paga in 3/4 rate" },
   bonifico_istantaneo: { nome: "Bonifico istantaneo", descrizione: "Pagamento tramite Stripe" },
-  bonifico: { nome: "Bonifico", descrizione: "Bonifico bancario" },
+  bonifico_diretto_venditore: {
+    nome: "Bonifico bancario diretto al venditore",
+    descrizione: "Pagamento manuale sul conto bancario del Venditore",
+  },
 };
 
 type FormState = {
@@ -102,6 +108,9 @@ type ProviderForm = {
   client_id: string;
   payee_email: string;
   iban: string;
+  bic_swift: string;
+  bank_account_name: string;
+  bank_name: string;
   secret: string;
   webhook_secret: string;
   has_secret: boolean;
@@ -123,6 +132,9 @@ function statoIniziale(): FormState {
       client_id: "",
       payee_email: "",
       iban: "",
+      bic_swift: "",
+      bank_account_name: "",
+      bank_name: "",
       secret: "",
       webhook_secret: "",
       has_secret: false,
@@ -184,6 +196,9 @@ export default function PagamentiModule({ storeId }: Props) {
               client_id: p.client_id ?? "",
               payee_email: p.payee_email ?? "",
               iban: p.iban ?? "",
+              bic_swift: p.bic_swift ?? "",
+              bank_account_name: p.bank_account_name ?? "",
+              bank_name: p.bank_name ?? "",
               secret: "",
               webhook_secret: "",
               has_secret: p.has_secret ?? false,
@@ -303,13 +318,18 @@ export default function PagamentiModule({ storeId }: Props) {
         attivo: p.attivo,
         test_mode: p.test_mode,
       };
-      if (provider !== "bonifico") {
+      if (provider !== "bonifico" && provider !== "bonifico_diretto_venditore") {
         if (p.client_id.trim()) entry.client_id = p.client_id.trim();
         // I secret vengono inviati SOLO se l'utente ne ha digitato uno nuovo.
         if (secretDirty[provider] && p.secret.trim()) entry.secret = p.secret.trim();
         if (secretDirty[provider] && p.webhook_secret.trim()) {
           entry.webhook_secret = p.webhook_secret.trim();
         }
+      } else if (provider === "bonifico_diretto_venditore") {
+        if (p.bank_account_name.trim()) entry.bank_account_name = p.bank_account_name.trim();
+        if (p.bank_name.trim()) entry.bank_name = p.bank_name.trim();
+        if (p.iban.trim()) entry.iban = p.iban.trim();
+        if (p.bic_swift.trim()) entry.bic_swift = p.bic_swift.trim();
       } else {
         if (p.payee_email.trim()) entry.payee_email = p.payee_email.trim();
         if (p.iban.trim()) entry.iban = p.iban.trim();
@@ -596,7 +616,7 @@ export default function PagamentiModule({ storeId }: Props) {
 
                   {p.attivo && (
                     <div className="mt-4 space-y-3 border-t border-slate-100 pt-4">
-                      {key !== "bonifico" ? (
+                      {key !== "bonifico_diretto_venditore" ? (
                         <>
                           <div className="grid gap-3 sm:grid-cols-2">
                             {!info.soloSecret && (
@@ -698,32 +718,53 @@ export default function PagamentiModule({ storeId }: Props) {
                           )}
                         </>
                       ) : (
-                        <div className="grid gap-3 sm:grid-cols-2">
-                          <div>
-                            <label className="mb-1.5 flex items-center gap-1 text-xs font-semibold text-slate-500">
-                              Intestatario / email
-                            </label>
-                            <input
-                              type="text"
-                              value={p.payee_email}
-                              onChange={(e) => setProvider(key, { payee_email: e.target.value })}
-                              placeholder="es. contabilita@negozio.it"
-                              className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                            />
+                        <div>
+                          <p className="mb-3 text-xs font-semibold text-slate-600">
+                            Dati di Fatturazione e Incasso SEPA
+                          </p>
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            <div>
+                              <label className="mb-1.5 block text-xs font-semibold text-slate-500">Intestatario del conto</label>
+                              <input
+                                type="text"
+                                value={p.bank_account_name}
+                                onChange={(e) => setProvider(key, { bank_account_name: e.target.value })}
+                                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                              />
+                            </div>
+                            <div>
+                              <label className="mb-1.5 block text-xs font-semibold text-slate-500">Banca</label>
+                              <input
+                                type="text"
+                                value={p.bank_name}
+                                onChange={(e) => setProvider(key, { bank_name: e.target.value })}
+                                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                              />
+                            </div>
+                            <div>
+                              <label className="mb-1.5 block text-xs font-semibold text-slate-500">IBAN</label>
+                              <input
+                                type="text"
+                                value={p.iban}
+                                onChange={(e) => setProvider(key, { iban: e.target.value })}
+                                maxLength={60}
+                                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                              />
+                            </div>
+                            <div>
+                              <label className="mb-1.5 block text-xs font-semibold text-slate-500">BIC/SWIFT</label>
+                              <input
+                                type="text"
+                                value={p.bic_swift}
+                                onChange={(e) => setProvider(key, { bic_swift: e.target.value })}
+                                maxLength={11}
+                                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                              />
+                            </div>
                           </div>
-                          <div>
-                            <label className="mb-1.5 flex items-center gap-1 text-xs font-semibold text-slate-500">
-                              IBAN
-                            </label>
-                            <input
-                              type="text"
-                              value={p.iban}
-                              onChange={(e) => setProvider(key, { iban: e.target.value })}
-                              placeholder="IT00 XXXX XXXX XXXX XXXX XXXX XXX"
-                              maxLength={60}
-                              className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                            />
-                          </div>
+                          <p className="mt-2 text-[10px] leading-4 text-slate-400">
+                            Il metodo viene reso disponibile solo quando tutti i dati richiesti sono presenti e formalmente validi.
+                          </p>
                         </div>
                       )}
                     </div>

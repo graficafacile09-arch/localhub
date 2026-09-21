@@ -32,6 +32,7 @@ export const METODI_PAGAMENTO_VALIDI = [
   "klarna",
   "sepa_debit",
   "bonifico_istantaneo",
+  "bonifico_diretto_venditore",
 ] as const;
 
 export type ProviderPagamentoValido = (typeof PROVIDER_PAGAMENTO_VALIDI)[number];
@@ -135,6 +136,9 @@ export type CredenzialiPubbliche = {
   client_id: string | null;
   payee_email: string | null;
   iban: string | null;
+  bic_swift: string | null;
+  bank_account_name: string | null;
+  bank_name: string | null;
   has_secret: boolean;
   /** Account collegato (Stripe Connect: stripe_user_id `acct_…`). Non sensibile. */
   account_id: string | null;
@@ -171,6 +175,9 @@ export function credenzialiPubbliche(
     client_id: riga.client_id ? String(riga.client_id) : null,
     payee_email: riga.payee_email ? String(riga.payee_email) : null,
     iban: riga.iban ? String(riga.iban) : null,
+    bic_swift: riga.bic_swift ? String(riga.bic_swift) : null,
+    bank_account_name: riga.bank_account_name ? String(riga.bank_account_name) : null,
+    bank_name: riga.bank_name ? String(riga.bank_name) : null,
     account_id: riga.account_id ? String(riga.account_id) : null,
     account_name: riga.account_name ? String(riga.account_name) : null,
     onboarding_status: riga.onboarding_status ? String(riga.onboarding_status) : null,

@@ -60,12 +60,52 @@ export type EsitoMetodiPubblici =
  *
  * Solo "active" abilita: requested/pending/inactive/restricted → false.
  */
+export type DatiBonificoDiretto = {
+  bankAccountName: string;
+  bankName: string;
+  iban: string;
+  bicSwift: string;
+};
+
+/** Legge e valida server-side i dati necessari al bonifico diretto. */
+export async function getDatiBonificoDiretto(
+  negozioId: string
+): Promise<DatiBonificoDiretto | null> {
+  if (!negozioId) return null;
+  try {
+    const db = createAdminSupabaseClient();
+    const { data, error } = await db.rpc("pagamenti_bonifico_diretto_leggi", {
+      p_negozio_id: negozioId,
+    });
+    if (error || !data || data.ok !== true || data.attivo !== true) return null;
+    const iban = String(data.iban ?? "").replace(/\s+/g, "").toUpperCase();
+    const bic = String(data.bic_swift ?? "").replace(/\s+/g, "").toUpperCase();
+    const bankAccountName = String(data.bank_account_name ?? "").trim();
+    const bankName = String(data.bank_name ?? "").trim();
+    if (
+      !/^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/.test(iban) ||
+      !/^[A-Z0-9]{8}(?:[A-Z0-9]{3})?$/.test(bic) ||
+      !bankAccountName ||
+      !bankName
+    ) {
+      return null;
+    }
+    return { bankAccountName, bankName, iban, bicSwift: bic };
+  } catch {
+    return null;
+  }
+}
+
 export async function isMetodoDisponibile(
   negozioId: string,
   metodo: string,
   _opts?: { importo?: number }
 ): Promise<boolean> {
   if (!negozioId) return false;
+
+  if (metodo === "bonifico_diretto_venditore") {
+    return (await getDatiBonificoDiretto(negozioId)) !== null;
+  }
 
   if (
     metodo === "carta" ||
@@ -236,6 +276,9 @@ async function disponibilitaVoce(
   negozioId: string,
   attivi: string[]
 ): Promise<boolean> {
+  if (voce.metodo === "bonifico_diretto_venditore") {
+    return attivi.includes(voce.metodo) && (await isMetodoDisponibile(negozioId, voce.metodo));
+  }
   if (!voce.richiedeGateway) return true;
   if (!attivi.includes(voce.metodo)) return false;
   if (!voce.provider) return false;
@@ -303,7 +346,9 @@ export async function getMetodiPagamentoPubbliciMulti(
       etichetta: voce.etichetta,
       nomeBreve: voce.nomeBreve,
       descrizione: voce.descrizione,
-      disponibile: voce.richiedeGateway ? disponibileOvunque : true,
+      disponibile: voce.metodo === "bonifico_diretto_venditore" || voce.richiedeGateway
+        ? disponibileOvunque
+        : true,
     };
 
     risultato.push(item);

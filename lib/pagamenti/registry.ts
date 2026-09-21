@@ -38,6 +38,8 @@ export function providerDaMetodoPagamento(metodo: string | undefined | null): st
     return "stripe";
   }
   if (metodo === "paypal") return "stripe";
+  // Il bonifico diretto al venditore è un pagamento manuale fuori gateway.
+  if (metodo === "bonifico_diretto_venditore") return null;
   return null;
 }
 

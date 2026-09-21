@@ -14,7 +14,8 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { getGuestMode } from "@/lib/auth/guest";
 import { checkRateLimit } from "@/lib/rate-limiter";
 import { setOrderAccessCookie } from "@/lib/cliente/order-access";
-import { isMetodoDisponibile } from "@/lib/pagamenti/metodi-pubblici";
+import { getDatiBonificoDiretto, isMetodoDisponibile } from "@/lib/pagamenti/metodi-pubblici";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import {
   annullaIntentoCheckout,
   costruisciPayloadIntentoCheckout,
@@ -173,7 +174,8 @@ export async function POST(request: Request) {
     spedizioneRaw.metodoPagamento !== "klarna" &&
     spedizioneRaw.metodoPagamento !== "bonifico_istantaneo" &&
     spedizioneRaw.metodoPagamento !== "paypal" &&
-    spedizioneRaw.metodoPagamento !== "sepa_debit"
+    spedizioneRaw.metodoPagamento !== "sepa_debit" &&
+    spedizioneRaw.metodoPagamento !== "bonifico_diretto_venditore"
   ) {
     return apiError("VALIDATION_ERROR", "Metodo di pagamento non valido.", 422);
   }
@@ -231,6 +233,27 @@ export async function POST(request: Request) {
       raggruppamento.messaggio,
       statusDaCodice(raggruppamento.codice)
     );
+  }
+
+  const vuoleBonificoDiretto =
+    modalita === "spedizione" && spedizioneRaw.metodoPagamento === "bonifico_diretto_venditore";
+  let datiBonificoDiretto: Awaited<ReturnType<typeof getDatiBonificoDiretto>> = null;
+  if (vuoleBonificoDiretto) {
+    if (raggruppamento.negozi.length > 1) {
+      return apiError(
+        "BONIFICO_DIRETTO_MULTI_VENDITORE",
+        "Il bonifico bancario diretto al venditore è disponibile solo per ordini relativi a un singolo venditore.",
+        422
+      );
+    }
+    datiBonificoDiretto = await getDatiBonificoDiretto(raggruppamento.negozi[0].negozioId);
+    if (!datiBonificoDiretto) {
+      return apiError(
+        "BONIFICO_DIRETTO_NON_DISPONIBILE",
+        "Il bonifico bancario diretto al venditore non è disponibile per questo negozio.",
+        422
+      );
+    }
   }
 
   // ── BLOCCO AUTO-ACQUISTO DEL VENDITORE (regola di sicurezza) ───────────
@@ -418,7 +441,9 @@ export async function POST(request: Request) {
             note: typeof spedizioneRaw.note === "string" ? spedizioneRaw.note : null,
             carrier: carrier as CarrierCodice,
             servizio: servizio as ServizioCodice,
-            metodoPagamento: "carta",
+            metodoPagamento: vuoleBonificoDiretto
+              ? "bonifico_diretto_venditore"
+              : "carta",
           }
         : null,
     fatturazione:
@@ -437,11 +462,49 @@ export async function POST(request: Request) {
 
   // Almeno un ordine REALMENTE nuovo → 201; tutti già esistenti (retry) → 200.
   const almenoNuovo = esito.ordini.some((o) => !o.giaEsistente);
+  let ordiniRisposta = esito.ordini;
+  if (vuoleBonificoDiretto) {
+    const db = createAdminSupabaseClient();
+    for (const ordine of ordiniRisposta) {
+      const { data: statoPagamento, error: statoErrore } = await db.rpc("aggiorna_payment_status", {
+        p_ordine_id: ordine.ordineId,
+        p_nuovo_stato: "pending",
+        p_importo: ordine.totale,
+        p_valuta: "EUR",
+      });
+      if (statoErrore || !(statoPagamento as { ok?: boolean } | null)?.ok) {
+        return apiError(
+          "PAYMENT_STATUS_INIT_FAILED",
+          "Impossibile inizializzare lo stato del pagamento dell'ordine.",
+          500
+        );
+      }
+    }
+    ordiniRisposta = ordiniRisposta.map((ordine) => ({
+      ...ordine,
+      paymentStatus: "pending",
+      paymentProvider: null,
+    }));
+  }
+
   const response = apiOk(
     {
       checkoutKey: esito.checkoutKey,
-      ordini: esito.ordini,
+      ordini: ordiniRisposta,
       errori: esito.errori,
+      ...(vuoleBonificoDiretto && datiBonificoDiretto && ordiniRisposta[0]
+        ? {
+            bonificoDiretto: {
+              venditoreNome: ordiniRisposta[0].negozioNome,
+              intestatarioConto: datiBonificoDiretto.bankAccountName,
+              banca: datiBonificoDiretto.bankName,
+              iban: datiBonificoDiretto.iban,
+              bicSwift: datiBonificoDiretto.bicSwift,
+              importo: ordiniRisposta[0].totale,
+              causale: null,
+            },
+          }
+        : {}),
     },
     almenoNuovo ? 201 : 200
   );

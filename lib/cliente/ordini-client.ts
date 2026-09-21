@@ -35,7 +35,7 @@ export type CreaOrdinePayload = {
     /** Servizio del corriere (standard | express | online | locale). */
     servizio: ServizioCodice;
     /** Metodo SCELTO ESPLICITAMENTE dall'utente (il server rifiuta un assente). */
-    metodoPagamento: "carta" | "klarna" | "paypal" | "sepa_debit" | "bonifico_istantaneo" | "bonifico";
+    metodoPagamento: "carta" | "klarna" | "paypal" | "sepa_debit" | "bonifico_istantaneo" | "bonifico_diretto_venditore" | "bonifico";
   } | null;
   /** Indirizzo di fatturazione opzionale (solo spedizione). */
   fatturazione?: {

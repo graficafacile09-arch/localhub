@@ -12,6 +12,16 @@ import {
 } from "@/lib/pagamenti/crypto";
 import type { CredenzialiPubbliche } from "@/lib/pagamenti/crypto";
 
+function isValidIban(value: string): boolean {
+  const normalized = value.replace(/\s+/g, "").toUpperCase();
+  return /^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/.test(normalized);
+}
+
+function isValidBicSwift(value: string): boolean {
+  const normalized = value.replace(/\s+/g, "").toUpperCase();
+  return /^[A-Z0-9]{8}(?:[A-Z0-9]{3})?$/.test(normalized);
+}
+
 /**
  * GET/PUT /api/merchant/stores/[negozioId]/pagamenti
  *
@@ -38,6 +48,9 @@ type BodyPagamenti = {
     client_id?: unknown;
     payee_email?: unknown;
     iban?: unknown;
+    bic_swift?: unknown;
+    bank_account_name?: unknown;
+    bank_name?: unknown;
     secret?: unknown;
     webhook_secret?: unknown;
   }>;
@@ -52,6 +65,9 @@ const MAX_LUNGH = {
   client_id: 200,
   payee_email: 200,
   iban: 60,
+  bic_swift: 11,
+  bank_account_name: 200,
+  bank_name: 200,
   secret: 500,
 };
 
@@ -111,6 +127,9 @@ export async function GET(
       client_id: pubblici?.client_id ?? null,
       payee_email: pubblici?.payee_email ?? null,
       iban: pubblici?.iban ?? null,
+      bic_swift: pubblici?.bic_swift ?? null,
+      bank_account_name: pubblici?.bank_account_name ?? null,
+      bank_name: pubblici?.bank_name ?? null,
       account_id: pubblici?.account_id ?? null,
       account_name: pubblici?.account_name ?? null,
       onboarding_status: pubblici?.onboarding_status ?? null,
@@ -123,6 +142,36 @@ export async function GET(
       has_secret: pubblici?.has_secret ?? false,
     });
   }
+
+  const { data: direttoData, error: direttoError } = await supabase.rpc("pagamenti_bonifico_diretto_leggi", {
+    p_negozio_id: negozioId,
+  });
+  if (direttoError) {
+    return apiError("PAYMENTS_CONFIG_READ_FAILED", "Impossibile caricare i dati del bonifico diretto.", 500);
+  }
+  const diretto = direttoData as Record<string, unknown> | null;
+  providerRisultati.push({
+    provider: "bonifico_diretto_venditore",
+    presente: diretto?.presente === true,
+    attivo: diretto?.attivo === true,
+    test_mode: false,
+    client_id: null,
+    payee_email: null,
+    iban: typeof diretto?.iban === "string" ? diretto.iban : null,
+    bic_swift: typeof diretto?.bic_swift === "string" ? diretto.bic_swift : null,
+    bank_name: typeof diretto?.bank_name === "string" ? diretto.bank_name : null,
+    account_id: null,
+    account_name: null,
+    bank_account_name: typeof diretto?.bank_account_name === "string" ? diretto.bank_account_name : null,
+    onboarding_status: null,
+    payouts_enabled: false,
+    charges_enabled: false,
+    klarna_enabled: false,
+    merchant_id: null,
+    payments_receivable: false,
+    primary_email_confirmed: false,
+    has_secret: false,
+  });
 
   // ── Metodi attivi per il checkout ─────────────────────────────────────
   const { data: metodiRow, error: metodiError } = await supabase
@@ -200,6 +249,26 @@ export async function PUT(
       return apiError("VALIDATION_ERROR", "Configurazione provider non valida.", 422);
     }
     const provider = entry.provider;
+    if (provider === "bonifico_diretto_venditore") {
+      const iban = typeof entry.iban === "string" ? entry.iban.trim().slice(0, MAX_LUNGH.iban) : "";
+      const bicSwift = typeof entry.bic_swift === "string" ? entry.bic_swift.trim().slice(0, MAX_LUNGH.bic_swift) : "";
+      const bankAccountName = typeof entry.bank_account_name === "string" ? entry.bank_account_name.trim().slice(0, MAX_LUNGH.bank_account_name) : "";
+      const bankName = typeof entry.bank_name === "string" ? entry.bank_name.trim().slice(0, MAX_LUNGH.bank_name) : "";
+      if (iban && !isValidIban(iban)) return apiError("VALIDATION_ERROR", "IBAN non valido.", 422);
+      if (bicSwift && !isValidBicSwift(bicSwift)) return apiError("VALIDATION_ERROR", "BIC/SWIFT non valido.", 422);
+      const { data, error } = await supabase.rpc("pagamenti_bonifico_diretto_salva", {
+        p_negozio_id: negozioId,
+        p_attivo: entry.attivo === true,
+        p_iban: iban || null,
+        p_bic_swift: bicSwift || null,
+        p_bank_account_name: bankAccountName || null,
+        p_bank_name: bankName || null,
+      });
+      if (error || !(data as { ok?: boolean } | null)?.ok) {
+        return apiError("SAVE_FAILED", "Impossibile salvare i dati bancari.", 500);
+      }
+      continue;
+    }
     if (!isProviderPagamentoValido(provider)) {
       return apiError("VALIDATION_ERROR", `Provider non valido: ${String(provider)}`, 422);
     }

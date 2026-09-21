@@ -91,7 +91,7 @@ export default function SpedizioneForm({
   // "disponibile" NON significa "selezionato". Il submit è bloccato finché
   // l'utente non sceglie esplicitamente un metodo (vedi pulsante disabilitato).
   const [metodoPagamento, setMetodoPagamento] = useState<
-    "carta" | "klarna" | "paypal" | "sepa_debit" | "bonifico_istantaneo" | "bonifico" | null
+    "carta" | "klarna" | "paypal" | "sepa_debit" | "bonifico_istantaneo" | "bonifico_diretto_venditore" | "bonifico" | null
   >(null);
   const [inviando, setInviando] = useState(false);
   const [errore, setErrore] = useState<string | null>(null);

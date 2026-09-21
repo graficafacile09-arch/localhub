@@ -4,7 +4,7 @@ import { utentePossiedeNegozio } from "@/lib/merchant/data";
 import { inviaNotificaNuovoOrdine } from "@/lib/notifiche/whatsapp";
 import { inviaNotificaNuovoOrdineNtfy } from "@/lib/notifiche/ntfy";
 import { notificaNuovoOrdineAdmin } from "@/lib/amministratore/notifiche";
-import { inviaEmailConfermaOrdine } from "./ordine-email";
+import { inviaEmailConfermaOrdine, inviaEmailNuovoBonificoVenditore } from "./ordine-email";
 import { richiediVariantePerProdotto } from "@/lib/varianti-pubbliche";
 import type { PaymentStatus } from "@/lib/pagamenti/types";
 import {
@@ -191,7 +191,7 @@ export type OrdinePersistito = {
   /** Data/ora dell'annullamento. */
   annullatoAt: string | null;
   /** Metodo di pagamento selezionato al checkout (solo spedizione). */
-  metodoPagamento: "carta" | "klarna" | "bonifico_istantaneo" | "bonifico" | null;
+  metodoPagamento: "carta" | "klarna" | "bonifico_istantaneo" | "bonifico_diretto_venditore" | "bonifico" | null;
   /** Stato del pagamento (FASE F1): null per gli ordini legacy senza pagamento. */
   paymentStatus: PaymentStatus | null;
   paymentProvider: string | null;
@@ -199,6 +199,7 @@ export type OrdinePersistito = {
   paymentExpiresAt: string | null;
   paymentRefundedAt: string | null;
   paymentRefundedAmount: number | null;
+  bonificoCausale: string | null;
   righe: RigaOrdine[];
 };
 
@@ -419,6 +420,7 @@ function assumiOrdine(riga: Record<string, unknown>, righe: RigaOrdine[]): Ordin
       riga.payment_refunded_amount == null
         ? null
         : Number(riga.payment_refunded_amount),
+    bonificoCausale: (riga.bonifico_causale as string | null) ?? null,
     righe,
   };
 }
@@ -571,7 +573,8 @@ export async function creaOrdine(
       sp.metodoPagamento !== "bonifico_istantaneo" &&
       sp.metodoPagamento !== "klarna" &&
       sp.metodoPagamento !== "paypal" &&
-      sp.metodoPagamento !== "sepa_debit"
+      sp.metodoPagamento !== "sepa_debit" &&
+      sp.metodoPagamento !== "bonifico_diretto_venditore"
     ) {
       return { ok: false, errore: "Metodo di pagamento non valido.", codice: "VALIDATION_ERROR", status: 422 };
     }
@@ -677,6 +680,12 @@ export async function creaOrdine(
       .then(({ error }) => {
         if (error) console.error("[ordini] salvataggio fatturazione fallito:", error.message);
       });
+  }
+
+  // Causale deterministica, derivata dall'identificativo definitivo dell'ordine.
+  if (esito.ordine?.id && input.spedizione?.metodoPagamento === "bonifico_diretto_venditore") {
+    const causale = `Ordine #${esito.ordine.numero} - Marketplace InCittà`;
+    await db.from("ordini").update({ bonifico_causale: causale }).eq("id", esito.ordine.id);
   }
 
   // ── 3. Notifiche al negoziante (BEST-EFFORT, mai bloccano) ───────────────

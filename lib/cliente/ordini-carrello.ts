@@ -87,7 +87,7 @@ export type CheckoutCarrelloInput = {
     carrier: CarrierCodice;
     /** Servizio del corriere (standard | express | online | locale). */
     servizio: ServizioCodice;
-    metodoPagamento: "carta" | "klarna" | "paypal" | "sepa_debit" | "bonifico_istantaneo" | "bonifico";
+    metodoPagamento: "carta" | "klarna" | "paypal" | "sepa_debit" | "bonifico_istantaneo" | "bonifico_diretto_venditore" | "bonifico";
   } | null;
   /** Indirizzo di fatturazione opzionale (solo modalità spedizione). */
   fatturazione?: FatturazioneCheckout | null;
@@ -259,7 +259,8 @@ function validaCheckout(input: CheckoutCarrelloInput): { codice: string; messagg
       sp.metodoPagamento !== "klarna" &&
       sp.metodoPagamento !== "bonifico_istantaneo" &&
       sp.metodoPagamento !== "paypal" &&
-      sp.metodoPagamento !== "sepa_debit"
+      sp.metodoPagamento !== "sepa_debit" &&
+      sp.metodoPagamento !== "bonifico_diretto_venditore"
     ) {
       return { codice: "VALIDATION_ERROR", messaggio: "Metodo di pagamento non valido." };
     }

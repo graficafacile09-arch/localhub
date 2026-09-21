@@ -11,7 +11,11 @@ import {
   creaSessionePagamentoPerIntento,
   providerDaMetodoPagamento,
 } from "@/lib/pagamenti/sessioni";
-import { metodoDisponibilePerProdotto } from "@/lib/pagamenti/metodi-pubblici";
+import {
+  getDatiBonificoDiretto,
+  metodoDisponibilePerProdotto,
+} from "@/lib/pagamenti/metodi-pubblici";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import {
   isCarrierCodice,
   isServizioValidoPerCarrier,
@@ -22,6 +26,21 @@ import {
 /** IP del richiedente (pattern già usato da /api/assistente). */
 function ipRichiedente(request: Request): string {
   return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "anon";
+}
+
+async function negozioDaProdotto(
+  prodottoId: string
+): Promise<{ id: string; nome: string } | null> {
+  if (!prodottoId) return null;
+  const db = createAdminSupabaseClient();
+  const { data, error } = await db
+    .from("prodotti")
+    .select("negozio_id, negozi(nome)")
+    .eq("id", Number(prodottoId))
+    .maybeSingle();
+  if (error || !data?.negozio_id) return null;
+  const negozio = Array.isArray(data.negozi) ? data.negozi[0] : data.negozi;
+  return { id: String(data.negozio_id), nome: String(negozio?.nome ?? "") };
 }
 
 /**
@@ -127,7 +146,8 @@ export async function POST(request: Request) {
     metodoScelto === "bonifico_istantaneo" ||
     metodoScelto === "klarna" ||
     metodoScelto === "paypal" ||
-    metodoScelto === "sepa_debit";
+    metodoScelto === "sepa_debit" ||
+    metodoScelto === "bonifico_diretto_venditore";
   // Valore PRESENTE ma non ammesso: rifiuto
   // sempre, indipendentemente dalla modalità → mai un ordine con un metodo
   // che il server non conosce.
@@ -208,6 +228,23 @@ export async function POST(request: Request) {
       return apiError(
         "SEPA_NON_DISPONIBILE",
         "Il pagamento SEPA Direct Debit non è disponibile per questo negozio.",
+        422
+      );
+    }
+  }
+
+  const vuoleBonificoDiretto =
+    modalita === "spedizione" && spedizioneRaw.metodoPagamento === "bonifico_diretto_venditore";
+  let datiBonificoDiretto: Awaited<ReturnType<typeof getDatiBonificoDiretto>> = null;
+  let negozioNomeDiretto = "";
+  if (vuoleBonificoDiretto) {
+    const negozioDiretto = await negozioDaProdotto(prodottoIdRaw);
+    datiBonificoDiretto = await getDatiBonificoDiretto(negozioDiretto?.id ?? "");
+    negozioNomeDiretto = negozioDiretto?.nome ?? "";
+    if (!datiBonificoDiretto) {
+      return apiError(
+        "BONIFICO_DIRETTO_NON_DISPONIBILE",
+        "Il bonifico bancario diretto al venditore non è disponibile per questo negozio.",
         422
       );
     }
@@ -300,7 +337,11 @@ export async function POST(request: Request) {
             // Le RPC storiche persistono i metodi online Stripe come carta;
             // bonifico manuale resta il solo metodo non-gateway.
             metodoPagamento:
-              spedizioneRaw.metodoPagamento === "bonifico" ? "bonifico" : "carta",
+              spedizioneRaw.metodoPagamento === "bonifico_diretto_venditore"
+                ? "bonifico_diretto_venditore"
+                : spedizioneRaw.metodoPagamento === "bonifico"
+                  ? "bonifico"
+                  : "carta",
           }
         : null,
     fatturazione:
@@ -402,10 +443,48 @@ export async function POST(request: Request) {
     return apiError(esito.codice, esito.errore, esito.status);
   }
 
+  let ordineRisposta = esito.ordine;
+  if (vuoleBonificoDiretto && esito.ordine?.id) {
+    const db = createAdminSupabaseClient();
+    const { data: statoPagamento, error: statoErrore } = await db.rpc("aggiorna_payment_status", {
+      p_ordine_id: esito.ordine.id,
+      p_nuovo_stato: "pending",
+      p_importo: esito.ordine.totale,
+      p_valuta: "EUR",
+    });
+    if (statoErrore || !(statoPagamento as { ok?: boolean } | null)?.ok) {
+      return apiError(
+        "PAYMENT_STATUS_INIT_FAILED",
+        "Impossibile inizializzare lo stato del pagamento dell'ordine.",
+        500
+      );
+    }
+    ordineRisposta = esito.ordine;
+  }
+
   const response = apiOk(
     {
-      ordine: esito.ordine,
+      ordine: ordineRisposta,
       giaEsistente: esito.giaEsistente,
+      ...(vuoleBonificoDiretto
+        ? {
+            metodoPagamento: "bonifico_diretto_venditore",
+            paymentStatus: "pending",
+          }
+        : {}),
+      ...(vuoleBonificoDiretto && datiBonificoDiretto
+        ? {
+            bonificoDiretto: {
+              venditoreNome: negozioNomeDiretto,
+              intestatarioConto: datiBonificoDiretto.bankAccountName,
+              banca: datiBonificoDiretto.bankName,
+              iban: datiBonificoDiretto.iban,
+              bicSwift: datiBonificoDiretto.bicSwift,
+              importo: esito.ordine.totale,
+              causale: null,
+            },
+          }
+        : {}),
     },
     esito.giaEsistente ? 200 : 201
   );

@@ -65,6 +65,7 @@ export type DatiEmailOrdine = {
    *  usato nell'email di conferma pagamento. Opzionale: assente nelle email
    *  legacy/di creazione che non lo costruiscono. */
   metodoPagamento?: string | null;
+  bonificoCausale?: string | null;
   ritiroData: string | null;
   ritiroFascia: string | null;
   spedizioneIndirizzo: string | null;
@@ -539,6 +540,7 @@ async function caricaDatiEmailOrdine(
     spedizioneIndirizzo: ordine.spedizione_indirizzo ?? null,
     spedizioneCap: ordine.spedizione_cap ?? null,
     spedizioneCitta: ordine.spedizione_citta ?? null,
+    bonificoCausale: (ordine.bonifico_causale as string | null) ?? null,
     spedizioneProvincia: ordine.spedizione_provincia ?? null,
     spedizioneNote: ordine.spedizione_note ?? null,
     note: ordine.note ?? null,
@@ -551,6 +553,27 @@ async function caricaDatiEmailOrdine(
   };
 
   return { ok: true, dati, email };
+}
+
+/** Notifica il venditore di un nuovo ordine con bonifico diretto atteso. */
+export async function inviaEmailNuovoBonificoVenditore(ordineId: string): Promise<EsitoEmailOrdine> {
+  try {
+    const db = createAdminSupabaseClient() as any;
+    const { data: ordine } = await db.from("ordini").select("id, numero, negozio_id, negozio_nome, totale, metodo_pagamento").eq("id", ordineId).single();
+    if (!ordine || ordine.metodo_pagamento !== "bonifico_diretto_venditore") return { stato: "skipped", motivo: "metodo_non_applicabile" };
+    const { data: negozio } = await db.from("negozi").select("owner_user_id, email_negozio").eq("id", ordine.negozio_id).single();
+    let email = String(negozio?.email_negozio ?? "").trim();
+    if (negozio?.owner_user_id) {
+      const { data: owner } = await db.from("auth.users").select("email").eq("id", negozio.owner_user_id).single();
+      email = String(owner?.email ?? email).trim();
+    }
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { stato: "skipped", motivo: "email_assente" };
+    const link = `${SITE_URL.replace(/\/+$/, "")}/merchant/${encodeURIComponent(String(ordine.negozio_id))}/ordini/${encodeURIComponent(ordineId)}`;
+    const dati = { id: ordineId, numero: String(ordine.numero ?? ""), stato: "in_preparazione", totale: Number(ordine.totale ?? 0), costoSpedizione: 0, createdAt: new Date().toISOString(), modalita: "spedizione" as const, negozioNome: String(ordine.negozio_nome ?? "Negozio"), email, ritiroData: null, ritiroFascia: null, spedizioneIndirizzo: null, spedizioneCap: null, spedizioneCitta: null, spedizioneProvincia: null, spedizioneNote: null, note: null, righe: [] };
+    const html = `<p>Hai ricevuto il nuovo ordine <strong>${escapeHtml(dati.numero)}</strong> presso ${escapeHtml(dati.negozioNome)}.</p><p>Pagamento atteso tramite bonifico diretto al tuo conto. Verifica l’effettivo accredito prima di sbloccare la spedizione.</p><p>Importo ordine: €${formattaEuroEmail(dati.totale)}</p><p><a href="${link}">Apri l’ordine e conferma la ricezione</a></p>`;
+    const messageId = await inviaConResend(dati, `Nuovo ordine ${dati.numero} — bonifico diretto`, html);
+    return { stato: "sent", messageId };
+  } catch { return { stato: "error", motivo: "invio_fallito" }; }
 }
 
 /**

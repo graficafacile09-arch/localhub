@@ -24,7 +24,7 @@ import { RigheProdotto } from "@/components/ordini/RigheProdotto";
 import { OrderHeader } from "@/components/ordini/OrderHeader";
 import { PagamentoStatoBanner } from "@/components/ordini/PagamentoStatoBanner";
 import { CheckoutInAttesa } from "@/components/ordini/CheckoutInAttesa";
-import { getMetodiPagamentoPubblici } from "@/lib/pagamenti/metodi-pubblici";
+import { getDatiBonificoDiretto } from "@/lib/pagamenti/metodi-pubblici";
 
 type Params = { ordineId: string };
 
@@ -147,9 +147,16 @@ export default async function ConfermaOrdinePage({
         />
 
         {/* Bonifico (FASE F1): coordinate per il pagamento manuale, se configurate */}
-        {ordine.metodoPagamento === "bonifico" &&
+        {ordine.metodoPagamento === "bonifico_diretto_venditore" &&
           ordine.stato !== "cancellato" &&
-          ordine.paymentStatus !== "paid" && <BonificoInfo negozioId={ordine.negozioId} />}
+          ordine.paymentStatus !== "paid" && (
+            <BonificoDirettoInfo
+              negozioId={ordine.negozioId}
+              negozioNome={ordine.negozioNome}
+              importo={ordine.totale}
+              causale={ordine.bonificoCausale ?? `Ordine #${ordine.numero} - Marketplace InCittà`}
+            />
+          )}
 
         {/* Klarna: il pagamento verrà confermato dopo l'approvazione di Klarna.
             Il marcatore autoritativo è payment_provider='klarna' (la colonna
@@ -371,26 +378,24 @@ async function ConfermaIntentoView({
 }
 
 /** Coordinate bonifico del negozio (lettura pubblica server-side). */
-async function BonificoInfo({ negozioId }: { negozioId: string }) {
-  const esito = await getMetodiPagamentoPubblici(negozioId);
-  const bonifico = esito.ok
-    ? esito.metodi.find((m) => m.metodo === "bonifico")
-    : null;
-
+async function BonificoDirettoInfo({ negozioId, negozioNome, importo, causale }: { negozioId: string; negozioNome: string; importo: number; causale: string }) {
+  const dati = await getDatiBonificoDiretto(negozioId);
+  if (!dati) return null;
   return (
-    <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
-      <p className="text-sm font-bold text-blue-800">Pagamento tramite bonifico bancario</p>
-      <p className="mt-0.5 text-xs text-blue-700">
-        Il negozio preparerà l&apos;ordine e ti comunicherà quando versare l&apos;importo.
+    <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-4">
+      <p className="text-sm font-bold text-amber-900">Bonifico bancario diretto al venditore</p>
+      <div className="mt-3 space-y-1 text-sm text-slate-800">
+        <p><strong>Venditore:</strong> {negozioNome}</p>
+        <p><strong>Intestatario conto:</strong> {dati.bankAccountName}</p>
+        <p><strong>Banca:</strong> {dati.bankName}</p>
+        <p><strong>IBAN:</strong> <span className="font-mono">{dati.iban}</span></p>
+        <p><strong>BIC/SWIFT:</strong> <span className="font-mono">{dati.bicSwift}</span></p>
+        <p><strong>Importo:</strong> €{importo.toFixed(2)}</p>
+        <p><strong>Causale:</strong> {causale}</p>
+      </div>
+      <p className="mt-3 rounded-lg bg-white/70 p-3 text-xs leading-5 text-amber-950">
+        ATTENZIONE: Stai effettuando un pagamento diretto sul conto corrente del venditore {negozioNome}. InCittà fornisce solo l&apos;infrastruttura tecnologica e non riceve né gestisce questo denaro. Per qualsiasi problema legato al pagamento o alla spedizione, il riferimento commerciale è il venditore sopra indicato.
       </p>
-      {bonifico?.iban && (
-        <p className="mt-2 rounded-lg bg-white px-3 py-2 text-sm font-semibold text-slate-800 ring-1 ring-blue-100">
-          IBAN: {bonifico.iban}
-          {bonifico.payeeEmail ? (
-            <span className="ml-2 font-normal text-slate-500">Intestatario: {bonifico.payeeEmail}</span>
-          ) : null}
-        </p>
-      )}
     </div>
   );
 }

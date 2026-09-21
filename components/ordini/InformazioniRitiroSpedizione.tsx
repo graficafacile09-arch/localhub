@@ -96,7 +96,7 @@ export function InformazioniRitiroSpedizione({
   /** Consegna stimata (testo libero). */
   consegnaStimata: string | null;
   metodoSpedizione: "standard" | "express" | null;
-  metodoPagamento: "carta" | "klarna" | "bonifico_istantaneo" | "bonifico" | null;
+  metodoPagamento: "carta" | "klarna" | "paypal" | "sepa_debit" | "bonifico_istantaneo" | "bonifico_diretto_venditore" | "bonifico" | null;
   /** Marcatore autoritativo del provider Stripe (es. 'klarna'). */
   paymentProvider?: string | null;
 }) {
