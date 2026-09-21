@@ -22,7 +22,7 @@ const sezioni = [
           operativa predisposta per la successiva revisione legale.
         </p>
         <p>
-          L&apos;utilizzo della piattaforma può coinvolgere rapporti distinti tra InCittà,
+          L'utilizzo della piattaforma può coinvolgere rapporti distinti tra InCittà,
           i venditori e i clienti. Le condizioni applicabili alla singola vendita devono
           essere lette insieme alle informazioni e alle condizioni rese disponibili dal
           venditore.
@@ -34,18 +34,18 @@ const sezioni = [
     titolo: "2. Definizioni",
     contenuto: (
       <ul>
-        <li><strong>InCittà</strong>: la piattaforma e l&apos;infrastruttura tecnologica gestita da [DENOMINAZIONE DEL GESTORE].</li>
+        <li><strong>InCittà</strong>: la piattaforma e l'infrastruttura tecnologica gestita da [DENOMINAZIONE DEL GESTORE].</li>
         <li><strong>Gestore</strong>: [DENOMINAZIONE DEL GESTORE], con sede in [SEDE LEGALE], P.IVA [P.IVA].</li>
-        <li><strong>Venditore</strong>: il soggetto che pubblica un&apos;offerta e propone al cliente un prodotto, un servizio o altra prestazione.</li>
+        <li><strong>Venditore</strong>: il soggetto che pubblica un'offerta e propone al cliente un prodotto, un servizio o altra prestazione.</li>
         <li><strong>Cliente</strong>: la persona che utilizza la piattaforma e può acquistare dal venditore.</li>
         <li><strong>Piattaforma</strong>: il sito, il checkout, le aree account e gli strumenti tecnici collegati a InCittà.</li>
-        <li><strong>Provider di pagamento</strong>: il soggetto terzo che fornisce l&apos;infrastruttura tecnica per il pagamento selezionato.</li>
-        <li><strong>Ordine</strong>: la richiesta di acquisto o prenotazione riferita a un&apos;offerta del venditore, secondo il flusso applicabile.</li>
+        <li><strong>Provider di pagamento</strong>: il soggetto terzo che fornisce l'infrastruttura tecnica per il pagamento selezionato.</li>
+        <li><strong>Ordine</strong>: la richiesta di acquisto o prenotazione riferita a un'offerta del venditore, secondo il flusso applicabile.</li>
       </ul>
     ),
   },
   {
-    titolo: "3. Cos&apos;è InCittà",
+    titolo: "3. Cos'è InCittà",
     contenuto: (
       <>
         <p>
@@ -54,8 +54,8 @@ const sezioni = [
         </p>
         <p>
           La piattaforma può consentire di visualizzare negozi, prodotti, servizi e offerte,
-          avviare un checkout, trasmettere dati dell&apos;ordine e ricevere comunicazioni sullo
-          stato tecnico dell&apos;operazione.
+          avviare un checkout, trasmettere dati dell'ordine e ricevere comunicazioni sullo
+          stato tecnico dell'operazione.
         </p>
       </>
     ),
@@ -68,7 +68,7 @@ const sezioni = [
           InCittà mette a disposizione strumenti tecnologici per il funzionamento del
           marketplace, tra cui pubblicazione e consultazione delle offerte, checkout,
           gestione tecnica degli ordini, comunicazioni operative, tracciamento tecnico dello
-          stato dell&apos;ordine, strumenti per comunicazioni e reclami e misure di sicurezza.
+          stato dell'ordine, strumenti per comunicazioni e reclami e misure di sicurezza.
         </p>
         <p>
           InCittà può inoltre interfacciarsi tecnicamente con provider di pagamento e altri
@@ -88,12 +88,12 @@ const sezioni = [
     contenuto: (
       <>
         <p>
-          Il venditore è il soggetto che presenta l&apos;offerta e propone al cliente il
+          Il venditore è il soggetto che presenta l'offerta e propone al cliente il
           prodotto, il servizio o la prestazione descritta nella piattaforma.
         </p>
         <p>
           Il venditore cura, secondo il rapporto applicabile e la normativa vigente, le
-          informazioni sulla propria offerta, la disponibilità, l&apos;esecuzione della
+          informazioni sulla propria offerta, la disponibilità, l'esecuzione della
           prestazione, la consegna o il ritiro, la conformità, la garanzia, i reclami
           commerciali, i resi e le richieste di rimborso di propria competenza.
         </p>
@@ -110,12 +110,12 @@ const sezioni = [
       <>
         <p>
           La vendita o la prestazione richiesta dal cliente è riferita al venditore indicato
-          nell&apos;offerta e nel riepilogo dell&apos;ordine. Il cliente deve verificare le
+          nell'offerta e nel riepilogo dell'ordine. Il cliente deve verificare le
           informazioni del venditore e le condizioni della specifica vendita prima di
           completare il checkout.
         </p>
         <p>
-          Prezzi, disponibilità, caratteristiche dell&apos;offerta, modalità di esecuzione,
+          Prezzi, disponibilità, caratteristiche dell'offerta, modalità di esecuzione,
           consegna, ritiro, recesso, resi, garanzia e conformità devono essere valutati in
           relazione al venditore e al prodotto o servizio interessato, fatti salvi gli obblighi
           eventualmente applicabili a InCittà.
@@ -128,12 +128,12 @@ const sezioni = [
     contenuto: (
       <>
         <p>
-          Alcune funzioni possono richiedere la registrazione o l&apos;accesso a un account.
+          Alcune funzioni possono richiedere la registrazione o l'accesso a un account.
           Altre funzioni, incluso il checkout guest quando disponibile, possono essere
           utilizzate senza creare un account.
         </p>
         <p>
-          Le informazioni fornite dall&apos;utente devono essere accurate, aggiornate e
+          Le informazioni fornite dall'utente devono essere accurate, aggiornate e
           utilizzate nel rispetto delle istruzioni della piattaforma e della normativa
           applicabile.
         </p>
@@ -145,8 +145,8 @@ const sezioni = [
     contenuto: (
       <>
         <p>
-          L&apos;utente deve proteggere le proprie credenziali e informare tempestivamente il
-          Gestore in caso di accesso non autorizzato o di sospetto uso improprio dell&apos;account.
+          L'utente deve proteggere le proprie credenziali e informare tempestivamente il
+          Gestore in caso di accesso non autorizzato o di sospetto uso improprio dell'account.
         </p>
         <p>
           Le funzioni disponibili possono dipendere dal tipo di account, dal ruolo assegnato,
@@ -159,7 +159,7 @@ const sezioni = [
     titolo: "9. Utilizzo corretto della piattaforma",
     contenuto: (
       <p>
-        L&apos;utente deve utilizzare InCittà in modo lecito, corretto e conforme alla sua
+        L'utente deve utilizzare InCittà in modo lecito, corretto e conforme alla sua
         funzione. Non deve compromettere la sicurezza, aggirare i controlli, utilizzare dati
         altrui senza autorizzazione, introdurre contenuti dannosi o usare la piattaforma per
         attività fraudolente, illecite o non autorizzate.
@@ -173,7 +173,7 @@ const sezioni = [
         <p>
           Le offerte sono pubblicate o gestite dai venditori tramite gli strumenti messi a
           disposizione dalla piattaforma. Le informazioni visualizzate devono essere verificate
-          dall&apos;utente prima dell&apos;acquisto.
+          dall'utente prima dell'acquisto.
         </p>
         <p>
           InCittà può adottare controlli tecnici, richiedere aggiornamenti o limitare la
@@ -193,15 +193,15 @@ const sezioni = [
           condizioni prima di accettare la richiesta.
         </p>
         <p>
-          Il riepilogo dell&apos;ordine indica, per quanto applicabile, il venditore, i prodotti
+          Il riepilogo dell'ordine indica, per quanto applicabile, il venditore, i prodotti
           o servizi, gli importi, la modalità di consegna o ritiro e il metodo di pagamento
           selezionato. La formazione e gli effetti della vendita sono disciplinati dalle
           condizioni applicabili alla specifica offerta.
         </p>
         <p>
-          Per i flussi in cui il pagamento viene avviato prima della creazione dell&apos;ordine,
+          Per i flussi in cui il pagamento viene avviato prima della creazione dell'ordine,
           la piattaforma può conservare tecnicamente un intento di checkout fino alla conferma
-          dell&apos;esito del pagamento, secondo il flusso applicabile.
+          dell'esito del pagamento, secondo il flusso applicabile.
         </p>
       </>
     ),
@@ -217,7 +217,7 @@ const sezioni = [
         </p>
         <p>
           InCittà può trasmettere al provider i dati necessari e aggiornare tecnicamente lo
-          stato dell&apos;ordine sulla base delle informazioni ricevute. La presenza di un
+          stato dell'ordine sulla base delle informazioni ricevute. La presenza di un
           provider nel checkout non attribuisce a InCittà la vendita del prodotto o del
           servizio.
         </p>
@@ -234,9 +234,9 @@ const sezioni = [
     contenuto: (
       <p>
         InCittà può inviare comunicazioni tecniche relative alla ricezione, allo stato, al
-        pagamento, alla consegna, al ritiro o ad altri eventi dell&apos;ordine. Le comunicazioni
+        pagamento, alla consegna, al ritiro o ad altri eventi dell'ordine. Le comunicazioni
         possono essere inviate anche dal venditore o da un provider coinvolto nel flusso.
-        L&apos;indirizzo e-mail o gli altri recapiti forniti devono essere verificati dall&apos;utente.
+        L'indirizzo e-mail o gli altri recapiti forniti devono essere verificati dall'utente.
       </p>
     ),
   },
@@ -250,8 +250,8 @@ const sezioni = [
         </p>
         <p>
           Il venditore è il referente della questione commerciale relativa al prodotto o
-          servizio. L&apos;apertura di un reclamo non determina automaticamente un rimborso, un
-          reso, una sostituzione, una decisione sulla garanzia o la chiusura dell&apos;ordine.
+          servizio. L'apertura di un reclamo non determina automaticamente un rimborso, un
+          reso, una sostituzione, una decisione sulla garanzia o la chiusura dell'ordine.
         </p>
         <p>
           Eventuali operazioni tecniche di rimborso sono eseguite secondo il workflow
@@ -266,7 +266,7 @@ const sezioni = [
     contenuto: (
       <p>
         Gli utenti e i venditori devono pubblicare contenuti pertinenti, accurati e leciti e
-        devono disporre dei diritti necessari per utilizzarli. Il contenuto dell&apos;offerta e
+        devono disporre dei diritti necessari per utilizzarli. Il contenuto dell'offerta e
         delle comunicazioni resta riferito al soggetto che lo pubblica, fatti salvi i controlli
         e gli interventi tecnici previsti dalla piattaforma o dalla legge.
       </p>
@@ -278,7 +278,7 @@ const sezioni = [
       <p>
         Segnalazioni relative a contenuti, offerte o attività potenzialmente illecite possono
         essere inviate a [EMAIL SEGNALAZIONI]. La segnalazione dovrebbe contenere informazioni
-        sufficienti per consentire una verifica tecnica e, quando necessario, l&apos;eventuale
+        sufficienti per consentire una verifica tecnica e, quando necessario, l'eventuale
         intervento previsto dalle regole della piattaforma o dalla normativa applicabile.
       </p>
     ),
@@ -289,9 +289,9 @@ const sezioni = [
       <p>
         In presenza di motivi tecnici, di sicurezza, di violazioni delle regole applicabili,
         di richieste delle autorità o di altri presupposti previsti dalla legge o dagli accordi
-        applicabili, l&apos;accesso a una funzione o a un account può essere limitato o sospeso.
+        applicabili, l'accesso a una funzione o a un account può essere limitato o sospeso.
         Le modalità, le comunicazioni e gli eventuali strumenti di contestazione devono essere
-        interpretati nel rispetto dei diritti applicabili all&apos;utente.
+        interpretati nel rispetto dei diritti applicabili all'utente.
       </p>
     ),
   },
@@ -335,8 +335,8 @@ const sezioni = [
     contenuto: (
       <p>
         Il trattamento dei dati personali è descritto nella Privacy Policy di InCittà, che
-        dovrà essere pubblicata separatamente e validata prima dell&apos;utilizzo definitivo.
-        Le informazioni presenti nei presenti Termini non sostituiscono l&apos;informativa privacy
+        dovrà essere pubblicata separatamente e validata prima dell'utilizzo definitivo.
+        Le informazioni presenti nei presenti Termini non sostituiscono l'informativa privacy
         né eventuali consensi separati richiesti dalla normativa.
       </p>
     ),
@@ -345,7 +345,7 @@ const sezioni = [
     titolo: "22. Cookie",
     contenuto: (
       <p>
-        L&apos;uso di cookie e altri strumenti di tracciamento è descritto nella Cookie Policy e,
+        L'uso di cookie e altri strumenti di tracciamento è descritto nella Cookie Policy e,
         quando previsto, nel relativo strumento per la gestione delle preferenze. La Cookie
         Policy dovrà essere predisposta separatamente e validata prima della pubblicazione
         definitiva.
@@ -368,7 +368,7 @@ const sezioni = [
     titolo: "24. Legge applicabile e foro",
     contenuto: (
       <p>
-        La legge applicabile e l&apos;eventuale foro competente saranno indicati nella versione
+        La legge applicabile e l'eventuale foro competente saranno indicati nella versione
         sottoposta a revisione legale, nel rispetto delle norme inderogabili applicabili ai
         consumatori e degli eventuali diritti riconosciuti dalla normativa vigente.
       </p>

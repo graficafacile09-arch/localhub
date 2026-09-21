@@ -17,7 +17,7 @@ const sezioni = [
     contenuto: (
       <>
         <p>
-          I presenti Termini e condizioni disciplinano l&apos;utilizzo della piattaforma InCittà
+          I presenti Termini e condizioni disciplinano l'utilizzo della piattaforma InCittà
           da parte dei soggetti che pubblicano e gestiscono offerte rivolte ai clienti. Il
           documento è una bozza operativa predisposta per la successiva revisione legale.
         </p>
@@ -33,14 +33,14 @@ const sezioni = [
     titolo: "2. Definizioni",
     contenuto: (
       <ul>
-        <li><strong>InCittà</strong>: la piattaforma e l&apos;infrastruttura tecnologica gestita da [DENOMINAZIONE DEL GESTORE].</li>
+        <li><strong>InCittà</strong>: la piattaforma e l'infrastruttura tecnologica gestita da [DENOMINAZIONE DEL GESTORE].</li>
         <li><strong>Gestore</strong>: [DENOMINAZIONE DEL GESTORE], con sede in [SEDE LEGALE], P.IVA [P.IVA].</li>
         <li><strong>Venditore</strong>: il soggetto che utilizza InCittà per pubblicare e offrire prodotti, servizi o altre prestazioni.</li>
-        <li><strong>Cliente</strong>: il soggetto che consulta un&apos;offerta o acquista dal Venditore.</li>
+        <li><strong>Cliente</strong>: il soggetto che consulta un'offerta o acquista dal Venditore.</li>
         <li><strong>Negozio</strong>: lo spazio o profilo del Venditore pubblicato sulla piattaforma.</li>
         <li><strong>Offerta</strong>: la proposta relativa a un prodotto, servizio o prestazione pubblicata dal Venditore.</li>
-        <li><strong>Ordine</strong>: la richiesta del Cliente relativa a un&apos;offerta, secondo il flusso applicabile.</li>
-        <li><strong>Provider di pagamento</strong>: il soggetto terzo che fornisce l&apos;infrastruttura tecnica per il metodo di pagamento selezionato.</li>
+        <li><strong>Ordine</strong>: la richiesta del Cliente relativa a un'offerta, secondo il flusso applicabile.</li>
+        <li><strong>Provider di pagamento</strong>: il soggetto terzo che fornisce l'infrastruttura tecnica per il metodo di pagamento selezionato.</li>
       </ul>
     ),
   },
@@ -55,7 +55,7 @@ const sezioni = [
         </p>
         <p>
           Il Venditore cura le informazioni commerciali relative alle proprie offerte, la
-          disponibilità, la gestione degli ordini e l&apos;esecuzione della prestazione dovuta al
+          disponibilità, la gestione degli ordini e l'esecuzione della prestazione dovuta al
           Cliente secondo il rapporto applicabile.
         </p>
       </>
@@ -66,8 +66,8 @@ const sezioni = [
     contenuto: (
       <>
         <p>
-          InCittà mette a disposizione un&apos;infrastruttura tecnologica per pubblicare e
-          consultare offerte, gestire il checkout, trasmettere dati dell&apos;ordine, fornire
+          InCittà mette a disposizione un'infrastruttura tecnologica per pubblicare e
+          consultare offerte, gestire il checkout, trasmettere dati dell'ordine, fornire
           comunicazioni operative e supportare tecnicamente alcune fasi del rapporto tra
           Venditore e Cliente.
         </p>
@@ -85,7 +85,7 @@ const sezioni = [
     ),
   },
   {
-    titolo: "5. Requisiti per l&apos;apertura e gestione del negozio",
+    titolo: "5. Requisiti per l'apertura e gestione del negozio",
     contenuto: (
       <>
         <p>
@@ -94,7 +94,7 @@ const sezioni = [
           requisiti applicabili al proprio ruolo e alla propria attività.
         </p>
         <p>
-          L&apos;accesso alle funzioni operative può dipendere dallo stato dell&apos;account, dalle
+          L'accesso alle funzioni operative può dipendere dallo stato dell'account, dalle
           verifiche previste e dalla disponibilità dei servizi tecnici necessari.
         </p>
       </>
@@ -107,7 +107,7 @@ const sezioni = [
         <p>
           Il Venditore deve fornire informazioni accurate e aggiornate richieste da InCittà
           per la propria identificazione, per la pubblicazione delle offerte e per gli
-          obblighi applicabili alla piattaforma o all&apos;attività del Venditore.
+          obblighi applicabili alla piattaforma o all'attività del Venditore.
         </p>
         <p>
           InCittà può richiedere chiarimenti o documentazione aggiuntiva quando ciò sia
@@ -133,14 +133,14 @@ const sezioni = [
     contenuto: (
       <>
         <p>
-          L&apos;account utilizzato dal Venditore, il profilo del Venditore e il negozio sono
+          L'account utilizzato dal Venditore, il profilo del Venditore e il negozio sono
           elementi collegati secondo le regole tecniche della piattaforma. Il Venditore deve
-          utilizzare soltanto account e profili per i quali dispone dell&apos;autorizzazione
+          utilizzare soltanto account e profili per i quali dispone dell'autorizzazione
           necessaria.
         </p>
         <p>
           InCittà può chiedere al Venditore di confermare il collegamento tra il soggetto che
-          utilizza l&apos;account, il profilo del Venditore e il negozio gestito. Il Venditore non
+          utilizza l'account, il profilo del Venditore e il negozio gestito. Il Venditore non
           deve trasferire o condividere credenziali in modo contrario alle regole di sicurezza.
         </p>
       </>
@@ -174,7 +174,7 @@ const sezioni = [
         </p>
         <p>
           InCittà può effettuare controlli tecnici sui dati ricevuti e può chiedere correzioni
-          quando un&apos;informazione appare incompleta, incoerente o potenzialmente fuorviante.
+          quando un'informazione appare incompleta, incoerente o potenzialmente fuorviante.
           Tali controlli non sostituiscono la responsabilità del Venditore sulle proprie offerte.
         </p>
       </>
@@ -198,10 +198,10 @@ const sezioni = [
         <p>
           Il Venditore deve verificare e gestire gli ordini ricevuti secondo le proprie
           procedure e le condizioni applicabili alla vendita. Deve mantenere aggiornata la
-          disponibilità e comunicare tempestivamente eventuali impedimenti all&apos;esecuzione.
+          disponibilità e comunicare tempestivamente eventuali impedimenti all'esecuzione.
         </p>
         <p>
-          L&apos;ordine può essere soggetto a verifiche tecniche, pagamento, disponibilità e
+          L'ordine può essere soggetto a verifiche tecniche, pagamento, disponibilità e
           altri passaggi previsti dal flusso. La gestione tecnica della piattaforma non
           sostituisce gli adempimenti commerciali del Venditore.
         </p>
@@ -212,8 +212,8 @@ const sezioni = [
     titolo: "13. Preparazione, consegna, ritiro o esecuzione della prestazione",
     contenuto: (
       <p>
-        Il Venditore cura la preparazione del prodotto, la consegna, il ritiro o l&apos;esecuzione
-        del servizio secondo quanto indicato nell&apos;offerta e nell&apos;ordine. Deve rispettare i
+        Il Venditore cura la preparazione del prodotto, la consegna, il ritiro o l'esecuzione
+        del servizio secondo quanto indicato nell'offerta e nell'ordine. Deve rispettare i
         tempi e le modalità comunicati al Cliente, nei casi e nei limiti previsti dalla
         normativa applicabile, informando il Cliente e InCittà degli impedimenti rilevanti.
       </p>
@@ -277,7 +277,7 @@ const sezioni = [
         <p>
           InCittà può fornire strumenti tecnici per comunicare una richiesta e, dopo le
           autorizzazioni previste dal workflow, eseguire tecnicamente un rimborso tramite il
-          provider. L&apos;esecuzione tecnica non sostituisce la valutazione commerciale del
+          provider. L'esecuzione tecnica non sostituisce la valutazione commerciale del
           soggetto competente.
         </p>
         <p>
@@ -311,7 +311,7 @@ const sezioni = [
         <p>
           InCittà può mettere a disposizione un sistema tecnico di reclami, messaggistica,
           notifiche e conservazione delle comunicazioni. Il sistema non determina
-          automaticamente l&apos;esito commerciale della questione.
+          automaticamente l'esito commerciale della questione.
         </p>
       </>
     ),
@@ -321,9 +321,9 @@ const sezioni = [
     contenuto: (
       <p>
         Il Venditore deve offrire prodotti e servizi conformi ai requisiti applicabili alla
-        propria attività e deve adottare le misure necessarie per la sicurezza, l&apos;informazione
+        propria attività e deve adottare le misure necessarie per la sicurezza, l'informazione
         e la tracciabilità richieste dalla normativa pertinente. Deve informare tempestivamente
-        InCittà di rischi, richiami, divieti o altri eventi che possano rendere un&apos;offerta non
+        InCittà di rischi, richiami, divieti o altri eventi che possano rendere un'offerta non
         idonea alla pubblicazione.
       </p>
     ),
@@ -376,10 +376,10 @@ const sezioni = [
     ),
   },
   {
-    titolo: "24. Obblighi del Venditore nell&apos;utilizzo della piattaforma",
+    titolo: "24. Obblighi del Venditore nell'utilizzo della piattaforma",
     contenuto: (
       <ul>
-        <li>utilizzare l&apos;account e il negozio per finalità lecite e autorizzate;</li>
+        <li>utilizzare l'account e il negozio per finalità lecite e autorizzate;</li>
         <li>mantenere corretti i dati identificativi e commerciali;</li>
         <li>aggiornare offerte, prezzi e disponibilità;</li>
         <li>gestire gli ordini e le comunicazioni in modo tempestivo;</li>
@@ -409,7 +409,7 @@ const sezioni = [
         quando ciò sia ragionevolmente necessario in presenza di violazioni dei Termini, dati
         non corretti, attività fraudolente, rischi per la sicurezza, violazioni normative,
         richieste delle autorità, mancata collaborazione o violazioni reiterate.
-        L&apos;intervento deve essere comunicato o motivato secondo quanto previsto dagli accordi
+        L'intervento deve essere comunicato o motivato secondo quanto previsto dagli accordi
         applicabili e dalla normativa, salvo esigenze di sicurezza, riservatezza o urgenza che
         richiedano modalità diverse.
       </p>
@@ -421,7 +421,7 @@ const sezioni = [
       <p>
         Il Venditore deve collaborare in buona fede alle richieste ragionevoli di informazioni,
         chiarimenti o documenti necessarie per la sicurezza, la gestione tecnica degli ordini,
-        la verifica delle offerte, la gestione delle segnalazioni o l&apos;adempimento di obblighi
+        la verifica delle offerte, la gestione delle segnalazioni o l'adempimento di obblighi
         applicabili alla piattaforma. Le richieste devono essere valutate nel rispetto delle
         regole di protezione dei dati e degli obblighi di riservatezza.
       </p>
@@ -467,8 +467,8 @@ const sezioni = [
     titolo: "31. Durata e cessazione del rapporto con la piattaforma",
     contenuto: (
       <p>
-        Il rapporto tra Venditore e InCittà dura secondo le condizioni applicabili all&apos;account
-        e ai servizi utilizzati. Il Venditore può chiedere la cessazione dell&apos;utilizzo del
+        Il rapporto tra Venditore e InCittà dura secondo le condizioni applicabili all'account
+        e ai servizi utilizzati. Il Venditore può chiedere la cessazione dell'utilizzo del
         negozio secondo le procedure disponibili. La cessazione non elimina gli obblighi che,
         per loro natura, devono restare applicabili agli ordini, ai pagamenti, alle comunicazioni,
         ai dati o agli adempimenti già maturati.
@@ -479,7 +479,7 @@ const sezioni = [
     titolo: "32. Legge applicabile e foro",
     contenuto: (
       <p>
-        La legge applicabile e l&apos;eventuale foro competente saranno indicati nella versione
+        La legge applicabile e l'eventuale foro competente saranno indicati nella versione
         sottoposta a revisione legale, tenendo conto della natura del Venditore, del rapporto
         con InCittà e delle norme inderogabili eventualmente applicabili.
       </p>
