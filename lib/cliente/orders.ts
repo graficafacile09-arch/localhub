@@ -150,7 +150,7 @@ export type CreaOrdineInput = {
     carrier: CarrierCodice;
     /** Servizio del corriere (standard | express | online | locale). */
     servizio: ServizioCodice;
-    metodoPagamento: "carta" | "klarna" | "bonifico_istantaneo" | "bonifico";
+    metodoPagamento: "carta" | "klarna" | "paypal" | "sepa_debit" | "bonifico_istantaneo" | "bonifico";
   } | null;
   /** Indirizzo di fatturazione opzionale (solo modalità spedizione). */
   fatturazione?: FatturazioneCheckout | null;
@@ -293,6 +293,7 @@ export async function getOrdineConferma(
 /** Stato di un checkout INTENTO (sessione senza ordine) per la pagina risultato. */
 export type CheckoutConfermaStato = {
   status: string;
+  negozioNome: string;
   provider: string;
   importo: number;
 };
@@ -371,6 +372,9 @@ export async function getCheckoutConferma(
       status: String(sessione.status ?? ""),
       provider: sessione.provider ? String(sessione.provider) : "",
       importo: Number(sessione.amount ?? 0),
+      negozioNome: String(
+        ((sessione.checkout_payload as { negozioNome?: unknown } | null)?.negozioNome ?? "")
+      ),
     },
   };
 }
@@ -565,8 +569,9 @@ export async function creaOrdine(
     if (
       sp.metodoPagamento !== "carta" &&
       sp.metodoPagamento !== "bonifico_istantaneo" &&
-      sp.metodoPagamento !== "bonifico" &&
-      sp.metodoPagamento !== "klarna"
+      sp.metodoPagamento !== "klarna" &&
+      sp.metodoPagamento !== "paypal" &&
+      sp.metodoPagamento !== "sepa_debit"
     ) {
       return { ok: false, errore: "Metodo di pagamento non valido.", codice: "VALIDATION_ERROR", status: 422 };
     }
@@ -691,6 +696,8 @@ export async function creaOrdine(
     const pagamentoOnline =
       input.spedizione?.metodoPagamento === "carta" ||
       input.spedizione?.metodoPagamento === "klarna" ||
+      input.spedizione?.metodoPagamento === "paypal" ||
+      input.spedizione?.metodoPagamento === "sepa_debit" ||
       input.spedizione?.metodoPagamento === "bonifico_istantaneo";
     if (!pagamentoOnline) {
       await inviaEmailConfermaOrdine(esito.ordine.id).catch(() => {});
