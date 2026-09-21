@@ -101,6 +101,14 @@ export default async function RootLayout({
           <a href="/privacy" className="font-semibold text-blue-700 underline-offset-2 hover:underline">
             Privacy
           </a>
+          <span aria-hidden="true" className="mx-2">·</span>
+          <a href="/termini" className="font-semibold text-blue-700 underline-offset-2 hover:underline">
+            Termini e condizioni
+          </a>
+          <span aria-hidden="true" className="mx-2">·</span>
+          <a href="/venditori" className="font-semibold text-blue-700 underline-offset-2 hover:underline">
+            Termini per i Venditori
+          </a>
             <span aria-hidden="true" className="mx-2">·</span>
             <a href="/termini" className="font-semibold text-blue-700 underline-offset-2 hover:underline">
               Termini e condizioni
