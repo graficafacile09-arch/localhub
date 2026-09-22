@@ -350,13 +350,15 @@ export function riconciliaOrdiniPayout(
     ordiniConStatoNonValido,
     ordiniSenzaDataPagamento,
     ordiniDuplicati,
+    ordiniFuoriPeriodo,
     errori: ordini.length !== payout.nOrdini
       ? [...errori, "Il numero di ordini associati non coincide con quello registrato nel payout."]
       : errori,
   };
 }
 
-/**
+/** Dettaglio payout (admin, con ordini e riconciliazione read-only). */
+export async function getPayoutAdminDettaglio(
   payoutId: string
 ): Promise<PayoutAdminRiga & { ordini: Array<Record<string, unknown>>; riconciliazione: RiconciliazionePayoutAdmin } | null> {
   const db = await createServerSupabaseClient();
