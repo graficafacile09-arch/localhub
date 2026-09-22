@@ -34,7 +34,7 @@
 
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { risolviCredenzialiGateway } from "./config";
-import { getGatewayProvider, providerGatewayImplementato } from "./registry";
+import { getGatewayProvider } from "./registry";
 
 /** Stato di pagamento finale/parziale di un rimborso (macchina a stati esistente). */
 export type StatoRimborso = "refunded" | "partially_refunded";
@@ -156,8 +156,15 @@ export async function rimborsaOrdine(opts: {
   }
 
   const db = createAdminSupabaseClient();
+  // Le RPC di questo blocco sono già presenti in produzione ma non fanno
+  // parte del type-map generato del client Supabase: manteniamo qui il
+  // contratto runtime esplicito senza falsare i tipi globali.
+  const callRpc = db.rpc.bind(db) as unknown as (
+    name: string,
+    args: Record<string, unknown>
+  ) => Promise<{ data: unknown; error: { message?: string } | null }>;
 
-  const { data: prepara, error: preparaErr } = await db.rpc("pagamenti_rimborso_operazione_prepara", {
+  const { data: prepara, error: preparaErr } = await callRpc("pagamenti_rimborso_operazione_prepara", {
     p_ordine_id: opts.ordineId,
     p_importo: opts.importo,
     p_merchant_user_id: opts.userId,
@@ -184,7 +191,7 @@ export async function rimborsaOrdine(opts: {
     return { ok: true, ordineId: String(prep.ordine_id ?? opts.ordineId), importoRichiesto, importoRimborsato: importoRichiesto, paymentStatus: paymentStatus || "refunded", residuo, refundId: String(prep.refund_id), pending: false };
   }
 
-  const { data: claim, error: claimErr } = await db.rpc("pagamenti_rimborso_operazione_claim", { p_operazione_id: operazioneId });
+  const { data: claim, error: claimErr } = await callRpc("pagamenti_rimborso_operazione_claim", { p_operazione_id: operazioneId });
   if (claimErr) return { ok: false, codice: "SAVE_FAILED", errore: "Impossibile acquisire l'operazione di rimborso.", status: 500 };
 
   const claimed = (claim ?? null) as {
@@ -202,7 +209,7 @@ export async function rimborsaOrdine(opts: {
   const provider = String(claimed.provider ?? prep.provider ?? "");
   const paymentId = String(claimed.payment_id ?? prep.payment_id ?? "");
   if (provider !== "stripe" || !paymentId) {
-    await db.rpc("pagamenti_rimborso_operazione_fallita", { p_operazione_id: operazioneId, p_stato: "failed", p_codice: "PAGAMENTO_NON_RIMBORSABILE", p_dettaglio: "Nessun pagamento Stripe rimborsabile su questo ordine." });
+    await callRpc("pagamenti_rimborso_operazione_fallita", { p_operazione_id: operazioneId, p_stato: "failed", p_codice: "PAGAMENTO_NON_RIMBORSABILE", p_dettaglio: "Nessun pagamento Stripe rimborsabile su questo ordine." });
     return { ok: false, codice: "PAGAMENTO_NON_RIMBORSABILE", errore: "Nessun pagamento gateway rimborsabile su questo ordine.", status: 422 };
   }
 
@@ -228,7 +235,7 @@ export async function rimborsaOrdine(opts: {
     return { ok: true, pending: true, ordineId: String(prep.ordine_id ?? opts.ordineId), importoRichiesto, paymentStatus: paymentStatus || "paid", residuo, refundId: null };
   }
 
-  const { data: completa, error: completaErr } = await db.rpc("pagamenti_rimborso_operazione_completa", { p_operazione_id: operazioneId, p_refund_id: refundId });
+  const { data: completa, error: completaErr } = await callRpc("pagamenti_rimborso_operazione_completa", { p_operazione_id: operazioneId, p_refund_id: refundId });
   if (completaErr) {
     await db.rpc("pagamenti_rimborso_operazione_fallita", { p_operazione_id: operazioneId, p_stato: "reconciliation_required", p_codice: "STATE_NOT_UPDATED", p_dettaglio: "Refund creato dal provider ma finalizzazione DB non disponibile." });
     return { ok: true, pending: true, ordineId: String(prep.ordine_id ?? opts.ordineId), importoRichiesto, paymentStatus: paymentStatus || "paid", residuo, refundId };
