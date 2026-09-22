@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Coins, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, CalendarRange, Coins, Loader2, X } from "lucide-react";
 import FiltroDataRange from "@/components/ui/FiltroDataRange";
 import type { PayoutAdminRiga, RiepilogoPayoutAdmin } from "@/lib/amministratore/payout";
 
@@ -71,6 +71,11 @@ export default function PayoutAdminClient() {
   } | null>(null);
   const [caricando, setCaricando] = useState(true);
   const [errore, setErrore] = useState<string | null>(null);
+  const [periodoDa, setPeriodoDa] = useState(() => `${new Date().getFullYear()}-01-01`);
+  const [periodoA, setPeriodoA] = useState(() => `${new Date().getFullYear()}-12-31`);
+  const [calcolando, setCalcolando] = useState(false);
+  const [messaggioCalcolo, setMessaggioCalcolo] = useState<string | null>(null);
+  const [erroreCalcolo, setErroreCalcolo] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/amministratore/negozi")
@@ -213,6 +218,64 @@ export default function PayoutAdminClient() {
             Azzera filtri
           </button>
         </div>
+      </div>
+
+
+      {/* Calcolo payout admin */}
+      <div className="rounded-[1.75rem] border border-white/70 bg-white p-4 shadow-sm md:p-5">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="min-w-[190px]">
+              <label htmlFor="payout-negozio" className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-slate-400">Negozio</label>
+              <select id="payout-negozio" value={filtri.negozioId} onChange={(e) => setFiltro("negozioId", e.target.value)} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-yellow-400 focus:ring-2 focus:ring-yellow-100">
+                <option value="">Seleziona negozio</option>
+                {negozi.map((n) => <option key={n.id} value={n.id}>{n.nome}</option>)}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="payout-periodo-da" className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-slate-400">Periodo da</label>
+              <input id="payout-periodo-da" type="date" value={periodoDa} onChange={(e) => setPeriodoDa(e.target.value)} className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100" />
+            </div>
+            <div>
+              <label htmlFor="payout-periodo-a" className="mb-1 block text-[11px] font-bold uppercase tracking-wider text-slate-400">Periodo a</label>
+              <input id="payout-periodo-a" type="date" value={periodoA} onChange={(e) => setPeriodoA(e.target.value)} className="rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none focus:border-blue-300 focus:ring-2 focus:ring-blue-100" />
+            </div>
+            <button
+              type="button"
+              disabled={calcolando || !filtri.negozioId}
+              onClick={async () => {
+                setCalcolando(true);
+                setMessaggioCalcolo(null);
+                setErroreCalcolo(null);
+                try {
+                  const res = await fetch("/api/amministratore/payout", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ negozioId: filtri.negozioId, periodoDa, periodoA }),
+                  });
+                  const json = (await res.json().catch(() => null)) as { error?: { message?: string }; data?: { giaEsistente?: boolean } | null };
+                  if (!res.ok) {
+                    setErroreCalcolo(json?.error?.message ?? "Impossibile calcolare il payout.");
+                    return;
+                  }
+                  setMessaggioCalcolo(json?.data?.giaEsistente ? "Payout già esistente per questo periodo." : "Payout calcolato correttamente.");
+                  await carica();
+                } catch {
+                  setErroreCalcolo("Errore di rete. Riprova.");
+                } finally {
+                  setCalcolando(false);
+                }
+              }}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-blue-700 disabled:opacity-50"
+            >
+              {calcolando ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <CalendarRange className="h-4 w-4" aria-hidden />}
+              Calcola payout
+            </button>
+          </div>
+          <p className="max-w-xs text-[11px] leading-4 text-slate-400">Il calcolo usa esclusivamente gli snapshot economici degli ordini e resta interno. Nessun pagamento reale viene creato.</p>
+        </div>
+        {messaggioCalcolo && <p className="mt-3 rounded-xl bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">{messaggioCalcolo}</p>}
+        {erroreCalcolo && <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">{erroreCalcolo}</p>}
       </div>
 
       {/* Stati */}
