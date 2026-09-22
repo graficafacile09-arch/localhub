@@ -57,7 +57,7 @@ export async function POST(request: Request) {
   const negozioId = typeof body.negozioId === "string" ? body.negozioId.trim() : "";
   const periodoDa = typeof body.periodoDa === "string" ? body.periodoDa.trim() : "";
   const periodoA = typeof body.periodoA === "string" ? body.periodoA.trim() : "";
-  if (!negozioId || !/^\\d{4}-\\d{2}-\\d{2}$/.test(periodoDa) || !/^\\d{4}-\\d{2}-\\d{2}$/.test(periodoA)) {
+  if (!negozioId || !/^\d{4}-\d{2}-\d{2}$/.test(periodoDa) || !/^\\d{4}-\\d{2}-\\d{2}$/.test(periodoA)) {
     return apiError("VALIDATION_ERROR", "Negozio o periodo non valido.", 422);
   }
   if (periodoDa > periodoA) {
