@@ -85,6 +85,7 @@ export default function RimborsoSection({
         error?: { code?: string; message?: string };
         data?: {
           success?: boolean;
+          pending?: boolean;
           importoRimborsato?: number;
           paymentStatus?: string;
           residuo?: number;
@@ -94,9 +95,13 @@ export default function RimborsoSection({
         setErrore(json.error?.message ?? "Rimborso non riuscito.");
         return;
       }
-      setSuccesso(
-        `Rimborso di ${formattaEuro(json.data.importoRimborsato ?? 0)} registrato (${json.data.paymentStatus === "refunded" ? "totale" : "parziale"}).`
-      );
+      if (json.data.pending) {
+        setSuccesso("Rimborso inviato a riconciliazione. Non ripetere l'operazione.");
+      } else {
+        setSuccesso(
+          `Rimborso di ${formattaEuro(json.data.importoRimborsato ?? 0)} registrato (${json.data.paymentStatus === "refunded" ? "totale" : "parziale"}).`
+        );
+      }
       setAperto(false);
       router.refresh();
     } catch {

@@ -34,7 +34,7 @@
 
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { risolviCredenzialiGateway } from "./config";
-import { getGatewayProvider, providerGatewayImplementato } from "./registry";
+import { getGatewayProvider } from "./registry";
 
 /** Stato di pagamento finale/parziale di un rimborso (macchina a stati esistente). */
 export type StatoRimborso = "refunded" | "partially_refunded";
@@ -46,15 +46,8 @@ export const MAX_MOTIVO_RIMBORSO = 200;
 const PROVIDER_RIMBORSABILI = ["stripe"] as const;
 
 export type EsitoRimborso =
-  | {
-      ok: true;
-      ordineId: string;
-      importoRichiesto: number;
-      importoRimborsato: number;
-      paymentStatus: string;
-      residuo: number;
-      refundId: string | null;
-    }
+  | { ok: true; ordineId: string; importoRichiesto: number; importoRimborsato: number; paymentStatus: string; residuo: number; refundId: string | null; pending?: false }
+  | { ok: true; pending: true; ordineId: string; importoRichiesto: number; paymentStatus: string; residuo: number; refundId: string | null }
   | { ok: false; codice: string; errore: string; status: number };
 
 type RispostaPrepara = {
@@ -154,162 +147,124 @@ export async function rimborsaOrdine(opts: {
   importo: unknown;
   motivo?: string | null;
   userId: string;
+  idempotencyKey: string;
 }): Promise<EsitoRimborso> {
-  if (!opts.ordineId) {
-    return { ok: false, codice: "VALIDATION_ERROR", errore: "Ordine non valido.", status: 422 };
-  }
+  if (!opts.ordineId) return { ok: false, codice: "VALIDATION_ERROR", errore: "Ordine non valido.", status: 422 };
+  if (!opts.idempotencyKey || opts.idempotencyKey.trim().length > 128) return { ok: false, codice: "VALIDATION_ERROR", errore: "Chiave di idempotenza non valida.", status: 422 };
   if (opts.motivo && opts.motivo.length > MAX_MOTIVO_RIMBORSO) {
-    return {
-      ok: false,
-      codice: "VALIDATION_ERROR",
-      errore: `Il motivo supera ${MAX_MOTIVO_RIMBORSO} caratteri.`,
-      status: 422,
-    };
+    return { ok: false, codice: "VALIDATION_ERROR", errore: `Il motivo supera ${MAX_MOTIVO_RIMBORSO} caratteri.`, status: 422 };
   }
 
   const db = createAdminSupabaseClient();
+  // Le RPC di questo blocco sono già presenti in produzione ma non fanno
+  // parte del type-map generato del client Supabase: manteniamo qui il
+  // contratto runtime esplicito senza falsare i tipi globali.
+  const callRpc = db.rpc.bind(db) as unknown as (
+    name: string,
+    args: Record<string, unknown>
+  ) => Promise<{ data: unknown; error: { message?: string } | null }>;
 
-  // ── 1. Prenotazione atomica (validazioni + residuo + over-refund) ─────
-  const { data: prepara, error: rpcErr } = await db.rpc("pagamenti_prepara_rimborso", {
+  const { data: prepara, error: preparaErr } = await callRpc("pagamenti_rimborso_operazione_prepara", {
     p_ordine_id: opts.ordineId,
     p_importo: opts.importo,
     p_merchant_user_id: opts.userId,
+    p_idempotency_key: opts.idempotencyKey.trim(),
   });
-  if (rpcErr) {
-    return { ok: false, codice: "SAVE_FAILED", errore: "Impossibile preparare il rimborso.", status: 500 };
-  }
-  const prep = (prepara ?? null) as RispostaPrepara | null;
-  if (!prep || prep.ok !== true) {
+  if (preparaErr) return { ok: false, codice: "SAVE_FAILED", errore: "Impossibile preparare il rimborso.", status: 500 };
+
+  const prep = (prepara ?? null) as RispostaPrepara & {
+    esistente?: boolean; operazione_id?: string; stato?: string; refund_id?: string | null; payment_status?: string | null;
+  };
+  if (!prep || prep.ok !== true || !prep.operazione_id) {
     const codice = String(prep?.codice ?? "SAVE_FAILED");
-    const status =
-      codice === "FORBIDDEN" ? 403 : codice === "ORDINE_NON_TROVATO" ? 404 : 422;
-    return {
-      ok: false,
-      codice,
-      errore: String(prep?.messaggio ?? "Rimborso non consentito."),
-      status,
-    };
+    const status = codice === "FORBIDDEN" ? 403 : codice === "ORDINE_NON_TROVATO" ? 404 : 422;
+    return { ok: false, codice, errore: String(prep?.messaggio ?? "Rimborso non consentito."), status };
   }
 
-  const ordineId = String(prep.ordine_id ?? opts.ordineId);
-  const provider = String(prep.provider ?? "");
-  const paymentId = String(prep.payment_id ?? "");
+  const operazioneId = String(prep.operazione_id);
   const importoRichiesto = Number(prep.importo_richiesto ?? opts.importo);
-  const residuoNuovo = Number(prep.residuo ?? 0);
-  const statoAtteso = (prep.stato_nuovo ?? "partially_refunded") as StatoRimborso;
+  const statoOperazione = String(prep.stato ?? "pending");
+  const paymentStatus = String(prep.payment_status ?? "");
+  const residuo = Number(prep.residuo ?? 0);
 
-  // ── 2. Provider gateway + credenziali (fail-closed) ───────────────────
-  if (!provider || !PROVIDER_RIMBORSABILI.includes(provider as never) || !paymentId) {
-    await rilasciaPrenotazione(ordineId, importoRichiesto);
-    return {
-      ok: false,
-      codice: "PAGAMENTO_NON_RIMBORSABILE",
-      errore: "Nessun pagamento gateway rimborsabile su questo ordine.",
-      status: 422,
-    };
-  }
-  if (!providerGatewayImplementato(provider)) {
-    await rilasciaPrenotazione(ordineId, importoRichiesto);
-    return {
-      ok: false,
-      codice: "PROVIDER_NON_DISPONIBILE",
-      errore: "Il provider di pagamento non è disponibile.",
-      status: 422,
-    };
-  }
-  const gateway = getGatewayProvider(provider);
-  if (!gateway) {
-    await rilasciaPrenotazione(ordineId, importoRichiesto);
-    return {
-      ok: false,
-      codice: "PROVIDER_NON_DISPONIBILE",
-      errore: "Il provider di pagamento non è disponibile.",
-      status: 422,
-    };
+  if (statoOperazione === "succeeded" && prep.refund_id) {
+    return { ok: true, ordineId: String(prep.ordine_id ?? opts.ordineId), importoRichiesto, importoRimborsato: importoRichiesto, paymentStatus: paymentStatus || "refunded", residuo, refundId: String(prep.refund_id), pending: false };
   }
 
-  // Credenziali: Stripe Connect (account collegato) oppure direct (secret).
-  // Il negozioId serve per risolvere la config; lo leggiamo dall'ordine.
-  const { data: ordineRow } = await db
-    .from("ordini")
-    .select("negozio_id")
-    .eq("id", ordineId)
-    .maybeSingle();
+  const { data: claim, error: claimErr } = await callRpc("pagamenti_rimborso_operazione_claim", { p_operazione_id: operazioneId });
+  if (claimErr) return { ok: false, codice: "SAVE_FAILED", errore: "Impossibile acquisire l'operazione di rimborso.", status: 500 };
+
+  const claimed = (claim ?? null) as {
+    ok?: boolean; claimed?: boolean; stato?: string; provider?: string; payment_id?: string | null; idempotency_key?: string; importo_richiesto?: number; refund_id?: string | null;
+  };
+  if (claimed?.ok !== true) return { ok: false, codice: "SAVE_FAILED", errore: "Impossibile acquisire l'operazione di rimborso.", status: 500 };
+
+  if (claimed.claimed !== true) {
+    if (claimed.stato === "succeeded" && claimed.refund_id) {
+      return { ok: true, ordineId: String(prep.ordine_id ?? opts.ordineId), importoRichiesto, importoRimborsato: importoRichiesto, paymentStatus: paymentStatus || "refunded", residuo, refundId: claimed.refund_id, pending: false };
+    }
+    return { ok: true, pending: true, ordineId: String(prep.ordine_id ?? opts.ordineId), importoRichiesto, paymentStatus: paymentStatus || "paid", residuo, refundId: claimed.refund_id ?? null };
+  }
+
+  const provider = String(claimed.provider ?? prep.provider ?? "");
+  const paymentId = String(claimed.payment_id ?? prep.payment_id ?? "");
+  if (provider !== "stripe" || !paymentId) {
+    await callRpc("pagamenti_rimborso_operazione_fallita", { p_operazione_id: operazioneId, p_stato: "failed", p_codice: "PAGAMENTO_NON_RIMBORSABILE", p_dettaglio: "Nessun pagamento Stripe rimborsabile su questo ordine." });
+    return { ok: false, codice: "PAGAMENTO_NON_RIMBORSABILE", errore: "Nessun pagamento gateway rimborsabile su questo ordine.", status: 422 };
+  }
+
+  const { data: ordineRow } = await db.from("ordini").select("negozio_id").eq("id", opts.ordineId).maybeSingle();
   const negozioId = ordineRow?.negozio_id ? String(ordineRow.negozio_id) : "";
-  const risolto = negozioId
-    ? await risolviCredenzialiGateway(negozioId, provider)
-    : { pronto: false as const, cred: null };
+  const risolto = negozioId ? await risolviCredenzialiGateway(negozioId, provider) : { pronto: false as const, cred: null };
   if (!risolto.pronto || !risolto.cred) {
-    await rilasciaPrenotazione(ordineId, importoRichiesto);
-    return {
-      ok: false,
-      codice: "PROVIDER_NON_CONFIGURATO",
-      errore: "Il metodo di pagamento non è più configurato per il negozio.",
-      status: 422,
-    };
+    await db.rpc("pagamenti_rimborso_operazione_fallita", { p_operazione_id: operazioneId, p_stato: "failed", p_codice: "PROVIDER_NON_CONFIGURATO", p_dettaglio: "Il metodo di pagamento non è più configurato per il negozio." });
+    return { ok: false, codice: "PROVIDER_NON_CONFIGURATO", errore: "Il metodo di pagamento non è più configurato per il negozio.", status: 422 };
   }
 
-  // ── 3. Chiamata al provider (fonte del rimborso) ──────────────────────
   let refundId: string | null = null;
   try {
-    const esito = await gateway.rimborsa(paymentId, importoRichiesto, risolto.cred);
-    refundId = esito.refundId ?? null;
-  } catch {
-    await rilasciaPrenotazione(ordineId, importoRichiesto);
-    return {
-      ok: false,
-      codice: "RIMBORSO_PROVIDER_FALLITO",
-      errore: "Il provider ha rifiutato il rimborso. Nessun importo è stato addebitato.",
-      status: 502,
-    };
-  }
-
-  // ── 4. Stato pagamento via RPC esistente (macchina a stati) ───────────
-  const { data: statoRes, error: statoErr } = await db.rpc("aggiorna_payment_status", {
-    p_ordine_id: ordineId,
-    p_nuovo_stato: statoAtteso,
-    p_payment_id: null,
-    p_transaction_id: refundId,
-    p_importo: null,
-    p_valuta: null,
-    p_expires_at: null,
-  });
-  if (statoErr || (statoRes as { ok?: boolean } | null)?.ok !== true) {
-    // Il rimborso al provider È avvenuto: NON rilasciamo la prenotazione
-    // (l'importo risulta già rimborsato al provider). Registriamo l'evento
-    // e ritorniamo un errore transitorio: il webhook del provider farà la
-    // riconciliazione definitiva.
-    await registraEventoStorico({
-      ordineId,
-      importo: importoRichiesto,
-      stato: statoAtteso,
-      motivo: opts.motivo,
-      autoreId: opts.userId,
+    const gateway = getGatewayProvider(provider);
+    if (!gateway) throw new Error("Provider non disponibile.");
+    const esito = await gateway.rimborsa(paymentId, importoRichiesto, risolto.cred, {
+      idempotencyKey: String(claimed.idempotency_key ?? opts.idempotencyKey.trim()),
+      operationId: operazioneId,
     });
-    return {
-      ok: false,
-      codice: "STATO_NON_AGGIORNATO",
-      errore: "Rimborso eseguito dal provider ma stato non aggiornato: verrà riconciliato dal webhook.",
-      status: 502,
-    };
+    refundId = esito.refundId ?? null;
+  } catch (err) {
+    await db.rpc("pagamenti_rimborso_operazione_fallita", { p_operazione_id: operazioneId, p_stato: "reconciliation_required", p_codice: "RIMBORSO_PROVIDER_INDETERMINATO", p_dettaglio: err instanceof Error ? err.message : "Risposta provider indeterminata." });
+    return { ok: true, pending: true, ordineId: String(prep.ordine_id ?? opts.ordineId), importoRichiesto, paymentStatus: paymentStatus || "paid", residuo, refundId: null };
   }
 
-  // ── 5. Storico ordine (operazione admin) + risposta ───────────────────
+  const { data: completa, error: completaErr } = await callRpc("pagamenti_rimborso_operazione_completa", { p_operazione_id: operazioneId, p_refund_id: refundId });
+  if (completaErr) {
+    await db.rpc("pagamenti_rimborso_operazione_fallita", { p_operazione_id: operazioneId, p_stato: "reconciliation_required", p_codice: "STATE_NOT_UPDATED", p_dettaglio: "Refund creato dal provider ma finalizzazione DB non disponibile." });
+    return { ok: true, pending: true, ordineId: String(prep.ordine_id ?? opts.ordineId), importoRichiesto, paymentStatus: paymentStatus || "paid", residuo, refundId };
+  }
+
+  const finale = (completa ?? null) as { ok?: boolean; stato?: string; codice?: string; refund_id?: string | null; importo_rimborsato?: number; payment_status?: string; residuo?: number };
+  if (finale.ok !== true || finale.stato !== "succeeded") {
+    if (finale.stato === "reconciliation_required") {
+      return { ok: true, pending: true, ordineId: String(prep.ordine_id ?? opts.ordineId), importoRichiesto, paymentStatus: paymentStatus || "paid", residuo: Number(finale.residuo ?? residuo), refundId: finale.refund_id ?? refundId };
+    }
+    return { ok: false, codice: String(finale.codice ?? "STATE_NOT_UPDATED"), errore: "Impossibile finalizzare il rimborso.", status: 502 };
+  }
+
   await registraEventoStorico({
-    ordineId,
-    importo: importoRichiesto,
-    stato: statoAtteso,
+    ordineId: String(prep.ordine_id ?? opts.ordineId),
+    importo: Number(finale.importo_rimborsato ?? importoRichiesto),
+    stato: finale.payment_status === "refunded" ? "refunded" : "partially_refunded",
     motivo: opts.motivo,
     autoreId: opts.userId,
   });
 
   return {
     ok: true,
-    ordineId,
+    ordineId: String(prep.ordine_id ?? opts.ordineId),
     importoRichiesto,
-    importoRimborsato: importoRichiesto,
-    paymentStatus: statoAtteso,
-    residuo: residuoNuovo,
-    refundId,
+    importoRimborsato: Number(finale.importo_rimborsato ?? importoRichiesto),
+    paymentStatus: String(finale.payment_status ?? "partially_refunded"),
+    residuo: Number(finale.residuo ?? residuo),
+    refundId: finale.refund_id ?? refundId,
+    pending: false,
   };
 }
