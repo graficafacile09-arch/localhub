@@ -288,13 +288,36 @@ async function main() {
 
     const ids = { pA1: String(pA1), pA2: String(pA2), pAV: String(pAV), v1: String(v1Id), pB: String(pB) };
 
+    // Abilita il bonifico diretto sul negozio A con dati fittizi ma formalmente
+    // validi. Il test non usa mai dati bancari reali.
+    const { data: bonificoCfg, error: bonificoCfgErr } = await db.rpc("pagamenti_bonifico_diretto_salva", {
+      p_negozio_id: negozioAId,
+      p_attivo: true,
+      p_iban: "IT60X0542811101000000123456",
+      p_bic_swift: "BPPIITRRXXX",
+      p_bank_account_name: "F26 Test Account",
+      p_bank_name: "F26 Test Bank",
+    });
+    if (bonificoCfgErr || !(bonificoCfg as { ok?: boolean } | null)?.ok) {
+      fail("Configurazione bonifico diretto F26 fallita: " + (bonificoCfgErr?.message ?? JSON.stringify(bonificoCfg)));
+    }
+
     const baseCheckout = {
       modalita: "spedizione" as const,
       cliente: { nome: "Mario", cognome: "Rossi", telefono: "3331234567", email: "f26@localhub.test" },
       spedizione: {
         indirizzo: "Via Test 1", cap: "87100", citta: "Cosenza", provincia: "CS",
-        carrier: "poste_italiane", servizio: "standard", metodoPagamento: "bonifico" as const,
+        carrier: "poste_italiane", servizio: "standard", metodoPagamento: "bonifico_diretto_venditore" as const,
       },
+    };
+
+    // Checkout di prova senza gateway: usato solo negli scenari multi-venditore,
+    // perché il bonifico diretto al venditore è deliberatamente limitato a un
+    // singolo venditore per checkout.
+    const baseCheckoutRitiro = {
+      modalita: "ritiro" as const,
+      cliente: { nome: "Mario", cognome: "Rossi", telefono: "3331234567", email: "f26@localhub.test" },
+      ritiro: { data: "2030-01-15", fascia: "09:00-12:00" },
     };
 
     await avviaServer();
@@ -309,7 +332,7 @@ async function main() {
     }
 
     // ── T2: guest, 1 negozio multi-riga con VARIANTE → 201 ────────────────
-    console.log("\n[T2] Guest, 1 negozio (legacy + variante), spedizione, bonifico → 201");
+    console.log("\n[T2] Guest, 1 negozio (legacy + variante), spedizione, bonifico diretto → 201");
     let ordineT2Id: string | null = null;
     {
       const key = `f26-t2-${ts}`;
@@ -327,7 +350,8 @@ async function main() {
       check("negozio risolto dal DB (A)", String(ordine?.negozioId) === negozioAId, ordine?.negozioId);
       check("totale server-side = 32.70 (10×2 + 6×1 + 6.70 spedizione)", Number(ordine?.totale) === 32.7, ordine?.totale);
       check("2 righe nello snapshot", Array.isArray(ordine?.righe) && ordine.righe.length === 2, ordine?.righe);
-      check("bonifico → nessuna sessione (pagamento null)", ordine?.pagamento == null, ordine?.pagamento);
+      check("bonifico diretto → nessuna sessione provider", ordine?.pagamento == null, ordine?.pagamento);
+      check("bonifico diretto → payment_status pending", ordine?.paymentStatus === "pending", ordine?.paymentStatus);
       const rigaV = ordine?.righe?.find((r: any) => r.prodottoId === ids.pAV);
       check("snapshot variante: prezzo 6.00 (variante, non padre)", Number(rigaV?.prezzoUnitario) === 6.0, rigaV);
       ordineT2Id = String(ordine?.ordineId);
@@ -352,7 +376,7 @@ async function main() {
     {
       const key = `f26-t3-${ts}`;
       const esito = await postJson("/api/cliente/ordini/carrello", {
-        checkoutKey: key, ...baseCheckout,
+        checkoutKey: key, ...baseCheckoutRitiro,
         righe: [
           { prodottoId: ids.pA1, varianteId: null, quantita: 1 },
           { prodottoId: ids.pA2, varianteId: null, quantita: 1 },
@@ -366,8 +390,8 @@ async function main() {
       const oB = ordini.find((o: any) => String(o.negozioId) === negozioBId);
       check("ordine A presente", Boolean(oA), ordini);
       check("ordine B presente", Boolean(oB), ordini);
-      check("totale A = 36.40 (10 + 20.5 + 5.90)", oA && Number(oA.totale) === 36.4, oA?.totale);
-      check("totale B = 11.90 (3×2 + 5.90 spedizione UNA volta)", oB && Number(oB.totale) === 11.9, oB?.totale);
+      check("totale A = 30.50 (10 + 20.5, ritiro)", oA && Number(oA.totale) === 30.5, oA?.totale);
+      check("totale B = 6.00 (3×2, ritiro)", oB && Number(oB.totale) === 6.0, oB?.totale);
       for (const o of ordini) ordiniCreati.push(String(o.ordineId));
 
       const chiaveA = chiavePerNegozio(key, negozioAId!);
@@ -447,7 +471,7 @@ async function main() {
       const key = `f26-t6-${ts}`;
       await db.from("prodotti").update({ quantita_disponibile: 2 }).eq("id", pB);
       const esito = await postJson("/api/cliente/ordini/carrello", {
-        checkoutKey: key, ...baseCheckout,
+        checkoutKey: key, ...baseCheckoutRitiro,
         righe: [
           { prodottoId: ids.pA1, varianteId: null, quantita: 1 },
           { prodottoId: ids.pA2, varianteId: null, quantita: 1 },
@@ -541,11 +565,11 @@ async function main() {
       mockStripe = await avviaMockStripe();
       const gatewayOpts = { host: "127.0.0.1", port: mockStripe.port, protocol: "http" as const };
 
-      // 2 ordini via API (bonifico: la route NON crea la sessione), poi una
+      // 2 ordini via API (ritiro: la route NON crea la sessione), poi una
       // sessione per ciascuno con il VERO orchestratore + gateway mock.
       const key = `f26-t9-${ts}`;
       const esito = await postJson("/api/cliente/ordini/carrello", {
-        checkoutKey: key, ...baseCheckout,
+        checkoutKey: key, ...baseCheckoutRitiro,
         righe: [
           { prodottoId: ids.pA1, varianteId: null, quantita: 1 }, // negozio A
           { prodottoId: ids.pB, varianteId: null, quantita: 1 }, // negozio B
@@ -756,7 +780,7 @@ async function main() {
         cliente: { nome: "Anna", cognome: "Bianchi", telefono: null, email: "f26-bn@localhub.test" },
         spedizione: {
           indirizzo: "Via Test 2", cap: "87100", citta: "Cosenza", provincia: "CS",
-          carrier: "poste_italiane", servizio: "standard", metodoPagamento: "bonifico",
+          carrier: "poste_italiane", servizio: "standard", metodoPagamento: "bonifico_diretto_venditore",
         },
       };
       const r1 = await postJson("/api/cliente/ordini", body);
