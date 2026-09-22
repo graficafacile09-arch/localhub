@@ -193,6 +193,52 @@ export async function getPayoutAdmin(
   };
 }
 
+/**
+ * Calcola un payout per un negozio e periodo (admin).
+ * Il calcolo resta interno: non crea Transfer/Payout Stripe reali.
+ */
+export async function calcolaPayoutAdmin(
+  negozioId: string,
+  periodoDa: string,
+  periodoA: string,
+  creatoDa?: string | null
+): Promise<
+  | { ok: true; giaEsistente: boolean; payout: Record<string, unknown> }
+  | { ok: false; codice: string; messaggio: string; status: number }
+> {
+  const db = createAdminSupabaseClient();
+  const { data, error } = await db.rpc("payout_calcola", {
+    p_negozio_id: negozioId,
+    p_periodo_da: periodoDa,
+    p_periodo_a: periodoA,
+    p_creato_da: creatoDa ?? null,
+  });
+  if (error) {
+    return { ok: false, codice: "SAVE_FAILED", messaggio: "Impossibile calcolare il payout.", status: 500 };
+  }
+  const esito = data as unknown as {
+    ok?: boolean;
+    giaEsistente?: boolean;
+    payout?: Record<string, unknown>;
+    codice?: string;
+    messaggio?: string;
+  };
+  if (esito?.ok !== true || !esito.payout) {
+    const codice = String(esito?.codice ?? "SAVE_FAILED");
+    return {
+      ok: false,
+      codice,
+      messaggio: String(esito?.messaggio ?? "Impossibile calcolare il payout."),
+      status: codice === "NEGOZIO_NON_TROVATO" ? 404 : codice === "FORBIDDEN" ? 403 : 409,
+    };
+  }
+  return {
+    ok: true,
+    giaEsistente: esito.giaEsistente === true,
+    payout: esito.payout,
+  };
+}
+
 /** Dettaglio payout (admin, read-only). */
 export async function getPayoutDettaglioAdmin(
   payoutId: string
