@@ -302,6 +302,21 @@ async function main() {
       fail("Configurazione bonifico diretto F26 fallita: " + (bonificoCfgErr?.message ?? JSON.stringify(bonificoCfg)));
     }
 
+    // La RPC di checkout spedizione è fail-closed: il corriere/servizio
+    // deve risultare esplicitamente attivo per il negozio. Il fixture F2.6
+    // deve quindi configurare lo stesso servizio che il test seleziona.
+    const { error: spedAErr } = await db.from("negozio_metodi_spedizione").upsert(
+      { negozio_id: negozioAId, carrier: "poste_italiane", servizio: "standard", attivo: true, ordine_mostra: 1 },
+      { onConflict: "negozio_id,carrier,servizio" }
+    );
+    if (spedAErr) fail("Configurazione spedizione F26 negozio A fallita: " + spedAErr.message);
+
+    const { error: spedBErr } = await db.from("negozio_metodi_spedizione").upsert(
+      { negozio_id: negozioBId, carrier: "poste_italiane", servizio: "standard", attivo: true, ordine_mostra: 1 },
+      { onConflict: "negozio_id,carrier,servizio" }
+    );
+    if (spedBErr) fail("Configurazione spedizione F26 negozio B fallita: " + spedBErr.message);
+
     const baseCheckout = {
       modalita: "spedizione" as const,
       cliente: { nome: "Mario", cognome: "Rossi", telefono: "3331234567", email: "f26@localhub.test" },
