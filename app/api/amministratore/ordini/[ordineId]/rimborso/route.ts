@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { apiError, apiOk } from "@/lib/api/response";
 import { requireApiArea } from "@/lib/auth/session-area";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
@@ -49,16 +50,34 @@ export async function POST(
     typeof body.reason === "string" && body.reason.trim()
       ? body.reason.trim().slice(0, MAX_MOTIVO_RIMBORSO)
       : null;
+  const idempotencyKey = request.headers.get("Idempotency-Key")?.trim() || randomUUID();
+  if (idempotencyKey.length > 128) {
+    return apiError("VALIDATION_ERROR", "Chiave di idempotenza non valida.", 422);
+  }
 
   const esito = await rimborsaOrdine({
     ordineId,
     importo: amount,
     motivo: reason,
     userId: sessione.user.id,
+    idempotencyKey,
   });
 
   if (!esito.ok) {
     return apiError(esito.codice, esito.errore, esito.status);
+  }
+
+  if (esito.pending) {
+    return apiOk({
+      success: true,
+      pending: true,
+      ordineId: esito.ordineId,
+      importoRichiesto: esito.importoRichiesto,
+      paymentStatus: esito.paymentStatus,
+      residuo: esito.residuo,
+      refundId: esito.refundId,
+      message: "Rimborso in riconciliazione. Non ripetere l'operazione con una nuova chiave.",
+    }, 202);
   }
 
   // Registra l'operazione amministrativa SOLO dopo che il rimborso è stato
