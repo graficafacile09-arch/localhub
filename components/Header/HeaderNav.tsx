@@ -50,7 +50,7 @@ export default function HeaderNav() {
     { label: "Negozi", href: "/negozi", icona: Store, badge: null, micro: null, attiva: pathname === "/negozi" || pathname.startsWith("/negozi/") },
     { label: "Offerte", href: "/offerte", icona: Tag, badge: "SALDI", micro: null, attiva: pathname === "/offerte" || pathname.startsWith("/offerte/") },
     { label: "Categorie", href: "/categorie", icona: Grid2X2, badge: null, micro: null, attiva: pathname === "/categorie" || pathname.startsWith("/categorie/") },
-    { label: "Notizie", href: "/notizie", icona: Newspaper, badge: null, micro: "CV", attiva: pathname === "/notizie" || pathname.startsWith("/notizie/") },
+    { label: "Notizie", href: "/notizie", icona: Newspaper, badge: "CV", micro: null, attiva: pathname === "/notizie" || pathname.startsWith("/notizie/") },
   ];
 
   return (
@@ -59,8 +59,6 @@ export default function HeaderNav() {
         aria-label="Navigazione principale"
         className="relative mx-auto grid w-full max-w-[550px] grid-cols-5 items-center justify-items-center border-y border-slate-200 bg-white py-1 md:py-1 xl:w-auto"
       >
-        {/* Separatori verticali sottili tra le voci (molto discreti, danno
-            struttura senza essere protagonisti). */}
         {[0, 1, 2, 3].map((i) => (
           <span
             key={i}
@@ -79,11 +77,6 @@ export default function HeaderNav() {
               aria-current={voce.attiva ? "page" : undefined}
               className="group relative mx-1 flex min-w-0 flex-col items-center gap-1 px-1.5 py-1 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 sm:mx-1.5 sm:px-2 md:py-1 lg:mx-1 lg:px-1.5"
             >
-              {/* Icona protagonista — "SALDI" (Offerte) è un micro-badge
-                  compatto ancorato all'angolo del simbolo; "CV" (Notizie) è
-                  un micro-elemento rosso ancora più discreto, aderente
-                  all'icona. Entrambi in position:absolute: NON aumentano la
-                  larghezza del tasto. */}
               <span className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-yellow-400">
                 <Icona
                   aria-hidden
@@ -97,25 +90,12 @@ export default function HeaderNav() {
                     {voce.badge}
                   </span>
                 )}
-                {voce.micro && (
-                  <span
-                    aria-hidden
-                    className="absolute -right-0.5 -top-1 text-[8px] font-black uppercase leading-none tracking-tight text-red-600"
-                  >
-                    {voce.micro}
-                  </span>
-                )}
               </span>
 
-              {/* Testo sotto l'icona — sempre GIALLO e identico per tutte le
-                  voci ("Notizie" come le altre: nessun badge nel testo,
-                  larghezza coerente). */}
               <span className="whitespace-nowrap text-xs font-bold leading-none tracking-tight text-slate-900 transition-colors duration-200 sm:text-sm">
                 {voce.label}
               </span>
 
-              {/* Indicatore attivo: semplice linea orizzontale sottile sotto
-                  il testo (blu, come nel mockup) */}
               <span
                 aria-hidden
                 className={`mt-0.5 h-1 w-6 rounded-full transition-opacity duration-200 ${
