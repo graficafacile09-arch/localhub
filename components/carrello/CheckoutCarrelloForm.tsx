@@ -245,7 +245,7 @@ export default function CheckoutCarrelloForm({ prefill}
   // nessun controllo autoritativo nel client, né prezzi/totali/credenziali
   // conosciuti qui.
   const [metodoPagamento, setMetodoPagamento] = useState<
-    "carta" | "klarna" | "paypal" | "sepa_debit" | null
+    "carta" | "klarna" | "paypal" | "sepa_debit" | "bonifico_istantaneo" | "bonifico_diretto_venditore" | null
   >(null);
   // Catalogo dei metodi di pagamento supportati da InCittà (STESSA fonte del
   // buy-now: CATALOGO_METODI_PAGAMENTO + disponibilità via
@@ -635,7 +635,7 @@ export default function CheckoutCarrelloForm({ prefill}
      }
 
 
-      setEsito({ checkoutKey: json.data?.checkoutKey ?? checkoutKeyRef.current, ordini, errori}
+      setEsito({ checkoutKey: json.data?.checkoutKey ?? checkoutKeyRef.current, ordini, errori, bonificoDiretto: json.data?.bonificoDiretto ?? null}
 
 );
       setInviando(false);
@@ -1138,6 +1138,21 @@ export default function CheckoutCarrelloForm({ prefill}
                     );
                   }
 
+
+                  if (m.metodo === "bonifico_istantaneo" || m.metodo === "bonifico_diretto_venditore") {
+                    return (
+                      <OpzioneRadio
+                        key={m.metodo}
+                        selezionato={metodoPagamento === m.metodo}
+                        onClick={() => setMetodoPagamento(m.metodo as "bonifico_istantaneo" | "bonifico_diretto_venditore")}
+                        icona={<Banknote className="h-4 w-4 text-slate-500" />}
+                        titolo={m.etichetta}
+                        sotto={m.descrizione}
+                        disponibile={m.disponibile}
+                        nonDisponibileMessaggio={!m.disponibile ? messaggioNonDisponibile(m.nomeBreve) : undefined}
+                      />
+                    );
+                  }
 
                   return null;
                }
