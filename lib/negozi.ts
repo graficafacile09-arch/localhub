@@ -351,21 +351,72 @@ export async function getCategorieConNegozi(): Promise<CategoriaConNegozi[]> {
 
 export async function getCategoriaBySlug(slug: string) {
   const db = getDb();
-  if (!db) return null;
+
+  // La navigazione pubblica usa CATEGORIE_NEGOZIO_META come catalogo completo:
+  // se una categoria è presente nel catalogo ma non ha ancora una riga DB,
+  // la pagina deve comunque poter essere aperta senza generare un errore.
+  const meta = CATEGORIE_NEGOZIO_META.find((c) => c.slug === slug);
+
+  if (!db) {
+    if (!meta) return null;
+    return {
+      id: meta.slug,
+      nome: meta.nome,
+      slug: meta.slug,
+      descrizione: null,
+      icona: null,
+      immagine: null,
+      sinonimi: [],
+      ordine: 0,
+      attivo: true,
+    } as Categoria;
+  }
 
   const { data, error } = await db
     .from("categorie")
     .select("*")
     .eq("slug", slug)
     .eq("attivo", true)
-    .single();
+    .maybeSingle();
 
-  if (error) {
-    try { console.error("[negozi] getCategoriaBySlug:", { slug, code: error?.code, message: error?.message }); } catch {}
-    return null;
+  if (!error && data) return data as Categoria;
+
+  // Fallback coerente con getCategorieConNegozi(): la categoria può essere
+  // pubblica anche quando il DB non contiene ancora la relativa riga.
+  if (meta) {
+    if (error?.code !== "PGRST303") {
+      try {
+        console.error("[negozi] getCategoriaBySlug:", {
+          slug,
+          code: error?.code,
+          message: error?.message,
+        });
+      } catch {}
+    }
+    return {
+      id: meta.slug,
+      nome: meta.nome,
+      slug: meta.slug,
+      descrizione: null,
+      icona: null,
+      immagine: null,
+      sinonimi: [],
+      ordine: 0,
+      attivo: true,
+    } as Categoria;
   }
 
-  return (data as Categoria) ?? null;
+  if (error) {
+    try {
+      console.error("[negozi] getCategoriaBySlug:", {
+        slug,
+        code: error?.code,
+        message: error?.message,
+      });
+    } catch {}
+  }
+
+  return null;
 }
 
 // Termini di matching di una categoria: nome + sinonimi, normalizzati (lowercase, trim).
