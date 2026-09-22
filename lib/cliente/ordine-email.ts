@@ -636,8 +636,10 @@ export async function inviaEmailConfermaBonificoDiretto(
     const { dati } = carico;
     const html = costruisciHtmlConfermaPagamento(dati)
       .replace(/Pagamento ricevuto/g, "Bonifico diretto confermato")
-      .replace(/Il pagamento di ([^<]+) con [^<]+ è andato a buon fine\./, "Il venditore ha confermato la ricezione del bonifico diretto di $1.")
-      .replace(/gestito dal provider selezionato \([^)]*\)/g, "confermato dal venditore");
+      .replace(
+        /Il pagamento di <strong>([^<]+)<\/strong> con [^<]+ è andato a buon fine\./,
+        "Il venditore ha confermato la ricezione del bonifico diretto di <strong>$1</strong>."
+      );
     const invia = opts.invia ?? ((d: DatiEmailOrdine) => inviaConResend(d, `Bonifico ricevuto — ordine ${d.numero}`, html));
     const messageId = (await invia(dati)) ?? null;
     return { stato: "sent", messageId };
