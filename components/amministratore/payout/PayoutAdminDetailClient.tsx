@@ -20,6 +20,25 @@ type PayoutDetail = {
   errore: string | null;
   creatoAt: string;
   erogatoAt: string | null;
+  riconciliazione: {
+    ok: boolean;
+    ordiniAssociati: number;
+    ordiniConImporto: number;
+    lordoOrdini: number;
+    commissioneOrdini: number;
+    nettoCalcolato: number;
+    lordoPayout: number;
+    commissionePayout: number;
+    nettoPayout: number;
+    differenzaLordo: number;
+    differenzaCommissione: number;
+    differenzaNetto: number;
+    ordiniFuoriNegozio: number;
+    ordiniConStatoNonValido: number;
+    ordiniSenzaDataPagamento: number;
+    ordiniDuplicati: number;
+    errori: string[];
+  };
   ordini: Array<{
     id: string;
     numero: string;
@@ -285,7 +304,7 @@ export default function PayoutAdminDetailClient({ payoutId }: { payoutId: string
         )}
       </div>
 
-      {/* Ordini inclusi */}
+      {/* Riconciliazione contabile */}\n      <div className="rounded-[1.75rem] border border-white/70 bg-white p-4 shadow-sm md:p-5">\n        <div className="flex flex-wrap items-center justify-between gap-3">\n          <div>\n            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500">Riconciliazione</h2>\n            <p className="mt-1 text-xs text-slate-400">Controllo read-only degli ordini associati al payout.</p>\n          </div>\n          <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-bold ${d.riconciliazione.ok ? "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200" : "bg-red-50 text-red-700 ring-1 ring-red-200"}`}>\n            {d.riconciliazione.ok ? "Coerente" : "Da verificare"}\n          </span>\n        </div>\n        <div className="mt-4 grid gap-3 sm:grid-cols-3">\n          <div className="rounded-xl bg-slate-50 p-3"><p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Lordo ordini</p><p className="mt-1 text-base font-black text-slate-900">{formattaEuro(d.riconciliazione.lordoOrdini)}</p><p className="text-xs text-slate-400">Payout: {formattaEuro(d.riconciliazione.lordoPayout)}</p></div>\n          <div className="rounded-xl bg-slate-50 p-3"><p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Commissione</p><p className="mt-1 text-base font-black text-slate-900">{formattaEuro(d.riconciliazione.commissioneOrdini)}</p><p className="text-xs text-slate-400">Payout: {formattaEuro(d.riconciliazione.commissionePayout)}</p></div>\n          <div className="rounded-xl bg-slate-50 p-3"><p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Netto</p><p className="mt-1 text-base font-black text-slate-900">{formattaEuro(d.riconciliazione.nettoCalcolato)}</p><p className="text-xs text-slate-400">Payout: {formattaEuro(d.riconciliazione.nettoPayout)}</p></div>\n        </div>\n        <p className="mt-3 text-xs text-slate-500">{d.riconciliazione.ordiniAssociati} ordini associati · {d.riconciliazione.ordiniConImporto} con importo economico.</p>\n        {d.riconciliazione.errori.length > 0 && (\n          <div className="mt-3 rounded-xl bg-red-50 p-3 text-xs font-semibold text-red-700">\n            {d.riconciliazione.errori.map((e) => <p key={e}>{e}</p>)}\n          </div>\n        )}\n      </div>\n\n      {/* Ordini inclusi */}
       <div className="rounded-[1.75rem] border border-white/70 bg-white p-4 shadow-sm md:p-5">
         <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500">
           Ordini inclusi ({d.ordini.length})
