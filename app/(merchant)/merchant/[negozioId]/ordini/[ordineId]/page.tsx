@@ -202,6 +202,8 @@ export default async function MerchantOrdineDettaglioPage({
             modalita={ordine.modalita}
             statoSpedizione={ordine.statoSpedizione}
             trackingUrl={ordine.trackingUrl}
+            metodoPagamento={ordine.metodoPagamento}
+            paymentStatus={ordine.paymentStatus}
           />
         </div>
       )}
