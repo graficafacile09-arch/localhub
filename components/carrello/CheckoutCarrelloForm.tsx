@@ -144,7 +144,7 @@ const CATALOGO_DEFAULT: MetodoPagamentoCheckout[] = CATALOGO_METODI_PAGAMENTO.ma
   etichetta: v.etichetta,
   nomeBreve: v.nomeBreve,
   descrizione: v.descrizione,
-  disponibile: !v.richiedeGateway,
+  disponibile: false,
   iban: null,
   payeeEmail: null,
 }
