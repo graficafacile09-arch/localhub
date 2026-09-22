@@ -479,6 +479,23 @@ export async function POST(request: Request) {
           500
         );
       }
+
+      // Causale deterministica e stabile: viene congelata sull'ordine e
+      // restituita al checkout così il cliente usa esattamente la stessa
+      // causale anche in caso di retry del checkout.
+      const causale = `InCittà ordine ${ordine.numero}`;
+      const { error: causaleErrore } = await db
+        .from("ordini")
+        .update({ bonifico_causale: causale })
+        .eq("id", ordine.ordineId)
+        .is("bonifico_causale", null);
+      if (causaleErrore) {
+        return apiError(
+          "BONIFICO_CAUSALE_SAVE_FAILED",
+          "Impossibile preparare i dati del bonifico diretto.",
+          500
+        );
+      }
     }
     ordiniRisposta = ordiniRisposta.map((ordine) => ({
       ...ordine,
@@ -501,7 +518,7 @@ export async function POST(request: Request) {
               iban: datiBonificoDiretto.iban,
               bicSwift: datiBonificoDiretto.bicSwift,
               importo: ordiniRisposta[0].totale,
-              causale: null,
+              causale: `InCittà ordine ${ordiniRisposta[0].numero}`,
             },
           }
         : {}),
