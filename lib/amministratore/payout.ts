@@ -75,7 +75,7 @@ export type RiconciliazionePayoutAdmin = {
   ordiniFuoriNegozio: number;
   ordiniConStatoNonValido: number;
   ordiniSenzaDataPagamento: number;
-  ordiniDuplicati: number;
+  ordiniDuplicati: number;\n  ordiniFuoriPeriodo: number;
   errori: string[];
 };
 
@@ -282,7 +282,7 @@ export function riconciliaOrdiniPayout(
   let ordiniConStatoNonValido = 0;
   let ordiniSenzaDataPagamento = 0;
   const ids = new Set<string>();
-  let ordiniDuplicati = 0;
+  let ordiniDuplicati = 0;\n  let ordiniFuoriPeriodo = 0;
 
   for (const o of ordini) {
     const id = String(o.id ?? "");
@@ -295,7 +295,7 @@ export function riconciliaOrdiniPayout(
     const stato = String(o.payment_status ?? "");
     if (!["paid", "partially_refunded", "refunded"].includes(stato)) ordiniConStatoNonValido += 1;
 
-    if (!o.payment_paid_at) ordiniSenzaDataPagamento += 1;
+    if (!o.payment_paid_at) ordiniSenzaDataPagamento += 1;\n    else {\n      const data = String(o.payment_paid_at).slice(0, 10);\n      if (data < payout.periodoDa || data > payout.periodoA) ordiniFuoriPeriodo += 1;\n    }
 
     const pagato = Number(o.payment_amount ?? 0);
     const rimborsato = Number(o.payment_refunded_amount ?? 0);
@@ -324,10 +324,10 @@ export function riconciliaOrdiniPayout(
   if (ordiniFuoriNegozio > 0) errori.push("Sono presenti ordini appartenenti a un negozio diverso.");
   if (ordiniConStatoNonValido > 0) errori.push("Sono presenti ordini con stato pagamento non valido.");
   if (ordiniSenzaDataPagamento > 0) errori.push("Sono presenti ordini senza data di pagamento.");
-  if (ordiniDuplicati > 0) errori.push("Sono presenti ordini duplicati nel dettaglio.");
+  if (ordiniDuplicati > 0) errori.push("Sono presenti ordini duplicati nel dettaglio.");\n  if (ordiniFuoriPeriodo > 0) errori.push("Sono presenti ordini fuori dal periodo del payout.");
 
   return {
-    ok: errori.length === 0 && ordini.length === payout.nOrdini,
+    ok: errori.length === 0 && ordiniConImporto === payout.nOrdini,
     ordiniAssociati: ordini.length,
     ordiniConImporto,
     lordoOrdini,
