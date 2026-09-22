@@ -50,7 +50,7 @@ export default function RimborsoSection({
   const [motivo, setMotivo] = useState("");
   const [inviando, setInviando] = useState(false);
   const [errore, setErrore] = useState<string | null>(null);
-  const [successo, setSuccesso] = useState<string | null>(null);
+  const [successo, setSuccesso] = useState<string | null>(null);\n  // Una chiave per ogni tentativo aperto nel dialog: se la risposta di rete\n  // viene persa, il retry usa la stessa chiave e converge sulla stessa\n  // operazione durevole lato server/provider.\n  const [idempotencyKey, setIdempotencyKey] = useState<string | null>(null);
 
   const apriDialog = useCallback(() => {
     setImporto(residuo.toFixed(2));
@@ -68,14 +68,14 @@ export default function RimborsoSection({
     importoNum <= residuo;
 
   const conferma = async () => {
-    if (!importoValido || inviando) return;
+    if (!importoValido || inviando || !idempotencyKey) return;
     setInviando(true);
     setErrore(null);
     setSuccesso(null);
     try {
       const res = await fetch(`/api/amministratore/ordini/${ordineId}/rimborso`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {\n          "Content-Type": "application/json",\n          "Idempotency-Key": idempotencyKey,\n        },
         body: JSON.stringify({
           amount: Math.round(importoNum * 100) / 100,
           reason: motivo.trim() || undefined,
