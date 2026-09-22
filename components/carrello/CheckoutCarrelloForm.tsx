@@ -1371,6 +1371,59 @@ function EsitoCheckoutView({
           </div>
         </div>
 
+        {esito.bonificoDiretto && (
+          <div className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4">
+            <p className="text-sm font-black text-amber-950">
+              Istruzioni per il bonifico diretto al venditore
+            </p>
+            <p className="mt-1 text-xs leading-5 text-amber-900">
+              Esegui il bonifico direttamente sul conto del venditore. InCittà non riceve il denaro.
+              Usa la causale indicata qui sotto.
+            </p>
+            <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
+              <div>
+                <dt className="text-[11px] font-semibold uppercase tracking-wide text-amber-800">Venditore</dt>
+                <dd className="font-bold text-amber-950">{esito.bonificoDiretto.venditoreNome}</dd>
+              </div>
+              <div>
+                <dt className="text-[11px] font-semibold uppercase tracking-wide text-amber-800">Importo</dt>
+                <dd className="font-bold text-amber-950">{formattaEuro(esito.bonificoDiretto.importo)}</dd>
+              </div>
+              {esito.bonificoDiretto.intestatarioConto && (
+                <div>
+                  <dt className="text-[11px] font-semibold uppercase tracking-wide text-amber-800">Intestatario conto</dt>
+                  <dd className="font-semibold text-amber-950">{esito.bonificoDiretto.intestatarioConto}</dd>
+                </div>
+              )}
+              {esito.bonificoDiretto.banca && (
+                <div>
+                  <dt className="text-[11px] font-semibold uppercase tracking-wide text-amber-800">Banca</dt>
+                  <dd className="font-semibold text-amber-950">{esito.bonificoDiretto.banca}</dd>
+                </div>
+              )}
+              <div>
+                <dt className="text-[11px] font-semibold uppercase tracking-wide text-amber-800">IBAN</dt>
+                <dd className="break-all font-mono text-xs font-bold text-amber-950">{esito.bonificoDiretto.iban}</dd>
+              </div>
+              {esito.bonificoDiretto.bicSwift && (
+                <div>
+                  <dt className="text-[11px] font-semibold uppercase tracking-wide text-amber-800">BIC/SWIFT</dt>
+                  <dd className="font-mono text-xs font-bold text-amber-950">{esito.bonificoDiretto.bicSwift}</dd>
+                </div>
+              )}
+              {esito.bonificoDiretto.causale && (
+                <div className="sm:col-span-2">
+                  <dt className="text-[11px] font-semibold uppercase tracking-wide text-amber-800">Causale</dt>
+                  <dd className="font-bold text-amber-950">{esito.bonificoDiretto.causale}</dd>
+                </div>
+              )}
+            </dl>
+            <p className="mt-3 text-[11px] leading-4 text-amber-800">
+              Il venditore confermerà la ricezione dopo aver verificato l&apos;accredito.
+            </p>
+          </div>
+        )}
+
         {/* Ordini creati */}
 
         <ul className="mt-5 space-y-3">
