@@ -186,9 +186,31 @@ export class GatewayStripe implements PaymentGateway {
 
     const expiresAt = new Date(Date.now() + PAYMENT_SESSION_TTL_MS);
 
+    const paymentMethodTypes: Stripe.Checkout.SessionCreateParams.PaymentMethodType[] =
+      {
+        carta: ["card"],
+        klarna: ["klarna"],
+        paypal: ["paypal"],
+        sepa_debit: ["sepa_debit"],
+        bonifico_istantaneo: ["pay_by_bank"],
+      }[ctx.metodo] ?? [];
+
+    if (paymentMethodTypes.length === 0) {
+      throw new PagamentoGatewayError(
+        "METODO_STRIPE_NON_SUPPORTATO",
+        "Il metodo di pagamento Stripe richiesto non è supportato."
+      );
+    }
+
     const session = await stripe.checkout.sessions.create(
       {
         mode: "payment",
+        // IMPORTANTISSIMO: il metodo scelto in InCittà deve essere anche il
+        // solo metodo esposto da questa Checkout Session. Senza questo campo
+        // Stripe usa la configurazione dinamica dell'account e può mostrare
+        // altri metodi (per esempio Bonifici bancari) che il cliente non ha
+        // selezionato nel checkout InCittà.
+        payment_method_types: paymentMethodTypes,
         // Tutti i pagamenti online sono centralizzati su Stripe.
         // FASE F2.3 — un line_item per riga (prezzo/quantità dagli snapshot
         // del DB via ContestoCheckout.righe): il client non ha alcun controllo
