@@ -720,7 +720,7 @@ export default function PagamentiModule({ storeId }: Props) {
                       ) : (
                         <div>
                           <p className="mb-3 text-xs font-semibold text-slate-600">
-                            Dati di Fatturazione e Incasso SEPA
+                            Dati bancari per il bonifico diretto
                           </p>
                           <div className="grid gap-3 sm:grid-cols-2">
                             <div>
