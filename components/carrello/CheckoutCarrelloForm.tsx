@@ -144,7 +144,7 @@ const CATALOGO_DEFAULT: MetodoPagamentoCheckout[] = CATALOGO_METODI_PAGAMENTO.ma
   etichetta: v.etichetta,
   nomeBreve: v.nomeBreve,
   descrizione: v.descrizione,
-  // Fail-closed: anche i metodi senza gateway restano indisponibili finché il server non conferma la configurazione reale del negozio.\n  disponibile: false,
+  disponibile: !v.richiedeGateway,
   iban: null,
   payeeEmail: null,
 }
