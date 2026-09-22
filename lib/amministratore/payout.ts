@@ -393,6 +393,10 @@ export async function getPayoutAdminDettaglio(
   };
 }
 
+
+/** Alias retrocompatibile usato dalla route admin del dettaglio payout. */
+export const getPayoutDettaglioAdmin = getPayoutAdminDettaglio;
+
 /**
  * Aggiorna lo stato di un payout (admin): 'in_erogazione' | 'pagato' |
  * 'fallito' via RPC service-role. Nessuna chiamata Stripe in V1.
