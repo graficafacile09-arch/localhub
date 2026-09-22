@@ -85,7 +85,7 @@ export default function HeaderNav() {
                 {voce.badge && (
                   <span
                     aria-hidden
-                    className="absolute -right-1 -top-1 inline-flex items-center rounded-full bg-red-600 px-1 py-px text-[7px] font-black uppercase leading-none tracking-tight text-white"
+                    className="absolute -right-2 -top-2 inline-flex items-center rounded-full bg-red-600 px-1.5 py-0.5 text-[8px] font-black uppercase leading-none tracking-tight text-white shadow-sm ring-2 ring-white"
                   >
                     {voce.badge}
                   </span>
