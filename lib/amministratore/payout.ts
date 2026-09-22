@@ -59,6 +59,26 @@ export type RiepilogoPayoutAdmin = {
   totalePayout: number;
 };
 
+export type RiconciliazionePayoutAdmin = {
+  ok: boolean;
+  ordiniAssociati: number;
+  ordiniConImporto: number;
+  lordoOrdini: number;
+  commissioneOrdini: number;
+  nettoCalcolato: number;
+  lordoPayout: number;
+  commissionePayout: number;
+  nettoPayout: number;
+  differenzaLordo: number;
+  differenzaCommissione: number;
+  differenzaNetto: number;
+  ordiniFuoriNegozio: number;
+  ordiniConStatoNonValido: number;
+  ordiniSenzaDataPagamento: number;
+  ordiniDuplicati: number;
+  errori: string[];
+};
+
 export type RisultatoPayoutAdmin = {
   riepilogo: RiepilogoPayoutAdmin;
   payout: PayoutAdminRiga[];
@@ -240,9 +260,98 @@ export async function calcolaPayoutAdmin(
 }
 
 /** Dettaglio payout (admin, read-only). */
-export async function getPayoutDettaglioAdmin(
+function arrotonda2(v: number): number {
+  return Math.round((Number.isFinite(v) ? v : 0) * 100) / 100;
+}
+
+/**
+ * Riconciliazione contabile read-only del payout.
+ * Non modifica ordini, payout o Stripe: ricostruisce il totale dagli ordini
+ * timbrati con payout_id e verifica gli invarianti economici.
+ */
+export function riconciliaOrdiniPayout(
+  payout: PayoutAdminRiga,
+  ordini: Array<Record<string, unknown>>
+): RiconciliazionePayoutAdmin {
+  const errori: string[] = [];
+  let lordoOrdini = 0;
+  let commissioneOrdini = 0;
+  let nettoCalcolato = 0;
+  let ordiniConImporto = 0;
+  let ordiniFuoriNegozio = 0;
+  let ordiniConStatoNonValido = 0;
+  let ordiniSenzaDataPagamento = 0;
+  const ids = new Set<string>();
+  let ordiniDuplicati = 0;
+
+  for (const o of ordini) {
+    const id = String(o.id ?? "");
+    if (id && ids.has(id)) ordiniDuplicati += 1;
+    if (id) ids.add(id);
+
+    const negozioId = o.negozio_id == null ? payout.negozioId : String(o.negozio_id);
+    if (negozioId !== payout.negozioId) ordiniFuoriNegozio += 1;
+
+    const stato = String(o.payment_status ?? "");
+    if (!["paid", "partially_refunded", "refunded"].includes(stato)) ordiniConStatoNonValido += 1;
+
+    if (!o.payment_paid_at) ordiniSenzaDataPagamento += 1;
+
+    const pagato = Number(o.payment_amount ?? 0);
+    const rimborsato = Number(o.payment_refunded_amount ?? 0);
+    const commissioneMaturata = Number(o.commissione_importo ?? 0);
+    const nettoPagato = arrotonda2(pagato - rimborsato);
+    if (nettoPagato <= 0) continue;
+
+    let commissione = commissioneMaturata;
+    if (rimborsato >= pagato || pagato <= 0) commissione = 0;
+    else if (rimborsato > 0) commissione = arrotonda2(commissioneMaturata * (nettoPagato / pagato));
+    commissione = Math.max(0, Math.min(commissione, nettoPagato));
+
+    lordoOrdini = arrotonda2(lordoOrdini + nettoPagato);
+    commissioneOrdini = arrotonda2(commissioneOrdini + commissione);
+    nettoCalcolato = arrotonda2(nettoCalcolato + nettoPagato - commissione);
+    ordiniConImporto += 1;
+  }
+
+  const differenzaLordo = arrotonda2(lordoOrdini - payout.importoLordo);
+  const differenzaCommissione = arrotonda2(commissioneOrdini - payout.commissioneImporto);
+  const differenzaNetto = arrotonda2(nettoCalcolato - payout.importoNetto);
+
+  if (differenzaLordo !== 0) errori.push("Il lordo degli ordini non coincide con il lordo del payout.");
+  if (differenzaCommissione !== 0) errori.push("La commissione degli ordini non coincide con quella del payout.");
+  if (differenzaNetto !== 0) errori.push("Il netto degli ordini non coincide con il netto del payout.");
+  if (ordiniFuoriNegozio > 0) errori.push("Sono presenti ordini appartenenti a un negozio diverso.");
+  if (ordiniConStatoNonValido > 0) errori.push("Sono presenti ordini con stato pagamento non valido.");
+  if (ordiniSenzaDataPagamento > 0) errori.push("Sono presenti ordini senza data di pagamento.");
+  if (ordiniDuplicati > 0) errori.push("Sono presenti ordini duplicati nel dettaglio.");
+
+  return {
+    ok: errori.length === 0 && ordini.length === payout.nOrdini,
+    ordiniAssociati: ordini.length,
+    ordiniConImporto,
+    lordoOrdini,
+    commissioneOrdini,
+    nettoCalcolato,
+    lordoPayout: payout.importoLordo,
+    commissionePayout: payout.commissioneImporto,
+    nettoPayout: payout.importoNetto,
+    differenzaLordo,
+    differenzaCommissione,
+    differenzaNetto,
+    ordiniFuoriNegozio,
+    ordiniConStatoNonValido,
+    ordiniSenzaDataPagamento,
+    ordiniDuplicati,
+    errori: ordini.length !== payout.nOrdini
+      ? [...errori, "Il numero di ordini associati non coincide con quello registrato nel payout."]
+      : errori,
+  };
+}
+
+/**
   payoutId: string
-): Promise<PayoutAdminRiga & { ordini: Array<Record<string, unknown>> } | null> {
+): Promise<PayoutAdminRiga & { ordini: Array<Record<string, unknown>>; riconciliazione: RiconciliazionePayoutAdmin } | null> {
   const db = await createServerSupabaseClient();
   const { data, error } = await db
     .from("payout")
@@ -258,7 +367,7 @@ export async function getPayoutDettaglioAdmin(
 
   const { data: ordini, error: errOrdini } = await db
     .from("ordini")
-    .select("id, numero, totale, payment_amount, payment_refunded_amount, payment_status, payment_paid_at, commissione_importo")
+    .select("id, numero, negozio_id, totale, payment_amount, payment_refunded_amount, payment_status, payment_paid_at, commissione_importo")
     .eq("payout_id", payoutId)
     .order("payment_paid_at", { ascending: true });
   if (errOrdini) {
@@ -267,7 +376,7 @@ export async function getPayoutDettaglioAdmin(
 
   return {
     ...mappaPayout({ ...r, negozio_nome: negozi?.nome ?? "" }),
-    ordini: (ordini ?? []) as Array<Record<string, unknown>>,
+    ordini: (ordini ?? []) as Array<Record<string, unknown>>,\n    riconciliazione: riconciliaOrdiniPayout(\n      mappaPayout({ ...r, negozio_nome: negozi?.nome ?? "" }),\n      (ordini ?? []) as Array<Record<string, unknown>>\n    ),
   };
 }
 
