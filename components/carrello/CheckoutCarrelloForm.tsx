@@ -100,18 +100,33 @@ type ErroreNegozioRisposta = { negozioId: string; codice: string; messaggio: str
 
 ;
 
+type DatiBonificoDirettoCheckout = {
+  venditoreNome: string;
+  intestatarioConto: string | null;
+  banca: string | null;
+  iban: string;
+  bicSwift: string | null;
+  importo: number;
+  causale: string | null;
+};
+
 type EsitoCheckout = {
   checkoutKey: string;
   ordini: OrdineRisposta[];
   errori: ErroreNegozioRisposta[];
+  bonificoDiretto: DatiBonificoDirettoCheckout | null;
 }
 ;
 
 type RispostaApi = {
   status: number;
   success?: boolean;
-  data?: { checkoutKey?: string; ordini?: OrdineRisposta[]; errori?: ErroreNegozioRisposta[]}
-
+  data?: {
+    checkoutKey?: string;
+    ordini?: OrdineRisposta[];
+    errori?: ErroreNegozioRisposta[];
+    bonificoDiretto?: DatiBonificoDirettoCheckout | null;
+  }
 ;
   error?: { code?: string; message?: string}
 
