@@ -140,6 +140,13 @@ export default async function RootLayout({
             >
               Cookie Policy
             </a>
+            <span aria-hidden="true">·</span>
+            <a
+              href="/faq"
+              className="font-semibold text-slate-700 underline-offset-2 transition hover:text-blue-600 hover:underline"
+            >
+              FAQ
+            </a>
           </div>
         </footer>
 
