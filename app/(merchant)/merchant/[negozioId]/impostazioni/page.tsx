@@ -54,7 +54,7 @@ export default async function MerchantSettingsPage({
             </div>
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-[0.22em] text-blue-200">
-                Gestione negozio
+                Impostazioni negozio
               </p>
               <h1 className="mt-1.5 break-words text-2xl font-black tracking-tight text-white sm:text-3xl">
                 {store.nome ?? "Il tuo negozio"}
