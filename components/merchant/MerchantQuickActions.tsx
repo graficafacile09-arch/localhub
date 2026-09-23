@@ -10,7 +10,6 @@ import {
   CalendarCheck,
   Store,
 } from "lucide-react";
-import MetodiPagamentoCard from "./MetodiPagamentoCard";
 
 /**
  * Azioni rapide della Dashboard negozio.
@@ -132,8 +131,7 @@ export default function MerchantQuickActions({
         </div>
       </Link>
 
-      {/* Metodo di pagamento — card di stato con link alla route Pagamenti */}
-      <MetodiPagamentoCard storeId={storeId} />
+
     </div>
   );
 }
