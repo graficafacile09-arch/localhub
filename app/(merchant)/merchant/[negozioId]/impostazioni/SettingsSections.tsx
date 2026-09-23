@@ -282,8 +282,6 @@ export default function SettingsSections({
   const [settings, setSettings] = useState<Record<string, unknown> | null>(null);
   const [moduliAttivi, setModuliAttivi] = useState<string[] | null>(null);
   const [conteggi, setConteggi] = useState<Record<string, number>>({});
-  const [aperta, setAperta] = useState<string>("negozio");
-  const [aperteOnce, setAperteOnce] = useState<Record<string, boolean>>({ negozio: true });
   const [moduloAperto, setModuloAperto] = useState<Record<string, string>>({});
   const [moduliOnce, setModuliOnce] = useState<Record<string, string[]>>({});
 
@@ -342,21 +340,20 @@ export default function SettingsSections({
     })).filter((s) => s.moduli.length > 0);
   }, [moduliAttivi]);
 
-  const sezioneAperta = sezioniVisibili.some((s) => s.id === aperta)
-    ? aperta
-    : (sezioniVisibili[0]?.id ?? null);
-
   function toggleModulo(sezioneId: string, slug: string) {
     setModuloAperto((m) => ({ ...m, [sezioneId]: m[sezioneId] === slug ? "" : slug }));
     setModuliOnce((o) => ({ ...o, [sezioneId]: o[sezioneId]?.includes(slug) ? o[sezioneId] : [...(o[sezioneId] ?? []), slug] }));
   }
 
-  /** Apre una sezione e, se indicato, espande anche il modulo (usato dalle azioni rapide). */
-  function apriSezione(sezioneId: string, slug?: string) {
-    setAperta(sezioneId);
-    setAperteOnce((o) => ({ ...o, [sezioneId]: true }));
-    if (slug) toggleModulo(sezioneId, slug);
-    else setModuloAperto((m) => ({ ...m, [sezioneId]: "" }));
+  /** Apre direttamente un modulo senza aggiungere un secondo livello di menu. */
+  function apriModulo(sezioneId: string, slug: string) {
+    setModuloAperto((m) => ({ ...m, [sezioneId]: slug }));
+    setModuliOnce((o) => ({
+      ...o,
+      [sezioneId]: o[sezioneId]?.includes(slug)
+        ? o[sezioneId]
+        : [...(o[sezioneId] ?? []), slug],
+    }));
   }
 
   /** Elementi essenziali già configurati (per lo stato della vetrina). */
@@ -425,7 +422,7 @@ export default function SettingsSections({
             </span>
             <button
               type="button"
-              onClick={() => apriSezione("negozio", "informazioni")}
+              onClick={() => apriModulo("negozio", "informazioni")}
               className="inline-flex items-center gap-2 rounded-full bg-yellow-400 px-5 py-2.5 text-sm font-bold text-blue-900 shadow-sm transition hover:bg-yellow-300 active:scale-[0.98]"
             >
               <Building2 className="h-4 w-4" aria-hidden />
@@ -437,8 +434,6 @@ export default function SettingsSections({
 
       {sezioniVisibili.map((s) => {
         const Icona = s.icona;
-        const isAperta = sezioneAperta === s.id;
-        const resa = isAperta || aperteOnce[s.id] === true;
         const primaria = s.peso === "primaria";
         const secondaria = s.peso === "secondaria";
         const aperto = moduloAperto[s.id] ?? "";
@@ -450,49 +445,24 @@ export default function SettingsSections({
               primaria ? "border-blue-200" : secondaria ? "border-slate-200" : "border-slate-200"
             }`}
           >
-            <button
-              type="button"
-              onClick={() => {
-                setAperta((prev) => (prev === s.id ? "" : s.id));
-                setAperteOnce((o) => ({ ...o, [s.id]: true }));
-              }}
-              aria-expanded={isAperta}
-              className="flex w-full items-center gap-3 px-4 py-4 text-left transition hover:bg-slate-50/70 sm:gap-4 sm:px-5"
-            >
-              <span
-                className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl transition ${
-                  primaria && isAperta
-                    ? "bg-yellow-400 text-blue-900"
-                    : primaria
-                      ? "bg-yellow-100 text-blue-800"
-                      : isAperta
-                        ? "bg-blue-600 text-white"
-                        : secondaria
-                          ? "bg-slate-100 text-slate-500"
-                          : "bg-blue-50 text-blue-700"
-                }`}
-              >
+            <div className="flex items-center gap-3 px-4 py-4 sm:gap-4">
+              <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${
+                primaria
+                  ? "bg-yellow-100 text-blue-800"
+                  : secondaria
+                    ? "bg-slate-100 text-slate-500"
+                    : "bg-blue-50 text-blue-700"
+              }`}>
                 <Icona className="h-5 w-5" aria-hidden />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block text-base font-black tracking-tight text-slate-900">
-                  {s.titolo}
-                </span>
-                <span className="mt-0.5 block text-xs leading-4 text-slate-500">
-                  {isAperta ? s.descrizione : s.riepilogo}
-                </span>
+                <span className="block text-base font-black tracking-tight text-slate-900">{s.titolo}</span>
+                <span className="mt-0.5 block text-xs leading-4 text-slate-500">{s.descrizione}</span>
               </span>
-              <ChevronDown
-                className={`h-5 w-5 shrink-0 text-slate-400 transition-transform duration-200 ${
-                  isAperta ? "rotate-180" : ""
-                }`}
-                aria-hidden
-              />
-            </button>
+            </div>
 
-            <div className={isAperta ? "" : "hidden"}>
-              {resa && (
-                <div className="space-y-3 border-t border-slate-100 p-4 sm:p-5">
+            <div>
+              <div className="space-y-3 border-t border-slate-100 p-4 sm:p-5">
                   {s.moduli.map((slug) => {
                     if (slug === "pagamenti") {
                       return <MetodiPagamentoCard key="pagamenti" storeId={storeId} />;
@@ -580,7 +550,7 @@ export default function SettingsSections({
                     );
                   })}
                 </div>
-              )}
+              </div>
             </div>
           </div>
         );
