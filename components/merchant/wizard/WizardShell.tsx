@@ -48,11 +48,13 @@ export default function WizardShell({
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Destinazione post-creazione: editor condiviso nella propria area.
+  // Destinazione post-creazione: il venditore entra nel centro di gestione
+  // unificato del negozio. L'editor condiviso resta disponibile per i flussi
+  // guidati/compatibili, ma non è più il punto di ingresso principale.
   const editPath = (storeId: string) =>
     area === "admin"
       ? `/amministratore/negozi/${storeId}/edit`
-      : `/merchant/${storeId}/edit`;
+      : `/merchant/${storeId}/impostazioni`;
 
   // Preselezione dal query param ?template=…: letta UNA volta all'avvio
   // (lazy initializer), senza effetti che settano stato. I template di
