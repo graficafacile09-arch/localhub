@@ -2,22 +2,12 @@ import Link from "next/link";
 import { Camera } from "lucide-react";
 import MerchantDashboardCards from "@/components/merchant/MerchantDashboardCards";
 import MerchantEmptyState from "@/components/merchant/MerchantEmptyState";
-import MerchantQuickActions from "@/components/merchant/MerchantQuickActions";
 import { AvvisoNuoviOrdini } from "@/components/ordini/AvvisoNuoviOrdini";
 import { AvvisoReclamiAperti } from "@/components/ordini/AvvisoReclamiAperti";
 import { requireCurrentUser } from "@/lib/auth/session";
 import { getMerchantProductsForStore, getMerchantStoreForUser } from "@/lib/merchant/data";
 import { getOrdiniVenditore } from "@/lib/merchant/ordini";
 import { getConteggioReclamiApertiVenditore } from "@/lib/ordine-reclami";
-import {
-  contaNuoviAppuntamenti,
-  getBaselineAgenda,
-  getUltimaLetturaAgenda,
-  rigaPrenotazionePerBadge,
-} from "@/lib/merchant/agenda-badge";
-import { attivitaHaAgenda } from "@/lib/profili-attivita";
-import { createAdminSupabaseClient } from "@/lib/supabase/admin";
-import type { Negozio } from "@/types/negozio";
 
 export default async function MerchantStorePage({
   params,
@@ -68,55 +58,6 @@ export default async function MerchantStorePage({
     reclamiAperti = 0;
   }
 
-  // Badge Agenda: appuntamenti NUOVI (non ancora visti) per il SOLO negozio
-  // corrente. Definizione centralizzata in lib/merchant/agenda-badge.ts:
-  // confermata con created_at > data.agenda_ultima_lettura; se l'Agenda non
-  // è mai stata aperta → 0 (mai lo storico). Solo per attività con Agenda.
-  let nuoviAppuntamenti = 0;
-  try {
-    const supabase = createAdminSupabaseClient();
-    // MerchantStoreSummary non espone il jsonb `data`: leggo `data` e
-    // `moduli_attivi` direttamente per il gating centralizzato e la lettura.
-    const { data: rigaNegozio } = await supabase
-      .from("negozi")
-      .select("data, moduli_attivi, created_at")
-      .eq("id", negozioId)
-      .single();
-
-    if (rigaNegozio) {
-      const dataNegozio = (rigaNegozio.data ?? {}) as Record<string, unknown>;
-      const negozioMinimo = {
-        data: dataNegozio,
-        moduli_attivi: Array.isArray(rigaNegozio.moduli_attivi)
-          ? (rigaNegozio.moduli_attivi as string[])
-          : [],
-      } as unknown as Negozio;
-
-      if (attivitaHaAgenda(negozioMinimo)) {
-        // Soglia = ultima lettura Agenda se esiste, altrimenti la creazione
-        // del negozio: così una prenotazione confermata successiva produce
-        // subito il badge [N] anche prima della prima apertura dell'Agenda.
-        const baseline = getBaselineAgenda(
-          getUltimaLetturaAgenda(dataNegozio),
-          rigaNegozio.created_at
-        );
-        if (baseline) {
-          const { data: righe } = await supabase
-            .from("prenotazioni")
-            .select("negozio_id, stato, created_at")
-            .eq("negozio_id", negozioId);
-          nuoviAppuntamenti = contaNuoviAppuntamenti(
-            (righe ?? []).map(rigaPrenotazionePerBadge),
-            negozioId,
-            baseline
-          );
-        }
-      }
-    }
-  } catch {
-    nuoviAppuntamenti = 0;
-  }
-
   return (
     <div className="space-y-4">
       {/* Header compatto */}
@@ -162,9 +103,6 @@ export default async function MerchantStorePage({
         </div>
         <span>Scansiona nuovo prodotto</span>
       </Link>
-
-      {/* Altre azioni rapide */}
-      <MerchantQuickActions storeId={negozioId} nuoviAppuntamenti={nuoviAppuntamenti} />
 
       {/* ── Statistiche — comprimibili ──────────────────────────────────────── */}
       <MerchantDashboardCards
