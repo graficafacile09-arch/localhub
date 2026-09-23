@@ -560,7 +560,6 @@ export default function SettingsSections({
                 </div>
               </div>
             </div>
-          </div>
         );
       })}
 
