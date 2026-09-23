@@ -109,9 +109,17 @@ const SEZIONI: Sezione[] = [
     icona: Store,
     titolo: "Il mio negozio",
     descrizione: "Tieni aggiornate le informazioni che i clienti vedono sul tuo negozio.",
-    riepilogo: "Informazioni · Foto · Contatti · Posizione · Orari · Richieste · Agenda",
-    moduli: ["informazioni", "immagini", "contatti", "posizione", "orari", "richiesta_info", "prenotazioni"],
+    riepilogo: "Informazioni · Foto · Contatti · Posizione · Orari",
+    moduli: ["informazioni", "immagini", "contatti", "posizione", "orari"],
     peso: "primaria",
+  },
+  {
+    id: "clienti",
+    icona: MessageSquare,
+    titolo: "Clienti",
+    descrizione: "Gestisci appuntamenti e richieste ricevute dai clienti.",
+    riepilogo: "Agenda · Richiesta informazioni",
+    moduli: ["prenotazioni", "richiesta_info"],
   },
   {
     id: "vendita",
@@ -124,7 +132,7 @@ const SEZIONI: Sezione[] = [
   {
     id: "catalogo",
     icona: Package,
-    titolo: "Catalogo e offerte",
+    titolo: "Catalogo",
     descrizione: "Servizi, promozioni ed eventi del negozio.",
     riepilogo: "Servizi · Offerte · Eventi",
     moduli: ["servizi", "offerte", "eventi"],
