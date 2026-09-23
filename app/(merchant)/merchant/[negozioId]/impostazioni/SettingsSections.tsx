@@ -371,17 +371,6 @@ export default function SettingsSections({
     return lista;
   }, [settings]);
 
-  const azioniPrincipali = useMemo(() => {
-    const visibili = new Set(sezioniVisibili.flatMap((x) => x.moduli));
-    const azioni: { label: string; descrizione: string; sezione: string; slug?: string; icona: LucideIcon }[] = [
-      { label: "Modifica informazioni", descrizione: "Nome, categoria e descrizione", sezione: "negozio", slug: "informazioni", icona: Building2 },
-      { label: "Foto del negozio", descrizione: "Logo, copertina e galleria", sezione: "negozio", slug: "immagini", icona: ImageIcon },
-      { label: "Gestisci prodotti", descrizione: "Catalogo e aggiunta prodotti", sezione: "catalogo", slug: "prodotti", icona: Package },
-      { label: "Come vendi", descrizione: "Ritiro, consegna o spedizione", sezione: "vendita", slug: "modalita-vendita", icona: ShoppingCart },
-    ];
-    return azioni.filter((a) => a.sezione && visibili.has(a.slug ?? ""));
-  }, [sezioniVisibili]);
-
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -444,27 +433,6 @@ export default function SettingsSections({
             </button>
           </div>
         </div>
-      </div>
-
-      {/* ── Azioni principali ─────────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {azioniPrincipali.map((a) => {
-          const Icona = a.icona;
-          return (
-            <button
-              key={a.label}
-              type="button"
-              onClick={() => apriSezione(a.sezione, a.slug)}
-              className="group flex flex-col items-start gap-2 rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md active:scale-[0.98]"
-            >
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-700 transition group-hover:bg-blue-600 group-hover:text-white">
-                <Icona className="h-5 w-5" aria-hidden />
-              </span>
-              <span className="block text-sm font-bold leading-tight text-slate-900">{a.label}</span>
-              <span className="block text-[11px] leading-4 text-slate-500">{a.descrizione}</span>
-            </button>
-          );
-        })}
       </div>
 
       {sezioniVisibili.map((s) => {
