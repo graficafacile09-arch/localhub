@@ -2,7 +2,6 @@ import { ADMIN_BASE } from "@/components/amministratore/navigation";
 import {
   Coins,
   Copy,
-  CreditCard,
   FolderOpen,
   Home,
   LayoutGrid,
@@ -53,6 +52,8 @@ export type MerchantBottomNavItem = {
  * - Incassi + Payout sono accorpati in "Guadagni" (/guadagni);
  * - Reclami non è una voce autonoma: il badge vive su "Ordini";
  * - "Gestione negozio" (/edit) è stata unificata in "Impostazioni negozio"
+ * - "Pagamenti" è raggiungibile dalla sezione Vendita di "Impostazioni negozio",
+ *   così non esistono due ingressi principali alla stessa configurazione;
  *   (/impostazioni); /edit resta funzionante solo per i flussi guidati
  *   (onboarding wizard, duplica, media) — non è più una voce di menu;
  * - "Duplica negozio" resta come azione secondaria.
@@ -88,13 +89,6 @@ export function getMerchantStoreNavItems(storeId: string): MerchantNavItem[] {
       description: "Incassi e payout del negozio",
       href: `${storePath}/guadagni`,
       icon: Coins,
-    },
-    {
-      key: "pagamenti",
-      label: "Pagamenti",
-      description: "Stripe Connect, provider e metodi",
-      href: `${storePath}/pagamenti`,
-      icon: CreditCard,
     },
     // ── Sezione strumenti: separa le funzioni SECONDARIE dalle principali.
     //    Pattern "section" già supportato da MerchantSidebarNav: intestazione
