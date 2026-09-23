@@ -125,9 +125,9 @@ const SEZIONI: Sezione[] = [
     id: "catalogo",
     icona: Package,
     titolo: "Catalogo e offerte",
-    descrizione: "Prodotti, servizi e promozioni del negozio.",
-    riepilogo: "Prodotti · Servizi · Offerte · Eventi",
-    moduli: ["prodotti", "servizi", "offerte", "eventi"],
+    descrizione: "Servizi, promozioni ed eventi del negozio.",
+    riepilogo: "Servizi · Offerte · Eventi",
+    moduli: ["servizi", "offerte", "eventi"],
   },
   {
     id: "visibilita",
