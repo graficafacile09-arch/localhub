@@ -60,6 +60,7 @@ export default async function NegoziPage({
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
             {negozi.map((negozio) => {
               const imageUrl = getNegozioCardImmagine({
+                copertina_url: negozio.copertina_url,
                 logo_url: negozio.logo_url,
                 categoria: negozio.categoria,
               });

@@ -439,9 +439,10 @@ export default function SettingsSections({
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={logoUrl} alt={nome} className="h-full w-full object-cover" />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 text-blue-700">
-                    <Store className="h-8 w-8" aria-hidden />
-                  </div>
+                  <div
+                    className="h-full w-full bg-white"
+                    aria-label={`Logo ${nome} non ancora impostato`}
+                  />
                 )}
               </div>
 

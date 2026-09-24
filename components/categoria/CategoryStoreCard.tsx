@@ -13,28 +13,25 @@ type Props = {
 };
 
 export default function CategoryStoreCard({ negozio, preferitoAttivo, autenticato }: Props) {
-  const logoFallback = getNegozioCardImmagine({
-    logo_url: negozio.logo_url,
+  // Il logo viene mostrato solo quando esiste davvero: nessun placeholder
+  // fotografico al suo posto. Dopo la migrazione dei dati il cerchio resta vuoto
+  // finché il commerciante non carica il proprio logo.
+  const logoUrl =
+    typeof negozio.logo_url === "string" &&
+    (negozio.logo_url.startsWith("http://") ||
+      negozio.logo_url.startsWith("https://") ||
+      negozio.logo_url.startsWith("/"))
+      ? negozio.logo_url.trim()
+      : null;
+
+  // La copertina è sempre la foto principale della card.
+  // Se manca, il resolver usa il placeholder fotografico della categoria.
+  const copertina = getNegozioCardImmagine({
+    copertina_url: negozio.copertina_url,
+    logo_url: null,
+    immagine: null,
     categoria: negozio.categoria,
   });
-
-  // Copertina: usata SOLO se è un URL valido (assoluto o root-relative).
-  // I valori relativi tipo "copertina-panificio.jpg" non sono risolvibili
-  // (il file non esiste in /public) e produrrebbero un'immagine rotta:
-  // in quel caso si ricade sul placeholder fotografico di categoria,
-  // esattamente come per gli altri negozi senza copertina.
-  const copertina =
-    negozio.copertina_url &&
-    (negozio.copertina_url.startsWith("http://") ||
-      negozio.copertina_url.startsWith("https://") ||
-      negozio.copertina_url.startsWith("/"))
-      ? negozio.copertina_url.trim()
-      : getNegozioCardImmagine({
-          // Solo categoria: placeholder fotografico grande, non il logo.
-          logo_url: null,
-          immagine: null,
-          categoria: negozio.categoria,
-        });
 
   const haProdotti = negozio.prodotti_attivi > 0;
   // Link pubblico USA SEMPRE lo slug (mai UUID, mai null/undefined).
@@ -59,14 +56,18 @@ export default function CategoryStoreCard({ negozio, preferitoAttivo, autenticat
             className="h-full w-full bg-cover bg-center transition duration-300 group-hover:scale-105"
             style={{ backgroundImage: `url(${copertina})` }}
           />
-          {/* Logo in sovrapposizione */}
-          <div className="absolute bottom-3 left-3 flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl border-2 border-white bg-white shadow-sm">
-            <div
-              role="img"
-              aria-label={`Logo ${negozio.nome}`}
-              className="h-full w-full bg-cover bg-center"
-              style={{ backgroundImage: `url(${logoFallback})` }}
-            />
+          {/* Logo in sovrapposizione: vuoto finché non viene caricato */}
+          <div className="absolute bottom-3 left-3 flex h-14 w-14 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-white shadow-sm">
+            {logoUrl ? (
+              <div
+                role="img"
+                aria-label={`Logo ${negozio.nome}`}
+                className="h-full w-full bg-cover bg-center"
+                style={{ backgroundImage: `url(${logoUrl})` }}
+              />
+            ) : (
+              <div className="h-full w-full bg-white" aria-label={`Logo ${negozio.nome} non impostato`} />
+            )}
           </div>
         </div>
 

@@ -1,5 +1,6 @@
 type NegozioCardImmagineInput = {
   logo_url?: string | null;
+  copertina_url?: string | null;
   immagine?: string | null; // backward compat
   categoria?: string | null;
 };
@@ -153,8 +154,15 @@ function normalizeCustomImage(immagine: string) {
   return `/negozi/${immagine}`;
 }
 
-export function getNegozioCardImmagine({ logo_url, immagine, categoria }: NegozioCardImmagineInput) {
-  immagine = logo_url ?? immagine;
+export function getNegozioCardImmagine({
+  logo_url,
+  copertina_url,
+  immagine,
+  categoria,
+}: NegozioCardImmagineInput) {
+  // Per le vetrine pubbliche la copertina è la foto principale.
+  // Il logo resta disponibile separatamente per il badge circolare.
+  immagine = copertina_url || logo_url || immagine;
   if (isCustomImage(immagine)) {
     return normalizeCustomImage(immagine!.trim());
   }

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Image, Camera, X } from "lucide-react";
 import ModuleShell from "./ModuleShell";
+import { SaveBar, type StatoSalvataggio } from "./ModuleFields";
 import { uploadStoreImage, type StoreImagePreset } from "@/components/merchant/editor/lib/upload-image";
 
 type Props = { storeId: string };
@@ -15,7 +16,8 @@ export default function ImmaginiModule({ storeId }: Props) {
   const [galleria, setGalleria] = useState<string[]>([]);
   const logoInput = useRef<HTMLInputElement>(null);
   const copertinaInput = useRef<HTMLInputElement>(null);
-  const [message, setMessage] = useState<{ tipo: "ok" | "errore"; testo: string } | null>(null);
+  const [originale, setOriginale] = useState("");
+  const [message, setMessage] = useState<StatoSalvataggio>(null);
 
   useEffect(() => {
     fetch(`/api/merchant/stores/${storeId}/settings`)
@@ -23,9 +25,13 @@ export default function ImmaginiModule({ storeId }: Props) {
       .then((json) => {
         if (json.success) {
           const s = json.data.settings;
-          setLogoUrl(s.logo_url ?? "");
-          setCopertinaUrl(s.copertina_url ?? "");
-          setGalleria(Array.isArray(s.galleria) ? s.galleria : []);
+          const logo = s.logo_url ?? "";
+          const copertina = s.copertina_url ?? "";
+          const foto = Array.isArray(s.galleria) ? s.galleria : [];
+          setLogoUrl(logo);
+          setCopertinaUrl(copertina);
+          setGalleria(foto);
+          setOriginale(JSON.stringify({ logoUrl: logo, copertinaUrl: copertina, galleria: foto }));
         }
         setLoading(false);
       });
@@ -49,7 +55,7 @@ export default function ImmaginiModule({ storeId }: Props) {
     const url = await handleUpload(file, "logo");
     if (url) {
       setLogoUrl(url);
-      await saveField("logo_url", url);
+      setMessage(null);
     }
   }
 
@@ -58,7 +64,7 @@ export default function ImmaginiModule({ storeId }: Props) {
     const url = await handleUpload(file, "copertina");
     if (url) {
       setCopertinaUrl(url);
-      await saveField("copertina_url", url);
+      setMessage(null);
     }
   }
 
@@ -66,44 +72,51 @@ export default function ImmaginiModule({ storeId }: Props) {
     if (!file) return;
     const url = await handleUpload(file, "galleria");
     if (url) {
-      const nuova = [...galleria, url];
-      setGalleria(nuova);
-      await saveField("galleria", nuova);
+      setGalleria((precedenti) => [...precedenti, url]);
+      setMessage(null);
     }
   }
 
-  async function removeGalleria(index: number) {
-    const nuova = galleria.filter((_, i) => i !== index);
-    setGalleria(nuova);
-    await saveField("galleria", nuova);
+  function removeGalleria(index: number) {
+    setGalleria((precedenti) => precedenti.filter((_, i) => i !== index));
+    setMessage(null);
   }
 
-  async function saveField(field: string, value: unknown): Promise<boolean> {
+  async function handleSave() {
     setSaving(true);
+    setMessage(null);
+
     try {
       const res = await fetch(`/api/merchant/stores/${storeId}/settings`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ [field]: value }),
+        body: JSON.stringify({
+          logo_url: logoUrl,
+          copertina_url: copertinaUrl,
+          galleria,
+        }),
       });
       const json = await res.json().catch(() => null);
+
       if (!res.ok || !json?.success) {
         setMessage({
           tipo: "errore",
           testo: json?.error?.message ?? "Salvataggio non riuscito. Riprova.",
         });
-        return false;
+        return;
       }
-      setMessage({ tipo: "ok", testo: "Immagine salvata" });
-      setTimeout(() => setMessage(null), 2000);
-      return true;
+
+      setOriginale(JSON.stringify({ logoUrl, copertinaUrl, galleria }));
+      setMessage({ tipo: "ok", testo: "Modifiche salvate." });
     } catch {
       setMessage({ tipo: "errore", testo: "Errore di rete. Riprova." });
-      return false;
     } finally {
       setSaving(false);
     }
   }
+
+  const dirty =
+    JSON.stringify({ logoUrl, copertinaUrl, galleria }) !== originale;
 
   if (loading) {
     return (
@@ -115,14 +128,8 @@ export default function ImmaginiModule({ storeId }: Props) {
 
   return (
     <ModuleShell icon={<Image className="h-4 w-4" />} title="Immagini" subtitle="Logo, copertina e galleria foto" id="immagini">
-      {message && (
-        <div
-          className={`mb-4 rounded-xl border px-4 py-2 text-sm font-semibold ${
-            message.tipo === "ok"
-              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-              : "border-red-200 bg-red-50 text-red-700"
-          }`}
-        >
+      {message && message.tipo === "errore" && (
+        <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700">
           {message.testo}
         </div>
       )}
@@ -135,7 +142,7 @@ export default function ImmaginiModule({ storeId }: Props) {
           inputRef={logoInput}
           variant="logo"
           onChange={(f) => handleLogo(f)}
-          onRemove={async () => { setLogoUrl(""); await saveField("logo_url", ""); }}
+          onRemove={() => { setLogoUrl(""); setMessage(null); }}
         />
         <ImageUploadBox
           label="Copertina"
@@ -144,7 +151,7 @@ export default function ImmaginiModule({ storeId }: Props) {
           inputRef={copertinaInput}
           variant="cover"
           onChange={(f) => handleCopertina(f)}
-          onRemove={async () => { setCopertinaUrl(""); await saveField("copertina_url", ""); }}
+          onRemove={() => { setCopertinaUrl(""); setMessage(null); }}
         />
       </div>
 
@@ -169,6 +176,13 @@ export default function ImmaginiModule({ storeId }: Props) {
           </label>
         </div>
       </div>
+
+      <SaveBar
+        saving={saving}
+        onSave={handleSave}
+        dirty={dirty}
+        messaggio={message}
+      />
     </ModuleShell>
   );
 }
