@@ -25,7 +25,7 @@ type Props = {
  * Pulsante Preferiti (cuore) — componente strutturale riutilizzabile.
  *
  * - Utente anonimo → al click viene portato alla pagina di login.
- * - Utente loggato → toggle ottimistico via /api/cliente/preferiti.
+ * - Utente loggato → salva/rimuove via /api/cliente/preferiti e aggiorna lo stato solo dopo conferma del server.
  *
  * Lo stato iniziale (`attivo`, `autenticato`) arriva sempre dal server
  * calcolato con un'unica query per pagina (getChiaviPreferiti): nessuna
@@ -59,7 +59,6 @@ export default function FavoritoButton({
     }
 
     const prossimoStato = !attivoLocal;
-    setAttivoLocal(prossimoStato);
     setInviando(true);
 
     try {
@@ -70,10 +69,15 @@ export default function FavoritoButton({
       });
 
       if (!response.ok) {
-        setAttivoLocal(!prossimoStato);
+        return;
       }
+
+      // Il cuore cambia solo dopo la conferma del server. In questo modo
+      // un 403/401 o un errore di rete non lascia la UI in uno stato falso.
+      setAttivoLocal(prossimoStato);
+      router.refresh();
     } catch {
-      setAttivoLocal(!prossimoStato);
+      // Nessuna modifica locale: il server non ha confermato l'operazione.
     } finally {
       setInviando(false);
     }
