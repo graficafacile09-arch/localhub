@@ -12,9 +12,7 @@ import {
   getUltimaLetturaAgenda,
   rigaPrenotazionePerBadge,
 } from "@/lib/merchant/agenda-badge";
-import { attivitaHaAgenda } from "@/lib/profili-attivita";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
-import type { Negozio } from "@/types/negozio";
 
 export default async function MerchantStorePage({
   params,
@@ -75,13 +73,6 @@ export default async function MerchantStorePage({
 
     if (rigaNegozio) {
       const dataNegozio = (rigaNegozio.data ?? {}) as Record<string, unknown>;
-      const negozioMinimo = {
-        data: dataNegozio,
-        moduli_attivi: Array.isArray(rigaNegozio.moduli_attivi)
-          ? (rigaNegozio.moduli_attivi as string[])
-          : [],
-      } as unknown as Negozio;
-
       const prenotazioniConfig =
         dataNegozio.prenotazioni_config && typeof dataNegozio.prenotazioni_config === "object"
           ? (dataNegozio.prenotazioni_config as Record<string, unknown>)
