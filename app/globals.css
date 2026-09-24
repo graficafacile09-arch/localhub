@@ -383,7 +383,9 @@ body {
  * "Conferma modifiche".
  */
 body.correggi-ai-aperto .merchant-bottom-nav,
-body.correggi-ai-aperto .merchant-bottom-nav-spacer {
+body.correggi-ai-aperto .merchant-bottom-nav-spacer,
+body.merchant-image-editor-aperto .merchant-bottom-nav,
+body.merchant-image-editor-aperto .merchant-bottom-nav-spacer {
   display: none !important;
 }
 
