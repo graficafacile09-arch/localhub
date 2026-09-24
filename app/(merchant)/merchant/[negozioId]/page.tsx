@@ -3,11 +3,9 @@ import { ArrowRight, Camera, CircleDollarSign, Package, ShoppingBag } from "luci
 import MerchantDashboardCards from "@/components/merchant/MerchantDashboardCards";
 import MerchantEmptyState from "@/components/merchant/MerchantEmptyState";
 import MerchantQuickActions from "@/components/merchant/MerchantQuickActions";
-import { AvvisoNuoviOrdini } from "@/components/ordini/AvvisoNuoviOrdini";
 import { requireCurrentUser } from "@/lib/auth/session";
 import { getMerchantProductsForStore, getMerchantStoreForUser } from "@/lib/merchant/data";
 import { getOrdiniVenditore } from "@/lib/merchant/ordini";
-import { getConteggioReclamiApertiVenditore } from "@/lib/ordine-reclami";
 import {
   contaNuoviAppuntamenti,
   getBaselineAgenda,
@@ -58,14 +56,6 @@ export default async function MerchantStorePage({
     ordini = [];
   }
   const nonLetti = ordini.filter((o) => !o.lettoAt).length;
-
-  // Reclami attivi (best-effort: un errore qui non deve far fallire la dashboard).
-  let reclamiAperti = 0;
-  try {
-    reclamiAperti = await getConteggioReclamiApertiVenditore(user.id, negozioId);
-  } catch {
-    reclamiAperti = 0;
-  }
 
   // Badge Agenda: appuntamenti NUOVI (non ancora visti) per il SOLO negozio
   // corrente. Definizione centralizzata in lib/merchant/agenda-badge.ts:
@@ -140,24 +130,6 @@ export default async function MerchantStorePage({
         </div>
         {storeResult.data.descrizione && <p className="mt-4 text-sm leading-5 text-slate-500">{storeResult.data.descrizione}</p>}
       </div>
-
-      {/* ── ATTENZIONE — AVVISI URGENTI (prima cosa visibile) ── */}
-      {(nonLetti > 0 || reclamiAperti > 0) && (
-        <div className="space-y-3">
-          {nonLetti > 0 && (
-            <AvvisoNuoviOrdini
-              conteggio={nonLetti}
-              href={`/merchant/${negozioId}/ordini?filtro=nuovi`}
-            />
-          )}
-          {reclamiAperti > 0 && (
-            <AvvisoReclamiAperti
-              conteggio={reclamiAperti}
-              href={`/merchant/${negozioId}/ordini?filtro=reclami`}
-            />
-          )}
-        </div>
-      )}
 
       {/* Scansione — azione principale, immediatamente visibile */}
       <Link
