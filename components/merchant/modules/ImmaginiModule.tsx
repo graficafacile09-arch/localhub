@@ -127,18 +127,22 @@ export default function ImmaginiModule({ storeId }: Props) {
         </div>
       )}
 
-      <div className="mb-6 grid gap-4 sm:grid-cols-2">
+      <div className="mb-6 grid gap-4 lg:grid-cols-[220px_minmax(0,1fr)]">
         <ImageUploadBox
           label="Logo"
+          description="512 × 512 px · visualizzato in tondo accanto al nome"
           value={logoUrl}
           inputRef={logoInput}
+          variant="logo"
           onChange={(f) => handleLogo(f)}
           onRemove={async () => { setLogoUrl(""); await saveField("logo_url", ""); }}
         />
         <ImageUploadBox
           label="Copertina"
+          description="1600 × 900 px · immagine grande del negozio"
           value={copertinaUrl}
           inputRef={copertinaInput}
+          variant="cover"
           onChange={(f) => handleCopertina(f)}
           onRemove={async () => { setCopertinaUrl(""); await saveField("copertina_url", ""); }}
         />
@@ -169,36 +173,69 @@ export default function ImmaginiModule({ storeId }: Props) {
   );
 }
 
-function ImageUploadBox({ label, value, inputRef, onChange, onRemove }: {
-  label: string; value: string; inputRef: React.RefObject<HTMLInputElement | null>;
-  onChange: (f: File | undefined) => void; onRemove: () => void;
+function ImageUploadBox({
+  label,
+  description,
+  value,
+  inputRef,
+  variant,
+  onChange,
+  onRemove,
+}: {
+  label: string;
+  description: string;
+  value: string;
+  inputRef: React.RefObject<HTMLInputElement | null>;
+  variant: "logo" | "cover";
+  onChange: (f: File | undefined) => void;
+  onRemove: () => void;
 }) {
+  const isLogo = variant === "logo";
   return (
     <div>
-      <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">{label}</p>
+      <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-slate-500">{label}</p>
+      <p className="mb-2 text-[10px] leading-4 text-slate-400">{description}</p>
       <div
-        className="group relative flex h-32 w-full cursor-pointer items-center justify-center overflow-hidden rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 transition hover:border-blue-300"
+        className={isLogo
+          ? "group relative flex h-40 w-40 cursor-pointer items-center justify-center overflow-hidden rounded-full border-2 border-dashed border-slate-200 bg-slate-50 transition hover:border-blue-300"
+          : "group relative flex aspect-[16/9] w-full cursor-pointer items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50 transition hover:border-blue-300"}
         onClick={() => inputRef.current?.click()}
       >
         {value ? (
           <>
-            <img src={value} alt={label} className="h-full w-full object-cover" />
+            <img
+              src={value}
+              alt={label}
+              className={isLogo ? "h-full w-full object-cover" : "h-full w-full object-cover"}
+            />
             <button
               type="button"
-              onClick={(e) => { e.stopPropagation(); onRemove(); }}
-              className="absolute right-1.5 top-1.5 hidden rounded-lg bg-blue-500/90 px-2 py-1 text-[10px] font-bold text-white group-hover:block"
+              onClick={(e) => {
+                e.stopPropagation();
+                onRemove();
+              }}
+              className="absolute right-2 top-2 hidden rounded-lg bg-blue-500/90 px-2 py-1 text-[10px] font-bold text-white group-hover:block"
             >
               Elimina
             </button>
           </>
         ) : (
           <div className="flex flex-col items-center gap-1 text-slate-400">
-            <Camera className="h-6 w-6" />
+            <Camera className={isLogo ? "h-7 w-7" : "h-6 w-6"} />
             <span className="text-[10px] font-medium">Carica {label.toLowerCase()}</span>
           </div>
         )}
       </div>
-      <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => onChange(e.target.files?.[0])} />
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        className="hidden"
+        onChange={(e) => {
+          onChange(e.target.files?.[0]);
+          e.target.value = "";
+        }}
+      />
     </div>
   );
 }
