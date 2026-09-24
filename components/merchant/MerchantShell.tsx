@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { Home, LogOut } from "lucide-react";
+import { ArrowUpRight, Home, LogOut, Store } from "lucide-react";
 import type { User } from "@supabase/supabase-js";
 import type { MerchantStoreSummary } from "@/lib/merchant/types";
 import MerchantStoreSwitcher from "./MerchantStoreSwitcher";
@@ -49,7 +49,7 @@ export default function MerchantShell({
   const areaHref = isAdmin ? "/amministratore" : "/merchant";
 
   return (
-    <main className="min-h-screen bg-[#eef3f8] text-slate-900">
+    <main className="min-h-screen bg-[#eef2f7] text-slate-950">
 
       {/* ── Top App Bar mobile — sticky, visibile solo su mobile ─────────────── */}
       <MerchantTopBar
@@ -61,82 +61,60 @@ export default function MerchantShell({
       />
 
       {/* ── Header desktop — visibile solo su md+ ────────────────────────────── */}
-      <div className="hidden border-b border-blue-800/20 bg-blue-700 text-white shadow-sm md:block">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-4">
-          <div className="flex items-center gap-4">
-            <Link
-              href="/"
-              className="flex items-center gap-1.5 rounded-xl bg-white/15 px-3 py-2 text-sm font-bold text-white transition hover:bg-white/25"
-            >
-              <Home className="h-4 w-4" />
-              Home
+      <header className="hidden border-b border-slate-800 bg-slate-950 text-white md:block">
+        <div className="mx-auto flex h-[82px] max-w-[1480px] items-center justify-between px-6 lg:px-8">
+          <div className="flex items-center gap-5">
+            <Link href="/" className="flex h-11 items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 text-sm font-bold text-slate-200 transition hover:bg-white/10">
+              <Home className="h-4 w-4" /> Sito pubblico
             </Link>
-            <div>
-              <Link href={areaHref} className="text-2xl font-black tracking-tight text-white">
-                {areaTitle}
-              </Link>
-              <p className="mt-1 text-sm text-blue-100">
-                {currentStore?.nome ?? areaTitle}
-              </p>
-            </div>
+            <div className="h-9 w-px bg-white/10" />
+            <Link href={areaHref} className="flex items-center gap-3">
+              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-slate-950"><Store className="h-5 w-5" /></span>
+              <span>
+                <span className="block text-base font-black tracking-tight">{areaTitle}</span>
+                <span className="block text-xs font-medium text-slate-400">{currentStore?.nome ?? "Gestione attività"}</span>
+              </span>
+            </Link>
           </div>
-
           <div className="flex items-center gap-3">
-            <div className="rounded-2xl border border-white/15 bg-white/10 px-4 py-2 text-sm text-blue-50">
-              {user.email}
+            <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-right">
+              <p className="max-w-[260px] truncate text-xs font-semibold text-white">{user.email}</p>
+              <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">{isAdmin ? "amministratore" : "venditore"}</p>
             </div>
             <form action="/api/auth/signout" method="post">
-              <button
-                type="submit"
-                className="inline-flex h-11 items-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-4 text-sm font-semibold text-white transition hover:bg-white/15"
-              >
-                <LogOut className="h-4 w-4" />
-                Esci
-              </button>
+              <button type="submit" className="inline-flex h-11 items-center gap-2 rounded-xl bg-white px-4 text-sm font-bold text-slate-950 transition hover:bg-slate-200"><LogOut className="h-4 w-4" /> Esci</button>
             </form>
           </div>
         </div>
-      </div>
+      </header>
 
       {/* ── Layout principale ─────────────────────────────────────────────────── */}
-      <div className="mx-auto grid max-w-7xl gap-4 px-4 py-3 md:grid-cols-[280px_minmax(0,1fr)] md:px-6 md:py-5">
+      <div className="mx-auto grid max-w-[1480px] gap-6 px-4 py-5 pb-28 md:grid-cols-[292px_minmax(0,1fr)] md:px-6 md:py-7 md:pb-10 lg:grid-cols-[320px_minmax(0,1fr)] lg:px-8">
 
         {/* Sidebar — visibile solo su desktop/tablet ─────────────────────────── */}
-        <aside className="hidden space-y-5 md:block">
-          {/* Amministrazione — SOLO nell'Area Amministratore. PRIMA card della
-              sidebar: il menu admin (Strumenti di piattaforma → Negozi → …) è la
-              prima cosa che l'amministratore vede entrando in /amministratore. */}
-          {isAdmin ? (
-            <>
-              {/* Contesto negozio: visibile quando l'admin è dentro un negozio */}
-              <AdminStoreNavAuto />
-              <div className="card p-5">
-                <AdminSidebar nonLetteNotifiche={adminNotificheNonLette ?? 0} />
+        <aside className="hidden md:block">
+          <div className="sticky top-6 space-y-4">
+            <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_18px_45px_-28px_rgba(15,23,42,.45)]">
+              <div className="bg-slate-950 px-5 py-5 text-white">
+                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">{isAdmin ? "Console" : "Merchant Console"}</p>
+                <p className="mt-1 text-lg font-black tracking-tight">{currentStore?.nome ?? "I tuoi negozi"}</p>
+                <p className="mt-1 text-xs text-slate-400">{isAdmin ? "Amministrazione" : "Gestione completa del negozio"}</p>
               </div>
-            </>
-          ) : (
-            <MerchantStoreNavAuto
-              stores={stores}
-              reclamiApertiPerNegozio={reclamiApertiPerNegozio}
-            />
-          )}
-
-          {/* Sezione SEPARATA dalla navigazione principale: i link ai negozi
-              non sono voci del menu admin. Per l'admin l'etichetta è
-              "Negozi gestiti", con stile visivamente distinto (card a parte). */}
-          <MerchantStoreSwitcher
-            stores={stores}
-            currentStoreId={currentStoreId}
-            ordiniNonLettiPerNegozio={ordiniNonLettiPerNegozio}
-            baseHref={isAdmin ? "/amministratore/negozi" : "/merchant"}
-            label={isAdmin ? "Negozi gestiti" : "I tuoi negozi"}
-          />
+              <div className="p-3">
+                {isAdmin ? <><AdminStoreNavAuto /><div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-2"><AdminSidebar nonLetteNotifiche={adminNotificheNonLette ?? 0} /></div></> : <MerchantStoreNavAuto stores={stores} reclamiApertiPerNegozio={reclamiApertiPerNegozio} />}
+              </div>
+            </div>
+            <div className="rounded-[20px] border border-slate-200 bg-white p-3 shadow-sm">
+              <MerchantStoreSwitcher stores={stores} currentStoreId={currentStoreId} ordiniNonLettiPerNegozio={ordiniNonLettiPerNegozio} baseHref={isAdmin ? "/amministratore/negozi" : "/merchant"} label={isAdmin ? "Negozi gestiti" : "Cambia negozio"} />
+            </div>
+            {!isAdmin && <Link href="/" className="flex items-center justify-between rounded-[20px] border border-dashed border-slate-300 bg-white px-4 py-3 text-xs font-bold text-slate-600 transition hover:border-slate-400 hover:bg-slate-50"><span>Apri il sito pubblico</span><ArrowUpRight className="h-4 w-4" /></Link>}
+          </div>
         </aside>
 
         {/* Contenuto principale ──────────────────────────────────────────────── */}
-        <section className="min-w-0 space-y-3">
+        <section className="min-w-0">
           {banner ? (
-            <div className="rounded-3xl border border-yellow-200 bg-yellow-50 px-5 py-4 text-sm text-yellow-900">
+            <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-semibold text-amber-950">
               {banner}
             </div>
           ) : null}
