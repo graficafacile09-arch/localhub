@@ -4,7 +4,6 @@ import MerchantDashboardCards from "@/components/merchant/MerchantDashboardCards
 import MerchantEmptyState from "@/components/merchant/MerchantEmptyState";
 import MerchantQuickActions from "@/components/merchant/MerchantQuickActions";
 import { AvvisoNuoviOrdini } from "@/components/ordini/AvvisoNuoviOrdini";
-import { AvvisoReclamiAperti } from "@/components/ordini/AvvisoReclamiAperti";
 import { requireCurrentUser } from "@/lib/auth/session";
 import { getMerchantProductsForStore, getMerchantStoreForUser } from "@/lib/merchant/data";
 import { getOrdiniVenditore } from "@/lib/merchant/ordini";
@@ -127,8 +126,13 @@ export default async function MerchantStorePage({
           <Link href={`/merchant/${negozioId}/prodotti`} className="group rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:border-slate-300 hover:bg-white">
             <Package className="h-5 w-5 text-slate-700" /><p className="mt-3 text-sm font-black">Prodotti</p><p className="mt-1 text-xs text-slate-500">Catalogo e disponibilità</p><ArrowRight className="mt-3 h-4 w-4 transition group-hover:translate-x-1" />
           </Link>
-          <Link href={`/merchant/${negozioId}/ordini`} className="group rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:border-slate-300 hover:bg-white">
-            <ShoppingBag className="h-5 w-5 text-slate-700" /><p className="mt-3 text-sm font-black">Ordini</p><p className="mt-1 text-xs text-slate-500">Gestisci le vendite</p><ArrowRight className="mt-3 h-4 w-4 transition group-hover:translate-x-1" />
+          <Link href={`/merchant/${negozioId}/ordini`} className="group relative rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:border-blue-200 hover:bg-white">
+            {nonLetti > 0 && (
+              <span className="absolute right-3 top-3 inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-red-500 px-1.5 text-[11px] font-black leading-none text-white" aria-label={`${nonLetti} nuovi ordini`}>
+                {nonLetti > 99 ? "99+" : nonLetti}
+              </span>
+            )}
+            <ShoppingBag className="h-5 w-5 text-blue-700" /><p className="mt-3 text-sm font-black">Ordini</p><p className="mt-1 text-xs text-slate-500">Gestisci le vendite</p><ArrowRight className="mt-3 h-4 w-4 transition group-hover:translate-x-1" />
           </Link>
           <Link href={`/merchant/${negozioId}/guadagni`} className="group rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:border-slate-300 hover:bg-white">
             <CircleDollarSign className="h-5 w-5 text-slate-700" /><p className="mt-3 text-sm font-black">Guadagni</p><p className="mt-1 text-xs text-slate-500">Incassi e riepiloghi</p><ArrowRight className="mt-3 h-4 w-4 transition group-hover:translate-x-1" />
@@ -158,10 +162,10 @@ export default async function MerchantStorePage({
       {/* Scansione — azione principale, immediatamente visibile */}
       <Link
         href={`/merchant/${negozioId}/prodotti/ai`}
-        className="flex w-full items-center justify-between rounded-[22px] border border-slate-800 bg-slate-950 px-5 py-4 text-sm font-black text-white shadow-[0_18px_40px_-24px_rgba(15,23,42,.7)] transition hover:bg-slate-800"
+        className="flex w-full items-center justify-between rounded-[22px] border border-yellow-500 bg-yellow-400 px-5 py-4 text-sm font-black text-blue-950 shadow-[0_18px_40px_-24px_rgba(15,23,42,.25)] transition hover:bg-yellow-300"
       >
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15">
-          <Camera className="h-5 w-5" />
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-900/10">
+          <Camera className="h-5 w-5 text-blue-950" />
         </div>
         <span>Scansiona nuovo prodotto</span>
       </Link>
