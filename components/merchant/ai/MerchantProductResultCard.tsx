@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, CheckCircle2, Crop, Mic, Pencil, RotateCcw } from "lucide-react";
 import type { ProductVisionSuggestion } from "@/lib/product-assistant/vision";
@@ -12,6 +12,8 @@ type ResultCardProps = {
   photoUrl: string;
   onRetake: () => void;
   onEdit: () => void;
+  /** Permette di modificare direttamente il titolo nell'anteprima. */
+  onTitleChange: (nome: string) => void;
   /** Apre la correzione vocale/testuale con l'AI sul draft. */
   onCorreggi: () => void;
   /** Apre l'editor immagine post-generazione (separato dal flusso AI). */
@@ -27,6 +29,7 @@ export default function MerchantProductResultCard({
   photoUrl,
   onRetake,
   onEdit,
+  onTitleChange,
   onCorreggi,
   onModificaImmagine,
   giàSalvato = null,
@@ -35,6 +38,30 @@ export default function MerchantProductResultCard({
   const [publishing, setPublishing] = useState(false);
   const [published, setPublished] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [titoloInModifica, setTitoloInModifica] = useState(false);
+  const [titoloDraft, setTitoloDraft] = useState(suggestion.nome);
+  const titoloInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (!titoloInModifica) setTitoloDraft(suggestion.nome);
+  }, [suggestion.nome, titoloInModifica]);
+
+  useEffect(() => {
+    if (!titoloInModifica) return;
+    requestAnimationFrame(() => titoloInputRef.current?.focus());
+  }, [titoloInModifica]);
+
+  function salvaTitolo() {
+    const nome = titoloDraft.trim();
+    if (!nome) return;
+    onTitleChange(nome);
+    setTitoloInModifica(false);
+  }
+
+  function annullaModificaTitolo() {
+    setTitoloDraft(suggestion.nome);
+    setTitoloInModifica(false);
+  }
 
   async function handlePublish() {
     setPublishing(true);
@@ -153,9 +180,60 @@ export default function MerchantProductResultCard({
 
           <div className="flex min-w-0 flex-1 flex-col justify-between">
             <div className="min-w-0">
-              <h2 className="min-w-0 max-w-full break-words text-base font-black tracking-tight text-slate-900 line-clamp-2">
-                {suggestion.nome}
-              </h2>
+              {titoloInModifica ? (
+                <div className="space-y-1.5">
+                  <input
+                    ref={titoloInputRef}
+                    type="text"
+                    value={titoloDraft}
+                    onChange={(e) => setTitoloDraft(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        salvaTitolo();
+                      }
+                      if (e.key === "Escape") {
+                        e.preventDefault();
+                        annullaModificaTitolo();
+                      }
+                    }}
+                    aria-label="Titolo annuncio"
+                    className="w-full rounded-lg border border-blue-300 bg-white px-2.5 py-2 text-base font-black tracking-tight text-slate-900 outline-none ring-2 ring-blue-100"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={salvaTitolo}
+                      disabled={!titoloDraft.trim()}
+                      className="rounded-lg bg-blue-600 px-2.5 py-1.5 text-[11px] font-bold text-white disabled:opacity-50"
+                    >
+                      Salva titolo
+                    </button>
+                    <button
+                      type="button"
+                      onClick={annullaModificaTitolo}
+                      className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-600"
+                    >
+                      Annulla
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTitoloDraft(suggestion.nome);
+                    setTitoloInModifica(true);
+                  }}
+                  className="block w-full text-left"
+                  aria-label="Modifica titolo annuncio"
+                  title="Modifica titolo"
+                >
+                  <h2 className="min-w-0 max-w-full break-words text-base font-black tracking-tight text-slate-900 line-clamp-2">
+                    {suggestion.nome}
+                  </h2>
+                </button>
+              )}
               {suggestion.marca && (
                 <p className="text-xs font-semibold text-slate-500 truncate">{suggestion.marca}</p>
               )}
