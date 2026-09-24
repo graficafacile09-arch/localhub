@@ -1,81 +1,48 @@
 "use client";
 
 import Link from "next/link";
-import {
-  Settings,
-  Hand,
-  Cog,
-  CalendarCheck,
-} from "lucide-react";
-
-/**
- * Azioni rapide della Dashboard negozio — solo funzioni non duplicate.
- *
- * Le card puntano alle sezioni/blocchi specifici del nuovo editor
- * (`/merchant/:id/edit?step=…&block=…`), così ogni voce apre direttamente
- * il blocco giusto invece di una pagina generica. Le destinazioni concrete:
- * - Informazioni      → 01 Attività (blocco identità);
- * - Foto               → 03 Presentazione (blocco presentazione);
- * - Prodotti           → 04 Catalogo e servizi (blocco prodotti) / gestione catalogo;
- * - Servizi            → 04 Catalogo e servizi (blocco servizi strutturati);
- * - Come vendi         → 05 Vendita e prenotazioni (blocco commerciale);
- * - Prenotazioni       → 05 Vendita e prenotazioni (blocco prenotazioni);
- * - Impostazioni negozio → pagina canonica /impostazioni.
- */
-function ServiziIcon() {
-  return (
-    <span className="relative flex h-5 w-5 items-center justify-center" aria-hidden="true">
-      <Hand className="h-5 w-5" />
-      <Cog className="absolute -right-1 -bottom-1 h-3 w-3 fill-white" />
-    </span>
-  );
-}
+import { Settings, Sparkles } from "lucide-react";
+import MerchantAgendaQuickAction from "./MerchantAgendaQuickAction";
 
 const azioni = [
   {
     key: "servizi",
     title: "Servizi offerti",
     description: "I servizi che offri ai clienti.",
-    icon: ServiziIcon,
+    icon: Sparkles,
     href: (storeId: string) => `/merchant/${storeId}/edit?step=catalogo&block=servizi-strutturati`,
-  },
-  {
-    key: "prenotazioni",
-    title: "Agenda",
-    description: "Appuntamenti dei clienti.",
-    icon: CalendarCheck,
-    href: (storeId: string) => `/merchant/${storeId}/edit?step=vendita&block=prenotazioni`,
   },
 ];
 
 export default function MerchantQuickActions({
   storeId,
   nuoviAppuntamenti = 0,
+  agendaAttiva = false,
+  agendaDisponibile = true,
 }: {
   storeId: string;
-  /** Appuntamenti NUOVI (non ancora visti) → badge numerico sulla card Agenda. */
   nuoviAppuntamenti?: number;
+  agendaAttiva?: boolean;
+  agendaDisponibile?: boolean;
 }) {
   return (
     <div className="grid gap-4 lg:grid-cols-2">
+      {agendaDisponibile && (
+        <MerchantAgendaQuickAction
+          storeId={storeId}
+          initialActive={agendaAttiva}
+          nuoviAppuntamenti={nuoviAppuntamenti}
+        />
+      )}
+
       {azioni.map((action) => {
         const Icon = action.icon;
-
         return (
           <Link
             key={action.key}
             href={action.href(storeId)}
             className="group relative flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-lg hover:shadow-blue-500/10 cursor-pointer"
           >
-            {/* Badge appuntamenti nuovi (solo card Agenda, solo se > 0) */}
-            {action.key === "prenotazioni" && nuoviAppuntamenti > 0 && (
-              <span
-                className="absolute right-3 top-3 inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-red-500 px-1.5 text-[11px] font-black leading-none text-white shadow-sm"
-                aria-label={`${nuoviAppuntamenti} nuovi appuntamenti`}
-              >
-                {nuoviAppuntamenti > 99 ? "99+" : nuoviAppuntamenti}
-              </span>
-            )}
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-700 transition group-hover:bg-blue-100">
               <Icon className="h-5 w-5" />
             </div>
@@ -91,7 +58,6 @@ export default function MerchantQuickActions({
         );
       })}
 
-      {/* Impostazioni negozio — stessa destinazione della sidebar (una sola voce) */}
       <Link
         href={`/merchant/${storeId}/impostazioni`}
         className="group flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-lg hover:shadow-blue-500/10 cursor-pointer"
