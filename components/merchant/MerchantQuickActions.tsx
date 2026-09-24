@@ -4,10 +4,10 @@ import Link from "next/link";
 import { Cog, Hand, Settings } from "lucide-react";
 import MerchantAgendaQuickAction from "./MerchantAgendaQuickAction";
 
-function ServiziIcon() {
+function ServiziIcon({ className = "h-5 w-5" }: { className?: string }) {
   return (
-    <span className="relative flex h-5 w-5 items-center justify-center" aria-hidden="true">
-      <Hand className="h-5 w-5" />
+    <span className={`relative flex items-center justify-center ${className}`} aria-hidden="true">
+      <Hand className="h-full w-full" />
       <Cog className="absolute -right-1 -bottom-1 h-3 w-3 fill-white" />
     </span>
   );
