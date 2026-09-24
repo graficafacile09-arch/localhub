@@ -10,7 +10,6 @@ import {
   CalendarCheck,
   Store,
 } from "lucide-react";
-import MetodiPagamentoCard from "./MetodiPagamentoCard";
 
 /**
  * Azioni rapide della Dashboard negozio.
@@ -28,39 +27,11 @@ import MetodiPagamentoCard from "./MetodiPagamentoCard";
  */
 const azioni = [
   {
-    key: "informazioni",
-    title: "Informazioni",
-    description: "Nome, categoria e descrizione.",
-    icon: Building2,
-    href: (storeId: string) => `/merchant/${storeId}/edit?step=attivita&block=identita`,
-  },
-  {
-    key: "foto",
-    title: "Foto del negozio",
-    description: "Logo, copertina e galleria.",
-    icon: ImageIcon,
-    href: (storeId: string) => `/merchant/${storeId}/edit?step=presentazione&block=presentazione`,
-  },
-  {
-    key: "prodotti",
-    title: "Gestisci prodotti",
-    description: "Vedi e modifica il catalogo.",
-    icon: LayoutList,
-    href: (storeId: string) => `/merchant/${storeId}/edit?step=catalogo&block=catalogo-prodotti`,
-  },
-  {
     key: "servizi",
     title: "Servizi offerti",
     description: "I servizi che offri ai clienti.",
     icon: Sparkles,
     href: (storeId: string) => `/merchant/${storeId}/edit?step=catalogo&block=servizi-strutturati`,
-  },
-  {
-    key: "come-vendi",
-    title: "Come vendi",
-    description: "Ritiro, consegna o spedizione.",
-    icon: Store,
-    href: (storeId: string) => `/merchant/${storeId}/edit?step=vendita&block=vendita-commerciale`,
   },
   {
     key: "prenotazioni",
@@ -131,9 +102,6 @@ export default function MerchantQuickActions({
           </p>
         </div>
       </Link>
-
-      {/* Metodo di pagamento — card di stato con link alla route Pagamenti */}
-      <MetodiPagamentoCard storeId={storeId} />
     </div>
   );
 }
