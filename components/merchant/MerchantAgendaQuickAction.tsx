@@ -21,30 +21,19 @@ export default function MerchantAgendaQuickAction({
 
   async function toggleAgenda() {
     if (saving) return;
+    const nextActive = !active;
+
+    setActive(nextActive);
     setSaving(true);
     setError("");
 
     try {
-      const currentRes = await fetch(`/api/merchant/stores/${storeId}/settings`);
-      const currentJson = await currentRes.json().catch(() => null);
-      if (!currentRes.ok || !currentJson?.success) {
-        throw new Error(currentJson?.error?.message ?? "Impossibile leggere la configurazione Agenda.");
-      }
-
-      const data = (currentJson.data?.settings?.data ?? {}) as Record<string, unknown>;
-      const currentConfig =
-        data.prenotazioni_config && typeof data.prenotazioni_config === "object"
-          ? (data.prenotazioni_config as Record<string, unknown>)
-          : {};
-
-      const nextActive = !active;
       const saveRes = await fetch(`/api/merchant/stores/${storeId}/settings`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           data: {
-            prenotazioni_config: {
-              ...currentConfig,
+            prenotazioni_config_patch: {
               attiva: nextActive,
             },
           },
@@ -54,9 +43,8 @@ export default function MerchantAgendaQuickAction({
       if (!saveRes.ok || !saveJson?.success) {
         throw new Error(saveJson?.error?.message ?? "Salvataggio non riuscito.");
       }
-
-      setActive(nextActive);
     } catch (e) {
+      setActive(!nextActive);
       setError(e instanceof Error ? e.message : "Salvataggio non riuscito.");
     } finally {
       setSaving(false);
