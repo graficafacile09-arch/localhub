@@ -36,13 +36,11 @@ export default function MerchantQuickActions({
 }) {
   return (
     <div className="grid gap-4 lg:grid-cols-2">
-      {agendaDisponibile && (
-        <MerchantAgendaQuickAction
-          storeId={storeId}
-          initialActive={agendaAttiva}
-          nuoviAppuntamenti={nuoviAppuntamenti}
-        />
-      )}
+      <MerchantAgendaQuickAction
+        storeId={storeId}
+        initialActive={agendaAttiva}
+        nuoviAppuntamenti={nuoviAppuntamenti}
+      />
 
       {azioni.map((action) => {
         const Icon = action.icon;
