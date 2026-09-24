@@ -428,34 +428,37 @@ export default function MerchantImageEditorDialog({
   }
 
   /** Salva l'immagine nella bozza e RESTA nell'editor. Non pubblica mai. */
-  async function handleSave() {
-    if (!img || saving) return;
+  async function salvaImmagineCorrente(): Promise<boolean> {
+    if (!img || saving) return false;
     setSaving(true);
     setSaveError(null);
     try {
       const dataUrl = await exportDataUrl();
       await onSave(dataUrl);
       setDirty(false);
+      return true;
     } catch (caught) {
       setSaveError(
         caught instanceof Error ? caught.message : "Errore durante il salvataggio."
       );
+      return false;
     } finally {
       setSaving(false);
     }
   }
 
-  /** Torna all'annuncio: salva prima le modifiche correnti e poi chiude l'editor. */
+  async function handleSave() {
+    await salvaImmagineCorrente();
+  }
+
+  /** Torna all'annuncio: salva prima le modifiche correnti e chiude solo se il salvataggio riesce. */
   async function handleBackToDraft() {
     if (saving) return;
-    try {
-      if (dirty) {
-        await handleSave();
-      }
-      onClose();
-    } catch {
-      // handleSave mostra già l'errore e lascia l'editor aperto.
+    if (dirty) {
+      const ok = await salvaImmagineCorrente();
+      if (!ok) return;
     }
+    onClose();
   }
 
   return (
