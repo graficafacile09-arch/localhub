@@ -405,40 +405,6 @@ export default function MerchantProductForm({
     router.push(onSuccessRedirect ?? `/merchant/${negozioId}/prodotti`);
     router.refresh();
   }
-      success: boolean;
-      error?: { message?: string };
-      product?: { id?: string };
-      // Le route prodotti rispondono con { success, data: { product } }.
-      data?: { product?: { id?: string } };
-    };
-
-    if (!response.ok || !result.success) {
-      setError(result.error?.message ?? "Impossibile salvare il prodotto.");
-      setSubmitting(false);
-      return;
-    }
-
-    // Salvataggio riuscito: il form torna pulito (niente modifiche pendenti).
-    dirtyRef.current = false;
-    onDirtyChange?.(false);
-
-    // Modalità "resta nella stessa vista" (es. annuncio del wizard AI): niente
-    // redirect, il chiamante aggiorna il proprio stato con i dati salvati.
-    if (onSuccess) {
-      onSuccess({
-        payload,
-        // Id reale del prodotto creato: le route rispondono { success, data: { product } }.
-        // Il fallback piatto resta per compatibilità con eventuali risposte non incapsulate.
-        productId: productId ?? result.data?.product?.id ?? result.product?.id ?? null,
-      });
-      router.refresh();
-      setSubmitting(false);
-      return;
-    }
-
-    router.push(onSuccessRedirect ?? `/merchant/${negozioId}/prodotti`);
-    router.refresh();
-  }
 
   return (
     <form onSubmit={handleSubmit} onChange={handleFormChange} noValidate className="space-y-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
