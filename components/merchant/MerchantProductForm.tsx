@@ -263,6 +263,32 @@ export default function MerchantProductForm({
       return;
     }
 
+    const prezzoRaw = String(formData.get("prezzo") ?? "").trim();
+    const prezzo = Number(prezzoRaw.replace(",", "."));
+    if (!prezzoRaw || !Number.isFinite(prezzo) || prezzo < 0) {
+      setError("Inserisci un prezzo valido, ad esempio 12,50.");
+      setSubmitting(false);
+      return;
+    }
+
+    const quantitaRaw = String(formData.get("quantitaDisponibile") ?? "").trim();
+    const quantita = quantitaRaw ? Number(quantitaRaw.replace(",", ".")) : 1;
+    if (!Number.isInteger(quantita) || quantita < 0) {
+      setError("Inserisci una quantità disponibile valida.");
+      setSubmitting(false);
+      return;
+    }
+
+    const prezzoSuggeritoRaw = String(formData.get("prezzoSuggerito") ?? "").trim();
+    const prezzoSuggerito = prezzoSuggeritoRaw
+      ? Number(prezzoSuggeritoRaw.replace(",", "."))
+      : null;
+    if (prezzoSuggerito !== null && (!Number.isFinite(prezzoSuggerito) || prezzoSuggerito < 0)) {
+      setError("Il prezzo suggerito non è valido.");
+      setSubmitting(false);
+      return;
+    }
+
     const payload: MerchantProductPayload = {
       nome,
       descrizione,
@@ -300,13 +326,9 @@ export default function MerchantProductForm({
           }
           return acc;
         }, {}) || undefined,
-      prezzo: Number(formData.get("prezzo") ?? 0),
-      prezzoSuggerito: formData.get("prezzoSuggerito")
-        ? Number(formData.get("prezzoSuggerito"))
-        : null,
-      quantitaDisponibile: formData.get("quantitaDisponibile")
-        ? Number(formData.get("quantitaDisponibile"))
-        : 1,
+      prezzo,
+      prezzoSuggerito,
+      quantitaDisponibile: quantita,
       statoCondizione: String(formData.get("statoCondizione") ?? "nuovo") as "nuovo" | "usato" | "ricondizionato",
       immaginePrincipale: newImageDataUrl ?? String(formData.get("immaginePrincipale") ?? "").trim(),
       seoTitle: String(formData.get("seo_title") ?? "").trim() || undefined,
@@ -324,13 +346,65 @@ export default function MerchantProductForm({
 
     const method = productId ? "PUT" : "POST";
 
-    const response = await fetch(route, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+    let response: Response;
+    try {
+      response = await fetch(route, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+    } catch (fetchError) {
+      console.error("[MerchantProductForm] Errore di rete durante la pubblicazione:", fetchError);
+      setError("Impossibile raggiungere il servizio di pubblicazione. Riprova.");
+      setSubmitting(false);
+      return;
+    }
 
-    const result = (await response.json()) as {
+    let result: {
+      success: boolean;
+      error?: { message?: string };
+      product?: { id?: string };
+      data?: { product?: { id?: string } };
+    };
+    try {
+      result = (await response.json()) as {
+        success: boolean;
+        error?: { message?: string };
+        product?: { id?: string };
+        data?: { product?: { id?: string } };
+      };
+    } catch (jsonError) {
+      console.error("[MerchantProductForm] Risposta API non valida:", jsonError);
+      setError("Il servizio di pubblicazione ha restituito una risposta non valida.");
+      setSubmitting(false);
+      return;
+    }
+
+    if (!response.ok || !result.success) {
+      setError(result.error?.message ?? "Impossibile pubblicare il prodotto.");
+      setSubmitting(false);
+      return;
+    }
+
+    // Salvataggio riuscito: il form torna pulito (niente modifiche pendenti).
+    dirtyRef.current = false;
+    onDirtyChange?.(false);
+
+    // Modalità "resta nella stessa vista" (es. annuncio del wizard): niente
+    // redirect, il chiamante aggiorna il proprio stato con i dati salvati.
+    if (onSuccess) {
+      onSuccess({
+        payload,
+        productId: productId ?? result.data?.product?.id ?? result.product?.id ?? null,
+      });
+      router.refresh();
+      setSubmitting(false);
+      return;
+    }
+
+    router.push(onSuccessRedirect ?? `/merchant/${negozioId}/prodotti`);
+    router.refresh();
+  }
       success: boolean;
       error?: { message?: string };
       product?: { id?: string };
@@ -367,7 +441,7 @@ export default function MerchantProductForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} onChange={handleFormChange} className="space-y-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+    <form onSubmit={handleSubmit} onChange={handleFormChange} noValidate className="space-y-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
       {/* Errore */}
       {error ? (
         <div className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700">{error}</div>
@@ -561,10 +635,9 @@ export default function MerchantProductForm({
           <input
             id="prezzo"
             name="prezzo"
-            type="number"
-            min="0"
-            step="0.01"
-            defaultValue={initialValues.prezzo}
+            type="text"
+            inputMode="decimal"
+            defaultValue={initialValues.prezzo === 0 ? "" : String(initialValues.prezzo).replace(".", ",")}
             required
             readOnly={initialData?.ha_varianti === true}
             title={initialData?.ha_varianti === true ? "Calcolato automaticamente dalle varianti" : undefined}
