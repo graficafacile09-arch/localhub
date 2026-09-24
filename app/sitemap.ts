@@ -4,13 +4,11 @@ import { getSiteUrl } from "@/lib/site";
 
 const SITE_URL = getSiteUrl();
 
-// La sitemap è rigenerata al massimo ogni ora (ISR): le tre query Supabase
-// non vengono rieseguite a ogni richiesta.
+// La sitemap è rigenerata al massimo ogni ora (ISR): le query Supabase
+// non vengono rieseguite a ogni richiesta quando la configurazione è completa.
 export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const db = createAdminSupabaseClient();
-
   const urls: MetadataRoute.Sitemap = [
     { url: SITE_URL, changeFrequency: "daily", priority: 1 },
     { url: `${SITE_URL}/negozi`, changeFrequency: "daily", priority: 0.9 },
@@ -22,7 +20,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/notizie`, changeFrequency: "hourly", priority: 0.7 },
   ];
 
-  // Categorie attive con slug (stesse URL pubbliche di /categorie/[slug]).
+  // Durante una build su ambienti che non hanno ancora la chiave server,
+  // restituiamo le URL statiche senza interrompere il deploy.
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return urls;
+  }
+
+  const db = createAdminSupabaseClient();
+
   const { data: categorie } = await db
     .from("categorie")
     .select("slug")
@@ -37,7 +42,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     });
   }
 
-  // Negozi attivi (URL pubbliche SOLO con slug).
   const { data: negozi } = await db
     .from("negozi")
     .select("slug, updated_at")
@@ -56,7 +60,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     });
   }
 
-  // Prodotti attivi con slug.
   const { data: prodotti } = await db
     .from("prodotti")
     .select("slug, updated_at")
@@ -74,7 +77,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     });
   }
 
-  // Contenuti editoriali SOLO pubblicati (bozze/archiviati MAI nella sitemap).
   const { data: contenuti } = await db
     .from("contenuti")
     .select("slug, updated_at")
