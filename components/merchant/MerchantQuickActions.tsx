@@ -3,7 +3,8 @@
 import Link from "next/link";
 import {
   Settings,
-  HandCog,
+  Hand,
+  Cog,
   CalendarCheck,
 } from "lucide-react";
 
@@ -21,12 +22,21 @@ import {
  * - Prenotazioni       → 05 Vendita e prenotazioni (blocco prenotazioni);
  * - Impostazioni negozio → pagina canonica /impostazioni.
  */
+function ServiziIcon() {
+  return (
+    <span className="relative flex h-5 w-5 items-center justify-center" aria-hidden="true">
+      <Hand className="h-5 w-5" />
+      <Cog className="absolute -right-1 -bottom-1 h-3 w-3 fill-white" />
+    </span>
+  );
+}
+
 const azioni = [
   {
     key: "servizi",
     title: "Servizi offerti",
     description: "I servizi che offri ai clienti.",
-    icon: HandCog,
+    icon: ServiziIcon,
     href: (storeId: string) => `/merchant/${storeId}/edit?step=catalogo&block=servizi-strutturati`,
   },
   {
