@@ -43,6 +43,7 @@ export default function MerchantProductResultCard({
   const router = useRouter();
   const [publishing, setPublishing] = useState(false);
   const [published, setPublished] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [titoloInModifica, setTitoloInModifica] = useState(false);
   const [titoloDraft, setTitoloDraft] = useState(suggestion.nome);
@@ -67,6 +68,19 @@ export default function MerchantProductResultCard({
   function annullaModificaTitolo() {
     setTitoloDraft(suggestion.nome);
     setTitoloInModifica(false);
+  }
+
+  async function handleDraftSave() {
+    if (savingDraft || !draftDirty) return;
+    setSavingDraft(true);
+    setError(null);
+    try {
+      await onSaveDraft();
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Impossibile salvare la bozza.");
+    } finally {
+      setSavingDraft(false);
+    }
   }
 
   async function handlePublish() {
@@ -303,7 +317,7 @@ export default function MerchantProductResultCard({
             <button
               type="button"
               onClick={handlePublish}
-              disabled={publishing}
+              disabled={publishing || savingDraft}
               className="flex-1 rounded-xl bg-gradient-to-b from-blue-500 to-blue-700 px-3 py-2.5 text-sm font-bold text-white shadow shadow-blue-500/20 transition hover:shadow-md hover:shadow-blue-500/30 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
             >
               {publishing ? "Pubblicazione..." : "Pubblica"}
@@ -329,13 +343,15 @@ export default function MerchantProductResultCard({
 
           <button
             type="button"
-            onClick={onSaveDraft}
+            onClick={handleDraftSave}
             disabled={publishing || !draftDirty}
             className="flex w-full items-center justify-center gap-2 rounded-xl border border-yellow-300 bg-yellow-50 px-3 py-2.5 text-sm font-bold text-yellow-800 transition hover:bg-yellow-100 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {giàSalvato?.stato === "bozza"
-              ? "Salva modifiche"
-              : "Salva come bozza"}
+            {savingDraft
+              ? "Salvataggio..."
+              : giàSalvato?.stato === "bozza"
+                ? "Salva modifiche"
+                : "Salva come bozza"}
           </button>
 
           {giàSalvato?.stato === "bozza" && !draftDirty && (
