@@ -9,6 +9,7 @@ import {
   CreditCard,
   FolderTree,
   Globe,
+  HardDrive,
   Home,
   LayoutDashboard,
   LayoutTemplate,
@@ -256,6 +257,13 @@ export const adminNavGroups: AdminNavGroup[] = [
         description:
           "Negozi eliminati dalla piattaforma: ripristino o eliminazione definitiva (solo amministratore).",
         icon: Trash2,
+      },
+      {
+        href: `${ADMIN_BASE}/backup`,
+        label: "Backup",
+        description:
+          "Gestione del backup locale del database con Supabase CLI e Docker Desktop.",
+        icon: HardDrive,
       },
     ],
   },
