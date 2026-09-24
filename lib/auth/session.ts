@@ -14,13 +14,29 @@ export async function getCurrentUser() {
   }
 
   const supabase = await createServerSupabaseClient();
-  const { data, error } = await supabase.auth.getUser();
 
-  if (error) {
+  try {
+    const { data, error } = await supabase.auth.getUser();
+
+    if (error) {
+      return null;
+    }
+
+    return data.user ?? null;
+  } catch (error) {
+    // Supabase Auth può lanciare AuthSessionMissingError quando il browser
+    // non porta una sessione (o quando il refresh token è ormai invalido).
+    // In entrambi i casi l'applicazione deve trattare la richiesta come anonima,
+    // senza generare un errore server.
+    const message = error instanceof Error ? error.message : String(error);
+    const sessionMissing = /auth session missing|invalid refresh token|refresh token not found/i.test(message);
+
+    if (!sessionMissing) {
+      console.error("[auth] getCurrentUser failed:", error);
+    }
+
     return null;
   }
-
-  return data.user ?? null;
 }
 
 export async function requireCurrentUser(redirectTo = "/login") {
