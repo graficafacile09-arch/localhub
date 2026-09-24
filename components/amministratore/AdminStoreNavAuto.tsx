@@ -36,9 +36,9 @@ export default function AdminStoreNavAuto() {
   }
 
   return (
-    <div className="card p-5">
-      <p className="section-label">Negozio</p>
-      <nav aria-label="Menu negozio amministratore" className="mt-4 space-y-1.5 text-sm font-semibold">
+    <div>
+      <p className="px-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Negozio</p>
+      <nav aria-label="Menu negozio amministratore" className="mt-3 space-y-1.5 text-sm font-semibold">
         <div className="mb-2 flex items-center gap-3 rounded-2xl border border-slate-100 bg-linear-to-br from-blue-50 to-blue-100/60 p-3.5">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm shadow-blue-600/30">
             <Store className="h-5 w-5" aria-hidden />

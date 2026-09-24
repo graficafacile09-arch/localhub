@@ -69,7 +69,7 @@ export default function MerchantBottomNav({
         aria-label="Navigazione area mobile"
       >
         <div
-          className="border-t border-slate-200/80 bg-white/95 shadow-[0_-1px_0_0_rgba(0,0,0,0.06),0_-8px_32px_rgba(15,23,42,0.10)] backdrop-blur-md"
+          className="border-t border-blue-100 bg-white/95 shadow-[0_-1px_0_0_rgba(0,0,0,0.06),0_-8px_32px_rgba(15,23,42,0.10)] backdrop-blur-md"
           style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
         >
           <div className="flex items-end justify-around px-1 pt-2 pb-2 touch-manipulation">
@@ -93,17 +93,17 @@ export default function MerchantBottomNav({
                       className={`flex h-14 w-14 items-center justify-center rounded-2xl shadow-lg transition-all duration-200 active:scale-95
                         ${
                           active
-                            ? "bg-blue-700 shadow-blue-600/50"
-                            : "bg-blue-600 shadow-blue-500/30"
+                            ? "bg-yellow-300 shadow-yellow-400/40"
+                            : "bg-yellow-400 shadow-yellow-400/35"
                         }
                         ${!available ? "opacity-40" : ""}
                       `}
                     >
-                      <Icon className="h-6 w-6 text-white" aria-hidden />
+                      <Icon className="h-6 w-6 text-blue-950" aria-hidden />
                     </span>
                     <span
                       className={`mt-1.5 text-[10px] font-bold leading-none tracking-wide transition-colors
-                        ${active ? "text-blue-700" : "text-blue-600"}
+                        ${active ? "text-blue-900" : "text-blue-700"}
                       `}
                     >
                       {item.label}

@@ -61,28 +61,28 @@ export default function MerchantShell({
       />
 
       {/* ── Header desktop — visibile solo su md+ ────────────────────────────── */}
-      <header className="hidden border-b border-slate-800 bg-slate-950 text-white md:block">
+      <header className="hidden border-b border-blue-800/30 bg-blue-700 text-white shadow-[0_10px_30px_-20px_rgba(30,64,175,.55)] md:block">
         <div className="mx-auto flex h-[82px] max-w-[1480px] items-center justify-between px-6 lg:px-8">
           <div className="flex items-center gap-5">
-            <Link href="/" className="flex h-11 items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 text-sm font-bold text-slate-200 transition hover:bg-white/10">
+            <Link href="/" className="flex h-11 items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 text-sm font-bold text-white transition hover:bg-white/15">
               <Home className="h-4 w-4" /> Sito pubblico
             </Link>
-            <div className="h-9 w-px bg-white/10" />
+            <div className="h-9 w-px bg-white/20" />
             <Link href={areaHref} className="flex items-center gap-3">
-              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-slate-950"><Store className="h-5 w-5" /></span>
+              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-blue-700 shadow-sm"><Store className="h-5 w-5" /></span>
               <span>
-                <span className="block text-base font-black tracking-tight">{areaTitle}</span>
-                <span className="block text-xs font-medium text-slate-400">{currentStore?.nome ?? "Gestione attività"}</span>
+                <span className="block text-base font-black tracking-tight text-white">{areaTitle}</span>
+                <span className="block text-xs font-medium text-blue-100">{currentStore?.nome ?? "Gestione attività"}</span>
               </span>
             </Link>
           </div>
           <div className="flex items-center gap-3">
-            <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-right">
+            <div className="rounded-xl border border-white/15 bg-white/10 px-4 py-2.5 text-right">
               <p className="max-w-[260px] truncate text-xs font-semibold text-white">{user.email}</p>
-              <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">{isAdmin ? "amministratore" : "venditore"}</p>
+              <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-blue-100">{isAdmin ? "amministratore" : "venditore"}</p>
             </div>
             <form action="/api/auth/signout" method="post">
-              <button type="submit" className="inline-flex h-11 items-center gap-2 rounded-xl bg-white px-4 text-sm font-bold text-slate-950 transition hover:bg-slate-200"><LogOut className="h-4 w-4" /> Esci</button>
+              <button type="submit" className="inline-flex h-11 items-center gap-2 rounded-xl bg-yellow-400 px-4 text-sm font-bold text-blue-950 transition hover:bg-yellow-300"><LogOut className="h-4 w-4" /> Esci</button>
             </form>
           </div>
         </div>
@@ -96,18 +96,18 @@ export default function MerchantShell({
           <div className="sticky top-6 space-y-4">
             <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_18px_45px_-28px_rgba(15,23,42,.45)]">
               <div className="bg-blue-700 px-5 py-5 text-white">
-                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">{isAdmin ? "Console" : "Merchant Console"}</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.22em] text-blue-100">{isAdmin ? "Console" : "Merchant Console"}</p>
                 <p className="mt-1 text-lg font-black tracking-tight">{currentStore?.nome ?? "I tuoi negozi"}</p>
-                <p className="mt-1 text-xs text-slate-400">{isAdmin ? "Amministrazione" : "Gestione completa del negozio"}</p>
+                <p className="mt-1 text-xs text-blue-100">{isAdmin ? "Amministrazione" : "Gestione completa del negozio"}</p>
               </div>
               <div className="p-3">
-                {isAdmin ? <><AdminStoreNavAuto /><div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-2"><AdminSidebar nonLetteNotifiche={adminNotificheNonLette ?? 0} /></div></> : <MerchantStoreNavAuto stores={stores} reclamiApertiPerNegozio={reclamiApertiPerNegozio} />}
+                {isAdmin ? <><AdminStoreNavAuto /><div className="mt-3 rounded-2xl border border-blue-100 bg-blue-50/50 p-2"><AdminSidebar nonLetteNotifiche={adminNotificheNonLette ?? 0} /></div></> : <MerchantStoreNavAuto stores={stores} reclamiApertiPerNegozio={reclamiApertiPerNegozio} />}
               </div>
             </div>
             <div className="rounded-[20px] border border-slate-200 bg-white p-3 shadow-sm">
               <MerchantStoreSwitcher stores={stores} currentStoreId={currentStoreId} ordiniNonLettiPerNegozio={ordiniNonLettiPerNegozio} baseHref={isAdmin ? "/amministratore/negozi" : "/merchant"} label={isAdmin ? "Negozi gestiti" : "Cambia negozio"} />
             </div>
-            {!isAdmin && <Link href="/" className="flex items-center justify-between rounded-[20px] border border-dashed border-slate-300 bg-white px-4 py-3 text-xs font-bold text-slate-600 transition hover:border-slate-400 hover:bg-slate-50"><span>Apri il sito pubblico</span><ArrowUpRight className="h-4 w-4" /></Link>}
+            {!isAdmin && <Link href="/" className="flex items-center justify-between rounded-[20px] border border-dashed border-blue-200 bg-white px-4 py-3 text-xs font-bold text-blue-700 transition hover:border-blue-300 hover:bg-blue-50"><span>Apri il sito pubblico</span><ArrowUpRight className="h-4 w-4" /></Link>}
           </div>
         </aside>
 

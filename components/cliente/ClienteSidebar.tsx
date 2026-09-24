@@ -127,7 +127,7 @@ export default function ClienteSidebar({
                         {item.label}
                       </span>
                       {mostraBadge && (
-                        <span className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-blue-600 px-1.5 text-[10px] font-black leading-none text-blue-900">
+                        <span className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-blue-600 px-1.5 text-[10px] font-black leading-none text-white">
                           {badge > 9 ? "9+" : badge}
                         </span>
                       )}

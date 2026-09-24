@@ -61,6 +61,13 @@ export function getMerchantStoreNavItems(storeId: string): MerchantNavItem[] {
   const storePath = `${MERCHANT_BASE}/${storeId}`;
   return [
     {
+      key: "operativo",
+      label: "Operatività",
+      href: null,
+      icon: Store,
+      section: true,
+    },
+    {
       key: "dashboard",
       label: "Dashboard",
       description: "Panoramica del negozio",

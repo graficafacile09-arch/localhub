@@ -137,7 +137,7 @@ export default function MerchantSidebarNav({
                 <span className="truncate text-sm font-bold">{item.label}</span>
                 {mostraBadge && (
                   <span
-                    className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-blue-600 px-1.5 text-[10px] font-black leading-none text-blue-900"
+                    className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-blue-600 px-1.5 text-[10px] font-black leading-none text-white"
                     title={`${badge} ${badge === 1 ? "reclamo aperto" : "reclami aperti"}`}
                   >
                     {badge > 9 ? "9+" : badge}

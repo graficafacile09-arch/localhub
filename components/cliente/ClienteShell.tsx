@@ -56,7 +56,7 @@ export default function ClienteShell({
   }, [mobileOpen]);
 
   return (
-    <main className="min-h-screen bg-[#eef3f8] text-slate-900">
+    <main className="min-h-screen bg-[#eef2f7] text-slate-900">
       <ClienteMobileTopBar
         menuOpen={mobileOpen}
         onOpenMenu={() => setMobileOpen(true)}
@@ -74,7 +74,7 @@ export default function ClienteShell({
         {/* Sidebar desktop ─────────────────────────────────────────────────── */}
         <aside className="hidden md:block">
           <div className="sticky top-5 space-y-3">
-            <div className="card p-5">
+            <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_18px_45px_-28px_rgba(15,23,42,.42)]">
               <ClienteSidebar
                 collapsed={collapsed}
                 ordiniInCorso={ordiniInCorso}
@@ -125,9 +125,9 @@ export default function ClienteShell({
             onClick={() => setMobileOpen(false)}
           />
 
-          <div className="absolute inset-y-0 right-0 flex w-[85%] max-w-xs flex-col overflow-y-auto bg-[#eef3f8] p-4 shadow-2xl">
+          <div className="absolute inset-y-0 right-0 flex w-[85%] max-w-xs flex-col overflow-y-auto bg-[#eef2f7] p-4 shadow-2xl">
             {/* Intestazione drawer */}
-            <div className="mb-3 flex items-center justify-between rounded-2xl border border-white/70 bg-white px-4 py-3">
+            <div className="mb-3 flex items-center justify-between rounded-2xl border border-blue-100 bg-white px-4 py-3">
               <div className="flex items-center gap-3">
                 <span
                   aria-hidden

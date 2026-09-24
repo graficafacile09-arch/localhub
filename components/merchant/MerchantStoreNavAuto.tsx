@@ -31,9 +31,9 @@ export default function MerchantStoreNavAuto({
   if (!store) return null;
 
   return (
-    <div className="card p-5">
-      <p className="section-label">Navigazione</p>
-      <div className="mt-4">
+    <div>
+      <p className="px-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Navigazione</p>
+      <div className="mt-3">
         <MerchantSidebarNav
           storeId={store.id}
           storeName={store.nome}
