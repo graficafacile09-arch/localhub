@@ -181,12 +181,11 @@ export function getMerchantBottomNavItems(
       requiresStore: true,
     },
     {
-      key: "ai",
-      label: "Aggiungi",
-      href: storePath ? `${storePath}/prodotti/ai` : baseHref,
-      icon: Sparkles,
+      key: "pagamenti",
+      label: "Pagamenti",
+      href: storePath ? `${storePath}/pagamenti` : baseHref,
+      icon: CreditCard,
       requiresStore: true,
-      ai: true,
     },
   ];
 }
