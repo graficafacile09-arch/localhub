@@ -1,6 +1,5 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { getCurrentUser } from "@/lib/auth/session";
-import { utenteHaRuoli } from "@/lib/auth/roles";
+import { getSessionArea } from "@/lib/auth/session-area";
 import { getNegozio, getProdotto } from "@/lib/negozi";
 import { getNegozioCardImmagine } from "@/lib/negozi-card-immagini";
 import { getProdottoImmagine } from "@/lib/prodotti-immagini";
@@ -67,15 +66,16 @@ export async function getStatoPreferitiPerPagina(): Promise<{
   autenticato: boolean;
   chiavi: Set<string>;
 }> {
-  const user = await getCurrentUser();
-  if (!user) return { autenticato: false, chiavi: new Set() };
+  const sessione = await getSessionArea();
+  if (!sessione || sessione.area !== "cliente") {
+    // Un account multi-ruolo (es. merchant + customer) può avere i
+    // preferiti solo quando sta usando esplicitamente l'Area Clienti.
+    // Evita che una sessione merchant mostri un cuore apparentemente
+    // utilizzabile che poi viene rifiutato dall'API /cliente/preferiti.
+    return { autenticato: false, chiavi: new Set() };
+  }
 
-  // I preferiti appartengono all'Area Clienti: solo gli utenti con il
-  // ruolo customer possono salvarli (merchant puri e admin puri no).
-  const èCliente = await utenteHaRuoli(user.id, ["customer"]);
-  if (!èCliente) return { autenticato: false, chiavi: new Set() };
-
-  const chiavi = await getChiaviPreferiti(user.id);
+  const chiavi = await getChiaviPreferiti(sessione.user.id);
   return { autenticato: true, chiavi };
 }
 
