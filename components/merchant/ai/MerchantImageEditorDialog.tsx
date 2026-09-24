@@ -29,7 +29,9 @@ type MerchantImageEditorDialogProps = {
    * Persiste la nuova immagine (JPEG data URL). Se lancia un errore la modal
    * resta aperta e mostra il messaggio.
    */
-  onSave: (dataUrl: string) => Promise<void>;
+  onSave: (dataUrl: string) => Promise<string | void>;
+  /** Salva l'intero annuncio come bozza e torna al risultato. Non pubblica mai. */
+  onSaveDraft?: (imageUrlOverride?: string) => Promise<void>;
 };
 
 const CROP_MIN = 0.08; // dimensione minima del ritaglio (normalizzata)
@@ -79,6 +81,7 @@ export default function MerchantImageEditorDialog({
   imageUrl,
   onClose,
   onSave,
+  onSaveDraft,
 }: MerchantImageEditorDialogProps) {
   const [img, setImg] = useState<HTMLImageElement | null>(null);
   const [loading, setLoading] = useState(true);
@@ -155,10 +158,18 @@ export default function MerchantImageEditorDialog({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [onClose, saving, dirty, confermaChiusura]);
 
-  // ── Nasconde la bottom nav mobile (stesso pattern delle altre modal) ─────
+  // ── L'editor immagine diventa un contesto isolato: niente navigazione merchant sotto.
+  // Blocchiamo anche lo scroll del body per evitare che i tap/gesture finiscano
+  // sugli elementi della pagina sottostante durante modifiche ripetute.
   useEffect(() => {
-    document.body.classList.add("correggi-ai-aperto");
-    return () => document.body.classList.remove("correggi-ai-aperto");
+    const previousOverflow = document.body.style.overflow;
+    document.body.classList.add("correggi-ai-aperto", "merchant-image-editor-aperto");
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.classList.remove("merchant-image-editor-aperto");
+      document.body.classList.remove("correggi-ai-aperto");
+      document.body.style.overflow = previousOverflow;
+    };
   }, []);
 
   const W = img?.naturalWidth ?? 1;
@@ -451,6 +462,30 @@ export default function MerchantImageEditorDialog({
     await salvaImmagineCorrente();
   }
 
+  /** Salva l'immagine + l'intero annuncio come bozza, poi torna al risultato. */
+  async function handleSaveDraft() {
+    if (!onSaveDraft || saving) return;
+    setSaving(true);
+    setSaveError(null);
+    try {
+      let imageUrlOverride: string | undefined;
+      if (img && dirty) {
+        const dataUrl = await exportDataUrl();
+        const persisted = await onSave(dataUrl);
+        imageUrlOverride = persisted ?? dataUrl;
+      }
+      await onSaveDraft(imageUrlOverride);
+      setDirty(false);
+      onClose();
+    } catch (caught) {
+      setSaveError(
+        caught instanceof Error ? caught.message : "Errore durante il salvataggio della bozza."
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
   /** Torna all'annuncio: salva prima le modifiche correnti e chiude solo se il salvataggio riesce. */
   async function handleBackToDraft() {
     if (saving) return;
@@ -463,7 +498,7 @@ export default function MerchantImageEditorDialog({
 
   return (
     <div
-      className="fixed inset-0 z-[70] flex items-end justify-center sm:items-center sm:p-4"
+      className="fixed inset-0 z-[9999] flex items-end justify-center sm:items-center sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-label="Modifica immagine"
@@ -755,30 +790,39 @@ export default function MerchantImageEditorDialog({
           )}
         </div>
 
-        {/* Footer: azione di ritorno mantenuta sempre disponibile */}
-        <div className="sticky bottom-0 z-10 flex items-center justify-between gap-3 border-t border-slate-100 bg-white/95 px-5 py-3 backdrop-blur">
-          <button
-            type="button"
-            onClick={handleBackToDraft}
-            disabled={saving}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 disabled:opacity-50"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Torna all&apos;annuncio
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={saving || !img || loading}
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-b from-blue-500 to-blue-700 px-5 py-2.5 text-sm font-bold text-white shadow shadow-blue-500/20 transition hover:shadow-md hover:shadow-blue-500/30 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {saving ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Check className="h-4 w-4" />
+        {/* Footer DELL'EDITOR: qui restano solo azioni dell'immagine/annuncio. */}
+        <div className="sticky bottom-0 z-10 border-t border-slate-100 bg-white/95 px-4 py-3 backdrop-blur">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+            <button
+              type="button"
+              onClick={handleBackToDraft}
+              disabled={saving}
+              className="inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 sm:flex-none"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Torna all&apos;annuncio
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving || !img || loading || !dirty}
+              className="inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-bold text-blue-700 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50 sm:flex-none"
+            >
+              {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+              {saving ? "Salvataggio..." : "Salva"}
+            </button>
+            {onSaveDraft && (
+              <button
+                type="button"
+                onClick={handleSaveDraft}
+                disabled={saving || !img || loading}
+                className="inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-b from-blue-500 to-blue-700 px-4 py-2 text-sm font-bold text-white shadow shadow-blue-500/20 transition hover:shadow-md hover:shadow-blue-500/30 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 sm:flex-none"
+              >
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+                {saving ? "Salvataggio..." : "Salva bozza"}
+              </button>
             )}
-            {saving ? "Salvataggio..." : "Salva modifiche"}
-          </button>
+          </div>
         </div>
       </div>
 
