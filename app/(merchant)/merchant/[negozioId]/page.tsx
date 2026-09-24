@@ -114,7 +114,7 @@ export default async function MerchantStorePage({
         <h1 className="mt-1 text-3xl font-black tracking-tight text-slate-950 md:text-4xl">{storeResult.data.nome}</h1>
         <div className="mt-6 grid gap-3 sm:grid-cols-3">
           <Link href={`/merchant/${negozioId}/prodotti`} className="group rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:border-slate-300 hover:bg-white">
-            <Package className="h-5 w-5 text-slate-700" /><p className="mt-3 text-sm font-black">Prodotti</p><p className="mt-1 text-xs text-slate-500">Catalogo e disponibilità</p><ArrowRight className="mt-3 h-4 w-4 transition group-hover:translate-x-1" />
+            <Package className="h-5 w-5 text-blue-700" /><p className="mt-3 text-sm font-black">Prodotti</p><p className="mt-1 text-xs text-slate-500">Catalogo e disponibilità</p><ArrowRight className="mt-3 h-4 w-4 text-blue-700 transition group-hover:translate-x-1" />
           </Link>
           <Link href={`/merchant/${negozioId}/ordini`} className="group relative rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:border-blue-200 hover:bg-white">
             {nonLetti > 0 && (
@@ -125,7 +125,7 @@ export default async function MerchantStorePage({
             <ShoppingBag className="h-5 w-5 text-blue-700" /><p className="mt-3 text-sm font-black">Ordini</p><p className="mt-1 text-xs text-slate-500">Gestisci le vendite</p><ArrowRight className="mt-3 h-4 w-4 transition group-hover:translate-x-1" />
           </Link>
           <Link href={`/merchant/${negozioId}/guadagni`} className="group rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:border-slate-300 hover:bg-white">
-            <CircleDollarSign className="h-5 w-5 text-slate-700" /><p className="mt-3 text-sm font-black">Guadagni</p><p className="mt-1 text-xs text-slate-500">Incassi e riepiloghi</p><ArrowRight className="mt-3 h-4 w-4 transition group-hover:translate-x-1" />
+            <CircleDollarSign className="h-5 w-5 text-blue-700" /><p className="mt-3 text-sm font-black">Guadagni</p><p className="mt-1 text-xs text-slate-500">Incassi e riepiloghi</p><ArrowRight className="mt-3 h-4 w-4 transition group-hover:translate-x-1" />
           </Link>
         </div>
         {storeResult.data.descrizione && <p className="mt-4 text-sm leading-5 text-slate-500">{storeResult.data.descrizione}</p>}
