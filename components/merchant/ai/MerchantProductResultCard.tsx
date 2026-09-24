@@ -18,8 +18,12 @@ type ResultCardProps = {
   onCorreggi: () => void;
   /** Apre l'editor immagine post-generazione (separato dal flusso AI). */
   onModificaImmagine: () => void;
-  /** Prodotto già salvato/pubblicato dall'editor: nasconde "Pubblica" per evitare doppioni. */
-  giàSalvato?: { id: string } | null;
+  /** Stato persistito dell'annuncio: bozza o pubblicato. */
+  giàSalvato?: { id: string; stato: "bozza" | "pubblicato" } | null;
+  /** Salva l'annuncio corrente come bozza senza pubblicarlo. */
+  onSaveDraft: () => Promise<void>;
+  /** True quando ci sono modifiche locali non ancora persistite. */
+  draftDirty: boolean;
 };
 
 export default function MerchantProductResultCard({
@@ -33,6 +37,8 @@ export default function MerchantProductResultCard({
   onCorreggi,
   onModificaImmagine,
   giàSalvato = null,
+  onSaveDraft,
+  draftDirty,
 }: ResultCardProps) {
   const router = useRouter();
   const [publishing, setPublishing] = useState(false);
@@ -91,11 +97,19 @@ export default function MerchantProductResultCard({
         originePubblicazione: "ai",
       };
 
-      const res = await fetch(`/api/merchant/stores/${negozioId}/products`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const isDraft = Boolean(giàSalvato && giàSalvato.stato === "bozza");
+      const res = await fetch(
+        isDraft
+          ? `/api/merchant/stores/${negozioId}/products/${giàSalvato!.id}`
+          : `/api/merchant/stores/${negozioId}/products`,
+        {
+          method: isDraft ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(
+            isDraft ? { ...payload, attivo: true } : payload
+          ),
+        }
+      );
 
       const data = await res.json();
       if (!res.ok || !data.success) {
@@ -284,13 +298,8 @@ export default function MerchantProductResultCard({
         </button>
 
         {/* Azioni */}
-        <div className="mt-2 flex gap-2">
-          {giàSalvato ? (
-            <div className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2.5 text-sm font-bold text-blue-800">
-              <CheckCircle2 className="h-4 w-4" />
-              Pubblicato nel catalogo
-            </div>
-          ) : (
+        <div className="mt-2 space-y-2">
+          <div className="flex gap-2">
             <button
               type="button"
               onClick={handlePublish}
@@ -299,8 +308,7 @@ export default function MerchantProductResultCard({
             >
               {publishing ? "Pubblicazione..." : "Pubblica"}
             </button>
-          )}
-          <button
+            <button
             type="button"
             onClick={onEdit}
             className="flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"
@@ -317,6 +325,25 @@ export default function MerchantProductResultCard({
             <RotateCcw className="h-3.5 w-3.5" />
             Nuova scansione
           </button>
+          </div>
+
+          <button
+            type="button"
+            onClick={onSaveDraft}
+            disabled={publishing || !draftDirty}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-yellow-300 bg-yellow-50 px-3 py-2.5 text-sm font-bold text-yellow-800 transition hover:bg-yellow-100 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {giàSalvato?.stato === "bozza"
+              ? "Salva modifiche"
+              : "Salva come bozza"}
+          </button>
+
+          {giàSalvato?.stato === "bozza" && !draftDirty && (
+            <div className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-500">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              Bozza salvata
+            </div>
+          )}
         </div>
       </div>
     </div>
