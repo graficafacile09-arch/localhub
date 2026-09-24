@@ -127,15 +127,15 @@ export default function ClienteShell({
 
           <div className="absolute inset-y-0 right-0 flex w-[85%] max-w-xs flex-col overflow-y-auto bg-[#eef2f7] p-4 shadow-2xl">
             {/* Intestazione drawer */}
-            <div className="mb-3 flex items-center justify-between rounded-2xl border border-blue-100 bg-white px-4 py-3">
+            <div className="mb-3 flex items-center justify-between rounded-2xl bg-blue-700 px-4 py-3 text-white shadow-sm">
               <div className="flex items-center gap-3">
                 <span
                   aria-hidden
                   className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50"
                 >
-                  <ShoppingBasket className="h-4 w-4 text-blue-600" aria-hidden />
+                  <ShoppingBasket className="h-4 w-4 text-white" aria-hidden />
                 </span>
-                <p className="text-xs font-semibold uppercase tracking-[0.15em] text-blue-700">
+                <p className="text-xs font-black uppercase tracking-[0.15em] text-blue-100">
                   Area Clienti
                 </p>
               </div>
@@ -144,7 +144,7 @@ export default function ClienteShell({
                 onClick={() => setMobileOpen(false)}
                 aria-label="Chiudi il menu"
                 autoFocus
-                className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition active:bg-blue-100"
+                className="flex h-8 w-8 items-center justify-center rounded-xl bg-yellow-400 text-blue-950 transition active:bg-yellow-300"
               >
                 <X className="h-4 w-4" aria-hidden />
               </button>

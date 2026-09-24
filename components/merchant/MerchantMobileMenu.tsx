@@ -39,20 +39,20 @@ export default function MerchantMobileMenu({
 
   return (
     <div className="absolute inset-y-0 right-0 flex w-[88%] max-w-sm flex-col overflow-y-auto bg-[#eef3f8] p-4 shadow-2xl">
-      <div className="mb-3 flex items-center justify-between rounded-2xl border border-white/70 bg-white px-4 py-3">
+      <div className="mb-3 flex items-center justify-between rounded-2xl bg-blue-700 px-4 py-3 text-white shadow-sm">
         <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-blue-100">
             {isAdmin ? "Area Amministratore" : "Area Venditore"}
           </p>
           {!isAdmin && storeName ? (
-            <p className="mt-1 truncate text-sm font-bold text-slate-900">{storeName}</p>
+            <p className="mt-1 truncate text-sm font-black text-white">{storeName}</p>
           ) : null}
         </div>
         <button
           type="button"
           onClick={onClose}
           aria-label="Chiudi menu"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition active:bg-blue-100"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-yellow-400 text-blue-950 transition active:bg-yellow-300"
         >
           <X className="h-4 w-4" aria-hidden />
         </button>
