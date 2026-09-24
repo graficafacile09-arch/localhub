@@ -175,7 +175,7 @@ export function getMerchantBottomNavItems(
     },
     {
       key: "ai",
-      label: "AI",
+      label: "Aggiungi",
       href: storePath ? `${storePath}/prodotti/ai` : baseHref,
       icon: Sparkles,
       requiresStore: true,
@@ -184,6 +184,19 @@ export function getMerchantBottomNavItems(
   ];
 }
 
+/**
+ * Funzioni secondarie dell'Area Venditore da mostrare nel drawer mobile.
+ * Le funzioni principali restano nella bottom navigation: qui non vengono
+ * duplicate Dashboard, Prodotti, Ordini e Guadagni.
+ */
+export function getMerchantSecondaryNavItems(storeId: string): MerchantNavItem[] {
+  const storePath = `${MERCHANT_BASE}/${storeId}`;
+  return [
+    { key: "pagamenti", label: "Pagamenti", description: "Provider e metodi di pagamento", href: `${storePath}/pagamenti`, icon: CreditCard },
+    { key: "media", label: "Libreria Media", description: "Immagini e file del negozio", href: `${storePath}/media`, icon: FolderOpen },
+    { key: "impostazioni", label: "Impostazioni negozio", description: "Dati, foto, contatti e vendita", href: `${storePath}/impostazioni`, icon: Settings },
+  ];
+}
 /** Voci della bottom navigation mobile dell'Area Amministratore. */
 export function getAdminBottomNavItems(): MerchantBottomNavItem[] {
   return [
