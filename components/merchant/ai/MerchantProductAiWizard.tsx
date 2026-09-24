@@ -22,6 +22,7 @@ type AnalysisResult = {
 type ProdottoSalvato = {
   id: string;
   dati: MerchantProductPayload;
+  stato: "bozza" | "pubblicato";
 };
 
 type MerchantProductAiWizardProps = {
@@ -78,6 +79,8 @@ export default function MerchantProductAiWizard({
   /** True se l'editor ha modifiche non salvate. */
   const [formDirty, setFormDirty] = useState(false);
   const formDirtyRef = useRef(false);
+  /** Modifiche del risultato AI non ancora persistite in una bozza. */
+  const [draftDirty, setDraftDirty] = useState(true);
   /** Dialog controllato di conferma uscita (mai alert nativo). */
   const [uscitaConferma, setUscitaConferma] = useState(false);
 
@@ -95,6 +98,7 @@ export default function MerchantProductAiWizard({
     setProdottoSalvato(null);
     setFormDirty(false);
     formDirtyRef.current = false;
+    setDraftDirty(true);
   }
 
   /**
@@ -110,12 +114,91 @@ export default function MerchantProductAiWizard({
   function handleTitleChange(nome: string) {
     setSuggestion((prev) => (prev ? { ...prev, nome } : prev));
     setResult((prev) => (prev ? { ...prev, suggestion: { ...prev.suggestion, nome } } : prev));
+    setDraftDirty(true);
+  }
+
+  function payloadDaSuggestion(s: ProductVisionSuggestion): MerchantProductPayload {
+    return {
+      nome: s.nome,
+      descrizione: s.descrizione,
+      descrizioneCompleta: s.descrizioneCompleta || undefined,
+      categoria: s.categoria,
+      sottocategoria: s.sottocategoria || null,
+      marca: s.marca || undefined,
+      colore: s.colore || undefined,
+      materiale: s.materiale || undefined,
+      caratteristiche: s.caratteristiche,
+      pesoVolume: s.pesoVolume || undefined,
+      paroleChiave: s.paroleChiave,
+      filtriCatalogo: s.filtriCatalogo || undefined,
+      prezzo: s.prezzoSuggerito ?? 0,
+      prezzoSuggerito: s.prezzoSuggerito ?? null,
+      quantitaDisponibile: s.quantitaSuggerita,
+      statoCondizione: s.statoCondizione,
+      immaginePrincipale: result?.photoUrl || s.immaginePrincipale || "",
+      seoTitle: s.seoTitle || undefined,
+      seoDescription: s.seoDescription || undefined,
+      altTextImmagine: s.altTextImmagine || undefined,
+      attivo: false,
+      originePubblicazione: "ai",
+      prodottoTipico: false,
+      prodottoOfferta: false,
+    };
+  }
+
+  async function handleSaveDraft() {
+    if (!suggestion) return;
+    const payload = payloadDaSuggestion(suggestion);
+    try {
+      const isDraft = prodottoSalvato?.stato === "bozza";
+      const url = isDraft
+        ? `/api/merchant/stores/${negozioId}/products/${prodottoSalvato!.id}`
+        : `/api/merchant/stores/${negozioId}/products`;
+      const response = await fetch(url, {
+        method: isDraft ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(
+          isDraft
+            ? payload
+            : { ...payload, salvaComeBozza: true }
+        ),
+      });
+      const data = (await response.json().catch(() => ({}))) as {
+        success?: boolean;
+        product?: MerchantProductPayload & { id?: string; immagine_principale?: string | null };
+        data?: { product?: { id?: string; immagine_principale?: string | null } };
+        error?: { message?: string };
+      };
+      if (!response.ok || !data.success) {
+        throw new Error(data.error?.message ?? "Impossibile salvare la bozza.");
+      }
+
+      const product = data.data?.product ?? data.product;
+      const productId = product?.id ?? prodottoSalvato?.id ?? null;
+      const imagePersisted = product?.immagine_principale ?? null;
+
+      if (imagePersisted) {
+        setSuggestion((prev) => (prev ? { ...prev, immaginePrincipale: imagePersisted } : prev));
+        setResult((prev) => (prev ? { ...prev, photoUrl: imagePersisted } : prev));
+        payload.immaginePrincipale = imagePersisted;
+      }
+
+      if (productId) {
+        setProdottoSalvato({ id: productId, dati: payload, stato: "bozza" });
+      }
+      setDraftDirty(false);
+      setFormDirty(false);
+      formDirtyRef.current = false;
+    } catch (caught) {
+      throw caught instanceof Error ? caught : new Error("Impossibile salvare la bozza.");
+    }
   }
 
   /** Applica il draft corretto dall'AI: aggiorna lo stato dell'annuncio in memoria. */
   function handleCorreggiConfermata(aggiornata: ProductVisionSuggestion) {
     setSuggestion(aggiornata);
     setResult((prev) => (prev ? { ...prev, suggestion: aggiornata } : prev));
+    setDraftDirty(true);
     setCorreggiAperto(false);
   }
 
@@ -156,6 +239,9 @@ export default function MerchantProductAiWizard({
           ? { ...prev, dati: { ...prev.dati, immaginePrincipale: urlFinale } }
           : prev
       );
+      setDraftDirty(false);
+    } else {
+      setDraftDirty(true);
     }
 
     setSuggestion((prev) =>
@@ -184,8 +270,9 @@ export default function MerchantProductAiWizard({
       );
     }
     if (esito.productId) {
-      setProdottoSalvato({ id: esito.productId, dati: esito.payload });
+      setProdottoSalvato({ id: esito.productId, dati: esito.payload, stato: "bozza" });
     }
+    setDraftDirty(false);
     setEditing(false);
     setFormDirty(false);
     formDirtyRef.current = false;
@@ -362,7 +449,8 @@ export default function MerchantProductAiWizard({
                   attivo: true,
                   origine_pubblicazione: "ai",
                 }}
-                submitLabel={prodottoSalvato ? "Aggiorna prodotto" : "Pubblica prodotto"}
+                submitLabel="Salva modifiche"
+                saveAsDraft
                 onSuccess={handleFormSuccess}
                 onDirtyChange={handleFormDirty}
               />
