@@ -262,6 +262,7 @@ export function getMerchantTopTitle(
   if (suffix === "/incassi") return "Guadagni";
   if (suffix === "/payout") return "Guadagni";
   if (suffix === "/pagamenti") return "Pagamenti";
+  if (suffix === "/agenda") return "Agenda";
   if (suffix === "/impostazioni") return "Impostazioni negozio";
   if (suffix === "/edit") return "Editor negozio";
 
