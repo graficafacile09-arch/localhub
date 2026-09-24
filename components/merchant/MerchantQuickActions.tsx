@@ -1,15 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { Settings, Sparkles } from "lucide-react";
+import { Cog, Hand, Settings } from "lucide-react";
 import MerchantAgendaQuickAction from "./MerchantAgendaQuickAction";
+
+function ServiziIcon() {
+  return (
+    <span className="relative flex h-5 w-5 items-center justify-center" aria-hidden="true">
+      <Hand className="h-5 w-5" />
+      <Cog className="absolute -right-1 -bottom-1 h-3 w-3 fill-white" />
+    </span>
+  );
+}
 
 const azioni = [
   {
     key: "servizi",
     title: "Servizi offerti",
     description: "I servizi che offri ai clienti.",
-    icon: Sparkles,
+    icon: ServiziIcon,
     href: (storeId: string) => `/merchant/${storeId}/edit?step=catalogo&block=servizi-strutturati`,
   },
 ];
