@@ -232,9 +232,26 @@ export default async function PaginaNegozio({
                   {negozio.categoria as string}
                 </span>
               )}
-              <h1 className="truncate text-2xl font-black tracking-tight text-white drop-shadow-md sm:text-3xl">
-                {negozio.nome as string}
-              </h1>
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full border-2 border-white/90 bg-white shadow-md sm:h-14 sm:w-14">
+                  {negozio.logo_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={negozio.logo_url as string}
+                      alt={`Logo ${negozio.nome as string}`}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div
+                      className="h-full w-full bg-white"
+                      aria-label={`Logo ${negozio.nome as string} non ancora impostato`}
+                    />
+                  )}
+                </div>
+                <h1 className="min-w-0 truncate text-2xl font-black tracking-tight text-white drop-shadow-md sm:text-3xl">
+                  {negozio.nome as string}
+                </h1>
+              </div>
               {negozio.descrizione && (
                 <p className="mt-1 line-clamp-1 max-w-2xl text-xs leading-5 text-white/85 drop-shadow-sm sm:text-sm">
                   {negozio.descrizione as string}
