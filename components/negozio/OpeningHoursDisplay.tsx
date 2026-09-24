@@ -115,7 +115,7 @@ export default function OpeningHoursDisplay({ orari }: Props) {
   }
 
   return (
-    <div className={`${jakarta.className} rounded-2xl border border-white/70 bg-white p-3.5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md sm:p-4">
+    <div className="rounded-2xl border border-white/70 bg-white p-3.5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md sm:p-4">
       {/* Riga compatta cliccabile */}
       <button
         type="button"
