@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ShoppingBasket } from "lucide-react";
-import { useCarrello } from "@/lib/carrello/CartContext";
+import { useOptionalCarrello } from "@/lib/carrello/CartContext";
 
 /**
  * Icona Carrello COMPATTA da posizionare accanto al logo nell'header.
@@ -18,7 +18,8 @@ import { useCarrello } from "@/lib/carrello/CartContext";
  *   allo spazio disponibile senza spingere o sovrapporre gli elementi.
  */
 export default function HeaderCartIcon() {
-  const { pezzi } = useCarrello();
+  const carrello = useOptionalCarrello();
+  const pezzi = carrello?.pezzi ?? 0;
 
   return (
     <Link

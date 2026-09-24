@@ -40,9 +40,42 @@ export async function proxy(request: NextRequest) {
     },
   });
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  let user: Awaited<ReturnType<typeof supabase.auth.getUser>>["data"]["user"] = null;
+
+  try {
+    const {
+      data: { user: currentUser },
+      error,
+    } = await supabase.auth.getUser();
+
+    if (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      const invalidRefresh = /invalid refresh token|refresh token not found/i.test(message);
+      if (!invalidRefresh) throw error;
+
+      const projectRef = new URL(url).hostname.split(".")[0] ?? "";
+      const authCookiePrefix = projectRef ? `sb-${projectRef}-auth-token` : "";
+      if (authCookiePrefix) {
+        for (const cookie of request.cookies.getAll()) {
+          if (cookie.name === authCookiePrefix || cookie.name.startsWith(`${authCookiePrefix}.`)) {
+            response.cookies.set(cookie.name, "", {
+              path: "/",
+              expires: new Date(0),
+              maxAge: 0,
+              httpOnly: true,
+              secure: process.env.NODE_ENV === "production",
+              sameSite: "lax",
+            });
+          }
+        }
+      }
+    } else {
+      user = currentUser;
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (!/invalid refresh token|refresh token not found/i.test(message)) throw error;
+  }
 
   const pathname = request.nextUrl.pathname;
 

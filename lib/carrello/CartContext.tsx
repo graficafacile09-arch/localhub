@@ -112,8 +112,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
   return <CarrelloContext.Provider value={valore}>{children}</CarrelloContext.Provider>;
 }
 
+export function useOptionalCarrello(): StatoCarrello | null {
+  return useContext(CarrelloContext);
+}
+
 export function useCarrello(): StatoCarrello {
-  const ctx = useContext(CarrelloContext);
+  const ctx = useOptionalCarrello();
   if (!ctx) {
     throw new Error("useCarrello deve essere usato dentro <CartProvider>");
   }

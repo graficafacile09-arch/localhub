@@ -15,7 +15,6 @@ import { getSessionArea } from "@/lib/auth/session-area";
 import { isAccountSupervisione } from "@/lib/auth/roles";
 import { getMerchantStoresForUser } from "@/lib/merchant/data";
 import { getConteggiOrdiniNonLetti } from "@/lib/merchant/ordini";
-import { getConteggioReclamiApertiVenditore } from "@/lib/ordine-reclami";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 
 export default async function MerchantLayout({
@@ -65,23 +64,6 @@ export default async function MerchantLayout({
     storesResult.data.map((s) => s.id)
   );
 
-  // Badge rosso "Reclami [N]" in sidebar: reclami ATTIVI per negozio
-  // (best-effort, riusa il conteggio esistente della dashboard).
-  const conteggiReclami = await Promise.all(
-    storesResult.data.map(async (store) => {
-      try {
-        return [
-          store.id,
-          await getConteggioReclamiApertiVenditore(sessione.user.id, store.id),
-        ] as const;
-      } catch {
-        return [store.id, 0] as const;
-      }
-    })
-  );
-  const reclamiApertiPerNegozio: Record<string, number> = Object.fromEntries(
-    conteggiReclami
-  );
 
   return (
     <MerchantShell
@@ -89,7 +71,6 @@ export default async function MerchantLayout({
       stores={storesResult.data}
       banner={storesResult.setupRequired ? storesResult.errorMessage : storesResult.errorMessage}
       ordiniNonLettiPerNegozio={ordiniNonLettiPerNegozio}
-      reclamiApertiPerNegozio={reclamiApertiPerNegozio}
     >
       {children}
     </MerchantShell>

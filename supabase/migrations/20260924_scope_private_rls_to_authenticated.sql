@@ -1,0 +1,24 @@
+-- Keep administrative/merchant-private policies out of the anonymous role.
+ALTER POLICY "admin_activity_log admin insert" ON public.admin_activity_log TO authenticated;
+ALTER POLICY "admin_activity_log admin select" ON public.admin_activity_log TO authenticated;
+ALTER POLICY "eventi admin manage" ON public.eventi TO authenticated;
+ALTER POLICY "negozi admin manage" ON public.negozi TO authenticated;
+ALTER POLICY "negozio metodi admin select all" ON public.negozio_metodi_pagamento TO authenticated;
+ALTER POLICY "negozio metodi spedizione admin select all" ON public.negozio_metodi_spedizione TO authenticated;
+ALTER POLICY "negozio pagamenti admin select all" ON public.negozio_pagamenti TO authenticated;
+ALTER POLICY "offerte admin manage" ON public.offerte TO authenticated;
+ALTER POLICY "ordine_reclami admin select all" ON public.ordine_reclami TO authenticated;
+ALTER POLICY "ordine_reclami admin update all" ON public.ordine_reclami TO authenticated;
+ALTER POLICY "ordini admin select all" ON public.ordini TO authenticated;
+ALTER POLICY "ordini eventi admin select all" ON public.ordini_eventi TO authenticated;
+ALTER POLICY "ordini righe admin select all" ON public.ordini_righe TO authenticated;
+ALTER POLICY "pagamenti eventi admin select all" ON public.pagamenti_eventi TO authenticated;
+ALTER POLICY "pagamenti sessioni admin select all" ON public.pagamenti_sessioni TO authenticated;
+ALTER POLICY "piattaforma_settings admin manage" ON public.piattaforma_settings TO authenticated;
+ALTER POLICY "prenotazioni admin select all" ON public.prenotazioni TO authenticated;
+ALTER POLICY "reclamo_comunicazioni admin all" ON public.reclamo_comunicazioni TO authenticated;
+ALTER POLICY "reclamo_comunicazioni admin insert" ON public.reclamo_comunicazioni TO authenticated;
+ALTER POLICY "segnalazioni admin select all" ON public.segnalazioni TO authenticated;
+ALTER POLICY "segnalazioni admin update all" ON public.segnalazioni TO authenticated;
+ALTER POLICY "merchant own store select" ON public.negozi TO authenticated;
+ALTER POLICY "merchant own store update" ON public.negozi TO authenticated;
