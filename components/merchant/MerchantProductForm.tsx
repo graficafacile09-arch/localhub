@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Camera, ChevronDown, ChevronUp, ImagePlus, Tag, Truck, Wheat } from "lucide-react";
+import MerchantImageEditorDialog from "@/components/merchant/ai/MerchantImageEditorDialog";
 import ProductGalleryManager from "@/components/merchant/products/ProductGalleryManager";
 import { Toggle } from "@/components/merchant/modules/ModuleFields";
 import type { MerchantProduct } from "@/lib/merchant/types";
@@ -107,6 +108,7 @@ export default function MerchantProductForm({
   const [showAdvanced, setShowAdvanced] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [newImageDataUrl, setNewImageDataUrl] = useState<string | null>(null);
+  const [editorImmagineAperto, setEditorImmagineAperto] = useState(false);
   // True se il prodotto appartiene alla vetrina "Prodotti tipici" (homepage).
   const [prodottoTipico, setProdottoTipico] = useState(Boolean(initialData?.prodotto_tipico));
   // True se il prodotto è in offerta (vetrina "Offerte", badge rosso).
@@ -407,20 +409,21 @@ export default function MerchantProductForm({
   }
 
   return (
+    <>
     <form onSubmit={handleSubmit} onChange={handleFormChange} noValidate className="space-y-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
       {/* Errore */}
       {error ? (
         <div className="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700">{error}</div>
       ) : null}
 
-      {/* Anteprima immagine + upload */}
+      {/* Immagine prodotto + editor di ritaglio condiviso con il flusso AI */}
       <div className="flex flex-col items-center gap-3">
         {newImageDataUrl || initialValues.immaginePrincipale ? (
           <button
             type="button"
-            onClick={() => fileInputRef.current?.click()}
-            title="Sostituisci foto prodotto"
-            aria-label="Sostituisci foto prodotto"
+            onClick={() => setEditorImmagineAperto(true)}
+            title="Modifica immagine"
+            aria-label="Modifica immagine"
             className="group relative cursor-pointer rounded-2xl border-0 bg-transparent p-0 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2"
           >
             <img
@@ -456,20 +459,32 @@ export default function MerchantProductForm({
             reader.onload = () => {
               const dataUrl = reader.result as string;
               setNewImageDataUrl(dataUrl);
-              // Un'immagine diversa da quella iniziale è sempre una modifica.
+              setEditorImmagineAperto(true);
               notifyDirty(dataUrl !== initialValues.immaginePrincipale.trim());
+              e.target.value = "";
             };
             reader.readAsDataURL(file);
           }}
         />
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-yellow-50"
-        >
-          <Camera className="h-3.5 w-3.5" />
-          {initialValues.immaginePrincipale ? "Cambia immagine" : "Aggiungi immagine"}
-        </button>
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <button
+            type="button"
+            onClick={() => setEditorImmagineAperto(true)}
+            disabled={!newImageDataUrl && !initialValues.immaginePrincipale}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <ImagePlus className="h-3.5 w-3.5" />
+            Modifica e ritaglia
+          </button>
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-yellow-50"
+          >
+            <Camera className="h-3.5 w-3.5" />
+            {initialValues.immaginePrincipale || newImageDataUrl ? "Cambia immagine" : "Aggiungi immagine"}
+          </button>
+        </div>
       </div>
 
       {/* Galleria multi-immagine (solo per prodotti già salvati) */}
@@ -778,5 +793,18 @@ export default function MerchantProductForm({
         {submitting ? "Pubblicazione in corso..." : submitLabel}
       </button>
     </form>
+
+      {editorImmagineAperto && (newImageDataUrl || initialValues.immaginePrincipale) ? (
+        <MerchantImageEditorDialog
+          key={newImageDataUrl || initialValues.immaginePrincipale}
+          imageUrl={newImageDataUrl || initialValues.immaginePrincipale}
+          onClose={() => setEditorImmagineAperto(false)}
+          onSave={async (dataUrl) => {
+            setNewImageDataUrl(dataUrl);
+            notifyDirty(dataUrl !== initialValues.immaginePrincipale.trim());
+          }}
+        />
+      ) : null}
+    </>
   );
 }
