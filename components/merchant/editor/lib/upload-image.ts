@@ -89,12 +89,79 @@ function drawCover(
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, width, height);
   }
-  const ratio = Math.max(width / img.naturalWidth, height / img.naturalHeight);
-  const w = Math.max(1, Math.round(img.naturalWidth * ratio));
-  const h = Math.max(1, Math.round(img.naturalHeight * ratio));
+
+  // I loghi caricati dall'utente possono contenere già dei bordi bianchi
+  // dentro al file (non è sufficiente object-cover per eliminarli).
+  // Per il preset logo individuiamo quindi il contenuto utile e facciamo
+  // il crop su quello, evitando bande bianche laterali/superiori.
+  const source = trimLogoWhitespace(img, transparentBackground);
+  const ratio = Math.max(width / source.width, height / source.height);
+  const w = Math.max(1, Math.round(source.width * ratio));
+  const h = Math.max(1, Math.round(source.height * ratio));
   const x = Math.round((width - w) / 2);
   const y = Math.round((height - h) / 2);
-  ctx.drawImage(img, x, y, w, h);
+  ctx.drawImage(source.canvas, source.x, source.y, source.width, source.height, x, y, w, h);
+}
+
+function trimLogoWhitespace(
+  img: HTMLImageElement,
+  transparentBackground: boolean
+): { canvas: HTMLCanvasElement; x: number; y: number; width: number; height: number } {
+  const canvas = document.createElement("canvas");
+  canvas.width = img.naturalWidth;
+  canvas.height = img.naturalHeight;
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  if (!ctx) return { canvas, x: 0, y: 0, width: img.naturalWidth, height: img.naturalHeight };
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(img, 0, 0);
+
+  let data: ImageData;
+  try {
+    data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  } catch {
+    return { canvas, x: 0, y: 0, width: img.naturalWidth, height: img.naturalHeight };
+  }
+
+  const threshold = 248;
+  let minX = canvas.width;
+  let minY = canvas.height;
+  let maxX = -1;
+  let maxY = -1;
+
+  // Consideriamo vuoto il bordo quasi completamente bianco/trasparente.
+  // Il controllo viene fatto su tutti i pixel, così funziona anche con
+  // loghi fotografati/scansionati con sfondo bianco.
+  for (let y = 0; y < canvas.height; y++) {
+    for (let x = 0; x < canvas.width; x++) {
+      const i = (y * canvas.width + x) * 4;
+      const r = data.data[i];
+      const g = data.data[i + 1];
+      const b = data.data[i + 2];
+      const a = data.data[i + 3];
+      const empty = a < 12 || (r >= threshold && g >= threshold && b >= threshold);
+      if (!empty) {
+        if (x < minX) minX = x;
+        if (y < minY) minY = y;
+        if (x > maxX) maxX = x;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+
+  if (maxX < 0 || maxY < 0) {
+    return { canvas, x: 0, y: 0, width: img.naturalWidth, height: img.naturalHeight };
+  }
+
+  // Un minimo margine evita di tagliare antialiasing e dettagli sul bordo.
+  const pad = Math.max(2, Math.round(Math.min(canvas.width, canvas.height) * 0.01));
+  return {
+    canvas,
+    x: Math.max(0, minX - pad),
+    y: Math.max(0, minY - pad),
+    width: Math.min(canvas.width, maxX + pad + 1) - Math.max(0, minX - pad),
+    height: Math.min(canvas.height, maxY + pad + 1) - Math.max(0, minY - pad),
+  };
 }
 
 /**
@@ -131,13 +198,21 @@ async function prepareImage(
   const originalHasAlpha = file.type === "image/png" || file.type === "image/webp";
   const preserveAlpha = preset === "logo" && originalHasAlpha;
 
-  drawCover(
-    ctx,
-    img,
-    width,
-    height,
-    preserveAlpha
-  );
+  if (preset === "logo") {
+    drawCover(ctx, img, width, height, preserveAlpha);
+  } else {
+    const ratio = Math.max(width / img.naturalWidth, height / img.naturalHeight);
+    const w = Math.max(1, Math.round(img.naturalWidth * ratio));
+    const h = Math.max(1, Math.round(img.naturalHeight * ratio));
+    const x = Math.round((width - w) / 2);
+    const y = Math.round((height - h) / 2);
+    if (preserveAlpha) ctx.clearRect(0, 0, width, height);
+    else {
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, width, height);
+    }
+    ctx.drawImage(img, x, y, w, h);
+  }
 
   const outType =
     preserveAlpha && supportsWebP() ? "image/webp" : "image/jpeg";
