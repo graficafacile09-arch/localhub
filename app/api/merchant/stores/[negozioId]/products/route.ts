@@ -209,7 +209,10 @@ export async function POST(
     quantitaDisponibile: payload.quantitaDisponibile ?? null,
     statoCondizione: payload.statoCondizione ?? null,
     immaginePrincipale: payload.immaginePrincipale?.trim() ?? "",
-    attivo: payload.attivo ?? true,
+    // POST di creazione = pubblicazione. La gestione delle bozze avviene
+    // successivamente tramite PATCH, quindi un nuovo prodotto non può nascere
+    // accidentalmente invisibile al catalogo pubblico.
+    attivo: true,
     originePubblicazione: payload.originePubblicazione ?? "manuale",
     prodottoTipico: payload.prodottoTipico ?? false,
     prodottoOfferta: payload.prodottoOfferta ?? false,
