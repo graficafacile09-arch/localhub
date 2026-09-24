@@ -56,6 +56,8 @@ type MerchantProductFormProps = {
     payload: MerchantProductPayload;
     productId: string | null;
   }) => void;
+  /** In modalità bozza salva i dati senza rendere il prodotto pubblico. */
+  saveAsDraft?: boolean;
   /**
    * Notifica il chiamante quando il form ha modifiche non salvate (true) o
    * quando torna a coincidere con i valori iniziali (false). Usato dal wizard
@@ -101,6 +103,7 @@ export default function MerchantProductForm({
   onSuccessRedirect,
   onSuccess,
   onDirtyChange,
+  saveAsDraft = false,
 }: MerchantProductFormProps) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -336,7 +339,8 @@ export default function MerchantProductForm({
       seoTitle: String(formData.get("seo_title") ?? "").trim() || undefined,
       seoDescription: String(formData.get("seo_description") ?? "").trim() || undefined,
       altTextImmagine: String(formData.get("alt_text_immagine") ?? "").trim() || undefined,
-      attivo: true,
+      attivo: saveAsDraft ? false : initialValues.attivo,
+      salvaComeBozza: saveAsDraft ? true : undefined,
       originePubblicazione: String(formData.get("originePubblicazione") ?? initialValues.originePubblicazione),
       prodottoTipico: prodottoTipico,
       prodottoOfferta: prodottoOfferta,
@@ -790,7 +794,7 @@ export default function MerchantProductForm({
         disabled={submitting}
         className="flex h-11 w-full items-center justify-center rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 px-4 text-sm font-bold text-white shadow-lg shadow-blue-500/30 transition hover:from-blue-500 hover:to-blue-600 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
       >
-        {submitting ? "Pubblicazione in corso..." : submitLabel}
+        {submitting ? (saveAsDraft ? "Salvataggio bozza..." : "Pubblicazione in corso...") : submitLabel}
       </button>
     </form>
 
