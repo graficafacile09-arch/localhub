@@ -62,7 +62,6 @@ export default async function MerchantStorePage({
   // confermata con created_at > data.agenda_ultima_lettura; se l'Agenda non
   // è mai stata aperta → 0 (mai lo storico). Solo per attività con Agenda.
   let nuoviAppuntamenti = 0;
-  let agendaDisponibile = false;
   let agendaAttiva = false;
   try {
     const supabase = createAdminSupabaseClient();
@@ -83,14 +82,13 @@ export default async function MerchantStorePage({
           : [],
       } as unknown as Negozio;
 
-      agendaDisponibile = attivitaHaAgenda(negozioMinimo);
       const prenotazioniConfig =
         dataNegozio.prenotazioni_config && typeof dataNegozio.prenotazioni_config === "object"
           ? (dataNegozio.prenotazioni_config as Record<string, unknown>)
           : {};
-      agendaAttiva = agendaDisponibile && prenotazioniConfig.attiva === true;
+      agendaAttiva = prenotazioniConfig.attiva === true;
 
-      if (agendaDisponibile) {
+      {
         // Soglia = ultima lettura Agenda se esiste, altrimenti la creazione
         // del negozio: così una prenotazione confermata successiva produce
         // subito il badge [N] anche prima della prima apertura dell'Agenda.
@@ -167,7 +165,6 @@ export default async function MerchantStorePage({
       <MerchantQuickActions
         storeId={negozioId}
         nuoviAppuntamenti={nuoviAppuntamenti}
-        agendaDisponibile={agendaDisponibile}
         agendaAttiva={agendaAttiva}
       />
 
