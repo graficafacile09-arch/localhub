@@ -370,6 +370,8 @@ export default function MerchantProductAiWizard({
             onCorreggi={() => setCorreggiAperto(true)}
             onModificaImmagine={() => setEditorImmagineAperto(true)}
             giàSalvato={prodottoSalvato}
+            onSaveDraft={handleSaveDraft}
+            draftDirty={draftDirty}
           />
         )}
 
