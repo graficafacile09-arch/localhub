@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { CalendarCheck, CalendarClock, ChevronDown, ChevronUp, X } from "lucide-react";
+import { CalendarCheck, CalendarClock, ChevronDown, ChevronUp, X, Plus, Trash2 } from "lucide-react";
 import ModuleShell from "./ModuleShell";
 import { Field, Toggle, SaveBar, type StatoSalvataggio } from "./ModuleFields";
 import AgendaCalendario from "./AgendaCalendario";
-import type { AgendaEccezioni, ConfigPrenotazioni, Orari } from "@/types/negozio";
+import type { AgendaEccezioni, ConfigPrenotazioni, Orari, ServizioStrutturato } from "@/types/negozio";
 import { normalizzaEccezioni } from "@/lib/agenda";
 
 type Props = {
@@ -92,6 +92,11 @@ export default function PrenotazioniModule({ storeId, markReadAgenda = false }: 
   // Agenda annuale: orari settimanali + eccezioni per singola data
   const [orari, setOrari] = useState<Orari | null>(null);
   const [eccezioni, setEccezioni] = useState<AgendaEccezioni>({});
+  // I servizi sono parte del flusso Agenda: sono le prestazioni prenotabili.
+  const [servizi, setServizi] = useState<ServizioStrutturato[]>([]);
+  const [serviziOriginale, setServiziOriginale] = useState("");
+  const [salvataggioServizi, setSalvataggioServizi] = useState(false);
+  const [messaggioServizi, setMessaggioServizi] = useState<StatoSalvataggio>(null);
 
   // Elenco prenotazioni (API Fase 6d)
   const [prenotazioni, setPrenotazioni] = useState<PrenotazioneRow[]>([]);
@@ -148,6 +153,22 @@ export default function PrenotazioniModule({ storeId, markReadAgenda = false }: 
         setOriginal(JSON.stringify(configNormalizzata));
         setOrari((json.data.settings.orari ?? null) as Orari | null);
         setEccezioni(normalizzaEccezioni(data.agenda_eccezioni));
+        const serviziRaw = Array.isArray(data.servizi_strutturati) ? data.servizi_strutturati : [];
+        const serviziNormalizzati = (serviziRaw as unknown[])
+          .filter((s): s is Record<string, unknown> => !!s && typeof s === "object")
+          .map((s, i) => ({
+            id: typeof s.id === "string" && s.id ? s.id : `servizio-${i}-${Date.now()}`,
+            nome: typeof s.nome === "string" ? s.nome : "",
+            descrizione: typeof s.descrizione === "string" ? s.descrizione : "",
+            prezzo: typeof s.prezzo === "number" && Number.isFinite(s.prezzo) ? s.prezzo : null,
+            prezzo_da: s.prezzo_da === true,
+            durata_min: typeof s.durata_min === "number" && Number.isFinite(s.durata_min) ? s.durata_min : 30,
+            immagine: typeof s.immagine === "string" ? s.immagine : "",
+            ordinamento: typeof s.ordinamento === "number" ? s.ordinamento : i,
+            attivo: s.attivo !== false,
+          })) as ServizioStrutturato[];
+        setServizi(serviziNormalizzati);
+        setServiziOriginale(JSON.stringify(serviziNormalizzati));
       })
       .catch(() => {
         if (attivo) setLoading(false);
@@ -171,6 +192,85 @@ export default function PrenotazioniModule({ storeId, markReadAgenda = false }: 
   function update(patch: Partial<ConfigPrenotazioni>) {
     editedRef.current = true;
     setConfig((prev) => ({ ...prev, ...patch }));
+  }
+
+  const serviziDirty = JSON.stringify(servizi) !== serviziOriginale;
+
+  function nuovoServizioAgenda(): ServizioStrutturato {
+    const id =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `servizio-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    return {
+      id,
+      nome: "",
+      descrizione: "",
+      prezzo: null,
+      prezzo_da: false,
+      durata_min: 30,
+      immagine: "",
+      ordinamento: servizi.length,
+      attivo: true,
+    };
+  }
+
+  function aggiornaServizio(id: string, patch: Partial<ServizioStrutturato>) {
+    editedRef.current = true;
+    setServizi((prev) => prev.map((s) => (s.id === id ? { ...s, ...patch } : s)));
+    setMessaggioServizi(null);
+  }
+
+  function aggiungiServizioAgenda() {
+    const nuovo = nuovoServizioAgenda();
+    editedRef.current = true;
+    setServizi((prev) => [...prev, nuovo]);
+    setMessaggioServizi(null);
+  }
+
+  function eliminaServizioAgenda(id: string) {
+    editedRef.current = true;
+    setServizi((prev) => prev.filter((s) => s.id !== id).map((s, i) => ({ ...s, ordinamento: i })));
+    setMessaggioServizi(null);
+  }
+
+  async function salvaServiziAgenda() {
+    const nonValidi = servizi.some((s) => !s.nome.trim());
+    if (nonValidi) {
+      setMessaggioServizi({ tipo: "errore", testo: "Ogni servizio deve avere un nome." });
+      return;
+    }
+    setSalvataggioServizi(true);
+    setMessaggioServizi(null);
+    try {
+      const normalizzati = servizi.map((s, i) => ({
+        ...s,
+        nome: s.nome.trim(),
+        descrizione: (s.descrizione ?? "").trim(),
+        durata_min: s.durata_min == null || s.durata_min <= 0 ? 30 : s.durata_min,
+        ordinamento: i,
+        attivo: s.attivo !== false,
+      }));
+      const res = await fetch(`/api/merchant/stores/${storeId}/settings`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ data: { servizi_strutturati: normalizzati } }),
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.success) {
+        setMessaggioServizi({
+          tipo: "errore",
+          testo: json?.error?.message ?? "Salvataggio dei servizi non riuscito.",
+        });
+        return;
+      }
+      setServizi(normalizzati);
+      setServiziOriginale(JSON.stringify(normalizzati));
+      setMessaggioServizi({ tipo: "ok", testo: "Servizi salvati." });
+    } catch {
+      setMessaggioServizi({ tipo: "errore", testo: "Errore di rete. Riprova." });
+    } finally {
+      setSalvataggioServizi(false);
+    }
   }
 
   async function handleSave() {
@@ -307,6 +407,141 @@ export default function PrenotazioniModule({ storeId, markReadAgenda = false }: 
           eccezioni={eccezioni}
           onSalva={salvaEccezioni}
         />
+
+        {/* ── Servizi/Prestazioni: sono il riferimento per la prenotazione ── */}
+        <div className="rounded-xl border border-blue-100 bg-blue-50/40 p-4">
+          <div className="mb-3 flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-bold tracking-tight text-slate-900">
+                Servizi prenotabili
+              </p>
+              <p className="mt-1 text-xs text-slate-500">
+                Crea qui le prestazioni che il cliente potrà scegliere in Agenda. La durata
+                determina automaticamente la durata dell&apos;appuntamento.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={aggiungiServizioAgenda}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-blue-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-blue-700"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Aggiungi servizio
+            </button>
+          </div>
+
+          {servizi.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-blue-200 bg-white px-4 py-5 text-center">
+              <p className="text-sm font-semibold text-slate-700">Nessun servizio configurato</p>
+              <p className="mt-1 text-xs text-slate-400">
+                Aggiungi la prima prestazione, ad esempio &quot;Pulizia orecchie&quot;.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {servizi.map((s) => (
+                <div key={s.id} className="rounded-xl border border-slate-200 bg-white p-3">
+                  <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_130px_90px_auto]">
+                    <label className="block">
+                      <span className="mb-1 block text-[10px] font-semibold text-slate-500">Servizio *</span>
+                      <input
+                        type="text"
+                        value={s.nome}
+                        onChange={(e) => aggiornaServizio(s.id, { nome: e.target.value })}
+                        placeholder="es. Pulizia orecchie"
+                        className="h-9 w-full rounded-lg border border-slate-200 px-3 text-xs text-slate-900 outline-none focus:border-blue-500"
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="mb-1 block text-[10px] font-semibold text-slate-500">Durata (min)</span>
+                      <input
+                        type="number"
+                        min={5}
+                        step={5}
+                        value={s.durata_min ?? 30}
+                        onChange={(e) =>
+                          aggiornaServizio(s.id, {
+                            durata_min: e.target.value === "" ? null : Number(e.target.value),
+                          })
+                        }
+                        className="h-9 w-full rounded-lg border border-slate-200 px-3 text-xs text-slate-900 outline-none focus:border-blue-500"
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="mb-1 block text-[10px] font-semibold text-slate-500">Prezzo (€)</span>
+                      <input
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        value={s.prezzo ?? ""}
+                        onChange={(e) =>
+                          aggiornaServizio(s.id, {
+                            prezzo: e.target.value === "" ? null : Number(e.target.value),
+                          })
+                        }
+                        placeholder="—"
+                        className="h-9 w-full rounded-lg border border-slate-200 px-3 text-xs text-slate-900 outline-none focus:border-blue-500"
+                      />
+                    </label>
+                    <div className="flex items-end justify-end gap-2 pb-0.5">
+                      <label className="flex h-9 items-center gap-1.5 text-[10px] font-semibold text-slate-500">
+                        <input
+                          type="checkbox"
+                          checked={s.attivo !== false}
+                          onChange={(e) => aggiornaServizio(s.id, { attivo: e.target.checked })}
+                          className="h-3.5 w-3.5 accent-blue-600"
+                        />
+                        Attivo
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => eliminaServizioAgenda(s.id)}
+                        aria-label={`Elimina ${s.nome || "servizio"}`}
+                        className="rounded-lg p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                  <label className="mt-2 block">
+                    <span className="mb-1 block text-[10px] font-semibold text-slate-500">Descrizione</span>
+                    <input
+                      type="text"
+                      value={s.descrizione ?? ""}
+                      onChange={(e) => aggiornaServizio(s.id, { descrizione: e.target.value })}
+                      placeholder="Descrizione breve della prestazione"
+                      className="h-9 w-full rounded-lg border border-slate-200 px-3 text-xs text-slate-900 outline-none focus:border-blue-500"
+                    />
+                  </label>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {messaggioServizi && (
+            <p className={`mt-3 rounded-lg px-3 py-2 text-xs font-semibold ${
+              messaggioServizi.tipo === "ok"
+                ? "bg-emerald-50 text-emerald-700"
+                : "bg-red-50 text-red-700"
+            }`}>
+              {messaggioServizi.testo}
+            </p>
+          )}
+
+          <div className="mt-3 flex items-center justify-between gap-2 border-t border-blue-100 pt-3">
+            <p className="text-[10px] text-slate-400">
+              {serviziDirty ? "Hai modifiche ai servizi non ancora salvate." : "Servizi aggiornati."}
+            </p>
+            <button
+              type="button"
+              onClick={() => void salvaServiziAgenda()}
+              disabled={salvataggioServizi || !serviziDirty}
+              className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              {salvataggioServizi ? "Salvataggio..." : "Salva servizi"}
+            </button>
+          </div>
+        </div>
 
         <Toggle
           icon={<CalendarCheck className="h-4 w-4 text-blue-600" />}
