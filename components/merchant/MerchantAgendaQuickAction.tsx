@@ -51,6 +51,7 @@ export default function MerchantAgendaQuickAction({
     }
   }
 
+  // Deploy sync: preserva la risposta immediata del toggle.
   const cardClass = active
     ? "border-slate-200 bg-white shadow-sm hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-lg hover:shadow-blue-500/10"
     : "border-slate-200 bg-slate-100 shadow-sm";
