@@ -189,6 +189,7 @@ export async function POST(
   }
 
   const payload = (await request.json()) as Partial<MerchantProductInput>;
+  const salvaComeBozza = payload.salvaComeBozza === true;
   const validationError = validateProductPayload(payload);
 
   if (validationError) {
@@ -209,10 +210,10 @@ export async function POST(
     quantitaDisponibile: payload.quantitaDisponibile ?? null,
     statoCondizione: payload.statoCondizione ?? null,
     immaginePrincipale: payload.immaginePrincipale?.trim() ?? "",
-    // POST di creazione = pubblicazione. La gestione delle bozze avviene
-    // successivamente tramite PATCH, quindi un nuovo prodotto non può nascere
-    // accidentalmente invisibile al catalogo pubblico.
-    attivo: true,
+    // La creazione normale pubblica. Il flusso AI può invece chiedere
+    // esplicitamente una bozza: resta nel catalogo merchant con attivo=false
+    // e non entra nella vetrina pubblica.
+    attivo: !salvaComeBozza,
     originePubblicazione: payload.originePubblicazione ?? "manuale",
     prodottoTipico: payload.prodottoTipico ?? false,
     prodottoOfferta: payload.prodottoOfferta ?? false,
@@ -236,15 +237,17 @@ export async function POST(
     return apiError("PRODUCT_CREATE_FAILED", createResult.errorMessage ?? "Impossibile creare il prodotto.", 500);
   }
 
-  // Notifica admin — BEST-EFFORT, creazione prodotto riuscita. Mai
-  // bloccante: un errore qui non tocca l'esito della creazione.
-  await creaNotificaAdmin({
-    tipo: "prodotto_creato",
-    titolo: "Nuovo prodotto pubblicato",
-    corpo: payload.nome!.trim(),
-    gravita: "info",
-    href: `/amministratore/prodotti/${createResult.data.id}`,
-  });
+  // Notifica admin solo per una pubblicazione reale. La bozza non è
+  // pubblica e non deve generare una notifica "prodotto pubblicato".
+  if (!salvaComeBozza) {
+    await creaNotificaAdmin({
+      tipo: "prodotto_creato",
+      titolo: "Nuovo prodotto pubblicato",
+      corpo: payload.nome!.trim(),
+      gravita: "info",
+      href: `/amministratore/prodotti/${createResult.data.id}`,
+    });
+  }
 
-  return apiOk({ product: createResult.data }, 201);
+  return apiOk({ product: createResult.data, bozza: salvaComeBozza }, 201);
 }
