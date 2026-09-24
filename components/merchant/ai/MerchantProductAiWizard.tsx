@@ -106,6 +106,12 @@ export default function MerchantProductAiWizard({
     setEditing(true);
   }
 
+  /** Aggiorna il titolo nella bozza corrente: resta modificato anche senza pubblicare. */
+  function handleTitleChange(nome: string) {
+    setSuggestion((prev) => (prev ? { ...prev, nome } : prev));
+    setResult((prev) => (prev ? { ...prev, suggestion: { ...prev.suggestion, nome } } : prev));
+  }
+
   /** Applica il draft corretto dall'AI: aggiorna lo stato dell'annuncio in memoria. */
   function handleCorreggiConfermata(aggiornata: ProductVisionSuggestion) {
     setSuggestion(aggiornata);
@@ -273,6 +279,7 @@ export default function MerchantProductAiWizard({
             photoUrl={result.photoUrl}
             onRetake={handleRetake}
             onEdit={handleEdit}
+            onTitleChange={handleTitleChange}
             onCorreggi={() => setCorreggiAperto(true)}
             onModificaImmagine={() => setEditorImmagineAperto(true)}
             giàSalvato={prodottoSalvato}
