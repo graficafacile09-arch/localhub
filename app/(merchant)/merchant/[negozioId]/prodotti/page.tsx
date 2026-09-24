@@ -145,17 +145,17 @@ export default async function MerchantProductsPage({ params, searchParams }: Pro
           <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center md:shrink md:min-w-0 md:justify-end">
             <Link
               href={`/merchant/${negozioId}/prodotti/ai`}
-              className="btn-cta h-12 gap-2 px-5 text-sm"
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-yellow-500 bg-yellow-400 px-5 text-sm font-black text-blue-950 shadow-sm transition hover:bg-yellow-300"
             >
-              <Sparkles className="h-4 w-4" />
-              Aggiungi con AI
+              <Sparkles className="h-4 w-4 text-blue-950" />
+              Aggiungi prodotto con AI
             </Link>
 
             <Link
               href={`/merchant/${negozioId}/prodotti/nuovo?manual=1`}
-              className="inline-flex h-12 items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+              className="inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-blue-600 bg-blue-600 px-5 text-sm font-black text-white shadow-sm transition hover:bg-blue-700"
             >
-              Aggiungi manualmente
+              <span className="text-white">Aggiungi prodotto manualmente</span>
             </Link>
           </div>
         </div>
@@ -382,16 +382,16 @@ export default async function MerchantProductsPage({ params, searchParams }: Pro
               <div className="flex flex-wrap justify-center gap-3">
                 <Link
                   href={`/merchant/${negozioId}/prodotti/ai`}
-                  className="btn-cta h-11 gap-2 px-5 text-sm"
+                  className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-yellow-500 bg-yellow-400 px-5 text-sm font-black text-blue-950 shadow-sm transition hover:bg-yellow-300"
                 >
-                  <Sparkles className="h-4 w-4" />
-                  Aggiungi con AI
+                  <Sparkles className="h-4 w-4 text-blue-950" />
+                  Aggiungi prodotto con AI
                 </Link>
                 <Link
                   href={`/merchant/${negozioId}/prodotti/nuovo?manual=1`}
-                  className="inline-flex h-11 items-center justify-center rounded-2xl border border-slate-200 bg-white px-5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                  className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl border border-blue-600 bg-blue-600 px-5 text-sm font-black text-white shadow-sm transition hover:bg-blue-700"
                 >
-                  Aggiungi manualmente
+                  <span className="text-white">Aggiungi prodotto manualmente</span>
                 </Link>
               </div>
             }
