@@ -300,6 +300,26 @@ export async function PUT(
     const existing = (oldRow?.data ?? {}) as Record<string, unknown>;
     const nuovoData = payload.data as Record<string, unknown>;
 
+    // Toggle rapido Agenda: aggiorna solo lo stato attiva senza una lettura
+    // preliminare dal client, preservando tutti gli altri parametri.
+    if (
+      nuovoData.prenotazioni_config_patch &&
+      typeof nuovoData.prenotazioni_config_patch === "object" &&
+      !Array.isArray(nuovoData.prenotazioni_config_patch)
+    ) {
+      const currentConfig =
+        existing.prenotazioni_config &&
+        typeof existing.prenotazioni_config === "object" &&
+        !Array.isArray(existing.prenotazioni_config)
+          ? (existing.prenotazioni_config as Record<string, unknown>)
+          : {};
+      existing.prenotazioni_config = {
+        ...currentConfig,
+        ...(nuovoData.prenotazioni_config_patch as Record<string, unknown>),
+      };
+      delete nuovoData.prenotazioni_config_patch;
+    }
+
     // AGENDA ANNUALE: `agenda_eccezioni` è un oggetto interamente posseduto
     // dal modulo Agenda → viene SOSTITUITO (replace) e normalizzato, mai fuso
     // come le altre chiavi: così sia l'aggiornamento di una singola data sia
