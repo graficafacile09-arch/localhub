@@ -35,6 +35,7 @@ export type MerchantProductPayload = {
   seoDescription?: string;
   altTextImmagine?: string;
   attivo: boolean;
+  salvaComeBozza?: boolean;
   originePubblicazione: string;
   prodottoTipico: boolean;
   /** True se il prodotto è in offerta (vetrina "Offerte", badge rosso). */
