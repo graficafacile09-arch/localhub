@@ -2,13 +2,9 @@
 
 import Link from "next/link";
 import {
-  LayoutList,
   Settings,
-  Building2,
-  Image as ImageIcon,
   Sparkles,
   CalendarCheck,
-  Store,
 } from "lucide-react";
 
 /**
