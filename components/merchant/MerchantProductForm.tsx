@@ -96,7 +96,7 @@ export default function MerchantProductForm({
   negozioId,
   productId,
   initialData,
-  submitLabel = "Salva prodotto",
+  submitLabel = productId ? "Aggiorna prodotto" : "Pubblica prodotto",
   onSuccessRedirect,
   onSuccess,
   onDirtyChange,
@@ -240,11 +240,34 @@ export default function MerchantProductForm({
     setError(null);
 
     const formData = new FormData(event.currentTarget);
+
+    // Validazione esplicita prima della chiamata API: evita che il venditore
+    // prema "Pubblica" senza sapere quale campo obbligatorio manca.
+    const nome = String(formData.get("nome") ?? "").trim();
+    const descrizione = String(formData.get("descrizione") ?? "").trim();
+    const categoria = String(formData.get("categoria") ?? "").trim();
+
+    if (!nome) {
+      setError("Inserisci il nome del prodotto.");
+      setSubmitting(false);
+      return;
+    }
+    if (!descrizione) {
+      setError("Inserisci una descrizione del prodotto.");
+      setSubmitting(false);
+      return;
+    }
+    if (!categoria) {
+      setError("Inserisci la categoria del prodotto.");
+      setSubmitting(false);
+      return;
+    }
+
     const payload: MerchantProductPayload = {
-      nome: String(formData.get("nome") ?? "").trim(),
-      descrizione: String(formData.get("descrizione") ?? "").trim(),
+      nome,
+      descrizione,
       descrizioneCompleta: String(formData.get("descrizione_completa") ?? "").trim() || undefined,
-      categoria: String(formData.get("categoria") ?? "").trim(),
+      categoria,
       sottocategoria: String(formData.get("sottocategoria") ?? "").trim() || null,
       marca: String(formData.get("marca") ?? "").trim() || undefined,
       colore: String(formData.get("colore") ?? "").trim() || undefined,
