@@ -128,6 +128,7 @@ export default async function MerchantProductsPage({ params, searchParams }: Pro
   return (
     <div className="space-y-6">
       {/* Header con titolo e pulsanti azione */}
+      {/* Deploy sync: allinea il catalogo alle azioni della dashboard. */}
       <div className="rounded-[2rem] border border-white/70 bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-4 md:flex-row md:flex-wrap md:items-start md:justify-between">
           <div className="min-w-0">
