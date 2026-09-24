@@ -351,12 +351,31 @@ export default function SettingsSections({
     setModuliOnce((o) => ({ ...o, [sezioneId]: o[sezioneId]?.includes(slug) ? o[sezioneId] : [...(o[sezioneId] ?? []), slug] }));
   }
 
-  /** Apre una sezione e, se indicato, espande anche il modulo (usato dalle azioni rapide). */
+  /** Apre in modo deterministico la sezione e il modulo richiesto. */
   function apriSezione(sezioneId: string, slug?: string) {
     setAperta(sezioneId);
     setAperteOnce((o) => ({ ...o, [sezioneId]: true }));
-    if (slug) toggleModulo(sezioneId, slug);
-    else setModuloAperto((m) => ({ ...m, [sezioneId]: "" }));
+
+    if (!slug) {
+      setModuloAperto((m) => ({ ...m, [sezioneId]: "" }));
+      return;
+    }
+
+    // Non usare toggleModulo qui: le azioni rapide devono SEMPRE aprire
+    // il modulo richiesto, anche se il modulo era già aperto.
+    setModuloAperto((m) => ({ ...m, [sezioneId]: slug }));
+    setModuliOnce((o) => ({
+      ...o,
+      [sezioneId]: o[sezioneId]?.includes(slug)
+        ? o[sezioneId]
+        : [...(o[sezioneId] ?? []), slug],
+    }));
+
+    requestAnimationFrame(() => {
+      document
+        .querySelector(`[data-settings-module="${sezioneId}-${slug}"]`)
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
   }
 
   /** Elementi essenziali già configurati (per lo stato della vetrina). */
@@ -539,6 +558,7 @@ export default function SettingsSections({
                     return (
                       <div
                         key={slug}
+                        data-settings-module={`${s.id}-${slug}`}
                         className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
                       >
                         <button
