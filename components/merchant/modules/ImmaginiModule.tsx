@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Image, Camera, X } from "lucide-react";
 import ModuleShell from "./ModuleShell";
+import { uploadStoreImage, type StoreImagePreset } from "@/components/merchant/editor/lib/upload-image";
 
 type Props = { storeId: string };
 
@@ -30,25 +31,19 @@ export default function ImmaginiModule({ storeId }: Props) {
       });
   }, [storeId]);
 
-  async function handleUpload(file: File, folder: string): Promise<string | null> {
-    const reader = new FileReader();
-    const dataUrl = await new Promise<string>((resolve) => {
-      reader.onload = () => resolve(reader.result as string);
-      reader.readAsDataURL(file);
-    });
-    const res = await fetch(`/api/merchant/stores/${storeId}/gallery`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ image: dataUrl, name: folder }),
-    });
-    const json = await res.json();
-    if (!res.ok || !json.success) {
-      setMessage({ tipo: "errore", testo: json.error?.message ?? "Upload fallito" });
+  async function handleUpload(file: File, preset: StoreImagePreset): Promise<string | null> {
+    try {
+      // Normalizzazione a risoluzione fissa prima dello storage:
+      // logo 512x512, copertina 1600x900, galleria max 2000px.
+      return await uploadStoreImage(storeId, file, preset);
+    } catch (e) {
+      setMessage({
+        tipo: "errore",
+        testo: e instanceof Error ? e.message : "Upload fallito",
+      });
       return null;
     }
-    return json.data?.url ?? null;
   }
-
   async function handleLogo(file: File | undefined) {
     if (!file) return;
     const url = await handleUpload(file, "logo");
