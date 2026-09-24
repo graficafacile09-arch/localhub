@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 
 /**
- * Azioni rapide della Dashboard negozio.
+ * Azioni rapide della Dashboard negozio — solo funzioni non duplicate.
  *
  * Le card puntano alle sezioni/blocchi specifici del nuovo editor
  * (`/merchant/:id/edit?step=…&block=…`), così ogni voce apre direttamente
