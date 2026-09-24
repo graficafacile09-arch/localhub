@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Camera, CircleDollarSign, Package, ShoppingBag } from "lucide-react";
+import { ArrowRight, Camera, CircleDollarSign, Package, Plus, ShoppingBag } from "lucide-react";
 import MerchantDashboardCards from "@/components/merchant/MerchantDashboardCards";
 import MerchantEmptyState from "@/components/merchant/MerchantEmptyState";
 import MerchantQuickActions from "@/components/merchant/MerchantQuickActions";
@@ -131,16 +131,28 @@ export default async function MerchantStorePage({
         {storeResult.data.descrizione && <p className="mt-4 text-sm leading-5 text-slate-500">{storeResult.data.descrizione}</p>}
       </div>
 
-      {/* Scansione — azione principale, immediatamente visibile */}
-      <Link
-        href={`/merchant/${negozioId}/prodotti/ai`}
-        className="flex w-full items-center justify-between rounded-[22px] border border-yellow-500 bg-yellow-400 px-5 py-4 text-sm font-black text-blue-950 shadow-[0_18px_40px_-24px_rgba(15,23,42,.25)] transition hover:bg-yellow-300"
-      >
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-900/10">
-          <Camera className="h-5 w-5 text-blue-950" />
-        </div>
-        <span>Scansiona nuovo prodotto</span>
-      </Link>
+      {/* Aggiunta prodotto — AI come azione principale, manuale come alternativa */}
+      <div className="space-y-3">
+        <Link
+          href={`/merchant/${negozioId}/prodotti/ai`}
+          className="flex w-full items-center justify-between rounded-[22px] border border-yellow-500 bg-yellow-400 px-5 py-4 text-sm font-black text-blue-950 shadow-[0_18px_40px_-24px_rgba(15,23,42,.25)] transition hover:bg-yellow-300"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-900/10">
+            <Camera className="h-5 w-5 text-blue-950" />
+          </div>
+          <span>Aggiungi prodotto con AI</span>
+        </Link>
+
+        <Link
+          href={`/merchant/${negozioId}/prodotti/nuovo?manual=1`}
+          className="flex w-full items-center justify-between rounded-[22px] border border-blue-600 bg-blue-600 px-5 py-4 text-sm font-black text-white shadow-[0_18px_40px_-24px_rgba(15,23,42,.20)] transition hover:bg-blue-700"
+        >
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15">
+            <Plus className="h-5 w-5 text-white" />
+          </div>
+          <span>Aggiungi prodotto manualmente</span>
+        </Link>
+      </div>
 
       {/* Altre azioni rapide */}
       <MerchantQuickActions storeId={negozioId} nuoviAppuntamenti={nuoviAppuntamenti} />
