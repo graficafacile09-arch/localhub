@@ -465,17 +465,26 @@ export default function MerchantImageEditorDialog({
       <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={richiediChiusura} aria-hidden />
 
       <div className="relative flex max-h-[94vh] w-full max-w-xl flex-col overflow-hidden rounded-t-3xl bg-white shadow-2xl sm:rounded-3xl">
-        {/* Header */}
-        <div className="flex items-center gap-3 bg-gradient-to-b from-blue-600 to-blue-700 px-5 py-4 text-white">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15">
-            <Crop className="h-5 w-5" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-blue-200">
+        {/* Header: ritorno sempre disponibile, anche dopo aver applicato il ritaglio */}
+        <div className="flex items-center gap-2 bg-gradient-to-b from-blue-600 to-blue-700 px-4 py-3 text-white">
+          <button
+            type="button"
+            onClick={handleBackToDraft}
+            disabled={saving}
+            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl bg-white/15 px-3 text-xs font-bold transition hover:bg-white/25 disabled:opacity-50"
+            aria-label="Torna all'annuncio"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Torna all'annuncio
+          </button>
+
+          <div className="min-w-0 flex-1 px-1">
+            <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-200">
               Immagine annuncio
             </p>
-            <p className="text-sm font-black tracking-tight">Modifica immagine</p>
+            <p className="truncate text-sm font-black tracking-tight">Modifica immagine</p>
           </div>
+
           <button
             type="button"
             onClick={richiediChiusura}
@@ -739,8 +748,8 @@ export default function MerchantImageEditorDialog({
           )}
         </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-between gap-3 border-t border-slate-100 px-5 py-3">
+        {/* Footer: azione di ritorno mantenuta sempre disponibile */}
+        <div className="sticky bottom-0 z-10 flex items-center justify-between gap-3 border-t border-slate-100 bg-white/95 px-5 py-3 backdrop-blur">
           <button
             type="button"
             onClick={handleBackToDraft}
