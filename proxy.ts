@@ -42,22 +42,39 @@ export async function proxy(request: NextRequest) {
 
   let user: Awaited<ReturnType<typeof supabase.auth.getUser>>["data"]["user"] = null;
 
-  try {
-    const {
-      data: { user: currentUser },
-      error,
-    } = await supabase.auth.getUser();
+  // Non chiamare Supabase Auth sulle richieste anonime: senza cookie di sessione
+  // getUser() può emettere AuthSessionMissingError internamente prima del catch.
+  // Verifichiamo prima l'esistenza dei cookie sb-<project>-auth-token.
+  const projectRef = new URL(url).hostname.split(".")[0] ?? "";
+  const authCookiePrefix = projectRef ? `sb-${projectRef}-auth-token` : "";
+  const hasAuthCookie =
+    authCookiePrefix.length > 0 &&
+    request.cookies.getAll().some(
+      (cookie) =>
+        cookie.name === authCookiePrefix ||
+        cookie.name.startsWith(`${authCookiePrefix}.`)
+    );
 
-    if (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      const invalidRefresh = /invalid refresh token|refresh token not found/i.test(message);
-      if (!invalidRefresh) throw error;
+  if (hasAuthCookie) {
+    try {
+      const {
+        data: { user: currentUser },
+        error,
+      } = await supabase.auth.getUser();
 
-      const projectRef = new URL(url).hostname.split(".")[0] ?? "";
-      const authCookiePrefix = projectRef ? `sb-${projectRef}-auth-token` : "";
-      if (authCookiePrefix) {
+      if (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        const invalidRefresh = /invalid refresh token|refresh token not found/i.test(message);
+
+        if (!invalidRefresh) throw error;
+
+        // Cookie Auth presente ma non più valido: lo cancelliamo e trattiamo
+        // la richiesta come anonima.
         for (const cookie of request.cookies.getAll()) {
-          if (cookie.name === authCookiePrefix || cookie.name.startsWith(`${authCookiePrefix}.`)) {
+          if (
+            cookie.name === authCookiePrefix ||
+            cookie.name.startsWith(`${authCookiePrefix}.`)
+          ) {
             response.cookies.set(cookie.name, "", {
               path: "/",
               expires: new Date(0),
@@ -68,13 +85,30 @@ export async function proxy(request: NextRequest) {
             });
           }
         }
+      } else {
+        user = currentUser;
       }
-    } else {
-      user = currentUser;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (!/invalid refresh token|refresh token not found|auth session missing/i.test(message)) {
+        throw error;
+      }
+      for (const cookie of request.cookies.getAll()) {
+        if (
+          cookie.name === authCookiePrefix ||
+          cookie.name.startsWith(`${authCookiePrefix}.`)
+        ) {
+          response.cookies.set(cookie.name, "", {
+            path: "/",
+            expires: new Date(0),
+            maxAge: 0,
+            httpOnly: true,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "lax",
+          });
+        }
+      }
     }
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    if (!/invalid refresh token|refresh token not found/i.test(message)) throw error;
   }
 
   const pathname = request.nextUrl.pathname;
