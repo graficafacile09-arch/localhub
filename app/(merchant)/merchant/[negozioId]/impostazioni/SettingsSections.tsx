@@ -409,7 +409,8 @@ export default function SettingsSections({
     );
   }
 
-  const logoUrl = (settings?.logo_url as string | undefined) ?? (settings?.copertina_url as string | undefined) ?? null;
+  const logoUrl = (settings?.logo_url as string | undefined) ?? null;
+  const copertinaUrl = (settings?.copertina_url as string | undefined) ?? null;
   const nome = (settings?.nome as string | undefined) ?? "Il tuo negozio";
   const categoria = (settings?.categoria as string | undefined) ?? "";
   const citta = (settings?.citta as string | undefined) ?? "";
@@ -419,48 +420,64 @@ export default function SettingsSections({
     <div className="space-y-4">
       {/* ── Il tuo negozio — card principale (la vetrina) ─────────────────── */}
       <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm">
-        <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:gap-5 sm:p-6">
-          <div className="flex items-center gap-4">
-            <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-blue-50 to-blue-100 text-blue-700 sm:h-24 sm:w-24">
-              {logoUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={logoUrl} alt={nome} className="h-full w-full object-cover" />
-              ) : (
-                <Store className="h-9 w-9 sm:h-10 sm:w-10" aria-hidden />
-              )}
-            </div>
-            <div className="min-w-0">
-              <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-700">
-                Il tuo negozio
-              </p>
-              <h2 className="mt-1 break-words text-xl font-black tracking-tight text-slate-900 sm:text-2xl">
-                {nome}
-              </h2>
-              <p className="mt-1 text-sm text-slate-500">
-                {[categoria, citta].filter(Boolean).join(" · ") || "La tua vetrina su InCittà"}
-              </p>
-            </div>
+        <div className="relative">
+          <div className="aspect-[16/5] w-full overflow-hidden bg-gradient-to-br from-blue-50 to-blue-100">
+            {copertinaUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={copertinaUrl} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <div className="flex h-full items-center justify-center text-blue-300">
+                <ImageIcon className="h-10 w-10" aria-hidden />
+              </div>
+            )}
           </div>
 
-          <div className="flex flex-col items-start gap-3 sm:ml-auto sm:items-end">
-            <span
-              className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${
-                configurato ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"
-              }`}
-            >
-              <span className={`h-1.5 w-1.5 rounded-full ${configurato ? "bg-emerald-500" : "bg-amber-500"}`} />
-              {configurato
-                ? "Negozio configurato"
-                : `Completa: ${mancanti.slice(0, 2).join(", ")}${mancanti.length > 2 ? ` +${mancanti.length - 2}` : ""}`}
-            </span>
-            <button
-              type="button"
-              onClick={() => apriSezione("negozio", "informazioni")}
-              className="inline-flex items-center gap-2 rounded-full bg-yellow-400 px-5 py-2.5 text-sm font-bold text-blue-900 shadow-sm transition hover:bg-yellow-300 active:scale-[0.98]"
-            >
-              <Building2 className="h-4 w-4" aria-hidden />
-              Modifica negozio
-            </button>
+          <div className="px-5 pb-5 sm:px-6 sm:pb-6">
+            <div className="-mt-10 flex flex-col gap-4 sm:-mt-12 sm:flex-row sm:items-end">
+              <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-full border-4 border-white bg-white shadow-md sm:h-24 sm:w-24">
+                {logoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={logoUrl} alt={nome} className="h-full w-full object-cover" />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-blue-50 to-blue-100 text-blue-700">
+                    <Store className="h-8 w-8" aria-hidden />
+                  </div>
+                )}
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-blue-700">
+                  Il tuo negozio
+                </p>
+                <h2 className="mt-1 break-words text-xl font-black tracking-tight text-slate-900 sm:text-2xl">
+                  {nome}
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  {[categoria, citta].filter(Boolean).join(" · ") || "La tua vetrina su InCittà"}
+                </p>
+              </div>
+
+              <div className="flex flex-col items-start gap-3 sm:ml-auto sm:items-end">
+                <span
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${
+                    configurato ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"
+                  }`}
+                >
+                  <span className={`h-1.5 w-1.5 rounded-full ${configurato ? "bg-emerald-500" : "bg-amber-500"}`} />
+                  {configurato
+                    ? "Negozio configurato"
+                    : `Completa: ${mancanti.slice(0, 2).join(", ")}${mancanti.length > 2 ? ` +${mancanti.length - 2}` : ""}`}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => apriSezione("negozio", "informazioni")}
+                  className="inline-flex items-center gap-2 rounded-full bg-yellow-400 px-5 py-2.5 text-sm font-bold text-blue-900 shadow-sm transition hover:bg-yellow-300 active:scale-[0.98]"
+                >
+                  <Building2 className="h-4 w-4" aria-hidden />
+                  Modifica negozio
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
