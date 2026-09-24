@@ -76,7 +76,14 @@ export default function AdminSidebar({
   // resta SEMPRE aperto (derivato nel render: nessun effect, nessun setState):
   // l'utente può chiudere gli altri gruppi, ma la voce attiva resta visibile.
   const [aperti, setAperti] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(adminNavGroups.map((g) => [g.key, false]))
+    Object.fromEntries(
+      adminNavGroups.map((g, indice) => [
+        g.key,
+        // Le aree operative principali restano visibili: solo Strumenti e
+        // Recupero partono chiusi per contenere il rumore visivo.
+        indice < 5,
+      ])
+    )
   );
 
   function isAperto(key: string): boolean {
