@@ -122,10 +122,10 @@ export default async function MerchantStorePage({
                 {nonLetti > 99 ? "99+" : nonLetti}
               </span>
             )}
-            <ShoppingBag className="h-5 w-5 text-blue-700" /><p className="mt-3 text-sm font-black">Ordini</p><p className="mt-1 text-xs text-slate-500">Gestisci le vendite</p><ArrowRight className="mt-3 h-4 w-4 transition group-hover:translate-x-1" />
+            <ShoppingBag className="h-5 w-5 text-blue-700" /><p className="mt-3 text-sm font-black">Ordini</p><p className="mt-1 text-xs text-slate-500">Gestisci le vendite</p><ArrowRight className="mt-3 h-4 w-4 text-blue-700 transition group-hover:translate-x-1" />
           </Link>
           <Link href={`/merchant/${negozioId}/guadagni`} className="group rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:border-slate-300 hover:bg-white">
-            <CircleDollarSign className="h-5 w-5 text-blue-700" /><p className="mt-3 text-sm font-black">Guadagni</p><p className="mt-1 text-xs text-slate-500">Incassi e riepiloghi</p><ArrowRight className="mt-3 h-4 w-4 transition group-hover:translate-x-1" />
+            <CircleDollarSign className="h-5 w-5 text-blue-700" /><p className="mt-3 text-sm font-black">Guadagni</p><p className="mt-1 text-xs text-slate-500">Incassi e riepiloghi</p><ArrowRight className="mt-3 h-4 w-4 text-blue-700 transition group-hover:translate-x-1" />
           </Link>
         </div>
         {storeResult.data.descrizione && <p className="mt-4 text-sm leading-5 text-slate-500">{storeResult.data.descrizione}</p>}
