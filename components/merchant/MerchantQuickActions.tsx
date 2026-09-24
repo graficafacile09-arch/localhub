@@ -3,7 +3,7 @@
 import Link from "next/link";
 import {
   Settings,
-  Wrench,
+  HandCog,
   CalendarCheck,
 } from "lucide-react";
 
@@ -26,7 +26,7 @@ const azioni = [
     key: "servizi",
     title: "Servizi offerti",
     description: "I servizi che offri ai clienti.",
-    icon: Wrench,
+    icon: HandCog,
     href: (storeId: string) => `/merchant/${storeId}/edit?step=catalogo&block=servizi-strutturati`,
   },
   {
