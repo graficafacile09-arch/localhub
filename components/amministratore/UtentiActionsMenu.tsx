@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Eye, Loader2, MoreHorizontal, ShieldCheck, Trash2 } from "lucide-react";
+import { Ban, Eye, Loader2, MoreHorizontal, RotateCcw, ShieldCheck, Trash2 } from "lucide-react";
 import type { Utente } from "@/lib/amministratore/types";
 
 /**
@@ -109,6 +109,23 @@ export default function UtentiActionsMenu({
           >
             <Eye className="h-4 w-4" />
             Visualizza dettaglio
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => { onDettaglio?.(utente); setAperto(false); }}
+            className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold transition hover:bg-red-50 ${
+              utente.stato === "attivo" ? "text-red-700" : "text-emerald-700"
+            }`}
+          >
+            {utente.stato === "attivo" ? (
+              <Ban className="h-4 w-4" aria-hidden />
+            ) : (
+              <RotateCcw className="h-4 w-4" aria-hidden />
+            )}
+            {utente.stato === "attivo"
+              ? "Sospendi / banna account"
+              : "Gestisci blocco / riattiva"}
           </button>
           {utente.protetto ? (
             <p className="mx-2 flex items-center gap-2 rounded-lg bg-slate-50 px-2 py-1.5 text-[11px] font-semibold text-slate-500">
