@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
+  ArrowLeft,
   Check,
   Crop,
   FlipHorizontal2,
@@ -443,6 +444,16 @@ export default function MerchantImageEditorDialog({
     }
   }
 
+  /** Torna alla scheda annuncio mantenendo le modifiche nella bozza, senza pubblicare. */
+  async function handleBackToDraft() {
+    if (saving) return;
+    if (!dirty) {
+      onClose();
+      return;
+    }
+    await handleSave();
+  }
+
   return (
     <div
       className="fixed inset-0 z-[70] flex items-end justify-center sm:items-center sm:p-4"
@@ -732,12 +743,12 @@ export default function MerchantImageEditorDialog({
         <div className="flex items-center justify-between gap-3 border-t border-slate-100 px-5 py-3">
           <button
             type="button"
-            onClick={richiediChiusura}
+            onClick={handleBackToDraft}
             disabled={saving}
-            className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 transition hover:text-slate-800 disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 disabled:opacity-50"
           >
-            <X className="h-4 w-4" />
-            Annulla
+            <ArrowLeft className="h-4 w-4" />
+            Torna all&apos;annuncio
           </button>
           <button
             type="button"
