@@ -105,6 +105,8 @@ export type MerchantProductInput = {
   seoDescription?: string;
   altTextImmagine?: string;
   attivo: boolean;
+  /** True solo quando il merchant vuole creare una bozza non pubblicata. */
+  salvaComeBozza?: boolean;
   originePubblicazione?: string;
   /** True se il prodotto appare anche nella vetrina "Prodotti tipici" (homepage). */
   prodottoTipico?: boolean;
