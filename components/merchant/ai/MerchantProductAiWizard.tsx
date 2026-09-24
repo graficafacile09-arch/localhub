@@ -117,7 +117,10 @@ export default function MerchantProductAiWizard({
     setDraftDirty(true);
   }
 
-  function payloadDaSuggestion(s: ProductVisionSuggestion): MerchantProductPayload {
+  function payloadDaSuggestion(
+    s: ProductVisionSuggestion,
+    imageUrlOverride?: string
+  ): MerchantProductPayload {
     return {
       nome: s.nome,
       descrizione: s.descrizione,
@@ -135,7 +138,8 @@ export default function MerchantProductAiWizard({
       prezzoSuggerito: s.prezzoSuggerito ?? null,
       quantitaDisponibile: s.quantitaSuggerita,
       statoCondizione: s.statoCondizione,
-      immaginePrincipale: result?.photoUrl || s.immaginePrincipale || "",
+      immaginePrincipale:
+        imageUrlOverride || result?.photoUrl || s.immaginePrincipale || "",
       seoTitle: s.seoTitle || undefined,
       seoDescription: s.seoDescription || undefined,
       altTextImmagine: s.altTextImmagine || undefined,
@@ -146,9 +150,9 @@ export default function MerchantProductAiWizard({
     };
   }
 
-  async function handleSaveDraft() {
+  async function handleSaveDraft(imageUrlOverride?: string) {
     if (!suggestion) return;
-    const payload = payloadDaSuggestion(suggestion);
+    const payload = payloadDaSuggestion(suggestion, imageUrlOverride);
     try {
       const isDraft = prodottoSalvato?.stato === "bozza";
       const url = isDraft
@@ -239,7 +243,8 @@ export default function MerchantProductAiWizard({
           ? { ...prev, dati: { ...prev.dati, immaginePrincipale: urlFinale } }
           : prev
       );
-      setDraftDirty(false);
+      // Il salvataggio della sola immagine non deve azzerare lo stato sporco
+      // delle altre modifiche dell'annuncio (titolo/campi non ancora salvati).
     } else {
       setDraftDirty(true);
     }
@@ -248,6 +253,7 @@ export default function MerchantProductAiWizard({
       prev ? { ...prev, immaginePrincipale: urlFinale } : prev
     );
     setResult((prev) => (prev ? { ...prev, photoUrl: urlFinale } : prev));
+    return urlFinale;
   }
 
   /** Salvataggio confermato dall'editor: NESSUN redirect, NESSUNA chiusura. */
@@ -507,6 +513,7 @@ export default function MerchantProductAiWizard({
           imageUrl={result.photoUrl}
           onClose={() => setEditorImmagineAperto(false)}
           onSave={handleSalvaImmagine}
+          onSaveDraft={handleSaveDraft}
         />
       )}
     </>
