@@ -23,12 +23,12 @@ export type StoreImagePreset = "logo" | "copertina" | "galleria";
 type ImagePresetConfig = {
   width: number;
   height: number;
-  mode: "contain" | "cover" | "limit";
+  mode: "cover" | "limit";
 };
 
 const PRESET: Record<StoreImagePreset, ImagePresetConfig> = {
   // Logo: quadrato fisso, adatto al rendering circolare accanto al nome.
-  logo: { width: 512, height: 512, mode: "contain" },
+  logo: { width: 512, height: 512, mode: "cover" },
   // Copertina: formato fisso 16:9 per una cover leggera e uniforme.
   copertina: { width: 1600, height: 900, mode: "cover" },
   // Galleria: mantiene il comportamento precedente con un tetto massimo.
@@ -76,35 +76,19 @@ function canvasToBlob(
   });
 }
 
-function drawContain(
+function drawCover(
   ctx: CanvasRenderingContext2D,
   img: HTMLImageElement,
   width: number,
   height: number,
-  alphaBackground: boolean
+  transparentBackground = false
 ) {
-  if (alphaBackground) {
+  if (transparentBackground) {
     ctx.clearRect(0, 0, width, height);
   } else {
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, width, height);
   }
-  const ratio = Math.min(width / img.naturalWidth, height / img.naturalHeight);
-  const w = Math.max(1, Math.round(img.naturalWidth * ratio));
-  const h = Math.max(1, Math.round(img.naturalHeight * ratio));
-  const x = Math.round((width - w) / 2);
-  const y = Math.round((height - h) / 2);
-  ctx.drawImage(img, x, y, w, h);
-}
-
-function drawCover(
-  ctx: CanvasRenderingContext2D,
-  img: HTMLImageElement,
-  width: number,
-  height: number
-) {
-  ctx.fillStyle = "#ffffff";
-  ctx.fillRect(0, 0, width, height);
   const ratio = Math.max(width / img.naturalWidth, height / img.naturalHeight);
   const w = Math.max(1, Math.round(img.naturalWidth * ratio));
   const h = Math.max(1, Math.round(img.naturalHeight * ratio));
@@ -147,11 +131,13 @@ async function prepareImage(
   const originalHasAlpha = file.type === "image/png" || file.type === "image/webp";
   const preserveAlpha = preset === "logo" && originalHasAlpha;
 
-  if (config.mode === "contain") {
-    drawContain(ctx, img, width, height, preserveAlpha);
-  } else {
-    drawCover(ctx, img, width, height);
-  }
+  drawCover(
+    ctx,
+    img,
+    width,
+    height,
+    preserveAlpha
+  );
 
   const outType =
     preserveAlpha && supportsWebP() ? "image/webp" : "image/jpeg";

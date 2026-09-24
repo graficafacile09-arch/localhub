@@ -8,7 +8,7 @@ import {
   CATEGORIA_PERSONALIZZATA_LABEL,
   isCategoriaPersonalizzata,
 } from "@/lib/categorie-negozio";
-import { uploadStoreImage, type StoreImagePreset } from "../lib/upload-image";
+import { uploadStoreImage } from "../lib/upload-image";
 import type { StepProps } from "../editor-steps";
 
 export default function StepIdentita({ storeId, store, onDataChanged }: StepProps) {
@@ -74,8 +74,7 @@ export default function StepIdentita({ storeId, store, onDataChanged }: StepProp
     setUploading(target);
     setError(null);
     try {
-      const preset: StoreImagePreset = target === "logo" ? "logo" : "copertina";
-      const url = await uploadStoreImage(storeId, file, preset);
+      const url = await uploadStoreImage(storeId, file);
       if (target === "logo") setLogoUrl(url);
       else setCopertinaUrl(url);
     } catch (e) {
@@ -106,8 +105,8 @@ export default function StepIdentita({ storeId, store, onDataChanged }: StepProp
           categoria: form.categoria.trim(),
           sottocategoria: form.sottocategoria.trim(),
           descrizione: form.descrizione.trim(),
-          logo_url: logoUrl || null,
-          copertina_url: copertinaUrl || null,
+          logo_url: logoUrl || undefined,
+          copertina_url: copertinaUrl || undefined,
         }),
       });
       const json = await res.json();
