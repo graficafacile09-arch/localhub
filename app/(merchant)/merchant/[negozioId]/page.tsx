@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Camera } from "lucide-react";
+import { ArrowRight, Camera, CircleDollarSign, Package, ShoppingBag } from "lucide-react";
 import MerchantDashboardCards from "@/components/merchant/MerchantDashboardCards";
 import MerchantEmptyState from "@/components/merchant/MerchantEmptyState";
 import MerchantQuickActions from "@/components/merchant/MerchantQuickActions";
@@ -118,20 +118,23 @@ export default async function MerchantStorePage({
   }
 
   return (
-    <div className="space-y-4">
-      {/* Header compatto */}
-      <div className="rounded-2xl border border-white/70 bg-white p-5 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
-          Dashboard negozio
-        </p>
-        <h1 className="mt-1 text-2xl font-black tracking-tight text-slate-900">
-          {storeResult.data.nome}
-        </h1>
-        {storeResult.data.descrizione && (
-          <p className="mt-1 text-sm leading-5 text-slate-500">
-            {storeResult.data.descrizione}
-          </p>
-        )}
+    <div className="space-y-5">
+      {/* Header principale */}
+      <div className="rounded-[28px] border border-slate-200 bg-white p-6 shadow-[0_20px_55px_-35px_rgba(15,23,42,.55)] md:p-8">
+        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">CENTRO OPERATIVO</p>
+        <h1 className="mt-1 text-3xl font-black tracking-tight text-slate-950 md:text-4xl">{storeResult.data.nome}</h1>
+        <div className="mt-6 grid gap-3 sm:grid-cols-3">
+          <Link href={`/merchant/${negozioId}/prodotti`} className="group rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:border-slate-300 hover:bg-white">
+            <Package className="h-5 w-5 text-slate-700" /><p className="mt-3 text-sm font-black">Prodotti</p><p className="mt-1 text-xs text-slate-500">Catalogo e disponibilità</p><ArrowRight className="mt-3 h-4 w-4 transition group-hover:translate-x-1" />
+          </Link>
+          <Link href={`/merchant/${negozioId}/ordini`} className="group rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:border-slate-300 hover:bg-white">
+            <ShoppingBag className="h-5 w-5 text-slate-700" /><p className="mt-3 text-sm font-black">Ordini</p><p className="mt-1 text-xs text-slate-500">Gestisci le vendite</p><ArrowRight className="mt-3 h-4 w-4 transition group-hover:translate-x-1" />
+          </Link>
+          <Link href={`/merchant/${negozioId}/guadagni`} className="group rounded-2xl border border-slate-200 bg-slate-50 p-4 transition hover:border-slate-300 hover:bg-white">
+            <CircleDollarSign className="h-5 w-5 text-slate-700" /><p className="mt-3 text-sm font-black">Guadagni</p><p className="mt-1 text-xs text-slate-500">Incassi e riepiloghi</p><ArrowRight className="mt-3 h-4 w-4 transition group-hover:translate-x-1" />
+          </Link>
+        </div>
+        {storeResult.data.descrizione && <p className="mt-4 text-sm leading-5 text-slate-500">{storeResult.data.descrizione}</p>}
       </div>
 
       {/* ── ATTENZIONE — AVVISI URGENTI (prima cosa visibile) ── */}
@@ -155,7 +158,7 @@ export default async function MerchantStorePage({
       {/* Scansione — azione principale, immediatamente visibile */}
       <Link
         href={`/merchant/${negozioId}/prodotti/ai`}
-        className="btn-cta gap-3 px-5 py-3 text-sm"
+        className="flex w-full items-center justify-between rounded-[22px] border border-slate-800 bg-slate-950 px-5 py-4 text-sm font-black text-white shadow-[0_18px_40px_-24px_rgba(15,23,42,.7)] transition hover:bg-slate-800"
       >
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15">
           <Camera className="h-5 w-5" />
