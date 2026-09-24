@@ -95,7 +95,7 @@ export default function MerchantShell({
         <aside className="hidden md:block">
           <div className="sticky top-6 space-y-4">
             <div className="overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-[0_18px_45px_-28px_rgba(15,23,42,.45)]">
-              <div className="bg-slate-950 px-5 py-5 text-white">
+              <div className="bg-blue-700 px-5 py-5 text-white">
                 <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">{isAdmin ? "Console" : "Merchant Console"}</p>
                 <p className="mt-1 text-lg font-black tracking-tight">{currentStore?.nome ?? "I tuoi negozi"}</p>
                 <p className="mt-1 text-xs text-slate-400">{isAdmin ? "Amministrazione" : "Gestione completa del negozio"}</p>
