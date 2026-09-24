@@ -1,17 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { LogOut, Store, X } from "lucide-react";
+import { useState } from "react";
+import { Copy, LogOut, Store, X } from "lucide-react";
 import type { MerchantStoreSummary } from "@/lib/merchant/types";
 import AdminSidebar from "@/components/amministratore/AdminSidebar";
 import AdminStoreNavAuto from "@/components/amministratore/AdminStoreNavAuto";
-import MerchantSidebarNav from "./MerchantSidebarNav";
+import DuplicaNegozioWizard from "@/components/merchant/media/DuplicaNegozioWizard";
+import { getMerchantSecondaryNavItems } from "./navigation";
 
 /**
- * Contenuto del drawer mobile (hamburger) condiviso tra Area Venditore e
- * Area Amministratore. È il menu "Altro": contiene ciò che NON è nella
- * bottom nav (Impostazioni negozio, Media, Guadagni, Pagamenti, i negozi,
- * ed Esci — mai nella bottom nav).
+ * Drawer mobile condiviso tra Area Venditore e Area Amministratore.
+ *
+ * Nell'Area Venditore mostra SOLO le funzioni secondarie: le funzioni
+ * principali (Negozio, Prodotti, Ordini, Guadagni) sono già sempre visibili
+ * nella bottom navigation e non vengono duplicate qui.
  */
 export default function MerchantMobileMenu({
   area = "merchant",
@@ -32,25 +35,29 @@ export default function MerchantMobileMenu({
 }) {
   const isAdmin = area === "admin";
   const baseHref = isAdmin ? "/amministratore" : "/merchant";
+  const [showDuplica, setShowDuplica] = useState(false);
 
   return (
-    <div className="absolute inset-y-0 right-0 flex w-[85%] max-w-xs flex-col overflow-y-auto bg-[#eef3f8] p-4 shadow-2xl">
-      {/* Intestazione drawer */}
+    <div className="absolute inset-y-0 right-0 flex w-[88%] max-w-sm flex-col overflow-y-auto bg-[#eef3f8] p-4 shadow-2xl">
       <div className="mb-3 flex items-center justify-between rounded-2xl border border-white/70 bg-white px-4 py-3">
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
-          {isAdmin ? "Area Amministratore" : "Area Venditore"}
-        </p>
+        <div className="min-w-0">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
+            {isAdmin ? "Area Amministratore" : "Area Venditore"}
+          </p>
+          {!isAdmin && storeName ? (
+            <p className="mt-1 truncate text-sm font-bold text-slate-900">{storeName}</p>
+          ) : null}
+        </div>
         <button
           type="button"
           onClick={onClose}
-          aria-label="Chiudi"
-          className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition active:bg-blue-100"
+          aria-label="Chiudi menu"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 transition active:bg-blue-100"
         >
           <X className="h-4 w-4" aria-hidden />
         </button>
       </div>
 
-      {/* Contenuto per area */}
       <div className="flex-1 space-y-3">
         {isAdmin ? (
           <>
@@ -62,13 +69,64 @@ export default function MerchantMobileMenu({
         ) : (
           <>
             {storeId ? (
-              <div className="card p-4">
-                <MerchantSidebarNav
-                  storeId={storeId}
-                  storeName={storeName ?? "Il tuo negozio"}
-                  reclamiAperti={reclamiApertiPerNegozio?.[storeId] ?? 0}
-                />
-              </div>
+              <>
+                <div className="card p-4">
+                  <p className="section-label">Altre funzioni</p>
+                  <div className="mt-3 space-y-1.5">
+                    {getMerchantSecondaryNavItems(storeId).map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <Link
+                          key={item.key}
+                          href={item.href ?? "#"}
+                          onClick={onClose}
+                          className="group flex min-h-14 items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2.5 transition hover:border-blue-200 hover:bg-blue-50 active:scale-[0.99]"
+                        >
+                          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 group-hover:bg-blue-100">
+                            <Icon className="h-[18px] w-[18px]" aria-hidden />
+                          </span>
+                          <span className="min-w-0">
+                            <span className="block text-sm font-bold text-slate-900">{item.label}</span>
+                            {item.description ? (
+                              <span className="mt-0.5 block text-[11px] leading-4 text-slate-500">
+                                {item.description}
+                              </span>
+                            ) : null}
+                          </span>
+                        </Link>
+                      );
+                    })}
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        // Il wizard viene aperto nello stesso drawer senza
+                        // creare una seconda voce di navigazione.
+                        setShowDuplica(true);
+                      }}
+                      className="group flex min-h-14 w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-left transition hover:border-blue-200 hover:bg-blue-50 active:scale-[0.99]"
+                    >
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600 group-hover:bg-blue-100">
+                        <Copy className="h-[18px] w-[18px]" aria-hidden />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block text-sm font-bold text-slate-900">Duplica negozio</span>
+                        <span className="mt-0.5 block text-[11px] leading-4 text-slate-500">
+                          Crea un nuovo negozio partendo da questo.
+                        </span>
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                {showDuplica ? (
+                  <DuplicaNegozioWizard
+                    storeId={storeId}
+                    storeName={storeName ?? "Il tuo negozio"}
+                    onClose={() => setShowDuplica(false)}
+                  />
+                ) : null}
+              </>
             ) : (
               <div className="card p-4">
                 <p className="section-label">Il tuo negozio</p>
@@ -78,7 +136,6 @@ export default function MerchantMobileMenu({
               </div>
             )}
 
-            {/* I tuoi negozi — cambio negozio rapido anche su mobile */}
             {stores.length > 0 && (
               <div className="card p-4">
                 <p className="section-label">I tuoi negozi</p>
@@ -91,7 +148,7 @@ export default function MerchantMobileMenu({
                         key={store.id}
                         href={baseHref === "/merchant" ? `/merchant/${store.id}` : `/amministratore/negozi/${store.id}`}
                         onClick={onClose}
-                        className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-sm transition ${
+                        className={`flex min-h-11 items-center gap-2 rounded-xl border px-3 py-2.5 text-sm transition ${
                           active
                             ? "border-yellow-300 bg-yellow-50 text-yellow-800"
                             : "border-blue-200 bg-blue-50/60 text-blue-700 hover:border-blue-300 hover:bg-blue-100"
@@ -99,14 +156,14 @@ export default function MerchantMobileMenu({
                       >
                         <Store className="h-4 w-4 shrink-0 text-blue-600" aria-hidden />
                         <span className="min-w-0 flex-1 truncate font-semibold">{store.nome}</span>
-                        {ordiniNonLetti > 0 && (
+                        {ordiniNonLetti > 0 ? (
                           <span
                             className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-yellow-400 px-1.5 text-[10px] font-black leading-none text-blue-900"
                             title={`${ordiniNonLetti} ${ordiniNonLetti === 1 ? "ordine non letto" : "ordini non letti"}`}
                           >
                             {ordiniNonLetti > 9 ? "9+" : ordiniNonLetti}
                           </span>
-                        )}
+                        ) : null}
                       </Link>
                     );
                   })}
@@ -117,11 +174,10 @@ export default function MerchantMobileMenu({
         )}
       </div>
 
-      {/* Esci — nel drawer, MAI nella bottom nav */}
-      <form action="/api/auth/signout" method="post" className="mt-4 border-t border-slate-100 pt-4">
+      <form action="/api/auth/signout" method="post" className="mt-4 border-t border-slate-200 pt-4">
         <button
           type="submit"
-          className="flex w-full items-center gap-3 rounded-2xl border border-blue-200 bg-blue-50 px-3 py-2.5 text-sm font-semibold text-blue-700 transition hover:border-blue-300 hover:bg-blue-100 hover:text-blue-800"
+          className="flex min-h-11 w-full items-center gap-3 rounded-2xl border border-blue-200 bg-blue-50 px-3 py-2.5 text-sm font-semibold text-blue-700 transition hover:border-blue-300 hover:bg-blue-100 hover:text-blue-800"
         >
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
             <LogOut className="h-[18px] w-[18px]" aria-hidden />
