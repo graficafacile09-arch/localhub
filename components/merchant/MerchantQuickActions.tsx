@@ -27,12 +27,10 @@ export default function MerchantQuickActions({
   storeId,
   nuoviAppuntamenti = 0,
   agendaAttiva = false,
-  agendaDisponibile = true,
 }: {
   storeId: string;
   nuoviAppuntamenti?: number;
   agendaAttiva?: boolean;
-  agendaDisponibile?: boolean;
 }) {
   return (
     <div className="grid gap-4 lg:grid-cols-2">
