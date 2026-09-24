@@ -2,15 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { ChevronDown, Clock } from "lucide-react";
-import { Plus_Jakarta_Sans } from "next/font/google";
 import { DAYS, parseTime, formatTime } from "@/types/orari";
 import type { DaySchedule, Orari } from "@/types/orari";
-
-// Font più elegante per la scheda orari (stesso pattern next/font del layout).
-const jakarta = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  weight: ["500", "600", "700", "800"],
-});
 
 type Props = {
   orari: Orari | null | undefined;
@@ -109,7 +102,7 @@ export default function OpeningHoursDisplay({ orari }: Props) {
   // Nessun orario configurato: riga informativa non espandibile.
   if (!hasAny) {
     return (
-      <div className={`${jakarta.className} rounded-2xl border border-white/70 bg-white p-3.5 shadow-sm sm:p-4`}>
+      <div className="rounded-2xl border border-white/70 bg-white p-3.5 shadow-sm sm:p-4">
         <div className="flex items-center gap-2.5">
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-yellow-100">
             <Clock className="h-4 w-4 text-yellow-600" aria-hidden />
@@ -122,7 +115,7 @@ export default function OpeningHoursDisplay({ orari }: Props) {
   }
 
   return (
-    <div className={`${jakarta.className} rounded-2xl border border-white/70 bg-white p-3.5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md sm:p-4`}>
+    <div className={`${jakarta.className} rounded-2xl border border-white/70 bg-white p-3.5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md sm:p-4">
       {/* Riga compatta cliccabile */}
       <button
         type="button"
