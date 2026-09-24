@@ -427,6 +427,7 @@ export default function MerchantImageEditorDialog({
     });
   }
 
+  /** Salva l'immagine nella bozza e RESTA nell'editor. Non pubblica mai. */
   async function handleSave() {
     if (!img || saving) return;
     setSaving(true);
@@ -434,7 +435,7 @@ export default function MerchantImageEditorDialog({
     try {
       const dataUrl = await exportDataUrl();
       await onSave(dataUrl);
-      onClose();
+      setDirty(false);
     } catch (caught) {
       setSaveError(
         caught instanceof Error ? caught.message : "Errore durante il salvataggio."
@@ -444,14 +445,17 @@ export default function MerchantImageEditorDialog({
     }
   }
 
-  /** Torna alla scheda annuncio mantenendo le modifiche nella bozza, senza pubblicare. */
+  /** Torna all'annuncio: salva prima le modifiche correnti e poi chiude l'editor. */
   async function handleBackToDraft() {
     if (saving) return;
-    if (!dirty) {
+    try {
+      if (dirty) {
+        await handleSave();
+      }
       onClose();
-      return;
+    } catch {
+      // handleSave mostra già l'errore e lascia l'editor aperto.
     }
-    await handleSave();
   }
 
   return (
