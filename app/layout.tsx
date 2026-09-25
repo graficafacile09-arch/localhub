@@ -52,7 +52,7 @@ export async function generateMetadata(): Promise<Metadata> {
       icon: "/favicon-incitta.svg?v=101",
       shortcut: "/favicon-incitta.svg?v=101",
       apple: "/favicon-incitta.svg?v=101",
-    },,
+    },
     openGraph: {
       siteName: nome,
       locale: "it_IT",
