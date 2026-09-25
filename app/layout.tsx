@@ -47,8 +47,8 @@ export async function generateMetadata(): Promise<Metadata> {
     description:
       "Trova negozi, prodotti e servizi della tua città. Cerca, confronta e acquista localmente.",
     icons: {
-      icon: "/favicon-negative.svg",
-      shortcut: "/favicon-negative.svg",
+      icon: "/favicon-negative.svg?v=3",
+      shortcut: "/favicon-negative.svg?v=3",
     },
     openGraph: {
       siteName: nome,
