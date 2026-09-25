@@ -314,7 +314,7 @@ function TimeInput({
         onChange={(e) => handleChange(e.target.value)}
         placeholder="HH:MM"
         aria-label={label}
-        className="h-11 w-full min-w-0 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 outline-none transition placeholder:text-slate-300 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+        className="h-11 w-full min-w-[76px] rounded-xl border border-slate-200 bg-white px-2.5 text-sm font-semibold tabular-nums text-slate-800 outline-none transition placeholder:text-slate-300 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
       />
     </label>
   );
