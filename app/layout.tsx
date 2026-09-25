@@ -46,13 +46,6 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     description:
       "Trova negozi, prodotti e servizi della tua città. Cerca, confronta e acquista localmente.",
-    // Usa direttamente il logo originale del sito: niente SVG intermedio,
-    // niente crop/filtri e niente asset esterno dentro la favicon.
-    icons: {
-      icon: "/favicon-incitta.svg?v=101",
-      shortcut: "/favicon-incitta.svg?v=101",
-      apple: "/favicon-incitta.svg?v=101",
-    },
     openGraph: {
       siteName: nome,
       locale: "it_IT",
