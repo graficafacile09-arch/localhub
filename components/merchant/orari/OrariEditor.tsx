@@ -149,7 +149,7 @@ export default function OrariEditor({ orari, onChange }: Props) {
             return (
               <section key={day} className={s.chiuso ? "bg-slate-50/70" : "bg-white"}>
                 <div className="p-3 sm:p-4 lg:grid lg:grid-cols-[190px_1fr_1fr] lg:items-center lg:gap-4">
-                  <div className="mb-3 flex items-center justify-between gap-3 lg:mb-0">
+                  <div className="mb-3 flex min-w-0 items-center justify-between gap-2 lg:mb-0">
                     <div className="flex items-center gap-3">
                       <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xs font-bold ${
                         s.chiuso ? "bg-slate-200 text-slate-500" : "bg-blue-50 text-blue-700"
@@ -172,7 +172,7 @@ export default function OrariEditor({ orari, onChange }: Props) {
                       aria-checked={!s.chiuso}
                       aria-label={`${s.chiuso ? "Apri" : "Chiudi"} ${day}`}
                       onClick={() => toggleChiuso(day)}
-                      className={`inline-flex items-center gap-2 rounded-full border px-2.5 py-1.5 text-[11px] font-semibold transition ${
+                      className={`inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border px-2.5 py-1.5 text-[11px] font-semibold transition ${
                         s.chiuso
                           ? "border-slate-200 bg-white text-slate-500 hover:border-slate-300"
                           : "border-blue-200 bg-blue-50 text-blue-700 hover:border-blue-300"
@@ -298,13 +298,12 @@ function TimeInput({
     <label className="block min-w-0">
       <span className="mb-1 block text-[10px] font-medium text-slate-400">{label}</span>
       <div className="relative">
-        <Clock3 className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
         <input
           type="time"
           value={value}
           onChange={(e) => onChange(e.target.value)}
           aria-label={label}
-          className="h-11 w-full min-w-0 appearance-none rounded-xl border border-slate-200 bg-white pl-9 pr-2 text-base font-semibold text-slate-800 outline-none transition hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 [color-scheme:light]"
+          className="h-11 w-full min-w-0 appearance-none rounded-xl border border-slate-200 bg-white px-3 pr-2 text-base font-semibold text-slate-800 outline-none transition hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 [color-scheme:light]"
         />
       </div>
     </label>
