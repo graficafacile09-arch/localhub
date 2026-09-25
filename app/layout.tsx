@@ -46,6 +46,11 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     description:
       "Trova negozi, prodotti e servizi della tua città. Cerca, confronta e acquista localmente.",
+    icons: {
+      icon: "/favicon-incitta.svg?v=102",
+      shortcut: "/favicon-incitta.svg?v=102",
+      apple: "/favicon-incitta.svg?v=102",
+    },
     openGraph: {
       siteName: nome,
       locale: "it_IT",
