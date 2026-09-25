@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" role="img" aria-labelledby="title">
+  <title id="title">InCittà</title>
+  <defs>
+    <clipPath id="c">
+      <circle cx="300" cy="300" r="296"/>
+    </clipPath>
+  </defs>
+  <circle cx="300" cy="300" r="296" fill="#fff"/>
+  <g clip-path="url(#c)">
+    <image
+      href="/logo-transparent.png"
+      x="40"
+      y="-200"
+      width="1536"
+      height="1024"
+      preserveAspectRatio="none"
+    />
+  </g>
+</svg>
