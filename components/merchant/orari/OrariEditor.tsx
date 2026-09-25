@@ -295,20 +295,11 @@ function TimeInput({
   label: string;
 }) {
   function handleChange(next: string) {
-    const cleaned = next.replace(/[^0-9:]/g, "").slice(0, 5);
-    onChange(cleaned);
-  }
-
-  function handleBlur() {
-    if (/^\\d{1,2}:\\d{1,2}$/.test(value)) {
-      const [hours, minutes] = value.split(":");
-      const hh = hours.padStart(2, "0").slice(0, 2);
-      const mm = minutes.padStart(2, "0").slice(0, 2);
-      onChange(hh + ":" + mm);
-    } else if (/^\\d{3,4}$/.test(value)) {
-      const padded = value.padStart(4, "0");
-      onChange(padded.slice(0, 2) + ":" + padded.slice(2));
-    }
+    const digits = next.replace(/[^0-9]/g, "").slice(0, 4);
+    const formatted = digits.length > 2
+      ? digits.slice(0, 2) + ":" + digits.slice(2)
+      : digits;
+    onChange(formatted);
   }
 
   return (
@@ -321,7 +312,6 @@ function TimeInput({
         maxLength={5}
         value={value}
         onChange={(e) => handleChange(e.target.value)}
-        onBlur={handleBlur}
         placeholder="HH:MM"
         aria-label={label}
         className="h-11 w-full min-w-0 rounded-xl border border-slate-200 bg-white px-3 text-base font-semibold text-slate-800 outline-none transition placeholder:text-slate-300 hover:border-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
