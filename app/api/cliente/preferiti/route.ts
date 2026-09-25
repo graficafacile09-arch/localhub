@@ -18,8 +18,9 @@ function validaTipo(value: unknown): TipoPreferito | null {
 }
 
 function validaRiferimentoId(value: unknown): string | null {
-  if (typeof value !== "string" || !value.trim()) return null;
-  return value.trim();
+  if (typeof value === "string" && value.trim()) return value.trim();
+  if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  return null;
 }
 
 /**
