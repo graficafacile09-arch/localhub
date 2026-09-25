@@ -304,10 +304,10 @@ function TimeInput({
       const [hours, minutes] = value.split(":");
       const hh = hours.padStart(2, "0").slice(0, 2);
       const mm = minutes.padStart(2, "0").slice(0, 2);
-      onChange(\`\${hh}:\${mm}\`);
+      onChange(hh + ":" + mm);
     } else if (/^\\d{3,4}$/.test(value)) {
       const padded = value.padStart(4, "0");
-      onChange(\`\${padded.slice(0, 2)}:\${padded.slice(2)}\`);
+      onChange(padded.slice(0, 2) + ":" + padded.slice(2));
     }
   }
 
