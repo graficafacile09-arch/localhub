@@ -78,7 +78,7 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
     notFound();
   }
 
-  const id = prodotto.id as string;
+  const id = String(prodotto.id);
   const negozio = await getNegozio(String(prodotto.negozio_id));
 
   // REGOLA AUTO-ACQUISTO: se l'utente autenticato è un VENDITORE e il
