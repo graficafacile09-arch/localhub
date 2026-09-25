@@ -49,10 +49,10 @@ export async function generateMetadata(): Promise<Metadata> {
     // Usa direttamente il logo originale del sito: niente SVG intermedio,
     // niente crop/filtri e niente asset esterno dentro la favicon.
     icons: {
-      icon: "/logo-transparent.png?v=100",
-      shortcut: "/logo-transparent.png?v=100",
-      apple: "/logo-transparent.png?v=100",
-    },
+      icon: "/favicon-incitta.svg?v=101",
+      shortcut: "/favicon-incitta.svg?v=101",
+      apple: "/favicon-incitta.svg?v=101",
+    },,
     openGraph: {
       siteName: nome,
       locale: "it_IT",
