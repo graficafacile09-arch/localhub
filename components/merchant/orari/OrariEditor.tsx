@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Check, Clock3, Copy, Plus, X } from "lucide-react";
+import { Check, Clock3, Copy, X } from "lucide-react";
 import {
   DAYS,
   EMPTY_DAY,
@@ -12,8 +12,6 @@ import {
 import {
   ORARI_PRESET_LABELS,
   ORARI_PRESETS,
-  normalizzaGiorno,
-  suggerisciSecondaFascia,
   giornoHaSovrapposizioni,
   copiaSettimanaDalLunedi,
 } from "@/lib/orari";
@@ -49,10 +47,9 @@ export default function OrariEditor({ orari, onChange }: Props) {
     });
   }
 
-  function aggiungiSeconda(day: string) {
-    const current = orari[day] ? { ...orari[day] } : { ...EMPTY_DAY };
-    const s = normalizzaGiorno(current);
-    onChange({ ...orari, [day]: { ...s, ...suggerisciSecondaFascia(s) } });
+  function rimuoviMattina(day: string) {
+    const current = orari[day] ?? { ...EMPTY_DAY };
+    onChange({ ...orari, [day]: { ...current, apertura1: "", chiusura1: "" } });
   }
 
   function rimuoviSeconda(day: string) {
@@ -147,7 +144,6 @@ export default function OrariEditor({ orari, onChange }: Props) {
         <div className="divide-y divide-slate-200">
           {visibleDays.map((day) => {
             const s = orari[day] ?? EMPTY_DAY;
-            const hasSecond = !!(s.apertura2 && s.chiusura2);
             const overlap = giornoHaSovrapposizioni(s);
 
             return (
@@ -205,29 +201,22 @@ export default function OrariEditor({ orari, onChange }: Props) {
                         end={s.chiusura1}
                         onStart={(value) => updateDay(day, { apertura1: value })}
                         onEnd={(value) => updateDay(day, { chiusura1: value })}
+                        removable
+                        removeLabel="Rimuovi fascia mattutina"
+                        onRemove={() => rimuoviMattina(day)}
                       />
 
                       <div className="mt-3 lg:mt-0">
-                        {hasSecond ? (
-                          <TimeRange
-                            label="Pomeriggio / sera"
-                            start={s.apertura2}
-                            end={s.chiusura2}
-                            onStart={(value) => updateDay(day, { apertura2: value })}
-                            onEnd={(value) => updateDay(day, { chiusura2: value })}
-                            removable
-                            onRemove={() => rimuoviSeconda(day)}
-                          />
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => aggiungiSeconda(day)}
-                            className="flex min-h-[76px] w-full items-center justify-center gap-2 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-3 py-3 text-xs font-semibold text-slate-500 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
-                          >
-                            <Plus className="h-4 w-4" />
-                            Aggiungi fascia pomeridiana / serale
-                          </button>
-                        )}
+                        <TimeRange
+                          label="Pomeriggio / sera"
+                          start={s.apertura2}
+                          end={s.chiusura2}
+                          onStart={(value) => updateDay(day, { apertura2: value })}
+                          onEnd={(value) => updateDay(day, { chiusura2: value })}
+                          removable
+                          removeLabel="Rimuovi fascia pomeridiana"
+                          onRemove={() => rimuoviSeconda(day)}
+                        />
                         {overlap && (
                           <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-medium text-amber-700">
                             Le fasce si sovrappongono: verranno unificate al salvataggio.
@@ -259,6 +248,7 @@ function TimeRange({
   onEnd,
   removable = false,
   onRemove,
+  removeLabel,
 }: {
   label: string;
   start: string;
@@ -267,6 +257,7 @@ function TimeRange({
   onEnd: (value: string) => void;
   removable?: boolean;
   onRemove?: () => void;
+  removeLabel?: string;
 }) {
   return (
     <div className="rounded-xl border border-slate-200 bg-slate-50/60 p-3">
@@ -276,7 +267,7 @@ function TimeRange({
           <button
             type="button"
             onClick={onRemove}
-            aria-label="Rimuovi fascia pomeridiana"
+            aria-label={removeLabel ?? "Rimuovi fascia"}
             className="rounded-lg p-1.5 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
           >
             <X className="h-3.5 w-3.5" />
