@@ -43,6 +43,7 @@ export default function FavoritoButton({
   const router = useRouter();
   const [attivoLocal, setAttivoLocal] = useState(attivo);
   const [inviando, setInviando] = useState(false);
+  const [errore, setErrore] = useState<string | null>(null);
 
   // Etichetta accessibile descrittiva: "Salva <nome> nei preferiti" oppure
   // "Rimuovi <nome> dai preferiti" (mai solo il nome dell'elemento).
@@ -52,13 +53,16 @@ export default function FavoritoButton({
     : `Salva${oggetto} nei preferiti`;
 
   const toggle = useCallback(async () => {
-    // Utente anonimo: prima l'accesso, poi potrà salvare il preferito.
+    // Utente anonimo o con area non cliente: entra esplicitamente come Cliente,
+    // altrimenti un login generico può riaprire la sessione Venditore e rendere
+    // il pulsante apparentemente inattivo.
     if (!autenticato) {
-      router.push("/login");
+      router.push("/login?area=cliente");
       return;
     }
 
     const prossimoStato = !attivoLocal;
+    setErrore(null);
     setInviando(true);
 
     try {
@@ -69,6 +73,21 @@ export default function FavoritoButton({
       });
 
       if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          router.push("/login?area=cliente");
+          return;
+        }
+
+        let messaggio = "Non è stato possibile salvare il preferito.";
+        try {
+          const payload = (await response.json()) as {
+            error?: { message?: string };
+          };
+          if (payload.error?.message) messaggio = payload.error.message;
+        } catch {
+          // Risposta non JSON: manteniamo il messaggio leggibile di fallback.
+        }
+        setErrore(messaggio);
         return;
       }
 
@@ -88,6 +107,7 @@ export default function FavoritoButton({
 
   if (variante === "inline") {
     return (
+      <div className={`w-full ${className}`}>
       <button
         type="button"
         onClick={toggle}
@@ -98,7 +118,7 @@ export default function FavoritoButton({
           attivoLocal
             ? "border-yellow-200 bg-yellow-50 text-yellow-600 hover:bg-yellow-100"
             : "border-yellow-300 bg-yellow-50 text-yellow-800 hover:border-yellow-400 hover:bg-yellow-100"
-        } ${className}`}
+        }`}
       >
         <Heart
           className={`h-4 w-4 ${attivoLocal ? "fill-yellow-500 text-yellow-500" : ""}`}
@@ -106,6 +126,12 @@ export default function FavoritoButton({
         />
         {attivoLocal ? "Salvato" : "Salva"}
       </button>
+      {errore && (
+        <p role="alert" className="mt-1 text-center text-[11px] font-semibold text-red-600">
+          {errore}
+        </p>
+      )}
+      </div>
     );
   }
 
