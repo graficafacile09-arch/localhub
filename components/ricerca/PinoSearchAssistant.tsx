@@ -106,12 +106,6 @@ export default function PinoSearchAssistant({
               draggable={false}
               className={"pino-image " + (stato === "positive" ? "pino-positive" : stato === "negative" ? "pino-negative" : "pino-searching")}
             />
-            {stato === "negative" && (
-              <span className="pino-tears" aria-hidden="true">
-                <span className="pino-tear pino-tear-left" />
-                <span className="pino-tear pino-tear-right" />
-              </span>
-            )}
           </div>
 
         </button>
@@ -188,48 +182,6 @@ export default function PinoSearchAssistant({
           filter: drop-shadow(0 7px 8px rgba(15, 23, 42, .15));
         }
 
-        .pino-tears {
-          position: absolute;
-          inset: 0;
-          pointer-events: none;
-          overflow: visible;
-        }
-
-        .pino-tear {
-          position: absolute;
-          top: 28%;
-          width: 8px;
-          height: 31px;
-          border-radius: 999px 999px 65% 65%;
-          background: linear-gradient(to bottom, rgba(147, 197, 253, .98), rgba(37, 99, 235, .78));
-          box-shadow: 0 1px 4px rgba(30, 64, 175, .28);
-          transform-origin: top center;
-          animation: pinoTearFall 1.15s ease-in infinite;
-        }
-
-        .pino-tear::after {
-          content: "";
-          position: absolute;
-          left: 50%;
-          bottom: -5px;
-          width: 11px;
-          height: 13px;
-          border-radius: 50% 50% 60% 60%;
-          background: rgba(59, 130, 246, .82);
-          transform: translateX(-50%);
-        }
-
-        .pino-tear-left { left: 40.5%; animation-delay: .05s; }
-        .pino-tear-right { left: 57.5%; animation-delay: .25s; }
-
-        @keyframes pinoTearFall {
-          0% { opacity: 0; transform: translateY(-2px) scaleY(.55); }
-          18% { opacity: 1; }
-          72% { opacity: 1; transform: translateY(38px) scaleY(1); }
-          100% { opacity: 0; transform: translateY(55px) scaleY(1.08); }
-        }
-
-
         @keyframes pinoHappy { 0%,100% { transform:translateY(0) rotate(0); } 35% { transform:translateY(-10px) rotate(-4deg); } 65% { transform:translateY(-5px) rotate(4deg); } }
         @keyframes pinoSad { 0%,100% { transform:translateY(0); } 45% { transform:translateY(4px) rotate(-3deg); } }
 
@@ -245,17 +197,6 @@ export default function PinoSearchAssistant({
 
           .pino-image {
             height: 220px;
-          }
-
-          .pino-tear {
-            top: 28%;
-            width: 6px;
-            height: 23px;
-          }
-
-          .pino-tear::after {
-            width: 9px;
-            height: 11px;
           }
 
           .pino-bubble {
