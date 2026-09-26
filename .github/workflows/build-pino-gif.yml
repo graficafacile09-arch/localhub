@@ -20,6 +20,14 @@ jobs:
         with:
           ref: main
 
+      - name: Install ImageMagick
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y imagemagick
+          magick -version || convert -version
+
       - name: Build animated GIF from the original Pino artwork
         shell: bash
         run: |
@@ -47,7 +55,7 @@ jobs:
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.email "41898282+github-actions[bot].noreply.github.com"
           git add public/pino-assistente.gif
           if git diff --cached --quiet; then
             echo "GIF already up to date"
