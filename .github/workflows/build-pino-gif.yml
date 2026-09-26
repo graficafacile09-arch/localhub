@@ -113,14 +113,33 @@ jobs:
             make_frame /tmp/pino-source.png "/tmp/pino-frames/sad/frame-$i.png" "$scale" "$angle" "-$angle" /tmp/pino-eye-sad
           done
 
-          # Happy keeps the original palette; sad is deliberately a little less saturated.
+          # Happy keeps the original palette. Sad keeps the natural Pino palette and
+          # uses real water-drop tears anchored directly beneath the eyes.
           convert -delay 10 -loop 0 /tmp/pino-frames/searching/frame-*.png -coalesce -layers OptimizeTransparency public/pino-assistente-searching.gif
           convert -delay 10 -loop 0 /tmp/pino-frames/happy/frame-*.png -coalesce -layers OptimizeTransparency public/pino-assistente-happy.gif
-          convert /tmp/pino-frames/sad/frame-0.png -modulate 100,78,100 /tmp/pino-sad-tone.png
-          for frame in /tmp/pino-frames/sad/frame-*.png; do
-            convert "$frame" -modulate 100,78,100 "$frame"
+
+          add_tears() {
+            local src="$1"
+            local out="$2"
+            local dy="$3"
+            convert "$src"               -fill "rgba(96,165,250,0.96)" -stroke "rgba(37,99,235,0.58)" -strokewidth 1               -draw "path 'M 229,$((354+dy)) C 223,$((363+dy)) 222,$((377+dy)) 229,$((384+dy)) C 236,$((377+dy)) 235,$((363+dy)) 229,$((354+dy)) Z'"               -fill "rgba(239,246,255,0.78)" -stroke none               -draw "ellipse 227,$((365+dy)) 229,$((371+dy))"               -fill "rgba(96,165,250,0.96)" -stroke "rgba(37,99,235,0.58)" -strokewidth 1               -draw "path 'M 329,$((354+dy)) C 323,$((363+dy)) 322,$((377+dy)) 329,$((384+dy)) C 336,$((377+dy)) 335,$((363+dy)) 329,$((354+dy)) Z'"               -fill "rgba(239,246,255,0.78)" -stroke none               -draw "ellipse 327,$((365+dy)) 329,$((371+dy))"               "$out"
+          }
+
+          for i in 0 1 2 3 4 5 6 7; do
+            case "$i" in
+              0) dy="0" ;;
+              1) dy="2" ;;
+              2) dy="5" ;;
+              3) dy="8" ;;
+              4) dy="10" ;;
+              5) dy="7" ;;
+              6) dy="4" ;;
+              7) dy="1" ;;
+            esac
+            add_tears "/tmp/pino-frames/sad/frame-$i.png" "/tmp/pino-frames/sad/tear-$i.png" "$dy"
           done
-          convert -delay 10 -loop 0 /tmp/pino-frames/sad/frame-*.png -coalesce -layers OptimizeTransparency public/pino-assistente-sad.gif
+
+          convert -delay 10 -loop 0 /tmp/pino-frames/sad/tear-*.png -coalesce -layers OptimizeTransparency public/pino-assistente-sad.gif
 
           identify public/pino-assistente-searching.gif
           identify public/pino-assistente-happy.gif
