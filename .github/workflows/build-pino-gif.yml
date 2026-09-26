@@ -1,0 +1,53 @@
+name: Build Pino GIF
+
+on:
+  push:
+    paths:
+      - "public/pino-assistente.jpg"
+      - ".github/workflows/build-pino-gif.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build animated GIF from the original Pino artwork
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f public/pino-assistente.jpg
+          mkdir -p /tmp/pino-frames
+          for i in 0 1 2 3 4 5 6 7; do
+            case "$i" in
+              0) scale=100 ;;
+              1) scale=101 ;;
+              2) scale=102 ;;
+              3) scale=103 ;;
+              4) scale=102 ;;
+              5) scale=101 ;;
+              6) scale=100 ;;
+              7) scale=99 ;;
+            esac
+            magick public/pino-assistente.jpg -resize "${scale}%" -gravity center -crop 100%x100%+0+0 +repage /tmp/pino-frames/frame-$i.png
+          done
+          magick -delay 8 -loop 0 /tmp/pino-frames/frame-*.png -layers OptimizeFrame public/pino-assistente.gif
+          identify public/pino-assistente.gif
+
+      - name: Commit GIF
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/pino-assistente.gif
+          if git diff --cached --quiet; then
+            echo "GIF already up to date"
+            exit 0
+          fi
+          git commit -m "chore: build real animated GIF for Pino"
+          git push
