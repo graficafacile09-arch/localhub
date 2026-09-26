@@ -1,9 +1,9 @@
 import Header from "@/components/Header/Header";
 import SearchForm from "@/components/home/SearchForm";
 import CategoriaShowcaseView from "@/components/categoria/CategoriaShowcaseView";
-import { OpenAssistantButton } from "@/components/assistant/OpenAssistantButton";
 import SearchFilters, { FILTRI_VUOTI } from "@/components/ricerca/SearchFilters";
 import SearchSort from "@/components/ricerca/SearchSort";
+import PinoSearchAssistant from "@/components/ricerca/PinoSearchAssistant";
 import SearchPagination from "@/components/ricerca/SearchPagination";
 import { getCategoriaShowcase, getFiltriDisponibiliProdotti, isOrdinamentoProdottiPubblici, type OrdinamentoProdottiPubblici } from "@/lib/negozi";
 import { search } from "@/lib/search-service";
@@ -242,6 +242,15 @@ export default async function RicercaPage({
                 </div>
               </details>
 
+              {termine && (
+                <PinoSearchAssistant
+                  query={termine}
+                  productCount={prodotti.length}
+                  storeCount={negozi.length}
+                  total={total}
+                />
+              )}
+
               {/* Conteggio + ordinamento */}
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <span className="text-sm text-slate-600">
@@ -397,13 +406,6 @@ export default async function RicercaPage({
                 totale={total}
                 perPagina={PER_PAGINA}
               />
-
-              {/* Invito AI solo quando non ci sono risultati */}
-              {prodotti.length === 0 && negozi.length === 0 && (
-                <div className="mt-2 flex justify-center">
-                  <OpenAssistantButton label="Chiedi all'AI" />
-                </div>
-              )}
             </div>
           </div>
             ) : (
