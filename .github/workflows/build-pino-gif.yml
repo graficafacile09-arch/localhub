@@ -92,7 +92,7 @@ jobs:
           # HAPPY: existing eyes gently narrow and lift toward the center.
           for i in 0 1 2 3 4 5 6 7; do
             case "$i" in
-              0|7) effect="0" ;;
+              0|7) effect="100" ;;
               1|6) effect="70" ;;
               2|5) effect="52" ;;
               3|4) effect="38" ;;
@@ -103,7 +103,7 @@ jobs:
           # SAD: existing eyes open slightly and pull outward, without drawing replacements.
           for i in 0 1 2 3 4 5 6 7; do
             case "$i" in
-              0|7) effect="0" ;;
+              0|7) effect="100" ;;
               1|6) effect="85" ;;
               2|5) effect="100" ;;
               3|4) effect="115" ;;
