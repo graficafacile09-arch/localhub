@@ -52,47 +52,63 @@ jobs:
 
           # Pino's original artwork is 280x342. These two small regions sit on the
           # existing eyes. No new eyes, mouths, eyebrows, emojis or graphics are drawn.
-          LEFT_EYE="24x24+103+156"
-          RIGHT_EYE="24x24+153+156"
+          LEFT_EYE="28x28+101+154"
+          RIGHT_EYE="28x28+151+154"
+
+          make_eye() {
+            local src="$1"
+            local geometry="$2"
+            local scale="$3"
+            local out="$4"
+            convert "$src" -crop "$geometry" +repage -alpha set -fuzz 15% -fill none -draw "alpha 0,0 floodfill" \
+              -resize "100%x${scale}%" -background none -gravity center -extent 28x28 "$out"
+          }
 
           make_frame() {
             local src="$1"
             local out="$2"
-            local effect="$3"
-            convert "$src" -region "$LEFT_EYE" -implode "$effect" +region -region "$RIGHT_EYE" -implode "$effect" +region "$out"
+            local scale="$3"
+            local tmp="$4"
+            mkdir -p "$tmp"
+            make_eye "$src" "$LEFT_EYE" "$scale" "$tmp/left.png"
+            make_eye "$src" "$RIGHT_EYE" "$scale" "$tmp/right.png"
+            convert "$src" \
+              "$tmp/left.png" -geometry +101+154 -compose over -composite \
+              "$tmp/right.png" -geometry +151+154 -compose over -composite \
+              "$out"
           }
 
           # SEARCHING: natural Pino with a gentle blink using the original eye pixels.
           for i in 0 1 2 3 4 5 6 7; do
             case "$i" in
               0|7) effect="0" ;;
-              1|6) effect="0.25" ;;
-              2|5) effect="0.55" ;;
-              3|4) effect="0.85" ;;
+              1|6) effect="80" ;;
+              2|5) effect="55" ;;
+              3|4) effect="30" ;;
             esac
-            make_frame /tmp/pino-source.png "/tmp/pino-frames/searching/frame-$i.png" "$effect"
+            make_frame /tmp/pino-source.png "/tmp/pino-frames/searching/frame-$i.png" "$effect" /tmp/pino-eye-searching
           done
 
           # HAPPY: existing eyes gently narrow and lift toward the center.
           for i in 0 1 2 3 4 5 6 7; do
             case "$i" in
               0|7) effect="0" ;;
-              1|6) effect="0.45" ;;
-              2|5) effect="0.8" ;;
-              3|4) effect="1.05" ;;
+              1|6) effect="70" ;;
+              2|5) effect="52" ;;
+              3|4) effect="38" ;;
             esac
-            make_frame /tmp/pino-source.png "/tmp/pino-frames/happy/frame-$i.png" "$effect"
+            make_frame /tmp/pino-source.png "/tmp/pino-frames/happy/frame-$i.png" "$effect" /tmp/pino-eye-happy
           done
 
           # SAD: existing eyes open slightly and pull outward, without drawing replacements.
           for i in 0 1 2 3 4 5 6 7; do
             case "$i" in
               0|7) effect="0" ;;
-              1|6) effect="-0.35" ;;
-              2|5) effect="-0.65" ;;
-              3|4) effect="-0.85" ;;
+              1|6) effect="85" ;;
+              2|5) effect="100" ;;
+              3|4) effect="115" ;;
             esac
-            make_frame /tmp/pino-source.png "/tmp/pino-frames/sad/frame-$i.png" "$effect"
+            make_frame /tmp/pino-source.png "/tmp/pino-frames/sad/frame-$i.png" "$effect" /tmp/pino-eye-sad
           done
 
           cp /tmp/pino-frames/happy/frame-4.png public/pino-debug-happy.png
