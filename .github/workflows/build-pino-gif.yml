@@ -52,8 +52,8 @@ jobs:
 
           # Pino's original artwork is 280x342. These two small regions sit on the
           # existing eyes. No new eyes, mouths, eyebrows, emojis or graphics are drawn.
-          LEFT_EYE="18x16+105+91"
-          RIGHT_EYE="18x16+157+91"
+          LEFT_EYE="24x22+103+130"
+          RIGHT_EYE="24x22+153+130"
 
           make_frame() {
             local src="$1"
@@ -95,6 +95,7 @@ jobs:
             make_frame /tmp/pino-source.png "/tmp/pino-frames/sad/frame-$i.png" "$effect"
           done
 
+          cp /tmp/pino-frames/happy/frame-4.png public/pino-debug-happy.png
           convert -delay 10 -loop 0 /tmp/pino-frames/searching/frame-*.png public/pino-assistente-searching.gif
           convert -delay 10 -loop 0 /tmp/pino-frames/happy/frame-*.png public/pino-assistente-happy.gif
           convert -delay 10 -loop 0 /tmp/pino-frames/sad/frame-*.png public/pino-assistente-sad.gif
@@ -109,7 +110,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot].noreply.github.com"
-          git add public/pino-assistente-searching.gif public/pino-assistente-happy.gif public/pino-assistente-sad.gif
+          git add public/pino-assistente-searching.gif public/pino-assistente-happy.gif public/pino-assistente-sad.gif public/pino-debug-happy.png
           if git diff --cached --quiet; then
             echo "Pino GIFs already up to date"
             exit 0
