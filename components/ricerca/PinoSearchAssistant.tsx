@@ -97,14 +97,22 @@ export default function PinoSearchAssistant({
     <aside aria-label={statoLabel} className="mb-4 w-full">
       <div className="pino-wrap group mx-auto flex w-full max-w-3xl items-end justify-center gap-2 text-left sm:gap-3">
         <button type="button" onClick={handleClick} aria-label="Usa la ricerca con Pino" title="Cerca con Pino" className="pino-character relative block w-[220px] shrink-0 cursor-pointer sm:w-[280px]">
-          <img
-            src={PINO_IMAGES[stato]}
-            alt=""
-            width={280}
-            height={342}
-            draggable={false}
-            className={"pino-image " + (stato === "positive" ? "pino-positive" : stato === "negative" ? "pino-negative" : "pino-searching")}
-          />
+          <div className="pino-visual">
+            <img
+              src={PINO_IMAGES[stato]}
+              alt=""
+              width={280}
+              height={342}
+              draggable={false}
+              className={"pino-image " + (stato === "positive" ? "pino-positive" : stato === "negative" ? "pino-negative" : "pino-searching")}
+            />
+            {stato === "negative" && (
+              <span className="pino-tears" aria-hidden="true">
+                <span className="pino-tear pino-tear-left" />
+                <span className="pino-tear pino-tear-right" />
+              </span>
+            )}
+          </div>
 
         </button>
 
@@ -147,6 +155,13 @@ export default function PinoSearchAssistant({
           overflow: visible;
         }
 
+        .pino-visual {
+          position: relative;
+          display: flex;
+          align-items: flex-end;
+          justify-content: center;
+        }
+
         .pino-image {
           display: block;
           height: 300px;
@@ -168,8 +183,50 @@ export default function PinoSearchAssistant({
           filter: saturate(1.12) drop-shadow(0 9px 10px rgba(15, 23, 42, .16));
         }
 
-        .pino-negative { animation: pinoSad .9s ease-out 1;
-          filter: saturate(.95) brightness(.98) drop-shadow(0 7px 8px rgba(15, 23, 42, .13));
+        .pino-negative {
+          animation: pinoSad .9s ease-out 1;
+          filter: drop-shadow(0 7px 8px rgba(15, 23, 42, .15));
+        }
+
+        .pino-tears {
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          overflow: visible;
+        }
+
+        .pino-tear {
+          position: absolute;
+          top: 28%;
+          width: 8px;
+          height: 31px;
+          border-radius: 999px 999px 65% 65%;
+          background: linear-gradient(to bottom, rgba(147, 197, 253, .98), rgba(37, 99, 235, .78));
+          box-shadow: 0 1px 4px rgba(30, 64, 175, .28);
+          transform-origin: top center;
+          animation: pinoTearFall 1.15s ease-in infinite;
+        }
+
+        .pino-tear::after {
+          content: "";
+          position: absolute;
+          left: 50%;
+          bottom: -5px;
+          width: 11px;
+          height: 13px;
+          border-radius: 50% 50% 60% 60%;
+          background: rgba(59, 130, 246, .82);
+          transform: translateX(-50%);
+        }
+
+        .pino-tear-left { left: 40.5%; animation-delay: .05s; }
+        .pino-tear-right { left: 57.5%; animation-delay: .25s; }
+
+        @keyframes pinoTearFall {
+          0% { opacity: 0; transform: translateY(-2px) scaleY(.55); }
+          18% { opacity: 1; }
+          72% { opacity: 1; transform: translateY(38px) scaleY(1); }
+          100% { opacity: 0; transform: translateY(55px) scaleY(1.08); }
         }
 
 
@@ -188,6 +245,17 @@ export default function PinoSearchAssistant({
 
           .pino-image {
             height: 220px;
+          }
+
+          .pino-tear {
+            top: 28%;
+            width: 6px;
+            height: 23px;
+          }
+
+          .pino-tear::after {
+            width: 9px;
+            height: 11px;
           }
 
           .pino-bubble {
