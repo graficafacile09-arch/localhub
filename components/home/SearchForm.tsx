@@ -1,7 +1,6 @@
 "use client";
 
-import { useRef } from "react";
-import { Search, Sparkles } from "lucide-react";
+import { Search } from "lucide-react";
 
 type SearchFormProps = {
   /** Query attuale (mostrata nel campo così l'utente può modificarla). */
@@ -19,27 +18,14 @@ type SearchFormProps = {
  * pagina dei risultati si può quindi fare una seconda/terza ricerca senza
  * tornare alla homepage.
  *
- * La ricerca resta ESCLUSIVAMENTE database-side (nessuna chiamata AI):
- * il pulsante ✨ apre solo l'Assistente (azione esplicita dell'utente).
+ * La ricerca resta ESCLUSIVAMENTE database-side.
  */
 export default function SearchForm({ initialQuery = "", compact = false }: SearchFormProps) {
-  const inputRef = useRef<HTMLInputElement | null>(null);
-
-  // ✨ AI: passa la query digitata all'Assistente (che la invia subito), così
-  // l'utente non deve riscriverla nel pannello condiviso.
-  const handleAI = () => {
-    const query = inputRef.current?.value?.trim() ?? initialQuery;
-    window.dispatchEvent(
-      new CustomEvent("assistant:open", { detail: { initialQuery: query } })
-    );
-  };
-
   return (
     <form action="/ricerca" method="get" className="w-full">
       <div className="flex items-center gap-2">
         <div className="relative flex min-w-0 flex-1 items-center">
           <input
-            ref={inputRef}
             type="text"
             name="q"
             defaultValue={initialQuery}
@@ -59,14 +45,6 @@ export default function SearchForm({ initialQuery = "", compact = false }: Searc
             <Search className="h-4 w-4" />
           </button>
         </div>
-        <button
-          type="button"
-          onClick={handleAI}
-          className={`flex shrink-0 items-center justify-center rounded-lg border border-blue-200 bg-blue-50 text-blue-600 transition hover:bg-blue-100 ${compact ? "h-9 w-9" : "h-10 w-10"}`}
-          aria-label="Chiedi all'Assistente AI"
-        >
-          <Sparkles className="h-4 w-4" />
-        </button>
       </div>
     </form>
   );
