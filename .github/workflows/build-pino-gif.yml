@@ -1,5 +1,4 @@
 name: Build Pino expression GIFs
-# Rebuild trigger
 
 on:
   push:
@@ -7,17 +6,13 @@ on:
       - "public/pino-assistente.jpg"
       - ".github/workflows/build-pino-gif.yml"
   create:
-  pull_request:
-    types: [opened, synchronize]
-  pull_request_target:
-    types: [opened, synchronize]
 
 permissions:
   contents: write
 
 jobs:
   build:
-    if: github.event_name == 'push' || github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'create' && github.ref_type == 'branch' && startsWith(github.ref_name, 'pino-gif-trigger'))
+    if: github.event_name == 'push' || (github.event_name == 'create' && github.ref_type == 'branch' && startsWith(github.ref_name, 'pino-gif-trigger'))
     runs-on: ubuntu-latest
     steps:
       - name: Checkout main
@@ -111,7 +106,6 @@ jobs:
             make_frame /tmp/pino-source.png "/tmp/pino-frames/sad/frame-$i.png" "$effect" /tmp/pino-eye-sad
           done
 
-          cp /tmp/pino-frames/happy/frame-4.png public/pino-debug-happy.png
           convert -delay 10 -loop 0 /tmp/pino-frames/searching/frame-*.png public/pino-assistente-searching.gif
           convert -delay 10 -loop 0 /tmp/pino-frames/happy/frame-*.png public/pino-assistente-happy.gif
           convert -delay 10 -loop 0 /tmp/pino-frames/sad/frame-*.png public/pino-assistente-sad.gif
@@ -126,7 +120,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot].noreply.github.com"
-          git add public/pino-assistente-searching.gif public/pino-assistente-happy.gif public/pino-assistente-sad.gif public/pino-debug-happy.png
+          git add public/pino-assistente-searching.gif public/pino-assistente-happy.gif public/pino-assistente-sad.gif
           if git diff --cached --quiet; then
             echo "Pino GIFs already up to date"
             exit 0
