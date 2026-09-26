@@ -28,11 +28,11 @@ jobs:
           sudo apt-get install -y imagemagick
           convert -version
 
-      - name: Restore the original Pino artwork from its valid Git revision
+      - name: Restore the original Pino artwork from its valid Git blob
         shell: bash
         run: |
           set -euo pipefail
-          git show 87b42980c5cf1131f22f08ddc706bfe64c306072:public/pino-assistente.jpg > /tmp/pino-original.jpg
+          curl -fsSL "https://api.github.com/repos/graficafacile09-arch/localhub/git/blobs/d9dfcedc0597ef64efc52a66e18f332a1fa92f1d"             | python -c 'import sys,json,base64; print(base64.b64decode(json.load(sys.stdin)["content"]).decode("latin1"), end="")' > /tmp/pino-original.jpg
           test -s /tmp/pino-original.jpg
           identify /tmp/pino-original.jpg
 
