@@ -22,7 +22,7 @@ export type FiltriCorrenti = {
   colore?: string;
   prezzoMin?: string;
   prezzoMax?: string;
-  soloDisponibili?: boolean;
+  soloDisponibili?: string;
 };
 
 type Props = {
