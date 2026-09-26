@@ -100,8 +100,8 @@ jobs:
             case "$i" in
               0|7) effect="100" ;;
               1|6) effect="85" ;;
-              2|5) effect="100" ;;
-              3|4) effect="115" ;;
+              2|5) effect="72" ;;
+              3|4) effect="60" ;;
             esac
             make_frame /tmp/pino-source.png "/tmp/pino-frames/sad/frame-$i.png" "$effect" /tmp/pino-eye-sad
           done
