@@ -113,6 +113,9 @@ jobs:
             make_frame /tmp/pino-source.png "/tmp/pino-frames/sad/frame-$i.png" "$scale" "$angle" "-$angle" /tmp/pino-eye-sad
           done
 
+          cp /tmp/pino-frames/happy/frame-4.png public/pino-debug-happy.png
+          cp /tmp/pino-frames/sad/frame-4.png public/pino-debug-sad.png
+
           for state in searching happy sad; do
             convert -delay 10 -loop 0 /tmp/pino-frames/$state/frame-*.png \
               -coalesce -layers OptimizeTransparency \
@@ -129,7 +132,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot].noreply.github.com"
-          git add public/pino-assistente-searching.gif public/pino-assistente-happy.gif public/pino-assistente-sad.gif
+          git add public/pino-assistente-searching.gif public/pino-assistente-happy.gif public/pino-assistente-sad.gif public/pino-debug-happy.png public/pino-debug-sad.png
           if git diff --cached --quiet; then
             echo "Pino GIFs already up to date"
             exit 0
