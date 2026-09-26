@@ -390,7 +390,7 @@ export default async function PaginaNegozio({
                 colore: colore || undefined,
                 prezzoMin: prezzoMin !== undefined ? String(prezzoMin) : undefined,
                 prezzoMax: prezzoMax !== undefined ? String(prezzoMax) : undefined,
-                soloDisponibili: soloDisponibili || undefined,
+                soloDisponibili: soloDisponibili ? "1" : undefined,
               }}
               disponibili={filtriDisponibili}
               showCategoria={false}
