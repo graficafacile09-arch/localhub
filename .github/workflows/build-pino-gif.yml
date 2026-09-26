@@ -26,7 +26,7 @@ jobs:
           set -euo pipefail
           sudo apt-get update
           sudo apt-get install -y imagemagick
-          magick -version || convert -version
+          convert -version
 
       - name: Build animated GIF from the original Pino artwork
         shell: bash
@@ -45,9 +45,9 @@ jobs:
               6) scale=100 ;;
               7) scale=99 ;;
             esac
-            magick public/pino-assistente.jpg -resize "${scale}%" -gravity center -crop 100%x100%+0+0 +repage /tmp/pino-frames/frame-$i.png
+            convert public/pino-assistente.jpg -resize "${scale}%" -gravity center -crop 100%x100%+0+0 +repage /tmp/pino-frames/frame-$i.png
           done
-          magick -delay 8 -loop 0 /tmp/pino-frames/frame-*.png -layers OptimizeFrame public/pino-assistente.gif
+          convert -delay 8 -loop 0 /tmp/pino-frames/frame-*.png -layers OptimizeFrame public/pino-assistente.gif
           identify public/pino-assistente.gif
 
       - name: Commit GIF to main
