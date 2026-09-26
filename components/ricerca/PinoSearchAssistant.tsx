@@ -81,7 +81,11 @@ export default function PinoSearchAssistant({
             ? "Pino ha trovato risultati"
             : "Pino non ha trovato risultati"
       }
-      className={mobile ? "relative mb-2 h-[118px] w-full" : "relative min-h-[430px] w-full"}
+      className={
+        mobile
+          ? "relative float-right mb-3 ml-3 h-[118px] w-[132px] max-w-[45%]"
+          : "relative float-right mb-4 ml-4 min-h-[320px] w-[205px]"
+      }
     >
       <button
         type="button"
@@ -91,7 +95,7 @@ export default function PinoSearchAssistant({
         className={
           mobile
             ? "relative flex h-full w-full items-end justify-end overflow-visible focus:outline-none"
-            : "relative flex min-h-[430px] w-full items-end justify-center overflow-visible focus:outline-none"
+            : "relative flex min-h-[320px] w-full items-end justify-center overflow-visible focus:outline-none"
         }
       >
         <div
@@ -117,13 +121,13 @@ export default function PinoSearchAssistant({
           alt=""
           width={420}
           height={514}
-          sizes={mobile ? "96px" : "205px"}
+          sizes={mobile ? "132px" : "205px"}
           className={
             stato === "searching"
-              ? mobile ? "pino-image pino-searching w-[96px]" : "pino-image pino-searching w-[205px]"
+              ? mobile ? "pino-image pino-searching w-[132px]" : "pino-image pino-searching w-[205px]"
               : stato === "positive"
-                ? mobile ? "pino-image pino-positive w-[96px]" : "pino-image pino-positive w-[205px]"
-                : mobile ? "pino-image pino-negative w-[96px]" : "pino-image pino-negative w-[205px]"
+                ? mobile ? "pino-image pino-positive w-[132px]" : "pino-image pino-positive w-[205px]"
+                : mobile ? "pino-image pino-negative w-[132px]" : "pino-image pino-negative w-[205px]"
           }
         />
       </button>
