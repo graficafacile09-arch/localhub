@@ -242,15 +242,6 @@ export default async function RicercaPage({
                 </div>
               </details>
 
-              {termine && (
-                <PinoSearchAssistant
-                  query={termine}
-                  productCount={prodotti.length}
-                  storeCount={negozi.length}
-                  total={total}
-                />
-              )}
-
               {/* Conteggio + ordinamento */}
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <span className="text-sm text-slate-600">
@@ -265,6 +256,15 @@ export default async function RicercaPage({
                 </span>
                 <SearchSort basePath="/ricerca" value={ordina} />
               </div>
+
+              {termine && (
+                <PinoSearchAssistant
+                  query={termine}
+                  productCount={prodotti.length}
+                  storeCount={negozi.length}
+                  total={total}
+                />
+              )}
 
               {/* ═══ PRODOTTI ═══ */}
               {prodotti.length > 0 ? (
