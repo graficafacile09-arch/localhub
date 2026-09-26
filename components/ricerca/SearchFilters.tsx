@@ -23,6 +23,7 @@ export type FiltriCorrenti = {
   prezzoMin?: string;
   prezzoMax?: string;
   soloDisponibili?: string;
+  ordina?: string;
 };
 
 type Props = {
@@ -36,6 +37,8 @@ type Props = {
   showSottocategoria?: boolean;
   /** Variante compatta (riga singola, per il catalogo negozio). */
   compact?: boolean;
+  onChange?: (filtri: FiltriCorrenti) => void;
+  isLoading?: boolean;
 };
 
 const selectCls =
@@ -147,7 +150,7 @@ export default function SearchFilters({
           type="checkbox"
           name="disponibile"
           value="1"
-          defaultChecked={current.soloDisponibili ?? false}
+          defaultChecked={current.soloDisponibili === "1"}
           className="h-3.5 w-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-300"
         />
         Solo disponibili

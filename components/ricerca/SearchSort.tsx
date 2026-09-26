@@ -14,18 +14,24 @@ const OPZIONI: { value: OrdinamentoProdottiPubblici; label: string }[] = [
 type Props = {
   basePath?: string;
   value: OrdinamentoProdottiPubblici;
+  onChange?: (value: OrdinamentoProdottiPubblici) => void;
 };
 
-export default function SearchSort({ basePath = "/ricerca", value }: Props) {
+export default function SearchSort({ basePath = "/ricerca", value, onChange }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const onChange = (next: string) => {
+  const handleChange = (next: string) => {
+    const nextValue = next as OrdinamentoProdottiPubblici;
+    if (onChange) {
+      onChange(nextValue);
+      return;
+    }
     const params = new URLSearchParams(searchParams.toString());
-    if (next === "rilevanza") {
+    if (nextValue === "rilevanza") {
       params.delete("ordina");
     } else {
-      params.set("ordina", next);
+      params.set("ordina", nextValue);
     }
     // Un nuovo ordinamento riparte dalla prima pagina.
     params.delete("pagina");
@@ -38,7 +44,7 @@ export default function SearchSort({ basePath = "/ricerca", value }: Props) {
       <span className="hidden sm:inline">Ordina:</span>
       <select
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => handleChange(e.target.value)}
         aria-label="Ordina risultati"
         className="h-8 rounded-lg border border-yellow-300 bg-yellow-50 px-2 text-xs font-medium text-yellow-900 focus:border-yellow-400 focus:outline-none focus:ring-1 focus:ring-yellow-200"
       >
