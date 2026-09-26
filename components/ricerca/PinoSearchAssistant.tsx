@@ -169,7 +169,7 @@ export default function PinoSearchAssistant({
         }
 
         .pino-negative { animation: pinoSad .9s ease-out 1;
-          filter: saturate(.72) brightness(.94) drop-shadow(0 7px 8px rgba(15, 23, 42, .13));
+          filter: saturate(.95) brightness(.98) drop-shadow(0 7px 8px rgba(15, 23, 42, .13));
         }
 
 
