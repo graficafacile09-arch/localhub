@@ -61,10 +61,10 @@ jobs:
           # SEARCHING: natural Pino with a gentle blink using the original eye pixels.
           for i in 0 1 2 3 4 5 6 7; do
             case "$i" in
-              0|7) effect="-implode 0" ;;
-              1|6) effect="-implode 0.25" ;;
-              2|5) effect="-implode 0.55" ;;
-              3|4) effect="-implode 0.85" ;;
+              0|7) effect="0" ;;
+              1|6) effect="0.25" ;;
+              2|5) effect="0.55" ;;
+              3|4) effect="0.85" ;;
             esac
             make_frame /tmp/pino-source.png "/tmp/pino-frames/searching/frame-$i.png" "$effect"
           done
@@ -73,9 +73,9 @@ jobs:
           for i in 0 1 2 3 4 5 6 7; do
             case "$i" in
               0|7) effect="-implode 0" ;;
-              1|6) effect="-implode 0.45" ;;
-              2|5) effect="-implode 0.8" ;;
-              3|4) effect="-implode 1.05" ;;
+              1|6) effect="0.45" ;;
+              2|5) effect="0.8" ;;
+              3|4) effect="1.05" ;;
             esac
             make_frame /tmp/pino-source.png "/tmp/pino-frames/happy/frame-$i.png" "$effect"
           done
@@ -84,9 +84,9 @@ jobs:
           for i in 0 1 2 3 4 5 6 7; do
             case "$i" in
               0|7) effect="-implode 0" ;;
-              1|6) effect="-implode -0.35" ;;
-              2|5) effect="-implode -0.65" ;;
-              3|4) effect="-implode -0.85" ;;
+              1|6) effect="-0.35" ;;
+              2|5) effect="-0.65" ;;
+              3|4) effect="-0.85" ;;
             esac
             make_frame /tmp/pino-source.png "/tmp/pino-frames/sad/frame-$i.png" "$effect"
           done
