@@ -113,30 +113,63 @@ jobs:
             make_frame /tmp/pino-source.png "/tmp/pino-frames/sad/frame-$i.png" "$scale" "$angle" "-$angle" /tmp/pino-eye-sad
           done
 
-          # Happy keeps the original palette. Sad keeps the natural Pino palette and
-          # uses real water-drop tears anchored directly beneath the eyes.
+          # Happy keeps the original palette. Sad keeps the natural Pino palette.
+          # IMPORTANT: remove the old red marks under the eyes first, then add actual
+          # translucent tears. No desaturation and no decorative arrows/lines.
           convert -delay 10 -loop 0 /tmp/pino-frames/searching/frame-*.png -coalesce -layers OptimizeTransparency public/pino-assistente-searching.gif
           convert -delay 10 -loop 0 /tmp/pino-frames/happy/frame-*.png -coalesce -layers OptimizeTransparency public/pino-assistente-happy.gif
+
+          clean_sad_marks() {
+            local src="$1"
+            local out="$2"
+            python3 - "$src" "$out" <<'PY'
+          from PIL import Image, ImageFilter
+          import sys
+
+          src, out = sys.argv[1], sys.argv[2]
+          im = Image.open(src).convert("RGBA")
+          blurred = im.filter(ImageFilter.GaussianBlur(radius=2.2))
+          px = im.load()
+          bp = blurred.load()
+
+          # Only inspect the skin immediately below each eye. Replace genuinely
+          # red pixels with the local blurred skin colour, leaving the eyes and
+          # the rest of Pino completely untouched.
+          zones = [
+              (196, 340, 264, 398),
+              (296, 340, 364, 398),
+          ]
+          for x0, y0, x1, y1 in zones:
+              for y in range(y0, min(y1, im.height)):
+                  for x in range(x0, min(x1, im.width)):
+                      r, g, b, a = px[x, y]
+                      if r > 120 and r - g >= 22 and r - b >= 22 and r > g * 1.16:
+                          px[x, y] = bp[x, y]
+          im.save(out, "PNG")
+          PY
+          }
 
           add_tears() {
             local src="$1"
             local out="$2"
             local dy="$3"
-            convert "$src"               -fill "rgba(96,165,250,0.96)" -stroke "rgba(37,99,235,0.58)" -strokewidth 1               -draw "path 'M 229,$((354+dy)) C 223,$((363+dy)) 222,$((377+dy)) 229,$((384+dy)) C 236,$((377+dy)) 235,$((363+dy)) 229,$((354+dy)) Z'"               -fill "rgba(239,246,255,0.78)" -stroke none               -draw "ellipse 227,$((365+dy)) 229,$((371+dy))"               -fill "rgba(96,165,250,0.96)" -stroke "rgba(37,99,235,0.58)" -strokewidth 1               -draw "path 'M 329,$((354+dy)) C 323,$((363+dy)) 322,$((377+dy)) 329,$((384+dy)) C 336,$((377+dy)) 335,$((363+dy)) 329,$((354+dy)) Z'"               -fill "rgba(239,246,255,0.78)" -stroke none               -draw "ellipse 327,$((365+dy)) 329,$((371+dy))"               "$out"
+            convert "$src"               -fill "rgba(111,191,255,0.92)"               -stroke "rgba(62,142,214,0.52)" -strokewidth 1               -draw "path 'M 229,$((354+dy)) C 224,$((361+dy)) 224,$((371+dy)) 229,$((379+dy)) C 234,$((371+dy)) 234,$((361+dy)) 229,$((354+dy)) Z'"               -fill "rgba(245,251,255,0.88)" -stroke none               -draw "ellipse 227,$((360+dy)) 229,$((366+dy))"               -fill "rgba(111,191,255,0.92)"               -stroke "rgba(62,142,214,0.52)" -strokewidth 1               -draw "path 'M 329,$((354+dy)) C 324,$((361+dy)) 324,$((371+dy)) 329,$((379+dy)) C 334,$((371+dy)) 334,$((361+dy)) 329,$((354+dy)) Z'"               -fill "rgba(245,251,255,0.88)" -stroke none               -draw "ellipse 327,$((360+dy)) 329,$((366+dy))"               "$out"
           }
 
+          rm -f /tmp/pino-frames/sad/tear-*.png
           for i in 0 1 2 3 4 5 6 7; do
             case "$i" in
               0) dy="0" ;;
               1) dy="2" ;;
               2) dy="5" ;;
               3) dy="8" ;;
-              4) dy="10" ;;
-              5) dy="7" ;;
+              4) dy="11" ;;
+              5) dy="8" ;;
               6) dy="4" ;;
               7) dy="1" ;;
             esac
-            add_tears "/tmp/pino-frames/sad/frame-$i.png" "/tmp/pino-frames/sad/tear-$i.png" "$dy"
+            clean_sad_marks "/tmp/pino-frames/sad/frame-$i.png" "/tmp/pino-frames/sad/clean-$i.png"
+            add_tears "/tmp/pino-frames/sad/clean-$i.png" "/tmp/pino-frames/sad/tear-$i.png" "$dy"
           done
 
           convert -delay 10 -loop 0 /tmp/pino-frames/sad/tear-*.png -coalesce -layers OptimizeTransparency public/pino-assistente-sad.gif
