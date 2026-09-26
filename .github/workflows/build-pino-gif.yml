@@ -32,7 +32,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          curl -fsSL "https://api.github.com/repos/graficafacile09-arch/localhub/git/blobs/d9dfcedc0597ef64efc52a66e18f332a1fa92f1d"             | python -c 'import sys,json,base64; print(base64.b64decode(json.load(sys.stdin)["content"]).decode("latin1"), end="")' > /tmp/pino-original.jpg
+          curl -fsSL "https://api.github.com/repos/graficafacile09-arch/localhub/git/blobs/d9dfcedc0597ef64efc52a66e18f332a1fa92f1d"             | python -c 'import sys,json; print(json.load(sys.stdin)["content"], end="")'             | base64 -d > /tmp/pino-original.jpg
           test -s /tmp/pino-original.jpg
           identify /tmp/pino-original.jpg
 
