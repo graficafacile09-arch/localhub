@@ -59,7 +59,7 @@ jobs:
             local src="$1"
             local out="$2"
             local effect="$3"
-            convert "$src"               -region "$LEFT_EYE" "$effect" +region               -region "$RIGHT_EYE" "$effect" +region               "$out"
+            convert "$src" -region "$LEFT_EYE" -implode "$effect" +region -region "$RIGHT_EYE" -implode "$effect" +region "$out"
           }
 
           # SEARCHING: natural Pino with a gentle blink using the original eye pixels.
