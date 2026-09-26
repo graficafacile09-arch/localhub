@@ -9,13 +9,15 @@ on:
   create:
   pull_request:
     types: [opened, synchronize]
+  pull_request_target:
+    types: [opened, synchronize]
 
 permissions:
   contents: write
 
 jobs:
   build:
-    if: github.event_name == 'push' || github.event_name == 'pull_request' || (github.event_name == 'create' && github.ref_type == 'branch' && startsWith(github.ref_name, 'pino-gif-trigger'))
+    if: github.event_name == 'push' || github.event_name == 'pull_request' || github.event_name == 'pull_request_target' || (github.event_name == 'create' && github.ref_type == 'branch' && startsWith(github.ref_name, 'pino-gif-trigger'))
     runs-on: ubuntu-latest
     steps:
       - name: Checkout main
