@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import type React from "react";
 import { Search } from "lucide-react";
 
 type StatoPino = "searching" | "positive" | "negative";
@@ -48,6 +49,8 @@ export default function PinoSearchAssistant({
   const totalResults = Math.max(total, productCount, storeCount);
   const positivo = totalResults > 0;
   const [stato, setStato] = useState<StatoPino>("searching");
+  const [ricercaAperta, setRicercaAperta] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setStato("searching");
@@ -72,23 +75,21 @@ export default function PinoSearchAssistant({
         : "Pino non ha trovato risultati";
 
   const handleClick = () => {
-    window.dispatchEvent(
-      new CustomEvent("assistant:open", {
-        detail: { initialQuery: query },
-      })
-    );
+    setRicercaAperta(true);
+    window.setTimeout(() => inputRef.current?.focus(), 40);
+  };
+
+  const handleSearch = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const value = inputRef.current?.value.trim() ?? "";
+    if (!value) return;
+    window.location.assign("/ricerca?q=" + encodeURIComponent(value));
   };
 
   return (
     <aside aria-label={statoLabel} className="mb-4 w-full">
-      <button
-        type="button"
-        onClick={handleClick}
-        aria-label="Clicca Pino per farti aiutare con questa ricerca"
-        title="Chiedi aiuto a Pino"
-        className="pino-wrap group mx-auto flex w-full max-w-3xl items-end justify-center gap-2 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:ring-offset-2 sm:gap-3"
-      >
-        <span className="pino-character relative block w-[94px] shrink-0 sm:w-[118px]" aria-hidden="true">
+      <div className="pino-wrap group mx-auto flex w-full max-w-3xl items-end justify-center gap-2 text-left sm:gap-3">
+        <button type="button" onClick={handleClick} aria-label="Usa la ricerca con Pino" title="Cerca con Pino" className="pino-character relative block w-[94px] shrink-0 cursor-pointer sm:w-[118px]">
           <img
             src={PINO_IMAGE}
             alt=""
@@ -114,7 +115,7 @@ export default function PinoSearchAssistant({
               <span className="pino-mouth pino-mouth-sad" />
             </span>
           )}
-        </span>
+        </button>
 
         <span className="pino-bubble relative mb-7 block min-w-0 max-w-[520px] rounded-[20px] border-2 border-yellow-400 bg-yellow-300 px-4 py-3 shadow-[0_8px_22px_-16px_rgba(15,23,42,.55)] sm:px-5 sm:py-3.5">
           <span aria-hidden="true" className="absolute -bottom-2.5 left-[-8px] h-4 w-4 rotate-45 border-b-2 border-l-2 border-yellow-400 bg-yellow-300" />
@@ -127,13 +128,21 @@ export default function PinoSearchAssistant({
           <span aria-live="polite" className="relative mt-1.5 block text-[11px] font-semibold leading-4 text-blue-950/85 sm:text-xs">
             {risposta}
           </span>
-          {stato !== "searching" && (
-            <span className="relative mt-1.5 block text-[10px] font-black text-blue-800">
-              Tocca Pino se vuoi che ti aiuti.
-            </span>
+          {stato !== "searching" && !ricercaAperta && (
+            <button type="button" onClick={handleClick} className="relative mt-2 rounded-lg bg-blue-700 px-3 py-2 text-[11px] font-black text-white shadow-sm transition hover:bg-blue-800">
+              Cerca ancora con Pino
+            </button>
+          )}
+          {ricercaAperta && (
+            <form onSubmit={handleSearch} className="relative mt-2 flex items-center gap-2">
+              <input ref={inputRef} name="q" defaultValue={query} placeholder="Cosa cerchiamo?" aria-label="Cerca con Pino" className="h-9 min-w-0 flex-1 rounded-lg border-2 border-blue-200 bg-white px-3 text-xs font-bold text-slate-900 outline-none focus:border-blue-500" />
+              <button type="submit" aria-label="Avvia ricerca" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-700 text-white shadow-sm transition hover:bg-blue-800">
+                <Search className="h-4 w-4" strokeWidth={3} />
+              </button>
+            </form>
           )}
         </span>
-      </button>
+      </div>
 
       <style jsx>{`
         .pino-wrap {
