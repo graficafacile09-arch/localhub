@@ -19,24 +19,24 @@ function suggerimento(query: string, positivo: boolean, totalResults: number): s
 
   if (!positivo) {
     if (/apert[oaie]|adesso|ora|stasera|oggi/.test(q)) {
-      return "Posso provare una ricerca simile tenendo conto dell'orario.";
+      return "Provo a cercarlo in modo più mirato, anche pensando all'orario.";
     }
     if (/vicin[oaie]|centro|zona|quartiere|dintorni/.test(q)) {
-      return "Posso provare a restringere la zona o cercare una categoria vicina.";
+      return "Posso restringere la ricerca alla zona che ti interessa.";
     }
-    return "Posso aiutarti a riformulare la ricerca e provare di nuovo.";
+    return "Se vuoi, possiamo provare una ricerca simile.";
   }
 
   if (/apert[oaie]|adesso|ora|stasera|oggi|chius[oaie]/.test(q)) {
-    return `Posso aiutarti a capire quali dei ${totalResults} risultati sono più adatti all'orario che cerchi.`;
+    return "Posso aiutarti a trovare tra questi i più adatti all'orario.";
   }
   if (/vicin[oaie]|centro|zona|quartiere|dintorni/.test(q)) {
-    return "Posso aiutarti a restringere la ricerca alla zona che ti interessa.";
+    return "Posso aiutarti a restringere la ricerca alla zona.";
   }
   if (/sotto|meno di|massimo|max |budget|prezzo|economico|economica|€/.test(q)) {
-    return "Posso aiutarti a restringere i risultati in base al prezzo.";
+    return "Posso aiutarti a restringere i risultati per prezzo.";
   }
-  return "Posso aiutarti a capire quali risultati sono più pertinenti per quello che cerchi.";
+  return "Ne ho trovati " + totalResults + ". Posso aiutarti a scegliere quelli più pertinenti.";
 }
 
 export default function PinoSearchAssistant({
@@ -57,19 +57,19 @@ export default function PinoSearchAssistant({
     return () => window.clearTimeout(timer);
   }, [positivo, query]);
 
-  const messaggio =
+  const risposta =
     stato === "searching"
-      ? "Sto guardando cosa c'è nella tua ricerca…"
+      ? "Dammi un secondo, guardo cosa ho trovato…"
       : positivo
-        ? `Ho trovato ${totalResults} ${totalResults === 1 ? "risultato" : "risultati"}. ${suggerimento(query, true, totalResults)}`
-        : `Non ho trovato corrispondenze utili. ${suggerimento(query, false, 0)}`;
+        ? "Per “" + query + "” " + suggerimento(query, true, totalResults)
+        : "Per “" + query + "” non ho trovato corrispondenze. " + suggerimento(query, false, 0);
 
   const statoLabel =
     stato === "searching"
       ? "Pino sta esaminando i risultati"
       : positivo
-        ? "Pino ha trovato risultati pertinenti"
-        : "Pino non ha trovato risultati pertinenti";
+        ? "Pino ha trovato risultati"
+        : "Pino non ha trovato risultati";
 
   const handleClick = () => {
     window.dispatchEvent(
@@ -86,43 +86,44 @@ export default function PinoSearchAssistant({
         onClick={handleClick}
         aria-label="Clicca Pino per farti aiutare con questa ricerca"
         title="Chiedi aiuto a Pino"
-        className="pino-card group relative flex w-full items-center overflow-hidden rounded-2xl border-2 border-yellow-400 bg-yellow-300 px-3 py-2.5 text-left shadow-[0_10px_28px_-18px_rgba(30,64,175,0.65)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_32px_-18px_rgba(30,64,175,0.7)] focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-500 focus-visible:ring-offset-2 sm:px-4"
+        className="pino-wrap group mx-auto flex w-full max-w-3xl items-end justify-center gap-2 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:ring-offset-2 sm:gap-3"
       >
-        <div className="min-w-0 flex-1 pr-2 sm:pr-3">
-          <p className="text-[10px] font-black uppercase tracking-[0.16em] text-blue-900">
-            Pino · assistente ricerca
-          </p>
-          <p className="mt-0.5 truncate text-sm font-black text-blue-950 sm:text-base" title={query}>
-            “{query}”
-          </p>
-          <p aria-live="polite" className="mt-1 max-w-2xl text-[11px] font-semibold leading-4 text-blue-950/85 sm:text-xs">
-            {messaggio}
-          </p>
-          {stato !== "searching" && (
-            <p className="mt-1 text-[10px] font-black text-blue-800">
-              Tocca Pino per continuare.
-            </p>
-          )}
-        </div>
-
-        <span className="pino-stage relative block w-[96px] shrink-0 self-stretch sm:w-[118px]" aria-hidden="true">
+        <span className="pino-character relative block w-[94px] shrink-0 sm:w-[118px]" aria-hidden="true">
           <img
             src={PINO_IMAGE}
             alt=""
-            width={420}
-            height={514}
+            width={280}
+            height={342}
             draggable={false}
-            className={`pino-image w-full ${stato === "searching" ? "pino-searching" : stato === "positive" ? "pino-positive" : "pino-negative"}`}
+            className={"pino-image " + (stato === "searching" ? "pino-searching" : stato === "positive" ? "pino-positive" : "pino-negative")}
           />
+        </span>
+
+        <span className="pino-bubble relative mb-7 block min-w-0 max-w-[520px] rounded-[20px] border-2 border-yellow-400 bg-yellow-300 px-4 py-3 shadow-[0_8px_22px_-16px_rgba(15,23,42,.55)] sm:px-5 sm:py-3.5">
+          <span aria-hidden="true" className="absolute -bottom-2.5 left-[-8px] h-4 w-4 rotate-45 border-b-2 border-l-2 border-yellow-400 bg-yellow-300" />
+          <span className="relative block text-[11px] font-black uppercase tracking-[0.12em] text-blue-950">
+            Ciao! Sono Pino 👋
+          </span>
+          <span className="relative mt-0.5 block text-sm font-black leading-5 text-blue-950 sm:text-base">
+            Il tuo assistente virtuale.
+          </span>
+          <span aria-live="polite" className="relative mt-1.5 block text-[11px] font-semibold leading-4 text-blue-950/85 sm:text-xs">
+            {risposta}
+          </span>
+          {stato !== "searching" && (
+            <span className="relative mt-1.5 block text-[10px] font-black text-blue-800">
+              Tocca Pino se vuoi che ti aiuti.
+            </span>
+          )}
         </span>
       </button>
 
       <style jsx>{`
-        .pino-card {
-          min-height: 112px;
+        .pino-wrap {
+          min-height: 148px;
         }
 
-        .pino-stage {
+        .pino-character {
           display: flex;
           align-items: flex-end;
           justify-content: center;
@@ -130,66 +131,70 @@ export default function PinoSearchAssistant({
         }
 
         .pino-image {
-          height: 116px;
+          display: block;
+          height: 148px;
           width: auto;
           max-width: 100%;
-          display: block;
           object-fit: contain;
-          transform-origin: 50% 96%;
+          transform-origin: 50% 94%;
           will-change: transform, filter;
           user-select: none;
           -webkit-user-drag: none;
-          mix-blend-mode: multiply;
-          filter: drop-shadow(0 8px 9px rgba(15, 23, 42, .14));
+          filter: drop-shadow(0 7px 8px rgba(15, 23, 42, .15));
         }
 
         .pino-searching {
-          animation: pino-searching 680ms ease-in-out infinite;
+          animation: pino-searching 700ms ease-in-out infinite;
         }
 
         .pino-positive {
-          animation: pino-positive 850ms cubic-bezier(.18,.82,.18,1) infinite;
-          filter: saturate(1.14) drop-shadow(0 10px 12px rgba(15, 23, 42, .15));
+          animation: pino-positive 900ms cubic-bezier(.18,.82,.18,1) infinite;
+          filter: saturate(1.12) drop-shadow(0 9px 10px rgba(15, 23, 42, .16));
         }
 
         .pino-negative {
-          animation: pino-negative 1050ms ease-in-out infinite;
-          filter: saturate(.72) brightness(.94) drop-shadow(0 8px 9px rgba(15, 23, 42, .12));
+          animation: pino-negative 1100ms ease-in-out infinite;
+          filter: saturate(.72) brightness(.94) drop-shadow(0 7px 8px rgba(15, 23, 42, .13));
         }
 
         @keyframes pino-searching {
-          0%, 100% { transform: translate3d(0, 2px, 0) rotate(0deg) scale(1); }
-          20% { transform: translate3d(-5px, -3px, 0) rotate(-3deg) scale(1.015); }
-          45% { transform: translate3d(5px, 0, 0) rotate(3deg) scale(1.025); }
-          70% { transform: translate3d(-4px, -2px, 0) rotate(-2deg) scale(1.012); }
+          0%, 100% { transform: translate3d(0, 1px, 0) rotate(0deg) scale(1); }
+          25% { transform: translate3d(-4px, -3px, 0) rotate(-2deg) scale(1.02); }
+          50% { transform: translate3d(4px, 0, 0) rotate(2deg) scale(1.025); }
+          75% { transform: translate3d(-3px, -2px, 0) rotate(-1.5deg) scale(1.01); }
         }
 
         @keyframes pino-positive {
           0%, 100% { transform: translate3d(0, 1px, 0) rotate(0deg) scale(1); }
-          22% { transform: translate3d(0, -9px, 0) rotate(-2deg) scale(1.04); }
-          45% { transform: translate3d(0, 1px, 0) rotate(2deg) scale(1.02); }
-          68% { transform: translate3d(0, -5px, 0) rotate(-1deg) scale(1.035); }
+          25% { transform: translate3d(0, -8px, 0) rotate(-2deg) scale(1.035); }
+          50% { transform: translate3d(0, 0, 0) rotate(2deg) scale(1.02); }
+          75% { transform: translate3d(0, -5px, 0) rotate(-1deg) scale(1.03); }
         }
 
         @keyframes pino-negative {
-          0%, 100% { transform: translate3d(0, 4px, 0) rotate(0deg) scale(1); }
-          25% { transform: translate3d(-6px, 7px, 0) rotate(-5deg) scale(.98); }
-          55% { transform: translate3d(6px, 10px, 0) rotate(5deg) scale(.96); }
-          80% { transform: translate3d(-3px, 8px, 0) rotate(-3deg) scale(.975); }
+          0%, 100% { transform: translate3d(0, 3px, 0) rotate(0deg) scale(1); }
+          30% { transform: translate3d(-4px, 6px, 0) rotate(-4deg) scale(.98); }
+          60% { transform: translate3d(4px, 8px, 0) rotate(4deg) scale(.97); }
+          85% { transform: translate3d(-2px, 6px, 0) rotate(-2deg) scale(.98); }
         }
 
         @media (max-width: 640px) {
-          .pino-card {
-            min-height: 96px;
-            padding-right: 8px;
+          .pino-wrap {
+            min-height: 112px;
+            gap: 6px;
+          }
+
+          .pino-character {
+            width: 78px;
           }
 
           .pino-image {
-            height: 94px;
+            height: 112px;
           }
 
-          .pino-stage {
-            width: 82px;
+          .pino-bubble {
+            margin-bottom: 18px;
+            padding: 10px 12px;
           }
         }
 
@@ -200,7 +205,8 @@ export default function PinoSearchAssistant({
             animation: none !important;
           }
         }
-      `}</style>
+      `}
+      </style>
     </aside>
   );
 }
