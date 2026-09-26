@@ -20,21 +20,22 @@ jobs:
         with:
           ref: main
 
-      - name: Install ImageMagick
+      - name: Install image tools
         shell: bash
         run: |
           set -euo pipefail
           sudo apt-get update
-          sudo apt-get install -y imagemagick
+          sudo apt-get install -y imagemagick ffmpeg
           convert -version
+          ffmpeg -version | head -n 1
 
-      - name: Restore the original Pino artwork from its valid Git blob
+      - name: Restore and recover the original Pino artwork
         shell: bash
         run: |
           set -euo pipefail
           curl -fsSL "https://api.github.com/repos/graficafacile09-arch/localhub/git/blobs/d9dfcedc0597ef64efc52a66e18f332a1fa92f1d"             | python -c 'import sys,json; print(json.load(sys.stdin)["content"], end="")'             | base64 -d > /tmp/pino-original.jpg
           test -s /tmp/pino-original.jpg
-          identify /tmp/pino-original.jpg
+          ffmpeg -y -v warning -err_detect ignore_err -i /tmp/pino-original.jpg -frames:v 1 /tmp/pino-source.png
 
       - name: Build animated GIF from the original Pino artwork
         shell: bash
@@ -52,7 +53,7 @@ jobs:
               6) scale=100 ;;
               7) scale=99 ;;
             esac
-            convert /tmp/pino-original.jpg -resize "${scale}%" -gravity center -crop 100%x100%+0+0 +repage /tmp/pino-frames/frame-$i.png
+            convert /tmp/pino-source.png -resize "${scale}%" -gravity center -crop 100%x100%+0+0 +repage /tmp/pino-frames/frame-$i.png
           done
           convert -delay 8 -loop 0 /tmp/pino-frames/frame-*.png -layers OptimizeFrame public/pino-assistente.gif
           identify public/pino-assistente.gif
