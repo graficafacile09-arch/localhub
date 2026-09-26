@@ -96,9 +96,9 @@ jobs:
           for i in 0 1 2 3 4 5 6 7; do
             case "$i" in
               0|7) scale="100"; angle="0" ;;
-              1|6) scale="94"; angle="3" ;;
-              2|5) scale="88"; angle="6" ;;
-              3|4) scale="82"; angle="9" ;;
+              1|6) scale="92"; angle="6" ;;
+              2|5) scale="84"; angle="9" ;;
+              3|4) scale="78"; angle="12" ;;
             esac
             make_frame /tmp/pino-source.png "/tmp/pino-frames/happy/frame-$i.png" "$scale" "-$angle" "$angle" /tmp/pino-eye-happy
           done
@@ -106,9 +106,9 @@ jobs:
           for i in 0 1 2 3 4 5 6 7; do
             case "$i" in
               0|7) scale="100"; angle="0" ;;
-              1|6) scale="102"; angle="7" ;;
-              2|5) scale="104"; angle="11" ;;
-              3|4) scale="106"; angle="14" ;;
+              1|6) scale="106"; angle="12" ;;
+              2|5) scale="110"; angle="18" ;;
+              3|4) scale="114"; angle="24" ;;
             esac
             make_frame /tmp/pino-source.png "/tmp/pino-frames/sad/frame-$i.png" "$scale" "$angle" "-$angle" /tmp/pino-eye-sad
           done
@@ -116,11 +116,14 @@ jobs:
           cp /tmp/pino-frames/happy/frame-4.png public/pino-debug-happy.png
           cp /tmp/pino-frames/sad/frame-4.png public/pino-debug-sad.png
 
-          for state in searching happy sad; do
-            convert -delay 10 -loop 0 /tmp/pino-frames/$state/frame-*.png \
-              -coalesce -layers OptimizeTransparency \
-              "public/pino-assistente-$state.gif"
+          # Happy keeps the original palette; sad is deliberately a little less saturated.
+          convert -delay 10 -loop 0 /tmp/pino-frames/searching/frame-*.png -coalesce -layers OptimizeTransparency public/pino-assistente-searching.gif
+          convert -delay 10 -loop 0 /tmp/pino-frames/happy/frame-*.png -coalesce -layers OptimizeTransparency public/pino-assistente-happy.gif
+          convert /tmp/pino-frames/sad/frame-0.png -modulate 100,78,100 /tmp/pino-sad-tone.png
+          for frame in /tmp/pino-frames/sad/frame-*.png; do
+            convert "$frame" -modulate 100,78,100 "$frame"
           done
+          convert -delay 10 -loop 0 /tmp/pino-frames/sad/frame-*.png -coalesce -layers OptimizeTransparency public/pino-assistente-sad.gif
 
           identify public/pino-assistente-searching.gif
           identify public/pino-assistente-happy.gif
