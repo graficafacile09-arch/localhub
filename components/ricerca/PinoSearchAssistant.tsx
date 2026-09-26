@@ -92,7 +92,7 @@ export default function PinoSearchAssistant({
   return (
     <aside aria-label={statoLabel} className="mb-4 w-full">
       <div className="pino-wrap group mx-auto flex w-full max-w-3xl items-end justify-center gap-2 text-left sm:gap-3">
-        <button type="button" onClick={handleClick} aria-label="Usa la ricerca con Pino" title="Cerca con Pino" className="pino-character relative block w-[94px] shrink-0 cursor-pointer sm:w-[118px]">
+        <button type="button" onClick={handleClick} aria-label="Usa la ricerca con Pino" title="Cerca con Pino" className="pino-character relative block w-[220px] shrink-0 cursor-pointer sm:w-[280px]">
           <img
             src={PINO_IMAGE}
             alt=""
@@ -102,22 +102,6 @@ export default function PinoSearchAssistant({
             className={"pino-image " + (stato === "positive" ? "pino-positive" : stato === "negative" ? "pino-negative" : "pino-searching")}
           />
           {stato === "searching" && <span className="pino-search-lens" aria-hidden="true"><Search className="h-7 w-7" strokeWidth={3} /></span>}
-          {stato === "positive" && (
-            <span className="pino-face pino-face-happy" aria-hidden="true">
-              <span className="pino-eye pino-eye-left" />
-              <span className="pino-eye pino-eye-right" />
-              <span className="pino-mouth pino-mouth-happy" />
-            </span>
-          )}
-          {stato === "negative" && (
-            <span className="pino-face pino-face-sad" aria-hidden="true">
-              <span className="pino-eyebrow pino-eyebrow-left" />
-              <span className="pino-eyebrow pino-eyebrow-right" />
-              <span className="pino-eye pino-eye-left" />
-              <span className="pino-eye pino-eye-right" />
-              <span className="pino-mouth pino-mouth-sad" />
-            </span>
-          )}
         </button>
 
         <span className="pino-bubble relative mb-7 block min-w-0 max-w-[520px] rounded-[20px] border-2 border-yellow-400 bg-yellow-300 px-4 py-3 shadow-[0_8px_22px_-16px_rgba(15,23,42,.55)] sm:px-5 sm:py-3.5">
@@ -149,7 +133,7 @@ export default function PinoSearchAssistant({
 
       <style jsx>{`
         .pino-wrap {
-          min-height: 210px;
+          min-height: 300px;
         }
 
         .pino-character {
@@ -161,9 +145,9 @@ export default function PinoSearchAssistant({
 
         .pino-image {
           display: block;
-          height: 220px;
+          height: 300px;
           width: auto;
-          max-width: 100%;
+          max-width: none;
           object-fit: contain;
           transform-origin: 50% 94%;
           will-change: transform, filter;
@@ -174,19 +158,8 @@ export default function PinoSearchAssistant({
 
         .pino-searching { animation: pinoSearch 0.85s ease-in-out infinite alternate; }
         .pino-search-lens { position:absolute; right:-2px; top:8px; display:flex; height:48px; width:48px; align-items:center; justify-content:center; border:4px solid #1d4ed8; border-radius:9999px; background:#facc15; color:#1d4ed8; box-shadow:0 5px 12px rgba(15,23,42,.2); animation:lensSweep .85s ease-in-out infinite alternate; }
-        .pino-face { position:absolute; left:50%; top:24%; width:29%; height:19%; transform:translateX(-50%); pointer-events:none; z-index:4; animation:facePop .45s ease-out both; }
-        .pino-eye { position:absolute; top:24%; width:18%; height:18%; border-radius:50%; background:#172554; }
-        .pino-eye-left { left:19%; }
-        .pino-eye-right { right:19%; }
-        .pino-mouth { position:absolute; left:50%; transform:translateX(-50%); width:42%; }
-        .pino-mouth-happy { bottom:5%; height:30%; border-bottom:4px solid #172554; border-radius:0 0 50% 50%; }
-        .pino-mouth-sad { bottom:5%; height:30%; border-top:4px solid #172554; border-radius:50% 50% 0 0; }
-        .pino-eyebrow { position:absolute; top:0; width:25%; height:5%; border-radius:9999px; background:#172554; }
-        .pino-eyebrow-left { left:13%; transform:rotate(15deg); }
-        .pino-eyebrow-right { right:13%; transform:rotate(-15deg); }
         @keyframes pinoSearch { from { transform:translateY(2px) rotate(-2deg); } to { transform:translateY(-7px) rotate(2deg); } }
         @keyframes lensSweep { from { transform:translate(-4px,3px) rotate(-10deg); } to { transform:translate(5px,-2px) rotate(10deg); } }
-        @keyframes facePop { from { transform:translateX(-50%) scale(.55); opacity:0; } to { transform:translateX(-50%) scale(1); opacity:1; } }
         .pino-positive { animation: pinoHappy .7s ease-out 2;
           filter: saturate(1.12) drop-shadow(0 9px 10px rgba(15, 23, 42, .16));
         }
@@ -201,16 +174,16 @@ export default function PinoSearchAssistant({
 
         @media (max-width: 640px) {
           .pino-wrap {
-            min-height: 154px;
+            min-height: 224px;
             gap: 6px;
           }
 
           .pino-character {
-            width: 78px;
+            width: 180px;
           }
 
           .pino-image {
-            height: 160px;
+            height: 220px;
           }
 
           .pino-bubble {
