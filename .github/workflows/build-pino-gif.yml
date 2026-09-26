@@ -60,7 +60,7 @@ jobs:
             local geometry="$2"
             local scale="$3"
             local out="$4"
-            convert "$src" -crop "$geometry" +repage -alpha set -fuzz 15% -fill none -draw "alpha 0,0 floodfill" \
+            convert "$src" -crop "$geometry" +repage -alpha on -fuzz 15% -fill none -draw "matte 0,0 floodfill" \
               -resize "100%x${scale}%" -background none -gravity center -extent 28x28 "$out"
           }
 
