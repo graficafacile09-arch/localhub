@@ -1,21 +1,27 @@
 "use client";
 
+import { useRef } from "react";
 import { Search } from "lucide-react";
+import HomeAssistantButton from "@/components/assistant/HomeAssistantButton";
 
 /**
  * Barra di ricerca dell'hero della homepage.
  *
- * Form nativo GET verso `/ricerca?q=...` (funziona anche senza JS).
- * L'Assistente entra in scena nella pagina dei risultati attraverso Pino,
- * dopo che la ricerca normale è stata eseguita.
+ * Form nativo GET verso `/ricerca?q=...` (funziona anche senza JS). A fianco,
+ * il pulsante ✨ dell'Assistente: quando l'utente ha digitato una query nel
+ * campo, questa viene passata al pannello AI come initialQuery, così il
+ * pannello parte subito con la richiesta (nessuna riscrittura manuale).
  */
 export default function HeroSearchBar() {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
   return (
     <div className="mt-7 flex max-w-xl items-center gap-2 sm:gap-3">
       <form action="/ricerca" method="GET" className="min-w-0 flex-1">
         <div className="flex items-center rounded-full bg-white/95 p-1.5 shadow-lg shadow-black/25 transition focus-within:ring-2 focus-within:ring-yellow-300">
           <Search className="ml-3 h-5 w-5 shrink-0 text-slate-400 sm:ml-4" />
           <input
+            ref={inputRef}
             type="text"
             name="q"
             placeholder="Cerca prodotto, negozio o servizio..."
@@ -38,6 +44,9 @@ export default function HeroSearchBar() {
           </button>
         </div>
       </form>
+
+      {/* Assistente AI — accessibile SOLO dalla homepage */}
+      <HomeAssistantButton getQuery={() => inputRef.current?.value ?? ""} />
     </div>
   );
 }
