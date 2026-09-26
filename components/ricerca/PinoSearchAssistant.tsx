@@ -13,7 +13,11 @@ type Props = {
   total: number;
 };
 
-const PINO_IMAGE = "/pino-assistente.gif";
+const PINO_IMAGES: Record<StatoPino, string> = {
+  searching: "/pino-assistente-searching.gif",
+  positive: "/pino-assistente-happy.gif",
+  negative: "/pino-assistente-sad.gif",
+};
 
 function suggerimento(query: string, positivo: boolean, totalResults: number): string {
   const q = query.toLocaleLowerCase("it-IT");
@@ -94,14 +98,14 @@ export default function PinoSearchAssistant({
       <div className="pino-wrap group mx-auto flex w-full max-w-3xl items-end justify-center gap-2 text-left sm:gap-3">
         <button type="button" onClick={handleClick} aria-label="Usa la ricerca con Pino" title="Cerca con Pino" className="pino-character relative block w-[220px] shrink-0 cursor-pointer sm:w-[280px]">
           <img
-            src={PINO_IMAGE}
+            src={PINO_IMAGES[stato]}
             alt=""
             width={280}
             height={342}
             draggable={false}
             className={"pino-image " + (stato === "positive" ? "pino-positive" : stato === "negative" ? "pino-negative" : "pino-searching")}
           />
-          {stato === "searching" && <span className="pino-search-lens" aria-hidden="true"><Search className="h-7 w-7" strokeWidth={3} /></span>}
+
         </button>
 
         <span className="pino-bubble relative mb-7 block min-w-0 max-w-[520px] rounded-[20px] border-2 border-yellow-400 bg-yellow-300 px-4 py-3 shadow-[0_8px_22px_-16px_rgba(15,23,42,.55)] sm:px-5 sm:py-3.5">
