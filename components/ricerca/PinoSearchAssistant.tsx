@@ -98,14 +98,28 @@ export default function PinoSearchAssistant({
             className={"pino-image " + (stato === "positive" ? "pino-positive" : stato === "negative" ? "pino-negative" : "pino-searching")}
           />
           {stato === "searching" && <span className="pino-search-lens" aria-hidden="true"><Search className="h-7 w-7" strokeWidth={3} /></span>}
-          {stato === "positive" && <span className="pino-result-face pino-happy" aria-hidden="true">😊</span>}
-          {stato === "negative" && <span className="pino-result-face pino-sad" aria-hidden="true">😟</span>}
+          {stato === "positive" && (
+            <span className="pino-face pino-face-happy" aria-hidden="true">
+              <span className="pino-eye pino-eye-left" />
+              <span className="pino-eye pino-eye-right" />
+              <span className="pino-mouth pino-mouth-happy" />
+            </span>
+          )}
+          {stato === "negative" && (
+            <span className="pino-face pino-face-sad" aria-hidden="true">
+              <span className="pino-eyebrow pino-eyebrow-left" />
+              <span className="pino-eyebrow pino-eyebrow-right" />
+              <span className="pino-eye pino-eye-left" />
+              <span className="pino-eye pino-eye-right" />
+              <span className="pino-mouth pino-mouth-sad" />
+            </span>
+          )}
         </span>
 
         <span className="pino-bubble relative mb-7 block min-w-0 max-w-[520px] rounded-[20px] border-2 border-yellow-400 bg-yellow-300 px-4 py-3 shadow-[0_8px_22px_-16px_rgba(15,23,42,.55)] sm:px-5 sm:py-3.5">
           <span aria-hidden="true" className="absolute -bottom-2.5 left-[-8px] h-4 w-4 rotate-45 border-b-2 border-l-2 border-yellow-400 bg-yellow-300" />
           <span className="relative block text-[11px] font-black uppercase tracking-[0.12em] text-blue-950">
-            {stato === "searching" ? "Pino è al lavoro 🔎" : positivo ? "Trovato! Sono Pino 😄" : "Uffa… niente trovato 😟"}
+            {stato === "searching" ? "Pino è al lavoro" : positivo ? "Trovato! Sono Pino" : "Uffa… niente trovato"}
           </span>
           <span className="relative mt-0.5 block text-sm font-black leading-5 text-blue-950 sm:text-base">
             {stato === "searching" ? "Sto cercando per te…" : positivo ? "Ho trovato qualcosa per te!" : "Questa volta non ho trovato nulla."}
@@ -153,7 +167,7 @@ export default function PinoSearchAssistant({
         .pino-sad { border:3px solid #94a3b8; }
         @keyframes pinoSearch { from { transform:translateY(2px) rotate(-2deg); } to { transform:translateY(-7px) rotate(2deg); } }
         @keyframes lensSweep { from { transform:translate(-4px,3px) rotate(-10deg); } to { transform:translate(5px,-2px) rotate(10deg); } }
-        @keyframes resultPop { from { transform:scale(.4) rotate(-12deg); opacity:0; } to { transform:scale(1) rotate(0); opacity:1; } }
+        @keyframes facePop { from { transform:translateX(-50%) scale(.55); opacity:0; } to { transform:translateX(-50%) scale(1); opacity:1; } }
         .pino-positive { animation: pinoHappy .7s ease-out 2;
           filter: saturate(1.12) drop-shadow(0 9px 10px rgba(15, 23, 42, .16));
         }
