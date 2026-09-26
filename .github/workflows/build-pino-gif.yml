@@ -1,4 +1,5 @@
 name: Build Pino expression GIFs
+# Rebuild trigger
 
 on:
   push:
