@@ -29,86 +29,95 @@ jobs:
           convert -version
           ffmpeg -version | head -n 1
 
-      - name: Restore the original Pino artwork
+      - name: Restore and prepare high-resolution Pino artwork
         shell: bash
         run: |
           set -euo pipefail
-          curl -fsSL "https://api.github.com/repos/graficafacile09-arch/localhub/git/blobs/d9dfcedc0597ef64efc52a66e18f332a1fa92f1d"             | python -c 'import sys,json; print(json.load(sys.stdin)["content"], end="")'             | base64 -d > /tmp/pino-original.jpg
+          curl -fsSL "https://api.github.com/repos/graficafacile09-arch/localhub/git/blobs/d9dfcedc0597ef64efc52a66e18f332a1fa92f1d" \
+            | python -c 'import sys,json; print(json.load(sys.stdin)["content"], end="")' \
+            | base64 -d > /tmp/pino-original.jpg
           test -s /tmp/pino-original.jpg
-          ffmpeg -y -v warning -err_detect ignore_err -i /tmp/pino-original.jpg -frames:v 1 /tmp/pino-source.png
+          ffmpeg -y -v warning -i /tmp/pino-original.jpg \
+            -vf "scale=560:684:flags=lanczos,unsharp=5:5:0.35:5:5:0" \
+            /tmp/pino-source.png
           identify /tmp/pino-source.png
 
-      - name: Build Pino GIFs by transforming only his existing eyes
+      - name: Build Pino GIFs from his original eyes
         shell: bash
         run: |
           set -euo pipefail
           rm -rf /tmp/pino-frames
           mkdir -p /tmp/pino-frames/searching /tmp/pino-frames/happy /tmp/pino-frames/sad
 
-          # Pino's original artwork is 280x342. These two small regions sit on the
-          # existing eyes. No new eyes, mouths, eyebrows, emojis or graphics are drawn.
-          LEFT_EYE="28x28+101+154"
-          RIGHT_EYE="28x28+151+154"
+          LEFT_EYE="56x56+202+308"
+          RIGHT_EYE="56x56+302+308"
 
           make_eye() {
             local src="$1"
             local geometry="$2"
             local scale="$3"
-            local out="$4"
-            convert "$src" -crop "$geometry" +repage -alpha on -fuzz 15% -fill none -draw "matte 0,0 floodfill" \
-              -resize "100%x${scale}%" -background none -gravity center -extent 28x28 "$out"
+            local angle="$4"
+            local out="$5"
+            convert "$src" \
+              -crop "$geometry" +repage \
+              -alpha on -fuzz 14% -fill none -draw "matte 0,0 floodfill" \
+              -resize "100%x${scale}%" \
+              -background none -gravity center -rotate "$angle" -extent 56x56 \
+              "$out"
           }
 
           make_frame() {
             local src="$1"
             local out="$2"
             local scale="$3"
-            local tmp="$4"
+            local left_angle="$4"
+            local right_angle="$5"
+            local tmp="$6"
+            rm -rf "$tmp"
             mkdir -p "$tmp"
-            make_eye "$src" "$LEFT_EYE" "$scale" "$tmp/left.png"
-            make_eye "$src" "$RIGHT_EYE" "$scale" "$tmp/right.png"
+            make_eye "$src" "$LEFT_EYE" "$scale" "$left_angle" "$tmp/left.png"
+            make_eye "$src" "$RIGHT_EYE" "$scale" "$right_angle" "$tmp/right.png"
             convert "$src" \
-              "$tmp/left.png" -geometry +101+154 -compose over -composite \
-              "$tmp/right.png" -geometry +151+154 -compose over -composite \
+              "$tmp/left.png" -geometry +202+308 -compose over -composite \
+              "$tmp/right.png" -geometry +302+308 -compose over -composite \
               "$out"
           }
 
-          # SEARCHING: natural Pino with a gentle blink using the original eye pixels.
           for i in 0 1 2 3 4 5 6 7; do
             case "$i" in
-              0|7) effect="100" ;;
-              1|6) effect="80" ;;
-              2|5) effect="55" ;;
-              3|4) effect="30" ;;
+              0|7) scale="100" ;;
+              1|6) scale="94" ;;
+              2|5) scale="88" ;;
+              3|4) scale="82" ;;
             esac
-            make_frame /tmp/pino-source.png "/tmp/pino-frames/searching/frame-$i.png" "$effect" /tmp/pino-eye-searching
+            make_frame /tmp/pino-source.png "/tmp/pino-frames/searching/frame-$i.png" "$scale" "0" "0" /tmp/pino-eye-searching
           done
 
-          # HAPPY: existing eyes gently narrow and lift toward the center.
           for i in 0 1 2 3 4 5 6 7; do
             case "$i" in
-              0|7) effect="100" ;;
-              1|6) effect="70" ;;
-              2|5) effect="52" ;;
-              3|4) effect="38" ;;
+              0|7) scale="100"; angle="0" ;;
+              1|6) scale="94"; angle="3" ;;
+              2|5) scale="88"; angle="6" ;;
+              3|4) scale="82"; angle="9" ;;
             esac
-            make_frame /tmp/pino-source.png "/tmp/pino-frames/happy/frame-$i.png" "$effect" /tmp/pino-eye-happy
+            make_frame /tmp/pino-source.png "/tmp/pino-frames/happy/frame-$i.png" "$scale" "-$angle" "$angle" /tmp/pino-eye-happy
           done
 
-          # SAD: existing eyes open slightly and pull outward, without drawing replacements.
           for i in 0 1 2 3 4 5 6 7; do
             case "$i" in
-              0|7) effect="100" ;;
-              1|6) effect="85" ;;
-              2|5) effect="72" ;;
-              3|4) effect="60" ;;
+              0|7) scale="100"; angle="0" ;;
+              1|6) scale="102"; angle="7" ;;
+              2|5) scale="104"; angle="11" ;;
+              3|4) scale="106"; angle="14" ;;
             esac
-            make_frame /tmp/pino-source.png "/tmp/pino-frames/sad/frame-$i.png" "$effect" /tmp/pino-eye-sad
+            make_frame /tmp/pino-source.png "/tmp/pino-frames/sad/frame-$i.png" "$scale" "$angle" "-$angle" /tmp/pino-eye-sad
           done
 
-          convert -delay 10 -loop 0 /tmp/pino-frames/searching/frame-*.png public/pino-assistente-searching.gif
-          convert -delay 10 -loop 0 /tmp/pino-frames/happy/frame-*.png public/pino-assistente-happy.gif
-          convert -delay 10 -loop 0 /tmp/pino-frames/sad/frame-*.png public/pino-assistente-sad.gif
+          for state in searching happy sad; do
+            convert -delay 10 -loop 0 /tmp/pino-frames/$state/frame-*.png \
+              -coalesce -layers OptimizeTransparency \
+              "public/pino-assistente-$state.gif"
+          done
 
           identify public/pino-assistente-searching.gif
           identify public/pino-assistente-happy.gif
