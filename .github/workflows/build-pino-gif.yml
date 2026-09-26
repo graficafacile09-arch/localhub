@@ -98,7 +98,7 @@ jobs:
               0|7) scale="100"; angle="0" ;;
               1|6) scale="92"; angle="6" ;;
               2|5) scale="84"; angle="9" ;;
-              3|4) scale="78"; angle="12" ;;
+              3|4) scale="74"; angle="13" ;;
             esac
             make_frame /tmp/pino-source.png "/tmp/pino-frames/happy/frame-$i.png" "$scale" "-$angle" "$angle" /tmp/pino-eye-happy
           done
@@ -106,15 +106,12 @@ jobs:
           for i in 0 1 2 3 4 5 6 7; do
             case "$i" in
               0|7) scale="100"; angle="0" ;;
-              1|6) scale="106"; angle="12" ;;
-              2|5) scale="110"; angle="18" ;;
-              3|4) scale="114"; angle="24" ;;
+              1|6) scale="94"; angle="10" ;;
+              2|5) scale="90"; angle="16" ;;
+              3|4) scale="88"; angle="20" ;;
             esac
             make_frame /tmp/pino-source.png "/tmp/pino-frames/sad/frame-$i.png" "$scale" "$angle" "-$angle" /tmp/pino-eye-sad
           done
-
-          cp /tmp/pino-frames/happy/frame-4.png public/pino-debug-happy.png
-          cp /tmp/pino-frames/sad/frame-4.png public/pino-debug-sad.png
 
           # Happy keeps the original palette; sad is deliberately a little less saturated.
           convert -delay 10 -loop 0 /tmp/pino-frames/searching/frame-*.png -coalesce -layers OptimizeTransparency public/pino-assistente-searching.gif
@@ -135,7 +132,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot].noreply.github.com"
-          git add public/pino-assistente-searching.gif public/pino-assistente-happy.gif public/pino-assistente-sad.gif public/pino-debug-happy.png public/pino-debug-sad.png
+          git add public/pino-assistente-searching.gif public/pino-assistente-happy.gif public/pino-assistente-sad.gif
           if git diff --cached --quiet; then
             echo "Pino GIFs already up to date"
             exit 0
