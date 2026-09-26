@@ -80,39 +80,32 @@ export default function PinoSearchAssistant({
   };
 
   return (
-    <aside
-      aria-label={statoLabel}
-      className="mb-3 flex w-full items-end justify-end gap-2 sm:gap-3"
-    >
+    <aside aria-label={statoLabel} className="mb-4 w-full">
       <button
         type="button"
         onClick={handleClick}
         aria-label="Clicca Pino per farti aiutare con questa ricerca"
         title="Chiedi aiuto a Pino"
-        className="group flex max-w-full items-end gap-2 rounded-2xl text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:ring-offset-2"
+        className="pino-card group relative flex w-full items-center overflow-hidden rounded-2xl border-2 border-yellow-400 bg-yellow-300 px-3 py-2.5 text-left shadow-[0_10px_28px_-18px_rgba(30,64,175,0.65)] transition hover:-translate-y-0.5 hover:shadow-[0_14px_32px_-18px_rgba(30,64,175,0.7)] focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-500 focus-visible:ring-offset-2 sm:px-4"
       >
-        <div className="relative w-[min(245px,calc(100vw-125px))] min-w-0 rounded-2xl border border-blue-200 bg-white px-3 py-2 shadow-[0_8px_24px_-16px_rgba(30,64,175,0.6)] sm:w-[245px]">
-          <span
-            aria-hidden="true"
-            className="absolute -right-1.5 bottom-3 h-3 w-3 rotate-45 border-r border-t border-blue-200 bg-white"
-          />
-          <p className="text-[9px] font-black uppercase tracking-[0.13em] text-blue-600">
-            Pino
+        <div className="min-w-0 flex-1 pr-2 sm:pr-3">
+          <p className="text-[10px] font-black uppercase tracking-[0.16em] text-blue-900">
+            Pino · assistente ricerca
           </p>
-          <p className="mt-0.5 truncate text-[11px] font-bold text-slate-900" title={query}>
+          <p className="mt-0.5 truncate text-sm font-black text-blue-950 sm:text-base" title={query}>
             “{query}”
           </p>
-          <p aria-live="polite" className="mt-1 text-[10px] leading-4 text-slate-600 sm:text-[11px]">
+          <p aria-live="polite" className="mt-1 max-w-2xl text-[11px] font-semibold leading-4 text-blue-950/85 sm:text-xs">
             {messaggio}
           </p>
           {stato !== "searching" && (
-            <p className="mt-1 text-[9px] font-black text-blue-700">
-              Tocca Pino e ti aiuto.
+            <p className="mt-1 text-[10px] font-black text-blue-800">
+              Tocca Pino per continuare.
             </p>
           )}
         </div>
 
-        <span className="relative block w-[76px] shrink-0 sm:w-[92px]" aria-hidden="true">
+        <span className="pino-stage relative block w-[96px] shrink-0 self-stretch sm:w-[118px]" aria-hidden="true">
           <img
             src={PINO_IMAGE}
             alt=""
@@ -125,51 +118,79 @@ export default function PinoSearchAssistant({
       </button>
 
       <style jsx>{`
+        .pino-card {
+          min-height: 112px;
+        }
+
+        .pino-stage {
+          display: flex;
+          align-items: flex-end;
+          justify-content: center;
+          overflow: visible;
+        }
+
         .pino-image {
-          height: auto;
+          height: 116px;
+          width: auto;
+          max-width: 100%;
           display: block;
           object-fit: contain;
-          transform-origin: 50% 94%;
+          transform-origin: 50% 96%;
           will-change: transform, filter;
           user-select: none;
           -webkit-user-drag: none;
           mix-blend-mode: multiply;
-          filter: drop-shadow(0 8px 10px rgba(15, 23, 42, .12));
+          filter: drop-shadow(0 8px 9px rgba(15, 23, 42, .14));
         }
 
         .pino-searching {
-          animation: pino-searching 700ms ease-in-out infinite;
+          animation: pino-searching 680ms ease-in-out infinite;
         }
 
         .pino-positive {
-          animation: pino-positive 900ms cubic-bezier(.18,.82,.18,1) 1;
-          filter: saturate(1.08) drop-shadow(0 10px 13px rgba(15, 23, 42, .13));
+          animation: pino-positive 850ms cubic-bezier(.18,.82,.18,1) infinite;
+          filter: saturate(1.14) drop-shadow(0 10px 12px rgba(15, 23, 42, .15));
         }
 
         .pino-negative {
-          animation: pino-negative 1150ms ease-in-out 1;
-          filter: saturate(.7) brightness(.92) drop-shadow(0 8px 10px rgba(15, 23, 42, .11));
+          animation: pino-negative 1050ms ease-in-out infinite;
+          filter: saturate(.72) brightness(.94) drop-shadow(0 8px 9px rgba(15, 23, 42, .12));
         }
 
         @keyframes pino-searching {
-          0%, 100% { transform: translate3d(0, 1px, 0) rotate(0deg) scale(1); }
-          20% { transform: translate3d(-3px, -2px, 0) rotate(-1.5deg) scale(1.01); }
-          50% { transform: translate3d(4px, 0, 0) rotate(1.3deg) scale(1.014); }
-          80% { transform: translate3d(-2px, -2px, 0) rotate(-.8deg) scale(1.006); }
+          0%, 100% { transform: translate3d(0, 2px, 0) rotate(0deg) scale(1); }
+          20% { transform: translate3d(-5px, -3px, 0) rotate(-3deg) scale(1.015); }
+          45% { transform: translate3d(5px, 0, 0) rotate(3deg) scale(1.025); }
+          70% { transform: translate3d(-4px, -2px, 0) rotate(-2deg) scale(1.012); }
         }
 
         @keyframes pino-positive {
-          0% { transform: translate3d(0, 10px, 0) rotate(-1deg) scale(.97); }
-          35% { transform: translate3d(0, -6px, 0) rotate(1.1deg) scale(1.025); }
-          60% { transform: translate3d(0, 1px, 0) rotate(-.25deg) scale(1.006); }
-          100% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
+          0%, 100% { transform: translate3d(0, 1px, 0) rotate(0deg) scale(1); }
+          22% { transform: translate3d(0, -9px, 0) rotate(-2deg) scale(1.04); }
+          45% { transform: translate3d(0, 1px, 0) rotate(2deg) scale(1.02); }
+          68% { transform: translate3d(0, -5px, 0) rotate(-1deg) scale(1.035); }
         }
 
         @keyframes pino-negative {
-          0% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); }
-          25% { transform: translate3d(-3px, 5px, 0) rotate(-1.8deg) scale(.99); }
-          55% { transform: translate3d(3px, 9px, 0) rotate(2deg) scale(.98); }
-          100% { transform: translate3d(0, 7px, 0) rotate(-.7deg) scale(.985); }
+          0%, 100% { transform: translate3d(0, 4px, 0) rotate(0deg) scale(1); }
+          25% { transform: translate3d(-6px, 7px, 0) rotate(-5deg) scale(.98); }
+          55% { transform: translate3d(6px, 10px, 0) rotate(5deg) scale(.96); }
+          80% { transform: translate3d(-3px, 8px, 0) rotate(-3deg) scale(.975); }
+        }
+
+        @media (max-width: 640px) {
+          .pino-card {
+            min-height: 96px;
+            padding-right: 8px;
+          }
+
+          .pino-image {
+            height: 94px;
+          }
+
+          .pino-stage {
+            width: 82px;
+          }
         }
 
         @media (prefers-reduced-motion: reduce) {
