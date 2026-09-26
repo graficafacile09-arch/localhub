@@ -5,16 +5,20 @@ on:
     paths:
       - "public/pino-assistente.jpg"
       - ".github/workflows/build-pino-gif.yml"
+  create:
 
 permissions:
   contents: write
 
 jobs:
   build:
+    if: github.event_name == 'push' || (github.event_name == 'create' && github.ref_type == 'branch' && github.ref_name == 'pino-gif-trigger')
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout main
         uses: actions/checkout@v4
+        with:
+          ref: main
 
       - name: Build animated GIF from the original Pino artwork
         shell: bash
@@ -38,7 +42,7 @@ jobs:
           magick -delay 8 -loop 0 /tmp/pino-frames/frame-*.png -layers OptimizeFrame public/pino-assistente.gif
           identify public/pino-assistente.gif
 
-      - name: Commit GIF
+      - name: Commit GIF to main
         shell: bash
         run: |
           set -euo pipefail
@@ -50,4 +54,4 @@ jobs:
             exit 0
           fi
           git commit -m "chore: build real animated GIF for Pino"
-          git push
+          git push origin HEAD:main
