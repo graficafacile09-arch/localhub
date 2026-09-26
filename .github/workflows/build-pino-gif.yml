@@ -1,5 +1,5 @@
 name: Build Pino expression GIFs
-# Rebuild trigger for PR verification v3
+# Rebuild trigger for PR verification v4
 
 on:
   push:
