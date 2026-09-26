@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Search } from "lucide-react";
 
 type StatoPino = "searching" | "positive" | "negative";
 
@@ -52,7 +53,7 @@ export default function PinoSearchAssistant({
     setStato("searching");
     const timer = window.setTimeout(() => {
       setStato(positivo ? "positive" : "negative");
-    }, 900);
+    }, 1400);
     return () => window.clearTimeout(timer);
   }, [positivo, query]);
 
@@ -94,17 +95,20 @@ export default function PinoSearchAssistant({
             width={280}
             height={342}
             draggable={false}
-            className={"pino-image " + (stato === "positive" ? "pino-positive" : stato === "negative" ? "pino-negative" : "")}
+            className={"pino-image " + (stato === "positive" ? "pino-positive" : stato === "negative" ? "pino-negative" : "pino-searching")}
           />
+          {stato === "searching" && <span className="pino-search-lens" aria-hidden="true"><Search className="h-7 w-7" strokeWidth={3} /></span>}
+          {stato === "positive" && <span className="pino-result-face pino-happy" aria-hidden="true">😊</span>}
+          {stato === "negative" && <span className="pino-result-face pino-sad" aria-hidden="true">😟</span>}
         </span>
 
         <span className="pino-bubble relative mb-7 block min-w-0 max-w-[520px] rounded-[20px] border-2 border-yellow-400 bg-yellow-300 px-4 py-3 shadow-[0_8px_22px_-16px_rgba(15,23,42,.55)] sm:px-5 sm:py-3.5">
           <span aria-hidden="true" className="absolute -bottom-2.5 left-[-8px] h-4 w-4 rotate-45 border-b-2 border-l-2 border-yellow-400 bg-yellow-300" />
           <span className="relative block text-[11px] font-black uppercase tracking-[0.12em] text-blue-950">
-            Ciao! Sono Pino 👋
+            {stato === "searching" ? "Pino è al lavoro 🔎" : positivo ? "Trovato! Sono Pino 😄" : "Uffa… niente trovato 😟"}
           </span>
           <span className="relative mt-0.5 block text-sm font-black leading-5 text-blue-950 sm:text-base">
-            Il tuo assistente virtuale.
+            {stato === "searching" ? "Sto cercando per te…" : positivo ? "Ho trovato qualcosa per te!" : "Questa volta non ho trovato nulla."}
           </span>
           <span aria-live="polite" className="relative mt-1.5 block text-[11px] font-semibold leading-4 text-blue-950/85 sm:text-xs">
             {risposta}
@@ -131,7 +135,7 @@ export default function PinoSearchAssistant({
 
         .pino-image {
           display: block;
-          height: 148px;
+          height: 170px;
           width: auto;
           max-width: 100%;
           object-fit: contain;
@@ -142,14 +146,25 @@ export default function PinoSearchAssistant({
           filter: drop-shadow(0 7px 8px rgba(15, 23, 42, .15));
         }
 
-        .pino-positive {
+        .pino-searching { animation: pinoSearch 0.85s ease-in-out infinite alternate; }
+        .pino-search-lens { position:absolute; right:-2px; top:8px; display:flex; height:48px; width:48px; align-items:center; justify-content:center; border:4px solid #1d4ed8; border-radius:9999px; background:#facc15; color:#1d4ed8; box-shadow:0 5px 12px rgba(15,23,42,.2); animation:lensSweep .85s ease-in-out infinite alternate; }
+        .pino-result-face { position:absolute; right:-2px; top:8px; display:grid; height:42px; width:42px; place-items:center; border-radius:9999px; background:white; box-shadow:0 5px 12px rgba(15,23,42,.18); font-size:26px; animation:resultPop .45s ease-out both; }
+        .pino-happy { border:3px solid #22c55e; }
+        .pino-sad { border:3px solid #94a3b8; }
+        @keyframes pinoSearch { from { transform:translateY(2px) rotate(-2deg); } to { transform:translateY(-7px) rotate(2deg); } }
+        @keyframes lensSweep { from { transform:translate(-4px,3px) rotate(-10deg); } to { transform:translate(5px,-2px) rotate(10deg); } }
+        @keyframes resultPop { from { transform:scale(.4) rotate(-12deg); opacity:0; } to { transform:scale(1) rotate(0); opacity:1; } }
+        .pino-positive { animation: pinoHappy .7s ease-out 2;
           filter: saturate(1.12) drop-shadow(0 9px 10px rgba(15, 23, 42, .16));
         }
 
-        .pino-negative {
+        .pino-negative { animation: pinoSad .9s ease-out 1;
           filter: saturate(.72) brightness(.94) drop-shadow(0 7px 8px rgba(15, 23, 42, .13));
         }
 
+
+        @keyframes pinoHappy { 0%,100% { transform:translateY(0) rotate(0); } 35% { transform:translateY(-10px) rotate(-4deg); } 65% { transform:translateY(-5px) rotate(4deg); } }
+        @keyframes pinoSad { 0%,100% { transform:translateY(0); } 45% { transform:translateY(4px) rotate(-3deg); } }
 
         @media (max-width: 640px) {
           .pino-wrap {
