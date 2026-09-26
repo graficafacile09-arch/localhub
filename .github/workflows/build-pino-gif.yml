@@ -29,20 +29,18 @@ jobs:
           convert -version
           ffmpeg -version | head -n 1
 
-      - name: Restore and prepare high-resolution Pino artwork
+      - name: Restore and prepare the current Pino artwork
         shell: bash
         run: |
           set -euo pipefail
-          curl -fsSL "https://api.github.com/repos/graficafacile09-arch/localhub/git/blobs/d9dfcedc0597ef64efc52a66e18f332a1fa92f1d" \
-            | python -c 'import sys,json; print(json.load(sys.stdin)["content"], end="")' \
-            | base64 -d > /tmp/pino-original.jpg
+          cp public/pino-assistente.jpg /tmp/pino-original.jpg
           test -s /tmp/pino-original.jpg
           ffmpeg -y -v warning -i /tmp/pino-original.jpg \
             -vf "scale=560:684:flags=lanczos,unsharp=5:5:0.35:5:5:0" \
             /tmp/pino-source.png
           identify /tmp/pino-source.png
 
-      - name: Build Pino GIFs from his original eyes
+      - name: Build Pino GIFs from the current artwork eyes
         shell: bash
         run: |
           set -euo pipefail
