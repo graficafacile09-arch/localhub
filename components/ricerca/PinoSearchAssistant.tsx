@@ -76,7 +76,10 @@ export default function PinoSearchAssistant({
 
   const handleClick = () => {
     setRicercaAperta(true);
-    window.setTimeout(() => inputRef.current?.focus(), 40);
+    window.setTimeout(() => {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    }, 40);
   };
 
   const handleSearch = (event: React.FormEvent<HTMLFormElement>) => {
@@ -135,7 +138,7 @@ export default function PinoSearchAssistant({
           )}
           {ricercaAperta && (
             <form onSubmit={handleSearch} className="relative mt-2 flex items-center gap-2">
-              <input ref={inputRef} name="q" defaultValue={query} placeholder="Cosa cerchiamo?" aria-label="Cerca con Pino" className="h-9 min-w-0 flex-1 rounded-lg border-2 border-blue-200 bg-white px-3 text-xs font-bold text-slate-900 outline-none focus:border-blue-500" />
+              <input ref={inputRef} name="q" defaultValue="" placeholder="Cosa cerchiamo?" aria-label="Cerca con Pino" className="h-9 min-w-0 flex-1 rounded-lg border-2 border-blue-200 bg-white px-3 text-xs font-bold text-slate-900 outline-none focus:border-blue-500" />
               <button type="submit" aria-label="Avvia ricerca" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-700 text-white shadow-sm transition hover:bg-blue-800">
                 <Search className="h-4 w-4" strokeWidth={3} />
               </button>
@@ -146,7 +149,7 @@ export default function PinoSearchAssistant({
 
       <style jsx>{`
         .pino-wrap {
-          min-height: 148px;
+          min-height: 210px;
         }
 
         .pino-character {
@@ -158,7 +161,7 @@ export default function PinoSearchAssistant({
 
         .pino-image {
           display: block;
-          height: 170px;
+          height: 220px;
           width: auto;
           max-width: 100%;
           object-fit: contain;
@@ -171,9 +174,16 @@ export default function PinoSearchAssistant({
 
         .pino-searching { animation: pinoSearch 0.85s ease-in-out infinite alternate; }
         .pino-search-lens { position:absolute; right:-2px; top:8px; display:flex; height:48px; width:48px; align-items:center; justify-content:center; border:4px solid #1d4ed8; border-radius:9999px; background:#facc15; color:#1d4ed8; box-shadow:0 5px 12px rgba(15,23,42,.2); animation:lensSweep .85s ease-in-out infinite alternate; }
-        .pino-result-face { position:absolute; right:-2px; top:8px; display:grid; height:42px; width:42px; place-items:center; border-radius:9999px; background:white; box-shadow:0 5px 12px rgba(15,23,42,.18); font-size:26px; animation:resultPop .45s ease-out both; }
-        .pino-happy { border:3px solid #22c55e; }
-        .pino-sad { border:3px solid #94a3b8; }
+        .pino-face { position:absolute; left:50%; top:24%; width:29%; height:19%; transform:translateX(-50%); pointer-events:none; z-index:4; animation:facePop .45s ease-out both; }
+        .pino-eye { position:absolute; top:24%; width:18%; height:18%; border-radius:50%; background:#172554; }
+        .pino-eye-left { left:19%; }
+        .pino-eye-right { right:19%; }
+        .pino-mouth { position:absolute; left:50%; transform:translateX(-50%); width:42%; }
+        .pino-mouth-happy { bottom:5%; height:30%; border-bottom:4px solid #172554; border-radius:0 0 50% 50%; }
+        .pino-mouth-sad { bottom:5%; height:30%; border-top:4px solid #172554; border-radius:50% 50% 0 0; }
+        .pino-eyebrow { position:absolute; top:0; width:25%; height:5%; border-radius:9999px; background:#172554; }
+        .pino-eyebrow-left { left:13%; transform:rotate(15deg); }
+        .pino-eyebrow-right { right:13%; transform:rotate(-15deg); }
         @keyframes pinoSearch { from { transform:translateY(2px) rotate(-2deg); } to { transform:translateY(-7px) rotate(2deg); } }
         @keyframes lensSweep { from { transform:translate(-4px,3px) rotate(-10deg); } to { transform:translate(5px,-2px) rotate(10deg); } }
         @keyframes facePop { from { transform:translateX(-50%) scale(.55); opacity:0; } to { transform:translateX(-50%) scale(1); opacity:1; } }
@@ -191,7 +201,7 @@ export default function PinoSearchAssistant({
 
         @media (max-width: 640px) {
           .pino-wrap {
-            min-height: 112px;
+            min-height: 154px;
             gap: 6px;
           }
 
@@ -200,7 +210,7 @@ export default function PinoSearchAssistant({
           }
 
           .pino-image {
-            height: 112px;
+            height: 160px;
           }
 
           .pino-bubble {
