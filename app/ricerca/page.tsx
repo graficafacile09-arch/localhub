@@ -228,7 +228,9 @@ export default async function RicercaPage({
             </aside>
 
             <div className="min-w-0">
-              {/* Pannello filtri (mobile) */}
+              <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_205px] lg:items-start lg:gap-5">
+                <div className="min-w-0">
+                  {/* Pannello filtri (mobile) */
               <details className="mb-3 rounded-xl border border-slate-200 bg-white shadow-sm lg:hidden">
                 <summary className="flex cursor-pointer list-none items-center gap-1.5 px-3 py-2.5 text-xs font-bold text-slate-700 [&::-webkit-details-marker]:hidden">
                   <SlidersHorizontal className="h-3.5 w-3.5 text-blue-600" />
@@ -242,16 +244,19 @@ export default async function RicercaPage({
                 </div>
               </details>
 
-              {termine && (
-                <PinoSearchAssistant
-                  query={termine}
-                  productCount={prodotti.length}
-                  storeCount={negozi.length}
-                  total={total}
-                />
-              )}
+                  <div className="lg:hidden">
+                    {termine && (
+                      <PinoSearchAssistant
+                        query={termine}
+                        productCount={prodotti.length}
+                        storeCount={negozi.length}
+                        total={total}
+                        mobile
+                      />
+                    )}
+                  </div>
 
-              {/* Conteggio + ordinamento */}
+                  {/* Conteggio + ordinamento */
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <span className="text-sm text-slate-600">
                   <span className="font-bold">{total}</span>{" "}
@@ -399,13 +404,25 @@ export default async function RicercaPage({
               )}
 
               {/* Paginazione prodotti */}
-              <SearchPagination
-                basePath="/ricerca"
-                params={paramsPaginazione}
-                pagina={pagina}
-                totale={total}
-                perPagina={PER_PAGINA}
-              />
+                <SearchPagination
+                  basePath="/ricerca"
+                  params={paramsPaginazione}
+                  pagina={pagina}
+                  totale={total}
+                  perPagina={PER_PAGINA}
+                />
+              </div>
+
+              <div className="hidden lg:block">
+                {termine && (
+                  <PinoSearchAssistant
+                    query={termine}
+                    productCount={prodotti.length}
+                    storeCount={negozi.length}
+                    total={total}
+                  />
+                )}
+              </div>
             </div>
           </div>
             ) : (
