@@ -11,8 +11,7 @@ type Props = {
   total: number;
 };
 
-const PINO_IMAGE =
-  "https://raw.githubusercontent.com/graficafacile09-arch/localhub/87b42980c5cf1131f22f08ddc706bfe64c306072/public/pino-assistente.jpg";
+const PINO_IMAGE = "/pino-assistente.gif";
 
 function suggerimento(query: string, positivo: boolean, totalResults: number): string {
   const q = query.toLocaleLowerCase("it-IT");
@@ -95,7 +94,7 @@ export default function PinoSearchAssistant({
             width={280}
             height={342}
             draggable={false}
-            className={"pino-image " + (stato === "searching" ? "pino-searching" : stato === "positive" ? "pino-positive" : "pino-negative")}
+            className={"pino-image " + (stato === "positive" ? "pino-positive" : stato === "negative" ? "pino-negative" : "")}
           />
         </span>
 
@@ -143,40 +142,14 @@ export default function PinoSearchAssistant({
           filter: drop-shadow(0 7px 8px rgba(15, 23, 42, .15));
         }
 
-        .pino-searching {
-          animation: pino-searching 700ms ease-in-out infinite;
-        }
-
         .pino-positive {
-          animation: pino-positive 900ms cubic-bezier(.18,.82,.18,1) infinite;
           filter: saturate(1.12) drop-shadow(0 9px 10px rgba(15, 23, 42, .16));
         }
 
         .pino-negative {
-          animation: pino-negative 1100ms ease-in-out infinite;
           filter: saturate(.72) brightness(.94) drop-shadow(0 7px 8px rgba(15, 23, 42, .13));
         }
 
-        @keyframes pino-searching {
-          0%, 100% { transform: translate3d(0, 1px, 0) rotate(0deg) scale(1); }
-          25% { transform: translate3d(-4px, -3px, 0) rotate(-2deg) scale(1.02); }
-          50% { transform: translate3d(4px, 0, 0) rotate(2deg) scale(1.025); }
-          75% { transform: translate3d(-3px, -2px, 0) rotate(-1.5deg) scale(1.01); }
-        }
-
-        @keyframes pino-positive {
-          0%, 100% { transform: translate3d(0, 1px, 0) rotate(0deg) scale(1); }
-          25% { transform: translate3d(0, -8px, 0) rotate(-2deg) scale(1.035); }
-          50% { transform: translate3d(0, 0, 0) rotate(2deg) scale(1.02); }
-          75% { transform: translate3d(0, -5px, 0) rotate(-1deg) scale(1.03); }
-        }
-
-        @keyframes pino-negative {
-          0%, 100% { transform: translate3d(0, 3px, 0) rotate(0deg) scale(1); }
-          30% { transform: translate3d(-4px, 6px, 0) rotate(-4deg) scale(.98); }
-          60% { transform: translate3d(4px, 8px, 0) rotate(4deg) scale(.97); }
-          85% { transform: translate3d(-2px, 6px, 0) rotate(-2deg) scale(.98); }
-        }
 
         @media (max-width: 640px) {
           .pino-wrap {
@@ -198,12 +171,6 @@ export default function PinoSearchAssistant({
           }
         }
 
-        @media (prefers-reduced-motion: reduce) {
-          .pino-searching,
-          .pino-positive,
-          .pino-negative {
-            animation: none !important;
-          }
         }
       `}
       </style>
