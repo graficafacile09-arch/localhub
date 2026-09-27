@@ -19,6 +19,7 @@ import { chiavePreferito, getStatoPreferitiPerPagina } from "@/lib/cliente/favor
 import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
 import ProductCard from "@/components/home/ProductCard";
 import EccellenzeCalabresiGrid from "@/components/home/EccellenzeCalabresiGrid";
+import PinoHomepageHelper from "@/components/assistant/PinoHomepageHelper";
 
 // La homepage deve riflettere in tempo reale i negozi in evidenza flaggati
 // dal merchant (il toggle "In evidenza" della dashboard), quindi non viene
@@ -116,7 +117,10 @@ export default async function Home() {
           {/* Motore di ricerca invariato: stessa action GET e stesso parametro q.
               HeroSearchBar (client) passa la query digitata anche al pulsante
               ✨ dell'Assistente, così il pannello parte subito con la richiesta. */}
-          <HeroSearchBar />
+          <div className="mt-7 grid gap-6 md:grid-cols-[minmax(0,1fr)_290px] md:items-end">
+            <HeroSearchBar />
+            <PinoHomepageHelper />
+          </div>
         </div>
       </section>
 
