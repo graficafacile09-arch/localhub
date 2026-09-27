@@ -56,7 +56,7 @@ export default function PinoHomepageHelper() {
           role="button"
           tabIndex={0}
           aria-label="Apri l'assistente AI"
-          className="cursor-grab rounded-full outline-none transition hover:scale-105 active:cursor-grabbing focus-visible:ring-2 focus-visible:ring-yellow-300"
+          className="cursor-grab rounded-full outline-none transition hover:scale-105 active:cursor-grabbing focus-visible:ring-2 focus-visible:ring-yellow-300 md:scale-[2] md:origin-bottom"
           onKeyDown={(event) => {
             if (event.key === "Enter" || event.key === " ") {
               event.preventDefault();
@@ -64,7 +64,7 @@ export default function PinoHomepageHelper() {
             }
           }}
         >
-          <PinoSprite mood="neutral" className="h-[92px] w-[71px] md:h-[184px] md:w-[142px] drop-shadow-[0_7px_10px_rgba(15,23,42,0.2)]" />
+          <PinoSprite mood="neutral" className="h-[92px] w-[71px] drop-shadow-[0_7px_10px_rgba(15,23,42,0.2)]" />
         </div>
       </div>
       <span className="sr-only">Trascina Pino per spostarlo oppure clicca per aprire la ricerca AI.</span>
