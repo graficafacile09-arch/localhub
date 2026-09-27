@@ -152,7 +152,8 @@ export default async function RootLayout({
           </div>
         </footer>
 
-        {<PinoAssistantPanel />\n      </body>
+        <PinoAssistantPanel />
+      </body>
     </html>
   );
 }
