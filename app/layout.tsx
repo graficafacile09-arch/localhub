@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import PinoAssistantPanel from "@/components/assistant/PinoAssistantPanel";
 import { CartProvider } from "@/lib/carrello/CartContext";
 import { getImpostazioniPubbliche } from "@/lib/platform/settings";
 import { getSiteUrl } from "@/lib/site";
@@ -151,8 +150,6 @@ export default async function RootLayout({
             </a>
           </div>
         </footer>
-
-        <PinoAssistantPanel />
       </body>
     </html>
   );
