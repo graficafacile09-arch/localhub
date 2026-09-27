@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import AssistantMessage, { type ChatMessage } from "./AssistantMessage";
 import AssistantInput from "./AssistantInput";
 import TypingIndicator from "./TypingIndicator";
+import PinoSprite, { type PinoMood } from "./PinoSprite";
 import type { SearchResult } from "@/lib/search-service";
 
 const SUGGESTIONS = [
@@ -225,6 +226,7 @@ export default function AssistantPanel() {
         <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto">
           {messages.length === 0 && !isLoading ? (
             <div className="flex h-full flex-col items-center justify-center gap-3 px-4">
+              <PinoSprite mood="neutral" className="h-[120px] w-[92px]" />
               <div className="text-center">
                 <h2 className="text-sm font-bold text-slate-900">
                   Ciao! Sono l&apos;Assistente di InCittà
@@ -253,11 +255,26 @@ export default function AssistantPanel() {
                   message.role === "assistant" &&
                   !messages.slice(index + 1).some((m) => m.role === "assistant");
 
+                const pinoMood: PinoMood =
+                    message.role !== "assistant"
+                      ? "neutral"
+                      : message.negozi?.length || message.prodotti?.length
+                        ? "happy"
+                        : message.content.includes("Non ho trovato") || message.content.includes("errore")
+                          ? "sad"
+                          : "neutral";
+
                 return (
                   <div
                     key={message.id}
                     ref={isLastAssistant ? lastAssistantRef : undefined}
                   >
+                    {message.role === "assistant" && isLastAssistant && (
+                      <div className="mb-1 flex items-end gap-2 pl-1">
+                        <PinoSprite mood={pinoMood} className="h-[72px] w-[56px]" />
+                        <span className="sr-only">Pino è {pinoMood === "happy" ? "felice perché ha trovato risultati" : pinoMood === "sad" ? "triste perché non ha trovato risultati" : "neutro"}.</span>
+                      </div>
+                    )}
                     <AssistantMessage message={message} />
                   </div>
                 );
