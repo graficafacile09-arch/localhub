@@ -229,7 +229,7 @@ export default function AssistantPanel() {
               <PinoSprite mood="neutral" className="h-[230px] w-[177px]" />
               <div className="text-center">
                 <h2 className="text-sm font-bold text-slate-900">
-                  Ciao sono Pino, chatta con me
+                  Ciao sono Pino, chatta con me.
                 </h2>
                 <p className="mt-1 text-xs text-slate-500">
                   Sono il tuo assistente allo shopping su InCittà. Posso aiutarti a trovare negozi, prodotti e servizi nella tua città.
