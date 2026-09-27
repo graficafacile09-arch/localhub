@@ -42,15 +42,15 @@ export default function PinoHomepageHelper() {
       onPointerCancel={() => { dragRef.current = null; }}
       aria-label="Pino, assistente di InCittà"
     >
-      <div className="flex items-end gap-1.5">
+      <div className="flex items-end gap-2">
         <button
           type="button"
           onClick={(event) => { event.stopPropagation(); openAssistant(); }}
-          className="relative mb-6 max-w-[158px] rounded-[18px] rounded-br-[7px] border border-blue-200/90 bg-blue-50/95 px-3 py-1.5 shadow-[0_5px_16px_-9px_rgba(15,23,42,0.5)] outline-none transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-blue-300"
+          className="relative mb-7 max-w-[172px] rounded-[16px] rounded-br-[4px] border-2 border-blue-300 bg-blue-100 px-3 py-2 shadow-[0_8px_22px_-8px_rgba(30,64,175,0.45)] outline-none transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-blue-400"
           aria-label="Apri l'assistente AI di InCittà"
         >
-          <span className="block text-[11px] font-semibold leading-[15px] text-blue-900">Ciao, sono Pino, pronto ad aiutarti.</span>
-          <span className="absolute -bottom-1.5 right-4 h-3 w-3 rotate-45 border-r border-b border-blue-200/90 bg-blue-50" aria-hidden="true" />
+          <span className="block text-[11px] font-bold leading-[15px] text-blue-950">Ciao, sono Pino, pronto ad aiutarti.</span>
+          <span className="absolute -bottom-2 right-4 h-4 w-4 rotate-45 border-r-2 border-b-2 border-blue-300 bg-blue-100" aria-hidden="true" />
         </button>
         <div
           role="button"
