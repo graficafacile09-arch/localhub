@@ -1,24 +1,17 @@
 "use client";
 
 import { useRef, useState } from "react";
+import PinoSprite from "./PinoSprite";
 
 export default function PinoHomepageHelper() {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const dragRef = useRef<{ startX: number; startY: number; baseX: number; baseY: number; moved: boolean } | null>(null);
 
-  const openAssistant = () => {
-    window.dispatchEvent(new Event("assistant:open"));
-  };
+  const openAssistant = () => window.dispatchEvent(new Event("assistant:open"));
 
   const onPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     event.currentTarget.setPointerCapture(event.pointerId);
-    dragRef.current = {
-      startX: event.clientX,
-      startY: event.clientY,
-      baseX: position.x,
-      baseY: position.y,
-      moved: false,
-    };
+    dragRef.current = { startX: event.clientX, startY: event.clientY, baseX: position.x, baseY: position.y, moved: false };
   };
 
   const onPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -56,12 +49,9 @@ export default function PinoHomepageHelper() {
           className="relative mb-8 max-w-[190px] rounded-[22px] rounded-br-[8px] border border-white/80 bg-white px-3.5 py-2 shadow-[0_8px_24px_-10px_rgba(15,23,42,0.45)] outline-none transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-yellow-300"
           aria-label="Apri l'assistente AI di InCittà"
         >
-          <span className="block text-[12px] font-bold leading-4 text-blue-900">
-            Ciao, sono Pino, pronto ad aiutarti.
-          </span>
+          <span className="block text-[12px] font-bold leading-4 text-blue-900">Ciao, sono Pino, pronto ad aiutarti.</span>
           <span className="absolute -bottom-1.5 right-4 h-3 w-3 rotate-45 border-r border-b border-white/80 bg-white" aria-hidden="true" />
         </button>
-
         <div
           role="button"
           tabIndex={0}
@@ -74,15 +64,7 @@ export default function PinoHomepageHelper() {
             }
           }}
         >
-          <div
-            aria-hidden="true"
-            className="h-[78px] w-[60px] overflow-hidden bg-no-repeat drop-shadow-[0_7px_10px_rgba(15,23,42,0.2)]"
-            style={{
-              backgroundImage: 'url("/pino-sprite.jpg")',
-              backgroundSize: "300% 100%",
-              backgroundPosition: "50% 0%",
-            }}
-          />
+          <PinoSprite mood="neutral" className="h-[78px] w-[60px] drop-shadow-[0_7px_10px_rgba(15,23,42,0.2)]" />
         </div>
       </div>
       <span className="sr-only">Trascina Pino per spostarlo oppure clicca per aprire la ricerca AI.</span>
