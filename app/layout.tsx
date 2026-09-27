@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import AssistantPanel from "../components/assistant/AssistantPanel";
+import PinoAssistantPanel from "@/components/assistant/PinoAssistantPanel";
 import { CartProvider } from "@/lib/carrello/CartContext";
 import { getImpostazioniPubbliche } from "@/lib/platform/settings";
 import { getSiteUrl } from "@/lib/site";
@@ -152,11 +152,7 @@ export default async function RootLayout({
           </div>
         </footer>
 
-        {/* AssistantPanel risponde SOLO all'evento esplicito "assistant:open"
-            (pulsanti dedicati, es. homepage). Nessun pulsante flottante
-            globale: le bottom navigation mobile restano completamente libere. */}
-        <AssistantPanel />
-      </body>
+        {<PinoAssistantPanel />\n      </body>
     </html>
   );
 }

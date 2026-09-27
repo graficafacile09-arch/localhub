@@ -2,7 +2,6 @@
 
 import { useRef } from "react";
 import { Search } from "lucide-react";
-import HomeAssistantButton from "@/components/assistant/HomeAssistantButton";
 
 /**
  * Barra di ricerca dell'hero della homepage.
