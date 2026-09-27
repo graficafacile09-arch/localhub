@@ -49,7 +49,7 @@ export default function PinoHomepageHelper() {
           className="relative mb-6 max-w-[150px] rounded-[14px] rounded-br-[4px] border-2 border-blue-300 bg-blue-100 px-2.5 py-1.5 shadow-[0_7px_18px_-8px_rgba(30,64,175,0.42)] outline-none transition hover:-translate-y-0.5 hover:shadow-md focus-visible:ring-2 focus-visible:ring-blue-400"
           aria-label="Apri l'assistente AI di InCittà"
         >
-          <span className="block text-[10px] font-bold leading-[13px] text-blue-950">Chiedi a Pino</span>
+          <span className="block text-[10px] font-bold leading-[13px] text-blue-950">Ciao sono Pino, chatta con me.</span>
           <span className="absolute -bottom-1.5 right-3 h-3 w-3 rotate-45 border-r-2 border-b-2 border-blue-300 bg-blue-100" aria-hidden="true" />
         </button>
         <div
