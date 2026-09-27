@@ -5,6 +5,8 @@ import { getImpostazioniPubbliche } from "@/lib/platform/settings";
 import { getSiteUrl } from "@/lib/site";
 import "./globals.css";
 import AreaTitleSync from "@/components/layout/AreaTitleSync";
+import PinoHomepageHelper from "@/components/assistant/PinoHomepageHelper";
+import AssistantPanel from "@/components/assistant/AssistantPanel";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -23,8 +25,6 @@ export const viewport: Viewport = {
 
 const SITE_URL = getSiteUrl();
 
-// Valori di fallback = quelli usati prima dell'introduzione delle impostazioni
-// piattaforma: il sito resta identico anche senza DB o con righe vuote.
 const DEFAULTS = {
   site_name: "InCittà",
   site_tagline: "Amazon della tua città",
@@ -100,56 +100,24 @@ export default async function RootLayout({
           <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 px-4">
             <span>{footerText}</span>
             <span aria-hidden="true">·</span>
-            <a
-              href="/privacy"
-              className="font-semibold text-slate-700 underline-offset-2 transition hover:text-blue-600 hover:underline"
-            >
-              Privacy
-            </a>
+            <a href="/privacy" className="font-semibold text-slate-700 underline-offset-2 transition hover:text-blue-600 hover:underline">Privacy</a>
             <span aria-hidden="true">·</span>
-            <a
-              href="/termini"
-              className="font-semibold text-slate-700 underline-offset-2 transition hover:text-blue-600 hover:underline"
-            >
-              Termini e condizioni
-            </a>
+            <a href="/termini" className="font-semibold text-slate-700 underline-offset-2 transition hover:text-blue-600 hover:underline">Termini e condizioni</a>
             <span aria-hidden="true">·</span>
-            <a
-              href="/acquirenti"
-              className="font-semibold text-slate-700 underline-offset-2 transition hover:text-blue-600 hover:underline"
-            >
-              Termini per gli Acquirenti
-            </a>
+            <a href="/acquirenti" className="font-semibold text-slate-700 underline-offset-2 transition hover:text-blue-600 hover:underline">Termini per gli Acquirenti</a>
             <span aria-hidden="true">·</span>
-            <a
-              href="/condizioni-vendita"
-              className="font-semibold text-slate-700 underline-offset-2 transition hover:text-blue-600 hover:underline"
-            >
-              Condizioni di vendita
-            </a>
+            <a href="/condizioni-vendita" className="font-semibold text-slate-700 underline-offset-2 transition hover:text-blue-600 hover:underline">Condizioni di vendita</a>
             <span aria-hidden="true">·</span>
-            <a
-              href="/venditori"
-              className="font-semibold text-slate-700 underline-offset-2 transition hover:text-blue-600 hover:underline"
-            >
-              Termini per i Venditori
-            </a>
+            <a href="/venditori" className="font-semibold text-slate-700 underline-offset-2 transition hover:text-blue-600 hover:underline">Termini per i Venditori</a>
             <span aria-hidden="true">·</span>
-            <a
-              href="/cookie"
-              className="font-semibold text-slate-700 underline-offset-2 transition hover:text-blue-600 hover:underline"
-            >
-              Cookie Policy
-            </a>
+            <a href="/cookie" className="font-semibold text-slate-700 underline-offset-2 transition hover:text-blue-600 hover:underline">Cookie Policy</a>
             <span aria-hidden="true">·</span>
-            <a
-              href="/faq"
-              className="font-semibold text-slate-700 underline-offset-2 transition hover:text-blue-600 hover:underline"
-            >
-              FAQ
-            </a>
+            <a href="/faq" className="font-semibold text-slate-700 underline-offset-2 transition hover:text-blue-600 hover:underline">FAQ</a>
           </div>
         </footer>
+
+        <PinoHomepageHelper />
+        <AssistantPanel />
       </body>
     </html>
   );
