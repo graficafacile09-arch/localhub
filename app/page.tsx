@@ -117,7 +117,7 @@ export default async function Home() {
           {/* Motore di ricerca invariato: stessa action GET e stesso parametro q.
               HeroSearchBar (client) passa la query digitata anche al pulsante
               ✨ dell'Assistente, così il pannello parte subito con la richiesta. */}
-          <div className="mt-7 grid gap-6 md:grid-cols-[minmax(0,1fr)_290px] md:items-end">
+          <div className="mt-7 grid gap-3 md:grid-cols-[minmax(0,1fr)_220px] md:items-end md:gap-5">
             <HeroSearchBar />
             <PinoHomepageHelper />
           </div>
