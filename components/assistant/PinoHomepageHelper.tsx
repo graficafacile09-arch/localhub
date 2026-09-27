@@ -46,11 +46,11 @@ export default function PinoHomepageHelper() {
         <button
           type="button"
           onClick={(event) => { event.stopPropagation(); openAssistant(); }}
-          className="relative mb-5 rounded-full border border-slate-200/90 bg-white/95 px-3 py-1.5 shadow-[0_6px_18px_-7px_rgba(15,23,42,0.28)] backdrop-blur-sm outline-none transition hover:-translate-y-0.5 hover:shadow-md focus-visible:ring-2 focus-visible:ring-blue-300"
+          className="relative mb-6 max-w-[150px] rounded-[14px] rounded-br-[4px] border-2 border-blue-300 bg-blue-100 px-2.5 py-1.5 shadow-[0_7px_18px_-8px_rgba(30,64,175,0.42)] outline-none transition hover:-translate-y-0.5 hover:shadow-md focus-visible:ring-2 focus-visible:ring-blue-400"
           aria-label="Apri l'assistente AI di InCittà"
         >
-          <span className="block whitespace-nowrap text-[11px] font-semibold leading-4 tracking-[-0.01em] text-slate-700">Ciao, sono Pino.</span>
-          <span className="absolute -right-1.5 bottom-0.5 h-3 w-3 rotate-45 rounded-[2px] border-r border-b border-slate-200/90 bg-white/95" aria-hidden="true" />
+          <span className="block text-[10px] font-bold leading-[13px] text-blue-950">Chiedi a Pino</span>
+          <span className="absolute -bottom-1.5 right-3 h-3 w-3 rotate-45 border-r-2 border-b-2 border-blue-300 bg-blue-100" aria-hidden="true" />
         </button>
         <div
           role="button"
