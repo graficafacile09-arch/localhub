@@ -8,12 +8,7 @@ import type { SearchResult } from "@/lib/search-service";
 
 type StatoPino = "neutral" | "searching" | "happy" | "sad";
 
-const PINO_IMAGE: Record<StatoPino, string> = {
-  neutral: "/pino-assistente.gif",
-  searching: "/pino-assistente-searching.gif",
-  happy: "/pino-assistente-happy.gif",
-  sad: "/pino-assistente-sad.gif",
-};
+const PINO_SPRITE = "/pino-sprite.jpg";
 
 const SUGGESTIONS = [
   "Pizzeria vicino al centro",
@@ -24,6 +19,23 @@ const SUGGESTIONS = [
 
 let idCounter = 0;
 const nextId = () => `pino-${Date.now()}-${++idCounter}`;
+
+function PinoVisual({ state, className = "" }: { state: StatoPino; className?: string }) {
+  const searching = state === "searching";
+  const effectivePosition = state === "happy" ? "0% 0%" : state === "sad" ? "100% 0%" : "50% 0%";
+
+  return (
+    <div
+      aria-hidden
+      className={`overflow-hidden bg-no-repeat ${searching ? "animate-pulse" : ""} ${className}`}
+      style={{
+        backgroundImage: `url(${PINO_SPRITE})`,
+        backgroundSize: "300% 100%",
+        backgroundPosition: effectivePosition,
+      }}
+    />
+  );
+}
 
 export default function PinoAssistantPanel() {
   const [open, setOpen] = useState(false);
@@ -133,7 +145,7 @@ export default function PinoAssistantPanel() {
           >
             <header className="flex shrink-0 items-center justify-between border-b border-slate-100 px-4 py-3">
               <div className="flex items-center gap-2">
-                <img src={PINO_IMAGE[state]} alt="" className="h-10 w-8 object-contain object-bottom" />
+                <PinoVisual state={state} className="h-10 w-7 shrink-0" />
                 <div>
                   <p className="text-sm font-black text-slate-900">Pino</p>
                   <p className="text-[11px] text-slate-500">
@@ -147,7 +159,7 @@ export default function PinoAssistantPanel() {
             <div className="min-h-0 flex-1 overflow-y-auto p-3">
               {messages.length === 0 && !loading ? (
                 <div className="flex h-full flex-col items-center justify-center px-3 text-center">
-                  <img src={PINO_IMAGE.neutral} alt="" className="h-40 w-auto object-contain" />
+                  <PinoVisual state="neutral" className="h-40 w-[100px]" />
                   <h2 className="mt-2 text-base font-black text-slate-900">Ciao! Sono Pino.</h2>
                   <p className="mt-1 max-w-xs text-xs leading-5 text-slate-500">Posso aiutarti a trovare negozi, prodotti e servizi nella tua città.</p>
                   <div className="mt-4 flex flex-wrap justify-center gap-1.5">
@@ -177,8 +189,7 @@ export default function PinoAssistantPanel() {
           title="Pino — assistente di InCittà"
           className="group ml-auto flex h-[68px] w-[68px] items-end justify-center rounded-full bg-white/95 p-1 shadow-xl ring-1 ring-slate-200 transition hover:-translate-y-1 hover:shadow-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 sm:h-[76px] sm:w-[76px]"
         >
-          <img src={PINO_IMAGE[state]} alt="Pino" className="h-full w-full object-contain object-bottom" draggable={false} />
-          {state === "sad" && <span aria-hidden className="pointer-events-none absolute bottom-[31%] right-[39%] h-2.5 w-1.5 rounded-full bg-sky-400 shadow-sm" />}
+          <PinoVisual state={state} className="h-full w-[48px] sm:w-[54px]" />
         </button>
       </div>
     </>
