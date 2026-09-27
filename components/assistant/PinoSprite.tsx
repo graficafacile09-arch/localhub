@@ -201,8 +201,8 @@ export default function PinoSprite({
       className={className}
       style={{
         display: "block",
-        width: "100%",
-        height: "100%",
+        width: "60px",
+        height: "78px",
         imageRendering: "auto",
       }}
     />
