@@ -226,13 +226,13 @@ export default function AssistantPanel() {
         <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto">
           {messages.length === 0 && !isLoading ? (
             <div className="flex h-full flex-col items-center justify-center gap-3 px-4">
-              <PinoSprite mood="neutral" className="h-[190px] w-[146px]" />
+              <PinoSprite mood="neutral" className="h-[120px] w-[92px]" />
               <div className="text-center">
                 <h2 className="text-sm font-bold text-slate-900">
-                  Ciao, sono Pino!
+                  Ciao! Sono l&apos;Assistente di InCittà
                 </h2>
                 <p className="mt-1 text-xs text-slate-500">
-                  Sono il tuo assistente allo shopping su InCittà. Posso aiutarti a trovare negozi, prodotti e servizi nella tua città.
+                  Cerca negozi e prodotti nella tua città.
                 </p>
               </div>
               <div className="flex flex-wrap justify-center gap-1.5">
