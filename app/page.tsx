@@ -8,7 +8,6 @@ import {
   Store,
   Tag,
 } from "lucide-react";
-import HomeAssistantButton from "@/components/assistant/HomeAssistantButton";
 import HeroSearchBar from "@/components/home/HeroSearchBar";
 import {
   getNegoziInEvidenza,
@@ -400,10 +399,7 @@ export default async function Home() {
               Assistente
             </h3>
             <div className="mt-3 flex items-center gap-3">
-              <HomeAssistantButton className="h-10 w-10" />
-              <p className="text-[13px] leading-5 text-slate-400">
-                Chiedi tutto quello che vuoi: ti aiutiamo a trovare ciò che cerchi.
-              </p>
+              <span className="text-sm font-bold text-slate-200">Pino è sempre disponibile per aiutarti.</span>
             </div>
           </div>
         </div>

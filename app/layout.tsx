@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import AssistantPanel from "../components/assistant/AssistantPanel";
 import { CartProvider } from "@/lib/carrello/CartContext";
 import { getImpostazioniPubbliche } from "@/lib/platform/settings";
 import { getSiteUrl } from "@/lib/site";
@@ -46,11 +45,6 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     description:
       "Trova negozi, prodotti e servizi della tua città. Cerca, confronta e acquista localmente.",
-    icons: {
-      icon: "/favicon-incitta.svg?v=102",
-      shortcut: "/favicon-incitta.svg?v=102",
-      apple: "/favicon-incitta.svg?v=102",
-    },
     openGraph: {
       siteName: nome,
       locale: "it_IT",
@@ -156,11 +150,6 @@ export default async function RootLayout({
             </a>
           </div>
         </footer>
-
-        {/* AssistantPanel risponde SOLO all'evento esplicito "assistant:open"
-            (pulsanti dedicati, es. homepage). Nessun pulsante flottante
-            globale: le bottom navigation mobile restano completamente libere. */}
-        <AssistantPanel />
       </body>
     </html>
   );

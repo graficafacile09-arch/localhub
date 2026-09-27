@@ -3,8 +3,8 @@ import SearchForm from "@/components/home/SearchForm";
 import CategoriaShowcaseView from "@/components/categoria/CategoriaShowcaseView";
 import SearchFilters, { FILTRI_VUOTI } from "@/components/ricerca/SearchFilters";
 import SearchSort from "@/components/ricerca/SearchSort";
-import PinoSearchAssistant from "@/components/ricerca/PinoSearchAssistant";
 import SearchPagination from "@/components/ricerca/SearchPagination";
+import PinoSearchHelper from "@/components/assistant/PinoSearchHelper";
 import { getCategoriaShowcase, getFiltriDisponibiliProdotti, isOrdinamentoProdottiPubblici, type OrdinamentoProdottiPubblici } from "@/lib/negozi";
 import { search } from "@/lib/search-service";
 import { prodottoEsaurito } from "@/lib/prodotti-disponibilita";
@@ -219,7 +219,13 @@ export default async function RicercaPage({
               Ricerca
             </h1>
             {ricercaAttiva ? (
-          <div className="lg:grid lg:grid-cols-[250px,1fr] lg:gap-5">
+          <>
+            <PinoSearchHelper
+              query={termine}
+              hasResults={prodotti.length > 0 || negozi.length > 0}
+              resultCount={prodotti.length + negozi.length}
+            />
+            <div className="lg:grid lg:grid-cols-[250px,1fr] lg:gap-5">
             {/* Sidebar filtri (desktop) */}
             <aside className="hidden lg:block">
               <div className="sticky top-4 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
@@ -241,15 +247,6 @@ export default async function RicercaPage({
                   <SearchFilters current={filtriCorrenti} disponibili={disponibili} />
                 </div>
               </details>
-
-              {termine && (
-                <PinoSearchAssistant
-                  query={termine}
-                  productCount={prodotti.length}
-                  storeCount={negozi.length}
-                  total={total}
-                />
-              )}
 
               {/* Conteggio + ordinamento */}
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -406,8 +403,10 @@ export default async function RicercaPage({
                 totale={total}
                 perPagina={PER_PAGINA}
               />
+
             </div>
           </div>
+          </>
             ) : (
               <div className="py-12 text-center">
                 <p className="text-sm text-slate-500">
