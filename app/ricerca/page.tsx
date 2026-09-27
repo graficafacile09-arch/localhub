@@ -1,7 +1,6 @@
 import Header from "@/components/Header/Header";
 import SearchForm from "@/components/home/SearchForm";
 import CategoriaShowcaseView from "@/components/categoria/CategoriaShowcaseView";
-import { OpenAssistantButton } from "@/components/assistant/OpenAssistantButton";
 import SearchFilters, { FILTRI_VUOTI } from "@/components/ricerca/SearchFilters";
 import SearchSort from "@/components/ricerca/SearchSort";
 import SearchPagination from "@/components/ricerca/SearchPagination";
@@ -398,12 +397,6 @@ export default async function RicercaPage({
                 perPagina={PER_PAGINA}
               />
 
-              {/* Invito AI solo quando non ci sono risultati */}
-              {prodotti.length === 0 && negozi.length === 0 && (
-                <div className="mt-2 flex justify-center">
-                  <OpenAssistantButton label="Chiedi all'AI" />
-                </div>
-              )}
             </div>
           </div>
             ) : (
