@@ -52,7 +52,7 @@ export default function PinoHomepageHelper() {
       <div className="flex items-end gap-1.5">
         <button
           type="button"
-          onClick={(event) => event.stopPropagation()}
+          onClick={(event) => { event.stopPropagation(); openAssistant(); }}
           className="relative mb-8 max-w-[190px] rounded-[22px] rounded-br-[8px] border border-white/80 bg-white px-3.5 py-2 shadow-[0_8px_24px_-10px_rgba(15,23,42,0.45)] outline-none transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-yellow-300"
           aria-label="Apri l'assistente AI di InCittà"
         >
