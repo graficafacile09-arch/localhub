@@ -29,10 +29,14 @@ export default function AssistantPanel() {
   const lastAssistantRef = useRef<HTMLDivElement>(null);
   const assistantCountRef = useRef(0);
 
+  // Cronologia recente + sessionId (contratto di /api/assistente: il backend
+  // è stateless, la storia recente è il veicolo del contesto).
   const messagesRef = useRef<ChatMessage[]>([]);
   const sessionIdRef = useRef<string>(
     `ass-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
   );
+  // Query iniziale passata dalla barra di ricerca (pulsante ✨): viene inviata
+  // automaticamente all'apertura, così l'utente non deve riscriverla.
   const pendingInitialRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -49,6 +53,9 @@ export default function AssistantPanel() {
     return () => window.removeEventListener("assistant:open", handleOpen);
   }, []);
 
+  // Chiusura da eventi globali: i link dei risultati (card negozio/prodotto)
+  // dispatchano "assistant:close" prima di navigare, così il pannello non
+  // resta aperto sopra la pagina di destinazione.
   useEffect(() => {
     const handleClose = () => setIsOpen(false);
     window.addEventListener("assistant:close", handleClose);
@@ -96,6 +103,9 @@ export default function AssistantPanel() {
     isLoadingRef.current = true;
     setIsLoading(true);
 
+    // L'Assistente usa l'endpoint dedicato /api/assistente (Gemini): la
+    // ricerca normale resta 100% database, l'AI parte SOLO da qui (pulsante
+    // esplicito). Si invia la cronologia recente per mantenere il contesto.
     const storico = [
       ...messagesRef.current.slice(-7).map((m) => ({ role: m.role, content: m.content })),
       { role: "user" as const, content: termine },
@@ -155,6 +165,7 @@ export default function AssistantPanel() {
     }
   }, []);
 
+  // Al primo render con il pannello aperto e una query in attesa, inviala.
   useEffect(() => {
     if (!isOpen) return;
     const q = pendingInitialRef.current;
@@ -179,18 +190,21 @@ export default function AssistantPanel() {
 
   return (
     <>
+      {/* Backdrop */}
       <div
         className="fixed inset-0 z-[70] bg-black/20 backdrop-blur-sm sm:bg-black/10"
         onClick={() => setIsOpen(false)}
         aria-hidden
       />
 
+      {/* Panel */}
       <div className="fixed bottom-0 right-0 z-[80] flex h-[85dvh] w-full flex-col rounded-t-2xl border border-slate-200 bg-white shadow-2xl sm:bottom-4 sm:right-4 sm:h-[70dvh] sm:w-[400px] sm:rounded-2xl sm:border">
+        {/* Header */}
         <div className="flex h-12 shrink-0 items-center justify-between border-b border-slate-100 px-4">
           <div className="flex items-center gap-2">
             <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-r from-blue-600 to-blue-500 text-white">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-3.5 w-3.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 01-2.846.813z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
               </svg>
             </div>
             <span className="text-sm font-bold text-slate-900">Assistente AI</span>
@@ -208,6 +222,7 @@ export default function AssistantPanel() {
           </button>
         </div>
 
+        {/* Messages */}
         <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto">
           {messages.length === 0 && !isLoading ? (
             <div className="flex h-full flex-col items-center justify-center gap-3 px-4">
@@ -269,6 +284,7 @@ export default function AssistantPanel() {
           )}
         </div>
 
+        {/* Input */}
         <div className="shrink-0 border-t border-slate-100 bg-white px-3 pt-2 pb-3">
           <AssistantInput
             value={inputValue}
