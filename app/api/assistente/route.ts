@@ -15,6 +15,8 @@
  * usato ESCLUSIVAMENTE da AssistantChat.
  *
  * @module app/api/assistente/route
+ *
+ * La logica AI resta quella della versione di riferimento delle ore 20:00.
  */
 
 import { NextResponse } from "next/server";
