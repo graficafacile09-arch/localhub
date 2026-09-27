@@ -64,7 +64,7 @@ export default function PinoHomepageHelper() {
             }
           }}
         >
-          <PinoSprite mood="neutral" className="h-[122px] w-[94px] drop-shadow-[0_7px_10px_rgba(15,23,42,0.2)]" />
+          <PinoSprite mood="neutral" className="h-[92px] w-[71px] drop-shadow-[0_7px_10px_rgba(15,23,42,0.2)]" />
         </div>
       </div>
       <span className="sr-only">Trascina Pino per spostarlo oppure clicca per aprire la ricerca AI.</span>
