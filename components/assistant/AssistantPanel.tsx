@@ -226,7 +226,7 @@ export default function AssistantPanel() {
         <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto">
           {messages.length === 0 && !isLoading ? (
             <div className="flex h-full flex-col items-center justify-center gap-3 px-4">
-              <PinoSprite mood="neutral" className="h-[230px] w-[177px]" />
+              <PinoSprite mood="neutral" className="h-[190px] w-[146px]" />
               <div className="text-center">
                 <h2 className="text-sm font-bold text-slate-900">
                   Ciao, sono Pino!
