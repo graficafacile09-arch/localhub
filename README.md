@@ -54,5 +54,3 @@ L'app è disponibile su `http://localhost:3000`.
 ## Documentazione
 
 - [ARCHITETTURA-NEGOZI.md](./ARCHITETTURA-NEGOZI.md) — architettura database e CMS dei negozi
-
-<!-- Vercel redeploy trigger 2026-09-27 23:58 -->
