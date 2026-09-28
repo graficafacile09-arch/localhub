@@ -106,7 +106,7 @@ export async function POST(
       const invio = await inviaEmailConfermaRecesso(esito.richiesta.id);
       confermaEmail = invio.stato;
     }
-    void inviaEmailNotificaVenditore(esito.richiesta.id);
+    await inviaEmailNotificaVenditore(esito.richiesta.id);
   }
 
   revalidatePath(`/cliente/ordini/${ordineId}`);
