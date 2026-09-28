@@ -20,6 +20,7 @@ import {
 } from "@/lib/ordine-reclami-messaggi";
 import type { OrdineClienteDettaglio } from "@/lib/cliente/types";
 import ReclamoOrdine from "@/components/cliente/ReclamoOrdine";
+import RecessoOrdine from "@/components/cliente/RecessoOrdine.jsx";
 import { Sezione, RigaDettaglio } from "@/components/ordini/Sezione";
 import { StatoOrdineBanner } from "@/components/ordini/StatoOrdineBanner";
 import { RigheProdotto } from "@/components/ordini/RigheProdotto";
@@ -223,6 +224,8 @@ export default async function OrdineDettaglioPage({ params }: { params: Promise<
       </div>
 
       {/* ── Reclamo: ordine non arrivato (il componente decide la visibilità) ── */}
+      <RecessoOrdine ordineId={ordineId} />
+
       <ReclamoOrdine
         ordineId={ordineId}
         puòReclamare={ordine.stato !== "cancellato"}
