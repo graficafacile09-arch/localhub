@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import PinoSprite from "@/components/assistant/PinoSprite";
 import { useEffect, useState } from "react";
 
 type StatoPino = "searching" | "positive" | "negative";
@@ -128,12 +128,8 @@ export default function PinoSearchAssistant({
           </div>
         </div>
 
-        <Image
-          src="/pino-assistente.jpg"
-          alt=""
-          width={420}
-          height={514}
-          sizes={mobile ? "145px" : "205px"}
+        <PinoSprite
+          mood={stato === "searching" ? "neutral" : stato === "positive" ? "happy" : "sad"}
           className={
             stato === "searching"
               ? mobile
@@ -158,8 +154,7 @@ export default function PinoSearchAssistant({
           will-change: transform, filter;
           user-select: none;
           -webkit-user-drag: none;
-          mix-blend-mode: multiply;
-          filter: drop-shadow(0 12px 14px rgba(15, 23, 42, .13));
+          filter: saturate(1.08) contrast(1.035) drop-shadow(0 12px 14px rgba(15, 23, 42, .13));
           transition: filter 180ms ease;
         }
 
