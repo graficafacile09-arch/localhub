@@ -1,6 +1,8 @@
 "use client";
 
 import { Search } from "lucide-react";
+import { useEffect } from "react";
+import { isLocalAssistantQuery } from "@/lib/assistente/local-intents";
 
 type SearchFormProps = {
   initialQuery?: string;
@@ -8,8 +10,36 @@ type SearchFormProps = {
 };
 
 export default function SearchForm({ initialQuery = "", compact = false }: SearchFormProps) {
+  useEffect(() => {
+    const query = initialQuery.trim();
+    if (!query || !isLocalAssistantQuery(query)) return;
+
+    window.dispatchEvent(
+      new CustomEvent("assistant:open", {
+        detail: { initialQuery: query },
+      })
+    );
+  }, [initialQuery]);
+
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    const input = event.currentTarget.elements.namedItem("q");
+    const query = input instanceof HTMLInputElement ? input.value.trim() : "";
+
+    // Meteo, farmacia/sintomi e richieste locali speciali vanno direttamente
+    // a Pino. Non devono mai raggiungere /ricerca?q= e quindi non possono
+    // essere interpretate come query catalogo/prodotto.
+    if (isLocalAssistantQuery(query)) {
+      event.preventDefault();
+      window.dispatchEvent(
+        new CustomEvent("assistant:open", {
+          detail: { initialQuery: query },
+        })
+      );
+    }
+  };
+
   return (
-    <form action="/ricerca" method="get" className="w-full">
+    <form action="/ricerca" method="get" onSubmit={handleSubmit} className="w-full">
       <div className="relative flex min-w-0 items-center">
         <input
           type="text"
