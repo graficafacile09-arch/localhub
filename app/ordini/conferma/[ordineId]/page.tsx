@@ -25,7 +25,7 @@ import { OrderHeader } from "@/components/ordini/OrderHeader";
 import { PagamentoStatoBanner } from "@/components/ordini/PagamentoStatoBanner";
 import { CheckoutInAttesa } from "@/components/ordini/CheckoutInAttesa";
 import { getDatiBonificoDiretto } from "@/lib/pagamenti/metodi-pubblici";
-import RecessoOrdine from "@/components/cliente/RecessoOrdine.jsx";
+import RecessoOrdineGuest from "@/components/cliente/RecessoOrdineGuest.jsx";
 
 type Params = { ordineId: string };
 
@@ -236,7 +236,7 @@ export default async function ConfermaOrdinePage({
         </div>
 
         {/* Recesso online: il componente verifica autonomamente applicabilità e accesso guest. */}
-        <RecessoOrdine ordineId={ordineId} token={accessToken} />
+        <RecessoOrdineGuest ordineId={ordineId} token={accessToken} />
 
         {/* Dettagli consegna + azioni post-ordine */}
         <div className="mt-4 rounded-[1.75rem] border border-white/70 bg-white p-5 shadow-sm">
