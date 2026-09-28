@@ -201,8 +201,19 @@ export default async function RicercaPage({
 
       <div className="mx-auto max-w-7xl px-3 py-3 sm:px-5">
         {/* Barra ricerca — SEMPRE utilizzabile (form GET nativo verso /ricerca?q=) */}
-        <div className="mb-3">
-          <SearchForm initialQuery={termine} />
+        <div className="mb-3 flex flex-col gap-2 lg:flex-row lg:items-start">
+          <div className="min-w-0 flex-1">
+            <SearchForm initialQuery={termine} />
+          </div>
+          {ricercaAttiva && termine ? (
+            <div className="shrink-0 lg:w-[285px]">
+              <PinoSearchHelper
+                query={termine}
+                hasResults={prodotti.length > 0 || negozi.length > 0}
+                resultCount={prodotti.length + negozi.length}
+              />
+            </div>
+          ) : null}
         </div>
 
         {usaVetrina && categoriaShowcase ? (
