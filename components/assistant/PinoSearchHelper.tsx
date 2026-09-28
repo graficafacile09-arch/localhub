@@ -3,11 +3,23 @@
 import { useEffect, useState } from "react";
 import { PINO_ASSET, PINO_ASSET_H, PINO_ASSET_W } from "./PinoSprite";
 
-type PinoSearchHelperProps = { query: string; hasResults: boolean; resultCount: number };
+type PinoSearchHelperProps = {
+  query: string;
+  hasResults: boolean;
+  resultCount: number;
+};
 type PinoState = "searching" | "happy" | "sad";
 
-/** Stato della ricerca -> stato d'animo di Pino (a riposo = neutro). */
-const STATO_MOOD = { searching: "neutral", happy: "happy", sad: "sad" } as const;
+/**
+ * Stato della ricerca ripristinato alla configurazione funzionante precedente.
+ * Gli asset correnti di Pino restano invariati: cambia solo la logica di
+ * presentazione dello stato nella pagina /ricerca.
+ */
+const STATO_MOOD = {
+  searching: "neutral",
+  happy: "happy",
+  sad: "sad",
+} as const;
 
 function PinoVisual({ state }: { state: PinoState }) {
   return (
@@ -21,7 +33,7 @@ function PinoVisual({ state }: { state: PinoState }) {
       width={PINO_ASSET_W}
       height={PINO_ASSET_H}
       className={
-        "h-[62px] w-[52px] shrink-0 object-contain " +
+        "h-[58px] w-[48px] shrink-0 object-contain " +
         (state === "searching" ? "animate-bounce" : "")
       }
     />
@@ -68,7 +80,10 @@ export default function PinoSearchHelper({
           {state === "searching"
             ? "Cerco “" + query + "” per te..."
             : state === "happy"
-              ? resultCount + (resultCount === 1 ? " risultato trovato" : " risultati trovati")
+              ? resultCount +
+                (resultCount === 1
+                  ? " risultato trovato"
+                  : " risultati trovati")
               : "Prova con un termine più generico."}
         </p>
       </div>
