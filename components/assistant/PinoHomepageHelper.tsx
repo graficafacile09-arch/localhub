@@ -2,20 +2,16 @@
 
 import { useRef, useState } from "react";
 import { X } from "lucide-react";
+import { PINO_ASSET, PINO_ASSET_H, PINO_ASSET_W } from "./PinoSprite";
 
 /**
- * Asset dedicato alla homepage: lo stesso disegno del frame "neutral" di
- * `public/pino-sprite.jpg`, ma precalcolato a 4x con scontorno professionale
- * (nessun alone grigio, nessun residuo fra gambe e braccia).
- * Rigenerabile con `python scripts/gen-pino-homepage.py`.
- *
- * Il canvas a runtime di `PinoSprite` resta invariato per il Pino della chat:
- * qui serve un'immagine statica già pronta, nitida a dimensione grande.
+ * Asset della homepage: lo stato neutro di Pino, già scontornato e ad alta
+ * risoluzione (378x560). Rigenerabile con `python scripts/gen-pino-assets.py`.
  */
-const PINO_HOME_SRC = "/pino-home.png";
-const PINO_HOME_W = 320; // px naturali dell'asset (76x118 a 1x, ingrandito 4x)
-const PINO_HOME_H = 488;
-const PINO_HOME_HEIGHT = 110; // px a schermo: leggermente più grande di prima (era 92)
+const PINO_HOME_SRC = PINO_ASSET.neutral;
+const PINO_HOME_W = PINO_ASSET_W;
+const PINO_HOME_H = PINO_ASSET_H;
+const PINO_HOME_HEIGHT = 120; // px a schermo: leggermente più grande di prima (erano 92)
 
 /**
  * Pino flottante con il suo messaggio di presentazione.

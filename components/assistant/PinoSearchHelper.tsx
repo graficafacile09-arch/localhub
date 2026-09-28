@@ -1,24 +1,29 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { PINO_ASSET, PINO_ASSET_H, PINO_ASSET_W } from "./PinoSprite";
 
 type PinoSearchHelperProps = { query: string; hasResults: boolean; resultCount: number };
 type PinoState = "searching" | "happy" | "sad";
 
+/** Stato della ricerca -> stato d'animo di Pino (a riposo = neutro). */
+const STATO_MOOD = { searching: "neutral", happy: "happy", sad: "sad" } as const;
+
 function PinoVisual({ state }: { state: PinoState }) {
-  const position = state === "happy" ? "0% 0%" : state === "sad" ? "100% 0%" : "50% 0%";
   return (
-    <div
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={PINO_ASSET[STATO_MOOD[state]]}
+      alt=""
       aria-hidden="true"
+      draggable={false}
+      decoding="async"
+      width={PINO_ASSET_W}
+      height={PINO_ASSET_H}
       className={
-        "h-[58px] w-[48px] shrink-0 overflow-hidden bg-no-repeat " +
+        "h-[62px] w-[52px] shrink-0 object-contain " +
         (state === "searching" ? "animate-bounce" : "")
       }
-      style={{
-        backgroundImage: 'url("/pino-sprite.jpg")',
-        backgroundSize: "300% 100%",
-        backgroundPosition: position,
-      }}
     />
   );
 }

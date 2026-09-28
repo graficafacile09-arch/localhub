@@ -14,12 +14,17 @@
  *   - nessun errore in console e nessuna regressione della barra di ricerca.
  *
  * Per il Pino della HOMEPAGE verifica inoltre:
- *   - l'asset statico dedicato (4x) è quello servito e viene caricato;
+ *   - l'asset dedicato ad alta risoluzione (canvas 378x560) è quello servito;
  *   - le proporzioni del disegno non sono deformate;
  *   - il personaggio è più grande di prima su desktop e mobile;
  *   - il ritaglio non lascia residui di fondo opachi né un velo di bordo
  *     (analisi dei pixel reali dell'asset decodificato dal browser);
  *   - la transizione del bordo resta di pochi pixel.
+ *
+ * Verifica infine che i TRE stati di Pino restino collegati come prima:
+ * homepage = neutro (a riposo), chat e /ricerca = allegro con risultati,
+ * triste senza risultati. Il vecchio asset a bassa risoluzione non deve più
+ * comparire da nessuna parte.
  *
  * Uso: node scripts/__verify-pino-presentazione.mjs [--url http://localhost:3110]
  */
@@ -159,12 +164,40 @@ async function analisiAlone(page) {
     ];
     const vicino = (r, g, b, t) =>
       FONDI.some((f) => Math.hypot(r - f[0], g - f[1], b - f[2]) < t);
+
+    // Mappa della distanza dal trasparente (dilatazione iterativa, 4 passi):
+    // serve per distinguere il BORDO della sagoma dai pixel interni al disegno.
+    // Un alone è per definizione sul bordo; un pixel chiaro in mezzo alla chioma
+    // (es. la pigna o un ramo) è disegno e non va contato.
+    const W = off.width;
+    const H = off.height;
+    const trasp = new Uint8Array(W * H);
+    for (let p = 0; p < W * H; p++) trasp[p] = d[p * 4 + 3] < 10 ? 1 : 0;
+    let cur = trasp;
+    const dist = new Uint8Array(W * H).fill(99);
+    for (let k = 1; k <= 4; k++) {
+      const g2 = Uint8Array.from(cur);
+      for (let y = 1; y < H; y++)
+        for (let x = 0; x < W; x++) if (cur[(y - 1) * W + x]) g2[y * W + x] = 1;
+      for (let y = 0; y < H - 1; y++)
+        for (let x = 0; x < W; x++) if (cur[(y + 1) * W + x]) g2[y * W + x] = 1;
+      for (let y = 0; y < H; y++)
+        for (let x = 1; x < W; x++) if (cur[y * W + x - 1]) g2[y * W + x] = 1;
+      for (let y = 0; y < H; y++)
+        for (let x = 0; x < W - 1; x++) if (cur[y * W + x + 1]) g2[y * W + x] = 1;
+      for (let p = 0; p < W * H; p++) if (g2[p] && !cur[p] && dist[p] === 99) dist[p] = k;
+      cur = g2;
+    }
+
     let opachi = 0;
     let residui = 0;
     let visibili = 0; // alfa >= 0.5: pixel che si vedono sul fondo
     let velo = 0; // ...e che hanno ancora il colore del fondo (velo grigio)
-    let bordo = 0;
-    for (let i = 0; i < d.length; i += 4) {
+    let bordo = 0; // transizione di alfa
+    let bordoVisibile = 0; // pixel visibili entro 3px dal trasparente
+    let bordoConFondo = 0; // ...e ancora colorati come un fondo chiaro: ALONE
+    for (let p = 0; p < W * H; p++) {
+      const i = p * 4;
       const a = d[i + 3];
       const fondo = vicino(d[i], d[i + 1], d[i + 2], 24);
       if (a >= 250) {
@@ -176,9 +209,13 @@ async function analisiAlone(page) {
       if (a >= 128) {
         visibili++;
         if (fondo) velo++;
+        if (dist[p] <= 3) {
+          bordoVisibile++;
+          if (fondo) bordoConFondo++;
+        }
       }
     }
-    return { opachi, residui, visibili, velo, bordo };
+    return { opachi, residui, visibili, velo, bordo, bordoVisibile, bordoConFondo };
   });
 }
 
@@ -281,42 +318,52 @@ try {
 
   // ── ASSET HOMEPAGE: PIÙ GRANDE, PIÙ NITIDO, SCONTORNATO ────────────────────
   console.log("\n── A2. ASSET DEL PINO DELLA HOMEPAGE ────────────────────────────");
-  const attese = 320 / 488; // proporzioni reali dell'asset (4x di un disegno 76x118)
-  check("Pino usa l'asset statico dedicato", m.asset.src === "/pino-home.png", m.asset.src);
+  const attese = 378 / 560; // proporzioni reali dell'asset (canvas comune ai tre stati)
+  check("Pino usa l'asset dello stato NEUTRO", m.asset.src === "/pino-neutro.webp", m.asset.src);
   check("asset caricato dal browser", m.asset.caricato, m.asset.natural.join("x"));
   check(
-    "asset ad alta risoluzione (4x del disegno originale)",
-    m.asset.natural[0] === 320 && m.asset.natural[1] === 488,
+    "asset ad alta risoluzione (canvas 378x560)",
+    m.asset.natural[0] === 378 && m.asset.natural[1] === 560,
     m.asset.natural.join("x")
   );
   check("nessun canvas a runtime sulla homepage", m.asset.canvasRuntime === false);
+  check(
+    "il vecchio asset a bassa risoluzione non è più usato",
+    !/pino-sprite|pino-home\.png|pino-assistente/.test(m.asset.src),
+    m.asset.src
+  );
   check(
     "proporzioni corrette: nessuna deformazione",
     Math.abs(m.proporzioni - attese) / attese < 0.015,
     `${m.proporzioni.toFixed(3)} vs ${attese.toFixed(3)}`
   );
   check(
-    "Pino più grande di prima (≥ 210px su desktop)",
-    m.personaggioAltezza >= 210,
-    `${Math.round(m.personaggioAltezza)}px (prima ~184px)`
+    "Pino più grande di prima (≥ 230px su desktop)",
+    m.personaggioAltezza >= 230,
+    `${Math.round(m.personaggioAltezza)}px (prima ~156px)`
   );
 
+  // L'alone si vede SUL BORDO della sagoma (specialmente tra i capelli): è lì che
+  // il matte bianco originale lasciava il grigio. I pixel chiari all'interno
+  // (es. la pigna o un ramo chiaro) sono disegno e non vanno contati.
   const alone = await analisiAlone(desktop);
-  const quotaResidui = alone ? alone.residui / Math.max(1, alone.opachi) : 1;
+  const quotaAlone = alone ? alone.bordoConFondo / Math.max(1, alone.bordoVisibile) : 1;
   check(
-    "scontorno: nessun residuo di fondo opaco (< 0.5%)",
-    quotaResidui < 0.005,
-    alone ? `${alone.residui} su ${alone.opachi} px opachi (${(quotaResidui * 100).toFixed(2)}%)` : "n/d"
+    "nessun alone grigio sul bordo della sagoma (< 2%)",
+    quotaAlone < 0.02,
+    alone
+      ? `${alone.bordoConFondo} su ${alone.bordoVisibile} px di bordo visibile (${(quotaAlone * 100).toFixed(2)}%)`
+      : "n/d"
   );
   const quotaVelo = alone ? alone.velo / Math.max(1, alone.visibili) : 1;
   check(
-    "scontorno: nessun velo grigio visibile (< 3%)",
+    "scontorno: nessun velo di fondo diffuso (< 3%)",
     quotaVelo < 0.03,
     alone ? `${alone.velo} su ${alone.visibili} px visibili (${(quotaVelo * 100).toFixed(2)}%)` : "n/d"
   );
   const prof = await profiloBordo(desktop);
   check(
-    "bordo netto: transizione entro l'antialiasing (≤ 8px su 4x)",
+    "bordo netto: transizione entro l'antialiasing (≤ 8px)",
     !!prof && prof.transizioneMax <= 8,
     prof ? `media ${prof.transizioneMedia.toFixed(2)} / max ${prof.transizioneMax}` : "n/d"
   );
@@ -368,6 +415,83 @@ try {
   await desktop.waitForTimeout(1500);
   check("la ricerca commerciale funziona", /\/ricerca\?q=cerco\+una\+pizzeria/.test(desktop.url()), desktop.url());
 
+  // ── B2. I TRE STATI DI PINO ────────────────────────────────────────────────
+  console.log("\n── B2. STATI DI PINO (neutro / allegro / triste) ────────────────");
+
+  // /ricerca: allegro con risultati, triste senza (stato deciso dal componente).
+  const moodRicerca = async (q) => {
+    await desktop.goto(`${base}/ricerca?q=${encodeURIComponent(q)}`, { waitUntil: "domcontentloaded" });
+    const aside = desktop.locator('[aria-label="Assistente di ricerca Pino"]').first();
+    await aside.waitFor({ state: "visible", timeout: 20000 }).catch(() => {});
+    await desktop.waitForTimeout(1400); // il timer del componente fissa lo stato a 650ms
+    return aside.locator("img").first().getAttribute("src").catch(() => null);
+  };
+  const conRisultati = await moodRicerca("pizzeria");
+  check("/ricerca con risultati: Pino ALLEGRO", conRisultati === "/pino-allegro.webp", String(conRisultati));
+  const senzaRisultati = await moodRicerca("qzxwvjklmnop");
+  check("/ricerca senza risultati: Pino TRISTE", senzaRisultati === "/pino-triste.webp", String(senzaRisultati));
+
+  // Chat: a riposo (nessun messaggio) neutro, con risultati allegro.
+  await desktop.goto(base, { waitUntil: "domcontentloaded" });
+  await desktop.locator(SEL_SPRITE).first().click();
+  check("chat: apribile dal personaggio", await pannelloAperto(desktop));
+  await desktop.waitForTimeout(900);
+  const pinChat = await desktop.evaluate(() => {
+    const dentroHomepage = (el) => !!el.closest('[aria-label="Pino, assistente di InCittà"]');
+    const imgs = [...document.querySelectorAll('img[src^="/pino-"]')].filter((el) => !dentroHomepage(el));
+    const grandi = imgs
+      .map((el) => ({ src: el.getAttribute("src"), h: el.getBoundingClientRect().height }))
+      .sort((a, b) => b.h - a.h);
+    return grandi[0] ?? null;
+  });
+  check(
+    "chat inattiva: Pino NEUTRO",
+    pinChat?.src === "/pino-neutro.webp",
+    `${pinChat?.src ?? "n/d"} (${Math.round(pinChat?.h ?? 0)}px)`
+  );
+
+  // Lo `sr-only` di AssistantPanel dichiara lo stato di Pino: lo uso come
+  // contromisura indipendente dal selettore dell'immagine.
+  const leggiStatoChat = () =>
+    desktop.evaluate(() => {
+      const spans = [...document.querySelectorAll("span.sr-only")].filter((s) =>
+        (s.textContent ?? "").trim().startsWith("Pino è")
+      );
+      const last = spans[spans.length - 1];
+      if (!last) return null;
+      const img = last.parentElement?.querySelector('img[src^="/pino-"]');
+      return {
+        testo: (last.textContent ?? "").trim(),
+        nome: (last.textContent ?? "").trim().split(" ")[2] ?? "",
+        src: img?.getAttribute("src") ?? null,
+      };
+    });
+
+  const inputChat = desktop.locator('textarea[placeholder="Chiedi qualcosa..."]').first();
+  await inputChat.waitFor({ state: "visible", timeout: 10000 });
+  await inputChat.fill("cerco una pizzeria");
+  await inputChat.press("Enter");
+  await desktop.waitForTimeout(12000);
+  const statoChat = await leggiStatoChat();
+  check(
+    "chat con risultati: Pino ALLEGRO",
+    statoChat?.src === "/pino-allegro.webp",
+    `${statoChat?.src ?? "n/d"} — "${statoChat?.testo ?? "n/d"}"`
+  );
+
+  await inputChat.fill("cerca zqxwvbnmklp");
+  await inputChat.press("Enter");
+  await desktop.waitForTimeout(12000);
+  const statoChat2 = await leggiStatoChat();
+  check(
+    "chat senza risultati: Pino TRISTE",
+    statoChat2?.src === "/pino-triste.webp",
+    `${statoChat2?.src ?? "n/d"} — "${statoChat2?.testo ?? "n/d"}"`
+  );
+
+  await desktop.locator(SEL_PANEL).first().click().catch(() => {});
+  await desktop.waitForTimeout(400);
+
   // ── MOBILE ─────────────────────────────────────────────────────────────────
   console.log("\n── C. MOBILE (390x844) ──────────────────────────────────────────");
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
@@ -391,9 +515,9 @@ try {
     check("mobile: X cliccabile (≥ 22px)", m.xWidth >= 22 && m.xHeight >= 22, `${Math.round(m.xWidth)}x${Math.round(m.xHeight)}`);
     check("mobile: X non coperta dal personaggio", m.xCopertaDalPersonaggio === false);
     check(
-      "mobile: Pino più grande di prima (≥ 100px)",
-      m.personaggioAltezza >= 100,
-      `${Math.round(m.personaggioAltezza)}px (prima 92px)`
+      "mobile: Pino più grande di prima (≥ 114px)",
+      m.personaggioAltezza >= 114,
+      `${Math.round(m.personaggioAltezza)}px (prima 78px)`
     );
     check(
       "mobile: proporzioni corrette",
@@ -401,13 +525,12 @@ try {
       m.proporzioni.toFixed(3)
     );
     const aloneM = await analisiAlone(mobile);
+    const quotaAloneM = aloneM ? aloneM.bordoConFondo / Math.max(1, aloneM.bordoVisibile) : 1;
     check(
-      "mobile: scontorno senza residui né velo di bordo",
-      !!aloneM &&
-        aloneM.residui / Math.max(1, aloneM.opachi) < 0.005 &&
-        aloneM.velo / Math.max(1, aloneM.visibili) < 0.03,
+      "mobile: nessun alone grigio sul bordo della sagoma (< 2%)",
+      quotaAloneM < 0.02,
       aloneM
-        ? `residui ${(100 * aloneM.residui / aloneM.opachi).toFixed(2)}%, velo ${(100 * aloneM.velo / aloneM.visibili).toFixed(2)}%`
+        ? `${aloneM.bordoConFondo} su ${aloneM.bordoVisibile} px di bordo (${(quotaAloneM * 100).toFixed(2)}%)`
         : "n/d"
     );
 
@@ -420,6 +543,21 @@ try {
       m.cardRect.bottom > ricerca.y;
     check("mobile: il fumetto NON copre il campo di ricerca", !sovrapposto);
     check("mobile: Pino resta ben visibile (≥ 70px)", m.personaggioAltezza >= 70, `${Math.round(m.personaggioAltezza)}px`);
+
+    const spriteRect = await mobile.locator(SEL_SPRITE).first().boundingBox();
+    const pinoSuRicerca =
+      spriteRect &&
+      ricerca &&
+      spriteRect.x < ricerca.x + ricerca.width &&
+      spriteRect.x + spriteRect.width > ricerca.x &&
+      spriteRect.y < ricerca.y + ricerca.height &&
+      spriteRect.y + spriteRect.height > ricerca.y;
+    check("mobile: Pino grande NON copre il campo di ricerca", !pinoSuRicerca);
+    check(
+      "mobile: Pino dentro lo schermo",
+      !!spriteRect && spriteRect.x >= 0 && spriteRect.x + spriteRect.width <= 390,
+      spriteRect ? `x ${Math.round(spriteRect.x)}..${Math.round(spriteRect.x + spriteRect.width)}` : "n/d"
+    );
   }
 
   await mobile.screenshot({ path: "screenshots/pino-presentazione-mobile.png" });
@@ -429,7 +567,7 @@ try {
   check("mobile: la X chiude la presentazione", (await mobile.locator(SEL_WIDGET).count()) === 0);
 
   // ── ZOOM SUL BORDO: CAPELLI E SPAZIO FRA LE GAMBE ──────────────────────────
-  console.log("\n── E. ZOOM SUL RITAGLIO (desktop 3x) ────────────────────────────");
+  console.log("\n── E. ZOOM SUL RITAGLIO (desktop 3x/6x) ─────────────────────────");
   const zoom = await browser.newPage({
     viewport: { width: 1280, height: 900 },
     deviceScaleFactor: 3,
@@ -446,8 +584,32 @@ try {
     };
     await zoom.screenshot({ path: "screenshots/pino-homepage-zoom-desktop.png", clip });
     check("zoom 3x catturato per il controllo visivo del bordo", true, `${Math.round(clip.width)}x${Math.round(clip.height)} css px`);
+
+    // Ingrandimenti 6x sulle due zone critiche: chioma/capelli e gambe.
+    const zoom6 = await browser.newPage({
+      viewport: { width: 1280, height: 900 },
+      deviceScaleFactor: 6,
+    });
+    await apriHome(zoom6);
+    const zb6 = await zoom6.locator(SEL_SPRITE).first().boundingBox();
+    const zona = async (nome, frazioneY, altezzaFrazione) => {
+      if (!zb6) return false;
+      const c = {
+        x: Math.max(0, zb6.x - 4),
+        y: Math.max(0, zb6.y + zb6.height * frazioneY - 4),
+        width: Math.min(zb6.width + 8, 1280),
+        height: Math.min(zb6.height * altezzaFrazione + 8, 900),
+      };
+      await zoom6.screenshot({ path: `screenshots/pino-homepage-zoom-${nome}.png`, clip: c });
+      return true;
+    };
+    check("zoom 6x sulla chioma (capelli) catturato", await zona("capelli", 0.0, 0.45));
+    check("zoom 6x sulle gambe catturato", await zona("gambe", 0.6, 0.4));
+    await zoom6.close();
   } else {
     check("zoom 3x catturato per il controllo visivo del bordo", false, "personaggio non trovato");
+    check("zoom 6x sulla chioma (capelli) catturato", false, "personaggio non trovato");
+    check("zoom 6x sulle gambe catturato", false, "personaggio non trovato");
   }
 
   console.log("\n── D. CONSOLE ───────────────────────────────────────────────────");

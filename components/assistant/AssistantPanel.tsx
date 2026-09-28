@@ -226,7 +226,7 @@ export default function AssistantPanel() {
         <div ref={scrollContainerRef} className="flex-1 min-h-0 overflow-y-auto">
           {messages.length === 0 && !isLoading ? (
             <div className="flex h-full flex-col items-center justify-center gap-3 px-4">
-              <PinoSprite mood="neutral" className="h-[230px] w-[177px]" />
+              <PinoSprite mood="neutral" className="h-[248px] w-[190px]" />
               <div className="text-center">
                 <h2 className="text-sm font-bold text-slate-900">
                   In cosa posso esserti utile?
@@ -271,7 +271,7 @@ export default function AssistantPanel() {
                   >
                     {message.role === "assistant" && isLastAssistant && (
                       <div className="mb-1 flex items-end gap-2 pl-1">
-                        <PinoSprite mood={pinoMood} className="h-[72px] w-[56px]" />
+                        <PinoSprite mood={pinoMood} className="h-[78px] w-[60px]" />
                         <span className="sr-only">Pino è {pinoMood === "happy" ? "felice perché ha trovato risultati" : pinoMood === "sad" ? "triste perché non ha trovato risultati" : "neutro"}.</span>
                       </div>
                     )}
