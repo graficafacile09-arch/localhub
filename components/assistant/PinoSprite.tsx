@@ -122,7 +122,7 @@ export default function PinoSprite({
         // The supplied image has a light-gray studio background, not pure white.
         // Use a low-chroma + lightness test so gray areas between the hair and legs
         // are treated as background while Pino's darker/saturated artwork remains.
-        return min > 145 && chroma < 0.14 && luminance > 0.57;
+        return min > 180 && chroma < 0.105 && luminance > 0.69;
       };
 
       const push = (x: number, y: number) => {
@@ -187,7 +187,7 @@ export default function PinoSprite({
 
         // Hard-remove the pale gray fringe instead of leaving a translucent gray
         // outline. Darker/saturated Pino pixels stay fully opaque.
-        if (luminance > 0.63 && chroma < 0.15) {
+        if (luminance > 0.68 && chroma < 0.13) {
           d[i + 3] = 0;
           continue;
         }
@@ -220,9 +220,8 @@ export default function PinoSprite({
       className={className}
       style={{
         display: "block",
-        width: "100%",
-        height: "auto",
-        maxWidth: "100%",
+        width: "60px",
+        height: "78px",
         imageRendering: "auto",
       }}
     />
