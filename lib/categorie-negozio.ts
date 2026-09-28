@@ -113,7 +113,11 @@ export const CATEGORIE_NEGOZIO: string[] = [
   "Servizi alla persona",
   "Servizi per aziende",
   "Altro",
-].sort((a, b) => a.localeCompare(b, "it", { sensitivity: "base" }));
+].sort((a, b) => {
+  if (a === "Altro") return 1;
+  if (b === "Altro") return -1;
+  return a.localeCompare(b, "it", { sensitivity: "base" });
+});
 
 /**
  * Le 71 categorie dell'editor come coppie { nome, slug }, già ordinate
