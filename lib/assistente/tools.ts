@@ -423,7 +423,7 @@ export async function searchAll(
 ): Promise<RisultatoRicercaCompleta> {
   const q = (query ?? "").trim();
   if (!q) {
-    return { negozi: [], prodotti: [], offerte: [], eventi: [], categorie: [] };
+    return { negozi: [], prodotti: [], offerte: [], eventi: [], categorie: [], meteo: null, farmacie: [] };
   }
 
   const [negozi, prodotti, offerte, eventi, categorie] = await Promise.all([
