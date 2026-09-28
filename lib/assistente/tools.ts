@@ -19,6 +19,7 @@ import { cercaNegozi, cercaProdotti, getCategorieConNegozi } from "@/lib/negozi"
 import { getOffertePubbliche } from "@/lib/offerte";
 import { getEventiPubblici } from "@/lib/eventi";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { getFarmacieTurnoCastrovillari, type FarmaciaTurno } from "@/lib/farmacie-turno";
 import type { NegozioRicerca, ProdottoRicerca } from "@/lib/ricerca-ai";
 
 // ─── Tipi risultati dei tool ─────────────────────────────────────────────────
@@ -42,6 +43,25 @@ export type EventoAssistente = {
   negozio_nome: string;
 };
 
+export type MeteoAssistente = {
+  citta: "Castrovillari";
+  timezone: "Europe/Rome";
+  aggiornato: string;
+  temperatura: number;
+  temperaturaPercepita: number;
+  codice: number;
+  descrizione: string;
+  ventoKmh: number;
+  precipitazioneMm: number;
+  oggi: { minima: number; massima: number; probabilitaPioggia: number | null };
+  domani: { data: string; minima: number; massima: number; probabilitaPioggia: number | null; descrizione: string };
+};
+
+export type FarmaciaAssistente = Pick<
+  FarmaciaTurno,
+  "id" | "nome" | "indirizzo" | "stato" | "apertura" | "turno" | "telefono" | "urlScheda"
+>;
+
 export type ToolParams = {
   query?: string;
   maxPrice?: number | null;
@@ -57,6 +77,8 @@ export type ToolParams = {
   tipo?: string;
   /** Filtro città. */
   citta?: string;
+  /** Stato farmacia per il tool locale: aperte, turno o tutte. */
+  stato?: "aperte" | "turno" | "tutte";
 };
 
 export type RisultatoRicercaCompleta = {
@@ -65,6 +87,8 @@ export type RisultatoRicercaCompleta = {
   offerte: OffertaAssistente[];
   eventi: EventoAssistente[];
   categorie: { nome: string; count: number }[];
+  meteo: MeteoAssistente | null;
+  farmacie: FarmaciaAssistente[];
 };
 
 // ─── Helper ──────────────────────────────────────────────────────────────────
@@ -83,6 +107,149 @@ function testoIncluso(testo: string | null | undefined, query: string): boolean 
   const q = query.trim().toLowerCase();
   if (!q) return true;
   return (testo ?? "").toLowerCase().includes(q);
+}
+
+function descrizioneMeteo(codice: number): string {
+  const map: Record<number, string> = {
+    0: "Sereno",
+    1: "Prevalentemente sereno",
+    2: "Parzialmente nuvoloso",
+    3: "Coperto",
+    45: "Nebbia",
+    48: "Nebbia",
+    51: "Pioggerella",
+    53: "Pioggerella",
+    55: "Pioggerella intensa",
+    61: "Pioggia",
+    63: "Pioggia",
+    65: "Pioggia intensa",
+    71: "Neve",
+    73: "Neve",
+    75: "Neve intensa",
+    80: "Rovesci",
+    81: "Rovesci",
+    82: "Rovesci intensi",
+    95: "Temporale",
+    96: "Temporale con grandine",
+    99: "Temporale con grandine",
+  };
+  return map[codice] ?? "Condizioni variabili";
+}
+
+export async function getWeatherCastrovillari(): Promise<MeteoAssistente | null> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 8_000);
+  try {
+    const url =
+      "https://api.open-meteo.com/v1/forecast" +
+      "?latitude=39.817&longitude=16.202" +
+      "&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m,precipitation" +
+      "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max" +
+      "&forecast_days=2&timezone=Europe%2FRome";
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: { "Accept": "application/json" },
+      cache: "no-store",
+    });
+    if (!response.ok) return null;
+    const d = (await response.json()) as {
+      current?: {
+        time?: string;
+        temperature_2m?: number;
+        apparent_temperature?: number;
+        weather_code?: number;
+        wind_speed_10m?: number;
+        precipitation?: number;
+      };
+      daily?: {
+        time?: string[];
+        weather_code?: number[];
+        temperature_2m_max?: number[];
+        temperature_2m_min?: number[];
+        precipitation_probability_max?: Array<number | null>;
+      };
+    };
+    const cur = d.current;
+    const daily = d.daily;
+    if (
+      !cur?.time ||
+      typeof cur.temperature_2m !== "number" ||
+      typeof cur.apparent_temperature !== "number" ||
+      typeof cur.weather_code !== "number" ||
+      !daily?.time?.[0] ||
+      !daily.time[1] ||
+      !Array.isArray(daily.temperature_2m_min) ||
+      !Array.isArray(daily.temperature_2m_max)
+    ) return null;
+
+    const min0 = daily.temperature_2m_min[0];
+    const max0 = daily.temperature_2m_max[0];
+    const min1 = daily.temperature_2m_min[1];
+    const max1 = daily.temperature_2m_max[1];
+    if (![min0, max0, min1, max1].every((n) => typeof n === "number")) return null;
+
+    const wind = typeof cur.wind_speed_10m === "number" ? cur.wind_speed_10m : 0;
+    const precipitation = typeof cur.precipitation === "number" ? cur.precipitation : 0;
+    const code1 = typeof daily.weather_code?.[1] === "number" ? daily.weather_code[1] : 0;
+
+    return {
+      citta: "Castrovillari",
+      timezone: "Europe/Rome",
+      aggiornato: cur.time,
+      temperatura: Math.round(cur.temperature_2m),
+      temperaturaPercepita: Math.round(cur.apparent_temperature),
+      codice: cur.weather_code,
+      descrizione: descrizioneMeteo(cur.weather_code),
+      ventoKmh: Math.round(wind),
+      precipitazioneMm: Number(precipitation.toFixed(1)),
+      oggi: {
+        minima: Math.round(min0),
+        massima: Math.round(max0),
+        probabilitaPioggia:
+          typeof daily.precipitation_probability_max?.[0] === "number"
+            ? daily.precipitation_probability_max[0]
+            : null,
+      },
+      domani: {
+        data: daily.time[1],
+        minima: Math.round(min1),
+        massima: Math.round(max1),
+        probabilitaPioggia:
+          typeof daily.precipitation_probability_max?.[1] === "number"
+            ? daily.precipitation_probability_max[1]
+            : null,
+        descrizione: descrizioneMeteo(code1),
+      },
+    };
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+export async function searchPharmacies(
+  stato: "aperte" | "turno" | "tutte",
+  limit = 8
+): Promise<FarmaciaAssistente[]> {
+  const farmacie = await getFarmacieTurnoCastrovillari();
+  const filtrate =
+    stato === "aperte"
+      ? farmacie.filter((f) => f.stato === "aperta")
+      : stato === "turno"
+        ? farmacie.filter((f) => Boolean(f.turno))
+        : farmacie;
+
+  return filtrate.slice(0, limita(limit, 8, 8)).map((f) => ({
+    id: f.id,
+    nome: f.nome,
+    indirizzo: f.indirizzo,
+    stato: f.stato,
+    apertura: f.apertura,
+    turno: f.turno,
+    telefono: f.telefono,
+    urlScheda: f.urlScheda,
+  }));
 }
 
 // ─── searchStores ────────────────────────────────────────────────────────────
@@ -256,7 +423,7 @@ export async function searchAll(
 ): Promise<RisultatoRicercaCompleta> {
   const q = (query ?? "").trim();
   if (!q) {
-    return { negozi: [], prodotti: [], offerte: [], eventi: [], categorie: [] };
+    return { negozi: [], prodotti: [], offerte: [], eventi: [], categorie: [], meteo: null, farmacie: [] };
   }
 
   const [negozi, prodotti, offerte, eventi, categorie] = await Promise.all([
@@ -267,5 +434,5 @@ export async function searchAll(
     getCategoriesList(),
   ]);
 
-  return { negozi, prodotti, offerte, eventi, categorie };
+  return { negozi, prodotti, offerte, eventi, categorie, meteo: null, farmacie: [] };
 }

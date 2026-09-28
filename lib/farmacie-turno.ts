@@ -22,7 +22,7 @@ export type FarmaciaTurno = {
   nome: string;
   /** Indirizzo completo (via, civico, CAP, città, provincia). */
   indirizzo: string | null;
-  stato: "aperta" | "chiusa";
+  stato: "aperta" | "chiusa" | null;
   /** Orario di apertura di oggi (es. "8:30-13:00 e 16:00-21:00"). */
   apertura: string | null;
   /** Testo del turno (es. "Tutto il giorno fino a domani") — presente solo
@@ -96,7 +96,12 @@ export function parseFarmacieTurno(html: string): FarmaciaTurno[] {
       id: idf ?? null,
       nome: decodifica(nome),
       indirizzo: estraiIndirizzo(blocco),
-      stato: statoRaw === "CHIUSA" ? "chiusa" : "aperta",
+      stato:
+        statoRaw === "CHIUSA" || statoRaw === "CHIUSO"
+          ? "chiusa"
+          : statoRaw === "APERTA" || statoRaw === "APERTO"
+            ? "aperta"
+            : null,
       apertura: apertura ? decodifica(apertura) : null,
       turno: turno ? decodifica(turno) : null,
       telefono,
