@@ -42,7 +42,8 @@ export async function GET(
   context: { params: Promise<{ ordineId: string }> }
 ) {
   const { ordineId } = await context.params;
-  const accesso = await risolviAccesso(ordineId);
+  const token = new URL(request.url).searchParams.get("token");
+  const accesso = await risolviAccesso(ordineId, token);
   if (!accesso.ok) return accesso.response;
 
   const info = await getRecessoInfo(ordineId, accesso.accesso);
@@ -66,8 +67,6 @@ export async function POST(
   context: { params: Promise<{ ordineId: string }> }
 ) {
   const { ordineId } = await context.params;
-  const accesso = await risolviAccesso(ordineId);
-  if (!accesso.ok) return accesso.response;
 
   let body: Record<string, unknown>;
   try {
