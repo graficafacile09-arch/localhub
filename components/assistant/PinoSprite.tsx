@@ -85,6 +85,11 @@ export default function PinoSprite({
       ctx.imageSmoothingQuality = "high";
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+      // Keep the exact supplied Pino artwork, but improve the source rendering:
+      // slightly restore color/contrast before segmentation so the character
+      // does not look washed out after the white/gray background is removed.
+      ctx.filter = "saturate(1.12) contrast(1.035) brightness(1.015)";
+
       ctx.drawImage(
         img,
         FRAME_INDEX[mood] * frameWidth,
@@ -147,9 +152,9 @@ export default function PinoSprite({
         if (y < h - 1) push(x, y + 1);
       }
 
-      // Build a one-pixel feather around the detected background. Pixels on this
-      // boundary are partially transparent and their white contamination is
-      // removed mathematically, eliminating the visible white halo.
+      // Build a small feather around the detected background. JPEG compression
+      // leaves a pale gray fringe around fine details such as the hair. A slightly
+      // wider feather lets us remove that fringe without changing Pino's silhouette.
       const feather = new Uint8Array(w * h);
       for (let p = 0; p < w * h; p++) {
         if (visited[p]) continue;
@@ -172,15 +177,30 @@ export default function PinoSprite({
         if (!feather[p]) continue;
 
         const r = d[i], g = d[i + 1], b = d[i + 2];
-        const whiteness = Math.min(r, g, b) / 255;
-        const chroma = (Math.max(r, g, b) - Math.min(r, g, b)) / 255;
-        const alpha = Math.max(0, Math.min(1, (1 - whiteness) * 2.4 + chroma * 0.35));
+        const minRgb = Math.min(r, g, b);
+        const maxRgb = Math.max(r, g, b);
+        const chroma = (maxRgb - minRgb) / 255;
+        const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
 
-        if (alpha < 0.96) {
-          // Unmix the white studio background from the edge pixel.
-          d[i] = Math.max(0, Math.min(255, Math.round((r - 255 * (1 - alpha)) / Math.max(alpha, 0.01))));
-          d[i + 1] = Math.max(0, Math.min(255, Math.round((g - 255 * (1 - alpha)) / Math.max(alpha, 0.01))));
-          d[i + 2] = Math.max(0, Math.min(255, Math.round((b - 255 * (1 - alpha)) / Math.max(alpha, 0.01))));
+        // Remove the light, low-chroma JPEG fringe much more decisively.
+        // Saturated/darker Pino pixels are kept opaque, so the character itself
+        // is not recolored or reshaped.
+        const backgroundLike = Math.max(0, Math.min(1,
+          (luminance - 0.68) / 0.28
+        )) * Math.max(0, Math.min(1, 1 - chroma * 7));
+
+        const alpha = Math.max(
+          0.08,
+          Math.min(1, 1 - backgroundLike * 0.92)
+        );
+
+        if (alpha < 0.995) {
+          // Unmix the light studio background from the boundary pixel so the
+          // remaining semi-transparent edge does not carry a gray/white halo.
+          const bg = 245;
+          d[i] = Math.max(0, Math.min(255, Math.round((r - bg * (1 - alpha)) / Math.max(alpha, 0.01))));
+          d[i + 1] = Math.max(0, Math.min(255, Math.round((g - bg * (1 - alpha)) / Math.max(alpha, 0.01))));
+          d[i + 2] = Math.max(0, Math.min(255, Math.round((b - bg * (1 - alpha)) / Math.max(alpha, 0.01))));
           d[i + 3] = Math.round(alpha * 255);
         }
       }
