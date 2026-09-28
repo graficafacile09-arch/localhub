@@ -21,7 +21,6 @@ import type { OrdinePersistito } from "@/lib/cliente/orders";
 import { etichettaStato, sintesiProdotti } from "@/lib/cliente/ordini-format";
 import { StatoOrdineBanner } from "@/components/ordini/StatoOrdineBanner";
 import { RigheProdotto } from "@/components/ordini/RigheProdotto";
-import RecessoOrdine from "@/components/cliente/RecessoOrdine.jsx";
 import { OrderHeader } from "@/components/ordini/OrderHeader";
 import { PagamentoStatoBanner } from "@/components/ordini/PagamentoStatoBanner";
 import { CheckoutInAttesa } from "@/components/ordini/CheckoutInAttesa";
@@ -235,9 +234,7 @@ export default async function ConfermaOrdinePage({
           </div>
         </div>
 
-        <RecessoOrdine ordineId={ordineId} token={accessToken} />
-
-        {/* Dettagli consegna + azioni post-ordine */
+        {/* Dettagli consegna + azioni post-ordine */}
         <div className="mt-4 rounded-[1.75rem] border border-white/70 bg-white p-5 shadow-sm">
           <h2 className="flex items-center gap-2 text-sm font-black uppercase tracking-wide text-slate-900">
             <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
