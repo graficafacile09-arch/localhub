@@ -4,7 +4,7 @@ import { apiError, apiOk } from "@/lib/api/response";
 import { getSessionArea } from "@/lib/auth/session-area";
 import { orderAccessCookieName, verifyOrderAccessToken } from "@/lib/cliente/order-access";
 import { creaRichiestaRecesso, getRecessoInfo } from "@/lib/cliente/recesso";
-import { inviaEmailConfermaRecesso } from "@/lib/cliente/recesso-email";
+import { inviaEmailConfermaRecesso, inviaEmailNotificaVenditore } from "@/lib/cliente/recesso-email";
 
 async function risolviAccesso(ordineId: string, tokenFornito?: string | null): Promise<
   | { ok: true; accesso: { clienteUserId: string; guestAutorizzato?: false } }
@@ -101,9 +101,12 @@ export async function POST(
   if (!esito.ok) return apiError(esito.codice, esito.messaggio, esito.status);
 
   let confermaEmail: "inviata" | "saltata" | "fallita" = "saltata";
-  if (esito.clienteEmail && !esito.richiesta.giaEsistente) {
-    const invio = await inviaEmailConfermaRecesso(esito.richiesta.id);
-    confermaEmail = invio.stato;
+  if (!esito.richiesta.giaEsistente) {
+    if (esito.clienteEmail) {
+      const invio = await inviaEmailConfermaRecesso(esito.richiesta.id);
+      confermaEmail = invio.stato;
+    }
+    void inviaEmailNotificaVenditore(esito.richiesta.id);
   }
 
   revalidatePath(\`/cliente/ordini/\${ordineId}\`);

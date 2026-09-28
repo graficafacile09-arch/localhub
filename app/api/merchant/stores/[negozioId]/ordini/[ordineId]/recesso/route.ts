@@ -42,7 +42,7 @@ async function caricaPratica(negozioId: string, ordineId: string) {
   const { data: ordine } = await db
     .from("ordini")
     .select("numero,totale,payment_status,payment_amount,payment_refunded_amount,payment_provider")
-    .eq("id", ordemId)
+    .eq("id", ordineId)
     .maybeSingle();
 
   return { richiesta, righe: righe ?? [], ordine: ordine ?? null };

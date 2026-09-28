@@ -23,6 +23,7 @@ import {
   type MessaggioReclamo,
 } from "@/lib/ordine-reclami-messaggi";
 import ReclamiOrdine from "@/components/merchant/ReclamiOrdine";
+import RecessoOrdineMerchant from "@/components/merchant/RecessoOrdineMerchant";
 import type { OrdineVenditoreDettaglio } from "@/lib/merchant/ordini";
 import { Sezione } from "@/components/ordini/Sezione";
 import { StatoOrdineBanner } from "@/components/ordini/StatoOrdineBanner";
@@ -219,6 +220,8 @@ export default async function MerchantOrdineDettaglioPage({
               totale={ordine.totale}
             />
           </Sezione>
+
+          <RecessoOrdineMerchant negozioId={negozioId} ordineId={ordineId} />
 
           <Sezione icon={History} titolo="Cronologia dell'ordine">
             <StoricoEventi eventi={ordine.eventi} />
