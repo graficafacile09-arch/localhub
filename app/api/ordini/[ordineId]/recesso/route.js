@@ -9,11 +9,7 @@ import { orderAccessCookieName, verifyOrderAccessToken } from "@/lib/cliente/ord
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.incitta.online";
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? "InCittà <onboarding@resend.dev>";
 
-type Accesso =
-  | { userId: string; guest: false }
-  | { userId: null; guest: true };
-
-async function risolviAccesso(ordineId: string, token?: string | null): Promise<Accesso | null> {
+async function risolviAccesso(ordineId, token) {
   const sessione = await getSessionArea();
 
   if (sessione?.area === "cliente") {
@@ -27,7 +23,7 @@ async function risolviAccesso(ordineId: string, token?: string | null): Promise<
   return { userId: null, guest: true };
 }
 
-async function inviaRicevuta(richiestaId: string): Promise<void> {
+async function inviaRicevuta(richiestaId) {
   const db = createAdminSupabaseClient();
   const { data: richiesta } = await db
     .from("richieste_recesso")
@@ -104,7 +100,7 @@ async function inviaRicevuta(richiestaId: string): Promise<void> {
 
 export async function GET(
   request: Request,
-  context: { params: Promise<{ ordineId: string }> }
+  context
 ) {
   const { ordineId } = await context.params;
   const token = new URL(request.url).searchParams.get("token");
@@ -156,21 +152,18 @@ export async function GET(
 
 export async function POST(
   request: Request,
-  context: { params: Promise<{ ordineId: string }> }
+  context
 ) {
   const { ordineId } = await context.params;
 
   let body: Record<string, unknown>;
   try {
-    body = (await request.json()) as Record<string, unknown>;
+    body = await request.json();
   } catch {
     return apiError("VALIDATION_ERROR", "Corpo della richiesta non valido.", 422);
   }
 
-  const accesso = await risolviAccesso(
-    ordineId,
-    typeof body.token === "string" ? body.token : null
-  );
+  const accesso = await risolviAccesso(ordineId, typeof body.token === "string" ? body.token : null);
   if (!accesso) return apiError("UNAUTHORIZED", "Accesso all'ordine non autorizzato.", 401);
 
   const db = createAdminSupabaseClient();
@@ -187,7 +180,7 @@ export async function POST(
 
   const righe = Array.isArray(body.righe)
     ? body.righe.map((r) => {
-        const item = (r ?? {}) as Record<string, unknown>;
+        const item = r ?? {};
         return {
           ordineRigaId: typeof item.ordineRigaId === "string" ? item.ordineRigaId : "",
           quantita: Number(item.quantita),
@@ -210,7 +203,7 @@ export async function POST(
     return apiError("SAVE_FAILED", "Impossibile registrare la richiesta di recesso.", 500);
   }
 
-  const result = (data ?? {}) as Record<string, unknown>;
+  const result = data ?? {};
   if (result.ok !== true) {
     const codice = String(result.codice ?? "SAVE_FAILED");
     const status =
