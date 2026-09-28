@@ -1,13 +1,24 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 
 type PinoSearchHelperProps = { query: string; hasResults: boolean; resultCount: number };
 type PinoState = "searching" | "happy" | "sad";
 
 function PinoVisual({ state }: { state: PinoState }) {
-  const position = state === "happy" ? "0% 0%" : state === "sad" ? "100% 0%" : "50% 0%";
-  return <div aria-hidden="true" className={"h-16 w-12 shrink-0 overflow-hidden bg-no-repeat sm:h-20 sm:w-14 " + (state === "searching" ? "animate-bounce" : "")} style={{ backgroundImage: 'url("/pino-sprite.jpg")', backgroundSize: "300% 100%", backgroundPosition: position }} />;
+  const src = state === "happy" ? "/pino-happy.webp" : state === "sad" ? "/pino-sad.webp" : "/pino-searching.webp";
+  return (
+    <Image
+      aria-hidden="true"
+      alt=""
+      src={src}
+      width={264}
+      height={364}
+      unoptimized
+      className={"h-16 w-12 shrink-0 object-contain sm:h-20 sm:w-14 " + (state === "searching" ? "animate-bounce" : "")}
+    />
+  );
 }
 
 export default function PinoSearchHelper({ query, hasResults, resultCount }: PinoSearchHelperProps) {
