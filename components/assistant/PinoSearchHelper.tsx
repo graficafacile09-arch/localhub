@@ -11,7 +11,7 @@ function PinoVisual({ state }: { state: PinoState }) {
     <div
       aria-hidden="true"
       className={
-        "h-14 w-11 shrink-0 overflow-hidden rounded-xl bg-no-repeat sm:h-16 sm:w-12 " +
+        "h-[58px] w-[48px] shrink-0 overflow-hidden bg-no-repeat " +
         (state === "searching" ? "animate-bounce" : "")
       }
       style={{
@@ -31,6 +31,7 @@ export default function PinoSearchHelper({
   const [state, setState] = useState<PinoState>("searching");
 
   useEffect(() => {
+    setState("searching");
     const timer = window.setTimeout(
       () => setState(hasResults ? "happy" : "sad"),
       650
@@ -40,35 +41,30 @@ export default function PinoSearchHelper({
 
   if (!query) return null;
 
-  const status =
-    state === "searching"
-      ? "Sto cercando..."
-      : hasResults
-        ? "Ho trovato qualcosa!"
-        : "Non trovo ancora nulla.";
-
-  const suggestion = hasResults
-    ? resultCount === 1
-      ? "Ecco il risultato più vicino alla tua ricerca."
-      : "Dai un’occhiata ai risultati: potresti trovare proprio quello che cerchi."
-    : "Prova con un termine più generico o con il nome di un negozio.";
-
   return (
     <aside
-      aria-label="Suggerimento di Pino"
-      className="flex min-h-[72px] items-center gap-2.5 rounded-2xl border border-slate-200 bg-white px-2.5 py-2 shadow-sm"
+      aria-label="Assistente di ricerca Pino"
+      className="flex min-h-[66px] items-center gap-2 rounded-2xl border border-slate-200 bg-white px-2.5 py-1.5 shadow-sm"
     >
       <PinoVisual state={state} />
-      <div className="min-w-0">
-        <div className="text-[11px] font-black text-blue-900 sm:text-xs">
-          Pino{" "}
-          <span className="ml-1 font-normal text-slate-500">{status}</span>
+
+      <div className="min-w-0 flex-1">
+        <div className="inline-flex max-w-full items-center rounded-xl rounded-bl-sm bg-blue-50 px-2.5 py-1 text-[11px] font-bold leading-tight text-blue-900">
+          <span className="truncate">
+            {state === "searching"
+              ? "Ciao, sono Pino 👋"
+              : state === "happy"
+                ? "Ho trovato!"
+                : "Non ho trovato risultati"}
+          </span>
         </div>
-        <p className="mt-0.5 truncate text-xs font-semibold text-slate-800">
-          “{query}”
-        </p>
-        <p className="mt-0.5 line-clamp-2 text-[10px] leading-3.5 text-slate-500">
-          {suggestion}
+
+        <p className="mt-1 truncate text-[10px] font-medium text-slate-500">
+          {state === "searching"
+            ? "Cerco “" + query + "” per te..."
+            : state === "happy"
+              ? resultCount + (resultCount === 1 ? " risultato trovato" : " risultati trovati")
+              : "Prova con un termine più generico."}
         </p>
       </div>
     </aside>
