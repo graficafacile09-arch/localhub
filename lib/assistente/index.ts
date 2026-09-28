@@ -38,6 +38,7 @@ import { extractJsonFromText } from "@/lib/product-assistant/providers/utils";
 import { callGeminiText } from "@/lib/ai/gemini-text";
 import type { NegozioRicerca, ProdottoRicerca } from "@/lib/ricerca-ai";
 import { analizzaRichiesta } from "@/lib/ricerca-intento";
+import { pianoIntentoLocale } from "./local-intents";
 
 // ─── Tipi pubblici ───────────────────────────────────────────────────────────
 
@@ -198,34 +199,30 @@ function pianoPredefinito(
 
   const RE_PIATTAFORMA =
     /che cos'è incittà|che cos'e incitta|cos'è incittà|come funziona|chi sei|cosa sei|cos'è il sito/;
-  const RE_METEO =
-    /che tempo fa|com[’']e il tempo|come è il tempo|come sara il tempo|come sarà il tempo|meteo|previsioni|piove|piovera|pioverà|temperatura|quanti gradi|gradi ci sono/i;
-  const RE_FARMACIA_WIDGET =
-    /di turno|farmacia.*apert[aoe]?|farmacie.*apert[aei]?|apert[aoe]?.*farmaci|farmacia.*adesso|farmacie.*adesso|farmacia.*ora|farmacie.*ora/i;
 
-  if (REQUIRES_PHARMACY_REASON.test(ultimo)) {
-    return {
-      directReply: null,
-      tools: [{ tool: "searchPharmacies", params: { stato: "turno", limit: 8 } }],
-    };
-  }
+  // Meteo e farmacie: riconoscimento UNICO e condiviso con il router della
+  // barra di ricerca (lib/assistente/local-intents.ts), che normalizza accenti
+  // e apostrofi. Con regex locali non normalizzate "com'è il tempo" scivolava
+  // al planner LLM e la risposta elencava prodotti di catalogo assurdi.
+  const pianoLocale = pianoIntentoLocale(utenti[utenti.length - 1] ?? "");
 
-  if (RE_METEO.test(ultimo)) {
+  if (pianoLocale?.tool === "getWeather") {
     return {
       directReply: null,
       tools: [{ tool: "getWeather", params: {} }],
     };
   }
 
-  if (RE_FARMACIA_WIDGET.test(ultimo)) {
-    const chiedeAperta = /apert[aoe]?|adesso|ora|in questo momento/i.test(ultimo);
-    const chiedeTurno = /di turno|turno/i.test(ultimo);
+  if (pianoLocale?.tool === "searchPharmacies") {
+    // stato già deciso dal riconoscimento condiviso: "aperte" = solo farmacie
+    // con stato realmente aperto, "turno" = solo con turno realmente
+    // valorizzato (e per i sintomi). Mai una farmacia presunta.
     return {
       directReply: null,
       tools: [
         {
           tool: "searchPharmacies",
-          params: { stato: chiedeAperta ? "aperte" : chiedeTurno ? "turno" : "turno", limit: 8 },
+          params: { stato: pianoLocale.stato, limit: 8 },
         },
       ],
     };

@@ -1,9 +1,27 @@
 /**
  * Intenti locali che devono essere gestiti dall'Assistente Pino invece del
  * motore catalogo. File puro e condivisibile tra Server e Client Components.
+ *
+ * È l'UNICO riconoscimento di questi intenti:
+ *   - la barra di ricerca (client) usa `isLocalAssistantQuery` per aprire Pino
+ *     invece di navigare al catalogo;
+ *   - l'assistente (server) usa `pianoIntentoLocale` per scegliere il tool
+ *     reale (meteo / farmacie) e non lasciare mai la richiesta al motore
+ *     prodotti.
+ *
+ * Se le due parti usassero regex proprie, una variante scritta diversamente
+ * ("com'è il tempo" con l'accento grave, l'apostrofo tipografico "com’è", le
+ * maiuscole) verrebbe riconosciuta da una sola delle due e finirebbe comunque
+ * nel catalogo, restituendo prodotti assurdi (es. "filetti di cipolla" per una
+ * domanda sul tempo). Per questo ogni test passa da `normalizzaRichiesta`.
  */
 
-function normalizza(testo: string): string {
+/**
+ * Normalizza la richiesta: minuscole, senza accenti/diacritici, apostrofi
+ * uniformati, spazi compattati. Così "com'è il tempo", "com’e il tempo" e
+ * "COM'E IL TEMPO" sono la stessa richiesta.
+ */
+export function normalizzaRichiesta(testo: string): string {
   return testo
     .toLowerCase()
     .normalize("NFD")
@@ -22,17 +40,47 @@ const RE_FARMACIA =
 const RE_SINTOMO =
   /\b(febbre|temperatura alta|mal di gola|raffreddore|influenza|tosse|mal di testa)\b/i;
 
+/** Stato richiesto per le farmacie (allineato al tool searchPharmacies). */
+export type StatoFarmacie = "aperte" | "turno" | "tutte";
+
+/** Piano deterministico dell'intento locale: quale dato reale deve rispondere. */
+export type PianoIntentoLocale =
+  | { tool: "getWeather" }
+  | { tool: "searchPharmacies"; stato: StatoFarmacie };
+
+/**
+ * Riconosce l'intento locale e restituisce il tool da usare. `null` = non è un
+ * intento locale (ricerca catalogo normale).
+ *
+ * "farmacia aperta adesso" → SOLO farmacie con stato realmente aperto;
+ * "farmacia di turno" e i sintomi ("ho la febbre") → SOLO farmacie con il
+ * campo turno realmente valorizzato;
+ * "farmacia" da sola → nessun intento: resta una ricerca di catalogo.
+ */
+export function pianoIntentoLocale(query: string): PianoIntentoLocale | null {
+  const q = normalizzaRichiesta(query);
+  if (!q) return null;
+
+  if (RE_METEO.test(q)) return { tool: "getWeather" };
+
+  if (RE_FARMACIA.test(q) || RE_SINTOMO.test(q)) {
+    const chiedeAperta = /apert|adesso|ora|in questo momento/i.test(q);
+    return { tool: "searchPharmacies", stato: chiedeAperta ? "aperte" : "turno" };
+  }
+
+  return null;
+}
+
+/** True se la richiesta deve essere gestita da Pino e NON dal catalogo. */
 export function isLocalAssistantQuery(query: string): boolean {
-  const q = normalizza(query);
-  if (!q) return false;
-  return RE_METEO.test(q) || RE_FARMACIA.test(q) || RE_SINTOMO.test(q);
+  return pianoIntentoLocale(query) !== null;
 }
 
 export function isWeatherQuery(query: string): boolean {
-  return RE_METEO.test(normalizza(query));
+  return RE_METEO.test(normalizzaRichiesta(query));
 }
 
 export function isPharmacyQuery(query: string): boolean {
-  const q = normalizza(query);
+  const q = normalizzaRichiesta(query);
   return RE_FARMACIA.test(q) || RE_SINTOMO.test(q);
 }
