@@ -132,6 +132,12 @@ async function eseguiTool(
     case "searchEvents":
       // Query vuota = TUTTI gli eventi attivi (es. "cosa c'è questo weekend?").
       return { ...vuoto, eventi: await searchEvents(params?.query?.trim() || undefined, limit) };
+    case "searchAll": {
+      const q = eQuerySostanziale(params?.query ?? "") || fallbackQuery;
+      if (!q) return vuoto;
+      const tutto = await searchAll(q, { ...params, limit });
+      return tutto;
+    }
     case "getCategories":
       return { ...vuoto, categorie: await getCategoriesList() };
     case "getWeather":
