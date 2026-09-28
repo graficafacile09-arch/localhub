@@ -4,9 +4,9 @@ import { useParams, useSearchParams } from "next/navigation";
 import RecessoOrdine from "@/components/cliente/RecessoOrdine.jsx";
 
 export default function RecessoGuestPage() {
-  const params = useParams<{ ordineId: string }>();
+  const params = useParams();
   const searchParams = useSearchParams();
-  const ordineId = params?.ordineId ?? "";
+  const ordineId = String(params?.ordineId ?? "");
   const token = searchParams.get("token");
 
   return (
