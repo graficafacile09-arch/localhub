@@ -20,6 +20,7 @@ import {
 } from "@/lib/ordine-reclami-messaggi";
 import type { OrdineClienteDettaglio } from "@/lib/cliente/types";
 import ReclamoOrdine from "@/components/cliente/ReclamoOrdine";
+import RecessoOrdine from "@/components/cliente/RecessoOrdine";
 import { Sezione, RigaDettaglio } from "@/components/ordini/Sezione";
 import { StatoOrdineBanner } from "@/components/ordini/StatoOrdineBanner";
 import { RigheProdotto } from "@/components/ordini/RigheProdotto";
@@ -229,6 +230,8 @@ export default async function OrdineDettaglioPage({ params }: { params: Promise<
         reclamiIniziali={reclami}
         messaggiIniziali={messaggiReclami}
       />
+
+      <RecessoOrdine ordineId={ordineId} />
 
       {/* ── Azioni ──────────────────────────────────────────────────────────── */}
       <div className="flex flex-wrap gap-3">
