@@ -77,6 +77,8 @@ export type ToolParams = {
   tipo?: string;
   /** Filtro città. */
   citta?: string;
+  /** Stato farmacia per il tool locale: aperte, turno o tutte. */
+  stato?: "aperte" | "turno" | "tutte";
 };
 
 export type RisultatoRicercaCompleta = {
