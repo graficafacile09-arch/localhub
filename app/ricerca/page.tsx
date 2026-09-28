@@ -5,6 +5,7 @@ import SearchFilters, { FILTRI_VUOTI } from "@/components/ricerca/SearchFilters"
 import SearchSort from "@/components/ricerca/SearchSort";
 import SearchPagination from "@/components/ricerca/SearchPagination";
 import PinoSearchHelper from "@/components/assistant/PinoSearchHelper";
+import { isLocalAssistantQuery } from "@/lib/assistente/local-intents";
 import { getCategoriaShowcase, getFiltriDisponibiliProdotti, isOrdinamentoProdottiPubblici, type OrdinamentoProdottiPubblici } from "@/lib/negozi";
 import { search } from "@/lib/search-service";
 import { prodottoEsaurito } from "@/lib/prodotti-disponibilita";
@@ -141,9 +142,15 @@ export default async function RicercaPage({
     if (!categoriaShowcase?.categoria) usaVetrina = false;
   }
 
+  const richiestaPino = isLocalAssistantQuery(termine);
+
+  // Una richiesta riconoscibile come meteo/farmacia/sintomo non deve mai
+  // entrare nel motore catalogo SSR. SearchForm aprirà Pino automaticamente
+  // anche quando /ricerca viene raggiunta direttamente con ?q=...
   const ricercaAttiva = Boolean(
-    termine || categoria || sottocategoria || marca || colore ||
-    prezzoMin !== undefined || prezzoMax !== undefined || soloDisponibili
+    !richiestaPino &&
+    (termine || categoria || sottocategoria || marca || colore ||
+      prezzoMin !== undefined || prezzoMax !== undefined || soloDisponibili)
   );
 
   let prodotti: ProdottoRicerca[] = [];
@@ -413,6 +420,15 @@ export default async function RicercaPage({
             </div>
           </div>
           </>
+            ) : richiestaPino ? (
+              <div className="py-12 text-center">
+                <p className="text-sm font-semibold text-slate-600">
+                  Pino sta gestendo questa richiesta.
+                </p>
+                <p className="mt-1 text-xs text-slate-400">
+                  La richiesta non viene cercata nel catalogo prodotti.
+                </p>
+              </div>
             ) : (
               <div className="py-12 text-center">
                 <p className="text-sm text-slate-500">
