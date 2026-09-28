@@ -13,6 +13,14 @@
  *   - il drag continua a spostare Pino senza aprire l'assistente;
  *   - nessun errore in console e nessuna regressione della barra di ricerca.
  *
+ * Per il Pino della HOMEPAGE verifica inoltre:
+ *   - l'asset statico dedicato (4x) è quello servito e viene caricato;
+ *   - le proporzioni del disegno non sono deformate;
+ *   - il personaggio è più grande di prima su desktop e mobile;
+ *   - il ritaglio non lascia residui di fondo opachi né un velo di bordo
+ *     (analisi dei pixel reali dell'asset decodificato dal browser);
+ *   - la transizione del bordo resta di pochi pixel.
+ *
  * Uso: node scripts/__verify-pino-presentazione.mjs [--url http://localhost:3110]
  */
 import { chromium } from "@playwright/test";
@@ -48,10 +56,11 @@ async function metriche(page) {
       const x = document.querySelector(selX);
       const card = x?.parentElement ?? null;
       const wrap = widget?.querySelector('[role="button"]') ?? null;
+      const img = widget?.querySelector("img") ?? null;
       const canvas = widget?.querySelector("canvas") ?? null;
       const testo = document.querySelector(selTesto);
       const span = testo?.querySelector("span") ?? null;
-      if (!widget || !card || !wrap || !canvas || !testo || !span || !x) return null;
+      if (!widget || !card || !wrap || !img || !testo || !span || !x) return null;
 
       const cs = getComputedStyle(span);
       const cardRect = card.getBoundingClientRect();
@@ -59,20 +68,24 @@ async function metriche(page) {
       const wrapRect = wrap.getBoundingClientRect();
       const testoRect = testo.getBoundingClientRect();
 
-      // Bordo sinistro dell'ARTWORK di Pino (primo pixel non trasparente del
-      // canvas) limitato alle righe che cadono nella fascia del fumetto.
-      const ctx = canvas.getContext("2d");
-      const cw = canvas.width;
-      const ch = canvas.height;
-      const data = ctx.getImageData(0, 0, cw, ch).data;
-      const scala = canvas.getBoundingClientRect().width / cw;
+      // Bordo sinistro dell'ARTWORK di Pino: primo pixel non trasparente
+      // dell'asset, riletto dal canale alpha dell'immagine decodificata e
+      // riportato in coordinate schermo. Limitato alle righe che cadono nella
+      // fascia del fumetto.
+      const imgRect = img.getBoundingClientRect();
+      const off = document.createElement("canvas");
+      off.width = img.naturalWidth;
+      off.height = img.naturalHeight;
+      const octx = off.getContext("2d", { willReadFrequently: true });
+      octx.drawImage(img, 0, 0);
+      const od = octx.getImageData(0, 0, off.width, off.height).data;
       let artworkLeft = null;
-      for (let y = 0; y < ch; y += 2) {
-        const yr = canvas.getBoundingClientRect().top + y * scala;
+      for (let y = 0; y < off.height; y += 2) {
+        const yr = imgRect.top + (y / off.height) * imgRect.height;
         if (yr < cardRect.top || yr > cardRect.bottom) continue;
-        for (let px = 0; px < cw; px++) {
-          if (data[(y * cw + px) * 4 + 3] > 24) {
-            const xr = canvas.getBoundingClientRect().left + px * scala;
+        for (let px = 0; px < off.width; px++) {
+          if (od[(y * off.width + px) * 4 + 3] > 24) {
+            const xr = imgRect.left + (px / off.width) * imgRect.width;
             if (artworkLeft === null || xr < artworkLeft) artworkLeft = xr;
             break;
           }
@@ -105,11 +118,112 @@ async function metriche(page) {
         spazioTraFumettoEPino: artworkLeft === null ? null : artworkLeft - cardRect.right,
         artworkCopreTesto: artworkLeft === null ? null : artworkLeft < testoRect.right,
         wrapLeft: wrapRect.left,
-        personaggioAltezza: canvas.getBoundingClientRect().height,
+        personaggioAltezza: imgRect.height,
+        personaggioLarghezza: imgRect.width,
+        proporzioni: imgRect.width / imgRect.height,
+        asset: {
+          src: new URL(img.currentSrc || img.src, location.href).pathname,
+          natural: [img.naturalWidth, img.naturalHeight],
+          caricato: img.complete && img.naturalWidth > 0,
+          canvasRuntime: canvas !== null,
+        },
       };
     },
     { selX: SEL_X, selTesto: SEL_TESTO }
   );
+}
+
+/**
+ * ALONE / RESIDUI GRIGI — controlla i pixel reali dell'asset decodificato dal
+ * browser (canale alpha compreso), non il canvas a runtime.
+ *
+ * Un residuo è un pixel completamente opaco il cui colore è ancora quello del
+ * fondo. Un "velo" è un pixel visibile (alfa >= 0.5) ancora colorato come il
+ * fondo: su un fondo diverso diventerebbe un alone grigio. Su un ritaglio
+ * professionale entrambi restano a quote trascurabili.
+ */
+async function analisiAlone(page) {
+  return page.evaluate(async () => {
+    const img = document.querySelector('[aria-label="Pino, assistente di InCittà"] img');
+    if (!img) return null;
+    if (!img.complete) await img.decode().catch(() => {});
+    const off = document.createElement("canvas");
+    off.width = img.naturalWidth;
+    off.height = img.naturalHeight;
+    const ctx = off.getContext("2d", { willReadFrequently: true });
+    ctx.drawImage(img, 0, 0);
+    const d = ctx.getImageData(0, 0, off.width, off.height).data;
+    const FONDI = [
+      [235, 240, 245], // fondo chiaro della homepage
+      [255, 255, 255], // pagina bianca
+    ];
+    const vicino = (r, g, b, t) =>
+      FONDI.some((f) => Math.hypot(r - f[0], g - f[1], b - f[2]) < t);
+    let opachi = 0;
+    let residui = 0;
+    let visibili = 0; // alfa >= 0.5: pixel che si vedono sul fondo
+    let velo = 0; // ...e che hanno ancora il colore del fondo (velo grigio)
+    let bordo = 0;
+    for (let i = 0; i < d.length; i += 4) {
+      const a = d[i + 3];
+      const fondo = vicino(d[i], d[i + 1], d[i + 2], 24);
+      if (a >= 250) {
+        opachi++;
+        if (fondo) residui++;
+      } else if (a > 10) {
+        bordo++;
+      }
+      if (a >= 128) {
+        visibili++;
+        if (fondo) velo++;
+      }
+    }
+    return { opachi, residui, visibili, velo, bordo };
+  });
+}
+
+/**
+ * Profilo del bordo: cammina dal fuori verso il personaggio e misura quanti
+ * pixel "franchi" (né fondo né disegno) ci sono. Un taglio professionale ha
+ * una transizione breve; il vecchio ritaglio lasciava un alone piu spesso.
+ */
+async function profiloBordo(page) {
+  return page.evaluate(async () => {
+    const img = document.querySelector('[aria-label="Pino, assistente di InCittà"] img');
+    if (!img) return null;
+    if (!img.complete) await img.decode().catch(() => {});
+    const off = document.createElement("canvas");
+    off.width = img.naturalWidth;
+    off.height = img.naturalHeight;
+    const ctx = off.getContext("2d", { willReadFrequently: true });
+    ctx.drawImage(img, 0, 0);
+    const d = ctx.getImageData(0, 0, off.width, off.height).data;
+    const H = off.height;
+    let larghezzaMax = 0;
+    let somma = 0;
+    let righe = 0;
+    for (let y = 2; y < H - 2; y += 2) {
+      let prima = -1;
+      let ultima = -1;
+      for (let x = 0; x < off.width; x++) {
+        if (d[(y * off.width + x) * 4 + 3] > 8) {
+          if (prima < 0) prima = x;
+          ultima = x;
+        }
+      }
+      if (prima < 0) continue;
+      // quanti pixel semitrasparenti (10..250) compongono la transizione
+      let soft = 0;
+      for (let x = prima; x <= Math.min(ultima, prima + 6); x++) {
+        const a = d[(y * off.width + x) * 4 + 3];
+        if (a > 10 && a < 250) soft++;
+      }
+      larghezzaMax = Math.max(larghezzaMax, soft);
+      somma += soft;
+      righe++;
+    }
+    return { transizioneMedia: righe ? somma / righe : 0, transizioneMax: larghezzaMax };
+  });
 }
 
 async function apriHome(page) {
@@ -164,6 +278,48 @@ try {
   check("X cliccabile (≥ 22px)", m.xWidth >= 22 && m.xHeight >= 22, `${Math.round(m.xWidth)}x${Math.round(m.xHeight)}`);
   check("X in un angolo del messaggio", m.xInTopLeft && m.xInsideCard);
   check("X non coperta dal personaggio", m.xCopertaDalPersonaggio === false);
+
+  // ── ASSET HOMEPAGE: PIÙ GRANDE, PIÙ NITIDO, SCONTORNATO ────────────────────
+  console.log("\n── A2. ASSET DEL PINO DELLA HOMEPAGE ────────────────────────────");
+  const attese = 320 / 488; // proporzioni reali dell'asset (4x di un disegno 76x118)
+  check("Pino usa l'asset statico dedicato", m.asset.src === "/pino-home.png", m.asset.src);
+  check("asset caricato dal browser", m.asset.caricato, m.asset.natural.join("x"));
+  check(
+    "asset ad alta risoluzione (4x del disegno originale)",
+    m.asset.natural[0] === 320 && m.asset.natural[1] === 488,
+    m.asset.natural.join("x")
+  );
+  check("nessun canvas a runtime sulla homepage", m.asset.canvasRuntime === false);
+  check(
+    "proporzioni corrette: nessuna deformazione",
+    Math.abs(m.proporzioni - attese) / attese < 0.015,
+    `${m.proporzioni.toFixed(3)} vs ${attese.toFixed(3)}`
+  );
+  check(
+    "Pino più grande di prima (≥ 210px su desktop)",
+    m.personaggioAltezza >= 210,
+    `${Math.round(m.personaggioAltezza)}px (prima ~184px)`
+  );
+
+  const alone = await analisiAlone(desktop);
+  const quotaResidui = alone ? alone.residui / Math.max(1, alone.opachi) : 1;
+  check(
+    "scontorno: nessun residuo di fondo opaco (< 0.5%)",
+    quotaResidui < 0.005,
+    alone ? `${alone.residui} su ${alone.opachi} px opachi (${(quotaResidui * 100).toFixed(2)}%)` : "n/d"
+  );
+  const quotaVelo = alone ? alone.velo / Math.max(1, alone.visibili) : 1;
+  check(
+    "scontorno: nessun velo grigio visibile (< 3%)",
+    quotaVelo < 0.03,
+    alone ? `${alone.velo} su ${alone.visibili} px visibili (${(quotaVelo * 100).toFixed(2)}%)` : "n/d"
+  );
+  const prof = await profiloBordo(desktop);
+  check(
+    "bordo netto: transizione entro l'antialiasing (≤ 8px su 4x)",
+    !!prof && prof.transizioneMax <= 8,
+    prof ? `media ${prof.transizioneMedia.toFixed(2)} / max ${prof.transizioneMax}` : "n/d"
+  );
 
   mkdirSync("screenshots", { recursive: true });
   await desktop.screenshot({ path: "screenshots/pino-presentazione-desktop.png" });
@@ -234,6 +390,26 @@ try {
     check("mobile: testo leggibile (≥ 12px, bold)", m.fontSize >= 12 && m.fontWeight >= 700, `${m.fontSize}px / ${m.fontWeight}`);
     check("mobile: X cliccabile (≥ 22px)", m.xWidth >= 22 && m.xHeight >= 22, `${Math.round(m.xWidth)}x${Math.round(m.xHeight)}`);
     check("mobile: X non coperta dal personaggio", m.xCopertaDalPersonaggio === false);
+    check(
+      "mobile: Pino più grande di prima (≥ 100px)",
+      m.personaggioAltezza >= 100,
+      `${Math.round(m.personaggioAltezza)}px (prima 92px)`
+    );
+    check(
+      "mobile: proporzioni corrette",
+      Math.abs(m.proporzioni - attese) / attese < 0.015,
+      m.proporzioni.toFixed(3)
+    );
+    const aloneM = await analisiAlone(mobile);
+    check(
+      "mobile: scontorno senza residui né velo di bordo",
+      !!aloneM &&
+        aloneM.residui / Math.max(1, aloneM.opachi) < 0.005 &&
+        aloneM.velo / Math.max(1, aloneM.visibili) < 0.03,
+      aloneM
+        ? `residui ${(100 * aloneM.residui / aloneM.opachi).toFixed(2)}%, velo ${(100 * aloneM.velo / aloneM.visibili).toFixed(2)}%`
+        : "n/d"
+    );
 
     const ricerca = await mobile.locator('form[action="/ricerca"] input[name="q"]').first().boundingBox();
     const sovrapposto =
@@ -251,6 +427,28 @@ try {
   await mobile.locator(SEL_X).first().tap();
   await mobile.waitForTimeout(500);
   check("mobile: la X chiude la presentazione", (await mobile.locator(SEL_WIDGET).count()) === 0);
+
+  // ── ZOOM SUL BORDO: CAPELLI E SPAZIO FRA LE GAMBE ──────────────────────────
+  console.log("\n── E. ZOOM SUL RITAGLIO (desktop 3x) ────────────────────────────");
+  const zoom = await browser.newPage({
+    viewport: { width: 1280, height: 900 },
+    deviceScaleFactor: 3,
+  });
+  await apriHome(zoom);
+  const zb = await zoom.locator(SEL_SPRITE).first().boundingBox();
+  if (zb) {
+    const mx = 8;
+    const clip = {
+      x: Math.max(0, zb.x - mx),
+      y: Math.max(0, zb.y - mx),
+      width: Math.min(zb.width + 2 * mx, 1280 - Math.max(0, zb.x - mx)),
+      height: Math.min(zb.height + 2 * mx, 900 - Math.max(0, zb.y - mx)),
+    };
+    await zoom.screenshot({ path: "screenshots/pino-homepage-zoom-desktop.png", clip });
+    check("zoom 3x catturato per il controllo visivo del bordo", true, `${Math.round(clip.width)}x${Math.round(clip.height)} css px`);
+  } else {
+    check("zoom 3x catturato per il controllo visivo del bordo", false, "personaggio non trovato");
+  }
 
   console.log("\n── D. CONSOLE ───────────────────────────────────────────────────");
   const errori = erroriConsole.filter((t) => !/favicon|Failed to load resource|net::ERR/i.test(t));

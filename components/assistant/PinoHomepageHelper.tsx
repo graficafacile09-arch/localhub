@@ -2,7 +2,20 @@
 
 import { useRef, useState } from "react";
 import { X } from "lucide-react";
-import PinoSprite from "./PinoSprite";
+
+/**
+ * Asset dedicato alla homepage: lo stesso disegno del frame "neutral" di
+ * `public/pino-sprite.jpg`, ma precalcolato a 4x con scontorno professionale
+ * (nessun alone grigio, nessun residuo fra gambe e braccia).
+ * Rigenerabile con `python scripts/gen-pino-homepage.py`.
+ *
+ * Il canvas a runtime di `PinoSprite` resta invariato per il Pino della chat:
+ * qui serve un'immagine statica già pronta, nitida a dimensione grande.
+ */
+const PINO_HOME_SRC = "/pino-home.png";
+const PINO_HOME_W = 320; // px naturali dell'asset (76x118 a 1x, ingrandito 4x)
+const PINO_HOME_H = 488;
+const PINO_HOME_HEIGHT = 110; // px a schermo: leggermente più grande di prima (era 92)
 
 /**
  * Pino flottante con il suo messaggio di presentazione.
@@ -19,6 +32,10 @@ import PinoSprite from "./PinoSprite";
  * 2x) copre la parte destra del fumetto, quindi l'angolo destro non è un
  * bersaglio cliccabile. Per lo stesso motivo il testo ha un padding destro
  * riservato su desktop: nessuna parola finisce sotto Pino.
+ *
+ * Il personaggio è leggermente più grande di prima (e con le proporzioni reali
+ * del disegno): la nitidezza arriva dall'asset ad alta risoluzione, non da un
+ * ingrandimento del browser.
  */
 export default function PinoHomepageHelper() {
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -110,7 +127,20 @@ export default function PinoHomepageHelper() {
             }
           }}
         >
-          <PinoSprite mood="neutral" className="h-[92px] w-[71px] drop-shadow-[0_7px_10px_rgba(15,23,42,0.2)]" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={PINO_HOME_SRC}
+            alt=""
+            aria-hidden="true"
+            draggable={false}
+            decoding="async"
+            width={PINO_HOME_W}
+            height={PINO_HOME_H}
+            // w-auto: la larghezza segue le proporzioni reali del disegno,
+            // quindi nessuna deformazione orizzontale o verticale.
+            className="block w-auto drop-shadow-[0_7px_10px_rgba(15,23,42,0.2)]"
+            style={{ height: `${PINO_HOME_HEIGHT}px`, imageRendering: "auto" }}
+          />
         </div>
       </div>
       <span className="sr-only">
