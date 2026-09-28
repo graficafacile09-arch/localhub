@@ -1,18 +1,13 @@
+"use client";
+
+import { useParams, useSearchParams } from "next/navigation";
 import RecessoOrdine from "@/components/cliente/RecessoOrdine.jsx";
 
-type Params = { ordineId: string };
-type SearchParams = Record<string, string | string[] | undefined>;
-
-export default async function RecessoGuestPage({
-  params,
-  searchParams,
-}: {
-  params: Promise<Params>;
-  searchParams: Promise<SearchParams>;
-}) {
-  const { ordineId } = await params;
-  const query = await searchParams;
-  const token = typeof query?.token === "string" ? query.token : null;
+export default function RecessoGuestPage() {
+  const params = useParams<{ ordineId: string }>();
+  const searchParams = useSearchParams();
+  const ordineId = params?.ordineId ?? "";
+  const token = searchParams.get("token");
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-8">
