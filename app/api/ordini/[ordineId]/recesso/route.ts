@@ -54,7 +54,9 @@ async function inviaRicevuta(richiestaId: string): Promise<void> {
     ? new Date(String(richiesta.termine_recesso_at)).toLocaleDateString("it-IT")
     : "14 giorni dalla consegna";
 
-  const resend = new Resend(process.env.RESEND_API_KEY);
+  const resendKey = process.env.RESEND_API_KEY;
+  if (!resendKey) throw new Error("RESEND_API_KEY non configurata");
+  const resend = new Resend(resendKey);
   const link = SITE_URL + "/ordini/conferma/" + encodeURIComponent(String(richiesta.ordine_id));
 
   const emailResult = await resend.emails.send({
