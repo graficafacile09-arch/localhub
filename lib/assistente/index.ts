@@ -460,8 +460,55 @@ function rispostaMeteoDeterministica(meteo: Awaited<ReturnType<typeof getWeather
 
 function rispostaFarmacieDeterministica(
   farmacie: Awaited<ReturnType<typeof searchPharmacies>>,
+  statoRichiesto: ToolParams["stato"] = "turno",
   motivo?: string
 ): string {
+  if (statoRichiesto === "aperte") {
+    const aperte = farmacie.filter((f) => f.stato === "aperta").slice(0, 5);
+    if (aperte.length === 0) {
+      return "Al momento non risulta alcuna farmacia con stato APERTA verificato nei dati disponibili per Castrovillari. Non ti indico farmacie non verificate come aperte.";
+    }
+
+    const elenco = aperte
+      .map((f) => {
+        const dettagli = [
+          f.indirizzo ? f.indirizzo : null,
+          f.telefono ? "tel. " + f.telefono : null,
+          f.apertura ? "orari: " + f.apertura : null,
+        ]
+          .filter(Boolean)
+          .join(" — ");
+        return "- **" + f.nome + "**" + (dettagli ? " — " + dettagli : "");
+      })
+      .join("\n");
+
+    return "Dai dati verificati di oggi risultano aperte:\n" + elenco;
+  }
+
+  if (statoRichiesto === "tutte") {
+    if (farmacie.length === 0) {
+      return "Al momento non ho dati verificati sulle farmacie di Castrovillari.";
+    }
+
+    const elenco = farmacie
+      .slice(0, 8)
+      .map((f) => {
+        const stato =
+          f.turno ? "DI TURNO" : f.stato === "aperta" ? "APERTA" : f.stato === "chiusa" ? "CHIUSA" : "NON VERIFICATA";
+        const dettagli = [
+          f.indirizzo ? f.indirizzo : null,
+          f.turno ? f.turno : null,
+          f.telefono ? "tel. " + f.telefono : null,
+        ]
+          .filter(Boolean)
+          .join(" — ");
+        return "- **" + f.nome + "** — " + stato + (dettagli ? " — " + dettagli : "");
+      })
+      .join("\n");
+
+    return "Farmacie per cui ho dati disponibili:\n" + elenco;
+  }
+
   const turno = farmacie.filter((f) => Boolean(f.turno)).slice(0, 3);
 
   if (turno.length === 0) {
@@ -614,11 +661,13 @@ export async function chatConAssistente(
   }
 
   if (haFarmacie) {
+    const statoFarmacia =
+      invocazioni.find((t) => t.tool === "searchPharmacies")?.params?.stato ?? "turno";
     const motivoFebbre = REQUIRES_PHARMACY_REASON.test(domanda)
       ? "i sintomi che hai indicato"
       : undefined;
     return {
-      risposta: rispostaFarmacieDeterministica(farmacie, motivoFebbre),
+      risposta: rispostaFarmacieDeterministica(farmacie, statoFarmacia, motivoFebbre),
       negozi: [],
       prodotti: [],
       processingMs: Date.now() - inizio,
