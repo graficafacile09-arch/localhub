@@ -96,7 +96,12 @@ export function parseFarmacieTurno(html: string): FarmaciaTurno[] {
       id: idf ?? null,
       nome: decodifica(nome),
       indirizzo: estraiIndirizzo(blocco),
-      stato:\n        statoRaw === "CHIUSA" || statoRaw === "CHIUSO"\n          ? "chiusa"\n          : statoRaw === "APERTA" || statoRaw === "APERTO"\n            ? "aperta"\n            : null,
+      stato:
+        statoRaw === "CHIUSA" || statoRaw === "CHIUSO"
+          ? "chiusa"
+          : statoRaw === "APERTA" || statoRaw === "APERTO"
+            ? "aperta"
+            : null,
       apertura: apertura ? decodifica(apertura) : null,
       turno: turno ? decodifica(turno) : null,
       telefono,
