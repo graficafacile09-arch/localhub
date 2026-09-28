@@ -64,10 +64,10 @@ export default function FarmacieTurnoWidget() {
 
   if (!pronto || !dati) return null;
 
-  const diTurno =
-    dati.farmacie.find((f) => f.turno) ??
-    dati.farmacie.find((f) => f.stato === "aperta") ??
-    dati.farmacie[0];
+  // Il widget deve mostrare una farmacia come "di turno" solo quando la
+  // fonte valorizza esplicitamente il campo turno. Non usiamo mai la prima
+  // farmacia come fallback: sarebbe un falso positivo.
+  const diTurno = dati.farmacie.find((f) => Boolean(f.turno));
   if (!diTurno) return null;
 
   const urlScheda = diTurno.urlScheda ?? URL_FONTE;
