@@ -203,7 +203,7 @@ export default function MerchantProductForm({
       alt_text_immagine: get("alt_text_immagine"),
       prodotto_tipico: String(prodottoTipico),
       prodotto_offerta: String(prodottoOfferta),
-      recesso_applicabile: get("recesso_esclusione_codice"),
+      recesso_applicabile: String(!get("recesso_esclusione_codice")),
       recesso_esclusione_dettaglio: get("recesso_esclusione_dettaglio"),
     });
     notifyDirty(current !== getSnapshot());

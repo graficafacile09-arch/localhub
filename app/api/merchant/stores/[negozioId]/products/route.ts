@@ -120,9 +120,10 @@ function validateProductPayload(payload: Partial<MerchantProductInput>) {
   ) {
     return "Dettaglio dell'esclusione del recesso non valido.";
   }
+  const recessoApplicabile = payload.recessoApplicabile ?? !payload.recessoEsclusioneCodice;
   if (
-    (payload.recessoApplicabile === false && !payload.recessoEsclusioneCodice) ||
-    (payload.recessoApplicabile === true && payload.recessoEsclusioneCodice)
+    (recessoApplicabile === false && !payload.recessoEsclusioneCodice) ||
+    (recessoApplicabile === true && payload.recessoEsclusioneCodice)
   ) {
     return "La configurazione del diritto di recesso non è coerente.";
   }
@@ -252,7 +253,7 @@ export async function POST(
     originePubblicazione: payload.originePubblicazione ?? "manuale",
     prodottoTipico: payload.prodottoTipico ?? false,
     prodottoOfferta: payload.prodottoOfferta ?? false,
-    recessoApplicabile: payload.recessoApplicabile ?? true,
+    recessoApplicabile,
     recessoEsclusioneCodice: payload.recessoEsclusioneCodice ?? null,
     recessoEsclusioneDettaglio: payload.recessoEsclusioneDettaglio ?? null,
     // Campi arricchiti (G1): inoltrati al data layer, che li persiste.
