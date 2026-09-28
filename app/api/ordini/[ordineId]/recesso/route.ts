@@ -174,7 +174,7 @@ export async function POST(
   const db = createAdminSupabaseClient();
   const { data: ordine, error: ordineError } = await db
     .from("ordini")
-    .select("id, cliente_user_id")
+    .select("id, cliente_user_id, cliente_email, cliente_telefono")
     .eq("id", ordineId)
     .maybeSingle();
 
@@ -196,8 +196,8 @@ export async function POST(
   const { data, error } = await db.rpc("crea_richiesta_recesso", {
     p_ordine_id: ordineId,
     p_cliente_user_id: accesso.guest ? null : accesso.userId,
-    p_guest_email: null,
-    p_guest_telefono: null,
+    p_guest_email: accesso.guest ? String(ordine.cliente_email ?? "") : null,
+    p_guest_telefono: accesso.guest ? String(ordine.cliente_telefono ?? "") : null,
     p_righe: righe,
     p_motivo: typeof body.motivo === "string" ? body.motivo.trim() : null,
     p_note: typeof body.note === "string" ? body.note.trim() : null,
@@ -214,11 +214,11 @@ export async function POST(
     const status =
       codice === "FORBIDDEN" ? 403 :
       codice === "ORDINE_NON_TROVATO" ? 404 :
-      codigo === "FUORI_TERMINE" ? 409 :
-      codigo === "RECESSO_ESCLUSO" ? 409 :
-      codigo === "RECESSO_NON_CONFIGURATO" ? 409 :
-      codigo === "QUANTITA_NON_VALIDA" || codigo === "QUANTITA_GIA_RICHIESTA" ? 409 :
-      codigo === "VALIDATION_ERROR" ? 422 : 500;
+      codice === "FUORI_TERMINE" ? 409 :
+      codice === "RECESSO_ESCLUSO" ? 409 :
+      codice === "RECESSO_NON_CONFIGURATO" ? 409 :
+      codice === "QUANTITA_NON_VALIDA" || codice === "QUANTITA_GIA_RICHIESTA" ? 409 :
+      codice === "VALIDATION_ERROR" ? 422 : 500;
     return apiError(codice, String(result.messaggio ?? "Impossibile registrare la richiesta di recesso."), status);
   }
 
