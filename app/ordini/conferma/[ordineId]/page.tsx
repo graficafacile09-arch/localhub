@@ -21,7 +21,6 @@ import type { OrdinePersistito } from "@/lib/cliente/orders";
 import { etichettaStato, sintesiProdotti } from "@/lib/cliente/ordini-format";
 import { StatoOrdineBanner } from "@/components/ordini/StatoOrdineBanner";
 import { RigheProdotto } from "@/components/ordini/RigheProdotto";
-import RecessoOrdine from "@/components/cliente/RecessoOrdine";
 import { OrderHeader } from "@/components/ordini/OrderHeader";
 import { PagamentoStatoBanner } from "@/components/ordini/PagamentoStatoBanner";
 import { CheckoutInAttesa } from "@/components/ordini/CheckoutInAttesa";
@@ -234,8 +233,6 @@ export default async function ConfermaOrdinePage({
             />
           </div>
         </div>
-
-        <RecessoOrdine ordineId={ordineId} token={accessToken} />
 
         {/* Dettagli consegna + azioni post-ordine */}
         <div className="mt-4 rounded-[1.75rem] border border-white/70 bg-white p-5 shadow-sm">

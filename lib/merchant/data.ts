@@ -77,9 +77,6 @@ type ProdottoRow = {
   origine_pubblicazione?: string | null;
   prodotto_tipico?: boolean | null;
   prodotto_offerta?: boolean | null;
-  recesso_applicabile?: boolean | null;
-  recesso_esclusione_codice?: string | null;
-  recesso_esclusione_dettaglio?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
 };
@@ -89,7 +86,7 @@ const SCHEMA_ERROR_CODES = new Set(["42P01", "42703", "PGRST204", "PGRST205"]);
 // Colonna usata per SELECT dei prodotti merchant (lista + patch parziale):
 // costante condivisa per evitare drift tra le due query.
 const SELECT_COLONNE_PRODOTTO =
-  "id, negozio_id, nome, descrizione, descrizione_completa, categoria, sottocategoria, marca, colore, materiale, caratteristiche, peso_volume, peso_grammi, costo_spedizione_locale, parole_chiave, filtri_catalogo, prezzo, prezzo_suggerito, immagine_principale, quantita_disponibile, quantita_riservata, ha_varianti, stato_condizione, seo_title, seo_description, alt_text_immagine, attivo, origine_pubblicazione, prodotto_tipico, prodotto_offerta, recesso_applicabile, recesso_esclusione_codice, recesso_esclusione_dettaglio, created_at, updated_at";
+  "id, negozio_id, nome, descrizione, descrizione_completa, categoria, sottocategoria, marca, colore, materiale, caratteristiche, peso_volume, peso_grammi, costo_spedizione_locale, parole_chiave, filtri_catalogo, prezzo, prezzo_suggerito, immagine_principale, quantita_disponibile, quantita_riservata, ha_varianti, stato_condizione, seo_title, seo_description, alt_text_immagine, attivo, origine_pubblicazione, prodotto_tipico, prodotto_offerta, created_at, updated_at";
 
 // Colonne delle varianti prodotto (Fase E2).
 const SELECT_COLONNE_VARIANTE =
@@ -170,9 +167,6 @@ function mapProduct(row: ProdottoRow): MerchantProduct {
     origine_pubblicazione: row.origine_pubblicazione ?? null,
     prodotto_tipico: row.prodotto_tipico ?? false,
     prodotto_offerta: row.prodotto_offerta ?? false,
-    recesso_applicabile: row.recesso_applicabile ?? true,
-    recesso_esclusione_codice: (row.recesso_esclusione_codice as MerchantProduct["recesso_esclusione_codice"]) ?? null,
-    recesso_esclusione_dettaglio: row.recesso_esclusione_dettaglio ?? null,
     created_at: row.created_at ?? null,
     updated_at: row.updated_at ?? null,
   };
@@ -724,9 +718,6 @@ export async function createMerchantProductForStore(
     origine_pubblicazione: input.originePubblicazione?.trim() || "manuale",
     prodotto_tipico: input.prodottoTipico ?? false,
     prodotto_offerta: input.prodottoOfferta ?? false,
-    recesso_applicabile: input.recessoApplicabile ?? true,
-    recesso_esclusione_codice: input.recessoEsclusioneCodice ?? null,
-    recesso_esclusione_dettaglio: input.recessoEsclusioneDettaglio?.trim() || null,
   };
 
   if (input.descrizioneCompleta !== undefined) payload.descrizione_completa = input.descrizioneCompleta.trim() || null;
@@ -826,9 +817,6 @@ export async function updateMerchantProductForStore(
     origine_pubblicazione: input.originePubblicazione?.trim() || "manuale",
     prodotto_tipico: input.prodottoTipico ?? false,
     prodotto_offerta: input.prodottoOfferta ?? false,
-    recesso_applicabile: input.recessoApplicabile ?? true,
-    recesso_esclusione_codice: input.recessoEsclusioneCodice ?? null,
-    recesso_esclusione_dettaglio: input.recessoEsclusioneDettaglio?.trim() || null,
   };
 
   if (input.descrizioneCompleta !== undefined) payload.descrizione_completa = input.descrizioneCompleta.trim() || null;

@@ -40,9 +40,6 @@ export type MerchantProductPayload = {
   prodottoTipico: boolean;
   /** True se il prodotto è in offerta (vetrina "Offerte", badge rosso). */
   prodottoOfferta: boolean;
-  recessoApplicabile: boolean;
-  recessoEsclusioneCodice: string | null;
-  recessoEsclusioneDettaglio?: string | null;
 };
 
 type MerchantProductFormProps = {
@@ -97,9 +94,6 @@ const DEFAULT_PRODUCT_FORM = {
   originePubblicazione: "manuale",
   prodotto_tipico: false,
   prodotto_offerta: false,
-  recesso_applicabile: true,
-  recesso_esclusione_codice: "",
-  recesso_esclusione_dettaglio: "",
 };
 
 export default function MerchantProductForm({
@@ -159,9 +153,6 @@ export default function MerchantProductForm({
       alt_text_immagine: str(initialValues.alt_text_immagine),
       prodotto_tipico: String(Boolean(initialValues.prodotto_tipico)),
       prodotto_offerta: String(Boolean(initialValues.prodotto_offerta)),
-      recesso_applicabile: String(Boolean(initialValues.recesso_applicabile)),
-      recesso_esclusione_codice: str(initialValues.recesso_esclusione_codice),
-      recesso_esclusione_dettaglio: str(initialValues.recesso_esclusione_dettaglio),
     });
   }
 
@@ -203,8 +194,6 @@ export default function MerchantProductForm({
       alt_text_immagine: get("alt_text_immagine"),
       prodotto_tipico: String(prodottoTipico),
       prodotto_offerta: String(prodottoOfferta),
-      recesso_applicabile: String(!get("recesso_esclusione_codice")),
-      recesso_esclusione_dettaglio: get("recesso_esclusione_dettaglio"),
     });
     notifyDirty(current !== getSnapshot());
   }
@@ -248,9 +237,6 @@ export default function MerchantProductForm({
         originePubblicazione: initialData.origine_pubblicazione ?? "manuale",
         prodotto_tipico: initialData.prodotto_tipico ?? false,
         prodotto_offerta: initialData.prodotto_offerta ?? false,
-        recesso_applicabile: initialData.recesso_applicabile ?? true,
-        recesso_esclusione_codice: initialData.recesso_esclusione_codice ?? "",
-        recesso_esclusione_dettaglio: initialData.recesso_esclusione_dettaglio ?? "",
       }
     : DEFAULT_PRODUCT_FORM;
 
@@ -359,11 +345,6 @@ export default function MerchantProductForm({
       originePubblicazione: String(formData.get("originePubblicazione") ?? initialValues.originePubblicazione),
       prodottoTipico: prodottoTipico,
       prodottoOfferta: prodottoOfferta,
-      recessoEsclusioneCodice:
-        (String(formData.get("recesso_esclusione_codice") ?? "").trim() || null) as MerchantProductPayload["recessoEsclusioneCodice"],
-      recessoApplicabile: !String(formData.get("recesso_esclusione_codice") ?? "").trim(),
-      recessoEsclusioneDettaglio:
-        String(formData.get("recesso_esclusione_dettaglio") ?? "").trim() || null,
     };
 
     const route = productId
@@ -792,36 +773,6 @@ export default function MerchantProductForm({
                 className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-yellow-500 focus:ring-2 focus:ring-yellow-100"
               />
             </div>
-            <div className="rounded-xl border border-blue-200 bg-blue-50/50 p-4">
-              <p className="text-sm font-bold text-slate-900">Diritto di recesso</p>
-              <p className="mt-1 text-[11px] leading-5 text-slate-600">
-                Il recesso è applicabile in via ordinaria. Indica un'esclusione solo quando il prodotto rientra effettivamente in una specifica esclusione prevista dalla normativa.
-              </p>
-              <select
-                id="recesso_esclusione_codice"
-                name="recesso_esclusione_codice"
-                defaultValue={initialValues.recesso_esclusione_codice}
-                className="mt-3 h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none transition focus:border-yellow-500 focus:ring-2 focus:ring-yellow-100"
-              >
-                <option value="">Recesso ordinario applicabile</option>
-                <option value="prodotto_personalizzato">Prodotto personalizzato</option>
-                <option value="prodotto_deperibile">Bene soggetto a deterioramento</option>
-                <option value="bene_sigillato_igiene_salute">Bene sigillato per igiene o salute</option>
-                <option value="servizio_tempo_libero_data_specifica">Servizio con data o periodo specifico</option>
-                <option value="contenuto_digitale_avviato">Contenuto digitale già iniziato con consenso</option>
-                <option value="servizio_urgente_su_richiesta">Servizio eseguito su richiesta specifica</option>
-                <option value="altra_esclusione_prevista">Altra esclusione prevista dalla normativa</option>
-              </select>
-              <input
-                id="recesso_esclusione_dettaglio"
-                name="recesso_esclusione_dettaglio"
-                defaultValue={initialValues.recesso_esclusione_dettaglio}
-                maxLength={500}
-                placeholder="Dettaglio dell'esclusione (facoltativo)"
-                className="mt-2 h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none transition focus:border-yellow-500 focus:ring-2 focus:ring-yellow-100"
-              />
-            </div>
-
             <textarea
               id="seo_description"
               name="seo_description"
