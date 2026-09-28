@@ -1,13 +1,16 @@
 "use client";
 
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import RecessoOrdine from "@/components/cliente/RecessoOrdine.jsx";
 
 export default function RecessoGuestPage() {
   const params = useParams();
-  const searchParams = useSearchParams();
   const ordineId = String(params?.ordineId ?? "");
-  const token = searchParams.get("token");
+
+  let token = null;
+  if (typeof window !== "undefined") {
+    token = new URLSearchParams(window.location.search).get("token");
+  }
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-8">
