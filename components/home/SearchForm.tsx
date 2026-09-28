@@ -14,11 +14,17 @@ export default function SearchForm({ initialQuery = "", compact = false }: Searc
     const query = initialQuery.trim();
     if (!query || !isLocalAssistantQuery(query)) return;
 
-    window.dispatchEvent(
-      new CustomEvent("assistant:open", {
-        detail: { initialQuery: query },
-      })
-    );
+    // Ritarda l'evento di un tick: su /ricerca il listener globale di
+    // AssistantPanel viene registrato da un componente fratello nel layout.
+    const timer = window.setTimeout(() => {
+      window.dispatchEvent(
+        new CustomEvent("assistant:open", {
+          detail: { initialQuery: query },
+        })
+      );
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [initialQuery]);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
