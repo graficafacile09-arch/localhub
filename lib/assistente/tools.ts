@@ -234,10 +234,18 @@ export async function searchPharmacies(
 ): Promise<FarmaciaAssistente[]> {
   const farmacie = await getFarmacieTurnoCastrovillari();
   const filtrate =
-    stato === "aperte"
-      ? farmacie.filter((f) => f.stato === "aperta")
-      : stato === "turno"
-        ? farmacie.filter((f) => Boolean(f.turno))
+    stato === "turno"
+      ? farmacie.filter((f) => Boolean(f.turno))
+      : stato === "aperte"
+        ? (() => {
+            const aperte = farmacie.filter((f) => f.stato === "aperta");
+            // Se la fonte non espone lo stato di apertura per nessuna farmacia,
+            // restituiamo solo le righe non verificate come avvertenza esplicita.
+            // Pino NON deve mai trasformarle in "aperte".
+            return aperte.length > 0
+              ? aperte
+              : farmacie.filter((f) => f.stato === null).slice(0, 3);
+          })()
         : farmacie;
 
   return filtrate.slice(0, limita(limit, 8, 8)).map((f) => ({
