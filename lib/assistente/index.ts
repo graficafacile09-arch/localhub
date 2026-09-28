@@ -190,8 +190,8 @@ function pianoPredefinito(
     /che cos'è incittà|che cos'e incitta|cos'è incittà|come funziona|chi sei|cosa sei|cos'è il sito/;
   const RE_METEO =
     /che tempo fa|com[’']e il tempo|come è il tempo|come sara il tempo|come sarà il tempo|meteo|previsioni|piove|piovera|pioverà|temperatura|quanti gradi|gradi ci sono/i;
-  const RE_FARMACIA =
-    /farmacia|farmacie|di turno|farmacia aperta|farmacie aperte|aperta adesso|aperte adesso|farmacia aperta adesso/i;
+  const RE_FARMACIA_WIDGET =
+    /di turno|farmacia.*apert[aoe]?|farmacie.*apert[aei]?|apert[aoe]?.*farmaci|farmacia.*adesso|farmacie.*adesso|farmacia.*ora|farmacie.*ora/i;
 
   if (RE_METEO.test(ultimo)) {
     return {
@@ -200,7 +200,7 @@ function pianoPredefinito(
     };
   }
 
-  if (RE_FARMACIA.test(ultimo)) {
+  if (RE_FARMACIA_WIDGET.test(ultimo)) {
     const chiedeAperta = /apert[aoe]?|adesso|ora|in questo momento/i.test(ultimo);
     const chiedeTurno = /di turno|turno/i.test(ultimo);
     return {
