@@ -98,10 +98,7 @@ async function inviaRicevuta(richiestaId) {
   }
 }
 
-export async function GET(
-  request: Request,
-  context
-) {
+export async function GET(request, context) {
   const { ordineId } = await context.params;
   const token = new URL(request.url).searchParams.get("token");
   const accesso = await risolviAccesso(ordineId, token);
@@ -150,13 +147,10 @@ export async function GET(
   });
 }
 
-export async function POST(
-  request: Request,
-  context
-) {
+export async function POST(request, context) {
   const { ordineId } = await context.params;
 
-  let body: Record<string, unknown>;
+  let body;
   try {
     body = await request.json();
   } catch {
