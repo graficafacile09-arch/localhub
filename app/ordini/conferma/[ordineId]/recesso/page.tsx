@@ -1,16 +1,13 @@
-"use client";
-
-import { useParams } from "next/navigation";
 import RecessoOrdine from "@/components/cliente/RecessoOrdine.jsx";
 
-export default function RecessoGuestPage() {
-  const params = useParams();
-  const ordineId = String(params?.ordineId ?? "");
+type Params = { ordineId: string };
 
-  let token = null;
-  if (typeof window !== "undefined") {
-    token = new URLSearchParams(window.location.search).get("token");
-  }
+export default async function RecessoGuestPage({
+  params,
+}: {
+  params: Promise<Params>;
+}) {
+  const { ordineId } = await params;
 
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-8">
@@ -22,7 +19,7 @@ export default function RecessoGuestPage() {
           ← Torna all'ordine
         </a>
       </div>
-      <RecessoOrdine ordineId={ordineId} token={token} />
+      <RecessoOrdine ordineId={ordineId} />
     </main>
   );
 }
