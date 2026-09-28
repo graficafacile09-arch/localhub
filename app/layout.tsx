@@ -7,6 +7,7 @@ import "./globals.css";
 import AreaTitleSync from "@/components/layout/AreaTitleSync";
 import PinoHomepageHelper from "@/components/assistant/PinoHomepageHelper";
 import AssistantPanel from "@/components/assistant/AssistantPanel";
+import CookieNotice from "@/components/privacy/CookieNotice";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -118,6 +119,7 @@ export default async function RootLayout({
 
         <PinoHomepageHelper />
         <AssistantPanel />
+        <CookieNotice />
       </body>
     </html>
   );
