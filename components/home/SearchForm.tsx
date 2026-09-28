@@ -1,7 +1,7 @@
 "use client";
 
 import { Search } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, type FormEvent } from "react";
 import { isLocalAssistantQuery } from "@/lib/assistente/local-intents";
 
 type SearchFormProps = {
@@ -21,7 +21,7 @@ export default function SearchForm({ initialQuery = "", compact = false }: Searc
     );
   }, [initialQuery]);
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     const input = event.currentTarget.elements.namedItem("q");
     const query = input instanceof HTMLInputElement ? input.value.trim() : "";
 
