@@ -467,26 +467,68 @@ try {
       };
     });
 
-  const inputChat = desktop.locator('textarea[placeholder="Chiedi qualcosa..."]').first();
-  await inputChat.waitFor({ state: "visible", timeout: 10000 });
-  await inputChat.fill("cerco una pizzeria");
-  await inputChat.press("Enter");
-  await desktop.waitForTimeout(12000);
+  // La risposta dell'assistente è asincrona: l'input resta `disabled` finché il
+  // backend non ha risposto, quindi attendo la fine della richiesta invece di un
+  // tempo fisso (su produzione la ricerca può richiedere parecchi secondi).
+  const statoInput = () =>
+    desktop.evaluate(() => {
+      const ta = document.querySelector('textarea[placeholder="Chiedi qualcosa..."]');
+      return ta ? (ta.disabled ? "occupato" : "pronto") : "assente";
+    });
+
+  const invia = async (testo) => {
+    await desktop
+      .waitForFunction(
+        () => {
+          const ta = document.querySelector('textarea[placeholder="Chiedi qualcosa..."]');
+          return !!ta && !ta.disabled;
+        },
+        null,
+        { timeout: 60000 }
+      )
+      .catch(() => {});
+    const inputChat = desktop.locator('textarea[placeholder="Chiedi qualcosa..."]').first();
+    await inputChat.fill(testo);
+    await inputChat.press("Enter");
+    // aspetta che parta la richiesta...
+    await desktop
+      .waitForFunction(
+        () => {
+          const ta = document.querySelector('textarea[placeholder="Chiedi qualcosa..."]');
+          return !!ta && ta.disabled;
+        },
+        null,
+        { timeout: 15000 }
+      )
+      .catch(() => {});
+    // ...e poi che sia finita
+    await desktop
+      .waitForFunction(
+        () => {
+          const ta = document.querySelector('textarea[placeholder="Chiedi qualcosa..."]');
+          return !!ta && !ta.disabled;
+        },
+        null,
+        { timeout: 120000 }
+      )
+      .catch(() => {});
+    await desktop.waitForTimeout(700);
+  };
+
+  await invia("cerco una pizzeria");
   const statoChat = await leggiStatoChat();
   check(
     "chat con risultati: Pino ALLEGRO",
     statoChat?.src === "/pino-allegro.webp",
-    `${statoChat?.src ?? "n/d"} — "${statoChat?.testo ?? "n/d"}"`
+    `${statoChat?.src ?? "n/d"} — "${statoChat?.testo ?? "n/d"}" (input ${await statoInput()})`
   );
 
-  await inputChat.fill("cerca zqxwvbnmklp");
-  await inputChat.press("Enter");
-  await desktop.waitForTimeout(12000);
+  await invia("cerca zqxwvbnmklp");
   const statoChat2 = await leggiStatoChat();
   check(
     "chat senza risultati: Pino TRISTE",
     statoChat2?.src === "/pino-triste.webp",
-    `${statoChat2?.src ?? "n/d"} — "${statoChat2?.testo ?? "n/d"}"`
+    `${statoChat2?.src ?? "n/d"} — "${statoChat2?.testo ?? "n/d"}" (input ${await statoInput()})`
   );
 
   await desktop.locator(SEL_PANEL).first().click().catch(() => {});
