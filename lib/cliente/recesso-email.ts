@@ -45,9 +45,9 @@ export async function inviaEmailConfermaRecesso(
     const { data: richiesta, error } = await db
       .from("richieste_recesso")
       .select(
-        "id,numero,ordine_id,cliente_nome,cliente_cognome,cliente_email,negozio_id,negozio_nome:" +
-        "negozio_id,venditore_denominazione_legale,venditore_nome_commerciale,venditore_email," +
-        "venditore_pec,ricevuta_at,dichiarazione_testo,termine_recesso_at"
+        "id,numero,ordine_id,cliente_nome,cliente_cognome,cliente_email," +
+        "venditore_denominazione_legale,venditore_nome_commerciale,venditore_email," +
+        "venditore_pec,ricevuta_at,dichiarazione_testo,termine_recesso_at,conferma_esito"
       )
       .eq("id", richiestaId)
       .maybeSingle();
@@ -60,6 +60,10 @@ export async function inviaEmailConfermaRecesso(
     if (!email) return { stato: "saltata", motivo: "email_assente" };
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return { stato: "saltata", motivo: "email_non_valida" };
+    }
+
+    if (String(richiesta.conferma_esito ?? "") === "inviata") {
+      return { stato: "inviata", messageId: null };
     }
 
     const ordineId = String(richiesta.ordine_id);

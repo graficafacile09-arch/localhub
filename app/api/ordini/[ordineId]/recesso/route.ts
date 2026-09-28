@@ -6,7 +6,7 @@ import { orderAccessCookieName, verifyOrderAccessToken } from "@/lib/cliente/ord
 import { creaRichiestaRecesso, getRecessoInfo } from "@/lib/cliente/recesso";
 import { inviaEmailConfermaRecesso } from "@/lib/cliente/recesso-email";
 
-async function risolviAccesso(ordineId: string): Promise<
+async function risolviAccesso(ordineId: string, tokenFornito?: string | null): Promise<
   | { ok: true; accesso: { clienteUserId: string; guestAutorizzato?: false } }
   | { ok: true; accesso: { clienteUserId: null; guestAutorizzato: true } }
   | { ok: false; response: Response }
@@ -23,7 +23,10 @@ async function risolviAccesso(ordineId: string): Promise<
     return { ok: true, accesso: { clienteUserId: sessione.user.id } };
   }
 
-  const token = (await cookies()).get(orderAccessCookieName(ordineId))?.value ?? null;
+  const token =
+    (typeof tokenFornito === "string" && tokenFornito.trim() ? tokenFornito.trim() : null) ??
+    (await cookies()).get(orderAccessCookieName(ordineId))?.value ??
+    null;
   if (!verifyOrderAccessToken(token, ordineId)) {
     return {
       ok: false,
@@ -35,7 +38,7 @@ async function risolviAccesso(ordineId: string): Promise<
 }
 
 export async function GET(
-  _request: Request,
+  request: Request,
   context: { params: Promise<{ ordineId: string }> }
 ) {
   const { ordineId } = await context.params;
@@ -73,6 +76,12 @@ export async function POST(
     return apiError("VALIDATION_ERROR", "Corpo della richiesta non valido.", 422);
   }
 
+  const accesso = await risolviAccesso(
+    ordineId,
+    typeof body.token === "string" ? body.token : null
+  );
+  if (!accesso.ok) return accesso.response;
+
   const righeRaw = Array.isArray(body.righe) ? body.righe : [];
   const righe = righeRaw.map((r) => {
     const x = (r ?? {}) as Record<string, unknown>;
@@ -93,7 +102,7 @@ export async function POST(
   if (!esito.ok) return apiError(esito.codice, esito.messaggio, esito.status);
 
   let confermaEmail: "inviata" | "saltata" | "fallita" = "saltata";
-  if (esito.clienteEmail) {
+  if (esito.clienteEmail && !esito.richiesta.giaEsistente) {
     const invio = await inviaEmailConfermaRecesso(esito.richiesta.id);
     confermaEmail = invio.stato;
   }
