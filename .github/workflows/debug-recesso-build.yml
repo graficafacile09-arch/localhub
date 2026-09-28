@@ -1,9 +1,9 @@
 name: Debug recesso build
 
 on:
-  push:
+  pull_request:
     branches:
-      - debug/recesso-build-20260928
+      - main
 
 jobs:
   build:
