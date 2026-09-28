@@ -1,10 +1,28 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { X } from "lucide-react";
 import PinoSprite from "./PinoSprite";
 
+/**
+ * Pino flottante con il suo messaggio di presentazione.
+ *
+ * Il fumetto è una card compatta con lo STESSO gradiente del pannello di Pino
+ * (from-cyan-700 to-sky-700): sembra parte dell'interfaccia del personaggio,
+ * non un box estraneo. Sta adiacente al personaggio (gap minimo) e ha una coda
+ * che punta verso di lui, così fumetto + Pino si leggono come un unico blocco.
+ *
+ * La X chiude completamente la presentazione (il personaggio flottante
+ * sparisce): l'assistente resta apribile dagli altri punti di ingresso già
+ * esistenti (header, homepage, /ricerca). È nell'angolo in alto a SINISTRA
+ * perché il personaggio sta sulla destra: su desktop la sua sagoma (scalata
+ * 2x) copre la parte destra del fumetto, quindi l'angolo destro non è un
+ * bersaglio cliccabile. Per lo stesso motivo il testo ha un padding destro
+ * riservato su desktop: nessuna parola finisce sotto Pino.
+ */
 export default function PinoHomepageHelper() {
   const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [chiuso, setChiuso] = useState(false);
   const dragRef = useRef<{ startX: number; startY: number; baseX: number; baseY: number; moved: boolean } | null>(null);
 
   const openAssistant = () => window.dispatchEvent(new Event("assistant:open"));
@@ -32,6 +50,9 @@ export default function PinoHomepageHelper() {
     if (!moved) openAssistant();
   };
 
+  // Chiusura completa della presentazione: né fumetto né personaggio flottante.
+  if (chiuso) return null;
+
   return (
     <div
       className="fixed bottom-5 right-5 z-[60] touch-none select-none"
@@ -42,16 +63,41 @@ export default function PinoHomepageHelper() {
       onPointerCancel={() => { dragRef.current = null; }}
       aria-label="Pino, assistente di InCittà"
     >
-      <div className="flex items-end gap-2">
-        <button
-          type="button"
-          onClick={(event) => { event.stopPropagation(); openAssistant(); }}
-          className="relative mb-6 max-w-[180px] rounded-[14px] rounded-br-[4px] border-2 border-blue-300 bg-blue-100 px-2.5 py-1.5 shadow-[0_7px_18px_-8px_rgba(30,64,175,0.42)] outline-none transition hover:-translate-y-0.5 hover:shadow-md focus-visible:ring-2 focus-visible:ring-blue-400"
-          aria-label="Apri l'assistente AI di InCittà"
-        >
-          <span className="block text-[11px] font-bold leading-[14px] text-blue-950">Ciao sono Pino, chatta con me.</span>
-          <span className="absolute -bottom-1.5 right-3 h-3 w-3 rotate-45 border-r-2 border-b-2 border-blue-300 bg-blue-100" aria-hidden="true" />
-        </button>
+      {/* gap-0.5: il fumetto è adiacente a Pino → un unico blocco visivo.
+          md:pr-6 riserva il bordo destro dove si sovrappone la sagoma di Pino. */}
+      <div className="flex items-end gap-0.5">
+        <div className="relative mb-4 flex max-w-[172px] items-start rounded-2xl bg-gradient-to-br from-cyan-700 to-sky-700 py-2 pl-2.5 pr-1.5 text-white shadow-[0_10px_26px_-12px_rgba(8,51,68,0.55)] sm:max-w-[188px] md:mb-14 md:pr-7">
+          {/* X: chiude completamente la presentazione. Stop della propagazione
+              su pointerdown/pointerup per non avviare il drag del personaggio
+              (l'onPointerUp del contenitore aprirebbe l'assistente). */}
+          <button
+            type="button"
+            onPointerDown={(event) => event.stopPropagation()}
+            onPointerUp={(event) => event.stopPropagation()}
+            onClick={(event) => { event.stopPropagation(); setChiuso(true); }}
+            className="mr-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/15 text-white ring-1 ring-white/30 transition hover:bg-white/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            aria-label="Chiudi Pino"
+            title="Chiudi Pino"
+          >
+            <X className="h-3.5 w-3.5" strokeWidth={2.75} aria-hidden />
+          </button>
+          {/* Testo cliccabile: apre l'assistente (comportamento invariato) */}
+          <button
+            type="button"
+            onClick={(event) => { event.stopPropagation(); openAssistant(); }}
+            className="min-w-0 flex-1 rounded-lg text-left outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+            aria-label="Apri l'assistente AI di InCittà"
+          >
+            <span className="block text-[12px] font-bold leading-[16px] tracking-tight text-white sm:text-[13px] sm:leading-[17px]">
+              Ciao sono Pino, chatta con me.
+            </span>
+          </button>
+          {/* Coda del fumetto verso Pino (lato destro, all'altezza del busto) */}
+          <span
+            aria-hidden="true"
+            className="absolute -right-[5px] top-1/2 h-2.5 w-2.5 -translate-y-1/2 rotate-45 rounded-[2px] bg-sky-700"
+          />
+        </div>
         <div
           role="button"
           tabIndex={0}
@@ -67,7 +113,9 @@ export default function PinoHomepageHelper() {
           <PinoSprite mood="neutral" className="h-[92px] w-[71px] drop-shadow-[0_7px_10px_rgba(15,23,42,0.2)]" />
         </div>
       </div>
-      <span className="sr-only">Trascina Pino per spostarlo oppure clicca per aprire la ricerca AI.</span>
+      <span className="sr-only">
+        Trascina Pino per spostarlo oppure clicca per aprire la ricerca AI. Usa la X per chiudere la presentazione.
+      </span>
     </div>
   );
 }
