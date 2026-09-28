@@ -22,6 +22,7 @@ export default function RecessoOrdine({ ordineId, token = null }) {
   const [selezionate, setSelezionate] = useState({});
   const [motivo, setMotivo] = useState("");
   const [nota, setNota] = useState("");
+  const [conferma, setConferma] = useState(false);
 
   useEffect(() => {
     let attivo = true;
@@ -223,6 +224,13 @@ export default function RecessoOrdine({ ordineId, token = null }) {
               className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm"
             />
 
+            <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-600">
+              Verifica gli articoli selezionati e conferma esplicitamente l’invio della dichiarazione.
+            </div>
+            <label className="mt-3 flex items-start gap-2 text-xs text-slate-600">
+              <input type="checkbox" checked={conferma} onChange={(e) => setConferma(e.target.checked)} className="mt-0.5 h-4 w-4 rounded border-slate-300 text-blue-600" />
+              <span>Confermo di voler trasmettere la richiesta di recesso.</span>
+            </label>
             <div className="mt-4 flex justify-end gap-2">
               <button
                 type="button"
@@ -234,7 +242,7 @@ export default function RecessoOrdine({ ordineId, token = null }) {
               </button>
               <button
                 type="button"
-                disabled={busy}
+                disabled={busy || !conferma}
                 onClick={() => void invia()}
                 className="rounded-xl bg-yellow-400 px-4 py-2.5 text-sm font-bold text-blue-800"
               >
