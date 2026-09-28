@@ -159,6 +159,10 @@ async function eseguiTool(
 // usa la richiesta precedente come soggetto della ricerca.
 const RE_VINCOLO = /^(e\s+)?(sotto|sopra|massimo|minimo|meno di|più di|piu di|più economico|piu economico|che altro|più caro|piu caro|oltre|fino a|tra)\b/i;
 
+// Intenzione salute → farmacia: usata anche nella risposta deterministica.
+const REQUIRES_PHARMACY_REASON =
+  /\bfebbre\b|\btemperatura alta\b|\bmal di gola\b|\braffreddore\b|\binfluenza\b|\btosse\b/i;
+
 function eQuerySostanziale(q: string): string | null {
   const t = q.trim();
   if (!t || t.length <= 3) return null;
@@ -198,6 +202,13 @@ function pianoPredefinito(
     /che tempo fa|com[’']e il tempo|come è il tempo|come sara il tempo|come sarà il tempo|meteo|previsioni|piove|piovera|pioverà|temperatura|quanti gradi|gradi ci sono/i;
   const RE_FARMACIA_WIDGET =
     /di turno|farmacia.*apert[aoe]?|farmacie.*apert[aei]?|apert[aoe]?.*farmaci|farmacia.*adesso|farmacie.*adesso|farmacia.*ora|farmacie.*ora/i;
+
+  if (REQUIRES_PHARMACY_REASON.test(ultimo)) {
+    return {
+      directReply: null,
+      tools: [{ tool: "searchPharmacies", params: { stato: "turno", limit: 8 } }],
+    };
+  }
 
   if (RE_METEO.test(ultimo)) {
     return {
@@ -415,6 +426,120 @@ function fallbackTestuale(
   return sezioni.join("\n\n") + nota;
 }
 
+// ─── Risposte deterministiche per dati sensibili al falso positivo ───────────
+// Meteo e stato farmacie non devono mai essere "interpretati" da Gemini:
+// una volta recuperati i dati, la risposta viene composta qui usando soltanto
+// ciò che la fonte ha realmente restituito. Questo elimina le allucinazioni
+// anche quando il modello finale sarebbe tentato di completare i buchi.
+
+function rispostaMeteoDeterministica(meteo: Awaited<ReturnType<typeof getWeatherCastrovillari>>): string {
+  if (!meteo) {
+    return "Al momento non riesco a verificare il meteo di Castrovillari. Non ti do una previsione inventata: riprova tra poco.";
+  }
+
+  const oggiPioggia =
+    meteo.oggi.probabilitaPioggia != null
+      ? ", probabilità di pioggia " + meteo.oggi.probabilitaPioggia + "%"
+      : "";
+  const domaniPioggia =
+    meteo.domani.probabilitaPioggia != null
+      ? ", probabilità di pioggia " + meteo.domani.probabilitaPioggia + "%"
+      : "";
+
+  return (
+    "A Castrovillari ora ci sono " + meteo.temperatura + "°C, " +
+    meteo.descrizione.toLowerCase() + ", con temperatura percepita di " +
+    meteo.temperaturaPercepita + "°C e vento a " + meteo.ventoKmh + " km/h. " +
+    "Oggi: " + meteo.oggi.minima + "° / " + meteo.oggi.massima + "°" +
+    oggiPioggia + ". " +
+    "Domani: " + meteo.domani.minima + "° / " + meteo.domani.massima + "°, " +
+    meteo.domani.descrizione.toLowerCase() + domaniPioggia + ". " +
+    "Dati aggiornati alle " + meteo.aggiornato + "."
+  );
+}
+
+function rispostaFarmacieDeterministica(
+  farmacie: Awaited<ReturnType<typeof searchPharmacies>>,
+  statoRichiesto: ToolParams["stato"] = "turno",
+  motivo?: string
+): string {
+  if (statoRichiesto === "aperte") {
+    const aperte = farmacie.filter((f) => f.stato === "aperta").slice(0, 5);
+    if (aperte.length === 0) {
+      return "Al momento non risulta alcuna farmacia con stato APERTA verificato nei dati disponibili per Castrovillari. Non ti indico farmacie non verificate come aperte.";
+    }
+
+    const elenco = aperte
+      .map((f) => {
+        const dettagli = [
+          f.indirizzo ? f.indirizzo : null,
+          f.telefono ? "tel. " + f.telefono : null,
+          f.apertura ? "orari: " + f.apertura : null,
+        ]
+          .filter(Boolean)
+          .join(" — ");
+        return "- **" + f.nome + "**" + (dettagli ? " — " + dettagli : "");
+      })
+      .join("\n");
+
+    return "Dai dati verificati di oggi risultano aperte:\n" + elenco;
+  }
+
+  if (statoRichiesto === "tutte") {
+    if (farmacie.length === 0) {
+      return "Al momento non ho dati verificati sulle farmacie di Castrovillari.";
+    }
+
+    const elenco = farmacie
+      .slice(0, 8)
+      .map((f) => {
+        const stato =
+          f.turno ? "DI TURNO" : f.stato === "aperta" ? "APERTA" : f.stato === "chiusa" ? "CHIUSA" : "NON VERIFICATA";
+        const dettagli = [
+          f.indirizzo ? f.indirizzo : null,
+          f.turno ? f.turno : null,
+          f.telefono ? "tel. " + f.telefono : null,
+        ]
+          .filter(Boolean)
+          .join(" — ");
+        return "- **" + f.nome + "** — " + stato + (dettagli ? " — " + dettagli : "");
+      })
+      .join("\n");
+
+    return "Farmacie per cui ho dati disponibili:\n" + elenco;
+  }
+
+  const turno = farmacie.filter((f) => Boolean(f.turno)).slice(0, 3);
+
+  if (turno.length === 0) {
+    const prefisso = motivo ? "Per " + motivo + ", " : "";
+    return (
+      prefisso +
+      "al momento non risulta alcuna farmacia di turno verificata nei dati disponibili per Castrovillari. " +
+      "Non ti indico un nome non verificato, per evitare un falso positivo."
+    );
+  }
+
+  const elenco = turno
+    .map((f) => {
+      const dettagli = [
+        f.turno ? f.turno : null,
+        f.indirizzo ? f.indirizzo : null,
+        f.telefono ? "tel. " + f.telefono : null,
+      ]
+        .filter(Boolean)
+        .join(" — ");
+      return "- **" + f.nome + "**" + (dettagli ? " — " + dettagli : "");
+    })
+    .join("\n");
+
+  const prefisso = motivo
+    ? "Per " + motivo + ", puoi rivolgerti a una farmacia di turno. Dai dati verificati di oggi risulta:\n"
+    : "Dai dati verificati di oggi risulta:\n";
+
+  return prefisso + elenco;
+}
+
 // ─── Orchestratore principale ────────────────────────────────────────────────
 
 export async function chatConAssistente(
@@ -520,7 +645,37 @@ export async function chatConAssistente(
     };
   }
 
-  // 3) Fallback: ricerca completa SOLO se la selezione LLM è fallita.
+  // 3) Dati deterministici: meteo e farmacie non passano MAI dal modello
+  // finale. Se il dato non è disponibile, lo dichiariamo esplicitamente.
+  const haMeteo = invocazioni.some((t) => t.tool === "getWeather");
+  const haFarmacie = invocazioni.some((t) => t.tool === "searchPharmacies");
+
+  if (haMeteo) {
+    return {
+      risposta: rispostaMeteoDeterministica(meteo),
+      negozi: [],
+      prodotti: [],
+      processingMs: Date.now() - inizio,
+      source: "assistente",
+    };
+  }
+
+  if (haFarmacie) {
+    const statoFarmacia =
+      invocazioni.find((t) => t.tool === "searchPharmacies")?.params?.stato ?? "turno";
+    const motivoFebbre = REQUIRES_PHARMACY_REASON.test(domanda)
+      ? "i sintomi che hai indicato"
+      : undefined;
+    return {
+      risposta: rispostaFarmacieDeterministica(farmacie, statoFarmacia, motivoFebbre),
+      negozi: [],
+      prodotti: [],
+      processingMs: Date.now() - inizio,
+      source: "assistente",
+    };
+  }
+
+  // 4) Fallback: ricerca completa SOLO se la selezione LLM è fallita.
   // Se l'LLM ha scelto tool che non hanno trovato nulla, i risultati sono
   // davvero vuoti → la risposta finale lo dirà onestamente.
   // Se l'LLM non ha scelto tool né risposta diretta (es. "va bene" senza
@@ -544,7 +699,7 @@ export async function chatConAssistente(
     };
   }
 
-  // 4) Contesto strutturato per la risposta finale
+  // 5) Contesto strutturato per la risposta finale
   const risultati: RisultatiRecuperati = {
     negozi: negozi.map((n) => ({
       nome: n.nome,
@@ -589,7 +744,7 @@ export async function chatConAssistente(
     ? `${contesto}\n\n${notaVincolo}`
     : contesto;
 
-  // 5) Risposta finale AI
+  // 6) Risposta finale AI
   let risposta: string;
   try {
     risposta = await callGeminiText({

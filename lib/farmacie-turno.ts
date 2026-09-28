@@ -22,7 +22,7 @@ export type FarmaciaTurno = {
   nome: string;
   /** Indirizzo completo (via, civico, CAP, città, provincia). */
   indirizzo: string | null;
-  stato: "aperta" | "chiusa" | null;
+  stato: "aperta" | "chiusa" | "turno" | null;
   /** Orario di apertura di oggi (es. "8:30-13:00 e 16:00-21:00"). */
   apertura: string | null;
   /** Testo del turno (es. "Tutto il giorno fino a domani") — presente solo
@@ -88,7 +88,8 @@ export function parseFarmacieTurno(html: string): FarmaciaTurno[] {
       .toUpperCase();
     const orarioRaw = blocco.match(/class='orario'>([\s\S]*?)<\/a>/)?.[1] ?? "";
     const apertura = orarioRaw.match(/Apertura:\s*([^<]+)/)?.[1]?.trim() ?? null;
-    const turno = orarioRaw.match(/Turno:\s*([^<]+)/)?.[1]?.trim() ?? null;
+    // La fonte usa sia "Turno:" sia "Turno*:" (nota l'asterisco).
+    const turno = orarioRaw.match(/Turno\*?:\s*([^<]+)/)?.[1]?.trim() ?? null;
     const telefono = blocco.match(/href="tel:([0-9+]+)"/)?.[1] ?? null;
     const idf = blocco.match(/idf=(\d+)/)?.[1] ?? null;
 
@@ -99,9 +100,11 @@ export function parseFarmacieTurno(html: string): FarmaciaTurno[] {
       stato:
         statoRaw === "CHIUSA" || statoRaw === "CHIUSO"
           ? "chiusa"
-          : statoRaw === "APERTA" || statoRaw === "APERTO"
-            ? "aperta"
-            : null,
+          : statoRaw === "TURNO"
+            ? "turno"
+            : statoRaw === "APERTA" || statoRaw === "APERTO"
+              ? "aperta"
+              : null,
       apertura: apertura ? decodifica(apertura) : null,
       turno: turno ? decodifica(turno) : null,
       telefono,
