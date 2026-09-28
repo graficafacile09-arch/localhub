@@ -231,11 +231,6 @@ export default async function RicercaPage({
             </h1>
             {ricercaAttiva ? (
           <>
-            <PinoSearchHelper
-              query={termine}
-              hasResults={prodotti.length > 0 || negozi.length > 0}
-              resultCount={prodotti.length + negozi.length}
-            />
             <div className="lg:grid lg:grid-cols-[250px,1fr] lg:gap-5">
             {/* Sidebar filtri (desktop) */}
             <aside className="hidden lg:block">
