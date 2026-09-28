@@ -1,5 +1,7 @@
 "use client";
 
+// Withdrawal UI — production retry marker.
+
 import { useEffect, useMemo, useState } from "react";
 
 function euro(value) {
