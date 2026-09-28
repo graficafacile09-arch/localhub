@@ -39,6 +39,15 @@ export type MetodoSpedizioneNegozioInput = {
   ordine_mostra: number;
 };
 
+export type CodiceEsclusioneRecesso =
+  | "prodotto_personalizzato"
+  | "prodotto_deperibile"
+  | "bene_sigillato_igiene_salute"
+  | "servizio_tempo_libero_data_specifica"
+  | "contenuto_digitale_avviato"
+  | "servizio_urgente_su_richiesta"
+  | "altra_esclusione_prevista";
+
 export type MerchantProduct = {
   id: string;
   negozio_id: string;
@@ -75,6 +84,9 @@ export type MerchantProduct = {
   prodotto_tipico: boolean;
   /** True se il prodotto è in offerta (vetrina "Offerte", badge rosso). */
   prodotto_offerta: boolean;
+  recesso_applicabile: boolean;
+  recesso_esclusione_codice: CodiceEsclusioneRecesso | null;
+  recesso_esclusione_dettaglio: string | null;
   created_at: string | null;
   updated_at: string | null;
 };
@@ -112,6 +124,10 @@ export type MerchantProductInput = {
   prodottoTipico?: boolean;
   /** True se il prodotto è in offerta (vetrina "Offerte", badge rosso). */
   prodottoOfferta?: boolean;
+  /** True = recesso ordinario applicabile; false = con esclusione codificata. */
+  recessoApplicabile?: boolean;
+  recessoEsclusioneCodice?: CodiceEsclusioneRecesso | null;
+  recessoEsclusioneDettaglio?: string | null;
 };
 
 export type MerchantQueryResult<T> = {

@@ -84,6 +84,41 @@ function validateProductPayload(payload: Partial<MerchantProductInput>) {
   if (payload.prodottoOfferta !== undefined && typeof payload.prodottoOfferta !== "boolean") {
     return "Il campo prodotto_offerta deve essere booleano.";
   }
+  const esclusioniRecesso = new Set([
+    "prodotto_personalizzato",
+    "prodotto_deperibile",
+    "bene_sigillato_igiene_salute",
+    "servizio_tempo_libero_data_specifica",
+    "contenuto_digitale_avviato",
+    "servizio_urgente_su_richiesta",
+    "altra_esclusione_prevista",
+  ]);
+  if (
+    payload.recessoApplicabile !== undefined &&
+    typeof payload.recessoApplicabile !== "boolean"
+  ) {
+    return "Il campo recesso_applicabile deve essere booleano.";
+  }
+  if (
+    payload.recessoEsclusioneCodice !== undefined &&
+    payload.recessoEsclusioneCodice !== null &&
+    !esclusioniRecesso.has(payload.recessoEsclusioneCodice)
+  ) {
+    return "Codice di esclusione del recesso non valido.";
+  }
+  if (
+    payload.recessoEsclusioneDettaglio !== undefined &&
+    payload.recessoEsclusioneDettaglio !== null &&
+    typeof payload.recessoEsclusioneDettaglio !== "string"
+  ) {
+    return "Dettaglio dell'esclusione del recesso non valido.";
+  }
+  if (
+    (payload.recessoApplicabile === false && !payload.recessoEsclusioneCodice) ||
+    (payload.recessoApplicabile === true && payload.recessoEsclusioneCodice)
+  ) {
+    return "La configurazione del diritto di recesso non è coerente.";
+  }
   if (payload.sottocategoria !== undefined && payload.sottocategoria !== null && typeof payload.sottocategoria !== "string") {
     return "Formato sottocategoria non valido.";
   }
@@ -173,6 +208,9 @@ export async function PUT(
     originePubblicazione: payload.originePubblicazione ?? "manuale",
     prodottoTipico: payload.prodottoTipico ?? false,
     prodottoOfferta: payload.prodottoOfferta ?? false,
+    recessoApplicabile: payload.recessoApplicabile ?? true,
+    recessoEsclusioneCodice: payload.recessoEsclusioneCodice ?? null,
+    recessoEsclusioneDettaglio: payload.recessoEsclusioneDettaglio ?? null,
     // Campi arricchiti (G1): inoltrati al data layer, che li persiste.
     descrizioneCompleta: payload.descrizioneCompleta,
     caratteristiche: payload.caratteristiche,
