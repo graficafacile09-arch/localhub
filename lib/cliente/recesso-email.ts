@@ -84,34 +84,34 @@ export async function inviaEmailConfermaRecesso(
         const nome = escapeHtml(String(r.nome_prodotto ?? "Prodotto"));
         const q = Number(r.quantita_richiesta ?? 0);
         const prezzo = Number(r.prezzo_unitario ?? 0).toFixed(2).replace(".", ",");
-        return \`<li style="margin:0 0 8px;color:#334155;">\${nome} — \${q} × €\${prezzo}</li>\`;
+        return `<li style="margin:0 0 8px;color:#334155;">${nome} — ${q} × €${prezzo}</li>`;
       })
       .join("");
 
-    const html = \`<!DOCTYPE html>
+    const html = `<!DOCTYPE html>
 <html lang="it">
 <body style="margin:0;background:#f1f5f9;font-family:Arial,Helvetica,sans-serif;">
   <div style="max-width:560px;margin:0 auto;padding:24px 16px;">
     <div style="background:#2563eb;border-radius:16px 16px 0 0;padding:22px;text-align:center;color:#fff;">
       <div style="font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:#dbeafe;font-weight:700;">Richiesta di recesso</div>
-      <div style="margin-top:7px;font-size:21px;font-weight:800;">\${escapeHtml(numero)}</div>
+      <div style="margin-top:7px;font-size:21px;font-weight:800;">${escapeHtml(numero)}</div>
     </div>
     <div style="background:#fff;border-radius:0 0 16px 16px;padding:24px;">
-      <p style="margin:0;font-size:15px;color:#0f172a;">Ciao \${escapeHtml(String(richiesta.cliente_nome ?? ""))},</p>
+      <p style="margin:0;font-size:15px;color:#0f172a;">Ciao ${escapeHtml(String(richiesta.cliente_nome ?? ""))},</p>
       <p style="margin:10px 0 0;font-size:14px;line-height:1.6;color:#334155;">
         abbiamo registrato la tua richiesta di recesso relativa all'ordine collegato.
       </p>
       <div style="margin-top:18px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:14px;">
-        <p style="margin:0;font-size:13px;color:#1e3a8a;"><strong>Data e ora di ricezione:</strong> \${escapeHtml(ricevuta)}</p>
-        <p style="margin:7px 0 0;font-size:13px;color:#1e3a8a;"><strong>Termine ordinario:</strong> \${escapeHtml(termine)}</p>
+        <p style="margin:0;font-size:13px;color:#1e3a8a;"><strong>Data e ora di ricezione:</strong> ${escapeHtml(ricevuta)}</p>
+        <p style="margin:7px 0 0;font-size:13px;color:#1e3a8a;"><strong>Termine ordinario:</strong> ${escapeHtml(termine)}</p>
       </div>
       <p style="margin:20px 0 7px;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#64748b;font-weight:700;">Articoli indicati</p>
-      <ul style="padding-left:20px;margin:0;">\${righeHtml}</ul>
+      <ul style="padding-left:20px;margin:0;">${righeHtml}</ul>
       <p style="margin:20px 0 0;font-size:13px;line-height:1.6;color:#475569;">
         La richiesta è stata trasmessa al venditore. Le istruzioni operative sul reso e le successive verifiche saranno comunicate nella gestione della pratica.
       </p>
       <div style="margin-top:22px;text-align:center;">
-        <a href="\${linkOrdine}" style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;padding:12px 24px;border-radius:12px;font-weight:700;font-size:14px;">Visualizza ordine</a>
+        <a href="${linkOrdine}" style="display:inline-block;background:#2563eb;color:#fff;text-decoration:none;padding:12px 24px;border-radius:12px;font-weight:700;font-size:14px;">Visualizza ordine</a>
       </div>
       <p style="margin:20px 0 0;font-size:11px;line-height:1.6;color:#94a3b8;text-align:center;">
         Il messaggio costituisce conferma della trasmissione della richiesta tramite InCittà.
@@ -119,7 +119,7 @@ export async function inviaEmailConfermaRecesso(
     </div>
   </div>
 </body>
-</html>\`;
+</html>`;
 
     const apiKey = process.env.RESEND_API_KEY;
     if (!apiKey) throw new Error("RESEND_API_KEY non configurata");
@@ -128,7 +128,7 @@ export async function inviaEmailConfermaRecesso(
       resend.emails.send({
         from: FROM_EMAIL,
         to: email,
-        subject: \`Ricevuta richiesta di recesso \${numero} — InCittà\`,
+        subject: `Ricevuta richiesta di recesso ${numero} — InCittà`,
         html,
       }),
       RESEND_TIMEOUT_MS

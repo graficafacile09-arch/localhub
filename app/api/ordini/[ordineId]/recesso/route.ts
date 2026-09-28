@@ -109,8 +109,8 @@ export async function POST(
     void inviaEmailNotificaVenditore(esito.richiesta.id);
   }
 
-  revalidatePath(\`/cliente/ordini/\${ordineId}\`);
-  revalidatePath(\`/ordini/conferma/\${ordineId}\`);
+  revalidatePath(`/cliente/ordini/${ordineId}`);
+  revalidatePath(`/ordini/conferma/${ordineId}`);
 
   return apiOk({
     richiesta: esito.richiesta,

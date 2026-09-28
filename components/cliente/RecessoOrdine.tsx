@@ -91,8 +91,8 @@ export default function RecessoOrdine({ ordineId, token = null }: Props) {
     let attivo = true;
     async function carica() {
       try {
-        const qs = token ? \`?token=\${encodeURIComponent(token)}\` : "";
-        const res = await fetch(\`/api/ordini/\${encodeURIComponent(ordineId)}/recesso\${qs}\`, {
+        const qs = token ? `?token=${encodeURIComponent(token)}` : "";
+        const res = await fetch(`/api/ordini/${encodeURIComponent(ordineId)}/recesso${qs}`, {
           cache: "no-store",
         });
         const data = (await res.json().catch(() => null)) as { data?: Info; error?: { message?: string } } | null;
@@ -136,7 +136,7 @@ export default function RecessoOrdine({ ordineId, token = null }: Props) {
     setInvio(true);
     setErrore(null);
     try {
-      const res = await fetch(\`/api/ordini/\${encodeURIComponent(ordineId)}/recesso\`, {
+      const res = await fetch(`/api/ordini/${encodeURIComponent(ordineId)}/recesso`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -159,8 +159,8 @@ export default function RecessoOrdine({ ordineId, token = null }: Props) {
       const richiesta = data?.data?.richiesta;
       setConferma(
         data?.data?.giaEsistente
-          ? \`Esiste già una richiesta attiva (\${richiesta?.numero ?? "pratica"}).\`
-          : \`Richiesta \${richiesta?.numero ?? ""} registrata. La conferma è stata presa in carico.\`
+          ? `Esiste già una richiesta attiva (${richiesta?.numero ?? "pratica"}).`
+          : `Richiesta ${richiesta?.numero ?? ""} registrata. La conferma è stata presa in carico.`
       );
       setAperto(false);
       setInfo((prev) =>
@@ -214,7 +214,7 @@ export default function RecessoOrdine({ ordineId, token = null }: Props) {
                 {info.richiestaAttiva
                   ? "La tua richiesta è già stata registrata e segue il normale flusso di gestione."
                   : info.termineRecessoAt
-                    ? \`Puoi trasmettere la richiesta entro il \${formattaData(info.termineRecessoAt)}.\`
+                    ? `Puoi trasmettere la richiesta entro il ${formattaData(info.termineRecessoAt)}.`
                     : "Puoi trasmettere la richiesta anche prima della consegna; il termine ordinario decorre dalla consegna del prodotto."
                 }
               </p>
@@ -245,7 +245,7 @@ export default function RecessoOrdine({ ordineId, token = null }: Props) {
                           }))
                         }
                         className="h-4 w-4 rounded border-slate-300 text-blue-600"
-                        aria-label={\`Seleziona \${r.nomeProdotto}\`}
+                        aria-label={`Seleziona ${r.nomeProdotto}`}
                       />
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-bold text-slate-800">{r.nomeProdotto}</p>
@@ -265,7 +265,7 @@ export default function RecessoOrdine({ ordineId, token = null }: Props) {
                           }))
                         }
                         className="w-20 rounded-lg border border-slate-200 px-2 py-1.5 text-center text-sm font-bold text-slate-800"
-                        aria-label={\`Quantità \${r.nomeProdotto}\`}
+                        aria-label={`Quantità ${r.nomeProdotto}`}
                       />
                     </div>
                   );
@@ -322,9 +322,9 @@ export default function RecessoOrdine({ ordineId, token = null }: Props) {
                     })}
                   </div>
                   <div>
-                    <label htmlFor={\`recesso-motivo-\${ordineId}\`} className="text-xs font-bold uppercase tracking-wider text-slate-500">Motivo (facoltativo)</label>
+                    <label htmlFor={`recesso-motivo-${ordineId}`} className="text-xs font-bold uppercase tracking-wider text-slate-500">Motivo (facoltativo)</label>
                     <textarea
-                      id={\`recesso-motivo-\${ordineId}\`}
+                      id={`recesso-motivo-${ordineId}`}
                       value={motivo}
                       onChange={(e) => setMotivo(e.target.value)}
                       maxLength={500}
@@ -333,9 +333,9 @@ export default function RecessoOrdine({ ordineId, token = null }: Props) {
                     />
                   </div>
                   <div>
-                    <label htmlFor={\`recesso-note-\${ordineId}\`} className="text-xs font-bold uppercase tracking-wider text-slate-500">Nota al venditore (facoltativa)</label>
+                    <label htmlFor={`recesso-note-${ordineId}`} className="text-xs font-bold uppercase tracking-wider text-slate-500">Nota al venditore (facoltativa)</label>
                     <textarea
-                      id={\`recesso-note-\${ordineId}\`}
+                      id={`recesso-note-${ordineId}`}
                       value={note}
                       onChange={(e) => setNote(e.target.value)}
                       maxLength={1500}
