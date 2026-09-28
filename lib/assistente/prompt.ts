@@ -73,6 +73,7 @@ TOOL:
 - searchProducts: query + maxPrice/minPrice (numeri interi, euro) + opt {categoria, sottocategoria} → prodotti
 - searchOffers: query opzionale → offerte/promozioni/sconti
 - searchEvents: query opzionale → eventi
+- searchAll: query → ricerca trasversale su negozi, prodotti, offerte, eventi e categorie; usalo per richieste ampie o ambigue
 - getCategories: nessun parametro → categorie con conteggio negozi
 - getWeather: nessun parametro → meteo aggiornato per Castrovillari, con condizioni attuali e previsione
 - searchPharmacies: stato "aperte" | "turno" | "tutte" → dati del widget Farmacia di turno di Castrovillari
@@ -90,6 +91,7 @@ SCELTA TOOL:
 - "mangiare"/"ristorante"/"pizza"/"cena"/"dove posso mangiare" → searchStores.
 - prodotto/regalo con prezzo → searchProducts con maxPrice/minPrice.
 - "quale negozio vende X" → searchStores.
+- richiesta ampia senza un oggetto unico ("cosa posso trovare?", "cerco qualcosa per casa", "cosa offre InCittà") → searchAll, ma non usare searchAll per meteo o farmacia con stato/turno.
 - "meteo", "che tempo fa", "piove", "temperatura", "previsioni" → getWeather.
 - "quale farmacia è aperta", "farmacia aperta adesso", "farmacie aperte" → searchPharmacies con stato "aperte". Considera aperte SOLO le righe con stato esattamente "aperta".
 - "quale farmacia è di turno", "farmacia di turno", "farmacie di turno" → searchPharmacies con stato "turno". Il campo turno è la sola prova del turno.
