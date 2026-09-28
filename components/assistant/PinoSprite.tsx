@@ -85,11 +85,7 @@ export default function PinoSprite({
       ctx.imageSmoothingQuality = "high";
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Keep the exact supplied Pino artwork, but improve the source rendering:
-      // slightly restore color/contrast before segmentation so the character
-      // does not look washed out after the white/gray background is removed.
-      ctx.filter = "saturate(1.12) contrast(1.035) brightness(1.015)";
-
+      // Draw the supplied Pino artwork unchanged. Do not alter its colors or shape.
       ctx.drawImage(
         img,
         FRAME_INDEX[mood] * frameWidth,
@@ -121,9 +117,12 @@ export default function PinoSprite({
         const b = d[idx * 4 + 2];
         const max = Math.max(r, g, b);
         const min = Math.min(r, g, b);
-        // Only classify near-white, low-chroma pixels as removable background.
-        // This keeps Pino's enclosed white details untouched.
-        return min > 222 && max - min < 24;
+        const chroma = (max - min) / 255;
+        const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+        // The supplied image has a light-gray studio background, not pure white.
+        // Use a low-chroma + lightness test so gray areas between the hair and legs
+        // are treated as background while Pino's darker/saturated artwork remains.
+        return min > 180 && chroma < 0.105 && luminance > 0.69;
       };
 
       const push = (x: number, y: number) => {
@@ -152,20 +151,24 @@ export default function PinoSprite({
         if (y < h - 1) push(x, y + 1);
       }
 
-      // Build a small feather around the detected background. JPEG compression
-      // leaves a pale gray fringe around fine details such as the hair. A slightly
-      // wider feather lets us remove that fringe without changing Pino's silhouette.
+      // Clean a two-pixel boundary around the detected background. This is the
+      // important part for the gray JPEG fringe: only light, low-chroma pixels
+      // outside the character are removed, so Pino itself is not reshaped.
       const feather = new Uint8Array(w * h);
       for (let p = 0; p < w * h; p++) {
         if (visited[p]) continue;
         const x = p % w;
         const y = Math.floor(p / w);
-        const near =
-          (x > 0 && visited[p - 1]) ||
-          (x < w - 1 && visited[p + 1]) ||
-          (y > 0 && visited[p - w]) ||
-          (y < h - 1 && visited[p + w]);
-        if (near) feather[p] = 1;
+        for (let dy = -2; dy <= 2 && !feather[p]; dy++) {
+          for (let dx = -2; dx <= 2; dx++) {
+            if (Math.abs(dx) + Math.abs(dy) > 2) continue;
+            const nx = x + dx, ny = y + dy;
+            if (nx >= 0 && nx < w && ny >= 0 && ny < h && visited[ny * w + nx]) {
+              feather[p] = 1;
+              break;
+            }
+          }
+        }
       }
 
       for (let p = 0; p < w * h; p++) {
@@ -177,30 +180,26 @@ export default function PinoSprite({
         if (!feather[p]) continue;
 
         const r = d[i], g = d[i + 1], b = d[i + 2];
-        const minRgb = Math.min(r, g, b);
         const maxRgb = Math.max(r, g, b);
+        const minRgb = Math.min(r, g, b);
         const chroma = (maxRgb - minRgb) / 255;
         const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
 
-        // Remove the light, low-chroma JPEG fringe much more decisively.
-        // Saturated/darker Pino pixels are kept opaque, so the character itself
-        // is not recolored or reshaped.
-        const backgroundLike = Math.max(0, Math.min(1,
-          (luminance - 0.68) / 0.28
-        )) * Math.max(0, Math.min(1, 1 - chroma * 7));
+        // Hard-remove the pale gray fringe instead of leaving a translucent gray
+        // outline. Darker/saturated Pino pixels stay fully opaque.
+        if (luminance > 0.68 && chroma < 0.13) {
+          d[i + 3] = 0;
+          continue;
+        }
 
-        const alpha = Math.max(
-          0.08,
-          Math.min(1, 1 - backgroundLike * 0.92)
-        );
-
+        // For the final antialiased edge pixel, remove only the background
+        // contribution and keep the actual Pino color.
+        const alpha = Math.max(0.25, Math.min(1, 1 - Math.max(0, (luminance - 0.55) / 0.45) * Math.max(0, 1 - chroma * 5)));
         if (alpha < 0.995) {
-          // Unmix the light studio background from the boundary pixel so the
-          // remaining semi-transparent edge does not carry a gray/white halo.
-          const bg = 245;
-          d[i] = Math.max(0, Math.min(255, Math.round((r - bg * (1 - alpha)) / Math.max(alpha, 0.01))));
-          d[i + 1] = Math.max(0, Math.min(255, Math.round((g - bg * (1 - alpha)) / Math.max(alpha, 0.01))));
-          d[i + 2] = Math.max(0, Math.min(255, Math.round((b - bg * (1 - alpha)) / Math.max(alpha, 0.01))));
+          const bg = 235;
+          d[i] = Math.max(0, Math.min(255, Math.round((r - bg * (1 - alpha)) / alpha)));
+          d[i + 1] = Math.max(0, Math.min(255, Math.round((g - bg * (1 - alpha)) / alpha)));
+          d[i + 2] = Math.max(0, Math.min(255, Math.round((b - bg * (1 - alpha)) / alpha)));
           d[i + 3] = Math.round(alpha * 255);
         }
       }
