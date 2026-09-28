@@ -23,6 +23,8 @@ import {
   searchEvents,
   getCategoriesList,
   searchAll,
+  getWeatherCastrovillari,
+  searchPharmacies,
   type ToolParams,
 } from "./tools";
 import {
@@ -93,8 +95,10 @@ async function eseguiTool(
   offerte: Awaited<ReturnType<typeof searchOffers>>;
   eventi: Awaited<ReturnType<typeof searchEvents>>;
   categorie: Awaited<ReturnType<typeof getCategoriesList>>;
+  meteo: Awaited<ReturnType<typeof getWeatherCastrovillari>>;
+  farmacie: Awaited<ReturnType<typeof searchPharmacies>>;
 }> {
-  const vuoto = { negozi: [], prodotti: [], offerte: [], eventi: [], categorie: [] };
+  const vuoto = { negozi: [], prodotti: [], offerte: [], eventi: [], categorie: [], meteo: null, farmacie: [] };
   const limit = params?.limit;
 
   switch (nome) {
@@ -130,9 +134,15 @@ async function eseguiTool(
       return { ...vuoto, eventi: await searchEvents(params?.query?.trim() || undefined, limit) };
     case "getCategories":
       return { ...vuoto, categorie: await getCategoriesList() };
-    case "searchOffers":
-    case "searchEvents":
-    case "getCategories":
+    case "getWeather":
+      return { ...vuoto, meteo: await getWeatherCastrovillari() };
+    case "searchPharmacies": {
+      const stato =
+        params?.stato === "aperte" || params?.stato === "turno" || params?.stato === "tutte"
+          ? params.stato
+          : "turno";
+      return { ...vuoto, farmacie: await searchPharmacies(stato, limit) };
+    }
     default:
       return vuoto;
   }
@@ -178,6 +188,31 @@ function pianoPredefinito(
 
   const RE_PIATTAFORMA =
     /che cos'è incittà|che cos'e incitta|cos'è incittà|come funziona|chi sei|cosa sei|cos'è il sito/;
+  const RE_METEO =
+    /che tempo fa|com[’']e il tempo|come è il tempo|come sara il tempo|come sarà il tempo|meteo|previsioni|piove|piovera|pioverà|temperatura|quanti gradi|gradi ci sono/i;
+  const RE_FARMACIA =
+    /farmacia|farmacie|di turno|farmacia aperta|farmacie aperte|aperta adesso|aperte adesso|farmacia aperta adesso/i;
+
+  if (RE_METEO.test(ultimo)) {
+    return {
+      directReply: null,
+      tools: [{ tool: "getWeather", params: {} }],
+    };
+  }
+
+  if (RE_FARMACIA.test(ultimo)) {
+    const chiedeAperta = /apert[aoe]?|adesso|ora|in questo momento/i.test(ultimo);
+    const chiedeTurno = /di turno|turno/i.test(ultimo);
+    return {
+      directReply: null,
+      tools: [
+        {
+          tool: "searchPharmacies",
+          params: { stato: chiedeAperta ? "aperte" : chiedeTurno ? "turno" : "turno", limit: 8 },
+        },
+      ],
+    };
+  }
   const RE_OFFERTE = /\bofferte\b|\bpromozion|\bsconti?\b|\bsaldo\b|\bsaldi\b/;
   const RE_EVENTI =
     /\beventi?\b|weekend|fine settimana|manifestazion|in programma|cosa c'è|cosa c'e|cosa succede|\bmostra\b|\bconcerto\b|\bfiera\b/;
@@ -376,6 +411,8 @@ export async function chatConAssistente(
   let offerte: Awaited<ReturnType<typeof searchOffers>> = [];
   let eventi: Awaited<ReturnType<typeof searchEvents>> = [];
   let categorie: Awaited<ReturnType<typeof getCategoriesList>> = [];
+  let meteo: Awaited<ReturnType<typeof getWeatherCastrovillari>> = null;
+  let farmacie: Awaited<ReturnType<typeof searchPharmacies>> = [];
   let directReply: string | null = null;
   let selezioneOk = false;
   let invocazioni: ToolInvocation[] = [];
@@ -430,6 +467,8 @@ export async function chatConAssistente(
       for (const o of r.offerte) if (!offerte.some((e) => e.id === o.id)) offerte = [...offerte, o];
       for (const e of r.eventi) if (!eventi.some((x) => x.id === e.id)) eventi = [...eventi, e];
       for (const c of r.categorie) if (!categorie.some((x) => x.nome === c.nome)) categorie = [...categorie, c];
+      if (r.meteo && !meteo) meteo = r.meteo;
+      for (const f of r.farmacie) if (!farmacie.some((x) => x.id === f.id && x.nome === f.nome)) farmacie = [...farmacie, f];
     }
   }
 
@@ -502,6 +541,8 @@ export async function chatConAssistente(
     offerte,
     eventi,
     categorie,
+    meteo,
+    farmacie,
   };
   const contesto = buildContextoRisultati(risultati);
 
