@@ -351,7 +351,9 @@ function fallbackTestuale(
     risultati.negozi.length +
     risultati.prodotti.length +
     risultati.offerte.length +
-    risultati.eventi.length;
+    risultati.eventi.length +
+    (risultati.meteo ? 1 : 0) +
+    risultati.farmacie.length;
 
   if (totale === 0) {
     const richiesta = domanda.replace(/\s+/g, " ").trim().slice(0, 100);
@@ -391,6 +393,20 @@ function fallbackTestuale(
         risultati.eventi
           .slice(0, 4)
           .map((e) => `- **${e.titolo}**${e.data_inizio ? ` — ${e.data_inizio.slice(0, 10)}` : ""} (${e.negozio_nome || "negozio sconosciuto"})`)
+          .join("\n")
+    );
+  }
+  if (risultati.meteo) {
+    sezioni.push(
+      `**Meteo Castrovillari**\n- Ora: ${risultati.meteo.temperatura}°C, ${risultati.meteo.descrizione}; oggi ${risultati.meteo.oggi.minima}°/${risultati.meteo.oggi.massima}°. Domani: ${risultati.meteo.domani.descrizione}, ${risultati.meteo.domani.minima}°/${risultati.meteo.domani.massima}°.`
+    );
+  }
+  if (risultati.farmacie.length > 0) {
+    sezioni.push(
+      "**Farmacie verificate**\n" +
+        risultati.farmacie
+          .slice(0, 5)
+          .map((f) => `- **${f.nome}**${f.stato ? ` — ${f.stato}` : " — stato non verificato"}${f.turno ? ` — ${f.turno}` : ""}${f.telefono ? ` — tel. ${f.telefono}` : ""}`)
           .join("\n")
     );
   }
