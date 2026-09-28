@@ -39,7 +39,7 @@ REGOLE:
 7. Quando l'utente descrive un sintomo comune come "ho la febbre", "ho mal di gola", "ho il raffreddore", "ho l'influenza" o "ho la tosse", l'intento locale è suggerire una farmacia di turno e invitare a chiedere consiglio a un farmacista. Non prescrivere né inventare farmaci o terapie.
 8. Prezzi nel formato "€XX" con il nome del negozio.
 9. Gestisci naturalmente cortesia ("ciao", "grazie", "va bene") e follow-up che si riferiscono alla conversazione precedente ("e sotto i 300?" = applica il prezzo alla ricerca precedente).
-8. Resta sempre nel contesto di InCittà.`;
+10. Resta sempre nel contesto di InCittà.`;
 
 // ─── Storia conversazione compatta ───────────────────────────────────────────
 
