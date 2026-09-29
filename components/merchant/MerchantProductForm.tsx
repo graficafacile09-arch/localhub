@@ -40,9 +40,6 @@ export type MerchantProductPayload = {
   prodottoTipico: boolean;
   /** True se il prodotto è in offerta (vetrina "Offerte", badge rosso). */
   prodottoOfferta: boolean;
-  recessoApplicabile: boolean;
-  recessoEsclusioneCodice: string | null;
-  recessoEsclusioneDettaglio: string | null;
 };
 
 type MerchantProductFormProps = {
@@ -97,9 +94,6 @@ const DEFAULT_PRODUCT_FORM = {
   originePubblicazione: "manuale",
   prodotto_tipico: false,
   prodotto_offerta: false,
-  recesso_applicabile: true,
-  recesso_esclusione_codice: "",
-  recesso_esclusione_dettaglio: "",
 };
 
 export default function MerchantProductForm({
@@ -159,9 +153,6 @@ export default function MerchantProductForm({
       alt_text_immagine: str(initialValues.alt_text_immagine),
       prodotto_tipico: String(Boolean(initialValues.prodotto_tipico)),
       prodotto_offerta: String(Boolean(initialValues.prodotto_offerta)),
-      recesso_applicabile: String(Boolean(initialValues.recesso_applicabile)),
-      recesso_esclusione_codice: str(initialValues.recesso_esclusione_codice),
-      recesso_esclusione_dettaglio: str(initialValues.recesso_esclusione_dettaglio),
     });
   }
 
@@ -203,9 +194,6 @@ export default function MerchantProductForm({
       alt_text_immagine: get("alt_text_immagine"),
       prodotto_tipico: String(prodottoTipico),
       prodotto_offerta: String(prodottoOfferta),
-      recesso_applicabile: get("recesso_applicabile"),
-      recesso_esclusione_codice: get("recesso_esclusione_codice"),
-      recesso_esclusione_dettaglio: get("recesso_esclusione_dettaglio"),
     });
     notifyDirty(current !== getSnapshot());
   }
@@ -249,9 +237,6 @@ export default function MerchantProductForm({
         originePubblicazione: initialData.origine_pubblicazione ?? "manuale",
         prodotto_tipico: initialData.prodotto_tipico ?? false,
         prodotto_offerta: initialData.prodotto_offerta ?? false,
-        recesso_applicabile: initialData.recesso_applicabile ?? true,
-        recesso_esclusione_codice: initialData.recesso_esclusione_codice ?? "",
-        recesso_esclusione_dettaglio: initialData.recesso_esclusione_dettaglio ?? "",
       }
     : DEFAULT_PRODUCT_FORM;
 
@@ -360,9 +345,6 @@ export default function MerchantProductForm({
       originePubblicazione: String(formData.get("originePubblicazione") ?? initialValues.originePubblicazione),
       prodottoTipico: prodottoTipico,
       prodottoOfferta: prodottoOfferta,
-      recessoApplicabile: String(formData.get("recesso_applicabile") ?? "true") === "true",
-      recessoEsclusioneCodice: String(formData.get("recesso_esclusione_codice") ?? "").trim() || null,
-      recessoEsclusioneDettaglio: String(formData.get("recesso_esclusione_dettaglio") ?? "").trim() || null,
     };
 
     const route = productId
@@ -789,45 +771,6 @@ export default function MerchantProductForm({
                 defaultValue={initialValues.alt_text_immagine}
                 placeholder="Alt text foto"
                 className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-yellow-500 focus:ring-2 focus:ring-yellow-100"
-              />
-            </div>
-            <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-3">
-              <p className="text-xs font-bold text-slate-800">Diritto di recesso</p>
-              <p className="mt-1 text-[11px] leading-5 text-slate-500">
-                Configura la regola applicabile a questo prodotto. La scelta viene storicizzata sull'ordine al momento dell'acquisto.
-              </p>
-              <select
-                id="recesso_applicabile"
-                name="recesso_applicabile"
-                defaultValue={initialValues.recesso_applicabile ? "true" : "false"}
-                className="mt-2 h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none transition focus:border-yellow-500 focus:ring-2 focus:ring-yellow-100"
-              >
-                <option value="true">Recesso applicabile</option>
-                <option value="false">Recesso escluso</option>
-              </select>
-              <select
-                id="recesso_esclusione_codice"
-                name="recesso_esclusione_codice"
-                defaultValue={initialValues.recesso_esclusione_codice}
-                className="mt-2 h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none transition focus:border-yellow-500 focus:ring-2 focus:ring-yellow-100"
-              >
-                <option value="">Motivazione esclusione (solo se escluso)</option>
-                <option value="prodotto_personalizzato">Prodotto personalizzato</option>
-                <option value="prodotto_deperibile">Prodotto deperibile</option>
-                <option value="bene_sigillato_igiene_salute">Bene sigillato per igiene o salute</option>
-                <option value="servizio_tempo_libero_data_specifica">Servizio per tempo libero con data specifica</option>
-                <option value="contenuto_digitale_avviato">Contenuto digitale già avviato</option>
-                <option value="servizio_urgente_su_richiesta">Servizio urgente su richiesta</option>
-                <option value="altra_esclusione_prevista">Altra esclusione prevista</option>
-              </select>
-              <textarea
-                id="recesso_esclusione_dettaglio"
-                name="recesso_esclusione_dettaglio"
-                rows={2}
-                maxLength={1000}
-                defaultValue={initialValues.recesso_esclusione_dettaglio}
-                placeholder="Dettaglio informativo per il cliente (facoltativo)"
-                className="mt-2 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-yellow-500 focus:ring-2 focus:ring-yellow-100"
               />
             </div>
             <textarea
