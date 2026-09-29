@@ -76,11 +76,11 @@ export type MerchantProduct = {
   /** True se il prodotto è in offerta (vetrina "Offerte", badge rosso). */
   prodotto_offerta: boolean;
   /** True se il diritto di recesso è applicabile a questo prodotto. */
-  recesso_applicabile: boolean;
+  recesso_applicabile?: boolean;
   /** Codice controllato dell'eventuale esclusione dal recesso. */
-  recesso_esclusione_codice: string | null;
+  recesso_esclusione_codice?: string | null;
   /** Dettaglio informativo mostrato al cliente e storicizzato sull'ordine. */
-  recesso_esclusione_dettaglio: string | null;
+  recesso_esclusione_dettaglio?: string | null;
   created_at: string | null;
   updated_at: string | null;
 };
