@@ -72,8 +72,39 @@ export default function PinoHomepageHelper() {
     if (!moved) openAssistant();
   };
 
-  // Chiusura completa della presentazione: né fumetto né personaggio flottante.
-  if (chiuso) return null;
+  // Dopo la X Pino resta chiuso per tutta la sessione, ma rimane sempre richiamabile.
+  if (chiuso) {
+    return (
+      <button
+        type="button"
+        onClick={() => {
+          try {
+            window.sessionStorage.removeItem(PINO_DISMISSED_KEY);
+          } catch {
+            // Il richiamo resta comunque disponibile.
+          }
+          setChiuso(false);
+        }}
+        className="fixed bottom-4 right-4 z-[90] flex h-12 min-w-[64px] items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2 py-1.5 shadow-xl shadow-slate-900/15 transition hover:scale-105 hover:border-blue-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 active:scale-95"
+        aria-label="Richiama Pino"
+        title="Richiama Pino"
+      >
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-50">
+          <img
+            src={PINO_HOME_SRC}
+            alt=""
+            aria-hidden="true"
+            draggable={false}
+            decoding="async"
+            width={PINO_HOME_W}
+            height={PINO_HOME_H}
+            className="block h-full w-auto object-contain"
+          />
+        </span>
+        <span className="pr-1 text-[11px] font-bold text-blue-800">Pino</span>
+      </button>
+    );
+  }
 
   return (
     <div
