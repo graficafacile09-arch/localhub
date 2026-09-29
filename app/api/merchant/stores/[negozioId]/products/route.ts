@@ -5,6 +5,15 @@ import type { MerchantProductInput, OrdinamentoProdotti } from "@/lib/merchant/t
 import { creaNotificaAdmin } from "@/lib/amministratore/notifiche";
 
 const STATI_CONDIZIONE_VALIDI = ["nuovo", "usato", "ricondizionato"] as const;
+const CODICI_ESCLUSIONE_RECESSO = [
+  "prodotto_personalizzato",
+  "prodotto_deperibile",
+  "bene_sigillato_igiene_salute",
+  "servizio_tempo_libero_data_specifica",
+  "contenuto_digitale_avviato",
+  "servizio_urgente_su_richiesta",
+  "altra_esclusione_prevista",
+] as const;
 const ORDINAMENTI_VALIDI: OrdinamentoProdotti[] = [
   "recenti",
   "vecchi",
@@ -90,6 +99,23 @@ function validateProductPayload(payload: Partial<MerchantProductInput>) {
   }
   if (payload.prodottoOfferta !== undefined && typeof payload.prodottoOfferta !== "boolean") {
     return "Il campo prodotto_offerta deve essere booleano.";
+  }
+  if (payload.recessoApplicabile !== undefined && typeof payload.recessoApplicabile !== "boolean") {
+    return "Il campo recesso_applicabile deve essere booleano.";
+  }
+  if (payload.recessoEsclusioneCodice !== undefined && payload.recessoEsclusioneCodice !== null &&
+      !CODICI_ESCLUSIONE_RECESSO.includes(payload.recessoEsclusioneCodice as (typeof CODICI_ESCLUSIONE_RECESSO)[number])) {
+    return "Motivazione di esclusione del recesso non valida.";
+  }
+  if (payload.recessoApplicabile === false && !payload.recessoEsclusioneCodice) {
+    return "Per escludere il recesso devi indicare una motivazione controllata.";
+  }
+  if (payload.recessoApplicabile !== false && payload.recessoEsclusioneCodice) {
+    return "La motivazione di esclusione va indicata solo quando il recesso è escluso.";
+  }
+  if (payload.recessoEsclusioneDettaglio !== undefined && payload.recessoEsclusioneDettaglio !== null &&
+      typeof payload.recessoEsclusioneDettaglio !== "string") {
+    return "Dettaglio dell'esclusione non valido.";
   }
   if (payload.sottocategoria !== undefined && payload.sottocategoria !== null && typeof payload.sottocategoria !== "string") {
     return "Formato sottocategoria non valido.";
@@ -217,6 +243,9 @@ export async function POST(
     originePubblicazione: payload.originePubblicazione ?? "manuale",
     prodottoTipico: payload.prodottoTipico ?? false,
     prodottoOfferta: payload.prodottoOfferta ?? false,
+    recessoApplicabile: payload.recessoApplicabile ?? true,
+    recessoEsclusioneCodice: payload.recessoEsclusioneCodice ?? null,
+    recessoEsclusioneDettaglio: payload.recessoEsclusioneDettaglio ?? null,
     // Campi arricchiti (G1): inoltrati al data layer, che li persiste.
     descrizioneCompleta: payload.descrizioneCompleta,
     caratteristiche: payload.caratteristiche,
