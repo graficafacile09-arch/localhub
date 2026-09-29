@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { PINO_ASSET, PINO_ASSET_H, PINO_ASSET_W } from "./PinoSprite";
 
@@ -12,6 +12,7 @@ const PINO_HOME_SRC = PINO_ASSET.neutral;
 const PINO_HOME_W = PINO_ASSET_W;
 const PINO_HOME_H = PINO_ASSET_H;
 const PINO_HOME_HEIGHT = 120; // px a schermo: leggermente più grande di prima (erano 92)
+const PINO_DISMISSED_KEY = "incitta_pino_home_dismissed_v1";
 
 /**
  * Pino flottante con il suo messaggio di presentazione.
@@ -36,6 +37,14 @@ const PINO_HOME_HEIGHT = 120; // px a schermo: leggermente più grande di prima 
 export default function PinoHomepageHelper() {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [chiuso, setChiuso] = useState(false);
+
+  useEffect(() => {
+    try {
+      setChiuso(window.sessionStorage.getItem(PINO_DISMISSED_KEY) === "1");
+    } catch {
+      // Se sessionStorage non è disponibile, manteniamo il comportamento normale.
+    }
+  }, []);
   const dragRef = useRef<{ startX: number; startY: number; baseX: number; baseY: number; moved: boolean } | null>(null);
 
   const openAssistant = () => window.dispatchEvent(new Event("assistant:open"));
@@ -87,7 +96,15 @@ export default function PinoHomepageHelper() {
             type="button"
             onPointerDown={(event) => event.stopPropagation()}
             onPointerUp={(event) => event.stopPropagation()}
-            onClick={(event) => { event.stopPropagation(); setChiuso(true); }}
+            onClick={(event) => {
+              event.stopPropagation();
+              try {
+                window.sessionStorage.setItem(PINO_DISMISSED_KEY, "1");
+              } catch {
+                // Chiusura comunque valida per questa visualizzazione.
+              }
+              setChiuso(true);
+            }}
             className="mr-1 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/15 text-white ring-1 ring-white/30 transition hover:bg-white/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
             aria-label="Chiudi Pino"
             title="Chiudi Pino"
