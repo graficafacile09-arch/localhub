@@ -11,6 +11,7 @@ const formattaEuro = (v: number) =>
 
 export default function CarrelloPageClient() {
   const { righe, gruppi, totale, pezzi, aggiorna, rimuovi, svuota } = useCarrello();
+  const richiedeVerificaEta = righe.some((r) => r.soggettoVerificaEta);
 
   if (righe.length === 0) {
     return (
@@ -69,6 +70,13 @@ export default function CarrelloPageClient() {
           </button>
         </div>
       </div>
+
+      {richiedeVerificaEta ? (
+        <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+          <p className="font-black">18+ — nel carrello ci sono prodotti soggetti a verifica dell'età</p>
+          <p className="mt-1 text-xs leading-5 text-amber-800">Al checkout dovrai confermare di avere almeno 18 anni. La conferma online non sostituisce gli eventuali controlli dell'identità richiesti al momento della consegna o del ritiro.</p>
+        </div>
+      ) : null}
 
       {/* Colonna esplicita minmax(0,1fr) anche su mobile: senza, la griglia
           usa una colonna implicita auto che cresce col contenuto (i nomi
