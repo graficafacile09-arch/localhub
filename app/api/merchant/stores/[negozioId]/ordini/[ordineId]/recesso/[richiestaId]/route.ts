@@ -40,6 +40,7 @@ export async function POST(
   let importo = body.importoRimborsato == null || body.importoRimborsato === ""
     ? null
     : Number(body.importoRimborsato);
+  let operazioneRimborsoId: string | null = null;
 
   if (importo !== null && (!Number.isFinite(importo) || importo <= 0)) {
     return apiError("VALIDATION_ERROR", "Importo rimborsato non valido.", 422);
@@ -74,6 +75,7 @@ export async function POST(
       return apiError("SAVE_FAILED", "Il rimborso non ha restituito un importo definitivo.", 502);
     }
     importo = esitoRimborso.importoRimborsato;
+    operazioneRimborsoId = esitoRimborso.operazioneId;
   }
 
   const supabase = await createServerSupabaseClient();
@@ -82,7 +84,7 @@ export async function POST(
     p_azione: body.azione,
     p_nota: nota,
     p_importo_rimborsato: importo,
-    p_rimborso_operazione_id: body.azione === "rimborsata" ? esitoRimborso.operazioneId : null,
+    p_rimborso_operazione_id: operazioneRimborsoId,
   });
 
   if (rpcError) {
@@ -157,6 +159,6 @@ export async function POST(
     richiestaId,
     aggiornata: true,
     origin: url.origin,
-    rimborso: body.azione === "rimborsata" ? { pending: false, importoRimborsato: importo, operazioneId: esitoRimborso.operazioneId } : null,
+    rimborso: body.azione === "rimborsata" ? { pending: false, importoRimborsato: importo, operazioneId: operazioneRimborsoId } : null,
   });
 }
