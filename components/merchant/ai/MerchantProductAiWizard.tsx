@@ -147,9 +147,6 @@ export default function MerchantProductAiWizard({
       originePubblicazione: "ai",
       prodottoTipico: false,
       prodottoOfferta: false,
-      recessoApplicabile: true,
-      recessoEsclusioneCodice: null,
-      recessoEsclusioneDettaglio: null,
     };
   }
 
