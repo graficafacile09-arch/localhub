@@ -94,7 +94,7 @@ async function inviaRicevuta(richiestaId) {
     .eq("id", richiestaId);
 
   if (richiesta.venditore_email) {
-    const sellerEmailResult = await resend.emails.send({
+    await resend.emails.send({
       from: FROM_EMAIL,
       to: String(richiesta.venditore_email),
       subject: "Nuova richiesta di recesso " + String(richiesta.numero) + " — InCittà",
