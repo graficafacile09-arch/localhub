@@ -434,10 +434,7 @@ const sezioni = [
     titolo: "20. Collegamenti e servizi di terze parti",
     contenuto: (
       <p>
-        La piattaforma può collegarsi a servizi di terzi, inclusi provider di pagamento,
-        strumenti di comunicazione, hosting o altri servizi tecnici. Tali servizi hanno
-        condizioni e informative proprie. Il loro utilizzo deve essere valutato secondo il
-        flusso e il servizio concretamente scelti.
+        La Piattaforma integra e utilizza servizi, contenuti e strumenti informativi forniti da soggetti terzi, inclusi i componenti e i widget informativi resi disponibili all'interno della Piattaforma. I dati, le informazioni, gli aggiornamenti e i risultati visualizzati attraverso tali componenti sono forniti e gestiti dai rispettivi soggetti o servizi di origine. La responsabilità dell'esattezza, completezza, aggiornamento, disponibilità e continuità di tali dati e informazioni è a carico del relativo soggetto o servizio di origine, secondo le proprie condizioni e responsabilità. InCittà non modifica né garantisce autonomamente tali dati e non assume responsabilità per eventuali inesattezze, ritardi, omissioni, indisponibilità o interruzioni imputabili al servizio o al soggetto che li fornisce, fatti salvi gli obblighi inderogabili previsti dalla legge.
       </p>
     ),
   },
