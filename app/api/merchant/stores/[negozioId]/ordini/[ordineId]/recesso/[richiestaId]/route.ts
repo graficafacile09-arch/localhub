@@ -3,6 +3,8 @@ import { requireApiArea } from "@/lib/auth/session-area";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { rimborsaOrdine, MAX_MOTIVO_RIMBORSO } from "@/lib/pagamenti/rimborsi";
 import { randomUUID } from "node:crypto";
+import { Resend } from "resend";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
 const AZIONI = new Set([
   "presa_in_carico",
@@ -93,7 +95,60 @@ export async function POST(
   }
 
   const url = new URL(request.url);
-  void sessione.user.id;
+
+  // Aggiornamento su supporto durevole per gli stati che modificano
+  // concretamente la gestione del recesso. L'email viene inviata solo
+  // dopo la conferma del cambio stato nel database.
+  if (["presa_in_carico", "istruzioni_reso", "reso_ricevuto", "rimborso_avviato", "rimborsata", "rifiuta"].includes(body.azione)) {
+    try {
+      const admin = createAdminSupabaseClient();
+      const { data: praticaEmail } = await admin
+        .from("richieste_recesso")
+        .select("numero, cliente_nome, cliente_email, stato, importo_previsto, importo_rimborsato")
+        .eq("id", richiestaId)
+        .maybeSingle();
+
+      const resendKey = process.env.RESEND_API_KEY;
+      const fromEmail = process.env.RESEND_FROM_EMAIL ?? "InCittà <onboarding@resend.dev>";
+
+      if (praticaEmail?.cliente_email && resendKey) {
+        const resend = new Resend(resendKey);
+        const statoTesto = {
+          presa_in_carico: "presa in carico dal venditore",
+          istruzioni_reso: "accompagnata dalle istruzioni per il reso",
+          reso_ricevuto: "segnalata come reso ricevuto",
+          rimborso_avviato: "con rimborso avviato",
+          rimborsata: "rimborsata",
+          rifiuta: "rifiutata dal venditore",
+        }[body.azione] ?? body.azione;
+
+        const dettagliRimborso =
+          body.azione === "rimborsata" && praticaEmail.importo_rimborsato != null
+            ? "\nImporto rimborsato: € " + Number(praticaEmail.importo_rimborsato).toFixed(2).replace(".", ",") + "\n"
+            : "";
+
+        const notaEmail = nota ? "\nNota del venditore:\n" + nota + "\n" : "";
+
+        await resend.emails.send({
+          from: fromEmail,
+          to: String(praticaEmail.cliente_email),
+          subject: "Aggiornamento richiesta di recesso " + String(praticaEmail.numero) + " — InCittà",
+          text:
+            "Ciao " + String(praticaEmail.cliente_nome || "") + ",\n\n" +
+            "La tua richiesta di recesso " + String(praticaEmail.numero) + " è stata " + statoTesto + ".\n" +
+            dettagliRimborso +
+            notaEmail +
+            "\nPuoi consultare l'ordine dalla tua area InCittà:\n" +
+            url.origin + "/ordini/conferma/" + encodeURIComponent(String(ordineId)) + "\n",
+        });
+      }
+    } catch (emailError) {
+      // L'aggiornamento della pratica resta valido anche se il provider email
+      // non risponde: la comunicazione non deve annullare un'operazione già registrata.
+      console.error("[api-recesso] email stato:", emailError);
+    }
+  }
+
   return apiOk({
     pratica: data,
     negozioId,
