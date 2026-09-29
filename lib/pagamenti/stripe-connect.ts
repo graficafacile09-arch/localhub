@@ -171,7 +171,7 @@ export async function disconnectStripeAccount(
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// STRIPE CONNECT EXPRESS — onboarding tramite Account Link (ACCOUNTS V2).
+// STRIPE CONNECT V2 — onboarding tramite Account Link (ACCOUNTS V2).
 //
 // Il venditore NON passa da connect.stripe.com/oauth: la piattaforma crea
 // un account V2 (v2/core/accounts) con configuration merchant via API,
@@ -290,7 +290,7 @@ export function statoOnboardingDaAccount(
 /**
  * Crea un account Stripe Connect V2 (v2/core/accounts) per la piattaforma.
  * Account con configuration MERCHANT (Merchant of Record, direct charges)
- * e dashboard express. Prefill opzionale (email del venditore + nome
+ * e dashboard Stripe completo. Prefill opzionale (email del venditore + nome
  * business) per ridurre i campi da compilare nell'onboarding hosted.
  * Nessuna credenziale merchant. La modalità (livemode) è quella della
  * piattaforma e arriva dal campo `livemode` dell'oggetto creato.
@@ -303,17 +303,17 @@ export async function createStripeExpressAccount(
   const account = await stripe.v2.core.accounts.create({
     contact_email: prefill.email || undefined,
     display_name: prefill.businessName || undefined,
-    dashboard: "express",
-    // Configurazione supportata per dashboard Express + direct charges.
-    // Con dashboard "express", Accounts v2 richiede che sia la piattaforma
-    // a raccogliere le fee e ad assumere la responsabilità dei saldi negativi.
-    // I costi Stripe restano quindi a carico della piattaforma; l'eventuale
-    // commissione applicativa viene gestita separatamente nel pagamento.
+    // Account indipendente del venditore: direct charges + Stripe-managed risk.
+    // Usiamo il Dashboard completo per evitare la combinazione Express +
+    // losses_collector=stripe, che richiede una API preview dedicata.
+    // In questo modello il venditore è merchant of record e Stripe gestisce
+    // la responsabilità per i saldi negativi del connected account.
+    dashboard: "full",
     defaults: {
       currency: "eur",
       responsibilities: {
-        fees_collector: "application",
-        losses_collector: "application",
+        fees_collector: "stripe",
+        losses_collector: "stripe",
       },
     },
     identity: { country: "IT" },
