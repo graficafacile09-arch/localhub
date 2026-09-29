@@ -1,6 +1,8 @@
 import { apiError, apiOk } from "@/lib/api/response";
 import { requireApiArea } from "@/lib/auth/session-area";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { rimborsaOrdine, MAX_MOTIVO_RIMBORSO } from "@/lib/pagamenti/rimborsi";
+import { randomUUID } from "node:crypto";
 
 const AZIONI = new Set([
   "presa_in_carico",
@@ -41,6 +43,34 @@ export async function POST(
     return apiError("VALIDATION_ERROR", "Importo rimborsato non valido.", 422);
   }
 
+  if (body.azione === "rimborsata") {
+    if (importo === null) {
+      return apiError("IMPORTO_RIMBORSO_MANCANTE", "Indica l'importo da rimborsare.", 422);
+    }
+    const esitoRimborso = await rimborsaOrdine({
+      ordineId,
+      importo,
+      motivo: nota?.slice(0, MAX_MOTIVO_RIMBORSO) ?? null,
+      userId: sessione.user.id,
+      idempotencyKey: request.headers.get("Idempotency-Key")?.trim() || randomUUID(),
+    });
+    if (!esitoRimborso.ok) {
+      return apiError(esitoRimborso.codice, esitoRimborso.errore, esitoRimborso.status);
+    }
+    if (esitoRimborso.pending) {
+      return apiOk({
+        pratica: null,
+        negozioId,
+        ordineId,
+        richiestaId,
+        aggiornata: false,
+        rimborso: { pending: true, refundId: esitoRimborso.refundId },
+        message: "Il rimborso è in riconciliazione. La pratica resta nello stato attuale.",
+      }, 202);
+    }
+    importo = esitoRimborso.importoRimborsato;
+  }
+
   const supabase = await createServerSupabaseClient();
   const { data, error: rpcError } = await supabase.rpc("gestisci_richiesta_recesso", {
     p_richiesta_id: richiestaId,
@@ -68,5 +98,6 @@ export async function POST(
     richiestaId,
     aggiornata: true,
     origin: url.origin,
+    rimborso: body.azione === "rimborsata" ? { pending: false, importoRimborsato: importo } : null,
   });
 }
