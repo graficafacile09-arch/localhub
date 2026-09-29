@@ -1,5 +1,7 @@
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getTemplateById as getSystemTemplateById } from "@/components/merchant/wizard/templates";
+import { getProfiloPerTemplate, getProfiloAttivita } from "@/lib/profili-attivita";
+import { orariPerProfilo } from "@/lib/orari";
 
 async function loadTemplateData(templateId: string): Promise<TemplateData> {
   // System templates are defined statically in the wizard registry; only user
@@ -263,6 +265,8 @@ export async function createStoreFromTemplate(
   const template = await loadTemplateData(templateId);
   const d = template as Record<string, unknown>;
 
+  const profilo = getProfiloPerTemplate(templateId) ?? getProfiloAttivita("ecommerce");
+
   const { data: created, error: createErr } = await supabase
     .from("negozi")
     .insert({
@@ -274,6 +278,11 @@ export async function createStoreFromTemplate(
       citta: newStore.citta,
       attivo: true,
       version: 1,
+      moduli_attivi: profilo?.moduli_attivi ?? null,
+      data: profilo
+        ? { tipo_attivita: profilo.id, operativita: profilo.operativita }
+        : null,
+      orari: profilo ? orariPerProfilo(null, profilo.id) : null,
     })
     .select("id")
     .single();
@@ -335,7 +344,10 @@ export async function createStoreFromTemplate(
   }
 
   // Offerte, Eventi, AI (data jsonb)
-  const mergedData: Record<string, unknown> = {};
+  const mergedData: Record<string, unknown> = {
+    tipo_attivita: profilo?.id ?? "ecommerce",
+    operativita: profilo?.operativita ?? "vendita",
+  };
   if (d.offerte) mergedData.offerte = JSON.parse(JSON.stringify(d.offerte));
   if (d.eventi) mergedData.eventi = JSON.parse(JSON.stringify(d.eventi));
   if (d.ai_data) mergedData.ai_data = JSON.parse(JSON.stringify(d.ai_data));
