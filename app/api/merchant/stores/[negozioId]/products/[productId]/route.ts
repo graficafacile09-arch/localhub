@@ -202,9 +202,6 @@ export async function PUT(
     recessoApplicabile: payload.recessoApplicabile ?? true,
     recessoEsclusioneCodice: payload.recessoEsclusioneCodice ?? null,
     recessoEsclusioneDettaglio: payload.recessoEsclusioneDettaglio ?? null,
-    recessoApplicabile: payload.recessoApplicabile ?? true,
-    recessoEsclusioneCodice: payload.recessoEsclusioneCodice ?? null,
-    recessoEsclusioneDettaglio: payload.recessoEsclusioneDettaglio ?? null,
     // Campi arricchiti (G1): inoltrati al data layer, che li persiste.
     descrizioneCompleta: payload.descrizioneCompleta,
     caratteristiche: payload.caratteristiche,
