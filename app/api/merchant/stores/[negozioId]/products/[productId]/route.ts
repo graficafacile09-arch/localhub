@@ -101,7 +101,7 @@ function validateProductPayload(payload: Partial<MerchantProductInput>) {
   if (payload.recessoApplicabile === false) {
     if (
       typeof payload.recessoEsclusioneCodice !== "string" ||
-      !CODICI_ESCLUSIONE_RECESSO.has(payload.recessoEsclusioneCodice)
+      !CODICI_ESCLUSIONE_RECESSO.has(payload.recessoEsclusioneCodice as string)
     ) {
       return "Se il recesso è escluso devi indicare una motivazione controllata.";
     }
