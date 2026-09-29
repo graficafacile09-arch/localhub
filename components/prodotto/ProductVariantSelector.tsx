@@ -50,7 +50,7 @@ type Props = {
   immagineBase: string;
   altText: string | null;
   varianti: VariantePubblica[];
-  soggettoVerificaEta: boolean;
+  soggettoVerificaEta?: boolean;
 };
 
 type SelezioniAttributi = Record<string, string>;
@@ -89,7 +89,7 @@ export default function ProductVariantSelector({
   immagineBase,
   altText,
   varianti,
-  soggettoVerificaEta,
+  soggettoVerificaEta = false,
 }: Props) {
   const [selezioni, setSelezioni] = useState<SelezioniAttributi>(() =>
     selezioneIniziale(varianti)
