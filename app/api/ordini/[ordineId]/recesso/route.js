@@ -5,6 +5,7 @@ import { apiError, apiOk } from "@/lib/api/response";
 import { getSessionArea } from "@/lib/auth/session-area";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { orderAccessCookieName, verifyOrderAccessToken } from "@/lib/cliente/order-access";
+import { inviaConfermaRecesso } from "@/lib/cliente/recesso-email";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.incitta.online";
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? "InCittà <onboarding@resend.dev>";
@@ -22,8 +23,6 @@ async function risolviAccesso(ordineId, token) {
   if (!verifyOrderAccessToken(effectiveToken, ordineId)) return null;
   return { userId: null, guest: true };
 }
-
-import { inviaConfermaRecesso } from "@/lib/cliente/recesso-email";
 
 export async function inviaRicevuta(richiestaId) {
   return inviaConfermaRecesso(richiestaId);
