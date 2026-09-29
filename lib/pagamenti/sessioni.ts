@@ -670,6 +670,8 @@ export type PayloadIntentoCheckout = {
   };
   fatturazione: unknown;
   note: string | null;
+  dichiarazioneEta?: boolean;
+  dichiarazioneEtaAt?: string | null;
   clienteIp: string | null;
 };
 
