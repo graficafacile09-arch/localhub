@@ -7,17 +7,6 @@ import type { MerchantProductInput } from "@/lib/merchant/types";
 
 const STATI_CONDIZIONE_VALIDI = ["nuovo", "usato", "ricondizionato"] as const;
 
-const CODICI_ESCLUSIONE_RECESSO = new Set([
-  "prodotto_personalizzato",
-  "prodotto_deperibile",
-  "bene_sigillato_igiene_salute",
-  "servizio_tempo_libero_data_specifica",
-  "contenuto_digitale_avviato",
-  "servizio_urgente_su_richiesta",
-  "altra_esclusione_prevista",
-]);
-
-
 function validateProductPayload(payload: Partial<MerchantProductInput>) {
   if (!payload.nome?.trim()) {
     return "Il nome del prodotto è obbligatorio.";
@@ -94,24 +83,6 @@ function validateProductPayload(payload: Partial<MerchantProductInput>) {
   }
   if (payload.prodottoOfferta !== undefined && typeof payload.prodottoOfferta !== "boolean") {
     return "Il campo prodotto_offerta deve essere booleano.";
-  }
-  if (payload.recessoApplicabile !== undefined && typeof payload.recessoApplicabile !== "boolean") {
-    return "Il campo recesso_applicabile deve essere booleano.";
-  }
-  if (payload.recessoApplicabile === false) {
-    if (
-      typeof payload.recessoEsclusioneCodice !== "string" ||
-      !CODICI_ESCLUSIONE_RECESSO.has(payload.recessoEsclusioneCodice as string)
-    ) {
-      return "Se il recesso è escluso devi indicare una motivazione controllata.";
-    }
-    if (
-      payload.recessoEsclusioneDettaglio !== undefined &&
-      payload.recessoEsclusioneDettaglio !== null &&
-      (typeof payload.recessoEsclusioneDettaglio !== "string" || payload.recessoEsclusioneDettaglio.length > 1000)
-    ) {
-      return "Il dettaglio dell'esclusione non è valido.";
-    }
   }
   if (payload.sottocategoria !== undefined && payload.sottocategoria !== null && typeof payload.sottocategoria !== "string") {
     return "Formato sottocategoria non valido.";
