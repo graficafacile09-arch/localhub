@@ -706,9 +706,10 @@ export async function createMerchantProductForStore(
       ? await uploadDataUrlToStorage(input.immaginePrincipale.trim())
       : null;
 
-  const payloadBase: Record<string, unknown> = {
+  const payload: Record<string, unknown> = {
     negozio_id: negozioId,
     nome: input.nome.trim(),
+    slug: await generaSlugUnivoco("prodotti", input.nome.trim()),
     descrizione: input.descrizione.trim(),
     categoria: input.categoria.trim(),
     sottocategoria: input.sottocategoria?.trim() || null,
@@ -741,7 +742,6 @@ export async function createMerchantProductForStore(
   if (input.seoDescription !== undefined) payload.seo_description = input.seoDescription.trim() || null;
   if (input.altTextImmagine !== undefined) payload.alt_text_immagine = input.altTextImmagine.trim() || null;
 
-  const payload = { ...payloadBase, slug: await generaSlugUnivoco("prodotti", input.nome.trim()) };
   const insertResult = await supabase.from("prodotti").insert(payload).select("*").single();
 
   if (insertResult.error && isSchemaError(insertResult.error)) {
