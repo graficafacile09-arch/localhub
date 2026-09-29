@@ -5,6 +5,8 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { toSlug } from "@/lib/slug";
 import { generaSlugUnivoco } from "@/lib/slug-server";
 import { creaNotificaAdmin } from "@/lib/amministratore/notifiche";
+import { getProfiloAttivita } from "@/lib/profili-attivita";
+import { orariPerProfilo } from "@/lib/orari";
 
 export async function GET() {
   const { sessione, error } = await requireApiArea("merchant");
@@ -29,6 +31,8 @@ export async function POST(request: Request) {
   const body = await request.json();
   const nome = (body.nome as string)?.trim();
   const categoria = (body.categoria as string)?.trim();
+  const profiloId = typeof body.profiloAttivita === "string" ? body.profiloAttivita.trim() : "ecommerce";
+  const profilo = getProfiloAttivita(profiloId) ?? getProfiloAttivita("ecommerce");
 
   if (!nome) return apiError("VALIDATION_ERROR", "Il nome del negozio è obbligatorio.", 422);
   if (!categoria) return apiError("VALIDATION_ERROR", "La categoria è obbligatoria.", 422);
@@ -48,6 +52,14 @@ export async function POST(request: Request) {
       citta: (body.citta as string)?.trim() || null,
       logo_url: (body.logo_url as string) || null,
       attivo: true,
+      moduli_attivi: profilo?.moduli_attivi ?? null,
+      data: profilo
+        ? {
+            tipo_attivita: profilo.id,
+            operativita: profilo.operativita,
+          }
+        : null,
+      orari: profilo ? orariPerProfilo(null, profilo.id) : null,
     })
     .select("id")
     .single();
