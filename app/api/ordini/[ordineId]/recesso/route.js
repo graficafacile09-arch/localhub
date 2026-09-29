@@ -70,7 +70,24 @@ async function inviaRicevuta(richiestaId) {
       "Ordine: " + link + "\n"
   });
 
-  if (emailResult.error) return;
+  if (emailResult.error) {
+    await db
+      .from("richieste_recesso")
+      .update({
+        conferma_email: String(richiesta.cliente_email),
+        conferma_esito: "fallita",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", richiestaId);
+
+    await db.from("richieste_recesso_eventi").insert({
+      richiesta_id: richiestaId,
+      tipo: "ricevuta",
+      messaggio: "Invio della ricevuta e-mail non riuscito.",
+      metadata: { esito: "fallita" },
+    });
+    return;
+  }
 
   await db
     .from("richieste_recesso")
@@ -82,6 +99,16 @@ async function inviaRicevuta(richiestaId) {
       updated_at: new Date().toISOString(),
     })
     .eq("id", richiestaId);
+
+  await db.from("richieste_recesso_eventi").insert({
+    richiesta_id: richiestaId,
+    tipo: "ricevuta",
+    messaggio: "Ricevuta e-mail di conferma inviata al cliente.",
+    metadata: {
+      esito: "inviata",
+      message_id: emailResult.data?.id ?? null,
+    },
+  });
 
   if (richiesta.venditore_email) {
     await resend.emails.send({
