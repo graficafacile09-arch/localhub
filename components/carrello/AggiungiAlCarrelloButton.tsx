@@ -16,6 +16,7 @@ type Props = {
   negozioId: string;
   negozioNome: string;
   slug: string;
+  soggettoVerificaEta?: boolean;
   quantita?: number;
   disabled?: boolean;
 };
@@ -38,6 +39,7 @@ export default function AggiungiAlCarrelloButton({
   negozioId,
   negozioNome,
   slug,
+  soggettoVerificaEta = false,
   quantita = 1,
   disabled = false,
 }: Props) {
@@ -74,6 +76,7 @@ export default function AggiungiAlCarrelloButton({
       negozioId,
       negozioNome,
       slug,
+      soggettoVerificaEta,
     });
   };
 
