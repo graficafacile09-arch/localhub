@@ -53,6 +53,7 @@ export default function SpedizioneForm({
   varianteId,
   metodiPagamento = [],
   prefill,
+  soggettoVerificaEta = false,
 }: {
   nome: string;
   prezzo: number;
@@ -68,6 +69,7 @@ export default function SpedizioneForm({
   metodiPagamento?: MetodoPagamentoCheckout[];
   /** Precompilazione dal profilo cliente (autenticato). Default: vuoto. */
   prefill?: PrefillProfilo;
+  soggettoVerificaEta?: boolean;
 }) {
   const router = useRouter();
   const p = prefill ?? {
@@ -93,6 +95,7 @@ export default function SpedizioneForm({
   const [metodoPagamento, setMetodoPagamento] = useState<
     "carta" | "klarna" | "paypal" | "sepa_debit" | "bonifico_istantaneo" | "bonifico_diretto_venditore" | "bonifico" | null
   >(null);
+  const [dichiarazioneEta, setDichiarazioneEta] = useState(false);
   const [inviando, setInviando] = useState(false);
   const [errore, setErrore] = useState<string | null>(null);
   // CAP / Città / Provincia collegati (valori sincronizzati dal componente
@@ -183,7 +186,8 @@ export default function SpedizioneForm({
   }, [prodottoId, quantita]);
 
   const procediAlPagamento = async () => {
-    if (inviando) return; // anti doppio invio
+    if (inviando) return;
+    if (soggettoVerificaEta && !dichiarazioneEta) { setErrore("Conferma di avere almeno 18 anni per continuare."); return; } // anti doppio invio
     // REGOLA ASSOLUTA: nessuna scelta esplicita di metodo di pagamento →
     // submit bloccato, nessuna chiamata a /api/cliente/ordini. Difesa anche
     // se il pulsante venisse attivato da stato/browser precedenti.
@@ -255,6 +259,7 @@ export default function SpedizioneForm({
           servizio: spedizioneScelta.servizio,
           metodoPagamento: metodoPagamentoEffettivo,
         },
+        dichiarazioneEta: soggettoVerificaEta && dichiarazioneEta,
         fatturazione: fatturazione.diversa
           ? {
               diversa: true,
