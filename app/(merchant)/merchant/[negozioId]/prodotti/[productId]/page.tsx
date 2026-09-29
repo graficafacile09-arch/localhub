@@ -3,6 +3,7 @@ import { ChevronRight, Pencil } from "lucide-react";
 import MerchantEmptyState from "@/components/merchant/MerchantEmptyState";
 import MerchantProductForm from "@/components/merchant/MerchantProductForm";
 import ProductTitleEditTarget from "@/components/merchant/ProductTitleEditTarget";
+import RecessoProdottoConfig from "@/components/merchant/RecessoProdottoConfig.jsx";
 import { requireCurrentUser } from "@/lib/auth/session";
 import { getMerchantProductForStore, getMerchantStoreForUser } from "@/lib/merchant/data";
 import { contaInteressati } from "@/lib/prodotti-avvisami";
@@ -90,6 +91,12 @@ export default async function MerchantEditProductPage({
           </div>
         </div>
       </div>
+
+      <RecessoProdottoConfig
+        negozioId={negozioId}
+        productId={productId}
+        initialData={product}
+      />
 
       {/* Form */}
       <MerchantProductForm
