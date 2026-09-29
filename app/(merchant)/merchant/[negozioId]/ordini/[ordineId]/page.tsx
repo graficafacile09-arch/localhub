@@ -31,7 +31,7 @@ import { StoricoEventi } from "@/components/ordini/StoricoEventi";
 import { OrderHeader } from "@/components/ordini/OrderHeader";
 import { InformazioniCliente } from "@/components/ordini/InformazioniCliente";
 import { InformazioniRitiroSpedizione } from "@/components/ordini/InformazioniRitiroSpedizione";
-import RecessoOrdineVenditore from "@/components/merchant/RecessoOrdineVenditore";
+import RecessoOrdineVenditore from "@/components/merchant/RecessoOrdineVenditore.jsx";
 
 export const dynamic = "force-dynamic";
 
