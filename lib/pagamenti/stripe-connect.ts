@@ -304,17 +304,16 @@ export async function createStripeExpressAccount(
     contact_email: prefill.email || undefined,
     display_name: prefill.businessName || undefined,
     dashboard: "express",
-    // Responsabilità richieste da Stripe V2 per la configuration merchant
-    // (capability stripe_balance.stripe_transfers; i due campi sono
-    // OBBLIGATORI nei create params — requirements_collector non esiste in
-    // creazione: in V2 è la piattaforma a raccogliere i requisiti). Scelta
-    // coerente col flusso Express v1 precedente: la piattaforma paga le fee
-    // Stripe (fees_collector) e assorbe le perdite/dispute (losses_collector).
+    // Configurazione supportata per dashboard Express + direct charges.
+    // Con dashboard "express", Accounts v2 richiede che sia la piattaforma
+    // a raccogliere le fee e ad assumere la responsabilità dei saldi negativi.
+    // I costi Stripe restano quindi a carico della piattaforma; l'eventuale
+    // commissione applicativa viene gestita separatamente nel pagamento.
     defaults: {
       currency: "eur",
       responsibilities: {
-        fees_collector: "stripe",
-        losses_collector: "stripe",
+        fees_collector: "application",
+        losses_collector: "application",
       },
     },
     identity: { country: "IT" },
