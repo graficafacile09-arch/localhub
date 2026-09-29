@@ -29,6 +29,7 @@ export default function RitiroForm({
   varianteId,
   negozio,
   prefill,
+  soggettoVerificaEta = false,
 }: {
   prodottoId: string;
   nome: string;
@@ -39,6 +40,7 @@ export default function RitiroForm({
   negozio: NegozioData | null;
   /** Precompilazione dal profilo cliente (autenticato). Default: vuoto. */
   prefill?: PrefillProfilo;
+  soggettoVerificaEta?: boolean;
 }) {
   const router = useRouter();
   const p = prefill ?? { nome: "", cognome: "", telefono: "", email: "", autenticato: false };
@@ -53,6 +55,7 @@ export default function RitiroForm({
   const [telefonoCliente, setTelefonoCliente] = useState(p.telefono);
   const [emailCliente, setEmailCliente] = useState(p.email);
 
+  const [dichiarazioneEta, setDichiarazioneEta] = useState(false);
   const [inviando, setInviando] = useState(false);
   const [errore, setErrore] = useState<string | null>(null);
   // Errori per singolo campo: per il ritiro sono obbligatori nome, cognome,
@@ -79,7 +82,8 @@ export default function RitiroForm({
     (p.autenticato || emailCliente.trim() !== "");
 
   const confermaRitiro = async () => {
-    if (inviando) return; // anti doppio invio
+    if (inviando) return;
+    if (soggettoVerificaEta && !dichiarazioneEta) { setErrore("Conferma di avere almeno 18 anni per continuare."); return; } // anti doppio invio
 
     const nuoviErrori: { nome?: string; cognome?: string; data?: string; fascia?: string; email?: string } = {};
     if (!nomeCliente.trim()) nuoviErrori.nome = "Inserisci il nome.";
@@ -109,6 +113,7 @@ export default function RitiroForm({
           telefono: telefonoCliente.trim() || null,
           email: emailCliente.trim() || null,
         },
+        dichiarazioneEta: soggettoVerificaEta && dichiarazioneEta,
         ritiro: {
           data: data || null,
           fascia: fascia || null,
