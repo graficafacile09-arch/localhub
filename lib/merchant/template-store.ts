@@ -297,8 +297,10 @@ export async function createStoreFromTemplate(
   const newId = created.id as string;
   const updateFields: Record<string, unknown> = {};
 
-  // Moduli attivi / colori del template
-  if (d.moduli_attivi !== undefined) updateFields.moduli_attivi = d.moduli_attivi;
+  // Moduli attivi / colori del template.
+  // Se esiste un profilo di sistema mappato, NON sovrascrivere il preset:
+  // altrimenti si perderebbero moduli commerciali come pagamenti.
+  if (!profilo && d.moduli_attivi !== undefined) updateFields.moduli_attivi = d.moduli_attivi;
   if (d.colori !== undefined) updateFields.colori = d.colori;
 
   // Informazioni
