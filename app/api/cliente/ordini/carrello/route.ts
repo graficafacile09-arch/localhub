@@ -150,6 +150,20 @@ export async function POST(request: Request) {
   const clienteRaw = (body.cliente ?? {}) as Record<string, unknown>;
   const ritiroRaw = (body.ritiro ?? {}) as Record<string, unknown>;
   const spedizioneRaw = (body.spedizione ?? {}) as Record<string, unknown>;
+  const dichiarazioneEta = body.dichiarazioneEta === true;
+
+
+  // Verifica requisiti di età dal DB, mai dal carrello/localStorage.
+  const dbAge = createAdminSupabaseClient();
+  const { data: prodottiEta, error: prodottiEtaError } = await dbAge
+    .from("prodotti")
+    .select("id, soggetto_verifica_eta")
+    .in("id", righe.map((r) => Number(r.prodottoId)));
+  if (prodottiEtaError) return apiError("AGE_CHECK_UNAVAILABLE", "Impossibile verificare i requisiti di età dei prodotti.", 503);
+  const richiedeVerificaEta = (prodottiEta ?? []).some((p: { soggetto_verifica_eta?: unknown }) => Boolean(p.soggetto_verifica_eta));
+  if (richiedeVerificaEta && !dichiarazioneEta) {
+    return apiError("AGE_DECLARATION_REQUIRED", "Per acquistare questi prodotti devi confermare di avere almeno 18 anni.", 422);
+  }
 
   // ── MOTORE TARIFFARIO — corriere + servizio (mai un prezzo dal browser) ──
   // La RPC ricalcola sempre il costo; qui si valida SOLO che corriere/servizio
@@ -343,6 +357,8 @@ export async function POST(request: Request) {
           },
           fatturazione: parseFatturazioneRaw(body.fatturazione),
           note: typeof body.note === "string" ? body.note : null,
+          dichiarazioneEta,
+          dichiarazioneEtaAt: dichiarazioneEta ? new Date().toISOString() : null,
         })
       );
       if (!intento.ok) {
@@ -352,6 +368,24 @@ export async function POST(request: Request) {
           messaggio: intento.errore,
         });
         continue;
+      }
+
+
+      if (richiedeVerificaEta && dichiarazioneEta) {
+        const dbAgeIntent = createAdminSupabaseClient();
+        const { data: sessionRow, error: sessionReadError } = await dbAgeIntent.from("pagamenti_sessioni").select("checkout_payload").eq("id", intento.checkoutId).maybeSingle();
+        if (sessionReadError || !sessionRow) {
+          await annullaIntentoCheckout(intento.checkoutId).catch(() => {});
+          erroriIntenti.push({ negozioId: gruppo.negozioId, codice: "AGE_SNAPSHOT_FAILED", messaggio: "Impossibile registrare la conferma di maggiore età." });
+          continue;
+        }
+        const payload = sessionRow.checkout_payload && typeof sessionRow.checkout_payload === "object" ? sessionRow.checkout_payload as Record<string, unknown> : {};
+        const { error: ageUpdateError } = await dbAgeIntent.from("pagamenti_sessioni").update({ checkout_payload: { ...payload, dichiarazioneEta: true, dichiarazioneEtaAt: new Date().toISOString() } }).eq("id", intento.checkoutId);
+        if (ageUpdateError) {
+          await annullaIntentoCheckout(intento.checkoutId).catch(() => {});
+          erroriIntenti.push({ negozioId: gruppo.negozioId, codice: "AGE_SNAPSHOT_FAILED", messaggio: "Impossibile registrare la conferma di maggiore età." });
+          continue;
+        }
       }
 
       const sessione = await creaSessionePagamentoPerIntento(
@@ -458,6 +492,16 @@ export async function POST(request: Request) {
       return apiError(primo.codice, primo.messaggio, statusDaCodice(primo.codice));
     }
     return apiError("SAVE_FAILED", "Impossibile completare il checkout.", 500);
+  }
+
+
+  if (richiedeVerificaEta && dichiarazioneEta) {
+    const dbAgeOrder = createAdminSupabaseClient();
+    const ids = esito.ordini.map((o) => o.ordineId);
+    if (ids.length > 0) {
+      const { error: ageOrderError } = await dbAgeOrder.from("ordini").update({ contiene_prodotti_verifica_eta: true, dichiarazione_eta_confermata: true, dichiarazione_eta_at: new Date().toISOString() }).in("id", ids);
+      if (ageOrderError) return apiError("AGE_SNAPSHOT_FAILED", "Impossibile registrare la conferma di maggiore età.", 500);
+    }
   }
 
   // Almeno un ordine REALMENTE nuovo → 201; tutti già esistenti (retry) → 200.
