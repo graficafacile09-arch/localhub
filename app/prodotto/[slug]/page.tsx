@@ -187,6 +187,7 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
               immagineBase={imageUrl}
               altText={"alt_text_immagine" in prodotto ? (prodotto.alt_text_immagine as string | null) : null}
               varianti={varianti}
+              soggettoVerificaEta={Boolean((prodotto as Record<string, unknown>).soggetto_verifica_eta)}
             />
             <div className="mt-4">
               <FavoritoButton
@@ -293,6 +294,7 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
                 negozioId={String(negozio?.id ?? "")}
                 negozioNome={String(negozio?.nome ?? "")}
                 slug={String(prodotto.slug ?? id)}
+                soggettoVerificaEta={Boolean((prodotto as Record<string, unknown>).soggetto_verifica_eta)}
                 disabled={esaurito || !negozio}
               />
             </>
