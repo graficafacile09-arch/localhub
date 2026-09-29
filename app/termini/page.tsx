@@ -236,7 +236,7 @@ const sezioni = [
           InCittà può adottare controlli tecnici, richiedere aggiornamenti o limitare la
           visibilità di contenuti e offerte nei casi previsti dalle regole della piattaforma,
           dagli accordi applicabili o dalla normativa.
-        </p>
+        </p>\n        <p>\n          Per i prodotti soggetti a verifica della maggiore età, il Venditore è responsabile della liceità della vendita e dell'esecuzione dei controlli sull'età e sull'identità dell'Acquirente previsti dalla normativa applicabile. La Piattaforma registra, quando richiesto dal checkout, la conferma espressa dell'Acquirente relativa alla maggiore età e segnala al Venditore la necessità dei controlli applicabili. Tale conferma digitale non sostituisce l'esibizione o la verifica del documento di identità richiesta al Venditore dalla legge.\n        </p>
       </>
     ),
   },
