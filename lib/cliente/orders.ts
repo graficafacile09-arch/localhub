@@ -333,8 +333,19 @@ export async function getCheckoutConferma(
   if (!sessione) return { tipo: "non_trovato" };
 
   // Fail-closed: mai dati di checkout altrui.
-  const payload = (sessione.checkout_payload as { clienteUserId?: unknown } | null) ?? null;
-  const ownerUserId = payload?.clienteUserId ? String(payload.clienteUserId) : null;
+  // Il payload canonico P1 salva l'identità nel blocco cliente.userId.
+  // Manteniamo anche il fallback clienteUserId per snapshot storici.
+  const payload =
+    (sessione.checkout_payload as {
+      cliente?: { userId?: unknown } | null;
+      clienteUserId?: unknown;
+    } | null) ?? null;
+  const ownerUserId =
+    payload?.cliente?.userId
+      ? String(payload.cliente.userId)
+      : payload?.clienteUserId
+        ? String(payload.clienteUserId)
+        : null;
   const autorizzato =
     access.userId !== null
       ? ownerUserId === access.userId
