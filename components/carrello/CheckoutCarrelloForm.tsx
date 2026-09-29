@@ -270,6 +270,8 @@ export default function CheckoutCarrelloForm({ prefill}
   // server-side e restare esplicita per il checkout.
   const [catalogoMetodi, setCatalogoMetodi] = useState<MetodoPagamentoCheckout[]>(CATALOGO_DEFAULT);
   const [note, setNote] = useState("");
+  const richiedeVerificaEta = useMemo(() => righe.some((r) => r.soggettoVerificaEta), [righe]);
+  const [dichiarazioneEta, setDichiarazioneEta] = useState(false);
 
   const [inviando, setInviando] = useState(false);
   const [errore, setErrore] = useState<string | null>(null);
@@ -472,6 +474,8 @@ export default function CheckoutCarrelloForm({ prefill}
 
   const valida = (): string | null => {
     if (!nome.trim() || !cognome.trim()) return "Inserisci nome e cognome.";
+    if (richiedeVerificaEta && !dichiarazioneEta) return "Conferma di avere almeno 18 anni per continuare.";
+
     if (modalita === "spedizione") {
       if (!catalogoMetodi.some((m) => m.metodo === metodoPagamento && m.disponibile)) {
         return "Seleziona un metodo di pagamento disponibile.";
@@ -1072,6 +1076,17 @@ export default function CheckoutCarrelloForm({ prefill}
             </section>
           )}
 
+
+
+          {richiedeVerificaEta ? (
+            <section className="rounded-2xl border border-amber-200 bg-amber-50/80 p-4 shadow-sm">
+              <h2 className="text-sm font-black uppercase tracking-wide text-amber-900">Verifica della maggiore età</h2>
+              <label className="mt-3 flex cursor-pointer items-start gap-3 text-sm text-amber-950">
+                <input type="checkbox" checked={dichiarazioneEta} onChange={(e) => setDichiarazioneEta(e.target.checked)} className="mt-0.5 h-4 w-4 rounded border-amber-300" />
+                <span><strong>Confermo di avere almeno 18 anni.</strong><br /><span className="text-xs leading-4 text-amber-800">La conferma viene registrata nell'ordine. Per i prodotti soggetti a verifica, il venditore resta responsabile dei controlli dell'identità previsti dalla legge.</span></span>
+              </label>
+            </section>
+          ) : null}
 
           {/* Metodo pagamento (solo modalità spedizione) */}
 
