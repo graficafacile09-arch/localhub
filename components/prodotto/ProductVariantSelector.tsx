@@ -50,6 +50,7 @@ type Props = {
   immagineBase: string;
   altText: string | null;
   varianti: VariantePubblica[];
+  soggettoVerificaEta: boolean;
 };
 
 type SelezioniAttributi = Record<string, string>;
@@ -88,6 +89,7 @@ export default function ProductVariantSelector({
   immagineBase,
   altText,
   varianti,
+  soggettoVerificaEta,
 }: Props) {
   const [selezioni, setSelezioni] = useState<SelezioniAttributi>(() =>
     selezioneIniziale(varianti)
@@ -310,6 +312,7 @@ export default function ProductVariantSelector({
               negozioId={negozioId}
               negozioNome={negozioNome}
               slug={slug}
+              soggettoVerificaEta={soggettoVerificaEta}
               disabled={!acquistabile}
             />
           </>
