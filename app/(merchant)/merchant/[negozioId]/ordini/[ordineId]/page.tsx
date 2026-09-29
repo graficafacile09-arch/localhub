@@ -211,6 +211,13 @@ export default async function MerchantOrdineDettaglioPage({
         </div>
       )}
 
+      {ordine.richiedeVerificaEta ? (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+          <p className="font-black">18+ — verificare la maggiore età prima della consegna/ritiro</p>
+          <p className="mt-1 text-xs leading-5 text-amber-800">L'ordine contiene prodotti soggetti a controllo. La conferma effettuata online non sostituisce il controllo dell'identità previsto dalla legge.</p>
+        </div>
+      ) : null}
+
       {/* ── Layout due colonne (desktop) ────────────────────────────────────── */}
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
         {/* ── Colonna principale ────────────────────────────────────────────── */}
