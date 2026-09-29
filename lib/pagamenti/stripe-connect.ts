@@ -313,8 +313,8 @@ export async function createStripeExpressAccount(
     defaults: {
       currency: "eur",
       responsibilities: {
-        fees_collector: "application_express",
-        losses_collector: "application",
+        fees_collector: "stripe",
+        losses_collector: "stripe",
       },
     },
     identity: { country: "IT" },
