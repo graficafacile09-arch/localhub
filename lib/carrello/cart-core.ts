@@ -22,7 +22,7 @@ export type RigaCarrello = {
   /** Slug del prodotto (link di ritorno alla scheda). */
   slug: string;
   /** Snapshot UI: il prodotto richiede controllo della maggiore età. */
-  soggettoVerificaEta: boolean;
+  soggettoVerificaEta?: boolean;
 };
 
 export type RigaInserimento = Omit<RigaCarrello, "quantita"> & {
