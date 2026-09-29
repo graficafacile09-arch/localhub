@@ -69,6 +69,8 @@ export type OrdineVenditoreLista = {
   haReclamoAperto: boolean;
   /** True se l'ordine ha una pratica di recesso ancora da chiudere. */
   haRichiestaRecesso: boolean;
+  /** True se l’ordine contiene prodotti soggetti a controllo della maggiore età. */
+  richiedeVerificaEta: boolean;
   /** Righe prodotto (per la sintesi in lista e il dettaglio). */
   righe: RigaOrdine[];
 };
@@ -176,6 +178,7 @@ function mappaLista(row: OrdineRow, righe: RigaOrdine[] = []): OrdineVenditoreLi
     lettoAt: (row.letto_at as string | null) ?? null,
     haReclamoAperto: false,
     haRichiestaRecesso: false,
+    richiedeVerificaEta: Boolean(row.contiene_prodotti_verifica_eta),
     righe,
   };
 }
