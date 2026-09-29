@@ -68,6 +68,9 @@ export async function POST(
         message: "Il rimborso è in riconciliazione. La pratica resta nello stato attuale.",
       }, 202);
     }
+    if (!("importoRimborsato" in esitoRimborso)) {
+      return apiError("SAVE_FAILED", "Il rimborso non ha restituito un importo definitivo.", 502);
+    }
     importo = esitoRimborso.importoRimborsato;
   }
 
