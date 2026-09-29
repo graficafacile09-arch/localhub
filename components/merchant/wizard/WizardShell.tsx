@@ -197,6 +197,7 @@ export default function WizardShell({
             nome: form.nome.trim(),
             categoria: form.categoria.trim(),
             citta: form.citta.trim(),
+            profiloAttivita,
           }),
         });
         const createJson = await createRes.json();
@@ -206,38 +207,24 @@ export default function WizardShell({
         }
         const storeId = createJson.data.storeId as string;
 
-        // 2) Profilo attività + logo persistiti via PUT settings (API
-        //    esistente: accetta moduli_attivi e data jsonb con merge).
-        //    Best-effort: il negozio è già stato creato; in caso di errore
-        //    si può riapplicare il profilo dall'editor.
+        // 2) Il profilo commerciale è già stato scritto server-side durante
+        //    la creazione. Qui completiamo solo i dati opzionali del wizard.
         try {
           const profilo = getProfiloAttivita(profiloAttivita);
-          const settingsPayload: Record<string, unknown> = {};
-          if (profilo) {
-            settingsPayload.moduli_attivi = profilo.moduli_attivi;
-            settingsPayload.data = {
-              tipo_attivita: profilo.id,
-              operativita: profilo.operativita,
-            };
-          }
-          // Orari iniziali: il nuovo negozio parte con il preset del profilo
-          // (o DEFAULT_HOURS), così la griglia non è mai vuota né incoerente
-          // con il tipo di attività. Il commerciante potrà modificarli.
-          const profiloId = profilo?.id ?? null;
-          settingsPayload.orari = orariPerProfilo(null, profiloId);
+          const settingsPayload: Record<string, unknown> = {
+            orari: orariPerProfilo(null, profilo?.id ?? null),
+          };
           if (logoFile) {
             settingsPayload.logo_url = await uploadStoreImage(storeId, logoFile);
           }
-          if (Object.keys(settingsPayload).length > 0) {
-            await fetch(`/api/merchant/stores/${storeId}/settings`, {
-              method: "PUT",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(settingsPayload),
-            });
-          }
+          await fetch(`/api/merchant/stores/${storeId}/settings`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(settingsPayload),
+          });
         } catch {
-          // Best-effort: il logo si può ricaricare e il profilo riapplicare
-          // dall'editor se la chiamata fallisce.
+          // Il negozio è già inizializzato correttamente lato server.
+          // Logo/orari possono essere modificati successivamente dall’editor.
         }
 
         router.push(editPath(storeId));
