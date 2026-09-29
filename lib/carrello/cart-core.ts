@@ -206,6 +206,7 @@ function validaRiga(raw: unknown): RigaCarrello | null {
     negozioId: r.negozioId,
     negozioNome: typeof r.negozioNome === "string" ? r.negozioNome : "",
     slug: typeof r.slug === "string" ? r.slug : "",
+    soggettoVerificaEta: Boolean(r.soggettoVerificaEta),
   };
 }
 
