@@ -905,6 +905,8 @@ export function costruisciPayloadIntentoCheckout(
     spedizioneServizio: input.spedizione?.servizio ?? null,
     metodoPagamento: input.spedizione?.metodoPagamento ?? null,
     note,
+    dichiarazioneEta: input.dichiarazioneEta === true,
+    dichiarazioneEtaAt: input.dichiarazioneEtaAt ?? null,
     fatturazione: input.fatturazione ?? null,
     righe: (input.righe ?? []).map((r) => ({
       prodottoId: String(r.prodottoId),
