@@ -877,6 +877,7 @@ export type IntentoCheckoutInput = {
 
 /**
  * Costruisce il payload della RPC `checkout_intento_crea` a partire
+ * includendo, quando previsto, la dichiarazione di maggiore eta nel payload.
  * dall'input VALIDATO (funzione pura, stessa normalizzazione di
  * costruisciPayloadOrdine: niente default silenziosi).
  */
