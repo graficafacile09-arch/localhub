@@ -46,6 +46,7 @@ export function OrderCard({
   nonLetto,
   haReclamoAperto,
   haRichiestaRecesso,
+  richiedeVerificaEta,
   vista,
   ctaLabel,
 }: {
@@ -63,6 +64,7 @@ export function OrderCard({
   nonLetto?: boolean;
   haReclamoAperto?: boolean;
   haRichiestaRecesso?: boolean;
+  richiedeVerificaEta?: boolean;
   vista: "cliente" | "venditore";
   ctaLabel: string;
 }) {
@@ -118,6 +120,17 @@ export function OrderCard({
             <span className="block truncate text-[11px] leading-4 text-amber-800/80">
               Richiede la tua attenzione
             </span>
+          </span>
+        </div>
+      ) : null}
+
+
+      {richiedeVerificaEta && vista === "venditore" ? (
+        <div className="mb-4 flex items-center gap-2.5 overflow-hidden rounded-xl border border-amber-200 bg-amber-50/95 px-3 py-2.5">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-500 text-xs font-black text-white">18+</span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-xs font-black uppercase tracking-wide text-amber-900">Controllo maggiore età</span>
+            <span className="block truncate text-[11px] leading-4 text-amber-800/80">Verifica l'identità del cliente secondo gli obblighi applicabili</span>
           </span>
         </div>
       ) : null}
