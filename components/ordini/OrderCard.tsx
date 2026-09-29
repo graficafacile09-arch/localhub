@@ -45,6 +45,7 @@ export function OrderCard({
   clienteCognome,
   nonLetto,
   haReclamoAperto,
+  haRichiestaRecesso,
   vista,
   ctaLabel,
 }: {
@@ -61,6 +62,7 @@ export function OrderCard({
   clienteCognome?: string;
   nonLetto?: boolean;
   haReclamoAperto?: boolean;
+  haRichiestaRecesso?: boolean;
   vista: "cliente" | "venditore";
   ctaLabel: string;
 }) {
@@ -82,7 +84,7 @@ export function OrderCard({
       className={`group flex min-w-0 h-full flex-col rounded-[1.75rem] border bg-white p-5 shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg ${
         nonLetto && vista === "venditore"
           ? "border-blue-200 ring-1 ring-blue-100"
-          : haReclamoAperto && vista === "venditore"
+          : (haReclamoAperto || haRichiestaRecesso) && vista === "venditore"
             ? "border-blue-200 ring-1 ring-blue-100"
             : "border-white/70 hover:border-slate-200"
       }`}
@@ -98,6 +100,22 @@ export function OrderCard({
               Reclamo aperto
             </span>
             <span className="block truncate text-[11px] leading-4 text-blue-700/80">
+              Richiede la tua attenzione
+            </span>
+          </span>
+        </div>
+      ) : null}
+
+      {haRichiestaRecesso && vista === "venditore" ? (
+        <div className="mb-4 flex items-center gap-2.5 overflow-hidden rounded-xl border border-amber-200 bg-amber-50/95 px-3 py-2.5">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-500 text-white shadow-sm shadow-amber-500/25">
+            <BellRing className="h-[18px] w-[18px]" aria-hidden />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-xs font-black uppercase tracking-wide text-amber-900">
+              Richiesta di recesso
+            </span>
+            <span className="block truncate text-[11px] leading-4 text-amber-800/80">
               Richiede la tua attenzione
             </span>
           </span>
