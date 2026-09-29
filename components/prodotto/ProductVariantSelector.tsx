@@ -270,6 +270,13 @@ export default function ProductVariantSelector({
         </p>
       </div>
 
+      {soggettoVerificaEta ? (
+        <div className="mb-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+          <p className="font-black">18+ — prodotto soggetto a verifica dell'età</p>
+          <p className="mt-1 text-xs leading-5 text-amber-800">Per completare l'acquisto sarà richiesta la conferma della maggiore età. Il controllo dell'identità previsto dalla legge resta a carico del venditore.</p>
+        </div>
+      ) : null}
+
       {/* Acquista — sostituito da "Il tuo prodotto" per il venditore del
           negozio proprietario (regola auto-acquisto, blocco anche API) */}
       <div className="mt-4 space-y-2">
