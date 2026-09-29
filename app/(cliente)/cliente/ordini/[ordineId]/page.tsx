@@ -154,6 +154,13 @@ export default async function OrdineDettaglioPage({ params }: { params: Promise<
         annullatoAt={ordine.annullatoAt}
       />
 
+      {ordine.richiedeVerificaEta ? (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+          <p className="font-black">18+ — ordine con prodotti soggetti a verifica dell'età</p>
+          <p className="mt-1 text-xs leading-5 text-amber-800">La maggiore età è stata confermata al checkout. Il venditore resta tenuto a effettuare gli eventuali controlli dell'identità previsti dalla legge.</p>
+        </div>
+      ) : null}
+
       {/* ── Layout due colonne (desktop) ────────────────────────────────────── */}
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
         {/* ── Colonna principale ────────────────────────────────────────────── */}
