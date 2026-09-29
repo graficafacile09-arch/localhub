@@ -50,6 +50,7 @@ export type CreaOrdinePayload = {
     nazione?: string | null;
   } | null;
   note?: string | null;
+  dichiarazioneEta?: boolean;
 };
 
 export type EsitoApi =
