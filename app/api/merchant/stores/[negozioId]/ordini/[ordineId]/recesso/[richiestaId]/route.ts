@@ -1,6 +1,7 @@
 import { apiError, apiOk } from "@/lib/api/response";
 import { requireApiArea } from "@/lib/auth/session-area";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { inviaAggiornamentoRecesso } from "@/lib/cliente/recesso-email";
 
 const AZIONI = new Set([
   "presa_in_carico",
@@ -57,6 +58,12 @@ export async function POST(
   if (!data?.ok) {
     const status = data?.codice === "NOT_FOUND" ? 404 : data?.codice === "UNAUTHORIZED" ? 401 : 422;
     return apiError(data?.codice || "SAVE_FAILED", data?.messaggio || "Impossibile aggiornare la pratica.", status);
+  }
+
+  try {
+    await inviaAggiornamentoRecesso(richiestaId, nota);
+  } catch (emailError) {
+    console.error("[api-recesso] email aggiornamento:", emailError);
   }
 
   const url = new URL(request.url);
