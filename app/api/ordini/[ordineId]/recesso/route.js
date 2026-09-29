@@ -68,21 +68,53 @@ async function inviaRicevuta(richiestaId) {
   const resend = new Resend(resendKey);
   const link = SITE_URL + "/ordini/conferma/" + encodeURIComponent(String(richiesta.ordine_id));
 
-  let emailResult;
   try {
-    emailResult = await resend.emails.send({
+    const emailResult = await resend.emails.send({
       from: FROM_EMAIL,
-    to: String(richiesta.cliente_email),
-    subject: "Ricevuta richiesta di recesso " + String(richiesta.numero) + " — InCittà",
-    text:
-      "Ciao " + String(richiesta.cliente_nome) + ",\n\n" +
-      "abbiamo registrato la tua richiesta di recesso.\n\n" +
-      "Pratica: " + String(richiesta.numero) + "\n" +
-      "Data e ora di ricezione: " + ricevuta + "\n" +
-      "Termine ordinario: " + termine + "\n\n" +
-      "Articoli:\n" + elenco + "\n\n" +
-      "La richiesta è stata trasmessa al venditore.\n" +
-      "Ordine: " + link + "\n"
+      to: String(richiesta.cliente_email),
+      subject: "Ricevuta richiesta di recesso " + String(richiesta.numero) + " — InCittà",
+      text:
+        "Ciao " + String(richiesta.cliente_nome) + ",\n\n" +
+        "abbiamo registrato la tua richiesta di recesso.\n\n" +
+        "Pratica: " + String(richiesta.numero) + "\n" +
+        "Data e ora di ricezione: " + ricevuta + "\n" +
+        "Termine ordinario: " + termine + "\n\n" +
+        "Articoli:\n" + elenco + "\n\n" +
+        "La richiesta è stata trasmessa al venditore.\n" +
+        "Ordine: " + link + "\n"
+    });
+
+    if (emailResult.error) {
+      await db.from("richieste_recesso").update({
+        conferma_email: String(richiesta.cliente_email),
+        conferma_esito: "fallita",
+        updated_at: new Date().toISOString(),
+      }).eq("id", richiestaId);
+      await db.from("richieste_recesso_eventi").insert({
+        richiesta_id: richiestaId,
+        tipo: "ricevuta",
+        messaggio: "Invio della ricevuta e-mail non riuscito.",
+        metadata: { esito: "fallita" },
+      });
+      return;
+    }
+
+    await db.from("richieste_recesso").update({
+      conferma_inviata_at: new Date().toISOString(),
+      conferma_email: String(richiesta.cliente_email),
+      conferma_message_id: emailResult.data?.id ?? null,
+      conferma_esito: "inviata",
+      updated_at: new Date().toISOString(),
+    }).eq("id", richiestaId);
+
+    await db.from("richieste_recesso_eventi").insert({
+      richiesta_id: richiestaId,
+      tipo: "ricevuta",
+      messaggio: "Ricevuta e-mail di conferma inviata al cliente.",
+      metadata: {
+        esito: "inviata",
+        message_id: emailResult.data?.id ?? null,
+      },
     });
   } catch (sendError) {
     await db.from("richieste_recesso").update({
@@ -98,46 +130,6 @@ async function inviaRicevuta(richiestaId) {
     });
     return;
   }
-
-  if (emailResult.error) {
-    await db
-      .from("richieste_recesso")
-      .update({
-        conferma_email: String(richiesta.cliente_email),
-        conferma_esito: "fallita",
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", richiestaId);
-
-    await db.from("richieste_recesso_eventi").insert({
-      richiesta_id: richiestaId,
-      tipo: "ricevuta",
-      messaggio: "Invio della ricevuta e-mail non riuscito.",
-      metadata: { esito: "fallita" },
-    });
-    return;
-  }
-
-  await db
-    .from("richieste_recesso")
-    .update({
-      conferma_inviata_at: new Date().toISOString(),
-      conferma_email: String(richiesta.cliente_email),
-      conferma_message_id: emailResult.data?.id ?? null,
-      conferma_esito: "inviata",
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", richiestaId);
-
-  await db.from("richieste_recesso_eventi").insert({
-    richiesta_id: richiestaId,
-    tipo: "ricevuta",
-    messaggio: "Ricevuta e-mail di conferma inviata al cliente.",
-    metadata: {
-      esito: "inviata",
-      message_id: emailResult.data?.id ?? null,
-    },
-  });
 
   if (richiesta.venditore_email) {
     await resend.emails.send({
