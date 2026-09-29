@@ -51,12 +51,27 @@ async function inviaRicevuta(richiestaId) {
     : "14 giorni dalla consegna";
 
   const resendKey = process.env.RESEND_API_KEY;
-  if (!resendKey) throw new Error("RESEND_API_KEY non configurata");
+  if (!resendKey) {
+    await db.from("richieste_recesso").update({
+      conferma_email: String(richiesta.cliente_email),
+      conferma_esito: "fallita",
+      updated_at: new Date().toISOString(),
+    }).eq("id", richiestaId);
+    await db.from("richieste_recesso_eventi").insert({
+      richiesta_id: richiestaId,
+      tipo: "ricevuta",
+      messaggio: "Ricevuta e-mail non inviata: servizio di posta non configurato.",
+      metadata: { esito: "fallita" },
+    });
+    return;
+  }
   const resend = new Resend(resendKey);
   const link = SITE_URL + "/ordini/conferma/" + encodeURIComponent(String(richiesta.ordine_id));
 
-  const emailResult = await resend.emails.send({
-    from: FROM_EMAIL,
+  let emailResult;
+  try {
+    emailResult = await resend.emails.send({
+      from: FROM_EMAIL,
     to: String(richiesta.cliente_email),
     subject: "Ricevuta richiesta di recesso " + String(richiesta.numero) + " — InCittà",
     text:
@@ -68,7 +83,21 @@ async function inviaRicevuta(richiestaId) {
       "Articoli:\n" + elenco + "\n\n" +
       "La richiesta è stata trasmessa al venditore.\n" +
       "Ordine: " + link + "\n"
-  });
+    });
+  } catch (sendError) {
+    await db.from("richieste_recesso").update({
+      conferma_email: String(richiesta.cliente_email),
+      conferma_esito: "fallita",
+      updated_at: new Date().toISOString(),
+    }).eq("id", richiestaId);
+    await db.from("richieste_recesso_eventi").insert({
+      richiesta_id: richiestaId,
+      tipo: "ricevuta",
+      messaggio: "Invio della ricevuta e-mail non riuscito.",
+      metadata: { esito: "fallita", errore: String(sendError) },
+    });
+    return;
+  }
 
   if (emailResult.error) {
     await db
