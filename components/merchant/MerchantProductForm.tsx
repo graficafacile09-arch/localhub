@@ -40,6 +40,9 @@ export type MerchantProductPayload = {
   prodottoTipico: boolean;
   /** True se il prodotto è in offerta (vetrina "Offerte", badge rosso). */
   prodottoOfferta: boolean;
+  recessoApplicabile: boolean;
+  recessoEsclusioneCodice: string | null;
+  recessoEsclusioneDettaglio: string | null;
 };
 
 type MerchantProductFormProps = {
