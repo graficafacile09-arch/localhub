@@ -741,30 +741,8 @@ export async function createMerchantProductForStore(
   if (input.seoDescription !== undefined) payload.seo_description = input.seoDescription.trim() || null;
   if (input.altTextImmagine !== undefined) payload.alt_text_immagine = input.altTextImmagine.trim() || null;
 
-  const creaProdottoConRetry = async () => {
-    let risultato = await supabase
-      .from("prodotti")
-      .insert({ ...payloadBase, slug: await generaSlugUnivoco("prodotti", input.nome.trim()) })
-      .select("*")
-      .single();
-
-    for (let tentativo = 1; tentativo < 4; tentativo += 1) {
-      if (risultato.error?.code !== "23505") break;
-
-      risultato = await supabase
-        .from("prodotti")
-        .insert({
-          ...payloadBase,
-          slug: await generaSlugUnivoco("prodotti", `${input.nome.trim()}-${tentativo + 1}`),
-        })
-        .select("*")
-        .single();
-    }
-
-    return risultato;
-  };
-
-  const insertResult = await creaProdottoConRetry();
+  const payload = { ...payloadBase, slug: await generaSlugUnivoco("prodotti", input.nome.trim()) };
+  const insertResult = await supabase.from("prodotti").insert(payload).select("*").single();
 
   if (insertResult.error && isSchemaError(insertResult.error)) {
     const fallbackResult = await supabase
