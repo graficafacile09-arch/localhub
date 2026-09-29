@@ -98,6 +98,7 @@ function mappaLista(row: OrdineRow, righe: RigaOrdine[] = []): OrdineClienteList
     negozioNome: String(row.negozio_nome ?? ""),
     ritiroData: (row.ritiro_data as string | null) ?? null,
     ritiroFascia: (row.ritiro_fascia as string | null) ?? null,
+    richiedeVerificaEta: Boolean(row.contiene_prodotti_verifica_eta),
     righe,
   };
 }
