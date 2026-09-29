@@ -157,6 +157,7 @@ export default function MerchantProductForm({
       alt_text_immagine: str(initialValues.alt_text_immagine),
       prodotto_tipico: String(Boolean(initialValues.prodotto_tipico)),
       prodotto_offerta: String(Boolean(initialValues.prodotto_offerta)),
+      soggetto_verifica_eta: String(Boolean(initialValues.soggetto_verifica_eta)),
     });
   }
 
