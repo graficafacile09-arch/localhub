@@ -19,7 +19,7 @@ const TEMPLATES: TemplateNegozio[] = [
     nome: "Negozio Base",
     descrizione: "Template generico per qualsiasi tipo di attività commerciale. Contiene tutti i moduli essenziali.",
     icone: ["🏪"],
-    moduli_attivi: ["informazioni", "immagini", "prodotti", "servizi", "offerte", "eventi", "contatti", "posizione", "orari", "social", "seo", "ai", "impostazioni"],
+    moduli_attivi: ["informazioni", "immagini", "prodotti", "servizi", "offerte", "eventi", "contatti", "posizione", "orari", "social", "seo", "ai", "pagamenti", "impostazioni"],
   },
   {
     id: "ristorante",
@@ -40,7 +40,7 @@ const TEMPLATES: TemplateNegozio[] = [
     nome: "Pizzeria",
     descrizione: "Per pizzerie al taglio, da asporto e con servizio ai tavoli. Include menu e delivery.",
     icone: ["🍕", "🍺"],
-    moduli_attivi: ["informazioni", "immagini", "prodotti", "offerte", "eventi", "contatti", "posizione", "orari", "social", "seo", "ai", "impostazioni"],
+    moduli_attivi: ["informazioni", "immagini", "prodotti", "offerte", "eventi", "contatti", "posizione", "orari", "social", "seo", "ai", "pagamenti", "impostazioni"],
   },
   {
     id: "hotel",
@@ -54,7 +54,7 @@ const TEMPLATES: TemplateNegozio[] = [
     nome: "Farmacia",
     descrizione: "Per farmacie e parafarmacie. Include servizi sanitari, turni e prodotti specifici.",
     icone: ["💊", "⚕️"],
-    moduli_attivi: ["informazioni", "immagini", "prodotti", "servizi", "offerte", "contatti", "posizione", "orari", "social", "seo", "ai", "impostazioni"],
+    moduli_attivi: ["informazioni", "immagini", "prodotti", "servizi", "offerte", "contatti", "posizione", "orari", "social", "seo", "ai", "pagamenti", "impostazioni"],
   },
   {
     id: "parrucchiere",
