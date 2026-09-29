@@ -90,6 +90,7 @@ const PROVIDER_INFO: Record<string, ProviderInfoEntry> = {
 const METODI_INFO: Record<string, { nome: string; descrizione: string }> = {
   carta: { nome: "Carta", descrizione: "Carte di credito e debito" },
   klarna: { nome: "Klarna", descrizione: "Paga in 3/4 rate" },
+  sepa_debit: { nome: "SEPA", descrizione: "Addebito diretto SEPA" },
   bonifico_istantaneo: { nome: "Bonifico istantaneo", descrizione: "Pagamento tramite Stripe" },
   bonifico_diretto_venditore: {
     nome: "Bonifico bancario diretto al venditore",
