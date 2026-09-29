@@ -826,6 +826,9 @@ export async function updateMerchantProductForStore(
     origine_pubblicazione: input.originePubblicazione?.trim() || "manuale",
     prodotto_tipico: input.prodottoTipico ?? false,
     prodotto_offerta: input.prodottoOfferta ?? false,
+    recesso_applicabile: input.recessoApplicabile ?? true,
+    recesso_esclusione_codice: input.recessoApplicabile === false ? (input.recessoEsclusioneCodice ?? null) : null,
+    recesso_esclusione_dettaglio: input.recessoApplicabile === false ? (input.recessoEsclusioneDettaglio?.trim() || null) : null,
   };
 
   if (input.descrizioneCompleta !== undefined) payload.descrizione_completa = input.descrizioneCompleta.trim() || null;
