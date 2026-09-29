@@ -21,6 +21,8 @@ export type RigaCarrello = {
   negozioNome: string;
   /** Slug del prodotto (link di ritorno alla scheda). */
   slug: string;
+  /** Snapshot UI: il prodotto richiede controllo della maggiore età. */
+  soggettoVerificaEta: boolean;
 };
 
 export type RigaInserimento = Omit<RigaCarrello, "quantita"> & {
@@ -69,6 +71,7 @@ function rigaCompleta(r: RigaInserimento): RigaCarrello {
     negozioId: r.negozioId,
     negozioNome: r.negozioNome,
     slug: r.slug,
+    soggettoVerificaEta: Boolean(r.soggettoVerificaEta),
   };
 }
 
