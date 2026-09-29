@@ -70,7 +70,17 @@ async function inviaRicevuta(richiestaId) {
       "Ordine: " + link + "\n"
   });
 
-  if (emailResult.error) return;
+  if (emailResult.error) {
+    await db
+      .from("richieste_recesso")
+      .update({
+        conferma_esito: "fallita",
+        conferma_email: String(richiesta.cliente_email),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", richiestaId);
+    throw new Error(emailResult.error.message || "Invio ricevuta di recesso fallito");
+  }
 
   await db
     .from("richieste_recesso")
@@ -84,7 +94,7 @@ async function inviaRicevuta(richiestaId) {
     .eq("id", richiestaId);
 
   if (richiesta.venditore_email) {
-    await resend.emails.send({
+    const sellerEmailResult = await resend.emails.send({
       from: FROM_EMAIL,
       to: String(richiesta.venditore_email),
       subject: "Nuova richiesta di recesso " + String(richiesta.numero) + " — InCittà",
