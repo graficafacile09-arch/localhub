@@ -66,7 +66,7 @@ export async function POST(
         ordineId,
         richiestaId,
         aggiornata: false,
-        rimborso: { pending: true, refundId: esitoRimborso.refundId },
+        rimborso: { pending: true, refundId: esitoRimborso.refundId, operazioneId: esitoRimborso.operazioneId },
         message: "Il rimborso è in riconciliazione. La pratica resta nello stato attuale.",
       }, 202);
     }
@@ -82,6 +82,7 @@ export async function POST(
     p_azione: body.azione,
     p_nota: nota,
     p_importo_rimborsato: importo,
+    p_rimborso_operazione_id: body.azione === "rimborsata" ? esitoRimborso.operazioneId : null,
   });
 
   if (rpcError) {
@@ -156,6 +157,6 @@ export async function POST(
     richiestaId,
     aggiornata: true,
     origin: url.origin,
-    rimborso: body.azione === "rimborsata" ? { pending: false, importoRimborsato: importo } : null,
+    rimborso: body.azione === "rimborsata" ? { pending: false, importoRimborsato: importo, operazioneId: esitoRimborso.operazioneId } : null,
   });
 }
