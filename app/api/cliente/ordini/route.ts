@@ -28,6 +28,14 @@ function ipRichiedente(request: Request): string {
   return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "anon";
 }
 
+
+async function prodottoRichiedeVerificaEta(prodottoId: string): Promise<boolean> {
+  const db = createAdminSupabaseClient();
+  const { data, error } = await db.from("prodotti").select("soggetto_verifica_eta").eq("id", Number(prodottoId)).maybeSingle();
+  if (error) throw new Error("AGE_FLAG_READ_FAILED");
+  return Boolean(data?.soggetto_verifica_eta);
+}
+
 async function negozioDaProdotto(
   prodottoId: string
 ): Promise<{ id: string; nome: string } | null> {
@@ -115,6 +123,7 @@ export async function POST(request: Request) {
   const clienteRaw = (body.cliente ?? {}) as Record<string, unknown>;
   const ritiroRaw = (body.ritiro ?? {}) as Record<string, unknown>;
   const spedizioneRaw = (body.spedizione ?? {}) as Record<string, unknown>;
+  const dichiarazioneEta = body.dichiarazioneEta === true;
 
   // ── VALIDAZIONE GUEST: email e telefono OBBLIGATORI per modalità guest ──────
   // Se l'utente NON è autenticato (quindi è in modalità guest esplicita),
@@ -177,6 +186,20 @@ export async function POST(request: Request) {
     typeof body.prodottoId === "string" || typeof body.prodottoId === "number"
       ? String(body.prodottoId)
       : "";
+
+  // Prodotti soggetti a controllo della maggiore età: il checkout deve
+  // registrare una conferma esplicita. La conferma online non sostituisce
+  // il controllo dell'identità che resta a carico del venditore nei casi previsti dalla legge.
+  let richiedeVerificaEta = false;
+  try {
+    richiedeVerificaEta = await prodottoRichiedeVerificaEta(prodottoIdRaw);
+  } catch {
+    return apiError("AGE_CHECK_UNAVAILABLE", "Impossibile verificare i requisiti di età del prodotto.", 503);
+  }
+  if (richiedeVerificaEta && !dichiarazioneEta) {
+    return apiError("AGE_DECLARATION_REQUIRED", "Per acquistare questo prodotto devi confermare di avere almeno 18 anni.", 422);
+  }
+
   const vuoleCarta =
     modalita === "spedizione" && spedizioneRaw.metodoPagamento === "carta";
   if (vuoleCarta) {
@@ -395,6 +418,8 @@ export async function POST(request: Request) {
         },
         fatturazione: input.fatturazione ?? null,
         note: input.note ?? null,
+        dichiarazioneEta,
+        dichiarazioneEtaAt: dichiarazioneEta ? new Date().toISOString() : null,
       })
     );
     if (!intento.ok) {
@@ -412,6 +437,16 @@ export async function POST(request: Request) {
     }
 
     const checkoutId = intento.checkoutId;
+
+    if (dichiarazioneEta) {
+      const db = createAdminSupabaseClient();
+      const { data: sessionRow, error: sessionReadError } = await db.from("pagamenti_sessioni").select("checkout_payload").eq("id", checkoutId).maybeSingle();
+      if (sessionReadError || !sessionRow) return apiError("AGE_SNAPSHOT_FAILED", "Impossibile registrare la conferma di maggiore età.", 500);
+      const payload = (sessionRow.checkout_payload && typeof sessionRow.checkout_payload === "object") ? sessionRow.checkout_payload as Record<string, unknown> : {};
+      const { error: sessionUpdateError } = await db.from("pagamenti_sessioni").update({ checkout_payload: { ...payload, dichiarazioneEta: true, dichiarazioneEtaAt: new Date().toISOString() } }).eq("id", checkoutId);
+      if (sessionUpdateError) return apiError("AGE_SNAPSHOT_FAILED", "Impossibile registrare la conferma di maggiore età.", 500);
+    }
+
     const response = apiOk(
       {
         checkoutId,
@@ -441,6 +476,13 @@ export async function POST(request: Request) {
 
   if (!esito.ok) {
     return apiError(esito.codice, esito.errore, esito.status);
+  }
+
+
+  if (richiedeVerificaEta && esito.ordine?.id && dichiarazioneEta) {
+    const db = createAdminSupabaseClient();
+    const { error: ageOrderError } = await db.from("ordini").update({ contiene_prodotti_verifica_eta: true, dichiarazione_eta_confermata: true, dichiarazione_eta_at: new Date().toISOString() }).eq("id", esito.ordine.id);
+    if (ageOrderError) return apiError("AGE_SNAPSHOT_FAILED", "Impossibile registrare la conferma di maggiore età.", 500);
   }
 
   let ordineRisposta = esito.ordine;
