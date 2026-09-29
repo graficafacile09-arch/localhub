@@ -1,6 +1,6 @@
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getTemplateById as getSystemTemplateById } from "@/components/merchant/wizard/templates";
-import { getProfiloPerTemplate, getProfiloAttivita } from "@/lib/profili-attivita";
+import { getProfiloPerTemplate } from "@/lib/profili-attivita";
 import { orariPerProfilo } from "@/lib/orari";
 
 async function loadTemplateData(templateId: string): Promise<TemplateData> {
