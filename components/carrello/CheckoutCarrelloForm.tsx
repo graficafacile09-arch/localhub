@@ -556,6 +556,7 @@ export default function CheckoutCarrelloForm({ prefill}
 
 ,
         note: note.trim() || null,
+        dichiarazioneEta: richiedeVerificaEta && dichiarazioneEta,
      }
 
 ;
