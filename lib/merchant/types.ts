@@ -75,9 +75,9 @@ export type MerchantProduct = {
   prodotto_tipico: boolean;
   /** True se il prodotto è in offerta (vetrina "Offerte", badge rosso). */
   prodotto_offerta: boolean;
-  recesso_applicabile: boolean;
-  recesso_esclusione_codice: string | null;
-  recesso_esclusione_dettaglio: string | null;
+  recesso_applicabile?: boolean;
+  recesso_esclusione_codice?: string | null;
+  recesso_esclusione_dettaglio?: string | null;
   created_at: string | null;
   updated_at: string | null;
 };
