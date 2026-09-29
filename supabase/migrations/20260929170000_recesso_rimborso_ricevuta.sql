@@ -128,4 +128,5 @@ end;
 $function$;
 
 
-revoke execute on function public.gestisci_richiesta_recesso(uuid,text,text,numeric,uuid) from anon;
+revoke execute on function public.gestisci_richiesta_recesso(uuid,text,text,numeric,uuid) from public, anon;
+grant execute on function public.gestisci_richiesta_recesso(uuid,text,text,numeric,uuid) to authenticated;
