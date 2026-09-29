@@ -206,7 +206,7 @@ export default async function AdminOrdineDettaglioPage({
       {/* Recesso: supervisione amministrativa, senza bypassare il workflow del venditore */}
       <RecessoOrdineAdmin ordineId={ordine.id} />
 
-      {/* Layout due colonne */
+      {/* Layout due colonne */}
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="min-w-0 space-y-5">
           <Sezione icon={Package} titolo="Prodotti" sottotitolo="Dettaglio delle righe dell'ordine">
