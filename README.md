@@ -70,6 +70,9 @@ GitHub, nessuna voce nella dashboard) e `vercel deploy` fallisce con:
 ```
 
 Il campo `limit.reset` di quella risposta indica in secondi epoch quando la finestra si libera.
+Per capire se la quota è di nuovo disponibile basta tentare la creazione di un deployment da API:
+se risponde `402 payment_required` la finestra è ancora chiusa e i push verranno ignorati
+fino a `reset`; se risponde `200` i deploy da Git hanno ripreso a funzionare.
 Poiché a contare sono **tutti** i deployment a prescindere dall'origine, con molti branch attivi
 conviene disabilitare esplicitamente in `vercel.json` (`git.deploymentEnabled`) le branch di cui
 non servono le preview, per non esaurire la quota e bloccare i deploy di `main`.
