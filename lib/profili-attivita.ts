@@ -274,10 +274,10 @@ export function getProfiloAttivita(
  * mapping → si conserva il comportamento attuale.
  */
 const PROFILO_DI_TEMPLATE: Record<string, ProfiloAttivitaId> = {
-  base: "altro",
+  base: "ecommerce",
   ristorante: "ristorante",
   bar: "alimentari",
-  pizzeria: "ristorante",
+  pizzeria: "ecommerce",
   hotel: "ricettivo",
   farmacia: "ecommerce",
   parrucchiere: "beauty",
