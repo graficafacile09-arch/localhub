@@ -101,6 +101,7 @@ export default async function RitiroPage({
           telefono: (negozio.telefono as string) ?? null,
           whatsapp: (negozio.whatsapp as string) ?? null,
         } : null}
+        soggettoVerificaEta={Boolean((prodotto as Record<string, unknown>).soggetto_verifica_eta)}
         prefill={{
           nome: profilo?.nome ?? "",
           cognome: profilo?.cognome ?? "",
