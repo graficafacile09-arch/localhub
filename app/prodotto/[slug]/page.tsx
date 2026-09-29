@@ -244,6 +244,13 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
             </div>
           </div>
 
+          {Boolean((prodotto as Record<string, unknown>).soggetto_verifica_eta) ? (
+            <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+              <p className="font-black">18+ — prodotto soggetto a verifica dell'età</p>
+              <p className="mt-1 text-xs leading-5 text-amber-800">Per acquistarlo è richiesta la conferma della maggiore età. Il controllo dell'identità previsto dalla legge resta a carico del venditore.</p>
+            </div>
+          ) : null}
+
           {"descrizione" in prodotto && prodotto.descrizione && (
             <p className="mt-3 text-sm leading-6 text-slate-600">
               {prodotto.descrizione as string}
