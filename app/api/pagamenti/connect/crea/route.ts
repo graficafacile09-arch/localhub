@@ -104,10 +104,28 @@ export async function POST(request: Request) {
     return apiOk({ url, accountId });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "errore sconosciuto";
+    const stripeCode =
+      e && typeof e === "object" && "code" in e
+        ? String((e as { code?: unknown }).code ?? "")
+        : "";
+
     console.error(`[connect-crea] onboarding non avviato: ${msg}`);
+
+    if (stripeCode === "account_creation_liability_unacknowledged") {
+      return apiError(
+        "STRIPE_PIATTAFORMA_LIABILITY_NON_ACCETTATA",
+        "Stripe richiede che l'amministratore della piattaforma accetti la responsabilità per le perdite degli account collegati. Apri il profilo Stripe Connect della piattaforma e completa la conferma richiesta.",
+        409,
+        {
+          azione_richiesta: "Accettare la responsabilità per le perdite degli account collegati nel Dashboard Stripe Connect.",
+          dashboard_url: "https://dashboard.stripe.com/settings/connect/platform-profile",
+        }
+      );
+    }
+
     return apiError(
       "STRIPE_CONNECT_NON_CONFIGURATO",
-      "Stripe Connect non è configurato a livello di piattaforma.",
+      "Non è stato possibile avviare l'onboarding Stripe Connect.",
       500
     );
   }
