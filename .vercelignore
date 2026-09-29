@@ -10,11 +10,3 @@ dist/
 playwright-report/
 test-results/
 .vercel
-
-# Local/dev artifacts not needed by the Vercel build
-.fase9-local/
-screenshots/
-tests/
-scripts/__verifica-visuale-shots/
-scripts/__pino-src/
-supabase/backups/
