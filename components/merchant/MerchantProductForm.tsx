@@ -117,7 +117,9 @@ export default function MerchantProductForm({
   const [prodottoTipico, setProdottoTipico] = useState(Boolean(initialData?.prodotto_tipico));
   // True se il prodotto è in offerta (vetrina "Offerte", badge rosso).
   const [prodottoOfferta, setProdottoOfferta] = useState(Boolean(initialData?.prodotto_offerta));
-
+  const [recessoApplicabile, setRecessoApplicabile] = useState(
+    initialData?.recesso_applicabile !== false
+  );
   // ── Rilevamento modifiche non salvate ────────────────────────────────────
   const dirtyRef = useRef(false);
   const snapshotRef = useRef<string | null>(null);
@@ -153,6 +155,9 @@ export default function MerchantProductForm({
       alt_text_immagine: str(initialValues.alt_text_immagine),
       prodotto_tipico: String(Boolean(initialValues.prodotto_tipico)),
       prodotto_offerta: String(Boolean(initialValues.prodotto_offerta)),
+      recesso_applicabile: String(Boolean(initialValues.recesso_applicabile)),
+      recesso_esclusione_codice: str(initialValues.recesso_esclusione_codice),
+      recesso_esclusione_dettaglio: str(initialValues.recesso_esclusione_dettaglio),
     });
   }
 
@@ -194,6 +199,9 @@ export default function MerchantProductForm({
       alt_text_immagine: get("alt_text_immagine"),
       prodotto_tipico: String(prodottoTipico),
       prodotto_offerta: String(prodottoOfferta),
+      recesso_applicabile: String(recessoApplicabile),
+      recesso_esclusione_codice: get("recesso_esclusione_codice"),
+      recesso_esclusione_dettaglio: get("recesso_esclusione_dettaglio"),
     });
     notifyDirty(current !== getSnapshot());
   }
@@ -237,6 +245,9 @@ export default function MerchantProductForm({
         originePubblicazione: initialData.origine_pubblicazione ?? "manuale",
         prodotto_tipico: initialData.prodotto_tipico ?? false,
         prodotto_offerta: initialData.prodotto_offerta ?? false,
+        recesso_applicabile: initialData.recesso_applicabile !== false,
+        recesso_esclusione_codice: initialData.recesso_esclusione_codice ?? "",
+        recesso_esclusione_dettaglio: initialData.recesso_esclusione_dettaglio ?? "",
       }
     : DEFAULT_PRODUCT_FORM;
 
@@ -345,6 +356,9 @@ export default function MerchantProductForm({
       originePubblicazione: String(formData.get("originePubblicazione") ?? initialValues.originePubblicazione),
       prodottoTipico: prodottoTipico,
       prodottoOfferta: prodottoOfferta,
+      recessoApplicabile,
+      recessoEsclusioneCodice: String(formData.get("recesso_esclusione_codice") ?? "").trim() || null,
+      recessoEsclusioneDettaglio: String(formData.get("recesso_esclusione_dettaglio") ?? "").trim() || null,
     };
 
     const route = productId
@@ -756,6 +770,58 @@ export default function MerchantProductForm({
               placeholder='Filtri (es. "taglia: M, stagione: estate")'
               className="h-10 w-full rounded-lg border border-slate-200 px-3 text-sm outline-none transition focus:border-yellow-500 focus:ring-2 focus:ring-yellow-100"
             />
+            <div className="rounded-xl border border-blue-100 bg-blue-50/40 p-3">
+              <div className="flex items-start gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-black uppercase tracking-wide text-slate-700">
+                    Diritto di recesso
+                  </p>
+                  <p className="mt-1 text-[11px] leading-4 text-slate-500">
+                    Imposta la regola applicabile al momento della pubblicazione. Questa informazione viene poi storicizzata sull’ordine.
+                  </p>
+                </div>
+                <label className="flex shrink-0 items-center gap-2 text-xs font-semibold text-slate-700">
+                  <input
+                    type="checkbox"
+                    name="recesso_applicabile"
+                    checked={recessoApplicabile}
+                    onChange={(e) => setRecessoApplicabile(e.target.checked)}
+                    className="h-4 w-4 rounded border-slate-300 text-blue-600"
+                  />
+                  Applicabile
+                </label>
+              </div>
+
+              {!recessoApplicabile ? (
+                <div className="mt-3 space-y-2">
+                  <select
+                    id="recesso_esclusione_codice"
+                    name="recesso_esclusione_codice"
+                    defaultValue={initialValues.recesso_esclusione_codice}
+                    className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none transition focus:border-yellow-500 focus:ring-2 focus:ring-yellow-100"
+                  >
+                    <option value="">Seleziona il motivo dell’esclusione</option>
+                    <option value="prodotto_personalizzato">Prodotto personalizzato</option>
+                    <option value="prodotto_deperibile">Prodotto deperibile</option>
+                    <option value="bene_sigillato_igiene_salute">Bene sigillato per igiene o salute</option>
+                    <option value="servizio_tempo_libero_data_specifica">Servizio per tempo libero con data specifica</option>
+                    <option value="contenuto_digitale_avviato">Contenuto digitale già avviato</option>
+                    <option value="servizio_urgente_su_richiesta">Servizio urgente su richiesta</option>
+                    <option value="altra_esclusione_prevista">Altra esclusione prevista</option>
+                  </select>
+                  <textarea
+                    id="recesso_esclusione_dettaglio"
+                    name="recesso_esclusione_dettaglio"
+                    defaultValue={initialValues.recesso_esclusione_dettaglio}
+                    maxLength={1000}
+                    rows={2}
+                    placeholder="Spiega brevemente l’esclusione mostrata al cliente"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-yellow-500 focus:ring-2 focus:ring-yellow-100"
+                  />
+                </div>
+              ) : null}
+            </div>
+
             <div className="grid grid-cols-2 gap-3">
               <input
                 id="seo_title"
