@@ -41,7 +41,7 @@ export type MerchantProductPayload = {
   /** True se il prodotto è in offerta (vetrina "Offerte", badge rosso). */
   prodottoOfferta: boolean;
   /** True se la vendita richiede verifica della maggiore età. */
-  soggettoVerificaEta: boolean;
+  soggettoVerificaEta?: boolean;
 };
 
 type MerchantProductFormProps = {
