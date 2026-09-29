@@ -787,14 +787,26 @@ export async function caricaIntentoRetry(
     .eq("id", checkoutId)
     .maybeSingle();
   if (!data) return null;
-  const payload = (data.checkout_payload as { clienteUserId?: unknown } | null) ?? null;
+  // Il payload canonico P1 salva l'identità nel blocco cliente.userId.
+  // Manteniamo anche il fallback clienteUserId per eventuali snapshot storici.
+  const payload =
+    (data.checkout_payload as {
+      cliente?: { userId?: unknown } | null;
+      clienteUserId?: unknown;
+    } | null) ?? null;
+  const clienteUserId =
+    payload?.cliente?.userId
+      ? String(payload.cliente.userId)
+      : payload?.clienteUserId
+        ? String(payload.clienteUserId)
+        : null;
   return {
     id: String(data.id),
     negozioId: String(data.negozio_id ?? ""),
     provider: String(data.provider ?? ""),
     status: String(data.status ?? ""),
     ordineId: data.ordine_id ? String(data.ordine_id) : null,
-    clienteUserId: payload?.clienteUserId ? String(payload.clienteUserId) : null,
+    clienteUserId,
     expiresAt: data.expires_at ? String(data.expires_at) : null,
     redirectUrl: data.redirect_url ? String(data.redirect_url) : null,
   };
