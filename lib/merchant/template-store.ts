@@ -265,7 +265,7 @@ export async function createStoreFromTemplate(
   const template = await loadTemplateData(templateId);
   const d = template as Record<string, unknown>;
 
-  const profilo = getProfiloPerTemplate(templateId) ?? getProfiloAttivita("ecommerce");
+  const profilo = getProfiloPerTemplate(templateId);
 
   const { data: created, error: createErr } = await supabase
     .from("negozi")
@@ -278,7 +278,10 @@ export async function createStoreFromTemplate(
       citta: newStore.citta,
       attivo: true,
       version: 1,
-      moduli_attivi: profilo?.moduli_attivi ?? null,
+      // Per i template di sistema mappati, il profilo attività è la fonte
+      // autorevole dei moduli commerciali (in particolare pagamenti).
+      // I template personali non mappati mantengono invece i propri moduli.
+      moduli_attivi: profilo?.moduli_attivi ?? (Array.isArray(d.moduli_attivi) ? d.moduli_attivi : null),
       data: profilo
         ? { tipo_attivita: profilo.id, operativita: profilo.operativita }
         : null,
@@ -344,10 +347,12 @@ export async function createStoreFromTemplate(
   }
 
   // Offerte, Eventi, AI (data jsonb)
-  const mergedData: Record<string, unknown> = {
-    tipo_attivita: profilo?.id ?? "ecommerce",
-    operativita: profilo?.operativita ?? "vendita",
-  };
+  const mergedData: Record<string, unknown> = profilo
+    ? {
+        tipo_attivita: profilo.id,
+        operativita: profilo.operativita,
+      }
+    : {};
   if (d.offerte) mergedData.offerte = JSON.parse(JSON.stringify(d.offerte));
   if (d.eventi) mergedData.eventi = JSON.parse(JSON.stringify(d.eventi));
   if (d.ai_data) mergedData.ai_data = JSON.parse(JSON.stringify(d.ai_data));
