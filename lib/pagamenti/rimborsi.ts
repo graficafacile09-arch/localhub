@@ -46,8 +46,8 @@ export const MAX_MOTIVO_RIMBORSO = 200;
 const PROVIDER_RIMBORSABILI = ["stripe"] as const;
 
 export type EsitoRimborso =
-  | { ok: true; ordineId: string; importoRichiesto: number; importoRimborsato: number; paymentStatus: string; residuo: number; refundId: string | null; pending?: false }
-  | { ok: true; pending: true; ordineId: string; importoRichiesto: number; paymentStatus: string; residuo: number; refundId: string | null }
+  | { ok: true; ordineId: string; operazioneId: string; importoRichiesto: number; importoRimborsato: number; paymentStatus: string; residuo: number; refundId: string | null; pending?: false }
+  | { ok: true; pending: true; ordineId: string; operazioneId: string; importoRichiesto: number; paymentStatus: string; residuo: number; refundId: string | null }
   | { ok: false; codice: string; errore: string; status: number };
 
 type RispostaPrepara = {
@@ -188,7 +188,7 @@ export async function rimborsaOrdine(opts: {
   const residuo = Number(prep.residuo ?? 0);
 
   if (statoOperazione === "succeeded" && prep.refund_id) {
-    return { ok: true, ordineId: String(prep.ordine_id ?? opts.ordineId), importoRichiesto, importoRimborsato: importoRichiesto, paymentStatus: paymentStatus || "refunded", residuo, refundId: String(prep.refund_id), pending: false };
+    return { ok: true, ordineId: String(prep.ordine_id ?? opts.ordineId), operazioneId, importoRichiesto, importoRimborsato: importoRichiesto, paymentStatus: paymentStatus || "refunded", residuo, refundId: String(prep.refund_id), pending: false };
   }
 
   const { data: claim, error: claimErr } = await callRpc("pagamenti_rimborso_operazione_claim", { p_operazione_id: operazioneId });
@@ -201,9 +201,9 @@ export async function rimborsaOrdine(opts: {
 
   if (claimed.claimed !== true) {
     if (claimed.stato === "succeeded" && claimed.refund_id) {
-      return { ok: true, ordineId: String(prep.ordine_id ?? opts.ordineId), importoRichiesto, importoRimborsato: importoRichiesto, paymentStatus: paymentStatus || "refunded", residuo, refundId: claimed.refund_id, pending: false };
+      return { ok: true, ordineId: String(prep.ordine_id ?? opts.ordineId), operazioneId, importoRichiesto, importoRimborsato: importoRichiesto, paymentStatus: paymentStatus || "refunded", residuo, refundId: claimed.refund_id, pending: false };
     }
-    return { ok: true, pending: true, ordineId: String(prep.ordine_id ?? opts.ordineId), importoRichiesto, paymentStatus: paymentStatus || "paid", residuo, refundId: claimed.refund_id ?? null };
+    return { ok: true, pending: true, ordineId: String(prep.ordine_id ?? opts.ordineId), operazioneId, importoRichiesto, paymentStatus: paymentStatus || "paid", residuo, refundId: claimed.refund_id ?? null };
   }
 
   const provider = String(claimed.provider ?? prep.provider ?? "");
@@ -232,19 +232,19 @@ export async function rimborsaOrdine(opts: {
     refundId = esito.refundId ?? null;
   } catch (err) {
     await db.rpc("pagamenti_rimborso_operazione_fallita", { p_operazione_id: operazioneId, p_stato: "reconciliation_required", p_codice: "RIMBORSO_PROVIDER_INDETERMINATO", p_dettaglio: err instanceof Error ? err.message : "Risposta provider indeterminata." });
-    return { ok: true, pending: true, ordineId: String(prep.ordine_id ?? opts.ordineId), importoRichiesto, paymentStatus: paymentStatus || "paid", residuo, refundId: null };
+    return { ok: true, pending: true, ordineId: String(prep.ordine_id ?? opts.ordineId), operazioneId, importoRichiesto, paymentStatus: paymentStatus || "paid", residuo, refundId: null };
   }
 
   const { data: completa, error: completaErr } = await callRpc("pagamenti_rimborso_operazione_completa", { p_operazione_id: operazioneId, p_refund_id: refundId });
   if (completaErr) {
     await db.rpc("pagamenti_rimborso_operazione_fallita", { p_operazione_id: operazioneId, p_stato: "reconciliation_required", p_codice: "STATE_NOT_UPDATED", p_dettaglio: "Refund creato dal provider ma finalizzazione DB non disponibile." });
-    return { ok: true, pending: true, ordineId: String(prep.ordine_id ?? opts.ordineId), importoRichiesto, paymentStatus: paymentStatus || "paid", residuo, refundId };
+    return { ok: true, pending: true, ordineId: String(prep.ordine_id ?? opts.ordineId), operazioneId, importoRichiesto, paymentStatus: paymentStatus || "paid", residuo, refundId };
   }
 
   const finale = (completa ?? null) as { ok?: boolean; stato?: string; codice?: string; refund_id?: string | null; importo_rimborsato?: number; payment_status?: string; residuo?: number };
   if (finale.ok !== true || finale.stato !== "succeeded") {
     if (finale.stato === "reconciliation_required") {
-      return { ok: true, pending: true, ordineId: String(prep.ordine_id ?? opts.ordineId), importoRichiesto, paymentStatus: paymentStatus || "paid", residuo: Number(finale.residuo ?? residuo), refundId: finale.refund_id ?? refundId };
+      return { ok: true, pending: true, ordineId: String(prep.ordine_id ?? opts.ordineId), operazioneId, importoRichiesto, paymentStatus: paymentStatus || "paid", residuo: Number(finale.residuo ?? residuo), refundId: finale.refund_id ?? refundId };
     }
     return { ok: false, codice: String(finale.codice ?? "STATE_NOT_UPDATED"), errore: "Impossibile finalizzare il rimborso.", status: 502 };
   }
@@ -265,6 +265,7 @@ export async function rimborsaOrdine(opts: {
     paymentStatus: String(finale.payment_status ?? "partially_refunded"),
     residuo: Number(finale.residuo ?? residuo),
     refundId: finale.refund_id ?? refundId,
+    operazioneId,
     pending: false,
   };
 }
