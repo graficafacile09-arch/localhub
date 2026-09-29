@@ -1,5 +1,6 @@
 import { RotateCcw } from "lucide-react";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import RecessoAzioniVenditore from "./RecessoAzioniVenditore.jsx";
 
 function dataIT(value) {
   if (!value) return "In attesa";
@@ -68,6 +69,8 @@ export default async function RecessoOrdineVenditore({ negozioId, ordineId }) {
                   ))}
                 </div>
               )}
+              <RecessoAzioniVenditore negozioId={negozioId} ordineId={ordineId} richiestaId={p.id} stato={p.stato} />
+
               <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
                 {fasi.map(([label, at]) => (
                   <div key={label} className="rounded-xl border border-slate-200 bg-white px-3 py-2">
