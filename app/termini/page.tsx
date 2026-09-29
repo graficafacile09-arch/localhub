@@ -20,7 +20,7 @@ const sezioni = [
           La società [Inserisci Nome Azienda/Ditta] (di seguito, il “Gestore”) mette a disposizione degli utenti una piattaforma tecnologica web e i relativi servizi digitali e di comunicazione (di seguito, il “Sito” o la “Piattaforma”), finalizzati a consentire l'incontro, l'interazione e la conclusione di rapporti commerciali tra venditori indipendenti (di seguito, i “Venditori”) e potenziali acquirenti (di seguito, gli “Acquirenti”).
         </p>
         <p>
-          Il Gestore fornisce l'infrastruttura tecnologica della Piattaforma e gli strumenti digitali attraverso i quali i Venditori possono pubblicare le proprie offerte e gli Acquirenti possono consultarle e, ove previsto, effettuare ordini.
+          Il Gestore fornisce l'infrastruttura tecnologica della Piattaforma e gli strumenti digitali attraverso i quali i Venditori pubblicano le proprie offerte e gli Acquirenti le consultano e effettuano gli ordini previsti.
         </p>
         <p>
           Il Gestore non acquista, non rivende e non commercializza in proprio i prodotti o i servizi offerti dai Venditori.
@@ -105,7 +105,7 @@ const sezioni = [
         </p>
         <p>
           Il Gestore fornisce esclusivamente lo strumento tecnologico attraverso il quale tali
-          informazioni possono essere registrate e visualizzate. Il Gestore non garantisce
+          informazioni sono registrate e visualizzate. Il Gestore non garantisce
           l'esattezza, la completezza o la tempestività delle informazioni inserite dal
           Venditore e non assume il controllo operativo della spedizione, della consegna o
           della prestazione, fermo restando quanto previsto dalla legge e la possibilità di
@@ -142,7 +142,7 @@ const sezioni = [
         <p>
           Il Venditore gestisce inoltre, nei limiti previsti dalla legge, il recesso, i resi,
           la garanzia legale, i reclami commerciali, i rimborsi e i rapporti con il vettore da
-          esso incaricato. Le condizioni specifiche del Venditore possono integrare i presenti
+          esso incaricato. Le condizioni specifiche del Venditore integrano i presenti
           Termini e sono rese disponibili nei punti pertinenti della Piattaforma.
         </p>
         <p>
@@ -185,8 +185,8 @@ const sezioni = [
     contenuto: (
       <>
         <p>
-          Alcune funzioni possono richiedere la registrazione o l'accesso a un account.
-          Altre funzioni, incluso il checkout guest quando disponibile, possono essere
+          Le funzioni che richiedono la registrazione o l'accesso a un account sono utilizzabili tramite account.
+          Le altre funzioni, incluso il checkout guest quando previsto dalla Piattaforma, sono
           utilizzate senza creare un account.
         </p>
         <p>
@@ -206,7 +206,7 @@ const sezioni = [
           Gestore in caso di accesso non autorizzato o di sospetto uso improprio dell'account.
         </p>
         <p>
-          Le funzioni disponibili possono dipendere dal tipo di account, dal ruolo assegnato,
+          Le funzioni disponibili dipendono dal tipo di account, dal ruolo assegnato,
           dalle verifiche effettuate e dallo stato della piattaforma.
         </p>
       </>
@@ -335,7 +335,7 @@ const sezioni = [
       <p>
         InCittà può inviare comunicazioni tecniche relative alla ricezione, allo stato, al
         pagamento, alla consegna, al ritiro o ad altri eventi dell'ordine. Le comunicazioni
-        possono essere inviate anche dal venditore o da un provider coinvolto nel flusso.
+        sono inviate anche dal venditore o da un provider coinvolto nel flusso.
         L'indirizzo e-mail o gli altri recapiti forniti devono essere verificati dall'utente.
       </p>
     ),
@@ -400,7 +400,7 @@ const sezioni = [
     titolo: "17. Segnalazioni di contenuti o attività illecite",
     contenuto: (
       <p>
-        Segnalazioni relative a contenuti, offerte o attività potenzialmente illecite possono
+        Le segnalazioni relative a contenuti, offerte o attività potenzialmente illecite sono
         essere inviate a [EMAIL SEGNALAZIONI]. La segnalazione dovrebbe contenere informazioni
         sufficienti per consentire una verifica tecnica e, quando necessario, l'eventuale
         intervento previsto dalle regole della piattaforma o dalla normativa applicabile.
@@ -424,7 +424,7 @@ const sezioni = [
     contenuto: (
       <p>
         InCittà adotta misure ragionevoli per mantenere disponibili e sicuri i propri servizi,
-        ma possono verificarsi manutenzioni, aggiornamenti, sospensioni, errori o interruzioni
+        e il servizio è soggetto a manutenzioni, aggiornamenti, sospensioni, errori o interruzioni
         dovuti a fattori tecnici o a servizi di terzi. Gli interventi non incidono sui diritti
         inderogabili riconosciuti dalla normativa applicabile.
       </p>
@@ -435,7 +435,7 @@ const sezioni = [
     contenuto: (
       <p>
         La piattaforma può collegarsi a servizi di terzi, inclusi provider di pagamento,
-        strumenti di comunicazione, hosting o altri servizi tecnici. Tali servizi possono avere
+        strumenti di comunicazione, hosting o altri servizi tecnici. Tali servizi hanno
         condizioni e informative proprie. Il loro utilizzo deve essere valutato secondo il
         flusso e il servizio concretamente scelti.
       </p>
@@ -475,7 +475,7 @@ const sezioni = [
     titolo: "24. Modifiche ai Termini",
     contenuto: (
       <p>
-        I presenti Termini possono essere aggiornati per esigenze tecniche, organizzative,
+        Gli aggiornamenti dei presenti Termini avvengono per esigenze tecniche, organizzative,
         normative o di servizio. La versione pubblicata dovrà indicare la data di decorrenza e
         le modalità con cui gli utenti saranno informati delle modifiche. Gli effetti sui
         rapporti già in corso e sugli ordini già conclusi devono essere valutati secondo la
