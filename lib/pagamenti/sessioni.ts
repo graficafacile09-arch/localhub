@@ -871,6 +871,8 @@ export type IntentoCheckoutInput = {
   /** Indirizzo di fatturazione opzionale (passthrough snapshot). */
   fatturazione?: unknown;
   note?: string | null;
+  dichiarazioneEta?: boolean;
+  dichiarazioneEtaAt?: string | null;
 };
 
 /**
