@@ -263,6 +263,9 @@ export async function PATCH(
     quantitaDisponibile?: number | null;
     attivo?: boolean;
     immaginePrincipale?: string | null;
+    recessoApplicabile?: boolean;
+    recessoEsclusioneCodice?: string | null;
+    recessoEsclusioneDettaglio?: string | null;
   }> | null;
 
   if (!body || typeof body !== "object") {
@@ -279,6 +282,9 @@ export async function PATCH(
     quantitaDisponibile?: number | null;
     attivo?: boolean;
     immaginePrincipale?: string;
+    recessoApplicabile?: boolean;
+    recessoEsclusioneCodice?: string | null;
+    recessoEsclusioneDettaglio?: string | null;
   } = {};
 
   if (body.quantitaDisponibile !== undefined) {
@@ -294,6 +300,36 @@ export async function PATCH(
       return apiError("INVALID_BODY", "Il campo attivo deve essere booleano.", 422);
     }
     patch.attivo = body.attivo;
+  }
+
+  if (body.recessoApplicabile !== undefined) {
+    if (typeof body.recessoApplicabile !== "boolean") {
+      return apiError("INVALID_BODY", "Il campo recesso_applicabile deve essere booleano.", 422);
+    }
+    patch.recessoApplicabile = body.recessoApplicabile;
+  }
+
+  if (body.recessoEsclusioneCodice !== undefined) {
+    if (body.recessoEsclusioneCodice !== null &&
+        !CODICI_ESCLUSIONE_RECESSO.includes(body.recessoEsclusioneCodice as (typeof CODICI_ESCLUSIONE_RECESSO)[number])) {
+      return apiError("INVALID_BODY", "Motivazione di esclusione del recesso non valida.", 422);
+    }
+    patch.recessoEsclusioneCodice = body.recessoEsclusioneCodice;
+  }
+
+  if (body.recessoEsclusioneDettaglio !== undefined) {
+    if (body.recessoEsclusioneDettaglio !== null && typeof body.recessoEsclusioneDettaglio !== "string") {
+      return apiError("INVALID_BODY", "Dettaglio dell'esclusione non valido.", 422);
+    }
+    patch.recessoEsclusioneDettaglio = body.recessoEsclusioneDettaglio;
+  }
+
+  if (body.recessoApplicabile === false && !body.recessoEsclusioneCodice) {
+    return apiError("INVALID_BODY", "Per escludere il recesso devi indicare una motivazione controllata.", 422);
+  }
+
+  if (body.recessoApplicabile !== false && body.recessoEsclusioneCodice) {
+    return apiError("INVALID_BODY", "La motivazione di esclusione va indicata solo quando il recesso è escluso.", 422);
   }
 
   // Aggiornamento della SOLA immagine (data URL o URL già persistito): usato
