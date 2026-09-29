@@ -379,6 +379,16 @@ export default function RitiroForm({
           )}
         </div>
 
+        {soggettoVerificaEta ? (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50/80 p-4 shadow-sm">
+            <h3 className="text-sm font-bold text-amber-900">Verifica della maggiore età</h3>
+            <label className="mt-3 flex cursor-pointer items-start gap-3 text-sm text-amber-950">
+              <input type="checkbox" checked={dichiarazioneEta} onChange={(e) => setDichiarazioneEta(e.target.checked)} className="mt-0.5 h-4 w-4" />
+              <span><strong>Confermo di avere almeno 18 anni.</strong><br /><span className="text-xs text-amber-800">La conferma viene registrata nell'ordine. Il venditore resta responsabile dei controlli dell'identità previsti dalla legge.</span></span>
+            </label>
+          </div>
+        ) : null}
+
         {/* Note cliente */}
         <div className="rounded-xl border border-slate-200 bg-white p-4">
           <h3 className="text-sm font-bold text-slate-900">Note</h3>
