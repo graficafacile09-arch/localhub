@@ -11,6 +11,7 @@ export const metadata: Metadata = {
   },
 };
 
+// Age-restricted products: seller responsibility and checkout confirmation are documented in section 11.
 const sezioni = [
   {
     titolo: "1. Natura e ruolo della Piattaforma",
