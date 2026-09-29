@@ -7,7 +7,8 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { orderAccessCookieName, verifyOrderAccessToken } from "@/lib/cliente/order-access";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.incitta.online";
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? "InCittà <onboarding@resend.dev>";
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL ?? "";
+const REPLY_TO_EMAIL = process.env.RESEND_REPLY_TO_EMAIL?.trim() || null;
 
 async function risolviAccesso(ordineId, token) {
   const sessione = await getSessionArea();
@@ -55,19 +56,54 @@ async function inviaRicevuta(richiestaId) {
   const resend = new Resend(resendKey);
   const link = SITE_URL + "/ordini/conferma/" + encodeURIComponent(String(richiesta.ordine_id));
 
+  if (!FROM_EMAIL) throw new Error("RESEND_FROM_EMAIL non configurata");
+
+  const articoliHtml = (righe ?? [])
+    .map((r) =>
+      "<li style=\"margin:0 0 6px;color:#334155;\">" +
+      escapeHtml(String(r.nome_prodotto)) +
+      " — quantità " +
+      escapeHtml(String(r.quantita_richiesta)) +
+      "</li>"
+    )
+    .join("");
+
+  const html = "<!DOCTYPE html><html lang=\"it\"><body style=\"margin:0;padding:0;background:#f1f5f9;font-family:Arial,Helvetica,sans-serif;\">" +
+    "<div style=\"max-width:560px;margin:0 auto;padding:24px 16px;\">" +
+    "<div style=\"background:#2563eb;border-radius:16px 16px 0 0;padding:24px;text-align:center;\">" +
+    "<p style=\"margin:0;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#dbeafe;font-weight:700;\">Ricevuta richiesta</p>" +
+    "<p style=\"margin:8px 0 0;font-size:20px;font-weight:800;color:#fff;\">Richiesta di recesso</p>" +
+    "<p style=\"margin:6px 0 0;font-size:13px;color:#dbeafe;\">Pratica " + escapeHtml(String(richiesta.numero)) + "</p>" +
+    "</div>" +
+    "<div style=\"background:#fff;border-radius:0 0 16px 16px;padding:24px;\">" +
+    "<p style=\"margin:0;font-size:15px;line-height:1.6;color:#0f172a;\">Ciao " + escapeHtml(String(richiesta.cliente_nome)) + ", abbiamo registrato la tua richiesta di recesso.</p>" +
+    "<div style=\"margin-top:18px;border:1px solid #e2e8f0;border-radius:12px;padding:14px;\">" +
+    "<p style=\"margin:0;font-size:13px;color:#475569;\"><strong>Data e ora di ricezione:</strong> " + escapeHtml(ricevuta) + "</p>" +
+    "<p style=\"margin:7px 0 0;font-size:13px;color:#475569;\"><strong>Termine ordinario:</strong> " + escapeHtml(termine) + "</p>" +
+    "</div>" +
+    "<p style=\"margin:20px 0 6px;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#64748b;font-weight:700;\">Articoli interessati</p>" +
+    "<ul style=\"margin:0;padding-left:20px;\">" + articoliHtml + "</ul>" +
+    "<p style=\"margin:20px 0 0;font-size:14px;line-height:1.6;color:#475569;\">La richiesta è stata trasmessa al venditore per la gestione del reso e del rimborso, quando previsto.</p>" +
+    "<div style=\"margin-top:24px;text-align:center;\"><a href=\"" + link + "\" style=\"display:inline-block;background:#2563eb;color:#fff;text-decoration:none;padding:13px 28px;border-radius:12px;font-size:14px;font-weight:700;\">Visualizza ordine</a></div>" +
+    "<p style=\"margin:20px 0 0;font-size:11px;line-height:1.6;color:#94a3b8;text-align:center;\">Email transazionale relativa alla tua richiesta di recesso su InCittà.</p>" +
+    "</div></div></body></html>";
+
+  const testo = "Ciao " + String(richiesta.cliente_nome) + ",\n\n" +
+    "abbiamo registrato la tua richiesta di recesso.\n\n" +
+    "Pratica: " + String(richiesta.numero) + "\n" +
+    "Data e ora di ricezione: " + ricevuta + "\n" +
+    "Termine ordinario: " + termine + "\n\n" +
+    "Articoli:\n" + elenco + "\n\n" +
+    "La richiesta è stata trasmessa al venditore.\n" +
+    "Visualizza ordine: " + link + "\n";
+
   const emailResult = await resend.emails.send({
     from: FROM_EMAIL,
     to: String(richiesta.cliente_email),
     subject: "Ricevuta richiesta di recesso " + String(richiesta.numero) + " — InCittà",
-    text:
-      "Ciao " + String(richiesta.cliente_nome) + ",\n\n" +
-      "abbiamo registrato la tua richiesta di recesso.\n\n" +
-      "Pratica: " + String(richiesta.numero) + "\n" +
-      "Data e ora di ricezione: " + ricevuta + "\n" +
-      "Termine ordinario: " + termine + "\n\n" +
-      "Articoli:\n" + elenco + "\n\n" +
-      "La richiesta è stata trasmessa al venditore.\n" +
-      "Ordine: " + link + "\n"
+    html,
+    text: testo,
+    ...(REPLY_TO_EMAIL ? { replyTo: REPLY_TO_EMAIL } : {}),
   });
 
   if (emailResult.error) {
@@ -94,18 +130,44 @@ async function inviaRicevuta(richiestaId) {
     .eq("id", richiestaId);
 
   if (richiesta.venditore_email) {
+    const ordineVenditore = SITE_URL + "/merchant/" +
+      encodeURIComponent(String(richiesta.ordine_id ? richiesta.ordine_id && richiesta.negozio_id : "")) +
+      "/ordini/" + encodeURIComponent(String(richiesta.ordine_id));
+
     await resend.emails.send({
       from: FROM_EMAIL,
       to: String(richiesta.venditore_email),
-      subject: "Nuova richiesta di recesso " + String(richiesta.numero) + " — InCittà",
+      subject: "Nuova richiesta di recesso " + String(richiesta.numero) + " — ordine InCittà",
+      html:
+        "<!DOCTYPE html><html lang=\"it\"><body style=\"margin:0;padding:0;background:#f1f5f9;font-family:Arial,Helvetica,sans-serif;\">" +
+        "<div style=\"max-width:560px;margin:0 auto;padding:24px 16px;\"><div style=\"background:#2563eb;border-radius:16px 16px 0 0;padding:22px;color:#fff;\">" +
+        "<div style=\"font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:#dbeafe;font-weight:700;\">InCittà — attenzione richiesta</div>" +
+        "<div style=\"margin-top:7px;font-size:21px;font-weight:800;\">Nuova richiesta di recesso</div>" +
+        "</div><div style=\"background:#fff;border-radius:0 0 16px 16px;padding:24px;\">" +
+        "<p style=\"margin:0;font-size:15px;color:#0f172a;\">È stata registrata una richiesta di recesso relativa a un tuo ordine.</p>" +
+        "<p style=\"margin:16px 0 0;font-size:14px;color:#475569;\"><strong>Pratica:</strong> " + escapeHtml(String(richiesta.numero)) + "</p>" +
+        "<p style=\"margin:7px 0 0;font-size:14px;color:#475569;\"><strong>Cliente:</strong> " + escapeHtml(String(richiesta.cliente_nome)) + "</p>" +
+        "<p style=\"margin:7px 0 0;font-size:14px;color:#475569;\"><strong>Ricezione:</strong> " + escapeHtml(ricevuta) + "</p>" +
+        "<div style=\"margin-top:22px;text-align:center;\"><a href=\"" + ordineVenditore + "\" style=\"display:inline-block;background:#2563eb;color:#fff;text-decoration:none;padding:13px 28px;border-radius:12px;font-size:14px;font-weight:700;\">Apri ordine e pratica</a></div>" +
+        "</div></div></body></html>",
       text:
-        "È stata registrata una nuova richiesta di recesso.\n\n" +
+        "È stata registrata una nuova richiesta di recesso relativa a un tuo ordine.\n\n" +
         "Pratica: " + String(richiesta.numero) + "\n" +
         "Cliente: " + String(richiesta.cliente_nome) + "\n" +
         "Ricezione: " + ricevuta + "\n\n" +
-        "Apri l'ordine nell'area venditore per gestire la pratica."
+        "Apri l'ordine e la pratica: " + ordineVenditore + "\n",
+      ...(REPLY_TO_EMAIL ? { replyTo: REPLY_TO_EMAIL } : {}),
     });
   }
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
 export async function GET(request, context) {
