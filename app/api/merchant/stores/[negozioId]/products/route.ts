@@ -100,6 +100,9 @@ function validateProductPayload(payload: Partial<MerchantProductInput>) {
   if (payload.prodottoOfferta !== undefined && typeof payload.prodottoOfferta !== "boolean") {
     return "Il campo prodotto_offerta deve essere booleano.";
   }
+  if (payload.soggettoVerificaEta !== undefined && typeof payload.soggettoVerificaEta !== "boolean") {
+    return "Il campo soggetto_verifica_eta deve essere booleano.";
+  }
   if (payload.recessoApplicabile !== undefined && typeof payload.recessoApplicabile !== "boolean") {
     return "Il campo recesso_applicabile deve essere booleano.";
   }
@@ -243,6 +246,7 @@ export async function POST(
     originePubblicazione: payload.originePubblicazione ?? "manuale",
     prodottoTipico: payload.prodottoTipico ?? false,
     prodottoOfferta: payload.prodottoOfferta ?? false,
+    soggettoVerificaEta: payload.soggettoVerificaEta ?? false,
     recessoApplicabile: payload.recessoApplicabile ?? true,
     recessoEsclusioneCodice: payload.recessoEsclusioneCodice ?? null,
     recessoEsclusioneDettaglio: payload.recessoEsclusioneDettaglio ?? null,
