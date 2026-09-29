@@ -66,7 +66,7 @@ export async function inviaConfermaRecesso(richiestaId) {
     `Pratica: ${richiesta.numero}`, `Ricezione: ${dataIT(richiesta.ricevuta_at)}`,
     `Termine ordinario: ${richiesta.termine_recesso_at ? dataIT(richiesta.termine_recesso_at) : "non ancora decorrente"}`,
     "", "Articoli:", ...righe.map(r => `- ${r.nome_prodotto} — quantità ${r.quantita_richiesta} — €${euro(Number(r.prezzo_unitario) * Number(r.quantita_richiesta))}`),
-    `", Importo previsto: €${euro(richiesta.importo_previsto)}`, "", richiesta.dichiarazione_testo,
+    `Importo previsto: €${euro(richiesta.importo_previsto)}`, "", richiesta.dichiarazione_testo,
   ].join("\\n");
   try {
     const result = await timeout(resend.emails.send({ from: FROM_EMAIL, to: String(richiesta.cliente_email), subject: `Ricevuta richiesta di recesso ${richiesta.numero} — InCittà`, html: buildHtml(richiesta, righe), text }));
