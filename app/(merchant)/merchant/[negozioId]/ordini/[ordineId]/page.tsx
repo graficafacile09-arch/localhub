@@ -31,6 +31,7 @@ import { StoricoEventi } from "@/components/ordini/StoricoEventi";
 import { OrderHeader } from "@/components/ordini/OrderHeader";
 import { InformazioniCliente } from "@/components/ordini/InformazioniCliente";
 import { InformazioniRitiroSpedizione } from "@/components/ordini/InformazioniRitiroSpedizione";
+import RecessoOrdineVenditore from "@/components/merchant/RecessoOrdineVenditore";
 
 export const dynamic = "force-dynamic";
 
@@ -186,6 +187,8 @@ export default async function MerchantOrdineDettaglioPage({
       />
 
       {/* ── Azioni venditore (in base allo stato reale) ────────────────────── */}
+      <RecessoOrdineVenditore negozioId={negozioId} ordineId={ordineId} />
+
       {mostraPannello && (
         <div className="rounded-[1.75rem] border border-blue-100 bg-white p-5 shadow-sm ring-1 ring-blue-50">
           <p className="mb-3 flex items-center gap-2 text-sm font-black uppercase tracking-wide text-slate-900">
