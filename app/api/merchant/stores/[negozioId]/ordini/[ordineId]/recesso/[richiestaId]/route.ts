@@ -35,7 +35,7 @@ export async function POST(
   }
 
   const nota = typeof body.nota === "string" ? body.nota.trim().slice(0, 1500) : null;
-  const importo = body.importoRimborsato == null || body.importoRimborsato === ""
+  let importo = body.importoRimborsato == null || body.importoRimborsato === ""
     ? null
     : Number(body.importoRimborsato);
 
