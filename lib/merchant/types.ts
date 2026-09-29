@@ -75,6 +75,8 @@ export type MerchantProduct = {
   prodotto_tipico: boolean;
   /** True se il prodotto è in offerta (vetrina "Offerte", badge rosso). */
   prodotto_offerta: boolean;
+  /** True se la vendita richiede verifica della maggiore età. */
+  soggetto_verifica_eta: boolean;
   recesso_applicabile?: boolean;
   recesso_esclusione_codice?: string | null;
   recesso_esclusione_dettaglio?: string | null;
@@ -115,6 +117,8 @@ export type MerchantProductInput = {
   prodottoTipico?: boolean;
   /** True se il prodotto è in offerta (vetrina "Offerte", badge rosso). */
   prodottoOfferta?: boolean;
+  /** True se la vendita richiede verifica della maggiore età. */
+  soggettoVerificaEta?: boolean;
   recessoApplicabile?: boolean;
   recessoEsclusioneCodice?: string | null;
   recessoEsclusioneDettaglio?: string | null;
