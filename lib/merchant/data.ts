@@ -741,13 +741,12 @@ export async function createMerchantProductForStore(
   if (input.seoDescription !== undefined) payload.seo_description = input.seoDescription.trim() || null;
   if (input.altTextImmagine !== undefined) payload.alt_text_immagine = input.altTextImmagine.trim() || null;
 
-  let insertResult: { data: Record<string, unknown> | null; error: QueryError | null };
   let payload = { ...payloadBase, slug: await generaSlugUnivoco("prodotti", input.nome.trim()) };
+  let insertResult = await supabase.from("prodotti").insert(payload).select("*").single();
 
-  for (let tentativo = 0; tentativo < 4; tentativo += 1) {
+  for (let tentativo = 1; tentativo < 4 && insertResult.error?.code === "23505"; tentativo += 1) {
+    payload = { ...payloadBase, slug: await generaSlugUnivoco("prodotti", `${input.nome.trim()}-${tentativo + 1}`) };
     insertResult = await supabase.from("prodotti").insert(payload).select("*").single();
-    if (!insertResult.error || insertResult.error.code !== "23505") break;
-    payload = { ...payloadBase, slug: await generaSlugUnivoco("prodotti", `${input.nome.trim()}-${tentativo + 2}`) };
   }
 
   if (insertResult.error && isSchemaError(insertResult.error)) {
