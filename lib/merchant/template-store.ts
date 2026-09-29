@@ -295,6 +295,14 @@ export async function createStoreFromTemplate(
   }
 
   const newId = created.id as string;
+
+  const { error: metodiError } = await supabase.rpc("negozio_metodi_inizializza", {
+    p_negozio_id: newId,
+  });
+  if (metodiError) {
+    console.error("Errore inizializzazione metodi da template:", metodiError.message);
+  }
+
   const updateFields: Record<string, unknown> = {};
 
   // Moduli attivi / colori del template.

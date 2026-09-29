@@ -70,6 +70,14 @@ export async function duplicateStore(
   }
 
   const newId = created.id as string;
+
+  const { error: metodiError } = await supabase.rpc("negozio_metodi_inizializza", {
+    p_negozio_id: newId,
+  });
+  if (metodiError) {
+    console.error("Errore inizializzazione metodi duplicazione:", metodiError.message);
+  }
+
   const updateFields: Record<string, unknown> = {};
 
   // 3. Informazioni

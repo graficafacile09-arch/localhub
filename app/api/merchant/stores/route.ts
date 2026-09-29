@@ -69,6 +69,14 @@ export async function POST(request: Request) {
     return apiError("CREATE_FAILED", "Impossibile creare il negozio. Riprova tra poco.", 500);
   }
 
+  // Inizializza il catalogo commerciale in modo idempotente.
+  const { error: metodiError } = await supabase.rpc("negozio_metodi_inizializza", {
+    p_negozio_id: data.id,
+  });
+  if (metodiError) {
+    console.error("[/api/merchant/stores] Errore inizializzazione metodi:", metodiError.message);
+  }
+
   // Notifica admin — BEST-EFFORT, creazione negozio riuscita. Mai
   // bloccante: un errore qui non tocca l'esito della creazione.
   await creaNotificaAdmin({
