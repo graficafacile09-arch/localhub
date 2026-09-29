@@ -67,6 +67,8 @@ export type OrdineVenditoreLista = {
   lettoAt: string | null;
   /** True se l'ordine ha almeno un reclamo ATTIVO (aperto/in gestione). */
   haReclamoAperto: boolean;
+  /** True se l'ordine ha una pratica di recesso ancora da chiudere. */
+  haRichiestaRecesso: boolean;
   /** Righe prodotto (per la sintesi in lista e il dettaglio). */
   righe: RigaOrdine[];
 };
@@ -173,6 +175,7 @@ function mappaLista(row: OrdineRow, righe: RigaOrdine[] = []): OrdineVenditoreLi
     numeroRighe: righe.length,
     lettoAt: (row.letto_at as string | null) ?? null,
     haReclamoAperto: false,
+    haRichiestaRecesso: false,
     righe,
   };
 }
@@ -297,6 +300,32 @@ export async function getOrdiniVenditore(
   const lista = ordini.map((o) =>
     mappaLista(o, righePerOrdine.get(String(o.id)) ?? [])
   );
+
+  // Pratiche di recesso ancora operative: vengono usate solo per
+  // evidenziare lo specifico ordine nella lista venditore.
+  try {
+    if (lista.length > 0) {
+      const { data: recessoIds } = await db
+        .from("richieste_recesso")
+        .select("ordine_id")
+        .in("ordine_id", lista.map((o) => o.id))
+        .in("stato", [
+          "richiesta",
+          "presa_in_carico",
+          "reso_da_spedire",
+          "reso_ricevuto",
+          "rimborso_in_corso",
+        ]);
+      const conRecesso = new Set(
+        ((recessoIds ?? []) as Array<{ ordine_id: unknown }>).map((r) => String(r.ordine_id))
+      );
+      for (const ordine of lista) {
+        ordine.haRichiestaRecesso = conRecesso.has(ordine.id);
+      }
+    }
+  } catch (err) {
+    console.error("[ordini-venditore] lettura recesso attivo fallita (best-effort):", (err as Error)?.message);
+  }
 
   // Reclami ATTIVI degli ordini elencati (best-effort: se la tabella non
   // esiste o la query fallisce, la lista non deve rompersi).
