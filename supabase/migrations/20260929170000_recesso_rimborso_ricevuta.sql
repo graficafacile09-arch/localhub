@@ -126,3 +126,6 @@ exception when others then
   return jsonb_build_object('ok',false,'codice','SAVE_FAILED','messaggio','Impossibile aggiornare la pratica.');
 end;
 $function$;
+
+
+revoke execute on function public.gestisci_richiesta_recesso(uuid,text,text,numeric,uuid) from anon;
