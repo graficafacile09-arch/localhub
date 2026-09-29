@@ -29,7 +29,7 @@ async function inviaRicevuta(richiestaId) {
   const { data: richiesta } = await db
     .from("richieste_recesso")
     .select(
-      "id, numero, ordine_id, cliente_nome, cliente_email, venditore_email, " +
+      "id, numero, ordine_id, negozio_id, cliente_nome, cliente_email, venditore_email, " +
       "ricevuta_at, termine_recesso_at, conferma_esito"
     )
     .eq("id", richiestaId)
@@ -131,7 +131,7 @@ async function inviaRicevuta(richiestaId) {
 
   if (richiesta.venditore_email) {
     const ordineVenditore = SITE_URL + "/merchant/" +
-      encodeURIComponent(String(richiesta.ordine_id ? richiesta.ordine_id && richiesta.negozio_id : "")) +
+      encodeURIComponent(String(richiesta.negozio_id)) +
       "/ordini/" + encodeURIComponent(String(richiesta.ordine_id));
 
     await resend.emails.send({
