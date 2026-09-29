@@ -114,6 +114,8 @@ export type OrdineClienteLista = {
   negozioNome: string;
   ritiroData: string | null;
   ritiroFascia: string | null;
+  /** True se l'ordine contiene prodotti soggetti a verifica della maggiore età. */
+  richiedeVerificaEta: boolean;
   /** Righe prodotto (per la sintesi in lista e il dettaglio). */
   righe: RigaOrdine[];
 };
