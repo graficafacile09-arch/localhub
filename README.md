@@ -54,3 +54,22 @@ L'app è disponibile su `http://localhost:3000`.
 ## Documentazione
 
 - [ARCHITETTURA-NEGOZI.md](./ARCHITETTURA-NEGOZI.md) — architettura database e CMS dei negozi
+
+## Deploy e limiti Vercel
+
+Il progetto è collegato a Vercel (`localhub-castrovillari/localhub`, Production Branch `main`):
+ogni push su qualsiasi branch del repository genera un deployment.
+
+**Limite piano Hobby:** 100 deployment ogni 86400 secondi (1 giorno), conteggiati in un'unica
+quota condivisa tra deployment da Git, da CLI e da API. Superata la soglia Vercel **non crea
+più alcun deployment**: i push su `main` vengono ignorati silenziosamente (nessun errore su
+GitHub, nessuna voce nella dashboard) e `vercel deploy` fallisce con:
+
+```text
+402 payment_required - "more than 100, code: api-deployments-free-per-day"
+```
+
+Il campo `limit.reset` di quella risposta indica in secondi epoch quando la finestra si libera.
+Poiché a contare sono **tutti** i deployment a prescindere dall'origine, con molti branch attivi
+conviene disabilitare esplicitamente in `vercel.json` (`git.deploymentEnabled`) le branch di cui
+non servono le preview, per non esaurire la quota e bloccare i deploy di `main`.
