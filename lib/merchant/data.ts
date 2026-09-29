@@ -706,10 +706,9 @@ export async function createMerchantProductForStore(
       ? await uploadDataUrlToStorage(input.immaginePrincipale.trim())
       : null;
 
-  const payload: Record<string, unknown> = {
+  const payloadBase: Record<string, unknown> = {
     negozio_id: negozioId,
     nome: input.nome.trim(),
-    slug: await generaSlugUnivoco("prodotti", input.nome.trim()),
     descrizione: input.descrizione.trim(),
     categoria: input.categoria.trim(),
     sottocategoria: input.sottocategoria?.trim() || null,
@@ -742,7 +741,14 @@ export async function createMerchantProductForStore(
   if (input.seoDescription !== undefined) payload.seo_description = input.seoDescription.trim() || null;
   if (input.altTextImmagine !== undefined) payload.alt_text_immagine = input.altTextImmagine.trim() || null;
 
-  const insertResult = await supabase.from("prodotti").insert(payload).select("*").single();
+  let insertResult: { data: Record<string, unknown> | null; error: QueryError | null };
+  let payload = { ...payloadBase, slug: await generaSlugUnivoco("prodotti", input.nome.trim()) };
+
+  for (let tentativo = 0; tentativo < 4; tentativo += 1) {
+    insertResult = await supabase.from("prodotti").insert(payload).select("*").single();
+    if (!insertResult.error || insertResult.error.code !== "23505") break;
+    payload = { ...payloadBase, slug: await generaSlugUnivoco("prodotti", `${input.nome.trim()}-${tentativo + 2}`) };
+  }
 
   if (insertResult.error && isSchemaError(insertResult.error)) {
     const fallbackResult = await supabase
