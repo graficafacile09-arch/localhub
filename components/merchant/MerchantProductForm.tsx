@@ -40,6 +40,8 @@ export type MerchantProductPayload = {
   prodottoTipico: boolean;
   /** True se il prodotto è in offerta (vetrina "Offerte", badge rosso). */
   prodottoOfferta: boolean;
+  /** True se la vendita richiede verifica della maggiore età. */
+  soggettoVerificaEta: boolean;
 };
 
 type MerchantProductFormProps = {
@@ -94,6 +96,7 @@ const DEFAULT_PRODUCT_FORM = {
   originePubblicazione: "manuale",
   prodotto_tipico: false,
   prodotto_offerta: false,
+  soggetto_verifica_eta: false,
 };
 
 export default function MerchantProductForm({
@@ -117,6 +120,7 @@ export default function MerchantProductForm({
   const [prodottoTipico, setProdottoTipico] = useState(Boolean(initialData?.prodotto_tipico));
   // True se il prodotto è in offerta (vetrina "Offerte", badge rosso).
   const [prodottoOfferta, setProdottoOfferta] = useState(Boolean(initialData?.prodotto_offerta));
+  const [soggettoVerificaEta, setSoggettoVerificaEta] = useState(Boolean(initialData?.soggetto_verifica_eta));
 
   // ── Rilevamento modifiche non salvate ────────────────────────────────────
   const dirtyRef = useRef(false);
@@ -194,6 +198,7 @@ export default function MerchantProductForm({
       alt_text_immagine: get("alt_text_immagine"),
       prodotto_tipico: String(prodottoTipico),
       prodotto_offerta: String(prodottoOfferta),
+      soggetto_verifica_eta: String(soggettoVerificaEta),
     });
     notifyDirty(current !== getSnapshot());
   }
@@ -237,6 +242,7 @@ export default function MerchantProductForm({
         originePubblicazione: initialData.origine_pubblicazione ?? "manuale",
         prodotto_tipico: initialData.prodotto_tipico ?? false,
         prodotto_offerta: initialData.prodotto_offerta ?? false,
+        soggetto_verifica_eta: initialData.soggetto_verifica_eta ?? false,
       }
     : DEFAULT_PRODUCT_FORM;
 
@@ -345,6 +351,7 @@ export default function MerchantProductForm({
       originePubblicazione: String(formData.get("originePubblicazione") ?? initialValues.originePubblicazione),
       prodottoTipico: prodottoTipico,
       prodottoOfferta: prodottoOfferta,
+      soggettoVerificaEta,
     };
 
     const route = productId
@@ -532,6 +539,21 @@ export default function MerchantProductForm({
             notifyDirty(v !== Boolean(initialValues.prodotto_offerta));
           }}
         />
+      </div>
+
+      {/* Verifica maggiore età — controllo commerciale del venditore */}
+      <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-4">
+        <Toggle
+          icon={<span className="text-base" aria-hidden>18+</span>}
+          label="Richiede verifica della maggiore età"
+          description="Attiva questa opzione per prodotti la cui vendita è riservata ai maggiorenni. Il checkout richiederà la conferma del cliente e l'ordine segnalerà al venditore che deve effettuare i controlli previsti dalla legge."
+          checked={soggettoVerificaEta}
+          onChange={(v) => {
+            setSoggettoVerificaEta(v);
+            notifyDirty(v !== Boolean(initialValues.soggetto_verifica_eta));
+          }}
+        />
+        {soggettoVerificaEta ? <p className="mt-2 text-[10px] leading-4 text-amber-800">La conferma online non sostituisce il controllo dell'identità richiesto al venditore nei casi previsti dalla legge.</p> : null}
       </div>
 
       {/* Banner prezzo AI */}
