@@ -23,79 +23,10 @@ async function risolviAccesso(ordineId, token) {
   return { userId: null, guest: true };
 }
 
-async function inviaRicevuta(richiestaId) {
-  const db = createAdminSupabaseClient();
-  const { data: richiesta } = await db
-    .from("richieste_recesso")
-    .select(
-      "id, numero, ordine_id, cliente_nome, cliente_email, venditore_email, " +
-      "ricevuta_at, termine_recesso_at, conferma_esito"
-    )
-    .eq("id", richiestaId)
-    .maybeSingle();
+import { inviaConfermaRecesso } from "@/lib/cliente/recesso-email";
 
-  if (!richiesta || !richiesta.cliente_email || richiesta.conferma_esito === "inviata") return;
-
-  const { data: righe } = await db
-    .from("richieste_recesso_righe")
-    .select("nome_prodotto, quantita_richiesta")
-    .eq("richiesta_id", richiestaId);
-
-  const elenco = (righe ?? [])
-    .map((r) => String(r.nome_prodotto) + " — quantità " + String(r.quantita_richiesta))
-    .join("\n");
-
-  const ricevuta = new Date(String(richiesta.ricevuta_at)).toLocaleString("it-IT");
-  const termine = richiesta.termine_recesso_at
-    ? new Date(String(richiesta.termine_recesso_at)).toLocaleDateString("it-IT")
-    : "14 giorni dalla consegna";
-
-  const resendKey = process.env.RESEND_API_KEY;
-  if (!resendKey) throw new Error("RESEND_API_KEY non configurata");
-  const resend = new Resend(resendKey);
-  const link = SITE_URL + "/ordini/conferma/" + encodeURIComponent(String(richiesta.ordine_id));
-
-  const emailResult = await resend.emails.send({
-    from: FROM_EMAIL,
-    to: String(richiesta.cliente_email),
-    subject: "Ricevuta richiesta di recesso " + String(richiesta.numero) + " — InCittà",
-    text:
-      "Ciao " + String(richiesta.cliente_nome) + ",\n\n" +
-      "abbiamo registrato la tua richiesta di recesso.\n\n" +
-      "Pratica: " + String(richiesta.numero) + "\n" +
-      "Data e ora di ricezione: " + ricevuta + "\n" +
-      "Termine ordinario: " + termine + "\n\n" +
-      "Articoli:\n" + elenco + "\n\n" +
-      "La richiesta è stata trasmessa al venditore.\n" +
-      "Ordine: " + link + "\n"
-  });
-
-  if (emailResult.error) return;
-
-  await db
-    .from("richieste_recesso")
-    .update({
-      conferma_inviata_at: new Date().toISOString(),
-      conferma_email: String(richiesta.cliente_email),
-      conferma_message_id: emailResult.data?.id ?? null,
-      conferma_esito: "inviata",
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", richiestaId);
-
-  if (richiesta.venditore_email) {
-    await resend.emails.send({
-      from: FROM_EMAIL,
-      to: String(richiesta.venditore_email),
-      subject: "Nuova richiesta di recesso " + String(richiesta.numero) + " — InCittà",
-      text:
-        "È stata registrata una nuova richiesta di recesso.\n\n" +
-        "Pratica: " + String(richiesta.numero) + "\n" +
-        "Cliente: " + String(richiesta.cliente_nome) + "\n" +
-        "Ricezione: " + ricevuta + "\n\n" +
-        "Apri l'ordine nell'area venditore per gestire la pratica."
-    });
-  }
+export async function inviaRicevuta(richiestaId) {
+  return inviaConfermaRecesso(richiestaId);
 }
 
 export async function GET(request, context) {
