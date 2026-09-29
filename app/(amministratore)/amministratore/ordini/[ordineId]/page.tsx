@@ -11,6 +11,7 @@ import {
 import OrdineAzioni from "@/components/merchant/OrdineAzioni";
 import MerchantEmptyState from "@/components/merchant/MerchantEmptyState";
 import RimborsoSection from "@/components/amministratore/ordini/RimborsoSection";
+import RecessoOrdineAdmin from "@/components/amministratore/ordini/RecessoOrdineAdmin.jsx";
 import EliminaOrdineAdminButton from "@/components/amministratore/ordini/EliminaOrdineAdminButton";
 import { getOrdineAdmin } from "@/lib/amministratore/ordini";
 import { sintesiProdotti } from "@/lib/cliente/ordini-format";
@@ -202,7 +203,10 @@ export default async function AdminOrdineDettaglioPage({
         <EliminaOrdineAdminButton ordineId={ordine.id} numero={ordine.numero} />
       </div>
 
-      {/* Layout due colonne */}
+      {/* Recesso: supervisione amministrativa, senza bypassare il workflow del venditore */}
+      <RecessoOrdineAdmin ordineId={ordine.id} />
+
+      {/* Layout due colonne */
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
         <div className="min-w-0 space-y-5">
           <Sezione icon={Package} titolo="Prodotti" sottotitolo="Dettaglio delle righe dell'ordine">
