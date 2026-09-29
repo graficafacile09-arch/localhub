@@ -201,6 +201,7 @@ export default async function MerchantOrdiniPage({
               clienteCognome={ordine.clienteCognome}
               nonLetto={!ordine.lettoAt}
               haReclamoAperto={ordine.haReclamoAperto}
+              haRichiestaRecesso={ordine.haRichiestaRecesso}
               ctaLabel="Apri ordine"
             />
           ))}
