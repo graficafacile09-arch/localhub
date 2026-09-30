@@ -58,10 +58,17 @@ export function buildHistoryText(messages: MessaggioAssistente[]): string {
 
 // ─── Selezione tool (JSON) ───────────────────────────────────────────────────
 
-export function buildToolSelectionPrompt(messages: MessaggioAssistente[]): string {
+export function buildToolSelectionPrompt(
+  messages: MessaggioAssistente[],
+  intentHint?: string
+): string {
   const storico = buildHistoryText(messages);
   const ultimo = messages[messages.length - 1];
   const domanda = ultimo && ultimo.role === "user" ? ultimo.content : "";
+  // Pino Intent Layer: l'intento riconosciuto guida le PRIORITÀ del planner.
+  const bloccoIntento = intentHint
+    ? `\nINTENTO RILEVATO (Pino Intent Layer): ${intentHint}\nUsa l'intento per PRIORITIZZARE il recupero: food → ristorazione/pizzerie/alimentari/gastronomia; drink → bar/bevande; service → attività e servizi; gift → idee regalo; product → prodotti diretti; generic → nessuna ricerca forzata.\n`
+    : "";
 
   return `Sei il motore di pianificazione dell'Assistente di InCittà: decidi QUALI dati recuperare dal database pubblico, usando il CONTESTO della conversazione (se prima si parlava di TV e ora dice "sotto 500 euro", la query resta "tv" e maxPrice=500).
 
@@ -69,7 +76,7 @@ CONVERSAZIONE RECENTE:
 ${storico}
 
 ULTIMO MESSAGGIO UTENTE: "${domanda}"
-
+${bloccoIntento}
 TOOL:
 - searchStores: query + opt {categoria, tipo, citta, termini} → negozi/attività
 - searchProducts: query + maxPrice/minPrice (numeri interi, euro) + opt {categoria, sottocategoria} → prodotti

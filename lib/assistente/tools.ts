@@ -22,7 +22,7 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getFarmacieTurnoCastrovillari, type FarmaciaTurno } from "@/lib/farmacie-turno";
 import type { NegozioRicerca, ProdottoRicerca } from "@/lib/ricerca-ai";
 import { terminiSignificativi, similaritaLevenshtein } from "@/lib/search-tollerante";
-import { concettiIntento } from "@/lib/ricerca-intento";
+import { analizzaRichiesta } from "@/lib/ricerca-intento";
 import { espandiQueryConSinonimi } from "@/lib/ricerca-semantica";
 import { estraiCitta } from "@/lib/localita";
 import { normalizza, estraiToken } from "@/lib/text-utils";
@@ -323,8 +323,11 @@ function classificazioneNegozio(n: Record<string, unknown>): string {
 // edit-distance (refuso/plurale). Soglia più alta sui termini corti, come nel
 // fallback tollerante esistente.
 function terminePresente(termine: string, testo: string, token: string[]): boolean {
+  // Termini CORTI (< 4): devono essere parole INTERE. Con il solo
+  // `includes`, "bar" matcherebbe "Barone" (e "barattolo" lato prodotti):
+  // un negozio di gioielli non è un bar.
+  if (termine.length < 4) return token.includes(termine);
   if (testo.includes(termine)) return true;
-  if (termine.length < 4) return false;
   const soglia = termine.length <= 6 ? 0.85 : 0.8;
   return token.some(
     (tok) => tok.length >= 4 && similaritaLevenshtein(tok, termine) >= soglia
@@ -380,10 +383,10 @@ export async function searchStores(
     const terminiOriginali = terminiSignificativi(base, 10)
       .map(normalizza)
       .filter((t) => !tokenCitta || t !== tokenCitta);
-    const concetti = concettiIntento(base)
-      .split(/\s+/)
-      .filter(Boolean)
-      .map(normalizza);
+    // Concetti d'intento come FRASI intere (es. "prodotti tipici"): spezzarli
+    // in singole parole renderebbe "prodotti"/"tipici" una chiave capace di
+    // pescare qualsiasi bottega con "prodotti da forno" tra i servizi.
+    const concetti = analizzaRichiesta(base).concetti.map(normalizza);
     const espansi = espandiQueryConSinonimi(base)
       .split(/\s+/)
       .filter(Boolean)
@@ -435,7 +438,12 @@ function prodottoPertinente(
   );
   if (!campi) return false;
   if (termini.length === 0) return true;
-  if (termini.every((t) => campi.includes(t))) return true;
+  // Anche qui i termini CORTI devono essere parole intere: altrimenti "bar"
+  // matcherebbe "barattolo" nella descrizione di un prodotto qualsiasi.
+  const token = estraiToken(campi);
+  if (termini.every((t) => (t.length < 4 ? token.includes(t) : campi.includes(t)))) {
+    return true;
+  }
   return concetti.some((c) => campi.includes(c));
 }
 
@@ -449,10 +457,10 @@ export async function searchProducts(
   const righe = await cercaProdotti(q, 60);
 
   const terminiOriginali = terminiSignificativi(q, 10).map(normalizza);
-  const concettiQuery = concettiIntento(q)
-    .split(/\s+/)
-    .filter(Boolean)
-    .map(normalizza);
+  // Concetti d'intento come FRASI intere (es. "prodotti tipici"): spezzarli in
+  // singole parole renderebbe "prodotti"/"tipici" una chiave che matcha mezzo
+  // catalogo.
+  const concettiQuery = analizzaRichiesta(q).concetti.map(normalizza);
   const pertinenti =
     terminiOriginali.length > 0
       ? righe.filter((p) => prodottoPertinente(p, terminiOriginali, concettiQuery))

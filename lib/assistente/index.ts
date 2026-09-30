@@ -37,8 +37,14 @@ import {
 import { extractJsonFromText } from "@/lib/product-assistant/providers/utils";
 import { callGeminiText } from "@/lib/ai/gemini-text";
 import type { NegozioRicerca, ProdottoRicerca } from "@/lib/ricerca-ai";
-import { analizzaRichiesta } from "@/lib/ricerca-intento";
 import { pianoIntentoLocale } from "./local-intents";
+import {
+  analizzaIntentoPino,
+  pianoIntento,
+  descriviIntento,
+  type PinoIntent,
+  type PinoIntentAnalysis,
+} from "./intent";
 
 // ─── Tipi pubblici ───────────────────────────────────────────────────────────
 
@@ -53,6 +59,8 @@ export interface RispostaAssistente {
   prodotti: ProdottoRicerca[];
   processingMs: number;
   source: "assistente";
+  /** Intento riconosciuto da Pino Intent Layer v1 (osservabilità/test). */
+  intent?: PinoIntent;
 }
 
 // ─── Configurazione LLM ──────────────────────────────────────────────────────
@@ -191,7 +199,8 @@ function ultimaQuerySostanziale(storico: MessaggioAssistente[]): string {
 // "che cos'è InCittà?" scelgano SEMPRE il tool/risposta giusti, senza
 // affidarsi alla disciplina del modello. Per tutto il resto decide l'LLM.
 function pianoPredefinito(
-  storico: MessaggioAssistente[]
+  storico: MessaggioAssistente[],
+  analisi: PinoIntentAnalysis
 ): { directReply: string | null; tools: ToolInvocation[] } | null {
   const utenti = storico.filter((m) => m.role === "user").map((m) => m.content);
   const ultimo = (utenti[utenti.length - 1] ?? "").trim().toLowerCase();
@@ -230,8 +239,6 @@ function pianoPredefinito(
   const RE_OFFERTE = /\bofferte\b|\bpromozion|\bsconti?\b|\bsaldo\b|\bsaldi\b/;
   const RE_EVENTI =
     /\beventi?\b|weekend|fine settimana|manifestazion|in programma|cosa c'è|cosa c'e|cosa succede|\bmostra\b|\bconcerto\b|\bfiera\b/;
-  const RE_CIBO =
-    /\bmangiare\b|ristorant|trattoria|pizzeria|\bpizza\b|cena|pranzo|aperitiv|\bpanificio\b|\bforno\b/;
   const RE_CHIACCHIERA =
     /^(va bene|ok|okay|perfetto|grazie|grazie mille|ciao|buongiorno|buonasera)$/;
 
@@ -250,69 +257,11 @@ function pianoPredefinito(
     // params vuoti = TUTTI gli eventi attivi (query non specificata)
     return { directReply: null, tools: [{ tool: "searchEvents", params: {} }] };
   }
-  if (RE_CIBO.test(ultimo)) {
-    // Cerchiamo su PIÙ termini alimentari: l'espansione sinonimi di
-    // "mangiare" viene troncata a 12 termini in cercaNegozi, quindi termini
-    // come "panificio"/"forno" non arriverebbero mai al DB. Lanciando più
-    // ricerche specifiche il Panificio/ristorante viene sempre trovato.
-    const specifico = ultimo.includes("pizzeria") || ultimo.includes("pizza")
-      ? "pizza"
-      : ultimo.includes("ristorante") ? "ristorante"
-      : ultimo.includes("trattoria") ? "trattoria"
-      : ultimo.includes("panificio") ? "panificio"
-      : ultimo.includes("forno") ? "forno"
-      : ultimo.includes("gelateria") ? "gelateria"
-      : ultimo.includes("bar") ? "bar"
-      : ultimo.includes("cena") ? "cena"
-      : ultimo.includes("pranzo") ? "pranzo"
-      : "";
-    const termini = Array.from(
-      new Set(
-        (specifico ? [specifico] : []).concat(["mangiare", "panificio", "forno", "ristorante", "pizzeria"])
-      )
-    );
-    // Regola fondamentale: la ricerca dei NEGOZI e quella dei PRODOTTI
-    // hanno rilevanza diversa. I termini generici usati per trovare attività
-    // (mangiare, panificio, forno, ristorante...) NON devono diventare query
-    // prodotto, altrimenti un negozio pertinente può trascinare nel risultato
-    // prodotti casuali del suo catalogo (es. "pizza" -> Nutella).
-    //
-    // Cerchiamo prodotti solo quando abbiamo un soggetto alimentare concreto.
-    // Se il prodotto non esiste, Pino può comunque mostrare il negozio
-    // pertinente, ma NON prodotti non corrispondenti.
-    const queryProdotto = specifico.trim();
-    return {
-      directReply: null,
-      tools: termini.flatMap((query) => [
-        { tool: "searchStores", params: { query } },
-        ...(query === queryProdotto
-          ? [{ tool: "searchProducts", params: { query, limit: 8 } }]
-          : []),
-      ]),
-    };
-  }
   if (RE_CHIACCHIERA.test(ultimo)) {
     return {
       directReply:
         "Va bene, sono qui! Posso aiutarti a trovare negozi, prodotti, offerte ed eventi nella tua città. Dimmi pure cosa cerchi.",
       tools: [],
-    };
-  }
-
-  // Bisogno/intento ("ho sete", "ho fame", "devo fare un regalo", ...): piano
-  // DETERMINISTICO sui concetti dell'interprete (lib/ricerca-intento). La query
-  // originale resta il soggetto: il retrieval di searchStores/prodotti espande
-  // additivamente i concetti. A differenza del passato, NON si affidano spanne
-  // restrittive: se non ci sono risultati reali, la risposta finale lo dirà
-  // onestamente (grounding). Se l'intento non produce concetti, NON forziamo.
-  const intento = analizzaRichiesta(ultimo);
-  if (intento.tipo === "bisogno" && intento.concetti.length > 0) {
-    return {
-      directReply: null,
-      tools: [
-        { tool: "searchStores", params: { query: ultimo } },
-        { tool: "searchProducts", params: { query: ultimo, limit: 8 } },
-      ],
     };
   }
 
@@ -359,6 +308,34 @@ function pianoPredefinito(
     }
   }
 
+  // ── Pino Intent Layer v1 ─────────────────────────────────────────────────
+  // L'intento è già classificato PRIMA di ogni ricerca. Da qui il piano è
+  // guidato dall'intento:
+  //   - generic → nessuna ricerca forzata: Pino chiede di specificare;
+  //   - confidenza alta/media → piano deterministico coerente con l'intento;
+  //   - confidenza bassa (nessun segnale di dominio) → decide il planner LLM,
+  //     esattamente come prima dell'intent layer.
+  if (analisi.intent === "generic") {
+    return {
+      directReply:
+        "Dimmi cosa cerchi a Castrovillari: un prodotto, un negozio, un servizio o un'idea regalo. Più dettagli mi dai, più preciso sarò.",
+      tools: [],
+    };
+  }
+
+  if (analisi.confidence !== "bassa") {
+    const piano = pianoIntento(analisi, ultimo);
+    if (piano.length > 0) {
+      return {
+        directReply: null,
+        tools: piano.map((t) => ({
+          tool: t.tool,
+          params: { query: t.query, ...(t.tool === "searchProducts" ? { limit: 8 } : {}) },
+        })),
+      };
+    }
+  }
+
   return null;
 }
 
@@ -366,8 +343,8 @@ function pianoPredefinito(
 
 function fallbackTestuale(
   risultati: RisultatiRecuperati,
-  domanda: string,
-  notaVincolo = ""
+  notaVincolo = "",
+  intent?: PinoIntent
 ): string {
   const sezioni: string[] = [];
   const totale =
@@ -379,8 +356,8 @@ function fallbackTestuale(
     risultati.farmacie.length;
 
   if (totale === 0) {
-    const richiesta = domanda.replace(/\s+/g, " ").trim().slice(0, 100);
-    return `Non ho trovato risultati per "${richiesta}". Prova con termini diversi o guarda le categorie disponibili su InCittà.`;
+    // Nessun risultato: Pino spiega cosa ha fatto e chiede di meglio.
+    return "Non ho trovato risultati compatibili. Prova a descrivere meglio cosa cerchi: posso cercare negozi, prodotti, offerte ed eventi a Castrovillari.";
   }
 
   if (risultati.prodotti.length > 0) {
@@ -440,13 +417,17 @@ function fallbackTestuale(
     risultati.offerte.length === 0 &&
     risultati.eventi.length === 0;
 
+  // Messaggio di apertura: dice sempre all'utente COSA ha trovato e cosa no.
+  // Per i servizi ("parrucchiere", "idraulico"...) non ha senso parlare di
+  // "prodotto esatto": si parla di attività.
   let introduzione = "";
-  if (soloNegozi) {
+  if (risultati.prodotti.length > 0) {
+    introduzione = "Ho trovato questi prodotti che corrispondono alla tua ricerca.\n\n";
+  } else if (soloNegozi) {
     introduzione =
-      "Non ho trovato prodotti che corrispondono direttamente alla tua ricerca, " +
-      "ma ho trovato alcuni negozi pertinenti che potrebbero aiutarti.\n\n";
-  } else if (risultati.prodotti.length > 0) {
-    introduzione = "Ho trovato questi risultati per la tua ricerca.\n\n";
+      intent === "service"
+        ? "Non ho trovato quello che cerchi, ma ho trovato alcune attività che potrebbero aiutarti.\n\n"
+        : "Non ho trovato il prodotto esatto che cerchi, ma ho trovato alcune attività pertinenti che potrebbero aiutarti.\n\n";
   } else if (totale > 0) {
     introduzione = "Ho trovato alcune informazioni pertinenti alla tua ricerca.\n\n";
   }
@@ -581,6 +562,10 @@ export async function chatConAssistente(
   // (la storia è già troncata a 300 caratteri per messaggio).
   const domanda = (ultimo && ultimo.role === "user" ? ultimo.content : "").slice(0, 500);
 
+  // Pino Intent Layer v1: la classificazione avviene PRIMA di ogni ricerca e
+  // guida la scelta dei tool, le priorità di recupero e il messaggio finale.
+  const analisi = analizzaIntentoPino(domanda);
+
   // Stato dei risultati recuperati
   let negozi: NegozioRicerca[] = [];
   let prodotti: ProdottoRicerca[] = [];
@@ -596,7 +581,7 @@ export async function chatConAssistente(
   // 1) Piano di ricerca: guardie deterministiche per le intenzioni chiare
   // (offerte, eventi, mangiare, chiacchiera, domande su InCittà); per tutto
   // il resto la selezione dei tool la fa l'LLM.
-  const piano = pianoPredefinito(storico);
+  const piano = pianoPredefinito(storico, analisi);
 
   if (piano) {
     directReply = piano.directReply;
@@ -606,7 +591,7 @@ export async function chatConAssistente(
     try {
       const raw = await callGeminiText({
         systemPrompt: SYSTEM_PROMPT,
-        userPrompt: buildToolSelectionPrompt(storico),
+        userPrompt: buildToolSelectionPrompt(storico, descriviIntento(analisi)),
         maxTokens: 450,
         temperature: 0.1,
         timeoutMs: 45_000,
@@ -649,7 +634,11 @@ export async function chatConAssistente(
   }
 
   console.log(
-    "[assistente] piano:",
+    "[assistente] intento:",
+    descriviIntento(analisi),
+    "| segnali:",
+    JSON.stringify(analisi.segnali),
+    "| piano:",
     JSON.stringify(invocazioni.map((t) => t.tool)),
     "| risultati — negozi:",
     negozi.length,
@@ -671,6 +660,7 @@ export async function chatConAssistente(
       prodotti: [],
       processingMs: Date.now() - inizio,
       source: "assistente",
+      intent: analisi.intent,
     };
   }
 
@@ -686,6 +676,7 @@ export async function chatConAssistente(
       prodotti: [],
       processingMs: Date.now() - inizio,
       source: "assistente",
+      intent: analisi.intent,
     };
   }
 
@@ -701,6 +692,7 @@ export async function chatConAssistente(
       prodotti: [],
       processingMs: Date.now() - inizio,
       source: "assistente",
+      intent: analisi.intent,
     };
   }
 
@@ -725,6 +717,7 @@ export async function chatConAssistente(
       prodotti: [],
       processingMs: Date.now() - inizio,
       source: "assistente",
+      intent: analisi.intent,
     };
   }
 
@@ -776,7 +769,7 @@ export async function chatConAssistente(
   // 6) Risposta rapida grounded: i risultati sono già stati recuperati dai tool.
   // Evitiamo una seconda chiamata Gemini solo per riscrivere dati che abbiamo
   // già verificato: così Pino mostra i risultati molto prima.
-  const risposta = fallbackTestuale(risultati, domanda, notaVincolo);
+  const risposta = fallbackTestuale(risultati, notaVincolo, analisi.intent);
 
   return {
     risposta,
@@ -784,5 +777,6 @@ export async function chatConAssistente(
     prodotti: prodotti.slice(0, 10),
     processingMs: Date.now() - inizio,
     source: "assistente",
+    intent: analisi.intent,
   };
 }
