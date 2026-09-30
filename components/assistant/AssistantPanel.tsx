@@ -1,10 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import AssistantMessage, { type ChatMessage } from "./AssistantMessage";
 import AssistantInput from "./AssistantInput";
 import TypingIndicator from "./TypingIndicator";
 import PinoSprite, { type PinoMood } from "./PinoSprite";
+import { isPinoTransactionalRoute } from "./pino-route";
 import type { SearchResult } from "@/lib/search-service";
 
 const SUGGESTIONS = [
@@ -20,6 +22,7 @@ function nextId(): string {
 }
 
 export default function AssistantPanel() {
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState("");
@@ -187,6 +190,11 @@ export default function AssistantPanel() {
   );
 
   if (!isOpen) return null;
+
+  // TASK 2 — nei flussi transazionali (carrello, checkout, pagamento, conferma
+  // ordine) anche la chat resta nascosta. Lo stato non viene toccato: conversazione,
+  // sessionId e cronologia sopravvivono e sono ancora lì al ritorno sulla homepage.
+  if (isPinoTransactionalRoute(pathname)) return null;
 
   return (
     <>
