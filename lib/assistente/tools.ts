@@ -21,9 +21,11 @@ import { getEventiPubblici } from "@/lib/eventi";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getFarmacieTurnoCastrovillari, type FarmaciaTurno } from "@/lib/farmacie-turno";
 import type { NegozioRicerca, ProdottoRicerca } from "@/lib/ricerca-ai";
-import { terminiSignificativi } from "@/lib/search-tollerante";
+import { terminiSignificativi, similaritaLevenshtein } from "@/lib/search-tollerante";
 import { concettiIntento } from "@/lib/ricerca-intento";
-import { normalizza } from "@/lib/text-utils";
+import { espandiQueryConSinonimi } from "@/lib/ricerca-semantica";
+import { estraiCitta } from "@/lib/localita";
+import { normalizza, estraiToken } from "@/lib/text-utils";
 
 // ─── Tipi risultati dei tool ─────────────────────────────────────────────────
 
@@ -265,6 +267,90 @@ export async function searchPharmacies(
 
 // ─── searchStores ────────────────────────────────────────────────────────────
 
+// Gate di pertinenza dei NEGOZI (solo assistente).
+// `cercaNegozi` è condivisa con la ricerca pubblica e allarga volutamente il
+// recall (sinonimi di categoria/commercio, profili attività, fallback
+// tollerante). Per il catalogo è corretto; per Pino no: una richiesta senza
+// significato finiva per restituire negozi senza alcun rapporto con essa (es.
+// "prodotto inesistente" → 5 negozi, perché "prodotto" attiva il profilo
+// ecommerce e "prodotti" compare nelle parole chiave "prodotti tipici").
+// Regole, applicate SOLO nel tool dell'assistente (nessuna modifica a
+// /api/search, alla ricerca pubblica o al catalogo):
+//   1) tutti i termini ORIGINALI della richiesta devono comparire nei campi
+//      identitari del negozio (nome, descrizione, categoria, sottocategoria,
+//      tipo attività, servizi, parole chiave);
+//   2) un concetto d'INTENTO riconosciuto ("ho sete" → bar/caffetteria) può
+//      comparire negli stessi campi: sono termini realmente cercabili;
+//   3) un sinonimo ESPANSO vale solo nei campi di CLASSIFICAZIONE (categoria,
+//      tipo attività): così "pizzeria" trova il panificio per categoria, ma
+//      "prodotto" non trova più chi ha "prodotti tipici" tra le parole chiave.
+// I termini originali sono ammessi anche con un refuso ragionevole (stessa
+// soglia del fallback tollerante della ricerca): "panifcio" continua a trovare
+// il Panificio, mentre "inesistente" non trova nulla.
+// Un filtro esplicito categoria/tipo chiesto dal chiamante è già di per sé una
+// prova di pertinenza e non viene mai scartato.
+function testoNegozio(n: Record<string, unknown>): string {
+  const data = (n.data ?? {}) as Record<string, unknown>;
+  const lista = (v: unknown) =>
+    Array.isArray(v) ? v.filter((x) => typeof x === "string").join(" ") : "";
+  return normalizza(
+    [
+      n.nome,
+      n.descrizione,
+      n.categoria,
+      n.sottocategoria,
+      data.tipo_attivita,
+      lista(n.servizi),
+      lista(n.parole_chiave),
+    ]
+      .filter(Boolean)
+      .map(String)
+      .join(" ")
+  );
+}
+
+function classificazioneNegozio(n: Record<string, unknown>): string {
+  const data = (n.data ?? {}) as Record<string, unknown>;
+  return normalizza(
+    [n.categoria, data.tipo_attivita]
+      .filter(Boolean)
+      .map(String)
+      .join(" ")
+  );
+}
+
+// Somiglianza con i termini richiesti: sottostringa oppure un token vicino per
+// edit-distance (refuso/plurale). Soglia più alta sui termini corti, come nel
+// fallback tollerante esistente.
+function terminePresente(termine: string, testo: string, token: string[]): boolean {
+  if (testo.includes(termine)) return true;
+  if (termine.length < 4) return false;
+  const soglia = termine.length <= 6 ? 0.85 : 0.8;
+  return token.some(
+    (tok) => tok.length >= 4 && similaritaLevenshtein(tok, termine) >= soglia
+  );
+}
+
+function negozioPertinente(
+  n: Record<string, unknown>,
+  termini: string[],
+  concetti: string[],
+  espansi: string[]
+): boolean {
+  const testo = testoNegozio(n);
+  if (!testo) return false;
+  // Nessun termine sostanziale nella richiesta → nessun vincolo da applicare.
+  if (termini.length === 0) return true;
+  // 1) Tutti i termini originali presenti (il match parziale non basta).
+  const token = estraiToken(testo);
+  if (termini.every((t) => terminePresente(t, testo, token))) return true;
+  // 2) Concetto d'intento riconosciuto.
+  if (concetti.some((c) => c.length >= 3 && testo.includes(c))) return true;
+  // 3) Sinonimo espanso, solo su un campo di classificazione.
+  const classificazione = classificazioneNegozio(n);
+  return espansi.some((e) => e.length >= 4 && classificazione.includes(e));
+}
+
 export async function searchStores(
   query: string,
   opts: ToolParams = {}
@@ -279,11 +365,35 @@ export async function searchStores(
     citta: opts?.citta,
     termini: opts?.termini?.length ? opts.termini : undefined,
   });
-  const attivi = (righe ?? [])
-    .filter((n: Record<string, unknown>) => n.attivo !== false)
-    .slice(0, limita(opts?.limit, 6, 8));
+  const attivi = (righe ?? []).filter(
+    (n: Record<string, unknown>) => n.attivo !== false
+  );
 
-  return attivi.map((n: Record<string, unknown>) => ({
+  // Filtro esplicito categoria/tipo: la classificazione è già garantita dal
+  // chiamante, quindi non applichiamo il gate.
+  const filtroEsplicito = Boolean(opts?.categoria?.trim() || opts?.tipo?.trim());
+  let pertinenti = attivi;
+  if (!filtroEsplicito) {
+    const base = q || (opts?.termini ?? []).join(" ");
+    const citta = opts?.citta?.trim() || estraiCitta(base) || "";
+    const tokenCitta = citta ? normalizza(citta) : "";
+    const terminiOriginali = terminiSignificativi(base, 10)
+      .map(normalizza)
+      .filter((t) => !tokenCitta || t !== tokenCitta);
+    const concetti = concettiIntento(base)
+      .split(/\s+/)
+      .filter(Boolean)
+      .map(normalizza);
+    const espansi = espandiQueryConSinonimi(base)
+      .split(/\s+/)
+      .filter(Boolean)
+      .map(normalizza);
+    pertinenti = attivi.filter((n) =>
+      negozioPertinente(n, terminiOriginali, concetti, espansi)
+    );
+  }
+
+  return pertinenti.slice(0, limita(opts?.limit, 6, 8)).map((n: Record<string, unknown>) => ({
     id: String(n.id),
     slug: (n.slug as string | null | undefined) ?? null,
     nome: String(n.nome ?? ""),
