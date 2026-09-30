@@ -54,7 +54,7 @@ export default function HeaderNav() {
   ];
 
   return (
-    <div className="w-full lg:w-auto">
+    <div className="w-full lg:w-auto incitta-desktop-public-nav">
       <nav
         aria-label="Navigazione principale"
         className="relative mx-auto grid w-full max-w-[550px] grid-cols-5 items-center justify-items-center border-y border-slate-200 bg-white py-1 md:py-1 xl:w-auto"
@@ -75,9 +75,9 @@ export default function HeaderNav() {
               href={voce.href}
               aria-label={voce.label}
               aria-current={voce.attiva ? "page" : undefined}
-              className="group relative mx-1 flex min-w-0 flex-col items-center gap-1 px-1.5 py-1 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 sm:mx-1.5 sm:px-2 md:py-1 lg:mx-1 lg:px-1.5"
+              className="incitta-public-nav-item group relative mx-1 flex min-w-0 flex-col items-center gap-1 px-1.5 py-1 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 sm:mx-1.5 sm:px-2 md:py-1 lg:mx-1 lg:px-1.5"
             >
-              <span className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-yellow-400">
+              <span className="incitta-public-nav-icon relative flex h-10 w-10 items-center justify-center rounded-xl bg-yellow-400">
                 <Icona
                   aria-hidden
                   className="h-[22px] w-[22px] text-white transition-colors duration-200"
@@ -92,7 +92,7 @@ export default function HeaderNav() {
                 )}
               </span>
 
-              <span className="whitespace-nowrap text-xs font-bold leading-none tracking-tight text-slate-900 transition-colors duration-200 sm:text-sm">
+              <span className="incitta-public-nav-label whitespace-nowrap text-xs font-bold leading-none tracking-tight text-slate-900 transition-colors duration-200 sm:text-sm">
                 {voce.label}
               </span>
 
