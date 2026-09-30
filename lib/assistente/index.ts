@@ -434,8 +434,25 @@ function fallbackTestuale(
     );
   }
 
+  const soloNegozi =
+    risultati.prodotti.length === 0 &&
+    risultati.negozi.length > 0 &&
+    risultati.offerte.length === 0 &&
+    risultati.eventi.length === 0;
+
+  let introduzione = "";
+  if (soloNegozi) {
+    introduzione =
+      "Non ho trovato prodotti che corrispondono direttamente alla tua ricerca, " +
+      "ma ho trovato alcuni negozi pertinenti che potrebbero aiutarti.\n\n";
+  } else if (risultati.prodotti.length > 0) {
+    introduzione = "Ho trovato questi risultati per la tua ricerca.\n\n";
+  } else if (totale > 0) {
+    introduzione = "Ho trovato alcune informazioni pertinenti alla tua ricerca.\n\n";
+  }
+
   const nota = notaVincolo ? `\n\n_${notaVincolo}_` : "";
-  return sezioni.join("\n\n") + nota;
+  return introduzione + sezioni.join("\n\n") + nota;
 }
 
 // ─── Risposte deterministiche per dati sensibili al falso positivo ───────────
