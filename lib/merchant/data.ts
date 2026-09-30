@@ -731,14 +731,14 @@ export async function createMerchantProductForStore(
     recesso_esclusione_dettaglio: input.recessoApplicabile === false ? (input.recessoEsclusioneDettaglio?.trim() || null) : null,
   };
 
-  if (input.descrizioneCompleta !== undefined) payload.descrizione_completa = input.descrizioneCompleta.trim() || null;
-  if (input.caratteristiche !== undefined) payload.caratteristiche = input.caratteristiche;
-  if (input.pesoVolume !== undefined) payload.peso_volume = input.pesoVolume.trim() || null;
-  if (input.pesoGrammi !== undefined) payload.peso_grammi = input.pesoGrammi;
-  if (input.costoSpedizioneLocale !== undefined) payload.costo_spedizione_locale = input.costoSpedizioneLocale;
-  if (input.filtriCatalogo !== undefined) payload.filtri_catalogo = input.filtriCatalogo;
-  if (input.seoTitle !== undefined) payload.seo_title = input.seoTitle.trim() || null;
-  if (input.seoDescription !== undefined) payload.seo_description = input.seoDescription.trim() || null;
+  if (input.descrizioneCompleta !== undefined) payloadBase.descrizione_completa = input.descrizioneCompleta.trim() || null;
+  if (input.caratteristiche !== undefined) payloadBase.caratteristiche = input.caratteristiche;
+  if (input.pesoVolume !== undefined) payloadBase.peso_volume = input.pesoVolume.trim() || null;
+  if (input.pesoGrammi !== undefined) payloadBase.peso_grammi = input.pesoGrammi;
+  if (input.costoSpedizioneLocale !== undefined) payloadBase.costo_spedizione_locale = input.costoSpedizioneLocale;
+  if (input.filtriCatalogo !== undefined) payloadBase.filtri_catalogo = input.filtriCatalogo;
+  if (input.seoTitle !== undefined) payloadBase.seo_title = input.seoTitle.trim() || null;
+  if (input.seoDescription !== undefined) payloadBase.seo_description = input.seoDescription.trim() || null;
   if (input.altTextImmagine !== undefined) payload.altTextImmagine = input.altTextImmagine.trim() || null;
 
   let payload: Record<string, unknown> = {
@@ -847,15 +847,15 @@ export async function updateMerchantProductForStore(
     recesso_esclusione_dettaglio: input.recessoApplicabile === false ? (input.recessoEsclusioneDettaglio?.trim() || null) : null,
   };
 
-  if (input.descrizioneCompleta !== undefined) payloadBase.descrizione_completa = input.descrizioneCompleta.trim() || null;
-  if (input.caratteristiche !== undefined) payloadBase.caratteristiche = input.caratteristiche;
-  if (input.pesoVolume !== undefined) payloadBase.peso_volume = input.pesoVolume.trim() || null;
-  if (input.pesoGrammi !== undefined) payloadBase.peso_grammi = input.pesoGrammi;
-  if (input.costoSpedizioneLocale !== undefined) payloadBase.costo_spedizione_locale = input.costoSpedizioneLocale;
-  if (input.filtriCatalogo !== undefined) payloadBase.filtri_catalogo = input.filtriCatalogo;
-  if (input.seoTitle !== undefined) payloadBase.seo_title = input.seoTitle.trim() || null;
-  if (input.seoDescription !== undefined) payloadBase.seo_description = input.seoDescription.trim() || null;
-  if (input.altTextImmagine !== undefined) payloadBase.alt_text_immagine = input.altTextImmagine.trim() || null;
+  if (input.descrizioneCompleta !== undefined) payload.descrizione_completa = input.descrizioneCompleta.trim() || null;
+  if (input.caratteristiche !== undefined) payload.caratteristiche = input.caratteristiche;
+  if (input.pesoVolume !== undefined) payload.peso_volume = input.pesoVolume.trim() || null;
+  if (input.pesoGrammi !== undefined) payload.peso_grammi = input.pesoGrammi;
+  if (input.costoSpedizioneLocale !== undefined) payload.costo_spedizione_locale = input.costoSpedizioneLocale;
+  if (input.filtriCatalogo !== undefined) payload.filtri_catalogo = input.filtriCatalogo;
+  if (input.seoTitle !== undefined) payload.seo_title = input.seoTitle.trim() || null;
+  if (input.seoDescription !== undefined) payload.seo_description = input.seoDescription.trim() || null;
+  if (input.altTextImmagine !== undefined) payload.alt_text_immagine = input.altTextImmagine.trim() || null;
 
   const updateResult = await supabase
     .from("prodotti")
