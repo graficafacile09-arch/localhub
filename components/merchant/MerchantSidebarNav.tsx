@@ -42,7 +42,7 @@ export default function MerchantSidebarNav({
   }
 
   return (
-    <nav aria-label="Menu negozio" className="space-y-1.5 text-sm font-semibold">
+    <nav aria-label="Menu negozio" className="incitta-desktop-area-nav space-y-1.5 text-sm font-semibold">
       {/* ── Blocco identità negozio (sidebar desktop) ─────────────────────── */}
       <div className="mb-2 flex items-center gap-3 rounded-2xl border border-slate-100 bg-linear-to-br from-blue-50 to-blue-100/60 p-3.5">
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm shadow-blue-600/30">
@@ -88,7 +88,7 @@ export default function MerchantSidebarNav({
               key={item.key}
               type="button"
               onClick={() => setShowDuplica(true)}
-              className="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-blue-700 transition-all duration-150 hover:bg-yellow-50 hover:text-yellow-800"
+              className="incitta-area-nav-item flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-blue-700 transition-all duration-150 hover:bg-yellow-50 hover:text-yellow-800"
             >
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
                 <Icon className="h-[18px] w-[18px]" />
@@ -111,7 +111,7 @@ export default function MerchantSidebarNav({
             key={item.key}
             href={item.href ?? "#"}
             aria-current={active ? "page" : undefined}
-            className={`group relative flex items-center gap-3 rounded-2xl px-3 py-2.5 transition-all duration-150 ${
+            className={`incitta-area-nav-item group relative flex items-center gap-3 rounded-2xl px-3 py-2.5 transition-all duration-150 ${
               active
                 ? "bg-yellow-50 text-yellow-800 ring-1 ring-yellow-200"
                 : "text-blue-700 hover:bg-yellow-50 hover:text-yellow-800"
@@ -124,7 +124,7 @@ export default function MerchantSidebarNav({
               />
             )}
             <span
-              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors ${
+              className={`incitta-area-nav-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors ${
                 active
                   ? "bg-yellow-400 text-blue-900 shadow-sm"
                   : "bg-blue-50 text-blue-600 group-hover:bg-yellow-100 group-hover:text-yellow-800"
@@ -134,7 +134,7 @@ export default function MerchantSidebarNav({
             </span>
             <span className="min-w-0 flex-1">
               <span className="flex items-center gap-2">
-                <span className="truncate text-sm font-bold">{item.label}</span>
+                <span className="incitta-area-nav-label truncate text-sm font-bold">{item.label}</span>
                 {mostraBadge && (
                   <span
                     className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-blue-600 px-1.5 text-[10px] font-black leading-none text-white"
