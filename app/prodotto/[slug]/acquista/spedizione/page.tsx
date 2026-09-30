@@ -136,6 +136,7 @@ export default async function SpedizionePage({
       varianteId={varianteIdProp}
       metodiPagamento={metodiPagamento}
       prefill={prefill}
+      soggettoVerificaEta={Boolean((prodotto as Record<string, unknown>).soggetto_verifica_eta)}
     />
   );
 }
