@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { permanentRedirect, notFound } from "next/navigation";
+import { cookies } from "next/headers";
 import type { Metadata } from "next";
 import Header from "@/components/Header/Header";
 import { risolviProdottoPubblico, getNegozio } from "@/lib/negozi";
@@ -18,6 +19,7 @@ import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
 import AggiungiAlCarrelloButton from "@/components/carrello/AggiungiAlCarrelloButton";
 import AvvisamiDisponibilitaButton from "@/components/prodotto/AvvisamiDisponibilitaButton";
 import { MapPin, Phone, MessageCircle, ArrowLeft, ExternalLink, ShoppingBag, Store } from "lucide-react";
+import ProductAgeGate from "@/components/prodotto/ProductAgeGate";
 
 type Params = { slug: string };
 
@@ -79,6 +81,17 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
   }
 
   const id = String(prodotto.id);
+  const soggettoVerificaEta = soggettoVerificaEta;
+  const cookieStore = await cookies();
+  const ageVerified = cookieStore.get("incitta_age_verified")?.value === "1";
+  const ageBlocked = cookieStore.get("incitta_age_blocked")?.value === "1";
+
+  // Un prodotto 18+ non espone la scheda finché l'age gate non è superato.
+  // La verifica avviene server-side e il cookie non contiene la data di nascita.
+  if (soggettoVerificaEta && !ageVerified) {
+    return <ProductAgeGate prodottoId={id} bloccato={ageBlocked} />;
+  }
+
   const negozio = await getNegozio(String(prodotto.negozio_id));
 
   // REGOLA AUTO-ACQUISTO: se l'utente autenticato è un VENDITORE e il
@@ -187,7 +200,7 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
               immagineBase={imageUrl}
               altText={"alt_text_immagine" in prodotto ? (prodotto.alt_text_immagine as string | null) : null}
               varianti={varianti}
-              soggettoVerificaEta={Boolean((prodotto as Record<string, unknown>).soggetto_verifica_eta)}
+              soggettoVerificaEta={soggettoVerificaEta}
             />
             <div className="mt-4">
               <FavoritoButton
@@ -244,7 +257,7 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
             </div>
           </div>
 
-          {Boolean((prodotto as Record<string, unknown>).soggetto_verifica_eta) ? (
+          {soggettoVerificaEta ? (
             <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
               <p className="font-black">18+ — prodotto soggetto a verifica dell'età</p>
               <p className="mt-1 text-xs leading-5 text-amber-800">Per acquistarlo è richiesta la conferma della maggiore età. Il controllo dell'identità previsto dalla legge resta a carico del venditore.</p>
@@ -301,7 +314,7 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
                 negozioId={String(negozio?.id ?? "")}
                 negozioNome={String(negozio?.nome ?? "")}
                 slug={String(prodotto.slug ?? id)}
-                soggettoVerificaEta={Boolean((prodotto as Record<string, unknown>).soggetto_verifica_eta)}
+                soggettoVerificaEta={soggettoVerificaEta}
                 disabled={esaurito || !negozio}
               />
             </>
