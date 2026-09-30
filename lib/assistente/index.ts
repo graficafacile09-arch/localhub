@@ -741,20 +741,10 @@ export async function chatConAssistente(
     ? `${contesto}\n\n${notaVincolo}`
     : contesto;
 
-  // 6) Risposta finale AI
-  let risposta: string;
-  try {
-    risposta = await callGeminiText({
-      systemPrompt: SYSTEM_PROMPT,
-      userPrompt: buildFinalPrompt(storico, contestoFinale),
-      maxTokens: 700,
-      temperature: 0.2,
-      timeoutMs: 45_000,
-    });
-  } catch (error) {
-    console.warn("[assistente] Risposta finale fallita, uso elenco risultati:", error);
-    risposta = fallbackTestuale(risultati, domanda, notaVincolo);
-  }
+  // 6) Risposta rapida grounded: i risultati sono già stati recuperati dai tool.
+  // Evitiamo una seconda chiamata Gemini solo per riscrivere dati che abbiamo
+  // già verificato: così Pino mostra i risultati molto prima.
+  const risposta = fallbackTestuale(risultati, domanda, notaVincolo);
 
   return {
     risposta,
