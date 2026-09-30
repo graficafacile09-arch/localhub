@@ -125,7 +125,7 @@ export default function AdminSidebar({
         key={item.href}
         href={item.href}
         aria-current={active ? "page" : undefined}
-        className={`group relative flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition-all duration-150 ${
+        className={`incitta-admin-nav-item group relative flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition-all duration-150 ${
           active
             ? "bg-yellow-50 text-yellow-800 shadow-sm"
             : "text-blue-700 hover:bg-blue-50 hover:text-blue-800"
@@ -141,7 +141,7 @@ export default function AdminSidebar({
           className={`h-4 w-4 shrink-0 ${active ? "text-yellow-700" : "text-blue-600"}`}
           aria-hidden
         />
-        <span className="truncate">{item.label}</span>
+        <span className="incitta-admin-nav-label truncate">{item.label}</span>
         {item.href === "/amministratore/notifiche" && nonLetteNotificheLocal > 0 && (
           <span
             className="ml-auto inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-yellow-400 px-1.5 text-[10px] font-black leading-none text-blue-900"
@@ -177,7 +177,7 @@ export default function AdminSidebar({
 
   return (
     <div className="space-y-1">
-      <nav aria-label="Menu Amministratore" className="space-y-2">
+      <nav aria-label="Menu Amministratore" className="incitta-desktop-admin-nav space-y-2">
         {adminNavGroups.map((group, indice) => {
           const Icon = group.icon;
           const aperto = isAperto(group.key);
@@ -193,7 +193,7 @@ export default function AdminSidebar({
                 type="button"
                 onClick={() => toggleGruppo(group.key)}
                 aria-expanded={aperto}
-                className={`flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-left text-[10px] font-black uppercase tracking-[0.16em] transition hover:bg-blue-50 ${
+                className={`incitta-admin-group-button flex w-full items-center gap-2 rounded-2xl px-4 py-2.5 text-left text-[10px] font-black uppercase tracking-[0.16em] transition hover:bg-blue-50 ${
                   eGruppoAttivo
                     ? "text-yellow-800"
                     : aperto
