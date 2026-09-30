@@ -273,7 +273,13 @@ function pianoPredefinito(
     );
     return {
       directReply: null,
-      tools: termini.map((query) => ({ tool: "searchStores", params: { query } })),
+      // Per le richieste alimentari Pino deve cercare sia ATTIVITÀ sia
+      // PRODOTTI. Prima "pizza" interrogava solo i negozi e poteva quindi
+      // perdere una pizza presente nel catalogo.
+      tools: termini.flatMap((query) => [
+        { tool: "searchStores", params: { query } },
+        { tool: "searchProducts", params: { query, limit: 8 } },
+      ]),
     };
   }
   if (RE_CHIACCHIERA.test(ultimo)) {
