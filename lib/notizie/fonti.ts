@@ -45,8 +45,9 @@ export const FONTI_V1: FonteNotizie[] = [
     id: FONTI_ID.PROVINCIA,
     nome: "Provincia di Cosenza",
     tipo: "rss",
-    urlFeed: "https://www.provincia.cs.it/portale/rss2.0.xml",
-    urlLista: "https://www.provincia.cs.it/portale/informazione/notizie/",
+    urlFeed: null,
+    // Il vecchio RSS non è più disponibile; la home istituzionale espone le notizie con gli stessi link view.cfm.
+    urlLista: "https://www.provincia.cs.it/portale/",
     urlBase: "https://www.provincia.cs.it",
     categoriaDefault: "Istituzioni",
     attiva: true,
