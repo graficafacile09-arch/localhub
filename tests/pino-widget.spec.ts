@@ -54,6 +54,56 @@ async function riquadroVisivo(page: Page, selector: string): Promise<Riquadro> {
   });
 }
 
+/**
+ * Attende che il widget sia idratato e sistemato.
+ *
+ * L'HTML del widget arriva dal server, ma la posizione è applicata dal client:
+ * prima dell'idratazione la transform non c'è e, su desktop, la sagoma scalata
+ * 2x sporge dal bordo destro finché il clamp di mount non la riporta dentro.
+ * Misurare prima di questo momento darebbe risultati incoerenti.
+ */
+async function attendiPinoPronto(page: Page): Promise<void> {
+  await expect(page.locator(WIDGET)).toHaveAttribute("style", /translate3d/);
+  await expect
+    .poll(
+      async () => {
+        const box = await riquadroVisivo(page, WIDGET);
+        const viewport = page.viewportSize();
+        if (!viewport) return false;
+        return (
+          box.x >= -3 &&
+          box.y >= -3 &&
+          box.x + box.width <= viewport.width + 3 &&
+          box.y + box.height <= viewport.height + 3
+        );
+      },
+      { timeout: 15000 }
+    )
+    .toBe(true);
+}
+
+/**
+ * Raggiunge /checkout in modalità ospite.
+ *
+ * La modalità ospite è una precondizione per arrivare al checkout (senza di
+ * essa /checkout reindirizza al login): nell'ambiente automatizzato il cookie
+ * può andare perso, quindi lo reimpostiamo e riproviamo. Se il checkout restasse
+ * irraggiungibile il test fallirebbe comunque, perché l'ultimo controllo è
+ * un'asserzione.
+ */
+async function vaiACheckout(page: Page, context: BrowserContext, baseURL?: string): Promise<void> {
+  for (let tentativo = 0; tentativo < 3; tentativo++) {
+    await page.goto("/checkout", { waitUntil: "domcontentloaded" });
+    if (new URL(page.url()).pathname === "/checkout") return;
+
+    if (baseURL) {
+      await context.addCookies([{ name: "lh_guest", value: "1", url: baseURL }]);
+    }
+  }
+
+  expect(new URL(page.url()).pathname).toBe("/checkout");
+}
+
 /** La chat di Pino è aperta quando è presente il suo tasto di chiusura. */
 function chatAperta(page: Page) {
   return page.getByRole("button", { name: TASTO_CHIUDI_CHAT });
@@ -194,6 +244,7 @@ test.describe("Pino chiuso trascinabile — mobile", () => {
   test("1) drag touch: si sposta, resta a schermo e ricorda la posizione", async ({ page }) => {
     await page.goto("/", { waitUntil: "domcontentloaded" });
     await expect(page.locator(WIDGET)).toBeVisible();
+    await attendiPinoPronto(page);
 
     // Il widget deve neutralizzare lo scroll della pagina durante il drag touch.
     const touchAction = await page
@@ -242,6 +293,7 @@ test.describe("Pino chiuso trascinabile — desktop", () => {
   test("2) drag mouse: si sposta, resta a schermo e ricorda la posizione", async ({ page }) => {
     await page.goto("/", { waitUntil: "domcontentloaded" });
     await expect(page.locator(WIDGET)).toBeVisible();
+    await attendiPinoPronto(page);
 
     const partenza = await puntoPresa(page);
     const prima = await attesaDentroSchermo(page);
@@ -327,6 +379,7 @@ test.describe("Pino nei flussi transazionali", () => {
   }) => {
     // Sposta Pino: la posizione deve sopravvivere all'intero flusso.
     await page.goto("/", { waitUntil: "domcontentloaded" });
+    await attendiPinoPronto(page);
     const partenza = await puntoPresa(page);
     await dragMouse(page, partenza, { x: 300, y: 320 });
     await allontanaMouse(page);
@@ -347,8 +400,7 @@ test.describe("Pino nei flussi transazionali", () => {
     await expect(chatAperta(page)).toHaveCount(0);
 
     // 5b) checkout (pagamento): Pino sparisce.
-    await page.goto("/checkout", { waitUntil: "domcontentloaded" });
-    expect(new URL(page.url()).pathname).toBe("/checkout");
+    await vaiACheckout(page, context, baseURL);
     await expect(page.locator(WIDGET)).toHaveCount(0);
 
     // 5c) pagamento del flusso acquisto immediato: Pino sparisce.
@@ -366,6 +418,7 @@ test.describe("Pino nei flussi transazionali", () => {
 
     // 7) Pino ricompare, nella posizione salvata.
     await expect(page.locator(WIDGET)).toBeVisible();
+    await attendiPinoPronto(page);
     const posizioneFinale = await riquadroVisivo(page, WIDGET);
     expect(Math.abs(posizioneFinale.x - posizioneSpostata.x)).toBeLessThanOrEqual(2);
     expect(Math.abs(posizioneFinale.y - posizioneSpostata.y)).toBeLessThanOrEqual(2);
