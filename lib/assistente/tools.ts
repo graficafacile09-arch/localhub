@@ -26,6 +26,7 @@ import { analizzaRichiesta } from "@/lib/ricerca-intento";
 import { espandiQueryConSinonimi } from "@/lib/ricerca-semantica";
 import { estraiCitta } from "@/lib/localita";
 import { normalizza, estraiToken } from "@/lib/text-utils";
+import type { Orari } from "@/types/negozio";
 
 // ─── Tipi risultati dei tool ─────────────────────────────────────────────────
 
@@ -588,6 +589,33 @@ export async function getCategoriesList(): Promise<{ nome: string; count: number
 }
 
 // ─── searchAll ───────────────────────────────────────────────────────────────
+
+// ─── Orari (solo lettura) per il follow-up "aperti ora" ──────────────────────
+// Gli orari non sono parte di NegozioRicerca (condiviso con la ricerca pubblica):
+// li leggiamo a parte, solo per gli id già pertinenti, e solo nel flusso di Pino.
+// In caso di errore NON inventiamo nulla: la mappa resta vuota e lo stato
+// risulterà non verificabile.
+export async function orariPerNegozi(
+  ids: string[]
+): Promise<Map<string, Orari | null>> {
+  const mappa = new Map<string, Orari | null>();
+  const unici = Array.from(new Set(ids.filter(Boolean)));
+  if (unici.length === 0) return mappa;
+  try {
+    const db = createAdminSupabaseClient();
+    const { data, error } = await db.from("negozi").select("id,orari").in("id", unici);
+    if (error) throw error;
+    for (const r of (data ?? []) as { id: string; orari: Orari | null }[]) {
+      mappa.set(String(r.id), r.orari ?? null);
+    }
+  } catch (err) {
+    console.warn(
+      "[assistente] orari non disponibili:",
+      (err as { message?: string })?.message ?? err
+    );
+  }
+  return mappa;
+}
 
 export async function searchAll(
   query: string,

@@ -25,6 +25,7 @@ import {
   searchAll,
   getWeatherCastrovillari,
   searchPharmacies,
+  orariPerNegozi,
   type ToolParams,
 } from "./tools";
 import {
@@ -45,6 +46,14 @@ import {
   type PinoIntent,
   type PinoIntentAnalysis,
 } from "./intent";
+import {
+  rilevaFollowUp,
+  soggettoPrecedente,
+  apertoOra,
+  motivoCategoria,
+  type FollowUp,
+  type FollowUpTipo,
+} from "./conversazione";
 
 // ─── Tipi pubblici ───────────────────────────────────────────────────────────
 
@@ -61,6 +70,8 @@ export interface RispostaAssistente {
   source: "assistente";
   /** Intento riconosciuto da Pino Intent Layer v1 (osservabilità/test). */
   intent?: PinoIntent;
+  /** Follow-up conversazionale applicato (Pino Conversazionale v1). */
+  followUp?: FollowUpTipo;
 }
 
 // ─── Configurazione LLM ──────────────────────────────────────────────────────
@@ -201,7 +212,7 @@ function ultimaQuerySostanziale(storico: MessaggioAssistente[]): string {
 function pianoPredefinito(
   storico: MessaggioAssistente[],
   analisi: PinoIntentAnalysis
-): { directReply: string | null; tools: ToolInvocation[] } | null {
+): { directReply: string | null; tools: ToolInvocation[]; followUp?: FollowUp } | null {
   const utenti = storico.filter((m) => m.role === "user").map((m) => m.content);
   const ultimo = (utenti[utenti.length - 1] ?? "").trim().toLowerCase();
   if (!ultimo) return null;
@@ -308,6 +319,54 @@ function pianoPredefinito(
     }
   }
 
+  // ── Pino Conversazionale v1: follow-up sul risultato precedente ───────────
+  // Una richiesta BREVE ("solo aperti ora", "solo economici", "fammi vedere
+  // altro", "vicino a me"...) NON deve diventare una ricerca generica: mantiene
+  // il SOGGETTO della richiesta precedente e ne modifica i risultati. Il filtro
+  // viene applicato DOPO il recupero (vedi rispostaFollowUp).
+  const followUp = rilevaFollowUp(ultimo);
+  if (followUp && utenti.length >= 2) {
+    const soggetto = soggettoPrecedente(utenti);
+    if (soggetto) {
+      // Se il soggetto precedente era una lista di offerte/eventi, il follow-up
+      // resta su quella superficie (non su negozi/prodotti).
+      if (RE_OFFERTE.test(soggetto)) {
+        return { directReply: null, tools: [{ tool: "searchOffers", params: {} }], followUp };
+      }
+      if (RE_EVENTI.test(soggetto)) {
+        return { directReply: null, tools: [{ tool: "searchEvents", params: {} }], followUp };
+      }
+      const analisiPrec = analizzaIntentoPino(soggetto);
+      // "fammi vedere altro" allarga il recupero per poter mostrare opzioni
+      // diverse da quelle già elencate.
+      const limiteAlto = followUp.tipo === "altro" ? 12 : undefined;
+      let tools: ToolInvocation[] = [];
+      if (analisiPrec.intent !== "generic" && analisiPrec.confidence !== "bassa") {
+        tools = pianoIntento(analisiPrec, soggetto).map((t) => ({
+          tool: t.tool,
+          params: {
+            query: t.query,
+            ...(limiteAlto
+              ? { limit: limiteAlto }
+              : t.tool === "searchProducts"
+                ? { limit: 8 }
+                : {}),
+          },
+        }));
+      }
+      if (tools.length === 0) {
+        tools = [
+          {
+            tool: "searchStores",
+            params: { query: soggetto, ...(limiteAlto ? { limit: limiteAlto } : {}) },
+          },
+          { tool: "searchProducts", params: { query: soggetto, limit: limiteAlto ?? 8 } },
+        ];
+      }
+      return { directReply: null, tools, followUp };
+    }
+  }
+
   // ── Pino Intent Layer v1 ─────────────────────────────────────────────────
   // L'intento è già classificato PRIMA di ogni ricerca. Da qui il piano è
   // guidato dall'intento:
@@ -341,24 +400,39 @@ function pianoPredefinito(
 
 // ─── Fallback testuale quando la risposta finale LLM fallisce ────────────────
 
-function fallbackTestuale(
-  risultati: RisultatiRecuperati,
-  notaVincolo = "",
-  intent?: PinoIntent
-): string {
-  const sezioni: string[] = [];
-  const totale =
-    risultati.negozi.length +
-    risultati.prodotti.length +
-    risultati.offerte.length +
-    risultati.eventi.length +
-    (risultati.meteo ? 1 : 0) +
-    risultati.farmacie.length;
+/** Risultati tipizzati → struttura per la composizione testuale (riuso). */
+function aRisultatiRecuperati(
+  negozi: NegozioRicerca[],
+  prodotti: ProdottoRicerca[],
+  extra: Partial<RisultatiRecuperati> = {}
+): RisultatiRecuperati {
+  return {
+    negozi: negozi.map((n) => ({
+      nome: n.nome,
+      categoria: n.categoria ?? null,
+      descrizione: n.descrizione ?? null,
+      indirizzo: n.indirizzo ?? null,
+      telefono: n.telefono ?? null,
+    })),
+    prodotti: prodotti.map((p) => ({
+      nome: p.nome,
+      prezzo: p.prezzo,
+      negozio_nome: p.negozio_nome,
+      categoria: p.categoria,
+      descrizione: p.descrizione,
+    })),
+    offerte: [],
+    eventi: [],
+    categorie: [],
+    meteo: null,
+    farmacie: [],
+    ...extra,
+  };
+}
 
-  if (totale === 0) {
-    // Nessun risultato: Pino spiega cosa ha fatto e chiede di meglio.
-    return "Non ho trovato risultati compatibili. Prova a descrivere meglio cosa cerchi: posso cercare negozi, prodotti, offerte ed eventi a Castrovillari.";
-  }
+/** Sezioni testuali dei risultati (condivise tra risposta normale e follow-up). */
+function sezioniRisultati(risultati: RisultatiRecuperati): string[] {
+  const sezioni: string[] = [];
 
   if (risultati.prodotti.length > 0) {
     sezioni.push(
@@ -410,6 +484,32 @@ function fallbackTestuale(
           .join("\n")
     );
   }
+  return sezioni;
+}
+
+function contaRisultati(risultati: RisultatiRecuperati): number {
+  return (
+    risultati.negozi.length +
+    risultati.prodotti.length +
+    risultati.offerte.length +
+    risultati.eventi.length +
+    (risultati.meteo ? 1 : 0) +
+    risultati.farmacie.length
+  );
+}
+
+function fallbackTestuale(
+  risultati: RisultatiRecuperati,
+  notaVincolo = "",
+  intent?: PinoIntent
+): string {
+  const sezioni = sezioniRisultati(risultati);
+  const totale = contaRisultati(risultati);
+
+  if (totale === 0) {
+    // Nessun risultato: Pino spiega cosa ha fatto e chiede di meglio.
+    return "Non ho trovato esattamente quello che cerchi. Prova a descrivere meglio cosa cerchi: posso cercare negozi, prodotti, offerte ed eventi a Castrovillari.";
+  }
 
   const soloNegozi =
     risultati.prodotti.length === 0 &&
@@ -417,23 +517,154 @@ function fallbackTestuale(
     risultati.offerte.length === 0 &&
     risultati.eventi.length === 0;
 
-  // Messaggio di apertura: dice sempre all'utente COSA ha trovato e cosa no.
-  // Per i servizi ("parrucchiere", "idraulico"...) non ha senso parlare di
-  // "prodotto esatto": si parla di attività.
+  // Messaggio di apertura: dice sempre all'utente COSA ha trovato e cosa no,
+  // in modo naturale. Per i servizi non ha senso parlare di "prodotto esatto".
   let introduzione = "";
   if (risultati.prodotti.length > 0) {
-    introduzione = "Ho trovato questi prodotti che corrispondono alla tua ricerca.\n\n";
+    const n = risultati.prodotti.length;
+    introduzione = `Ho trovato ${n} ${n === 1 ? "prodotto" : "prodotti"} che ${n === 1 ? "corrisponde" : "corrispondono"} alla tua ricerca.\n\n`;
   } else if (soloNegozi) {
     introduzione =
       intent === "service"
-        ? "Non ho trovato quello che cerchi, ma ho trovato alcune attività che potrebbero aiutarti.\n\n"
-        : "Non ho trovato il prodotto esatto che cerchi, ma ho trovato alcune attività pertinenti che potrebbero aiutarti.\n\n";
+        ? "Non ho trovato quello che cerchi, ma queste attività potrebbero aiutarti.\n\n"
+        : "Non ho trovato esattamente quello che cerchi, ma queste attività potrebbero aiutarti.\n\n";
   } else if (totale > 0) {
     introduzione = "Ho trovato alcune informazioni pertinenti alla tua ricerca.\n\n";
   }
 
+  // Motivazione basata sui dati reali (solo quando mostriamo attività senza
+  // prodotto): cita la categoria registrata, mai caratteristiche inventate.
+  const motivazione = soloNegozi ? motivoCategoria(risultati.negozi) : null;
   const nota = notaVincolo ? `\n\n_${notaVincolo}_` : "";
-  return introduzione + sezioni.join("\n\n") + nota;
+  return (
+    introduzione +
+    sezioni.join("\n\n") +
+    (motivazione ? "\n\n" + motivazione : "") +
+    nota
+  );
+}
+
+// ─── Risposta ai follow-up (Pino Conversazionale v1) ─────────────────────────
+// Ogni follow-up MODIFICA i risultati del soggetto precedente: nessuna ricerca
+// generica. Se il filtro non è applicabile sui dati reali, Pino lo dice in modo
+// onesto invece di inventare.
+
+async function rispostaFollowUp(input: {
+  followUp: FollowUp;
+  negozi: NegozioRicerca[];
+  prodotti: ProdottoRicerca[];
+  storico: MessaggioAssistente[];
+  analisi: PinoIntentAnalysis;
+  inizio: number;
+}): Promise<RispostaAssistente> {
+  const { followUp, negozi, prodotti, storico, analisi, inizio } = input;
+  const base = {
+    processingMs: Date.now() - inizio,
+    source: "assistente" as const,
+    intent: analisi.intent,
+    followUp: followUp.tipo,
+  };
+
+  const senzaPrecedenti = negozi.length === 0 && prodotti.length === 0;
+  if (senzaPrecedenti) {
+    return {
+      ...base,
+      negozi: [],
+      prodotti: [],
+      risposta:
+        "Non avevo risultati precedenti da filtrare. Dimmi cosa cerchi e poi potrò applicare il filtro che hai indicato.",
+    };
+  }
+
+  // ── Aperti ora ──
+  if (followUp.tipo === "aperti") {
+    const ids = [...negozi.map((n) => n.id), ...prodotti.map((p) => p.negozio_id)];
+    const orari = await orariPerNegozi(ids);
+    const negoziAperti = negozi.filter((n) => apertoOra(orari.get(n.id)) === true);
+    const prodottiAperti = prodotti.filter(
+      (p) => apertoOra(orari.get(p.negozio_id)) === true
+    );
+    if (negoziAperti.length === 0 && prodottiAperti.length === 0) {
+      return {
+        ...base,
+        negozi: [],
+        prodotti: [],
+        risposta:
+          "Tra i risultati precedenti, nessuna attività risulta aperta ora secondo gli orari registrati su InCittà.",
+      };
+    }
+    const corpo = sezioniRisultati(aRisultatiRecuperati(negoziAperti, prodottiAperti)).join("\n\n");
+    return {
+      ...base,
+      negozi: negoziAperti,
+      prodotti: prodottiAperti,
+      risposta: `Tra i risultati precedenti, queste sono le attività aperte ora:\n\n${corpo}`,
+    };
+  }
+
+  // ── Solo economici ── (ordinabili solo i prodotti: i negozi non hanno prezzo)
+  if (followUp.tipo === "economici") {
+    if (prodotti.length > 0) {
+      const ordinati = [...prodotti].sort((a, b) => Number(a.prezzo) - Number(b.prezzo));
+      const quanti = Math.max(1, Math.ceil(ordinati.length / 2));
+      const economici = ordinati.slice(0, quanti);
+      const corpo = sezioniRisultati(aRisultatiRecuperati([], economici)).join("\n\n");
+      return {
+        ...base,
+        negozi: [],
+        prodotti: economici,
+        risposta: `Tra i risultati precedenti, ecco le opzioni più economiche:\n\n${corpo}`,
+      };
+    }
+    const corpo = sezioniRisultati(aRisultatiRecuperati(negozi, [])).join("\n\n");
+    return {
+      ...base,
+      negozi,
+      prodotti: [],
+      risposta:
+        "I negozi non hanno un prezzo associato, quindi non posso ordinarli per economicità: il filtro \"economici\" vale sui prodotti. Ecco le attività già trovate:\n\n" +
+        corpo,
+    };
+  }
+
+  // ── Solo vicino ── (nessuna posizione utente: niente distanza inventata)
+  if (followUp.tipo === "vicino") {
+    const corpo = sezioniRisultati(aRisultatiRecuperati(negozi, prodotti)).join("\n\n");
+    return {
+      ...base,
+      negozi,
+      prodotti,
+      risposta:
+        "Non conosco la tua posizione, quindi non posso calcolare la distanza dalle attività (a InCittà non arriva la geolocalizzazione dal browser). Dimmi la zona o la via e filtro di conseguenza. Intanto ecco i risultati precedenti:\n\n" +
+        corpo,
+    };
+  }
+
+  // ── Fammi vedere altro / alternative ──
+  const precedenteAssistente = [...storico]
+    .reverse()
+    .find((m) => m.role === "assistant")?.content ?? "";
+  const giaMostrato = (nome: string) =>
+    precedenteAssistente.toLowerCase().includes(nome.toLowerCase());
+  const nuoviNegozi = negozi.filter((n) => !giaMostrato(n.nome));
+  const nuoviProdotti = prodotti.filter((p) => !giaMostrato(p.nome));
+
+  if (nuoviNegozi.length === 0 && nuoviProdotti.length === 0) {
+    return {
+      ...base,
+      negozi: [],
+      prodotti: [],
+      risposta:
+        "Ho già mostrato tutte le opzioni disponibili per la tua ricerca: non ce ne sono altre con gli stessi criteri. Vuoi provare una zona diversa, un'altra categoria o un'altra fascia di prezzo?",
+    };
+  }
+  const corpo = sezioniRisultati(aRisultatiRecuperati(nuoviNegozi, nuoviProdotti)).join("\n\n");
+  return {
+    ...base,
+    negozi: nuoviNegozi,
+    prodotti: nuoviProdotti,
+    risposta: `Ecco altre opzioni che non ti avevo ancora mostrato:\n\n${corpo}`,
+  };
 }
 
 // ─── Risposte deterministiche per dati sensibili al falso positivo ───────────
@@ -577,6 +808,7 @@ export async function chatConAssistente(
   let directReply: string | null = null;
   let selezioneOk = false;
   let invocazioni: ToolInvocation[] = [];
+  let followUp: FollowUp | null = null;
 
   // 1) Piano di ricerca: guardie deterministiche per le intenzioni chiare
   // (offerte, eventi, mangiare, chiacchiera, domande su InCittà); per tutto
@@ -586,6 +818,7 @@ export async function chatConAssistente(
   if (piano) {
     directReply = piano.directReply;
     invocazioni = piano.tools.filter((t) => typeof t.tool === "string" && t.tool.trim());
+    followUp = piano.followUp ?? null;
     selezioneOk = true;
   } else {
     try {
@@ -636,6 +869,7 @@ export async function chatConAssistente(
   console.log(
     "[assistente] intento:",
     descriviIntento(analisi),
+    followUp ? `| follow-up: ${followUp.tipo} (${followUp.segnale})` : "",
     "| segnali:",
     JSON.stringify(analisi.segnali),
     "| piano:",
@@ -721,28 +955,28 @@ export async function chatConAssistente(
     };
   }
 
+  // 4b) Pino Conversazionale v1: il follow-up MODIFICA i risultati del soggetto
+  // precedente (aperti ora / economici / vicino / altro). Nessuna ricerca
+  // generica: se il filtro non è applicabile sui dati reali, Pino lo dichiara.
+  if (followUp) {
+    return rispostaFollowUp({
+      followUp,
+      negozi,
+      prodotti,
+      storico,
+      analisi,
+      inizio,
+    });
+  }
+
   // 5) Contesto strutturato per la risposta finale
-  const risultati: RisultatiRecuperati = {
-    negozi: negozi.map((n) => ({
-      nome: n.nome,
-      categoria: n.categoria ?? null,
-      descrizione: n.descrizione ?? null,
-      indirizzo: n.indirizzo ?? null,
-      telefono: n.telefono ?? null,
-    })),
-    prodotti: prodotti.map((p) => ({
-      nome: p.nome,
-      prezzo: p.prezzo,
-      negozio_nome: p.negozio_nome,
-      categoria: p.categoria,
-      descrizione: p.descrizione,
-    })),
+  const risultati: RisultatiRecuperati = aRisultatiRecuperati(negozi, prodotti, {
     offerte,
     eventi,
     categorie,
     meteo,
     farmacie,
-  };
+  });
   const contesto = buildContextoRisultati(risultati);
 
   // Nota sul vincolo di prezzo applicato: quando l'utente chiede un limite
