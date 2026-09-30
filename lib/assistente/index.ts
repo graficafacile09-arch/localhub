@@ -271,14 +271,23 @@ function pianoPredefinito(
         (specifico ? [specifico] : []).concat(["mangiare", "panificio", "forno", "ristorante", "pizzeria"])
       )
     );
+    // Regola fondamentale: la ricerca dei NEGOZI e quella dei PRODOTTI
+    // hanno rilevanza diversa. I termini generici usati per trovare attività
+    // (mangiare, panificio, forno, ristorante...) NON devono diventare query
+    // prodotto, altrimenti un negozio pertinente può trascinare nel risultato
+    // prodotti casuali del suo catalogo (es. "pizza" -> Nutella).
+    //
+    // Cerchiamo prodotti solo quando abbiamo un soggetto alimentare concreto.
+    // Se il prodotto non esiste, Pino può comunque mostrare il negozio
+    // pertinente, ma NON prodotti non corrispondenti.
+    const queryProdotto = specifico.trim();
     return {
       directReply: null,
-      // Per le richieste alimentari Pino deve cercare sia ATTIVITÀ sia
-      // PRODOTTI. Prima "pizza" interrogava solo i negozi e poteva quindi
-      // perdere una pizza presente nel catalogo.
       tools: termini.flatMap((query) => [
         { tool: "searchStores", params: { query } },
-        { tool: "searchProducts", params: { query, limit: 8 } },
+        ...(query === queryProdotto
+          ? [{ tool: "searchProducts", params: { query, limit: 8 } }]
+          : []),
       ]),
     };
   }
