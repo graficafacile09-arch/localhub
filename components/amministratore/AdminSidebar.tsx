@@ -138,7 +138,7 @@ export default function AdminSidebar({
           />
         )}
         <Icon
-          className={`h-4 w-4 shrink-0 ${active ? "text-yellow-700" : "text-blue-600"}`}
+          className={`incitta-admin-nav-icon h-4 w-4 shrink-0 ${active ? "text-yellow-700" : "text-blue-600"}`}
           aria-hidden
         />
         <span className="incitta-admin-nav-label truncate">{item.label}</span>
