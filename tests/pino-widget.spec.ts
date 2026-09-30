@@ -1,4 +1,4 @@
-import { test, expect, type BrowserContext, type Page } from "@playwright/test";
+import { test, expect, type BrowserContext, type CDPSession, type Page } from "@playwright/test";
 import { isPinoTransactionalRoute } from "../components/assistant/pino-route";
 
 /**
@@ -422,5 +422,450 @@ test.describe("Pino nei flussi transazionali", () => {
     const posizioneFinale = await riquadroVisivo(page, WIDGET);
     expect(Math.abs(posizioneFinale.x - posizioneSpostata.x)).toBeLessThanOrEqual(2);
     expect(Math.abs(posizioneFinale.y - posizioneSpostata.y)).toBeLessThanOrEqual(2);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TASK 3 — prestazioni del drag
+//
+// Il drag deve essere fluido: durante il movimento non si legge il layout, non
+// si scrive su localStorage e non si tocca React. Il numero di scritture sullo
+// stile è limitato ai frame, non ai pointermove ricevuti: è la differenza fra un
+// movimento a filo del refresh e un movimento che insegue ogni evento.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Misure raccolte nella pagina, limitate al widget di Pino. */
+type MisureDrag = { lettureLayout: number; scrittureStorage: string[]; scrittureStile: number };
+
+/** Movimenti inviati in un solo drag "veloce" (uno per frame, come un mouse reale). */
+const PASSI_DRAG_VELOCE = 60;
+/**
+ * Lo stile viene riscritto al massimo una volta per movimento ricevuto: gli
+ * aggiornamenti sono raggruppati sui frame, non moltiplicati per evento.
+ */
+const MAX_SCRITTURE_STILE = PASSI_DRAG_VELOCE + 2;
+
+type GlobalInstrumentato = {
+  __pino?: MisureDrag;
+  __pinoNodo?: Element | null;
+  __pinoOsservatore?: MutationObserver;
+};
+
+/**
+ * Instrumenta la pagina contando SOLO ciò che riguarda il widget di Pino:
+ * letture di layout sul widget e sui suoi discendenti, scritture di posizione in
+ * localStorage e riscritture dell'attributo `style`. Si chiama una volta per
+ * pagina; cambiando nodo (widget completo ↔ ridotto) basta ripassare il nuovo
+ * selettore.
+ */
+async function strumentaPino(page: Page, selettore: string = WIDGET): Promise<void> {
+  await page.evaluate((sel) => {
+    const nodo = document.querySelector(sel);
+    if (!nodo) throw new Error(`widget di Pino non trovato: ${sel}`);
+
+    const glob = window as unknown as GlobalInstrumentato;
+
+    if (!glob.__pino) {
+      glob.__pino = { lettureLayout: 0, scrittureStorage: [], scrittureStile: 0 };
+
+      const gbc = Element.prototype.getBoundingClientRect;
+      Element.prototype.getBoundingClientRect = function (...args: []) {
+        const corrente = glob.__pinoNodo;
+        if (corrente && (this === corrente || corrente.contains(this))) {
+          glob.__pino!.lettureLayout++;
+        }
+        return gbc.apply(this, args);
+      };
+
+      const setItem = Storage.prototype.setItem;
+      Storage.prototype.setItem = function (chiave: string, valore: string) {
+        if (chiave.startsWith("incitta_pino")) glob.__pino!.scrittureStorage.push(chiave);
+        return setItem.call(this, chiave, valore);
+      };
+    }
+
+    glob.__pinoNodo = nodo;
+    glob.__pinoOsservatore?.disconnect();
+    glob.__pinoOsservatore = new MutationObserver((record) => {
+      glob.__pino!.scrittureStile += record.length;
+    });
+    glob.__pinoOsservatore.observe(nodo, { attributes: true, attributeFilter: ["style"] });
+  }, selettore);
+}
+
+/** Azzera i contatori: le misure valgono dal drag in poi. */
+async function azzeraPino(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const stato = (window as unknown as GlobalInstrumentato).__pino;
+    if (!stato) return;
+    stato.lettureLayout = 0;
+    stato.scrittureStorage = [];
+    stato.scrittureStile = 0;
+  });
+}
+
+/**
+ * Legge i contatori. Va chiamata PRIMA di qualsiasi misura del riquadro: le
+ * helper di misura usano `getBoundingClientRect` e quindi incrementano il conteggio.
+ */
+async function leggiPino(page: Page): Promise<MisureDrag> {
+  return page.evaluate(() => {
+    const stato = (window as unknown as GlobalInstrumentato).__pino;
+    if (!stato) return { lettureLayout: 0, scrittureStorage: [], scrittureStile: 0 };
+    return {
+      lettureLayout: stato.lettureLayout,
+      scrittureStorage: [...stato.scrittureStorage],
+      scrittureStile: stato.scrittureStile,
+    };
+  });
+}
+
+/** Aspetta due frame: garantisce che l'aggiornamento raggruppato sia stato applicato. */
+async function attendiDueFrame(page: Page): Promise<void> {
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+      })
+  );
+}
+
+/**
+ * Drag "veloce": i movimenti vengono inviati in rapida successione, senza pause
+ * artificiali fra l'uno e l'altro (un movimento al frame, come un drag umano
+ * deciso). È lo scenario in cui un'implementazione che lavora a ogni
+ * pointermove — misure di layout, storage, render — si sfalda.
+ *
+ * `rilascia: false` lascia il pointer premuto: permette di misurare il costo del
+ * solo movimento, prima del rilascio. La sessione CDP va chiusa dal chiamante.
+ */
+async function trascinaVeloce(
+  session: CDPSession,
+  {
+    da,
+    a,
+    passi = PASSI_DRAG_VELOCE,
+    touch = false,
+    rilascia = true,
+  }: { da: Punto; a: Punto; passi?: number; touch?: boolean; rilascia?: boolean }
+): Promise<void> {
+  const x0 = Math.round(da.x);
+  const y0 = Math.round(da.y);
+  const xv = (i: number) => Math.round(x0 + ((a.x - x0) * i) / passi);
+  const yv = (i: number) => Math.round(y0 + ((a.y - y0) * i) / passi);
+
+  if (touch) {
+    await session.send("Input.dispatchTouchEvent", {
+      type: "touchStart",
+      touchPoints: [{ x: x0, y: y0, id: 1 }],
+    });
+    for (let i = 1; i <= passi; i++) {
+      await session.send("Input.dispatchTouchEvent", {
+        type: "touchMove",
+        touchPoints: [{ x: xv(i), y: yv(i), id: 1 }],
+      });
+    }
+    if (rilascia) {
+      await session.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    }
+    return;
+  }
+
+  await session.send("Input.dispatchMouseEvent", {
+    type: "mousePressed",
+    x: x0,
+    y: y0,
+    button: "left",
+    buttons: 1,
+    clickCount: 1,
+  });
+  for (let i = 1; i <= passi; i++) {
+    await session.send("Input.dispatchMouseEvent", {
+      type: "mouseMoved",
+      x: xv(i),
+      y: yv(i),
+      buttons: 1,
+    });
+  }
+  if (rilascia) {
+    await session.send("Input.dispatchMouseEvent", {
+      type: "mouseReleased",
+      x: xv(passi),
+      y: yv(passi),
+      button: "left",
+      buttons: 0,
+      clickCount: 1,
+    });
+  }
+}
+
+/** Rilascia il pointer lasciato premuto da `trascinaVeloce({ rilascia: false })`. */
+async function rilasciaVeloce(
+  session: CDPSession,
+  { a, touch = false }: { a: Punto; touch?: boolean }
+): Promise<void> {
+  if (touch) {
+    await session.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    return;
+  }
+  await session.send("Input.dispatchMouseEvent", {
+    type: "mouseReleased",
+    x: Math.round(a.x),
+    y: Math.round(a.y),
+    button: "left",
+    buttons: 0,
+    clickCount: 1,
+  });
+}
+
+/** Punto al centro di un elemento (per il widget ridotto, che non ha il personaggio). */
+async function puntoCentrale(page: Page, selettore: string): Promise<Punto> {
+  const box = await page.locator(selettore).boundingBox();
+  if (!box) throw new Error(`${selettore} non misurabile`);
+  return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+}
+
+/**
+ * Offset salvato del widget (`translate3d`), indipendente dalla sua forma: la
+ * versione ridotta e quella completa hanno ancoraggi e ingombri diversi, quindi
+ * la posizione si confronta sull'offset, non sul riquadro visivo.
+ */
+async function offsetWidget(page: Page, selettore: string): Promise<Punto> {
+  const valore = await page.locator(selettore).evaluate((el) => el.style.transform);
+  const trovato = /translate3d\((-?[\d.]+)px,\s*(-?[\d.]+)px/.exec(valore);
+  if (!trovato) throw new Error(`transform non riconosciuta: ${valore}`);
+  return { x: Number(trovato[1]), y: Number(trovato[2]) };
+}
+
+test.describe("Pino — prestazioni del drag", () => {
+  test.use({ viewport: { width: 1280, height: 800 } });
+
+  test("3) drag desktop rapido: niente layout né storage durante il movimento", async ({
+    page,
+  }) => {
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    await expect(page.locator(WIDGET)).toBeVisible();
+    await attendiPinoPronto(page);
+    await strumentaPino(page);
+
+    const partenza = await puntoPresa(page);
+    const prima = await riquadroVisivo(page, WIDGET);
+    const destinazione = { x: partenza.x - 300, y: partenza.y - 180 };
+    const atteso = {
+      x: prima.x + (destinazione.x - partenza.x),
+      y: prima.y + (destinazione.y - partenza.y),
+    };
+
+    await azzeraPino(page);
+    const session = await page.context().newCDPSession(page);
+    try {
+      await trascinaVeloce(session, { da: partenza, a: destinazione, rilascia: false });
+      await attendiDueFrame(page);
+
+      // Durante il movimento: nessuna misura di layout, nessuna scrittura su
+      // disco, e molte meno scritture di stile che pointermove ricevuti.
+      const durante = await leggiPino(page);
+      expect(durante.lettureLayout, "nessuna lettura di layout durante il drag").toBe(0);
+      expect(durante.scrittureStorage, "nessun salvataggio durante il drag").toEqual([]);
+      expect(durante.scrittureStile, "il widget si è mosso").toBeGreaterThan(0);
+      expect(
+        durante.scrittureStile,
+        `scritture di stile (${durante.scrittureStile}) raggruppate sui frame, non una per pointermove`
+      ).toBeLessThanOrEqual(MAX_SCRITTURE_STILE);
+
+      await rilasciaVeloce(session, { a: destinazione });
+    } finally {
+      await session.detach();
+    }
+
+    await attendiDueFrame(page);
+
+    // Al rilascio: la posizione viene applicata e salvata una sola volta.
+    const dopoRilascio = await leggiPino(page);
+    expect(dopoRilascio.scrittureStorage, "una sola scrittura, al pointerup").toEqual([POS_KEY]);
+    expect(dopoRilascio.lettureLayout, "nessuna lettura di layout fino al rilascio").toBe(0);
+
+    // Il widget è arrivato esattamente dove è finito il puntatore.
+    const dopo = await attesaDentroSchermo(page);
+    expect(Math.abs(dopo.x - atteso.x), "x finale = x del puntatore").toBeLessThanOrEqual(3);
+    expect(Math.abs(dopo.y - atteso.y), "y finale = y del puntatore").toBeLessThanOrEqual(3);
+
+    // Niente inerzia: al rilascio il movimento è finito (nessuna transition su transform).
+    await page.waitForTimeout(300);
+    const assestato = await riquadroVisivo(page, WIDGET);
+    expect(Math.abs(assestato.x - dopo.x), "nessuna deriva dopo il rilascio").toBeLessThanOrEqual(1);
+    expect(Math.abs(assestato.y - dopo.y), "nessuna deriva dopo il rilascio").toBeLessThanOrEqual(1);
+  });
+
+  test("4) apri/chiudi Pino dopo il movimento, poi drag rapido del widget ridotto", async ({
+    page,
+  }) => {
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    await expect(page.locator(WIDGET)).toBeVisible();
+    await attendiPinoPronto(page);
+
+    const partenza = await puntoPresa(page);
+    const session = await page.context().newCDPSession(page);
+    try {
+      await trascinaVeloce(session, { da: partenza, a: { x: partenza.x - 260, y: partenza.y - 160 } });
+    } finally {
+      await session.detach();
+    }
+    await attendiDueFrame(page);
+    const dopoIlDrag = await riquadroVisivo(page, WIDGET);
+
+    // Aprire e chiudere la chat non deve spostare il widget.
+    await page.getByRole("button", { name: CTA_CHAT }).click();
+    await expect(chatAperta(page)).toBeVisible();
+    await chatAperta(page).click();
+    await expect(chatAperta(page)).toHaveCount(0);
+    await expect(page.locator(WIDGET)).toBeVisible();
+
+    const dopoLaChat = await riquadroVisivo(page, WIDGET);
+    expect(Math.abs(dopoLaChat.x - dopoIlDrag.x)).toBeLessThanOrEqual(2);
+    expect(Math.abs(dopoLaChat.y - dopoIlDrag.y)).toBeLessThanOrEqual(2);
+
+    // Widget ridotto: si trascina con la stessa fluidità e non "insegue" il
+    // puntatore dopo il rilascio (era il caso della transition generica su
+    // transform, che animava ogni singolo aggiornamento).
+    await page.getByRole("button", { name: "Chiudi Pino" }).click();
+    const ridotto = page.locator('[data-testid="pino-richiama"]');
+    await expect(ridotto).toBeVisible();
+    await strumentaPino(page, '[data-testid="pino-richiama"]');
+
+    const presaRidotto = await puntoCentrale(page, '[data-testid="pino-richiama"]');
+    const primaRidotto = await riquadroVisivo(page, '[data-testid="pino-richiama"]');
+    const destinazioneRidotto = { x: presaRidotto.x - 320, y: presaRidotto.y - 140 };
+    const attesoRidotto = {
+      x: primaRidotto.x + (destinazioneRidotto.x - presaRidotto.x),
+      y: primaRidotto.y + (destinazioneRidotto.y - presaRidotto.y),
+    };
+
+    await azzeraPino(page);
+    const session2 = await page.context().newCDPSession(page);
+    try {
+      await trascinaVeloce(session2, {
+        da: presaRidotto,
+        a: destinazioneRidotto,
+        rilascia: false,
+      });
+      await attendiDueFrame(page);
+
+      const durante = await leggiPino(page);
+      expect(durante.lettureLayout, "nessuna lettura di layout durante il drag").toBe(0);
+      expect(durante.scrittureStorage, "nessun salvataggio durante il drag").toEqual([]);
+      expect(durante.scrittureStile).toBeGreaterThan(0);
+      expect(durante.scrittureStile).toBeLessThanOrEqual(MAX_SCRITTURE_STILE);
+
+      await rilasciaVeloce(session2, { a: destinazioneRidotto });
+    } finally {
+      await session2.detach();
+    }
+    await attendiDueFrame(page);
+
+    const dopoRilascioRidotto = await leggiPino(page);
+    expect(dopoRilascioRidotto.scrittureStorage).toEqual([POS_KEY]);
+
+    const dopoRidotto = await riquadroVisivo(page, '[data-testid="pino-richiama"]');
+    expect(Math.abs(dopoRidotto.x - attesoRidotto.x)).toBeLessThanOrEqual(3);
+    expect(Math.abs(dopoRidotto.y - attesoRidotto.y)).toBeLessThanOrEqual(3);
+
+    await page.waitForTimeout(300);
+    const assestatoRidotto = await riquadroVisivo(page, '[data-testid="pino-richiama"]');
+    expect(
+      Math.abs(assestatoRidotto.x - dopoRidotto.x),
+      "il widget ridotto non continua a muoversi dopo il rilascio"
+    ).toBeLessThanOrEqual(1);
+    expect(Math.abs(assestatoRidotto.y - dopoRidotto.y)).toBeLessThanOrEqual(1);
+
+    // Un tap (non un drag) riporta Pino intero, con lo stesso offset salvato.
+    const offsetRidotto = await offsetWidget(page, '[data-testid="pino-richiama"]');
+    const centro = await puntoCentrale(page, '[data-testid="pino-richiama"]');
+    await page.mouse.click(centro.x, centro.y);
+    await expect(page.locator(WIDGET)).toBeVisible();
+    const offsetRichiamato = await offsetWidget(page, WIDGET);
+    expect(Math.abs(offsetRichiamato.x - offsetRidotto.x), "offset x conservato").toBeLessThanOrEqual(1);
+    expect(Math.abs(offsetRichiamato.y - offsetRidotto.y), "offset y conservato").toBeLessThanOrEqual(1);
+    await attesaDentroSchermo(page);
+  });
+
+  test("5) reload: la posizione raggiunta con un drag rapido viene ripristinata", async ({
+    page,
+  }) => {
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    await expect(page.locator(WIDGET)).toBeVisible();
+    await attendiPinoPronto(page);
+
+    const partenza = await puntoPresa(page);
+    const session = await page.context().newCDPSession(page);
+    try {
+      await trascinaVeloce(session, { da: partenza, a: { x: partenza.x - 340, y: partenza.y - 120 } });
+    } finally {
+      await session.detach();
+    }
+    await attendiDueFrame(page);
+
+    const salvata = await page.evaluate((k) => window.localStorage.getItem(k), POS_KEY);
+    expect(salvata, "posizione persistita al pointerup").not.toBeNull();
+
+    const primaDelReload = await riquadroVisivo(page, WIDGET);
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await expect(page.locator(WIDGET)).toBeVisible();
+    await attendiPinoPronto(page);
+
+    const dopoIlReload = await riquadroVisivo(page, WIDGET);
+    expect(Math.abs(dopoIlReload.x - primaDelReload.x), "x ripristinata").toBeLessThanOrEqual(2);
+    expect(Math.abs(dopoIlReload.y - primaDelReload.y), "y ripristinata").toBeLessThanOrEqual(2);
+  });
+});
+
+test.describe("Pino — prestazioni del drag (mobile)", () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+  test("6) drag touch rapido: fluido, dentro lo schermo, salvato solo al rilascio", async ({
+    page,
+  }) => {
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    await expect(page.locator(WIDGET)).toBeVisible();
+    await attendiPinoPronto(page);
+    await strumentaPino(page);
+
+    const partenza = await puntoPresa(page);
+    const prima = await riquadroVisivo(page, WIDGET);
+    const destinazione = { x: partenza.x - 60, y: partenza.y - 220 };
+    const atteso = {
+      x: prima.x + (destinazione.x - partenza.x),
+      y: prima.y + (destinazione.y - partenza.y),
+    };
+
+    await azzeraPino(page);
+    const session = await page.context().newCDPSession(page);
+    try {
+      await trascinaVeloce(session, {
+        da: partenza,
+        a: destinazione,
+        touch: true,
+        rilascia: false,
+      });
+      await attendiDueFrame(page);
+
+      const durante = await leggiPino(page);
+      expect(durante.lettureLayout, "nessuna lettura di layout durante il drag").toBe(0);
+      expect(durante.scrittureStorage, "nessun salvataggio durante il drag").toEqual([]);
+      expect(durante.scrittureStile).toBeGreaterThan(0);
+      expect(durante.scrittureStile).toBeLessThanOrEqual(MAX_SCRITTURE_STILE);
+
+      await rilasciaVeloce(session, { a: destinazione, touch: true });
+    } finally {
+      await session.detach();
+    }
+
+    await attendiDueFrame(page);
+    const dopoRilascio = await leggiPino(page);
+    expect(dopoRilascio.scrittureStorage, "salvataggio solo al rilascio").toEqual([POS_KEY]);
+
+    const dopo = await attesaDentroSchermo(page);
+    expect(Math.abs(dopo.x - atteso.x), "x finale = x del dito").toBeLessThanOrEqual(6);
+    expect(Math.abs(dopo.y - atteso.y), "y finale = y del dito").toBeLessThanOrEqual(6);
   });
 });

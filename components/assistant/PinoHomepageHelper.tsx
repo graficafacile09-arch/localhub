@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type PointerEvent as ReactPointerEvent,
-} from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { X } from "lucide-react";
 import { PINO_ASSET, PINO_ASSET_H, PINO_ASSET_W } from "./PinoSprite";
@@ -115,7 +109,11 @@ function limitiViewport(elemento: HTMLElement, applicata: Posizione) {
   };
 }
 
+/** Limiti di traslazione che tengono il widget dentro la viewport. */
+type Limiti = { minX: number; maxX: number; minY: number; maxY: number };
+
 type StatoDrag = {
+  /** Id del pointer attivo: nessun altro pointer deve muovere il widget. */
   pointerId: number;
   startX: number;
   startY: number;
@@ -132,13 +130,23 @@ type StatoDrag = {
  * Trascinamento del widget chiuso, condiviso da Pino flottante e dalla sua
  * versione ridotta ("richiama Pino").
  *
- * - mouse (desktop) e touch (mobile): un unico percorso basato sui Pointer Events;
- * - fluido: la posizione è scritta direttamente sull'elemento (nessun re-render
- *   per ogni pointermove) e gli aggiornamenti sono raggruppati su
- *   requestAnimationFrame, quindi il movimento resta a filo del frame;
- * - non esce dallo schermo: i limiti sono misurati all'inizio del drag e ogni
- *   spostamento viene clampato dentro la viewport; il clamp viene riapplicato
- *   al mount, al resize e alla rotazione;
+ * Come è reso fluido (nessun lavoro inutile durante il movimento):
+ * - i listener sono nativi: `pointerdown` sull'elemento, `pointermove`
+ *   (passive), `pointerup` e `pointercancel` su `window`. React non entra mai
+ *   nel percorso caldo del movimento → nessun render e nessuna allocazione di
+ *   eventi sintetici mentre il dito o il mouse scorrono;
+ * - `pointermove` fa solo aritmetica: le ultime coordinate finiscono in due ref
+ *   numeriche (nessun oggetto temporaneo, nessun setState);
+ * - la scrittura sull'elemento avviene al massimo una volta per frame
+ *   (`requestAnimationFrame`) e solo se la posizione è davvero cambiata;
+ * - durante il movimento non si legge il layout (nessun
+ *   `getBoundingClientRect`) e non si tocca localStorage: i limiti allo schermo
+ *   sono misurati una volta sola e poi riusati, la posizione viene salvata solo
+ *   al termine del gesto;
+ * - mouse (desktop) e touch (mobile) passano da un unico percorso basato sui
+ *   Pointer Events, con pointer capture per non perdere il gesto;
+ * - non esce dallo schermo: il clamp viene riapplicato al mount, al resize e
+ *   alla rotazione;
  * - tap vs drag: sotto la soglia di 5px è un tap → `onTap` (apre la chat o
  *   richiama Pino), sopra è un drag e il click successivo viene soppresso;
  * - la posizione è ripristinata da localStorage al primo mount e risalvata a
@@ -146,50 +154,88 @@ type StatoDrag = {
  */
 function usePinoTrascinabile(onTap: () => void) {
   const elementRef = useRef<HTMLElement | null>(null);
-  const posizioneRef = useRef<Posizione>(POSIZIONE_DEFAULT);
+  /** Posizione applicata all'elemento (mutata in place: nessuna allocazione per frame). */
+  const posizioneRef = useRef<Posizione>({ ...POSIZIONE_DEFAULT });
   const ripristinataRef = useRef(false);
   const dragRef = useRef<StatoDrag | null>(null);
   const frameRef = useRef<number | null>(null);
-  const pendenteRef = useRef<Posizione | null>(null);
+  /** Ultima posizione richiesta dal puntatore, non ancora scritta sull'elemento. */
+  const pendenteXRef = useRef(0);
+  const pendenteYRef = useRef(0);
+  const haPendenteRef = useRef(false);
   /** `true` se l'ultima interazione è stato un drag: serve a sopprimere il click. */
   const wasDraggedRef = useRef(false);
   const onTapRef = useRef(onTap);
+  /** Limiti già misurati: vengono invalidati al resize e al cambio di nodo. */
+  const limitiRef = useRef<Limiti | null>(null);
+  /** Smonta i listener nativi legati al nodo corrente. */
+  const staccaNodoRef = useRef<(() => void) | null>(null);
+  /** Smonta i listener nativi attivi solo durante il drag. */
+  const staccaDragRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     onTapRef.current = onTap;
   }, [onTap]);
 
+  // Smontaggio: nessun listener nativo resta appeso al documento.
+  useEffect(
+    () => () => {
+      staccaNodoRef.current?.();
+      staccaDragRef.current?.();
+    },
+    []
+  );
+
   /** Scrive la posizione sull'elemento: nessuno stato React da sincronizzare. */
-  const applica = useCallback((pos: Posizione) => {
-    posizioneRef.current = pos;
+  const applica = useCallback((x: number, y: number) => {
+    const pos = posizioneRef.current;
+    pos.x = x;
+    pos.y = y;
     const elemento = elementRef.current;
     if (elemento) elemento.style.transform = trasla(pos);
   }, []);
 
-  const commit = useCallback(
-    (next: Posizione) => {
-      if (frameRef.current !== null) {
-        cancelAnimationFrame(frameRef.current);
-        frameRef.current = null;
-      }
-      pendenteRef.current = null;
-      applica(next);
+  /** Scrive solo se la posizione è cambiata davvero: nessuno stile ridondante. */
+  const applicaSeCambiata = useCallback(
+    (x: number, y: number) => {
+      const pos = posizioneRef.current;
+      if (pos.x === x && pos.y === y) return;
+      applica(x, y);
     },
     [applica]
   );
 
-  /** Aggiornamento raggruppato a un frame: movimento fluido anche su mobile. */
-  const schedule = useCallback(
-    (next: Posizione) => {
-      pendenteRef.current = next;
-      if (frameRef.current !== null) return;
-      frameRef.current = requestAnimationFrame(() => {
-        frameRef.current = null;
-        const valore = pendenteRef.current;
-        if (valore) applica(valore);
-      });
-    },
-    [applica]
+  /** Scrittura raggruppata a un frame: il movimento resta a filo del refresh. */
+  const flush = useCallback(() => {
+    frameRef.current = null;
+    if (!haPendenteRef.current) return;
+    haPendenteRef.current = false;
+    applicaSeCambiata(pendenteXRef.current, pendenteYRef.current);
+  }, [applicaSeCambiata]);
+
+  /** Materializza subito l'ultimo movimento in sospeso (annulla il frame). */
+  const applicaSubito = useCallback(() => {
+    if (frameRef.current !== null) {
+      cancelAnimationFrame(frameRef.current);
+      frameRef.current = null;
+    }
+    if (!haPendenteRef.current) return;
+    haPendenteRef.current = false;
+    applicaSeCambiata(pendenteXRef.current, pendenteYRef.current);
+  }, [applicaSeCambiata]);
+
+  /** Misura i limiti allo schermo una volta sola, tenendoli in cache. */
+  const calcolaLimiti = useCallback((): Limiti => {
+    const elemento = elementRef.current;
+    if (!elemento) return { minX: 0, maxX: 0, minY: 0, maxY: 0 };
+    limitiRef.current = limitiViewport(elemento, posizioneRef.current);
+    return limitiRef.current;
+  }, []);
+
+  /** Limiti validi per la viewport attuale: se già misurati non costano nulla. */
+  const limitiCorrenti = useCallback(
+    (): Limiti => limitiRef.current ?? calcolaLimiti(),
+    [calcolaLimiti]
   );
 
   /**
@@ -201,147 +247,199 @@ function usePinoTrascinabile(onTap: () => void) {
     const elemento = elementRef.current;
     if (!elemento || dragRef.current) return;
 
+    const limiti = calcolaLimiti();
     const attuale = posizioneRef.current;
-    const limiti = limitiViewport(elemento, attuale);
-    const next = {
-      x: clamp(attuale.x, limiti.minX, limiti.maxX),
-      y: clamp(attuale.y, limiti.minY, limiti.maxY),
-    };
+    const x = clamp(attuale.x, limiti.minX, limiti.maxX);
+    const y = clamp(attuale.y, limiti.minY, limiti.maxY);
 
-    if (next.x !== attuale.x || next.y !== attuale.y) {
-      commit(next);
-      salvaPosizione(next);
+    if (x !== attuale.x || y !== attuale.y) {
+      applica(x, y);
+      salvaPosizione(posizioneRef.current);
     }
-  }, [commit]);
+  }, [applica, calcolaLimiti]);
+
+  /**
+   * Inizio del drag: registrato come listener nativo sull'elemento.
+   *
+   * Da qui in poi il movimento non passa più da React: `pointermove`, `pointerup`
+   * e `pointercancel` sono ascoltati su `window` (passive dove possibile) e
+   * vengono smontati appena il gesto finisce.
+   */
+  const iniziaDrag = useCallback(
+    (event: PointerEvent) => {
+      if (event.pointerType === "mouse" && event.button !== 0) return;
+      // La X del fumetto non deve iniziare un drag: i listener nativi scattano
+      // prima degli handler React, quindi un semplice stopPropagation non
+      // basterebbe più.
+      if ((event.target as Element | null)?.closest?.("[data-pino-nodrag]")) return;
+      if (dragRef.current) return;
+
+      const elemento = elementRef.current;
+      if (!elemento) return;
+
+      // Nessuna lettura di layout: se i limiti sono già in cache (misurati al
+      // mount o all'ultimo resize) l'inizio del drag è immediato.
+      const limiti = limitiCorrenti();
+
+      wasDraggedRef.current = false;
+      try {
+        elemento.setPointerCapture(event.pointerId);
+      } catch {
+        // Senza pointer capture il drag resta comunque funzionante.
+      }
+
+      dragRef.current = {
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        baseX: posizioneRef.current.x,
+        baseY: posizioneRef.current.y,
+        moved: false,
+        ...limiti,
+      };
+
+      /** Fine del gesto: smonta i listener di drag e rilascia il pointer. */
+      const stacca = () => {
+        window.removeEventListener("pointermove", onMove, true);
+        window.removeEventListener("pointerup", onUp, true);
+        window.removeEventListener("pointercancel", onCancel, true);
+        staccaDragRef.current = null;
+        try {
+          elemento.releasePointerCapture(event.pointerId);
+        } catch {
+          // Nulla da rilasciare.
+        }
+      };
+
+      function onMove(moveEvent: PointerEvent) {
+        const drag = dragRef.current;
+        if (!drag || drag.pointerId !== moveEvent.pointerId) return;
+
+        const dx = moveEvent.clientX - drag.startX;
+        const dy = moveEvent.clientY - drag.startY;
+
+        if (!drag.moved) {
+          if (Math.abs(dx) < SOGLIA_DRAG && Math.abs(dy) < SOGLIA_DRAG) return;
+          drag.moved = true;
+          wasDraggedRef.current = true;
+        }
+
+        // Solo aritmetica: niente DOM, niente storage, niente render.
+        pendenteXRef.current = clamp(drag.baseX + dx, drag.minX, drag.maxX);
+        pendenteYRef.current = clamp(drag.baseY + dy, drag.minY, drag.maxY);
+        haPendenteRef.current = true;
+
+        // Al massimo una scrittura per frame, anche con mouse ad alta frequenza.
+        if (frameRef.current === null) frameRef.current = requestAnimationFrame(flush);
+      }
+
+      function onUp(upEvent: PointerEvent) {
+        const drag = dragRef.current;
+        if (!drag || drag.pointerId !== upEvent.pointerId) return;
+
+        const spostato = drag.moved;
+        dragRef.current = null;
+        stacca();
+
+        if (!spostato) {
+          // Tap: apre la chat (o richiama Pino).
+          onTapRef.current();
+          return;
+        }
+
+        // Fissiamo l'ultimo movimento in sospeso e solo ora salviamo: durante il
+        // drag localStorage non viene mai toccato.
+        applicaSubito();
+        salvaPosizione(posizioneRef.current);
+      }
+
+      function onCancel(cancelEvent: PointerEvent) {
+        const drag = dragRef.current;
+        if (!drag || drag.pointerId !== cancelEvent.pointerId) return;
+
+        const spostato = drag.moved;
+        dragRef.current = null;
+        stacca();
+        if (!spostato) return;
+
+        // Il browser ha interrotto il gesto (gesture di sistema, perdita del
+        // pointer): consolidiamo lo spostamento già fatto invece di buttarlo via.
+        applicaSubito();
+        salvaPosizione(posizioneRef.current);
+      }
+
+      window.addEventListener("pointermove", onMove, { passive: true, capture: true });
+      window.addEventListener("pointerup", onUp, true);
+      window.addEventListener("pointercancel", onCancel, true);
+      staccaDragRef.current = stacca;
+    },
+    [applicaSubito, flush, limitiCorrenti]
+  );
 
   /**
    * Callback ref: funziona sia sul <div> flottante sia sul <button> ridotto e,
    * al primo mount, ripristina la posizione salvata prima del paint (nessun
    * salto visibile). Il componente resta montato quando Pino è nascosto nelle
    * rotte transazionali, quindi al ritorno la posizione è già in memoria.
+   *
+   * I listener del drag sono legati qui al nodo: nessun handler React nel
+   * percorso caldo del movimento.
    */
   const attachRef = useCallback(
     (node: HTMLElement | null) => {
+      staccaNodoRef.current?.();
+      staccaNodoRef.current = null;
+      staccaDragRef.current?.();
+      staccaDragRef.current = null;
+      dragRef.current = null;
+      // Nodo diverso (flottante ↔ ridotto): i limiti misurati non valgono più.
+      limitiRef.current = null;
       elementRef.current = node;
       if (!node) return;
 
       if (!ripristinataRef.current) {
         const salvata = leggiPosizioneSalvata();
-        if (salvata) posizioneRef.current = salvata;
+        if (salvata) {
+          posizioneRef.current.x = salvata.x;
+          posizioneRef.current.y = salvata.y;
+        }
         ripristinataRef.current = true;
       }
 
       node.style.transform = trasla(posizioneRef.current);
+
+      // Misura qui i limiti allo schermo (una volta per nodo): così anche il
+      // primo pointerdown è pura aritmetica, senza letture di layout.
+      calcolaLimiti();
+
+      node.addEventListener("pointerdown", iniziaDrag);
+      staccaNodoRef.current = () => node.removeEventListener("pointerdown", iniziaDrag);
     },
-    []
+    [calcolaLimiti, iniziaDrag]
   );
 
   // Mount, resize e rotazione: il widget non deve mai sbordare dallo schermo.
+  // Al cambio di dimensione i limiti in cache non valgono più e vanno rimisurati.
   useEffect(() => {
-    clampAllaViewport();
+    const ricalcola = () => {
+      limitiRef.current = null;
+      clampAllaViewport();
+    };
 
-    window.addEventListener("resize", clampAllaViewport);
-    window.addEventListener("orientationchange", clampAllaViewport);
+    ricalcola();
+
+    window.addEventListener("resize", ricalcola);
+    window.addEventListener("orientationchange", ricalcola);
     return () => {
-      window.removeEventListener("resize", clampAllaViewport);
-      window.removeEventListener("orientationchange", clampAllaViewport);
+      window.removeEventListener("resize", ricalcola);
+      window.removeEventListener("orientationchange", ricalcola);
     };
   }, [clampAllaViewport]);
-
-  const onPointerDown = (event: ReactPointerEvent<HTMLElement>) => {
-    if (event.pointerType === "mouse" && event.button !== 0) return;
-
-    const elemento = elementRef.current;
-    if (!elemento) return;
-
-    const attuale = posizioneRef.current;
-    const limiti = limitiViewport(elemento, attuale);
-
-    wasDraggedRef.current = false;
-    try {
-      elemento.setPointerCapture(event.pointerId);
-    } catch {
-      // Senza pointer capture il drag resta comunque funzionante.
-    }
-
-    dragRef.current = {
-      pointerId: event.pointerId,
-      startX: event.clientX,
-      startY: event.clientY,
-      baseX: attuale.x,
-      baseY: attuale.y,
-      moved: false,
-      ...limiti,
-    };
-  };
-
-  const onPointerMove = (event: ReactPointerEvent<HTMLElement>) => {
-    const drag = dragRef.current;
-    if (!drag || drag.pointerId !== event.pointerId) return;
-
-    const dx = event.clientX - drag.startX;
-    const dy = event.clientY - drag.startY;
-
-    if (!drag.moved) {
-      if (Math.abs(dx) < SOGLIA_DRAG && Math.abs(dy) < SOGLIA_DRAG) return;
-      drag.moved = true;
-      wasDraggedRef.current = true;
-    }
-
-    schedule({
-      x: clamp(drag.baseX + dx, drag.minX, drag.maxX),
-      y: clamp(drag.baseY + dy, drag.minY, drag.maxY),
-    });
-  };
-
-  const onPointerUp = (event: ReactPointerEvent<HTMLElement>) => {
-    const drag = dragRef.current;
-    if (!drag || drag.pointerId !== event.pointerId) return;
-
-    dragRef.current = null;
-    const elemento = elementRef.current;
-    if (elemento) {
-      try {
-        elemento.releasePointerCapture(event.pointerId);
-      } catch {
-        // Nulla da rilasciare.
-      }
-    }
-
-    if (!drag.moved) {
-      onTapRef.current();
-      return;
-    }
-
-    // Materializza l'ultimo movimento in sospeso e salvalo per le prossime sessioni.
-    const finale = pendenteRef.current ?? posizioneRef.current;
-    commit(finale);
-    salvaPosizione(finale);
-  };
-
-  // Il browser può interrompere un gesto touch (gesture di sistema, perdita
-  // del pointer): non buttiamo via lo spostamento già fatto, lo consolidiamo.
-  const onPointerCancel = (event: ReactPointerEvent<HTMLElement>) => {
-    const drag = dragRef.current;
-    dragRef.current = null;
-    if (!drag || drag.pointerId !== event.pointerId || !drag.moved) return;
-
-    const finale = pendenteRef.current ?? posizioneRef.current;
-    commit(finale);
-    salvaPosizione(finale);
-  };
-
-  const dragHandlers = {
-    onPointerDown,
-    onPointerMove,
-    onPointerUp,
-    onPointerCancel,
-  };
 
   /** Il click nativo che segue un drag va ignorato (altrimenti aprirebbe la chat). */
   const clickSopraggio = useCallback(() => wasDraggedRef.current, []);
 
-  return { attachRef, dragHandlers, clickSopraggio };
+  return { attachRef, clickSopraggio };
 }
 
 /**
@@ -402,7 +500,7 @@ export default function PinoHomepageHelper() {
 
   // TASK 1 — il widget chiuso è trascinabile in entrambe le sue forme:
   // tap = apri la chat (o richiama Pino), drag = spostalo.
-  const { attachRef, dragHandlers, clickSopraggio } = usePinoTrascinabile(() => {
+  const { attachRef, clickSopraggio } = usePinoTrascinabile(() => {
     if (chiuso) richiama();
     else openAssistant();
   });
@@ -418,7 +516,6 @@ export default function PinoHomepageHelper() {
       <button
         ref={attachRef}
         type="button"
-        {...dragHandlers}
         onKeyDown={(event) => {
           if (event.key === "Enter" || event.key === " ") {
             event.preventDefault();
@@ -429,7 +526,11 @@ export default function PinoHomepageHelper() {
         // Niente variazioni di scala su hover/press: il riquadro visivo deve
         // restare misurabile con esattezza, altrimenti il clamp allo schermo
         // verrebbe calcolato su una dimensione diversa da quella reale.
-        className="fixed bottom-4 right-4 z-[90] flex h-12 min-w-[64px] cursor-grab touch-none select-none items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2 py-1.5 shadow-xl shadow-slate-900/15 transition hover:border-blue-300 hover:brightness-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 active:cursor-grabbing active:brightness-95"
+        //
+        // `transition` è limitato a colori e luminosità: la versione generica
+        // include anche `transform`, quindi ogni scrittura durante il drag
+        // verrebbe animata in 150ms e il trascinamento sembrerebbe lento.
+        className="fixed bottom-4 right-4 z-[90] flex h-12 min-w-[64px] cursor-grab touch-none select-none items-center gap-1.5 rounded-full border border-slate-200 bg-white px-2 py-1.5 shadow-xl shadow-slate-900/15 transition-[color,background-color,border-color,filter] hover:border-blue-300 hover:brightness-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 active:cursor-grabbing active:brightness-95"
         aria-label="Richiama Pino"
         title="Richiama Pino"
       >
@@ -453,7 +554,6 @@ export default function PinoHomepageHelper() {
   return (
     <div
       ref={attachRef}
-      {...dragHandlers}
       data-testid="pino-widget"
       className="fixed bottom-5 right-5 z-[60] touch-none select-none will-change-transform"
       aria-label="Pino, assistente di InCittà"
@@ -462,13 +562,13 @@ export default function PinoHomepageHelper() {
           md:pr-6 riserva il bordo destro dove si sovrappone la sagoma di Pino. */}
       <div className="flex items-end gap-0.5">
         <div className="relative mb-4 flex max-w-[172px] items-start rounded-2xl bg-gradient-to-br from-cyan-700 to-sky-700 py-2 pl-2.5 pr-1.5 text-white shadow-[0_10px_26px_-12px_rgba(8,51,68,0.55)] sm:max-w-[188px] md:mb-14 md:pr-7">
-          {/* X: chiude completamente la presentazione. Stop della propagazione
-              su pointerdown/pointerup per non avviare il drag del personaggio
-              (l'onPointerUp del contenitore aprirebbe l'assistente). */}
+          {/* X: chiude completamente la presentazione. `data-pino-nodrag` la
+              esclude dal drag: i listener nativi del contenitore non possono
+              essere fermati da uno stopPropagation React (scattano prima), e
+              un gesto da qui non deve aprire l'assistente. */}
           <button
             type="button"
-            onPointerDown={(event) => event.stopPropagation()}
-            onPointerUp={(event) => event.stopPropagation()}
+            data-pino-nodrag="1"
             onClick={(event) => {
               event.stopPropagation();
               chiudiPresentazione();
