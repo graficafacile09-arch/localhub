@@ -21,6 +21,9 @@ import { getEventiPubblici } from "@/lib/eventi";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getFarmacieTurnoCastrovillari, type FarmaciaTurno } from "@/lib/farmacie-turno";
 import type { NegozioRicerca, ProdottoRicerca } from "@/lib/ricerca-ai";
+import { terminiSignificativi } from "@/lib/search-tollerante";
+import { concettiIntento } from "@/lib/ricerca-intento";
+import { normalizza } from "@/lib/text-utils";
 
 // ─── Tipi risultati dei tool ─────────────────────────────────────────────────
 
@@ -294,6 +297,38 @@ export async function searchStores(
 
 // ─── searchProducts (con filtro prezzo) ──────────────────────────────────────
 
+// Gate di pertinenza dei PRODOTTI (solo assistente).
+// La ricerca prodotti condivisa con il catalogo espande la query con i sinonimi
+// di categoria/commercio e, in ultima istanza, con una fase tollerante ai
+// refusi: utile al recall, ma sui PRODOTTI genera falsi positivi reali
+//   - "pane" attiva il gruppo "panificio" (che include "dolci") ⇒ Nutella
+//     (categoria "Dolciumi") comparirebbe cercando "pane";
+//   - per query senza riscontro la fase tollerante restituisce prodotti
+//     casuali (es. "tartufo nero" ⇒ T-shirt/orologi).
+// Pino deve mostrare SOLO prodotti che corrispondono alla richiesta reale:
+// tutti i termini ORIGINALI della query devono comparire nei campi del
+// prodotto; in alternativa basta un concetto d'INTENTO riconosciuto
+// (es. "ho sete" ⇒ acqua/bevande). Il match PARZIALE non è una corrispondenza:
+// per "tartufo nero" la parola "nero" nella descrizione di una T-shirt non
+// rende la T-shirt pertinente. I campi del NEGOZIO non contano: la pertinenza
+// del negozio non deve propagarsi ai suoi prodotti.
+// Se la query non ha termini sostanziali, non applichiamo il vincolo.
+function prodottoPertinente(
+  prodotto: ProdottoRicerca,
+  termini: string[],
+  concetti: string[]
+): boolean {
+  const campi = normalizza(
+    [prodotto.nome, prodotto.descrizione, prodotto.categoria]
+      .filter(Boolean)
+      .join(" ")
+  );
+  if (!campi) return false;
+  if (termini.length === 0) return true;
+  if (termini.every((t) => campi.includes(t))) return true;
+  return concetti.some((c) => campi.includes(c));
+}
+
 export async function searchProducts(
   query: string,
   opts: ToolParams = {}
@@ -302,8 +337,19 @@ export async function searchProducts(
   if (!q) return [];
 
   const righe = await cercaProdotti(q, 60);
+
+  const terminiOriginali = terminiSignificativi(q, 10).map(normalizza);
+  const concettiQuery = concettiIntento(q)
+    .split(/\s+/)
+    .filter(Boolean)
+    .map(normalizza);
+  const pertinenti =
+    terminiOriginali.length > 0
+      ? righe.filter((p) => prodottoPertinente(p, terminiOriginali, concettiQuery))
+      : righe;
+
   // Filtri in memoria su categoria/sottocategoria/tipo-se-pertinente.
-  let filtrate = righe;
+  let filtrate = pertinenti;
   if (opts?.categoria?.trim()) {
     const c = opts.categoria.trim().toLowerCase();
     filtrate = filtrate.filter((p) => (p.categoria ?? "").toLowerCase().includes(c));
