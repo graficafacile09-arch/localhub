@@ -405,3 +405,79 @@ body.merchant-image-editor-aperto .merchant-bottom-nav-spacer {
 .editor-blocco .grid > * {
   min-width: 0;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * DESKTOP NAVIGATION SCALE
+ * Solo viewport desktop (>= 1024px).
+ *
+ * Obiettivo: aumentare leggibilità e area di clic dei menu che risultavano
+ * troppo piccoli sui monitor desktop, senza modificare in alcun modo il
+ * rendering mobile/tablet.
+ * ═══════════════════════════════════════════════════════════════════════ */
+@media (min-width: 1024px) {
+  /* Navigazione pubblica: icone, etichette e celle più leggibili. */
+  .incitta-desktop-public-nav .incitta-public-nav-item {
+    min-width: 84px;
+    margin-inline: 0.35rem;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .incitta-desktop-public-nav .incitta-public-nav-icon {
+    width: 3rem;
+    height: 3rem;
+  }
+
+  .incitta-desktop-public-nav .incitta-public-nav-icon > svg {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  .incitta-desktop-public-nav .incitta-public-nav-label {
+    font-size: 0.9375rem;
+    line-height: 1.15rem;
+  }
+
+  /* Sidebar venditore / cliente / navigazioni contestuali negozio. */
+  .incitta-desktop-area-nav .incitta-area-nav-item {
+    min-height: 3rem;
+    gap: 0.75rem;
+    padding: 0.75rem 0.875rem;
+  }
+
+  .incitta-desktop-area-nav .incitta-area-nav-icon {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  .incitta-desktop-area-nav .incitta-area-nav-icon > svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  .incitta-desktop-area-nav .incitta-area-nav-label {
+    font-size: 0.9375rem;
+    line-height: 1.25rem;
+  }
+
+  /* Sidebar amministratore: stessa scala, con gruppi più leggibili. */
+  .incitta-desktop-admin-nav .incitta-admin-nav-item {
+    min-height: 3rem;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.9375rem;
+  }
+
+  .incitta-desktop-admin-nav .incitta-admin-nav-icon {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  .incitta-desktop-admin-nav .incitta-admin-group-button {
+    min-height: 3rem;
+    gap: 0.625rem;
+    padding: 0.75rem 1rem;
+    font-size: 0.75rem;
+  }
+}
+\n
