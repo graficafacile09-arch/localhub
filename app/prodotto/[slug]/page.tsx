@@ -81,7 +81,7 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
   }
 
   const id = String(prodotto.id);
-  const soggettoVerificaEta = soggettoVerificaEta;
+  const soggettoVerificaEta = Boolean((prodotto as Record<string, unknown>).soggetto_verifica_eta);
   const cookieStore = await cookies();
   const ageVerified = cookieStore.get("incitta_age_verified")?.value === "1";
   const ageBlocked = cookieStore.get("incitta_age_blocked")?.value === "1";
