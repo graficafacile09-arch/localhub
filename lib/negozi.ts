@@ -902,7 +902,7 @@ export function isOrdinamentoProdottiPubblici(value: unknown): value is Ordiname
 // quantita_disponibile/quantita_riservata: necessarie per il badge "Esaurito"
 // nelle card pubbliche (Fase D).
 const SELECT_PRODOTTO_RICERCA =
-  "id, slug, negozio_id, nome, descrizione, categoria, sottocategoria, marca, colore, prezzo, immagine_principale, quantita_disponibile, quantita_riservata, ha_varianti";
+  "id, slug, negozio_id, nome, descrizione, categoria, sottocategoria, marca, colore, materiale, parole_chiave, caratteristiche, seo_title, seo_description, alt_text_immagine, prezzo, immagine_principale, quantita_disponibile, quantita_riservata, ha_varianti";
 
 /**
  * Id dei negozi pubblici (deleted_at non valorizzato).
@@ -947,6 +947,11 @@ function applicaFiltriRicercaProdotti(
           `sottocategoria.ilike.%${p}%`,
           `colore.ilike.%${p}%`,
           `materiale.ilike.%${p}%`,
+          `parole_chiave.cs.{${p}}`,
+          `caratteristiche.cs.{${p}}`,
+          `seo_title.ilike.%${p}%`,
+          `seo_description.ilike.%${p}%`,
+          `alt_text_immagine.ilike.%${p}%`,
         ];
       })
       .join(",");
@@ -1007,7 +1012,11 @@ function calcolaPunteggioProdotto(
     "descrizione",
     "colore",
     "materiale",
-    "tag",
+    "parole_chiave",
+    "caratteristiche",
+    "seo_title",
+    "seo_description",
+    "alt_text_immagine",
   ];
 
   for (const campo of campi) {
@@ -1256,9 +1265,15 @@ async function cercaProdottiCore(
       break;
   }
 
-  // Paginazione (range inclusivo) oppure limite semplice.
+  // Per una ricerca libera non paginiamo il DB prima del ranking:
+  // recuperiamo una finestra ampia di candidati, poi ordiniamo per rilevanza
+  // e applichiamo la pagina. Evita il bug classico "il prodotto esiste ma non
+  // entra nei primi N record restituiti da PostgREST".
+  const ricercaLibera = !conFiltriExtra && ricerca.trim().length > 0;
   const { pagina, perPagina } = opts;
-  if (opts.conCount && pagina && perPagina) {
+  if (ricercaLibera) {
+    query = query.limit(Math.max(opts.limite, 200));
+  } else if (opts.conCount && pagina && perPagina) {
     const from = (pagina - 1) * perPagina;
     query = query.range(from, from + perPagina - 1);
   } else {
@@ -1294,7 +1309,7 @@ async function cercaProdottiCore(
       risultati,
       ricerca,
       termini,
-      opts.limite
+      Math.max(opts.limite, 200)
     );
   }
 
@@ -1334,6 +1349,15 @@ async function cercaProdottiCore(
   // hanno una città propria: la derivano dal negozio, citta OR indirizzo).
   if (cittaProdotto) {
     risultati = await filtraProdottiPerCitta(db, risultati, cittaProdotto);
+  }
+
+  // La paginazione della ricerca libera avviene DOPO retrieval, ranking,
+  // negazioni, prezzo e vincolo geografico.
+  if (ricercaLibera && perPagina) {
+    const from = Math.max(0, (paginaCorrente - 1) * perPagina);
+    risultati = risultati.slice(from, from + perPagina);
+  } else if (ricercaLibera) {
+    risultati = risultati.slice(0, opts.limite);
   }
 
   return { risultati, total };
