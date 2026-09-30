@@ -268,7 +268,6 @@ end;
 $function$
 
 
-revoke execute on function public.checkout_intento_conferma(uuid, text, text, text, numeric) from public, anon, authenticated;
 revoke execute on function public.checkout_intento_conferma(uuid, text, text, numeric, text) from public, anon, authenticated;
 grant execute on function public.checkout_intento_conferma(uuid, text, text, numeric, text) to service_role;
 
