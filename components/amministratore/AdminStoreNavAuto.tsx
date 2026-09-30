@@ -38,7 +38,7 @@ export default function AdminStoreNavAuto() {
   return (
     <div>
       <p className="px-2 text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Negozio</p>
-      <nav aria-label="Menu negozio amministratore" className="mt-3 space-y-1.5 text-sm font-semibold">
+      <nav aria-label="Menu negozio amministratore" className="incitta-desktop-area-nav mt-3 space-y-1.5 text-sm font-semibold">
         <div className="mb-2 flex items-center gap-3 rounded-2xl border border-slate-100 bg-linear-to-br from-blue-50 to-blue-100/60 p-3.5">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm shadow-blue-600/30">
             <Store className="h-5 w-5" aria-hidden />
@@ -61,7 +61,7 @@ export default function AdminStoreNavAuto() {
               key={voce.label}
               href={voce.href}
               aria-current={active ? "page" : undefined}
-              className={`group relative flex items-center gap-3 rounded-2xl px-3 py-2.5 transition-all duration-150 ${
+              className={`incitta-area-nav-item group relative flex items-center gap-3 rounded-2xl px-3 py-2.5 transition-all duration-150 ${
                 active
                   ? "bg-yellow-50 text-yellow-800 ring-1 ring-yellow-200"
                   : "text-blue-700 hover:bg-yellow-50 hover:text-yellow-800"
@@ -74,7 +74,7 @@ export default function AdminStoreNavAuto() {
                 />
               )}
               <span
-                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors ${
+                className={`incitta-area-nav-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors ${
                   active
                     ? "bg-yellow-400 text-blue-900 shadow-sm"
                     : "bg-blue-50 text-blue-600 group-hover:bg-yellow-100 group-hover:text-yellow-800"
@@ -82,7 +82,7 @@ export default function AdminStoreNavAuto() {
               >
                 <Icon className="h-[18px] w-[18px]" aria-hidden />
               </span>
-              <span className="truncate text-sm font-bold">{voce.label}</span>
+              <span className="incitta-area-nav-label truncate text-sm font-bold">{voce.label}</span>
             </Link>
           );
         })}
