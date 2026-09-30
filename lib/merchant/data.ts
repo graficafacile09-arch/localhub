@@ -746,14 +746,14 @@ export async function createMerchantProductForStore(
     slug: await generaSlugUnivoco("prodotti", input.nome.trim()),
   };
 
-  let insertResult: { data: Record<string, unknown> | null; error: QueryError | null };
-  for (let tentativo = 0; tentativo < 4; tentativo += 1) {
-    insertResult = await supabase.from("prodotti").insert(payload).select("*").single();
-    if (!insertResult.error || insertResult.error.code !== "23505") break;
+  let insertResult = await supabase.from("prodotti").insert(payload).select("*").single();
+  for (let tentativo = 0; tentativo < 3 && insertResult.error?.code === "23505"; tentativo += 1) {
     payload = {
       ...payloadBase,
       slug: await generaSlugUnivoco("prodotti", `${input.nome.trim()}-${tentativo + 2}`),
     };
+    insertResult = await supabase.from("prodotti").insert(payload).select("*").single();
+    if (!insertResult.error || insertResult.error.code !== "23505") break;
   }
 
   if (insertResult.error && isSchemaError(insertResult.error)) {
