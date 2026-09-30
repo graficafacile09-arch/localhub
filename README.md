@@ -62,8 +62,7 @@ ogni push su qualsiasi branch del repository genera un deployment.
 
 **Limite piano Hobby:** 100 deployment ogni 86400 secondi (1 giorno), conteggiati in un'unica
 quota condivisa tra deployment da Git, da CLI e da API. Superata la soglia Vercel **non crea
-più alcun deployment**: i push su `main` vengono ignorati silenziosamente (nessun errore su
-GitHub, nessuna voce nella dashboard) e `vercel deploy` fallisce con:
+più alcun deployment**: i push su `main` vengono ignorati silenziosamente (nessun errore su GitHub, nessuna voce nella dashboard) e `vercel deploy` fallisce con:
 
 ```text
 402 payment_required - "more than 100, code: api-deployments-free-per-day"
@@ -76,3 +75,4 @@ fino a `reset`; se risponde `200` i deploy da Git hanno ripreso a funzionare.
 Poiché a contare sono **tutti** i deployment a prescindere dall'origine, con molti branch attivi
 conviene disabilitare esplicitamente in `vercel.json` (`git.deploymentEnabled`) le branch di cui
 non servono le preview, per non esaurire la quota e bloccare i deploy di `main`.
+
