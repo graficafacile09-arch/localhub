@@ -739,7 +739,7 @@ export async function createMerchantProductForStore(
   if (input.filtriCatalogo !== undefined) payloadBase.filtri_catalogo = input.filtriCatalogo;
   if (input.seoTitle !== undefined) payloadBase.seo_title = input.seoTitle.trim() || null;
   if (input.seoDescription !== undefined) payloadBase.seo_description = input.seoDescription.trim() || null;
-  if (input.altTextImmagine !== undefined) payload.altTextImmagine = input.altTextImmagine.trim() || null;
+  if (input.altTextImmagine !== undefined) payloadBase.alt_text_immagine = input.altTextImmagine.trim() || null;
 
   let payload: Record<string, unknown> = {
     ...payloadBase,
