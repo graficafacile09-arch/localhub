@@ -59,7 +59,7 @@ export default function ClienteSidebar({
   ];
 
   return (
-    <nav aria-label="Menu Area Clienti" className="space-y-1">
+    <nav aria-label="Menu Area Clienti" className="incitta-desktop-area-nav space-y-1">
       {/* ── Blocco brand (solo sidebar desktop espansa) ───────────────────── */}
       {withHeader && !collapsed && (
         <div className="mb-4 flex items-center gap-3 rounded-2xl bg-blue-600 px-4 py-3.5 text-white shadow-sm">
@@ -94,7 +94,7 @@ export default function ClienteSidebar({
                 onClick={onNavigate}
                 aria-current={active ? "page" : undefined}
                 title={collapsed ? item.label : undefined}
-                className={`group relative flex items-center gap-3 rounded-2xl transition-all duration-150 ${
+                className={`incitta-area-nav-item group relative flex items-center gap-3 rounded-2xl transition-all duration-150 ${
                   collapsed ? "justify-center px-0 py-3" : "px-3 py-2.5"
                 } ${
                   active
@@ -111,7 +111,7 @@ export default function ClienteSidebar({
                 )}
 
                 <span
-                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors ${
+                  className={`incitta-area-nav-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors ${
                     active
                       ? "bg-yellow-400 text-blue-900 shadow-sm"
                       : "bg-blue-50 text-blue-600 group-hover:bg-yellow-100 group-hover:text-yellow-800"
@@ -123,7 +123,7 @@ export default function ClienteSidebar({
                 {!collapsed && (
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center gap-2">
-                      <span className="truncate text-sm font-bold">
+                      <span className="incitta-area-nav-label truncate text-sm font-bold">
                         {item.label}
                       </span>
                       {mostraBadge && (
