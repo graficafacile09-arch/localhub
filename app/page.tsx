@@ -247,7 +247,7 @@ export default async function Home() {
                       </div>
                     </Link>
 
-                    <div className="absolute bottom-3 right-3 z-10">
+                    <div className="absolute bottom-3 right-3 z-[100] pointer-events-auto">
                       <ShareActivityButton
                         title={negozio.nome}
                         description={negozio.descrizione ?? ""}
