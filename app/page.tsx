@@ -81,7 +81,7 @@ export default async function Home() {
     ]);
 
   return (
-    <main className="min-h-screen bg-[#eef3f8]">
+    <main className="min-h-screen bg-[#dce6f0]">
       <Header />
 
       {/* ═══════════════════════════════════════════════════════════════════
@@ -124,7 +124,7 @@ export default async function Home() {
       {/* ═══════════════════════════════════════════════════════════════════
           VALUE STRIP — perché LocalHub (3 promesse, nessuna duplicazione)
           ═══════════════════════════════════════════════════════════════════ */}
-      <section className="border-b border-slate-100 bg-white">
+      <section className="border-y border-[#c8d6e5] bg-[#edf3f8]">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-8 sm:grid-cols-3 md:px-6 md:py-10">
           <div className="flex items-start gap-3.5">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-yellow-400 text-blue-900 shadow-[0_4px_14px_-4px_rgba(202,138,4,0.45)]">
@@ -168,7 +168,7 @@ export default async function Home() {
           non vengono più duplicate nella pagina.
           ═══════════════════════════════════════════════════════════════════ */}
       {prodottiTipici.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 py-12 md:px-6 md:py-14">
+        <section className="incitta-section-soft mx-auto max-w-7xl px-4 py-12 md:px-6 md:py-14">
           <SezioneHeader
             titolo="ECCELLENZE CALABRESI"
             href="/prodotti-tipici"
@@ -187,7 +187,7 @@ export default async function Home() {
           NEGOZI IN EVIDENZA (solo se ce ne sono)
           ═══════════════════════════════════════════════════════════════════ */}
       {negozi.length > 0 && (
-        <section className="border-y border-slate-100 bg-white py-12 md:py-14">
+        <section className="border-y border-[#c3d2e1] bg-[#d6e2ed] py-12 md:py-14">
           <div className="mx-auto max-w-7xl px-4 md:px-6">
             <SezioneHeader
               label="Scopri"
@@ -206,7 +206,7 @@ export default async function Home() {
                 return (
                   <div
                     key={negozio.id}
-                    className="group relative flex flex-col justify-between overflow-visible rounded-2xl border border-slate-100 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md"
+                    className="incitta-store-card group relative flex flex-col justify-between overflow-visible"
                   >
                     <Link
                       href={`/negozio/${negozio.slug}`}
@@ -214,7 +214,7 @@ export default async function Home() {
                       className="flex flex-1 flex-col justify-between"
                     >
                       <div>
-                        <div className="relative h-48 w-full overflow-hidden rounded-t-2xl bg-slate-100">
+                        <div className="incitta-store-card-media relative h-52 w-full bg-slate-100">
                           <div
                             role="img"
                             aria-label={negozio.nome}
@@ -222,13 +222,13 @@ export default async function Home() {
                             style={{ backgroundImage: `url(${imageUrl})` }}
                           />
                           {negozio.categoria && (
-                            <span className="absolute left-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-blue-900 shadow-sm">
+                            <span className="absolute left-3 top-3 z-10 rounded-full border border-white/70 bg-white/95 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-blue-900 shadow-sm">
                               {negozio.categoria}
                             </span>
                           )}
                         </div>
 
-                        <div className="p-5">
+                        <div className="bg-gradient-to-b from-[#f7fafc] to-[#e8f0f6] p-5">
                           <h3 className="text-xl font-bold text-slate-900 transition group-hover:text-blue-700">
                             {negozio.nome}
                           </h3>
@@ -239,8 +239,8 @@ export default async function Home() {
                         </div>
                       </div>
 
-                      <div className="p-5 pt-0">
-                        <span className="flex w-full items-center justify-center gap-2 rounded-xl bg-yellow-400 py-2.5 text-center text-sm font-bold text-blue-900 shadow-sm transition group-hover:bg-yellow-300">
+                      <div className="bg-[#e8f0f6] p-5 pt-0">
+                        <span className="flex w-full items-center justify-center gap-2 rounded-xl bg-yellow-400 py-3 text-center text-sm font-black text-blue-900 shadow-[0_4px_12px_-5px_rgba(202,138,4,.5)] transition group-hover:bg-yellow-300">
                           Scopri il negozio
                           <ArrowRight className="h-4 w-4" aria-hidden />
                         </span>
@@ -275,7 +275,7 @@ export default async function Home() {
           PRODOTTI IN EVIDENZA (solo se ce ne sono)
           ═══════════════════════════════════════════════════════════════════ */}
       {prodottiInEvidenza.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 py-12 md:px-6 md:py-14">
+        <section className="border-y border-[#c5d4e3] bg-[#e3ebf3] px-0 py-12 md:py-14">
           <SezioneHeader
             label="Novità"
             titolo="Prodotti in evidenza"
@@ -310,7 +310,7 @@ export default async function Home() {
       {/* ═══════════════════════════════════════════════════════════════════
           TERRITORIO — il valore del commercio locale (banda blu)
           ═══════════════════════════════════════════════════════════════════ */}
-      <section className="bg-gradient-to-br from-blue-800 via-blue-900 to-blue-950 text-white">
+      <section className="bg-blue-950 text-white">
         <div className="mx-auto max-w-7xl px-4 py-16 text-center md:px-6 md:py-20">
           <p className="section-label !text-blue-200">Per i commercianti</p>
           <h2 className="mx-auto mt-3 max-w-2xl text-3xl font-black leading-tight tracking-tight md:text-4xl">

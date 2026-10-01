@@ -68,7 +68,7 @@ export default async function PaginaCheckout() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="incitta-premium-checkout min-h-screen">
       <Header />
       <CheckoutCarrelloForm prefill={prefill} />
     </main>

@@ -29,17 +29,26 @@ export default async function NegoziPage({
   const statoPreferiti = await getStatoPreferitiPerPagina();
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="incitta-directory-shell min-h-screen">
       <Header />
 
-      <div className="mx-auto max-w-7xl px-3 py-3 sm:px-5">
-        <h1 className="mb-3 text-3xl font-black tracking-tight text-slate-900">
-          {soloEvidenziati ? "⭐ Negozi in evidenza" : `Negozi di ${citta}`}
-        </h1>
+      <div className="mx-auto max-w-7xl px-3 py-6 sm:px-5 sm:py-8">
+        <div className="incitta-page-intro mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="section-label">Esplora InCittà</p>
+            <h1 className="mt-1 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
+              {soloEvidenziati ? "Negozi in evidenza" : `Negozi di ${citta}`}
+            </h1>
+            <p className="mt-1 max-w-2xl text-sm text-slate-500">
+              Scopri attività, vetrine e prodotti locali in un unico spazio.
+            </p>
+          </div>
+          <span className="badge badge-blue w-fit">Negozi locali</span>
+        </div>
 
         {soloEvidenziati && negozi.length === 0 ? (
           /* Empty State professionale: nessun negozio evidenziato */
-          <div className="flex flex-col items-center justify-center rounded-[2rem] border border-white/70 bg-white px-6 py-16 text-center shadow-sm">
+          <div className="incitta-empty-state flex flex-col items-center justify-center px-6 py-16 text-center">
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50">
               <Star className="h-8 w-8 text-blue-500" />
             </div>
@@ -58,7 +67,7 @@ export default async function NegoziPage({
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-4 lg:grid-cols-4">
             {negozi.map((negozio) => {
               const imageUrl = getNegozioCardImmagine({
                 copertina_url: negozio.copertina_url,
@@ -69,13 +78,13 @@ export default async function NegoziPage({
               return (
                 <div
                   key={negozio.id}
-                  className="relative overflow-hidden rounded-xl border border-slate-100 bg-white transition hover:border-blue-200 hover:shadow-sm"
+                  className="incitta-directory-card relative"
                 >
                   <Link
                     href={`/negozio/${negozio.slug}`}
                     className="group block"
                   >
-                    <div className="relative aspect-video overflow-hidden bg-slate-100">
+                    <div className="incitta-store-card-media relative aspect-[16/10]">
                       <div
                         role="img"
                         aria-label={negozio.nome}
@@ -83,13 +92,13 @@ export default async function NegoziPage({
                         style={{ backgroundImage: `url(${imageUrl})` }}
                       />
                       {negozio.categoria && (
-                        <span className="absolute bottom-1 left-1.5 rounded-full bg-black/55 px-1.5 py-px text-[9px] font-semibold text-white backdrop-blur-sm">
+                        <span className="absolute bottom-2 left-2 rounded-full bg-slate-950/65 px-2 py-1 text-[9px] font-bold text-white backdrop-blur-sm">
                           {negozio.categoria}
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center gap-2 p-2">
-                      <div className="h-8 w-8 shrink-0 overflow-hidden rounded-full border border-slate-200 bg-white">
+                    <div className="flex items-center gap-2 bg-gradient-to-b from-[#f7fafc] to-[#e8f0f6] p-3">
+                      <div className="h-8 w-8 shrink-0 overflow-hidden rounded-full border border-[#c6d5e3] bg-[#f8fafc]">
                         {negozio.logo_url ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img

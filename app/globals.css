@@ -481,3 +481,659 @@ body.merchant-image-editor-aperto .merchant-bottom-nav-spacer {
   }
 }
 
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * INCITTÀ — VISUAL REFRESH 2026
+ * Superfici stratificate, card più editoriali, meno "foglio bianco".
+ * Questi pattern sono condivisi tra homepage, cataloghi e vetrine.
+ * ═══════════════════════════════════════════════════════════════════════ */
+@layer components {
+  .incitta-section {
+    background: var(--surface-page);
+  }
+
+  .incitta-section-soft {
+    background: #f7f9fc;
+    border-block: 1px solid #e5ebf2;
+  }
+
+  .incitta-section-white {
+    background: #ffffff;
+    border-block: 1px solid #e2e8f0;
+  }
+
+  .incitta-store-card {
+    overflow: hidden;
+    border: 1px solid #d9e2ec;
+    border-radius: 1.25rem;
+    background: #ffffff;
+    box-shadow: 0 2px 8px rgb(15 23 42 / 0.06);
+    transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+  }
+
+  .incitta-store-card:hover {
+    transform: translateY(-3px);
+    border-color: #bfdbfe;
+    box-shadow: 0 16px 34px -22px rgb(15 23 42 / 0.32);
+  }
+
+  .incitta-store-card-media {
+    position: relative;
+    overflow: hidden;
+    background: #dfe7f0;
+  }
+
+  .incitta-store-card-media::after {
+    content: "";
+    position: absolute;
+    inset: auto 0 0;
+    height: 34%;
+    background: linear-gradient(to top, rgb(15 23 42 / .22), transparent);
+    pointer-events: none;
+  }
+
+  .incitta-product-card {
+    overflow: hidden;
+    border: 1px solid #d9e2ec;
+    border-radius: 1.125rem;
+    background: #ffffff;
+    box-shadow: 0 2px 7px rgb(15 23 42 / 0.055);
+    transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+  }
+
+  .incitta-product-card:hover {
+    transform: translateY(-2px);
+    border-color: #bfdbfe;
+    box-shadow: 0 14px 30px -20px rgb(37 99 235 / .34);
+  }
+
+  .incitta-product-card-body {
+    border-top: 1px solid #e8eef5;
+    background: #f8fafc;
+  }
+
+  .incitta-catalog-shell {
+    border: 1px solid #dce5ee;
+    border-radius: 1.25rem;
+    background: #ffffff;
+    box-shadow: 0 4px 16px rgb(15 23 42 / .045);
+  }
+
+  .incitta-store-hero {
+    overflow: hidden;
+    border: 1px solid #d8e2ec;
+    border-radius: 1.5rem;
+    background: #ffffff;
+    box-shadow: 0 6px 22px rgb(15 23 42 / .07);
+  }
+
+  .incitta-store-actions {
+    border: 1px solid #dce5ee;
+    border-radius: 1rem;
+    background: #ffffff;
+    padding: .55rem;
+    box-shadow: 0 3px 12px rgb(15 23 42 / .045);
+  }
+
+  .incitta-info-strip {
+    border: 1px solid #dbe5ef;
+    border-radius: 1rem;
+    background: #f8fafc;
+  }
+
+  .incitta-section-title {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+  }
+
+  .incitta-section-title::before {
+    content: "";
+    width: .25rem;
+    height: 1.35rem;
+    border-radius: 999px;
+    background: var(--brand-yellow);
+    box-shadow: 0 2px 8px rgb(202 138 4 / .25);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * INCITTÀ — VISUAL PASS 02
+ * ═══════════════════════════════════════════════════════════════════════ */
+@layer components {
+  .incitta-main-nav {
+    border-block: 1px solid #d7e1ec;
+    background: #f7f9fc;
+    border-radius: 1rem;
+  }
+  .incitta-main-nav::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / .9);
+  }
+  .incitta-filter-panel {
+    border: 1px solid #d6e0ea;
+    border-radius: 1.125rem;
+    background: #f8fafc;
+    box-shadow: 0 4px 18px rgb(15 23 42 / .045);
+  }
+  .incitta-search-product-card {
+    overflow: hidden;
+    border: 1px solid #d6e0ea;
+    border-radius: 1.125rem;
+    background: #fff;
+    box-shadow: 0 3px 12px rgb(15 23 42 / .055);
+    transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+  }
+  .incitta-search-product-card:hover {
+    transform: translateY(-2px);
+    border-color: #93c5fd;
+    box-shadow: 0 16px 32px -22px rgb(37 99 235 / .4);
+  }
+  .incitta-search-product-media > div { transition: transform .35s ease; }
+  .incitta-search-product-card:hover .incitta-search-product-media > div { transform: scale(1.035); }
+  .incitta-search-store-card {
+    overflow: hidden;
+    border: 1px solid #d6e0ea;
+    border-radius: 1.125rem;
+    background: #fff;
+    box-shadow: 0 3px 12px rgb(15 23 42 / .045);
+    transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+  }
+  .incitta-search-store-card:hover {
+    transform: translateY(-2px);
+    border-color: #93c5fd;
+    box-shadow: 0 14px 30px -22px rgb(37 99 235 / .35);
+  }
+  .incitta-empty-state {
+    border: 1px dashed #cbd5e1;
+    border-radius: 1.125rem;
+    background: #f8fafc;
+  }
+}
+header:has(.incitta-main-nav) {
+  border-top: 3px solid var(--brand-blue);
+  box-shadow: 0 2px 12px rgb(15 23 42 / .07);
+}
+
+
+/* VISUAL PASS 03 — directory, offers and category surfaces */
+@layer components {
+  .incitta-directory-shell {
+    border-top: 1px solid #dbe5ef;
+    background: linear-gradient(180deg, #f7f9fc 0%, #eef3f8 100%);
+  }
+  .incitta-page-intro {
+    border: 1px solid #d8e2ec;
+    border-radius: 1.25rem;
+    background: #ffffff;
+    padding: 1.1rem 1.15rem;
+    box-shadow: 0 4px 18px rgb(15 23 42 / .045);
+  }
+  .incitta-directory-card {
+    overflow: hidden;
+    border: 1px solid #d6e0ea;
+    border-radius: 1.25rem;
+    background: #ffffff;
+    box-shadow: 0 3px 12px rgb(15 23 42 / .055);
+    transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+  }
+  .incitta-directory-card:hover {
+    transform: translateY(-3px);
+    border-color: #93c5fd;
+    box-shadow: 0 18px 34px -22px rgb(37 99 235 / .35);
+  }
+  .incitta-category-tile {
+    border: 1px solid #d8e2ec;
+    background: #ffffff;
+    box-shadow: 0 3px 12px rgb(15 23 42 / .045);
+  }
+  .incitta-category-tile:hover {
+    border-color: #93c5fd;
+    box-shadow: 0 14px 28px -20px rgb(37 99 235 / .34);
+  }
+  .incitta-offer-intro {
+    border: 1px solid #fecaca;
+    border-radius: 1.25rem;
+    background: linear-gradient(135deg, #fff 0%, #fff7f7 100%);
+    box-shadow: 0 4px 18px rgb(127 29 29 / .05);
+  }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * INCITTÀ — PREMIUM MARKETPLACE PASS
+ * Vetrine e schede prodotto: identità, profondità e gerarchia commerciale.
+ * ═══════════════════════════════════════════════════════════════════════ */
+@layer components {
+  .incitta-premium-page {
+    background:
+      radial-gradient(circle at 50% -8%, rgb(37 99 235 / .07), transparent 34rem),
+      linear-gradient(180deg, #f7f9fc 0%, #eef3f8 48%, #e8eef5 100%);
+  }
+  .incitta-premium-product {
+    display: grid;
+    gap: 1rem;
+  }
+  .incitta-product-gallery-shell {
+    overflow: hidden;
+    border: 1px solid #d5e0eb;
+    border-radius: 1.5rem;
+    background: #ffffff;
+    box-shadow: 0 12px 36px -24px rgb(15 23 42 / .32), 0 2px 8px rgb(15 23 42 / .05);
+  }
+  .incitta-product-info {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid #d4dfeb;
+    border-radius: 1.5rem;
+    background: linear-gradient(145deg, #ffffff 0%, #f7faff 100%);
+    box-shadow: 0 14px 38px -26px rgb(15 23 42 / .28);
+  }
+  .incitta-product-info::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: .3rem;
+    background: linear-gradient(180deg, var(--brand-yellow), #2563eb);
+  }
+  .incitta-product-buy {
+    border: 1px solid #d4dfeb;
+    border-radius: 1.25rem;
+    background: #ffffff;
+    padding: .75rem;
+    box-shadow: 0 8px 24px -20px rgb(15 23 42 / .3);
+  }
+  .incitta-store-context {
+    position: relative;
+    overflow: hidden;
+    border: 1px solid #d4dfeb;
+    border-radius: 1.35rem;
+    background: linear-gradient(135deg, #0f2f66 0%, #123f85 58%, #155e9b 100%);
+    color: white;
+    box-shadow: 0 16px 34px -24px rgb(15 47 102 / .45);
+  }
+  .incitta-store-context::after {
+    content: "";
+    position: absolute;
+    width: 12rem;
+    height: 12rem;
+    right: -5rem;
+    top: -6rem;
+    border-radius: 999px;
+    background: rgb(250 204 21 / .16);
+  }
+  .incitta-store-context-link {
+    color: white;
+    font-size: 1.05rem;
+    font-weight: 900;
+  }
+  .incitta-store-context-meta {
+    color: rgb(219 234 254 / .88);
+  }
+  .incitta-premium-store-hero {
+    box-shadow: 0 18px 48px -28px rgb(15 23 42 / .42), 0 3px 10px rgb(15 23 42 / .06);
+  }
+  .incitta-premium-store-hero::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / .16);
+  }
+  .incitta-store-actions-premium {
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    border-color: #d2deea;
+    box-shadow: 0 10px 28px -24px rgb(15 23 42 / .35);
+  }
+  @media (min-width: 900px) {
+    .incitta-premium-product { grid-template-columns: minmax(0, 1.08fr) minmax(320px, .92fr); align-items: start; }
+    .incitta-product-gallery-shell { grid-row: span 2; }
+    .incitta-product-info, .incitta-product-buy { grid-column: 2; }
+  }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * INCITTÀ — CART & CHECKOUT PREMIUM
+ * Flusso d'acquisto: gerarchia forte, superfici stratificate, CTA chiara.
+ * Solo presentazione: nessuna logica commerciale viene modificata.
+ * ═══════════════════════════════════════════════════════════════════════ */
+@layer components {
+  .incitta-premium-cart,
+  .incitta-premium-checkout {
+    min-height: 100%;
+    background:
+      radial-gradient(circle at 82% -5%, rgb(37 99 235 / .08), transparent 28rem),
+      linear-gradient(180deg, #f7f9fc 0%, #edf2f7 55%, #e7edf4 100%);
+  }
+
+  .incitta-premium-cart .max-w-5xl,
+  .incitta-premium-checkout .max-w-5xl {
+    position: relative;
+  }
+
+  .incitta-premium-cart .rounded-2xl.border.border-slate-200.bg-white,
+  .incitta-premium-checkout .rounded-2xl.border.border-slate-200.bg-white {
+    border-color: #d3dfeb;
+    background: linear-gradient(145deg, #ffffff 0%, #f8fbff 100%);
+    box-shadow: 0 14px 36px -28px rgb(15 23 42 / .32), 0 2px 8px rgb(15 23 42 / .04);
+  }
+
+  .incitta-premium-cart section.rounded-2xl.border.border-slate-200.bg-white {
+    overflow: hidden;
+  }
+
+  .incitta-premium-cart section.rounded-2xl.border.border-slate-200.bg-white > header {
+    background: linear-gradient(90deg, #eef5ff 0%, #f7faff 100%);
+    border-color: #dbe6f1;
+  }
+
+  .incitta-premium-cart aside {
+    border-color: #cbd9e7;
+    background: linear-gradient(145deg, #0f2f66 0%, #123f85 100%);
+    color: white;
+    box-shadow: 0 18px 40px -28px rgb(15 47 102 / .55);
+  }
+
+  .incitta-premium-cart aside h2,
+  .incitta-premium-cart aside dt {
+    color: rgb(219 234 254 / .82);
+  }
+
+  .incitta-premium-cart aside dd.text-blue-700,
+  .incitta-premium-cart aside dd.text-lg {
+    color: white;
+  }
+
+  .incitta-premium-cart aside .border-t {
+    border-color: rgb(255 255 255 / .16);
+  }
+
+  .incitta-premium-cart aside a[href="/checkout"] {
+    box-shadow: 0 10px 24px -12px rgb(250 204 21 / .65);
+  }
+
+  .incitta-premium-checkout .max-w-5xl > h1 {
+    font-size: clamp(1.55rem, 2.5vw, 2rem);
+    color: #0f2f66;
+  }
+
+  .incitta-premium-checkout .space-y-4 > section {
+    border-color: #d3dfeb;
+    background: linear-gradient(145deg, #ffffff 0%, #f8fbff 100%);
+    box-shadow: 0 12px 32px -26px rgb(15 23 42 / .28);
+  }
+
+  .incitta-premium-checkout .space-y-4 > section > h2 {
+    color: #334e73;
+  }
+
+  .incitta-premium-checkout .space-y-4 > section > h2 svg {
+    color: #2563eb;
+  }
+
+  .incitta-premium-checkout aside section,
+  .incitta-premium-checkout aside > div {
+    border-color: #d3dfeb;
+    background: linear-gradient(145deg, #ffffff 0%, #f7faff 100%);
+    box-shadow: 0 12px 32px -26px rgb(15 23 42 / .28);
+  }
+
+  .incitta-premium-checkout aside section > header {
+    background: linear-gradient(90deg, #eef5ff 0%, #f7faff 100%);
+    border-color: #dbe6f1;
+  }
+
+  .incitta-premium-checkout .space-y-4 > section:last-of-type {
+    border-color: #b9cce1;
+  }
+
+  @media (max-width: 639px) {
+    .incitta-premium-cart .max-w-5xl,
+    .incitta-premium-checkout .max-w-5xl {
+      padding-top: 1rem;
+      padding-bottom: 1.25rem;
+    }
+  }
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * INCITTÀ — VISUAL OVERHAUL 04
+ * Obiettivo: eliminare l'effetto "pagina bianca", dare più presenza al
+ * marketplace su desktop e creare una gerarchia visiva immediatamente
+ * riconoscibile. Solo CSS/presentazione: nessuna logica applicativa.
+ * ═══════════════════════════════════════════════════════════════════════ */
+@layer components {
+  :root {
+    --surface-page: #dfe8f2;
+    --surface-card: #f8fafc;
+    --border-card: #c8d5e3;
+  }
+
+  body {
+    background:
+      radial-gradient(circle at 10% 0%, rgb(37 99 235 / .08), transparent 26rem),
+      linear-gradient(180deg, #e7eef6 0%, #dbe5ef 48%, #d4e0eb 100%);
+  }
+
+  /* Header pubblico: diventa una vera fascia di marca, non una distesa bianca. */
+  header:has(.incitta-main-nav) {
+    position: relative;
+    z-index: 20;
+    border-top: 0;
+    border-bottom: 1px solid rgb(255 255 255 / .14);
+    background: linear-gradient(105deg, #082653 0%, #0d3470 52%, #12488f 100%) !important;
+    box-shadow: 0 12px 32px -18px rgb(7 31 70 / .65);
+  }
+
+  header:has(.incitta-main-nav) > div {
+    color: white;
+  }
+
+  header:has(.incitta-main-nav) .incitta-public-nav-label {
+    color: #ffffff !important;
+    text-shadow: 0 1px 1px rgb(0 0 0 / .15);
+  }
+
+  header:has(.incitta-main-nav) .incitta-public-nav-icon {
+    background: rgb(255 255 255 / .12) !important;
+    border: 1px solid rgb(255 255 255 / .18);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / .12), 0 6px 16px -10px rgb(0 0 0 / .5);
+  }
+
+  header:has(.incitta-main-nav) .incitta-public-nav-icon svg {
+    color: #facc15 !important;
+  }
+
+  header:has(.incitta-main-nav) .incitta-main-nav > span {
+    background: rgb(255 255 255 / .18) !important;
+  }
+
+  header:has(.incitta-main-nav) a[aria-label="Carrello"] {
+    background: #facc15 !important;
+    color: #0f2f66;
+    box-shadow: 0 10px 24px -10px rgb(250 204 21 / .75);
+  }
+
+  header:has(.incitta-main-nav) a[aria-label="Carrello"] svg {
+    color: #0f2f66 !important;
+  }
+
+  header:has(.incitta-main-nav) button[aria-label="Accedi"] {
+    background: #ffffff !important;
+    color: #12448a !important;
+    border: 1px solid rgb(255 255 255 / .5);
+  }
+
+  /* Il logo non viene ridotto: viene semplicemente integrato nella fascia blu. */
+  header:has(.incitta-main-nav) img[alt="InCittà"] {
+    filter: drop-shadow(0 4px 8px rgb(0 0 0 / .16));
+  }
+
+  /* Pubblico: contenitori più larghi su desktop, meno "aria morta" ai lati. */
+  main[class*="incitta-"] .max-w-7xl {
+    max-width: 90rem;
+  }
+
+  main[class*="incitta-"] .max-w-5xl {
+    max-width: 82rem;
+  }
+
+  main[class*="incitta-"] .max-w-3xl {
+    max-width: 72rem;
+  }
+
+  /* Superfici principali: azzurro-grigio invece del bianco continuo. */
+  .incitta-directory-shell,
+  .incitta-premium-page,
+  .incitta-premium-cart,
+  .incitta-premium-checkout {
+    position: relative;
+    background:
+      radial-gradient(circle at 88% 0%, rgb(37 99 235 / .11), transparent 30rem),
+      radial-gradient(circle at 5% 42%, rgb(250 204 21 / .055), transparent 24rem),
+      linear-gradient(180deg, #e9f0f7 0%, #dce6f0 52%, #d5e0eb 100%);
+  }
+
+  .incitta-directory-shell::before,
+  .incitta-premium-page::before,
+  .incitta-premium-cart::before,
+  .incitta-premium-checkout::before {
+    content: "";
+    display: block;
+    height: .35rem;
+    background: linear-gradient(90deg, #facc15 0%, #facc15 16%, #2563eb 16%, #2563eb 100%);
+    opacity: .95;
+  }
+
+  /* Intro / hero testuali: diventano blocchi di orientamento, non card bianche. */
+  .incitta-page-intro {
+    background: linear-gradient(135deg, #0c2f66 0%, #12488f 100%) !important;
+    border-color: #123f7d !important;
+    color: white;
+    box-shadow: 0 18px 38px -24px rgb(15 47 102 / .55);
+  }
+
+  .incitta-page-intro h1,
+  .incitta-page-intro h2,
+  .incitta-page-intro p {
+    color: white !important;
+  }
+
+  .incitta-page-intro a {
+    box-shadow: 0 8px 18px -10px rgb(250 204 21 / .7);
+  }
+
+  /* Directory cards: non più "fogli bianchi" isolati. */
+  .incitta-directory-card,
+  .incitta-category-tile,
+  .incitta-search-product-card,
+  .incitta-search-store-card {
+    background: linear-gradient(145deg, #f9fbfd 0%, #eef4f9 100%) !important;
+    border-color: #c3d2e1 !important;
+    box-shadow: 0 10px 24px -18px rgb(15 47 82 / .32), 0 2px 5px rgb(15 23 42 / .05) !important;
+  }
+
+  .incitta-directory-card:hover,
+  .incitta-category-tile:hover,
+  .incitta-search-product-card:hover,
+  .incitta-search-store-card:hover {
+    transform: translateY(-4px);
+    border-color: #6fa7e8 !important;
+    box-shadow: 0 20px 34px -22px rgb(37 99 235 / .48) !important;
+  }
+
+  /* Product detail: la colonna informativa deve avere presenza. */
+  .incitta-product-gallery-shell,
+  .incitta-product-buy {
+    background: linear-gradient(145deg, #f8fafc 0%, #eaf1f7 100%) !important;
+    border-color: #c5d3e1 !important;
+  }
+
+  .incitta-product-info {
+    background: linear-gradient(145deg, #0b2e63 0%, #12488f 100%) !important;
+    border-color: #0b2e63 !important;
+    color: white;
+    box-shadow: 0 22px 44px -26px rgb(15 47 102 / .58) !important;
+  }
+
+  .incitta-product-info h1,
+  .incitta-product-info h2,
+  .incitta-product-info p,
+  .incitta-product-info span,
+  .incitta-product-info dt,
+  .incitta-product-info dd {
+    color: inherit;
+  }
+
+  .incitta-product-info::before {
+    width: .4rem;
+    background: linear-gradient(180deg, #facc15 0%, #facc15 42%, #60a5fa 100%);
+  }
+
+  /* Store actions e pannelli: contrasto più deciso. */
+  .incitta-store-actions-premium {
+    background: linear-gradient(145deg, #f8fafc 0%, #e8f0f7 100%) !important;
+    border-color: #c3d2e1 !important;
+  }
+
+  /* Carrello vuoto: la pagina non deve sembrare un documento vuoto. */
+  .incitta-premium-cart > .max-w-3xl {
+    padding-top: 3.5rem;
+    padding-bottom: 4.5rem;
+  }
+
+  .incitta-premium-cart > .max-w-3xl > .rounded-2xl {
+    min-height: 26rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    background:
+      radial-gradient(circle at 80% 10%, rgb(37 99 235 / .1), transparent 18rem),
+      linear-gradient(145deg, #f9fbfd 0%, #eaf1f7 100%) !important;
+    border-color: #c1d1e0 !important;
+    box-shadow: 0 22px 44px -28px rgb(15 47 82 / .4) !important;
+  }
+
+  /* Footer pubblico: chiusura visiva forte. */
+  body:has(header .incitta-main-nav) footer {
+    background: #082653 !important;
+    color: rgb(219 234 254 / .82) !important;
+    border-color: #174681 !important;
+  }
+
+  body:has(header .incitta-main-nav) footer a {
+    color: #ffffff !important;
+  }
+
+  @media (min-width: 1280px) {
+    main[class*="incitta-"] > .max-w-7xl,
+    main[class*="incitta-"] > .max-w-5xl {
+      padding-left: 2rem;
+      padding-right: 2rem;
+    }
+
+    .incitta-directory-shell,
+    .incitta-premium-page,
+    .incitta-premium-cart,
+    .incitta-premium-checkout {
+      min-height: calc(100vh - 11rem);
+    }
+  }
+
+  @media (max-width: 639px) {
+    .incitta-directory-shell::before,
+    .incitta-premium-page::before,
+    .incitta-premium-cart::before,
+    .incitta-premium-checkout::before {
+      height: .25rem;
+    }
+  }
+}

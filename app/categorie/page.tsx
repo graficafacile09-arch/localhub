@@ -8,16 +8,17 @@ export default async function CategoriePage() {
   const categorieConNegozi = await getCategorieConNegozi();
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="incitta-directory-shell min-h-screen">
       <Header />
 
-      <div className="mx-auto max-w-4xl px-4 py-8 md:px-6">
-        <div className="mb-6">
-          <h1 className="text-3xl font-black tracking-tight text-slate-900">
+      <div className="mx-auto max-w-6xl px-4 py-6 md:px-6 md:py-8">
+        <div className="incitta-page-intro mb-6">
+          <p className="section-label">Esplora per settore</p>
+          <h1 className="mt-1 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">
             Tutte le categorie
           </h1>
-          <p className="mt-1 text-xs text-slate-500">
-            Scegli una categoria per trovare i negozi e le attività della tua città.
+          <p className="mt-1 max-w-2xl text-sm text-slate-500">
+            Scegli una categoria per trovare negozi, attività e servizi della tua città.
           </p>
           <OpenAssistantButton label="Cerca con l'Assistente AI" />
         </div>
@@ -35,7 +36,7 @@ export default async function CategoriePage() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 md:grid-cols-5 md:gap-3 lg:grid-cols-6">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
             {categorieConNegozi.map(({ categoria, count }, index) => (
               <CategoryTile
                 key={categoria.id}

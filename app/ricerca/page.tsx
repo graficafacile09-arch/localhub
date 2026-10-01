@@ -202,10 +202,10 @@ export default async function RicercaPage({
   };
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="min-h-screen bg-[#eef3f8]">
       <Header />
 
-      <div className="mx-auto max-w-7xl px-3 py-3 sm:px-5">
+      <div className="mx-auto max-w-7xl px-3 py-5 sm:px-5 lg:py-7">
         {/* Barra ricerca — SEMPRE utilizzabile (form GET nativo verso /ricerca?q=) */}
         <div className="mb-3 flex flex-col gap-2 lg:flex-row lg:items-start">
           <div className="min-w-0 flex-1">
@@ -223,22 +223,22 @@ export default async function RicercaPage({
         ) : (
           <>
             {/* Titolo pagina — H1 coerente con la scala 10C */}
-            <h1 className="mb-3 text-3xl font-black tracking-tight text-slate-900">
+            <div className="mb-5 flex items-end justify-between gap-3 border-b border-slate-200 pb-4"><div><p className="section-label mb-1">Esplora InCittà</p><h1 className="incitta-section-title text-3xl font-black tracking-tight text-slate-900">
               Ricerca
-            </h1>
+            </h1></div><span className="hidden rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700 sm:inline-flex">Negozi · Prodotti · Servizi</span></div>
             {ricercaAttiva ? (
           <>
             <div className="lg:grid lg:grid-cols-[250px,1fr] lg:gap-5">
             {/* Sidebar filtri (desktop) */}
             <aside className="hidden lg:block">
-              <div className="sticky top-4 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+              <div className="incitta-filter-panel sticky top-4 p-4">
                 <SearchFilters current={filtriCorrenti} disponibili={disponibili} />
               </div>
             </aside>
 
             <div className="min-w-0">
               {/* Pannello filtri (mobile) */}
-              <details className="mb-3 rounded-xl border border-slate-200 bg-white shadow-sm lg:hidden">
+              <details className="incitta-filter-panel mb-4 lg:hidden">
                 <summary className="flex cursor-pointer list-none items-center gap-1.5 px-3 py-2.5 text-xs font-bold text-slate-700 [&::-webkit-details-marker]:hidden">
                   <SlidersHorizontal className="h-3.5 w-3.5 text-blue-600" />
                   Filtri
@@ -272,14 +272,14 @@ export default async function RicercaPage({
                   <h2 className="mb-2 text-lg font-black tracking-tight text-slate-900">
                     Prodotti ({prodotti.length})
                   </h2>
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3">
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3">
                     {prodotti.map((prodotto) => (
                       <div
                         key={prodotto.id}
-                        className="relative overflow-hidden rounded-xl border border-slate-100 bg-white transition hover:border-blue-200 hover:shadow-sm"
+                        className="incitta-search-product-card relative"
                       >
                         <Link href={`/prodotto/${prodotto.slug}`} className="group block">
-                          <div className="relative aspect-[4/3] overflow-hidden bg-slate-100 sm:aspect-square">
+                          <div className="relative aspect-[4/3] overflow-hidden bg-slate-100 sm:aspect-square incitta-search-product-media">
                             <div
                               role="img"
                               aria-label={prodotto.nome}
@@ -297,7 +297,7 @@ export default async function RicercaPage({
                               </span>
                             )}
                           </div>
-                          <div className="p-3 sm:p-3.5">
+                          <div className="incitta-product-card-body p-3 sm:p-3.5">
                             <h3 className="line-clamp-2 text-[13px] font-bold leading-snug text-slate-900 sm:text-sm">
                               {prodotto.nome}
                             </h3>
@@ -322,7 +322,7 @@ export default async function RicercaPage({
                   </div>
                 </section>
               ) : (
-                <div className="rounded-xl border border-slate-100 bg-white p-8 text-center">
+                <div className="incitta-empty-state p-8 text-center">
                   <p className="text-sm font-semibold text-slate-600">
                     Nessun prodotto trovato con questi filtri.
                   </p>
@@ -345,10 +345,10 @@ export default async function RicercaPage({
                     {negozi.map((negozio) => (
                       <div
                         key={negozio.id}
-                        className="relative flex gap-3 overflow-hidden rounded-xl border border-slate-100 bg-white p-2.5 transition hover:border-blue-200 hover:shadow-sm"
+                        className="incitta-search-store-card relative flex gap-3 p-3"
                       >
                         <Link href={`/negozio/${negozio.slug}`} className="group flex min-w-0 flex-1 gap-3">
-                          <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-slate-100">
+                          <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-slate-100">
                             <div
                               role="img"
                               aria-label={negozio.nome}
