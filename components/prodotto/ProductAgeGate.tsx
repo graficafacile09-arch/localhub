@@ -10,7 +10,7 @@ type Props = {
   bloccato: boolean;
 };
 
-export default function ProductAgeGate({ prodottoId, bloccato }: Props) {
+export default function ProductAgeGate({ prodottoId, slug, bloccato }: Props) {
   const [mese, setMese] = useState("");
   const [anno, setAnno] = useState("");
   const [errore, setErrore] = useState("");
