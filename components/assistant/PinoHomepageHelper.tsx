@@ -10,6 +10,7 @@ const PINO_HOME_W = PINO_ASSET_W;
 const PINO_HOME_H = PINO_ASSET_H;
 const PINO_CLOSED_SIZE = 48;
 const PINO_BAR_HEIGHT = 58;
+const PINO_HIDE_NEAR_BOTTOM = 820;
 /**
  * La fascia entra in scena quando l'utente ha raggiunto la parte bassa della
  * homepage, dove iniziano le vetrine di negozi/prodotti.
@@ -22,6 +23,7 @@ export default function PinoHomepageHelper() {
   const pathname = usePathname();
   const [hasReachedArea, setHasReachedArea] = useState(false);
   const [isScrolling, setIsScrolling] = useState(false);
+  const [isNearBottom, setIsNearBottom] = useState(false);
 
   useEffect(() => {
     if (pathname !== "/") {
@@ -66,7 +68,7 @@ export default function PinoHomepageHelper() {
   // Pino homepage è intenzionalmente escluso dai flussi transazionali.
   if (pathname !== "/" || isPinoTransactionalRoute(pathname)) return null;
 
-  const visible = hasReachedArea && !isScrolling;
+  const visible = hasReachedArea && !isScrolling && !isNearBottom;
 
   return (
     <div
@@ -84,15 +86,15 @@ export default function PinoHomepageHelper() {
         className="pointer-events-auto flex w-full items-center justify-end border-t border-slate-200/90 bg-white/95 px-3 shadow-[0_-8px_24px_-18px_rgba(15,23,42,0.35)] backdrop-blur-sm sm:px-5"
         style={{ minHeight: PINO_BAR_HEIGHT }}
       >
-        <div className="flex w-full items-center gap-3 sm:gap-4">
-          <p className="min-w-0 flex-1 truncate text-left text-sm font-semibold text-slate-700 sm:text-base">
+        <div className="flex w-full items-center justify-end gap-2 sm:gap-3">
+          <p className="min-w-0 text-center text-xs font-semibold text-slate-700 sm:flex-none sm:text-sm">
             Ciao, sono Pino il tuo assistente virtuale.
           </p>
 
           <button
             type="button"
             onClick={openAssistant}
-            className="shrink-0 rounded-lg bg-yellow-400 px-3 py-2 text-[11px] font-black tracking-wide text-blue-900 shadow-sm transition hover:bg-yellow-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 active:scale-[0.98] sm:px-4 sm:text-xs"
+            className="shrink-0 rounded-md bg-yellow-400 px-2 py-1.5 text-[9px] font-black tracking-wide text-blue-900 shadow-sm transition hover:bg-yellow-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 active:scale-[0.98] sm:px-2.5 sm:py-1.5 sm:text-[10px]"
             aria-label="Clicca per aprire Pino"
           >
             CLICCA
