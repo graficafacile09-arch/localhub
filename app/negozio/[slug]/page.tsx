@@ -18,6 +18,7 @@ import { normalizzaNumeroWhatsApp } from "@/lib/telefono";
 import { getOffertePubblicheNegozio, type Offerta } from "@/lib/offerte";
 import { getEventiPubbliciNegozio, type Evento } from "@/lib/eventi";
 import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
+import ShareActivityButton from "@/components/negozio/ShareActivityButton";
 import { MapPin, Phone, MessageCircle, Tag, Calendar, Clock, Globe, Sparkles } from "lucide-react";
 import OpeningHoursDisplay from "@/components/negozio/OpeningHoursDisplay";
 import RichiestaInfoButton from "@/components/negozio/RichiestaInfoButton";
@@ -318,6 +319,10 @@ export default async function PaginaNegozio({
             autenticato={statoPreferiti.autenticato}
             variante="inline"
             label={String(negozio.nome ?? "")}
+          />
+          <ShareActivityButton
+            title={String(negozio.nome ?? "Attività")}
+            description={String(negozio.descrizione ?? negozio.descrizione_completa ?? "")}
           />
           {negozio.telefono && (
             <a
