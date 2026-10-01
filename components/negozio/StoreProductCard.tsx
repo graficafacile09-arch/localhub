@@ -37,12 +37,12 @@ export default function StoreProductCard({
   const mostraPreferiti = id != null && preferitoAttivo !== undefined && autenticato !== undefined;
 
   return (
-    <div className="relative overflow-hidden rounded-xl border border-slate-100 bg-white transition hover:border-blue-200 hover:shadow-sm">
+    <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm ring-1 ring-slate-100 transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md">
       <Link
         href={`/prodotto/${slug}`}
         className="group block"
       >
-        <div className="relative aspect-square overflow-hidden bg-slate-50">
+        <div className="relative aspect-square overflow-hidden border-b border-slate-200 bg-slate-50">
           <div
             role="img"
             aria-label={nome}
@@ -55,10 +55,10 @@ export default function StoreProductCard({
             </span>
           )}
         </div>
-        <div className="p-2">
+        <div className="border-l-4 border-blue-700 bg-slate-50 p-3">
           <h3 className="truncate text-xs font-bold text-slate-900">{nome}</h3>
           {descrizione && <p className="mt-0.5 line-clamp-2 text-[10px] leading-4 text-slate-400">{descrizione}</p>}
-          <p className="mt-1 text-xs font-bold text-blue-600">
+          <p className="mt-2 inline-flex rounded-md border border-yellow-200 bg-yellow-50 px-2 py-1 text-xs font-black text-blue-700">
             {haVarianti ? "Da " : ""}&euro; {prezzo.toFixed(2)}
           </p>
         </div>
