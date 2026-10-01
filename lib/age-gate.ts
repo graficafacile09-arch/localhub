@@ -1,6 +1,8 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 const VERIFIED_COOKIE = "incitta_age_verified";
@@ -23,6 +25,7 @@ export async function verificaAccessoProdotto18(
   prodottoId: string,
   mese: string,
   anno: string,
+  slug: string,
 ): Promise<{ ok: boolean; reason?: "invalid" | "underage" | "unavailable" }> {
   const month = Number.parseInt(mese, 10);
   const year = Number.parseInt(anno, 10);
@@ -88,5 +91,6 @@ export async function verificaAccessoProdotto18(
     maxAge: 0,
   });
 
-  return { ok: true };
+  revalidatePath(`/prodotto/${slug}`);
+  redirect(`/prodotto/${slug}`);
 }
