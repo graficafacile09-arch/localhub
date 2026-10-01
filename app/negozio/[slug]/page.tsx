@@ -658,9 +658,15 @@ export default async function PaginaNegozio({
                         </div>
                       )}
                       <div className="min-w-0 flex-1">
-                        <h3 className="truncate text-sm font-black text-slate-900">
-                          {servizio.nome}
-                        </h3>
+                        <div className="flex items-start justify-between gap-2">
+                          <h3 className="truncate text-sm font-black text-slate-900">
+                            {servizio.nome}
+                          </h3>
+                          <ShareActivityButton
+                            title={String(servizio.nome)}
+                            description={String(servizio.descrizione ?? "")}
+                          />
+                        </div>
                         {servizio.descrizione && (
                           <p className="mt-0.5 line-clamp-2 text-[11px] leading-4 text-slate-600">
                             {servizio.descrizione}
