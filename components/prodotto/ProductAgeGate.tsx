@@ -25,10 +25,9 @@ export default function ProductAgeGate({ prodottoId, bloccato }: Props) {
     }
 
     startTransition(async () => {
-      const result = await verificaAccessoProdotto18(prodottoId, mese, anno);
+      const result = await verificaAccessoProdotto18(prodottoId, mese, anno, slug);
 
       if (result.ok) {
-        window.location.href = `/prodotto/${slug}`;
         return;
       }
 
