@@ -481,3 +481,119 @@ body.merchant-image-editor-aperto .merchant-bottom-nav-spacer {
   }
 }
 
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * INCITTÀ — VISUAL REFRESH 2026
+ * Superfici stratificate, card più editoriali, meno "foglio bianco".
+ * Questi pattern sono condivisi tra homepage, cataloghi e vetrine.
+ * ═══════════════════════════════════════════════════════════════════════ */
+@layer components {
+  .incitta-section {
+    background: var(--surface-page);
+  }
+
+  .incitta-section-soft {
+    background: #f7f9fc;
+    border-block: 1px solid #e5ebf2;
+  }
+
+  .incitta-section-white {
+    background: #ffffff;
+    border-block: 1px solid #e2e8f0;
+  }
+
+  .incitta-store-card {
+    overflow: hidden;
+    border: 1px solid #d9e2ec;
+    border-radius: 1.25rem;
+    background: #ffffff;
+    box-shadow: 0 2px 8px rgb(15 23 42 / 0.06);
+    transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+  }
+
+  .incitta-store-card:hover {
+    transform: translateY(-3px);
+    border-color: #bfdbfe;
+    box-shadow: 0 16px 34px -22px rgb(15 23 42 / 0.32);
+  }
+
+  .incitta-store-card-media {
+    position: relative;
+    overflow: hidden;
+    background: #dfe7f0;
+  }
+
+  .incitta-store-card-media::after {
+    content: "";
+    position: absolute;
+    inset: auto 0 0;
+    height: 34%;
+    background: linear-gradient(to top, rgb(15 23 42 / .22), transparent);
+    pointer-events: none;
+  }
+
+  .incitta-product-card {
+    overflow: hidden;
+    border: 1px solid #d9e2ec;
+    border-radius: 1.125rem;
+    background: #ffffff;
+    box-shadow: 0 2px 7px rgb(15 23 42 / 0.055);
+    transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+  }
+
+  .incitta-product-card:hover {
+    transform: translateY(-2px);
+    border-color: #bfdbfe;
+    box-shadow: 0 14px 30px -20px rgb(37 99 235 / .34);
+  }
+
+  .incitta-product-card-body {
+    border-top: 1px solid #e8eef5;
+    background: #f8fafc;
+  }
+
+  .incitta-catalog-shell {
+    border: 1px solid #dce5ee;
+    border-radius: 1.25rem;
+    background: #ffffff;
+    box-shadow: 0 4px 16px rgb(15 23 42 / .045);
+  }
+
+  .incitta-store-hero {
+    overflow: hidden;
+    border: 1px solid #d8e2ec;
+    border-radius: 1.5rem;
+    background: #ffffff;
+    box-shadow: 0 6px 22px rgb(15 23 42 / .07);
+  }
+
+  .incitta-store-actions {
+    border: 1px solid #dce5ee;
+    border-radius: 1rem;
+    background: #ffffff;
+    padding: .55rem;
+    box-shadow: 0 3px 12px rgb(15 23 42 / .045);
+  }
+
+  .incitta-info-strip {
+    border: 1px solid #dbe5ef;
+    border-radius: 1rem;
+    background: #f8fafc;
+  }
+
+  .incitta-section-title {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+  }
+
+  .incitta-section-title::before {
+    content: "";
+    width: .25rem;
+    height: 1.35rem;
+    border-radius: 999px;
+    background: var(--brand-yellow);
+    box-shadow: 0 2px 8px rgb(202 138 4 / .25);
+  }
+}
