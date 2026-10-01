@@ -21,6 +21,7 @@ import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
 import { MapPin, Phone, MessageCircle, Tag, Calendar, Clock, Globe, Sparkles } from "lucide-react";
 import OpeningHoursDisplay from "@/components/negozio/OpeningHoursDisplay";
 import RichiestaInfoButton from "@/components/negozio/RichiestaInfoButton";
+import ShareActivityButton from "@/components/negozio/ShareActivityButton";
 import PrenotazioneButton from "@/components/negozio/PrenotazioneButton";
 import { getConfigRichiestaInfo } from "@/lib/negozio/richiesta-info";
 import { getConfigPrenotazioni } from "@/lib/prenotazioni";
@@ -300,6 +301,13 @@ export default async function PaginaNegozio({
             autenticato={statoPreferiti.autenticato}
             variante="inline"
             label={String(negozio.nome ?? "")}
+          />
+          <ShareActivityButton
+            title={String(negozio.nome ?? "")}
+            description={String(negozio.descrizione ?? "")}
+            url={`/negozio/${slugCanonico}`}
+            label={String(negozio.nome ?? "")}
+            variante="inline"
           />
           {negozio.telefono && (
             <a

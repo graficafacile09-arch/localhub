@@ -19,6 +19,7 @@ import { getNegozioCardImmagine } from "@/lib/negozi-card-immagini";
 import { chiavePreferito, getStatoPreferitiPerPagina } from "@/lib/cliente/favorites";
 import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
 import ProductCard from "@/components/home/ProductCard";
+import ShareActivityButton from "@/components/negozio/ShareActivityButton";
 import EccellenzeCalabresiGrid from "@/components/home/EccellenzeCalabresiGrid";
 
 // La homepage deve riflettere in tempo reale i negozi in evidenza flaggati
@@ -254,6 +255,17 @@ export default async function Home() {
                       autenticato={statoPreferiti.autenticato}
                       className="absolute right-2.5 top-2.5 z-10"
                       label={negozio.nome}
+                    />
+
+                    {/* Fratello del <Link> (non annidato): il click sul pulsante
+                        non apre il negozio. Il menu è portato su body, così esce
+                        dalla card overflow-hidden senza z-index artificiali. */}
+                    <ShareActivityButton
+                      title={negozio.nome}
+                      description={negozio.descrizione ?? ""}
+                      url={`/negozio/${negozio.slug}`}
+                      label={negozio.nome}
+                      className="absolute right-12 top-2.5 z-10"
                     />
                   </div>
                 );
