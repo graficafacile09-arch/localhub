@@ -161,10 +161,10 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
   };
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="incitta-premium-page min-h-screen">
       <Header />
 
-      <div className="mx-auto max-w-5xl px-3 py-3 sm:px-5">
+      <div className="mx-auto max-w-6xl px-3 py-4 sm:px-5 lg:py-6">
         {/* Breadcrumb */}
         <nav aria-label="Breadcrumb" className="mb-3 flex items-center gap-1.5 text-[11px] text-slate-400">
           <Link href="/" className="transition hover:text-blue-600">Home</Link>
@@ -226,15 +226,17 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
         ) : (
           <>
         {/* Photo / galleria */}
+        <div className="incitta-product-gallery-shell">
         <ProductGallery
           immagini={immaginiGalleria}
           fallbackUrl={imageUrl}
           altText={"alt_text_immagine" in prodotto ? (prodotto.alt_text_immagine as string | null) : null}
           nomeProdotto={prodotto.nome as string}
         />
+        </div>
 
         {/* Product info */}
-        <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm ring-1 ring-slate-100 sm:p-5">
+        <div className="incitta-product-info mt-0 p-4 sm:p-5">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0 flex-1">
               <h1 className="text-3xl font-black tracking-tight text-slate-900">
@@ -290,7 +292,7 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
 
         {/* Acquista — sostituito da "Il tuo prodotto" per il venditore del
             negozio proprietario (regola auto-acquisto, blocco anche API) */}
-        <div className="mt-4 space-y-2">
+        <div className="incitta-product-buy mt-0 space-y-2">
           {eIlMioProdotto ? (
             <div className="flex w-full items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-base font-bold text-blue-700">
               <Store className="h-5 w-5 shrink-0" aria-hidden />
@@ -346,25 +348,25 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
 
         {/* Store info */}
         {negozio && (
-          <div className="mt-6 rounded-xl border border-slate-200 bg-white p-4">
+          <div className="incitta-store-context mt-5 p-4 sm:p-5">
             <Link
               href={`/negozio/${negozio.slug}`}
-              className="text-sm font-bold text-slate-900 transition hover:text-blue-600"
+              className="incitta-store-context-link transition hover:text-yellow-200"
             >
               {negozio.nome as string}
             </Link>
             {negozio.categoria && (
-              <p className="mt-px text-[11px] font-semibold text-blue-600">
+              <p className="mt-1 text-[11px] font-bold uppercase tracking-wide text-yellow-300">
                 {negozio.categoria as string}
               </p>
             )}
             {negozio.descrizione && (
-              <p className="mt-1 text-xs leading-5 text-slate-500">
+              <p className="mt-2 text-xs leading-5 text-blue-100">
                 {negozio.descrizione as string}
               </p>
             )}
 
-            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-500">
+            <div className="incitta-store-context-meta mt-3 flex flex-wrap gap-x-4 gap-y-1 text-[11px]">
               {negozio.indirizzo && (
                 <span className="flex items-center gap-1">
                   <MapPin className="h-3 w-3 text-blue-500" />
@@ -406,7 +408,7 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
                   href={buildMapsUrl()}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 transition hover:border-blue-300 hover:text-blue-700"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-bold text-white transition hover:border-white/40 hover:bg-white/15"
                 >
                   <MapPin className="h-3.5 w-3.5" />
                   Mappa
@@ -415,7 +417,7 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
               {negozio.telefono && (
                 <a
                   href={`tel:${negozio.telefono as string}`}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-bold text-slate-700 transition hover:border-blue-300 hover:text-blue-700"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3 py-1.5 text-xs font-bold text-white transition hover:border-white/40 hover:bg-white/15"
                 >
                   <Phone className="h-3.5 w-3.5" />
                   Chiama
