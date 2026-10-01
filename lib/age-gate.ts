@@ -1,12 +1,14 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
-const VERIFIED_COOKIE = "incitta_age_verified";
-const BLOCKED_COOKIE = "incitta_age_blocked";
+const VERIFIED_COOKIE_PREFIX = "incitta_age_verified_";
+const BLOCKED_COOKIE_PREFIX = "incitta_age_blocked_";
+
+function cookieName(prefix: string, prodottoId: string): string {
+  return `${prefix}${prodottoId}`;
+}
 
 function isMaggiorenne(month: number, year: number): boolean {
   const now = new Date();
@@ -25,7 +27,6 @@ export async function verificaAccessoProdotto18(
   prodottoId: string,
   mese: string,
   anno: string,
-  slug: string,
 ): Promise<{ ok: boolean; reason?: "invalid" | "underage" | "unavailable" }> {
   const month = Number.parseInt(mese, 10);
   const year = Number.parseInt(anno, 10);
@@ -57,16 +58,18 @@ export async function verificaAccessoProdotto18(
   }
 
   const cookieStore = await cookies();
+  const verifiedCookie = cookieName(VERIFIED_COOKIE_PREFIX, prodottoId);
+  const blockedCookie = cookieName(BLOCKED_COOKIE_PREFIX, prodottoId);
 
   if (!isMaggiorenne(month, year)) {
-    cookieStore.set(BLOCKED_COOKIE, "1", {
+    cookieStore.set(blockedCookie, "1", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",
       maxAge: 60 * 60 * 24,
     });
-    cookieStore.set(VERIFIED_COOKIE, "", {
+    cookieStore.set(verifiedCookie, "", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
@@ -76,14 +79,14 @@ export async function verificaAccessoProdotto18(
     return { ok: false, reason: "underage" };
   }
 
-  cookieStore.set(VERIFIED_COOKIE, "1", {
+  cookieStore.set(verifiedCookie, "1", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 24 * 30,
   });
-  cookieStore.set(BLOCKED_COOKIE, "", {
+  cookieStore.set(blockedCookie, "", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
@@ -91,6 +94,4 @@ export async function verificaAccessoProdotto18(
     maxAge: 0,
   });
 
-  revalidatePath(`/prodotto/${slug}`);
-  redirect(`/prodotto/${slug}`);
 }
