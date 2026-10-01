@@ -300,7 +300,7 @@ export default async function Home() {
       {/* ═══════════════════════════════════════════════════════════════════
           TERRITORIO — il valore del commercio locale (banda blu)
           ═══════════════════════════════════════════════════════════════════ */}
-      <section className="bg-gradient-to-br from-blue-800 via-blue-900 to-blue-950 text-white">
+      <section data-pino-footer-zone="true" className="bg-gradient-to-br from-blue-800 via-blue-900 to-blue-950 text-white">
         <div className="mx-auto max-w-7xl px-4 py-16 text-center md:px-6 md:py-20">
           <p className="section-label !text-blue-200">Per i commercianti</p>
           <h2 className="mx-auto mt-3 max-w-2xl text-3xl font-black leading-tight tracking-tight md:text-4xl">
