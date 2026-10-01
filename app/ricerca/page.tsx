@@ -225,7 +225,7 @@ export default async function RicercaPage({
             {/* Titolo pagina — H1 coerente con la scala 10C */}
             <div className="mb-5 flex items-end justify-between gap-3 border-b border-slate-200 pb-4"><div><p className="section-label mb-1">Esplora InCittà</p><h1 className="incitta-section-title text-3xl font-black tracking-tight text-slate-900">
               Ricerca
-            </h1>
+            </h1></div><span className="hidden rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-700 sm:inline-flex">Negozi · Prodotti · Servizi</span></div>
             {ricercaAttiva ? (
           <>
             <div className="lg:grid lg:grid-cols-[250px,1fr] lg:gap-5">
