@@ -215,7 +215,7 @@ export default async function PaginaNegozio({
         </nav>
 
         {/* Hero — copertina con identità sovrapposta */}
-        <div className="incitta-store-hero relative">
+        <div className="incitta-store-hero incitta-premium-store-hero relative">
           <div className="relative aspect-[16/9] max-h-[230px] w-full overflow-hidden sm:aspect-[21/9]">
             <div
               role="img"
@@ -311,7 +311,7 @@ export default async function PaginaNegozio({
         )}
 
         {/* Azioni */}
-        <div className="incitta-store-actions mt-3 flex flex-wrap items-center gap-2">
+        <div className="incitta-store-actions incitta-store-actions-premium mt-3 flex flex-wrap items-center gap-2">
           <FavoritoButton
             tipo="negozio"
             riferimentoId={id}
