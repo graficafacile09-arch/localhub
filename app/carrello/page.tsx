@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function PaginaCarrello() {
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="incitta-premium-cart min-h-screen">
       <Header />
       <CarrelloPageClient />
     </main>
