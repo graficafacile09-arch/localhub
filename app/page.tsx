@@ -81,7 +81,7 @@ export default async function Home() {
     ]);
 
   return (
-    <main className="min-h-screen bg-[#f3f6fa]">
+    <main className="min-h-screen bg-[#dce6f0]">
       <Header />
 
       {/* ═══════════════════════════════════════════════════════════════════
@@ -124,7 +124,7 @@ export default async function Home() {
       {/* ═══════════════════════════════════════════════════════════════════
           VALUE STRIP — perché LocalHub (3 promesse, nessuna duplicazione)
           ═══════════════════════════════════════════════════════════════════ */}
-      <section className="incitta-section-white">
+      <section className="border-y border-[#c8d6e5] bg-[#edf3f8]">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-8 sm:grid-cols-3 md:px-6 md:py-10">
           <div className="flex items-start gap-3.5">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-yellow-400 text-blue-900 shadow-[0_4px_14px_-4px_rgba(202,138,4,0.45)]">
@@ -187,7 +187,7 @@ export default async function Home() {
           NEGOZI IN EVIDENZA (solo se ce ne sono)
           ═══════════════════════════════════════════════════════════════════ */}
       {negozi.length > 0 && (
-        <section className="incitta-section-white py-12 md:py-14">
+        <section className="border-y border-[#c3d2e1] bg-[#d6e2ed] py-12 md:py-14">
           <div className="mx-auto max-w-7xl px-4 md:px-6">
             <SezioneHeader
               label="Scopri"
@@ -228,7 +228,7 @@ export default async function Home() {
                           )}
                         </div>
 
-                        <div className="bg-white p-5">
+                        <div className="bg-gradient-to-b from-[#f7fafc] to-[#e8f0f6] p-5">
                           <h3 className="text-xl font-bold text-slate-900 transition group-hover:text-blue-700">
                             {negozio.nome}
                           </h3>
@@ -239,7 +239,7 @@ export default async function Home() {
                         </div>
                       </div>
 
-                      <div className="bg-white p-5 pt-0">
+                      <div className="bg-[#e8f0f6] p-5 pt-0">
                         <span className="flex w-full items-center justify-center gap-2 rounded-xl bg-yellow-400 py-3 text-center text-sm font-black text-blue-900 shadow-[0_4px_12px_-5px_rgba(202,138,4,.5)] transition group-hover:bg-yellow-300">
                           Scopri il negozio
                           <ArrowRight className="h-4 w-4" aria-hidden />
@@ -275,7 +275,7 @@ export default async function Home() {
           PRODOTTI IN EVIDENZA (solo se ce ne sono)
           ═══════════════════════════════════════════════════════════════════ */}
       {prodottiInEvidenza.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 py-12 md:px-6 md:py-14">
+        <section className="border-y border-[#c5d4e3] bg-[#e3ebf3] px-0 py-12 md:py-14">
           <SezioneHeader
             label="Novità"
             titolo="Prodotti in evidenza"
