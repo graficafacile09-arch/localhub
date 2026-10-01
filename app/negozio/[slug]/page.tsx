@@ -323,6 +323,7 @@ export default async function PaginaNegozio({
           <ShareActivityButton
             title={String(negozio.nome ?? "Attività")}
             description={String(negozio.descrizione ?? negozio.descrizione_completa ?? "")}
+            url={`/negozio/${slugCanonico}`}
           />
           {negozio.telefono && (
             <a

@@ -121,6 +121,7 @@ export default async function NegoziPage({
                     <ShareActivityButton
                       title={negozio.nome}
                       description={negozio.descrizione ?? ""}
+                      url={`/negozio/${negozio.slug}`}
                     />
                   </div>
                   <FavoritoButton

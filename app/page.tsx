@@ -251,6 +251,7 @@ export default async function Home() {
                       <ShareActivityButton
                         title={negozio.nome}
                         description={negozio.descrizione ?? ""}
+                        url={`/negozio/${negozio.slug}`}
                       />
                     </div>
 

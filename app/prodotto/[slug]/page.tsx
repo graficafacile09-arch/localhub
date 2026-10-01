@@ -338,6 +338,7 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
           <ShareActivityButton
             title={String(prodotto.nome ?? "Prodotto")}
             description={String((prodotto as Record<string, unknown>).descrizione_completa ?? prodotto.descrizione ?? "")}
+            url={`/prodotto/${String(prodotto.slug ?? id)}`}
           />
           </div>
           </>
