@@ -94,4 +94,5 @@ export async function verificaAccessoProdotto18(
     maxAge: 0,
   });
 
+  return { ok: true };
 }
