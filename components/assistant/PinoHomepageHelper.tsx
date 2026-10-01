@@ -10,7 +10,7 @@ const PINO_HOME_W = PINO_ASSET_W;
 const PINO_HOME_H = PINO_ASSET_H;
 const PINO_CLOSED_SIZE = 48;
 const PINO_BAR_HEIGHT = 58;
-const PINO_HIDE_NEAR_BOTTOM = 820;
+const PINO_HIDE_NEAR_BOTTOM = 1150;
 /**
  * La fascia entra in scena quando l'utente ha raggiunto la parte bassa della
  * homepage, dove iniziano le vetrine di negozi/prodotti.
@@ -87,8 +87,8 @@ export default function PinoHomepageHelper() {
         style={{ minHeight: PINO_BAR_HEIGHT }}
       >
         <div className="flex w-full items-center justify-end gap-2 sm:gap-3">
-          <p className="min-w-0 text-center text-xs font-semibold text-slate-700 sm:flex-none sm:text-sm">
-            Ciao, sono Pino il tuo assistente virtuale.
+          <p className="min-w-0 text-center text-sm font-semibold text-slate-700 sm:flex-none sm:text-base">
+            Ciao, sono Pino il tuo assistente.
           </p>
 
           <button
