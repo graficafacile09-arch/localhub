@@ -46,6 +46,7 @@ import {
   type PinoIntent,
   type PinoIntentAnalysis,
 } from "./intent";
+import { recuperaMemoria, registraEsitoMemoria } from "./memoria";
 import {
   rilevaFollowUp,
   soggettoPrecedente,
@@ -796,6 +797,7 @@ export async function chatConAssistente(
   // Pino Intent Layer v1: la classificazione avviene PRIMA di ogni ricerca e
   // guida la scelta dei tool, le priorità di recupero e il messaggio finale.
   const analisi = analizzaIntentoPino(domanda);
+  const memoria = await recuperaMemoria(domanda);
 
   // Stato dei risultati recuperati
   let negozi: NegozioRicerca[] = [];
@@ -845,6 +847,27 @@ export async function chatConAssistente(
       // Selezione fallita → ricerca completa di sicurezza sull'ultima domanda
       console.warn("[assistente] Selezione tool fallita, uso searchAll:", error);
     }
+  }
+
+  // Memoria semantica: associazioni già confermate diventano ricerche
+  // aggiuntive sulle attività, senza sostituire il piano principale.
+  const usaMemoriaSuRicerca = !directReply &&
+    !followUp &&
+    memoria.length > 0 &&
+    !invocazioni.some((t) => t.tool === "getWeather" || t.tool === "searchPharmacies");
+
+  if (usaMemoriaSuRicerca) {
+    const giaCercati = new Set(
+      invocazioni.map((t) => String(t.params?.query ?? "").trim().toLowerCase()).filter(Boolean)
+    );
+    for (const voce of memoria.slice(0, 3)) {
+      const qMemoria = voce.concetto;
+      if (!qMemoria || giaCercati.has(qMemoria.toLowerCase())) continue;
+      invocazioni.push({ tool: "searchStores", params: { query: qMemoria, limit: 6 } });
+      giaCercati.add(qMemoria.toLowerCase());
+    }
+    if (invocazioni.length > 3) invocazioni = invocazioni.slice(0, 3);
+    if (invocazioni.length > 0) selezioneOk = true;
   }
 
   // Esecuzione dei tool scelti (dal piano o dall'LLM).
@@ -953,6 +976,17 @@ export async function chatConAssistente(
       source: "assistente",
       intent: analisi.intent,
     };
+  }
+
+  // Apprendimento non bloccante: impara solo da ricerche reali.
+  if (!followUp && !haMeteo && !haFarmacie && !directReply && toolsEseguiti) {
+    void registraEsitoMemoria({
+      query: domanda,
+      analisi,
+      categorie: negozi.map((n) => n.categoria ?? "").filter(Boolean),
+      risultati: contaRisultati(aRisultatiRecuperati(negozi, prodotti, { offerte, eventi })),
+      memoriaUsata: memoria,
+    });
   }
 
   // 4b) Pino Conversazionale v1: il follow-up MODIFICA i risultati del soggetto
