@@ -8,7 +8,7 @@ import { stileCategoria } from "@/lib/categorie-icone";
 // lib/categorie-icone.ts (stileCategoria(slug)): nessun elenco icone
 // duplicato in questo componente.
 const CARD_CLASS =
-  "group flex min-h-[108px] flex-col items-center justify-center gap-3 rounded-2xl border-0 bg-white px-3 py-5 text-center shadow-[0_2px_10px_rgba(0,0,0,0.06)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.10)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:ring-offset-2 sm:min-h-[112px] md:min-h-[122px] md:px-4 md:py-6";
+  "incitta-category-tile group flex min-h-[108px] flex-col items-center justify-center gap-3 rounded-2xl border-0 bg-white px-3 py-5 text-center shadow-[0_2px_10px_rgba(0,0,0,0.06)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_8px_24px_-8px_rgba(0,0,0,0.10)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:ring-offset-2 sm:min-h-[112px] md:min-h-[122px] md:px-4 md:py-6";
 
 const NOME_CLASS =
   "block break-words text-sm font-medium leading-tight text-slate-700 transition-colors group-hover:text-slate-900";
