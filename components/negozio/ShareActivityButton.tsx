@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Check, Copy, Facebook, Instagram, Mail, MessageCircle, Send, Share2 } from "lucide-react";
+import { Check, Copy, Mail, MessageCircle, Send, Share2 } from "lucide-react";
 
 type Props = { title: string; description?: string };
 
@@ -118,10 +118,10 @@ export default function ShareActivityButton({ title, description = "" }: Props) 
             <Share2 className="h-4 w-4 text-blue-600" aria-hidden /> Web / altre app
           </button>
           <button type="button" role="menuitem" onClick={shareFacebook} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-slate-700 hover:bg-slate-100">
-            <Facebook className="h-4 w-4 text-blue-600" aria-hidden /> Facebook
+            <span className="flex h-4 w-4 items-center justify-center text-xs font-black text-blue-600" aria-hidden>f</span> Facebook
           </button>
           <button type="button" role="menuitem" onClick={nativeShare} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-slate-700 hover:bg-slate-100">
-            <Instagram className="h-4 w-4 text-pink-600" aria-hidden /> Instagram
+            <span className="flex h-4 w-4 items-center justify-center text-xs font-black text-pink-600" aria-hidden>◎</span> Instagram
           </button>
           <button type="button" role="menuitem" onClick={shareTelegram} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-slate-700 hover:bg-slate-100">
             <Send className="h-4 w-4 text-sky-500" aria-hidden /> Telegram
