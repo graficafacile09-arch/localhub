@@ -10,7 +10,7 @@ const PINO_HOME_W = PINO_ASSET_W;
 const PINO_HOME_H = PINO_ASSET_H;
 const PINO_CLOSED_SIZE = 48;
 const PINO_BAR_HEIGHT = 58;
-const PINO_HIDE_NEAR_BOTTOM = 1150;
+const PINO_HIDE_NEAR_BOTTOM = 0;
 /**
  * La fascia entra in scena quando l'utente ha raggiunto la parte bassa della
  * homepage, dove iniziano le vetrine di negozi/prodotti.
@@ -36,7 +36,12 @@ export default function PinoHomepageHelper() {
 
     const updateVisibility = () => {
       const reached = window.scrollY >= PINO_TRIGGER_SCROLL;
+      const blueZone = document.querySelector<HTMLElement>("[data-pino-footer-zone=\"true\"]");
+      const blueZoneFinished = blueZone
+        ? blueZone.getBoundingClientRect().bottom <= window.innerHeight
+        : false;
       setHasReachedArea(reached);
+      setIsNearBottom(blueZoneFinished);
       setIsScrolling(true);
 
       if (settleTimer) clearTimeout(settleTimer);
@@ -46,7 +51,12 @@ export default function PinoHomepageHelper() {
     };
 
     const syncInitialPosition = () => {
+      const blueZone = document.querySelector<HTMLElement>("[data-pino-footer-zone=\"true\"]");
+      const blueZoneFinished = blueZone
+        ? blueZone.getBoundingClientRect().bottom <= window.innerHeight
+        : false;
       setHasReachedArea(window.scrollY >= PINO_TRIGGER_SCROLL);
+      setIsNearBottom(blueZoneFinished);
       setIsScrolling(false);
     };
 
