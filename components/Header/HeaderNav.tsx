@@ -57,7 +57,7 @@ export default function HeaderNav() {
     <div className="w-full lg:w-auto incitta-desktop-public-nav">
       <nav
         aria-label="Navigazione principale"
-        className="relative mx-auto grid w-full max-w-[550px] grid-cols-5 items-center justify-items-center border-y border-slate-200 bg-white py-1 md:py-1 xl:w-auto"
+        className="incitta-main-nav relative mx-auto grid w-full max-w-[550px] grid-cols-5 items-center justify-items-center py-1 md:py-1 xl:w-auto"
       >
         {[0, 1, 2, 3].map((i) => (
           <span
@@ -77,7 +77,7 @@ export default function HeaderNav() {
               aria-current={voce.attiva ? "page" : undefined}
               className="incitta-public-nav-item group relative mx-1 flex min-w-0 flex-col items-center gap-1 px-1.5 py-1 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 sm:mx-1.5 sm:px-2 md:py-1 lg:mx-1 lg:px-1.5"
             >
-              <span className="incitta-public-nav-icon relative flex h-10 w-10 items-center justify-center rounded-xl bg-yellow-400">
+              <span className="incitta-public-nav-icon relative flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600">
                 <Icona
                   aria-hidden
                   className="h-[22px] w-[22px] text-white transition-colors duration-200"
@@ -85,7 +85,7 @@ export default function HeaderNav() {
                 {voce.badge && (
                   <span
                     aria-hidden
-                    className={`absolute -top-2 inline-flex items-center rounded-full bg-red-600 font-black uppercase leading-none tracking-tight text-white shadow-sm ring-2 ring-white ${voce.badge === "CV" ? "-right-1.5 px-2 py-1 text-[9px]" : "-right-2 px-1.5 py-0.5 text-[8px]"}`}
+                    className={`absolute -top-2 inline-flex items-center rounded-full bg-red-600 font-black uppercase leading-none tracking-tight text-white shadow-sm ring-2 ring-[#eef3f8] ${voce.badge === "CV" ? "-right-1.5 px-2 py-1 text-[9px]" : "-right-2 px-1.5 py-0.5 text-[8px]"}`}
                   >
                     {voce.badge}
                   </span>
@@ -99,7 +99,7 @@ export default function HeaderNav() {
               <span
                 aria-hidden
                 className={`mt-0.5 h-1 w-6 rounded-full transition-opacity duration-200 ${
-                  voce.attiva ? "bg-blue-600 opacity-100" : "bg-transparent opacity-0"
+                  voce.attiva ? "bg-yellow-400 opacity-100" : "bg-transparent opacity-0"
                 }`}
               />
             </Link>
