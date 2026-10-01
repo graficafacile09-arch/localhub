@@ -21,6 +21,28 @@ export default function ShareActivityButton({ title, description = "" }: Props) 
     setOpen(false);
   };
 
+  // Try the installed native app first. If the OS/browser cannot handle the
+  // custom scheme, fall back to the normal web share page.
+  const openAppThenFallback = (appUrl: string, webUrl: string) => {
+    let handled = false;
+    const markHandled = () => {
+      handled = true;
+      window.removeEventListener("visibilitychange", markHandled);
+    };
+
+    window.addEventListener("visibilitychange", markHandled);
+    window.location.href = appUrl;
+
+    window.setTimeout(() => {
+      window.removeEventListener("visibilitychange", markHandled);
+      if (!handled && document.visibilityState === "visible") {
+        window.location.href = webUrl;
+      }
+    }, 1200);
+
+    setOpen(false);
+  };
+
   const copyLink = async () => {
     const url = getShareData().url;
     try {
@@ -48,22 +70,32 @@ export default function ShareActivityButton({ title, description = "" }: Props) 
 
   const shareFacebook = () => {
     const url = getShareData().url;
-    openUrl("https://www.facebook.com/sharer/sharer.php?u=" + encodeURIComponent(url));
+    const webUrl = "https://www.facebook.com/sharer/sharer.php?u=" + encodeURIComponent(url);
+    const appUrl = "fb://facewebmodal/f?href=" + encodeURIComponent(webUrl);
+    openAppThenFallback(appUrl, webUrl);
   };
 
   const shareTelegram = () => {
     const data = getShareData();
-    openUrl(
+    const webUrl =
       "https://t.me/share/url?url=" +
-        encodeURIComponent(data.url) +
-        "&text=" +
-        encodeURIComponent(data.text)
-    );
+      encodeURIComponent(data.url) +
+      "&text=" +
+      encodeURIComponent(data.text);
+    const appUrl =
+      "tg://msg_url?url=" +
+      encodeURIComponent(data.url) +
+      "&text=" +
+      encodeURIComponent(data.text);
+    openAppThenFallback(appUrl, webUrl);
   };
 
   const shareWhatsApp = () => {
     const data = getShareData();
-    openUrl("https://wa.me/?text=" + encodeURIComponent(data.text + " " + data.url));
+    const message = encodeURIComponent(data.text + " " + data.url);
+    const webUrl = "https://wa.me/?text=" + message;
+    const appUrl = "whatsapp://send?text=" + message;
+    openAppThenFallback(appUrl, webUrl);
   };
 
   const shareSms = () => {
@@ -120,7 +152,24 @@ export default function ShareActivityButton({ title, description = "" }: Props) 
           <button type="button" role="menuitem" onClick={shareFacebook} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-slate-700 hover:bg-slate-100">
             <span className="flex h-4 w-4 items-center justify-center text-xs font-black text-blue-600" aria-hidden>f</span> Facebook
           </button>
-          <button type="button" role="menuitem" onClick={nativeShare} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-slate-700 hover:bg-slate-100">
+          <button type="button" role="menuitem" onClick={() => {
+            const data = getShareData();
+            // Instagram has no stable public web share endpoint. Open the
+            // installed app when possible; otherwise use the native share sheet.
+            let handled = false;
+            const markHandled = () => {
+              handled = true;
+              window.removeEventListener("visibilitychange", markHandled);
+            };
+            window.addEventListener("visibilitychange", markHandled);
+            window.location.href = "instagram://app";
+            window.setTimeout(() => {
+              window.removeEventListener("visibilitychange", markHandled);
+              if (!handled && document.visibilityState === "visible") void nativeShare();
+            }, 1000);
+            void data;
+            setOpen(false);
+          }} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-slate-700 hover:bg-slate-100">
             <span className="flex h-4 w-4 items-center justify-center text-xs font-black text-pink-600" aria-hidden>◎</span> Instagram
           </button>
           <button type="button" role="menuitem" onClick={shareTelegram} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-slate-700 hover:bg-slate-100">
