@@ -21,7 +21,8 @@ create index if not exists pino_memoria_confidence_idx on public.pino_memoria (c
 create or replace function public.pino_memoria_touch_updated_at()
 returns trigger
 language plpgsql
-as $$
+set search_path = public, pg_catalog
+as $
 begin
   new.updated_at = now();
   return new;
