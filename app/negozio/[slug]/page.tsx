@@ -201,10 +201,10 @@ export default async function PaginaNegozio({
   };
 
   return (
-    <main className="min-h-screen bg-[#eef3f8]">
+    <main className="min-h-screen bg-[#f3f6fa]">
       <Header />
 
-      <div className="mx-auto max-w-5xl px-3 py-3 sm:px-5">
+      <div className="mx-auto max-w-6xl px-3 py-4 sm:px-5 lg:py-6">
         {/* Breadcrumb */}
         <nav aria-label="Breadcrumb" className="mb-2 flex items-center gap-1.5 text-[11px] text-slate-400">
           <Link href="/" className="transition hover:text-blue-600">Home</Link>
@@ -215,7 +215,7 @@ export default async function PaginaNegozio({
         </nav>
 
         {/* Hero — copertina con identità sovrapposta */}
-        <div className="relative overflow-hidden rounded-2xl border border-white/60 bg-white shadow-sm">
+        <div className="incitta-store-hero relative">
           <div className="relative aspect-[16/9] max-h-[230px] w-full overflow-hidden sm:aspect-[21/9]">
             <div
               role="img"
@@ -280,7 +280,7 @@ export default async function PaginaNegozio({
         />
 
         {/* Info compatte — pill cliccabili (mappa / telefono) */}
-        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+        <div className="incitta-info-strip mt-3 flex flex-wrap items-center gap-1.5 p-2">
           {negozio.indirizzo && (
             <a
               href={buildMapsUrl()}
@@ -311,7 +311,7 @@ export default async function PaginaNegozio({
         )}
 
         {/* Azioni */}
-        <div className="mt-2 flex flex-wrap items-center gap-2">
+        <div className="incitta-store-actions mt-3 flex flex-wrap items-center gap-2">
           <FavoritoButton
             tipo="negozio"
             riferimentoId={id}
@@ -390,7 +390,7 @@ export default async function PaginaNegozio({
         </div>
 
         {/* Catalogo prodotti del negozio (Fase C: filtri/ordinamento/paginazione) */}
-        <section className="mt-4">
+        <section className="incitta-catalog-shell mt-5 p-3 sm:p-4">
           <div className="mb-2 flex flex-wrap items-center gap-2">
             <h2 className="text-xs font-bold uppercase tracking-wide text-slate-500">
               Prodotti
@@ -445,7 +445,7 @@ export default async function PaginaNegozio({
           </details>
 
           {prodotti.length > 0 ? (
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 md:gap-5">
               {prodotti.map((prodotto: Record<string, unknown>) => {
                 const prodottoId = String(prodotto.id);
                 return (
