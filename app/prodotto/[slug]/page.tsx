@@ -225,6 +225,7 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
           </>
         ) : (
           <>
+            <div className="incitta-premium-product">
         {/* Photo / galleria */}
         <div className="incitta-product-gallery-shell">
         <ProductGallery
@@ -343,6 +344,7 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
             url={`/prodotto/${String(prodotto.slug ?? id)}`}
           />
           </div>
+            </div>
           </>
         )}
 
