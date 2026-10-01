@@ -90,7 +90,7 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
   // Un prodotto 18+ non espone la scheda finché l'age gate non è superato.
   // La verifica avviene server-side e il cookie non contiene la data di nascita.
   if (soggettoVerificaEta && !ageVerified) {
-    return <ProductAgeGate prodottoId={id} bloccato={ageBlocked} />;
+    return <ProductAgeGate prodottoId={id} slug={String(prodotto.slug ?? slug)} bloccato={ageBlocked} />;
   }
 
   const negozio = await getNegozio(String(prodotto.negozio_id));
