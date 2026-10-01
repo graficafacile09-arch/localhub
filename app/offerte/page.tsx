@@ -44,17 +44,19 @@ export default async function OffertePage() {
   ]);
 
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="incitta-directory-shell min-h-screen">
       <Header />
 
-      <div className="mx-auto max-w-7xl px-3 py-3 sm:px-5">
-        <div className="flex items-center justify-between gap-3">
+      <div className="mx-auto max-w-7xl px-3 py-6 sm:px-5 sm:py-8">
+        <div className="incitta-offer-intro mb-6 flex items-center justify-between gap-3 p-4 sm:p-5">
           <div>
-            <h1 className="inline-block whitespace-nowrap rounded-lg bg-red-600 px-2 py-1 text-[13px] font-black tracking-tight text-white shadow-sm sm:text-base md:px-3 md:py-1.5 md:text-2xl">
-              OFFERTE
-            </h1>
+            <p className="section-label text-red-600">Scopri e risparmia</p>
+            <div className="mt-1 flex items-center gap-2">
+              <span className="inline-flex h-8 items-center rounded-lg bg-red-600 px-2.5 text-xs font-black tracking-wide text-white sm:text-sm">OFFERTE</span>
+              <h1 className="text-xl font-black tracking-tight text-slate-900 sm:text-2xl">Promozioni locali</h1>
+            </div>
             <p className="mt-1 text-sm text-slate-500">
-              Le migliori promozioni dei negozi della tua città, sempre aggiornate.
+              Le promozioni dei negozi della tua città, sempre aggiornate.
             </p>
           </div>
           <Link
@@ -88,7 +90,7 @@ export default async function OffertePage() {
         ) : (
           <>
             <h2 className="sr-only">Prodotti in offerta</h2>
-            <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-5 lg:grid-cols-4">
+            <div className="incitta-catalog-shell mt-5 grid grid-cols-2 gap-3 p-3 sm:grid-cols-3 sm:p-4 md:gap-5 lg:grid-cols-4">
             {prodottiOfferta.map((prodotto) => {
               const prodottoId = String(prodotto.id);
               return (
