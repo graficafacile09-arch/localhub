@@ -3,8 +3,8 @@
 import { cookies } from "next/headers";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
-const verifiedCookie_PREFIX = "incitta_age_verified_";
-const blockedCookie_PREFIX = "incitta_age_blocked_";
+const VERIFIED_COOKIE_PREFIX = "incitta_age_verified_";
+const BLOCKED_COOKIE_PREFIX = "incitta_age_blocked_";
 
 function cookieName(prefix: string, prodottoId: string): string {
   return `${prefix}${prodottoId}`;
@@ -27,7 +27,6 @@ export async function verificaAccessoProdotto18(
   prodottoId: string,
   mese: string,
   anno: string,
-  slug: string,
 ): Promise<{ ok: boolean; reason?: "invalid" | "underage" | "unavailable" }> {
   const month = Number.parseInt(mese, 10);
   const year = Number.parseInt(anno, 10);
@@ -59,8 +58,8 @@ export async function verificaAccessoProdotto18(
   }
 
   const cookieStore = await cookies();
-  const verifiedCookie = cookieName(verifiedCookie_PREFIX, prodottoId);
-  const blockedCookie = cookieName(blockedCookie_PREFIX, prodottoId);
+  const verifiedCookie = cookieName(VERIFIED_COOKIE_PREFIX, prodottoId);
+  const blockedCookie = cookieName(BLOCKED_COOKIE_PREFIX, prodottoId);
 
   if (!isMaggiorenne(month, year)) {
     cookieStore.set(blockedCookie, "1", {
