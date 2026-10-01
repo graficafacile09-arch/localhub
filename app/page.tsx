@@ -206,7 +206,7 @@ export default async function Home() {
                 return (
                   <div
                     key={negozio.id}
-                    className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md"
+                    className="group relative flex flex-col justify-between overflow-visible rounded-2xl border border-slate-100 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md"
                   >
                     <Link
                       href={`/negozio/${negozio.slug}`}
@@ -214,7 +214,7 @@ export default async function Home() {
                       className="flex flex-1 flex-col justify-between"
                     >
                       <div>
-                        <div className="relative h-48 w-full overflow-hidden bg-slate-100">
+                        <div className="relative h-48 w-full overflow-hidden rounded-t-2xl bg-slate-100">
                           <div
                             role="img"
                             aria-label={negozio.nome}
