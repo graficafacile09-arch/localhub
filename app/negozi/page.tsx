@@ -97,8 +97,8 @@ export default async function NegoziPage({
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center gap-2 bg-white p-3">
-                      <div className="h-8 w-8 shrink-0 overflow-hidden rounded-full border border-slate-200 bg-white">
+                    <div className="flex items-center gap-2 bg-gradient-to-b from-[#f7fafc] to-[#e8f0f6] p-3">
+                      <div className="h-8 w-8 shrink-0 overflow-hidden rounded-full border border-[#c6d5e3] bg-[#f8fafc]">
                         {negozio.logo_url ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
