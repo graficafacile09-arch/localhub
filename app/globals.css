@@ -597,3 +597,65 @@ body.merchant-image-editor-aperto .merchant-bottom-nav-spacer {
     box-shadow: 0 2px 8px rgb(202 138 4 / .25);
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+ * INCITTÀ — VISUAL PASS 02
+ * ═══════════════════════════════════════════════════════════════════════ */
+@layer components {
+  .incitta-main-nav {
+    border-block: 1px solid #d7e1ec;
+    background: #f7f9fc;
+    border-radius: 1rem;
+  }
+  .incitta-main-nav::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / .9);
+  }
+  .incitta-filter-panel {
+    border: 1px solid #d6e0ea;
+    border-radius: 1.125rem;
+    background: #f8fafc;
+    box-shadow: 0 4px 18px rgb(15 23 42 / .045);
+  }
+  .incitta-search-product-card {
+    overflow: hidden;
+    border: 1px solid #d6e0ea;
+    border-radius: 1.125rem;
+    background: #fff;
+    box-shadow: 0 3px 12px rgb(15 23 42 / .055);
+    transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+  }
+  .incitta-search-product-card:hover {
+    transform: translateY(-2px);
+    border-color: #93c5fd;
+    box-shadow: 0 16px 32px -22px rgb(37 99 235 / .4);
+  }
+  .incitta-search-product-media > div { transition: transform .35s ease; }
+  .incitta-search-product-card:hover .incitta-search-product-media > div { transform: scale(1.035); }
+  .incitta-search-store-card {
+    overflow: hidden;
+    border: 1px solid #d6e0ea;
+    border-radius: 1.125rem;
+    background: #fff;
+    box-shadow: 0 3px 12px rgb(15 23 42 / .045);
+    transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+  }
+  .incitta-search-store-card:hover {
+    transform: translateY(-2px);
+    border-color: #93c5fd;
+    box-shadow: 0 14px 30px -22px rgb(37 99 235 / .35);
+  }
+  .incitta-empty-state {
+    border: 1px dashed #cbd5e1;
+    border-radius: 1.125rem;
+    background: #f8fafc;
+  }
+}
+header:has(.incitta-main-nav) {
+  border-top: 3px solid var(--brand-blue);
+  box-shadow: 0 2px 12px rgb(15 23 42 / .07);
+}
