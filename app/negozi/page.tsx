@@ -4,6 +4,7 @@ import { getNegozioCardImmagine } from "@/lib/negozi-card-immagini";
 import { chiavePreferito, getStatoPreferitiPerPagina } from "@/lib/cliente/favorites";
 import { getImpostazioniPubbliche } from "@/lib/platform/settings";
 import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
+import ShareActivityButton from "@/components/negozio/ShareActivityButton";
 import Link from "next/link";
 import { ArrowLeft, MapPin, Star } from "lucide-react";
 
@@ -116,6 +117,12 @@ export default async function NegoziPage({
                       </div>
                     </div>
                   </Link>
+                  <div className="absolute right-2 bottom-2 z-10">
+                    <ShareActivityButton
+                      title={negozio.nome}
+                      description={negozio.descrizione ?? ""}
+                    />
+                  </div>
                   <FavoritoButton
                     tipo="negozio"
                     riferimentoId={negozio.id}
