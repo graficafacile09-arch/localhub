@@ -19,7 +19,6 @@ import { chiavePreferito, getStatoPreferitiPerPagina } from "@/lib/cliente/favor
 import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
 import ProductCard from "@/components/home/ProductCard";
 import EccellenzeCalabresiGrid from "@/components/home/EccellenzeCalabresiGrid";
-import ShareActivityButton from "@/components/negozio/ShareActivityButton";
 
 // La homepage deve riflettere in tempo reale i negozi in evidenza flaggati
 // dal merchant (il toggle "In evidenza" della dashboard), quindi non viene
@@ -246,15 +245,6 @@ export default async function Home() {
                         </span>
                       </div>
                     </Link>
-
-                    <div className="absolute bottom-3 right-3 z-[100] pointer-events-auto">
-                      <ShareActivityButton
-                        title={negozio.nome}
-                        description={negozio.descrizione ?? ""}
-                        url={`/negozio/${negozio.slug}`}
-                      />
-                    </div>
-
                     <FavoritoButton
                       tipo="negozio"
                       riferimentoId={negozio.id}
