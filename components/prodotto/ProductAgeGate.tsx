@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { verificaAccessoProdotto18 } from "@/lib/age-gate";
 
 type Props = {
@@ -13,6 +14,7 @@ export default function ProductAgeGate({ prodottoId, bloccato }: Props) {
   const [anno, setAnno] = useState("");
   const [errore, setErrore] = useState("");
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
   function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -27,7 +29,7 @@ export default function ProductAgeGate({ prodottoId, bloccato }: Props) {
       const result = await verificaAccessoProdotto18(prodottoId, mese, anno);
 
       if (result.ok) {
-        window.location.reload();
+        router.refresh();
         return;
       }
 
