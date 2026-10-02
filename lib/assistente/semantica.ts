@@ -244,7 +244,7 @@ export function usaFastPathSemantico(query: string, analisi: PinoIntentAnalysis)
 }
 
 function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): PinoSemanticPlan | null {
-  const q = normalizzaRichiesta(query).trim();
+  const q = correggiErroriBattitura(normalizzaRichiesta(query)).trim();
   if (!q) return null;
   const match = CANONICI_RICERCA.find((x) => x.pattern.test(q));
   const haEsclusioneAlcol = /\b(?:non|senza)\s+(?:alcol(?:ica|ico)?|alcol)\b|\banalcolic(?:a|o|he|i)\b/i.test(q);
