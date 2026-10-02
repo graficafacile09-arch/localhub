@@ -7,6 +7,7 @@ import {
   utenteHaRuoli,
   type RuoloUtente,
 } from "@/lib/auth/roles";
+import { getAccountApprovalStatus } from "@/lib/auth/account-approval";
 
 export async function getCurrentUser() {
   if (!isSupabaseConfigured()) {
@@ -70,6 +71,9 @@ export async function getCurrentRuoli(): Promise<UtenteConRuoli | null> {
   const user = await getCurrentUser();
   if (!user) return null;
 
+  const approvalStatus = await getAccountApprovalStatus(user.id);
+  if (approvalStatus !== "approved") return null;
+
   const ruoli = await getRuoliUtente(user.id);
   const role =
     ruoli.length === 0
@@ -93,6 +97,8 @@ export async function getApiUtente(
 ): Promise<{ user: NonNullable<Awaited<ReturnType<typeof getCurrentUser>>> | null; ok: boolean }> {
   const user = await getCurrentUser();
   if (!user) return { user: null, ok: false };
+  const approvalStatus = await getAccountApprovalStatus(user.id);
+  if (approvalStatus !== "approved") return { user, ok: false };
   const ok = await utenteHaRuoli(user.id, richiesti);
   return { user, ok };
 }
