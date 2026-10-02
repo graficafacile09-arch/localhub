@@ -190,7 +190,7 @@ function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): Pi
     intent,
     query: termine.slice(0, 120),
     terms: Array.from(new Set([termine, ...(match ? [match.termine] : [])])).slice(0, 5),
-    exclusions,
+    exclusions: esclusioni,
     minPrice,
     maxPrice,
     city,
