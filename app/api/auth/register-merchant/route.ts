@@ -252,8 +252,10 @@ export async function POST(request: Request) {
     href: "/amministratore/attivita",
   });
 
-  // La sessione nasce legata all'area merchant (sessione attiva httpOnly).
-  const response = NextResponse.redirect(new URL("/", request.url));
+  // La registrazione crea un account merchant PENDING: la sessione viene
+  // stabilita solo per poter mostrare la schermata di attesa. Le aree
+  // protette restano comunque bloccate dai gate di approvazione.
+  const response = NextResponse.redirect(new URL("/account-in-attesa?area=merchant", request.url));
   response.cookies.set(AREA_COOKIE, "merchant", areaCookieOptions());
   return response;
 }
