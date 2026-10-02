@@ -3,6 +3,8 @@ import {
   MailX,
   ShieldAlert,
   Store,
+  UserRoundCheck,
+  Clock3,
 } from "lucide-react";
 import type { RuoloUtente, Utente } from "@/lib/amministratore/types";
 import { RUOLI_UTENTE, STATO_ACCOUNT } from "@/lib/amministratore/types";
@@ -87,6 +89,22 @@ export default function UtentiTable({
 }) {
   return (
     <div className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
+      {(() => {
+        const inAttesa = utenti.filter((u) => u.approvazione === "pending").length;
+        return inAttesa > 0 ? (
+          <div className="flex flex-wrap items-center gap-2.5 border-b border-amber-200 bg-amber-50 px-5 py-3.5">
+            <Clock3 className="h-4 w-4 text-amber-700" aria-hidden />
+            <div>
+              <p className="text-sm font-black text-amber-950">
+                {inAttesa} {inAttesa === 1 ? "registrazione richiede" : "registrazioni richiedono"} approvazione
+              </p>
+              <p className="text-xs text-amber-800">
+                Premi "Approva" nella riga oppure apri il dettaglio per approvare o rifiutare.
+              </p>
+            </div>
+          </div>
+        ) : null;
+      })()}
       <div className="overflow-x-auto">
         <table className="w-full min-w-[860px] text-left text-sm">
           <thead>
@@ -163,11 +181,24 @@ export default function UtentiTable({
                     : "Mai"}
                 </td>
                 <td className="px-5 py-4 text-right">
-                  <UtentiActionsMenu
-                    utente={utente}
-                    onDettaglio={onDettaglio}
-                    onElimina={onElimina}
-                  />
+                  <div className="flex items-center justify-end gap-2">
+                    {utente.approvazione === "pending" && onDettaglio && (
+                      <button
+                        type="button"
+                        onClick={() => onDettaglio(utente)}
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-2 text-[11px] font-black text-white transition hover:bg-emerald-700"
+                        title="Apri approvazione account"
+                      >
+                        <UserRoundCheck className="h-3.5 w-3.5" aria-hidden />
+                        Approva
+                      </button>
+                    )}
+                    <UtentiActionsMenu
+                      utente={utente}
+                      onDettaglio={onDettaglio}
+                      onElimina={onElimina}
+                    />
+                  </div>
                 </td>
               </tr>
             ))}
