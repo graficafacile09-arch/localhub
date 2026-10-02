@@ -162,6 +162,59 @@ function correggiErroriBattitura(query: string): string {
 }
 
 /**
+ * Applica SOLO le associazioni di memoria esplicitamente apprese come
+ * correzione semantica e già consolidate. La sostituzione è token-aware:
+ * "birrra," viene corretto, ma "birrraio" no.
+ *
+ * La query originale resta intatta nel flusso dell'interfaccia; questa funzione
+ * produce esclusivamente la variante usata dal planner/retrieval. Le soglie
+ * vengono ricontrollate qui per evitare che una voce debole possa alterare la
+ * ricerca anche se arriva da un chiamante futuro diverso da recuperaMemoria().
+ */
+export function applicaMemoriaSemantica(
+  query: string,
+  memoria: PinoMemoriaVoce[]
+): string {
+  const originale = (query ?? "").trim();
+  if (!originale || !memoria?.length) return originale;
+
+  const correzioni = memoria
+    .filter(
+      (m) =>
+        m.tipo === "correzione_semantica" &&
+        m.frequenza >= 2 &&
+        m.confidence >= 0.70
+    )
+    .map((m) => ({
+      termine: normalizzaRichiesta(m.termine ?? "").trim(),
+      concetto: normalizzaRichiesta(m.concetto ?? "").trim(),
+    }))
+    .filter(
+      (m) =>
+        m.termine.length >= 4 &&
+        m.concetto.length >= 2 &&
+        m.termine !== m.concetto &&
+        !m.termine.includes(" ") &&
+        !m.concetto.includes(" ")
+    )
+    .sort((a, b) => b.termine.length - a.termine.length);
+
+  let risultato = originale;
+  for (const correzione of correzioni.slice(0, 6)) {
+    const escaped = correzione.termine.replace(/[.*+?^$()|[\]\\]/g, "\\$&");
+    const re = new RegExp(
+      "(^|[^A-Za-zÀ-ÖØ-öø-ÿ0-9])" +
+        escaped +
+        "(?=$|[^A-Za-zÀ-ÖØ-öø-ÿ0-9])",
+      "gi"
+    );
+    risultato = risultato.replace(re, "$1" + correzione.concetto);
+  }
+
+  return risultato.replace(/\s+/g, " ").trim();
+}
+
+/**
  * Collega una modifica breve alla ricerca sostanziale più recente.
  *
  * La ricerca precedente non è necessariamente l'ultimo messaggio dell'utente:
@@ -343,12 +396,16 @@ export async function interpretaRichiestaPino(
   analisi: PinoIntentAnalysis,
   memoria: PinoMemoriaVoce[]
 ): Promise<PinoSemanticPlan> {
-  const fallback = fallbackPlan(query, analisi);
-  const q = query.trim();
+  const queryConMemoria = applicaMemoriaSemantica(query, memoria);
+  const q = queryConMemoria.trim();
+  // Se la memoria ha trasformato un termine non riconosciuto in un concetto
+  // canonico, ricalcoliamo l'intento sul testo normalizzato.
+  const analisiEffettiva = q !== query.trim() ? analizzaIntentoPino(q) : analisi;
+  const fallback = fallbackPlan(q, analisiEffettiva);
 
-  if (!q || analisi.intent === "generic") return fallback;
+  if (!q || analisiEffettiva.intent === "generic") return fallback;
 
-  const fastPlan = pianoLocaleIntelligente(q, analisi);
+  const fastPlan = pianoLocaleIntelligente(q, analisiEffettiva);
   if (fastPlan) return fastPlan;
 
   const memoriaTesto = memoria.slice(0, 4)
@@ -387,7 +444,7 @@ export async function interpretaRichiestaPino(
         ? parsed.intent
         : fallback.intent;
 
-    const intentFinal = analisi.confidence === "alta" ? analisi.intent : intent;
+    const intentFinal = analisiEffettiva.confidence === "alta" ? analisiEffettiva.intent : intent;
     const terms = pulisciLista(parsed.terms, 5);
     const exclusions = pulisciLista(parsed.exclusions, 5);
     const minPrice = numeroValido(parsed.minPrice);
