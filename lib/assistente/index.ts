@@ -47,7 +47,7 @@ import {
   type PinoIntentAnalysis,
 } from "./intent";
 import { recuperaMemoria, registraEsitoMemoria } from "./memoria";
-import { interpretaRichiestaPino, usaFastPathSemantico, type PinoSemanticPlan } from "./semantica";
+import { arricchisciRichiestaConContesto, interpretaRichiestaPino, usaFastPathSemantico, type PinoSemanticPlan } from "./semantica";
 import {
   rilevaFollowUp,
   soggettoPrecedente,
