@@ -47,7 +47,7 @@ import {
   type PinoIntentAnalysis,
 } from "./intent";
 import { recuperaMemoria, registraEsitoMemoria } from "./memoria";
-import { arricchisciRichiestaConContesto, interpretaRichiestaPino, usaFastPathSemantico, type PinoSemanticPlan } from "./semantica";
+import { arricchisciRichiestaConContesto, costruisciStatoConversazionale, interpretaRichiestaPino, usaFastPathSemantico, type PinoSemanticPlan } from "./semantica";
 import {
   rilevaFollowUp,
   soggettoPrecedente,
@@ -948,7 +948,10 @@ export async function chatConAssistente(
   // Costruiamo subito la domanda contestuale: la memoria deve poter imparare
   // e poi essere utilizzata anche nelle richieste brevi che passano dal
   // fast-path locale.
-  const domandaSemantica = arricchisciRichiestaConContesto(domanda, storico);
+  const statoConversazionale = costruisciStatoConversazionale(storico);
+  const domandaSemantica =
+    statoConversazionale.richiesta ||
+    arricchisciRichiestaConContesto(domanda, storico);
   const analisiSemantica = analizzaIntentoPino(domandaSemantica);
 
   // Meteo e farmacie sono intenti deterministici e non hanno bisogno di memoria.
@@ -966,7 +969,13 @@ export async function chatConAssistente(
     domandaSemantica.length >= 22 ||
     /\b(?:non|senza|sotto|sopra|massimo|minimo|tra|entro|preferisco|tipo|per|aperto|aperta|ora|adesso|vicino)\b/i.test(domandaSemantica);
   const semantica = attivaPlannerSemantico
-    ? await interpretaRichiestaPino(domandaSemantica, storico, analisiSemantica, memoria)
+    ? await interpretaRichiestaPino(
+        domandaSemantica,
+        storico,
+        analisiSemantica,
+        memoria,
+        statoConversazionale
+      )
     : undefined;
 
   // Stato dei risultati recuperati
