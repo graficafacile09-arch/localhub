@@ -566,6 +566,72 @@ function punteggioProdottoPino(
   return score;
 }
 
+/**
+ * Applica ai prodotti i vincoli che appartengono al NEGOZIO proprietario.
+ * La città e lo stato "aperto ora" sono proprietà del negozio, non del prodotto.
+ * In caso di verifica esplicita non disponibile, il prodotto non viene promosso.
+ */
+export function filtraRisultatiPerVincoliNegozi(
+  prodotti: ProdottoRicerca[],
+  negoziAmmessi?: Set<string> | null,
+  negoziAperti?: Set<string> | null,
+): ProdottoRicerca[] {
+  return prodotti.filter((p) => {
+    if (negoziAmmessi && !negoziAmmessi.has(String(p.negozio_id))) return false;
+    if (negoziAperti && !negoziAperti.has(String(p.negozio_id))) return false;
+    return true;
+  });
+}
+
+async function filtraProdottiPerVincoliNegozio(
+  prodotti: ProdottoRicerca[],
+  opts: ToolParams,
+): Promise<ProdottoRicerca[]> {
+  if (prodotti.length === 0 || (!opts?.citta?.trim() && !opts?.apertiOra)) return prodotti;
+
+  let filtrati = prodotti;
+  const ids = Array.from(new Set(filtrati.map((p) => String(p.negozio_id)).filter(Boolean)));
+  if (ids.length === 0) return [];
+
+  if (opts?.citta?.trim()) {
+    let db;
+    try {
+      db = createAdminSupabaseClient();
+    } catch {
+      return [];
+    }
+    const target = normalizza(opts.citta).trim();
+    const { data, error } = await db
+      .from("negozi")
+      .select("id, citta, indirizzo")
+      .in("id", ids)
+      .is("deleted_at", null);
+    if (error) return [];
+
+    const ammessi = new Set(
+      (data ?? [])
+        .filter((n) => {
+          const citta = normalizza(String(n.citta ?? ""));
+          const indirizzo = normalizza(String(n.indirizzo ?? ""));
+          return target.length > 0 && (citta.includes(target) || indirizzo.includes(target));
+        })
+        .map((n) => String(n.id))
+    );
+    filtrati = filtraRisultatiPerVincoliNegozi(filtrati, ammessi, null);
+  }
+
+  if (opts?.apertiOra && filtrati.length > 0) {
+    const orari = await orariPerNegozi(filtrati.map((p) => String(p.negozio_id)));
+    const aperti = new Set<string>();
+    for (const [id, dati] of orari) {
+      if (apertoOra(dati) === true) aperti.add(String(id));
+    }
+    filtrati = filtraRisultatiPerVincoliNegozi(filtrati, null, aperti);
+  }
+
+  return filtrati;
+}
+
 export async function searchProducts(
   query: string,
   opts: ToolParams = {}
@@ -592,7 +658,7 @@ export async function searchProducts(
     const c = opts.categoria.trim().toLowerCase();
     filtrate = filtrate.filter((p) => (p.categoria ?? "").toLowerCase().includes(c));
   }
-  const maxPrice = opts.maxPrice != null ? Number(opts.maxPrice) : null;
+  // V12: città e "aperto ora" dipendono dal negozio proprietario.\n  // Applichiamo questi vincoli prima del filtro prezzo e del fallback fuori budget.\n  filtrate = await filtraProdottiPerVincoliNegozio(filtrate, opts);\n\n  const maxPrice = opts.maxPrice != null ? Number(opts.maxPrice) : null;
   const minPrice = opts.minPrice != null ? Number(opts.minPrice) : null;
 
   // Escludiamo i prodotti senza prezzo reale (es. prezzo 0 da dati demo).
