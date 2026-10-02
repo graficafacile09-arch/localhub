@@ -944,13 +944,22 @@ export async function chatConAssistente(
   // Pino Intent Layer v1: la classificazione avviene PRIMA di ogni ricerca e
   // guida la scelta dei tool, le priorità di recupero e il messaggio finale.
   const analisi = analizzaIntentoPino(domanda);
-  const memoria = usaFastPathSemantico(domanda, analisi) ? [] : await recuperaMemoria(domanda);
 
-  // Anche le richieste brevi che passano dal fast-path generano un piano
-  // semantico locale: serve sia per mantenere gli attributi sia per consolidare
-  // gli eventuali sinonimi/refusi confermati dai risultati.
+  // Costruiamo subito la domanda contestuale: la memoria deve poter imparare
+  // e poi essere utilizzata anche nelle richieste brevi che passano dal
+  // fast-path locale.
   const domandaSemantica = arricchisciRichiestaConContesto(domanda, storico);
   const analisiSemantica = analizzaIntentoPino(domandaSemantica);
+
+  // Meteo e farmacie sono intenti deterministici e non hanno bisogno di memoria.
+  // Per tutte le altre richieste il recupero viene avviato senza saltare il
+  // fast-path: così una correzione appresa può diventare immediatamente utile.
+  const pianoLocale = pianoIntentoLocale(domanda);
+  const memoriaPromise =
+    pianoLocale?.tool === "getWeather" || pianoLocale?.tool === "searchPharmacies"
+      ? Promise.resolve([])
+      : recuperaMemoria(domandaSemantica);
+  const memoria = await memoriaPromise;
   const attivaPlannerSemantico =
     usaFastPathSemantico(domandaSemantica, analisiSemantica) ||
     domandaSemantica !== domanda ||
