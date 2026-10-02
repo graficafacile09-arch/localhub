@@ -946,13 +946,18 @@ export async function chatConAssistente(
   const analisi = analizzaIntentoPino(domanda);
   const memoria = usaFastPathSemantico(domanda, analisi) ? [] : await recuperaMemoria(domanda);
 
-  // Il planner semantico si attiva sulle richieste composte/naturali, mentre
-  // le richieste semplici continuano a usare il percorso deterministico rapido.
+  // Anche le richieste brevi che passano dal fast-path generano un piano
+  // semantico locale: serve sia per mantenere gli attributi sia per consolidare
+  // gli eventuali sinonimi/refusi confermati dai risultati.
+  const domandaSemantica = arricchisciRichiestaConContesto(domanda, storico);
+  const analisiSemantica = analizzaIntentoPino(domandaSemantica);
   const attivaPlannerSemantico =
-    domanda.length >= 22 ||
-    /\b(?:non|senza|sotto|sopra|massimo|minimo|tra|entro|preferisco|tipo|per|aperto|aperta|ora|adesso|vicino)\b/i.test(domanda);
+    usaFastPathSemantico(domandaSemantica, analisiSemantica) ||
+    domandaSemantica !== domanda ||
+    domandaSemantica.length >= 22 ||
+    /\b(?:non|senza|sotto|sopra|massimo|minimo|tra|entro|preferisco|tipo|per|aperto|aperta|ora|adesso|vicino)\b/i.test(domandaSemantica);
   const semantica = attivaPlannerSemantico
-    ? await interpretaRichiestaPino(domanda, storico, analisi, memoria)
+    ? await interpretaRichiestaPino(domandaSemantica, storico, analisiSemantica, memoria)
     : undefined;
 
   // Stato dei risultati recuperati
@@ -1182,6 +1187,7 @@ export async function chatConAssistente(
       categorie: negozi.map((n) => n.categoria ?? "").filter(Boolean),
       risultati: contaRisultati(aRisultatiRecuperati(negozi, prodotti, { offerte, eventi })),
       memoriaUsata: memoria,
+      semantica,
     });
   }
 
