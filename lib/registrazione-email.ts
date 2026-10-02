@@ -58,8 +58,18 @@ export async function inviaEmailRegistrazioneUtente(opts: {
   nome: string;
   area: "cliente" | "merchant";
   negozio?: string | null;
+  /**
+   * Password in CHIARO, disponibile solo durante la richiesta di
+   * registrazione. Viene usata esclusivamente per comporre questa email e NON
+   * deve mai essere salvata, loggata o inserita in URL/notifiche.
+   */
+  password: string;
 }): Promise<boolean> {
   const nome = escapeHtml(opts.nome || "Utente");
+  // Non esiste un campo "username" separato: l'identificativo di accesso è
+  // l'indirizzo email usato per la registrazione.
+  const username = escapeHtml(opts.to);
+  const password = escapeHtml(opts.password ?? "");
   const area =
     opts.area === "merchant"
       ? "venditore/commerciante"
@@ -78,6 +88,14 @@ export async function inviaEmailRegistrazioneUtente(opts: {
           come ${area}.
         </p>
         ${negozio ? `<p style="line-height:1.65">Negozio indicato: <strong>${negozio}</strong>.</p>` : ""}
+        <div style="margin:20px 0;padding:16px;border-radius:14px;background:#f8fafc;border:1px solid #e2e8f0">
+          <p style="margin:0 0 10px;font-weight:bold;color:#0f172a">Le tue credenziali InCittà</p>
+          <p style="margin:0 0 6px;line-height:1.65"><strong>Username:</strong> ${username}</p>
+          <p style="margin:0;line-height:1.65"><strong>Password:</strong> ${password}</p>
+        </div>
+        <p style="line-height:1.65">
+          <strong>Conserva queste credenziali:</strong> ti serviranno per accedere a InCittà dopo l'approvazione del tuo account.
+        </p>
         <p style="line-height:1.65">
           Il tuo account è ora <strong>in attesa di approvazione amministrativa</strong>.
           Fino all'approvazione non potrai utilizzare le aree personali della piattaforma.

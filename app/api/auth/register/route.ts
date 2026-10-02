@@ -243,6 +243,7 @@ export async function POST(request: Request) {
       to: email,
       nome: `${name} ${surname}`.trim(),
       area: "cliente",
+      password,
     }),
     inviaEmailNuovaRegistrazioneAdmin({
       nome: `${name} ${surname}`.trim(),

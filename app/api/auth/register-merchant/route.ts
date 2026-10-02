@@ -267,6 +267,7 @@ export async function POST(request: Request) {
       nome: `${name} ${surname}`.trim(),
       area: "merchant",
       negozio: storeName,
+      password,
     }),
     inviaEmailNuovaRegistrazioneAdmin({
       nome: `${name} ${surname}`.trim(),
