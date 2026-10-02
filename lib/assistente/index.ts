@@ -564,15 +564,38 @@ function contaRisultati(risultati: RisultatiRecuperati): number {
   );
 }
 
+function descriviCriteriRicerca(semantica?: PinoSemanticPlan): string {
+  if (!semantica || semantica.confidence === "bassa" || !semantica.query) return "";
+
+  const criteri: string[] = [];
+  if (semantica.city) criteri.push(semantica.city);
+  if (semantica.openNow) criteri.push("aperto ora");
+  if (semantica.minPrice != null && semantica.maxPrice != null) {
+    criteri.push(`tra €${semantica.minPrice} e €${semantica.maxPrice}`);
+  } else if (semantica.maxPrice != null) {
+    criteri.push(`fino a €${semantica.maxPrice}`);
+  } else if (semantica.minPrice != null) {
+    criteri.push(`da €${semantica.minPrice}`);
+  }
+
+  if (criteri.length === 0) return "";
+  return `Ho cercato **${semantica.query}** ${criteri.join(" · ")}.`;
+}
+
 function fallbackTestuale(
   risultati: RisultatiRecuperati,
   notaVincolo = "",
-  intent?: PinoIntent
+  intent?: PinoIntent,
+  semantica?: PinoSemanticPlan
 ): string {
   const sezioni = sezioniRisultati(risultati);
   const totale = contaRisultati(risultati);
+  const criteri = descriviCriteriRicerca(semantica);
 
   if (totale === 0) {
+    if (criteri) {
+      return `${criteri} Non trovo risultati con questi criteri. Posso allargare la ricerca togliendo un vincolo, cambiando zona o cercando un'alternativa.`;
+    }
     // Anche senza risultati Pino deve restare proattivo: non scarica il
     // problema sull'utente con una frase passiva, ma suggerisce come
     // proseguire la ricerca.
@@ -587,7 +610,7 @@ function fallbackTestuale(
 
   // Messaggio di apertura: dice sempre all'utente COSA ha trovato e cosa no,
   // in modo naturale. Per i servizi non ha senso parlare di "prodotto esatto".
-  let introduzione = "";
+  let introduzione = criteri ? `${criteri}\\n\\n` : "";
   if (risultati.prodotti.length > 0) {
     const n = risultati.prodotti.length;
     introduzione = `Ho trovato ${n} ${n === 1 ? "prodotto" : "prodotti"} che ${n === 1 ? "corrisponde" : "corrispondono"} alla tua ricerca.\n\n`;
@@ -1284,7 +1307,7 @@ export async function chatConAssistente(
   // 6) Risposta rapida grounded: i risultati sono già stati recuperati dai tool.
   // Evitiamo una seconda chiamata Gemini solo per riscrivere dati che abbiamo
   // già verificato: così Pino mostra i risultati molto prima.
-  const rispostaBase = fallbackTestuale(risultati, notaVincolo, analisi.intent);
+  const rispostaBase = fallbackTestuale(risultati, notaVincolo, analisi.intent, semantica);
   const risposta = notaRecupero
     ? `${notaRecupero}
 
