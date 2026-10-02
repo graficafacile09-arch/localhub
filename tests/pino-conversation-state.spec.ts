@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 
-import { arricchisciRichiestaConContesto } from "../lib/assistente/semantica";
+import { arricchisciRichiestaConContesto, interpretaRichiestaPino } from "../lib/assistente/semantica";
+import { analizzaIntentoPino } from "../lib/assistente/intent";
+import type { PinoMemoriaVoce } from "../lib/assistente/memoria";
 
 const u = (content: string) => ({ role: "user" as const, content });
 
@@ -61,4 +63,22 @@ test.describe("Pino — stato conversazionale dei filtri", () => {
 
     expect(risultato).toBe("pizza");
   });
+});
+
+
+test("il planner non porta parole conversazionali come 'anzi' nella query", async () => {
+  const richieste = contesto("cerco scarpe da uomo sotto 100", "eleganti", "anzi sotto 70");
+  const domanda = "anzi sotto 70";
+  const arricchita = arricchisciRichiestaConContesto(domanda, richieste);
+  const memoria: PinoMemoriaVoce[] = [];
+  const piano = await interpretaRichiestaPino(
+    arricchita,
+    richieste,
+    analizzaIntentoPino(arricchita),
+    memoria
+  );
+
+  expect(piano.maxPrice).toBe(70);
+  expect(piano.query).toContain("scarpe");
+  expect(piano.query).not.toMatch(/\banzi\b/i);
 });
