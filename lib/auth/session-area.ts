@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import type { NextResponse } from "next/server";
 import { apiError } from "@/lib/api/response";
 import { getCurrentRuoli, type UtenteConRuoli } from "@/lib/auth/session";
+import { getAccountApprovalStatus } from "@/lib/auth/account-approval";
 import {
   AREA_COOKIE,
   areaCookieOptions,
@@ -14,30 +15,21 @@ import {
  * AREA ATTIVA DI SESSIONE — helper centrale SERVER.
  *
  * Unico punto di accesso all'area attiva (cookie httpOnly lh_area) per
- * LAYOUT e ROUTE HANDLER API. Il proxy edge usa le stesse funzioni pure
- * di lib/auth/area.ts (risolviAreaAttiva/areaConsenteAccesso), quindi la
- * logica non è mai duplicata: cambia solo il trasporto (redirect vs JSON).
+ * LAYOUT e ROUTE HANDLER API.
  *
  * Regole garantite:
  * - l'area è scelta SOLO al login e resta fissa fino al logout;
  * - un cookie mancante/invalido/non coerente con i ruoli viene risolto
- *   automaticamente all'area consentita dell'utente (e riscritto nelle
- *   route handler, dove la scrittura dei cookie è permessa);
- * - nessuna richiesta può uscire dall'area della sessione (403).
+ *   automaticamente all'area consentita dell'utente;
+ * - nessuna richiesta API può uscire dall'area della sessione;
+ * - nessuna API protetta può essere usata da un account non approvato.
  */
 
 export type SessioneArea = UtenteConRuoli & {
-  /** Area attiva risolta della sessione (cookie valido o ripiego dai ruoli). */
   area: AreaAttiva;
-  /** True se il cookie era mancante/invalido/non coerente (da riscrivere). */
   correzione: boolean;
 };
 
-/**
- * Legge l'area attiva della sessione (SOLA LETTURA: sicura in layout e
- * componenti server, dove i cookie non sono mutabili).
- * - null → utente non autenticato OPPURE senza alcuna area possibile.
- */
 export async function getSessionArea(): Promise<SessioneArea | null> {
   const auth = await getCurrentRuoli();
   if (!auth) return null;
@@ -59,14 +51,11 @@ export type EsitoAreaApi =
   | { sessione: null; error: NextResponse };
 
 /**
- * Verifica di accesso per le ROUTE HANDLER API: richiede che la sessione
- * sia autenticata E che la sua area attiva coincida con l'area richiesta
- * (con il ruolo corrispondente; per admin anche l'email autorizzata).
- * - 401 → non autenticato o senza area possibile;
- * - 403 → autenticato ma area di sessione diversa (es. sessione merchant
- *         che chiama un endpoint amministratore).
- * Inoltre riscrive automaticamente il cookie se era incoerente (qui la
- * scrittura dei cookie è consentita, a differenza dei layout).
+ * Gate server-side AUTOREVOLE per tutte le API di area.
+ *
+ * L'approvazione viene verificata prima del controllo area: anche se qualcuno
+ * riesce a bypassare il proxy/browser, una route handler non può concedere
+ * accesso a un account pending/rejected.
  */
 export async function requireApiArea(
   areaRichiesta: AreaAttiva
@@ -79,7 +68,20 @@ export async function requireApiArea(
     };
   }
 
-  // Cookie incoerente → rigenerato automaticamente con l'area corretta.
+  const approvalStatus = await getAccountApprovalStatus(sessione.user.id);
+  if (approvalStatus !== "approved") {
+    return {
+      sessione: null,
+      error: apiError(
+        "ACCOUNT_NOT_APPROVED",
+        approvalStatus === "rejected"
+          ? "Il tuo account non è stato approvato dall'amministratore."
+          : "Il tuo account è in attesa di approvazione da parte dell'amministratore.",
+        403
+      ),
+    };
+  }
+
   if (sessione.correzione) {
     (await cookies()).set(AREA_COOKIE, sessione.area, areaCookieOptions());
   }
