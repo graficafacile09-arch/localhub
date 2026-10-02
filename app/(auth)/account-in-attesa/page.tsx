@@ -18,12 +18,13 @@ export default function AccountInAttesaPage() {
           Account in attesa di approvazione
         </h1>
         <p className="mt-4 text-sm leading-6 text-slate-600">
-          La registrazione è stata completata. Dopo la conferma dell&apos;email,
-          l&apos;account deve essere approvato da un amministratore prima di poter
-          utilizzare l&apos;area personale.
+          Registrazione completata e accesso effettuato. Il tuo account è ora in attesa
+          dell&apos;approvazione dell&apos;amministratore prima di poter utilizzare
+          le aree personali della piattaforma.
         </p>
         <p className="mt-3 text-sm leading-6 text-slate-600">
-          Puoi continuare a visitare InCittà mentre attendi l&apos;approvazione.
+          Ti abbiamo inviato una email di conferma della registrazione. Non devi fare altro:
+          riceverai una nuova comunicazione quando l&apos;amministratore avrà deciso.
         </p>
         <Link
           href="/"
