@@ -601,7 +601,7 @@ async function filtraProdottiPerVincoliNegozio(
       return [];
     }
     const target = normalizza(opts.citta).trim();
-    const targetToken = target.split(/\\s+/).filter(Boolean);
+    const targetToken = target.split(/\s+/).filter(Boolean);
     const localitaCorrisponde = (valore: string): boolean => {
       const testo = normalizza(valore).trim();
       if (!testo || !target) return false;
