@@ -207,6 +207,19 @@ function ultimaQuerySostanziale(storico: MessaggioAssistente[]): string {
   return ultima;
 }
 
+export function nomiGiaMostrati(storico: MessaggioAssistente[]): string[] {
+  const nomi = new Set<string>();
+  for (const messaggio of storico.filter((m) => m.role === "assistant")) {
+    const testo = messaggio.content ?? "";
+    const regex = /^-\s+\*\*([^*]+)\*\*/gim;
+    for (const match of testo.matchAll(regex)) {
+      const nome = (match[1] ?? "").trim();
+      if (nome) nomi.add(nome.toLowerCase());
+    }
+  }
+  return Array.from(nomi);
+}
+
 // Guardie deterministiche per le intenzioni CHIARE: garantiscono che "ci sono
 // offerte?", "cosa c'è questo weekend?", "voglio mangiare", "va bene" e
 // "che cos'è InCittà?" scelgano SEMPRE il tool/risposta giusti, senza
@@ -299,7 +312,8 @@ function pianoPredefinito(
       const analisiPrec = analizzaIntentoPino(soggetto);
       // "fammi vedere altro" allarga il recupero per poter mostrare opzioni
       // diverse da quelle già elencate.
-      const limiteAlto = followUp.tipo === "altro" ? 12 : undefined;
+      const limiteAlto = followUp.tipo === "altro" ? 20 : undefined;
+      const giaMostrati = followUp.tipo === "altro" ? nomiGiaMostrati(storico) : [];
       let tools: ToolInvocation[] = [];
       if (analisiPrec.intent !== "generic" && analisiPrec.confidence !== "bassa") {
         tools = pianoIntento(analisiPrec, soggetto).map((t) => ({
@@ -307,7 +321,7 @@ function pianoPredefinito(
           params: {
             query: t.query,
             ...(limiteAlto
-              ? { limit: limiteAlto }
+              ? { limit: limiteAlto, escludiNomi: giaMostrati }
               : t.tool === "searchProducts"
                 ? { limit: 8 }
                 : {}),
@@ -318,9 +332,19 @@ function pianoPredefinito(
         tools = [
           {
             tool: "searchStores",
-            params: { query: soggetto, ...(limiteAlto ? { limit: limiteAlto } : {}) },
+            params: {
+              query: soggetto,
+              ...(limiteAlto ? { limit: limiteAlto, escludiNomi: giaMostrati } : {}),
+            },
           },
-          { tool: "searchProducts", params: { query: soggetto, limit: limiteAlto ?? 8 } },
+          {
+            tool: "searchProducts",
+            params: {
+              query: soggetto,
+              limit: limiteAlto ?? 8,
+              ...(limiteAlto ? { escludiNomi: giaMostrati } : {}),
+            },
+          },
         ];
       }
       return { directReply: null, tools, followUp };
@@ -685,11 +709,8 @@ async function rispostaFollowUp(input: {
   }
 
   // ── Fammi vedere altro / alternative ──
-  const precedenteAssistente = [...storico]
-    .reverse()
-    .find((m) => m.role === "assistant")?.content ?? "";
-  const giaMostrato = (nome: string) =>
-    precedenteAssistente.toLowerCase().includes(nome.toLowerCase());
+  const giaMostrati = new Set(nomiGiaMostrati(storico));
+  const giaMostrato = (nome: string) => giaMostrati.has(nome.toLowerCase().trim());
   const nuoviNegozi = negozi.filter((n) => !giaMostrato(n.nome));
   const nuoviProdotti = prodotti.filter((p) => !giaMostrato(p.nome));
 
@@ -702,11 +723,13 @@ async function rispostaFollowUp(input: {
         "Ho già mostrato tutte le opzioni disponibili per la tua ricerca: non ce ne sono altre con gli stessi criteri. Vuoi provare una zona diversa, un'altra categoria o un'altra fascia di prezzo?",
     };
   }
-  const corpo = sezioniRisultati(aRisultatiRecuperati(nuoviNegozi, nuoviProdotti)).join("\n\n");
+  const mostratiNegozi = nuoviNegozi.slice(0, 5);
+  const mostratiProdotti = nuoviProdotti.slice(0, 5);
+  const corpo = sezioniRisultati(aRisultatiRecuperati(mostratiNegozi, mostratiProdotti)).join("\n\n");
   return {
     ...base,
-    negozi: nuoviNegozi,
-    prodotti: nuoviProdotti,
+    negozi: mostratiNegozi,
+    prodotti: mostratiProdotti,
     risposta: `Ecco altre opzioni che non ti avevo ancora mostrato:\n\n${corpo}`,
   };
 }

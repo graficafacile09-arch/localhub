@@ -88,6 +88,8 @@ export type ToolParams = {
   stato?: "aperte" | "turno" | "tutte";
   /** Esclusioni semantiche Pino: es. ["alcolica"] per "birra non alcolica". */
   esclusioni?: string[];
+  /** Nomi già mostrati da Pino: usato per "fammi vedere altro" e alternative. */
+  escludiNomi?: string[];
   /** Vincolo reale sugli orari: solo attività aperte secondo gli orari registrati. */
   apertiOra?: boolean;
 };
@@ -424,7 +426,7 @@ export async function searchStores(
   if (!q && !(opts?.termini?.length) && !opts?.categoria && !opts?.tipo) return [];
 
   const righe = await cercaNegozi(q, {
-    limit: limita(opts?.limit, 6, 8),
+    limit: limita(opts?.limit, 6, 20),
     categoria: opts?.categoria,
     tipo: opts?.tipo,
     citta: opts?.citta,
@@ -463,12 +465,23 @@ export async function searchStores(
     );
   }
 
+  if (opts?.escludiNomi?.length) {
+    const esclusi = new Set(
+      opts.escludiNomi
+        .map((n) => String(n ?? "").trim().toLowerCase())
+        .filter(Boolean)
+    );
+    pertinenti = pertinenti.filter(
+      (n) => !esclusi.has(String(n.nome ?? "").trim().toLowerCase())
+    );
+  }
+
   if (opts?.apertiOra && pertinenti.length > 0) {
     const orari = await orariPerNegozi(pertinenti.map((n) => String(n.id)));
     pertinenti = pertinenti.filter((n) => apertoOra(orari.get(String(n.id))) === true);
   }
 
-  return pertinenti.slice(0, limita(opts?.limit, 6, 8)).map((n: Record<string, unknown>) => ({
+  return pertinenti.slice(0, limita(opts?.limit, 6, 20)).map((n: Record<string, unknown>) => ({
     id: String(n.id),
     slug: (n.slug as string | null | undefined) ?? null,
     nome: String(n.nome ?? ""),
@@ -588,7 +601,19 @@ export async function searchProducts(
     return Number.isFinite(prezzo) && prezzo > 0;
   });
 
-  const nelBudget = conPrezzo.filter((p) => {
+  let candidati = conPrezzo;
+  if (opts?.escludiNomi?.length) {
+    const esclusi = new Set(
+      opts.escludiNomi
+        .map((n) => String(n ?? "").trim().toLowerCase())
+        .filter(Boolean)
+    );
+    candidati = candidati.filter(
+      (p) => !esclusi.has(String(p.nome ?? "").trim().toLowerCase())
+    );
+  }
+
+  const nelBudget = candidati.filter((p) => {
     const prezzo = Number(p.prezzo);
     if (maxPrice != null && Number.isFinite(maxPrice) && prezzo > maxPrice) return false;
     if (minPrice != null && Number.isFinite(minPrice) && prezzo < minPrice) return false;
@@ -601,7 +626,7 @@ export async function searchProducts(
     nelBudget.length > 0
       ? nelBudget
       : (maxPrice != null || minPrice != null) && conPrezzo.length > 0
-        ? conPrezzo.slice(0, 3)
+        ? candidati.slice(0, 3)
         : nelBudget;
 
   return scelti
@@ -611,7 +636,7 @@ export async function searchProducts(
       if (scoreA !== scoreB) return scoreB - scoreA;
       return Number(a.prezzo) - Number(b.prezzo);
     })
-    .slice(0, limita(opts.limit, 8, 10));
+    .slice(0, limita(opts.limit, 8, 20));
 }
 
 // ─── searchOffers ────────────────────────────────────────────────────────────
