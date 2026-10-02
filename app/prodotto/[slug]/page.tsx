@@ -84,8 +84,8 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
   const id = String(prodotto.id);
   const soggettoVerificaEta = Boolean((prodotto as Record<string, unknown>).soggetto_verifica_eta);
   const cookieStore = await cookies();
-  const ageVerified = cookieStore.get(`incitta_age_verified_${id}`)?.value === "1";
-  const ageBlocked = cookieStore.get(`incitta_age_blocked_${id}`)?.value === "1";
+  const ageVerified = cookieStore.get(`incitta_age_verified_v2_${id}`)?.value === "1";
+  const ageBlocked = cookieStore.get(`incitta_age_blocked_v2_${id}`)?.value === "1";
 
   // Un prodotto 18+ non espone la scheda finché l'age gate non è superato.
   // La verifica avviene server-side e il cookie non contiene la data di nascita.
