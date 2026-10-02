@@ -79,6 +79,74 @@ function numeroValido(value: unknown): number | null {
   return Number.isFinite(n) && n >= 0 && n <= 1000000 ? Math.round(n * 100) / 100 : null;
 }
 
+const CANONICI_RICERCA: Array<{ pattern: RegExp; termine: string; intent: PinoIntent }> = [
+  { pattern: /\bbir(?:ra|re|retta|rette|rettina|rettine)\b/i, termine: "birra", intent: "drink" },
+  { pattern: /\bvino|vini|vinello|vinelli\b/i, termine: "vino", intent: "drink" },
+  { pattern: /\bacqua|acque\b/i, termine: "acqua", intent: "drink" },
+  { pattern: /\bpizza|pizze|pizzetta|pizzette\b/i, termine: "pizza", intent: "food" },
+  { pattern: /\bpanino|panini|paninetto|paninetti\b/i, termine: "panino", intent: "food" },
+  { pattern: /\btelefono|telefoni|telefonino|telefonini|cellulare|cellulari|smartphone\b/i, termine: "telefono", intent: "product" },
+  { pattern: /\bscarpa|scarpe|scarpina|scarpine\b/i, termine: "scarpe", intent: "product" },
+  { pattern: /\bmaglietta|magliette|maglia|maglie\b/i, termine: "maglia", intent: "product" },
+];
+
+function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): PinoSemanticPlan | null {
+  const q = normalizzaRichiesta(query).trim();
+  if (!q) return null;
+  const match = CANONICI_RICERCA.find((x) => x.pattern.test(q));
+  const haEsclusioneAlcol = /\b(?:non|senza)\s+(?:alcol(?:ica|ico)?|alcol)\b|\banalcolic(?:a|o|he|i)\b/i.test(q);
+  const haPrezzo = /\b(?:sotto|sopra|massimo|minimo|meno di|piu di|più di|entro|fino a|tra)\b/i.test(q);
+  const haCitta = /\b(?:a|in)\s+[A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ' -]{2,40}/.test(query);
+  if (!match && !haEsclusioneAlcol && !haPrezzo && analisi.confidence === "bassa") return null;
+
+  const termine = match?.termine ?? q
+    .replace(/\b(?:voglio|vorrei|cerco|cerca|trovami|mi serve|fammi trovare|dammi|delle|degli|del|della|dei|di|una|un|uno|per|con|senza|non)\b/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(" ")
+    .filter(Boolean)[0] ?? q;
+
+  const esclusioni: string[] = [];
+  if (haEsclusioneAlcol) esclusioni.push("alcolica");
+
+  let minPrice: number | null = null;
+  let maxPrice: number | null = null;
+  const range = q.match(/(?:tra|da)\s*(\d+(?:[.,]\d+)?)\s*(?:e|a)\s*(\d+(?:[.,]\d+)?)/i);
+  const max = q.match(/(?:sotto|massimo|meno di|entro|fino a)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)/i);
+  const min = q.match(/(?:sopra|minimo|piu di|più di)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)/i);
+  if (range) {
+    minPrice = Number(range[1].replace(",", "."));
+    maxPrice = Number(range[2].replace(",", "."));
+  } else {
+    if (max) maxPrice = Number(max[1].replace(",", "."));
+    if (min) minPrice = Number(min[1].replace(",", "."));
+  }
+
+  let city: string | null = null;
+  if (haCitta) {
+    const m = query.match(/\b(?:a|in)\s+([A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ' -]{2,40})/);
+    city = m?.[1]?.trim() || null;
+  }
+
+  const intent = match?.intent ?? analisi.intent;
+  const surface: PinoSemanticPlan["surface"] =
+    intent === "service" ? "stores" :
+    intent === "generic" ? "none" : "products";
+
+  return {
+    surface,
+    intent,
+    query: termine.slice(0, 120),
+    terms: Array.from(new Set([termine, ...(match ? [match.termine] : [])])).slice(0, 5),
+    exclusions,
+    minPrice,
+    maxPrice,
+    city,
+    openNow: /\b(?:aperto|aperta|aperti|aperte|ora|adesso)\b/i.test(q),
+    confidence: match || haEsclusioneAlcol || haPrezzo ? "alta" : analisi.confidence,
+  };
+}
+
 function fallbackPlan(query: string, analisi: PinoIntentAnalysis): PinoSemanticPlan {
   const q = normalizzaRichiesta(query);
   const tokens = q
@@ -124,7 +192,7 @@ export async function interpretaRichiestaPino(
 
   if (!q || analisi.intent === "generic") return fallback;
 
-  const memoriaTesto = memoria.slice(0, 4)
+  const fastPlan = pianoLocaleIntelligente(q, analisi);\n  if (fastPlan) return fastPlan;\n\n  const memoriaTesto = memoria.slice(0, 4)
     .map((m) => `${m.termine}=>${m.concetto}`)
     .join(", ") || "nessuna";
 
