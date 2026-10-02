@@ -234,6 +234,32 @@ export function arricchisciRichiestaConContesto(
   const parole = q.split(/\s+/).filter(Boolean);
   if (parole.length > 8) return corrente;
 
+  const RE_RESET_PREZZO =
+    /\b(?:lascia\s+perdere|togli|rimuovi|ignora)\s+(?:il\s+)?(?:filtro\s+)?(?:del\s+|di\s+)?prezzo\b|\b(?:senza|non\s+importa)\s+(?:il\s+)?(?:limite\s+di\s+)?prezzo\b/i;
+  const RE_CLAUSOLA_PREZZO =
+    /\b(?:sotto|sopra|massimo|minimo|meno\s+di|piu\s+di|più\s+di|entro|fino\s+a|tra|da)\s*(?:€\s*)?\d+(?:[.,]\d+)?(?:\s*(?:e|a)\s*(?:€\s*)?\d+(?:[.,]\d+)?)?/gi;
+  const estraiCittaEsplicita = (testo: string): string | null => {
+    const normalizzata = normalizzaRichiesta(testo);
+    const citta = estraiCitta(normalizzata);
+    if (!citta) return null;
+    return new RegExp("\\b(?:a|in)\\s+" + citta + "\\b", "i").test(normalizzata)
+      ? citta
+      : null;
+  };
+  const rimuoviPrezzo = (testo: string): string =>
+    testo
+      .replace(RE_CLAUSOLA_PREZZO, " ")
+      .replace(/\\s+/g, " ")
+      .trim();
+  const rimuoviCitta = (testo: string, citta: string | null): string => {
+    if (!citta) return testo;
+    const escaped = citta.replace(/[.*+?^$()|[\]\\]/g, "\\$&");
+    return testo
+      .replace(new RegExp("\\b(?:a|in)\\s+" + escaped + "\\b", "gi"), " ")
+      .replace(/\\s+/g, " ")
+      .trim();
+  };
+
   const haSoggettoConcreto = (testo: string): boolean => {
     const normalizzata = normalizzaRichiesta(testo);
     if (!normalizzata) return false;
@@ -258,8 +284,6 @@ export function arricchisciRichiestaConContesto(
     return corrente;
   }
 
-  // Trova la richiesta concreta più recente, saltando i follow-up/modifiche
-  // già avvenuti dopo di essa.
   let indiceBase = -1;
   for (let i = utenti.length - 2; i >= 0; i--) {
     if (haSoggettoConcreto(utenti[i])) {
@@ -269,13 +293,36 @@ export function arricchisciRichiestaConContesto(
   }
   if (indiceBase < 0) return corrente;
 
-  const parti = utenti.slice(indiceBase, utenti.length - 1);
+  let parti = utenti.slice(indiceBase, utenti.length - 1);
+  const haNuovoPrezzo = RE_CLAUSOLA_PREZZO.test(corrente);
+  RE_CLAUSOLA_PREZZO.lastIndex = 0;
+  const resetPrezzo = RE_RESET_PREZZO.test(q);
+
+  // Un nuovo vincolo economico sostituisce quello precedente. Questo evita
+  // che "sotto 100" + "anzi sotto 70" venga interpretato ancora come 100.
+  if (haNuovoPrezzo || resetPrezzo) {
+    parti = parti.map(rimuoviPrezzo).filter(Boolean);
+  }
+
+  const nuovaCitta = estraiCittaEsplicita(corrente);
+  if (nuovaCitta) {
+    // Anche la città è un filtro sostituibile: "a Castrovillari" → "a Cosenza".
+    parti = parti
+      .map((p) => {
+        const cittaPrecedente = estraiCittaEsplicita(p);
+        return rimuoviCitta(p, cittaPrecedente);
+      })
+      .filter(Boolean);
+  }
+
+  // Un reset del prezzo è un comando di stato, non testo da cercare.
+  if (resetPrezzo) {
+    return [...parti].join(" ").replace(/\\s+/g, " ").trim().slice(0, 500) || corrente;
+  }
+
   const modificaEsplicita =
     /\b(?:elegant[ei]|sportiv[oi]|casual|da uomo|da donna|per uomo|per donna|per bambini?|economich[ei]|economico|costos[oi]|nere?|bianch[ei]|ross[aei]|blu|verdi?|gialle?|grigie?|marron[ei]|piccol[oi]|grand[ei]|nuov[oi]|usato|usata|usati|usate|senza|non|sotto|sopra|massimo|minimo|entro|fino|tra|vicino|vicina|vicinanze|aperto|aperta|aperti|aperte|oggi|domani|stasera|adesso|ora)\b/i;
 
-  // Messaggi brevi non autonomi (es. "eleganti", "nere", "sotto 100 euro")
-  // sono modifiche alla ricerca base. Un messaggio più lungo senza un soggetto
-  // concreto resta autonomo: evitiamo di incollarlo arbitrariamente.
   const intermedi =
     parti.length === 0
       ? []
@@ -365,7 +412,7 @@ function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): Pi
   }
 
   termine = termine
-    .replace(/\b(?:voglio|vorrei|cerco|cerca|trovami|mi serve|fammi trovare|dammi|delle|degli|del|della|dei|una|un|uno|il|lo|la|i|gli|le)\b/gi, " ")
+    .replace(/\b(?:voglio|vorrei|cerco|cerca|trovami|mi serve|fammi trovare|dammi|anzi|invece|pero|però|delle|degli|del|della|dei|una|un|uno|il|lo|la|i|gli|le)\b/gi, " ")
     .replace(/\s+/g, " ")
     .trim();
 
@@ -404,7 +451,7 @@ function fallbackPlan(query: string, analisi: PinoIntentAnalysis): PinoSemanticP
   const tokens = q
     .split(/[^a-z0-9]+/)
     .filter((t) => t.length >= 3)
-    .filter((t) => !/^(cerco|cerca|trovami|trova|vorrei|voglio|mi|serve|un|una|uno|per|con|di|a|da|il|lo|la|i|gli|le|e|in|su|del|della|dei|delle|sotto|sopra|massimo|minimo|euro)$/.test(t));
+    .filter((t) => !/^(cerco|cerca|trovami|trova|vorrei|voglio|mi|serve|anzi|invece|pero|però|un|una|uno|per|con|di|a|da|il|lo|la|i|gli|le|e|in|su|del|della|dei|delle|sotto|sopra|massimo|minimo|euro)$/.test(t));
   const mMax = q.match(/(?:sotto|massimo|fino a|entro|meno di)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)/);
   const mMin = q.match(/(?:sopra|minimo|piu di|più di|oltre)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)/);
   const mRange = q.match(/(?:tra|da)\s*(\d+(?:[.,]\d+)?)\s*(?:e|a)\s*(\d+(?:[.,]\d+)?)/);
