@@ -96,7 +96,7 @@ export default function PinoHomepageHelper() {
       <div
         className="pointer-events-auto flex h-full w-full items-center justify-center border-t border-slate-200/90 bg-white px-3 sm:px-5 shadow-[0_-2px_8px_rgba(15,23,42,0.06)]"
       >
-        <div className="grid w-full grid-cols-[48px_1fr_auto] items-center gap-2 sm:gap-3">
+        <div className="grid w-full grid-cols-[48px_minmax(0,1fr)_auto] items-center gap-3 sm:gap-5">
           <button
             type="button"
             onClick={openAssistant}
@@ -120,7 +120,7 @@ export default function PinoHomepageHelper() {
             </span>
           </button>
 
-          <p className="min-w-0 text-center text-sm font-semibold text-slate-700 sm:text-base">
+          <p className="min-w-0 text-center text-base font-bold tracking-tight text-slate-800 sm:text-lg">
             Tu chiedi. Pino trova.
           </p>
 
