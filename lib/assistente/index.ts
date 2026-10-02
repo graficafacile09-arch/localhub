@@ -367,7 +367,7 @@ function pianoPredefinito(
   // il SOGGETTO della richiesta precedente e ne modifica i risultati. Il filtro
   // viene applicato DOPO il recupero (vedi rispostaFollowUp).
   const followUp = rilevaFollowUp(ultimo);
-  if (followUp && utenti.length >= 2) {
+  if (followUp && utenti.length >= 2 && (analisi.intent === "generic" || analisi.confidence === "bassa")) {
     const soggetto = soggettoPrecedente(utenti);
     if (soggetto) {
       // Se il soggetto precedente era una lista di offerte/eventi, il follow-up
