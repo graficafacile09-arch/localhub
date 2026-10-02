@@ -115,7 +115,7 @@ export default function PinoHomepageHelper() {
                 decoding="async"
                 width={PINO_HOME_W}
                 height={PINO_HOME_H}
-                className="block h-auto w-[58px] max-w-none object-contain -translate-y-1"
+                className="block h-auto w-[46px] max-w-none object-contain -translate-y-1"
               />
             </span>
           </button>
