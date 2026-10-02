@@ -106,7 +106,7 @@ export default function PinoHomepageHelper() {
             className="pointer-events-auto flex shrink-0 cursor-pointer items-center justify-center outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
             style={{ width: PINO_CLOSED_SIZE, height: PINO_CLOSED_SIZE }}
           >
-            <span className="flex h-full w-full items-center justify-center overflow-hidden">
+            <span className="flex h-full w-full items-start justify-center overflow-hidden">
               <img
                 src={PINO_HOME_SRC}
                 alt=""
@@ -115,7 +115,7 @@ export default function PinoHomepageHelper() {
                 decoding="async"
                 width={PINO_HOME_W}
                 height={PINO_HOME_H}
-                className="block h-full w-auto object-contain"
+                className="block h-auto w-[72px] max-w-none object-contain -translate-y-1"
               />
             </span>
           </button>
@@ -127,7 +127,7 @@ export default function PinoHomepageHelper() {
           <button
             type="button"
             onClick={openAssistant}
-            className="shrink-0 rounded-md bg-yellow-400 px-2 py-1.5 text-[9px] font-black tracking-wide text-blue-900 shadow-sm transition hover:bg-yellow-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 active:scale-[0.98] sm:px-2.5 sm:py-1.5 sm:text-[10px]"
+            className="shrink-0 rounded-md bg-yellow-400 px-4 py-2 text-xs font-black tracking-wide text-blue-900 shadow-sm transition hover:bg-yellow-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 active:scale-[0.98] sm:px-5 sm:py-2 sm:text-sm"
             aria-label="Clicca per aprire Pino"
           >
             CLICCA
