@@ -9,6 +9,7 @@ import {
   invalidaTokenPrecedenti,
 } from "@/lib/password-reset";
 import { inviaEmailResetPassword } from "@/lib/password-reset-email";
+import { inviaEmailEsitoApprovazione } from "@/lib/registrazione-email";
 
 /**
  * UTENTI — azioni amministrative (PATCH) ed eliminazione (DELETE).
@@ -288,6 +289,19 @@ export async function PATCH(
     if (approvalError) {
       return apiError("APPROVAL_FAILED", approvalError.message, 422);
     }
+
+    // Comunica l'esito al titolare dell'account. BEST-EFFORT: la decisione
+    // amministrativa resta valida anche se il provider email non risponde.
+    const nomeTarget =
+      String(target.user.user_metadata?.full_name ?? "").trim() ||
+      String(emailTarget).split("@")[0] ||
+      "Utente";
+    await inviaEmailEsitoApprovazione({
+      to: emailTarget,
+      nome: nomeTarget,
+      approvato: statoApprovazione === "approved",
+      motivo: statoApprovazione === "rejected" ? motivoApprovazione : null,
+    });
 
     operazioni.push(
       statoApprovazione === "approved"
