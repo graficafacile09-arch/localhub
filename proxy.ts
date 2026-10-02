@@ -126,6 +126,25 @@ export async function proxy(request: NextRequest) {
     response.cookies.delete(GUEST_COOKIE);
   }
 
+  // Account non ancora approvati: le pagine pubbliche restano visitabili,
+  // ma nessuna area personale/admin/merchant può essere utilizzata.
+  if (
+    user &&
+    (pathname.startsWith("/amministratore") ||
+      pathname.startsWith("/merchant") ||
+      pathname.startsWith("/cliente"))
+  ) {
+    const approvalStatus = await getAccountApprovalStatus(user.id);
+    if (approvalStatus !== "approved") {
+      const pendingUrl = new URL("/account-in-attesa", request.url);
+      pendingUrl.searchParams.set(
+        "stato",
+        approvalStatus === "rejected" ? "rifiutato" : "in-attesa"
+      );
+      return redirectConSessione(pendingUrl.toString());
+    }
+  }
+
   const areaRichiesta: AreaAttiva | null =
     pathname.startsWith("/amministratore") ? "admin"
     : pathname.startsWith("/merchant") ? "merchant"
