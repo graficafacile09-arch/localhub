@@ -3,8 +3,8 @@
 import { cookies } from "next/headers";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 
-const VERIFIED_COOKIE_PREFIX = "incitta_age_verified_";
-const BLOCKED_COOKIE_PREFIX = "incitta_age_blocked_";
+const VERIFIED_COOKIE_PREFIX = "incitta_age_verified_v2_";
+const BLOCKED_COOKIE_PREFIX = "incitta_age_blocked_v2_";
 
 function cookieName(prefix: string, prodottoId: string): string {
   return `${prefix}${prodottoId}`;
