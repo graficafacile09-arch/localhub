@@ -90,7 +90,52 @@ const CANONICI_RICERCA: Array<{ pattern: RegExp; termine: string; intent: PinoIn
   { pattern: /\bmaglietta|magliette|maglia|maglie\b/i, termine: "maglia", intent: "product" },
 ];
 
-export function usaFastPathSemantico(query: string, analisi: PinoIntentAnalysis): boolean {\n  const q = normalizzaRichiesta(query).trim();\n  return CANONICI_RICERCA.some((x) => x.pattern.test(q)) ||\n    /\\b(?:analcolic(?:a|o|he|i)|non\\s+(?:alcol(?:ica|ico)?|alcol)|senza\\s+(?:alcol(?:ica|ico)?|alcol))\\b/i.test(q) ||\n    /\\b(?:sotto|sopra|massimo|minimo|meno di|piu di|più di|entro|fino a|tra)\\b/i.test(q);\n}\n\nfunction pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): PinoSemanticPlan | null {
+function distanzaLevenshtein(a: string, b: string): number {
+  const prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    let diag = prev[0];
+    prev[0] = i;
+    for (let j = 1; j <= b.length; j++) {
+      const old = prev[j];
+      prev[j] = Math.min(prev[j] + 1, prev[j - 1] + 1, diag + (a[i - 1] === b[j - 1] ? 0 : 1));
+      diag = old;
+    }
+  }
+  return prev[b.length];
+}
+
+const VOCABOLARIO_PINO: Array<[string, string]> = [
+  ["birra", "birra"], ["birretta", "birra"], ["birrette", "birra"],
+  ["analcolica", "analcolica"], ["analcolico", "analcolica"],
+  ["vino", "vino"], ["vini", "vino"], ["acqua", "acqua"],
+  ["pizza", "pizza"], ["pizze", "pizza"], ["panino", "panino"], ["panini", "panino"],
+  ["telefono", "telefono"], ["telefoni", "telefono"], ["telefonino", "telefono"],
+  ["cellulare", "telefono"], ["smartphone", "telefono"],
+  ["scarpa", "scarpa"], ["scarpe", "scarpa"],
+  ["maglia", "maglia"], ["maglietta", "maglia"], ["magliette", "maglia"],
+];
+
+function correggiErroriBattitura(query: string): string {
+  return query.split(/(\\s+)/).map((part) => {
+    if (!/^[A-Za-zÀ-ÖØ-öø-ÿ]+$/.test(part)) return part;
+    const lower = part.toLocaleLowerCase("it-IT");
+    if (lower.length < 4) return part;
+    let best = lower;
+    let bestDistance = Infinity;
+    for (const [word, canonical] of VOCABOLARIO_PINO) {
+      if (Math.abs(word.length - lower.length) > 2) continue;
+      const d = distanzaLevenshtein(lower, word);
+      const soglia = lower.length <= 5 ? 1 : 2;
+      if (d <= soglia && d < bestDistance) {
+        best = canonical;
+        bestDistance = d;
+      }
+    }
+    return bestDistance < Infinity ? best : part;
+  }).join("");
+}
+
+export function usaFastPathSemantico(query: string, analisi: PinoIntentAnalysis): boolean {\n  const q = correggiErroriBattitura(normalizzaRichiesta(query)).trim();\n  return CANONICI_RICERCA.some((x) => x.pattern.test(q)) ||\n    /\\b(?:analcolic(?:a|o|he|i)|non\\s+(?:alcol(?:ica|ico)?|alcol)|senza\\s+(?:alcol(?:ica|ico)?|alcol))\\b/i.test(q) ||\n    /\\b(?:sotto|sopra|massimo|minimo|meno di|piu di|più di|entro|fino a|tra)\\b/i.test(q);\n}\n\nfunction pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): PinoSemanticPlan | null {
   const q = normalizzaRichiesta(query).trim();
   if (!q) return null;
   const match = CANONICI_RICERCA.find((x) => x.pattern.test(q));
