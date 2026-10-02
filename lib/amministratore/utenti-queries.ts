@@ -222,6 +222,26 @@ export async function getUtentiReali(
   // Q5 — stati account (sospeso/bannato con motivo e durate), best effort.
   const statiAccount = await leggeStatiAccount(db);
 
+  const approvazioni = new Map<string, { stato: StatoApprovazioneAccount; deciso_il: string | null }>();
+  try {
+    const { data: righeApprovazione, error: approvazioneError } = await db
+      .from("account_approvazioni")
+      .select("user_id, stato, deciso_il");
+    if (!approvazioneError) {
+      for (const riga of righeApprovazione ?? []) {
+        const stato = String(riga.stato);
+        if (stato === "pending" || stato === "approved" || stato === "rejected") {
+          approvazioni.set(String(riga.user_id), {
+            stato,
+            deciso_il: (riga.deciso_il as string | null) ?? null,
+          });
+        }
+      }
+    }
+  } catch {
+    // Layer di approvazione non disponibile: comportamento legacy approvato.
+  }
+
   const ruoliPerUtente = new Map<string, string[]>();
   for (const r of ruoli ?? []) {
     const key = String(r.user_id);
@@ -304,6 +324,8 @@ export async function getUtentiReali(
         registratoIl: riga.created_at ?? new Date().toISOString(),
         blocco,
         protetto: isAdminEmail(email),
+        approvazione: approvazioni.get(riga.id)?.stato ?? "approved",
+        approvazioneDecisaIl: approvazioni.get(riga.id)?.deciso_il ?? null,
       };
 
       return utente;
