@@ -47,6 +47,7 @@ import {
   type PinoIntentAnalysis,
 } from "./intent";
 import { recuperaMemoria, registraEsitoMemoria } from "./memoria";
+import { interpretaRichiestaPino, type PinoSemanticPlan } from "./semantica";
 import {
   rilevaFollowUp,
   soggettoPrecedente,
@@ -212,7 +213,8 @@ function ultimaQuerySostanziale(storico: MessaggioAssistente[]): string {
 // affidarsi alla disciplina del modello. Per tutto il resto decide l'LLM.
 function pianoPredefinito(
   storico: MessaggioAssistente[],
-  analisi: PinoIntentAnalysis
+  analisi: PinoIntentAnalysis,
+  semantica?: PinoSemanticPlan
 ): { directReply: string | null; tools: ToolInvocation[]; followUp?: FollowUp } | null {
   const utenti = storico.filter((m) => m.role === "user").map((m) => m.content);
   const ultimo = (utenti[utenti.length - 1] ?? "").trim().toLowerCase();
@@ -275,6 +277,45 @@ function pianoPredefinito(
         "Va bene, sono qui! Posso aiutarti a trovare negozi, prodotti, offerte ed eventi nella tua città. Dimmi pure cosa cerchi.",
       tools: [],
     };
+  }
+
+  // ── Pino Semantic Planner v2 ─────────────────────────────────────────────
+  // Per richieste naturali/composte il planner trasforma il linguaggio umano
+  // in un piano strutturato: soggetto + sinonimi + prezzo + esclusioni +
+  // città + "aperto ora". I tool restano deterministici e grounded.
+  if (semantica && semantica.confidence !== "bassa" && semantica.query) {
+    const base = semantica.query;
+    const paramsBase: ToolParams = {
+      query: base,
+      citta: semantica.city ?? undefined,
+      esclusioni: semantica.exclusions.length ? semantica.exclusions : undefined,
+      apertiOra: semantica.openNow || undefined,
+      maxPrice: semantica.maxPrice,
+      minPrice: semantica.minPrice,
+      limit: 8,
+    };
+
+    if (semantica.surface === "stores") {
+      return {
+        directReply: null,
+        tools: [{ tool: "searchStores", params: paramsBase }],
+      };
+    }
+
+    if (semantica.surface === "products") {
+      return {
+        directReply: null,
+        tools: [{ tool: "searchProducts", params: paramsBase }],
+      };
+    }
+
+    if (semantica.surface === "both") {
+      const tools: ToolInvocation[] = [
+        { tool: "searchProducts", params: paramsBase },
+        { tool: "searchStores", params: { ...paramsBase, maxPrice: undefined, minPrice: undefined } },
+      ];
+      return { directReply: null, tools };
+    }
   }
 
   // Follow-up con vincolo di prezzo ("sotto 500 euro", "massimo 100 euro"):
@@ -799,6 +840,15 @@ export async function chatConAssistente(
   const analisi = analizzaIntentoPino(domanda);
   const memoria = await recuperaMemoria(domanda);
 
+  // Il planner semantico si attiva sulle richieste composte/naturali, mentre
+  // le richieste semplici continuano a usare il percorso deterministico rapido.
+  const attivaPlannerSemantico =
+    domanda.length >= 22 ||
+    /\b(?:non|senza|sotto|sopra|massimo|minimo|tra|entro|preferisco|tipo|per|aperto|aperta|ora|adesso|vicino)\b/i.test(domanda);
+  const semantica = attivaPlannerSemantico
+    ? await interpretaRichiestaPino(domanda, storico, analisi, memoria)
+    : undefined;
+
   // Stato dei risultati recuperati
   let negozi: NegozioRicerca[] = [];
   let prodotti: ProdottoRicerca[] = [];
@@ -815,7 +865,7 @@ export async function chatConAssistente(
   // 1) Piano di ricerca: guardie deterministiche per le intenzioni chiare
   // (offerte, eventi, mangiare, chiacchiera, domande su InCittà); per tutto
   // il resto la selezione dei tool la fa l'LLM.
-  const piano = pianoPredefinito(storico, analisi);
+  const piano = pianoPredefinito(storico, analisi, semantica);
 
   if (piano) {
     directReply = piano.directReply;
