@@ -207,7 +207,7 @@ function ultimaQuerySostanziale(storico: MessaggioAssistente[]): string {
   return ultima;
 }
 
-function nomiGiaMostrati(storico: MessaggioAssistente[]): string[] {
+export function nomiGiaMostrati(storico: MessaggioAssistente[]): string[] {
   const nomi = new Set<string>();
   for (const messaggio of storico.filter((m) => m.role === "assistant")) {
     const testo = messaggio.content ?? "";
@@ -723,11 +723,13 @@ async function rispostaFollowUp(input: {
         "Ho già mostrato tutte le opzioni disponibili per la tua ricerca: non ce ne sono altre con gli stessi criteri. Vuoi provare una zona diversa, un'altra categoria o un'altra fascia di prezzo?",
     };
   }
-  const corpo = sezioniRisultati(aRisultatiRecuperati(nuoviNegozi, nuoviProdotti)).join("\n\n");
+  const mostratiNegozi = nuoviNegozi.slice(0, 5);
+  const mostratiProdotti = nuoviProdotti.slice(0, 5);
+  const corpo = sezioniRisultati(aRisultatiRecuperati(mostratiNegozi, mostratiProdotti)).join("\n\n");
   return {
     ...base,
-    negozi: nuoviNegozi,
-    prodotti: nuoviProdotti,
+    negozi: mostratiNegozi,
+    prodotti: mostratiProdotti,
     risposta: `Ecco altre opzioni che non ti avevo ancora mostrato:\n\n${corpo}`,
   };
 }
