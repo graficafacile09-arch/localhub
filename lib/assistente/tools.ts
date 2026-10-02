@@ -658,7 +658,11 @@ export async function searchProducts(
     const c = opts.categoria.trim().toLowerCase();
     filtrate = filtrate.filter((p) => (p.categoria ?? "").toLowerCase().includes(c));
   }
-  // V12: città e "aperto ora" dipendono dal negozio proprietario.\n  // Applichiamo questi vincoli prima del filtro prezzo e del fallback fuori budget.\n  filtrate = await filtraProdottiPerVincoliNegozio(filtrate, opts);\n\n  const maxPrice = opts.maxPrice != null ? Number(opts.maxPrice) : null;
+  // V12: città e "aperto ora" dipendono dal negozio proprietario.
+  // Applichiamo questi vincoli prima del filtro prezzo e del fallback fuori budget.
+  filtrate = await filtraProdottiPerVincoliNegozio(filtrate, opts);
+
+  const maxPrice = opts.maxPrice != null ? Number(opts.maxPrice) : null;
   const minPrice = opts.minPrice != null ? Number(opts.minPrice) : null;
 
   // Escludiamo i prodotti senza prezzo reale (es. prezzo 0 da dati demo).
