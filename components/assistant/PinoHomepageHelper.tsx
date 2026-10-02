@@ -10,12 +10,7 @@ const PINO_HOME_W = PINO_ASSET_W;
 const PINO_HOME_H = PINO_ASSET_H;
 const PINO_CLOSED_SIZE = 48;
 const PINO_BAR_HEIGHT = 58;
-/**
- * La fascia entra in scena quando l'utente ha raggiunto la parte bassa della
- * homepage, dove iniziano le vetrine di negozi/prodotti.
- */
 const PINO_TRIGGER_SCROLL = 560;
-/** Ritardo breve per considerare terminato lo scroll, evitando sfarfallii. */
 const PINO_SCROLL_SETTLE_MS = 180;
 
 export default function PinoHomepageHelper() {
@@ -33,14 +28,30 @@ export default function PinoHomepageHelper() {
 
     let settleTimer: ReturnType<typeof setTimeout> | null = null;
 
-    const updateVisibility = () => {
-      const reached = window.scrollY >= PINO_TRIGGER_SCROLL;
-      const blueZone = document.querySelector<HTMLElement>("[data-pino-footer-zone=\"true\"]");
-      const blueZoneFinished = blueZone
-        ? blueZone.getBoundingClientRect().top <= window.innerHeight
+    const isFooterVisible = () => {
+      const blueZone = document.querySelector<HTMLElement>(
+        "[data-pino-footer-zone=\"true\"]"
+      );
+      const legalFooter = document.querySelector<HTMLElement>(
+        "[data-pino-legal-footer=\"true\"]"
+      );
+
+      // Appena una delle due zone finali entra nella viewport, rimuoviamo
+      // completamente la fascia fissa: nessun overlay o fascia grigia sopra
+      // le regole/il footer.
+      const blueVisible = blueZone
+        ? blueZone.getBoundingClientRect().top < window.innerHeight
         : false;
-      setHasReachedArea(reached);
-      setIsNearBottom(blueZoneFinished);
+      const legalVisible = legalFooter
+        ? legalFooter.getBoundingClientRect().top < window.innerHeight
+        : false;
+
+      return blueVisible || legalVisible;
+    };
+
+    const updateVisibility = () => {
+      setHasReachedArea(window.scrollY >= PINO_TRIGGER_SCROLL);
+      setIsNearBottom(isFooterVisible());
       setIsScrolling(true);
 
       if (settleTimer) clearTimeout(settleTimer);
@@ -50,12 +61,8 @@ export default function PinoHomepageHelper() {
     };
 
     const syncInitialPosition = () => {
-      const blueZone = document.querySelector<HTMLElement>("[data-pino-footer-zone=\"true\"]");
-      const blueZoneFinished = blueZone
-        ? blueZone.getBoundingClientRect().top <= window.innerHeight
-        : false;
       setHasReachedArea(window.scrollY >= PINO_TRIGGER_SCROLL);
-      setIsNearBottom(blueZoneFinished);
+      setIsNearBottom(isFooterVisible());
       setIsScrolling(false);
     };
 
@@ -87,7 +94,7 @@ export default function PinoHomepageHelper() {
       aria-hidden="false"
     >
       <div
-        className="pointer-events-auto flex w-full items-center justify-center border-t border-slate-200/90 bg-white/95 px-3 shadow-[0_-8px_24px_-18px_rgba(15,23,42,0.35)] backdrop-blur-sm sm:px-5"
+        className="pointer-events-auto flex w-full items-center justify-center border-t border-slate-200/90 bg-white px-3 sm:px-5"
         style={{ minHeight: PINO_BAR_HEIGHT }}
       >
         <div className="flex w-full items-center justify-center gap-2 sm:gap-3">
