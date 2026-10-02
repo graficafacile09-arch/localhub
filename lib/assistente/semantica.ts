@@ -201,27 +201,7 @@ export function applicaMemoriaSemantica(
 
   let risultato = originale;
   for (const correzione of correzioni.slice(0, 6)) {
-    const escaped = correzione.termine.replace(/[.*+?^$()|[\]\\]/g, "\\function correggiErroriBattitura(query: string): string {
-  return query.split(/(\\s+)/).map((part) => {
-    if (!/^[A-Za-zÀ-ÖØ-öø-ÿ]+$/.test(part)) return part;
-    const lower = part.toLocaleLowerCase("it-IT");
-    if (lower.length < 4) return part;
-    let best = lower;
-    let bestDistance = Infinity;
-    for (const [word, canonical] of VOCABOLARIO_PINO) {
-      if (Math.abs(word.length - lower.length) > 2) continue;
-      const d = distanzaLevenshtein(lower, word);
-      const soglia = lower.length <= 5 ? 1 : 2;
-      if (d <= soglia && d < bestDistance) {
-        best = canonical;
-        bestDistance = d;
-      }
-    }
-    return bestDistance < Infinity ? best : part;
-  }).join("");
-}
-
-");
+    const escaped = correzione.termine.replace(/[.*+?^$()|[\]\\]/g, "\\$&");
     const re = new RegExp(
       "(^|[^A-Za-zÀ-ÖØ-öø-ÿ0-9])" +
         escaped +
@@ -231,7 +211,7 @@ export function applicaMemoriaSemantica(
     risultato = risultato.replace(re, "$1" + correzione.concetto);
   }
 
-  return risultato.replace(/\\s+/g, " ").trim();
+  return risultato.replace(/\s+/g, " ").trim();
 }
 
 /**
@@ -419,8 +399,7 @@ export async function interpretaRichiestaPino(
   const queryConMemoria = applicaMemoriaSemantica(query, memoria);
   const q = queryConMemoria.trim();
   // Se la memoria ha trasformato un termine non riconosciuto in un concetto
-  // canonico, ricalcoliamo l'intento sul testo normalizzato: altrimenti un
-  // "telefono" appreso da "telefonazo" resterebbe erroneamente generic.
+  // canonico, ricalcoliamo l'intento sul testo normalizzato.
   const analisiEffettiva = q !== query.trim() ? analizzaIntentoPino(q) : analisi;
   const fallback = fallbackPlan(q, analisiEffettiva);
 
@@ -442,10 +421,9 @@ export async function interpretaRichiestaPino(
     const raw = await callGeminiText({
       systemPrompt: SCHEMA_PROMPT,
       userPrompt:
-        `Intento locale già riconosciuto: ${analisiEffettiva.intent} / ${analisiEffettiva.dominio}.\n` +
-        `Memoria semantica confermata: ${memoriaTesto}\n` +
-        (q !== query.trim() ? `Termine corretto dalla memoria: ${q}\n` : "") +
-        `\nCONVERSAZIONE:\n${storico}\n\nRICHIESTA ATTUALE:\n${q}`,
+        `Intento locale già riconosciuto: ${analisi.intent} / ${analisi.dominio}.\n` +
+        `Memoria semantica confermata: ${memoriaTesto}\n\n` +
+        `CONVERSAZIONE:\n${storico}\n\nRICHIESTA ATTUALE:\n${q}`,
       maxTokens: 300,
       temperature: 0,
       json: true,
@@ -466,7 +444,7 @@ export async function interpretaRichiestaPino(
         ? parsed.intent
         : fallback.intent;
 
-    const intentFinal = analisi.confidence === "alta" ? analisi.intent : intent;
+    const intentFinal = analisiEffettiva.confidence === "alta" ? analisiEffettiva.intent : intent;
     const terms = pulisciLista(parsed.terms, 5);
     const exclusions = pulisciLista(parsed.exclusions, 5);
     const minPrice = numeroValido(parsed.minPrice);
