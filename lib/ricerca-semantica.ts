@@ -48,6 +48,45 @@ const stopWordsRicerca = new Set([
 // cercare. L'espansione automatica semplicemente non li usa più per saltare
 // da un dominio all'altro.
 
+// Sinonimi DIRETTI ad alta precisione per il catalogo prodotti.
+export const SINONIMI_DIRETTI_PRODOTTO: string[][] = [
+  ["birra", "birre", "birretta", "birrette"],
+  ["scarpa", "scarpe", "calzatura", "calzature"],
+  ["cellulare", "cellulari", "smartphone", "telefonino", "telefonini", "telefono"],
+  ["computer", "pc", "laptop", "notebook", "portatile", "portatili"],
+  ["televisore", "televisori", "tv", "televisione"],
+  ["frigorifero", "frigo"],
+  ["divano", "sofa", "sofà"],
+  ["profumo", "fragranza", "fragranze"],
+  ["occhiale", "occhiali"],
+  ["zaino", "zaini"],
+  ["giubbotto", "giubbino", "giaccone"],
+  ["maglietta", "t-shirt", "tshirt", "tee"],
+];
+
+export function espandiSinonimiDirettiProdotto(query: string): string[] {
+  const token = normalizza(query)
+    .split(/[^a-z0-9]+/)
+    .map((t) => t.trim())
+    .filter(Boolean);
+  const trovati = new Set<string>();
+  for (const gruppo of SINONIMI_DIRETTI_PRODOTTO) {
+    if (gruppo.some((voce) => token.includes(normalizza(voce)))) {
+      for (const voce of gruppo) trovati.add(normalizza(voce));
+    }
+  }
+  return Array.from(trovati);
+}
+
+export function sonoSinonimiDirettiProdotto(a: string, b: string): boolean {
+  const aa = normalizza(a).trim();
+  const bb = normalizza(b).trim();
+  if (!aa || !bb) return false;
+  return SINONIMI_DIRETTI_PRODOTTO.some(
+    (gruppo) => gruppo.includes(aa) && gruppo.includes(bb)
+  );
+}
+
 const gruppiBase: Record<string, string[]> = {
   panificio: ["panificio", "forno", "pane", "pasticceria", "pasticcere", "bakery", "bakery shop", "cornetti", "pizza al taglio", "focaccia", "grissini", "biscotti", "torte", "dolci", "lievitati", "panetteria", "pane casereccio"],
   beauty: ["beauty", "bellezza", "parrucchiere", "parrucchieri", "barber", "barbiere", "estetica", "estetista", "trucco", "makeup", "make-up", "capelli", "taglio", "piega", "barba", "skincare"],
@@ -150,7 +189,10 @@ export function espandiQueryConSinonimiBase(query: string): string {
     .map((termino) => termino.trim())
     .filter((termino) => termino && !stopWordsRicerca.has(termino));
 
-  const terminiEspansi = new Set<string>(terminiBase);
+  const terminiEspansi = new Set<string>([
+    ...terminiBase,
+    ...espandiSinonimiDirettiProdotto(query),
+  ]);
   for (const termine of terminiBase) {
     for (const gruppo of Object.values(gruppiBase)) {
       if (gruppo.some((voce) => attivaGruppo(termine, voce))) {
@@ -184,7 +226,10 @@ export function espandiQueryConSinonimi(query: string): string {
     .map((termino) => termino.trim())
     .filter((termino) => termino && !stopWordsRicerca.has(termino));
 
-  const terminiEspansi = new Set<string>(terminiBase);
+  const terminiEspansi = new Set<string>([
+    ...terminiBase,
+    ...espandiSinonimiDirettiProdotto(query),
+  ]);
 
   // 1) gruppi base (categorie/commercio)
   for (const termine of terminiBase) {
