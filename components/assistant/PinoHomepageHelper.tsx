@@ -10,7 +10,6 @@ const PINO_HOME_W = PINO_ASSET_W;
 const PINO_HOME_H = PINO_ASSET_H;
 const PINO_CLOSED_SIZE = 48;
 const PINO_BAR_HEIGHT = 58;
-const PINO_HIDE_NEAR_BOTTOM = 0;
 /**
  * La fascia entra in scena quando l'utente ha raggiunto la parte bassa della
  * homepage, dove iniziano le vetrine di negozi/prodotti.
@@ -38,7 +37,7 @@ export default function PinoHomepageHelper() {
       const reached = window.scrollY >= PINO_TRIGGER_SCROLL;
       const blueZone = document.querySelector<HTMLElement>("[data-pino-footer-zone=\"true\"]");
       const blueZoneFinished = blueZone
-        ? blueZone.getBoundingClientRect().bottom <= window.innerHeight - PINO_BAR_HEIGHT
+        ? blueZone.getBoundingClientRect().top <= window.innerHeight
         : false;
       setHasReachedArea(reached);
       setIsNearBottom(blueZoneFinished);
@@ -53,7 +52,7 @@ export default function PinoHomepageHelper() {
     const syncInitialPosition = () => {
       const blueZone = document.querySelector<HTMLElement>("[data-pino-footer-zone=\"true\"]");
       const blueZoneFinished = blueZone
-        ? blueZone.getBoundingClientRect().bottom <= window.innerHeight - PINO_BAR_HEIGHT
+        ? blueZone.getBoundingClientRect().top <= window.innerHeight
         : false;
       setHasReachedArea(window.scrollY >= PINO_TRIGGER_SCROLL);
       setIsNearBottom(blueZoneFinished);
@@ -75,7 +74,6 @@ export default function PinoHomepageHelper() {
     window.dispatchEvent(new Event("assistant:open"));
   }, []);
 
-  // Pino homepage è intenzionalmente escluso dai flussi transazionali.
   if (pathname !== "/" || isPinoTransactionalRoute(pathname)) return null;
 
   const visible = hasReachedArea && !isScrolling && !isNearBottom;
@@ -85,21 +83,15 @@ export default function PinoHomepageHelper() {
   return (
     <div
       aria-label="Pino, assistente di InCittà"
-      className={[
-        "pointer-events-none fixed inset-x-0 bottom-0 z-[60]",
-        "transition-[opacity,transform] duration-200 ease-out",
-        "translate-y-0 opacity-100",
-      ].join(" ")}
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-[60]"
       aria-hidden="false"
     >
-      {/* Fascia piena da bordo a bordo. È volutamente appena più alta
-          del Pino chiuso, così il personaggio sembra integrato nella UI. */}
       <div
-        className="pointer-events-auto flex w-full items-center justify-end border-t border-slate-200/90 bg-white/95 px-3 shadow-[0_-8px_24px_-18px_rgba(15,23,42,0.35)] backdrop-blur-sm sm:px-5"
+        className="pointer-events-auto flex w-full items-center justify-center border-t border-slate-200/90 bg-white/95 px-3 shadow-[0_-8px_24px_-18px_rgba(15,23,42,0.35)] backdrop-blur-sm sm:px-5"
         style={{ minHeight: PINO_BAR_HEIGHT }}
       >
-        <div className="flex w-full items-center justify-end gap-2 sm:gap-3">
-          <p className="min-w-0 text-center text-sm font-semibold text-slate-700 sm:flex-none sm:text-base">
+        <div className="flex w-full items-center justify-center gap-2 sm:gap-3">
+          <p className="min-w-0 text-center text-sm font-semibold text-slate-700 sm:text-base">
             Tu chiedi. Pino trova.
           </p>
 
