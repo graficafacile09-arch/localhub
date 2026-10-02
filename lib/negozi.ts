@@ -1660,9 +1660,17 @@ export async function cercaNegozi(
   // bevande/bar/caffetteria). I termini ORIGINALI significativi sono già dentro
   // espandiQueryConSinonimi (che mantiene i token base), quindi la query non va
   // persa; i concetti si aggiungono (OR), mai come filtro AND restrittivo.
+  const tokenOriginaliNegozi = normalizza(ricerca)
+    .split(/[^a-z0-9]+/)
+    .map((t) => t.trim())
+    .filter((t) => t.length >= 4);
+  const radiciOriginaliNegozi = tokenOriginaliNegozi
+    .map(radiceRicerca)
+    .filter((t) => t.length >= 4);
+
   const espansa = opts.termini && opts.termini.length > 0
-    ? `${opts.termini.join(" ")} ${concettiIntento(ricerca)}`
-    : `${concettiIntento(ricerca)} ${espandiQueryConSinonimi(ricerca)}`;
+    ? `${opts.termini.join(" ")} ${concettiIntento(ricerca)} ${radiciOriginaliNegozi.join(" ")}`
+    : `${concettiIntento(ricerca)} ${espandiQueryConSinonimi(ricerca)} ${radiciOriginaliNegozi.join(" ")}`;
   const terminiEspansi = Array.from(
     new Set(
       espansa
