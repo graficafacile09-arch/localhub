@@ -953,6 +953,7 @@ export async function chatConAssistente(
     statoConversazionale.richiesta ||
     arricchisciRichiestaConContesto(domanda, storico);
   const analisiSemantica = analizzaIntentoPino(domandaSemantica);
+  const followUpBreve = rilevaFollowUp(domanda);
 
   // Meteo e farmacie sono intenti deterministici e non hanno bisogno di memoria.
   // Per tutte le altre richieste il recupero viene avviato senza saltare il
@@ -964,10 +965,13 @@ export async function chatConAssistente(
       : recuperaMemoria(domandaSemantica);
   const memoria = await memoriaPromise;
   const attivaPlannerSemantico =
-    usaFastPathSemantico(domandaSemantica, analisiSemantica) ||
-    domandaSemantica !== domanda ||
-    domandaSemantica.length >= 22 ||
-    /\b(?:non|senza|sotto|sopra|massimo|minimo|tra|entro|preferisco|tipo|per|aperto|aperta|ora|adesso|vicino)\b/i.test(domandaSemantica);
+    !followUpBreve &&
+    (
+      usaFastPathSemantico(domandaSemantica, analisiSemantica) ||
+      domandaSemantica !== domanda ||
+      domandaSemantica.length >= 22 ||
+      /\b(?:non|senza|sotto|sopra|massimo|minimo|tra|entro|preferisco|tipo|per|aperto|aperta|ora|adesso|vicino)\b/i.test(domandaSemantica)
+    );
   const semantica = attivaPlannerSemantico
     ? await interpretaRichiestaPino(
         domandaSemantica,
