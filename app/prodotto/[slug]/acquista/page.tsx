@@ -45,8 +45,8 @@ export default async function AcquistaChoicePage({
   // possibile saltare il modulo visitando /acquista senza passare dalla scheda.
   const soggettoVerificaEta = Boolean((prodotto as Record<string, unknown>).soggetto_verifica_eta);
   const cookieStore = await cookies();
-  const ageVerified = cookieStore.get(\`incitta_age_verified_v2_\${String(prodotto.id)}\`)?.value === "1";
-  const ageBlocked = cookieStore.get(\`incitta_age_blocked_v2_\${String(prodotto.id)}\`)?.value === "1";
+  const ageVerified = cookieStore.get(`incitta_age_verified_v2_${String(prodotto.id)}`)?.value === "1";
+  const ageBlocked = cookieStore.get(`incitta_age_blocked_v2_${String(prodotto.id)}`)?.value === "1";
 
   if (soggettoVerificaEta && !ageVerified) {
     return (
