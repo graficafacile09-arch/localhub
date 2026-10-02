@@ -27,6 +27,7 @@
  */
 
 import { analizzaRichiesta } from "@/lib/ricerca-intento";
+import { equivalentiMorfologici } from "@/lib/search-tollerante";
 import { normalizzaRichiesta } from "./local-intents";
 
 // ─── Tipi pubblici ───────────────────────────────────────────────────────────
@@ -344,6 +345,10 @@ function contiene(q: string, vocaboli: string[]): string | null {
     if (v.includes(" ")) {
       if (q.includes(v)) return v;
     } else if (token.includes(v)) {
+      return v;
+    } else if (token.some((t) => equivalentiMorfologici(t, v))) {
+      // Plurali e forme colloquiali/diminutive: "birre", "birretta",
+      // "telefonini", ecc. devono attivare lo stesso intento del lemma.
       return v;
     }
   }
