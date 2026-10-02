@@ -100,7 +100,7 @@ export default function PinoHomepageHelper() {
       >
         <div className="flex w-full items-center justify-end gap-2 sm:gap-3">
           <p className="min-w-0 text-center text-sm font-semibold text-slate-700 sm:flex-none sm:text-base">
-            Ciao, sono Pino il tuo assistente.
+            Tu chiedi. Pino trova.
           </p>
 
           <button
