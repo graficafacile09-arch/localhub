@@ -8,19 +8,17 @@ import { creaNotificaAdmin } from "@/lib/amministratore/notifiche";
 import { inviaEmailRegistrazioneUtente, inviaEmailNuovaRegistrazioneAdmin } from "@/lib/registrazione-email";
 
 /**
- * Registrazione CLIENTE (acquirente) — flusso con CONFERMA EMAIL REALE.
+ * Registrazione CLIENTE (acquirente).
  *
  * Sequenza:
- *  1. signUp() crea l'account NON confermato e Supabase invia l'email di
- *     conferma con emailRedirectTo verso /auth/callback;
- *  2. NESSUNA auto-conferma amministrativa, NESSUN login automatico;
- *  3. il ruolo customer viene assegnato lato server (service role, idempotente)
- *     e viene NUOVAMENTE garantito nel callback /auth/callback prima di
- *     concedere l'accesso all'area cliente;
- *  4. redirect alla pagina "Controlla la tua email".
- *
- * Quando il cliente clicca il link dell'email, Supabase conferma l'account e
- * reindirizza il browser a /auth/callback?code=... che stabilisce la sessione.
+ *  1. signUp() crea l'account e il trigger Auth crea la richiesta
+ *     account_approvazioni = pending;
+ *  2. il ruolo customer viene assegnato lato server;
+ *  3. l'email viene confermata tecnicamente lato server per permettere
+ *     il login automatico richiesto dal flusso;
+ *  4. viene aperta subito la sessione e mostrata /account-in-attesa;
+ *  5. una email di registrazione viene inviata all'utente e una comunicazione
+ *     viene inviata all'amministratore. L'approvazione resta obbligatoria.
  */
 export async function POST(request: Request) {
   const verificaUrl = new URL("/verifica-email", request.url);
