@@ -12,7 +12,8 @@
 import { callGeminiText } from "@/lib/ai/gemini-text";
 import { extractJsonFromText } from "@/lib/product-assistant/providers/utils";
 import { normalizzaRichiesta } from "./local-intents";
-import { type PinoIntent, type PinoIntentAnalysis } from "./intent";
+import { analizzaIntentoPino, type PinoIntent, type PinoIntentAnalysis } from "./intent";
+import { SINONIMI_DIRETTI_PRODOTTO, SINONIMI_TIPO_ATTIVITA } from "@/lib/ricerca-semantica";
 import type { MessaggioAssistente } from "./index";
 import type { PinoMemoriaVoce } from "./memoria";
 
@@ -104,7 +105,7 @@ function distanzaLevenshtein(a: string, b: string): number {
   return prev[b.length];
 }
 
-const VOCABOLARIO_PINO: Array<[string, string]> = [
+const VOCABOLARIO_PINO_BASE: Array<[string, string]> = [
   ["birra", "birra"], ["birretta", "birra"], ["birrette", "birra"],
   ["analcolica", "analcolica"], ["analcolico", "analcolica"],
   ["vino", "vino"], ["vini", "vino"], ["acqua", "acqua"],
@@ -114,6 +115,31 @@ const VOCABOLARIO_PINO: Array<[string, string]> = [
   ["scarpa", "scarpa"], ["scarpe", "scarpa"],
   ["maglia", "maglia"], ["maglietta", "maglia"], ["magliette", "maglia"],
 ];
+
+const VOCABOLARIO_PINO: Array<[string, string]> = (() => {
+  const mappa = new Map<string, string>(VOCABOLARIO_PINO_BASE);
+
+  // Riutilizziamo il vocabolario semantico già presente nel motore InCittà:
+  // errori di battitura su prodotti, categorie e servizi vengono corretti
+  // verso un termine reale già conosciuto dal catalogo.
+  for (const gruppo of SINONIMI_DIRETTI_PRODOTTO) {
+    for (const voce of gruppo) {
+      for (const token of normalizzaRichiesta(voce).split(/\\s+/)) {
+        if (token.length >= 4) mappa.set(token, token);
+      }
+    }
+  }
+
+  for (const gruppo of Object.values(SINONIMI_TIPO_ATTIVITA)) {
+    for (const voce of gruppo) {
+      for (const token of normalizzaRichiesta(voce).split(/\\s+/)) {
+        if (token.length >= 4) mappa.set(token, token);
+      }
+    }
+  }
+
+  return Array.from(mappa.entries());
+})();
 
 function correggiErroriBattitura(query: string): string {
   return query.split(/(\\s+)/).map((part) => {
@@ -136,8 +162,12 @@ function correggiErroriBattitura(query: string): string {
 }
 
 /**
- * Collega una modifica breve alla ricerca precedente, senza alterare le
- * richieste che hanno già un soggetto autonomo.
+ * Collega una modifica breve alla ricerca sostanziale più recente.
+ *
+ * La ricerca precedente non è necessariamente l'ultimo messaggio dell'utente:
+ * in una catena come "scarpe da uomo" -> "eleganti" -> "sotto 100 euro" ->
+ * "nere", il soggetto va recuperato dal primo messaggio concreto e i
+ * modificatori intermedi vanno mantenuti.
  */
 export function arricchisciRichiestaConContesto(
   query: string,
@@ -150,27 +180,62 @@ export function arricchisciRichiestaConContesto(
   const parole = q.split(/\s+/).filter(Boolean);
   if (parole.length > 8) return corrente;
 
-  const haSoggetto = CANONICI_RICERCA.some((x) => x.pattern.test(q)) ||
-    /\b(?:parrucchier[ei]|barbier[ei]|farmaci[ae]|ristorant[ei]|pizzeri[ae]|negozio|negozi|hotel|idraulico|elettricista|calzolaio|dentista)\b/i.test(q);
-  if (haSoggetto) return corrente;
+  const haSoggettoConcreto = (testo: string): boolean => {
+    const normalizzata = normalizzaRichiesta(testo);
+    if (!normalizzata) return false;
+    if (CANONICI_RICERCA.some((x) => x.pattern.test(normalizzata))) return true;
+    if (/\b(?:parrucchier[ei]|barbier[ei]|farmaci[ae]|ristorant[ei]|pizzeri[ae]|negozio|negozi|hotel|idraulico|elettricista|calzolaio|dentista|oculista|meccanico|gommista|sartoria|fotografo|tipografia)\b/i.test(normalizzata)) {
+      return true;
+    }
+    const analisi = analizzaIntentoPino(normalizzata);
+    return analisi.intent !== "generic" && analisi.confidence !== "bassa";
+  };
 
-  const utenti = history.filter((m) => m.role === "user")
-    .map((m) => m.content.trim()).filter(Boolean);
+  // Una nuova richiesta con un soggetto proprio non deve ereditare il contesto.
+  if (haSoggettoConcreto(corrente)) return corrente;
+
+  const utenti = history
+    .filter((m) => m.role === "user")
+    .map((m) => m.content.trim())
+    .filter(Boolean);
   if (utenti.length < 2) return corrente;
-
-  const precedente = utenti[utenti.length - 2];
-  const precedenteNorm = normalizzaRichiesta(precedente);
-  if (!precedenteNorm || precedenteNorm === q) return corrente;
 
   if (/^(?:ok|okay|va bene|perfetto|grazie|grazie mille|ciao|buongiorno|buonasera)$/.test(q)) {
     return corrente;
   }
 
-  const modifica = /\b(?:elegant[ei]|sportiv[oi]|casual|da uomo|da donna|per uomo|per donna|per bambini?|economich[ei]|economico|costos[oi]|nere?|bianch[ei]|ross[aei]|blu|piccol[oi]|grand[ei]|grandi|nuov[oi]|usato|usata|usati|usate|senza|non|sotto|sopra|massimo|minimo|entro|fino|tra|vicino|vicina|vicinanze|aperto|aperta|aperti|aperte|oggi|domani|stasera|adesso|ora)\b/i.test(q);
-  if (!modifica && parole.length > 2) return corrente;
+  // Trova la richiesta concreta più recente, saltando i follow-up/modifiche
+  // già avvenuti dopo di essa.
+  let indiceBase = -1;
+  for (let i = utenti.length - 2; i >= 0; i--) {
+    if (haSoggettoConcreto(utenti[i])) {
+      indiceBase = i;
+      break;
+    }
+  }
+  if (indiceBase < 0) return corrente;
 
-  return (precedente + " " + corrente).slice(0, 500);
+  const parti = utenti.slice(indiceBase, utenti.length - 1);
+  const modificaEsplicita =
+    /\b(?:elegant[ei]|sportiv[oi]|casual|da uomo|da donna|per uomo|per donna|per bambini?|economich[ei]|economico|costos[oi]|nere?|bianch[ei]|ross[aei]|blu|verdi?|gialle?|grigie?|marron[ei]|piccol[oi]|grand[ei]|nuov[oi]|usato|usata|usati|usate|senza|non|sotto|sopra|massimo|minimo|entro|fino|tra|vicino|vicina|vicinanze|aperto|aperta|aperti|aperte|oggi|domani|stasera|adesso|ora)\b/i;
+
+  // Messaggi brevi non autonomi (es. "eleganti", "nere", "sotto 100 euro")
+  // sono modifiche alla ricerca base. Un messaggio più lungo senza un soggetto
+  // concreto resta autonomo: evitiamo di incollarlo arbitrariamente.
+  const intermedi =
+    parti.length === 0
+      ? []
+      : parti.filter((p) => {
+          const pn = normalizzaRichiesta(p);
+          const n = pn.split(/\s+/).filter(Boolean).length;
+          return n <= 8 && (modificaEsplicita.test(pn) || n <= 2);
+        });
+
+  if (parti.length > 0 && intermedi.length !== parti.length) return corrente;
+
+  return [...parti, corrente].join(" ").slice(0, 500);
 }
+
 export function usaFastPathSemantico(query: string, analisi: PinoIntentAnalysis): boolean {
   const q = correggiErroriBattitura(normalizzaRichiesta(query)).trim();
   return CANONICI_RICERCA.some((x) => x.pattern.test(q)) ||
