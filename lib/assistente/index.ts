@@ -1237,9 +1237,7 @@ export async function chatConAssistente(
   const risposta = notaRecupero
     ? `${notaRecupero}
 
-${rispostaBase}
-
-Se vuoi, posso anche restringere la ricerca per prezzo, categoria o negozi aperti ora.`
+${rispostaBase}`
     : rispostaBase;
 
   return {
