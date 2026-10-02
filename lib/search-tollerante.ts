@@ -165,6 +165,51 @@ export function similaritaLevenshtein(a: string, b: string): number {
   return 1 - distanzaLevenshtein(aa, bb) / max;
 }
 
+// Lemma leggero per l'italiano: rende equivalenti singolare/plurale e le
+// forme colloquiali/diminutive più comuni senza introdurre un vero stemmer.
+// Esempi: birre -> birr, birra -> birr, birretta -> birr,
+// scarpe -> scarp, telefonini -> telefon, telefonino -> telefon.
+// Viene usato SOLO per il matching della ricerca, non modifica i dati.
+export function radiceRicerca(termine: string): string {
+  const t = pulisciTermine(termine).replace(/[^a-z0-9]/g, "");
+  if (t.length <= 4) return t;
+
+  let base = t;
+  const suffissi = [
+    "icini", "icine", "etti", "ette", "etti", "etta", "etto",
+    "ini", "ine", "ino", "ina", "elli", "elle", "ello", "ella",
+    "ucci", "ucce", "uccio", "uccia", "one", "ona",
+  ];
+
+  for (const suffisso of suffissi) {
+    if (base.length > suffisso.length + 3 && base.endsWith(suffisso)) {
+      base = base.slice(0, -suffisso.length);
+      break;
+    }
+  }
+
+  // Plurali italiani più comuni e finale vocalica.
+  if (base.length > 4) {
+    if (base.endsWith("i")) base = base.slice(0, -1);
+    else if (base.endsWith("e") || base.endsWith("a") || base.endsWith("o")) {
+      base = base.slice(0, -1);
+    }
+  }
+
+  return base;
+}
+
+/** True quando due parole appartengono allo stesso lemma di ricerca. */
+export function equivalentiMorfologici(a: string, b: string): boolean {
+  const aa = pulisciTermine(a);
+  const bb = pulisciTermine(b);
+  if (!aa || !bb) return false;
+  if (aa === bb) return true;
+  const ra = radiceRicerca(aa);
+  const rb = radiceRicerca(bb);
+  return ra.length >= 4 && ra === rb;
+}
+
 // ─── Termini significativi ───────────────────────────────────────────────────
 
 // Stopword italiane comuni: non sono mai termini di ricerca significativi e
