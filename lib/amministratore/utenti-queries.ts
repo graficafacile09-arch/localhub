@@ -240,7 +240,8 @@ export async function getUtentiReali(
       }
     }
   } catch {
-    // Layer di approvazione non disponibile: comportamento legacy approvato.
+    // Se il layer di approvazione non è leggibile, il pannello non deve mai
+    // mostrare un account come approvato: comportamento fail-closed.
   }
 
   const ruoliPerUtente = new Map<string, string[]>();
@@ -325,7 +326,7 @@ export async function getUtentiReali(
         registratoIl: riga.created_at ?? new Date().toISOString(),
         blocco,
         protetto: isAdminEmail(email),
-        approvazione: approvazioni.get(riga.id)?.stato ?? "approved",
+        approvazione: approvazioni.get(riga.id)?.stato ?? "pending",
         approvazioneDecisaIl: approvazioni.get(riga.id)?.deciso_il ?? null,
       };
 
