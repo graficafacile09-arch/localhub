@@ -5,6 +5,7 @@ import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { AREA_COOKIE, areaCookieOptions } from "@/lib/auth/area";
 import { isPartitaIvaValida, normalizzaPartitaIva } from "@/lib/partita-iva";
 import { creaNotificaAdmin } from "@/lib/amministratore/notifiche";
+import { inviaEmailRegistrazioneUtente, inviaEmailNuovaRegistrazioneAdmin } from "@/lib/registrazione-email";
 
 /**
  * Registrazione COMMERCIANTE (venditore).
@@ -235,6 +236,46 @@ export async function POST(request: Request) {
       loginUrl.searchParams.set("error", "Errore durante la creazione dell'account. Riprova.");
       return NextResponse.redirect(loginUrl);
     }
+  // Garantisce esplicitamente lo stato PENDING anche se il trigger Auth è già
+  // presente: la registrazione pubblica non può mai auto-approvarsi.
+  const { error: approvalError } = await adminClient
+    .from("account_approvazioni")
+    .upsert(
+      {
+        user_id: userId,
+        stato: "pending",
+        richiesto_il: new Date().toISOString(),
+        deciso_il: null,
+        deciso_da: null,
+        motivo: null,
+      },
+      { onConflict: "user_id" },
+    );
+
+  if (approvalError) {
+    console.error("[register-merchant] Approvazione pending fallita:", approvalError.message);
+    loginUrl.searchParams.set(
+      "error",
+      "Account creato ma non è stato possibile registrare la richiesta di approvazione. Contatta l'assistenza.",
+    );
+    return NextResponse.redirect(loginUrl);
+  }
+
+  await Promise.allSettled([
+    inviaEmailRegistrazioneUtente({
+      to: email,
+      nome: `${name} ${surname}`.trim(),
+      area: "merchant",
+      negozio: storeName,
+    }),
+    inviaEmailNuovaRegistrazioneAdmin({
+      nome: `${name} ${surname}`.trim(),
+      email,
+      area: "merchant",
+      negozio: storeName,
+    }),
+  ]);
+
   const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
   if (signInError) {
     loginUrl.searchParams.set("error", "Account creato ma accesso automatico fallito. Effettua il login.");
