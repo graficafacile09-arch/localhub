@@ -357,11 +357,11 @@ export default function UtentiDettaglioModal({
                   <button
                     type="button"
                     disabled={operando !== null}
-                    onClick={() => setMotivo((v) => v)}
+                    onClick={() => void rifiutaAccount()}
                     className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 bg-white px-3 py-2 text-xs font-bold text-red-700 transition hover:bg-red-50 disabled:opacity-50"
                   >
-                    <UserRoundX className="h-3.5 w-3.5" />
-                    Rifiuta
+                    {operando === "rifiuta" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserRoundX className="h-3.5 w-3.5" />}
+                    Rifiuta account
                   </button>
                 </div>
                 <div className="mt-3">
@@ -373,14 +373,7 @@ export default function UtentiDettaglioModal({
                     aria-label="Motivo rifiuto account"
                     className="w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-xs outline-none focus:border-amber-400"
                   />
-                  <button
-                    type="button"
-                    disabled={operando !== null || !motivo.trim()}
-                    onClick={() => void rifiutaAccount()}
-                    className="mt-2 inline-flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-700 transition hover:bg-red-100 disabled:opacity-40"
-                  >
-                    Conferma rifiuto
-                  </button>
+                  <p className="mt-2 text-[11px] text-amber-700">Il motivo è facoltativo.</p>
                 </div>
               </div>
             </div>
