@@ -168,7 +168,7 @@ export async function interpretaRichiestaPino(
     const city = typeof parsed.city === "string"
       ? normalizzaRichiesta(parsed.city).trim().slice(0, 60) || null
       : null;
-    const queryPlan = (terms.length ? terms.join(" ") : fallback.query).slice(0, 120);
+    const queryPlan = (terms.length ? terms[0] : fallback.query).slice(0, 120);
 
     return {
       surface: intentFinal === "service" ? "stores" : surface,
