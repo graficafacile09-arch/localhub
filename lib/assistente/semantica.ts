@@ -12,6 +12,7 @@
 import { callGeminiText } from "@/lib/ai/gemini-text";
 import { extractJsonFromText } from "@/lib/product-assistant/providers/utils";
 import { normalizzaRichiesta } from "./local-intents";
+import { estraiCitta } from "@/lib/localita";
 import { analizzaIntentoPino, type PinoIntent, type PinoIntentAnalysis } from "./intent";
 import { SINONIMI_DIRETTI_PRODOTTO, SINONIMI_TIPO_ATTIVITA } from "@/lib/ricerca-semantica";
 import type { MessaggioAssistente } from "./index";
@@ -305,24 +306,15 @@ function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): Pi
   const haCitta = /\b(?:a|in)\s+[A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ' -]{2,40}/.test(query);
   if (!match && !haEsclusioneAlcol && !haPrezzo && analisi.confidence === "bassa") return null;
 
-  // Manteniamo anche gli attributi della richiesta ("da uomo", "eleganti",
-  // "nere", ecc.): il fast-path non deve trasformare una ricerca ricca nel
-  // solo lemma principale.
-  let termine = q
-    .replace(/\b(?:voglio|vorrei|cerco|cerca|trovami|mi serve|fammi trovare|dammi|delle|degli|del|della|dei|di|una|un|uno|per|con|senza|non)\b/gi, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-  if (match) termine = termine.replace(match.pattern, match.termine).replace(/\s+/g, " ").trim();
-  if (!termine) termine = match?.termine ?? q;
-
-  const esclusioni: string[] = [];
-  if (haEsclusioneAlcol) esclusioni.push("alcolica");
-
+  // I vincoli NON fanno parte della query di retrieval. Prezzo, negazioni,
+  // apertura e città vengono estratti separatamente, altrimenti il gate di
+  // pertinenza potrebbe richiedere termini come "sotto" o "100" dentro al
+  // prodotto e restituire zero risultati.
   let minPrice: number | null = null;
   let maxPrice: number | null = null;
   const range = q.match(/(?:tra|da)\s*(\d+(?:[.,]\d+)?)\s*(?:e|a)\s*(\d+(?:[.,]\d+)?)/i);
   const max = q.match(/(?:sotto|massimo|meno di|entro|fino a)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)/i);
-  const min = q.match(/(?:sopra|minimo|piu di|più di)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)/i);
+  const min = q.match(/(?:sopra|minimo|piu di|più di|oltre)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)/i);
   if (range) {
     minPrice = Number(range[1].replace(",", "."));
     maxPrice = Number(range[2].replace(",", "."));
@@ -331,11 +323,62 @@ function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): Pi
     if (min) minPrice = Number(min[1].replace(",", "."));
   }
 
+  // Negazione generica: "non nere", "senza glutine", "non usato" ecc.
+  // Manteniamo al massimo due token per non inghiottire il resto della frase.
+  const esclusioni = Array.from(new Set(
+    Array.from(q.matchAll(
+      /\b(?:non|senza)\s+([a-zàèéìòù][a-zàèéìòù0-9-]*(?:\s+[a-zàèéìòù][a-zàèéìòù0-9-]*)?)/gi
+    ))
+      .map((m) => m[1].trim())
+      .filter(Boolean)
+  )).slice(0, 5);
+
   let city: string | null = null;
-  if (haCitta) {
-    const m = query.match(/\b(?:a|in)\s+([A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ' -]{2,40})/);
-    city = m?.[1]?.trim() || null;
+  const cittaNota = estraiCitta(q);
+  if (cittaNota && new RegExp("\\b(?:a|in)\\s+" + cittaNota + "\\b", "i").test(q)) {
+    city = cittaNota;
   }
+
+  // Costruiamo la query sostanziale eliminando SOLO i vincoli già estratti.
+  // Gli attributi positivi restano: "scarpe da uomo eleganti" deve continuare
+  // a cercare scarpe da uomo eleganti, non solo "scarpe".
+  let termine = q
+    .replace(/(?:tra|da)\s*\d+(?:[.,]\d+)?\s*(?:e|a)\s*\d+(?:[.,]\d+)?/gi, " ")
+    .replace(/(?:sotto|massimo|meno di|entro|fino a|sopra|minimo|piu di|più di|oltre)\s*(?:€\s*)?\d+(?:[.,]\d+)?/gi, " ")
+    .replace(/\b(?:aperto|aperta|aperti|aperte)\s+(?:ora|adesso)\b/gi, " ")
+    .replace(/\b(?:ora|adesso)\b/gi, " ");
+
+  for (const esclusione of esclusioni) {
+    const escaped = esclusione.replace(/[.*+?^$()|[\]\\]/g, "\\$&");
+    termine = termine.replace(
+      new RegExp("\\b(?:non|senza)\\s+" + escaped + "\\b", "gi"),
+      " "
+    );
+  }
+
+  if (city) {
+    const escapedCity = city.replace(/[.*+?^$()|[\]\\]/g, "\\$&");
+    termine = termine.replace(
+      new RegExp("\\b(?:a|in)\\s+" + escapedCity + "\\b", "gi"),
+      " "
+    );
+  }
+
+  termine = termine
+    .replace(/\b(?:voglio|vorrei|cerco|cerca|trovami|mi serve|fammi trovare|dammi|delle|degli|del|della|dei|una|un|uno|il|lo|la|i|gli|le)\b/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (match) termine = termine.replace(match.pattern, match.termine).replace(/\s+/g, " ").trim();
+  if (!termine) termine = match?.termine ?? q;
+
+  // "analcolica" resta una caratteristica positiva; la regola speciale del
+  // retrieval la tratta correttamente senza escludere le vere analcoliche.
+  if (haEsclusioneAlcol && !esclusioni.some((e) => /\balcol/i.test(e))) {
+    esclusioni.push("alcolica");
+  }
+
+  const openNow = /\b(?:aperto|aperta|aperti|aperte)\b|\b(?:ora|adesso)\b/i.test(q);
 
   const intent = match?.intent ?? analisi.intent;
   const surface: PinoSemanticPlan["surface"] =
@@ -351,7 +394,7 @@ function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): Pi
     minPrice,
     maxPrice,
     city,
-    openNow: /\b(?:aperto|aperta|aperti|aperte|ora|adesso)\b/i.test(q),
+    openNow,
     confidence: match || haEsclusioneAlcol || haPrezzo ? "alta" : analisi.confidence,
   };
 }
