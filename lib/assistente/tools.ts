@@ -601,6 +601,16 @@ async function filtraProdottiPerVincoliNegozio(
       return [];
     }
     const target = normalizza(opts.citta).trim();
+    const targetToken = target.split(/\\s+/).filter(Boolean);
+    const localitaCorrisponde = (valore: string): boolean => {
+      const testo = normalizza(valore).trim();
+      if (!testo || !target) return false;
+      if (testo === target) return true;
+      if (targetToken.length === 1) {
+        return testo.split(/[^a-z0-9]+/).includes(targetToken[0]);
+      }
+      return testo.includes(target);
+    };
     const { data, error } = await db
       .from("negozi")
       .select("id, citta, indirizzo")
@@ -613,7 +623,7 @@ async function filtraProdottiPerVincoliNegozio(
         .filter((n) => {
           const citta = normalizza(String(n.citta ?? ""));
           const indirizzo = normalizza(String(n.indirizzo ?? ""));
-          return target.length > 0 && (citta.includes(target) || indirizzo.includes(target));
+          return target.length > 0 && (localitaCorrisponde(citta) || localitaCorrisponde(indirizzo));
         })
         .map((n) => String(n.id))
     );
