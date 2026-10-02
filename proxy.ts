@@ -12,6 +12,7 @@ import {
   type AreaAttiva,
 } from "@/lib/auth/area";
 import { GUEST_COOKIE } from "@/lib/auth/guest";
+import { getAccountApprovalStatus } from "@/lib/auth/account-approval";
 
 export async function proxy(request: NextRequest) {
   if (!isSupabaseConfigured()) {
