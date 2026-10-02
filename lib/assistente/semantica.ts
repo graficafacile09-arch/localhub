@@ -187,12 +187,15 @@ function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): Pi
   const haCitta = /\b(?:a|in)\s+[A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ' -]{2,40}/.test(query);
   if (!match && !haEsclusioneAlcol && !haPrezzo && analisi.confidence === "bassa") return null;
 
-  const termine = match?.termine ?? q
+  // Manteniamo anche gli attributi della richiesta ("da uomo", "eleganti",
+  // "nere", ecc.): il fast-path non deve trasformare una ricerca ricca nel
+  // solo lemma principale.
+  let termine = q
     .replace(/\b(?:voglio|vorrei|cerco|cerca|trovami|mi serve|fammi trovare|dammi|delle|degli|del|della|dei|di|una|un|uno|per|con|senza|non)\b/gi, " ")
     .replace(/\s+/g, " ")
-    .trim()
-    .split(" ")
-    .filter(Boolean)[0] ?? q;
+    .trim();
+  if (match) termine = termine.replace(match.pattern, match.termine).replace(/\s+/g, " ").trim();
+  if (!termine) termine = match?.termine ?? q;
 
   const esclusioni: string[] = [];
   if (haEsclusioneAlcol) esclusioni.push("alcolica");
