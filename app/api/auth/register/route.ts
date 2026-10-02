@@ -3,6 +3,9 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { getSiteUrl } from "@/lib/site";
+import { AREA_COOKIE, areaCookieOptions } from "@/lib/auth/area";
+import { creaNotificaAdmin } from "@/lib/amministratore/notifiche";
+import { inviaEmailRegistrazioneUtente, inviaEmailNuovaRegistrazioneAdmin } from "@/lib/registrazione-email";
 
 /**
  * Registrazione CLIENTE (acquirente) — flusso con CONFERMA EMAIL REALE.
@@ -203,7 +206,74 @@ export async function POST(request: Request) {
     );
   }
 
-  // NIENTE login automatico: l'account non è ancora confermato.
-  verificaUrl.searchParams.set("email", email);
-  return NextResponse.redirect(verificaUrl);
+  const adminClient = createAdminSupabaseClient();
+
+  // La conferma email tecnica serve solo a permettere il login immediato.
+  // L autorizzazione all uso resta esclusivamente in account_approvazioni = pending.
+  const { error: confermaError } = await adminClient.auth.admin.updateUserById(userId, {
+    email_confirm: true,
+  });
+  if (confermaError) {
+    console.error("[auth/register] Conferma tecnica email fallita:", confermaError.message);
+    verificaUrl.searchParams.set("error", "Registrazione creata ma non è stato possibile completare l accesso automatico. Riprova.");
+    return NextResponse.redirect(verificaUrl);
+  }
+
+  const { error: approvalError } = await adminClient
+    .from("account_approvazioni")
+    .upsert(
+      {
+        user_id: userId,
+        stato: "pending",
+        richiesto_il: new Date().toISOString(),
+        deciso_il: null,
+        deciso_da: null,
+        motivo: null,
+      },
+      { onConflict: "user_id" },
+    );
+
+  if (approvalError) {
+    console.error("[auth/register] Creazione approvazione pending fallita:", approvalError.message);
+    verificaUrl.searchParams.set("error", "Registrazione creata ma non è stato possibile registrare la richiesta di approvazione. Contatta l assistenza.");
+    return NextResponse.redirect(verificaUrl);
+  }
+
+  // Email e notifica admin sono BEST-EFFORT e non annullano una registrazione riuscita.
+  await Promise.allSettled([
+    inviaEmailRegistrazioneUtente({
+      to: email,
+      nome: `${name} ${surname}`.trim(),
+      area: "cliente",
+    }),
+    inviaEmailNuovaRegistrazioneAdmin({
+      nome: `${name} ${surname}`.trim(),
+      email,
+      area: "cliente",
+    }),
+    creaNotificaAdmin({
+      tipo: "venditore_registrato",
+      titolo: "Nuovo utente registrato",
+      corpo: `${name} ${surname}`.trim() + ` ha registrato un nuovo account cliente (${email})`,
+      gravita: "info",
+      href: "/amministratore/utenti",
+    }),
+  ]);
+
+  const { error: signInError } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (signInError) {
+    console.error("[auth/register] Login automatico fallito:", signInError.message);
+    verificaUrl.searchParams.set("error", "Registrazione completata ma accesso automatico non riuscito. Effettua il login per continuare.");
+    return NextResponse.redirect(verificaUrl);
+  }
+
+  const response = NextResponse.redirect(
+    new URL("/account-in-attesa?area=cliente", request.url),
+  );
+  response.cookies.set(AREA_COOKIE, "cliente", areaCookieOptions());
+  return response;
 }
