@@ -12,7 +12,7 @@
 import { callGeminiText } from "@/lib/ai/gemini-text";
 import { extractJsonFromText } from "@/lib/product-assistant/providers/utils";
 import { normalizzaRichiesta } from "./local-intents";
-import { type PinoIntent, type PinoIntentAnalysis } from "./intent";
+import { analizzaIntentoPino, type PinoIntent, type PinoIntentAnalysis } from "./intent";
 import type { MessaggioAssistente } from "./index";
 import type { PinoMemoriaVoce } from "./memoria";
 
