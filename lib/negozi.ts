@@ -19,6 +19,8 @@ import {
   punteggioFuzzy,
   similaritaLevenshtein,
   terminiSignificativi,
+  equivalentiMorfologici,
+  radiceRicerca,
 } from "./search-tollerante";
 import type { Categoria } from "@/types/negozio";
 import { CATEGORIE_NEGOZIO_META } from "./categorie-negozio";
@@ -1057,11 +1059,21 @@ function prodottoRilevante(
   // del prodotto. Il nome/descrizione (testo libero) non bastano per un sinonimo.
   const campiStrutturati = ["categoria", "sottocategoria", "marca"];
 
-  // 1) Termine ORIGINALE in qualsiasi campo ⇒ rilevante (query diretta intatta).
+  // 1) Termine ORIGINALE in qualsiasi campo ⇒ rilevante.
+  // Oltre al match letterale, confrontiamo i token per lemma leggero:
+  // "birra" ↔ "birre" ↔ "birretta", "scarpa" ↔ "scarpe", ecc.
   for (const o of originali) {
     const on = normalizza(o).trim();
     if (!on) continue;
     if (Object.keys(PESO_CAMPO_PRODOTTO).some((c) => inCampo(c, on))) return true;
+
+    const radiceOriginale = radiceRicerca(on);
+    if (radiceOriginale.length >= 4) {
+      for (const campo of Object.keys(PESO_CAMPO_PRODOTTO)) {
+        const token = estraiToken(String(prodotto[campo] ?? ""));
+        if (token.some((t) => equivalentiMorfologici(on, t))) return true;
+      }
+    }
   }
 
   // 2) Sinonimo ESPANSO in un campo strutturato di classificazione ⇒ rilevante.
@@ -1215,7 +1227,20 @@ async function cercaProdottiCore(
   // d'intento ADDITIVI (es. "ho sete" → bevande/acqua/bar). La query originale
   // resta comunque rappresentata dai token base in espandiQueryConSinonimiBase
   // (i concetti aggiungono, mai restringono).
-  const espansaBase = `${concettiIntento(ricerca)} ${espandiQueryConSinonimiBase(ricerca)}`;
+  const tokenOriginali = normalizza(ricerca)
+    .split(/[^a-z0-9]+/)
+    .map((t) => t.trim())
+    .filter((t) => t.length >= 4);
+
+  // Aggiunge il lemma leggero dei termini originali al retrieval SQL.
+  // Così "birre" e "birretta" recuperano anche prodotti chiamati "birra"
+  // prima ancora del ranking. I termini originali restano invariati e
+  // continuano a dominare la rilevanza.
+  const radiciOriginali = tokenOriginali
+    .map(radiceRicerca)
+    .filter((t) => t.length >= 4);
+
+  const espansaBase = `${concettiIntento(ricerca)} ${espandiQueryConSinonimiBase(ricerca)} ${radiciOriginali.join(" ")}`;
   let termini = Array.from(
     new Set(
       espansaBase
@@ -1223,7 +1248,7 @@ async function cercaProdottiCore(
         .map((t) => t.trim())
         .filter(Boolean)
     )
-  ).slice(0, 16);
+  ).slice(0, 24);
 
   // V8 — LOCALITÀ: il token città viene rimosso dai termini prodotto (è un
   // vincolo applicato sul negozio proprietario in fondo, non una keyword da
