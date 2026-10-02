@@ -38,7 +38,7 @@ export default function PinoHomepageHelper() {
       const reached = window.scrollY >= PINO_TRIGGER_SCROLL;
       const blueZone = document.querySelector<HTMLElement>("[data-pino-footer-zone=\"true\"]");
       const blueZoneFinished = blueZone
-        ? blueZone.getBoundingClientRect().bottom <= window.innerHeight
+        ? blueZone.getBoundingClientRect().bottom <= window.innerHeight - PINO_BAR_HEIGHT
         : false;
       setHasReachedArea(reached);
       setIsNearBottom(blueZoneFinished);
@@ -53,7 +53,7 @@ export default function PinoHomepageHelper() {
     const syncInitialPosition = () => {
       const blueZone = document.querySelector<HTMLElement>("[data-pino-footer-zone=\"true\"]");
       const blueZoneFinished = blueZone
-        ? blueZone.getBoundingClientRect().bottom <= window.innerHeight
+        ? blueZone.getBoundingClientRect().bottom <= window.innerHeight - PINO_BAR_HEIGHT
         : false;
       setHasReachedArea(window.scrollY >= PINO_TRIGGER_SCROLL);
       setIsNearBottom(blueZoneFinished);
@@ -80,15 +80,17 @@ export default function PinoHomepageHelper() {
 
   const visible = hasReachedArea && !isScrolling && !isNearBottom;
 
+  if (!visible) return null;
+
   return (
     <div
       aria-label="Pino, assistente di InCittà"
       className={[
         "pointer-events-none fixed inset-x-0 bottom-0 z-[60]",
         "transition-[opacity,transform] duration-200 ease-out",
-        visible ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0",
+        "translate-y-0 opacity-100",
       ].join(" ")}
-      aria-hidden={!visible}
+      aria-hidden="false"
     >
       {/* Fascia piena da bordo a bordo. È volutamente appena più alta
           del Pino chiuso, così il personaggio sembra integrato nella UI. */}
