@@ -13,6 +13,7 @@ import { callGeminiText } from "@/lib/ai/gemini-text";
 import { extractJsonFromText } from "@/lib/product-assistant/providers/utils";
 import { normalizzaRichiesta } from "./local-intents";
 import { analizzaIntentoPino, type PinoIntent, type PinoIntentAnalysis } from "./intent";
+import { SINONIMI_DIRETTI_PRODOTTO, SINONIMI_TIPO_ATTIVITA } from "@/lib/ricerca-semantica";
 import type { MessaggioAssistente } from "./index";
 import type { PinoMemoriaVoce } from "./memoria";
 
@@ -104,7 +105,7 @@ function distanzaLevenshtein(a: string, b: string): number {
   return prev[b.length];
 }
 
-const VOCABOLARIO_PINO: Array<[string, string]> = [
+const VOCABOLARIO_PINO_BASE: Array<[string, string]> = [
   ["birra", "birra"], ["birretta", "birra"], ["birrette", "birra"],
   ["analcolica", "analcolica"], ["analcolico", "analcolica"],
   ["vino", "vino"], ["vini", "vino"], ["acqua", "acqua"],
@@ -114,6 +115,31 @@ const VOCABOLARIO_PINO: Array<[string, string]> = [
   ["scarpa", "scarpa"], ["scarpe", "scarpa"],
   ["maglia", "maglia"], ["maglietta", "maglia"], ["magliette", "maglia"],
 ];
+
+const VOCABOLARIO_PINO: Array<[string, string]> = (() => {
+  const mappa = new Map<string, string>(VOCABOLARIO_PINO_BASE);
+
+  // Riutilizziamo il vocabolario semantico già presente nel motore InCittà:
+  // errori di battitura su prodotti, categorie e servizi vengono corretti
+  // verso un termine reale già conosciuto dal catalogo.
+  for (const gruppo of SINONIMI_DIRETTI_PRODOTTO) {
+    for (const voce of gruppo) {
+      for (const token of normalizzaRichiesta(voce).split(/\\s+/)) {
+        if (token.length >= 4) mappa.set(token, token);
+      }
+    }
+  }
+
+  for (const gruppo of Object.values(SINONIMI_TIPO_ATTIVITA)) {
+    for (const voce of gruppo) {
+      for (const token of normalizzaRichiesta(voce).split(/\\s+/)) {
+        if (token.length >= 4) mappa.set(token, token);
+      }
+    }
+  }
+
+  return Array.from(mappa.entries());
+})();
 
 function correggiErroriBattitura(query: string): string {
   return query.split(/(\\s+)/).map((part) => {
