@@ -16,7 +16,7 @@
  */
 
 const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
-const MODELLO_FALLBACK = "gemini-2.0-flash";
+const MODELLO_FALLBACK = "gemini-3.8-flash";
 const TIMEOUT_DEFAULT_MS = 60_000;
 const TENTATIVI_DEFAULT = 3;
 
