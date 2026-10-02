@@ -4,7 +4,7 @@ import {
   terminiOriginali,
 } from "./ranking-negozi";
 import { estraiToken, normalizza } from "./text-utils";
-import { espandiQueryConSinonimi, espandiQueryConSinonimiBase } from "./ricerca-semantica";
+import { espandiQueryConSinonimi, espandiQueryConSinonimiBase, sonoSinonimiDirettiProdotto } from "./ricerca-semantica";
 import {
   concettiIntento,
   esclusioniNegazione,
@@ -1076,7 +1076,23 @@ function prodottoRilevante(
     }
   }
 
-  // 2) Sinonimo ESPANSO in un campo strutturato di classificazione ⇒ rilevante.
+  // 2) Sinonimo DIRETTO in un campo identitario del prodotto.
+  // È ammesso anche nel nome: "calzature" deve trovare un prodotto chiamato
+  // "Scarpe Running", senza richiedere che la categoria DB sia compilata.
+  for (const o of originali) {
+    for (const e of espansi) {
+      const en = normalizza(e).trim();
+      if (!en || en.length < 3 || en === normalizza(o).trim()) continue;
+      if (
+        sonoSinonimiDirettiProdotto(o, en) &&
+        Object.keys(PESO_CAMPO_PRODOTTO).some((c) => inCampo(c, en))
+      ) {
+        return true;
+      }
+    }
+  }
+
+  // 3) Sinonimo ESPANSO in un campo strutturato di classificazione ⇒ rilevante.
   for (const e of espansi) {
     const en = normalizza(e).trim();
     if (!en || en.length < 3) continue;
