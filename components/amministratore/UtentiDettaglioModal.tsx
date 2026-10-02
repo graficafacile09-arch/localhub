@@ -177,6 +177,31 @@ export default function UtentiDettaglioModal({
     }
   }
 
+
+  async function approvaAccount() {
+    const ok = await patch({ approva: true }, "approva");
+    if (ok) {
+      setRisultato({
+        tipo: "ok",
+        messaggio: "Account approvato. Ora può accedere all'area personale.",
+      });
+    }
+  }
+
+  async function rifiutaAccount() {
+    const ok = await patch(
+      { rifiuta: { conferma: true, motivo: motivo.trim() || null } },
+      "rifiuta"
+    );
+    if (ok) {
+      setRisultato({
+        tipo: "ok",
+        messaggio: "Account rifiutato. L'accesso alle aree personali resta bloccato.",
+      });
+      setMotivo("");
+    }
+  }
+
   async function riattiva() {
     const ok = await patch({ riattiva: true }, "riattiva");
     if (ok) {
@@ -309,6 +334,76 @@ export default function UtentiDettaglioModal({
             </span>
           )}
         </div>
+
+        {utente.approvazione === "pending" && !protetto && (
+          <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+            <div className="flex items-start gap-3">
+              <UserRoundCheck className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" aria-hidden />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-black text-amber-900">Approvazione amministrativa richiesta</p>
+                <p className="mt-1 text-xs leading-5 text-amber-800">
+                  L&apos;email può essere già verificata, ma l&apos;account non può ancora usare le aree personali.
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    disabled={operando !== null}
+                    onClick={() => void approvaAccount()}
+                    className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+                  >
+                    {operando === "approva" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserRoundCheck className="h-3.5 w-3.5" />}
+                    Approva account
+                  </button>
+                  <button
+                    type="button"
+                    disabled={operando !== null}
+                    onClick={() => setMotivo((v) => v)}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 bg-white px-3 py-2 text-xs font-bold text-red-700 transition hover:bg-red-50 disabled:opacity-50"
+                  >
+                    <UserRoundX className="h-3.5 w-3.5" />
+                    Rifiuta
+                  </button>
+                </div>
+                <div className="mt-3">
+                  <input
+                    value={motivo}
+                    onChange={(e) => setMotivo(e.target.value)}
+                    placeholder="Motivo del rifiuto (facoltativo)"
+                    maxLength={200}
+                    aria-label="Motivo rifiuto account"
+                    className="w-full rounded-xl border border-amber-200 bg-white px-3 py-2 text-xs outline-none focus:border-amber-400"
+                  />
+                  <button
+                    type="button"
+                    disabled={operando !== null || !motivo.trim()}
+                    onClick={() => void rifiutaAccount()}
+                    className="mt-2 inline-flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-700 transition hover:bg-red-100 disabled:opacity-40"
+                  >
+                    Conferma rifiuto
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {utente.approvazione === "rejected" && !protetto && (
+          <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 p-4">
+            <p className="text-sm font-black text-red-900">Account rifiutato</p>
+            <p className="mt-1 text-xs leading-5 text-red-800">
+              L&apos;account resta bloccato finché un amministratore non lo approva nuovamente.
+            </p>
+            <button
+              type="button"
+              disabled={operando !== null}
+              onClick={() => void approvaAccount()}
+              className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+            >
+              {operando === "approva" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserRoundCheck className="h-3.5 w-3.5" />}
+              Approva account
+            </button>
+          </div>
+        )}
 
         {risultato && (
           <p
