@@ -1,6 +1,7 @@
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { normalizzaRichiesta } from "./local-intents";
 import type { PinoIntentAnalysis } from "./intent";
+import type { PinoSemanticPlan } from "./semantica";
 
 export type PinoMemoriaVoce = {
   termine: string;
@@ -76,6 +77,7 @@ export async function registraEsitoMemoria(params: {
   categorie?: string[];
   risultati: number;
   memoriaUsata?: PinoMemoriaVoce[];
+  semantica?: PinoSemanticPlan;
 }): Promise<void> {
   try {
     const supabase = createAdminSupabaseClient();
@@ -83,7 +85,27 @@ export async function registraEsitoMemoria(params: {
     const concettiIntento = params.analisi.terminiPrioritari.map(normalizzaTermine).filter(Boolean).slice(0, 3);
     const concettiCatalogo = (params.categorie ?? []).map(normalizzaTermine).filter(Boolean).slice(0, 3);
 
-    const associazioni = params.risultati > 0
+    // Apprendimento esplicito di correzioni/sinonimi: associamo il termine
+    // digitato al concetto semantico canonico solo quando la ricerca ha prodotto
+    // risultati reali. Questo permette di consolidare, ad esempio,
+    // "birretta" -> "birra" e "telefonino" -> "telefono" senza accettare
+    // associazioni basate su zero risultati o su parole inventate.
+    const concettoSemantico = normalizzaTermine(params.semantica?.query ?? "");
+    const terminiSemantici = concettoSemantico
+      ? termini
+          .filter((termine) => {
+            const t = normalizzaTermine(termine);
+            return t.length >= 4 && t !== concettoSemantico && !STOPWORDS.has(t);
+          })
+          .slice(0, 4)
+          .map((termine) => ({
+            termine: normalizzaTermine(termine),
+            concetto: concettoSemantico,
+            tipo: "correzione_semantica",
+          }))
+      : [];
+
+    const associazioniBase = params.risultati > 0
       ? termini.flatMap((termine) =>
           Array.from(new Set([...concettiIntento, ...concettiCatalogo]))
             .filter((concetto) => concetto && concetto !== termine)
@@ -93,6 +115,13 @@ export async function registraEsitoMemoria(params: {
       : (params.memoriaUsata ?? []).map((v) => ({
           termine: v.termine, concetto: v.concetto, tipo: v.tipo || "semantica",
         }));
+
+    const associazioni = Array.from(
+      new Map(
+        [...terminiSemantici, ...associazioniBase]
+          .map((a) => [`${a.termine}::${a.concetto}`, a] as const)
+      ).values()
+    );
 
     if (!associazioni.length) return;
 
