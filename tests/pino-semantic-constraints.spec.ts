@@ -5,8 +5,9 @@ import {
   type PinoSemanticPlan,
 } from "../lib/assistente/semantica";
 import { analizzaIntentoPino } from "../lib/assistente/intent";
+import type { PinoMemoriaVoce } from "../lib/assistente/memoria";
 
-const NESSUNA_MEMORIA = [] as PinoSemanticPlan[] as never;
+const NESSUNA_MEMORIA: PinoMemoriaVoce[] = [];
 
 async function piano(query: string) {
   return interpretaRichiestaPino(
@@ -55,7 +56,7 @@ test.describe("Pino — separazione query e vincoli semantici", () => {
 
   test("6) apertura ora viene estratta e non entra nel testo prodotto", async () => {
     const p = await piano("pizzeria aperta ora");
-    expect(p.surface).toBe("products");
+    expect(p.surface).toBe("stores");
     expect(p.openNow).toBe(true);
     expect(p.query).toBe("pizzeria");
   });
