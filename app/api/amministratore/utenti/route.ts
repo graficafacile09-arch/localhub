@@ -61,6 +61,27 @@ export async function POST(request: Request) {
   }
 
   const userId = creato.user.id;
+
+  // Gli account creati direttamente dall'amministratore sono già autorizzati.
+  // Le registrazioni pubbliche restano pending e non passano da questa route.
+  const { error: erroreApprovazione } = await db
+    .from("account_approvazioni")
+    .upsert(
+      {
+        user_id: userId,
+        stato: "approved",
+        richiesto_il: creato.user.created_at ?? new Date().toISOString(),
+        deciso_il: new Date().toISOString(),
+        deciso_da: sessione.user.id,
+        motivo: null,
+      },
+      { onConflict: "user_id" }
+    );
+  if (erroreApprovazione) {
+    await db.auth.admin.deleteUser(userId);
+    return apiError("APPROVAL_FAILED", erroreApprovazione.message, 422);
+  }
+
   const { error: erroreRuolo } = await db
     .from("user_roles")
     .insert({ user_id: userId, role: RUOLI_DB[ruolo] });
