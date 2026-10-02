@@ -47,7 +47,7 @@ import {
   type PinoIntentAnalysis,
 } from "./intent";
 import { recuperaMemoria, registraEsitoMemoria } from "./memoria";
-import { interpretaRichiestaPino, type PinoSemanticPlan } from "./semantica";
+import { interpretaRichiestaPino, usaFastPathSemantico, type PinoSemanticPlan } from "./semantica";
 import {
   rilevaFollowUp,
   soggettoPrecedente,
@@ -944,7 +944,7 @@ export async function chatConAssistente(
   // Pino Intent Layer v1: la classificazione avviene PRIMA di ogni ricerca e
   // guida la scelta dei tool, le priorità di recupero e il messaggio finale.
   const analisi = analizzaIntentoPino(domanda);
-  const memoria = await recuperaMemoria(domanda);
+  const memoria = usaFastPathSemantico(domanda, analisi) ? [] : await recuperaMemoria(domanda);
 
   // Il planner semantico si attiva sulle richieste composte/naturali, mentre
   // le richieste semplici continuano a usare il percorso deterministico rapido.
