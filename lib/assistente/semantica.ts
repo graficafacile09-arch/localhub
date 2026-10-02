@@ -412,7 +412,7 @@ function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): Pi
   }
 
   termine = termine
-    .replace(/\b(?:voglio|vorrei|cerco|cerca|trovami|mi serve|fammi trovare|dammi|delle|degli|del|della|dei|una|un|uno|il|lo|la|i|gli|le)\b/gi, " ")
+    .replace(/\b(?:voglio|vorrei|cerco|cerca|trovami|mi serve|fammi trovare|dammi|anzi|invece|pero|però|delle|degli|del|della|dei|una|un|uno|il|lo|la|i|gli|le)\b/gi, " ")
     .replace(/\s+/g, " ")
     .trim();
 
@@ -451,7 +451,7 @@ function fallbackPlan(query: string, analisi: PinoIntentAnalysis): PinoSemanticP
   const tokens = q
     .split(/[^a-z0-9]+/)
     .filter((t) => t.length >= 3)
-    .filter((t) => !/^(cerco|cerca|trovami|trova|vorrei|voglio|mi|serve|un|una|uno|per|con|di|a|da|il|lo|la|i|gli|le|e|in|su|del|della|dei|delle|sotto|sopra|massimo|minimo|euro)$/.test(t));
+    .filter((t) => !/^(cerco|cerca|trovami|trova|vorrei|voglio|mi|serve|anzi|invece|pero|però|un|una|uno|per|con|di|a|da|il|lo|la|i|gli|le|e|in|su|del|della|dei|delle|sotto|sopra|massimo|minimo|euro)$/.test(t));
   const mMax = q.match(/(?:sotto|massimo|fino a|entro|meno di)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)/);
   const mMin = q.match(/(?:sopra|minimo|piu di|più di|oltre)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)/);
   const mRange = q.match(/(?:tra|da)\s*(\d+(?:[.,]\d+)?)\s*(?:e|a)\s*(\d+(?:[.,]\d+)?)/);
