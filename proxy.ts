@@ -12,7 +12,6 @@ import {
   type AreaAttiva,
 } from "@/lib/auth/area";
 import { GUEST_COOKIE } from "@/lib/auth/guest";
-import { getAccountApprovalStatus } from "@/lib/auth/account-approval";
 
 export async function proxy(request: NextRequest) {
   if (!isSupabaseConfigured()) {
@@ -126,6 +125,25 @@ export async function proxy(request: NextRequest) {
     response.cookies.delete(GUEST_COOKIE);
   }
 
+  // Il proxy gira nel runtime Edge: non importa il client service-role server-only.
+  // Usa invece il client Supabase già autenticato, con RLS limitata alla riga
+  // dell'utente corrente. In caso di errore o riga assente il gate è chiuso.
+  async function getProxyApprovalStatus(userId: string): Promise<"pending" | "approved" | "rejected"> {
+    try {
+      const { data, error } = await supabase
+        .from("account_approvazioni")
+        .select("stato")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (error || !data) return "pending";
+      const stato = String(data.stato);
+      return stato === "rejected" ? "rejected" : stato === "approved" ? "approved" : "pending";
+    } catch {
+      return "pending";
+    }
+  }
+
   // Account non ancora approvati: le pagine pubbliche restano visitabili,
   // ma nessuna area personale/admin/merchant può essere utilizzata.
   if (
@@ -134,7 +152,7 @@ export async function proxy(request: NextRequest) {
       pathname.startsWith("/merchant") ||
       pathname.startsWith("/cliente"))
   ) {
-    const approvalStatus = await getAccountApprovalStatus(user.id);
+    const approvalStatus = await getProxyApprovalStatus(user.id);
     if (approvalStatus !== "approved") {
       const pendingUrl = new URL("/account-in-attesa", request.url);
       pendingUrl.searchParams.set(
