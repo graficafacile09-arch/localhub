@@ -90,12 +90,11 @@ export default function PinoHomepageHelper() {
   return (
     <div
       aria-label="Pino, assistente di InCittà"
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-[60]"
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-[60] h-[58px] overflow-hidden bg-white"
       aria-hidden="false"
     >
       <div
-        className="pointer-events-auto flex w-full items-center justify-center border-t border-slate-200/90 bg-white px-3 sm:px-5"
-        style={{ minHeight: PINO_BAR_HEIGHT }}
+        className="pointer-events-auto flex h-full w-full items-center justify-center border-t border-slate-200/90 bg-white px-3 sm:px-5 shadow-[0_-2px_8px_rgba(15,23,42,0.06)]"
       >
         <div className="flex w-full items-center justify-center gap-2 sm:gap-3">
           <p className="min-w-0 text-center text-sm font-semibold text-slate-700 sm:text-base">
