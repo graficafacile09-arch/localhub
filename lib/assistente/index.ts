@@ -549,8 +549,10 @@ function fallbackTestuale(
   const totale = contaRisultati(risultati);
 
   if (totale === 0) {
-    // Nessun risultato: Pino spiega cosa ha fatto e chiede di meglio.
-    return "Non ho trovato esattamente quello che cerchi. Prova a descrivere meglio cosa cerchi: posso cercare negozi, prodotti, offerte ed eventi a Castrovillari.";
+    // Anche senza risultati Pino deve restare proattivo: non scarica il
+    // problema sull'utente con una frase passiva, ma suggerisce come
+    // proseguire la ricerca.
+    return "Non trovo risultati per questa richiesta. Posso provare a cercare per categoria, sinonimo o negozio: ad esempio dimmi se vuoi un prodotto simile, una fascia di prezzo oppure un'attività che potrebbe averlo.";
   }
 
   const soloNegozi =
@@ -709,7 +711,110 @@ async function rispostaFollowUp(input: {
   };
 }
 
-// ─── Risposte deterministiche per dati sensibili al falso positivo ───────────
+
+
+/**
+ * Recupero intelligente quando la prima ricerca non restituisce nulla.
+ * Pino non si ferma al primo zero: prova il concetto canonico, i termini
+ * semantici alternativi e, quando ha senso, la superficie negozi per capire
+ * dove reperire ciò che l'utente sta cercando.
+ */
+async function recuperaAlternativeSemantiche(
+  domanda: string,
+  storico: MessaggioAssistente[],
+  analisi: PinoIntentAnalysis,
+  memoria: Awaited<ReturnType<typeof recuperaMemoria>>,
+  semanticaIniziale?: PinoSemanticPlan
+): Promise<{
+  negozi: NegozioRicerca[];
+  prodotti: ProdottoRicerca[];
+  piano: PinoSemanticPlan | undefined;
+  descrizione: string | null;
+}> {
+  const piano =
+    semanticaIniziale ??
+    (await interpretaRichiestaPino(domanda, storico, analisi, memoria));
+
+  if (!piano || piano.confidence === "bassa" || !piano.query) {
+    return { negozi: [], prodotti: [], piano, descrizione: null };
+  }
+
+  const esclusioni = piano.exclusions.length ? piano.exclusions : undefined;
+  const baseParams: ToolParams = {
+    citta: piano.city ?? undefined,
+    esclusioni,
+    apertiOra: piano.openNow || undefined,
+    maxPrice: piano.maxPrice,
+    minPrice: piano.minPrice,
+    limit: 8,
+  };
+
+  const candidati = Array.from(
+    new Set(
+      [piano.query, ...piano.terms]
+        .map((t) => t.trim().toLowerCase())
+        .filter((t) => t.length >= 2)
+    )
+  ).slice(0, 5);
+
+  const prodottiTrovati: ProdottoRicerca[] = [];
+  const negoziTrovati: NegozioRicerca[] = [];
+
+  // Prima allarga il concetto sullo stesso tipo di superficie.
+  if (piano.surface === "products" || piano.surface === "both") {
+    for (const q of candidati) {
+      const trovati = await searchProducts(q, { ...baseParams, query: q });
+      for (const p of trovati) {
+        if (!prodottiTrovati.some((x) => x.id === p.id)) prodottiTrovati.push(p);
+      }
+      if (prodottiTrovati.length >= 8) break;
+    }
+  }
+
+  // Se l'utente sta cercando dove reperire qualcosa, cerca anche attività
+  // pertinenti. Non viene presentato come prodotto trovato: è un'alternativa
+  // concreta e trasparente.
+  if (
+    (piano.surface === "stores" || piano.surface === "both" || analisi.intent === "product") &&
+    negoziTrovati.length < 6
+  ) {
+    for (const q of candidati.slice(0, 3)) {
+      const trovati = await searchStores(q, {
+        citta: piano.city ?? undefined,
+        esclusioni,
+        apertiOra: piano.openNow || undefined,
+        limit: 6,
+      });
+      for (const n of trovati) {
+        if (!negoziTrovati.some((x) => x.id === n.id)) negoziTrovati.push(n);
+      }
+      if (negoziTrovati.length >= 6) break;
+    }
+  }
+
+  if (prodottiTrovati.length === 0 && negoziTrovati.length === 0) {
+    return {
+      negozi: [],
+      prodotti: [],
+      piano,
+      descrizione: null,
+    };
+  }
+
+  const concetto = piano.query;
+  const descrizione =
+    prodottiTrovati.length > 0
+      ? `Non ho trovato una corrispondenza esatta per "${domanda}", quindi ho allargato la ricerca al concetto "${concetto}" e alle sue varianti.`
+      : `Non ho trovato il prodotto esatto per "${domanda}", ma ho trovato attività pertinenti dove potrebbe essere reperito.`;
+
+  return {
+    negozi: negoziTrovati.slice(0, 8),
+    prodotti: prodottiTrovati.slice(0, 10),
+    piano,
+    descrizione,
+  };
+}
+\n// ─── Risposte deterministiche per dati sensibili al falso positivo ───────────
 // Meteo e stato farmacie non devono mai essere "interpretati" da Gemini:
 // una volta recuperati i dati, la risposta viene composta qui usando soltanto
 // ciò che la fonte ha realmente restituito. Questo elimina le allucinazioni
@@ -939,6 +1044,46 @@ export async function chatConAssistente(
     }
   }
 
+  // ── Recupero intelligente v3 ─────────────────────────────────────────────
+  // Uno zero al primo tentativo NON è la fine della conversazione. In questo
+  // punto Pino ha già provato la ricerca principale: ora usa il planner
+  // semantico per capire il concetto, allargare morfologia/sinonimi e, se
+  // utile, cercare anche le attività che possono avere quel prodotto.
+  let notaRecupero: string | null = null;
+  if (
+    !directReply &&
+    !followUp &&
+    negozi.length === 0 &&
+    prodotti.length === 0 &&
+    offerte.length === 0 &&
+    eventi.length === 0 &&
+    !invocazioni.some((t) =>
+      t.tool === "getWeather" || t.tool === "searchPharmacies" || t.tool === "searchOffers" || t.tool === "searchEvents"
+    )
+  ) {
+    const recupero = await recuperaAlternativeSemantiche(
+      domanda,
+      storico,
+      analisi,
+      memoria,
+      semantica
+    );
+    if (recupero.prodotti.length > 0 || recupero.negozi.length > 0) {
+      prodotti = recupero.prodotti;
+      negozi = recupero.negozi;
+      notaRecupero = recupero.descrizione;
+      console.log(
+        "[assistente] recupero semantico:",
+        JSON.stringify({
+          query: recupero.piano?.query ?? null,
+          terms: recupero.piano?.terms ?? [],
+          prodotti: prodotti.length,
+          negozi: negozi.length,
+        })
+      );
+    }
+  }
+
   console.log(
     "[assistente] intento:",
     descriviIntento(analisi),
@@ -1087,7 +1232,14 @@ export async function chatConAssistente(
   // 6) Risposta rapida grounded: i risultati sono già stati recuperati dai tool.
   // Evitiamo una seconda chiamata Gemini solo per riscrivere dati che abbiamo
   // già verificato: così Pino mostra i risultati molto prima.
-  const risposta = fallbackTestuale(risultati, notaVincolo, analisi.intent);
+  const rispostaBase = fallbackTestuale(risultati, notaVincolo, analisi.intent);
+  const risposta = notaRecupero
+    ? `${notaRecupero}
+
+${rispostaBase}
+
+Se vuoi, posso anche restringere la ricerca per prezzo, categoria o negozi aperti ora.`
+    : rispostaBase;
 
   return {
     risposta,
