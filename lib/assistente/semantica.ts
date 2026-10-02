@@ -90,7 +90,7 @@ const CANONICI_RICERCA: Array<{ pattern: RegExp; termine: string; intent: PinoIn
   { pattern: /\bmaglietta|magliette|maglia|maglie\b/i, termine: "maglia", intent: "product" },
 ];
 
-function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): PinoSemanticPlan | null {
+export function usaFastPathSemantico(query: string, analisi: PinoIntentAnalysis): boolean {\n  const q = normalizzaRichiesta(query).trim();\n  return CANONICI_RICERCA.some((x) => x.pattern.test(q)) ||\n    /\\b(?:analcolic(?:a|o|he|i)|non\\s+(?:alcol(?:ica|ico)?|alcol)|senza\\s+(?:alcol(?:ica|ico)?|alcol))\\b/i.test(q) ||\n    /\\b(?:sotto|sopra|massimo|minimo|meno di|piu di|più di|entro|fino a|tra)\\b/i.test(q);\n}\n\nfunction pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): PinoSemanticPlan | null {
   const q = normalizzaRichiesta(query).trim();
   if (!q) return null;
   const match = CANONICI_RICERCA.find((x) => x.pattern.test(q));
