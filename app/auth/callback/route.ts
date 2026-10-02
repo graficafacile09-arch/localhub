@@ -3,6 +3,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { AREA_COOKIE, areaCookieOptions } from "@/lib/auth/area";
+import { getAccountApprovalStatus } from "@/lib/auth/account-approval";
 
 /**
  * CALLBACK DI CONFERMA EMAIL (nuovo cliente).
@@ -97,6 +98,17 @@ export async function GET(request: Request) {
       "Non è stato possibile completare la verifica. Riprova o accedi con le tue credenziali.",
     );
     return NextResponse.redirect(loginUrl);
+  }
+
+  const approvalStatus = await getAccountApprovalStatus(user.id);
+  if (approvalStatus !== "approved") {
+    await supabase.auth.signOut();
+    const pendingUrl = new URL("/account-in-attesa", request.url);
+    pendingUrl.searchParams.set(
+      "stato",
+      approvalStatus === "rejected" ? "rifiutato" : "in-attesa"
+    );
+    return NextResponse.redirect(pendingUrl);
   }
 
   // ── Registrazione social Cliente/Venditore ───────────────────────────
