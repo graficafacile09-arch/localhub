@@ -21,14 +21,6 @@ type Props = {
   disabled?: boolean;
 };
 
-/**
- * Pulsante "Aggiungi al carrello" (FASE F2.4). Trasmette SOLO lo snapshot UI
- * (nome/prezzo/immagine/variante/negozio) per la visualizzazione: prezzi e
- * stock non sono mai autoritativi — il backend li risolve dal DB.
- *
- * Dopo l'aggiunta mostra il feedback "Aggiunto al carrello" (1,6s) e, finché
- * il feedback è attivo, il link "Vai al carrello".
- */
 export default function AggiungiAlCarrelloButton({
   prodottoId,
   varianteId = null,
@@ -48,15 +40,12 @@ export default function AggiungiAlCarrelloButton({
   const [mostraOk, setMostraOk] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Feedback quando l'ultimo aggiunto è questa riga (reset se cambia riga).
   useEffect(() => {
     if (ultimoAggiunto === chiave) {
       setMostraOk(true);
       if (timerRef.current) clearTimeout(timerRef.current);
       timerRef.current = setTimeout(() => setMostraOk(false), 2600);
     } else {
-      // Un altro prodotto è stato aggiunto nel frattempo: spegni il feedback
-      // per non lasciarlo "Aggiunto" per sempre.
       setMostraOk(false);
     }
     return () => {
@@ -80,20 +69,25 @@ export default function AggiungiAlCarrelloButton({
     });
   };
 
+  if (soggettoVerificaEta) {
+    return (
+      <Link
+        href={`/prodotto/${slug}`}
+        className="flex w-full items-center justify-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-base font-bold text-amber-900 shadow-sm transition hover:bg-amber-100 active:scale-[0.98]"
+      >
+        🔞 Verifica età per acquistare
+      </Link>
+    );
+  }
+
   if (mostraOk) {
     return (
       <div className="w-full space-y-2">
-        <p
-          data-testid="aggiunto-feedback"
-          className="flex w-full items-center justify-center gap-2 rounded-xl border border-blue-300 bg-blue-50 px-4 py-3 text-base font-bold text-blue-700"
-        >
+        <p data-testid="aggiunto-feedback" className="flex w-full items-center justify-center gap-2 rounded-xl border border-blue-300 bg-blue-50 px-4 py-3 text-base font-bold text-blue-700">
           <Check className="h-5 w-5" aria-hidden />
           Aggiunto al carrello
         </p>
-        <Link
-          href="/carrello"
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-yellow-400 px-4 py-3 text-base font-bold text-blue-800 shadow-sm transition hover:bg-yellow-300 active:scale-[0.98]"
-        >
+        <Link href="/carrello" className="flex w-full items-center justify-center gap-2 rounded-xl bg-yellow-400 px-4 py-3 text-base font-bold text-blue-800 shadow-sm transition hover:bg-yellow-300 active:scale-[0.98]">
           <ShoppingCart className="h-5 w-5" aria-hidden />
           Vai al carrello
           <ArrowRight className="h-5 w-5" aria-hidden />
