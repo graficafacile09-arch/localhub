@@ -27,6 +27,7 @@ import { espandiQueryConSinonimi } from "@/lib/ricerca-semantica";
 import { estraiCitta } from "@/lib/localita";
 import { normalizza, estraiToken } from "@/lib/text-utils";
 import type { Orari } from "@/types/negozio";
+import { apertoOra } from "./conversazione";
 
 // ─── Tipi risultati dei tool ─────────────────────────────────────────────────
 
@@ -386,25 +387,6 @@ function negozioPertinente(
   return espansi.some((e) => e.length >= 4 && classificazione.includes(e));
 }
 
-function apertoOraDaOrari(orari: Orari | null | undefined): boolean {
-  if (!orari) return false;
-  const oggi = new Date();
-  const giorno = ["dom","lun","mar","mer","gio","ven","sab"][oggi.getDay()];
-  const fasce = (orari as Record<string, unknown>)[giorno];
-  if (!Array.isArray(fasce)) return false;
-  const minuti = oggi.getHours() * 60 + oggi.getMinutes();
-  return fasce.some((fascia) => {
-    const f = fascia as Record<string, unknown>;
-    const apertura = String(f.apertura ?? f.apre ?? "");
-    const chiusura = String(f.chiusura ?? f.chiude ?? "");
-    const [ah, am] = apertura.split(":").map(Number);
-    const [ch, cm] = chiusura.split(":").map(Number);
-    if (![ah, am, ch, cm].every(Number.isFinite)) return false;
-    const start = ah * 60 + am;
-    const end = ch * 60 + cm;
-    return end >= start ? minuti >= start && minuti < end : minuti >= start || minuti < end;
-  });
-}
 
 export async function searchStores(
   query: string,
@@ -455,7 +437,7 @@ export async function searchStores(
 
   if (opts?.apertiOra && pertinenti.length > 0) {
     const orari = await orariPerNegozi(pertinenti.map((n) => String(n.id)));
-    pertinenti = pertinenti.filter((n) => apertoOraDaOrari(orari.get(String(n.id))));
+    pertinenti = pertinenti.filter((n) => apertoOra(orari.get(String(n.id))) === true);
   }
 
   return pertinenti.slice(0, limita(opts?.limit, 6, 8)).map((n: Record<string, unknown>) => ({
