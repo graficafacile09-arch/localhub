@@ -119,7 +119,7 @@ export default function PinoHomepageHelper() {
             className="pointer-events-auto shrink-0 cursor-pointer rounded-full outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
             style={{ width: PINO_CLOSED_SIZE, height: PINO_CLOSED_SIZE }}
           >
-            <span className="flex h-full w-full items-center justify-center overflow-hidden rounded-full bg-slate-50 shadow-lg ring-1 ring-slate-200">
+            <span className="flex h-full w-full items-center justify-center overflow-hidden">
               <img
                 src={PINO_HOME_SRC}
                 alt=""
