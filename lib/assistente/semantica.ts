@@ -135,6 +135,42 @@ function correggiErroriBattitura(query: string): string {
   }).join("");
 }
 
+/**
+ * Collega una modifica breve alla ricerca precedente, senza alterare le
+ * richieste che hanno già un soggetto autonomo.
+ */
+export function arricchisciRichiestaConContesto(
+  query: string,
+  history: MessaggioAssistente[]
+): string {
+  const corrente = (query ?? "").trim();
+  const q = normalizzaRichiesta(corrente);
+  if (!q) return corrente;
+
+  const parole = q.split(/\s+/).filter(Boolean);
+  if (parole.length > 8) return corrente;
+
+  const haSoggetto = CANONICI_RICERCA.some((x) => x.pattern.test(q)) ||
+    /\b(?:parrucchier[ei]|barbier[ei]|farmaci[ae]|ristorant[ei]|pizzeri[ae]|negozio|negozi|hotel|idraulico|elettricista|calzolaio|dentista)\b/i.test(q);
+  if (haSoggetto) return corrente;
+
+  const utenti = history.filter((m) => m.role === "user")
+    .map((m) => m.content.trim()).filter(Boolean);
+  if (utenti.length < 2) return corrente;
+
+  const precedente = utenti[utenti.length - 2];
+  const precedenteNorm = normalizzaRichiesta(precedente);
+  if (!precedenteNorm || precedenteNorm === q) return corrente;
+
+  if (/^(?:ok|okay|va bene|perfetto|grazie|grazie mille|ciao|buongiorno|buonasera)$/.test(q)) {
+    return corrente;
+  }
+
+  const modifica = /\b(?:elegant[ei]|sportiv[oi]|casual|da uomo|da donna|per uomo|per donna|per bambini?|economich[ei]|economico|costos[oi]|nere?|bianch[ei]|ross[aei]|blu|piccol[oi]|grand[ei]|grandi|nuov[oi]|usato|usata|usati|usate|senza|non|sotto|sopra|massimo|minimo|entro|fino|tra|vicino|vicina|vicinanze|aperto|aperta|aperti|aperte|oggi|domani|stasera|adesso|ora)\b/i.test(q);
+  if (!modifica && parole.length > 2) return corrente;
+
+  return (precedente + " " + corrente).slice(0, 500);
+}
 export function usaFastPathSemantico(query: string, analisi: PinoIntentAnalysis): boolean {
   const q = correggiErroriBattitura(normalizzaRichiesta(query)).trim();
   return CANONICI_RICERCA.some((x) => x.pattern.test(q)) ||
