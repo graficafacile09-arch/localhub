@@ -25,6 +25,22 @@ function ChipRuolo({ ruolo }: { ruolo: RuoloUtente }) {
   );
 }
 
+function ChipApprovazione({ utente }: { utente: Utente }) {
+  if (utente.approvazione === "approved") return null;
+  const rifiutato = utente.approvazione === "rejected";
+  return (
+    <span
+      className={`mt-1 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 ${
+        rifiutato
+          ? "bg-red-50 text-red-700 ring-red-200"
+          : "bg-amber-50 text-amber-800 ring-amber-200"
+      }`}
+    >
+      {rifiutato ? "Approvazione rifiutata" : "In attesa approvazione"}
+    </span>
+  );
+}
+
 function ChipStato({ utente }: { utente: Utente }) {
   const stile = STATO_ACCOUNT[utente.stato];
   return (
@@ -136,7 +152,10 @@ export default function UtentiTable({
                   </div>
                 </td>
                 <td className="px-5 py-4">
-                  <ChipStato utente={utente} />
+                  <div className="flex flex-col items-start">
+                    <ChipStato utente={utente} />
+                    <ChipApprovazione utente={utente} />
+                  </div>
                 </td>
                 <td className="px-5 py-4 text-slate-500">
                   {utente.ultimoAccesso
