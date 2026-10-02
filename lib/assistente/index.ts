@@ -946,13 +946,17 @@ export async function chatConAssistente(
   const analisi = analizzaIntentoPino(domanda);
   const memoria = usaFastPathSemantico(domanda, analisi) ? [] : await recuperaMemoria(domanda);
 
-  // Il planner semantico si attiva sulle richieste composte/naturali, mentre
-  // le richieste semplici continuano a usare il percorso deterministico rapido.
+  // Il planner semantico riceve anche il contesto quando l'utente invia una
+  // modifica breve ("eleganti", "da donna", "sotto 100 euro"). In questo modo
+  // il soggetto precedente resta attivo senza rendere la ricerca pubblica
+  // dipendente da Pino.
+  const domandaSemantica = arricchisciRichiestaConContesto(domanda, storico);
   const attivaPlannerSemantico =
-    domanda.length >= 22 ||
-    /\b(?:non|senza|sotto|sopra|massimo|minimo|tra|entro|preferisco|tipo|per|aperto|aperta|ora|adesso|vicino)\b/i.test(domanda);
+    domandaSemantica !== domanda ||
+    domandaSemantica.length >= 22 ||
+    /\b(?:non|senza|sotto|sopra|massimo|minimo|tra|entro|preferisco|tipo|per|aperto|aperta|ora|adesso|vicino)\b/i.test(domandaSemantica);
   const semantica = attivaPlannerSemantico
-    ? await interpretaRichiestaPino(domanda, storico, analisi, memoria)
+    ? await interpretaRichiestaPino(domandaSemantica, storico, analizzaIntentoPino(domandaSemantica), memoria)
     : undefined;
 
   // Stato dei risultati recuperati
