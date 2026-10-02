@@ -146,6 +146,34 @@ function recordEscluso(campi: unknown[], esclusioni: string[] | undefined): bool
   return campi.some((campo) => campoContieneEsclusione(String(campo ?? ""), esclusioni));
 }
 
+function prodottoSoddisfaEsclusioni(
+  prodotto: ProdottoRicerca,
+  esclusioni: string[] | undefined
+): boolean {
+  if (!esclusioni?.length) return true;
+  const testo = normalizza(
+    [prodotto.nome, prodotto.descrizione, prodotto.categoria]
+      .filter(Boolean)
+      .join(" ")
+  );
+  for (const esclusione of esclusioni) {
+    const e = normalizza(esclusione);
+    if (!e) continue;
+    if (e === "alcolica" || e === "alcolico" || e === "alcol") {
+      const analcolica =
+        /\banalcolic[oa]\b/.test(testo) ||
+        /\bsenza alcol\b/.test(testo) ||
+        /\bzero alcol\b/.test(testo) ||
+        /\b0[.,]?0(?:%| gradi)?\b/.test(testo) ||
+        /\b0% alcol\b/.test(testo);
+      if (!analcolica) return false;
+      continue;
+    }
+    if (campoContieneEsclusione(testo, [e])) return false;
+  }
+  return true;
+}
+
 
 function descrizioneMeteo(codice: number): string {
   const map: Record<number, string> = {
@@ -509,12 +537,7 @@ export async function searchProducts(
     (terminiOriginali.length > 0
       ? righe.filter((p) => prodottoPertinente(p, terminiOriginali, concettiQuery))
       : righe
-    ).filter((p) =>
-      !recordEscluso(
-        [p.nome, p.descrizione, p.categoria],
-        opts?.esclusioni
-      )
-    );
+    ).filter((p) => prodottoSoddisfaEsclusioni(p, opts?.esclusioni));
 
   // Filtri in memoria su categoria/sottocategoria/tipo-se-pertinente.
   let filtrate = pertinenti;
