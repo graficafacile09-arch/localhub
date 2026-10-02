@@ -279,6 +279,54 @@ function pianoPredefinito(
     };
   }
 
+  // ── Pino Conversazionale v1: follow-up sul risultato precedente ───────────
+  // Una richiesta BREVE ("solo aperti ora", "solo economici", "fammi vedere
+  // altro", "vicino a me"...) NON deve diventare una ricerca generica: mantiene
+  // il SOGGETTO della richiesta precedente e ne modifica i risultati. Il filtro
+  // viene applicato DOPO il recupero (vedi rispostaFollowUp).
+  const followUp = rilevaFollowUp(ultimo);
+  if (followUp && utenti.length >= 2 && (analisi.intent === "generic" || analisi.confidence === "bassa")) {
+    const soggetto = soggettoPrecedente(utenti);
+    if (soggetto) {
+      // Se il soggetto precedente era una lista di offerte/eventi, il follow-up
+      // resta su quella superficie (non su negozi/prodotti).
+      if (RE_OFFERTE.test(soggetto)) {
+        return { directReply: null, tools: [{ tool: "searchOffers", params: {} }], followUp };
+      }
+      if (RE_EVENTI.test(soggetto)) {
+        return { directReply: null, tools: [{ tool: "searchEvents", params: {} }], followUp };
+      }
+      const analisiPrec = analizzaIntentoPino(soggetto);
+      // "fammi vedere altro" allarga il recupero per poter mostrare opzioni
+      // diverse da quelle già elencate.
+      const limiteAlto = followUp.tipo === "altro" ? 12 : undefined;
+      let tools: ToolInvocation[] = [];
+      if (analisiPrec.intent !== "generic" && analisiPrec.confidence !== "bassa") {
+        tools = pianoIntento(analisiPrec, soggetto).map((t) => ({
+          tool: t.tool,
+          params: {
+            query: t.query,
+            ...(limiteAlto
+              ? { limit: limiteAlto }
+              : t.tool === "searchProducts"
+                ? { limit: 8 }
+                : {}),
+          },
+        }));
+      }
+      if (tools.length === 0) {
+        tools = [
+          {
+            tool: "searchStores",
+            params: { query: soggetto, ...(limiteAlto ? { limit: limiteAlto } : {}) },
+          },
+          { tool: "searchProducts", params: { query: soggetto, limit: limiteAlto ?? 8 } },
+        ];
+      }
+      return { directReply: null, tools, followUp };
+    }
+  }
+
   // ── Pino Semantic Planner v2 ─────────────────────────────────────────────
   // Per richieste naturali/composte il planner trasforma il linguaggio umano
   // in un piano strutturato: soggetto + sinonimi + prezzo + esclusioni +
@@ -358,54 +406,6 @@ function pianoPredefinito(
           ],
         };
       }
-    }
-  }
-
-  // ── Pino Conversazionale v1: follow-up sul risultato precedente ───────────
-  // Una richiesta BREVE ("solo aperti ora", "solo economici", "fammi vedere
-  // altro", "vicino a me"...) NON deve diventare una ricerca generica: mantiene
-  // il SOGGETTO della richiesta precedente e ne modifica i risultati. Il filtro
-  // viene applicato DOPO il recupero (vedi rispostaFollowUp).
-  const followUp = rilevaFollowUp(ultimo);
-  if (followUp && utenti.length >= 2 && (analisi.intent === "generic" || analisi.confidence === "bassa")) {
-    const soggetto = soggettoPrecedente(utenti);
-    if (soggetto) {
-      // Se il soggetto precedente era una lista di offerte/eventi, il follow-up
-      // resta su quella superficie (non su negozi/prodotti).
-      if (RE_OFFERTE.test(soggetto)) {
-        return { directReply: null, tools: [{ tool: "searchOffers", params: {} }], followUp };
-      }
-      if (RE_EVENTI.test(soggetto)) {
-        return { directReply: null, tools: [{ tool: "searchEvents", params: {} }], followUp };
-      }
-      const analisiPrec = analizzaIntentoPino(soggetto);
-      // "fammi vedere altro" allarga il recupero per poter mostrare opzioni
-      // diverse da quelle già elencate.
-      const limiteAlto = followUp.tipo === "altro" ? 12 : undefined;
-      let tools: ToolInvocation[] = [];
-      if (analisiPrec.intent !== "generic" && analisiPrec.confidence !== "bassa") {
-        tools = pianoIntento(analisiPrec, soggetto).map((t) => ({
-          tool: t.tool,
-          params: {
-            query: t.query,
-            ...(limiteAlto
-              ? { limit: limiteAlto }
-              : t.tool === "searchProducts"
-                ? { limit: 8 }
-                : {}),
-          },
-        }));
-      }
-      if (tools.length === 0) {
-        tools = [
-          {
-            tool: "searchStores",
-            params: { query: soggetto, ...(limiteAlto ? { limit: limiteAlto } : {}) },
-          },
-          { tool: "searchProducts", params: { query: soggetto, limit: limiteAlto ?? 8 } },
-        ];
-      }
-      return { directReply: null, tools, followUp };
     }
   }
 
