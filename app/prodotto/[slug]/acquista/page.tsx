@@ -1,4 +1,5 @@
 import { permanentRedirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { risolviProdottoPubblico, getNegozio } from "@/lib/negozi";
 import { getProdottoImmagine } from "@/lib/prodotti-immagini";
 import { richiediVariantePerProdotto } from "@/lib/varianti-pubbliche";
@@ -6,6 +7,7 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { getGuestMode } from "@/lib/auth/guest";
 import Link from "next/link";
 import GuestPurchaseButton from "@/components/acquista/GuestPurchaseButton";
+import ProductAgeGate from "@/components/prodotto/ProductAgeGate";
 
 function formatPrezzo(p: number): number {
   return Number(p);
@@ -36,6 +38,23 @@ export default async function AcquistaChoicePage({
       <div className="py-12 text-center">
         <p className="text-slate-600">Prodotto non trovato.</p>
       </div>
+    );
+  }
+
+  // Protezione 18+ anche sul percorso di acquisto diretto: non deve essere
+  // possibile saltare il modulo visitando /acquista senza passare dalla scheda.
+  const soggettoVerificaEta = Boolean((prodotto as Record<string, unknown>).soggetto_verifica_eta);
+  const cookieStore = await cookies();
+  const ageVerified = cookieStore.get(\`incitta_age_verified_v2_\${String(prodotto.id)}\`)?.value === "1";
+  const ageBlocked = cookieStore.get(\`incitta_age_blocked_v2_\${String(prodotto.id)}\`)?.value === "1";
+
+  if (soggettoVerificaEta && !ageVerified) {
+    return (
+      <ProductAgeGate
+        prodottoId={String(prodotto.id)}
+        slug={String(prodotto.slug ?? slug)}
+        bloccato={ageBlocked}
+      />
     );
   }
 
