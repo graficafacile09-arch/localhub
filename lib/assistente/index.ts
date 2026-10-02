@@ -814,7 +814,8 @@ async function recuperaAlternativeSemantiche(
     descrizione,
   };
 }
-\n// ─── Risposte deterministiche per dati sensibili al falso positivo ───────────
+
+// ─── Risposte deterministiche per dati sensibili al falso positivo ───────────
 // Meteo e stato farmacie non devono mai essere "interpretati" da Gemini:
 // una volta recuperati i dati, la risposta viene composta qui usando soltanto
 // ciò che la fonte ha realmente restituito. Questo elimina le allucinazioni
