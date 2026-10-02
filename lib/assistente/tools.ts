@@ -85,6 +85,8 @@ export type ToolParams = {
   citta?: string;
   /** Stato farmacia per il tool locale: aperte, turno o tutte. */
   stato?: "aperte" | "turno" | "tutte";
+  /** Esclusioni semantiche Pino: es. ["alcolica"] per "birra non alcolica". */
+  esclusioni?: string[];
 };
 
 export type RisultatoRicercaCompleta = {
@@ -114,6 +116,33 @@ function testoIncluso(testo: string | null | undefined, query: string): boolean 
   if (!q) return true;
   return (testo ?? "").toLowerCase().includes(q);
 }
+
+function campoContieneEsclusione(campo: string, esclusioni: string[]): boolean {
+  const testo = normalizza(campo);
+  const token = testo.split(/[^a-z0-9]+/).filter(Boolean);
+  for (const esclusione of esclusioni) {
+    const e = normalizza(esclusione).trim();
+    if (!e) continue;
+    const et = e.split(/[^a-z0-9]+/).filter(Boolean);
+    if (et.length === 0) continue;
+    for (let i = 0; i <= token.length - et.length; i++) {
+      if (!et.every((v, j) => token[i + j] === v)) continue;
+      const precedente = token[i - 1] ?? "";
+      // "birra non alcolica" non deve essere scartata solo perché la descrizione
+      // ripete "non alcolica": l'esclusione vale quando il prodotto contiene
+      // davvero la caratteristica esclusa.
+      if (precedente === "non" || precedente === "senza") continue;
+      return true;
+    }
+  }
+  return false;
+}
+
+function recordEscluso(campi: unknown[], esclusioni: string[] | undefined): boolean {
+  if (!esclusioni?.length) return false;
+  return campi.some((campo) => campoContieneEsclusione(String(campo ?? ""), esclusioni));
+}
+
 
 function descrizioneMeteo(codice: number): string {
   const map: Record<number, string> = {
@@ -371,6 +400,11 @@ export async function searchStores(
   });
   const attivi = (righe ?? []).filter(
     (n: Record<string, unknown>) => n.attivo !== false
+  ).filter((n: Record<string, unknown>) =>
+    !recordEscluso(
+      [n.nome, n.descrizione, n.categoria, n.sottocategoria, (n.data as Record<string, unknown> | undefined)?.tipo_attivita],
+      opts?.esclusioni
+    )
   );
 
   // Filtro esplicito categoria/tipo: la classificazione è già garantita dal
@@ -463,9 +497,15 @@ export async function searchProducts(
   // catalogo.
   const concettiQuery = analizzaRichiesta(q).concetti.map(normalizza);
   const pertinenti =
-    terminiOriginali.length > 0
+    (terminiOriginali.length > 0
       ? righe.filter((p) => prodottoPertinente(p, terminiOriginali, concettiQuery))
-      : righe;
+      : righe
+    ).filter((p) =>
+      !recordEscluso(
+        [p.nome, p.descrizione, p.categoria],
+        opts?.esclusioni
+      )
+    );
 
   // Filtri in memoria su categoria/sottocategoria/tipo-se-pertinente.
   let filtrate = pertinenti;
