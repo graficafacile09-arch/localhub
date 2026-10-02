@@ -519,6 +519,40 @@ function prodottoPertinente(
   return concetti.some((c) => campi.includes(c));
 }
 
+function punteggioProdottoPino(
+  prodotto: ProdottoRicerca,
+  query: string,
+  termini: string[]
+): number {
+  const nome = normalizza(prodotto.nome ?? "");
+  const descrizione = normalizza(prodotto.descrizione ?? "");
+  const categoria = normalizza(prodotto.categoria ?? "");
+  const q = normalizza(query).trim();
+  const tokenNome = estraiToken(nome);
+  let score = 0;
+
+  if (q && nome === q) score += 120;
+  else if (q && nome.includes(q)) score += 90;
+
+  for (const termine of termini) {
+    const t = normalizza(termine).trim();
+    if (!t) continue;
+    if (tokenNome.includes(t)) score += 45;
+    else if (nome.includes(t)) score += 30;
+    else if (categoria.includes(t)) score += 18;
+    else if (descrizione.includes(t)) score += 8;
+  }
+
+  // Se più termini della richiesta compaiono nel nome, il prodotto è più
+  // specifico rispetto a uno che li cita solo nella descrizione.
+  if (termini.length > 0 && termini.every((t) => nome.includes(normalizza(t)))) {
+    score += 35;
+  }
+
+  score -= Math.min(nome.length, 160) / 160;
+  return score;
+}
+
 export async function searchProducts(
   query: string,
   opts: ToolParams = {}
@@ -571,7 +605,12 @@ export async function searchProducts(
         : nelBudget;
 
   return scelti
-    .sort((a, b) => Number(a.prezzo) - Number(b.prezzo))
+    .sort((a, b) => {
+      const scoreA = punteggioProdottoPino(a, q, terminiOriginali);
+      const scoreB = punteggioProdottoPino(b, q, terminiOriginali);
+      if (scoreA !== scoreB) return scoreB - scoreA;
+      return Number(a.prezzo) - Number(b.prezzo);
+    })
     .slice(0, limita(opts.limit, 8, 10));
 }
 
