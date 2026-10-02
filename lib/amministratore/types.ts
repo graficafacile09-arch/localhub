@@ -22,6 +22,8 @@ export type RuoloUtente = "amministratore" | "commerciante" | "utente";
  */
 export type StatoAccount = "attivo" | "sospeso" | "bannato";
 
+export type StatoApprovazioneAccount = "pending" | "approved" | "rejected";
+
 /** Filtri disponibili nelle tab del modulo utenti (ruolo PRIMARIO). */
 export type FiltroRuoloUtente = "tutti" | RuoloUtente;
 
@@ -123,4 +125,8 @@ export type Utente = {
    * il pannello NON può mai sospenderlo/bannarlo/eliminarlo/degradarlo.
    */
   protetto: boolean;
+  /** Stato dell'approvazione amministrativa, distinto dal blocco Auth. */
+  approvazione: StatoApprovazioneAccount;
+  /** Data della decisione amministrativa, se presente. */
+  approvazioneDecisaIl: string | null;
 };

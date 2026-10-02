@@ -105,6 +105,8 @@ export async function PATCH(
     [
       "ruolo",
       "stato",
+      "approva",
+      "rifiuta",
       "aggiungiRuolo",
       "rimuoviRuolo",
       "sospendi",
@@ -240,6 +242,58 @@ export async function PATCH(
       ruoliAggiornati.delete(ruoloDb);
       operazioni.push(`ruolo rimosso: ${body.rimuoviRuolo}`);
     }
+  }
+
+  // ── Approvazione amministrativa account ───────────────────────────────
+  // Separata dallo stato Auth (sospeso/bannato): approvato = accesso consentito,
+  // pending/rejected = account autenticato ma non autorizzato all'uso.
+  if (bodyPresente("approva") || bodyPresente("rifiuta")) {
+    if (bodyPresente("approva") && bodyPresente("rifiuta")) {
+      return apiError("VALIDATION_ERROR", "Scegli una sola azione di approvazione.", 422);
+    }
+
+    if (bodyPresente("approva") && body.approva !== true) {
+      return apiError("VALIDATION_ERROR", "Valore approva non valido.", 422);
+    }
+
+    const rifiuta =
+      body.rifiuta && typeof body.rifiuta === "object"
+        ? (body.rifiuta as Record<string, unknown>)
+        : null;
+
+    if (bodyPresente("rifiuta") && (!rifiuta || rifiuta.conferma !== true)) {
+      return apiError("VALIDATION_ERROR", "Valore rifiuta non valido.", 422);
+    }
+
+    const motivoApprovazione =
+      rifiuta && typeof rifiuta.motivo === "string"
+        ? rifiuta.motivo.trim().slice(0, 200)
+        : null;
+
+    const statoApprovazione = bodyPresente("approva") ? "approved" : "rejected";
+
+    const { error: approvalError } = await db
+      .from("account_approvazioni")
+      .upsert(
+        {
+          user_id: utenteId,
+          stato: statoApprovazione,
+          deciso_il: new Date().toISOString(),
+          deciso_da: sessione.user.id,
+          motivo: statoApprovazione === "rejected" ? motivoApprovazione : null,
+        },
+        { onConflict: "user_id" }
+      );
+
+    if (approvalError) {
+      return apiError("APPROVAL_FAILED", approvalError.message, 422);
+    }
+
+    operazioni.push(
+      statoApprovazione === "approved"
+        ? "approvazione account: approvato"
+        : "approvazione account: rifiutato"
+    );
   }
 
   // ── 4) Stato account: sospendi / banna / riattiva. ──────────────────────

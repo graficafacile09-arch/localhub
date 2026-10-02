@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { getRuoliUtente } from "@/lib/auth/roles";
+import { getAccountApprovalStatus } from "@/lib/auth/account-approval";
 import {
   AREA_COOKIE,
   areaCookieOptions,
@@ -59,6 +60,20 @@ export async function POST(request: Request) {
     }
     preservaArea(loginUrl, formData);
     return NextResponse.redirect(loginUrl);
+  }
+
+  const approvalStatus = await getAccountApprovalStatus(data.user.id);
+  if (approvalStatus !== "approved") {
+    // La sessione non viene usata per concedere accesso all'area: l'utente
+    // resta autenticato in modo controllato ma viene portato alla schermata
+    // di attesa. La registrazione esistente non viene modificata.
+    await supabase.auth.signOut();
+    const pendingUrl = new URL("/account-in-attesa", request.url);
+    pendingUrl.searchParams.set(
+      "stato",
+      approvalStatus === "rejected" ? "rifiutato" : "in-attesa"
+    );
+    return NextResponse.redirect(pendingUrl);
   }
 
   // ── Area attiva della sessione ────────────────────────────────────────

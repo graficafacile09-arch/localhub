@@ -12,6 +12,7 @@ import {
   type AreaAttiva,
 } from "@/lib/auth/area";
 import { GUEST_COOKIE } from "@/lib/auth/guest";
+import { getAccountApprovalStatus } from "@/lib/auth/account-approval";
 
 export async function proxy(request: NextRequest) {
   if (!isSupabaseConfigured()) {
@@ -123,6 +124,25 @@ export async function proxy(request: NextRequest) {
 
   if (pathname === "/login" && request.method === "GET" && !isRscRequest) {
     response.cookies.delete(GUEST_COOKIE);
+  }
+
+  // Account non ancora approvati: le pagine pubbliche restano visitabili,
+  // ma nessuna area personale/admin/merchant può essere utilizzata.
+  if (
+    user &&
+    (pathname.startsWith("/amministratore") ||
+      pathname.startsWith("/merchant") ||
+      pathname.startsWith("/cliente"))
+  ) {
+    const approvalStatus = await getAccountApprovalStatus(user.id);
+    if (approvalStatus !== "approved") {
+      const pendingUrl = new URL("/account-in-attesa", request.url);
+      pendingUrl.searchParams.set(
+        "stato",
+        approvalStatus === "rejected" ? "rifiutato" : "in-attesa"
+      );
+      return redirectConSessione(pendingUrl.toString());
+    }
   }
 
   const areaRichiesta: AreaAttiva | null =
