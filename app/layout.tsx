@@ -97,7 +97,7 @@ export default async function RootLayout({
           </div>
         </CartProvider>
 
-        <footer className="border-t border-slate-200 bg-white py-3 text-center text-xs text-slate-600">
+        <footer data-pino-legal-footer="true" className="border-t border-slate-200 bg-white py-3 text-center text-xs text-slate-600">
           <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 px-4">
             <span>{footerText}</span>
             <span aria-hidden="true">·</span>
