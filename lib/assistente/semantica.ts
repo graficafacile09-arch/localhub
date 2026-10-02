@@ -12,6 +12,7 @@
 import { callGeminiText } from "@/lib/ai/gemini-text";
 import { extractJsonFromText } from "@/lib/product-assistant/providers/utils";
 import { normalizzaRichiesta } from "./local-intents";
+import { rilevaFollowUp } from "./conversazione";
 import { estraiCitta } from "@/lib/localita";
 import { analizzaIntentoPino, type PinoIntent, type PinoIntentAnalysis } from "./intent";
 import { SINONIMI_DIRETTI_PRODOTTO, SINONIMI_TIPO_ATTIVITA } from "@/lib/ricerca-semantica";
@@ -29,6 +30,108 @@ export type PinoSemanticPlan = {
   city: string | null;
   openNow: boolean;
   confidence: "alta" | "media" | "bassa";
+};
+
+export type PinoConversationState = {
+  richiesta: string;
+  query: string | null;
+  intent: PinoIntent;
+  exclusions: string[];
+  minPrice: number | null;
+  maxPrice: number | null;
+  city: string | null;
+  openNow: boolean;
+  confidence: "alta" | "media" | "bassa";
+  attivo: boolean;
+};
+
+/**
+ * Costruisce uno stato semantico esplicito dalla conversazione recente.
+ *
+ * Lo stato viene calcolato in modo deterministico e resta confinato a Pino:
+ * non scrive sul DB e non modifica la ricerca pubblica. La regola importante
+ * è che l'ultimo messaggio può modificare lo stato precedente senza portarsi
+ * dietro filtri obsoleti (prezzo/città/reset).
+ */
+export function costruisciStatoConversazionale(
+  history: MessaggioAssistente[]
+): PinoConversationState {
+  const utenti = history
+    .filter((m) => m.role === "user")
+    .map((m) => m.content.trim())
+    .filter(Boolean);
+
+  const corrente = utenti[utenti.length - 1] ?? "";
+  if (!corrente) {
+    return {
+      richiesta: "",
+      query: null,
+      intent: "generic",
+      exclusions: [],
+      minPrice: null,
+      maxPrice: null,
+      city: null,
+      openNow: false,
+      confidence: "bassa",
+      attivo: false,
+    };
+  }
+
+  // Riutilizziamo la stessa logica di contesto già verificata e la trasformiamo
+  // subito in uno stato strutturato. In questo modo i livelli successivi non
+  // devono reinterpretare ogni volta la cronologia in modo diverso.
+  const richiesta = arricchisciRichiestaConContesto(corrente, history);
+  const analisi = analizzaIntentoPino(richiesta);
+  const piano = pianoLocaleIntelligente(richiesta, analisi);
+
+  // Follow-up puri senza un piano locale (es. "fammi vedere altro") mantengono
+  // comunque il soggetto della conversazione; non diventano una nuova ricerca.
+  if (!piano) {
+    const follow = rilevaFollowUp(corrente);
+    if (follow && utenti.length >= 2) {
+      const soggetto = [...utenti.slice(0, -1)].reverse().find((q) => !rilevaFollowUp(q));
+      if (soggetto) {
+        const base = analizzaIntentoPino(soggetto);
+        return {
+          richiesta,
+          query: soggetto,
+          intent: base.intent,
+          exclusions: [],
+          minPrice: null,
+          maxPrice: null,
+          city: null,
+          openNow: false,
+          confidence: base.confidence,
+          attivo: true,
+        };
+      }
+    }
+    return {
+      richiesta,
+      query: null,
+      intent: analisi.intent,
+      exclusions: [],
+      minPrice: null,
+      maxPrice: null,
+      city: null,
+      openNow: false,
+      confidence: analisi.confidence,
+      attivo: false,
+    };
+  }
+
+  return {
+    richiesta,
+    query: piano.query || null,
+    intent: piano.intent,
+    exclusions: piano.exclusions,
+    minPrice: piano.minPrice,
+    maxPrice: piano.maxPrice,
+    city: piano.city,
+    openNow: piano.openNow,
+    confidence: piano.confidence,
+    attivo: piano.surface !== "none" && Boolean(piano.query),
+  };
 };
 
 const SCHEMA_PROMPT = `Interpreta una richiesta dell'utente per la ricerca locale di InCittà.
@@ -350,7 +453,6 @@ function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): Pi
   const match = CANONICI_RICERCA.find((x) => x.pattern.test(q));
   const haEsclusioneAlcol = /\b(?:non|senza)\s+(?:alcol(?:ica|ico)?|alcol)\b|\banalcolic(?:a|o|he|i)\b/i.test(q);
   const haPrezzo = /\b(?:sotto|sopra|massimo|minimo|meno di|piu di|più di|entro|fino a|tra)\b/i.test(q);
-  const haCitta = /\b(?:a|in)\s+[A-ZÀ-ÖØ-Ý][A-Za-zÀ-ÖØ-öø-ÿ' -]{2,40}/.test(query);
   if (!match && !haEsclusioneAlcol && !haPrezzo && analisi.confidence === "bassa") return null;
 
   // I vincoli NON fanno parte della query di retrieval. Prezzo, negazioni,
@@ -484,9 +586,17 @@ export async function interpretaRichiestaPino(
   query: string,
   history: MessaggioAssistente[],
   analisi: PinoIntentAnalysis,
-  memoria: PinoMemoriaVoce[]
+  memoria: PinoMemoriaVoce[],
+  stato?: PinoConversationState
 ): Promise<PinoSemanticPlan> {
-  const queryConMemoria = applicaMemoriaSemantica(query, memoria);
+  // Lo stato strutturato è la fonte prioritaria per le conversazioni
+  // multi-turno. La memoria semantica viene applicata comunque dopo la
+  // ricostruzione dello stato, così una correzione consolidata resta utilizzabile.
+  const richiestaDaStato =
+    stato?.attivo && stato.richiesta
+      ? stato.richiesta
+      : query;
+  const queryConMemoria = applicaMemoriaSemantica(richiestaDaStato, memoria);
   const q = queryConMemoria.trim();
   // Se la memoria ha trasformato un termine non riconosciuto in un concetto
   // canonico, ricalcoliamo l'intento sul testo normalizzato.

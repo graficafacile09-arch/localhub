@@ -47,7 +47,7 @@ import {
   type PinoIntentAnalysis,
 } from "./intent";
 import { recuperaMemoria, registraEsitoMemoria } from "./memoria";
-import { arricchisciRichiestaConContesto, interpretaRichiestaPino, usaFastPathSemantico, type PinoSemanticPlan } from "./semantica";
+import { arricchisciRichiestaConContesto, costruisciStatoConversazionale, interpretaRichiestaPino, usaFastPathSemantico, type PinoSemanticPlan } from "./semantica";
 import {
   rilevaFollowUp,
   soggettoPrecedente,
@@ -279,6 +279,54 @@ function pianoPredefinito(
     };
   }
 
+  // ── Pino Conversazionale v1: follow-up sul risultato precedente ───────────
+  // Una richiesta BREVE ("solo aperti ora", "solo economici", "fammi vedere
+  // altro", "vicino a me"...) NON deve diventare una ricerca generica: mantiene
+  // il SOGGETTO della richiesta precedente e ne modifica i risultati. Il filtro
+  // viene applicato DOPO il recupero (vedi rispostaFollowUp).
+  const followUp = rilevaFollowUp(ultimo);
+  if (followUp && utenti.length >= 2 && (analisi.intent === "generic" || analisi.confidence === "bassa")) {
+    const soggetto = soggettoPrecedente(utenti);
+    if (soggetto) {
+      // Se il soggetto precedente era una lista di offerte/eventi, il follow-up
+      // resta su quella superficie (non su negozi/prodotti).
+      if (RE_OFFERTE.test(soggetto)) {
+        return { directReply: null, tools: [{ tool: "searchOffers", params: {} }], followUp };
+      }
+      if (RE_EVENTI.test(soggetto)) {
+        return { directReply: null, tools: [{ tool: "searchEvents", params: {} }], followUp };
+      }
+      const analisiPrec = analizzaIntentoPino(soggetto);
+      // "fammi vedere altro" allarga il recupero per poter mostrare opzioni
+      // diverse da quelle già elencate.
+      const limiteAlto = followUp.tipo === "altro" ? 12 : undefined;
+      let tools: ToolInvocation[] = [];
+      if (analisiPrec.intent !== "generic" && analisiPrec.confidence !== "bassa") {
+        tools = pianoIntento(analisiPrec, soggetto).map((t) => ({
+          tool: t.tool,
+          params: {
+            query: t.query,
+            ...(limiteAlto
+              ? { limit: limiteAlto }
+              : t.tool === "searchProducts"
+                ? { limit: 8 }
+                : {}),
+          },
+        }));
+      }
+      if (tools.length === 0) {
+        tools = [
+          {
+            tool: "searchStores",
+            params: { query: soggetto, ...(limiteAlto ? { limit: limiteAlto } : {}) },
+          },
+          { tool: "searchProducts", params: { query: soggetto, limit: limiteAlto ?? 8 } },
+        ];
+      }
+      return { directReply: null, tools, followUp };
+    }
+  }
+
   // ── Pino Semantic Planner v2 ─────────────────────────────────────────────
   // Per richieste naturali/composte il planner trasforma il linguaggio umano
   // in un piano strutturato: soggetto + sinonimi + prezzo + esclusioni +
@@ -358,54 +406,6 @@ function pianoPredefinito(
           ],
         };
       }
-    }
-  }
-
-  // ── Pino Conversazionale v1: follow-up sul risultato precedente ───────────
-  // Una richiesta BREVE ("solo aperti ora", "solo economici", "fammi vedere
-  // altro", "vicino a me"...) NON deve diventare una ricerca generica: mantiene
-  // il SOGGETTO della richiesta precedente e ne modifica i risultati. Il filtro
-  // viene applicato DOPO il recupero (vedi rispostaFollowUp).
-  const followUp = rilevaFollowUp(ultimo);
-  if (followUp && utenti.length >= 2) {
-    const soggetto = soggettoPrecedente(utenti);
-    if (soggetto) {
-      // Se il soggetto precedente era una lista di offerte/eventi, il follow-up
-      // resta su quella superficie (non su negozi/prodotti).
-      if (RE_OFFERTE.test(soggetto)) {
-        return { directReply: null, tools: [{ tool: "searchOffers", params: {} }], followUp };
-      }
-      if (RE_EVENTI.test(soggetto)) {
-        return { directReply: null, tools: [{ tool: "searchEvents", params: {} }], followUp };
-      }
-      const analisiPrec = analizzaIntentoPino(soggetto);
-      // "fammi vedere altro" allarga il recupero per poter mostrare opzioni
-      // diverse da quelle già elencate.
-      const limiteAlto = followUp.tipo === "altro" ? 12 : undefined;
-      let tools: ToolInvocation[] = [];
-      if (analisiPrec.intent !== "generic" && analisiPrec.confidence !== "bassa") {
-        tools = pianoIntento(analisiPrec, soggetto).map((t) => ({
-          tool: t.tool,
-          params: {
-            query: t.query,
-            ...(limiteAlto
-              ? { limit: limiteAlto }
-              : t.tool === "searchProducts"
-                ? { limit: 8 }
-                : {}),
-          },
-        }));
-      }
-      if (tools.length === 0) {
-        tools = [
-          {
-            tool: "searchStores",
-            params: { query: soggetto, ...(limiteAlto ? { limit: limiteAlto } : {}) },
-          },
-          { tool: "searchProducts", params: { query: soggetto, limit: limiteAlto ?? 8 } },
-        ];
-      }
-      return { directReply: null, tools, followUp };
     }
   }
 
@@ -948,8 +948,12 @@ export async function chatConAssistente(
   // Costruiamo subito la domanda contestuale: la memoria deve poter imparare
   // e poi essere utilizzata anche nelle richieste brevi che passano dal
   // fast-path locale.
-  const domandaSemantica = arricchisciRichiestaConContesto(domanda, storico);
+  const statoConversazionale = costruisciStatoConversazionale(storico);
+  const domandaSemantica =
+    statoConversazionale.richiesta ||
+    arricchisciRichiestaConContesto(domanda, storico);
   const analisiSemantica = analizzaIntentoPino(domandaSemantica);
+  const followUpBreve = rilevaFollowUp(domanda);
 
   // Meteo e farmacie sono intenti deterministici e non hanno bisogno di memoria.
   // Per tutte le altre richieste il recupero viene avviato senza saltare il
@@ -961,12 +965,21 @@ export async function chatConAssistente(
       : recuperaMemoria(domandaSemantica);
   const memoria = await memoriaPromise;
   const attivaPlannerSemantico =
-    usaFastPathSemantico(domandaSemantica, analisiSemantica) ||
-    domandaSemantica !== domanda ||
-    domandaSemantica.length >= 22 ||
-    /\b(?:non|senza|sotto|sopra|massimo|minimo|tra|entro|preferisco|tipo|per|aperto|aperta|ora|adesso|vicino)\b/i.test(domandaSemantica);
+    !followUpBreve &&
+    (
+      usaFastPathSemantico(domandaSemantica, analisiSemantica) ||
+      domandaSemantica !== domanda ||
+      domandaSemantica.length >= 22 ||
+      /\b(?:non|senza|sotto|sopra|massimo|minimo|tra|entro|preferisco|tipo|per|aperto|aperta|ora|adesso|vicino)\b/i.test(domandaSemantica)
+    );
   const semantica = attivaPlannerSemantico
-    ? await interpretaRichiestaPino(domandaSemantica, storico, analisiSemantica, memoria)
+    ? await interpretaRichiestaPino(
+        domandaSemantica,
+        storico,
+        analisiSemantica,
+        memoria,
+        statoConversazionale
+      )
     : undefined;
 
   // Stato dei risultati recuperati
