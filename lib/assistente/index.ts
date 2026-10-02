@@ -610,21 +610,19 @@ function fallbackTestuale(
 
   // Messaggio di apertura: dice sempre all'utente COSA ha trovato e cosa no,
   // in modo naturale. Per i servizi non ha senso parlare di "prodotto esatto".
-  let introduzione = criteri ? `${criteri}\\n\\n` : "";
+  let introduzione = criteri ? `${criteri}\n\n` : "";
   if (risultati.prodotti.length > 0) {
     const n = risultati.prodotti.length;
-    introduzione = `Ho trovato ${n} ${n === 1 ? "prodotto" : "prodotti"} che ${n === 1 ? "corrisponde" : "corrispondono"} alla tua ricerca.\n\n`;
+    introduzione += `Ho trovato ${n} ${n === 1 ? "prodotto" : "prodotti"} che ${n === 1 ? "corrisponde" : "corrispondono"} alla tua ricerca.\n\n`;
   } else if (soloNegozi) {
-    introduzione =
+    introduzione +=
       intent === "service"
         ? "Non ho trovato quello che cerchi, ma queste attività potrebbero aiutarti.\n\n"
         : "Non ho trovato esattamente quello che cerchi, ma queste attività potrebbero aiutarti.\n\n";
   } else if (totale > 0) {
-    introduzione = "Ho trovato alcune informazioni pertinenti alla tua ricerca.\n\n";
+    introduzione += "Ho trovato alcune informazioni pertinenti alla tua ricerca.\n\n";
   }
 
-  // Motivazione basata sui dati reali (solo quando mostriamo attività senza
-  // prodotto): cita la categoria registrata, mai caratteristiche inventate.
   const motivazione = soloNegozi ? motivoCategoria(risultati.negozi) : null;
   const nota = notaVincolo ? `\n\n_${notaVincolo}_` : "";
   return (
