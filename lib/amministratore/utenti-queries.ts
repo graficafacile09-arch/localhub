@@ -7,6 +7,7 @@ import type {
   NegozioUtente,
   RuoloUtente,
   StatoAccount,
+  StatoApprovazioneAccount,
   Utente,
 } from "./types";
 
