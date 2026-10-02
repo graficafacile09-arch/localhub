@@ -135,7 +135,14 @@ function correggiErroriBattitura(query: string): string {
   }).join("");
 }
 
-export function usaFastPathSemantico(query: string, analisi: PinoIntentAnalysis): boolean {\n  const q = correggiErroriBattitura(normalizzaRichiesta(query)).trim();\n  return CANONICI_RICERCA.some((x) => x.pattern.test(q)) ||\n    /\\b(?:analcolic(?:a|o|he|i)|non\\s+(?:alcol(?:ica|ico)?|alcol)|senza\\s+(?:alcol(?:ica|ico)?|alcol))\\b/i.test(q) ||\n    /\\b(?:sotto|sopra|massimo|minimo|meno di|piu di|più di|entro|fino a|tra)\\b/i.test(q);\n}\n\nfunction pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): PinoSemanticPlan | null {
+export function usaFastPathSemantico(query: string, analisi: PinoIntentAnalysis): boolean {
+  const q = correggiErroriBattitura(normalizzaRichiesta(query)).trim();
+  return CANONICI_RICERCA.some((x) => x.pattern.test(q)) ||
+    /\b(?:analcolic(?:a|o|he|i)|non\s+(?:alcol(?:ica|ico)?|alcol)|senza\s+(?:alcol(?:ica|ico)?|alcol))\b/i.test(q) ||
+    /\b(?:sotto|sopra|massimo|minimo|meno di|piu di|più di|entro|fino a|tra)\b/i.test(q);
+}
+
+function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): PinoSemanticPlan | null {
   const q = normalizzaRichiesta(query).trim();
   if (!q) return null;
   const match = CANONICI_RICERCA.find((x) => x.pattern.test(q));
@@ -237,7 +244,10 @@ export async function interpretaRichiestaPino(
 
   if (!q || analisi.intent === "generic") return fallback;
 
-  const fastPlan = pianoLocaleIntelligente(q, analisi);\n  if (fastPlan) return fastPlan;\n\n  const memoriaTesto = memoria.slice(0, 4)
+  const fastPlan = pianoLocaleIntelligente(q, analisi);
+  if (fastPlan) return fastPlan;
+
+  const memoriaTesto = memoria.slice(0, 4)
     .map((m) => `${m.termine}=>${m.concetto}`)
     .join(", ") || "nessuna";
 
