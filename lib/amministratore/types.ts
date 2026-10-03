@@ -67,6 +67,10 @@ export const RUOLI_UTENTE: Record<
     label: "Venditore",
     chip: "bg-emerald-50 text-emerald-700 ring-emerald-200",
   },
+  corriere: {
+    label: "Corriere",
+    chip: "bg-amber-50 text-amber-700 ring-amber-200",
+  },
   utente: {
     label: "Cliente",
     chip: "bg-slate-100 text-slate-600 ring-slate-200",
