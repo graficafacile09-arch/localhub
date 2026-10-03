@@ -82,10 +82,10 @@ export default async function NegoziPage({
                         className="h-full w-full bg-cover bg-center"
                         style={{ backgroundImage: `url(${imageUrl})` }}
                       />
-                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/45 to-transparent px-3 pb-2.5 pt-8">
-                        <h2 className="truncate text-sm font-black leading-5 text-white drop-shadow-sm sm:text-base">
-                          {negozio.nome}
-                        </h2>
+                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent px-3 pb-2.5 pt-8">
+                        <span className="inline-flex max-w-full items-center rounded-full bg-yellow-400 px-2.5 py-1 text-[11px] font-bold leading-4 text-yellow-950 shadow-sm sm:text-xs">
+                          <span className="truncate">{negozio.nome}</span>
+                        </span>
                       </div>
                     </div>
                     <div className="flex items-start gap-2 p-2.5">
