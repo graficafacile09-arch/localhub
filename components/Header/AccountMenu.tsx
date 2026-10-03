@@ -230,6 +230,15 @@ export default function AccountMenu({
                 <Store className="h-4 w-4 shrink-0 text-blue-600" aria-hidden />
                 Entra come Venditore
               </Link>
+              <Link
+                href="/login?area=courier"
+                role="menuitem"
+                onClick={() => setOpen(false)}
+                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition hover:bg-slate-50 hover:text-blue-700"
+              >
+                <Truck className="h-4 w-4 shrink-0 text-emerald-600" aria-hidden />
+                Area Corriere Locale
+              </Link>
             </div>
           </div>
         )}
