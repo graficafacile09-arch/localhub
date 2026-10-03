@@ -9,7 +9,7 @@
  */
 
 /** Ruoli di piattaforma (vista Area Amministratore). */
-export type RuoloUtente = "amministratore" | "commerciante" | "utente";
+export type RuoloUtente = "amministratore" | "commerciante" | "corriere" | "utente";
 
 /**
  * Stato ACCOUNT — distinto dal ruolo.
