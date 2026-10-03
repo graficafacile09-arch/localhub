@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { Truck, LogOut } from "lucide-react";
 import { getSessionArea } from "@/lib/auth/session-area";
 import { getAccountApprovalStatus } from "@/lib/auth/account-approval";
+import ConsegneLocali from "@/components/corriere/ConsegneLocali";
 
 export default async function CorrierePage() {
   const sessione = await getSessionArea();
@@ -51,11 +52,13 @@ export default async function CorrierePage() {
           <p className="text-sm text-slate-500">Benvenuto,</p>
           <h2 className="mt-1 text-2xl font-extrabold text-slate-900">{nome}</h2>
           <p className="mt-3 text-sm leading-6 text-slate-600">
-            L&apos;accesso al profilo corriere locale è attivo. Qui verrà collegata
-            la gestione delle consegne, con gli ordini assegnati e la navigazione
-            verso le coordinate del destinatario.
+            Qui trovi le consegne locali assegnate al tuo profilo e puoi aggiornarne
+            lo stato fino alla consegna, aprendo direttamente la navigazione verso
+            le coordinate del destinatario.
           </p>
         </section>
+
+        <ConsegneLocali />
       </div>
     </main>
   );
