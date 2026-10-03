@@ -16,7 +16,7 @@ export async function getUtenti(
   return getUtentiReali(filtro);
 }
 
-/** Conteggi per le tab (tutti / amministratori / commercianti / utenti). */
+/** Conteggi per le tab (tutti / amministratori / commercianti / corrieri / utenti). */
 export async function getConteggiUtenti(): Promise<
   Record<FiltroRuoloUtente, number>
 > {
