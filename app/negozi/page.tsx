@@ -6,7 +6,7 @@ import { getImpostazioniPubbliche } from "@/lib/platform/settings";
 import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
 import ShareActivityButton from "@/components/negozio/ShareActivityButton";
 import Link from "next/link";
-import { ArrowLeft, MapPin, Star } from "lucide-react";
+import { ArrowLeft, MapPin, Star, Tag } from "lucide-react";
 
 export default async function NegoziPage({
   searchParams,
@@ -75,41 +75,25 @@ export default async function NegoziPage({
                     href={`/negozio/${negozio.slug}`}
                     className="group block"
                   >
-                    <div className="relative aspect-video overflow-hidden bg-slate-100">
-                      <div
-                        role="img"
-                        aria-label={negozio.nome}
-                        className="h-full w-full bg-cover bg-center"
-                        style={{ backgroundImage: `url(${imageUrl})` }}
-                      />
-
-                    </div>
-                    <div className="flex items-start gap-2 p-2.5">
-                      <div className="h-8 w-8 shrink-0 overflow-hidden rounded-full border border-slate-200 bg-white">
-                        {negozio.logo_url ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={negozio.logo_url}
-                            alt={`Logo ${negozio.nome}`}
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <div
-                            className="h-full w-full bg-white"
-                            aria-label={`Logo ${negozio.nome} non ancora impostato`}
-                          />
-                        )}
-                      </div>
-                      <div className="min-w-0">
-                        <h2 className="truncate text-sm font-black leading-5 text-slate-900 sm:text-base">
-                          {negozio.nome}
-                        </h2>
+                    <div className="relative aspect-[16/9] overflow-hidden bg-slate-100">
+                      <div role="img" aria-label={negozio.nome} className="h-full w-full bg-cover bg-center" style={{ backgroundImage: `url(${imageUrl})` }} />
+                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-900/25 to-transparent" />
+                      <div className="absolute inset-x-0 bottom-0 p-2.5">
                         {negozio.categoria && (
-                          <span className="mt-1 inline-block max-w-full truncate rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700">
+                          <span className="mb-1 inline-flex items-center gap-1 rounded-full bg-yellow-400 px-2 py-0.5 text-[9px] font-black uppercase tracking-wide text-yellow-950 shadow-sm">
+                            <Tag className="h-2.5 w-2.5" aria-hidden />
                             {negozio.categoria}
                           </span>
                         )}
-                        {negozio.indirizzo && (
+                        <div className="flex min-w-0 items-center gap-2">
+                          <div className="h-8 w-8 shrink-0 overflow-hidden rounded-full border-2 border-white/90 bg-white shadow-md">
+                            {negozio.logo_url ? <img src={negozio.logo_url} alt="" className="h-full w-full object-cover" /> : null}
+                          </div>
+                          <h2 className="min-w-0 truncate text-base font-black tracking-tight text-white drop-shadow-md">{negozio.nome}</h2>
+                        </div>
+                      </div>
+                    </div>
+                    {negozio.indirizzo && (
                           <p className="mt-0.5 flex items-center gap-1 text-[10px] text-slate-400">
                             <MapPin className="h-2.5 w-2.5 shrink-0" />
                             <span className="truncate">{negozio.indirizzo}</span>
