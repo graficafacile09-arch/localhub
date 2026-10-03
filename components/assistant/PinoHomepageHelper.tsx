@@ -36,9 +36,6 @@ export default function PinoHomepageHelper() {
         "[data-pino-legal-footer=\"true\"]"
       );
 
-      // Appena una delle due zone finali entra nella viewport, rimuoviamo
-      // completamente la fascia fissa: nessun overlay o fascia grigia sopra
-      // le regole/il footer.
       const blueVisible = blueZone
         ? blueZone.getBoundingClientRect().top < window.innerHeight
         : false;
@@ -90,7 +87,7 @@ export default function PinoHomepageHelper() {
   return (
     <div
       aria-label="Pino, assistente di InCittà"
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-[60] h-[58px] overflow-hidden bg-white lg:inset-x-auto lg:left-auto lg:right-0 lg:w-fit"
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-[60] h-[58px] overflow-hidden bg-white lg:inset-x-auto lg:left-auto lg:right-0 lg:w-fit lg:rounded-l-2xl"
       aria-hidden="false"
     >
       <div
