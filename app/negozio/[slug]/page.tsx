@@ -180,7 +180,6 @@ export default async function PaginaNegozio({
   const statoPreferiti = await getStatoPreferitiPerPagina();
 
   const imageUrl = getNegozioCardImmagine({
-    copertina_url: (negozio.copertina_url as string) ?? null,
     logo_url: (negozio.logo_url as string) ?? null,
     categoria: (negozio.categoria as string) ?? null,
   });
