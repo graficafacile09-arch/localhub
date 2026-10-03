@@ -166,6 +166,8 @@ function LoginContent() {
               <RegisterVenditoreOAuthCompletionForm tema={tema} />
             ) : area === "merchant" ? (
               <RegisterVenditoreForm tema={tema} />
+            ) : area === "courier" ? (
+              <RegisterCorriereForm tema={tema} />
             ) : (
               <RegisterClienteForm tema={tema} />
             )}
@@ -374,6 +376,81 @@ function RegisterClienteForm({ tema }: { tema: TemaLogin }) {
 }
 
 /** Registrazione VENDITORE: solo i campi del Venditore (con Partita IVA obbligatoria), nessun riferimento al Cliente. */
+function RegisterCorriereForm({ tema }: { tema: TemaLogin }) {
+  return (
+    <form
+      id="register-form"
+      action="/api/auth/register-courier"
+      method="post"
+      className="space-y-4"
+    >
+      <div className="space-y-2">
+        <label htmlFor="courier_nome" className={tema.labelFieldClass}>Nome</label>
+        <input
+          id="courier_nome" name="name" type="text" required
+          autoComplete="given-name"
+          placeholder="Mario"
+          className={`h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-900 outline-none transition ${tema.inputFocusClass}`}
+        />
+      </div>
+      <div className="space-y-2">
+        <label htmlFor="courier_cognome" className={tema.labelFieldClass}>Cognome</label>
+        <input
+          id="courier_cognome" name="surname" type="text" required
+          autoComplete="family-name"
+          placeholder="Rossi"
+          className={`h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-900 outline-none transition ${tema.inputFocusClass}`}
+        />
+      </div>
+      <div className="space-y-2">
+        <label htmlFor="courier_email" className={tema.labelFieldClass}>Email</label>
+        <input
+          id="courier_email" name="email" type="email" required
+          autoComplete="email"
+          placeholder="corriere@incitta.online"
+          className={`h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-900 outline-none transition ${tema.inputFocusClass}`}
+        />
+      </div>
+      <div className="space-y-2">
+        <label htmlFor="courier_telefono" className={tema.labelFieldClass}>Numero di telefono</label>
+        <input
+          id="courier_telefono" name="phone" type="tel" required
+          autoComplete="tel"
+          placeholder="+39 333 1234567"
+          className={`h-12 w-full rounded-2xl border border-slate-200 px-4 text-sm text-slate-900 outline-none transition ${tema.inputFocusClass}`}
+        />
+      </div>
+      <div className="space-y-2">
+        <label htmlFor="courier_password" className={tema.labelFieldClass}>Password</label>
+        <PasswordInput
+          id="courier_password" name="password" required
+          placeholder="Minimo 6 caratteri"
+          className="h-12"
+          focusClassName={tema.inputFocusClass}
+        />
+      </div>
+      <div className="space-y-2">
+        <label htmlFor="courier_password_confirm" className={tema.labelFieldClass}>Conferma Password</label>
+        <PasswordInput
+          id="courier_password_confirm" name="password_confirm" required
+          placeholder="Ripeti la password"
+          className="h-12"
+          focusClassName={tema.inputFocusClass}
+        />
+      </div>
+      <button
+        type="submit"
+        className={`h-12 w-full ${tema.ctaClass}`}
+      >
+        Invia richiesta di registrazione
+        {tema.IconaCta && (
+          <tema.IconaCta className="h-4 w-4" aria-hidden="true" />
+        )}
+      </button>
+    </form>
+  );
+}
+
 function RegisterVenditoreForm({ tema }: { tema: TemaLogin }) {
   const [partitaIva, setPartitaIva] = useState("");
   const [partitaIvaError, setPartitaIvaError] = useState("");
