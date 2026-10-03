@@ -166,6 +166,7 @@ export async function proxy(request: NextRequest) {
   const areaRichiesta: AreaAttiva | null =
     pathname.startsWith("/amministratore") ? "admin"
     : pathname.startsWith("/merchant") ? "merchant"
+    : pathname.startsWith("/corriere") ? "courier"
     : pathname.startsWith("/cliente") ? "cliente"
     : null;
 

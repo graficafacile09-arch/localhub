@@ -5,6 +5,7 @@ import {
   Settings,
   Store,
   Trash2,
+  Truck,
   Users,
 } from "lucide-react";
 import DashboardPage from "@/components/amministratore/DashboardPage";
@@ -39,6 +40,12 @@ const ACCESSI_RAPIDI = [
     href: "/amministratore/utenti",
     desc: "Profili e ruoli",
     icon: Users,
+  },
+  {
+    label: "Corrieri locali",
+    href: "/amministratore/corrieri",
+    desc: "Approvazione corrieri locali",
+    icon: Truck,
   },
   {
     label: "Cestino",

@@ -1,0 +1,28 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { CheckCircle2, MapPin, PackageCheck, Truck } from "lucide-react";
+
+type Item = {
+  ordine_id: string; stato: string; latitudine: number | null; longitudine: number | null;
+  ordini: { numero: string; cliente_nome: string | null; cliente_cognome: string | null; cliente_telefono: string | null; spedizione_indirizzo: string | null; spedizione_cap: string | null; spedizione_citta: string | null; spedizione_note: string | null } | null;
+};
+const labels: Record<string,string> = { assegnata:"Assegnata", accettata:"Accettata", ritirata:"Ritirata", in_consegna:"In consegna", consegnata:"Consegnata", problema_consegna:"Problema", annullata:"Annullata" };
+const actions: Record<string,{stato:string,label:string}[]> = {
+  assegnata:[{stato:"accettata",label:"Accetta consegna"},{stato:"problema_consegna",label:"Segnala problema"}],
+  accettata:[{stato:"ritirata",label:"Conferma ritiro"},{stato:"problema_consegna",label:"Segnala problema"}],
+  ritirata:[{stato:"in_consegna",label:"Avvia consegna"},{stato:"problema_consegna",label:"Segnala problema"}],
+  in_consegna:[{stato:"consegnata",label:"Conferma consegna"},{stato:"problema_consegna",label:"Segnala problema"}],
+  problema_consegna:[{stato:"accettata",label:"Riprendi consegna"},{stato:"annullata",label:"Annulla consegna"}]
+};
+function maps(lat:number|null,lng:number|null){ return lat == null || lng == null ? null : "https://www.google.com/maps/dir/?api=1&destination="+encodeURIComponent(lat+","+lng); }
+
+export default function ConsegneLocali(){
+ const [items,setItems]=useState<Item[]>([]); const [loading,setLoading]=useState(true); const [busy,setBusy]=useState<string|null>(null);
+ async function load(){setLoading(true); try{const r=await fetch("/api/corriere/consegne",{cache:"no-store"}); const j=await r.json(); if(r.ok)setItems(j.data??[]);}finally{setLoading(false);}}
+ useEffect(()=>{void load();},[]);
+ async function update(id:string,stato:string){setBusy(id);try{const r=await fetch("/api/corriere/consegne",{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({ordineId:id,stato})});if(!r.ok)throw new Error();await load();}finally{setBusy(null);}}
+ if(loading)return <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-500">Caricamento consegne…</div>;
+ if(!items.length)return <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-500">Nessuna consegna locale assegnata.</div>;
+ return <div className="space-y-4">{items.map(i=>{const o=i.ordini;const url=maps(i.latitudine,i.longitudine);return <article key={i.ordine_id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between"><div><p className="text-xs font-bold uppercase tracking-[.18em] text-emerald-700">Ordine {o?.numero??i.ordine_id}</p><h2 className="mt-1 text-lg font-black text-slate-900">{o?.cliente_nome} {o?.cliente_cognome}</h2><p className="mt-1 text-sm text-slate-600">{o?.spedizione_indirizzo}, {o?.spedizione_cap} {o?.spedizione_citta}</p>{o?.cliente_telefono&&<p className="mt-1 text-sm text-slate-600">Tel. {o.cliente_telefono}</p>}{o?.spedizione_note&&<p className="mt-2 rounded-xl bg-slate-50 p-3 text-sm text-slate-600">{o.spedizione_note}</p>}</div><span className="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">{labels[i.stato]??i.stato}</span></div><div className="mt-4 flex flex-wrap gap-2">{url&&<a href={url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-bold text-blue-700"><MapPin className="h-4 w-4"/>Apri navigazione</a>}{(actions[i.stato]??[]).map(a=><button key={a.stato} disabled={busy===i.ordine_id} onClick={()=>update(i.ordine_id,a.stato)} className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2 text-sm font-bold text-white disabled:opacity-50">{a.stato==="consegnata"?<CheckCircle2 className="h-4 w-4"/>:a.stato==="ritirata"?<PackageCheck className="h-4 w-4"/>:<Truck className="h-4 w-4"/>}{a.label}</button>)}</div></article>})}</div>;
+}

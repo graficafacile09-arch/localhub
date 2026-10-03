@@ -16,7 +16,7 @@ export async function getUtenti(
   return getUtentiReali(filtro);
 }
 
-/** Conteggi per le tab (tutti / amministratori / commercianti / utenti). */
+/** Conteggi per le tab (tutti / amministratori / commercianti / corrieri / utenti). */
 export async function getConteggiUtenti(): Promise<
   Record<FiltroRuoloUtente, number>
 > {
@@ -25,6 +25,7 @@ export async function getConteggiUtenti(): Promise<
     tutti: tutti.length,
     amministratore: tutti.filter((u) => u.ruolo === "amministratore").length,
     commerciante: tutti.filter((u) => u.ruolo === "commerciante").length,
+    corriere: tutti.filter((u) => u.ruolo === "corriere").length,
     utente: tutti.filter((u) => u.ruolo === "utente").length,
   };
 }

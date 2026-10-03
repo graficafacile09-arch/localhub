@@ -11,12 +11,12 @@ import { isAdminEmail, type RuoloUtente } from "@/lib/auth/roles";
  * Il cookie è httpOnly: il browser NON può leggerlo né modificarlo. L'unico
  * modo per cambiare area è fare logout e rientrare dall'ingresso corretto.
  */
-export type AreaAttiva = "cliente" | "merchant" | "admin";
+export type AreaAttiva = "cliente" | "merchant" | "courier" | "admin";
 
 /** Nome del cookie che conserva l'area attiva della sessione. */
 export const AREA_COOKIE = "lh_area";
 
-const AREE_VALIDE: readonly AreaAttiva[] = ["cliente", "merchant", "admin"];
+const AREE_VALIDE: readonly AreaAttiva[] = ["cliente", "merchant", "courier", "admin"];
 
 export function isAreaAttiva(
   value: string | null | undefined
@@ -33,6 +33,8 @@ export function areaToPath(area: AreaAttiva): string {
       return "/merchant";
     case "cliente":
       return "/cliente";
+    case "courier":
+      return "/corriere";
   }
 }
 
@@ -60,6 +62,7 @@ export function areaPerRuoli(
 ): AreaAttiva | null {
   if (ruoli.includes("admin") && isAdminEmail(email)) return "admin";
   if (ruoli.includes("merchant")) return "merchant";
+  if (ruoli.includes("courier")) return "courier";
   if (ruoli.includes("customer")) return "cliente";
   return null;
 }
@@ -87,7 +90,9 @@ export function areaEffettiva(
       ? ha("admin") && isAdminEmail(email)
       : areaRichiesta === "merchant"
         ? ha("merchant")
-        : ha("customer");
+        : areaRichiesta === "courier"
+          ? ha("courier")
+          : ha("customer");
   if (consentita) return areaRichiesta;
   return areaPerRuoli(email, ruoli);
 }
@@ -121,6 +126,9 @@ export function areaConsenteAccesso(
   if (areaSessione !== areaRichiesta) return false;
   if (areaSessione === "merchant") {
     return ruoli.includes("merchant");
+  }
+  if (areaSessione === "courier") {
+    return ruoli.includes("courier");
   }
   return ruoli.includes("customer");
 }

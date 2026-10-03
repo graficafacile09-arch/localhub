@@ -9,12 +9,13 @@ import {
   ShieldCheck,
   ShoppingBasket,
   Store,
+  Truck,
   User,
 } from "lucide-react";
 import type { RuoloUtente } from "@/lib/auth/roles";
 import type { AreaAttiva } from "@/lib/auth/area";
 
-export type ProfiloCommerciale = "acquirente" | "venditore" | "amministratore";
+export type ProfiloCommerciale = "acquirente" | "venditore" | "corriere" | "amministratore";
 
 export type DatiAccount = {
   nome: string;
@@ -45,6 +46,7 @@ const ETICHETTE_PROFILO: Record<ProfiloCommerciale, string> = {
   acquirente: "Acquirente",
   venditore: "Venditore",
   amministratore: "Amministratore",
+  corriere: "Corriere locale",
 };
 
 /**
@@ -124,6 +126,15 @@ export default function AccountMenu({
             >
               <Store className="h-4 w-4 shrink-0 text-blue-600" aria-hidden />
               Entra come Venditore
+            </Link>
+            <Link
+              href="/login?area=courier"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition hover:bg-slate-50 hover:text-blue-700"
+            >
+              <Truck className="h-4 w-4 shrink-0 text-emerald-600" aria-hidden />
+              Area Corriere Locale
             </Link>
           </div>
         )}
@@ -219,6 +230,15 @@ export default function AccountMenu({
                 <Store className="h-4 w-4 shrink-0 text-blue-600" aria-hidden />
                 Entra come Venditore
               </Link>
+              <Link
+                href="/login?area=courier"
+                role="menuitem"
+                onClick={() => setOpen(false)}
+                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition hover:bg-slate-50 hover:text-blue-700"
+              >
+                <Truck className="h-4 w-4 shrink-0 text-emerald-600" aria-hidden />
+                Area Corriere Locale
+              </Link>
             </div>
           </div>
         )}
@@ -254,6 +274,8 @@ export default function AccountMenu({
     voci.push({ label: "Area Venditore", href: storeBase, icon: Store });
   } else if (area === "cliente") {
     voci.push({ label: "Area Clienti", href: "/cliente", icon: ShoppingBasket });
+  } else if (area === "courier") {
+    voci.push({ label: "Area Corriere Locale", href: "/corriere", icon: Truck });
   }
 
   return (

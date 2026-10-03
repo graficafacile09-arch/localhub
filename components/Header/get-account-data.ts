@@ -44,7 +44,9 @@ export async function getDatiAccount(): Promise<DatiAccount | null> {
       ? "amministratore"
       : role === "merchant" || richiestaVenditore
         ? "venditore"
-        : "acquirente";
+        : role === "courier"
+          ? "corriere"
+          : "acquirente";
 
   return {
     nome,

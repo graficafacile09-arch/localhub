@@ -9,6 +9,7 @@ import {
   Search,
   ShieldCheck,
   UserRound,
+  ArrowLeft,
 } from "lucide-react";
 import {
   STATO_ACCOUNT,
@@ -56,10 +57,12 @@ export default function UtentiModule({
       amministratore: 0,
       commerciante: 0,
       utente: 0,
+      corriere: 0,
     };
     for (const utente of utenti) {
       if (utente.ruolo === "amministratore") conteggiLocali.amministratore += 1;
       else if (utente.ruolo === "commerciante") conteggiLocali.commerciante += 1;
+      else if (utente.ruolo === "corriere") conteggiLocali.corriere += 1;
       else conteggiLocali.utente += 1;
     }
     return conteggiLocali;
@@ -67,7 +70,7 @@ export default function UtentiModule({
   // Il ruolo amministratore NON è tra i ruoli creabili dal pannello: è
   // riservato all'account autorizzato già esistente (il server comunque
   // lo rifiuta per qualunque altra email).
-  type RuoloCreabile = "utente" | "commerciante";
+  type RuoloCreabile = "utente" | "commerciante" | "corriere";
   const [form, setForm] = useState({
     nome: "",
     email: "",
@@ -199,9 +202,10 @@ export default function UtentiModule({
 
   return (
     <div className="space-y-5">
-      <div className="card p-6 md:p-8">
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex items-start gap-4">
+      <div className="card relative p-6 md:p-8">
+        <div className="flex flex-col gap-5 pt-12 sm:flex-row sm:items-start sm:justify-between md:pt-0">
+          <button type="button" onClick={() => window.location.assign("/amministratore")} className="absolute left-6 top-6 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 md:left-8 md:top-8"><ArrowLeft className="h-4 w-4" />Torna al pannello</button>
+        <div className="flex items-start gap-4">
             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 ring-1 ring-blue-100"><UserRound className="h-7 w-7" aria-hidden /></div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">Gestione account della piattaforma</p>
@@ -242,7 +246,7 @@ export default function UtentiModule({
                 <label className="text-sm font-semibold text-slate-700">Email<input required type="email" value={form.email} onChange={(event) => setForm((precedenti) => ({ ...precedenti, email: event.target.value }))} placeholder="nome@email.it" className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal" /></label>
                 <label className="text-sm font-semibold text-slate-700">Password<input required minLength={8} type="password" value={form.password} onChange={(event) => setForm((precedenti) => ({ ...precedenti, password: event.target.value }))} placeholder="Almeno 8 caratteri" className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal" /></label>
                 <label className="text-sm font-semibold text-slate-700">Conferma password<input required minLength={8} type="password" value={form.confermaPassword} onChange={(event) => setForm((precedenti) => ({ ...precedenti, confermaPassword: event.target.value }))} placeholder="Ripeti la password" className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal" /></label>
-                <label className="text-sm font-semibold text-slate-700 sm:col-span-2">Ruolo<select value={form.ruolo} onChange={(event) => setForm((precedenti) => ({ ...precedenti, ruolo: event.target.value as RuoloCreabile }))} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal"><option value="utente">Utente (cliente)</option><option value="commerciante">Venditore</option></select><span className="mt-1 block text-xs text-slate-400">La registrazione assegna un solo ruolo; il ruolo amministratore è riservato all&apos;account autorizzato.</span></label>
+                <label className="text-sm font-semibold text-slate-700 sm:col-span-2">Ruolo<select value={form.ruolo} onChange={(event) => setForm((precedenti) => ({ ...precedenti, ruolo: event.target.value as RuoloCreabile }))} className="mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-normal"><option value="utente">Utente (cliente)</option><option value="commerciante">Venditore</option><option value="corriere">Corriere</option></select><span className="mt-1 block text-xs text-slate-400">La registrazione assegna un solo ruolo; il ruolo amministratore è riservato all&apos;account autorizzato.</span></label>
               </div>
               {errore && <p role="alert" className="mt-3 rounded-xl bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-700">{errore}</p>}
               <div className="mt-6 flex justify-end gap-2">

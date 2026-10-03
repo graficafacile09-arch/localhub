@@ -9,7 +9,7 @@
  */
 
 /** Ruoli di piattaforma (vista Area Amministratore). */
-export type RuoloUtente = "amministratore" | "commerciante" | "utente";
+export type RuoloUtente = "amministratore" | "commerciante" | "corriere" | "utente";
 
 /**
  * Stato ACCOUNT — distinto dal ruolo.
@@ -66,6 +66,10 @@ export const RUOLI_UTENTE: Record<
   commerciante: {
     label: "Venditore",
     chip: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+  },
+  corriere: {
+    label: "Corriere",
+    chip: "bg-amber-50 text-amber-700 ring-amber-200",
   },
   utente: {
     label: "Cliente",

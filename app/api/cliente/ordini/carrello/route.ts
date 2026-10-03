@@ -150,6 +150,10 @@ export async function POST(request: Request) {
   const clienteRaw = (body.cliente ?? {}) as Record<string, unknown>;
   const ritiroRaw = (body.ritiro ?? {}) as Record<string, unknown>;
   const spedizioneRaw = (body.spedizione ?? {}) as Record<string, unknown>;
+  const latitudineRaw = spedizioneRaw.latitudine;
+  const longitudineRaw = spedizioneRaw.longitudine;
+  const latitudine = typeof latitudineRaw === "number" && Number.isFinite(latitudineRaw) && latitudineRaw >= -90 && latitudineRaw <= 90 ? latitudineRaw : null;
+  const longitudine = typeof longitudineRaw === "number" && Number.isFinite(longitudineRaw) && longitudineRaw >= -180 && longitudineRaw <= 180 ? longitudineRaw : null;
   const dichiarazioneEta = body.dichiarazioneEta === true;
 
 
@@ -175,6 +179,9 @@ export async function POST(request: Request) {
     carrier !== null && isServizioValidoPerCarrier(carrier, spedizioneRaw.servizio)
       ? spedizioneRaw.servizio
       : null;
+  if (modalita === "spedizione" && carrier === "locale" && (latitudine === null || longitudine === null)) {
+    return apiError("COORDINATE_CONSEGNA_RICHIESTE", "Per il corriere locale sono necessarie le coordinate della consegna.", 422);
+  }
   if (modalita === "spedizione" && (!carrier || !servizio)) {
     return apiError(
       "CORRIERE_NON_VALIDO",
@@ -354,6 +361,8 @@ export async function POST(request: Request) {
             carrier: carrier as string,
             servizio: servizio as string,
             metodoPagamento: String(spedizioneRaw.metodoPagamento),
+            latitudine,
+            longitudine,
           },
           fatturazione: parseFatturazioneRaw(body.fatturazione),
           note: typeof body.note === "string" ? body.note : null,
@@ -494,6 +503,16 @@ export async function POST(request: Request) {
     return apiError("SAVE_FAILED", "Impossibile completare il checkout.", 500);
   }
 
+
+  if (latitudine !== null && longitudine !== null && esito.ordini.length > 0) {
+    const dbCoordinate = createAdminSupabaseClient();
+    for (const ordine of esito.ordini) {
+      await dbCoordinate.from("corrieri_locali").upsert(
+        { ordine_id: ordine.ordineId, latitudine, longitudine },
+        { onConflict: "ordine_id" }
+      );
+    }
+  }
 
   if (richiedeVerificaEta && dichiarazioneEta) {
     const dbAgeOrder = createAdminSupabaseClient();

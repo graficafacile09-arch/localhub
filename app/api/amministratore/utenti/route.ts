@@ -8,13 +8,14 @@ import { getUtenteAdminById } from "@/lib/amministratore/utenti-queries";
 const RUOLI_DB = {
   amministratore: "admin",
   commerciante: "merchant",
+  corriere: "courier",
   utente: "customer",
 } as const;
 
 type RuoloArea = keyof typeof RUOLI_DB;
 
 function ruoloValido(value: unknown): value is RuoloArea {
-  return value === "amministratore" || value === "commerciante" || value === "utente";
+  return value === "amministratore" || value === "commerciante" || value === "corriere" || value === "utente";
 }
 
 export async function POST(request: Request) {

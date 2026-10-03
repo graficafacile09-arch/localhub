@@ -38,6 +38,7 @@ const getDb = () => {
 export const RUOLO_AREA: Record<string, RuoloUtente> = {
   admin: "amministratore",
   merchant: "commerciante",
+  courier: "corriere",
   customer: "utente",
 };
 
@@ -45,6 +46,7 @@ export const RUOLO_AREA: Record<string, RuoloUtente> = {
 export const PRIORITÀ_AREA: Record<RuoloUtente, number> = {
   amministratore: 2,
   commerciante: 1,
+  corriere: 1,
   utente: 0,
 };
 

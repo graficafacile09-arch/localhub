@@ -41,13 +41,14 @@ import { inviaEmailEsitoApprovazione } from "@/lib/registrazione-email";
 const RUOLI_DB = {
   amministratore: "admin",
   commerciante: "merchant",
+  corriere: "courier",
   utente: "customer",
 } as const;
 
 type RuoloArea = keyof typeof RUOLI_DB;
 
 function ruoloValido(value: unknown): value is RuoloArea {
-  return value === "amministratore" || value === "commerciante" || value === "utente";
+  return value === "amministratore" || value === "commerciante" || value === "corriere" || value === "utente";
 }
 
 /** Ban "permanente" storico (≈100 anni): stessa durata del vecchio disattiva. */
@@ -227,13 +228,6 @@ export async function PATCH(
     }
     if (ruoliAggiornati.has(ruoloDb)) {
       // L'utente deve mantenere almeno un ruolo (mai un account senza area).
-      if (ruoliAggiornati.size < 2) {
-        return apiError(
-          "VALIDATION_ERROR",
-          "L'utente deve mantenere almeno un ruolo: rimuovine uno solo quando ne possiede almeno due.",
-          422
-        );
-      }
       const { error: deleteError } = await db
         .from("user_roles")
         .delete()
@@ -272,6 +266,22 @@ export async function PATCH(
         : null;
 
     const statoApprovazione = bodyPresente("approva") ? "approved" : "rejected";
+
+    // Un account registrato come corriere deve possedere il ruolo courier
+    // prima di essere approvato. È una seconda barriera nel caso di
+    // registrazioni create da una versione precedente del flusso.
+    const areaAccount = String(target.user.user_metadata?.account_area ?? "").trim();
+    if (statoApprovazione === "approved" && areaAccount === "courier" && !ruoliAggiornati.has("courier")) {
+      const { error: courierRoleError } = await db
+        .from("user_roles")
+        .insert({ user_id: utenteId, role: "courier" });
+      const courierDuplicate = courierRoleError?.code === "23505";
+      if (courierRoleError && !courierDuplicate) {
+        return apiError("ROLE_FAILED", courierRoleError.message, 422);
+      }
+      ruoliAggiornati.add("courier");
+      operazioni.push("ruolo aggiunto: corriere");
+    }
 
     const { error: approvalError } = await db
       .from("account_approvazioni")

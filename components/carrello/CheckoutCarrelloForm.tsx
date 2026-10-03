@@ -236,6 +236,8 @@ export default function CheckoutCarrelloForm({ prefill}
   const [citta, setCitta] = useState(prefill.citta);
   const [provincia, setProvincia] = useState(prefill.provincia);
   const [noteConsegna, setNoteConsegna] = useState("");
+  const [coordinateConsegna, setCoordinateConsegna] = useState<{ latitudine: number; longitudine: number } | null>(null);
+  const [acquisizioneCoordinate, setAcquisizioneCoordinate] = useState(false);
   // Indirizzo proveniente dal profilo (precompilato). All'avvio resta in stato
   // "riepilogo" finché l'utente non clicca "CAMBIA INDIRIZZO": da quel momento
   // i campi diventano modificabili per SOLO questo ordine, senza toccare il profilo.
@@ -485,6 +487,7 @@ export default function CheckoutCarrelloForm({ prefill}
         return "Completa l'indirizzo di spedizione.";
       if (!/^\d{5}$/.test(cap.trim())) return "Il CAP deve essere composto da 5 cifre.";
       if (!spedizioneScelta) return "Seleziona un corriere di spedizione.";
+      if (spedizioneScelta.carrier === "locale" && !coordinateConsegna) return "Per il corriere locale devi indicare le coordinate della consegna.";
       // Fatturazione diversa: campi obbligatori, blocco invio se incompleti.
       if (fatturazione.diversa) {
         const errFatt = validaDatiFatturazione(fatturazione);
@@ -576,6 +579,7 @@ export default function CheckoutCarrelloForm({ prefill}
           carrier: spedizioneScelta!.carrier,
           servizio: spedizioneScelta!.servizio,
           metodoPagamento,
+          ...(coordinateConsegna ? { latitudine: coordinateConsegna.latitudine, longitudine: coordinateConsegna.longitudine } : {}),
        }
 
 ;
@@ -861,6 +865,48 @@ export default function CheckoutCarrelloForm({ prefill}
               </div>
             ) : (
               <div className="mt-4 space-y-3">
+                {spedizioneScelta?.carrier === "locale" && (
+                  <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-3">
+                    <div className="flex items-start gap-2">
+                      <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-emerald-700" aria-hidden />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-black text-emerald-900">Posizione della consegna</p>
+                        <p className="mt-0.5 text-[11px] leading-4 text-emerald-800">
+                          Serve al corriere locale per raggiungere esattamente il punto indicato. Consenti la posizione quando richiesto dal browser.
+                        </p>
+                        {coordinateConsegna ? (
+                          <p className="mt-2 text-[11px] font-bold text-emerald-800">Posizione acquisita ✓</p>
+                        ) : (
+                          <button
+                            type="button"
+                            disabled={acquisizioneCoordinate}
+                            onClick={() => {
+                              if (!navigator.geolocation) return setErrore("Il browser non supporta la geolocalizzazione.");
+                              setAcquisizioneCoordinate(true);
+                              navigator.geolocation.getCurrentPosition(
+                                (position) => {
+                                  setCoordinateConsegna({ latitudine: position.coords.latitude, longitudine: position.coords.longitude });
+                                  setAcquisizioneCoordinate(false);
+                                  setErrore(null);
+                                },
+                                () => {
+                                  setAcquisizioneCoordinate(false);
+                                  setErrore("Non è stato possibile acquisire la posizione. Consenti la posizione e riprova.");
+                                },
+                                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                              );
+                            }}
+                            className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-2 text-xs font-bold text-white disabled:opacity-60"
+                          >
+                            <MapPin className="h-3.5 w-3.5" aria-hidden />
+                            {acquisizioneCoordinate ? "Acquisizione..." : "Acquisisci posizione della consegna"}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Riepilogo indirizzo precompilato dal profilo → CAMBIA INDIRIZZO */}
 
                 {indirizzoDaProfilo && !cambiaIndirizzo ? (

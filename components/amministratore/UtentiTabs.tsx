@@ -1,6 +1,6 @@
 "use client";
 
-import { Users, UserCog, Store, UserRound } from "lucide-react";
+import { Users, UserCog, Store, UserRound, Truck } from "lucide-react";
 import type { FiltroRuoloUtente } from "@/lib/amministratore/types";
 
 type TabDef = {
@@ -13,6 +13,7 @@ const TAB: TabDef[] = [
   { id: "tutti", label: "Tutti", icon: Users },
   { id: "amministratore", label: "Amministratori", icon: UserCog },
   { id: "commerciante", label: "Venditori", icon: Store },
+  { id: "corriere", label: "Corrieri", icon: Truck },
   { id: "utente", label: "Utenti", icon: UserRound },
 ];
 
