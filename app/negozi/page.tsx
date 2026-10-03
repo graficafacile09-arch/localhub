@@ -54,7 +54,7 @@ export default async function NegoziPage({
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4">
             {negozi.map((negozio) => {
               const imageUrl = getNegozioCardImmagine({
                 copertina_url: negozio.copertina_url,
