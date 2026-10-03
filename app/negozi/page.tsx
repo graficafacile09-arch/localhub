@@ -61,7 +61,7 @@ export default async function NegoziPage({
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
             {negozi.map((negozio) => {
               const imageUrl = getNegozioCardImmagine({
-                logo_url: negozio.logo_url,
+                immagine: negozio.immagine,
                 categoria: negozio.categoria,
               });
 
@@ -82,38 +82,24 @@ export default async function NegoziPage({
                         style={{ backgroundImage: `url(${imageUrl})` }}
                       />
                       {negozio.categoria && (
-                        <span className="absolute bottom-1 left-1.5 rounded-full bg-black/55 px-1.5 py-px text-[9px] font-semibold text-white backdrop-blur-sm">
-                          {negozio.categoria}
-                        </span>
+                         
                       )}
                     </div>
-                    <div className="flex items-center gap-2 p-2">
-                      <div className="h-8 w-8 shrink-0 overflow-hidden rounded-full border border-slate-200 bg-white">
-                        {negozio.logo_url ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={negozio.logo_url}
-                            alt={`Logo ${negozio.nome}`}
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <div
-                            className="h-full w-full bg-white"
-                            aria-label={`Logo ${negozio.nome} non ancora impostato`}
-                          />
-                        )}
-                      </div>
-                      <div className="min-w-0">
-                        <h2 className="truncate text-xs font-bold text-slate-900">
-                          {negozio.nome}
-                        </h2>
-                        {negozio.indirizzo && (
-                          <p className="mt-0.5 flex items-center gap-1 text-[10px] text-slate-400">
-                            <MapPin className="h-2.5 w-2.5 shrink-0" />
-                            <span className="truncate">{negozio.indirizzo}</span>
-                          </p>
-                        )}
-                      </div>
+                    <div className="p-2">
+                      <h2 className="truncate text-xs font-bold text-slate-900">
+                        {negozio.nome}
+                      </h2>
+                      {negozio.categoria && (
+                        <p className="mt-0.5 truncate text-[10px] font-semibold text-slate-500">
+                          {negozio.categoria}
+                        </p>
+                      )}
+                      {negozio.indirizzo && (
+                        <p className="mt-0.5 flex items-center gap-1 text-[10px] text-slate-400">
+                          <MapPin className="h-2.5 w-2.5 shrink-0" />
+                          <span className="truncate">{negozio.indirizzo}</span>
+                        </p>
+                      )}
                     </div>
                   </Link>
                   <div className="absolute right-2 bottom-2 z-10">
