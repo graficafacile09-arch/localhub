@@ -56,7 +56,7 @@ async function inviaEmail(opts: {
 export async function inviaEmailRegistrazioneUtente(opts: {
   to: string;
   nome: string;
-  area: "cliente" | "merchant";
+  area: "cliente" | "merchant" | "courier";
   negozio?: string | null;
   /**
    * Password in CHIARO, disponibile solo durante la richiesta di
@@ -73,7 +73,9 @@ export async function inviaEmailRegistrazioneUtente(opts: {
   const area =
     opts.area === "merchant"
       ? "venditore/commerciante"
-      : "cliente";
+      : opts.area === "courier"
+        ? "corriere locale"
+        : "cliente";
   const negozio = opts.negozio ? escapeHtml(opts.negozio) : "";
 
   return inviaEmail({
@@ -116,7 +118,7 @@ export async function inviaEmailRegistrazioneUtente(opts: {
 export async function inviaEmailNuovaRegistrazioneAdmin(opts: {
   nome: string;
   email: string;
-  area: "cliente" | "merchant";
+  area: "cliente" | "merchant" | "courier";
   negozio?: string | null;
 }): Promise<boolean> {
   const nome = escapeHtml(opts.nome || "Utente");
@@ -124,7 +126,9 @@ export async function inviaEmailNuovaRegistrazioneAdmin(opts: {
   const area =
     opts.area === "merchant"
       ? "Venditore"
-      : "Cliente";
+      : opts.area === "courier"
+        ? "Corriere locale"
+        : "Cliente";
   const negozio = opts.negozio ? escapeHtml(opts.negozio) : "";
 
   return inviaEmail({
