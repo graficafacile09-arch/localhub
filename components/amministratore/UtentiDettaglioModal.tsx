@@ -117,7 +117,7 @@ export default function UtentiDettaglioModal({
   // permanente: non compare MAI tra i ruoli aggiungibili.
   const ruoliMancanti = useMemo(() => {
     const posseduti = new Set(utente.ruoli);
-    return (["amministratore", "commerciante", "utente"] as RuoloUtente[]).filter(
+    return (["amministratore", "commerciante", "corriere", "utente"] as RuoloUtente[]).filter(
       (ruolo) =>
         !posseduti.has(ruolo) &&
         !(utente.protetto && ruolo === "amministratore")
@@ -129,7 +129,7 @@ export default function UtentiDettaglioModal({
   // amministratore.
   function ruoloRimovibile(ruolo: RuoloUtente): boolean {
     if (utente.protetto && ruolo === "amministratore") return false;
-    return utente.ruoli.length > 1;
+    return true;
   }
 
   async function aggiungiRuolo(ruolo: RuoloUtente) {
