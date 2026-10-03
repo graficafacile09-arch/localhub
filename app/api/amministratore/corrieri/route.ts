@@ -55,8 +55,36 @@ export async function PATCH(request: Request) {
   if (!userId || !stato) return NextResponse.json({ error: "Richiesta non valida." }, { status: 400 });
 
   const admin = createAdminSupabaseClient();
-  const { data: role } = await admin.from("user_roles").select("user_id").eq("user_id", userId).eq("role", "courier").maybeSingle();
-  if (!role) return NextResponse.json({ error: "Account corriere non trovato." }, { status: 404 });
+
+  // L'approvazione è il momento in cui l'account corriere deve diventare
+  // realmente operativo. Le vecchie registrazioni possono avere l'area
+  // courier ma non avere ancora la riga in user_roles: in quel caso la
+  // assegniamo qui, prima di salvare l'approvazione.
+  const { data: target, error: targetError } = await admin.auth.admin.getUserById(userId);
+  if (targetError || !target.user) {
+    return NextResponse.json({ error: "Utente non trovato." }, { status: 404 });
+  }
+
+  const areaAccount = String(target.user.user_metadata?.account_area ?? "").trim();
+  const { data: role } = await admin
+    .from("user_roles")
+    .select("user_id")
+    .eq("user_id", userId)
+    .eq("role", "courier")
+    .maybeSingle();
+
+  if (stato === "approved" && areaAccount === "courier" && !role) {
+    const { error: roleError } = await admin
+      .from("user_roles")
+      .insert({ user_id: userId, role: "courier" });
+    if (roleError && roleError.code !== "23505") {
+      return NextResponse.json({ error: "Impossibile assegnare il ruolo corriere." }, { status: 500 });
+    }
+  }
+
+  if (stato === "rejected" && role) {
+    await admin.from("user_roles").delete().eq("user_id", userId).eq("role", "courier");
+  }
 
   const { error } = await admin.from("account_approvazioni").update({
     stato,
