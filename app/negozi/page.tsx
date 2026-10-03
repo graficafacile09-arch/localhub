@@ -82,7 +82,11 @@ export default async function NegoziPage({
                         className="h-full w-full bg-cover bg-center"
                         style={{ backgroundImage: `url(${imageUrl})` }}
                       />
-
+                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/45 to-transparent px-3 pb-2.5 pt-8">
+                        <h2 className="truncate text-sm font-black leading-5 text-white drop-shadow-sm sm:text-base">
+                          {negozio.nome}
+                        </h2>
+                      </div>
                     </div>
                     <div className="flex items-start gap-2 p-2.5">
                       <div className="h-8 w-8 shrink-0 overflow-hidden rounded-full border border-slate-200 bg-white">
@@ -101,14 +105,9 @@ export default async function NegoziPage({
                         )}
                       </div>
                       <div className="min-w-0">
-                        <h2 className="truncate text-sm font-black leading-5 text-slate-900 sm:text-base">
-                          {negozio.nome}
-                        </h2>
-                        {negozio.categoria && (
-                          <span className="mt-1 inline-block max-w-full truncate rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700">
-                            {negozio.categoria}
-                          </span>
-                        )}
+                        <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                          Negozio
+                        </span>
                         {negozio.indirizzo && (
                           <p className="mt-0.5 flex items-center gap-1 text-[10px] text-slate-400">
                             <MapPin className="h-2.5 w-2.5 shrink-0" />
