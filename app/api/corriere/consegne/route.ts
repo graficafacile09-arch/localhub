@@ -33,5 +33,26 @@ export async function PATCH(request: Request) {
   if (stato === "problema_consegna") patch.problema_at = now;
   const { error } = await db.from("corrieri_locali").update(patch).eq("ordine_id", ordineId);
   if (error) return NextResponse.json({ error: "Impossibile aggiornare la consegna." }, { status: 500 });
+
+  // Mantiene sincronizzato anche lo stato di spedizione dell'ordine locale.
+  const orderShippingState: Record<string, string | null> = {
+    accettata: "affidata",
+    ritirata: "affidata",
+    in_consegna: "in_transito",
+    consegnata: "consegnata",
+    problema_consegna: "problema",
+    annullata: "non_affidata",
+  };
+  const shippingState = orderShippingState[stato];
+  const orderPatch: Record<string, unknown> = { stato_spedizione: shippingState, updated_at: now };
+  if (stato === "consegnata") {
+    orderPatch.stato = "consegnato";
+    orderPatch.consegnata_at = now;
+  } else if (stato === "in_consegna") {
+    orderPatch.stato = "in_consegna";
+  }
+  const { error: orderError } = await db.from("ordini").update(orderPatch).eq("id", ordineId);
+  if (orderError) return NextResponse.json({ error: "Consegna aggiornata, ma impossibile sincronizzare lo stato dell'ordine." }, { status: 500 });
+
   return NextResponse.json({ ok: true, stato });
 }

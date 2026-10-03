@@ -98,18 +98,34 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "L'ordine non appartiene al corriere locale." }, { status: 404 });
   }
 
+  const { data: delivery } = await admin
+    .from("corrieri_locali")
+    .select("stato")
+    .eq("ordine_id", ordineId)
+    .maybeSingle();
+  if (delivery && ["consegnata", "annullata"].includes(delivery.stato)) {
+    return NextResponse.json({ error: "La consegna è in uno stato finale e non può essere riassegnata." }, { status: 409 });
+  }
+
   if (corriereUserId) {
     const { data: role } = await admin.from("user_roles").select("user_id").eq("user_id", corriereUserId).eq("role", "courier").maybeSingle();
     const { data: approval } = await admin.from("account_approvazioni").select("user_id").eq("user_id", corriereUserId).eq("stato", "approved").maybeSingle();
     if (!role || !approval) return NextResponse.json({ error: "Il corriere non è approvato." }, { status: 422 });
   }
 
+  const now = new Date().toISOString();
   const payload = corriereUserId
-    ? { corriere_user_id: corriereUserId, stato: "assegnata", assegnata_at: new Date().toISOString(), updated_at: new Date().toISOString() }
-    : { corriere_user_id: null, stato: "da_assegnare", assegnata_at: null, updated_at: new Date().toISOString() };
+    ? { corriere_user_id: corriereUserId, stato: "assegnata", assegnata_at: now, updated_at: now }
+    : { corriere_user_id: null, stato: "da_assegnare", assegnata_at: null, updated_at: now };
 
   const { error } = await admin.from("corrieri_locali").upsert({ ordine_id: ordineId, ...payload }, { onConflict: "ordine_id" });
   if (error) return NextResponse.json({ error: "Impossibile aggiornare l'assegnazione." }, { status: 500 });
+
+  const { error: orderError } = await admin
+    .from("ordini")
+    .update({ stato_spedizione: corriereUserId ? "affidata" : "non_affidata", updated_at: now })
+    .eq("id", ordineId);
+  if (orderError) return NextResponse.json({ error: "Assegnazione aggiornata, ma impossibile sincronizzare lo stato della spedizione." }, { status: 500 });
 
   return NextResponse.json({ ok: true });
 }
