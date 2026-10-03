@@ -25,6 +25,7 @@ export async function getConteggiUtenti(): Promise<
     tutti: tutti.length,
     amministratore: tutti.filter((u) => u.ruolo === "amministratore").length,
     commerciante: tutti.filter((u) => u.ruolo === "commerciante").length,
+    corriere: tutti.filter((u) => u.ruolo === "corriere").length,
     utente: tutti.filter((u) => u.ruolo === "utente").length,
   };
 }
