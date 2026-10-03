@@ -899,7 +899,7 @@ export default function CheckoutCarrelloForm({ prefill}
                             className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-emerald-700 px-3 py-2 text-xs font-bold text-white disabled:opacity-60"
                           >
                             <MapPin className="h-3.5 w-3.5" aria-hidden />
-                            {acquisizioneCoordinate ? "Acquisizione..." : "Indica posizione su Google Maps"}
+                            {acquisizioneCoordinate ? "Acquisizione..." : "Acquisisci posizione della consegna"}
                           </button>
                         )}
                       </div>
