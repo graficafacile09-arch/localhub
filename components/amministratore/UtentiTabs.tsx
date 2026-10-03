@@ -13,6 +13,7 @@ const TAB: TabDef[] = [
   { id: "tutti", label: "Tutti", icon: Users },
   { id: "amministratore", label: "Amministratori", icon: UserCog },
   { id: "commerciante", label: "Venditori", icon: Store },
+  { id: "corriere", label: "Corrieri", icon: Truck },
   { id: "utente", label: "Utenti", icon: UserRound },
 ];
 
