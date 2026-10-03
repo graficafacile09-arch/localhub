@@ -41,6 +41,7 @@ import { inviaEmailEsitoApprovazione } from "@/lib/registrazione-email";
 const RUOLI_DB = {
   amministratore: "admin",
   commerciante: "merchant",
+  corriere: "courier",
   utente: "customer",
 } as const;
 
