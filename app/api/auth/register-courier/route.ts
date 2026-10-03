@@ -3,7 +3,6 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { AREA_COOKIE, areaCookieOptions } from "@/lib/auth/area";
-import { creaNotificaAdmin } from "@/lib/amministratore/notifiche";
 import {
   inviaEmailRegistrazioneUtente,
   inviaEmailNuovaRegistrazioneAdmin,
@@ -202,13 +201,6 @@ export async function POST(request: Request) {
       nome: `${name} ${surname}`.trim(),
       email,
       area: "courier",
-    }),
-    creaNotificaAdmin({
-      tipo: "corriere_registrato",
-      titolo: "Nuovo corriere locale registrato",
-      corpo: `${name} ${surname}`.trim() + ` ha richiesto l'accesso come corriere locale (${email}, ${phone})`,
-      gravita: "info",
-      href: "/amministratore/utenti",
     }),
   ]);
 
