@@ -8,6 +8,7 @@ import { getUtenteAdminById } from "@/lib/amministratore/utenti-queries";
 const RUOLI_DB = {
   amministratore: "admin",
   commerciante: "merchant",
+  corriere: "courier",
   utente: "customer",
 } as const;
 
