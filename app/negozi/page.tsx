@@ -6,7 +6,7 @@ import { getImpostazioniPubbliche } from "@/lib/platform/settings";
 import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
 import ShareActivityButton from "@/components/negozio/ShareActivityButton";
 import Link from "next/link";
-import { ArrowLeft, MapPin, Star } from "lucide-react";
+import { ArrowLeft, MapPin, Star, Tag } from "lucide-react";
 
 export default async function NegoziPage({
   searchParams,
@@ -82,7 +82,7 @@ export default async function NegoziPage({
                             {negozio.categoria}
                           </div>
                         )}
-                        <h2 className="min-w-0 truncate text-lg font-black tracking-tight text-white drop-shadow-md sm:text-xl">
+                        <h2 className="min-w-0 truncate text-lg font-extrabold tracking-tight text-white drop-shadow-md sm:text-xl">
                           {negozio.nome}
                         </h2>
                       </div>
