@@ -82,13 +82,13 @@ export default async function NegoziPage({
                         className="h-full w-full bg-cover bg-center"
                         style={{ backgroundImage: `url(${imageUrl})` }}
                       />
-                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent px-3 pb-2.5 pt-8">
-                        <span className="inline-flex max-w-full items-center rounded-full bg-yellow-400 px-2.5 py-1 text-[11px] font-bold leading-4 text-yellow-950 shadow-sm sm:text-xs">
-                          <span className="truncate">{negozio.nome}</span>
+                      {negozio.categoria && (
+                        <span className="absolute bottom-1 left-1.5 rounded-full bg-black/55 px-1.5 py-px text-[9px] font-semibold text-white backdrop-blur-sm">
+                          {negozio.categoria}
                         </span>
-                      </div>
+                      )}
                     </div>
-                    <div className="flex items-start gap-2 p-2.5">
+                    <div className="flex items-center gap-2 p-2">
                       <div className="h-8 w-8 shrink-0 overflow-hidden rounded-full border border-slate-200 bg-white">
                         {negozio.logo_url ? (
                           // eslint-disable-next-line @next/next/no-img-element
@@ -105,9 +105,9 @@ export default async function NegoziPage({
                         )}
                       </div>
                       <div className="min-w-0">
-                        <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-                          Negozio
-                        </span>
+                        <h2 className="truncate text-xs font-bold text-slate-900">
+                          {negozio.nome}
+                        </h2>
                         {negozio.indirizzo && (
                           <p className="mt-0.5 flex items-center gap-1 text-[10px] text-slate-400">
                             <MapPin className="h-2.5 w-2.5 shrink-0" />
