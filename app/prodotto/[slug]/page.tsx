@@ -291,7 +291,7 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
 
         {/* Acquista — sostituito da "Il tuo prodotto" per il venditore del
             negozio proprietario (regola auto-acquisto, blocco anche API) */}
-        <div className="mt-4 space-y-2">
+        <div className="mt-4 space-y-3">
           {eIlMioProdotto ? (
             <div className="flex w-full items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-base font-bold text-blue-700">
               <Store className="h-5 w-5 shrink-0" aria-hidden />
@@ -336,11 +336,13 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
             className="w-full"
             label={String(prodotto.nome ?? "")}
           />
-          <ShareActivityButton
-            title={String(prodotto.nome ?? "Prodotto")}
-            description={String((prodotto as Record<string, unknown>).descrizione_completa ?? prodotto.descrizione ?? "")}
-            url={`/prodotto/${String(prodotto.slug ?? id)}`}
-          />
+          <div className="w-full">
+            <ShareActivityButton
+              title={String(prodotto.nome ?? "Prodotto")}
+              description={String((prodotto as Record<string, unknown>).descrizione_completa ?? prodotto.descrizione ?? "")}
+              url={`/prodotto/${String(prodotto.slug ?? id)}`}
+            />
+          </div>
           <SegnalaAbusoButton
             targetType="prodotto"
             targetName={String(prodotto.nome ?? "Prodotto")}
