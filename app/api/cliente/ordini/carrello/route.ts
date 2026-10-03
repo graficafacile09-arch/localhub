@@ -504,13 +504,49 @@ export async function POST(request: Request) {
   }
 
 
-  if (latitudine !== null && longitudine !== null && esito.ordini.length > 0) {
+  // Per i nuovi ordini del corriere locale inizializziamo esplicitamente
+  // la consegna come "da_assegnare" e lo stato di spedizione come
+  // "non_affidata". Nei retry/idempotenza aggiorniamo solo le coordinate:
+  // non dobbiamo mai sovrascrivere un'assegnazione già effettuata dall'admin.
+  if (carrier === "locale" && latitudine !== null && longitudine !== null && esito.ordini.length > 0) {
     const dbCoordinate = createAdminSupabaseClient();
     for (const ordine of esito.ordini) {
-      await dbCoordinate.from("corrieri_locali").upsert(
-        { ordine_id: ordine.ordineId, latitudine, longitudine },
-        { onConflict: "ordine_id" }
-      );
+      const payload: Record<string, unknown> = {
+        ordine_id: ordine.ordineId,
+        latitudine,
+        longitudine,
+      };
+
+      if (!ordine.giaEsistente) {
+        payload.stato = "da_assegnare";
+      }
+
+      const { error: coordinateError } = await dbCoordinate
+        .from("corrieri_locali")
+        .upsert(payload, { onConflict: "ordine_id" });
+
+      if (coordinateError) {
+        return apiError(
+          "LOCAL_DELIVERY_INIT_FAILED",
+          "Impossibile inizializzare la consegna locale.",
+          500
+        );
+      }
+
+      if (!ordine.giaEsistente) {
+        const { error: shippingStateError } = await dbCoordinate
+          .from("ordini")
+          .update({ stato_spedizione: "non_affidata" })
+          .eq("id", ordine.ordineId);
+
+        if (shippingStateError) {
+          return apiError(
+            "LOCAL_DELIVERY_STATE_INIT_FAILED",
+            "Impossibile inizializzare lo stato della consegna locale.",
+            500
+          );
+        }
+      }
     }
   }
 
