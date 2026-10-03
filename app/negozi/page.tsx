@@ -92,7 +92,7 @@ export default async function NegoziPage({
                               <img src={negozio.logo_url} alt="" className="h-full w-full object-cover" />
                             </div>
                           )}
-                          <h2 className="min-w-0 truncate text-base font-medium tracking-tight text-white drop-shadow-md sm:text-lg">
+                          <h2 className="min-w-0 max-w-full break-words text-[13px] font-semibold leading-tight tracking-tight text-white drop-shadow-md sm:text-[15px]">
                             {negozio.nome}
                           </h2>
                         </div>
