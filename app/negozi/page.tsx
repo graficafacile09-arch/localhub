@@ -82,13 +82,9 @@ export default async function NegoziPage({
                         className="h-full w-full bg-cover bg-center"
                         style={{ backgroundImage: `url(${imageUrl})` }}
                       />
-                      {negozio.categoria && (
-                        <span className="absolute bottom-1 left-1.5 rounded-full bg-black/55 px-1.5 py-px text-[9px] font-semibold text-white backdrop-blur-sm">
-                          {negozio.categoria}
-                        </span>
-                      )}
+
                     </div>
-                    <div className="flex items-center gap-2 p-2">
+                    <div className="flex items-start gap-2 p-2.5">
                       <div className="h-8 w-8 shrink-0 overflow-hidden rounded-full border border-slate-200 bg-white">
                         {negozio.logo_url ? (
                           // eslint-disable-next-line @next/next/no-img-element
@@ -105,9 +101,14 @@ export default async function NegoziPage({
                         )}
                       </div>
                       <div className="min-w-0">
-                        <h2 className="truncate text-xs font-bold text-slate-900">
+                        <h2 className="truncate text-sm font-black leading-5 text-slate-900 sm:text-base">
                           {negozio.nome}
                         </h2>
+                        {negozio.categoria && (
+                          <span className="mt-1 inline-block max-w-full truncate rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700">
+                            {negozio.categoria}
+                          </span>
+                        )}
                         {negozio.indirizzo && (
                           <p className="mt-0.5 flex items-center gap-1 text-[10px] text-slate-400">
                             <MapPin className="h-2.5 w-2.5 shrink-0" />
