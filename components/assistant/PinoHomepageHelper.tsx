@@ -90,13 +90,13 @@ export default function PinoHomepageHelper() {
   return (
     <div
       aria-label="Pino, assistente di InCittà"
-      className="pointer-events-none fixed inset-x-0 bottom-0 z-[60] h-[58px] overflow-hidden bg-white"
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-[60] h-[58px] overflow-hidden bg-white lg:inset-x-auto lg:left-auto lg:right-0 lg:w-fit"
       aria-hidden="false"
     >
       <div
-        className="pointer-events-auto flex h-full w-full items-center justify-center border-t border-slate-200/90 bg-white px-3 sm:px-5 shadow-[0_-2px_8px_rgba(15,23,42,0.06)]"
+        className="pointer-events-auto flex h-full w-full items-center justify-center border-t border-slate-200/90 bg-white px-3 sm:px-5 shadow-[0_-2px_8px_rgba(15,23,42,0.06)] lg:w-auto"
       >
-        <div className="grid w-full grid-cols-[48px_minmax(0,1fr)_auto] items-center gap-3 sm:gap-5">
+        <div className="grid w-full grid-cols-[48px_minmax(0,1fr)_auto] items-center gap-3 sm:gap-5 lg:w-auto lg:grid-cols-[48px_auto_auto] lg:gap-3">
           <button
             type="button"
             onClick={openAssistant}
