@@ -65,10 +65,10 @@ export default async function NegoziPage({
               return (
                 <div
                   key={negozio.id}
-                  className="relative overflow-visible rounded-xl border border-slate-100 bg-white transition hover:border-blue-200 hover:shadow-sm"
+                  className="relative overflow-visible rounded-2xl border border-white/60 bg-white shadow-sm transition hover:border-blue-200 hover:shadow-md"
                 >
                   <Link href={`/negozio/${negozio.slug}`} className="group block">
-                    <div className="relative aspect-[16/9] overflow-hidden rounded-t-xl bg-slate-100">
+                    <div className="relative aspect-[21/9] overflow-hidden rounded-t-2xl bg-slate-100">
                       <div
                         role="img"
                         aria-label={negozio.nome}
@@ -76,34 +76,34 @@ export default async function NegoziPage({
                         style={{ backgroundImage: `url(${imageUrl})` }}
                       />
                       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-900/25 to-transparent" />
-                      <div className="absolute inset-x-0 bottom-0 p-2.5">
+                      <div className="absolute inset-x-0 bottom-0 p-3 sm:p-3.5">
                         {negozio.categoria && (
-                          <div className="mb-1 text-[10px] font-black uppercase tracking-wide text-yellow-400 drop-shadow-md">
+                          <div className="mb-1 text-[9px] font-black uppercase tracking-wide text-yellow-400 drop-shadow-md sm:text-[10px]">
                             {negozio.categoria}
                           </div>
                         )}
-                        <h2 className="min-w-0 truncate text-base font-black tracking-tight text-white drop-shadow-md">
+                        <h2 className="min-w-0 truncate text-lg font-black tracking-tight text-white drop-shadow-md sm:text-xl">
                           {negozio.nome}
                         </h2>
                       </div>
                     </div>
 
                     {negozio.indirizzo && (
-                      <p className="flex items-center gap-1 px-2.5 pb-2 pt-1.5 text-[10px] text-slate-400">
+                      <p className="flex items-center gap-1 px-3 pb-2.5 pt-1.5 text-[10px] text-slate-400">
                         <MapPin className="h-2.5 w-2.5 shrink-0" />
                         <span className="truncate">{negozio.indirizzo}</span>
                       </p>
                     )}
                   </Link>
 
-                  <div className="absolute -bottom-3 left-2.5 z-20 h-10 w-10 overflow-hidden rounded-full border-2 border-white bg-white shadow-md">
+                  <div className="absolute -bottom-4 left-3 z-20 h-11 w-11 overflow-hidden rounded-full border-2 border-white bg-white shadow-md sm:h-12 sm:w-12">
                     {negozio.logo_url ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={negozio.logo_url} alt="" className="h-full w-full object-cover" />
                     ) : null}
                   </div>
 
-                  <div className="absolute -bottom-3 right-2.5 z-20">
+                  <div className="absolute -bottom-4 right-3 z-20">
                     <ShareActivityButton
                       title={negozio.nome}
                       description={negozio.descrizione ?? ""}
