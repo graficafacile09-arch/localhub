@@ -26,6 +26,13 @@ export async function GET() {
   const userMap = new Map(users.users.map((user) => [user.id, user]));
   const { data: roles } = await admin.from("user_roles").select("user_id,role").eq("role", "courier");
   const courierIds = new Set((roles ?? []).map((row) => row.user_id));
+  // Le richieste corriere devono restare visibili anche se una registrazione
+  // legacy è stata approvata prima che il ruolo courier fosse scritto.
+  for (const user of users.users) {
+    if (String(user.user_metadata?.account_area ?? "").trim() === "courier") {
+      courierIds.add(user.id);
+    }
+  }
 
   const data = (approvals ?? [])
     .filter((row) => courierIds.has(row.user_id))
@@ -65,7 +72,6 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Utente non trovato." }, { status: 404 });
   }
 
-  const areaAccount = String(target.user.user_metadata?.account_area ?? "").trim();
   const { data: role } = await admin
     .from("user_roles")
     .select("user_id")
@@ -73,7 +79,10 @@ export async function PATCH(request: Request) {
     .eq("role", "courier")
     .maybeSingle();
 
-  if (stato === "approved" && areaAccount === "courier" && !role) {
+  // Questo endpoint gestisce ESCLUSIVAMENTE approvazioni dell'Area Corriere.
+  // Quindi l'approvazione deve sempre garantire il ruolo courier, anche per
+  // account legacy o creati prima dell'attuale flusso di registrazione.
+  if (stato === "approved" && !role) {
     const { error: roleError } = await admin
       .from("user_roles")
       .insert({ user_id: userId, role: "courier" });
