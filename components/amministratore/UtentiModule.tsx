@@ -9,6 +9,7 @@ import {
   Search,
   ShieldCheck,
   UserRound,
+  ArrowLeft,
 } from "lucide-react";
 import {
   STATO_ACCOUNT,
@@ -199,9 +200,10 @@ export default function UtentiModule({
 
   return (
     <div className="space-y-5">
-      <div className="card p-6 md:p-8">
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex items-start gap-4">
+      <div className="card relative p-6 md:p-8">
+        <div className="flex flex-col gap-5 pt-12 sm:flex-row sm:items-start sm:justify-between md:pt-0">
+          <button type="button" onClick={() => window.location.assign("/amministratore")} className="absolute left-6 top-6 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 md:left-8 md:top-8"><ArrowLeft className="h-4 w-4" />Torna al pannello</button>
+        <div className="flex items-start gap-4">
             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 ring-1 ring-blue-100"><UserRound className="h-7 w-7" aria-hidden /></div>
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">Gestione account della piattaforma</p>
