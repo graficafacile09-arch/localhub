@@ -6,6 +6,7 @@ import {
   ShieldCheck,
   ShoppingBag,
   Store,
+  Truck,
 } from "lucide-react";
 
 /**
@@ -17,7 +18,7 @@ import {
  * pulsanti ed elementi decorativi per rendere le tre esperienze
  * (cliente / venditore / amministrazione) chiaramente distinguibili.
  */
-export type AreaLogin = "cliente" | "merchant" | "admin";
+export type AreaLogin = "cliente" | "merchant" | "courier" | "admin";
 
 export type TemaLogin = {
   id: AreaLogin;
@@ -189,6 +190,69 @@ const temaMerchant: TemaLogin = {
   },
 };
 
+/** CORRIERE LOCALE — operativo, essenziale e orientato alle consegne. */
+const temaCourier: TemaLogin = {
+  id: "courier",
+  eyebrow: "InCittà · Area Corriere Locale",
+  eyebrowClass: "text-emerald-700",
+  IconaBadge: Truck,
+  badgeClass:
+    "flex h-11 w-11 items-center justify-center rounded-lg bg-emerald-700 text-white shadow-md shadow-emerald-700/25",
+  titoloLogin: "Area Corriere Locale",
+  titoloRegistrati: "Registrati come corriere locale",
+  sottotitoloLogin:
+    "Accedi per gestire le consegne locali e visualizzare gli ordini assegnati.",
+  sottotitoloRegistrati:
+    "Crea il tuo account corriere. L'accesso operativo sarà disponibile dopo l'approvazione amministrativa.",
+  titoloClass: "text-3xl font-extrabold tracking-tight text-slate-900",
+  sottotitoloClass: "text-sm leading-6 text-slate-600",
+  sfondoClass: "bg-emerald-50/60",
+  decorazioni: [
+    "absolute inset-x-0 top-0 h-64 bg-gradient-to-b from-emerald-100/70 to-transparent",
+    "absolute -bottom-40 -right-32 h-[26rem] w-[26rem] rounded-full bg-teal-100/60 blur-3xl",
+  ],
+  strisciaTopClasse: "h-1 w-full bg-emerald-700",
+  bandaHeader: null,
+  cardClass:
+    "card w-full max-w-md overflow-hidden rounded-2xl border-emerald-200 shadow-[0_20px_50px_-30px_rgba(4,120,87,0.35)]",
+  chips: [
+    {
+      testo: "Consegne locali",
+      classe:
+        "rounded-md border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700",
+    },
+    {
+      testo: "Ordini",
+      classe:
+        "rounded-md border border-teal-200 bg-teal-50 px-2 py-0.5 text-[11px] font-semibold text-teal-700",
+    },
+    {
+      testo: "Navigazione",
+      classe:
+        "rounded-md border border-sky-200 bg-sky-50 px-2 py-0.5 text-[11px] font-semibold text-sky-700",
+    },
+  ],
+  tabsContainerClass: "flex rounded-xl bg-emerald-100/80 p-1",
+  tabAttivoClass: "bg-white text-emerald-800 shadow-sm ring-1 ring-emerald-200",
+  tabInattivoClass: "text-emerald-900/60 hover:text-emerald-900",
+  bannerClass:
+    "rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800",
+  labelFieldClass: "text-sm font-semibold text-slate-700",
+  inputFocusClass: "focus:border-emerald-600 focus:ring-4 focus:ring-emerald-100",
+  checkboxAccentClass: "accent-emerald-700",
+  linkClass: "text-emerald-700 underline-offset-2 hover:text-emerald-900 hover:underline",
+  ctaClass:
+    "inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-700 text-sm font-bold text-white shadow-lg shadow-emerald-700/20 transition hover:bg-emerald-800 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-300 disabled:opacity-55",
+  IconaCta: Truck,
+  placeholderEmailLogin: "corriere@incitta.online",
+  boxSecondarioClass: "rounded-xl border border-emerald-200 bg-emerald-50/70 px-4 py-3",
+  erroreCampoClass: "text-xs font-semibold text-red-600",
+  notaFooter: {
+    testo: "Area riservata ai corrieri locali approvati da InCittà.",
+    classe: "mt-6 max-w-md text-center text-xs text-emerald-900/50",
+  },
+};
+
 /** ADMIN — istituzionale, luminoso, blu istituzionale con accenti LocalHub. */
 const temaAdmin: TemaLogin = {
   id: "admin",
@@ -243,6 +307,7 @@ const temaAdmin: TemaLogin = {
 const temi: Record<AreaLogin, TemaLogin> = {
   cliente: temaCliente,
   merchant: temaMerchant,
+  courier: temaCourier,
   admin: temaAdmin,
 };
 
@@ -256,6 +321,7 @@ export function risolviTemaLogin(
   area: string | null | undefined
 ): TemaLogin {
   if (area === "merchant") return temi.merchant;
+  if (area === "courier") return temi.courier;
   if (area === "admin") return temi.admin;
   return temi.cliente;
 }
