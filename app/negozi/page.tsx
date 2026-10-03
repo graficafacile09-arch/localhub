@@ -85,15 +85,17 @@ export default async function NegoziPage({
                         )}
                       </div>
                       <div className="absolute inset-x-0 bottom-0 p-3 sm:p-3.5">
-                        <div className="mb-2 flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border-2 border-white/90 bg-white shadow-md sm:h-10 sm:w-10">
-                          {negozio.logo_url ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={negozio.logo_url} alt="" className="h-full w-full object-cover" />
-                          ) : null}
+                        <div className="flex min-w-0 items-center gap-2.5">
+                          {negozio.logo_url && (
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white/90 bg-white shadow-md sm:h-10 sm:w-10">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={negozio.logo_url} alt="" className="h-full w-full object-cover" />
+                            </div>
+                          )}
+                          <h2 className="min-w-0 truncate text-base font-medium tracking-tight text-white drop-shadow-md sm:text-lg">
+                            {negozio.nome}
+                          </h2>
                         </div>
-                        <h2 className="min-w-0 truncate text-lg font-semibold tracking-tight text-white drop-shadow-md sm:text-xl">
-                          {negozio.nome}
-                        </h2>
                       </div>
                     </div>
 
