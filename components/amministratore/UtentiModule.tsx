@@ -57,10 +57,12 @@ export default function UtentiModule({
       amministratore: 0,
       commerciante: 0,
       utente: 0,
+      corriere: 0,
     };
     for (const utente of utenti) {
       if (utente.ruolo === "amministratore") conteggiLocali.amministratore += 1;
       else if (utente.ruolo === "commerciante") conteggiLocali.commerciante += 1;
+      else if (utente.ruolo === "corriere") conteggiLocali.corriere += 1;
       else conteggiLocali.utente += 1;
     }
     return conteggiLocali;
