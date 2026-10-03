@@ -5,7 +5,7 @@ import { createAdminSupabaseClient } from "@/lib/supabase/admin";
  * Il sistema è estensibile: per aggiungere un ruolo (editor, moderatore,
  * supporto, …) basta estendere questa unione e la relativa priorità.
  */
-export type RuoloUtente = "customer" | "merchant" | "admin";
+export type RuoloUtente = "customer" | "merchant" | "courier" | "admin";
 
 /**
  * Unica email autorizzata ad accedere all'Area Amministratore.
@@ -50,6 +50,7 @@ export async function utenteAdminAutorizzato(
 export const RUOLI_UTENTE: readonly RuoloUtente[] = [
   "customer",
   "merchant",
+  "courier",
   "admin",
 ] as const;
 
@@ -57,7 +58,8 @@ export const RUOLI_UTENTE: readonly RuoloUtente[] = [
 export const PRIORITA_RUOLO: Record<RuoloUtente, number> = {
   customer: 0,
   merchant: 1,
-  admin: 2,
+  courier: 2,
+  admin: 3,
 };
 
 export function isRuoloUtente(value: string): value is RuoloUtente {
@@ -79,6 +81,8 @@ export function redirectPerRuolo(ruolo: RuoloUtente): string {
       return "/amministratore";
     case "merchant":
       return "/merchant";
+    case "courier":
+      return "/corriere";
     default:
       return "/";
   }
