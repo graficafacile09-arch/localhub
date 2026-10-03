@@ -14,7 +14,7 @@ const RUOLI_DB = {
 type RuoloArea = keyof typeof RUOLI_DB;
 
 function ruoloValido(value: unknown): value is RuoloArea {
-  return value === "amministratore" || value === "commerciante" || value === "utente";
+  return value === "amministratore" || value === "commerciante" || value === "corriere" || value === "utente";
 }
 
 export async function POST(request: Request) {
