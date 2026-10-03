@@ -1,6 +1,6 @@
 "use client";
 
-import { Users, UserCog, Store, UserRound } from "lucide-react";
+import { Users, UserCog, Store, UserRound, Truck } from "lucide-react";
 import type { FiltroRuoloUtente } from "@/lib/amministratore/types";
 
 type TabDef = {
