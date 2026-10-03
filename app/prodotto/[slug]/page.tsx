@@ -17,6 +17,7 @@ import { getSiteUrl } from "@/lib/site";
 import { normalizzaNumeroWhatsApp } from "@/lib/telefono";
 import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
 import ShareActivityButton from "@/components/negozio/ShareActivityButton";
+import SegnalaAbusoButton from "@/components/cliente/segnalazioni/SegnalaAbusoButton";
 import AggiungiAlCarrelloButton from "@/components/carrello/AggiungiAlCarrelloButton";
 import AvvisamiDisponibilitaButton from "@/components/prodotto/AvvisamiDisponibilitaButton";
 import { MapPin, Phone, MessageCircle, ArrowLeft, ExternalLink, ShoppingBag, Store } from "lucide-react";
@@ -339,6 +340,11 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
             title={String(prodotto.nome ?? "Prodotto")}
             description={String((prodotto as Record<string, unknown>).descrizione_completa ?? prodotto.descrizione ?? "")}
             url={`/prodotto/${String(prodotto.slug ?? id)}`}
+          />
+          <SegnalaAbusoButton
+            targetType="prodotto"
+            targetName={String(prodotto.nome ?? "Prodotto")}
+            negozioId={String(negozio?.id ?? "")}
           />
           </div>
           </>
