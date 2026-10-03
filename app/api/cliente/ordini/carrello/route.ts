@@ -179,9 +179,6 @@ export async function POST(request: Request) {
     carrier !== null && isServizioValidoPerCarrier(carrier, spedizioneRaw.servizio)
       ? spedizioneRaw.servizio
       : null;
-  if (modalita === "spedizione" && carrier === "locale" && (latitudine === null || longitudine === null)) {
-    return apiError("COORDINATE_CONSEGNA_RICHIESTE", "Per il corriere locale sono necessarie le coordinate della consegna.", 422);
-  }
   if (modalita === "spedizione" && (!carrier || !servizio)) {
     return apiError(
       "CORRIERE_NON_VALIDO",
@@ -504,18 +501,19 @@ export async function POST(request: Request) {
   }
 
 
-  // Per i nuovi ordini del corriere locale inizializziamo esplicitamente
-  // la consegna come "da_assegnare" e lo stato di spedizione come
-  // "non_affidata". Nei retry/idempotenza aggiorniamo solo le coordinate:
-  // non dobbiamo mai sovrascrivere un'assegnazione già effettuata dall'admin.
-  if (carrier === "locale" && latitudine !== null && longitudine !== null && esito.ordini.length > 0) {
+  // Per i nuovi ordini del corriere locale inizializziamo sempre la consegna
+  // come "da_assegnare". Le coordinate sono opzionali: se il checkout non le
+  // fornisce, admin e corriere usano l'indirizzo di spedizione come fallback.
+  // Nei retry aggiorniamo solo le coordinate quando presenti e non tocchiamo
+  // mai un'assegnazione già effettuata dall'admin.
+  if (carrier === "locale" && esito.ordini.length > 0) {
     const dbCoordinate = createAdminSupabaseClient();
     for (const ordine of esito.ordini) {
-      const payload: Record<string, unknown> = {
-        ordine_id: ordine.ordineId,
-        latitudine,
-        longitudine,
-      };
+      const payload: Record<string, unknown> = { ordine_id: ordine.ordineId };
+      if (latitudine !== null && longitudine !== null) {
+        payload.latitudine = latitudine;
+        payload.longitudine = longitudine;
+      }
 
       if (!ordine.giaEsistente) {
         payload.stato = "da_assegnare";
