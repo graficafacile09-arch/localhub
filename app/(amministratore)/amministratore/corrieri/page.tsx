@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import CorrieriApprovazioni from "@/components/amministratore/CorrieriApprovazioni";
+import ConsegneLocaliAdmin from "@/components/amministratore/ConsegneLocaliAdmin";
 import { getSessionArea } from "@/lib/auth/session-area";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
@@ -30,5 +31,10 @@ export default async function CorrieriPage() {
     };
   });
 
-  return <CorrieriApprovazioni iniziali={iniziali} />;
+  return (
+    <div className="space-y-6">
+      <CorrieriApprovazioni iniziali={iniziali} />
+      <ConsegneLocaliAdmin />
+    </div>
+  );
 }
