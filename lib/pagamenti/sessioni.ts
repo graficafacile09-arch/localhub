@@ -867,6 +867,8 @@ export type IntentoCheckoutInput = {
     carrier: string;
     servizio: string;
     metodoPagamento: string;
+    latitudine?: number | null;
+    longitudine?: number | null;
   };
   /** Indirizzo di fatturazione opzionale (passthrough snapshot). */
   fatturazione?: unknown;
@@ -909,6 +911,8 @@ export function costruisciPayloadIntentoCheckout(
     spedizioneCarrier: input.spedizione?.carrier ?? null,
     spedizioneServizio: input.spedizione?.servizio ?? null,
     metodoPagamento: input.spedizione?.metodoPagamento ?? null,
+    latitudine: input.spedizione?.latitudine ?? null,
+    longitudine: input.spedizione?.longitudine ?? null,
     note,
     dichiarazioneEta: input.dichiarazioneEta === true,
     dichiarazioneEtaAt: input.dichiarazioneEtaAt ?? null,
