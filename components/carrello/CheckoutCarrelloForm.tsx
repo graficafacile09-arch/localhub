@@ -487,7 +487,6 @@ export default function CheckoutCarrelloForm({ prefill}
         return "Completa l'indirizzo di spedizione.";
       if (!/^\d{5}$/.test(cap.trim())) return "Il CAP deve essere composto da 5 cifre.";
       if (!spedizioneScelta) return "Seleziona un corriere di spedizione.";
-      if (spedizioneScelta.carrier === "locale" && !coordinateConsegna) return "Per il corriere locale devi indicare le coordinate della consegna.";
       // Fatturazione diversa: campi obbligatori, blocco invio se incompleti.
       if (fatturazione.diversa) {
         const errFatt = validaDatiFatturazione(fatturazione);
