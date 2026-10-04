@@ -44,9 +44,14 @@ function maps(lat: number | null, lng: number | null, address: string | null, ca
   return "https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent([address, cap, citta].filter(Boolean).join(", "));
 }
 
-function isHistory(stato: string) { return stato === "consegnata" || stato === "annullata"; }
+function isHistory(stato: string, ordineStato: string | null) {
+  return stato === "consegnata" || stato === "annullata" || ordineStato === "consegnato" || ordineStato === "cancellato";
+}
 function isWaitingForSeller(item: Item) {
-  return item.stato === "assegnata" && item.ordine_stato !== "pronto";
+  return item.stato === "assegnata" && ["in_preparazione", "confermato", "in_lavorazione"].includes(item.ordine_stato ?? "");
+}
+function isReadyForPickup(item: Item) {
+  return item.stato === "assegnata" && item.ordine_stato === "pronto";
 }
 
 export default function ConsegneLocali() {
@@ -106,7 +111,7 @@ export default function ConsegneLocali() {
     if (filter === "da_accettare") return items.filter((i) => isWaitingForSeller(i));
     if (filter === "attive") return items.filter((i) => ["accettata", "ritirata", "in_consegna"].includes(i.stato));
     if (filter === "problemi") return items.filter((i) => i.stato === "problema_consegna");
-    if (filter === "storico") return items.filter((i) => isHistory(i.stato));
+    if (filter === "storico") return items.filter((i) => isHistory(i.stato, i.ordine_stato));
     return items;
   }, [items, filter]);
 
@@ -145,14 +150,14 @@ export default function ConsegneLocali() {
               <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div><p className="text-xs font-bold uppercase tracking-[.18em] text-emerald-700">Ordine {o?.numero ?? i.ordine_id}</p><h3 className="mt-1 text-lg font-black text-slate-900">{o?.cliente_nome} {o?.cliente_cognome}</h3><p className="mt-1 text-sm font-semibold text-slate-600">{o?.negozio_nome ?? "Negozio"} · {o?.spedizione_indirizzo}, {o?.spedizione_cap} {o?.spedizione_citta}</p>{o?.cliente_telefono && <p className="mt-1 text-sm text-slate-500">Tel. {o.cliente_telefono}</p>}{o?.spedizione_note && <p className="mt-2 rounded-xl bg-slate-50 p-3 text-sm text-slate-600">{o.spedizione_note}</p>}</div>
                 <div className="flex flex-wrap items-center gap-2"><span className="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">
-                  {i.stato === "assegnata" && i.ordine_stato === "pronto" ? "Pacco pronto · da ritirare" : (labels[i.stato] ?? i.stato)}
+                  {isReadyForPickup(i) ? "Pacco pronto · da ritirare" : isHistory(i.stato, i.ordine_stato) && i.stato === "assegnata" ? "Ordine già completato" : (labels[i.stato] ?? i.stato)}
                 </span>{i.comunicazioni_non_lette > 0 && <span className="rounded-full bg-blue-600 px-3 py-1.5 text-xs font-bold text-white">{i.comunicazioni_non_lette} nuovi messaggi</span>}</div>
               </div>
               <div className="mt-4 flex flex-wrap gap-2">
                 {url && <a href={url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-bold text-blue-700"><MapPin className="h-4 w-4" />Navigazione</a>}
                 <button onClick={() => setChat(chat === i.ordine_id ? null : i.ordine_id)} className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-white px-4 py-2 text-sm font-bold text-blue-700"><MessageCircle className="h-4 w-4" />{chat === i.ordine_id ? "Chiudi comunicazioni" : "Comunicazioni"}{i.comunicazioni_non_lette > 0 ? ` · ${i.comunicazioni_non_lette}` : ""}</button>
-                {i.stato === "assegnata" && i.ordine_stato === "pronto" && <button disabled={busy === i.ordine_id} onClick={() => void update(i.ordine_id, "ritirata")} className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2 text-sm font-bold text-white disabled:opacity-50"><PackageCheck className="h-4 w-4" />{busy === i.ordine_id ? "Aggiornamento…" : "Ritira pacco"}</button>}
-                {i.stato === "assegnata" && i.ordine_stato !== "pronto" && <span className="inline-flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-800"><Clock3 className="h-4 w-4" />In attesa che il venditore prepari il pacco</span>}
+                {isReadyForPickup(i) && <button disabled={busy === i.ordine_id} onClick={() => void update(i.ordine_id, "ritirata")} className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2 text-sm font-bold text-white disabled:opacity-50"><PackageCheck className="h-4 w-4" />{busy === i.ordine_id ? "Aggiornamento…" : "Ritira pacco"}</button>}
+                {isWaitingForSeller(i) && <span className="inline-flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-800"><Clock3 className="h-4 w-4" />In attesa che il venditore prepari il pacco</span>}
                 {(actions[i.stato] ?? []).map((a) => <button key={a.stato} disabled={busy === i.ordine_id} onClick={() => void update(i.ordine_id, a.stato)} className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold text-white disabled:opacity-50 ${a.stato === "problema_consegna" || a.stato === "annullata" ? "bg-red-600" : "bg-emerald-700"}`}>{a.stato === "consegnata" ? <CheckCircle2 className="h-4 w-4" /> : a.stato === "ritirata" ? <PackageCheck className="h-4 w-4" /> : a.stato === "problema_consegna" ? <AlertTriangle className="h-4 w-4" /> : <Truck className="h-4 w-4" />}{busy === i.ordine_id ? "Aggiornamento…" : a.label}</button>)}
               </div>
               {chat === i.ordine_id && <div className="mt-4"><OrdineComunicazioni ordineId={i.ordine_id} /></div>}
@@ -171,7 +176,7 @@ export default function ConsegneLocali() {
         <div className="flex items-center gap-2"><History className="h-5 w-5 text-slate-600" /><h2 className="text-lg font-black text-slate-900">Storico consegne</h2></div>
         <p className="mt-1 text-sm text-slate-500">Le consegne concluse e annullate rimangono consultabili.</p>
         <div className="mt-4 grid gap-2 md:grid-cols-2">
-          {items.filter((i) => isHistory(i.stato)).length === 0 ? <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-500">Nessuna consegna conclusa.</p> : items.filter((i) => isHistory(i.stato)).slice(0, 10).map((i) => <button key={i.ordine_id} onClick={() => { setFilter("storico"); document.getElementById("consegne")?.scrollIntoView({ behavior: "smooth" }); }} className="flex items-center justify-between rounded-xl border border-slate-200 p-3 text-left hover:bg-slate-50"><span><span className="block font-bold text-slate-800">Ordine {i.ordini?.numero ?? i.ordine_id}</span><span className="text-xs text-slate-500">{i.ordini?.negozio_nome ?? "Negozio"}</span></span><span className={`rounded-full px-2.5 py-1 text-xs font-bold ${i.stato === "consegnata" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>{labels[i.stato]}</span></button>)}
+          {items.filter((i) => isHistory(i.stato, i.ordine_stato)).length === 0 ? <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-500">Nessuna consegna conclusa.</p> : items.filter((i) => isHistory(i.stato, i.ordine_stato)).slice(0, 10).map((i) => <button key={i.ordine_id} onClick={() => { setFilter("storico"); document.getElementById("consegne")?.scrollIntoView({ behavior: "smooth" }); }} className="flex items-center justify-between rounded-xl border border-slate-200 p-3 text-left hover:bg-slate-50"><span><span className="block font-bold text-slate-800">Ordine {i.ordini?.numero ?? i.ordine_id}</span><span className="text-xs text-slate-500">{i.ordini?.negozio_nome ?? "Negozio"}</span></span><span className={`rounded-full px-2.5 py-1 text-xs font-bold ${i.stato === "consegnata" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"}`}>{labels[i.stato]}</span></button>)}
         </div>
       </section>
     </div>
