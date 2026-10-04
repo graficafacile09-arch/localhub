@@ -10,7 +10,7 @@ export async function GET() {
   const userId = gate.sessione.user.id;
   const { data, error } = await db
     .from("corrieri_locali")
-    .select("ordine_id,corriere_user_id,stato,latitudine,longitudine,assegnata_at,accettata_at,ritirata_at,in_consegna_at,consegnata_at,problema_at,note_corriere,ordini(numero,negozio_nome,cliente_nome,cliente_cognome,cliente_telefono,spedizione_indirizzo,spedizione_cap,spedizione_citta,spedizione_provincia,spedizione_note,totale,stato_spedizione)")
+    .select("ordine_id,corriere_user_id,stato,latitudine,longitudine,assegnata_at,accettata_at,ritirata_at,in_consegna_at,consegnata_at,problema_at,note_corriere,ordini(numero,negozio_nome,cliente_nome,cliente_cognome,cliente_telefono,spedizione_indirizzo,spedizione_cap,spedizione_citta,spedizione_provincia,spedizione_note,totale,stato,stato_spedizione)")
     .eq("corriere_user_id", userId)
     .order("updated_at", { ascending: false });
 
@@ -41,10 +41,17 @@ export async function GET() {
   }
 
   return NextResponse.json({
-    data: items.map((item) => ({
-      ...item,
-      comunicazioni_non_lette: unreadByOrder.get(item.ordine_id) ?? 0,
-    })),
+    data: items.map((item) => {
+      const ordine = Array.isArray(item.ordini) ? item.ordini[0] : item.ordini;
+      return {
+        ...item,
+        // Il frontend del corriere deve sapere quando il venditore ha
+        // effettivamente portato l'ordine a "pronto": solo allora il
+        // pulsante "Ritira pacco" deve sostituire l'attesa.
+        ordine_stato: ordine?.stato ?? null,
+        comunicazioni_non_lette: unreadByOrder.get(item.ordine_id) ?? 0,
+      };
+    }),
   });
 }
 
