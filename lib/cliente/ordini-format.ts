@@ -10,6 +10,8 @@
 import type { RigaOrdine, StatoOrdine } from "./types";
 
 /** Formatta una data ISO in formato italiano (es. "16 agosto 2026"). */
+const FUSO_ORARIO_IN_CITTA = "Europe/Rome";
+
 export function formattaDataOrdine(value: string | null | undefined): string {
   if (!value) return "";
   const d = new Date(value);
@@ -18,6 +20,7 @@ export function formattaDataOrdine(value: string | null | undefined): string {
     day: "numeric",
     month: "long",
     year: "numeric",
+    timeZone: FUSO_ORARIO_IN_CITTA,
   });
 }
 
@@ -32,6 +35,7 @@ export function formattaDataOraEvento(value: string | null | undefined): string 
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: FUSO_ORARIO_IN_CITTA,
   });
 }
 
@@ -50,6 +54,7 @@ export function formattaDataOraCard(value: string | null | undefined): string {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
+    timeZone: FUSO_ORARIO_IN_CITTA,
   });
   // it-IT usa la virgola (es. "10/08/2026, 18:42") → la sostituiamo con " · ".
   return parti.replace(/,\s*/, " · ");
