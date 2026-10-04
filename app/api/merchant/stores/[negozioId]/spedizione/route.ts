@@ -165,10 +165,10 @@ export async function PATCH(
             : null,
       });
     }
-    const esito = await updateMetodiSpedizioneNegozio(user.id, negozioId, metodi);
     if (metodi.some((m) => m.carrier === "locale" && m.servizio === "locale" && m.costo_euro! < 0)) {
       return apiError("VALIDATION_ERROR", "Il costo del Corriere locale deve essere un numero maggiore o uguale a zero.", 422);
     }
+    const esito = await updateMetodiSpedizioneNegozio(user.id, negozioId, metodi);
     if (!esito.ok) {
       return apiError("UPDATE_FAILED", esito.errore ?? "Impossibile salvare i metodi di spedizione.", 500);
     }
