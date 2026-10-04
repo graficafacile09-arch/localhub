@@ -56,8 +56,14 @@ export async function GET(
     consegna: delivery ?? { corriere_user_id: null, stato: "da_assegnare", assegnata_at: null },
     corrieri: [...approvedIds].map((userId) => ({
       userId,
-      nome: userMap.get(userId)?.user_metadata?.nome ?? "",
-      cognome: userMap.get(userId)?.user_metadata?.cognome ?? "",
+      nome:
+        userMap.get(userId)?.user_metadata?.nome ??
+        userMap.get(userId)?.user_metadata?.first_name ??
+        (userMap.get(userId)?.user_metadata?.full_name ?? "").trim().split(/\\s+/)[0] ?? "",
+      cognome:
+        userMap.get(userId)?.user_metadata?.cognome ??
+        userMap.get(userId)?.user_metadata?.last_name ??
+        (userMap.get(userId)?.user_metadata?.full_name ?? "").trim().split(/\\s+/).slice(1).join(" ") ?? "",
       email: userMap.get(userId)?.email ?? "",
     })),
   });
