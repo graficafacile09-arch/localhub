@@ -39,7 +39,7 @@ type Item = {
 };
 
 const labels: Record<string, string> = {
-  assegnata: "Da accettare",
+  assegnata: "In attesa del venditore",
   accettata: "Accettata",
   ritirata: "Ritirata",
   in_consegna: "In consegna",
@@ -73,7 +73,7 @@ const actions: Record<string, { stato: string; label: string }[]> = {
 
 const filters = [
   ["tutte", "Tutte"],
-  ["da_accettare", "Da accettare"],
+  ["da_accettare", "In attesa del venditore"],
   ["attive", "Attive"],
   ["problemi", "Problemi"],
   ["storico", "Storico"],
