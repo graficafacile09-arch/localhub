@@ -34,6 +34,7 @@ import { InformazioniRitiroSpedizione } from "@/components/ordini/InformazioniRi
 import RecessoOrdineVenditore from "@/components/merchant/RecessoOrdineVenditore.jsx";
 import AffidaCorriereLocale from "@/components/merchant/AffidaCorriereLocale";
 import OrdineComunicazioni from "@/components/ordini/OrdineComunicazioni";
+import StatoSpedizioneLive from "@/components/ordini/StatoSpedizioneLive";
 
 export const dynamic = "force-dynamic";
 
@@ -253,6 +254,10 @@ export default async function MerchantOrdineDettaglioPage({
             telefono={ordine.clienteTelefono}
             email={ordine.clienteEmail}
           />
+
+          {ordine.modalita === "spedizione" && ordine.spedizioneCarrier === "locale" && ordine.spedizioneServizio === "locale" ? (
+            <StatoSpedizioneLive ordineId={ordine.id} statoIniziale={ordine.statoSpedizione} />
+          ) : null}
 
           <InformazioniRitiroSpedizione
             modalita={ordine.modalita}

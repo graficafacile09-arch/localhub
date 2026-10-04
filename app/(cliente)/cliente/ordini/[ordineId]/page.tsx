@@ -29,6 +29,7 @@ import { OrderHeader } from "@/components/ordini/OrderHeader";
 import { InformazioniNegozio } from "@/components/ordini/InformazioniNegozio";
 import { InformazioniRitiroSpedizione } from "@/components/ordini/InformazioniRitiroSpedizione";
 import OrdineComunicazioni from "@/components/ordini/OrdineComunicazioni";
+import StatoSpedizioneLive from "@/components/ordini/StatoSpedizioneLive";
 
 type Params = { ordineId: string };
 
@@ -190,6 +191,10 @@ export default async function OrdineDettaglioPage({ params }: { params: Promise<
         {/* ── Colonna laterale ──────────────────────────────────────────────── */}
         <div className="min-w-0 space-y-5">
           <InformazioniNegozio negozioNome={ordine.negozioNome} linkHref={linkNegozio} />
+
+          {ordine.modalita === "spedizione" && ordine.spedizioneCarrier === "locale" && ordine.spedizioneServizio === "locale" ? (
+            <StatoSpedizioneLive ordineId={ordine.id} statoIniziale={ordine.statoSpedizione} />
+          ) : null}
 
           <InformazioniRitiroSpedizione
             modalita={ordine.modalita}
