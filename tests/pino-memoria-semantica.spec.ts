@@ -23,7 +23,7 @@ function memoria(
   };
 }
 
-const pianoVuoto: PinoSemanticPlan[] = [];
+const pianoVuoto: PinoMemoriaVoce[] = [];
 
 test.describe("Pino — consumo della memoria semantica verificata", () => {
   test("1) applica una correzione appresa a una query semplice", () => {
@@ -92,7 +92,7 @@ test.describe("Pino — consumo della memoria semantica verificata", () => {
 
   test("7) nessuna memoria lascia la query intatta", () => {
     expect(
-      applicaMemoriaSemantica("scarpe da uomo eleganti", pianoVuoto as PinoMemoriaVoce[])
+      applicaMemoriaSemantica("scarpe da uomo eleganti", pianoVuoto)
     ).toBe("scarpe da uomo eleganti");
   });
 });
