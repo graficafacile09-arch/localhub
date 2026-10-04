@@ -211,10 +211,7 @@ export default function SpedizionePaccoConfig({
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          metodi: prossimi.map((m) => ({
-            carrier: m.carrier,
-            servizio: m.servizio,
-            ...payloadMetodi(prossimi),
+          metodi: payloadMetodi(prossimi),
         }),
       });
       if (!res.ok) {
