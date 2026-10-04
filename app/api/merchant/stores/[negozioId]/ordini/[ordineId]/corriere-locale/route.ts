@@ -29,6 +29,9 @@ export async function GET(
     .maybeSingle();
 
   if (!ordine) return apiError("NOT_FOUND", "Ordine non trovato.", 404);
+  if (["consegnato", "cancellato"].includes(ordine.stato)) {
+    return apiError("FINAL_ORDER_STATE", "Non è possibile affidare una consegna a un ordine già completato o annullato.", 409);
+  }
   if (ordine.modalita !== "spedizione" || ordine.spedizione_carrier !== "locale" || ordine.spedizione_servizio !== "locale") {
     return apiError("NOT_LOCAL_DELIVERY", "Questo ordine non utilizza il corriere locale.", 422);
   }
