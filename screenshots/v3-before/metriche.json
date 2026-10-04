@@ -1,0 +1,695 @@
+[
+  {
+    "id": "home",
+    "viewport": "desktop",
+    "path": "/",
+    "uso": 89,
+    "scrollWidth": 1440,
+    "clientWidth": 1440,
+    "colpevoli": [],
+    "headerHeight": 314,
+    "headerBands": [
+      181,
+      40,
+      85
+    ],
+    "haNav": true,
+    "haSearch": true,
+    "mainHeight": 4761,
+    "contenutoMax": 1280,
+    "contenutoLeft": 80,
+    "nCards": 31,
+    "firstFold": 0,
+    "sezioni": 7,
+    "superfici": [
+      "rgb(10, 20, 43)",
+      "rgb(226, 236, 248)",
+      "rgb(238, 244, 251)",
+      "rgb(255, 255, 255)"
+    ]
+  },
+  {
+    "id": "negozi",
+    "viewport": "desktop",
+    "path": "/negozi",
+    "uso": 89,
+    "scrollWidth": 1440,
+    "clientWidth": 1440,
+    "colpevoli": [],
+    "headerHeight": 314,
+    "headerBands": [
+      181,
+      40,
+      85
+    ],
+    "haNav": true,
+    "haSearch": true,
+    "mainHeight": 1518,
+    "contenutoMax": 1280,
+    "contenutoLeft": 80,
+    "nCards": 8,
+    "firstFold": 4,
+    "sezioni": 1,
+    "superfici": [
+      "rgb(10, 20, 43)"
+    ]
+  },
+  {
+    "id": "categorie",
+    "viewport": "desktop",
+    "path": "/categorie",
+    "uso": 80,
+    "scrollWidth": 1440,
+    "clientWidth": 1440,
+    "colpevoli": [],
+    "headerHeight": 314,
+    "headerBands": [
+      181,
+      40,
+      85
+    ],
+    "haNav": true,
+    "haSearch": true,
+    "mainHeight": 2412,
+    "contenutoMax": 1152,
+    "contenutoLeft": 144,
+    "nCards": 71,
+    "firstFold": 12,
+    "sezioni": 1,
+    "superfici": [
+      "rgb(10, 20, 43)"
+    ]
+  },
+  {
+    "id": "offerte",
+    "viewport": "desktop",
+    "path": "/offerte",
+    "uso": 89,
+    "scrollWidth": 1440,
+    "clientWidth": 1440,
+    "colpevoli": [],
+    "headerHeight": 314,
+    "headerBands": [
+      181,
+      40,
+      85
+    ],
+    "haNav": true,
+    "haSearch": true,
+    "mainHeight": 984,
+    "contenutoMax": 1280,
+    "contenutoLeft": 80,
+    "nCards": 3,
+    "firstFold": 3,
+    "sezioni": 1,
+    "superfici": [
+      "rgb(10, 20, 43)"
+    ]
+  },
+  {
+    "id": "carrello",
+    "viewport": "desktop",
+    "path": "/carrello",
+    "uso": 53,
+    "scrollWidth": 1440,
+    "clientWidth": 1440,
+    "colpevoli": [],
+    "headerHeight": 314,
+    "headerBands": [
+      181,
+      40,
+      85
+    ],
+    "haNav": true,
+    "haSearch": true,
+    "mainHeight": 900,
+    "contenutoMax": 768,
+    "contenutoLeft": 336,
+    "nCards": 0,
+    "firstFold": 0,
+    "sezioni": 0,
+    "superfici": []
+  },
+  {
+    "id": "checkout",
+    "viewport": "desktop",
+    "path": "/checkout",
+    "uso": 53,
+    "scrollWidth": 1440,
+    "clientWidth": 1440,
+    "colpevoli": [],
+    "headerHeight": 314,
+    "headerBands": [
+      181,
+      40,
+      85
+    ],
+    "haNav": true,
+    "haSearch": true,
+    "mainHeight": 900,
+    "contenutoMax": 768,
+    "contenutoLeft": 336,
+    "nCards": 0,
+    "firstFold": 0,
+    "sezioni": 0,
+    "superfici": []
+  },
+  {
+    "id": "prodotto",
+    "viewport": "desktop",
+    "path": "/prodotto/ciotaredda-castrovillari",
+    "uso": 89,
+    "scrollWidth": 1440,
+    "clientWidth": 1440,
+    "colpevoli": [],
+    "headerHeight": 314,
+    "headerBands": [
+      181,
+      40,
+      85
+    ],
+    "haNav": true,
+    "haSearch": true,
+    "mainHeight": 1149,
+    "contenutoMax": 1280,
+    "contenutoLeft": 80,
+    "nCards": 4,
+    "firstFold": 0,
+    "sezioni": 0,
+    "superfici": []
+  },
+  {
+    "id": "carrello-pieno",
+    "viewport": "desktop",
+    "path": "/carrello",
+    "uso": 71,
+    "scrollWidth": 1440,
+    "clientWidth": 1440,
+    "colpevoli": [],
+    "headerHeight": 314,
+    "headerBands": [
+      181,
+      40,
+      85
+    ],
+    "haNav": true,
+    "haSearch": true,
+    "mainHeight": 900,
+    "contenutoMax": 1024,
+    "contenutoLeft": 208,
+    "nCards": 2,
+    "firstFold": 1,
+    "sezioni": 0,
+    "superfici": [
+      "rgb(255, 255, 255)"
+    ]
+  },
+  {
+    "id": "checkout-form",
+    "viewport": "desktop",
+    "path": "/checkout",
+    "uso": 71,
+    "scrollWidth": 1440,
+    "clientWidth": 1440,
+    "colpevoli": [],
+    "headerHeight": 314,
+    "headerBands": [
+      181,
+      40,
+      85
+    ],
+    "haNav": true,
+    "haSearch": true,
+    "mainHeight": 2008,
+    "contenutoMax": 1024,
+    "contenutoLeft": 208,
+    "nCards": 0,
+    "firstFold": 0,
+    "sezioni": 0,
+    "superfici": [
+      "rgb(255, 255, 255)"
+    ]
+  },
+  {
+    "id": "home",
+    "viewport": "tablet",
+    "path": "/",
+    "uso": 100,
+    "scrollWidth": 834,
+    "clientWidth": 834,
+    "colpevoli": [],
+    "headerHeight": 232,
+    "headerBands": [
+      155,
+      40,
+      33
+    ],
+    "haNav": true,
+    "haSearch": true,
+    "mainHeight": 5786,
+    "contenutoMax": 834,
+    "contenutoLeft": 0,
+    "nCards": 31,
+    "firstFold": 0,
+    "sezioni": 7,
+    "superfici": [
+      "rgb(10, 20, 43)",
+      "rgb(226, 236, 248)",
+      "rgb(238, 244, 251)",
+      "rgb(255, 255, 255)"
+    ]
+  },
+  {
+    "id": "negozi",
+    "viewport": "tablet",
+    "path": "/negozi",
+    "uso": 100,
+    "scrollWidth": 834,
+    "clientWidth": 834,
+    "colpevoli": [],
+    "headerHeight": 232,
+    "headerBands": [
+      155,
+      40,
+      33
+    ],
+    "haNav": true,
+    "haSearch": true,
+    "mainHeight": 2304,
+    "contenutoMax": 834,
+    "contenutoLeft": 0,
+    "nCards": 8,
+    "firstFold": 4,
+    "sezioni": 1,
+    "superfici": [
+      "rgb(10, 20, 43)"
+    ]
+  },
+  {
+    "id": "categorie",
+    "viewport": "tablet",
+    "path": "/categorie",
+    "uso": 100,
+    "scrollWidth": 834,
+    "clientWidth": 834,
+    "colpevoli": [],
+    "headerHeight": 232,
+    "headerBands": [
+      155,
+      40,
+      33
+    ],
+    "haNav": true,
+    "haSearch": true,
+    "mainHeight": 2904,
+    "contenutoMax": 834,
+    "contenutoLeft": 0,
+    "nCards": 71,
+    "firstFold": 18,
+    "sezioni": 1,
+    "superfici": [
+      "rgb(10, 20, 43)"
+    ]
+  },
+  {
+    "id": "offerte",
+    "viewport": "tablet",
+    "path": "/offerte",
+    "uso": 100,
+    "scrollWidth": 834,
+    "clientWidth": 834,
+    "colpevoli": [],
+    "headerHeight": 232,
+    "headerBands": [
+      155,
+      40,
+      33
+    ],
+    "haNav": true,
+    "haSearch": true,
+    "mainHeight": 1112,
+    "contenutoMax": 834,
+    "contenutoLeft": 0,
+    "nCards": 3,
+    "firstFold": 3,
+    "sezioni": 1,
+    "superfici": [
+      "rgb(10, 20, 43)"
+    ]
+  },
+  {
+    "id": "carrello",
+    "viewport": "tablet",
+    "path": "/carrello",
+    "uso": 92,
+    "scrollWidth": 834,
+    "clientWidth": 834,
+    "colpevoli": [],
+    "headerHeight": 232,
+    "headerBands": [
+      155,
+      40,
+      33
+    ],
+    "haNav": true,
+    "haSearch": true,
+    "mainHeight": 1112,
+    "contenutoMax": 768,
+    "contenutoLeft": 33,
+    "nCards": 0,
+    "firstFold": 0,
+    "sezioni": 0,
+    "superfici": []
+  },
+  {
+    "id": "checkout",
+    "viewport": "tablet",
+    "path": "/checkout",
+    "uso": 92,
+    "scrollWidth": 834,
+    "clientWidth": 834,
+    "colpevoli": [],
+    "headerHeight": 232,
+    "headerBands": [
+      155,
+      40,
+      33
+    ],
+    "haNav": true,
+    "haSearch": true,
+    "mainHeight": 1112,
+    "contenutoMax": 768,
+    "contenutoLeft": 33,
+    "nCards": 0,
+    "firstFold": 0,
+    "sezioni": 0,
+    "superfici": []
+  },
+  {
+    "id": "prodotto",
+    "viewport": "tablet",
+    "path": "/prodotto/ciotaredda-castrovillari",
+    "uso": 100,
+    "scrollWidth": 834,
+    "clientWidth": 834,
+    "colpevoli": [],
+    "headerHeight": 232,
+    "headerBands": [
+      155,
+      40,
+      33
+    ],
+    "haNav": true,
+    "haSearch": true,
+    "mainHeight": 1491,
+    "contenutoMax": 834,
+    "contenutoLeft": 0,
+    "nCards": 4,
+    "firstFold": 0,
+    "sezioni": 0,
+    "superfici": []
+  },
+  {
+    "id": "carrello-pieno",
+    "viewport": "tablet",
+    "path": "/carrello",
+    "uso": 100,
+    "scrollWidth": 834,
+    "clientWidth": 834,
+    "colpevoli": [],
+    "headerHeight": 232,
+    "headerBands": [
+      155,
+      40,
+      33
+    ],
+    "haNav": true,
+    "haSearch": true,
+    "mainHeight": 1112,
+    "contenutoMax": 834,
+    "contenutoLeft": 0,
+    "nCards": 2,
+    "firstFold": 1,
+    "sezioni": 0,
+    "superfici": [
+      "rgb(255, 255, 255)"
+    ]
+  },
+  {
+    "id": "checkout-form",
+    "viewport": "tablet",
+    "path": "/checkout",
+    "uso": 100,
+    "scrollWidth": 834,
+    "clientWidth": 834,
+    "colpevoli": [],
+    "headerHeight": 232,
+    "headerBands": [
+      155,
+      40,
+      33
+    ],
+    "haNav": true,
+    "haSearch": true,
+    "mainHeight": 2177,
+    "contenutoMax": 834,
+    "contenutoLeft": 0,
+    "nCards": 0,
+    "firstFold": 0,
+    "sezioni": 0,
+    "superfici": [
+      "rgb(255, 255, 255)"
+    ]
+  },
+  {
+    "id": "home",
+    "viewport": "mobile",
+    "path": "/",
+    "uso": 100,
+    "scrollWidth": 390,
+    "clientWidth": 390,
+    "colpevoli": [],
+    "headerHeight": 284,
+    "headerBands": [
+      176,
+      55,
+      53
+    ],
+    "haNav": true,
+    "haSearch": true,
+    "mainHeight": 6464,
+    "contenutoMax": 390,
+    "contenutoLeft": 0,
+    "nCards": 31,
+    "firstFold": 0,
+    "sezioni": 7,
+    "superfici": [
+      "rgb(10, 20, 43)",
+      "rgb(226, 236, 248)",
+      "rgb(238, 244, 251)",
+      "rgb(255, 255, 255)"
+    ]
+  },
+  {
+    "id": "negozi",
+    "viewport": "mobile",
+    "path": "/negozi",
+    "uso": 100,
+    "scrollWidth": 390,
+    "clientWidth": 390,
+    "colpevoli": [],
+    "headerHeight": 284,
+    "headerBands": [
+      176,
+      55,
+      53
+    ],
+    "haNav": true,
+    "haSearch": true,
+    "mainHeight": 3667,
+    "contenutoMax": 390,
+    "contenutoLeft": 0,
+    "nCards": 8,
+    "firstFold": 1,
+    "sezioni": 1,
+    "superfici": [
+      "rgb(10, 20, 43)"
+    ]
+  },
+  {
+    "id": "categorie",
+    "viewport": "mobile",
+    "path": "/categorie",
+    "uso": 100,
+    "scrollWidth": 390,
+    "clientWidth": 390,
+    "colpevoli": [],
+    "headerHeight": 284,
+    "headerBands": [
+      176,
+      55,
+      53
+    ],
+    "haNav": true,
+    "haSearch": true,
+    "mainHeight": 3405,
+    "contenutoMax": 390,
+    "contenutoLeft": 0,
+    "nCards": 71,
+    "firstFold": 8,
+    "sezioni": 1,
+    "superfici": [
+      "rgb(10, 20, 43)"
+    ]
+  },
+  {
+    "id": "offerte",
+    "viewport": "mobile",
+    "path": "/offerte",
+    "uso": 100,
+    "scrollWidth": 390,
+    "clientWidth": 390,
+    "colpevoli": [],
+    "headerHeight": 284,
+    "headerBands": [
+      176,
+      55,
+      53
+    ],
+    "haNav": true,
+    "haSearch": true,
+    "mainHeight": 1117,
+    "contenutoMax": 390,
+    "contenutoLeft": 0,
+    "nCards": 3,
+    "firstFold": 2,
+    "sezioni": 1,
+    "superfici": [
+      "rgb(10, 20, 43)"
+    ]
+  },
+  {
+    "id": "carrello",
+    "viewport": "mobile",
+    "path": "/carrello",
+    "uso": 100,
+    "scrollWidth": 390,
+    "clientWidth": 390,
+    "colpevoli": [],
+    "headerHeight": 284,
+    "headerBands": [
+      176,
+      55,
+      53
+    ],
+    "haNav": true,
+    "haSearch": true,
+    "mainHeight": 844,
+    "contenutoMax": 390,
+    "contenutoLeft": 0,
+    "nCards": 0,
+    "firstFold": 0,
+    "sezioni": 0,
+    "superfici": []
+  },
+  {
+    "id": "checkout",
+    "viewport": "mobile",
+    "path": "/checkout",
+    "uso": 100,
+    "scrollWidth": 390,
+    "clientWidth": 390,
+    "colpevoli": [],
+    "headerHeight": 284,
+    "headerBands": [
+      176,
+      55,
+      53
+    ],
+    "haNav": true,
+    "haSearch": true,
+    "mainHeight": 844,
+    "contenutoMax": 390,
+    "contenutoLeft": 0,
+    "nCards": 0,
+    "firstFold": 0,
+    "sezioni": 0,
+    "superfici": []
+  },
+  {
+    "id": "prodotto",
+    "viewport": "mobile",
+    "path": "/prodotto/ciotaredda-castrovillari",
+    "uso": 100,
+    "scrollWidth": 390,
+    "clientWidth": 390,
+    "colpevoli": [],
+    "headerHeight": 284,
+    "headerBands": [
+      176,
+      55,
+      53
+    ],
+    "haNav": true,
+    "haSearch": true,
+    "mainHeight": 1623,
+    "contenutoMax": 390,
+    "contenutoLeft": 0,
+    "nCards": 4,
+    "firstFold": 0,
+    "sezioni": 0,
+    "superfici": []
+  },
+  {
+    "id": "carrello-pieno",
+    "viewport": "mobile",
+    "path": "/carrello",
+    "uso": 100,
+    "scrollWidth": 390,
+    "clientWidth": 390,
+    "colpevoli": [],
+    "headerHeight": 284,
+    "headerBands": [
+      176,
+      55,
+      53
+    ],
+    "haNav": true,
+    "haSearch": true,
+    "mainHeight": 860,
+    "contenutoMax": 390,
+    "contenutoLeft": 0,
+    "nCards": 2,
+    "firstFold": 1,
+    "sezioni": 0,
+    "superfici": [
+      "rgb(255, 255, 255)"
+    ]
+  },
+  {
+    "id": "checkout-form",
+    "viewport": "mobile",
+    "path": "/checkout",
+    "uso": 100,
+    "scrollWidth": 390,
+    "clientWidth": 390,
+    "colpevoli": [],
+    "headerHeight": 284,
+    "headerBands": [
+      176,
+      55,
+      53
+    ],
+    "haNav": true,
+    "haSearch": true,
+    "mainHeight": 2513,
+    "contenutoMax": 390,
+    "contenutoLeft": 0,
+    "nCards": 0,
+    "firstFold": 0,
+    "sezioni": 0,
+    "superfici": [
+      "rgb(255, 255, 255)"
+    ]
+  }
+]

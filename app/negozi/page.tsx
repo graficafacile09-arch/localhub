@@ -54,7 +54,7 @@ export default async function NegoziPage({
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 sm:gap-7 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-x-2 gap-y-5 sm:grid-cols-3 lg:grid-cols-4">
             {negozi.map((negozio) => {
               const imageUrl = getNegozioCardImmagine({
                 copertina_url: negozio.copertina_url,
@@ -65,10 +65,10 @@ export default async function NegoziPage({
               return (
                 <div
                   key={negozio.id}
-                  className="relative overflow-hidden rounded-2xl border border-white/70 bg-white shadow-sm transition hover:border-blue-200 hover:shadow-md"
+                  className="relative overflow-visible rounded-2xl border border-white/60 bg-white shadow-sm transition hover:border-blue-200 hover:shadow-md"
                 >
                   <Link href={`/negozio/${negozio.slug}`} className="group block">
-                    <div className="relative aspect-[4/3] overflow-hidden rounded-t-2xl bg-slate-100">
+                    <div className="relative aspect-[21/9] overflow-hidden rounded-t-2xl bg-slate-100">
                       <div
                         role="img"
                         aria-label={negozio.nome}
@@ -76,36 +76,43 @@ export default async function NegoziPage({
                         style={{ backgroundImage: `url(${imageUrl})` }}
                       />
                       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-900/25 to-transparent" />
-                      <div className="absolute inset-x-0 top-0 flex items-start p-3 sm:p-3.5">
+                      <div className="absolute inset-x-0 bottom-0 p-3 sm:p-3.5">
                         {negozio.categoria && (
-                          <span className="inline-flex max-w-[75%] items-center gap-1 rounded-full bg-yellow-400 px-2 py-1 text-[9px] font-black uppercase tracking-wide text-yellow-950 shadow-sm sm:text-[10px]">
-                            <Tag className="h-2.5 w-2.5 shrink-0 sm:h-3 sm:w-3" aria-hidden />
-                            <span className="truncate">{negozio.categoria}</span>
+                          <span className="mb-1.5 inline-flex items-center gap-1 rounded-full bg-yellow-400 px-2 py-0.5 text-[9px] font-black uppercase tracking-wide text-yellow-950 shadow-sm sm:text-[10px]">
+                            <Tag className="h-2.5 w-2.5 sm:h-3 sm:w-3" aria-hidden />
+                            {negozio.categoria}
                           </span>
                         )}
-                      </div>
-                      <div className="absolute inset-x-0 bottom-0 p-3 sm:p-3.5">
-                        <div className="flex min-w-0 items-center gap-2.5">
-                          {negozio.logo_url && (
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-white/90 bg-white shadow-md sm:h-10 sm:w-10">
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img src={negozio.logo_url} alt="" className="h-full w-full object-cover" />
-                            </div>
-                          )}
-                          <h2 className="min-w-0 max-w-full break-words text-[13px] font-semibold leading-tight tracking-tight text-white drop-shadow-md sm:text-[15px]">
-                            {negozio.nome}
-                          </h2>
-                        </div>
+                        <h2 className="min-w-0 truncate text-lg font-semibold tracking-tight text-white drop-shadow-md sm:text-xl">
+                          {negozio.nome}
+                        </h2>
                       </div>
                     </div>
 
                     {negozio.indirizzo && (
-                      <p className="flex items-center gap-1 px-3 pb-2.5 pt-1.5 text-[10px] text-slate-400">
+                      <p className="flex items-center gap-1 px-3 pb-1 pt-1.5 text-[10px] text-slate-400">
                         <MapPin className="h-2.5 w-2.5 shrink-0" />
                         <span className="truncate">{negozio.indirizzo}</span>
                       </p>
                     )}
                   </Link>
+
+                  {/* Tasto Condividi in flusso, sotto il contenuto della propria card:
+                      non copre più la card della riga successiva. */}
+                  <div className="flex items-center justify-end px-3 pb-3 pt-1">
+                    <ShareActivityButton
+                      title={negozio.nome}
+                      description={negozio.descrizione ?? ""}
+                      url={`/negozio/${negozio.slug}`}
+                    />
+                  </div>
+
+                  <div className="pointer-events-none absolute -bottom-4 left-3 z-20 h-11 w-11 overflow-hidden rounded-full border-2 border-white bg-white shadow-md sm:h-12 sm:w-12">
+                    {negozio.logo_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={negozio.logo_url} alt="" className="h-full w-full object-cover" />
+                    ) : null}
+                  </div>
 
                   <FavoritoButton
                     tipo="negozio"
@@ -115,14 +122,6 @@ export default async function NegoziPage({
                     className="absolute right-2 top-2 z-10"
                     label={negozio.nome}
                   />
-
-                  <div className="flex items-center justify-end border-t border-slate-100 px-3 py-3">
-                    <ShareActivityButton
-                      title={negozio.nome}
-                      description={negozio.descrizione ?? ""}
-                      url={`/negozio/${negozio.slug}`}
-                    />
-                  </div>
                 </div>
               );
             })}
