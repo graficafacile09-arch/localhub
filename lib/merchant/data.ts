@@ -344,6 +344,7 @@ export async function getMetodiSpedizioneNegozio(
       attivo: boolean;
       spedizione_gratuita: boolean;
       ordine_mostra: number;
+      costo_euro: number | null;
     }>
   | null
 > {
@@ -353,7 +354,7 @@ export async function getMetodiSpedizioneNegozio(
   const supabase = await getDbForUser(userId);
   const { data, error } = await supabase
     .from("negozio_metodi_spedizione")
-    .select("carrier, servizio, attivo, spedizione_gratuita, ordine_mostra")
+    .select("carrier, servizio, attivo, spedizione_gratuita, ordine_mostra, costo_euro")
     .eq("negozio_id", negozioId)
     .order("ordine_mostra", { ascending: true });
 
@@ -364,6 +365,7 @@ export async function getMetodiSpedizioneNegozio(
     attivo: r.attivo === true,
     spedizione_gratuita: r.spedizione_gratuita === true,
     ordine_mostra: Number(r.ordine_mostra ?? 0),
+    costo_euro: r.costo_euro == null ? null : Number(r.costo_euro),
   }));
 }
 
