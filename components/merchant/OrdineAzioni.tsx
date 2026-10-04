@@ -36,6 +36,8 @@ type Props = {
   trackingUrl: string | null;
   metodoPagamento?: string | null;
   paymentStatus?: string | null;
+  /** Consegna locale: il completamento dell'ordine viene confermato dal corriere. */
+  consegnaLocale?: boolean;
   /**
    * Base dell'endpoint azioni. Default: endpoint merchant
    * `/api/merchant/stores/<negozioId>/ordini/<ordineId>`. L'Area
@@ -123,12 +125,15 @@ export default function OrdineAzioni({
   trackingUrl,
   metodoPagamento,
   paymentStatus,
+  consegnaLocale = false,
   apiBase,
 }: Props) {
   const router = useRouter();
   const endpointBase =
     apiBase ?? `/api/merchant/stores/${negozioId}/ordini/${ordineId}`;
-  const azioni = azioniDisponibili(stato);
+  const azioni = consegnaLocale && stato === "pronto"
+    ? azioniDisponibili(stato).filter((azione) => azione.stato !== "consegnato")
+    : azioniDisponibili(stato);
   const azioniSpedizione = modalita === "spedizione" ? azioniSpedizioneDisponibili(statoSpedizione, stato) : [];
 
   const [azioneAttiva, setAzioneAttiva] = useState<AzioneOrdine | null>(null);
@@ -343,6 +348,13 @@ export default function OrdineAzioni({
               </button>
             );
           })}
+        </div>
+      )}
+
+      {consegnaLocale && stato === "pronto" && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+          <p className="font-black">Pacco pronto per il corriere</p>
+          <p className="mt-1 text-xs leading-5 text-emerald-800">Il venditore ha completato la preparazione. Il ritiro e la conferma della consegna spettano al corriere.</p>
         </div>
       )}
 
