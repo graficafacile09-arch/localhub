@@ -63,7 +63,7 @@ export async function PATCH(request: Request) {
   const db = createAdminSupabaseClient();
   const { data: current, error: readError } = await db
     .from("corrieri_locali")
-    .select("ordine_id,corriere_user_id,stato")
+    .select("ordine_id,corriere_user_id,stato,ordini(stato)")
     .eq("ordine_id", ordineId)
     .maybeSingle();
 
@@ -71,8 +71,29 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Consegna non disponibile." }, { status: 404 });
   }
 
+  const ordineStato = Array.isArray(current.ordini)
+    ? current.ordini[0]?.stato
+    : current.ordini?.stato;
+
+  // Il venditore è il solo soggetto che accetta e prepara l'ordine.
+  // Il corriere locale può intervenire operativamente solo quando l'ordine
+  // è PRONTO: a quel punto ritira il pacco, senza passare da "accettata".
+  if (current.stato === "assegnata" && stato === "accettata") {
+    return NextResponse.json(
+      { error: "Il corriere locale non deve accettare l'ordine. Il venditore deve prima prepararlo e marcarlo come pronto." },
+      { status: 409 },
+    );
+  }
+
+  if (current.stato === "assegnata" && stato === "ritirata" && ordineStato !== "pronto") {
+    return NextResponse.json(
+      { error: "Il pacco non è ancora pronto. Il venditore deve accettare e preparare l'ordine prima del ritiro." },
+      { status: 409 },
+    );
+  }
+
   const transitions: Record<string, string[]> = {
-    assegnata: ["accettata", "problema_consegna"],
+    assegnata: ["ritirata", "problema_consegna"],
     accettata: ["ritirata", "problema_consegna"],
     ritirata: ["in_consegna", "problema_consegna"],
     in_consegna: ["consegnata", "problema_consegna"],
