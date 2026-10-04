@@ -36,6 +36,7 @@ type MetodoSpedizione = {
   attivo: boolean;
   spedizione_gratuita: boolean;
   ordine_mostra: number;
+  costo_euro: number | null;
   label: string;
 };
 
@@ -77,6 +78,7 @@ export default function SpedizionePaccoConfig({
   const [metodi, setMetodi] = useState<MetodoSpedizione[]>([]);
   const [caricamentoMetodi, setCaricamentoMetodi] = useState(true);
   const [salvandoMetodo, setSalvandoMetodo] = useState<string | null>(null);
+  const [costoLocale, setCostoLocale] = useState("2");
 
   const [salvando, setSalvando] = useState(false);
   const [errore, setErrore] = useState<string | null>(null);
@@ -92,7 +94,10 @@ export default function SpedizionePaccoConfig({
       .then((r) => r.json())
       .then((json: { success?: boolean; data?: { metodi?: MetodoSpedizione[] } }) => {
         if (!attivo) return;
-        setMetodi(json?.data?.metodi ?? []);
+        const elenco = json?.data?.metodi ?? [];
+        setMetodi(elenco);
+        const locale = elenco.find((m) => m.carrier === "locale" && m.servizio === "locale");
+        setCostoLocale(locale?.costo_euro == null ? "2" : String(locale.costo_euro));
       })
       .catch(() => {
         if (attivo) setMetodi([]);
@@ -173,6 +178,22 @@ export default function SpedizionePaccoConfig({
     }
   }
 
+  function payloadMetodi(prossimi: MetodoSpedizione[], costoLocaleOverride?: number): Array<Record<string, unknown>> {
+    return prossimi.map((m) => ({ carrier: m.carrier, servizio: m.servizio, attivo: m.attivo, spedizione_gratuita: m.spedizione_gratuita, ordine_mostra: m.ordine_mostra, costo_euro: m.carrier === "locale" && m.servizio === "locale" ? costoLocaleOverride ?? m.costo_euro ?? 2 : null }));
+  }
+
+  async function salvaCostoLocale() {
+    const costo = Number(costoLocale.replace(",", "."));
+    if (!Number.isFinite(costo) || costo < 0) { setErrore("Il costo del Corriere locale deve essere un numero maggiore o uguale a zero."); return; }
+    setSalvandoMetodo("locale:locale"); setErrore(null);
+    try {
+      const res = await fetch("/api/merchant/stores/" + negozioId + "/spedizione", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ metodi: payloadMetodi(metodi, costo) }) });
+      if (!res.ok) { const data = await res.json().catch(() => null) as { error?: { message?: string } } | null; setErrore(data?.error?.message ?? "Impossibile salvare il costo."); return; }
+      setMetodi((prev) => prev.map((m) => m.carrier === "locale" && m.servizio === "locale" ? { ...m, costo_euro: costo } : m));
+      router.refresh();
+    } catch { setErrore("Errore di rete. Riprova."); } finally { setSalvandoMetodo(null); }
+  }
+
   /** Attiva/disattiva un servizio (salvataggio immediato, fail-closed). */
   async function toggleServizio(carrier: string, servizio: string, attivo: boolean) {
     const chiave = `${carrier}:${servizio}`;
@@ -190,13 +211,7 @@ export default function SpedizionePaccoConfig({
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          metodi: prossimi.map((m) => ({
-            carrier: m.carrier,
-            servizio: m.servizio,
-            attivo: m.attivo,
-            spedizione_gratuita: m.spedizione_gratuita,
-            ordine_mostra: m.ordine_mostra,
-          })),
+          metodi: payloadMetodi(prossimi),
         }),
       });
       if (!res.ok) {
@@ -409,6 +424,22 @@ export default function SpedizionePaccoConfig({
                           />
                         </button>
                       </div>
+
+                      {m.attivo && m.carrier === "locale" && (
+                        <div className="mt-2 border-t border-slate-100 pt-2">
+                          <div className="flex items-end gap-2">
+                            <div className="flex-1">
+                              <label htmlFor="costo-corriere-locale" className="block text-xs font-semibold text-slate-700">Costo consegna locale</label>
+                              <div className="relative mt-1">
+                                <input id="costo-corriere-locale" type="text" inputMode="decimal" value={costoLocale} onChange={(e) => setCostoLocale(e.target.value)} className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 pr-10 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100" />
+                                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">€</span>
+                              </div>
+                            </div>
+                            <button type="button" onClick={salvaCostoLocale} disabled={busy} className="h-10 rounded-lg bg-blue-600 px-3 text-xs font-bold text-white disabled:opacity-50">Salva</button>
+                          </div>
+                          <p className="mt-1 text-[11px] text-slate-500">Costo predefinito: €2,00. Il venditore può modificarlo.</p>
+                        </div>
+                      )}
 
                       {m.attivo && m.carrier !== "locale" && (
                         <div className="mt-2 border-t border-slate-100 pt-2">

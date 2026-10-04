@@ -37,6 +37,8 @@ export type MetodoSpedizioneNegozioInput = {
   /** True se il metodo è offerto a costo zero al cliente. */
   spedizione_gratuita: boolean;
   ordine_mostra: number;
+  /** Costo del corriere locale in euro, configurabile dal venditore. */
+  costo_euro?: number | null;
 };
 
 export type MerchantProduct = {
