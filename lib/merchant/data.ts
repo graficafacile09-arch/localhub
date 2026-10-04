@@ -392,6 +392,7 @@ export async function updateMetodiSpedizioneNegozio(
         attivo: m.attivo === true,
         spedizione_gratuita: m.spedizione_gratuita === true,
         ordine_mostra: m.ordine_mostra,
+        costo_euro: m.carrier === "locale" && m.servizio === "locale" ? m.costo_euro ?? 2 : null,
         updated_at: new Date().toISOString(),
       },
       { onConflict: "negozio_id,carrier,servizio" }
