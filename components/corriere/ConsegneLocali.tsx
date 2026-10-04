@@ -34,7 +34,7 @@ const actions: Record<string, { stato: string; label: string }[]> = {
 };
 
 const filters = [
-  ["tutte", "Tutte"], ["da_accettare", "In attesa del venditore"], ["attive", "Attive"],
+  ["tutte", "Tutte"], ["da_ritirare", "Da ritirare"], ["attive", "Attive"],
   ["problemi", "Problemi"], ["storico", "Storico"],
 ] as const;
 
@@ -124,7 +124,7 @@ export default function ConsegneLocali() {
       <section id="dashboard" className="scroll-mt-24">
         <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
           {[
-            ["Da accettare", stats.daAccettare, "bg-amber-50 border-amber-200 text-amber-800"],
+            ["Da ritirare", stats.daRitirare, "bg-amber-50 border-amber-200 text-amber-800"],
             ["Attive", stats.attive, "bg-emerald-50 border-emerald-200 text-emerald-800"],
             ["Problemi", stats.problemi, "bg-red-50 border-red-200 text-red-800"],
             ["Consegnate", stats.consegnate, "bg-slate-50 border-slate-200 text-slate-800"],
