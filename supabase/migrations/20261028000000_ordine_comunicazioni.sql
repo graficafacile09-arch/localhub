@@ -1,0 +1,7 @@
+create table if not exists public.ordine_comunicazioni (id uuid primary key default gen_random_uuid(),ordine_id uuid not null references public.ordini(id) on delete cascade,mittente_user_id uuid not null,mittente_ruolo text not null check (mittente_ruolo in ('cliente','venditore','corriere')),mittente_nome text not null default '',corpo text not null check (char_length(trim(corpo)) between 1 and 2000),created_at timestamptz not null default now());
+create index if not exists ordine_comunicazioni_ordine_created_idx on public.ordine_comunicazioni(ordine_id,created_at);
+create table if not exists public.ordine_comunicazioni_letture (messaggio_id uuid not null references public.ordine_comunicazioni(id) on delete cascade,user_id uuid not null,letto_at timestamptz not null default now(),primary key(messaggio_id,user_id));
+create index if not exists ordine_comunicazioni_letture_user_idx on public.ordine_comunicazioni_letture(user_id,letto_at);
+alter table public.ordine_comunicazioni enable row level security;alter table public.ordine_comunicazioni_letture enable row level security;
+grant select,insert on public.ordine_comunicazioni to authenticated;grant select,insert,update on public.ordine_comunicazioni_letture to authenticated;
+alter publication supabase_realtime add table public.ordine_comunicazioni;

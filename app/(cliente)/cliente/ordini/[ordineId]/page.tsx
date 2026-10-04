@@ -28,6 +28,7 @@ import { StoricoEventi } from "@/components/ordini/StoricoEventi";
 import { OrderHeader } from "@/components/ordini/OrderHeader";
 import { InformazioniNegozio } from "@/components/ordini/InformazioniNegozio";
 import { InformazioniRitiroSpedizione } from "@/components/ordini/InformazioniRitiroSpedizione";
+import OrdineComunicazioni from "@/components/ordini/OrdineComunicazioni";
 
 type Params = { ordineId: string };
 
@@ -153,6 +154,10 @@ export default async function OrdineDettaglioPage({ params }: { params: Promise<
         annullatoNota={ordine.annullatoNota}
         annullatoAt={ordine.annullatoAt}
       />
+
+      {ordine.modalita === "spedizione" && ordine.spedizioneCarrier === "locale" && ordine.spedizioneServizio === "locale" && ordine.stato !== "cancellato" && (
+        <OrdineComunicazioni ordineId={ordineId} />
+      )}
 
       {ordine.richiedeVerificaEta ? (
         <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
