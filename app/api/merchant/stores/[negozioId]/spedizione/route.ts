@@ -52,13 +52,14 @@ export async function GET(
   const righe = await getMetodiSpedizioneNegozio(user.id, negozioId);
   const perChiave = new Map<
     string,
-    { attivo: boolean; spedizione_gratuita: boolean; ordine_mostra: number }
+    { attivo: boolean; spedizione_gratuita: boolean; ordine_mostra: number; costo_euro: number | null }
   >();
   for (const r of righe ?? []) {
     perChiave.set(`${r.carrier}:${r.servizio}`, {
       attivo: r.attivo,
       spedizione_gratuita: r.spedizione_gratuita,
       ordine_mostra: r.ordine_mostra,
+      costo_euro: r.costo_euro,
     });
   }
 
@@ -70,6 +71,7 @@ export async function GET(
       attivo: p?.attivo ?? false,
       spedizione_gratuita: p?.spedizione_gratuita ?? false,
       ordine_mostra: p?.ordine_mostra ?? index,
+      costo_euro: p?.costo_euro ?? (v.carrier === "locale" && v.servizio === "locale" ? 2 : null),
       label: labelServizio(v.carrier, v.servizio),
     };
   });
@@ -132,6 +134,7 @@ export async function PATCH(
       attivo: boolean;
       spedizione_gratuita: boolean;
       ordine_mostra: number;
+      costo_euro?: number | null;
     }> = [];
     for (const entry of metodiRaw) {
       const e = (entry ?? {}) as Record<string, unknown>;
@@ -153,9 +156,19 @@ export async function PATCH(
         attivo: e.attivo === true,
         spedizione_gratuita: e.spedizione_gratuita === true,
         ordine_mostra: ordineMostra,
+        costo_euro:
+          carrier === "locale" && servizio === "locale"
+            ? (() => {
+                const n = e.costo_euro == null ? 2 : Number(e.costo_euro);
+                return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) / 100 : -1;
+              })()
+            : null,
       });
     }
     const esito = await updateMetodiSpedizioneNegozio(user.id, negozioId, metodi);
+    if (metodi.some((m) => m.carrier === "locale" && m.servizio === "locale" && m.costo_euro! < 0)) {
+      return apiError("VALIDATION_ERROR", "Il costo del Corriere locale deve essere un numero maggiore o uguale a zero.", 422);
+    }
     if (!esito.ok) {
       return apiError("UPDATE_FAILED", esito.errore ?? "Impossibile salvare i metodi di spedizione.", 500);
     }
