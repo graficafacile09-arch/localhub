@@ -63,7 +63,7 @@ export async function PATCH(request: Request) {
   const db = createAdminSupabaseClient();
   const { data: current, error: readError } = await db
     .from("corrieri_locali")
-    .select("ordine_id,corriere_user_id,stato,ordini(stato)")
+    .select("ordine_id,corriere_user_id,stato")
     .eq("ordine_id", ordineId)
     .maybeSingle();
 
@@ -71,9 +71,17 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Consegna non disponibile." }, { status: 404 });
   }
 
-  const ordineStato = Array.isArray(current.ordini)
-    ? current.ordini[0]?.stato
-    : current.ordini?.stato;
+  const { data: ordine, error: ordineError } = await db
+    .from("ordini")
+    .select("stato")
+    .eq("id", ordineId)
+    .maybeSingle();
+
+  if (ordineError || !ordine) {
+    return NextResponse.json({ error: "Ordine non disponibile." }, { status: 404 });
+  }
+
+  const ordineStato = ordine.stato;
 
   // Il venditore è il solo soggetto che accetta e prepara l'ordine.
   // Il corriere locale può intervenire operativamente solo quando l'ordine
