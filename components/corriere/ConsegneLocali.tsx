@@ -17,6 +17,7 @@ import OrdineComunicazioni from "@/components/ordini/OrdineComunicazioni";
 type Item = {
   ordine_id: string;
   stato: string;
+  ordine_stato: string | null;
   latitudine: number | null;
   longitudine: number | null;
   assegnata_at: string | null;
@@ -48,10 +49,10 @@ const labels: Record<string, string> = {
 };
 
 const actions: Record<string, { stato: string; label: string }[]> = {
-  assegnata: [
-    { stato: "accettata", label: "Accetta consegna" },
-    { stato: "problema_consegna", label: "Segnala problema" },
-  ],
+  // Per una nuova consegna il corriere non "accetta" l'ordine:
+  // il venditore deve prima accettarlo, prepararlo e marcarlo come pronto.
+  // Il corriere interviene solo per il ritiro del pacco pronto.
+  assegnata: [],
   accettata: [
     { stato: "ritirata", label: "Conferma ritiro" },
     { stato: "problema_consegna", label: "Segnala problema" },
@@ -243,6 +244,22 @@ export default function ConsegneLocali() {
                   <div className="mt-4 flex flex-wrap gap-2">
                     {url && <a href={url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-bold text-blue-700"><MapPin className="h-4 w-4" />Navigazione</a>}
                     <button onClick={() => setChat(chat === i.ordine_id ? null : i.ordine_id)} className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-white px-4 py-2 text-sm font-bold text-blue-700"><MessageCircle className="h-4 w-4" />{chat === i.ordine_id ? "Chiudi comunicazioni" : "Comunicazioni"}{i.comunicazioni_non_lette > 0 ? ` · ${i.comunicazioni_non_lette}` : ""}</button>
+                    {i.stato === "assegnata" && i.ordine_stato === "pronto" ? (
+                      <button
+                        disabled={busy === i.ordine_id}
+                        onClick={() => void update(i.ordine_id, "ritirata")}
+                        className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
+                      >
+                        <PackageCheck className="h-4 w-4" />
+                        {busy === i.ordine_id ? "Aggiornamento…" : "Ritira pacco"}
+                      </button>
+                    ) : null}
+                    {i.stato === "assegnata" && i.ordine_stato !== "pronto" ? (
+                      <span className="inline-flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-800">
+                        <Clock3 className="h-4 w-4" />
+                        In attesa che il venditore prepari il pacco
+                      </span>
+                    ) : null}
                     {(actions[i.stato] ?? []).map((a) => (
                       <button key={a.stato} disabled={busy === i.ordine_id} onClick={() => void update(i.ordine_id, a.stato)} className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold text-white disabled:opacity-50 ${a.stato === "problema_consegna" || a.stato === "annullata" ? "bg-red-600" : "bg-emerald-700"}`}>
                         {a.stato === "consegnata" ? <CheckCircle2 className="h-4 w-4" /> : a.stato === "ritirata" ? <PackageCheck className="h-4 w-4" /> : a.stato === "problema_consegna" ? <AlertTriangle className="h-4 w-4" /> : <Truck className="h-4 w-4" />}
