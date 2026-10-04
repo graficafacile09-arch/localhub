@@ -3,6 +3,7 @@ import { apiError, apiOk } from "@/lib/api/response";
 import { requireApiArea } from "@/lib/auth/session-area";
 import { aggiornaStatoOrdineVenditore, getOrdineVenditore } from "@/lib/merchant/ordini";
 import { isStatoOrdine } from "@/lib/merchant/ordini-stati";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
 /**
  * GET /api/merchant/stores/[negozioId]/ordini/[ordineId]
@@ -64,6 +65,49 @@ export async function PATCH(
 
   if (!isStatoOrdine(body.stato)) {
     return apiError("VALIDATION_ERROR", "Stato non valido.", 422);
+  }
+
+  // Per la consegna locale il venditore può portare l'ordine fino a PRONTO,
+  // ma non può dichiararlo CONSEGNATO: quel passaggio appartiene al corriere.
+  // Il controllo è server-side per evitare che una chiamata PATCH diretta
+  // ricrei lo stato incoerente che alimenta l'avviso errato nella dashboard.
+  if (body.stato === "consegnato") {
+    const admin = createAdminSupabaseClient();
+    const { data: ordineLocale, error: ordineLocaleError } = await admin
+      .from("ordini")
+      .select("modalita,spedizione_carrier,spedizione_servizio")
+      .eq("id", ordineId)
+      .eq("negozio_id", negozioId)
+      .maybeSingle();
+
+    if (ordineLocaleError) {
+      return apiError("ORDINE_READ_FAILED", "Impossibile verificare la consegna locale.", 500);
+    }
+
+    const consegnaLocale =
+      ordineLocale?.modalita === "spedizione" &&
+      ordineLocale?.spedizione_carrier === "locale" &&
+      ordineLocale?.spedizione_servizio === "locale";
+
+    if (consegnaLocale) {
+      const { data: consegna, error: consegnaError } = await admin
+        .from("corrieri_locali")
+        .select("stato")
+        .eq("ordine_id", ordineId)
+        .maybeSingle();
+
+      if (consegnaError) {
+        return apiError("DELIVERY_READ_FAILED", "Impossibile verificare lo stato del corriere.", 500);
+      }
+
+      if (consegna?.stato !== "consegnata") {
+        return apiError(
+          "COURIER_COMPLETION_REQUIRED",
+          "Per una consegna locale il venditore non può completare l'ordine: deve prima ritirarlo e consegnarlo il corriere.",
+          409,
+        );
+      }
+    }
   }
 
   const motivo = typeof body.motivo === "string" && body.motivo.trim() ? body.motivo.trim().slice(0, 120) : null;
