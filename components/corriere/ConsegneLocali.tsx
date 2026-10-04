@@ -21,7 +21,7 @@ type Item = {
 };
 
 const labels: Record<string, string> = {
-  assegnata: "In attesa del venditore", accettata: "Accettata", ritirata: "Ritirata",
+  assegnata: "Da ritirare", accettata: "Accettata", ritirata: "Ritirata",
   in_consegna: "In consegna", consegnata: "Consegnata", problema_consegna: "Problema", annullata: "Annullata",
 };
 
@@ -100,7 +100,7 @@ export default function ConsegneLocali() {
   }
 
   const stats = useMemo(() => ({
-    daAccettare: items.filter((i) => isWaitingForSeller(i)).length,
+    daRitirare: items.filter((i) => isReadyForPickup(i)).length,
     attive: items.filter((i) => ["accettata", "ritirata", "in_consegna"].includes(i.stato)).length,
     problemi: items.filter((i) => i.stato === "problema_consegna").length,
     consegnate: items.filter((i) => i.stato === "consegnata").length,
@@ -108,7 +108,7 @@ export default function ConsegneLocali() {
   }), [items]);
 
   const visible = useMemo(() => {
-    if (filter === "da_accettare") return items.filter((i) => isWaitingForSeller(i));
+    if (filter === "da_ritirare") return items.filter((i) => isReadyForPickup(i));
     if (filter === "attive") return items.filter((i) => ["accettata", "ritirata", "in_consegna"].includes(i.stato));
     if (filter === "problemi") return items.filter((i) => i.stato === "problema_consegna");
     if (filter === "storico") return items.filter((i) => isHistory(i.stato, i.ordine_stato));
@@ -139,7 +139,7 @@ export default function ConsegneLocali() {
           <button onClick={() => void load()} className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50"><RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} /> Aggiorna</button>
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
-          {filters.map(([key, label]) => <button key={key} onClick={() => setFilter(key)} className={`rounded-xl px-3 py-2 text-sm font-bold ${filter === key ? "bg-emerald-700 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}>{label}{key === "da_accettare" && stats.daAccettare > 0 ? ` · ${stats.daAccettare}` : ""}{key === "attive" && stats.attive > 0 ? ` · ${stats.attive}` : ""}{key === "problemi" && stats.problemi > 0 ? ` · ${stats.problemi}` : ""}</button>)}
+          {filters.map(([key, label]) => <button key={key} onClick={() => setFilter(key)} className={`rounded-xl px-3 py-2 text-sm font-bold ${filter === key ? "bg-emerald-700 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"}`}>{label}{key === "da_ritirare" && stats.daRitirare > 0 ? ` · ${stats.daRitirare}` : ""}{key === "attive" && stats.attive > 0 ? ` · ${stats.attive}` : ""}{key === "problemi" && stats.problemi > 0 ? ` · ${stats.problemi}` : ""}</button>)}
         </div>
         {error && <p className="mt-4 rounded-xl bg-red-50 p-3 text-sm font-semibold text-red-700">{error}</p>}
         <div className="mt-5 space-y-4">
