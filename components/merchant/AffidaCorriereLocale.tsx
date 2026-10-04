@@ -123,7 +123,7 @@ export default function AffidaCorriereLocale({ negozioId, ordineId }: Props) {
               <option value="">Seleziona un corriere…</option>
               {corrieri.map((courier) => (
                 <option key={courier.userId} value={courier.userId}>
-                  {courier.nome} {courier.cognome}{courier.email ? ` — ${courier.email}` : ""}
+                  {courier.nome} {courier.cognome}
                 </option>
               ))}
             </select>
