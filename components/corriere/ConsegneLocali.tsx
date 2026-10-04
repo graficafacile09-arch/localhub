@@ -45,6 +45,9 @@ function maps(lat: number | null, lng: number | null, address: string | null, ca
 }
 
 function isHistory(stato: string) { return stato === "consegnata" || stato === "annullata"; }
+function isWaitingForSeller(item: Item) {
+  return item.stato === "assegnata" && item.ordine_stato !== "pronto";
+}
 
 export default function ConsegneLocali() {
   const [items, setItems] = useState<Item[]>([]);
@@ -92,7 +95,7 @@ export default function ConsegneLocali() {
   }
 
   const stats = useMemo(() => ({
-    daAccettare: items.filter((i) => i.stato === "assegnata").length,
+    daAccettare: items.filter((i) => isWaitingForSeller(i)).length,
     attive: items.filter((i) => ["accettata", "ritirata", "in_consegna"].includes(i.stato)).length,
     problemi: items.filter((i) => i.stato === "problema_consegna").length,
     consegnate: items.filter((i) => i.stato === "consegnata").length,
@@ -100,7 +103,7 @@ export default function ConsegneLocali() {
   }), [items]);
 
   const visible = useMemo(() => {
-    if (filter === "da_accettare") return items.filter((i) => i.stato === "assegnata");
+    if (filter === "da_accettare") return items.filter((i) => isWaitingForSeller(i));
     if (filter === "attive") return items.filter((i) => ["accettata", "ritirata", "in_consegna"].includes(i.stato));
     if (filter === "problemi") return items.filter((i) => i.stato === "problema_consegna");
     if (filter === "storico") return items.filter((i) => isHistory(i.stato));
@@ -141,7 +144,9 @@ export default function ConsegneLocali() {
             return <article key={i.ordine_id} className="rounded-2xl border border-slate-200 p-5">
               <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                 <div><p className="text-xs font-bold uppercase tracking-[.18em] text-emerald-700">Ordine {o?.numero ?? i.ordine_id}</p><h3 className="mt-1 text-lg font-black text-slate-900">{o?.cliente_nome} {o?.cliente_cognome}</h3><p className="mt-1 text-sm font-semibold text-slate-600">{o?.negozio_nome ?? "Negozio"} · {o?.spedizione_indirizzo}, {o?.spedizione_cap} {o?.spedizione_citta}</p>{o?.cliente_telefono && <p className="mt-1 text-sm text-slate-500">Tel. {o.cliente_telefono}</p>}{o?.spedizione_note && <p className="mt-2 rounded-xl bg-slate-50 p-3 text-sm text-slate-600">{o.spedizione_note}</p>}</div>
-                <div className="flex flex-wrap items-center gap-2"><span className="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">{labels[i.stato] ?? i.stato}</span>{i.comunicazioni_non_lette > 0 && <span className="rounded-full bg-blue-600 px-3 py-1.5 text-xs font-bold text-white">{i.comunicazioni_non_lette} nuovi messaggi</span>}</div>
+                <div className="flex flex-wrap items-center gap-2"><span className="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">
+                  {i.stato === "assegnata" && i.ordine_stato === "pronto" ? "Pacco pronto · da ritirare" : (labels[i.stato] ?? i.stato)}
+                </span>{i.comunicazioni_non_lette > 0 && <span className="rounded-full bg-blue-600 px-3 py-1.5 text-xs font-bold text-white">{i.comunicazioni_non_lette} nuovi messaggi</span>}</div>
               </div>
               <div className="mt-4 flex flex-wrap gap-2">
                 {url && <a href={url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-bold text-blue-700"><MapPin className="h-4 w-4" />Navigazione</a>}
