@@ -1,1 +1,0 @@
-Temporary Vercel deployment trigger for production commit 31a1c9f. Remove after deployment verification.
