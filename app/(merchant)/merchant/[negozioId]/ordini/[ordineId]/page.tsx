@@ -33,6 +33,7 @@ import { InformazioniCliente } from "@/components/ordini/InformazioniCliente";
 import { InformazioniRitiroSpedizione } from "@/components/ordini/InformazioniRitiroSpedizione";
 import RecessoOrdineVenditore from "@/components/merchant/RecessoOrdineVenditore.jsx";
 import AffidaCorriereLocale from "@/components/merchant/AffidaCorriereLocale";
+import OrdineComunicazioni from "@/components/ordini/OrdineComunicazioni";
 
 export const dynamic = "force-dynamic";
 
@@ -192,6 +193,10 @@ export default async function MerchantOrdineDettaglioPage({
 
       {ordine.modalita === "spedizione" && ordine.spedizioneCarrier === "locale" && ordine.spedizioneServizio === "locale" && ordine.stato !== "cancellato" && (
         <AffidaCorriereLocale negozioId={negozioId} ordineId={ordineId} />
+      )}
+
+      {ordine.modalita === "spedizione" && ordine.spedizioneCarrier === "locale" && ordine.spedizioneServizio === "locale" && ordine.stato !== "cancellato" && (
+        <OrdineComunicazioni ordineId={ordineId} />
       )}
 
       {mostraPannello && (
