@@ -178,9 +178,8 @@ export default function SpedizionePaccoConfig({
     }
   }
 
-  function payloadMetodi(prossimi: MetodoSpedizione[]): Array<Record<string, unknown>> {
-    const costo = Number(costoLocale.replace(",", "."));
-    return prossimi.map((m) => ({ carrier: m.carrier, servizio: m.servizio, attivo: m.attivo, spedizione_gratuita: m.spedizione_gratuita, ordine_mostra: m.ordine_mostra, costo_euro: m.carrier === "locale" && m.servizio === "locale" ? costo : null }));
+  function payloadMetodi(prossimi: MetodoSpedizione[], costoLocaleOverride?: number): Array<Record<string, unknown>> {
+    return prossimi.map((m) => ({ carrier: m.carrier, servizio: m.servizio, attivo: m.attivo, spedizione_gratuita: m.spedizione_gratuita, ordine_mostra: m.ordine_mostra, costo_euro: m.carrier === "locale" && m.servizio === "locale" ? costoLocaleOverride ?? m.costo_euro ?? 2 : null }));
   }
 
   async function salvaCostoLocale() {
@@ -188,7 +187,7 @@ export default function SpedizionePaccoConfig({
     if (!Number.isFinite(costo) || costo < 0) { setErrore("Il costo del Corriere locale deve essere un numero maggiore o uguale a zero."); return; }
     setSalvandoMetodo("locale:locale"); setErrore(null);
     try {
-      const res = await fetch("/api/merchant/stores/" + negozioId + "/spedizione", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ metodi: payloadMetodi(metodi) }) });
+      const res = await fetch("/api/merchant/stores/" + negozioId + "/spedizione", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ metodi: payloadMetodi(metodi, costo) }) });
       if (!res.ok) { const data = await res.json().catch(() => null) as { error?: { message?: string } } | null; setErrore(data?.error?.message ?? "Impossibile salvare il costo."); return; }
       setMetodi((prev) => prev.map((m) => m.carrier === "locale" && m.servizio === "locale" ? { ...m, costo_euro: costo } : m));
       router.refresh();
