@@ -73,8 +73,7 @@ export default function ConsegneLocali() {
 
   useEffect(() => {
     void load({ initial: true });
-    const timer = window.setInterval(() => void load(), 5000);
-    return () => window.clearInterval(timer);
+    return undefined;
   }, []);
 
   async function update(id: string, stato: string) {
