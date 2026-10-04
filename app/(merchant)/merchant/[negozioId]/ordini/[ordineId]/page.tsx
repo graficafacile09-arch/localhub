@@ -218,6 +218,11 @@ export default async function MerchantOrdineDettaglioPage({
             trackingUrl={ordine.trackingUrl}
             metodoPagamento={ordine.metodoPagamento}
             paymentStatus={ordine.paymentStatus}
+            consegnaLocale={
+              ordine.modalita === "spedizione" &&
+              ordine.spedizioneCarrier === "locale" &&
+              ordine.spedizioneServizio === "locale"
+            }
           />
         </div>
       )}
