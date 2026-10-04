@@ -100,6 +100,9 @@ export async function PATCH(
   if (ordine.modalita !== "spedizione" || ordine.spedizione_carrier !== "locale" || ordine.spedizione_servizio !== "locale") {
     return apiError("NOT_LOCAL_DELIVERY", "Questo ordine non utilizza il corriere locale.", 422);
   }
+  if (ordine.stato !== "pronto") {
+    return apiError("ORDER_NOT_READY", "Il corriere può essere affidato solo quando il venditore ha segnato l'ordine come pronto.", 409);
+  }
 
   const { data: delivery } = await admin
     .from("corrieri_locali")
