@@ -69,7 +69,9 @@ export default function RecessoAzioniVenditore({ negozioId, ordineId, richiestaI
         }
       );
       const json = await res.json().catch(() => null);
-      if (!res.ok || !json?.ok) throw new Error(json?.error?.message || json?.messaggio || "Operazione non riuscita.");
+      if (!res.ok || !json?.success) {
+        throw new Error(json?.error?.message || "Operazione non riuscita.");
+      }
       window.location.reload();
     } catch (e) {
       setErrore(e instanceof Error ? e.message : "Operazione non riuscita.");
