@@ -173,6 +173,29 @@ export default function RecessoOrdine({ ordineId, token = null }) {
         </p>
       ) : null}
 
+      {richiesta ? (
+        <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3">
+          <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Comunicazioni della pratica</p>
+          {(richiesta.motivo_cliente || richiesta.note_cliente) ? (
+            <div className="mt-2 rounded-lg bg-white px-3 py-2 text-xs text-slate-700">
+              <p className="font-bold text-slate-500">Messaggio inviato al venditore</p>
+              {richiesta.motivo_cliente ? <p className="mt-1 whitespace-pre-wrap break-words"><span className="font-semibold text-slate-500">Motivo: </span>{richiesta.motivo_cliente}</p> : null}
+              {richiesta.note_cliente && richiesta.note_cliente !== richiesta.motivo_cliente ? <p className="mt-1 whitespace-pre-wrap break-words"><span className="font-semibold text-slate-500">Nota: </span>{richiesta.note_cliente}</p> : null}
+            </div>
+          ) : null}
+          {(info.eventi ?? []).filter((evento) => evento.messaggio && evento.autore_user_id).map((evento) => (
+            <div key={evento.id} className="mt-2 rounded-lg bg-white px-3 py-2 text-xs text-slate-700">
+              <p className="font-bold text-slate-500">Messaggio del venditore</p>
+              <p className="mt-1 whitespace-pre-wrap break-words">{evento.messaggio}</p>
+              <p className="mt-1 text-[10px] text-slate-400">{dataIT(evento.created_at)}</p>
+            </div>
+          ))}
+          {!richiesta.motivo_cliente && !richiesta.note_cliente && !(info.eventi ?? []).some((evento) => evento.messaggio && evento.autore_user_id) ? (
+            <p className="mt-2 text-xs text-slate-400">Nessuna comunicazione aggiuntiva.</p>
+          ) : null}
+        </div>
+      ) : null}
+
       {!richiesta && eleggibili.length > 0 ? (
         <>
           <div className="mt-4 space-y-2">
