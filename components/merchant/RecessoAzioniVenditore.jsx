@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 const LABELS = {
-  presa_in_carico: "Prendi in carico",
+  presa_in_carico: "Prendi in carico / Accetta richiesta",
   istruzioni_reso: "Invia istruzioni reso",
   reso_ricevuto: "Registra reso ricevuto",
   rimborso_avviato: "Avvia rimborso",
@@ -27,9 +27,32 @@ export default function RecessoAzioniVenditore({ negozioId, ordineId, richiestaI
     rimborsata: ["chiusa"],
   }[stato] || [];
 
-  if (!azioni.length) return null;
+  if (!azioni.length) {
+    const messaggioStato = {
+      rifiutata: "Questa pratica è stata rifiutata e non è più modificabile.",
+      annullata: "Questa pratica è stata annullata e non è più modificabile.",
+      chiusa: "Questa pratica è chiusa e non è più modificabile.",
+    }[stato] || "Questa pratica è in uno stato non modificabile dal venditore.";
+
+    return (
+      <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4">
+        <p className="text-xs font-black uppercase tracking-wide text-slate-500">Azioni pratica</p>
+        <p className="mt-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-600">
+          {messaggioStato}
+        </p>
+      </div>
+    );
+  }
 
   async function esegui(azione) {
+    if ((azione === "rifiuta" || azione === "istruzioni_reso") && !nota.trim()) {
+      setErrore(
+        azione === "rifiuta"
+          ? "Inserisci una nota prima di rifiutare la pratica."
+          : "Inserisci una nota prima di inviare le istruzioni di reso."
+      );
+      return;
+    }
     setBusy(true);
     setErrore("");
     try {

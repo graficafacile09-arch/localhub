@@ -12,12 +12,19 @@ export default async function RecessoOrdineVenditore({ negozioId, ordineId }) {
   const db = createAdminSupabaseClient();
   const { data: pratiche } = await db
     .from("richieste_recesso")
-    .select("id, numero, stato, ricevuta_at, importo_previsto, importo_rimborsato, presa_in_carico_at, istruzioni_reso_at, reso_ricevuto_at, rimborso_avviato_at, rimborsata_at, chiusa_at")
+    .select("id, numero, stato, motivo_cliente, note_cliente, cliente_nome, cliente_cognome, ricevuta_at, importo_previsto, importo_rimborsato, presa_in_carico_at, istruzioni_reso_at, reso_ricevuto_at, rimborso_avviato_at, rimborsata_at, chiusa_at")
     .eq("ordine_id", ordineId)
     .eq("negozio_id", negozioId)
     .order("created_at", { ascending: false });
 
   if (!pratiche?.length) return null;
+
+  const { data: ordine } = await db
+    .from("ordini")
+    .select("numero")
+    .eq("id", ordineId)
+    .maybeSingle();
+  const numeroOrdine = ordine?.numero ? String(ordine.numero) : String(ordineId);
 
   const ids = pratiche.map((p) => p.id);
   const { data: righe } = await db
@@ -38,6 +45,12 @@ export default async function RecessoOrdineVenditore({ negozioId, ordineId }) {
       <div className="mt-4 space-y-4">
         {pratiche.map((p) => {
           const righePratica = (righe ?? []).filter((r) => r.richiesta_id === p.id);
+          const motivoCliente = String(p.motivo_cliente ?? "").trim();
+          const noteCliente = String(p.note_cliente ?? "").trim();
+          const cliente = [p.cliente_nome, p.cliente_cognome]
+            .map((v) => String(v ?? "").trim())
+            .filter(Boolean)
+            .join(" ");
           const fasi = [
             ["Richiesta ricevuta", p.ricevuta_at],
             ["Presa in carico", p.presa_in_carico_at],
@@ -50,14 +63,37 @@ export default async function RecessoOrdineVenditore({ negozioId, ordineId }) {
           return (
             <div key={p.id} className="rounded-2xl border border-blue-100 bg-blue-50/40 p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm font-black text-slate-900">{p.numero}</p>
-                  <p className="mt-1 text-xs text-slate-600">Stato pratica: <strong>{p.stato}</strong></p>
+                <div className="space-y-1 text-xs text-slate-600">
+                  <p className="text-sm font-black text-slate-900">Pratica {p.numero}</p>
+                  <p>Numero ordine: <strong className="text-slate-800">{numeroOrdine}</strong></p>
+                  <p>Cliente: <strong className="text-slate-800">{cliente || "—"}</strong></p>
+                  <p>Stato attuale: <strong className="text-slate-800">{p.stato}</strong></p>
                 </div>
                 <div className="text-right text-xs text-slate-600">
                   {p.importo_previsto != null && <p>Previsto: <strong>€ {Number(p.importo_previsto).toFixed(2).replace(".", ",")}</strong></p>}
                   {p.importo_rimborsato != null && <p className="mt-1">Rimborsato: <strong>€ {Number(p.importo_rimborsato).toFixed(2).replace(".", ",")}</strong></p>}
                 </div>
+              </div>
+              <div className="mt-3 rounded-xl border border-blue-100 bg-white px-3 py-2.5">
+                <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Messaggio del cliente</p>
+                {motivoCliente || noteCliente ? (
+                  <div className="mt-1.5 space-y-1 text-xs text-slate-700">
+                    {motivoCliente && (
+                      <p className="whitespace-pre-wrap break-words">
+                        <span className="font-semibold text-slate-500">Motivo: </span>
+                        {motivoCliente}
+                      </p>
+                    )}
+                    {noteCliente && noteCliente !== motivoCliente && (
+                      <p className="whitespace-pre-wrap break-words">
+                        <span className="font-semibold text-slate-500">Nota: </span>
+                        {noteCliente}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="mt-1 text-xs text-slate-400">Nessun messaggio fornito dal cliente.</p>
+                )}
               </div>
               {righePratica.length > 0 && (
                 <div className="mt-3 space-y-1.5">

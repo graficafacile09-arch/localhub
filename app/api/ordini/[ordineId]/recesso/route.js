@@ -29,8 +29,8 @@ async function inviaRicevuta(richiestaId) {
   const { data: richiesta } = await db
     .from("richieste_recesso")
     .select(
-      "id, numero, ordine_id, negozio_id, cliente_nome, cliente_email, venditore_email, " +
-      "ricevuta_at, termine_recesso_at, conferma_esito"
+      "id, numero, ordine_id, negozio_id, cliente_nome, cliente_cognome, cliente_email, venditore_email, " +
+      "motivo_cliente, note_cliente, ricevuta_at, termine_recesso_at, conferma_esito"
     )
     .eq("id", richiestaId)
     .maybeSingle();
@@ -50,6 +50,23 @@ async function inviaRicevuta(richiestaId) {
   const termine = richiesta.termine_recesso_at
     ? new Date(String(richiesta.termine_recesso_at)).toLocaleDateString("it-IT")
     : "14 giorni dalla consegna";
+
+  const { data: ordineEmail } = await db
+    .from("ordini")
+    .select("numero")
+    .eq("id", richiesta.ordine_id)
+    .maybeSingle();
+  const numeroOrdine = ordineEmail?.numero ? String(ordineEmail.numero) : String(richiesta.ordine_id);
+  const clienteNomeCompleto = [richiesta.cliente_nome, richiesta.cliente_cognome]
+    .map((v) => String(v ?? "").trim())
+    .filter(Boolean)
+    .join(" ");
+  const motivoCliente = String(richiesta.motivo_cliente ?? "").trim();
+  const noteCliente = String(richiesta.note_cliente ?? "").trim();
+  const messaggioCliente = [
+    motivoCliente ? ["Motivo", motivoCliente] : null,
+    noteCliente && noteCliente !== motivoCliente ? ["Nota", noteCliente] : null,
+  ].filter(Boolean);
 
   const resendKey = process.env.RESEND_API_KEY;
   if (!resendKey) throw new Error("RESEND_API_KEY non configurata");
@@ -145,17 +162,32 @@ async function inviaRicevuta(richiestaId) {
         "<div style=\"margin-top:7px;font-size:21px;font-weight:800;\">Nuova richiesta di recesso</div>" +
         "</div><div style=\"background:#fff;border-radius:0 0 16px 16px;padding:24px;\">" +
         "<p style=\"margin:0;font-size:15px;color:#0f172a;\">È stata registrata una richiesta di recesso relativa a un tuo ordine.</p>" +
-        "<p style=\"margin:16px 0 0;font-size:14px;color:#475569;\"><strong>Pratica:</strong> " + escapeHtml(String(richiesta.numero)) + "</p>" +
-        "<p style=\"margin:7px 0 0;font-size:14px;color:#475569;\"><strong>Cliente:</strong> " + escapeHtml(String(richiesta.cliente_nome)) + "</p>" +
+        "<p style=\"margin:16px 0 0;font-size:14px;color:#475569;\"><strong>Numero pratica:</strong> " + escapeHtml(String(richiesta.numero)) + "</p>" +
+        "<p style=\"margin:7px 0 0;font-size:14px;color:#475569;\"><strong>Numero ordine:</strong> " + escapeHtml(numeroOrdine) + "</p>" +
+        "<p style=\"margin:7px 0 0;font-size:14px;color:#475569;\"><strong>Cliente:</strong> " + escapeHtml(clienteNomeCompleto || String(richiesta.cliente_nome ?? "")) + "</p>" +
         "<p style=\"margin:7px 0 0;font-size:14px;color:#475569;\"><strong>Ricezione:</strong> " + escapeHtml(ricevuta) + "</p>" +
+        (messaggioCliente.length
+          ? "<div style=\"margin-top:16px;border:1px solid #e2e8f0;border-radius:12px;padding:14px;background:#f8fafc;\">" +
+            "<p style=\"margin:0;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:#64748b;font-weight:700;\">Messaggio del cliente</p>" +
+            messaggioCliente
+              .map(([label, value]) =>
+                "<p style=\"margin:7px 0 0;font-size:14px;color:#475569;\"><strong>" + escapeHtml(label) + ":</strong> " + escapeHtml(value) + "</p>"
+              )
+              .join("") +
+            "</div>"
+          : "") +
         "<div style=\"margin-top:22px;text-align:center;\"><a href=\"" + ordineVenditore + "\" style=\"display:inline-block;background:#2563eb;color:#fff;text-decoration:none;padding:13px 28px;border-radius:12px;font-size:14px;font-weight:700;\">Apri ordine e pratica</a></div>" +
         "</div></div></body></html>",
       text:
         "È stata registrata una nuova richiesta di recesso relativa a un tuo ordine.\n\n" +
-        "Pratica: " + String(richiesta.numero) + "\n" +
-        "Cliente: " + String(richiesta.cliente_nome) + "\n" +
-        "Ricezione: " + ricevuta + "\n\n" +
-        "Apri l'ordine e la pratica: " + ordineVenditore + "\n",
+        "Numero pratica: " + String(richiesta.numero) + "\n" +
+        "Numero ordine: " + numeroOrdine + "\n" +
+        "Cliente: " + (clienteNomeCompleto || String(richiesta.cliente_nome ?? "")) + "\n" +
+        "Ricezione: " + ricevuta + "\n" +
+        (messaggioCliente.length
+          ? "\nMessaggio del cliente:\n" + messaggioCliente.map(([label, value]) => label + ": " + value).join("\n") + "\n"
+          : "") +
+        "\nApri l'ordine e la pratica: " + ordineVenditore + "\n",
       ...(REPLY_TO_EMAIL ? { replyTo: REPLY_TO_EMAIL } : {}),
     });
   }
