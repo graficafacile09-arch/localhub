@@ -79,7 +79,7 @@ export default function RitiroForm({
     cognomeCliente.trim() !== "" &&
     data !== "" &&
     fascia !== "" &&
-    (p.autenticato || emailCliente.trim() !== "");
+    telefonoCliente.trim() !== "" &&\n    (p.autenticato || emailCliente.trim() !== "");
 
   const confermaRitiro = async () => {
     if (inviando) return;
@@ -290,12 +290,12 @@ export default function RitiroForm({
             </div>
           </div>
           <div className="mt-3">
-            <label htmlFor="telefono-ritiro" className="block text-xs font-semibold text-slate-700">Telefono (facoltativo)</label>
+            <label htmlFor="telefono-ritiro" className="block text-xs font-semibold text-slate-700">Numero di cellulare *</label>
             <input
               id="telefono-ritiro"
               type="tel"
               value={telefonoCliente}
-              onChange={(e) => setTelefonoCliente(e.target.value)}
+              onChange={(e) => {\n                setTelefonoCliente(e.target.value);\n                setErrori((p) => ({ ...p, telefono: undefined }));\n              }}\n              required\n              aria-required="true"\n              aria-invalid={!!errori.telefono}
               className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
             />
           </div>
