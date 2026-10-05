@@ -139,6 +139,8 @@ export type CreaOrdineInput = {
   cliente: ClienteCheckout;
   /** Solo modalita='ritiro' */
   ritiro?: { data?: string | null; fascia?: string | null } | null;
+  /** Metodo obbligatorio per il ritiro in negozio. */
+  metodoPagamentoRitiro?: "contanti_negozio";
   /** Solo modalita='spedizione' */
   spedizione?: {
     indirizzo: string;
@@ -482,6 +484,10 @@ export function costruisciPayloadOrdine(input: CreaOrdineInput): PayloadCreaOrdi
       input.modalita === "ritiro" && input.ritiro?.fascia
         ? String(input.ritiro.fascia).trim()
         : null,
+    metodoPagamento:
+      input.modalita === "ritiro"
+        ? input.metodoPagamentoRitiro ?? null
+        : input.spedizione!.metodoPagamento,
     spedizioneIndirizzo: input.modalita === "spedizione" ? String(input.spedizione!.indirizzo).trim() : null,
     spedizioneCap: input.modalita === "spedizione" ? String(input.spedizione!.cap).trim() : null,
     spedizioneCitta: input.modalita === "spedizione" ? String(input.spedizione!.citta).trim() : null,
@@ -489,7 +495,7 @@ export function costruisciPayloadOrdine(input: CreaOrdineInput): PayloadCreaOrdi
     spedizioneNote: input.modalita === "spedizione" ? (input.spedizione!.note ? String(input.spedizione!.note).trim().slice(0, 500) : null) : null,
     spedizioneCarrier: input.modalita === "spedizione" ? input.spedizione!.carrier : null,
     spedizioneServizio: input.modalita === "spedizione" ? input.spedizione!.servizio : null,
-    metodoPagamento: input.modalita === "spedizione" ? input.spedizione!.metodoPagamento : null,
+    metodoPagamento: input.modalita === "ritiro" ? input.metodoPagamentoRitiro ?? null : input.spedizione!.metodoPagamento,
     note,
   };
 }
@@ -598,6 +604,12 @@ export async function creaOrdine(
     }
     if (!fasciaRitiro) {
       return { ok: false, errore: "La fascia oraria del ritiro è obbligatoria.", codice: "VALIDATION_ERROR", status: 422 };
+    }
+    if (input.metodoPagamentoRitiro !== "contanti_negozio") {
+      return { ok: false, errore: "Seleziona il pagamento in contanti in negozio.", codice: "VALIDATION_ERROR", status: 422 };
+    }
+    if (!input.cliente.telefono?.trim()) {
+      return { ok: false, errore: "Il numero di cellulare è obbligatorio per il ritiro.", codice: "VALIDATION_ERROR", status: 422 };
     }
     if (dataRitiro.length > 20) {
       return { ok: false, errore: "Data di ritiro non valida.", codice: "VALIDATION_ERROR", status: 422 };
