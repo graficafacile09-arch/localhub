@@ -1,403 +1,12 @@
 -- Ritiro in negozio: cellulare obbligatorio e pagamento contanti esplicito.
--- Le RPC restano la barriera server-side finale: il client non può bypassare i vincoli.
+-- RPC ripristinata e resa coerente con il checkout corrente.
 
-CREATE OR REPLACE FUNCTION public.crea_ordine(p_payload jsonb)
- RETURNS jsonb
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
-declare
-  v_key            text;
-  v_prodotto_id    bigint;
-  v_variante_id    uuid;
-  v_quantita       integer;
-  v_quantita_num   numeric;
-  v_modalita       text;
-  v_cliente_user_id uuid;
-  v_cliente_nome   text;
-  v_cliente_cognome text;
-  v_cliente_telefono text;
-  v_cliente_email  text;
-  v_cliente_ip     text;
-  v_ritiro_data    text;
-  v_ritiro_fascia  text;
-  v_sped_indirizzo text;
-  v_sped_cap       text;
-  v_sped_citta     text;
-  v_sped_prov      text;
-  v_sped_note      text;
-  v_metodo_sped    text;
-  v_carrier        text;
-  v_servizio       text;
-  v_metodo_pag     text;
-  v_note           text;
-  v_prodotto       record;
-  v_negozio        record;
-  v_variante       record;
-  v_ordine         record;
-  v_prezzo         numeric;
-  v_immagine_riga  text;
-  v_variante_nome  text;
-  v_costo_sped     numeric := 0;
-  v_peso_grammi    integer;
-  v_costo_locale_negozio numeric := null;
-  v_tariffa        jsonb;
-  v_tariffa_vers   text;
-  v_gratuita       boolean;
-  v_totale         numeric;
-  v_commissione_pct numeric;
-  v_commissione    numeric;
-  v_seller          record;
-begin
-  -- ── estrazione + validazione difensiva del payload (barriera finale) ──
-  v_key := p_payload ->> 'idempotencyKey';
-  if v_key is null or length(v_key) = 0 or length(v_key) > 64 then
-    return jsonb_build_object('ok', false, 'codice', 'VALIDATION_ERROR', 'messaggio', 'Chiave di idempotenza non valida.');
-  end if;
-
-  if p_payload ->> 'prodottoId' is null or p_payload ->> 'prodottoId' !~ '^[0-9]+$' then
-    return jsonb_build_object('ok', false, 'codice', 'VALIDATION_ERROR', 'messaggio', 'Prodotto non valido.');
-  end if;
-  v_prodotto_id := (p_payload ->> 'prodottoId')::bigint;
-
-  begin
-    v_variante_id := nullif(p_payload ->> 'varianteId', '')::uuid;
-  exception
-    when invalid_text_representation then
-      return jsonb_build_object('ok', false, 'codice', 'VARIANTE_NON_VALIDA', 'messaggio', 'Variante non valida.');
-  end;
-
-  v_quantita_num := (p_payload ->> 'quantita')::numeric;
-  if v_quantita_num is null or v_quantita_num <> trunc(v_quantita_num)
-     or v_quantita_num < 1 or v_quantita_num > 99 then
-    return jsonb_build_object('ok', false, 'codice', 'VALIDATION_ERROR', 'messaggio', 'Quantità non valida (1-99).');
-  end if;
-  v_quantita := v_quantita_num::integer;
-
-  v_modalita := p_payload ->> 'modalita';
-  if v_modalita not in ('ritiro', 'spedizione') then
-    return jsonb_build_object('ok', false, 'codice', 'VALIDATION_ERROR', 'messaggio', 'Modalità di consegna non valida.');
-  end if;
-
-  v_cliente_nome := coalesce(p_payload ->> 'clienteNome', '');
-  v_cliente_cognome := coalesce(p_payload ->> 'clienteCognome', '');
-  if length(v_cliente_nome) = 0 or length(v_cliente_cognome) = 0
-     or length(v_cliente_nome) > 80 or length(v_cliente_cognome) > 80 then
-    return jsonb_build_object('ok', false, 'codice', 'VALIDATION_ERROR', 'messaggio', 'Nome e cognome sono obbligatori.');
-  end if;
-  v_cliente_telefono := p_payload ->> 'clienteTelefono';
-  v_cliente_email := p_payload ->> 'clienteEmail';
-  v_cliente_ip := p_payload ->> 'clienteIp';
-  v_ritiro_data := p_payload ->> 'ritiroData';
-  v_ritiro_fascia := p_payload ->> 'ritiroFascia';
-  v_sped_indirizzo := p_payload ->> 'spedizioneIndirizzo';
-  v_sped_cap := p_payload ->> 'spedizioneCap';
-  v_sped_citta := p_payload ->> 'spedizioneCitta';
-  v_sped_prov := p_payload ->> 'spedizioneProvincia';
-  v_sped_note := p_payload ->> 'spedizioneNote';
-  v_carrier := p_payload ->> 'spedizioneCarrier';
-  v_servizio := p_payload ->> 'spedizioneServizio';
-  v_metodo_pag := p_payload ->> 'metodoPagamento';
-
-  if v_modalita = 'ritiro' then
-    if v_metodo_pag <> 'contanti_negozio' then
-      return jsonb_build_object('ok', false, 'codice', 'VALIDATION_ERROR', 'messaggio', 'Il pagamento in contanti in negozio è obbligatorio per il ritiro.');
-    end if;
-    if v_cliente_telefono is null or length(btrim(v_cliente_telefono)) = 0 then
-      return jsonb_build_object('ok', false, 'codice', 'VALIDATION_ERROR', 'messaggio', 'Il numero di cellulare è obbligatorio per il ritiro.');
-    end if;
-  end if;
-  v_note := p_payload ->> 'note';
-
-  -- ── Cliente autenticato (SERVER-ONLY) ──────────────────────────────────
-  begin
-    v_cliente_user_id := nullif(p_payload ->> 'clienteUserId', '')::uuid;
-  exception
-    when invalid_text_representation then
-      v_cliente_user_id := null;
-  end;
-
-  if v_cliente_user_id is not null then
-    begin
-      if not exists (select 1 from auth.users u where u.id = v_cliente_user_id) then
-        v_cliente_user_id := null;
-      end if;
-    exception
-      when others then
-        v_cliente_user_id := null;
-    end;
-  end if;
-
-  if v_modalita = 'spedizione' then
-    if v_sped_indirizzo is null or length(v_sped_indirizzo) = 0
-       or v_sped_cap is null or v_sped_citta is null or length(v_sped_citta) = 0
-       or v_sped_prov is null or length(v_sped_prov) = 0 then
-      return jsonb_build_object('ok', false, 'codice', 'VALIDATION_ERROR', 'messaggio', 'Dati di spedizione incompleti.');
-    end if;
-    if v_sped_cap !~ '^[0-9]{5}$' then
-      return jsonb_build_object('ok', false, 'codice', 'VALIDATION_ERROR', 'messaggio', 'Il CAP deve essere composto da 5 cifre.');
-    end if;
-    if v_carrier not in ('poste_italiane', 'brt', 'locale', 'gls') then
-      return jsonb_build_object('ok', false, 'codice', 'CORRIERE_NON_VALIDO', 'messaggio', 'Corriere di spedizione non valido.');
-    end if;
-    if (v_carrier = 'poste_italiane' and v_servizio not in ('standard', 'express'))
-       or (v_carrier = 'brt' and v_servizio <> 'online')
-       or (v_carrier = 'gls' and v_servizio <> 'standard')
-       or (v_carrier = 'locale' and v_servizio <> 'locale') then
-      return jsonb_build_object('ok', false, 'codice', 'SERVIZIO_NON_VALIDO', 'messaggio', 'Servizio di spedizione non valido per il corriere scelto.');
-    end if;
-    if v_metodo_pag not in ('carta', 'paypal', 'bonifico') then
-      return jsonb_build_object('ok', false, 'codice', 'VALIDATION_ERROR', 'messaggio', 'Metodo di pagamento non valido.');
-    end if;
-  end if;
-
-  -- ── 1. Idempotenza ─────────────────────────────────────────────────────
-  select * into v_ordine
-  from public.ordini
-  where idempotency_key = v_key
-  limit 1;
-
-  if v_ordine.id is not null then
-    return jsonb_build_object('ok', true, 'giaEsistente', true, 'ordine', public.ordine_to_json(v_ordine.id));
-  end if;
-
-  -- ── 2. LOCK riga prodotto ───────────────────────────────────────────────
-  select * into v_prodotto
-  from public.prodotti
-  where id = v_prodotto_id
-  for update;
-
-  if v_prodotto.id is null then
-    return jsonb_build_object('ok', false, 'codice', 'PRODOTTO_NON_TROVATO', 'messaggio', 'Prodotto non trovato.');
-  end if;
-  if not coalesce(v_prodotto.attivo, false) then
-    return jsonb_build_object('ok', false, 'codice', 'PRODOTTO_INATTIVO', 'messaggio', 'Questo prodotto non è più disponibile.');
-  end if;
-
-  -- ── 3. Negozio (dal prodotto) ───────────────────────────────────────────
-  select * into v_negozio
-  from public.negozi
-  where id = v_prodotto.negozio_id;
-
-  if v_negozio.id is null then
-    return jsonb_build_object('ok', false, 'codice', 'NEGOZIO_NON_TROVATO', 'messaggio', 'Negozio non trovato.');
-  end if;
-  if not coalesce(v_negozio.attivo, false) or v_negozio.deleted_at is not null then
-    return jsonb_build_object('ok', false, 'codice', 'NEGOZIO_INATTIVO', 'messaggio', 'Il negozio non è più attivo.');
-  end if;
-
-  select * into v_seller from public.resolve_seller_identity(v_negozio.id);
-
-  -- ── 3bis. coerenza variante ↔ prodotto ─────────────────────────────────
-  if coalesce(v_prodotto.ha_varianti, false) and v_variante_id is null then
-    return jsonb_build_object('ok', false, 'codice', 'VARIANTE_OBBLIGATORIA', 'messaggio', 'Seleziona una variante del prodotto.');
-  end if;
-  if not coalesce(v_prodotto.ha_varianti, false) and v_variante_id is not null then
-    return jsonb_build_object('ok', false, 'codice', 'VARIANTE_NON_VALIDA', 'messaggio', 'Variante non valida per questo prodotto.');
-  end if;
-
-  if v_variante_id is not null then
-    select * into v_variante
-    from public.prodotto_varianti
-    where id = v_variante_id
-    for update;
-
-    if v_variante.id is null then
-      return jsonb_build_object('ok', false, 'codice', 'VARIANTE_NON_VALIDA', 'messaggio', 'Variante non trovata.');
-    end if;
-    if v_variante.prodotto_id <> v_prodotto_id then
-      return jsonb_build_object('ok', false, 'codice', 'VARIANTE_NON_VALIDA', 'messaggio', 'Variante non valida per questo prodotto.');
-    end if;
-    if not coalesce(v_variante.attivo, false) then
-      return jsonb_build_object('ok', false, 'codice', 'VARIANTE_NON_VALIDA', 'messaggio', 'Questa variante non è più disponibile.');
-    end if;
-  end if;
-
-  -- ── 4. Prezzo, disponibilità e immagine (dal DATABASE) ─────────────────
-  if v_variante_id is not null then
-    v_prezzo := coalesce(v_variante.prezzo, v_prodotto.prezzo);
-    if v_prezzo is null or v_prezzo < 0 then
-      return jsonb_build_object('ok', false, 'codice', 'PREZZO_NON_VALIDO', 'messaggio', 'Prezzo del prodotto non valido.');
-    end if;
-    if v_variante.quantita_disponibile - v_variante.quantita_riservata < v_quantita then
-      return jsonb_build_object('ok', false, 'codice', 'SCORTE_INSUFFICIENTI',
-        'messaggio', 'Disponibilità insufficiente (restano ' ||
-          (v_variante.quantita_disponibile - v_variante.quantita_riservata) || ' pezzi).');
-    end if;
-    v_immagine_riga := coalesce(v_variante.immagine_principale, v_prodotto.immagine_principale);
-    v_variante_nome := v_variante.nome;
-  else
-    v_prezzo := v_prodotto.prezzo;
-    if v_prezzo is null or v_prezzo < 0 then
-      return jsonb_build_object('ok', false, 'codice', 'PREZZO_NON_VALIDO', 'messaggio', 'Prezzo del prodotto non valido.');
-    end if;
-    if v_prodotto.quantita_disponibile is not null then
-      if v_prodotto.quantita_disponibile < v_quantita then
-        return jsonb_build_object('ok', false, 'codice', 'SCORTE_INSUFFICIENTI',
-          'messaggio', 'Disponibilità insufficiente (restano ' || v_prodotto.quantita_disponibile || ' pezzi).');
-      end if;
-    end if;
-    v_immagine_riga := v_prodotto.immagine_principale;
-    v_variante_nome := null;
-  end if;
-
-  -- ── 5. Costo spedizione CALCOLATO DAL SISTEMA (mai dal client) ─────────
-  if v_modalita = 'spedizione' then
-    if v_carrier = 'poste_italiane' or v_carrier = 'brt' or v_carrier = 'gls' then
-      -- Spedizione gratuita configurata dal negozio per questo metodo?
-      select exists(
-        select 1 from public.negozio_metodi_spedizione nms
-        where nms.negozio_id = v_prodotto.negozio_id
-          and nms.carrier = v_carrier
-          and nms.servizio = v_servizio
-          and nms.spedizione_gratuita = true
-      ) into v_gratuita;
-
-      if coalesce(v_gratuita, false) then
-        v_costo_sped := 0;
-        v_tariffa_vers := null;
-        v_peso_grammi := v_prodotto.peso_grammi * v_quantita;
-      else
-        if v_prodotto.peso_grammi is null or v_prodotto.peso_grammi <= 0 then
-          return jsonb_build_object('ok', false, 'codice', 'PESO_MANCANTE',
-            'messaggio', 'Il peso di questo prodotto non è ancora configurato dal negozio.');
-        end if;
-        -- V1 pacco unico per ordine: il peso deriva dal pacco configurato dal
-        -- venditore, MAI dalla somma peso prodotto × quantità.
-        v_peso_grammi := v_prodotto.peso_grammi * v_quantita;
-        v_tariffa := public.calcola_tariffa_spedizione(v_carrier, v_servizio, v_peso_grammi);
-        if coalesce(v_tariffa ->> 'ok', 'false') <> 'true' then
-          return jsonb_build_object('ok', false, 'codice', v_tariffa ->> 'codice', 'messaggio', v_tariffa ->> 'messaggio');
-        end if;
-        v_costo_sped := (v_tariffa ->> 'prezzo')::numeric;
-        v_tariffa_vers := v_tariffa ->> 'versione';
-      end if;
-    elsif v_carrier = 'locale' then
-      select nms.costo_euro into v_costo_locale_negozio
-      from public.negozio_metodi_spedizione nms
-      where nms.negozio_id = v_prodotto.negozio_id
-        and nms.carrier = 'locale'
-        and nms.servizio = 'locale'
-        and coalesce(nms.attivo, false) = true
-      limit 1;
-      if v_costo_locale_negozio is not null and v_costo_locale_negozio >= 0 then
-        v_costo_sped := v_costo_locale_negozio;
-      elsif v_prodotto.costo_spedizione_locale is null or v_prodotto.costo_spedizione_locale < 0 then
-        return jsonb_build_object('ok', false, 'codice', 'CORRIERE_LOCALE_NON_DISPONIBILE',
-          'messaggio', 'Il corriere locale non è disponibile per questo prodotto.');
-      else
-        v_costo_sped := v_prodotto.costo_spedizione_locale;
-      end if;
-      v_tariffa_vers := null;
-    end if;
-    -- metodo_spedizione (legacy) = tier: express solo per Poste Express.
-    v_metodo_sped := case when v_servizio = 'express' then 'express' else 'standard' end;
-  end if;
-  v_totale := round((v_prezzo * v_quantita + v_costo_sped)::numeric, 2);
-
-  -- ── 5bis. COMMISSIONE PIATTAFORMA (solo server, snapshot deterministico) ─
-  v_commissione_pct := coalesce(
-    v_negozio.commissione_percentuale,
-    public.commissione_piattaforma_percentuale()
-);
-  v_commissione := round((v_totale * v_commissione_pct / 100.0)::numeric, 2);
-  if v_commissione < 0 then v_commissione := 0; end if;
-  if v_commissione > v_totale then v_commissione := v_totale; end if;
-
-  -- ── 6. Insert ordine ────────────────────────────────────────────────────
-  insert into public.ordini (
-    idempotency_key, modalita, totale, negozio_id, negozio_nome,
-    venditore_identity_id, venditore_denominazione_legale, venditore_nome_commerciale,
-    venditore_forma_giuridica, venditore_partita_iva, venditore_codice_fiscale,
-    venditore_pec, venditore_sede_legale, venditore_email, venditore_telefono,
-    venditore_stato_verifica, venditore_valida_dal, venditore_valida_al, venditore_origine_dati,
-    cliente_user_id, cliente_nome, cliente_cognome, cliente_telefono, cliente_email, cliente_ip,
-    ritiro_data, ritiro_fascia,
-    spedizione_indirizzo, spedizione_cap, spedizione_citta, spedizione_provincia, spedizione_note,
-    metodo_spedizione, spedizione_carrier, spedizione_servizio,
-    spedizione_tariffa_versione, spedizione_peso_grammi,
-    costo_spedizione, commissione_percentuale, commissione_importo,
-    metodo_pagamento, note
-  ) values (
-    v_key, v_modalita, v_totale, v_negozio.id, v_negozio.nome,
-    v_seller.identity_id, v_seller.denominazione_legale, v_seller.nome_commerciale,
-    v_seller.forma_giuridica, v_seller.partita_iva, v_seller.codice_fiscale,
-    v_seller.pec, v_seller.sede_legale, v_seller.email, v_seller.telefono,
-    v_seller.stato_verifica, v_seller.valida_dal, v_seller.valida_al, v_seller.origine_dati,
-    v_cliente_user_id, v_cliente_nome, v_cliente_cognome, v_cliente_telefono, v_cliente_email, v_cliente_ip,
-    case when v_modalita = 'ritiro' then v_ritiro_data else null end,
-    case when v_modalita = 'ritiro' then v_ritiro_fascia else null end,
-    case when v_modalita = 'spedizione' then v_sped_indirizzo else null end,
-    case when v_modalita = 'spedizione' then v_sped_cap else null end,
-    case when v_modalita = 'spedizione' then v_sped_citta else null end,
-    case when v_modalita = 'spedizione' then v_sped_prov else null end,
-    case when v_modalita = 'spedizione' then v_sped_note else null end,
-    case when v_modalita = 'spedizione' then v_metodo_sped else null end,
-    case when v_modalita = 'spedizione' then v_carrier else null end,
-    case when v_modalita = 'spedizione' then v_servizio else null end,
-    case when v_modalita = 'spedizione' then v_tariffa_vers else null end,
-    case when v_modalita = 'spedizione' then v_peso_grammi else null end,
-    v_costo_sped, v_commissione_pct, v_commissione,
-    v_metodo_pag,
-    v_note
-  )
-  returning * into v_ordine;
-
-  -- ── 7. Riga ordine ──────────────────────────────────────────────────────
-  insert into public.ordini_righe (
-    ordine_id, prodotto_id, variante_id, variante_nome,
-    nome_prodotto, prezzo_unitario, quantita, immagine_url
-  ) values (
-    v_ordine.id, v_prodotto_id, v_variante_id, v_variante_nome,
-    v_prodotto.nome, v_prezzo, v_quantita, v_immagine_riga
-  );
-
-  -- ── 8. Decremento atomico scorte ────────────────────────────────────────
-  if v_variante_id is not null then
-    update public.prodotto_varianti
-    set quantita_disponibile = quantita_disponibile - v_quantita
-    where id = v_variante_id
-      and quantita_disponibile - v_quantita >= 0;
-    if not found then
-      raise exception 'SCORTE_INSUFFICIENTI' using errcode = 'P0001';
-    end if;
-  else
-    if v_prodotto.quantita_disponibile is not null then
-      update public.prodotti
-      set quantita_disponibile = quantita_disponibile - v_quantita
-      where id = v_prodotto_id
-        and quantita_disponibile - v_quantita >= 0;
-      if not found then
-        raise exception 'SCORTE_INSUFFICIENTI' using errcode = 'P0001';
-      end if;
-    end if;
-  end if;
-
-  return jsonb_build_object('ok', true, 'giaEsistente', false, 'ordine', public.ordine_to_json(v_ordine.id));
-
-exception
-  when unique_violation then
-    select * into v_ordine
-    from public.ordini
-    where idempotency_key = v_key
-    limit 1;
-    if v_ordine.id is not null then
-      return jsonb_build_object('ok', true, 'giaEsistente', true, 'ordine', public.ordine_to_json(v_ordine.id));
-    end if;
-    raise;
-  when others then
-    return jsonb_build_object('ok', false, 'codice', 'SAVE_FAILED', 'messaggio', 'Impossibile salvare l''ordine.');
-end;
-$function$
-
-
-CREATE OR REPLACE FUNCTION public.crea_ordine_carrello(p_payload jsonb)
- RETURNS jsonb
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
+create or replace function public.crea_ordine_carrello(p_payload jsonb)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
 declare
   v_key            text;
   v_modalita       text;
@@ -449,13 +58,13 @@ declare
   v_peso_mancante  boolean := false;
   v_max_locale     numeric := null;
   v_locale_mancante boolean := false;
-  v_costo_locale_negozio numeric := null;
   v_tariffa        jsonb;
   v_tariffa_vers   text;
   v_gratuita       boolean;
   v_commissione_pct numeric;
   v_commissione    numeric;
-  v_seller          record;
+  v_costo_locale_negozio numeric := null;
+  v_seller record;
 begin
   v_key := p_payload ->> 'idempotencyKey';
   if v_key is null or length(v_key) = 0 or length(v_key) > 64 then
@@ -486,6 +95,7 @@ begin
   v_carrier := p_payload ->> 'spedizioneCarrier';
   v_servizio := p_payload ->> 'spedizioneServizio';
   v_metodo_pag := p_payload ->> 'metodoPagamento';
+  v_note := p_payload ->> 'note';
 
   if v_modalita = 'ritiro' then
     if v_metodo_pag <> 'contanti_negozio' then
@@ -495,7 +105,6 @@ begin
       return jsonb_build_object('ok', false, 'codice', 'VALIDATION_ERROR', 'messaggio', 'Il numero di cellulare è obbligatorio per il ritiro.');
     end if;
   end if;
-  v_note := p_payload ->> 'note';
 
   if v_modalita = 'spedizione' then
     if v_sped_indirizzo is null or length(v_sped_indirizzo) = 0
@@ -649,7 +258,6 @@ begin
   if not coalesce(v_negozio.attivo, false) or v_negozio.deleted_at is not null then
     return jsonb_build_object('ok', false, 'codice', 'NEGOZIO_INATTIVO', 'messaggio', 'Il negozio non è più attivo.');
   end if;
-
   select * into v_seller from public.resolve_seller_identity(v_negozio.id);
 
   create temp table tt_carrello_varianti (
@@ -741,13 +349,6 @@ begin
 
     v_totale := v_totale + round((v_prezzo * v_riga_row.quantita)::numeric, 2);
 
-    -- Peso prodotto della riga: somma del peso per quantità.
-    if v_riga_row.peso_grammi is null or v_riga_row.peso_grammi <= 0 then
-      v_peso_mancante := true;
-    else
-      v_peso_grammi := v_peso_grammi + (v_riga_row.peso_grammi * v_riga_row.quantita);
-    end if;
-
     -- Corriere locale: MAX tra le tariffe locali dei prodotti dell'ordine.
     if v_carrier = 'locale' then
       if v_riga_row.costo_spedizione_locale is null or v_riga_row.costo_spedizione_locale < 0 then
@@ -758,22 +359,21 @@ begin
     end if;
   end loop;
 
-  if v_carrier = 'locale' then
-    select nms.costo_euro into v_costo_locale_negozio
-    from public.negozio_metodi_spedizione nms
-    where nms.negozio_id = v_negozio.id
-      and nms.carrier = 'locale'
-      and nms.servizio = 'locale'
-      and coalesce(nms.attivo, false) = true
-    limit 1;
-    if v_costo_locale_negozio is not null and v_costo_locale_negozio >= 0 then
-      v_max_locale := v_costo_locale_negozio;
-      v_locale_mancante := false;
-    end if;
-  end if;
-
   -- ── 7. Costo spedizione CALCOLATO DAL SISTEMA (mai dal client) ─────────
   if v_modalita = 'spedizione' then
+    if v_carrier = 'locale' then
+      select nms.costo_euro into v_costo_locale_negozio
+      from public.negozio_metodi_spedizione nms
+      where nms.negozio_id = v_negozio.id
+        and nms.carrier = 'locale'
+        and nms.servizio = 'locale'
+        and coalesce(nms.attivo, false) = true
+      limit 1;
+      if v_costo_locale_negozio is not null and v_costo_locale_negozio >= 0 then
+        v_max_locale := v_costo_locale_negozio;
+        v_locale_mancante := false;
+      end if;
+    end if;
     if v_carrier = 'poste_italiane' or v_carrier = 'brt' or v_carrier = 'gls' then
       select exists(
         select 1 from public.negozio_metodi_spedizione nms
@@ -786,13 +386,13 @@ begin
       if coalesce(v_gratuita, false) then
         v_costo_sped := 0;
         v_tariffa_vers := null;
-        null;
+        v_peso_grammi := v_negozio.pacco_peso_grammi;
       else
-        if v_peso_mancante or v_peso_grammi <= 0 then
+        if v_negozio.pacco_peso_grammi is null or v_negozio.pacco_peso_grammi <= 0 then
           return jsonb_build_object('ok', false, 'codice', 'PESO_MANCANTE',
-            'messaggio', 'Il peso di uno o più prodotti del carrello non è ancora configurato dal negozio.');
+            'messaggio', 'Il pacco di spedizione di questo negozio non è ancora configurato.');
         end if;
-        null;
+        v_peso_grammi := v_negozio.pacco_peso_grammi;
         v_tariffa := public.calcola_tariffa_spedizione(v_carrier, v_servizio, v_peso_grammi);
         if coalesce(v_tariffa ->> 'ok', 'false') <> 'true' then
           return jsonb_build_object('ok', false, 'codice', v_tariffa ->> 'codice', 'messaggio', v_tariffa ->> 'messaggio');
@@ -815,10 +415,7 @@ begin
   v_totale := round((v_totale + v_costo_sped)::numeric, 2);
 
   -- ── 7bis. COMMISSIONE PIATTAFORMA (solo server, snapshot deterministico) ─
-  v_commissione_pct := coalesce(
-    v_negozio.commissione_percentuale,
-    public.commissione_piattaforma_percentuale()
-);
+  v_commissione_pct := public.commissione_piattaforma_percentuale();
   v_commissione := round((v_totale * v_commissione_pct / 100.0)::numeric, 2);
   if v_commissione < 0 then v_commissione := 0; end if;
   if v_commissione > v_totale then v_commissione := v_totale; end if;
@@ -928,5 +525,4 @@ exception
   when others then
     return jsonb_build_object('ok', false, 'codice', 'SAVE_FAILED', 'messaggio', 'Impossibile salvare l''ordine.');
 end;
-$function$
-
+$$;
