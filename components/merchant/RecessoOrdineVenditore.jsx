@@ -33,6 +33,12 @@ export default async function RecessoOrdineVenditore({ negozioId, ordineId }) {
     .in("richiesta_id", ids)
     .order("created_at", { ascending: true });
 
+  const { data: eventi } = await db
+    .from("richieste_recesso_eventi")
+    .select("id, richiesta_id, autore_user_id, stato_precedente, stato_nuovo, messaggio, created_at")
+    .in("richiesta_id", ids)
+    .order("created_at", { ascending: true });
+
   return (
     <section className="rounded-[1.75rem] border border-blue-100 bg-white p-5 shadow-sm ring-1 ring-blue-50">
       <p className="flex items-center gap-2 text-sm font-black uppercase tracking-wide text-slate-900">
@@ -95,6 +101,21 @@ export default async function RecessoOrdineVenditore({ negozioId, ordineId }) {
                   <p className="mt-1 text-xs text-slate-400">Nessun messaggio fornito dal cliente.</p>
                 )}
               </div>
+              {((eventi ?? []).filter((e) => e.richiesta_id === p.id && e.messaggio && e.autore_user_id).length > 0) && (
+                <div className="mt-3 rounded-xl border border-slate-200 bg-white px-3 py-2.5">
+                  <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Comunicazioni della pratica</p>
+                  {(eventi ?? [])
+                    .filter((e) => e.richiesta_id === p.id && e.messaggio && e.autore_user_id)
+                    .map((e) => (
+                      <div key={e.id} className="mt-2 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-700">
+                        <p className="font-semibold text-slate-500">Nota della gestione</p>
+                        <p className="mt-1 whitespace-pre-wrap break-words">{e.messaggio}</p>
+                        <p className="mt-1 text-[10px] text-slate-400">{dataIT(e.created_at)}</p>
+                      </div>
+                    ))}
+                </div>
+              )}
+
               {righePratica.length > 0 && (
                 <div className="mt-3 space-y-1.5">
                   {righePratica.map((r) => (
