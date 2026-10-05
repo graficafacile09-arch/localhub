@@ -1301,7 +1301,7 @@ export default function CheckoutCarrelloForm({ prefill}
 
           {ritiroIncompleto && (
             <p className="text-[11px] leading-4 text-slate-500">
-              Compila nome, cognome, data e fascia oraria per confermare il ritiro.
+              Compila nome, cognome, numero di cellulare, data e fascia oraria per confermare il ritiro.
             </p>
           )}
 
