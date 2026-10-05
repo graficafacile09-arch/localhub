@@ -358,10 +358,24 @@ export class GatewayStripe implements PaymentGateway {
         "Nessun payment intent associato alla sessione."
       );
     }
+    // Stripe rifiuta refund_application_fee=true quando il pagamento
+    // non ha una application fee (caso normale per gli ordini senza
+    // commissione piattaforma). Recuperiamo il charge e chiediamo il
+    // reversal della fee solo quando la fee esiste davvero.
+    const paymentIntentObject = await stripe.paymentIntents.retrieve(
+      paymentIntent,
+      { expand: ["latest_charge"] },
+      richiestaPer(cred)
+    );
+    const latestCharge = typeof paymentIntentObject.latest_charge === "object"
+      ? paymentIntentObject.latest_charge
+      : null;
+    const hasApplicationFee = Boolean(latestCharge?.application_fee);
+
     const refund = await stripe.refunds.create({
       payment_intent: paymentIntent,
       amount: importo !== undefined && Number(importo) > 0 ? Math.round(Number(importo) * 100) : undefined,
-      refund_application_fee: true,
+      ...(hasApplicationFee ? { refund_application_fee: true } : {}),
       ...(options?.operationId ? { metadata: { refund_operation_id: options.operationId } } : {}),
     }, {
       ...(richiestaPer(cred) ?? {}),
