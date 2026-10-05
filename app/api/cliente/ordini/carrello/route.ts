@@ -114,6 +114,7 @@ export async function POST(request: Request) {
   // ── Validazione esplicita dei valori: mai default silenziosi ───────────
   const modalita: "ritiro" | "spedizione" | null =
     body.modalita === "ritiro" ? "ritiro" : body.modalita === "spedizione" ? "spedizione" : null;
+  const metodoPagamentoRitiro = body.metodoPagamentoRitiro === "contanti_negozio" ? "contanti_negozio" as const : null;
   if (!modalita) {
     return apiError("VALIDATION_ERROR", "Modalità di consegna non valida.", 422);
   }
@@ -148,6 +149,12 @@ export async function POST(request: Request) {
   }
 
   const clienteRaw = (body.cliente ?? {}) as Record<string, unknown>;
+  if (modalita === "ritiro" && metodoPagamentoRitiro !== "contanti_negozio") {
+    return apiError("VALIDATION_ERROR", "Seleziona il pagamento in contanti in negozio.", 422);
+  }
+  if (modalita === "ritiro" && (typeof clienteRaw.telefono !== "string" || !clienteRaw.telefono.trim())) {
+    return apiError("VALIDATION_ERROR", "Il numero di cellulare è obbligatorio per il ritiro.", 422);
+  }
   const ritiroRaw = (body.ritiro ?? {}) as Record<string, unknown>;
   const spedizioneRaw = (body.spedizione ?? {}) as Record<string, unknown>;
   const latitudineRaw = spedizioneRaw.latitudine;
@@ -346,6 +353,7 @@ export async function POST(request: Request) {
             email: emailDestinataria,
           },
           clienteUserId: utenteAutenticato?.id ?? null,
+      metodoPagamentoRitiro: modalita === "ritiro" ? metodoPagamentoRitiro : undefined,
           clienteIp: ip,
           spedizione: {
             indirizzo:
