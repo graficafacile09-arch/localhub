@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSessionArea } from "@/lib/auth/session-area";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { apiError } from "@/lib/api/response";
 
 async function requireAdmin() {
   const sessione = await getSessionArea();
@@ -90,7 +91,7 @@ export async function PATCH(request: Request) {
   const admin = createAdminSupabaseClient();
   const { data: order } = await admin
     .from("ordini")
-    .select("id,modalita,spedizione_carrier,spedizione_servizio")
+    .select("id,modalita,spedizione_carrier,spedizione_servizio,stato")
     .eq("id", ordineId)
     .maybeSingle();
 
@@ -105,6 +106,14 @@ export async function PATCH(request: Request) {
     .maybeSingle();
   if (delivery && ["consegnata", "annullata"].includes(delivery.stato)) {
     return NextResponse.json({ error: "La consegna è in uno stato finale e non può essere riassegnata." }, { status: 409 });
+  }
+
+  if (corriereUserId && order.stato !== "pronto") {
+    return apiError(
+      "ORDER_NOT_READY",
+      "Il corriere può essere affidato solo quando il venditore ha segnato l'ordine come pronto.",
+      409,
+    );
   }
 
   if (corriereUserId) {

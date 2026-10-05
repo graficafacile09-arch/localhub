@@ -84,6 +84,21 @@ export default function ConsegneLocali() {
     return undefined;
   }, []);
 
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") void load();
+    };
+    const handleFocus = () => void load();
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, []);
+
   async function update(id: string, stato: string) {
     setBusy(id); setError(null);
     try {
