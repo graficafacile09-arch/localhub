@@ -65,6 +65,7 @@ export default function RitiroForm({
     cognome?: string;
     data?: string;
     fascia?: string;
+    telefono?: string;
     email?: string;
   }>({});
   // Chiave di idempotenza: generata UNA volta per pagina → un doppio click
@@ -79,7 +80,8 @@ export default function RitiroForm({
     cognomeCliente.trim() !== "" &&
     data !== "" &&
     fascia !== "" &&
-    telefonoCliente.trim() !== "" &&\n    (p.autenticato || emailCliente.trim() !== "");
+    telefonoCliente.trim() !== "" &&
+    (p.autenticato || emailCliente.trim() !== "");
 
   const confermaRitiro = async () => {
     if (inviando) return;
@@ -90,6 +92,7 @@ export default function RitiroForm({
     if (!cognomeCliente.trim()) nuoviErrori.cognome = "Inserisci il cognome.";
     if (!data) nuoviErrori.data = "Seleziona la data del ritiro.";
     if (!fascia) nuoviErrori.fascia = "Seleziona la fascia oraria.";
+    if (!telefonoCliente.trim()) nuoviErrori.telefono = "Inserisci il numero di cellulare.";
     if (!p.autenticato && !emailCliente.trim()) nuoviErrori.email = "Inserisci l'email.";
     if (Object.keys(nuoviErrori).length > 0) {
       setErrori(nuoviErrori);
@@ -113,6 +116,7 @@ export default function RitiroForm({
           telefono: telefonoCliente.trim() || null,
           email: emailCliente.trim() || null,
         },
+        metodoPagamentoRitiro: "contanti_negozio",
         dichiarazioneEta: soggettoVerificaEta && dichiarazioneEta,
         ritiro: {
           data: data || null,
@@ -295,7 +299,13 @@ export default function RitiroForm({
               id="telefono-ritiro"
               type="tel"
               value={telefonoCliente}
-              onChange={(e) => {\n                setTelefonoCliente(e.target.value);\n                setErrori((p) => ({ ...p, telefono: undefined }));\n              }}\n              required\n              aria-required="true"\n              aria-invalid={!!errori.telefono}
+              onChange={(e) => {
+                setTelefonoCliente(e.target.value);
+                setErrori((p) => ({ ...p, telefono: undefined }));
+              }}
+              required
+              aria-required="true"
+              aria-invalid={!!errori.telefono}
               className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
             />
           </div>
@@ -400,6 +410,15 @@ export default function RitiroForm({
             placeholder="Eventuali note per il ritiro..."
             className="mt-2 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100 placeholder:text-slate-400"
           />
+        </div>
+
+        {/* Metodo di pagamento */}
+        <div className="rounded-xl border border-slate-200 bg-white p-4">
+          <h3 className="text-sm font-bold text-slate-900">Metodo di pagamento</h3>
+          <button type="button" aria-pressed="true" className="mt-3 flex w-full items-center gap-3 rounded-lg border border-blue-400 bg-blue-50/50 p-3 text-left">
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-100 text-sm font-black text-emerald-700">€</span>
+            <span><span className="block text-sm font-bold text-slate-900">Paga in contanti in negozio</span><span className="block text-[11px] text-slate-500">Pagherai il totale direttamente al momento del ritiro.</span></span>
+          </button>
         </div>
 
         {/* Riepilogo ordine */}
