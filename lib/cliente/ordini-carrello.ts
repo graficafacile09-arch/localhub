@@ -76,6 +76,8 @@ export type CheckoutCarrelloInput = {
   modalita: "ritiro" | "spedizione";
   /** Solo modalita='ritiro'. */
   ritiro?: { data?: string | null; fascia?: string | null } | null;
+  /** Metodo obbligatorio per il ritiro in negozio. */
+  metodoPagamentoRitiro?: "contanti_negozio";
   /** Solo modalita='spedizione'. */
   spedizione?: {
     indirizzo: string;
@@ -269,6 +271,12 @@ function validaCheckout(input: CheckoutCarrelloInput): { codice: string; messagg
       return { codice: "VALIDATION_ERROR", messaggio: errFatt };
     }
   } else {
+    if (String(cliente.telefono ?? "").trim() === "") {
+      return { codice: "VALIDATION_ERROR", messaggio: "Il numero di cellulare è obbligatorio per il ritiro." };
+    }
+    if (input.metodoPagamentoRitiro !== "contanti_negozio") {
+      return { codice: "VALIDATION_ERROR", messaggio: "Seleziona il pagamento in contanti in negozio." };
+    }
     // Modalità RITIRO: data e fascia oraria OBBLIGATORIE (come nome/cognome).
     const dataRitiro = input.ritiro?.data ? String(input.ritiro.data).trim() : "";
     const fasciaRitiro = input.ritiro?.fascia ? String(input.ritiro.fascia).trim() : "";
@@ -436,6 +444,7 @@ function costruisciPayloadBase(input: CheckoutCarrelloInput, idempotencyKey: str
   if (input.modalita === "ritiro") {
     payload.ritiroData = input.ritiro?.data ? String(input.ritiro.data).trim() : null;
     payload.ritiroFascia = input.ritiro?.fascia ? String(input.ritiro.fascia).trim() : null;
+    payload.metodoPagamento = input.metodoPagamentoRitiro ?? null;
   } else {
     const sp = input.spedizione!;
     payload.spedizioneIndirizzo = String(sp.indirizzo).trim();
