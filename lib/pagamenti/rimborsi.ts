@@ -222,7 +222,10 @@ export async function rimborsaOrdine(opts: {
   }
 
   let refundId: string | null = null;
-  // Il claim porta intenzionalmente l'operazione da reconciliation_required a processing.\n  // Perciò lo stato da usare per decidere il retry va letto dalla PREPARAZIONE,\n  // non dalla risposta del claim.\n  const wasReconciliationRequired = statoOperazione === "reconciliation_required";
+  // Il claim porta intenzionalmente l'operazione da reconciliation_required a processing.
+  // Perciò lo stato da usare per decidere il retry va letto dalla PREPARAZIONE,
+  // non dalla risposta del claim.
+  const wasReconciliationRequired = statoOperazione === "reconciliation_required";
   try {
     const gateway = getGatewayProvider(provider);
     if (!gateway) throw new Error("Provider non disponibile.");
