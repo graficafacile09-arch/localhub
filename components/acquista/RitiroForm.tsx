@@ -309,6 +309,9 @@ export default function RitiroForm({
               className="mt-1 block w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-100"
             />
           </div>
+          {errori.telefono && (
+            <p className="mt-1 text-[11px] font-semibold text-blue-600">{errori.telefono}</p>
+          )}
           <div className="mt-3">
             <label htmlFor="email-ritiro" className="block text-xs font-semibold text-slate-700">Email *</label>
             <input
@@ -454,7 +457,7 @@ export default function RitiroForm({
         {/* Conferma ritiro */}
         {!ritiroCompleto && (
           <p className="text-[11px] leading-4 text-slate-500">
-            Compila nome, cognome, data e fascia oraria per confermare il ritiro.
+            Compila nome, cognome, numero di cellulare, data e fascia oraria per confermare il ritiro.
           </p>
         )}
         <button
