@@ -231,6 +231,7 @@ export default function CheckoutCarrelloForm({ prefill}
   const [modalita, setModalita] = useState<"ritiro" | "spedizione">("spedizione");
   const [dataRitiro, setDataRitiro] = useState("");
   const [fascia, setFascia] = useState("");
+  const metodoPagamentoRitiro = "contanti_negozio" as const;
   const [indirizzo, setIndirizzo] = useState(prefill.indirizzo);
   const [cap, setCap] = useState(prefill.cap);
   const [citta, setCitta] = useState(prefill.citta);
@@ -525,7 +526,7 @@ export default function CheckoutCarrelloForm({ prefill}
   // (La spedizione non è toccata: nessun vincolo aggiuntivo.)
   const ritiroIncompleto =
     modalita === "ritiro" &&
-    (!nome.trim() || !cognome.trim() || !dataRitiro || !fascia);
+    (!nome.trim() || !cognome.trim() || !telefono.trim() || !dataRitiro || !fascia);
 
   const invia = async () => {
     if (inviando) return; // anti doppio invio
@@ -563,7 +564,8 @@ export default function CheckoutCarrelloForm({ prefill}
 
 ;
       if (modalita === "ritiro") {
-        body.ritiro = { data: dataRitiro || null, fascia: fascia || null}
+        body.ritiro = { data: dataRitiro || null, fascia: fascia || null};
+        body.metodoPagamentoRitiro = metodoPagamentoRitiro;
 
 ;
      }
@@ -744,7 +746,7 @@ export default function CheckoutCarrelloForm({ prefill}
                 type="email"
                 id="ck-email"
               />
-              <Campo label="Telefono" value={telefono}
+              <Campo label={modalita === "ritiro" ? "Numero di cellulare *" : "Telefono"} value={telefono}
  onChange={setTelefono}
  type="tel" id="ck-telefono" />
             </div>
@@ -859,7 +861,7 @@ export default function CheckoutCarrelloForm({ prefill}
                   </div>
                 </div>
                 <p className="text-[11px] leading-4 text-slate-400">
-                  Il pagamento del ritiro viene concordato direttamente con il negozio.
+                  Pagherai in contanti direttamente al momento del ritiro.
                 </p>
               </div>
             ) : (
