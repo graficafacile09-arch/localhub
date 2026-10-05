@@ -233,11 +233,21 @@ export async function GET(request, context) {
 
   const { data: richiesta } = await db
     .from("richieste_recesso")
-    .select("id, numero, stato, richiesta_at, ricevuta_at, termine_recesso_at")
+    .select("id, numero, stato, richiesta_at, ricevuta_at, termine_recesso_at, motivo_cliente, note_cliente")
     .eq("ordine_id", ordineId)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
+
+  let eventi = [];
+  if (richiesta?.id) {
+    const { data: eventiData } = await db
+      .from("richieste_recesso_eventi")
+      .select("id, tipo, autore_user_id, stato_precedente, stato_nuovo, messaggio, created_at")
+      .eq("richiesta_id", richiesta.id)
+      .order("created_at", { ascending: true });
+    eventi = eventiData ?? [];
+  }
 
   return apiOk({
     ordineNumero: ordine.numero,
@@ -248,6 +258,7 @@ export async function GET(request, context) {
       : null,
     righe: righe ?? [],
     richiesta: richiesta ?? null,
+    eventi,
   });
 }
 
