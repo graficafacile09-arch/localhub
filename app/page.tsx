@@ -197,10 +197,23 @@ export default async function Home() {
 
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {negozi.map((negozio) => {
-                const imageUrl = getNegozioCardImmagine({
-                  logo_url: negozio.logo_url,
+                // Stessa logica di rendering della vetrina pubblica (scheda
+                // aperta del negozio e CategoryStoreCard): la copertina è SEMPRE
+                // la foto principale della card. Il logo NON viene mai usato
+                // come sfondo (era la causa dello zoom): resta nel badge
+                // circolare sovrapposto, piccolo, come nella scheda aperta.
+                const immaginiCopertina = getNegozioCardImmagine({
+                  copertina_url: (negozio.copertina_url as string | null) ?? null,
+                  logo_url: null,
                   categoria: negozio.categoria,
                 });
+                const logoNegozio =
+                  typeof negozio.logo_url === "string" &&
+                  (negozio.logo_url.startsWith("http://") ||
+                    negozio.logo_url.startsWith("https://") ||
+                    negozio.logo_url.startsWith("/"))
+                    ? negozio.logo_url.trim()
+                    : null;
 
                 return (
                   <div
@@ -218,8 +231,18 @@ export default async function Home() {
                             role="img"
                             aria-label={negozio.nome}
                             className="absolute inset-0 bg-cover bg-center transition duration-300 group-hover:scale-105"
-                            style={{ backgroundImage: `url(${imageUrl})` }}
+                            style={{ backgroundImage: `url(${immaginiCopertina})` }}
                           />
+                          {logoNegozio && (
+                            <div className="absolute bottom-3 left-3 flex h-14 w-14 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-white shadow-sm">
+                              <div
+                                role="img"
+                                aria-label={`Logo ${negozio.nome}`}
+                                className="h-full w-full bg-cover bg-center"
+                                style={{ backgroundImage: `url(${logoNegozio})` }}
+                              />
+                            </div>
+                          )}
                           {negozio.categoria && (
                             <span className="absolute left-3 top-3 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-blue-900 shadow-sm">
                               {negozio.categoria}
