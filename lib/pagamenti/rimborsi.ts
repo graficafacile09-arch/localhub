@@ -222,14 +222,41 @@ export async function rimborsaOrdine(opts: {
   }
 
   let refundId: string | null = null;
+  const wasReconciliationRequired = claimed.stato === "reconciliation_required";
   try {
     const gateway = getGatewayProvider(provider);
     if (!gateway) throw new Error("Provider non disponibile.");
-    const esito = await gateway.rimborsa(paymentId, importoRichiesto, risolto.cred, {
-      idempotencyKey: String(claimed.idempotency_key ?? opts.idempotencyKey.trim()),
-      operationId: operazioneId,
-    });
-    refundId = esito.refundId ?? null;
+
+    // Se un tentativo precedente è finito in reconciliation_required, prima
+    // cerchiamo su Stripe un refund già creato con questo operationId.
+    // Solo se non esiste ne creiamo uno nuovo con una nuova chiave Stripe:
+    // la vecchia chiave potrebbe essere stata consumata da una richiesta
+    // precedente con parametri diversi (es. prima della correzione della
+    // gestione application fee).
+    if (wasReconciliationRequired && "riconciliaRimborso" in gateway) {
+      const riconciliato = await (gateway as typeof gateway & {
+        riconciliaRimborso: (
+          paymentId: string,
+          importo: number,
+          cred: typeof risolto.cred,
+          operationId: string
+        ) => Promise<{ refundId: string } | null>;
+      }).riconciliaRimborso(paymentId, importoRichiesto, risolto.cred, operazioneId);
+      if (riconciliato?.refundId) {
+        refundId = riconciliato.refundId;
+      }
+    }
+
+    if (!refundId) {
+      const providerIdempotencyKey = wasReconciliationRequired
+        ? crypto.randomUUID()
+        : String(claimed.idempotency_key ?? opts.idempotencyKey.trim());
+      const esito = await gateway.rimborsa(paymentId, importoRichiesto, risolto.cred, {
+        idempotencyKey: providerIdempotencyKey,
+        operationId: operazioneId,
+      });
+      refundId = esito.refundId ?? null;
+    }
   } catch (err) {
     await db.rpc("pagamenti_rimborso_operazione_fallita", { p_operazione_id: operazioneId, p_stato: "reconciliation_required", p_codice: "RIMBORSO_PROVIDER_INDETERMINATO", p_dettaglio: err instanceof Error ? err.message : "Risposta provider indeterminata." });
     return { ok: true, pending: true, ordineId: String(prep.ordine_id ?? opts.ordineId), operazioneId, importoRichiesto, paymentStatus: paymentStatus || "paid", residuo, refundId: null };
