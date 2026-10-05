@@ -193,7 +193,7 @@ export type OrdinePersistito = {
   /** Data/ora dell'annullamento. */
   annullatoAt: string | null;
   /** Metodo di pagamento selezionato al checkout (solo spedizione). */
-  metodoPagamento: "carta" | "klarna" | "bonifico_istantaneo" | "bonifico_diretto_venditore" | "bonifico" | null;
+  metodoPagamento: "carta" | "klarna" | "bonifico_istantaneo" | "bonifico_diretto_venditore" | "bonifico" | "contanti_negozio" | null;
   /** Stato del pagamento (FASE F1): null per gli ordini legacy senza pagamento. */
   paymentStatus: PaymentStatus | null;
   paymentProvider: string | null;
@@ -423,7 +423,7 @@ function assumiOrdine(riga: Record<string, unknown>, righe: RigaOrdine[]): Ordin
     annullatoNota: (riga.annullato_nota as string | null) ?? null,
     annullatoAt: (riga.annullato_at as string | null) ?? null,
     metodoPagamento:
-      (riga.metodo_pagamento as "carta" | "klarna" | "bonifico_istantaneo" | "bonifico" | null) ?? null,
+      (riga.metodo_pagamento as "carta" | "klarna" | "bonifico_istantaneo" | "bonifico" | "contanti_negozio" | null) ?? null,
     paymentStatus: (riga.payment_status as PaymentStatus | null) ?? null,
     paymentProvider: (riga.payment_provider as string | null) ?? null,
     paymentPaidAt: (riga.payment_paid_at as string | null) ?? null,
@@ -484,10 +484,6 @@ export function costruisciPayloadOrdine(input: CreaOrdineInput): PayloadCreaOrdi
       input.modalita === "ritiro" && input.ritiro?.fascia
         ? String(input.ritiro.fascia).trim()
         : null,
-    metodoPagamento:
-      input.modalita === "ritiro"
-        ? input.metodoPagamentoRitiro ?? null
-        : input.spedizione!.metodoPagamento,
     spedizioneIndirizzo: input.modalita === "spedizione" ? String(input.spedizione!.indirizzo).trim() : null,
     spedizioneCap: input.modalita === "spedizione" ? String(input.spedizione!.cap).trim() : null,
     spedizioneCitta: input.modalita === "spedizione" ? String(input.spedizione!.citta).trim() : null,
