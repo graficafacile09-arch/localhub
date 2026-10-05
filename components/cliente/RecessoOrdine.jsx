@@ -72,6 +72,25 @@ export default function RecessoOrdine({ ordineId, token = null }) {
   if (!info || !info.righe?.length) return null;
 
   const richiesta = info.richiesta;
+  const statoRichiesta = richiesta?.stato ?? null;
+  const statoLabel = {
+    richiesta: "Richiesta ricevuta dal venditore",
+    presa_in_carico: "Richiesta presa in carico dal venditore",
+    istruzioni_reso: "Istruzioni per il reso disponibili",
+    reso_da_spedire: "Reso da spedire",
+    reso_ricevuto: "Reso ricevuto",
+    rimborso_in_elaborazione: "Rimborso in elaborazione",
+    rimborso_in_corso: "Rimborso in corso",
+    rimborsata: "Rimborso completato",
+    rifiutata: "Richiesta di recesso rifiutata",
+    annullata: "Richiesta di recesso annullata",
+    chiusa: "Pratica di recesso chiusa",
+  }[statoRichiesta] ?? "Richiesta registrata";
+  const statoClassName = statoRichiesta === "rifiutata" || statoRichiesta === "annullata"
+    ? "border-red-200 bg-red-50 text-red-800"
+    : statoRichiesta === "rimborsata"
+      ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+      : "border-blue-200 bg-blue-50 text-blue-800";
   const eleggibili = info.righe.filter(
     (r) => r.recesso_applicabile === true && Number(r.quantita || 0) > 0
   );
@@ -130,9 +149,12 @@ export default function RecessoOrdine({ ordineId, token = null }) {
           </h2>
 
           {richiesta ? (
-            <p className="mt-1 text-sm leading-6 text-slate-600">
-              Richiesta {richiesta.numero} registrata il {dataIT(richiesta.ricevuta_at)}.
-            </p>
+            <div className={"mt-2 rounded-xl border px-3 py-3 " + statoClassName}>
+              <p className="text-sm font-bold">{statoLabel}</p>
+              <p className="mt-1 text-xs leading-5">
+                Pratica {richiesta.numero} · registrata il {dataIT(richiesta.ricevuta_at)}.
+              </p>
+            </div>
           ) : info.termineRecessoAt ? (
             <p className="mt-1 text-sm leading-6 text-slate-600">
               Puoi trasmettere la richiesta entro {dataIT(info.termineRecessoAt)}.
