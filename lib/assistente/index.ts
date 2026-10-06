@@ -179,7 +179,7 @@ async function eseguiTool(
 // Ultima query "sostanziale" dell'utente: se il messaggio corrente è solo un
 // vincolo/follow-up ("sotto 500 euro", "e sotto i 300?", "più economico"),
 // usa la richiesta precedente come soggetto della ricerca.
-const RE_VINCOLO = /^(e\s+)?(sotto|sopra|massimo|minimo|meno di|più di|piu di|più economico|piu economico|che altro|più caro|piu caro|oltre|fino a|tra)\b/i;
+const RE_VINCOLO = /^(e\s+)?(sotto|sopra|massimo|minimo|meno di|più di|piu di|più economico|piu economico|che altro|più caro|piu caro|oltre|fino a|tra|under|below|up to|over|above|less than|more than|cheaper|more expensive|what else|only open|open now)\b/i;
 
 // Intenzione salute → farmacia: usata anche nella risposta deterministica.
 const REQUIRES_PHARMACY_REASON =
@@ -191,7 +191,7 @@ function eQuerySostanziale(q: string): string | null {
   if (RE_VINCOLO.test(t)) return null;
   const parole = t.split(/\s+/);
   const soloVincoli = parole.every((p) =>
-    /^(e|sotto|sopra|massimo|minimo|minore|fino|oltre|più|piu|di|a|da|tra|euro|€|\d+)$/i.test(p)
+    /^(e|and|under|below|up|to|over|above|less|than|more|sotto|sopra|massimo|minimo|minore|fino|oltre|più|piu|di|a|da|tra|euro|euros|dollars|dollar|€|\$|\d+)$/i.test(p)
   );
   if (soloVincoli) return null;
   return t;
@@ -234,7 +234,7 @@ function pianoPredefinito(
   if (!ultimo) return null;
 
   const RE_PIATTAFORMA =
-    /che cos'è incittà|che cos'e incitta|cos'è incittà|come funziona|chi sei|cosa sei|cos'è il sito/;
+    /che cos'è incittà|che cos'e incitta|cos'è incittà|come funziona|chi sei|cosa sei|cos'è il sito|what is incitta|what is incittà|how does incitta work|how does incittà work|who are you|what are you|what is this site/;
 
   // Meteo e farmacie: riconoscimento UNICO e condiviso con il router della
   // barra di ricerca (lib/assistente/local-intents.ts), che normalizza accenti
@@ -267,12 +267,13 @@ function pianoPredefinito(
   const RE_EVENTI =
     /\beventi?\b|weekend|fine settimana|manifestazion|in programma|cosa c'è|cosa c'e|cosa succede|\bmostra\b|\bconcerto\b|\bfiera\b/;
   const RE_CHIACCHIERA =
-    /^(va bene|ok|okay|perfetto|grazie|grazie mille|ciao|buongiorno|buonasera)$/;
+    /^(va bene|ok|okay|perfetto|grazie|grazie mille|ciao|buongiorno|buonasera|hi|hello|hey|thanks|thank you|perfect|good|great)$/;
 
   if (RE_PIATTAFORMA.test(ultimo)) {
     return {
-      directReply:
-        "InCittà è la piattaforma locale della tua città: raccoglie le attività commerciali del territorio con i loro negozi, prodotti e prezzi, offerte e promozioni, eventi e manifestazioni. Puoi cercare attività, confrontare prodotti, vedere orari e contatti e contattare i negozi direttamente.",
+      directReply: /\b(what|how|who)\b/i.test(ultimo)
+        ? "InCittà is the local platform for your city. It brings together local businesses, products and prices, offers and promotions, events and useful information. You can search for businesses, compare products, check opening hours and contact local shops."
+        : "InCittà è la piattaforma locale della tua città: raccoglie le attività commerciali del territorio con i loro negozi, prodotti e prezzi, offerte e promozioni, eventi e manifestazioni. Puoi cercare attività, confrontare prodotti, vedere orari e contatti e contattare i negozi direttamente.",
       tools: [],
     };
   }
@@ -286,8 +287,9 @@ function pianoPredefinito(
   }
   if (RE_CHIACCHIERA.test(ultimo)) {
     return {
-      directReply:
-        "Va bene, sono qui! Posso aiutarti a trovare negozi, prodotti, offerte ed eventi nella tua città. Dimmi pure cosa cerchi.",
+      directReply: /\b(hi|hello|hey|thanks|thank you|perfect|great|good)\b/i.test(ultimo)
+        ? "Sure! I’m here to help you find local shops, products, offers and events. What are you looking for?"
+        : "Va bene, sono qui! Posso aiutarti a trovare negozi, prodotti, offerte ed eventi nella tua città. Dimmi pure cosa cerchi.",
       tools: [],
     };
   }
