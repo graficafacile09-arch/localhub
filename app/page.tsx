@@ -109,8 +109,14 @@ export default async function Home() {
           </h1>
 
           <p className="mt-3 max-w-xl text-sm text-white/90 drop-shadow-md md:text-lg">
-            Negozi, professionisti, offerte e servizi locali: cercali, confrontali e acquista
-            restando nella tua città.
+            Negozi, offerte servizi e{" "}
+            <Link
+              href="/attrazioni"
+              className="font-black text-yellow-300 underline decoration-2 underline-offset-2 transition hover:text-yellow-200"
+            >
+              attrazioni della tua città
+            </Link>
+            .
           </p>
 
           {/* Motore di ricerca invariato: stessa action GET e stesso parametro q.
