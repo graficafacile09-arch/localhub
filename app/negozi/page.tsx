@@ -83,7 +83,7 @@ export default async function NegoziPage({
                             {negozio.categoria}
                           </span>
                         )}
-                        <h2 className="min-w-0 truncate text-lg font-semibold tracking-tight text-white drop-shadow-md sm:text-xl">
+                        <h2 className="min-w-0 truncate text-sm font-semibold tracking-tight text-white drop-shadow-md sm:text-base">
                           {negozio.nome}
                         </h2>
                       </div>
@@ -107,7 +107,7 @@ export default async function NegoziPage({
                     />
                   </div>
 
-                  <div className="pointer-events-none absolute -bottom-4 left-3 z-20 h-11 w-11 overflow-hidden rounded-full border-2 border-white bg-white shadow-md sm:h-12 sm:w-12">
+                  <div className="pointer-events-none absolute bottom-3 left-3 z-20 h-11 w-11 overflow-hidden rounded-full border-2 border-white bg-white shadow-md sm:h-12 sm:w-12">
                     {negozio.logo_url ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={negozio.logo_url} alt="" className="h-full w-full object-cover" />
