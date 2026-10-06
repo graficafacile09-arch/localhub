@@ -111,6 +111,8 @@ export default async function RootLayout({
             <span aria-hidden="true">·</span>
             <a href="/venditori" className="font-semibold text-slate-700 underline-offset-2 transition hover:text-blue-600 hover:underline">Termini per i Venditori</a>
             <span aria-hidden="true">·</span>
+            <a href="/regolamento-consegne" className="font-semibold text-slate-700 underline-offset-2 transition hover:text-blue-600 hover:underline">Regolamento Consegne</a>
+            <span aria-hidden="true">·</span>
             <a href="/cookie" className="font-semibold text-slate-700 underline-offset-2 transition hover:text-blue-600 hover:underline">Cookie Policy</a>
             <span aria-hidden="true">·</span>
             <a href="/faq" className="font-semibold text-slate-700 underline-offset-2 transition hover:text-blue-600 hover:underline">FAQ</a>
