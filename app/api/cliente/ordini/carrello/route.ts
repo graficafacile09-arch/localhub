@@ -353,7 +353,6 @@ export async function POST(request: Request) {
             email: emailDestinataria,
           },
           clienteUserId: utenteAutenticato?.id ?? null,
-      metodoPagamentoRitiro: modalita === "ritiro" ? metodoPagamentoRitiro : undefined,
           clienteIp: ip,
           spedizione: {
             indirizzo:
