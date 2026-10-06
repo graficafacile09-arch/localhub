@@ -138,7 +138,9 @@ const SCHEMA_PROMPT = `Interpreta una richiesta dell'utente per la ricerca local
 NON rispondere all'utente. Devi produrre SOLO JSON valido.
 
 Regole:
-- Comprendi italiano naturale, plurali, diminutivi, sinonimi e forme colloquiali.
+- Comprendi italiano e inglese naturali, inclusi plurali, sinonimi, forme colloquiali e abbreviazioni.
+- Se la richiesta è in inglese, produci comunque lo stesso JSON strutturato e normalizza il soggetto in una forma utile alla ricerca nel catalogo.
+- Comprendi richieste come "under 100", "below 100", "up to 100", "over 50", "between 50 and 100", "open now" e "near the center".
 - "birre", "birretta", "birrette" => soggetto canonico "birra".
 - "telefonino", "cellulare", "smartphone" => soggetto canonico "telefono".
 - Non inventare prodotti, negozi o disponibilità.
@@ -340,7 +342,7 @@ export function arricchisciRichiestaConContesto(
   const RE_RESET_PREZZO =
     /\b(?:lascia\s+perdere|togli|rimuovi|ignora)\s+(?:il\s+)?(?:filtro\s+)?(?:del\s+|di\s+)?prezzo\b|\b(?:senza|non\s+importa)\s+(?:il\s+)?(?:limite\s+di\s+)?prezzo\b/i;
   const RE_CLAUSOLA_PREZZO =
-    /\b(?:sotto|sopra|massimo|minimo|meno\s+di|piu\s+di|più\s+di|entro|fino\s+a|tra|da)\s*(?:€\s*)?\d+(?:[.,]\d+)?(?:\s*(?:e|a)\s*(?:€\s*)?\d+(?:[.,]\d+)?)?/gi;
+    /\b(?:sotto|sopra|massimo|minimo|meno\s+di|piu\s+di|più\s+di|entro|fino\s+a|tra|da|under|below|up\s+to|over|above|more\s+than|less\s+than|between)\s*(?:€\s*)?\d+(?:[.,]\d+)?(?:\s*(?:e|a|and|to)\s*(?:€\s*)?\d+(?:[.,]\d+)?)?/gi;
   const estraiCittaEsplicita = (testo: string): string | null => {
     const normalizzata = normalizzaRichiesta(testo);
     const citta = estraiCitta(normalizzata);
@@ -452,7 +454,7 @@ function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): Pi
   if (!q) return null;
   const match = CANONICI_RICERCA.find((x) => x.pattern.test(q));
   const haEsclusioneAlcol = /\b(?:non|senza)\s+(?:alcol(?:ica|ico)?|alcol)\b|\banalcolic(?:a|o|he|i)\b/i.test(q);
-  const haPrezzo = /\b(?:sotto|sopra|massimo|minimo|meno di|piu di|più di|entro|fino a|tra)\b/i.test(q);
+  const haPrezzo = /\b(?:sotto|sopra|massimo|minimo|meno di|piu di|più di|entro|fino a|tra|under|below|up to|over|above|more than|less than|between)\b/i.test(q);
   if (!match && !haEsclusioneAlcol && !haPrezzo && analisi.confidence === "bassa") return null;
 
   // I vincoli NON fanno parte della query di retrieval. Prezzo, negazioni,
@@ -462,8 +464,8 @@ function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): Pi
   let minPrice: number | null = null;
   let maxPrice: number | null = null;
   const range = q.match(/(?:tra|da)\s*(\d+(?:[.,]\d+)?)\s*(?:e|a)\s*(\d+(?:[.,]\d+)?)/i);
-  const max = q.match(/(?:sotto|massimo|meno di|entro|fino a)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)/i);
-  const min = q.match(/(?:sopra|minimo|piu di|più di|oltre)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)/i);
+  const max = q.match(/(?:sotto|massimo|meno di|entro|fino a|under|below|up to|less than)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)/i);
+  const min = q.match(/(?:sopra|minimo|piu di|più di|oltre|over|above|more than)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)/i);
   if (range) {
     minPrice = Number(range[1].replace(",", "."));
     maxPrice = Number(range[2].replace(",", "."));
