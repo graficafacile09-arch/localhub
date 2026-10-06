@@ -112,7 +112,7 @@ export default async function Home() {
             Negozi, offerte servizi e{" "}
             <Link
               href="/attrazioni"
-              className="font-black text-yellow-300 underline decoration-2 underline-offset-2 transition hover:text-yellow-200"
+              className="font-black text-yellow-300 transition hover:text-yellow-200"
             >
               attrazioni della tua città
             </Link>
