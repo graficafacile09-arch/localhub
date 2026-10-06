@@ -50,7 +50,15 @@ export default async function Header() {
               />
             </Link>
             <div className="ml-auto mr-2 flex shrink-0 items-center gap-1 max-sm:mr-0 xl:mr-1">
-              <div className="xl:-ml-2 max-sm:hidden">
+              <div className="flex flex-col items-end gap-0.5 xl:-ml-2 max-sm:hidden">
+                <Link
+                  href="https://castrovillaricittafestival.it/menu/3047961/cosa-visitare"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="whitespace-nowrap text-[10px] font-bold leading-none text-blue-700 transition hover:text-blue-900 hover:underline"
+                >
+                  Attrazioni di Castrovillari
+                </Link>
                 <WeatherWidget />
               </div>
               <div className="flex flex-col items-center gap-1 max-sm:flex-row">
@@ -62,7 +70,17 @@ export default async function Header() {
           </div>
           <div className="max-sm:mt-1">
             <div className="mb-1 hidden px-1 max-sm:block">
-              <WeatherWidget mobileExtended />
+              <div className="flex flex-col items-start gap-0.5">
+                <Link
+                  href="https://castrovillaricittafestival.it/menu/3047961/cosa-visitare"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="whitespace-nowrap text-[10px] font-bold leading-none text-blue-700 transition hover:text-blue-900 hover:underline"
+                >
+                  Attrazioni di Castrovillari
+                </Link>
+                <WeatherWidget mobileExtended />
+              </div>
             </div>
             <FarmacieTurnoWidget />
           </div>
@@ -70,8 +88,6 @@ export default async function Header() {
 
         {/* NAV — visibile anche su mobile (nessun hamburger), compatta e senza overflow */}
         <HeaderNav />
-
-
       </div>
     </header>
   );
