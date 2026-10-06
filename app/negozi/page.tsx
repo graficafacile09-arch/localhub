@@ -68,7 +68,7 @@ export default async function NegoziPage({
                   className="relative overflow-visible rounded-2xl border border-white/60 bg-white shadow-sm transition hover:border-blue-200 hover:shadow-md"
                 >
                   <Link href={`/negozio/${negozio.slug}`} className="group block">
-                    <div className="relative aspect-[21/9] overflow-hidden rounded-t-2xl bg-slate-100">
+                    <div className="relative aspect-[16/9] overflow-hidden rounded-t-2xl bg-slate-100">
                       <div
                         role="img"
                         aria-label={negozio.nome}
@@ -85,12 +85,12 @@ export default async function NegoziPage({
                         )}
                         <div className="flex min-w-0 items-center gap-2">
                           {negozio.logo_url && (
-                            <span className="h-7 w-7 shrink-0 overflow-hidden rounded-full border-2 border-white bg-white shadow-sm">
+                            <span className="h-7 w-7 shrink-0 overflow-hidden rounded-full border border-white/80 bg-white shadow-sm">
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img src={negozio.logo_url} alt="" className="h-full w-full object-cover" />
                             </span>
                           )}
-                          <h2 className="min-w-0 truncate text-sm font-semibold tracking-tight text-white drop-shadow-md sm:text-base">
+                          <h2 className="min-w-0 break-words text-sm font-semibold leading-tight tracking-tight text-white drop-shadow-md sm:text-base">
                             {negozio.nome}
                           </h2>
                         </div>
