@@ -354,7 +354,7 @@ export async function POST(request: Request) {
             data: typeof ritiroRaw.data === "string" ? ritiroRaw.data : null,
             fascia: typeof ritiroRaw.fascia === "string" ? ritiroRaw.fascia : null,
           },
-    metodoPagamentoRitiro: modalita === "ritiro" ? metodoPagamentoRitiro : undefined,
+    metodoPagamentoRitiro: modalita === "ritiro" ? metodoPagamentoRitiro ?? undefined : undefined,
     spedizione:
       modalita === "spedizione"
         ? {
