@@ -32,13 +32,13 @@ export function normalizzaRichiesta(testo: string): string {
 }
 
 const RE_METEO =
-  /\b(meteo|previsioni|che tempo fa|com'e il tempo|come e il tempo|come sara il tempo|piove|piovera|temperatura|quanti gradi|gradi ci sono)\b/i;
+  /\b(meteo|previsioni|che tempo fa|com'e il tempo|come e il tempo|come sara il tempo|piove|piovera|temperatura|quanti gradi|gradi ci sono|weather|forecast|what(?:'s| is) the weather|how(?:'s| is) the weather|will it rain|is it raining|temperature|how many degrees|degrees outside)\b/i;
 
 const RE_FARMACIA =
-  /\b(farmacia|farmacie)\b.{0,50}\b(aperta|aperte|aperto|aperti|adesso|ora|turno|turno oggi)\b|\b(di turno|farmacia di turno|farmacie di turno)\b/i;
+  /\b(farmacia|farmacie)\b.{0,50}\b(aperta|aperte|aperto|aperti|adesso|ora|turno|turno oggi)\b|\b(di turno|farmacia di turno|farmacie di turno)\b|\b(pharmacy|pharmacies)\b.{0,60}\b(open|opened|now|on duty|duty)\b|\b(on duty pharmacy|pharmacy on duty|pharmacies on duty)\b/i;
 
 const RE_SINTOMO =
-  /\b(febbre|temperatura alta|mal di gola|raffreddore|influenza|tosse|mal di testa)\b/i;
+  /\b(febbre|temperatura alta|mal di gola|raffreddore|influenza|tosse|mal di testa|fever|high temperature|sore throat|cold|flu|cough|headache)\b/i;
 
 /** Stato richiesto per le farmacie (allineato al tool searchPharmacies). */
 export type StatoFarmacie = "aperte" | "turno" | "tutte";
@@ -64,7 +64,7 @@ export function pianoIntentoLocale(query: string): PianoIntentoLocale | null {
   if (RE_METEO.test(q)) return { tool: "getWeather" };
 
   if (RE_FARMACIA.test(q) || RE_SINTOMO.test(q)) {
-    const chiedeAperta = /apert|adesso|ora|in questo momento/i.test(q);
+    const chiedeAperta = /apert|adesso|ora|in questo momento|open|now|right now|currently/i.test(q);
     return { tool: "searchPharmacies", stato: chiedeAperta ? "aperte" : "turno" };
   }
 
