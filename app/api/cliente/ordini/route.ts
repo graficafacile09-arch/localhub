@@ -412,7 +412,6 @@ export async function POST(request: Request) {
         ],
         cliente: input.cliente,
         clienteUserId: utenteAutenticato?.id ?? null,
-      metodoPagamentoRitiro: modalita === "ritiro" ? metodoPagamentoRitiro : undefined,
         clienteIp: ip,
         spedizione: {
           indirizzo: input.spedizione!.indirizzo,
