@@ -87,7 +87,7 @@ export default function RitiroForm({
     if (inviando) return;
     if (soggettoVerificaEta && !dichiarazioneEta) { setErrore("Conferma di avere almeno 18 anni per continuare."); return; } // anti doppio invio
 
-    const nuoviErrori: { nome?: string; cognome?: string; data?: string; fascia?: string; email?: string } = {};
+    const nuoviErrori: { nome?: string; cognome?: string; data?: string; fascia?: string; telefono?: string; email?: string } = {};
     if (!nomeCliente.trim()) nuoviErrori.nome = "Inserisci il nome.";
     if (!cognomeCliente.trim()) nuoviErrori.cognome = "Inserisci il cognome.";
     if (!data) nuoviErrori.data = "Seleziona la data del ritiro.";
