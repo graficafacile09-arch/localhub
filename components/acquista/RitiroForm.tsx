@@ -54,6 +54,7 @@ export default function RitiroForm({
   const [cognomeCliente, setCognomeCliente] = useState(p.cognome);
   const [telefonoCliente, setTelefonoCliente] = useState(p.telefono);
   const [emailCliente, setEmailCliente] = useState(p.email);
+  const [metodoPagamentoRitiro, setMetodoPagamentoRitiro] = useState<"contanti_negozio">("contanti_negozio");
 
   const [dichiarazioneEta, setDichiarazioneEta] = useState(false);
   const [inviando, setInviando] = useState(false);
@@ -116,7 +117,7 @@ export default function RitiroForm({
           telefono: telefonoCliente.trim() || null,
           email: emailCliente.trim() || null,
         },
-        metodoPagamentoRitiro: "contanti_negozio",
+        metodoPagamentoRitiro,
         dichiarazioneEta: soggettoVerificaEta && dichiarazioneEta,
         ritiro: {
           data: data || null,
@@ -418,10 +419,18 @@ export default function RitiroForm({
         {/* Metodo di pagamento */}
         <div className="rounded-xl border border-slate-200 bg-white p-4">
           <h3 className="text-sm font-bold text-slate-900">Metodo di pagamento</h3>
-          <button type="button" aria-pressed="true" className="mt-3 flex w-full items-center gap-3 rounded-lg border border-blue-400 bg-blue-50/50 p-3 text-left">
+          <label className="mt-3 flex w-full cursor-pointer items-center gap-3 rounded-lg border border-blue-400 bg-blue-50/50 p-3 text-left">
+            <input
+              type="radio"
+              name="metodo-pagamento-ritiro"
+              value="contanti_negozio"
+              checked={metodoPagamentoRitiro === "contanti_negozio"}
+              onChange={() => setMetodoPagamentoRitiro("contanti_negozio")}
+              className="h-4 w-4 accent-blue-600"
+            />
             <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-100 text-sm font-black text-emerald-700">€</span>
             <span><span className="block text-sm font-bold text-slate-900">Paga in contanti in negozio</span><span className="block text-[11px] text-slate-500">Pagherai il totale direttamente al momento del ritiro.</span></span>
-          </button>
+          </label>
         </div>
 
         {/* Riepilogo ordine */}

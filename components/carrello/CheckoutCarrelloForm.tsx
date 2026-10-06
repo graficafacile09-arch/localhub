@@ -231,7 +231,7 @@ export default function CheckoutCarrelloForm({ prefill}
   const [modalita, setModalita] = useState<"ritiro" | "spedizione">("spedizione");
   const [dataRitiro, setDataRitiro] = useState("");
   const [fascia, setFascia] = useState("");
-  const metodoPagamentoRitiro = "contanti_negozio" as const;
+  const [metodoPagamentoRitiro, setMetodoPagamentoRitiro] = useState<"contanti_negozio" | null>("contanti_negozio");
   const [indirizzo, setIndirizzo] = useState(prefill.indirizzo);
   const [cap, setCap] = useState(prefill.cap);
   const [citta, setCitta] = useState(prefill.citta);
@@ -507,6 +507,7 @@ export default function CheckoutCarrelloForm({ prefill}
 
 
     // modalita === "ritiro": data e fascia oraria OBBLIGATORIE (come nome/cognome).
+    if (metodoPagamentoRitiro !== "contanti_negozio") return "Seleziona il pagamento in contanti in negozio per continuare.";
     const nuoviErrori: { data?: string; fascia?: string}
 
  = {}
@@ -862,10 +863,18 @@ export default function CheckoutCarrelloForm({ prefill}
                 </div>
                 <div className="rounded-xl border border-slate-200 bg-white p-4">
                   <h3 className="text-sm font-bold text-slate-900">Metodo di pagamento</h3>
-                  <button type="button" aria-pressed="true" className="mt-3 flex w-full items-center gap-3 rounded-lg border border-blue-400 bg-blue-50/50 p-3 text-left">
+                  <label className="mt-3 flex w-full cursor-pointer items-center gap-3 rounded-lg border border-blue-400 bg-blue-50/50 p-3 text-left">
+                    <input
+                      type="radio"
+                      name="metodo-pagamento-ritiro"
+                      value="contanti_negozio"
+                      checked={metodoPagamentoRitiro === "contanti_negozio"}
+                      onChange={() => setMetodoPagamentoRitiro("contanti_negozio")}
+                      className="h-4 w-4 accent-blue-600"
+                    />
                     <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-100 text-sm font-black text-emerald-700">€</span>
                     <span><span className="block text-sm font-bold text-slate-900">Paga in contanti in negozio</span><span className="block text-[11px] text-slate-500">Pagherai il totale direttamente al momento del ritiro.</span></span>
-                  </button>
+                  </label>
                 </div>
                 <p className="text-[11px] leading-4 text-slate-400">
                   Pagherai in contanti direttamente al momento del ritiro.
