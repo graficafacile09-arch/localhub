@@ -83,9 +83,17 @@ export default async function NegoziPage({
                             {negozio.categoria}
                           </span>
                         )}
-                        <h2 className="min-w-0 truncate text-sm font-semibold tracking-tight text-white drop-shadow-md sm:text-base">
-                          {negozio.nome}
-                        </h2>
+                        <div className="flex min-w-0 items-center gap-2">
+                          {negozio.logo_url && (
+                            <span className="h-7 w-7 shrink-0 overflow-hidden rounded-full border-2 border-white bg-white shadow-sm">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={negozio.logo_url} alt="" className="h-full w-full object-cover" />
+                            </span>
+                          )}
+                          <h2 className="min-w-0 truncate text-sm font-semibold tracking-tight text-white drop-shadow-md sm:text-base">
+                            {negozio.nome}
+                          </h2>
+                        </div>
                       </div>
                     </div>
 
@@ -105,13 +113,6 @@ export default async function NegoziPage({
                       description={negozio.descrizione ?? ""}
                       url={`/negozio/${negozio.slug}`}
                     />
-                  </div>
-
-                  <div className="pointer-events-none absolute bottom-3 left-3 z-20 h-11 w-11 overflow-hidden rounded-full border-2 border-white bg-white shadow-md sm:h-12 sm:w-12">
-                    {negozio.logo_url ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={negozio.logo_url} alt="" className="h-full w-full object-cover" />
-                    ) : null}
                   </div>
 
                   <FavoritoButton
