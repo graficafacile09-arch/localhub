@@ -78,7 +78,7 @@ export default async function NegoziPage({
                       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-900/25 to-transparent" />
                       <div className="absolute inset-x-0 bottom-0 p-3 sm:p-3.5">
                         {negozio.categoria && (
-                          <span className="mb-1.5 inline-flex items-center gap-1 rounded-full bg-yellow-400 px-2 py-0.5 text-[9px] font-black uppercase tracking-wide text-yellow-950 shadow-sm sm:text-[10px]">
+                          <span className="mb-1.5 inline-flex items-center gap-1 rounded-full bg-yellow-400 px-2 py-0.5 text-[9px] font-black uppercase tracking-wide text-yellow-950 shadow-sm sm:text-[10px] whitespace-nowrap">
                             <Tag className="h-2.5 w-2.5 sm:h-3 sm:w-3" aria-hidden />
                             {negozio.categoria}
                           </span>
