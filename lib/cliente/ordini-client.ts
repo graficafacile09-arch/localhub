@@ -23,7 +23,9 @@ export type CreaOrdinePayload = {
   quantita: number;
   modalita: "ritiro" | "spedizione";
   cliente: ClienteCheckoutPayload;
-  ritiro?: { data?: string | null; fascia?: string | null } | null;\n  /** Metodo obbligatorio per il ritiro in negozio. */\n  metodoPagamentoRitiro?: "contanti_negozio";
+  ritiro?: { data?: string | null; fascia?: string | null } | null;
+  /** Metodo obbligatorio per il ritiro in negozio. */
+  metodoPagamentoRitiro?: "contanti_negozio";
   spedizione?: {
     indirizzo: string;
     cap: string;
