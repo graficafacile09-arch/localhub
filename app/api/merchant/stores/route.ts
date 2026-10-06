@@ -39,6 +39,24 @@ export async function POST(request: Request) {
 
   const supabase = createAdminSupabaseClient();
 
+  // Un venditore può avere un solo negozio attivo.
+  // Il controllo applicativo evita di arrivare al database nella maggior parte dei casi;
+  // il trigger DB mantiene comunque la regola anche in caso di richieste concorrenti.
+  const { count: existingStoreCount, error: existingStoreError } = await supabase
+    .from("negozi")
+    .select("id", { count: "exact", head: true })
+    .eq("owner_user_id", user.id)
+    .is("deleted_at", null);
+
+  if (existingStoreError) {
+    console.error("[/api/merchant/stores] Errore verifica negozio esistente:", existingStoreError);
+    return apiError("CREATE_FAILED", "Impossibile verificare il negozio esistente. Riprova tra poco.", 500);
+  }
+
+  if ((existingStoreCount ?? 0) > 0) {
+    return apiError("STORE_ALREADY_EXISTS", "Hai già un negozio registrato. Ogni venditore può registrare un solo negozio.", 409);
+  }
+
   const slugBase = (body.slug as string)?.trim() || toSlug(nome);
   const slug = await generaSlugUnivoco("negozi", slugBase || "negozio");
 
@@ -66,6 +84,11 @@ export async function POST(request: Request) {
 
   if (error) {
     console.error("[/api/merchant/stores] Errore creazione negozio:", error);
+
+    if (error.code === "23505") {
+      return apiError("STORE_ALREADY_EXISTS", "Hai già un negozio registrato. Ogni venditore può registrare un solo negozio.", 409);
+    }
+
     return apiError("CREATE_FAILED", "Impossibile creare il negozio. Riprova tra poco.", 500);
   }
 
