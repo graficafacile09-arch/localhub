@@ -142,14 +142,14 @@ export default function FavoritoButton({
       disabled={inviando}
       aria-pressed={attivoLocal}
       aria-label={ariaEtichetta}
-      className={`${base} h-9 w-9 shadow-md ${
+      className={`${base} h-7 w-7 shadow-md ${
         attivoLocal
           ? "bg-yellow-500 text-white hover:bg-yellow-600"
           : "bg-yellow-50 text-yellow-700 backdrop-blur hover:bg-yellow-100 hover:text-yellow-800"
       } ${className}`}
     >
       <Heart
-        className={`h-4 w-4 ${attivoLocal ? "fill-white" : ""}`}
+        className={`h-3.5 w-3.5 ${attivoLocal ? "fill-white" : ""}`}
         aria-hidden
       />
     </button>
