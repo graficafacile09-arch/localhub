@@ -87,7 +87,6 @@ export default async function Home() {
           HERO — fotografica, messaggio immediato, ricerca + AI
           ═══════════════════════════════════════════════════════════════════ */}
       <section className="relative overflow-hidden rounded-b-[2rem] bg-slate-900 shadow-lg shadow-slate-900/10 sm:rounded-b-[2.5rem]">
-        {/* La foto copre tutta la HERO e non ne determina l'altezza. */}
         <Image
           src="/hero-via-roma-castrovillari-1400x1050.jpg"
           alt="Via Roma a Castrovillari"
@@ -97,7 +96,6 @@ export default async function Home() {
           className="absolute inset-0 h-full w-full object-cover object-center"
         />
 
-        {/* Gradiente leggero solo nella zona del testo: la parte bassa resta luminosa. */}
         <div
           aria-hidden="true"
           className="absolute inset-0 bg-gradient-to-b from-slate-950/60 via-slate-950/25 to-transparent"
@@ -109,8 +107,14 @@ export default async function Home() {
           </h1>
 
           <p className="mt-3 max-w-xl text-sm text-white/90 drop-shadow-md md:text-lg">
-            Negozi, professionisti, offerte e servizi locali: cercali, confrontali e acquista
-            restando nella tua città.
+            Negozi, offerte servizi e{" "}
+            <Link
+              href="/attrazioni"
+              className="font-black text-yellow-300 underline decoration-2 underline-offset-2 transition hover:text-yellow-200"
+            >
+              attrazioni della tua città
+            </Link>
+            .
           </p>
 
           {/* Motore di ricerca invariato: stessa action GET e stesso parametro q.
@@ -161,11 +165,6 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════════════════════════
-          ECCELLENZE CALABRESI (solo se ce ne sono) — vetrina territoriale.
-          Le categorie restano nella navigazione (barra Home/Negozi/Categorie):
-          non vengono più duplicate nella pagina.
-          ═══════════════════════════════════════════════════════════════════ */}
       {prodottiTipici.length > 0 && (
         <section className="mx-auto max-w-7xl px-4 py-12 md:px-6 md:py-14">
           <SezioneHeader
@@ -174,7 +173,6 @@ export default async function Home() {
             linkLabel="Vedi tutti"
             titoloClassName="mt-1 inline-block whitespace-nowrap rounded-lg bg-yellow-400 px-2 py-1 text-[13px] font-black tracking-tight text-blue-900 shadow-sm transition hover:bg-yellow-300 sm:text-base md:px-3 md:py-1.5 md:text-2xl"
           />
-
           <EccellenzeCalabresiGrid
             prodotti={prodottiTipici}
             statoPreferiti={statoPreferiti}
@@ -182,9 +180,6 @@ export default async function Home() {
         </section>
       )}
 
-      {/* ═══════════════════════════════════════════════════════════════════
-          NEGOZI IN EVIDENZA (solo se ce ne sono)
-          ═══════════════════════════════════════════════════════════════════ */}
       {negozi.length > 0 && (
         <section className="border-y border-slate-100 bg-white py-12 md:py-14">
           <div className="mx-auto max-w-7xl px-4 md:px-6">
@@ -194,14 +189,8 @@ export default async function Home() {
               href="/negozi?featured=1"
               linkLabel="Vedi tutti"
             />
-
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {negozi.map((negozio) => {
-                // Stessa logica di rendering della vetrina pubblica (scheda
-                // aperta del negozio e CategoryStoreCard): la copertina è SEMPRE
-                // la foto principale della card. Il logo NON viene mai usato
-                // come sfondo (era la causa dello zoom): resta nel badge
-                // circolare sovrapposto, piccolo, come nella scheda aperta.
                 const immaginiCopertina = getNegozioCardImmagine({
                   copertina_url: (negozio.copertina_url as string | null) ?? null,
                   logo_url: null,
@@ -284,9 +273,6 @@ export default async function Home() {
         </section>
       )}
 
-      {/* ═══════════════════════════════════════════════════════════════════
-          PRODOTTI IN EVIDENZA (solo se ce ne sono)
-          ═══════════════════════════════════════════════════════════════════ */}
       {prodottiInEvidenza.length > 0 && (
         <section className="mx-auto max-w-7xl px-4 py-12 md:px-6 md:py-14">
           <SezioneHeader
@@ -295,7 +281,6 @@ export default async function Home() {
             href="/negozi"
             linkLabel="Esplora i negozi"
           />
-
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-5 lg:grid-cols-4">
             {prodottiInEvidenza.map((prodotto) => {
               const prodottoId = String(prodotto.id);
@@ -320,9 +305,6 @@ export default async function Home() {
         </section>
       )}
 
-      {/* ═══════════════════════════════════════════════════════════════════
-          TERRITORIO — il valore del commercio locale (banda blu)
-          ═══════════════════════════════════════════════════════════════════ */}
       <section data-pino-footer-zone="true" className="bg-gradient-to-br from-blue-800 via-blue-900 to-blue-950 text-white">
         <div className="mx-auto max-w-7xl px-4 py-16 text-center md:px-6 md:py-20">
           <p className="section-label !text-blue-200">Per i commercianti</p>
@@ -352,10 +334,6 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════════════════════════
-          FOOTER HOMEPAGE — ordinato e non ridondante
-          (il footer globale con la riga legale resta nel layout root)
-          ═══════════════════════════════════════════════════════════════════ */}
       <footer className="bg-slate-950 text-slate-300">
         <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:grid-cols-2 md:px-6 lg:grid-cols-4">
           <div>
@@ -373,23 +351,11 @@ export default async function Home() {
               Esplora
             </h3>
             <ul className="mt-3 space-y-2.5 text-sm">
-              <li>
-                <Link href="/" className="transition hover:text-yellow-300">Home</Link>
-              </li>
-              <li>
-                <Link href="/negozi" className="transition hover:text-yellow-300">Negozi</Link>
-              </li>
-              <li>
-                <Link href="/categorie" className="transition hover:text-yellow-300">Categorie</Link>
-              </li>
-              <li>
-                <Link href="/prodotti-tipici" className="transition hover:text-yellow-300">ECCELLENZE CALABRESI</Link>
-              </li>
-              <li>
-                <Link href="/negozi?featured=1" className="transition hover:text-yellow-300">
-                  Negozi in evidenza
-                </Link>
-              </li>
+              <li><Link href="/" className="transition hover:text-yellow-300">Home</Link></li>
+              <li><Link href="/negozi" className="transition hover:text-yellow-300">Negozi</Link></li>
+              <li><Link href="/categorie" className="transition hover:text-yellow-300">Categorie</Link></li>
+              <li><Link href="/prodotti-tipici" className="transition hover:text-yellow-300">ECCELLENZE CALABRESI</Link></li>
+              <li><Link href="/negozi?featured=1" className="transition hover:text-yellow-300">Negozi in evidenza</Link></li>
             </ul>
           </div>
 
@@ -398,21 +364,9 @@ export default async function Home() {
               Le tue aree
             </h3>
             <ul className="mt-3 space-y-2.5 text-sm">
-              <li>
-                <Link href="/login?area=cliente" className="transition hover:text-yellow-300">
-                  Area Clienti
-                </Link>
-              </li>
-              <li>
-                <Link href="/login?area=merchant" className="transition hover:text-yellow-300">
-                  Area Venditore
-                </Link>
-              </li>
-              <li>
-                <Link href="/login?area=admin" className="transition hover:text-yellow-300">
-                  Amministrazione
-                </Link>
-              </li>
+              <li><Link href="/login?area=cliente" className="transition hover:text-yellow-300">Area Clienti</Link></li>
+              <li><Link href="/login?area=merchant" className="transition hover:text-yellow-300">Area Venditore</Link></li>
+              <li><Link href="/login?area=admin" className="transition hover:text-yellow-300">Amministrazione</Link></li>
             </ul>
           </div>
 
