@@ -104,7 +104,7 @@ export default async function Home() {
         />
 
         <div className="relative z-10 mx-auto max-w-5xl px-4 py-14 text-left md:px-6 md:py-20">
-          <h1 className="max-w-2xl text-3xl font-black leading-tight tracking-tight text-white drop-shadow-lg md:text-5xl">
+          <h1 className="max-w-4xl text-3xl font-black leading-tight tracking-tight text-white drop-shadow-lg md:text-5xl">
             Negozi, offerte servizi e{" "}
             <Link
               href="/attrazioni"
