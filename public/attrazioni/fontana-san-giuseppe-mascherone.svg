@@ -1,18 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 912 720" role="img" aria-labelledby="title">
   <title id="title">Mascherone della Fontana di San Giuseppe di Castrovillari</title>
   <defs>
-    <filter id="antique" x="-20%" y="-20%" width="140%" height="140%">
-      <feColorMatrix type="matrix" values="
-        .393 .769 .189 0 0
-        .349 .686 .168 0 0
-        .272 .534 .131 0 0
-        0 0 0 1 0"/>
-      <feComponentTransfer>
-        <feFuncR type="linear" slope="0.9" intercept="0.06"/>
-        <feFuncG type="linear" slope="0.82" intercept="0.04"/>
-        <feFuncB type="linear" slope="0.62" intercept="0.02"/>
-      </feComponentTransfer>
-    </filter>
     <clipPath id="mask">
       <path d="M251 133
         C296 79 365 57 455 61
@@ -25,9 +13,9 @@
         C187 245 207 178 251 133 Z"/>
     </clipPath>
   </defs>
-  <g clip-path="url(#mask)" filter="url(#antique)">
+  <g clip-path="url(#mask)">
     <image href="https://cdn.imagetourls.com/uploads/tyImg/1l4CKIlT.jpg"
       x="0" y="0" width="912" height="1216"
-      preserveAspectRatio="none"/>
+      preserveAspectRatio="xMidYMid slice"/>
   </g>
 </svg>
