@@ -81,6 +81,13 @@ export default async function Home() {
 
   return (
     <main className="min-h-screen bg-[#eef3f8]">
+      {/* Preview: ricerca spostata in cima alla pagina, sopra il logo/header, su banda blu a tutta larghezza. */}
+      <div className="w-full bg-blue-900 shadow-md">
+        <div className="mx-auto max-w-7xl px-4 py-3 md:px-6 md:py-4">
+          <HeroSearchBar />
+        </div>
+      </div>
+
       <Header />
 
       {/* ═══════════════════════════════════════════════════════════════════
@@ -104,10 +111,7 @@ export default async function Home() {
         />
 
         <div className="relative z-10 mx-auto max-w-5xl px-4 py-14 text-left md:px-6 md:py-20">
-          {/* Preview: motore di ricerca sopra il testo, con pannello blu per aumentare il contrasto sulla foto. */}
-          <div className="rounded-2xl bg-blue-900/95 p-3 shadow-xl md:p-4"><HeroSearchBar /></div>
-
-          <div className="mt-6">
+          <div>
             <h1 className="max-w-2xl text-3xl font-black leading-tight tracking-tight text-white drop-shadow-lg md:text-5xl">
               Tutto quello che cerchi... <span className="text-yellow-300">è già</span> nella tua città.
             </h1>
