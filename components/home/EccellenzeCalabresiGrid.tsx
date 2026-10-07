@@ -40,7 +40,7 @@ export default function EccellenzeCalabresiGrid({
 
   return (
     <div>
-      <div className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2 sm:mx-0 sm:grid sm:grid-cols-3 sm:gap-3 sm:overflow-visible sm:px-0 sm:pb-0 md:gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-4 lg:grid-cols-4">
         {visibili.map((prodotto) => {
           const prodottoId = String(prodotto.id);
           return (
