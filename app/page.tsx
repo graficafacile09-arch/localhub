@@ -1,4 +1,5 @@
 import Header from "@/components/Header/Header";
+import HeaderNav from "@/components/Header/HeaderNav";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -83,12 +84,13 @@ export default async function Home() {
     <main className="min-h-screen bg-[#eef3f8]">
       {/* Preview: ricerca spostata in cima alla pagina, sopra il logo/header, su banda blu a tutta larghezza. */}
       <div className="w-full bg-blue-900 shadow-md">
-        <div className="mx-auto max-w-7xl px-4 py-3 md:px-6 md:py-4">
+        <div className="mx-auto flex max-w-7xl flex-col items-center gap-2 px-4 py-3 md:px-6 md:py-4">
           <HeroSearchBar />
+          <HeaderNav />
         </div>
       </div>
 
-      <Header />
+      <Header showNav={false} />
 
       {/* ═══════════════════════════════════════════════════════════════════
           HERO — fotografica, messaggio immediato, ricerca + AI
