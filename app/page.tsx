@@ -116,11 +116,11 @@ export default async function Home() {
             >
               <span>attrazioni della tua città</span>
               <ArrowRight
-                className="ml-1 inline-block h-4 w-4 align-middle transition-transform duration-200 group-hover/attrazioni:translate-x-0.5 md:h-5 md:w-5"
+                className="ml-1.5 inline-block h-5 w-5 align-middle transition-transform duration-200 group-hover/attrazioni:translate-x-0.5 md:h-6 md:w-6"
+                strokeWidth={3}
                 aria-hidden
               />
             </Link>
-            .
           </p>
 
           {/* Motore di ricerca invariato: stessa action GET e stesso parametro q.
