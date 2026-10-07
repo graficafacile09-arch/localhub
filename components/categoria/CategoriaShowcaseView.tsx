@@ -88,14 +88,16 @@ export default function CategoriaShowcaseView({
         </div>
       ) : (
         /* Griglia negozi */
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-3 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3">
           {negozi.map((negozio) => (
+            <div className="w-[calc(50vw-1.25rem)] shrink-0 snap-start sm:w-auto sm:shrink">
             <CategoryStoreCard
               key={negozio.id}
               negozio={negozio}
               preferitoAttivo={chiaviPreferiti?.has(chiavePreferito("negozio", negozio.id))}
               autenticato={autenticato}
             />
+            </div>
           ))}
         </div>
       )}
