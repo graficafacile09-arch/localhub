@@ -194,7 +194,7 @@ export default async function Home() {
               linkLabel="Vedi tutti"
             />
 
-            <div className="-mx-1 flex snap-x snap-mandatory gap-4 overflow-x-auto px-1 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-6 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-3">
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {negozi.map((negozio) => {
                 // Stessa logica di rendering della vetrina pubblica (scheda
                 // aperta del negozio e CategoryStoreCard): la copertina è SEMPRE
@@ -217,7 +217,7 @@ export default async function Home() {
                 return (
                   <div
                     key={negozio.id}
-                    className="group relative flex w-[calc(50vw-1.5rem)] shrink-0 snap-start flex-col justify-between overflow-visible rounded-2xl sm:w-auto sm:shrink border border-slate-100 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md"
+                    className="group relative flex flex-col justify-between overflow-visible rounded-2xl border border-slate-100 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md"
                   >
                     <Link
                       href={`/negozio/${negozio.slug}`}
@@ -295,7 +295,7 @@ export default async function Home() {
             linkLabel="Esplora i negozi"
           />
 
-          <div className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2 sm:mx-0 sm:grid sm:grid-cols-3 sm:gap-3 sm:overflow-visible sm:px-0 sm:pb-0 md:gap-5 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-5 lg:grid-cols-4">
             {prodottiInEvidenza.map((prodotto) => {
               const prodottoId = String(prodotto.id);
               return (
