@@ -104,7 +104,7 @@ export default async function Home() {
         />
 
         <div className="relative z-10 mx-auto max-w-5xl px-4 py-14 text-left md:px-6 md:py-20">
-          <h1 className="font-[var(--font-plus-jakarta)] max-w-4xl text-2xl font-semibold leading-tight tracking-tight text-white drop-shadow-lg md:text-4xl">
+          <h1 className="max-w-4xl text-2xl font-semibold leading-tight tracking-tight text-white drop-shadow-lg md:text-4xl">
             Tutto ciò che cerchi è già nella tua città. Negozi, offerte, servizi e{" "}
             <Link
               href="/attrazioni"
