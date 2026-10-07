@@ -104,24 +104,20 @@ export default async function Home() {
         />
 
         <div className="relative z-10 mx-auto max-w-5xl px-4 py-14 text-left md:px-6 md:py-20">
-          <h1 className="max-w-2xl text-2xl font-black leading-tight tracking-tight text-white drop-shadow-lg md:text-4xl">
-            Tutto ciò che cerchi è già nella tua città.
-          </h1>
-
-          <p className="mt-3 max-w-xl text-[13px] leading-5 text-white/95 drop-shadow-md md:text-base md:leading-6">
-            Negozi, offerte, servizi e{" "}
+          <h1 className="max-w-4xl text-2xl font-black leading-tight tracking-tight text-white drop-shadow-lg md:text-4xl">
+            Tutto ciò che cerchi è già nella tua città. Negozi, offerte, servizi e{" "}
             <Link
               href="/attrazioni"
-              className="group/attrazioni inline-flex items-center whitespace-nowrap font-black text-yellow-300 transition hover:text-yellow-200"
+              className="group/attrazioni whitespace-nowrap text-yellow-300 transition hover:text-yellow-200"
             >
-              <span>attrazioni della tua città</span>
+              attrazioni della tua città
               <ArrowRight
-                className="ml-1.5 inline-block h-5 w-5 align-middle transition-transform duration-200 group-hover/attrazioni:translate-x-0.5 md:h-6 md:w-6"
+                className="ml-1 inline-block h-5 w-5 align-[-0.1em] transition-transform duration-200 group-hover/attrazioni:translate-x-0.5 md:h-6 md:w-6"
                 strokeWidth={3}
                 aria-hidden
               />
             </Link>
-          </p>
+          </h1>
 
           {/* Motore di ricerca invariato: stessa action GET e stesso parametro q.
               HeroSearchBar (client) passa la query digitata anche al pulsante
