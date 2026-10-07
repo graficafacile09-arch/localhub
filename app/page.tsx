@@ -45,7 +45,7 @@ function SezioneHeader({
   return (
     <div className="mb-6 flex items-end justify-between gap-4">
       <div>
-        {label && <p className="section-label">{label}</p>}
+        {label && <p className="section-label font-black text-slate-700">{label}</p>}
         <h2
           className={
             titoloClassName ??
@@ -112,7 +112,7 @@ export default async function Home() {
             Negozi, offerte servizi e{" "}
             <Link
               href="/attrazioni"
-              className="group/attrazioni font-black text-yellow-300 transition hover:text-yellow-200"
+              className="group/attrazioni inline-flex items-center whitespace-nowrap font-black text-yellow-300 transition hover:text-yellow-200"
             >
               <span>attrazioni della tua città</span>
               <ArrowRight
@@ -133,7 +133,7 @@ export default async function Home() {
       {/* ═══════════════════════════════════════════════════════════════════
           VALUE STRIP — perché LocalHub (3 promesse, nessuna duplicazione)
           ═══════════════════════════════════════════════════════════════════ */}
-      <section className="border-b border-slate-100 bg-white">
+      <section className="border-y border-slate-200 bg-white shadow-sm">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-8 sm:grid-cols-3 md:px-6 md:py-10">
           <div className="flex items-start gap-3.5">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-yellow-400 text-blue-900 shadow-[0_4px_14px_-4px_rgba(202,138,4,0.45)]">
