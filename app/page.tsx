@@ -132,7 +132,7 @@ export default async function Home() {
 
       {/* ═══════════════════════════════════════════════════════════════════
           VALUE STRIP — perché LocalHub (3 promesse, nessuna duplicazione)
-          ═══════════════════════════════════════════════════════════════════ */
+          ═══════════════════════════════════════════════════════════════════ */}
       <section className="border-b border-slate-100 bg-white">
         <div className="mx-auto grid max-w-7xl gap-8 px-4 py-8 sm:grid-cols-3 md:px-6 md:py-10">
           <div className="flex items-start gap-3.5">
@@ -175,7 +175,7 @@ export default async function Home() {
           ECCELLENZE CALABRESI (solo se ce ne sono) — vetrina territoriale.
           Le categorie restano nella navigazione (barra Home/Negozi/Categorie):
           non vengono più duplicate nella pagina.
-          ═══════════════════════════════════════════════════════════════════ */
+          ═══════════════════════════════════════════════════════════════════ */}
       {prodottiTipici.length > 0 && (
         <section className="mx-auto max-w-7xl px-4 py-12 md:px-6 md:py-14">
           <SezioneHeader
@@ -194,7 +194,7 @@ export default async function Home() {
 
       {/* ═══════════════════════════════════════════════════════════════════
           NEGOZI IN EVIDENZA (solo se ce ne sono)
-          ═══════════════════════════════════════════════════════════════════ */
+          ═══════════════════════════════════════════════════════════════════ */}
       {negozi.length > 0 && (
         <section className="border-y border-slate-100 bg-white py-12 md:py-14">
           <div className="mx-auto max-w-7xl px-4 md:px-6">
@@ -207,6 +207,11 @@ export default async function Home() {
 
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {negozi.map((negozio) => {
+                // Stessa logica di rendering della vetrina pubblica (scheda
+                // aperta del negozio e CategoryStoreCard): la copertina è SEMPRE
+                // la foto principale della card. Il logo NON viene mai usato
+                // come sfondo (era la causa dello zoom): resta nel badge
+                // circolare sovrapposto, piccolo, come nella scheda aperta.
                 const immaginiCopertina = getNegozioCardImmagine({
                   copertina_url: (negozio.copertina_url as string | null) ?? null,
                   logo_url: null,
@@ -360,7 +365,7 @@ export default async function Home() {
       {/* ═══════════════════════════════════════════════════════════════════
           FOOTER HOMEPAGE — ordinato e non ridondante
           (il footer globale con la riga legale resta nel layout root)
-          ═══════════════════════════════════════════════════════════════════ */
+          ═══════════════════════════════════════════════════════════════════ */}
       <footer className="bg-slate-950 text-slate-300">
         <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:grid-cols-2 md:px-6 lg:grid-cols-4">
           <div>
