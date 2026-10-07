@@ -105,12 +105,19 @@ export default async function Home() {
 
         <div className="relative z-10 mx-auto max-w-5xl px-4 py-14 text-left md:px-6 md:py-20">
           <h1 className="max-w-2xl text-3xl font-black leading-tight tracking-tight text-white drop-shadow-lg md:text-5xl">
-            Tutto quello che cerchi... <span className="text-yellow-300">è già</span> nella tua città.
+            Negozi, offerte servizi e{" "}
+            <Link
+              href="/attrazioni"
+              className="group/attrazioni inline-flex items-center whitespace-nowrap font-black text-yellow-300 transition hover:text-yellow-200"
+            >
+              <span>attrazioni della tua città</span>
+              <ArrowRight
+                className="ml-1.5 inline-block h-5 w-5 align-middle transition-transform duration-200 group-hover/attrazioni:translate-x-0.5 md:h-6 md:w-6"
+                strokeWidth={3}
+                aria-hidden
+              />
+            </Link>
           </h1>
-
-          <p className="mt-3 max-w-xl text-sm text-white/90 drop-shadow-md md:text-lg">
-            Negozi, offerte e servizi locali: cercali, confrontali e acquista restando nella tua città.
-          </p>
 
           {/* Motore di ricerca invariato: stessa action GET e stesso parametro q.
               HeroSearchBar (client) passa la query digitata anche al pulsante
