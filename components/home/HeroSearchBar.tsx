@@ -4,7 +4,7 @@ import { Search } from "lucide-react";
 
 export default function HeroSearchBar() {
   return (
-    <div className="mt-7 max-w-xl">
+    <div className="w-full max-w-2xl">
       <form action="/ricerca" method="GET">
         <div className="flex items-center rounded-full bg-white/95 p-1.5 shadow-lg shadow-black/25 transition focus-within:ring-2 focus-within:ring-yellow-300">
           <Search className="ml-3 h-5 w-5 shrink-0 text-slate-400 sm:ml-4" />
