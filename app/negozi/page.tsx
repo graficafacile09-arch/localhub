@@ -54,7 +54,7 @@ export default async function NegoziPage({
             </Link>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-x-2 gap-y-5 sm:grid-cols-3 lg:grid-cols-4">
+          <div className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2 sm:mx-0 sm:grid sm:grid-cols-3 sm:gap-3 sm:overflow-visible sm:px-0 sm:pb-0 lg:grid-cols-4">
             {negozi.map((negozio) => {
               const imageUrl = getNegozioCardImmagine({
                 copertina_url: negozio.copertina_url,
@@ -65,7 +65,7 @@ export default async function NegoziPage({
               return (
                 <div
                   key={negozio.id}
-                  className="relative overflow-visible rounded-2xl border border-white/60 bg-white shadow-sm transition hover:border-blue-200 hover:shadow-md"
+                  className="relative w-[calc(50vw-1.25rem)] shrink-0 snap-start overflow-visible rounded-2xl sm:w-auto sm:shrink border border-white/60 bg-white shadow-sm transition hover:border-blue-200 hover:shadow-md"
                 >
                   <Link href={`/negozio/${negozio.slug}`} className="group block">
                     <div className="relative aspect-[4/3] overflow-hidden rounded-t-2xl bg-slate-100">
