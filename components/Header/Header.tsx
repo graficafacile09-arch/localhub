@@ -20,7 +20,7 @@ import { getGuestMode } from "@/lib/auth/guest";
  * Il menu Account riflette l'AREA ATTIVA della sessione (cookie httpOnly
  * lh_area): cliente, venditore o amministratore.
  */
-export default async function Header() {
+export default async function Header({ showNav = true }: { showNav?: boolean }) {
   const account = await getDatiAccount();
   // Modalità ospite: cookie httpOnly lh_guest letto SOLO lato server e
   // rilevante solo per l'utente anonimo (per l'autenticato il proxy la
@@ -69,7 +69,7 @@ export default async function Header() {
         </div>
 
         {/* NAV — visibile anche su mobile (nessun hamburger), compatta e senza overflow */}
-        <HeaderNav />
+        {showNav && <HeaderNav />}
 
 
       </div>
