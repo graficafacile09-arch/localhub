@@ -17,8 +17,8 @@ import {
 import { getNegozioCardImmagine } from "@/lib/negozi-card-immagini";
 import { chiavePreferito, getStatoPreferitiPerPagina } from "@/lib/cliente/favorites";
 import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
-import ProductCard from "@/components/home/ProductCard";
 import EccellenzeCalabresiGrid from "@/components/home/EccellenzeCalabresiGrid";
+import HomepageProductCarousel from "@/components/home/HomepageProductCarousel";
 
 // La homepage deve riflettere in tempo reale i negozi in evidenza flaggati
 // dal merchant (il toggle "In evidenza" della dashboard), quindi non viene
@@ -295,29 +295,10 @@ export default async function Home() {
             linkLabel="Esplora i negozi"
           />
 
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-5 lg:grid-cols-4">
-            {prodottiInEvidenza.map((prodotto) => {
-              const prodottoId = String(prodotto.id);
-              return (
-                <div className="w-[calc(50vw-1.25rem)] shrink-0 snap-start sm:w-auto sm:shrink">
-                <ProductCard
-                  key={prodottoId}
-                  id={prodottoId}
-                  slug={(prodotto.slug as string) ?? prodottoId}
-                  nome={prodotto.nome as string}
-                  prezzo={prodotto.prezzo as number}
-                  categoria={(prodotto.categoria as string) ?? null}
-                  negozio_nome={(prodotto.negozio_nome as string) ?? ""}
-                  negozio_id={String(prodotto.negozio_id ?? "")}
-                  immagine_principale={(prodotto.immagine_principale as string) ?? null}
-                  haVarianti={Boolean(prodotto.ha_varianti)}
-                  preferitoAttivo={statoPreferiti.chiavi.has(chiavePreferito("prodotto", prodottoId))}
-                  autenticato={statoPreferiti.autenticato}
-                />
-                </div>
-              );
-            })}
-          </div>
+          <HomepageProductCarousel
+            prodotti={prodottiInEvidenza}
+            statoPreferiti={statoPreferiti}
+          />
         </section>
       )}
 
