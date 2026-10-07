@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 912 720" role="img" aria-labelledby="title">
+  <title id="title">Mascherone della Fontana di San Giuseppe di Castrovillari</title>
+  <defs>
+    <clipPath id="mask">
+      <path d="M251 133
+        C296 79 365 57 455 61
+        C548 57 623 81 670 133
+        C710 178 727 245 716 315
+        C707 383 681 442 639 492
+        C596 543 538 579 456 592
+        C372 580 313 544 271 494
+        C228 443 204 382 196 314
+        C187 245 207 178 251 133 Z"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#mask)">
+    <image href="https://cdn.imagetourls.com/uploads/tyImg/1l4CKIlT.jpg"
+      x="0" y="0" width="912" height="1216"
+      preserveAspectRatio="xMidYMid slice"/>
+  </g>
+</svg>

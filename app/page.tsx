@@ -112,11 +112,15 @@ export default async function Home() {
             Negozi, offerte servizi e{" "}
             <Link
               href="/attrazioni"
-              className="font-black text-yellow-300 transition hover:text-yellow-200"
+              className="group/attrazioni font-black text-yellow-300 transition hover:text-yellow-200"
             >
-              attrazioni della tua città
+              <span>attrazioni della tua città</span>
+              <ArrowRight
+                className="ml-1.5 inline-block h-5 w-5 align-middle transition-transform duration-200 group-hover/attrazioni:translate-x-0.5 md:h-6 md:w-6"
+                strokeWidth={3}
+                aria-hidden
+              />
             </Link>
-            .
           </p>
 
           {/* Motore di ricerca invariato: stessa action GET e stesso parametro q.
