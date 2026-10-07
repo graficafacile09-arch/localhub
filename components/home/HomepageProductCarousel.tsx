@@ -43,12 +43,11 @@ export default function HomepageProductCarousel({
 
     setCanScrollLeft(desktop && haScorrimento && el.scrollLeft > 2);
     setCanScrollRight(
-      desktop &&
-        prodotti.length > 4 &&
-        haScorrimento &&
+      haScorrimento &&
+        (desktop ? prodotti.length > 4 : prodotti.length > 2) &&
         el.scrollLeft + el.clientWidth < el.scrollWidth - 2
     );
-  }, []);
+  }, [prodotti.length]);
 
   useEffect(() => {
     const el = viewportRef.current;
@@ -82,10 +81,21 @@ export default function HomepageProductCarousel({
             type="button"
             onClick={() => scorri("sinistra")}
             aria-label="Mostra i prodotti precedenti"
-            disabled={!canScrollLeft}
-            className="absolute left-0 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-blue-900 shadow-md transition hover:bg-yellow-400 disabled:pointer-events-none disabled:opacity-30 md:flex"
+            className="absolute left-0 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-yellow-300 bg-yellow-400 text-blue-900 shadow-md transition hover:bg-yellow-300 md:flex"
           >
             <ChevronLeft className="h-5 w-5" aria-hidden />
+          </button>
+        )}
+
+        {prodotti.length > 2 && (
+          <button
+            type="button"
+            onClick={() => scorri("destra")}
+            aria-label="Mostra altri prodotti"
+            disabled={!canScrollRight}
+            className="absolute right-1 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-yellow-300 bg-yellow-400 text-blue-900 shadow-md transition hover:bg-yellow-300 disabled:pointer-events-none disabled:opacity-30 md:right-0 md:hidden"
+          >
+            <ChevronRight className="h-5 w-5" aria-hidden />
           </button>
         )}
 
@@ -95,7 +105,7 @@ export default function HomepageProductCarousel({
             onClick={() => scorri("destra")}
             aria-label="Mostra altri prodotti"
             disabled={!canScrollRight}
-            className="absolute right-0 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200 bg-white text-blue-900 shadow-md transition hover:bg-yellow-400 disabled:pointer-events-none disabled:opacity-30 md:flex"
+            className="absolute right-0 top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-yellow-300 bg-yellow-400 text-blue-900 shadow-md transition hover:bg-yellow-300 disabled:pointer-events-none disabled:opacity-30 md:flex"
           >
             <ChevronRight className="h-5 w-5" aria-hidden />
           </button>
