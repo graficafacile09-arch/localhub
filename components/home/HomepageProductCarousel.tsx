@@ -109,7 +109,7 @@ export default function HomepageProductCarousel({
             return (
               <div
                 key={prodottoId}
-                className="w-[calc((100vw-3.25rem)/2)] min-w-[calc((100vw-3.25rem)/2)] shrink-0 snap-start md:w-[calc((100%+1.25rem)/4-1.25rem)] md:min-w-[calc((100%+1.25rem)/4-1.25rem)]"
+                className="w-[calc((100%_-_0.75rem)_/_2)] min-w-[calc((100%_-_0.75rem)_/_2)] shrink-0 snap-start md:w-[calc((100%_-_3.75rem)_/_4)] md:min-w-[calc((100%_-_3.75rem)_/_4)]"
               >
                 <ProductCard
                   id={prodottoId}
