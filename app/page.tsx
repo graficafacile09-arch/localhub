@@ -104,12 +104,12 @@ export default async function Home() {
         />
 
         <div className="relative z-10 mx-auto max-w-5xl px-4 py-14 text-left md:px-6 md:py-20">
-          <h1 className="max-w-2xl text-3xl font-black leading-tight tracking-tight text-white drop-shadow-lg md:text-5xl">
-            Tutto quello che cerchi... <span className="text-yellow-300">è già</span> nella tua città.
+          <h1 className="max-w-2xl text-2xl font-black leading-tight tracking-tight text-white drop-shadow-lg md:text-4xl">
+            Tutto ciò che cerchi è già nella tua città.
           </h1>
 
-          <p className="mt-3 max-w-xl text-sm text-white/90 drop-shadow-md md:text-lg">
-            Negozi, offerte servizi e{" "}
+          <p className="mt-3 max-w-xl text-[13px] leading-5 text-white/95 drop-shadow-md md:text-base md:leading-6">
+            Negozi, offerte, servizi e{" "}
             <Link
               href="/attrazioni"
               className="group/attrazioni inline-flex items-center whitespace-nowrap font-black text-yellow-300 transition hover:text-yellow-200"
