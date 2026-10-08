@@ -9,6 +9,7 @@ type ApiResponse = {
   data?: Stato;
   enabled?: boolean;
   message?: string;
+  updatedAt?: string | null;
   error?: { message?: string };
 };
 
