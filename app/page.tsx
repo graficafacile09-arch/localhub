@@ -115,16 +115,13 @@ export default async function Home() {
                 Tutto quello che cerchi... <span className="text-yellow-300">è già</span> nella tua città.
               </h1>
             </div>
-            <div className="absolute bottom-2 right-2 z-20 flex w-[148px] flex-col gap-1.5 lg:static lg:z-auto lg:w-auto lg:max-w-sm lg:gap-2.5 lg:pt-2">
-              <div className="rounded-xl border border-sky-200/70 bg-sky-50/90 p-1 shadow-md backdrop-blur-md lg:rounded-2xl lg:p-2 lg:shadow-lg">
+            <div className="absolute inset-x-4 bottom-3 z-20 flex items-end justify-between gap-4 sm:inset-x-6 md:bottom-4">
+              <div className="w-[min(42vw,280px)] rounded-lg border border-white/70 bg-white/95 px-2 py-0.5 shadow-md backdrop-blur-md">
                 <WeatherWidget hero />
               </div>
-              <div className="rounded-xl border border-emerald-200/70 bg-emerald-50/90 p-1 shadow-md backdrop-blur-md lg:rounded-2xl lg:p-2 lg:shadow-lg">
+              <div className="w-[min(42vw,280px)] rounded-lg border border-white/70 bg-white/95 px-2 py-0.5 shadow-md backdrop-blur-md">
                 <FarmacieTurnoWidget hero />
               </div>
-              <p className="hidden px-1 text-[10px] font-semibold text-white/85 drop-shadow lg:block">
-                Tocca o clicca una scheda per vedere tutti i dettagli.
-              </p>
             </div>
           </div>
         </div>
