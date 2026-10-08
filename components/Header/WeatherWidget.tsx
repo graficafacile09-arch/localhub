@@ -68,10 +68,10 @@ export default function WeatherWidget({
         className="flex aspect-square w-full flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-center transition hover:bg-sky-100/60">
         <Icon className="h-6 w-6 text-sky-700 sm:hidden" strokeWidth={1.8} aria-hidden />
         <span className="hidden text-[10px] font-black uppercase tracking-wide text-sky-700 sm:block">Meteo</span>
-        <span className="text-sm font-black leading-none text-slate-900 sm:text-sm">{temp}°</span>
+        <span className="text-sm font-black leading-none text-slate-900 sm:text-xs">{temp}°</span>
         <span className="max-w-full truncate text-[7px] font-semibold leading-none text-slate-600 sm:hidden">{label}</span>
         <span className="hidden text-[10px] font-black text-slate-900 sm:block">{label}</span>
-        <ChevronDown className={`h-2.5 w-2.5 text-sky-700 transition-transform sm:h-3.5 sm:w-3.5 ${open ? "rotate-180" : ""}`} aria-hidden />
+        <ChevronDown className={`h-2.5 w-2.5 text-sky-700 transition-transform sm:h-3 sm:w-3 ${open ? "rotate-180" : ""}`} aria-hidden />
       </button>
       {open && <div className="mt-1 rounded-lg bg-sky-50/95 px-2 py-2 text-[10px] text-slate-600">
         <div className="flex items-center justify-between gap-2"><span>Temperatura</span><strong className="text-slate-900">{temp}°C</strong></div>
