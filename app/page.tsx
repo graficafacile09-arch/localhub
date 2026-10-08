@@ -124,15 +124,6 @@ export default async function Home() {
             </div>
           </div>
         </div>
-          <h1 className="max-w-2xl text-3xl font-black leading-tight tracking-tight text-white drop-shadow-lg md:text-5xl">
-            Tutto quello che cerchi... <span className="text-yellow-300">è già</span> nella tua città.
-          </h1>
-
-          {/* Motore di ricerca invariato: stessa action GET e stesso parametro q.
-              HeroSearchBar (client) passa la query digitata anche al pulsante
-              ✨ dell'Assistente, così il pannello parte subito con la richiesta. */}
-          <div className="mt-7"><HeroSearchBar /></div>
-        </div>
       </section>
 
       {/* ═══════════════════════════════════════════════════════════════════
