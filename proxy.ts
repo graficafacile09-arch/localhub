@@ -137,13 +137,14 @@ export async function proxy(request: NextRequest) {
   // resta accessibile; la tabella è leggibile in sola lettura da anon/authenticated.
   // Se la tabella non è ancora stata migrata o il DB non risponde, fail-open:
   // non si rischia di bloccare il sito per un errore infrastrutturale.
-  const percorsoRiservatoDuranteManutenzione =
-    pathname.startsWith("/amministratore") ||
-    pathname.startsWith("/api/") ||
+  const apiAdminDuranteManutenzione = pathname.startsWith("/api/amministratore/");
+  const percorsoAuthDuranteManutenzione =
     pathname === "/login" ||
     pathname.startsWith("/account-in-attesa") ||
+    pathname.startsWith("/auth/callback") ||
+    pathname.startsWith("/api/auth/") ||
     pathname.startsWith("/manutenzione");
-  if (!percorsoRiservatoDuranteManutenzione) {
+  if (!pathname.startsWith("/amministratore") && !apiAdminDuranteManutenzione && !percorsoAuthDuranteManutenzione) {
     try {
       const { data: manutenzione } = await supabase
         .from("site_maintenance")
@@ -152,6 +153,12 @@ export async function proxy(request: NextRequest) {
         .maybeSingle();
 
       if (manutenzione?.enabled === true) {
+        if (pathname.startsWith("/api/")) {
+          return NextResponse.json(
+            { success: false, error: { code: "SITE_MAINTENANCE", message: "Il sito è temporaneamente in manutenzione. Riprova più tardi." } },
+            { status: 503, headers: { "Cache-Control": "no-store", "Retry-After": "300" } }
+          );
+        }
         const maintenanceResponse = NextResponse.rewrite(
           new URL("/manutenzione", request.url)
         );
