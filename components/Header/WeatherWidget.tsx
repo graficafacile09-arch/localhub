@@ -79,19 +79,19 @@ export default function WeatherWidget({
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="flex h-6 w-full items-center gap-1 rounded-lg px-1 text-left transition hover:bg-sky-100/60 sm:h-8 sm:gap-2"
+        className="flex h-6 w-full items-center gap-1 rounded-lg px-1 text-left transition hover:bg-sky-100/60 lg:h-10 lg:gap-2 lg:rounded-xl"
       >
-        <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-md bg-sky-100 text-sky-700 sm:h-9 sm:w-9 sm:rounded-lg">
-          <Icon className="h-2.5 w-2.5 sm:h-5 sm:w-5" strokeWidth={1.8} aria-hidden />
+        <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-md bg-sky-100 text-sky-700 lg:h-8 lg:w-8 lg:rounded-lg">
+          <Icon className="h-2.5 w-2.5 lg:h-5 lg:w-5" strokeWidth={1.8} aria-hidden />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-[10px] font-black text-slate-900 sm:text-sm">Meteo · {temp}°</span>
+          <span className="block truncate text-[10px] font-black text-slate-900 lg:text-sm">Meteo · {temp}°</span>
         </span>
-        <span className="hidden text-[10px] font-semibold text-slate-500 sm:block">Castrovillari</span>
+        <span className="hidden text-[10px] font-semibold text-slate-500 lg:block">Castrovillari</span>
         <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-sky-700 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden />
       </button>
       {open && (
-        <div className="absolute bottom-full left-0 mb-2 w-full rounded-lg bg-white/95 px-3 py-2 text-xs text-slate-600 shadow-lg backdrop-blur-md">
+        <div className="absolute bottom-full left-0 z-40 mb-2 w-[220px] max-w-[calc(100vw-1rem)] rounded-xl border border-sky-200 bg-white/95 p-3 text-xs text-slate-600 shadow-xl backdrop-blur-md sm:w-[250px] lg:w-[290px]">
           <div className="flex items-center justify-between gap-3">
             <span>Temperatura attuale</span>
             <strong className="text-slate-900">{temp}°C</strong>
