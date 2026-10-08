@@ -113,11 +113,11 @@ export default async function Home() {
               </h1>
               <div className="mt-7"><HeroSearchBar /></div>
             </div>
-            <div className="absolute bottom-2 right-2 z-20 flex w-[148px] flex-col gap-1.5 lg:static lg:z-auto lg:w-auto lg:max-w-sm lg:gap-2.5 lg:pt-2">
-              <div className="rounded-xl border border-sky-200/70 bg-sky-50/90 p-1 shadow-md backdrop-blur-md lg:rounded-2xl lg:p-2 lg:shadow-lg">
+            <div className="absolute bottom-1 right-1 z-20 flex w-[120px] flex-col gap-1 lg:static lg:z-auto lg:w-auto lg:max-w-sm lg:gap-2.5 lg:pt-2">
+              <div className="rounded-lg border border-sky-200/70 bg-sky-50/90 p-0.5 shadow-sm backdrop-blur-md lg:rounded-2xl lg:p-2 lg:shadow-lg">
                 <WeatherWidget hero />
               </div>
-              <div className="rounded-xl border border-emerald-200/70 bg-emerald-50/90 p-1 shadow-md backdrop-blur-md lg:rounded-2xl lg:p-2 lg:shadow-lg">
+              <div className="rounded-lg border border-emerald-200/70 bg-emerald-50/90 p-0.5 shadow-sm backdrop-blur-md lg:rounded-2xl lg:p-2 lg:shadow-lg">
                 <FarmacieTurnoWidget hero />
               </div>
               <p className="hidden px-1 text-[10px] font-semibold text-white/85 drop-shadow lg:block">
