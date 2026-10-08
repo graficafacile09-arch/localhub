@@ -50,13 +50,13 @@ export default function FarmacieTurnoWidget({ hero = false }: { hero?: boolean }
           type="button"
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
-          className="flex h-8 w-full items-center gap-2 rounded-lg px-1 text-left transition hover:bg-emerald-100/60"
+          className="flex h-6 w-full items-center gap-1 rounded-lg px-1 text-left transition hover:bg-emerald-100/60 sm:h-8 sm:gap-2"
         >
-          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-emerald-100 text-emerald-700 sm:h-9 sm:w-9 sm:rounded-lg">
-            <Pill className="h-3.5 w-3.5 sm:h-5 sm:w-5" aria-hidden />
+          <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-md bg-emerald-100 text-emerald-700 sm:h-9 sm:w-9 sm:rounded-lg">
+            <Pill className="h-2.5 w-2.5 sm:h-5 sm:w-5" aria-hidden />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block truncate text-[11px] font-black text-slate-900 sm:text-sm">Farmacia · {diTurno.nome}</span>
+            <span className="block truncate text-[10px] font-black text-slate-900 sm:text-sm">Farmacia · {diTurno.nome}</span>
           </span>
           
           <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-emerald-700 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden />
