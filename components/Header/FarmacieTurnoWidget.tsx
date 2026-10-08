@@ -45,29 +45,24 @@ export default function FarmacieTurnoWidget({ hero = false }: { hero?: boolean }
 
   if (hero) {
     return (
-      <div className="w-full">
+      <div className="relative w-full">
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
-          className="flex w-full items-center gap-2 rounded-xl px-1 py-0.5 text-left transition hover:bg-emerald-100/60"
+          className="flex h-8 w-full items-center gap-2 rounded-lg px-1 text-left transition hover:bg-emerald-100/60"
         >
           <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-emerald-100 text-emerald-700 sm:h-9 sm:w-9 sm:rounded-lg">
             <Pill className="h-3.5 w-3.5 sm:h-5 sm:w-5" aria-hidden />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-[8px] font-black uppercase tracking-wide text-emerald-700 sm:text-[10px]">Farmacia di turno</span>
-            <span className="block max-w-[112px] truncate text-[11px] font-black text-slate-900 sm:max-w-none sm:text-sm">{diTurno.nome}</span>
+            <span className="block truncate text-[11px] font-black text-slate-900 sm:text-sm">Farmacia · {diTurno.nome}</span>
           </span>
-          {diTurno.stato && (
-            <span className={`hidden rounded-full px-2 py-0.5 text-[10px] font-bold sm:inline ${diTurno.stato === "aperta" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
-              {diTurno.stato === "aperta" ? "Aperta" : "Chiusa"}
-            </span>
-          )}
+          
           <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-emerald-700 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden />
         </button>
         {open && (
-          <div className="mt-2 rounded-lg bg-emerald-50/90 px-3 py-2 text-xs text-slate-600">
+          <div className="absolute bottom-full left-0 mb-2 w-full rounded-lg bg-white/95 px-3 py-2 text-xs text-slate-600 shadow-lg backdrop-blur-md">
             {diTurno.indirizzo && <div className="flex items-start justify-between gap-3"><span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" />Indirizzo</span><strong className="text-right text-slate-900">{diTurno.indirizzo}</strong></div>}
             {diTurno.apertura && <div className="mt-1 flex items-center justify-between gap-3"><span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" />Orario</span><strong className="text-slate-900">{diTurno.apertura}</strong></div>}
             {diTurno.telefono && <div className="mt-1 flex items-center justify-between gap-3"><span className="inline-flex items-center gap-1"><Phone className="h-3 w-3" />Telefono</span><a href={`tel:${diTurno.telefono}`} className="font-bold text-blue-700 hover:underline">{diTurno.telefono}</a></div>}
