@@ -108,10 +108,6 @@ export default async function Home() {
             Tutto quello che cerchi... <span className="text-yellow-300">è già</span> nella tua città.
           </h1>
 
-          <p className="mt-3 max-w-xl text-sm text-white/90 drop-shadow-md md:text-lg">
-            Negozi, offerte e servizi locali: cercali, confrontali e acquista restando nella tua città.
-          </p>
-
           {/* Motore di ricerca invariato: stessa action GET e stesso parametro q.
               HeroSearchBar (client) passa la query digitata anche al pulsante
               ✨ dell'Assistente, così il pannello parte subito con la richiesta. */}
