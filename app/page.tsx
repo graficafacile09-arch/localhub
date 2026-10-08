@@ -108,7 +108,7 @@ export default async function Home() {
         <div className="relative z-10 mx-auto max-w-7xl px-4 py-10 text-left md:px-6 md:py-16">
           <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-10">
             <div>
-              <div className="-mt-7">
+              <div className="-mt-12 md:-mt-10">
                 <HeroSearchBar />
               </div>
               <h1 className="mt-4 max-w-2xl text-3xl font-black leading-tight tracking-tight text-white drop-shadow-lg md:mt-6 md:text-5xl">
