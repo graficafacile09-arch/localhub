@@ -63,50 +63,21 @@ export default function WeatherWidget({
 
   if (!hero) {
     return (
-      <div className="flex items-center gap-1 text-[11px] leading-tight sm:gap-1.5 sm:text-sm" aria-label="Meteo Castrovillari">
-        <Icon className="h-4 w-4 shrink-0 text-yellow-700 sm:h-5 sm:w-5" strokeWidth={1.75} aria-hidden />
-        <span className="font-bold tabular-nums text-slate-800">{temp}°</span>
-        <span className={`${mobileExtended ? "inline" : "hidden sm:inline"} whitespace-nowrap font-medium text-slate-600`}>
-          Castrovillari{label ? ` · ${label}` : ""}
-        </span>
-      </div>
-    );
-  }
-
-  return (
     <div className="w-full">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-        className="flex w-full items-center gap-1 rounded-lg px-0.5 py-0 text-left transition hover:bg-sky-100/60"
-      >
-        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-sky-100 text-sky-700 sm:h-9 sm:w-9 sm:rounded-lg">
-          <Icon className="h-3 w-3 sm:h-5 sm:w-5" strokeWidth={1.8} aria-hidden />
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block text-[7px] font-black uppercase tracking-wide text-sky-700 sm:text-[10px]">Meteo</span>
-          <span className="block truncate text-[9px] font-black leading-none text-slate-900 sm:text-sm">{temp}° · {label || "Condizioni attuali"}</span>
-        </span>
-        <span className="hidden text-[11px] font-semibold text-slate-500 sm:block">Castrovillari</span>
-        <ChevronDown className={`h-3 w-3 shrink-0 text-sky-700 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden />
+      <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open}
+        className="flex aspect-square w-full flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-center transition hover:bg-sky-100/60">
+        <Icon className="h-6 w-6 text-sky-700 sm:hidden" strokeWidth={1.8} aria-hidden />
+        <span className="hidden text-[10px] font-black uppercase tracking-wide text-sky-700 sm:block">Meteo</span>
+        <span className="text-sm font-black leading-none text-slate-900 sm:text-sm">{temp}°</span>
+        <span className="max-w-full truncate text-[7px] font-semibold leading-none text-slate-600 sm:hidden">{label}</span>
+        <span className="hidden text-[10px] font-black text-slate-900 sm:block">{label}</span>
+        <ChevronDown className={`h-2.5 w-2.5 text-sky-700 transition-transform sm:h-3.5 sm:w-3.5 ${open ? "rotate-180" : ""}`} aria-hidden />
       </button>
-      {open && (
-        <div className="mt-2 rounded-lg bg-sky-50/90 px-3 py-2 text-xs text-slate-600">
-          <div className="flex items-center justify-between gap-3">
-            <span>Temperatura attuale</span>
-            <strong className="text-slate-900">{temp}°C</strong>
-          </div>
-          <div className="mt-1 flex items-center justify-between gap-3">
-            <span>Condizioni</span>
-            <strong className="text-slate-900">{label || "—"}</strong>
-          </div>
-          <div className="mt-1 flex items-center justify-between gap-3">
-            <span>Località</span>
-            <strong className="text-slate-900">Castrovillari</strong>
-          </div>
-        </div>
-      )}
+      {open && <div className="mt-1 rounded-lg bg-sky-50/95 px-2 py-2 text-[10px] text-slate-600">
+        <div className="flex items-center justify-between gap-2"><span>Temperatura</span><strong className="text-slate-900">{temp}°C</strong></div>
+        <div className="mt-1 flex items-center justify-between gap-2"><span>Condizioni</span><strong className="text-right text-slate-900">{label || "—"}</strong></div>
+        <div className="mt-1 flex items-center justify-between gap-2"><span>Località</span><strong className="text-slate-900">Castrovillari</strong></div>
+      </div>}
     </div>
   );
-}
+
