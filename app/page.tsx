@@ -113,14 +113,16 @@ export default async function Home() {
               </h1>
               <div className="mt-7"><HeroSearchBar /></div>
             </div>
-            <div className="flex flex-col gap-3 lg:pt-2">
-              <div className="rounded-2xl border border-white/35 bg-white/90 p-3 shadow-xl backdrop-blur-md">
-                <p className="mb-2 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">Meteo</p>
-                <WeatherWidget mobileExtended />
+            <div className="flex max-w-sm flex-col gap-2.5 lg:pt-2">
+              <div className="rounded-2xl border border-sky-200/70 bg-sky-50/90 p-2 shadow-lg backdrop-blur-md">
+                <WeatherWidget hero />
               </div>
-              <div className="rounded-2xl border border-white/35 bg-white/90 p-1.5 shadow-xl backdrop-blur-md">
-                <FarmacieTurnoWidget />
+              <div className="rounded-2xl border border-emerald-200/70 bg-emerald-50/90 p-2 shadow-lg backdrop-blur-md">
+                <FarmacieTurnoWidget hero />
               </div>
+              <p className="px-1 text-[10px] font-semibold text-white/85 drop-shadow">
+                Tocca o clicca una scheda per vedere tutti i dettagli.
+              </p>
             </div>
           </div>
         </div>
