@@ -4,7 +4,6 @@ import { useEffect, useRef, useState, type ComponentType } from "react";
 import Link from "next/link";
 import {
   ChevronDown,
-  LogIn,
   LogOut,
   ShieldCheck,
   ShoppingBasket,
@@ -100,7 +99,7 @@ export default function AccountMenu({
           aria-label="Accedi"
           className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-yellow-400 shadow-md transition-colors hover:bg-blue-700 active:scale-95 max-[374px]:h-9 max-[374px]:w-9"
         >
-          <LogIn className="h-6 w-6" aria-hidden />
+          <User className="h-6 w-6" aria-hidden />
         </button>
 
         {open && (
