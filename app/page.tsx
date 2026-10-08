@@ -116,10 +116,10 @@ export default async function Home() {
               </h1>
             </div>
             <div className="absolute inset-x-4 bottom-3 z-20 flex items-end justify-between gap-4 sm:inset-x-6 md:bottom-4">
-              <div className="w-[min(42vw,280px)] rounded-lg border border-white/70 bg-white/95 px-2 py-0.5 shadow-md backdrop-blur-md">
+              <div className="w-[min(42vw,280px)] rounded-lg border border-white/70 bg-white/95 px-2 py-0.5 shadow-md backdrop-blur-md lg:rounded-2xl lg:border-sky-200/70 lg:bg-sky-50/90 lg:p-2 lg:shadow-lg">
                 <WeatherWidget hero />
               </div>
-              <div className="w-[min(42vw,280px)] rounded-lg border border-white/70 bg-white/95 px-2 py-0.5 shadow-md backdrop-blur-md">
+              <div className="w-[min(42vw,280px)] rounded-lg border border-white/70 bg-white/95 px-2 py-0.5 shadow-md backdrop-blur-md lg:rounded-2xl lg:border-emerald-200/70 lg:bg-emerald-50/90 lg:p-2 lg:shadow-lg">
                 <FarmacieTurnoWidget hero />
               </div>
             </div>
