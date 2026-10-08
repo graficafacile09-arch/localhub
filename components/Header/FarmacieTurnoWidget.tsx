@@ -52,19 +52,19 @@ export default function FarmacieTurnoWidget({ hero = false }: { hero?: boolean }
           aria-expanded={open}
           className="flex w-full items-center gap-2 rounded-xl px-1 py-0.5 text-left transition hover:bg-emerald-100/60"
         >
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
-            <Pill className="h-5 w-5" aria-hidden />
+          <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-emerald-100 text-emerald-700 sm:h-9 sm:w-9 sm:rounded-lg">
+            <Pill className="h-3.5 w-3.5 sm:h-5 sm:w-5" aria-hidden />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-[10px] font-black uppercase tracking-wide text-emerald-700">Farmacia di turno</span>
-            <span className="block truncate text-sm font-black text-slate-900">{diTurno.nome}</span>
+            <span className="block text-[8px] font-black uppercase tracking-wide text-emerald-700 sm:text-[10px]">Farmacia di turno</span>
+            <span className="block max-w-[112px] truncate text-[11px] font-black text-slate-900 sm:max-w-none sm:text-sm">{diTurno.nome}</span>
           </span>
           {diTurno.stato && (
             <span className={`hidden rounded-full px-2 py-0.5 text-[10px] font-bold sm:inline ${diTurno.stato === "aperta" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
               {diTurno.stato === "aperta" ? "Aperta" : "Chiusa"}
             </span>
           )}
-          <ChevronDown className={`h-4 w-4 shrink-0 text-emerald-700 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden />
+          <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-emerald-700 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden />
         </button>
         {open && (
           <div className="mt-2 rounded-lg bg-emerald-50/90 px-3 py-2 text-xs text-slate-600">
