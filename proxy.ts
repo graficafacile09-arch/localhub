@@ -113,6 +113,38 @@ export async function proxy(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
+  // Modalità manutenzione pubblica. Le API restano operative e l'amministrazione
+  // resta accessibile; la tabella è leggibile in sola lettura da anon/authenticated.
+  // Se la tabella non è ancora stata migrata o il DB non risponde, fail-open:
+  // non si rischia di bloccare il sito per un errore infrastrutturale.
+  const percorsoRiservatoDuranteManutenzione =
+    pathname.startsWith("/amministratore") ||
+    pathname.startsWith("/api/") ||
+    pathname === "/login" ||
+    pathname.startsWith("/account-in-attesa") ||
+    pathname.startsWith("/manutenzione");
+  if (!percorsoRiservatoDuranteManutenzione) {
+    try {
+      const { data: manutenzione } = await supabase
+        .from("site_maintenance")
+        .select("enabled")
+        .eq("id", 1)
+        .maybeSingle();
+
+      if (manutenzione?.enabled === true) {
+        const maintenanceResponse = NextResponse.rewrite(
+          new URL("/manutenzione", request.url)
+        );
+        for (const cookie of response.cookies.getAll()) {
+          maintenanceResponse.cookies.set(cookie.name, cookie.value, cookie);
+        }
+        return maintenanceResponse;
+      }
+    } catch {
+      // Non bloccare le richieste pubbliche se il controllo manutenzione fallisce.
+    }
+  }
+
   // ── Pulizia modalità guest: se l'utente accede alla pagina di login
   // (scelta esplicita di fare login), rimuoviamo il cookie guest.
   // Questo evita una sessione guest parallela dopo il login.
