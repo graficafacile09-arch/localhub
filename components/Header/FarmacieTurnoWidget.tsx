@@ -42,6 +42,7 @@ export default function FarmacieTurnoWidget({ hero = false }: { hero?: boolean }
   const diTurno = dati.farmacie.find((f) => Boolean(f.turno));
   if (!diTurno) return null;
   const urlScheda = diTurno.urlScheda ?? URL_FONTE;
+  const indirizzoPulito = diTurno.indirizzo?.replace(/\b\d{5}\b/g, "").replace(/\s{2,}/g, " ").replace(/\s*,\s*,/g, ",").trim() || null;
 
   if (hero) {
     return (
@@ -50,20 +51,20 @@ export default function FarmacieTurnoWidget({ hero = false }: { hero?: boolean }
           type="button"
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
-          className="flex h-6 w-full items-center gap-1 rounded-lg px-1 text-left transition hover:bg-emerald-100/60 sm:h-8 sm:gap-2"
+          className="flex h-6 w-full items-center gap-1 rounded-lg px-1 text-left transition hover:bg-emerald-100/60 lg:h-10 lg:gap-2 lg:rounded-xl"
         >
-          <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-md bg-emerald-100 text-emerald-700 sm:h-9 sm:w-9 sm:rounded-lg">
-            <Pill className="h-2.5 w-2.5 sm:h-5 sm:w-5" aria-hidden />
+          <span className="flex h-4 w-4 shrink-0 items-center justify-center rounded-md bg-emerald-100 text-emerald-700 lg:h-8 lg:w-8 lg:rounded-lg">
+            <Pill className="h-2.5 w-2.5 lg:h-5 lg:w-5" aria-hidden />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block truncate text-[10px] font-black text-slate-900 sm:text-sm">Farmacia · {diTurno.nome}</span>
+            <span className="block truncate text-[10px] font-black text-slate-900 lg:text-sm">Farmacia · {diTurno.nome}</span>
           </span>
           
           <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-emerald-700 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden />
         </button>
         {open && (
-          <div className="absolute bottom-full left-0 mb-2 w-full rounded-lg bg-white/95 px-3 py-2 text-xs text-slate-600 shadow-lg backdrop-blur-md">
-            {diTurno.indirizzo && <div className="flex items-start justify-between gap-3"><span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" />Indirizzo</span><strong className="text-right text-slate-900">{diTurno.indirizzo}</strong></div>}
+          <div className="absolute bottom-full right-0 z-40 mb-2 w-[220px] max-w-[calc(100vw-1rem)] rounded-xl border border-emerald-200 bg-white/95 p-3 text-xs text-slate-600 shadow-xl backdrop-blur-md sm:w-[250px] lg:w-[290px]">
+            {indirizzoPulito && <div className="space-y-1"><span className="inline-flex items-center gap-1 font-semibold text-slate-500"><MapPin className="h-3 w-3" />Indirizzo</span><strong className="block break-words leading-4 text-slate-900">{indirizzoPulito}</strong></div>}
             {diTurno.apertura && <div className="mt-1 flex items-center justify-between gap-3"><span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" />Orario</span><strong className="text-slate-900">{diTurno.apertura}</strong></div>}
             {diTurno.telefono && <div className="mt-1 flex items-center justify-between gap-3"><span className="inline-flex items-center gap-1"><Phone className="h-3 w-3" />Telefono</span><a href={`tel:${diTurno.telefono}`} className="font-bold text-blue-700 hover:underline">{diTurno.telefono}</a></div>}
             <a href={urlScheda} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-[10px] font-semibold text-emerald-700 hover:underline">Vedi scheda completa ↗</a>
