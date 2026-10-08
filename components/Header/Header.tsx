@@ -1,10 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import AccountMenu from "./AccountMenu";
-import FarmacieTurnoWidget from "./FarmacieTurnoWidget";
 import HeaderCartIcon from "./HeaderCartIcon";
 import HeaderNav from "./HeaderNav";
-import WeatherWidget from "./WeatherWidget";
 import { getDatiAccount } from "./get-account-data";
 import { getGuestMode } from "@/lib/auth/guest";
 
@@ -50,21 +48,11 @@ export default async function Header() {
               />
             </Link>
             <div className="ml-auto mr-2 flex shrink-0 items-center gap-1 max-sm:mr-0 xl:mr-1">
-              <div className="xl:-ml-2 max-sm:hidden">
-                <WeatherWidget />
-              </div>
               <div className="flex flex-col items-center gap-1 max-sm:flex-row">
-                {/* Carrello/account affiancati su mobile; colonna invariata su desktop. */}
                 <HeaderCartIcon />
                 <AccountMenu account={account} guestMode={guestMode} />
               </div>
             </div>
-          </div>
-          <div className="max-sm:mt-1">
-            <div className="mb-1 hidden px-1 max-sm:block">
-              <WeatherWidget mobileExtended />
-            </div>
-            <FarmacieTurnoWidget />
           </div>
         </div>
 

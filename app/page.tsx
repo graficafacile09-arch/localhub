@@ -17,8 +17,10 @@ import {
 import { getNegozioCardImmagine } from "@/lib/negozi-card-immagini";
 import { chiavePreferito, getStatoPreferitiPerPagina } from "@/lib/cliente/favorites";
 import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
-import ProductCard from "@/components/home/ProductCard";
 import EccellenzeCalabresiGrid from "@/components/home/EccellenzeCalabresiGrid";
+import HomepageProductCarousel from "@/components/home/HomepageProductCarousel";
+import WeatherWidget from "@/components/Header/WeatherWidget";
+import FarmacieTurnoWidget from "@/components/Header/FarmacieTurnoWidget";
 
 // La homepage deve riflettere in tempo reale i negozi in evidenza flaggati
 // dal merchant (il toggle "In evidenza" della dashboard), quindi non viene
@@ -103,19 +105,26 @@ export default async function Home() {
           className="absolute inset-0 bg-gradient-to-b from-slate-950/60 via-slate-950/25 to-transparent"
         />
 
-        <div className="relative z-10 mx-auto max-w-5xl px-4 py-14 text-left md:px-6 md:py-20">
-          <h1 className="max-w-2xl text-3xl font-black leading-tight tracking-tight text-white drop-shadow-lg md:text-5xl">
-            Tutto quello che cerchi... <span className="text-yellow-300">è già</span> nella tua città.
-          </h1>
-
-          <p className="mt-3 max-w-xl text-sm text-white/90 drop-shadow-md md:text-lg">
-            Negozi, offerte e servizi locali: cercali, confrontali e acquista restando nella tua città.
-          </p>
-
-          {/* Motore di ricerca invariato: stessa action GET e stesso parametro q.
-              HeroSearchBar (client) passa la query digitata anche al pulsante
-              ✨ dell'Assistente, così il pannello parte subito con la richiesta. */}
-          <div className="mt-7"><HeroSearchBar /></div>
+        <div className="relative z-10 mx-auto max-w-7xl px-4 py-10 text-left md:px-6 md:py-16">
+          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-10">
+            <div>
+              <h1 className="max-w-2xl text-3xl font-black leading-tight tracking-tight text-white drop-shadow-lg md:text-5xl">
+                Tutto quello che cerchi... <span className="text-yellow-300">è già</span> nella tua città.
+              </h1>
+              <div className="mt-7"><HeroSearchBar /></div>
+            </div>
+            <div className="flex max-w-sm flex-col gap-2.5 lg:pt-2">
+              <div className="rounded-2xl border border-sky-200/70 bg-sky-50/90 p-2 shadow-lg backdrop-blur-md">
+                <WeatherWidget hero />
+              </div>
+              <div className="rounded-2xl border border-emerald-200/70 bg-emerald-50/90 p-2 shadow-lg backdrop-blur-md">
+                <FarmacieTurnoWidget hero />
+              </div>
+              <p className="px-1 text-[10px] font-semibold text-white/85 drop-shadow">
+                Tocca o clicca una scheda per vedere tutti i dettagli.
+              </p>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -295,29 +304,10 @@ export default async function Home() {
             linkLabel="Esplora i negozi"
           />
 
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-5 lg:grid-cols-4">
-            {prodottiInEvidenza.map((prodotto) => {
-              const prodottoId = String(prodotto.id);
-              return (
-                <div className="w-[calc(50vw-1.25rem)] shrink-0 snap-start sm:w-auto sm:shrink">
-                <ProductCard
-                  key={prodottoId}
-                  id={prodottoId}
-                  slug={(prodotto.slug as string) ?? prodottoId}
-                  nome={prodotto.nome as string}
-                  prezzo={prodotto.prezzo as number}
-                  categoria={(prodotto.categoria as string) ?? null}
-                  negozio_nome={(prodotto.negozio_nome as string) ?? ""}
-                  negozio_id={String(prodotto.negozio_id ?? "")}
-                  immagine_principale={(prodotto.immagine_principale as string) ?? null}
-                  haVarianti={Boolean(prodotto.ha_varianti)}
-                  preferitoAttivo={statoPreferiti.chiavi.has(chiavePreferito("prodotto", prodottoId))}
-                  autenticato={statoPreferiti.autenticato}
-                />
-                </div>
-              );
-            })}
-          </div>
+          <HomepageProductCarousel
+            prodotti={prodottiInEvidenza}
+            statoPreferiti={statoPreferiti}
+          />
         </section>
       )}
 
