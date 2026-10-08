@@ -1,3 +1,4 @@
+import ManutenzioneSitoCard from "@/components/amministratore/ManutenzioneSitoCard";
 import ImpostazioniModule, {
   type ImpostazioneEditoriale,
 } from "@/components/amministratore/ImpostazioniModule";
@@ -33,9 +34,12 @@ export default async function ImpostazioniPage() {
   const commissionePercentuale = await getCommissionePercentuale();
 
   return (
-    <ImpostazioniModule
-      iniziali={modificabili}
-      commissionePercentuale={commissionePercentuale}
-    />
+    <div className="space-y-6">
+      <ManutenzioneSitoCard />
+      <ImpostazioniModule
+        iniziali={modificabili}
+        commissionePercentuale={commissionePercentuale}
+      />
+    </div>
   );
 }
