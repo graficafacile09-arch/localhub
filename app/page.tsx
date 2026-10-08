@@ -111,7 +111,7 @@ export default async function Home() {
               <div className="-mt-7">
                 <HeroSearchBar />
               </div>
-              <h1 className="mt-16 max-w-2xl text-3xl font-black leading-tight tracking-tight text-white drop-shadow-lg md:mt-24 md:text-5xl">
+              <h1 className="mt-4 max-w-2xl text-3xl font-black leading-tight tracking-tight text-white drop-shadow-lg md:mt-6 md:text-5xl">
                 Tutto quello che cerchi... <span className="text-yellow-300">è già</span> nella tua città.
               </h1>
             </div>
