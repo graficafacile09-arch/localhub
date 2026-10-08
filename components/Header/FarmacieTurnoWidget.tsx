@@ -45,22 +45,25 @@ export default function FarmacieTurnoWidget({ hero = false }: { hero?: boolean }
 
   if (hero) {
     return (
-      <div className="w-full">
+      <div className="relative w-full">
         <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open}
-          className="flex aspect-square w-full flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1 text-center transition hover:bg-emerald-100/60">
-          <Pill className="h-6 w-6 text-emerald-700 sm:hidden" aria-hidden />
-          <span className="hidden text-[10px] font-black uppercase tracking-wide text-emerald-700 sm:block">Farmacia di turno</span>
-          <span className="text-[8px] font-black leading-none text-slate-900 sm:hidden">Farmacia</span>
-          <span className="hidden truncate text-sm font-black text-slate-900 sm:block">{diTurno.nome}</span>
-          {diTurno.telefono && <span className="max-w-full truncate text-[7px] font-bold leading-none text-blue-700 sm:hidden">{diTurno.telefono}</span>}
+          className="flex aspect-square w-full flex-col items-center justify-center gap-0.5 rounded-lg px-0.5 py-1 text-center transition hover:bg-emerald-100/60">
+          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 sm:h-8 sm:w-8">
+            <Pill className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden />
+          </span>
+          <span className="text-[7px] font-black uppercase leading-none text-emerald-700 sm:text-[9px]">Farmacia</span>
+          <span className="max-w-full truncate text-[7px] font-bold leading-none text-slate-900 sm:text-[9px]">{diTurno.telefono || "Turno"}</span>
           <ChevronDown className={`h-2.5 w-2.5 text-emerald-700 transition-transform sm:h-3 sm:w-3 ${open ? "rotate-180" : ""}`} aria-hidden />
         </button>
-        {open && <div className="mt-1 rounded-lg bg-emerald-50/95 px-2 py-2 text-[10px] text-slate-600">
-          {diTurno.indirizzo && <div className="flex items-start justify-between gap-2"><span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" />Indirizzo</span><strong className="text-right text-slate-900">{diTurno.indirizzo}</strong></div>}
-          {diTurno.apertura && <div className="mt-1 flex items-center justify-between gap-2"><span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" />Orario</span><strong className="text-slate-900">{diTurno.apertura}</strong></div>}
-          {diTurno.telefono && <div className="mt-1 flex items-center justify-between gap-2"><span className="inline-flex items-center gap-1"><Phone className="h-3 w-3" />Telefono</span><a href={`tel:${diTurno.telefono}`} className="font-bold text-blue-700 hover:underline">{diTurno.telefono}</a></div>}
-          <a href={urlScheda} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-[10px] font-semibold text-emerald-700 hover:underline">Vedi scheda completa ↗</a>
-        </div>}
+        {open && (
+          <div className="absolute bottom-[calc(100%+6px)] right-0 z-50 w-[230px] rounded-xl border border-emerald-200 bg-emerald-50/95 p-3 text-[10px] text-slate-600 shadow-xl backdrop-blur-md sm:static sm:mt-1 sm:w-auto sm:border-0 sm:p-2 sm:shadow-none">
+            <div className="mb-2 text-xs font-black text-slate-900">{diTurno.nome}</div>
+            {diTurno.indirizzo && <div className="flex items-start justify-between gap-2"><span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" />Indirizzo</span><strong className="text-right text-slate-900">{diTurno.indirizzo}</strong></div>}
+            {diTurno.apertura && <div className="mt-1 flex items-center justify-between gap-2"><span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" />Orario</span><strong className="text-slate-900">{diTurno.apertura}</strong></div>}
+            {diTurno.telefono && <div className="mt-1 flex items-center justify-between gap-2"><span className="inline-flex items-center gap-1"><Phone className="h-3 w-3" />Telefono</span><a href={`tel:${diTurno.telefono}`} className="font-bold text-blue-700 hover:underline">{diTurno.telefono}</a></div>}
+            <a href={urlScheda} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-[10px] font-semibold text-emerald-700 hover:underline">Vedi scheda completa ↗</a>
+          </div>
+        )}
       </div>
     );
   }
