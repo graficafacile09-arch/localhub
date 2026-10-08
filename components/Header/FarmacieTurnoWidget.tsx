@@ -45,22 +45,32 @@ export default function FarmacieTurnoWidget({ hero = false }: { hero?: boolean }
 
   if (hero) {
     return (
-      <div className="relative w-full">
-        <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open}
-          className="flex aspect-square w-full flex-col items-center justify-center gap-0.5 rounded-lg px-0.5 py-1 text-center transition hover:bg-emerald-100/60">
-          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 sm:h-8 sm:w-8">
-            <Pill className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden />
+      <div className="w-full">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          className="flex w-full items-center gap-1.5 rounded-lg px-1 py-0.5 text-left transition hover:bg-emerald-100/60"
+        >
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
+            <Pill className="h-5 w-5" aria-hidden />
           </span>
-          <span className="text-[7px] font-black uppercase leading-none text-emerald-700 sm:text-[9px]">Farmacia</span>
-          <span className="max-w-full truncate text-[7px] font-bold leading-none text-slate-900 sm:text-[9px]">{diTurno.telefono || "Turno"}</span>
-          <ChevronDown className={`h-2.5 w-2.5 text-emerald-700 transition-transform sm:h-3 sm:w-3 ${open ? "rotate-180" : ""}`} aria-hidden />
+          <span className="min-w-0 flex-1">
+            <span className="block text-[10px] font-black uppercase tracking-wide text-emerald-700">Farmacia di turno</span>
+            <span className="block truncate text-sm font-black text-slate-900">{diTurno.nome}</span>
+          </span>
+          {diTurno.stato && (
+            <span className={`hidden rounded-full px-2 py-0.5 text-[10px] font-bold sm:inline ${diTurno.stato === "aperta" ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
+              {diTurno.stato === "aperta" ? "Aperta" : "Chiusa"}
+            </span>
+          )}
+          <ChevronDown className={`h-4 w-4 shrink-0 text-emerald-700 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden />
         </button>
         {open && (
-          <div className="absolute bottom-[calc(100%+6px)] right-0 z-50 w-[230px] rounded-xl border border-emerald-200 bg-emerald-50/95 p-3 text-[10px] text-slate-600 shadow-xl backdrop-blur-md sm:static sm:mt-1 sm:w-auto sm:border-0 sm:p-2 sm:shadow-none">
-            <div className="mb-2 text-xs font-black text-slate-900">{diTurno.nome}</div>
-            {diTurno.indirizzo && <div className="flex items-start justify-between gap-2"><span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" />Indirizzo</span><strong className="text-right text-slate-900">{diTurno.indirizzo}</strong></div>}
-            {diTurno.apertura && <div className="mt-1 flex items-center justify-between gap-2"><span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" />Orario</span><strong className="text-slate-900">{diTurno.apertura}</strong></div>}
-            {diTurno.telefono && <div className="mt-1 flex items-center justify-between gap-2"><span className="inline-flex items-center gap-1"><Phone className="h-3 w-3" />Telefono</span><a href={`tel:${diTurno.telefono}`} className="font-bold text-blue-700 hover:underline">{diTurno.telefono}</a></div>}
+          <div className="mt-2 rounded-lg bg-emerald-50/90 px-3 py-2 text-xs text-slate-600">
+            {diTurno.indirizzo && <div className="flex items-start justify-between gap-3"><span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" />Indirizzo</span><strong className="text-right text-slate-900">{diTurno.indirizzo}</strong></div>}
+            {diTurno.apertura && <div className="mt-1 flex items-center justify-between gap-3"><span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" />Orario</span><strong className="text-slate-900">{diTurno.apertura}</strong></div>}
+            {diTurno.telefono && <div className="mt-1 flex items-center justify-between gap-3"><span className="inline-flex items-center gap-1"><Phone className="h-3 w-3" />Telefono</span><a href={`tel:${diTurno.telefono}`} className="font-bold text-blue-700 hover:underline">{diTurno.telefono}</a></div>}
             <a href={urlScheda} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block text-[10px] font-semibold text-emerald-700 hover:underline">Vedi scheda completa ↗</a>
           </div>
         )}
@@ -70,8 +80,8 @@ export default function FarmacieTurnoWidget({ hero = false }: { hero?: boolean }
 
   return (
     <>
-      <div className="mt-1 flex w-full items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50/70 px-2 py-1 text-[11px] leading-none text-slate-600 lg:hidden">
-        <Pill className="h-3.5 w-3.5 shrink-0 text-emerald-600" aria-hidden />
+      <div className="mt-1 flex w-full items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50/70 px-2 py-1 text-[10px] leading-none text-slate-600 lg:hidden">
+        <Pill className="h-3 w-3 shrink-0 text-emerald-600" aria-hidden />
         <span className="shrink-0 font-semibold text-slate-600">Farmacia di turno:</span>
         <a href={urlScheda} target="_blank" rel="noopener noreferrer" className="min-w-0 truncate font-bold text-emerald-700 hover:underline">{diTurno.nome}</a>
         {diTurno.telefono && <a href={`tel:${diTurno.telefono}`} aria-label={`Chiama la farmacia ${diTurno.nome}`} className="ml-auto flex shrink-0 items-center gap-1 font-semibold text-blue-700 hover:underline"><Phone className="h-3 w-3" />{diTurno.telefono}</a>}
