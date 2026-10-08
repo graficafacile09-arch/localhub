@@ -108,10 +108,12 @@ export default async function Home() {
         <div className="relative z-10 mx-auto max-w-7xl px-4 py-10 text-left md:px-6 md:py-16">
           <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-10">
             <div>
+              <div className="mb-7">
+                <HeroSearchBar />
+              </div>
               <h1 className="max-w-2xl text-3xl font-black leading-tight tracking-tight text-white drop-shadow-lg md:text-5xl">
                 Tutto quello che cerchi... <span className="text-yellow-300">è già</span> nella tua città.
               </h1>
-              <div className="mt-7"><HeroSearchBar /></div>
             </div>
             <div className="absolute bottom-2 right-2 z-20 flex w-[148px] flex-col gap-1.5 lg:static lg:z-auto lg:w-auto lg:max-w-sm lg:gap-2.5 lg:pt-2">
               <div className="rounded-xl border border-sky-200/70 bg-sky-50/90 p-1 shadow-md backdrop-blur-md lg:rounded-2xl lg:p-2 lg:shadow-lg">
