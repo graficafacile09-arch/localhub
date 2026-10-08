@@ -19,6 +19,8 @@ import { chiavePreferito, getStatoPreferitiPerPagina } from "@/lib/cliente/favor
 import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
 import EccellenzeCalabresiGrid from "@/components/home/EccellenzeCalabresiGrid";
 import HomepageProductCarousel from "@/components/home/HomepageProductCarousel";
+import WeatherWidget from "@/components/Header/WeatherWidget";
+import FarmacieTurnoWidget from "@/components/Header/FarmacieTurnoWidget";
 
 // La homepage deve riflettere in tempo reale i negozi in evidenza flaggati
 // dal merchant (il toggle "In evidenza" della dashboard), quindi non viene
@@ -103,7 +105,25 @@ export default async function Home() {
           className="absolute inset-0 bg-gradient-to-b from-slate-950/60 via-slate-950/25 to-transparent"
         />
 
-        <div className="relative z-10 mx-auto max-w-5xl px-4 py-14 text-left md:px-6 md:py-20">
+        <div className="relative z-10 mx-auto max-w-7xl px-4 py-10 text-left md:px-6 md:py-16">
+          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-10">
+            <div>
+              <h1 className="max-w-2xl text-3xl font-black leading-tight tracking-tight text-white drop-shadow-lg md:text-5xl">
+                Tutto quello che cerchi... <span className="text-yellow-300">è già</span> nella tua città.
+              </h1>
+              <div className="mt-7"><HeroSearchBar /></div>
+            </div>
+            <div className="flex flex-col gap-3 lg:pt-2">
+              <div className="rounded-2xl border border-white/35 bg-white/90 p-3 shadow-xl backdrop-blur-md">
+                <p className="mb-2 text-[10px] font-black uppercase tracking-[0.12em] text-slate-500">Meteo</p>
+                <WeatherWidget mobileExtended />
+              </div>
+              <div className="rounded-2xl border border-white/35 bg-white/90 p-1.5 shadow-xl backdrop-blur-md">
+                <FarmacieTurnoWidget />
+              </div>
+            </div>
+          </div>
+        </div>
           <h1 className="max-w-2xl text-3xl font-black leading-tight tracking-tight text-white drop-shadow-lg md:text-5xl">
             Tutto quello che cerchi... <span className="text-yellow-300">è già</span> nella tua città.
           </h1>
