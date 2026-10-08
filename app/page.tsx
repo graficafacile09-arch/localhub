@@ -19,8 +19,6 @@ import { chiavePreferito, getStatoPreferitiPerPagina } from "@/lib/cliente/favor
 import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
 import EccellenzeCalabresiGrid from "@/components/home/EccellenzeCalabresiGrid";
 import HomepageProductCarousel from "@/components/home/HomepageProductCarousel";
-import WeatherWidget from "@/components/Header/WeatherWidget";
-import FarmacieTurnoWidget from "@/components/Header/FarmacieTurnoWidget";
 
 // La homepage deve riflettere in tempo reale i negozi in evidenza flaggati
 // dal merchant (il toggle "In evidenza" della dashboard), quindi non viene
@@ -106,23 +104,13 @@ export default async function Home() {
         />
 
         <div className="relative z-10 mx-auto max-w-7xl px-4 py-10 text-left md:px-6 md:py-16">
-          <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-10">
-            <div>
-              <div className="-mt-12 md:-mt-10">
-                <HeroSearchBar />
-              </div>
-              <h1 className="mt-4 max-w-2xl text-3xl font-black leading-tight tracking-tight text-white drop-shadow-lg md:mt-6 md:text-5xl">
-                Tutto quello che cerchi... <span className="text-yellow-300">è già</span> nella tua città.
-              </h1>
+          <div>
+            <div className="-mt-12 md:-mt-10">
+              <HeroSearchBar />
             </div>
-            <div className="absolute inset-x-4 bottom-3 z-20 flex items-end justify-between gap-4 sm:inset-x-6 md:bottom-4">
-              <div className="w-[min(42vw,280px)] rounded-lg border border-white/70 bg-white/95 px-2 py-0.5 shadow-md backdrop-blur-md lg:rounded-2xl lg:border-sky-200/70 lg:bg-sky-50/90 lg:p-2 lg:shadow-lg">
-                <WeatherWidget hero />
-              </div>
-              <div className="w-[min(42vw,280px)] rounded-lg border border-white/70 bg-white/95 px-2 py-0.5 shadow-md backdrop-blur-md lg:rounded-2xl lg:border-emerald-200/70 lg:bg-emerald-50/90 lg:p-2 lg:shadow-lg">
-                <FarmacieTurnoWidget hero />
-              </div>
-            </div>
+            <h1 className="mt-4 max-w-2xl text-3xl font-black leading-tight tracking-tight text-white drop-shadow-lg md:mt-6 md:text-5xl">
+              Tutto quello che cerchi... <span className="text-yellow-300">è già</span> nella tua città.
+            </h1>
           </div>
         </div>
       </section>
