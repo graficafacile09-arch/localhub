@@ -79,17 +79,17 @@ export default function WeatherWidget({
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="flex w-full items-center gap-2 rounded-xl px-1 py-0.5 text-left transition hover:bg-sky-100/60"
+        className="flex w-full items-center gap-1 rounded-lg px-0.5 py-0 text-left transition hover:bg-sky-100/60"
       >
-        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-sky-100 text-sky-700 sm:h-9 sm:w-9 sm:rounded-lg">
-          <Icon className="h-3.5 w-3.5 sm:h-5 sm:w-5" strokeWidth={1.8} aria-hidden />
+        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-sky-100 text-sky-700 sm:h-9 sm:w-9 sm:rounded-lg">
+          <Icon className="h-3 w-3 sm:h-5 sm:w-5" strokeWidth={1.8} aria-hidden />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block text-[8px] font-black uppercase tracking-wide text-sky-700 sm:text-[10px]">Meteo</span>
-          <span className="block truncate text-[11px] font-black text-slate-900 sm:text-sm">{temp}° · {label || "Condizioni attuali"}</span>
+          <span className="block text-[7px] font-black uppercase tracking-wide text-sky-700 sm:text-[10px]">Meteo</span>
+          <span className="block truncate text-[9px] font-black leading-none text-slate-900 sm:text-sm">{temp}° · {label || "Condizioni attuali"}</span>
         </span>
         <span className="hidden text-[11px] font-semibold text-slate-500 sm:block">Castrovillari</span>
-        <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-sky-700 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden />
+        <ChevronDown className={`h-3 w-3 shrink-0 text-sky-700 transition-transform ${open ? "rotate-180" : ""}`} aria-hidden />
       </button>
       {open && (
         <div className="mt-2 rounded-lg bg-sky-50/90 px-3 py-2 text-xs text-slate-600">
