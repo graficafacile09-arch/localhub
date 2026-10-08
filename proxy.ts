@@ -14,6 +14,26 @@ import {
 import { GUEST_COOKIE } from "@/lib/auth/guest";
 
 export async function proxy(request: NextRequest) {
+  // Protezione applicativa delle anteprime Vercel. Attiva solo quando le
+  // credenziali sono configurate nell'ambiente Preview; Production non riceve
+  // queste variabili e il dominio pubblico resta invariato.
+  const previewUser = process.env.PREVIEW_ACCESS_USERNAME;
+  const previewPassword = process.env.PREVIEW_ACCESS_PASSWORD;
+  const hostname = request.nextUrl.hostname.toLowerCase();
+  if (previewUser && previewPassword && hostname.endsWith(".vercel.app")) {
+    const authorization = request.headers.get("authorization") ?? "";
+    const expected = `Basic ${btoa(`${previewUser}:${previewPassword}`)}`;
+    if (authorization !== expected) {
+      return new NextResponse("Anteprima InCittà riservata. Inserisci le credenziali per continuare.", {
+        status: 401,
+        headers: {
+          "WWW-Authenticate": 'Basic realm="InCittà Preview", charset="UTF-8"',
+          "Cache-Control": "no-store",
+        },
+      });
+    }
+  }
+
   if (!isSupabaseConfigured()) {
     return NextResponse.next({ request });
   }
