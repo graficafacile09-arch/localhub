@@ -53,7 +53,7 @@ export default function FarmacieTurnoWidget({ hero = false }: { hero?: boolean }
           <span className="text-[8px] font-black leading-none text-slate-900 sm:hidden">Farmacia</span>
           <span className="hidden truncate text-sm font-black text-slate-900 sm:block">{diTurno.nome}</span>
           {diTurno.telefono && <span className="max-w-full truncate text-[7px] font-bold leading-none text-blue-700 sm:hidden">{diTurno.telefono}</span>}
-          <ChevronDown className={`h-2.5 w-2.5 text-emerald-700 transition-transform sm:h-3.5 sm:w-3.5 ${open ? "rotate-180" : ""}`} aria-hidden />
+          <ChevronDown className={`h-2.5 w-2.5 text-emerald-700 transition-transform sm:h-3 sm:w-3 ${open ? "rotate-180" : ""}`} aria-hidden />
         </button>
         {open && <div className="mt-1 rounded-lg bg-emerald-50/95 px-2 py-2 text-[10px] text-slate-600">
           {diTurno.indirizzo && <div className="flex items-start justify-between gap-2"><span className="inline-flex items-center gap-1"><MapPin className="h-3 w-3" />Indirizzo</span><strong className="text-right text-slate-900">{diTurno.indirizzo}</strong></div>}
