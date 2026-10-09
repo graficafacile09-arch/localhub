@@ -31,8 +31,8 @@ export default async function Header({ homepage = false }: { homepage?: boolean 
   return (
     <header className="border-b border-slate-200 bg-white shadow-sm">
       <div className={`mx-auto flex max-w-7xl flex-col items-center justify-between gap-1 px-1.5 py-1.5 max-sm:gap-2 max-sm:px-2 max-sm:py-2 max-[374px]:gap-1 max-[374px]:px-1 max-[374px]:py-1 sm:px-4 md:px-4 md:py-0 xl:gap-x-4 xl:gap-y-0 xl:py-0 ${homepage ? "xl:grid xl:grid-cols-[320px_minmax(0,1fr)_auto] xl:grid-rows-[auto_auto] xl:items-center" : "xl:flex-row xl:items-start xl:gap-4"}`}>
-        <div className={`flex w-full flex-col xl:w-auto ${homepage ? "xl:contents" : ""}`}>
-          <div className={`flex w-full min-w-0 items-center gap-1 max-[374px]:gap-1 ${homepage ? "xl:contents" : ""}`}>
+        <div className={`flex w-full flex-col xl:w-auto ${homepage ? "contents xl:contents" : ""}`}>
+          <div className={`flex w-full min-w-0 items-center gap-1 max-[374px]:gap-1 ${homepage ? "order-1 xl:order-none xl:contents" : ""}`}>
             <Link
               href="/"
               aria-label="InCittà — Home"
@@ -58,7 +58,7 @@ export default async function Header({ homepage = false }: { homepage?: boolean 
               </div>
             </div>
           </div>
-          <div className={`max-sm:mt-1 ${homepage ? "xl:contents" : ""}`}>
+          <div className={`max-sm:mt-1 ${homepage ? "order-3 xl:order-none xl:contents" : ""}`}>
             <div className="mb-1 hidden px-1 max-sm:block">
               <WeatherWidget mobileExtended />
             </div>
@@ -70,7 +70,7 @@ export default async function Header({ homepage = false }: { homepage?: boolean 
 
         {homepage ? (
           <>
-            <div className="w-full min-w-0 flex-1 py-1 xl:col-start-2 xl:row-start-1 xl:py-2">
+            <div className="order-2 w-full min-w-0 flex-1 py-1 xl:order-none xl:col-start-2 xl:row-start-1 xl:py-2">
               <HeroSearchBar inHeader />
             </div>
             <div className="hidden w-full lg:block lg:col-start-2 lg:col-span-2 lg:row-start-2 xl:justify-self-end">
