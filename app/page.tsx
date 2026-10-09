@@ -124,7 +124,9 @@ export default async function Home() {
             </span>
             <div>
               <h2 className="text-xs font-black text-slate-900 sm:text-sm">Sostieni il commercio locale</h2>
-
+              <p className="mt-1 text-xs leading-5 text-slate-500">
+                Ogni acquisto resta nella tua città e sostiene chi la fa vivere.
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-2.5">
@@ -133,7 +135,9 @@ export default async function Home() {
             </span>
             <div>
               <h2 className="text-xs font-black text-slate-900 sm:text-sm">Trova tutto in un unico posto</h2>
-
+              <p className="mt-1 text-xs leading-5 text-slate-500">
+                Negozi, professionisti, prodotti e servizi: una ricerca, zero code.
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-2.5">
@@ -142,7 +146,9 @@ export default async function Home() {
             </span>
             <div>
               <h2 className="text-xs font-black text-slate-900 sm:text-sm">Offerte dal territorio</h2>
-
+              <p className="mt-1 text-xs leading-5 text-slate-500">
+                Promozioni e novità dai negozi vicini, sempre aggiornate.
+              </p>
             </div>
           </div>
         </div>
