@@ -23,7 +23,7 @@ type PublishResponse = {
 
 const DEFAULT_MESSAGE =
   "Stiamo lavorando per migliorare il servizio. Ci scusiamo per il disagio e torneremo online al più presto.";
-const PREVIEW_URL = "https://localhub-git-fix-hero-search-top-4e7c6e-localhub-castrovillari.vercel.app";
+const PREVIEW_URL = "https://localhub-git-fix-hero-search-top-4e7c6e-localhub-castrovillari.vercel.app/?_vercel_share=fbtgiQM83OQQcLYyEQ4IDLOxlqsOaLnf";
 
 export default function ManutenzioneSitoCard() {
   const [stato, setStato] = useState<MaintenanceState>({ enabled: true, message: DEFAULT_MESSAGE });
