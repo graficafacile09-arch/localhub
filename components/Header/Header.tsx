@@ -58,7 +58,7 @@ export default async function Header({ homepage = false }: { homepage?: boolean 
               </div>
             </div>
           </div>
-          <div className={`max-sm:mt-1 ${homepage ? "order-2 xl:order-none xl:contents" : ""}`}>
+          <div className={`max-sm:mt-1 ${homepage ? "order-3 xl:order-none xl:contents" : ""}`}>
             <div className="mb-1 hidden px-1 max-sm:block">
               <WeatherWidget mobileExtended />
             </div>
@@ -70,7 +70,7 @@ export default async function Header({ homepage = false }: { homepage?: boolean 
 
         {homepage ? (
           <>
-            <div className="order-3 w-full min-w-0 flex-1 py-1 xl:order-none xl:col-start-2 xl:row-start-1 xl:py-2">
+            <div className="order-2 w-full min-w-0 flex-1 py-1 xl:order-none xl:col-start-2 xl:row-start-1 xl:py-2">
               <HeroSearchBar inHeader />
             </div>
             <div className="hidden w-full lg:block lg:col-start-2 lg:col-span-2 lg:row-start-2 xl:justify-self-end">
