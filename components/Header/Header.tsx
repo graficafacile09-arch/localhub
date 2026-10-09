@@ -27,8 +27,8 @@ export default async function Header(_props: { homepage?: boolean } = {}) {
           </div>
         </div>
 
-        <div className="col-span-2 row-start-2 flex w-full min-w-0 items-center gap-1 xl:col-span-1 xl:col-start-1 xl:row-start-2">
-          <Link href="/" aria-label="InCittà — Home" className="min-w-0 shrink-0">
+        <div className="col-span-2 row-start-2 flex w-full min-w-0 items-center gap-1 xl:contents">
+          <Link href="/" aria-label="InCittà — Home" className="min-w-0 shrink-0 xl:col-start-1 xl:row-start-2">
             <Image
               src="/logo-transparent.png"
               alt="InCittà"
@@ -39,7 +39,7 @@ export default async function Header(_props: { homepage?: boolean } = {}) {
               className="-my-2 h-auto max-sm:w-[min(64vw,246px)] max-[374px]:w-[min(58vw,185px)] sm:w-[min(56vw,240px)] md:w-[260px] xl:w-[320px]"
             />
           </Link>
-          <div className="ml-auto mr-1 flex shrink-0 items-center gap-1">
+          <div className="ml-auto mr-1 flex shrink-0 items-center gap-1 xl:col-start-3 xl:row-start-2">
             <div className="flex flex-col items-center gap-1 max-sm:flex-row">
               <HeaderCartIcon />
               <AccountMenu account={account} guestMode={guestMode} />
@@ -47,7 +47,7 @@ export default async function Header(_props: { homepage?: boolean } = {}) {
           </div>
         </div>
 
-        <div className="col-span-2 row-start-3 w-full min-w-0 py-1 xl:col-start-2 xl:row-start-2 xl:py-2">
+        <div className="col-span-2 row-start-3 w-full min-w-0 py-1 xl:col-span-1 xl:col-start-2 xl:row-start-2 xl:py-2">
           <HeroSearchBar inHeader />
         </div>
 
