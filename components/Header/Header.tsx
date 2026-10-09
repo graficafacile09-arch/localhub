@@ -83,7 +83,7 @@ export default async function Header({ homepage = false }: { homepage?: boolean 
               <HeroSearchBar inHeader />
             </div>
 
-            <div className="order-3 mt-2 w-full min-w-0 xl:col-span-3 xl:row-start-3 xl:mt-0 xl:pt-2">
+            <div className="order-3 mt-5 w-full min-w-0 xl:col-span-3 xl:row-start-3 xl:mt-0 xl:pt-4">
               <HeaderNav />
             </div>
           </>
