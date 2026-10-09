@@ -12,6 +12,7 @@ import {
   type AreaAttiva,
 } from "@/lib/auth/area";
 import { GUEST_COOKIE } from "@/lib/auth/guest";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
 export async function proxy(request: NextRequest) {
   // Protezione applicativa delle anteprime Vercel. Attiva solo quando le
@@ -148,11 +149,16 @@ export async function proxy(request: NextRequest) {
     try {
       const tabellaManutenzione =
         process.env.VERCEL_ENV === "production" ? "site_maintenance" : "site_maintenance_preview";
-      const { data: manutenzione } = await supabase
+      // Leggi lo stato con la chiave server-only: la chiave anon può essere
+      // bloccata dalle policy RLS e lasciare il sito online anche quando
+      // l'amministratore lo ha messo in manutenzione.
+      const dbManutenzione = createAdminSupabaseClient();
+      const { data: manutenzione, error: erroreManutenzione } = await dbManutenzione
         .from(tabellaManutenzione)
         .select("enabled")
         .eq("id", 1)
         .maybeSingle();
+      if (erroreManutenzione) throw erroreManutenzione;
 
       if (manutenzione?.enabled === true) {
         if (pathname.startsWith("/api/")) {
