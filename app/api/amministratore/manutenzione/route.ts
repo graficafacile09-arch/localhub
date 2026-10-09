@@ -30,6 +30,8 @@ export async function GET() {
     enabled: Boolean(data.enabled),
     message: String(data.message || MESSAGGIO_DEFAULT),
     updatedAt: data.updated_at,
+    environment: process.env.VERCEL_ENV === "production" ? "production" : "preview",
+    table: TABELLA_MANUTENZIONE,
   });
 }
 
@@ -79,5 +81,7 @@ export async function PATCH(request: Request) {
     enabled: Boolean(data.enabled),
     message: String(data.message),
     updatedAt: data.updated_at,
+    environment: process.env.VERCEL_ENV === "production" ? "production" : "preview",
+    table: TABELLA_MANUTENZIONE,
   });
 }
