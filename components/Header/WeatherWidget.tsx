@@ -89,7 +89,7 @@ export default function WeatherWidget() {
         <div
           role="dialog"
           aria-label="Dettagli meteo di Castrovillari"
-          className="absolute right-0 top-full z-[80] mt-2 w-64 max-w-[calc(100vw-2rem)] rounded-xl border border-slate-200 bg-white p-4 text-left shadow-xl"
+          className="absolute left-0 top-full z-[80] mt-2 w-64 max-w-[calc(100vw-1rem)] rounded-xl border border-slate-200 bg-white p-4 text-left shadow-xl"
         >
           <div className="flex items-start justify-between gap-3">
             <div>
