@@ -105,7 +105,7 @@ export default async function Home() {
 
         <div className="relative z-10 mx-auto max-w-7xl px-4 py-10 text-left md:px-6 md:py-16">
           <div>
-            <HeaderNav overlay />
+            <div className="lg:hidden"><HeaderNav overlay /></div>
             <h1 className="mt-4 max-w-2xl text-3xl font-black leading-tight tracking-tight text-white drop-shadow-lg md:mt-6 md:text-5xl">
               Tutto quello che cerchi... <span className="text-yellow-300">è già</span> nella tua città.
             </h1>
