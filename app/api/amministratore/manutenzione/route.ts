@@ -6,33 +6,42 @@ import { registraAttivitaAdmin, OPERATION_TYPES, TARGET_TYPES } from "@/lib/ammi
 const MESSAGGIO_DEFAULT =
   "Stiamo lavorando per migliorare il servizio. Ci scusiamo per il disagio e torneremo online al più presto.";
 
-// Preview e produzione hanno righe separate: le prove non devono mai attivare
-// la manutenzione sul dominio pubblico.
-const TABELLA_MANUTENZIONE =
-  process.env.VERCEL_ENV === "production" ? "site_maintenance" : "site_maintenance_preview";
+const TABELLE = {
+  production: "site_maintenance",
+  preview: "site_maintenance_preview",
+} as const;
+
+type Target = keyof typeof TABELLE;
+
+async function leggiStato(db: ReturnType<typeof createAdminSupabaseClient>, target: Target) {
+  const { data, error } = await db
+    .from(TABELLE[target])
+    .select("enabled, message, updated_at")
+    .eq("id", 1)
+    .maybeSingle();
+  if (error || !data) throw new Error("Impossibile leggere le impostazioni di manutenzione.");
+  return {
+    enabled: Boolean(data.enabled),
+    message: String(data.message || MESSAGGIO_DEFAULT),
+    updatedAt: data.updated_at,
+    table: TABELLE[target],
+  };
+}
 
 export async function GET() {
   const { error } = await requireApiArea("admin");
   if (error) return error;
 
-  const db = createAdminSupabaseClient();
-  const { data, error: dbError } = await db
-    .from(TABELLA_MANUTENZIONE)
-    .select("enabled, message, updated_at")
-    .eq("id", 1)
-    .maybeSingle();
-
-  if (dbError || !data) {
-    return apiError("READ_FAILED", "Impossibile leggere le impostazioni di manutenzione. Verifica che la migrazione sia stata applicata.", 500);
+  try {
+    const db = createAdminSupabaseClient();
+    const [production, preview] = await Promise.all([
+      leggiStato(db, "production"),
+      leggiStato(db, "preview"),
+    ]);
+    return apiOk({ production, preview });
+  } catch {
+    return apiError("READ_FAILED", "Impossibile leggere lo stato di manutenzione di produzione e anteprima.", 500);
   }
-
-  return apiOk({
-    enabled: Boolean(data.enabled),
-    message: String(data.message || MESSAGGIO_DEFAULT),
-    updatedAt: data.updated_at,
-    environment: process.env.VERCEL_ENV === "production" ? "production" : "preview",
-    table: TABELLA_MANUTENZIONE,
-  });
 }
 
 export async function PATCH(request: Request) {
@@ -40,18 +49,25 @@ export async function PATCH(request: Request) {
   if (error) return error;
 
   const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
-  if (!body || typeof body.enabled !== "boolean" || typeof body.message !== "string") {
-    return apiError("VALIDATION_ERROR", "Richiesta non valida: servono stato e messaggio.", 422);
+  if (
+    !body ||
+    (body.target !== "production" && body.target !== "preview") ||
+    typeof body.enabled !== "boolean" ||
+    typeof body.message !== "string"
+  ) {
+    return apiError("VALIDATION_ERROR", "Richiesta non valida: specifica destinazione, stato e messaggio.", 422);
   }
 
+  const target = body.target as Target;
   const message = body.message.trim();
   if (message.length < 5 || message.length > 500) {
     return apiError("VALIDATION_ERROR", "Il messaggio deve contenere da 5 a 500 caratteri.", 422);
   }
 
+  const table = TABELLE[target];
   const db = createAdminSupabaseClient();
   const { data, error: dbError } = await db
-    .from(TABELLA_MANUTENZIONE)
+    .from(table)
     .update({
       enabled: body.enabled,
       message,
@@ -63,7 +79,7 @@ export async function PATCH(request: Request) {
     .single();
 
   if (dbError || !data) {
-    return apiError("UPDATE_FAILED", "Salvataggio non riuscito. Verifica che la migrazione sia stata applicata.", 500);
+    return apiError("UPDATE_FAILED", `Salvataggio non riuscito per ${target === "production" ? "il sito pubblico" : "l'anteprima privata"}.`, 500);
   }
 
   await registraAttivitaAdmin({
@@ -71,17 +87,17 @@ export async function PATCH(request: Request) {
     adminEmail: sessione.user.email ?? "",
     operationType: OPERATION_TYPES.IMPOSTAZIONI_MODIFICATE,
     targetType: TARGET_TYPES.IMPOSTAZIONI,
-    targetId: TABELLA_MANUTENZIONE,
-    targetName: "Modalità manutenzione sito",
+    targetId: table,
+    targetName: target === "production" ? "Manutenzione sito pubblico" : "Manutenzione anteprima privata",
     result: "success",
-    detail: { enabled: Boolean(data.enabled), environment: process.env.VERCEL_ENV ?? "development" },
+    detail: { enabled: Boolean(data.enabled), target },
   });
 
   return apiOk({
+    target,
     enabled: Boolean(data.enabled),
     message: String(data.message),
     updatedAt: data.updated_at,
-    environment: process.env.VERCEL_ENV === "production" ? "production" : "preview",
-    table: TABELLA_MANUTENZIONE,
+    table,
   });
 }
