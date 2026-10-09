@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { CheckCircle2, ExternalLink, Loader2, LockKeyhole, Save, Wrench } from "lucide-react";
 
 type Stato = { enabled: boolean; message: string; updatedAt?: string | null };
+type PublishResponse = { success?: boolean; data?: { url?: string; state?: string; branch?: string }; error?: { message?: string } };
+
 type ApiResponse = {
   success?: boolean;
   data?: Stato;
@@ -21,6 +23,10 @@ export default function ManutenzioneSitoCard() {
   const [caricamento, setCaricamento] = useState(true);
   const [salvataggio, setSalvataggio] = useState(false);
   const [esito, setEsito] = useState<{ testo: string; ok: boolean } | null>(null);
+  const [conferma, setConferma] = useState(false);
+  const [testoConferma, setTestoConferma] = useState("");
+  const [pubblicando, setPubblicando] = useState(false);
+  const [deployment, setDeployment] = useState<{url:string; state:string; branch:string} | null>(null);
 
   useEffect(() => {
     let attivo = true;
@@ -67,6 +73,21 @@ export default function ManutenzioneSitoCard() {
     }
   };
 
+  const pubblica = async () => {
+    if (testoConferma !== "PUBBLICA INCITTÀ") return;
+    setPubblicando(true); setEsito(null); setDeployment(null);
+    try {
+      const response = await fetch("/api/amministratore/pubblica-versione", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ confirmation: testoConferma }) });
+      const json = (await response.json().catch(() => null)) as PublishResponse | null;
+      if (!response.ok) throw new Error(json?.error?.message ?? "Vercel non ha accettato la richiesta.");
+      const value = json?.data;
+      if (!value?.url) throw new Error("Vercel non ha restituito un URL di deployment.");
+      setDeployment({ url: value.url, state: value.state ?? "BUILDING", branch: value.branch ?? "main" });
+      setEsito({ testo: "Richiesta inviata. Verifica che il deployment sia READY e controlla il sito.", ok: true });
+      setConferma(false); setTestoConferma("");
+    } catch (error) { setEsito({ testo: error instanceof Error ? error.message : "Errore durante la pubblicazione.", ok: false }); }
+    finally { setPubblicando(false); }
+  };
   const salvaMessaggio = async () => { await salva(stato.enabled); };
 
   return (
