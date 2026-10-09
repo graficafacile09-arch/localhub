@@ -30,7 +30,7 @@ export default async function Header({ homepage = false }: { homepage?: boolean 
 
   return (
     <header className="border-b border-slate-200 bg-white shadow-sm">
-      <div className={`mx-auto flex max-w-7xl flex-col items-center justify-between gap-1 px-1.5 py-1.5 ${homepage ? "max-sm:gap-0" : "max-sm:gap-2"} max-sm:px-2 max-sm:py-2 max-[374px]:gap-1 max-[374px]:px-1 max-[374px]:py-1 sm:px-4 md:px-4 md:py-0 xl:gap-x-4 xl:gap-y-0 xl:py-0 ${homepage ? "xl:grid xl:grid-cols-[320px_minmax(0,1fr)_auto] xl:grid-rows-[auto_auto] xl:items-center" : "xl:flex-row xl:items-start xl:gap-4"}`}>
+      <div className={`mx-auto flex max-w-7xl flex-col items-center justify-between gap-1 px-1.5 py-1.5 ${homepage ? "max-sm:gap-0" : "max-sm:gap-2"} max-sm:px-2 max-sm:py-2 max-[374px]:gap-1 max-[374px]:px-1 max-[374px]:py-1 sm:px-4 md:px-4 md:py-0 xl:gap-x-4 xl:gap-y-0 xl:py-0 ${homepage ? "xl:grid xl:grid-cols-[320px_minmax(0,1fr)_auto] xl:grid-rows-[auto_auto_auto] xl:items-center" : "xl:flex-row xl:items-start xl:gap-4"}`}>
         <div className={homepage ? "contents" : "flex w-full flex-col xl:w-auto"}>
           {homepage && (
             <div className="order-0 flex w-full min-w-0 items-center justify-between gap-2 border-b border-slate-100 px-1 pb-1 xl:col-span-3 xl:row-start-1 xl:justify-end xl:gap-4 xl:border-0 xl:px-0 xl:pb-0 xl:pt-2">
@@ -89,5 +89,7 @@ export default async function Header({ homepage = false }: { homepage?: boolean 
         ) : (
           <HeaderNav />
         )}
+      </div>
+    </header>
   );
 }
