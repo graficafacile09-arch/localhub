@@ -44,6 +44,30 @@ export async function POST(request: Request) {
       503
     );
   }
+  // Individua la preview READY più recente del ramo di lavoro: la produzione
+  // deve ricevere esattamente il commit che è stato compilato e testato in preview.
+  const previewsResponse = await fetch(
+    `https://api.vercel.com/v6/deployments?projectId=${encodeURIComponent(PROJECT_ID)}&teamId=${encodeURIComponent(TEAM_ID)}&target=preview&limit=20`,
+    { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" }
+  );
+  const previews = (await previewsResponse.json().catch(() => null)) as
+    | { deployments?: Array<{ uid?: string; id?: string; url?: string; readyState?: string; state?: string; createdAt?: number; created?: number; meta?: Record<string, string>; gitSource?: { sha?: string; ref?: string } }> }
+    | null;
+  if (!previewsResponse.ok) {
+    return apiError("PREVIEW_LOOKUP_FAILED", "Non riesco a verificare la preview su Vercel. Nessuna modifica è stata pubblicata.", 502);
+  }
+  const testedPreview = (previews?.deployments ?? [])
+    .filter((item) => item.meta?.githubCommitRef === ref && (item.readyState === "READY" || item.state === "READY"))
+    .sort((a, b) => (b.createdAt ?? b.created ?? 0) - (a.createdAt ?? a.created ?? 0))[0];
+  const testedSha = testedPreview?.meta?.githubCommitSha ?? testedPreview?.gitSource?.sha;
+  if (!testedPreview || !testedSha) {
+    return apiError(
+      "READY_PREVIEW_NOT_FOUND",
+      "Non trovo una preview READY con il commit del ramo di lavoro. Apri e verifica il link privato, attendi READY e riprova. Nessuna modifica è stata pubblicata.",
+      409
+    );
+  }
+
   const response = await fetch(
     `https://api.vercel.com/v13/deployments?teamId=${encodeURIComponent(TEAM_ID)}`,
     {
@@ -61,9 +85,13 @@ export async function POST(request: Request) {
           org: REPOSITORY_ORG,
           repo: REPOSITORY_NAME,
           ref,
+          sha: testedSha,
         },
         meta: {
           source: "incitta-admin-publish",
+          testedPreviewId: testedPreview.uid ?? testedPreview.id ?? "",
+          testedPreviewUrl: testedPreview.url ?? "",
+          testedCommitSha: testedSha,
           requestedBy: sessione.user.id,
           requestedByEmail: sessione.user.email ?? "",
         },
@@ -89,6 +117,8 @@ export async function POST(request: Request) {
     url: result.url.startsWith("http") ? result.url : `https://${result.url}`,
     state: result.readyState ?? "BUILDING",
     branch: ref,
+    testedCommitSha: testedSha,
+    testedPreviewUrl: testedPreview.url ?? "",
     requestedBy: sessione.user.email ?? sessione.user.id,
     message: "Richiesta inviata a Vercel. Verifica che il deployment sia READY e controlla il sito pubblicato.",
   });
