@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Clock, MapPin, Phone, Pill } from "lucide-react";
+import { Clock, MapPin, Phone } from "lucide-react";
 
 /**
  * Widget "Farmacia di turno · Castrovillari" nell'header.
@@ -76,7 +76,7 @@ export default function FarmacieTurnoWidget() {
     <>
       {/* ── MOBILE/TABLET: barra compatta a tutta larghezza, una riga ────── */}
       <div className="mt-1 flex w-full items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50/70 px-2 py-1 text-[11px] leading-none text-slate-600 lg:hidden">
-        <Pill className="h-3.5 w-3.5 shrink-0 text-emerald-600" aria-hidden />
+        <span aria-hidden className="inline-flex h-4 w-4 shrink-0 items-center justify-center text-[17px] font-black leading-none text-green-600">F</span>
         <span className="shrink-0 font-semibold text-slate-600">Farmacia di turno:</span>
         <a
           href={urlScheda}
@@ -101,7 +101,7 @@ export default function FarmacieTurnoWidget() {
       {/* ── DESKTOP: card completa ────────────────────────────────────────── */}
       <div className="mt-2 hidden w-full rounded-xl border border-slate-200 bg-white/80 px-3 py-2 text-slate-700 lg:block">
         <p className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wide text-slate-500">
-          <Pill className="h-3.5 w-3.5 text-emerald-600" aria-hidden />
+          <span aria-hidden className="inline-flex h-4 w-4 shrink-0 items-center justify-center text-[17px] font-black leading-none text-green-600">F</span>
           Farmacia di turno · Castrovillari
         </p>
 
