@@ -142,11 +142,31 @@ export default function ManutenzioneSitoCard() {
             <div className="min-w-0 flex-1">
               <p className="text-sm font-bold text-slate-800">Anteprima privata e pubblicazione del codice</p>
               <p className="mt-1 text-sm leading-6 text-slate-600">
-                Le modifiche al codice vanno salvate nel ramo di lavoro e verificate nell'anteprima Vercel. Questa scheda gestisce soltanto la manutenzione: non pubblica automaticamente codice né modifica ordini o pagamenti.
+                La pubblicazione è separata dalla manutenzione e richiede una conferma esplicita. Per impostazione predefinita Vercel crea il deployment Production dal ramo main.
               </p>
               <a href="https://vercel.com/localhub-castrovillari/localhub" target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-blue-700 underline decoration-blue-200 underline-offset-4 hover:text-blue-900">
                 Apri il progetto e le anteprime Vercel <ExternalLink className="h-4 w-4" aria-hidden />
               </a>
+              {deployment && <p className="mt-3 text-sm text-slate-700">Ultimo deployment richiesto: <strong>{deployment.state}</strong> dal ramo <strong>{deployment.branch}</strong>. <a className="font-bold text-blue-700 underline" href={deployment.url} target="_blank" rel="noreferrer">Apri deployment</a></p>}
+              {!conferma ? (
+                <button type="button" onClick={() => setConferma(true)} disabled={caricamento || salvataggio || pubblicando} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-bold text-white hover:bg-slate-700 disabled:opacity-50">
+                  <ExternalLink className="h-4 w-4" aria-hidden /> Pubblica una versione su Vercel
+                </button>
+              ) : (
+                <div className="mt-4 space-y-3 rounded-xl border border-amber-300 bg-amber-50 p-4">
+                  <p className="text-sm font-bold text-amber-950">Questa operazione può aggiornare il sito pubblico.</p>
+                  <p className="text-sm leading-6 text-amber-900">Verifica prima la preview e assicurati che il codice desiderato sia nel ramo configurato. Scrivi PUBBLICA INCITTÀ per confermare.</p>
+                  <input value={testoConferma} onChange={(event) => setTestoConferma(event.target.value)} autoComplete="off" aria-label="Conferma pubblicazione" className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm" />
+                  <div className="flex flex-wrap gap-2">
+                    <button type="button" onClick={pubblica} disabled={testoConferma !== "PUBBLICA INCITTÀ" || pubblicando} className="inline-flex items-center gap-2 rounded-xl bg-red-700 px-4 py-3 text-sm font-bold text-white hover:bg-red-800 disabled:opacity-50">
+                      {pubblicando ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <ExternalLink className="h-4 w-4" aria-hidden />}
+                      {pubblicando ? "Invio richiesta…" : "Conferma e avvia pubblicazione"}
+                    </button>
+                    <button type="button" onClick={() => { setConferma(false); setTestoConferma(""); }} disabled={pubblicando} className="rounded-xl border border-slate-300 px-4 py-3 text-sm font-bold text-slate-700">Annulla</button>
+                  </div>
+                </div>
+              )}
+              <p className="mt-3 text-xs leading-5 text-slate-500">Richiede la variabile segreta VERCEL_TOKEN in Vercel. Se manca, la richiesta viene rifiutata senza pubblicare.</p>
             </div>
           </div>
         </div>
