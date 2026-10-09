@@ -82,9 +82,7 @@ export default async function Header({ homepage = false }: { homepage?: boolean 
             <div className="order-2 w-full min-w-0 flex-1 py-1 max-sm:py-0 xl:order-none xl:col-start-2 xl:row-start-2 xl:py-2">
               <HeroSearchBar inHeader />
             </div>
-            <div className="hidden w-full lg:block lg:col-start-2 lg:col-span-2 lg:row-start-3 xl:justify-self-end">
-              <HeaderNav />
-            </div>
+
           </>
         ) : (
           <HeaderNav />
