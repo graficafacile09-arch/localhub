@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import AccountMenu from "./AccountMenu";
+import FarmacieTurnoWidget from "./FarmacieTurnoWidget";
 import HeaderCartIcon from "./HeaderCartIcon";
 import HeaderNav from "./HeaderNav";
 import HeroSearchBar from "@/components/home/HeroSearchBar";
@@ -20,10 +21,12 @@ export default async function Header(_props: { homepage?: boolean } = {}) {
   return (
     <header className="border-b border-slate-200 bg-white shadow-sm">
       <div className="mx-auto grid w-full max-w-7xl grid-cols-[minmax(0,1fr)_auto] grid-rows-[auto_auto_auto] items-center gap-x-2 gap-y-0 px-2 py-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:px-4 xl:grid-cols-[320px_minmax(0,1fr)_auto] xl:gap-x-4 xl:px-4 xl:py-0">
-        <div className="col-span-2 row-start-1 flex w-full min-w-0 items-center justify-between gap-2 border-b border-slate-100 px-1 pb-1 xl:col-span-3 xl:justify-end xl:gap-4 xl:border-0 xl:px-0 xl:pb-0 xl:pt-2">
-          <div className="flex min-w-0 items-center gap-1 sm:gap-2" />
-          <div className="flex shrink-0 items-center">
+        <div className="col-span-2 row-start-1 flex w-full min-w-0 items-center justify-between gap-2 border-b border-slate-100 px-1 pb-1 xl:col-span-3 xl:justify-between xl:gap-4 xl:border-0 xl:px-0 xl:pb-0 xl:pt-2">
+          <div className="flex min-w-0 items-center gap-1 sm:gap-2">
             <WeatherWidget />
+          </div>
+          <div className="flex min-w-0 shrink-0 items-center">
+            <FarmacieTurnoWidget />
           </div>
         </div>
 
