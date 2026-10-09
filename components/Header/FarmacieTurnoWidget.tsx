@@ -1,20 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Clock, MapPin, Phone } from "lucide-react";
-
-/**
- * Widget "Farmacia di turno · Castrovillari" nell'header.
- *
- * - MOBILE/TABLET: barra COMPATTA a tutta larghezza (~24px, una sola riga):
- *   "💊 Farmacia di turno: NOME ... telefono". Riempie la larghezza sotto
- *   il logo senza lasciare spazi vuoti e senza aggiungere quasi altezza.
- * - DESKTOP: card completa (titolo, nome, indirizzo, orari, telefono, fonte).
- *
- * I dati arrivano da /api/farmacie-turno (farmaciediturno.org, cache
- * server-side). Finché non ci sono dati non renderizza nulla: nessun flash,
- * nessuno spazio vuoto.
- */
+import { Clock, MapPin, Phone, X, ExternalLink } from "lucide-react";
 
 type FarmaciaTurno = {
   id: string | null;
@@ -40,6 +27,7 @@ const URL_FONTE = "https://www.farmaciediturno.org/comune.asp?cod=78033";
 export default function FarmacieTurnoWidget() {
   const [dati, setDati] = useState<RispostaApi["data"] | null>(null);
   const [pronto, setPronto] = useState(false);
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     let cancellato = false;
@@ -47,13 +35,9 @@ export default function FarmacieTurnoWidget() {
       .then((r) => r.json())
       .then((d: RispostaApi) => {
         if (cancellato) return;
-        if (d?.success && d.data && d.data.farmacie.length > 0) {
-          setDati(d.data);
-        }
+        if (d?.success && d.data && d.data.farmacie.length > 0) setDati(d.data);
       })
-      .catch(() => {
-        // errore → nessun widget, nessun danno
-      })
+      .catch(() => {})
       .finally(() => {
         if (!cancellato) setPronto(true);
       });
@@ -63,91 +47,68 @@ export default function FarmacieTurnoWidget() {
   }, []);
 
   if (!pronto || !dati) return null;
-
-  // Il widget deve mostrare una farmacia come "di turno" solo quando la
-  // fonte valorizza esplicitamente il campo turno. Non usiamo mai la prima
-  // farmacia come fallback: sarebbe un falso positivo.
+  // Non mostrare mai una farmacia come di turno se la fonte non lo dichiara esplicitamente.
   const diTurno = dati.farmacie.find((f) => Boolean(f.turno));
   if (!diTurno) return null;
 
   const urlScheda = diTurno.urlScheda ?? URL_FONTE;
 
   return (
-    <>
-      {/* ── MOBILE/TABLET: barra compatta a tutta larghezza, una riga ────── */}
-      <div className="mt-1 flex w-full items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50/70 px-2 py-1 text-[11px] leading-none text-slate-600 lg:hidden">
-        <span aria-hidden className="inline-flex h-4 w-4 shrink-0 items-center justify-center text-[17px] font-black leading-none text-green-600">F</span>
-        <span className="shrink-0 font-semibold text-slate-600">Farmacia di turno:</span>
-        <a
-          href={urlScheda}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="min-w-0 truncate font-bold text-emerald-700 transition hover:text-emerald-900 hover:underline"
+    <div className="relative min-w-0">
+      <button
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        aria-label={`Apri dettagli farmacia di turno: ${diTurno.nome}`}
+        aria-expanded={open}
+        className="inline-flex min-h-8 max-w-full items-center gap-1.5 rounded-full px-2 py-1 text-left transition hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
+      >
+        <span aria-hidden className="inline-flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-[4px] border-2 border-green-600 text-[17px] font-black leading-none text-green-700">F</span>
+        <span className="max-w-[min(48vw,260px)] truncate text-xs font-semibold text-slate-800 sm:max-w-[300px] sm:text-sm">{diTurno.nome}</span>
+      </button>
+
+      {open && (
+        <div
+          role="dialog"
+          aria-label={`Dettagli farmacia di turno: ${diTurno.nome}`}
+          className="absolute left-0 top-full z-[80] mt-2 w-80 max-w-[calc(100vw-1.5rem)] rounded-xl border border-slate-200 bg-white p-4 text-left shadow-xl"
         >
-          {diTurno.nome}
-        </a>
-        {diTurno.telefono && (
-          <a
-            href={`tel:${diTurno.telefono}`}
-            aria-label={`Chiama la farmacia ${diTurno.nome}`}
-            className="ml-auto flex shrink-0 items-center gap-1 font-semibold text-blue-700 transition hover:text-blue-900 hover:underline"
-          >
-            <Phone className="h-3 w-3" aria-hidden />
-            {diTurno.telefono}
-          </a>
-        )}
-      </div>
+          <div className="flex items-start gap-3">
+            <span aria-hidden className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md border-2 border-green-600 text-2xl font-black leading-none text-green-700">F</span>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Farmacia di turno · Castrovillari</p>
+              <p className="mt-1 break-words text-sm font-bold text-slate-900">{diTurno.nome}</p>
+            </div>
+            <button type="button" onClick={() => setOpen(false)} aria-label="Chiudi dettagli farmacia" className="rounded p-1 text-slate-500 hover:bg-slate-100">
+              <X className="h-4 w-4" aria-hidden />
+            </button>
+          </div>
 
-      {/* ── DESKTOP: card completa ────────────────────────────────────────── */}
-      <div className="mt-2 hidden w-full rounded-xl border border-slate-200 bg-white/80 px-3 py-2 text-slate-700 lg:block">
-        <p className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-wide text-slate-500">
-          <span aria-hidden className="inline-flex h-4 w-4 shrink-0 items-center justify-center text-[17px] font-black leading-none text-green-600">F</span>
-          Farmacia di turno · Castrovillari
-        </p>
-
-        <div className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
-          <a
-            href={urlScheda}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm font-bold text-emerald-700 transition hover:text-emerald-900 hover:underline"
-          >
-            {diTurno.nome}
+          <div className="mt-3 space-y-2 text-sm text-slate-700">
+            {diTurno.indirizzo && (
+              <p className="flex items-start gap-2">
+                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" aria-hidden />
+                <span>{diTurno.indirizzo}</span>
+              </p>
+            )}
+            {diTurno.apertura && (
+              <p className="flex items-start gap-2">
+                <Clock className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" aria-hidden />
+                <span>{diTurno.apertura}</span>
+              </p>
+            )}
+            {diTurno.telefono && (
+              <a href={`tel:${diTurno.telefono}`} className="flex items-center gap-2 font-semibold text-blue-700 hover:underline">
+                <Phone className="h-4 w-4 shrink-0" aria-hidden />
+                {diTurno.telefono}
+              </a>
+            )}
+          </div>
+          <a href={urlScheda} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 hover:underline">
+            Consulta la scheda della farmacia <ExternalLink className="h-3.5 w-3.5" aria-hidden />
           </a>
-          {diTurno.indirizzo && (
-            <span className="inline-flex items-center gap-1 text-[11px] text-slate-500">
-              <MapPin className="h-3 w-3 shrink-0" aria-hidden />
-              {diTurno.indirizzo}
-            </span>
-          )}
+          <p className="mt-2 text-[11px] text-slate-400">Fonte: farmaciediturno.org</p>
         </div>
-
-        <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-slate-600">
-          {diTurno.apertura && (
-            <span className="inline-flex items-center gap-1">
-              <Clock className="h-3 w-3 shrink-0 text-slate-400" aria-hidden />
-              {diTurno.apertura}
-            </span>
-          )}
-          {diTurno.telefono && (
-            <a
-              href={`tel:${diTurno.telefono}`}
-              className="inline-flex items-center gap-1 font-semibold text-blue-700 transition hover:text-blue-900 hover:underline"
-            >
-              <Phone className="h-3 w-3 shrink-0" aria-hidden />
-              {diTurno.telefono}
-            </a>
-          )}
-          <a
-            href={URL_FONTE}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="ml-auto text-[10px] text-slate-400 transition hover:text-slate-600 hover:underline"
-          >
-            Fonte: farmaciediturno.org
-          </a>
-        </div>
-      </div>
-    </>
+      )}
+    </div>
   );
 }
