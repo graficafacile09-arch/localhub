@@ -38,7 +38,7 @@ import type { ComponentType } from "react";
  * sm/lg) per restare ariosi senza allargare la barra; i separatori verticali
  * restano allineati ai bordi delle celle della griglia.
  */
-export default function HeaderNav() {
+export default function HeaderNav({ overlay = false }: { overlay?: boolean } = {}) {
   const pathname = usePathname();
 
   // La voce "Offerte" resta IDENTICA alle altre (stessa struttura, larghezza,
@@ -54,16 +54,16 @@ export default function HeaderNav() {
   ];
 
   return (
-    <div className="w-full lg:w-auto incitta-desktop-public-nav">
+    <div className={overlay ? "w-full lg:w-auto" : "w-full lg:w-auto incitta-desktop-public-nav"}>
       <nav
         aria-label="Navigazione principale"
-        className="relative mx-auto grid w-full max-w-[550px] grid-cols-5 items-center justify-items-center border-y border-slate-200 bg-white py-1 md:py-1 xl:w-auto"
+        className={overlay ? "relative mx-auto grid w-full max-w-[680px] grid-cols-5 items-center justify-items-center py-1 md:py-2 xl:w-auto" : "relative mx-auto grid w-full max-w-[550px] grid-cols-5 items-center justify-items-center border-y border-slate-200 bg-white py-1 md:py-1 xl:w-auto"}
       >
         {[0, 1, 2, 3].map((i) => (
           <span
             key={i}
             aria-hidden
-            className="pointer-events-none absolute top-1/2 h-8 w-px -translate-y-1/2 bg-slate-200"
+            className={`pointer-events-none absolute top-1/2 h-8 w-px -translate-y-1/2 ${overlay ? "bg-white/50" : "bg-slate-200"}`}
             style={{ left: `calc(20% + ${i * 20}%)` }}
           />
         ))}
@@ -92,7 +92,7 @@ export default function HeaderNav() {
                 )}
               </span>
 
-              <span className="incitta-public-nav-label whitespace-nowrap text-xs font-bold leading-none tracking-tight text-slate-900 transition-colors duration-200 sm:text-sm">
+              <span className={`incitta-public-nav-label whitespace-nowrap text-xs font-bold leading-none tracking-tight transition-colors duration-200 sm:text-sm ${overlay ? "text-white drop-shadow-sm" : "text-slate-900"}`}>
                 {voce.label}
               </span>
 
