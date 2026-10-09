@@ -32,7 +32,7 @@ export async function POST(request: Request) {
   }
 
   // Branch esplicito configurabile; in sua assenza usiamo main, mai un branch di anteprima.
-  const ref = process.env.VERCEL_PUBLISH_BRANCH || "main";
+  const ref = process.env.VERCEL_PUBLISH_BRANCH || process.env.VERCEL_GIT_COMMIT_REF || "main";
   const response = await fetch(
     `https://api.vercel.com/v13/deployments?teamId=${encodeURIComponent(TEAM_ID)}`,
     {
