@@ -142,7 +142,7 @@ export default function ManutenzioneSitoCard() {
             <div className="min-w-0 flex-1">
               <p className="text-sm font-bold text-slate-800">Anteprima privata e pubblicazione del codice</p>
               <p className="mt-1 text-sm leading-6 text-slate-600">
-                La pubblicazione è separata dalla manutenzione e richiede una conferma esplicita. Viene usato il ramo di questa anteprima, salvo diversa configurazione VERCEL_PUBLISH_BRANCH.
+                La pubblicazione è separata dalla manutenzione e richiede una conferma esplicita. Per sicurezza, viene usato solo il ramo configurato esplicitamente in VERCEL_PUBLISH_BRANCH; senza questa impostazione la richiesta viene bloccata.
               </p>
               <a href="https://vercel.com/localhub-castrovillari/localhub" target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-blue-700 underline decoration-blue-200 underline-offset-4 hover:text-blue-900">
                 Apri il progetto e le anteprime Vercel <ExternalLink className="h-4 w-4" aria-hidden />
@@ -166,7 +166,7 @@ export default function ManutenzioneSitoCard() {
                   </div>
                 </div>
               )}
-              <p className="mt-3 text-xs leading-5 text-slate-500">Richiede la variabile segreta VERCEL_TOKEN in Vercel. Se manca, la richiesta viene rifiutata senza pubblicare.</p>
+              <p className="mt-3 text-xs leading-5 text-slate-500">Richiede VERCEL_TOKEN (segreto server-side) e VERCEL_PUBLISH_BRANCH (ramo approvato) nell'ambiente Vercel della preview. Se manca una delle due, la richiesta viene rifiutata senza pubblicare.</p>
             </div>
           </div>
         </div>
