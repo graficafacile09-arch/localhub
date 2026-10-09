@@ -165,9 +165,10 @@ export default function ManutenzioneSitoCard() {
             <div className="min-w-0 flex-1">
               <p className="text-sm font-bold text-slate-800">Pubblicazione della versione</p>
               <p className="mt-1 text-sm leading-6 text-slate-600">La pubblicazione del codice è separata dagli interruttori di manutenzione e richiede una conferma esplicita. Controlla la preview prima di pubblicare.</p>
-              <a href="https://vercel.com/localhub-castrovillari/localhub" target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-blue-700 underline decoration-blue-200 underline-offset-4 hover:text-blue-900">
-                Apri il progetto e le anteprime Vercel <ExternalLink className="h-4 w-4" aria-hidden />
+              <a href="https://localhub-git-fix-hero-search-top-4e7c6e-localhub-castrovillari.vercel.app" target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-2 rounded-xl bg-blue-700 px-4 py-3 text-sm font-bold text-white hover:bg-blue-800">
+                Apri il link privato per lavorare e testare <ExternalLink className="h-4 w-4" aria-hidden />
               </a>
+              <p className="mt-2 text-xs leading-5 text-slate-500">Questa è l’anteprima del ramo di lavoro. Le modifiche al codice devono essere salvate nel progetto GitHub e il nuovo deployment deve risultare READY prima della pubblicazione.</p>
               {deployment && <p className="mt-3 text-sm text-slate-700">Ultimo deployment richiesto: <strong>{deployment.state}</strong> dal ramo <strong>{deployment.branch}</strong>. <a className="font-bold text-blue-700 underline" href={deployment.url} target="_blank" rel="noreferrer">Apri deployment</a></p>}
               {!conferma ? (
                 <button type="button" onClick={() => setConferma(true)} disabled={caricamento || salvataggio !== null || pubblicando} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-bold text-white hover:bg-slate-700 disabled:opacity-50">
