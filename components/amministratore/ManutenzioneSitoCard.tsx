@@ -142,7 +142,7 @@ export default function ManutenzioneSitoCard() {
             <div className="min-w-0 flex-1">
               <p className="text-sm font-bold text-slate-800">Anteprima privata e pubblicazione del codice</p>
               <p className="mt-1 text-sm leading-6 text-slate-600">
-                La pubblicazione è separata dalla manutenzione e richiede una conferma esplicita. Per impostazione predefinita Vercel crea il deployment Production dal ramo main.
+                La pubblicazione è separata dalla manutenzione e richiede una conferma esplicita. Viene usato il ramo di questa anteprima, salvo diversa configurazione VERCEL_PUBLISH_BRANCH.
               </p>
               <a href="https://vercel.com/localhub-castrovillari/localhub" target="_blank" rel="noreferrer" className="mt-3 inline-flex items-center gap-2 text-sm font-bold text-blue-700 underline decoration-blue-200 underline-offset-4 hover:text-blue-900">
                 Apri il progetto e le anteprime Vercel <ExternalLink className="h-4 w-4" aria-hidden />
