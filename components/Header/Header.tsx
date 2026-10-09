@@ -30,15 +30,15 @@ export default async function Header({ homepage = false }: { homepage?: boolean 
 
   return (
     <header className="border-b border-slate-200 bg-white shadow-sm">
-      <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-1 px-1.5 py-1.5 max-sm:gap-2 max-sm:px-2 max-sm:py-2 max-[374px]:gap-1 max-[374px]:px-1 max-[374px]:py-1 sm:px-4 md:px-4 md:py-0 xl:flex-row xl:items-start xl:gap-1 xl:py-0">
+      <div className={`mx-auto flex max-w-7xl flex-col items-center justify-between gap-1 px-1.5 py-1.5 max-sm:gap-2 max-sm:px-2 max-sm:py-2 max-[374px]:gap-1 max-[374px]:px-1 max-[374px]:py-1 sm:px-4 md:px-4 md:py-0 xl:gap-x-4 xl:gap-y-0 xl:py-0 ${homepage ? "xl:grid xl:grid-cols-[320px_minmax(0,1fr)_auto] xl:grid-rows-[auto_auto] xl:items-center" : "xl:flex-row xl:items-start"}`}>
         {/* Colonna sinistra: riga LOGO + METEO + CARRELLO + ACCOUNT sulla
             stessa fascia (compatta, senza wrap a 390px), widget farmacie sotto */}
-        <div className="flex w-full flex-col xl:w-auto">
-          <div className="flex w-full min-w-0 items-center gap-1 max-[374px]:gap-1">
+        <div className={`flex w-full flex-col xl:w-auto ${homepage ? "xl:contents" : ""}`}>
+          <div className={`flex w-full min-w-0 items-center gap-1 max-[374px]:gap-1 ${homepage ? "xl:contents" : ""}`}>
             <Link
               href="/"
               aria-label="InCittà — Home"
-              className="min-w-0 shrink-0"
+              className={`min-w-0 shrink-0 ${homepage ? "xl:col-start-1 xl:row-start-1" : ""}`}
             >
               <Image
                 src="/logo-transparent.png"
@@ -50,7 +50,7 @@ export default async function Header({ homepage = false }: { homepage?: boolean 
                 className="-my-2 h-auto max-sm:w-[min(64vw,246px)] max-[374px]:w-[min(58vw,185px)] sm:w-[min(56vw,240px)] md:w-[260px] xl:w-[320px]"
               />
             </Link>
-            <div className="ml-auto mr-2 flex shrink-0 items-center gap-1 max-sm:mr-0 xl:mr-1">
+            <div className={`ml-auto mr-2 flex shrink-0 items-center gap-1 max-sm:mr-0 xl:mr-1 ${homepage ? "xl:col-start-3 xl:row-start-1" : ""}`}>
               <div className="xl:-ml-2 max-sm:hidden">
                 <WeatherWidget />
               </div>
@@ -61,18 +61,18 @@ export default async function Header({ homepage = false }: { homepage?: boolean 
               </div>
             </div>
           </div>
-          <div className="max-sm:mt-1">
+          <div className={`max-sm:mt-1 ${homepage ? "xl:contents" : ""}`}>
             <div className="mb-1 hidden px-1 max-sm:block">
               <WeatherWidget mobileExtended />
             </div>
-            <FarmacieTurnoWidget />
+            <div className={homepage ? "xl:col-start-1 xl:row-start-2" : ""}><FarmacieTurnoWidget /></div>
           </div>
         </div>
 
         {homepage ? (
-          <div className="w-full min-w-0 flex-1 py-1 xl:py-2">
+          <div className="w-full min-w-0 flex-1 py-1 xl:col-start-2 xl:row-start-1 xl:py-2">
             <HeroSearchBar inHeader />
-            <div className="hidden lg:block">
+            <div className="hidden lg:col-start-2 lg:col-span-2 lg:row-start-2 lg:block">
               <HeaderNav />
             </div>
           </div>
