@@ -63,7 +63,9 @@ export default function FarmacieTurnoWidget() {
         className="inline-flex min-h-8 max-w-full items-center gap-1.5 rounded-full px-2 py-1 text-left transition hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
       >
         <span aria-hidden className="inline-flex h-[22px] w-[22px] shrink-0 items-center justify-center rounded-[4px] border-2 border-green-600 text-[17px] font-black leading-none text-green-700">F</span>
-        <span className="max-w-[min(48vw,260px)] truncate text-xs font-semibold text-slate-800 sm:max-w-[300px] sm:text-sm">{diTurno.nome}</span>
+        <span className="flex flex-col items-start leading-tight">
+          <span className="text-[11px] font-medium text-slate-500 sm:text-xs">Farmacia di turno</span>
+        </span>
       </button>
 
       {open && (
