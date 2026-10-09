@@ -146,8 +146,10 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/manutenzione");
   if (!pathname.startsWith("/amministratore") && !apiAdminDuranteManutenzione && !percorsoAuthDuranteManutenzione) {
     try {
+      const tabellaManutenzione =
+        process.env.VERCEL_ENV === "production" ? "site_maintenance" : "site_maintenance_preview";
       const { data: manutenzione } = await supabase
-        .from("site_maintenance")
+        .from(tabellaManutenzione)
         .select("enabled")
         .eq("id", 1)
         .maybeSingle();
