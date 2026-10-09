@@ -6,13 +6,18 @@ import { registraAttivitaAdmin, OPERATION_TYPES, TARGET_TYPES } from "@/lib/ammi
 const MESSAGGIO_DEFAULT =
   "Stiamo lavorando per migliorare il servizio. Ci scusiamo per il disagio e torneremo online al più presto.";
 
+// Preview e produzione hanno righe separate: le prove non devono mai attivare
+// la manutenzione sul dominio pubblico.
+const TABELLA_MANUTENZIONE =
+  process.env.VERCEL_ENV === "production" ? "site_maintenance" : "site_maintenance_preview";
+
 export async function GET() {
   const { error } = await requireApiArea("admin");
   if (error) return error;
 
   const db = createAdminSupabaseClient();
   const { data, error: dbError } = await db
-    .from("site_maintenance")
+    .from(TABELLA_MANUTENZIONE)
     .select("enabled, message, updated_at")
     .eq("id", 1)
     .maybeSingle();
@@ -44,7 +49,7 @@ export async function PATCH(request: Request) {
 
   const db = createAdminSupabaseClient();
   const { data, error: dbError } = await db
-    .from("site_maintenance")
+    .from(TABELLA_MANUTENZIONE)
     .update({
       enabled: body.enabled,
       message,
@@ -64,10 +69,10 @@ export async function PATCH(request: Request) {
     adminEmail: sessione.user.email ?? "",
     operationType: OPERATION_TYPES.IMPOSTAZIONI_MODIFICATE,
     targetType: TARGET_TYPES.IMPOSTAZIONI,
-    targetId: "site_maintenance",
+    targetId: TABELLA_MANUTENZIONE,
     targetName: "Modalità manutenzione sito",
     result: "success",
-    detail: { enabled: Boolean(data.enabled) },
+    detail: { enabled: Boolean(data.enabled), environment: process.env.VERCEL_ENV ?? "development" },
   });
 
   return apiOk({
