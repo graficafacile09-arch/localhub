@@ -60,12 +60,12 @@ export default function FarmacieTurnoWidget() {
         onClick={() => setOpen((value) => !value)}
         aria-label={`Apri dettagli farmacia di turno: ${diTurno.nome}`}
         aria-expanded={open}
-        className="inline-flex min-h-8 max-w-full items-center gap-1.5 rounded-full px-2 py-1 text-left transition hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
+        className="inline-flex min-h-7 max-w-full items-center gap-1 rounded-full px-1.5 py-0.5 text-left transition hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
       >
-        <span aria-hidden className="relative inline-flex h-[22px] w-[22px] shrink-0 items-center justify-center"><span className="absolute h-[18px] w-[6px] rounded-[1px] bg-green-700" /><span className="absolute h-[6px] w-[18px] rounded-[1px] bg-green-700" /></span>
+        <span aria-hidden className="relative inline-flex h-[18px] w-[18px] shrink-0 items-center justify-center"><span className="absolute h-[15px] w-[5px] rounded-[1px] bg-green-700" /><span className="absolute h-[5px] w-[15px] rounded-[1px] bg-green-700" /></span>
         <span className="flex min-w-0 flex-col items-start leading-tight">
-          <span className="max-w-[170px] truncate text-xs font-normal text-slate-800">{diTurno.nome}</span>
-          <span className="text-[10px] font-normal text-slate-500">Farmacia di turno</span>
+          <span className="max-w-[150px] truncate text-[11px] font-normal text-slate-800">{diTurno.nome}</span>
+          <span className="text-[9px] font-normal text-slate-500">Farmacia di turno</span>
         </span>
       </button>
 
@@ -73,10 +73,10 @@ export default function FarmacieTurnoWidget() {
         <div
           role="dialog"
           aria-label={`Dettagli farmacia di turno: ${diTurno.nome}`}
-          className="absolute left-0 top-full z-[80] mt-2 w-80 max-w-[calc(100vw-1.5rem)] rounded-xl border border-slate-200 bg-white p-4 text-left shadow-xl"
+          className="absolute left-0 top-full z-[80] mt-2 w-72 max-w-[calc(100vw-1.5rem)] rounded-xl border border-slate-200 bg-white p-3 text-left shadow-xl"
         >
           <div className="flex items-start gap-3">
-            <span aria-hidden className="relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-emerald-50"><span className="absolute h-6 w-2 rounded-[1px] bg-green-700" /><span className="absolute h-2 w-6 rounded-[1px] bg-green-700" /></span>
+            <span aria-hidden className="relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-emerald-50"><span className="absolute h-5 w-[7px] rounded-[1px] bg-green-700" /><span className="absolute h-[7px] w-5 rounded-[1px] bg-green-700" /></span>
             <div className="min-w-0 flex-1">
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Farmacia di turno · Castrovillari</p>
               <p className="mt-1 break-words text-sm font-bold text-slate-900">{diTurno.nome}</p>
