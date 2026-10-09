@@ -31,8 +31,16 @@ export async function POST(request: Request) {
     );
   }
 
-  // In anteprima usa il ramo attualmente testato; VERCEL_PUBLISH_BRANCH può forzare un ramo specifico.
-  const ref = process.env.VERCEL_PUBLISH_BRANCH || process.env.VERCEL_GIT_COMMIT_REF || "main";
+  // Non promuovere automaticamente il branch di preview: il ramo di rilascio
+  // deve essere scelto esplicitamente dall'amministratore tramite env server-side.
+  const ref = process.env.VERCEL_PUBLISH_BRANCH;
+  if (!ref || !/^[A-Za-z0-9._/-]{1,250}$/.test(ref) || ref.startsWith("-")) {
+    return apiError(
+      "PUBLISH_BRANCH_NOT_CONFIGURED",
+      "Pubblicazione non configurata: imposta VERCEL_PUBLISH_BRANCH con il ramo Git approvato per il rilascio. Nessuna modifica è stata pubblicata.",
+      503
+    );
+  }
   const response = await fetch(
     `https://api.vercel.com/v13/deployments?teamId=${encodeURIComponent(TEAM_ID)}`,
     {
