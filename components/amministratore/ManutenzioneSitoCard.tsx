@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { CheckCircle2, ExternalLink, Loader2, LockKeyhole, Save, Wrench } from "lucide-react";
 
-type Stato = { enabled: boolean; message: string; updatedAt?: string | null };
+type Stato = { enabled: boolean; message: string; updatedAt?: string | null; environment?: "production" | "preview"; table?: string };
 type PublishResponse = { success?: boolean; data?: { url?: string; state?: string; branch?: string }; error?: { message?: string } };
 
 type ApiResponse = {
@@ -12,6 +12,8 @@ type ApiResponse = {
   enabled?: boolean;
   message?: string;
   updatedAt?: string | null;
+  environment?: "production" | "preview";
+  table?: string;
   error?: { message?: string };
 };
 
@@ -39,6 +41,8 @@ export default function ManutenzioneSitoCard() {
           enabled: Boolean(value?.enabled),
           message: typeof value?.message === "string" ? value.message : DEFAULT_MESSAGE,
           updatedAt: value?.updatedAt ?? null,
+          environment: value?.environment,
+          table: value?.table,
         });
       })
       .catch((error: unknown) => {
@@ -64,6 +68,8 @@ export default function ManutenzioneSitoCard() {
         enabled: Boolean(value?.enabled),
         message: typeof value?.message === "string" ? value.message : old.message,
         updatedAt: value?.updatedAt ?? null,
+        environment: value?.environment ?? old.environment,
+        table: value?.table ?? old.table,
       }));
       setEsito({ testo: enabled ? "Manutenzione attivata. Il pubblico vedrà il messaggio." : "Sito riaperto al pubblico.", ok: true });
     } catch (error) {
