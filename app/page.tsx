@@ -117,38 +117,29 @@ export default async function Home() {
           VALUE STRIP — perché LocalHub (3 promesse, nessuna duplicazione)
           ═══════════════════════════════════════════════════════════════════ */}
       <section className="border-y border-slate-200 bg-white shadow-sm">
-        <div className="mx-auto grid max-w-7xl gap-4 px-4 py-3 sm:grid-cols-3 md:px-6 md:py-4">
-          <div className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-yellow-400 text-blue-900 shadow-[0_4px_14px_-4px_rgba(202,138,4,0.45)]">
+        <div className="mx-auto grid max-w-7xl grid-cols-3 gap-2 px-3 py-3 md:gap-4 md:px-6 md:py-4">
+          <div className="flex min-w-0 flex-col items-center gap-1.5 text-center sm:flex-row sm:gap-2.5 sm:text-left">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-yellow-400 text-blue-900 shadow-[0_4px_14px_-4px_rgba(202,138,4,0.45)] sm:h-8 sm:w-8">
               <Store className="h-5 w-5" aria-hidden />
             </span>
             <div>
-              <h2 className="text-xs font-black text-slate-900 sm:text-sm">Sostieni il commercio locale</h2>
-              <p className="mt-1 text-xs leading-5 text-slate-500">
-                Ogni acquisto resta nella tua città e sostiene chi la fa vivere.
-              </p>
+              <h2 className="text-[10px] font-black leading-tight text-slate-900 sm:text-sm">Sostieni il commercio locale</h2>
             </div>
           </div>
-          <div className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-yellow-400 text-blue-900 shadow-[0_4px_14px_-4px_rgba(202,138,4,0.45)]">
+          <div className="flex min-w-0 flex-col items-center gap-1.5 text-center sm:flex-row sm:gap-2.5 sm:text-left">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-yellow-400 text-blue-900 shadow-[0_4px_14px_-4px_rgba(202,138,4,0.45)] sm:h-8 sm:w-8">
               <SearchCheck className="h-5 w-5" aria-hidden />
             </span>
             <div>
-              <h2 className="text-xs font-black text-slate-900 sm:text-sm">Trova tutto in un unico posto</h2>
-              <p className="mt-1 text-xs leading-5 text-slate-500">
-                Negozi, professionisti, prodotti e servizi: una ricerca, zero code.
-              </p>
+              <h2 className="text-[10px] font-black leading-tight text-slate-900 sm:text-sm">Trova tutto in un unico posto</h2>
             </div>
           </div>
-          <div className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-yellow-400 text-blue-900 shadow-[0_4px_14px_-4px_rgba(202,138,4,0.45)]">
+          <div className="flex min-w-0 flex-col items-center gap-1.5 text-center sm:flex-row sm:gap-2.5 sm:text-left">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-yellow-400 text-blue-900 shadow-[0_4px_14px_-4px_rgba(202,138,4,0.45)] sm:h-8 sm:w-8">
               <Tag className="h-5 w-5" aria-hidden />
             </span>
             <div>
-              <h2 className="text-xs font-black text-slate-900 sm:text-sm">Offerte dal territorio</h2>
-              <p className="mt-1 text-xs leading-5 text-slate-500">
-                Promozioni e novità dai negozi vicini, sempre aggiornate.
-              </p>
+              <h2 className="text-[10px] font-black leading-tight text-slate-900 sm:text-sm">Offerte dal territorio</h2>
             </div>
           </div>
         </div>
