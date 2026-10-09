@@ -4,6 +4,7 @@ import AccountMenu from "./AccountMenu";
 import FarmacieTurnoWidget from "./FarmacieTurnoWidget";
 import HeaderCartIcon from "./HeaderCartIcon";
 import HeaderNav from "./HeaderNav";
+import HeroSearchBar from "@/components/home/HeroSearchBar";
 import WeatherWidget from "./WeatherWidget";
 import { getDatiAccount } from "./get-account-data";
 import { getGuestMode } from "@/lib/auth/guest";
@@ -20,7 +21,7 @@ import { getGuestMode } from "@/lib/auth/guest";
  * Il menu Account riflette l'AREA ATTIVA della sessione (cookie httpOnly
  * lh_area): cliente, venditore o amministratore.
  */
-export default async function Header() {
+export default async function Header({ homepage = false }: { homepage?: boolean } = {}) {
   const account = await getDatiAccount();
   // Modalità ospite: cookie httpOnly lh_guest letto SOLO lato server e
   // rilevante solo per l'utente anonimo (per l'autenticato il proxy la
@@ -68,10 +69,13 @@ export default async function Header() {
           </div>
         </div>
 
-        {/* NAV — visibile anche su mobile (nessun hamburger), compatta e senza overflow */}
-        <HeaderNav />
-
-
+        {homepage ? (
+          <div className="w-full min-w-0 flex-1 py-1 xl:py-2">
+            <HeroSearchBar inHeader />
+          </div>
+        ) : (
+          <HeaderNav />
+        )}
       </div>
     </header>
   );
