@@ -9,12 +9,15 @@ export const metadata = {
 const MESSAGGIO_DEFAULT =
   "Stiamo lavorando per migliorare il servizio. Ci scusiamo per il disagio e torneremo online al più presto.";
 
+const TABELLA_MANUTENZIONE =
+  process.env.VERCEL_ENV === "production" ? "site_maintenance" : "site_maintenance_preview";
+
 export default async function ManutenzionePage() {
   let message = MESSAGGIO_DEFAULT;
   try {
     const db = createAdminSupabaseClient();
     const { data } = await db
-      .from("site_maintenance")
+      .from(TABELLA_MANUTENZIONE)
       .select("message")
       .eq("id", 1)
       .maybeSingle();
