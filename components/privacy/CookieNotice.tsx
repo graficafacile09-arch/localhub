@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Cookie } from "lucide-react";
+import { usePathname } from "next/navigation";
 
 const COOKIE_NAME = "incitta_cookie_notice_v1";
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
@@ -21,6 +22,7 @@ function saveNoticeCookie(): void {
 }
 
 export default function CookieNotice() {
+  const pathname = usePathname();
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -33,7 +35,7 @@ export default function CookieNotice() {
     <aside
       role="status"
       aria-label="Informativa sui cookie"
-      className="fixed inset-x-3 bottom-3 z-[60] mx-auto max-w-2xl rounded-2xl border border-slate-200 bg-white/95 px-3.5 py-3 shadow-xl shadow-slate-900/10 backdrop-blur sm:px-4"
+      className={`fixed inset-x-3 ${pathname === "/" ? "bottom-[68px]" : "bottom-3"} z-[60] mx-auto max-w-2xl rounded-2xl border border-slate-200 bg-white/95 px-3.5 py-3 shadow-xl shadow-slate-900/10 backdrop-blur sm:px-4`}
     >
       <div className="flex items-center gap-3">
         <span
