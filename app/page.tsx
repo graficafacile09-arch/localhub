@@ -86,33 +86,6 @@ export default async function Home() {
       {/* ═══════════════════════════════════════════════════════════════════
           HERO — fotografica, messaggio immediato, ricerca + AI
           ═══════════════════════════════════════════════════════════════════ */}
-      <section className="relative overflow-hidden rounded-b-[2rem] bg-slate-900 shadow-lg shadow-slate-900/10 sm:rounded-b-[2.5rem]">
-        {/* La foto copre tutta la HERO e non ne determina l'altezza. */}
-        <Image
-          src="/hero-via-roma-castrovillari-1400x1050.jpg"
-          alt="Via Roma a Castrovillari"
-          fill
-          sizes="100vw"
-          priority
-          className="absolute inset-0 h-full w-full object-cover object-center"
-        />
-
-        {/* Gradiente leggero solo nella zona del testo: la parte bassa resta luminosa. */}
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 bg-gradient-to-b from-slate-950/60 via-slate-950/25 to-transparent"
-        />
-
-        <div className="relative z-10 mx-auto max-w-7xl px-4 py-10 text-left md:px-6 md:py-16">
-          <div>
-            <div className="lg:hidden"><HeaderNav overlay /></div>
-            <h1 className="mt-4 max-w-2xl text-3xl font-black leading-tight tracking-tight text-white drop-shadow-lg md:mt-6 md:text-5xl">
-              Tutto quello che cerchi... <span className="text-yellow-300">è già</span> nella tua città.
-            </h1>
-          </div>
-        </div>
-      </section>
-
       {/* ═══════════════════════════════════════════════════════════════════
           VALUE STRIP — perché LocalHub (3 promesse, nessuna duplicazione)
           ═══════════════════════════════════════════════════════════════════ */}
@@ -141,6 +114,38 @@ export default async function Home() {
             <div>
               <h2 className="text-[10px] font-black leading-tight text-slate-900 sm:text-sm">Offerte dal territorio</h2>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <div className="border-b border-slate-200 bg-white">
+        <div className="mx-auto max-w-7xl px-2 py-1.5 sm:px-4">
+          <HeaderNav />
+        </div>
+      </div>
+
+      <section className="relative overflow-hidden rounded-b-[2rem] bg-slate-900 shadow-lg shadow-slate-900/10 sm:rounded-b-[2.5rem]">
+        {/* La foto copre tutta la HERO e non ne determina l'altezza. */}
+        <Image
+          src="/hero-via-roma-castrovillari-1400x1050.jpg"
+          alt="Via Roma a Castrovillari"
+          fill
+          sizes="100vw"
+          priority
+          className="absolute inset-0 h-full w-full object-cover object-center"
+        />
+
+        {/* Gradiente leggero solo nella zona del testo: la parte bassa resta luminosa. */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 bg-gradient-to-b from-slate-950/60 via-slate-950/25 to-transparent"
+        />
+
+        <div className="relative z-10 mx-auto max-w-7xl px-4 py-10 text-left md:px-6 md:py-16">
+          <div>
+            <h1 className="mt-4 max-w-2xl text-3xl font-black leading-tight tracking-tight text-white drop-shadow-lg md:mt-6 md:text-5xl">
+              Tutto quello che cerchi... <span className="text-yellow-300">è già</span> nella tua città.
+            </h1>
           </div>
         </div>
       </section>
