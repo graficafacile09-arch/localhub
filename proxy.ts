@@ -14,6 +14,26 @@ import {
 import { GUEST_COOKIE } from "@/lib/auth/guest";
 
 export async function proxy(request: NextRequest) {
+  // Protezione applicativa delle anteprime Vercel. Attiva solo quando le
+  // credenziali sono configurate nell'ambiente Preview; Production non riceve
+  // queste variabili e il dominio pubblico resta invariato.
+  const previewUser = process.env.PREVIEW_ACCESS_USERNAME;
+  const previewPassword = process.env.PREVIEW_ACCESS_PASSWORD;
+  const hostname = request.nextUrl.hostname.toLowerCase();
+  if (previewUser && previewPassword && hostname.endsWith(".vercel.app")) {
+    const authorization = request.headers.get("authorization") ?? "";
+    const expected = `Basic ${btoa(`${previewUser}:${previewPassword}`)}`;
+    if (authorization !== expected) {
+      return new NextResponse("Anteprima InCittà riservata. Inserisci le credenziali per continuare.", {
+        status: 401,
+        headers: {
+          "WWW-Authenticate": 'Basic realm="InCittà Preview", charset="UTF-8"',
+          "Cache-Control": "no-store",
+        },
+      });
+    }
+  }
+
   if (!isSupabaseConfigured()) {
     return NextResponse.next({ request });
   }
@@ -112,6 +132,47 @@ export async function proxy(request: NextRequest) {
   }
 
   const pathname = request.nextUrl.pathname;
+
+  // Modalità manutenzione pubblica. Le API restano operative e l'amministrazione
+  // resta accessibile; la tabella è leggibile in sola lettura da anon/authenticated.
+  // Se la tabella non è ancora stata migrata o il DB non risponde, fail-open:
+  // non si rischia di bloccare il sito per un errore infrastrutturale.
+  const apiAdminDuranteManutenzione = pathname.startsWith("/api/amministratore/");
+  const percorsoAuthDuranteManutenzione =
+    pathname === "/login" ||
+    pathname.startsWith("/account-in-attesa") ||
+    pathname.startsWith("/auth/callback") ||
+    pathname.startsWith("/api/auth/") ||
+    pathname.startsWith("/manutenzione");
+  if (!pathname.startsWith("/amministratore") && !apiAdminDuranteManutenzione && !percorsoAuthDuranteManutenzione) {
+    try {
+      const tabellaManutenzione =
+        process.env.VERCEL_ENV === "production" ? "site_maintenance" : "site_maintenance_preview";
+      const { data: manutenzione } = await supabase
+        .from(tabellaManutenzione)
+        .select("enabled")
+        .eq("id", 1)
+        .maybeSingle();
+
+      if (manutenzione?.enabled === true) {
+        if (pathname.startsWith("/api/")) {
+          return NextResponse.json(
+            { success: false, error: { code: "SITE_MAINTENANCE", message: "Il sito è temporaneamente in manutenzione. Riprova più tardi." } },
+            { status: 503, headers: { "Cache-Control": "no-store", "Retry-After": "300" } }
+          );
+        }
+        const maintenanceResponse = NextResponse.rewrite(
+          new URL("/manutenzione", request.url)
+        );
+        for (const cookie of response.cookies.getAll()) {
+          maintenanceResponse.cookies.set(cookie.name, cookie.value, cookie);
+        }
+        return maintenanceResponse;
+      }
+    } catch {
+      // Non bloccare le richieste pubbliche se il controllo manutenzione fallisce.
+    }
+  }
 
   // ── Pulizia modalità guest: se l'utente accede alla pagina di login
   // (scelta esplicita di fare login), rimuoviamo il cookie guest.
