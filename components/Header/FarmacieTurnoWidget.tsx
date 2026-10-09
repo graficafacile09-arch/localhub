@@ -73,7 +73,7 @@ export default function FarmacieTurnoWidget() {
         <div
           role="dialog"
           aria-label={`Dettagli farmacia di turno: ${diTurno.nome}`}
-          className="absolute left-0 top-full z-[80] mt-2 w-72 max-w-[calc(100vw-1.5rem)] rounded-xl border border-slate-200 bg-white p-3 text-left shadow-xl"
+          className="absolute right-0 top-full z-[80] mt-2 w-72 max-w-[calc(100vw-1rem)] rounded-xl border border-slate-200 bg-white p-3 text-left shadow-xl"
         >
           <div className="flex items-start gap-3">
             <span aria-hidden className="relative inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-emerald-50"><span className="absolute h-5 w-[7px] rounded-[1px] bg-green-700" /><span className="absolute h-[7px] w-5 rounded-[1px] bg-green-700" /></span>
