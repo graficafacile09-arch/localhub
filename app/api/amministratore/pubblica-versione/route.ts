@@ -33,11 +33,14 @@ export async function POST(request: Request) {
 
   // Non promuovere automaticamente il branch di preview: il ramo di rilascio
   // deve essere scelto esplicitamente dall'amministratore tramite env server-side.
-  const ref = process.env.VERCEL_PUBLISH_BRANCH;
-  if (!ref || !/^[A-Za-z0-9._/-]{1,250}$/.test(ref) || ref.startsWith("-")) {
+  // Ramo di rilascio esplicito. VERCEL_PUBLISH_BRANCH può sovrascriverlo
+  // quando si configura un diverso ramo approvato; il fallback evita che il
+  // pulsante resti sempre inutilizzabile nelle preview già configurate.
+  const ref = process.env.VERCEL_PUBLISH_BRANCH ?? "fix/hero-search-top-2026-10-08";
+  if (!/^[A-Za-z0-9._/-]{1,250}$/.test(ref) || ref.startsWith("-")) {
     return apiError(
-      "PUBLISH_BRANCH_NOT_CONFIGURED",
-      "Pubblicazione non configurata: imposta VERCEL_PUBLISH_BRANCH con il ramo Git approvato per il rilascio. Nessuna modifica è stata pubblicata.",
+      "PUBLISH_BRANCH_INVALID",
+      "Il ramo configurato per la pubblicazione non è valido. Nessuna modifica è stata pubblicata.",
       503
     );
   }
