@@ -71,7 +71,7 @@ export default function ManutenzioneSitoCard() {
         environment: value?.environment ?? old.environment,
         table: value?.table ?? old.table,
       }));
-      setEsito({ testo: enabled ? "Manutenzione attivata. Il pubblico vedrà il messaggio." : "Sito riaperto al pubblico.", ok: true });
+      setEsito({ testo: stato.environment === "production" ? (enabled ? "Manutenzione attivata sul sito pubblico." : "Sito pubblico riaperto.") : (enabled ? "Manutenzione attivata solo nell’anteprima privata." : "Manutenzione disattivata solo nell’anteprima privata."), ok: true });
     } catch (error) {
       setEsito({ testo: error instanceof Error ? error.message : "Errore di salvataggio.", ok: false });
     } finally {
@@ -112,6 +112,16 @@ export default function ManutenzioneSitoCard() {
       </header>
 
       <div className="space-y-5 px-6 py-5">
+        {stato.environment === "preview" ? (
+          <div role="status" className="rounded-2xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-950">
+            <strong>Anteprima privata:</strong> questo interruttore modifica solo la manutenzione dell’anteprima e non cambia lo stato di <strong>www.incitta.online</strong>.
+            <a href="https://www.incitta.online/amministratore/impostazioni" className="ml-1 font-bold underline underline-offset-2">Apri le impostazioni sul sito pubblico</a>.
+          </div>
+        ) : stato.environment === "production" ? (
+          <div role="status" className="rounded-2xl border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm leading-6 text-emerald-950">
+            <strong>Produzione:</strong> questo interruttore controlla la manutenzione del sito pubblico <strong>www.incitta.online</strong>.
+          </div>
+        ) : null}
         {esito && (
           <p role="status" className={`rounded-2xl border px-4 py-3 text-sm ${esito.ok ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-red-200 bg-red-50 text-red-800"}`}>
             {esito.testo}
