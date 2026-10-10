@@ -45,6 +45,11 @@ const FOTO: Record<string, string> = {
   "Altomonte": "https://www.e-borghi.com/wp-content/uploads/2024/06/20_09_17-12_26_10-E35d5c705daf979af17f1a4cec61f653.jpg",
   "Saracena": "https://www.calnews.it/wp-content/uploads/2019/09/Saracena.jpg",
   "Parco Nazionale del Pollino": "https://www.italia.it/content/dam/tdh/it/destinations/italia/parco-nazionale-del-pollino/media/2480X1000_parco_nazionale_del_pollino_destination.jpg",
+  "Suoni Festival": "https://ecodellojonio.b-cdn.net/media/posts/26/07/1783425040.jpeg?aspect_ratio=16%3A9&width=785",
+  "Joy Festival": "https://ecodellojonio.b-cdn.net/media/posts/21/08/1629363164.jpg?aspect_ratio=16%3A9&width=785",
+  "Calabria Wine & Design Festival": "https://www.parks.it/imgnews.php?f=1&idn=82682",
+  "Festival dei Lettori": "https://www.castrovillari.info/news/foto/THEREADERS2016.jpg",
+  "Clap! Etno Music Fest": "https://calabriastraordinaria.it/storage/images/13319/Castrovillari-citta%CC%80-festival.jpg",
 };
 const FOTO_ALTERNATIVE: Record<string, string> = {
   "La Civita e il centro storico": "https://www.calabriafilmcommission.it/wp-content/uploads/2022/04/9-4-Castrovillari.jpg",
