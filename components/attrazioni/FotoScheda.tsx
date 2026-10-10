@@ -6,10 +6,15 @@ const FOTO: Record<string, string> = {
   "Castello Aragonese": "https://fai-platform.imgix.net/media/calabria/cs/2708_castello-aragonese.jpg?fit=crop&h=630&w=1200",
   "Protoconvento Francescano – SiMuCCà": "https://mycity.s3.sbg.io.cloud.ovh.net/4222084/PROTOCONVENTO-FRANCESCANO.jpg",
   "Museo Archeologico": "https://tourismmedia.italia.it/is/image/mitur/20230227121404_simucca-sistema-museale-citta-di-castrovillari_9-4?fit=constrain%2C1&fmt=webp&hei=500&wid=850",
-  "Chiesa di San Giuseppe": "https://www.quicosenza.it/news/wp-content/uploads/2022/03/Santuario-Madonna-del-Castello-768x489-2.jpg",
+  "Chiesa di San Giuseppe": "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/1b/4c/35/fd/img-20200422-201626-largejpg.jpg?h=-1&s=1&w=1200",
   "Santa Maria delle Grazie": "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/1d/b6/50/86/chiesa-della-madonna.jpg?h=1100&s=1&w=1100",
   "Palazzo Gallo": "https://1.bp.blogspot.com/-YbV-pY1tKlM/T-sOhTtZl0I/AAAAAAAAAm8/JwsbAAa5KUY/s1600/palazzo%2Bgallo%2B27%2B6%2B2012.JPG",
   "Palazzo Varcasia": "https://files.supersite.aruba.it/media/27294_11953e22c20bfd95315485c580b7f2b032480336.jpeg",
+  "La Civita e il centro storico": "https://i0.wp.com/visitcalabria.uk/wp-content/uploads/2022/02/Castrovillari_civita-old-town.jpg?fit=443%2C462&ssl=1",
+  "Teatro Sybaris": "https://ecodellojonio.b-cdn.net/media/posts/24/10/1729690203.jpg?aspect_ratio=16%3A9&width=785",
+  "Biblioteca Civica Umberto Caldora": "https://mycity.s3.sbg.io.cloud.ovh.net/3427528/download.jpeg",
+  "Palazzo Cappelli": "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/1d/b6/51/01/palazzo-cqppelli.jpg?h=1200&s=1&w=1200",
+  "Archivio di Stato – Sezione di Castrovillari": "https://media.cultura.gov.it/mibac/files/1682/Archivio%20di%20Stato%20di%20Castrovillari_Modificato.jpg",
 
   "Carnevale di Castrovillari": "https://calabriastraordinaria.it/storage/images/15208/Carnevale-di-Castrovillari_-programma.jpg",
   "Primavera dei Teatri": "https://calabriastraordinaria.it/api/image-loader?q=75&url=https%3A%2F%2Fcalabriastraordinaria.it%2Fstorage%2Fimages%2F16023%2FPrimavera-dei-teatri-2026-%25281%2529.jpg&w=1200",
@@ -21,6 +26,12 @@ const FOTO: Record<string, string> = {
   "Festival dei Quartieri": "https://ecodellojonio.b-cdn.net/media/posts/24/08/1724851132.jpg?aspect_ratio=16%3A9&width=785",
   "Rural Food Festival": "https://calabriastraordinaria.it/api/image-loader?q=75&url=https%3A%2F%2Fcalabriastraordinaria.it%2Fstorage%2Fimages%2F12278%2FRural-Food-Festival2.jpg&w=1200",
   "Vibe Fest": "https://calabriastraordinaria.it/storage/images/14056/Vibe-Fest.jpg",
+  "Primafila": "https://ecodellojonio.b-cdn.net/media/posts/25/12/1766998699.jpg?aspect_ratio=16%3A9&width=785",
+  "Suoni Festival": "https://mycity.s3.sbg.io.cloud.ovh.net/4782457/SUONI-FESTIVAL.jpg",
+  "Joy Festival": "https://mycity.s3.sbg.io.cloud.ovh.net/4186635/FOTO-14_JOY-FESTIVAL.jpg",
+  "Calabria Wine & Design Festival": "https://calabriastraordinaria.it/storage/images/13061/Calabria-Wine-and-Design-Festival.jpg",
+  "Festival dei Lettori": "https://mycity.s3.sbg.io.cloud.ovh.net/4900510/ALL.-1-(2).jpg",
+  "Clap! Etno Music Fest": "https://mycity.s3.sbg.io.cloud.ovh.net/4794957/3.jpg",
 
   "Rigenerazioni Fest": "https://calabriastraordinaria.it/api/image-loader?q=75&url=https%3A%2F%2Fcalabriastraordinaria.it%2Fstorage%2Fimages%2F16087%2FRiGenerazioni.jpg&w=1200",
   "Radure – Invito al teatro": "https://images.lac.atexcloud.io/view/acePublic/alias/contentid/1ndl605ybcgzcf9q8ls/0/polemos-lessico-guerra-jpg.jpeg?f=3%3A2",
@@ -44,9 +55,15 @@ const FOTO: Record<string, string> = {
 export default function FotoScheda({ alt }: { query: string; alt: string }) {
   const [officialSrc, setOfficialSrc] = useState<string | null>(null);
   const [officialChecked, setOfficialChecked] = useState(false);
-  const src = FOTO[alt] ?? officialSrc;
+  const [fallbackSrc, setFallbackSrc] = useState<string | null>(null);
+  const [fallbackTried, setFallbackTried] = useState(false);
+  const [imageFailed, setImageFailed] = useState(false);
+  const src = fallbackSrc ?? FOTO[alt] ?? officialSrc;
 
   useEffect(() => {
+    setFallbackSrc(null);
+    setFallbackTried(false);
+    setImageFailed(false);
     if (FOTO[alt]) return;
     let active = true;
     fetch(`/api/events-photo-audit?event=${encodeURIComponent(alt)}`)
@@ -63,14 +80,37 @@ export default function FotoScheda({ alt }: { query: string; alt: string }) {
 
   return (
     <div className="relative flex h-44 w-full items-center justify-center overflow-hidden bg-gradient-to-br from-slate-100 via-blue-50 to-slate-200">
-      {src ? (
+
+  const handleImageFailure = () => {
+    if (fallbackTried) {
+      setImageFailed(true);
+      return;
+    }
+    setFallbackTried(true);
+    if (!FOTO[alt] && !officialSrc) {
+      // The official-event fallback request is already in flight.
+      return;
+    }
+    fetch(`/api/events-photo-audit?event=${encodeURIComponent(alt)}`)
+      .then((response) => response.ok ? response.json() : null)
+      .then((data) => {
+        if (data?.src && typeof data.src === "string" && data.src !== src) {
+          setFallbackSrc(data.src);
+        } else {
+          setImageFailed(true);
+        }
+      })
+      .catch(() => setImageFailed(true));
+  };
+
+      {src && !imageFailed ? (
         <img
           src={src}
           alt={alt}
           loading="lazy"
           decoding="async"
           className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
-          onError={(event) => { event.currentTarget.style.display = "none"; }}
+          onError={handleImageFailure}
         />
       ) : (
         <div className="px-5 text-center text-blue-950/70">
