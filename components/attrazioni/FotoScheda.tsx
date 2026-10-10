@@ -50,6 +50,7 @@ const FOTO: Record<string, string> = {
   "Calabria Wine & Design Festival": "https://www.parks.it/imgnews.php?f=1&idn=82682",
   "Festival dei Lettori": "https://www.castrovillari.info/news/foto/THEREADERS2016.jpg",
   "Clap! Etno Music Fest": "https://calabriastraordinaria.it/storage/images/13319/Castrovillari-citta%CC%80-festival.jpg",
+  "Festival Antonio Vivaldi": "https://fai-platform.imgix.net/media/calabria/cs/2708_castello-aragonese.jpg?fit=crop&h=630&w=1200",
 };
 const FOTO_ALTERNATIVE: Record<string, string> = {
   "La Civita e il centro storico": "https://www.calabriafilmcommission.it/wp-content/uploads/2022/04/9-4-Castrovillari.jpg",
