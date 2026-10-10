@@ -12,11 +12,15 @@ export default function LinkGoogleMaps({ query, label }: { query: string; label:
       .then((response) => response.ok ? response.json() : null)
       .then((data) => {
         if (typeof data?.mapsUrl === "string") {
-          const url = new URL(data.mapsUrl);
-          if (url.protocol === "https:" && (url.hostname === "maps.google.com" || url.hostname === "www.google.com" || url.hostname === "google.com")) {
-            setMapsUrl(data.mapsUrl);
-          }
-        } else if (typeof data?.latitude === "number" && typeof data?.longitude === "number") {
+          try {
+            const url = new URL(data.mapsUrl);
+            if (url.protocol === "https:" && (url.hostname === "maps.google.com" || url.hostname === "www.google.com" || url.hostname === "google.com")) {
+              setMapsUrl(data.mapsUrl);
+              return;
+            }
+          } catch {}
+        }
+        if (typeof data?.latitude === "number" && typeof data?.longitude === "number") {
           setMapsUrl(`https://www.google.com/maps?q=${data.latitude},${data.longitude}`);
         }
       })
