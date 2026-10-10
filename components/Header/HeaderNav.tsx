@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Grid2X2, Home, Newspaper, Store, Tag } from "lucide-react";
+import { Grid2X2, Home, MapPinned, Store, Tag } from "lucide-react";
 import type { ComponentType } from "react";
 
 /**
@@ -50,7 +50,7 @@ export default function HeaderNav({ overlay = false }: { overlay?: boolean } = {
     { label: "Negozi", href: "/negozi", icona: Store, badge: null, micro: null, attiva: pathname === "/negozi" || pathname.startsWith("/negozi/") },
     { label: "Offerte", href: "/offerte", icona: Tag, badge: "SALDI", micro: null, attiva: pathname === "/offerte" || pathname.startsWith("/offerte/") },
     { label: "Categorie", href: "/categorie", icona: Grid2X2, badge: null, micro: null, attiva: pathname === "/categorie" || pathname.startsWith("/categorie/") },
-    { label: "Notizie", href: "/notizie", icona: Newspaper, badge: "CV", micro: null, attiva: pathname === "/notizie" || pathname.startsWith("/notizie/") },
+    { label: "Attrazioni", href: "/attrazioni", icona: MapPinned, badge: null, micro: null, attiva: pathname === "/attrazioni" || pathname.startsWith("/attrazioni/") },
   ];
 
   return (
