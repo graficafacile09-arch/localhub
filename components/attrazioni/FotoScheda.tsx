@@ -47,7 +47,7 @@ const FOTO: Record<string, string> = {
   "Parco Nazionale del Pollino": "https://www.italia.it/content/dam/tdh/it/destinations/italia/parco-nazionale-del-pollino/media/2480X1000_parco_nazionale_del_pollino_destination.jpg",
   "Suoni Festival": "https://ecodellojonio.b-cdn.net/media/posts/26/07/1783425040.jpeg?aspect_ratio=16%3A9&width=785",
   "Joy Festival": "https://ecodellojonio.b-cdn.net/media/posts/21/08/1629363164.jpg?aspect_ratio=16%3A9&width=785",
-  "Calabria Wine & Design Festival": "https://www.parks.it/imgnews.php?f=1&idn=82682",
+  "Calabria Wine & Design Festival": "https://calabriastraordinaria.it/storage/images/13061/Calabria-Wine-and-Design-Festival.jpg",
   "Festival dei Lettori": "https://www.castrovillari.info/news/foto/THEREADERS2016.jpg",
   "Clap! Etno Music Fest": "https://calabriastraordinaria.it/storage/images/13319/Castrovillari-citta%CC%80-festival.jpg",
 };
