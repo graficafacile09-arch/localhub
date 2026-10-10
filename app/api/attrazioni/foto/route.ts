@@ -3,62 +3,68 @@ import { NextRequest, NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-type PlacePhoto = {
-  name?: string;
-  authorAttributions?: { displayName?: string; uri?: string }[];
+type CommonsPage = {
+  title?: string;
+  imageinfo?: {
+    thumburl?: string;
+    descriptionurl?: string;
+    extmetadata?: {
+      Artist?: { value?: string };
+      LicenseShortName?: { value?: string };
+    };
+  }[];
 };
-type PlaceSearch = { places?: { photos?: PlacePhoto[] }[] };
+type CommonsSearch = { query?: { pages?: Record<string, CommonsPage> } };
+
+function plainText(value?: string) {
+  return value?.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").trim();
+}
 
 export async function GET(request: NextRequest) {
-  const apiKey = process.env.GOOGLE_MAPS_API_KEY;
-  if (!apiKey) return NextResponse.json({ error: "Google Maps non configurato" }, { status: 503 });
-
   const query = request.nextUrl.searchParams.get("query")?.trim();
-  if (!query || query.length > 180) return NextResponse.json({ error: "Query non valida" }, { status: 400 });
+  if (!query || query.length > 180) {
+    return NextResponse.json({ error: "Query non valida" }, { status: 400 });
+  }
 
   try {
-    const search = await fetch("https://places.googleapis.com/v1/places:searchText", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Goog-Api-Key": apiKey,
-        "X-Goog-FieldMask": "places.photos.name,places.photos.authorAttributions",
-      },
-      body: JSON.stringify({ textQuery: query, languageCode: "it", regionCode: "IT", maxResultCount: 1 }),
-      cache: "no-store",
-    });
-    if (!search.ok) {
-      console.error("Google Places Text Search failed", search.status);
-      return NextResponse.json({ error: "Ricerca foto non riuscita" }, { status: 502 });
-    }
-    const result = (await search.json()) as PlaceSearch;
-    const photo = result.places?.[0]?.photos?.[0];
-    if (!photo?.name) return NextResponse.json({ photoUrl: null, attribution: [] });
+    const url = new URL("https://commons.wikimedia.org/w/api.php");
+    url.searchParams.set("action", "query");
+    url.searchParams.set("format", "json");
+    url.searchParams.set("formatversion", "2");
+    url.searchParams.set("generator", "search");
+    url.searchParams.set("gsrsearch", `filetype:bitmap ${query}`);
+    url.searchParams.set("gsrnamespace", "6");
+    url.searchParams.set("gsrlimit", "8");
+    url.searchParams.set("prop", "imageinfo");
+    url.searchParams.set("iiprop", "url|extmetadata");
+    url.searchParams.set("iiurlwidth", "720");
 
-    const mediaUrl = new URL(`https://places.googleapis.com/v1/${photo.name}/media`);
-    mediaUrl.searchParams.set("maxWidthPx", "640");
-    mediaUrl.searchParams.set("maxHeightPx", "360");
-    mediaUrl.searchParams.set("skipHttpRedirect", "true");
-    mediaUrl.searchParams.set("key", apiKey);
-    const media = await fetch(mediaUrl, { cache: "no-store" });
-    if (!media.ok) {
-      console.error("Google Places Photo Media failed", media.status);
-      return NextResponse.json({ error: "Foto non disponibile" }, { status: 502 });
-    }
-    const mediaResult = (await media.json()) as { photoUri?: string };
-    if (!mediaResult.photoUri) return NextResponse.json({ photoUrl: null, attribution: [] });
-
-    const attribution = (photo.authorAttributions ?? [])
-      .filter((author) => author.displayName)
-      .map((author) => ({
-        name: author.displayName!,
-        url: author.uri ? (author.uri.startsWith("//") ? `https:${author.uri}` : author.uri) : undefined,
-      }));
-    return NextResponse.json({ photoUrl: mediaResult.photoUri, attribution }, {
-      headers: { "Cache-Control": "no-store" },
+    const response = await fetch(url, {
+      headers: { "User-Agent": "InCitta/1.0 (local tourism guide; image attribution displayed)" },
+      next: { revalidate: 86400 },
     });
+    if (!response.ok) {
+      console.error("Wikimedia Commons image search failed", response.status);
+      return NextResponse.json({ photoUrl: null, attribution: null });
+    }
+
+    const data = (await response.json()) as CommonsSearch;
+    const pages = Object.values(data.query?.pages ?? {});
+    const page = pages.find((candidate) => candidate.imageinfo?.[0]?.thumburl);
+    const info = page?.imageinfo?.[0];
+    if (!page || !info?.thumburl) {
+      return NextResponse.json({ photoUrl: null, attribution: null });
+    }
+
+    return NextResponse.json({
+      photoUrl: info.thumburl,
+      sourceUrl: info.descriptionurl,
+      title: page.title?.replace(/^File:/, ""),
+      attribution: plainText(info.extmetadata?.Artist?.value),
+      license: plainText(info.extmetadata?.LicenseShortName?.value),
+    }, { headers: { "Cache-Control": "public, s-maxage=86400, stale-while-revalidate=604800" } });
   } catch (error) {
-    console.error("Google Maps photo lookup failed", error);
-    return NextResponse.json({ error: "Errore nel recupero della foto" }, { status: 502 });
+    console.error("Wikimedia Commons image lookup failed", error);
+    return NextResponse.json({ photoUrl: null, attribution: null });
   }
 }
