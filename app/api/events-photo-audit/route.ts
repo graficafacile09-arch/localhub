@@ -2,8 +2,8 @@ export const dynamic = "force-dynamic";
 
 const OFFICIAL_PAGES: Record<string, string> = {
   "Primafila": "https://castrovillaricittafestival.it/contenuti/3529951/rty",
-  "Radure – Invito al teatro": "https://castrovillaricittafestival.it/eventi",
-  "Càlabbria Teatro Festival": "https://castrovillaricittafestival.it/eventi",
+  "Radure – Invito al teatro": "https://castrovillaricittafestival.it/eventi/3046323/radure-invito-teatro",
+  "Càlabbria Teatro Festival": "https://castrovillaricittafestival.it/contenuti/3529973/calabbria-teatro-festival",
   "Festival Antonio Vivaldi": "https://castrovillaricittafestival.it/eventi/3046330/festival-antonio-vivaldi",
   "I-Fest International Film Festival": "https://castrovillaricittafestival.it/eventi/3046342/fest-international-film-festival",
   "Castrovillari Film Festival": "https://castrovillaricittafestival.it/contenuti/3529981/castrovillari-film-festival",
@@ -22,6 +22,9 @@ const OFFICIAL_PAGES: Record<string, string> = {
   "Primavera dei Teatri": "https://castrovillaricittafestival.it/contenuti/3530004/primavera-teatri",
   "Estate Internazionale del Folklore": "https://castrovillaricittafestival.it/eventi/2173811/estate-internazionale-folklore",
   "Festival della Cipolla Bianca": "https://castrovillaricittafestival.it/contenuti/3529995/festival-cipolla-bianca-castrovillari",
+  "Festival dei Lettori": "https://castrovillaricittafestival.it/contenuti/3530030/festival-ricorrente-lettori",
+  "Vibe Fest": "https://castrovillaricittafestival.it/contenuti/3530045/vibe-fest",
+  "Pollicino Book Festival": "https://castrovillaricittafestival.it/contenuti/3530019/pollicino-book-festival",
 };
 
 function decode(value: string) {
