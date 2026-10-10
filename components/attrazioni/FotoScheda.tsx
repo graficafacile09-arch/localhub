@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+
 const FOTO: Record<string, string> = {
   "Castello Aragonese": "https://fai-platform.imgix.net/media/calabria/cs/2708_castello-aragonese.jpg?fit=crop&h=630&w=1200",
   "Protoconvento Francescano – SiMuCCà": "https://mycity.s3.sbg.io.cloud.ovh.net/4222084/PROTOCONVENTO-FRANCESCANO.jpg",
@@ -39,9 +41,25 @@ const FOTO: Record<string, string> = {
   "Parco Nazionale del Pollino": "https://www.italia.it/content/dam/tdh/it/destinations/italia/parco-nazionale-del-pollino/media/2480X1000_parco_nazionale_del_pollino_destination.jpg",
 };
 
-export default function FotoScheda({ alt }: { query: string; alt: string }) {
-  // Mostra solo immagini assegnate esplicitamente e verificate: niente foto casuali o riutilizzate come fallback.
-  const src = FOTO[alt];
+export default function FotoScheda({ query, alt }: { query: string; alt: string }) {
+  const [officialSrc, setOfficialSrc] = useState<string | null>(null);
+  const [officialChecked, setOfficialChecked] = useState(false);
+  const src = FOTO[alt] ?? officialSrc;
+
+  useEffect(() => {
+    if (FOTO[alt]) return;
+    let active = true;
+    fetch(`/api/events-photo-audit?event=${encodeURIComponent(alt)}`)
+      .then((response) => response.ok ? response.json() : null)
+      .then((data) => {
+        if (active && data?.src && typeof data.src === "string") setOfficialSrc(data.src);
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        if (active) setOfficialChecked(true);
+      });
+    return () => { active = false; };
+  }, [alt]);
 
   return (
     <div className="relative flex h-44 w-full items-center justify-center overflow-hidden bg-gradient-to-br from-slate-100 via-blue-50 to-slate-200">
@@ -57,7 +75,7 @@ export default function FotoScheda({ alt }: { query: string; alt: string }) {
       ) : (
         <div className="px-5 text-center text-blue-950/70">
           <div aria-hidden="true" className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-white/80 text-lg font-black shadow-sm">✦</div>
-          <p className="text-xs font-bold uppercase tracking-[0.14em]">Castrovillari</p>
+          <p className="text-xs font-bold uppercase tracking-[0.14em]">{officialChecked ? "Castrovillari" : "Caricamento foto ufficiale"}</p>
           <p className="mt-1 text-sm font-semibold">{alt}</p>
         </div>
       )}
