@@ -50,7 +50,6 @@ const FOTO_ALTERNATIVE: Record<string, string> = {
   "La Civita e il centro storico": "https://www.calabriafilmcommission.it/wp-content/uploads/2022/04/9-4-Castrovillari.jpg",
   "Biblioteca Civica Umberto Caldora": "https://mycity.s3.sbg.io.cloud.ovh.net/3427528/download.jpeg",
   "Chiesa di San Giuseppe": "https://mycity.s3.sbg.io.cloud.ovh.net/3431230/Castrovillari-1024x768.jpeg",
-  "Palazzo Cappelli": "https://upload.wikimedia.org/wikipedia/commons/c/c7/Castrovillari-palazzo-palazzo-cappelli.jpg",
   "Archivio di Stato – Sezione di Castrovillari": "https://archiviodistatocosenza.cultura.gov.it/fileadmin/_processed_/4/e/csm_Apertura_Cv_20Mar_SITO_ecd39a5167.jpg",
   "San Basile": "https://d3wo5wojvuv7l.cloudfront.net/t_square_limited_720/images.spreaker.com/original/2f272a0c52ce773c666533486630b848.jpg",
 };
