@@ -1,41 +1,71 @@
 export const dynamic = "force-dynamic";
 
+const OFFICIAL_PAGES: Record<string, string> = {
+  "Primafila": "https://castrovillaricittafestival.it/contenuti/3529951/rty",
+  "Radure – Invito al teatro": "https://castrovillaricittafestival.it/eventi",
+  "Càlabbria Teatro Festival": "https://castrovillaricittafestival.it/eventi",
+  "Festival Antonio Vivaldi": "https://castrovillaricittafestival.it/eventi/3046330/festival-antonio-vivaldi",
+  "I-Fest International Film Festival": "https://castrovillaricittafestival.it/eventi/3046342/fest-international-film-festival",
+  "Castrovillari Film Festival": "https://castrovillaricittafestival.it/contenuti/3529981/castrovillari-film-festival",
+  "Peperoncino Jazz Festival": "https://castrovillaricittafestival.it/eventi/3046397/peperoncino-jazz-festival",
+  "Festival della Cipolla Bianca": "https://castrovillaricittafestival.it/eventi/3483904/festival-cipolla-bianca-castrovillari",
+  "Clap! Etno Music Fest": "https://castrovillaricittafestival.it/eventi/3483896/clap-etno-music-festival",
+  "Civita Nova – Radicarsi": "https://castrovillaricittafestival.it/eventi/3046349/civita-nova-radicarsi",
+  "Suoni Festival": "https://castrovillaricittafestival.it/eventi/3046400/suoni-festival",
+  "Joy Festival": "https://castrovillaricittafestival.it/eventi/3046332/joy-festival",
+  "Festival dei Quartieri": "https://castrovillaricittafestival.it/eventi/3046399/festival-quartieri",
+  "Premio Castrovillari d'autore": "https://castrovillaricittafestival.it/eventi/3046403/premio-castrovillari-d-autore",
+  "Festival della Legalità": "https://castrovillaricittafestival.it/eventi/3046408/festival-legalita",
+  "Calabria Wine & Design Festival": "https://castrovillaricittafestival.it/contenuti/3530006/calabria-wine-design-festival",
+  "Rural Food Festival": "https://castrovillaricittafestival.it/contenuti/3530056/rural-food-festival",
+  "Rigenerazioni Fest": "https://castrovillaricittafestival.it/eventi/3046305/rigenerazioni-fest",
+  "Primavera dei Teatri": "https://castrovillaricittafestival.it/contenuti/3530004/primavera-teatri",
+  "Estate Internazionale del Folklore": "https://castrovillaricittafestival.it/eventi/2173811/estate-internazionale-folklore",
+  "Festival della Cipolla Bianca": "https://castrovillaricittafestival.it/contenuti/3529995/festival-cipolla-bianca-castrovillari",
+};
+
+function decode(value: string) {
+  return value.replace(/&amp;/g, "&").replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/&#x2F;/g, "/");
+}
+
 export async function GET(request: Request) {
-  if (new URL(request.url).searchParams.get("key") !== "events-photo-audit-2026") {
-    return new Response("Not found", { status: 404 });
+  const event = new URL(request.url).searchParams.get("event") ?? "";
+  const page = OFFICIAL_PAGES[event];
+  if (!page) return Response.json({ src: null }, { status: 404 });
+
+  try {
+    const response = await fetch(page, {
+      headers: { "user-agent": "Mozilla/5.0 (compatible; InCitta/1.0)" },
+      next: { revalidate: 86400 },
+    });
+    if (!response.ok) return Response.json({ src: null }, { status: 502 });
+    const html = await response.text();
+
+    const candidates = [
+      /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["'][^>]*>/i,
+      /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["'][^>]*>/i,
+      /<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["'][^>]*>/i,
+      /<meta[^>]+content=["']([^"']+)["'][^>]+name=["']twitter:image["'][^>]*>/i,
+    ];
+    for (const pattern of candidates) {
+      const match = html.match(pattern);
+      if (match?.[1]) {
+        const src = decode(match[1].trim());
+        return Response.json({ src: new URL(src, page).toString(), page });
+      }
+    }
+
+    const images = [...html.matchAll(/<img\b[^>]*>/gi)];
+    for (const match of images) {
+      const tag = match[0];
+      const alt = tag.match(/\balt=["']([^"']*)["']/i)?.[1] ?? "";
+      const src = tag.match(/\b(?:src|data-src|data-original)=["']([^"']+)["']/i)?.[1];
+      if (src && alt && /festival|castrovillari|teatro|cinema|musica|folklore|civita|cipolla|vino|legalit/i.test(alt)) {
+        return Response.json({ src: new URL(decode(src), page).toString(), page });
+      }
+    }
+    return Response.json({ src: null, page }, { status: 404 });
+  } catch {
+    return Response.json({ src: null, page }, { status: 502 });
   }
-
-  const response = await fetch("https://castrovillaricittafestival.it/eventi", {
-    headers: { "user-agent": "Mozilla/5.0 (compatible; InCittaPreviewAudit/1.0)" },
-    cache: "no-store",
-  });
-
-  const html = await response.text();
-  const tags = [...html.matchAll(/<img\b[^>]*>/gi)].slice(0, 120).map((match) => {
-    const tag = match[0];
-    const start = match.index ?? 0;
-    const around = html.slice(Math.max(0, start - 1200), Math.min(html.length, start + 1800));
-    const get = (name: string) => tag.match(new RegExp(name + '=["\\']([^"\\']+)["\\']', "i"))?.[1] ?? null;
-    const anchors = [...around.matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>/gi)];
-    const lastAnchor = anchors[anchors.length - 1]?.[1] ?? null;
-    const headings = [...around.matchAll(/<(?:h[1-6]|strong|title)[^>]*>([\\s\\S]*?)<\\/(?:h[1-6]|strong|title)>/gi)];
-    const lastHeading = headings[headings.length - 1]?.[1]?.replace(/<[^>]+>/g, " ").replace(/\\s+/g, " ").trim() ?? null;
-    return {
-      src: get("src"),
-      lazySrc: get("data-src") ?? get("data-lazy-src") ?? get("data-original"),
-      srcset: get("srcset"),
-      alt: get("alt"),
-      href: lastAnchor,
-      heading: lastHeading,
-      tag,
-    };
-  });
-
-  return Response.json({
-    source: "https://castrovillaricittafestival.it/eventi",
-    status: response.status,
-    pageTitle: html.match(/<title[^>]*>([\\s\\S]*?)<\\/title>/i)?.[1]?.replace(/<[^>]+>/g, "").trim() ?? null,
-    htmlLength: html.length,
-    images: tags,
-  });
 }
