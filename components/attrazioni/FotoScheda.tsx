@@ -6,10 +6,15 @@ const FOTO: Record<string, string> = {
   "Castello Aragonese": "https://fai-platform.imgix.net/media/calabria/cs/2708_castello-aragonese.jpg?fit=crop&h=630&w=1200",
   "Protoconvento Francescano – SiMuCCà": "https://mycity.s3.sbg.io.cloud.ovh.net/4222084/PROTOCONVENTO-FRANCESCANO.jpg",
   "Museo Archeologico": "https://tourismmedia.italia.it/is/image/mitur/20230227121404_simucca-sistema-museale-citta-di-castrovillari_9-4?fit=constrain%2C1&fmt=webp&hei=500&wid=850",
-  "Chiesa di San Giuseppe": "https://www.quicosenza.it/news/wp-content/uploads/2022/03/Santuario-Madonna-del-Castello-768x489-2.jpg",
   "Santa Maria delle Grazie": "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/1d/b6/50/86/chiesa-della-madonna.jpg?h=1100&s=1&w=1100",
   "Palazzo Gallo": "https://1.bp.blogspot.com/-YbV-pY1tKlM/T-sOhTtZl0I/AAAAAAAAAm8/JwsbAAa5KUY/s1600/palazzo%2Bgallo%2B27%2B6%2B2012.JPG",
   "Palazzo Varcasia": "https://files.supersite.aruba.it/media/27294_11953e22c20bfd95315485c580b7f2b032480336.jpeg",
+  "La Civita e il centro storico": "https://www.calabriafilmcommission.it/wp-content/uploads/2022/04/9-4-Castrovillari.jpg",
+  "Teatro Sybaris": "https://ecodellojonio.b-cdn.net/media/posts/24/10/1729690203.jpg?aspect_ratio=16%3A9&width=785",
+  "Biblioteca Civica Umberto Caldora": "https://www.paese24.it/timthumb.php?q=90&src=https%3A%2F%2Fwww.paese24.it%2Fwp-content%2Fuploads%2F2018%2F06%2Flefigaroconsegna3.jpg&w=650&zc=1",
+  "Chiesa di San Giuseppe": "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/1b/4c/35/fd/img-20200422-201626-largejpg.jpg?h=-1&s=1&w=1200",
+  "Palazzo Cappelli": "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/1d/b6/51/01/palazzo-cqppelli.jpg?h=1200&s=1&w=1200",
+  "Archivio di Stato – Sezione di Castrovillari": "https://media.cultura.gov.it/mibac/files/1682/Archivio%20di%20Stato%20di%20Castrovillari_Modificato.jpg",
 
   "Carnevale di Castrovillari": "https://calabriastraordinaria.it/storage/images/15208/Carnevale-di-Castrovillari_-programma.jpg",
   "Primavera dei Teatri": "https://calabriastraordinaria.it/api/image-loader?q=75&url=https%3A%2F%2Fcalabriastraordinaria.it%2Fstorage%2Fimages%2F16023%2FPrimavera-dei-teatri-2026-%25281%2529.jpg&w=1200",
@@ -34,48 +39,99 @@ const FOTO: Record<string, string> = {
   "Morano Calabro": "https://www.finestresullarte.info/rivista/immagini/2022/fn/veduta-di-morano-calabro.jpg",
   "Civita": "https://101-zone.com/wp-content/uploads/2023/09/MG_2958-HDR.jpg-Calabria-Parco-Nazionale-del-Pollino.-Il-borgo-di-Civita-con-vista-delle-Gole-di-Raganello-e-il-Ponte-del-Diavolo.jpg",
   "Frascineto ed Eianina": "https://www.e-borghi.com/wp-content/uploads/2024/06/10_05_19-03_02_33-eaf7dccd2043a35bdfa1d3e4456f3423.jpg",
-  "San Basile": "https://www.raiplay.it/dl/img/2025/11/04/1762269390989_STILL-PUNTATA-SAN-BASILE.jpg",
+  "San Basile": "https://www.isentieridelpollino.it/images/comuni-parco-pollino/San-Basile/galleria-fotografica-SanBasile/San-Basile1.jpg",
   "Mormanno": "https://www.comune.mormanno.cs.it/immagini/3.jpeg",
   "Altomonte": "https://www.e-borghi.com/wp-content/uploads/2024/06/20_09_17-12_26_10-E35d5c705daf979af17f1a4cec61f653.jpg",
   "Saracena": "https://www.calnews.it/wp-content/uploads/2019/09/Saracena.jpg",
   "Parco Nazionale del Pollino": "https://www.italia.it/content/dam/tdh/it/destinations/italia/parco-nazionale-del-pollino/media/2480X1000_parco_nazionale_del_pollino_destination.jpg",
 };
 
+
 export default function FotoScheda({ alt }: { query: string; alt: string }) {
   const [officialSrc, setOfficialSrc] = useState<string | null>(null);
   const [officialChecked, setOfficialChecked] = useState(false);
-  const src = FOTO[alt] ?? officialSrc;
+  const [staticFailed, setStaticFailed] = useState(false);
+  const imageRef = useRef<HTMLImageElement | null>(null);
+
+  const staticSrc = FOTO[alt];
+  const src = staticSrc && !staticFailed ? staticSrc : officialSrc;
 
   useEffect(() => {
-    if (FOTO[alt]) return;
+    if (staticSrc && !staticFailed) return;
+
     let active = true;
-    fetch(`/api/events-photo-audit?event=${encodeURIComponent(alt)}`)
-      .then((response) => response.ok ? response.json() : null)
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 15_000);
+    setOfficialChecked(false);
+
+    fetch(`/api/events-photo-audit?event=${encodeURIComponent(alt)}`, {
+      signal: controller.signal,
+    })
+      .then((response) => (response.ok ? response.json() : null))
       .then((data) => {
-        if (active && data?.src && typeof data.src === "string") setOfficialSrc(data.src);
+        if (!active) return;
+        const candidate = data?.src;
+        if (typeof candidate !== "string") return;
+        try {
+          const url = new URL(candidate);
+          if (url.protocol === "https:" || url.protocol === "http:") {
+            setOfficialSrc(url.toString());
+          }
+        } catch {
+          // A malformed image URL is treated as unavailable.
+        }
       })
       .catch(() => undefined)
       .finally(() => {
+        window.clearTimeout(timeout);
         if (active) setOfficialChecked(true);
       });
-    return () => { active = false; };
-  }, [alt]);
+
+    return () => {
+      active = false;
+      window.clearTimeout(timeout);
+      controller.abort();
+    };
+  }, [alt, staticFailed, staticSrc]);
+
+  const handleImageFailure = useCallback(() => {
+    if (staticSrc && !staticFailed) {
+      setStaticFailed(true);
+      setOfficialSrc(null);
+      setOfficialChecked(false);
+      return;
+    }
+    setOfficialSrc(null);
+    setOfficialChecked(true);
+  }, [staticFailed, staticSrc]);
+
+  // Catch images that failed before React hydration, when the onError handler
+  // could not yet be attached.
+  useEffect(() => {
+    const image = imageRef.current;
+    if (image?.complete && image.naturalWidth === 0) {
+      handleImageFailure();
+    }
+  }, [src, handleImageFailure]);
 
   return (
     <div className="relative flex h-44 w-full items-center justify-center overflow-hidden bg-gradient-to-br from-slate-100 via-blue-50 to-slate-200">
       {src ? (
         <img
+          ref={imageRef}
           src={src}
           alt={alt}
           loading="lazy"
           decoding="async"
           className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
-          onError={(event) => { event.currentTarget.style.display = "none"; }}
+          onError={handleImageFailure}
         />
       ) : (
         <div className="px-5 text-center text-blue-950/70">
           <div aria-hidden="true" className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-white/80 text-lg font-black shadow-sm">✦</div>
-          <p className="text-xs font-bold uppercase tracking-[0.14em]">{officialChecked ? "Castrovillari" : "Caricamento foto ufficiale"}</p>
+          <p className="text-xs font-bold uppercase tracking-[0.14em]">
+            {officialChecked ? "Foto non disponibile" : "Caricamento foto ufficiale"}
+          </p>
           <p className="mt-1 text-sm font-semibold">{alt}</p>
         </div>
       )}
