@@ -56,10 +56,6 @@ const dintorni = [
   { nome: "Parco Nazionale del Pollino", tipo: "Natura e attività all'aperto", descrizione: "Il Parco Nazionale del Pollino offre ambienti diversi, dai boschi ai panorami d'alta quota, ed è ideale per camminate, osservazione della natura e attività all'aperto. Scegli itinerari adatti alla tua preparazione, controlla meteo e stato dei percorsi e rispetta le regole dell'area protetta, senza improvvisare accessi a zone regolamentate." },
 ];
 
-function mapsUrl(query: string) {
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
-}
-
 export default function AttrazioniPage() {
   return (
     <main className="min-h-screen bg-[#eef3f8]">
@@ -100,7 +96,7 @@ export default function AttrazioniPage() {
               <FotoScheda query={luogo.query} alt={luogo.nome} />
               <div className="flex flex-1 flex-col p-5"><div className="flex items-start justify-between gap-3"><span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-yellow-400 text-blue-950"><Icona className="h-6 w-6" aria-hidden /></span><span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-slate-600">{luogo.tipo}</span></div>
               <h3 className="mt-4 text-lg font-black leading-snug text-slate-900">{luogo.nome}</h3><p className="mt-2 flex-1 text-sm leading-6 text-slate-600">{luogo.descrizione}</p>
-              <a href={mapsUrl(luogo.query)} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex items-center gap-2 border-t border-slate-100 pt-3 text-sm font-bold text-blue-700 hover:text-blue-900"><MapPinned className="h-4 w-4" aria-hidden /> Indicazioni sulla mappa <ArrowUpRight className="h-3.5 w-3.5" aria-hidden /></a></div>
+              </div>
             </article>
           ); })}
         </div>
@@ -148,7 +144,7 @@ export default function AttrazioniPage() {
       <section id="dintorni" className="mx-auto max-w-7xl scroll-mt-20 px-4 py-12 md:px-6 md:py-16">
         <div className="mb-7"><p className="text-xs font-black uppercase tracking-[0.16em] text-blue-700">Fuori città</p><h2 className="mt-2 text-3xl font-black tracking-tight text-slate-900 md:text-4xl">I dintorni di Castrovillari</h2><p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">Borghi, cultura arbëreshë e natura del Pollino, in una sezione separata dalle attrazioni cittadine.</p></div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {dintorni.map((luogo) => <article key={luogo.nome} className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-yellow-300 hover:shadow-md"><FotoScheda query={`${luogo.nome}, Calabria, Italia`} alt={luogo.nome} /><div className="flex flex-1 flex-col p-5"><div className="flex h-11 w-11 items-center justify-center rounded-xl bg-yellow-400 text-blue-950">{luogo.nome.includes("Pollino") ? <Mountain className="h-5 w-5" aria-hidden /> : <MapPinned className="h-5 w-5" aria-hidden />}</div><p className="mt-4 text-[10px] font-black uppercase tracking-wide text-blue-700">{luogo.tipo}</p><h3 className="mt-1 text-lg font-black text-slate-900">{luogo.nome}</h3><p className="mt-2 flex-1 text-sm leading-6 text-slate-600">{luogo.descrizione}</p><a href={mapsUrl(luogo.nome)} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex items-center gap-2 border-t border-slate-100 pt-3 text-sm font-bold text-blue-700 hover:text-blue-900">Come arrivare <ArrowUpRight className="h-4 w-4" aria-hidden /></a></div></article>)}
+          {dintorni.map((luogo) => <article key={luogo.nome} className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-0.5 hover:border-yellow-300 hover:shadow-md"><FotoScheda query={`${luogo.nome}, Calabria, Italia`} alt={luogo.nome} /><div className="flex flex-1 flex-col p-5"><div className="flex h-11 w-11 items-center justify-center rounded-xl bg-yellow-400 text-blue-950">{luogo.nome.includes("Pollino") ? <Mountain className="h-5 w-5" aria-hidden /> : <MapPinned className="h-5 w-5" aria-hidden />}</div><p className="mt-4 text-[10px] font-black uppercase tracking-wide text-blue-700">{luogo.tipo}</p><h3 className="mt-1 text-lg font-black text-slate-900">{luogo.nome}</h3><p className="mt-2 flex-1 text-sm leading-6 text-slate-600">{luogo.descrizione}</p></div></article>)}
         </div>
         <div className="mt-7 rounded-2xl bg-blue-950 p-6 text-white md:flex md:items-center md:justify-between md:gap-6"><div><h3 className="text-xl font-black">Prima di partire, verifica le informazioni</h3><p className="mt-2 max-w-2xl text-sm leading-6 text-blue-100">Per sentieri, accessi, condizioni meteo e attività nel Parco del Pollino, consulta gli aggiornamenti degli enti competenti.</p></div><a href="https://www.parcopollino.it/" target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-1 font-bold text-yellow-300 hover:text-yellow-200 md:mt-0">Sito ufficiale del Parco <ArrowUpRight className="h-4 w-4" aria-hidden /></a></div>
       </section>
