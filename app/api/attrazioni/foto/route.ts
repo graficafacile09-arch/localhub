@@ -7,7 +7,7 @@ type PlacePhoto = {
   name?: string;
   authorAttributions?: { displayName?: string; uri?: string }[];
 };
-type PlaceSearch = { places?: { photos?: PlacePhoto[] }[] };
+type PlaceSearch = { places?: { photos?: PlacePhoto[]; location?: { latitude?: number; longitude?: number }; googleMapsUri?: string }[] };
 
 export async function GET(request: NextRequest) {
   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
       headers: {
         "Content-Type": "application/json",
         "X-Goog-Api-Key": apiKey,
-        "X-Goog-FieldMask": "places.photos.name,places.photos.authorAttributions",
+        "X-Goog-FieldMask": "places.photos.name,places.photos.authorAttributions,places.location,places.googleMapsUri",
       },
       body: JSON.stringify({ textQuery: query, languageCode: "it", regionCode: "IT", maxResultCount: 1 }),
       cache: "no-store",
@@ -32,8 +32,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Ricerca foto non riuscita" }, { status: 502 });
     }
     const result = (await search.json()) as PlaceSearch;
-    const photo = result.places?.[0]?.photos?.[0];
-    if (!photo?.name) return NextResponse.json({ photoUrl: null, attribution: [] });
+    const place = result.places?.[0];
+    const photo = place?.photos?.[0];
+    const placeData = { mapsUrl: place?.googleMapsUri ?? null, latitude: place?.location?.latitude ?? null, longitude: place?.location?.longitude ?? null };
+    if (!photo?.name) return NextResponse.json({ photoUrl: null, attribution: [], ...placeData });
 
     const mediaUrl = new URL(`https://places.googleapis.com/v1/${photo.name}/media`);
     mediaUrl.searchParams.set("maxWidthPx", "640");
@@ -54,7 +56,7 @@ export async function GET(request: NextRequest) {
         name: author.displayName!,
         url: author.uri ? (author.uri.startsWith("//") ? `https:${author.uri}` : author.uri) : undefined,
       }));
-    return NextResponse.json({ photoUrl: mediaResult.photoUri, attribution }, {
+    return NextResponse.json({ photoUrl: mediaResult.photoUri, attribution, ...placeData }, {
       headers: { "Cache-Control": "no-store" },
     });
   } catch (error) {
