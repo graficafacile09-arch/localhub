@@ -4,7 +4,6 @@ const FOTO: Record<string, string> = {
   "Castello Aragonese": "https://fai-platform.imgix.net/media/calabria/cs/2708_castello-aragonese.jpg?fit=crop&h=630&w=1200",
   "Protoconvento Francescano – SiMuCCà": "https://mycity.s3.sbg.io.cloud.ovh.net/4222084/PROTOCONVENTO-FRANCESCANO.jpg",
   "Museo Archeologico": "https://tourismmedia.italia.it/is/image/mitur/20230227121404_simucca-sistema-museale-citta-di-castrovillari_9-4?fit=constrain%2C1&fmt=webp&hei=500&wid=850",
-  "Teatro Sybaris": "https://www.lavoceromana.it/images/Articoli/arte/Primavera_dei_teatri_2.jpeg",
   "Chiesa di San Giuseppe": "https://www.quicosenza.it/news/wp-content/uploads/2022/03/Santuario-Madonna-del-Castello-768x489-2.jpg",
   "Santa Maria delle Grazie": "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/1d/b6/50/86/chiesa-della-madonna.jpg?h=1100&s=1&w=1100",
   "Palazzo Gallo": "https://1.bp.blogspot.com/-YbV-pY1tKlM/T-sOhTtZl0I/AAAAAAAAAm8/JwsbAAa5KUY/s1600/palazzo%2Bgallo%2B27%2B6%2B2012.JPG",
@@ -31,7 +30,7 @@ const FOTO: Record<string, string> = {
   "Parco Nazionale del Pollino": "https://www.italia.it/content/dam/tdh/it/destinations/italia/parco-nazionale-del-pollino/media/2480X1000_parco_nazionale_del_pollino_destination.jpg",
 };
 
-export default function FotoScheda({ query, alt }: { query: string; alt: string }) {
+export default function FotoScheda({ alt }: { query: string; alt: string }) {
   // Mostra solo immagini assegnate esplicitamente e verificate: niente foto casuali o riutilizzate come fallback.
   const src = FOTO[alt];
 
