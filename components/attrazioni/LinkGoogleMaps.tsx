@@ -11,7 +11,6 @@ const COORDINATE: Record<string, [number, number]> = {
   "Morano Calabro, Calabria, Italia": [39.8420625, 16.1361875],
   "Civita, Calabria, Italia": [39.8274375, 16.3129375],
   "Altomonte, Calabria, Italia": [39.6993125, 16.1301875],
-  "Frascineto ed Eianina, Calabria, Italia": [39.8351875, 16.2655625],
 };
 
 function urlCoordinate(query: string) {
