@@ -11,8 +11,11 @@ export default function LinkGoogleMaps({ query, label }: { query: string; label:
     fetch(`/api/attrazioni/foto?query=${encodeURIComponent(query)}`, { signal: controller.signal })
       .then((response) => response.ok ? response.json() : null)
       .then((data) => {
-        if (typeof data?.mapsUrl === "string" && data.mapsUrl.startsWith("https://www.google.com/maps/")) {
-          setMapsUrl(data.mapsUrl);
+        if (typeof data?.mapsUrl === "string") {
+          const url = new URL(data.mapsUrl);
+          if (url.protocol === "https:" && (url.hostname === "maps.google.com" || url.hostname === "www.google.com" || url.hostname === "google.com")) {
+            setMapsUrl(data.mapsUrl);
+          }
         } else if (typeof data?.latitude === "number" && typeof data?.longitude === "number") {
           setMapsUrl(`https://www.google.com/maps?q=${data.latitude},${data.longitude}`);
         }
