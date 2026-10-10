@@ -59,7 +59,7 @@ const FOTO_ALTERNATIVE: Record<string, string> = {
   "Archivio di Stato – Sezione di Castrovillari": "https://archiviodistatocosenza.cultura.gov.it/fileadmin/_processed_/4/e/csm_Apertura_Cv_20Mar_SITO_ecd39a5167.jpg",
 };
 
-export default function FotoScheda({ query, alt }: { query: string; alt: string }) {
+export default function FotoScheda({ alt }: { query: string; alt: string }) {
   const [officialSrc, setOfficialSrc] = useState<string | null>(null);
   const [officialChecked, setOfficialChecked] = useState(false);
   const [fallbackSrc, setFallbackSrc] = useState<string | null>(null);
@@ -68,11 +68,6 @@ export default function FotoScheda({ query, alt }: { query: string; alt: string 
   const src = fallbackSrc ?? FOTO[alt] ?? officialSrc;
 
   useEffect(() => {
-    setOfficialSrc(null);
-    setOfficialChecked(false);
-    setFallbackSrc(null);
-    setFallbackTried(false);
-    setImageFailed(false);
     if (FOTO[alt]) return;
 
     let active = true;
