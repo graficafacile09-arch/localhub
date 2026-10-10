@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
       headers: {
         "Content-Type": "application/json",
         "X-Goog-Api-Key": apiKey,
-        "X-Goog-FieldMask": "places.displayName,places.photos",
+        "X-Goog-FieldMask": "places.photos.name,places.photos.authorAttributions",
       },
       body: JSON.stringify({ textQuery: query, languageCode: "it", regionCode: "IT", maxResultCount: 1 }),
       cache: "no-store",
