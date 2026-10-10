@@ -6,6 +6,7 @@ import {
   Theater, Trees, Utensils,
 } from "lucide-react";
 import Header from "@/components/Header/Header";
+import FotoScheda from "@/components/attrazioni/FotoScheda";
 import { getSiteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -59,59 +60,6 @@ function mapsUrl(query: string) {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 }
 
-function fotoUrl(query: string) {
-  const immagini: Record<string, string> = {
-    "Castello Aragonese": "https://fai-platform.imgix.net/media/calabria/cs/2708_castello-aragonese.jpg?fit=crop&h=630&w=1200",
-    "La Civita": "https://images.unsplash.com/photo-1518005020951-eccb494ad742?auto=format&fit=crop&w=960&q=80",
-    "Protoconvento": "https://mycity.s3.sbg.io.cloud.ovh.net/4222084/PROTOCONVENTO-FRANCESCANO.jpg",
-    "Museo Archeologico": "https://images.unsplash.com/photo-1561214115-f2f134cc4912?auto=format&fit=crop&w=960&q=80",
-    "Teatro Sybaris": "https://www.prontoestate.it/public/teatro_sybaris_castrovillari.jpg",
-    "Biblioteca Civica": "https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=960&q=80",
-    "Chiesa di San Giuseppe": "https://images.unsplash.com/photo-1438032005730-c779502df39b?auto=format&fit=crop&w=960&q=80",
-    "Santa Maria delle Grazie": "https://images.unsplash.com/photo-1438032005730-c779502df39b?auto=format&fit=crop&w=960&q=80",
-    "Palazzo Gallo": "https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&w=960&q=80",
-    "Palazzo Cappelli": "https://images.unsplash.com/photo-1511818966892-d7d671e672a2?auto=format&fit=crop&w=960&q=80",
-    "Palazzo Varcasia": "https://images.unsplash.com/photo-1518005020951-eccb494ad742?auto=format&fit=crop&w=960&q=80",
-    "Archivio di Stato": "https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=960&q=80",
-    "Carnevale di Castrovillari": "https://www.italia.it/content/dam/tdh/it/interests/calabria/cosenza/evento-carnevale-castrovillari/media/carnevale-di-castrovillari_20260109T162809.jpeg",
-    "Primavera dei Teatri": "https://images.unsplash.com/photo-1503095396549-807759245b35?auto=format&fit=crop&w=960&q=80",
-    "Estate Internazionale del Folklore": "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&w=960&q=80",
-    "Suoni Festival": "https://images.unsplash.com/photo-1506157786151-b8491531f063?auto=format&fit=crop&w=960&q=80",
-    "Festival della Legalità": "https://images.unsplash.com/photo-1475721027785-f74eccf877e2?auto=format&fit=crop&w=960&q=80",
-    "Pollicino Book Festival": "https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=960&q=80",
-    "Rigenerazioni Fest": "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?auto=format&fit=crop&w=960&q=80",
-    "Calabria Wine & Design Festival": "https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?auto=format&fit=crop&w=960&q=80",
-    "Festival dei Lettori": "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&w=960&q=80",
-    "Festival dei Quartieri": "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=960&q=80",
-    "Rural Food Festival": "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=960&q=80",
-    "Vibe Fest": "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?auto=format&fit=crop&w=960&q=80",
-    "Morano Calabro": "https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=960&q=80",
-    "Civita": "https://images.unsplash.com/photo-1519608487953-e999c86e7455?auto=format&fit=crop&w=960&q=80",
-    "Frascineto": "https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=960&q=80",
-    "San Basile": "https://images.unsplash.com/photo-1518005020951-eccb494ad742?auto=format&fit=crop&w=960&q=80",
-    "Mormanno": "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=960&q=80",
-    "Altomonte": "https://images.unsplash.com/photo-1487958449943-2429e8be8625?auto=format&fit=crop&w=960&q=80",
-    "Saracena": "https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?auto=format&fit=crop&w=960&q=80",
-    "Parco Nazionale del Pollino": "https://commons.wikimedia.org/wiki/Special:FilePath/Pollino%20banner.jpg",
-  };
-  const voce = Object.keys(immagini).find((nome) => query.includes(nome));
-  return immagini[voce ?? "Castello Aragonese"];
-}
-
-function FotoScheda({ query, alt }: { query: string; alt: string }) {
-  return (
-    <div className="relative h-24 w-full overflow-hidden bg-slate-200">
-      <img
-        src={fotoUrl(query)}
-        alt={alt}
-        loading="lazy"
-        decoding="async"
-        className="h-full w-full object-cover"
-      />
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/15 via-transparent to-transparent" />
-    </div>
-  );
-}
 
 export default function AttrazioniPage() {
   return (
