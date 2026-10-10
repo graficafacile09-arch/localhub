@@ -45,7 +45,11 @@ async function callChatCompletions(accountId: string, apiToken: string, model: s
   const bodySize = new Blob([body]).size;
   const response = await fetch(url, {
     method: "POST",
-    headers: { Authorization: `Bearer ${apiToken}`, "Content-Type": "application/json" },
+    headers: {
+      Authorization: `Bearer ${apiToken}`,
+      "Content-Type": "application/json",
+      "cf-aig-gateway-id": process.env.CLOUDFLARE_AI_GATEWAY_ID || "default",
+    },
     body,
   });
   const tHeaders = performance.now();
@@ -57,22 +61,29 @@ async function callChatCompletions(accountId: string, apiToken: string, model: s
 }
 
 async function callMoondream(accountId: string, apiToken: string, prompt: string, imageBase64: string, mime: string) {
-  const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/moondream/moondream3.1-9B-A2B`;
+  const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run`;
 
   const body = JSON.stringify({
-    task: "query",
-    image: `data:${mime};base64,${imageBase64}`,
-    question: prompt,
-    max_tokens: MAX_TOKENS,
-    temperature: 0.1,
-    reasoning: false,
+    model: "@cf/moondream/moondream3.1-9B-A2B",
+    input: {
+      task: "query",
+      image: `data:${mime};base64,${imageBase64}`,
+      question: prompt,
+      max_tokens: MAX_TOKENS,
+      temperature: 0.1,
+      reasoning: false,
+    },
   });
 
   const tStart = performance.now();
   const bodySize = new Blob([body]).size;
   const response = await fetch(url, {
     method: "POST",
-    headers: { Authorization: `Bearer ${apiToken}`, "Content-Type": "application/json" },
+    headers: {
+      Authorization: `Bearer ${apiToken}`,
+      "Content-Type": "application/json",
+      "cf-aig-gateway-id": process.env.CLOUDFLARE_AI_GATEWAY_ID || "default",
+    },
     body,
   });
   const tHeaders = performance.now();
