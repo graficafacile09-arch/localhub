@@ -44,7 +44,7 @@ const FOTO: Record<string, string> = {
 
   "Morano Calabro": "https://www.finestresullarte.info/rivista/immagini/2022/fn/veduta-di-morano-calabro.jpg",
   "Civita": "https://101-zone.com/wp-content/uploads/2023/09/MG_2958-HDR.jpg-Calabria-Parco-Nazionale-del-Pollino.-Il-borgo-di-Civita-con-vista-delle-Gole-di-Raganello-e-il-Ponte-del-Diavolo.jpg",
-  "Frascineto ed Eianina": "https://www.e-borghi.com/wp-content/uploads/2024/06/10_05_19-03_02_33-eaf7dccd2043a35bdfa1d3e4456f3423.jpg",
+  "Frascineto ed Eianina": "https://www.bbpieffe.it/images/borghi-parco-nazionale-del-pollino/frascineto/Frascineto-borgo-Parco-Pollino5.jpg",
   "San Basile": "https://www.raiplay.it/dl/img/2025/11/04/1762269390989_STILL-PUNTATA-SAN-BASILE.jpg",
   "Mormanno": "https://www.comune.mormanno.cs.it/immagini/3.jpeg",
   "Altomonte": "https://www.e-borghi.com/wp-content/uploads/2024/06/20_09_17-12_26_10-E35d5c705daf979af17f1a4cec61f653.jpg",
