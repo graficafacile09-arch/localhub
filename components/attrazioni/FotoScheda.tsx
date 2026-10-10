@@ -4,15 +4,15 @@ import { useEffect, useState } from "react";
 
 const FOTO: Record<string, string> = {
   "Castello Aragonese": "https://fai-platform.imgix.net/media/calabria/cs/2708_castello-aragonese.jpg?fit=crop&h=630&w=1200",
-  "Protoconvento Francescano – SiMuCCà": "https://mycity.s3.sbg.io.cloud.ovh.net/4222084/PROTOCONVENTO-FRANCESCANO.jpg",
+  "Protoconvento Francescano – SiMuCCà": "https://tourismmedia.italia.it/is/image/mitur/20230227121401_simucca-sistema-museale-citta-di-castrovillari_4-4?fit=hfit%2C1&fmt=webp&hei=500&wid=850",
   "Museo Archeologico": "https://tourismmedia.italia.it/is/image/mitur/20230227121404_simucca-sistema-museale-citta-di-castrovillari_9-4?fit=constrain%2C1&fmt=webp&hei=500&wid=850",
-  "Chiesa di San Giuseppe": "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/1b/4c/35/fd/img-20200422-201626-largejpg.jpg?h=-1&s=1&w=1200",
+  "Chiesa di San Giuseppe": "https://mycity.s3.sbg.io.cloud.ovh.net/3431230/Castrovillari-1024x768.jpeg",
   "Santa Maria delle Grazie": "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/1d/b6/50/86/chiesa-della-madonna.jpg?h=1100&s=1&w=1100",
   "Palazzo Gallo": "https://1.bp.blogspot.com/-YbV-pY1tKlM/T-sOhTtZl0I/AAAAAAAAAm8/JwsbAAa5KUY/s1600/palazzo%2Bgallo%2B27%2B6%2B2012.JPG",
   "Palazzo Varcasia": "https://files.supersite.aruba.it/media/27294_11953e22c20bfd95315485c580b7f2b032480336.jpeg",
   "La Civita e il centro storico": "https://i0.wp.com/visitcalabria.uk/wp-content/uploads/2022/02/Castrovillari_civita-old-town.jpg?fit=443%2C462&ssl=1",
   "Teatro Sybaris": "https://ecodellojonio.b-cdn.net/media/posts/24/10/1729690203.jpg?aspect_ratio=16%3A9&width=785",
-  "Biblioteca Civica Umberto Caldora": "https://mycity.s3.sbg.io.cloud.ovh.net/3427528/download.jpeg",
+  "Biblioteca Civica Umberto Caldora": "https://www.paese24.it/timthumb.php?q=90&src=https%3A%2F%2Fwww.paese24.it%2Fwp-content%2Fuploads%2F2018%2F06%2Flefigaroconsegna3.jpg&w=650&zc=1",
   "Palazzo Cappelli": "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/1d/b6/51/01/palazzo-cqppelli.jpg?h=1200&s=1&w=1200",
   "Archivio di Stato – Sezione di Castrovillari": "https://media.cultura.gov.it/mibac/files/1682/Archivio%20di%20Stato%20di%20Castrovillari_Modificato.jpg",
 
