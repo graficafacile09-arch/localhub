@@ -36,7 +36,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const impostazioni = await getImpostazioniPubbliche();
   const nome = impostazioni.site_name?.trim() || DEFAULTS.site_name;
   const tagline = impostazioni.site_tagline?.trim() || DEFAULTS.site_tagline;
-  const ogImageUrl = `${SITE_URL}/hero-via-roma-castrovillari-1400x1050.jpg`;
+  const ogImageUrl = `${SITE_URL}/hero-coppia-castrovillari.webp`;
 
   return {
     metadataBase: new URL(SITE_URL),
