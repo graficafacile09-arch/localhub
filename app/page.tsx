@@ -89,8 +89,8 @@ export default async function Home() {
       <section className="relative overflow-hidden rounded-b-[2rem] bg-slate-900 shadow-lg shadow-slate-900/10 sm:rounded-b-[2.5rem]">
         {/* La foto copre tutta la HERO e non ne determina l'altezza. */}
         <Image
-          src="/hero-via-roma-castrovillari-1400x1050.jpg"
-          alt="Via Roma a Castrovillari"
+          src="/hero-coppia-castrovillari.webp"
+          alt="Coppia a Castrovillari"
           fill
           sizes="100vw"
           priority
