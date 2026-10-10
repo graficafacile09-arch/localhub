@@ -1,0 +1,51 @@
+name: Seed verified attraction photo fallbacks
+
+on:
+  push:
+    branches:
+      - assets/attrazioni-photo-fallbacks-2026-10-10
+
+permissions:
+  contents: write
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: assets/attrazioni-photo-fallbacks-2026-10-10
+          fetch-depth: 0
+      - name: Create response files
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p public/photo-fallbacks
+          cat > public/photo-fallbacks/la-civita.json <<'JSON'
+          {"src":"https://i0.wp.com/visitcalabria.uk/wp-content/uploads/2022/02/Castrovillari_civita-old-town.jpg?fit=443%2C462&ssl=1","page":"https://visitcalabria.uk/"}
+          JSON
+          cat > public/photo-fallbacks/teatro-sybaris.json <<'JSON'
+          {"src":"https://ecodellojonio.b-cdn.net/media/posts/24/10/1729690203.jpg?aspect_ratio=16%3A9&width=785","page":"https://ecodellojonio.it/"}
+          JSON
+          cat > public/photo-fallbacks/biblioteca.json <<'JSON'
+          {"src":"https://mycity.s3.sbg.io.cloud.ovh.net/3427528/download.jpeg","page":"https://castrovillaricittafestival.it/"}
+          JSON
+          cat > public/photo-fallbacks/palazzo-cappelli.json <<'JSON'
+          {"src":"https://dynamic-media-cdn.tripadvisor.com/media/photo-o/1d/b6/51/01/palazzo-cqppelli.jpg?h=1200&s=1&w=1200","page":"https://castrovillaricittafestival.it/"}
+          JSON
+          cat > public/photo-fallbacks/archivio-di-stato.json <<'JSON'
+          {"src":"https://media.cultura.gov.it/mibac/files/1682/Archivio%20di%20Stato%20di%20Castrovillari_Modificato.jpg","page":"https://archiviodistatocosenza.cultura.gov.it/chi-siamo/sezione-di-castrovillari"}
+          JSON
+          cat > public/photo-fallbacks/primafila.json <<'JSON'
+          {"src":"https://ecodellojonio.b-cdn.net/media/posts/25/12/1766998699.jpg?aspect_ratio=16%3A9&width=785","page":"https://castrovillaricittafestival.it/contenuti/3529951/rty"}
+          JSON
+      - name: Commit fallback responses
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          rm .github/workflows/seed-photo-fallbacks.yml
+          git add public/photo-fallbacks/*.json .github/workflows/seed-photo-fallbacks.yml
+          git commit -m "assets: add verified photo fallbacks for attractions"
+          git push origin HEAD:assets/attrazioni-photo-fallbacks-2026-10-10
