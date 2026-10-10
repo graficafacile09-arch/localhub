@@ -6,6 +6,7 @@ import {
   Theater, Trees, Utensils,
 } from "lucide-react";
 import Header from "@/components/Header/Header";
+import FotoScheda from "@/components/attrazioni/FotoScheda";
 import { getSiteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -58,31 +59,6 @@ const dintorni = [
 function mapsUrl(query: string) {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
 }
-
-function fotoUrl(query: string) {
-  return `https://loremflickr.com/960/540/${encodeURIComponent(query)}`;
-}
-
-const FOTO_FALLBACK = "https://mycity.s3.sbg.io.cloud.ovh.net/4222084/PROTOCONVENTO-FRANCESCANO.jpg";
-
-function FotoScheda({ query, alt }: { query: string; alt: string }) {
-  return (
-    <div className="relative h-44 w-full overflow-hidden bg-slate-200">
-      <img
-        src={fotoUrl(query)}
-        alt={alt}
-        loading="lazy"
-        decoding="async"
-        className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
-        onError={(event) => {
-          if (event.currentTarget.src !== FOTO_FALLBACK) event.currentTarget.src = FOTO_FALLBACK;
-        }}
-      />
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/25 via-transparent to-transparent" />
-    </div>
-  );
-}
-
 
 export default function AttrazioniPage() {
   return (
