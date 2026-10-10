@@ -9,9 +9,9 @@ const FOTO: Record<string, string> = {
   "Santa Maria delle Grazie": "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/1d/b6/50/86/chiesa-della-madonna.jpg?h=1100&s=1&w=1100",
   "Palazzo Gallo": "https://1.bp.blogspot.com/-YbV-pY1tKlM/T-sOhTtZl0I/AAAAAAAAAm8/JwsbAAa5KUY/s1600/palazzo%2Bgallo%2B27%2B6%2B2012.JPG",
   "Palazzo Varcasia": "https://files.supersite.aruba.it/media/27294_11953e22c20bfd95315485c580b7f2b032480336.jpeg",
-  "La Civita e il centro storico": "https://www.calabriafilmcommission.it/wp-content/uploads/2022/04/9-4-Castrovillari.jpg",
+  "La Civita e il centro storico": "https://i0.wp.com/visitcalabria.uk/wp-content/uploads/2022/02/Castrovillari_civita-old-town.jpg?fit=443%2C462&ssl=1",
   "Teatro Sybaris": "https://ecodellojonio.b-cdn.net/media/posts/24/10/1729690203.jpg?aspect_ratio=16%3A9&width=785",
-  "Biblioteca Civica Umberto Caldora": "https://www.paese24.it/wp-content/uploads/2018/06/lefigaroconsegna3.jpg",
+  "Biblioteca Civica Umberto Caldora": "https://www.paese24.it/timthumb.php?q=90&src=https%3A%2F%2Fwww.paese24.it%2Fwp-content%2Fuploads%2F2018%2F06%2Flefigaroconsegna3.jpg&w=650&zc=1",
   "Primafila": "https://ecodellojonio.b-cdn.net/media/posts/25/12/1766998699.jpg?aspect_ratio=16%3A9&width=785",
   "Chiesa di San Giuseppe": "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/1b/4c/35/fd/img-20200422-201626-largejpg.jpg?h=-1&s=1&w=1200",
   "Palazzo Cappelli": "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/1d/b6/51/01/palazzo-cqppelli.jpg?h=1200&s=1&w=1200",
@@ -46,19 +46,32 @@ const FOTO: Record<string, string> = {
   "Saracena": "https://www.calnews.it/wp-content/uploads/2019/09/Saracena.jpg",
   "Parco Nazionale del Pollino": "https://www.italia.it/content/dam/tdh/it/destinations/italia/parco-nazionale-del-pollino/media/2480X1000_parco_nazionale_del_pollino_destination.jpg",
 };
-
-
+const FOTO_ALTERNATIVE: Record<string, string> = {
+  "La Civita e il centro storico": "https://www.calabriafilmcommission.it/wp-content/uploads/2022/04/9-4-Castrovillari.jpg",
+  "Biblioteca Civica Umberto Caldora": "https://mycity.s3.sbg.io.cloud.ovh.net/3427528/download.jpeg",
+  "Chiesa di San Giuseppe": "https://mycity.s3.sbg.io.cloud.ovh.net/3431230/Castrovillari-1024x768.jpeg",
+  "Palazzo Cappelli": "https://upload.wikimedia.org/wikipedia/commons/c/c7/Castrovillari-palazzo-palazzo-cappelli.jpg",
+  "Archivio di Stato – Sezione di Castrovillari": "https://archiviodistatocosenza.cultura.gov.it/fileadmin/_processed_/4/e/csm_Apertura_Cv_20Mar_SITO_ecd39a5167.jpg",
+  "San Basile": "https://d3wo5wojvuv7l.cloudfront.net/t_square_limited_720/images.spreaker.com/original/2f272a0c52ce773c666533486630b848.jpg",
+};
 export default function FotoScheda({ alt }: { query: string; alt: string }) {
   const [officialSrc, setOfficialSrc] = useState<string | null>(null);
   const [officialChecked, setOfficialChecked] = useState(false);
   const [staticFailed, setStaticFailed] = useState(false);
+  const [alternativeFailed, setAlternativeFailed] = useState(false);
   const imageRef = useRef<HTMLImageElement | null>(null);
 
   const staticSrc = FOTO[alt];
-  const src = staticSrc && !staticFailed ? staticSrc : officialSrc;
+  const alternativeSrc = FOTO_ALTERNATIVE[alt];
+  const src =
+    staticSrc && !staticFailed
+      ? staticSrc
+      : alternativeSrc && !alternativeFailed
+        ? alternativeSrc
+        : officialSrc;
 
   useEffect(() => {
-    if (staticSrc && !staticFailed) return;
+    if ((staticSrc && !staticFailed) || (alternativeSrc && !alternativeFailed)) return;
 
     let active = true;
     const controller = new AbortController();
@@ -93,7 +106,7 @@ export default function FotoScheda({ alt }: { query: string; alt: string }) {
       window.clearTimeout(timeout);
       controller.abort();
     };
-  }, [alt, staticFailed, staticSrc]);
+  }, [alt, staticFailed, alternativeFailed, staticSrc, alternativeSrc]);
 
   const handleImageFailure = useCallback(() => {
     if (staticSrc && !staticFailed) {
@@ -102,12 +115,17 @@ export default function FotoScheda({ alt }: { query: string; alt: string }) {
       setOfficialChecked(false);
       return;
     }
+    if (alternativeSrc && !alternativeFailed) {
+      setAlternativeFailed(true);
+      setOfficialSrc(null);
+      setOfficialChecked(false);
+      return;
+    }
     setOfficialSrc(null);
     setOfficialChecked(true);
-  }, [staticFailed, staticSrc]);
+  }, [staticSrc, staticFailed, alternativeSrc, alternativeFailed]);
 
-  // Catch images that failed before React hydration, when the onError handler
-  // could not yet be attached.
+  // Handle images that failed before React hydration, when onError was not attached.
   useEffect(() => {
     const image = imageRef.current;
     if (image?.complete && image.naturalWidth === 0) {
