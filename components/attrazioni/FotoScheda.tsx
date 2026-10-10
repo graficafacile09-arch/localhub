@@ -41,7 +41,7 @@ const FOTO: Record<string, string> = {
   "Parco Nazionale del Pollino": "https://www.italia.it/content/dam/tdh/it/destinations/italia/parco-nazionale-del-pollino/media/2480X1000_parco_nazionale_del_pollino_destination.jpg",
 };
 
-export default function FotoScheda({ query, alt }: { query: string; alt: string }) {
+export default function FotoScheda({ alt }: { query: string; alt: string }) {
   const [officialSrc, setOfficialSrc] = useState<string | null>(null);
   const [officialChecked, setOfficialChecked] = useState(false);
   const src = FOTO[alt] ?? officialSrc;
