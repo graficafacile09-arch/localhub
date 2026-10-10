@@ -8,9 +8,6 @@ const COORDINATE: Record<string, [number, number]> = {
   "Protoconvento Francescano Castrovillari": [39.8086875, 16.2103125],
   "Museo Archeologico Castrovillari": [39.8083149, 16.2098598],
   "Teatro Sybaris Castrovillari": [39.8086875, 16.2103125],
-  "Morano Calabro, Calabria, Italia": [39.8420625, 16.1361875],
-  "Civita, Calabria, Italia": [39.8274375, 16.3129375],
-  "Altomonte, Calabria, Italia": [39.6993125, 16.1301875],
 };
 
 function urlCoordinate(query: string) {
