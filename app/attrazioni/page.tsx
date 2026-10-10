@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import {
   ArrowRight, ArrowUpRight, BookOpen, CalendarDays, Church, Compass,
-  ExternalLink, Landmark, MapPinned, Mountain, Music2, Route, Sparkles,
+  Landmark, MapPinned, Mountain, Music2, Route, Sparkles,
   Theater, Trees, Utensils,
 } from "lucide-react";
 import Header from "@/components/Header/Header";
@@ -31,18 +31,28 @@ const luoghi = [
 ];
 
 const eventi = [
-  { nome: "Carnevale di Castrovillari", descrizione: "È una delle manifestazioni più rappresentative della città e porta in strada maschere, gruppi, costumi e momenti di partecipazione collettiva. Per organizzare la visita controlla il calendario dell'edizione in corso, il percorso delle sfilate e gli eventuali aggiornamenti su accessi e viabilità.", icona: Sparkles },
-  { nome: "Primavera dei Teatri", descrizione: "La rassegna è dedicata alla scena contemporanea e offre un'occasione per incontrare compagnie, artisti e linguaggi teatrali non convenzionali. Il programma può articolarsi in più giornate e spazi: consulta le date ufficiali e verifica se gli spettacoli richiedono prenotazione.", icona: Theater },
-  { nome: "Estate Internazionale del Folklore", descrizione: "Questa manifestazione mette al centro la danza popolare e il dialogo tra culture, con gruppi e tradizioni provenienti da territori diversi. È un appuntamento adatto a chi vuole vivere la città anche attraverso spettacoli all'aperto e momenti di festa; programma e partecipanti cambiano a ogni edizione.", icona: Music2 },
-  { nome: "Suoni Festival", descrizione: "La rassegna propone appuntamenti musicali e può rappresentare una tappa per chi visita Castrovillari durante la stagione degli eventi. Artisti, location e formula del festival possono variare: controlla gli annunci dell'organizzazione prima di pianificare la serata.", icona: Music2 },
-  { nome: "Festival della Legalità", descrizione: "Gli appuntamenti affrontano temi civici e sociali attraverso incontri, testimonianze e attività di sensibilizzazione. Per capire il taglio dell'edizione e partecipare agli eventi più adatti, consulta il programma aggiornato e le indicazioni degli organizzatori.", icona: BookOpen },
-  { nome: "Pollicino Book Festival", descrizione: "Il festival valorizza la lettura come esperienza condivisa e può includere presentazioni, incontri con autori e iniziative per bambini e ragazzi. Controlla il calendario per conoscere ospiti, fasce d'età consigliate e luoghi degli appuntamenti.", icona: BookOpen },
-  { nome: "Rigenerazioni Fest", descrizione: "La manifestazione raccoglie occasioni di incontro e attività culturali che coinvolgono luoghi e comunità cittadine. Per individuare gli appuntamenti effettivamente previsti nell'edizione corrente, fai riferimento agli annunci ufficiali e alle pagine degli organizzatori.", icona: Sparkles },
-  { nome: "Calabria Wine & Design Festival", descrizione: "L'iniziativa mette in dialogo prodotti, cultura del cibo e progettualità creativa, raccontando il territorio anche attraverso le sue eccellenze. Se vuoi partecipare a degustazioni o attività specifiche, verifica in anticipo programma, eventuali prenotazioni e modalità di accesso.", icona: Utensils },
-  { nome: "Festival dei Lettori", descrizione: "La rassegna crea occasioni per incontrare libri e lettori attraverso presentazioni e momenti di confronto. Gli ospiti e il calendario possono cambiare nel tempo, quindi è utile consultare le comunicazioni più recenti prima di scegliere l'appuntamento.", icona: BookOpen },
-  { nome: "Festival dei Quartieri", descrizione: "Gli eventi di quartiere permettono di scoprire la città attraverso iniziative di prossimità, spesso in luoghi diversi dal circuito culturale tradizionale. Controlla il programma per conoscere le piazze coinvolte, gli orari e le eventuali modifiche in caso di maltempo.", icona: Music2 },
-  { nome: "Rural Food Festival", descrizione: "La proposta gastronomica è un'occasione per conoscere produttori, piatti e storie del mondo rurale locale. Per sapere quali stand, degustazioni e attività siano confermati nell'edizione corrente, consulta gli aggiornamenti dell'organizzazione.", icona: Utensils },
-  { nome: "Vibe Fest e Joy Festival", descrizione: "Questi appuntamenti possono aggiungere una dimensione più contemporanea all'offerta culturale, con musica e occasioni di socialità. Le edizioni possono cambiare nome, formato o collocazione: verifica il calendario ufficiale per confermare che siano in programma e per ottenere informazioni affidabili.", icona: Music2 },
+  { nome: "Carnevale di Castrovillari", periodo: "Di solito a febbraio", descrizione: "Maschere, carri e gruppi folkloristici animano le strade con una delle feste più sentite della città.", icona: Sparkles },
+  { nome: "Primavera dei Teatri", periodo: "Fine maggio – inizio giugno", descrizione: "Festival dedicato alla scena contemporanea, con spettacoli e compagnie da tutta Italia.", icona: Theater },
+  { nome: "Estate Internazionale del Folklore", periodo: "Di solito ad agosto", descrizione: "Danza, musica e costumi tradizionali portano a Castrovillari culture da tutto il mondo.", icona: Music2 },
+  { nome: "Suoni Festival", periodo: "Periodo variabile, spesso in estate", descrizione: "Appuntamenti musicali e sonorità etno-jazz in una rassegna legata al territorio.", icona: Music2 },
+  { nome: "Festival della Legalità", periodo: "Date variabili durante l'anno", descrizione: "Incontri e testimonianze su legalità, cittadinanza e impegno sociale.", icona: BookOpen },
+  { nome: "Pollicino Book Festival", periodo: "Di solito in primavera", descrizione: "Libri, autori e attività dedicate soprattutto a bambini, ragazzi e famiglie.", icona: BookOpen },
+  { nome: "Rigenerazioni Fest", periodo: "Di solito in primavera", descrizione: "Iniziative culturali e incontri che mettono in dialogo persone, luoghi e comunità.", icona: Sparkles },
+  { nome: "Calabria Wine & Design Festival", periodo: "Date da confermare ogni anno", descrizione: "Un incontro tra prodotti del territorio, cultura enogastronomica e creatività.", icona: Utensils },
+  { nome: "Festival dei Lettori", periodo: "Periodo variabile", descrizione: "Presentazioni, libri e occasioni di confronto per chi ama leggere e scoprire nuovi autori.", icona: BookOpen },
+  { nome: "Festival dei Quartieri", periodo: "Di solito nella bella stagione", descrizione: "Musica e iniziative diffuse nei quartieri, tra piazze e luoghi di ritrovo della città.", icona: Music2 },
+  { nome: "Rural Food Festival", periodo: "Di solito in estate", descrizione: "Sapori locali, prodotti rurali e tradizioni gastronomiche raccontano il territorio.", icona: Utensils },
+  { nome: "Vibe Fest e Joy Festival", periodo: "Di solito in estate", descrizione: "Musica e momenti di socialità con un programma che cambia a ogni edizione.", icona: Music2 },
+  { nome: "Primafila", periodo: "Di solito tra novembre e dicembre", descrizione: "Rassegna teatrale che accompagna il periodo natalizio con spettacoli e incontri.", icona: Theater },
+  { nome: "Radure – Invito al teatro", periodo: "Di solito in autunno", descrizione: "Teatro e ricerca artistica in una rassegna che valorizza luoghi e linguaggi diversi.", icona: Theater },
+  { nome: "Càlabbria Teatro Festival", periodo: "Di solito in autunno", descrizione: "Spettacoli e corti teatrali dedicati alla creatività e alla scena contemporanea.", icona: Theater },
+  { nome: "Festival Antonio Vivaldi", periodo: "Di solito tra settembre e ottobre", descrizione: "Concerti e appuntamenti dedicati alla musica classica e al repertorio barocco.", icona: Music2 },
+  { nome: "I-Fest International Film Festival", periodo: "Di solito a settembre", descrizione: "Cinema internazionale, proiezioni e incontri dedicati al mondo audiovisivo.", icona: Sparkles },
+  { nome: "Castrovillari Film Festival", periodo: "Di solito tra agosto e settembre", descrizione: "Una finestra sul cinema indipendente, con film e autori italiani e internazionali.", icona: Theater },
+  { nome: "Peperoncino Jazz Festival", periodo: "Di solito in estate", descrizione: "Concerti jazz in diverse località calabresi, con tappe e date che variano ogni anno.", icona: Music2 },
+  { nome: "Festival della Cipolla Bianca", periodo: "Di solito a luglio", descrizione: "Una festa dedicata alla Cipolla Bianca di Castrovillari e alle specialità del territorio.", icona: Utensils },
+  { nome: "Clap! Etno Music Fest", periodo: "Di solito a inizio estate", descrizione: "Musica etnica e tradizioni popolari si incontrano in una rassegna dal respiro contemporaneo.", icona: Music2 },
+  { nome: "Civita Nova – Radicarsi", periodo: "Di solito ad agosto", descrizione: "Arte, storia e identità locale animano il centro storico con appuntamenti diffusi.", icona: Sparkles },
 ];
 
 const dintorni = [
@@ -117,8 +127,7 @@ export default function AttrazioniPage() {
 
       <section id="eventi" className="mx-auto max-w-7xl scroll-mt-20 px-4 py-12 md:px-6 md:py-16">
         <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
-          <div><p className="text-xs font-black uppercase tracking-[0.16em] text-blue-700">Da non perdere</p><h2 className="mt-2 text-3xl font-black tracking-tight text-slate-900 md:text-4xl">Eventi e festival</h2><p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">Una selezione delle rassegne cittadine. Per non perdere eventi più piccoli, nuove iniziative e date appena annunciate, consulta il calendario ufficiale completo.</p></div>
-          <a href="https://castrovillaricittafestival.it/eventi" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-xl bg-yellow-400 px-4 py-3 text-sm font-black text-blue-950 shadow-sm transition hover:bg-yellow-300">Tutti gli eventi aggiornati <ExternalLink className="h-4 w-4" aria-hidden /></a>
+          <div><p className="text-xs font-black uppercase tracking-[0.16em] text-blue-700">Da non perdere</p><h2 className="mt-2 text-3xl font-black tracking-tight text-slate-900 md:text-4xl">Eventi e festival</h2><p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">Una selezione di festival e appuntamenti ricorrenti a Castrovillari. Le finestre indicate sono orientative: le date esatte cambiano ogni anno.</p></div>
         </div>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {eventi.map((evento) => { const Icona = evento.icona; return (
@@ -126,11 +135,10 @@ export default function AttrazioniPage() {
               <FotoScheda query={`${evento.nome}, Castrovillari, Calabria, festival`} alt={evento.nome} />
               <div className="p-5"><div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-950 text-yellow-300"><Icona className="h-5 w-5" aria-hidden /></div>
               <h3 className="mt-4 text-lg font-black text-slate-900">{evento.nome}</h3><p className="mt-2 text-sm leading-6 text-slate-600">{evento.descrizione}</p>
-              <p className="mt-4 flex items-center gap-2 border-t border-slate-100 pt-3 text-xs font-semibold text-slate-500"><CalendarDays className="h-4 w-4 shrink-0 text-blue-700" aria-hidden /> Date e programma da verificare sul calendario ufficiale</p></div>
+              <p className="mt-4 flex items-center gap-2 border-t border-slate-100 pt-3 text-xs font-semibold text-slate-500"><CalendarDays className="h-4 w-4 shrink-0 text-blue-700" aria-hidden /> {evento.periodo}</p></div>
             </article>
           ); })}
         </div>
-        <div className="mt-6 rounded-2xl border border-blue-100 bg-blue-50 p-5 md:flex md:items-center md:justify-between md:gap-6"><div><h3 className="font-black text-blue-950">Vuoi consultare il programma completo?</h3><p className="mt-1 text-sm leading-6 text-blue-900/80">Il calendario ufficiale raccoglie anche gli appuntamenti aggiunti durante l'anno.</p></div><a href="https://castrovillaricittafestival.it/eventi" target="_blank" rel="noopener noreferrer" className="mt-3 inline-flex items-center gap-1 font-bold text-blue-700 hover:text-blue-900 hover:underline md:mt-0">Apri il calendario <ArrowUpRight className="h-4 w-4" aria-hidden /></a></div>
       </section>
 
       <section id="sapori" className="scroll-mt-20 border-y border-slate-200 bg-white py-12 md:py-16">
