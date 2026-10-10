@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 
 const luoghi = [
   { nome: "Castello Aragonese", tipo: "Storia", descrizione: "È uno dei riferimenti storici più riconoscibili di Castrovillari e racconta il ruolo strategico della città nel corso dei secoli. Dedica tempo anche alle strade e agli edifici che circondano il castello, così da inserire la visita in una passeggiata più ampia nel centro antico.", icona: Landmark, query: "Castello Aragonese Castrovillari" },
-  { nome: "La Civita e il centro storico", tipo: "Passeggiate", descrizione: "La Civita è il nucleo antico da attraversare senza fretta, osservando vicoli, passaggi, facciate e scorci che restituiscono la struttura della Castrovillari storica. È una buona zona per una passeggiata fotografica e per scoprire dettagli architettonici che spesso sfuggono attraversando la città in auto.", icona: Route, query: "Civita Castrovillari" },
+  { nome: "La Civita e il centro storico", tipo: "Passeggiate", descrizione: "La Civita è il nucleo antico da attraversare senza fretta, osservando vicoli, passaggi, facciate e scorci che restituiscono la struttura della Castrovillari storica. È una buona zona per una passeggiata fotografica e per scoprire dettagli architettonici che spesso sfuggono attraversando la città in auto.", icona: Route, query: "La Civita centro storico quartiere antico Castrovillari Calabria" },
   { nome: "Protoconvento Francescano – SiMuCCà", tipo: "Musei e cultura", descrizione: "Il complesso è uno dei luoghi da cercare per conoscere il patrimonio culturale locale attraverso mostre, collezioni e iniziative pubbliche. Prima della visita controlla quali esposizioni siano aperte e se sono previste visite guidate o attività temporanee.", icona: BookOpen, query: "Protoconvento Francescano Castrovillari" },
   { nome: "Museo Archeologico", tipo: "Musei e cultura", descrizione: "Una visita al museo aiuta a leggere il territorio oltre il centro urbano, seguendo le tracce delle comunità che hanno abitato questa parte della Calabria nel passato. Verifica sede, orari e disponibilità delle collezioni prima di organizzare la tappa.", icona: Landmark, query: "Museo Archeologico Castrovillari" },
   { nome: "Teatro Sybaris", tipo: "Spettacoli", descrizione: "Il Teatro Sybaris è un riferimento per chi vuole affiancare alla visita della città una serata di spettacolo. Il cartellone può comprendere teatro, incontri e rassegne: consulta il programma aggiornato per scegliere una data e controllare modalità di ingresso.", icona: Theater, query: "Teatro Sybaris Castrovillari" },
@@ -63,22 +63,17 @@ function fotoUrl(query: string) {
   return `https://loremflickr.com/960/540/${encodeURIComponent(query)}`;
 }
 
-const FOTO_FALLBACK = "https://mycity.s3.sbg.io.cloud.ovh.net/4222084/PROTOCONVENTO-FRANCESCANO.jpg";
-
 function FotoScheda({ query, alt }: { query: string; alt: string }) {
   return (
-    <div className="relative h-44 w-full overflow-hidden bg-slate-200">
+    <div className="relative h-24 w-full overflow-hidden bg-slate-200">
       <img
         src={fotoUrl(query)}
         alt={alt}
         loading="lazy"
         decoding="async"
-        className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
-        onError={(event) => {
-          if (event.currentTarget.src !== FOTO_FALLBACK) event.currentTarget.src = FOTO_FALLBACK;
-        }}
+        className="h-full w-full object-cover"
       />
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/25 via-transparent to-transparent" />
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/15 via-transparent to-transparent" />
     </div>
   );
 }
