@@ -36,6 +36,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const impostazioni = await getImpostazioniPubbliche();
   const nome = impostazioni.site_name?.trim() || DEFAULTS.site_name;
   const tagline = impostazioni.site_tagline?.trim() || DEFAULTS.site_tagline;
+  // Keep social preview image aligned with homepage hero.
   const ogImageUrl = `${SITE_URL}/hero-coppia-castrovillari.webp`;
 
   return {
