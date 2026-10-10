@@ -81,11 +81,11 @@ export async function GET(request: Request) {
             return Response.json({ src: new URL(src, fallbackPage).toString(), page: fallbackPage });
           }
         }
-        const fallbackImages = [...fallbackHtml.matchAll(/<img\\b[^>]*>/gi)];
+        const fallbackImages = [...fallbackHtml.matchAll(/<img\b[^>]*>/gi)];
         for (const match of fallbackImages) {
           const tag = match[0];
-          const alt = tag.match(/\\balt=["']([^"']*)["']/i)?.[1] ?? "";
-          const src = tag.match(/\\b(?:src|data-src|data-original)=["']([^"']+)["']/i)?.[1];
+          const alt = tag.match(/\balt=["']([^"']*)["']/i)?.[1] ?? "";
+          const src = tag.match(/\b(?:src|data-src|data-original)=["']([^"']+)["']/i)?.[1];
           if (src && /teatro|sybaris|immagine principale|castrovillari/i.test(alt)) {
             return Response.json({ src: new URL(decode(src), fallbackPage).toString(), page: fallbackPage });
           }
