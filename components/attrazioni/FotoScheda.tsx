@@ -52,7 +52,14 @@ const FOTO: Record<string, string> = {
   "Parco Nazionale del Pollino": "https://www.italia.it/content/dam/tdh/it/destinations/italia/parco-nazionale-del-pollino/media/2480X1000_parco_nazionale_del_pollino_destination.jpg",
 };
 
-export default function FotoScheda({ alt }: { query: string; alt: string }) {
+const FOTO_ALTERNATIVE: Record<string, string> = {
+  "La Civita e il centro storico": "https://www.calabriafilmcommission.it/wp-content/uploads/2022/04/9-4-Castrovillari.jpg",
+  "Biblioteca Civica Umberto Caldora": "https://www.paese24.it/timthumb.php?q=90&src=https%3A%2F%2Fwww.paese24.it%2Fwp-content%2Fuploads%2F2018%2F06%2Flefigaroconsegna3.jpg&w=650&zc=1",
+  "Chiesa di San Giuseppe": "https://mycity.s3.sbg.io.cloud.ovh.net/3431230/Castrovillari-1024x768.jpeg",
+  "Archivio di Stato – Sezione di Castrovillari": "https://archiviodistatocosenza.cultura.gov.it/fileadmin/_processed_/4/e/csm_Apertura_Cv_20Mar_SITO_ecd39a5167.jpg",
+};
+
+export default function FotoScheda({ query, alt }: { query: string; alt: string }) {
   const [officialSrc, setOfficialSrc] = useState<string | null>(null);
   const [officialChecked, setOfficialChecked] = useState(false);
   const [fallbackSrc, setFallbackSrc] = useState<string | null>(null);
@@ -61,10 +68,13 @@ export default function FotoScheda({ alt }: { query: string; alt: string }) {
   const src = fallbackSrc ?? FOTO[alt] ?? officialSrc;
 
   useEffect(() => {
+    setOfficialSrc(null);
+    setOfficialChecked(false);
     setFallbackSrc(null);
     setFallbackTried(false);
     setImageFailed(false);
     if (FOTO[alt]) return;
+
     let active = true;
     fetch(`/api/events-photo-audit?event=${encodeURIComponent(alt)}`)
       .then((response) => response.ok ? response.json() : null)
@@ -75,22 +85,30 @@ export default function FotoScheda({ alt }: { query: string; alt: string }) {
       .finally(() => {
         if (active) setOfficialChecked(true);
       });
+
     return () => { active = false; };
   }, [alt]);
-
-  return (
-    <div className="relative flex h-44 w-full items-center justify-center overflow-hidden bg-gradient-to-br from-slate-100 via-blue-50 to-slate-200">
 
   const handleImageFailure = () => {
     if (fallbackTried) {
       setImageFailed(true);
       return;
     }
+
     setFallbackTried(true);
-    if (!FOTO[alt] && !officialSrc) {
-      // The official-event fallback request is already in flight.
+    const alternative = FOTO_ALTERNATIVE[alt];
+    if (alternative && alternative !== src) {
+      setFallbackSrc(alternative);
       return;
     }
+
+    // Primafila's current Open Graph image on the event page is unrelated;
+    // never replace its specific poster with that wrong image.
+    if (alt === "Primafila") {
+      setImageFailed(true);
+      return;
+    }
+
     fetch(`/api/events-photo-audit?event=${encodeURIComponent(alt)}`)
       .then((response) => response.ok ? response.json() : null)
       .then((data) => {
@@ -103,6 +121,8 @@ export default function FotoScheda({ alt }: { query: string; alt: string }) {
       .catch(() => setImageFailed(true));
   };
 
+  return (
+    <div className="relative flex h-44 w-full items-center justify-center overflow-hidden bg-gradient-to-br from-slate-100 via-blue-50 to-slate-200">
       {src && !imageFailed ? (
         <img
           src={src}
@@ -115,7 +135,9 @@ export default function FotoScheda({ alt }: { query: string; alt: string }) {
       ) : (
         <div className="px-5 text-center text-blue-950/70">
           <div aria-hidden="true" className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-xl bg-white/80 text-lg font-black shadow-sm">✦</div>
-          <p className="text-xs font-bold uppercase tracking-[0.14em]">{officialChecked ? "Castrovillari" : "Caricamento foto ufficiale"}</p>
+          <p className="text-xs font-bold uppercase tracking-[0.14em]">
+            {officialChecked ? "Foto non disponibile" : "Caricamento foto ufficiale"}
+          </p>
           <p className="mt-1 text-sm font-semibold">{alt}</p>
         </div>
       )}
