@@ -11,6 +11,8 @@ const FOTO: Record<string, string> = {
   "Palazzo Varcasia": "https://files.supersite.aruba.it/media/27294_11953e22c20bfd95315485c580b7f2b032480336.jpeg",
   "La Civita e il centro storico": "https://www.calabriafilmcommission.it/wp-content/uploads/2022/04/9-4-Castrovillari.jpg",
   "Teatro Sybaris": "https://ecodellojonio.b-cdn.net/media/posts/24/10/1729690203.jpg?aspect_ratio=16%3A9&width=785",
+  "Biblioteca Civica Umberto Caldora": "https://www.paese24.it/wp-content/uploads/2018/06/lefigaroconsegna3.jpg",
+  "Primafila": "https://ecodellojonio.b-cdn.net/media/posts/25/12/1766998699.jpg?aspect_ratio=16%3A9&width=785",
   "Chiesa di San Giuseppe": "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/1b/4c/35/fd/img-20200422-201626-largejpg.jpg?h=-1&s=1&w=1200",
   "Palazzo Cappelli": "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/1d/b6/51/01/palazzo-cqppelli.jpg?h=1200&s=1&w=1200",
   "Archivio di Stato – Sezione di Castrovillari": "https://media.cultura.gov.it/mibac/files/1682/Archivio%20di%20Stato%20di%20Castrovillari_Modificato.jpg",
