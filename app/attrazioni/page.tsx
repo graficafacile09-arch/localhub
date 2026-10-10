@@ -42,7 +42,8 @@ const eventi = [
   { nome: "Festival dei Lettori", periodo: "Date da confermare ogni anno", descrizione: "Presentazioni, libri e occasioni di confronto per chi ama leggere e scoprire nuovi autori.", icona: BookOpen },
   { nome: "Festival dei Quartieri", periodo: "Edizione 2026: 4–14 agosto", descrizione: "Musica e iniziative diffuse nei quartieri, tra piazze e luoghi di ritrovo della città.", icona: Music2 },
   { nome: "Rural Food Festival", periodo: "Date da confermare ogni anno", descrizione: "Sapori locali, prodotti rurali e tradizioni gastronomiche raccontano il territorio.", icona: Utensils },
-  { nome: "Vibe Fest e Joy Festival", periodo: "Date da confermare ogni anno", descrizione: "Musica e momenti di socialità con un programma che cambia a ogni edizione.", icona: Music2 },
+  { nome: "Vibe Fest", periodo: "Date da confermare ogni anno", descrizione: "Festival musicale che anima Castrovillari con concerti e appuntamenti dedicati alla musica dal vivo.", icona: Music2 },
+  { nome: "Joy Festival", periodo: "Date da confermare ogni anno", descrizione: "Appuntamenti musicali e momenti di aggregazione nel calendario degli eventi cittadini.", icona: Music2 },
   { nome: "Primafila", periodo: "Edizione 2026: 30 novembre – 30 dicembre", descrizione: "Rassegna teatrale che accompagna il periodo natalizio con spettacoli e incontri.", icona: Theater },
   { nome: "Radure – Invito al teatro", periodo: "Edizione 2026: 14 novembre – 5 dicembre", descrizione: "Teatro e ricerca artistica in una rassegna che valorizza luoghi e linguaggi diversi.", icona: Theater },
   { nome: "Càlabbria Teatro Festival", periodo: "Edizione 2026: 14–18 ottobre", descrizione: "Spettacoli e corti teatrali dedicati alla creatività e alla scena contemporanea.", icona: Theater },
@@ -51,8 +52,8 @@ const eventi = [
   { nome: "Castrovillari Film Festival", periodo: "Edizione 2026: 27–30 agosto", descrizione: "Una finestra sul cinema indipendente, con film e autori italiani e internazionali.", icona: Theater },
   { nome: "Peperoncino Jazz Festival", periodo: "Edizione 2026: 18–20 luglio", descrizione: "Concerti jazz in diverse località calabresi, con tappe e date che variano ogni anno.", icona: Music2 },
   { nome: "Festival della Cipolla Bianca", periodo: "Edizione 2026: 10–12 luglio", descrizione: "Una festa dedicata alla Cipolla Bianca di Castrovillari e alle specialità del territorio.", icona: Utensils },
-  { nome: "Clap! Etno Music Fest", periodo: "Edizione 2026: 2–6 giugno", descrizione: "Musica etnica e tradizioni popolari si incontrano in una rassegna dal respiro contemporaneo.", icona: Music2 },
-  { nome: "Civita Nova – Radicarsi", periodo: "Edizione 2026: agosto (date da confermare)", descrizione: "Arte, storia e identità locale animano il centro storico con appuntamenti diffusi.", icona: Sparkles },
+  { nome: "Clap! Etno Music Fest", periodo: "Edizione 2026: 29 maggio – 1 giugno", descrizione: "Musica etnica e tradizioni popolari si incontrano in una rassegna dal respiro contemporaneo.", icona: Music2 },
+  { nome: "Civita Nova – Radicarsi", periodo: "Edizione 2026: 3–5 settembre", descrizione: "Arte, storia e identità locale animano il centro storico con appuntamenti diffusi.", icona: Sparkles },
 ];
 
 const dintorni = [
