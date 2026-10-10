@@ -8,6 +8,7 @@ const OFFICIAL_PAGES: Record<string, string> = {
   "I-Fest International Film Festival": "https://castrovillaricittafestival.it/eventi/3046342/fest-international-film-festival",
   "Castrovillari Film Festival": "https://castrovillaricittafestival.it/contenuti/3529981/castrovillari-film-festival",
   "Peperoncino Jazz Festival": "https://castrovillaricittafestival.it/eventi/3046397/peperoncino-jazz-festival",
+  "Festival della Cipolla Bianca": "https://castrovillaricittafestival.it/eventi/3483904/festival-cipolla-bianca-castrovillari",
   "Clap! Etno Music Fest": "https://castrovillaricittafestival.it/eventi/3483896/clap-etno-music-festival",
   "Civita Nova – Radicarsi": "https://castrovillaricittafestival.it/eventi/3046349/civita-nova-radicarsi",
   "Suoni Festival": "https://castrovillaricittafestival.it/eventi/3046400/suoni-festival",
@@ -64,32 +65,6 @@ export async function GET(request: Request) {
       const src = tag.match(/\b(?:src|data-src|data-original)=["']([^"']+)["']/i)?.[1];
       if (src && alt && /festival|castrovillari|teatro|cinema|musica|folklore|civita|cipolla|vino|legalit/i.test(alt)) {
         return Response.json({ src: new URL(decode(src), page).toString(), page });
-      }
-    }
-    if (event === "Primafila") {
-      const fallbackPage = "https://comune.castrovillari.cs.it/luoghi/2435594/teatro-sybaris";
-      const fallbackResponse = await fetch(fallbackPage, {
-        headers: { "user-agent": "Mozilla/5.0 (compatible; InCitta/1.0)" },
-        next: { revalidate: 86400 },
-      });
-      if (fallbackResponse.ok) {
-        const fallbackHtml = await fallbackResponse.text();
-        for (const pattern of candidates) {
-          const match = fallbackHtml.match(pattern);
-          if (match?.[1]) {
-            const src = decode(match[1].trim());
-            return Response.json({ src: new URL(src, fallbackPage).toString(), page: fallbackPage });
-          }
-        }
-        const fallbackImages = [...fallbackHtml.matchAll(/<img\b[^>]*>/gi)];
-        for (const match of fallbackImages) {
-          const tag = match[0];
-          const alt = tag.match(/\balt=["']([^"']*)["']/i)?.[1] ?? "";
-          const src = tag.match(/\b(?:src|data-src|data-original)=["']([^"']+)["']/i)?.[1];
-          if (src && /teatro|sybaris|immagine principale|castrovillari/i.test(alt)) {
-            return Response.json({ src: new URL(decode(src), fallbackPage).toString(), page: fallbackPage });
-          }
-        }
       }
     }
     return Response.json({ src: null, page }, { status: 404 });
