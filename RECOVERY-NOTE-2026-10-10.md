@@ -8,3 +8,4 @@ This recovery branch starts from the last successful production version before t
 - The homepage text and all unrelated files from the base version are preserved.
 - Social preview image metadata is aligned to the same hero image.
 - No database changes are part of this recovery.
+- The recovery point was fast-forwarded to `main` without rewriting Git history.
