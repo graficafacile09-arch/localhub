@@ -61,18 +61,15 @@ async function callChatCompletions(accountId: string, apiToken: string, model: s
 }
 
 async function callMoondream(accountId: string, apiToken: string, prompt: string, imageBase64: string, mime: string) {
-  const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run`;
+  const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/@cf/moondream/moondream3.1-9B-A2B`;
 
   const body = JSON.stringify({
-    model: "@cf/moondream/moondream3.1-9B-A2B",
-    input: {
-      task: "query",
-      image: `data:${mime};base64,${imageBase64}`,
-      question: prompt,
-      max_tokens: MAX_TOKENS,
-      temperature: 0.1,
-      reasoning: false,
-    },
+    task: "query",
+    image: `data:${mime};base64,${imageBase64}`,
+    question: prompt,
+    max_tokens: MAX_TOKENS,
+    temperature: 0.1,
+    reasoning: false,
   });
 
   const tStart = performance.now();
