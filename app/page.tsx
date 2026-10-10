@@ -384,11 +384,14 @@ export default async function Home() {
 
           <div>
             <h3 className="text-xs font-black uppercase tracking-[0.14em] text-slate-500">
-              Assistente
+              Informazioni
             </h3>
-            <div className="mt-3 flex items-center gap-3">
-              <span className="text-sm font-bold text-slate-200">Pino è sempre disponibile per aiutarti.</span>
-            </div>
+            <Link
+              href="/notizie"
+              className="mt-3 inline-flex text-sm font-black text-yellow-400 transition hover:text-yellow-300 hover:underline underline-offset-4"
+            >
+              Notizie
+            </Link>
           </div>
         </div>
       </footer>
