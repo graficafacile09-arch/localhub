@@ -1097,29 +1097,38 @@ export async function chatConAssistente(
   // (la storia è già troncata a 300 caratteri per messaggio).
   const domanda = (ultimo && ultimo.role === "user" ? ultimo.content : "").slice(0, 500);
 
-  // Prima le domande sul funzionamento della piattaforma e sulle responsabilità:
-  // non devono mai essere intercettate da corrispondenze accidentali nella guida turistica.
-  const conoscenza = cercaConoscenzaPino(domanda);
-  if (conoscenza) {
-    return { risposta: conoscenza.risposta, negozi: [], prodotti: [], processingMs: Date.now() - inizio, source: "assistente", intent: "generic" };
-  }
+  // Le richieste esplicite di ricerca nel catalogo devono superare i fast-path
+  // FAQ/guida: altrimenti parole come "prodotti" e "negozi" possono far
+  // prevalere una risposta informativa sulla ricerca reale.
+  const richiestaCatalogoPrimaDelFastPath =
+    /\\b(cerca|cercami|cerco|trovami|mostrami|fammi vedere|vorrei trovare|voglio trovare|idee regalo|regalo per|regali per)\\b/i.test(domanda) &&
+    /\\b(regalo|regali|prodotto|prodotti|orologio|scarpe|borsa|telefono|libro|cuffie|smartwatch|negozi|catalogo|disponibili)\\b/i.test(domanda);
 
-  // Guida turistica InCittà: consultata dopo la conoscenza del sito.
-  // L'indice condivide i dati con /attrazioni e risponde solo se la domanda
-  // ha una corrispondenza turistica pertinente.
-  const luoghi = searchAttractions(domanda, 6);
-  if (luoghi.length > 0) {
-    const elenco = luoghi.map((luogo) => {
-      const maps = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(luogo.queryMaps);
-      return `- **${luogo.nome}** — ${luogo.tipo}. ${luogo.descrizione} [Come arrivare / Google Maps](${maps})${luogo.url ? ` · [Sito di riferimento](${luogo.url})` : ""}`;
-    }).join("\n");
-    return {
-      risposta: `Ecco cosa ho trovato nella guida locale di InCittà:\n\n${elenco}\n\nPer orari, aperture e date degli eventi, verifica sempre le informazioni aggiornate.`,
-      negozi: [],
-      prodotti: [],
-      processingMs: Date.now() - inizio,
-      source: "assistente",
-    };
+  if (!richiestaCatalogoPrimaDelFastPath) {
+    // Prima le domande sul funzionamento della piattaforma e sulle responsabilità:
+    // non devono mai essere intercettate da corrispondenze accidentali nella guida turistica.
+    const conoscenza = cercaConoscenzaPino(domanda);
+    if (conoscenza) {
+      return { risposta: conoscenza.risposta, negozi: [], prodotti: [], processingMs: Date.now() - inizio, source: "assistente", intent: "generic" };
+    }
+
+    // Guida turistica InCittà: consultata dopo la conoscenza del sito.
+    // L'indice condivide i dati con /attrazioni e risponde solo se la domanda
+    // ha una corrispondenza turistica pertinente.
+    const luoghi = searchAttractions(domanda, 6);
+    if (luoghi.length > 0) {
+      const elenco = luoghi.map((luogo) => {
+        const maps = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(luogo.queryMaps);
+        return `- **${luogo.nome}** — ${luogo.tipo}. ${luogo.descrizione} [Come arrivare / Google Maps](${maps})${luogo.url ? ` · [Sito di riferimento](${luogo.url})` : ""}`;
+      }).join("\n");
+      return {
+        risposta: `Ecco cosa ho trovato nella guida locale di InCittà:\n\n${elenco}\n\nPer orari, aperture e date degli eventi, verifica sempre le informazioni aggiornate.`,
+        negozi: [],
+        prodotti: [],
+        processingMs: Date.now() - inizio,
+        source: "assistente",
+      };
+    }
   }
 
   // Pino Intent Layer v1: la classificazione avviene PRIMA di ogni ricerca e
