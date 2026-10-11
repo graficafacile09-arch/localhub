@@ -1067,8 +1067,15 @@ export async function chatConAssistente(
       ? Promise.resolve([])
       : recuperaMemoria(domandaSemantica);
   const memoria = await memoriaPromise;
+  const testoPerRegalo = normalizzaRichiesta(domandaSemantica);
+  const regaloGenericoSenzaVincoli =
+    analisiSemantica.intent === "gift" &&
+    /\b(regalo|regali|regalare|regalino|regalini|dono|doni)\b/.test(testoPerRegalo) &&
+    !/\b(orolog|gioiell|profum|borsa|portafogli|collan|braccial|anell|libro|libri|cuffie|smartwatch|penna|portachiavi|scarpe|telefono|smartphone|cioccolat|vino)\w*\b/.test(testoPerRegalo) &&
+    !/\b(sotto|sopra|massimo|minimo|budget|tra|entro|euro|non|senza|aperto|aperta|ora|adesso)\b|€|\b(a|in)\s+[a-zà-ù]+/.test(testoPerRegalo);
   const attivaPlannerSemantico =
     !followUpBreve &&
+    !regaloGenericoSenzaVincoli &&
     (
       usaFastPathSemantico(domandaSemantica, analisiSemantica) ||
       domandaSemantica !== domanda ||
