@@ -693,23 +693,27 @@ export async function searchProducts(
     );
   }
 
-  const nelBudget = candidati.filter((p) => {
-    const prezzo = Number(p.prezzo);
-    if (maxPrice != null && Number.isFinite(maxPrice) && prezzo > maxPrice) return false;
-    if (minPrice != null && Number.isFinite(minPrice) && prezzo < minPrice) return false;
-    return true;
-  });
-
-  // Un vincolo di prezzo esplicito è tassativo: non restituire mai
-  // alternative fuori budget, neppure quando non esistono corrispondenze.
-  const scelti = nelBudget;
+  // Il prezzo è una preferenza di ordinamento, non un filtro che azzera la
+  // ricerca: prima mostriamo gli articoli compatibili con la fascia richiesta,
+  // poi le alternative fuori fascia, sempre dal meno caro al più caro.
+  const scelti = candidati;
 
   return scelti
     .sort((a, b) => {
+      const prezzoA = Number(a.prezzo);
+      const prezzoB = Number(b.prezzo);
+      const dentroA =
+        (maxPrice == null || !Number.isFinite(maxPrice) || prezzoA <= maxPrice) &&
+        (minPrice == null || !Number.isFinite(minPrice) || prezzoA >= minPrice);
+      const dentroB =
+        (maxPrice == null || !Number.isFinite(maxPrice) || prezzoB <= maxPrice) &&
+        (minPrice == null || !Number.isFinite(minPrice) || prezzoB >= minPrice);
+      if (dentroA !== dentroB) return dentroA ? -1 : 1;
+      // All'interno di ciascun gruppo, ordine crescente di prezzo.
+      if (prezzoA !== prezzoB) return prezzoA - prezzoB;
       const scoreA = punteggioProdottoPino(a, q, terminiOriginali);
       const scoreB = punteggioProdottoPino(b, q, terminiOriginali);
-      if (scoreA !== scoreB) return scoreB - scoreA;
-      return Number(a.prezzo) - Number(b.prezzo);
+      return scoreB - scoreA;
     })
     .slice(0, limita(opts.limit, 8, 20));
 }
