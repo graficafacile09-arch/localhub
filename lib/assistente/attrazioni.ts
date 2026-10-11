@@ -36,7 +36,7 @@ export function searchAttractions(query: string, limit = 6): AttrazionePino[] {
   const broad = /\b(cosa vedere|luoghi da vedere|attrazioni|monumenti|visitare|dintorni|borghi|turismo|tour|itinerario)\b/.test(q);
   const richiestaDintorni = /\b(dintorni|nei dintorni|vicino a castrovillari|paesi vicini|borghi vicini|fuori castrovillari)\b/.test(q);
   const richiestaCitta = /\b(a castrovillari|nel centro di castrovillari|centro storico di castrovillari)\b/.test(q);
-  const nomiDintorni = new Set(ATTRAZIONI_DINTORNI.map((v) => v.nome));
+  const nomiDintorni = new Set<string>(ATTRAZIONI_DINTORNI.map((v) => v.nome));
   const ranked = CATALOGO.map((item) => {
     const fields = normalizza([item.nome,item.tipo,item.descrizione,...item.alias].join(" "));
     const words = new Set(fields.split(" "));
