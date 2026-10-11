@@ -1101,6 +1101,33 @@ export async function chatConAssistente(
 
   // Esecuzione dei tool scelti (dal piano o dall'LLM).
   const queryDefault = ultimaQuerySostanziale(storico);
+
+  // Guardrail del budget: il planner non può omettere il limite dichiarato.
+  const richiestaCatalogoEsplicita =
+    /\b(cerca|cercami|cerco|trovami|mostrami|fammi vedere|prodotti disponibili|nel catalogo|nei negozi di incittà)\b/i.test(domandaSemantica) &&
+    /\b(regalo|regali|prodotto|prodotti|orologio|scarpe|borsa|telefono|libro|cuffie|smartwatch)\b/i.test(domandaSemantica);
+  const importoCatalogo = domandaSemantica.match(/(?:budget(?:\s+di)?|massimo|fino a|entro|sotto|non oltre|al massimo)\s*(?:di\s*)?(?:€\s*)?(\d+(?:[.,]\d+)?)/i)
+    ?? domandaSemantica.match(/(?:€\s*)(\d+(?:[.,]\d+)?)/i)
+    ?? domandaSemantica.match(/(\d+(?:[.,]\d+)?)\s*(?:euro|eur)\b/i);
+  const maxPriceCatalogo = importoCatalogo ? Number(importoCatalogo[1].replace(",", ".")) : undefined;
+  const haToolProdotti = invocazioni.some((t) => t.tool === "searchProducts" || t.tool === "searchAll");
+  if (richiestaCatalogoEsplicita && maxPriceCatalogo !== undefined && Number.isFinite(maxPriceCatalogo)) {
+    if (!haToolProdotti) {
+      invocazioni = [{
+        tool: "searchProducts",
+        params: { query: domandaSemantica, limit: 8, maxPrice: maxPriceCatalogo },
+      }];
+      directReply = null;
+      selezioneOk = true;
+    } else {
+      invocazioni = invocazioni.map((t) =>
+        t.tool === "searchProducts" || t.tool === "searchAll"
+          ? { ...t, params: { ...(t.params ?? {}), maxPrice: maxPriceCatalogo } }
+          : t
+      );
+    }
+    console.info("[pino-budget-routing-guard]", JSON.stringify({ budget: maxPriceCatalogo, forcedSearch: !haToolProdotti }));
+  }
   if (invocazioni.length > 0) {
     const risultati = await Promise.all(
       invocazioni.map((t) => eseguiTool(t.tool as string, t.params ?? {}, queryDefault))
@@ -1156,6 +1183,25 @@ export async function chatConAssistente(
         })
       );
     }
+  }
+
+  // Barriera finale: applica il budget dopo il merge e il recupero semantico,
+  // così nessun risultato secondario può reintrodurre articoli fuori soglia.
+  const budgetFinaleMatch =
+    domandaSemantica.match(/(?:budget(?:\s+di)?|massimo|fino a|entro|sotto|non oltre|al massimo)\s*(?:di\s*)?(?:€\s*)?(\d+(?:[.,]\d+)?)/i)
+    ?? domandaSemantica.match(/(?:€\s*)(\d+(?:[.,]\d+)?)/i)
+    ?? domandaSemantica.match(/(\d+(?:[.,]\d+)?)\s*(?:euro|eur)\b/i);
+  const budgetFinale = budgetFinaleMatch ? Number(budgetFinaleMatch[1].replace(",", ".")) : undefined;
+  const richiestaRegaloConBudget =
+    /\b(regalo|regali|prodotto|prodotti|orologio|scarpe|borsa|telefono|libro|cuffie|smartwatch)\b/i.test(domandaSemantica) &&
+    budgetFinale !== undefined && Number.isFinite(budgetFinale);
+  if (richiestaRegaloConBudget) {
+    const primaDelFiltro = prodotti.length;
+    prodotti = prodotti.filter((p) => {
+      const prezzo = Number(p.prezzo);
+      return Number.isFinite(prezzo) && prezzo > 0 && prezzo <= budgetFinale!;
+    });
+    console.info("[pino-budget-final-guard]", JSON.stringify({ budget: budgetFinale, prima: primaDelFiltro, dopo: prodotti.length }));
   }
 
   console.log(
@@ -1283,9 +1329,8 @@ export async function chatConAssistente(
   });
   const contesto = buildContextoRisultati(risultati);
 
-  // Nota sul vincolo di prezzo applicato: quando l'utente chiede un limite
-  // ("sotto 500 euro") e i prodotti recuperati lo superano, l'AI deve
-  // segnalarli onestamente come alternative fuori budget.
+  // Il budget è tassativo: i prodotti fuori soglia vengono rimossi prima
+  // della composizione della risposta e non vanno suggeriti come alternative.
   const vincoliPrezzo = invocazioni
     .map((t) => t.params)
     .filter((p): p is ToolParams => !!p && (p.maxPrice != null || p.minPrice != null))
@@ -1297,7 +1342,7 @@ export async function chatConAssistente(
     });
   const notaVincolo =
     vincoliPrezzo.length > 0
-      ? `Nota: la tua richiesta indicava un limite di prezzo (${vincoliPrezzo.join("; ")}). Se un prodotto/opzione elencato supera il limite, è l'alternativa più vicina realmente trovata: segnalalo sempre con il prezzo reale.`
+      ? `Vincolo di prezzo tassativo (${vincoliPrezzo.join("; ")}): mostra esclusivamente prodotti entro il budget; se non ci sono prodotti compatibili, dichiaralo senza elencare articoli più costosi.`
       : "";
 
   const contestoFinale = notaVincolo
