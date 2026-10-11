@@ -40,7 +40,7 @@ import { callGeminiText } from "@/lib/ai/gemini-text";
 import { searchAttractions } from "./attrazioni";
 import { cercaConoscenzaPino } from "./conoscenza";
 import type { NegozioRicerca, ProdottoRicerca } from "@/lib/ricerca-ai";
-import { pianoIntentoLocale } from "./local-intents";
+import { normalizzaRichiesta, pianoIntentoLocale } from "./local-intents";
 import {
   analizzaIntentoPino,
   pianoIntento,
