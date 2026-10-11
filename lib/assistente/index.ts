@@ -179,7 +179,7 @@ async function eseguiTool(
 // Ultima query "sostanziale" dell'utente: se il messaggio corrente è solo un
 // vincolo/follow-up ("sotto 500 euro", "e sotto i 300?", "più economico"),
 // usa la richiesta precedente come soggetto della ricerca.
-const RE_VINCOLO = /^(e\s+)?(sotto|sopra|massimo|minimo|meno di|più di|piu di|più economico|piu economico|che altro|più caro|piu caro|oltre|fino a|tra|under|below|up to|over|above|less than|more than|cheaper|more expensive|what else|only open|open now)\b/i;
+const RE_VINCOLO = /^(e\s+)?(budget(?:\s+di)?|sotto|sopra|massimo|minimo|meno di|più di|piu di|più economico|piu economico|che altro|più caro|piu caro|oltre|fino a|tra|under|below|up to|over|above|less than|more than|cheaper|more expensive|what else|only open|open now)\b/i;
 
 // Intenzione salute → farmacia: usata anche nella risposta deterministica.
 const REQUIRES_PHARMACY_REASON =
