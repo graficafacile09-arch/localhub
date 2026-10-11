@@ -631,6 +631,7 @@ export async function interpretaRichiestaPino(
       json: true,
       timeoutMs: 8_000,
       retries: 1,
+      usageLabel: "pino_semantic_planner",
     });
 
     const parsed = JSON.parse(extractJsonFromText(raw)) as Record<string, unknown>;

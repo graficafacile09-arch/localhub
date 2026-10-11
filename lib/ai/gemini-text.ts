@@ -38,6 +38,8 @@ export type CallGeminiTextParams = {
   timeoutMs?: number;
   /** Retry con backoff su 429/402 (quota). Default 3. */
   retries?: number;
+  /** Etichetta tecnica per attribuire i consumi senza registrare il prompt. */
+  usageLabel?: string;
 };
 
 /**
@@ -54,7 +56,9 @@ export async function callGeminiText({
   json = false,
   timeoutMs = TIMEOUT_DEFAULT_MS,
   retries = TENTATIVI_DEFAULT,
+  usageLabel = "other",
 }: CallGeminiTextParams): Promise<string> {
+  const startedAt = Date.now();
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     throw new Error("Chiave API Gemini mancante. Aggiungi GEMINI_API_KEY al file .env.local.");
@@ -117,6 +121,13 @@ export async function callGeminiText({
 
       const resData = (await response.json()) as {
         candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+        usageMetadata?: {
+          promptTokenCount?: number;
+          candidatesTokenCount?: number;
+          totalTokenCount?: number;
+          thoughtsTokenCount?: number;
+          cachedContentTokenCount?: number;
+        };
       };
 
       const text =
@@ -128,6 +139,20 @@ export async function callGeminiText({
       if (!text) {
         throw new Error("Risposta AI vuota.");
       }
+
+      // Solo metadati d'uso: mai prompt, cronologia, risposte o chiavi API.
+      const usage = resData.usageMetadata;
+      console.info("[ai-usage]", JSON.stringify({
+        provider: "gemini",
+        feature: usageLabel,
+        model,
+        promptTokens: usage?.promptTokenCount ?? null,
+        outputTokens: usage?.candidatesTokenCount ?? null,
+        thinkingTokens: usage?.thoughtsTokenCount ?? null,
+        cachedTokens: usage?.cachedContentTokenCount ?? null,
+        totalTokens: usage?.totalTokenCount ?? null,
+        durationMs: Date.now() - startedAt,
+      }));
 
       return text;
     } catch (caught: unknown) {
