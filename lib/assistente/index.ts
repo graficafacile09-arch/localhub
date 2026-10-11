@@ -1101,8 +1101,8 @@ export async function chatConAssistente(
   // FAQ/guida: altrimenti parole come "prodotti" e "negozi" possono far
   // prevalere una risposta informativa sulla ricerca reale.
   const richiestaCatalogoPrimaDelFastPath =
-    /\\b(cerca|cercami|cerco|trovami|mostrami|fammi vedere|vorrei trovare|voglio trovare|idee regalo|regalo per|regali per)\\b/i.test(domanda) &&
-    /\\b(regalo|regali|prodotto|prodotti|orologio|scarpe|borsa|telefono|libro|cuffie|smartwatch|negozi|catalogo|disponibili)\\b/i.test(domanda);
+    /\b(cerca|cercami|cerco|trovami|mostrami|fammi vedere|vorrei trovare|voglio trovare|idee regalo|regalo per|regali per)\b/i.test(domanda) &&
+    /\b(regalo|regali|prodotto|prodotti|orologio|scarpe|borsa|telefono|libro|cuffie|smartwatch|negozi|catalogo|disponibili)\b/i.test(domanda);
 
   if (!richiestaCatalogoPrimaDelFastPath) {
     // Prima le domande sul funzionamento della piattaforma e sulle responsabilità:
