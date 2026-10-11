@@ -38,6 +38,7 @@ import {
 import { extractJsonFromText } from "@/lib/product-assistant/providers/utils";
 import { callGeminiText } from "@/lib/ai/gemini-text";
 import { searchAttractions } from "./attrazioni";
+import { cercaConoscenzaPino } from "./conoscenza";
 import type { NegozioRicerca, ProdottoRicerca } from "@/lib/ricerca-ai";
 import { pianoIntentoLocale } from "./local-intents";
 import {
@@ -1007,6 +1008,11 @@ export async function chatConAssistente(
         source: "assistente",
       };
     }
+  }
+
+  const conoscenza = cercaConoscenzaPino(domanda);
+  if (conoscenza) {
+    return { risposta: conoscenza.risposta, negozi: [], prodotti: [], processingMs: Date.now() - inizio, source: "assistente", intent: "generic" };
   }
 
   // Pino Intent Layer v1: la classificazione avviene PRIMA di ogni ricerca e
