@@ -505,12 +505,16 @@ function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): Pi
   let termine = q
     // Importi espressi in modo colloquiale ("ho 100 euro", "con 100 euro")
     // sono vincoli di budget, non keyword da cercare nel catalogo.
-    .replace(/\b(?:ho|con|dispongo di|a disposizione(?: di)?)\s*(?:un budget(?:\s+di)?\s*)?(?:€\s*)?\d+(?:[.,]\d+)?\s*(?:euro|euros|eur)\b(?:\s+(?:da spendere|per)\b)?/gi, " ")
+    .replace(/\b(?:ho|con|dispongo di|a disposizione(?: di)?)\s*(?:(?:un|il|il mio)\s+)?(?:budget(?:\s+di)?\s*)?(?:€\s*)?\d+(?:[.,]\d+)?\s*(?:euro|euros|eur)\b(?:\s+(?:da spendere|per)\b)?/gi, " ")
     .replace(/(?:tra|da)\s*\d+(?:[.,]\d+)?\s*(?:e|a)\s*\d+(?:[.,]\d+)?/gi, " ")
     .replace(
       /(?:budget(?:\s+di)?|non oltre|al massimo|sotto|massimo|meno di|entro|fino a|sopra|minimo|piu di|più di|oltre)\s*(?:€\s*)?\d+(?:[.,]\d+)?/gi,
       " "
     )
+    // Qualsiasi importo con valuta rimasto ("da 99 euro", "€ 99,00") è ancora
+    // un budget: non deve restare nella query di retrieval.
+    .replace(/\b\d+(?:[.,]\d+)?\s*(?:euro|euros|eur)\b/gi, " ")
+    .replace(/€\s*\d+(?:[.,]\d+)?/g, " ")
     // La valuta resta attaccata al numero ("sotto 30 euro"): va rimossa anche
     // da sola, altrimenti entra nella query di retrieval e il gate di
     // pertinenza dei prodotti — che richiede TUTTE le parole — azzera i
@@ -541,11 +545,16 @@ function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): Pi
 
   termine = termine
     .replace(/\b(?:voglio|vorrei|cerco|cerca|trovami|mi serve|fammi trovare|dammi|ho|anzi|invece|pero|però|delle|degli|del|della|dei|una|un|uno|il|lo|la|i|gli|le)\b/gi, " ")
+    // Preposizioni/connettivi orfani rimasti dopo aver tolto l'importo
+    // ("orologio con", "orologio da"): non sono keyword di catalogo.
+    .replace(/\s+\b(?:con|da|di|a|per|circa|entro|fino|e)\s*$/i, "")
     .replace(/\s+/g, " ")
     .trim();
 
   if (match) termine = termine.replace(match.pattern, match.termine).replace(/\s+/g, " ").trim();
-  if (!termine) termine = match?.termine ?? q;
+  // Se non resta alcun termine di catalogo (es. "ho 99 euro", "budget di
+  // 100 euro"), la query è vuota: non reimmettiamo la frase di budget.
+  if (!termine) termine = match?.termine ?? "";
 
   // "analcolica" resta una caratteristica positiva; la regola speciale del
   // retrieval la tratta correttamente senza escludere le vere analcoliche.
@@ -564,7 +573,9 @@ function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): Pi
     surface,
     intent,
     query: termine.slice(0, 120),
-    terms: Array.from(new Set([termine, ...(match ? [match.termine] : [])])).slice(0, 5),
+    terms: Array.from(
+      new Set([termine, ...(match ? [match.termine] : [])].filter((t) => t && t.trim()))
+    ).slice(0, 5),
     exclusions: esclusioni,
     minPrice,
     maxPrice,

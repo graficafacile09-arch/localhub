@@ -202,4 +202,32 @@ test.describe("Pino — budget separato dalla query di ricerca", () => {
     expect(p.query).toContain("scarpe");
     expect(p.query).not.toMatch(/euro|eur|\b50\b|\b120\b/);
   });
+
+  test("'cerco un orologio con budget di 99 euro' → query 'orologio' e nessun residuo di budget", async () => {
+    const p = await piano("cerco un orologio con budget di 99 euro");
+    expect(p.maxPrice).toBe(99);
+    // Regressione: 'con' (preposizione del vincolo di budget) non deve restare
+    // nella query, altrimenti il gate di pertinenza azzera i prodotti.
+    expect(p.query).toBe("orologio");
+    expect(p.query).not.toMatch(/budget|euro|eur|con|\b99\b/i);
+  });
+
+  test("'ho un budget di 100 euro' → importo riconosciuto e nessuna frase di budget nella query", async () => {
+    const p = await piano("ho un budget di 100 euro");
+    expect(p.maxPrice).toBe(100);
+    expect(p.query).not.toMatch(/budget|euro|eur|\b100\b|\bho\b/i);
+  });
+
+  test("'ho 99 euro' → importo riconosciuto; la query non contiene la frase di budget", async () => {
+    const p = await piano("ho 99 euro");
+    expect(p.maxPrice).toBe(99);
+    expect(p.query).not.toMatch(/budget|euro|eur|\b99\b|\bho\b/i);
+  });
+
+  test("'un orologio da 99 euro' → la preposizione 'da' e il prezzo non restano nella query", async () => {
+    const p = await piano("un orologio da 99 euro");
+    expect(p.maxPrice).toBe(99);
+    expect(p.query).toBe("orologio");
+    expect(p.query).not.toMatch(/budget|euro|eur|\bda\b|\b99\b/i);
+  });
 });
