@@ -1118,8 +1118,8 @@ export async function chatConAssistente(
     // In questo caso cerchiamo categorie regalo comuni separatamente, sempre
     // applicando il budget dentro ogni ricerca e poi il guardrail finale.
     const regaloGenerico =
-      /\\bregal[oi]\\b/i.test(domandaSemantica) &&
-      !/\\b(orologio|scarpe|borsa|telefono|libro|cuffie|smartwatch|anello|collana|bracciale|profumo|portafoglio|cintura|occhiali|giocattolo|videogioco|tablet|computer|auricolari|altoparlante|speaker|cassa bluetooth)\\b/i.test(domandaSemantica);
+      /\bregal[oi]\b/i.test(domandaSemantica) &&
+      !/\b(orologio|scarpe|borsa|telefono|libro|cuffie|smartwatch|anello|collana|bracciale|profumo|portafoglio|cintura|occhiali|giocattolo|videogioco|tablet|computer|auricolari|altoparlante|speaker|cassa bluetooth)\b/i.test(domandaSemantica);
     if (regaloGenerico) {
       const categorieRegalo = [
         "orologio", "anello", "collana", "bracciale", "borsa",
