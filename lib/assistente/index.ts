@@ -1112,21 +1112,46 @@ export async function chatConAssistente(
   const maxPriceCatalogo = importoCatalogo ? Number(importoCatalogo[1].replace(",", ".")) : undefined;
   const haToolProdotti = invocazioni.some((t) => t.tool === "searchProducts" || t.tool === "searchAll");
   if (richiestaCatalogoEsplicita && maxPriceCatalogo !== undefined && Number.isFinite(maxPriceCatalogo)) {
-    if (!haToolProdotti) {
-      invocazioni = [{
+    // Un regalo generico non è una keyword di catalogo: cercare la frase
+    // completa ("regalo per una persona di 30 anni...") rende la ricerca
+    // iper-restrittiva e scarta anche prodotti economici realmente disponibili.
+    // In questo caso cerchiamo categorie regalo comuni separatamente, sempre
+    // applicando il budget dentro ogni ricerca e poi il guardrail finale.
+    const regaloGenerico =
+      /\\bregal[oi]\\b/i.test(domandaSemantica) &&
+      !/\\b(orologio|scarpe|borsa|telefono|libro|cuffie|smartwatch|anello|collana|bracciale|profumo|portafoglio|cintura|occhiali|giocattolo|videogioco|tablet|computer|auricolari|altoparlante|speaker|cassa bluetooth)\\b/i.test(domandaSemantica);
+    if (regaloGenerico) {
+      const categorieRegalo = [
+        "orologio", "anello", "collana", "bracciale", "borsa",
+        "portafoglio", "profumo", "libro", "cuffie", "accessorio",
+      ];
+      invocazioni = categorieRegalo.map((query) => ({
         tool: "searchProducts",
-        params: { query: domandaSemantica, limit: 8, maxPrice: maxPriceCatalogo },
-      }];
+        params: { query, limit: 8, maxPrice: maxPriceCatalogo },
+      }));
       directReply = null;
       selezioneOk = true;
+      console.info("[pino-budget-routing-guard]", JSON.stringify({
+        budget: maxPriceCatalogo,
+        genericGiftFanout: categorieRegalo.length,
+      }));
     } else {
-      invocazioni = invocazioni.map((t) =>
-        t.tool === "searchProducts" || t.tool === "searchAll"
-          ? { ...t, params: { ...(t.params ?? {}), maxPrice: maxPriceCatalogo } }
-          : t
-      );
+      if (!haToolProdotti) {
+        invocazioni = [{
+          tool: "searchProducts",
+          params: { query: domandaSemantica, limit: 8, maxPrice: maxPriceCatalogo },
+        }];
+        directReply = null;
+        selezioneOk = true;
+      } else {
+        invocazioni = invocazioni.map((t) =>
+          t.tool === "searchProducts" || t.tool === "searchAll"
+            ? { ...t, params: { ...(t.params ?? {}), maxPrice: maxPriceCatalogo } }
+            : t
+        );
+      }
+      console.info("[pino-budget-routing-guard]", JSON.stringify({ budget: maxPriceCatalogo, forcedSearch: !haToolProdotti }));
     }
-    console.info("[pino-budget-routing-guard]", JSON.stringify({ budget: maxPriceCatalogo, forcedSearch: !haToolProdotti }));
   }
   if (invocazioni.length > 0) {
     const risultati = await Promise.all(
