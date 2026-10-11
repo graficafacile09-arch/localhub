@@ -355,6 +355,35 @@ function pianoPredefinito(
     }
   }
 
+  // Regali: una richiesta generica deve cercare prodotti reali, non soltanto negozi.
+  // Questo controllo precede il piano semantico perché un planner che sceglie
+  // solo "stores" farebbe perdere prodotti pertinenti come gli orologi.
+  if (analisi.intent === "gift") {
+    const testoRegalo = ultimo.normalize("NFD").replace(/[\\u0300-\\u036f]/g, "");
+    const prodottoEsplicito = /\\b(orolog|gioiell|profum|borsa|portafogli|collan|braccial|anell|libro|libri|cuffie|smartwatch|penna|portachiavi|scarpe|telefono|smartphone|cioccolat|vino)\\w*\\b/.test(testoRegalo);
+    const regaloGenerico = /\\b(regalo|regali|regalare|regalino|regalini|dono|doni)\\b/.test(testoRegalo) && !prodottoEsplicito;
+    const soggetto = semantica?.query?.trim() || ultimo;
+    const vincoli: ToolParams = {
+      citta: semantica?.city ?? undefined,
+      esclusioni: semantica?.exclusions?.length ? semantica.exclusions : undefined,
+      maxPrice: semantica?.maxPrice ?? undefined,
+      minPrice: semantica?.minPrice ?? undefined,
+      limit: 4,
+    };
+    const famiglie = regaloGenerico
+      ? ["orologio", "gioielli", "profumo", "borsa", "accessori", "libro"]
+      : [soggetto];
+    const tools: ToolInvocation[] = famiglie.map((query) => ({
+      tool: "searchProducts",
+      params: { ...vincoli, query, limit: 4 },
+    }));
+    const negozi = regaloGenerico ? ["gioielleria", "accessori"] : [soggetto];
+    for (const query of negozi) {
+      tools.push({ tool: "searchStores", params: { query, citta: vincoli.citta, limit: 5 } });
+    }
+    return { directReply: null, tools };
+  }
+
   // ── Pino Semantic Planner v2 ─────────────────────────────────────────────
   // Per richieste naturali/composte il planner trasforma il linguaggio umano
   // in un piano strutturato: soggetto + sinonimi + prezzo + esclusioni +
