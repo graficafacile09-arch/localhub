@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { cercaConoscenzaPino } from "../lib/assistente/conoscenza";
+import { searchAttractions } from "../lib/assistente/attrazioni";
 
 test.describe("Pino — conoscenza pubblica InCittà", () => {
   test("indirizza al Regolamento Consegne con una risposta coerente", () => {
@@ -23,5 +24,25 @@ test.describe("Pino — conoscenza pubblica InCittà", () => {
 
   test("non intercetta una ricerca di prodotto come se fosse una FAQ", () => {
     expect(cercaConoscenzaPino("orologio da uomo sotto 100 euro")).toBeNull();
+  });
+});
+
+test.describe("Pino — indice condiviso della guida locale", () => {
+  test("trova eventi già presenti nella pagina Attrazioni", () => {
+    const risultati = searchAttractions("I-Fest International Film Festival");
+    expect(risultati[0]?.nome).toBe("I-Fest International Film Festival");
+    expect(risultati[0]?.url).toContain("castrovillaricittafestival.it");
+  });
+
+  test("distingue il quartiere La Civita dal borgo Civita", () => {
+    const risultati = searchAttractions("La Civita");
+    expect(risultati[0]?.nome).toBe("La Civita e il centro storico");
+  });
+
+  test("recupera Palazzo Varcasia con la fonte di riferimento", () => {
+    const risultato = searchAttractions("Palazzo Varcasia")[0];
+    expect(risultato?.nome).toBe("Palazzo Varcasia");
+    expect(risultato?.url).toContain("palazzo-varcasia");
+    expect(risultato?.queryMaps).toContain("Castrovillari");
   });
 });
