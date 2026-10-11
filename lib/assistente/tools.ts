@@ -700,14 +700,9 @@ export async function searchProducts(
     return true;
   });
 
-  // Se il filtro prezzo esclude tutto, mostriamo comunque un paio di opzioni
-  // fuori budget: l'AI le segnalerà onestamente come "vicine" alla richiesta.
-  const scelti =
-    nelBudget.length > 0
-      ? nelBudget
-      : (maxPrice != null || minPrice != null) && conPrezzo.length > 0
-        ? candidati.slice(0, 3)
-        : nelBudget;
+  // Un vincolo di prezzo esplicito è tassativo: non restituire mai
+  // alternative fuori budget, neppure quando non esistono corrispondenze.
+  const scelti = nelBudget;
 
   return scelti
     .sort((a, b) => {
