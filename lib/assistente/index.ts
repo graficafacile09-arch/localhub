@@ -1396,11 +1396,20 @@ export async function chatConAssistente(
   // Evitiamo una seconda chiamata Gemini solo per riscrivere dati che abbiamo
   // già verificato: così Pino mostra i risultati molto prima.
   const rispostaBase = fallbackTestuale(risultati, notaVincolo, analisi.intent, semantica);
+  const notaRegaloPocoDiversificato =
+    regaloGenericoSenzaVincoli &&
+    prodotti.length > 0 &&
+    prodotti.every((p) => /orolog/i.test(`${p.nome} ${p.categoria ?? ""}`))
+      ? "Nel catalogo disponibile, i risultati pertinenti che ho trovato si concentrano sugli orologi. Non voglio presentarli come idee regalo diverse: se mi indichi un budget o il tipo di regalo che preferisci, posso restringere meglio la ricerca."
+      : "";
+  const rispostaConNotaRegalo = notaRegaloPocoDiversificato
+    ? `${notaRegaloPocoDiversificato}\n\n${rispostaBase}`
+    : rispostaBase;
   const risposta = notaRecupero
     ? `${notaRecupero}
 
-${rispostaBase}`
-    : rispostaBase;
+${rispostaConNotaRegalo}`
+    : rispostaConNotaRegalo;
 
   return {
     risposta,
