@@ -85,6 +85,85 @@ type ToolInvocation = {
   params?: ToolParams;
 };
 
+// Tool declarations Gemini native: il modello sceglie funzioni tipizzate
+// invece di dover inventare JSON libero. I risultati restano recuperati dai
+// tool reali di InCittà; il modello non può creare prodotti o disponibilità.
+const PINO_TOOL_DECLARATIONS = [
+  {
+    name: "searchStores",
+    description: "Cerca negozi, attività e servizi locali. Usa termini pertinenti e filtri espliciti.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        query: { type: "STRING", description: "Soggetto principale della ricerca." },
+        categoria: { type: "STRING" }, sottocategoria: { type: "STRING" },
+        tipo: { type: "STRING" }, citta: { type: "STRING" },
+        termini: { type: "ARRAY", items: { type: "STRING" } },
+        apertiOra: { type: "BOOLEAN" }, limit: { type: "INTEGER" },
+      },
+    },
+  },
+  {
+    name: "searchProducts",
+    description: "Cerca prodotti reali nel catalogo InCittà, applicando eventuali vincoli di prezzo.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        query: { type: "STRING" }, termini: { type: "ARRAY", items: { type: "STRING" } },
+        categoria: { type: "STRING" }, sottocategoria: { type: "STRING" },
+        citta: { type: "STRING" }, minPrice: { type: "NUMBER" },
+        maxPrice: { type: "NUMBER" }, esclusioni: { type: "ARRAY", items: { type: "STRING" } },
+        limit: { type: "INTEGER" },
+      },
+    },
+  },
+  {
+    name: "searchOffers",
+    description: "Recupera offerte e promozioni pubblicate. Query assente significa tutte le offerte attive.",
+    parameters: { type: "OBJECT", properties: { query: { type: "STRING" }, limit: { type: "INTEGER" } } },
+  },
+  {
+    name: "searchEvents",
+    description: "Recupera eventi pubblicati in InCittà. Non inventare date o manifestazioni.",
+    parameters: { type: "OBJECT", properties: { query: { type: "STRING" }, limit: { type: "INTEGER" } } },
+  },
+  {
+    name: "searchAll",
+    description: "Ricerca trasversale su negozi, prodotti, offerte ed eventi per richieste ampie.",
+    parameters: { type: "OBJECT", properties: { query: { type: "STRING" }, limit: { type: "INTEGER" } } },
+  },
+  {
+    name: "getCategories",
+    description: "Restituisce le categorie di attività disponibili su InCittà.",
+    parameters: { type: "OBJECT", properties: {} },
+  },
+  {
+    name: "getWeather",
+    description: "Recupera il meteo aggiornato di Castrovillari.",
+    parameters: { type: "OBJECT", properties: {} },
+  },
+  {
+    name: "searchPharmacies",
+    description: "Recupera farmacie di Castrovillari con stato di apertura o turno verificato.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        stato: { type: "STRING", enum: ["aperte", "turno", "tutte"] },
+        limit: { type: "INTEGER" },
+      },
+    },
+  },
+  {
+    name: "answerDirectly",
+    description: "Risponde brevemente a saluti, cortesia o domande generiche senza bisogno di dati esterni.",
+    parameters: {
+      type: "OBJECT",
+      properties: { text: { type: "STRING", description: "Risposta nella lingua dell'utente." } },
+      required: ["text"],
+    },
+  },
+] as const;
+
 // ─── Chiamata Gemini con timeout e retry ────────────────────────────────────
 // Il provider è centralizzato in lib/ai/gemini-text.ts (callGeminiText): usa
 // GEMINI_API_KEY + GEMINI_MODEL, endpoint generateContent di Gemini, retry con
@@ -1116,9 +1195,17 @@ export async function chatConAssistente(
     selezioneOk = true;
   } else {
     try {
+      const promptPianificazione = buildToolSelectionPrompt(storico, descriviIntento(analisi));
+      const promptConFunzioni = promptPianificazione.split("\nESEMPI:")[0] +
+        "\n\nUsa esclusivamente le funzioni dichiarate. Per una ricerca chiama una o più funzioni di ricerca; per saluti o richieste senza ricerca usa answerDirectly. Non scrivere JSON o testo fuori dalle funzioni. Non inventare risultati: i dati verranno letti dai tool di InCittà.";
       const raw = await callGeminiText({
-        systemPrompt: SYSTEM_PROMPT,
-        userPrompt: buildToolSelectionPrompt(storico, descriviIntento(analisi)),
+        systemPrompt: SYSTEM_PROMPT + "\n\nPianificatore: seleziona le funzioni più pertinenti. Gli argomenti devono essere ricavati dalla richiesta e dalla cronologia, senza inventare filtri.",
+        userPrompt: promptConFunzioni,
+        functionDeclarations: PINO_TOOL_DECLARATIONS.map((declaration) => ({
+          name: declaration.name,
+          description: declaration.description,
+          parameters: declaration.parameters as unknown as Record<string, unknown>,
+        })),
         maxTokens: 450,
         temperature: 0.1,
         timeoutMs: 45_000,
