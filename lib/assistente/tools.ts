@@ -700,14 +700,9 @@ export async function searchProducts(
     return true;
   });
 
-  // Se il filtro prezzo esclude tutto, mostriamo comunque un paio di opzioni
-  // fuori budget: l'AI le segnalerà onestamente come "vicine" alla richiesta.
-  const scelti =
-    nelBudget.length > 0
-      ? nelBudget
-      : (maxPrice != null || minPrice != null) && conPrezzo.length > 0
-        ? candidati.slice(0, 3)
-        : nelBudget;
+  // Il budget è un vincolo rigido: non ripieghiamo su prodotti più costosi.
+  // Se non ci sono prodotti entro la soglia, il risultato corretto è una lista vuota.
+  const scelti = nelBudget;
 
   return scelti
     .sort((a, b) => {
