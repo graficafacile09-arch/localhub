@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { ordinaProdottiPerBudget, prezzoNumerico } from "../lib/assistente/tools";
+import { ordinaProdottiPerBudget, prezzoNumerico, prodottoHaPrezzoReale } from "../lib/assistente/tools";
 import type { ProdottoRicerca } from "../lib/ricerca-ai";
 import { interpretaRichiestaPino } from "../lib/assistente/semantica";
 import { analizzaIntentoPino } from "../lib/assistente/intent";
@@ -105,6 +105,14 @@ test.describe("Pino — normalizzazione dei prezzi", () => {
     expect(prezzoNumerico("15")).toBeCloseTo(15);
   });
 
+  test("il filtro di ricerca Pino non scarta prezzi decimali italiani come 99,00", () => {
+    expect(prodottoHaPrezzoReale(99)).toBe(true);
+    expect(prodottoHaPrezzoReale("99,00")).toBe(true);
+    expect(prodottoHaPrezzoReale("€ 99,00")).toBe(true);
+    expect(prodottoHaPrezzoReale("0")).toBe(false);
+    expect(prodottoHaPrezzoReale("non disponibile")).toBe(false);
+  });
+
   test("un prezzo non numerico non diventa un numero inventato", () => {
     expect(prezzoNumerico("abc")).toBeNull();
     expect(prezzoNumerico("")).toBeNull();
@@ -171,6 +179,20 @@ test.describe("Pino — budget separato dalla query di ricerca", () => {
     const p = await piano("vorrei un regalo per mia moglie, budget 30 euro");
     expect(p.maxPrice).toBe(30);
     expect(p.query).not.toMatch(/euro|eur|budget|\b30\b/);
+  });
+
+  test("'voglio un orologio, ho 100 euro' interpreta l'importo come budget e cerca solo il soggetto", async () => {
+    const p = await piano("voglio un orologio, ho 100 euro");
+    expect(p.maxPrice).toBe(100);
+    expect(p.query).toMatch(/orologio/i);
+    expect(p.query).not.toMatch(/euro|eur|budget|\b100\b|\bho\b/i);
+  });
+
+  test("'ho 100 euro per un orologio' mantiene il soggetto e separa il budget", async () => {
+    const p = await piano("ho 100 euro per un orologio");
+    expect(p.maxPrice).toBe(100);
+    expect(p.query).toMatch(/orologio/i);
+    expect(p.query).not.toMatch(/euro|eur|budget|\b100\b|\bho\b/i);
   });
 
   test("il range di prezzo non lascia numeri o valuta nella query", async () => {

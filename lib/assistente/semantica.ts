@@ -463,7 +463,7 @@ function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): Pi
   if (!q) return null;
   const match = CANONICI_RICERCA.find((x) => x.pattern.test(q));
   const haEsclusioneAlcol = /\b(?:non|senza)\s+(?:alcol(?:ica|ico)?|alcol)\b|\banalcolic(?:a|o|he|i)\b/i.test(q);
-  const haPrezzo = /\b(?:budget(?:\s+di)?|sotto|sopra|massimo|minimo|meno di|piu di|più di|entro|fino a|tra|under|below|up to|over|above|more than|less than|between)\b/i.test(q);
+  const haPrezzo = /\b(?:budget(?:\s+di)?|sotto|sopra|massimo|minimo|meno di|piu di|più di|entro|fino a|tra|under|below|up to|over|above|more than|less than|between)\b/i.test(q) || /\b(?:ho|con|dispongo di|a disposizione(?: di)?)\s*(?:€\s*)?\d+(?:[.,]\d+)?\s*(?:euro|euros|eur)\b/i.test(q) || /(?:€\s*)\d+(?:[.,]\d+)?|\b\d+(?:[.,]\d+)?\s*(?:euro|euros|eur)\b/i.test(q);
   if (!match && !haEsclusioneAlcol && !haPrezzo && analisi.confidence === "bassa") return null;
 
   // I vincoli NON fanno parte della query di retrieval. Prezzo, negazioni,
@@ -473,7 +473,7 @@ function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): Pi
   let minPrice: number | null = null;
   let maxPrice: number | null = null;
   const range = q.match(/(?:tra|da)\s*(\d+(?:[.,]\d+)?)\s*(?:e|a)\s*(\d+(?:[.,]\d+)?)/i);
-  const max = q.match(/(?:budget(?:\s+di)?|sotto|massimo|meno di|entro|fino a|under|below|up to|less than)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)/i);
+  const max = q.match(/(?:budget(?:\s+di)?|sotto|massimo|meno di|entro|fino a|under|below|up to|less than)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)/i) ?? q.match(/\b(?:ho|con|dispongo di|a disposizione(?: di)?)\s*(?:un budget(?:\s+di)?\s*)?(?:€\s*)?(\d+(?:[.,]\d+)?)\s*(?:euro|euros|eur)\b/i) ?? q.match(/(?:€\s*)(\d+(?:[.,]\d+)?)/i) ?? q.match(/\b(\d+(?:[.,]\d+)?)\s*(?:euro|euros|eur)\b/i);
   const min = q.match(/(?:sopra|minimo|piu di|più di|oltre|over|above|more than)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)/i);
   if (range) {
     minPrice = Number(range[1].replace(",", "."));
@@ -503,6 +503,9 @@ function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): Pi
   // Gli attributi positivi restano: "scarpe da uomo eleganti" deve continuare
   // a cercare scarpe da uomo eleganti, non solo "scarpe".
   let termine = q
+    // Importi espressi in modo colloquiale ("ho 100 euro", "con 100 euro")
+    // sono vincoli di budget, non keyword da cercare nel catalogo.
+    .replace(/\b(?:ho|con|dispongo di|a disposizione(?: di)?)\s*(?:un budget(?:\s+di)?\s*)?(?:€\s*)?\d+(?:[.,]\d+)?\s*(?:euro|euros|eur)\b(?:\s+(?:da spendere|per)\b)?/gi, " ")
     .replace(/(?:tra|da)\s*\d+(?:[.,]\d+)?\s*(?:e|a)\s*\d+(?:[.,]\d+)?/gi, " ")
     .replace(
       /(?:budget(?:\s+di)?|non oltre|al massimo|sotto|massimo|meno di|entro|fino a|sopra|minimo|piu di|più di|oltre)\s*(?:€\s*)?\d+(?:[.,]\d+)?/gi,
@@ -537,7 +540,7 @@ function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): Pi
   }
 
   termine = termine
-    .replace(/\b(?:voglio|vorrei|cerco|cerca|trovami|mi serve|fammi trovare|dammi|anzi|invece|pero|però|delle|degli|del|della|dei|una|un|uno|il|lo|la|i|gli|le)\b/gi, " ")
+    .replace(/\b(?:voglio|vorrei|cerco|cerca|trovami|mi serve|fammi trovare|dammi|ho|anzi|invece|pero|però|delle|degli|del|della|dei|una|un|uno|il|lo|la|i|gli|le)\b/gi, " ")
     .replace(/\s+/g, " ")
     .trim();
 
