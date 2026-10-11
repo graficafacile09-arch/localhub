@@ -1020,10 +1020,10 @@ export async function chatConAssistente(
 
   // Guida turistica InCittà: recupero locale deterministico, senza affidarsi
   // al planner LLM che altrimenti tratta i monumenti come prodotti/negozi.
-  const domandaNorm = domanda.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
-  const richiestaAttrazioni = /\b(attrazioni|monumenti|luoghi da vedere|cosa vedere|cosa c'e da vedere|cosa visitare|da visitare|cosa fare|dove andare|centro storico|dintorni|borghi|borgo|palazzo|chiesa|museo|musei|castello|protoconvento|simucca|teatro sybaris|civita|frascineto|morano calabro|pollino|cipolla bianca|carnevale|primavera dei teatri|folklore|festival|escursioni|trekking|sapori locali|luoghi storici|architettura)\b/.test(domandaNorm);
-  if (richiestaAttrazioni) {
-    const luoghi = searchAttractions(domanda, 6);
+  // L'indice è costruito dagli stessi dati della pagina /attrazioni: non serve
+  // mantenere una seconda lista di parole che si rompe quando si aggiunge un evento.
+  const luoghi = searchAttractions(domanda, 6);
+  if (luoghi.length > 0) {
     if (luoghi.length > 0) {
       const elenco = luoghi.map((luogo) => {
         const maps = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(luogo.queryMaps);
