@@ -34,6 +34,9 @@ export function searchAttractions(query: string, limit = 6): AttrazionePino[] {
   const stop = new Set(["dove","cosa","quali","quale","visitare","vedere","consigli","consigliami","vorrei","posso","fare","sono","ci","nel","nella","della","delle","degli","per","una","uno","che","come","raggiungere","arrivare","andare","castrovillari"]);
   const tokens = q.split(/\s+/).filter((t) => t.length >= 3 && !stop.has(t));
   const broad = /\b(cosa vedere|luoghi da vedere|attrazioni|monumenti|visitare|dintorni|borghi|turismo|tour|itinerario)\b/.test(q);
+  const richiestaDintorni = /\b(dintorni|nei dintorni|vicino a castrovillari|paesi vicini|borghi vicini|fuori castrovillari)\b/.test(q);
+  const richiestaCitta = /\b(a castrovillari|nel centro di castrovillari|centro storico di castrovillari)\b/.test(q);
+  const nomiDintorni = new Set(ATTRAZIONI_DINTORNI.map((v) => v.nome));
   const ranked = CATALOGO.map((item) => {
     const fields = normalizza([item.nome,item.tipo,item.descrizione,...item.alias].join(" "));
     const words = new Set(fields.split(" "));
@@ -41,7 +44,16 @@ export function searchAttractions(query: string, limit = 6): AttrazionePino[] {
     for (const token of tokens) if (words.has(token)) score += 3;
     for (const alias of item.alias) if (normalizza(alias).length >= 4 && q.includes(normalizza(alias))) score += 7;
     if (broad && /dintorni|borgo|natura|passeggiate|storia|monumenti|cultura|architettura|evento|festival/i.test(item.tipo)) score += 2;
+    // Una richiesta sui dintorni deve favorire i comuni e i luoghi esterni,
+    // non riempire la lista con archivi o monumenti del centro cittadino.
+    if (richiestaDintorni) score += nomiDintorni.has(item.nome) ? 30 : -8;
+    if (richiestaCitta && nomiDintorni.has(item.nome)) score -= 12;
     return { item, score };
   }).filter((x) => x.score > 0).sort((a,b) => b.score-a.score);
-  return ranked.slice(0, Math.max(1, Math.min(limit, 10))).map((x) => x.item);
+  // Se la domanda chiede esplicitamente i dintorni, non mischiare destinazioni
+  // esterne con luoghi cittadini solo per arrivare al numero massimo di risultati.
+  const candidati = richiestaDintorni
+    ? ranked.filter((x) => nomiDintorni.has(x.item.nome))
+    : ranked;
+  return candidati.slice(0, Math.max(1, Math.min(limit, 10))).map((x) => x.item);
 }
