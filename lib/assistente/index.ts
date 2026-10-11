@@ -359,9 +359,9 @@ function pianoPredefinito(
   // Questo controllo precede il piano semantico perché un planner che sceglie
   // solo "stores" farebbe perdere prodotti pertinenti come gli orologi.
   if (analisi.intent === "gift") {
-    const testoRegalo = ultimo.normalize("NFD").replace(/[\\u0300-\\u036f]/g, "");
-    const prodottoEsplicito = /\\b(orolog|gioiell|profum|borsa|portafogli|collan|braccial|anell|libro|libri|cuffie|smartwatch|penna|portachiavi|scarpe|telefono|smartphone|cioccolat|vino)\\w*\\b/.test(testoRegalo);
-    const regaloGenerico = /\\b(regalo|regali|regalare|regalino|regalini|dono|doni)\\b/.test(testoRegalo) && !prodottoEsplicito;
+    const testoRegalo = ultimo.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const prodottoEsplicito = /\b(orolog|gioiell|profum|borsa|portafogli|collan|braccial|anell|libro|libri|cuffie|smartwatch|penna|portachiavi|scarpe|telefono|smartphone|cioccolat|vino)\w*\b/.test(testoRegalo);
+    const regaloGenerico = /\b(regalo|regali|regalare|regalino|regalini|dono|doni)\b/.test(testoRegalo) && !prodottoEsplicito;
     const soggetto = semantica?.query?.trim() || ultimo;
     const vincoli: ToolParams = {
       citta: semantica?.city ?? undefined,
