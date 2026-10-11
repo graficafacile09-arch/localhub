@@ -9,7 +9,7 @@ const FOTO: Record<string, string> = {
   "Chiesa di San Giuseppe": "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/1b/4c/35/fd/img-20200422-201626-largejpg.jpg?h=-1&s=1&w=1200",
   "Santa Maria delle Grazie": "https://dynamic-media-cdn.tripadvisor.com/media/photo-o/1d/b6/50/86/chiesa-della-madonna.jpg?h=1100&s=1&w=1100",
   "Palazzo Gallo": "https://1.bp.blogspot.com/-YbV-pY1tKlM/T-sOhTtZl0I/AAAAAAAAAm8/JwsbAAa5KUY/s1600/palazzo%2Bgallo%2B27%2B6%2B2012.JPG",
-  "Palazzo Varcasia": "https://files.supersite.aruba.it/media/27294_11953e22c20bfd95315485c580b7f2b032480336.jpeg",
+  "Palazzo Varcasia": "https://www.castrovillari.tv/images/convegno-forza-italia-pollino-30-12-2017.JPG",
   "La Civita e il centro storico": "https://i0.wp.com/visitcalabria.uk/wp-content/uploads/2022/02/Castrovillari_civita-old-town.jpg?fit=443%2C462&ssl=1",
   "Teatro Sybaris": "https://ecodellojonio.b-cdn.net/media/posts/24/10/1729690203.jpg?aspect_ratio=16%3A9&width=785",
   "Biblioteca Civica Umberto Caldora": "https://www.paese24.it/timthumb.php?q=90&src=https%3A%2F%2Fwww.paese24.it%2Fwp-content%2Fuploads%2F2018%2F06%2Flefigaroconsegna3.jpg&w=650&zc=1",
@@ -43,7 +43,7 @@ const FOTO: Record<string, string> = {
   "Civita Nova – Radicarsi": "https://images.lac.atexcloud.io/view/acePublic/alias/contentid/1ljzjglpwjg87ybg8wh/0/sas-jpg.jpeg?f=3%3A2",
 
   "Morano Calabro": "https://www.finestresullarte.info/rivista/immagini/2022/fn/veduta-di-morano-calabro.jpg",
-  "Civita": "https://101-zone.com/wp-content/uploads/2023/09/MG_2958-HDR.jpg-Calabria-Parco-Nazionale-del-Pollino.-Il-borgo-di-Civita-con-vista-delle-Gole-di-Raganello-e-il-Ponte-del-Diavolo.jpg",
+  "Civita": "https://commons.wikimedia.org/wiki/Special:FilePath/Civita-vom-belvedere.jpg?width=1200",
   "Frascineto ed Eianina": "https://www.bbpieffe.it/images/borghi-parco-nazionale-del-pollino/frascineto/Frascineto-borgo-Parco-Pollino5.jpg",
   "San Basile": "https://www.raiplay.it/dl/img/2025/11/04/1762269390989_STILL-PUNTATA-SAN-BASILE.jpg",
   "Mormanno": "https://www.comune.mormanno.cs.it/immagini/3.jpeg",
