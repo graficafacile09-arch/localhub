@@ -14,6 +14,19 @@ test.describe("Pino — conoscenza pubblica InCittà", () => {
     const r = cercaConoscenzaPino("quali metodi di pagamento posso usare?");
     expect(r).not.toBeNull();
     expect(r?.risposta).toContain("checkout");
+    expect(r?.risposta).toContain("effettivamente disponibili");
+  });
+
+  test("le domande su chi gestisce le consegne portano al regolamento corretto", () => {
+    for (const domanda of [
+      "Chi gestisce le consegne su InCittà?",
+      "InCittà manda i corrieri?",
+      "Chi è responsabile delle consegne?",
+    ]) {
+      const r = cercaConoscenzaPino(domanda);
+      expect(r?.url).toBe("/regolamento-consegne");
+      expect(r?.risposta).toContain("non effettua né organizza materialmente le consegne");
+    }
   });
 
   test("risponde alla domanda su come fare un ordine", () => {
@@ -44,5 +57,13 @@ test.describe("Pino — indice condiviso della guida locale", () => {
     expect(risultato?.nome).toBe("Palazzo Varcasia");
     expect(risultato?.url).toContain("palazzo-varcasia");
     expect(risultato?.queryMaps).toContain("Castrovillari");
+  });
+
+  test("una domanda sui dintorni privilegia esclusivamente le destinazioni esterne", () => {
+    const risultati = searchAttractions("Cosa posso visitare nei dintorni di Castrovillari?");
+    expect(risultati.length).toBeGreaterThan(0);
+    expect(risultati.some((v) => v.nome === "Morano Calabro")).toBe(true);
+    expect(risultati.some((v) => v.nome === "Archivio di Stato – Sezione di Castrovillari")).toBe(false);
+    expect(risultati.some((v) => v.tipo === "Eventi e festival")).toBe(false);
   });
 });
