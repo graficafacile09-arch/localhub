@@ -371,7 +371,7 @@ function pianoPredefinito(
       limit: 4,
     };
     const famiglie = regaloGenerico
-      ? ["orologio", "gioielli", "profumo", "borsa", "accessori", "libro", "smartwatch", "portafogli", "cuffie", "scarpe", "cioccolato"]
+      ? ["orologio", "anello", "gioiello", "profumo", "borsa", "accessori", "libro", "smartwatch", "portafogli", "cuffie", "scarpe", "cioccolato", "miele", "olio", "dolciumi", "prodotti tipici", "ciotaredda"]
       : [soggetto];
     const tools: ToolInvocation[] = famiglie.map((query) => ({
       tool: "searchProducts",
