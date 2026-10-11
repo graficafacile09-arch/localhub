@@ -1220,13 +1220,22 @@ export async function chatConAssistente(
   const richiestaRegaloConBudget =
     /\b(regalo|regali|prodotto|prodotti|orologio|scarpe|borsa|telefono|libro|cuffie|smartwatch)\b/i.test(domandaSemantica) &&
     budgetFinale !== undefined && Number.isFinite(budgetFinale);
+  // Il budget non è più un filtro bloccante: conserva le alternative e
+  // ordina prima quelle entro la soglia, poi tutte le altre per prezzo crescente.
   if (richiestaRegaloConBudget) {
-    const primaDelFiltro = prodotti.length;
-    prodotti = prodotti.filter((p) => {
-      const prezzo = Number(p.prezzo);
-      return Number.isFinite(prezzo) && prezzo > 0 && prezzo <= budgetFinale!;
+    prodotti = [...prodotti].sort((a, b) => {
+      const prezzoA = Number(a.prezzo);
+      const prezzoB = Number(b.prezzo);
+      const dentroA = Number.isFinite(prezzoA) && prezzoA > 0 && prezzoA <= budgetFinale!;
+      const dentroB = Number.isFinite(prezzoB) && prezzoB > 0 && prezzoB <= budgetFinale!;
+      if (dentroA !== dentroB) return dentroA ? -1 : 1;
+      return prezzoA - prezzoB;
     });
-    console.info("[pino-budget-final-guard]", JSON.stringify({ budget: budgetFinale, prima: primaDelFiltro, dopo: prodotti.length }));
+    console.info("[pino-budget-soft-order]", JSON.stringify({
+      budget: budgetFinale,
+      risultati: prodotti.length,
+      entroBudget: prodotti.filter((p) => Number(p.prezzo) <= budgetFinale!).length,
+    }));
   }
 
   console.log(
@@ -1354,20 +1363,20 @@ export async function chatConAssistente(
   });
   const contesto = buildContextoRisultati(risultati);
 
-  // Il budget è tassativo: i prodotti fuori soglia vengono rimossi prima
-  // della composizione della risposta e non vanno suggeriti come alternative.
+  // Il prezzo è una preferenza: privilegia le opzioni entro budget senza
+  // vietare alternative utili quando il catalogo non offre corrispondenze.
   const vincoliPrezzo = invocazioni
     .map((t) => t.params)
     .filter((p): p is ToolParams => !!p && (p.maxPrice != null || p.minPrice != null))
     .map((p) => {
       const pezzi: string[] = [];
-      if (p.minPrice != null) pezzi.push(`min €${p.minPrice}`);
-      if (p.maxPrice != null) pezzi.push(`max €${p.maxPrice}`);
+      if (p.minPrice != null) pezzi.push(`da €${p.minPrice}`);
+      if (p.maxPrice != null) pezzi.push(`budget indicativo €${p.maxPrice}`);
       return pezzi.join(" e ");
     });
   const notaVincolo =
     vincoliPrezzo.length > 0
-      ? `Vincolo di prezzo tassativo (${vincoliPrezzo.join("; ")}): mostra esclusivamente prodotti entro il budget; se non ci sono prodotti compatibili, dichiaralo senza elencare articoli più costosi.`
+      ? `Preferenza di prezzo (${vincoliPrezzo.join("; ")}): mostra prima le opzioni nella fascia indicata, poi eventuali alternative più costose, con prezzi chiari.`
       : "";
 
   const contestoFinale = notaVincolo
