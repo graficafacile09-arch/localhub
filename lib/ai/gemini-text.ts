@@ -26,6 +26,12 @@ export type GeminiMessage = {
   content: string;
 };
 
+export type GeminiFunctionDeclaration = {
+  name: string;
+  description: string;
+  parameters: Record<string, unknown>;
+};
+
 export type CallGeminiTextParams = {
   systemPrompt: string;
   userPrompt: string;
@@ -35,6 +41,8 @@ export type CallGeminiTextParams = {
   temperature?: number;
   /** true → generationConfig.responseMimeType "application/json". */
   json?: boolean;
+  /** Gemini native function calling. When supplied, the returned text is normalized to the assistant's tool-plan JSON. */
+  functionDeclarations?: GeminiFunctionDeclaration[];
   timeoutMs?: number;
   /** Retry con backoff su 429/402 (quota). Default 3. */
   retries?: number;
@@ -54,6 +62,7 @@ export async function callGeminiText({
   maxTokens = 700,
   temperature = 0.2,
   json = false,
+  functionDeclarations,
   timeoutMs = TIMEOUT_DEFAULT_MS,
   retries = TENTATIVI_DEFAULT,
   usageLabel = "other",
@@ -92,6 +101,15 @@ export async function callGeminiText({
       if (systemPrompt.trim()) {
         body.systemInstruction = { parts: [{ text: systemPrompt }] };
       }
+      if (functionDeclarations?.length) {
+        body.tools = [{ functionDeclarations }];
+        body.toolConfig = {
+          functionCallingConfig: {
+            mode: "ANY",
+            allowedFunctionNames: functionDeclarations.map((declaration) => declaration.name),
+          },
+        };
+      }
 
       const url = `${GEMINI_BASE}/${encodeURIComponent(model)}:generateContent?key=${apiKey}`;
       const response = await fetch(url, {
@@ -120,7 +138,10 @@ export async function callGeminiText({
       }
 
       const resData = (await response.json()) as {
-        candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+        candidates?: Array<{ content?: { parts?: Array<{
+          text?: string;
+          functionCall?: { name?: string; args?: Record<string, unknown> };
+        }> } }>;
         usageMetadata?: {
           promptTokenCount?: number;
           candidatesTokenCount?: number;
@@ -130,11 +151,34 @@ export async function callGeminiText({
         };
       };
 
-      const text =
-        resData.candidates?.[0]?.content?.parts
-          ?.map((p) => p.text ?? "")
-          .join("")
-          .trim() ?? "";
+      const parts = resData.candidates?.[0]?.content?.parts ?? [];
+      const functionCalls = parts
+        .map((part) => part.functionCall)
+        .filter((call): call is { name?: string; args?: Record<string, unknown> } => Boolean(call?.name));
+
+      // Convertiamo le chiamate native Gemini nel formato interno già validato
+      // dall'orchestratore. La UI e i tool di InCittà restano invariati.
+      const pianoDaFunzioni = functionDeclarations?.length && functionCalls.length
+        ? (() => {
+            const rispostaDiretta = functionCalls.find((call) => call.name === "answerDirectly");
+            if (rispostaDiretta) {
+              const testo = rispostaDiretta.args?.text;
+              return JSON.stringify({
+                tools: [],
+                directReply: typeof testo === "string" ? testo : null,
+              });
+            }
+            return JSON.stringify({
+              tools: functionCalls
+                .filter((call) => call.name && call.name !== "answerDirectly")
+                .map((call) => ({ tool: call.name, params: call.args ?? {} })),
+              directReply: null,
+            });
+          })()
+        : null;
+
+      const text = pianoDaFunzioni ??
+        parts.map((part) => part.text ?? "").join("").trim();
 
       if (!text) {
         throw new Error("Risposta AI vuota.");
