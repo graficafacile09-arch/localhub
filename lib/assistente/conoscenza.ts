@@ -18,7 +18,7 @@ const PAGINE: Voce[] = [
 
 const STOP = new Set(["come","cosa","dove","quale","quali","che","per","una","uno","gli","della","delle","dello","degli","del","dei","nel","nella","nelle","sul","sulla","con","sono","posso","vorrei","fare","incitta","citta"]);
 function tokens(s: string): string[] {
- return normalizzaRichiesta(s).replace(/[^a-z0-9\\s]/g," ").split(/\\s+/).filter(t => t.length >= 3 && !STOP.has(t));
+ return normalizzaRichiesta(s).replace(/[^a-z0-9\s]/g," ").split(/\s+/).filter(t => t.length >= 3 && !STOP.has(t));
 }
 function score(q: string, titolo: string, alias: string[], risposta = ""): number {
  const qn = normalizzaRichiesta(q);
