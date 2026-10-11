@@ -43,5 +43,5 @@ export function cercaConoscenzaPino(query: string): { titolo: string; risposta: 
  ].sort((a,b) => b.score-a.score);
  const first = items[0];
  if (!first || first.score < (tokens(q).length <= 1 ? 10 : 9)) return null;
- return { titolo:first.titolo, risposta:first.risposta + "\\n\\nApprofondisci: [" + first.titolo + "](" + first.url + ").", url:first.url };
+ return { titolo:first.titolo, risposta:first.risposta + "\n\nApprofondisci: [" + first.titolo + "](" + first.url + ").", url:first.url };
 }
