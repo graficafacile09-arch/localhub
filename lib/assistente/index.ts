@@ -1059,6 +1059,7 @@ export async function chatConAssistente(
         maxTokens: 450,
         temperature: 0.1,
         timeoutMs: 45_000,
+        usageLabel: "pino_tool_selection",
       });
       const parsed = JSON.parse(extractJsonFromText(raw)) as {
         tools?: ToolInvocation[];
