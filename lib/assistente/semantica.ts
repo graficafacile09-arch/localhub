@@ -431,7 +431,12 @@ export function arricchisciRichiestaConContesto(
   const intermedi =
     parti.length === 0
       ? []
-      : parti.filter((p) => {
+      : parti.filter((p, index) => {
+          // Il primo elemento è il soggetto-base concreto già riconosciuto
+          // sopra: può essere una richiesta completa e lunga (es. idea regalo
+          // con destinatario). I limiti di lunghezza valgono solo per i
+          // messaggi intermedi, non per la richiesta originale.
+          if (index === 0) return true;
           const pn = normalizzaRichiesta(p);
           const n = pn.split(/\s+/).filter(Boolean).length;
           return n <= 8 && (modificaEsplicita.test(pn) || n <= 2);
