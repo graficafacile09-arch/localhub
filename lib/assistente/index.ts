@@ -85,6 +85,85 @@ type ToolInvocation = {
   params?: ToolParams;
 };
 
+// Tool declarations Gemini native: il modello sceglie funzioni tipizzate
+// invece di dover inventare JSON libero. I risultati restano recuperati dai
+// tool reali di InCittà; il modello non può creare prodotti o disponibilità.
+const PINO_TOOL_DECLARATIONS = [
+  {
+    name: "searchStores",
+    description: "Cerca negozi, attività e servizi locali. Usa termini pertinenti e filtri espliciti.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        query: { type: "STRING", description: "Soggetto principale della ricerca." },
+        categoria: { type: "STRING" }, sottocategoria: { type: "STRING" },
+        tipo: { type: "STRING" }, citta: { type: "STRING" },
+        termini: { type: "ARRAY", items: { type: "STRING" } },
+        apertiOra: { type: "BOOLEAN" }, limit: { type: "INTEGER" },
+      },
+    },
+  },
+  {
+    name: "searchProducts",
+    description: "Cerca prodotti reali nel catalogo InCittà, applicando eventuali vincoli di prezzo.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        query: { type: "STRING" }, termini: { type: "ARRAY", items: { type: "STRING" } },
+        categoria: { type: "STRING" }, sottocategoria: { type: "STRING" },
+        citta: { type: "STRING" }, minPrice: { type: "NUMBER" },
+        maxPrice: { type: "NUMBER" }, esclusioni: { type: "ARRAY", items: { type: "STRING" } },
+        limit: { type: "INTEGER" },
+      },
+    },
+  },
+  {
+    name: "searchOffers",
+    description: "Recupera offerte e promozioni pubblicate. Query assente significa tutte le offerte attive.",
+    parameters: { type: "OBJECT", properties: { query: { type: "STRING" }, limit: { type: "INTEGER" } } },
+  },
+  {
+    name: "searchEvents",
+    description: "Recupera eventi pubblicati in InCittà. Non inventare date o manifestazioni.",
+    parameters: { type: "OBJECT", properties: { query: { type: "STRING" }, limit: { type: "INTEGER" } } },
+  },
+  {
+    name: "searchAll",
+    description: "Ricerca trasversale su negozi, prodotti, offerte ed eventi per richieste ampie.",
+    parameters: { type: "OBJECT", properties: { query: { type: "STRING" }, limit: { type: "INTEGER" } } },
+  },
+  {
+    name: "getCategories",
+    description: "Restituisce le categorie di attività disponibili su InCittà.",
+    parameters: { type: "OBJECT", properties: {} },
+  },
+  {
+    name: "getWeather",
+    description: "Recupera il meteo aggiornato di Castrovillari.",
+    parameters: { type: "OBJECT", properties: {} },
+  },
+  {
+    name: "searchPharmacies",
+    description: "Recupera farmacie di Castrovillari con stato di apertura o turno verificato.",
+    parameters: {
+      type: "OBJECT",
+      properties: {
+        stato: { type: "STRING", enum: ["aperte", "turno", "tutte"] },
+        limit: { type: "INTEGER" },
+      },
+    },
+  },
+  {
+    name: "answerDirectly",
+    description: "Risponde brevemente a saluti, cortesia o domande generiche senza bisogno di dati esterni.",
+    parameters: {
+      type: "OBJECT",
+      properties: { text: { type: "STRING", description: "Risposta nella lingua dell'utente." } },
+      required: ["text"],
+    },
+  },
+] as const;
+
 // ─── Chiamata Gemini con timeout e retry ────────────────────────────────────
 // Il provider è centralizzato in lib/ai/gemini-text.ts (callGeminiText): usa
 // GEMINI_API_KEY + GEMINI_MODEL, endpoint generateContent di Gemini, retry con
@@ -1116,9 +1195,21 @@ export async function chatConAssistente(
     selezioneOk = true;
   } else {
     try {
+      const promptPianificazione = buildToolSelectionPrompt(storico, descriviIntento(analisi));
+      const promptConFunzioni = promptPianificazione.split("\nESEMPI:")[0] +
+        "\n\nREGOLE OBBLIGATORIE DI ROUTING: " +
+        "se l'utente chiede di cercare, trovare, mostrare o verificare prodotti disponibili, chiama searchProducts (e, se utile, searchStores/searchOffers). " +
+        "Per richieste di regali con budget o destinatario, cerca prima nel catalogo con searchProducts: non rispondere con consigli generici e non usare answerDirectly. " +
+        "answerDirectly è consentita solo per saluti, domande informative generali e richieste che non richiedono dati aggiornati della piattaforma. " +
+        "Usa esclusivamente le funzioni dichiarate. Non scrivere JSON o testo fuori dalle funzioni. Non inventare risultati: i dati devono provenire dai tool di InCittà.";
       const raw = await callGeminiText({
-        systemPrompt: SYSTEM_PROMPT,
-        userPrompt: buildToolSelectionPrompt(storico, descriviIntento(analisi)),
+        systemPrompt: SYSTEM_PROMPT + "\n\nPianificatore: seleziona le funzioni più pertinenti. Gli argomenti devono essere ricavati dalla richiesta e dalla cronologia, senza inventare filtri.",
+        userPrompt: promptConFunzioni,
+        functionDeclarations: PINO_TOOL_DECLARATIONS.map((declaration) => ({
+          name: declaration.name,
+          description: declaration.description,
+          parameters: declaration.parameters as unknown as Record<string, unknown>,
+        })),
         maxTokens: 450,
         temperature: 0.1,
         timeoutMs: 45_000,
@@ -1165,6 +1256,26 @@ export async function chatConAssistente(
 
   // Esecuzione dei tool scelti (dal piano o dall'LLM).
   const queryDefault = ultimaQuerySostanziale(storico);
+
+  // Guardrail: una richiesta esplicita di ricerca prodotti non può essere
+  // chiusa con answerDirectly né con un tool estraneo al catalogo.
+  const richiestaCatalogoEsplicita =
+    /\b(cerca|cercami|cerco|trovami|mostrami|fammi vedere|prodotti disponibili|nel catalogo|nei negozi di incittà)\b/i.test(domandaSemantica) &&
+    /\b(regalo|regali|prodotto|prodotti|orologio|scarpe|borsa|telefono|libro|cuffie|smartwatch)\b/i.test(domandaSemantica);
+  const haToolProdotti = invocazioni.some((t) => t.tool === "searchProducts" || t.tool === "searchAll");
+  if (richiestaCatalogoEsplicita && !haToolProdotti) {
+    const importo = domandaSemantica.match(/(?:budget(?:\s+di)?|massimo|fino a|entro|sotto)\s*(?:di\s*)?(?:€\s*)?(\d+(?:[.,]\d+)?)/i)
+      ?? domandaSemantica.match(/(\d+(?:[.,]\d+)?)\s*(?:euro|€)/i);
+    const maxPrice = importo ? Number(importo[1].replace(",", ".")) : undefined;
+    invocazioni = [{
+      tool: "searchProducts",
+      params: { query: domandaSemantica, limit: 8, ...(maxPrice !== undefined && Number.isFinite(maxPrice) ? { maxPrice } : {}) },
+    }];
+    directReply = null;
+    selezioneOk = true;
+    console.info("[pino-routing-guard]", JSON.stringify({ intent: analisiSemantica.intent, forcedTool: "searchProducts", budgetDetected: maxPrice ?? null }));
+  }
+
   if (invocazioni.length > 0) {
     const risultati = await Promise.all(
       invocazioni.map(async (t) => {
