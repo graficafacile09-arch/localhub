@@ -821,7 +821,7 @@ async function recuperaAlternativeSemantiche(
   // pertinenti. Non viene presentato come prodotto trovato: è un'alternativa
   // concreta e trasparente.
   if (
-    (piano.surface === "stores" || piano.surface === "both" || analisi.intent === "product") &&
+    (piano.surface === "stores" || piano.surface === "both" || analisi.intent === "product" || analisi.intent === "gift") &&
     negoziTrovati.length < 6
   ) {
     for (const q of candidati.slice(0, 3)) {
@@ -1104,7 +1104,31 @@ export async function chatConAssistente(
   const queryDefault = ultimaQuerySostanziale(storico);
   if (invocazioni.length > 0) {
     const risultati = await Promise.all(
-      invocazioni.map((t) => eseguiTool(t.tool as string, t.params ?? {}, queryDefault))
+      invocazioni.map(async (t) => {
+        const toolStartedAt = Date.now();
+        try {
+          const result = await eseguiTool(t.tool as string, t.params ?? {}, queryDefault);
+          console.info("[pino-retrieval]", JSON.stringify({
+            tool: t.tool,
+            durationMs: Date.now() - toolStartedAt,
+            stores: result.negozi.length,
+            products: result.prodotti.length,
+            offers: result.offerte.length,
+            events: result.eventi.length,
+            categories: result.categorie.length,
+            pharmacies: result.farmacie.length,
+            weather: result.meteo ? 1 : 0,
+          }));
+          return result;
+        } catch (error) {
+          console.warn("[pino-retrieval-error]", JSON.stringify({
+            tool: t.tool,
+            durationMs: Date.now() - toolStartedAt,
+            error: error instanceof Error ? error.name : "unknown",
+          }));
+          throw error;
+        }
+      })
     );
     // Merge con deduplica per id: più tool possono restituire lo stesso
     // negozio/prodotto (es. ricerca cibo multi-termine).
