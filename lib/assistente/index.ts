@@ -1375,6 +1375,33 @@ export async function chatConAssistente(
     }
   }
 
+  // Ultima barriera deterministica: il budget si applica ai risultati FINALI,
+  // dopo merge dei tool e recupero semantico. Nessun tool secondario può
+  // reintrodurre articoli più cari nella risposta.
+  const budgetDichiarato =
+    domanda.match(/(?:budget(?:\\s+di)?|massimo|fino a|entro|sotto|non oltre|al massimo)\\s*(?:di\\s*)?(?:€\\s*)?(\\d+(?:[.,]\\d+)?)/i)
+    ?? domanda.match(/(?:€\\s*)(\\d+(?:[.,]\\d+)?)/i)
+    ?? domanda.match(/(\\d+(?:[.,]\\d+)?)\\s*(?:euro|eur)\\b/i);
+  const limiteBudgetFinale = budgetDichiarato
+    ? Number(budgetDichiarato[1].replace(",", "."))
+    : undefined;
+  const richiestaRegaloConBudget =
+    /\\b(regalo|regali|prodotto|prodotti|orologio|scarpe|borsa|telefono|libro|cuffie|smartwatch)\\b/i.test(domanda) &&
+    limiteBudgetFinale !== undefined &&
+    Number.isFinite(limiteBudgetFinale);
+  if (richiestaRegaloConBudget) {
+    const primaDelFiltro = prodotti.length;
+    prodotti = prodotti.filter((p) => {
+      const prezzo = Number(p.prezzo);
+      return Number.isFinite(prezzo) && prezzo > 0 && prezzo <= limiteBudgetFinale!;
+    });
+    console.info("[pino-budget-final-guard]", JSON.stringify({
+      budget: limiteBudgetFinale,
+      prima: primaDelFiltro,
+      dopo: prodotti.length,
+    }));
+  }
+
   console.log(
     "[assistente] intento:",
     descriviIntento(analisi),
