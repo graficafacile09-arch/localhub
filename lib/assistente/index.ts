@@ -1018,30 +1018,29 @@ export async function chatConAssistente(
   // (la storia è già troncata a 300 caratteri per messaggio).
   const domanda = (ultimo && ultimo.role === "user" ? ultimo.content : "").slice(0, 500);
 
-  // Guida turistica InCittà: recupero locale deterministico, senza affidarsi
-  // al planner LLM che altrimenti tratta i monumenti come prodotti/negozi.
-  // L'indice è costruito dagli stessi dati della pagina /attrazioni: non serve
-  // mantenere una seconda lista di parole che si rompe quando si aggiunge un evento.
-  const luoghi = searchAttractions(domanda, 6);
-  if (luoghi.length > 0) {
-    if (luoghi.length > 0) {
-      const elenco = luoghi.map((luogo) => {
-        const maps = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(luogo.queryMaps);
-        return `- **${luogo.nome}** — ${luogo.tipo}. ${luogo.descrizione} [Come arrivare / Google Maps](${maps})${luogo.url ? ` · [Sito di riferimento](${luogo.url})` : ""}`;
-      }).join("\n");
-      return {
-        risposta: `Ecco cosa ho trovato nella guida locale di InCittà:\n\n${elenco}\n\nPer orari, aperture e date degli eventi, verifica sempre le informazioni aggiornate.`,
-        negozi: [],
-        prodotti: [],
-        processingMs: Date.now() - inizio,
-        source: "assistente",
-      };
-    }
-  }
-
+  // Prima le domande sul funzionamento della piattaforma e sulle responsabilità:
+  // non devono mai essere intercettate da corrispondenze accidentali nella guida turistica.
   const conoscenza = cercaConoscenzaPino(domanda);
   if (conoscenza) {
     return { risposta: conoscenza.risposta, negozi: [], prodotti: [], processingMs: Date.now() - inizio, source: "assistente", intent: "generic" };
+  }
+
+  // Guida turistica InCittà: consultata dopo la conoscenza del sito.
+  // L'indice condivide i dati con /attrazioni e risponde solo se la domanda
+  // ha una corrispondenza turistica pertinente.
+  const luoghi = searchAttractions(domanda, 6);
+  if (luoghi.length > 0) {
+    const elenco = luoghi.map((luogo) => {
+      const maps = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(luogo.queryMaps);
+      return `- **${luogo.nome}** — ${luogo.tipo}. ${luogo.descrizione} [Come arrivare / Google Maps](${maps})${luogo.url ? ` · [Sito di riferimento](${luogo.url})` : ""}`;
+    }).join("\n");
+    return {
+      risposta: `Ecco cosa ho trovato nella guida locale di InCittà:\n\n${elenco}\n\nPer orari, aperture e date degli eventi, verifica sempre le informazioni aggiornate.`,
+      negozi: [],
+      prodotti: [],
+      processingMs: Date.now() - inizio,
+      source: "assistente",
+    };
   }
 
   // Pino Intent Layer v1: la classificazione avviene PRIMA di ogni ricerca e
