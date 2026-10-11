@@ -37,6 +37,7 @@ import {
 } from "./prompt";
 import { extractJsonFromText } from "@/lib/product-assistant/providers/utils";
 import { callGeminiText } from "@/lib/ai/gemini-text";
+import { searchAttractions } from "./attrazioni";
 import type { NegozioRicerca, ProdottoRicerca } from "@/lib/ricerca-ai";
 import { pianoIntentoLocale } from "./local-intents";
 import {
@@ -986,6 +987,27 @@ export async function chatConAssistente(
   // Cap sulla domanda: evita abuso di token e superfici di prompt injection
   // (la storia è già troncata a 300 caratteri per messaggio).
   const domanda = (ultimo && ultimo.role === "user" ? ultimo.content : "").slice(0, 500);
+
+  // Guida turistica InCittà: recupero locale deterministico, senza affidarsi
+  // al planner LLM che altrimenti tratta i monumenti come prodotti/negozi.
+  const domandaNorm = domanda.normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLowerCase();
+  const richiestaAttrazioni = /\\b(attrazioni|monumenti|luoghi da vedere|cosa vedere|cosa visitare|da visitare|centro storico|dintorni|borghi|palazzo varcasia|castello aragonese|protoconvento|simucca|teatro sybaris|civita|frascineto|morano calabro|pollino|palazzo gallo|palazzo cappelli|cipolla bianca|carnevale di castrovillari|primavera dei teatri|folklore)\\b/.test(domandaNorm);
+  if (richiestaAttrazioni) {
+    const luoghi = searchAttractions(domanda, 6);
+    if (luoghi.length > 0) {
+      const elenco = luoghi.map((luogo) => {
+        const maps = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(luogo.queryMaps);
+        return `- **${luogo.nome}** — ${luogo.tipo}. ${luogo.descrizione} [Come arrivare / Google Maps](${maps})${luogo.url ? ` · [Sito di riferimento](${luogo.url})` : ""}`;
+      }).join("\\n");
+      return {
+        risposta: `Ecco cosa ho trovato nella guida locale di InCittà:\\n\\n${elenco}\\n\\nPer orari, aperture e date degli eventi, verifica sempre le informazioni aggiornate.`,
+        negozi: [],
+        prodotti: [],
+        processingMs: Date.now() - inizio,
+        source: "assistente",
+      };
+    }
+  }
 
   // Pino Intent Layer v1: la classificazione avviene PRIMA di ogni ricerca e
   // guida la scelta dei tool, le priorità di recupero e il messaggio finale.
