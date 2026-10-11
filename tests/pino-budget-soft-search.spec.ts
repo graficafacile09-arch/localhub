@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { ordinaProdottiPerBudget, prezzoNumerico } from "../lib/assistente/tools";
+import { ordinaProdottiPerBudget, prezzoNumerico, prodottoHaPrezzoReale } from "../lib/assistente/tools";
 import type { ProdottoRicerca } from "../lib/ricerca-ai";
 import { interpretaRichiestaPino } from "../lib/assistente/semantica";
 import { analizzaIntentoPino } from "../lib/assistente/intent";
@@ -103,6 +103,14 @@ test.describe("Pino — normalizzazione dei prezzi", () => {
     expect(prezzoNumerico("29,90")).toBeCloseTo(29.9);
     expect(prezzoNumerico("€ 12,50")).toBeCloseTo(12.5);
     expect(prezzoNumerico("15")).toBeCloseTo(15);
+  });
+
+  test("il filtro di ricerca Pino non scarta prezzi decimali italiani come 99,00", () => {
+    expect(prodottoHaPrezzoReale(99)).toBe(true);
+    expect(prodottoHaPrezzoReale("99,00")).toBe(true);
+    expect(prodottoHaPrezzoReale("€ 99,00")).toBe(true);
+    expect(prodottoHaPrezzoReale("0")).toBe(false);
+    expect(prodottoHaPrezzoReale("non disponibile")).toBe(false);
   });
 
   test("un prezzo non numerico non diventa un numero inventato", () => {
