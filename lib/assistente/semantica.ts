@@ -342,7 +342,7 @@ export function arricchisciRichiestaConContesto(
   const RE_RESET_PREZZO =
     /\b(?:lascia\s+perdere|togli|rimuovi|ignora)\s+(?:il\s+)?(?:filtro\s+)?(?:del\s+|di\s+)?prezzo\b|\b(?:senza|non\s+importa)\s+(?:il\s+)?(?:limite\s+di\s+)?prezzo\b/i;
   const RE_CLAUSOLA_PREZZO =
-    /\b(?:sotto|sopra|massimo|minimo|meno\s+di|piu\s+di|più\s+di|entro|fino\s+a|tra|da|under|below|up\s+to|over|above|more\s+than|less\s+than|between)\s*(?:€\s*)?\d+(?:[.,]\d+)?(?:\s*(?:e|a|and|to)\s*(?:€\s*)?\d+(?:[.,]\d+)?)?/gi;
+    /\b(?:budget(?:\s+di)?|sotto|sopra|massimo|minimo|meno\s+di|piu\s+di|più\s+di|entro|fino\s+a|tra|da|under|below|up\s+to|over|above|more\s+than|less\s+than|between)\s*(?:€\s*)?\d+(?:[.,]\d+)?(?:\s*(?:e|a|and|to)\s*(?:€\s*)?\d+(?:[.,]\d+)?)?/gi;
   const estraiCittaEsplicita = (testo: string): string | null => {
     const normalizzata = normalizzaRichiesta(testo);
     const citta = estraiCitta(normalizzata);
@@ -431,7 +431,12 @@ export function arricchisciRichiestaConContesto(
   const intermedi =
     parti.length === 0
       ? []
-      : parti.filter((p) => {
+      : parti.filter((p, index) => {
+          // Il primo elemento è il soggetto-base concreto già riconosciuto
+          // sopra: può essere una richiesta completa e lunga (es. idea regalo
+          // con destinatario). I limiti di lunghezza valgono solo per i
+          // messaggi intermedi, non per la richiesta originale.
+          if (index === 0) return true;
           const pn = normalizzaRichiesta(p);
           const n = pn.split(/\s+/).filter(Boolean).length;
           return n <= 8 && (modificaEsplicita.test(pn) || n <= 2);
@@ -454,7 +459,7 @@ function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): Pi
   if (!q) return null;
   const match = CANONICI_RICERCA.find((x) => x.pattern.test(q));
   const haEsclusioneAlcol = /\b(?:non|senza)\s+(?:alcol(?:ica|ico)?|alcol)\b|\banalcolic(?:a|o|he|i)\b/i.test(q);
-  const haPrezzo = /\b(?:sotto|sopra|massimo|minimo|meno di|piu di|più di|entro|fino a|tra|under|below|up to|over|above|more than|less than|between)\b/i.test(q);
+  const haPrezzo = /\b(?:budget(?:\s+di)?|sotto|sopra|massimo|minimo|meno di|piu di|più di|entro|fino a|tra|under|below|up to|over|above|more than|less than|between)\b/i.test(q);
   if (!match && !haEsclusioneAlcol && !haPrezzo && analisi.confidence === "bassa") return null;
 
   // I vincoli NON fanno parte della query di retrieval. Prezzo, negazioni,
@@ -464,7 +469,7 @@ function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): Pi
   let minPrice: number | null = null;
   let maxPrice: number | null = null;
   const range = q.match(/(?:tra|da)\s*(\d+(?:[.,]\d+)?)\s*(?:e|a)\s*(\d+(?:[.,]\d+)?)/i);
-  const max = q.match(/(?:sotto|massimo|meno di|entro|fino a|under|below|up to|less than)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)/i);
+  const max = q.match(/(?:budget(?:\s+di)?|sotto|massimo|meno di|entro|fino a|under|below|up to|less than)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)/i);
   const min = q.match(/(?:sopra|minimo|piu di|più di|oltre|over|above|more than)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)/i);
   if (range) {
     minPrice = Number(range[1].replace(",", "."));
