@@ -106,7 +106,7 @@ export default function AttrazioniPage() {
             <article key={luogo.nome} className="group flex min-h-60 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:border-yellow-300 hover:shadow-lg">
               <FotoScheda query={luogo.query} alt={luogo.nome} />
               <div className="flex flex-1 flex-col p-5"><div className="flex items-start justify-between gap-3"><span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-yellow-400 text-blue-950"><Icona className="h-6 w-6" aria-hidden /></span><span className="rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-slate-600">{luogo.tipo}</span></div>
-              <h3 className="mt-4 text-lg font-black leading-snug text-slate-900">{luogo.nome}</h3><p className="mt-2 flex-1 text-sm leading-6 text-slate-600">{luogo.descrizione}</p>
+              <h3 className="mt-4 text-lg font-black leading-snug text-slate-900">{luogo.nome}</h3><p className="mt-2 flex-1 text-sm leading-6 text-slate-600">{luogo.descrizione}</p><a href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(luogo.query)}`} target="_blank" rel="noopener noreferrer" aria-label={`Indicazioni stradali per ${luogo.nome} su Google Maps`} className="mt-4 inline-flex w-fit items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-extrabold text-blue-800 transition hover:border-yellow-400 hover:bg-yellow-50 hover:text-blue-950"><MapPinned className="h-4 w-4" aria-hidden /> Come raggiungerlo <ArrowUpRight className="h-3.5 w-3.5" aria-hidden /></a>
               </div>
             </article>
           ); })}
