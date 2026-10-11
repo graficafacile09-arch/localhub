@@ -505,7 +505,7 @@ function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): Pi
   let termine = q
     // Importi espressi in modo colloquiale ("ho 100 euro", "con 100 euro")
     // sono vincoli di budget, non keyword da cercare nel catalogo.
-    .replace(/\b(?:ho|con|dispongo di|a disposizione(?: di)?)\s*(?:un budget(?:\s+di)?\s*)?(?:€\s*)?\d+(?:[.,]\d+)?\s*(?:euro|euros|eur)\b/gi, " ")
+    .replace(/\b(?:ho|con|dispongo di|a disposizione(?: di)?)\s*(?:un budget(?:\s+di)?\s*)?(?:€\s*)?\d+(?:[.,]\d+)?\s*(?:euro|euros|eur)\b(?:\s+(?:da spendere|per)\b)?/gi, " ")
     .replace(/(?:tra|da)\s*\d+(?:[.,]\d+)?\s*(?:e|a)\s*\d+(?:[.,]\d+)?/gi, " ")
     .replace(
       /(?:budget(?:\s+di)?|non oltre|al massimo|sotto|massimo|meno di|entro|fino a|sopra|minimo|piu di|più di|oltre)\s*(?:€\s*)?\d+(?:[.,]\d+)?/gi,
