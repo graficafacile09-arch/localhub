@@ -1197,7 +1197,11 @@ export async function chatConAssistente(
     try {
       const promptPianificazione = buildToolSelectionPrompt(storico, descriviIntento(analisi));
       const promptConFunzioni = promptPianificazione.split("\nESEMPI:")[0] +
-        "\n\nUsa esclusivamente le funzioni dichiarate. Per una ricerca chiama una o più funzioni di ricerca; per saluti o richieste senza ricerca usa answerDirectly. Non scrivere JSON o testo fuori dalle funzioni. Non inventare risultati: i dati verranno letti dai tool di InCittà.";
+        "\n\nREGOLE OBBLIGATORIE DI ROUTING: " +
+        "se l'utente chiede di cercare, trovare, mostrare o verificare prodotti disponibili, chiama searchProducts (e, se utile, searchStores/searchOffers). " +
+        "Per richieste di regali con budget o destinatario, cerca prima nel catalogo con searchProducts: non rispondere con consigli generici e non usare answerDirectly. " +
+        "answerDirectly è consentita solo per saluti, domande informative generali e richieste che non richiedono dati aggiornati della piattaforma. " +
+        "Usa esclusivamente le funzioni dichiarate. Non scrivere JSON o testo fuori dalle funzioni. Non inventare risultati: i dati devono provenire dai tool di InCittà.";
       const raw = await callGeminiText({
         systemPrompt: SYSTEM_PROMPT + "\n\nPianificatore: seleziona le funzioni più pertinenti. Gli argomenti devono essere ricavati dalla richiesta e dalla cronologia, senza inventare filtri.",
         userPrompt: promptConFunzioni,
@@ -1252,6 +1256,26 @@ export async function chatConAssistente(
 
   // Esecuzione dei tool scelti (dal piano o dall'LLM).
   const queryDefault = ultimaQuerySostanziale(storico);
+
+  // Guardrail: una richiesta esplicita di ricerca prodotti non può essere
+  // chiusa con answerDirectly né con un tool estraneo al catalogo.
+  const richiestaCatalogoEsplicita =
+    /\b(cerca|cercami|cerco|trovami|mostrami|fammi vedere|prodotti disponibili|nel catalogo|nei negozi di incittà)\b/i.test(domandaSemantica) &&
+    /\b(regalo|regali|prodotto|prodotti|orologio|scarpe|borsa|telefono|libro|cuffie|smartwatch)\b/i.test(domandaSemantica);
+  const haToolProdotti = invocazioni.some((t) => t.tool === "searchProducts" || t.tool === "searchAll");
+  if (richiestaCatalogoEsplicita && !haToolProdotti) {
+    const importo = domandaSemantica.match(/(?:budget(?:\s+di)?|massimo|fino a|entro|sotto)\s*(?:di\s*)?(?:€\s*)?(\d+(?:[.,]\d+)?)/i)
+      ?? domandaSemantica.match(/(\d+(?:[.,]\d+)?)\s*(?:euro|€)/i);
+    const maxPrice = importo ? Number(importo[1].replace(",", ".")) : undefined;
+    invocazioni = [{
+      tool: "searchProducts",
+      params: { query: domandaSemantica, limit: 8, ...(maxPrice !== undefined && Number.isFinite(maxPrice) ? { maxPrice } : {}) },
+    }];
+    directReply = null;
+    selezioneOk = true;
+    console.info("[pino-routing-guard]", JSON.stringify({ intent: analisiSemantica.intent, forcedTool: "searchProducts", budgetDetected: maxPrice ?? null }));
+  }
+
   if (invocazioni.length > 0) {
     const risultati = await Promise.all(
       invocazioni.map(async (t) => {
