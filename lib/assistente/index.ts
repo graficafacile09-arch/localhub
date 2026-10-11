@@ -1379,14 +1379,14 @@ export async function chatConAssistente(
   // dopo merge dei tool e recupero semantico. Nessun tool secondario può
   // reintrodurre articoli più cari nella risposta.
   const budgetDichiarato =
-    domanda.match(/(?:budget(?:\\s+di)?|massimo|fino a|entro|sotto|non oltre|al massimo)\\s*(?:di\\s*)?(?:€\\s*)?(\\d+(?:[.,]\\d+)?)/i)
-    ?? domanda.match(/(?:€\\s*)(\\d+(?:[.,]\\d+)?)/i)
-    ?? domanda.match(/(\\d+(?:[.,]\\d+)?)\\s*(?:euro|eur)\\b/i);
+    domanda.match(/(?:budget(?:\s+di)?|massimo|fino a|entro|sotto|non oltre|al massimo)\s*(?:di\s*)?(?:€\s*)?(\d+(?:[.,]\d+)?)/i)
+    ?? domanda.match(/(?:€\s*)(\d+(?:[.,]\d+)?)/i)
+    ?? domanda.match(/(\d+(?:[.,]\d+)?)\s*(?:euro|eur)\b/i);
   const limiteBudgetFinale = budgetDichiarato
     ? Number(budgetDichiarato[1].replace(",", "."))
     : undefined;
   const richiestaRegaloConBudget =
-    /\\b(regalo|regali|prodotto|prodotti|orologio|scarpe|borsa|telefono|libro|cuffie|smartwatch)\\b/i.test(domanda) &&
+    /\b(regalo|regali|prodotto|prodotti|orologio|scarpe|borsa|telefono|libro|cuffie|smartwatch)\b/i.test(domanda) &&
     limiteBudgetFinale !== undefined &&
     Number.isFinite(limiteBudgetFinale);
   if (richiestaRegaloConBudget) {
