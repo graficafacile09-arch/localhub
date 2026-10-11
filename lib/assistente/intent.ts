@@ -531,10 +531,20 @@ export function pianoIntento(analisi: PinoIntentAnalysis, query: string): PinoTo
       return [negozi(q)];
 
     case "gift":
-      // Per il regalo NON cerchiamo la frase intera: l'interprete la espande
-      // verso "prodotti tipici" e riempirebbe il risultato di botteghe
-      // alimentari. Le categorie del regalo bastano e restano pertinenti.
-      return [prodotti(q), ...analisi.terminiPrioritari.map(negozi)].slice(0, 7);
+      // Una richiesta regalo generica (es. "un regalo per una persona di 30 anni")
+      // non è una query prodotto: il testo intero non corrisponde ai nomi del catalogo
+      // e il gate di pertinenza scarta prodotti validi come gli orologi. Cerchiamo
+      // invece famiglie di prodotti regalo reali; il retrieval restituisce solo quelli
+      // effettivamente presenti e pertinenti nel catalogo. La query originale resta
+      // come tentativo aggiuntivo per richieste che nominano già un prodotto preciso.
+      const queryNormalizzata = q.toLocaleLowerCase("it-IT").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+      const regaloGenerico = /\b(regalo|regali|regalare|regalino|regalini|dono|doni|idea regalo|idee regalo)\b/.test(queryNormalizzata) &&
+        !/\b(orolog|gioiell|profum|borsa|portafogli|collan|braccial|anell|libro|libri|cuffie|smartwatch|penna|portachiavi)\w*\b/.test(queryNormalizzata);
+      const famiglieRegalo = ["orologio", "gioielli", "profumo", "borsa", "portafoglio", "accessori"];
+      const ricercheProdotti = regaloGenerico
+        ? [...famiglieRegalo.map(prodotti), prodotti(q)]
+        : [prodotti(q)];
+      return [...ricercheProdotti, ...analisi.terminiPrioritari.map(negozi)].slice(0, 12);
 
     case "drink": {
       // Come per il cibo: i prodotti si cercano SOLO su una bevanda concreta

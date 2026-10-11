@@ -37,8 +37,10 @@ import {
 } from "./prompt";
 import { extractJsonFromText } from "@/lib/product-assistant/providers/utils";
 import { callGeminiText } from "@/lib/ai/gemini-text";
+import { searchAttractions } from "./attrazioni";
+import { cercaConoscenzaPino } from "./conoscenza";
 import type { NegozioRicerca, ProdottoRicerca } from "@/lib/ricerca-ai";
-import { pianoIntentoLocale } from "./local-intents";
+import { normalizzaRichiesta, pianoIntentoLocale } from "./local-intents";
 import {
   analizzaIntentoPino,
   pianoIntento,
@@ -351,6 +353,35 @@ function pianoPredefinito(
       }
       return { directReply: null, tools, followUp };
     }
+  }
+
+  // Regali: una richiesta generica deve cercare prodotti reali, non soltanto negozi.
+  // Questo controllo precede il piano semantico perché un planner che sceglie
+  // solo "stores" farebbe perdere prodotti pertinenti come gli orologi.
+  if (analisi.intent === "gift") {
+    const testoRegalo = ultimo.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const prodottoEsplicito = /\b(orolog|gioiell|profum|borsa|portafogli|collan|braccial|anell|libro|libri|cuffie|smartwatch|penna|portachiavi|scarpe|telefono|smartphone|cioccolat|vino)\w*\b/.test(testoRegalo);
+    const regaloGenerico = /\b(regalo|regali|regalare|regalino|regalini|dono|doni)\b/.test(testoRegalo) && !prodottoEsplicito;
+    const soggetto = semantica?.query?.trim() || ultimo;
+    const vincoli: ToolParams = {
+      citta: semantica?.city ?? undefined,
+      esclusioni: semantica?.exclusions?.length ? semantica.exclusions : undefined,
+      maxPrice: semantica?.maxPrice ?? undefined,
+      minPrice: semantica?.minPrice ?? undefined,
+      limit: 4,
+    };
+    const famiglie = regaloGenerico
+      ? ["orologio", "anello", "gioiello", "profumo", "borsa", "accessori", "libro", "smartwatch", "portafogli", "cuffie", "scarpe", "cioccolato", "miele", "olio", "dolciumi", "prodotti tipici", "ciotaredda"]
+      : [soggetto];
+    const tools: ToolInvocation[] = famiglie.map((query) => ({
+      tool: "searchProducts",
+      params: { ...vincoli, query, limit: 4 },
+    }));
+    const negozi = regaloGenerico ? ["gioielleria", "accessori"] : [soggetto];
+    for (const query of negozi) {
+      tools.push({ tool: "searchStores", params: { query, citta: vincoli.citta, limit: 5 } });
+    }
+    return { directReply: null, tools };
   }
 
   // ── Pino Semantic Planner v2 ─────────────────────────────────────────────
@@ -821,7 +852,7 @@ async function recuperaAlternativeSemantiche(
   // pertinenti. Non viene presentato come prodotto trovato: è un'alternativa
   // concreta e trasparente.
   if (
-    (piano.surface === "stores" || piano.surface === "both" || analisi.intent === "product") &&
+    (piano.surface === "stores" || piano.surface === "both" || analisi.intent === "product" || analisi.intent === "gift") &&
     negoziTrovati.length < 6
   ) {
     for (const q of candidati.slice(0, 3)) {
@@ -987,6 +1018,31 @@ export async function chatConAssistente(
   // (la storia è già troncata a 300 caratteri per messaggio).
   const domanda = (ultimo && ultimo.role === "user" ? ultimo.content : "").slice(0, 500);
 
+  // Prima le domande sul funzionamento della piattaforma e sulle responsabilità:
+  // non devono mai essere intercettate da corrispondenze accidentali nella guida turistica.
+  const conoscenza = cercaConoscenzaPino(domanda);
+  if (conoscenza) {
+    return { risposta: conoscenza.risposta, negozi: [], prodotti: [], processingMs: Date.now() - inizio, source: "assistente", intent: "generic" };
+  }
+
+  // Guida turistica InCittà: consultata dopo la conoscenza del sito.
+  // L'indice condivide i dati con /attrazioni e risponde solo se la domanda
+  // ha una corrispondenza turistica pertinente.
+  const luoghi = searchAttractions(domanda, 6);
+  if (luoghi.length > 0) {
+    const elenco = luoghi.map((luogo) => {
+      const maps = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(luogo.queryMaps);
+      return `- **${luogo.nome}** — ${luogo.tipo}. ${luogo.descrizione} [Come arrivare / Google Maps](${maps})${luogo.url ? ` · [Sito di riferimento](${luogo.url})` : ""}`;
+    }).join("\n");
+    return {
+      risposta: `Ecco cosa ho trovato nella guida locale di InCittà:\n\n${elenco}\n\nPer orari, aperture e date degli eventi, verifica sempre le informazioni aggiornate.`,
+      negozi: [],
+      prodotti: [],
+      processingMs: Date.now() - inizio,
+      source: "assistente",
+    };
+  }
+
   // Pino Intent Layer v1: la classificazione avviene PRIMA di ogni ricerca e
   // guida la scelta dei tool, le priorità di recupero e il messaggio finale.
   const analisi = analizzaIntentoPino(domanda);
@@ -1010,8 +1066,15 @@ export async function chatConAssistente(
       ? Promise.resolve([])
       : recuperaMemoria(domandaSemantica);
   const memoria = await memoriaPromise;
+  const testoPerRegalo = normalizzaRichiesta(domandaSemantica);
+  const regaloGenericoSenzaVincoli =
+    analisiSemantica.intent === "gift" &&
+    /\b(regalo|regali|regalare|regalino|regalini|dono|doni)\b/.test(testoPerRegalo) &&
+    !/\b(orolog|gioiell|profum|borsa|portafogli|collan|braccial|anell|libro|libri|cuffie|smartwatch|penna|portachiavi|scarpe|telefono|smartphone|cioccolat|vino)\w*\b/.test(testoPerRegalo) &&
+    !/\b(sotto|sopra|massimo|minimo|budget|tra|entro|euro|non|senza|aperto|aperta|ora|adesso)\b|€|\b(a|in)\s+[a-zà-ù]+/.test(testoPerRegalo);
   const attivaPlannerSemantico =
     !followUpBreve &&
+    !regaloGenericoSenzaVincoli &&
     (
       usaFastPathSemantico(domandaSemantica, analisiSemantica) ||
       domandaSemantica !== domanda ||
@@ -1104,7 +1167,31 @@ export async function chatConAssistente(
   const queryDefault = ultimaQuerySostanziale(storico);
   if (invocazioni.length > 0) {
     const risultati = await Promise.all(
-      invocazioni.map((t) => eseguiTool(t.tool as string, t.params ?? {}, queryDefault))
+      invocazioni.map(async (t) => {
+        const toolStartedAt = Date.now();
+        try {
+          const result = await eseguiTool(t.tool as string, t.params ?? {}, queryDefault);
+          console.info("[pino-retrieval]", JSON.stringify({
+            tool: t.tool,
+            durationMs: Date.now() - toolStartedAt,
+            stores: result.negozi.length,
+            products: result.prodotti.length,
+            offers: result.offerte.length,
+            events: result.eventi.length,
+            categories: result.categorie.length,
+            pharmacies: result.farmacie.length,
+            weather: result.meteo ? 1 : 0,
+          }));
+          return result;
+        } catch (error) {
+          console.warn("[pino-retrieval-error]", JSON.stringify({
+            tool: t.tool,
+            durationMs: Date.now() - toolStartedAt,
+            error: error instanceof Error ? error.name : "unknown",
+          }));
+          throw error;
+        }
+      })
     );
     // Merge con deduplica per id: più tool possono restituire lo stesso
     // negozio/prodotto (es. ricerca cibo multi-termine).
@@ -1309,11 +1396,20 @@ export async function chatConAssistente(
   // Evitiamo una seconda chiamata Gemini solo per riscrivere dati che abbiamo
   // già verificato: così Pino mostra i risultati molto prima.
   const rispostaBase = fallbackTestuale(risultati, notaVincolo, analisi.intent, semantica);
+  const notaRegaloPocoDiversificato =
+    regaloGenericoSenzaVincoli &&
+    prodotti.length > 0 &&
+    prodotti.every((p) => /orolog/i.test(`${p.nome} ${p.categoria ?? ""}`))
+      ? "Nel catalogo disponibile, i risultati pertinenti che ho trovato si concentrano sugli orologi. Non voglio presentarli come idee regalo diverse: se mi indichi un budget o il tipo di regalo che preferisci, posso restringere meglio la ricerca."
+      : "";
+  const rispostaConNotaRegalo = notaRegaloPocoDiversificato
+    ? `${notaRegaloPocoDiversificato}\n\n${rispostaBase}`
+    : rispostaBase;
   const risposta = notaRecupero
     ? `${notaRecupero}
 
-${rispostaBase}`
-    : rispostaBase;
+${rispostaConNotaRegalo}`
+    : rispostaConNotaRegalo;
 
   return {
     risposta,
