@@ -173,6 +173,20 @@ test.describe("Pino — budget separato dalla query di ricerca", () => {
     expect(p.query).not.toMatch(/euro|eur|budget|\b30\b/);
   });
 
+  test("'voglio un orologio, ho 100 euro' interpreta l'importo come budget e cerca solo il soggetto", async () => {
+    const p = await piano("voglio un orologio, ho 100 euro");
+    expect(p.maxPrice).toBe(100);
+    expect(p.query).toMatch(/orologio/i);
+    expect(p.query).not.toMatch(/euro|eur|budget|\\b100\\b|\\bho\\b/i);
+  });
+
+  test("'ho 100 euro per un orologio' mantiene il soggetto e separa il budget", async () => {
+    const p = await piano("ho 100 euro per un orologio");
+    expect(p.maxPrice).toBe(100);
+    expect(p.query).toMatch(/orologio/i);
+    expect(p.query).not.toMatch(/euro|eur|budget|\\b100\\b|\\bho\\b/i);
+  });
+
   test("il range di prezzo non lascia numeri o valuta nella query", async () => {
     const p = await piano("scarpe tra 50 e 120 euro");
     expect(p.minPrice).toBe(50);
