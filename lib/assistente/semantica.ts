@@ -354,6 +354,10 @@ export function arricchisciRichiestaConContesto(
   const rimuoviPrezzo = (testo: string): string =>
     testo
       .replace(RE_CLAUSOLA_PREZZO, " ")
+      // La valuta resta attaccata al numero ("sotto 50 euro"): va rimossa anche
+      // da sola, altrimenti entra nella query di retrieval.
+      .replace(/\b(?:euro|euros|eur)\b/gi, " ")
+      .replace(/€/g, " ")
       .replace(/\\s+/g, " ")
       .trim();
   const rimuoviCitta = (testo: string, citta: string | null): string => {
@@ -500,9 +504,21 @@ function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): Pi
   // a cercare scarpe da uomo eleganti, non solo "scarpe".
   let termine = q
     .replace(/(?:tra|da)\s*\d+(?:[.,]\d+)?\s*(?:e|a)\s*\d+(?:[.,]\d+)?/gi, " ")
-    .replace(/(?:sotto|massimo|meno di|entro|fino a|sopra|minimo|piu di|più di|oltre)\s*(?:€\s*)?\d+(?:[.,]\d+)?/gi, " ")
+    .replace(
+      /(?:budget(?:\s+di)?|non oltre|al massimo|sotto|massimo|meno di|entro|fino a|sopra|minimo|piu di|più di|oltre)\s*(?:€\s*)?\d+(?:[.,]\d+)?/gi,
+      " "
+    )
+    // La valuta resta attaccata al numero ("sotto 30 euro"): va rimossa anche
+    // da sola, altrimenti entra nella query di retrieval e il gate di
+    // pertinenza dei prodotti — che richiede TUTTE le parole — azzera i
+    // risultati ("orologio euro" ⇒ 0 prodotti invece di 4).
+    .replace(/\b(?:euro|euros|eur)\b/gi, " ")
+    .replace(/€/g, " ")
     .replace(/\b(?:aperto|aperta|aperti|aperte)\s+(?:ora|adesso)\b/gi, " ")
-    .replace(/\b(?:ora|adesso)\b/gi, " ");
+    .replace(/\b(?:ora|adesso)\b/gi, " ")
+    // Punteggiatura residua ("regalo,"): non è una keyword di catalogo e
+    // sporcherebbe la query mostrata all'utente.
+    .replace(/[,;:]+/g, " ");
 
   for (const esclusione of esclusioni) {
     const escaped = esclusione.replace(/[.*+?^$()|[\]\\]/g, "\\$&");

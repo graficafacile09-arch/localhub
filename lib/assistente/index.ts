@@ -26,6 +26,8 @@ import {
   getWeatherCastrovillari,
   searchPharmacies,
   orariPerNegozi,
+  ordinaProdottiPerBudget,
+  prezzoNumerico,
   type ToolParams,
 } from "./tools";
 import {
@@ -499,7 +501,10 @@ function aRisultatiRecuperati(
 }
 
 /** Sezioni testuali dei risultati (condivise tra risposta normale e follow-up). */
-function sezioniRisultati(risultati: RisultatiRecuperati): string[] {
+function sezioniRisultati(
+  risultati: RisultatiRecuperati,
+  budget?: number | null
+): string[] {
   const sezioni: string[] = [];
 
   if (risultati.prodotti.length > 0) {
@@ -507,7 +512,12 @@ function sezioniRisultati(risultati: RisultatiRecuperati): string[] {
       "**Prodotti trovati**\n" +
         risultati.prodotti
           .slice(0, 5)
-          .map((p) => `- **${p.nome}** — €${p.prezzo} (${p.negozio_nome || "negozio sconosciuto"})`)
+          .map((p) => {
+            const prezzo = prezzoNumerico(p.prezzo);
+            const fuoriBudget =
+              budget != null && prezzo != null && prezzo > 0 && prezzo > budget;
+            return `- **${p.nome}** — €${p.prezzo} (${p.negozio_nome || "negozio sconosciuto"})${fuoriBudget ? " — **oltre il budget**" : ""}`;
+          })
           .join("\n")
     );
   }
@@ -588,9 +598,10 @@ function fallbackTestuale(
   risultati: RisultatiRecuperati,
   notaVincolo = "",
   intent?: PinoIntent,
-  semantica?: PinoSemanticPlan
+  semantica?: PinoSemanticPlan,
+  budget?: number | null
 ): string {
-  const sezioni = sezioniRisultati(risultati);
+  const sezioni = sezioniRisultati(risultati, budget);
   const totale = contaRisultati(risultati);
   const criteri = descriviCriteriRicerca(semantica);
 
@@ -615,7 +626,21 @@ function fallbackTestuale(
   let introduzione = criteri ? `${criteri}\n\n` : "";
   if (risultati.prodotti.length > 0) {
     const n = risultati.prodotti.length;
-    introduzione += `Ho trovato ${n} ${n === 1 ? "prodotto" : "prodotti"} che ${n === 1 ? "corrisponde" : "corrispondono"} alla tua ricerca.\n\n`;
+    if (budget != null && Number.isFinite(budget)) {
+      const entroBudget = risultati.prodotti.filter((p) => {
+        const prezzo = prezzoNumerico(p.prezzo);
+        return prezzo != null && prezzo > 0 && prezzo <= budget;
+      }).length;
+      if (entroBudget === 0) {
+        introduzione += `Nessun prodotto rientra nel budget di €${budget}: ecco le alternative più vicine, tutte oltre la cifra indicata.\n\n`;
+      } else if (entroBudget < n) {
+        introduzione += `Ho trovato ${n} ${n === 1 ? "prodotto" : "prodotti"}: prima quelli entro il budget di €${budget}, poi le alternative più care.\n\n`;
+      } else {
+        introduzione += `Ho trovato ${n} ${n === 1 ? "prodotto" : "prodotti"} entro il budget di €${budget}.\n\n`;
+      }
+    } else {
+      introduzione += `Ho trovato ${n} ${n === 1 ? "prodotto" : "prodotti"} che ${n === 1 ? "corrisponde" : "corrispondono"} alla tua ricerca.\n\n`;
+    }
   } else if (soloNegozi) {
     introduzione +=
       intent === "service"
@@ -1103,9 +1128,11 @@ export async function chatConAssistente(
   const queryDefault = ultimaQuerySostanziale(storico);
 
   // Guardrail del budget: il planner non può omettere il limite dichiarato.
+  // Basta il SOGGETTO di catalogo (regalo o prodotto concreto): il budget deve
+  // sempre vincolare la ricerca, anche quando la frase non contiene un verbo
+  // esplicito ("vorrei un regalo per mia moglie, budget 30").
   const richiestaCatalogoEsplicita =
-    /\b(cerca|cercami|cerco|trovami|mostrami|fammi vedere|prodotti disponibili|nel catalogo|nei negozi di incittà)\b/i.test(domandaSemantica) &&
-    /\b(regalo|regali|prodotto|prodotti|orologio|scarpe|borsa|telefono|libro|cuffie|smartwatch)\b/i.test(domandaSemantica);
+    /\b(regalo|regali|regalare|idea regalo|idee regalo|prodotto|prodotti|orologio|orologi|scarpe|borsa|borse|telefono|telefoni|libro|libri|cuffie|smartwatch|gioiello|gioielli|anello|anelli|collana|collane|bracciale|bracciali|profumo|profumi|portafoglio|portafogli|cintura|cinture|occhiali|giocattolo|giocattoli|tablet|computer|auricolari|altoparlante|speaker)\b/i.test(domandaSemantica);
   const importoCatalogo = domandaSemantica.match(/(?:budget(?:\s+di)?|massimo|fino a|entro|sotto|non oltre|al massimo)\s*(?:di\s*)?(?:€\s*)?(\d+(?:[.,]\d+)?)/i)
     ?? domandaSemantica.match(/(?:€\s*)(\d+(?:[.,]\d+)?)/i)
     ?? domandaSemantica.match(/(\d+(?:[.,]\d+)?)\s*(?:euro|eur)\b/i);
@@ -1118,7 +1145,7 @@ export async function chatConAssistente(
     // In questo caso cerchiamo categorie regalo comuni separatamente, sempre
     // applicando il budget dentro ogni ricerca e poi il guardrail finale.
     const regaloGenerico =
-      /\bregal[oi]\b/i.test(domandaSemantica) &&
+      /\bregal(?:o|i|are|ino|ini|etto|etti)\b|\bidea regalo\b|\bbombonier/i.test(domandaSemantica) &&
       !/\b(orologio|scarpe|borsa|telefono|libro|cuffie|smartwatch|anello|collana|bracciale|profumo|portafoglio|cintura|occhiali|giocattolo|videogioco|tablet|computer|auricolari|altoparlante|speaker|cassa bluetooth)\b/i.test(domandaSemantica);
     if (regaloGenerico) {
       const categorieRegalo = [
@@ -1137,9 +1164,12 @@ export async function chatConAssistente(
       }));
     } else {
       if (!haToolProdotti) {
+        // Usa la query già ripulita dal planner (senza prezzo/valuta): la frase
+        // naturale intera non è una keyword di catalogo.
+        const queryCatalogo = semantica?.query?.trim() || domandaSemantica;
         invocazioni = [{
           tool: "searchProducts",
-          params: { query: domandaSemantica, limit: 8, maxPrice: maxPriceCatalogo },
+          params: { query: queryCatalogo, limit: 8, maxPrice: maxPriceCatalogo },
         }];
         directReply = null;
         selezioneOk = true;
@@ -1217,24 +1247,19 @@ export async function chatConAssistente(
     ?? domandaSemantica.match(/(?:€\s*)(\d+(?:[.,]\d+)?)/i)
     ?? domandaSemantica.match(/(\d+(?:[.,]\d+)?)\s*(?:euro|eur)\b/i);
   const budgetFinale = budgetFinaleMatch ? Number(budgetFinaleMatch[1].replace(",", ".")) : undefined;
-  const richiestaRegaloConBudget =
-    /\b(regalo|regali|prodotto|prodotti|orologio|scarpe|borsa|telefono|libro|cuffie|smartwatch)\b/i.test(domandaSemantica) &&
-    budgetFinale !== undefined && Number.isFinite(budgetFinale);
-  // Il budget non è più un filtro bloccante: conserva le alternative e
-  // ordina prima quelle entro la soglia, poi tutte le altre per prezzo crescente.
-  if (richiestaRegaloConBudget) {
-    prodotti = [...prodotti].sort((a, b) => {
-      const prezzoA = Number(a.prezzo);
-      const prezzoB = Number(b.prezzo);
-      const dentroA = Number.isFinite(prezzoA) && prezzoA > 0 && prezzoA <= budgetFinale!;
-      const dentroB = Number.isFinite(prezzoB) && prezzoB > 0 && prezzoB <= budgetFinale!;
-      if (dentroA !== dentroB) return dentroA ? -1 : 1;
-      return prezzoA - prezzoB;
-    });
+  // Il budget è una PREFERENZA: qualunque importo esplicito ordina i risultati
+  // (prima quelli entro la soglia, poi le alternative), senza eliminarne alcuno.
+  const budgetPreferenza =
+    budgetFinale !== undefined && Number.isFinite(budgetFinale) ? budgetFinale : null;
+  if (budgetPreferenza != null && prodotti.length > 0) {
+    prodotti = ordinaProdottiPerBudget(prodotti, { maxPrice: budgetPreferenza });
     console.info("[pino-budget-soft-order]", JSON.stringify({
-      budget: budgetFinale,
+      budget: budgetPreferenza,
       risultati: prodotti.length,
-      entroBudget: prodotti.filter((p) => Number(p.prezzo) <= budgetFinale!).length,
+      entroBudget: prodotti.filter((p) => {
+        const prezzo = prezzoNumerico(p.prezzo);
+        return prezzo != null && prezzo > 0 && prezzo <= budgetPreferenza;
+      }).length,
     }));
   }
 
@@ -1365,15 +1390,19 @@ export async function chatConAssistente(
 
   // Il prezzo è una preferenza: privilegia le opzioni entro budget senza
   // vietare alternative utili quando il catalogo non offre corrispondenze.
-  const vincoliPrezzo = invocazioni
-    .map((t) => t.params)
-    .filter((p): p is ToolParams => !!p && (p.maxPrice != null || p.minPrice != null))
-    .map((p) => {
-      const pezzi: string[] = [];
-      if (p.minPrice != null) pezzi.push(`da €${p.minPrice}`);
-      if (p.maxPrice != null) pezzi.push(`budget indicativo €${p.maxPrice}`);
-      return pezzi.join(" e ");
-    });
+  const vincoliPrezzo = Array.from(
+    new Set(
+      invocazioni
+        .map((t) => t.params)
+        .filter((p): p is ToolParams => !!p && (p.maxPrice != null || p.minPrice != null))
+        .map((p) => {
+          const pezzi: string[] = [];
+          if (p.minPrice != null) pezzi.push(`da €${p.minPrice}`);
+          if (p.maxPrice != null) pezzi.push(`budget indicativo €${p.maxPrice}`);
+          return pezzi.join(" e ");
+        })
+    )
+  );
   const notaVincolo =
     vincoliPrezzo.length > 0
       ? `Preferenza di prezzo (${vincoliPrezzo.join("; ")}): mostra prima le opzioni nella fascia indicata, poi eventuali alternative più costose, con prezzi chiari.`
@@ -1386,7 +1415,13 @@ export async function chatConAssistente(
   // 6) Risposta rapida grounded: i risultati sono già stati recuperati dai tool.
   // Evitiamo una seconda chiamata Gemini solo per riscrivere dati che abbiamo
   // già verificato: così Pino mostra i risultati molto prima.
-  const rispostaBase = fallbackTestuale(risultati, notaVincolo, analisi.intent, semantica);
+  const rispostaBase = fallbackTestuale(
+    risultati,
+    notaVincolo,
+    analisi.intent,
+    semantica,
+    budgetPreferenza
+  );
   const risposta = notaRecupero
     ? `${notaRecupero}
 

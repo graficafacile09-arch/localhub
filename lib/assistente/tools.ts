@@ -526,10 +526,27 @@ function prodottoPertinente(
   // Anche qui i termini CORTI devono essere parole intere: altrimenti "bar"
   // matcherebbe "barattolo" nella descrizione di un prodotto qualsiasi.
   const token = estraiToken(campi);
-  if (termini.every((t) => (t.length < 4 ? token.includes(t) : campi.includes(t)))) {
+  if (
+    termini.every((t) =>
+      t.length < 4 ? token.includes(t) : campi.includes(t) || tokenCompatibile(t, token)
+    )
+  ) {
     return true;
   }
   return concetti.some((c) => campi.includes(c));
+}
+
+// Un termine è compatibile con il prodotto anche quando differisce solo per la
+// vocale finale (singolare/plurale): "accessorio" trova la categoria
+// "Accessori", "orologio" trova "Orologi". Non è uno stemmer: si applica solo a
+// termini ≥ 4 caratteri, quindi non indebolisce la regola dei termini corti.
+function tokenCompatibile(termine: string, token: string[]): boolean {
+  if (termine.length < 4) return false;
+  const radiceTermine = termine.replace(/[aeiou]+$/i, "");
+  if (radiceTermine.length < 4) return false;
+  return token.some(
+    (t) => t.length >= 4 && t.replace(/[aeiou]+$/i, "") === radiceTermine
+  );
 }
 
 function punteggioProdottoPino(
@@ -642,6 +659,72 @@ async function filtraProdottiPerVincoliNegozio(
   return filtrati;
 }
 
+/**
+ * Converte un prezzo in numero. Accetta numeri e stringhe, anche con valuta o
+ * virgola decimale ("29,90"): i dati arrivano dal DB e non si assume un unico
+ * formato. Restituisce null quando il prezzo non è un numero reale.
+ */
+export function prezzoNumerico(value: unknown): number | null {
+  if (typeof value === "number") return Number.isFinite(value) ? value : null;
+  if (typeof value === "string") {
+    const pulito = value.trim().replace(/€/g, "").replace(/\s+/g, "").replace(",", ".");
+    if (!pulito) return null;
+    const numero = Number(pulito);
+    return Number.isFinite(numero) ? numero : null;
+  }
+  return null;
+}
+
+/**
+ * Ordina i prodotti secondo la PREFERENZA di prezzo. Non elimina nulla: il
+ * budget non è un filtro. Prima i prodotti realmente entro la fascia richiesta
+ * (dal più economico al più caro), poi le alternative fuori fascia (sempre dal
+ * più economico al più caro); i prodotti senza prezzo valido restano in coda.
+ */
+export function ordinaProdottiPerBudget(
+  prodotti: ProdottoRicerca[],
+  opts: { maxPrice?: number | null; minPrice?: number | null } = {},
+  confrontoSecondario?: (a: ProdottoRicerca, b: ProdottoRicerca) => number
+): ProdottoRicerca[] {
+  const maxPrice =
+    opts.maxPrice != null && Number.isFinite(Number(opts.maxPrice))
+      ? Number(opts.maxPrice)
+      : null;
+  const minPrice =
+    opts.minPrice != null && Number.isFinite(Number(opts.minPrice))
+      ? Number(opts.minPrice)
+      : null;
+
+  const dentroFascia = (p: ProdottoRicerca): boolean => {
+    const prezzo = prezzoNumerico(p.prezzo);
+    if (prezzo == null || prezzo <= 0) return false;
+    if (maxPrice != null && prezzo > maxPrice) return false;
+    if (minPrice != null && prezzo < minPrice) return false;
+    return true;
+  };
+  const prezzoOrdinabile = (p: ProdottoRicerca): number | null => {
+    const prezzo = prezzoNumerico(p.prezzo);
+    return prezzo != null && prezzo > 0 ? prezzo : null;
+  };
+
+  return [...prodotti].sort((a, b) => {
+    const dentroA = dentroFascia(a);
+    const dentroB = dentroFascia(b);
+    if (dentroA !== dentroB) return dentroA ? -1 : 1;
+
+    const prezzoA = prezzoOrdinabile(a);
+    const prezzoB = prezzoOrdinabile(b);
+    // I prodotti senza prezzo valido non appartengono a nessuna fascia: in coda.
+    if (prezzoA == null && prezzoB == null)
+      return confrontoSecondario ? confrontoSecondario(a, b) : 0;
+    if (prezzoA == null) return 1;
+    if (prezzoB == null) return -1;
+    if (prezzoA !== prezzoB) return prezzoA - prezzoB;
+
+    return confrontoSecondario ? confrontoSecondario(a, b) : 0;
+  });
+}
+
 export async function searchProducts(
   query: string,
   opts: ToolParams = {}
@@ -696,26 +779,13 @@ export async function searchProducts(
   // Il prezzo è una preferenza di ordinamento, non un filtro che azzera la
   // ricerca: prima mostriamo gli articoli compatibili con la fascia richiesta,
   // poi le alternative fuori fascia, sempre dal meno caro al più caro.
-  const scelti = candidati;
-
-  return scelti
-    .sort((a, b) => {
-      const prezzoA = Number(a.prezzo);
-      const prezzoB = Number(b.prezzo);
-      const dentroA =
-        (maxPrice == null || !Number.isFinite(maxPrice) || prezzoA <= maxPrice) &&
-        (minPrice == null || !Number.isFinite(minPrice) || prezzoA >= minPrice);
-      const dentroB =
-        (maxPrice == null || !Number.isFinite(maxPrice) || prezzoB <= maxPrice) &&
-        (minPrice == null || !Number.isFinite(minPrice) || prezzoB >= minPrice);
-      if (dentroA !== dentroB) return dentroA ? -1 : 1;
-      // All'interno di ciascun gruppo, ordine crescente di prezzo.
-      if (prezzoA !== prezzoB) return prezzoA - prezzoB;
-      const scoreA = punteggioProdottoPino(a, q, terminiOriginali);
-      const scoreB = punteggioProdottoPino(b, q, terminiOriginali);
-      return scoreB - scoreA;
-    })
-    .slice(0, limita(opts.limit, 8, 20));
+  return ordinaProdottiPerBudget(
+    candidati,
+    { maxPrice, minPrice },
+    (a, b) =>
+      punteggioProdottoPino(b, q, terminiOriginali) -
+      punteggioProdottoPino(a, q, terminiOriginali)
+  ).slice(0, limita(opts.limit, 8, 20));
 }
 
 // ─── searchOffers ────────────────────────────────────────────────────────────
