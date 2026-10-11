@@ -675,6 +675,12 @@ export function prezzoNumerico(value: unknown): number | null {
   return null;
 }
 
+/** Prezzo valido per il catalogo: gestisce anche stringhe italiane come "99,00". */
+export function prodottoHaPrezzoReale(value: unknown): boolean {
+  const prezzo = prezzoNumerico(value);
+  return prezzo != null && prezzo > 0;
+}
+
 /**
  * Ordina i prodotti secondo la PREFERENZA di prezzo. Non elimina nulla: il
  * budget non è un filtro. Prima i prodotti realmente entro la fascia richiesta
@@ -759,10 +765,7 @@ export async function searchProducts(
   const minPrice = opts.minPrice != null ? Number(opts.minPrice) : null;
 
   // Escludiamo i prodotti senza prezzo reale (es. prezzo 0 da dati demo).
-  const conPrezzo = filtrate.filter((p) => {
-    const prezzo = Number(p.prezzo);
-    return Number.isFinite(prezzo) && prezzo > 0;
-  });
+  const conPrezzo = filtrate.filter((p) => prodottoHaPrezzoReale(p.prezzo));
 
   let candidati = conPrezzo;
   if (opts?.escludiNomi?.length) {
