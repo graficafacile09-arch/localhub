@@ -94,7 +94,7 @@ export default async function Home() {
           fill
           sizes="100vw"
           priority
-          className="absolute inset-0 h-full w-full object-cover object-center"
+          className="absolute inset-0 h-full w-full object-cover object-center md:object-[center_40%]"
         />
 
         {/* Gradiente leggero solo nella zona del testo: la parte bassa resta luminosa. */}
