@@ -415,7 +415,6 @@ export default async function RicercaPage({
               />
 
             </div>
-          </div>
           </>
             ) : richiestaPino ? (
               <div className="py-12 text-center">
