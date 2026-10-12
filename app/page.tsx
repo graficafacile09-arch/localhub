@@ -86,7 +86,7 @@ export default async function Home() {
       {/* ═══════════════════════════════════════════════════════════════════
           HERO — fotografica, messaggio immediato, ricerca + AI
           ═══════════════════════════════════════════════════════════════════ */}
-      <section className="relative overflow-hidden rounded-b-[2rem] bg-slate-900 shadow-lg shadow-slate-900/10 sm:rounded-b-[2.5rem]">
+      <section className="relative overflow-hidden rounded-b-[2rem] bg-slate-900 shadow-lg shadow-slate-900/10 sm:rounded-b-[2.5rem] md:min-h-[520px] lg:min-h-[600px]">
         {/* La foto copre tutta la HERO e non ne determina l'altezza. */}
         <Image
           src="/hero-coppia-castrovillari.webp"
@@ -103,7 +103,7 @@ export default async function Home() {
           className="absolute inset-0 bg-gradient-to-b from-slate-950/60 via-slate-950/25 to-transparent"
         />
 
-        <div className="relative z-10 mx-auto max-w-7xl px-4 py-10 text-left md:px-6 md:py-16">
+        <div className="relative z-10 mx-auto max-w-7xl px-4 py-10 text-left md:flex md:min-h-[520px] md:w-full md:items-center md:px-6 md:py-16 lg:min-h-[600px]">
           <div>
             <h1 className="mt-4 max-w-2xl text-3xl font-black leading-tight tracking-tight text-white drop-shadow-lg md:mt-6 md:text-5xl">
               Tutto quello che cerchi... <span className="text-yellow-300">è già</span> nella tua città.
