@@ -157,7 +157,9 @@ export default function ProductVariantSelector({
     : null;
 
   return (
-    <div className="mt-4">
+    <div className="mt-4 md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:items-start md:gap-8 lg:gap-10">
+      {/* Desktop: immagine a sinistra; dettagli, varianti e acquisto a destra. Mobile invariato. */}
+      <div className="min-w-0">
       {/* Immagine (variante se ha immagine propria, altrimenti prodotto padre) */}
       <div className="overflow-hidden rounded-xl">
         <div className="relative aspect-square max-h-[400px] overflow-hidden bg-slate-100">
@@ -169,8 +171,10 @@ export default function ProductVariantSelector({
           />
         </div>
       </div>
+      </div>
 
-      <div className="mt-4">
+      <div className="min-w-0">
+      <div className="mt-4 md:mt-0">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
             <h1 className="text-xl font-black tracking-tight text-slate-900">{nome}</h1>
@@ -324,6 +328,7 @@ export default function ProductVariantSelector({
             />
           </>
         )}
+      </div>
       </div>
     </div>
   );
