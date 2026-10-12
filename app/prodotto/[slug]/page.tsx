@@ -165,7 +165,7 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
     <main className="min-h-screen bg-slate-50">
       <Header />
 
-      <div className="mx-auto max-w-5xl px-3 py-3 sm:px-5">
+      <div className="mx-auto max-w-7xl px-3 py-3 sm:px-5">
         {/* Breadcrumb */}
         <nav aria-label="Breadcrumb" className="mb-3 flex items-center gap-1.5 text-[11px] text-slate-400">
           <Link href="/" className="transition hover:text-blue-600">Home</Link>
@@ -226,16 +226,20 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
           </>
         ) : (
           <>
-        {/* Photo / galleria */}
+        <div className="md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:items-start md:gap-8 lg:gap-10">
+        {/* Desktop: foto a sinistra, informazioni e acquisto a destra. Su mobile resta impilato come prima. */}
+        <div className="min-w-0">
         <ProductGallery
           immagini={immaginiGalleria}
           fallbackUrl={imageUrl}
           altText={"alt_text_immagine" in prodotto ? (prodotto.alt_text_immagine as string | null) : null}
           nomeProdotto={prodotto.nome as string}
         />
+        </div>
 
+        <div className="min-w-0">
         {/* Product info */}
-        <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm ring-1 ring-slate-100 sm:p-5">
+        <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm ring-1 ring-slate-100 sm:p-5 md:mt-0">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0 flex-1">
               <h1 className="text-3xl font-black tracking-tight text-slate-900">
@@ -349,6 +353,8 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
             negozioId={String(negozio?.id ?? "")}
           />
           </div>
+        </div>
+        </div>
           </>
         )}
 
