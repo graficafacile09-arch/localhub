@@ -126,7 +126,7 @@ export default function HomepageProductCarousel({
   return (
     <div>
       <div className="relative md:px-10">
-        {canScrollLeft && (
+        {prodotti.length > 4 && (
           <button
             type="button"
             onClick={() => scorri("sinistra")}
