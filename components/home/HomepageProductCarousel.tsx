@@ -71,11 +71,13 @@ export default function HomepageProductCarousel({
     aggiornaFrecce();
   }, [aggiornaFrecce, visibili.length]);
 
-  const timerNormalizzazioneRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // window.setTimeout restituisce un numero nel DOM browser; il tipo Node
+  // ReturnType<typeof setTimeout> non è compatibile con questa assegnazione.
+  const timerNormalizzazioneRef = useRef<number | null>(null);
 
   const gestisciScroll = useCallback(() => {
     aggiornaFrecce();
-    if (timerNormalizzazioneRef.current) {
+    if (timerNormalizzazioneRef.current !== null) {
       window.clearTimeout(timerNormalizzazioneRef.current);
     }
     timerNormalizzazioneRef.current = window.setTimeout(normalizzaPosizione, 250);
@@ -104,7 +106,7 @@ export default function HomepageProductCarousel({
       window.cancelAnimationFrame(frame);
       el.removeEventListener("scroll", gestisciScroll);
       window.removeEventListener("resize", normalizzaPosizione);
-      if (timerNormalizzazioneRef.current) {
+      if (timerNormalizzazioneRef.current !== null) {
         window.clearTimeout(timerNormalizzazioneRef.current);
         timerNormalizzazioneRef.current = null;
       }
