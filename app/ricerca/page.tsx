@@ -228,15 +228,22 @@ export default async function RicercaPage({
             </h1>
             {ricercaAttiva ? (
           <>
-            <div className="lg:grid lg:grid-cols-[250px,1fr] lg:gap-5">
-            {/* Sidebar filtri (desktop) */}
-            <aside className="hidden lg:block">
-              <div className="sticky top-4 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
-                <SearchFilters current={filtriCorrenti} disponibili={disponibili} />
-              </div>
-            </aside>
-
             <div className="min-w-0">
+              {/* Pannello filtri (desktop): compatto e chiuso per dare priorità ai risultati */}
+              <details className="mb-3 hidden rounded-xl border border-slate-200 bg-white shadow-sm lg:block">
+                <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-xs font-bold text-slate-700 [&::-webkit-details-marker]:hidden">
+                  <SlidersHorizontal className="h-3.5 w-3.5 text-blue-600" />
+                  Filtri prodotto
+                  <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-black text-blue-600">
+                    {[categoria, sottocategoria, marca, colore, prezzoMin !== undefined ? "min" : null, prezzoMax !== undefined ? "max" : null, soloDisponibili ? "disp" : null].filter(Boolean).length}
+                  </span>
+                  <span className="ml-auto text-[10px] font-medium text-slate-500">Mostra / nascondi</span>
+                </summary>
+                <div className="border-t border-slate-100 p-3">
+                  <SearchFilters current={filtriCorrenti} disponibili={disponibili} desktopCompact />
+                </div>
+              </details>
+
               {/* Pannello filtri (mobile) */}
               <details className="mb-3 rounded-xl border border-slate-200 bg-white shadow-sm lg:hidden">
                 <summary className="flex cursor-pointer list-none items-center gap-1.5 px-3 py-2.5 text-xs font-bold text-slate-700 [&::-webkit-details-marker]:hidden">
