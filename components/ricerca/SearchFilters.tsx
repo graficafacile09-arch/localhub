@@ -36,6 +36,8 @@ type Props = {
   showSottocategoria?: boolean;
   /** Variante compatta (riga singola, per il catalogo negozio). */
   compact?: boolean;
+  /** Filtri compatti a griglia per la ricerca desktop globale. */
+  desktopCompact?: boolean;
 };
 
 const selectCls =
@@ -75,6 +77,7 @@ export default function SearchFilters({
   showCategoria = true,
   showSottocategoria = true,
   compact = false,
+  desktopCompact = false,
 }: Props) {
   const resetUrl = basePath === "/ricerca" ? `/ricerca${current.q ? `?q=${encodeURIComponent(current.q)}` : ""}` : basePath;
 
@@ -183,10 +186,10 @@ export default function SearchFilters({
         <SlidersHorizontal className="h-3.5 w-3.5 text-blue-600" />
         <p className="text-xs font-black uppercase tracking-wide text-slate-700">Filtri</p>
       </div>
-      <form action={basePath} method="get" className="space-y-3">
+      <form action={basePath} method="get" className={desktopCompact ? "grid grid-cols-2 gap-x-3 gap-y-2 md:grid-cols-4 xl:grid-cols-7" : "space-y-3"}>
         <input type="hidden" name="q" value={current.q} />
         {campi}
-        <div className="flex gap-2 pt-1">
+        <div className={desktopCompact ? "col-span-2 flex gap-2 pt-1 md:col-span-4 xl:col-span-7" : "flex gap-2 pt-1"}>
           <button
             type="submit"
             className="h-8 flex-1 rounded-lg bg-yellow-400 text-xs font-bold text-blue-800 transition hover:bg-yellow-300"
