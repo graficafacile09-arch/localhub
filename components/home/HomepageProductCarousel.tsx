@@ -42,28 +42,44 @@ export default function HomepageProductCarousel({
     const haScorrimento = el.scrollWidth > el.clientWidth + 2;
     const puoScorrere = haScorrimento && visibili.length > 1;
 
-    // Le frecce mantengono la visibilità prevista dal layout; lo scorrimento
-    // circolare resta disponibile in entrambe le direzioni.
+    // Aggiorna solo le frecce: non spostare il carosello durante
+    // un gesto touch o un'animazione di scorrimento.
     setCanScrollLeft(desktop && visibili.length > 4 && puoScorrere);
     setCanScrollRight((desktop ? visibili.length > 4 : visibili.length > 2) && puoScorrere);
+  }, [visibili.length]);
+
+  const normalizzaPosizione = useCallback(() => {
+    const el = viewportRef.current;
+    if (!el) return;
 
     const primaCopia = el.children[0] as HTMLElement | undefined;
     const secondaCopia = el.children[visibili.length] as HTMLElement | undefined;
-    if (!primaCopia || !secondaCopia || !puoScorrere) return;
+    if (!primaCopia || !secondaCopia || visibili.length < 2) return;
 
     const larghezzaSegmento =
       secondaCopia.getBoundingClientRect().left -
       primaCopia.getBoundingClientRect().left;
     if (larghezzaSegmento <= 0) return;
 
-    // Quando ci si avvicina a un'estremità, salta al segmento equivalente
-    // senza cambiare i prodotti visibili.
+    // Ricentra solo dopo che lo scorrimento si è fermato, non durante
+    // l'animazione o mentre il browser completa lo snap.
     if (el.scrollLeft < larghezzaSegmento * 0.5) {
       el.scrollLeft += larghezzaSegmento;
     } else if (el.scrollLeft > larghezzaSegmento * 1.5) {
       el.scrollLeft -= larghezzaSegmento;
     }
-  }, [visibili.length]);
+    aggiornaFrecce();
+  }, [aggiornaFrecce, visibili.length]);
+
+  const timerNormalizzazioneRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const gestisciScroll = useCallback(() => {
+    aggiornaFrecce();
+    if (timerNormalizzazioneRef.current) {
+      window.clearTimeout(timerNormalizzazioneRef.current);
+    }
+    timerNormalizzazioneRef.current = window.setTimeout(normalizzaPosizione, 250);
+  }, [aggiornaFrecce, normalizzaPosizione]);
 
   useEffect(() => {
     const el = viewportRef.current;
@@ -81,15 +97,19 @@ export default function HomepageProductCarousel({
     };
 
     const frame = window.requestAnimationFrame(posizionaAlCentro);
-    el.addEventListener("scroll", aggiornaFrecce, { passive: true });
-    window.addEventListener("resize", aggiornaFrecce);
+    el.addEventListener("scroll", gestisciScroll, { passive: true });
+    window.addEventListener("resize", normalizzaPosizione);
 
     return () => {
       window.cancelAnimationFrame(frame);
-      el.removeEventListener("scroll", aggiornaFrecce);
-      window.removeEventListener("resize", aggiornaFrecce);
+      el.removeEventListener("scroll", gestisciScroll);
+      window.removeEventListener("resize", normalizzaPosizione);
+      if (timerNormalizzazioneRef.current) {
+        window.clearTimeout(timerNormalizzazioneRef.current);
+        timerNormalizzazioneRef.current = null;
+      }
     };
-  }, [aggiornaFrecce, visibili.length]);
+  }, [aggiornaFrecce, gestisciScroll, normalizzaPosizione, visibili.length]);
 
   const scorri = (direzione: "sinistra" | "destra") => {
     const el = viewportRef.current;
@@ -141,7 +161,7 @@ export default function HomepageProductCarousel({
 
         <div
           ref={viewportRef}
-          className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:gap-5"
+          className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:gap-5"
           aria-label="Galleria prodotti"
         >
           {[...visibili, ...visibili, ...visibili].map((prodotto, indice) => {
