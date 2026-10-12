@@ -28,8 +28,8 @@ export default function HomepageProductCarousel({
   mostraTutti?: boolean;
 }) {
   const [espanso, setEspanso] = useState(false);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(prodotti.length > 4);
+  const [canScrollLeft, setCanScrollLeft] = useState(prodotti.length > 4);
+  const [canScrollRight, setCanScrollRight] = useState(prodotti.length > 2);
   const viewportRef = useRef<HTMLDivElement>(null);
 
   const visibili = mostraTutti && !espanso ? prodotti.slice(0, 4) : prodotti;
@@ -40,24 +40,52 @@ export default function HomepageProductCarousel({
 
     const desktop = window.matchMedia("(min-width: 768px)").matches;
     const haScorrimento = el.scrollWidth > el.clientWidth + 2;
+    const puoScorrere = haScorrimento && visibili.length > 1;
 
-    setCanScrollLeft(desktop && haScorrimento && el.scrollLeft > 2);
-    setCanScrollRight(
-      haScorrimento &&
-        (desktop ? prodotti.length > 4 : prodotti.length > 2) &&
-        el.scrollLeft + el.clientWidth < el.scrollWidth - 2
-    );
-  }, [prodotti.length]);
+    // Le frecce mantengono la visibilità prevista dal layout; lo scorrimento
+    // circolare resta disponibile in entrambe le direzioni.
+    setCanScrollLeft(desktop && visibili.length > 4 && puoScorrere);
+    setCanScrollRight((desktop ? visibili.length > 4 : visibili.length > 2) && puoScorrere);
+
+    const primaCopia = el.children[0] as HTMLElement | undefined;
+    const secondaCopia = el.children[visibili.length] as HTMLElement | undefined;
+    if (!primaCopia || !secondaCopia || !puoScorrere) return;
+
+    const larghezzaSegmento =
+      secondaCopia.getBoundingClientRect().left -
+      primaCopia.getBoundingClientRect().left;
+    if (larghezzaSegmento <= 0) return;
+
+    // Quando ci si avvicina a un'estremità, salta al segmento equivalente
+    // senza cambiare i prodotti visibili.
+    if (el.scrollLeft < larghezzaSegmento * 0.5) {
+      el.scrollLeft += larghezzaSegmento;
+    } else if (el.scrollLeft > larghezzaSegmento * 1.5) {
+      el.scrollLeft -= larghezzaSegmento;
+    }
+  }, [visibili.length]);
 
   useEffect(() => {
     const el = viewportRef.current;
     if (!el) return;
 
-    aggiornaFrecce();
+    const posizionaAlCentro = () => {
+      const primaCopia = el.children[0] as HTMLElement | undefined;
+      const secondaCopia = el.children[visibili.length] as HTMLElement | undefined;
+      if (primaCopia && secondaCopia && visibili.length > 1) {
+        el.scrollLeft =
+          secondaCopia.getBoundingClientRect().left -
+          primaCopia.getBoundingClientRect().left;
+      }
+      aggiornaFrecce();
+    };
+
+    const frame = window.requestAnimationFrame(posizionaAlCentro);
     el.addEventListener("scroll", aggiornaFrecce, { passive: true });
     window.addEventListener("resize", aggiornaFrecce);
 
     return () => {
+      window.cancelAnimationFrame(frame);
       el.removeEventListener("scroll", aggiornaFrecce);
       window.removeEventListener("resize", aggiornaFrecce);
     };
@@ -116,12 +144,14 @@ export default function HomepageProductCarousel({
           className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain scroll-smooth [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:gap-5"
           aria-label="Galleria prodotti"
         >
-          {visibili.map((prodotto) => {
+          {[...visibili, ...visibili, ...visibili].map((prodotto, indice) => {
             const prodottoId = String(prodotto.id);
+            const copia = Math.floor(indice / visibili.length);
 
             return (
               <div
-                key={prodottoId}
+                key={`${prodottoId}-copia-${copia}-indice-${indice % visibili.length}`}
+                data-carousel-copia={copia}
                 className="w-[calc((100%_-_0.75rem)_/_2)] min-w-[calc((100%_-_0.75rem)_/_2)] shrink-0 snap-start md:w-[calc((100%_-_3.75rem)_/_4)] md:min-w-[calc((100%_-_3.75rem)_/_4)]"
               >
                 <ProductCard
