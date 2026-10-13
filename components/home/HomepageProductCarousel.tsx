@@ -195,7 +195,7 @@ export default function HomepageProductCarousel({
 
             return (
               <div
-                key={`${prodottoId}-copia-${copia}-indice-${indice % visibili.length}`}
+                key={`${String(prodotto.id)}-copia-${copia}-indice-${indice % visibili.length}`}
                 data-carousel-copia={copia}
                 className="w-[calc((100%_-_0.75rem)_/_2)] min-w-[calc((100%_-_0.75rem)_/_2)] shrink-0 snap-start md:w-[calc((100%_-_3.75rem)_/_4)] md:min-w-[calc((100%_-_3.75rem)_/_4)]"
               >
