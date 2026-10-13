@@ -267,7 +267,13 @@ export async function POST(
   }
 
   if (!createResult.data) {
-    return apiError("PRODUCT_CREATE_FAILED", createResult.errorMessage ?? "Impossibile creare il prodotto.", 500);
+    const limitReached = createResult.errorMessage?.includes("200 annunci") ||
+      createResult.errorMessage?.includes("MERCHANT_PRODUCT_LIMIT_REACHED");
+    return apiError(
+      limitReached ? "PRODUCT_LIMIT_REACHED" : "PRODUCT_CREATE_FAILED",
+      createResult.errorMessage ?? "Impossibile creare il prodotto.",
+      limitReached ? 409 : 500
+    );
   }
 
   // Notifica admin solo per una pubblicazione reale. La bozza non è
