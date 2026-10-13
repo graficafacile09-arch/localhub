@@ -223,6 +223,8 @@ const STOPWORD: ReadonlySet<string> = new Set([
   "ho", "hai", "ha", "abbiamo", "voglio", "vorrei", "devo", "bisogno",
   "aiutami", "mi", "favore", "perfavore", "grazie", "dammi", "elenco",
   "lista", "mostra", "apri", "dimmi", "quanto", "quale", "meglio", "come",
+  // Cornici linguistiche delle domande sul prezzo: non sono attributi del prodotto.
+  "costa", "costano", "costare", "costo", "prezzo", "prezzi", "viene", "vengono", "vale", "valgono",
   // Articoli/preposizioni articolate (evitano pattern-spazzatura tipo %al_e%):
   "al", "all", "alla", "alle", "allo", "agli", "all'it",
   "dall", "dallo", "dalla", "dalle", "dagli", "dai", "dal",

@@ -192,6 +192,22 @@ const CANONICI_RICERCA: Array<{ pattern: RegExp; termine: string; intent: PinoIn
   { pattern: /\bacqua|acque\b/i, termine: "acqua", intent: "drink" },
   { pattern: /\bpizza|pizze|pizzetta|pizzette\b/i, termine: "pizza", intent: "food" },
   { pattern: /\bpanino|panini|paninetto|paninetti\b/i, termine: "panino", intent: "food" },
+  // Generi alimentari comuni: canonizza singolare/plurale senza trasformare
+  // un alimento in un altro (nessuna espansione trasversale che crei falsi positivi).
+  { pattern: /\b(?:cipolla|cipolle)\b/i, termine: "cipolla", intent: "food" },
+  { pattern: /\b(?:patata|patate)\b/i, termine: "patata", intent: "food" },
+  { pattern: /\b(?:pomodoro|pomodori)\b/i, termine: "pomodoro", intent: "food" },
+  { pattern: /\baglio\b/i, termine: "aglio", intent: "food" },
+  { pattern: /\b(?:carota|carote)\b/i, termine: "carota", intent: "food" },
+  { pattern: /\b(?:zucchina|zucchine)\b/i, termine: "zucchina", intent: "food" },
+  { pattern: /\b(?:melanzana|melanzane)\b/i, termine: "melanzana", intent: "food" },
+  { pattern: /\b(?:peperone|peperoni)\b/i, termine: "peperone", intent: "food" },
+  { pattern: /\b(?:insalata|insalate)\b/i, termine: "insalata", intent: "food" },
+  { pattern: /\b(?:mela|mele)\b/i, termine: "mela", intent: "food" },
+  { pattern: /\b(?:pera|pere)\b/i, termine: "pera", intent: "food" },
+  { pattern: /\b(?:arancia|arance)\b/i, termine: "arancia", intent: "food" },
+  { pattern: /\b(?:limone|limoni)\b/i, termine: "limone", intent: "food" },
+  { pattern: /\b(?:banana|banane)\b/i, termine: "banana", intent: "food" },
   { pattern: /\btelefono|telefoni|telefonino|telefonini|cellulare|cellulari|smartphone\b/i, termine: "telefono", intent: "product" },
   { pattern: /\bscarpa|scarpe|scarpina|scarpine\b/i, termine: "scarpe", intent: "product" },
   { pattern: /\bmaglietta|magliette|maglia|maglie\b/i, termine: "maglia", intent: "product" },
@@ -216,6 +232,13 @@ const VOCABOLARIO_PINO_BASE: Array<[string, string]> = [
   ["analcolica", "analcolica"], ["analcolico", "analcolica"],
   ["vino", "vino"], ["vini", "vino"], ["acqua", "acqua"],
   ["pizza", "pizza"], ["pizze", "pizza"], ["panino", "panino"], ["panini", "panino"],
+  ["cipolla", "cipolla"], ["cipolle", "cipolla"], ["patata", "patata"], ["patate", "patata"],
+  ["pomodoro", "pomodoro"], ["pomodori", "pomodoro"], ["aglio", "aglio"],
+  ["carota", "carota"], ["carote", "carota"], ["zucchina", "zucchina"], ["zucchine", "zucchina"],
+  ["melanzana", "melanzana"], ["melanzane", "melanzana"], ["peperone", "peperone"], ["peperoni", "peperone"],
+  ["insalata", "insalata"], ["insalate", "insalata"], ["mela", "mela"], ["mele", "mela"],
+  ["pera", "pera"], ["pere", "pera"], ["arancia", "arancia"], ["arance", "arancia"],
+  ["limone", "limone"], ["limoni", "limone"], ["banana", "banana"], ["banane", "banana"],
   ["telefono", "telefono"], ["telefoni", "telefono"], ["telefonino", "telefono"],
   ["cellulare", "telefono"], ["smartphone", "telefono"],
   ["scarpa", "scarpa"], ["scarpe", "scarpa"],
@@ -503,6 +526,11 @@ function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): Pi
   // Gli attributi positivi restano: "scarpe da uomo eleganti" deve continuare
   // a cercare scarpe da uomo eleganti, non solo "scarpe".
   let termine = q
+    // La domanda sul prezzo è una cornice linguistica, non parte del nome
+    // cercato: "quanto costa la cipolla?" deve interrogare il catalogo per
+    // "cipolla", non per le parole "quanto/costa".
+    .replace(/\bquanto\s+(?:costa|costano|viene|vengono|vale|valgono)\b/gi, " ")
+    .replace(/\b(?:prezzo|prezzi)\s+(?:di|del|della|dei|degli|delle)?\b/gi, " ")
     // Importi espressi in modo colloquiale ("ho 100 euro", "con 100 euro")
     // sono vincoli di budget, non keyword da cercare nel catalogo.
     .replace(/\b(?:ho|con|dispongo di|a disposizione(?: di)?)\s*(?:(?:un|il|il mio)\s+)?(?:budget(?:\s+di)?\s*)?(?:€\s*)?\d+(?:[.,]\d+)?\s*(?:euro|euros|eur)\b(?:\s+(?:da spendere|per)\b)?/gi, " ")
