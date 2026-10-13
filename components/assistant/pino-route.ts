@@ -19,10 +19,10 @@
 const PREFIXI_TRANSIZIONALI = ["/carrello", "/checkout", "/ordini/conferma"] as const;
 
 /** Scheda prodotto: /prodotto/<slug>. */
-const RE_DETTAGLIO_PRODOTTO = /^\\/prodotto\\/[^/]+$/;
+const RE_DETTAGLIO_PRODOTTO = /^\/prodotto\/[^/]+$/;
 
 /** Percorso di acquisto: /prodotto/<slug>/acquista[/...]. */
-const RE_ACQUISTA = /^\\/prodotto\\/[^/]+\\/acquista(?:\\/|$)/;
+const RE_ACQUISTA = /^\/prodotto\/[^/]+\/acquista(?:\/|$)/;
 
 /**
  * `true` quando Pino deve restare nascosto. Accetta pathname null durante
@@ -31,7 +31,7 @@ const RE_ACQUISTA = /^\\/prodotto\\/[^/]+\\/acquista(?:\\/|$)/;
 export function isPinoTransactionalRoute(pathname: string | null | undefined): boolean {
   if (!pathname) return false;
 
-  const percorso = (pathname.split("?")[0] || "/").replace(/\\/+$/, "") || "/";
+  const percorso = (pathname.split("?")[0] || "/").replace(/\/+$/, "") || "/";
 
   for (const prefisso of PREFIXI_TRANSIZIONALI) {
     if (percorso === prefisso || percorso.startsWith(prefisso + "/")) return true;
