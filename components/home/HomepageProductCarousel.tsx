@@ -32,7 +32,8 @@ export default function HomepageProductCarousel({
   const [canScrollRight, setCanScrollRight] = useState(prodotti.length > 2);
   const viewportRef = useRef<HTMLDivElement>(null);
 
-  const visibili = mostraTutti && !espanso ? prodotti.slice(0, 4) : prodotti;
+  // Scorri l'intero elenco ricevuto: non riciclare solo i primi quattro prodotti.
+  const visibili = prodotti;
 
   const aggiornaFrecce = useCallback(() => {
     const el = viewportRef.current;
@@ -123,8 +124,32 @@ export default function HomepageProductCarousel({
     });
   };
 
+  const renderProductCard = (prodotto: ProdottoRecord) => {
+    const prodottoId = String(prodotto.id);
+    return (
+      <ProductCard
+        id={prodottoId}
+        slug={(prodotto.slug as string) ?? prodottoId}
+        nome={prodotto.nome as string}
+        prezzo={prodotto.prezzo as number}
+        categoria={(prodotto.categoria as string) ?? null}
+        negozio_nome={(prodotto.negozio_nome as string) ?? ""}
+        negozio_id={String(prodotto.negozio_id ?? "")}
+        immagine_principale={(prodotto.immagine_principale as string) ?? null}
+        haVarianti={Boolean(prodotto.ha_varianti)}
+        {...(prodottoTipico ? { prodottoTipico: true } : {})}
+        {...(compatto ? { compatto: true } : {})}
+        preferitoAttivo={statoPreferiti.chiavi.has(
+          chiavePreferito("prodotto", prodottoId)
+        )}
+        autenticato={statoPreferiti.autenticato}
+      />
+    );
+  };
+
   return (
     <div>
+      {(!mostraTutti || !espanso) && (
       <div className="relative md:px-10">
         {prodotti.length > 4 && (
           <button
@@ -166,39 +191,31 @@ export default function HomepageProductCarousel({
           aria-label="Galleria prodotti"
         >
           {[...visibili, ...visibili, ...visibili].map((prodotto, indice) => {
-            const prodottoId = String(prodotto.id);
             const copia = Math.floor(indice / visibili.length);
 
             return (
               <div
-                key={`${prodottoId}-copia-${copia}-indice-${indice % visibili.length}`}
+                key={`${String(prodotto.id)}-copia-${copia}-indice-${indice % visibili.length}`}
                 data-carousel-copia={copia}
                 className="w-[calc((100%_-_0.75rem)_/_2)] min-w-[calc((100%_-_0.75rem)_/_2)] shrink-0 snap-start md:w-[calc((100%_-_3.75rem)_/_4)] md:min-w-[calc((100%_-_3.75rem)_/_4)]"
               >
-                <ProductCard
-                  id={prodottoId}
-                  slug={(prodotto.slug as string) ?? prodottoId}
-                  nome={prodotto.nome as string}
-                  prezzo={prodotto.prezzo as number}
-                  categoria={(prodotto.categoria as string) ?? null}
-                  negozio_nome={(prodotto.negozio_nome as string) ?? ""}
-                  negozio_id={String(prodotto.negozio_id ?? "")}
-                  immagine_principale={
-                    (prodotto.immagine_principale as string) ?? null
-                  }
-                  haVarianti={Boolean(prodotto.ha_varianti)}
-                  {...(prodottoTipico ? { prodottoTipico: true } : {})}
-                  {...(compatto ? { compatto: true } : {})}
-                  preferitoAttivo={statoPreferiti.chiavi.has(
-                    chiavePreferito("prodotto", prodottoId)
-                  )}
-                  autenticato={statoPreferiti.autenticato}
-                />
+                {renderProductCard(prodotto)}
               </div>
             );
           })}
         </div>
       </div>
+      )}
+
+      {mostraTutti && espanso && (
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">
+          {prodotti.map((prodotto, indice) => (
+            <div key={String(prodotto.id) + "-griglia-" + indice} className="min-w-0">
+              {renderProductCard(prodotto)}
+            </div>
+          ))}
+        </div>
+      )}
 
       {mostraTutti && prodotti.length > 4 && (
         <div className="mt-6 flex justify-center">
