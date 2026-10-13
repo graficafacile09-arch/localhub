@@ -32,7 +32,8 @@ export default function HomepageProductCarousel({
   const [canScrollRight, setCanScrollRight] = useState(prodotti.length > 2);
   const viewportRef = useRef<HTMLDivElement>(null);
 
-  const visibili = mostraTutti && !espanso ? prodotti.slice(0, 4) : prodotti;
+  // Il carosello deve scorrere l’intero elenco ricevuto, non ripetere sempre i primi quattro prodotti.
+  const visibili = prodotti;
 
   const aggiornaFrecce = useCallback(() => {
     const el = viewportRef.current;
@@ -201,25 +202,54 @@ export default function HomepageProductCarousel({
       </div>
 
       {mostraTutti && prodotti.length > 4 && (
-        <div className="mt-6 flex justify-center">
-          <button
-            type="button"
-            onClick={() => setEspanso((v) => !v)}
-            className="inline-flex items-center gap-2 rounded-xl bg-yellow-400 px-6 py-2.5 text-sm font-black text-blue-900 shadow-sm transition hover:bg-yellow-300 active:scale-95"
-          >
-            {espanso ? (
-              <>
-                Mostra meno
-                <ChevronUp className="h-4 w-4" aria-hidden />
-              </>
-            ) : (
-              <>
-                Mostra tutto
-                <ChevronDown className="h-4 w-4" aria-hidden />
-              </>
-            )}
-          </button>
-        </div>
+        <>
+          {espanso && (
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 md:gap-5">
+              {prodotti.map((prodotto) => {
+                const prodottoId = String(prodotto.id);
+                return (
+                  <ProductCard
+                    key={prodottoId}
+                    id={prodottoId}
+                    slug={(prodotto.slug as string) ?? prodottoId}
+                    nome={prodotto.nome as string}
+                    prezzo={prodotto.prezzo as number}
+                    categoria={(prodotto.categoria as string) ?? null}
+                    negozio_nome={(prodotto.negozio_nome as string) ?? ""}
+                    negozio_id={String(prodotto.negozio_id ?? "")}
+                    immagine_principale={(prodotto.immagine_principale as string) ?? null}
+                    haVarianti={Boolean(prodotto.ha_varianti)}
+                    {...(prodottoTipico ? { prodottoTipico: true } : {})}
+                    {...(compatto ? { compatto: true } : {})}
+                    preferitoAttivo={statoPreferiti.chiavi.has(
+                      chiavePreferito("prodotto", prodottoId)
+                    )}
+                    autenticato={statoPreferiti.autenticato}
+                  />
+                );
+              })}
+            </div>
+          )}
+          <div className="mt-6 flex justify-center">
+            <button
+              type="button"
+              onClick={() => setEspanso((v) => !v)}
+              className="inline-flex items-center gap-2 rounded-xl bg-yellow-400 px-6 py-2.5 text-sm font-black text-blue-900 shadow-sm transition hover:bg-yellow-300 active:scale-95"
+            >
+              {espanso ? (
+                <>
+                  Nascondi elenco
+                  <ChevronUp className="h-4 w-4" aria-hidden />
+                </>
+              ) : (
+                <>
+                  Mostra tutti i prodotti
+                  <ChevronDown className="h-4 w-4" aria-hidden />
+                </>
+              )}
+            </button>
+          </div>
+        </>
       )}
     </div>
   );
