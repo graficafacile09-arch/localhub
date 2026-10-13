@@ -83,6 +83,15 @@ export default async function Home() {
     <main className="min-h-screen bg-[#eef3f8]">
       <Header homepage />
 
+      {/* Avviso discreto: la piattaforma è in modalità dimostrativa. */}
+      <aside
+        aria-label="Avviso versione demo"
+        className="border-b border-blue-100 bg-blue-50 px-4 py-2 text-center text-xs leading-5 text-slate-600"
+      >
+        <span className="font-semibold text-blue-900">Versione demo</span>
+        <span> — Account e dati sono di test; gli acquisti non sono attivi.</span>
+      </aside>
+
       {/* ═══════════════════════════════════════════════════════════════════
           HERO — fotografica, messaggio immediato, ricerca + AI
           ═══════════════════════════════════════════════════════════════════ */}
