@@ -223,7 +223,12 @@ export async function PUT(
   }
 
   if (!updateResult.data) {
-    return apiError("PRODUCT_UPDATE_FAILED", updateResult.errorMessage ?? "Impossibile aggiornare il prodotto.", 500);
+    const imageTooLarge = updateResult.errorMessage?.includes("2 MB");
+    return apiError(
+      imageTooLarge ? "PRODUCT_IMAGE_TOO_LARGE" : "PRODUCT_UPDATE_FAILED",
+      updateResult.errorMessage ?? "Impossibile aggiornare il prodotto.",
+      imageTooLarge ? 413 : 500
+    );
   }
 
   // Ritorno di disponibilità (0 → >0): genera le notifiche "avvisami".
@@ -356,7 +361,12 @@ export async function PATCH(
   }
 
   if (!patchResult.data) {
-    return apiError("PRODUCT_UPDATE_FAILED", patchResult.errorMessage ?? "Impossibile aggiornare il prodotto.", 500);
+    const imageTooLarge = patchResult.errorMessage?.includes("2 MB");
+    return apiError(
+      imageTooLarge ? "PRODUCT_IMAGE_TOO_LARGE" : "PRODUCT_UPDATE_FAILED",
+      patchResult.errorMessage ?? "Impossibile aggiornare il prodotto.",
+      imageTooLarge ? 413 : 500
+    );
   }
 
   // Ritorno di disponibilità (0 → >0): genera le notifiche "avvisami".

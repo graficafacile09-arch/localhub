@@ -9,6 +9,7 @@ import { requireApiArea } from "@/lib/auth/session-area";
 import { canManageStore } from "@/lib/merchant/data";
 import { checkRateLimit } from "@/lib/rate-limiter";
 import { logScan } from "@/lib/scan-log";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
 const LOW_CONFIDENCE_THRESHOLD = 60;
 const MAX_TOKENS = 300;
@@ -159,6 +160,32 @@ export async function POST(
       return NextResponse.json(
         { success: false, error: { code: "INVALID_BODY", message: "Immagine mancante o non valida." } },
         { status: 422 }
+      );
+    }
+
+    // Conta ogni scansione richiesta dal venditore, inclusi i risultati in cache.
+    // Il contatore mensile è atomico e distinto dal rate limit minuto/ora.
+    const admin = createAdminSupabaseClient();
+    const { data: quotaData, error: quotaError } = await admin.rpc("consume_merchant_monthly_scan", {
+      p_user_id: user.id,
+      p_limit: 1000,
+    });
+    if (quotaError) {
+      console.error("[vision] Controllo quota mensile non disponibile:", quotaError.message);
+      return NextResponse.json(
+        { success: false, error: { code: "SCAN_QUOTA_UNAVAILABLE", message: "Non riesco a verificare il tuo limite mensile. Riprova tra poco." } },
+        { status: 503 }
+      );
+    }
+    const quota = Array.isArray(quotaData) ? quotaData[0] : quotaData;
+    if (!quota || quota.allowed !== true) {
+      const resetAt = typeof quota?.resets_at === "string" ? new Date(quota.resets_at) : null;
+      const resetLabel = resetAt && !Number.isNaN(resetAt.getTime())
+        ? resetAt.toLocaleDateString("it-IT", { timeZone: "Europe/Rome" })
+        : "il mese prossimo";
+      return NextResponse.json(
+        { success: false, error: { code: "MONTHLY_SCAN_LIMIT_REACHED", message: "Hai raggiunto il limite di 1.000 scansioni AI del mese. Potrai riprendere dal " + resetLabel + ".", used: quota?.used ?? 1000, limit: 1000, resetsAt: quota?.resets_at ?? null } },
+        { status: 429 }
       );
     }
 

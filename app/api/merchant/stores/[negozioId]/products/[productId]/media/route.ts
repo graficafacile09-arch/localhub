@@ -64,7 +64,14 @@ export async function POST(
   });
 
   if (!result.data) {
-    return apiError("create_failed", result.errorMessage ?? "Impossibile aggiungere l'immagine.", 400);
+    const limitReached = result.errorMessage?.includes("5 foto") ||
+      result.errorMessage?.includes("PRODUCT_IMAGE_LIMIT_REACHED");
+    const imageTooLarge = result.errorMessage?.includes("2 MB");
+    return apiError(
+      limitReached ? "PRODUCT_IMAGE_LIMIT_REACHED" : imageTooLarge ? "PRODUCT_IMAGE_TOO_LARGE" : "create_failed",
+      result.errorMessage ?? "Impossibile aggiungere l'immagine.",
+      limitReached ? 409 : imageTooLarge ? 413 : 400
+    );
   }
 
   return apiOk({ media: result.data }, 201);

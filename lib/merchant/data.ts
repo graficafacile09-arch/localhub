@@ -1,6 +1,6 @@
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { deleteImageFromStorage, uploadDataUrlToStorage } from "@/lib/supabase/storage";
+import { deleteImageFromStorage, uploadProductImageDataUrlToStorage } from "@/lib/supabase/storage";
 import { generaSlugUnivoco } from "@/lib/slug-server";
 import { getCurrentUser } from "@/lib/auth/session";
 import { utenteAdminAutorizzato } from "@/lib/auth/roles";
@@ -704,10 +704,39 @@ export async function createMerchantProductForStore(
 
   const supabase = await getDbForUser(userId);
 
-  const immagineFinale =
-    input.immaginePrincipale.trim()
-      ? await uploadDataUrlToStorage(input.immaginePrincipale.trim())
+  // Il tetto comprende annunci pubblicati, bozze e prodotti inattivi.
+  const { count: prodottiCount, error: prodottiCountError } = await supabase
+    .from("prodotti")
+    .select("id", { head: true, count: "exact" })
+    .eq("negozio_id", negozioId);
+  if (prodottiCountError) {
+    return {
+      data: null,
+      setupRequired: false,
+      errorMessage: prodottiCountError.message ?? "Impossibile verificare il limite annunci.",
+    };
+  }
+  if ((prodottiCount ?? 0) >= 200) {
+    return {
+      data: null,
+      setupRequired: false,
+      errorMessage: "Hai raggiunto il limite di 200 annunci per negozio. Elimina un annuncio prima di crearne un altro.",
+      code: "PRODUCT_LIMIT_REACHED",
+    };
+  }
+
+  let immagineFinale: string | null = null;
+  try {
+    immagineFinale = input.immaginePrincipale.trim()
+      ? await uploadProductImageDataUrlToStorage(input.immaginePrincipale.trim())
       : null;
+  } catch (caught) {
+    return {
+      data: null,
+      setupRequired: false,
+      errorMessage: caught instanceof Error ? caught.message : "Impossibile elaborare la foto del prodotto.",
+    };
+  }
 
   const payloadBase: Record<string, unknown> = {
     negozio_id: negozioId,
@@ -760,6 +789,8 @@ export async function createMerchantProductForStore(
   }
 
   if (insertResult.error && isSchemaError(insertResult.error)) {
+    // Il fallback storico non persiste l'immagine: evita di lasciare il file orfano.
+    await deleteImageFromStorage(immagineFinale);
     const fallbackResult = await supabase
       .from("prodotti")
       .insert({
@@ -774,6 +805,7 @@ export async function createMerchantProductForStore(
       .single();
 
     if (fallbackResult.error) {
+      await deleteImageFromStorage(immagineFinale);
       return {
         data: null,
         setupRequired: false,
@@ -789,6 +821,7 @@ export async function createMerchantProductForStore(
   }
 
   if (insertResult.error) {
+    await deleteImageFromStorage(immagineFinale);
     return {
       data: null,
       setupRequired: false,
@@ -821,10 +854,18 @@ export async function updateMerchantProductForStore(
 
   const supabase = await getDbForUser(userId);
 
-  const immagineFinale =
-    input.immaginePrincipale.trim()
-      ? await uploadDataUrlToStorage(input.immaginePrincipale.trim())
+  let immagineFinale: string | null = null;
+  try {
+    immagineFinale = input.immaginePrincipale.trim()
+      ? await uploadProductImageDataUrlToStorage(input.immaginePrincipale.trim())
       : null;
+  } catch (caught) {
+    return {
+      data: null,
+      setupRequired: false,
+      errorMessage: caught instanceof Error ? caught.message : "Impossibile elaborare la foto del prodotto.",
+    };
+  }
 
   const payload: Record<string, unknown> = {
     nome: input.nome.trim(),
@@ -963,9 +1004,17 @@ export async function patchMerchantProductForStore(
   if (patch.immaginePrincipale !== undefined) {
     // Stesso meccanismo di create/update: carica il data URL nel bucket
     // product-images e salva l'URL pubblico (gli URL già persistiti restano tali).
-    payload.immagine_principale = await uploadDataUrlToStorage(
-      patch.immaginePrincipale.trim()
-    );
+    try {
+      payload.immagine_principale = await uploadProductImageDataUrlToStorage(
+        patch.immaginePrincipale.trim()
+      );
+    } catch (caught) {
+      return {
+        data: null,
+        setupRequired: false,
+        errorMessage: caught instanceof Error ? caught.message : "Impossibile elaborare la foto del prodotto.",
+      };
+    }
   }
 
   if (Object.keys(payload).length === 0) {

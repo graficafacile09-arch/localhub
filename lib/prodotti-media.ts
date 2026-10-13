@@ -1,6 +1,6 @@
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { deleteImageFromStorage, uploadDataUrlToStorage } from "@/lib/supabase/storage";
+import { deleteImageFromStorage, uploadProductImageDataUrlToStorage } from "@/lib/supabase/storage";
 import { getMerchantProductForStore } from "@/lib/merchant/data";
 
 export type RuoloMediaProdotto = "primary" | "gallery" | "detail";
@@ -181,6 +181,32 @@ export async function addProductMediaForStore(
 
   const supabase = createAdminSupabaseClient();
 
+  // Controlla le foto già salvate prima di caricare il nuovo file.
+  // L'immagine principale legacy conta come foto se non è già nella galleria.
+  const { data: productRow, error: productError } = await supabase
+    .from("prodotti")
+    .select("immagine_principale")
+    .eq("id", String(productId))
+    .eq("negozio_id", negozioId)
+    .maybeSingle();
+  if (productError || !productRow) {
+    return { data: null, errorMessage: productError?.message ?? "Prodotto non trovato." };
+  }
+  const { data: mediaCorrenti, error: mediaError } = await supabase
+    .from("product_media")
+    .select("id, public_url")
+    .eq("product_id", String(productId));
+  if (mediaError) {
+    return { data: null, errorMessage: mediaError.message ?? "Impossibile verificare il limite foto." };
+  }
+  const fotoCorrenti = mediaCorrenti ?? [];
+  const immaginePrincipale = (productRow as { immagine_principale?: string | null }).immagine_principale ?? null;
+  const principaleGiaInGalleria = !!immaginePrincipale && fotoCorrenti.some((m) => m.public_url === immaginePrincipale);
+  const principaleNonRappresentata = !!immaginePrincipale && !principaleGiaInGalleria && url !== immaginePrincipale;
+  if (fotoCorrenti.length + (principaleNonRappresentata ? 1 : 0) + 1 > 5) {
+    return { data: null, errorMessage: "Hai raggiunto il limite di 5 foto per annuncio, inclusa l'immagine principale." };
+  }
+
   // Upload nello Storage (se data URL); altrimenti usa l'URL fornito.
   let publicUrl: string;
   let storageBucket: string | null = null;
@@ -188,7 +214,11 @@ export async function addProductMediaForStore(
     if (!isDataUrl(dataUrl)) {
       return { data: null, errorMessage: "Formato immagine non valido." };
     }
-    publicUrl = await uploadDataUrlToStorage(dataUrl);
+    try {
+      publicUrl = await uploadProductImageDataUrlToStorage(dataUrl);
+    } catch (caught) {
+      return { data: null, errorMessage: caught instanceof Error ? caught.message : "Impossibile ottimizzare la foto." };
+    }
     storageBucket = "product-images";
   } else {
     publicUrl = url;
