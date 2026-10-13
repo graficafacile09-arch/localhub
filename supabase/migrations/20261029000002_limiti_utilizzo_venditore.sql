@@ -14,6 +14,22 @@ create table if not exists public.merchant_monthly_scan_usage (
 create index if not exists merchant_monthly_scan_usage_month_idx
   on public.merchant_monthly_scan_usage (month_start);
 
+-- Se la regola viene attivata a mese iniziato, includi le scansioni già registrate
+-- nel mese corrente (escludendo i token tecnici del rate limiter).
+insert into public.merchant_monthly_scan_usage (user_id, month_start, used)
+select
+  s.user_id,
+  date_trunc('month', s.created_at at time zone 'UTC')::date,
+  count(*)::integer
+from public.scan_log s
+where s.created_at >= (date_trunc('month', now() at time zone 'UTC') at time zone 'UTC')
+  and s.provider not in ('__rate_limit__', 'rate_limiter')
+  and s.status <> 'rate_limited'
+group by s.user_id, date_trunc('month', s.created_at at time zone 'UTC')::date
+on conflict (user_id, month_start) do update
+set used = greatest(public.merchant_monthly_scan_usage.used, excluded.used),
+    updated_at = now();
+
 alter table public.merchant_monthly_scan_usage enable row level security;
 revoke all on public.merchant_monthly_scan_usage from public, anon, authenticated;
 grant select, insert, update, delete on public.merchant_monthly_scan_usage to service_role;
@@ -25,7 +41,7 @@ create or replace function public.consume_merchant_monthly_scan(
 returns table(allowed boolean, used integer, resets_at timestamptz)
 language plpgsql
 security definer
-set search_path = public
+set search_path = pg_catalog, public
 as $$
 declare
   v_month_start date := date_trunc('month', now() at time zone 'UTC')::date;
@@ -79,7 +95,7 @@ create or replace function public.enforce_merchant_product_limit()
 returns trigger
 language plpgsql
 security definer
-set search_path = public
+set search_path = pg_catalog, public
 as $$
 declare
   v_count integer;
@@ -120,7 +136,7 @@ create or replace function public.enforce_product_media_limit()
 returns trigger
 language plpgsql
 security definer
-set search_path = public
+set search_path = pg_catalog, public
 as $$
 declare
   v_count integer;
