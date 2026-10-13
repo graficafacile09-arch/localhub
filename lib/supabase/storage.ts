@@ -68,7 +68,7 @@ export async function uploadProductImageDataUrlToStorage(
 ): Promise<string> {
   if (!isDataUrl(dataUrl)) return dataUrl;
 
-  const matches = dataUrl.match(/^data:(image\\/\\w+);base64,(.+)$/);
+  const matches = dataUrl.match(/^data:(image\/\w+);base64,(.+)$/);
   if (!matches) throw new Error("Formato data URL immagine non valido.");
 
   const original = Buffer.from(matches[2], "base64");
