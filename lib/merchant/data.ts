@@ -1,6 +1,6 @@
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { deleteImageFromStorage, uploadDataUrlToStorage, uploadProductImageDataUrlToStorage } from "@/lib/supabase/storage";
+import { deleteImageFromStorage, uploadProductImageDataUrlToStorage } from "@/lib/supabase/storage";
 import { generaSlugUnivoco } from "@/lib/slug-server";
 import { getCurrentUser } from "@/lib/auth/session";
 import { utenteAdminAutorizzato } from "@/lib/auth/roles";
@@ -789,6 +789,8 @@ export async function createMerchantProductForStore(
   }
 
   if (insertResult.error && isSchemaError(insertResult.error)) {
+    // Il fallback storico non persiste l'immagine: evita di lasciare il file orfano.
+    await deleteImageFromStorage(immagineFinale);
     const fallbackResult = await supabase
       .from("prodotti")
       .insert({
@@ -803,6 +805,7 @@ export async function createMerchantProductForStore(
       .single();
 
     if (fallbackResult.error) {
+      await deleteImageFromStorage(immagineFinale);
       return {
         data: null,
         setupRequired: false,
@@ -818,6 +821,7 @@ export async function createMerchantProductForStore(
   }
 
   if (insertResult.error) {
+    await deleteImageFromStorage(immagineFinale);
     return {
       data: null,
       setupRequired: false,
