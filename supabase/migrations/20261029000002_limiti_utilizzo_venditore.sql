@@ -174,7 +174,7 @@ begin
 
   return new;
 end;
-$;
+$$;
 
 revoke all on function public.enforce_product_media_limit() from public, anon, authenticated;
 
