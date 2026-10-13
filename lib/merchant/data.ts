@@ -1,6 +1,6 @@
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { deleteImageFromStorage, uploadDataUrlToStorage } from "@/lib/supabase/storage";
+import { deleteImageFromStorage, uploadDataUrlToStorage, uploadProductImageDataUrlToStorage } from "@/lib/supabase/storage";
 import { generaSlugUnivoco } from "@/lib/slug-server";
 import { getCurrentUser } from "@/lib/auth/session";
 import { utenteAdminAutorizzato } from "@/lib/auth/roles";
@@ -704,9 +704,30 @@ export async function createMerchantProductForStore(
 
   const supabase = await getDbForUser(userId);
 
+  // Il tetto comprende annunci pubblicati, bozze e prodotti inattivi.
+  const { count: prodottiCount, error: prodottiCountError } = await supabase
+    .from("prodotti")
+    .select("id", { head: true, count: "exact" })
+    .eq("negozio_id", negozioId);
+  if (prodottiCountError) {
+    return {
+      data: null,
+      setupRequired: false,
+      errorMessage: prodottiCountError.message ?? "Impossibile verificare il limite annunci.",
+    };
+  }
+  if ((prodottiCount ?? 0) >= 200) {
+    return {
+      data: null,
+      setupRequired: false,
+      errorMessage: "Hai raggiunto il limite di 200 annunci per negozio. Elimina un annuncio prima di crearne un altro.",
+      code: "PRODUCT_LIMIT_REACHED",
+    };
+  }
+
   const immagineFinale =
     input.immaginePrincipale.trim()
-      ? await uploadDataUrlToStorage(input.immaginePrincipale.trim())
+      ? await uploadProductImageDataUrlToStorage(input.immaginePrincipale.trim())
       : null;
 
   const payloadBase: Record<string, unknown> = {
