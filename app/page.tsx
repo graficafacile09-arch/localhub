@@ -113,7 +113,7 @@ export default async function Home() {
       </section>
 
       {/* ═══════════════════════════════════════════════════════════════════
-          VALUE STRIP — perché LocalHub (3 promesse, nessuna duplicazione)
+          VALUE STRIP — perché InCittà (3 promesse, nessuna duplicazione)
           ═══════════════════════════════════════════════════════════════════ */}
       <section className="border-y border-slate-200 bg-white shadow-sm">
         <div className="mx-auto grid max-w-7xl grid-cols-3 gap-2 px-3 py-3 md:gap-4 md:px-6 md:py-4">
@@ -326,7 +326,7 @@ export default async function Home() {
         <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 sm:grid-cols-2 md:px-6 lg:grid-cols-4">
           <div>
             <p className="text-lg font-black tracking-tight text-white">
-              Local<span className="text-yellow-400">Hub</span>
+              InCittà
             </p>
             <p className="mt-2 max-w-xs text-[13px] leading-5 text-slate-400">
               La vetrina digitale del commercio di Castrovillari: negozi, professionisti, prodotti
