@@ -18,13 +18,14 @@ create index if not exists merchant_monthly_scan_usage_month_idx
 -- nel mese corrente (escludendo i token tecnici del rate limiter).
 insert into public.merchant_monthly_scan_usage (user_id, month_start, used)
 select
-  s.user_id,
+  s.user_id::text,
   date_trunc('month', s.created_at at time zone 'UTC')::date,
   count(*)::integer
 from public.scan_log s
 where s.created_at >= (date_trunc('month', now() at time zone 'UTC') at time zone 'UTC')
-  and s.provider not in ('__rate_limit__', 'rate_limiter')
-  and s.status <> 'rate_limited'
+  and s.user_id is not null
+  and coalesce(s.provider, '') not in ('__rate_limit__', 'rate_limiter')
+  and s.status is distinct from 'rate_limited'
 group by s.user_id, date_trunc('month', s.created_at at time zone 'UTC')::date
 on conflict (user_id, month_start) do update
 set used = greatest(merchant_monthly_scan_usage.used, excluded.used),
@@ -123,7 +124,6 @@ end;
 $$;
 
 revoke all on function public.enforce_merchant_product_limit() from public, anon, authenticated;
-revoke all on function public.enforce_product_media_limit() from public, anon, authenticated;
 
 drop trigger if exists trg_enforce_merchant_product_limit on public.prodotti;
 create trigger trg_enforce_merchant_product_limit
@@ -174,7 +174,9 @@ begin
 
   return new;
 end;
-$$;
+$;
+
+revoke all on function public.enforce_product_media_limit() from public, anon, authenticated;
 
 drop trigger if exists trg_enforce_product_media_limit on public.product_media;
 create trigger trg_enforce_product_media_limit
