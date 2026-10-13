@@ -1,3 +1,4 @@
+import sharp from "sharp";
 import { createAdminSupabaseClient } from "./admin";
 
 const DEFAULT_BUCKET = "product-images";
@@ -53,6 +54,54 @@ export async function uploadDataUrlToStorage(
     .from(bucketName)
     .getPublicUrl(fileName);
 
+  return publicUrlData.publicUrl;
+}
+
+/**
+ * Upload di una foto prodotto: limite 2 MiB sul file originale e
+ * normalizzazione automatica WebP per contenere storage e traffico.
+ * Gli URL esterni già pronti non vengono scaricati né trasformati.
+ */
+export async function uploadProductImageDataUrlToStorage(
+  dataUrl: string,
+  bucketName: string = DEFAULT_BUCKET
+): Promise<string> {
+  if (!isDataUrl(dataUrl)) return dataUrl;
+
+  const matches = dataUrl.match(/^data:(image\\/\\w+);base64,(.+)$/);
+  if (!matches) throw new Error("Formato data URL immagine non valido.");
+
+  const original = Buffer.from(matches[2], "base64");
+  const maxBytes = 2 * 1024 * 1024;
+  if (original.byteLength > maxBytes) {
+    throw new Error("La foto supera il limite di 2 MB. Riduci le dimensioni del file e riprova.");
+  }
+
+  const optimized = await sharp(original, { failOn: "error" })
+    .rotate()
+    .resize(1600, 1600, { fit: "inside", withoutEnlargement: true })
+    .webp({ quality: 82, effort: 4 })
+    .toBuffer();
+
+  const fileName = `${crypto.randomUUID()}.webp`;
+  const supabase = createAdminSupabaseClient();
+  const upload = () => supabase.storage.from(bucketName).upload(fileName, optimized, {
+    contentType: "image/webp",
+    upsert: false,
+  });
+
+  let { error: uploadError } = await upload();
+  if (uploadError) {
+    const msg = (uploadError.message ?? "").toLowerCase();
+    if (msg.includes("bucket") || msg.includes("not found") || msg.includes("does not exist")) {
+      const { error: createError } = await supabase.storage.createBucket(bucketName, { public: true });
+      if (createError) throw createError;
+      ({ error: uploadError } = await upload());
+    }
+  }
+  if (uploadError) throw uploadError;
+
+  const { data: publicUrlData } = supabase.storage.from(bucketName).getPublicUrl(fileName);
   return publicUrlData.publicUrl;
 }
 
