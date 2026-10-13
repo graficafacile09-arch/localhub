@@ -9,6 +9,7 @@ import { requireApiArea } from "@/lib/auth/session-area";
 import { canManageStore } from "@/lib/merchant/data";
 import { checkRateLimit } from "@/lib/rate-limiter";
 import { logScan } from "@/lib/scan-log";
+import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
 const LOW_CONFIDENCE_THRESHOLD = 60;
 const MAX_TOKENS = 300;
@@ -164,7 +165,7 @@ export async function POST(
 
     // Conta ogni scansione richiesta dal venditore, inclusi i risultati in cache.
     // Il contatore mensile è atomico e distinto dal rate limit minuto/ora.
-    const admin = (await import("@/lib/supabase/admin")).createAdminSupabaseClient();
+    const admin = createAdminSupabaseClient();
     const { data: quotaData, error: quotaError } = await admin.rpc("consume_merchant_monthly_scan", {
       p_user_id: user.id,
       p_limit: 1000,
