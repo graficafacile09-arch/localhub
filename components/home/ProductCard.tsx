@@ -57,14 +57,18 @@ export default function ProductCard({
         className="block"
       >
         <div
-          className={`relative overflow-hidden border-b border-slate-200 bg-slate-100 ${
+          className={`relative overflow-hidden border-b border-slate-200 ${prodottoTipico ? "bg-white" : "bg-slate-100"} ${
             compatto ? "aspect-[4/3]" : "aspect-square"
           }`}
         >
           <div
             role="img"
             aria-label={nome}
-            className="h-full w-full bg-cover bg-center transition duration-300 group-hover:scale-105"
+            className={`h-full w-full ${
+              prodottoTipico
+                ? "bg-contain bg-center bg-no-repeat"
+                : "bg-cover bg-center transition duration-300 group-hover:scale-105"
+            }`}
             style={{ backgroundImage: `url(${imageUrl})` }}
           />
           {prodottoTipico && (
