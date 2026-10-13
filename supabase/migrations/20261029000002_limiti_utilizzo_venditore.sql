@@ -27,7 +27,7 @@ where s.created_at >= (date_trunc('month', now() at time zone 'UTC') at time zon
   and s.status <> 'rate_limited'
 group by s.user_id, date_trunc('month', s.created_at at time zone 'UTC')::date
 on conflict (user_id, month_start) do update
-set used = greatest(public.merchant_monthly_scan_usage.used, excluded.used),
+set used = greatest(merchant_monthly_scan_usage.used, excluded.used),
     updated_at = now();
 
 alter table public.merchant_monthly_scan_usage enable row level security;
