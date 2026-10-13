@@ -74,7 +74,7 @@ export default async function Home() {
   const [negozi, prodottiInEvidenza, prodottiTipici, statoPreferiti] =
     await Promise.all([
       getNegoziInEvidenza(8),
-      getProdottiInEvidenza(8),
+      getProdottiInEvidenza(60),
       getProdottiTipici(60),
       getStatoPreferitiPerPagina(),
     ]);

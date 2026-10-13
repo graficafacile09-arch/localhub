@@ -28,11 +28,12 @@ export default function HomepageProductCarousel({
   mostraTutti?: boolean;
 }) {
   const [espanso, setEspanso] = useState(false);
-  const [canScrollLeft, setCanScrollLeft] = useState(prodotti.length > 4);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(prodotti.length > 2);
   const viewportRef = useRef<HTMLDivElement>(null);
 
-  const visibili = mostraTutti && !espanso ? prodotti.slice(0, 4) : prodotti;
+  // Il carosello deve scorrere l’intero elenco ricevuto, non ripetere sempre i primi quattro prodotti.
+  const visibili = prodotti;
 
   const aggiornaFrecce = useCallback(() => {
     const el = viewportRef.current;
@@ -40,65 +41,29 @@ export default function HomepageProductCarousel({
 
     const desktop = window.matchMedia("(min-width: 768px)").matches;
     const haScorrimento = el.scrollWidth > el.clientWidth + 2;
-    const puoScorrere = haScorrimento && visibili.length > 1;
+    setCanScrollLeft(haScorrimento && el.scrollLeft > 2);
+    setCanScrollRight(
+      haScorrimento && el.scrollLeft + el.clientWidth < el.scrollWidth - 2
+    );
 
-    // Aggiorna solo le frecce: non spostare il carosello durante
-    // un gesto touch o un'animazione di scorrimento.
-    setCanScrollLeft(desktop && visibili.length > 4 && puoScorrere);
-    setCanScrollRight((desktop ? visibili.length > 4 : visibili.length > 2) && puoScorrere);
-  }, [visibili.length]);
+    // Su mobile le frecce non sono mostrate a sinistra; la navigazione resta touch.
+    if (!desktop) setCanScrollLeft(false);
+  }, []);
 
   const normalizzaPosizione = useCallback(() => {
-    const el = viewportRef.current;
-    if (!el) return;
-
-    const primaCopia = el.children[0] as HTMLElement | undefined;
-    const secondaCopia = el.children[visibili.length] as HTMLElement | undefined;
-    if (!primaCopia || !secondaCopia || visibili.length < 2) return;
-
-    const larghezzaSegmento =
-      secondaCopia.getBoundingClientRect().left -
-      primaCopia.getBoundingClientRect().left;
-    if (larghezzaSegmento <= 0) return;
-
-    // Ricentra solo dopo che lo scorrimento si è fermato, non durante
-    // l'animazione o mentre il browser completa lo snap.
-    if (el.scrollLeft < larghezzaSegmento * 0.5) {
-      el.scrollLeft += larghezzaSegmento;
-    } else if (el.scrollLeft > larghezzaSegmento * 1.5) {
-      el.scrollLeft -= larghezzaSegmento;
-    }
+    // Il carosello è finito: non ricentra né duplica gli articoli.
     aggiornaFrecce();
-  }, [aggiornaFrecce, visibili.length]);
-
-  // window.setTimeout restituisce un numero nel DOM browser; il tipo Node
-  // ReturnType<typeof setTimeout> non è compatibile con questa assegnazione.
-  const timerNormalizzazioneRef = useRef<number | null>(null);
+  }, [aggiornaFrecce]);
 
   const gestisciScroll = useCallback(() => {
     aggiornaFrecce();
-    if (timerNormalizzazioneRef.current !== null) {
-      window.clearTimeout(timerNormalizzazioneRef.current);
-    }
-    timerNormalizzazioneRef.current = window.setTimeout(normalizzaPosizione, 250);
-  }, [aggiornaFrecce, normalizzaPosizione]);
+  }, [aggiornaFrecce]);
 
   useEffect(() => {
     const el = viewportRef.current;
     if (!el) return;
 
-    const posizionaAlCentro = () => {
-      const primaCopia = el.children[0] as HTMLElement | undefined;
-      const secondaCopia = el.children[visibili.length] as HTMLElement | undefined;
-      if (primaCopia && secondaCopia && visibili.length > 1) {
-        el.scrollLeft =
-          secondaCopia.getBoundingClientRect().left -
-          primaCopia.getBoundingClientRect().left;
-      }
-      aggiornaFrecce();
-    };
-
-    const frame = window.requestAnimationFrame(posizionaAlCentro);
+    const frame = window.requestAnimationFrame(aggiornaFrecce);
     el.addEventListener("scroll", gestisciScroll, { passive: true });
     window.addEventListener("resize", normalizzaPosizione);
 
@@ -106,10 +71,6 @@ export default function HomepageProductCarousel({
       window.cancelAnimationFrame(frame);
       el.removeEventListener("scroll", gestisciScroll);
       window.removeEventListener("resize", normalizzaPosizione);
-      if (timerNormalizzazioneRef.current !== null) {
-        window.clearTimeout(timerNormalizzazioneRef.current);
-        timerNormalizzazioneRef.current = null;
-      }
     };
   }, [aggiornaFrecce, gestisciScroll, normalizzaPosizione, visibili.length]);
 
@@ -131,7 +92,8 @@ export default function HomepageProductCarousel({
             type="button"
             onClick={() => scorri("sinistra")}
             aria-label="Mostra i prodotti precedenti"
-            className="absolute left-0 top-1/2 z-10 hidden h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full border border-yellow-300 bg-yellow-400 text-blue-900 shadow-md transition hover:bg-yellow-300 md:flex"
+            disabled={!canScrollLeft}
+            className="absolute left-0 top-1/2 z-10 hidden h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full border border-yellow-300 bg-yellow-400 text-blue-900 shadow-md transition hover:bg-yellow-300 disabled:pointer-events-none disabled:opacity-30 md:flex"
           >
             <ChevronLeft className="h-3.5 w-3.5" aria-hidden />
           </button>
@@ -154,6 +116,7 @@ export default function HomepageProductCarousel({
             type="button"
             onClick={() => scorri("destra")}
             aria-label="Mostra altri prodotti"
+            disabled={!canScrollRight}
             className="absolute right-0 top-1/2 z-10 hidden h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full border border-yellow-300 bg-yellow-400 text-blue-900 shadow-md transition hover:bg-yellow-300 md:flex"
           >
             <ChevronRight className="h-3.5 w-3.5" aria-hidden />
@@ -165,14 +128,12 @@ export default function HomepageProductCarousel({
           className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:gap-5"
           aria-label="Galleria prodotti"
         >
-          {[...visibili, ...visibili, ...visibili].map((prodotto, indice) => {
+          {visibili.map((prodotto) => {
             const prodottoId = String(prodotto.id);
-            const copia = Math.floor(indice / visibili.length);
 
             return (
               <div
-                key={`${prodottoId}-copia-${copia}-indice-${indice % visibili.length}`}
-                data-carousel-copia={copia}
+                key={prodottoId}
                 className="w-[calc((100%_-_0.75rem)_/_2)] min-w-[calc((100%_-_0.75rem)_/_2)] shrink-0 snap-start md:w-[calc((100%_-_3.75rem)_/_4)] md:min-w-[calc((100%_-_3.75rem)_/_4)]"
               >
                 <ProductCard
@@ -201,25 +162,54 @@ export default function HomepageProductCarousel({
       </div>
 
       {mostraTutti && prodotti.length > 4 && (
-        <div className="mt-6 flex justify-center">
-          <button
-            type="button"
-            onClick={() => setEspanso((v) => !v)}
-            className="inline-flex items-center gap-2 rounded-xl bg-yellow-400 px-6 py-2.5 text-sm font-black text-blue-900 shadow-sm transition hover:bg-yellow-300 active:scale-95"
-          >
-            {espanso ? (
-              <>
-                Mostra meno
-                <ChevronUp className="h-4 w-4" aria-hidden />
-              </>
-            ) : (
-              <>
-                Mostra tutto
-                <ChevronDown className="h-4 w-4" aria-hidden />
-              </>
-            )}
-          </button>
-        </div>
+        <>
+          {espanso && (
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 md:gap-5">
+              {prodotti.map((prodotto) => {
+                const prodottoId = String(prodotto.id);
+                return (
+                  <ProductCard
+                    key={prodottoId}
+                    id={prodottoId}
+                    slug={(prodotto.slug as string) ?? prodottoId}
+                    nome={prodotto.nome as string}
+                    prezzo={prodotto.prezzo as number}
+                    categoria={(prodotto.categoria as string) ?? null}
+                    negozio_nome={(prodotto.negozio_nome as string) ?? ""}
+                    negozio_id={String(prodotto.negozio_id ?? "")}
+                    immagine_principale={(prodotto.immagine_principale as string) ?? null}
+                    haVarianti={Boolean(prodotto.ha_varianti)}
+                    {...(prodottoTipico ? { prodottoTipico: true } : {})}
+                    {...(compatto ? { compatto: true } : {})}
+                    preferitoAttivo={statoPreferiti.chiavi.has(
+                      chiavePreferito("prodotto", prodottoId)
+                    )}
+                    autenticato={statoPreferiti.autenticato}
+                  />
+                );
+              })}
+            </div>
+          )}
+          <div className="mt-6 flex justify-center">
+            <button
+              type="button"
+              onClick={() => setEspanso((v) => !v)}
+              className="inline-flex items-center gap-2 rounded-xl bg-yellow-400 px-6 py-2.5 text-sm font-black text-blue-900 shadow-sm transition hover:bg-yellow-300 active:scale-95"
+            >
+              {espanso ? (
+                <>
+                  Nascondi elenco
+                  <ChevronUp className="h-4 w-4" aria-hidden />
+                </>
+              ) : (
+                <>
+                  Mostra tutti i prodotti
+                  <ChevronDown className="h-4 w-4" aria-hidden />
+                </>
+              )}
+            </button>
+          </div>
+        </>
       )}
     </div>
   );
