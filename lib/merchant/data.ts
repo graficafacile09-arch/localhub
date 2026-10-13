@@ -725,10 +725,18 @@ export async function createMerchantProductForStore(
     };
   }
 
-  const immagineFinale =
-    input.immaginePrincipale.trim()
+  let immagineFinale: string | null = null;
+  try {
+    immagineFinale = input.immaginePrincipale.trim()
       ? await uploadProductImageDataUrlToStorage(input.immaginePrincipale.trim())
       : null;
+  } catch (caught) {
+    return {
+      data: null,
+      setupRequired: false,
+      errorMessage: caught instanceof Error ? caught.message : "Impossibile elaborare la foto del prodotto.",
+    };
+  }
 
   const payloadBase: Record<string, unknown> = {
     negozio_id: negozioId,
