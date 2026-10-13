@@ -20,9 +20,10 @@ export default function PinoHomepageHelper() {
   const [isNearBottom, setIsNearBottom] = useState(false);
 
   useEffect(() => {
-    if (pathname !== "/") {
+    if (isPinoTransactionalRoute(pathname)) {
       setHasReachedArea(false);
       setIsScrolling(false);
+      setIsNearBottom(false);
       return;
     }
 
@@ -81,9 +82,15 @@ export default function PinoHomepageHelper() {
     window.dispatchEvent(new Event("assistant:open"));
   }, []);
 
-  if (pathname !== "/" || isPinoTransactionalRoute(pathname)) return null;
+  if (isPinoTransactionalRoute(pathname)) return null;
 
-  const visible = hasReachedArea && !isScrolling && !isNearBottom;
+  // Sulla homepage manteniamo il comportamento esistente: Pino compare dopo
+  // lo scroll iniziale. Nelle altre pagine è disponibile subito, ma scompare
+  // quando il footer entra nella viewport.
+  const visible =
+    !isScrolling &&
+    !isNearBottom &&
+    (pathname !== "/" || hasReachedArea);
 
   if (!visible) return null;
 
