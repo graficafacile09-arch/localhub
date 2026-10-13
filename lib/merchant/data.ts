@@ -850,10 +850,18 @@ export async function updateMerchantProductForStore(
 
   const supabase = await getDbForUser(userId);
 
-  const immagineFinale =
-    input.immaginePrincipale.trim()
+  let immagineFinale: string | null = null;
+  try {
+    immagineFinale = input.immaginePrincipale.trim()
       ? await uploadProductImageDataUrlToStorage(input.immaginePrincipale.trim())
       : null;
+  } catch (caught) {
+    return {
+      data: null,
+      setupRequired: false,
+      errorMessage: caught instanceof Error ? caught.message : "Impossibile elaborare la foto del prodotto.",
+    };
+  }
 
   const payload: Record<string, unknown> = {
     nome: input.nome.trim(),
@@ -992,9 +1000,17 @@ export async function patchMerchantProductForStore(
   if (patch.immaginePrincipale !== undefined) {
     // Stesso meccanismo di create/update: carica il data URL nel bucket
     // product-images e salva l'URL pubblico (gli URL già persistiti restano tali).
-    payload.immagine_principale = await uploadProductImageDataUrlToStorage(
-      patch.immaginePrincipale.trim()
-    );
+    try {
+      payload.immagine_principale = await uploadProductImageDataUrlToStorage(
+        patch.immaginePrincipale.trim()
+      );
+    } catch (caught) {
+      return {
+        data: null,
+        setupRequired: false,
+        errorMessage: caught instanceof Error ? caught.message : "Impossibile elaborare la foto del prodotto.",
+      };
+    }
   }
 
   if (Object.keys(payload).length === 0) {
