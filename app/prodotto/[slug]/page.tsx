@@ -289,6 +289,9 @@ export default async function PaginaProdotto({ params }: { params: Promise<Param
                 <span className={`inline-block h-1.5 w-1.5 rounded-full ${!esaurito ? "bg-blue-500" : "bg-blue-500"}`} />
                 {!esaurito ? `${disponibile} disponibili` : "Esaurito"}
               </span>
+              <span className="text-[10px] leading-4 text-red-600">
+                Demo: account e dati di test; acquisti non attivi.
+              </span>
             </div>
           )}
         </div>
