@@ -269,10 +269,11 @@ export async function POST(
   if (!createResult.data) {
     const limitReached = createResult.errorMessage?.includes("200 annunci") ||
       createResult.errorMessage?.includes("MERCHANT_PRODUCT_LIMIT_REACHED");
+    const imageTooLarge = createResult.errorMessage?.includes("2 MB");
     return apiError(
-      limitReached ? "PRODUCT_LIMIT_REACHED" : "PRODUCT_CREATE_FAILED",
+      limitReached ? "PRODUCT_LIMIT_REACHED" : imageTooLarge ? "PRODUCT_IMAGE_TOO_LARGE" : "PRODUCT_CREATE_FAILED",
       createResult.errorMessage ?? "Impossibile creare il prodotto.",
-      limitReached ? 409 : 500
+      limitReached ? 409 : imageTooLarge ? 413 : 500
     );
   }
 
