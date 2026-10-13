@@ -852,7 +852,7 @@ export async function updateMerchantProductForStore(
 
   const immagineFinale =
     input.immaginePrincipale.trim()
-      ? await uploadDataUrlToStorage(input.immaginePrincipale.trim())
+      ? await uploadProductImageDataUrlToStorage(input.immaginePrincipale.trim())
       : null;
 
   const payload: Record<string, unknown> = {
@@ -992,7 +992,7 @@ export async function patchMerchantProductForStore(
   if (patch.immaginePrincipale !== undefined) {
     // Stesso meccanismo di create/update: carica il data URL nel bucket
     // product-images e salva l'URL pubblico (gli URL già persistiti restano tali).
-    payload.immagine_principale = await uploadDataUrlToStorage(
+    payload.immagine_principale = await uploadProductImageDataUrlToStorage(
       patch.immaginePrincipale.trim()
     );
   }
