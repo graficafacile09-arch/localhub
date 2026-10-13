@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Store } from "lucide-react";
+import { ShoppingCart, Store } from "lucide-react";
 import { getProdottoImmagine } from "@/lib/prodotti-immagini";
 import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
 
@@ -113,6 +113,19 @@ export default function ProductCard({
           </p>
         </div>
       </Link>
+
+      {/* CTA desktop dedicata alla vetrina Eccellenze: porta alla scheda prodotto
+          dove l'utente può selezionare le opzioni e aggiungerlo al carrello. */}
+      {prodottoTipico && (
+        <Link
+          href={`/prodotto/${slug}`}
+          className="mx-3 mb-3 hidden items-center justify-center gap-2 rounded-lg bg-yellow-400 px-3 py-2 text-sm font-bold text-slate-900 transition hover:bg-yellow-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-600 focus-visible:ring-offset-2 md:flex"
+          aria-label={`Acquista ${nome}`}
+        >
+          <ShoppingCart className="h-4 w-4" aria-hidden />
+          Acquista
+        </Link>
+      )}
 
       {mostraPreferiti && (
         <FavoritoButton
