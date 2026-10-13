@@ -39,6 +39,7 @@ import {
 } from "./prompt";
 import { extractJsonFromText } from "@/lib/product-assistant/providers/utils";
 import { callGeminiText } from "@/lib/ai/gemini-text";
+import { searchAttractions } from "./attrazioni";
 import type { NegozioRicerca, ProdottoRicerca } from "@/lib/ricerca-ai";
 import { pianoIntentoLocale } from "./local-intents";
 import {
@@ -1011,6 +1012,27 @@ export async function chatConAssistente(
   // Cap sulla domanda: evita abuso di token e superfici di prompt injection
   // (la storia è già troncata a 300 caratteri per messaggio).
   const domanda = (ultimo && ultimo.role === "user" ? ultimo.content : "").slice(0, 500);
+
+  // Guida turistica InCittà: usa lo stesso catalogo della pagina /attrazioni.
+  // Il filtro d'intento evita di deviare qui normali ricerche di prodotti o servizi.
+  const richiestaTuristica =
+    /\b(muse[oi]|monument[oi]|attrazion[ei]|cosa vedere|luoghi da visitare|luoghi da vedere|visitare|palazz[oi]|castell[oi]|chies[ae]|teatr[oi]|biblioteca|archivio|borg[oh]i?|dintorni|centro storico|festival|mostre|parco|itinerario|turistic[oa])\b/i.test(domanda);
+  if (richiestaTuristica) {
+    const luoghi = searchAttractions(domanda, 6);
+    if (luoghi.length > 0) {
+      const elenco = luoghi.map((luogo) => {
+        const maps = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(luogo.queryMaps);
+        return `- **${luogo.nome}** — ${luogo.tipo}. ${luogo.descrizione} [Apri su Google Maps](${maps})${luogo.url ? ` · [Fonte / sito di riferimento](${luogo.url})` : ""}`;
+      }).join("\n");
+      return {
+        risposta: `Ho cercato nella guida Attrazioni di InCittà. Ecco i risultati più pertinenti:\n\n${elenco}\n\nPer orari, aperture e date degli eventi, verifica sempre le fonti ufficiali aggiornate.`,
+        negozi: [],
+        prodotti: [],
+        processingMs: Date.now() - inizio,
+        source: "assistente",
+      };
+    }
+  }
 
   // Pino Intent Layer v1: la classificazione avviene PRIMA di ogni ricerca e
   // guida la scelta dei tool, le priorità di recupero e il messaggio finale.
