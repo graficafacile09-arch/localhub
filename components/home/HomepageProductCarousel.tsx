@@ -116,6 +116,7 @@ export default function HomepageProductCarousel({
             type="button"
             onClick={() => scorri("destra")}
             aria-label="Mostra altri prodotti"
+            disabled={!canScrollRight}
             className="absolute right-0 top-1/2 z-10 hidden h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full border border-yellow-300 bg-yellow-400 text-blue-900 shadow-md transition hover:bg-yellow-300 md:flex"
           >
             <ChevronRight className="h-3.5 w-3.5" aria-hidden />
