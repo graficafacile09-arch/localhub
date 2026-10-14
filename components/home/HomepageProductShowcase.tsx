@@ -10,8 +10,10 @@ type StatoPreferiti = {
 
 function testoCategoria(prodotto: ProdottoRecord) {
   const categoria = prodotto.categoria;
-  if (typeof categoria === "string" && categoria.trim()) return categoria.trim();
-  return "Altri prodotti";
+  if (typeof categoria !== "string" || !categoria.trim()) return "Altri prodotti";
+  const pulita = categoria.trim();
+  if (pulita.toLocaleLowerCase("it") === "gioiello") return "Gioielli";
+  return pulita;
 }
 
 function ProductSectionCard({
@@ -30,7 +32,7 @@ function ProductSectionCard({
   if (prodotti.length === 0) return null;
 
   return (
-    <article className="flex w-[88vw] max-w-[420px] shrink-0 snap-start flex-col rounded-2xl border border-blue-100 bg-[#f7faff] p-3 shadow-sm sm:p-4 md:w-[min(72vw,960px)] md:max-w-none md:p-5">
+    <article className="flex w-full min-w-0 flex-col rounded-2xl border border-blue-100 bg-[#f7faff] p-3 shadow-sm sm:p-4 md:w-[min(72vw,960px)] md:shrink-0 md:snap-start md:p-5">
       <div className="mb-3 flex items-center justify-between gap-3">
         <h2 className="min-w-0 text-base font-black leading-tight tracking-tight text-slate-900 sm:text-lg md:text-xl">
           {titolo}
@@ -96,7 +98,7 @@ export default function HomepageProductShowcase({
         </div>
 
         <div
-          className="flex snap-x snap-mandatory items-stretch gap-3 overflow-x-auto overscroll-x-contain pb-2 [scrollbar-width:thin] sm:gap-4 md:gap-5"
+          className="flex flex-col items-stretch gap-3 pb-2 md:flex-row md:snap-x md:snap-mandatory md:gap-5 md:overflow-x-auto md:overscroll-x-contain md:[scrollbar-width:thin]"
           aria-label="Sezioni prodotti scorrevoli"
         >
           <ProductSectionCard
