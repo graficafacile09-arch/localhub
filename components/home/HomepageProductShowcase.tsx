@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import HomepageProductCarousel from "@/components/home/HomepageProductCarousel";
@@ -89,7 +88,7 @@ export default function HomepageProductShowcase({
       <div className="mx-auto max-w-[1800px]">
         <div className="mb-3 flex items-center justify-between gap-3 px-1">
           <p className="text-xs font-semibold text-blue-900 sm:text-sm">
-            Scopri i prodotti dei negozi locali
+            Scopri i prodotti dei negozi locali per categoria
           </p>
           <span className="shrink-0 text-xs font-semibold text-slate-500">
             Scorri <span aria-hidden>→</span>
@@ -100,30 +99,6 @@ export default function HomepageProductShowcase({
           className="flex snap-x snap-mandatory items-stretch gap-3 overflow-x-auto overscroll-x-contain pb-2 [scrollbar-width:thin] sm:gap-4 md:gap-5"
           aria-label="Sezioni prodotti scorrevoli"
         >
-          <article className="flex w-[44vw] min-w-[150px] max-w-[210px] shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-blue-100 bg-[#f7faff] shadow-sm sm:w-[210px] md:w-[230px] md:max-w-[230px]">
-            <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden bg-slate-100">
-              <Image
-                src="/hero-coppia-castrovillari.webp"
-                alt="Coppia che fa shopping nei negozi della città"
-                fill
-                priority
-                sizes="(max-width: 639px) 44vw, 230px"
-                className="object-cover object-center"
-              />
-            </div>
-            <div className="flex flex-1 flex-col p-3 sm:p-3.5">
-              <h1 className="text-sm font-black leading-snug tracking-tight text-slate-950 sm:text-base">
-                Negozi, offerte e servizi locali: cercali, confrontali e acquista restando nella tua città.
-              </h1>
-              <Link
-                href="/negozi"
-                className="mt-auto inline-flex min-h-9 items-center justify-center gap-1.5 self-stretch rounded-xl bg-yellow-400 px-2 py-2 text-xs font-black text-blue-950 shadow-sm transition hover:bg-yellow-300 sm:text-sm"
-              >
-                Scopri i prodotti <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
-              </Link>
-            </div>
-          </article>
-
           <ProductSectionCard
             titolo="Eccellenze calabresi"
             href="/prodotti-tipici"
