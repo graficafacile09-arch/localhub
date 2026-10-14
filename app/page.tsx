@@ -15,6 +15,7 @@ import {
 } from "@/lib/negozi";
 import { getNegozioCardImmagine } from "@/lib/negozi-card-immagini";
 import HomepageProductShowcase from "@/components/home/HomepageProductShowcase";
+import HomepageProductSwipeReveal from "@/components/home/HomepageProductSwipeReveal";
 import { chiavePreferito, getStatoPreferitiPerPagina } from "@/lib/cliente/favorites";
 import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
 
@@ -81,68 +82,80 @@ export default async function Home() {
     <main className="min-h-screen bg-[#eef3f8]">
       <Header homepage />
 
-      {/* ═══════════════════════════════════════════════════════════════════
-          HERO — ripristinata nella posizione originale
-          ═══════════════════════════════════════════════════════════════════ */}
-      <section className="relative overflow-hidden rounded-b-[2rem] bg-slate-900 shadow-lg shadow-slate-900/10 sm:rounded-b-[2.5rem] md:min-h-[600px]">
-        <Image
-          src="/hero-coppia-castrovillari.webp"
-          alt="Coppia a Castrovillari"
-          fill
-          sizes="100vw"
-          priority
-          className="absolute inset-0 h-full w-full object-cover object-center md:object-[center_40%]"
-        />
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 bg-gradient-to-b from-slate-950/60 via-slate-950/25 to-transparent"
-        />
-        <div className="relative z-10 mx-auto max-w-7xl px-4 py-10 text-left md:flex md:min-h-[600px] md:w-full md:items-center md:px-6 md:py-16">
-          <div>
-            <h1 className="mt-4 max-w-xl text-3xl font-black leading-tight tracking-tight text-white drop-shadow-lg md:mt-6 md:text-7xl">
-              Tutto quello che cerchi... <span className="text-yellow-300">è già</span> nella tua città.
-            </h1>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════════════════════════════════════════════════════════════
-          VALUE STRIP — perché InCittà (3 promesse, nessuna duplicazione)
-          ═══════════════════════════════════════════════════════════════════ */}
-      <section className="border-y border-slate-200 bg-white shadow-sm">
-        <div className="mx-auto grid max-w-7xl grid-cols-3 gap-2 px-3 py-3 md:gap-4 md:px-6 md:py-4">
-          <div className="flex min-w-0 flex-col items-center gap-1.5 text-center sm:flex-row sm:gap-2.5 sm:text-left">
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-yellow-400 text-blue-900 shadow-[0_4px_14px_-4px_rgba(202,138,4,0.45)] sm:h-8 sm:w-8">
-              <Store className="h-5 w-5" aria-hidden />
-            </span>
-            <div>
-              <h2 className="text-[10px] font-black leading-tight text-slate-900 sm:text-sm">Sostieni il commercio locale</h2>
-            </div>
-          </div>
-          <div className="flex min-w-0 flex-col items-center gap-1.5 text-center sm:flex-row sm:gap-2.5 sm:text-left">
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-yellow-400 text-blue-900 shadow-[0_4px_14px_-4px_rgba(202,138,4,0.45)] sm:h-8 sm:w-8">
-              <SearchCheck className="h-5 w-5" aria-hidden />
-            </span>
-            <div>
-              <h2 className="text-[10px] font-black leading-tight text-slate-900 sm:text-sm">Trova tutto in un unico posto</h2>
-            </div>
-          </div>
-          <div className="flex min-w-0 flex-col items-center gap-1.5 text-center sm:flex-row sm:gap-2.5 sm:text-left">
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-yellow-400 text-blue-900 shadow-[0_4px_14px_-4px_rgba(202,138,4,0.45)] sm:h-8 sm:w-8">
-              <Tag className="h-5 w-5" aria-hidden />
-            </span>
-            <div>
-              <h2 className="text-[10px] font-black leading-tight text-slate-900 sm:text-sm">Offerte dal territorio</h2>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Caroselli prodotti a schede: scorri orizzontalmente per categoria. */}
-      <HomepageProductShowcase
-        prodottiTipici={prodottiTipici}
-        prodottiCatalogo={prodottiCatalogo}
-        statoPreferiti={statoPreferiti}
+      <HomepageProductSwipeReveal
+        hero={
+          <>
+                  {/* ═══════════════════════════════════════════════════════════════════
+                      HERO — ripristinata nella posizione originale
+                      ═══════════════════════════════════════════════════════════════════ */}
+                  <section className="relative overflow-hidden rounded-b-[2rem] bg-slate-900 shadow-lg shadow-slate-900/10 sm:rounded-b-[2.5rem] md:min-h-[600px]">
+                    <Image
+                      src="/hero-coppia-castrovillari.webp"
+                      alt="Coppia a Castrovillari"
+                      fill
+                      sizes="100vw"
+                      priority
+                      className="absolute inset-0 h-full w-full object-cover object-center md:object-[center_40%]"
+                    />
+                    <div
+                      aria-hidden="true"
+                      className="absolute inset-0 bg-gradient-to-b from-slate-950/60 via-slate-950/25 to-transparent"
+                    />
+                    <div className="relative z-10 mx-auto max-w-7xl px-4 py-10 text-left md:flex md:min-h-[600px] md:w-full md:items-center md:px-6 md:py-16">
+                      <div>
+                        <h1 className="mt-4 max-w-xl text-3xl font-black leading-tight tracking-tight text-white drop-shadow-lg md:mt-6 md:text-7xl">
+                          Tutto quello che cerchi... <span className="text-yellow-300">è già</span> nella tua città.
+                        </h1>
+                      </div>
+                    </div>
+                  </section>
+          </>
+        }
+        valueStrip={
+          <>
+                  {/* ═══════════════════════════════════════════════════════════════════
+                      VALUE STRIP — perché InCittà (3 promesse, nessuna duplicazione)
+                      ═══════════════════════════════════════════════════════════════════ */}
+                  <section className="border-y border-slate-200 bg-white shadow-sm">
+                    <div className="mx-auto grid max-w-7xl grid-cols-3 gap-2 px-3 py-3 md:gap-4 md:px-6 md:py-4">
+                      <div className="flex min-w-0 flex-col items-center gap-1.5 text-center sm:flex-row sm:gap-2.5 sm:text-left">
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-yellow-400 text-blue-900 shadow-[0_4px_14px_-4px_rgba(202,138,4,0.45)] sm:h-8 sm:w-8">
+                          <Store className="h-5 w-5" aria-hidden />
+                        </span>
+                        <div>
+                          <h2 className="text-[10px] font-black leading-tight text-slate-900 sm:text-sm">Sostieni il commercio locale</h2>
+                        </div>
+                      </div>
+                      <div className="flex min-w-0 flex-col items-center gap-1.5 text-center sm:flex-row sm:gap-2.5 sm:text-left">
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-yellow-400 text-blue-900 shadow-[0_4px_14px_-4px_rgba(202,138,4,0.45)] sm:h-8 sm:w-8">
+                          <SearchCheck className="h-5 w-5" aria-hidden />
+                        </span>
+                        <div>
+                          <h2 className="text-[10px] font-black leading-tight text-slate-900 sm:text-sm">Trova tutto in un unico posto</h2>
+                        </div>
+                      </div>
+                      <div className="flex min-w-0 flex-col items-center gap-1.5 text-center sm:flex-row sm:gap-2.5 sm:text-left">
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-yellow-400 text-blue-900 shadow-[0_4px_14px_-4px_rgba(202,138,4,0.45)] sm:h-8 sm:w-8">
+                          <Tag className="h-5 w-5" aria-hidden />
+                        </span>
+                        <div>
+                          <h2 className="text-[10px] font-black leading-tight text-slate-900 sm:text-sm">Offerte dal territorio</h2>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+          </>
+        }
+        products={
+          <>
+                  {/* Caroselli prodotti a schede: scorri orizzontalmente per categoria. */}
+                  <HomepageProductShowcase
+                    prodottiTipici={prodottiTipici}
+                    prodottiCatalogo={prodottiCatalogo}
+                    statoPreferiti={statoPreferiti}
+                  />
+          </>
+        }
       />
 
       {/* ═══════════════════════════════════════════════════════════════════
