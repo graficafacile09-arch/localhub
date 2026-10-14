@@ -93,9 +93,6 @@ export default function HomepageProductShowcase({
           <p className="text-xs font-semibold text-blue-900 sm:text-sm">
             Scopri i prodotti dei negozi locali per categoria
           </p>
-          <span className="shrink-0 text-xs font-semibold text-slate-500">
-            Scorri <span aria-hidden>→</span>
-          </span>
         </div>
 
         <HomepageProductCategoryScroller>
