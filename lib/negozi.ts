@@ -1900,3 +1900,42 @@ async function cercaNegoziTolleranti(
     .slice(0, 10)
     .map((x) => x.negozio);
 }
+
+// Catalogo completo per la vetrina homepage: tutti i prodotti attivi dei negozi
+// pubblici, non soltanto quelli marcati come "in evidenza". La query dei negozi
+// è unica e consente di escludere attività disattivate o nel cestino.
+export async function getProdottiCatalogoHomepage(limit = 1000) {
+  const db = getDb();
+  if (!db) return [];
+
+  const { data: prodotti, error } = await db
+    .from("prodotti")
+    .select("id, slug, negozio_id, nome, prezzo, categoria, immagine_principale, ha_varianti, created_at")
+    .eq("attivo", true)
+    .order("created_at", { ascending: false })
+    .limit(Math.max(1, Math.min(limit, 1000)));
+
+  if (error || !prodotti?.length) return [];
+
+  const negozioIds = Array.from(
+    new Set(prodotti.map((prodotto) => prodotto.negozio_id as string).filter(Boolean))
+  );
+  if (negozioIds.length === 0) return [];
+
+  const { data: negozi, error: erroreNegozi } = await db
+    .from("negozi")
+    .select("id, nome")
+    .eq("attivo", true)
+    .is("deleted_at", null)
+    .in("id", negozioIds);
+
+  if (erroreNegozi) return [];
+
+  const nomiNegozi = new Map((negozi ?? []).map((negozio) => [negozio.id, negozio.nome]));
+  return prodotti
+    .filter((prodotto) => nomiNegozi.has(prodotto.negozio_id as string))
+    .map((prodotto) => ({
+      ...prodotto,
+      negozio_nome: nomiNegozi.get(prodotto.negozio_id as string) ?? "",
+    }));
+}
