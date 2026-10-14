@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import HomepageProductCarousel from "@/components/home/HomepageProductCarousel";
+import HomepageProductCategoryScroller from "@/components/home/HomepageProductCategoryScroller";
 
 type ProdottoRecord = Record<string, unknown>;
 type StatoPreferiti = {
@@ -97,10 +98,7 @@ export default function HomepageProductShowcase({
           </span>
         </div>
 
-        <div
-          className="flex flex-col items-stretch gap-3 pb-2 md:flex-row md:snap-x md:snap-mandatory md:gap-5 md:overflow-x-auto md:overscroll-x-contain md:[scrollbar-width:thin]"
-          aria-label="Sezioni prodotti scorrevoli"
-        >
+        <HomepageProductCategoryScroller>
           <ProductSectionCard
             titolo="Eccellenze calabresi"
             href="/prodotti-tipici"
@@ -124,7 +122,7 @@ export default function HomepageProductShowcase({
               I prodotti dei negozi locali saranno visibili qui appena disponibili.
             </article>
           )}
-        </div>
+        </HomepageProductCategoryScroller>
       </div>
     </section>
   );
