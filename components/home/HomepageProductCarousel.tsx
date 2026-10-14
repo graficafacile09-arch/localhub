@@ -67,7 +67,7 @@ export default function HomepageProductCarousel({
               immagine_principale={(prodotto.immagine_principale as string) ?? null}
               haVarianti={Boolean(prodotto.ha_varianti)}
               {...(prodottoTipico ? { prodottoTipico: true } : {})}
-              compatto={compatto || true}
+              compatto={compatto}
               preferitoAttivo={statoPreferiti.chiavi.has(
                 chiavePreferito("prodotto", prodottoId)
               )}
