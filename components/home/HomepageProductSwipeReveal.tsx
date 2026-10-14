@@ -76,8 +76,8 @@ export default function HomepageProductSwipeReveal({
     <>
       <div
         className="relative overflow-hidden bg-[#e5edf7] md:h-[600px]"
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
+        onTouchStartCapture={onTouchStart}
+        onTouchEndCapture={onTouchEnd}
         aria-label="Homepage InCittà: scorri orizzontalmente per passare dalla foto ai prodotti"
       >
         <div
