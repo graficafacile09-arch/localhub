@@ -92,7 +92,6 @@ export default function HomepageProductSwipeReveal({
           className={`transition-transform duration-300 ease-out [&>section]:min-h-full ${showProducts ? "relative w-full translate-x-0 overflow-visible md:absolute md:inset-0 md:overflow-y-auto" : "absolute inset-0 w-full translate-x-full overflow-y-auto md:overflow-y-auto"}`}
           aria-hidden={!showProducts}
           id="homepage-prodotti"
-          data-home-products-swipe
         >
           {products}
         </div>
