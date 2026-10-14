@@ -64,8 +64,9 @@ export default function HomepageProductCarousel({
 
   return (
     <div className="min-w-0" onTouchStart={onCarouselTouchStart} onTouchEnd={onCarouselTouchEnd}>
-      <div className="grid min-w-0 grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
-        {prodottiVisibili.map((prodotto) => {
+      <div className="group/carousel relative">
+        <div className="grid min-w-0 grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
+          {prodottiVisibili.map((prodotto) => {
           const prodottoId = String(prodotto.id);
           return (
             <ProductCard
@@ -87,7 +88,31 @@ export default function HomepageProductCarousel({
               autenticato={statoPreferiti.autenticato}
             />
           );
-        })}
+          })}
+        </div>
+
+        {numeroPagine > 1 && (
+          <>
+            <button
+              type="button"
+              onClick={() => setPagina((corrente) => Math.max(0, corrente - 1))}
+              disabled={paginaSicura === 0}
+              aria-label="Mostra i quattro prodotti precedenti"
+              className="absolute left-1 top-1/2 z-10 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200/90 bg-white/95 text-slate-700 shadow-md transition-opacity hover:bg-white disabled:opacity-0 md:opacity-0 md:group-hover/carousel:opacity-100 md:group-focus-within/carousel:opacity-100"
+            >
+              <ChevronLeft className="h-5 w-5" aria-hidden />
+            </button>
+            <button
+              type="button"
+              onClick={() => setPagina((corrente) => Math.min(numeroPagine - 1, corrente + 1))}
+              disabled={paginaSicura >= numeroPagine - 1}
+              aria-label="Mostra i quattro prodotti successivi"
+              className="absolute right-1 top-1/2 z-10 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200/90 bg-white/95 text-slate-700 shadow-md transition-opacity hover:bg-white disabled:opacity-0 md:opacity-0 md:group-hover/carousel:opacity-100 md:group-focus-within/carousel:opacity-100"
+            >
+              <ChevronRight className="h-5 w-5" aria-hidden />
+            </button>
+          </>
+        )}
       </div>
 
       {numeroPagine > 1 && (
