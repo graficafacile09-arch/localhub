@@ -51,10 +51,10 @@ export default function ProductCard({
   const prezzoFormattato = Number.isFinite(prezzo) ? prezzo.toFixed(2) : String(prezzo);
 
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ring-1 ring-slate-100 transition hover:-translate-y-0.5 hover:border-yellow-300 hover:shadow-lg">
+    <div className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ring-1 ring-slate-100 transition hover:-translate-y-0.5 hover:border-yellow-300 hover:shadow-lg">
       <Link
         href={`/prodotto/${slug}`}
-        className="block"
+        className="flex flex-1 flex-col"
       >
         <div
           className={`relative overflow-hidden border-b border-slate-200 ${prodottoTipico ? "bg-white" : "bg-slate-100"} ${
@@ -92,7 +92,7 @@ export default function ProductCard({
             </span>
           )}
         </div>
-        <div className={compatto ? "border-l-4 border-blue-700 bg-slate-50 p-2.5 md:p-3" : "border-l-4 border-blue-700 bg-slate-50 p-3 md:p-4"}>
+        <div className={`flex flex-1 flex-col border-l-4 border-blue-700 bg-slate-50 ${compatto ? "p-2.5 md:p-3" : "p-3 md:p-4"}`}>
           <h3
             className={`line-clamp-2 font-bold leading-snug text-slate-900 transition group-hover:text-yellow-800 ${
               compatto ? "text-[13px]" : "text-sm"
@@ -119,7 +119,7 @@ export default function ProductCard({
       {prodottoTipico && (
         <Link
           href={`/prodotto/${slug}`}
-          className="mx-3 mb-3 hidden items-center justify-center gap-2 rounded-lg bg-yellow-400 px-3 py-2 text-sm font-bold text-slate-900 transition hover:bg-yellow-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-600 focus-visible:ring-offset-2 md:flex"
+          className="mx-3 mt-auto mb-3 hidden min-h-10 items-center justify-center gap-2 rounded-lg bg-yellow-400 px-3 py-2 text-sm font-bold text-slate-900 transition hover:bg-yellow-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-600 focus-visible:ring-offset-2 md:flex"
           aria-label={`Acquista ${nome}`}
         >
           <ShoppingCart className="h-4 w-4" aria-hidden />
