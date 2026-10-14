@@ -32,13 +32,13 @@ export default function HomepageProductSwipeReveal({
   return (
     <>
       <div
-        className="relative min-h-[360px] overflow-hidden bg-[#e5edf7] sm:min-h-[420px] md:h-[600px] md:min-h-0"
+        className="relative min-h-[420px] overflow-hidden bg-[#e5edf7] sm:min-h-[460px] md:h-[600px] md:min-h-0"
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
         aria-label="Homepage InCittà: scorri orizzontalmente per passare dalla foto ai prodotti"
       >
         <div
-          className={`absolute inset-0 transition-transform duration-300 ease-out ${showProducts ? "-translate-x-full" : "translate-x-0"}`}
+          className={`absolute inset-0 min-h-[420px] transition-transform duration-300 ease-out sm:min-h-[460px] md:min-h-0 ${showProducts ? "-translate-x-full" : "translate-x-0"}`}
           aria-hidden={showProducts}
         >
           {hero}
@@ -51,6 +51,12 @@ export default function HomepageProductSwipeReveal({
         >
           {products}
         </div>
+
+        {!showProducts && (
+          <div className="pointer-events-none absolute bottom-5 left-1/2 z-20 -translate-x-1/2 whitespace-nowrap rounded-full border border-white/35 bg-slate-950/35 px-3 py-1.5 text-xs font-semibold text-white shadow-sm backdrop-blur-sm sm:bottom-6 sm:text-sm">
+            Scorri a sinistra per scoprire i prodotti <span aria-hidden>←</span>
+          </div>
+        )}
 
         <button
           type="button"
