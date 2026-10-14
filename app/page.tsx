@@ -1,6 +1,5 @@
 import Header from "@/components/Header/Header";
 import Link from "next/link";
-import Image from "next/image";
 
 import {
   ArrowRight,
@@ -8,17 +7,15 @@ import {
   Store,
   Tag,
 } from "lucide-react";
-import HeaderNav from "@/components/Header/HeaderNav";
 import {
   getNegoziInEvidenza,
   getProdottiInEvidenza,
   getProdottiTipici,
 } from "@/lib/negozi";
 import { getNegozioCardImmagine } from "@/lib/negozi-card-immagini";
+import HomepageProductShowcase from "@/components/home/HomepageProductShowcase";
 import { chiavePreferito, getStatoPreferitiPerPagina } from "@/lib/cliente/favorites";
 import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
-import EccellenzeCalabresiGrid from "@/components/home/EccellenzeCalabresiGrid";
-import HomepageProductCarousel from "@/components/home/HomepageProductCarousel";
 
 // La homepage deve riflettere in tempo reale i negozi in evidenza flaggati
 // dal merchant (il toggle "In evidenza" della dashboard), quindi non viene
@@ -74,8 +71,8 @@ export default async function Home() {
   const [negozi, prodottiInEvidenza, prodottiTipici, statoPreferiti] =
     await Promise.all([
       getNegoziInEvidenza(8),
-      getProdottiInEvidenza(60),
-      getProdottiTipici(60),
+      getProdottiInEvidenza(200),
+      getProdottiTipici(200),
       getStatoPreferitiPerPagina(),
     ]);
 
@@ -83,34 +80,12 @@ export default async function Home() {
     <main className="min-h-screen bg-[#eef3f8]">
       <Header homepage />
 
-      {/* ═══════════════════════════════════════════════════════════════════
-          HERO — fotografica, messaggio immediato, ricerca + AI
-          ═══════════════════════════════════════════════════════════════════ */}
-      <section className="relative overflow-hidden rounded-b-[2rem] bg-slate-900 shadow-lg shadow-slate-900/10 sm:rounded-b-[2.5rem] md:min-h-[600px]">
-        {/* La foto copre tutta la HERO e non ne determina l'altezza. */}
-        <Image
-          src="/hero-coppia-castrovillari.webp"
-          alt="Coppia a Castrovillari"
-          fill
-          sizes="100vw"
-          priority
-          className="absolute inset-0 h-full w-full object-cover object-center md:object-[center_40%]"
-        />
-
-        {/* Gradiente leggero solo nella zona del testo: la parte bassa resta luminosa. */}
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 bg-gradient-to-b from-slate-950/60 via-slate-950/25 to-transparent"
-        />
-
-        <div className="relative z-10 mx-auto max-w-7xl px-4 py-10 text-left md:flex md:min-h-[600px] md:w-full md:items-center md:px-6 md:py-16">
-          <div>
-            <h1 className="mt-4 max-w-xl text-3xl font-black leading-tight tracking-tight text-white drop-shadow-lg md:mt-6 md:text-7xl">
-              Tutto quello che cerchi... <span className="text-yellow-300">è già</span> nella tua città.
-            </h1>
-          </div>
-        </div>
-      </section>
+      {/* Vetrina marketplace: la prima card conserva foto e messaggio; seguono i caroselli dei prodotti reali. */}
+      <HomepageProductShowcase
+        prodottiTipici={prodottiTipici}
+        prodottiInEvidenza={prodottiInEvidenza}
+        statoPreferiti={statoPreferiti}
+      />
 
       {/* ═══════════════════════════════════════════════════════════════════
           VALUE STRIP — perché InCittà (3 promesse, nessuna duplicazione)
@@ -143,27 +118,6 @@ export default async function Home() {
           </div>
         </div>
       </section>
-
-      {/* ═══════════════════════════════════════════════════════════════════
-          ECCELLENZE CALABRESI (solo se ce ne sono) — vetrina territoriale.
-          Le categorie restano nella navigazione (barra Home/Negozi/Categorie):
-          non vengono più duplicate nella pagina.
-          ═══════════════════════════════════════════════════════════════════ */}
-      {prodottiTipici.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 pt-5 pb-10 md:px-6 md:pt-7 md:pb-12">
-          <SezioneHeader
-            titolo="ECCELLENZE CALABRESI"
-            href="/prodotti-tipici"
-            linkLabel="Vedi tutti"
-            titoloClassName="mt-1 inline-block whitespace-nowrap rounded-lg bg-yellow-400 px-2 py-1 text-[13px] font-black tracking-tight text-blue-900 shadow-sm transition hover:bg-yellow-300 sm:text-base md:px-3 md:py-1.5 md:text-2xl"
-          />
-
-          <EccellenzeCalabresiGrid
-            prodotti={prodottiTipici}
-            statoPreferiti={statoPreferiti}
-          />
-        </section>
-      )}
 
       {/* ═══════════════════════════════════════════════════════════════════
           NEGOZI IN EVIDENZA (solo se ce ne sono)
@@ -264,25 +218,6 @@ export default async function Home() {
               })}
             </div>
           </div>
-        </section>
-      )}
-
-      {/* ═══════════════════════════════════════════════════════════════════
-          PRODOTTI IN EVIDENZA (solo se ce ne sono)
-          ═══════════════════════════════════════════════════════════════════ */}
-      {prodottiInEvidenza.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 py-12 md:px-6 md:py-14">
-          <SezioneHeader
-            label="Novità"
-            titolo="Prodotti in evidenza"
-            href="/negozi"
-            linkLabel="Esplora i negozi"
-          />
-
-          <HomepageProductCarousel
-            prodotti={prodottiInEvidenza}
-            statoPreferiti={statoPreferiti}
-          />
         </section>
       )}
 
