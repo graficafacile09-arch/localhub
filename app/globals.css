@@ -490,7 +490,7 @@ body.merchant-image-editor-aperto .merchant-bottom-nav-spacer {
 
 /* La freccia compare soltanto durante la fase di avanzamento verso destra. */
 @keyframes incitta-swipe-arrow {
-  0%, 22% { opacity: 0; transform: translate(0, -50%); }
+  0%, 22% { opacity: 0; transform: translate(14px, -50%); }
   36%, 52% { opacity: 1; transform: translate(0, -50%); }
   68%, 100% { opacity: 0; transform: translate(14px, -50%); }
 }
