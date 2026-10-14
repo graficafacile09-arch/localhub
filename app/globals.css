@@ -494,3 +494,9 @@ body.merchant-image-editor-aperto .merchant-bottom-nav-spacer {
   36%, 52% { opacity: 1; transform: translate(0, -50%); }
   68%, 100% { opacity: 0; transform: translate(14px, -50%); }
 }
+
+
+/* Scia discreta dietro la freccia dello swipe mobile. */
+.incitta-swipe-trail {
+  filter: drop-shadow(5px 0 0 rgb(30 64 175 / 0.32)) drop-shadow(10px 0 0 rgb(30 64 175 / 0.16));
+}
