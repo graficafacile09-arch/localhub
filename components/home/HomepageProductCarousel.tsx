@@ -98,7 +98,7 @@ export default function HomepageProductCarousel({
               onClick={() => setPagina((corrente) => Math.max(0, corrente - 1))}
               disabled={paginaSicura === 0}
               aria-label="Mostra i quattro prodotti precedenti"
-              className="absolute left-1 top-1/2 z-10 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200/90 bg-white/95 text-slate-700 shadow-md transition-opacity hover:bg-white disabled:opacity-0 md:opacity-0 md:group-hover/carousel:opacity-100 md:group-focus-within/carousel:opacity-100"
+              className="absolute left-1 top-1/2 z-10 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200/90 bg-white/95 text-slate-700 shadow-md transition-opacity hover:bg-white disabled:opacity-40 md:opacity-0 md:group-hover/carousel:opacity-100 md:group-focus-within/carousel:opacity-100"
             >
               <ChevronLeft className="h-5 w-5" aria-hidden />
             </button>
@@ -107,7 +107,7 @@ export default function HomepageProductCarousel({
               onClick={() => setPagina((corrente) => Math.min(numeroPagine - 1, corrente + 1))}
               disabled={paginaSicura >= numeroPagine - 1}
               aria-label="Mostra i quattro prodotti successivi"
-              className="absolute right-1 top-1/2 z-10 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200/90 bg-white/95 text-slate-700 shadow-md transition-opacity hover:bg-white disabled:opacity-0 md:opacity-0 md:group-hover/carousel:opacity-100 md:group-focus-within/carousel:opacity-100"
+              className="absolute right-1 top-1/2 z-10 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200/90 bg-white/95 text-slate-700 shadow-md transition-opacity hover:bg-white disabled:opacity-40 md:opacity-0 md:group-hover/carousel:opacity-100 md:group-focus-within/carousel:opacity-100"
             >
               <ChevronRight className="h-5 w-5" aria-hidden />
             </button>
