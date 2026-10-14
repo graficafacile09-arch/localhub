@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, type ReactNode, type TouchEvent } from "react";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, ArrowLeftRight, Hand } from "lucide-react";
 
 export default function HomepageProductSwipeReveal({
   hero,
@@ -77,12 +77,13 @@ export default function HomepageProductSwipeReveal({
           <button
             type="button"
             onClick={() => setShowProducts(true)}
-            aria-label="Scopri i prodotti"
-            className="group absolute bottom-5 left-1/2 z-20 inline-flex min-h-12 -translate-x-1/2 items-center gap-3 rounded-full border border-yellow-200/80 bg-yellow-400 py-1.5 pl-5 pr-2 text-sm font-extrabold tracking-tight text-slate-950 shadow-[0_10px_30px_-8px_rgba(15,23,42,0.65)] transition duration-200 hover:-translate-y-0.5 hover:bg-yellow-300 hover:shadow-[0_14px_34px_-8px_rgba(15,23,42,0.7)] active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 sm:bottom-6 sm:text-base"
+            aria-label="Scopri i prodotti: scorri per vedere i prodotti"
+            className="group absolute bottom-5 left-1/2 z-20 inline-flex min-h-12 -translate-x-1/2 items-center gap-2.5 rounded-full border border-yellow-200/80 bg-yellow-400 px-5 py-3 text-sm font-extrabold tracking-tight text-blue-900 shadow-[0_10px_30px_-8px_rgba(15,23,42,0.45)] transition duration-200 hover:-translate-y-0.5 hover:bg-yellow-300 active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 sm:bottom-6 sm:text-base md:hidden"
           >
             <span>Scopri i prodotti</span>
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-950 text-yellow-300 transition-transform duration-200 group-hover:-translate-x-0.5">
-              <ArrowLeft className="h-5 w-5" aria-hidden />
+            <span className="inline-flex items-center gap-1.5 text-blue-900 transition-transform duration-200 group-hover:translate-x-0.5">
+              <Hand className="h-5 w-5" aria-hidden />
+              <ArrowLeftRight className="h-4 w-4" aria-hidden />
             </span>
           </button>
         )}
@@ -93,7 +94,7 @@ export default function HomepageProductSwipeReveal({
           aria-label={showProducts ? "Torna alla foto della homepage" : "Mostra i prodotti"}
           aria-expanded={showProducts}
           aria-controls="homepage-prodotti"
-          className="absolute bottom-4 right-4 z-20 inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/70 bg-white/90 text-blue-900 shadow-md backdrop-blur transition hover:bg-yellow-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-700"
+          className="absolute bottom-4 right-4 z-20 hidden h-10 w-10 items-center justify-center rounded-full border border-white/70 bg-white/90 text-blue-900 shadow-md backdrop-blur transition hover:bg-yellow-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 md:inline-flex"
         >
           {showProducts ? (
             <ArrowLeft className="h-5 w-5" aria-hidden />
