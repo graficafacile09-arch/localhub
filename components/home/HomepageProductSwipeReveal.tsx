@@ -52,13 +52,13 @@ export default function HomepageProductSwipeReveal({
   return (
     <>
       <div
-        className="relative min-h-[420px] overflow-hidden bg-[#e5edf7] sm:min-h-[460px] md:h-[600px] md:min-h-0"
+        className="relative overflow-hidden bg-[#e5edf7] md:h-[600px]"
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
         aria-label="Homepage InCittà: scorri orizzontalmente per passare dalla foto ai prodotti"
       >
         <div
-          className={`absolute inset-0 min-h-[420px] transition-transform duration-300 ease-out sm:min-h-[460px] md:min-h-0 ${showProducts ? "-translate-x-full" : "translate-x-0"}`}
+          className={`relative transition-transform duration-300 ease-out md:absolute md:inset-0 ${showProducts ? "-translate-x-full" : "translate-x-0"}`}
           aria-hidden={showProducts}
           data-home-hero-swipe
         >
