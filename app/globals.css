@@ -481,3 +481,9 @@ body.merchant-image-editor-aperto .merchant-bottom-nav-spacer {
   }
 }
 
+/* Indicatore swipe della hero mobile: il dito scorre lateralmente, senza distrarre. */
+@keyframes incitta-swipe {
+  0%, 100% { transform: translateX(0); }
+  35% { transform: translateX(-4px); }
+  65% { transform: translateX(4px); }
+}
