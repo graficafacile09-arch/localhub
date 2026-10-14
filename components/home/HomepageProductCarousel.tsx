@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type TouchEvent } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import ProductCard from "@/components/home/ProductCard";
 
@@ -30,6 +30,25 @@ export default function HomepageProductCarousel({
   mostraTutti?: boolean;
 }) {
   const [pagina, setPagina] = useState(0);
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
+
+  function onCarouselTouchStart(event: TouchEvent<HTMLDivElement>) {
+    const touch = event.changedTouches[0];
+    if (touch) touchStart.current = { x: touch.clientX, y: touch.clientY };
+  }
+
+  function onCarouselTouchEnd(event: TouchEvent<HTMLDivElement>) {
+    const start = touchStart.current;
+    const touch = event.changedTouches[0];
+    touchStart.current = null;
+    if (!start || !touch || numeroPagine < 2) return;
+
+    const deltaX = touch.clientX - start.x;
+    const deltaY = touch.clientY - start.y;
+    if (Math.abs(deltaX) < 45 || Math.abs(deltaX) < Math.abs(deltaY) * 1.25) return;
+    if (deltaX < 0) setPagina((current) => Math.min(numeroPagine - 1, current + 1));
+    else setPagina((current) => Math.max(0, current - 1));
+  }
   const numeroPagine = Math.max(1, Math.ceil(prodotti.length / PRODOTTI_PER_PAGINA));
   const paginaSicura = Math.min(pagina, numeroPagine - 1);
   const prodottiVisibili = prodotti.slice(
@@ -43,14 +62,8 @@ export default function HomepageProductCarousel({
 
   if (prodotti.length === 0) return null;
 
-  const primoIndice = paginaSicura * PRODOTTI_PER_PAGINA + 1;
-  const ultimoIndice = Math.min(
-    paginaSicura * PRODOTTI_PER_PAGINA + prodottiVisibili.length,
-    prodotti.length
-  );
-
   return (
-    <div className="min-w-0">
+    <div className="min-w-0" onTouchStart={onCarouselTouchStart} onTouchEnd={onCarouselTouchEnd}>
       <div className="grid min-w-0 grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
         {prodottiVisibili.map((prodotto) => {
           const prodottoId = String(prodotto.id);
@@ -79,9 +92,6 @@ export default function HomepageProductCarousel({
 
       {mostraTutti && numeroPagine > 1 && (
         <div className="mt-3 flex items-center justify-between gap-2 border-t border-slate-100 pt-3">
-          <span className="text-xs font-medium text-slate-500" aria-live="polite">
-            {primoIndice}–{ultimoIndice} di {prodotti.length} prodotti
-          </span>
           <div className="flex items-center gap-2">
             <button
               type="button"
