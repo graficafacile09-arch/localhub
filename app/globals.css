@@ -481,22 +481,17 @@ body.merchant-image-editor-aperto .merchant-bottom-nav-spacer {
   }
 }
 
-/* Indicatore swipe mobile: mano che avanza verso destra e torna al punto di partenza. */
+/* Indicatore swipe mobile: indice che scorre verso sinistra e torna al punto di partenza. */
 @keyframes incitta-swipe {
   0%, 12% { transform: translateX(30px); }
   42%, 56% { transform: translateX(0); }
   88%, 100% { transform: translateX(30px); }
 }
 
-/* La freccia compare soltanto durante la fase di avanzamento verso destra. */
+/* Freccia lunga che entra da destra e indica lo swipe verso sinistra. */
 @keyframes incitta-swipe-arrow {
   0%, 22% { opacity: 0; transform: translate(14px, -50%); }
   36%, 52% { opacity: 1; transform: translate(0, -50%); }
   68%, 100% { opacity: 0; transform: translate(14px, -50%); }
 }
 
-
-/* Scia discreta dietro la freccia dello swipe mobile. */
-.incitta-swipe-trail {
-  filter: drop-shadow(5px 0 0 rgb(30 64 175 / 0.32)) drop-shadow(10px 0 0 rgb(30 64 175 / 0.16));
-}
