@@ -81,7 +81,7 @@ export default function HomepageProductSwipeReveal({
         aria-label="Homepage InCittà: scorri orizzontalmente per passare dalla foto ai prodotti"
       >
         <div
-          className={`transition-transform duration-[650ms] ease-out md:absolute md:inset-0 ${showProducts ? "absolute inset-0 -translate-x-full md:-translate-x-full" : "relative translate-x-0 md:translate-x-0"}`}
+          className={`transition-transform duration-[1200ms] ease-out md:absolute md:inset-0 ${showProducts ? "absolute inset-0 -translate-x-full md:-translate-x-full" : "relative translate-x-0 md:translate-x-0"}`}
           aria-hidden={showProducts}
           data-home-hero-swipe
         >
@@ -89,7 +89,7 @@ export default function HomepageProductSwipeReveal({
         </div>
 
         <div
-          className={`transition-transform duration-[650ms] ease-out [&>section]:min-h-full ${showProducts ? "relative w-full translate-x-0 overflow-visible md:absolute md:inset-0 md:overflow-y-auto" : "absolute inset-0 w-full translate-x-full overflow-y-auto md:overflow-y-auto"}`}
+          className={`transition-transform duration-[1200ms] ease-out [&>section]:min-h-full ${showProducts ? "relative w-full translate-x-0 overflow-visible md:absolute md:inset-0 md:overflow-y-auto" : "absolute inset-0 w-full translate-x-full overflow-y-auto md:overflow-y-auto"}`}
           aria-hidden={!showProducts}
           id="homepage-prodotti"
         >
