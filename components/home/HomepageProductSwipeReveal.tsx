@@ -81,9 +81,9 @@ export default function HomepageProductSwipeReveal({
             className="absolute bottom-3 left-1/2 z-20 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-yellow-300/90 bg-yellow-400/95 px-3 py-1.5 text-[11px] font-bold text-blue-900 shadow-md shadow-slate-950/20 transition hover:bg-yellow-300 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 md:hidden"
           >
             <span>Scopri i prodotti</span>
-            <span className="relative top-1 inline-flex h-6 w-10 items-center justify-start" aria-hidden="true">
+            <span className="relative top-0 inline-flex h-6 w-12 items-center justify-start" aria-hidden="true">
               <Pointer className="h-[18px] w-[18px] text-blue-800 motion-safe:animate-[incitta-swipe_1.5s_ease-in-out_infinite]" strokeWidth={2.3} />
-              <MoveLeft className="absolute left-0 top-1/2 h-[11px] w-8 -translate-y-1/2 text-blue-800 opacity-0 motion-safe:animate-[incitta-swipe-arrow_1.5s_ease-in-out_infinite]" strokeWidth={2.3} />
+              <MoveLeft className="absolute right-0 top-1/2 h-5 w-10 -translate-y-1/2 text-blue-800 opacity-100 motion-safe:animate-[incitta-swipe-arrow_1.5s_ease-in-out_infinite]" strokeWidth={2.8} />
             </span>
           </button>
         )}
