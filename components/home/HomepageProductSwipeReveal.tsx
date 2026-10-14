@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, type ReactNode, type TouchEvent } from "react";
-import { ArrowLeft, ArrowRight, Hand, Home } from "lucide-react";
+import { ArrowLeft, ArrowRight, MoveLeft, Pointer } from "lucide-react";
 
 export default function HomepageProductSwipeReveal({
   hero,
@@ -82,21 +82,9 @@ export default function HomepageProductSwipeReveal({
           >
             <span>Scopri i prodotti</span>
             <span className="relative inline-flex h-6 w-10 items-center justify-start" aria-hidden="true">
-              <Hand className="h-[18px] w-[18px] text-blue-800 motion-safe:animate-[incitta-swipe_1.5s_ease-in-out_infinite]" />
-              <ArrowLeft className="incitta-swipe-trail absolute left-0 top-1/2 h-4 w-6 -translate-y-1/2 text-blue-800 opacity-0 motion-safe:animate-[incitta-swipe-arrow_1.5s_ease-in-out_infinite]" />
+              <Pointer className="h-7 w-7 text-blue-800 motion-safe:animate-[incitta-swipe_1.5s_ease-in-out_infinite]" strokeWidth={2.8} />
+              <MoveLeft className="absolute left-0 top-1/2 h-5 w-9 -translate-y-1/2 text-blue-800 opacity-0 motion-safe:animate-[incitta-swipe-arrow_1.5s_ease-in-out_infinite]" strokeWidth={2.8} />
             </span>
-          </button>
-        )}
-
-        {showProducts && (
-          <button
-            type="button"
-            onClick={() => setShowProducts(false)}
-            aria-label="Torna alla home"
-            className="absolute right-3 top-3 z-30 inline-flex min-h-8 items-center justify-center gap-1 rounded-full border border-yellow-300/90 bg-yellow-400 px-2.5 py-1.5 text-[11px] font-bold text-blue-900 shadow-sm transition hover:bg-yellow-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 md:hidden"
-          >
-            <Home className="h-4 w-4" aria-hidden />
-            <span>Home</span>
           </button>
         )}
 
