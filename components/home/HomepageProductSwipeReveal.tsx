@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type ReactNode, type TouchEvent } from "react";
+import { useEffect, useRef, useState, type ReactNode, type TouchEvent } from "react";
 import { ArrowLeft, ArrowRight, MoveLeft, Pointer } from "lucide-react";
 
 export default function HomepageProductSwipeReveal({
@@ -16,6 +16,12 @@ export default function HomepageProductSwipeReveal({
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
   const allowSwipe = useRef(false);
+
+  useEffect(() => {
+    const resetHomePanel = () => setShowProducts(false);
+    window.addEventListener("incitta:reset-home", resetHomePanel);
+    return () => window.removeEventListener("incitta:reset-home", resetHomePanel);
+  }, []);
 
   function onTouchStart(event: TouchEvent<HTMLDivElement>) {
     const touch = event.changedTouches[0];
