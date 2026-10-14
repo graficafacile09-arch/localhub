@@ -80,7 +80,7 @@ export default function HomepageProductCarousel({
               <div
                 key={indicePagina}
                 className="grid min-w-0 shrink-0 grid-cols-2 content-start gap-2.5 sm:gap-3 lg:grid-cols-4"
-                style={{ width: `${100 / numeroPagine}%` }}
+                style={{ flex: `0 0 ${100 / numeroPagine}%`, width: `${100 / numeroPagine}%` }}
                 aria-hidden={indicePagina !== paginaSicura}
               >
                 {paginaProdotti.map((prodotto) => {
