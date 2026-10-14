@@ -89,10 +89,7 @@ export default function HomepageProductShowcase({
       <div className="mx-auto max-w-[1800px]">
         <div className="mb-3 flex items-end justify-between gap-3 rounded-xl border border-blue-100 bg-white/75 px-3 py-2.5 sm:px-4">
           <div className="min-w-0">
-            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-blue-800 sm:text-xs">
-              Il marketplace della tua città
-            </p>
-            <p className="mt-1 text-xs leading-4 text-slate-600 sm:text-sm">
+            <p className="text-xs font-bold leading-5 text-blue-900 sm:text-sm">
               Negozi, offerte e servizi locali: cercali, confrontali e acquista restando nella tua città.
             </p>
           </div>
