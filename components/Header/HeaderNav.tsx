@@ -75,6 +75,11 @@ export default function HeaderNav({ overlay = false }: { overlay?: boolean } = {
               href={voce.href}
               aria-label={voce.label}
               aria-current={voce.attiva ? "page" : undefined}
+              onClick={() => {
+                if (voce.href === "/") {
+                  window.dispatchEvent(new Event("incitta:reset-home"));
+                }
+              }}
               className="incitta-public-nav-item group relative mx-1 flex min-w-0 flex-col items-center gap-1 px-1.5 py-1 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 sm:mx-1.5 sm:px-2 md:py-1 lg:mx-1 lg:px-1.5"
             >
               <span className="incitta-public-nav-icon relative flex h-10 w-10 items-center justify-center rounded-xl bg-yellow-400">
@@ -98,9 +103,7 @@ export default function HeaderNav({ overlay = false }: { overlay?: boolean } = {
 
               <span
                 aria-hidden
-                className={`mt-0.5 h-1 w-6 rounded-full transition-opacity duration-200 ${
-                  voce.attiva ? "bg-blue-600 opacity-100" : "bg-transparent opacity-0"
-                }`}
+                className={`mt-0.5 h-1 w-6 rounded-full transition-opacity duration-200 ${voce.attiva ? "bg-blue-600 opacity-100" : "bg-transparent opacity-0"}`}
               />
             </Link>
           );
