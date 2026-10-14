@@ -53,7 +53,7 @@ export default function HomepageProductSwipeReveal({
     setIsDragging(true);
     // Sticky at the start, then progressively freer: like dragging a panel through light glue.
     const distance = Math.abs(deltaX);
-    const resistedDistance = distance <= 32 ? distance * 0.35 : 11.2 + (distance - 32) * 0.72;
+    const resistedDistance = distance <= 48 ? distance * 0.18 : 8.64 + (distance - 48) * 0.42;
     const resistedDelta = Math.sign(deltaX) * resistedDistance;
     setDragOffsetX(Math.max(-window.innerWidth, Math.min(window.innerWidth, resistedDelta)));
   }
@@ -114,7 +114,7 @@ export default function HomepageProductSwipeReveal({
           className={`md:absolute md:inset-0 ${showProducts ? "absolute inset-0" : "relative"}`}
           style={{
             transform: `translateX(${showProducts ? `calc(-100% + ${dragOffsetX}px)` : `${dragOffsetX}px`})`,
-            transition: isDragging ? "none" : "transform 900ms cubic-bezier(0.16, 1, 0.3, 1)",
+            transition: isDragging ? "none" : "transform 1800ms cubic-bezier(0.12, 0.8, 0.2, 1)",
           }}
           aria-hidden={showProducts}
           data-home-hero-swipe
@@ -126,7 +126,7 @@ export default function HomepageProductSwipeReveal({
           className={`[&>section]:min-h-full ${showProducts ? "relative w-full overflow-visible md:absolute md:inset-0 md:overflow-y-auto" : "absolute inset-0 w-full overflow-y-auto md:overflow-y-auto"}`}
           style={{
             transform: `translateX(${showProducts ? `${dragOffsetX}px` : `calc(100% + ${dragOffsetX}px)`})`,
-            transition: isDragging ? "none" : "transform 520ms cubic-bezier(0.22, 0.61, 0.36, 1)",
+            transition: isDragging ? "none" : "transform 1800ms cubic-bezier(0.12, 0.8, 0.2, 1)",
           }}
           aria-hidden={!showProducts}
           id="homepage-prodotti"
