@@ -51,9 +51,12 @@ export default function HomepageProductCarousel({
   }
   const numeroPagine = Math.max(1, Math.ceil(prodotti.length / PRODOTTI_PER_PAGINA));
   const paginaSicura = Math.min(pagina, numeroPagine - 1);
-  const prodottiVisibili = prodotti.slice(
-    paginaSicura * PRODOTTI_PER_PAGINA,
-    paginaSicura * PRODOTTI_PER_PAGINA + PRODOTTI_PER_PAGINA
+  const pagineProdotti = Array.from(
+    { length: numeroPagine },
+    (_, indice) => prodotti.slice(
+      indice * PRODOTTI_PER_PAGINA,
+      indice * PRODOTTI_PER_PAGINA + PRODOTTI_PER_PAGINA
+    )
   );
 
   useEffect(() => {
@@ -65,30 +68,47 @@ export default function HomepageProductCarousel({
   return (
     <div className="min-w-0" onTouchStart={onCarouselTouchStart} onTouchEnd={onCarouselTouchEnd}>
       <div className="group/carousel relative">
-        <div className="grid min-w-0 grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
-          {prodottiVisibili.map((prodotto) => {
-          const prodottoId = String(prodotto.id);
-          return (
-            <ProductCard
-              key={prodottoId}
-              id={prodottoId}
-              slug={(prodotto.slug as string) ?? prodottoId}
-              nome={prodotto.nome as string}
-              prezzo={prodotto.prezzo as number}
-              categoria={(prodotto.categoria as string) ?? null}
-              negozio_nome={(prodotto.negozio_nome as string) ?? ""}
-              negozio_id={String(prodotto.negozio_id ?? "")}
-              immagine_principale={(prodotto.immagine_principale as string) ?? null}
-              haVarianti={Boolean(prodotto.ha_varianti)}
-              {...(prodottoTipico ? { prodottoTipico: true } : {})}
-              compatto={compatto}
-              preferitoAttivo={statoPreferiti.chiavi.has(
-                chiavePreferito("prodotto", prodottoId)
-              )}
-              autenticato={statoPreferiti.autenticato}
-            />
-          );
-          })}
+        <div className="min-w-0 overflow-hidden">
+          <div
+            className="flex items-stretch transition-transform duration-[900ms] ease-in-out motion-reduce:transition-none"
+            style={{
+              width: `${numeroPagine * 100}%`,
+              transform: `translateX(-${paginaSicura * (100 / numeroPagine)}%)`,
+            }}
+          >
+            {pagineProdotti.map((paginaProdotti, indicePagina) => (
+              <div
+                key={indicePagina}
+                className="grid min-w-0 shrink-0 grid-cols-2 content-start gap-2.5 sm:gap-3 lg:grid-cols-4"
+                style={{ width: `${100 / numeroPagine}%` }}
+                aria-hidden={indicePagina !== paginaSicura}
+              >
+                {paginaProdotti.map((prodotto) => {
+                  const prodottoId = String(prodotto.id);
+                  return (
+                    <ProductCard
+                      key={prodottoId}
+                      id={prodottoId}
+                      slug={(prodotto.slug as string) ?? prodottoId}
+                      nome={prodotto.nome as string}
+                      prezzo={prodotto.prezzo as number}
+                      categoria={(prodotto.categoria as string) ?? null}
+                      negozio_nome={(prodotto.negozio_nome as string) ?? ""}
+                      negozio_id={String(prodotto.negozio_id ?? "")}
+                      immagine_principale={(prodotto.immagine_principale as string) ?? null}
+                      haVarianti={Boolean(prodotto.ha_varianti)}
+                      {...(prodottoTipico ? { prodottoTipico: true } : {})}
+                      compatto={compatto}
+                      preferitoAttivo={statoPreferiti.chiavi.has(
+                        chiavePreferito("prodotto", prodottoId)
+                      )}
+                      autenticato={statoPreferiti.autenticato}
+                    />
+                  );
+                })}
+              </div>
+            ))}
+          </div>
         </div>
 
         {numeroPagine > 1 && (
