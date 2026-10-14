@@ -17,12 +17,49 @@ export default function HomepageProductSwipeReveal({
   const touchStartY = useRef<number | null>(null);
   const allowSwipe = useRef(false);
   const swipeHandled = useRef(false);
+  const productsHistoryEntry = useRef(false);
 
   useEffect(() => {
-    const resetHomePanel = () => setShowProducts(false);
+    const resetHomePanel = () => {
+      if (productsHistoryEntry.current) {
+        productsHistoryEntry.current = false;
+        const { incittaHomeProducts: _ignored, ...historyState } = window.history.state ?? {};
+        window.history.replaceState(historyState, "", window.location.href);
+      }
+      setShowProducts(false);
+    };
+    const handlePopState = () => {
+      if (productsHistoryEntry.current) {
+        productsHistoryEntry.current = false;
+        setShowProducts(false);
+      }
+    };
     window.addEventListener("incitta:reset-home", resetHomePanel);
-    return () => window.removeEventListener("incitta:reset-home", resetHomePanel);
+    window.addEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("incitta:reset-home", resetHomePanel);
+      window.removeEventListener("popstate", handlePopState);
+    };
   }, []);
+
+  function openProducts() {
+    if (showProducts) return;
+    window.history.pushState(
+      { ...(window.history.state ?? {}), incittaHomeProducts: true },
+      "",
+      window.location.href
+    );
+    productsHistoryEntry.current = true;
+    setShowProducts(true);
+  }
+
+  function closeProducts() {
+    if (productsHistoryEntry.current) {
+      productsHistoryEntry.current = false;
+      window.history.back();
+    }
+    setShowProducts(false);
+  }
 
   function onTouchStart(event: TouchEvent<HTMLDivElement>) {
     const touch = event.changedTouches[0];
@@ -55,11 +92,11 @@ export default function HomepageProductSwipeReveal({
 
     if (!showProducts && deltaX < 0) {
       swipeHandled.current = true;
-      setShowProducts(true);
+      openProducts();
     }
     if (showProducts && deltaX > 0) {
       swipeHandled.current = true;
-      setShowProducts(false);
+      closeProducts();
     }
   }
 
@@ -69,7 +106,8 @@ export default function HomepageProductSwipeReveal({
       swipeHandled.current = false;
       return;
     }
-    setShowProducts((current) => !current);
+    if (showProducts) closeProducts();
+    else openProducts();
   }
 
   return (
