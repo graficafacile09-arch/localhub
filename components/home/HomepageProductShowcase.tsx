@@ -31,7 +31,7 @@ function ProductSectionCard({
   if (prodotti.length === 0) return null;
 
   return (
-    <article className="flex w-[88vw] max-w-[420px] shrink-0 snap-start flex-col rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4 md:w-[min(72vw,960px)] md:max-w-none md:p-5">
+    <article className="flex w-[88vw] max-w-[420px] shrink-0 snap-start flex-col rounded-2xl border border-blue-100 bg-[#f7faff] p-3 shadow-sm sm:p-4 md:w-[min(72vw,960px)] md:max-w-none md:p-5">
       <div className="mb-3 flex items-center justify-between gap-3">
         <h2 className="min-w-0 text-base font-black leading-tight tracking-tight text-slate-900 sm:text-lg md:text-xl">
           {titolo}
@@ -84,16 +84,16 @@ export default function HomepageProductShowcase({
   return (
     <section
       aria-label="Vetrina prodotti InCittà"
-      className="w-full overflow-hidden bg-[#eef3f8] px-3 pb-5 pt-3 sm:px-4 md:px-6 md:pb-7 md:pt-4"
+      className="w-full overflow-hidden bg-[#e5edf7] px-3 pb-5 pt-3 sm:px-4 md:px-6 md:pb-7 md:pt-4"
     >
       <div className="mx-auto max-w-[1800px]">
-        <div className="mb-3 flex items-end justify-between gap-3">
+        <div className="mb-3 flex items-end justify-between gap-3 rounded-xl border border-blue-100 bg-white/75 px-3 py-2.5 sm:px-4">
           <div className="min-w-0">
             <p className="text-[10px] font-black uppercase tracking-[0.16em] text-blue-800 sm:text-xs">
               Il marketplace della tua città
             </p>
             <p className="mt-1 text-xs leading-4 text-slate-600 sm:text-sm">
-              Prodotti dei negozi locali, raccolti per categoria.
+              Negozi, offerte e servizi locali: cercali, confrontali e acquista restando nella tua città.
             </p>
           </div>
           <span className="hidden shrink-0 text-xs font-semibold text-slate-500 sm:inline">
@@ -105,8 +105,8 @@ export default function HomepageProductShowcase({
           className="flex snap-x snap-mandatory items-stretch gap-3 overflow-x-auto overscroll-x-contain pb-2 [scrollbar-width:thin] sm:gap-4 md:gap-5"
           aria-label="Sezioni prodotti scorrevoli"
         >
-          <article className="flex w-[88vw] max-w-[420px] shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm sm:max-w-[440px]">
-            <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
+          <article className="flex w-[88vw] max-w-[420px] shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-blue-100 bg-[#f7faff] shadow-sm sm:max-w-[440px] md:w-[min(72vw,960px)] md:max-w-none">
+            <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100 md:aspect-[4/3]">
               <Image
                 src="/hero-coppia-castrovillari.webp"
                 alt="Coppia che fa shopping nei negozi della città"
@@ -121,7 +121,7 @@ export default function HomepageProductShowcase({
                 InCittà · Shopping locale
               </p>
               <h1 className="mt-2 text-xl font-black leading-tight tracking-tight text-slate-950 sm:text-2xl">
-                Tutto quello che cerchi... <span className="text-blue-700">è già</span> nella tua città.
+                Negozi, offerte e servizi locali: cercali, confrontali e acquista restando nella tua città.
               </h1>
               <p className="mt-2 text-sm leading-5 text-slate-600">
                 Scopri i prodotti dei negozi locali e sostieni chi dà valore al tuo territorio.
