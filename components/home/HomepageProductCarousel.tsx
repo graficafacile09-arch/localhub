@@ -90,15 +90,15 @@ export default function HomepageProductCarousel({
         })}
       </div>
 
-      {mostraTutti && numeroPagine > 1 && (
-        <div className="mt-3 flex items-center justify-between gap-2 border-t border-slate-100 pt-3">
+      {numeroPagine > 1 && (
+        <div className="mt-2 flex items-center justify-end gap-2 pt-1">
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setPagina((corrente) => Math.max(0, corrente - 1))}
               disabled={paginaSicura === 0}
               aria-label="Mostra i quattro prodotti precedenti"
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-blue-900 shadow-sm transition hover:border-yellow-400 hover:bg-yellow-50 disabled:cursor-not-allowed disabled:opacity-35"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white/90 text-slate-600 shadow-sm transition hover:border-blue-300 hover:text-blue-800 disabled:cursor-not-allowed disabled:opacity-30"
             >
               <ChevronLeft className="h-4 w-4" aria-hidden />
             </button>
@@ -107,7 +107,7 @@ export default function HomepageProductCarousel({
               onClick={() => setPagina((corrente) => Math.min(numeroPagine - 1, corrente + 1))}
               disabled={paginaSicura >= numeroPagine - 1}
               aria-label="Mostra i quattro prodotti successivi"
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-yellow-400 text-blue-950 shadow-sm transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-35"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white/90 text-slate-600 shadow-sm transition hover:border-blue-300 hover:text-blue-800 disabled:cursor-not-allowed disabled:opacity-30"
             >
               <ChevronRight className="h-4 w-4" aria-hidden />
             </button>
