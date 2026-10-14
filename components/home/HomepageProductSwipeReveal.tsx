@@ -51,7 +51,11 @@ export default function HomepageProductSwipeReveal({
     // Follow the finger directly on horizontal gestures; leave vertical scrolling native.
     if (Math.abs(deltaX) < Math.abs(deltaY) * 1.1) return;
     setIsDragging(true);
-    setDragOffsetX(Math.max(-window.innerWidth, Math.min(window.innerWidth, deltaX)));
+    // Sticky at the start, then progressively freer: like dragging a panel through light glue.
+    const distance = Math.abs(deltaX);
+    const resistedDistance = distance <= 32 ? distance * 0.35 : 11.2 + (distance - 32) * 0.72;
+    const resistedDelta = Math.sign(deltaX) * resistedDistance;
+    setDragOffsetX(Math.max(-window.innerWidth, Math.min(window.innerWidth, resistedDelta)));
   }
 
   function onTouchEnd(event: TouchEvent<HTMLDivElement>) {
@@ -110,7 +114,7 @@ export default function HomepageProductSwipeReveal({
           className={`md:absolute md:inset-0 ${showProducts ? "absolute inset-0" : "relative"}`}
           style={{
             transform: `translateX(${showProducts ? `calc(-100% + ${dragOffsetX}px)` : `${dragOffsetX}px`})`,
-            transition: isDragging ? "none" : "transform 520ms cubic-bezier(0.22, 0.61, 0.36, 1)",
+            transition: isDragging ? "none" : "transform 900ms cubic-bezier(0.16, 1, 0.3, 1)",
           }}
           aria-hidden={showProducts}
           data-home-hero-swipe
