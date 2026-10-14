@@ -87,14 +87,12 @@ export default function HomepageProductShowcase({
       className="w-full overflow-hidden bg-[#e5edf7] px-3 pb-5 pt-3 sm:px-4 md:px-6 md:pb-7 md:pt-4"
     >
       <div className="mx-auto max-w-[1800px]">
-        <div className="mb-3 flex items-end justify-between gap-3 rounded-xl border border-blue-100 bg-white/75 px-3 py-2.5 sm:px-4">
-          <div className="min-w-0">
-            <p className="text-xs font-bold leading-5 text-blue-900 sm:text-sm">
-              Negozi, offerte e servizi locali: cercali, confrontali e acquista restando nella tua città.
-            </p>
-          </div>
-          <span className="hidden shrink-0 text-xs font-semibold text-slate-500 sm:inline">
-            Scorri le sezioni <span aria-hidden>→</span>
+        <div className="mb-3 flex items-center justify-between gap-3 px-1">
+          <p className="text-xs font-semibold text-blue-900 sm:text-sm">
+            Scopri i prodotti dei negozi locali
+          </p>
+          <span className="shrink-0 text-xs font-semibold text-slate-500">
+            Scorri <span aria-hidden>→</span>
           </span>
         </div>
 
@@ -102,32 +100,26 @@ export default function HomepageProductShowcase({
           className="flex snap-x snap-mandatory items-stretch gap-3 overflow-x-auto overscroll-x-contain pb-2 [scrollbar-width:thin] sm:gap-4 md:gap-5"
           aria-label="Sezioni prodotti scorrevoli"
         >
-          <article className="flex w-[88vw] max-w-[420px] shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-blue-100 bg-[#f7faff] shadow-sm sm:max-w-[440px] md:w-[min(72vw,960px)] md:max-w-none">
-            <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100 md:aspect-[4/3]">
+          <article className="flex w-[44vw] min-w-[150px] max-w-[210px] shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-blue-100 bg-[#f7faff] shadow-sm sm:w-[210px] md:w-[230px] md:max-w-[230px]">
+            <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden bg-slate-100">
               <Image
                 src="/hero-coppia-castrovillari.webp"
                 alt="Coppia che fa shopping nei negozi della città"
                 fill
                 priority
-                sizes="(max-width: 639px) 88vw, 440px"
+                sizes="(max-width: 639px) 44vw, 230px"
                 className="object-cover object-center"
               />
             </div>
-            <div className="flex flex-1 flex-col p-4 sm:p-5">
-              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-blue-800 sm:text-xs">
-                InCittà · Shopping locale
-              </p>
-              <h1 className="mt-2 text-xl font-black leading-tight tracking-tight text-slate-950 sm:text-2xl">
+            <div className="flex flex-1 flex-col p-3 sm:p-3.5">
+              <h1 className="text-sm font-black leading-snug tracking-tight text-slate-950 sm:text-base">
                 Negozi, offerte e servizi locali: cercali, confrontali e acquista restando nella tua città.
               </h1>
-              <p className="mt-2 text-sm leading-5 text-slate-600">
-                Scopri i prodotti dei negozi locali e sostieni chi dà valore al tuo territorio.
-              </p>
               <Link
                 href="/negozi"
-                className="mt-4 inline-flex min-h-10 items-center justify-center gap-2 self-start rounded-xl bg-yellow-400 px-4 py-2.5 text-sm font-black text-blue-950 shadow-sm transition hover:bg-yellow-300"
+                className="mt-auto inline-flex min-h-9 items-center justify-center gap-1.5 self-stretch rounded-xl bg-yellow-400 px-2 py-2 text-xs font-black text-blue-950 shadow-sm transition hover:bg-yellow-300 sm:text-sm"
               >
-                Scopri i prodotti <ArrowRight className="h-4 w-4" aria-hidden />
+                Scopri i prodotti <ArrowRight className="h-4 w-4 shrink-0" aria-hidden />
               </Link>
             </div>
           </article>
