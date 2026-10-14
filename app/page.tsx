@@ -68,7 +68,7 @@ function SezioneHeader({
 }
 
 export default async function Home() {
-  const [negozi, prodottiInEvidenza, prodottiTipici, statoPreferiti] =
+  const [negozi, prodottiCatalogo, prodottiTipici, statoPreferiti] =
     await Promise.all([
       getNegoziInEvidenza(8),
       getProdottiCatalogoHomepage(1000),
@@ -83,7 +83,7 @@ export default async function Home() {
       {/* Vetrina marketplace: la prima card conserva foto e messaggio; seguono i caroselli dei prodotti reali. */}
       <HomepageProductShowcase
         prodottiTipici={prodottiTipici}
-        prodottiInEvidenza={prodottiInEvidenza}
+        prodottiCatalogo={prodottiCatalogo}
         statoPreferiti={statoPreferiti}
       />
 
