@@ -481,9 +481,16 @@ body.merchant-image-editor-aperto .merchant-bottom-nav-spacer {
   }
 }
 
-/* Indicatore swipe della hero mobile: il dito scorre lateralmente, senza distrarre. */
+/* Indicatore swipe mobile: mano che avanza verso destra e torna al punto di partenza. */
 @keyframes incitta-swipe {
-  0%, 100% { transform: translateX(0); }
-  35% { transform: translateX(-4px); }
-  65% { transform: translateX(4px); }
+  0%, 12% { transform: translateX(0); }
+  42%, 56% { transform: translateX(15px); }
+  88%, 100% { transform: translateX(0); }
+}
+
+/* La freccia compare soltanto durante la fase di avanzamento verso destra. */
+@keyframes incitta-swipe-arrow {
+  0%, 22% { opacity: 0; transform: translate(0, -50%); }
+  36%, 52% { opacity: 1; transform: translate(4px, -50%); }
+  68%, 100% { opacity: 0; transform: translate(0, -50%); }
 }
