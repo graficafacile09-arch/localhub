@@ -16,6 +16,7 @@ export default function HomepageProductSwipeReveal({
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
   const allowSwipe = useRef(false);
+  const swipeHandled = useRef(false);
 
   useEffect(() => {
     const resetHomePanel = () => setShowProducts(false);
@@ -28,9 +29,9 @@ export default function HomepageProductSwipeReveal({
     if (!touch) return;
     touchStartX.current = touch.clientX;
     touchStartY.current = touch.clientY;
+    swipeHandled.current = false;
 
-    // Change panels only when the gesture starts on the hero or the products intro.
-    // Swipes on product cards, links and the inner product carousels must never switch panels.
+    // The CTA buttons are valid swipe start areas too; other product links/cards remain isolated.
     const target = event.target as HTMLElement;
     allowSwipe.current = showProducts
       ? Boolean(target.closest("[data-home-products-swipe]"))
@@ -51,8 +52,24 @@ export default function HomepageProductSwipeReveal({
     const deltaY = touch.clientY - startY;
     // Require a clearly horizontal gesture, so vertical browsing doesn't switch panels.
     if (Math.abs(deltaX) < 60 || Math.abs(deltaX) < Math.abs(deltaY) * 1.35) return;
-    if (!showProducts && deltaX < 0) setShowProducts(true);
-    if (showProducts && deltaX > 0) setShowProducts(false);
+
+    if (!showProducts && deltaX < 0) {
+      swipeHandled.current = true;
+      setShowProducts(true);
+    }
+    if (showProducts && deltaX > 0) {
+      swipeHandled.current = true;
+      setShowProducts(false);
+    }
+  }
+
+  function onToggleButtonClick() {
+    // A swipe starting on a CTA may also produce a synthetic click; don't toggle twice.
+    if (swipeHandled.current) {
+      swipeHandled.current = false;
+      return;
+    }
+    setShowProducts((current) => !current);
   }
 
   return (
@@ -75,6 +92,7 @@ export default function HomepageProductSwipeReveal({
           className={`transition-transform duration-300 ease-out [&>section]:min-h-full ${showProducts ? "relative w-full translate-x-0 overflow-visible md:absolute md:inset-0 md:overflow-y-auto" : "absolute inset-0 w-full translate-x-full overflow-y-auto md:overflow-y-auto"}`}
           aria-hidden={!showProducts}
           id="homepage-prodotti"
+          data-home-products-swipe
         >
           {products}
         </div>
@@ -82,8 +100,9 @@ export default function HomepageProductSwipeReveal({
         {!showProducts && (
           <button
             type="button"
-            onClick={() => setShowProducts(true)}
+            onClick={onToggleButtonClick}
             aria-label="Scopri i prodotti: scorri per vedere i prodotti"
+            data-home-hero-swipe
             className="absolute bottom-3 left-1/2 z-20 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-yellow-300/90 bg-yellow-400/95 px-3 py-1.5 text-[11px] font-bold text-blue-900 shadow-md shadow-slate-950/20 transition hover:bg-yellow-300 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 md:hidden"
           >
             <span>Scopri i prodotti</span>
@@ -96,10 +115,12 @@ export default function HomepageProductSwipeReveal({
 
         <button
           type="button"
-          onClick={() => setShowProducts((current) => !current)}
+          onClick={onToggleButtonClick}
           aria-label={showProducts ? "Torna alla foto della homepage" : "Mostra i prodotti"}
           aria-expanded={showProducts}
           aria-controls="homepage-prodotti"
+          data-home-hero-swipe
+          data-home-products-swipe
           className="group absolute bottom-5 right-5 z-20 hidden min-h-11 items-center gap-3 rounded-full border border-white/25 bg-blue-950/90 py-1.5 pl-5 pr-1.5 text-sm font-bold text-white shadow-[0_10px_30px_-12px_rgba(2,6,23,0.8)] backdrop-blur-md transition duration-200 hover:-translate-y-0.5 hover:bg-blue-900 hover:shadow-[0_14px_34px_-12px_rgba(2,6,23,0.9)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-300 focus-visible:ring-offset-2 focus-visible:ring-offset-blue-900 md:inline-flex"
         >
           {showProducts ? (
