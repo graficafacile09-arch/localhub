@@ -78,12 +78,12 @@ export default function HomepageProductSwipeReveal({
             type="button"
             onClick={() => setShowProducts(true)}
             aria-label="Scopri i prodotti: scorri per vedere i prodotti"
-            className="absolute bottom-3 left-1/2 z-20 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-white/25 bg-blue-950/90 px-3 py-1.5 text-[11px] font-bold text-white shadow-[0_10px_30px_-12px_rgba(2,6,23,0.8)] backdrop-blur-md transition hover:bg-blue-900 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-300 focus-visible:ring-offset-2 focus-visible:ring-offset-blue-900 md:hidden"
+            className="absolute bottom-3 left-1/2 z-20 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-yellow-300/90 bg-yellow-400/95 px-3 py-1.5 text-[11px] font-bold text-blue-900 shadow-md shadow-slate-950/20 transition hover:bg-yellow-300 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 md:hidden"
           >
             <span>Scopri i prodotti</span>
             <span className="relative inline-flex h-6 w-10 items-center justify-start" aria-hidden="true">
-              <Hand className="h-[18px] w-[18px] text-yellow-300 motion-safe:animate-[incitta-swipe_1.5s_ease-in-out_infinite]" />
-              <ArrowRight className="absolute left-5 top-1/2 h-4 w-5 -translate-y-1/2 text-yellow-300 opacity-0 motion-safe:animate-[incitta-swipe-arrow_1.5s_ease-in-out_infinite]" />
+              <Hand className="h-[18px] w-[18px] text-blue-800 motion-safe:animate-[incitta-swipe_1.5s_ease-in-out_infinite]" />
+              <ArrowLeft className="absolute left-0 top-1/2 h-4 w-6 -translate-y-1/2 text-blue-800 opacity-0 motion-safe:animate-[incitta-swipe-arrow_1.5s_ease-in-out_infinite]" />
             </span>
           </button>
         )}
@@ -93,9 +93,9 @@ export default function HomepageProductSwipeReveal({
             type="button"
             onClick={() => setShowProducts(false)}
             aria-label="Torna alla home"
-            className="absolute left-3 top-3 z-30 inline-flex min-h-10 items-center gap-2 rounded-full border border-yellow-300 bg-blue-950 px-4 py-2.5 text-sm font-bold text-white shadow-[0_8px_24px_-8px_rgba(2,6,23,0.85)] backdrop-blur-sm transition hover:bg-blue-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-300 md:hidden"
+            className="absolute right-3 top-3 z-30 inline-flex min-h-8 items-center justify-center gap-1 rounded-full border border-yellow-300/90 bg-yellow-400 px-2.5 py-1.5 text-[11px] font-bold text-blue-900 shadow-sm transition hover:bg-yellow-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-700 md:hidden"
           >
-            <Home className="h-5 w-5 text-yellow-300" aria-hidden />
+            <Home className="h-4 w-4" aria-hidden />
             <span>Home</span>
           </button>
         )}
