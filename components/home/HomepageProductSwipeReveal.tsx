@@ -58,7 +58,7 @@ export default function HomepageProductSwipeReveal({
         aria-label="Homepage InCittà: scorri orizzontalmente per passare dalla foto ai prodotti"
       >
         <div
-          className={`relative transition-transform duration-300 ease-out md:absolute md:inset-0 ${showProducts ? "-translate-x-full" : "translate-x-0"}`}
+          className={`transition-transform duration-300 ease-out md:absolute md:inset-0 ${showProducts ? "absolute inset-0 -translate-x-full md:-translate-x-full" : "relative translate-x-0 md:translate-x-0"}`}
           aria-hidden={showProducts}
           data-home-hero-swipe
         >
@@ -66,7 +66,7 @@ export default function HomepageProductSwipeReveal({
         </div>
 
         <div
-          className={`absolute inset-0 overflow-y-auto transition-transform duration-300 ease-out [&>section]:min-h-full ${showProducts ? "translate-x-0" : "translate-x-full"}`}
+          className={`transition-transform duration-300 ease-out [&>section]:min-h-full ${showProducts ? "relative w-full translate-x-0 overflow-visible md:absolute md:inset-0 md:overflow-y-auto" : "absolute inset-0 w-full translate-x-full overflow-y-auto md:overflow-y-auto"}`}
           aria-hidden={!showProducts}
           id="homepage-prodotti"
         >
@@ -78,7 +78,7 @@ export default function HomepageProductSwipeReveal({
             type="button"
             onClick={() => setShowProducts(true)}
             aria-label="Scopri i prodotti: scorri per vedere i prodotti"
-            className="absolute bottom-4 left-1/2 z-20 inline-flex -translate-x-1/2 items-center gap-2 rounded-full border border-yellow-300/90 bg-yellow-400/95 px-3.5 py-2 text-xs font-bold text-blue-900 shadow-md shadow-slate-950/20 transition hover:bg-yellow-300 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 md:hidden"
+            className="absolute bottom-3 left-1/2 z-20 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-yellow-300/90 bg-yellow-400/95 px-3 py-1.5 text-[11px] font-bold text-blue-900 shadow-md shadow-slate-950/20 transition hover:bg-yellow-300 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 md:hidden"
           >
             <span>Scopri i prodotti</span>
             <span className="relative inline-flex h-6 w-9 items-center justify-start" aria-hidden="true">
@@ -106,17 +106,21 @@ export default function HomepageProductSwipeReveal({
           aria-label={showProducts ? "Torna alla foto della homepage" : "Mostra i prodotti"}
           aria-expanded={showProducts}
           aria-controls="homepage-prodotti"
-          className="absolute bottom-5 right-5 z-20 hidden min-h-12 items-center gap-2 rounded-xl border border-yellow-200 bg-yellow-400 px-5 py-3 text-sm font-extrabold text-blue-900 shadow-lg shadow-slate-950/25 ring-1 ring-white/70 transition hover:-translate-y-0.5 hover:bg-yellow-300 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-blue-800 md:inline-flex"
+          className="group absolute bottom-5 right-5 z-20 hidden min-h-11 items-center gap-3 rounded-full border border-white/25 bg-blue-950/90 py-1.5 pl-5 pr-1.5 text-sm font-bold text-white shadow-[0_10px_30px_-12px_rgba(2,6,23,0.8)] backdrop-blur-md transition duration-200 hover:-translate-y-0.5 hover:bg-blue-900 hover:shadow-[0_14px_34px_-12px_rgba(2,6,23,0.9)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-300 focus-visible:ring-offset-2 focus-visible:ring-offset-blue-900 md:inline-flex"
         >
           {showProducts ? (
             <>
-              <ArrowLeft className="h-5 w-5" aria-hidden />
               <span>Torna alla foto</span>
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-yellow-300 transition group-hover:bg-white/15">
+                <ArrowLeft className="h-4 w-4" aria-hidden />
+              </span>
             </>
           ) : (
             <>
               <span>Scopri i prodotti</span>
-              <ArrowRight className="h-5 w-5" aria-hidden />
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-yellow-400 text-blue-950 transition group-hover:translate-x-0.5 group-hover:bg-yellow-300">
+                <ArrowRight className="h-4 w-4" aria-hidden />
+              </span>
             </>
           )}
         </button>
