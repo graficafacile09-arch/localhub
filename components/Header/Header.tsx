@@ -1,10 +1,10 @@
 import Image from "next/image";
-import Link from "next/link";
 import AccountMenu from "./AccountMenu";
 import FarmacieTurnoWidget from "./FarmacieTurnoWidget";
 import HeaderCartIcon from "./HeaderCartIcon";
 import HeaderNav from "./HeaderNav";
 import HeroSearchBar from "@/components/home/HeroSearchBar";
+import HomeResetLink from "@/components/home/HomeResetLink";
 import WeatherWidget from "./WeatherWidget";
 import { getDatiAccount } from "./get-account-data";
 import { getGuestMode } from "@/lib/auth/guest";
@@ -31,7 +31,7 @@ export default async function Header(_props: { homepage?: boolean } = {}) {
         </div>
 
         <div className="col-span-2 row-start-2 flex w-full min-w-0 items-center gap-1 md:contents">
-          <Link href="/" aria-label="InCittà — Home" className="min-w-0 shrink-0 md:col-start-1 md:row-start-2">
+          <HomeResetLink className="min-w-0 shrink-0 md:col-start-1 md:row-start-2">
             <Image
               src="/logo-transparent.png"
               alt="InCittà"
@@ -41,7 +41,7 @@ export default async function Header(_props: { homepage?: boolean } = {}) {
               sizes="(max-width: 374px) min(48vw, 154px), (max-width: 639px) min(56vw, 216px), (max-width: 1279px) min(56vw, 240px), 300px"
               className="-my-2 h-auto max-sm:w-[min(64vw,246px)] max-[374px]:w-[min(58vw,185px)] sm:w-[min(56vw,240px)] md:w-[260px] xl:w-[320px]"
             />
-          </Link>
+          </HomeResetLink>
           <div className="ml-auto mr-1 flex shrink-0 items-center gap-1 md:col-start-3 md:row-start-2">
             <div className="flex flex-col items-center gap-1 max-sm:flex-row">
               <HeaderCartIcon />
