@@ -89,7 +89,7 @@ export default function HomepageProductShowcase({
       className="w-full overflow-hidden bg-[#e5edf7] px-3 pb-5 pt-3 sm:px-4 md:px-6 md:pb-7 md:pt-4"
     >
       <div className="mx-auto max-w-[1800px]">
-        <div className="mb-3 flex items-center justify-between gap-3 px-1">
+        <div data-home-products-swipe className="mb-3 flex items-center justify-between gap-3 px-1">
           <p className="text-xs font-semibold text-blue-900 sm:text-sm">
             Scopri i prodotti dei negozi locali per categoria
           </p>
