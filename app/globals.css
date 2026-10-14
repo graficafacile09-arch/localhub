@@ -481,16 +481,34 @@ body.merchant-image-editor-aperto .merchant-bottom-nav-spacer {
   }
 }
 
-/* Indicatore swipe mobile: indice che scorre verso sinistra e torna al punto di partenza. */
-@keyframes incitta-swipe {
+/* Mano e freccia sono sincronizzate: la freccia si allunga mentre l'indice avanza a sinistra. */
+.incitta-swipe-cue-hand {
+  animation: incitta-swipe-hand 1.5s ease-in-out infinite;
+}
+
+.incitta-swipe-cue-arrow {
+  transform-origin: right center;
+  animation: incitta-swipe-arrow-grow 1.5s ease-in-out infinite;
+}
+
+@keyframes incitta-swipe-hand {
   0%, 12% { transform: translateX(30px); }
   42%, 56% { transform: translateX(0); }
   88%, 100% { transform: translateX(30px); }
 }
 
-/* Freccia lunga che entra da destra e indica lo swipe verso sinistra. */
-@keyframes incitta-swipe-arrow {
-  0%, 100% { opacity: 1; transform: translate(4px, -50%); }
-  50% { opacity: 1; transform: translate(-4px, -50%); }
+@keyframes incitta-swipe-arrow-grow {
+  0%, 12% { transform: translateY(-50%) scaleX(0.08); }
+  42%, 56% { transform: translateY(-50%) scaleX(1); }
+  88%, 100% { transform: translateY(-50%) scaleX(0.08); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .incitta-swipe-cue-hand,
+  .incitta-swipe-cue-arrow {
+    animation: none;
+  }
+  .incitta-swipe-cue-hand { transform: none; }
+  .incitta-swipe-cue-arrow { transform: translateY(-50%) scaleX(1); }
 }
 
