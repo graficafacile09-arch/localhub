@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import ProductCard from "@/components/home/ProductCard";
 
 const chiavePreferito = (tipo: string, riferimentoId: string) =>
@@ -13,6 +13,8 @@ type StatoPreferiti = {
   autenticato: boolean;
   chiavi: Set<string>;
 };
+
+const PRODOTTI_PER_PAGINA = 4;
 
 export default function HomepageProductCarousel({
   prodotti,
@@ -27,189 +29,80 @@ export default function HomepageProductCarousel({
   compatto?: boolean;
   mostraTutti?: boolean;
 }) {
-  const [espanso, setEspanso] = useState(false);
-  const [canScrollLeft, setCanScrollLeft] = useState(false);
-  const [canScrollRight, setCanScrollRight] = useState(prodotti.length > 2);
-  const viewportRef = useRef<HTMLDivElement>(null);
-
-  // Il carosello deve scorrere l’intero elenco ricevuto, non ripetere sempre i primi quattro prodotti.
-  const visibili = prodotti;
-
-  const aggiornaFrecce = useCallback(() => {
-    const el = viewportRef.current;
-    if (!el) return;
-
-    const desktop = window.matchMedia("(min-width: 768px)").matches;
-    const haScorrimento = el.scrollWidth > el.clientWidth + 2;
-    setCanScrollLeft(haScorrimento && el.scrollLeft > 2);
-    setCanScrollRight(
-      haScorrimento && el.scrollLeft + el.clientWidth < el.scrollWidth - 2
-    );
-
-    // Su mobile le frecce non sono mostrate a sinistra; la navigazione resta touch.
-    if (!desktop) setCanScrollLeft(false);
-  }, []);
-
-  const normalizzaPosizione = useCallback(() => {
-    // Il carosello è finito: non ricentra né duplica gli articoli.
-    aggiornaFrecce();
-  }, [aggiornaFrecce]);
-
-  const gestisciScroll = useCallback(() => {
-    aggiornaFrecce();
-  }, [aggiornaFrecce]);
+  const [pagina, setPagina] = useState(0);
+  const numeroPagine = Math.max(1, Math.ceil(prodotti.length / PRODOTTI_PER_PAGINA));
+  const paginaSicura = Math.min(pagina, numeroPagine - 1);
+  const prodottiVisibili = prodotti.slice(
+    paginaSicura * PRODOTTI_PER_PAGINA,
+    paginaSicura * PRODOTTI_PER_PAGINA + PRODOTTI_PER_PAGINA
+  );
 
   useEffect(() => {
-    const el = viewportRef.current;
-    if (!el) return;
+    if (pagina > numeroPagine - 1) setPagina(Math.max(0, numeroPagine - 1));
+  }, [pagina, numeroPagine]);
 
-    const frame = window.requestAnimationFrame(aggiornaFrecce);
-    el.addEventListener("scroll", gestisciScroll, { passive: true });
-    window.addEventListener("resize", normalizzaPosizione);
+  if (prodotti.length === 0) return null;
 
-    return () => {
-      window.cancelAnimationFrame(frame);
-      el.removeEventListener("scroll", gestisciScroll);
-      window.removeEventListener("resize", normalizzaPosizione);
-    };
-  }, [aggiornaFrecce, gestisciScroll, normalizzaPosizione, visibili.length]);
-
-  const scorri = (direzione: "sinistra" | "destra") => {
-    const el = viewportRef.current;
-    if (!el) return;
-
-    el.scrollBy({
-      left: direzione === "destra" ? el.clientWidth : -el.clientWidth,
-      behavior: "smooth",
-    });
-  };
+  const primoIndice = paginaSicura * PRODOTTI_PER_PAGINA + 1;
+  const ultimoIndice = Math.min(
+    paginaSicura * PRODOTTI_PER_PAGINA + prodottiVisibili.length,
+    prodotti.length
+  );
 
   return (
-    <div>
-      <div className="relative md:px-10">
-        {prodotti.length > 4 && (
-          <button
-            type="button"
-            onClick={() => scorri("sinistra")}
-            aria-label="Mostra i prodotti precedenti"
-            disabled={!canScrollLeft}
-            className="absolute left-0 top-1/2 z-10 hidden h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full border border-yellow-300 bg-yellow-400 text-blue-900 shadow-md transition hover:bg-yellow-300 disabled:pointer-events-none disabled:opacity-30 md:flex"
-          >
-            <ChevronLeft className="h-3.5 w-3.5" aria-hidden />
-          </button>
-        )}
-
-        {prodotti.length > 2 && (
-          <button
-            type="button"
-            onClick={() => scorri("destra")}
-            aria-label="Mostra altri prodotti"
-            disabled={!canScrollRight}
-            className="absolute right-0.5 top-1/2 z-10 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full border border-yellow-300 bg-yellow-400 text-blue-900 shadow-md transition hover:bg-yellow-300 disabled:pointer-events-none disabled:opacity-30 md:right-0 md:hidden"
-          >
-            <ChevronRight className="h-3.5 w-3.5" aria-hidden />
-          </button>
-        )}
-
-        {prodotti.length > 4 && (
-          <button
-            type="button"
-            onClick={() => scorri("destra")}
-            aria-label="Mostra altri prodotti"
-            disabled={!canScrollRight}
-            className="absolute right-0 top-1/2 z-10 hidden h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full border border-yellow-300 bg-yellow-400 text-blue-900 shadow-md transition hover:bg-yellow-300 md:flex"
-          >
-            <ChevronRight className="h-3.5 w-3.5" aria-hidden />
-          </button>
-        )}
-
-        <div
-          ref={viewportRef}
-          className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:gap-5"
-          aria-label="Galleria prodotti"
-        >
-          {visibili.map((prodotto) => {
-            const prodottoId = String(prodotto.id);
-
-            return (
-              <div
-                key={prodottoId}
-                className="w-[calc((100%_-_0.75rem)_/_2)] min-w-[calc((100%_-_0.75rem)_/_2)] shrink-0 snap-start md:w-[calc((100%_-_3.75rem)_/_4)] md:min-w-[calc((100%_-_3.75rem)_/_4)]"
-              >
-                <ProductCard
-                  id={prodottoId}
-                  slug={(prodotto.slug as string) ?? prodottoId}
-                  nome={prodotto.nome as string}
-                  prezzo={prodotto.prezzo as number}
-                  categoria={(prodotto.categoria as string) ?? null}
-                  negozio_nome={(prodotto.negozio_nome as string) ?? ""}
-                  negozio_id={String(prodotto.negozio_id ?? "")}
-                  immagine_principale={
-                    (prodotto.immagine_principale as string) ?? null
-                  }
-                  haVarianti={Boolean(prodotto.ha_varianti)}
-                  {...(prodottoTipico ? { prodottoTipico: true } : {})}
-                  {...(compatto ? { compatto: true } : {})}
-                  preferitoAttivo={statoPreferiti.chiavi.has(
-                    chiavePreferito("prodotto", prodottoId)
-                  )}
-                  autenticato={statoPreferiti.autenticato}
-                />
-              </div>
-            );
-          })}
-        </div>
+    <div className="min-w-0">
+      <div className="grid min-w-0 grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
+        {prodottiVisibili.map((prodotto) => {
+          const prodottoId = String(prodotto.id);
+          return (
+            <ProductCard
+              key={prodottoId}
+              id={prodottoId}
+              slug={(prodotto.slug as string) ?? prodottoId}
+              nome={prodotto.nome as string}
+              prezzo={prodotto.prezzo as number}
+              categoria={(prodotto.categoria as string) ?? null}
+              negozio_nome={(prodotto.negozio_nome as string) ?? ""}
+              negozio_id={String(prodotto.negozio_id ?? "")}
+              immagine_principale={(prodotto.immagine_principale as string) ?? null}
+              haVarianti={Boolean(prodotto.ha_varianti)}
+              {...(prodottoTipico ? { prodottoTipico: true } : {})}
+              compatto={compatto || true}
+              preferitoAttivo={statoPreferiti.chiavi.has(
+                chiavePreferito("prodotto", prodottoId)
+              )}
+              autenticato={statoPreferiti.autenticato}
+            />
+          );
+        })}
       </div>
 
-      {mostraTutti && prodotti.length > 4 && (
-        <>
-          {espanso && (
-            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 md:gap-5">
-              {prodotti.map((prodotto) => {
-                const prodottoId = String(prodotto.id);
-                return (
-                  <ProductCard
-                    key={prodottoId}
-                    id={prodottoId}
-                    slug={(prodotto.slug as string) ?? prodottoId}
-                    nome={prodotto.nome as string}
-                    prezzo={prodotto.prezzo as number}
-                    categoria={(prodotto.categoria as string) ?? null}
-                    negozio_nome={(prodotto.negozio_nome as string) ?? ""}
-                    negozio_id={String(prodotto.negozio_id ?? "")}
-                    immagine_principale={(prodotto.immagine_principale as string) ?? null}
-                    haVarianti={Boolean(prodotto.ha_varianti)}
-                    {...(prodottoTipico ? { prodottoTipico: true } : {})}
-                    {...(compatto ? { compatto: true } : {})}
-                    preferitoAttivo={statoPreferiti.chiavi.has(
-                      chiavePreferito("prodotto", prodottoId)
-                    )}
-                    autenticato={statoPreferiti.autenticato}
-                  />
-                );
-              })}
-            </div>
-          )}
-          <div className="mt-6 flex justify-center">
+      {mostraTutti && numeroPagine > 1 && (
+        <div className="mt-3 flex items-center justify-between gap-2 border-t border-slate-100 pt-3">
+          <span className="text-xs font-medium text-slate-500" aria-live="polite">
+            {primoIndice}–{ultimoIndice} di {prodotti.length} prodotti
+          </span>
+          <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setEspanso((v) => !v)}
-              className="inline-flex items-center gap-2 rounded-xl bg-yellow-400 px-6 py-2.5 text-sm font-black text-blue-900 shadow-sm transition hover:bg-yellow-300 active:scale-95"
+              onClick={() => setPagina((corrente) => Math.max(0, corrente - 1))}
+              disabled={paginaSicura === 0}
+              aria-label="Mostra i quattro prodotti precedenti"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-blue-900 shadow-sm transition hover:border-yellow-400 hover:bg-yellow-50 disabled:cursor-not-allowed disabled:opacity-35"
             >
-              {espanso ? (
-                <>
-                  Nascondi elenco
-                  <ChevronUp className="h-4 w-4" aria-hidden />
-                </>
-              ) : (
-                <>
-                  Mostra tutti i prodotti
-                  <ChevronDown className="h-4 w-4" aria-hidden />
-                </>
-              )}
+              <ChevronLeft className="h-4 w-4" aria-hidden />
+            </button>
+            <button
+              type="button"
+              onClick={() => setPagina((corrente) => Math.min(numeroPagine - 1, corrente + 1))}
+              disabled={paginaSicura >= numeroPagine - 1}
+              aria-label="Mostra i quattro prodotti successivi"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-yellow-400 text-blue-950 shadow-sm transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-35"
+            >
+              <ChevronRight className="h-4 w-4" aria-hidden />
             </button>
           </div>
-        </>
+        </div>
       )}
     </div>
   );
