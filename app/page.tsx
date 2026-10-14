@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import {
   getNegoziInEvidenza,
-  getProdottiInEvidenza,
+  getProdottiCatalogoHomepage,
   getProdottiTipici,
 } from "@/lib/negozi";
 import { getNegozioCardImmagine } from "@/lib/negozi-card-immagini";
@@ -71,7 +71,7 @@ export default async function Home() {
   const [negozi, prodottiInEvidenza, prodottiTipici, statoPreferiti] =
     await Promise.all([
       getNegoziInEvidenza(8),
-      getProdottiInEvidenza(200),
+      getProdottiCatalogoHomepage(1000),
       getProdottiTipici(200),
       getStatoPreferitiPerPagina(),
     ]);
