@@ -13,6 +13,8 @@ export default function HomepageProductSwipeReveal({
   products: ReactNode;
 }) {
   const [showProducts, setShowProducts] = useState(false);
+  const [dragOffsetX, setDragOffsetX] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
   const allowSwipe = useRef(false);
@@ -38,6 +40,20 @@ export default function HomepageProductSwipeReveal({
       : Boolean(target.closest("[data-home-hero-swipe]"));
   }
 
+  function onTouchMove(event: TouchEvent<HTMLDivElement>) {
+    const startX = touchStartX.current;
+    const startY = touchStartY.current;
+    const touch = event.changedTouches[0];
+    if (!allowSwipe.current || startX === null || startY === null || !touch) return;
+
+    const deltaX = touch.clientX - startX;
+    const deltaY = touch.clientY - startY;
+    // Follow the finger directly on horizontal gestures; leave vertical scrolling native.
+    if (Math.abs(deltaX) < Math.abs(deltaY) * 1.1) return;
+    setIsDragging(true);
+    setDragOffsetX(Math.max(-window.innerWidth, Math.min(window.innerWidth, deltaX)));
+  }
+
   function onTouchEnd(event: TouchEvent<HTMLDivElement>) {
     const startX = touchStartX.current;
     const startY = touchStartY.current;
@@ -45,22 +61,30 @@ export default function HomepageProductSwipeReveal({
     touchStartX.current = null;
     touchStartY.current = null;
 
-    if (!allowSwipe.current || startX === null || startY === null || !touch) return;
+    if (!allowSwipe.current || startX === null || startY === null || !touch) {
+      setIsDragging(false);
+      setDragOffsetX(0);
+      return;
+    }
     allowSwipe.current = false;
+    setIsDragging(false);
 
     const deltaX = touch.clientX - startX;
     const deltaY = touch.clientY - startY;
     // Require a clearly horizontal gesture, so vertical browsing doesn't switch panels.
-    if (Math.abs(deltaX) < 60 || Math.abs(deltaX) < Math.abs(deltaY) * 1.35) return;
+    if (Math.abs(deltaX) < 60 || Math.abs(deltaX) < Math.abs(deltaY) * 1.35) {
+      setDragOffsetX(0);
+      return;
+    }
 
     if (!showProducts && deltaX < 0) {
       swipeHandled.current = true;
       setShowProducts(true);
-    }
-    if (showProducts && deltaX > 0) {
+    } else if (showProducts && deltaX > 0) {
       swipeHandled.current = true;
       setShowProducts(false);
     }
+    setDragOffsetX(0);
   }
 
   function onToggleButtonClick() {
@@ -77,11 +101,17 @@ export default function HomepageProductSwipeReveal({
       <div
         className="relative overflow-hidden bg-[#e5edf7] md:h-[600px]"
         onTouchStartCapture={onTouchStart}
+        onTouchMoveCapture={onTouchMove}
         onTouchEndCapture={onTouchEnd}
+        style={{ touchAction: "pan-y" }}
         aria-label="Homepage InCittà: scorri orizzontalmente per passare dalla foto ai prodotti"
       >
         <div
-          className={`transition-transform duration-[1200ms] ease-out md:absolute md:inset-0 ${showProducts ? "absolute inset-0 -translate-x-full md:-translate-x-full" : "relative translate-x-0 md:translate-x-0"}`}
+          className={`md:absolute md:inset-0 ${showProducts ? "absolute inset-0" : "relative"}`}
+          style={{
+            transform: `translateX(${showProducts ? `calc(-100% + ${dragOffsetX}px)` : `${dragOffsetX}px`})`,
+            transition: isDragging ? "none" : "transform 520ms cubic-bezier(0.22, 0.61, 0.36, 1)",
+          }}
           aria-hidden={showProducts}
           data-home-hero-swipe
         >
@@ -89,7 +119,11 @@ export default function HomepageProductSwipeReveal({
         </div>
 
         <div
-          className={`transition-transform duration-[1200ms] ease-out [&>section]:min-h-full ${showProducts ? "relative w-full translate-x-0 overflow-visible md:absolute md:inset-0 md:overflow-y-auto" : "absolute inset-0 w-full translate-x-full overflow-y-auto md:overflow-y-auto"}`}
+          className={`[&>section]:min-h-full ${showProducts ? "relative w-full overflow-visible md:absolute md:inset-0 md:overflow-y-auto" : "absolute inset-0 w-full overflow-y-auto md:overflow-y-auto"}`}
+          style={{
+            transform: `translateX(${showProducts ? `${dragOffsetX}px` : `calc(100% + ${dragOffsetX}px)`})`,
+            transition: isDragging ? "none" : "transform 520ms cubic-bezier(0.22, 0.61, 0.36, 1)",
+          }}
           aria-hidden={!showProducts}
           id="homepage-prodotti"
         >
