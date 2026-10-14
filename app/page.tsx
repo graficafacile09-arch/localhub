@@ -86,7 +86,7 @@ export default async function Home() {
         hero={
           <>
             {/* HERO — ripristinata nella posizione originale */}
-            <section className="relative h-full overflow-hidden rounded-b-[2rem] bg-slate-900 shadow-lg shadow-slate-900/10 sm:rounded-b-[2.5rem] md:min-h-[600px]">
+            <section className="relative h-full min-h-[420px] overflow-hidden rounded-b-[2rem] bg-slate-900 shadow-lg shadow-slate-900/10 sm:min-h-[460px] sm:rounded-b-[2.5rem] md:min-h-[600px]">
               <Image
                 src="/hero-coppia-castrovillari.webp"
                 alt="Coppia a Castrovillari"
@@ -99,7 +99,7 @@ export default async function Home() {
                 aria-hidden="true"
                 className="absolute inset-0 bg-gradient-to-b from-slate-950/60 via-slate-950/25 to-transparent"
               />
-              <div className="relative z-10 mx-auto max-w-7xl px-4 py-10 text-left md:flex md:min-h-[600px] md:w-full md:items-center md:px-6 md:py-16">
+              <div className="relative z-10 mx-auto flex min-h-[420px] max-w-7xl items-center px-4 py-10 text-left sm:min-h-[460px] md:min-h-[600px] md:w-full md:px-6 md:py-16">
                 <div>
                   <h1 className="mt-4 max-w-xl text-3xl font-black leading-tight tracking-tight text-white drop-shadow-lg md:mt-6 md:text-7xl">
                     Tutto quello che cerchi... <span className="text-yellow-300">è già</span> nella tua città.
