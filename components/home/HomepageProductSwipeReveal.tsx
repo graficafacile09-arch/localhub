@@ -23,11 +23,12 @@ export default function HomepageProductSwipeReveal({
     touchStartX.current = touch.clientX;
     touchStartY.current = touch.clientY;
 
-    // While browsing products, ignore gestures on cards, links and carousel controls.
-    // A right-swipe back to the hero is only accepted when it starts at the far left edge.
+    // Change panels only when the gesture starts on the hero or the products intro.
+    // Swipes on product cards, links and the inner product carousels must never switch panels.
+    const target = event.target as HTMLElement;
     allowSwipe.current = showProducts
-      ? touch.clientX <= 28
-      : Boolean((event.target as HTMLElement).closest("[data-home-hero-swipe]"));
+      ? Boolean(target.closest("[data-home-products-swipe]"))
+      : Boolean(target.closest("[data-home-hero-swipe]"));
   }
 
   function onTouchEnd(event: TouchEvent<HTMLDivElement>) {
@@ -73,12 +74,17 @@ export default function HomepageProductSwipeReveal({
         </div>
 
         {!showProducts && (
-          <div className="pointer-events-none absolute bottom-5 left-1/2 z-20 -translate-x-1/2 sm:bottom-6">
-            <span className="inline-flex items-center gap-2 rounded-full border border-yellow-200/90 bg-yellow-400 px-4 py-2 text-xs font-extrabold tracking-wide text-slate-950 shadow-lg shadow-slate-950/20 ring-1 ring-black/5 sm:text-sm">
-              Scorri per scoprire i prodotti
-              <ArrowLeft className="h-4 w-4" aria-hidden />
+          <button
+            type="button"
+            onClick={() => setShowProducts(true)}
+            aria-label="Scopri i prodotti"
+            className="group absolute bottom-5 left-1/2 z-20 inline-flex min-h-12 -translate-x-1/2 items-center gap-3 rounded-full border border-yellow-200/80 bg-yellow-400 py-1.5 pl-5 pr-2 text-sm font-extrabold tracking-tight text-slate-950 shadow-[0_10px_30px_-8px_rgba(15,23,42,0.65)] transition duration-200 hover:-translate-y-0.5 hover:bg-yellow-300 hover:shadow-[0_14px_34px_-8px_rgba(15,23,42,0.7)] active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 sm:bottom-6 sm:text-base"
+          >
+            <span>Scopri i prodotti</span>
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-950 text-yellow-300 transition-transform duration-200 group-hover:-translate-x-0.5">
+              <ArrowLeft className="h-5 w-5" aria-hidden />
             </span>
-          </div>
+          </button>
         )}
 
         <button
