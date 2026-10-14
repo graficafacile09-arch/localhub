@@ -486,12 +486,12 @@ body.merchant-image-editor-aperto .merchant-bottom-nav-spacer {
    di conseguenza. Il ritaglio chiude la freccia partendo dalla punta, così
    non resta alcun segmento quando la mano torna a riposo. */
 .incitta-swipe-cue-hand {
-  animation: incitta-swipe-hand 2.4s ease-in-out infinite;
+  animation: incitta-swipe-hand 4s ease-in-out infinite;
 }
 .incitta-swipe-cue-arrow {
   transform: translateY(-50%);
   clip-path: inset(0px 30px 0px 18px);
-  animation: incitta-swipe-arrow-grow 2.4s ease-in-out infinite;
+  animation: incitta-swipe-arrow-grow 4s ease-in-out infinite;
 }
 @keyframes incitta-swipe-hand {
   0%, 12% { transform: translateX(30px); }
