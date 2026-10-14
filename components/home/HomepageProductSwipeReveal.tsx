@@ -83,7 +83,7 @@ export default function HomepageProductSwipeReveal({
             <span>Scopri i prodotti</span>
             <span className="relative inline-flex h-6 w-10 items-center justify-start" aria-hidden="true">
               <Hand className="h-[18px] w-[18px] text-blue-800 motion-safe:animate-[incitta-swipe_1.5s_ease-in-out_infinite]" />
-              <ArrowLeft className="absolute left-0 top-1/2 h-4 w-6 -translate-y-1/2 text-blue-800 opacity-0 motion-safe:animate-[incitta-swipe-arrow_1.5s_ease-in-out_infinite]" />
+              <ArrowLeft className="incitta-swipe-trail absolute left-0 top-1/2 h-4 w-6 -translate-y-1/2 text-blue-800 opacity-0 motion-safe:animate-[incitta-swipe-arrow_1.5s_ease-in-out_infinite]" />
             </span>
           </button>
         )}
