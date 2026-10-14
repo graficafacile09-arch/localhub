@@ -481,13 +481,16 @@ body.merchant-image-editor-aperto .merchant-bottom-nav-spacer {
   }
 }
 
-/* Mano e freccia allineate al testo; la freccia si rivela progressivamente senza lasciare residui. */
+/* Mano e freccia allineate al testo: la punta della freccia si muove insieme
+   all'indice (stesso translateX/stessa durata) e il corpo si allunga/accorcia
+   di conseguenza. Il ritaglio chiude la freccia partendo dalla punta, così
+   non resta alcun segmento quando la mano torna a riposo. */
 .incitta-swipe-cue-hand {
   animation: incitta-swipe-hand 1.5s ease-in-out infinite;
 }
 .incitta-swipe-cue-arrow {
   transform: translateY(-50%);
-  clip-path: inset(0 0 0 100%);
+  clip-path: inset(0px 30px 0px 18px);
   animation: incitta-swipe-arrow-grow 1.5s ease-in-out infinite;
 }
 @keyframes incitta-swipe-hand {
@@ -496,9 +499,9 @@ body.merchant-image-editor-aperto .merchant-bottom-nav-spacer {
   88%, 100% { transform: translateX(30px); }
 }
 @keyframes incitta-swipe-arrow-grow {
-  0%, 12% { clip-path: inset(0 0 0 100%); }
-  42%, 56% { clip-path: inset(0); }
-  88%, 100% { clip-path: inset(0 0 0 100%); }
+  0%, 12% { transform: translateY(-50%) translateX(30px); clip-path: inset(0px 30px 0px 18px); }
+  42%, 56% { transform: translateY(-50%) translateX(0); clip-path: inset(0px); }
+  88%, 100% { transform: translateY(-50%) translateX(30px); clip-path: inset(0px 30px 0px 18px); }
 }
 @media (prefers-reduced-motion: reduce) {
   .incitta-swipe-cue-hand, .incitta-swipe-cue-arrow { animation: none; }
