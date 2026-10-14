@@ -87,19 +87,28 @@ export default async function Home() {
           <>
             {/* HERO — ripristinata nella posizione originale */}
             <section className="relative h-full min-h-[420px] overflow-hidden rounded-b-[2rem] bg-slate-900 shadow-lg shadow-slate-900/10 sm:min-h-[460px] sm:rounded-b-[2.5rem] md:min-h-[600px]">
+              {/* Sfondo morbido mobile + foto intera in primo piano: la coppia non viene tagliata. */}
+              <Image
+                src="/hero-coppia-castrovillari.webp"
+                alt=""
+                aria-hidden="true"
+                fill
+                sizes="100vw"
+                className="absolute inset-0 h-full w-full scale-110 object-cover opacity-55 blur-2xl md:hidden"
+              />
               <Image
                 src="/hero-coppia-castrovillari.webp"
                 alt="Coppia a Castrovillari"
                 fill
                 sizes="100vw"
                 priority
-                className="absolute inset-0 h-full w-full object-cover object-center md:object-[center_40%]"
+                className="absolute inset-0 h-full w-full object-contain md:object-cover md:object-[center_40%]"
               />
               <div
                 aria-hidden="true"
                 className="absolute inset-0 bg-gradient-to-b from-slate-950/60 via-slate-950/25 to-transparent"
               />
-              <div className="relative z-10 mx-auto flex min-h-[420px] max-w-7xl items-center px-4 py-10 text-left sm:min-h-[460px] md:min-h-[600px] md:w-full md:px-6 md:py-16">
+              <div className="relative z-10 mx-auto flex min-h-[420px] max-w-7xl items-start px-4 pb-24 pt-5 text-left sm:min-h-[460px] md:min-h-[600px] md:w-full md:items-center md:px-6 md:py-16">
                 <div>
                   <h1 className="mt-4 max-w-xl text-3xl font-black leading-tight tracking-tight text-white drop-shadow-lg md:mt-6 md:text-7xl">
                     Tutto quello che cerchi... <span className="text-yellow-300">è già</span> nella tua città.
