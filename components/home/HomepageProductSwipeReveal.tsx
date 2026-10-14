@@ -53,7 +53,7 @@ export default function HomepageProductSwipeReveal({
     setIsDragging(true);
     // Sticky at the start, then progressively freer: like dragging a panel through light glue.
     const distance = Math.abs(deltaX);
-    const resistedDistance = distance <= 48 ? distance * 0.18 : 8.64 + (distance - 48) * 0.42;
+    const resistedDistance = distance <= 56 ? distance * 0.08 : 4.48 + (distance - 56) * 0.62;
     const resistedDelta = Math.sign(deltaX) * resistedDistance;
     setDragOffsetX(Math.max(-window.innerWidth, Math.min(window.innerWidth, resistedDelta)));
   }
@@ -76,7 +76,7 @@ export default function HomepageProductSwipeReveal({
     const deltaX = touch.clientX - startX;
     const deltaY = touch.clientY - startY;
     // Require a clearly horizontal gesture, so vertical browsing doesn't switch panels.
-    if (Math.abs(deltaX) < 60 || Math.abs(deltaX) < Math.abs(deltaY) * 1.35) {
+    if (Math.abs(deltaX) < 90 || Math.abs(deltaX) < Math.abs(deltaY) * 1.35) {
       setDragOffsetX(0);
       return;
     }
@@ -114,7 +114,7 @@ export default function HomepageProductSwipeReveal({
           className={`md:absolute md:inset-0 ${showProducts ? "absolute inset-0" : "relative"}`}
           style={{
             transform: `translateX(${showProducts ? `calc(-100% + ${dragOffsetX}px)` : `${dragOffsetX}px`})`,
-            transition: isDragging ? "none" : "transform 1800ms cubic-bezier(0.12, 0.8, 0.2, 1)",
+            transition: isDragging ? "none" : "transform 2600ms cubic-bezier(0.08, 0.72, 0.18, 1)",
           }}
           aria-hidden={showProducts}
           data-home-hero-swipe
@@ -126,7 +126,7 @@ export default function HomepageProductSwipeReveal({
           className={`[&>section]:min-h-full ${showProducts ? "relative w-full overflow-visible md:absolute md:inset-0 md:overflow-y-auto" : "absolute inset-0 w-full overflow-y-auto md:overflow-y-auto"}`}
           style={{
             transform: `translateX(${showProducts ? `${dragOffsetX}px` : `calc(100% + ${dragOffsetX}px)`})`,
-            transition: isDragging ? "none" : "transform 1800ms cubic-bezier(0.12, 0.8, 0.2, 1)",
+            transition: isDragging ? "none" : "transform 2600ms cubic-bezier(0.08, 0.72, 0.18, 1)",
           }}
           aria-hidden={!showProducts}
           id="homepage-prodotti"
