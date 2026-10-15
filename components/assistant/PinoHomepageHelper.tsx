@@ -30,21 +30,25 @@ export default function PinoHomepageHelper() {
     let settleTimer: ReturnType<typeof setTimeout> | null = null;
 
     const isFooterVisible = () => {
-      // Sulla homepage aspettiamo il footer vero e proprio: la banda blu
-      // promozionale precedente non deve impedire a Pino di comparire dopo
-      // i 560 px. Nelle altre pagine resta il selettore originale.
-      const footerZone =
-        pathname === "/"
-          ? document.querySelector<HTMLElement>("main footer")
-          : document.querySelector<HTMLElement>("[data-pino-footer-zone=\"true\"]");
+      // Homepage: considera esclusivamente il footer visibile della homepage.
+      // La fascia blu promozionale e il footer legale globale non devono
+      // impedire a Pino di comparire dopo i 560 px.
+      if (pathname === "/") {
+        const homeFooter = document.querySelector<HTMLElement>("main > footer");
+        return homeFooter
+          ? homeFooter.getBoundingClientRect().top < window.innerHeight
+          : false;
+      }
+
+      // Nelle altre pagine manteniamo esattamente la logica già esistente.
+      const blueZone = document.querySelector<HTMLElement>(
+        "[data-pino-footer-zone=\"true\"]"
+      );
       const legalFooter = document.querySelector<HTMLElement>(
         "[data-pino-legal-footer=\"true\"]"
       );
-
-      // Quando il footer entra nella viewport, nascondiamo la fascia per
-      // non coprire le scritte finali.
-      const blueVisible = footerZone
-        ? footerZone.getBoundingClientRect().top < window.innerHeight
+      const blueVisible = blueZone
+        ? blueZone.getBoundingClientRect().top < window.innerHeight
         : false;
       const legalVisible = legalFooter
         ? legalFooter.getBoundingClientRect().top < window.innerHeight
