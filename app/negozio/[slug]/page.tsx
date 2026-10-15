@@ -332,17 +332,6 @@ export default async function PaginaNegozio({
             targetName={String(negozio.nome ?? "Negozio")}
             negozioId={id}
           />
-          {negozio.telefono && (
-            <a
-              href={buildWhatsAppUrl()}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-xl bg-whatsapp px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-whatsapp-dark hover:shadow-md"
-            >
-              <MessageCircle className="h-4 w-4" />
-              WhatsApp
-            </a>
-          )}
           {mostraRichiestaInfo && configRichiestaInfo && (
             <RichiestaInfoButton
               slug={slugCanonico ?? slug}
@@ -372,6 +361,17 @@ export default async function PaginaNegozio({
             >
               <MapPin className="h-4 w-4" />
               Mappa
+            </a>
+          )}
+          {normalizzaNumeroWhatsApp(whatsappNegozio) && (
+            <a
+              href={buildWhatsAppUrl()}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-whatsapp px-3.5 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-whatsapp-dark hover:shadow-md"
+            >
+              <MessageCircle className="h-4 w-4" />
+              WhatsApp
             </a>
           )}
           {negozio.telefono && (
