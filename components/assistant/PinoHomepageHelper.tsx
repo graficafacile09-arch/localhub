@@ -30,24 +30,35 @@ export default function PinoHomepageHelper() {
     let settleTimer: ReturnType<typeof setTimeout> | null = null;
 
     const isFooterVisible = () => {
-      const blueZone = document.querySelector<HTMLElement>(
-        "[data-pino-footer-zone=\"true\"]"
-      );
       const legalFooter = document.querySelector<HTMLElement>(
         "[data-pino-legal-footer=\"true\"]"
       );
 
-      // Appena una delle due zone finali entra nella viewport, rimuoviamo
+      // Sulla homepage il footer vero è l'elemento <footer> della pagina.
+      // La fascia blu promozionale (data-pino-footer-zone) NON è il footer:
+      // trattarla come tale la faceva entrare nella viewport prima dei 560px
+      // di scroll e Pino non compariva mai. Nelle altre pagine resta la
+      // condizione esistente.
+      const pageFooter =
+        pathname === "/"
+          ? document.querySelector<HTMLElement>(
+              "footer:not([data-pino-legal-footer=\"true\"])"
+            )
+          : document.querySelector<HTMLElement>(
+              "[data-pino-footer-zone=\"true\"]"
+            );
+
+      // Appena le zone finali entrano nella viewport, rimuoviamo
       // completamente la fascia fissa: nessun overlay o fascia grigia sopra
       // le regole/il footer.
-      const blueVisible = blueZone
-        ? blueZone.getBoundingClientRect().top < window.innerHeight
+      const pageFooterVisible = pageFooter
+        ? pageFooter.getBoundingClientRect().top < window.innerHeight
         : false;
       const legalVisible = legalFooter
         ? legalFooter.getBoundingClientRect().top < window.innerHeight
         : false;
 
-      return blueVisible || legalVisible;
+      return pageFooterVisible || legalVisible;
     };
 
     const updateVisibility = () => {
