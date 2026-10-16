@@ -48,23 +48,6 @@ export async function generateMetadata({
     return Array.isArray(v) ? (v[0] ?? "") : (v ?? "");
   };
 
-  // Canonicalizza solo il vecchio alias "Alimenti" e conserva tutti gli altri
-  // parametri della ricerca durante il redirect permanente (308).
-  const categoriaRichiesta = get("categoria").trim();
-  const categoriaCanonica = normalizzaCategoriaNegozio(categoriaRichiesta);
-  if (categoriaRichiesta && categoriaCanonica !== categoriaRichiesta) {
-    const queryCanonica = new URLSearchParams();
-    for (const [chiave, valore] of Object.entries(sp)) {
-      if (Array.isArray(valore)) {
-        for (const elemento of valore) queryCanonica.append(chiave, elemento);
-      } else if (valore !== undefined) {
-        queryCanonica.set(chiave, valore);
-      }
-    }
-    queryCanonica.set("categoria", categoriaCanonica);
-    permanentRedirect(`/ricerca?${queryCanonica.toString()}`);
-  }
-
   const termine = get("q").trim();
   const categoria = get("categoria").trim();
   const haFiltriTecnici = Boolean(
@@ -130,6 +113,23 @@ export default async function RicercaPage({
     const v = sp[k];
     return Array.isArray(v) ? (v[0] ?? "") : (v ?? "");
   };
+
+  // Canonicalizza solo il vecchio alias "Alimenti" e conserva tutti gli altri
+  // parametri della ricerca durante il redirect permanente (308).
+  const categoriaRichiesta = get("categoria").trim();
+  const categoriaCanonica = normalizzaCategoriaNegozio(categoriaRichiesta);
+  if (categoriaRichiesta && categoriaCanonica !== categoriaRichiesta) {
+    const queryCanonica = new URLSearchParams();
+    for (const [chiave, valore] of Object.entries(sp)) {
+      if (Array.isArray(valore)) {
+        for (const elemento of valore) queryCanonica.append(chiave, elemento);
+      } else if (valore !== undefined) {
+        queryCanonica.set(chiave, valore);
+      }
+    }
+    queryCanonica.set("categoria", categoriaCanonica);
+    permanentRedirect(`/ricerca?${queryCanonica.toString()}`);
+  }
 
   const termine = get("q").trim();
   const categoria = get("categoria").trim();
