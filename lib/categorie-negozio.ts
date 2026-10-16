@@ -37,8 +37,22 @@ const SLUG_CATEGORIA_OVERRIDE: Record<string, string> = {
 };
 
 /** Slug canonico (DB) di una categoria a partire dal suo nome. */
+/** Alias legacy: i link che usavano "Alimenti" puntano alla categoria canonica "Alimentari". */
+const ALIAS_CATEGORIE_NEGOZIO: Record<string, string> = {
+  alimenti: "Alimentari",
+};
+
+/** Restituisce il nome canonico della categoria, mantenendo invariati gli altri valori. */
+export function normalizzaCategoriaNegozio(nome: string | null | undefined): string {
+  const value = (nome ?? "").trim();
+  if (!value) return "";
+  return ALIAS_CATEGORIE_NEGOZIO[value.toLocaleLowerCase("it-IT")] ?? value;
+}
+
+/** Slug canonico (DB) di una categoria a partire dal suo nome. */
 export function slugCategoria(nome: string): string {
-  return SLUG_CATEGORIA_OVERRIDE[nome] ?? toSlug(nome);
+  const canonica = normalizzaCategoriaNegozio(nome);
+  return SLUG_CATEGORIA_OVERRIDE[canonica] ?? toSlug(canonica);
 }
 
 export const CATEGORIE_NEGOZIO: string[] = [
