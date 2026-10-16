@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type ReactNode, type TouchEvent } from "react";
+import { useEffect, useRef, useState, type ReactNode, type TouchEvent } from "react";
 import { ArrowLeft, ArrowRight, MoveLeft, Pointer } from "lucide-react";
 
 export default function HomepageProductSwipeReveal({
@@ -13,9 +13,50 @@ export default function HomepageProductSwipeReveal({
   products: ReactNode;
 }) {
   const [showProducts, setShowProducts] = useState(false);
+  const showProductsRef = useRef(false);
+  const panelHistoryEntry = useRef(false);
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
   const allowSwipe = useRef(false);
+
+  // Il carosello è un pannello della homepage, ma il tasto Indietro del
+  // browser/cellulare deve poterlo chiudere prima di lasciare la pagina.
+  useEffect(() => {
+    function onPopState() {
+      if (!panelHistoryEntry.current) return;
+      panelHistoryEntry.current = false;
+      showProductsRef.current = false;
+      setShowProducts(false);
+    }
+
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
+  function openProducts() {
+    if (showProductsRef.current) return;
+    window.history.pushState(
+      { ...(window.history.state ?? {}), incittaHomeProductsPanel: true },
+      "",
+      window.location.href
+    );
+    panelHistoryEntry.current = true;
+    showProductsRef.current = true;
+    setShowProducts(true);
+  }
+
+  function closeProducts() {
+    if (!showProductsRef.current) return;
+    showProductsRef.current = false;
+    setShowProducts(false);
+
+    // Rimuove la voce sintetica aggiunta all'apertura, così il prossimo
+    // Indietro del browser torna alla pagina visitata prima della homepage.
+    if (panelHistoryEntry.current) {
+      panelHistoryEntry.current = false;
+      window.history.back();
+    }
+  }
 
   function onTouchStart(event: TouchEvent<HTMLDivElement>) {
     const touch = event.changedTouches[0];
@@ -45,8 +86,8 @@ export default function HomepageProductSwipeReveal({
     const deltaY = touch.clientY - startY;
     // Require a clearly horizontal gesture, so vertical browsing doesn't switch panels.
     if (Math.abs(deltaX) < 60 || Math.abs(deltaX) < Math.abs(deltaY) * 1.35) return;
-    if (!showProducts && deltaX < 0) setShowProducts(true);
-    if (showProducts && deltaX > 0) setShowProducts(false);
+    if (!showProducts && deltaX < 0) openProducts();
+    if (showProducts && deltaX > 0) closeProducts();
   }
 
   return (
@@ -76,7 +117,7 @@ export default function HomepageProductSwipeReveal({
         {!showProducts && (
           <button
             type="button"
-            onClick={() => setShowProducts(true)}
+            onClick={openProducts}
             aria-label="Scopri i prodotti: scorri per vedere i prodotti"
             className="absolute bottom-3 left-1/2 z-20 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-yellow-300/90 bg-yellow-400/95 px-3 py-1.5 text-[11px] font-bold text-blue-900 shadow-md shadow-slate-950/20 transition hover:bg-yellow-300 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 md:hidden"
           >
@@ -90,7 +131,7 @@ export default function HomepageProductSwipeReveal({
 
         <button
           type="button"
-          onClick={() => setShowProducts((current) => !current)}
+          onClick={() => (showProducts ? closeProducts() : openProducts())}
           aria-label={showProducts ? "Torna alla foto della homepage" : "Mostra i prodotti"}
           aria-expanded={showProducts}
           aria-controls="homepage-prodotti"
