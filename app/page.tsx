@@ -18,6 +18,7 @@ import HomepageProductShowcase from "@/components/home/HomepageProductShowcase";
 import HomepageProductSwipeReveal from "@/components/home/HomepageProductSwipeReveal";
 import { chiavePreferito, getStatoPreferitiPerPagina } from "@/lib/cliente/favorites";
 import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
+import ProductCard from "@/components/home/ProductCard";
 
 // La homepage deve riflettere in tempo reale i negozi in evidenza flaggati
 // dal merchant (il toggle "In evidenza" della dashboard), quindi non viene
@@ -252,6 +253,44 @@ export default async function Home() {
                 );
               })}
             </div>
+          </div>
+        </section>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          VETRINA PRODOTTI — una scheda singola per ogni prodotto attivo.
+          Posizionata subito dopo i negozi in evidenza.
+          ═══════════════════════════════════════════════════════════════════ */}
+      {prodottiCatalogo.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 py-12 md:px-6 md:py-14">
+          <SezioneHeader
+            label="Dal territorio"
+            titolo="Tutti i prodotti"
+            href="/negozi"
+            linkLabel="Esplora i negozi"
+          />
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 md:gap-5">
+            {prodottiCatalogo.map((prodotto) => {
+              const prodottoId = String(prodotto.id);
+              return (
+                <ProductCard
+                  key={prodottoId}
+                  id={prodottoId}
+                  slug={(prodotto.slug as string) ?? prodottoId}
+                  nome={prodotto.nome as string}
+                  prezzo={prodotto.prezzo as number}
+                  categoria={(prodotto.categoria as string) ?? null}
+                  negozio_nome={(prodotto.negozio_nome as string) ?? ""}
+                  negozio_id={String(prodotto.negozio_id ?? "")}
+                  immagine_principale={(prodotto.immagine_principale as string) ?? null}
+                  haVarianti={Boolean(prodotto.ha_varianti)}
+                  preferitoAttivo={statoPreferiti.chiavi.has(
+                    chiavePreferito("prodotto", prodottoId)
+                  )}
+                  autenticato={statoPreferiti.autenticato}
+                />
+              );
+            })}
           </div>
         </section>
       )}
