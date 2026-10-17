@@ -80,6 +80,11 @@ export function normalizzaQueryCatalogo(testo: string): string {
   ];
   for (const [pattern, sostituzione] of traduzioni) q = q.replace(pattern, sostituzione);
 
+  // Remove first-person budget framing BEFORE stripping the numeric amount.
+  // Otherwise "I have 100 euros and want a watch" loses "100 euros" first,
+  // leaving the orphaned verb "have" in the catalog query.
+  q = q.replace(/\b(?:i have|i['’]ve got|ive got)\b/gi, " ");
+
   // Price ranges and constraints in either language.
   q = q
     .replace(/\b(?:between|tra|da)\s*\$?\s*\d+(?:[.,]\d+)?\s*(?:and|e|a|to)\s*\$?\s*\d+(?:[.,]\d+)?\s*(?:euros?|eur|dollars?|usd|€|\$)?\b/gi, " ")
