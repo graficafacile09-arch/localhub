@@ -1469,17 +1469,17 @@ export async function chatConAssistente(
   // 6) Risposta rapida grounded: i risultati sono già stati recuperati dai tool.
   // Evitiamo una seconda chiamata Gemini solo per riscrivere dati che abbiamo
   // già verificato: così Pino mostra i risultati molto prima.
+  const linguaRisposta = rilevaLinguaPino(domanda);
   const rispostaBase = fallbackTestuale(
     risultati,
     notaVincolo,
     analisi.intent,
     semantica,
-    budgetPreferenza
+    budgetPreferenza,
+    linguaRisposta
   );
-  const risposta = notaRecupero
-    ? `${notaRecupero}
-
-${rispostaBase}`
+  const risposta = notaRecupero && linguaRisposta !== "en"
+    ? `${notaRecupero}\n\n`${rispostaBase}`
     : rispostaBase;
 
   return {
