@@ -13,6 +13,7 @@ import { callGeminiText } from "@/lib/ai/gemini-text";
 import { extractJsonFromText } from "@/lib/product-assistant/providers/utils";
 import { normalizzaRichiesta } from "./local-intents";
 import { normalizzaQueryCatalogo } from "./understanding";
+import { rilevaLinguaPino } from "./understanding";
 import { rilevaFollowUp } from "./conversazione";
 import { estraiCitta } from "@/lib/localita";
 import { analizzaIntentoPino, type PinoIntent, type PinoIntentAnalysis } from "./intent";
@@ -671,7 +672,7 @@ export async function interpretaRichiestaPino(
   const analisiEffettiva = q !== query.trim() ? analizzaIntentoPino(q) : analisi;
   const fallback = fallbackPlan(q, analisiEffettiva);
 
-  if (!q || (analisiEffettiva.intent === "generic" && q.length < 12)) return fallback;
+  if (!q || (analisiEffettiva.intent === "generic" && q.length < 12 && rilevaLinguaPino(q) !== "en")) return fallback;
 
   // Il piano locale resta un fallback rapido e sicuro, non un veto alla
   // comprensione AI: le richieste nuove o colloquiali devono poter arrivare
