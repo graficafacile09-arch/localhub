@@ -18,6 +18,10 @@ test("Reported English budget sentence never leaves the word have in the query",
   );
 });
 
+test("Orphaned English planner terms are removed from catalog query", () => {
+  assert.equal(normalizzaQueryCatalogo("have orologio"), "orologio");
+});
+
 test("Colloquial English budget wording does not pollute the query", () => {
   assert.equal(
     normalizzaQueryCatalogo("I have 100 euros and want a watch"),
