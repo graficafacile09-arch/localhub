@@ -8,20 +8,20 @@ import {
 test("English budget and alternative wording reduce to the catalog subject", () => {
   const request = "I want a watch under 100 euros, or something similar";
   assert.equal(rilevaLinguaPino(request), "en");
-  assert.equal(normalizzaQueryCatalogo(request), "watch");
+  assert.equal(normalizzaQueryCatalogo(request), "orologio");
 });
 
 test("Colloquial English budget wording does not pollute the query", () => {
   assert.equal(
     normalizzaQueryCatalogo("I have 100 euros and want a watch"),
-    "watch",
+    "orologio",
   );
 });
 
 test("English product attributes are preserved", () => {
   assert.equal(
     normalizzaQueryCatalogo("I want a watch with a leather strap under 100 euros"),
-    "watch with leather strap",
+    "orologio con cinturino in pelle",
   );
 });
 
@@ -31,4 +31,10 @@ test("Italian product attributes are preserved", () => {
     "scarpe da uomo eleganti",
   );
   assert.equal(rilevaLinguaPino("Ho 100 euro e voglio un orologio"), "it");
+});
+
+test("Common English catalog subjects normalize to Italian search terms", () => {
+  assert.equal(normalizzaQueryCatalogo("I want shoes under 80 euros"), "scarpe");
+  assert.equal(normalizzaQueryCatalogo("Find me a wallet"), "portafoglio");
+  assert.equal(normalizzaQueryCatalogo("I need a phone"), "telefono");
 });
