@@ -68,3 +68,44 @@ test("Pino system prompt defines identity and proactive grounded behavior", () =
   assert.match(promptSource, /Non inventare mai negozi, prodotti, prezzi/);
   assert.match(promptSource, /Se la richiesta è abbastanza chiara, agisci e cerca subito/);
 });
+
+test("Empty and whitespace-only catalog requests stay empty", () => {
+  assert.equal(normalizzaQueryCatalogo(""), "");
+  assert.equal(normalizzaQueryCatalogo("   "), "");
+  assert.equal(rilevaLinguaPino("   "), "it");
+});
+
+test("Language detection handles short, direct requests in both languages", () => {
+  assert.equal(rilevaLinguaPino("Find me a wallet"), "en");
+  assert.equal(rilevaLinguaPino("Trovami un portafoglio"), "it");
+  assert.equal(rilevaLinguaPino("I need a phone"), "en");
+  assert.equal(rilevaLinguaPino("Mi serve un telefono"), "it");
+});
+
+test("Catalog normalization preserves useful attributes while removing budget framing", () => {
+  assert.equal(
+    normalizzaQueryCatalogo("I need men's shoes under 80 euros"),
+    "scarpe da uomo",
+  );
+  assert.equal(
+    normalizzaQueryCatalogo("I want a leather wallet"),
+    "pelle portafoglio",
+  );
+  assert.equal(
+    normalizzaQueryCatalogo("cerco scarpe da uomo eleganti sotto 100 euro"),
+    "scarpe da uomo eleganti",
+  );
+});
+
+test("Identity helper handles accented Italian and common English variants", () => {
+  assert.match(rispostaIdentitaPino("Qual è il tuo nome?") ?? "", /Sono Pino/);
+  assert.match(rispostaIdentitaPino("Come ti chiami!") ?? "", /Sono Pino/);
+  assert.match(rispostaIdentitaPino("What's your name?") ?? "", /I'm Pino/);
+  assert.match(rispostaIdentitaPino("Who is Pino?") ?? "", /I'm Pino/);
+});
+
+test("Identity detection does not intercept ordinary catalog searches", () => {
+  assert.equal(rispostaIdentitaPino("Cerco un negozio di scarpe"), null);
+  assert.equal(rispostaIdentitaPino("Find me a watch under 100 euros"), null);
+  assert.equal(rispostaIdentitaPino("Come funziona la ricerca?"), null);
+});
