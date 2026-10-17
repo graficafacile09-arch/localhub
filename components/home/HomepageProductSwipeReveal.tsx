@@ -64,12 +64,16 @@ export default function HomepageProductSwipeReveal({
     touchStartX.current = touch.clientX;
     touchStartY.current = touch.clientY;
 
-    // Change panels only when the gesture starts on the hero or the products intro.
-    // Swipes on product cards, links and the inner product carousels must never switch panels.
+    // Consenti il gesto anche quando parte dal pulsante "Scopri i prodotti".
+    // Nel pannello prodotti, i gesti restano confinati all'area dedicata.
     const target = event.target as HTMLElement;
     allowSwipe.current = showProducts
       ? Boolean(target.closest("[data-home-products-swipe]"))
-      : Boolean(target.closest("[data-home-hero-swipe]"));
+      : Boolean(
+          target.closest(
+            "[data-home-hero-swipe], button[aria-label='Scopri i prodotti: scorri per vedere i prodotti'], button[aria-label='Mostra i prodotti']"
+          )
+        );
   }
 
   function onTouchEnd(event: TouchEvent<HTMLDivElement>) {
