@@ -105,7 +105,7 @@ export default function HomepageProductCarousel({
             onClick={() => scorri("destra")}
             aria-label="Mostra altri prodotti"
             disabled={!canScrollRight}
-            className="absolute right-0.5 top-1/2 z-10 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full border border-yellow-300 bg-yellow-400 text-blue-900 shadow-md transition hover:bg-yellow-300 disabled:pointer-events-none disabled:opacity-30 md:right-0 md:hidden"
+            className="absolute right-0.5 top-1/2 z-10 flex h-7 w-7 -translate-y-1/2 touch-pan-x items-center justify-center rounded-full border border-yellow-300 bg-yellow-400 text-blue-900 shadow-md transition hover:bg-yellow-300 disabled:pointer-events-none disabled:opacity-30 md:right-0 md:hidden"
           >
             <ChevronRight className="h-3.5 w-3.5" aria-hidden />
           </button>
@@ -125,7 +125,7 @@ export default function HomepageProductCarousel({
 
         <div
           ref={viewportRef}
-          className="flex snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:gap-5"
+          className="flex snap-x snap-proximity gap-3 overflow-x-auto overscroll-x-contain touch-pan-x [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:gap-5"
           aria-label="Galleria prodotti"
         >
           {visibili.map((prodotto) => {
