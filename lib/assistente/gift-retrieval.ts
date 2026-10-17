@@ -21,6 +21,38 @@ export const CATEGORIE_REGALO = [
   "accessorio",
 ] as const;
 
+/**
+ * Verifica che un prodotto recuperato dal fan-out appartenga davvero alla
+ * categoria interrogata: evita falsi positivi come un libro di cucina tra gli orologi.
+ */
+export function prodottoCorrispondeCategoriaRegalo(
+  prodotto: { nome?: unknown; descrizione?: unknown; categoria?: unknown },
+  categoria: string
+): boolean {
+  const testo = [prodotto.nome, prodotto.descrizione, prodotto.categoria]
+    .filter(Boolean)
+    .join(" ")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+  const sinonimi: Record<string, string[]> = {
+    orologio: ["orologio", "orologi", "watch", "watches"],
+    anello: ["anello", "anelli", "ring", "rings"],
+    gioielli: ["gioiello", "gioielli", "jewelry", "jewellery"],
+    orecchini: ["orecchino", "orecchini", "earring", "earrings"],
+    collana: ["collana", "collane", "necklace", "necklaces"],
+    bracciale: ["bracciale", "bracciali", "bracelet", "bracelets"],
+    borsa: ["borsa", "borse", "bag", "bags", "handbag"],
+    portafoglio: ["portafoglio", "portafogli", "wallet", "wallets"],
+    profumo: ["profumo", "profumi", "perfume", "fragrance"],
+    libro: ["libro", "libri", "book", "books"],
+    cuffie: ["cuffia", "cuffie", "headphone", "headphones", "earbuds"],
+    accessorio: ["accessorio", "accessori", "accessory", "accessories"],
+  };
+  const termini = sinonimi[categoria.toLowerCase()] ?? [categoria.toLowerCase()];
+  return termini.some((termine) => testo.includes(termine));
+}
+
 /** True solo per un intento regalo senza un tipo di prodotto già specificato. */
 export function isGenericGiftRequest(query: string): boolean {
   const testo = String(query ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
