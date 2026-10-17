@@ -14,7 +14,6 @@ type StatoPreferiti = {
   chiavi: Set<string>;
 };
 
-const PRODOTTI_PER_PAGINA = 4;
 
 export default function HomepageProductCarousel({
   prodotti,
@@ -30,7 +29,19 @@ export default function HomepageProductCarousel({
   mostraTutti?: boolean;
 }) {
   const [pagina, setPagina] = useState(0);
+  const [prodottiPerPagina, setProdottiPerPagina] = useState(4);
   const touchStart = useRef<{ x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 639px)");
+    const aggiornaDimensione = () => {
+      setProdottiPerPagina(media.matches ? 2 : 4);
+      setPagina(0);
+    };
+    aggiornaDimensione();
+    media.addEventListener("change", aggiornaDimensione);
+    return () => media.removeEventListener("change", aggiornaDimensione);
+  }, []);
 
   function onCarouselTouchStart(event: TouchEvent<HTMLDivElement>) {
     const touch = event.changedTouches[0];
@@ -45,11 +56,11 @@ export default function HomepageProductCarousel({
 
     const deltaX = touch.clientX - start.x;
     const deltaY = touch.clientY - start.y;
-    if (Math.abs(deltaX) < 45 || Math.abs(deltaX) < Math.abs(deltaY) * 1.25) return;
+    if (Math.abs(deltaX) < 60 || Math.abs(deltaX) < Math.abs(deltaY) * 1.35) return;
     if (deltaX < 0) setPagina((current) => Math.min(numeroPagine - 1, current + 1));
     else setPagina((current) => Math.max(0, current - 1));
   }
-  const numeroPagine = Math.max(1, Math.ceil(prodotti.length / PRODOTTI_PER_PAGINA));
+  const numeroPagine = Math.max(1, Math.ceil(prodotti.length / prodottiPerPagina));
   const paginaSicura = Math.min(pagina, numeroPagine - 1);
   const prodottiVisibili = prodotti.slice(
     paginaSicura * PRODOTTI_PER_PAGINA,
@@ -63,7 +74,7 @@ export default function HomepageProductCarousel({
   if (prodotti.length === 0) return null;
 
   return (
-    <div className="min-w-0" onTouchStart={onCarouselTouchStart} onTouchEnd={onCarouselTouchEnd}>
+    <div className="min-w-0 touch-pan-y" onTouchStart={onCarouselTouchStart} onTouchEnd={onCarouselTouchEnd}>
       <div className="group/carousel relative">
         <div className="grid min-w-0 grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
           {prodottiVisibili.map((prodotto) => {
