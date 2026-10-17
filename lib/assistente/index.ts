@@ -1,4 +1,5 @@
 import { rilevaLinguaPino } from "./understanding";
+import { rispostaIdentitaPino } from "./identity";
 /**
  * LocalHub — Assistente AI: Orchestratore
  *
@@ -238,7 +239,7 @@ function pianoPredefinito(
   if (!ultimo) return null;
 
   const RE_PIATTAFORMA =
-    /che cos'è incittà|che cos'e incitta|cos'è incittà|come funziona|chi sei|cosa sei|cos'è il sito|what is incitta|what is incittà|how does incitta work|how does incittà work|who are you|what are you|what is this site/;
+    /che cos'è incittà|che cos'e incitta|cos'è incittà|come funziona|cos'è il sito|what is incitta|what is incittà|how does incitta work|how does incittà work|what is this site/;
 
   // Meteo e farmacie: riconoscimento UNICO e condiviso con il router della
   // barra di ricerca (lib/assistente/local-intents.ts), che normalizza accenti
@@ -273,9 +274,14 @@ function pianoPredefinito(
   const RE_CHIACCHIERA =
     /^(va bene|ok|okay|perfetto|grazie|grazie mille|ciao|buongiorno|buonasera|hi|hello|hey|thanks|thank you|perfect|good|great)$/;
 
+  const rispostaIdentita = rispostaIdentitaPino(utenti[utenti.length - 1] ?? "");
+  if (rispostaIdentita) {
+    return { directReply: rispostaIdentita, tools: [] };
+  }
+
   if (RE_PIATTAFORMA.test(ultimo)) {
     return {
-      directReply: /\b(what|how|who)\b/i.test(ultimo)
+      directReply: /\b(what|how)\b/i.test(ultimo)
         ? "InCittà is the local platform for your city. It brings together local businesses, products and prices, offers and promotions, events and useful information. You can search for businesses, compare products, check opening hours and contact local shops."
         : "InCittà è la piattaforma locale della tua città: raccoglie le attività commerciali del territorio con i loro negozi, prodotti e prezzi, offerte e promozioni, eventi e manifestazioni. Puoi cercare attività, confrontare prodotti, vedere orari e contatti e contattare i negozi direttamente.",
       tools: [],
