@@ -1149,16 +1149,44 @@ export async function chatConAssistente(
   // Esecuzione dei tool scelti (dal piano o dall'LLM).
   const queryDefault = ultimaQuerySostanziale(storico);
 
+  // Piano semantico autorevole per ricerche di prodotti fisici.
+  // La query restituita dal planner è il soggetto del catalogo, non la frase
+  // conversazionale completa. Questo evita che inglese, budget e richieste di
+  // alternative diventino termini obbligatori nel gate di pertinenza.
+  const pianoProdottoAffidabile = Boolean(
+    semantica &&
+    semantica.surface === "products" &&
+    semantica.intent === "product" &&
+    semantica.confidence !== "bassa" &&
+    semantica.query.trim()
+  );
+  if (pianoProdottoAffidabile && semantica) {
+    invocazioni = [{
+      tool: "searchProducts",
+      params: {
+        query: semantica.query,
+        limit: 8,
+        maxPrice: semantica.maxPrice,
+        minPrice: semantica.minPrice,
+        esclusioni: semantica.exclusions,
+        escludiNomi: [],
+      },
+    }];
+    directReply = null;
+    followUp = null;
+    selezioneOk = true;
+  }
+
   // Guardrail del budget: il planner non può omettere il limite dichiarato.
   // Basta il SOGGETTO di catalogo (regalo o prodotto concreto): il budget deve
   // sempre vincolare la ricerca, anche quando la frase non contiene un verbo
   // esplicito ("vorrei un regalo per mia moglie, budget 30").
   const richiestaCatalogoEsplicita =
-    /\b(regalo|regali|regalare|idea regalo|idee regalo|prodotto|prodotti|orologio|orologi|scarpe|borsa|borse|telefono|telefoni|libro|libri|cuffie|smartwatch|gioiello|gioielli|anello|anelli|collana|collane|bracciale|bracciali|profumo|profumi|portafoglio|portafogli|cintura|cinture|occhiali|giocattolo|giocattoli|tablet|computer|auricolari|altoparlante|speaker)\b/i.test(domandaSemantica);
+    /\\b(regalo|regali|regalare|idea regalo|idee regalo|prodotto|prodotti|orologio|orologi|scarpe|borsa|borse|telefono|telefoni|libro|libri|cuffie|smartwatch|gioiello|gioielli|anello|anelli|collana|collane|bracciale|bracciali|profumo|profumi|portafoglio|portafogli|cintura|cinture|occhiali|giocattolo|giocattoli|tablet|computer|auricolari|altoparlante|speaker|watch|watches|clock|clocks|shoes|handbag|bag|phone|book|headphones|jewelry|ring|necklace|bracelet|perfume|wallet|belt|glasses|toy|toys|earbuds|speaker)\\b/i.test(domandaSemantica) || pianoProdottoAffidabile;
   const importoCatalogo = domandaSemantica.match(/(?:budget(?:\s+di)?|massimo|fino a|entro|sotto|non oltre|al massimo)\s*(?:di\s*)?(?:€\s*)?(\d+(?:[.,]\d+)?)/i)
     ?? domandaSemantica.match(/(?:€\s*)(\d+(?:[.,]\d+)?)/i)
     ?? domandaSemantica.match(/(\d+(?:[.,]\d+)?)\s*(?:euro|eur)\b/i);
-  const maxPriceCatalogo = importoCatalogo ? Number(importoCatalogo[1].replace(",", ".")) : undefined;
+  const maxPriceCatalogo = importoCatalogo ? Number(importoCatalogo[1].replace(",", ".")) : semantica?.maxPrice ?? undefined;
   const haToolProdotti = invocazioni.some((t) => t.tool === "searchProducts" || t.tool === "searchAll");
   if (richiestaCatalogoEsplicita && maxPriceCatalogo !== undefined && Number.isFinite(maxPriceCatalogo)) {
     // Un regalo generico non è una keyword di catalogo: cercare la frase
