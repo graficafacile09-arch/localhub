@@ -11,6 +11,13 @@ test("English budget and alternative wording reduce to the catalog subject", () 
   assert.equal(normalizzaQueryCatalogo(request), "orologio");
 });
 
+test("Reported English budget sentence never leaves the word have in the query", () => {
+  assert.equal(
+    normalizzaQueryCatalogo("I have 100 euros and I want a watch or something similar."),
+    "orologio",
+  );
+});
+
 test("Colloquial English budget wording does not pollute the query", () => {
   assert.equal(
     normalizzaQueryCatalogo("I have 100 euros and want a watch"),
