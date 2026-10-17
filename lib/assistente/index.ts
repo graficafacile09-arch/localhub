@@ -1186,11 +1186,15 @@ export async function chatConAssistente(
   // sempre vincolare la ricerca, anche quando la frase non contiene un verbo
   // esplicito ("vorrei un regalo per mia moglie, budget 30").
   const richiestaCatalogoEsplicita =
-    /\\b(regalo|regali|regalare|idea regalo|idee regalo|prodotto|prodotti|orologio|orologi|scarpe|borsa|borse|telefono|telefoni|libro|libri|cuffie|smartwatch|gioiello|gioielli|anello|anelli|collana|collane|bracciale|bracciali|profumo|profumi|portafoglio|portafogli|cintura|cinture|occhiali|giocattolo|giocattoli|tablet|computer|auricolari|altoparlante|speaker|watch|watches|clock|clocks|shoes|handbag|bag|phone|book|headphones|jewelry|ring|necklace|bracelet|perfume|wallet|belt|glasses|toy|toys|earbuds|speaker)\\b/i.test(domandaSemantica) || pianoProdottoAffidabile;
-  const importoCatalogo = domandaSemantica.match(/(?:budget(?:\s+di)?|massimo|fino a|entro|sotto|non oltre|al massimo)\s*(?:di\s*)?(?:€\s*)?(\d+(?:[.,]\d+)?)/i)
+    /\b(regalo|regali|regalare|idea regalo|idee regalo|prodotto|prodotti|orologio|orologi|scarpe|borsa|borse|telefono|telefoni|libro|libri|cuffie|smartwatch|gioiello|gioielli|anello|anelli|collana|collane|bracciale|bracciali|profumo|profumi|portafoglio|portafogli|cintura|cinture|occhiali|giocattolo|giocattoli|tablet|computer|auricolari|altoparlante|speaker|watch|watches|clock|clocks|shoes|handbag|bag|phone|book|headphones|jewelry|ring|necklace|bracelet|perfume|wallet|belt|glasses|toy|toys|earbuds|speaker)\b/i.test(domandaSemantica) || pianoProdottoAffidabile;
+  const importoCatalogo = domandaSemantica.match(/(?:budget(?:\s+di)?|massimo|fino a|entro|sotto|non oltre|al massimo|under|below|up to|less than|not over|at most)\s*(?:di\s*)?(?:€\s*)?(\d+(?:[.,]\d+)?)/i)
     ?? domandaSemantica.match(/(?:€\s*)(\d+(?:[.,]\d+)?)/i)
-    ?? domandaSemantica.match(/(\d+(?:[.,]\d+)?)\s*(?:euro|eur)\b/i);
-  const maxPriceCatalogo = importoCatalogo ? Number(importoCatalogo[1].replace(",", ".")) : semantica?.maxPrice ?? undefined;
+    ?? domandaSemantica.match(/(\d+(?:[.,]\d+)?)\s*(?:euros?|eur)\b/i);
+  const maxPriceCatalogo =
+    semantica?.maxPrice ??
+    (importoCatalogo && !/\b(?:sopra|minimo|oltre|over|above|more than|at least)\b/i.test(domandaSemantica)
+      ? Number(importoCatalogo[1].replace(",", "."))
+      : undefined);
   const haToolProdotti = invocazioni.some((t) => t.tool === "searchProducts" || t.tool === "searchAll");
   if (richiestaCatalogoEsplicita && maxPriceCatalogo !== undefined && Number.isFinite(maxPriceCatalogo)) {
     // Un regalo generico non è una keyword di catalogo: cercare la frase
