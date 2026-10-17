@@ -1194,13 +1194,13 @@ export async function chatConAssistente(
   // in più categorie anche SENZA budget. Prima questa espansione era annidata
   // nel solo ramo con prezzo e il planner poteva restituire attività fuori tema.
   const richiestaCatalogoEsplicita =
-    /\\b(regalo|regali|regalare|idea regalo|idee regalo|prodotto|prodotti|orologio|orologi|scarpe|borsa|borse|telefono|telefoni|libro|libri|cuffie|smartwatch|gioiello|gioielli|anello|anelli|collana|collane|bracciale|bracciali|profumo|profumi|portafoglio|portafogli|cintura|cinture|occhiali|giocattolo|giocattoli|tablet|computer|auricolari|altoparlante|speaker|watch|watches|clock|clocks|shoes|handbag|bag|phone|book|headphones|jewelry|ring|necklace|bracelet|perfume|wallet|belt|glasses|toy|toys|earbuds|speaker)\\b/i.test(domandaSemantica) || pianoProdottoAffidabile;
-  const importoCatalogo = domandaSemantica.match(/(?:budget(?:\\s+di)?|massimo|fino a|entro|sotto|non oltre|al massimo|under|below|up to|less than|not over|at most)\\s*(?:di\\s*)?(?:€\\s*)?(\\d+(?:[.,]\\d+)?)/i)
-    ?? domandaSemantica.match(/(?:€\\s*)(\\d+(?:[.,]\\d+)?)/i)
-    ?? domandaSemantica.match(/(\\d+(?:[.,]\\d+)?)\\s*(?:euros?|eur)\\b/i);
+    /\b(regalo|regali|regalare|idea regalo|idee regalo|prodotto|prodotti|orologio|orologi|scarpe|borsa|borse|telefono|telefoni|libro|libri|cuffie|smartwatch|gioiello|gioielli|anello|anelli|collana|collane|bracciale|bracciali|profumo|profumi|portafoglio|portafogli|cintura|cinture|occhiali|giocattolo|giocattoli|tablet|computer|auricolari|altoparlante|speaker|watch|watches|clock|clocks|shoes|handbag|bag|phone|book|headphones|jewelry|ring|necklace|bracelet|perfume|wallet|belt|glasses|toy|toys|earbuds|speaker)\b/i.test(domandaSemantica) || pianoProdottoAffidabile;
+  const importoCatalogo = domandaSemantica.match(/(?:budget(?:\s+di)?|massimo|fino a|entro|sotto|non oltre|al massimo|under|below|up to|less than|not over|at most)\s*(?:di\s*)?(?:€\s*)?(\d+(?:[.,]\d+)?)/i)
+    ?? domandaSemantica.match(/(?:€\s*)(\d+(?:[.,]\d+)?)/i)
+    ?? domandaSemantica.match(/(\d+(?:[.,]\d+)?)\s*(?:euros?|eur)\b/i);
   const maxPriceCatalogo =
     semantica?.maxPrice ??
-    (importoCatalogo && !/\\b(?:sopra|minimo|oltre|over|above|more than|at least)\\b/i.test(domandaSemantica)
+    (importoCatalogo && !/\b(?:sopra|minimo|oltre|over|above|more than|at least)\b/i.test(domandaSemantica)
       ? Number(importoCatalogo[1].replace(",", "."))
       : undefined);
   const haToolProdotti = invocazioni.some((t) => t.tool === "searchProducts" || t.tool === "searchAll");
