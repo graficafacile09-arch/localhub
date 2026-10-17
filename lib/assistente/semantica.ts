@@ -12,6 +12,8 @@
 import { callGeminiText } from "@/lib/ai/gemini-text";
 import { extractJsonFromText } from "@/lib/product-assistant/providers/utils";
 import { normalizzaRichiesta } from "./local-intents";
+import { normalizzaQueryCatalogo } from "./understanding";
+import { rilevaLinguaPino } from "./understanding";
 import { rilevaFollowUp } from "./conversazione";
 import { estraiCitta } from "@/lib/localita";
 import { analizzaIntentoPino, type PinoIntent, type PinoIntentAnalysis } from "./intent";
@@ -139,7 +141,8 @@ NON rispondere all'utente. Devi produrre SOLO JSON valido.
 
 Regole:
 - Comprendi italiano e inglese naturali, inclusi plurali, sinonimi, forme colloquiali e abbreviazioni.
-- Se la richiesta è in inglese, produci comunque lo stesso JSON strutturato e normalizza il soggetto in una forma utile alla ricerca nel catalogo.
+- Se la richiesta è in inglese, produci comunque lo stesso JSON strutturato. Il catalogo è prevalentemente in italiano: traduci il soggetto in italiano e usa sinonimi/categorie italiani utili al retrieval, mantenendo attributi distintivi.
+- Esempi di normalizzazione cross-lingua: "watch"/"wristwatch" => "orologio"; "shoes" => "scarpe"; "phone"/"cellphone" => "telefono"; "wallet" => "portafoglio". Sono esempi, non un elenco chiuso: interpreta anche soggetti mai visti.
 - Comprendi richieste come "under 100", "below 100", "up to 100", "over 50", "between 50 and 100", "open now" e "near the center".
 - "birre", "birretta", "birrette" => soggetto canonico "birra".
 - "telefonino", "cellulare", "smartphone" => soggetto canonico "telefono".
@@ -578,8 +581,9 @@ function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): Pi
     .replace(/\s+\b(?:con|da|di|a|per|circa|entro|fino|e)\s*$/i, "")
     .replace(/\s+/g, " ")
     .trim();
+  termine = normalizzaQueryCatalogo(termine);
 
-  if (match) termine = termine.replace(match.pattern, match.termine).replace(/\s+/g, " ").trim();
+  if (match) termine = normalizzaQueryCatalogo(termine.replace(match.pattern, match.termine)).trim();
   // Se non resta alcun termine di catalogo (es. "ho 99 euro", "budget di
   // 100 euro"), la query è vuota: non reimmettiamo la frase di budget.
   if (!termine) termine = match?.termine ?? "";
@@ -615,13 +619,14 @@ function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): Pi
 
 function fallbackPlan(query: string, analisi: PinoIntentAnalysis): PinoSemanticPlan {
   const q = normalizzaRichiesta(query);
-  const tokens = q
+  const qCatalogo = normalizzaQueryCatalogo(q);
+  const tokens = qCatalogo
     .split(/[^a-z0-9]+/)
     .filter((t) => t.length >= 3)
     .filter((t) => !/^(cerco|cerca|trovami|trova|vorrei|voglio|mi|serve|anzi|invece|pero|però|un|una|uno|per|con|di|a|da|il|lo|la|i|gli|le|e|in|su|del|della|dei|delle|sotto|sopra|massimo|minimo|euro)$/.test(t));
-  const mMax = q.match(/(?:sotto|massimo|fino a|entro|meno di)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)/);
-  const mMin = q.match(/(?:sopra|minimo|piu di|più di|oltre)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)/);
-  const mRange = q.match(/(?:tra|da)\s*(\d+(?:[.,]\d+)?)\s*(?:e|a)\s*(\d+(?:[.,]\d+)?)/);
+  const mMax = q.match(/(?:sotto|massimo|fino a|entro|meno di|under|below|up to|less than|no more than|not over|at most)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)/i);
+  const mMin = q.match(/(?:sopra|minimo|piu di|più di|oltre|over|above|more than|at least)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)/i);
+  const mRange = q.match(/(?:tra|da|between)\s*(\d+(?:[.,]\d+)?)\s*(?:e|a|and|to)\s*(\d+(?:[.,]\d+)?)/i);
   const maxPrice = mRange ? Number(mRange[2].replace(",", ".")) : mMax ? Number(mMax[1].replace(",", ".")) : null;
   const minPrice = mRange ? Number(mRange[1].replace(",", ".")) : mMin ? Number(mMin[1].replace(",", ".")) : null;
   const exclusions: string[] = [];
@@ -668,10 +673,12 @@ export async function interpretaRichiestaPino(
   const analisiEffettiva = q !== query.trim() ? analizzaIntentoPino(q) : analisi;
   const fallback = fallbackPlan(q, analisiEffettiva);
 
-  if (!q || analisiEffettiva.intent === "generic") return fallback;
+  if (!q || (analisiEffettiva.intent === "generic" && q.length < 12 && rilevaLinguaPino(q) !== "en")) return fallback;
 
+  // Il piano locale resta un fallback rapido e sicuro, non un veto alla
+  // comprensione AI: le richieste nuove o colloquiali devono poter arrivare
+  // al planner multilingue anche quando una regex ha già riconosciuto il prezzo.
   const fastPlan = pianoLocaleIntelligente(q, analisiEffettiva);
-  if (fastPlan) return fastPlan;
 
   const memoriaTesto = memoria.slice(0, 4)
     .map((m) => `${m.termine}=>${m.concetto}`)
@@ -710,14 +717,16 @@ export async function interpretaRichiestaPino(
         : fallback.intent;
 
     const intentFinal = analisiEffettiva.confidence === "alta" ? analisiEffettiva.intent : intent;
-    const terms = pulisciLista(parsed.terms, 5);
+    const terms = pulisciLista(parsed.terms, 5)
+      .map((termine) => normalizzaQueryCatalogo(termine))
+      .filter(Boolean);
     const exclusions = pulisciLista(parsed.exclusions, 5);
     const minPrice = numeroValido(parsed.minPrice);
     const maxPrice = numeroValido(parsed.maxPrice);
     const city = typeof parsed.city === "string"
       ? normalizzaRichiesta(parsed.city).trim().slice(0, 60) || null
       : null;
-    const queryPlan = (terms.length ? terms[0] : fallback.query).slice(0, 120);
+    const queryPlan = (normalizzaQueryCatalogo(terms.length ? terms[0] : fallback.query) || fallback.query).slice(0, 120);
 
     return {
       surface: intentFinal === "service" ? "stores" : surface,
@@ -736,6 +745,6 @@ export async function interpretaRichiestaPino(
     };
   } catch (error) {
     console.warn("[pino-semantic] planner non disponibile, fallback locale:", error);
-    return fallback;
+    return fastPlan ?? fallback;
   }
 }

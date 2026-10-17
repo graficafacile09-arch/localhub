@@ -1,3 +1,4 @@
+import { rilevaLinguaPino } from "./understanding";
 /**
  * LocalHub — Assistente AI: Orchestratore
  *
@@ -504,27 +505,29 @@ function aRisultatiRecuperati(
 /** Sezioni testuali dei risultati (condivise tra risposta normale e follow-up). */
 function sezioniRisultati(
   risultati: RisultatiRecuperati,
-  budget?: number | null
+  budget?: number | null,
+  lingua: "it" | "en" = "it"
 ): string[] {
+  const inglese = lingua === "en";
   const sezioni: string[] = [];
 
   if (risultati.prodotti.length > 0) {
     sezioni.push(
-      "**Prodotti trovati**\n" +
+      (inglese ? "**Products found**\n" : "**Prodotti trovati**\n") +
         risultati.prodotti
           .slice(0, 5)
           .map((p) => {
             const prezzo = prezzoNumerico(p.prezzo);
             const fuoriBudget =
               budget != null && prezzo != null && prezzo > 0 && prezzo > budget;
-            return `- **${p.nome}** — €${p.prezzo} (${p.negozio_nome || "negozio sconosciuto"})${fuoriBudget ? " — **oltre il budget**" : ""}`;
+            return `- **${p.nome}** — €${p.prezzo} (${p.negozio_nome || (inglese ? "unknown store" : "negozio sconosciuto")})${fuoriBudget ? (inglese ? " — **over budget**" : " — **oltre il budget**") : ""}`;
           })
           .join("\n")
     );
   }
   if (risultati.negozi.length > 0) {
     sezioni.push(
-      "**Negozi pertinenti**\n" +
+      (inglese ? "**Relevant stores**\n" : "**Negozi pertinenti**\n") +
         risultati.negozi
           .slice(0, 5)
           .map((n) => `- **${n.nome}**${n.categoria ? ` (${n.categoria})` : ""}`)
@@ -533,33 +536,33 @@ function sezioniRisultati(
   }
   if (risultati.offerte.length > 0) {
     sezioni.push(
-      "**Offerte**\n" +
+      (inglese ? "**Offers**\n" : "**Offerte**\n") +
         risultati.offerte
           .slice(0, 4)
-          .map((o) => `- **${o.titolo}**${o.prezzo_offerta != null ? ` — €${o.prezzo_offerta}` : ""} (${o.negozio_nome || "negozio sconosciuto"})`)
+          .map((o) => `- **${o.titolo}**${o.prezzo_offerta != null ? ` — €${o.prezzo_offerta}` : ""} (${o.negozio_nome || (inglese ? "unknown store" : "negozio sconosciuto")})`)
           .join("\n")
     );
   }
   if (risultati.eventi.length > 0) {
     sezioni.push(
-      "**Eventi**\n" +
+      (inglese ? "**Events**\n" : "**Eventi**\n") +
         risultati.eventi
           .slice(0, 4)
-          .map((e) => `- **${e.titolo}**${e.data_inizio ? ` — ${e.data_inizio.slice(0, 10)}` : ""} (${e.negozio_nome || "negozio sconosciuto"})`)
+          .map((e) => `- **${e.titolo}**${e.data_inizio ? ` — ${e.data_inizio.slice(0, 10)}` : ""} (${e.negozio_nome || (inglese ? "unknown store" : "negozio sconosciuto")})`)
           .join("\n")
     );
   }
   if (risultati.meteo) {
     sezioni.push(
-      `**Meteo Castrovillari**\n- Ora: ${risultati.meteo.temperatura}°C, ${risultati.meteo.descrizione}; oggi ${risultati.meteo.oggi.minima}°/${risultati.meteo.oggi.massima}°. Domani: ${risultati.meteo.domani.descrizione}, ${risultati.meteo.domani.minima}°/${risultati.meteo.domani.massima}°.`
+      `**${inglese ? "Castrovillari weather" : "Meteo Castrovillari"}**\n- ${inglese ? "Now" : "Ora"}: ${risultati.meteo.temperatura}°C, ${risultati.meteo.descrizione}; ${inglese ? "today" : "oggi"} ${risultati.meteo.oggi.minima}°/${risultati.meteo.oggi.massima}°. ${inglese ? "Tomorrow" : "Domani"}: ${risultati.meteo.domani.descrizione}, ${risultati.meteo.domani.minima}°/${risultati.meteo.domani.massima}°.`
     );
   }
   if (risultati.farmacie.length > 0) {
     sezioni.push(
-      "**Farmacie verificate**\n" +
+      (inglese ? "**Verified pharmacies**\n" : "**Farmacie verificate**\n") +
         risultati.farmacie
           .slice(0, 5)
-          .map((f) => `- **${f.nome}**${f.stato ? ` — ${f.stato}` : " — stato non verificato"}${f.turno ? ` — ${f.turno}` : ""}${f.telefono ? ` — tel. ${f.telefono}` : ""}`)
+          .map((f) => `- **${f.nome}**${f.stato ? ` — ${f.stato}` : (inglese ? " — status unverified" : " — stato non verificato")}${f.turno ? ` — ${f.turno}` : ""}${f.telefono ? ` — tel. ${f.telefono}` : ""}`)
           .join("\n")
     );
   }
@@ -577,22 +580,22 @@ function contaRisultati(risultati: RisultatiRecuperati): number {
   );
 }
 
-function descriviCriteriRicerca(semantica?: PinoSemanticPlan): string {
+function descriviCriteriRicerca(semantica?: PinoSemanticPlan, lingua: "it" | "en" = "it"): string {
   if (!semantica || semantica.confidence === "bassa" || !semantica.query) return "";
 
   const criteri: string[] = [];
   if (semantica.city) criteri.push(semantica.city);
-  if (semantica.openNow) criteri.push("aperto ora");
+  if (semantica.openNow) criteri.push(lingua === "en" ? "open now" : "aperto ora");
   if (semantica.minPrice != null && semantica.maxPrice != null) {
-    criteri.push(`tra €${semantica.minPrice} e €${semantica.maxPrice}`);
+    criteri.push(lingua === "en" ? `between €${semantica.minPrice} and €${semantica.maxPrice}` : `tra €${semantica.minPrice} e €${semantica.maxPrice}`);
   } else if (semantica.maxPrice != null) {
-    criteri.push(`fino a €${semantica.maxPrice}`);
+    criteri.push(lingua === "en" ? `up to €${semantica.maxPrice}` : `fino a €${semantica.maxPrice}`);
   } else if (semantica.minPrice != null) {
-    criteri.push(`da €${semantica.minPrice}`);
+    criteri.push(lingua === "en" ? `from €${semantica.minPrice}` : `da €${semantica.minPrice}`);
   }
 
   if (criteri.length === 0) return "";
-  return `Ho cercato **${semantica.query}** ${criteri.join(" · ")}.`;
+  return lingua === "en" ? `I searched for **${semantica.query}** ${criteri.join(" · ")}.` : `Ho cercato **${semantica.query}** ${criteri.join(" · ")}.`;
 }
 
 function fallbackTestuale(
@@ -600,20 +603,22 @@ function fallbackTestuale(
   notaVincolo = "",
   intent?: PinoIntent,
   semantica?: PinoSemanticPlan,
-  budget?: number | null
+  budget?: number | null,
+  lingua: "it" | "en" = "it"
 ): string {
-  const sezioni = sezioniRisultati(risultati, budget);
+  const inglese = lingua === "en";
+  const sezioni = sezioniRisultati(risultati, budget, lingua);
   const totale = contaRisultati(risultati);
-  const criteri = descriviCriteriRicerca(semantica);
+  const criteri = descriviCriteriRicerca(semantica, lingua);
 
   if (totale === 0) {
     if (criteri) {
-      return `${criteri} Non trovo risultati con questi criteri. Posso allargare la ricerca togliendo un vincolo, cambiando zona o cercando un'alternativa.`;
+        return inglese ? `${criteri} I couldn’t find results matching these criteria. I can broaden the search by relaxing a filter, changing the area, or looking for alternatives.` : `${criteri} Non trovo risultati con questi criteri. Posso allargare la ricerca togliendo un vincolo, cambiando zona o cercando un'alternativa.`;
     }
     // Anche senza risultati Pino deve restare proattivo: non scarica il
     // problema sull'utente con una frase passiva, ma suggerisce come
     // proseguire la ricerca.
-    return "Non trovo risultati per questa richiesta. Posso provare a cercare per categoria, sinonimo o negozio: ad esempio dimmi se vuoi un prodotto simile, una fascia di prezzo oppure un'attività che potrebbe averlo.";
+    return inglese ? "I couldn’t find results for this request. I can try related categories, similar products, a different price range, or local stores that may carry it." : "Non trovo risultati per questa richiesta. Posso provare a cercare per categoria, sinonimo o negozio: ad esempio dimmi se vuoi un prodotto simile, una fascia di prezzo oppure un'attività che potrebbe averlo.";
   }
 
   const soloNegozi =
@@ -633,26 +638,26 @@ function fallbackTestuale(
         return prezzo != null && prezzo > 0 && prezzo <= budget;
       }).length;
       if (entroBudget === 0) {
-        introduzione += `Nessun prodotto rientra nel budget di €${budget}: ecco le alternative più vicine, tutte oltre la cifra indicata.\n\n`;
+        introduzione += inglese ? `No products are within the €${budget} budget, so these are the closest alternatives, all above that amount.\n\n` : `Nessun prodotto rientra nel budget di €${budget}: ecco le alternative più vicine, tutte oltre la cifra indicata.\n\n`;
       } else if (entroBudget < n) {
-        introduzione += `Ho trovato ${n} ${n === 1 ? "prodotto" : "prodotti"}: prima quelli entro il budget di €${budget}, poi le alternative più care.\n\n`;
+        introduzione += inglese ? `I found ${n} ${n === 1 ? "product" : "products"}: first those within the €${budget} budget, then more expensive alternatives.\n\n` : `Ho trovato ${n} ${n === 1 ? "prodotto" : "prodotti"}: prima quelli entro il budget di €${budget}, poi le alternative più care.\n\n`;
       } else {
-        introduzione += `Ho trovato ${n} ${n === 1 ? "prodotto" : "prodotti"} entro il budget di €${budget}.\n\n`;
+        introduzione += inglese ? `I found ${n} ${n === 1 ? "product" : "products"} within the €${budget} budget.\n\n` : `Ho trovato ${n} ${n === 1 ? "prodotto" : "prodotti"} entro il budget di €${budget}.\n\n`;
       }
     } else {
-      introduzione += `Ho trovato ${n} ${n === 1 ? "prodotto" : "prodotti"} che ${n === 1 ? "corrisponde" : "corrispondono"} alla tua ricerca.\n\n`;
+      introduzione += inglese ? `I found ${n} ${n === 1 ? "product" : "products"} matching your search.\n\n` : `Ho trovato ${n} ${n === 1 ? "prodotto" : "prodotti"} che ${n === 1 ? "corrisponde" : "corrispondono"} alla tua ricerca.\n\n`;
     }
   } else if (soloNegozi) {
     introduzione +=
       intent === "service"
-        ? "Non ho trovato quello che cerchi, ma queste attività potrebbero aiutarti.\n\n"
-        : "Non ho trovato esattamente quello che cerchi, ma queste attività potrebbero aiutarti.\n\n";
+        ? (inglese ? "I did not find the exact item, but these businesses may help.\n\n" : "Non ho trovato quello che cerchi, ma queste attività potrebbero aiutarti.\n\n")
+        : (inglese ? "I did not find an exact match, but these businesses may help.\n\n" : "Non ho trovato esattamente quello che cerchi, ma queste attività potrebbero aiutarti.\n\n");
   } else if (totale > 0) {
-    introduzione += "Ho trovato alcune informazioni pertinenti alla tua ricerca.\n\n";
+    introduzione += inglese ? "I found some information relevant to your search.\n\n" : "Ho trovato alcune informazioni pertinenti alla tua ricerca.\n\n";
   }
 
-  const motivazione = soloNegozi ? motivoCategoria(risultati.negozi) : null;
-  const nota = notaVincolo ? `\n\n_${notaVincolo}_` : "";
+  const motivazione = soloNegozi && !inglese ? motivoCategoria(risultati.negozi) : null;
+  const nota = notaVincolo && !inglese ? `\n\n_${notaVincolo}_` : "";
   return (
     introduzione +
     sezioni.join("\n\n") +
@@ -1061,6 +1066,7 @@ export async function chatConAssistente(
     !followUpBreve &&
     (
       usaFastPathSemantico(domandaSemantica, analisiSemantica) ||
+      rilevaLinguaPino(domandaSemantica) === "en" ||
       domandaSemantica !== domanda ||
       domandaSemantica.length >= 22 ||
       /\b(?:non|senza|sotto|sopra|massimo|minimo|tra|entro|preferisco|tipo|per|aperto|aperta|ora|adesso|vicino)\b/i.test(domandaSemantica)
@@ -1149,16 +1155,48 @@ export async function chatConAssistente(
   // Esecuzione dei tool scelti (dal piano o dall'LLM).
   const queryDefault = ultimaQuerySostanziale(storico);
 
+  // Piano semantico autorevole per ricerche di prodotti fisici.
+  // La query restituita dal planner è il soggetto del catalogo, non la frase
+  // conversazionale completa. Questo evita che inglese, budget e richieste di
+  // alternative diventino termini obbligatori nel gate di pertinenza.
+  const pianoProdottoAffidabile = Boolean(
+    semantica &&
+    semantica.surface === "products" &&
+    semantica.intent === "product" &&
+    semantica.confidence !== "bassa" &&
+    semantica.query.trim()
+  );
+  if (pianoProdottoAffidabile && semantica) {
+    invocazioni = [{
+      tool: "searchProducts",
+      params: {
+        query: semantica.query,
+        limit: 8,
+        maxPrice: semantica.maxPrice,
+        minPrice: semantica.minPrice,
+        esclusioni: semantica.exclusions,
+        escludiNomi: [],
+      },
+    }];
+    directReply = null;
+    followUp = null;
+    selezioneOk = true;
+  }
+
   // Guardrail del budget: il planner non può omettere il limite dichiarato.
   // Basta il SOGGETTO di catalogo (regalo o prodotto concreto): il budget deve
   // sempre vincolare la ricerca, anche quando la frase non contiene un verbo
   // esplicito ("vorrei un regalo per mia moglie, budget 30").
   const richiestaCatalogoEsplicita =
-    /\b(regalo|regali|regalare|idea regalo|idee regalo|prodotto|prodotti|orologio|orologi|scarpe|borsa|borse|telefono|telefoni|libro|libri|cuffie|smartwatch|gioiello|gioielli|anello|anelli|collana|collane|bracciale|bracciali|profumo|profumi|portafoglio|portafogli|cintura|cinture|occhiali|giocattolo|giocattoli|tablet|computer|auricolari|altoparlante|speaker)\b/i.test(domandaSemantica);
-  const importoCatalogo = domandaSemantica.match(/(?:budget(?:\s+di)?|massimo|fino a|entro|sotto|non oltre|al massimo)\s*(?:di\s*)?(?:€\s*)?(\d+(?:[.,]\d+)?)/i)
+    /\b(regalo|regali|regalare|idea regalo|idee regalo|prodotto|prodotti|orologio|orologi|scarpe|borsa|borse|telefono|telefoni|libro|libri|cuffie|smartwatch|gioiello|gioielli|anello|anelli|collana|collane|bracciale|bracciali|profumo|profumi|portafoglio|portafogli|cintura|cinture|occhiali|giocattolo|giocattoli|tablet|computer|auricolari|altoparlante|speaker|watch|watches|clock|clocks|shoes|handbag|bag|phone|book|headphones|jewelry|ring|necklace|bracelet|perfume|wallet|belt|glasses|toy|toys|earbuds|speaker)\b/i.test(domandaSemantica) || pianoProdottoAffidabile;
+  const importoCatalogo = domandaSemantica.match(/(?:budget(?:\s+di)?|massimo|fino a|entro|sotto|non oltre|al massimo|under|below|up to|less than|not over|at most)\s*(?:di\s*)?(?:€\s*)?(\d+(?:[.,]\d+)?)/i)
     ?? domandaSemantica.match(/(?:€\s*)(\d+(?:[.,]\d+)?)/i)
-    ?? domandaSemantica.match(/(\d+(?:[.,]\d+)?)\s*(?:euro|eur)\b/i);
-  const maxPriceCatalogo = importoCatalogo ? Number(importoCatalogo[1].replace(",", ".")) : undefined;
+    ?? domandaSemantica.match(/(\d+(?:[.,]\d+)?)\s*(?:euros?|eur)\b/i);
+  const maxPriceCatalogo =
+    semantica?.maxPrice ??
+    (importoCatalogo && !/\b(?:sopra|minimo|oltre|over|above|more than|at least)\b/i.test(domandaSemantica)
+      ? Number(importoCatalogo[1].replace(",", "."))
+      : undefined);
   const haToolProdotti = invocazioni.some((t) => t.tool === "searchProducts" || t.tool === "searchAll");
   if (richiestaCatalogoEsplicita && maxPriceCatalogo !== undefined && Number.isFinite(maxPriceCatalogo)) {
     // Un regalo generico non è una keyword di catalogo: cercare la frase
@@ -1437,17 +1475,17 @@ export async function chatConAssistente(
   // 6) Risposta rapida grounded: i risultati sono già stati recuperati dai tool.
   // Evitiamo una seconda chiamata Gemini solo per riscrivere dati che abbiamo
   // già verificato: così Pino mostra i risultati molto prima.
+  const linguaRisposta = rilevaLinguaPino(domanda);
   const rispostaBase = fallbackTestuale(
     risultati,
     notaVincolo,
     analisi.intent,
     semantica,
-    budgetPreferenza
+    budgetPreferenza,
+    linguaRisposta
   );
-  const risposta = notaRecupero
-    ? `${notaRecupero}
-
-${rispostaBase}`
+  const risposta = notaRecupero && linguaRisposta !== "en"
+    ? `${notaRecupero}\n\n${rispostaBase}`
     : rispostaBase;
 
   return {
