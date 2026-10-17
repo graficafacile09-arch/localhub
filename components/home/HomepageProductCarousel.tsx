@@ -29,7 +29,27 @@ export default function HomepageProductCarousel({
 }) {
   const [pagina, setPagina] = useState(0);
   const [prodottiPerPagina, setProdottiPerPagina] = useState(4);
+  const [animazionePagina, setAnimazionePagina] = useState<"fermo" | "uscita">("fermo");
+  const timerTransizione = useRef<ReturnType<typeof setTimeout> | null>(null);
   const touchStart = useRef<{ x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timerTransizione.current) clearTimeout(timerTransizione.current);
+    };
+  }, []);
+
+  function cambiaPagina(destinazione: number) {
+    const destinazioneSicura = Math.max(0, Math.min(numeroPagine - 1, destinazione));
+    if (destinazioneSicura === paginaSicura) return;
+    if (timerTransizione.current) clearTimeout(timerTransizione.current);
+    setAnimazionePagina("uscita");
+    timerTransizione.current = setTimeout(() => {
+      setPagina(destinazioneSicura);
+      setAnimazionePagina("fermo");
+      timerTransizione.current = null;
+    }, 160);
+  }
 
   useEffect(() => {
     const media = window.matchMedia("(max-width: 639px)");
@@ -56,8 +76,8 @@ export default function HomepageProductCarousel({
     const deltaX = touch.clientX - start.x;
     const deltaY = touch.clientY - start.y;
     if (Math.abs(deltaX) < 60 || Math.abs(deltaX) < Math.abs(deltaY) * 1.35) return;
-    if (deltaX < 0) setPagina((current) => Math.min(numeroPagine - 1, current + 1));
-    else setPagina((current) => Math.max(0, current - 1));
+    if (deltaX < 0) cambiaPagina(paginaSicura + 1);
+    else cambiaPagina(paginaSicura - 1);
   }
   const numeroPagine = Math.max(1, Math.ceil(prodotti.length / prodottiPerPagina));
   const paginaSicura = Math.min(pagina, numeroPagine - 1);
@@ -75,7 +95,7 @@ export default function HomepageProductCarousel({
   return (
     <div className="min-w-0 touch-pan-y" onTouchStart={onCarouselTouchStart} onTouchEnd={onCarouselTouchEnd}>
       <div className="group/carousel relative">
-        <div className="grid min-w-0 grid-cols-2 gap-2.5 sm:gap-3 lg:grid-cols-4">
+        <div className={`grid min-w-0 grid-cols-2 gap-2.5 transition-[opacity,transform] duration-300 ease-in-out sm:gap-3 lg:grid-cols-4 ${animazionePagina === "uscita" ? "translate-x-2 opacity-0" : "translate-x-0 opacity-100"}`}>
           {prodottiVisibili.map((prodotto) => {
             const prodottoId = String(prodotto.id);
             return (
@@ -105,7 +125,7 @@ export default function HomepageProductCarousel({
           <>
             <button
               type="button"
-              onClick={() => setPagina((corrente) => Math.max(0, corrente - 1))}
+              onClick={() => cambiaPagina(paginaSicura - 1)}
               disabled={paginaSicura === 0}
               aria-label="Mostra i quattro prodotti precedenti"
               className="absolute left-1 top-1/2 z-10 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200/90 bg-white/95 text-slate-700 shadow-md transition-opacity hover:bg-white disabled:opacity-40 md:opacity-0 md:group-hover/carousel:opacity-100 md:group-focus-within/carousel:opacity-100"
@@ -114,7 +134,7 @@ export default function HomepageProductCarousel({
             </button>
             <button
               type="button"
-              onClick={() => setPagina((corrente) => Math.min(numeroPagine - 1, corrente + 1))}
+              onClick={() => cambiaPagina(paginaSicura + 1)}
               disabled={paginaSicura >= numeroPagine - 1}
               aria-label="Mostra i quattro prodotti successivi"
               className="absolute right-1 top-1/2 z-10 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-slate-200/90 bg-white/95 text-slate-700 shadow-md transition-opacity hover:bg-white disabled:opacity-40 md:opacity-0 md:group-hover/carousel:opacity-100 md:group-focus-within/carousel:opacity-100"
@@ -130,7 +150,7 @@ export default function HomepageProductCarousel({
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setPagina((corrente) => Math.max(0, corrente - 1))}
+              onClick={() => cambiaPagina(paginaSicura - 1)}
               disabled={paginaSicura === 0}
               aria-label="Mostra i quattro prodotti precedenti"
               className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white/90 text-slate-600 shadow-sm transition hover:border-blue-300 hover:text-blue-800 disabled:cursor-not-allowed disabled:opacity-30"
@@ -139,7 +159,7 @@ export default function HomepageProductCarousel({
             </button>
             <button
               type="button"
-              onClick={() => setPagina((corrente) => Math.min(numeroPagine - 1, corrente + 1))}
+              onClick={() => cambiaPagina(paginaSicura + 1)}
               disabled={paginaSicura >= numeroPagine - 1}
               aria-label="Mostra i quattro prodotti successivi"
               className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white/90 text-slate-600 shadow-sm transition hover:border-blue-300 hover:text-blue-800 disabled:cursor-not-allowed disabled:opacity-30"
