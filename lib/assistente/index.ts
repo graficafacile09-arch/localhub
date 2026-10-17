@@ -1,3 +1,4 @@
+import { rilevaLinguaPino } from "./understanding";
 /**
  * LocalHub — Assistente AI: Orchestratore
  *
@@ -1061,6 +1062,7 @@ export async function chatConAssistente(
     !followUpBreve &&
     (
       usaFastPathSemantico(domandaSemantica, analisiSemantica) ||
+      rilevaLinguaPino(domandaSemantica) === "en" ||
       domandaSemantica !== domanda ||
       domandaSemantica.length >= 22 ||
       /\b(?:non|senza|sotto|sopra|massimo|minimo|tra|entro|preferisco|tipo|per|aperto|aperta|ora|adesso|vicino)\b/i.test(domandaSemantica)
