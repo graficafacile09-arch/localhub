@@ -12,6 +12,7 @@
 import { callGeminiText } from "@/lib/ai/gemini-text";
 import { extractJsonFromText } from "@/lib/product-assistant/providers/utils";
 import { normalizzaRichiesta } from "./local-intents";
+import { normalizzaQueryCatalogo } from "./understanding";
 import { rilevaFollowUp } from "./conversazione";
 import { estraiCitta } from "@/lib/localita";
 import { analizzaIntentoPino, type PinoIntent, type PinoIntentAnalysis } from "./intent";
@@ -615,7 +616,8 @@ function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): Pi
 
 function fallbackPlan(query: string, analisi: PinoIntentAnalysis): PinoSemanticPlan {
   const q = normalizzaRichiesta(query);
-  const tokens = q
+  const qCatalogo = normalizzaQueryCatalogo(q);
+  const tokens = qCatalogo
     .split(/[^a-z0-9]+/)
     .filter((t) => t.length >= 3)
     .filter((t) => !/^(cerco|cerca|trovami|trova|vorrei|voglio|mi|serve|anzi|invece|pero|però|un|una|uno|per|con|di|a|da|il|lo|la|i|gli|le|e|in|su|del|della|dei|delle|sotto|sopra|massimo|minimo|euro)$/.test(t));
@@ -668,10 +670,12 @@ export async function interpretaRichiestaPino(
   const analisiEffettiva = q !== query.trim() ? analizzaIntentoPino(q) : analisi;
   const fallback = fallbackPlan(q, analisiEffettiva);
 
-  if (!q || analisiEffettiva.intent === "generic") return fallback;
+  if (!q || (analisiEffettiva.intent === "generic" && q.length < 12)) return fallback;
 
+  // Il piano locale resta un fallback rapido e sicuro, non un veto alla
+  // comprensione AI: le richieste nuove o colloquiali devono poter arrivare
+  // al planner multilingue anche quando una regex ha già riconosciuto il prezzo.
   const fastPlan = pianoLocaleIntelligente(q, analisiEffettiva);
-  if (fastPlan) return fastPlan;
 
   const memoriaTesto = memoria.slice(0, 4)
     .map((m) => `${m.termine}=>${m.concetto}`)
@@ -710,14 +714,16 @@ export async function interpretaRichiestaPino(
         : fallback.intent;
 
     const intentFinal = analisiEffettiva.confidence === "alta" ? analisiEffettiva.intent : intent;
-    const terms = pulisciLista(parsed.terms, 5);
+    const terms = pulisciLista(parsed.terms, 5)
+      .map((termine) => normalizzaQueryCatalogo(termine))
+      .filter(Boolean);
     const exclusions = pulisciLista(parsed.exclusions, 5);
     const minPrice = numeroValido(parsed.minPrice);
     const maxPrice = numeroValido(parsed.maxPrice);
     const city = typeof parsed.city === "string"
       ? normalizzaRichiesta(parsed.city).trim().slice(0, 60) || null
       : null;
-    const queryPlan = (terms.length ? terms[0] : fallback.query).slice(0, 120);
+    const queryPlan = (normalizzaQueryCatalogo(terms.length ? terms[0] : fallback.query) || fallback.query).slice(0, 120);
 
     return {
       surface: intentFinal === "service" ? "stores" : surface,
@@ -736,6 +742,6 @@ export async function interpretaRichiestaPino(
     };
   } catch (error) {
     console.warn("[pino-semantic] planner non disponibile, fallback locale:", error);
-    return fallback;
+    return fastPlan ?? fallback;
   }
 }
