@@ -505,27 +505,29 @@ function aRisultatiRecuperati(
 /** Sezioni testuali dei risultati (condivise tra risposta normale e follow-up). */
 function sezioniRisultati(
   risultati: RisultatiRecuperati,
-  budget?: number | null
+  budget?: number | null,
+  lingua: "it" | "en" = "it"
 ): string[] {
+  const inglese = lingua === "en";
   const sezioni: string[] = [];
 
   if (risultati.prodotti.length > 0) {
     sezioni.push(
-      "**Prodotti trovati**\n" +
+      (inglese ? "**Products found**\n" : "**Prodotti trovati**\n") +
         risultati.prodotti
           .slice(0, 5)
           .map((p) => {
             const prezzo = prezzoNumerico(p.prezzo);
             const fuoriBudget =
               budget != null && prezzo != null && prezzo > 0 && prezzo > budget;
-            return `- **${p.nome}** — €${p.prezzo} (${p.negozio_nome || "negozio sconosciuto"})${fuoriBudget ? " — **oltre il budget**" : ""}`;
+            return `- **${p.nome}** — €${p.prezzo} (${p.negozio_nome || (inglese ? "unknown store" : "negozio sconosciuto")})${fuoriBudget ? (inglese ? " — **over budget**" : " — **oltre il budget**") : ""}`;
           })
           .join("\n")
     );
   }
   if (risultati.negozi.length > 0) {
     sezioni.push(
-      "**Negozi pertinenti**\n" +
+      (inglese ? "**Relevant stores**\n" : "**Negozi pertinenti**\n") +
         risultati.negozi
           .slice(0, 5)
           .map((n) => `- **${n.nome}**${n.categoria ? ` (${n.categoria})` : ""}`)
@@ -534,7 +536,7 @@ function sezioniRisultati(
   }
   if (risultati.offerte.length > 0) {
     sezioni.push(
-      "**Offerte**\n" +
+      (inglese ? "**Offers**\n" : "**Offerte**\n") +
         risultati.offerte
           .slice(0, 4)
           .map((o) => `- **${o.titolo}**${o.prezzo_offerta != null ? ` — €${o.prezzo_offerta}` : ""} (${o.negozio_nome || "negozio sconosciuto"})`)
@@ -543,7 +545,7 @@ function sezioniRisultati(
   }
   if (risultati.eventi.length > 0) {
     sezioni.push(
-      "**Eventi**\n" +
+      (inglese ? "**Events**\n" : "**Eventi**\n") +
         risultati.eventi
           .slice(0, 4)
           .map((e) => `- **${e.titolo}**${e.data_inizio ? ` — ${e.data_inizio.slice(0, 10)}` : ""} (${e.negozio_nome || "negozio sconosciuto"})`)
@@ -552,15 +554,15 @@ function sezioniRisultati(
   }
   if (risultati.meteo) {
     sezioni.push(
-      `**Meteo Castrovillari**\n- Ora: ${risultati.meteo.temperatura}°C, ${risultati.meteo.descrizione}; oggi ${risultati.meteo.oggi.minima}°/${risultati.meteo.oggi.massima}°. Domani: ${risultati.meteo.domani.descrizione}, ${risultati.meteo.domani.minima}°/${risultati.meteo.domani.massima}°.`
+      `**${inglese ? "Castrovillari weather" : "Meteo Castrovillari"}**\n- ${inglese ? "Now" : "Ora"}: ${risultati.meteo.temperatura}°C, ${risultati.meteo.descrizione}; ${inglese ? "today" : "oggi"} ${risultati.meteo.oggi.minima}°/${risultati.meteo.oggi.massima}°. ${inglese ? "Tomorrow" : "Domani"}: ${risultati.meteo.domani.descrizione}, ${risultati.meteo.domani.minima}°/${risultati.meteo.domani.massima}°.`
     );
   }
   if (risultati.farmacie.length > 0) {
     sezioni.push(
-      "**Farmacie verificate**\n" +
+      (inglese ? "**Verified pharmacies**\n" : "**Farmacie verificate**\n") +
         risultati.farmacie
           .slice(0, 5)
-          .map((f) => `- **${f.nome}**${f.stato ? ` — ${f.stato}` : " — stato non verificato"}${f.turno ? ` — ${f.turno}` : ""}${f.telefono ? ` — tel. ${f.telefono}` : ""}`)
+          .map((f) => `- **${f.nome}**${f.stato ? ` — ${f.stato}` : (inglese ? " — status unverified" : " — stato non verificato")}${f.turno ? ` — ${f.turno}` : ""}${f.telefono ? ` — tel. ${f.telefono}` : ""}`)
           .join("\n")
     );
   }
@@ -605,7 +607,7 @@ function fallbackTestuale(
   lingua: "it" | "en" = "it"
 ): string {
   const inglese = lingua === "en";
-  const sezioni = sezioniRisultati(risultati, budget);
+  const sezioni = sezioniRisultati(risultati, budget, lingua);
   const totale = contaRisultati(risultati);
   const criteri = descriviCriteriRicerca(semantica);
 
