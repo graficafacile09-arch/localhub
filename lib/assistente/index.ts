@@ -1485,7 +1485,7 @@ export async function chatConAssistente(
     linguaRisposta
   );
   const risposta = notaRecupero && linguaRisposta !== "en"
-    ? `${notaRecupero}\n\n`${rispostaBase}`
+    ? `${notaRecupero}\n\n${rispostaBase}`
     : rispostaBase;
 
   return {
