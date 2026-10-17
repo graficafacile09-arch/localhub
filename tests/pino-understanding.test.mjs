@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { rispostaIdentitaPino } from "../lib/assistente/identity.ts";
+import { SYSTEM_PROMPT } from "../lib/assistente/prompt.ts";
 import {
   normalizzaQueryCatalogo,
   rilevaLinguaPino,
@@ -48,4 +50,16 @@ test("Common English catalog subjects normalize to Italian search terms", () => 
   assert.equal(normalizzaQueryCatalogo("I want shoes under 80 euros"), "scarpe");
   assert.equal(normalizzaQueryCatalogo("Find me a wallet"), "portafoglio");
   assert.equal(normalizzaQueryCatalogo("I need a phone"), "telefono");
+});
+
+test("Pino identifies itself consistently in Italian and English", () => {
+  assert.match(rispostaIdentitaPino("Chi sei?") ?? "", /Sono Pino/);
+  assert.match(rispostaIdentitaPino("What is your name?") ?? "", /I'm Pino/);
+  assert.equal(rispostaIdentitaPino("Cerca un orologio"), null);
+});
+
+test("Pino system prompt defines identity and proactive grounded behavior", () => {
+  assert.match(SYSTEM_PROMPT, /Sei Pino, l'assistente AI ufficiale di InCittà\.online/);
+  assert.match(SYSTEM_PROMPT, /Non inventare mai negozi, prodotti, prezzi/);
+  assert.match(SYSTEM_PROMPT, /Se la richiesta è abbastanza chiara, agisci e cerca subito/);
 });
