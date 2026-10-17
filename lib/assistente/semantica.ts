@@ -579,8 +579,9 @@ function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): Pi
     .replace(/\s+\b(?:con|da|di|a|per|circa|entro|fino|e)\s*$/i, "")
     .replace(/\s+/g, " ")
     .trim();
+  termine = normalizzaQueryCatalogo(termine);
 
-  if (match) termine = termine.replace(match.pattern, match.termine).replace(/\s+/g, " ").trim();
+  if (match) termine = normalizzaQueryCatalogo(termine.replace(match.pattern, match.termine)).trim();
   // Se non resta alcun termine di catalogo (es. "ho 99 euro", "budget di
   // 100 euro"), la query è vuota: non reimmettiamo la frase di budget.
   if (!termine) termine = match?.termine ?? "";
@@ -621,9 +622,9 @@ function fallbackPlan(query: string, analisi: PinoIntentAnalysis): PinoSemanticP
     .split(/[^a-z0-9]+/)
     .filter((t) => t.length >= 3)
     .filter((t) => !/^(cerco|cerca|trovami|trova|vorrei|voglio|mi|serve|anzi|invece|pero|però|un|una|uno|per|con|di|a|da|il|lo|la|i|gli|le|e|in|su|del|della|dei|delle|sotto|sopra|massimo|minimo|euro)$/.test(t));
-  const mMax = q.match(/(?:sotto|massimo|fino a|entro|meno di)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)/);
-  const mMin = q.match(/(?:sopra|minimo|piu di|più di|oltre)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)/);
-  const mRange = q.match(/(?:tra|da)\s*(\d+(?:[.,]\d+)?)\s*(?:e|a)\s*(\d+(?:[.,]\d+)?)/);
+  const mMax = q.match(/(?:sotto|massimo|fino a|entro|meno di|under|below|up to|less than|no more than|not over|at most)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)/i);
+  const mMin = q.match(/(?:sopra|minimo|piu di|più di|oltre|over|above|more than|at least)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)/i);
+  const mRange = q.match(/(?:tra|da|between)\s*(\d+(?:[.,]\d+)?)\s*(?:e|a|and|to)\s*(\d+(?:[.,]\d+)?)/i);
   const maxPrice = mRange ? Number(mRange[2].replace(",", ".")) : mMax ? Number(mMax[1].replace(",", ".")) : null;
   const minPrice = mRange ? Number(mRange[1].replace(",", ".")) : mMin ? Number(mMin[1].replace(",", ".")) : null;
   const exclusions: string[] = [];
