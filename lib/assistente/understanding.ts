@@ -54,6 +54,32 @@ export function normalizzaQueryCatalogo(testo: string): string {
     .trim();
   if (!q) return "";
 
+  // Normalize common cross-language catalog vocabulary before deterministic retrieval.
+  // The semantic planner handles arbitrary phrasing; this shared bridge prevents
+  // a valid English subject from reaching an Italian-only catalog untranslated.
+  const traduzioni: Array<[RegExp, string]> = [
+    [/\\b(?:wristwatches|wristwatch|watches|watch)\\b/gi, "orologio"],
+    [/\\b(?:shoes|shoe)\\b/gi, "scarpe"],
+    [/\\b(?:wallets|wallet)\\b/gi, "portafoglio"],
+    [/\\b(?:handbags|handbag|purses|purse|bags|bag)\\b/gi, "borsa"],
+    [/\\b(?:phones|phone|cellphones|cellphone)\\b/gi, "telefono"],
+    [/\\b(?:laptops|laptop|notebooks|notebook)\\b/gi, "computer portatile"],
+    [/\\b(?:headphones|earphones|earbuds)\\b/gi, "cuffie"],
+    [/\\b(?:jackets|jacket|coats|coat)\\b/gi, "giacca"],
+    [/\\b(?:dresses|dress)\\b/gi, "vestito"],
+    [/\\b(?:shirts|shirt|t-shirts|t-shirt|tshirts|tshirt)\\b/gi, "maglietta"],
+    [/\\b(?:jeans)\\b/gi, "jeans"],
+    [/\\b(?:sunglasses)\\b/gi, "occhiali da sole"],
+    [/\\b(?:perfumes|perfume)\\b/gi, "profumo"],
+    [/\\b(?:backpacks|backpack)\\b/gi, "zaino"],
+    [/\\b(?:leather strap|leather band)\\b/gi, "cinturino in pelle"],
+    [/\\b(?:leather)\\b/gi, "pelle"],
+    [/\\b(?:men's|mens|for men)\\b/gi, "da uomo"],
+    [/\\b(?:women's|womens|for women)\\b/gi, "da donna"],
+    [/\\bwith\\b/gi, "con"],
+  ];
+  for (const [pattern, sostituzione] of traduzioni) q = q.replace(pattern, sostituzione);
+
   // Price ranges and constraints in either language.
   q = q
     .replace(/\b(?:between|tra|da)\s*\$?\s*\d+(?:[.,]\d+)?\s*(?:and|e|a|to)\s*\$?\s*\d+(?:[.,]\d+)?\s*(?:euros?|eur|dollars?|usd|€|\$)?\b/gi, " ")
