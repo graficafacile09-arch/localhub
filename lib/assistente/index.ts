@@ -601,20 +601,22 @@ function fallbackTestuale(
   notaVincolo = "",
   intent?: PinoIntent,
   semantica?: PinoSemanticPlan,
-  budget?: number | null
+  budget?: number | null,
+  lingua: "it" | "en" = "it"
 ): string {
+  const inglese = lingua === "en";
   const sezioni = sezioniRisultati(risultati, budget);
   const totale = contaRisultati(risultati);
   const criteri = descriviCriteriRicerca(semantica);
 
   if (totale === 0) {
     if (criteri) {
-      return `${criteri} Non trovo risultati con questi criteri. Posso allargare la ricerca togliendo un vincolo, cambiando zona o cercando un'alternativa.`;
+        return inglese ? `${criteri} I couldn’t find results matching these criteria. I can broaden the search by relaxing a filter, changing the area, or looking for alternatives.` : `${criteri} Non trovo risultati con questi criteri. Posso allargare la ricerca togliendo un vincolo, cambiando zona o cercando un'alternativa.`;
     }
     // Anche senza risultati Pino deve restare proattivo: non scarica il
     // problema sull'utente con una frase passiva, ma suggerisce come
     // proseguire la ricerca.
-    return "Non trovo risultati per questa richiesta. Posso provare a cercare per categoria, sinonimo o negozio: ad esempio dimmi se vuoi un prodotto simile, una fascia di prezzo oppure un'attività che potrebbe averlo.";
+    return inglese ? "I couldn’t find results for this request. I can try related categories, similar products, a different price range, or local stores that may carry it." : "Non trovo risultati per questa richiesta. Posso provare a cercare per categoria, sinonimo o negozio: ad esempio dimmi se vuoi un prodotto simile, una fascia di prezzo oppure un'attività che potrebbe averlo.";
   }
 
   const soloNegozi =
