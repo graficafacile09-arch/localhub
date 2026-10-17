@@ -141,7 +141,8 @@ NON rispondere all'utente. Devi produrre SOLO JSON valido.
 
 Regole:
 - Comprendi italiano e inglese naturali, inclusi plurali, sinonimi, forme colloquiali e abbreviazioni.
-- Se la richiesta è in inglese, produci comunque lo stesso JSON strutturato e normalizza il soggetto in una forma utile alla ricerca nel catalogo.
+- Se la richiesta è in inglese, produci comunque lo stesso JSON strutturato. Il catalogo è prevalentemente in italiano: traduci il soggetto in italiano e usa sinonimi/categorie italiani utili al retrieval, mantenendo attributi distintivi.
+- Esempi di normalizzazione cross-lingua: "watch"/"wristwatch" => "orologio"; "shoes" => "scarpe"; "phone"/"cellphone" => "telefono"; "wallet" => "portafoglio". Sono esempi, non un elenco chiuso: interpreta anche soggetti mai visti.
 - Comprendi richieste come "under 100", "below 100", "up to 100", "over 50", "between 50 and 100", "open now" e "near the center".
 - "birre", "birretta", "birrette" => soggetto canonico "birra".
 - "telefonino", "cellulare", "smartphone" => soggetto canonico "telefono".
