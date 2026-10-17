@@ -1,6 +1,6 @@
 import { rilevaLinguaPino } from "./understanding";
 import { rispostaIdentitaPino } from "./identity";
-import { CATEGORIE_REGALO, isGenericGiftRequest } from "./gift-retrieval";
+import { CATEGORIE_REGALO, isGenericGiftRequest, prodottoCorrispondeCategoriaRegalo } from "./gift-retrieval";
 /**
  * LocalHub — Assistente AI: Orchestratore
  *
@@ -1204,7 +1204,7 @@ export async function chatConAssistente(
       ? Number(importoCatalogo[1].replace(",", "."))
       : undefined);
   const haToolProdotti = invocazioni.some((t) => t.tool === "searchProducts" || t.tool === "searchAll");
-  const regaloGenerico = isGenericGiftRequest(domandaSemantica);
+  const regaloGenerico = isGenericGiftRequest(domanda) || isGenericGiftRequest(domandaSemantica);
 
   if (regaloGenerico) {
     // La frase "un regalo per mia moglie" descrive l'intento, non il nome di
@@ -1248,9 +1248,16 @@ export async function chatConAssistente(
     );
     // Merge con deduplica per id: più tool possono restituire lo stesso
     // negozio/prodotto (es. ricerca cibo multi-termine).
-    for (const r of risultati) {
+    for (let i = 0; i < risultati.length; i++) {
+      const r = risultati[i];
+      const categoriaRegalo = regaloGenerico ? String(invocazioni[i]?.params?.query ?? "") : "";
       for (const n of r.negozi) if (!negozi.some((e) => e.id === n.id)) negozi = [...negozi, n];
-      for (const p of r.prodotti) if (!prodotti.some((e) => e.id === p.id)) prodotti = [...prodotti, p];
+      for (const p of r.prodotti) {
+        // Nel fan-out regalo accettiamo solo prodotti che corrispondono alla
+        // categoria specifica interrogata: nessun fallback su articoli casuali.
+        if (categoriaRegalo && !prodottoCorrispondeCategoriaRegalo(p, categoriaRegalo)) continue;
+        if (!prodotti.some((e) => e.id === p.id)) prodotti = [...prodotti, p];
+      }
       for (const o of r.offerte) if (!offerte.some((e) => e.id === o.id)) offerte = [...offerte, o];
       for (const e of r.eventi) if (!eventi.some((x) => x.id === e.id)) eventi = [...eventi, e];
       for (const c of r.categorie) if (!categorie.some((x) => x.nome === c.nome)) categorie = [...categorie, c];
@@ -1268,6 +1275,7 @@ export async function chatConAssistente(
   if (
     !directReply &&
     !followUp &&
+    !regaloGenerico &&
     negozi.length === 0 &&
     prodotti.length === 0 &&
     offerte.length === 0 &&
