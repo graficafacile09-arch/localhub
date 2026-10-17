@@ -234,6 +234,9 @@ export function buildFinalPrompt(
   const domanda = ultimo && ultimo.role === "user" ? ultimo.content : "";
 
   const lingua = rilevaLinguaPino(domanda) === "en" ? "English" : "Italian";
+  const istruzioneFinale = lingua === "English"
+    ? "Answer the latest message using ONLY the data above. Be helpful, concise, and natural. Suggest the most relevant alternatives with store and price when available; if nothing is relevant, say so clearly and suggest how to refine the search."
+    : "Rispondi all'ultimo messaggio usando SOLO i dati sopra. Sii utile, sintetico e naturale: proponi le alternative più pertinenti con negozio e prezzo dove disponibili; se non c'è nulla di pertinente dillo chiaramente e suggerisci come affinare la ricerca.";
   return `RESPONSE LANGUAGE: ${lingua}. Always reply in this language, including headings and explanations.
 
 CONVERSAZIONE RECENTE:
@@ -243,5 +246,5 @@ ULTIMO MESSAGGIO UTENTE: "${domanda}"
 
 ${contesto}
 
-Rispondi all'ultimo messaggio usando SOLO i dati sopra. Sii utile, sintetico e naturale: proponi le alternative più pertinenti con negozio e prezzo dove disponibili; se non c'è nulla di pertinente dillo chiaramente e suggerisci come affinare la ricerca.`;
+${istruzioneFinale}`;
 }
