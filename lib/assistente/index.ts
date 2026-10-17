@@ -1214,7 +1214,7 @@ export async function chatConAssistente(
     // dopo il merge. Nessuna chiamata a servizi esterni o nuove dipendenze.
     invocazioni = CATEGORIE_REGALO.map((query) => ({
       tool: "searchProducts",
-      params: { query, limit: 8, maxPrice: maxPriceCatalogo },
+      params: { query, limit: 3, maxPrice: maxPriceCatalogo },
     }));
     directReply = null;
     selezioneOk = true;
