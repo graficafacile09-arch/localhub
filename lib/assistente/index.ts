@@ -580,22 +580,22 @@ function contaRisultati(risultati: RisultatiRecuperati): number {
   );
 }
 
-function descriviCriteriRicerca(semantica?: PinoSemanticPlan): string {
+function descriviCriteriRicerca(semantica?: PinoSemanticPlan, lingua: "it" | "en" = "it"): string {
   if (!semantica || semantica.confidence === "bassa" || !semantica.query) return "";
 
   const criteri: string[] = [];
   if (semantica.city) criteri.push(semantica.city);
-  if (semantica.openNow) criteri.push("aperto ora");
+  if (semantica.openNow) criteri.push(lingua === "en" ? "open now" : "aperto ora");
   if (semantica.minPrice != null && semantica.maxPrice != null) {
-    criteri.push(`tra €${semantica.minPrice} e €${semantica.maxPrice}`);
+    criteri.push(lingua === "en" ? `between €${semantica.minPrice} and €${semantica.maxPrice}` : `tra €${semantica.minPrice} e €${semantica.maxPrice}`);
   } else if (semantica.maxPrice != null) {
-    criteri.push(`fino a €${semantica.maxPrice}`);
+    criteri.push(lingua === "en" ? `up to €${semantica.maxPrice}` : `fino a €${semantica.maxPrice}`);
   } else if (semantica.minPrice != null) {
-    criteri.push(`da €${semantica.minPrice}`);
+    criteri.push(lingua === "en" ? `from €${semantica.minPrice}` : `da €${semantica.minPrice}`);
   }
 
   if (criteri.length === 0) return "";
-  return `Ho cercato **${semantica.query}** ${criteri.join(" · ")}.`;
+  return lingua === "en" ? `I searched for **${semantica.query}** ${criteri.join(" · ")}.` : `Ho cercato **${semantica.query}** ${criteri.join(" · ")}.`;
 }
 
 function fallbackTestuale(
@@ -609,7 +609,7 @@ function fallbackTestuale(
   const inglese = lingua === "en";
   const sezioni = sezioniRisultati(risultati, budget, lingua);
   const totale = contaRisultati(risultati);
-  const criteri = descriviCriteriRicerca(semantica);
+  const criteri = descriviCriteriRicerca(semantica, lingua);
 
   if (totale === 0) {
     if (criteri) {
@@ -638,25 +638,25 @@ function fallbackTestuale(
         return prezzo != null && prezzo > 0 && prezzo <= budget;
       }).length;
       if (entroBudget === 0) {
-        introduzione += `Nessun prodotto rientra nel budget di €${budget}: ecco le alternative più vicine, tutte oltre la cifra indicata.\n\n`;
+        introduzione += inglese ? `No products are within the €${budget} budget, so these are the closest alternatives, all above that amount.\n\n` : `Nessun prodotto rientra nel budget di €${budget}: ecco le alternative più vicine, tutte oltre la cifra indicata.\n\n`;
       } else if (entroBudget < n) {
-        introduzione += `Ho trovato ${n} ${n === 1 ? "prodotto" : "prodotti"}: prima quelli entro il budget di €${budget}, poi le alternative più care.\n\n`;
+        introduzione += inglese ? `I found ${n} ${n === 1 ? "product" : "products"}: first those within the €${budget} budget, then more expensive alternatives.\n\n` : `Ho trovato ${n} ${n === 1 ? "prodotto" : "prodotti"}: prima quelli entro il budget di €${budget}, poi le alternative più care.\n\n`;
       } else {
-        introduzione += `Ho trovato ${n} ${n === 1 ? "prodotto" : "prodotti"} entro il budget di €${budget}.\n\n`;
+        introduzione += inglese ? `I found ${n} ${n === 1 ? "product" : "products"} within the €${budget} budget.\n\n` : `Ho trovato ${n} ${n === 1 ? "prodotto" : "prodotti"} entro il budget di €${budget}.\n\n`;
       }
     } else {
-      introduzione += `Ho trovato ${n} ${n === 1 ? "prodotto" : "prodotti"} che ${n === 1 ? "corrisponde" : "corrispondono"} alla tua ricerca.\n\n`;
+      introduzione += inglese ? `I found ${n} ${n === 1 ? "product" : "products"} matching your search.\n\n` : `Ho trovato ${n} ${n === 1 ? "prodotto" : "prodotti"} che ${n === 1 ? "corrisponde" : "corrispondono"} alla tua ricerca.\n\n`;
     }
   } else if (soloNegozi) {
     introduzione +=
       intent === "service"
-        ? "Non ho trovato quello che cerchi, ma queste attività potrebbero aiutarti.\n\n"
-        : "Non ho trovato esattamente quello che cerchi, ma queste attività potrebbero aiutarti.\n\n";
+        ? (inglese ? "I did not find the exact item, but these businesses may help.\n\n" : "Non ho trovato quello che cerchi, ma queste attività potrebbero aiutarti.\n\n")
+        : (inglese ? "I did not find an exact match, but these businesses may help.\n\n" : "Non ho trovato esattamente quello che cerchi, ma queste attività potrebbero aiutarti.\n\n");
   } else if (totale > 0) {
-    introduzione += "Ho trovato alcune informazioni pertinenti alla tua ricerca.\n\n";
+    introduzione += inglese ? "I found some information relevant to your search.\n\n" : "Ho trovato alcune informazioni pertinenti alla tua ricerca.\n\n";
   }
 
-  const motivazione = soloNegozi ? motivoCategoria(risultati.negozi) : null;
+  const motivazione = soloNegozi && !inglese ? motivoCategoria(risultati.negozi) : null;
   const nota = notaVincolo ? `\n\n_${notaVincolo}_` : "";
   return (
     introduzione +
