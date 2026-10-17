@@ -101,7 +101,7 @@ export function normalizzaQueryCatalogo(testo: string): string {
     .replace(/\b(?:please|the|a|an|some|any|me|i|my|and|or|want|need|looking|would|like|un|una|uno|il|lo|la|gli|le|del|della|dei|delle|e)\b/gi, " ")
     .replace(/^\s*(?:with|for|of|to|da|con|per|di|a)\b\s*/i, "")
     .replace(/\s+\b(?:and|or|with|for|of|to|da|con|per|di|a)\s*$/i, "")
-    .replace(/[?!,;:]+/g, " ")
+    .replace(/[.!?,;:]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 
