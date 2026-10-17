@@ -1,5 +1,6 @@
 import { rilevaLinguaPino } from "./understanding";
 import { rispostaIdentitaPino } from "./identity";
+import { CATEGORIE_REGALO, isGenericGiftRequest, prodottoCorrispondeCategoriaRegalo } from "./gift-retrieval";
 /**
  * LocalHub — Assistente AI: Orchestratore
  *
@@ -1189,10 +1190,9 @@ export async function chatConAssistente(
     selezioneOk = true;
   }
 
-  // Guardrail del budget: il planner non può omettere il limite dichiarato.
-  // Basta il SOGGETTO di catalogo (regalo o prodotto concreto): il budget deve
-  // sempre vincolare la ricerca, anche quando la frase non contiene un verbo
-  // esplicito ("vorrei un regalo per mia moglie, budget 30").
+  // Guardrail catalogo: una richiesta generica di regalo deve cercare prodotti
+  // in più categorie anche SENZA budget. Prima questa espansione era annidata
+  // nel solo ramo con prezzo e il planner poteva restituire attività fuori tema.
   const richiestaCatalogoEsplicita =
     /\b(regalo|regali|regalare|idea regalo|idee regalo|prodotto|prodotti|orologio|orologi|scarpe|borsa|borse|telefono|telefoni|libro|libri|cuffie|smartwatch|gioiello|gioielli|anello|anelli|collana|collane|bracciale|bracciali|profumo|profumi|portafoglio|portafogli|cintura|cinture|occhiali|giocattolo|giocattoli|tablet|computer|auricolari|altoparlante|speaker|watch|watches|clock|clocks|shoes|handbag|bag|phone|book|headphones|jewelry|ring|necklace|bracelet|perfume|wallet|belt|glasses|toy|toys|earbuds|speaker)\b/i.test(domandaSemantica) || pianoProdottoAffidabile;
   const importoCatalogo = domandaSemantica.match(/(?:budget(?:\s+di)?|massimo|fino a|entro|sotto|non oltre|al massimo|under|below|up to|less than|not over|at most)\s*(?:di\s*)?(?:€\s*)?(\d+(?:[.,]\d+)?)/i)
@@ -1204,50 +1204,43 @@ export async function chatConAssistente(
       ? Number(importoCatalogo[1].replace(",", "."))
       : undefined);
   const haToolProdotti = invocazioni.some((t) => t.tool === "searchProducts" || t.tool === "searchAll");
-  if (richiestaCatalogoEsplicita && maxPriceCatalogo !== undefined && Number.isFinite(maxPriceCatalogo)) {
-    // Un regalo generico non è una keyword di catalogo: cercare la frase
-    // completa ("regalo per una persona di 30 anni...") rende la ricerca
-    // iper-restrittiva e scarta anche prodotti economici realmente disponibili.
-    // In questo caso cerchiamo categorie regalo comuni separatamente, sempre
-    // applicando il budget dentro ogni ricerca e poi il guardrail finale.
-    const regaloGenerico =
-      /\bregal(?:o|i|are|ino|ini|etto|etti)\b|\bidea regalo\b|\bbombonier/i.test(domandaSemantica) &&
-      !/\b(orologio|scarpe|borsa|telefono|libro|cuffie|smartwatch|anello|collana|bracciale|profumo|portafoglio|cintura|occhiali|giocattolo|videogioco|tablet|computer|auricolari|altoparlante|speaker|cassa bluetooth)\b/i.test(domandaSemantica);
-    if (regaloGenerico) {
-      const categorieRegalo = [
-        "orologio", "anello", "collana", "bracciale", "borsa",
-        "portafoglio", "profumo", "libro", "cuffie", "accessorio",
-      ];
-      invocazioni = categorieRegalo.map((query) => ({
+  const regaloGenerico = isGenericGiftRequest(domanda) || isGenericGiftRequest(domandaSemantica);
+
+  if (regaloGenerico) {
+    // La frase "un regalo per mia moglie" descrive l'intento, non il nome di
+    // un articolo. Cerchiamo categorie di prodotto reali e poi deduplichiamo
+    // per ID; il ranking e i filtri di pertinenza esistenti restano invariati.
+    // Il budget, se presente, viene applicato a ogni ricerca e verificato di nuovo
+    // dopo il merge. Nessuna chiamata a servizi esterni o nuove dipendenze.
+    invocazioni = CATEGORIE_REGALO.map((query) => ({
+      tool: "searchProducts",
+      params: { query, limit: 3, maxPrice: maxPriceCatalogo },
+    }));
+    directReply = null;
+    selezioneOk = true;
+    console.info("[pino-gift-routing]", JSON.stringify({
+      genericGiftFanout: CATEGORIE_REGALO.length,
+      hasBudget: maxPriceCatalogo !== undefined && Number.isFinite(maxPriceCatalogo),
+    }));
+  } else if (richiestaCatalogoEsplicita && maxPriceCatalogo !== undefined && Number.isFinite(maxPriceCatalogo)) {
+    if (!haToolProdotti) {
+      // Usa la query ripulita dal planner (senza prezzo/valuta): la frase
+      // naturale intera non è una keyword di catalogo.
+      const queryCatalogo = semantica?.query?.trim() || domandaSemantica;
+      invocazioni = [{
         tool: "searchProducts",
-        params: { query, limit: 8, maxPrice: maxPriceCatalogo },
-      }));
+        params: { query: queryCatalogo, limit: 8, maxPrice: maxPriceCatalogo },
+      }];
       directReply = null;
       selezioneOk = true;
-      console.info("[pino-budget-routing-guard]", JSON.stringify({
-        budget: maxPriceCatalogo,
-        genericGiftFanout: categorieRegalo.length,
-      }));
     } else {
-      if (!haToolProdotti) {
-        // Usa la query già ripulita dal planner (senza prezzo/valuta): la frase
-        // naturale intera non è una keyword di catalogo.
-        const queryCatalogo = semantica?.query?.trim() || domandaSemantica;
-        invocazioni = [{
-          tool: "searchProducts",
-          params: { query: queryCatalogo, limit: 8, maxPrice: maxPriceCatalogo },
-        }];
-        directReply = null;
-        selezioneOk = true;
-      } else {
-        invocazioni = invocazioni.map((t) =>
-          t.tool === "searchProducts" || t.tool === "searchAll"
-            ? { ...t, params: { ...(t.params ?? {}), maxPrice: maxPriceCatalogo } }
-            : t
-        );
-      }
-      console.info("[pino-budget-routing-guard]", JSON.stringify({ budget: maxPriceCatalogo, forcedSearch: !haToolProdotti }));
+      invocazioni = invocazioni.map((t) =>
+        t.tool === "searchProducts" || t.tool === "searchAll"
+          ? { ...t, params: { ...(t.params ?? {}), maxPrice: maxPriceCatalogo } }
+          : t
+      );
     }
+    console.info("[pino-budget-routing-guard]", JSON.stringify({ budget: maxPriceCatalogo, forcedSearch: !haToolProdotti }));
   }
   if (invocazioni.length > 0) {
     const risultati = await Promise.all(
@@ -1255,9 +1248,16 @@ export async function chatConAssistente(
     );
     // Merge con deduplica per id: più tool possono restituire lo stesso
     // negozio/prodotto (es. ricerca cibo multi-termine).
-    for (const r of risultati) {
+    for (let i = 0; i < risultati.length; i++) {
+      const r = risultati[i];
+      const categoriaRegalo = regaloGenerico ? String(invocazioni[i]?.params?.query ?? "") : "";
       for (const n of r.negozi) if (!negozi.some((e) => e.id === n.id)) negozi = [...negozi, n];
-      for (const p of r.prodotti) if (!prodotti.some((e) => e.id === p.id)) prodotti = [...prodotti, p];
+      for (const p of r.prodotti) {
+        // Nel fan-out regalo accettiamo solo prodotti che corrispondono alla
+        // categoria specifica interrogata: nessun fallback su articoli casuali.
+        if (categoriaRegalo && !prodottoCorrispondeCategoriaRegalo(p, categoriaRegalo)) continue;
+        if (!prodotti.some((e) => e.id === p.id)) prodotti = [...prodotti, p];
+      }
       for (const o of r.offerte) if (!offerte.some((e) => e.id === o.id)) offerte = [...offerte, o];
       for (const e of r.eventi) if (!eventi.some((x) => x.id === e.id)) eventi = [...eventi, e];
       for (const c of r.categorie) if (!categorie.some((x) => x.nome === c.nome)) categorie = [...categorie, c];
@@ -1275,6 +1275,7 @@ export async function chatConAssistente(
   if (
     !directReply &&
     !followUp &&
+    !regaloGenerico &&
     negozi.length === 0 &&
     prodotti.length === 0 &&
     offerte.length === 0 &&
