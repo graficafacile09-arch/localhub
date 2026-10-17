@@ -539,7 +539,7 @@ function sezioniRisultati(
       (inglese ? "**Offers**\n" : "**Offerte**\n") +
         risultati.offerte
           .slice(0, 4)
-          .map((o) => `- **${o.titolo}**${o.prezzo_offerta != null ? ` — €${o.prezzo_offerta}` : ""} (${o.negozio_nome || "negozio sconosciuto"})`)
+          .map((o) => `- **${o.titolo}**${o.prezzo_offerta != null ? ` — €${o.prezzo_offerta}` : ""} (${o.negozio_nome || (inglese ? "unknown store" : "negozio sconosciuto")})`)
           .join("\n")
     );
   }
@@ -548,7 +548,7 @@ function sezioniRisultati(
       (inglese ? "**Events**\n" : "**Eventi**\n") +
         risultati.eventi
           .slice(0, 4)
-          .map((e) => `- **${e.titolo}**${e.data_inizio ? ` — ${e.data_inizio.slice(0, 10)}` : ""} (${e.negozio_nome || "negozio sconosciuto"})`)
+          .map((e) => `- **${e.titolo}**${e.data_inizio ? ` — ${e.data_inizio.slice(0, 10)}` : ""} (${e.negozio_nome || (inglese ? "unknown store" : "negozio sconosciuto")})`)
           .join("\n")
     );
   }
@@ -657,7 +657,7 @@ function fallbackTestuale(
   }
 
   const motivazione = soloNegozi && !inglese ? motivoCategoria(risultati.negozi) : null;
-  const nota = notaVincolo ? `\n\n_${notaVincolo}_` : "";
+  const nota = notaVincolo && !inglese ? `\n\n_${notaVincolo}_` : "";
   return (
     introduzione +
     sezioni.join("\n\n") +
