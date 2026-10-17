@@ -18,6 +18,7 @@
  */
 
 import type { MessaggioAssistente } from "./index";
+import { rilevaLinguaPino } from "./understanding";
 import type {
   OffertaAssistente,
   EventoAssistente,
@@ -232,7 +233,8 @@ export function buildFinalPrompt(
   const ultimo = messages[messages.length - 1];
   const domanda = ultimo && ultimo.role === "user" ? ultimo.content : "";
 
-  return `LINGUA RISPOSTA: usa la lingua dell'ultimo messaggio dell'utente. Se è inglese, rispondi in inglese; se è italiano, rispondi in italiano.
+  const lingua = rilevaLinguaPino(domanda) === "en" ? "English" : "Italian";
+  return `RESPONSE LANGUAGE: ${lingua}. Always reply in this language, including headings and explanations.
 
 CONVERSAZIONE RECENTE:
 ${storico}
