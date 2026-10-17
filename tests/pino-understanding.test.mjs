@@ -1,11 +1,16 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { readFileSync } from "node:fs";
 import { rispostaIdentitaPino } from "../lib/assistente/identity.ts";
-import { SYSTEM_PROMPT } from "../lib/assistente/prompt.ts";
 import {
   normalizzaQueryCatalogo,
   rilevaLinguaPino,
 } from "../lib/assistente/understanding.ts";
+
+const promptSource = readFileSync(
+  new URL("../lib/assistente/prompt.ts", import.meta.url),
+  "utf8",
+);
 
 test("English budget and alternative wording reduce to the catalog subject", () => {
   const request = "I want a watch under 100 euros, or something similar";
@@ -59,7 +64,7 @@ test("Pino identifies itself consistently in Italian and English", () => {
 });
 
 test("Pino system prompt defines identity and proactive grounded behavior", () => {
-  assert.match(SYSTEM_PROMPT, /Sei Pino, l'assistente AI ufficiale di InCittà\.online/);
-  assert.match(SYSTEM_PROMPT, /Non inventare mai negozi, prodotti, prezzi/);
-  assert.match(SYSTEM_PROMPT, /Se la richiesta è abbastanza chiara, agisci e cerca subito/);
+  assert.match(promptSource, /Sei Pino, l'assistente AI ufficiale di InCittà\.online/);
+  assert.match(promptSource, /Non inventare mai negozi, prodotti, prezzi/);
+  assert.match(promptSource, /Se la richiesta è abbastanza chiara, agisci e cerca subito/);
 });
