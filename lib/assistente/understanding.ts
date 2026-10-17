@@ -67,7 +67,9 @@ export function normalizzaQueryCatalogo(testo: string): string {
     .replace(/\b(?:or something similar|or something like that|or similar|something similar|something like that|anything similar|similar items|other similar options)\b/gi, " ")
     .replace(/\b(?:i am looking for|i'm looking for|im looking for|looking for|i would like|i'd like|id like|i want|i need|can you find|could you find|find me|show me|help me find|please find|please show|i am after|im after)\b/gi, " ")
     .replace(/\b(?:voglio|vorrei|cerco|cerca|trovami|trova|mi serve|fammi trovare|dammi|per favore|per piacere|qualcosa di simile|o qualcosa di simile|o simile)\b/gi, " ")
-    .replace(/\b(?:please|the|a|an|some|any|for me|me|i|my|and|or|with|for|of|to|a|un|una|uno|il|lo|la|i|gli|le|del|della|dei|delle|di|da|con|per|e)\b/gi, " ")
+    .replace(/\\b(?:please|the|a|an|some|any|me|i|my|and|or|un|una|uno|il|lo|la|gli|le|del|della|dei|delle|e)\\b/gi, " ")
+    .replace(/^\\s*(?:with|for|of|to|da|con|per|di|a)\\b\\s*/i, "")
+    .replace(/\\s+\\b(?:and|or|with|for|of|to|da|con|per|di|a)\\s*$/i, "")
     .replace(/[?!,;:]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
