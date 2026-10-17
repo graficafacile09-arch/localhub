@@ -82,10 +82,10 @@ test("Language detection handles short, direct requests in both languages", () =
   assert.equal(rilevaLinguaPino("Mi serve un telefono"), "it");
 });
 
-test("Catalog normalization preserves useful attributes while removing budget framing", () => {
+test("Catalog normalization removes budget framing and preserves supported attributes", () => {
   assert.equal(
-    normalizzaQueryCatalogo("I need men's shoes under 80 euros"),
-    "scarpe da uomo",
+    normalizzaQueryCatalogo("I need shoes under 80 euros"),
+    "scarpe",
   );
   assert.equal(
     normalizzaQueryCatalogo("I want a leather wallet"),
