@@ -14,11 +14,10 @@ import {
   getProdottiTipici,
 } from "@/lib/negozi";
 import { getNegozioCardImmagine } from "@/lib/negozi-card-immagini";
-import HomepageProductShowcase from "@/components/home/HomepageProductShowcase";
+import HomepageProductShowcase, { ProductSectionCard } from "@/components/home/HomepageProductShowcase";
 import HomepageProductSwipeReveal from "@/components/home/HomepageProductSwipeReveal";
 import { chiavePreferito, getStatoPreferitiPerPagina } from "@/lib/cliente/favorites";
 import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
-import ProductCard from "@/components/home/ProductCard";
 
 // La homepage deve riflettere in tempo reale i negozi in evidenza flaggati
 // dal merchant (il toggle "In evidenza" della dashboard), quindi non viene
@@ -78,32 +77,6 @@ export default async function Home() {
       getProdottiTipici(200),
       getStatoPreferitiPerPagina(),
     ]);
-
-  const gruppiProdotti = Array.from(
-    prodottiCatalogo.reduce(
-      (gruppi, prodotto) => {
-        const categoriaOriginale =
-          typeof prodotto.categoria === "string" && prodotto.categoria.trim()
-            ? prodotto.categoria.trim()
-            : "Altri prodotti";
-        const chiaveCategoria = categoriaOriginale.toLocaleLowerCase("it-IT");
-        const gruppo = gruppi.get(chiaveCategoria);
-        if (gruppo) {
-          gruppo.prodotti.push(prodotto);
-        } else {
-          gruppi.set(chiaveCategoria, {
-            categoria: categoriaOriginale,
-            prodotti: [prodotto],
-          });
-        }
-        return gruppi;
-      },
-      new Map<
-        string,
-        { categoria: string; prodotti: typeof prodottiCatalogo }
-      >()
-    ).values()
-  ).sort((a, b) => a.categoria.localeCompare(b.categoria, "it-IT"));
 
   return (
     <main className="min-h-screen bg-[#eef3f8]">
@@ -182,52 +155,19 @@ export default async function Home() {
       />
 
       {/* ═══════════════════════════════════════════════════════════════════
-          VETRINA PRODOTTI — una scheda singola per ogni prodotto attivo.
-          Posizionata subito dopo i negozi in evidenza.
+          ECCELLENZE CALABRESI — stessa scheda gialla, fuori dallo swipe.
           ═══════════════════════════════════════════════════════════════════ */}
-      {gruppiProdotti.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 py-12 md:px-6 md:py-14">
-          <SezioneHeader
-            label="Dal territorio"
-            titolo="Tutti i prodotti"
-            href="/negozi"
-            linkLabel="Esplora i negozi"
+      {prodottiTipici.length > 0 && (
+        <section className="mx-auto max-w-[1800px] px-4 py-12 md:px-6 md:py-14">
+          <ProductSectionCard
+            titolo="Eccellenze calabresi"
+            href="/prodotti-tipici"
+            prodotti={prodottiTipici}
+            statoPreferiti={statoPreferiti}
+            prodottoTipico
+            evidenziato
+            standalone
           />
-          <div className="space-y-10 md:space-y-12">
-            {gruppiProdotti.map((gruppo) => (
-              <section key={gruppo.categoria.toLocaleLowerCase("it-IT")}>
-                <h3 className="mb-4 border-b border-slate-200 pb-2 text-xl font-black tracking-tight text-slate-900 md:text-2xl">
-                  {gruppo.categoria}
-                  <span className="ml-2 align-middle text-sm font-semibold text-slate-500">
-                    ({gruppo.prodotti.length})
-                  </span>
-                </h3>
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 md:gap-5">
-                  {gruppo.prodotti.map((prodotto) => {
-                    const prodottoId = String(prodotto.id);
-                    return (
-                      <ProductCard
-                        key={prodottoId}
-                        id={prodottoId}
-                        slug={(prodotto.slug as string) ?? prodottoId}
-                        nome={prodotto.nome as string}
-                        prezzo={prodotto.prezzo as number}
-                        categoria={(prodotto.categoria as string) ?? null}
-                        negozio_nome={(prodotto.negozio_nome as string) ?? ""}
-                        negozio_id={String(prodotto.negozio_id ?? "")}
-                        immagine_principale={(prodotto.immagine_principale as string) ?? null}
-                        haVarianti={Boolean(prodotto.ha_varianti)}
-                        preferitoAttivo={statoPreferiti.chiavi.has(
-                          chiavePreferito("prodotto", prodottoId)
-                        )}
-                        autenticato={statoPreferiti.autenticato}
-                      />
-                    );
-                  })}
-                </div>
-              </section>
-            ))}
-          </div>
         </section>
       )}
 
