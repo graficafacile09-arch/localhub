@@ -36,8 +36,14 @@ export function ProductSectionCard({
 }) {
   if (prodotti.length === 0) return null;
 
+  const desktopWidthClass = standalone
+    ? "mx-auto md:w-full"
+    : titolo.toLocaleLowerCase("it") === "altri prodotti"
+      ? "md:w-[min(88vw,1600px)] md:shrink-0 md:snap-start"
+      : "md:w-[min(72vw,960px)] md:shrink-0 md:snap-start";
+
   return (
-    <article className={`flex w-full min-w-0 flex-col rounded-2xl border p-3 shadow-sm sm:p-4 ${standalone ? "mx-auto md:w-[min(72vw,960px)]" : "md:w-[min(72vw,960px)] md:shrink-0 md:snap-start"} md:p-5 ${
+    <article className={`flex w-full min-w-0 flex-col rounded-2xl border p-3 shadow-sm sm:p-4 ${desktopWidthClass} md:p-5 ${
       evidenziato
         ? "border-yellow-400 bg-yellow-100 shadow-md ring-2 ring-yellow-300/70"
         : "border-blue-100 bg-[#f7faff]"
