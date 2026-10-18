@@ -135,12 +135,13 @@ export default function HomepageProductCarousel({
             return (
               <div
                 key={prodottoId}
-                className="w-[calc((100%_-_0.75rem)_/_2)] min-w-[calc((100%_-_0.75rem)_/_2)] shrink-0 snap-start md:w-[calc((100%_-_3.75rem)_/_4)] md:min-w-[calc((100%_-_3.75rem)_/_4)]"
+                className="w-[calc((100%_-_0.75rem)_/_2)] min-w-[calc((100%_-_0.75rem)_/_2)] shrink-0 snap-start sm:w-[calc((100%_-_1.5rem)_/_3)] sm:min-w-[calc((100%_-_1.5rem)_/_3)] md:w-[calc((100%_-_2.5rem)_/_3)] md:min-w-[calc((100%_-_2.5rem)_/_3)] lg:w-[calc((100%_-_3.75rem)_/_4)] lg:min-w-[calc((100%_-_3.75rem)_/_4)]"
               >
                 <ProductCard
                   id={prodottoId}
                   slug={(prodotto.slug as string) ?? prodottoId}
                   nome={prodotto.nome as string}
+                  descrizione={(prodotto.descrizione as string) ?? null}
                   prezzo={prodotto.prezzo as number}
                   categoria={(prodotto.categoria as string) ?? null}
                   negozio_nome={(prodotto.negozio_nome as string) ?? ""}
@@ -174,6 +175,7 @@ export default function HomepageProductCarousel({
                     id={prodottoId}
                     slug={(prodotto.slug as string) ?? prodottoId}
                     nome={prodotto.nome as string}
+                    descrizione={(prodotto.descrizione as string) ?? null}
                     prezzo={prodotto.prezzo as number}
                     categoria={(prodotto.categoria as string) ?? null}
                     negozio_nome={(prodotto.negozio_nome as string) ?? ""}

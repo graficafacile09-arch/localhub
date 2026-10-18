@@ -9,7 +9,7 @@ import { getCategoriaShowcase, getFiltriDisponibiliProdotti, isOrdinamentoProdot
 import { search } from "@/lib/search-service";
 import { prodottoEsaurito } from "@/lib/prodotti-disponibilita";
 import { getNegozioCardImmagine } from "@/lib/negozi-card-immagini";
-import { getProdottoImmagine } from "@/lib/prodotti-immagini";
+import ProductCard from "@/components/home/ProductCard";
 import { chiavePreferito, getStatoPreferitiPerPagina } from "@/lib/cliente/favorites";
 import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
 import type { ProdottoRicerca, NegozioRicerca } from "@/lib/ricerca-ai";
@@ -279,52 +279,24 @@ export default async function RicercaPage({
                   <h2 className="mb-2 text-lg font-black tracking-tight text-slate-900">
                     Prodotti ({prodotti.length})
                   </h2>
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3">
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-5 lg:grid-cols-4">
                     {prodotti.map((prodotto) => (
-                      <div
+                      <ProductCard
                         key={prodotto.id}
-                        className="relative overflow-hidden rounded-xl border border-slate-100 bg-white transition hover:border-blue-200 hover:shadow-sm"
-                      >
-                        <Link href={`/prodotto/${prodotto.slug}`} className="group block">
-                          <div className="relative aspect-[4/3] overflow-hidden bg-slate-100 sm:aspect-square">
-                            <div
-                              role="img"
-                              aria-label={prodotto.nome}
-                              className="h-full w-full bg-cover bg-center"
-                              style={{
-                                backgroundImage: `url(${getProdottoImmagine({
-                                  immagine_principale: prodotto.immagine_principale,
-                                  categoria: prodotto.categoria,
-                                })})`,
-                              }}
-                            />
-                            {prodottoEsaurito(prodotto.quantita_disponibile, prodotto.quantita_riservata) && (
-                              <span className="absolute inset-x-0 bottom-0 bg-blue-600/90 py-1 text-center text-[9px] font-black uppercase tracking-wider text-white">
-                                Esaurito
-                              </span>
-                            )}
-                          </div>
-                          <div className="p-3 sm:p-3.5">
-                            <h3 className="line-clamp-2 text-[13px] font-bold leading-snug text-slate-900 sm:text-sm">
-                              {prodotto.nome}
-                            </h3>
-                            <p className="mt-1 text-base font-black text-blue-700">
-                              {prodotto.ha_varianti ? "Da " : ""}€{prodotto.prezzo}
-                            </p>
-                            <p className="mt-1 line-clamp-1 text-[11px] text-slate-500">
-                              {prodotto.negozio_nome}
-                            </p>
-                          </div>
-                        </Link>
-                        <FavoritoButton
-                          tipo="prodotto"
-                          riferimentoId={prodotto.id}
-                          attivo={statoPreferiti.chiavi.has(chiavePreferito("prodotto", prodotto.id))}
-                          autenticato={statoPreferiti.autenticato}
-                          className="absolute right-2 top-2 z-10"
-                          label={prodotto.nome}
-                        />
-                      </div>
+                        id={prodotto.id}
+                        slug={prodotto.slug ?? prodotto.id}
+                        nome={prodotto.nome}
+                        descrizione={prodotto.descrizione}
+                        prezzo={prodotto.prezzo}
+                        categoria={prodotto.categoria}
+                        negozio_nome={prodotto.negozio_nome}
+                        negozio_id={prodotto.negozio_id}
+                        immagine_principale={prodotto.immagine_principale}
+                        esaurito={prodottoEsaurito(prodotto.quantita_disponibile, prodotto.quantita_riservata)}
+                        haVarianti={Boolean(prodotto.ha_varianti)}
+                        preferitoAttivo={statoPreferiti.chiavi.has(chiavePreferito("prodotto", prodotto.id))}
+                        autenticato={statoPreferiti.autenticato}
+                      />
                     ))}
                   </div>
                 </section>

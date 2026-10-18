@@ -1910,7 +1910,7 @@ export async function getProdottiCatalogoHomepage(limit = 1000) {
 
   const { data: prodotti, error } = await db
     .from("prodotti")
-    .select("id, slug, negozio_id, nome, prezzo, categoria, immagine_principale, ha_varianti, created_at")
+    .select("id, slug, negozio_id, nome, descrizione, prezzo, categoria, immagine_principale, ha_varianti, created_at")
     .eq("attivo", true)
     .order("created_at", { ascending: false })
     .limit(Math.max(1, Math.min(limit, 1000)));
