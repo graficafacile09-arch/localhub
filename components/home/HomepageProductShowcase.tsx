@@ -23,19 +23,25 @@ function ProductSectionCard({
   prodotti,
   statoPreferiti,
   prodottoTipico = false,
+  evidenziato = false,
 }: {
   titolo: string;
   href: string;
   prodotti: ProdottoRecord[];
   statoPreferiti: StatoPreferiti;
   prodottoTipico?: boolean;
+  evidenziato?: boolean;
 }) {
   if (prodotti.length === 0) return null;
 
   return (
-    <article className="flex w-full min-w-0 flex-col rounded-2xl border border-blue-100 bg-[#f7faff] p-3 shadow-sm sm:p-4 md:w-[min(72vw,960px)] md:shrink-0 md:snap-start md:p-5">
+    <article className={`flex w-full min-w-0 flex-col rounded-2xl border p-3 shadow-sm sm:p-4 md:w-[min(72vw,960px)] md:shrink-0 md:snap-start md:p-5 ${
+      evidenziato
+        ? "border-yellow-400 bg-yellow-100 shadow-md ring-2 ring-yellow-300/70"
+        : "border-blue-100 bg-[#f7faff]"
+    }`}>
       <div className="mb-3 flex items-center justify-between gap-3">
-        <h2 className="min-w-0 text-base font-black leading-tight tracking-tight text-slate-900 sm:text-lg md:text-xl">
+        <h2 className={`min-w-0 text-base font-black leading-tight tracking-tight sm:text-lg md:text-xl ${evidenziato ? "text-blue-950" : "text-slate-900"}`}>
           {titolo}
         </h2>
         <Link
@@ -68,11 +74,23 @@ export default function HomepageProductShowcase({
   const idTipici = new Set(
     prodottiTipici.map((prodotto) => String(prodotto.id ?? "")).filter(Boolean)
   );
-  const prodottiPerCategoria = new Map<string, ProdottoRecord[]>();
 
+  // Mostra prima tutti i prodotti del Panificio Zini, come nella vetrina di riferimento.
+  // I prodotti tipici restano nella sezione dedicata e non vengono duplicati.
+  const prodottiPanificioZini = prodottiCatalogo.filter((prodotto) => {
+    const id = String(prodotto.id ?? "");
+    const negozio = String(prodotto.negozio_nome ?? "").trim().toLocaleLowerCase("it");
+    return negozio.includes("panificio zini") && !idTipici.has(id);
+  });
+  const idPanificioZini = new Set(
+    prodottiPanificioZini.map((prodotto) => String(prodotto.id ?? "")).filter(Boolean)
+  );
+
+  // Tutti gli altri prodotti del catalogo vengono mantenuti nelle rispettive categorie.
+  const prodottiPerCategoria = new Map<string, ProdottoRecord[]>();
   for (const prodotto of prodottiCatalogo) {
     const id = String(prodotto.id ?? "");
-    if (id && idTipici.has(id)) continue;
+    if ((id && idTipici.has(id)) || (id && idPanificioZini.has(id))) continue;
     const categoria = testoCategoria(prodotto);
     const gruppo = prodottiPerCategoria.get(categoria) ?? [];
     gruppo.push(prodotto);
@@ -97,11 +115,19 @@ export default function HomepageProductShowcase({
 
         <HomepageProductCategoryScroller>
           <ProductSectionCard
+            titolo="Panificio Zini"
+            href="/negozi"
+            prodotti={prodottiPanificioZini}
+            statoPreferiti={statoPreferiti}
+          />
+
+          <ProductSectionCard
             titolo="Eccellenze calabresi"
             href="/prodotti-tipici"
             prodotti={prodottiTipici}
             statoPreferiti={statoPreferiti}
             prodottoTipico
+            evidenziato
           />
 
           {categorie.map(([categoria, prodotti]) => (
@@ -114,7 +140,7 @@ export default function HomepageProductShowcase({
             />
           ))}
 
-          {prodottiTipici.length === 0 && categorie.length === 0 && (
+          {prodottiPanificioZini.length === 0 && prodottiTipici.length === 0 && categorie.length === 0 && (
             <article className="flex min-h-[260px] w-[88vw] max-w-[420px] shrink-0 snap-start items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-center text-sm text-slate-600">
               I prodotti dei negozi locali saranno visibili qui appena disponibili.
             </article>
