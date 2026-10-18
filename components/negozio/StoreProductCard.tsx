@@ -38,6 +38,8 @@ export default function StoreProductCard({
 }: Props) {
   const imageUrl = getProdottoImmagine({ immagine_principale, categoria });
   const mostraPreferiti = id != null && preferitoAttivo !== undefined && autenticato !== undefined;
+  const caratteriNomeNegozio = Math.max(Array.from(negozio_nome.trim()).length, 1);
+  const dimensioneNomeNegozio = `min(10px, ${(80 / (caratteriNomeNegozio * 0.6)).toFixed(4)}cqi)`;
 
   return (
     <div className="relative flex h-full w-full min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ring-1 ring-slate-100 transition hover:-translate-y-0.5 hover:border-yellow-300 hover:shadow-lg">
@@ -70,9 +72,9 @@ export default function StoreProductCard({
               {haVarianti ? "Da " : ""}&euro; {prezzo.toFixed(2)}
             </span>
           </p>
-          <p className="mt-2 flex h-7 shrink-0 min-w-0 items-center gap-1 rounded-md border border-slate-200 bg-white px-2 text-[11px] text-slate-600">
+          <p className="mt-2 flex h-7 shrink-0 min-w-0 items-center gap-1 overflow-hidden rounded-md border border-slate-200 bg-white px-2 text-slate-600" style={{ containerType: "inline-size" }}>
             <Store className="h-3 w-3 shrink-0 text-yellow-700" aria-hidden />
-            <span className="min-w-0 truncate">{negozio_nome || "\u00a0"}</span>
+            <span className="min-w-0 flex-1 whitespace-nowrap leading-none" style={{ fontSize: dimensioneNomeNegozio }}>{negozio_nome.trim() || "\u00a0"}</span>
           </p>
         </div>
       </Link>
