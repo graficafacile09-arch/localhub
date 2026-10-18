@@ -29,7 +29,7 @@ export default function HomepageProductCategoryScroller({ children }: { children
       <div
         ref={scrollerRef}
         data-home-inner-horizontal-scroll
-        className="flex min-w-0 flex-1 flex-col items-stretch gap-3 pb-2 md:flex-row md:snap-x md:snap-mandatory md:gap-5 md:overflow-x-auto md:overscroll-x-contain md:scroll-smooth md:touch-pan-x md:[scrollbar-width:thin]"
+        className="flex min-w-0 flex-1 flex-col items-stretch gap-3 pb-2 md:flex-row md:snap-x md:snap-mandatory md:gap-5 md:overflow-x-auto md:overscroll-x-contain md:scroll-smooth md:[scrollbar-width:thin]"
         aria-label="Sezioni prodotti scorrevoli"
       >
         {children}
