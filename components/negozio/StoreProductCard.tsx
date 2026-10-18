@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Store } from "lucide-react";
 import { getProdottoImmagine } from "@/lib/prodotti-immagini";
 import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
 
@@ -6,6 +7,7 @@ type Props = {
   slug: string;
   nome: string;
   descrizione: string | null;
+  negozio_nome?: string;
   prezzo: number;
   categoria: string | null;
   immagine_principale: string | null;
@@ -24,6 +26,7 @@ export default function StoreProductCard({
   slug,
   nome,
   descrizione,
+  negozio_nome = "",
   prezzo,
   categoria,
   immagine_principale,
@@ -37,12 +40,12 @@ export default function StoreProductCard({
   const mostraPreferiti = id != null && preferitoAttivo !== undefined && autenticato !== undefined;
 
   return (
-    <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm ring-1 ring-slate-100 transition hover:-translate-y-0.5 hover:border-blue-300 hover:shadow-md">
+    <div className="relative flex h-full w-full min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ring-1 ring-slate-100 transition hover:-translate-y-0.5 hover:border-yellow-300 hover:shadow-lg">
       <Link
         href={`/prodotto/${slug}`}
-        className="group block"
+        className="group flex min-h-0 flex-1 flex-col"
       >
-        <div className="relative aspect-square overflow-hidden border-b border-slate-200 bg-slate-50">
+        <div className="relative aspect-square w-full shrink-0 overflow-hidden border-b border-slate-200 bg-slate-50">
           <div
             role="img"
             aria-label={nome}
@@ -55,11 +58,21 @@ export default function StoreProductCard({
             </span>
           )}
         </div>
-        <div className="border-l-4 border-blue-700 bg-slate-50 p-3">
-          <h3 className="truncate text-xs font-bold text-slate-900">{nome}</h3>
-          {descrizione && <p className="mt-0.5 line-clamp-2 text-[10px] leading-4 text-slate-400">{descrizione}</p>}
-          <p className="mt-2 inline-flex rounded-md border border-yellow-200 bg-yellow-50 px-2 py-1 text-xs font-black text-blue-700">
-            {haVarianti ? "Da " : ""}&euro; {prezzo.toFixed(2)}
+        <div className="flex flex-1 flex-col border-l-4 border-blue-700 bg-slate-50 p-3">
+          <h3 className="h-10 shrink-0 overflow-hidden line-clamp-2 text-sm font-bold leading-5 text-slate-900">
+            {nome}
+          </h3>
+          <p className="mt-1 h-8 shrink-0 overflow-hidden line-clamp-2 text-[11px] leading-4 text-slate-500">
+            {descrizione?.trim() ? descrizione : <span aria-hidden="true">&nbsp;</span>}
+          </p>
+          <p className="mt-2 flex h-8 shrink-0 items-center">
+            <span className="inline-flex h-7 items-center rounded-md border border-yellow-200 bg-yellow-50 px-2 text-xs font-black text-blue-700">
+              {haVarianti ? "Da " : ""}&euro; {prezzo.toFixed(2)}
+            </span>
+          </p>
+          <p className="mt-2 flex h-7 shrink-0 min-w-0 items-center gap-1 rounded-md border border-slate-200 bg-white px-2 text-[11px] text-slate-600">
+            <Store className="h-3 w-3 shrink-0 text-yellow-700" aria-hidden />
+            <span className="min-w-0 truncate">{negozio_nome || "\u00a0"}</span>
           </p>
         </div>
       </Link>
