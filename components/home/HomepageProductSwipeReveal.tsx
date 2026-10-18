@@ -118,6 +118,7 @@ export default function HomepageProductSwipeReveal({
           <button
             type="button"
             onClick={openProducts}
+            data-home-hero-swipe
             aria-label="Scopri i prodotti: scorri per vedere i prodotti"
             className="absolute bottom-3 left-1/2 z-20 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-yellow-300/90 bg-yellow-400/95 px-3 py-1.5 text-[11px] font-bold text-blue-900 shadow-md shadow-slate-950/20 transition hover:bg-yellow-300 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 md:hidden"
           >
@@ -132,6 +133,8 @@ export default function HomepageProductSwipeReveal({
         <button
           type="button"
           onClick={() => (showProducts ? closeProducts() : openProducts())}
+          data-home-hero-swipe
+          data-home-products-swipe
           aria-label={showProducts ? "Torna alla foto della homepage" : "Mostra i prodotti"}
           aria-expanded={showProducts}
           aria-controls="homepage-prodotti"
