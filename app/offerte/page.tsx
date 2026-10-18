@@ -97,6 +97,7 @@ export default async function OffertePage() {
                   id={prodottoId}
                   slug={(prodotto.slug as string) ?? prodottoId}
                   nome={prodotto.nome as string}
+                  descrizione={(prodotto.descrizione as string) ?? null}
                   prezzo={prodotto.prezzo as number}
                   categoria={(prodotto.categoria as string) ?? null}
                   negozio_nome={(prodotto.negozio_nome as string) ?? ""}
