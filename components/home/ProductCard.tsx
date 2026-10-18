@@ -9,6 +9,7 @@ type ProductCardProps = {
   nome: string;
   prezzo: number;
   categoria?: string | null;
+  descrizione?: string | null;
   negozio_nome: string;
   negozio_id: string;
   immagine_principale?: string | null;
@@ -21,8 +22,9 @@ type ProductCardProps = {
   prodottoTipico?: boolean;
   /** True se il prodotto è in offerta (badge rosso "OFFERTA"). */
   prodottoInOfferta?: boolean;
-  /** Variante compatta (griglie dense tipo Eccellenze Calabresi): immagine
-   *  più bassa e padding/testi ridotti. Nessun cambio di colori o stile. */
+  /** Badge di disponibilità reale. */
+  esaurito?: boolean;
+  /** Compatibilità con i vecchi chiamanti: le schede ora condividono le stesse dimensioni. */
   compatto?: boolean;
 };
 
@@ -44,22 +46,21 @@ export default function ProductCard({
   haVarianti,
   prodottoTipico,
   prodottoInOfferta,
-  compatto,
+  descrizione,
+  esaurito,
 }: ProductCardProps) {
   const imageUrl = getProdottoImmagine({ immagine_principale, categoria });
   const mostraPreferiti = preferitoAttivo !== undefined && autenticato !== undefined;
   const prezzoFormattato = Number.isFinite(prezzo) ? prezzo.toFixed(2) : String(prezzo);
 
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ring-1 ring-slate-100 transition hover:-translate-y-0.5 hover:border-yellow-300 hover:shadow-lg">
+    <div className="group relative flex h-full w-full min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ring-1 ring-slate-100 transition hover:-translate-y-0.5 hover:border-yellow-300 hover:shadow-lg">
       <Link
         href={`/prodotto/${slug}`}
-        className="block"
+        className="flex min-h-0 flex-1 flex-col"
       >
         <div
-          className={`relative overflow-hidden border-b border-slate-200 ${prodottoTipico ? "bg-white" : "bg-slate-100"} ${
-            compatto ? "aspect-[4/3]" : "aspect-square"
-          }`}
+          className={`relative aspect-square w-full shrink-0 overflow-hidden border-b border-slate-200 ${prodottoTipico ? "bg-white" : "bg-slate-100"}`}
         >
           <div
             role="img"
@@ -91,25 +92,27 @@ export default function ProductCard({
               Da
             </span>
           )}
+          {esaurito && (
+            <span className="absolute inset-x-0 bottom-0 bg-blue-600/90 py-1 text-center text-[9px] font-black uppercase tracking-wider text-white">
+              Esaurito
+            </span>
+          )}
         </div>
-        <div className={compatto ? "border-l-4 border-blue-700 bg-slate-50 p-2.5 md:p-3" : "border-l-4 border-blue-700 bg-slate-50 p-3 md:p-4"}>
-          <h3
-            className={`line-clamp-2 font-bold leading-snug text-slate-900 transition group-hover:text-yellow-800 ${
-              compatto ? "text-[13px]" : "text-sm"
-            }`}
-          >
+        <div className="flex flex-1 flex-col border-l-4 border-blue-700 bg-slate-50 p-3">
+          <h3 className="h-10 shrink-0 overflow-hidden line-clamp-2 text-sm font-bold leading-5 text-slate-900 transition group-hover:text-yellow-800">
             {nome}
           </h3>
-          <p
-            className={`font-black text-blue-700 ${
-              compatto ? "mt-1 text-sm" : "mt-1.5 text-base"
-            }`}
-          >
-            {haVarianti ? "Da " : ""}€{prezzoFormattato}
+          <p className="mt-1 h-8 shrink-0 overflow-hidden line-clamp-2 text-[11px] leading-4 text-slate-500">
+            {descrizione?.trim() ? descrizione : <span aria-hidden="true">&nbsp;</span>}
           </p>
-          <p className="mt-2 flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 line-clamp-1 text-[11px] text-slate-600">
+          <p className="mt-2 flex h-8 shrink-0 items-center">
+            <span className="inline-flex h-7 items-center rounded-md border border-yellow-200 bg-yellow-50 px-2 text-xs font-black text-blue-700">
+              {haVarianti ? "Da " : ""}&euro; {prezzoFormattato}
+            </span>
+          </p>
+          <p className="mt-2 flex h-7 shrink-0 min-w-0 items-center gap-1 rounded-md border border-slate-200 bg-white px-2 text-[11px] text-slate-600">
             <Store className="h-3 w-3 shrink-0 text-yellow-700" aria-hidden />
-            {negozio_nome}
+            <span className="min-w-0 truncate">{negozio_nome || "\u00a0"}</span>
           </p>
         </div>
       </Link>
@@ -119,7 +122,7 @@ export default function ProductCard({
       {prodottoTipico && (
         <Link
           href={`/prodotto/${slug}`}
-          className="mx-3 mb-3 hidden items-center justify-center gap-2 rounded-lg bg-yellow-400 px-3 py-2 text-sm font-bold text-slate-900 transition hover:bg-yellow-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-600 focus-visible:ring-offset-2 md:flex"
+          className="mx-3 mb-3 hidden h-10 shrink-0 items-center justify-center gap-2 rounded-lg bg-yellow-400 px-3 py-2 text-sm font-bold text-slate-900 transition hover:bg-yellow-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-600 focus-visible:ring-offset-2 md:flex"
           aria-label={`Acquista ${nome}`}
         >
           <ShoppingCart className="h-4 w-4" aria-hidden />
