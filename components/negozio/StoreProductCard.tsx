@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Store } from "lucide-react";
 import { getProdottoImmagine } from "@/lib/prodotti-immagini";
 import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
 
