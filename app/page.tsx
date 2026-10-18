@@ -158,7 +158,7 @@ export default async function Home() {
           ECCELLENZE CALABRESI — stessa scheda gialla, fuori dallo swipe.
           ═══════════════════════════════════════════════════════════════════ */}
       {prodottiTipici.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 py-12 md:px-6 md:py-14">
+        <section className="mx-auto max-w-[1800px] px-4 py-12 md:px-6 md:py-14">
           <ProductSectionCard
             titolo="Eccellenze calabresi"
             href="/prodotti-tipici"
