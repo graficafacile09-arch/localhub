@@ -481,3 +481,27 @@ body.merchant-image-editor-aperto .merchant-bottom-nav-spacer {
   }
 }
 
+/* Ripristina l'indicatore animato mano + freccia dello swipe homepage. */
+.incitta-swipe-cue-hand {
+  animation: incitta-swipe-hand 1.5s ease-in-out infinite;
+}
+.incitta-swipe-cue-arrow {
+  transform: translateY(-50%);
+  clip-path: inset(0px 30px 0px 18px);
+  animation: incitta-swipe-arrow-grow 1.5s ease-in-out infinite;
+}
+@keyframes incitta-swipe-hand {
+  0%, 12% { transform: translateX(30px); }
+  42%, 56% { transform: translateX(0); }
+  88%, 100% { transform: translateX(30px); }
+}
+@keyframes incitta-swipe-arrow-grow {
+  0%, 12% { transform: translateY(-50%) translateX(30px); clip-path: inset(0px 30px 0px 18px); }
+  42%, 56% { transform: translateY(-50%) translateX(0); clip-path: inset(0px); }
+  88%, 100% { transform: translateY(-50%) translateX(30px); clip-path: inset(0px 30px 0px 18px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .incitta-swipe-cue-hand, .incitta-swipe-cue-arrow { animation: none; }
+  .incitta-swipe-cue-hand { transform: none; }
+  .incitta-swipe-cue-arrow { transform: translateY(-50%); clip-path: none; }
+}
