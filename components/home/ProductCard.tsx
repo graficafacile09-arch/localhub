@@ -112,7 +112,7 @@ export default function ProductCard({
               </span>
             </p>
           </div>
-          <div className="-ml-1 flex min-h-10 w-[calc(100%_+_4px)] shrink-0 items-center justify-center bg-yellow-400 px-2 py-1 text-center text-xs font-bold leading-4 text-blue-950">
+          <div className="-ml-1 flex min-h-10 w-[calc(100%_+_4px)] shrink-0 items-center justify-center border border-yellow-400 bg-transparent px-2 py-1 text-center text-xs font-bold leading-4 text-blue-950">
             <span className="break-words">{negozio_nome.trim() || "\u00a0"}</span>
           </div>
         </div>
