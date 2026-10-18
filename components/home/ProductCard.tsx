@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ShoppingCart, Store } from "lucide-react";
+import { ShoppingCart } from "lucide-react";
 import { getProdottoImmagine } from "@/lib/prodotti-immagini";
 import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
 
@@ -52,8 +52,6 @@ export default function ProductCard({
   const imageUrl = getProdottoImmagine({ immagine_principale, categoria });
   const mostraPreferiti = preferitoAttivo !== undefined && autenticato !== undefined;
   const prezzoFormattato = Number.isFinite(prezzo) ? prezzo.toFixed(2) : String(prezzo);
-  const caratteriNomeNegozio = Math.max(Array.from(negozio_nome.trim()).length, 1);
-  const dimensioneNomeNegozio = `clamp(10px, ${(100 / (caratteriNomeNegozio * 0.55)).toFixed(4)}cqi, 12px)`;
 
   return (
     <div className="group relative flex h-full w-full min-w-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ring-1 ring-slate-100 transition hover:-translate-y-0.5 hover:border-yellow-300 hover:shadow-lg">
@@ -100,22 +98,23 @@ export default function ProductCard({
             </span>
           )}
         </div>
-        <div className="flex flex-1 flex-col border-l-4 border-blue-700 bg-slate-50 p-3">
-          <h3 className="h-10 shrink-0 overflow-hidden line-clamp-2 text-sm font-bold leading-5 text-slate-900 transition group-hover:text-yellow-800">
-            {nome}
-          </h3>
-          <p className="mt-1 h-8 shrink-0 overflow-hidden line-clamp-2 text-[11px] leading-4 text-slate-500">
-            {descrizione?.trim() ? descrizione : <span aria-hidden="true">&nbsp;</span>}
-          </p>
-          <p className="mt-2 flex h-8 shrink-0 items-center">
-            <span className="inline-flex h-7 items-center rounded-md border border-yellow-200 bg-yellow-50 px-2 text-xs font-black text-blue-700">
-              {haVarianti ? "Da " : ""}&euro; {prezzoFormattato}
-            </span>
-          </p>
-          <p className="mt-2 flex h-7 shrink-0 min-w-0 items-center gap-1 overflow-hidden rounded-md border border-slate-200 bg-white px-2 text-slate-600" style={{ containerType: "inline-size" }}>
-            <Store className="h-3 w-3 shrink-0 text-yellow-700" aria-hidden />
-            <span className="min-w-0 flex-1 truncate whitespace-nowrap leading-none" style={{ fontSize: dimensioneNomeNegozio }}>{negozio_nome.trim() || "\u00a0"}</span>
-          </p>
+        <div className="flex flex-1 flex-col border-l-4 border-blue-700 bg-slate-50">
+          <div className="flex flex-1 flex-col p-3">
+            <h3 className="h-10 shrink-0 overflow-hidden line-clamp-2 text-sm font-bold leading-5 text-slate-900 transition group-hover:text-yellow-800">
+              {nome}
+            </h3>
+            <p className="mt-1 h-8 shrink-0 overflow-hidden line-clamp-2 text-[11px] leading-4 text-slate-500">
+              {descrizione?.trim() ? descrizione : <span aria-hidden="true">&nbsp;</span>}
+            </p>
+            <p className="mt-2 flex h-8 shrink-0 items-center">
+              <span className="inline-flex h-7 items-center rounded-md border border-yellow-200 bg-yellow-50 px-2 text-xs font-black text-blue-700">
+                {haVarianti ? "Da " : ""}&euro; {prezzoFormattato}
+              </span>
+            </p>
+          </div>
+          <div className="-ml-1 flex min-h-10 w-[calc(100%_+_4px)] shrink-0 items-center justify-center bg-yellow-400 px-2 py-1 text-center text-xs font-bold leading-4 text-blue-950">
+            <span className="break-words">{negozio_nome.trim() || "\u00a0"}</span>
+          </div>
         </div>
       </Link>
 
