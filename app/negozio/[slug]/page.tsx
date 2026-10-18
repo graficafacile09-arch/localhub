@@ -452,7 +452,7 @@ export default async function PaginaNegozio({
           </details>
 
           {prodotti.length > 0 ? (
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-5 lg:grid-cols-4">
               {prodotti.map((prodotto: Record<string, unknown>) => {
                 const prodottoId = String(prodotto.id);
                 return (
@@ -462,6 +462,7 @@ export default async function PaginaNegozio({
                     slug={(prodotto.slug as string) ?? prodottoId}
                     nome={prodotto.nome as string}
                     descrizione={(prodotto.descrizione as string) ?? null}
+                    negozio_nome={String(negozio.nome ?? "")}
                     prezzo={prodotto.prezzo as number}
                     categoria={(prodotto.categoria as string) ?? null}
                     immagine_principale={(prodotto.immagine_principale as string) ?? null}
