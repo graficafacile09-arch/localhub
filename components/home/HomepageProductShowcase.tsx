@@ -140,7 +140,7 @@ export default function HomepageProductShowcase({
             />
           ))}
 
-          {prodottiTipici.length === 0 && categorie.length === 0 && (
+          {prodottiPanificioZini.length === 0 && prodottiTipici.length === 0 && categorie.length === 0 && (
             <article className="flex min-h-[260px] w-[88vw] max-w-[420px] shrink-0 snap-start items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-center text-sm text-slate-600">
               I prodotti dei negozi locali saranno visibili qui appena disponibili.
             </article>
