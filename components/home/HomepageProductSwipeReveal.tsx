@@ -69,7 +69,7 @@ export default function HomepageProductSwipeReveal({
     // lasciamo che sia quella galleria a gestirlo, senza rubare il movimento.
     const target = event.target instanceof Element ? event.target : null;
     const interactive = Boolean(
-      target?.closest("a, button, input, select, textarea, [role='button']")
+      target?.closest("a, button:not([data-home-hero-swipe]), input, select, textarea, [role='button']:not([data-home-hero-swipe])")
     );
     const innerScroller = target?.closest<HTMLElement>(
       "[data-home-inner-horizontal-scroll]"
