@@ -49,7 +49,13 @@ export function ProductSectionCard({
         : "border-blue-100 bg-[#f7faff]"
     }`}>
       <div className="mb-3 flex items-center justify-between gap-3">
-        <h2 className={`min-w-0 text-base font-black leading-tight tracking-tight sm:text-lg md:text-xl ${evidenziato ? "text-blue-950" : "text-slate-900"}`}>
+        <h2
+          className={`inline-flex min-w-0 max-w-full items-center font-black leading-tight tracking-tight shadow-sm ${
+            evidenziato
+              ? "rounded-lg border-2 border-red-700 bg-white px-4 py-2 text-sm uppercase tracking-[0.1em] text-red-700 shadow-[0_4px_0_rgba(185,28,28,0.22)] sm:text-base md:text-lg"
+              : "rounded-lg border-l-4 border-yellow-400 bg-blue-950 px-3 py-2 text-base text-white sm:text-lg md:text-xl"
+          }`}
+        >
           {titolo}
         </h2>
         <Link

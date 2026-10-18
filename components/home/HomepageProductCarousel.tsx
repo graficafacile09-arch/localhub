@@ -125,6 +125,7 @@ export default function HomepageProductCarousel({
 
         <div
           ref={viewportRef}
+          data-home-inner-horizontal-scroll
           className="flex snap-x snap-proximity gap-3 overflow-x-auto overscroll-x-contain touch-pan-x [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:gap-5"
           aria-label="Galleria prodotti"
         >
