@@ -483,12 +483,12 @@ body.merchant-image-editor-aperto .merchant-bottom-nav-spacer {
 
 /* Ripristina l'indicatore animato mano + freccia dello swipe homepage. */
 .incitta-swipe-cue-hand {
-  animation: incitta-swipe-hand 1.5s ease-in-out infinite;
+  animation: incitta-swipe-hand 3s ease-in-out infinite;
 }
 .incitta-swipe-cue-arrow {
   transform: translateY(-50%);
   clip-path: inset(0px 30px 0px 18px);
-  animation: incitta-swipe-arrow-grow 1.5s ease-in-out infinite;
+  animation: incitta-swipe-arrow-grow 3s ease-in-out infinite;
 }
 @keyframes incitta-swipe-hand {
   0%, 12% { transform: translateX(30px); }
