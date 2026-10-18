@@ -17,13 +17,14 @@ function testoCategoria(prodotto: ProdottoRecord) {
   return pulita;
 }
 
-function ProductSectionCard({
+export function ProductSectionCard({
   titolo,
   href,
   prodotti,
   statoPreferiti,
   prodottoTipico = false,
   evidenziato = false,
+  standalone = false,
 }: {
   titolo: string;
   href: string;
@@ -31,11 +32,12 @@ function ProductSectionCard({
   statoPreferiti: StatoPreferiti;
   prodottoTipico?: boolean;
   evidenziato?: boolean;
+  standalone?: boolean;
 }) {
   if (prodotti.length === 0) return null;
 
   return (
-    <article className={`flex w-full min-w-0 flex-col rounded-2xl border p-3 shadow-sm sm:p-4 md:w-[min(72vw,960px)] md:shrink-0 md:snap-start md:p-5 ${
+    <article className={`flex w-full min-w-0 flex-col rounded-2xl border p-3 shadow-sm sm:p-4 ${standalone ? "mx-auto md:w-[min(72vw,960px)]" : "md:w-[min(72vw,960px)] md:shrink-0 md:snap-start"} md:p-5 ${
       evidenziato
         ? "border-yellow-400 bg-yellow-100 shadow-md ring-2 ring-yellow-300/70"
         : "border-blue-100 bg-[#f7faff]"
@@ -75,8 +77,8 @@ export default function HomepageProductShowcase({
     prodottiTipici.map((prodotto) => String(prodotto.id ?? "")).filter(Boolean)
   );
 
-  // Eccellenze calabresi apre il carosello; i prodotti del Panificio Zini
-  // sono esclusi da questa vetrina. Tutti gli altri prodotti restano per categoria.
+  // I prodotti tipici sono mostrati nella scheda gialla fuori dallo swipe;
+  // i prodotti del Panificio Zini restano esclusi da questa vetrina.
   const prodottiPerCategoria = new Map<string, ProdottoRecord[]>();
   for (const prodotto of prodottiCatalogo) {
     const id = String(prodotto.id ?? "");
@@ -104,15 +106,6 @@ export default function HomepageProductShowcase({
         </div>
 
         <HomepageProductCategoryScroller>
-          <ProductSectionCard
-            titolo="Eccellenze calabresi"
-            href="/prodotti-tipici"
-            prodotti={prodottiTipici}
-            statoPreferiti={statoPreferiti}
-            prodottoTipico
-            evidenziato
-          />
-
           {categorie.map(([categoria, prodotti]) => (
             <ProductSectionCard
               key={categoria}
@@ -123,7 +116,7 @@ export default function HomepageProductShowcase({
             />
           ))}
 
-          {prodottiTipici.length === 0 && categorie.length === 0 && (
+          {categorie.length === 0 && (
             <article className="flex min-h-[260px] w-[88vw] max-w-[420px] shrink-0 snap-start items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-center text-sm text-slate-600">
               I prodotti dei negozi locali saranno visibili qui appena disponibili.
             </article>
