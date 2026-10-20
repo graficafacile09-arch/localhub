@@ -44,7 +44,7 @@ import { extractJsonFromText } from "@/lib/product-assistant/providers/utils";
 import { callGeminiText } from "@/lib/ai/gemini-text";
 import { searchAttractions } from "./attrazioni";
 import type { NegozioRicerca, ProdottoRicerca } from "@/lib/ricerca-ai";
-import { pianoIntentoLocale } from "./local-intents";
+import { pianoIntentoLocale, normalizzaRichiesta } from "./local-intents";
 import {
   analizzaIntentoPino,
   pianoIntento,
@@ -244,6 +244,19 @@ function pianoPredefinito(
   const utenti = storico.filter((m) => m.role === "user").map((m) => m.content);
   const ultimo = (utenti[utenti.length - 1] ?? "").trim().toLowerCase();
   if (!ultimo) return null;
+
+  // Elenco generale delle attività: non è una ricerca di prodotti e non deve
+  // passare la frase intera ("quali negozi ci sono?") al motore keyword.
+  // Questo percorso usa solo le attività pubbliche attive tramite searchStores.
+  const richiestaNormalizzata = normalizzaRichiesta(ultimo);
+  const RE_ELENCO_NEGOZI =
+    /^(?:quali\s+(?:sono\s+)?negozi\s+(?:ci\s+sono|avete|sono\s+presenti)?|che\s+negozi\s+(?:ci\s+sono|avete|sono\s+presenti)?|elenco\s+(?:dei\s+)?negozi|lista\s+(?:dei\s+)?negozi|mostrami\s+(?:tutti\s+)?(?:i\s+)?negozi|fammi\s+vedere\s+(?:tutti\s+)?(?:i\s+)?negozi|quali\s+attivita\s+(?:ci\s+sono|avete|sono\s+presenti)?|elenco\s+(?:delle\s+)?attivita|lista\s+(?:delle\s+)?attivita|mostrami\s+(?:tutte\s+)?(?:le\s+)?attivita)[?!. ]*$/i;
+  if (RE_ELENCO_NEGOZI.test(richiestaNormalizzata)) {
+    return {
+      directReply: null,
+      tools: [{ tool: "searchStores", params: { tutte: true, limit: 20 } }],
+    };
+  }
 
   const RE_PIATTAFORMA =
     /che cos'è incittà|che cos'e incitta|cos'è incittà|come funziona|cos'è il sito|what is incitta|what is incittà|how does incitta work|how does incittà work|what is this site/;
