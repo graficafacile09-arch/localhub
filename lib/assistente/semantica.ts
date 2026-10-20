@@ -710,7 +710,7 @@ export async function interpretaRichiestaPino(
       maxTokens: 300,
       temperature: 0,
       json: true,
-      timeoutMs: 8_000,
+      timeoutMs: 15_000,
       retries: 1,
     });
 
