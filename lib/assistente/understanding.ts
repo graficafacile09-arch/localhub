@@ -108,7 +108,7 @@ export function normalizzaQueryCatalogo(testo: string): string {
     .replace(/\b\d+(?:[.,]\d+)?\s*(?:euros?|eur|dollars?|usd)\b/gi, " ");
 
   // Open-now wording is a constraint, not part of the catalog subject.
-  q = q.replace(/\\b(?:aperto|aperta|aperti|aperte)\\s+(?:ora|adesso)\\b|\\b(?:open|opened)\\s+(?:right\\s+)?now\\b|\\bcurrently\\s+open\\b|\\bopen\\s+at\\s+the\\s+moment\\b/gi, " ");
+  q = q.replace(/\b(?:aperto|aperta|aperti|aperte)\s+(?:ora|adesso)\b|\b(?:open|opened)\s+(?:right\s+)?now\b|\bcurrently\s+open\b|\bopen\s+at\s+the\s+moment\b/gi, " ");
 
   // Phrases that describe the act of searching rather than the desired item.
   q = q
