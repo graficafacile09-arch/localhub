@@ -693,6 +693,8 @@ export async function interpretaRichiestaPino(
     .map((m) => `${m.termine}=>${m.concetto}`)
     .join(", ") || "nessuna";
 
+  const plannerStartedAt = Date.now();
+
   try {
     const storico = history
       .slice(-6)
@@ -713,6 +715,10 @@ export async function interpretaRichiestaPino(
     });
 
     const parsed = JSON.parse(extractJsonFromText(raw)) as Record<string, unknown>;
+    // Log minimale: prova positiva della risposta Gemini, senza prompt, testo o credenziali.
+    console.info("[pino-semantic] planner Gemini riuscito", {
+      durataMs: Date.now() - plannerStartedAt,
+    });
     const surface =
       parsed.surface === "products" || parsed.surface === "stores" ||
       parsed.surface === "both" || parsed.surface === "none"
@@ -753,7 +759,24 @@ export async function interpretaRichiestaPino(
           : fallback.confidence,
     };
   } catch (error) {
-    console.warn("[pino-semantic] planner non disponibile, fallback locale:", error);
+    const messaggio = error instanceof Error ? error.message : "";
+    const categoriaErrore = /chiave API Gemini mancante/i.test(messaggio)
+      ? "chiave_mancante"
+      : /quota Gemini superata|HTTP 429|HTTP 402/i.test(messaggio)
+        ? "quota"
+        : /timeout/i.test(messaggio)
+          ? "timeout"
+          : /Errore Gemini \(HTTP (\d+)\)/i.test(messaggio)
+            ? "http_" + (messaggio.match(/HTTP (\d+)/i)?.[1] ?? "errore")
+            : /Risposta AI vuota/i.test(messaggio)
+              ? "risposta_vuota"
+              : /JSON|Unexpected token|position/i.test(messaggio)
+                ? "risposta_non_valida"
+                : "errore_chiamata";
+    console.warn("[pino-semantic] planner Gemini fallito; fallback locale", {
+      durataMs: Date.now() - plannerStartedAt,
+      categoriaErrore,
+    });
     return fastPlan ?? fallback;
   }
 }
