@@ -511,7 +511,7 @@ export async function searchStores(
 // rende la T-shirt pertinente. I campi del NEGOZIO non contano: la pertinenza
 // del negozio non deve propagarsi ai suoi prodotti.
 // Se la query non ha termini sostanziali, non applichiamo il vincolo.
-function prodottoPertinente(
+export function prodottoPertinente(
   prodotto: ProdottoRicerca,
   termini: string[],
   concetti: string[]
