@@ -193,7 +193,7 @@ const CANONICI_RICERCA: Array<{ pattern: RegExp; termine: string; intent: PinoIn
   { pattern: /\bbir(?:ra|re|retta|rette|rettina|rettine)\b/i, termine: "birra", intent: "drink" },
   { pattern: /\bvino|vini|vinello|vinelli\b/i, termine: "vino", intent: "drink" },
   { pattern: /\bacqua|acque\b/i, termine: "acqua", intent: "drink" },
-  { pattern: /\bpizza|pizze|pizzetta|pizzette\b/i, termine: "pizza", intent: "food" },
+  { pattern: /\b(?:pizza|pizze|pizzetta|pizzette)\b/i, termine: "pizza", intent: "food" },
   { pattern: /\bpanino|panini|paninetto|paninetti\b/i, termine: "panino", intent: "food" },
   // Generi alimentari comuni: canonizza singolare/plurale senza trasformare
   // un alimento in un altro (nessuna espansione trasversale che crei falsi positivi).
@@ -598,14 +598,15 @@ function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): Pi
   const openNow = /\b(?:aperto|aperta|aperti|aperte)\b|\b(?:ora|adesso)\b/i.test(q);
 
   const intent = match?.intent ?? analisi.intent;
-  // Riutilizziamo la classificazione deterministica del livello intent:
-  // una "pizzeria aperta ora" è una ricerca di attività, non di prodotti.
+  // "aperto ora" su un'attività (pizzeria, farmacia, …) è una ricerca di
+  // negozi. Le altre richieste restano guidate dall'intent: i flag
+  // usaNegozi/usaProdotti valgono true quasi sempre, quindi usarli in
+  // precedenza classificherebbe come "both" anche le query di catalogo
+  // ("scarpe da uomo eleganti" deve restare "products").
   const surface: PinoSemanticPlan["surface"] =
     openNow && analisi.usaNegozi ? "stores" :
-    analisi.usaNegozi && analisi.usaProdotti ? "both" :
-    analisi.usaNegozi ? "stores" :
-    analisi.usaProdotti ? "products" :
-    intent === "generic" ? "none" : "both";
+    intent === "service" ? "stores" :
+    intent === "generic" ? "none" : "products";
 
   return {
     surface,

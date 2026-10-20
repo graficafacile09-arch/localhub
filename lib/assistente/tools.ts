@@ -713,15 +713,21 @@ export function ordinaProdottiPerBudget(
     return prezzo != null && prezzo > 0 ? prezzo : null;
   };
 
-  return [...prodotti].sort((a, b) => {
-    // La pertinenza è primaria; il prezzo resta una preferenza secondaria
-    // e non deve promuovere un prodotto economico ma poco pertinente.
-    const rilevanza = confrontoSecondario ? confrontoSecondario(a, b) : 0;
-    if (rilevanza !== 0) return rilevanza;
+  // Con un vincolo economico esplicito la fascia viene prima di tutto: un
+  // prodotto fuori budget non deve superare un'alternativa compatibile solo
+  // perché più pertinente. Senza budget, invece, la pertinenza è primaria e
+  // il prezzo resta un criterio secondario.
+  const haVincoloEconomico = maxPrice != null || minPrice != null;
 
+  return [...prodotti].sort((a, b) => {
     const dentroA = dentroFascia(a);
     const dentroB = dentroFascia(b);
     if (dentroA !== dentroB) return dentroA ? -1 : 1;
+
+    if (!haVincoloEconomico) {
+      const rilevanza = confrontoSecondario ? confrontoSecondario(a, b) : 0;
+      if (rilevanza !== 0) return rilevanza;
+    }
 
     const prezzoA = prezzoOrdinabile(a);
     const prezzoB = prezzoOrdinabile(b);
@@ -732,7 +738,7 @@ export function ordinaProdottiPerBudget(
     if (prezzoB == null) return -1;
     if (prezzoA !== prezzoB) return prezzoA - prezzoB;
 
-    return 0;
+    return confrontoSecondario ? confrontoSecondario(a, b) : 0;
   });
 }
 
