@@ -415,7 +415,7 @@ function negozioPertinente(
   // passare forni e panifici come risultati di una ricerca di pizzerie.
   // Il match diretto sopra resta valido; in questi casi non allarghiamo oltre.
   const categoriaSpecificata = termini.some((t) =>
-    /\\b(?:pizzer(?:ia|ie)|panific(?:io|i)|forn(?:o|i))\\b/i.test(t)
+    /\b(?:pizzer(?:ia|ie)|panific(?:io|i)|forn(?:o|i))\b/i.test(t)
   );
   if (categoriaSpecificata) return false;
 
