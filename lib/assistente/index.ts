@@ -44,7 +44,7 @@ import { extractJsonFromText } from "@/lib/product-assistant/providers/utils";
 import { callGeminiText } from "@/lib/ai/gemini-text";
 import { searchAttractions } from "./attrazioni";
 import type { NegozioRicerca, ProdottoRicerca } from "@/lib/ricerca-ai";
-import { pianoIntentoLocale, normalizzaRichiesta } from "./local-intents";
+import { pianoIntentoLocale, normalizzaRichiesta, rilevaElencoNegoziCitta } from "./local-intents";
 import {
   analizzaIntentoPino,
   pianoIntento,
@@ -259,15 +259,13 @@ function pianoPredefinito(
 
   // Domande generiche sui negozi in una città: usa l'elenco delle attività,
   // non il planner prodotti. Non vengono applicati vincoli di prezzo impliciti.
-  const matchElencoNegoziCitta = richiestaNormalizzata.match(
-    /^(?:quali|che)\\s+(?:(?:sono\\s+)?(?:i\\s+)?)?negozi\\s+(?:posso\\s+trovare|trovo|ci\\s+sono|avete|sono\\s+presenti)\\s+(?:a|in)\\s+(.+?)[?!. ]*$/i
-  );
-  if (matchElencoNegoziCitta?.[1]?.trim()) {
+  const cittaElencoNegozi = rilevaElencoNegoziCitta(ultimo);
+  if (cittaElencoNegozi) {
     return {
       directReply: null,
       tools: [{
         tool: "searchStores",
-        params: { tutte: true, citta: matchElencoNegoziCitta[1].trim(), limit: 20 },
+        params: { tutte: true, citta: cittaElencoNegozi, limit: 20 },
       }],
     };
   }
