@@ -8,6 +8,16 @@
 
 export type PinoLanguage = "it" | "en";
 
+/** Detects an explicit request for a currently open business in Italian or English. */
+export function richiestaApertaOra(testo: string): boolean {
+  const q = String(testo ?? "")
+    .toLocaleLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[’‘]/g, "'");
+  return /\b(?:aperto|aperta|aperti|aperte)\b.*\b(?:ora|adesso)\b|\b(?:open|opened)\s+(?:right\s+)?now\b|\bcurrently\s+open\b|\bopen\s+at\s+the\s+moment\b/i.test(q);
+}
+
 /** Detects the dominant language of a short request; Italian is the safe default. */
 export function rilevaLinguaPino(testo: string, fallback: PinoLanguage = "it"): PinoLanguage {
   const q = String(testo ?? "").toLocaleLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, " ");
@@ -80,6 +90,10 @@ export function normalizzaQueryCatalogo(testo: string): string {
   ];
   for (const [pattern, sostituzione] of traduzioni) q = q.replace(pattern, sostituzione);
 
+  // Normalize common Italian catalog questions to the subject being requested.
+  // In this question frame, plural "paste" refers to the pasta category.
+  q = q.replace(/\b(?:quali|quanta|quanto|quanti|quante|che)\s+(?:tipi\s+di\s+)?past[ae]\b/gi, "pasta");
+
   // Remove first-person budget framing BEFORE stripping the numeric amount.
   // Otherwise "I have 100 euros and want a watch" loses "100 euros" first,
   // leaving the orphaned verb "have" in the catalog query.
@@ -93,12 +107,15 @@ export function normalizzaQueryCatalogo(testo: string): string {
     .replace(/(?:€|\$)\s*\d+(?:[.,]\d+)?/g, " ")
     .replace(/\b\d+(?:[.,]\d+)?\s*(?:euros?|eur|dollars?|usd)\b/gi, " ");
 
+  // Open-now wording is a constraint, not part of the catalog subject.
+  q = q.replace(/\b(?:aperto|aperta|aperti|aperte)\s+(?:ora|adesso)\b|\b(?:open|opened)\s+(?:right\s+)?now\b|\bcurrently\s+open\b|\bopen\s+at\s+the\s+moment\b/gi, " ");
+
   // Phrases that describe the act of searching rather than the desired item.
   q = q
     .replace(/\b(?:or something similar|or something like that|or similar|something similar|something like that|anything similar|similar items|other similar options)\b/gi, " ")
     .replace(/\b(?:i am looking for|i'm looking for|im looking for|looking for|i would like|i'd like|id like|i want|i need|can you find|could you find|find me|show me|help me find|please find|please show|i am after|im after)\b/gi, " ")
     .replace(/\b(?:voglio|vorrei|cerco|cerca|trovami|trova|mi serve|fammi trovare|dammi|per favore|per piacere|qualcosa di simile|o qualcosa di simile|o simile)\b/gi, " ")
-    .replace(/\b(?:please|the|a|an|some|any|me|i|my|and|or|want|need|have|got|looking|would|like|un|una|uno|il|lo|la|gli|le|del|della|dei|delle|e)\b/gi, " ")
+    .replace(/\b(?:please|the|a|an|some|any|me|i|my|and|or|want|need|have|got|looking|would|like|un|una|uno|il|lo|la|gli|le|del|della|dei|delle|e|avete|hai|hanno|abbiamo|disponete|disponibile|disponibili|quale|quali|quanta|quanto|quanti|quante|che|cosa)\b/gi, " ")
     .replace(/^\s*(?:with|for|of|to|da|con|per|di|a)\b\s*/i, "")
     .replace(/\s+\b(?:and|or|with|for|of|to|da|con|per|di|a)\s*$/i, "")
     .replace(/[.!?,;:]+/g, " ")

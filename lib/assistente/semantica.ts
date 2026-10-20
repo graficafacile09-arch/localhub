@@ -12,7 +12,7 @@
 import { callGeminiText } from "@/lib/ai/gemini-text";
 import { extractJsonFromText } from "@/lib/product-assistant/providers/utils";
 import { normalizzaRichiesta } from "./local-intents";
-import { normalizzaQueryCatalogo } from "./understanding";
+import { normalizzaQueryCatalogo, richiestaApertaOra } from "./understanding";
 import { rilevaLinguaPino } from "./understanding";
 import { rilevaFollowUp } from "./conversazione";
 import { estraiCitta } from "@/lib/localita";
@@ -553,7 +553,7 @@ function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): Pi
     // risultati ("orologio euro" ⇒ 0 prodotti invece di 4).
     .replace(/\b(?:euro|euros|eur)\b/gi, " ")
     .replace(/€/g, " ")
-    .replace(/\b(?:aperto|aperta|aperti|aperte)\s+(?:ora|adesso)\b/gi, " ")
+    .replace(/\b(?:aperto|aperta|aperti|aperte)\s+(?:ora|adesso)\b|\b(?:open|opened)\s+(?:right\s+)?now\b|\bcurrently\s+open\b|\bopen\s+at\s+the\s+moment\b/gi, " ")
     .replace(/\b(?:ora|adesso)\b/gi, " ")
     // Punteggiatura residua ("regalo,"): non è una keyword di catalogo e
     // sporcherebbe la query mostrata all'utente.
@@ -595,7 +595,7 @@ function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): Pi
     esclusioni.push("alcolica");
   }
 
-  const openNow = /\b(?:aperto|aperta|aperti|aperte)\b|\b(?:ora|adesso)\b/i.test(q);
+  const openNow = richiestaApertaOra(q);
 
   const intent = match?.intent ?? analisi.intent;
   // "aperto ora" su un'attività (pizzeria, farmacia, …) è una ricerca di
@@ -640,7 +640,9 @@ function fallbackPlan(query: string, analisi: PinoIntentAnalysis): PinoSemanticP
   const neg = q.match(/\b(?:non|senza)\s+([a-z0-9àèéìòù-]+)/);
   if (neg?.[1]) exclusions.push(neg[1]);
 
+  const openNow = richiestaApertaOra(q);
   const surface =
+    openNow && analisi.usaNegozi ? "stores" :
     analisi.intent === "service" ? "stores" :
     analisi.intent === "generic" ? "none" :
     "both";
@@ -654,7 +656,7 @@ function fallbackPlan(query: string, analisi: PinoIntentAnalysis): PinoSemanticP
     minPrice,
     maxPrice,
     city: null,
-    openNow: /\b(?:aperto|aperta|aperti|aperte|ora|adesso)\b/.test(q),
+    openNow,
     confidence: analisi.confidence,
   };
 }

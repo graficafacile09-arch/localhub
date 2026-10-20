@@ -5,6 +5,7 @@ import { rispostaIdentitaPino } from "../lib/assistente/identity.ts";
 import {
   normalizzaQueryCatalogo,
   rilevaLinguaPino,
+  richiestaApertaOra,
 } from "../lib/assistente/understanding.ts";
 
 const promptSource = readFileSync(
@@ -67,4 +68,20 @@ test("Pino system prompt defines identity and proactive grounded behavior", () =
   assert.match(promptSource, /Sei Pino, l'assistente AI ufficiale di InCittà\.online/);
   assert.match(promptSource, /Non inventare mai negozi, prodotti, prezzi/);
   assert.match(promptSource, /Se la richiesta è abbastanza chiara, agisci e cerca subito/);
+});
+
+
+test("Italian question wording normalizes to the pasta catalog subject", () => {
+  assert.equal(normalizzaQueryCatalogo("Quanta pasta avete?"), "pasta");
+  assert.equal(normalizzaQueryCatalogo("Che pasta avete?"), "pasta");
+  assert.equal(normalizzaQueryCatalogo("Quali paste avete?"), "pasta");
+  assert.equal(normalizzaQueryCatalogo("Avete pasta?"), "pasta");
+});
+
+test("Open-now wording is recognized in Italian and English and removed from catalog queries", () => {
+  assert.equal(richiestaApertaOra("pizzeria aperta ora"), true);
+  assert.equal(richiestaApertaOra("pizza open now"), true);
+  assert.equal(richiestaApertaOra("pizzeria open right now"), true);
+  assert.equal(normalizzaQueryCatalogo("pizza open now"), "pizza");
+  assert.equal(normalizzaQueryCatalogo("pizzeria aperta ora"), "pizzeria");
 });
