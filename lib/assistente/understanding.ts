@@ -13,9 +13,9 @@ export function richiestaApertaOra(testo: string): boolean {
   const q = String(testo ?? "")
     .toLocaleLowerCase()
     .normalize("NFD")
-    .replace(/[\\u0300-\\u036f]/g, "")
+    .replace(/[\u0300-\u036f]/g, "")
     .replace(/[’‘]/g, "'");
-  return /\\b(?:aperto|aperta|aperti|aperte)\\b.*\\b(?:ora|adesso)\\b|\\b(?:open|opened)\\s+(?:right\\s+)?now\\b|\\bcurrently\\s+open\\b|\\bopen\\s+at\\s+the\\s+moment\\b/i.test(q);
+  return /\b(?:aperto|aperta|aperti|aperte)\b.*\b(?:ora|adesso)\b|\b(?:open|opened)\s+(?:right\s+)?now\b|\bcurrently\s+open\b|\bopen\s+at\s+the\s+moment\b/i.test(q);
 }
 
 /** Detects the dominant language of a short request; Italian is the safe default. */
@@ -92,7 +92,7 @@ export function normalizzaQueryCatalogo(testo: string): string {
 
   // Normalize common Italian catalog questions to the subject being requested.
   // In this question frame, plural "paste" refers to the pasta category.
-  q = q.replace(/\\b(?:quali|quanta|quanto|quanti|quante|che)\\s+(?:tipi\\s+di\\s+)?past[ae]\\b/gi, "pasta");
+  q = q.replace(/\b(?:quali|quanta|quanto|quanti|quante|che)\s+(?:tipi\s+di\s+)?past[ae]\b/gi, "pasta");
 
   // Remove first-person budget framing BEFORE stripping the numeric amount.
   // Otherwise "I have 100 euros and want a watch" loses "100 euros" first,
