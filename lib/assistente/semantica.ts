@@ -849,7 +849,7 @@ export async function interpretaRichiestaPino(
       /^(?:ECONNRESET|ECONNREFUSED|ENOTFOUND|EAI_AGAIN|ETIMEDOUT|UND_ERR_CONNECT_TIMEOUT|UND_ERR_HEADERS_TIMEOUT|CERT_HAS_EXPIRED|UNABLE_TO_VERIFY_LEAF_SIGNATURE)$/.test((causa as { code: string }).code)
         ? (causa as { code: string }).code
         : undefined;
-    const statusHttp = messaggio.match(/\\bHTTP (\\d{3})\\b/i)?.[1];
+    const statusHttp = messaggio.match(/\bHTTP (\d{3})\b/i)?.[1];
     console.warn("[pino-semantic] planner Gemini fallito; fallback locale", {
       durataMs: Date.now() - plannerStartedAt,
       categoriaErrore,
