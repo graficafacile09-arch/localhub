@@ -523,6 +523,19 @@ function prodottoPertinente(
   );
   if (!campi) return false;
   if (termini.length === 0) return true;
+  // "Pasta all'uovo" è una richiesta di categoria + lavorazione: il prodotto
+  // può essere catalogato con il nome specifico ("tagliatelle all'uovo") senza
+  // riportare la parola generica "pasta". Manteniamo obbligatorio il qualificatore
+  // "uovo" e limitiamo l'equivalenza a formati di pasta riconoscibili, evitando
+  // di trasformare la ricerca in un match permissivo su una sola parola.
+  const richiedePastaAllUovo =
+    termini.includes("pasta") &&
+    termini.some((t) => t === "uovo" || t === "uova" || t === "all'uovo");
+  if (
+    richiedePastaAllUovo &&
+    /\\b(?:tagliatell[ei]|fettuccin[ei]|pappardell[ei]|lasagn[ae])\\b/.test(campi) &&
+    /\\buov[oa]\\b/.test(campi)
+  ) return true;
   // Anche qui i termini CORTI devono essere parole intere: altrimenti "bar"
   // matcherebbe "barattolo" nella descrizione di un prodotto qualsiasi.
   const token = estraiToken(campi);
