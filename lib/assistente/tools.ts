@@ -714,6 +714,11 @@ export function ordinaProdottiPerBudget(
   };
 
   return [...prodotti].sort((a, b) => {
+    // La pertinenza è primaria; il prezzo resta una preferenza secondaria
+    // e non deve promuovere un prodotto economico ma poco pertinente.
+    const rilevanza = confrontoSecondario ? confrontoSecondario(a, b) : 0;
+    if (rilevanza !== 0) return rilevanza;
+
     const dentroA = dentroFascia(a);
     const dentroB = dentroFascia(b);
     if (dentroA !== dentroB) return dentroA ? -1 : 1;
@@ -727,7 +732,7 @@ export function ordinaProdottiPerBudget(
     if (prezzoB == null) return -1;
     if (prezzoA !== prezzoB) return prezzoA - prezzoB;
 
-    return confrontoSecondario ? confrontoSecondario(a, b) : 0;
+    return 0;
   });
 }
 
