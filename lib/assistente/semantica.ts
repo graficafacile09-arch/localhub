@@ -840,9 +840,22 @@ export async function interpretaRichiestaPino(
               : /JSON|Unexpected token|position/i.test(messaggio)
                 ? "risposta_non_valida"
                 : "errore_chiamata";
+    // Diagnostica sicura: non registrare messaggio, prompt, risposta o credenziali.
+    // Per gli errori HTTP conserva solo lo status; per la rete solo codici tecnici allowlist.
+    const causa = error instanceof Error ? (error as Error & { cause?: unknown }).cause : undefined;
+    const codiceCausa =
+      causa && typeof causa === "object" && "code" in causa &&
+      typeof (causa as { code?: unknown }).code === "string" &&
+      /^(?:ECONNRESET|ECONNREFUSED|ENOTFOUND|EAI_AGAIN|ETIMEDOUT|UND_ERR_CONNECT_TIMEOUT|UND_ERR_HEADERS_TIMEOUT|CERT_HAS_EXPIRED|UNABLE_TO_VERIFY_LEAF_SIGNATURE)$/.test((causa as { code: string }).code)
+        ? (causa as { code: string }).code
+        : undefined;
+    const statusHttp = messaggio.match(/\\bHTTP (\\d{3})\\b/i)?.[1];
     console.warn("[pino-semantic] planner Gemini fallito; fallback locale", {
       durataMs: Date.now() - plannerStartedAt,
       categoriaErrore,
+      tipoErrore: error instanceof Error ? error.name : typeof error,
+      ...(statusHttp ? { statusHttp: Number(statusHttp) } : {}),
+      ...(codiceCausa ? { codiceCausa } : {}),
     });
     return fastPlan ?? fallback;
   }
