@@ -7,6 +7,7 @@ import {
   componiRispostaAggregata,
 } from "../lib/assistente/aggregata";
 import type { ProdottoRicerca } from "../lib/ricerca-ai";
+import { prodottoPertinente } from "../lib/assistente/tools";
 
 const prodotto = (nome: string, prezzo = 2, descrizione: string | null = null): ProdottoRicerca => ({
   id: nome.toLowerCase().replace(/\s+/g, "-"),
@@ -88,6 +89,12 @@ test.describe("Pino — domande informative sul catalogo", () => {
   test("il filtro si applica su nome e descrizione reali", () => {
     expect(prodottoCorrispondeQualificatore(TAGLIATELLE, "all'uovo")).toBe(true);
     expect(prodottoCorrispondeQualificatore(CATALOGO_PASTA[0], "all'uovo")).toBe(false);
+  });
+
+  test("la ricerca iniziale «Cerco pasta all'uovo» trova il nome specifico in catalogo", () => {
+    expect(prodottoPertinente(TAGLIATELLE, ["pasta", "uovo"], [])).toBe(true);
+    expect(prodottoPertinente(prodotto("Biscotti all'uovo"), ["pasta", "uovo"], [])).toBe(false);
+    expect(prodottoPertinente(prodotto("Tagliatelle secche"), ["pasta", "uovo"], [])).toBe(false);
   });
 });
 
