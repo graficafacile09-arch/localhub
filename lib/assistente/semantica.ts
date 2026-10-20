@@ -216,6 +216,44 @@ const CANONICI_RICERCA: Array<{ pattern: RegExp; termine: string; intent: PinoIn
   { pattern: /\bmaglietta|magliette|maglia|maglie\b/i, termine: "maglia", intent: "product" },
 ];
 
+// ─── Richieste di ATTIVITÀ per categoria ────────────────────────────────────
+// "Quali negozi vendono scarpe?" non è una ricerca di prodotto: chiede le
+// attività che trattano una categoria. Il predicato conversazionale ("quali
+// negozi vendono") non è una keyword di catalogo: se resta nella query, il gate
+// di pertinenza dei prodotti lo richiede letteralmente e azzera i risultati
+// ("quali negozi vendono scarpe" ⇒ 0), mentre la ricerca delle attività non
+// viene mai eseguita sul soggetto reale.
+const RE_NEGOZIO_CATEGORIA_VERBO =
+  /\b(?:negozi|negozio|attivit[àa]|botteghe|bottega|rivenditori|rivenditore|esercizi)\b[^.?!]*?\b(?:vendono|vende|trattano|tratta|offrono|offre)\b\s+(.+)$/i;
+const RE_NEGOZIO_CATEGORIA_DI =
+  /\b(?:negozi|negozio|attivit[àa]|botteghe|bottega|rivenditori|rivenditore)\b\s+(?:di|del|della|dei|degli|delle|per|specializzati\s+in|specializzato\s+in)\s+(.+)$/i;
+const RE_SHOP_CATEGORY_EN =
+  /\b(?:stores?|shops?)\b[^.?!]*?\b(?:sell|sells|selling)\b\s+(.+)$/i;
+
+/**
+ * Soggetto di una richiesta "attività che vendono <categoria>".
+ * Restituisce SOLO il soggetto ("scarpe", "scarpe da uomo"), già normalizzato
+ * per il catalogo italiano, oppure null se la frase non ha questa forma.
+ */
+export function soggettoNegozioCategoria(query: string): string | null {
+  const q = normalizzaRichiesta(query ?? "").trim();
+  if (!q) return null;
+  const match =
+    q.match(RE_NEGOZIO_CATEGORIA_VERBO) ??
+    q.match(RE_NEGOZIO_CATEGORIA_DI) ??
+    q.match(RE_SHOP_CATEGORY_EN);
+  if (!match?.[1]) return null;
+  const soggetto = normalizzaQueryCatalogo(
+    match[1]
+      .replace(/\b(?:su|in)\s+incitt[àa]\b\.?(?:online)?/gi, " ")
+      // "che negozi di scarpe ci sono?": il predicato della domanda non è parte
+      // della categoria cercata.
+      .replace(/\b(?:ci\s+sono|sono\s+presenti|sono\s+disponibili|esistono|si\s+trovano|si\s+trova|avete)\b/gi, " ")
+      .replace(/[.?!,;:]+/g, " ")
+  ).trim();
+  return soggetto.length >= 3 ? soggetto.slice(0, 120) : null;
+}
+
 function distanzaLevenshtein(a: string, b: string): number {
   const prev = Array.from({ length: b.length + 1 }, (_, i) => i);
   for (let i = 1; i <= a.length; i++) {
@@ -479,7 +517,8 @@ export function arricchisciRichiestaConContesto(
 
 export function usaFastPathSemantico(query: string, analisi: PinoIntentAnalysis): boolean {
   const q = correggiErroriBattitura(normalizzaRichiesta(query)).trim();
-  return CANONICI_RICERCA.some((x) => x.pattern.test(q)) ||
+  return soggettoNegozioCategoria(q) !== null ||
+    CANONICI_RICERCA.some((x) => x.pattern.test(q)) ||
     /\b(?:analcolic(?:a|o|he|i)|non\s+(?:alcol(?:ica|ico)?|alcol)|senza\s+(?:alcol(?:ica|ico)?|alcol))\b/i.test(q) ||
     /\b(?:sotto|sopra|massimo|minimo|meno di|piu di|più di|entro|fino a|tra)\b/i.test(q);
 }
@@ -490,7 +529,10 @@ function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): Pi
   const match = CANONICI_RICERCA.find((x) => x.pattern.test(q));
   const haEsclusioneAlcol = /\b(?:non|senza)\s+(?:alcol(?:ica|ico)?|alcol)\b|\banalcolic(?:a|o|he|i)\b/i.test(q);
   const haPrezzo = /\b(?:budget(?:\s+di)?|sotto|sopra|massimo|minimo|meno di|piu di|più di|entro|fino a|tra|under|below|up to|over|above|more than|less than|between)\b/i.test(q) || /\b(?:ho|con|dispongo di|a disposizione(?: di)?)\s*(?:€\s*)?\d+(?:[.,]\d+)?\s*(?:euro|euros|eur)\b/i.test(q) || /(?:€\s*)\d+(?:[.,]\d+)?|\b\d+(?:[.,]\d+)?\s*(?:euro|euros|eur)\b/i.test(q);
-  if (!match && !haEsclusioneAlcol && !haPrezzo && analisi.confidence === "bassa") return null;
+  // Anche senza un termine canonico né un vincolo, una richiesta esplicita di
+  // attività che vendono una categoria ha un soggetto concreto: non va scartata.
+  const negozioCategoria = soggettoNegozioCategoria(q);
+  if (!negozioCategoria && !match && !haEsclusioneAlcol && !haPrezzo && analisi.confidence === "bassa") return null;
 
   // I vincoli NON fanno parte della query di retrieval. Prezzo, negazioni,
   // apertura e città vengono estratti separatamente, altrimenti il gate di
@@ -597,6 +639,25 @@ function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): Pi
 
   const openNow = richiestaApertaOra(q);
 
+  // Superficie NEGOZI con il soggetto reale: il predicato ("quali negozi
+  // vendono") resta fuori dalla query, così il gate delle attività confronta
+  // "scarpe" con categoria/descrizione e la ricerca prodotto non viene
+  // forzata su una frase che non è il nome di un articolo.
+  if (negozioCategoria) {
+    return {
+      surface: "stores",
+      intent: match?.intent ?? analisi.intent,
+      query: negozioCategoria,
+      terms: [negozioCategoria],
+      exclusions: esclusioni,
+      minPrice,
+      maxPrice,
+      city,
+      openNow,
+      confidence: "alta",
+    };
+  }
+
   const intent = match?.intent ?? analisi.intent;
   // "aperto ora" su un'attività (pizzeria, farmacia, …) è una ricerca di
   // negozi. Le altre richieste restano guidate dall'intent: i flag
@@ -688,6 +749,12 @@ export async function interpretaRichiestaPino(
   // comprensione AI: le richieste nuove o colloquiali devono poter arrivare
   // al planner multilingue anche quando una regex ha già riconosciuto il prezzo.
   const fastPlan = pianoLocaleIntelligente(q, analisiEffettiva);
+
+  // La richiesta di attività per categoria è già risolta in modo deterministico
+  // (superficie negozi + soggetto): non può essere sovrascritta dal planner —
+  // era esattamente così che "quali negozi vendono scarpe" finiva su
+  // searchProducts con la frase intera.
+  if (soggettoNegozioCategoria(q) && fastPlan) return fastPlan;
 
   const memoriaTesto = memoria.slice(0, 4)
     .map((m) => `${m.termine}=>${m.concetto}`)
