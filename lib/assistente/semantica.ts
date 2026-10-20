@@ -193,7 +193,7 @@ const CANONICI_RICERCA: Array<{ pattern: RegExp; termine: string; intent: PinoIn
   { pattern: /\bbir(?:ra|re|retta|rette|rettina|rettine)\b/i, termine: "birra", intent: "drink" },
   { pattern: /\bvino|vini|vinello|vinelli\b/i, termine: "vino", intent: "drink" },
   { pattern: /\bacqua|acque\b/i, termine: "acqua", intent: "drink" },
-  { pattern: /\bpizza|pizze|pizzetta|pizzette\b/i, termine: "pizza", intent: "food" },
+  { pattern: /\b(?:pizza|pizze|pizzetta|pizzette)\b/i, termine: "pizza", intent: "food" },
   { pattern: /\bpanino|panini|paninetto|paninetti\b/i, termine: "panino", intent: "food" },
   // Generi alimentari comuni: canonizza singolare/plurale senza trasformare
   // un alimento in un altro (nessuna espansione trasversale che crei falsi positivi).
@@ -510,10 +510,11 @@ function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): Pi
   }
 
   // Negazione generica: "non nere", "senza glutine", "non usato" ecc.
-  // Manteniamo al massimo due token per non inghiottire il resto della frase.
+  // Catturiamo solo il termine immediatamente negato: "non nere eleganti"
+  // deve escludere "nere" e mantenere "eleganti" come attributo positivo.
   const esclusioni = Array.from(new Set(
     Array.from(q.matchAll(
-      /\b(?:non|senza)\s+([a-zàèéìòù][a-zàèéìòù0-9-]*(?:\s+[a-zàèéìòù][a-zàèéìòù0-9-]*)?)/gi
+      /\b(?:non|senza)\s+([a-zàèéìòù][a-zàèéìòù0-9-]*)/gi
     ))
       .map((m) => m[1].trim())
       .filter(Boolean)
@@ -597,7 +598,13 @@ function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): Pi
   const openNow = /\b(?:aperto|aperta|aperti|aperte)\b|\b(?:ora|adesso)\b/i.test(q);
 
   const intent = match?.intent ?? analisi.intent;
+  // "aperto ora" su un'attività (pizzeria, farmacia, …) è una ricerca di
+  // negozi. Le altre richieste restano guidate dall'intent: i flag
+  // usaNegozi/usaProdotti valgono true quasi sempre, quindi usarli in
+  // precedenza classificherebbe come "both" anche le query di catalogo
+  // ("scarpe da uomo eleganti" deve restare "products").
   const surface: PinoSemanticPlan["surface"] =
+    openNow && analisi.usaNegozi ? "stores" :
     intent === "service" ? "stores" :
     intent === "generic" ? "none" : "products";
 
@@ -726,7 +733,7 @@ export async function interpretaRichiestaPino(
     const city = typeof parsed.city === "string"
       ? normalizzaRichiesta(parsed.city).trim().slice(0, 60) || null
       : null;
-    const queryPlan = (normalizzaQueryCatalogo(terms.length ? terms[0] : fallback.query) || fallback.query).slice(0, 120);
+    const queryPlan = (normalizzaQueryCatalogo(typeof parsed.query === "string" && parsed.query.trim() ? parsed.query : terms.length ? terms[0] : fallback.query) || fallback.query).slice(0, 120);
 
     return {
       surface: intentFinal === "service" ? "stores" : surface,

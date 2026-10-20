@@ -53,6 +53,12 @@ import {
   type PinoIntentAnalysis,
 } from "./intent";
 import { recuperaMemoria, registraEsitoMemoria } from "./memoria";
+import {
+  rilevaDomandaAggregata,
+  risolviSoggettoAggregato,
+  prodottoCorrispondeQualificatore,
+  componiRispostaAggregata,
+} from "./aggregata";
 import { arricchisciRichiestaConContesto, costruisciStatoConversazionale, interpretaRichiestaPino, usaFastPathSemantico, type PinoSemanticPlan } from "./semantica";
 import {
   rilevaFollowUp,
@@ -1060,6 +1066,64 @@ export async function chatConAssistente(
   const analisiSemantica = analizzaIntentoPino(domandaSemantica);
   const followUpBreve = rilevaFollowUp(domanda);
 
+  // ── Domande informative/aggregate sul catalogo ──────────────────────────
+  // "Quanti tipi di pasta ci sono?" NON è una ricerca per parola chiave: se
+  // passa dal planner diventa query "quanti tipi di pasta ci sono", il gate di
+  // pertinenza la azzera e Pino risponde con risultati non pertinenti.
+  // Qui il soggetto (ed eventualmente il filtro già attivo) viene ricostruito
+  // dalla conversazione e il conteggio usa SOLO i prodotti recuperati.
+  const domandaAggregata = rilevaDomandaAggregata(domanda);
+  if (domandaAggregata) {
+    const precedenti = storico
+      .filter((m) => m.role === "user")
+      .map((m) => m.content)
+      .slice(0, -1);
+    const soggettoAggregato = risolviSoggettoAggregato(domanda, precedenti);
+
+    if (soggettoAggregato) {
+      const limite = 20;
+      const qualificatore = soggettoAggregato.qualificatore;
+      const prodottiSoggetto = await searchProducts(soggettoAggregato.soggetto, { limit: limite });
+      const prodottiQualificatore = qualificatore
+        ? (await searchProducts(qualificatore, { limit: limite })).filter((p) =>
+            prodottoCorrispondeQualificatore(p, qualificatore)
+          )
+        : [];
+
+      const risposta = componiRispostaAggregata({
+        tipo: domandaAggregata.tipo,
+        soggetto: soggettoAggregato.soggetto,
+        qualificatore,
+        prodottiSoggetto,
+        prodottiQualificatore,
+        limite,
+        riferimentoContesto: domandaAggregata.riferimentoContesto,
+      });
+
+      console.log(
+        "[pino-aggregata]",
+        JSON.stringify({
+          domanda,
+          soggetto: soggettoAggregato.soggetto,
+          qualificatore,
+          daContesto: soggettoAggregato.daContesto,
+          tipo: domandaAggregata.tipo,
+          prodottiSoggetto: prodottiSoggetto.length,
+          prodottiQualificatore: prodottiQualificatore.length,
+        })
+      );
+
+      return {
+        risposta,
+        negozi: [],
+        prodotti: prodottiQualificatore.length > 0 ? prodottiQualificatore : prodottiSoggetto,
+        processingMs: Date.now() - inizio,
+        source: "assistente",
+        intent: analisi.intent,
+      };
+    }
+  }
+
   // Meteo e farmacie sono intenti deterministici e non hanno bisogno di memoria.
   // Per tutte le altre richieste il recupero viene avviato senza saltare il
   // fast-path: così una correzione appresa può diventare immediatamente utile.
@@ -1169,7 +1233,7 @@ export async function chatConAssistente(
   const pianoProdottoAffidabile = Boolean(
     semantica &&
     semantica.surface === "products" &&
-    semantica.intent === "product" &&
+    (semantica.intent === "product" || semantica.intent === "food" || semantica.intent === "drink") &&
     semantica.confidence !== "bassa" &&
     semantica.query.trim()
   );

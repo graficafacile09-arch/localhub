@@ -511,7 +511,7 @@ export async function searchStores(
 // rende la T-shirt pertinente. I campi del NEGOZIO non contano: la pertinenza
 // del negozio non deve propagarsi ai suoi prodotti.
 // Se la query non ha termini sostanziali, non applichiamo il vincolo.
-function prodottoPertinente(
+export function prodottoPertinente(
   prodotto: ProdottoRicerca,
   termini: string[],
   concetti: string[]
@@ -523,6 +523,19 @@ function prodottoPertinente(
   );
   if (!campi) return false;
   if (termini.length === 0) return true;
+  // "Pasta all'uovo" è una richiesta di categoria + lavorazione: il prodotto
+  // può essere catalogato con il nome specifico ("tagliatelle all'uovo") senza
+  // riportare la parola generica "pasta". Manteniamo obbligatorio il qualificatore
+  // "uovo" e limitiamo l'equivalenza a formati di pasta riconoscibili, evitando
+  // di trasformare la ricerca in un match permissivo su una sola parola.
+  const richiedePastaAllUovo =
+    termini.includes("pasta") &&
+    termini.some((t) => t === "uovo" || t === "uova" || t === "all'uovo");
+  if (
+    richiedePastaAllUovo &&
+    /\b(?:tagliatell[ei]|fettuccin[ei]|pappardell[ei]|lasagn[ae])\b/.test(campi) &&
+    /\buov[oa]\b/.test(campi)
+  ) return true;
   // Anche qui i termini CORTI devono essere parole intere: altrimenti "bar"
   // matcherebbe "barattolo" nella descrizione di un prodotto qualsiasi.
   const token = estraiToken(campi);
@@ -713,10 +726,21 @@ export function ordinaProdottiPerBudget(
     return prezzo != null && prezzo > 0 ? prezzo : null;
   };
 
+  // Con un vincolo economico esplicito la fascia viene prima di tutto: un
+  // prodotto fuori budget non deve superare un'alternativa compatibile solo
+  // perché più pertinente. Senza budget, invece, la pertinenza è primaria e
+  // il prezzo resta un criterio secondario.
+  const haVincoloEconomico = maxPrice != null || minPrice != null;
+
   return [...prodotti].sort((a, b) => {
     const dentroA = dentroFascia(a);
     const dentroB = dentroFascia(b);
     if (dentroA !== dentroB) return dentroA ? -1 : 1;
+
+    if (!haVincoloEconomico) {
+      const rilevanza = confrontoSecondario ? confrontoSecondario(a, b) : 0;
+      if (rilevanza !== 0) return rilevanza;
+    }
 
     const prezzoA = prezzoOrdinabile(a);
     const prezzoB = prezzoOrdinabile(b);
