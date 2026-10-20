@@ -733,7 +733,7 @@ export async function interpretaRichiestaPino(
     const city = typeof parsed.city === "string"
       ? normalizzaRichiesta(parsed.city).trim().slice(0, 60) || null
       : null;
-    const queryPlan = (normalizzaQueryCatalogo(terms.length ? terms[0] : fallback.query) || fallback.query).slice(0, 120);
+    const queryPlan = (normalizzaQueryCatalogo(typeof parsed.query === "string" && parsed.query.trim() ? parsed.query : terms.length ? terms[0] : fallback.query) || fallback.query).slice(0, 120);
 
     return {
       surface: intentFinal === "service" ? "stores" : surface,
