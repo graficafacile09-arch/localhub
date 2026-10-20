@@ -257,6 +257,21 @@ function pianoPredefinito(
     };
   }
 
+  // Domande generiche sui negozi in una città: usa l'elenco delle attività,
+  // non il planner prodotti. Non vengono applicati vincoli di prezzo impliciti.
+  const matchElencoNegoziCitta = richiestaNormalizzata.match(
+    /^(?:quali|che)\\s+(?:(?:sono\\s+)?(?:i\\s+)?)?negozi\\s+(?:posso\\s+trovare|trovo|ci\\s+sono|avete|sono\\s+presenti)\\s+(?:a|in)\\s+(.+?)[?!. ]*$/i
+  );
+  if (matchElencoNegoziCitta?.[1]?.trim()) {
+    return {
+      directReply: null,
+      tools: [{
+        tool: "searchStores",
+        params: { tutte: true, citta: matchElencoNegoziCitta[1].trim(), limit: 20 },
+      }],
+    };
+  }
+
   // "Quali negozi vendono scarpe?" resta una ricerca per categoria:
   // al catalogo viene passata solo la categoria, mai la frase intera.
   const matchNegoziCategoria = richiestaNormalizzata.match(
