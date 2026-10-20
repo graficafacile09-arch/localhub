@@ -1233,7 +1233,7 @@ export async function chatConAssistente(
   const pianoProdottoAffidabile = Boolean(
     semantica &&
     semantica.surface === "products" &&
-    semantica.intent === "product" &&
+    (semantica.intent === "product" || semantica.intent === "food" || semantica.intent === "drink") &&
     semantica.confidence !== "bassa" &&
     semantica.query.trim()
   );
