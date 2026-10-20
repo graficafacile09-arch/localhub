@@ -510,10 +510,11 @@ function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): Pi
   }
 
   // Negazione generica: "non nere", "senza glutine", "non usato" ecc.
-  // Manteniamo al massimo due token per non inghiottire il resto della frase.
+  // Catturiamo solo il termine immediatamente negato: "non nere eleganti"
+  // deve escludere "nere" e mantenere "eleganti" come attributo positivo.
   const esclusioni = Array.from(new Set(
     Array.from(q.matchAll(
-      /\b(?:non|senza)\s+([a-zàèéìòù][a-zàèéìòù0-9-]*(?:\s+[a-zàèéìòù][a-zàèéìòù0-9-]*)?)/gi
+      /\b(?:non|senza)\s+([a-zàèéìòù][a-zàèéìòù0-9-]*)/gi
     ))
       .map((m) => m[1].trim())
       .filter(Boolean)
@@ -597,9 +598,13 @@ function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): Pi
   const openNow = /\b(?:aperto|aperta|aperti|aperte)\b|\b(?:ora|adesso)\b/i.test(q);
 
   const intent = match?.intent ?? analisi.intent;
+  // Riutilizziamo la classificazione deterministica del livello intent:
+  // una "pizzeria aperta ora" è una ricerca di attività, non di prodotti.
   const surface: PinoSemanticPlan["surface"] =
-    intent === "service" ? "stores" :
-    intent === "generic" ? "none" : "products";
+    analisi.usaNegozi && analisi.usaProdotti ? "both" :
+    analisi.usaNegozi ? "stores" :
+    analisi.usaProdotti ? "products" :
+    intent === "generic" ? "none" : "both";
 
   return {
     surface,
