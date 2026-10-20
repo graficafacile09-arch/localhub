@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
 import { rispostaIdentitaPino } from "../lib/assistente/identity.ts";
+import { rilevaElencoNegoziCitta } from "../lib/assistente/local-intents.ts";
 import {
   normalizzaQueryCatalogo,
   rilevaLinguaPino,
@@ -84,4 +85,17 @@ test("Open-now wording is recognized in Italian and English and removed from cat
   assert.equal(richiestaApertaOra("pizzeria open right now"), true);
   assert.equal(normalizzaQueryCatalogo("pizza open now"), "pizza");
   assert.equal(normalizzaQueryCatalogo("pizzeria aperta ora"), "pizzeria");
+});
+
+
+test("city-wide store questions are recognized with and without a greeting", () => {
+  assert.equal(
+    rilevaElencoNegoziCitta("Ciao, quali negozi posso trovare a Castrovillari?"),
+    "castrovillari",
+  );
+  assert.equal(
+    rilevaElencoNegoziCitta("Quali negozi posso trovare a Castrovillari?"),
+    "castrovillari",
+  );
+  assert.equal(rilevaElencoNegoziCitta("Ciao, cerco un orologio"), null);
 });
