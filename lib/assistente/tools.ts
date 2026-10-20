@@ -15,7 +15,7 @@
  * @module lib/assistente/tools
  */
 
-import { cercaNegozi, cercaProdotti, getCategorieConNegozi } from "@/lib/negozi";
+import { cercaNegozi, cercaProdotti, getCategorieConNegozi, getNegozi } from "@/lib/negozi";
 import { getOffertePubbliche } from "@/lib/offerte";
 import { getEventiPubblici } from "@/lib/eventi";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
@@ -86,6 +86,8 @@ export type ToolParams = {
   citta?: string;
   /** Stato farmacia per il tool locale: aperte, turno o tutte. */
   stato?: "aperte" | "turno" | "tutte";
+  /** Elenco generale delle attività pubbliche, senza ricerca per keyword. */
+  tutte?: boolean;
   /** Esclusioni semantiche Pino: es. ["alcolica"] per "birra non alcolica". */
   esclusioni?: string[];
   /** Nomi già mostrati da Pino: usato per "fammi vedere altro" e alternative. */
@@ -432,6 +434,26 @@ export async function searchStores(
   opts: ToolParams = {}
 ): Promise<NegozioRicerca[]> {
   const q = (query ?? "").trim();
+
+  // Richiesta generale di elenco: usa direttamente le attività pubbliche attive,
+  // senza trasformare la frase dell’utente in una keyword da cercare nel catalogo.
+  if (opts?.tutte) {
+    const righe = await getNegozi();
+    return (righe ?? [])
+      .filter((n: Record<string, unknown>) => n.attivo !== false)
+      .slice(0, limita(opts?.limit, 20, 20))
+      .map((n: Record<string, unknown>) => ({
+        id: String(n.id),
+        slug: (n.slug as string | null | undefined) ?? null,
+        nome: String(n.nome ?? ""),
+        descrizione: (n.descrizione as string | null | undefined) ?? null,
+        categoria: (n.categoria as string | null | undefined) ?? null,
+        indirizzo: (n.indirizzo as string | null | undefined) ?? null,
+        telefono: (n.telefono as string | null | undefined) ?? null,
+        logo_url: (n.logo_url as string | null | undefined) ?? null,
+      }));
+  }
+
   if (!q && !(opts?.termini?.length) && !opts?.categoria && !opts?.tipo) return [];
 
   const righe = await cercaNegozi(q, {
