@@ -4,7 +4,9 @@ import { apertoOra, rilevaFollowUp, soggettoPrecedente, motivoCategoria } from "
 test.describe("Pino V16 — casi limite conversazionali", () => {
   test("riconosce i follow-up brevi senza confonderli con ricerche complete", () => {
     expect(rilevaFollowUp("solo aperti ora")?.tipo).toBe("aperti");
+    expect(rilevaFollowUp("solo aperte ora")?.tipo).toBe("aperti");
     expect(rilevaFollowUp("più economici")?.tipo).toBe("economici");
+    expect(rilevaFollowUp("più economiche")?.tipo).toBe("economici");
     expect(rilevaFollowUp("fammi vedere altro")?.tipo).toBe("altro");
     expect(rilevaFollowUp("cerco una pizza aperta ora a Castrovillari")?.tipo).toBeUndefined();
   });
