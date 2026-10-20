@@ -439,8 +439,15 @@ export async function searchStores(
   // senza trasformare la frase dell’utente in una keyword da cercare nel catalogo.
   if (opts?.tutte) {
     const righe = await getNegozi();
+    const cittaRichiesta = normalizza(opts?.citta ?? "");
     return (righe ?? [])
       .filter((n: Record<string, unknown>) => n.attivo !== false)
+      .filter((n: Record<string, unknown>) => {
+        if (!cittaRichiesta) return true;
+        const cittaNegozio = normalizza(String(n.citta ?? ""));
+        const indirizzo = normalizza(String(n.indirizzo ?? ""));
+        return cittaNegozio.includes(cittaRichiesta) || indirizzo.includes(cittaRichiesta);
+      })
       .slice(0, limita(opts?.limit, 20, 20))
       .map((n: Record<string, unknown>) => ({
         id: String(n.id),
