@@ -39,11 +39,11 @@ const MAX_PAROLE_FOLLOWUP = 5;
 
 const SEGNALI: { tipo: FollowUpTipo; re: RegExp }[] = [
   // "solo aperti ora", "quelli aperti", "aperto ora", "solo aperte"
-  { tipo: "aperti", re: /\b(?:solo\s+)?(?:quelli\s+|quelle\s+)?apert[oi]\b|\bapert[eo]\s+ora\b/ },
+  { tipo: "aperti", re: /\b(?:solo\s+)?(?:quelli\s+|quelle\s+)?apert(?:o|i|a|e)\b|\bapert[eo]\s+ora\b/ },
   // "solo economici", "i più economici", "poco caro", "a basso prezzo", "low cost"
   {
     tipo: "economici",
-    re: /\b(?:solo\s+)?(?:pi[uù]\s+)?economic[hi]\b|\beconomic[he]\b|\bpoco\s+car[oi]\b|\ba\s+basso\s+prezzo\b|\blow\s?cost\b/,
+    re: /\b(?:solo\s+)?(?:pi[uù]\s+)?economic(?:i|he)\b|\bpoco\s+car[oi]\b|\ba\s+basso\s+prezzo\b|\blow\s?cost\b/,
   },
   // "solo vicino", "vicino a me", "nelle vicinanze"
   { tipo: "vicino", re: /\b(?:solo\s+)?vicin[oi]\b|\bvicino\s+a\s+me\b|\b(?:nelle?\s+)?vicinanze\b/ },
