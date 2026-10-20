@@ -410,6 +410,15 @@ function negozioPertinente(
   // 1) Tutti i termini originali presenti (il match parziale non basta).
   const token = estraiToken(testo);
   if (termini.every((t) => terminePresente(t, testo, token))) return true;
+  // Query di categorie specifiche come "pizzeria" non devono ereditare
+  // l'intero gruppo ristorazione: altrimenti il sinonimo "panificio" può far
+  // passare forni e panifici come risultati di una ricerca di pizzerie.
+  // Il match diretto sopra resta valido; in questi casi non allarghiamo oltre.
+  const categoriaSpecificata = termini.some((t) =>
+    /\\b(?:pizzer(?:ia|ie)|panific(?:io|i)|forn(?:o|i))\\b/i.test(t)
+  );
+  if (categoriaSpecificata) return false;
+
   // 2) Concetto d'intento riconosciuto.
   if (concetti.some((c) => c.length >= 3 && testo.includes(c))) return true;
   // 3) Sinonimo espanso, solo su un campo di classificazione.
