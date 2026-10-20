@@ -601,6 +601,7 @@ function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): Pi
   // Riutilizziamo la classificazione deterministica del livello intent:
   // una "pizzeria aperta ora" è una ricerca di attività, non di prodotti.
   const surface: PinoSemanticPlan["surface"] =
+    openNow && analisi.usaNegozi ? "stores" :
     analisi.usaNegozi && analisi.usaProdotti ? "both" :
     analisi.usaNegozi ? "stores" :
     analisi.usaProdotti ? "products" :
