@@ -245,16 +245,30 @@ function pianoPredefinito(
   const ultimo = (utenti[utenti.length - 1] ?? "").trim().toLowerCase();
   if (!ultimo) return null;
 
-  // Elenco generale delle attività: non è una ricerca di prodotti e non deve
-  // passare la frase intera ("quali negozi ci sono?") al motore keyword.
-  // Questo percorso usa solo le attività pubbliche attive tramite searchStores.
+  // Instradamento deterministico per richieste di elenco e ricerche per categoria.
+  // Evita che il timeout del planner AI trasformi la domanda intera in una keyword.
   const richiestaNormalizzata = normalizzaRichiesta(ultimo);
   const RE_ELENCO_NEGOZI =
-    /^(?:quali\s+(?:sono\s+)?negozi\s+(?:ci\s+sono|avete|sono\s+presenti)?|che\s+negozi\s+(?:ci\s+sono|avete|sono\s+presenti)?|elenco\s+(?:dei\s+)?negozi|lista\s+(?:dei\s+)?negozi|mostrami\s+(?:tutti\s+)?(?:i\s+)?negozi|fammi\s+vedere\s+(?:tutti\s+)?(?:i\s+)?negozi|quali\s+attivita\s+(?:ci\s+sono|avete|sono\s+presenti)?|elenco\s+(?:delle\s+)?attivita|lista\s+(?:delle\s+)?attivita|mostrami\s+(?:tutte\s+)?(?:le\s+)?attivita)[?!. ]*$/i;
+    /^(?:(?:quali|che)\s+(?:(?:sono\s+)?(?:i\s+)?negozi|(?:le\s+)?attivita)(?:\s+(?:ci\s+sono|avete|sono\s+presenti)(?:\s+su\s+incitta)?)?|elenco\s+(?:dei\s+)?negozi|lista\s+(?:dei\s+)?negozi|mostrami\s+(?:tutti\s+)?(?:i\s+)?negozi|fammi\s+vedere\s+(?:tutti\s+)?(?:i\s+)?negozi|elenco\s+(?:delle\s+)?attivita|lista\s+(?:delle\s+)?attivita|mostrami\s+(?:tutte\s+)?(?:le\s+)?attivita)[?!. ]*$/i;
   if (RE_ELENCO_NEGOZI.test(richiestaNormalizzata)) {
     return {
       directReply: null,
       tools: [{ tool: "searchStores", params: { tutte: true, limit: 20 } }],
+    };
+  }
+
+  // "Quali negozi vendono scarpe?" resta una ricerca per categoria:
+  // al catalogo viene passata solo la categoria, mai la frase intera.
+  const matchNegoziCategoria = richiestaNormalizzata.match(
+    /^(?:quali|che)\s+(?:negozi|attivita)\s+(?:vendono|hanno|trattano|offrono|propongono)\s+(.+?)[?!. ]*$/i
+  );
+  if (matchNegoziCategoria?.[1]?.trim()) {
+    return {
+      directReply: null,
+      tools: [{
+        tool: "searchStores",
+        params: { query: matchNegoziCategoria[1].trim(), limit: 12 },
+      }],
     };
   }
 
