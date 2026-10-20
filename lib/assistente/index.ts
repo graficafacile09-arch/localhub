@@ -497,8 +497,7 @@ function pianoPredefinito(
   if (analisi.confidence !== "bassa") {
     const piano = pianoIntento(analisi, ultimo);
     if (piano.length > 0) {
-      return {
-        directReply: null,
+      return {        directReply: null,
         tools: piano.map((t) => ({
           tool: t.tool,
           params: { query: t.query, ...(t.tool === "searchProducts" ? { limit: 8 } : {}) },
@@ -997,8 +996,7 @@ function rispostaFarmacieDeterministica(
     }
 
     const elenco = farmacie
-      .slice(0, 8)
-      .map((f) => {
+      .slice(0, 8)      .map((f) => {
         const stato =
           f.turno ? "DI TURNO" : f.stato === "aperta" ? "APERTA" : f.stato === "chiusa" ? "CHIUSA" : "NON VERIFICATA";
         const dettagli = [
@@ -1266,7 +1264,10 @@ export async function chatConAssistente(
     semantica.confidence !== "bassa" &&
     semantica.query.trim()
   );
-  if (pianoProdottoAffidabile && semantica) {
+  // Un piano deterministico che ha scelto esplicitamente i negozi deve prevalere
+  // sul fast-path semantico dei prodotti (es. "quali negozi vendono scarpe?").
+  const pianoNegoziDeterministico = Boolean(piano?.tools.some((t) => t.tool === "searchStores"));
+  if (pianoProdottoAffidabile && semantica && !pianoNegoziDeterministico) {
     invocazioni = [{
       tool: "searchProducts",
       params: {
@@ -1497,8 +1498,7 @@ export async function chatConAssistente(
     const tutto = await searchAll(domanda, {});
     negozi = tutto.negozi;
     prodotti = tutto.prodotti;
-    offerte = tutto.offerte;
-    eventi = tutto.eventi;
+    offerte = tutto.offerte;    eventi = tutto.eventi;
     categorie = tutto.categorie;
   } else if (!directReply && !toolsEseguiti) {
     return {
