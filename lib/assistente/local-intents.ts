@@ -60,11 +60,11 @@ export type PianoIntentoLocale =
 /** Estrae la città da una richiesta di elenco negozi, anche con saluto iniziale. */
 export function rilevaElencoNegoziCitta(testo: string): string | null {
   const richiesta = normalizzaRichiesta(testo).replace(
-    /^(?:(?:ciao|salve|buongiorno|buonasera|hey|hi)[,!\\s]+)+/i,
+    /^(?:(?:ciao|salve|buongiorno|buonasera|hey|hi)[,!\s]+)+/i,
     "",
   );
   const match = richiesta.match(
-    /^(?:quali|che)\\s+(?:(?:sono\\s+)?(?:i\\s+)?)?negozi\\s+(?:posso\\s+trovare|trovo|ci\\s+sono|avete|sono\\s+presenti)\\s+(?:a|in)\\s+(.+?)[?!. ]*$/i,
+    /^(?:quali|che)\s+(?:(?:sono\s+)?(?:i\s+)?)?negozi\s+(?:posso\s+trovare|trovo|ci\s+sono|avete|sono\s+presenti)\s+(?:a|in)\s+(.+?)[?!. ]*$/i,
   );
   return match?.[1]?.trim() || null;
 }
