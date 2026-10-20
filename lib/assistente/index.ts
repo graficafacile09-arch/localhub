@@ -1182,7 +1182,9 @@ export async function chatConAssistente(
         userPrompt: buildToolSelectionPrompt(storico, descriviIntento(analisi)),
         maxTokens: 450,
         temperature: 0.1,
-        timeoutMs: 45_000,
+        json: true,
+        timeoutMs: 20_000,
+        retries: 1,
       });
       const parsed = JSON.parse(extractJsonFromText(raw)) as {
         tools?: ToolInvocation[];
