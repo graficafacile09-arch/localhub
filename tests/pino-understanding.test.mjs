@@ -106,6 +106,13 @@ test("city-wide store questions are recognized with and without a greeting", () 
 
 
 
+test("Pino distinguishes an empty catalog from businesses absent from a city", () => {
+  assert.match(promptSource, /assenza di corrispondenze nel catalogo dall'inesistenza di attivit/);
+  assert.match(promptSource, /non risultano attivit[àa] pertinenti registrate nel catalogo/);
+  assert.match(promptSource, /Categoria e citt[àa] sono campi distinti/);
+  assert.match(promptSource, /non dedurre che nella citt[àa] non esistano attivit/);
+});
+
 test("Pino keeps the explicit city out of the store-category query", () => {
   assert.match(semanticaSource, /let testoSoggetto = match\[1\]/);
   assert.match(semanticaSource, /testoSoggetto = testoSoggetto\.replace\(/);
