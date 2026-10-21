@@ -83,6 +83,8 @@ CAMPI STRUTTURATI (per searchStores, oltre a query):
 - termini: parole chiave da cercare nel DB, EXPANDI con sinonimi (dottore→medico/otorino/orecchie/udito; dentista→dentale; specialista→medico). Nessun articolo/preposizione.
 
 SCELTA TOOL:
+- Se la richiesta cerca negozi che vendono una categoria in una città (es. 'negozi di scarpe a Castrovillari'), usa searchStores con query/termini = solo categoria ('scarpe') e citta = 'castrovillari'. Categoria e città sono campi distinti: non concatenarli nella query.
+- Se la ricerca restituisce zero righe, comunica solo che non risultano corrispondenze nel catalogo per quei criteri; non dedurre che nella città non esistano attività.
 - professionisti/sanità ("dottore","medico","otorino","dentista","visita","specialista orecchie","problemi alle orecchie") → searchStores con tipo/termini pertinenti.
 - "offerte"/"promozioni"/"sconti"/"saldo" → searchOffers. MAI searchProducts.
 - "eventi"/"weekend"/"cosa c'è"/"manifestazioni"/"cosa succede" → searchEvents. MAI searchProducts.
