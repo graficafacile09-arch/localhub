@@ -40,6 +40,7 @@ import {
   type RisultatiRecuperati,
 } from "./prompt";
 import { selezionaToolConAgente } from "./agent-planner";
+import { callGeminiText } from "@/lib/ai/gemini-text";
 import { searchAttractions } from "./attrazioni";
 import type { NegozioRicerca, ProdottoRicerca } from "@/lib/ricerca-ai";
 import { pianoIntentoLocale, normalizzaRichiesta, rilevaElencoNegoziCitta } from "./local-intents";
@@ -1570,7 +1571,7 @@ export async function chatConAssistente(
   // Evitiamo una seconda chiamata Gemini solo per riscrivere dati che abbiamo
   // già verificato: così Pino mostra i risultati molto prima.
   const linguaRisposta = rilevaLinguaPino(domanda);
-  const rispostaBase = fallbackTestuale(
+  let rispostaBase = fallbackTestuale(
     risultati,
     notaVincolo,
     analisi.intent,
@@ -1578,6 +1579,25 @@ export async function chatConAssistente(
     budgetPreferenza,
     linguaRisposta
   );
+
+  // Formulazione AI soltanto quando ci sono dati reali da spiegare.
+  // Il fallback testuale è già pronto prima della chiamata e resta disponibile
+  // in caso di quota, timeout o risposta vuota: Pino non perde mai i risultati.
+  if (contaRisultati(risultati) > 0) {
+    try {
+      const rispostaAI = await callGeminiText({
+        systemPrompt: "Usa esclusivamente i dati recuperati forniti nel messaggio. Non inventare nomi, prezzi, orari o disponibilità.",
+        userPrompt: buildFinalPrompt(storico, contestoFinale),
+        maxTokens: 450,
+        temperature: 0.25,
+        timeoutMs: 15_000,
+        retries: 1,
+      });
+      if (rispostaAI.trim()) rispostaBase = rispostaAI.trim();
+    } catch (error) {
+      console.warn("[assistente] Risposta AI non disponibile, uso fallback grounded:", error);
+    }
+  }
   const risposta = notaRecupero && linguaRisposta !== "en"
     ? `${notaRecupero}\n\n${rispostaBase}`
     : rispostaBase;
