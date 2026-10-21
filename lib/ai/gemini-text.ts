@@ -1,26 +1,17 @@
 /**
- * LocalHub — Gemini: chiamata testuale/JSON (assistente + correggi-ai)
+ * Pino text generation through the Vercel AI SDK + Google Gemini provider.
  *
- * Separata da callGeminiGeneration() (lib/product-assistant/providers/gemini.ts),
- * che resta dedicata ESCLUSIVAMENTE alla Vision (scansione prodotto) e non
- * viene toccata. Qui: richieste text-only con system prompt, cronologia,
- * generazione JSON opzionale (responseMimeType), timeout e retry su 429/5xx.
- *
- * Endpoint: POST https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={key}
- * Risposta: candidates[0].content.parts[].text
- *
- * Usa GEMINI_API_KEY e GEMINI_MODEL (con fallback gemini-2.0-flash),
- * le stesse variabili già usate dalla Vision.
- *
- * @module lib/ai/gemini-text
+ * Keep the existing GEMINI_API_KEY / GEMINI_MODEL configuration and the
+ * current callGeminiText contract so Pino's planner and final-answer flow
+ * remain unchanged. Product Vision remains on its existing provider.
  */
+import { Output, generateText } from "ai";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 
-const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 const MODELLO_FALLBACK = "gemini-3.8-flash";
 const TIMEOUT_DEFAULT_MS = 60_000;
 const TENTATIVI_DEFAULT = 3;
 
-/** Messaggio di conversazione per Gemini: i ruoli ammessi sono user/model. */
 export type GeminiMessage = {
   role: "user" | "model";
   content: string;
@@ -29,22 +20,19 @@ export type GeminiMessage = {
 export type CallGeminiTextParams = {
   systemPrompt: string;
   userPrompt: string;
-  /** Cronologia precedente (ruoli già normalizzati user/model). */
   history?: GeminiMessage[];
   maxTokens?: number;
   temperature?: number;
-  /** true → generationConfig.responseMimeType "application/json". */
   json?: boolean;
   timeoutMs?: number;
-  /** Retry con backoff su 429/402 (quota). Default 3. */
   retries?: number;
 };
 
-/**
- * Chiama Gemini e restituisce il testo della prima risposta (candidates[0]).
- * Lancia Error con messaggi chiari per: chiave mancante, quota (dopo i retry),
- * errore server, HTTP generico, timeout, risposta vuota.
- */
+function erroreTemporaneo(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return /\b(429|500|502|503|504)\b|rate.?limit|quota|timeout|timed out|ECONNRESET|fetch failed/i.test(message);
+}
+
 export async function callGeminiText({
   systemPrompt,
   userPrompt,
@@ -59,86 +47,49 @@ export async function callGeminiText({
   if (!apiKey) {
     throw new Error("Chiave API Gemini mancante. Aggiungi GEMINI_API_KEY al file .env.local.");
   }
-  const model = process.env.GEMINI_MODEL?.trim() || MODELLO_FALLBACK;
 
-  let ultimoErrore: Error | null = null;
+  const modelId = process.env.GEMINI_MODEL?.trim() || MODELLO_FALLBACK;
+  const google = createGoogleGenerativeAI({ apiKey });
+  const messages = [
+    ...history.map((message) => ({
+      role: message.role === "model" ? ("assistant" as const) : ("user" as const),
+      content: message.content,
+    })),
+    { role: "user" as const, content: userPrompt },
+  ];
 
+  let ultimoErrore: unknown;
   for (let tentativo = 1; tentativo <= retries; tentativo++) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
-      // Ruoli Gemini: user/model (niente "assistant"); l'ultima parte è sempre
-      // la richiesta dell'utente.
-      const contents: Array<{ role: "user" | "model"; parts: Array<{ text: string }> }> = [
-        ...history.map((m) => ({ role: m.role, parts: [{ text: m.content }] })),
-        { role: "user", parts: [{ text: userPrompt }] },
-      ];
-
-      const generationConfig: Record<string, unknown> = {
-        temperature,
+      const result = await generateText({
+        model: google(modelId),
+        instructions: systemPrompt.trim() || undefined,
+        messages,
         maxOutputTokens: maxTokens,
-      };
-      if (json) generationConfig.responseMimeType = "application/json";
-
-      const body: Record<string, unknown> = {
-        contents,
-        generationConfig,
-      };
-      if (systemPrompt.trim()) {
-        body.systemInstruction = { parts: [{ text: systemPrompt }] };
-      }
-
-      const url = `${GEMINI_BASE}/${encodeURIComponent(model)}:generateContent?key=${apiKey}`;
-      const response = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-        signal: controller.signal,
+        temperature,
+        ...(json ? { output: Output.json() } : {}),
+        abortSignal: controller.signal,
       });
 
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        const errorBody = await response.text().catch(() => "unknown");
-        if (response.status === 429 || response.status === 402) {
-          ultimoErrore = new Error(`Quota Gemini superata (HTTP ${response.status}).`);
-          if (tentativo < retries) {
-            await new Promise((r) => setTimeout(r, tentativo * 1500));
-            continue;
-          }
-          throw ultimoErrore;
-        }
-        if (response.status >= 500 && response.status < 600) {
-          throw new Error(`Errore server Gemini (HTTP ${response.status}).`);
-        }
-        throw new Error(`Errore Gemini (HTTP ${response.status}): ${errorBody.slice(0, 300)}`);
-      }
-
-      const resData = (await response.json()) as {
-        candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
-      };
-
-      const text =
-        resData.candidates?.[0]?.content?.parts
-          ?.map((p) => p.text ?? "")
-          .join("")
-          .trim() ?? "";
-
-      if (!text) {
-        throw new Error("Risposta AI vuota.");
-      }
-
+      const text = result.text?.trim();
+      if (!text) throw new Error("Gemini ha restituito una risposta vuota.");
       return text;
-    } catch (caught: unknown) {
-      clearTimeout(timeoutId);
-      if (caught instanceof DOMException && caught.name === "AbortError") {
-        throw new Error(`Timeout chiamata Gemini (${Math.round(timeoutMs / 1000)}s).`);
+    } catch (error) {
+      ultimoErrore = error;
+      if (tentativo >= retries || !erroreTemporaneo(error)) {
+        const message = error instanceof Error ? error.message : String(error);
+        if (controller.signal.aborted) throw new Error(`Timeout Gemini dopo ${timeoutMs} ms.`);
+        if (/\b429\b|quota|rate.?limit/i.test(message)) throw new Error("Quota Gemini superata. Riprova tra poco.");
+        throw error instanceof Error ? error : new Error(message);
       }
-      if (caught instanceof Error) throw caught;
-      throw new Error("Errore sconosciuto chiamata Gemini.");
+      await new Promise((resolve) => setTimeout(resolve, tentativo * 1500));
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
 
-  throw ultimoErrore ?? new Error("Chiamata Gemini fallita.");
+  throw ultimoErrore instanceof Error ? ultimoErrore : new Error("Chiamata Gemini fallita.");
 }
