@@ -34,14 +34,12 @@ import {
   type ToolParams,
 } from "./tools";
 import {
-  SYSTEM_PROMPT,
   buildToolSelectionPrompt,
   buildContextoRisultati,
   buildFinalPrompt,
   type RisultatiRecuperati,
 } from "./prompt";
-import { extractJsonFromText } from "@/lib/product-assistant/providers/utils";
-import { callGeminiText } from "@/lib/ai/gemini-text";
+import { selezionaToolConAgente } from "./agent-planner";
 import { searchAttractions } from "./attrazioni";
 import type { NegozioRicerca, ProdottoRicerca } from "@/lib/ricerca-ai";
 import { pianoIntentoLocale, normalizzaRichiesta, rilevaElencoNegoziCitta } from "./local-intents";
@@ -1215,30 +1213,13 @@ export async function chatConAssistente(
     selezioneOk = true;
   } else {
     try {
-      const raw = await callGeminiText({
-        systemPrompt: SYSTEM_PROMPT,
-        userPrompt: buildToolSelectionPrompt(storico, descriviIntento(analisi)),
-        maxTokens: 450,
-        temperature: 0.1,
-        json: true,
-        timeoutMs: 20_000,
-        retries: 1,
+      invocazioni = await selezionaToolConAgente({
+        prompt: buildToolSelectionPrompt(storico, descriviIntento(analisi)),
       });
-      const parsed = JSON.parse(extractJsonFromText(raw)) as {
-        tools?: ToolInvocation[];
-        directReply?: string | null;
-      };
-
-      if (parsed && typeof parsed.directReply === "string" && parsed.directReply.trim()) {
-        directReply = parsed.directReply.trim();
-      }
-
-      const tools = Array.isArray(parsed?.tools) ? parsed.tools.slice(0, 3) : [];
-      invocazioni = tools.filter((t) => typeof t.tool === "string" && t.tool.trim());
       selezioneOk = true;
     } catch (error) {
-      // Selezione fallita → ricerca completa di sicurezza sull'ultima domanda
-      console.warn("[assistente] Selezione tool fallita, uso searchAll:", error);
+      // Selezione fallita → la ricerca di sicurezza resta affidata ai fallback esistenti.
+      console.warn("[assistente] Pianificazione agente fallita, uso fallback:", error);
     }
   }
 
