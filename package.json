@@ -25,7 +25,8 @@
     "resend": "^6.18.1",
     "stripe": "^22.5.0",
     "ai": "^7.0.148",
-    "@ai-sdk/google": "^4.0.102"
+    "@ai-sdk/google": "^4.0.102",
+    "zod": "^4.1.8"
   },
   "devDependencies": {
     "@playwright/test": "^1.62.0",
