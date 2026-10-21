@@ -17,6 +17,17 @@ export type GeminiMessage = {
   content: string;
 };
 
+
+/** Crea il modello Gemini condiviso da Pino e dal suo agente di pianificazione. */
+export function createGeminiLanguageModel() {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("Chiave API Gemini mancante. Aggiungi GEMINI_API_KEY al file .env.local.");
+  }
+  const modelId = process.env.GEMINI_MODEL?.trim() || MODELLO_FALLBACK;
+  return createGoogleGenerativeAI({ apiKey })(modelId);
+}
+
 export type CallGeminiTextParams = {
   systemPrompt: string;
   userPrompt: string;
