@@ -807,11 +807,21 @@ export async function searchProducts(
   // singole parole renderebbe "prodotti"/"tipici" una chiave che matcha mezzo
   // catalogo.
   const concettiQuery = analizzaRichiesta(q).concetti.map(normalizza);
-  const pertinenti =
+  const pertinentiPino =
     (terminiOriginali.length > 0
       ? righe.filter((p) => prodottoPertinente(p, terminiOriginali, concettiQuery))
       : righe
     ).filter((p) => prodottoSoddisfaEsclusioni(p, opts?.esclusioni));
+
+  // Fallback al motore di ricerca condiviso: cercaProdotti ha già applicato
+  // sinonimi, ranking e filtri di rilevanza del catalogo pubblico. Il gate
+  // aggiuntivo di Pino richiede invece TUTTI i termini originali (AND), quindi
+  // può scartare un prodotto reale quando la domanda contiene provenienza,
+  // località o dettagli che non compaiono nella scheda (es. "olio del Pollino").
+  // Se il gate stretto non trova nulla, riutilizziamo i risultati già validati
+  // dal motore normale, mantenendo esclusioni, categoria, città e disponibilità.
+  const pertinenti = (pertinentiPino.length > 0 ? pertinentiPino : righe)
+    .filter((p) => prodottoSoddisfaEsclusioni(p, opts?.esclusioni));
 
   // Filtri in memoria su categoria/sottocategoria/tipo-se-pertinente.
   let filtrate = pertinenti;
