@@ -260,10 +260,10 @@ export function soggettoNegozioCategoria(query: string): string | null {
   }
   const soggetto = normalizzaQueryCatalogo(
     testoSoggetto
-      .replace(/\\b(?:su|in)\\s+incitt[àa]\\b\\.?(?:online)?/gi, " ")
+      .replace(/\b(?:su|in)\s+incitt[àa]\b\.?(?:online)?/gi, " ")
       // "che negozi di scarpe ci sono?": il predicato della domanda non è parte
       // della categoria cercata.
-      .replace(/\\b(?:ci\\s+sono|sono\\s+presenti|sono\\s+disponibili|esistono|si\\s+trovano|si\\s+trova|avete)\\b/gi, " ")
+      .replace(/\b(?:ci\s+sono|sono\s+presenti|sono\s+disponibili|esistono|si\s+trovano|si\s+trova|avete)\b/gi, " ")
       .replace(/[.?!,;:]+/g, " ")
   ).trim();
   return soggetto.length >= 3 ? soggetto.slice(0, 120) : null;
