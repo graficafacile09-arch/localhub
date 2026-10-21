@@ -243,8 +243,38 @@ export function soggettoNegozioCategoria(query: string): string | null {
     q.match(RE_NEGOZIO_CATEGORIA_DI) ??
     q.match(RE_SHOP_CATEGORY_EN);
   if (!match?.[1]) return null;
-  const soggetto = normalizzaQueryCatalogo(
+  // La regex cattura anche la coda dopo la categoria: nella domanda
+  // "Quali negozi vendono scarpe a Castrovillari?" il gruppo è
+  // "scarpe a Castrovillari". La città è un filtro separato, non una keyword
+  // della categoria, altrimenti searchStores riceve "scarpe castrovillari".
+  let testoSoggetto = match[1];
+  const cittaEsplicita = estraiCitta(q);
+  if (
+    cittaEsplicita &&
+    new RegExp("\\b(?:a|in)\\s+" + cittaEsplicita.replace(/[.*+?^$()|[\\]\\\\]/g, "\\  const soggetto = normalizzaQueryCatalogo(
     match[1]
+      .replace(/\b(?:su|in)\s+incitt[àa]\b\.?(?:online)?/gi, " ")
+      // "che negozi di scarpe ci sono?": il predicato della domanda non è parte
+      // della categoria cercata.
+      .replace(/\b(?:ci\s+sono|sono\s+presenti|sono\s+disponibili|esistono|si\s+trovano|si\s+trova|avete)\b/gi, " ")
+      .replace(/[.?!,;:]+/g, " ")
+  ).trim();") + "\\b", "i").test(q)
+  ) {
+    const cittaEscapata = cittaEsplicita.replace(/[.*+?^$()|[\\]\\\\]/g, "\\  const soggetto = normalizzaQueryCatalogo(
+    match[1]
+      .replace(/\b(?:su|in)\s+incitt[àa]\b\.?(?:online)?/gi, " ")
+      // "che negozi di scarpe ci sono?": il predicato della domanda non è parte
+      // della categoria cercata.
+      .replace(/\b(?:ci\s+sono|sono\s+presenti|sono\s+disponibili|esistono|si\s+trovano|si\s+trova|avete)\b/gi, " ")
+      .replace(/[.?!,;:]+/g, " ")
+  ).trim();");
+    testoSoggetto = testoSoggetto.replace(
+      new RegExp("\\b(?:a|in)\\s+" + cittaEscapata + "\\b", "gi"),
+      " "
+    );
+  }
+  const soggetto = normalizzaQueryCatalogo(
+    testoSoggetto
       .replace(/\b(?:su|in)\s+incitt[àa]\b\.?(?:online)?/gi, " ")
       // "che negozi di scarpe ci sono?": il predicato della domanda non è parte
       // della categoria cercata.
