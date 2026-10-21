@@ -251,34 +251,19 @@ export function soggettoNegozioCategoria(query: string): string | null {
   const cittaEsplicita = estraiCitta(q);
   if (
     cittaEsplicita &&
-    new RegExp("\\b(?:a|in)\\s+" + cittaEsplicita.replace(/[.*+?^$()|[\\]\\\\]/g, "\\  const soggetto = normalizzaQueryCatalogo(
-    match[1]
-      .replace(/\b(?:su|in)\s+incitt[àa]\b\.?(?:online)?/gi, " ")
-      // "che negozi di scarpe ci sono?": il predicato della domanda non è parte
-      // della categoria cercata.
-      .replace(/\b(?:ci\s+sono|sono\s+presenti|sono\s+disponibili|esistono|si\s+trovano|si\s+trova|avete)\b/gi, " ")
-      .replace(/[.?!,;:]+/g, " ")
-  ).trim();") + "\\b", "i").test(q)
+    new RegExp("\\b(?:a|in)\\s+" + cittaEsplicita + "\\b", "i").test(q)
   ) {
-    const cittaEscapata = cittaEsplicita.replace(/[.*+?^$()|[\\]\\\\]/g, "\\  const soggetto = normalizzaQueryCatalogo(
-    match[1]
-      .replace(/\b(?:su|in)\s+incitt[àa]\b\.?(?:online)?/gi, " ")
-      // "che negozi di scarpe ci sono?": il predicato della domanda non è parte
-      // della categoria cercata.
-      .replace(/\b(?:ci\s+sono|sono\s+presenti|sono\s+disponibili|esistono|si\s+trovano|si\s+trova|avete)\b/gi, " ")
-      .replace(/[.?!,;:]+/g, " ")
-  ).trim();");
     testoSoggetto = testoSoggetto.replace(
-      new RegExp("\\b(?:a|in)\\s+" + cittaEscapata + "\\b", "gi"),
+      new RegExp("\\b(?:a|in)\\s+" + cittaEsplicita + "\\b", "gi"),
       " "
     );
   }
   const soggetto = normalizzaQueryCatalogo(
     testoSoggetto
-      .replace(/\b(?:su|in)\s+incitt[àa]\b\.?(?:online)?/gi, " ")
+      .replace(/\\b(?:su|in)\\s+incitt[àa]\\b\\.?(?:online)?/gi, " ")
       // "che negozi di scarpe ci sono?": il predicato della domanda non è parte
       // della categoria cercata.
-      .replace(/\b(?:ci\s+sono|sono\s+presenti|sono\s+disponibili|esistono|si\s+trovano|si\s+trova|avete)\b/gi, " ")
+      .replace(/\\b(?:ci\\s+sono|sono\\s+presenti|sono\\s+disponibili|esistono|si\\s+trovano|si\\s+trova|avete)\\b/gi, " ")
       .replace(/[.?!,;:]+/g, " ")
   ).trim();
   return soggetto.length >= 3 ? soggetto.slice(0, 120) : null;
