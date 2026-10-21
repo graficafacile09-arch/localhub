@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
 import { rispostaIdentitaPino } from "../lib/assistente/identity.ts";
+import { soggettoNegozioCategoria } from "../lib/assistente/semantica.ts";
 import { rilevaElencoNegoziCitta } from "../lib/assistente/local-intents.ts";
 import {
   normalizzaQueryCatalogo,
@@ -98,4 +99,20 @@ test("city-wide store questions are recognized with and without a greeting", () 
     "castrovillari",
   );
   assert.equal(rilevaElencoNegoziCitta("Ciao, cerco un orologio"), null);
+});
+
+
+test("Pino separates the requested store category from the explicit city", () => {
+  assert.equal(
+    soggettoNegozioCategoria("Quali negozi vendono scarpe a Castrovillari?"),
+    "scarpe",
+  );
+  assert.equal(
+    soggettoNegozioCategoria("Quali negozi vendono scarpe da uomo a Castrovillari?"),
+    "scarpe da uomo",
+  );
+  assert.equal(
+    soggettoNegozioCategoria("Quali negozi vendono scarpe?"),
+    "scarpe",
+  );
 });
