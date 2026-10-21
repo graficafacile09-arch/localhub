@@ -40,7 +40,7 @@ import {
   type RisultatiRecuperati,
 } from "./prompt";
 import { selezionaToolConAgente } from "./agent-planner";
-import { callGeminiText } from "@/lib/ai/gemini-text";
+import { callGeminiText } from "./gemini-text";
 import { searchAttractions } from "./attrazioni";
 import type { NegozioRicerca, ProdottoRicerca } from "@/lib/ricerca-ai";
 import { pianoIntentoLocale, normalizzaRichiesta, rilevaElencoNegoziCitta } from "./local-intents";
