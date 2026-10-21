@@ -1,6 +1,6 @@
 import { isStepCount, ToolLoopAgent, tool } from "ai";
 import { z } from "zod";
-import { createGeminiLanguageModel } from "@/lib/ai/gemini-text";
+import { createGeminiLanguageModel } from "./gemini-text";
 import type { ToolParams } from "./tools";
 
 export type PinoToolInvocation = { tool: string; params: ToolParams };
