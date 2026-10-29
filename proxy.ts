@@ -113,6 +113,45 @@ export async function proxy(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
+  // Interruttore manutenzione: ogni deployment consulta esclusivamente la
+  // propria tabella (produzione o preview). Il proxy usa il client anon già
+  // autenticato con RLS di sola lettura; in caso di errore resta fail-open.
+  const manutenzioneEsclusioni =
+    pathname.startsWith("/amministratore") ||
+    pathname.startsWith("/api/amministratore/") ||
+    pathname === "/login" ||
+    pathname.startsWith("/auth/") ||
+    pathname.startsWith("/api/auth/") ||
+    pathname.startsWith("/manutenzione") ||
+    pathname.startsWith("/account-in-attesa");
+  if (!manutenzioneEsclusioni) {
+    try {
+      const tabella = process.env.VERCEL_ENV === "production"
+        ? "site_maintenance"
+        : "site_maintenance_preview";
+      const { data: statoManutenzione, error: erroreManutenzione } = await (supabase as any)
+        .from(tabella)
+        .select("enabled")
+        .eq("id", 1)
+        .maybeSingle();
+      if (!erroreManutenzione && statoManutenzione?.enabled === true) {
+        if (pathname.startsWith("/api/")) {
+          return NextResponse.json(
+            { success: false, error: { code: "SITE_MAINTENANCE", message: "Il sito è temporaneamente in manutenzione." } },
+            { status: 503, headers: { "Cache-Control": "no-store", "Retry-After": "300" } }
+          );
+        }
+        const maintenanceResponse = NextResponse.rewrite(new URL("/manutenzione", request.url));
+        for (const cookie of response.cookies.getAll()) {
+          maintenanceResponse.cookies.set(cookie.name, cookie.value, cookie);
+        }
+        return maintenanceResponse;
+      }
+    } catch {
+      // Un errore di lettura non deve rendere irraggiungibile il sito.
+    }
+  }
+
   // ── Pulizia modalità guest: se l'utente accede alla pagina di login
   // (scelta esplicita di fare login), rimuoviamo il cookie guest.
   // Questo evita una sessione guest parallela dopo il login.
