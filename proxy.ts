@@ -113,6 +113,63 @@ export async function proxy(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
+  // Modalità manutenzione: tabella isolata per ambiente Vercel.
+  // Il controllo è pubblico in sola lettura; la modifica passa dall'API admin.
+  const apiAdminDuranteManutenzione = pathname.startsWith("/api/amministratore/");
+  const percorsoAuthDuranteManutenzione =
+    pathname === "/login" ||
+    pathname.startsWith("/account-in-attesa") ||
+    pathname.startsWith("/auth/callback") ||
+    pathname.startsWith("/api/auth/") ||
+    pathname.startsWith("/manutenzione");
+
+  if (
+    !pathname.startsWith("/amministratore") &&
+    !apiAdminDuranteManutenzione &&
+    !percorsoAuthDuranteManutenzione
+  ) {
+    try {
+      const tabellaManutenzione =
+        process.env.VERCEL_ENV === "production"
+          ? "site_maintenance"
+          : "site_maintenance_preview";
+      const { data: manutenzione, error: erroreManutenzione } = await supabase
+        .from(tabellaManutenzione)
+        .select("enabled")
+        .eq("id", 1)
+        .maybeSingle();
+
+      if (erroreManutenzione) throw erroreManutenzione;
+      if (manutenzione?.enabled === true) {
+        if (pathname.startsWith("/api/")) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: {
+                code: "SITE_MAINTENANCE",
+                message: "Il sito è temporaneamente in manutenzione. Riprova più tardi.",
+              },
+            },
+            {
+              status: 503,
+              headers: { "Cache-Control": "no-store", "Retry-After": "300" },
+            }
+          );
+        }
+
+        const maintenanceResponse = NextResponse.rewrite(
+          new URL("/manutenzione", request.url)
+        );
+        for (const cookie of response.cookies.getAll()) {
+          maintenanceResponse.cookies.set(cookie.name, cookie.value, cookie);
+        }
+        return maintenanceResponse;
+      }
+    } catch {
+      // Fail-open: un problema di lettura non deve rendere indisponibile il sito.
+    }
+  }
+
   // ── Pulizia modalità guest: se l'utente accede alla pagina di login
   // (scelta esplicita di fare login), rimuoviamo il cookie guest.
   // Questo evita una sessione guest parallela dopo il login.
