@@ -13,6 +13,7 @@ export default function HomepageProductSwipeReveal({
   products: ReactNode;
 }) {
   const [showProducts, setShowProducts] = useState(false);
+  const [androidTabletViewport, setAndroidTabletViewport] = useState(false);
   const showProductsRef = useRef(false);
   const panelHistoryEntry = useRef(false);
   const touchStartX = useRef<number | null>(null);
@@ -21,6 +22,20 @@ export default function HomepageProductSwipeReveal({
 
   // Il carosello è un pannello della homepage, ma il tasto Indietro del
   // browser/cellulare deve poterlo chiudere prima di lasciare la pagina.
+  useEffect(() => {
+    // Riconosce i tablet Android anche con browser meno recenti che non
+    // supportano le media query CSS pointer/hover.
+    function updateAndroidTabletViewport() {
+      const isAndroid = /Android/i.test(window.navigator.userAgent);
+      const width = window.innerWidth;
+      setAndroidTabletViewport(isAndroid && width >= 768 && width <= 1600);
+    }
+
+    updateAndroidTabletViewport();
+    window.addEventListener("resize", updateAndroidTabletViewport);
+    return () => window.removeEventListener("resize", updateAndroidTabletViewport);
+  }, []);
+
   useEffect(() => {
     function onPopState() {
       if (!panelHistoryEntry.current) return;
@@ -101,7 +116,7 @@ export default function HomepageProductSwipeReveal({
   return (
     <>
       <div
-        className="relative overflow-hidden bg-[#e5edf7] md:h-[600px]"
+        className={`relative overflow-hidden bg-[#e5edf7] md:h-[600px] ${androidTabletViewport ? "incitta-android-tablet" : ""}`}
         onTouchStartCapture={onTouchStart}
         onTouchEndCapture={onTouchEnd}
         aria-label="Homepage InCittà: scorri orizzontalmente per passare dalla foto ai prodotti"
