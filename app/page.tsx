@@ -86,7 +86,7 @@ export default async function Home() {
         hero={
           <>
             {/* HERO — stessa resa della versione attuale in produzione; lo swipe non modifica la foto. */}
-            <section className="relative overflow-hidden rounded-b-[2rem] bg-slate-900 shadow-lg shadow-slate-900/10 sm:rounded-b-[2.5rem] md:min-h-[600px]">
+            <section className="relative overflow-hidden rounded-b-[2rem] bg-slate-900 shadow-lg shadow-slate-900/10 sm:rounded-b-[2.5rem] md:min-h-[600px] md:max-lg:w-screen md:max-lg:max-w-none md:max-lg:ml-[calc(50%-50vw)]">
               <Image
                 src="/hero-coppia-castrovillari.webp"
                 alt="Coppia a Castrovillari"
