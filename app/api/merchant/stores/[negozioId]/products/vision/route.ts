@@ -46,7 +46,11 @@ async function callChatCompletions(accountId: string, apiToken: string, model: s
   const bodySize = new Blob([body]).size;
   const response = await fetch(url, {
     method: "POST",
-    headers: { Authorization: `Bearer ${apiToken}`, "Content-Type": "application/json" },
+    headers: {
+      Authorization: `Bearer ${apiToken}`,
+      "Content-Type": "application/json",
+      "cf-aig-gateway-id": process.env.CLOUDFLARE_AI_GATEWAY_ID || "default",
+    },
     body,
   });
   const tHeaders = performance.now();
@@ -73,7 +77,11 @@ async function callMoondream(accountId: string, apiToken: string, prompt: string
   const bodySize = new Blob([body]).size;
   const response = await fetch(url, {
     method: "POST",
-    headers: { Authorization: `Bearer ${apiToken}`, "Content-Type": "application/json" },
+    headers: {
+      Authorization: `Bearer ${apiToken}`,
+      "Content-Type": "application/json",
+      "cf-aig-gateway-id": process.env.CLOUDFLARE_AI_GATEWAY_ID || "default",
+    },
     body,
   });
   const tHeaders = performance.now();
