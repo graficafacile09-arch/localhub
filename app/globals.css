@@ -507,15 +507,13 @@ body.merchant-image-editor-aperto .merchant-bottom-nav-spacer {
 }
 
 
-/* Homepage hero: full viewport width only on tablet-sized touch screens.
-   Explicit CSS avoids relying on arbitrary Tailwind media variants in tablet browsers. */
-@media (min-width: 768px) and (max-width: 1600px) and (pointer: coarse) {
-  .incitta-home-hero {
-    width: 100vw !important;
-    max-width: none !important;
-    position: relative;
-    left: calc(50% - 50vw) !important;
-    margin-left: 0 !important;
-    transform: none !important;
-  }
+/* Homepage hero: fallback dedicato ai tablet Android, inclusi i browser
+   meno recenti che non riconoscono le media query pointer/hover. */
+.incitta-android-tablet .incitta-home-hero {
+  width: 100vw !important;
+  max-width: none !important;
+  position: relative;
+  left: calc(50% - 50vw) !important;
+  margin-left: 0 !important;
+  transform: none !important;
 }
