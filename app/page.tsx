@@ -86,7 +86,7 @@ export default async function Home() {
         hero={
           <>
             {/* HERO — stessa resa della versione attuale in produzione; lo swipe non modifica la foto. */}
-            <section className="relative overflow-hidden rounded-b-[2rem] bg-slate-900 shadow-lg shadow-slate-900/10 sm:rounded-b-[2.5rem] md:min-h-[600px] [@media_(min-width:768px)_and_(max-width:1366px)_and_(any-pointer:coarse)]:w-screen [@media_(min-width:768px)_and_(max-width:1366px)_and_(any-pointer:coarse)]:max-w-none [@media_(min-width:768px)_and_(max-width:1366px)_and_(any-pointer:coarse)]:left-1/2 [@media_(min-width:768px)_and_(max-width:1366px)_and_(any-pointer:coarse)]:-translate-x-1/2">
+            <section className="relative overflow-hidden rounded-b-[2rem] bg-slate-900 shadow-lg shadow-slate-900/10 sm:rounded-b-[2.5rem] md:min-h-[600px] [@media_(min-width:768px)_and_(hover:none)]:w-screen [@media_(min-width:768px)_and_(hover:none)]:max-w-none [@media_(min-width:768px)_and_(hover:none)]:left-1/2 [@media_(min-width:768px)_and_(hover:none)]:-translate-x-1/2">
               <Image
                 src="/hero-coppia-castrovillari.webp"
                 alt="Coppia a Castrovillari"
