@@ -7,6 +7,7 @@ export default function ManutenzionePage() {
         <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-50 text-amber-700"><span className="text-2xl">🔧</span></div>
         <h1 className="text-2xl font-black text-slate-900">Sito temporaneamente in manutenzione</h1>
         <p className="mt-3 text-base leading-7 text-slate-600">Stiamo lavorando per migliorare il servizio. Ci scusiamo per il disagio e torneremo online al più presto.</p>
+        <a href="/admin" className="mt-6 inline-flex items-center justify-center rounded-xl bg-blue-700 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-blue-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2">Accedi all’amministrazione</a>
       </section>
     </main>
   );
