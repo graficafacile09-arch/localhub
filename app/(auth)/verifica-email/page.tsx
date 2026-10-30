@@ -72,7 +72,7 @@ function VerificaEmailContent() {
 
 export default function VerificaEmailPage() {
   return (
-    <Suspense>
+    <Suspense fallback={null}>
       <VerificaEmailContent />
     </Suspense>
   );
