@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { PINO_ASSET, PINO_ASSET_H, PINO_ASSET_W } from "./PinoSprite";
 import { isPinoTransactionalRoute } from "./pino-route";
 
@@ -15,7 +15,9 @@ const PINO_SCROLL_SETTLE_MS = 180;
 
 export default function PinoHomepageHelper() {
   const pathname = usePathname();
-  const isAdminArea = pathname === "/amministratore" || pathname.startsWith("/amministratore/");
+  const searchParams = useSearchParams();
+  const isAdminLogin = pathname === "/login" && searchParams.get("area") === "admin";
+  const isAdminArea = isAdminLogin || pathname === "/amministratore" || pathname.startsWith("/amministratore/");
   const [hasReachedArea, setHasReachedArea] = useState(false);
   const [isScrolling, setIsScrolling] = useState(false);
   const [isNearBottom, setIsNearBottom] = useState(false);
