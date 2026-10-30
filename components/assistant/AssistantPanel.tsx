@@ -23,6 +23,7 @@ function nextId(): string {
 
 export default function AssistantPanel() {
   const pathname = usePathname();
+  const isAdminArea = pathname === "/amministratore" || pathname.startsWith("/amministratore/");
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState("");
@@ -194,7 +195,7 @@ export default function AssistantPanel() {
   // TASK 2 — nei flussi transazionali (carrello, checkout, pagamento, conferma
   // ordine) anche la chat resta nascosta. Lo stato non viene toccato: conversazione,
   // sessionId e cronologia sopravvivono e sono ancora lì al ritorno sulla homepage.
-  if (isPinoTransactionalRoute(pathname)) return null;
+  if (isAdminArea || isPinoTransactionalRoute(pathname)) return null;
 
   return (
     <>
