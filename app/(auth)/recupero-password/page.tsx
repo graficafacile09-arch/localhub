@@ -91,7 +91,7 @@ function RecuperoContent() {
 
 export default function RecuperoPasswordPage() {
   return (
-    <Suspense>
+    <Suspense fallback={null}>
       <RecuperoContent />
     </Suspense>
   );
