@@ -100,6 +100,7 @@ export default function PinoHomepageHelper() {
   return (
     <div
       aria-label="Pino, assistente di InCittà"
+      data-pino-helper="true"
       className="pointer-events-none fixed inset-x-0 bottom-0 z-[60] h-[58px] overflow-hidden bg-white lg:inset-x-auto lg:left-auto lg:right-0 lg:w-fit lg:rounded-l-2xl"
       aria-hidden="false"
     >
