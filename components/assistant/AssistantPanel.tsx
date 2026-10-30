@@ -203,13 +203,14 @@ export default function AssistantPanel() {
     <>
       {/* Backdrop */}
       <div
+        data-pino-panel-backdrop="true"
         className="fixed inset-0 z-[70] bg-black/20 backdrop-blur-sm sm:bg-black/10"
         onClick={() => setIsOpen(false)}
         aria-hidden
       />
 
       {/* Panel */}
-      <div className="fixed bottom-0 right-0 z-[80] flex h-[85dvh] w-full flex-col rounded-t-2xl border border-slate-200 bg-white shadow-2xl sm:bottom-4 sm:right-4 sm:h-[70dvh] sm:w-[400px] sm:rounded-2xl sm:border">
+      <div data-pino-panel="true" className="fixed bottom-0 right-0 z-[80] flex h-[85dvh] w-full flex-col rounded-t-2xl border border-slate-200 bg-white shadow-2xl sm:bottom-4 sm:right-4 sm:h-[70dvh] sm:w-[400px] sm:rounded-2xl sm:border">
         {/* Header */}
         <div className="flex h-12 shrink-0 items-center justify-between border-b border-slate-100 px-4">
           <div className="flex items-center gap-2">
