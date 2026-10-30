@@ -38,6 +38,7 @@ function LoginContent() {
 
   return (
     <main
+      data-admin-login={isAdmin ? "true" : undefined}
       className={`relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-12 ${tema.sfondoClass}`}
     >
       {tema.decorazioni.map((classe) => (
