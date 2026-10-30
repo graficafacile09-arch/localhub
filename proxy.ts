@@ -117,6 +117,7 @@ export async function proxy(request: NextRequest) {
   // propria tabella (produzione o preview). Il proxy usa il client anon già
   // autenticato con RLS di sola lettura; in caso di errore resta fail-open.
   const manutenzioneEsclusioni =
+    pathname === "/admin" ||
     pathname.startsWith("/amministratore") ||
     pathname.startsWith("/api/amministratore/") ||
     pathname === "/login" ||
