@@ -41,6 +41,9 @@ function LoginContent() {
       data-admin-login={isAdmin ? "true" : undefined}
       className={`relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-12 ${tema.sfondoClass}`}
     >
+      {isAdmin && (
+        <style>{`body:has(main[data-admin-login="true"]) [data-pino-helper], body:has(main[data-admin-login="true"]) [data-pino-panel], body:has(main[data-admin-login="true"]) [data-pino-panel-backdrop] { display: none !important; }`}</style>
+      )}
       {tema.decorazioni.map((classe) => (
         <div
           key={classe}
