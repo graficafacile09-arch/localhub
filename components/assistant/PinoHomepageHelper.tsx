@@ -15,12 +15,13 @@ const PINO_SCROLL_SETTLE_MS = 180;
 
 export default function PinoHomepageHelper() {
   const pathname = usePathname();
+  const isAdminArea = pathname === "/amministratore" || pathname.startsWith("/amministratore/");
   const [hasReachedArea, setHasReachedArea] = useState(false);
   const [isScrolling, setIsScrolling] = useState(false);
   const [isNearBottom, setIsNearBottom] = useState(false);
 
   useEffect(() => {
-    if (isPinoTransactionalRoute(pathname)) {
+    if (isAdminArea || isPinoTransactionalRoute(pathname)) {
       setHasReachedArea(false);
       setIsScrolling(false);
       setIsNearBottom(false);
@@ -82,7 +83,7 @@ export default function PinoHomepageHelper() {
     window.dispatchEvent(new Event("assistant:open"));
   }, []);
 
-  if (isPinoTransactionalRoute(pathname)) return null;
+  if (isAdminArea || isPinoTransactionalRoute(pathname)) return null;
 
   // Sulla homepage manteniamo il comportamento esistente: Pino compare dopo
   // lo scroll iniziale. Nelle altre pagine è disponibile subito, ma scompare
