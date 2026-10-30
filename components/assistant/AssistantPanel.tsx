@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import AssistantMessage, { type ChatMessage } from "./AssistantMessage";
 import AssistantInput from "./AssistantInput";
 import TypingIndicator from "./TypingIndicator";
@@ -23,7 +23,9 @@ function nextId(): string {
 
 export default function AssistantPanel() {
   const pathname = usePathname();
-  const isAdminArea = pathname === "/amministratore" || pathname.startsWith("/amministratore/");
+  const searchParams = useSearchParams();
+  const isAdminLogin = pathname === "/login" && searchParams.get("area") === "admin";
+  const isAdminArea = isAdminLogin || pathname === "/amministratore" || pathname.startsWith("/amministratore/");
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState("");
