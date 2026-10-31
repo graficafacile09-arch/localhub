@@ -33,7 +33,9 @@ function normalizzaRelazionale(input: string): string {
     .replace(/[^a-z0-9' ]+/g, " ")
     .replace(/\s+/g, " ")
     .trim()
-    .replace(/\b2\b/g, "due");
+    .replace(/\b2\b/g, "due")
+    // Errori colloquiali frequenti: "kiacchiere" al posto di "chiacchiere".
+    .replace(/\bkiacchiere\b/g, "chiacchiere");
 }
 
 function distanzaRelazionale(a: string, b: string): number {
