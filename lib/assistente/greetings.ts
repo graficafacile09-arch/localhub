@@ -76,7 +76,7 @@ export function rispostaRelazionalePino(input: string): string | null {
     return riga[b.length];
   };
   const haParola = (attesa: string) =>
-    paroleDialogo.some((parola) => parola === attesa || (parola.length >= 6 && distanzaParole(parola, attesa) <= 1));
+    paroleDialogo.some((parola) => parola === attesa || (parola.length >= 6 && distanzaParole(parola, attesa) <= 2));
   const vuoleConversare =
     /(ti va|ti andrebbe|vuoi|facciamo|possiamo|ho voglia|mi va|parliamo|due) /.test(q) &&
     (haParola("chiacchiere") || haParola("chiacchierare") || haParola("parlare") || haParola("conversare") || /parliamo/.test(q));
