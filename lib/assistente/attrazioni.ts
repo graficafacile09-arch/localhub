@@ -34,7 +34,7 @@ function normalizza(t: string): string {
  */
 export function isAttractionNameQuery(query: string): boolean {
   const q = normalizza(query);
-  if (q.length < 4) return false;
+  if (q.length < 4 || q === "castrovillari") return false;
   return CATALOGO.some((item) =>
     [item.nome, ...item.alias].some((value) => {
       const alias = normalizza(value);
