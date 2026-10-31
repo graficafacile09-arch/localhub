@@ -141,22 +141,29 @@ async function eseguiTool(
       // Se l'LLM non riporta il soggetto nei follow-up ("sotto 500 euro") o
       // passa una query che è solo un vincolo di prezzo, usiamo la query
       // sostanziale della conversazione (es. "cerco una TV").
-      const q = params?.termini?.length
-        ? (params.termini.join(" ") || fallbackQuery)
-        : eQuerySostanziale(params?.query ?? "") || fallbackQuery;
-      if (!q) return vuoto;
       if (nome === "searchStores") {
+        const q = params?.termini?.length
+          ? (params.termini.join(" ") || fallbackQuery)
+          : eQuerySostanziale(params?.query ?? "") || fallbackQuery;
+        if (!q) return vuoto;
         return {
           ...vuoto,
           negozi: await searchStores(q, { ...params, limit }),
         };
       }
+
+      // La query completa serve al retrieval e al ranking; i termini del planner
+      // vengono passati separatamente come soggetto, non scartati.
+      const qProdotti =
+        eQuerySostanziale(params?.query ?? "") ||
+        (params?.termini?.length ? params.termini.join(" ") : fallbackQuery);
+      if (!qProdotti) return vuoto;
       return {
         ...vuoto,
-        prodotti: await searchProducts(q, {
+        prodotti: await searchProducts(qProdotti, {
           ...params,
           limit,
-          termini: undefined,
+          termini: params?.termini,
         }),
       };
     }
@@ -832,6 +839,7 @@ async function recuperaAlternativeSemantiche(
   const esclusioni = piano.exclusions.length ? piano.exclusions : undefined;
   const baseParams: ToolParams = {
     citta: piano.city ?? undefined,
+    termini: piano.terms,
     esclusioni,
     apertiOra: piano.openNow || undefined,
     maxPrice: piano.maxPrice,
@@ -1242,6 +1250,7 @@ export async function chatConAssistente(
       tool: "searchProducts",
       params: {
         query: semantica.query,
+        termini: semantica.terms,
         limit: 8,
         maxPrice: semantica.maxPrice,
         minPrice: semantica.minPrice,

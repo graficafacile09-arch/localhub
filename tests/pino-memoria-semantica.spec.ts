@@ -51,7 +51,8 @@ test.describe("Pino — consumo della memoria semantica verificata", () => {
   test("4) una correzione appresa porta il termine canonico dentro il fast-path", async () => {
     const query = "telefonazzo";
     const analisi = analizzaIntentoPino(query);
-    expect(analisi.intent).toBe("generic");
+    expect(analisi.intent).toBe("product");
+    expect(analisi.confidence).toBe("bassa");
 
     const piano = await interpretaRichiestaPino(
       query,
