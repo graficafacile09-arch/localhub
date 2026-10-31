@@ -87,7 +87,9 @@ export function rispostaRelazionalePino(input: string): string | null {
   if (/^(grazie|grazie pino|ti ringrazio|molte grazie|thanks|thank you|thanks pino|thank you pino)$/.test(q)) {
     return "Di nulla! 😊 Quando vuoi, riprendiamo da qui. Se hai un'altra idea o vuoi approfondire qualcosa, ci sono.";
   }
-  if (/^(come stai|come va|tutto bene|come te la passi|how are you|how are you pino|are you doing well)$/.test(q)) {
+  // Un saluto può accompagnare una domanda personale: non deve costringere
+  // l'utente a scrivere "come stai?" da solo per ottenere una risposta diretta.
+  if (/^(?:(?:ciao|salve|buongiorno|buonasera)(?: pino)? )?(come stai|come va|tutto bene|come te la passi|how are you|how are you pino|are you doing well)$/.test(q)) {
     return "Tutto bene, grazie! Non ho giornate o stati d'animo come una persona, ma sono qui, attento alla conversazione e pronto a darti una mano. Tu come stai?";
   }
   if (/^(scusa|scusami|sorry|i am sorry|my apologies)$/.test(q)) {
