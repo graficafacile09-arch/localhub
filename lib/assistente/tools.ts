@@ -580,6 +580,29 @@ export function prodottoPertinente(
     return prodottoDiPasta && contieneUovo;
   }
 
+  // Il soggetto deve identificare il prodotto, non comparire soltanto in una
+  // frase accessoria della descrizione (es. "filetti conservati sott'olio"
+  // non sono un risultato per la ricerca "olio"). Usiamo nome e classificazione
+  // del prodotto, oltre ai metadati espliciti, come prova d'identità.
+  const campiIdentita = normalizza([
+    prodotto.nome,
+    prodotto.categoria,
+    prodotto.sottocategoria,
+    prodotto.marca,
+    ...paroleChiave,
+    ...caratteristiche,
+    prodotto.seo_title,
+  ].filter(Boolean).join(" "));
+  const tokenIdentita = estraiToken(campiIdentita);
+  const soggetto = termini[0];
+  const soggettoInIdentita = soggetto
+    ? soggetto.length < 4
+      ? tokenIdentita.includes(soggetto)
+      : campiIdentita.includes(soggetto) || tokenCompatibile(soggetto, tokenIdentita)
+    : true;
+  const concettoInIdentita = concetti.some((concetto) => campiIdentita.includes(concetto));
+  if (!soggettoInIdentita && !concettoInIdentita) return false;
+
   // Il soggetto ancora la ricerca; gli aggettivi e le preferenze successive
   // contribuiscono al ranking ma non azzerano la ricerca se la scheda è breve.
   // Le caratteristiche alimentari esplicite restano vincoli rigidi.
@@ -591,7 +614,6 @@ export function prodottoPertinente(
 
   if (termini.every(corrisponde)) return true;
 
-  const soggetto = termini[0];
   if (soggetto && corrisponde(soggetto)) {
     const qualificatoriRigidi = new Set([
       "analcolica", "analcolico", "analcoliche", "analcolici",
@@ -603,7 +625,7 @@ export function prodottoPertinente(
       .every(corrisponde);
   }
 
-  return concetti.some((concetto) => campi.includes(concetto));
+  return concettoInIdentita;
 }
 
 // Un termine è compatibile con il prodotto anche quando differisce solo per la
