@@ -28,6 +28,7 @@ import { estraiCitta } from "@/lib/localita";
 import { normalizza, estraiToken } from "@/lib/text-utils";
 import type { Orari } from "@/types/negozio";
 import { apertoOra } from "./conversazione";
+import { prodottoIdentificatoDaSoggetto } from "./product-relevance";
 
 // ─── Tipi risultati dei tool ─────────────────────────────────────────────────
 
@@ -545,6 +546,9 @@ export function prodottoPertinente(
     /\b(?:tagliatell[ei]|fettuccin[ei]|pappardell[ei]|lasagn[ae])\b/.test(campi) &&
     /\buov[oa]\b/.test(campi)
   ) return true;
+  // Il primo termine deve identificare il prodotto tramite nome/categoria.
+  // La sola presenza nella descrizione (es. "conservati sott'olio") non basta.
+  if (!prodottoIdentificatoDaSoggetto(prodotto, termini[0], concetti)) return false;
   // Anche qui i termini CORTI devono essere parole intere: altrimenti "bar"
   // matcherebbe "barattolo" nella descrizione di un prodotto qualsiasi.
   const token = estraiToken(campi);
