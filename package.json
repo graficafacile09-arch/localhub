@@ -9,7 +9,7 @@
     "lint": "eslint",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test:pino": "node --experimental-strip-types --test tests/pino-understanding.test.mjs tests/pino-gift-retrieval.test.mjs",
+    "test:pino": "node --experimental-strip-types --test tests/pino-understanding.test.mjs tests/pino-gift-retrieval.test.mjs && playwright test tests/pino-search-recall.spec.ts --reporter=line",
     "prebuild": "npm run test:pino"
   },
   "dependencies": {

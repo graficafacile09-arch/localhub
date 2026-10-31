@@ -523,38 +523,70 @@ export async function searchStores(
 export function prodottoPertinente(
   prodotto: ProdottoRicerca,
   termini: string[],
-  concetti: string[]
+  concetti: string[],
+  options: { matchAnyTerm?: boolean; query?: string } = {}
 ): boolean {
-  const campi = normalizza(
-    [prodotto.nome, prodotto.descrizione, prodotto.categoria]
-      .filter(Boolean)
-      .join(" ")
+  const nomeCategoria = normalizza(
+    [prodotto.nome, prodotto.categoria].filter(Boolean).join(" ")
   );
+  const descrizione = normalizza(prodotto.descrizione ?? "");
+  const campi = normalizza([nomeCategoria, descrizione].filter(Boolean).join(" "));
   if (!campi) return false;
   if (termini.length === 0) return true;
-  // "Pasta all'uovo" è una richiesta di categoria + lavorazione: il prodotto
-  // può essere catalogato con il nome specifico ("tagliatelle all'uovo") senza
-  // riportare la parola generica "pasta". Manteniamo obbligatorio il qualificatore
-  // "uovo" e limitiamo l'equivalenza a formati di pasta riconoscibili, evitando
-  // di trasformare la ricerca in un match permissivo su una sola parola.
+
+  const query = normalizza(options.query ?? "");
+
+  // "Pasta all'uovo" ha un attributo essenziale: non basta trovare una pasta qualsiasi.
   const richiedePastaAllUovo =
-    termini.includes("pasta") &&
-    termini.some((t) => t === "uovo" || t === "uova" || t === "all'uovo");
-  if (
-    richiedePastaAllUovo &&
-    /\b(?:tagliatell[ei]|fettuccin[ei]|pappardell[ei]|lasagn[ae])\b/.test(campi) &&
-    /\buov[oa]\b/.test(campi)
-  ) return true;
-  // Anche qui i termini CORTI devono essere parole intere: altrimenti "bar"
-  // matcherebbe "barattolo" nella descrizione di un prodotto qualsiasi.
-  const token = estraiToken(campi);
-  if (
-    termini.every((t) =>
-      t.length < 4 ? token.includes(t) : campi.includes(t) || tokenCompatibile(t, token)
-    )
-  ) {
+    /\bpasta\s+all['’]?uovo\b/.test(query) ||
+    (termini.includes("pasta") &&
+      termini.some((t) => t === "uovo" || t === "uova" || t === "all'uovo"));
+  if (richiedePastaAllUovo) {
+    return (
+      /\b(?:tagliatell[ei]|fettuccin[ei]|pappardell[ei]|lasagn[ae])\b/.test(campi) &&
+      /\buov[oa]\b/.test(campi)
+    );
+  }
+
+  // Se il catalogo dichiara esplicitamente il genere opposto, rispettiamo il vincolo.
+  // Se il dato manca, non lo interpretiamo come una contraddizione.
+  const cercaUomo = /\b(?:uomo|maschile)\b/.test(query);
+  const cercaDonna = /\b(?:donna|femminile)\b/.test(query);
+  const prodottoUomo = /\b(?:uomo|maschile)\b/.test(campi);
+  const prodottoDonna = /\b(?:donna|femminile)\b/.test(campi);
+  if (cercaUomo && prodottoDonna && !prodottoUomo) return false;
+  if (cercaDonna && prodottoUomo && !prodottoDonna) return false;
+
+  // I termini del soggetto sono alternative/sinonimi: basta una corrispondenza.
+  // Aggettivi, destinatari e dettagli restano nella query per il ranking, ma non
+  // diventano condizioni obbligatorie che azzerano il recupero.
+  const tokenNomeCategoria = estraiToken(nomeCategoria);
+  const tokenCampi = estraiToken(campi);
+  const corrisponde = (t: string, primario = false) => {
+    const termine = normalizza(t);
+    if (!termine) return false;
+    const testo = primario ? nomeCategoria : campi;
+    const token = primario ? tokenNomeCategoria : tokenCampi;
+    return termine.length < 4
+      ? token.includes(termine)
+      : testo.includes(termine) || tokenCompatibile(termine, token);
+  };
+
+  if (options.matchAnyTerm) {
+    const descrizioneIniziale = descrizione.slice(0, 70);
+    const matchSoggetto = termini.some(
+      (t) =>
+        corrisponde(t, true) ||
+        (normalizza(t).length >= 4 && descrizioneIniziale.includes(normalizza(t)))
+    );
+    if (matchSoggetto) return true;
+    // Con un soggetto esplicito, un concetto generico (es. alimentari o prodotti
+    // tipici) non può sostituire il soggetto e trasformare miele/pecorino in olio.
+    return false;
+  } else if (termini.every((t) => corrisponde(t))) {
     return true;
   }
+
   return concetti.some((c) => campi.includes(c));
 }
 
@@ -773,14 +805,24 @@ export async function searchProducts(
 
   const righe = await cercaProdotti(q, 60);
 
-  const terminiOriginali = terminiSignificativi(q, 10).map(normalizza);
+  const terminiEspliciti = (opts.termini ?? [])
+    .map((termine) => normalizza(String(termine ?? "").trim()))
+    .filter(Boolean);
+  const terminiOriginali = (
+    terminiEspliciti.length > 0 ? terminiEspliciti : terminiSignificativi(q, 10)
+  ).map(normalizza);
   // Concetti d'intento come FRASI intere (es. "prodotti tipici"): spezzarli in
   // singole parole renderebbe "prodotti"/"tipici" una chiave che matcha mezzo
   // catalogo.
   const concettiQuery = analizzaRichiesta(q).concetti.map(normalizza);
   const pertinenti =
     (terminiOriginali.length > 0
-      ? righe.filter((p) => prodottoPertinente(p, terminiOriginali, concettiQuery))
+      ? righe.filter((p) =>
+          prodottoPertinente(p, terminiOriginali, concettiQuery, {
+            matchAnyTerm: terminiEspliciti.length > 0,
+            query: q,
+          })
+        )
       : righe
     ).filter((p) => prodottoSoddisfaEsclusioni(p, opts?.esclusioni));
 

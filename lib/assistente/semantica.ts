@@ -148,7 +148,9 @@ Regole:
 - "telefonino", "cellulare", "smartphone" => soggetto canonico "telefono".
 - Non inventare prodotti, negozi o disponibilità.
 - terms contiene SOLO i soggetti realmente cercati, non articoli, preposizioni,
-  verbi o vincoli. Può contenere sinonimi utili (massimo 5).
+  verbi, aggettivi descrittivi, destinatari o vincoli. Può contenere sinonimi
+  utili (massimo 5): i termini sono ALTERNATIVE dello stesso soggetto, non
+  condizioni che devono comparire tutti insieme nel prodotto.
 - exclusions contiene ciò che l'utente esclude esplicitamente (massimo 5),
   ad esempio "non alcolica" => ["alcolica"].
 - Estrai prezzi da frasi come "sotto 10 euro", "massimo 20", "tra 5 e 15".
@@ -214,6 +216,19 @@ const CANONICI_RICERCA: Array<{ pattern: RegExp; termine: string; intent: PinoIn
   { pattern: /\btelefono|telefoni|telefonino|telefonini|cellulare|cellulari|smartphone\b/i, termine: "telefono", intent: "product" },
   { pattern: /\bscarpa|scarpe|scarpina|scarpine\b/i, termine: "scarpe", intent: "product" },
   { pattern: /\bmaglietta|magliette|maglia|maglie\b/i, termine: "maglia", intent: "product" },
+  { pattern: /\b(?:orologio|orologi|cronografo|cronografi)\b/i, termine: "orologio", intent: "product" },
+  { pattern: /\b(?:borsa|borse|borsetta|borsette)\b/i, termine: "borsa", intent: "product" },
+  { pattern: /\b(?:profumo|profumi|fragranza|fragranze)\b/i, termine: "profumo", intent: "product" },
+  { pattern: /\b(?:anello|anelli)\b/i, termine: "anello", intent: "product" },
+  { pattern: /\b(?:collana|collane)\b/i, termine: "collana", intent: "product" },
+  { pattern: /\b(?:bracciale|bracciali)\b/i, termine: "bracciale", intent: "product" },
+  { pattern: /\b(?:portafoglio|portafogli)\b/i, termine: "portafoglio", intent: "product" },
+  { pattern: /\b(?:cintura|cinture)\b/i, termine: "cintura", intent: "product" },
+  { pattern: /\b(?:occhiale|occhiali)\b/i, termine: "occhiali", intent: "product" },
+  { pattern: /\b(?:olio|oli)\b/i, termine: "olio", intent: "food" },
+  { pattern: /\b(?:miele|mieli)\b/i, termine: "miele", intent: "food" },
+  { pattern: /\b(?:pasta|paste)\b/i, termine: "pasta", intent: "food" },
+  { pattern: /\b(?:tartufo|tartufi)\b/i, termine: "tartufo", intent: "food" },
 ];
 
 function distanzaLevenshtein(a: string, b: string): number {
@@ -484,7 +499,7 @@ export function usaFastPathSemantico(query: string, analisi: PinoIntentAnalysis)
     /\b(?:sotto|sopra|massimo|minimo|meno di|piu di|più di|entro|fino a|tra)\b/i.test(q);
 }
 
-function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): PinoSemanticPlan | null {
+export function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): PinoSemanticPlan | null {
   const q = correggiErroriBattitura(normalizzaRichiesta(query)).trim();
   if (!q) return null;
   const match = CANONICI_RICERCA.find((x) => x.pattern.test(q));
@@ -598,6 +613,14 @@ function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): Pi
   const openNow = richiestaApertaOra(q);
 
   const intent = match?.intent ?? analisi.intent;
+  const termineSoggetto =
+    match?.termine ??
+    analisi.segnali
+      .map((segnale) =>
+        segnale.match(/^(?:food|drink|product|dominio-food|dominio-drink):(.+)$/)?.[1] ?? ""
+      )
+      .find(Boolean) ??
+    termine;
   // "aperto ora" su un'attività (pizzeria, farmacia, …) è una ricerca di
   // negozi. Le altre richieste restano guidate dall'intent: i flag
   // usaNegozi/usaProdotti valgono true quasi sempre, quindi usarli in
@@ -612,9 +635,7 @@ function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): Pi
     surface,
     intent,
     query: termine.slice(0, 120),
-    terms: Array.from(
-      new Set([termine, ...(match ? [match.termine] : [])].filter((t) => t && t.trim()))
-    ).slice(0, 5),
+    terms: termineSoggetto ? [termineSoggetto] : [],
     exclusions: esclusioni,
     minPrice,
     maxPrice,

@@ -9,12 +9,12 @@ import {
 import type { ProdottoRicerca } from "../lib/ricerca-ai";
 import { prodottoPertinente } from "../lib/assistente/tools";
 
-const prodotto = (nome: string, prezzo = 2, descrizione: string | null = null): ProdottoRicerca => ({
+const prodotto = (nome: string, prezzo = 2, descrizione: string | null = null, categoria = "Pasta"): ProdottoRicerca => ({
   id: nome.toLowerCase().replace(/\s+/g, "-"),
   negozio_id: "negozio-1",
   nome,
   descrizione,
-  categoria: "Pasta",
+  categoria,
   prezzo,
   negozio_nome: "Mani in Pasta",
   immagine_principale: null,
@@ -23,9 +23,9 @@ const prodotto = (nome: string, prezzo = 2, descrizione: string | null = null): 
 // Prodotti reali del catalogo InCittà per la ricerca "pasta".
 const CATALOGO_PASTA = [
   prodotto("Fileja di Tropea", 2),
-  prodotto("Taralli calabresi", 3),
+  prodotto("Taralli calabresi", 3, null, "Prodotti da forno"),
   prodotto("Maccheroni al ferretto", 3.5),
-  prodotto("Biscotti tradizionali calabresi", 4),
+  prodotto("Biscotti tradizionali calabresi", 4, null, "Prodotti da forno"),
 ];
 
 // Prodotto recuperato dal filtro "all'uovo".

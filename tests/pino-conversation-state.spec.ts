@@ -44,8 +44,8 @@ test.describe("Pino — stato conversazionale dei filtri", () => {
     const risultato = arricchisciRichiestaConContesto("anzi a Cosenza", richieste);
 
     expect(risultato).toContain("scarpe");
-    expect(risultato).toContain("cosenza");
-    expect(risultato).not.toContain("castrovillari");
+    expect(risultato).toMatch(/cosenza/i);
+    expect(risultato).not.toMatch(/castrovillari/i);
   });
 
   test("le esclusioni precedenti restano attive", () => {
