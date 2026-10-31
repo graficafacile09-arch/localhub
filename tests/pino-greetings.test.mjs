@@ -40,3 +40,23 @@ test("Pino is transparent about consciousness and feelings", () => {
 test("Pino does not intercept a concrete shopping request", () => {
   assert.equal(rispostaRelazionalePino("Cerco un orologio sotto 100 euro"), null);
 });
+
+
+test("Pino accepts a direct invitation to chat", () => {
+  const reply = rispostaRelazionalePino("Ti va di fare due chiacchiere?");
+  assert.match(reply ?? "", /Volentieri!/);
+});
+
+test("Pino understands a chat invitation with a spelling mistake", () => {
+  const reply = rispostaRelazionalePino("Ti va di fare due kiacchiere?");
+  assert.match(reply ?? "", /Volentieri!/);
+});
+
+test("Pino understands an informal chat invitation", () => {
+  const reply = rispostaRelazionalePino("Facciamo 2 chiacchiere");
+  assert.match(reply ?? "", /Volentieri!/);
+});
+
+test("Pino does not intercept a concrete catalog request containing a typo", () => {
+  assert.equal(rispostaRelazionalePino("Cerco un orologgio sotto 100 euro"), null);
+});
