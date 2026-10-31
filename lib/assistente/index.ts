@@ -1,5 +1,6 @@
 import { rilevaLinguaPino } from "./understanding";
 import { rispostaIdentitaPino } from "./identity";
+import { rispostaSalutoPino, rispostaRelazionalePino } from "./greetings";
 import { CATEGORIE_REGALO, isGenericGiftRequest, prodottoCorrispondeCategoriaRegalo } from "./gift-retrieval";
 /**
  * LocalHub — Assistente AI: Orchestratore
@@ -1030,6 +1031,22 @@ export async function chatConAssistente(
   // Cap sulla domanda: evita abuso di token e superfici di prompt injection
   // (la storia è già troncata a 300 caratteri per messaggio).
   const domanda = (ultimo && ultimo.role === "user" ? ultimo.content : "").slice(0, 500);
+
+  // Fast path conversazionale: saluti, check-in e dialogo semplice devono
+  // rispondere PRIMA di memoria, planner semantico/Gemini e qualsiasi ricerca.
+  // In questo modo quota 429 o timeout del provider non rallentano i messaggi sociali.
+  const identitaDiretta = rispostaIdentitaPino(domanda);
+  const rispostaDiretta = identitaDiretta ?? rispostaRelazionalePino(domanda) ?? rispostaSalutoPino(domanda);
+  if (rispostaDiretta) {
+    return {
+      risposta: rispostaDiretta,
+      negozi: [],
+      prodotti: [],
+      processingMs: Date.now() - inizio,
+      source: "assistente",
+    };
+  }
+
 
   // Guida turistica InCittà: usa lo stesso catalogo della pagina /attrazioni.
   // Il filtro d'intento evita di deviare qui normali ricerche di prodotti o servizi.
