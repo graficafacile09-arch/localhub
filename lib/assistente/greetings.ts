@@ -3,8 +3,7 @@
  * Mantiene la lingua dell'utente e non avvia ricerche non richieste.
  */
 export function rispostaSalutoPino(input: string): string | null {
-  const q = input.normalize("NFD").replace(/[\\u0300-\\u036f]/g, "")
-    .toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  const q = input.toLowerCase().replace(/[^a-z0-9à-ù]+/g, " ").trim();
 
   const it: Record<string, string> = {
     ciao: "Ciao!", "ciao pino": "Ciao!", salve: "Ciao!", "salve pino": "Ciao!",
