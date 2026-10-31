@@ -12,7 +12,7 @@
     "test:pino": "npm run test:pino:unit && npm run test:pino:regression",
     "prebuild": "npm run test:pino",
     "test:pino:unit": "node --experimental-strip-types --test tests/pino-understanding.test.mjs tests/pino-gift-retrieval.test.mjs",
-    "test:pino:regression": "playwright test tests/pino-altro-dedup-v11.spec.ts tests/pino-attrazioni.spec.ts tests/pino-budget-soft-search.spec.ts tests/pino-conversation-state-v10.spec.ts tests/pino-conversation-state.spec.ts tests/pino-domanda-aggregata.spec.ts tests/pino-intenti-locali.spec.ts tests/pino-memoria-semantica.spec.ts tests/pino-product-local-filters.spec.ts tests/pino-product-recall.spec.ts tests/pino-semantic-constraints.spec.ts tests/pino-v16-edge-cases.spec.ts --workers=1 --reporter=line"
+    "test:pino:regression": "node scripts/run-pino-regression-tests.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.12.0",
