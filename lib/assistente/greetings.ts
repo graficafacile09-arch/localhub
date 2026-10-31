@@ -60,6 +60,30 @@ export function rispostaRelazionalePino(input: string): string | null {
   if (/^(ti va di fare due chiacchiere|ti va di chiacchierare|facciamo due chiacchiere|due chiacchiere|parliamo un po|parliamo|vuoi parlare|ho voglia di parlare|ti va di parlare|let's chat|lets chat|want to chat|can we chat|chat with me)$/.test(qDialogo)) {
     return "Volentieri! 😊 Possiamo fare due chiacchiere con calma. C'è qualcosa che ti passa per la testa, oppure scegliamo un argomento al volo?";
   }
+  // Riconosce l'intenzione di conversare anche con formulazioni libere e refusi.
+  const paroleDialogo = q.split(" ").filter(Boolean);
+  const distanzaParole = (a: string, b: string): number => {
+    const riga = Array.from({ length: b.length + 1 }, (_, i) => i);
+    for (let i = 1; i <= a.length; i++) {
+      let diagonale = riga[0];
+      riga[0] = i;
+      for (let j = 1; j <= b.length; j++) {
+        const sopra = riga[j];
+        riga[j] = Math.min(riga[j] + 1, riga[j - 1] + 1, diagonale + (a[i - 1] === b[j - 1] ? 0 : 1));
+        diagonale = sopra;
+      }
+    }
+    return riga[b.length];
+  };
+  const haParola = (attesa: string) =>
+    paroleDialogo.some((parola) => parola === attesa || (parola.length >= 6 && distanzaParole(parola, attesa) <= 1));
+  const vuoleConversare =
+    /(ti va|ti andrebbe|vuoi|facciamo|possiamo|ho voglia|mi va|parliamo|due) /.test(q) &&
+    (haParola("chiacchiere") || haParola("chiacchierare") || haParola("parlare") || haParola("conversare") || /parliamo/.test(q));
+  if (vuoleConversare || /^(let'?s chat|want to chat|can we chat|chat with me)$/.test(q)) {
+    return "Volentieri! 😊 Possiamo fare due chiacchiere con calma. C'è qualcosa che ti passa per la testa, oppure scegliamo un argomento al volo?";
+  }
+
   if (/^(grazie|grazie pino|ti ringrazio|molte grazie|thanks|thank you|thanks pino|thank you pino)$/.test(q)) {
     return "Di nulla! 😊 Quando vuoi, riprendiamo da qui. Se hai un'altra idea o vuoi approfondire qualcosa, ci sono.";
   }
