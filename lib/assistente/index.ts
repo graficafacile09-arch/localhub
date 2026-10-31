@@ -1,6 +1,6 @@
 import { rilevaLinguaPino } from "./understanding";
 import { rispostaIdentitaPino } from "./identity";
-import { rispostaSalutoPino } from "./greetings";
+import { rispostaSalutoPino, rispostaRelazionalePino } from "./greetings";
 import { CATEGORIE_REGALO, isGenericGiftRequest, prodottoCorrispondeCategoriaRegalo } from "./gift-retrieval";
 /**
  * LocalHub — Assistente AI: Orchestratore
@@ -1032,11 +1032,24 @@ export async function chatConAssistente(
   // (la storia è già troncata a 300 caratteri per messaggio).
   const domanda = (ultimo && ultimo.role === "user" ? ultimo.content : "").slice(0, 500);
 
-  // Risposta diretta e cordiale ai saluti semplici, senza passare dal planner.
-  const salutoPino = rispostaSalutoPino(domanda);
-  if (salutoPino) {
+  // Dialogo relazionale: risposte immediate, senza ricerche inutili.
+  const identitaPino = rispostaIdentitaPino(domanda);
+  if (identitaPino) {
     return {
-      risposta: salutoPino,
+      risposta: identitaPino,
+      negozi: [],
+      prodotti: [],
+      processingMs: Date.now() - inizio,
+      source: "assistente",
+    };
+  }
+
+  const salutoPino = rispostaSalutoPino(domanda);
+  const relazionePino = rispostaRelazionalePino(domanda);
+  const rispostaRelazionale = salutoPino ?? relazionePino;
+  if (rispostaRelazionale) {
+    return {
+      risposta: rispostaRelazionale,
       negozi: [],
       prodotti: [],
       processingMs: Date.now() - inizio,
