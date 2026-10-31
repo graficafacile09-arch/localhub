@@ -1,0 +1,50 @@
+name: Pino regression audit
+
+on:
+  push:
+    branches:
+      - audit/pino-regression-2026-10-31
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pino-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Pino unit tests
+        run: npm run test:pino
+
+      - name: Pino regression suites
+        run: >
+          npx playwright test
+          tests/pino-altro-dedup-v11.spec.ts
+          tests/pino-attrazioni.spec.ts
+          tests/pino-budget-soft-search.spec.ts
+          tests/pino-conversation-state-v10.spec.ts
+          tests/pino-conversation-state.spec.ts
+          tests/pino-domanda-aggregata.spec.ts
+          tests/pino-intenti-locali.spec.ts
+          tests/pino-memoria-semantica.spec.ts
+          tests/pino-product-local-filters.spec.ts
+          tests/pino-semantic-constraints.spec.ts
+          tests/pino-v16-edge-cases.spec.ts
+          --workers=1
+          --reporter=line
+
+      - name: TypeScript
+        run: npx tsc --noEmit
