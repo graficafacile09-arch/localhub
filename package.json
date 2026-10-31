@@ -11,7 +11,7 @@
     "test:e2e:ui": "playwright test --ui",
     "test:pino": "npm run test:pino:unit && npm run test:pino:regression",
     "prebuild": "npm run test:pino",
-    "test:pino:unit": "node --experimental-strip-types --test tests/pino-understanding.test.mjs tests/pino-gift-retrieval.test.mjs",
+    "test:pino:unit": "node --experimental-strip-types --test tests/pino-understanding.test.mjs tests/pino-gift-retrieval.test.mjs tests/pino-greetings.test.mjs",
     "test:pino:regression": "node scripts/run-pino-regression-tests.mjs"
   },
   "dependencies": {
