@@ -29,6 +29,11 @@ test("Pino answers a personal check-in transparently", () => {
   const reply = rispostaRelazionalePino("Come stai?");
   assert.match(reply ?? "", /Non ho giornate o stati d'animo come una persona/);
 });
+test("Pino answers a check-in preceded by his greeting", () => {
+  const reply = rispostaRelazionalePino("Ciao Pino, come stai?");
+  assert.match(reply ?? "", /Tutto bene, grazie!/);
+  assert.match(reply ?? "", /Tu come stai\?/);
+});
 test("Pino acknowledges misunderstandings without blaming the user", () => {
   const reply = rispostaRelazionalePino("Non hai capito");
   assert.match(reply ?? "", /ho interpretato male/i);
