@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 import { Geist, Geist_Mono } from "next/font/google";
 import { CartProvider } from "@/lib/carrello/CartContext";
 import { getImpostazioniPubbliche } from "@/lib/platform/settings";
@@ -120,8 +121,12 @@ export default async function RootLayout({
           </div>
         </footer>
 
-        <PinoHomepageHelper />
-        <AssistantPanel />
+        <Suspense fallback={null}>
+          <PinoHomepageHelper />
+        </Suspense>
+        <Suspense fallback={null}>
+          <AssistantPanel />
+        </Suspense>
         <CookieNotice />
       </body>
     </html>
