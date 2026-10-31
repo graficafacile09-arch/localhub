@@ -1,4 +1,4 @@
-import { normalizza, estraiToken } from "../text-utils";
+import { normalizza, estraiToken } from "../text-utils.ts";
 
 export type ProdottoIdentificabile = {
   nome?: string | null;
