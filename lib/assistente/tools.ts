@@ -4,7 +4,7 @@
  * Strato interno dell'assistente: recupera i dati pubblici di InCittà
  * RIUSANDO le funzioni di ricerca già esistenti (nessuna logica duplicata):
  *   - searchStores   → cercaNegozi() (keyword + sinonimi + ranking)
- *   - searchProducts → cercaProdotti() + filtro prezzo in memoria
+ *   - searchProducts → stesso retrieval DB della ricerca pubblica + metadati interni per la pertinenza
  *   - searchOffers   → getOffertePubbliche() + nome negozio + filtro testo
  *   - searchEvents   → getEventiPubblici() + nome negozio + filtro testo
  *   - getCategories  → getCategorieConNegozi()
@@ -15,7 +15,12 @@
  * @module lib/assistente/tools
  */
 
-import { cercaNegozi, cercaProdotti, getCategorieConNegozi } from "@/lib/negozi";
+import {
+  cercaNegozi,
+  cercaProdottiPerAssistente,
+  getCategorieConNegozi,
+  type ProdottoRicercaAssistente,
+} from "@/lib/negozi";
 import { getOffertePubbliche } from "@/lib/offerte";
 import { getEventiPubblici } from "@/lib/eventi";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
@@ -149,15 +154,24 @@ function recordEscluso(campi: unknown[], esclusioni: string[] | undefined): bool
 }
 
 function prodottoSoddisfaEsclusioni(
-  prodotto: ProdottoRicerca,
+  prodotto: ProdottoRicercaAssistente,
   esclusioni: string[] | undefined
 ): boolean {
   if (!esclusioni?.length) return true;
-  const testo = normalizza(
-    [prodotto.nome, prodotto.descrizione, prodotto.categoria]
-      .filter(Boolean)
-      .join(" ")
-  );
+  const testo = normalizza([
+    prodotto.nome,
+    prodotto.descrizione,
+    prodotto.categoria,
+    prodotto.sottocategoria,
+    prodotto.marca,
+    prodotto.colore,
+    prodotto.materiale,
+    ...(prodotto.parole_chiave ?? []),
+    ...(prodotto.caratteristiche ?? []),
+    prodotto.seo_title,
+    prodotto.seo_description,
+    prodotto.alt_text_immagine,
+  ].filter(Boolean).join(" "));
   for (const esclusione of esclusioni) {
     const e = normalizza(esclusione);
     if (!e) continue;
@@ -521,41 +535,75 @@ export async function searchStores(
 // del negozio non deve propagarsi ai suoi prodotti.
 // Se la query non ha termini sostanziali, non applichiamo il vincolo.
 export function prodottoPertinente(
-  prodotto: ProdottoRicerca,
+  prodotto: ProdottoRicercaAssistente,
   termini: string[],
   concetti: string[]
 ): boolean {
-  const campi = normalizza(
-    [prodotto.nome, prodotto.descrizione, prodotto.categoria]
-      .filter(Boolean)
-      .join(" ")
-  );
+  const paroleChiave = prodotto.parole_chiave ?? [];
+  const caratteristiche = prodotto.caratteristiche ?? [];
+  const testoProdotto = [
+    prodotto.nome,
+    prodotto.descrizione,
+    prodotto.sottocategoria,
+    ...paroleChiave,
+    ...caratteristiche,
+  ].filter(Boolean).join(" ");
+  const nomeDescrizione = normalizza(testoProdotto);
+  const campi = normalizza([
+    prodotto.nome,
+    prodotto.descrizione,
+    prodotto.categoria,
+    prodotto.sottocategoria,
+    prodotto.marca,
+    prodotto.colore,
+    prodotto.materiale,
+    ...paroleChiave,
+    ...caratteristiche,
+    prodotto.seo_title,
+    prodotto.seo_description,
+    prodotto.alt_text_immagine,
+  ].filter(Boolean).join(" "));
   if (!campi) return false;
   if (termini.length === 0) return true;
-  // "Pasta all'uovo" è una richiesta di categoria + lavorazione: il prodotto
-  // può essere catalogato con il nome specifico ("tagliatelle all'uovo") senza
-  // riportare la parola generica "pasta". Manteniamo obbligatorio il qualificatore
-  // "uovo" e limitiamo l'equivalenza a formati di pasta riconoscibili, evitando
-  // di trasformare la ricerca in un match permissivo su una sola parola.
+
+  // "Pasta all'uovo" è una richiesta di categoria + lavorazione, non una
+  // semplice intersezione di parole: la categoria DB "Pasta" da sola non deve
+  // trasformare "Biscotti all'uovo" in un risultato pertinente. La prova deve
+  // essere nel nome o nei metadati descrittivi del prodotto.
   const richiedePastaAllUovo =
     termini.includes("pasta") &&
-    termini.some((t) => t === "uovo" || t === "uova" || t === "all'uovo");
-  if (
-    richiedePastaAllUovo &&
-    /\b(?:tagliatell[ei]|fettuccin[ei]|pappardell[ei]|lasagn[ae])\b/.test(campi) &&
-    /\buov[oa]\b/.test(campi)
-  ) return true;
-  // Anche qui i termini CORTI devono essere parole intere: altrimenti "bar"
-  // matcherebbe "barattolo" nella descrizione di un prodotto qualsiasi.
-  const token = estraiToken(campi);
-  if (
-    termini.every((t) =>
-      t.length < 4 ? token.includes(t) : campi.includes(t) || tokenCompatibile(t, token)
-    )
-  ) {
-    return true;
+    termini.some((termine) => termine === "uovo" || termine === "uova" || termine === "all'uovo");
+  if (richiedePastaAllUovo) {
+    const prodottoDiPasta =
+      /\b(?:past[ae]|tagliatell[ei]|fettuccin[ei]|pappardell[ei]|lasagn[ae])\b/.test(nomeDescrizione);
+    const contieneUovo = /\buov[oa]\b/.test(nomeDescrizione);
+    return prodottoDiPasta && contieneUovo;
   }
-  return concetti.some((c) => campi.includes(c));
+
+  // Il soggetto ancora la ricerca; gli aggettivi e le preferenze successive
+  // contribuiscono al ranking ma non azzerano la ricerca se la scheda è breve.
+  // Le caratteristiche alimentari esplicite restano vincoli rigidi.
+  const token = estraiToken(campi);
+  const corrisponde = (termine: string) =>
+    termine.length < 4
+      ? token.includes(termine)
+      : campi.includes(termine) || tokenCompatibile(termine, token);
+
+  if (termini.every(corrisponde)) return true;
+
+  const soggetto = termini[0];
+  if (soggetto && corrisponde(soggetto)) {
+    const qualificatoriRigidi = new Set([
+      "analcolica", "analcolico", "analcoliche", "analcolici",
+      "glutine", "lattosio", "vegano", "vegana", "vegetariano", "vegetariana",
+    ]);
+    return termini
+      .slice(1)
+      .filter((termine) => qualificatoriRigidi.has(termine))
+      .every(corrisponde);
+  }
+
+  return concetti.some((concetto) => campi.includes(concetto));
 }
 
 // Un termine è compatibile con il prodotto anche quando differisce solo per la
@@ -572,13 +620,24 @@ function tokenCompatibile(termine: string, token: string[]): boolean {
 }
 
 function punteggioProdottoPino(
-  prodotto: ProdottoRicerca,
+  prodotto: ProdottoRicercaAssistente,
   query: string,
   termini: string[]
 ): number {
   const nome = normalizza(prodotto.nome ?? "");
   const descrizione = normalizza(prodotto.descrizione ?? "");
   const categoria = normalizza(prodotto.categoria ?? "");
+  const sottocategoria = normalizza(prodotto.sottocategoria ?? "");
+  const marca = normalizza(prodotto.marca ?? "");
+  const colore = normalizza(prodotto.colore ?? "");
+  const materiale = normalizza(prodotto.materiale ?? "");
+  const paroleChiave = normalizza((prodotto.parole_chiave ?? []).join(" "));
+  const caratteristiche = normalizza((prodotto.caratteristiche ?? []).join(" "));
+  const seo = normalizza([
+    prodotto.seo_title,
+    prodotto.seo_description,
+    prodotto.alt_text_immagine,
+  ].filter(Boolean).join(" "));
   const q = normalizza(query).trim();
   const tokenNome = estraiToken(nome);
   let score = 0;
@@ -592,12 +651,16 @@ function punteggioProdottoPino(
     if (tokenNome.includes(t)) score += 45;
     else if (nome.includes(t)) score += 30;
     else if (categoria.includes(t)) score += 18;
+    else if (sottocategoria.includes(t)) score += 16;
+    else if (marca.includes(t)) score += 15;
+    else if (paroleChiave.includes(t)) score += 14;
+    else if (caratteristiche.includes(t)) score += 12;
+    else if (colore.includes(t) || materiale.includes(t)) score += 10;
     else if (descrizione.includes(t)) score += 8;
+    else if (seo.includes(t)) score += 4;
   }
 
-  // Se più termini della richiesta compaiono nel nome, il prodotto è più
-  // specifico rispetto a uno che li cita solo nella descrizione.
-  if (termini.length > 0 && termini.every((t) => nome.includes(normalizza(t)))) {
+  if (termini.length > 0 && termini.every((termine) => nome.includes(normalizza(termine)))) {
     score += 35;
   }
 
@@ -771,7 +834,7 @@ export async function searchProducts(
   const q = (query ?? "").trim();
   if (!q) return [];
 
-  const righe = await cercaProdotti(q, 60);
+  const righe = await cercaProdottiPerAssistente(q, 60);
 
   const terminiOriginali = terminiSignificativi(q, 10).map(normalizza);
   // Concetti d'intento come FRASI intere (es. "prodotti tipici"): spezzarli in

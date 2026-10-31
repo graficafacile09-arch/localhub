@@ -1438,6 +1438,74 @@ async function mappaProdottoRicerca(
 }
 
 /**
+ * Dati di ricerca aggiuntivi conservati SOLO nel flusso interno di Pino.
+ * La ricerca pubblica continua a restituire il DTO ProdottoRicerca minimale.
+ */
+export type ProdottoRicercaAssistente = ProdottoRicerca & {
+  sottocategoria?: string | null;
+  marca?: string | null;
+  colore?: string | null;
+  materiale?: string | null;
+  parole_chiave?: string[] | null;
+  caratteristiche?: string[] | null;
+  seo_title?: string | null;
+  seo_description?: string | null;
+  alt_text_immagine?: string | null;
+};
+
+/** Conserva i campi indicizzati senza allargare il DTO della ricerca pubblica. */
+export function aggiungiMetadatiRicercaAssistente(
+  prodotto: ProdottoRicerca,
+  riga: Record<string, unknown>
+): ProdottoRicercaAssistente {
+  const stringa = (value: unknown): string | null =>
+    typeof value === "string" && value.trim() ? value : null;
+  const lista = (value: unknown): string[] =>
+    Array.isArray(value)
+      ? value.map((item) => String(item ?? "").trim()).filter(Boolean)
+      : [];
+
+  return {
+    ...prodotto,
+    sottocategoria: stringa(riga.sottocategoria),
+    marca: stringa(riga.marca),
+    colore: stringa(riga.colore),
+    materiale: stringa(riga.materiale),
+    parole_chiave: lista(riga.parole_chiave),
+    caratteristiche: lista(riga.caratteristiche),
+    seo_title: stringa(riga.seo_title),
+    seo_description: stringa(riga.seo_description),
+    alt_text_immagine: stringa(riga.alt_text_immagine),
+  };
+}
+
+async function mappaProdottoRicercaAssistente(
+  risultati: Record<string, unknown>[]
+): Promise<ProdottoRicercaAssistente[]> {
+  const base = await mappaProdottoRicerca(risultati);
+  return base.map((prodotto, index) =>
+    aggiungiMetadatiRicercaAssistente(prodotto, risultati[index] ?? {})
+  );
+}
+
+/**
+ * Ricerca per Pino: usa lo stesso retrieval SQL della ricerca pubblica, ma
+ * conserva i campi indicizzati necessari a verificare la pertinenza. Non
+ * modifica il payload pubblico restituito da cercaProdotti().
+ */
+export async function cercaProdottiPerAssistente(
+  ricerca: string,
+  limit = 20
+): Promise<ProdottoRicercaAssistente[]> {
+  const { risultati } = await cercaProdottiCore(ricerca, {
+    limite: limit,
+    conCount: false,
+    filtri: {},
+  });
+  return mappaProdottoRicercaAssistente(risultati);
+}
+
+/**
  * Ricerca pubblica storica: identica al comportamento precedente (nessun
  * count, limite fisso, fallback tollerante). Backward-compatible.
  */
