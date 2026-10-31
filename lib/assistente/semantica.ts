@@ -243,6 +243,7 @@ const VOCABOLARIO_PINO_BASE: Array<[string, string]> = [
   ["pera", "pera"], ["pere", "pera"], ["arancia", "arancia"], ["arance", "arancia"],
   ["limone", "limone"], ["limoni", "limone"], ["banana", "banana"], ["banane", "banana"],
   ["telefono", "telefono"], ["telefoni", "telefono"], ["telefonino", "telefono"],
+  ["orologio", "orologio"], ["orologi", "orologio"],
   ["cellulare", "telefono"], ["smartphone", "telefono"],
   ["scarpa", "scarpa"], ["scarpe", "scarpa"],
   ["maglia", "maglia"], ["maglietta", "maglia"], ["magliette", "maglia"],
