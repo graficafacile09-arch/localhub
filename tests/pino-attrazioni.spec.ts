@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { searchAttractions } from "../lib/assistente/attrazioni";
+import { isAttractionNameQuery, searchAttractions } from "../lib/assistente/attrazioni";
 
 test.describe("Pino — ricerca nella guida Attrazioni", () => {
   test("trova i musei dalla domanda al plurale", () => {
@@ -18,6 +18,13 @@ test.describe("Pino — ricerca nella guida Attrazioni", () => {
 
   test("distingue il quartiere La Civita dal borgo Civita", () => {
     expect(searchAttractions("La Civita")[0]?.nome).toBe("La Civita e il centro storico");
+  });
+
+  test("riconosce il nome diretto di un luogo anche senza parole turistiche", () => {
+    expect(isAttractionNameQuery("La Civita")).toBe(true);
+    expect(isAttractionNameQuery("Vorrei visitare Palazzo Varcasia")).toBe(true);
+    expect(isAttractionNameQuery("orologio da uomo sotto 100 euro")).toBe(false);
+    expect(isAttractionNameQuery("Castrovillari")).toBe(false);
   });
 
   test("una ricerca commerciale non restituisce attrazioni senza pertinenza", () => {

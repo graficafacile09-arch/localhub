@@ -28,6 +28,21 @@ function normalizza(t: string): string {
   return t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 }
 
+/**
+ * Riconosce richieste che citano direttamente un luogo o evento del catalogo.
+ * Consente a Pino di instradare anche messaggi brevi come "La Civita".
+ */
+export function isAttractionNameQuery(query: string): boolean {
+  const q = normalizza(query);
+  if (q.length < 4 || q === "castrovillari") return false;
+  return CATALOGO.some((item) =>
+    [item.nome, ...item.alias].some((value) => {
+      const alias = normalizza(value);
+      return alias.length >= 4 && q.includes(alias);
+    })
+  );
+}
+
 export function searchAttractions(query: string, limit = 6): AttrazionePino[] {
   const q = normalizza(query);
   if (!q) return [];
