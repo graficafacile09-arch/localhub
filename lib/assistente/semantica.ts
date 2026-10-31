@@ -243,6 +243,7 @@ const VOCABOLARIO_PINO_BASE: Array<[string, string]> = [
   ["pera", "pera"], ["pere", "pera"], ["arancia", "arancia"], ["arance", "arancia"],
   ["limone", "limone"], ["limoni", "limone"], ["banana", "banana"], ["banane", "banana"],
   ["telefono", "telefono"], ["telefoni", "telefono"], ["telefonino", "telefono"],
+  ["orologio", "orologio"], ["orologi", "orologio"],
   ["cellulare", "telefono"], ["smartphone", "telefono"],
   ["scarpa", "scarpa"], ["scarpe", "scarpa"],
   ["maglia", "maglia"], ["maglietta", "maglia"], ["magliette", "maglia"],
@@ -256,7 +257,7 @@ const VOCABOLARIO_PINO: Array<[string, string]> = (() => {
   // verso un termine reale già conosciuto dal catalogo.
   for (const gruppo of SINONIMI_DIRETTI_PRODOTTO) {
     for (const voce of gruppo) {
-      for (const token of normalizzaRichiesta(voce).split(/\\s+/)) {
+      for (const token of normalizzaRichiesta(voce).split(/\s+/)) {
         if (token.length >= 4) mappa.set(token, token);
       }
     }
@@ -264,7 +265,7 @@ const VOCABOLARIO_PINO: Array<[string, string]> = (() => {
 
   for (const gruppo of Object.values(SINONIMI_TIPO_ATTIVITA)) {
     for (const voce of gruppo) {
-      for (const token of normalizzaRichiesta(voce).split(/\\s+/)) {
+      for (const token of normalizzaRichiesta(voce).split(/\s+/)) {
         if (token.length >= 4) mappa.set(token, token);
       }
     }
@@ -274,7 +275,7 @@ const VOCABOLARIO_PINO: Array<[string, string]> = (() => {
 })();
 
 function correggiErroriBattitura(query: string): string {
-  return query.split(/(\\s+)/).map((part) => {
+  return query.split(/(\s+)/).map((part) => {
     if (!/^[A-Za-zÀ-ÖØ-öø-ÿ]+$/.test(part)) return part;
     const lower = part.toLocaleLowerCase("it-IT");
     if (lower.length < 4) return part;

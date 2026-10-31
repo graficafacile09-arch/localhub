@@ -1,6 +1,6 @@
 import { rilevaLinguaPino } from "./understanding";
 import { rispostaIdentitaPino } from "./identity";
-import { rispostaSalutoPino } from "./greetings";
+import { rispostaSalutoPino, rispostaRelazionalePino } from "./greetings";
 import { CATEGORIE_REGALO, isGenericGiftRequest, prodottoCorrispondeCategoriaRegalo } from "./gift-retrieval";
 /**
  * LocalHub — Assistente AI: Orchestratore
@@ -1031,6 +1031,21 @@ export async function chatConAssistente(
   // Cap sulla domanda: evita abuso di token e superfici di prompt injection
   // (la storia è già troncata a 300 caratteri per messaggio).
   const domanda = (ultimo && ultimo.role === "user" ? ultimo.content : "").slice(0, 500);
+
+  // Fast path conversazionale: non attendere memoria, planner semantico o Gemini
+  // per saluti, domande personali e inviti a chiacchierare.
+  const identitaDiretta = rispostaIdentitaPino(domanda);
+  const rispostaDiretta = identitaDiretta ?? rispostaRelazionalePino(domanda) ?? rispostaSalutoPino(domanda);
+  if (rispostaDiretta) {
+    return {
+      risposta: rispostaDiretta,
+      negozi: [],
+      prodotti: [],
+      processingMs: Date.now() - inizio,
+      source: "assistente",
+    };
+  }
+
 
   // Risposta diretta e cordiale ai saluti semplici, senza passare dal planner.
   const salutoPino = rispostaSalutoPino(domanda);
