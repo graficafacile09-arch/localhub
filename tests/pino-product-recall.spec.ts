@@ -62,6 +62,24 @@ test.describe("Pino — recupero prodotti senza falsi negativi", () => {
     ).toBe(true);
   });
 
+  test("una parola presente solo in una frase accessoria della descrizione non identifica il prodotto", () => {
+    expect(
+      prodottoPertinente(
+        prodotto("Filetti di Cipolla Bianca di Castrovillari", "Conserve", "Filetti di cipolla conservati sott'olio"),
+        ["olio"],
+        []
+      )
+    ).toBe(false);
+
+    expect(
+      prodottoPertinente(
+        prodotto("Olio Extra Vergine di Oliva del Pollino", "Alimentari"),
+        ["olio", "extravergine", "oliva"],
+        []
+      )
+    ).toBe(true);
+  });
+
   test("il mapper interno conserva i campi usati dalla ricerca pubblica", () => {
     const base = prodotto("Miele millefiori 500 g", "Alimentari");
     const mappato = aggiungiMetadatiRicercaAssistente(base, {
