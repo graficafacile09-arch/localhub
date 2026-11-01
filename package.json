@@ -9,6 +9,7 @@
     "lint": "eslint",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
+    "benchmark:pino:live": "node --experimental-strip-types scripts/pino-core-v2-live-benchmark.mjs",
     "test:pino": "node --experimental-strip-types --test tests/pino-understanding.test.mjs tests/pino-gift-retrieval.test.mjs tests/pino-greetings.test.mjs tests/pino-core-v2.test.mjs tests/pino-core-v2-ranker.test.mjs tests/pino-core-v2-ai-planner.test.mjs tests/pino-core-v2-benchmark.test.mjs tests/pino-current-gates-benchmark.test.mjs",
     "prebuild": "npm run test:pino"
   },
