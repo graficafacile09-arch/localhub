@@ -6,7 +6,7 @@
  * generata dal modello e nessuna disponibilità inventata.
  */
 
-import { GoogleGenAI, FunctionCallingConfigMode, Type } from "@google/genai";
+import { GoogleGenAI, FunctionCallingConfigMode, Type, type FunctionDeclaration } from "@google/genai";
 import {
   searchStores,
   searchProducts,
@@ -61,7 +61,7 @@ type RisultatoTool = {
   errore?: string;
 };
 
-const FUNCTION_DECLARATIONS = [
+const FUNCTION_DECLARATIONS: FunctionDeclaration[] = [
   {
     name: "cercaNelDatabaseInCitta",
     description:
@@ -311,6 +311,8 @@ async function eseguiRicercaDatabase(argsRaw: Record<string, unknown>): Promise<
           categorie: risultato.categorie,
         };
       }
+      default:
+        return { ok: false, strumento: "cercaNelDatabaseInCitta", ambito: "sconosciuto", errore: "Ambito di ricerca non riconosciuto." };
     }
   } catch (error) {
     console.error("[pino-function-calling] Errore ricerca database:", error);
@@ -491,7 +493,7 @@ export async function chatConFunctionCalling(
       parts: calls.map((call, index) => ({
         functionResponse: {
           name: call.name ?? "",
-          response: risultati[index],
+          response: risultati[index] as unknown as Record<string, unknown>,
           ...(call.id ? { id: call.id } : {}),
         },
       })),
