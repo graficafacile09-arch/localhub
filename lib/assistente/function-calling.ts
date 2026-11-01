@@ -33,8 +33,8 @@ type AmbitoRicerca =
   | "tutto";
 
 type ArgomentiRicerca = {
-  ricerca?: string;
-  ambito?: AmbitoRicerca;
+  ricerca: string;
+  ambito: AmbitoRicerca;
   categoria?: string;
   tipo?: string;
   citta?: string;
@@ -415,7 +415,7 @@ export async function chatConFunctionCalling(
 
   const model = process.env.GEMINI_MODEL?.trim() || "gemini-3.8-flash";
   const ai = new GoogleGenAI({ apiKey });
-  const contents = messages.slice(-12).map((m) => ({
+  const contents: any[] = messages.slice(-12).map((m) => ({
     role: m.role === "assistant" ? "model" as const : "user" as const,
     parts: [{ text: m.content.slice(0, 800) }],
   }));
