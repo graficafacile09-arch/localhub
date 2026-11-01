@@ -22,25 +22,34 @@ The planner converts a natural-language request into:
 - open-now constraint and explicit exclusions;
 - confidence and clarification requirement.
 
-`request-planner.ts` is the offline deterministic baseline.
+`request-planner.ts` is the offline deterministic v2 baseline.
 `ai-request-planner.ts` is the new structured AI planner. It accepts recent conversation context and supports an injected model function for offline tests. It is not connected to Pino.
 
 ## Evaluation
 
-Run the isolated planner tests with:
+Run the complete Pino test and benchmark suite with:
 
 ```bash
-node --experimental-strip-types --test tests/pino-core-v2.test.mjs tests/pino-core-v2-ai-planner.test.mjs
+npm run test:pino
 ```
 
-The project Pino test suite also includes these cases through `npm run test:pino`.
+The shared labelled corpus is `tests/fixtures/pino-core-v2-benchmark-cases.mjs` (165 cases), covering Italian and English product/store requests, budget and attributes, colloquial and misspelled wording, conversation, attractions, events, weather and pharmacies.
+
+Two separate measurements are emitted:
+1. `pino-core-v2-benchmark.test.mjs`: deterministic v2 planner against all 165 expected labels, including route/surface accuracy and every miss.
+2. `pino-current-gates-benchmark.test.mjs`: read-only adapter over the existing production deterministic routing helpers (`local-intents.ts` and `routing-policy.ts`). It reports coverage, accuracy among handled cases, deferred categories and mismatches.
+
+**Important comparison limit:** the current-Pino adapter measures only those pure deterministic routing gates. It does not execute the entire production pipeline (semantic Gemini planner, intent layer, conversation-state orchestration, tool selection and catalog retrieval). It must not be described as a full production Pino score. A fair full-pipeline comparison still requires a dedicated read-only adapter and controlled/mocked provider and retrieval boundaries.
+
+The v2 AI planner's existing tests validate JSON parsing, plan validation, deterministic constraint preservation and fallback using injected model responses. They do not represent a live Gemini quality benchmark. A real 165-request model run must be explicitly opt-in, cost-controlled and report latency, provider failures and token usage; it must not run as part of ordinary preview builds.
 
 ## Next milestones
 
-1. Build a labelled corpus of at least 165 realistic requests, including typos, colloquial language, elliptical follow-ups, mixed intents and explicit constraints.
-2. Compare the current planner, deterministic v2 and AI v2 against the same expected structured plans.
-3. Report route accuracy, subject/query accuracy, constraint extraction, false-positive searches, clarification quality, latency and provider fallback rate.
-4. Add conversation-state merging and explicit uncertainty handling.
-5. Only after offline comparison, consider a read-only adapter to existing public search functions behind an explicit experimental flag.
+1. [x] Build a 165-request labelled corpus and deterministic v2 scoring runner.
+2. [x] Measure the existing deterministic routing gates separately from the full production pipeline.
+3. [ ] Build a read-only adapter for the full current Pino semantic/intent pipeline without editing the production orchestrator.
+4. [ ] Run live AI v2 against the same corpus in a controlled environment with explicit cost limits.
+5. [ ] Compare route/surface/query accuracy, constraint extraction, false-positive searches, clarification quality, latency and fallback rate.
+6. [ ] Add conversation-state merging and explicit uncertainty handling.
 
 Do not connect this prototype to the assistant, merge it into `main`, or deploy it to production until the user has reviewed the comparison results and explicitly approved the next step.
