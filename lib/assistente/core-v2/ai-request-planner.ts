@@ -226,7 +226,7 @@ export async function planPinoCoreRequestWithAI(
           temperature: 0,
           maxTokens: 450,
           timeoutMs: 12_000,
-          retries: 0,
+          retries: 1,
         });
     const parsed = parseModelOutput(raw);
     return parsed ? mergePlan(original, deterministic, parsed) : deterministic;
