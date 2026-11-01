@@ -36,12 +36,10 @@ import {
   type ToolParams,
 } from "./tools";
 import {
-  SYSTEM_PROMPT,
   buildContextoRisultati,
   buildFinalPrompt,
   type RisultatiRecuperati,
 } from "./prompt";
-import { extractJsonFromText } from "@/lib/product-assistant/providers/utils";
 import { callGeminiText } from "@/lib/ai/gemini-text";
 import { selezionaToolConGemini } from "./function-calling";
 import { isAttractionNameQuery, searchAttractions } from "./attrazioni";
