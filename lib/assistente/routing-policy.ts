@@ -41,5 +41,5 @@ export function isExplicitFoodProductRequest(query: string): boolean {
 /** Richieste generiche in inglese/italiano che chiedono la guida Attrazioni. */
 export function isBroadAttractionsRequest(query: string): boolean {
   const q = normalizza(query);
-  return /\b(?:cosa vedere|luoghi da vedere|attrazioni?|monumenti?|visitare|dintorni|borghi?|turismo|tour|itinerario|things to see|places to visit|tourist attractions?|sights|what to visit|what can i visit|what should i see|surroundings|nearby places|tourism|itinerary)\b/.test(q);
+  return /\b(?:cosa vedere|luoghi da vedere|attrazioni?|attractions?|monumenti?|monuments?|visitare|dintorni|borghi?|villages?|turismo|tour|itinerario|things to see|places to visit|tourist attractions?|sights|what to visit|what can i visit|what should i see|surroundings|nearby places|tourism|itinerary)\b/.test(q);
 }
