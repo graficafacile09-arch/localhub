@@ -7,17 +7,13 @@ import { CATEGORIE_REGALO, isGenericGiftRequest, prodottoCorrispondeCategoriaReg
 /**
  * LocalHub — Assistente AI: Orchestratore
  *
- * Flusso (2 chiamate LLM, come da analisi):
- *   1. comprensione intenzione + scelta dei tool (JSON) usando TUTTA la
- *      conversazione recente ("e sotto i 300?" viene risolto col contesto);
- *   2. esecuzione dei tool (retrieval su dati pubblici, riuso funzioni esistenti);
- *   3. contesto strutturato dei risultati → risposta finale dell'AI.
+ * Flusso Gemini Function Calling:
+ *   1. Gemini interpreta la conversazione e sceglie uno strumento;
+ *   2. Node.js esegue esclusivamente funzioni di retrieval autorizzate;
+ *   3. Gemini formula la risposta usando i dati restituiti dal tool.
  *
- * Usa GEMINI_API_KEY (già presente nel progetto, usata anche dalla Vision),
- * modello GEMINI_MODEL (con fallback gemini-2.0-flash), timeout su ogni
- * chiamata, max_tokens e temperature. Fallback: se la selezione tool fallisce
- * → searchAll sulla domanda; se la risposta finale fallisce → elenco testuale
- * dei risultati recuperati. Nessuna scrittura su DB.
+ * Il catalogo usa i servizi InCittà esistenti. Nessuna query SQL generata
+ * dal modello e nessuna scrittura sul database.
  *
  * @module lib/assistente/index
  */
