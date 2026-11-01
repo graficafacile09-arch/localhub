@@ -114,3 +114,13 @@ test("Pino keeps the conversation language when a follow-up is short", () => {
     { role: "user", content: "Okay" },
   ]), "en");
 });
+
+
+test("Pino switches back to Italian when the user does", () => {
+  assert.equal(rilevaLinguaPino("Va bene, grazie"), "it");
+  assert.equal(rilevaLinguaConversazionePino([
+    { role: "user", content: "I'm looking for a watch under 100 euros" },
+    { role: "assistant", content: "I found two products." },
+    { role: "user", content: "Va bene, grazie" },
+  ]), "it");
+});
