@@ -43,6 +43,25 @@ Two separate measurements are emitted:
 
 The v2 AI planner's existing tests validate JSON parsing, plan validation, deterministic constraint preservation and fallback using injected model responses. They do not represent a live Gemini quality benchmark. A real 165-request model run must be explicitly opt-in, cost-controlled and report latency, provider failures and token usage; it must not run as part of ordinary preview builds.
 
+
+### Live Gemini benchmark (opt-in only)
+
+The live runner is `scripts/pino-core-v2-live-benchmark.mjs`. It is intentionally excluded from `prebuild` and the normal test suite. It requires both `GEMINI_API_KEY` and an explicit `PINO_RUN_LIVE_BENCHMARK=1` opt-in. It defaults to 10 cases to avoid unexpectedly running 165 provider calls.
+
+Example for a small smoke run:
+
+```bash
+PINO_RUN_LIVE_BENCHMARK=1 npm run benchmark:pino:live
+```
+
+Full corpus (165 requests):
+
+```bash
+PINO_RUN_LIVE_BENCHMARK=1 PINO_BENCHMARK_LIMIT=165 npm run benchmark:pino:live
+```
+
+The report measures route/surface accuracy, model-call success/fallback and latency. The current hand-labelled corpus does not yet contain gold labels for subject/query/attributes, and the Gemini wrapper does not expose token usage; do not claim those metrics or a monetary cost from this run.
+
 ## Next milestones
 
 1. [x] Build a 165-request labelled corpus and deterministic v2 scoring runner.
