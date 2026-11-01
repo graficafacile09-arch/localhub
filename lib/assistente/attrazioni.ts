@@ -1,4 +1,5 @@
 import { ATTRAZIONI_LUOGHI, ATTRAZIONI_EVENTI, ATTRAZIONI_DINTORNI } from "@/lib/attrazioni-data";
+import { isBroadAttractionsRequest } from "./routing-policy";
 
 export type AttrazionePino = {
   nome: string;
@@ -46,11 +47,11 @@ export function isAttractionNameQuery(query: string): boolean {
 export function searchAttractions(query: string, limit = 6): AttrazionePino[] {
   const q = normalizza(query);
   if (!q) return [];
-  const stop = new Set(["dove","cosa","quali","quale","visitare","vedere","consigli","consigliami","vorrei","posso","fare","sono","ci","nel","nella","della","delle","degli","per","una","uno","che","come","raggiungere","arrivare","andare","castrovillari"]);
+  const stop = new Set(["dove","cosa","quali","quale","visitare","vedere","consigli","consigliami","vorrei","posso","fare","sono","ci","nel","nella","della","delle","degli","per","una","uno","che","come","raggiungere","arrivare","andare","castrovillari","what","can","i","the","in","of","to","near","at","are","is","best","local","tourist","sights","places","around","should","my","attractions","attraction","visit","visiting","things","see"]);
   const tokens = q.split(/\s+/).filter((t) => t.length >= 3 && !stop.has(t));
-  const broad = /\b(cosa vedere|luoghi da vedere|attrazioni|monumenti|visitare|dintorni|borghi|turismo|tour|itinerario)\b/.test(q);
-  const richiestaDintorni = /\b(dintorni|nei dintorni|vicino a castrovillari|paesi vicini|borghi vicini|fuori castrovillari)\b/.test(q);
-  const richiestaCitta = /\b(a castrovillari|nel centro di castrovillari|centro storico di castrovillari)\b/.test(q);
+  const broad = isBroadAttractionsRequest(q);
+  const richiestaDintorni = /\b(dintorni|nei dintorni|vicino a castrovillari|paesi vicini|borghi vicini|fuori castrovillari|surroundings|near castrovillari|nearby|nearby places|villages nearby|around castrovillari)\b/.test(q);
+  const richiestaCitta = /\b(a castrovillari|nel centro di castrovillari|centro storico di castrovillari|in castrovillari|in the center of castrovillari|historic center of castrovillari|historic centre of castrovillari)\b/.test(q);
   const nomiDintorni = new Set<string>(ATTRAZIONI_DINTORNI.map((v) => v.nome));
   const ranked = CATALOGO.map((item) => {
     const fields = normalizza([item.nome,item.tipo,item.descrizione,...item.alias].join(" "));
@@ -58,7 +59,8 @@ export function searchAttractions(query: string, limit = 6): AttrazionePino[] {
     let score = fields.includes(q) ? 10 : 0;
     for (const token of tokens) if (words.has(token)) score += 3;
     for (const alias of item.alias) if (normalizza(alias).length >= 4 && q.includes(normalizza(alias))) score += 7;
-    if (broad && /dintorni|borgo|natura|passeggiate|storia|monumenti|cultura|architettura|evento|festival/i.test(item.tipo)) score += 2;
+    if (broad && /dintorni|borgo|natura|passeggiate|storia|monumenti|cultura|architettura|evento|festival|museum|monument|church|historic|park|village|attraction|nature|culture/i.test(item.tipo)) score += 2;
+    if (broad && tokens.length === 0) score += 1;
     // Una richiesta sui dintorni deve favorire i comuni e i luoghi esterni,
     // non riempire la lista con archivi o monumenti del centro cittadino.
     if (richiestaDintorni) score += nomiDintorni.has(item.nome) ? 30 : -8;

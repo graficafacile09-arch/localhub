@@ -191,10 +191,13 @@ export type EsitoAggregato = {
   /** Limite massimo della ricerca: oltre, il conteggio diventa "almeno". */
   limite: number;
   riferimentoContesto?: boolean;
+  lingua?: "it" | "en";
 };
 
 const CAVEAT =
   "Il conteggio si basa solo sulle schede pubblicate dai negozi su InCittà: non è un elenco esaustivo delle varietà esistenti.";
+const CAVEAT_EN =
+  "This count is based only on product listings published by shops on InCittà; it is not an exhaustive list of all existing varieties.";
 
 function unici(prodotti: ProdottoRicerca[]): ProdottoRicerca[] {
   const visti = new Set<string>();
@@ -208,17 +211,19 @@ function unici(prodotti: ProdottoRicerca[]): ProdottoRicerca[] {
   return risultato;
 }
 
-function conteggio(n: number, limite: number): string {
-  const prefix = n >= limite ? "almeno " : "";
-  return `${prefix}${n} ${n === 1 ? "prodotto" : "prodotti"}`;
+function conteggio(n: number, limite: number, inglese = false): string {
+  const prefix = n >= limite ? (inglese ? "at least " : "almeno ") : "";
+  return inglese
+    ? prefix + n + " " + (n === 1 ? "product" : "products")
+    : prefix + n + " " + (n === 1 ? "prodotto" : "prodotti");
 }
 
 function elenco(prodotti: ProdottoRicerca[]): string {
   return prodotti
     .slice(0, 5)
     .map((p) => {
-      const prezzo = p.prezzo != null && String(p.prezzo).trim() !== "" ? ` — €${p.prezzo}` : "";
-      return `- **${p.nome}**${prezzo}${p.negozio_nome ? ` (${p.negozio_nome})` : ""}`;
+      const prezzo = p.prezzo != null && String(p.prezzo).trim() !== "" ? " — €" + p.prezzo : "";
+      return "- **" + p.nome + "**" + prezzo + (p.negozio_nome ? " (" + p.negozio_nome + ")" : "");
     })
     .join("\n");
 }
@@ -231,66 +236,65 @@ export function componiRispostaAggregata(esito: EsitoAggregato): string {
   const tipo = esito.tipo;
   const soggetto = String(esito.soggetto ?? "").trim();
   const limite = Number.isFinite(esito.limite) && esito.limite > 0 ? esito.limite : 20;
+  const inglese = esito.lingua === "en";
+  const caveat = inglese ? CAVEAT_EN : CAVEAT;
 
   const base = unici(esito.prodottiSoggetto ?? []);
   const filtrati = esito.qualificatore
     ? unici(esito.prodottiQualificatore ?? [])
     : [];
 
-  // Nessun filtro attivo: si risponde sul soggetto.
   if (!esito.qualificatore) {
     if (base.length === 0) {
-      return (
-        `Nel catalogo InCittà non risultano prodotti per «${soggetto}», quindi non posso dirti quanti ce ne sono: ` +
-        "non invento un conteggio. Posso provare con un sinonimo, una categoria più ampia o un negozio specifico."
-      );
+      return inglese
+        ? "The InCittà catalog has no listed products for “" + soggetto + "”, so I can't give you a count. I won't make one up. I can try a synonym, a broader category or a specific shop."
+        : "Nel catalogo InCittà non risultano prodotti per «" + soggetto + "», quindi non posso dirti quanti ce ne sono: non invento un conteggio. Posso provare con un sinonimo, una categoria più ampia o un negozio specifico.";
     }
-    const apertura =
-      tipo === "conteggio"
-        ? `Nel catalogo InCittà risultano ${conteggio(base.length, limite)} per «${soggetto}».`
-        : `Nel catalogo InCittà ho trovato ${conteggio(base.length, limite)} per «${soggetto}».`;
+    const quanti = conteggio(base.length, limite, inglese);
+    const apertura = inglese
+      ? (tipo === "conteggio"
+        ? "The InCittà catalog lists " + quanti + " for “" + soggetto + "”."
+        : "I found " + quanti + " in the InCittà catalog for “" + soggetto + "”.")
+      : (tipo === "conteggio"
+        ? "Nel catalogo InCittà risultano " + quanti + " per «" + soggetto + "»."
+        : "Nel catalogo InCittà ho trovato " + quanti + " per «" + soggetto + "».");
     const nota = base.length >= limite
-      ? ` La ricerca si ferma a ${limite} risultati, quindi il numero reale può essere maggiore.`
+      ? (inglese
+        ? " The search is limited to " + limite + " results, so the actual number may be higher."
+        : " La ricerca si ferma a " + limite + " risultati, quindi il numero reale può essere maggiore.")
       : "";
-    return `${apertura}${nota}\n\n${elenco(base)}\n\n${CAVEAT}`;
+    return apertura + nota + "\n\n" + elenco(base) + "\n\n" + caveat;
   }
 
-  // Filtro attivo ma nessun prodotto che lo rispetti.
   if (filtrati.length === 0) {
     if (base.length === 0) {
-      return (
-        `Con il filtro «${esito.qualificatore}» non risulta alcun prodotto per «${soggetto}», ` +
-        `e nel catalogo InCittà non trovo prodotti per «${soggetto}» nemmeno senza filtro. ` +
-        "Non posso darti un conteggio affidabile e non invento un numero."
-      );
+      return inglese
+        ? "No products for “" + soggetto + "” match the “" + esito.qualificatore + "” filter, and I couldn't find any for “" + soggetto + "” in the InCittà catalog even without that filter. I can't provide a reliable count, and I won't make one up."
+        : "Con il filtro «" + esito.qualificatore + "» non risulta alcun prodotto per «" + soggetto + "», e nel catalogo InCittà non trovo prodotti per «" + soggetto + "» nemmeno senza filtro. Non posso darti un conteggio affidabile e non invento un numero.";
     }
-    return (
-      `Con il filtro «${esito.qualificatore}» non risulta alcun prodotto per «${soggetto}». ` +
-      `Senza quel filtro il catalogo InCittà ha ${conteggio(base.length, limite)} per «${soggetto}»:\n\n` +
-      `${elenco(base)}\n\n${CAVEAT}`
-    );
+    return inglese
+      ? "No products for “" + soggetto + "” match the “" + esito.qualificatore + "” filter. Without that filter, the InCittà catalog lists " + conteggio(base.length, limite, true) + " for “" + soggetto + "”:\n\n" + elenco(base) + "\n\n" + caveat
+      : "Con il filtro «" + esito.qualificatore + "» non risulta alcun prodotto per «" + soggetto + "». Senza quel filtro il catalogo InCittà ha " + conteggio(base.length, limite) + " per «" + soggetto + "»:\n\n" + elenco(base) + "\n\n" + caveat;
   }
 
   const nota = filtrati.length >= limite
-    ? ` La ricerca si ferma a ${limite} risultati, quindi il numero reale può essere maggiore.`
+    ? (inglese
+      ? " The search is limited to " + limite + " results, so the actual number may be higher."
+      : " La ricerca si ferma a " + limite + " risultati, quindi il numero reale può essere maggiore.")
     : "";
 
-  // Domanda che punta esplicitamente al sottoinsieme già discusso
-  // ("quanti prodotti di questo tipo ci sono?").
   if (esito.riferimentoContesto && tipo === "conteggio") {
     const totale = base.length > filtrati.length
-      ? ` Per «${soggetto}» senza filtro il catalogo ne ha ${base.length}.`
+      ? (inglese
+        ? " Without the filter, the catalog lists " + base.length + " products for “" + soggetto + "”."
+        : " Per «" + soggetto + "» senza filtro il catalogo ne ha " + base.length + ".")
       : "";
-    return (
-      `Con il filtro «${esito.qualificatore}» risultano ${conteggio(filtrati.length, limite)} per «${soggetto}».` +
-      `${nota}${totale}\n\n${elenco(filtrati)}\n\n${CAVEAT}`
-    );
+    return inglese
+      ? "With the “" + esito.qualificatore + "” filter, the catalog lists " + conteggio(filtrati.length, limite, true) + " for “" + soggetto + "”." + nota + totale + "\n\n" + elenco(filtrati) + "\n\n" + caveat
+      : "Con il filtro «" + esito.qualificatore + "» risultano " + conteggio(filtrati.length, limite) + " per «" + soggetto + "»." + nota + totale + "\n\n" + elenco(filtrati) + "\n\n" + caveat;
   }
 
-  // Domanda sul soggetto con un filtro ancora attivo: si dichiarano entrambi.
-  return (
-    `Per «${soggetto}» il catalogo InCittà ha ${conteggio(base.length, limite)}; ` +
-    `${filtrati.length} ${filtrati.length === 1 ? "corrisponde" : "corrispondono"} al filtro «${esito.qualificatore}» già attivo.` +
-    `${nota}\n\n${elenco(filtrati)}\n\n${CAVEAT}`
-  );
+  return inglese
+    ? "The InCittà catalog lists " + conteggio(base.length, limite, true) + " for “" + soggetto + "”; " + filtrati.length + " " + (filtrati.length === 1 ? "matches" : "match") + " the active “" + esito.qualificatore + "” filter." + nota + "\n\n" + elenco(filtrati) + "\n\n" + caveat
+    : "Per «" + soggetto + "» il catalogo InCittà ha " + conteggio(base.length, limite) + "; " + filtrati.length + " " + (filtrati.length === 1 ? "corrisponde" : "corrispondono") + " al filtro «" + esito.qualificatore + "» già attivo." + nota + "\n\n" + elenco(filtrati) + "\n\n" + caveat;
 }

@@ -1,4 +1,5 @@
-import { rilevaLinguaPino } from "./understanding";
+import { rilevaLinguaConversazionePino, rilevaLinguaPino, normalizzaQueryCatalogo } from "./understanding";
+import { isExplicitFoodProductRequest } from "./routing-policy";
 import { rispostaIdentitaPino } from "./identity";
 import { rispostaSalutoPino, rispostaRelazionalePino } from "./greetings";
 import { CATEGORIE_REGALO, isGenericGiftRequest, prodottoCorrispondeCategoriaRegalo } from "./gift-retrieval";
@@ -196,7 +197,7 @@ const RE_VINCOLO = /^(e\s+)?(budget(?:\s+di)?|sotto|sopra|massimo|minimo|meno di
 
 // Intenzione salute → farmacia: usata anche nella risposta deterministica.
 const REQUIRES_PHARMACY_REASON =
-  /\bfebbre\b|\btemperatura alta\b|\bmal di gola\b|\braffreddore\b|\binfluenza\b|\btosse\b/i;
+  /\bfebbre\b|\btemperatura alta\b|\bmal di gola\b|\braffreddore\b|\binfluenza\b|\btosse\b|\bfever\b|\bsore throat\b|\bcold\b|\bflu\b|\bcough\b/i;
 
 function eQuerySostanziale(q: string): string | null {
   const t = q.trim();
@@ -244,6 +245,7 @@ function pianoPredefinito(
 ): { directReply: string | null; tools: ToolInvocation[]; followUp?: FollowUp } | null {
   const utenti = storico.filter((m) => m.role === "user").map((m) => m.content);
   const ultimo = (utenti[utenti.length - 1] ?? "").trim().toLowerCase();
+  const inglese = rilevaLinguaConversazionePino(storico) === "en";
   if (!ultimo) return null;
 
   const RE_PIATTAFORMA =
@@ -276,11 +278,11 @@ function pianoPredefinito(
       ],
     };
   }
-  const RE_OFFERTE = /\bofferte\b|\bpromozion|\bsconti?\b|\bsaldo\b|\bsaldi\b/;
+  const RE_OFFERTE = /\bofferte\b|\bpromozion|\bsconti?\b|\bsaldo\b|\bsaldi\b|\boffers?\b|\bdeals?\b|\bdiscounts?\b|\bsales?\b/;
   const RE_EVENTI =
-    /\beventi?\b|weekend|fine settimana|manifestazion|in programma|cosa c'è|cosa c'e|cosa succede|\bmostra\b|\bconcerto\b|\bfiera\b/;
+    /\beventi?\b|weekend|fine settimana|manifestazion|in programma|cosa c'è|cosa c'e|cosa succede|\bmostra\b|\bconcerto\b|\bfiera\b|\bevents?\b|what'?s on|what is on|\bconcerts?\b|\bfestivals?\b|\bexhibitions?\b/;
   const RE_CHIACCHIERA =
-    /^(va bene|ok|okay|perfetto|grazie|grazie mille|ciao|buongiorno|buonasera|hi|hello|hey|thanks|thank you|perfect|good|great)$/;
+    /^(va bene|ok|okay|perfetto|grazie|grazie mille|ciao|buongiorno|buonasera|hi|hello|hey|thanks|thank you|perfect|good|great|goodbye|bye|see you|good morning|good evening|good afternoon|sure)$/;
 
   const rispostaIdentita = rispostaIdentitaPino(utenti[utenti.length - 1] ?? "");
   if (rispostaIdentita) {
@@ -305,8 +307,8 @@ function pianoPredefinito(
   }
   if (RE_CHIACCHIERA.test(ultimo)) {
     return {
-      directReply: /\b(hi|hello|hey|thanks|thank you|perfect|great|good)\b/i.test(ultimo)
-        ? "Sure! I’m here to help you find local shops, products, offers and events. What are you looking for?"
+      directReply: inglese
+        ? "Sure! I'm here to help you find local shops, products, offers and events. What are you looking for?"
         : "Va bene, sono qui! Posso aiutarti a trovare negozi, prodotti, offerte ed eventi nella tua città. Dimmi pure cosa cerchi.",
       tools: [],
     };
@@ -334,6 +336,24 @@ function pianoPredefinito(
       // diverse da quelle già elencate.
       const limiteAlto = followUp.tipo === "altro" ? 20 : undefined;
       const giaMostrati = followUp.tipo === "altro" ? nomiGiaMostrati(storico) : [];
+
+      // Mantieni la superficie PRODOTTI anche nei follow-up di una ricerca
+      // alimentare esplicita: "Show me more" non deve trasformarsi in negozi.
+      if (isExplicitFoodProductRequest(soggetto)) {
+        return {
+          directReply: null,
+          tools: [{
+            tool: "searchProducts",
+            params: {
+              query: normalizzaQueryCatalogo(soggetto),
+              limit: limiteAlto ?? 8,
+              ...(limiteAlto ? { escludiNomi: giaMostrati } : {}),
+            },
+          }],
+          followUp,
+        };
+      }
+
       let tools: ToolInvocation[] = [];
       if (analisiPrec.intent !== "generic" && analisiPrec.confidence !== "bassa") {
         tools = pianoIntento(analisiPrec, soggetto).map((t) => ({
@@ -369,6 +389,26 @@ function pianoPredefinito(
       }
       return { directReply: null, tools, followUp };
     }
+  }
+
+  // Una richiesta esplicita di un alimento come bene da acquistare deve
+  // interrogare il catalogo prodotti, non aggiungere automaticamente panifici
+  // e ristoranti. Questo evita che una ricerca "pasta" diventi una lista negozi.
+  if (isExplicitFoodProductRequest(ultimo)) {
+    const queryProdotto = semantica?.query?.trim() || normalizzaQueryCatalogo(ultimo);
+    return {
+      directReply: null,
+      tools: [{
+        tool: "searchProducts",
+        params: {
+          query: queryProdotto,
+          maxPrice: semantica?.maxPrice,
+          minPrice: semantica?.minPrice,
+          esclusioni: semantica?.exclusions,
+          limit: 8,
+        },
+      }],
+    };
   }
 
   // ── Pino Semantic Planner v2 ─────────────────────────────────────────────
@@ -462,8 +502,9 @@ function pianoPredefinito(
   //     esattamente come prima dell'intent layer.
   if (analisi.intent === "generic") {
     return {
-      directReply:
-        "Dimmi cosa cerchi a Castrovillari: un prodotto, un negozio, un servizio o un'idea regalo. Più dettagli mi dai, più preciso sarò.",
+      directReply: inglese
+        ? "What are you looking for in Castrovillari — a product, a shop, a service or a gift idea? A few details will help me give you a more precise answer."
+        : "Dimmi cosa cerchi a Castrovillari: un prodotto, un negozio, un servizio o un'idea regalo. Più dettagli mi dai, più preciso sarò.",
       tools: [],
     };
   }
@@ -692,8 +733,11 @@ async function rispostaFollowUp(input: {
   storico: MessaggioAssistente[];
   analisi: PinoIntentAnalysis;
   inizio: number;
+  lingua?: "it" | "en";
 }): Promise<RispostaAssistente> {
   const { followUp, negozi, prodotti, storico, analisi, inizio } = input;
+  const lingua = input.lingua ?? rilevaLinguaConversazionePino(storico);
+  const inglese = lingua === "en";
   const base = {
     processingMs: Date.now() - inizio,
     source: "assistente" as const,
@@ -707,76 +751,76 @@ async function rispostaFollowUp(input: {
       ...base,
       negozi: [],
       prodotti: [],
-      risposta:
-        "Non avevo risultati precedenti da filtrare. Dimmi cosa cerchi e poi potrò applicare il filtro che hai indicato.",
+      risposta: inglese
+        ? "I don't have previous results to filter yet. Tell me what you're looking for first, and then I can apply that filter."
+        : "Non avevo risultati precedenti da filtrare. Dimmi cosa cerchi e poi potrò applicare il filtro che hai indicato.",
     };
   }
 
-  // ── Aperti ora ──
   if (followUp.tipo === "aperti") {
     const ids = [...negozi.map((n) => n.id), ...prodotti.map((p) => p.negozio_id)];
     const orari = await orariPerNegozi(ids);
     const negoziAperti = negozi.filter((n) => apertoOra(orari.get(n.id)) === true);
-    const prodottiAperti = prodotti.filter(
-      (p) => apertoOra(orari.get(p.negozio_id)) === true
-    );
+    const prodottiAperti = prodotti.filter((p) => apertoOra(orari.get(p.negozio_id)) === true);
     if (negoziAperti.length === 0 && prodottiAperti.length === 0) {
       return {
         ...base,
         negozi: [],
         prodotti: [],
-        risposta:
-          "Tra i risultati precedenti, nessuna attività risulta aperta ora secondo gli orari registrati su InCittà.",
+        risposta: inglese
+          ? "None of the previous businesses can be verified as open right now based on the opening hours listed on InCittà."
+          : "Tra i risultati precedenti, nessuna attività risulta aperta ora secondo gli orari registrati su InCittà.",
       };
     }
-    const corpo = sezioniRisultati(aRisultatiRecuperati(negoziAperti, prodottiAperti)).join("\n\n");
+    const corpo = sezioniRisultati(aRisultatiRecuperati(negoziAperti, prodottiAperti), undefined, lingua).join("\n\n");
     return {
       ...base,
       negozi: negoziAperti,
       prodotti: prodottiAperti,
-      risposta: `Tra i risultati precedenti, queste sono le attività aperte ora:\n\n${corpo}`,
+      risposta: inglese
+        ? "Among the previous results, these businesses are listed as open now:\n\n" + corpo
+        : "Tra i risultati precedenti, queste sono le attività aperte ora:\n\n" + corpo,
     };
   }
 
-  // ── Solo economici ── (ordinabili solo i prodotti: i negozi non hanno prezzo)
   if (followUp.tipo === "economici") {
     if (prodotti.length > 0) {
       const ordinati = [...prodotti].sort((a, b) => Number(a.prezzo) - Number(b.prezzo));
       const quanti = Math.max(1, Math.ceil(ordinati.length / 2));
       const economici = ordinati.slice(0, quanti);
-      const corpo = sezioniRisultati(aRisultatiRecuperati([], economici)).join("\n\n");
+      const corpo = sezioniRisultati(aRisultatiRecuperati([], economici), undefined, lingua).join("\n\n");
       return {
         ...base,
         negozi: [],
         prodotti: economici,
-        risposta: `Tra i risultati precedenti, ecco le opzioni più economiche:\n\n${corpo}`,
+        risposta: (inglese
+          ? "Among the previous results, here are the lower-priced options:\n\n"
+          : "Tra i risultati precedenti, ecco le opzioni più economiche:\n\n") + corpo,
       };
     }
-    const corpo = sezioniRisultati(aRisultatiRecuperati(negozi, [])).join("\n\n");
+    const corpo = sezioniRisultati(aRisultatiRecuperati(negozi, []), undefined, lingua).join("\n\n");
     return {
       ...base,
       negozi,
       prodotti: [],
-      risposta:
-        "I negozi non hanno un prezzo associato, quindi non posso ordinarli per economicità: il filtro \"economici\" vale sui prodotti. Ecco le attività già trovate:\n\n" +
-        corpo,
+      risposta: inglese
+        ? "Stores don't have a price attached, so I can't rank them by price. The 'cheaper' filter applies to products. Here are the businesses already found:\n\n" + corpo
+        : "I negozi non hanno un prezzo associato, quindi non posso ordinarli per economicità: il filtro \"economici\" vale sui prodotti. Ecco le attività già trovate:\n\n" + corpo,
     };
   }
 
-  // ── Solo vicino ── (nessuna posizione utente: niente distanza inventata)
   if (followUp.tipo === "vicino") {
-    const corpo = sezioniRisultati(aRisultatiRecuperati(negozi, prodotti)).join("\n\n");
+    const corpo = sezioniRisultati(aRisultatiRecuperati(negozi, prodotti), undefined, lingua).join("\n\n");
     return {
       ...base,
       negozi,
       prodotti,
-      risposta:
-        "Non conosco la tua posizione, quindi non posso calcolare la distanza dalle attività (a InCittà non arriva la geolocalizzazione dal browser). Dimmi la zona o la via e filtro di conseguenza. Intanto ecco i risultati precedenti:\n\n" +
-        corpo,
+      risposta: inglese
+        ? "I don't have your location, so I can't calculate distances to these businesses. Tell me an area or street and I can narrow things down. In the meantime, here are the previous results:\n\n" + corpo
+        : "Non conosco la tua posizione, quindi non posso calcolare la distanza dalle attività (a InCittà non arriva la geolocalizzazione dal browser). Dimmi la zona o la via e filtro di conseguenza. Intanto ecco i risultati precedenti:\n\n" + corpo,
     };
   }
 
-  // ── Fammi vedere altro / alternative ──
   const giaMostrati = new Set(nomiGiaMostrati(storico));
   const giaMostrato = (nome: string) => giaMostrati.has(nome.toLowerCase().trim());
   const nuoviNegozi = negozi.filter((n) => !giaMostrato(n.nome));
@@ -787,22 +831,23 @@ async function rispostaFollowUp(input: {
       ...base,
       negozi: [],
       prodotti: [],
-      risposta:
-        "Ho già mostrato tutte le opzioni disponibili per la tua ricerca: non ce ne sono altre con gli stessi criteri. Vuoi provare una zona diversa, un'altra categoria o un'altra fascia di prezzo?",
+      risposta: inglese
+        ? "I've already shown all the available options matching these criteria. Would you like to try a different area, category or price range?"
+        : "Ho già mostrato tutte le opzioni disponibili per la tua ricerca: non ce ne sono altre con gli stessi criteri. Vuoi provare una zona diversa, un'altra categoria o un'altra fascia di prezzo?",
     };
   }
   const mostratiNegozi = nuoviNegozi.slice(0, 5);
   const mostratiProdotti = nuoviProdotti.slice(0, 5);
-  const corpo = sezioniRisultati(aRisultatiRecuperati(mostratiNegozi, mostratiProdotti)).join("\n\n");
+  const corpo = sezioniRisultati(aRisultatiRecuperati(mostratiNegozi, mostratiProdotti), undefined, lingua).join("\n\n");
   return {
     ...base,
     negozi: mostratiNegozi,
     prodotti: mostratiProdotti,
-    risposta: `Ecco altre opzioni che non ti avevo ancora mostrato:\n\n${corpo}`,
+    risposta: (inglese
+      ? "Here are some more options I haven't shown you yet:\n\n"
+      : "Ecco altre opzioni che non ti avevo ancora mostrato:\n\n") + corpo,
   };
 }
-
-
 
 /**
  * Recupero intelligente quando la prima ricerca non restituisce nulla.
@@ -822,9 +867,14 @@ async function recuperaAlternativeSemantiche(
   piano: PinoSemanticPlan | undefined;
   descrizione: string | null;
 }> {
-  const piano =
+  const pianoInterpretato =
     semanticaIniziale ??
     (await interpretaRichiestaPino(domanda, storico, analisi, memoria));
+  // Una richiesta alimentare esplicita resta sulla superficie prodotti anche
+  // durante il recupero di secondo livello: non deve degradare a negozi.
+  const piano = pianoInterpretato && isExplicitFoodProductRequest(domanda)
+    ? { ...pianoInterpretato, surface: "products" as const }
+    : pianoInterpretato;
 
   if (!piano || piano.confidence === "bassa" || !piano.query) {
     return { negozi: [], prodotti: [], piano, descrizione: null };
@@ -893,10 +943,15 @@ async function recuperaAlternativeSemantiche(
   }
 
   const concetto = piano.query;
+  const inglese = rilevaLinguaConversazionePino(storico) === "en";
   const descrizione =
     prodottiTrovati.length > 0
-      ? `Non ho trovato una corrispondenza esatta per "${domanda}", quindi ho allargato la ricerca al concetto "${concetto}" e alle sue varianti.`
-      : `Non ho trovato il prodotto esatto per "${domanda}", ma ho trovato attività pertinenti dove potrebbe essere reperito.`;
+      ? (inglese
+          ? `I didn't find an exact match for "${domanda}", so I broadened the search to "${concetto}" and related variants.`
+          : `Non ho trovato una corrispondenza esatta per "${domanda}", quindi ho allargato la ricerca al concetto "${concetto}" e alle sue varianti.`)
+      : (inglese
+          ? `I didn't find the exact product for "${domanda}", but I found relevant businesses that may carry it.`
+          : `Non ho trovato il prodotto esatto per "${domanda}", ma ho trovato attività pertinenti dove potrebbe essere reperito.`);
 
   return {
     negozi: negoziTrovati.slice(0, 8),
@@ -912,19 +967,48 @@ async function recuperaAlternativeSemantiche(
 // ciò che la fonte ha realmente restituito. Questo elimina le allucinazioni
 // anche quando il modello finale sarebbe tentato di completare i buchi.
 
-function rispostaMeteoDeterministica(meteo: Awaited<ReturnType<typeof getWeatherCastrovillari>>): string {
+function descrizioneMeteoInglese(descrizione: string): string {
+  return String(descrizione ?? "").toLowerCase()
+    .replace(/parzialmente nuvoloso/g, "partly cloudy")
+    .replace(/poco nuvoloso/g, "mostly clear")
+    .replace(/pioggia moderata/g, "moderate rain")
+    .replace(/pioggia leggera|pioviggine/g, "light rain")
+    .replace(/pioggia intensa/g, "heavy rain")
+    .replace(/temporale/g, "thunderstorm")
+    .replace(/neve/g, "snow")
+    .replace(/nuvoloso/g, "cloudy")
+    .replace(/coperto/g, "overcast")
+    .replace(/sereno/g, "clear")
+    .replace(/pioggia/g, "rain");
+}
+
+function rispostaMeteoDeterministica(
+  meteo: Awaited<ReturnType<typeof getWeatherCastrovillari>>,
+  lingua: "it" | "en" = "it"
+): string {
+  const inglese = lingua === "en";
   if (!meteo) {
-    return "Al momento non riesco a verificare il meteo di Castrovillari. Non ti do una previsione inventata: riprova tra poco.";
+    return inglese
+      ? "I can't verify the weather in Castrovillari right now. I won't make up a forecast — please try again shortly."
+      : "Al momento non riesco a verificare il meteo di Castrovillari. Non ti do una previsione inventata: riprova tra poco.";
   }
 
-  const oggiPioggia =
-    meteo.oggi.probabilitaPioggia != null
-      ? ", probabilità di pioggia " + meteo.oggi.probabilitaPioggia + "%"
-      : "";
-  const domaniPioggia =
-    meteo.domani.probabilitaPioggia != null
-      ? ", probabilità di pioggia " + meteo.domani.probabilitaPioggia + "%"
-      : "";
+  const oggiPioggia = meteo.oggi.probabilitaPioggia != null
+    ? (inglese ? ", chance of rain " : ", probabilità di pioggia ") + meteo.oggi.probabilitaPioggia + "%"
+    : "";
+  const domaniPioggia = meteo.domani.probabilitaPioggia != null
+    ? (inglese ? ", chance of rain " : ", probabilità di pioggia ") + meteo.domani.probabilitaPioggia + "%"
+    : "";
+
+  if (inglese) {
+    return "In Castrovillari it is currently " + meteo.temperatura + "°C, " +
+      descrizioneMeteoInglese(meteo.descrizione) + ", with a feels-like temperature of " +
+      meteo.temperaturaPercepita + "°C and wind at " + meteo.ventoKmh + " km/h. " +
+      "Today: " + meteo.oggi.minima + "° / " + meteo.oggi.massima + "°" + oggiPioggia + ". " +
+      "Tomorrow: " + descrizioneMeteoInglese(meteo.domani.descrizione) + ", " +
+      meteo.domani.minima + "° / " + meteo.domani.massima + "°" + domaniPioggia + ". " +
+      "Data updated at " + meteo.aggiornato + ".";
+  }
 
   return (
     "A Castrovillari ora ci sono " + meteo.temperatura + "°C, " +
@@ -941,81 +1025,85 @@ function rispostaMeteoDeterministica(meteo: Awaited<ReturnType<typeof getWeather
 function rispostaFarmacieDeterministica(
   farmacie: Awaited<ReturnType<typeof searchPharmacies>>,
   statoRichiesto: ToolParams["stato"] = "turno",
-  motivo?: string
+  motivo?: string,
+  lingua: "it" | "en" = "it"
 ): string {
+  const inglese = lingua === "en";
+  const turnoTradotto = (turno: string | null | undefined) =>
+    turno ? (inglese ? "on duty: " + turno : turno) : null;
+
   if (statoRichiesto === "aperte") {
     const aperte = farmacie.filter((f) => f.stato === "aperta").slice(0, 5);
     if (aperte.length === 0) {
-      return "Al momento non risulta alcuna farmacia con stato APERTA verificato nei dati disponibili per Castrovillari. Non ti indico farmacie non verificate come aperte.";
+      return inglese
+        ? "I can't verify any pharmacy as currently open in the available Castrovillari data. I won't list a pharmacy as open without confirmation."
+        : "Al momento non risulta alcuna farmacia con stato APERTA verificato nei dati disponibili per Castrovillari. Non ti indico farmacie non verificate come aperte.";
     }
 
-    const elenco = aperte
-      .map((f) => {
-        const dettagli = [
-          f.indirizzo ? f.indirizzo : null,
-          f.telefono ? "tel. " + f.telefono : null,
-          f.apertura ? "orari: " + f.apertura : null,
-        ]
-          .filter(Boolean)
-          .join(" — ");
-        return "- **" + f.nome + "**" + (dettagli ? " — " + dettagli : "");
-      })
-      .join("\n");
+    const elenco = aperte.map((f) => {
+      const dettagli = [
+        f.indirizzo ? f.indirizzo : null,
+        f.telefono ? "tel. " + f.telefono : null,
+        f.apertura ? (inglese ? "hours: " : "orari: ") + f.apertura : null,
+      ].filter(Boolean).join(" — ");
+      return "- **" + f.nome + "**" + (dettagli ? " — " + dettagli : "");
+    }).join("\n");
 
-    return "Dai dati verificati di oggi risultano aperte:\n" + elenco;
+    return inglese
+      ? "Based on today's verified data, these pharmacies are listed as open:\n" + elenco
+      : "Dai dati verificati di oggi risultano aperte:\n" + elenco;
   }
 
   if (statoRichiesto === "tutte") {
     if (farmacie.length === 0) {
-      return "Al momento non ho dati verificati sulle farmacie di Castrovillari.";
+      return inglese
+        ? "I don't currently have verified pharmacy information for Castrovillari."
+        : "Al momento non ho dati verificati sulle farmacie di Castrovillari.";
     }
 
-    const elenco = farmacie
-      .slice(0, 8)
-      .map((f) => {
-        const stato =
-          f.turno ? "DI TURNO" : f.stato === "aperta" ? "APERTA" : f.stato === "chiusa" ? "CHIUSA" : "NON VERIFICATA";
-        const dettagli = [
-          f.indirizzo ? f.indirizzo : null,
-          f.turno ? f.turno : null,
-          f.telefono ? "tel. " + f.telefono : null,
-        ]
-          .filter(Boolean)
-          .join(" — ");
-        return "- **" + f.nome + "** — " + stato + (dettagli ? " — " + dettagli : "");
-      })
-      .join("\n");
+    const elenco = farmacie.slice(0, 8).map((f) => {
+      const stato = f.turno
+        ? (inglese ? "ON DUTY" : "DI TURNO")
+        : f.stato === "aperta"
+          ? (inglese ? "OPEN" : "APERTA")
+          : f.stato === "chiusa"
+            ? (inglese ? "CLOSED" : "CHIUSA")
+            : (inglese ? "NOT VERIFIED" : "NON VERIFICATA");
+      const dettagli = [
+        f.indirizzo ? f.indirizzo : null,
+        turnoTradotto(f.turno),
+        f.telefono ? "tel. " + f.telefono : null,
+      ].filter(Boolean).join(" — ");
+      return "- **" + f.nome + "** — " + stato + (dettagli ? " — " + dettagli : "");
+    }).join("\n");
 
-    return "Farmacie per cui ho dati disponibili:\n" + elenco;
+    return inglese
+      ? "Pharmacies with available information:\n" + elenco
+      : "Farmacie per cui ho dati disponibili:\n" + elenco;
   }
 
   const turno = farmacie.filter((f) => Boolean(f.turno)).slice(0, 3);
-
   if (turno.length === 0) {
-    const prefisso = motivo ? "Per " + motivo + ", " : "";
-    return (
-      prefisso +
-      "al momento non risulta alcuna farmacia di turno verificata nei dati disponibili per Castrovillari. " +
-      "Non ti indico un nome non verificato, per evitare un falso positivo."
-    );
+    const prefisso = motivo ? (inglese ? "For " : "Per ") + motivo + ", " : "";
+    return inglese
+      ? prefisso + "no on-duty pharmacy is currently verified in the available Castrovillari data. I won't provide an unverified name."
+      : prefisso + "al momento non risulta alcuna farmacia di turno verificata nei dati disponibili per Castrovillari. Non ti indico un nome non verificato, per evitare un falso positivo.";
   }
 
-  const elenco = turno
-    .map((f) => {
-      const dettagli = [
-        f.turno ? f.turno : null,
-        f.indirizzo ? f.indirizzo : null,
-        f.telefono ? "tel. " + f.telefono : null,
-      ]
-        .filter(Boolean)
-        .join(" — ");
-      return "- **" + f.nome + "**" + (dettagli ? " — " + dettagli : "");
-    })
-    .join("\n");
+  const elenco = turno.map((f) => {
+    const dettagli = [
+      turnoTradotto(f.turno),
+      f.indirizzo ? f.indirizzo : null,
+      f.telefono ? "tel. " + f.telefono : null,
+    ].filter(Boolean).join(" — ");
+    return "- **" + f.nome + "**" + (dettagli ? " — " + dettagli : "");
+  }).join("\n");
 
   const prefisso = motivo
-    ? "Per " + motivo + ", puoi rivolgerti a una farmacia di turno. Dai dati verificati di oggi risulta:\n"
-    : "Dai dati verificati di oggi risulta:\n";
+    ? (inglese ? "For " : "Per ") + motivo + (inglese
+      ? ", you can contact an on-duty pharmacy. Today's verified data shows:\n"
+      : ", puoi rivolgerti a una farmacia di turno. Dai dati verificati di oggi risulta:\n")
+    : (inglese ? "Today's verified data shows these on-duty pharmacies:\n" : "Dai dati verificati di oggi risulta:\n");
 
   return prefisso + elenco;
 }
@@ -1031,11 +1119,12 @@ export async function chatConAssistente(
   // Cap sulla domanda: evita abuso di token e superfici di prompt injection
   // (la storia è già troncata a 300 caratteri per messaggio).
   const domanda = (ultimo && ultimo.role === "user" ? ultimo.content : "").slice(0, 500);
+  const linguaConversazione = rilevaLinguaConversazionePino(storico);
 
   // Fast path conversazionale: non attendere memoria, planner semantico o Gemini
   // per saluti, domande personali e inviti a chiacchierare.
   const identitaDiretta = rispostaIdentitaPino(domanda);
-  const rispostaDiretta = identitaDiretta ?? rispostaRelazionalePino(domanda) ?? rispostaSalutoPino(domanda);
+  const rispostaDiretta = identitaDiretta ?? rispostaRelazionalePino(domanda, linguaConversazione) ?? rispostaSalutoPino(domanda);
   if (rispostaDiretta) {
     return {
       risposta: rispostaDiretta,
@@ -1063,15 +1152,18 @@ export async function chatConAssistente(
   // Il filtro d'intento evita di deviare qui normali ricerche di prodotti o servizi.
   const luoghi = searchAttractions(domanda, 6);
   const richiestaTuristica =
-    (/\b(muse[oi]|monument[oi]|attrazion[ei]|cosa vedere|luoghi da visitare|luoghi da vedere|visitare|palazz[oi]|castell[oi]|chies[ae]|teatr[oi]|biblioteca|archivio|borg[oh]i?|dintorni|centro storico|festival|mostre|parco|itinerario|turistic[oa])\b/i.test(domanda)) || isAttractionNameQuery(domanda);
+    (/\b(muse[oi]|monument[oi]|attrazion[ei]|cosa vedere|luoghi da visitare|luoghi da vedere|visitare|palazz[oi]|castell[oi]|chies[ae]|teatr[oi]|biblioteca|archivio|borg[oh]i?|dintorni|centro storico|festival|mostre|parco|itinerario|turistic[oa]|museums?|monuments?|attractions?|things to see|places to visit|visit|palaces?|castles?|churches|theatres?|libraries|archives?|villages?|surroundings|historic center|historic centre|exhibitions?|parks?|itinerary|tourism|tourist)\b/i.test(domanda)) || isAttractionNameQuery(domanda);
   if (richiestaTuristica) {
     if (luoghi.length > 0) {
       const elenco = luoghi.map((luogo) => {
         const maps = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(luogo.queryMaps);
-        return `- **${luogo.nome}** — ${luogo.tipo}. ${luogo.descrizione} [Apri su Google Maps](${maps})${luogo.url ? ` · [Fonte / sito di riferimento](${luogo.url})` : ""}`;
+        return `- **${luogo.nome}** — ${luogo.tipo}. ${luogo.descrizione} [${linguaConversazione === "en" ? "Open in Google Maps" : "Apri su Google Maps"}](${maps})${luogo.url ? ` · [${linguaConversazione === "en" ? "Official source / website" : "Fonte / sito di riferimento"}](${luogo.url})` : ""}`;
       }).join("\n");
+      const rispostaAttrazioni = linguaConversazione === "en"
+        ? `I searched InCittà's Attractions guide. Here are the most relevant results:\n\n${elenco}\n\nFor opening hours, availability and event dates, always check the latest official sources.`
+        : `Ho cercato nella guida Attrazioni di InCittà. Ecco i risultati più pertinenti:\n\n${elenco}\n\nPer orari, aperture e date degli eventi, verifica sempre le fonti ufficiali aggiornate.`;
       return {
-        risposta: `Ho cercato nella guida Attrazioni di InCittà. Ecco i risultati più pertinenti:\n\n${elenco}\n\nPer orari, aperture e date degli eventi, verifica sempre le fonti ufficiali aggiornate.`,
+        risposta: rispostaAttrazioni,
         negozi: [],
         prodotti: [],
         processingMs: Date.now() - inizio,
@@ -1126,6 +1218,7 @@ export async function chatConAssistente(
         prodottiQualificatore,
         limite,
         riferimentoContesto: domandaAggregata.riferimentoContesto,
+        lingua: linguaConversazione,
       });
 
       console.log(
@@ -1234,6 +1327,7 @@ export async function chatConAssistente(
   // aggiuntive sulle attività, senza sostituire il piano principale.
   const usaMemoriaSuRicerca = !directReply &&
     !followUp &&
+    !isExplicitFoodProductRequest(domanda) &&
     memoria.length > 0 &&
     !invocazioni.some((t) => t.tool === "getWeather" || t.tool === "searchPharmacies");
 
@@ -1461,7 +1555,7 @@ export async function chatConAssistente(
 
   if (haMeteo) {
     return {
-      risposta: rispostaMeteoDeterministica(meteo),
+      risposta: rispostaMeteoDeterministica(meteo, linguaConversazione),
       negozi: [],
       prodotti: [],
       processingMs: Date.now() - inizio,
@@ -1474,10 +1568,10 @@ export async function chatConAssistente(
     const statoFarmacia =
       invocazioni.find((t) => t.tool === "searchPharmacies")?.params?.stato ?? "turno";
     const motivoFebbre = REQUIRES_PHARMACY_REASON.test(domanda)
-      ? "i sintomi che hai indicato"
+      ? (linguaConversazione === "en" ? "the symptoms you mentioned" : "i sintomi che hai indicato")
       : undefined;
     return {
-      risposta: rispostaFarmacieDeterministica(farmacie, statoFarmacia, motivoFebbre),
+      risposta: rispostaFarmacieDeterministica(farmacie, statoFarmacia, motivoFebbre, linguaConversazione),
       negozi: [],
       prodotti: [],
       processingMs: Date.now() - inizio,
@@ -1501,8 +1595,9 @@ export async function chatConAssistente(
     categorie = tutto.categorie;
   } else if (!directReply && !toolsEseguiti) {
     return {
-      risposta:
-        "Va bene, sono qui! Posso aiutarti a trovare negozi, prodotti, offerte ed eventi nella tua città. Dimmi pure cosa cerchi.",
+      risposta: linguaConversazione === "en"
+        ? "I'm here! I can help you find local shops, products, offers and events. What are you looking for?"
+        : "Va bene, sono qui! Posso aiutarti a trovare negozi, prodotti, offerte ed eventi nella tua città. Dimmi pure cosa cerchi.",
       negozi: [],
       prodotti: [],
       processingMs: Date.now() - inizio,
@@ -1534,6 +1629,7 @@ export async function chatConAssistente(
       storico,
       analisi,
       inizio,
+      lingua: linguaConversazione,
     });
   }
 
@@ -1574,7 +1670,7 @@ export async function chatConAssistente(
   // 6) Risposta rapida grounded: i risultati sono già stati recuperati dai tool.
   // Evitiamo una seconda chiamata Gemini solo per riscrivere dati che abbiamo
   // già verificato: così Pino mostra i risultati molto prima.
-  const linguaRisposta = rilevaLinguaPino(domanda);
+  const linguaRisposta = rilevaLinguaConversazionePino(storico);
   const rispostaBase = fallbackTestuale(
     risultati,
     notaVincolo,
@@ -1583,7 +1679,7 @@ export async function chatConAssistente(
     budgetPreferenza,
     linguaRisposta
   );
-  const risposta = notaRecupero && linguaRisposta !== "en"
+  const risposta = notaRecupero
     ? `${notaRecupero}\n\n${rispostaBase}`
     : rispostaBase;
 

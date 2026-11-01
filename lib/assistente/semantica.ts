@@ -385,14 +385,14 @@ export function arricchisciRichiestaConContesto(
       // da sola, altrimenti entra nella query di retrieval.
       .replace(/\b(?:euro|euros|eur)\b/gi, " ")
       .replace(/€/g, " ")
-      .replace(/\\s+/g, " ")
+      .replace(/\s+/g, " ")
       .trim();
   const rimuoviCitta = (testo: string, citta: string | null): string => {
     if (!citta) return testo;
     const escaped = citta.replace(/[.*+?^$()|[\]\\]/g, "\\$&");
     return testo
       .replace(new RegExp("\\b(?:a|in)\\s+" + escaped + "\\b", "gi"), " ")
-      .replace(/\\s+/g, " ")
+      .replace(/\s+/g, " ")
       .trim();
   };
 
@@ -453,7 +453,7 @@ export function arricchisciRichiestaConContesto(
 
   // Un reset del prezzo è un comando di stato, non testo da cercare.
   if (resetPrezzo) {
-    return [...parti].join(" ").replace(/\\s+/g, " ").trim().slice(0, 500) || corrente;
+    return [...parti].join(" ").replace(/\s+/g, " ").trim().slice(0, 500) || corrente;
   }
 
   const modificaEsplicita =
@@ -485,7 +485,7 @@ export function usaFastPathSemantico(query: string, analisi: PinoIntentAnalysis)
     /\b(?:sotto|sopra|massimo|minimo|meno di|piu di|più di|entro|fino a|tra)\b/i.test(q);
 }
 
-function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): PinoSemanticPlan | null {
+export function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): PinoSemanticPlan | null {
   const q = correggiErroriBattitura(normalizzaRichiesta(query)).trim();
   if (!q) return null;
   const match = CANONICI_RICERCA.find((x) => x.pattern.test(q));
@@ -531,6 +531,9 @@ function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): Pi
   // Gli attributi positivi restano: "scarpe da uomo eleganti" deve continuare
   // a cercare scarpe da uomo eleganti, non solo "scarpe".
   let termine = q
+    // Remove English conversational framing before single-token cleanup:
+    // otherwise stripping the standalone "i" from "I'm" leaves an orphan "'m".
+    .replace(/\b(?:i am looking for|i['’]m looking for|im looking for|looking for|i would like|i'd like|id like|i want|i need|can you find|could you find|find me|show me|help me find|please find|please show)\b/gi, " ")
     // La domanda sul prezzo è una cornice linguistica, non parte del nome
     // cercato: "quanto costa la cipolla?" deve interrogare il catalogo per
     // "cipolla", non per le parole "quanto/costa".
@@ -541,7 +544,7 @@ function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): Pi
     .replace(/\b(?:ho|con|dispongo di|a disposizione(?: di)?)\s*(?:(?:un|il|il mio)\s+)?(?:budget(?:\s+di)?\s*)?(?:€\s*)?\d+(?:[.,]\d+)?\s*(?:euro|euros|eur)\b(?:\s+(?:da spendere|per)\b)?/gi, " ")
     .replace(/(?:tra|da)\s*\d+(?:[.,]\d+)?\s*(?:e|a)\s*\d+(?:[.,]\d+)?/gi, " ")
     .replace(
-      /(?:budget(?:\s+di)?|non oltre|al massimo|sotto|massimo|meno di|entro|fino a|sopra|minimo|piu di|più di|oltre)\s*(?:€\s*)?\d+(?:[.,]\d+)?/gi,
+      /(?:budget(?:\s+di)?|non oltre|al massimo|sotto|massimo|meno di|entro|fino a|sopra|minimo|piu di|più di|oltre|under|below|up to|less than|no more than|not over|at most)\s*(?:€|\$)?\s*\d+(?:[.,]\d+)?/gi,
       " "
     )
     // Qualsiasi importo con valuta rimasto ("da 99 euro", "€ 99,00") è ancora
@@ -689,6 +692,22 @@ export async function interpretaRichiestaPino(
   // comprensione AI: le richieste nuove o colloquiali devono poter arrivare
   // al planner multilingue anche quando una regex ha già riconosciuto il prezzo.
   const fastPlan = pianoLocaleIntelligente(q, analisiEffettiva);
+
+  // A clear English product request with an explicit numeric price constraint
+  // is already fully parsed locally. Keep that deterministic subject and
+  // budget instead of allowing an LLM paraphrase to reintroduce fragments
+  // such as "'m pasta under" into the catalog query.
+  if (
+    fastPlan &&
+    rilevaLinguaPino(q) === "en" &&
+    fastPlan.surface === "products" &&
+    (fastPlan.intent === "product" || fastPlan.intent === "food" || fastPlan.intent === "drink") &&
+    (fastPlan.maxPrice !== null || fastPlan.minPrice !== null) &&
+    fastPlan.confidence !== "bassa" &&
+    fastPlan.query.trim()
+  ) {
+    return fastPlan;
+  }
 
   const memoriaTesto = memoria.slice(0, 4)
     .map((m) => `${m.termine}=>${m.concetto}`)

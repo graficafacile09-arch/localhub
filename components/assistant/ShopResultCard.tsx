@@ -3,6 +3,7 @@ import { MapPin, Navigation, MessageCircle, ExternalLink } from "lucide-react";
 import { getNegozioCardImmagine } from "@/lib/negozi-card-immagini";
 import { normalizzaNumeroWhatsApp } from "@/lib/telefono";
 import type { NegozioRicerca } from "@/lib/ricerca-ai";
+import { pinoShopHref } from "@/lib/assistente/shop-link";
 
 type ShopResultCardProps = {
   negozio: NegozioRicerca;
@@ -27,7 +28,7 @@ export default function ShopResultCard({ negozio, rank }: ShopResultCardProps) {
     categoria: negozio.categoria,
   });
 
-  const hrefNegozio = `/negozio/${negozio.slug}`;
+  const hrefNegozio = pinoShopHref(negozio.slug);
 
   // Prima di navigare chiude l'Assistente AI (evento globale, stesso pattern
   // di "assistant:open") così il pannello non resta aperto sopra la pagina.
@@ -35,58 +36,64 @@ export default function ShopResultCard({ negozio, rank }: ShopResultCardProps) {
 
   return (
     <article className="group overflow-hidden rounded-xl border border-slate-100 bg-white p-2.5 transition hover:border-blue-200 hover:shadow-md">
-      {/* Area principale: l'intera card è cliccabile e apre la pagina del negozio */}
-      <Link
-        href={hrefNegozio}
-        onClick={chiudiAssistente}
-        className="flex gap-3"
-        aria-label={`Apri la scheda di ${negozio.nome}`}
-      >
-        <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-slate-100">
-          <div
-            role="img"
-            aria-label={`Fotografia di ${negozio.nome}`}
-            className="h-full w-full bg-cover bg-center transition duration-200 group-hover:scale-105"
-            style={{ backgroundImage: `url(${imageUrl})` }}
-          />
-        </div>
-
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start justify-between gap-1">
-            <div className="min-w-0">
-              <h3 className="truncate text-[15px] font-bold text-slate-900 transition group-hover:text-blue-700">
-                {negozio.nome}
-              </h3>
-              {negozio.categoria && (
-                <p className="text-[11px] font-semibold text-blue-600">
-                  {negozio.categoria}
+      {/* La scheda è cliccabile solo se il catalogo fornisce uno slug valido. */}
+      {(() => {
+        const contenuto = (
+          <>
+            <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-slate-100">
+              <div
+                role="img"
+                aria-label={`Fotografia di ${negozio.nome}`}
+                className="h-full w-full bg-cover bg-center transition duration-200 group-hover:scale-105"
+                style={{ backgroundImage: `url(${imageUrl})` }}
+              />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-start justify-between gap-1">
+                <div className="min-w-0">
+                  <h3 className="truncate text-[15px] font-bold text-slate-900 transition group-hover:text-blue-700">
+                    {negozio.nome}
+                  </h3>
+                  {negozio.categoria && (
+                    <p className="text-[11px] font-semibold text-blue-600">
+                      {negozio.categoria}
+                    </p>
+                  )}
+                </div>
+                <span className="shrink-0 rounded-full bg-yellow-100 px-2 py-0.5 text-[10px] font-bold text-yellow-700">
+                  #{rank}
+                </span>
+              </div>
+              {negozio.indirizzo && (
+                <p className="mt-1 flex items-center gap-1 text-xs text-slate-500">
+                  <MapPin className="h-3.5 w-3.5 shrink-0 text-blue-500" />
+                  <span className="truncate">{negozio.indirizzo}</span>
                 </p>
               )}
             </div>
-            <span className="shrink-0 rounded-full bg-yellow-100 px-2 py-0.5 text-[10px] font-bold text-yellow-700">
-              #{rank}
-            </span>
-          </div>
+          </>
+        );
+        return hrefNegozio ? (
+          <Link href={hrefNegozio} onClick={chiudiAssistente} className="flex gap-3" aria-label={`Apri la scheda di ${negozio.nome}`}>
+            {contenuto}
+          </Link>
+        ) : (
+          <div className="flex gap-3">{contenuto}</div>
+        );
+      })()}
 
-          {negozio.indirizzo && (
-            <p className="mt-1 flex items-center gap-1 text-xs text-slate-500">
-              <MapPin className="h-3.5 w-3.5 shrink-0 text-blue-500" />
-              <span className="truncate">{negozio.indirizzo}</span>
-            </p>
-          )}
-        </div>
-      </Link>
-
-      {/* Azioni secondarie: scheda, mappa e WhatsApp restano link separati */}
+      {/* Azioni secondarie: scheda solo con slug valido; mappa e WhatsApp restano separati */}
       <div className="mt-2 flex flex-wrap gap-1.5">
-        <Link
-          href={hrefNegozio}
-          onClick={chiudiAssistente}
-          className="inline-flex items-center gap-1 rounded-lg bg-yellow-400 px-2.5 py-1 text-[11px] font-bold text-blue-800 transition hover:bg-yellow-300"
-        >
-          <ExternalLink className="h-3 w-3" />
-          Scheda
-        </Link>
+        {hrefNegozio && (
+          <Link
+            href={hrefNegozio}
+            onClick={chiudiAssistente}
+            className="inline-flex items-center gap-1 rounded-lg bg-yellow-400 px-2.5 py-1 text-[11px] font-bold text-blue-800 transition hover:bg-yellow-300"
+          >
+            <ExternalLink className="h-3 w-3" />
+            Scheda
+          </Link>
+        )}
         {negozio.indirizzo && (
           <a
             href={buildMapsUrl(negozio.indirizzo)}

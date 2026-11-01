@@ -15,7 +15,8 @@
  * @module lib/assistente/tools
  */
 
-import { cercaNegozi, cercaProdotti, getCategorieConNegozi } from "@/lib/negozi";
+import { cercaNegozi, getCategorieConNegozi } from "@/lib/negozi";
+import { search as searchCatalogoPubblico } from "@/lib/search-service";
 import { getOffertePubbliche } from "@/lib/offerte";
 import { getEventiPubblici } from "@/lib/eventi";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
@@ -775,57 +776,54 @@ export async function searchProducts(
   const q = (query ?? "").trim();
   if (!q) return [];
 
-  const righe = await cercaProdotti(q, 60);
+  // FONTE UNICA DI VERITÀ: Pino interroga lo stesso Search Service della
+  // ricerca pubblica. Non esegue una seconda ricerca autonoma e non applica
+  // un gate lessicale che possa scartare risultati validi del catalogo.
+  const canonici = await searchCatalogoPubblico(q);
+  let filtrate = [...(canonici.prodotti ?? [])].filter((p) =>
+    prodottoSoddisfaEsclusioni(p, opts?.esclusioni)
+  );
 
-  const terminiOriginali = terminiSignificativi(q, 10).map(normalizza);
-  // Concetti d'intento come FRASI intere (es. "prodotti tipici"): spezzarli in
-  // singole parole renderebbe "prodotti"/"tipici" una chiave che matcha mezzo
-  // catalogo.
-  const concettiQuery = analizzaRichiesta(q).concetti.map(normalizza);
-  const pertinenti =
-    (terminiOriginali.length > 0
-      ? righe.filter((p) => prodottoPertinente(p, terminiOriginali, concettiQuery))
-      : righe
-    ).filter((p) => prodottoSoddisfaEsclusioni(p, opts?.esclusioni));
-
-  // Filtri in memoria su categoria/sottocategoria/tipo-se-pertinente.
-  let filtrate = pertinenti;
-  if (opts?.categoria?.trim()) {
-    const c = opts.categoria.trim().toLowerCase();
-    filtrate = filtrate.filter((p) => (p.categoria ?? "").toLowerCase().includes(c));
+  // Per le ricerche di alimenti il negozio non deve contribuire alla
+  // pertinenza: "pasta" non deve restituire taralli solo perché il venditore
+  // si chiama "Mani in Pasta". Il soggetto deve identificare il prodotto
+  // stesso (nome/categoria), non il nome dell'attività.
+  const soggettoAlimentare = q.toLowerCase().match(
+    /\b(pasta|pane|pizza|dolci?|gelato|torte?|biscotti|formaggio|salumi|prosciutto|carne|pesce|verdura|frutta|olio|miele|conserve|farina|riso|nutella|cipolla|pomodoro|bread|noodles|cake|cookies|cheese|meat|fish|vegetables|fruit|honey|flour|rice|onion|tomato)\b/
+  )?.[1];
+  if (soggettoAlimentare) {
+    filtrate = filtrate.filter((p) => prodottoPertinente(p, [soggettoAlimentare], []));
   }
-  // V12: città e "aperto ora" dipendono dal negozio proprietario.
-  // Applichiamo questi vincoli prima del filtro prezzo e del fallback fuori budget.
+
+  // I filtri espliciti si applicano solo dopo il retrieval canonico.
+  if (opts?.categoria?.trim()) {
+    const categoria = normalizza(opts.categoria);
+    filtrate = filtrate.filter((p) => normalizza(p.categoria ?? "").includes(categoria));
+  }
+
   filtrate = await filtraProdottiPerVincoliNegozio(filtrate, opts);
 
-  const maxPrice = opts.maxPrice != null ? Number(opts.maxPrice) : null;
-  const minPrice = opts.minPrice != null ? Number(opts.minPrice) : null;
-
-  // Escludiamo i prodotti senza prezzo reale (es. prezzo 0 da dati demo).
-  const conPrezzo = filtrate.filter((p) => prodottoHaPrezzoReale(p.prezzo));
-
-  let candidati = conPrezzo;
   if (opts?.escludiNomi?.length) {
     const esclusi = new Set(
       opts.escludiNomi
         .map((n) => String(n ?? "").trim().toLowerCase())
         .filter(Boolean)
     );
-    candidati = candidati.filter(
+    filtrate = filtrate.filter(
       (p) => !esclusi.has(String(p.nome ?? "").trim().toLowerCase())
     );
   }
 
-  // Il prezzo è una preferenza di ordinamento, non un filtro che azzera la
-  // ricerca: prima mostriamo gli articoli compatibili con la fascia richiesta,
-  // poi le alternative fuori fascia, sempre dal meno caro al più caro.
-  return ordinaProdottiPerBudget(
-    candidati,
-    { maxPrice, minPrice },
-    (a, b) =>
-      punteggioProdottoPino(b, q, terminiOriginali) -
-      punteggioProdottoPino(a, q, terminiOriginali)
-  ).slice(0, limita(opts.limit, 8, 20));
+  // Prezzo come preferenza di ordinamento, mai come motivo per azzerare
+  // la ricerca. Manteniamo anche i prodotti senza prezzo come nel motore
+  // pubblico: non devono sparire solo perché il dato prezzo manca.
+  const maxPrice = opts.maxPrice != null ? Number(opts.maxPrice) : null;
+  const minPrice = opts.minPrice != null ? Number(opts.minPrice) : null;
+  if (maxPrice !== null || minPrice !== null) {
+    filtrate = ordinaProdottiPerBudget(filtrate, { maxPrice, minPrice });
+  }
+
+  return filtrate.slice(0, limita(opts.limit, 8, 20));
 }
 
 // ─── searchOffers ────────────────────────────────────────────────────────────

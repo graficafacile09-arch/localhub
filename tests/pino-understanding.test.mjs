@@ -2,10 +2,13 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
 import { rispostaIdentitaPino } from "../lib/assistente/identity.ts";
+import { isExplicitFoodProductRequest, isBroadAttractionsRequest } from "../lib/assistente/routing-policy.ts";
+import { prodottoIdentificatoDaSoggetto } from "../lib/assistente/product-relevance.ts";
 import {
   normalizzaQueryCatalogo,
   rilevaLinguaPino,
   richiestaApertaOra,
+  rilevaLinguaConversazionePino,
 } from "../lib/assistente/understanding.ts";
 
 const promptSource = readFileSync(
@@ -14,6 +17,8 @@ const promptSource = readFileSync(
 );
 
 test("English budget and alternative wording reduce to the catalog subject", () => {
+  assert.equal(rilevaLinguaPino("I'm looking for pasta under 5 euros"), "en");
+  assert.equal(normalizzaQueryCatalogo("I'm looking for pasta under 5 euros"), "pasta");
   const request = "I want a watch under 100 euros, or something similar";
   assert.equal(rilevaLinguaPino(request), "en");
   assert.equal(normalizzaQueryCatalogo(request), "orologio");
@@ -94,4 +99,53 @@ test("product search subject must identify the product, not occur only in its de
   assert.equal(prodottoIdentificatoDaSoggetto({ nome: "Olio Extra Vergine di Oliva del Pollino", categoria: "Alimentari" }, "olio"), true);
   assert.equal(prodottoIdentificatoDaSoggetto({ nome: "Orologio da polso", categoria: "Accessori" }, "orologio"), true);
   assert.equal(prodottoIdentificatoDaSoggetto({ nome: "Filetti di Cipolla", categoria: "Conserve" }, "olio", ["olio"]), false);
+});
+
+
+test("English short conversational messages are detected, including how are you", () => {
+  assert.equal(rilevaLinguaPino("Hi Pino, how are you?"), "en");
+  assert.equal(rilevaLinguaPino("Would you like to chat?"), "en");
+  assert.equal(rilevaLinguaPino("Thanks, that was helpful!"), "en");
+  assert.equal(rilevaLinguaPino("Come stai?"), "it");
+});
+
+test("Pino keeps the conversation language when a follow-up is short", () => {
+  assert.equal(rilevaLinguaConversazionePino([
+    { role: "user", content: "I'm looking for a watch under 100 euros" },
+    { role: "assistant", content: "I found two products." },
+    { role: "user", content: "Show me more" },
+    { role: "assistant", content: "Here are more options." },
+    { role: "user", content: "Okay" },
+  ]), "en");
+});
+
+
+test("Pino switches back to Italian when the user does", () => {
+  assert.equal(rilevaLinguaPino("Va bene, grazie"), "it");
+  assert.equal(rilevaLinguaConversazionePino([
+    { role: "user", content: "I'm looking for a watch under 100 euros" },
+    { role: "assistant", content: "I found two products." },
+    { role: "user", content: "Va bene, grazie" },
+  ]), "it");
+});
+
+
+test("explicit food product requests are routed to the catalog in Italian and English", () => {
+  assert.equal(isExplicitFoodProductRequest("I'm looking for pasta under 5 euros"), true);
+  assert.equal(isExplicitFoodProductRequest("Cerco pasta sotto 5 euro"), true);
+  assert.equal(isExplicitFoodProductRequest("I need some bread"), true);
+  assert.equal(isExplicitFoodProductRequest("Vorrei mangiare"), false);
+});
+
+test("generic attractions questions are recognized in Italian and English", () => {
+  assert.equal(isBroadAttractionsRequest("What attractions can I visit in Castrovillari?"), true);
+  assert.equal(isBroadAttractionsRequest("Quali attrazioni posso visitare a Castrovillari?"), true);
+  assert.equal(isBroadAttractionsRequest("I'm looking for pasta"), false);
+});
+
+
+test("food relevance uses product identity, never the seller name", () => {
+  assert.equal(prodottoIdentificatoDaSoggetto({ nome: "Taralli tradizionali", categoria: "Alimentari" }, "pasta"), false);
+  assert.equal(prodottoIdentificatoDaSoggetto({ nome: "Pasta artigianale", categoria: "Alimentari" }, "pasta"), true);
+  assert.equal(prodottoIdentificatoDaSoggetto({ nome: "Tagliatelle all'uovo", categoria: "Pasta fresca" }, "pasta"), true);
 });
