@@ -8,7 +8,7 @@ const FOOD_PRODUCTS = [
   "pasta", "pane", "pizza", "dolce", "dolci", "gelato", "torta", "torte",
   "biscotti", "formaggio", "salumi", "prosciutto", "carne", "pesce",
   "verdura", "frutta", "olio", "miele", "conserve", "farina", "riso",
-  "nutella", "cipolla", "pomodoro",
+  "nutella", "cipolla", "pomodoro", "bread", "noodles", "cake", "cookies", "cheese", "meat", "fish", "vegetables", "fruit", "honey", "flour", "rice", "onion", "tomato",
 ];
 
 function normalizza(testo: string): string {
