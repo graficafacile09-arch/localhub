@@ -48,5 +48,5 @@ test("read-only snapshot benchmark: current production intent layer", () => {
     mismatches: rows.filter((row) => !row.routeOk || !row.surfaceOk),
   }, null, 2));
 
-  assert.equal(rows.length, 105, "Expected the 105 catalog/conversation benchmark cases");
+  assert.equal(rows.length, 120, "Expected the 120 catalog/conversation benchmark cases");
 });
