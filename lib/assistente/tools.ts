@@ -784,6 +784,17 @@ export async function searchProducts(
     prodottoSoddisfaEsclusioni(p, opts?.esclusioni)
   );
 
+  // Per le ricerche di alimenti il negozio non deve contribuire alla
+  // pertinenza: "pasta" non deve restituire taralli solo perché il venditore
+  // si chiama "Mani in Pasta". Il soggetto deve identificare il prodotto
+  // stesso (nome/categoria), non il nome dell'attività.
+  const soggettoAlimentare = q.toLowerCase().match(
+    /\b(pasta|pane|pizza|dolci?|gelato|torte?|biscotti|formaggio|salumi|prosciutto|carne|pesce|verdura|frutta|olio|miele|conserve|farina|riso|nutella|cipolla|pomodoro|bread|noodles|cake|cookies|cheese|meat|fish|vegetables|fruit|honey|flour|rice|onion|tomato)\b/
+  )?.[1];
+  if (soggettoAlimentare) {
+    filtrate = filtrate.filter((p) => prodottoPertinente(p, [soggettoAlimentare], []));
+  }
+
   // I filtri espliciti si applicano solo dopo il retrieval canonico.
   if (opts?.categoria?.trim()) {
     const categoria = normalizza(opts.categoria);
