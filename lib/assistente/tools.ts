@@ -71,6 +71,8 @@ export type FarmaciaAssistente = Pick<
   "id" | "nome" | "indirizzo" | "stato" | "apertura" | "turno" | "telefono" | "urlScheda"
 >;
 
+export type NegozioAssistente = NegozioRicerca & { servizi?: string[] };
+
 export type ToolParams = {
   query?: string;
   maxPrice?: number | null;
@@ -354,19 +356,23 @@ export async function searchPharmacies(
 // il Panificio, mentre "inesistente" non trova nulla.
 // Un filtro esplicito categoria/tipo chiesto dal chiamante è già di per sé una
 // prova di pertinenza e non viene mai scartato.
-function valoriTestualiStrutturati(value: unknown, profondita = 0): string {
-  if (profondita > 5 || value == null) return "";
-  if (typeof value === "string" || typeof value === "number") return String(value);
+function estraiTestiServizi(value: unknown, profondita = 0): string[] {
+  if (profondita > 5 || value == null) return [];
+  if (typeof value === "string") return value.trim() ? [value.trim()] : [];
   if (Array.isArray(value)) {
-    return value.map((item) => valoriTestualiStrutturati(item, profondita + 1)).filter(Boolean).join(" ");
+    return value.flatMap((item) => estraiTestiServizi(item, profondita + 1));
   }
   if (typeof value === "object") {
-    return Object.values(value as Record<string, unknown>)
-      .map((item) => valoriTestualiStrutturati(item, profondita + 1))
-      .filter(Boolean)
-      .join(" ");
+    const record = value as Record<string, unknown>;
+    const campiDescrittivi = new Set([
+      "nome", "titolo", "servizio", "descrizione", "categoria", "tipo",
+      "label", "name", "title", "description", "dettaglio", "specialita",
+    ]);
+    return Object.entries(record)
+      .filter(([chiave]) => campiDescrittivi.has(chiave.toLowerCase()))
+      .flatMap(([, contenuto]) => estraiTestiServizi(contenuto, profondita + 1));
   }
-  return "";
+  return [];
 }
 
 function testoNegozio(n: Record<string, unknown>): string {
@@ -376,7 +382,7 @@ function testoNegozio(n: Record<string, unknown>): string {
   // La RPC semantica può trovare servizi memorizzati nella struttura JSONB.
   // Il gate di pertinenza di Pino deve leggere gli stessi dati, altrimenti
   // elimina proprio i risultati recuperati grazie a servizi_strutturati.
-  const serviziStrutturati = valoriTestualiStrutturati(data.servizi_strutturati);
+  const serviziStrutturati = estraiTestiServizi(data.servizi_strutturati).join(" ");
   return normalizza(
     [
       n.nome,
@@ -452,7 +458,7 @@ function negozioPertinente(
 export async function searchStores(
   query: string,
   opts: ToolParams = {}
-): Promise<NegozioRicerca[]> {
+): Promise<NegozioAssistente[]> {
   const q = (query ?? "").trim();
   if (!q && !(opts?.termini?.length) && !opts?.categoria && !opts?.tipo) return [];
 
@@ -521,6 +527,10 @@ export async function searchStores(
     indirizzo: (n.indirizzo as string | null | undefined) ?? null,
     telefono: (n.telefono as string | null | undefined) ?? null,
     logo_url: (n.logo_url as string | null | undefined) ?? null,
+    servizi: Array.from(new Set([
+      ...estraiTestiServizi(n.servizi),
+      ...estraiTestiServizi(((n.data ?? {}) as Record<string, unknown>).servizi_strutturati),
+    ])),
   }));
 }
 
