@@ -6,6 +6,7 @@ import {
   normalizzaQueryCatalogo,
   rilevaLinguaPino,
   richiestaApertaOra,
+  rilevaLinguaConversazionePino,
 } from "../lib/assistente/understanding.ts";
 
 const promptSource = readFileSync(
@@ -94,4 +95,22 @@ test("product search subject must identify the product, not occur only in its de
   assert.equal(prodottoIdentificatoDaSoggetto({ nome: "Olio Extra Vergine di Oliva del Pollino", categoria: "Alimentari" }, "olio"), true);
   assert.equal(prodottoIdentificatoDaSoggetto({ nome: "Orologio da polso", categoria: "Accessori" }, "orologio"), true);
   assert.equal(prodottoIdentificatoDaSoggetto({ nome: "Filetti di Cipolla", categoria: "Conserve" }, "olio", ["olio"]), false);
+});
+
+
+test("English short conversational messages are detected, including how are you", () => {
+  assert.equal(rilevaLinguaPino("Hi Pino, how are you?"), "en");
+  assert.equal(rilevaLinguaPino("Would you like to chat?"), "en");
+  assert.equal(rilevaLinguaPino("Thanks, that was helpful!"), "en");
+  assert.equal(rilevaLinguaPino("Come stai?"), "it");
+});
+
+test("Pino keeps the conversation language when a follow-up is short", () => {
+  assert.equal(rilevaLinguaConversazionePino([
+    { role: "user", content: "I'm looking for a watch under 100 euros" },
+    { role: "assistant", content: "I found two products." },
+    { role: "user", content: "Show me more" },
+    { role: "assistant", content: "Here are more options." },
+    { role: "user", content: "Okay" },
+  ]), "en");
 });
