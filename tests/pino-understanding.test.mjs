@@ -3,6 +3,7 @@ import test from "node:test";
 import { readFileSync } from "node:fs";
 import { rispostaIdentitaPino } from "../lib/assistente/identity.ts";
 import { isExplicitFoodProductRequest, isBroadAttractionsRequest } from "../lib/assistente/routing-policy.ts";
+import { prodottoIdentificatoDaSoggetto } from "../lib/assistente/product-relevance.ts";
 import {
   normalizzaQueryCatalogo,
   rilevaLinguaPino,
@@ -140,4 +141,11 @@ test("generic attractions questions are recognized in Italian and English", () =
   assert.equal(isBroadAttractionsRequest("What attractions can I visit in Castrovillari?"), true);
   assert.equal(isBroadAttractionsRequest("Quali attrazioni posso visitare a Castrovillari?"), true);
   assert.equal(isBroadAttractionsRequest("I'm looking for pasta"), false);
+});
+
+
+test("food relevance uses product identity, never the seller name", () => {
+  assert.equal(prodottoIdentificatoDaSoggetto({ nome: "Taralli tradizionali", categoria: "Alimentari" }, "pasta"), false);
+  assert.equal(prodottoIdentificatoDaSoggetto({ nome: "Pasta artigianale", categoria: "Alimentari" }, "pasta"), true);
+  assert.equal(prodottoIdentificatoDaSoggetto({ nome: "Tagliatelle all'uovo", categoria: "Pasta fresca" }, "pasta"), true);
 });
