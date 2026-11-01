@@ -867,9 +867,14 @@ async function recuperaAlternativeSemantiche(
   piano: PinoSemanticPlan | undefined;
   descrizione: string | null;
 }> {
-  const piano =
+  const pianoInterpretato =
     semanticaIniziale ??
     (await interpretaRichiestaPino(domanda, storico, analisi, memoria));
+  // Una richiesta alimentare esplicita resta sulla superficie prodotti anche
+  // durante il recupero di secondo livello: non deve degradare a negozi.
+  const piano = pianoInterpretato && isExplicitFoodProductRequest(domanda)
+    ? { ...pianoInterpretato, surface: "products" as const }
+    : pianoInterpretato;
 
   if (!piano || piano.confidence === "bassa" || !piano.query) {
     return { negozi: [], prodotti: [], piano, descrizione: null };
