@@ -1,4 +1,5 @@
-import { rilevaLinguaConversazionePino, rilevaLinguaPino } from "./understanding";
+import { rilevaLinguaConversazionePino, rilevaLinguaPino, normalizzaQueryCatalogo } from "./understanding";
+import { isExplicitFoodProductRequest } from "./routing-policy";
 import { rispostaIdentitaPino } from "./identity";
 import { rispostaSalutoPino, rispostaRelazionalePino } from "./greetings";
 import { CATEGORIE_REGALO, isGenericGiftRequest, prodottoCorrispondeCategoriaRegalo } from "./gift-retrieval";
@@ -370,6 +371,26 @@ function pianoPredefinito(
       }
       return { directReply: null, tools, followUp };
     }
+  }
+
+  // Una richiesta esplicita di un alimento come bene da acquistare deve
+  // interrogare il catalogo prodotti, non aggiungere automaticamente panifici
+  // e ristoranti. Questo evita che una ricerca "pasta" diventi una lista negozi.
+  if (isExplicitFoodProductRequest(ultimo)) {
+    const queryProdotto = semantica?.query?.trim() || normalizzaQueryCatalogo(ultimo);
+    return {
+      directReply: null,
+      tools: [{
+        tool: "searchProducts",
+        params: {
+          query: queryProdotto,
+          maxPrice: semantica?.maxPrice,
+          minPrice: semantica?.minPrice,
+          esclusioni: semantica?.exclusions,
+          limit: 8,
+        },
+      }],
+    };
   }
 
   // ── Pino Semantic Planner v2 ─────────────────────────────────────────────
