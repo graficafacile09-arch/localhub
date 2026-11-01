@@ -19,11 +19,12 @@ export function estraiSelezioneFunctionCalling<TParams>(
   maxTools = 3
 ): NormalizedFunctionCallingSelection<TParams> {
   const tools: Array<{ tool: string; params: TParams }> = [];
+  const limit = Number.isFinite(maxTools) ? Math.max(0, Math.floor(maxTools)) : 3;
 
   for (const call of response.functionCalls ?? []) {
+    if (tools.length >= limit) break;
     if (!call || !call.name || !allowedTools.has(call.name)) continue;
     tools.push({ tool: call.name, params: cleanParams(call.args) });
-    if (tools.length >= maxTools) break;
   }
 
   const directReply =
@@ -32,4 +33,17 @@ export function estraiSelezioneFunctionCalling<TParams>(
       : null;
 
   return { tools, directReply };
+}
+
+
+/**
+ * Una risposta vuota del modello non è una selezione riuscita per una query
+ * concreta: in quel caso l'orchestratore deve poter usare il fallback searchAll.
+ * Per messaggi generic/conversazionali, invece, evita una ricerca inventata.
+ */
+export function functionCallingSelectionIsComplete<TParams>(
+  selection: NormalizedFunctionCallingSelection<TParams>,
+  isGenericIntent: boolean
+): boolean {
+  return selection.tools.length > 0 || Boolean(selection.directReply) || isGenericIntent;
 }
