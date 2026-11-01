@@ -131,6 +131,20 @@ test.describe("Pino — risposta aggregata basata sui dati", () => {
     expect(risposta).toContain("Tagliatelle all'uovo");
   });
 
+  test("composes an English aggregate reply when the conversation is English", () => {
+    const risposta = componiRispostaAggregata({
+      tipo: "conteggio",
+      soggetto: "pasta",
+      qualificatore: null,
+      prodottiSoggetto: CATALOGO_PASTA,
+      limite: 20,
+      lingua: "en",
+    });
+
+    expect(risposta).toContain("The InCittà catalog lists 4 products");
+    expect(risposta).toContain("This count is based only on product listings");
+  });
+
   test("catalogo senza dati: nessun conteggio inventato", () => {
     const risposta = componiRispostaAggregata({
       tipo: "conteggio",

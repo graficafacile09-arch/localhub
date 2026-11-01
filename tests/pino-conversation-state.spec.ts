@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { arricchisciRichiestaConContesto, interpretaRichiestaPino } from "../lib/assistente/semantica";
+import { rilevaFollowUp } from "../lib/assistente/conversazione";
 import { analizzaIntentoPino } from "../lib/assistente/intent";
 import type { PinoMemoriaVoce } from "../lib/assistente/memoria";
 
@@ -81,4 +82,15 @@ test("il planner non porta parole conversazionali come 'anzi' nella query", asyn
   expect(piano.maxPrice).toBe(70);
   expect(piano.query).toContain("scarpe");
   expect(piano.query).not.toMatch(/\banzi\b/i);
+});
+
+
+test.describe("Pino — English conversational follow-ups", () => {
+  test("recognizes English requests to show more, filter by price, opening hours and proximity", () => {
+    expect(rilevaFollowUp("Show me more")?.tipo).toBe("altro");
+    expect(rilevaFollowUp("More options")?.tipo).toBe("altro");
+    expect(rilevaFollowUp("Cheaper")?.tipo).toBe("economici");
+    expect(rilevaFollowUp("Only open now")?.tipo).toBe("aperti");
+    expect(rilevaFollowUp("Nearby")?.tipo).toBe("vicino");
+  });
 });

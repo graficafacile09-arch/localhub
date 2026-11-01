@@ -20,33 +20,68 @@ export function richiestaApertaOra(testo: string): boolean {
 
 /** Detects the dominant language of a short request; Italian is the safe default. */
 export function rilevaLinguaPino(testo: string, fallback: PinoLanguage = "it"): PinoLanguage {
-  const q = String(testo ?? "").toLocaleLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, " ");
+  const q = String(testo ?? "")
+    .toLocaleLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, " ")
+    .replace(/[’‘]/g, "'");
   if (!q.trim()) return fallback;
+
+  if (/\b(?:cosa cerchi|come posso|puoi aiutarmi|mi puoi aiutare|vorrei sapere|dimmi|che cosa|dove posso|quanto costa|quanto costano|va bene|tutto bene|non trovo|non ho|cerco un|cerco una)\b/.test(q)) return "it";
+  if (/\b(?:what do you|how do i|can you help|could you|would you|i'?m looking|i want|i need|please find|show me|tell me|where can i|what'?s up|how much|good morning|good afternoon)\b/.test(q)) return "en";
 
   const parole = q.match(/[a-z]+/g) ?? [];
   const it = new Set([
-    "ciao", "cerco", "cerca", "trovami", "trova", "voglio", "vorrei", "mi", "serve",
-    "ho", "con", "sotto", "sopra", "entro", "fino", "massimo", "minimo", "euro",
-    "negozio", "negozi", "prodotto", "prodotti", "orologio", "orologi", "qualcosa",
-    "simile", "costa", "quanto", "aperto", "aperta", "vicino", "grazie", "per",
-    "una", "uno", "del", "della", "dei", "delle", "che", "come", "dove",
+    "ciao", "salve", "buongiorno", "buonasera", "cerco", "cerca", "trovami", "trova",
+    "voglio", "vorrei", "mi", "serve", "ho", "con", "sotto", "sopra", "entro", "fino",
+    "massimo", "minimo", "euro", "negozio", "negozi", "prodotto", "prodotti",
+    "orologio", "orologi", "qualcosa", "simile", "costa", "quanto", "aperto", "aperta",
+    "vicino", "grazie", "per", "una", "uno", "del", "della", "dei", "delle", "che",
+    "come", "stai", "vuoi", "parliamo", "chiacchiere", "scusa", "arrivederci",
+    "offerte", "eventi", "farmacia", "farmacie", "meteo", "oggi", "domani",
+    "cosa", "cerchi", "dove", "perche", "puoi", "potresti", "aiutami", "aiutarti",
+    "dimmi", "sono", "sei", "questo", "questa", "questi", "queste", "altro",
+    "altra", "tutto", "bene", "va", "posso", "trovare", "costano", "aprono",
   ]);
   const en = new Set([
-    "hi", "hello", "please", "find", "show", "looking", "want", "need", "have",
-    "with", "under", "below", "above", "over", "between", "budget", "dollars",
-    "dollar", "euros", "euro", "watch", "watches", "something", "similar", "like",
-    "that", "cheaper", "open", "now", "near", "store", "stores", "product",
-    "products", "thanks", "thank", "you", "the", "for", "me", "and", "or",
-    "could", "would", "get", "buy", "want", "i", "my", "it",
+    "hi", "hello", "hey", "please", "find", "show", "looking", "want", "need", "have",
+    "with", "under", "below", "above", "over", "between", "budget", "dollars", "dollar",
+    "euros", "watch", "watches", "something", "similar", "like", "that", "cheaper",
+    "cheapest", "open", "now", "near", "nearby", "store", "stores", "shop", "shops",
+    "business", "businesses", "product", "products", "thanks", "thank", "you", "the",
+    "for", "and", "or", "could", "would", "get", "buy", "i", "my", "it", "how", "are",
+    "doing", "well", "do", "does", "did", "can", "we", "will", "what", "who", "where",
+    "when", "why", "which", "is", "was", "were", "am", "this", "these", "those",
+    "there", "here", "sorry", "apologies", "chat", "talk", "speak", "joke", "funny",
+    "tell", "good", "morning", "evening", "afternoon", "night", "goodbye", "bye",
+    "see", "later", "perfect", "great", "okay", "only", "offers", "deals", "discounts",
+    "events", "pharmacy", "pharmacies", "weather", "forecast", "today", "tomorrow",
+    "other", "more", "less", "on", "duty", "up", "sure", "fine", "alright",
+    "recommend", "suggest", "help", "restaurants", "restaurant", "cafes", "cafe",
+    "food", "drinks", "price", "prices", "cheap", "expensive", "available",
   ]);
   const score = (set: Set<string>) => parole.reduce((n, p) => n + (set.has(p) ? 1 : 0), 0);
   const si = score(it);
   const se = score(en);
   if (se > si) return "en";
   if (si > se) return "it";
-  // Common English sentence openings resolve ties without requiring a long sample.
-  if (/\b(?:i want|i need|i have|find me|show me|looking for|can you|could you|please)\b/.test(q)) return "en";
+
+  if (/\b(?:how are you|how's it going|how is it going|would you|do you|can we|let'?s|thank you|you are|are you|see you|good morning|good evening)\b/.test(q)) return "en";
+  if (/\b(?:come stai|come va|ti va|vuoi|grazie|buongiorno|buonasera|ciao)\b/.test(q)) return "it";
   return fallback;
+}
+
+/** Keeps the language of the conversation when the newest message is too short to classify. */
+export function rilevaLinguaConversazionePino(
+  messages: Array<{ role: string; content: string }>,
+  fallback: PinoLanguage = "it"
+): PinoLanguage {
+  let lingua = fallback;
+  for (const message of messages ?? []) {
+    if (message?.role !== "user" || typeof message.content !== "string") continue;
+    lingua = rilevaLinguaPino(message.content, lingua);
+  }
+  return lingua;
 }
 
 /**

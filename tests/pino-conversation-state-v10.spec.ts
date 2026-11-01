@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 
-import { costruisciStatoConversazionale } from "../lib/assistente/semantica";
+import { costruisciStatoConversazionale, pianoLocaleIntelligente } from "../lib/assistente/semantica";
+import { analizzaIntentoPino } from "../lib/assistente/intent";
+import { rilevaFollowUp } from "../lib/assistente/conversazione";
 
 const u = (content: string) => ({ role: "user" as const, content });
 
@@ -77,5 +79,21 @@ test.describe("Pino — stato semantico conversazionale", () => {
     expect(stato.query).toBe("pizza");
     expect(stato.maxPrice).toBeNull();
     expect(stato.exclusions).toEqual([]);
+  });
+});
+
+test.describe("Pino — richieste inglesi e follow-up", () => {
+  test("parses the reported pasta request into a clean product query and €5 budget", () => {
+    const query = "I'm looking for pasta under 5 euros";
+    const plan = pianoLocaleIntelligente(query, analizzaIntentoPino(query));
+
+    expect(plan?.surface).toBe("products");
+    expect(plan?.query).toBe("pasta");
+    expect(plan?.maxPrice).toBe(5);
+  });
+
+  test("recognizes a polite full-sentence cheaper-options follow-up", () => {
+    expect(rilevaFollowUp("Can you show me cheaper options?")?.tipo).toBe("economici");
+    expect(rilevaFollowUp("I'm looking for cheaper pasta under 5 euros")).toBeNull();
   });
 });
