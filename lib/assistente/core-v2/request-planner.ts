@@ -53,13 +53,13 @@ const WEATHER =
 const PHARMACY =
   /\b(?:farmacia|farmacie|farmacista|pharmacy|pharmacies|chemist)\b/i;
 const EVENTS =
-  /\b(?:eventi|evento|manifestazioni|concerto|concerti|sagra|sagre|festival|fiera|fiere|mostra|mostre|spettacolo|spettacoli|events|what'?s on|what is on|what'?s happening|concert|festival|exhibition|local shows)\b/i;
+  /\b(?:eventi|evento|manifestazioni|concerto|concerti|sagra|sagre|festival|fiera|fiere|mostra|mostre|spettacolo|spettacoli|events|what'?s on|what is on|what'?s happening|concert|concerts|festival|festivals|exhibition|exhibitions|local shows)\b/i;
 const EVENT_TIME_PHRASE =
   /\b(?:cosa succede|che succede|what(?:'s| is) happening)\b.*\b(?:oggi|stasera|domani|weekend|today|tonight|tomorrow|weekend)\b/i;
 const ATTRACTIONS =
   /\b(?:attrazioni?|luoghi interessanti|luoghi da visitare|cosa vedere|cosa visitare|centro storico|monumenti?|itinerari? turistici?|tour turistici?|borghi da vedere|dintorni da visitare|places to visit|things to see|tourist attractions|what should i see|what can i visit|sightseeing)\b/i;
 const STORE =
-  /\b(?:negozio|negozi|attivita|servizio|servizi|professionista|professionisti|parrucchiere|barbiere|estetista|medico|dottore|dentista|otorino|veterinario|idraulico|elettricista|meccanico|commercialista|fotografo|fotografi|sarto|sarti|fiorista|fioristi|impresa di pulizie|pulizie|ristorante|pizzeria|bar|hotel|store|stores|shop|shops|business|businesses|service|services|doctor|dentist|hairdresser|plumber|electrician|mechanic|accountant|photographer|tailor|florist|cleaning service)\b/i;
+  /\b(?:negozio|negozi|attivita|servizio|servizi|professionista|professionisti|parrucchiere|barbiere|estetista|medico|dottore|dentista|otorino|veterinario|idraulico|elettricista|meccanico|commercialista|fotografo|fotografi|sarto|sarti|fiorista|fioristi|impresa di pulizie|pulizie|ristorante|ristoranti|restaurant|restaurants|pizzeria|pizzerie|bar|hotel|store|stores|shop|shops|business|businesses|service|services|doctor|dentist|hairdresser|barber|barbers|plumber|electrician|electricians|mechanic|accountant|photographer|tailor|florist|vet|vets|cleaning service)\b/i;
 
 const PRICE_RANGE =
   /\b(?:tra|between|da)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)\s*(?:e|and|to|a)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)(?:\s*(?:euro|euros|eur))?\b/i;
