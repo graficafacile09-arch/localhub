@@ -14,6 +14,7 @@ import {
   searchEvents,
   getCategoriesList,
   searchAll,
+  ordinaProdottiPerBudget,
   getWeatherCastrovillari,
   searchPharmacies,
   type ToolParams,
@@ -66,6 +67,11 @@ const FUNCTION_DECLARATIONS: FunctionDeclaration[] = [
           ],
           description:
             "Dove cercare. prodotti per articoli acquistabili; negozi_servizi per attività, professionisti e servizi; offerte per promozioni; eventi per manifestazioni; attrazioni per la guida turistica InCittà; categorie per le categorie disponibili; tutto per una ricerca trasversale.",
+        },
+        varianti: {
+          type: Type.ARRAY,
+          items: { type: Type.STRING },
+          description: "Fino a tre sinonimi o formulazioni alternative del soggetto, utili quando il catalogo può usare un nome diverso.",
         },
         categoria: {
           type: Type.STRING,
@@ -138,7 +144,7 @@ ARCHITETTURA A STRUMENTI — REGOLE OBBLIGATORIE:
 - Sei Pino. Per ogni richiesta che riguarda disponibilità, prodotti, negozi, servizi, professionisti, offerte, eventi, attrazioni o categorie di InCittà devi chiamare lo strumento appropriato PRIMA di rispondere.
 - Non rispondere mai sulla disponibilità di un prodotto o servizio basandoti sulla memoria del modello. I dati del tool sono l'unica fonte di verità.
 - Interpreta il significato, non copiare meccanicamente le parole dell'utente. Comprendi sinonimi, linguaggio colloquiale, errori di battitura e richieste in italiano o inglese. Esempio: "c'è qualcuno che lava le macchine a casa?" → ricerca "lavaggio auto a domicilio" nell'ambito negozi_servizi.
-- Estrai il soggetto senza parole conversazionali. "Voglio un orologio, ho 99 euro" → ricerca "orologio", ambito prodotti, prezzoMassimo 99.
+- Estrai il soggetto senza parole conversazionali. "Voglio un orologio, ho 99 euro" → ricerca "orologio", ambito prodotti, prezzoMassimo 99. Se un sinonimo può essere registrato nel catalogo con una formulazione diversa, aggiungi fino a tre varianti di ricerca.
 - Mantieni il contesto: "e sotto 100?", "più economico", "fammi vedere altro" e simili si riferiscono alla richiesta precedente. Per "altro" escludi i nomi già mostrati.
 - Scegli l'ambito giusto: prodotti per beni da acquistare; negozi_servizi per chi offre un'attività o un servizio; offerte ed eventi per le rispettive sezioni; attrazioni per luoghi, cultura, turismo e dintorni; tutto solo per richieste davvero ampie.
 - Se l'utente cerca un prodotto, non restituire negozi come se fossero prodotti. Se cerca un servizio, cerca le attività che lo dichiarano nei dati del catalogo.
@@ -149,9 +155,37 @@ ARCHITETTURA A STRUMENTI — REGOLE OBBLIGATORIE:
 - Non mostrare all'utente nomi interni degli strumenti, JSON o dettagli tecnici.
 `;
 
+function queryVarianti(args: ReturnType<typeof normalizzaArgomentiRicercaPino>): string[] {
+  return Array.from(new Set([args.ricerca, ...(args.varianti ?? [])]
+    .map((q) => q.trim())
+    .filter(Boolean))).slice(0, 4);
+}
+
+function unisciPerId<T extends { id: string }>(liste: T[][], limite: number): T[] {
+  const risultati = new Map<string, T>();
+  for (const lista of liste) {
+    for (const item of lista) {
+      if (!risultati.has(String(item.id))) risultati.set(String(item.id), item);
+    }
+  }
+  return Array.from(risultati.values()).slice(0, limite);
+}
+
+function unisciPerNome<T extends { nome: string }>(liste: T[][], limite: number): T[] {
+  const risultati = new Map<string, T>();
+  for (const lista of liste) {
+    for (const item of lista) {
+      const chiave = item.nome.trim().toLowerCase();
+      if (chiave && !risultati.has(chiave)) risultati.set(chiave, item);
+    }
+  }
+  return Array.from(risultati.values()).slice(0, limite);
+}
+
 async function eseguiRicercaDatabase(argsRaw: Record<string, unknown>): Promise<RisultatoTool> {
   const args = normalizzaArgomentiRicercaPino(argsRaw);
   const query = args.ricerca ?? "";
+  const queries = queryVarianti(args);
   const limite = args.limite ?? 8;
   const filtri: ToolParams = {
     categoria: args.categoria,
@@ -166,46 +200,53 @@ async function eseguiRicercaDatabase(argsRaw: Record<string, unknown>): Promise<
 
   try {
     switch (args.ambito) {
-      case "prodotti":
+      case "prodotti": {
+        const liste = await Promise.all(queries.map((q) => searchProducts(q, filtri)));
+        let prodotti = unisciPerId(liste, limite);
+        if (args.prezzoMassimo != null || args.prezzoMinimo != null) {
+          prodotti = ordinaProdottiPerBudget(
+            prodotti,
+            { maxPrice: args.prezzoMassimo, minPrice: args.prezzoMinimo }
+          );
+        }
+        return { ok: true, strumento: "cercaNelDatabaseInCitta", ambito: args.ambito, ricerca: query, prodotti };
+      }
+      case "negozi_servizi": {
+        const liste = queries.length
+          ? await Promise.all(queries.map((q) => searchStores(q, filtri)))
+          : (args.categoria || args.tipo)
+            ? [await searchStores("", filtri)]
+            : [];
         return {
           ok: true,
           strumento: "cercaNelDatabaseInCitta",
           ambito: args.ambito,
           ricerca: query,
-          prodotti: query ? await searchProducts(query, filtri) : [],
+          negozi: unisciPerId(liste, limite),
         };
-      case "negozi_servizi":
+      }
+      case "offerte": {
+        const liste = queries.length
+          ? await Promise.all(queries.map((q) => searchOffers(q, limite)))
+          : [await searchOffers(undefined, limite)];
+        return { ok: true, strumento: "cercaNelDatabaseInCitta", ambito: args.ambito, ricerca: query, offerte: unisciPerId(liste, limite) };
+      }
+      case "eventi": {
+        const liste = queries.length
+          ? await Promise.all(queries.map((q) => searchEvents(q, limite)))
+          : [await searchEvents(undefined, limite)];
+        return { ok: true, strumento: "cercaNelDatabaseInCitta", ambito: args.ambito, ricerca: query, eventi: unisciPerId(liste, limite) };
+      }
+      case "attrazioni": {
+        const liste = queries.map((q) => searchAttractions(q, limite));
         return {
           ok: true,
           strumento: "cercaNelDatabaseInCitta",
           ambito: args.ambito,
           ricerca: query,
-          negozi: query ? await searchStores(query, filtri) : [],
+          attrazioni: unisciPerNome(liste, limite),
         };
-      case "offerte":
-        return {
-          ok: true,
-          strumento: "cercaNelDatabaseInCitta",
-          ambito: args.ambito,
-          ricerca: query,
-          offerte: await searchOffers(query || undefined, limite),
-        };
-      case "eventi":
-        return {
-          ok: true,
-          strumento: "cercaNelDatabaseInCitta",
-          ambito: args.ambito,
-          ricerca: query,
-          eventi: await searchEvents(query || undefined, limite),
-        };
-      case "attrazioni":
-        return {
-          ok: true,
-          strumento: "cercaNelDatabaseInCitta",
-          ambito: args.ambito,
-          ricerca: query,
-          attrazioni: query ? searchAttractions(query, limite) : [],
-        };
+      }
       case "categorie":
         return {
           ok: true,
@@ -215,32 +256,25 @@ async function eseguiRicercaDatabase(argsRaw: Record<string, unknown>): Promise<
           categorie: await getCategoriesList(),
         };
       case "tutto": {
-        if (!query) {
+        if (queries.length === 0) {
           const [offerte, eventi, categorie] = await Promise.all([
             searchOffers(undefined, 5),
             searchEvents(undefined, 5),
             getCategoriesList(),
           ]);
-          return {
-            ok: true,
-            strumento: "cercaNelDatabaseInCitta",
-            ambito: args.ambito,
-            offerte,
-            eventi,
-            categorie,
-          };
+          return { ok: true, strumento: "cercaNelDatabaseInCitta", ambito: args.ambito, offerte, eventi, categorie };
         }
-        const risultato = await searchAll(query, filtri);
+        const liste = await Promise.all(queries.map((q) => searchAll(q, filtri)));
         return {
           ok: true,
           strumento: "cercaNelDatabaseInCitta",
           ambito: args.ambito,
           ricerca: query,
-          negozi: risultato.negozi,
-          prodotti: risultato.prodotti,
-          offerte: risultato.offerte,
-          eventi: risultato.eventi,
-          categorie: risultato.categorie,
+          negozi: unisciPerId(liste.map((r) => r.negozi), limite),
+          prodotti: unisciPerId(liste.map((r) => r.prodotti), limite),
+          offerte: unisciPerId(liste.map((r) => r.offerte), limite),
+          eventi: unisciPerId(liste.map((r) => r.eventi), limite),
+          categorie: unisciPerNome(liste.map((r) => r.categorie), 20),
         };
       }
       default:
@@ -257,7 +291,6 @@ async function eseguiRicercaDatabase(argsRaw: Record<string, unknown>): Promise<
     };
   }
 }
-
 async function eseguiInformazioneLocale(args: Record<string, unknown>): Promise<RisultatoTool> {
   const tipo = args.tipo === "farmacie" ? "farmacie" : "meteo";
   try {
