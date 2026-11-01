@@ -368,6 +368,7 @@ function estraiTestiServizi(value: unknown, profondita = 0): string[] {
       "nome", "titolo", "servizio", "descrizione", "categoria", "tipo",
       "label", "name", "title", "description", "dettaglio", "specialita",
       "servizi", "items", "elenco", "voci", "prestazioni", "nome_servizio", "descrizione_servizio",
+      "service", "service_name", "servizio_nome", "attivita", "titolo_servizio",
     ]);
     return Object.entries(record)
       .filter(([chiave]) => campiDescrittivi.has(chiave.toLowerCase()))
@@ -391,7 +392,7 @@ function testoNegozio(n: Record<string, unknown>): string {
       n.categoria,
       n.sottocategoria,
       data.tipo_attivita,
-      lista(n.servizi),
+      estraiTestiServizi(n.servizi).join(" "),
       lista(n.parole_chiave),
       serviziStrutturati,
     ]
