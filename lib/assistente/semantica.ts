@@ -211,7 +211,7 @@ const CANONICI_RICERCA: Array<{ pattern: RegExp; termine: string; intent: PinoIn
   { pattern: /\b(?:arancia|arance)\b/i, termine: "arancia", intent: "food" },
   { pattern: /\b(?:limone|limoni)\b/i, termine: "limone", intent: "food" },
   { pattern: /\b(?:banana|banane)\b/i, termine: "banana", intent: "food" },
-  { pattern: /\borologio|orologi\b/i, termine: "orologio", intent: "product" },
+  { pattern: /\b(?:orologio|orologi)\b/i, termine: "orologio", intent: "product" },
   { pattern: /\btelefono|telefoni|telefonino|telefonini|cellulare|cellulari|smartphone\b/i, termine: "telefono", intent: "product" },
   { pattern: /\bscarpa|scarpe|scarpina|scarpine\b/i, termine: "scarpe", intent: "product" },
   { pattern: /\bmaglietta|magliette|maglia|maglie\b/i, termine: "maglia", intent: "product" },
