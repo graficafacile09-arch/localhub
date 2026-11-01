@@ -1,5 +1,5 @@
 export type FunctionCallingRawResponse = {
-  functionCalls?: Array<{ name?: string | null; args?: unknown }> | null;
+  functionCalls?: Array<{ name?: string | null; args?: unknown } | null> | null;
   text?: string | null;
 };
 
@@ -21,7 +21,7 @@ export function estraiSelezioneFunctionCalling<TParams>(
   const tools: Array<{ tool: string; params: TParams }> = [];
 
   for (const call of response.functionCalls ?? []) {
-    if (!call.name || !allowedTools.has(call.name)) continue;
+    if (!call || !call.name || !allowedTools.has(call.name)) continue;
     tools.push({ tool: call.name, params: cleanParams(call.args) });
     if (tools.length >= maxTools) break;
   }
