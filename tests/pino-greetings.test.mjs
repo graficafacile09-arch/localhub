@@ -35,3 +35,12 @@ test("Pino answers thanks and misunderstandings", () => {
 test("Pino does not intercept concrete catalog requests", () => {
   assert.equal(rispostaRelazionalePino("Cerco un orologgio sotto 100 euro"), null);
 });
+
+
+test("Pino answers English social messages in English", () => {
+  assert.match(rispostaRelazionalePino("Hi Pino, how are you?") ?? "", /I'm doing well/i);
+  assert.match(rispostaRelazionalePino("Would you like to chat?") ?? "", /happy to chat/i);
+  assert.match(rispostaRelazionalePino("Thank you, Pino") ?? "", /You're welcome/i);
+  assert.match(rispostaRelazionalePino("You misunderstood me") ?? "", /may have misunderstood/i);
+  assert.match(rispostaRelazionalePino("See you later") ?? "", /See you soon/i);
+});
