@@ -13,6 +13,9 @@ import { chatConFunctionCalling } from "./function-calling";
 import { rispostaIdentitaPino } from "./identity";
 import { rispostaSalutoPino, rispostaRelazionalePino } from "./greetings";
 import { rilevaLinguaConversazionePino } from "./understanding";
+import type { PinoIntent } from "./intent";
+import type { FollowUpTipo } from "./conversazione";
+import type { NegozioRicerca, ProdottoRicerca } from "@/lib/ricerca-ai";
 
 // ─── Tipi pubblici ───────────────────────────────────────────────────────────
 
@@ -23,12 +26,12 @@ export type MessaggioAssistente = {
 
 export interface RispostaAssistente {
   risposta: string;
-  negozi: import("@/lib/ricerca-ai").NegozioRicerca[];
-  prodotti: import("@/lib/ricerca-ai").ProdottoRicerca[];
+  negozi: NegozioRicerca[];
+  prodotti: ProdottoRicerca[];
   processingMs: number;
   source: "assistente";
-  intent?: string;
-  followUp?: string;
+  intent?: PinoIntent;
+  followUp?: FollowUpTipo;
 }
 
 // ─── Normalizzazione cronologia ──────────────────────────────────────────────
