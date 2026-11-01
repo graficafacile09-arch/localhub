@@ -30,3 +30,34 @@ test("gift wording in English is supported", () => {
   assert.equal(isGenericGiftRequest("I need a gift for my wife"), true);
   assert.equal(isGenericGiftRequest("I need a watch as a gift"), false);
 });
+
+import { prodottoIdentificatoDaSoggetto } from "../lib/assistente/product-relevance.ts";
+
+test("Pino recognizes pasta products by explicit product description and keywords", () => {
+  const fileja = {
+    nome: "Fileja di Tropea",
+    categoria: "Alimentari",
+    descrizione: "Pasta tradizionale calabrese nel formato fileja, confezione da 500 g.",
+    descrizione_completa: "La fileja è un formato di pasta tradizionale calabrese.",
+    parole_chiave: ["fileja", "Tropea", "pasta calabrese", "pasta tipica"],
+  };
+  const maccheroni = {
+    nome: "Maccheroni al ferretto",
+    categoria: "Alimentari",
+    descrizione: "Pasta tradizionale calabrese, proposta nella selezione demo.",
+    parole_chiave: ["pasta", "maccheroni", "ferretto"],
+  };
+  const taralli = {
+    nome: "Taralli calabresi",
+    categoria: "Prodotti da forno",
+    descrizione: "Taralli artigianali.",
+    parole_chiave: ["taralli", "forno"],
+  };
+
+  assert.equal(prodottoIdentificatoDaSoggetto(fileja, "pasta"), true);
+  assert.equal(prodottoIdentificatoDaSoggetto(maccheroni, "pasta"), true);
+  assert.equal(prodottoIdentificatoDaSoggetto(taralli, "pasta"), false);
+  assert.equal(prodottoIdentificatoDaSoggetto(
+    { nome: "Anello", categoria: "Gioielli" }, "pasta"
+  ), false);
+});
