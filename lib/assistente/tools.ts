@@ -367,6 +367,7 @@ function estraiTestiServizi(value: unknown, profondita = 0): string[] {
     const campiDescrittivi = new Set([
       "nome", "titolo", "servizio", "descrizione", "categoria", "tipo",
       "label", "name", "title", "description", "dettaglio", "specialita",
+      "servizi", "items", "elenco", "voci", "prestazioni", "nome_servizio", "descrizione_servizio",
     ]);
     return Object.entries(record)
       .filter(([chiave]) => campiDescrittivi.has(chiave.toLowerCase()))
