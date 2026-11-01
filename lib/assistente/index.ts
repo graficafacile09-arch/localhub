@@ -694,8 +694,11 @@ async function rispostaFollowUp(input: {
   storico: MessaggioAssistente[];
   analisi: PinoIntentAnalysis;
   inizio: number;
+  lingua?: "it" | "en";
 }): Promise<RispostaAssistente> {
   const { followUp, negozi, prodotti, storico, analisi, inizio } = input;
+  const lingua = input.lingua ?? rilevaLinguaConversazionePino(storico);
+  const inglese = lingua === "en";
   const base = {
     processingMs: Date.now() - inizio,
     source: "assistente" as const,
@@ -709,76 +712,76 @@ async function rispostaFollowUp(input: {
       ...base,
       negozi: [],
       prodotti: [],
-      risposta:
-        "Non avevo risultati precedenti da filtrare. Dimmi cosa cerchi e poi potrò applicare il filtro che hai indicato.",
+      risposta: inglese
+        ? "I don't have previous results to filter yet. Tell me what you're looking for first, and then I can apply that filter."
+        : "Non avevo risultati precedenti da filtrare. Dimmi cosa cerchi e poi potrò applicare il filtro che hai indicato.",
     };
   }
 
-  // ── Aperti ora ──
   if (followUp.tipo === "aperti") {
     const ids = [...negozi.map((n) => n.id), ...prodotti.map((p) => p.negozio_id)];
     const orari = await orariPerNegozi(ids);
     const negoziAperti = negozi.filter((n) => apertoOra(orari.get(n.id)) === true);
-    const prodottiAperti = prodotti.filter(
-      (p) => apertoOra(orari.get(p.negozio_id)) === true
-    );
+    const prodottiAperti = prodotti.filter((p) => apertoOra(orari.get(p.negozio_id)) === true);
     if (negoziAperti.length === 0 && prodottiAperti.length === 0) {
       return {
         ...base,
         negozi: [],
         prodotti: [],
-        risposta:
-          "Tra i risultati precedenti, nessuna attività risulta aperta ora secondo gli orari registrati su InCittà.",
+        risposta: inglese
+          ? "None of the previous businesses can be verified as open right now based on the opening hours listed on InCittà."
+          : "Tra i risultati precedenti, nessuna attività risulta aperta ora secondo gli orari registrati su InCittà.",
       };
     }
-    const corpo = sezioniRisultati(aRisultatiRecuperati(negoziAperti, prodottiAperti)).join("\n\n");
+    const corpo = sezioniRisultati(aRisultatiRecuperati(negoziAperti, prodottiAperti), undefined, lingua).join("\n\n");
     return {
       ...base,
       negozi: negoziAperti,
       prodotti: prodottiAperti,
-      risposta: `Tra i risultati precedenti, queste sono le attività aperte ora:\n\n${corpo}`,
+      risposta: inglese
+        ? "Among the previous results, these businesses are listed as open now:\n\n" + corpo
+        : "Tra i risultati precedenti, queste sono le attività aperte ora:\n\n" + corpo,
     };
   }
 
-  // ── Solo economici ── (ordinabili solo i prodotti: i negozi non hanno prezzo)
   if (followUp.tipo === "economici") {
     if (prodotti.length > 0) {
       const ordinati = [...prodotti].sort((a, b) => Number(a.prezzo) - Number(b.prezzo));
       const quanti = Math.max(1, Math.ceil(ordinati.length / 2));
       const economici = ordinati.slice(0, quanti);
-      const corpo = sezioniRisultati(aRisultatiRecuperati([], economici)).join("\n\n");
+      const corpo = sezioniRisultati(aRisultatiRecuperati([], economici), undefined, lingua).join("\n\n");
       return {
         ...base,
         negozi: [],
         prodotti: economici,
-        risposta: `Tra i risultati precedenti, ecco le opzioni più economiche:\n\n${corpo}`,
+        risposta: (inglese
+          ? "Among the previous results, here are the lower-priced options:\n\n"
+          : "Tra i risultati precedenti, ecco le opzioni più economiche:\n\n") + corpo,
       };
     }
-    const corpo = sezioniRisultati(aRisultatiRecuperati(negozi, [])).join("\n\n");
+    const corpo = sezioniRisultati(aRisultatiRecuperati(negozi, []), undefined, lingua).join("\n\n");
     return {
       ...base,
       negozi,
       prodotti: [],
-      risposta:
-        "I negozi non hanno un prezzo associato, quindi non posso ordinarli per economicità: il filtro \"economici\" vale sui prodotti. Ecco le attività già trovate:\n\n" +
-        corpo,
+      risposta: inglese
+        ? "Stores don't have a price attached, so I can't rank them by price. The 'cheaper' filter applies to products. Here are the businesses already found:\n\n" + corpo
+        : "I negozi non hanno un prezzo associato, quindi non posso ordinarli per economicità: il filtro \"economici\" vale sui prodotti. Ecco le attività già trovate:\n\n" + corpo,
     };
   }
 
-  // ── Solo vicino ── (nessuna posizione utente: niente distanza inventata)
   if (followUp.tipo === "vicino") {
-    const corpo = sezioniRisultati(aRisultatiRecuperati(negozi, prodotti)).join("\n\n");
+    const corpo = sezioniRisultati(aRisultatiRecuperati(negozi, prodotti), undefined, lingua).join("\n\n");
     return {
       ...base,
       negozi,
       prodotti,
-      risposta:
-        "Non conosco la tua posizione, quindi non posso calcolare la distanza dalle attività (a InCittà non arriva la geolocalizzazione dal browser). Dimmi la zona o la via e filtro di conseguenza. Intanto ecco i risultati precedenti:\n\n" +
-        corpo,
+      risposta: inglese
+        ? "I don't have your location, so I can't calculate distances to these businesses. Tell me an area or street and I can narrow things down. In the meantime, here are the previous results:\n\n" + corpo
+        : "Non conosco la tua posizione, quindi non posso calcolare la distanza dalle attività (a InCittà non arriva la geolocalizzazione dal browser). Dimmi la zona o la via e filtro di conseguenza. Intanto ecco i risultati precedenti:\n\n" + corpo,
     };
   }
 
-  // ── Fammi vedere altro / alternative ──
   const giaMostrati = new Set(nomiGiaMostrati(storico));
   const giaMostrato = (nome: string) => giaMostrati.has(nome.toLowerCase().trim());
   const nuoviNegozi = negozi.filter((n) => !giaMostrato(n.nome));
@@ -789,22 +792,23 @@ async function rispostaFollowUp(input: {
       ...base,
       negozi: [],
       prodotti: [],
-      risposta:
-        "Ho già mostrato tutte le opzioni disponibili per la tua ricerca: non ce ne sono altre con gli stessi criteri. Vuoi provare una zona diversa, un'altra categoria o un'altra fascia di prezzo?",
+      risposta: inglese
+        ? "I've already shown all the available options matching these criteria. Would you like to try a different area, category or price range?"
+        : "Ho già mostrato tutte le opzioni disponibili per la tua ricerca: non ce ne sono altre con gli stessi criteri. Vuoi provare una zona diversa, un'altra categoria o un'altra fascia di prezzo?",
     };
   }
   const mostratiNegozi = nuoviNegozi.slice(0, 5);
   const mostratiProdotti = nuoviProdotti.slice(0, 5);
-  const corpo = sezioniRisultati(aRisultatiRecuperati(mostratiNegozi, mostratiProdotti)).join("\n\n");
+  const corpo = sezioniRisultati(aRisultatiRecuperati(mostratiNegozi, mostratiProdotti), undefined, lingua).join("\n\n");
   return {
     ...base,
     negozi: mostratiNegozi,
     prodotti: mostratiProdotti,
-    risposta: `Ecco altre opzioni che non ti avevo ancora mostrato:\n\n${corpo}`,
+    risposta: (inglese
+      ? "Here are some more options I haven't shown you yet:\n\n"
+      : "Ecco altre opzioni che non ti avevo ancora mostrato:\n\n") + corpo,
   };
 }
-
-
 
 /**
  * Recupero intelligente quando la prima ricerca non restituisce nulla.
@@ -895,10 +899,15 @@ async function recuperaAlternativeSemantiche(
   }
 
   const concetto = piano.query;
+  const inglese = rilevaLinguaConversazionePino(storico) === "en";
   const descrizione =
     prodottiTrovati.length > 0
-      ? `Non ho trovato una corrispondenza esatta per "${domanda}", quindi ho allargato la ricerca al concetto "${concetto}" e alle sue varianti.`
-      : `Non ho trovato il prodotto esatto per "${domanda}", ma ho trovato attività pertinenti dove potrebbe essere reperito.`;
+      ? (inglese
+          ? `I didn't find an exact match for "${domanda}", so I broadened the search to "${concetto}" and related variants.`
+          : `Non ho trovato una corrispondenza esatta per "${domanda}", quindi ho allargato la ricerca al concetto "${concetto}" e alle sue varianti.`)
+      : (inglese
+          ? `I didn't find the exact product for "${domanda}", but I found relevant businesses that may carry it.`
+          : `Non ho trovato il prodotto esatto per "${domanda}", ma ho trovato attività pertinenti dove potrebbe essere reperito.`);
 
   return {
     negozi: negoziTrovati.slice(0, 8),
@@ -1171,6 +1180,7 @@ export async function chatConAssistente(
         prodottiQualificatore,
         limite,
         riferimentoContesto: domandaAggregata.riferimentoContesto,
+        lingua: linguaConversazione,
       });
 
       console.log(
@@ -1506,7 +1516,7 @@ export async function chatConAssistente(
 
   if (haMeteo) {
     return {
-      risposta: rispostaMeteoDeterministica(meteo),
+      risposta: rispostaMeteoDeterministica(meteo, linguaConversazione),
       negozi: [],
       prodotti: [],
       processingMs: Date.now() - inizio,
@@ -1519,10 +1529,10 @@ export async function chatConAssistente(
     const statoFarmacia =
       invocazioni.find((t) => t.tool === "searchPharmacies")?.params?.stato ?? "turno";
     const motivoFebbre = REQUIRES_PHARMACY_REASON.test(domanda)
-      ? "i sintomi che hai indicato"
+      ? (linguaConversazione === "en" ? "the symptoms you mentioned" : "i sintomi che hai indicato")
       : undefined;
     return {
-      risposta: rispostaFarmacieDeterministica(farmacie, statoFarmacia, motivoFebbre),
+      risposta: rispostaFarmacieDeterministica(farmacie, statoFarmacia, motivoFebbre, linguaConversazione),
       negozi: [],
       prodotti: [],
       processingMs: Date.now() - inizio,
@@ -1579,6 +1589,7 @@ export async function chatConAssistente(
       storico,
       analisi,
       inizio,
+      lingua: linguaConversazione,
     });
   }
 
@@ -1619,7 +1630,7 @@ export async function chatConAssistente(
   // 6) Risposta rapida grounded: i risultati sono già stati recuperati dai tool.
   // Evitiamo una seconda chiamata Gemini solo per riscrivere dati che abbiamo
   // già verificato: così Pino mostra i risultati molto prima.
-  const linguaRisposta = rilevaLinguaPino(domanda);
+  const linguaRisposta = rilevaLinguaConversazionePino(storico);
   const rispostaBase = fallbackTestuale(
     risultati,
     notaVincolo,
