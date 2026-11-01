@@ -27,8 +27,8 @@ export function rilevaLinguaPino(testo: string, fallback: PinoLanguage = "it"): 
     .replace(/[’‘]/g, "'");
   if (!q.trim()) return fallback;
 
-  if (/\b(?:cosa cerchi|come posso|puoi aiutarmi|mi puoi aiutare|vorrei sapere|dimmi|che cosa|dove posso|quanto costa|quanto costano|va bene|tutto bene|non trovo|non ho|cerco un|cerco una)\\b/.test(q)) return "it";
-  if (/\b(?:what do you|how do i|can you help|could you|would you|i'?m looking|i want|i need|please find|show me|tell me|where can i|what'?s up|how much|good morning|good afternoon)\\b/.test(q)) return "en";
+  if (/\b(?:cosa cerchi|come posso|puoi aiutarmi|mi puoi aiutare|vorrei sapere|dimmi|che cosa|dove posso|quanto costa|quanto costano|va bene|tutto bene|non trovo|non ho|cerco un|cerco una)\b/.test(q)) return "it";
+  if (/\b(?:what do you|how do i|can you help|could you|would you|i'?m looking|i want|i need|please find|show me|tell me|where can i|what'?s up|how much|good morning|good afternoon)\b/.test(q)) return "en";
 
   const parole = q.match(/[a-z]+/g) ?? [];
   const it = new Set([
