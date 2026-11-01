@@ -354,10 +354,29 @@ export async function searchPharmacies(
 // il Panificio, mentre "inesistente" non trova nulla.
 // Un filtro esplicito categoria/tipo chiesto dal chiamante è già di per sé una
 // prova di pertinenza e non viene mai scartato.
+function valoriTestualiStrutturati(value: unknown, profondita = 0): string {
+  if (profondita > 5 || value == null) return "";
+  if (typeof value === "string" || typeof value === "number") return String(value);
+  if (Array.isArray(value)) {
+    return value.map((item) => valoriTestualiStrutturati(item, profondita + 1)).filter(Boolean).join(" ");
+  }
+  if (typeof value === "object") {
+    return Object.values(value as Record<string, unknown>)
+      .map((item) => valoriTestualiStrutturati(item, profondita + 1))
+      .filter(Boolean)
+      .join(" ");
+  }
+  return "";
+}
+
 function testoNegozio(n: Record<string, unknown>): string {
   const data = (n.data ?? {}) as Record<string, unknown>;
   const lista = (v: unknown) =>
     Array.isArray(v) ? v.filter((x) => typeof x === "string").join(" ") : "";
+  // La RPC semantica può trovare servizi memorizzati nella struttura JSONB.
+  // Il gate di pertinenza di Pino deve leggere gli stessi dati, altrimenti
+  // elimina proprio i risultati recuperati grazie a servizi_strutturati.
+  const serviziStrutturati = valoriTestualiStrutturati(data.servizi_strutturati);
   return normalizza(
     [
       n.nome,
@@ -367,6 +386,7 @@ function testoNegozio(n: Record<string, unknown>): string {
       data.tipo_attivita,
       lista(n.servizi),
       lista(n.parole_chiave),
+      serviziStrutturati,
     ]
       .filter(Boolean)
       .map(String)
