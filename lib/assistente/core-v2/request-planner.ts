@@ -170,7 +170,7 @@ export function planPinoCoreRequest(input: string): PinoCorePlan {
   const withoutConstraints = stripConstraints(original);
   const normalized = normalizzaQueryCatalogo(withoutConstraints);
   const query = normalized.trim();
-  const subject = query ? query.split(/\\s+/)[0] : null;
+  const subject = query ? query.split(" ")[0] : null;
   const storeRequest = classifyStoreRequest(original);
   const explicitFoodProduct = isExplicitFoodProductRequest(original);
   const surface: PinoCoreSurface = storeRequest ? "stores" : explicitFoodProduct ? "products" : "products";
