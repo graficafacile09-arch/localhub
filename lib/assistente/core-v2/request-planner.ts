@@ -139,7 +139,7 @@ function stripConstraints(query: string): string {
 function stripSearchFraming(text: string): string {
   return normalizeIntentText(text)
     .replace(/^\s*(?:oh\s+)?pino\b[,!:\s]*/i, "")
-    .replace(/^\s*(?:mi\s+(?:puoi\s+)?(?:trovare|trovi|serve|servono|servirebbe|occorre|occorrono)|mi dai una mano a trovare|sto cercando|stiamo cercando|vorrei comprare|voglio comprare|dove\s+(?:posso\s+)?(?:comprare|trovare)|find\s+(?:me\s+)?(?:a\s+)?pair\s+of|find\s+me|find|show\s+me|i am looking for|i'm looking for|im looking for|looking for|i need|i want)\s+/i, "")
+    .replace(/^\s*(?:mi\s+(?:puoi\s+)?(?:trovare|trovi|serve|servono|servirebbe|occorre|occorrono)|mi dai una mano a trovare|sto cercando|stiamo cercando|vorrei comprare|voglio comprare|dove\s+(?:posso\s+)?(?:comprare|trovare|trovo)|find\s+(?:me\s+)?(?:a\s+)?pair\s+of|find\s+me|find|show\s+me|i am looking for|i'm looking for|im looking for|looking for|i need|i want)\s+/i, "")
     .replace(/^\s*(?:comprare|to buy)\s+/i, "")
     .trim();
 }
