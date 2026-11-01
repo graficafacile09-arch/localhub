@@ -14,6 +14,7 @@ import {
 import { SYSTEM_PROMPT, buildToolSelectionPrompt } from "./prompt";
 import type { MessaggioAssistente } from "./index";
 import type { ToolParams } from "./tools";
+import { estraiSelezioneFunctionCalling } from "./function-calling-utils";
 
 export type PinoToolInvocation = {
   tool: string;
@@ -167,6 +168,21 @@ function cleanParams(raw: unknown): ToolParams {
   return result;
 }
 
+function statusCodeFromError(error: unknown): number | null {
+  if (!error || typeof error !== "object") return null;
+  const source = error as Record<string, unknown>;
+  const nested = source.error && typeof source.error === "object"
+    ? source.error as Record<string, unknown>
+    : null;
+  for (const value of [source.status, source.statusCode, nested?.code]) {
+    if (typeof value === "number" && Number.isFinite(value)) return value;
+    if (typeof value === "string" && /^\d{3}$/.test(value)) return Number(value);
+  }
+  const message = error instanceof Error ? error.message : "";
+  const match = message.match(/(?:HTTP|status)\s*(\d{3})/i);
+  return match ? Number(match[1]) : null;
+}
+
 export async function selezionaToolConGemini(
   messages: MessaggioAssistente[],
   intentHint?: string
@@ -174,7 +190,8 @@ export async function selezionaToolConGemini(
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error("Chiave API Gemini mancante.");
   const model = process.env.GEMINI_MODEL?.trim() || "gemini-2.5-flash";
-  const ai = new GoogleGenAI({ apiKey, httpOptions: { timeout: 45_000 } });
+  // Timeout breve e un solo retry per evitare attese indefinite nell'assistente.
+  const ai = new GoogleGenAI({ apiKey, httpOptions: { timeout: 15_000 } });
 
   const userPrompt = buildToolSelectionPrompt(messages, intentHint)
     .replace(
@@ -182,31 +199,32 @@ export async function selezionaToolConGemini(
       "Per una richiesta concreta chiama uno o più strumenti dichiarati. Per una chiacchiera o una risposta diretta non pertinente al catalogo, rispondi senza chiamare strumenti. Non inventare dati."
     );
 
-  const response = await ai.models.generateContent({
-    model,
-    contents: userPrompt,
-    config: {
-      systemInstruction: SYSTEM_PROMPT,
-      temperature: 0.1,
-      maxOutputTokens: 450,
-      tools: [{ functionDeclarations: FUNCTION_DECLARATIONS }],
-      toolConfig: {
-        functionCallingConfig: { mode: FunctionCallingConfigMode.AUTO },
-      },
-    },
-  });
-
-  const calls = response.functionCalls ?? [];
-  const tools: PinoToolInvocation[] = [];
-  for (const call of calls) {
-    if (!call.name || !ALLOWED_TOOLS.has(call.name)) continue;
-    tools.push({ tool: call.name, params: cleanParams(call.args) });
-    if (tools.length >= 3) break;
+  let response: Awaited<ReturnType<typeof ai.models.generateContent>> | null = null;
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      response = await ai.models.generateContent({
+        model,
+        contents: userPrompt,
+        config: {
+          systemInstruction: SYSTEM_PROMPT,
+          temperature: 0.1,
+          maxOutputTokens: 450,
+          tools: [{ functionDeclarations: FUNCTION_DECLARATIONS }],
+          toolConfig: {
+            functionCallingConfig: { mode: FunctionCallingConfigMode.AUTO },
+          },
+        },
+      });
+      break;
+    } catch (error) {
+      const status = statusCodeFromError(error);
+      const retryable = status !== null && [402, 429, 500, 502, 503, 504].includes(status);
+      if (!retryable || attempt === 2) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 800));
+    }
   }
 
-  const directReply = tools.length === 0 && typeof response.text === "string"
-    ? response.text.trim() || null
-    : null;
+  if (!response) throw new Error("Gemini non ha restituito una risposta per la selezione degli strumenti.");
 
-  return { tools, directReply };
+  return estraiSelezioneFunctionCalling(response, ALLOWED_TOOLS, cleanParams) as PinoToolSelection;
 }
