@@ -26,9 +26,9 @@
  * @module lib/assistente/core-v2/production-intent-snapshot
  */
 
-import { analizzaRichiesta } from "../../ricerca-intento";
-import { equivalentiMorfologici } from "../../search-tollerante";
-import { normalizzaRichiesta } from "../local-intents";
+import { analizzaRichiesta } from "../../ricerca-intento.ts";
+import { equivalentiMorfologici } from "../../search-tollerante.ts";
+import { normalizzaRichiesta } from "../local-intents.ts";
 
 // ─── Tipi pubblici ───────────────────────────────────────────────────────────
 
