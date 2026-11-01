@@ -66,7 +66,7 @@ function evidenceText(product: ProductEvidence): {
     product.description,
     product.fullDescription,
     ...(product.keywords ?? []),
-  ].filter(Boolean).join(" ");
+  ].filter(Boolean).join(" ").replace(/\\b(?:nella\\s+)?selezione\\s+demo\\s+di\\s+[^,.!?;]+/gi, " ");
   return { identity, details };
 }
 
