@@ -63,6 +63,15 @@ export function nomiGiaMostrati(storico: MessaggioAssistente[]): string[] {
   return Array.from(nomi);
 }
 
+function rispostaPiattaformaPino(domanda: string): string | null {
+  const q = domanda.toLowerCase().normalize("NFD").replace(/[\\u0300-\\u036f]/g, "");
+  const pattern = /che cos['’]?e incitta|cos['’]?e incitta|come funziona|cos['’]?e il sito|what is incitta|how does incitta work|what is this site/;
+  if (!pattern.test(q)) return null;
+  return /\\b(what|how)\\b/i.test(q)
+    ? "InCittà is the local platform for your city. It brings together local businesses, products and prices, offers and promotions, events and useful information. You can search for businesses, compare products, check opening hours and contact local shops."
+    : "InCittà è la piattaforma locale della tua città: raccoglie le attività commerciali del territorio con i loro negozi, prodotti e prezzi, offerte e promozioni, eventi e manifestazioni. Puoi cercare attività, confrontare prodotti, vedere orari e contatti e contattare i negozi direttamente.";
+}
+
 // ─── API interna Pino ────────────────────────────────────────────────────────
 
 export async function chatConAssistente(
@@ -76,6 +85,7 @@ export async function chatConAssistente(
 
   const rispostaDiretta =
     rispostaIdentitaPino(domanda) ??
+    rispostaPiattaformaPino(domanda) ??
     rispostaRelazionalePino(domanda, lingua) ??
     rispostaSalutoPino(domanda);
 
