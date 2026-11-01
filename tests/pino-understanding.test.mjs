@@ -92,8 +92,6 @@ test("Open-now wording is recognized in Italian and English and removed from cat
 });
 
 
-import { prodottoIdentificatoDaSoggetto } from "../lib/assistente/product-relevance.ts";
-
 test("product search subject must identify the product, not occur only in its description", () => {
   assert.equal(prodottoIdentificatoDaSoggetto({ nome: "Filetti di Cipolla Bianca di Castrovillari", categoria: "Conserve" }, "olio"), false);
   assert.equal(prodottoIdentificatoDaSoggetto({ nome: "Olio Extra Vergine di Oliva del Pollino", categoria: "Alimentari" }, "olio"), true);
