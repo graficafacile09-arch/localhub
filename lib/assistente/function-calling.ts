@@ -382,7 +382,20 @@ export async function chatConFunctionCalling(
   }
 
   const model = process.env.GEMINI_MODEL?.trim() || "gemini-3.8-flash";
-  const ai = new GoogleGenAI({ apiKey });
+  const ai = new GoogleGenAI({
+    apiKey,
+    httpOptions: {
+      timeout: 25_000,
+      retryOptions: {
+        attempts: 2,
+        initialDelay: 0.5,
+        maxDelay: 1.5,
+        expBase: 2,
+        jitter: 0.2,
+        httpStatusCodes: [408, 429, 500, 502, 503, 504],
+      },
+    },
+  });
   const contents: any[] = messages.slice(-12).map((m) => ({
     role: m.role === "assistant" ? "model" as const : "user" as const,
     parts: [{ text: m.content.slice(0, 800) }],
