@@ -51,3 +51,10 @@ test("Pino recognizes more natural English invitations to chat", () => {
   assert.match(rispostaRelazionalePino("I'd like to talk") ?? "", /happy to chat/i);
   assert.match(rispostaRelazionalePino("Let's have a chat") ?? "", /happy to chat/i);
 });
+
+
+test("Pino understands English smart apostrophes and greeting variants", () => {
+  assert.match(rispostaRelazionalePino("I’d like to talk") ?? "", /happy to chat/i);
+  assert.match(rispostaSalutoPino("Good morning Pino") ?? "", /Good morning!/);
+  assert.match(rispostaSalutoPino("What's up?") ?? "", /Hey there!/);
+});
