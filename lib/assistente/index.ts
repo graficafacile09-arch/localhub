@@ -196,7 +196,7 @@ const RE_VINCOLO = /^(e\s+)?(budget(?:\s+di)?|sotto|sopra|massimo|minimo|meno di
 
 // Intenzione salute → farmacia: usata anche nella risposta deterministica.
 const REQUIRES_PHARMACY_REASON =
-  /\bfebbre\b|\btemperatura alta\b|\bmal di gola\b|\braffreddore\b|\binfluenza\b|\btosse\b/i;
+  /\bfebbre\b|\btemperatura alta\b|\bmal di gola\b|\braffreddore\b|\binfluenza\b|\btosse\b|\bfever\b|\bsore throat\b|\bcold\b|\bflu\b|\bcough\b/i;
 
 function eQuerySostanziale(q: string): string | null {
   const t = q.trim();
@@ -914,19 +914,48 @@ async function recuperaAlternativeSemantiche(
 // ciò che la fonte ha realmente restituito. Questo elimina le allucinazioni
 // anche quando il modello finale sarebbe tentato di completare i buchi.
 
-function rispostaMeteoDeterministica(meteo: Awaited<ReturnType<typeof getWeatherCastrovillari>>): string {
+function descrizioneMeteoInglese(descrizione: string): string {
+  return String(descrizione ?? "").toLowerCase()
+    .replace(/parzialmente nuvoloso/g, "partly cloudy")
+    .replace(/poco nuvoloso/g, "mostly clear")
+    .replace(/pioggia moderata/g, "moderate rain")
+    .replace(/pioggia leggera|pioviggine/g, "light rain")
+    .replace(/pioggia intensa/g, "heavy rain")
+    .replace(/temporale/g, "thunderstorm")
+    .replace(/neve/g, "snow")
+    .replace(/nuvoloso/g, "cloudy")
+    .replace(/coperto/g, "overcast")
+    .replace(/sereno/g, "clear")
+    .replace(/pioggia/g, "rain");
+}
+
+function rispostaMeteoDeterministica(
+  meteo: Awaited<ReturnType<typeof getWeatherCastrovillari>>,
+  lingua: "it" | "en" = "it"
+): string {
+  const inglese = lingua === "en";
   if (!meteo) {
-    return "Al momento non riesco a verificare il meteo di Castrovillari. Non ti do una previsione inventata: riprova tra poco.";
+    return inglese
+      ? "I can't verify the weather in Castrovillari right now. I won't make up a forecast — please try again shortly."
+      : "Al momento non riesco a verificare il meteo di Castrovillari. Non ti do una previsione inventata: riprova tra poco.";
   }
 
-  const oggiPioggia =
-    meteo.oggi.probabilitaPioggia != null
-      ? ", probabilità di pioggia " + meteo.oggi.probabilitaPioggia + "%"
-      : "";
-  const domaniPioggia =
-    meteo.domani.probabilitaPioggia != null
-      ? ", probabilità di pioggia " + meteo.domani.probabilitaPioggia + "%"
-      : "";
+  const oggiPioggia = meteo.oggi.probabilitaPioggia != null
+    ? (inglese ? ", chance of rain " : ", probabilità di pioggia ") + meteo.oggi.probabilitaPioggia + "%"
+    : "";
+  const domaniPioggia = meteo.domani.probabilitaPioggia != null
+    ? (inglese ? ", chance of rain " : ", probabilità di pioggia ") + meteo.domani.probabilitaPioggia + "%"
+    : "";
+
+  if (inglese) {
+    return "In Castrovillari it is currently " + meteo.temperatura + "°C, " +
+      descrizioneMeteoInglese(meteo.descrizione) + ", with a feels-like temperature of " +
+      meteo.temperaturaPercepita + "°C and wind at " + meteo.ventoKmh + " km/h. " +
+      "Today: " + meteo.oggi.minima + "° / " + meteo.oggi.massima + "°" + oggiPioggia + ". " +
+      "Tomorrow: " + descrizioneMeteoInglese(meteo.domani.descrizione) + ", " +
+      meteo.domani.minima + "° / " + meteo.domani.massima + "°" + domaniPioggia + ". " +
+      "Data updated at " + meteo.aggiornato + ".";
+  }
 
   return (
     "A Castrovillari ora ci sono " + meteo.temperatura + "°C, " +
@@ -943,81 +972,91 @@ function rispostaMeteoDeterministica(meteo: Awaited<ReturnType<typeof getWeather
 function rispostaFarmacieDeterministica(
   farmacie: Awaited<ReturnType<typeof searchPharmacies>>,
   statoRichiesto: ToolParams["stato"] = "turno",
-  motivo?: string
+  motivo?: string,
+  lingua: "it" | "en" = "it"
 ): string {
+  const inglese = lingua === "en";
+  const statoTradotto = (stato: string | null | undefined) => {
+    if (!inglese) return stato ?? "NON VERIFICATO";
+    if (stato === "aperta") return "OPEN";
+    if (stato === "chiusa") return "CLOSED";
+    return "NOT VERIFIED";
+  };
+  const turnoTradotto = (turno: string | null | undefined) =>
+    turno ? (inglese ? "on duty: " + turno : turno) : null;
+
   if (statoRichiesto === "aperte") {
     const aperte = farmacie.filter((f) => f.stato === "aperta").slice(0, 5);
     if (aperte.length === 0) {
-      return "Al momento non risulta alcuna farmacia con stato APERTA verificato nei dati disponibili per Castrovillari. Non ti indico farmacie non verificate come aperte.";
+      return inglese
+        ? "I can't verify any pharmacy as currently open in the available Castrovillari data. I won't list a pharmacy as open without confirmation."
+        : "Al momento non risulta alcuna farmacia con stato APERTA verificato nei dati disponibili per Castrovillari. Non ti indico farmacie non verificate come aperte.";
     }
 
-    const elenco = aperte
-      .map((f) => {
-        const dettagli = [
-          f.indirizzo ? f.indirizzo : null,
-          f.telefono ? "tel. " + f.telefono : null,
-          f.apertura ? "orari: " + f.apertura : null,
-        ]
-          .filter(Boolean)
-          .join(" — ");
-        return "- **" + f.nome + "**" + (dettagli ? " — " + dettagli : "");
-      })
-      .join("\n");
+    const elenco = aperte.map((f) => {
+      const dettagli = [
+        f.indirizzo ? f.indirizzo : null,
+        f.telefono ? "tel. " + f.telefono : null,
+        f.apertura ? (inglese ? "hours: " : "orari: ") + f.apertura : null,
+      ].filter(Boolean).join(" — ");
+      return "- **" + f.nome + "**" + (dettagli ? " — " + dettagli : "");
+    }).join("\n");
 
-    return "Dai dati verificati di oggi risultano aperte:\n" + elenco;
+    return inglese
+      ? "Based on today's verified data, these pharmacies are listed as open:\n" + elenco
+      : "Dai dati verificati di oggi risultano aperte:\n" + elenco;
   }
 
   if (statoRichiesto === "tutte") {
     if (farmacie.length === 0) {
-      return "Al momento non ho dati verificati sulle farmacie di Castrovillari.";
+      return inglese
+        ? "I don't currently have verified pharmacy information for Castrovillari."
+        : "Al momento non ho dati verificati sulle farmacie di Castrovillari.";
     }
 
-    const elenco = farmacie
-      .slice(0, 8)
-      .map((f) => {
-        const stato =
-          f.turno ? "DI TURNO" : f.stato === "aperta" ? "APERTA" : f.stato === "chiusa" ? "CHIUSA" : "NON VERIFICATA";
-        const dettagli = [
-          f.indirizzo ? f.indirizzo : null,
-          f.turno ? f.turno : null,
-          f.telefono ? "tel. " + f.telefono : null,
-        ]
-          .filter(Boolean)
-          .join(" — ");
-        return "- **" + f.nome + "** — " + stato + (dettagli ? " — " + dettagli : "");
-      })
-      .join("\n");
+    const elenco = farmacie.slice(0, 8).map((f) => {
+      const stato = f.turno
+        ? (inglese ? "ON DUTY" : "DI TURNO")
+        : f.stato === "aperta"
+          ? (inglese ? "OPEN" : "APERTA")
+          : f.stato === "chiusa"
+            ? (inglese ? "CLOSED" : "CHIUSA")
+            : (inglese ? "NOT VERIFIED" : "NON VERIFICATA");
+      const dettagli = [
+        f.indirizzo ? f.indirizzo : null,
+        turnoTradotto(f.turno),
+        f.telefono ? "tel. " + f.telefono : null,
+      ].filter(Boolean).join(" — ");
+      return "- **" + f.nome + "** — " + stato + (dettagli ? " — " + dettagli : "");
+    }).join("\n");
 
-    return "Farmacie per cui ho dati disponibili:\n" + elenco;
+    return inglese
+      ? "Pharmacies with available information:\n" + elenco
+      : "Farmacie per cui ho dati disponibili:\n" + elenco;
   }
 
   const turno = farmacie.filter((f) => Boolean(f.turno)).slice(0, 3);
-
   if (turno.length === 0) {
-    const prefisso = motivo ? "Per " + motivo + ", " : "";
-    return (
-      prefisso +
-      "al momento non risulta alcuna farmacia di turno verificata nei dati disponibili per Castrovillari. " +
-      "Non ti indico un nome non verificato, per evitare un falso positivo."
-    );
+    const prefisso = motivo ? (inglese ? "For " : "Per ") + motivo + ", " : "";
+    return inglese
+      ? prefisso + "no on-duty pharmacy is currently verified in the available Castrovillari data. I won't provide an unverified name."
+      : prefisso + "al momento non risulta alcuna farmacia di turno verificata nei dati disponibili per Castrovillari. Non ti indico un nome non verificato, per evitare un falso positivo.";
   }
 
-  const elenco = turno
-    .map((f) => {
-      const dettagli = [
-        f.turno ? f.turno : null,
-        f.indirizzo ? f.indirizzo : null,
-        f.telefono ? "tel. " + f.telefono : null,
-      ]
-        .filter(Boolean)
-        .join(" — ");
-      return "- **" + f.nome + "**" + (dettagli ? " — " + dettagli : "");
-    })
-    .join("\n");
+  const elenco = turno.map((f) => {
+    const dettagli = [
+      turnoTradotto(f.turno),
+      f.indirizzo ? f.indirizzo : null,
+      f.telefono ? "tel. " + f.telefono : null,
+    ].filter(Boolean).join(" — ");
+    return "- **" + f.nome + "**" + (dettagli ? " — " + dettagli : "");
+  }).join("\n");
 
   const prefisso = motivo
-    ? "Per " + motivo + ", puoi rivolgerti a una farmacia di turno. Dai dati verificati di oggi risulta:\n"
-    : "Dai dati verificati di oggi risulta:\n";
+    ? (inglese ? "For " : "Per ") + motivo + (inglese
+      ? ", you can contact an on-duty pharmacy. Today's verified data shows:\n"
+      : ", puoi rivolgerti a una farmacia di turno. Dai dati verificati di oggi risulta:\n")
+    : (inglese ? "Today's verified data shows these on-duty pharmacies:\n" : "Dai dati verificati di oggi risulta:\n");
 
   return prefisso + elenco;
 }
