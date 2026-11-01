@@ -180,9 +180,10 @@ export function planPinoCoreRequest(input: string): PinoCorePlan {
       : subject ? "medium" : "low";
 
   const attributes = query
-    .split(/\s+/)
-    .filter((word) => word.length > 2)
-    .slice(1, 8);
+    .split(" ")
+    .slice(1)
+    .filter((word) => word.length > 2 && !["con", "per", "da", "del", "della", "dei", "delle", "di", "in", "a", "the", "with", "for"].includes(word))
+    .slice(0, 8);
 
   if (!subject) {
     return {
