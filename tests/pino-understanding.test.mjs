@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
 import { rispostaIdentitaPino } from "../lib/assistente/identity.ts";
+import { isExplicitFoodProductRequest, isBroadAttractionsRequest } from "../lib/assistente/routing-policy.ts";
 import {
   normalizzaQueryCatalogo,
   rilevaLinguaPino,
@@ -125,4 +126,17 @@ test("Pino switches back to Italian when the user does", () => {
     { role: "assistant", content: "I found two products." },
     { role: "user", content: "Va bene, grazie" },
   ]), "it");
+});
+
+
+test("explicit food product requests are routed to the catalog in Italian and English", () => {
+  assert.equal(isExplicitFoodProductRequest("I'm looking for pasta under 5 euros"), true);
+  assert.equal(isExplicitFoodProductRequest("Cerco pasta sotto 5 euro"), true);
+  assert.equal(isExplicitFoodProductRequest("Vorrei mangiare"), false);
+});
+
+test("generic attractions questions are recognized in Italian and English", () => {
+  assert.equal(isBroadAttractionsRequest("What attractions can I visit in Castrovillari?"), true);
+  assert.equal(isBroadAttractionsRequest("Quali attrazioni posso visitare a Castrovillari?"), true);
+  assert.equal(isBroadAttractionsRequest("I'm looking for pasta"), false);
 });
