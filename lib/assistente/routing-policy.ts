@@ -43,3 +43,15 @@ export function isBroadAttractionsRequest(query: string): boolean {
   const q = normalizza(query);
   return /\b(?:cosa vedere|luoghi da vedere|attrazioni?|attractions?|monumenti?|monuments?|visitare|dintorni|borghi?|villages?|turismo|tour|itinerario|things to see|places to visit|tourist attractions?|sights|what to visit|what can i visit|what should i see|surroundings|nearby places|tourism|itinerary)\b/.test(q);
 }
+
+/**
+ * Le richieste esplicite di alimenti da acquistare devono restare nel
+ * catalogo prodotti anche nel recupero alternativo: non suggerire negozi
+ * soltanto perché il catalogo non ha restituito una corrispondenza.
+ */
+export function shouldSearchStoreAlternativesForProductRequest(
+  query: string,
+  intent: string,
+): boolean {
+  return intent === "product" && !isExplicitFoodProductRequest(query);
+}
