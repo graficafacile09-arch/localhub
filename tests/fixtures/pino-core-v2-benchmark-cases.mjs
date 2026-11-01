@@ -87,10 +87,10 @@ export const pinoBenchmarkCases = groups.flatMap(([group, route, surface, uttera
     text,
     expected: {
       route: group === "weather-pharmacy"
-        ? (/farmac|pharmacy/i.test(text) ? "pharmacies" : "weather")
+        ? (/farmac|pharma/i.test(text) ? "pharmacies" : "weather")
         : route,
       surface: group === "weather-pharmacy"
-        ? (/farmac|pharmacy/i.test(text) ? "stores" : "none")
+        ? (/farmac|pharma/i.test(text) ? "stores" : "none")
         : surface
     }
   }))
