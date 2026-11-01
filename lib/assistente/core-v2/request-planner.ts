@@ -48,6 +48,9 @@ export type PinoCorePlan = {
 const GREETING =
   /^(?:ciao|salve|buongiorno|buonasera|buonanotte|hey|hi|hello|good morning|good afternoon|good evening|thanks|thank you|grazie|grazie mille|ok|okay|va bene|perfetto|great|perfect|sure|come stai|how are you|how's it going|would you like to chat|ti va di fare due chiacchiere)[!.?\s]*$/i;
 
+const GENERIC_VAGUE =
+  /^(?:qualcosa(?:\\s+di\\s+\\w+)?|un qualcosa|consigliami qualcosa|non so cosa|anything|something(?:\\s+nice)?|i don't know what|surprise me|whatever)\\s*[!.?]*$/i;
+
 const WEATHER =
   /\b(?:meteo|tempo che fa|che tempo|previsioni|piove|piovera|temperatura|weather|forecast|is it raining)\b/i;
 const PHARMACY =
