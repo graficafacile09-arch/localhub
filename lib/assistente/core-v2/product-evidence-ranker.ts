@@ -59,14 +59,14 @@ function evidenceText(product: ProductEvidence): {
   identity: string;
   details: string;
 } {
-  const identity = [product.name, product.category].filter(Boolean).join(" ");
+  ].filter(Boolean).join(" ").replace(/(?:nella )?selezione demo di [^.]+/gi, " ");
   // Seller attribution is not product evidence. Excluding it structurally
   // prevents a business name such as "Mani in Pasta" from creating a match.
   const details = [
     product.description,
     product.fullDescription,
     ...(product.keywords ?? []),
-  ].filter(Boolean).join(" ").replace(/(?:nella )?selezione demo di [^.]+/gi, " ");]+/gi, " ");
+  ].filter(Boolean).join(" ").replace(/(?:nella )?selezione demo di [^.]+/gi, " ");
   return { identity, details };
 }
 
