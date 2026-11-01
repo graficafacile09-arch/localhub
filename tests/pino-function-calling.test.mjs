@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { estraiSelezioneFunctionCalling } from "../lib/assistente/function-calling-utils.ts";
+import { estraiSelezioneFunctionCalling, functionCallingSelectionIsComplete } from "../lib/assistente/function-calling-utils.ts";
 
 const allowed = new Set(["searchProducts", "searchStores", "getWeather"]);
 const clean = (value) => value && typeof value === "object" ? value : {};
@@ -64,5 +64,26 @@ test("ignores malformed and undeclared function calls", () => {
     text: null,
   }, allowed, clean);
 
+  assert.deepEqual(result, { tools: [], directReply: null });
+});
+
+
+test("an empty selection keeps searchAll fallback for a concrete intent", () => {
+  assert.equal(functionCallingSelectionIsComplete({ tools: [], directReply: null }, false), false);
+});
+
+test("an empty selection is complete for a generic conversational intent", () => {
+  assert.equal(functionCallingSelectionIsComplete({ tools: [], directReply: null }, true), true);
+});
+
+test("a direct reply or a tool call completes the selection", () => {
+  assert.equal(functionCallingSelectionIsComplete({ tools: [], directReply: "Certo!" }, false), true);
+  assert.equal(functionCallingSelectionIsComplete({ tools: [{ tool: "searchProducts", params: {} }], directReply: null }, false), true);
+});
+
+test("a zero tool limit returns no tool calls", () => {
+  const result = estraiSelezioneFunctionCalling({
+    functionCalls: [{ name: "searchProducts", args: { query: "pasta" } }],
+  }, allowed, clean, 0);
   assert.deepEqual(result, { tools: [], directReply: null });
 });
