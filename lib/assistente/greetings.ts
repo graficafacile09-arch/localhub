@@ -1,4 +1,4 @@
-import { rilevaLinguaPino, type PinoLanguage } from "./understanding";
+import { rilevaLinguaPino, type PinoLanguage } from "./understanding.ts";
 
 export function rispostaSalutoPino(input: string): string | null {
   const q = input.toLowerCase().replace(/[^a-z0-9à-ù]+/g, " ").trim();
