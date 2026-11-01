@@ -4,6 +4,8 @@ import { readFileSync } from "node:fs";
 import { rispostaIdentitaPino } from "../lib/assistente/identity.ts";
 import { isExplicitFoodProductRequest, isBroadAttractionsRequest } from "../lib/assistente/routing-policy.ts";
 import { prodottoIdentificatoDaSoggetto } from "../lib/assistente/product-relevance.ts";
+import { analizzaIntentoPino } from "../lib/assistente/intent.ts";
+import { pianoLocaleIntelligente } from "../lib/assistente/semantica.ts";
 import {
   normalizzaQueryCatalogo,
   rilevaLinguaPino,
@@ -146,4 +148,23 @@ test("food relevance uses product identity, never the seller name", () => {
   assert.equal(prodottoIdentificatoDaSoggetto({ nome: "Taralli tradizionali", categoria: "Alimentari" }, "pasta"), false);
   assert.equal(prodottoIdentificatoDaSoggetto({ nome: "Pasta artigianale", categoria: "Alimentari" }, "pasta"), true);
   assert.equal(prodottoIdentificatoDaSoggetto({ nome: "Tagliatelle all'uovo", categoria: "Pasta fresca" }, "pasta"), true);
+});
+
+
+test("Italian verbs are never fuzzy-corrected into unrelated catalog subjects", () => {
+  const richiesta = "voglio un orologio ho 99 euro";
+  const piano = pianoLocaleIntelligente(richiesta, analizzaIntentoPino(richiesta));
+  assert.ok(piano);
+  assert.equal(piano.surface, "products");
+  assert.equal(piano.intent, "product");
+  assert.equal(piano.query, "orologio");
+  assert.equal(piano.maxPrice, 99);
+});
+
+test("A real garlic request still resolves to garlic", () => {
+  const richiesta = "cerco aglio";
+  const piano = pianoLocaleIntelligente(richiesta, analizzaIntentoPino(richiesta));
+  assert.ok(piano);
+  assert.equal(piano.query, "aglio");
+  assert.equal(piano.intent, "food");
 });
