@@ -12,8 +12,11 @@ export function rispostaSalutoPino(input: string): string | null {
   const en: Record<string, string> = {
     hi: "Hi!", "hi pino": "Hi!", "hi there": "Hi there!", hey: "Hey!", "hey pino": "Hey!",
     hello: "Hello!", "hello pino": "Hello!", "hello there": "Hello there!",
-    "good morning": "Good morning!", "good afternoon": "Good afternoon!",
-    "good evening": "Good evening!", "good night": "Good night!", howdy: "Hey there!",
+    "good morning": "Good morning!", "good morning pino": "Good morning!",
+    "good afternoon": "Good afternoon!", "good afternoon pino": "Good afternoon!",
+    "good evening": "Good evening!", "good evening pino": "Good evening!",
+    "good night": "Good night!", "good night pino": "Good night!", howdy: "Hey there!",
+    "hey there": "Hey there!", "what s up": "Hey there!",
   };
   if (en[q]) return en[q] + " 😊 What would you like to find or discover on InCittà? I'm happy to help!";
   return null;
@@ -22,6 +25,7 @@ export function rispostaSalutoPino(input: string): string | null {
 function normalizzaRelazionale(input: string): string {
   return input.normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[’‘]/g, "'")
     .toLowerCase()
     .replace(/[^a-z0-9' ]+/g, " ")
     .replace(/\s+/g, " ")
