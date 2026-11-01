@@ -985,12 +985,6 @@ function rispostaFarmacieDeterministica(
   lingua: "it" | "en" = "it"
 ): string {
   const inglese = lingua === "en";
-  const statoTradotto = (stato: string | null | undefined) => {
-    if (!inglese) return stato ?? "NON VERIFICATO";
-    if (stato === "aperta") return "OPEN";
-    if (stato === "chiusa") return "CLOSED";
-    return "NOT VERIFIED";
-  };
   const turnoTradotto = (turno: string | null | undefined) =>
     turno ? (inglese ? "on duty: " + turno : turno) : null;
 
@@ -1556,8 +1550,9 @@ export async function chatConAssistente(
     categorie = tutto.categorie;
   } else if (!directReply && !toolsEseguiti) {
     return {
-      risposta:
-        "Va bene, sono qui! Posso aiutarti a trovare negozi, prodotti, offerte ed eventi nella tua città. Dimmi pure cosa cerchi.",
+      risposta: linguaConversazione === "en"
+        ? "I'm here! I can help you find local shops, products, offers and events. What are you looking for?"
+        : "Va bene, sono qui! Posso aiutarti a trovare negozi, prodotti, offerte ed eventi nella tua città. Dimmi pure cosa cerchi.",
       negozi: [],
       prodotti: [],
       processingMs: Date.now() - inizio,
@@ -1639,7 +1634,7 @@ export async function chatConAssistente(
     budgetPreferenza,
     linguaRisposta
   );
-  const risposta = notaRecupero && linguaRisposta !== "en"
+  const risposta = notaRecupero
     ? `${notaRecupero}\n\n${rispostaBase}`
     : rispostaBase;
 
