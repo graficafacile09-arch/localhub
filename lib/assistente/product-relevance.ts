@@ -18,10 +18,27 @@ function tokenCompatibile(termine: string, token: string[]): boolean {
 }
 
 /**
+ * Rimuove dalle descrizioni le formule redazionali che citano il venditore,
+ * non il prodotto. Per esempio "nella selezione demo di Mani in Pasta":
+ * la parola "pasta" appartiene al nome dell'attività e non deve rendere
+ * pertinenti taralli o biscotti a una ricerca di pasta.
+ */
+function dettagliDescrittivi(prodotto: ProdottoIdentificabile): string {
+  return [
+    prodotto.descrizione,
+    prodotto.descrizione_completa,
+    ...(prodotto.parole_chiave ?? []),
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .replace(/\b(?:nella\s+)?selezione\s+demo\s+di\s+[^,.!?;]+/gi, " ");
+}
+
+/**
  * Il soggetto deve identificare il prodotto tramite nome/categoria oppure
  * tramite una descrizione o parole chiave esplicite del prodotto.
- * Non vengono considerati i dati del negozio: evitare che "Mani in Pasta"
- * faccia comparire prodotti non alimentari nella ricerca "pasta".
+ * Non vengono considerati i dati del negozio: evitare che il nome dell'attività
+ * o formule redazionali che lo citano alterino la pertinenza del prodotto.
  */
 export function prodottoIdentificatoDaSoggetto(
   prodotto: ProdottoIdentificabile,
@@ -29,11 +46,7 @@ export function prodottoIdentificatoDaSoggetto(
   concetti: string[] = []
 ): boolean {
   const identita = normalizza([prodotto.nome, prodotto.categoria].filter(Boolean).join(" "));
-  const dettagli = normalizza([
-    prodotto.descrizione,
-    prodotto.descrizione_completa,
-    ...(prodotto.parole_chiave ?? []),
-  ].filter(Boolean).join(" "));
+  const dettagli = normalizza(dettagliDescrittivi(prodotto));
   if (!identita && !dettagli) return false;
   if (!soggetto) return true;
 
