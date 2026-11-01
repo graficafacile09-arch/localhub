@@ -62,3 +62,17 @@ test("Pino accetta al massimo tre varianti semantiche distinte", () => {
 
   assert.deepEqual(args.varianti, ["pulizia auto", "lavaggio veicoli", "autolavaggio"]);
 });
+
+test("Pino ignora i filtri numerici null invece di convertirli in zero", () => {
+  const args = normalizzaArgomentiRicercaPino({
+    ricerca: "orologio",
+    ambito: "prodotti",
+    prezzoMassimo: null,
+    prezzoMinimo: null,
+    limite: null,
+  });
+
+  assert.equal(args.prezzoMassimo, undefined);
+  assert.equal(args.prezzoMinimo, undefined);
+  assert.equal(args.limite, 8);
+});
