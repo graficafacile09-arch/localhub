@@ -28,6 +28,7 @@ function testoLimitato(value: unknown, max: number): string | undefined {
 }
 
 function numeroLimitato(value: unknown, min: number, max: number): number | undefined {
+  if (value == null || value === "") return undefined;
   const n = typeof value === "number" ? value : Number(value);
   if (!Number.isFinite(n) || n < min || n > max) return undefined;
   return n;
