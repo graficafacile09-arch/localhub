@@ -47,7 +47,7 @@ export function isAttractionNameQuery(query: string): boolean {
 export function searchAttractions(query: string, limit = 6): AttrazionePino[] {
   const q = normalizza(query);
   if (!q) return [];
-  const stop = new Set(["dove","cosa","quali","quale","visitare","vedere","consigli","consigliami","vorrei","posso","fare","sono","ci","nel","nella","della","delle","degli","per","una","uno","che","come","raggiungere","arrivare","andare","castrovillari","what","can","i","the","in","of","to","near","at","are","is","best","local","tourist","sights","places","around","should","my"]);
+  const stop = new Set(["dove","cosa","quali","quale","visitare","vedere","consigli","consigliami","vorrei","posso","fare","sono","ci","nel","nella","della","delle","degli","per","una","uno","che","come","raggiungere","arrivare","andare","castrovillari","what","can","i","the","in","of","to","near","at","are","is","best","local","tourist","sights","places","around","should","my","attractions","attraction","visit","visiting","things","see"]);
   const tokens = q.split(/\s+/).filter((t) => t.length >= 3 && !stop.has(t));
   const broad = isBroadAttractionsRequest(q);
   const richiestaDintorni = /\b(dintorni|nei dintorni|vicino a castrovillari|paesi vicini|borghi vicini|fuori castrovillari|surroundings|near castrovillari|nearby|nearby places|villages nearby|around castrovillari)\b/.test(q);
