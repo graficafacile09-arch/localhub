@@ -135,15 +135,17 @@ function cleanParams(raw: unknown): ToolParams {
   const stringKeys = ["query", "categoria", "sottocategoria", "tipo", "citta"] as const;
   for (const key of stringKeys) {
     const value = source[key];
-    if (typeof value === "string") result[key] = value.trim().slice(0, 160);
+    if (typeof value === "string") Object.assign(result, { [key]: value.trim().slice(0, 160) });
   }
   const numberKeys = ["maxPrice", "minPrice", "limit"] as const;
   for (const key of numberKeys) {
     const value = source[key];
     if (typeof value === "number" && Number.isFinite(value)) {
-      result[key] = key === "limit"
-        ? Math.max(1, Math.min(20, Math.floor(value)))
-        : Math.max(0, Math.min(1_000_000, value));
+      Object.assign(result, {
+        [key]: key === "limit"
+          ? Math.max(1, Math.min(20, Math.floor(value)))
+          : Math.max(0, Math.min(1_000_000, value)),
+      });
     }
   }
   if (source.stato === "aperte" || source.stato === "turno" || source.stato === "tutte") {
@@ -153,11 +155,13 @@ function cleanParams(raw: unknown): ToolParams {
   for (const key of ["termini", "esclusioni", "escludiNomi"] as const) {
     const value = source[key];
     if (Array.isArray(value)) {
-      result[key] = value
-        .filter((item): item is string => typeof item === "string")
-        .map((item) => item.trim().slice(0, 100))
-        .filter(Boolean)
-        .slice(0, 12);
+      Object.assign(result, {
+        [key]: value
+          .filter((item): item is string => typeof item === "string")
+          .map((item) => item.trim().slice(0, 100))
+          .filter(Boolean)
+          .slice(0, 12),
+      });
     }
   }
   return result;
