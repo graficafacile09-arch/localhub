@@ -10,9 +10,9 @@ function score(field) {
   return { matched, total: pinoBenchmarkCases.length, percent: Number((matched / pinoBenchmarkCases.length * 100).toFixed(1)) };
 }
 
-test("Pino Core v2 benchmark corpus contains 150 labelled requests", () => {
+test("Pino Core v2 benchmark corpus contains 165 labelled requests", () => {
   assert.equal(pinoBenchmarkCases.length, 165);
-  assert.equal(new Set(pinoBenchmarkCases.map((item) => item.id)).size, 150);
+  assert.equal(new Set(pinoBenchmarkCases.map((item) => item.id)).size, 165);
   assert.ok(pinoBenchmarkCases.every((item) => item.text && item.expected.route && item.expected.surface));
 });
 
