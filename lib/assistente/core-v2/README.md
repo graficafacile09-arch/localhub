@@ -46,7 +46,7 @@ The v2 AI planner's existing tests validate JSON parsing, plan validation, deter
 
 ### Live Gemini benchmark (opt-in only)
 
-The live runner is `scripts/pino-core-v2-live-benchmark.mjs`. It is intentionally excluded from `prebuild` and the normal test suite. It requires both `GEMINI_API_KEY` and an explicit `PINO_RUN_LIVE_BENCHMARK=1` opt-in. It defaults to 10 cases to avoid unexpectedly running 165 provider calls.
+The live runner is `scripts/pino-core-v2-live-benchmark.mjs`. It is intentionally excluded from `prebuild` and the normal test suite. It loads `.env.local` when present and requires both `GEMINI_API_KEY` and an explicit `PINO_RUN_LIVE_BENCHMARK=1` opt-in. It defaults to 10 cases to avoid unexpectedly running 165 provider calls.
 
 Example for a small smoke run:
 
