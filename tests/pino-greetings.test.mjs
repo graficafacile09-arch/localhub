@@ -44,3 +44,10 @@ test("Pino answers English social messages in English", () => {
   assert.match(rispostaRelazionalePino("You misunderstood me") ?? "", /may have misunderstood/i);
   assert.match(rispostaRelazionalePino("See you later") ?? "", /See you soon/i);
 });
+
+
+test("Pino recognizes more natural English invitations to chat", () => {
+  assert.match(rispostaRelazionalePino("I want to chat") ?? "", /happy to chat/i);
+  assert.match(rispostaRelazionalePino("I'd like to talk") ?? "", /happy to chat/i);
+  assert.match(rispostaRelazionalePino("Let's have a chat") ?? "", /happy to chat/i);
+});
