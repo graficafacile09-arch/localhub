@@ -42,6 +42,7 @@ import {
 } from "./prompt";
 import { callGeminiText } from "@/lib/ai/gemini-text";
 import { selezionaToolConGemini } from "./function-calling";
+import { functionCallingSelectionIsComplete } from "./function-calling-utils";
 import { isAttractionNameQuery, searchAttractions } from "./attrazioni";
 import type { NegozioRicerca, ProdottoRicerca } from "@/lib/ricerca-ai";
 import { pianoIntentoLocale } from "./local-intents";
@@ -1302,9 +1303,13 @@ export async function chatConAssistente(
       );
       directReply = selezione.directReply;
       invocazioni = selezione.tools;
-      // Una risposta Gemini valida completa la selezione anche se non contiene
-      // tool o testo: in quel caso il ramo conversazionale risponde senza searchAll.
-      selezioneOk = true;
+      // Una risposta vuota non basta per una richiesta concreta: manteniamo
+      // searchAll come fallback. Per messaggi generic/conversazionali evitiamo
+      // invece di avviare una ricerca non richiesta.
+      selezioneOk = functionCallingSelectionIsComplete(
+        selezione,
+        analisi.intent === "generic"
+      );
     } catch (error) {
       // Selezione fallita → ricerca completa di sicurezza sull'ultima domanda
       console.warn("[assistente] Selezione tool fallita, uso searchAll:", error);
