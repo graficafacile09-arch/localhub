@@ -59,14 +59,17 @@ function evidenceText(product: ProductEvidence): {
   identity: string;
   details: string;
 } {
-  ].filter(Boolean).join(" ").replace(/(?:nella )?selezione demo di [^.]+/gi, " ");
-  // Seller attribution is not product evidence. Excluding it structurally
-  // prevents a business name such as "Mani in Pasta" from creating a match.
-  const details = [
+  const identity = [product.name, product.category].filter(Boolean).join(" ");
+  // Seller attribution is not product evidence. Remove known catalog boilerplate
+  // and never include the sellerName field in the relevance text.
+  const detailParts = [
     product.description,
     product.fullDescription,
     ...(product.keywords ?? []),
-  ].filter(Boolean).join(" ").replace(/(?:nella )?selezione demo di [^.]+/gi, " ");
+  ].filter(Boolean);
+  const details = detailParts
+    .join(" ")
+    .replace(/(?:nella )?selezione demo di [^.]+/gi, " ");
   return { identity, details };
 }
 
