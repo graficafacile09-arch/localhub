@@ -11,7 +11,7 @@ function score(field) {
 }
 
 test("Pino Core v2 benchmark corpus contains 150 labelled requests", () => {
-  assert.equal(pinoBenchmarkCases.length, 150);
+  assert.equal(pinoBenchmarkCases.length, 165);
   assert.equal(new Set(pinoBenchmarkCases.map((item) => item.id)).size, 150);
   assert.ok(pinoBenchmarkCases.every((item) => item.text && item.expected.route && item.expected.surface));
 });
@@ -27,7 +27,7 @@ test("Pino Core v2 deterministic planner benchmark — report, do not hide misse
     item.actual.route !== item.expected.route || item.actual.surface !== item.expected.surface
   );
   const grouped = Object.groupBy(failures, (item) => item.group);
-  console.log("\nPINО CORE V2 BENCHMARK — DETERMINISTIC BASELINE");
+  console.log("\nPINO CORE V2 BENCHMARK — DETERMINISTIC BASELINE");
   console.log(JSON.stringify({
     cases: results.length,
     routeAccuracy: route,
@@ -45,5 +45,5 @@ test("Pino Core v2 deterministic planner benchmark — report, do not hide misse
 
   // This is a measurement test, not a quality gate: expected misses are data
   // to improve against, not a reason to conceal or silently skip hard cases.
-  assert.equal(results.length, 150);
+  assert.equal(results.length, 165);
 });
