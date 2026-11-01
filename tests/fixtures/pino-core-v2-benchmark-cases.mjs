@@ -1,6 +1,6 @@
 /**
  * Pino Core v2 benchmark corpus.
- * 150 hand-labelled, realistic utterances. Labels describe intent, not catalog availability.
+ * 165 hand-labelled, realistic utterances. Labels describe intent, not catalog availability.
  * Keep this dataset independent from production Pino and never use it to fabricate model scores.
  */
 const groups = [
@@ -96,6 +96,6 @@ export const pinoBenchmarkCases = groups.flatMap(([group, route, surface, uttera
   }))
 );
 
-if (pinoBenchmarkCases.length !== 150) {
-  throw new Error(`Benchmark corpus must contain 150 cases; found ${pinoBenchmarkCases.length}`);
+if (pinoBenchmarkCases.length !== 165) {
+  throw new Error(`Benchmark corpus must contain 165 cases; found ${pinoBenchmarkCases.length}`);
 }
