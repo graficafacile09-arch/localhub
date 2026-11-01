@@ -1,4 +1,4 @@
-import { rilevaLinguaPino } from "./understanding";
+import { rilevaLinguaConversazionePino, rilevaLinguaPino } from "./understanding";
 import { rispostaIdentitaPino } from "./identity";
 import { rispostaSalutoPino, rispostaRelazionalePino } from "./greetings";
 import { CATEGORIE_REGALO, isGenericGiftRequest, prodottoCorrispondeCategoriaRegalo } from "./gift-retrieval";
@@ -244,6 +244,7 @@ function pianoPredefinito(
 ): { directReply: string | null; tools: ToolInvocation[]; followUp?: FollowUp } | null {
   const utenti = storico.filter((m) => m.role === "user").map((m) => m.content);
   const ultimo = (utenti[utenti.length - 1] ?? "").trim().toLowerCase();
+  const inglese = rilevaLinguaConversazionePino(storico) === "en";
   if (!ultimo) return null;
 
   const RE_PIATTAFORMA =
@@ -276,11 +277,11 @@ function pianoPredefinito(
       ],
     };
   }
-  const RE_OFFERTE = /\bofferte\b|\bpromozion|\bsconti?\b|\bsaldo\b|\bsaldi\b/;
+  const RE_OFFERTE = /\bofferte\b|\bpromozion|\bsconti?\b|\bsaldo\b|\bsaldi\b|\boffers?\b|\bdeals?\b|\bdiscounts?\b|\bsales?\b/;
   const RE_EVENTI =
-    /\beventi?\b|weekend|fine settimana|manifestazion|in programma|cosa c'è|cosa c'e|cosa succede|\bmostra\b|\bconcerto\b|\bfiera\b/;
+    /\beventi?\b|weekend|fine settimana|manifestazion|in programma|cosa c'è|cosa c'e|cosa succede|\bmostra\b|\bconcerto\b|\bfiera\b|\bevents?\b|what'?s on|what is on|\bconcerts?\b|\bfestivals?\b|\bexhibitions?\b/;
   const RE_CHIACCHIERA =
-    /^(va bene|ok|okay|perfetto|grazie|grazie mille|ciao|buongiorno|buonasera|hi|hello|hey|thanks|thank you|perfect|good|great)$/;
+    /^(va bene|ok|okay|perfetto|grazie|grazie mille|ciao|buongiorno|buonasera|hi|hello|hey|thanks|thank you|perfect|good|great|goodbye|bye|see you|good morning|good evening|good afternoon|sure)$/;
 
   const rispostaIdentita = rispostaIdentitaPino(utenti[utenti.length - 1] ?? "");
   if (rispostaIdentita) {
@@ -305,8 +306,8 @@ function pianoPredefinito(
   }
   if (RE_CHIACCHIERA.test(ultimo)) {
     return {
-      directReply: /\b(hi|hello|hey|thanks|thank you|perfect|great|good)\b/i.test(ultimo)
-        ? "Sure! I’m here to help you find local shops, products, offers and events. What are you looking for?"
+      directReply: inglese
+        ? "Sure! I'm here to help you find local shops, products, offers and events. What are you looking for?"
         : "Va bene, sono qui! Posso aiutarti a trovare negozi, prodotti, offerte ed eventi nella tua città. Dimmi pure cosa cerchi.",
       tools: [],
     };
@@ -462,8 +463,9 @@ function pianoPredefinito(
   //     esattamente come prima dell'intent layer.
   if (analisi.intent === "generic") {
     return {
-      directReply:
-        "Dimmi cosa cerchi a Castrovillari: un prodotto, un negozio, un servizio o un'idea regalo. Più dettagli mi dai, più preciso sarò.",
+      directReply: inglese
+        ? "What are you looking for in Castrovillari — a product, a shop, a service or a gift idea? A few details will help me give you a more precise answer."
+        : "Dimmi cosa cerchi a Castrovillari: un prodotto, un negozio, un servizio o un'idea regalo. Più dettagli mi dai, più preciso sarò.",
       tools: [],
     };
   }
@@ -1031,11 +1033,12 @@ export async function chatConAssistente(
   // Cap sulla domanda: evita abuso di token e superfici di prompt injection
   // (la storia è già troncata a 300 caratteri per messaggio).
   const domanda = (ultimo && ultimo.role === "user" ? ultimo.content : "").slice(0, 500);
+  const linguaConversazione = rilevaLinguaConversazionePino(storico);
 
   // Fast path conversazionale: non attendere memoria, planner semantico o Gemini
   // per saluti, domande personali e inviti a chiacchierare.
   const identitaDiretta = rispostaIdentitaPino(domanda);
-  const rispostaDiretta = identitaDiretta ?? rispostaRelazionalePino(domanda) ?? rispostaSalutoPino(domanda);
+  const rispostaDiretta = identitaDiretta ?? rispostaRelazionalePino(domanda, linguaConversazione) ?? rispostaSalutoPino(domanda);
   if (rispostaDiretta) {
     return {
       risposta: rispostaDiretta,
@@ -1063,15 +1066,18 @@ export async function chatConAssistente(
   // Il filtro d'intento evita di deviare qui normali ricerche di prodotti o servizi.
   const luoghi = searchAttractions(domanda, 6);
   const richiestaTuristica =
-    (/\b(muse[oi]|monument[oi]|attrazion[ei]|cosa vedere|luoghi da visitare|luoghi da vedere|visitare|palazz[oi]|castell[oi]|chies[ae]|teatr[oi]|biblioteca|archivio|borg[oh]i?|dintorni|centro storico|festival|mostre|parco|itinerario|turistic[oa])\b/i.test(domanda)) || isAttractionNameQuery(domanda);
+    (/\b(muse[oi]|monument[oi]|attrazion[ei]|cosa vedere|luoghi da visitare|luoghi da vedere|visitare|palazz[oi]|castell[oi]|chies[ae]|teatr[oi]|biblioteca|archivio|borg[oh]i?|dintorni|centro storico|festival|mostre|parco|itinerario|turistic[oa]|museums?|monuments?|attractions?|things to see|places to visit|visit|palaces?|castles?|churches|theatres?|libraries|archives?|villages?|surroundings|historic center|historic centre|exhibitions?|parks?|itinerary|tourism|tourist)\b/i.test(domanda)) || isAttractionNameQuery(domanda);
   if (richiestaTuristica) {
     if (luoghi.length > 0) {
       const elenco = luoghi.map((luogo) => {
         const maps = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(luogo.queryMaps);
-        return `- **${luogo.nome}** — ${luogo.tipo}. ${luogo.descrizione} [Apri su Google Maps](${maps})${luogo.url ? ` · [Fonte / sito di riferimento](${luogo.url})` : ""}`;
+        return `- **${luogo.nome}** — ${luogo.tipo}. ${luogo.descrizione} [${linguaConversazione === "en" ? "Open in Google Maps" : "Apri su Google Maps"}](${maps})${luogo.url ? ` · [${linguaConversazione === "en" ? "Official source / website" : "Fonte / sito di riferimento"}](${luogo.url})` : ""}`;
       }).join("\n");
+      const rispostaAttrazioni = linguaConversazione === "en"
+        ? `I searched InCittà's Attractions guide. Here are the most relevant results:\n\n${elenco}\n\nFor opening hours, availability and event dates, always check the latest official sources.`
+        : `Ho cercato nella guida Attrazioni di InCittà. Ecco i risultati più pertinenti:\n\n${elenco}\n\nPer orari, aperture e date degli eventi, verifica sempre le fonti ufficiali aggiornate.`;
       return {
-        risposta: `Ho cercato nella guida Attrazioni di InCittà. Ecco i risultati più pertinenti:\n\n${elenco}\n\nPer orari, aperture e date degli eventi, verifica sempre le fonti ufficiali aggiornate.`,
+        risposta: rispostaAttrazioni,
         negozi: [],
         prodotti: [],
         processingMs: Date.now() - inizio,
