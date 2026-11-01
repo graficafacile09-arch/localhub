@@ -336,6 +336,24 @@ function pianoPredefinito(
       // diverse da quelle già elencate.
       const limiteAlto = followUp.tipo === "altro" ? 20 : undefined;
       const giaMostrati = followUp.tipo === "altro" ? nomiGiaMostrati(storico) : [];
+
+      // Mantieni la superficie PRODOTTI anche nei follow-up di una ricerca
+      // alimentare esplicita: "Show me more" non deve trasformarsi in negozi.
+      if (isExplicitFoodProductRequest(soggetto)) {
+        return {
+          directReply: null,
+          tools: [{
+            tool: "searchProducts",
+            params: {
+              query: normalizzaQueryCatalogo(soggetto),
+              limit: limiteAlto ?? 8,
+              ...(limiteAlto ? { escludiNomi: giaMostrati } : {}),
+            },
+          }],
+          followUp,
+        };
+      }
+
       let tools: ToolInvocation[] = [];
       if (analisiPrec.intent !== "generic" && analisiPrec.confidence !== "bassa") {
         tools = pianoIntento(analisiPrec, soggetto).map((t) => ({
