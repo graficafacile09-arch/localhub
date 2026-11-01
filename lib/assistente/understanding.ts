@@ -27,6 +27,9 @@ export function rilevaLinguaPino(testo: string, fallback: PinoLanguage = "it"): 
     .replace(/[’‘]/g, "'");
   if (!q.trim()) return fallback;
 
+  if (/\\b(?:cosa cerchi|come posso|puoi aiutarmi|mi puoi aiutare|vorrei sapere|dimmi|che cosa|dove posso|quanto costa|quanto costano|va bene|tutto bene|non trovo|non ho|cerco un|cerco una)\\b/.test(q)) return "it";
+  if (/\\b(?:what do you|how do i|can you help|could you|would you|i'?m looking|i want|i need|please find|show me|tell me|where can i|what'?s up|how much|good morning|good afternoon)\\b/.test(q)) return "en";
+
   const parole = q.match(/[a-z]+/g) ?? [];
   const it = new Set([
     "ciao", "salve", "buongiorno", "buonasera", "cerco", "cerca", "trovami", "trova",
@@ -36,6 +39,9 @@ export function rilevaLinguaPino(testo: string, fallback: PinoLanguage = "it"): 
     "vicino", "grazie", "per", "una", "uno", "del", "della", "dei", "delle", "che",
     "come", "stai", "vuoi", "parliamo", "chiacchiere", "scusa", "arrivederci",
     "offerte", "eventi", "farmacia", "farmacie", "meteo", "oggi", "domani",
+    "cosa", "cerchi", "dove", "perche", "puoi", "potresti", "aiutami", "aiutarti",
+    "dimmi", "sono", "sei", "questo", "questa", "questi", "queste", "altro",
+    "altra", "tutto", "bene", "va", "posso", "trovare", "costano", "aprono",
   ]);
   const en = new Set([
     "hi", "hello", "hey", "please", "find", "show", "looking", "want", "need", "have",
@@ -50,7 +56,9 @@ export function rilevaLinguaPino(testo: string, fallback: PinoLanguage = "it"): 
     "tell", "good", "morning", "evening", "afternoon", "night", "goodbye", "bye",
     "see", "later", "perfect", "great", "okay", "only", "offers", "deals", "discounts",
     "events", "pharmacy", "pharmacies", "weather", "forecast", "today", "tomorrow",
-    "other", "more", "less", "on", "duty",
+    "other", "more", "less", "on", "duty", "up", "sure", "fine", "alright",
+    "recommend", "suggest", "help", "restaurants", "restaurant", "cafes", "cafe",
+    "food", "drinks", "price", "prices", "cheap", "expensive", "available",
   ]);
   const score = (set: Set<string>) => parole.reduce((n, p) => n + (set.has(p) ? 1 : 0), 0);
   const si = score(it);
