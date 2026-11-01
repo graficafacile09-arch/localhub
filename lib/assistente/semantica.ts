@@ -211,6 +211,7 @@ const CANONICI_RICERCA: Array<{ pattern: RegExp; termine: string; intent: PinoIn
   { pattern: /\b(?:arancia|arance)\b/i, termine: "arancia", intent: "food" },
   { pattern: /\b(?:limone|limoni)\b/i, termine: "limone", intent: "food" },
   { pattern: /\b(?:banana|banane)\b/i, termine: "banana", intent: "food" },
+  { pattern: /\borologio|orologi\b/i, termine: "orologio", intent: "product" },
   { pattern: /\btelefono|telefoni|telefonino|telefonini|cellulare|cellulari|smartphone\b/i, termine: "telefono", intent: "product" },
   { pattern: /\bscarpa|scarpe|scarpina|scarpine\b/i, termine: "scarpe", intent: "product" },
   { pattern: /\bmaglietta|magliette|maglia|maglie\b/i, termine: "maglia", intent: "product" },
@@ -229,6 +230,22 @@ function distanzaLevenshtein(a: string, b: string): number {
   }
   return prev[b.length];
 }
+
+// Parole funzionali e verbi frequenti: non sono refusi. In particolare
+// "voglio" è a distanza di edit ridotta da "aglio": correggerlo in automatico
+// trasformava una richiesta di orologio in una ricerca alimentare.
+const PAROLE_PROTETTE_CORREZIONE = new Set([
+  "voglio", "vorrei", "cerco", "cerca", "cercando", "trovami", "trova",
+  "serve", "servirebbe", "ho", "hai", "ha", "hanno", "abbiamo", "avete",
+  "sono", "siamo", "siete", "essere", "avere", "faccio", "fare", "dammi",
+  "fammi", "puoi", "potresti", "devo", "preferisco",
+  "per", "con", "senza", "sotto", "sopra", "entro", "fino", "massimo",
+  "minimo", "budget", "euro", "euros", "eur", "una", "uno", "un",
+  "del", "della", "dello", "dei", "degli", "delle", "alla", "allo",
+  "alle", "agli", "come", "dove", "quale", "quali", "quanto", "quanta",
+  "che", "non", "anche", "oppure", "oppur", "ma",
+  "the", "a", "an", "i", "you", "want", "need", "have", "with",
+]);
 
 const VOCABOLARIO_PINO_BASE: Array<[string, string]> = [
   ["birra", "birra"], ["birretta", "birra"], ["birrette", "birra"],
@@ -278,7 +295,7 @@ function correggiErroriBattitura(query: string): string {
   return query.split(/(\s+)/).map((part) => {
     if (!/^[A-Za-zÀ-ÖØ-öø-ÿ]+$/.test(part)) return part;
     const lower = part.toLocaleLowerCase("it-IT");
-    if (lower.length < 4) return part;
+    if (lower.length < 4 || PAROLE_PROTETTE_CORREZIONE.has(lower)) return part;
     let best = lower;
     let bestDistance = Infinity;
     for (const [word, canonical] of VOCABOLARIO_PINO) {
@@ -486,9 +503,13 @@ export function usaFastPathSemantico(query: string, analisi: PinoIntentAnalysis)
 }
 
 export function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): PinoSemanticPlan | null {
-  const q = correggiErroriBattitura(normalizzaRichiesta(query)).trim();
+  const originale = normalizzaRichiesta(query).trim();
+  const q = correggiErroriBattitura(originale).trim();
   if (!q) return null;
-  const match = CANONICI_RICERCA.find((x) => x.pattern.test(q));
+  // Un termine realmente digitato dall'utente ha precedenza su qualsiasi
+  // correzione fuzzy di un'altra parola della frase (es. "voglio" -> "aglio").
+  const match = CANONICI_RICERCA.find((x) => x.pattern.test(originale))
+    ?? CANONICI_RICERCA.find((x) => x.pattern.test(q));
   const haEsclusioneAlcol = /\b(?:non|senza)\s+(?:alcol(?:ica|ico)?|alcol)\b|\banalcolic(?:a|o|he|i)\b/i.test(q);
   const haPrezzo = /\b(?:budget(?:\s+di)?|sotto|sopra|massimo|minimo|meno di|piu di|più di|entro|fino a|tra|under|below|up to|over|above|more than|less than|between)\b/i.test(q) || /\b(?:ho|con|dispongo di|a disposizione(?: di)?)\s*(?:€\s*)?\d+(?:[.,]\d+)?\s*(?:euro|euros|eur)\b/i.test(q) || /(?:€\s*)\d+(?:[.,]\d+)?|\b\d+(?:[.,]\d+)?\s*(?:euro|euros|eur)\b/i.test(q);
   if (!match && !haEsclusioneAlcol && !haPrezzo && analisi.confidence === "bassa") return null;
