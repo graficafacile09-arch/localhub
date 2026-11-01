@@ -15,6 +15,8 @@ const promptSource = readFileSync(
 );
 
 test("English budget and alternative wording reduce to the catalog subject", () => {
+  assert.equal(rilevaLinguaPino("I'm looking for pasta under 5 euros"), "en");
+  assert.equal(normalizzaQueryCatalogo("I'm looking for pasta under 5 euros"), "pasta");
   const request = "I want a watch under 100 euros, or something similar";
   assert.equal(rilevaLinguaPino(request), "en");
   assert.equal(normalizzaQueryCatalogo(request), "orologio");

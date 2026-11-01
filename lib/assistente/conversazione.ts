@@ -58,10 +58,15 @@ function contaParole(q: string): number {
   return q.split(/[^a-z0-9']+/).filter(Boolean).length;
 }
 
+// Full polite English follow-ups are allowed beyond the short-fragment limit
+// only when the whole message is an explicit request to show more/cheaper options.
+const FOLLOWUP_INGLESE_ESTESO =
+  /^(?:can|could|would)\s+you\s+(?:please\s+)?(?:show|find|give)\s+me\s+(?:some\s+)?(?:cheaper|cheapest|less\s+expensive|lower[- ]priced|more\s+affordable|more)(?:\s+(?:options?|alternatives?))?$/i;
+
 /** Riconosce un follow-up breve, o null se il messaggio non lo è. */
 export function rilevaFollowUp(query: string): FollowUp | null {
-  const q = normalizzaRichiesta(query ?? "");
-  if (!q || contaParole(q) > MAX_PAROLE_FOLLOWUP) return null;
+  const q = normalizzaRichiesta(query ?? "").replace(/[?.!]+$/g, "").trim();
+  if (!q || (contaParole(q) > MAX_PAROLE_FOLLOWUP && !FOLLOWUP_INGLESE_ESTESO.test(q))) return null;
   for (const s of SEGNALI) {
     const m = q.match(s.re);
     if (m) return { tipo: s.tipo, segnale: m[0] };
