@@ -151,6 +151,17 @@ export function planPinoCoreRequest(input: string): PinoCorePlan {
     return { ...base, route: "attractions", surface: "none", confidence: "high", reason: "attractions_intent" };
   }
 
+  if (GENERIC_VAGUE.test(original)) {
+    return {
+      ...base,
+      route: "unknown",
+      surface: "none",
+      confidence: "low",
+      needsClarification: true,
+      reason: "generic_request_without_search_subject",
+    };
+  }
+
   const price = extractPrice(original);
   const openNow = richiestaApertaOra(original);
   const withoutConstraints = stripConstraints(original);
