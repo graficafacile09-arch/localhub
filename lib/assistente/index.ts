@@ -1109,7 +1109,9 @@ function rispostaFarmacieDeterministica(
   return prefisso + elenco;
 }
 
-// ─── Orchestratore export async function chatConAssistente(
+// ─── Orchestratore principale ───────────────────────────────────────────────
+
+export async function chatConAssistente(
   messages: MessaggioAssistente[]
 ): Promise<RispostaAssistente> {
   const inizio = Date.now();
