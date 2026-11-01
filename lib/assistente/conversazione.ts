@@ -38,19 +38,19 @@ export type FollowUp = {
 const MAX_PAROLE_FOLLOWUP = 5;
 
 const SEGNALI: { tipo: FollowUpTipo; re: RegExp }[] = [
-  // "solo aperti ora", "quelli aperti", "aperto ora", "solo aperte"
-  { tipo: "aperti", re: /\b(?:solo\s+)?(?:quelli\s+|quelle\s+)?apert(?:o|i|a|e)\b|\bapert[eo]\s+ora\b/ },
-  // "solo economici", "i più economici", "poco caro", "a basso prezzo", "low cost"
+  // Open now: Italian and English forms.
+  { tipo: "aperti", re: /\b(?:solo\s+)?(?:quelli\s+|quelle\s+)?apert(?:o|i|a|e)\b|\bapert[eo]\s+ora\b|\b(?:only\s+)?open(?:\s+ones)?\s*(?:now)?\b|\bonly\s+the\s+open\s+ones\b/ },
+  // Lower-priced options: Italian and English forms.
   {
     tipo: "economici",
-    re: /\b(?:solo\s+)?(?:pi[uù]\s+)?economic(?:i|he)\b|\bpoco\s+car[oi]\b|\ba\s+basso\s+prezzo\b|\blow\s?cost\b/,
+    re: /\b(?:solo\s+)?(?:pi[uù]\s+)?economic(?:i|he)\b|\bpoco\s+car[oi]\b|\ba\s+basso\s+prezzo\b|\blow\s?cost\b|\bcheaper\b|\bcheapest\b|\bless\s+expensive\b|\blower[- ]priced\b|\bmore\s+affordable\b/,
   },
-  // "solo vicino", "vicino a me", "nelle vicinanze"
-  { tipo: "vicino", re: /\b(?:solo\s+)?vicin[oi]\b|\bvicino\s+a\s+me\b|\b(?:nelle?\s+)?vicinanze\b/ },
-  // "fammi vedere altro", "mostrami altro", "alternative", "ancora", "di più"
+  // Nearby options: Italian and English forms.
+  { tipo: "vicino", re: /\b(?:solo\s+)?vicin[oi]\b|\bvicino\s+a\s+me\b|\b(?:nelle?\s+)?vicinanze\b|\bnearby\b|\bnear\s+me\b|\bcloser\b/ },
+  // More options: Italian and English forms.
   {
     tipo: "altro",
-    re: /\bfammi\s+vedere\s+altro\b|\bmostrami\s+altro\b|\bvediamo\s+altro\b|\baltro\b|\baltre\b|\baltri\b|\balternativ[ae]\b|\bancora\b|\bdi\s+pi[uù]\b/,
+    re: /\bfammi\s+vedere\s+altro\b|\bmostrami\s+altro\b|\bvediamo\s+altro\b|\baltro\b|\baltre\b|\baltri\b|\balternativ[ae]\b|\bancora\b|\bdi\s+pi[uù]\b|\bshow\s+me\s+more\b|\bmore\s+options\b|\bany\s+others?\b|\bother\s+options\b|\bsomething\s+else\b|\banother\s+one\b/,
   },
 ];
 
