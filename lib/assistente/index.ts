@@ -901,35 +901,48 @@ async function recuperaAlternativeSemantiche(
   const prodottiTrovati: ProdottoRicerca[] = [];
   const negoziTrovati: NegozioRicerca[] = [];
 
-  // Prima allarga il concetto sullo stesso tipo di superficie.
-  if (piano.surface === "products" || piano.surface === "both") {
-    for (const q of candidati) {
-      const trovati = await searchProducts(q, { ...baseParams, query: q });
-      for (const p of trovati) {
-        if (!prodottiTrovati.some((x) => x.id === p.id)) prodottiTrovati.push(p);
-      }
-      if (prodottiTrovati.length >= 8) break;
+  // Il recupero parte solo dopo uno zero: non deve trasformarsi in una lunga
+  // catena di query. Usiamo un numero massimo di varianti, tutte in parallelo,
+  // e isoliamo gli errori: una variante fallita non annulla gli altri risultati.
+  const cercaProdotti = piano.surface === "products" || piano.surface === "both";
+  const cercaNegozi =
+    piano.surface === "stores" || piano.surface === "both" || analisi.intent === "product";
+  const candidatiProdotti = cercaProdotti ? candidati.slice(0, 4) : [];
+  const candidatiNegozi = cercaNegozi ? candidati.slice(0, 2) : [];
+
+  const [esitiProdotti, esitiNegozi] = await Promise.all([
+    Promise.allSettled(
+      candidatiProdotti.map((q) => searchProducts(q, { ...baseParams, query: q }))
+    ),
+    Promise.allSettled(
+      candidatiNegozi.map((q) =>
+        searchStores(q, {
+          citta: piano.city ?? undefined,
+          esclusioni,
+          apertiOra: piano.openNow || undefined,
+          limit: 6,
+        })
+      )
+    ),
+  ]);
+
+  for (const esito of esitiProdotti) {
+    if (esito.status !== "fulfilled") {
+      console.warn("[assistente] variante di recupero prodotti non riuscita");
+      continue;
+    }
+    for (const prodotto of esito.value) {
+      if (!prodottiTrovati.some((x) => x.id === prodotto.id)) prodottiTrovati.push(prodotto);
     }
   }
 
-  // Se l'utente sta cercando dove reperire qualcosa, cerca anche attività
-  // pertinenti. Non viene presentato come prodotto trovato: è un'alternativa
-  // concreta e trasparente.
-  if (
-    (piano.surface === "stores" || piano.surface === "both" || analisi.intent === "product") &&
-    negoziTrovati.length < 6
-  ) {
-    for (const q of candidati.slice(0, 3)) {
-      const trovati = await searchStores(q, {
-        citta: piano.city ?? undefined,
-        esclusioni,
-        apertiOra: piano.openNow || undefined,
-        limit: 6,
-      });
-      for (const n of trovati) {
-        if (!negoziTrovati.some((x) => x.id === n.id)) negoziTrovati.push(n);
-      }
-      if (negoziTrovati.length >= 6) break;
+  for (const esito of esitiNegozi) {
+    if (esito.status !== "fulfilled") {
+      console.warn("[assistente] variante di recupero negozi non riuscita");
+      continue;
+    }
+    for (const negozio of esito.value) {
+      if (!negoziTrovati.some((x) => x.id === negozio.id)) negoziTrovati.push(negozio);
     }
   }
 
