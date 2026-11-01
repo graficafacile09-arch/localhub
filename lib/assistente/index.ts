@@ -1322,6 +1322,7 @@ export async function chatConAssistente(
   // aggiuntive sulle attività, senza sostituire il piano principale.
   const usaMemoriaSuRicerca = !directReply &&
     !followUp &&
+    !isExplicitFoodProductRequest(domanda) &&
     memoria.length > 0 &&
     !invocazioni.some((t) => t.tool === "getWeather" || t.tool === "searchPharmacies");
 
