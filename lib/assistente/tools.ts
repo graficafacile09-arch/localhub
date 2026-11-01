@@ -15,7 +15,7 @@
  * @module lib/assistente/tools
  */
 
-import { cercaNegozi, cercaProdotti, getCategorieConNegozi } from "@/lib/negozi";
+import { cercaNegozi, getCategorieConNegozi } from "@/lib/negozi";
 import { search as searchCatalogoPubblico } from "@/lib/search-service";
 import { getOffertePubbliche } from "@/lib/offerte";
 import { getEventiPubblici } from "@/lib/eventi";
