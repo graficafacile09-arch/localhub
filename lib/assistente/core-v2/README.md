@@ -37,7 +37,7 @@ The project Pino test suite also includes these cases through `npm run test:pino
 
 ## Next milestones
 
-1. Build a labelled corpus of at least 150 realistic requests, including typos, colloquial language, elliptical follow-ups, mixed intents and explicit constraints.
+1. Build a labelled corpus of at least 165 realistic requests, including typos, colloquial language, elliptical follow-ups, mixed intents and explicit constraints.
 2. Compare the current planner, deterministic v2 and AI v2 against the same expected structured plans.
 3. Report route accuracy, subject/query accuracy, constraint extraction, false-positive searches, clarification quality, latency and provider fallback rate.
 4. Add conversation-state merging and explicit uncertainty handling.
