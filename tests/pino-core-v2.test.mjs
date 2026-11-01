@@ -41,32 +41,87 @@ test("store requests are routed to stores rather than product search", () => {
   assert.equal(plan.openNow, true);
 });
 
+test("commercial and professional services are routed to stores", () => {
+  for (const text of [
+    "Dove trovo un commercialista",
+    "Mi serve un fotografo",
+    "Mi trovi un sarto",
+    "Show me electricians",
+    "I need a cleaning service",
+  ]) {
+    const plan = planPinoCoreRequest(text);
+    assert.equal(plan.route, "catalog", text);
+    assert.equal(plan.surface, "stores", text);
+  }
+});
+
 test("explicit food shopping request is routed to products", () => {
   const plan = planPinoCoreRequest("Mi serve del pane");
   assert.equal(plan.route, "catalog");
   assert.equal(plan.surface, "products");
 });
 
+test("search framing is removed while the actual product subject is preserved", () => {
+  const cases = [
+    ["Mi trovi del pane", "pane"],
+    ["Vorrei comprare olio extravergine", "olio extravergine"],
+    ["Sto cercando formaggio", "formaggio"],
+    ["Mi servono scarpe", "scarpe"],
+    ["Dove compro un portafoglio", "portafoglio"],
+    ["Find a pair of jeans", "jeans"],
+  ];
+  for (const [text, expected] of cases) {
+    const plan = planPinoCoreRequest(text);
+    assert.equal(plan.route, "catalog", text);
+    assert.equal(plan.query, expected, text);
+    assert.equal(plan.subject, expected.split(" ")[0], text);
+  }
+});
+
 test("attractions requests never fall through to product search", () => {
-  const plan = planPinoCoreRequest("Cosa posso visitare a Castrovillari?");
-  assert.equal(plan.route, "attractions");
-  assert.equal(plan.surface, "none");
+  for (const text of [
+    "Cosa posso visitare a Castrovillari?",
+    "Quali luoghi interessanti ci sono?",
+    "Places to visit nearby",
+  ]) {
+    const plan = planPinoCoreRequest(text);
+    assert.equal(plan.route, "attractions", text);
+    assert.equal(plan.surface, "none", text);
+  }
 });
 
 test("events requests are routed independently from attractions", () => {
-  const plan = planPinoCoreRequest("Quali concerti ci sono questo weekend?");
-  assert.equal(plan.route, "events");
+  for (const text of [
+    "Quali concerti ci sono questo weekend?",
+    "Cerca le sagre",
+    "Cosa succede stasera in città?",
+    "Any concerts this weekend?",
+  ]) {
+    assert.equal(planPinoCoreRequest(text).route, "events", text);
+  }
 });
 
 test("weather and pharmacy requests use their dedicated routes", () => {
   assert.equal(planPinoCoreRequest("Che tempo fa domani?").route, "weather");
+  assert.equal(planPinoCoreRequest("Pioverà oggi?").route, "weather");
   assert.equal(planPinoCoreRequest("Quale farmacia è di turno?").route, "pharmacies");
 });
 
 test("conversation messages do not trigger a catalog search", () => {
-  const plan = planPinoCoreRequest("Ciao Pino, come stai?");
-  assert.equal(plan.route, "conversation");
-  assert.equal(plan.surface, "none");
+  for (const text of [
+    "Ciao Pino, come stai?",
+    "Buongiorno Pino",
+    "Come va oggi?",
+    "Grazie mille",
+    "Perfetto, grazie",
+    "Hey, how are you?",
+    "Thanks for your help",
+    "Tell me a joke",
+  ]) {
+    const plan = planPinoCoreRequest(text);
+    assert.equal(plan.route, "conversation", text);
+    assert.equal(plan.surface, "none", text);
+  }
 });
 
 test("unclear requests ask for clarification instead of launching a random search", () => {
