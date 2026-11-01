@@ -1302,7 +1302,9 @@ export async function chatConAssistente(
       );
       directReply = selezione.directReply;
       invocazioni = selezione.tools;
-      selezioneOk = selezione.tools.length > 0 || Boolean(selezione.directReply);
+      // Una risposta Gemini valida completa la selezione anche se non contiene
+      // tool o testo: in quel caso il ramo conversazionale risponde senza searchAll.
+      selezioneOk = true;
     } catch (error) {
       // Selezione fallita → ricerca completa di sicurezza sull'ultima domanda
       console.warn("[assistente] Selezione tool fallita, uso searchAll:", error);
