@@ -18,7 +18,7 @@
  */
 
 import type { MessaggioAssistente } from "./index";
-import { rilevaLinguaPino } from "./understanding";
+import { rilevaLinguaConversazionePino } from "./understanding";
 import type {
   OffertaAssistente,
   EventoAssistente,
@@ -54,12 +54,17 @@ export function buildToolSelectionPrompt(
   const storico = buildHistoryText(messages);
   const ultimo = messages[messages.length - 1];
   const domanda = ultimo && ultimo.role === "user" ? ultimo.content : "";
+  const linguaConversazione = rilevaLinguaConversazionePino(messages);
   // Pino Intent Layer: l'intento riconosciuto guida le PRIORITÀ del planner.
   const bloccoIntento = intentHint
     ? `\nINTENTO RILEVATO (Pino Intent Layer): ${intentHint}\nUsa l'intento per PRIORITIZZARE il recupero: food → ristorazione/pizzerie/alimentari/gastronomia; drink → bar/bevande; service → attività e servizi; gift → idee regalo; product → prodotti diretti; generic → nessuna ricerca forzata.\n`
     : "";
 
-  return `Sei il motore di pianificazione di Pino, l'assistente AI di InCittà.online. Decidi quali dati recuperare dal database pubblico usando tutto il contesto. Pino ha un'identità stabile: domande come "chi sei?", "come ti chiami?", "who are you?" o "what is your name?" devono ricevere una risposta diretta sull'identità, senza ricerche nel catalogo. Per richieste concrete scegli i tool più pertinenti. Se prima si parlava di TV e ora l'utente dice "sotto 500 euro", la query resta "tv" e maxPrice=500.
+  const istruzioneLingua = linguaConversazione === "en"
+    ? "RESPONSE LANGUAGE: English. Keep all directReply text in natural English, including short conversational replies.\\n\\n"
+    : "LINGUA RISPOSTA: italiano. Mantieni directReply in italiano naturale.\\n\\n";
+
+  return `${istruzioneLingua}Sei il motore di pianificazione di Pino, l'assistente AI di InCittà.online. Decidi quali dati recuperare dal database pubblico usando tutto il contesto. Pino ha un'identità stabile: domande come "chi sei?", "come ti chiami?", "who are you?" o "what is your name?" devono ricevere una risposta diretta sull'identità, senza ricerche nel catalogo. Per richieste concrete scegli i tool più pertinenti. Se prima si parlava di TV e ora l'utente dice "sotto 500 euro", la query resta "tv" e maxPrice=500.
 
 CONVERSAZIONE RECENTE:
 ${storico}
@@ -220,7 +225,7 @@ export function buildFinalPrompt(
   const ultimo = messages[messages.length - 1];
   const domanda = ultimo && ultimo.role === "user" ? ultimo.content : "";
 
-  const lingua = rilevaLinguaPino(domanda) === "en" ? "English" : "Italian";
+  const lingua = rilevaLinguaConversazionePino(messages) === "en" ? "English" : "Italian";
   const istruzioneFinale = lingua === "English"
     ? "You are Pino, InCittà.online's AI assistant. Answer in natural English using ONLY the data above. Be proactive, concise, and useful: understand the goal, explain why real results fit, compare meaningful trade-offs, preserve constraints, and suggest one relevant next step. If asked who you are, say your name is Pino and explain your role. Never invent data or claim actions you cannot perform."
     : "Sei Pino, l'assistente AI di InCittà.online. Rispondi in italiano naturale usando SOLO i dati sopra. Sii proattivo, concreto e utile: comprendi l'obiettivo, spiega perché i risultati reali sono pertinenti, confronta le differenze importanti, rispetta i vincoli e suggerisci un passo successivo utile. Se ti chiedono chi sei, dì che ti chiami Pino e spiega il tuo ruolo. Non inventare dati e non dichiarare azioni che non puoi eseguire.";
