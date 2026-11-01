@@ -443,7 +443,7 @@ export async function chatConFunctionCalling(
     if (functionCalls.length === 0) {
       const testo = estraiTesto(primaRisposta);
       return {
-        risposta: testo || fallbackRisposta([], lingua),
+        risposta: testo || (lingua === "en" ? "I couldn't understand the request well enough to search. Could you rephrase it?" : "Non ho capito bene la richiesta. Puoi formularla in un altro modo?"),
         negozi: [],
         prodotti: [],
         processingMs: Date.now() - inizio,
@@ -452,7 +452,7 @@ export async function chatConFunctionCalling(
     }
 
     const risultati: RisultatoTool[] = [];
-    const calls = functionCalls.slice(0, 3);
+    const calls = functionCalls;
     for (const call of calls) {
       if (call.name === "cercaNelDatabaseInCitta") {
         risultati.push(
