@@ -9,6 +9,7 @@ export type AmbitoRicercaPino =
 
 export type ArgomentiRicercaPino = {
   ricerca: string;
+  varianti?: string[];
   ambito: AmbitoRicercaPino;
   categoria?: string;
   tipo?: string;
@@ -48,6 +49,9 @@ export function normalizzaArgomentiRicercaPino(
   const ambito = ambiti.includes(args.ambito as AmbitoRicercaPino)
     ? (args.ambito as AmbitoRicercaPino)
     : "tutto";
+  const varianti = Array.isArray(args.varianti)
+    ? Array.from(new Set(args.varianti.filter((v): v is string => typeof v === "string").map((v) => v.trim().slice(0, 100)).filter(Boolean))).slice(0, 3)
+    : undefined;
   const escludiNomi = Array.isArray(args.escludiNomi)
     ? args.escludiNomi
         .filter((v): v is string => typeof v === "string")
@@ -58,6 +62,7 @@ export function normalizzaArgomentiRicercaPino(
 
   return {
     ricerca: testoLimitato(args.ricerca, 120) ?? "",
+    varianti,
     ambito,
     categoria: testoLimitato(args.categoria, 80),
     tipo: testoLimitato(args.tipo, 80),
