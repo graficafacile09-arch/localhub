@@ -22,28 +22,7 @@ import { searchAttractions } from "./attrazioni";
 import { SYSTEM_PROMPT } from "./prompt";
 import { rilevaLinguaConversazionePino } from "./understanding";
 import type { MessaggioAssistente, RispostaAssistente } from "./index";
-
-type AmbitoRicerca =
-  | "prodotti"
-  | "negozi_servizi"
-  | "offerte"
-  | "eventi"
-  | "attrazioni"
-  | "categorie"
-  | "tutto";
-
-type ArgomentiRicerca = {
-  ricerca: string;
-  ambito: AmbitoRicerca;
-  categoria?: string;
-  tipo?: string;
-  citta?: string;
-  prezzoMassimo?: number;
-  prezzoMinimo?: number;
-  apertiOra?: boolean;
-  limite?: number;
-  escludiNomi?: string[];
-};
+import { normalizzaArgomentiRicercaPino } from "./function-calling-contract";
 
 type RisultatoTool = {
   ok: boolean;
@@ -170,55 +149,8 @@ ARCHITETTURA A STRUMENTI — REGOLE OBBLIGATORIE:
 - Non mostrare all'utente nomi interni degli strumenti, JSON o dettagli tecnici.
 `;
 
-function testoLimitato(value: unknown, max = 120): string | undefined {
-  if (typeof value !== "string") return undefined;
-  const v = value.trim().slice(0, max);
-  return v || undefined;
-}
-
-function numeroLimitato(value: unknown, min: number, max: number): number | undefined {
-  const n = typeof value === "number" ? value : Number(value);
-  if (!Number.isFinite(n) || n < min || n > max) return undefined;
-  return n;
-}
-
-function normalizzaArgomenti(args: Record<string, unknown>): ArgomentiRicerca {
-  const ambiti: AmbitoRicerca[] = [
-    "prodotti",
-    "negozi_servizi",
-    "offerte",
-    "eventi",
-    "attrazioni",
-    "categorie",
-    "tutto",
-  ];
-  const ambito = ambiti.includes(args.ambito as AmbitoRicerca)
-    ? (args.ambito as AmbitoRicerca)
-    : "tutto";
-  const escludiNomi = Array.isArray(args.escludiNomi)
-    ? args.escludiNomi
-        .filter((v): v is string => typeof v === "string")
-        .map((v) => v.trim().slice(0, 100))
-        .filter(Boolean)
-        .slice(0, 20)
-    : undefined;
-
-  return {
-    ricerca: testoLimitato(args.ricerca, 120) ?? "",
-    ambito,
-    categoria: testoLimitato(args.categoria, 80),
-    tipo: testoLimitato(args.tipo, 80),
-    citta: testoLimitato(args.citta, 80),
-    prezzoMassimo: numeroLimitato(args.prezzoMassimo, 0, 1_000_000),
-    prezzoMinimo: numeroLimitato(args.prezzoMinimo, 0, 1_000_000),
-    apertiOra: args.apertiOra === true,
-    limite: numeroLimitato(args.limite, 1, 20) ?? 8,
-    escludiNomi,
-  };
-}
-
 async function eseguiRicercaDatabase(argsRaw: Record<string, unknown>): Promise<RisultatoTool> {
-  const args = normalizzaArgomenti(argsRaw);
+  const args = normalizzaArgomentiRicercaPino(argsRaw);
   const query = args.ricerca ?? "";
   const limite = args.limite ?? 8;
   const filtri: ToolParams = {
