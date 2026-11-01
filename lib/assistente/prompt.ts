@@ -61,7 +61,7 @@ export function buildToolSelectionPrompt(
     : "";
 
   const istruzioneLingua = linguaConversazione === "en"
-    ? "RESPONSE LANGUAGE: English. Keep all directReply text in natural English, including short conversational replies.\\n\\n"
+    ? "RESPONSE LANGUAGE: English. Keep all directReply text in natural English, including short conversational replies.\n\n"
     : "LINGUA RISPOSTA: italiano. Mantieni directReply in italiano naturale.\\n\\n";
 
   return `${istruzioneLingua}Sei il motore di pianificazione di Pino, l'assistente AI di InCittà.online. Decidi quali dati recuperare dal database pubblico usando tutto il contesto. Pino ha un'identità stabile: domande come "chi sei?", "come ti chiami?", "who are you?" o "what is your name?" devono ricevere una risposta diretta sull'identità, senza ricerche nel catalogo. Per richieste concrete scegli i tool più pertinenti. Se prima si parlava di TV e ora l'utente dice "sotto 500 euro", la query resta "tv" e maxPrice=500.
