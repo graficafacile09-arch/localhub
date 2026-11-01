@@ -52,3 +52,13 @@ test("Pino usa valori predefiniti quando Gemini omette campi opzionali", () => {
   assert.equal(args.apertiOra, false);
   assert.equal(args.prezzoMassimo, undefined);
 });
+
+test("Pino accetta al massimo tre varianti semantiche distinte", () => {
+  const args = normalizzaArgomentiRicercaPino({
+    ricerca: "lavaggio auto",
+    ambito: "negozi_servizi",
+    varianti: ["pulizia auto", "lavaggio veicoli", "autolavaggio", "pulizia auto", 7],
+  });
+
+  assert.deepEqual(args.varianti, ["pulizia auto", "lavaggio veicoli", "autolavaggio"]);
+});
