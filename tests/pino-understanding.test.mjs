@@ -132,6 +132,7 @@ test("Pino switches back to Italian when the user does", () => {
 test("explicit food product requests are routed to the catalog in Italian and English", () => {
   assert.equal(isExplicitFoodProductRequest("I'm looking for pasta under 5 euros"), true);
   assert.equal(isExplicitFoodProductRequest("Cerco pasta sotto 5 euro"), true);
+  assert.equal(isExplicitFoodProductRequest("I need some bread"), true);
   assert.equal(isExplicitFoodProductRequest("Vorrei mangiare"), false);
 });
 
