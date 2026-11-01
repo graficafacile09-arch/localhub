@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
 import { rispostaIdentitaPino } from "../lib/assistente/identity.ts";
-import { isExplicitFoodProductRequest, isBroadAttractionsRequest } from "../lib/assistente/routing-policy.ts";
+import { isExplicitFoodProductRequest, isBroadAttractionsRequest, shouldSearchStoreAlternativesForProductRequest } from "../lib/assistente/routing-policy.ts";
 import { prodottoIdentificatoDaSoggetto } from "../lib/assistente/product-relevance.ts";
 import {
   normalizzaQueryCatalogo,
@@ -146,4 +146,12 @@ test("food relevance uses product identity, never the seller name", () => {
   assert.equal(prodottoIdentificatoDaSoggetto({ nome: "Taralli tradizionali", categoria: "Alimentari" }, "pasta"), false);
   assert.equal(prodottoIdentificatoDaSoggetto({ nome: "Pasta artigianale", categoria: "Alimentari" }, "pasta"), true);
   assert.equal(prodottoIdentificatoDaSoggetto({ nome: "Tagliatelle all'uovo", categoria: "Pasta fresca" }, "pasta"), true);
+});
+
+
+test("explicit food product searches never fall back to store suggestions", () => {
+  assert.equal(shouldSearchStoreAlternativesForProductRequest("Cerco pasta sotto 5 euro", "product"), false);
+  assert.equal(shouldSearchStoreAlternativesForProductRequest("I'm looking for pasta under 5 euros", "product"), false);
+  assert.equal(shouldSearchStoreAlternativesForProductRequest("Cerco un regalo", "product"), true);
+  assert.equal(shouldSearchStoreAlternativesForProductRequest("Cerco pasta sotto 5 euro", "generic"), false);
 });

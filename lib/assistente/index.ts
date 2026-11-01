@@ -1,5 +1,5 @@
 import { rilevaLinguaConversazionePino, rilevaLinguaPino, normalizzaQueryCatalogo } from "./understanding";
-import { isExplicitFoodProductRequest } from "./routing-policy";
+import { isExplicitFoodProductRequest, shouldSearchStoreAlternativesForProductRequest } from "./routing-policy";
 import { rispostaIdentitaPino } from "./identity";
 import { rispostaSalutoPino, rispostaRelazionalePino } from "./greetings";
 import { CATEGORIE_REGALO, isGenericGiftRequest, prodottoCorrispondeCategoriaRegalo } from "./gift-retrieval";
@@ -916,7 +916,7 @@ async function recuperaAlternativeSemantiche(
   // pertinenti. Non viene presentato come prodotto trovato: è un'alternativa
   // concreta e trasparente.
   if (
-    (piano.surface === "stores" || piano.surface === "both" || analisi.intent === "product") &&
+    (piano.surface === "stores" || piano.surface === "both" || shouldSearchStoreAlternativesForProductRequest(domanda, analisi.intent)) &&
     negoziTrovati.length < 6
   ) {
     for (const q of candidati.slice(0, 3)) {
