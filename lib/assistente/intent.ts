@@ -102,6 +102,10 @@ const RE_GIFT_DESTINATARIO =
   /\bper\s+(mia\s+madre|mia\s+mamma|mio\s+padre|mio\s+papa|un\s+bambino|una\s+bambina|un\s+amico|un'amica|una\s+amica|mia\s+moglie|mio\s+marito|mia\s+sorella|mio\s+fratello)\b/;
 
 const L_SERVICE: string[] = [
+  "cinema",
+  "cinemas",
+  "movie theater",
+  "movie theatre",
   "parrucchiere",
   "parrucchieri",
   "barbiere",
