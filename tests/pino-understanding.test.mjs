@@ -171,3 +171,17 @@ test("professional searches use a deterministic business-only fast path", () => 
   assert.doesNotMatch(fastPath, /searchProducts|searchEvents|searchAttractions|callGeminiText|recuperaMemoria/);
   assert.match(fastPath, /Non risultano \$\{plurale\} nel catalogo InCittà/);
 });
+
+
+test("service searches use a dedicated catalog-only tool", () => {
+  const toolsSource = readFileSync(
+    new URL("../lib/assistente/tools.ts", import.meta.url),
+    "utf8",
+  );
+  assert.ok(toolsSource.includes("export async function searchServices("));
+  assert.ok(toolsSource.includes("return searchStores(query,"));
+  assert.ok(assistantSource.includes('case "searchServices":'));
+  assert.ok(assistantSource.includes("negozi: await searchServices("));
+  assert.ok(promptSource.includes("searchServices: query"));
+  assert.ok(promptSource.includes("professionisti e servizi"));
+});
