@@ -1541,8 +1541,11 @@ export async function chatConAssistente(
   // Vale per richieste di prodotto concrete, non per bisogni astratti ("ho sete")
   // o per il percorso dedicato ai prodotti tipici, che usano concetti controllati.
   const ricercaProdottoConcreta =
-    analisi.intent === "product" &&
-    !analisi.segnali.includes("interprete:tipico");
+    (analisi.intent === "product" &&
+      !analisi.segnali.includes("interprete:tipico")) ||
+    analisi.segnali.some((segnale) =>
+      /^(dominio-food:|food:|drink:)/.test(segnale)
+    );
   if (ricercaProdottoConcreta && prodotti.length > 0) {
     const prima = prodotti.length;
     prodotti = prodotti.filter((prodotto) =>
