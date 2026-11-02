@@ -56,6 +56,13 @@ export function rispostaRelazionalePino(input: string, lingua: PinoLanguage = ri
   const tollerante = parole.map((p) => correggi(p, ["chiacchiere", "chiacchierare", "parlare", "conversare"])).join(" ");
   const inglese = lingua === "en";
 
+  if (q === "i speak english" || q === "please speak english" || q === "speak english please") {
+    return "Of course! I'll speak English from now on. What would you like to find or discover on InCittà?";
+  }
+  if (q === "parlo italiano" || q === "puoi parlare italiano" || q === "parla italiano") {
+    return "Certo! Da questo momento ti rispondo in italiano. Cosa cerchiamo su InCittà?";
+  }
+
   if (/^(ti va di fare due chiacchiere|ti va di chiacchierare|facciamo due chiacchiere|due chiacchiere|parliamo un po|parliamo|vuoi parlare|ho voglia di parlare|ti va di parlare|let'?s chat|want to chat|can we chat|chat with me|would you like to chat|do you want to chat|can we talk|let'?s talk|want to talk|would you like to talk|can we have a chat|do you want to talk|i want to chat|i want to talk|i'?d like to chat|id like to chat|i would like to chat|i'?d like to talk|id like to talk|i would like to talk|let'?s have a chat|lets have a chat|do you feel like chatting|would you like to have a chat)$/.test(tollerante)) {
     return inglese
       ? "Absolutely! 😊 I'd be happy to chat. Is there something on your mind, or shall we pick a topic together?"

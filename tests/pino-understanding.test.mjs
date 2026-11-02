@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { rispostaIdentitaPino } from "../lib/assistente/identity.ts";
 import { isExplicitFoodProductRequest, isBroadAttractionsRequest } from "../lib/assistente/routing-policy.ts";
 import { prodottoIdentificatoDaSoggetto } from "../lib/assistente/product-relevance.ts";
+import { prodottoCorrispondeAllaRichiestaUtente } from "../lib/assistente/product-relevance.ts";
 import {
   normalizzaQueryCatalogo,
   rilevaLinguaPino,
@@ -170,4 +171,93 @@ test("professional searches use a deterministic business-only fast path", () => 
   assert.match(fastPath, /await searchStores\(professione, \{ limit: 8 \}\)/);
   assert.doesNotMatch(fastPath, /searchProducts|searchEvents|searchAttractions|callGeminiText|recuperaMemoria/);
   assert.match(fastPath, /Non risultano \$\{plurale\} nel catalogo InCittà/);
+});
+
+
+test("service searches use a dedicated catalog-only tool", () => {
+  const toolsSource = readFileSync(
+    new URL("../lib/assistente/tools.ts", import.meta.url),
+    "utf8",
+  );
+  assert.ok(toolsSource.includes("export async function searchServices("));
+  assert.ok(toolsSource.includes("return searchStores(query,"));
+  assert.ok(assistantSource.includes('case "searchServices":'));
+  assert.ok(assistantSource.includes("negozi: await searchServices("));
+  assert.ok(promptSource.includes("searchServices: query"));
+  assert.ok(promptSource.includes("professionisti e servizi"));
+});
+
+test("product retrieval rejects unrelated fuzzy candidates for every category", () => {
+  const unrelated = [
+    { nome: "Vino Magliocco del Pollino", categoria: "Vini" },
+    { nome: "Pizza margherita al pezzo", categoria: "Pizzeria" },
+    { nome: "Anello con pietra", categoria: "Gioielleria" },
+  ];
+  for (const product of unrelated) {
+    assert.equal(prodottoIdentificatoDaSoggetto(product, "gatto"), false);
+  }
+  assert.equal(
+    prodottoIdentificatoDaSoggetto({ nome: "Olio Extra Vergine di Oliva del Pollino", categoria: "Alimentari" }, "olio"),
+    true,
+  );
+  assert.equal(
+    prodottoIdentificatoDaSoggetto({ nome: "Orologio da polso", categoria: "Accessori" }, "orologio"),
+    true,
+  );
+
+  const toolsSource = readFileSync(new URL("../lib/assistente/tools.ts", import.meta.url), "utf8");
+  assert.match(toolsSource, /terminiSignificativi\(q, 10\)/);
+  assert.match(toolsSource, /prodottoPertinente\(p, terminiRichiesti, \[\]\)/);
+});
+
+
+test("original user request is the final authority for every concrete product result", () => {
+  const unrelated = [
+    { nome: "Orologio da polso", categoria: "Accessori", descrizione: "Orologio elegante" },
+    { nome: "Vino Magliocco del Pollino", categoria: "Vini" },
+    { nome: "Pizza margherita al pezzo", categoria: "Pizzeria" },
+    { nome: "Anello con pietra", categoria: "Gioielleria" },
+  ];
+
+  for (const request of [
+    "Voglio un gatto",
+    "Voglio un cane",
+    "Voglio una minchiata",
+    "I speak English",
+    "I want a cat",
+    "I need a dog",
+  ]) {
+    for (const product of unrelated) {
+      assert.equal(
+        prodottoCorrispondeAllaRichiestaUtente(product, request),
+        false,
+        request + " must not return " + product.nome,
+      );
+    }
+  }
+
+  assert.equal(
+    prodottoCorrispondeAllaRichiestaUtente(
+      { nome: "Orologio da polso", categoria: "Accessori" },
+      "Cerco un orologio",
+    ),
+    true,
+  );
+  assert.equal(
+    prodottoCorrispondeAllaRichiestaUtente(
+      { nome: "Olio Extra Vergine di Oliva del Pollino", categoria: "Alimentari" },
+      "Cerco olio",
+    ),
+    true,
+  );
+});
+
+test("the original-query guard runs after retrieval recovery and before response composition", () => {
+  const guard = assistantSource.indexOf("[pino-original-query-product-guard]");
+  const recovery = assistantSource.indexOf("recuperaAlternativeSemantiche(");
+  const response = assistantSource.indexOf("const risultati: RisultatiRecuperati");
+  assert.ok(recovery >= 0);
+  assert.ok(guard > recovery);
+  assert.ok(response > guard);
+  assert.match(assistantSource, /prodottoCorrispondeAllaRichiestaUtente\(prodotto, domandaSemantica \|\| domanda\)/);
 });

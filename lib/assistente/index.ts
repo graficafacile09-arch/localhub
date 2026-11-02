@@ -1,8 +1,9 @@
 import { rilevaLinguaConversazionePino, rilevaLinguaPino, normalizzaQueryCatalogo } from "./understanding";
-import { isExplicitFoodProductRequest } from "./routing-policy";
+import { directProductQuery, isExplicitFoodProductRequest } from "./routing-policy";
 import { rispostaIdentitaPino } from "./identity";
 import { rispostaSalutoPino, rispostaRelazionalePino } from "./greetings";
 import { CATEGORIE_REGALO, isGenericGiftRequest, prodottoCorrispondeCategoriaRegalo } from "./gift-retrieval";
+import { prodottoCorrispondeAllaRichiestaUtente } from "./product-relevance";
 /**
  * LocalHub — Assistente AI: Orchestratore
  *
@@ -23,6 +24,7 @@ import { CATEGORIE_REGALO, isGenericGiftRequest, prodottoCorrispondeCategoriaReg
 
 import {
   searchStores,
+  searchServices,
   searchProducts,
   searchOffers,
   searchEvents,
@@ -138,6 +140,14 @@ async function eseguiTool(
   const limit = params?.limit;
 
   switch (nome) {
+    case "searchServices": {
+      const q = params?.query?.trim() || params?.tipo?.trim() || fallbackQuery;
+      if (!q) return vuoto;
+      return {
+        ...vuoto,
+        negozi: await searchServices({ ...params, query: q, limit }),
+      };
+    }
     case "searchStores":
     case "searchProducts": {
       // Se l'LLM non riporta il soggetto nei follow-up ("sotto 500 euro") o
@@ -871,8 +881,13 @@ async function recuperaAlternativeSemantiche(
     (await interpretaRichiestaPino(domanda, storico, analisi, memoria));
   // Una richiesta alimentare esplicita resta sulla superficie prodotti anche
   // durante il recupero di secondo livello: non deve degradare a negozi.
-  const piano = pianoInterpretato && isExplicitFoodProductRequest(domanda)
-    ? { ...pianoInterpretato, surface: "products" as const }
+  const soggettoProdottoDiretto = directProductQuery(domanda);
+  const piano = pianoInterpretato && (isExplicitFoodProductRequest(domanda) || soggettoProdottoDiretto)
+    ? {
+        ...pianoInterpretato,
+        surface: "products" as const,
+        ...(soggettoProdottoDiretto ? { query: soggettoProdottoDiretto, terms: [soggettoProdottoDiretto] } : {}),
+      }
     : pianoInterpretato;
 
   if (!piano || piano.confidence === "bassa" || !piano.query) {
@@ -914,7 +929,7 @@ async function recuperaAlternativeSemantiche(
   // pertinenti. Non viene presentato come prodotto trovato: è un'alternativa
   // concreta e trasparente.
   if (
-    (piano.surface === "stores" || piano.surface === "both" || analisi.intent === "product") &&
+    (piano.surface === "stores" || (piano.surface === "both" && !soggettoProdottoDiretto)) &&
     negoziTrovati.length < 6
   ) {
     for (const q of candidati.slice(0, 3)) {
@@ -1150,6 +1165,29 @@ export async function chatConAssistente(
   // Questo percorso precede Attrazioni, memoria e planner AI: uno zero risultati
   // è definitivo e non deve attivare ricerche su prodotti, eventi o luoghi.
   const analisi = analizzaIntentoPino(domanda);
+
+  // Una richiesta diretta di prodotto resta sul catalogo prodotti: niente
+  // reinterpretazione AI e nessuna ricerca negozi come ripiego.
+  const soggettoProdottoDiretto = directProductQuery(domanda);
+  const haVincoloPrezzoDiretto = /\\b(?:sotto|sopra|massimo|minimo|budget|under|below|over|above|between|tra|fino a|entro)\\b|(?:€|\\$)\\s*\\d|\\b\\d+(?:[.,]\\d+)?\\s*(?:euro|euros|eur)\\b/i.test(domanda);
+  if (soggettoProdottoDiretto && !haVincoloPrezzoDiretto) {
+    const prodotti = (await searchProducts(soggettoProdottoDiretto, { limit: 8 }))
+      .filter((prodotto) => prodottoCorrispondeAllaRichiestaUtente(prodotto, domanda));
+    const risposta = prodotti.length > 0
+      ? fallbackTestuale(aRisultatiRecuperati([], prodotti), "", analisi.intent, undefined, null, linguaConversazione)
+      : (linguaConversazione === "en"
+          ? `I couldn't find "${soggettoProdottoDiretto}" in the InCittà product catalog. This doesn't mean it isn't available elsewhere in the city; it simply isn't listed on InCittà right now.`
+          : `Non trovo "${soggettoProdottoDiretto}" nel catalogo prodotti di InCittà. Questo non significa che non sia disponibile in città: significa soltanto che al momento non è presente nel catalogo del sito.`);
+    return {
+      risposta,
+      negozi: [],
+      prodotti,
+      processingMs: Date.now() - inizio,
+      source: "assistente",
+      intent: analisi.intent,
+    };
+  }
+
   if (analisi.intent === "service" && analisi.confidence === "alta") {
     const segnaleServizio = analisi.segnali.find((segnale) => segnale.startsWith("service:"));
     const professione = segnaleServizio?.slice("service:".length).trim();
@@ -1361,6 +1399,7 @@ export async function chatConAssistente(
   const usaMemoriaSuRicerca = !directReply &&
     !followUp &&
     !isExplicitFoodProductRequest(domanda) &&
+    !directProductQuery(domanda) &&
     memoria.length > 0 &&
     !invocazioni.some((t) => t.tool === "getWeather" || t.tool === "searchPharmacies");
 
@@ -1523,6 +1562,30 @@ export async function chatConAssistente(
         })
       );
     }
+  }
+
+  // Barriera finale anti-falsi-positivi: il planner può riscrivere male una
+  // richiesta ("voglio un gatto" → query generica). Prima di mostrare QUALSIASI
+  // prodotto, verifichiamo il soggetto sulla frase originale dell'utente.
+  // Vale per richieste di prodotto concrete, non per bisogni astratti ("ho sete")
+  // o per il percorso dedicato ai prodotti tipici, che usano concetti controllati.
+  const ricercaProdottoConcreta =
+    Boolean(directProductQuery(domandaSemantica || domanda)) ||
+    (analisi.intent === "product" &&
+      !analisi.segnali.includes("interprete:tipico")) ||
+    analisi.segnali.some((segnale) =>
+      /^(dominio-food:|food:|drink:)/.test(segnale)
+    );
+  if (ricercaProdottoConcreta && prodotti.length > 0) {
+    const prima = prodotti.length;
+    prodotti = prodotti.filter((prodotto) =>
+      prodottoCorrispondeAllaRichiestaUtente(prodotto, domandaSemantica || domanda)
+    );
+    console.info("[pino-original-query-product-guard]", JSON.stringify({
+      queryUtente: domandaSemantica || domanda,
+      prima,
+      dopo: prodotti.length,
+    }));
   }
 
   // Barriera finale: applica il budget dopo il merge e il recupero semantico,

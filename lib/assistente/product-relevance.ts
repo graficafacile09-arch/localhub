@@ -1,4 +1,6 @@
 import { normalizza, estraiToken } from "../text-utils.ts";
+import { terminiSignificativi } from "../search-tollerante.ts";
+import { normalizzaQueryCatalogo } from "./understanding.ts";
 
 export type ProdottoIdentificabile = {
   nome?: string | null;
@@ -63,4 +65,40 @@ export function prodottoIdentificatoDaSoggetto(
       const c = normalizza(concetto);
       return Boolean(c) && (identita.includes(c) || dettagli.includes(c));
     });
+}
+
+/**
+ * Ultima barriera sui prodotti restituiti da Pino: confronta ogni prodotto con
+ * il soggetto ricavato dalla FRASE ORIGINALE dell'utente, non con la query
+ * eventualmente riscritta dal planner AI. Il soggetto principale deve apparire
+ * nel nome/categoria del prodotto; gli eventuali qualificatori possono
+ * comparire anche nei dettagli. Così un planner che interpreta male "un gatto",
+ * "un cane" o una frase casuale non può trasformare la richiesta in orologi,
+ * vino o altri articoli del catalogo.
+ */
+export function prodottoCorrispondeAllaRichiestaUtente(
+  prodotto: ProdottoIdentificabile,
+  richiesta: string
+): boolean {
+  const query = normalizzaQueryCatalogo(richiesta);
+  if (!query) return false;
+
+  const termini = terminiSignificativi(query, 10).map(normalizza).filter(Boolean);
+  const stopwordBrevi = new Set(["da", "di", "in", "a", "e", "il", "lo", "la", "un", "on", "of", "to"]);
+  const brevi = estraiToken(query).filter((t) => t.length === 2 && !stopwordBrevi.has(t));
+  const richiesti = Array.from(new Set([...termini, ...brevi]));
+  if (richiesti.length === 0) return false;
+
+  const identita = normalizza([prodotto.nome, prodotto.categoria].filter(Boolean).join(" "));
+  const primo = richiesti[0];
+  const tokenIdentita = estraiToken(identita);
+  const soggettoNelNome =
+    primo.length < 4
+      ? tokenIdentita.includes(primo)
+      : identita.includes(primo) || tokenCompatibile(primo, tokenIdentita);
+  if (!soggettoNelNome) return false;
+
+  return richiesti.slice(1).every((termine) =>
+    prodottoIdentificatoDaSoggetto(prodotto, termine)
+  );
 }
