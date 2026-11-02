@@ -17,7 +17,6 @@ import { rilevaLinguaPino } from "./understanding";
 import { rilevaFollowUp } from "./conversazione";
 import { estraiCitta } from "@/lib/localita";
 import { analizzaIntentoPino, type PinoIntent, type PinoIntentAnalysis } from "./intent";
-import { SINONIMI_DIRETTI_PRODOTTO, SINONIMI_TIPO_ATTIVITA } from "@/lib/ricerca-semantica";
 import type { MessaggioAssistente } from "./index";
 import type { PinoMemoriaVoce } from "./memoria";
 
@@ -216,82 +215,14 @@ const CANONICI_RICERCA: Array<{ pattern: RegExp; termine: string; intent: PinoIn
   { pattern: /\bmaglietta|magliette|maglia|maglie\b/i, termine: "maglia", intent: "product" },
 ];
 
-function distanzaLevenshtein(a: string, b: string): number {
-  const prev = Array.from({ length: b.length + 1 }, (_, i) => i);
-  for (let i = 1; i <= a.length; i++) {
-    let diag = prev[0];
-    prev[0] = i;
-    for (let j = 1; j <= b.length; j++) {
-      const old = prev[j];
-      prev[j] = Math.min(prev[j] + 1, prev[j - 1] + 1, diag + (a[i - 1] === b[j - 1] ? 0 : 1));
-      diag = old;
-    }
-  }
-  return prev[b.length];
-}
-
-const VOCABOLARIO_PINO_BASE: Array<[string, string]> = [
-  ["birra", "birra"], ["birretta", "birra"], ["birrette", "birra"],
-  ["analcolica", "analcolica"], ["analcolico", "analcolica"],
-  ["vino", "vino"], ["vini", "vino"], ["acqua", "acqua"],
-  ["pizza", "pizza"], ["pizze", "pizza"], ["panino", "panino"], ["panini", "panino"],
-  ["cipolla", "cipolla"], ["cipolle", "cipolla"], ["patata", "patata"], ["patate", "patata"],
-  ["pomodoro", "pomodoro"], ["pomodori", "pomodoro"], ["aglio", "aglio"],
-  ["carota", "carota"], ["carote", "carota"], ["zucchina", "zucchina"], ["zucchine", "zucchina"],
-  ["melanzana", "melanzana"], ["melanzane", "melanzana"], ["peperone", "peperone"], ["peperoni", "peperone"],
-  ["insalata", "insalata"], ["insalate", "insalata"], ["mela", "mela"], ["mele", "mela"],
-  ["pera", "pera"], ["pere", "pera"], ["arancia", "arancia"], ["arance", "arancia"],
-  ["limone", "limone"], ["limoni", "limone"], ["banana", "banana"], ["banane", "banana"],
-  ["telefono", "telefono"], ["telefoni", "telefono"], ["telefonino", "telefono"],
-  ["orologio", "orologio"], ["orologi", "orologio"],
-  ["cellulare", "telefono"], ["smartphone", "telefono"],
-  ["scarpa", "scarpa"], ["scarpe", "scarpa"],
-  ["maglia", "maglia"], ["maglietta", "maglia"], ["magliette", "maglia"],
-];
-
-const VOCABOLARIO_PINO: Array<[string, string]> = (() => {
-  const mappa = new Map<string, string>(VOCABOLARIO_PINO_BASE);
-
-  // Riutilizziamo il vocabolario semantico già presente nel motore InCittà:
-  // errori di battitura su prodotti, categorie e servizi vengono corretti
-  // verso un termine reale già conosciuto dal catalogo.
-  for (const gruppo of SINONIMI_DIRETTI_PRODOTTO) {
-    for (const voce of gruppo) {
-      for (const token of normalizzaRichiesta(voce).split(/\s+/)) {
-        if (token.length >= 4) mappa.set(token, token);
-      }
-    }
-  }
-
-  for (const gruppo of Object.values(SINONIMI_TIPO_ATTIVITA)) {
-    for (const voce of gruppo) {
-      for (const token of normalizzaRichiesta(voce).split(/\s+/)) {
-        if (token.length >= 4) mappa.set(token, token);
-      }
-    }
-  }
-
-  return Array.from(mappa.entries());
-})();
-
+/**
+ * Non corregge automaticamente parole sconosciute verso termini del catalogo.
+ * Il vecchio fuzzy correction usava Levenshtein su ogni token: "voglio" poteva
+ * diventare "aglio" e "cane" "pane". I refusi vanno gestiti dal retrieval
+ * tollerante, con verifica di pertinenza, non riscrivendo la richiesta.
+ */
 function correggiErroriBattitura(query: string): string {
-  return query.split(/(\s+)/).map((part) => {
-    if (!/^[A-Za-zÀ-ÖØ-öø-ÿ]+$/.test(part)) return part;
-    const lower = part.toLocaleLowerCase("it-IT");
-    if (lower.length < 4) return part;
-    let best = lower;
-    let bestDistance = Infinity;
-    for (const [word, canonical] of VOCABOLARIO_PINO) {
-      if (Math.abs(word.length - lower.length) > 2) continue;
-      const d = distanzaLevenshtein(lower, word);
-      const soglia = lower.length <= 5 ? 1 : 2;
-      if (d <= soglia && d < bestDistance) {
-        best = canonical;
-        bestDistance = d;
-      }
-    }
-    return bestDistance < Infinity ? best : part;
-  }).join("");
+  return query;
 }
 
 /**
