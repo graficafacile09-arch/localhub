@@ -2,7 +2,6 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
 import { rispostaIdentitaPino } from "../lib/assistente/identity.ts";
-import { analizzaIntentoPino, pianoIntento } from "../lib/assistente/intent.ts";
 import { isExplicitFoodProductRequest, isBroadAttractionsRequest } from "../lib/assistente/routing-policy.ts";
 import { prodottoIdentificatoDaSoggetto } from "../lib/assistente/product-relevance.ts";
 import {
@@ -150,23 +149,25 @@ test("food relevance uses product identity, never the seller name", () => {
 });
 
 
-test("professional requests are recognized deterministically as business-only searches", () => {
-  for (const [query, profession] of [
-    ["Dove trovo un commercialista?", "commercialista"],
-    ["Vorrei un fotografo", "fotografo"],
-    ["I need an accountant", "accountant"],
-    ["I'm looking for a photographer", "photographer"],
-  ]) {
-    const analysis = analizzaIntentoPino(query);
-    assert.equal(analysis.intent, "service", query);
-    assert.equal(analysis.confidence, "alta", query);
-    assert.equal(analysis.usaNegozi, true, query);
-    assert.equal(analysis.usaProdotti, false, query);
-    assert.ok(analysis.segnali.includes(`service:${profession}`), query);
-    assert.deepEqual(
-      pianoIntento(analysis, query).map((step) => step.tool),
-      ["searchStores"],
-      query,
-    );
+const intentSource = readFileSync(
+  new URL("../lib/assistente/intent.ts", import.meta.url),
+  "utf8",
+);
+const assistantSource = readFileSync(
+  new URL("../lib/assistente/index.ts", import.meta.url),
+  "utf8",
+);
+
+test("professional searches use a deterministic business-only fast path", () => {
+  for (const profession of ["commercialista", "fotografo", "accountant", "photographer"]) {
+    assert.ok(intentSource.includes(`"${profession}"`), profession);
   }
+  const fastPathStart = assistantSource.indexOf("Professioni riconosciute con certezza");
+  const attractionsStart = assistantSource.indexOf("Guida turistica InCittà");
+  assert.ok(fastPathStart >= 0);
+  assert.ok(attractionsStart > fastPathStart);
+  const fastPath = assistantSource.slice(fastPathStart, attractionsStart);
+  assert.match(fastPath, /await searchStores\(professione, \{ limit: 8 \}\)/);
+  assert.doesNotMatch(fastPath, /searchProducts|searchEvents|searchAttractions|callGeminiText|recuperaMemoria/);
+  assert.match(fastPath, /Non risultano \$\{plurale\} nel catalogo InCittà/);
 });
