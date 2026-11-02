@@ -49,16 +49,18 @@ export function isExplicitFoodProductRequest(query: string): boolean {
 export function directProductQuery(query: string): string | null {
   const q = normalizza(query);
   if (!q) return null;
-  if (/\\b(?:sotto|sopra|massimo|minimo|budget|under|below|over|above|between|tra|fino a|entro)\\b/.test(q)) return null;
-  if (!/\\b(?:voglio|vorrei|cerco|cercando|sto cercando|mi serve|ho bisogno di|trovami|trova|im looking for|i am looking for|i want|i need|find me|show me|looking for)\\b/.test(q)) return null;
+  const azioni = ["voglio ", "vorrei ", "cerco ", "cercando ", "sto cercando ", "mi serve ", "ho bisogno di ", "trovami ", "trova ", "im looking for ", "i am looking for ", "i want ", "i need ", "find me ", "show me ", "looking for "];
+  if (!azioni.some((azione) => q.includes(azione))) return null;
 
   const subject = normalizzaQueryCatalogo(query);
   if (!subject) return null;
-  if (/^(?:andare|vai|to go|go|visitare|visit|mangiare|eat|eating|bere|drink|parlare|talk|chat)\\b/.test(subject)) return null;
-  if (/\\b(?:negozio|negozi|attivita|shop|shops|store|stores|business|businesses|ristorante|ristoranti|pizzeria|pizzerie|barbiere|parrucchiere|dentista|commercialista|farmacia|farmacie|cinema|teatro|museo|musei)\\b/.test(subject)) return null;
+  const prima = subject.split(" ")[0];
+  const verbiNonProdotto = ["andare", "vai", "go", "visitare", "visit", "mangiare", "eat", "eating", "bere", "drink", "parlare", "talk", "chat"];
+  const superficiNonProdotto = ["negozio", "negozi", "attivita", "shop", "shops", "store", "stores", "business", "businesses", "ristorante", "ristoranti", "pizzeria", "pizzerie", "barbiere", "parrucchiere", "dentista", "commercialista", "farmacia", "farmacie", "cinema", "teatro", "museo", "musei"];
+  if (verbiNonProdotto.includes(prima)) return null;
+  if (subject.split(" ").some((token) => superficiNonProdotto.includes(token))) return null;
   return subject;
 }
-
 /** Richieste generiche in inglese/italiano che chiedono la guida Attrazioni. */
 export function isBroadAttractionsRequest(query: string): boolean {
   const q = normalizza(query);
