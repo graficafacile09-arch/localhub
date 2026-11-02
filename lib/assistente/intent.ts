@@ -26,8 +26,8 @@
  * @module lib/assistente/intent
  */
 
-import { analizzaRichiesta } from "@/lib/ricerca-intento";
-import { equivalentiMorfologici } from "@/lib/search-tollerante";
+import { analizzaRichiesta } from "../ricerca-intento";
+import { equivalentiMorfologici } from "../search-tollerante";
 import { normalizzaRichiesta } from "./local-intents";
 
 // ─── Tipi pubblici ───────────────────────────────────────────────────────────
