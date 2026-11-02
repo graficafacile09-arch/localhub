@@ -81,3 +81,19 @@ test("explicit exclusions are carried into the plan", () => {
   assert.equal(plan.maxPrice, 8);
   assert.ok(plan.exclusions.some((item) => item.includes("glutine")));
 });
+
+
+test("local service vocabulary routes cinema and professional services to stores", () => {
+  for (const query of [
+    "Voglio andare al cinema",
+    "Find a movie theater",
+    "Dove trovo un commercialista",
+    "Mi serve un fotografo",
+    "Looking for a florist",
+    "I need a cleaning service",
+  ]) {
+    const plan = planPinoCoreRequest(query);
+    assert.equal(plan.route, "catalog", query);
+    assert.equal(plan.surface, "stores", query);
+  }
+});
