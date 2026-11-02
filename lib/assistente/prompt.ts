@@ -72,7 +72,8 @@ ${storico}
 ULTIMO MESSAGGIO UTENTE: "${domanda}"
 ${bloccoIntento}
 TOOL:
-- searchStores: query + opt {categoria, tipo, citta, termini} → negozi/attività
+- searchStores: query + opt {categoria, tipo, citta, termini} → negozi/attività commerciali
+- searchServices: query + opt {tipo, citta, termini, limit} → professionisti e servizi, solo catalogo attività
 - searchProducts: query + maxPrice/minPrice (numeri interi, euro) + opt {categoria, sottocategoria} → prodotti
 - searchOffers: query opzionale → offerte/promozioni/sconti
 - searchEvents: query opzionale → eventi
@@ -88,7 +89,7 @@ CAMPI STRUTTURATI (per searchStores, oltre a query):
 - termini: parole chiave da cercare nel DB, EXPANDI con sinonimi (dottore→medico/otorino/orecchie/udito; dentista→dentale; specialista→medico). Nessun articolo/preposizione.
 
 SCELTA TOOL:
-- professionisti/sanità ("dottore","medico","otorino","dentista","visita","specialista orecchie","problemi alle orecchie") → searchStores con tipo/termini pertinenti.
+- professionisti e servizi ("commercialista","fotografo","dottore","medico","otorino","dentista","visita","specialista orecchie","problemi alle orecchie") → searchServices. Non usare searchProducts, searchOffers, searchEvents o searchAll come fallback.
 - "offerte"/"promozioni"/"sconti"/"saldo" → searchOffers. MAI searchProducts.
 - "eventi"/"weekend"/"cosa c'è"/"manifestazioni"/"cosa succede" → searchEvents. MAI searchProducts.
 - "mangiare"/"ristorante"/"pizza"/"cena"/"dove posso mangiare" → searchStores.
