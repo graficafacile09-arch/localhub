@@ -23,6 +23,7 @@ import { CATEGORIE_REGALO, isGenericGiftRequest, prodottoCorrispondeCategoriaReg
 
 import {
   searchStores,
+  searchServices,
   searchProducts,
   searchOffers,
   searchEvents,
@@ -138,6 +139,14 @@ async function eseguiTool(
   const limit = params?.limit;
 
   switch (nome) {
+    case "searchServices": {
+      const q = params?.query?.trim() || params?.tipo?.trim() || fallbackQuery;
+      if (!q) return vuoto;
+      return {
+        ...vuoto,
+        negozi: await searchServices({ ...params, query: q, limit }),
+      };
+    }
     case "searchStores":
     case "searchProducts": {
       // Se l'LLM non riporta il soggetto nei follow-up ("sotto 500 euro") o
