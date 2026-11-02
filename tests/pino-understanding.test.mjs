@@ -147,3 +147,27 @@ test("food relevance uses product identity, never the seller name", () => {
   assert.equal(prodottoIdentificatoDaSoggetto({ nome: "Pasta artigianale", categoria: "Alimentari" }, "pasta"), true);
   assert.equal(prodottoIdentificatoDaSoggetto({ nome: "Tagliatelle all'uovo", categoria: "Pasta fresca" }, "pasta"), true);
 });
+
+
+const intentSource = readFileSync(
+  new URL("../lib/assistente/intent.ts", import.meta.url),
+  "utf8",
+);
+const assistantSource = readFileSync(
+  new URL("../lib/assistente/index.ts", import.meta.url),
+  "utf8",
+);
+
+test("professional searches use a deterministic business-only fast path", () => {
+  for (const profession of ["commercialista", "fotografo", "accountant", "photographer"]) {
+    assert.ok(intentSource.includes(`"${profession}"`), profession);
+  }
+  const fastPathStart = assistantSource.indexOf("Professioni riconosciute con certezza");
+  const attractionsStart = assistantSource.indexOf("Guida turistica InCittà");
+  assert.ok(fastPathStart >= 0);
+  assert.ok(attractionsStart > fastPathStart);
+  const fastPath = assistantSource.slice(fastPathStart, attractionsStart);
+  assert.match(fastPath, /await searchStores\(professione, \{ limit: 8 \}\)/);
+  assert.doesNotMatch(fastPath, /searchProducts|searchEvents|searchAttractions|callGeminiText|recuperaMemoria/);
+  assert.match(fastPath, /Non risultano \$\{plurale\} nel catalogo InCittà/);
+});
