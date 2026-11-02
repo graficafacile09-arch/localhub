@@ -4,6 +4,8 @@
  * essere deterministiche e testabili prima di eseguire i tool.
  */
 
+import { normalizzaQueryCatalogo } from "./understanding";
+
 const FOOD_PRODUCTS = [
   "pasta", "pane", "pizza", "dolce", "dolci", "gelato", "torta", "torte",
   "biscotti", "formaggio", "salumi", "prosciutto", "carne", "pesce",
@@ -36,6 +38,25 @@ export function isExplicitFoodProductRequest(query: string): boolean {
   }
 
   return /\b(?:im looking for|i am looking for|looking for|i want|i need|want|need|find me|show me|can you find|could you find|buy|purchase|shopping for|cerco|cerca|cercando|sto cercando|trovami|trova|compro|comprare|acquistare|vorrei|voglio|mi serve|ho bisogno di)\b/.test(q);
+}
+
+/**
+ * Estrae il soggetto di una richiesta diretta di prodotto.
+ * In assenza di un riferimento esplicito a negozi/servizi/luoghi, "voglio X"
+ * e "I want X" interrogano solo il catalogo prodotti. Non è un fallback
+ * verso negozi: zero prodotti significa zero risultati.
+ */
+export function directProductQuery(query: string): string | null {
+  const q = normalizza(query);
+  if (!q) return null;
+  if (/\\b(?:sotto|sopra|massimo|minimo|budget|under|below|over|above|between|tra|fino a|entro)\\b/.test(q)) return null;
+  if (!/\\b(?:voglio|vorrei|cerco|cercando|sto cercando|mi serve|ho bisogno di|trovami|trova|im looking for|i am looking for|i want|i need|find me|show me|looking for)\\b/.test(q)) return null;
+
+  const subject = normalizzaQueryCatalogo(query);
+  if (!subject) return null;
+  if (/^(?:andare|vai|to go|go|visitare|visit|mangiare|eat|eating|bere|drink|parlare|talk|chat)\\b/.test(subject)) return null;
+  if (/\\b(?:negozio|negozi|attivita|shop|shops|store|stores|business|businesses|ristorante|ristoranti|pizzeria|pizzerie|barbiere|parrucchiere|dentista|commercialista|farmacia|farmacie|cinema|teatro|museo|musei)\\b/.test(subject)) return null;
+  return subject;
 }
 
 /** Richieste generiche in inglese/italiano che chiedono la guida Attrazioni. */
