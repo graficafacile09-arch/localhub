@@ -3,6 +3,7 @@ import { isExplicitFoodProductRequest } from "./routing-policy";
 import { rispostaIdentitaPino } from "./identity";
 import { rispostaSalutoPino, rispostaRelazionalePino } from "./greetings";
 import { CATEGORIE_REGALO, isGenericGiftRequest, prodottoCorrispondeCategoriaRegalo } from "./gift-retrieval";
+import { prodottoCorrispondeAllaRichiestaUtente } from "./product-relevance";
 /**
  * LocalHub — Assistente AI: Orchestratore
  *
@@ -1532,6 +1533,26 @@ export async function chatConAssistente(
         })
       );
     }
+  }
+
+  // Barriera finale anti-falsi-positivi: il planner può riscrivere male una
+  // richiesta ("voglio un gatto" → query generica). Prima di mostrare QUALSIASI
+  // prodotto, verifichiamo il soggetto sulla frase originale dell'utente.
+  // Vale per richieste di prodotto concrete, non per bisogni astratti ("ho sete")
+  // o per il percorso dedicato ai prodotti tipici, che usano concetti controllati.
+  const ricercaProdottoConcreta =
+    analisi.intent === "product" &&
+    !analisi.segnali.includes("interprete:tipico");
+  if (ricercaProdottoConcreta && prodotti.length > 0) {
+    const prima = prodotti.length;
+    prodotti = prodotti.filter((prodotto) =>
+      prodottoCorrispondeAllaRichiestaUtente(prodotto, domandaSemantica || domanda)
+    );
+    console.info("[pino-original-query-product-guard]", JSON.stringify({
+      queryUtente: domandaSemantica || domanda,
+      prima,
+      dopo: prodotti.length,
+    }));
   }
 
   // Barriera finale: applica il budget dopo il merge e il recupero semantico,
