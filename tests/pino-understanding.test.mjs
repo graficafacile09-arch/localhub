@@ -4,7 +4,6 @@ import { readFileSync } from "node:fs";
 import { rispostaIdentitaPino } from "../lib/assistente/identity.ts";
 import { isExplicitFoodProductRequest, isBroadAttractionsRequest } from "../lib/assistente/routing-policy.ts";
 import { prodottoIdentificatoDaSoggetto } from "../lib/assistente/product-relevance.ts";
-import { prodottoPertinente } from "../lib/assistente/tools.ts";
 import {
   normalizzaQueryCatalogo,
   rilevaLinguaPino,
@@ -187,25 +186,25 @@ test("service searches use a dedicated catalog-only tool", () => {
   assert.ok(promptSource.includes("professionisti e servizi"));
 });
 
-test("product relevance rejects unrelated fuzzy candidates for every category", () => {
+test("product retrieval rejects unrelated fuzzy candidates for every category", () => {
   const unrelated = [
     { nome: "Vino Magliocco del Pollino", categoria: "Vini" },
     { nome: "Pizza margherita al pezzo", categoria: "Pizzeria" },
     { nome: "Anello con pietra", categoria: "Gioielleria" },
   ];
   for (const product of unrelated) {
-    assert.equal(prodottoPertinente(product, ["gatto"], []), false);
+    assert.equal(prodottoIdentificatoDaSoggetto(product, "gatto"), false);
   }
   assert.equal(
-    prodottoPertinente({ nome: "Olio Extra Vergine di Oliva del Pollino", categoria: "Alimentari" }, ["olio"], []),
+    prodottoIdentificatoDaSoggetto({ nome: "Olio Extra Vergine di Oliva del Pollino", categoria: "Alimentari" }, "olio"),
     true,
   );
   assert.equal(
-    prodottoPertinente({ nome: "Orologio da polso", categoria: "Accessori" }, ["orologio"], []),
+    prodottoIdentificatoDaSoggetto({ nome: "Orologio da polso", categoria: "Accessori" }, "orologio"),
     true,
   );
 
   const toolsSource = readFileSync(new URL("../lib/assistente/tools.ts", import.meta.url), "utf8");
-  assert.match(toolsSource, /terminiSignificativi\(q, 10\)/);
-  assert.match(toolsSource, /prodottoPertinente\(p, terminiRichiesti, \[\]\)/);
+  assert.match(toolsSource, /terminiSignificativi\\(q, 10\\)/);
+  assert.match(toolsSource, /prodottoPertinente\\(p, terminiRichiesti, \\[\\]\\)/);
 });
