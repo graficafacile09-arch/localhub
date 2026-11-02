@@ -504,6 +504,32 @@ export async function searchStores(
   }));
 }
 
+ 
+// ─── searchServices: superficie dedicata a professionisti e servizi ──────────
+// Riusa il catalogo attività esistente, ma mantiene separata la responsabilità
+// di ricerca: un professionista non deve generare fallback verso prodotti/eventi.
+export async function searchServices(
+  params: ToolParams = {}
+): Promise<NegozioRicerca[]> {
+  const query = String(params.query ?? params.tipo ?? "").trim().slice(0, 120);
+  if (!query) return [];
+
+  const termini = Array.isArray(params.termini)
+    ? params.termini
+        .filter((termine): termine is string => typeof termine === "string")
+        .map((termine) => termine.trim().slice(0, 60))
+        .filter(Boolean)
+        .slice(0, 5)
+    : [];
+  const city = typeof params.citta === "string" ? params.citta.trim().slice(0, 80) : undefined;
+
+  return searchStores(query, {
+    termini: termini.length > 0 ? termini : [query],
+    citta: city || undefined,
+    limit: limita(params.limit, 6, 12),
+  });
+}
+
 // ─── searchProducts (con filtro prezzo) ──────────────────────────────────────
 
 // Gate di pertinenza dei PRODOTTI (solo assistente).
