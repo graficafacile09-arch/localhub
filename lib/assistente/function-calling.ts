@@ -174,7 +174,7 @@ export async function selezionaToolConGemini(
 ): Promise<PinoToolSelection> {
   const userPrompt = buildToolSelectionPrompt(messages, intentHint)
     .replace(
-      /Rispondi SOLO con JSON valido, senza testo esterno\\.[\\s\\S]*$/,
+      /Rispondi SOLO con JSON valido, senza testo esterno\.[\s\S]*$/,
       "Per una richiesta concreta chiama uno o più strumenti dichiarati. Per una chiacchiera o una risposta diretta non pertinente al catalogo, rispondi senza chiamare strumenti. Non inventare dati."
     );
 
