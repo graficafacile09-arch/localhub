@@ -881,8 +881,13 @@ async function recuperaAlternativeSemantiche(
     (await interpretaRichiestaPino(domanda, storico, analisi, memoria));
   // Una richiesta alimentare esplicita resta sulla superficie prodotti anche
   // durante il recupero di secondo livello: non deve degradare a negozi.
-  const piano = pianoInterpretato && isExplicitFoodProductRequest(domanda)
-    ? { ...pianoInterpretato, surface: "products" as const }
+  const soggettoProdottoDiretto = directProductQuery(domanda);
+  const piano = pianoInterpretato && (isExplicitFoodProductRequest(domanda) || soggettoProdottoDiretto)
+    ? {
+        ...pianoInterpretato,
+        surface: "products" as const,
+        ...(soggettoProdottoDiretto ? { query: soggettoProdottoDiretto, terms: [soggettoProdottoDiretto] } : {}),
+      }
     : pianoInterpretato;
 
   if (!piano || piano.confidence === "bassa" || !piano.query) {
@@ -924,7 +929,7 @@ async function recuperaAlternativeSemantiche(
   // pertinenti. Non viene presentato come prodotto trovato: è un'alternativa
   // concreta e trasparente.
   if (
-    (piano.surface === "stores" || piano.surface === "both" || analisi.intent === "product") &&
+    (piano.surface === "stores" || (piano.surface === "both" && !soggettoProdottoDiretto)) &&
     negoziTrovati.length < 6
   ) {
     for (const q of candidati.slice(0, 3)) {
@@ -1394,6 +1399,7 @@ export async function chatConAssistente(
   const usaMemoriaSuRicerca = !directReply &&
     !followUp &&
     !isExplicitFoodProductRequest(domanda) &&
+    !directProductQuery(domanda) &&
     memoria.length > 0 &&
     !invocazioni.some((t) => t.tool === "getWeather" || t.tool === "searchPharmacies");
 
@@ -1564,6 +1570,7 @@ export async function chatConAssistente(
   // Vale per richieste di prodotto concrete, non per bisogni astratti ("ho sete")
   // o per il percorso dedicato ai prodotti tipici, che usano concetti controllati.
   const ricercaProdottoConcreta =
+    Boolean(directProductQuery(domandaSemantica || domanda)) ||
     (analisi.intent === "product" &&
       !analisi.segnali.includes("interprete:tipico")) ||
     analisi.segnali.some((segnale) =>
