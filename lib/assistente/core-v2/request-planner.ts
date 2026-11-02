@@ -58,7 +58,7 @@ const PHARMACY =
 const EVENTS =
   /\b(?:eventi|evento|manifestazioni|concerto|concerti|festival|fiera|fiere|mostra|mostre|events|what'?s on|what is on|concert|festival|exhibition)\b/i;
 const STORE =
-  /\b(?:negozio|negozi|attivita|attività|servizio|servizi|professionista|professionisti|parrucchiere|barbiere|estetista|medico|dottore|dentista|otorino|veterinario|idraulico|elettricista|meccanico|ristorante|pizzeria|bar|hotel|store|stores|shop|shops|business|businesses|service|services|doctor|dentist|hairdresser|plumber|electrician|mechanic|restaurant)\b/i;
+  /\\b(?:negozio|negozi|attivita|attività|servizio|servizi|professionista|professionisti|parrucchiere|parrucchieri|barbiere|barbieri|estetista|estetica|medico|dottore|dentista|oculista|otorino|pediatra|veterinario|farmacia|idraulico|elettricista|falegname|imbianchino|muratore|meccanico|officina|gommista|carrozziere|sartoria|sarto|calzolaio|lavanderia|ottico|fotografo|commercialista|avvocato|notaio|architetto|geometra|ingegnere|consulente|agenzia immobiliare|assicurazione|banca|poste|palestra|personal trainer|cinema|cinemas|movie theater|movie theatre|theater|theatre|ristorante|pizzeria|bar|hotel|albergo|b\\s*\\&?b|store|stores|shop|shops|business|businesses|service|services|doctor|dentist|hairdresser|plumber|electrician|mechanic|accountant|photographer|tailor|florist|vet|cleaning service|lawyer|gym)\\b/i;
 
 const PRICE_RANGE =
   /\b(?:tra|between|da)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)\s*(?:e|and|to|a)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)(?:\s*(?:euro|euros|eur))?\b/i;
