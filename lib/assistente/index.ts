@@ -195,6 +195,8 @@ async function eseguiTool(
 const RE_VINCOLO = /^(e\s+)?(budget(?:\s+di)?|sotto|sopra|massimo|minimo|meno di|più di|piu di|più economico|piu economico|che altro|più caro|piu caro|oltre|fino a|tra|under|below|up to|over|above|less than|more than|cheaper|more expensive|what else|only open|open now)\b/i;
 
 // Intenzione salute → farmacia: usata anche nella risposta deterministica.
+const RE_CINEMA = /\b(cinema|cinemas|movie theater|movie theatre|go to the movies)\b/i;
+
 const REQUIRES_PHARMACY_REASON =
   /\bfebbre\b|\btemperatura alta\b|\bmal di gola\b|\braffreddore\b|\binfluenza\b|\btosse\b|\bfever\b|\bsore throat\b|\bcold\b|\bflu\b|\bcough\b/i;
 
@@ -246,6 +248,8 @@ function pianoPredefinito(
   const ultimo = (utenti[utenti.length - 1] ?? "").trim().toLowerCase();
   const inglese = rilevaLinguaConversazionePino(storico) === "en";
   if (!ultimo) return null;
+
+  if (RE_CINEMA.test(ultimo)) return { directReply: null, tools: [{ tool: "searchStores", params: { query: "cinema", limit: 8 } }] };
 
   const RE_PIATTAFORMA =
     /che cos'è incittà|che cos'e incitta|cos'è incittà|come funziona|cos'è il sito|what is incitta|what is incittà|how does incitta work|how does incittà work|what is this site/;
@@ -448,7 +452,6 @@ function pianoPredefinito(
       return { directReply: null, tools };
     }
   }
-
   // Follow-up con vincolo di prezzo ("sotto 500 euro", "massimo 100 euro"):
   // riusa il SOGGETTO della richiesta precedente con maxPrice, così il
   // contesto viene mantenuto in modo deterministico.
@@ -897,8 +900,7 @@ async function recuperaAlternativeSemantiche(
     )
   ).slice(0, 5);
 
-  const prodottiTrovati: ProdottoRicerca[] = [];
-  const negoziTrovati: NegozioRicerca[] = [];
+  const prodottiTrovati: ProdottoRicerca[] = [];  const negoziTrovati: NegozioRicerca[] = [];
 
   // Prima allarga il concetto sullo stesso tipo di superficie.
   if (piano.surface === "products" || piano.surface === "both") {
@@ -1347,8 +1349,8 @@ export async function chatConAssistente(
   // alternative diventino termini obbligatori nel gate di pertinenza.
   const pianoProdottoAffidabile = Boolean(
     semantica &&
-    semantica.surface === "products" &&
-    (semantica.intent === "product" || semantica.intent === "food" || semantica.intent === "drink") &&
+    !RE_CINEMA.test(domandaSemantica) &&
+    semantica.surface === "products" &&    (semantica.intent === "product" || semantica.intent === "food" || semantica.intent === "drink") &&
     semantica.confidence !== "bassa" &&
     semantica.query.trim()
   );
@@ -1421,6 +1423,12 @@ export async function chatConAssistente(
     }
     console.info("[pino-budget-routing-guard]", JSON.stringify({ budget: maxPriceCatalogo, forcedSearch: !haToolProdotti }));
   }
+  if (RE_CINEMA.test(domanda)) {
+    invocazioni = [{ tool: "searchStores", params: { query: "cinema", limit: 8 } }];
+    directReply = null;
+    selezioneOk = true;
+  }
+
   if (invocazioni.length > 0) {
     const risultati = await Promise.all(
       invocazioni.map((t) => eseguiTool(t.tool as string, t.params ?? {}, queryDefault))
@@ -1455,6 +1463,7 @@ export async function chatConAssistente(
     !directReply &&
     !followUp &&
     !regaloGenerico &&
+    !RE_CINEMA.test(domanda) &&
     negozi.length === 0 &&
     prodotti.length === 0 &&
     offerte.length === 0 &&
@@ -1624,6 +1633,15 @@ export async function chatConAssistente(
       inizio,
       lingua: linguaConversazione,
     });
+  }
+
+  if (RE_CINEMA.test(domanda) && negozi.length === 0) {
+    return {
+      risposta: linguaConversazione === "en"
+        ? "InCittà currently has no cinemas listed in its catalog. I haven’t found a cinema in the businesses available on the platform."
+        : "Al momento InCittà non ha cinema presenti nel proprio catalogo. Non ho trovato sale cinematografiche tra le attività disponibili sulla piattaforma.",
+      negozi: [], prodotti: [], processingMs: Date.now() - inizio, source: "assistente", intent: analisi.intent,
+    };
   }
 
   // 5) Contesto strutturato per la risposta finale
