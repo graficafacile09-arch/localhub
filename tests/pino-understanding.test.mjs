@@ -205,6 +205,6 @@ test("product retrieval rejects unrelated fuzzy candidates for every category", 
   );
 
   const toolsSource = readFileSync(new URL("../lib/assistente/tools.ts", import.meta.url), "utf8");
-  assert.match(toolsSource, /terminiSignificativi\\(q, 10\\)/);
-  assert.match(toolsSource, /prodottoPertinente\\(p, terminiRichiesti, \\[\\]\\)/);
+  assert.match(toolsSource, /terminiSignificativi\(q, 10\)/);
+  assert.match(toolsSource, /prodottoPertinente\(p, terminiRichiesti, \[\]\)/);
 });
