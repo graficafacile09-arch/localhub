@@ -1,5 +1,5 @@
 import { rilevaLinguaConversazionePino, rilevaLinguaPino, normalizzaQueryCatalogo } from "./understanding";
-import { isExplicitFoodProductRequest } from "./routing-policy";
+import { directProductQuery, isExplicitFoodProductRequest } from "./routing-policy";
 import { rispostaIdentitaPino } from "./identity";
 import { rispostaSalutoPino, rispostaRelazionalePino } from "./greetings";
 import { CATEGORIE_REGALO, isGenericGiftRequest, prodottoCorrispondeCategoriaRegalo } from "./gift-retrieval";
