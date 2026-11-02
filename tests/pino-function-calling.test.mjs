@@ -87,3 +87,74 @@ test("a zero tool limit returns no tool calls", () => {
   }, allowed, clean, 0);
   assert.deepEqual(result, { tools: [], directReply: null });
 });
+
+
+test("shared Gemini provider parses function calls without executing them", async () => {
+  const { callGeminiFunctionCalling } = await import("../lib/ai/gemini-text.ts");
+  const previousKey = process.env.GEMINI_API_KEY;
+  const previousModel = process.env.GEMINI_MODEL;
+  const previousFetch = globalThis.fetch;
+  process.env.GEMINI_API_KEY = "test-key";
+  delete process.env.GEMINI_MODEL;
+  let requestBody;
+
+  globalThis.fetch = async (_url, init) => {
+    requestBody = JSON.parse(init.body);
+    return new Response(JSON.stringify({
+      candidates: [{
+        content: {
+          parts: [
+            { functionCall: { name: "searchProducts", args: { query: "pasta", maxPrice: 5 } } },
+          ],
+        },
+      }],
+    }), { status: 200, headers: { "Content-Type": "application/json" } });
+  };
+
+  try {
+    const result = await callGeminiFunctionCalling({
+      systemPrompt: "Sei Pino.",
+      userPrompt: "Cerco pasta sotto 5 euro.",
+      functionDeclarations: [{ name: "searchProducts" }],
+      fallbackModel: "test-model",
+      retries: 1,
+    });
+
+    assert.deepEqual(result.functionCalls, [
+      { name: "searchProducts", args: { query: "pasta", maxPrice: 5 } },
+    ]);
+    assert.equal(result.text, null);
+    assert.equal(requestBody.tools[0].functionDeclarations[0].name, "searchProducts");
+    assert.equal(requestBody.toolConfig.functionCallingConfig.mode, "AUTO");
+  } finally {
+    globalThis.fetch = previousFetch;
+    if (previousKey === undefined) delete process.env.GEMINI_API_KEY;
+    else process.env.GEMINI_API_KEY = previousKey;
+    if (previousModel === undefined) delete process.env.GEMINI_MODEL;
+    else process.env.GEMINI_MODEL = previousModel;
+  }
+});
+
+test("shared Gemini provider returns direct text when no function is requested", async () => {
+  const { callGeminiFunctionCalling } = await import("../lib/ai/gemini-text.ts");
+  const previousKey = process.env.GEMINI_API_KEY;
+  const previousFetch = globalThis.fetch;
+  process.env.GEMINI_API_KEY = "test-key";
+  globalThis.fetch = async () => new Response(JSON.stringify({
+    candidates: [{ content: { parts: [{ text: "Certo, volentieri!" }] } }],
+  }), { status: 200, headers: { "Content-Type": "application/json" } });
+
+  try {
+    const result = await callGeminiFunctionCalling({
+      systemPrompt: "Sei Pino.",
+      userPrompt: "Ti va di fare due chiacchiere?",
+      functionDeclarations: [],
+      retries: 1,
+    });
+    assert.deepEqual(result, { functionCalls: [], text: "Certo, volentieri!" });
+  } finally {
+    globalThis.fetch = previousFetch;
+    if (previousKey === undefined) delete process.env.GEMINI_API_KEY;
+    else process.env.GEMINI_API_KEY = previousKey;
+  }
+});
