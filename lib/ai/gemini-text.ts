@@ -40,6 +40,118 @@ export type CallGeminiTextParams = {
   retries?: number;
 };
 
+
+/** Risposta strutturata della selezione strumenti Gemini. */
+export type GeminiFunctionCallingResult = {
+  functionCalls: Array<{ name?: string | null; args?: unknown } | null>;
+  text: string | null;
+};
+
+/**
+ * Esegue una richiesta Gemini con Function Calling usando lo stesso endpoint,
+ * la stessa chiave e la stessa gestione timeout/retry del provider testuale.
+ * Non esegue i tool: restituisce soltanto chiamate e testo al chiamante.
+ */
+export async function callGeminiFunctionCalling(params: {
+  systemPrompt: string;
+  userPrompt: string;
+  functionDeclarations: unknown[];
+  fallbackModel?: string;
+  maxTokens?: number;
+  temperature?: number;
+  timeoutMs?: number;
+  retries?: number;
+}): Promise<GeminiFunctionCallingResult> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("Chiave API Gemini mancante. Aggiungi GEMINI_API_KEY al file .env.local.");
+  }
+
+  const model = process.env.GEMINI_MODEL?.trim() || params.fallbackModel || MODELLO_FALLBACK;
+  const timeoutMs = params.timeoutMs ?? 15_000;
+  const retries = Math.max(1, params.retries ?? 2);
+  let ultimoErrore: Error | null = null;
+
+  for (let tentativo = 1; tentativo <= retries; tentativo++) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      const body = {
+        contents: [{ role: "user", parts: [{ text: params.userPrompt }] }],
+        systemInstruction: { parts: [{ text: params.systemPrompt }] },
+        generationConfig: {
+          temperature: params.temperature ?? 0.1,
+          maxOutputTokens: params.maxTokens ?? 450,
+        },
+        tools: [{ functionDeclarations: params.functionDeclarations }],
+        toolConfig: { functionCallingConfig: { mode: "AUTO" } },
+      };
+
+      const url = `${GEMINI_BASE}/${encodeURIComponent(model)}:generateContent?key=${apiKey}`;
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        const errorBody = await response.text().catch(() => "unknown");
+        const retryable = response.status === 402 || response.status === 429 ||
+          (response.status >= 500 && response.status < 600);
+        ultimoErrore = response.status === 429 || response.status === 402
+          ? new Error(`Quota Gemini superata (HTTP ${response.status}).`)
+          : new Error(`Errore Gemini (HTTP ${response.status}): ${errorBody.slice(0, 300)}`);
+        if (retryable && tentativo < retries) {
+          await new Promise((resolve) => setTimeout(resolve, tentativo * 800));
+          continue;
+        }
+        throw ultimoErrore;
+      }
+
+      const data = await response.json() as {
+        candidates?: Array<{
+          content?: {
+            parts?: Array<{
+              text?: string;
+              functionCall?: { name?: string; args?: unknown };
+            }>;
+          };
+        }>;
+      };
+      const parts = data.candidates?.[0]?.content?.parts ?? [];
+      const functionCalls = parts
+        .filter((part) => part.functionCall)
+        .map((part) => ({
+          name: part.functionCall?.name ?? null,
+          args: part.functionCall?.args,
+        }));
+      const text = parts.map((part) => part.text ?? "").join("").trim() || null;
+
+      if (functionCalls.length === 0 && !text) {
+        throw new Error("Gemini non ha restituito né chiamate agli strumenti né testo.");
+      }
+      return { functionCalls, text };
+    } catch (caught: unknown) {
+      if (caught instanceof DOMException && caught.name === "AbortError") {
+        ultimoErrore = new Error(`Timeout chiamata Gemini (${Math.round(timeoutMs / 1000)}s).`);
+      } else {
+        ultimoErrore = caught instanceof Error ? caught : new Error("Errore sconosciuto chiamata Gemini.");
+      }
+      if (tentativo < retries && /Timeout chiamata Gemini|Errore server Gemini/i.test(ultimoErrore.message)) {
+        await new Promise((resolve) => setTimeout(resolve, tentativo * 800));
+        continue;
+      }
+      throw ultimoErrore;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
+
+  throw ultimoErrore ?? new Error("Chiamata Gemini Function Calling fallita.");
+}
+
 /**
  * Chiama Gemini e restituisce il testo della prima risposta (candidates[0]).
  * Lancia Error con messaggi chiari per: chiave mancante, quota (dopo i retry),
