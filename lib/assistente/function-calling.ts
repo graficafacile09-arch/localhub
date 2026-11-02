@@ -127,7 +127,11 @@ const FUNCTION_DECLARATIONS: FunctionDeclaration[] = [
   },
 ];
 
-const ALLOWED_TOOLS = new Set(FUNCTION_DECLARATIONS.map((tool) => tool.name));
+const ALLOWED_TOOLS = new Set(
+  FUNCTION_DECLARATIONS
+    .map((tool) => tool.name)
+    .filter((name): name is string => typeof name === "string" && name.length > 0)
+);
 
 function cleanParams(raw: unknown): ToolParams {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
