@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
 import { rispostaIdentitaPino } from "../lib/assistente/identity.ts";
+import { analizzaIntentoPino, pianoIntento } from "../lib/assistente/intent.ts";
 import { isExplicitFoodProductRequest, isBroadAttractionsRequest } from "../lib/assistente/routing-policy.ts";
 import { prodottoIdentificatoDaSoggetto } from "../lib/assistente/product-relevance.ts";
 import {
@@ -146,4 +147,26 @@ test("food relevance uses product identity, never the seller name", () => {
   assert.equal(prodottoIdentificatoDaSoggetto({ nome: "Taralli tradizionali", categoria: "Alimentari" }, "pasta"), false);
   assert.equal(prodottoIdentificatoDaSoggetto({ nome: "Pasta artigianale", categoria: "Alimentari" }, "pasta"), true);
   assert.equal(prodottoIdentificatoDaSoggetto({ nome: "Tagliatelle all'uovo", categoria: "Pasta fresca" }, "pasta"), true);
+});
+
+
+test("professional requests are recognized deterministically as business-only searches", () => {
+  for (const [query, profession] of [
+    ["Dove trovo un commercialista?", "commercialista"],
+    ["Vorrei un fotografo", "fotografo"],
+    ["I need an accountant", "accountant"],
+    ["I'm looking for a photographer", "photographer"],
+  ]) {
+    const analysis = analizzaIntentoPino(query);
+    assert.equal(analysis.intent, "service", query);
+    assert.equal(analysis.confidence, "alta", query);
+    assert.equal(analysis.usaNegozi, true, query);
+    assert.equal(analysis.usaProdotti, false, query);
+    assert.ok(analysis.segnali.includes(`service:${profession}`), query);
+    assert.deepEqual(
+      pianoIntento(analysis, query).map((step) => step.tool),
+      ["searchStores"],
+      query,
+    );
+  }
 });
