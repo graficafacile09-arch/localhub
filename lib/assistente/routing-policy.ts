@@ -38,6 +38,25 @@ export function isExplicitFoodProductRequest(query: string): boolean {
   return /\b(?:im looking for|i am looking for|looking for|i want|i need|want|need|find me|show me|can you find|could you find|buy|purchase|shopping for|cerco|cerca|cercando|sto cercando|trovami|trova|compro|comprare|acquistare|vorrei|voglio|mi serve|ho bisogno di)\b/.test(q);
 }
 
+/**
+ * Richiesta di una sala cinematografica (o di andare al cinema).
+ *
+ * È un LUOGO/ATTIVITÀ, non un prodotto: deve essere gestita nel dominio
+ * attrazioni/servizi e mai trasformata in una ricerca di catalogo. Restano
+ * fuori le richieste di eventi/rassegne (già coperte dagli eventi), i prodotti
+ * che si usano al cinema (proiettore, TV, DVD..., anche al plurale) e gli
+ * abbonamenti.
+ */
+export function richiestaCinemaPino(query: string): boolean {
+  const q = normalizza(query);
+  if (!/\b(?:cinema|multisala|movie\s*theat(?:er|re)|movies?)\b/.test(q)) return false;
+  // Eventi, rassegne e programmazione seguono il dominio eventi.
+  if (/\b(?:eventi|evento|rassegn[ae]|festival|mostr[ae]|concerti?|programma|programmazione|events?)\b/.test(q)) return false;
+  // Prodotti e servizi legati al cinema (anche al plurale) e abbonamenti non
+  // sono una richiesta di sala: restano nel dominio del catalogo.
+  return !/\b(?:proiett\w*|videoproiett\w*|televisor\w*|tv|dvd|blu\s?ray|pellicol[ae]|locandin[ae]|poster|abbonament\w*)\b/.test(q);
+}
+
 /** Richieste generiche in inglese/italiano che chiedono la guida Attrazioni. */
 export function isBroadAttractionsRequest(query: string): boolean {
   const q = normalizza(query);

@@ -9,12 +9,17 @@ import {
 import type { ProdottoRicerca } from "../lib/ricerca-ai";
 import { prodottoPertinente } from "../lib/assistente/tools";
 
-const prodotto = (nome: string, prezzo = 2, descrizione: string | null = null): ProdottoRicerca => ({
+const prodotto = (
+  nome: string,
+  prezzo = 2,
+  descrizione: string | null = null,
+  categoria = "Pasta"
+): ProdottoRicerca => ({
   id: nome.toLowerCase().replace(/\s+/g, "-"),
   negozio_id: "negozio-1",
   nome,
   descrizione,
-  categoria: "Pasta",
+  categoria,
   prezzo,
   negozio_nome: "Mani in Pasta",
   immagine_principale: null,
@@ -93,7 +98,12 @@ test.describe("Pino — domande informative sul catalogo", () => {
 
   test("la ricerca iniziale «Cerco pasta all'uovo» trova il nome specifico in catalogo", () => {
     expect(prodottoPertinente(TAGLIATELLE, ["pasta", "uovo"], [])).toBe(true);
-    expect(prodottoPertinente(prodotto("Biscotti all'uovo"), ["pasta", "uovo"], [])).toBe(false);
+    // I biscotti non sono pasta: la categoria deve rispettare il prodotto reale
+    // (in catalogo i biscotti sono "Prodotti da forno"), altrimenti il caso
+    // verifica soltanto che "Biscotti" sia classificato come pasta.
+    expect(
+      prodottoPertinente(prodotto("Biscotti all'uovo", 2, null, "Prodotti da forno"), ["pasta", "uovo"], [])
+    ).toBe(false);
     expect(prodottoPertinente(prodotto("Tagliatelle secche"), ["pasta", "uovo"], [])).toBe(false);
   });
 });

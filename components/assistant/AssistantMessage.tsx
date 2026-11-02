@@ -153,7 +153,17 @@ export default function AssistantMessage({ message }: AssistantMessageProps) {
                     <p className="line-clamp-2 text-xs font-bold leading-tight text-slate-900 transition group-hover:text-blue-700">
                       {prodotto.nome}
                     </p>
-                    <p className="mt-0.5 text-sm font-black text-blue-700">€{prodotto.prezzo}</p>
+                    <p className="mt-0.5 text-sm font-black text-blue-700">
+                      {(() => {
+                        const prezzo = Number(prodotto.prezzo);
+                        if (!Number.isFinite(prezzo) || prezzo <= 0) {
+                          return "Prezzo non disponibile";
+                        }
+                        return prodotto.ha_varianti
+                          ? `A partire da €${prezzo}`
+                          : `€${prezzo}`;
+                      })()}
+                    </p>
                     <p className="mt-0.5 line-clamp-1 text-[10px] text-slate-400">{prodotto.negozio_nome}</p>
                   </div>
                 </Link>

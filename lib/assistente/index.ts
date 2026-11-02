@@ -1,7 +1,12 @@
-import { rilevaLinguaConversazionePino, rilevaLinguaPino, normalizzaQueryCatalogo } from "./understanding";
-import { isExplicitFoodProductRequest } from "./routing-policy";
+import {
+  attributoCanonicoPino,
+  rilevaLinguaConversazionePino,
+  rilevaLinguaPino,
+  normalizzaQueryCatalogo,
+} from "./understanding";
+import { isExplicitFoodProductRequest, richiestaCinemaPino } from "./routing-policy";
 import { rispostaIdentitaPino } from "./identity";
-import { rispostaSalutoPino, rispostaRelazionalePino } from "./greetings";
+import { rispostaSalutoPino, rispostaRelazionalePino, rispostaPreferenzaLinguaPino } from "./greetings";
 import { CATEGORIE_REGALO, isGenericGiftRequest, prodottoCorrispondeCategoriaRegalo } from "./gift-retrieval";
 /**
  * LocalHub — Assistente AI: Orchestratore
@@ -32,7 +37,17 @@ import {
   searchPharmacies,
   orariPerNegozi,
   ordinaProdottiPerBudget,
+  rilevaBudgetIndicativoPino,
   prezzoNumerico,
+  filtraProdottiPerAttributiPino,
+  filtraProdottiPerDisponibilitaPino,
+  notaDisponibilitaProdottiPino,
+  rilevaRichiestaServizioPino,
+  serviziRichiestiPino,
+  type AttributiProdottoPino,
+  type EsitoAttributiProdottiPino,
+  type RichiestaServizioPino,
+  type ServizioAttivoPino,
   type ToolParams,
 } from "./tools";
 import {
@@ -45,6 +60,7 @@ import {
 import { extractJsonFromText } from "@/lib/product-assistant/providers/utils";
 import { callGeminiText } from "@/lib/ai/gemini-text";
 import { isAttractionNameQuery, searchAttractions } from "./attrazioni";
+import { normalizza } from "@/lib/text-utils";
 import type { NegozioRicerca, ProdottoRicerca } from "@/lib/ricerca-ai";
 import { pianoIntentoLocale } from "./local-intents";
 import {
@@ -61,7 +77,17 @@ import {
   prodottoCorrispondeQualificatore,
   componiRispostaAggregata,
 } from "./aggregata";
-import { arricchisciRichiestaConContesto, costruisciStatoConversazionale, interpretaRichiestaPino, usaFastPathSemantico, type PinoSemanticPlan } from "./semantica";
+import {
+  analizzaComprensionePino,
+  arricchisciRichiestaConContesto,
+  costruisciStatoConversazionale,
+  fallbackPlan,
+  fondiVincoliPino,
+  interpretaRichiestaPino,
+  usaFastPathSemantico,
+  type PinoSemanticPlan,
+} from "./semantica";
+import type { PinoUnderstanding } from "./understanding";
 import {
   rilevaFollowUp,
   soggettoPrecedente,
@@ -92,7 +118,7 @@ export interface RispostaAssistente {
 
 // ─── Configurazione LLM ──────────────────────────────────────────────────────
 
-type ToolInvocation = {
+export type ToolInvocation = {
   tool?: string;
   params?: ToolParams;
 };
@@ -176,6 +202,32 @@ async function eseguiTool(
     }
     case "getCategories":
       return { ...vuoto, categorie: await getCategoriesList() };
+    case "searchGiftCategories": {
+      // S5.1 — Un'unica invocazione tool per gruppo di categorie regalo. Le
+      // ricerche per singola categoria sono query INTERNE al contratto dello
+      // strumento: non sono invocazioni tool aggiuntive e non superano il
+      // limite globale di 3. Il filtro di categoria resta attivo per ogni
+      // risultato, così nessun prodotto fuori tema riempie il gruppo.
+      const categorie = Array.isArray(params?.termini) ? params.termini : [];
+      const limiteCategoria = Math.max(
+        1,
+        Math.min(Math.floor(Number(params?.limit ?? 3)) || 3, 5)
+      );
+      const trovati: ProdottoRicerca[] = [];
+      for (const categoria of categorie) {
+        const risultati = await searchProducts(categoria, {
+          ...params,
+          query: categoria,
+          termini: undefined,
+          limit: limiteCategoria,
+        });
+        for (const prodotto of risultati) {
+          if (!prodottoCorrispondeCategoriaRegalo(prodotto, categoria)) continue;
+          if (!trovati.some((esistente) => esistente.id === prodotto.id)) trovati.push(prodotto);
+        }
+      }
+      return { ...vuoto, prodotti: trovati };
+    }
     case "getWeather":
       return { ...vuoto, meteo: await getWeatherCastrovillari() };
     case "searchPharmacies": {
@@ -188,6 +240,270 @@ async function eseguiTool(
     default:
       return vuoto;
   }
+}
+
+/**
+ * Vincoli del piano semantico da conservare nel fallback di ricerca completa.
+ * Il fallback non deve diventare un percorso alternativo che aggira i filtri
+ * della ricerca principale: esclusioni, budget, città e orari restano attivi.
+ * Solo i valori realmente presenti vengono passati (nessuna proprietà inventata).
+ */
+export function parametriFallbackPiano(
+  semantica?: PinoSemanticPlan,
+  comprensione?: PinoUnderstanding,
+  domanda?: string
+): ToolParams {
+  const params: ToolParams = {};
+  if (semantica) {
+    if (semantica.exclusions?.length) params.esclusioni = semantica.exclusions;
+    if (semantica.maxPrice != null) params.maxPrice = semantica.maxPrice;
+    if (semantica.minPrice != null) params.minPrice = semantica.minPrice;
+    if (semantica.city) params.citta = semantica.city;
+    if (semantica.openNow) params.apertiOra = true;
+  }
+  // S4.1: se il piano non è disponibile (planner spento o fallito) i vincoli
+  // riconosciuti dal contratto restano attivi anche nel fallback: nessuna
+  // ricerca "pulita" che reintroduca esclusioni o budget già riconosciuti.
+  // Gli importi passano dalla stessa validazione di `fondiVincoliPino`, così
+  // nessun prezzo pari a zero o non numerico diventa un vincolo.
+  if (comprensione) {
+    const daComprensione = fondiVincoliPino(undefined, comprensione);
+    if (!params.esclusioni?.length && daComprensione.esclusioni.length > 0) {
+      params.esclusioni = daComprensione.esclusioni;
+    }
+    if (params.maxPrice == null && daComprensione.maxPrice != null) {
+      params.maxPrice = daComprensione.maxPrice;
+    }
+    if (params.minPrice == null && daComprensione.minPrice != null) {
+      params.minPrice = daComprensione.minPrice;
+    }
+    // S4.3: colore e materiale restano attivi anche nel fallback.
+    const attributi = attributiProdottiPino(comprensione, domanda);
+    if (attributi) {
+      if (attributi.colori?.length) params.colori = attributi.colori;
+      if (attributi.materiali?.length) params.materiali = attributi.materiali;
+    }
+  }
+  return params;
+}
+
+/**
+ * S4.3 — Attributi dei prodotti che Pino trasferisce ai tool.
+ *
+ * Solo colore e materiale diventano filtri in questa fase (D-4); destinatario,
+ * taglia, genere e provenienza restano nel contratto senza diventare vincoli.
+ * Restituisce `null` quando non c'è nulla da applicare, così le richieste senza
+ * attributi non ricevono parametri aggiuntivi.
+ */
+const RE_ATTRIBUTO_NEGATO =
+  /\b(?:non|senza|not|without|no)\s+(?:in\s+|di\s+|il\s+|lo\s+|la\s+|the\s+)?([a-z\u00e0-\u00ff]+)/gi;
+
+export function attributiProdottiPino(
+  comprensione?: PinoUnderstanding,
+  domanda?: string
+): AttributiProdottoPino | null {
+  // Un attributo negato dall'utente ("non in tessuto") è un'esclusione, non un
+  // requisito: senza questa sottrazione il filtro accetterebbe proprio il
+  // materiale che la richiesta rifiuta. Fonti: esclusioni del piano e
+  // negazioni esplicite nella richiesta stessa.
+  //
+  // S6.1: il confronto passa dalla forma canonica del vocabolario
+  // ("nere" → "nero", "leather" → "pelle"). Con il confronto alla lettera
+  // "scarpe non nere" lasciava "nero" tra i requisiti positivi, perché
+  // l'esclusione arrivava nella forma flessa usata dall'utente.
+  const esclusi = new Set<string>();
+  const aggiungiEsclusione = (voce: unknown) => {
+    const testo = String(voce ?? "").trim().toLowerCase();
+    if (!testo) return;
+    esclusi.add(testo);
+    const canonico = attributoCanonicoPino(testo);
+    if (canonico) esclusi.add(canonico);
+  };
+  for (const voce of comprensione?.esclusioni ?? []) aggiungiEsclusione(voce);
+  if (domanda) {
+    for (const occorrenza of domanda.matchAll(RE_ATTRIBUTO_NEGATO)) {
+      aggiungiEsclusione(occorrenza[1]);
+    }
+  }
+  const colori = (comprensione?.attributi.colori ?? []).filter((voce) => !esclusi.has(voce));
+  const materiali = (comprensione?.attributi.materiali ?? []).filter(
+    (voce) => !esclusi.has(voce)
+  );
+  const attributi: AttributiProdottoPino = {};
+  if (colori.length > 0) attributi.colori = colori;
+  if (materiali.length > 0) attributi.materiali = materiali;
+  return attributi.colori || attributi.materiali ? attributi : null;
+}
+
+/**
+ * Trasferisce gli attributi alle invocazioni che leggono il catalogo prodotti,
+ * qualunque sia la loro origine (piano locale, LLM, fan-out dei regali).
+ * Gli altri strumenti restano invariati.
+ */
+export function applicaAttributiProdottiPino(
+  invocazioni: ToolInvocation[],
+  comprensione?: PinoUnderstanding,
+  domanda?: string
+): ToolInvocation[] {
+  const attributi = attributiProdottiPino(comprensione, domanda);
+  if (!attributi) return invocazioni;
+  return invocazioni.map((invocazione) =>
+    invocazione.tool === "searchProducts" ||
+    invocazione.tool === "searchAll" ||
+    invocazione.tool === "searchGiftCategories"
+      ? { ...invocazione, params: { ...(invocazione.params ?? {}), ...attributi } }
+      : invocazione
+  );
+}
+
+// ─── S4.5: richieste di servizio, ricerca e risposta ────────────────────────
+
+/** Negozio con i servizi trovati da `searchStores` (proprietà extra del tool). */
+type NegozioConServiziPino = NegozioRicerca & {
+  serviziTrovati?: ServizioAttivoPino[];
+  /** Servizi richiesti dichiarati dall'attività, ma senza record strutturato. */
+  serviziNonDichiarati?: string[];
+};
+
+/**
+ * Quando la richiesta è di un servizio, il catalogo da interrogare è quello
+ * delle attività: le invocazioni di prodotti vengono sostituite (nessun
+ * prodotto casuale, nessun negozio fuori tema) da una sola `searchStores` con
+ * il servizio riconosciuto. Il soggetto attività, se c'è, resta la query.
+ */
+export function invocazioniConServizioPino(
+  invocazioni: ToolInvocation[],
+  richiesta: RichiestaServizioPino | null,
+  vincoli: { esclusioni?: string[]; citta?: string | null } = {}
+): ToolInvocation[] {
+  if (!richiesta) return invocazioni;
+  const params: ToolParams = {
+    servizio: richiesta.servizio,
+    limit: 8,
+  };
+  if (richiesta.attivita) params.query = richiesta.attivita;
+  if (vincoli.esclusioni?.length) params.esclusioni = vincoli.esclusioni;
+  if (vincoli.citta) params.citta = vincoli.citta;
+  return [{ tool: "searchStores", params }];
+}
+
+function formattaPrezzoServizioPino(prezzo: number | null | undefined): string | null {
+  if (prezzo == null) return null;
+  const numero = Number(prezzo);
+  if (!Number.isFinite(numero) || numero <= 0) return null;
+  return `€${numero}`;
+}
+
+/**
+ * Risposta deterministica per le richieste di servizio: usa SOLO i servizi
+ * restituiti dal tool. Prezzo e durata mancanti sono dichiarati come tali e
+ * mai attribuiti al negozio o a un altro servizio.
+ */
+export function rispostaServizioPino(
+  negozi: NegozioRicerca[],
+  servizio: string,
+  lingua: "it" | "en" = "it"
+): string {
+  const inglese = lingua === "en";
+  // S6.1/P2: una richiesta può chiedere più servizi ("taglio e barba"). Ogni
+  // servizio resta un'unità distinta: la risposta non somma prezzi, non
+  // attribuisce la durata di uno all'altro e dichiara separatamente ciò che
+  // l'attività non dettaglia.
+  const richiesti = serviziRichiestiPino(servizio);
+  const righe: string[] = [];
+  for (const negozio of (negozi ?? []).slice(0, 8)) {
+    const nome = String(negozio?.nome ?? "").trim();
+    if (!nome) continue;
+    const trovati = ((negozio as NegozioConServiziPino).serviziTrovati ?? []).filter(
+      (voce) => voce && String(voce.nome ?? "").trim()
+    );
+    const dettagli = trovati.map((voce) => {
+      const prezzo = formattaPrezzoServizioPino(voce.prezzo);
+      const durata =
+        voce.durataMin != null && Number.isFinite(Number(voce.durataMin)) && Number(voce.durataMin) > 0
+          ? (inglese ? `about ${Number(voce.durataMin)} minutes` : `circa ${Number(voce.durataMin)} minuti`)
+          : null;
+      const parti = [
+        prezzo ?? (inglese ? "price not stated" : "prezzo non indicato"),
+        durata ?? (inglese ? "duration not stated" : "durata non indicata"),
+      ];
+      return `${String(voce.nome).trim()}: ${parti.join(" · ")}`;
+    });
+    // Solo per i servizi richiesti che l'attività non dettaglia: nessun prezzo
+    // o durata inventati, e nessuna riga aggiunta quando l'attività non mostra
+    // alcun servizio (in quel caso resta la formula "offre …").
+    if (dettagli.length > 0) {
+      for (const mancante of (negozio as NegozioConServiziPino).serviziNonDichiarati ?? []) {
+        const etichetta = String(mancante ?? "").trim();
+        if (!etichetta) continue;
+        dettagli.push(
+          `${etichetta}: ${inglese ? "price and duration not stated" : "prezzo e durata non indicati"}`
+        );
+      }
+    }
+    const descrizione = dettagli.length
+      ? dettagli.join("; ")
+      : (inglese ? `lists ${servizio}` : `offre ${servizio}`);
+    righe.push(`- **${nome}** — ${descrizione}`);
+  }
+
+  if (righe.length === 0) return messaggioServizioNonTrovatoPino(servizio, lingua);
+  const pluraleServizi = richiesti.length > 1;
+  const apertura = inglese
+    ? `I found ${righe.length} ${righe.length === 1 ? "business" : "businesses"} in the InCittà catalogue that ${pluraleServizi ? "list the requested services" : "list this service"}.`
+    : `Ho trovato ${righe.length} attività nel catalogo InCittà che ${pluraleServizi ? "dichiarano i servizi richiesti" : "dichiara questo servizio"}.`;
+  return `${apertura}\n\n${righe.join("\n")}`;
+}
+
+/**
+ * Nessuna attività con il servizio richiesto: Pino parla di catalogo, non
+ * dell'assenza del servizio in città, e non propone alternative casuali.
+ */
+export function messaggioServizioNonTrovatoPino(
+  servizio: string,
+  lingua: "it" | "en" = "it"
+): string {
+  return lingua === "en"
+    ? `I couldn't find any business in the InCittà catalogue that lists "${servizio}". I can try a different area or a similar service.`
+    : `Nel catalogo InCittà non ho trovato attività che dichiarino "${servizio}". Posso provare con un'altra zona o un servizio simile.`;
+}
+
+/**
+ * Nota onesta sugli attributi: dichiara solo ciò che il catalogo permette di
+ * verificare. Se il filtro ha azzerato i risultati, Pino parla di catalogo
+ * InCittà e non afferma che il prodotto non esista in città; se alcuni
+ * risultati non dichiarano il dato, non lo presenta come confermato.
+ */
+export function notaAttributiProdottiPino(
+  esito: EsitoAttributiProdottiPino,
+  comprensione?: PinoUnderstanding,
+  lingua: "it" | "en" = "it",
+  domanda?: string
+): string | null {
+  const attributi = attributiProdottiPino(comprensione, domanda);
+  if (!attributi) return null;
+  const elenco = [...(attributi.colori ?? []), ...(attributi.materiali ?? [])].join(", ");
+
+  if (esito.prodotti.length === 0 && esito.esclusi > 0) {
+    return lingua === "en"
+      ? `I found no products in the InCittà catalogue matching ${elenco}. I can relax that filter or look for a similar item.`
+      : `Nel catalogo InCittà non ho trovato prodotti compatibili con ${elenco}. Posso allargare la ricerca o cercare un prodotto simile.`;
+  }
+
+  const mancantiIt: string[] = [];
+  const mancantiEn: string[] = [];
+  if ((attributi.colori?.length ?? 0) > 0 && esito.senzaColore > 0) {
+    mancantiIt.push("il colore");
+    mancantiEn.push("the colour");
+  }
+  if ((attributi.materiali?.length ?? 0) > 0 && esito.senzaMateriale > 0) {
+    mancantiIt.push("il materiale");
+    mancantiEn.push("the material");
+  }
+  if (mancantiIt.length === 0) return null;
+  return lingua === "en"
+    ? `Some results do not state ${mancantiEn.join(" or ")} in the InCittà catalogue, so I can't confirm it.`
+    : `Per alcuni risultati il catalogo InCittà non indica ${mancantiIt.join(" e ")}: non posso confermarlo.`;
 }
 
 // Ultima query "sostanziale" dell'utente: se il messaggio corrente è solo un
@@ -238,10 +554,64 @@ export function nomiGiaMostrati(storico: MessaggioAssistente[]): string[] {
 // offerte?", "cosa c'è questo weekend?", "voglio mangiare", "va bene" e
 // "che cos'è InCittà?" scelgano SEMPRE il tool/risposta giusti, senza
 // affidarsi alla disciplina del modello. Per tutto il resto decide l'LLM.
+/**
+ * S6.2 — Richiesta breve di prodotto con un'esclusione esplicita.
+ *
+ * "borsa without leather" non ha formule introduttive: la confidenza lessicale
+ * resta bassa e il planner locale non produce un piano affidabile. La
+ * comprensione ha però già soggetto di catalogo ed esclusione, quindi il
+ * percorso ordinario dei prodotti è determinabile senza LLM: una sola
+ * invocazione `searchProducts`, con esclusioni canoniche ("leather" → "pelle").
+ *
+ * Restituisce `null` quando il caso non ricorre, così il comportamento delle
+ * altre richieste resta invariato.
+ */
+export function pianoProdottoEsclusionePino(
+  analisi: PinoIntentAnalysis,
+  semantica?: PinoSemanticPlan,
+  richiesta?: string
+): ToolInvocation[] | null {
+  if (analisi.confidence !== "bassa") return null;
+  if (analisi.intent === "generic" || analisi.intent === "service") return null;
+  // Luoghi e attrazioni non sono prodotti: il loro percorso deterministico
+  // (cinema, guida Attrazioni) resta prioritario anche con un'esclusione.
+  if (richiesta && (richiestaGuidaAttrazioniPino(richiesta) || richiestaCinemaPino(richiesta))) {
+    return null;
+  }
+  // Piano con esclusioni già riconosciute oppure piano locale deterministico
+  // (stesso fallback usato dal planner quando Gemini non è disponibile).
+  const piano =
+    semantica && semantica.exclusions.length > 0
+      ? semantica
+      : richiesta?.trim()
+        ? fallbackPlan(richiesta, analisi)
+        : null;
+  if (!piano) return null;
+  // Le richieste di attività restano sul loro percorso (servizi/negozi).
+  if (piano.surface === "stores" || piano.surface === "none") return null;
+  const query = piano.query.trim();
+  if (!query) return null;
+  const esclusioni = Array.from(
+    new Set(
+      piano.exclusions
+        .map((voce) => attributoCanonicoPino(voce) ?? String(voce ?? "").trim().toLowerCase())
+        .filter(Boolean)
+    )
+  );
+  if (esclusioni.length === 0) return null;
+  return [
+    {
+      tool: "searchProducts",
+      params: { query, limit: 8, esclusioni },
+    },
+  ];
+}
+
 function pianoPredefinito(
   storico: MessaggioAssistente[],
   analisi: PinoIntentAnalysis,
-  semantica?: PinoSemanticPlan
+  semantica?: PinoSemanticPlan,
+  richiestaContestuale?: string
 ): { directReply: string | null; tools: ToolInvocation[]; followUp?: FollowUp } | null {
   const utenti = storico.filter((m) => m.role === "user").map((m) => m.content);
   const ultimo = (utenti[utenti.length - 1] ?? "").trim().toLowerCase();
@@ -500,6 +870,17 @@ function pianoPredefinito(
   //   - confidenza alta/media → piano deterministico coerente con l'intento;
   //   - confidenza bassa (nessun segnale di dominio) → decide il planner LLM,
   //     esattamente come prima dell'intent layer.
+  // S6.2 — Richiesta breve di prodotto con esclusione: la comprensione
+  // lessicale basta, non serve attendere la selezione LLM.
+  const invocazioniEsclusione = pianoProdottoEsclusionePino(
+    analisi,
+    semantica,
+    richiestaContestuale || utenti[utenti.length - 1] || ""
+  );
+  if (invocazioniEsclusione) {
+    return { directReply: null, tools: invocazioniEsclusione };
+  }
+
   if (analisi.intent === "generic") {
     return {
       directReply: inglese
@@ -528,11 +909,18 @@ function pianoPredefinito(
 // ─── Fallback testuale quando la risposta finale LLM fallisce ────────────────
 
 /** Risultati tipizzati → struttura per la composizione testuale (riuso). */
+type ProdottoRisultatoTestualePino = RisultatiRecuperati["prodotti"][number] & {
+  ha_varianti?: boolean;
+};
+type RisultatiRecuperatiPino = Omit<RisultatiRecuperati, "prodotti"> & {
+  prodotti: ProdottoRisultatoTestualePino[];
+};
+
 function aRisultatiRecuperati(
   negozi: NegozioRicerca[],
   prodotti: ProdottoRicerca[],
   extra: Partial<RisultatiRecuperati> = {}
-): RisultatiRecuperati {
+): RisultatiRecuperatiPino {
   return {
     negozi: negozi.map((n) => ({
       nome: n.nome,
@@ -547,6 +935,7 @@ function aRisultatiRecuperati(
       negozio_nome: p.negozio_nome,
       categoria: p.categoria,
       descrizione: p.descrizione,
+      ha_varianti: p.ha_varianti === true,
     })),
     offerte: [],
     eventi: [],
@@ -557,9 +946,25 @@ function aRisultatiRecuperati(
   };
 }
 
+/** Formattazione deterministica del prezzo di un prodotto Pino. */
+export function formattaPrezzoProdottoPino(
+  prodotto: Pick<ProdottoRicerca, "prezzo" | "ha_varianti">,
+  lingua: "it" | "en" = "it"
+): string {
+  const prezzo = prezzoNumerico(prodotto?.prezzo);
+  const inglese = lingua === "en";
+  if (prezzo == null || prezzo <= 0) {
+    return inglese ? "Price not available" : "Prezzo non disponibile";
+  }
+  if (prodotto?.ha_varianti === true) {
+    return inglese ? `From €${prezzo}` : `A partire da €${prezzo}`;
+  }
+  return `€${prezzo}`;
+}
+
 /** Sezioni testuali dei risultati (condivise tra risposta normale e follow-up). */
 function sezioniRisultati(
-  risultati: RisultatiRecuperati,
+  risultati: RisultatiRecuperatiPino,
   budget?: number | null,
   lingua: "it" | "en" = "it"
 ): string[] {
@@ -575,7 +980,14 @@ function sezioniRisultati(
             const prezzo = prezzoNumerico(p.prezzo);
             const fuoriBudget =
               budget != null && prezzo != null && prezzo > 0 && prezzo > budget;
-            return `- **${p.nome}** — €${p.prezzo} (${p.negozio_nome || (inglese ? "unknown store" : "negozio sconosciuto")})${fuoriBudget ? (inglese ? " — **over budget**" : " — **oltre il budget**") : ""}`;
+            // S5.3: il prezzo con varianti è il minimo delle varianti attive,
+            // quindi va presentato come "a partire da", mai come prezzo della
+            // variante richiesta. Un prezzo assente non diventa zero.
+            // Nella riga dell'elenco la frase resta in minuscolo, come prima.
+            const prezzoCanonico = formattaPrezzoProdottoPino(p, lingua);
+            const prezzoTesto =
+              prezzoCanonico.charAt(0).toLocaleLowerCase() + prezzoCanonico.slice(1);
+            return `- **${p.nome}** — ${prezzoTesto} (${p.negozio_nome || (inglese ? "unknown store" : "negozio sconosciuto")})${fuoriBudget ? (inglese ? " — **over budget**" : " — **oltre il budget**") : ""}`;
           })
           .join("\n")
     );
@@ -653,7 +1065,7 @@ function descriviCriteriRicerca(semantica?: PinoSemanticPlan, lingua: "it" | "en
   return lingua === "en" ? `I searched for **${semantica.query}** ${criteri.join(" · ")}.` : `Ho cercato **${semantica.query}** ${criteri.join(" · ")}.`;
 }
 
-function fallbackTestuale(
+export function fallbackTestuale(
   risultati: RisultatiRecuperati,
   notaVincolo = "",
   intent?: PinoIntent,
@@ -692,10 +1104,22 @@ function fallbackTestuale(
         const prezzo = prezzoNumerico(p.prezzo);
         return prezzo != null && prezzo > 0 && prezzo <= budget;
       }).length;
+      // Prodotti senza prezzo pubblicato: non sono né dentro né fuori budget,
+      // quindi non possiamo presentarli come "alternative più care" né
+      // dichiarare che tutti i risultati rispettano la cifra.
+      const senzaPrezzo = risultati.prodotti.filter(
+        (p) => prezzoNumerico(p.prezzo) == null
+      ).length;
       if (entroBudget === 0) {
-        introduzione += inglese ? `No products are within the €${budget} budget, so these are the closest alternatives, all above that amount.\n\n` : `Nessun prodotto rientra nel budget di €${budget}: ecco le alternative più vicine, tutte oltre la cifra indicata.\n\n`;
+        introduzione +=
+          senzaPrezzo === 0
+            ? (inglese ? `No products are within the €${budget} budget, so these are the closest alternatives, all above that amount.\n\n` : `Nessun prodotto rientra nel budget di €${budget}: ecco le alternative più vicine, tutte oltre la cifra indicata.\n\n`)
+            : (inglese ? `No product with a published price is within the €${budget} budget: these alternatives are either above that amount or have no published price.\n\n` : `Nessun prodotto con prezzo pubblicato rientra nel budget di €${budget}: queste alternative superano la cifra indicata oppure non hanno un prezzo disponibile.\n\n`);
       } else if (entroBudget < n) {
-        introduzione += inglese ? `I found ${n} ${n === 1 ? "product" : "products"}: first those within the €${budget} budget, then more expensive alternatives.\n\n` : `Ho trovato ${n} ${n === 1 ? "prodotto" : "prodotti"}: prima quelli entro il budget di €${budget}, poi le alternative più care.\n\n`;
+        introduzione +=
+          senzaPrezzo === 0
+            ? (inglese ? `I found ${n} ${n === 1 ? "product" : "products"}: first those within the €${budget} budget, then more expensive alternatives.\n\n` : `Ho trovato ${n} ${n === 1 ? "prodotto" : "prodotti"}: prima quelli entro il budget di €${budget}, poi le alternative più care.\n\n`)
+            : (inglese ? `I found ${n} ${n === 1 ? "product" : "products"}: first those within the €${budget} budget, then more expensive alternatives or products without a published price.\n\n` : `Ho trovato ${n} ${n === 1 ? "prodotto" : "prodotti"}: prima quelli entro il budget di €${budget}, poi le alternative più costose o senza prezzo disponibile.\n\n`);
       } else {
         introduzione += inglese ? `I found ${n} ${n === 1 ? "product" : "products"} within the €${budget} budget.\n\n` : `Ho trovato ${n} ${n === 1 ? "prodotto" : "prodotti"} entro il budget di €${budget}.\n\n`;
       }
@@ -860,13 +1284,18 @@ async function recuperaAlternativeSemantiche(
   storico: MessaggioAssistente[],
   analisi: PinoIntentAnalysis,
   memoria: Awaited<ReturnType<typeof recuperaMemoria>>,
-  semanticaIniziale?: PinoSemanticPlan
+  semanticaIniziale?: PinoSemanticPlan,
+  maxInvocazioni: number = 3
 ): Promise<{
   negozi: NegozioRicerca[];
   prodotti: ProdottoRicerca[];
   piano: PinoSemanticPlan | undefined;
   descrizione: string | null;
 }> {
+  // Nessuna invocazione residua: non avviare né planner né retrieval.
+  if (maxInvocazioni <= 0) {
+    return { negozi: [], prodotti: [], piano: semanticaIniziale, descrizione: null };
+  }
   const pianoInterpretato =
     semanticaIniziale ??
     (await interpretaRichiestaPino(domanda, storico, analisi, memoria));
@@ -900,10 +1329,15 @@ async function recuperaAlternativeSemantiche(
 
   const prodottiTrovati: ProdottoRicerca[] = [];
   const negoziTrovati: NegozioRicerca[] = [];
+  // S5.1-C — Il recupero semantico consuma solo le invocazioni residue del
+  // budget globale (3 meno quelle già eseguite). Niente più 5+3 chiamate.
+  let residue = Math.max(0, Math.min(MASSIMO_INVOCAZIONI_PINO, Math.floor(maxInvocazioni)));
 
   // Prima allarga il concetto sullo stesso tipo di superficie.
   if (piano.surface === "products" || piano.surface === "both") {
     for (const q of candidati) {
+      if (residue <= 0) break;
+      residue -= 1;
       const trovati = await searchProducts(q, { ...baseParams, query: q });
       for (const p of trovati) {
         if (!prodottiTrovati.some((x) => x.id === p.id)) prodottiTrovati.push(p);
@@ -917,9 +1351,12 @@ async function recuperaAlternativeSemantiche(
   // concreta e trasparente.
   if (
     (piano.surface === "stores" || piano.surface === "both" || analisi.intent === "product") &&
-    negoziTrovati.length < 6
+    negoziTrovati.length < 6 &&
+    residue > 0
   ) {
     for (const q of candidati.slice(0, 3)) {
+      if (residue <= 0) break;
+      residue -= 1;
       const trovati = await searchStores(q, {
         citta: piano.city ?? undefined,
         esclusioni,
@@ -1108,6 +1545,314 @@ function rispostaFarmacieDeterministica(
   return prefisso + elenco;
 }
 
+// ─── Guida Attrazioni: intento di visita e pertinenza ──────────────────────
+//
+// S4.8 — Una richiesta di un luogo (museo, monumento, castello...) non è una
+// ricerca commerciale. Se la guida Attrazioni non ha un risultato pertinente,
+// Pino lo dichiara e si ferma: non deve proporre prodotti o negozi casuali né
+// affermare che il luogo non esista in città.
+
+const RE_INTENTO_GUIDA_PINO =
+  /\b(muse[oi]|monument[oi]|attrazion[ei]|cosa vedere|luoghi da visitare|luoghi da vedere|visitare|palazz[oi]|castell[oi]|chies[ae]|teatr[oi]|biblioteca|archivio|borg[oh]i?|dintorni|centro storico|festival|mostre|parco|itinerario|turistic[oa]|museums?|monuments?|attractions?|things to see|places to visit|visit|palaces?|castles?|churches|theatres?|libraries|archives?|villages?|surroundings|historic center|historic centre|exhibitions?|parks?|itinerary|tourism|tourist|archaeological|amphitheat(?:re|er)s?|ruins?|sites?)\b/i;
+
+// Parole che indicano un acquisto o un prodotto: «cerco un negozio di articoli
+// per il teatro» non è una visita, anche se contiene «teatro».
+const RE_CONTESTO_ACQUISTO_PINO =
+  /\b(?:comprare|compro|acquistare|acquisto|negozi[oi]|boutique|commerciale|commerciali|supermercat[oi]|prodott[oi]|shampoo|regal[oi]|prezz[oi]|offerte?|sconti?|vendita|buy|buying|shop|shops|store|stores|malls?|products?|prices?|offers?|discounts?|sale|gifts?)\b/i;
+
+// Parole di raccordo e categorie generiche di luogo: non identificano un
+// risultato specifico della guida, quindi non vengono usate per scartare.
+const TERMINI_NEUTRI_GUIDA_PINO = new Set([
+  "dove","cosa","quali","quale","chi","come","quando","perche","posso","potrei",
+  "vorrei","voglio","cerco","cercando","serve","servono","bisogno","sono","anche",
+  "solo","questo","questa","questi","queste","quel","quella","quei","quelle",
+  "il","lo","la","i","gli","le","un","uno","una","e","ed","o","di","da",
+  "del","della","dei","degli","delle","al","alla","ai","agli","alle","dal",
+  "dalla","dai","dagli","dalle","nel","nella","nei","negli","nelle","su","sul",
+  "sulla","per","con","senza","non","che","si","mi","ho","piu","c","ci",
+  "dell","dello","all","allo","nell","nello","sull","sullo","dall","dallo",
+  "visitare","visit","visiting","visita","visite","vedere","see","seeing",
+  "guardare","consigli","consigliami","mostrami",
+  "what","can","i","the","a","an","any","there","some","me","you","we","do",
+  "is","are","of","to","in","on","at","near","around","for","with","and","or",
+  "about","my","should","best","where","how","which","this","that","these",
+  "those","have","has","it","information","info","looking","find","things","places",
+  "museo","musei","museum","museums","monumento","monumenti","monument","monuments",
+  "attrazione","attrazioni","attraction","attractions","palazzo","palazzi","palace",
+  "palaces","castello","castelli","castle","castles","chiesa","chiese","church",
+  "churches","teatro","teatri","theatre","theatres","theater","theaters","biblioteca",
+  "biblioteche","library","libraries","archivio","archivi","archive","archives","borgo",
+  "borghi","village","villages","dintorni","surroundings","centro","storico","storica",
+  "historic","historical","centre","center","festival","festivals","mostra","mostre",
+  "exhibition","exhibitions","parco","parchi","park","parks","itinerario","itinerary",
+  "turismo","tourism","turistico","turistica","tourist","archeologico","archeologica",
+  "archeologici","archaeological","cultura","culture","arte","art","sito","siti",
+  "site","sites","evento","eventi","event","events","luogo","luoghi","place",
+  "castrovillari",
+]);
+
+// S4.8.1 — La ricerca della guida è lessicale e indicizzata su termini
+// italiani. I plurali inglesi (museums, monuments, churches, castles, parks)
+// non producevano alcun punteggio e la richiesta finiva nel messaggio di
+// assenza. Qui le categorie inglesi vengono ricondotte ai termini già presenti
+// nel catalogo, senza toccare nomi propri e qualificatori specifici.
+const CATEGORIE_GUIDA_EN_IT: ReadonlyArray<readonly [RegExp, string]> = [
+  [/\barchaeological\s+sites?\b/gi, "archeologico"],
+  [/\bhistorical\s+sites?\b/gi, "monumenti"],
+  [/\bhistorical\s+monuments?\b/gi, "monumenti"],
+  [/\bmuseums?\b/gi, "museo"],
+  [/\bmonuments?\b/gi, "monumenti"],
+  [/\bchurches\b|\bchurch\b/gi, "chiesa"],
+  [/\bcastles\b|\bcastle\b/gi, "castello"],
+  [/\btheat(?:re|er)s?\b/gi, "teatro"],
+  [/\bparks?\b/gi, "parco"],
+];
+
+export function espandiCategorieGuidaPino(query: string): string {
+  return CATEGORIE_GUIDA_EN_IT.reduce(
+    (testo, [categoria, termineItaliano]) => testo.replace(categoria, termineItaliano),
+    String(query ?? "")
+  );
+}
+
+function terminiSpecificiGuidaPino(query: string): string[] {
+  return normalizza(String(query ?? ""))
+    .split(/[^a-z0-9]+/)
+    .filter((termine) => termine.length >= 3 && !TERMINI_NEUTRI_GUIDA_PINO.has(termine));
+}
+
+/**
+ * Riconosce una richiesta di luogo/attrazione, escludendo gli acquisti.
+ * Il nome di un luogo del catalogo resta sempre una richiesta valida.
+ */
+export function richiestaGuidaAttrazioniPino(query: string): boolean {
+  const testo = String(query ?? "");
+  // Un acquisto esplicito resta una ricerca commerciale anche quando contiene
+  // il nome o la categoria di un luogo («negozio di articoli per il teatro»).
+  if (RE_CONTESTO_ACQUISTO_PINO.test(testo)) return false;
+  if (isAttractionNameQuery(testo)) return true;
+  if (!RE_INTENTO_GUIDA_PINO.test(testo)) return false;
+  return true;
+}
+
+/** Risposta onesta: assenza nella guida, non inesistenza nella città. */
+export function rispostaGuidaAttrazioniAssentePino(lingua: "it" | "en" = "it"): string {
+  return lingua === "en"
+    ? "I can't currently find information about this place in InCittà's attractions guide. That doesn't necessarily mean it doesn't exist in Castrovillari. I won't suggest shops or products that have nothing to do with it."
+    : "Al momento non trovo informazioni su questo luogo nella guida Attrazioni di InCittà. Questo non significa necessariamente che non esista a Castrovillari. Non ti propongo negozi o prodotti che non c'entrano.";
+}
+
+/**
+ * Mantiene solo i luoghi che condividono un termine specifico con la richiesta.
+ * Le domande ampie («cosa posso visitare?», «ci sono monumenti?») non hanno
+ * termini specifici e conservano l'elenco completo della guida.
+ */
+export function filtraLuoghiPertinentiGuidaPino(
+  query: string,
+  luoghi: ReturnType<typeof searchAttractions>
+): ReturnType<typeof searchAttractions> {
+  const specifici = terminiSpecificiGuidaPino(query);
+  if (specifici.length === 0) return luoghi;
+
+  return luoghi.filter((luogo) => {
+    const campi = normalizza(
+      [luogo.nome, luogo.tipo, luogo.descrizione, luogo.queryMaps, ...luogo.alias].join(" ")
+    ).split(/[^a-z0-9]+/);
+    return specifici.some((termine) =>
+      campi.some((campo) => {
+        if (campo === termine) return true;
+        if (termine.length < 4 || campo.length < 4) return false;
+        return campo.slice(0, 4) === termine.slice(0, 4);
+      })
+    );
+  });
+}
+
+// ─── S5.1: limite globale delle invocazioni tool ────────────────────────────
+//
+// Il vincolo architetturale è: massimo 3 invocazioni tool per richiesta.
+// Una singola invocazione può eseguire internamente più query di retrieval
+// previste dal proprio contratto (es. i gruppi di categorie regalo), mentre
+// ogni voce di `invocazioni` qui rappresenta una chiamata tool distinta.
+
+export const MASSIMO_INVOCAZIONI_PINO = 3;
+
+// S5.2.1 — Soggetti che non identificano un articolo: non possono diventare
+// una query di riserva ("prodotto", "regalo", "articolo"...).
+const SOGGETTI_GENERICI_RISERVA_PINO = new Set([
+  "prodotto", "prodotti", "regalo", "regali", "articolo", "articoli", "cosa",
+  "cose", "oggetto", "oggetti", "idea", "idee", "qualcosa", "qualche", "altro",
+  "altra", "product", "products", "gift", "gifts", "item", "items", "thing",
+  "things", "something",
+]);
+
+/** Una query è utilizzabile se, dopo la normalizzazione, contiene un termine
+ * che identifica un articolo (non solo parole generiche come "prodotto"). */
+function queryRiservaUtilizzabilePino(query: unknown): boolean {
+  const normalizzata = normalizzaQueryCatalogo(String(query ?? "")).trim();
+  if (!normalizzata) return false;
+  const token = normalizzata.split(/[^a-z0-9]+/).filter(Boolean);
+  return token.some((voce) => !SOGGETTI_GENERICI_RISERVA_PINO.has(voce));
+}
+
+/** Soggetto specifico utilizzabile come query di riserva, oppure null. */
+export function soggettoRiservaPino(soggetto: string): string | null {
+  const riserva = normalizzaQueryCatalogo(String(soggetto ?? "")).trim();
+  if (!riserva || riserva.length < 3) return null;
+  const token = riserva.split(/[^a-z0-9]+/).filter(Boolean);
+  if (token.length === 0) return null;
+  if (token.every((voce) => SOGGETTI_GENERICI_RISERVA_PINO.has(voce))) return null;
+  return riserva;
+}
+
+/**
+ * S5.2.1 — Usa il soggetto del contratto SOLO per riempire una query vuota o
+ * inutilizzabile su invocazioni già esistenti. Non crea nuove invocazioni,
+ * non sovrascrive query valide e non tocca i parametri di vincolo (budget,
+ * esclusioni, colori, materiali, città), che vengono conservati.
+ */
+export function applicaQueryRiservaPino(
+  invocazioni: ToolInvocation[],
+  comprensione?: PinoUnderstanding
+): ToolInvocation[] {
+  const elenco = Array.isArray(invocazioni) ? invocazioni : [];
+  const riserva = soggettoRiservaPino(comprensione?.soggetto ?? "");
+  if (!riserva) return elenco;
+  return elenco.map((invocazione) => {
+    if (
+      invocazione.tool !== "searchProducts" &&
+      invocazione.tool !== "searchStores" &&
+      invocazione.tool !== "searchAll"
+    ) {
+      return invocazione;
+    }
+    const params = invocazione.params ?? {};
+    if (queryRiservaUtilizzabilePino(params.query)) return invocazione;
+    // Un criterio esplicito già utilizzabile non richiede la riserva.
+    if (
+      params.termini?.length ||
+      params.categoria?.trim() ||
+      params.tipo?.trim() ||
+      params.servizio?.trim()
+    ) {
+      return invocazione;
+    }
+    return { ...invocazione, params: { ...params, query: riserva } };
+  });
+}
+
+/**
+ * S5.2.1 — Nota onesta per gli attributi che il catalogo non permette di
+ * verificare (destinatario, età, taglia, provenienza, artigianalità). Non
+ * dichiara idoneità o conformità e non esclude risultati.
+ */
+export function notaContestoAttributiPino(
+  comprensione?: PinoUnderstanding,
+  lingua: "it" | "en" = "it"
+): string | null {
+  if (!comprensione) return null;
+  const attributi = comprensione.attributi;
+  const vociIt: string[] = [];
+  const vociEn: string[] = [];
+  if (attributi.destinatario) {
+    vociIt.push(`destinatario (${attributi.destinatario})`);
+    vociEn.push(`recipient (${attributi.destinatario})`);
+  }
+  if (attributi.eta != null) {
+    vociIt.push(`età (${attributi.eta} anni)`);
+    vociEn.push(`age (${attributi.eta})`);
+  }
+  if (attributi.taglie.length > 0) {
+    vociIt.push(`taglia (${attributi.taglie.join(", ")})`);
+    vociEn.push(`size (${attributi.taglie.join(", ")})`);
+  }
+  if (attributi.provenienza.length > 0) {
+    vociIt.push(`provenienza (${attributi.provenienza.join(", ")})`);
+    vociEn.push(`origin (${attributi.provenienza.join(", ")})`);
+  }
+  if (attributi.altri.includes("artigianale")) {
+    vociIt.push("artigianalità");
+    vociEn.push("handmade production");
+  }
+  if (vociIt.length === 0) return null;
+  return lingua === "en"
+    ? `Note: the InCittà catalogue has no verifiable data on ${vociEn.join(", ")}. These results are not presented as meeting those criteria.`
+    : `Nota: il catalogo InCittà non dispone di dati verificabili su ${vociIt.join(", ")}. I risultati non sono presentati come conformi a questi criteri.`;
+}
+
+/**
+ * Riduce una lista di invocazioni al massimo consentito, preservando la
+ * varietà delle superfici: prima la prima occorrenza di ogni tool, poi le
+ * restanti nell'ordine originale. Non altera i parametri né i gate.
+ */
+export function limitaInvocazioniPino(
+  invocazioni: ToolInvocation[],
+  massimo: number = MASSIMO_INVOCAZIONI_PINO
+): ToolInvocation[] {
+  const limite = Number.isFinite(massimo)
+    ? Math.max(0, Math.floor(Number(massimo)))
+    : MASSIMO_INVOCAZIONI_PINO;
+  const elenco = Array.isArray(invocazioni) ? invocazioni : [];
+  if (elenco.length <= limite) return elenco;
+
+  const scelte: ToolInvocation[] = [];
+  const visti = new Set<string>();
+  for (const invocazione of elenco) {
+    if (scelte.length >= limite) break;
+    const nome = String(invocazione?.tool ?? "");
+    if (!nome || visti.has(nome)) continue;
+    visti.add(nome);
+    scelte.push(invocazione);
+  }
+  for (const invocazione of elenco) {
+    if (scelte.length >= limite) break;
+    if (scelte.includes(invocazione)) continue;
+    scelte.push(invocazione);
+  }
+  return scelte;
+}
+
+/** Invocazioni ancora disponibili per il recupero semantico entro il limite. */
+export function budgetInvocazioniRecuperoPino(usate: number): number {
+  const numero = Number.isFinite(usate) ? Math.max(0, Math.floor(Number(usate))) : 0;
+  return Math.max(0, MASSIMO_INVOCAZIONI_PINO - numero);
+}
+
+/**
+ * S5.1-B — Fan-out regalo in 3 invocazioni tool, non 12.
+ *
+ * Le 12 categorie restano tutte coperte: vengono divise in 3 gruppi e ogni
+ * gruppo è una singola invocazione `searchGiftCategories`, che esegue le
+ * ricerche di categoria al proprio interno. Budget, esclusioni, città e
+ * attributi viaggiano nei parametri e restano applicati dai tool.
+ */
+export function invocazioniRegaloPino(
+  maxPrice?: number | null,
+  extra: ToolParams = {}
+): ToolInvocation[] {
+  const categorie = [...CATEGORIE_REGALO];
+  if (categorie.length === 0) return [];
+  const gruppi = Math.min(MASSIMO_INVOCAZIONI_PINO, categorie.length);
+  const dimensione = Math.ceil(categorie.length / gruppi);
+  const invocazioni: ToolInvocation[] = [];
+  for (let indice = 0; indice < categorie.length; indice += dimensione) {
+    const termini = categorie.slice(indice, indice + dimensione);
+    if (termini.length === 0) continue;
+    invocazioni.push({
+      tool: "searchGiftCategories",
+      params: {
+        ...extra,
+        termini,
+        limit: 3,
+        ...(maxPrice != null && Number.isFinite(Number(maxPrice))
+          ? { maxPrice: Number(maxPrice) }
+          : {}),
+      },
+    });
+  }
+  return invocazioni.slice(0, MASSIMO_INVOCAZIONI_PINO);
+}
+
 // ─── Orchestratore principale ────────────────────────────────────────────────
 
 export async function chatConAssistente(
@@ -1119,7 +1864,22 @@ export async function chatConAssistente(
   // Cap sulla domanda: evita abuso di token e superfici di prompt injection
   // (la storia è già troncata a 300 caratteri per messaggio).
   const domanda = (ultimo && ultimo.role === "user" ? ultimo.content : "").slice(0, 500);
-  const linguaConversazione = rilevaLinguaConversazionePino(storico);
+
+  // S4.1 — Una sola comprensione strutturata per richiesta.
+  // Stato conversazionale, domanda contestuale e intento vengono calcolati qui
+  // una volta sola e passati al contratto `PinoUnderstanding`, che non li
+  // ricalcola. La comprensione guida la lingua della conversazione e la
+  // decisione "solo preferenza linguistica → nessuna ricerca".
+  const statoConversazionale = costruisciStatoConversazionale(storico);
+  const domandaSemantica =
+    statoConversazionale.richiesta ||
+    arricchisciRichiestaConContesto(domanda, storico);
+  const analisiSemantica = analizzaIntentoPino(domandaSemantica);
+  const comprensione = analizzaComprensionePino(domanda, storico, {
+    richiesta: domandaSemantica,
+    analisi: analisiSemantica,
+  });
+  const linguaConversazione = comprensione.lingua;
 
   // Fast path conversazionale: non attendere memoria, planner semantico o Gemini
   // per saluti, domande personali e inviti a chiacchierare.
@@ -1136,6 +1896,29 @@ export async function chatConAssistente(
   }
 
 
+  // Preferenza linguistica: "I speak English", "please answer in English",
+  // "vorrei parlare in inglese" sono comunicazioni sulla conversazione, non
+  // ricerche di catalogo. Il contratto decide SE è solo lingua
+  // (`languagePreferenceOnly`); greetings fornisce il testo della risposta.
+  const preferenzaLingua = comprensione.languagePreferenceOnly
+    ? rispostaPreferenzaLinguaPino(domanda)
+    : null;
+  if (comprensione.languagePreferenceOnly) {
+    return {
+      // Rete di sicurezza: anche se il testo non fosse disponibile, una
+      // richiesta di sola lingua non deve MAI avviare una ricerca.
+      risposta:
+        preferenzaLingua ??
+        (linguaConversazione === "en"
+          ? "Got it — I'll continue in English."
+          : "Va bene — continuo in italiano."),
+      negozi: [],
+      prodotti: [],
+      processingMs: Date.now() - inizio,
+      source: "assistente",
+    };
+  }
+
   // Risposta diretta e cordiale ai saluti semplici, senza passare dal planner.
   const salutoPino = rispostaSalutoPino(domanda);
   if (salutoPino) {
@@ -1148,11 +1931,43 @@ export async function chatConAssistente(
     };
   }
 
+  // Cinema: è un luogo/attività, non un prodotto. Nella guida Attrazioni di
+  // InCittà non è presente una sala cinematografica: Pino dichiara di non poter
+  // confermarla, senza affermare che in città non esistano cinema. Le rassegne
+  // della guida sono citate come EVENTI, mai presentate come sala disponibile.
+  if (richiestaCinemaPino(domanda)) {
+    const inglese = linguaConversazione === "en";
+    const rassegne = searchAttractions(domanda, 6).filter((luogo) =>
+      /\b(?:film|cine)/i.test(`${luogo.nome} ${luogo.tipo} ${luogo.descrizione}`)
+    );
+    const elenco = rassegne
+      .slice(0, 4)
+      .map((luogo) => `- **${luogo.nome}** — ${luogo.tipo}${luogo.url ? ` · [${inglese ? "official source" : "fonte ufficiale"}](${luogo.url})` : ""}`)
+      .join("\n");
+    const rispostaCinema = (inglese
+      ? "I can't find a cinema among the places listed in InCittà's Attractions guide, so I can't point you to a verified venue or confirm whether one exists in town. I won't suggest shops or products that have nothing to do with it."
+      : "Nella guida Attrazioni di InCittà non trovo cinema tra i luoghi elencati, quindi non posso indicarti una sala verificata né confermarti se in città ce ne siano. Non ti propongo negozi o prodotti che non c'entrano.") +
+      (elenco
+        ? (inglese
+            ? `\n\nAmong the events, these cinema-related initiatives are listed:\n\n${elenco}`
+            : `\n\nTra gli eventi risultano queste iniziative legate al cinema:\n\n${elenco}`)
+        : "");
+    return {
+      risposta: rispostaCinema,
+      negozi: [],
+      prodotti: [],
+      processingMs: Date.now() - inizio,
+      source: "assistente",
+    };
+  }
+
   // Guida turistica InCittà: usa lo stesso catalogo della pagina /attrazioni.
   // Il filtro d'intento evita di deviare qui normali ricerche di prodotti o servizi.
-  const luoghi = searchAttractions(domanda, 6);
-  const richiestaTuristica =
-    (/\b(muse[oi]|monument[oi]|attrazion[ei]|cosa vedere|luoghi da visitare|luoghi da vedere|visitare|palazz[oi]|castell[oi]|chies[ae]|teatr[oi]|biblioteca|archivio|borg[oh]i?|dintorni|centro storico|festival|mostre|parco|itinerario|turistic[oa]|museums?|monuments?|attractions?|things to see|places to visit|visit|palaces?|castles?|churches|theatres?|libraries|archives?|villages?|surroundings|historic center|historic centre|exhibitions?|parks?|itinerary|tourism|tourist)\b/i.test(domanda)) || isAttractionNameQuery(domanda);
+  const richiestaTuristica = richiestaGuidaAttrazioniPino(domanda);
+  const luoghi = filtraLuoghiPertinentiGuidaPino(
+    domanda,
+    searchAttractions(espandiCategorieGuidaPino(domanda), 6)
+  );
   if (richiestaTuristica) {
     if (luoghi.length > 0) {
       const elenco = luoghi.map((luogo) => {
@@ -1170,20 +1985,26 @@ export async function chatConAssistente(
         source: "assistente",
       };
     }
+
+    // La guida non ha un risultato pertinente: Pino si ferma qui e non delega
+    // la richiesta a una ricerca commerciale. Il testo distingue l'assenza
+    // nella guida dall'inesistenza del luogo in città.
+    return {
+      risposta: rispostaGuidaAttrazioniAssentePino(linguaConversazione),
+      negozi: [],
+      prodotti: [],
+      processingMs: Date.now() - inizio,
+      source: "assistente",
+    };
   }
 
   // Pino Intent Layer v1: la classificazione avviene PRIMA di ogni ricerca e
   // guida la scelta dei tool, le priorità di recupero e il messaggio finale.
   const analisi = analizzaIntentoPino(domanda);
 
-  // Costruiamo subito la domanda contestuale: la memoria deve poter imparare
-  // e poi essere utilizzata anche nelle richieste brevi che passano dal
-  // fast-path locale.
-  const statoConversazionale = costruisciStatoConversazionale(storico);
-  const domandaSemantica =
-    statoConversazionale.richiesta ||
-    arricchisciRichiestaConContesto(domanda, storico);
-  const analisiSemantica = analizzaIntentoPino(domandaSemantica);
+  // `statoConversazionale`, `domandaSemantica` e `analisiSemantica` sono già
+  // stati calcolati una sola volta all'inizio della richiesta (S4.1): qui non
+  // vengono ricalcolati.
   const followUpBreve = rilevaFollowUp(domanda);
 
   // ── Domande informative/aggregate sul catalogo ──────────────────────────
@@ -1273,6 +2094,15 @@ export async function chatConAssistente(
       )
     : undefined;
 
+  // S4.1 — Vincoli effettivi verso i tool: piano prioritario, contratto in
+  // appoggio. Il budget resta una preferenza (D-1), non un filtro.
+  const vincoliComprensione = fondiVincoliPino(semantica, comprensione);
+
+  // S4.5 — Richiesta di servizio: riconosciuta sul testo della richiesta, non
+  // sulle descrizioni del catalogo. Se c'è, il catalogo interrogato è quello
+  // delle attività con quel servizio dichiarato.
+  const richiestaServizio = rilevaRichiestaServizioPino(domandaSemantica);
+
   // Stato dei risultati recuperati
   let negozi: NegozioRicerca[] = [];
   let prodotti: ProdottoRicerca[] = [];
@@ -1289,7 +2119,7 @@ export async function chatConAssistente(
   // 1) Piano di ricerca: guardie deterministiche per le intenzioni chiare
   // (offerte, eventi, mangiare, chiacchiera, domande su InCittà); per tutto
   // il resto la selezione dei tool la fa l'LLM.
-  const piano = pianoPredefinito(storico, analisi, semantica);
+  const piano = pianoPredefinito(storico, analisi, semantica, domandaSemantica);
 
   if (piano) {
     directReply = piano.directReply;
@@ -1327,6 +2157,7 @@ export async function chatConAssistente(
   // aggiuntive sulle attività, senza sostituire il piano principale.
   const usaMemoriaSuRicerca = !directReply &&
     !followUp &&
+    !richiestaServizio &&
     !isExplicitFoodProductRequest(domanda) &&
     memoria.length > 0 &&
     !invocazioni.some((t) => t.tool === "getWeather" || t.tool === "searchPharmacies");
@@ -1367,7 +2198,7 @@ export async function chatConAssistente(
         limit: 8,
         maxPrice: semantica.maxPrice,
         minPrice: semantica.minPrice,
-        esclusioni: semantica.exclusions,
+        esclusioni: vincoliComprensione.esclusioni,
         escludiNomi: [],
       },
     }];
@@ -1386,6 +2217,7 @@ export async function chatConAssistente(
     ?? domandaSemantica.match(/(\d+(?:[.,]\d+)?)\s*(?:euros?|eur)\b/i);
   const maxPriceCatalogo =
     semantica?.maxPrice ??
+    vincoliComprensione.maxPrice ??
     (importoCatalogo && !/\b(?:sopra|minimo|oltre|over|above|more than|at least)\b/i.test(domandaSemantica)
       ? Number(importoCatalogo[1].replace(",", "."))
       : undefined);
@@ -1398,14 +2230,17 @@ export async function chatConAssistente(
     // per ID; il ranking e i filtri di pertinenza esistenti restano invariati.
     // Il budget, se presente, viene applicato a ogni ricerca e verificato di nuovo
     // dopo il merge. Nessuna chiamata a servizi esterni o nuove dipendenze.
-    invocazioni = CATEGORIE_REGALO.map((query) => ({
-      tool: "searchProducts",
-      params: { query, limit: 3, maxPrice: maxPriceCatalogo },
-    }));
+    invocazioni = invocazioniRegaloPino(maxPriceCatalogo, {
+      ...(vincoliComprensione.esclusioni.length
+        ? { esclusioni: vincoliComprensione.esclusioni }
+        : {}),
+      ...(semantica?.city ? { citta: semantica.city } : {}),
+    });
     directReply = null;
     selezioneOk = true;
     console.info("[pino-gift-routing]", JSON.stringify({
       genericGiftFanout: CATEGORIE_REGALO.length,
+      toolInvocations: invocazioni.length,
       hasBudget: maxPriceCatalogo !== undefined && Number.isFinite(maxPriceCatalogo),
     }));
   } else if (richiestaCatalogoEsplicita && maxPriceCatalogo !== undefined && Number.isFinite(maxPriceCatalogo)) {
@@ -1415,7 +2250,15 @@ export async function chatConAssistente(
       const queryCatalogo = semantica?.query?.trim() || domandaSemantica;
       invocazioni = [{
         tool: "searchProducts",
-        params: { query: queryCatalogo, limit: 8, maxPrice: maxPriceCatalogo },
+        params: {
+          query: queryCatalogo,
+          limit: 8,
+          maxPrice: maxPriceCatalogo,
+          minPrice: vincoliComprensione.minPrice ?? undefined,
+          esclusioni: vincoliComprensione.esclusioni.length
+            ? vincoliComprensione.esclusioni
+            : undefined,
+        },
       }];
       directReply = null;
       selezioneOk = true;
@@ -1428,6 +2271,31 @@ export async function chatConAssistente(
     }
     console.info("[pino-budget-routing-guard]", JSON.stringify({ budget: maxPriceCatalogo, forcedSearch: !haToolProdotti }));
   }
+  // S4.5 — Una richiesta di servizio non deve passare dai prodotti: una sola
+  // ricerca attività, con il servizio riconosciuto e il soggetto come query.
+  if (richiestaServizio && !directReply && !followUp) {
+    invocazioni = invocazioniConServizioPino(invocazioni, richiestaServizio, {
+      esclusioni: vincoliComprensione.esclusioni,
+      citta: semantica?.city ?? null,
+    });
+    selezioneOk = true;
+    console.info("[pino-servizio-routing]", JSON.stringify({
+      servizio: richiestaServizio.servizio,
+      attivita: richiestaServizio.attivita,
+    }));
+  }
+
+  // S4.3: colore e materiale viaggiano nei parametri di ogni invocazione che
+  // legge il catalogo prodotti, indipendentemente da chi l'ha scelta.
+  invocazioni = applicaAttributiProdottiPino(invocazioni, comprensione, domandaSemantica);
+
+  // S5.2.1 — Query di riserva: solo se l'invocazione è priva di una query
+  // utilizzabile. Nessuna nuova chiamata tool, nessun vincolo rimosso.
+  invocazioni = applicaQueryRiservaPino(invocazioni, comprensione);
+
+  // S5.1-D — Invariante globale: nessun percorso può superare 3 invocazioni.
+  invocazioni = limitaInvocazioniPino(invocazioni);
+
   if (invocazioni.length > 0) {
     const risultati = await Promise.all(
       invocazioni.map((t) => eseguiTool(t.tool as string, t.params ?? {}, queryDefault))
@@ -1459,9 +2327,11 @@ export async function chatConAssistente(
   // utile, cercare anche le attività che possono avere quel prodotto.
   let notaRecupero: string | null = null;
   if (
+    selezioneOk &&
     !directReply &&
     !followUp &&
     !regaloGenerico &&
+    !richiestaServizio &&
     negozi.length === 0 &&
     prodotti.length === 0 &&
     offerte.length === 0 &&
@@ -1475,7 +2345,8 @@ export async function chatConAssistente(
       storico,
       analisi,
       memoria,
-      semantica
+      semantica,
+      budgetInvocazioniRecuperoPino(invocazioni.length)
     );
     if (recupero.prodotti.length > 0 || recupero.negozi.length > 0) {
       prodotti = recupero.prodotti;
@@ -1493,17 +2364,51 @@ export async function chatConAssistente(
     }
   }
 
+  // S4.3 — Barriera finale su colore e materiale: vale per la ricerca ordinaria,
+  // per il fan-out dei regali, per il recupero semantico e per il fallback.
+  // Nessun percorso secondario può reintrodurre prodotti incompatibili.
+  const attributiRichiesti = attributiProdottiPino(comprensione, domandaSemantica);
+  const esitoAttributi = attributiRichiesti
+    ? filtraProdottiPerAttributiPino(prodotti, attributiRichiesti)
+    : null;
+  if (esitoAttributi) {
+    prodotti = esitoAttributi.prodotti;
+    console.info("[pino-attributi-filter]", JSON.stringify({
+      colori: attributiRichiesti?.colori ?? [],
+      materiali: attributiRichiesti?.materiali ?? [],
+      esclusi: esitoAttributi.esclusi,
+      senzaColore: esitoAttributi.senzaColore,
+      senzaMateriale: esitoAttributi.senzaMateriale,
+      risultati: prodotti.length,
+    }));
+  }
+
   // Barriera finale: applica il budget dopo il merge e il recupero semantico,
   // così nessun risultato secondario può reintrodurre articoli fuori soglia.
-  const budgetFinaleMatch =
-    domandaSemantica.match(/(?:budget(?:\s+di)?|massimo|fino a|entro|sotto|non oltre|al massimo)\s*(?:di\s*)?(?:€\s*)?(\d+(?:[.,]\d+)?)/i)
-    ?? domandaSemantica.match(/(?:€\s*)(\d+(?:[.,]\d+)?)/i)
-    ?? domandaSemantica.match(/(\d+(?:[.,]\d+)?)\s*(?:euro|eur)\b/i);
-  const budgetFinale = budgetFinaleMatch ? Number(budgetFinaleMatch[1].replace(",", ".")) : undefined;
-  // Il budget è una PREFERENZA: qualunque importo esplicito ordina i risultati
-  // (prima quelli entro la soglia, poi le alternative), senza eliminarne alcuno.
+  // D-1 (opzione B): il budget è INDICATIVO — ordina, non elimina — e vale
+  // qualunque sia la lingua o la fonte della cifra (testo, piano, tool).
+  const budgetDaTesto = rilevaBudgetIndicativoPino(domandaSemantica);
+  const budgetDaPiano =
+    semantica?.maxPrice != null && Number.isFinite(Number(semantica.maxPrice)) && Number(semantica.maxPrice) > 0
+      ? Number(semantica.maxPrice)
+      : null;
+  const budgetDaTool =
+    invocazioni
+      .map((t) => t.params)
+      .filter((p): p is ToolParams => !!p && p.maxPrice != null)
+      .map((p) => Number(p.maxPrice))
+      .filter((n) => Number.isFinite(n) && n > 0)
+      .pop() ?? null;
+  // Il budget riconosciuto dal contratto resta una PREFERENZA indicativa: qui
+  // entra nell'ordinamento finale, mai come filtro rigido.
+  const budgetDaComprensione =
+    comprensione.maxPrice != null &&
+    Number.isFinite(Number(comprensione.maxPrice)) &&
+    Number(comprensione.maxPrice) > 0
+      ? Number(comprensione.maxPrice)
+      : null;
   const budgetPreferenza =
-    budgetFinale !== undefined && Number.isFinite(budgetFinale) ? budgetFinale : null;
+    budgetDaTesto ?? budgetDaPiano ?? budgetDaComprensione ?? budgetDaTool;
   if (budgetPreferenza != null && prodotti.length > 0) {
     prodotti = ordinaProdottiPerBudget(prodotti, { maxPrice: budgetPreferenza });
     console.info("[pino-budget-soft-order]", JSON.stringify({
@@ -1524,6 +2429,16 @@ export async function chatConAssistente(
     JSON.stringify(analisi.segnali),
     "| piano:",
     JSON.stringify(invocazioni.map((t) => t.tool)),
+    "| comprensione:",
+    JSON.stringify({
+      lingua: comprensione.lingua,
+      soggetto: comprensione.soggetto,
+      attributi: comprensione.attributi,
+      esclusioni: comprensione.esclusioni,
+      minPrice: comprensione.minPrice,
+      maxPrice: comprensione.maxPrice,
+      servizio: richiestaServizio?.servizio ?? null,
+    }),
     "| risultati — negozi:",
     negozi.length,
     "prodotti:",
@@ -1586,14 +2501,19 @@ export async function chatConAssistente(
   // Se l'LLM non ha scelto tool né risposta diretta (es. "va bene" senza
   // contesto), NON inventiamo una ricerca: rispondiamo in modo naturale.
   const toolsEseguiti = invocazioni.length > 0;
-  if (!selezioneOk) {
-    const tutto = await searchAll(domanda, {});
+  if (!selezioneOk && !richiestaServizio) {
+    // Fallback con gli stessi vincoli del piano: nessuna ricerca "pulita" che
+    // possa reintrodurre prodotti esclusi o fuori budget.
+    const tutto = await searchAll(
+      domanda,
+      parametriFallbackPiano(semantica, comprensione, domandaSemantica)
+    );
     negozi = tutto.negozi;
     prodotti = tutto.prodotti;
     offerte = tutto.offerte;
     eventi = tutto.eventi;
     categorie = tutto.categorie;
-  } else if (!directReply && !toolsEseguiti) {
+  } else if (!directReply && !toolsEseguiti && !richiestaServizio) {
     return {
       risposta: linguaConversazione === "en"
         ? "I'm here! I can help you find local shops, products, offers and events. What are you looking for?"
@@ -1604,6 +2524,24 @@ export async function chatConAssistente(
       source: "assistente",
       intent: analisi.intent,
     };
+  }
+
+  // S5.3 — Barriera finale di disponibilità: vale per la ricerca ordinaria,
+  // per il fallback e per qualsiasi percorso che abbia prodotto risultati.
+  // La quantità netta è quella del checkout; i dati mancanti restano
+  // "non verificati" e non vengono dichiarati esauriti.
+  const prodottiPrimaDisponibilita = prodotti.length;
+  let notaDisponibilita: string | null = null;
+  if (prodottiPrimaDisponibilita > 0) {
+    const esitoDisponibilita = filtraProdottiPerDisponibilitaPino(prodotti);
+    prodotti = esitoDisponibilita.disponibili;
+    notaDisponibilita = notaDisponibilitaProdottiPino(esitoDisponibilita, linguaConversazione);
+    console.info("[pino-disponibilita-filter]", JSON.stringify({
+      trovati: esitoDisponibilita.totale,
+      disponibili: esitoDisponibilita.disponibili.length,
+      nonDisponibili: esitoDisponibilita.nonDisponibili.length,
+      nonVerificati: esitoDisponibilita.nonVerificati.length,
+    }));
   }
 
   // Apprendimento non bloccante: impara solo da ricerche reali.
@@ -1670,18 +2608,51 @@ export async function chatConAssistente(
   // 6) Risposta rapida grounded: i risultati sono già stati recuperati dai tool.
   // Evitiamo una seconda chiamata Gemini solo per riscrivere dati che abbiamo
   // già verificato: così Pino mostra i risultati molto prima.
-  const linguaRisposta = rilevaLinguaConversazionePino(storico);
+  // S5.1-A — Un'unica fonte per la lingua: il contratto di comprensione
+  // (preferenza esplicita inclusa), lo stesso usato dai rami anticipati.
+  const linguaRisposta = linguaConversazione;
+  // Le direttive interne (notaVincolo) restano nel contesto tecnico e non
+  // vengono mai passate alla composizione della risposta: l'utente vede solo
+  // testo naturale, senza istruzioni operative.
   const rispostaBase = fallbackTestuale(
     risultati,
-    notaVincolo,
+    "",
     analisi.intent,
     semantica,
     budgetPreferenza,
     linguaRisposta
   );
-  const risposta = notaRecupero
-    ? `${notaRecupero}\n\n${rispostaBase}`
-    : rispostaBase;
+  // S4.5 — Per le richieste di servizio la risposta è deterministica e usa solo
+  // i servizi restituiti dal tool (prezzo e durata inclusi o dichiarati assenti).
+  const rispostaServizioTrovata = richiestaServizio
+    ? rispostaServizioPino(negozi, richiestaServizio.servizio, linguaRisposta)
+    : null;
+  // Se l'unico esito erano prodotti esauriti, la risposta di base non deve
+  // dire "non ho trovato nulla": li ha trovati, ma non sono acquistabili.
+  const soloProdottiEsauriti =
+    Boolean(notaDisponibilita) &&
+    prodottiPrimaDisponibilita > 0 &&
+    prodotti.length === 0 &&
+    negozi.length === 0 &&
+    offerte.length === 0 &&
+    eventi.length === 0 &&
+    categorie.length === 0;
+  const rispostaBaseEffettiva = rispostaServizioTrovata ??
+    (soloProdottiEsauriti ? notaDisponibilita! : rispostaBase);
+  // S4.3: nota solo quando il catalogo non permette di confermare l'attributo o
+  // quando il filtro ha azzerato i risultati compatibili.
+  const notaAttributi = esitoAttributi
+    ? notaAttributiProdottiPino(esitoAttributi, comprensione, linguaRisposta, domandaSemantica)
+    : null;
+  // S5.2.1 — Contestare in modo trasparente gli attributi non verificabili
+  // (destinatario, età, taglia, provenienza, artigianalità) senza filtri.
+  const notaContestoAttributi = notaContestoAttributiPino(comprensione, linguaRisposta);
+  const partiRisposta = [notaRecupero, notaAttributi, notaContestoAttributi];
+  if (notaDisponibilita && !soloProdottiEsauriti) partiRisposta.push(notaDisponibilita);
+  partiRisposta.push(rispostaBaseEffettiva);
+  const risposta = partiRisposta
+    .filter((parte): parte is string => Boolean(parte && parte.trim()))
+    .join("\n\n");
 
   return {
     risposta,

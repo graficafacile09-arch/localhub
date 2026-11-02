@@ -1419,13 +1419,31 @@ async function mappaProdottoRicerca(
     : { data: [] };
   const nomiNegozi = new Map((negozi ?? []).map((negozio) => [negozio.id, negozio.nome]));
 
-  return risultati.map((p) => ({
+  return risultati.map((p) =>
+    mappaProdottoRiga(p, nomiNegozi.get(p.negozio_id as string) ?? "")
+  );
+}
+
+/**
+ * Mapping puro di una riga prodotto verso il DTO condiviso.
+ * Espone anche colore e materiale strutturati: senza questo passaggio la
+ * ricerca li selezionava dal DB ma Pino poteva usarli solo se ripetuti nel
+ * testo libero. I valori restano quelli del catalogo (nessuna normalizzazione
+ * qui): il confronto canonico avviene nel filtro Pino.
+ */
+export function mappaProdottoRiga(
+  p: Record<string, unknown>,
+  negozioNome = ""
+): ProdottoRicerca {
+  return {
     id: p.id as string,
     slug: (p.slug as string) ?? null,
     negozio_id: p.negozio_id as string,
     nome: p.nome as string,
     descrizione: (p.descrizione as string) ?? null,
     categoria: (p.categoria as string) ?? null,
+    colore: (p.colore as string | null | undefined) ?? null,
+    materiale: (p.materiale as string | null | undefined) ?? null,
     prezzo: p.prezzo as number,
     immagine_principale: (p.immagine_principale as string) ?? null,
     quantita_disponibile:
@@ -1433,8 +1451,8 @@ async function mappaProdottoRicerca(
     quantita_riservata:
       p.quantita_riservata != null ? Number(p.quantita_riservata) : null,
     ha_varianti: Boolean(p.ha_varianti),
-    negozio_nome: nomiNegozi.get(p.negozio_id as string) ?? "",
-  }));
+    negozio_nome: negozioNome,
+  };
 }
 
 /**
@@ -1630,7 +1648,7 @@ async function cercaProdottiTolleranti(
 
   const { data, error } = await db
     .from("prodotti")
-    .select("id, slug, negozio_id, nome, descrizione, categoria, marca, sottocategoria, prezzo, immagine_principale, quantita_disponibile, quantita_riservata, ha_varianti")
+    .select("id, slug, negozio_id, nome, descrizione, categoria, marca, sottocategoria, colore, materiale, prezzo, immagine_principale, quantita_disponibile, quantita_riservata, ha_varianti")
     .eq("attivo", true)
     .in("negozio_id", negoziValidi)
     .or(filtri)

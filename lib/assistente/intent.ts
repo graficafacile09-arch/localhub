@@ -165,6 +165,18 @@ const L_SERVICE: string[] = [
   "affittacamere",
   "agriturismo",
   "visita",
+  // Equivalenti inglesi dei servizi già riconosciuti in italiano. Servono a
+  // impedire che "I need a doctor" venga classificato come acquisto: il passo
+  // servizi resta PRIMA della ricerca esplicita di un bene.
+  "doctor", "physician", "dentist", "orthodontist", "plumber", "electrician",
+  "carpenter", "painter", "mechanic", "hairdresser", "hairdressing", "barber",
+  "barbershop", "haircut", "hair cut", "beautician", "esthetician", "veterinarian",
+  "vet", "pharmacy", "pharmacist", "lawyer", "attorney", "accountant", "notary",
+  "architect", "engineer", "nail salon", "nail technician", "gym", "trainer",
+  // NB: "cinema"/"movie theater" NON sono qui. Il luogo cinema è gestito da
+  // `richiestaCinemaPino` prima dell'intento; inserirlo tra i servizi
+  // disattiverebbe la ricerca prodotti di richieste come "proiettori per il
+  // cinema" o "televisori per il cinema".
 ];
 
 const L_DRINK_NEED: string[] = ["sete", "bere", "dissetante", "qualcosa da bere", "da bere"];
@@ -324,9 +336,12 @@ const L_FOOD_SOGGETTO: string[] = [
   "pomodoro",
 ];
 
-// Ricerca esplicita di un bene ("cerco pizza", "vorrei comprare una TV").
+// Ricerca esplicita di un bene ("cerco pizza", "vorrei comprare una TV") in
+// italiano e in inglese. Le forme inglesi richiedono un OGGETTO di acquisto
+// ("I want to buy…", "I want a…"): "I want to go to the cinema" non è un
+// acquisto e resta una richiesta di luogo.
 const RE_RICERCA_ESPLICITA =
-  /\b(cerco|cerca|cercando|sto cercando|trovami|trova|comprare|compro|acquistare|acquisto|vorrei|voglio|mi serve|mi servirebbe|ho bisogno di|dove posso comprare)\b/;
+  /\b(cerco|cerca|cercando|sto cercando|trovami|trova|comprare|compro|acquistare|acquisto|vorrei|voglio|mi serve|mi servirebbe|ho bisogno di|dove posso comprare|looking for|find me|show me|can you find|could you find)\b|\bi\s+want\s+to\s+(?:buy|purchase|order|get)\b|\bi\s+(?:want|need)\s+(?:a|an|some|the)\b|\bi'?d\s+like\s+(?:a|an|some|the)\b/;
 
 // ─── Matching ────────────────────────────────────────────────────────────────
 

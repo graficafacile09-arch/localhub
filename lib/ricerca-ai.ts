@@ -36,6 +36,10 @@ export type ProdottoRicerca = {
   nome: string;
   descrizione: string | null;
   categoria: string | null;
+  /** Colore strutturato del catalogo; null = dato non disponibile. */
+  colore?: string | null;
+  /** Materiale strutturato del catalogo; null = dato non disponibile. */
+  materiale?: string | null;
   prezzo: number;
   negozio_nome: string;
   immagine_principale: string | null;

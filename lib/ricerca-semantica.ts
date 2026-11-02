@@ -62,6 +62,11 @@ export const SINONIMI_DIRETTI_PRODOTTO: string[][] = [
   ["zaino", "zaini"],
   ["giubbotto", "giubbino", "giaccone"],
   ["maglietta", "t-shirt", "tshirt", "tee"],
+  // Cuffie/auricolari e borsa/borsello sono lo stesso bene con nomi diversi nel
+  // catalogo: ricerca pubblica, ricerca negozi e gate Pino devono accettare
+  // entrambe le forme. Nessun altro sinonimo viene aggiunto qui.
+  ["cuffia", "cuffie", "auricolare", "auricolari"],
+  ["borsa", "borse", "borsello", "borselli"],
 ];
 
 export function espandiSinonimiDirettiProdotto(query: string): string[] {

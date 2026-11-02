@@ -2,10 +2,17 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { readFileSync } from "node:fs";
 import { rispostaIdentitaPino } from "../lib/assistente/identity.ts";
-import { isExplicitFoodProductRequest, isBroadAttractionsRequest } from "../lib/assistente/routing-policy.ts";
-import { prodottoIdentificatoDaSoggetto } from "../lib/assistente/product-relevance.ts";
+import { isExplicitFoodProductRequest, isBroadAttractionsRequest, richiestaCinemaPino } from "../lib/assistente/routing-policy.ts";
+import { rispostaPreferenzaLinguaPino } from "../lib/assistente/greetings.ts";
 import {
+  prodottoIdentificatoDaSoggetto,
+  prodottoIdentificaSoggetto,
+  prodottoForseRefusoDiSoggetto,
+} from "../lib/assistente/product-relevance.ts";
+import {
+  correggiTokenCatalogo,
   normalizzaQueryCatalogo,
+  refusoPlausibile,
   rilevaLinguaPino,
   richiestaApertaOra,
   rilevaLinguaConversazionePino,
@@ -146,4 +153,255 @@ test("food relevance uses product identity, never the seller name", () => {
   assert.equal(prodottoIdentificatoDaSoggetto({ nome: "Taralli tradizionali", categoria: "Alimentari" }, "pasta"), false);
   assert.equal(prodottoIdentificatoDaSoggetto({ nome: "Pasta artigianale", categoria: "Alimentari" }, "pasta"), true);
   assert.equal(prodottoIdentificatoDaSoggetto({ nome: "Tagliatelle all'uovo", categoria: "Pasta fresca" }, "pasta"), true);
+});
+
+// ─── Regressioni segnalate sul comportamento reale di Pino ────────────────
+
+test("valid Italian words are never rewritten into catalog terms", () => {
+  const vocabolario = [
+    ["aglio", "aglio"],
+    ["pane", "pane"],
+    ["carota", "carota"],
+    ["orologio", "orologio"],
+    ["pizza", "pizza"],
+  ];
+  // "Voglio un cane" non deve diventare "aglio pane", "carta" non è "carota".
+  assert.equal(correggiTokenCatalogo("cane", vocabolario), null);
+  assert.equal(correggiTokenCatalogo("voglio", vocabolario), null);
+  assert.equal(correggiTokenCatalogo("carta", vocabolario), null);
+  assert.equal(correggiTokenCatalogo("gatto", vocabolario), null);
+  // I refusi reali restano corretti.
+  assert.equal(correggiTokenCatalogo("orologgio", vocabolario), "orologio");
+  assert.equal(correggiTokenCatalogo("pizze", vocabolario), "pizza");
+});
+
+test("requests without a catalog subject keep their real subject", () => {
+  assert.equal(normalizzaQueryCatalogo("Voglio un cane"), "cane");
+  assert.equal(normalizzaQueryCatalogo("Voglio un gatto"), "gatto");
+  assert.equal(normalizzaQueryCatalogo("Voglio un pane"), "pane");
+  assert.equal(isExplicitFoodProductRequest("Voglio un cane"), false);
+  assert.equal(isBroadAttractionsRequest("Voglio un cane"), false);
+});
+
+test("language statements are conversation, never catalog searches", () => {
+  const richieste = [
+    "I speak English",
+    "Please speak English",
+    "Can you reply in English?",
+    "I'd like to speak in English",
+    "Parlo solo inglese",
+    "Vorrei parlare in inglese",
+    "Rispondi in inglese per favore",
+  ];
+  for (const richiesta of richieste) {
+    assert.match(rispostaPreferenzaLinguaPino(richiesta) ?? "", /English/, richiesta);
+  }
+  // Una richiesta di catalogo con un riferimento linguistico resta una ricerca.
+  assert.equal(rispostaPreferenzaLinguaPino("I speak English and I'm looking for pasta"), null);
+  assert.equal(rispostaPreferenzaLinguaPino("Vorrei parlare in inglese e cerco pasta"), null);
+  // Una domanda di traduzione non è una preferenza linguistica.
+  assert.equal(rispostaPreferenzaLinguaPino("Come si dice cane in inglese?"), null);
+  assert.equal(rispostaPreferenzaLinguaPino("Cerco un libro in inglese"), null);
+});
+
+test("cinema belongs to places and services, not to the product catalog", () => {
+  const luoghi = [
+    "Voglio andare al cinema",
+    "Dove si trova il cinema?",
+    "C'è un cinema a Castrovillari?",
+    "Ci sono cinema a Castrovillari?",
+    "Vorrei vedere un film al cinema",
+    "I want to go to the movies",
+    "Where is the movie theater?",
+    "Is there a cinema nearby?",
+  ];
+  for (const richiesta of luoghi) {
+    assert.equal(richiestaCinemaPino(richiesta), true, richiesta);
+  }
+
+  // Eventi, prodotti (anche al plurale) e abbonamenti non sono una sala.
+  const nonLuoghi = [
+    "Ci sono eventi al cinema questo weekend?",
+    "Cerco un proiettore per casa",
+    "Voglio comprare proiettori",
+    "Cerco televisori",
+    "Cerco televisori per il cinema",
+    "Voglio proiettori per il cinema",
+    "Voglio un televisore per guardare film",
+    "Cerco DVD",
+    "Voglio un abbonamento cinema",
+    "Cerco una rassegna cinematografica",
+    "Cinema Paradiso, quando è il prossimo evento?",
+    "Cerco pasta sotto 5 euro",
+  ];
+  for (const richiesta of nonLuoghi) {
+    assert.equal(richiestaCinemaPino(richiesta), false, richiesta);
+  }
+});
+
+test("typo recovery never rewrites a valid Italian word", () => {
+  // Refusi recuperabili: stessa prima lettera, una sola modifica.
+  assert.equal(refusoPlausibile("telefno", "telefono"), true);
+  assert.equal(refusoPlausibile("orologgio", "orologio"), true);
+  // Parole italiane corrette e parole diverse restano intatte.
+  assert.equal(refusoPlausibile("cane", "pane"), false);
+  assert.equal(refusoPlausibile("voglio", "aglio"), false);
+  assert.equal(refusoPlausibile("carta", "carota"), false);
+});
+
+test("single-subject gate keeps real equivalences and rejects lookalikes", () => {
+  const sneakers = { nome: "Sneakers running", categoria: "Calzature" };
+  const anello = { nome: "Anello d'oro", categoria: "Gioielleria" };
+  const maglietta = { nome: "Maglietta in cotone", categoria: "Abbigliamento" };
+  const pane = { nome: "Pane artigianale", categoria: "Alimentari" };
+  const crocchetteCani = { nome: "Crocchette per cani", categoria: "Animali" };
+  const crocchetteCane = { nome: "Crocchette per cane", categoria: "Animali" };
+
+  // Equivalenze semantiche reali.
+  assert.equal(prodottoIdentificaSoggetto(anello, "gioielli"), true);
+  assert.equal(prodottoIdentificaSoggetto(maglietta, "maglia"), true);
+  assert.equal(prodottoIdentificaSoggetto(crocchetteCani, "cane"), true);
+  assert.equal(prodottoIdentificaSoggetto(crocchetteCane, "cani"), true);
+  // Il sinonimo diretto arriva dal motore condiviso ("calzature" per "scarpe").
+  assert.equal(prodottoIdentificaSoggetto(sneakers, "calzature"), true);
+
+  // Somiglianze casuali rifiutate.
+  assert.equal(prodottoIdentificaSoggetto(pane, "cane"), false);
+  assert.equal(prodottoForseRefusoDiSoggetto(pane, "cane"), false);
+  assert.equal(prodottoIdentificaSoggetto({ nome: "Carote", categoria: "Ortofrutta" }, "carta"), false);
+
+  // Recupero del solo refuso plausibile.
+  const telefono = { nome: "Telefono Samsung", categoria: "Telefonia" };
+  const orologio = { nome: "Orologio da polso", categoria: "Accessori" };
+  assert.equal(prodottoIdentificaSoggetto(telefono, "telefno"), false);
+  assert.equal(prodottoForseRefusoDiSoggetto(telefono, "telefno"), true);
+  assert.equal(prodottoIdentificaSoggetto(orologio, "orologgio"), false);
+  assert.equal(prodottoForseRefusoDiSoggetto(orologio, "orologgio"), true);
+});
+
+test("descriptions never identify the product by themselves (D1)", () => {
+  const cipolla = {
+    nome: "Filetti di cipolla",
+    categoria: "Conserve",
+    descrizione: "Conservati sott'olio, pronti da servire.",
+  };
+  assert.equal(prodottoIdentificatoDaSoggetto(cipolla, "olio"), false);
+
+  // I prodotti che si chiamano davvero olio restano pertinenti.
+  assert.equal(
+    prodottoIdentificatoDaSoggetto(
+      { nome: "Olio Extra Vergine di Oliva del Pollino", categoria: "Alimentari" },
+      "olio"
+    ),
+    true
+  );
+  // Una parola chiave da sola NON identifica il prodotto.
+  assert.equal(
+    prodottoIdentificatoDaSoggetto(
+      { nome: "Maccheroni al ferretto", categoria: "Alimentari", parole_chiave: ["pasta"] },
+      "pasta"
+    ),
+    false
+  );
+  // Contribuisce solo con una descrizione concorde (due segnali).
+  assert.equal(
+    prodottoIdentificatoDaSoggetto(
+      {
+        nome: "Maccheroni al ferretto",
+        categoria: "Alimentari",
+        parole_chiave: ["pasta"],
+        descrizione: "Pasta tradizionale calabrese.",
+      },
+      "pasta"
+    ),
+    true
+  );
+});
+
+test("seller keywords cannot identify a product on their own", () => {
+  // Keyword isolata: nessuna identificazione, anche se il termine è specifico.
+  assert.equal(
+    prodottoIdentificatoDaSoggetto(
+      { nome: "Biscotti", categoria: "Dolciumi", parole_chiave: ["olio"] },
+      "olio"
+    ),
+    false
+  );
+  assert.equal(
+    prodottoIdentificatoDaSoggetto(
+      { nome: "Trapano", categoria: "Ferramenta", parole_chiave: ["alimentari"] },
+      "alimentari"
+    ),
+    false
+  );
+  // Il prodotto realmente pertinente resta identificato dal nome.
+  assert.equal(
+    prodottoIdentificatoDaSoggetto(
+      { nome: "Olio Extra Vergine di Oliva", categoria: "Alimentari", parole_chiave: ["olio"] },
+      "olio"
+    ),
+    true
+  );
+  // Keyword + descrizione che la cita di passaggio: identità ancora incoerente,
+  // quindi nessuna identificazione ("con olio" non rende i biscotti olio).
+  assert.equal(
+    prodottoIdentificatoDaSoggetto(
+      {
+        nome: "Biscotti",
+        categoria: "Dolciumi",
+        parole_chiave: ["olio"],
+        descrizione: "Biscotti da forno con olio.",
+      },
+      "olio"
+    ),
+    false
+  );
+  assert.equal(
+    prodottoIdentificatoDaSoggetto(
+      {
+        nome: "Trapano",
+        categoria: "Ferramenta",
+        parole_chiave: ["alimentari"],
+        descrizione: "Utensile per uso alimentare.",
+      },
+      "alimentari"
+    ),
+    false
+  );
+  // Il segnale di classificazione vero resta ammesso: descrizione che NOMINA
+  // il soggetto in apertura, oppure parola chiave-frase del venditore.
+  assert.equal(
+    prodottoIdentificatoDaSoggetto(
+      {
+        nome: "Tagliatelle",
+        categoria: "Alimentari",
+        parole_chiave: ["pasta fresca"],
+        descrizione: "Pasta fresca all'uovo, sfoglia tirata a mano.",
+      },
+      "pasta"
+    ),
+    true
+  );
+});
+
+test("typo recovery compares with the product name head only (D3)", () => {
+  assert.equal(
+    prodottoForseRefusoDiSoggetto({ nome: "Panificio Rossi", categoria: "Panetteria" }, "panifcio"),
+    true
+  );
+  // Una parola secondaria non identifica il prodotto.
+  assert.equal(
+    prodottoForseRefusoDiSoggetto({ nome: "Cintura Orologio", categoria: "Accessori" }, "orologgio"),
+    false
+  );
+  assert.equal(
+    prodottoForseRefusoDiSoggetto({ nome: "Orologio da polso", categoria: "Accessori" }, "orologgio"),
+    true
+  );
+});
+
+test("budget product requests keep subject and budget", () => {
+  assert.equal(normalizzaQueryCatalogo("Cerco pasta sotto 5 euro"), "pasta");
+  assert.equal(normalizzaQueryCatalogo("I'm looking for pasta under 5 euros"), "pasta");
+  assert.equal(isExplicitFoodProductRequest("Cerco pasta sotto 5 euro"), true);
 });
