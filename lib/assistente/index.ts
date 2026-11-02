@@ -447,8 +447,7 @@ function pianoPredefinito(
         { tool: "searchStores", params: { ...paramsBase, maxPrice: undefined, minPrice: undefined } },
       ];
       return { directReply: null, tools };
-    }
-  }
+    }  }
 
   // Follow-up con vincolo di prezzo ("sotto 500 euro", "massimo 100 euro"):
   // riusa il SOGGETTO della richiesta precedente con maxPrice, così il
@@ -897,7 +896,6 @@ async function recuperaAlternativeSemantiche(
         .filter((t) => t.length >= 2)
     )
   ).slice(0, 5);
-
   const prodottiTrovati: ProdottoRicerca[] = [];
   const negoziTrovati: NegozioRicerca[] = [];
 
@@ -1148,6 +1146,43 @@ export async function chatConAssistente(
     };
   }
 
+  // Professioni riconosciute con certezza: un solo recupero sul catalogo attività.
+  // Questo percorso precede Attrazioni, memoria e planner AI: uno zero risultati
+  // è definitivo e non deve attivare ricerche su prodotti, eventi o luoghi.
+  const analisi = analizzaIntentoPino(domanda);
+  if (analisi.intent === "service" && analisi.confidence === "alta") {
+    const segnaleServizio = analisi.segnali.find((segnale) => segnale.startsWith("service:"));
+    const professione = segnaleServizio?.slice("service:".length).trim();
+    if (professione) {
+      const negozi = await searchStores(professione, { limit: 8 });
+      const inglese = linguaConversazione === "en";
+      const plurale = inglese
+        ? professione.endsWith("s") ? professione : professione + "s"
+        : professione.endsWith("ista")
+          ? professione.slice(0, -1) + "i"
+          : professione.endsWith("o")
+            ? professione.slice(0, -1) + "i"
+            : professione.endsWith("e")
+              ? professione.slice(0, -1) + "i"
+              : professione.endsWith("a")
+                ? professione.slice(0, -1) + "e"
+                : professione;
+      const risposta = negozi.length > 0
+        ? fallbackTestuale(aRisultatiRecuperati(negozi, []), "", analisi.intent, undefined, null, linguaConversazione)
+        : inglese
+          ? `No ${plurale} are listed in the InCittà catalog.`
+          : `Non risultano ${plurale} nel catalogo InCittà.`;
+      return {
+        risposta,
+        negozi: negozi.slice(0, 8),
+        prodotti: [],
+        processingMs: Date.now() - inizio,
+        source: "assistente",
+        intent: analisi.intent,
+      };
+    }
+  }
+
   // Guida turistica InCittà: usa lo stesso catalogo della pagina /attrazioni.
   // Il filtro d'intento evita di deviare qui normali ricerche di prodotti o servizi.
   const luoghi = searchAttractions(domanda, 6);
@@ -1174,8 +1209,6 @@ export async function chatConAssistente(
 
   // Pino Intent Layer v1: la classificazione avviene PRIMA di ogni ricerca e
   // guida la scelta dei tool, le priorità di recupero e il messaggio finale.
-  const analisi = analizzaIntentoPino(domanda);
-
   // Costruiamo subito la domanda contestuale: la memoria deve poter imparare
   // e poi essere utilizzata anche nelle richieste brevi che passano dal
   // fast-path locale.
@@ -1347,7 +1380,6 @@ export async function chatConAssistente(
 
   // Esecuzione dei tool scelti (dal piano o dall'LLM).
   const queryDefault = ultimaQuerySostanziale(storico);
-
   // Piano semantico autorevole per ricerche di prodotti fisici.
   // La query restituita dal planner è il soggetto del catalogo, non la frase
   // conversazionale completa. Questo evita che inglese, budget e richieste di
