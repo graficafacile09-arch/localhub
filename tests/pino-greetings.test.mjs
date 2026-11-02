@@ -58,3 +58,9 @@ test("Pino understands English smart apostrophes and greeting variants", () => {
   assert.match(rispostaSalutoPino("Good morning Pino") ?? "", /Good morning!/);
   assert.match(rispostaSalutoPino("What's up?") ?? "", /Hey there!/);
 });
+
+
+test("Pino treats an English language preference as conversation, not catalog search", () => {
+  assert.match(rispostaRelazionalePino("I speak English") ?? "", /I'll speak English with you from now on/i);
+  assert.match(rispostaRelazionalePino("Please speak English") ?? "", /I'll speak English with you from now on/i);
+});
