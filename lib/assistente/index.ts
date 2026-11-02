@@ -1160,6 +1160,29 @@ export async function chatConAssistente(
   // Questo percorso precede Attrazioni, memoria e planner AI: uno zero risultati
   // è definitivo e non deve attivare ricerche su prodotti, eventi o luoghi.
   const analisi = analizzaIntentoPino(domanda);
+
+  // Una richiesta diretta di prodotto resta sul catalogo prodotti: niente
+  // reinterpretazione AI e nessuna ricerca negozi come ripiego.
+  const soggettoProdottoDiretto = directProductQuery(domanda);
+  const haVincoloPrezzoDiretto = /\\b(?:sotto|sopra|massimo|minimo|budget|under|below|over|above|between|tra|fino a|entro)\\b|(?:€|\\$)\\s*\\d|\\b\\d+(?:[.,]\\d+)?\\s*(?:euro|euros|eur)\\b/i.test(domanda);
+  if (soggettoProdottoDiretto && !haVincoloPrezzoDiretto) {
+    const prodotti = (await searchProducts(soggettoProdottoDiretto, { limit: 8 }))
+      .filter((prodotto) => prodottoCorrispondeAllaRichiestaUtente(prodotto, domanda));
+    const risposta = prodotti.length > 0
+      ? fallbackTestuale(aRisultatiRecuperati([], prodotti), "", analisi.intent, undefined, null, linguaConversazione)
+      : (linguaConversazione === "en"
+          ? `I couldn't find "${soggettoProdottoDiretto}" in the InCittà product catalog. This doesn't mean it isn't available elsewhere in the city; it simply isn't listed on InCittà right now.`
+          : `Non trovo "${soggettoProdottoDiretto}" nel catalogo prodotti di InCittà. Questo non significa che non sia disponibile in città: significa soltanto che al momento non è presente nel catalogo del sito.`);
+    return {
+      risposta,
+      negozi: [],
+      prodotti,
+      processingMs: Date.now() - inizio,
+      source: "assistente",
+      intent: analisi.intent,
+    };
+  }
+
   if (analisi.intent === "service" && analisi.confidence === "alta") {
     const segnaleServizio = analisi.segnali.find((segnale) => segnale.startsWith("service:"));
     const professione = segnaleServizio?.slice("service:".length).trim();
