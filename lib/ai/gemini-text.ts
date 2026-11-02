@@ -20,7 +20,6 @@ const MODELLO_FALLBACK = "gemini-3.8-flash";
 const TIMEOUT_DEFAULT_MS = 60_000;
 const TENTATIVI_DEFAULT = 3;
 
-/** Messaggio di conversazione per Gemini: i ruoli ammessi sono user/model. */
 export type GeminiMessage = {
   role: "user" | "model";
   content: string;
@@ -29,28 +28,23 @@ export type GeminiMessage = {
 export type CallGeminiTextParams = {
   systemPrompt: string;
   userPrompt: string;
-  /** Cronologia precedente (ruoli già normalizzati user/model). */
   history?: GeminiMessage[];
   maxTokens?: number;
   temperature?: number;
-  /** true → generationConfig.responseMimeType "application/json". */
   json?: boolean;
   timeoutMs?: number;
-  /** Retry con backoff su 429/402 (quota). Default 3. */
   retries?: number;
 };
 
-
-/** Risposta strutturata della selezione strumenti Gemini. */
 export type GeminiFunctionCallingResult = {
   functionCalls: Array<{ name?: string | null; args?: unknown } | null>;
   text: string | null;
 };
 
 /**
- * Esegue una richiesta Gemini con Function Calling usando lo stesso endpoint,
- * la stessa chiave e la stessa gestione timeout/retry del provider testuale.
- * Non esegue i tool: restituisce soltanto chiamate e testo al chiamante.
+ * Esegue Function Calling senza eseguire gli strumenti.
+ * Usa lo stesso endpoint e la stessa configurazione credenziali del provider
+ * testuale, con timeout e retry espliciti per errori transitori.
  */
 export async function callGeminiFunctionCalling(params: {
   systemPrompt: string;
@@ -68,11 +62,13 @@ export async function callGeminiFunctionCalling(params: {
   }
 
   const model = process.env.GEMINI_MODEL?.trim() || params.fallbackModel || MODELLO_FALLBACK;
-  const timeoutMs = params.timeoutMs ?? 15_000;
-  const retries = Math.max(1, params.retries ?? 2);
+  const timeoutMs = Math.max(1_000, params.timeoutMs ?? 15_000);
+  // "retries" indica il numero massimo di tentativi complessivi, come nel
+  // contratto già usato dai test del provider.
+  const maxAttempts = Math.max(1, Math.floor(params.retries ?? 2));
   let ultimoErrore: Error | null = null;
 
-  for (let tentativo = 1; tentativo <= retries; tentativo++) {
+  for (let tentativo = 1; tentativo <= maxAttempts; tentativo++) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -98,12 +94,14 @@ export async function callGeminiFunctionCalling(params: {
 
       if (!response.ok) {
         const errorBody = await response.text().catch(() => "unknown");
-        const retryable = response.status === 402 || response.status === 429 ||
+        const retryable = response.status === 402 ||
+          response.status === 429 ||
           (response.status >= 500 && response.status < 600);
-        ultimoErrore = response.status === 429 || response.status === 402
+        ultimoErrore = response.status === 402 || response.status === 429
           ? new Error(`Quota Gemini superata (HTTP ${response.status}).`)
           : new Error(`Errore Gemini (HTTP ${response.status}): ${errorBody.slice(0, 300)}`);
-        if (retryable && tentativo < retries) {
+
+        if (retryable && tentativo < maxAttempts) {
           await new Promise((resolve) => setTimeout(resolve, tentativo * 800));
           continue;
         }
@@ -137,9 +135,16 @@ export async function callGeminiFunctionCalling(params: {
       if (caught instanceof DOMException && caught.name === "AbortError") {
         ultimoErrore = new Error(`Timeout chiamata Gemini (${Math.round(timeoutMs / 1000)}s).`);
       } else {
-        ultimoErrore = caught instanceof Error ? caught : new Error("Errore sconosciuto chiamata Gemini.");
+        ultimoErrore = caught instanceof Error
+          ? caught
+          : new Error("Errore sconosciuto chiamata Gemini.");
       }
-      if (tentativo < retries && /Timeout chiamata Gemini|Errore server Gemini/i.test(ultimoErrore.message)) {
+
+      // Retry solo per timeout o problemi di rete. Gli errori applicativi,
+      // HTTP non transitori e risposte vuote non vanno ripetuti alla cieca.
+      const erroreRete = caught instanceof TypeError;
+      const timeout = ultimoErrore.message.startsWith("Timeout chiamata Gemini");
+      if ((timeout || erroreRete) && tentativo < maxAttempts) {
         await new Promise((resolve) => setTimeout(resolve, tentativo * 800));
         continue;
       }
@@ -180,8 +185,6 @@ export async function callGeminiText({
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
-      // Ruoli Gemini: user/model (niente "assistant"); l'ultima parte è sempre
-      // la richiesta dell'utente.
       const contents: Array<{ role: "user" | "model"; parts: Array<{ text: string }> }> = [
         ...history.map((m) => ({ role: m.role, parts: [{ text: m.content }] })),
         { role: "user", parts: [{ text: userPrompt }] },
