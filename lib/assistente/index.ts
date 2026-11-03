@@ -1065,6 +1065,16 @@ function descriviCriteriRicerca(semantica?: PinoSemanticPlan, lingua: "it" | "en
   return lingua === "en" ? `I searched for **${semantica.query}** ${criteri.join(" · ")}.` : `Ho cercato **${semantica.query}** ${criteri.join(" · ")}.`;
 }
 
+/**
+ * Indisponibilità temporanea della selezione AI: distinta da un catalogo
+ * senza risultati. Usa la lingua già rilevata da Pino, senza forzare l'italiano.
+ */
+export function messaggioIndisponibilitaGemini(lingua: "it" | "en" = "it"): string {
+  return lingua === "en"
+    ? "The smart search service is temporarily having trouble. I found no results with the alternative search, but that does not mean the product or service is not in the catalogue. You can try again shortly, or tell me a category or a shop."
+    : "Il servizio di ricerca intelligente è momentaneamente in difficoltà. Non ho trovato risultati con la ricerca alternativa, ma questo non significa che il prodotto o servizio non esista nel catalogo. Puoi riprovare tra poco oppure indicarmi una categoria o un negozio.";
+}
+
 export function fallbackTestuale(
   risultati: RisultatiRecuperati,
   notaVincolo = "",
@@ -2526,6 +2536,18 @@ export async function chatConAssistente(
     };
   }
 
+  // Correzione B (S19): un guasto della selezione AI non è un catalogo vuoto.
+  // Il flag vale solo sul ramo di fallback nativo appena eseguito: se la
+  // ricerca alternativa ha trovato qualcosa, la risposta resta invariata.
+  const ricercaFallbackVuota =
+    !selezioneOk &&
+    !richiestaServizio &&
+    negozi.length === 0 &&
+    prodotti.length === 0 &&
+    offerte.length === 0 &&
+    eventi.length === 0 &&
+    categorie.length === 0;
+
   // S5.3 — Barriera finale di disponibilità: vale per la ricerca ordinaria,
   // per il fallback e per qualsiasi percorso che abbia prodotto risultati.
   // La quantità netta è quella del checkout; i dati mancanti restano
@@ -2637,7 +2659,13 @@ export async function chatConAssistente(
     offerte.length === 0 &&
     eventi.length === 0 &&
     categorie.length === 0;
-  const rispostaBaseEffettiva = rispostaServizioTrovata ??
+  // Correzione B (S19): il messaggio di indisponibilità sostituisce solo la
+  // risposta di base del ramo di fallback; filtri, note e risultati restano.
+  const rispostaIndisponibilitaAI = ricercaFallbackVuota
+    ? messaggioIndisponibilitaGemini(linguaRisposta)
+    : null;
+  const rispostaBaseEffettiva = rispostaIndisponibilitaAI ??
+    rispostaServizioTrovata ??
     (soloProdottiEsauriti ? notaDisponibilita! : rispostaBase);
   // S4.3: nota solo quando il catalogo non permette di confermare l'attributo o
   // quando il filtro ha azzerato i risultati compatibili.

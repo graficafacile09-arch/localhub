@@ -19,6 +19,10 @@ const GEMINI_BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 const MODELLO_FALLBACK = "gemini-3.8-flash";
 const TIMEOUT_DEFAULT_MS = 60_000;
 const TENTATIVI_DEFAULT = 3;
+/** 503 temporaneo: un solo retry breve, mai oltre il budget del chiamante. */
+const ATTESA_RETRY_503_MS = 1_500;
+const MAX_RETRY_503 = 1;
+const LIMITE_MESSAGGIO_PROVIDER = 300;
 
 /** Messaggio di conversazione per Gemini: i ruoli ammessi sono user/model. */
 export type GeminiMessage = {
@@ -45,6 +49,48 @@ export type CallGeminiTextParams = {
  * Lancia Error con messaggi chiari per: chiave mancante, quota (dopo i retry),
  * errore server, HTTP generico, timeout, risposta vuota.
  */
+/**
+ * Messaggio del provider ripulito: via la chiave, via i parametri `key=`, una
+ * sola riga e lunghezza limitata. Finisce negli errori, mai il corpo integrale.
+ */
+function sanificaMessaggioProvider(testo: string, chiave: string): string {
+  if (!testo) return "";
+  let ripulito = testo;
+  if (chiave) ripulito = ripulito.split(chiave).join("[REDACTED]");
+  ripulito = ripulito.replace(/key=[^&\s"']+/gi, "key=[REDACTED]");
+  ripulito = ripulito.replace(/[\r\n\t]+/g, " ").trim();
+  if (ripulito.length > LIMITE_MESSAGGIO_PROVIDER) {
+    ripulito = `${ripulito.slice(0, LIMITE_MESSAGGIO_PROVIDER)}...`;
+  }
+  return ripulito;
+}
+
+/** Estrae error.status e error.message dalla risposta di errore, se presenti. */
+function estraiErroreGemini(
+  corpo: string,
+  chiave: string
+): { stato: string; messaggio: string } {
+  const esito = { stato: "", messaggio: "" };
+  if (!corpo) return esito;
+  let dati: unknown = null;
+  try {
+    dati = JSON.parse(corpo);
+  } catch {
+    return esito;
+  }
+  if (!dati || typeof dati !== "object") return esito;
+  const errore = (dati as { error?: unknown }).error;
+  if (!errore || typeof errore !== "object") return esito;
+  const dettaglio = errore as { status?: unknown; message?: unknown };
+  if (typeof dettaglio.status === "string") {
+    esito.stato = sanificaMessaggioProvider(dettaglio.status, chiave);
+  }
+  if (typeof dettaglio.message === "string") {
+    esito.messaggio = sanificaMessaggioProvider(dettaglio.message, chiave);
+  }
+  return esito;
+}
+
 export async function callGeminiText({
   systemPrompt,
   userPrompt,
@@ -62,6 +108,7 @@ export async function callGeminiText({
   const model = process.env.GEMINI_MODEL?.trim() || MODELLO_FALLBACK;
 
   let ultimoErrore: Error | null = null;
+  let tentativi503 = 0;
 
   for (let tentativo = 1; tentativo <= retries; tentativo++) {
     const controller = new AbortController();
@@ -109,10 +156,26 @@ export async function callGeminiText({
           }
           throw ultimoErrore;
         }
+        if (response.status === 503) {
+          // 503 / UNAVAILABLE: saturazione dichiarata come temporanea dal
+          // provider. Un solo retry breve, solo se il budget di tentativi del
+          // chiamante lo consente (es. il planner con retries:1 non lo usa).
+          const dettaglio = estraiErroreGemini(errorBody, apiKey);
+          const etichetta = dettaglio.stato ? `HTTP 503, ${dettaglio.stato}` : "HTTP 503";
+          const coda = dettaglio.messaggio ? `: ${dettaglio.messaggio}` : ".";
+          if (tentativo < retries && tentativi503 < MAX_RETRY_503) {
+            tentativi503 += 1;
+            await new Promise((r) => setTimeout(r, ATTESA_RETRY_503_MS));
+            continue;
+          }
+          throw new Error(`Errore server Gemini (${etichetta})${coda}`);
+        }
         if (response.status >= 500 && response.status < 600) {
           throw new Error(`Errore server Gemini (HTTP ${response.status}).`);
         }
-        throw new Error(`Errore Gemini (HTTP ${response.status}): ${errorBody.slice(0, 300)}`);
+        throw new Error(
+          `Errore Gemini (HTTP ${response.status}): ${sanificaMessaggioProvider(errorBody, apiKey)}`
+        );
       }
 
       const resData = (await response.json()) as {
