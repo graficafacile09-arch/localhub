@@ -2,6 +2,7 @@ import { normalizza, estraiToken } from "../text-utils.ts";
 // Estensione esplicita: questo modulo è caricato anche dalla suite node
 // (`node --experimental-strip-types --test`), che non risolve gli alias.
 import { refusoPlausibile } from "./understanding.ts";
+import { SOTTOTIPI_PRODOTTO } from "../sottotipi-prodotto.ts";
 
 export type ProdottoIdentificabile = {
   nome?: string | null;
@@ -101,6 +102,34 @@ export function prodottoIdentificatoDaSoggetto(
       const c = normalizza(concetto);
       return Boolean(c) && (identita.includes(c) || dettagli.includes(c));
     });
+}
+
+/**
+ * Il prodotto appartiene alla categoria GENERICA richiesta tramite un sottotipo
+ * pubblicato nel catalogo ("formaggio" → "Pecorino di Castrovillari").
+ *
+ * Vale solo sui metadati identitari (nome, categoria, parole chiave): una
+ * descrizione che cita la categoria di passaggio ("ottima con formaggi") non
+ * rende il prodotto un formaggio. La mappa dei sottotipi è curata e piccola:
+ * nessuna soglia di rilevanza viene abbassata per le altre ricerche.
+ */
+export function prodottoIdentificaCategoriaGenerica(
+  prodotto: ProdottoIdentificabile,
+  soggetto: string | undefined
+): boolean {
+  const chiave = normalizza(soggetto ?? "").trim();
+  if (!chiave) return false;
+  const sottotipi = SOTTOTIPI_PRODOTTO[chiave] ?? [];
+  if (sottotipi.length === 0) return false;
+  // Confronto per parola intera: "toma" non deve agganciare "automatico".
+  const tokenIdentita = estraiToken(identitaProdotto(prodotto));
+  const tokenChiavi = paroleChiaveProdotto(prodotto).flatMap((chiaveProdotto) =>
+    estraiToken(chiaveProdotto)
+  );
+  return sottotipi.some((sottotipo) => {
+    const voce = normalizza(sottotipo).trim();
+    return Boolean(voce) && (tokenIdentita.includes(voce) || tokenChiavi.includes(voce));
+  });
 }
 
 /**

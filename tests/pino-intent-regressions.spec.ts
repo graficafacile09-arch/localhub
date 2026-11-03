@@ -112,6 +112,70 @@ test.describe("Pino — lingua del messaggio e conteggi", () => {
 });
 
 /**
+ * Categoria alimentare generica e sottotipi reali del catalogo.
+ *
+ * Il catalogo pubblica il nome specifico ("Pecorino"), non la categoria
+ * generica ("formaggio"): il ponte è curato e viene verificato solo sui
+ * metadati identitari, mai sulla descrizione, e non è una soglia globale più
+ * permissiva.
+ */
+test.describe("Pino — formaggi: categoria generica e sottotipi", () => {
+  const P = (nome: string, categoria: string, descrizione: string | null = null): ProdottoRicerca => ({
+    id: nome,
+    negozio_id: "n1",
+    nome,
+    descrizione,
+    categoria,
+    prezzo: 12,
+    negozio_nome: "Attività",
+    immagine_principale: null,
+  });
+
+  const pecorino = P("Pecorino di Castrovillari", "Alimentari", "Formaggio stagionato di latte di pecora.");
+
+  test("'formaggio' accetta il pecorino pubblicato come alimento", () => {
+    expect(prodottoPertinente(pecorino, ["formaggio"], [])).toBe(true);
+  });
+
+  test("'formaggio' non promuove un prodotto solo perché la descrizione lo cita", () => {
+    const cipolla = P("Dolcezza di Cipolla Bianca", "Alimentari", "Ottima con formaggi e carni.");
+    expect(prodottoPertinente(cipolla, ["formaggio"], [])).toBe(false);
+  });
+
+  test("'pecorino' resta una ricerca specifica, non una categoria", () => {
+    expect(prodottoPertinente(pecorino, ["pecorino"], [])).toBe(true);
+    expect(prodottoPertinente(P("Caciocavallo silano", "Alimentari"), ["pecorino"], [])).toBe(false);
+  });
+
+  test("la query generica si espande ai sottotipi senza perdere il termine originale", () => {
+    const espansa = espandiQueryConSinonimiBase("formaggio").split(/\s+/);
+    expect(espansa).toContain("formaggio");
+    expect(espansa).toContain("pecorino");
+    // Una query specifica non viene allargata alla categoria.
+    expect(espandiQueryConSinonimiBase("pecorino").split(/\s+/)).not.toContain("mozzarella");
+  });
+
+  test("'cerco pecorino' è una richiesta esplicita di prodotto alimentare", () => {
+    expect(isExplicitFoodProductRequest("cerco pecorino")).toBe(true);
+    expect(isExplicitFoodProductRequest("trova un formaggio")).toBe(true);
+  });
+
+  test("lingua: 'cheese' e 'I want some cheese' sono inglesi", () => {
+    expect(analizzaComprensionePino("cheese", [u("cheese")]).lingua).toBe("en");
+    expect(analizzaComprensionePino("I want some cheese", [u("I want some cheese")]).lingua).toBe("en");
+    // La normalizzazione del soggetto resta quella già introdotta.
+    expect(normalizzaQueryCatalogo("cheese")).toBe("formaggio");
+  });
+
+  test("regressioni alimentari invariate", () => {
+    expect(prodottoPertinente(P("Pane Casereccio", "Panetteria"), ["pane"], [])).toBe(true);
+    expect(normalizzaQueryCatalogo("cookies")).toBe("biscotti");
+    expect(prodottoPertinente(P("Biscotti della casa", "Dolciumi"), ["biscotti"], [])).toBe(true);
+    expect(rilevaLinguaConversazionePino(["I speak English", "voglio il pane"].map(u))).toBe("it");
+  });
+});
+
+/**
  * Regressioni segnalate sul comportamento reale di Pino.
  *
  * Questi casi si fermano prima di Supabase/Gemini (fast path conversazionale e

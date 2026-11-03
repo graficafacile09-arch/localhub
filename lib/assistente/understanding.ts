@@ -66,6 +66,13 @@ function rilevaLinguaRiconoscibilePino(testo: string): PinoLanguage | null {
     "other", "more", "less", "on", "duty", "up", "sure", "fine", "alright",
     "recommend", "suggest", "help", "restaurants", "restaurant", "cafes", "cafe",
     "food", "drinks", "price", "prices", "cheap", "expensive", "available",
+    // Nomi di alimento che esistono solo in inglese: senza questi segnali un
+    // messaggio di una sola parola ("cheese") ricadeva sul default italiano.
+    // "pasta" e "pizza" restano fuori: sono identiche nelle due lingue e non
+    // devono spostare il rilevamento di una frase italiana.
+    "bread", "cheese", "cookies", "cookie", "cake", "noodles", "meat",
+    "fish", "vegetables", "vegetable", "fruit", "fruits", "honey",
+    "flour", "rice", "onion", "onions", "tomato", "tomatoes",
     // S5.1 — categorie e termini turistici inglesi: senza questi segnali una
     // richiesta breve come "Egyptian Museum" ricadeva sull'italiano. Sono
     // parole non ambigue in italiano, quindi non spostano le frasi italiane.

@@ -107,6 +107,18 @@ test("product search subject must identify the product, not occur only in its de
 });
 
 
+test("single English food nouns are recognized as English", () => {
+  for (const query of ["cheese", "bread", "cookies", "cake", "noodles", "honey", "fish"]) {
+    assert.equal(rilevaLinguaPino(query), "en", query);
+  }
+  assert.equal(rilevaLinguaConversazionePino([{ role: "user", content: "cheese" }]), "en");
+  // Le parole identiche nelle due lingue non spostano il rilevamento.
+  assert.equal(rilevaLinguaPino("pasta"), "it");
+  assert.equal(rilevaLinguaPino("pizza"), "it");
+  // Un messaggio italiano resta italiano.
+  assert.equal(rilevaLinguaPino("voglio il pane"), "it");
+});
+
 test("English short conversational messages are detected, including how are you", () => {
   assert.equal(rilevaLinguaPino("Hi Pino, how are you?"), "en");
   assert.equal(rilevaLinguaPino("Would you like to chat?"), "en");

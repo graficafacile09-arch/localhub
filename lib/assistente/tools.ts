@@ -35,6 +35,7 @@ import {
 import type { Orari } from "@/types/negozio";
 import { apertoOra } from "./conversazione";
 import {
+  prodottoIdentificaCategoriaGenerica,
   prodottoIdentificatoDaSoggetto,
   prodottoIdentificaSoggetto,
   prodottoForseRefusoDiSoggetto,
@@ -1387,18 +1388,27 @@ export function prodottoPertinente(
   ) return true;
   // Il primo termine deve identificare il prodotto tramite nome/categoria.
   // La sola presenza nella descrizione (es. "conservati sott'olio") non basta.
-  if (!prodottoIdentificatoDaSoggetto(prodotto, termini[0], concetti)) return false;
+  const identificaDirettamente = prodottoIdentificatoDaSoggetto(prodotto, termini[0], concetti);
+  // Categoria GENERICA richiesta e sottotipo reale nel catalogo ("formaggio" →
+  // "Pecorino"): il termine generico non compare nel prodotto, ma il prodotto
+  // appartiene alla categoria. Il controllo usa solo i metadati identitari.
+  const identificaCategoria =
+    !identificaDirettamente && prodottoIdentificaCategoriaGenerica(prodotto, termini[0]);
+  if (!identificaDirettamente && !identificaCategoria) return false;
   // Anche qui i termini CORTI devono essere parole intere: altrimenti "bar"
   // matcherebbe "barattolo" nella descrizione di un prodotto qualsiasi.
+  // Quando l'identità arriva dalla categoria generica, il termine generico è
+  // già dimostrato: restano da verificare gli eventuali altri termini.
+  const terminiDaVerificare = identificaDirettamente ? termini : termini.slice(1);
   const token = estraiToken(campi);
   if (
-    termini.every((t) =>
+    terminiDaVerificare.every((t) =>
       t.length < 4 ? token.includes(t) : campi.includes(t) || tokenCompatibile(t, token)
     )
   ) {
     return true;
   }
-  return concetti.some((c) => campi.includes(c));
+  return identificaCategoria || concetti.some((c) => campi.includes(c));
 }
 
 // Un termine è compatibile con il prodotto anche quando differisce solo per la

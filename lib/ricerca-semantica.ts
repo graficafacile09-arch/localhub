@@ -20,6 +20,7 @@
  */
 
 import { normalizza, radice } from "./text-utils";
+import { SOTTOTIPI_PRODOTTO } from "./sottotipi-prodotto.ts";
 
 // ─── Stopword — non sono mai termini di ricerca significativi ───────────────
 
@@ -197,6 +198,10 @@ export function espandiQueryConSinonimiBase(query: string): string {
   const terminiEspansi = new Set<string>([
     ...terminiBase,
     ...espandiSinonimiDirettiProdotto(query),
+    // Categoria generica → sottotipi realmente pubblicati ("formaggio" →
+    // "pecorino"): così il retrieval trova il prodotto specifico. La query
+    // originale resta nel set: l'espansione aggiunge, non sostituisce.
+    ...terminiBase.flatMap((termine) => SOTTOTIPI_PRODOTTO[termine] ?? []),
   ]);
   for (const termine of terminiBase) {
     for (const gruppo of Object.values(gruppiBase)) {
