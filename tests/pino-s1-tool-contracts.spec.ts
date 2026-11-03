@@ -1,10 +1,12 @@
 import { expect, test } from "@playwright/test";
 
 import {
+  CONTRATTI_STRUMENTO,
   classeCorrispondenza,
   classificaNegozioPino,
   classificaProdottoPino,
   deduplicaPerId,
+  normalizzaQueryOfferteEventiPino,
   searchAll,
   searchProducts,
   searchStores,
@@ -57,20 +59,16 @@ const negozio = (
 // ─── Validazione dei parametri ──────────────────────────────────────────────
 
 test.describe("S1 — validazione dei ToolParams", () => {
-  test("parametri validi: trim, clamp del limite, liste senza duplicati", () => {
+  test("parametri validi dei prodotti: trim, clamp del limite, liste senza duplicati", () => {
     const esito = validaToolParams("searchProducts", {
       query: "  pasta  ",
       categoria: " Alimentari ",
-      sottocategoria: "Pasta secca",
-      tipo: "negozio",
       citta: "Castrovillari",
-      termini: ["pasta", "Pasta", "", "  ", "tagliatelle"],
       esclusioni: ["glutine", "GLUTINE"],
       escludiNomi: ["Taralli calabresi"],
       minPrice: "1.5",
       maxPrice: 12,
       limit: 999,
-      stato: "aperte",
       apertiOra: true,
     });
 
@@ -78,17 +76,28 @@ test.describe("S1 — validazione dei ToolParams", () => {
     expect(esito.params).toEqual({
       query: "pasta",
       categoria: "Alimentari",
-      sottocategoria: "Pasta secca",
-      tipo: "negozio",
       citta: "Castrovillari",
-      termini: ["pasta", "tagliatelle"],
       esclusioni: ["glutine"],
       escludiNomi: ["Taralli calabresi"],
       minPrice: 1.5,
       maxPrice: 12,
       limit: 20,
-      stato: "aperte",
       apertiOra: true,
+    });
+  });
+
+  test("parametri validi delle attività: termini, servizio, tipo", () => {
+    const esito = validaToolParams("searchStores", {
+      termini: ["pasta", "Pasta", "", "  ", "tagliatelle"],
+      tipo: "negozio",
+      servizio: " hair cut ",
+    });
+
+    expect(esito.problemi).toEqual([]);
+    expect(esito.params).toEqual({
+      termini: ["pasta", "tagliatelle"],
+      tipo: "negozio",
+      servizio: "hair cut",
     });
   });
 
@@ -102,30 +111,52 @@ test.describe("S1 — validazione dei ToolParams", () => {
   });
 
   test("parametri non validi vengono scartati e segnalati, mai lanciati", () => {
-    const esito = validaToolParams("searchProducts", {
+    const testo = validaToolParams("searchStores", {
       query: "   ",
       categoria: null,
       termini: "pasta",
-      minPrice: 0,
-      maxPrice: -4,
-      limit: "molti",
-      stato: "aperto",
-      apertiOra: "sì",
+      esclusioni: 42,
     });
 
-    expect(esito.params).toEqual({});
-    expect(esito.problemi).toEqual(
+    expect(testo.params).toEqual({});
+    expect(testo.problemi).toEqual(
       expect.arrayContaining([
         "query_non_valida",
         "categoria_non_valida",
         "lista_non_valida:termini",
+        "lista_non_valida:esclusioni",
+      ])
+    );
+
+    const vincoli = validaToolParams("searchProducts", {
+      minPrice: 0,
+      maxPrice: -4,
+      limit: "molti",
+      apertiOra: "sì",
+    });
+
+    expect(vincoli.params).toEqual({});
+    expect(vincoli.problemi).toEqual(
+      expect.arrayContaining([
         "minPrice_non_valido",
         "maxPrice_non_valido",
         "limit_non_valido",
-        "stato_non_valido",
         "apertiOra_non_valido",
       ])
     );
+  });
+
+  test("l'enum `stato` vale solo per lo strumento che lo usa", () => {
+    expect(validaToolParams("searchPharmacies", { stato: "aperto" }).problemi).toEqual([
+      "stato_non_valido",
+    ]);
+    expect(validaToolParams("searchPharmacies", { stato: "aperte" }).params).toEqual({
+      stato: "aperte",
+    });
+    expect(validaToolParams("searchProducts", { stato: "aperte" }).params).toEqual({});
+    expect(validaToolParams("searchProducts", { stato: "aperte" }).problemi).toEqual([
+      "chiave_non_ammessa:stato",
+    ]);
   });
 
   test("fascia di prezzo incoerente: scartata per intero e segnalata", () => {
@@ -331,5 +362,171 @@ test.describe("S1 — risultati e comportamento conservati", () => {
       apertiOra: true,
     });
     expect(esito.params.minPrice).toBeUndefined();
+  });
+});
+
+// ─── S1-A: contratti per strumento ──────────────────────────────────────────
+
+const chiaviContratto = (strumento: keyof typeof CONTRATTI_STRUMENTO) =>
+  CONTRATTI_STRUMENTO[strumento] as readonly string[];
+
+test.describe("S1-A — contratti per strumento", () => {
+  test("il contratto copre tutti e solo gli strumenti reali", () => {
+    expect(Object.keys(CONTRATTI_STRUMENTO).sort()).toEqual([
+      "getCategories",
+      "getWeather",
+      "searchAll",
+      "searchEvents",
+      "searchGiftCategories",
+      "searchOffers",
+      "searchPharmacies",
+      "searchProducts",
+      "searchStores",
+    ]);
+    // `searchServices` non esiste nel dispatcher: era un letterale morto.
+    expect(Object.keys(CONTRATTI_STRUMENTO)).not.toContain("searchServices");
+    expect(chiaviContratto("searchGiftCategories")).toEqual(
+      expect.arrayContaining(["termini", "limit"])
+    );
+    expect(chiaviContratto("getWeather")).toEqual([]);
+  });
+
+  test("nessuna chiave realmente letta da un tool viene esclusa", () => {
+    const attese: Record<string, string[]> = {
+      searchStores: [
+        "query", "limit", "categoria", "tipo", "servizio", "citta", "termini",
+        "esclusioni", "escludiNomi", "apertiOra",
+      ],
+      searchProducts: [
+        "query", "limit", "categoria", "citta", "esclusioni",
+        "colori", "materiali", "escludiNomi", "minPrice", "maxPrice", "apertiOra",
+      ],
+      searchOffers: ["query", "limit"],
+      searchEvents: ["query", "limit"],
+      searchAll: [
+        "query", "limit", "categoria", "tipo", "servizio", "citta",
+        "termini", "esclusioni", "colori", "materiali", "escludiNomi", "minPrice",
+        "maxPrice", "apertiOra",
+      ],
+      getCategories: [],
+      getWeather: [],
+      searchPharmacies: ["stato", "limit"],
+      searchGiftCategories: [
+        "query", "limit", "termini", "categoria", "citta", "esclusioni", "colori",
+        "materiali", "escludiNomi", "minPrice", "maxPrice", "apertiOra",
+      ],
+    };
+
+    for (const [strumento, chiavi] of Object.entries(attese)) {
+      expect(
+        chiaviContratto(strumento as keyof typeof CONTRATTI_STRUMENTO).slice().sort(),
+        strumento
+      ).toEqual(chiavi.slice().sort());
+    }
+  });
+
+  test("searchAll conserva i parametri inoltrati ai sotto-tool", () => {
+    const esito = validaToolParams("searchAll", {
+      query: "regalo",
+      termini: ["orologio"],
+      categoria: "Accessori",
+      tipo: "negozio",
+      servizio: "riparazione",
+      citta: "Castrovillari",
+      esclusioni: ["pelle"],
+      colori: ["nero"],
+      materiali: ["pelle"],
+      escludiNomi: ["Cintura"],
+      minPrice: 10,
+      maxPrice: 100,
+      apertiOra: true,
+      limit: 4,
+    });
+
+    expect(esito.problemi).toEqual([]);
+    expect(esito.params).toEqual({
+      query: "regalo",
+      termini: ["orologio"],
+      categoria: "Accessori",
+      tipo: "negozio",
+      servizio: "riparazione",
+      citta: "Castrovillari",
+      esclusioni: ["pelle"],
+      colori: ["nero"],
+      materiali: ["pelle"],
+      escludiNomi: ["Cintura"],
+      minPrice: 10,
+      maxPrice: 100,
+      apertiOra: true,
+      limit: 4,
+    });
+  });
+
+  test("searchGiftCategories conserva termini, limit e attributi, scarta il resto", () => {
+    const esito = validaToolParams("searchGiftCategories", {
+      termini: ["orologio", "borsa"],
+      limit: 3,
+      colori: ["nero"],
+      tipo: "negozio",
+    });
+
+    expect(esito.params).toEqual({
+      termini: ["orologio", "borsa"],
+      limit: 3,
+      colori: ["nero"],
+    });
+    expect(esito.problemi).toEqual(["chiave_non_ammessa:tipo"]);
+  });
+
+  test("le chiavi non ammesse vengono scartate e segnalate, senza eccezioni", () => {
+    const casi: Array<[keyof typeof CONTRATTI_STRUMENTO, string]> = [
+      ["searchProducts", "termini"],
+      ["searchProducts", "servizio"],
+      ["searchProducts", "sottocategoria"],
+      ["searchAll", "sottocategoria"],
+      ["searchStores", "colori"],
+      ["searchStores", "maxPrice"],
+      ["searchOffers", "stato"],
+      ["searchEvents", "materiali"],
+      ["getWeather", "limit"],
+      ["getCategories", "query"],
+      ["searchPharmacies", "categoria"],
+    ];
+
+    for (const [strumento, chiave] of casi) {
+      const esito = validaToolParams(strumento, { [chiave]: "x" } as unknown as ToolParams);
+      expect(esito.params, `${strumento}.${chiave}`).toEqual({});
+      expect(esito.problemi, `${strumento}.${chiave}`).toEqual([
+        `chiave_non_ammessa:${chiave}`,
+      ]);
+    }
+  });
+
+  test("una chiave inventata è segnalata come non ammessa", () => {
+    const esito = validaToolParams("searchProducts", {
+      query: "pasta",
+      prezzoMassimo: 10,
+    } as unknown as ToolParams);
+
+    expect(esito.params).toEqual({ query: "pasta" });
+    expect(esito.problemi).toEqual(["chiave_non_ammessa:prezzoMassimo"]);
+  });
+});
+
+// ─── S1-A: query di offerte ed eventi ───────────────────────────────────────
+
+test.describe("S1-A — query di offerte ed eventi", () => {
+  test("query normalizzata come gli altri parametri testuali", () => {
+    expect(normalizzaQueryOfferteEventiPino("  Sconti  ")).toBe("sconti");
+    expect(normalizzaQueryOfferteEventiPino("Scon\u0000ti")).toBe("scon ti");
+    expect(normalizzaQueryOfferteEventiPino("a".repeat(500))).toHaveLength(120);
+    expect(normalizzaQueryOfferteEventiPino(undefined)).toBe("");
+    expect(normalizzaQueryOfferteEventiPino(null)).toBe("");
+    expect(normalizzaQueryOfferteEventiPino(42)).toBe("");
+  });
+
+  test("le query valide restano identiche a prima (solo il caso)", () => {
+    expect(normalizzaQueryOfferteEventiPino("Natale")).toBe("natale");
+    expect(normalizzaQueryOfferteEventiPino("concerto live")).toBe("concerto live");
   });
 });

@@ -73,7 +73,7 @@ ULTIMO MESSAGGIO UTENTE: "${domanda}"
 ${bloccoIntento}
 TOOL:
 - searchStores: query + opt {categoria, tipo, citta, termini} → negozi/attività
-- searchProducts: query + maxPrice/minPrice (numeri interi, euro) + opt {categoria, sottocategoria} → prodotti
+- searchProducts: query + maxPrice/minPrice (numeri interi, euro) + opt {categoria} → prodotti
 - searchOffers: query opzionale → offerte/promozioni/sconti
 - searchEvents: query opzionale → eventi
 - searchAll: query → ricerca trasversale su negozi, prodotti, offerte, eventi e categorie; usalo per richieste ampie o ambigue

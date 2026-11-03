@@ -2,11 +2,15 @@ import { expect, test } from "@playwright/test";
 
 import {
   MASSIMO_INVOCAZIONI_PINO,
+  STRUMENTI_PINO_VALIDI,
   applicaAttributiProdottiPino,
   budgetInvocazioniRecuperoPino,
   chatConAssistente,
+  deduplicaInvocazioniPino,
   invocazioniRegaloPino,
   limitaInvocazioniPino,
+  nomeStrumentoPinoValido,
+  validaInvocazioniPino,
 } from "../lib/assistente/index";
 import { CATEGORIE_REGALO } from "../lib/assistente/gift-retrieval";
 import { rilevaLinguaConversazionePino, rilevaLinguaPino } from "../lib/assistente/understanding";
@@ -218,5 +222,135 @@ test.describe("S5.1-C/D — limite globale di 3 invocazioni", () => {
       expect(limitate.length).toBeLessThanOrEqual(3);
       expect(limitate.length + recupero).toBeLessThanOrEqual(3);
     }
+  });
+});
+
+// ─── S1-A: contratto al confine ─────────────────────────────────────────────
+
+test.describe("S1-A — contratto al confine", () => {
+  test("l'allowlist contiene solo gli strumenti del dispatcher", () => {
+    expect([...STRUMENTI_PINO_VALIDI].sort()).toEqual([
+      "getCategories",
+      "getWeather",
+      "searchAll",
+      "searchEvents",
+      "searchGiftCategories",
+      "searchOffers",
+      "searchPharmacies",
+      "searchProducts",
+      "searchStores",
+    ]);
+    expect(nomeStrumentoPinoValido("searchServices")).toBe(false);
+    expect(nomeStrumentoPinoValido("searchStores")).toBe(true);
+    expect(nomeStrumentoPinoValido(" searchStores ")).toBe(true);
+    expect(nomeStrumentoPinoValido("cerca")).toBe(false);
+    expect(nomeStrumentoPinoValido(42)).toBe(false);
+  });
+
+  test("i nomi sconosciuti vengono rifiutati e segnalati", () => {
+    const esito = validaInvocazioniPino([
+      { tool: "searchServices", params: { query: "x" } },
+      { tool: "searchStores", params: { query: "pane" } },
+      { params: {} },
+    ]);
+
+    expect(esito.invocazioni).toEqual([{ tool: "searchStores", params: { query: "pane" } }]);
+    expect(esito.scartate).toEqual(["searchServices", "(senza nome)"]);
+  });
+
+  test("i parametri non ammessi non arrivano al dispatcher", () => {
+    const esito = validaInvocazioniPino([
+      { tool: "searchProducts", params: { query: "pasta", stato: "aperte", limit: 999 } },
+    ]);
+
+    expect(esito.invocazioni).toEqual([
+      { tool: "searchProducts", params: { query: "pasta", limit: 20 } },
+    ]);
+  });
+
+  test("un'invocazione non valida non consuma il budget di tre", () => {
+    const grezze = [
+      { tool: "searchInspiegabile", params: {} },
+      { tool: "searchStores", params: { query: "forno" } },
+      { tool: "searchProducts", params: { query: "pane" } },
+      { tool: "searchOffers", params: {} },
+    ];
+    const valide = validaInvocazioniPino(grezze).invocazioni;
+    const limitate = limitaInvocazioniPino(valide);
+
+    expect(valide).toHaveLength(3);
+    expect(limitate).toHaveLength(3);
+    expect(limitate.map((i) => i.tool)).toEqual([
+      "searchStores",
+      "searchProducts",
+      "searchOffers",
+    ]);
+  });
+});
+
+// ─── S1-A: deduplica delle invocazioni ──────────────────────────────────────
+
+test.describe("S1-A — deduplica delle invocazioni", () => {
+  test("le invocazioni identiche diventano una sola", () => {
+    const invocazioni = [
+      { tool: "searchProducts", params: { query: "pane" } },
+      { tool: "searchProducts", params: { query: "pane" } },
+    ];
+    const uniche = deduplicaInvocazioniPino(invocazioni);
+
+    expect(uniche).toHaveLength(1);
+    expect(uniche[0]).toBe(invocazioni[0]);
+  });
+
+  test("l'ordine canonico dei parametri non crea duplicati", () => {
+    expect(
+      deduplicaInvocazioniPino([
+        { tool: "searchProducts", params: { query: "pane", limit: 8 } },
+        { tool: "searchProducts", params: { limit: 8, query: "pane" } },
+        { tool: "searchProducts", params: { query: "pane", limit: 8, colori: undefined } },
+      ])
+    ).toHaveLength(1);
+  });
+
+  test("parametri diversi restano invocazioni distinte, nell'ordine originale", () => {
+    const invocazioni = [
+      { tool: "searchStores", params: { query: "forno" } },
+      { tool: "searchStores", params: { query: "panificio" } },
+      { tool: "searchProducts", params: { query: "forno" } },
+      { tool: "searchStores", params: { query: "forno", limit: 3 } },
+    ];
+    const uniche = deduplicaInvocazioniPino(invocazioni);
+
+    expect(uniche).toHaveLength(4);
+    expect(uniche.map((i) => `${i.tool}:${i.params?.query}:${i.params?.limit ?? ""}`)).toEqual([
+      "searchStores:forno:",
+      "searchStores:panificio:",
+      "searchProducts:forno:",
+      "searchStores:forno:3",
+    ]);
+    expect(uniche[0]).toBe(invocazioni[0]);
+  });
+
+  test("deduplica prima del limite: tre invocazioni utili anche con doppioni", () => {
+    const doppie = [
+      { tool: "searchProducts", params: { query: "pane" } },
+      { tool: "searchProducts", params: { query: "pane" } },
+      { tool: "searchStores", params: { query: "forno" } },
+      { tool: "searchStores", params: { query: "forno" } },
+      { tool: "searchOffers", params: {} },
+    ];
+    const uniche = deduplicaInvocazioniPino(doppie);
+
+    expect(uniche).toHaveLength(3);
+    expect(limitaInvocazioniPino(uniche).map((i) => i.tool)).toEqual([
+      "searchProducts",
+      "searchStores",
+      "searchOffers",
+    ]);
+  });
+
+  test("un ingresso vuoto o malformato non produce invocazioni", () => {
+    expect(deduplicaInvocazioniPino([])).toEqual([]);
+    expect(deduplicaInvocazioniPino(undefined as never)).toEqual([]);
   });
 });

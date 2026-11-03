@@ -10,6 +10,10 @@
  * con intent + termini originali.
  */
 import { callGeminiText } from "@/lib/ai/gemini-text";
+import {
+  chiamataGeminiConBudgetPino,
+  type BudgetGeminiPino,
+} from "./budget-gemini";
 import { extractJsonFromText } from "@/lib/product-assistant/providers/utils";
 import { normalizzaRichiesta } from "./local-intents";
 import {
@@ -826,7 +830,8 @@ export async function interpretaRichiestaPino(
   history: MessaggioAssistente[],
   analisi: PinoIntentAnalysis,
   memoria: PinoMemoriaVoce[],
-  stato?: PinoConversationState
+  stato?: PinoConversationState,
+  budget?: BudgetGeminiPino
 ): Promise<PinoSemanticPlan> {
   // Lo stato strutturato è la fonte prioritaria per le conversazioni
   // multi-turno. La memoria semantica viene applicata comunque dopo la
@@ -875,18 +880,22 @@ export async function interpretaRichiestaPino(
       .map((m) => `${m.role}: ${m.content.slice(0, 240)}`)
       .join("\n");
 
-    const raw = await callGeminiText({
-      systemPrompt: SCHEMA_PROMPT,
-      userPrompt:
-        `Intento locale già riconosciuto: ${analisi.intent} / ${analisi.dominio}.\n` +
-        `Memoria semantica confermata: ${memoriaTesto}\n\n` +
-        `CONVERSAZIONE:\n${storico}\n\nRICHIESTA ATTUALE:\n${q}`,
-      maxTokens: 300,
-      temperature: 0,
-      json: true,
-      timeoutMs: 8_000,
-      retries: 1,
-    });
+    // M6-B1 — Budget condiviso con la selezione dei tool: a budget esaurito
+    // la chiamata non parte e vale il piano deterministico (catch sotto).
+    const raw = await chiamataGeminiConBudgetPino(budget, () =>
+      callGeminiText({
+        systemPrompt: SCHEMA_PROMPT,
+        userPrompt:
+          `Intento locale già riconosciuto: ${analisi.intent} / ${analisi.dominio}.\n` +
+          `Memoria semantica confermata: ${memoriaTesto}\n\n` +
+          `CONVERSAZIONE:\n${storico}\n\nRICHIESTA ATTUALE:\n${q}`,
+        maxTokens: 300,
+        temperature: 0,
+        json: true,
+        timeoutMs: 8_000,
+        retries: 1,
+      })
+    );
 
     const parsed = JSON.parse(extractJsonFromText(raw)) as Record<string, unknown>;
     const surface =

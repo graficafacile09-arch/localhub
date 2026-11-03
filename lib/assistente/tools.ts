@@ -15,7 +15,7 @@
  * @module lib/assistente/tools
  */
 
-import { cercaNegozi, getCategorieConNegozi } from "@/lib/negozi";
+import { cercaNegozi, getCategorieConNegozi, type SegnalazioneErroriDati } from "@/lib/negozi";
 import { search as searchCatalogoPubblico } from "@/lib/search-service";
 import { getOffertePubbliche } from "@/lib/offerte";
 import { getEventiPubblici } from "@/lib/eventi";
@@ -40,6 +40,62 @@ import {
   prodottoForseRefusoDiSoggetto,
 } from "./product-relevance";
 import { normalizzaQueryCatalogo } from "./understanding";
+
+// ─── M6-C1: segnalazione errori dati per Pino ───────────────────────────────
+//
+// I tool devono distinguere "ricerca riuscita senza risultati" da "errore
+// tecnico". Le funzioni dati segnalano l'errore con la callback "onErrore",
+// che qui lancia: l'eccezione attraversa il tool e M6-A la classifica come
+// "errore" (non "vuoto", non "timeout"), senza cambiare i chiamanti del sito.
+
+/** Errore tipizzato: i dati non sono leggibili per un guasto tecnico. */
+export class ErroreDatiNonDisponibiliPino extends Error {
+  /** Codice stabile (mai mostrato all'utente). */
+  readonly code = "DATI_NON_DISPONIBILI";
+  /** Codice tecnico PostgREST, quando disponibile: nessun testo del database. */
+  readonly codice: string | null;
+
+  constructor(codice: string | null = null) {
+    super("I dati richiesti non sono temporaneamente disponibili.");
+    this.name = "ErroreDatiNonDisponibiliPino";
+    this.codice = codice;
+  }
+}
+
+function codiceErroreDati(errore: unknown): string | null {
+  if (!errore || typeof errore !== "object") return null;
+  const codice = (errore as { code?: unknown }).code;
+  return typeof codice === "string" && codice.trim() ? codice.trim() : null;
+}
+
+/** Callback Pino: converte la segnalazione in eccezione tipizzata. */
+export function segnalaErroreDatiPino(errore: unknown): never {
+  throw new ErroreDatiNonDisponibiliPino(codiceErroreDati(errore));
+}
+
+/** Segnalazione passata solo ai wrapper "searchProducts" e "searchStores". */
+export const segnalazioneDatiPino: SegnalazioneErroriDati = {
+  onErrore: segnalaErroreDatiPino,
+};
+
+/**
+ * M6-C3 — Adapter delle farmacie: TIMEOUT resta uno stato timeout per M6-A
+ * (non e' un guasto dati), HTTP/rete/risposta non valida diventano
+ * DATI_NON_DISPONIBILI.
+ */
+export function segnalaErroreFarmaciePino(errore: unknown): never {
+  const codice = codiceErroreDati(errore);
+  if (codice === "TIMEOUT") {
+    const timeout = new Error("La fonte delle farmacie non ha risposto in tempo.");
+    timeout.name = "TimeoutError";
+    throw timeout;
+  }
+  throw new ErroreDatiNonDisponibiliPino(codice);
+}
+
+export const segnalazioneFarmaciePino: SegnalazioneErroriDati = {
+  onErrore: segnalaErroreFarmaciePino,
+};
 
 // ─── Tipi risultati dei tool ─────────────────────────────────────────────────
 
@@ -142,13 +198,13 @@ function limita(n: number | undefined, fallback: number, max: number): number {
 export type StrumentoPino =
   | "searchStores"
   | "searchProducts"
-  | "searchServices"
   | "searchOffers"
   | "searchEvents"
   | "searchAll"
   | "getCategories"
   | "getWeather"
-  | "searchPharmacies";
+  | "searchPharmacies"
+  | "searchGiftCategories";
 
 /** Classe di corrispondenza calcolata da Pino per un risultato. */
 export type ClasseCorrispondenza = "exact" | "synonym" | "semantic" | "weak";
@@ -163,6 +219,72 @@ const LUNGHEZZA_MASSIMA_TESTO = 120;
 const MASSIMO_ELEMENTI_LISTA = 5;
 const PREZZO_MASSIMO_AMMESSO = 100_000;
 const LIMITE_RISULTATI_MASSIMO = 20;
+
+/**
+ * S1-A — Contratto dei parametri per strumento.
+ *
+ * Derivato dall'USO EFFETTIVO dei parametri nel codice, non dalle firme:
+ * - `searchStores` legge termini/servizio/categoria/tipo/città/esclusioni/
+ *   escludiNomi/apertiOra; il budget non è un suo filtro.
+ * - `searchProducts` legge categoria/città/esclusioni/colori/
+ *   materiali/escludiNomi/minPrice/maxPrice/apertiOra (città e orari tramite
+ *   `filtraProdottiPerVincoliNegozio`) e IGNORA `termini`, che l'orchestratore
+ *   azzera già prima della chiamata.
+ * - `searchAll` inoltra i propri parametri ai sotto-tool: termini serve a
+ *   `searchStores`, budget e attributi a `searchProducts`.
+ * - `searchGiftCategories` legge `termini` (categorie regalo) e `limit`, e
+ *   inoltra il resto a `searchProducts`; `query` è letta dall'orchestratore per
+ *   il filtro di categoria del fan-out.
+ * - `searchPharmacies` usa solo `stato` e `limit`; `getCategories` e
+ *   `getWeather` non usano parametri.
+ *
+ * `sottocategoria` NON è supportata: il catalogo la conosce, Pino non la
+ * inoltra (nessun ramo la legge), quindi il prompt non la promette più.
+ * `query` è sempre ammessa dove l'orchestratore la usa per costruire la query
+ * del tool (vedi `eseguiTool`).
+ */
+export const CONTRATTI_STRUMENTO: Record<StrumentoPino, readonly (keyof ToolParams)[]> = {
+  searchStores: [
+    "query", "limit", "categoria", "tipo", "servizio", "citta", "termini",
+    "esclusioni", "escludiNomi", "apertiOra",
+  ],
+  searchProducts: [
+    "query", "limit", "categoria", "citta", "esclusioni",
+    "colori", "materiali", "escludiNomi", "minPrice", "maxPrice", "apertiOra",
+  ],
+  searchOffers: ["query", "limit"],
+  searchEvents: ["query", "limit"],
+  searchAll: [
+    "query", "limit", "categoria", "tipo", "servizio", "citta",
+    "termini", "esclusioni", "colori", "materiali", "escludiNomi", "minPrice",
+    "maxPrice", "apertiOra",
+  ],
+  getCategories: [],
+  getWeather: [],
+  searchPharmacies: ["stato", "limit"],
+  searchGiftCategories: [
+    "query", "limit", "termini", "categoria", "citta", "esclusioni", "colori",
+    "materiali", "escludiNomi", "minPrice", "maxPrice", "apertiOra",
+  ],
+};
+
+/** Chiavi note di `ToolParams`: tutto il resto è una chiave inventata. */
+const CHIAVI_TOOL_PARAMS: ReadonlySet<string> = new Set<string>([
+  "query", "maxPrice", "minPrice", "limit", "termini", "categoria",
+  "sottocategoria", "tipo", "servizio", "citta", "stato", "esclusioni",
+  "colori", "materiali", "escludiNomi", "apertiOra",
+]);
+
+/**
+ * Chiavi ammesse per lo strumento, oppure `null` se il nome non è nel
+ * contratto (in quel caso la validazione resta permissiva, come prima).
+ */
+function chiaviAmmessePino(strumento: StrumentoPino): ReadonlySet<string> | null {
+  const contratto = Object.prototype.hasOwnProperty.call(CONTRATTI_STRUMENTO, strumento)
+    ? CONTRATTI_STRUMENTO[strumento]
+    : undefined;
+  return contratto ? new Set<string>(contratto) : null;
+}
 
 function testoParametro(valore: unknown): string | null {
   if (typeof valore !== "string") return null;
@@ -197,8 +319,9 @@ function prezzoParametro(valore: unknown): number | undefined {
 /**
  * Valida e normalizza i parametri di uno strumento.
  *
- * - conserva solo le chiavi note di `ToolParams` (le altre, incluse quelle
- *   inventate dal modello, vengono ignorate come già avviene a runtime);
+ * - conserva solo le chiavi note di `ToolParams` ammesse dallo strumento (le
+ *   altre, incluse quelle inventate dal modello, vengono scartate e segnalate
+ *   con `chiave_non_ammessa:<campo>`: nessuna di esse era letta dal tool);
  * - stringhe: trim, rimozione caratteri di controllo, limite di lunghezza;
  * - liste: max 5 voci, senza duplicati (case-insensitive), senza voci vuote;
  * - prezzi: numeri finiti > 0; una fascia incoerente (min > max) viene
@@ -210,7 +333,7 @@ function prezzoParametro(valore: unknown): number | undefined {
  * Non lancia mai: gli strumenti restano tolleranti agli input del modello.
  */
 export function validaToolParams(
-  _strumento: StrumentoPino,
+  strumento: StrumentoPino,
   raw: unknown
 ): EsitoValidazioneParams {
   const params: ToolParams = {};
@@ -219,7 +342,20 @@ export function validaToolParams(
     if (raw !== undefined && raw !== null) problemi.push("parametri_non_oggetto");
     return { params, problemi };
   }
-  const sorgente = raw as Record<string, unknown>;
+  // S1-A — Contratto al confine: una chiave nota ma non prevista da questo
+  // strumento viene scartata e segnalata, esattamente come una chiave
+  // inesistente. Le chiavi scartate qui non erano lette da nessun ramo del
+  // tool, quindi i risultati restano identici.
+  const ammesse = chiaviAmmessePino(strumento);
+  const grezza = raw as Record<string, unknown>;
+  const sorgente: Record<string, unknown> = {};
+  for (const chiave of Object.keys(grezza)) {
+    if (!CHIAVI_TOOL_PARAMS.has(chiave) || (ammesse && !ammesse.has(chiave))) {
+      problemi.push(`chiave_non_ammessa:${chiave}`);
+      continue;
+    }
+    sorgente[chiave] = grezza[chiave];
+  }
 
   if (sorgente.query !== undefined) {
     const testo = testoParametro(sorgente.query);
@@ -594,9 +730,10 @@ export async function getWeatherCastrovillari(): Promise<MeteoAssistente | null>
 
 export async function searchPharmacies(
   stato: "aperte" | "turno" | "tutte",
-  limit = 8
+  limit = 8,
+  segnalazione: SegnalazioneErroriDati = segnalazioneFarmaciePino
 ): Promise<FarmaciaAssistente[]> {
-  const farmacie = await getFarmacieTurnoCastrovillari();
+  const farmacie = await getFarmacieTurnoCastrovillari(segnalazione);
   const filtrate =
     stato === "turno"
       ? farmacie.filter((f) => Boolean(f.turno))
@@ -1120,7 +1257,7 @@ export async function searchStores(
     tipo: opts?.tipo,
     citta: opts?.citta,
     termini: opts?.termini?.length ? opts.termini : undefined,
-  });
+  }, segnalazioneDatiPino);
   const attivi = (righe ?? []).filter(
     (n: Record<string, unknown>) => n.attivo !== false
   ).filter((n: Record<string, unknown>) =>
@@ -1845,7 +1982,7 @@ export async function searchProducts(
   // pubblica interviene solo un controllo di pertinenza Pino, limitato alle
   // richieste con un unico soggetto concreto (vedi sotto), per non mostrare
   // prodotti che il motore tollerante ha trovato solo per somiglianza.
-  const canonici = await searchCatalogoPubblico(q);
+  const canonici = await searchCatalogoPubblico(q, { onErrore: segnalaErroreDatiPino });
   let filtrate = [...(canonici.prodotti ?? [])].filter((p) =>
     prodottoSoddisfaEsclusioni(p, opts?.esclusioni)
   );
@@ -1938,9 +2075,22 @@ async function nomiNegozi(ids: string[]): Promise<Map<string, string>> {
   return new Map((data ?? []).map((n) => [String(n.id), String(n.nome ?? "")]));
 }
 
-export async function searchOffers(query?: string, limit = 8): Promise<OffertaAssistente[]> {
-  const q = (query ?? "").trim().toLowerCase();
-  const offerte = await getOffertePubbliche();
+/**
+ * S1-A — Normalizza la query di offerte ed eventi con la stessa regola degli
+ * altri parametri testuali (trim, caratteri di controllo, 120 caratteri).
+ * Una query assente resta assente; una query valida resta identica.
+ */
+export function normalizzaQueryOfferteEventiPino(query: unknown): string {
+  return (testoParametro(query) ?? "").toLowerCase();
+}
+
+export async function searchOffers(
+  query?: string,
+  limit = 8,
+  segnalazione: SegnalazioneErroriDati = segnalazioneDatiPino
+): Promise<OffertaAssistente[]> {
+  const q = normalizzaQueryOfferteEventiPino(query);
+  const offerte = await getOffertePubbliche(segnalazione);
 
   const filtrate = q
     ? offerte.filter(
@@ -1965,9 +2115,13 @@ export async function searchOffers(query?: string, limit = 8): Promise<OffertaAs
 
 // ─── searchEvents ────────────────────────────────────────────────────────────
 
-export async function searchEvents(query?: string, limit = 8): Promise<EventoAssistente[]> {
-  const q = (query ?? "").trim().toLowerCase();
-  const eventi = await getEventiPubblici();
+export async function searchEvents(
+  query?: string,
+  limit = 8,
+  segnalazione: SegnalazioneErroriDati = segnalazioneDatiPino
+): Promise<EventoAssistente[]> {
+  const q = normalizzaQueryOfferteEventiPino(query);
+  const eventi = await getEventiPubblici(segnalazione);
 
   const filtrati = q
     ? eventi.filter(
@@ -1992,13 +2146,36 @@ export async function searchEvents(query?: string, limit = 8): Promise<EventoAss
 
 // ─── getCategories ───────────────────────────────────────────────────────────
 
-export async function getCategoriesList(): Promise<{ nome: string; count: number }[]> {
-  const categorie = await getCategorieConNegozi();
+/**
+ * M6-C2 — elenco categorie con i conteggi reali.
+ *
+ * La segnalazione e' opzionale: assente = comportamento storico (nessuna
+ * eccezione, conteggi eventualmente a zero). Il tool getCategories usa
+ * l'adapter Pino, cosi' un guasto delle query non diventa "ogni categoria ha
+ * zero negozi"; il fallback di searchAll resta tollerante per non
+ * trasformare un guasto in un errore di route.
+ */
+async function elencoCategorie(
+  segnalazione?: SegnalazioneErroriDati,
+  dbIniettato?: Parameters<typeof getCategorieConNegozi>[1]
+): Promise<{ nome: string; count: number }[]> {
+  const categorie = await getCategorieConNegozi(segnalazione, dbIniettato);
   return categorie
     .map((c) => ({ nome: String(c.categoria?.nome ?? ""), count: c.count }))
     .filter((c) => c.nome)
     .sort((a, b) => b.count - a.count)
     .slice(0, 20);
+}
+
+/**
+ * Tool getCategories: con l'adapter Pino un errore dati diventa
+ * ErroreDatiNonDisponibiliPino e M6-A lo classifica come "errore".
+ * Il parametro opzionale esiste solo per i test (client iniettato).
+ */
+export async function getCategoriesList(
+  dbIniettato?: Parameters<typeof getCategorieConNegozi>[1]
+): Promise<{ nome: string; count: number }[]> {
+  return elencoCategorie(segnalazioneDatiPino, dbIniettato);
 }
 
 // ─── searchAll ───────────────────────────────────────────────────────────────
@@ -2045,9 +2222,11 @@ export async function searchAll(
     // negozi: il percorso di fallback non deve aggirare i filtri del piano.
     searchStores(q, { ...opts, limit: 6 }),
     searchProducts(q, { ...opts, limit: 8 }),
-    searchOffers(q, 5),
-    searchEvents(q, 5),
-    getCategoriesList(),
+    // M6-C3: il fallback di ricerca completa resta tollerante (segnalazione
+    // vuota), per non trasformare un guasto dati in un errore di route.
+    searchOffers(q, 5, {}),
+    searchEvents(q, 5, {}),
+    elencoCategorie(),
   ]);
 
   return { negozi, prodotti, offerte, eventi, categorie, meteo: null, farmacie: [] };

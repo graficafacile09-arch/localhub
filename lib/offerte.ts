@@ -1,4 +1,5 @@
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { segnalaErroreDati, type SegnalazioneErroriDati } from "./negozi";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { utenteAdminAutorizzato } from "@/lib/auth/roles";
 import { creaNotificaAdmin } from "@/lib/amministratore/notifiche";
@@ -461,9 +462,18 @@ export async function getOffertePubblicheNegozio(negozioId: string): Promise<Off
     });
 }
 
-export async function getOffertePubbliche(): Promise<Offerta[]> {
-  const db = getDb();
-  if (!db) return [];
+export async function getOffertePubbliche(
+  segnalazione?: SegnalazioneErroriDati,
+  dbIniettato?: ReturnType<typeof createAdminSupabaseClient> | null
+): Promise<Offerta[]> {
+  const db = dbIniettato === undefined ? getDb() : dbIniettato;
+  if (!db) {
+    segnalaErroreDati(
+      segnalazione,
+      new Error("Supabase non configurato: variabili del client admin mancanti.")
+    );
+    return [];
+  }
 
   const { data, error } = await db
     .from("offerte")
@@ -471,7 +481,13 @@ export async function getOffertePubbliche(): Promise<Offerta[]> {
     .eq("attiva", true)
     .order("created_at", { ascending: false });
 
-  if (error) return [];
+  // M6-C3: senza callback il comportamento resta quello preesistente (lista
+  // vuota). Con la callback di Pino l'errore interrompe il tool, cosi' un
+  // guasto non viene presentato come "nessuna offerta attiva".
+  if (error) {
+    segnalaErroreDati(segnalazione, error);
+    return [];
+  }
 
   const ora = Date.now();
   return (data ?? [])

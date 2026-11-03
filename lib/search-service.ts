@@ -89,10 +89,15 @@ export async function search(
     sessionId?: string;
     userId?: string;
     useMemory?: boolean;
+    /** M6-C1 — Segnalazione additiva degli errori dati (assente = invariato). */
+    onErrore?: (errore: unknown) => void;
   }
 ): Promise<SearchResult> {
   const termine = query.trim();
   const opts = options ?? {};
+  // M6-C1: la segnalazione viaggia solo se il chiamante la fornisce. Senza
+  // callback il comportamento resta identico a prima (liste vuote).
+  const segnalazione = opts.onErrore ? { onErrore: opts.onErrore } : undefined;
 
   // Filtri che restringono i prodotti (e sopprimono la ricerca negozi).
   const conFiltri = Boolean(
@@ -149,17 +154,17 @@ export async function search(
       ordina,
       pagina: opts.pagina,
       perPagina: opts.perPagina,
-    });
+    }, segnalazione);
     prodotti = risultato.prodotti;
     total = risultato.total;
     // Ricerca base senza filtri (ma paginata): i negozi restano visibili.
     if (!conFiltri && !opts.negozioId) {
-      negozi = (await cercaNegozi(termine)) as NegozioRicerca[];
+      negozi = (await cercaNegozi(termine, {}, segnalazione)) as NegozioRicerca[];
     }
   } else {
     const [n, p] = await Promise.all([
-      cercaNegozi(termine),
-      cercaProdotti(termine, 20),
+      cercaNegozi(termine, {}, segnalazione),
+      cercaProdotti(termine, 20, segnalazione),
     ]);
     negozi = (n ?? []) as NegozioRicerca[];
     prodotti = (p ?? []) as ProdottoRicerca[];

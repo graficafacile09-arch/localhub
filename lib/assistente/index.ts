@@ -44,11 +44,14 @@ import {
   notaDisponibilitaProdottiPino,
   rilevaRichiestaServizioPino,
   serviziRichiestiPino,
+  CONTRATTI_STRUMENTO,
+  validaToolParams,
   type AttributiProdottoPino,
   type EsitoAttributiProdottiPino,
   type RichiestaServizioPino,
   type ServizioAttivoPino,
   type ToolParams,
+  type StrumentoPino,
 } from "./tools";
 import {
   SYSTEM_PROMPT,
@@ -87,6 +90,10 @@ import {
   usaFastPathSemantico,
   type PinoSemanticPlan,
 } from "./semantica";
+import {
+  chiamataGeminiConBudgetPino,
+  creaBudgetGeminiPino,
+} from "./budget-gemini";
 import type { PinoUnderstanding } from "./understanding";
 import {
   rilevaFollowUp,
@@ -122,6 +129,177 @@ export type ToolInvocation = {
   tool?: string;
   params?: ToolParams;
 };
+
+// ─── S1-A: contratto al confine e deduplica delle invocazioni ───────────────
+//
+// I tool validano già i propri parametri; qui la stessa validazione viene
+// applicata PRIMA del dispatch, insieme a un'allowlist esplicita dei nomi.
+// Un nome sconosciuto (il modello può inventarlo) viene rifiutato e segnalato:
+// non consuma il budget delle 3 invocazioni e non resta un'esecuzione vuota
+// silenziosa. Nessuna firma pubblica cambia.
+
+/** Nomi di strumento realmente gestiti dal dispatcher (`eseguiTool`). */
+export const STRUMENTI_PINO_VALIDI: readonly StrumentoPino[] = [
+  "searchStores",
+  "searchProducts",
+  "searchOffers",
+  "searchEvents",
+  "searchAll",
+  "getCategories",
+  "getWeather",
+  "searchPharmacies",
+  "searchGiftCategories",
+];
+
+export function nomeStrumentoPinoValido(nome: unknown): nome is StrumentoPino {
+  if (typeof nome !== "string") return false;
+  return STRUMENTI_PINO_VALIDI.includes(nome.trim() as StrumentoPino);
+}
+
+/**
+ * M5-B — Strumenti esenti dal filtro dei parametri svuotati.
+ *
+ * `getWeather` e `getCategories` non leggono parametri: una chiave inventata
+ * non cambia l'esecuzione, quindi scartarle spegnerebbe meteo e categorie.
+ * `searchPharmacies` ha un default sicuro (`stato: "turno"`): il suo parametro
+ * svuotato resta un'esecuzione voluta.
+ */
+const STRUMENTI_SENZA_FILTRO_SVUOTATI_PINO: ReadonlySet<StrumentoPino> = new Set<StrumentoPino>([
+  "getWeather",
+  "getCategories",
+  "searchPharmacies",
+]);
+
+/**
+ * M5-B — Distingue i parametri originariamente assenti da quelli forniti e poi
+ * eliminati per intero dalla validazione.
+ *
+ * Restano valide: parametri assenti, `{}`, `query` vuota o `null` (ricerca
+ * generica intenzionale: tutte le offerte / tutti gli eventi), voci vuote come
+ * `esclusioni: []` e qualunque esito che conservi almeno un parametro valido.
+ * Viene scartata solo l'invocazione che aveva valori effettivamente forniti
+ * (non vuoti) e che dopo la validazione non ha più nessun parametro: eseguirla
+ * trasformerebbe una ricerca specifica in una ricerca generica involontaria.
+ */
+export function parametriInvocazioneSvuotatiPino(
+  strumento: StrumentoPino,
+  originale: unknown,
+  esito: { params: ToolParams }
+): boolean {
+  if (STRUMENTI_SENZA_FILTRO_SVUOTATI_PINO.has(strumento)) return false;
+  if (!CONTRATTI_STRUMENTO[strumento]?.length) return false;
+  if (!originale || typeof originale !== "object" || Array.isArray(originale)) return false;
+  const forniti = originale as Record<string, unknown>;
+  const chiavi = Object.keys(forniti);
+  if (chiavi.length === 0) return false;
+  if (Object.keys(esito.params).length > 0) return false;
+  // Regola B: `query: null` / `query: ""` sono una ricerca generica voluta,
+  // non una richiesta specifica rimasta senza parametri.
+  if ("query" in forniti) {
+    const query = forniti.query;
+    if (query === null || query === undefined) return false;
+    if (typeof query === "string" && !query.trim()) return false;
+  }
+  return chiavi.some((chiave) => {
+    const valore = forniti[chiave];
+    if (valore === null || valore === undefined) return false;
+    if (typeof valore === "string" && !valore.trim()) return false;
+    if (Array.isArray(valore) && valore.length === 0) return false;
+    return true;
+  });
+}
+
+/**
+ * Rifiuta i nomi fuori allowlist e valida i parametri prima del dispatch.
+ * Restituisce anche i nomi scartati (contratto e M5-B), per una traccia nei log.
+ *
+ * M5-B — Con `opzioni.followUp` il filtro dei parametri svuotati è disattivato:
+ * i piani follow-up usano `{}` o una query valida, e uno scarto lascerebbe la
+ * conversazione sul soggetto precedente senza alcuna risposta.
+ */
+export function validaInvocazioniPino(
+  invocazioni: ToolInvocation[],
+  opzioni?: { followUp?: boolean }
+): {
+  invocazioni: ToolInvocation[];
+  scartate: string[];
+  parametriScartati: string[];
+} {
+  const elenco = Array.isArray(invocazioni) ? invocazioni : [];
+  const valide: ToolInvocation[] = [];
+  const scartate: string[] = [];
+  const parametriScartati: string[] = [];
+  for (const invocazione of elenco) {
+    const nome = typeof invocazione?.tool === "string" ? invocazione.tool.trim() : "";
+    if (!nomeStrumentoPinoValido(nome)) {
+      scartate.push(nome || "(senza nome)");
+      continue;
+    }
+    const esito = validaToolParams(nome, invocazione.params ?? {});
+    if (!opzioni?.followUp && parametriInvocazioneSvuotatiPino(nome, invocazione.params, esito)) {
+      parametriScartati.push(nome);
+      continue;
+    }
+    valide.push({ tool: nome, params: esito.params });
+  }
+  return { invocazioni: valide, scartate, parametriScartati };
+}
+
+/** Parametri in forma canonica: chiavi ordinate, `undefined` omesso. */
+function parametriCanoniciPino(valore: unknown): unknown {
+  if (Array.isArray(valore)) return valore.map(parametriCanoniciPino);
+  if (valore && typeof valore === "object") {
+    const oggetto = valore as Record<string, unknown>;
+    const ordinato: Record<string, unknown> = {};
+    for (const chiave of Object.keys(oggetto).sort()) {
+      const canonico = parametriCanoniciPino(oggetto[chiave]);
+      if (canonico !== undefined) ordinato[chiave] = canonico;
+    }
+    return ordinato;
+  }
+  return valore;
+}
+
+/**
+ * Deduplica le invocazioni realmente identiche (stesso nome + stessi parametri,
+ * con chiavi in ordine canonico) conservando l'ordine originale. Le invocazioni
+ * dello stesso strumento con parametri diversi restano tutte.
+ */
+export function deduplicaInvocazioniPino(invocazioni: ToolInvocation[]): ToolInvocation[] {
+  const elenco = Array.isArray(invocazioni) ? invocazioni : [];
+  const visti = new Set<string>();
+  const uniche: ToolInvocation[] = [];
+  for (const invocazione of elenco) {
+    const nome = String(invocazione?.tool ?? "").trim();
+    const chiave = `${nome}|${JSON.stringify(parametriCanoniciPino(invocazione?.params ?? {}))}`;
+    if (visti.has(chiave)) continue;
+    visti.add(chiave);
+    uniche.push(invocazione);
+  }
+  return uniche;
+}
+
+/**
+ * M5-A — Una selezione è utilizzabile quando ha prodotto qualcosa di
+ * azionabile: una risposta diretta già pronta (chiacchiera, identità,
+ * piattaforma) oppure almeno un'invocazione tool con nome valido.
+ *
+ * `tools: []` senza `directReply` NON è una "nessuna ricerca voluta": il
+ * prompt riserva quel caso alla conversazione, che arriva sempre con
+ * `directReply`. Senza risposta e senza tool la selezione è fallita e deve
+ * valere il recupero di sicurezza già esistente (searchAll → messaggio S19).
+ */
+export function selezioneUtilizzabilePino(
+  invocazioni: ToolInvocation[],
+  directReply: string | null | undefined
+): boolean {
+  if (typeof directReply === "string" && directReply.trim()) return true;
+  const elenco = Array.isArray(invocazioni) ? invocazioni : [];
+  return elenco.some(
+    (invocazione) =>
+      typeof invocazione?.tool === "string" && invocazione.tool.trim().length > 0
+  );
+}
 
 // ─── Chiamata Gemini con timeout e retry ────────────────────────────────────
 // Il provider è centralizzato in lib/ai/gemini-text.ts (callGeminiText): usa
@@ -240,6 +418,361 @@ async function eseguiTool(
     default:
       return vuoto;
   }
+}
+
+// ─── M6-A: isolamento degli errori dei tool ─────────────────────────────────
+//
+// Il fallimento di un tool non deve interrompere la risposta: i risultati
+// validi si conservano, le eccezioni restano isolate e la risposta distingue
+// "riuscito con risultati", "riuscito senza risultati", "errore" e "timeout".
+// M6-A lasciava `timeout` come stato previsto dal tipo; M6-B aggiunge la
+// scadenza effettiva per invocazione, senza cambiare i lettori dell'esito.
+
+export type RisultatoToolPino = {
+  negozi: NegozioRicerca[];
+  prodotti: ProdottoRicerca[];
+  offerte: Awaited<ReturnType<typeof searchOffers>>;
+  eventi: Awaited<ReturnType<typeof searchEvents>>;
+  categorie: Awaited<ReturnType<typeof getCategoriesList>>;
+  meteo: Awaited<ReturnType<typeof getWeatherCastrovillari>>;
+  farmacie: Awaited<ReturnType<typeof searchPharmacies>>;
+};
+
+export type StatoEsitoInvocazionePino = "ok" | "vuoto" | "errore" | "timeout";
+
+/**
+ * Esito di una singola invocazione. Ogni esito trasporta la PROPRIA invocazione
+ * originale (parametri compresi): il merge non deve mai ricorrere all'indice di
+ * array paralleli per recuperare query o parametri.
+ */
+export type EsitoInvocazionePino =
+  | {
+      invocazione: ToolInvocation;
+      stato: "ok" | "vuoto";
+      durataMs: number;
+      risultati: RisultatoToolPino;
+      messaggio: null;
+    }
+  | {
+      invocazione: ToolInvocation;
+      stato: "errore" | "timeout";
+      durataMs: number;
+      risultati: null;
+      messaggio: string;
+    };
+
+/** M6-A — Tutte le fonti hanno fallito: nessun catalogo vuoto dichiarabile. */
+export function messaggioFontiNonDisponibiliPino(lingua: "it" | "en" = "it"): string {
+  return lingua === "en"
+    ? "I can't complete the search right now due to a temporary issue. Please try again shortly."
+    : "In questo momento non riesco a completare la ricerca per un problema temporaneo. Riprova tra poco.";
+}
+
+/** M6-A — Errore parziale: nota breve, separata dai risultati conservati. */
+export function notaFontiParzialiPino(lingua: "it" | "en" = "it"): string {
+  return lingua === "en"
+    ? "Some sources are temporarily unavailable."
+    : "Alcune fonti non sono temporaneamente disponibili.";
+}
+
+/** Un risultato è "vuoto" quando nessun contenitore porta dati. */
+export function risultatoToolVuotoPino(
+  risultati: RisultatoToolPino | null | undefined
+): boolean {
+  if (!risultati) return true;
+  return (
+    (risultati.negozi?.length ?? 0) === 0 &&
+    (risultati.prodotti?.length ?? 0) === 0 &&
+    (risultati.offerte?.length ?? 0) === 0 &&
+    (risultati.eventi?.length ?? 0) === 0 &&
+    (risultati.categorie?.length ?? 0) === 0 &&
+    (risultati.farmacie?.length ?? 0) === 0 &&
+    !risultati.meteo
+  );
+}
+
+/** Messaggio tecnico INTERNO (log): mai esposto all'utente. */
+function messaggioTecnicoErrorePino(errore: unknown): string {
+  if (errore instanceof Error && errore.message) return errore.message;
+  if (typeof errore === "string" && errore.trim()) return errore.trim();
+  return "errore sconosciuto";
+}
+
+/** Predisposizione M6-A: nessun timer, ma un errore marcato resta un timeout. */
+function erroreTimeoutPino(errore: unknown): boolean {
+  if (!errore || typeof errore !== "object") return false;
+  const oggetto = errore as { name?: unknown; code?: unknown; stato?: unknown };
+  return (
+    oggetto.name === "TimeoutError" ||
+    oggetto.code === "TIMEOUT" ||
+    oggetto.stato === "timeout"
+  );
+}
+
+/**
+ * M6-B — Scadenza reale di una singola invocazione. Il nome e il codice sono
+ * quelli già riconosciuti da M6-A, quindi lo stato prodotto è "timeout".
+ * Rappresenta un'attesa troppo lunga, non un guasto dei dati: nessun retry.
+ */
+export class ErroreTimeoutPino extends Error {
+  readonly code = "TIMEOUT";
+  readonly scadenzaMs: number;
+
+  constructor(scadenzaMs: number) {
+    super(`Timeout della fonte dopo ${scadenzaMs} ms.`);
+    this.name = "TimeoutError";
+    this.scadenzaMs = scadenzaMs;
+  }
+}
+
+/**
+ * M6-B — Limite per invocazione. Le chiamate PostgREST non hanno un timeout
+ * proprio: senza questa scadenza un tool appeso teneva aperta la richiesta a
+ * tempo indefinito. Il valore copre il timeout HTTP delle farmacie (8s).
+ */
+export const SCADENZA_INVOCAZIONE_PINO_MS = 20_000;
+
+/**
+ * M6-B — Attende la promessa entro la scadenza. Non annulla la promessa
+ * originale (PostgREST non espone un AbortSignal qui): smette di attenderla e
+ * la classifica come timeout. La promessa perdente ha già i gestori di
+ * `Promise.race`, quindi non produce rifiuti non gestiti.
+ */
+export function conScadenzaPino<T>(
+  promessa: Promise<T>,
+  ms: number = SCADENZA_INVOCAZIONE_PINO_MS
+): Promise<T> {
+  const attesa = Number.isFinite(ms) && ms > 0 ? ms : SCADENZA_INVOCAZIONE_PINO_MS;
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  const scadenza = new Promise<never>((_, rifiuta) => {
+    timer = setTimeout(() => rifiuta(new ErroreTimeoutPino(attesa)), attesa);
+  });
+  return Promise.race([promessa, scadenza]).finally(() => {
+    if (timer) clearTimeout(timer);
+  });
+}
+
+/**
+ * M6-B1 — Esegue il fallback `searchAll` con la stessa scadenza dei tool.
+ * Distingue timeout ed errore senza lanciare: il chiamante decide se i
+ * risultati (eventualmente assenti) sono conservabili. Nessun retry: una sola
+ * esecuzione, interrotta dall'attesa scaduta.
+ */
+export async function eseguiFallbackConScadenzaPino<T>(
+  esegui: () => Promise<T>,
+  scadenzaMs: number = SCADENZA_INVOCAZIONE_PINO_MS
+): Promise<{ esito: T | null; errore: unknown }> {
+  try {
+    return { esito: await conScadenzaPino(esegui(), scadenzaMs), errore: null };
+  } catch (errore) {
+    console.warn(
+      "[pino-fallback-scadenza]",
+      JSON.stringify({
+        timeout: errore instanceof ErroreTimeoutPino,
+        messaggio: errore instanceof Error ? errore.message : "errore sconosciuto",
+      })
+    );
+    return { esito: null, errore };
+  }
+}
+
+/**
+ * M6-A — Esegue le invocazioni isolate con `Promise.allSettled`: una rejection
+ * non interrompe il gruppo e nessuna eccezione raggiunge il chiamante.
+ * L'esecutore è iniettabile, così i test coprono i casi di errore senza DB.
+ */
+export async function eseguiInvocazioniPino(
+  invocazioni: ToolInvocation[],
+  esegui: (invocazione: ToolInvocation) => Promise<RisultatoToolPino>,
+  opzioni: { scadenzaMs?: number } = {}
+): Promise<EsitoInvocazionePino[]> {
+  const elenco = Array.isArray(invocazioni) ? invocazioni : [];
+  if (elenco.length === 0) return [];
+
+  // M6-B — Ogni invocazione ha una scadenza effettiva: un tool appeso diventa
+  // "timeout" (non "vuoto") e non trattiene i risultati degli altri.
+  const scadenzaMs = opzioni?.scadenzaMs ?? SCADENZA_INVOCAZIONE_PINO_MS;
+
+  const esiti = await Promise.allSettled(
+    elenco.map(async (invocazione) => {
+      const inizio = Date.now();
+      try {
+        const risultati = await conScadenzaPino(esegui(invocazione), scadenzaMs);
+        return {
+          invocazione,
+          fallito: false as const,
+          risultati,
+          durataMs: Date.now() - inizio,
+          errore: null,
+        };
+      } catch (errore) {
+        return {
+          invocazione,
+          fallito: true as const,
+          risultati: null,
+          durataMs: Date.now() - inizio,
+          errore,
+        };
+      }
+    })
+  );
+
+  return esiti.map((esito, indice): EsitoInvocazionePino => {
+    const invocazione = elenco[indice];
+    if (esito.status === "fulfilled") {
+      if (esito.value.fallito) {
+        const errore = esito.value.errore;
+        return {
+          invocazione,
+          stato: erroreTimeoutPino(errore) ? "timeout" : "errore",
+          durataMs: esito.value.durataMs,
+          risultati: null,
+          messaggio: messaggioTecnicoErrorePino(errore),
+        };
+      }
+      const risultati = esito.value.risultati;
+      return {
+        invocazione,
+        stato: risultatoToolVuotoPino(risultati) ? "vuoto" : "ok",
+        durataMs: esito.value.durataMs,
+        risultati,
+        messaggio: null,
+      };
+    }
+    return {
+      invocazione,
+      stato: "errore",
+      durataMs: 0,
+      risultati: null,
+      messaggio: messaggioTecnicoErrorePino(esito.reason),
+    };
+  });
+}
+
+export type RiepilogoEsitiInvocazioniPino = {
+  /** Invocazioni effettivamente dispatchate. */
+  tentate: number;
+  /** Invocazioni completate senza eccezioni (con o senza risultati). */
+  riuscite: number;
+  /** Invocazioni riuscite ma senza dati. */
+  vuote: number;
+  /** Invocazioni terminate con eccezione. */
+  fallite: number;
+  /** Invocazioni scadute (stato previsto, non ancora prodotto in M6-A). */
+  timeout: number;
+  /** Invocazioni riuscite con almeno un risultato. */
+  conRisultati: number;
+  tutteFallite: boolean;
+  erroreParziale: boolean;
+};
+
+/** M6-A — Tentate ≠ riuscite: il riepilogo separa i quattro stati. */
+export function riepilogoEsitiInvocazioniPino(
+  esiti: EsitoInvocazionePino[]
+): RiepilogoEsitiInvocazioniPino {
+  const elenco = Array.isArray(esiti) ? esiti : [];
+  const riuscite = elenco.filter((e) => e.stato === "ok" || e.stato === "vuoto").length;
+  const vuote = elenco.filter((e) => e.stato === "vuoto").length;
+  const fallite = elenco.filter((e) => e.stato === "errore").length;
+  const timeout = elenco.filter((e) => e.stato === "timeout").length;
+  const conRisultati = elenco.filter((e) => e.stato === "ok").length;
+  return {
+    tentate: elenco.length,
+    riuscite,
+    vuote,
+    fallite,
+    timeout,
+    conRisultati,
+    tutteFallite: elenco.length > 0 && riuscite === 0,
+    erroreParziale: riuscite > 0 && fallite + timeout > 0,
+  };
+}
+
+/**
+ * M6-A — Almeno una fonte è fallita e nessun risultato è disponibile: il
+ * catalogo vuoto non è dimostrabile, quindi la risposta deve dichiarare
+ * l'indisponibilità invece di dire "non ho trovato nulla".
+ */
+export function fontiInattendibiliSenzaRisultatiPino(
+  riepilogo: RiepilogoEsitiInvocazioniPino,
+  risultati: Pick<
+    RisultatoToolPino,
+    "negozi" | "prodotti" | "offerte" | "eventi" | "categorie" | "meteo" | "farmacie"
+  >
+): boolean {
+  if (!riepilogo || riepilogo.fallite + riepilogo.timeout === 0) return false;
+  return (
+    (risultati?.negozi?.length ?? 0) === 0 &&
+    (risultati?.prodotti?.length ?? 0) === 0 &&
+    (risultati?.offerte?.length ?? 0) === 0 &&
+    (risultati?.eventi?.length ?? 0) === 0 &&
+    (risultati?.categorie?.length ?? 0) === 0 &&
+    (risultati?.farmacie?.length ?? 0) === 0 &&
+    !risultati?.meteo
+  );
+}
+
+/**
+ * M6-D1 — Il ramo deterministico del meteo sostituisce la risposta SOLO quando
+ * nessun'altra fonte ha prodotto dati. Con dati validi di un'altra fonte i
+ * risultati restano nella risposta normale, insieme alla nota sulle fonti
+ * parziali: il meteo non deve cancellarli. Quando il meteo e' l'unico esito il
+ * ramo resta (dati meteo se presenti, indisponibilita' dichiarata se assenti).
+ */
+export function meteoSostituisceRispostaPino(
+  risultati: Pick<
+    RisultatoToolPino,
+    "negozi" | "prodotti" | "offerte" | "eventi" | "categorie" | "farmacie"
+  >
+): boolean {
+  return (
+    (risultati?.negozi?.length ?? 0) === 0 &&
+    (risultati?.prodotti?.length ?? 0) === 0 &&
+    (risultati?.offerte?.length ?? 0) === 0 &&
+    (risultati?.eventi?.length ?? 0) === 0 &&
+    (risultati?.categorie?.length ?? 0) === 0 &&
+    (risultati?.farmacie?.length ?? 0) === 0
+  );
+}
+
+export type RisultatiMergeInvocazioniPino = RisultatoToolPino;
+
+/**
+ * M6-A — Merge degli esiti con risultati, con deduplica per id. Il filtro del
+ * fan-out regalo usa i parametri TRASPORTATI dall'esito, non un indice.
+ */
+export function mergeEsitiInvocazioniPino(
+  esiti: EsitoInvocazionePino[],
+  opzioni: { regaloGenerico?: boolean } = {}
+): RisultatiMergeInvocazioniPino {
+  let negozi: NegozioRicerca[] = [];
+  let prodotti: ProdottoRicerca[] = [];
+  let offerte: RisultatoToolPino["offerte"] = [];
+  let eventi: RisultatoToolPino["eventi"] = [];
+  let categorie: RisultatoToolPino["categorie"] = [];
+  let meteo: RisultatoToolPino["meteo"] = null;
+  let farmacie: RisultatoToolPino["farmacie"] = [];
+  for (const esito of Array.isArray(esiti) ? esiti : []) {
+    if (esito.stato !== "ok" && esito.stato !== "vuoto") continue;
+    const r = esito.risultati;
+    if (!r) continue;
+    const categoriaRegalo = opzioni.regaloGenerico
+      ? String(esito.invocazione?.params?.query ?? "")
+      : "";
+    for (const n of r.negozi ?? []) if (!negozi.some((e) => e.id === n.id)) negozi = [...negozi, n];
+    for (const p of r.prodotti ?? []) {
+      // Nel fan-out regalo accettiamo solo prodotti che corrispondono alla
+      // categoria specifica interrogata: nessun fallback su articoli casuali.
+      if (categoriaRegalo && !prodottoCorrispondeCategoriaRegalo(p, categoriaRegalo)) continue;
+      if (!prodotti.some((e) => e.id === p.id)) prodotti = [...prodotti, p];
+    }
+    for (const o of r.offerte ?? []) if (!offerte.some((e) => e.id === o.id)) offerte = [...offerte, o];
+    for (const e of r.eventi ?? []) if (!eventi.some((x) => x.id === e.id)) eventi = [...eventi, e];
+    for (const c of r.categorie ?? []) if (!categorie.some((x) => x.nome === c.nome)) categorie = [...categorie, c];
+    if (r.meteo && !meteo) meteo = r.meteo;
+    for (const f of r.farmacie ?? []) if (!farmacie.some((x) => x.id === f.id && x.nome === f.nome)) farmacie = [...farmacie, f];
+  }
+  return { negozi, prodotti, offerte, eventi, categorie, meteo, farmacie };
 }
 
 /**
@@ -1066,6 +1599,32 @@ function descriviCriteriRicerca(semantica?: PinoSemanticPlan, lingua: "it" | "en
 }
 
 /**
+ * M5-A / S19 — Il fallback è vuoto solo quando la selezione era fallita:
+ * nessuna invocazione eseguita, nessuna richiesta di servizio e nessun
+ * risultato da mostrare. Un catalogo davvero vuoto (selezione riuscita) non
+ * deve ricevere il messaggio di indisponibilità.
+ */
+export function fallbackSelezioneVuotaPino(esito: {
+  selezioneOk: boolean;
+  richiestaServizio: unknown;
+  negozi: readonly unknown[];
+  prodotti: readonly unknown[];
+  offerte: readonly unknown[];
+  eventi: readonly unknown[];
+  categorie: readonly unknown[];
+}): boolean {
+  return (
+    !esito.selezioneOk &&
+    !esito.richiestaServizio &&
+    esito.negozi.length === 0 &&
+    esito.prodotti.length === 0 &&
+    esito.offerte.length === 0 &&
+    esito.eventi.length === 0 &&
+    esito.categorie.length === 0
+  );
+}
+
+/**
  * Indisponibilità temporanea della selezione AI: distinta da un catalogo
  * senza risultati. Usa la lingua già rilevata da Pino, senza forzare l'italiano.
  */
@@ -1429,7 +1988,7 @@ function descrizioneMeteoInglese(descrizione: string): string {
     .replace(/pioggia/g, "rain");
 }
 
-function rispostaMeteoDeterministica(
+export function rispostaMeteoDeterministica(
   meteo: Awaited<ReturnType<typeof getWeatherCastrovillari>>,
   lingua: "it" | "en" = "it"
 ): string {
@@ -2094,13 +2653,17 @@ export async function chatConAssistente(
       domandaSemantica.length >= 22 ||
       /\b(?:non|senza|sotto|sopra|massimo|minimo|tra|entro|preferisco|tipo|per|aperto|aperta|ora|adesso|vicino)\b/i.test(domandaSemantica)
     );
+  // M6-B1 — Budget condiviso: massimo due chiamate Gemini per richiesta,
+  // prenotate PRIMA di partire (anche quando falliscono o vanno in timeout).
+  const budgetGemini = creaBudgetGeminiPino();
   const semantica = attivaPlannerSemantico
     ? await interpretaRichiestaPino(
         domandaSemantica,
         storico,
         analisiSemantica,
         memoria,
-        statoConversazionale
+        statoConversazionale,
+        budgetGemini
       )
     : undefined;
 
@@ -2138,13 +2701,15 @@ export async function chatConAssistente(
     selezioneOk = true;
   } else {
     try {
-      const raw = await callGeminiText({
-        systemPrompt: SYSTEM_PROMPT,
-        userPrompt: buildToolSelectionPrompt(storico, descriviIntento(analisi)),
-        maxTokens: 450,
-        temperature: 0.1,
-        timeoutMs: 45_000,
-      });
+      const raw = await chiamataGeminiConBudgetPino(budgetGemini, () =>
+        callGeminiText({
+          systemPrompt: SYSTEM_PROMPT,
+          userPrompt: buildToolSelectionPrompt(storico, descriviIntento(analisi)),
+          maxTokens: 450,
+          temperature: 0.1,
+          timeoutMs: 45_000,
+        })
+      );
       const parsed = JSON.parse(extractJsonFromText(raw)) as {
         tools?: ToolInvocation[];
         directReply?: string | null;
@@ -2303,31 +2868,90 @@ export async function chatConAssistente(
   // utilizzabile. Nessuna nuova chiamata tool, nessun vincolo rimosso.
   invocazioni = applicaQueryRiservaPino(invocazioni, comprensione);
 
+  // S1-A — Contratto al confine: nomi fuori allowlist e parametri non ammessi
+  // vengono scartati PRIMA del limite, quindi non consumano il budget dei tre
+  // tool e non arrivano mai al dispatcher.
+  const confine = validaInvocazioniPino(invocazioni, { followUp: Boolean(followUp) });
+  if (confine.scartate.length > 0) {
+    console.warn("[pino-tool-contratto]", JSON.stringify({ scartate: confine.scartate }));
+  }
+  if (confine.parametriScartati.length > 0) {
+    console.warn("[pino-tool-parametri-svuotati]", JSON.stringify({ strumenti: confine.parametriScartati }));
+  }
+  invocazioni = deduplicaInvocazioniPino(confine.invocazioni);
+
   // S5.1-D — Invariante globale: nessun percorso può superare 3 invocazioni.
   invocazioni = limitaInvocazioniPino(invocazioni);
 
+  // M5-A — Selezione vuota: `tools: []` è una scelta legittima solo quando
+  // esiste una risposta diretta. Senza risposta e senza tool sopravvissuti a
+  // validazione e deduplica la selezione NON è utilizzabile: senza questo
+  // declassamento il fallback `searchAll` (che richiede !selezioneOk) e il
+  // messaggio S19 resterebbero spenti e l'utente riceverebbe un saluto generico
+  // al posto di una ricerca. Il calcolo avviene DOPO il confine S1-A, così
+  // contano anche le invocazioni scartate dal contratto; i piani deterministici
+  // e i routing speciali che hanno tool o risposta diretta restano invariati.
+  if (selezioneOk && !followUp && !selezioneUtilizzabilePino(invocazioni, directReply)) {
+    selezioneOk = false;
+    console.info("[pino-selezione-vuota]", JSON.stringify({
+      scartate: confine.scartate.length,
+      invocazioni: invocazioni.length,
+      fallback: !richiestaServizio,
+    }));
+  }
+
+  // M6-A — Dispatch isolato: un tool che fallisce non azzera gli altri né
+  // propaga l'eccezione fino alla route. Ogni esito porta la sua invocazione,
+  // quindi il merge non dipende dall'indice di array paralleli.
+  let esitiInvocazioni: EsitoInvocazionePino[] = [];
   if (invocazioni.length > 0) {
-    const risultati = await Promise.all(
-      invocazioni.map((t) => eseguiTool(t.tool as string, t.params ?? {}, queryDefault))
+    esitiInvocazioni = await eseguiInvocazioniPino(invocazioni, (invocazione) =>
+      eseguiTool(invocazione.tool as string, invocazione.params ?? {}, queryDefault)
     );
-    // Merge con deduplica per id: più tool possono restituire lo stesso
-    // negozio/prodotto (es. ricerca cibo multi-termine).
-    for (let i = 0; i < risultati.length; i++) {
-      const r = risultati[i];
-      const categoriaRegalo = regaloGenerico ? String(invocazioni[i]?.params?.query ?? "") : "";
-      for (const n of r.negozi) if (!negozi.some((e) => e.id === n.id)) negozi = [...negozi, n];
-      for (const p of r.prodotti) {
-        // Nel fan-out regalo accettiamo solo prodotti che corrispondono alla
-        // categoria specifica interrogata: nessun fallback su articoli casuali.
-        if (categoriaRegalo && !prodottoCorrispondeCategoriaRegalo(p, categoriaRegalo)) continue;
-        if (!prodotti.some((e) => e.id === p.id)) prodotti = [...prodotti, p];
-      }
-      for (const o of r.offerte) if (!offerte.some((e) => e.id === o.id)) offerte = [...offerte, o];
-      for (const e of r.eventi) if (!eventi.some((x) => x.id === e.id)) eventi = [...eventi, e];
-      for (const c of r.categorie) if (!categorie.some((x) => x.nome === c.nome)) categorie = [...categorie, c];
-      if (r.meteo && !meteo) meteo = r.meteo;
-      for (const f of r.farmacie) if (!farmacie.some((x) => x.id === f.id && x.nome === f.nome)) farmacie = [...farmacie, f];
-    }
+    const merge = mergeEsitiInvocazioniPino(esitiInvocazioni, { regaloGenerico });
+    negozi = merge.negozi;
+    prodotti = merge.prodotti;
+    offerte = merge.offerte;
+    eventi = merge.eventi;
+    categorie = merge.categorie;
+    if (merge.meteo) meteo = merge.meteo;
+    farmacie = merge.farmacie;
+  }
+
+  // M6-A — Tentate ≠ riuscite: solo le invocazioni completate senza eccezioni
+  // valgono come "tool eseguito".
+  const riepilogoTool = riepilogoEsitiInvocazioniPino(esitiInvocazioni);
+  const invocazioniRiuscite = riepilogoTool.riuscite;
+  const invocazioniFallite = riepilogoTool.fallite + riepilogoTool.timeout;
+  if (invocazioniFallite > 0) {
+    console.warn(
+      "[pino-tool-isolamento]",
+      JSON.stringify({
+        tentate: riepilogoTool.tentate,
+        riuscite: riepilogoTool.riuscite,
+        vuote: riepilogoTool.vuote,
+        fallite: riepilogoTool.fallite,
+        timeout: riepilogoTool.timeout,
+        strumenti: esitiInvocazioni
+          .filter((e) => e.stato === "errore" || e.stato === "timeout")
+          .map((e) => String(e.invocazione?.tool ?? "")),
+      })
+    );
+  }
+
+  // M6-A — Caso C: tutte le fonti fallite. Nessun recupero sullo stesso
+  // database e nessun testo di catalogo vuoto: la risposta dichiara
+  // l'indisponibilità temporanea, distinta dal messaggio S19 (selezione AI).
+  const tutteLeFontiFallite = riepilogoTool.tutteFallite;
+  if (tutteLeFontiFallite && !directReply) {
+    return {
+      risposta: messaggioFontiNonDisponibiliPino(linguaConversazione),
+      negozi: [],
+      prodotti: [],
+      processingMs: Date.now() - inizio,
+      source: "assistente",
+      intent: analisi.intent,
+    };
   }
 
   // ── Recupero intelligente v3 ─────────────────────────────────────────────
@@ -2478,7 +3102,12 @@ export async function chatConAssistente(
   const haMeteo = invocazioni.some((t) => t.tool === "getWeather");
   const haFarmacie = invocazioni.some((t) => t.tool === "searchPharmacies");
 
-  if (haMeteo) {
+  // M6-D1 — Il meteo e' deterministico, ma non deve sostituire le altre fonti:
+  // il ramo breve vale solo quando il meteo e' l'unico esito della ricerca.
+  if (
+    haMeteo &&
+    meteoSostituisceRispostaPino({ negozi, prodotti, offerte, eventi, categorie, farmacie })
+  ) {
     return {
       risposta: rispostaMeteoDeterministica(meteo, linguaConversazione),
       negozi: [],
@@ -2510,19 +3139,24 @@ export async function chatConAssistente(
   // davvero vuoti → la risposta finale lo dirà onestamente.
   // Se l'LLM non ha scelto tool né risposta diretta (es. "va bene" senza
   // contesto), NON inventiamo una ricerca: rispondiamo in modo naturale.
-  const toolsEseguiti = invocazioni.length > 0;
+  // M6-A — "Eseguito" non significa "tentato": contano le riuscite.
+  const toolsEseguiti = invocazioniRiuscite > 0;
   if (!selezioneOk && !richiestaServizio) {
     // Fallback con gli stessi vincoli del piano: nessuna ricerca "pulita" che
     // possa reintrodurre prodotti esclusi o fuori budget.
-    const tutto = await searchAll(
-      domanda,
-      parametriFallbackPiano(semantica, comprensione, domandaSemantica)
+    // M6-B1 — Anche il fallback ha la scadenza di 20s: una fonte appesa non
+    // trattiene la richiesta. Un timeout non e' un catalogo vuoto: il ramo S19
+    // sotto dichiara l'indisponibilita', e i risultati validi restano.
+    const fallback = await eseguiFallbackConScadenzaPino(() =>
+      searchAll(domanda, parametriFallbackPiano(semantica, comprensione, domandaSemantica))
     );
-    negozi = tutto.negozi;
-    prodotti = tutto.prodotti;
-    offerte = tutto.offerte;
-    eventi = tutto.eventi;
-    categorie = tutto.categorie;
+    if (fallback.esito) {
+      negozi = fallback.esito.negozi;
+      prodotti = fallback.esito.prodotti;
+      offerte = fallback.esito.offerte;
+      eventi = fallback.esito.eventi;
+      categorie = fallback.esito.categorie;
+    }
   } else if (!directReply && !toolsEseguiti && !richiestaServizio) {
     return {
       risposta: linguaConversazione === "en"
@@ -2539,14 +3173,15 @@ export async function chatConAssistente(
   // Correzione B (S19): un guasto della selezione AI non è un catalogo vuoto.
   // Il flag vale solo sul ramo di fallback nativo appena eseguito: se la
   // ricerca alternativa ha trovato qualcosa, la risposta resta invariata.
-  const ricercaFallbackVuota =
-    !selezioneOk &&
-    !richiestaServizio &&
-    negozi.length === 0 &&
-    prodotti.length === 0 &&
-    offerte.length === 0 &&
-    eventi.length === 0 &&
-    categorie.length === 0;
+  const ricercaFallbackVuota = fallbackSelezioneVuotaPino({
+    selezioneOk,
+    richiestaServizio,
+    negozi,
+    prodotti,
+    offerte,
+    eventi,
+    categorie,
+  });
 
   // S5.3 — Barriera finale di disponibilità: vale per la ricerca ordinaria,
   // per il fallback e per qualsiasi percorso che abbia prodotto risultati.
@@ -2664,7 +3299,23 @@ export async function chatConAssistente(
   const rispostaIndisponibilitaAI = ricercaFallbackVuota
     ? messaggioIndisponibilitaGemini(linguaRisposta)
     : null;
+  // M6-A — Una fonte fallita senza alcun risultato rende il catalogo vuoto
+  // non dimostrabile: la risposta dichiara l'indisponibilità, non "non ho
+  // trovato nulla". Con risultati validi resta una nota breve.
+  const fontiFalliteSenzaRisultati = fontiInattendibiliSenzaRisultatiPino(riepilogoTool, {
+    negozi,
+    prodotti,
+    offerte,
+    eventi,
+    categorie,
+    meteo,
+    farmacie,
+  });
+  const rispostaFontiNonDisponibili = fontiFalliteSenzaRisultati
+    ? messaggioFontiNonDisponibiliPino(linguaRisposta)
+    : null;
   const rispostaBaseEffettiva = rispostaIndisponibilitaAI ??
+    rispostaFontiNonDisponibili ??
     rispostaServizioTrovata ??
     (soloProdottiEsauriti ? notaDisponibilita! : rispostaBase);
   // S4.3: nota solo quando il catalogo non permette di confermare l'attributo o
@@ -2675,7 +3326,10 @@ export async function chatConAssistente(
   // S5.2.1 — Contestare in modo trasparente gli attributi non verificabili
   // (destinatario, età, taglia, provenienza, artigianalità) senza filtri.
   const notaContestoAttributi = notaContestoAttributiPino(comprensione, linguaRisposta);
-  const partiRisposta = [notaRecupero, notaAttributi, notaContestoAttributi];
+  const notaFontiParziali = riepilogoTool.erroreParziale && !fontiFalliteSenzaRisultati
+    ? notaFontiParzialiPino(linguaRisposta)
+    : null;
+  const partiRisposta = [notaFontiParziali, notaRecupero, notaAttributi, notaContestoAttributi];
   if (notaDisponibilita && !soloProdottiEsauriti) partiRisposta.push(notaDisponibilita);
   partiRisposta.push(rispostaBaseEffettiva);
   const risposta = partiRisposta
