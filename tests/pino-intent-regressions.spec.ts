@@ -2,12 +2,18 @@ import { expect, test } from "@playwright/test";
 
 import { chatConAssistente } from "../lib/assistente/index";
 import { pianoLocaleIntelligente } from "../lib/assistente/semantica";
-import { analizzaIntentoPino } from "../lib/assistente/intent";
+import { analizzaIntentoPino, pianoIntento } from "../lib/assistente/intent";
 import { prodottoPertinente, filtraProdottiPerSoggettoUnico } from "../lib/assistente/tools";
 import { parametriFallbackPiano, fallbackTestuale } from "../lib/assistente/index";
-import { richiestaCinemaPino } from "../lib/assistente/routing-policy";
+import {
+  isExplicitFoodProductRequest,
+  richiestaCinemaPino,
+} from "../lib/assistente/routing-policy";
 import { TOKEN_SENZA_REFUSI, VOCABOLARIO_PINO } from "../lib/assistente/semantica";
-import { correggiTokenCatalogo } from "../lib/assistente/understanding";
+import {
+  correggiTokenCatalogo,
+  normalizzaQueryCatalogo,
+} from "../lib/assistente/understanding";
 import {
   espandiQueryConSinonimi,
   espandiQueryConSinonimiBase,
@@ -16,6 +22,41 @@ import {
 import type { ProdottoRicerca } from "../lib/ricerca-ai";
 
 const u = (content: string) => ({ role: "user" as const, content });
+
+/**
+ * Ricerca alimentare in inglese: il soggetto deve diventare italiano PRIMA del
+ * retrieval. Nessuna nuova fonte: la query tradotta passa dalla stessa ricerca
+ * prodotti InCittà usata dalle richieste italiane.
+ */
+test.describe("Pino — alimenti in inglese", () => {
+  test("'bread' è intento food non basso e il piano cerca prodotti in italiano", () => {
+    const analisi = analizzaIntentoPino("bread");
+    expect(analisi.intent).toBe("food");
+    expect(analisi.dominio).toBe("food");
+    expect(analisi.confidence).not.toBe("bassa");
+
+    const piano = pianoIntento(analisi, "bread");
+    expect(piano).toContainEqual({ tool: "searchProducts", query: "pane" });
+    expect(piano.some((t) => t.query === "bread")).toBe(false);
+  });
+
+  test("le richieste inglesi complete usano il soggetto italiano del catalogo", () => {
+    const casi: Array<[string, string]> = [
+      ["I want some bread", "pane"],
+      ["I want some cheese", "formaggio"],
+      ["I need some cookies", "biscotti"],
+    ];
+    for (const [frase, soggetto] of casi) {
+      expect(normalizzaQueryCatalogo(frase)).toBe(soggetto);
+    }
+  });
+
+  test("la parola singola inglese è una richiesta esplicita di prodotto", () => {
+    expect(isExplicitFoodProductRequest("bread")).toBe(true);
+    // Confronto per token esatto: nessun falso positivo su parole più lunghe.
+    expect(isExplicitFoodProductRequest("breadsticks")).toBe(false);
+  });
+});
 
 /**
  * Regressioni segnalate sul comportamento reale di Pino.

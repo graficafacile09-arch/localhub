@@ -142,6 +142,49 @@ test("explicit food product requests are routed to the catalog in Italian and En
   assert.equal(isExplicitFoodProductRequest("Vorrei mangiare"), false);
 });
 
+test("English food subjects reach the Italian catalog subject", () => {
+  // Il catalogo è in italiano: il soggetto inglese deve arrivare già tradotto,
+  // altrimenti la ricerca prodotti non ha nulla da confrontare.
+  assert.equal(normalizzaQueryCatalogo("bread"), "pane");
+  assert.equal(normalizzaQueryCatalogo("I want some bread"), "pane");
+  assert.equal(normalizzaQueryCatalogo("cheese"), "formaggio");
+  assert.equal(normalizzaQueryCatalogo("I want some cheese"), "formaggio");
+  assert.equal(normalizzaQueryCatalogo("I need some cookies"), "biscotti");
+  assert.equal(normalizzaQueryCatalogo("noodles"), "pasta");
+  // Invariante: i termini italiani già funzionanti non cambiano.
+  assert.equal(normalizzaQueryCatalogo("voglio il pane"), "pane");
+  assert.equal(normalizzaQueryCatalogo("Voglio un pane"), "pane");
+  assert.equal(normalizzaQueryCatalogo("pizza"), "pizza");
+  assert.equal(normalizzaQueryCatalogo("Cerco pasta sotto 5 euro"), "pasta");
+  // Nessuna traduzione dentro parole più lunghe.
+  assert.equal(normalizzaQueryCatalogo("breadsticks"), "breadsticks");
+  assert.equal(normalizzaQueryCatalogo("meatballs"), "meatballs");
+});
+
+test("single English food nouns are explicit product requests, exact token only", () => {
+  // Positivi: parola singola inglese già nel vocabolario alimentare.
+  assert.equal(isExplicitFoodProductRequest("bread"), true);
+  assert.equal(isExplicitFoodProductRequest("cheese"), true);
+  assert.equal(isExplicitFoodProductRequest("meat"), true);
+  // Positivi con verbo (comportamento invariato).
+  assert.equal(isExplicitFoodProductRequest("I want some bread"), true);
+  assert.equal(isExplicitFoodProductRequest("voglio il pane"), true);
+  // Negativi: parole non alimentari isolate.
+  assert.equal(isExplicitFoodProductRequest("headphones"), false);
+  assert.equal(isExplicitFoodProductRequest("cane"), false);
+  assert.equal(isExplicitFoodProductRequest("gatto"), false);
+  // Negativi: parole che CONTENGONO un termine alimentare.
+  assert.equal(isExplicitFoodProductRequest("breadsticks"), false);
+  assert.equal(isExplicitFoodProductRequest("breadcrumbs"), false);
+  assert.equal(isExplicitFoodProductRequest("meatballs"), false);
+  // Regressioni italiane: nessun cambio di comportamento.
+  assert.equal(isExplicitFoodProductRequest("pane"), false);
+  assert.equal(isExplicitFoodProductRequest("Voglio un pane"), true);
+  assert.equal(isExplicitFoodProductRequest("Vorrei mangiare"), false);
+  assert.equal(isExplicitFoodProductRequest("Voglio un cane"), false);
+  assert.equal(isExplicitFoodProductRequest("Cerco pasta sotto 5 euro"), true);
+});
+
 test("generic attractions questions are recognized in Italian and English", () => {
   assert.equal(isBroadAttractionsRequest("What attractions can I visit in Castrovillari?"), true);
   assert.equal(isBroadAttractionsRequest("Quali attrazioni posso visitare a Castrovillari?"), true);
