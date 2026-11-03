@@ -3,6 +3,10 @@ import ShopResultCard from "./ShopResultCard";
 import type { NegozioRicerca, ProdottoRicerca } from "@/lib/ricerca-ai";
 import Link from "next/link";
 import { getProdottoImmagine } from "@/lib/prodotti-immagini";
+import {
+  etichettaNegoziTrovatiPino,
+  etichettaProdottiTrovatiPino,
+} from "@/lib/assistente/etichette-risultati";
 
 export type MessageRole = "user" | "assistant";
 
@@ -14,6 +18,8 @@ export interface ChatMessage {
   prodotti?: ProdottoRicerca[];
   processingMs?: number;
   source?: "brain" | "fallback" | "assistente";
+  /** Lingua della risposta di Pino: le etichette dei risultati la seguono. */
+  lingua?: "it" | "en";
 }
 
 interface AssistantMessageProps {
@@ -125,7 +131,7 @@ export default function AssistantMessage({ message }: AssistantMessageProps) {
         {message.prodotti && message.prodotti.length > 0 && (
           <Fragment>
             <p className="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-              {message.prodotti.length} prodott{message.prodotti.length === 1 ? "o trovato" : "i trovati"}
+              {etichettaProdottiTrovatiPino(message.prodotti.length, message.lingua)}
             </p>
             <div className="grid grid-cols-2 gap-2 pb-1">
               {message.prodotti.map((prodotto) => (
@@ -176,7 +182,7 @@ export default function AssistantMessage({ message }: AssistantMessageProps) {
         {message.negozi && message.negozi.length > 0 && (
           <Fragment>
             <p className="ml-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-              {message.negozi.length} negoz{message.negozi.length === 1 ? "io trovato" : "i trovati"}
+              {etichettaNegoziTrovatiPino(message.negozi.length, message.lingua)}
             </p>
             <div className="grid grid-cols-1 gap-1.5 pb-1">
               {message.negozi.map((negozio, index) => (

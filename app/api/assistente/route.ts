@@ -9,7 +9,7 @@
  *   { messages: [{ role: "user" | "assistant", content: string }], sessionId?: string }
  *
  * Response (200):
- *   { risposta, negozi, prodotti, processingMs, source: "assistente" }
+ *   { risposta, negozi, prodotti, processingMs, source: "assistente", lingua }
  *
  * NOTA: /api/search resta invariato (altri consumer); questo endpoint viene
  * usato ESCLUSIVAMENTE da AssistantChat.
@@ -21,6 +21,7 @@
 
 import { NextResponse } from "next/server";
 import { chatConAssistente, type MessaggioAssistente } from "@/lib/assistente";
+import { rilevaLinguaConversazionePino } from "@/lib/assistente/understanding";
 import { checkRateLimit } from "@/lib/rate-limiter";
 
 // ─── Rate limit CONDIVISO DB-backed per IP (guardia anti-abuso) ────────────
@@ -81,7 +82,12 @@ export async function POST(request: Request) {
 
   try {
     const risultato = await chatConAssistente(messaggi);
-    return NextResponse.json(risultato);
+    // La lingua dell'ultimo messaggio viaggia con la risposta: le etichette dei
+    // risultati (conteggi delle card) devono usare la stessa lingua del testo.
+    return NextResponse.json({
+      ...risultato,
+      lingua: rilevaLinguaConversazionePino(messaggi),
+    });
   } catch (error: unknown) {
     console.error("[/api/assistente] Errore:", error);
     return NextResponse.json(

@@ -63,10 +63,14 @@ test.describe("S5.1-A — lingua inglese su richieste brevi", () => {
     ).toBe("en");
   });
 
-  test("la preferenza linguistica già impostata resta prioritaria", () => {
+  test("un messaggio italiano riconosciuto riporta la conversazione in italiano", () => {
+    // La preferenza governa i messaggi ambigui, non un turno scritto
+    // chiaramente in un'altra lingua: la lingua del nuovo messaggio vince.
     const storico = [u("I speak English"), u("Hai dei musei?")];
-    expect(rilevaLinguaConversazionePino(storico)).toBe("en");
-    expect(analizzaComprensionePino("Hai dei musei?", storico).lingua).toBe("en");
+    expect(rilevaLinguaConversazionePino(storico)).toBe("it");
+    expect(analizzaComprensionePino("Hai dei musei?", storico).lingua).toBe("it");
+    // Un follow-up breve continua invece a ereditare la lingua corrente.
+    expect(rilevaLinguaConversazionePino([u("I speak English"), u("pasta")])).toBe("en");
   });
 
   test("richiesta turistica inglese breve: risposta in inglese", async () => {

@@ -152,6 +152,7 @@ export default function AssistantPanel() {
         prodotti: data.prodotti.length > 0 ? data.prodotti : undefined,
         processingMs: data.processingMs,
         source: (data.source as ChatMessage["source"]) ?? "assistente",
+        lingua: data.lingua,
       };
 
       setMessages((prev) => [...prev, assistantMsg]);

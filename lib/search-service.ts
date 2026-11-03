@@ -64,6 +64,9 @@ export interface SearchResult {
 
   /** Tempo di elaborazione in ms */
   processingMs: number;
+
+  /** Lingua della risposta di Pino (assistente AI); assente nella ricerca DB */
+  lingua?: "it" | "en";
 }
 
 /** Opzioni di filtri/ordinamento/paginazione accettate da search(). */

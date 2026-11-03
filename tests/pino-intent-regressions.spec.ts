@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { chatConAssistente } from "../lib/assistente/index";
-import { pianoLocaleIntelligente } from "../lib/assistente/semantica";
+import { analizzaComprensionePino, pianoLocaleIntelligente } from "../lib/assistente/semantica";
 import { analizzaIntentoPino, pianoIntento } from "../lib/assistente/intent";
 import { prodottoPertinente, filtraProdottiPerSoggettoUnico } from "../lib/assistente/tools";
 import { parametriFallbackPiano, fallbackTestuale } from "../lib/assistente/index";
@@ -13,7 +13,12 @@ import { TOKEN_SENZA_REFUSI, VOCABOLARIO_PINO } from "../lib/assistente/semantic
 import {
   correggiTokenCatalogo,
   normalizzaQueryCatalogo,
+  rilevaLinguaConversazionePino,
 } from "../lib/assistente/understanding";
+import {
+  etichettaNegoziTrovatiPino,
+  etichettaProdottiTrovatiPino,
+} from "../lib/assistente/etichette-risultati";
 import {
   espandiQueryConSinonimi,
   espandiQueryConSinonimiBase,
@@ -55,6 +60,54 @@ test.describe("Pino — alimenti in inglese", () => {
     expect(isExplicitFoodProductRequest("bread")).toBe(true);
     // Confronto per token esatto: nessun falso positivo su parole più lunghe.
     expect(isExplicitFoodProductRequest("breadsticks")).toBe(false);
+  });
+});
+
+/**
+ * Lingua del singolo messaggio e conteggi dei risultati.
+ *
+ * La lingua della risposta è `comprensione.lingua` (index.ts): una preferenza
+ * dichiarata in passato non deve bloccare un messaggio chiaramente scritto in
+ * un'altra lingua, e le etichette dei risultati devono seguire quella lingua.
+ */
+test.describe("Pino — lingua del messaggio e conteggi", () => {
+  const linguaRisposta = (frase: string, turni: string[]) =>
+    analizzaComprensionePino(frase, [...turni.map(u), u(frase)]).lingua;
+
+  test("conversazione in inglese, poi 'voglio il pane': risposta italiana", () => {
+    expect(linguaRisposta("voglio il pane", ["I speak English", "bread", "I want some bread"])).toBe("it");
+    expect(
+      rilevaLinguaConversazionePino(
+        ["I speak English", "bread", "I want some bread", "voglio il pane"].map(u)
+      )
+    ).toBe("it");
+  });
+
+  test("conversazione in italiano, poi 'I want some bread': risposta inglese", () => {
+    expect(linguaRisposta("I want some bread", ["voglio il pane"])).toBe("en");
+    expect(rilevaLinguaConversazionePino(["voglio il pane", "I want some bread"].map(u))).toBe("en");
+  });
+
+  test("cambio ripetuto italiano → inglese → italiano nella stessa conversazione", () => {
+    expect(linguaRisposta("voglio il pane", ["voglio il pane", "I want some bread"])).toBe("it");
+    expect(
+      linguaRisposta("I want some bread", ["voglio il pane", "I want some bread", "voglio il pane"])
+    ).toBe("en");
+    // Anche dopo una preferenza esplicita il ritorno all'italiano è riconosciuto.
+    expect(
+      rilevaLinguaConversazionePino(["I speak English", "bread", "voglio il pane"].map(u))
+    ).toBe("it");
+  });
+
+  test("i conteggi seguono la lingua della risposta", () => {
+    expect(etichettaProdottiTrovatiPino(1, "en")).toBe("1 product found");
+    expect(etichettaProdottiTrovatiPino(1, "it")).toBe("1 prodotto trovato");
+    expect(etichettaProdottiTrovatiPino(3, "en")).toBe("3 products found");
+    expect(etichettaProdottiTrovatiPino(3, "it")).toBe("3 prodotti trovati");
+    expect(etichettaNegoziTrovatiPino(1, "en")).toBe("1 store found");
+    expect(etichettaNegoziTrovatiPino(2, "it")).toBe("2 negozi trovati");
+    // Senza lingua (ricerca DB, non assistente) resta l'italiano storico.
+    expect(etichettaProdottiTrovatiPino(1)).toBe("1 prodotto trovato");
   });
 });
 

@@ -134,6 +134,44 @@ test("Pino switches back to Italian when the user does", () => {
   ]), "it");
 });
 
+test("Pino follows the language of each new message, even after a preference", () => {
+  // La sequenza reale: preferenza inglese, poi un messaggio italiano chiaro.
+  assert.equal(
+    rilevaLinguaConversazionePino(
+      ["I speak English", "bread", "I want some bread", "voglio il pane"].map((content) => ({
+        role: "user",
+        content,
+      }))
+    ),
+    "it"
+  );
+  // Anche in senso inverso: la conversazione italiana accoglie un messaggio inglese.
+  assert.equal(
+    rilevaLinguaConversazionePino([
+      { role: "user", content: "voglio il pane" },
+      { role: "user", content: "I want some bread" },
+    ]),
+    "en"
+  );
+  // Cambio ripetuto italiano → inglese → italiano.
+  assert.equal(
+    rilevaLinguaConversazionePino([
+      { role: "user", content: "voglio il pane" },
+      { role: "user", content: "I want some bread" },
+      { role: "user", content: "voglio il pane" },
+    ]),
+    "it"
+  );
+  // Un follow-up breve o ambiguo eredita ancora la lingua corrente.
+  assert.equal(
+    rilevaLinguaConversazionePino([
+      { role: "user", content: "I speak English" },
+      { role: "user", content: "bread" },
+    ]),
+    "en"
+  );
+});
+
 
 test("explicit food product requests are routed to the catalog in Italian and English", () => {
   assert.equal(isExplicitFoodProductRequest("I'm looking for pasta under 5 euros"), true);

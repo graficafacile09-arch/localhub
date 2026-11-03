@@ -22,14 +22,17 @@ export function richiestaApertaOra(testo: string): boolean {
   return /\b(?:aperto|aperta|aperti|aperte)\b.*\b(?:ora|adesso)\b|\b(?:open|opened)\s+(?:right\s+)?now\b|\bcurrently\s+open\b|\bopen\s+at\s+the\s+moment\b/i.test(q);
 }
 
-/** Detects the dominant language of a short request; Italian is the safe default. */
-export function rilevaLinguaPino(testo: string, fallback: PinoLanguage = "it"): PinoLanguage {
+/**
+ * Lingua riconoscibile dal solo testo, oppure `null` quando il messaggio è
+ * troppo breve o ambiguo: in quel caso vale la lingua del contesto.
+ */
+function rilevaLinguaRiconoscibilePino(testo: string): PinoLanguage | null {
   const q = String(testo ?? "")
     .toLocaleLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, " ")
     .replace(/[’‘]/g, "'");
-  if (!q.trim()) return fallback;
+  if (!q.trim()) return null;
 
   if (/\b(?:cosa cerchi|come posso|puoi aiutarmi|mi puoi aiutare|vorrei sapere|dimmi|che cosa|dove posso|quanto costa|quanto costano|va bene|tutto bene|non trovo|non ho|cerco un|cerco una)\b/.test(q)) return "it";
   if (/\b(?:what do you|how do i|can you help|could you|would you|i'?m looking|i want|i need|please find|show me|tell me|where can i|what'?s up|how much|good morning|good afternoon)\b/.test(q)) return "en";
@@ -80,29 +83,39 @@ export function rilevaLinguaPino(testo: string, fallback: PinoLanguage = "it"): 
 
   if (/\b(?:how are you|how's it going|how is it going|would you|do you|can we|let'?s|thank you|you are|are you|see you|good morning|good evening)\b/.test(q)) return "en";
   if (/\b(?:come stai|come va|ti va|vuoi|grazie|buongiorno|buonasera|ciao)\b/.test(q)) return "it";
-  return fallback;
+  return null;
 }
 
-/** Keeps the language of the conversation when the newest message is too short to classify. */
+/** Lingua dominante del messaggio; il fallback vale solo se il testo non la rivela. */
+export function rilevaLinguaPino(testo: string, fallback: PinoLanguage = "it"): PinoLanguage {
+  return rilevaLinguaRiconoscibilePino(testo) ?? fallback;
+}
+
+/**
+ * Lingua della conversazione: ogni messaggio riconoscibile aggiorna la lingua,
+ * mentre un messaggio troppo breve o ambiguo eredita quella corrente.
+ */
 export function rilevaLinguaConversazionePino(
   messages: Array<{ role: string; content: string }>,
   fallback: PinoLanguage = "it"
 ): PinoLanguage {
   let lingua = fallback;
-  // S5.1-A — La preferenza esplicita resta attiva anche nei messaggi
-  // successivi: "I speak English" seguito da "Hai dei musei?" non deve
-  // tornare all'italiano. Una nuova preferenza esplicita sostituisce la
-  // precedente (l'ultima dichiarazione dell'utente vince).
-  let preferenzaAttiva: PinoLanguage | null = null;
   for (const message of messages ?? []) {
     if (message?.role !== "user" || typeof message.content !== "string") continue;
-    lingua = rilevaLinguaPino(message.content, lingua);
-    // Una preferenza linguistica esplicita vince sul rilevamento statistico:
-    // "vorrei parlare in inglese" deve rendere inglese la conversazione anche
-    // se la frase, presa da sola, sembra italiana.
+    // Una preferenza linguistica esplicita vale per il messaggio che la
+    // contiene: "vorrei parlare in inglese" rende inglese la conversazione
+    // anche se la frase, presa da sola, sembra italiana.
     const preferenza = rilevaPreferenzaLinguaPino(message.content);
-    if (preferenza) preferenzaAttiva = preferenza.lingua;
-    if (preferenzaAttiva) lingua = preferenzaAttiva;
+    if (preferenza) {
+      lingua = preferenza.lingua;
+      continue;
+    }
+    // Ogni messaggio può cambiare lingua: la lingua riconoscibile del nuovo
+    // messaggio vince sul resto della conversazione. Solo un messaggio troppo
+    // breve o ambiguo eredita la lingua corrente (contesto, non preferenza).
+    // "I speak English" → "bread" → "voglio il pane" finisce in italiano.
+    const rilevata = rilevaLinguaRiconoscibilePino(message.content);
+    if (rilevata) lingua = rilevata;
   }
   return lingua;
 }
