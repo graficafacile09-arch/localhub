@@ -246,7 +246,8 @@ test.describe("M6-C1 — integrazione (invarianti di codice)", () => {
   const servizio = normalizza(readFileSync(join(process.cwd(), "lib/search-service.ts"), "utf8"));
 
   test("la segnalazione è attiva solo in searchProducts e searchStores", () => {
-    expect(tools).toContain("searchCatalogoPubblico(q, { onErrore: segnalaErroreDatiPino })");
+    expect(tools).toContain("onErrore: segnalaErroreDatiPino,");
+    expect(tools).toContain("searchCatalogoPubblico(q, opzioniRicerca)");
     expect(tools).toContain("}, segnalazioneDatiPino);");
     // M6-C2 (categorie) e M6-C3 (offerte, eventi, farmacie) hanno esteso di
     // proposito la segnalazione: qui resta solo il fallback non protetto da
