@@ -1,0 +1,1312 @@
+{
+  "versione": "P1.3.5",
+  "snapshot": {
+    "sha256": "4a9286a6c743098b57e8fb9500acedf178b2b5d3687521601a18eacd42e87175",
+    "prodottiAttivi": 37
+  },
+  "sorgente": "snapshot P1.3.3 + fixture P1.3/P1.3.2",
+  "baseline": {
+    "prodotto": "riuso del report P1.3.4 per le etichette già esistenti, stesso catalogo per prima e dopo",
+    "unita": "valori 'prima' manuali nello script per i casi unita: non è un replay eseguito di P1.3.4"
+  },
+  "distinzione": {
+    "recupero": "non eseguito: nessuna query Supabase",
+    "filtro": "gate P1.3.5 applicato ai candidati offline",
+    "endToEnd": false
+  },
+  "casi": [
+    {
+      "id": "nome-fileja",
+      "gruppo": "alimentare",
+      "catalogo": "snapshot",
+      "fonte": "snapshot reale",
+      "baseline": "report P1.3.4",
+      "query": "Cerco Fileja di Tropea",
+      "motivazione": "Nome esatto; unico prodotto con questo nome.",
+      "prima": {
+        "incluso": true,
+        "restituiti": [
+          "1513"
+        ],
+        "attesi": [
+          "1513"
+        ],
+        "corretti": [
+          "1513"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1
+      },
+      "dopo": {
+        "incluso": true,
+        "restituiti": [
+          "1513"
+        ],
+        "attesi": [
+          "1513"
+        ],
+        "corretti": [
+          "1513"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1
+      },
+      "confronto": "invariato"
+    },
+    {
+      "id": "nome-pecorino",
+      "gruppo": "alimentare",
+      "catalogo": "snapshot",
+      "fonte": "snapshot reale",
+      "baseline": "report P1.3.4",
+      "query": "Cerco Pecorino del Monte Poro",
+      "motivazione": "Nome esatto; unico prodotto con questo nome.",
+      "prima": {
+        "incluso": true,
+        "restituiti": [
+          "1508"
+        ],
+        "attesi": [
+          "1508"
+        ],
+        "corretti": [
+          "1508"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1
+      },
+      "dopo": {
+        "incluso": true,
+        "restituiti": [
+          "1508"
+        ],
+        "attesi": [
+          "1508"
+        ],
+        "corretti": [
+          "1508"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1
+      },
+      "confronto": "invariato"
+    },
+    {
+      "id": "categoria-pasta",
+      "gruppo": "alimentare",
+      "catalogo": "snapshot",
+      "fonte": "snapshot reale",
+      "baseline": "report P1.3.4",
+      "query": "Cerco pasta",
+      "motivazione": "Tagliatelle, Strascinati, Fileja e Maccheroni sono gli unici formati di pasta; taralli e biscotti restano esclusi.",
+      "prima": {
+        "incluso": true,
+        "restituiti": [
+          "1490",
+          "1491",
+          "1513",
+          "1517"
+        ],
+        "attesi": [
+          "1490",
+          "1491",
+          "1513",
+          "1517"
+        ],
+        "corretti": [
+          "1490",
+          "1491",
+          "1513",
+          "1517"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1
+      },
+      "dopo": {
+        "incluso": true,
+        "restituiti": [
+          "1490",
+          "1491",
+          "1513",
+          "1517"
+        ],
+        "attesi": [
+          "1490",
+          "1491",
+          "1513",
+          "1517"
+        ],
+        "corretti": [
+          "1490",
+          "1491",
+          "1513",
+          "1517"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1
+      },
+      "confronto": "invariato"
+    },
+    {
+      "id": "categoria-formaggio",
+      "gruppo": "alimentare",
+      "catalogo": "snapshot",
+      "fonte": "snapshot reale",
+      "baseline": "report P1.3.4",
+      "query": "Cerco formaggio",
+      "motivazione": "Pecorino è l'unico formaggio, tramite sottocategoria e caratteristica.",
+      "prima": {
+        "incluso": true,
+        "restituiti": [
+          "1508"
+        ],
+        "attesi": [
+          "1508"
+        ],
+        "corretti": [
+          "1508"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1
+      },
+      "dopo": {
+        "incluso": true,
+        "restituiti": [
+          "1508"
+        ],
+        "attesi": [
+          "1508"
+        ],
+        "corretti": [
+          "1508"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1
+      },
+      "confronto": "invariato"
+    },
+    {
+      "id": "marca-maserati",
+      "gruppo": "alimentare",
+      "catalogo": "snapshot",
+      "fonte": "snapshot reale",
+      "baseline": "report P1.3.4",
+      "query": "Cerco Maserati",
+      "motivazione": "Marca dichiarata Maserati.",
+      "prima": {
+        "incluso": true,
+        "restituiti": [
+          "218"
+        ],
+        "attesi": [
+          "218"
+        ],
+        "corretti": [
+          "218"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1
+      },
+      "dopo": {
+        "incluso": true,
+        "restituiti": [
+          "218"
+        ],
+        "attesi": [
+          "218"
+        ],
+        "corretti": [
+          "218"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1
+      },
+      "confronto": "invariato"
+    },
+    {
+      "id": "parole-chiave-amarelli",
+      "gruppo": "alimentare",
+      "catalogo": "snapshot",
+      "fonte": "snapshot reale",
+      "baseline": "report P1.3.4",
+      "query": "Cerco Amarelli",
+      "motivazione": "Amarelli è una parola chiave esatta e distintiva della Liquirizia di Calabria DOP.",
+      "prima": {
+        "incluso": true,
+        "restituiti": [
+          "1511"
+        ],
+        "attesi": [
+          "1511"
+        ],
+        "corretti": [
+          "1511"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1
+      },
+      "dopo": {
+        "incluso": true,
+        "restituiti": [
+          "1511"
+        ],
+        "attesi": [
+          "1511"
+        ],
+        "corretti": [
+          "1511"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1
+      },
+      "confronto": "invariato"
+    },
+    {
+      "id": "caratteristica-bottiglia-litro",
+      "gruppo": "alimentare",
+      "catalogo": "snapshot",
+      "fonte": "snapshot reale",
+      "baseline": "report P1.3.4",
+      "query": "Cerco olio in bottiglia da 1 litro",
+      "motivazione": "Solo l'olio calabrese dichiara 'Bottiglia da 1 litro'; l'altro olio non documenta il formato.",
+      "prima": {
+        "incluso": true,
+        "restituiti": [
+          "1507"
+        ],
+        "attesi": [
+          "1507"
+        ],
+        "corretti": [
+          "1507"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1
+      },
+      "dopo": {
+        "incluso": true,
+        "restituiti": [
+          "1507"
+        ],
+        "attesi": [
+          "1507"
+        ],
+        "corretti": [
+          "1507"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1
+      },
+      "confronto": "invariato"
+    },
+    {
+      "id": "sottocategoria-pasta-tipica",
+      "gruppo": "alimentare",
+      "catalogo": "snapshot",
+      "fonte": "snapshot reale",
+      "baseline": "report P1.3.4",
+      "query": "Cerco pasta tipica",
+      "motivazione": "Solo Fileja ha sottocategoria 'Pasta tipica' e la relativa parola chiave.",
+      "prima": {
+        "incluso": true,
+        "restituiti": [
+          "1513"
+        ],
+        "attesi": [
+          "1513"
+        ],
+        "corretti": [
+          "1513"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1
+      },
+      "dopo": {
+        "incluso": true,
+        "restituiti": [
+          "1513"
+        ],
+        "attesi": [
+          "1513"
+        ],
+        "corretti": [
+          "1513"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1
+      },
+      "confronto": "invariato"
+    },
+    {
+      "id": "descrizione-pane-lievito",
+      "gruppo": "alimentare",
+      "catalogo": "snapshot",
+      "fonte": "snapshot reale",
+      "baseline": "report P1.3.4",
+      "query": "Cerco pane con lievito madre",
+      "motivazione": "Pane Casereccio è l'unico pane; il lievito madre è un dettaglio descrittivo che non sostituisce l'identità.",
+      "prima": {
+        "incluso": true,
+        "restituiti": [
+          "1488"
+        ],
+        "attesi": [
+          "1488"
+        ],
+        "corretti": [
+          "1488"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1
+      },
+      "dopo": {
+        "incluso": true,
+        "restituiti": [
+          "1488"
+        ],
+        "attesi": [
+          "1488"
+        ],
+        "corretti": [
+          "1488"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1
+      },
+      "confronto": "invariato"
+    },
+    {
+      "id": "budget-miele-sotto-10",
+      "gruppo": "alimentare",
+      "catalogo": "snapshot",
+      "fonte": "snapshot reale",
+      "baseline": "report P1.3.4",
+      "query": "Cerco miele sotto 10 euro",
+      "motivazione": "Miele di Castagno (11,90) è fuori budget; restano Millefiori del Pollino (9,90), bergamotto (5,50) e millefiori 500 g (6,00).",
+      "prima": {
+        "incluso": true,
+        "restituiti": [
+          "1520",
+          "1521",
+          "1374"
+        ],
+        "attesi": [
+          "1374",
+          "1520",
+          "1521"
+        ],
+        "corretti": [
+          "1520",
+          "1521",
+          "1374"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1
+      },
+      "dopo": {
+        "incluso": true,
+        "restituiti": [
+          "1520",
+          "1521",
+          "1374"
+        ],
+        "attesi": [
+          "1374",
+          "1520",
+          "1521"
+        ],
+        "corretti": [
+          "1520",
+          "1521",
+          "1374"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1
+      },
+      "confronto": "invariato"
+    },
+    {
+      "id": "nome-liquirizia-dop",
+      "gruppo": "alimentare",
+      "catalogo": "snapshot",
+      "fonte": "snapshot reale",
+      "baseline": "report P1.3.4",
+      "query": "Cerco liquirizia DOP",
+      "motivazione": "Liquirizia di Calabria DOP è l'unico prodotto con liquirizia; DOP è nel nome.",
+      "prima": {
+        "incluso": true,
+        "restituiti": [
+          "1511"
+        ],
+        "attesi": [
+          "1511"
+        ],
+        "corretti": [
+          "1511"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1
+      },
+      "dopo": {
+        "incluso": true,
+        "restituiti": [
+          "1511"
+        ],
+        "attesi": [
+          "1511"
+        ],
+        "corretti": [
+          "1511"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1
+      },
+      "confronto": "invariato"
+    },
+    {
+      "id": "nonfood-borsa-pelle",
+      "gruppo": "non_alimentare",
+      "catalogo": "fixture",
+      "fonte": "fixture offline",
+      "baseline": "report P1.3.4",
+      "query": "Cerco una borsa in pelle",
+      "motivazione": "La fixture contiene tre prodotti pertinenti; il filtro non deve alterare il ramo non alimentare.",
+      "prima": {
+        "incluso": true,
+        "restituiti": [
+          "p13-borsa",
+          "p13-tracolla",
+          "p13-borsa-vintage"
+        ],
+        "attesi": [
+          "p13-borsa",
+          "p13-tracolla",
+          "p13-borsa-vintage"
+        ],
+        "corretti": [
+          "p13-borsa",
+          "p13-tracolla",
+          "p13-borsa-vintage"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1
+      },
+      "dopo": {
+        "incluso": true,
+        "restituiti": [
+          "p13-borsa",
+          "p13-tracolla",
+          "p13-borsa-vintage"
+        ],
+        "attesi": [
+          "p13-borsa",
+          "p13-tracolla",
+          "p13-borsa-vintage"
+        ],
+        "corretti": [
+          "p13-borsa",
+          "p13-tracolla",
+          "p13-borsa-vintage"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1
+      },
+      "confronto": "invariato"
+    },
+    {
+      "id": "nonfood-borsa-caratteristica",
+      "gruppo": "non_alimentare",
+      "catalogo": "fixture",
+      "fonte": "fixture offline",
+      "baseline": "report P1.3.4",
+      "query": "Cerco una borsa fatta a mano",
+      "motivazione": "Solo Borsa in pelle dichiara 'Fatta a mano'; è il comportamento già coperto da P1.3.",
+      "prima": {
+        "incluso": true,
+        "restituiti": [
+          "p13-borsa"
+        ],
+        "attesi": [
+          "p13-borsa"
+        ],
+        "corretti": [
+          "p13-borsa"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1
+      },
+      "dopo": {
+        "incluso": true,
+        "restituiti": [
+          "p13-borsa"
+        ],
+        "attesi": [
+          "p13-borsa"
+        ],
+        "corretti": [
+          "p13-borsa"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1
+      },
+      "confronto": "invariato"
+    },
+    {
+      "id": "nonfood-marca",
+      "gruppo": "non_alimentare",
+      "catalogo": "fixtureAmbiguita",
+      "fonte": "fixture offline",
+      "baseline": "report P1.3.4",
+      "query": "Cerco Pelletteria Rossi",
+      "motivazione": "La marca attraversa due negozi e non coincide con il catalogo di un singolo negozio.",
+      "prima": {
+        "incluso": true,
+        "restituiti": [
+          "a-borsa",
+          "a-cintura",
+          "a-borsa-borgo"
+        ],
+        "attesi": [
+          "a-borsa",
+          "a-cintura",
+          "a-borsa-borgo"
+        ],
+        "corretti": [
+          "a-borsa",
+          "a-cintura",
+          "a-borsa-borgo"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1
+      },
+      "dopo": {
+        "incluso": true,
+        "restituiti": [
+          "a-borsa",
+          "a-cintura",
+          "a-borsa-borgo"
+        ],
+        "attesi": [
+          "a-borsa",
+          "a-cintura",
+          "a-borsa-borgo"
+        ],
+        "corretti": [
+          "a-borsa",
+          "a-cintura",
+          "a-borsa-borgo"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1
+      },
+      "confronto": "invariato"
+    },
+    {
+      "id": "nonfood-marca-snapshot",
+      "gruppo": "non_alimentare",
+      "catalogo": "snapshot",
+      "fonte": "snapshot reale",
+      "baseline": "report P1.3.4",
+      "query": "Cerco Maserati",
+      "motivazione": "Marca reale dell'orologio, distinta dal nome del negozio.",
+      "prima": {
+        "incluso": true,
+        "restituiti": [
+          "218"
+        ],
+        "attesi": [
+          "218"
+        ],
+        "corretti": [
+          "218"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1
+      },
+      "dopo": {
+        "incluso": true,
+        "restituiti": [
+          "218"
+        ],
+        "attesi": [
+          "218"
+        ],
+        "corretti": [
+          "218"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1
+      },
+      "confronto": "invariato"
+    },
+    {
+      "id": "unita-1-litro",
+      "gruppo": "unita",
+      "catalogo": "snapshot",
+      "fonte": "snapshot reale",
+      "baseline": "manuale, non replay P1.3.4",
+      "query": "Cerco olio in bottiglia da 1 litro",
+      "motivazione": "Forma estesa singolare.",
+      "prima": {
+        "incluso": true,
+        "restituiti": [
+          "1507"
+        ],
+        "attesi": [
+          "1507"
+        ],
+        "corretti": [
+          "1507"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1
+      },
+      "dopo": {
+        "incluso": true,
+        "restituiti": [
+          "1507"
+        ],
+        "attesi": [
+          "1507"
+        ],
+        "corretti": [
+          "1507"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1
+      },
+      "confronto": "invariato"
+    },
+    {
+      "id": "unita-1-l",
+      "gruppo": "unita",
+      "catalogo": "snapshot",
+      "fonte": "snapshot reale",
+      "baseline": "manuale, non replay P1.3.4",
+      "query": "Cerco olio in bottiglia da 1 l",
+      "motivazione": "Abbreviazione del litro.",
+      "prima": {
+        "incluso": true,
+        "restituiti": [],
+        "attesi": [
+          "1507"
+        ],
+        "corretti": [],
+        "falsiPositivi": [],
+        "falsiNegativi": [
+          "1507"
+        ],
+        "precisione": null,
+        "richiamo": 0
+      },
+      "dopo": {
+        "incluso": true,
+        "restituiti": [
+          "1507"
+        ],
+        "attesi": [
+          "1507"
+        ],
+        "corretti": [
+          "1507"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1
+      },
+      "confronto": "migliorato"
+    },
+    {
+      "id": "unita-100-cl",
+      "gruppo": "unita",
+      "catalogo": "snapshot",
+      "fonte": "snapshot reale",
+      "baseline": "manuale, non replay P1.3.4",
+      "query": "Cerco olio in bottiglia da 100 cl",
+      "motivazione": "100 cl equivalgono a 1 litro.",
+      "prima": {
+        "incluso": true,
+        "restituiti": [],
+        "attesi": [
+          "1507"
+        ],
+        "corretti": [],
+        "falsiPositivi": [],
+        "falsiNegativi": [
+          "1507"
+        ],
+        "precisione": null,
+        "richiamo": 0
+      },
+      "dopo": {
+        "incluso": true,
+        "restituiti": [
+          "1507"
+        ],
+        "attesi": [
+          "1507"
+        ],
+        "corretti": [
+          "1507"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1
+      },
+      "confronto": "migliorato"
+    },
+    {
+      "id": "unita-1000-ml",
+      "gruppo": "unita",
+      "catalogo": "snapshot",
+      "fonte": "snapshot reale",
+      "baseline": "manuale, non replay P1.3.4",
+      "query": "Cerco olio in bottiglia da 1000 ml",
+      "motivazione": "1000 ml equivalgono a 1 litro.",
+      "prima": {
+        "incluso": true,
+        "restituiti": [],
+        "attesi": [
+          "1507"
+        ],
+        "corretti": [],
+        "falsiPositivi": [],
+        "falsiNegativi": [
+          "1507"
+        ],
+        "precisione": null,
+        "richiamo": 0
+      },
+      "dopo": {
+        "incluso": true,
+        "restituiti": [
+          "1507"
+        ],
+        "attesi": [
+          "1507"
+        ],
+        "corretti": [
+          "1507"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1
+      },
+      "confronto": "migliorato"
+    },
+    {
+      "id": "unita-1-litri",
+      "gruppo": "unita",
+      "catalogo": "snapshot",
+      "fonte": "snapshot reale",
+      "baseline": "manuale, non replay P1.3.4",
+      "query": "Cerco olio in bottiglia da 1 litri",
+      "motivazione": "Plurale non canonico ma non ambiguo.",
+      "prima": {
+        "incluso": true,
+        "restituiti": [],
+        "attesi": [
+          "1507"
+        ],
+        "corretti": [],
+        "falsiPositivi": [],
+        "falsiNegativi": [
+          "1507"
+        ],
+        "precisione": null,
+        "richiamo": 0
+      },
+      "dopo": {
+        "incluso": true,
+        "restituiti": [
+          "1507"
+        ],
+        "attesi": [
+          "1507"
+        ],
+        "corretti": [
+          "1507"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1
+      },
+      "confronto": "migliorato"
+    },
+    {
+      "id": "unita-un-litro",
+      "gruppo": "unita",
+      "catalogo": "snapshot",
+      "fonte": "snapshot reale",
+      "baseline": "manuale, non replay P1.3.4",
+      "query": "Cerco olio in bottiglia da un litro",
+      "motivazione": "Numero scritto in lettere.",
+      "prima": {
+        "incluso": true,
+        "restituiti": [
+          "1376",
+          "1507"
+        ],
+        "attesi": [
+          "1507"
+        ],
+        "corretti": [
+          "1507"
+        ],
+        "falsiPositivi": [
+          "1376"
+        ],
+        "falsiNegativi": [],
+        "precisione": 0.5,
+        "richiamo": 1
+      },
+      "dopo": {
+        "incluso": true,
+        "restituiti": [
+          "1507"
+        ],
+        "attesi": [
+          "1507"
+        ],
+        "corretti": [
+          "1507"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1
+      },
+      "confronto": "migliorato"
+    },
+    {
+      "id": "unita-mezzo-litro",
+      "gruppo": "unita",
+      "catalogo": "snapshot",
+      "fonte": "snapshot reale",
+      "baseline": "manuale, non replay P1.3.4",
+      "query": "Cerco olio in bottiglia da mezzo litro",
+      "motivazione": "Nessun olio dello snapshot documenta 500 ml; il prodotto da 1 litro non deve soddisfare mezzo litro.",
+      "prima": {
+        "incluso": true,
+        "restituiti": [
+          "1376",
+          "1507"
+        ],
+        "attesi": [],
+        "corretti": [],
+        "falsiPositivi": [
+          "1376",
+          "1507"
+        ],
+        "falsiNegativi": [],
+        "precisione": 0,
+        "richiamo": null
+      },
+      "dopo": {
+        "incluso": true,
+        "restituiti": [],
+        "attesi": [],
+        "corretti": [],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": null,
+        "richiamo": null
+      },
+      "confronto": "migliorato"
+    },
+    {
+      "id": "unita-2-litri",
+      "gruppo": "unita",
+      "catalogo": "snapshot",
+      "fonte": "snapshot reale",
+      "baseline": "manuale, non replay P1.3.4",
+      "query": "Cerco olio in bottiglia da 2 litri",
+      "motivazione": "Quantità non documentata.",
+      "prima": {
+        "incluso": true,
+        "restituiti": [],
+        "attesi": [],
+        "corretti": [],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": null,
+        "richiamo": null
+      },
+      "dopo": {
+        "incluso": true,
+        "restituiti": [],
+        "attesi": [],
+        "corretti": [],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": null,
+        "richiamo": null
+      },
+      "confronto": "invariato"
+    },
+    {
+      "id": "unita-1-kg",
+      "gruppo": "unita",
+      "catalogo": "snapshot",
+      "fonte": "snapshot reale",
+      "baseline": "manuale, non replay P1.3.4",
+      "query": "Cerco olio in bottiglia da 1 kg",
+      "motivazione": "Il peso non è compatibile con un formato di volume.",
+      "prima": {
+        "incluso": true,
+        "restituiti": [],
+        "attesi": [],
+        "corretti": [],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": null,
+        "richiamo": null
+      },
+      "dopo": {
+        "incluso": true,
+        "restituiti": [],
+        "attesi": [],
+        "corretti": [],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": null,
+        "richiamo": null
+      },
+      "confronto": "invariato"
+    },
+    {
+      "id": "unita-1-metro",
+      "gruppo": "unita",
+      "catalogo": "snapshot",
+      "fonte": "snapshot reale",
+      "baseline": "manuale, non replay P1.3.4",
+      "query": "Cerco olio in bottiglia da 1 m",
+      "motivazione": "La lunghezza non è compatibile con il formato del prodotto.",
+      "prima": {
+        "incluso": true,
+        "restituiti": [],
+        "attesi": [],
+        "corretti": [],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": null,
+        "richiamo": null
+      },
+      "dopo": {
+        "incluso": true,
+        "restituiti": [],
+        "attesi": [],
+        "corretti": [],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": null,
+        "richiamo": null
+      },
+      "confronto": "invariato"
+    }
+  ],
+  "metriche": {
+    "unita": {
+      "prima": {
+        "casi": 10,
+        "micro": {
+          "precisione": 0.4,
+          "richiamo": 0.3333,
+          "veriPositivi": 2,
+          "falsiPositivi": 3,
+          "falsiNegativi": 4,
+          "restituiti": 5,
+          "attesi": 6
+        },
+        "macro": {
+          "precisione": 0.5,
+          "richiamo": 0.3333
+        }
+      },
+      "dopo": {
+        "casi": 10,
+        "micro": {
+          "precisione": 1,
+          "richiamo": 1,
+          "veriPositivi": 6,
+          "falsiPositivi": 0,
+          "falsiNegativi": 0,
+          "restituiti": 6,
+          "attesi": 6
+        },
+        "macro": {
+          "precisione": 1,
+          "richiamo": 1
+        }
+      }
+    },
+    "alimentari": {
+      "prima": {
+        "casi": 11,
+        "micro": {
+          "precisione": 1,
+          "richiamo": 1,
+          "veriPositivi": 16,
+          "falsiPositivi": 0,
+          "falsiNegativi": 0,
+          "restituiti": 16,
+          "attesi": 16
+        },
+        "macro": {
+          "precisione": 1,
+          "richiamo": 1
+        }
+      },
+      "dopo": {
+        "casi": 11,
+        "micro": {
+          "precisione": 1,
+          "richiamo": 1,
+          "veriPositivi": 16,
+          "falsiPositivi": 0,
+          "falsiNegativi": 0,
+          "restituiti": 16,
+          "attesi": 16
+        },
+        "macro": {
+          "precisione": 1,
+          "richiamo": 1
+        }
+      }
+    },
+    "non_alimentari": {
+      "prima": {
+        "casi": 4,
+        "micro": {
+          "precisione": 1,
+          "richiamo": 1,
+          "veriPositivi": 8,
+          "falsiPositivi": 0,
+          "falsiNegativi": 0,
+          "restituiti": 8,
+          "attesi": 8
+        },
+        "macro": {
+          "precisione": 1,
+          "richiamo": 1
+        }
+      },
+      "dopo": {
+        "casi": 4,
+        "micro": {
+          "precisione": 1,
+          "richiamo": 1,
+          "veriPositivi": 8,
+          "falsiPositivi": 0,
+          "falsiNegativi": 0,
+          "restituiti": 8,
+          "attesi": 8
+        },
+        "macro": {
+          "precisione": 1,
+          "richiamo": 1
+        }
+      }
+    },
+    "sottocategorie": {
+      "prima": {
+        "casi": 1,
+        "micro": {
+          "precisione": 1,
+          "richiamo": 1,
+          "veriPositivi": 1,
+          "falsiPositivi": 0,
+          "falsiNegativi": 0,
+          "restituiti": 1,
+          "attesi": 1
+        },
+        "macro": {
+          "precisione": 1,
+          "richiamo": 1
+        }
+      },
+      "dopo": {
+        "casi": 1,
+        "micro": {
+          "precisione": 1,
+          "richiamo": 1,
+          "veriPositivi": 1,
+          "falsiPositivi": 0,
+          "falsiNegativi": 0,
+          "restituiti": 1,
+          "attesi": 1
+        },
+        "macro": {
+          "precisione": 1,
+          "richiamo": 1
+        }
+      }
+    },
+    "caratteristiche": {
+      "prima": {
+        "casi": 3,
+        "micro": {
+          "precisione": 1,
+          "richiamo": 1,
+          "veriPositivi": 3,
+          "falsiPositivi": 0,
+          "falsiNegativi": 0,
+          "restituiti": 3,
+          "attesi": 3
+        },
+        "macro": {
+          "precisione": 1,
+          "richiamo": 1
+        }
+      },
+      "dopo": {
+        "casi": 3,
+        "micro": {
+          "precisione": 1,
+          "richiamo": 1,
+          "veriPositivi": 3,
+          "falsiPositivi": 0,
+          "falsiNegativi": 0,
+          "restituiti": 3,
+          "attesi": 3
+        },
+        "macro": {
+          "precisione": 1,
+          "richiamo": 1
+        }
+      }
+    },
+    "prodotto": {
+      "prima": {
+        "casi": 15,
+        "micro": {
+          "precisione": 1,
+          "richiamo": 1,
+          "veriPositivi": 24,
+          "falsiPositivi": 0,
+          "falsiNegativi": 0,
+          "restituiti": 24,
+          "attesi": 24
+        },
+        "macro": {
+          "precisione": 1,
+          "richiamo": 1
+        }
+      },
+      "dopo": {
+        "casi": 15,
+        "micro": {
+          "precisione": 1,
+          "richiamo": 1,
+          "veriPositivi": 24,
+          "falsiPositivi": 0,
+          "falsiNegativi": 0,
+          "restituiti": 24,
+          "attesi": 24
+        },
+        "macro": {
+          "precisione": 1,
+          "richiamo": 1
+        }
+      }
+    }
+  },
+  "casiMigliorati": [
+    "unita-1-l",
+    "unita-100-cl",
+    "unita-1000-ml",
+    "unita-1-litri",
+    "unita-un-litro",
+    "unita-mezzo-litro"
+  ],
+  "casiPeggiorati": [],
+  "casiInvariati": [
+    "nome-fileja",
+    "nome-pecorino",
+    "categoria-pasta",
+    "categoria-formaggio",
+    "marca-maserati",
+    "parole-chiave-amarelli",
+    "caratteristica-bottiglia-litro",
+    "sottocategoria-pasta-tipica",
+    "descrizione-pane-lievito",
+    "budget-miele-sotto-10",
+    "nome-liquirizia-dop",
+    "nonfood-borsa-pelle",
+    "nonfood-borsa-caratteristica",
+    "nonfood-marca",
+    "nonfood-marca-snapshot",
+    "unita-1-litro",
+    "unita-2-litri",
+    "unita-1-kg",
+    "unita-1-metro"
+  ]
+}

@@ -142,6 +142,11 @@ export type ToolParams = {
   query?: string;
   maxPrice?: number | null;
   minPrice?: number | null;
+  /**
+   * Budget VINCOLANTE dichiarato dal chiamante: i limiti espliciti vengono
+   * inviati alla query invece di essere usati solo per l'ordinamento.
+   */
+  prezzoRigido?: boolean;
   limit?: number;
   /** Termini espliciti (da intent AI) — nessuna espansione automatica. */
   termini?: string[];
@@ -271,7 +276,7 @@ export const CONTRATTI_STRUMENTO: Record<StrumentoPino, readonly (keyof ToolPara
 
 /** Chiavi note di `ToolParams`: tutto il resto è una chiave inventata. */
 const CHIAVI_TOOL_PARAMS: ReadonlySet<string> = new Set<string>([
-  "query", "maxPrice", "minPrice", "limit", "termini", "categoria",
+  "query", "maxPrice", "minPrice", "prezzoRigido", "limit", "termini", "categoria",
   "sottocategoria", "tipo", "servizio", "citta", "stato", "esclusioni",
   "colori", "materiali", "escludiNomi", "apertiOra",
 ]);
@@ -433,6 +438,10 @@ export function validaToolParams(
     delete params.minPrice;
     delete params.maxPrice;
     problemi.push("fascia_prezzo_incoerente");
+  }
+  if (sorgente.prezzoRigido !== undefined) {
+    if (typeof sorgente.prezzoRigido === "boolean") params.prezzoRigido = sorgente.prezzoRigido;
+    else problemi.push("prezzoRigido_non_valido");
   }
 
   if (sorgente.stato !== undefined) {
@@ -1361,6 +1370,29 @@ export async function searchStores(
 // rende la T-shirt pertinente. I campi del NEGOZIO non contano: la pertinenza
 // del negozio non deve propagarsi ai suoi prodotti.
 // Se la query non ha termini sostanziali, non applichiamo il vincolo.
+// Formati con cui il catalogo pubblica la pasta: il prodotto può identificare
+// la categoria senza ripetere la parola «pasta» nel nome. Il confronto avviene
+// solo sui metadati identitari (nome, categoria), mai sulla descrizione:
+// «Biscotti» e «Taralli» non diventano pasta perché la descrizione cita il
+// pastificio «Mani in Pasta».
+const FORMATI_PASTA_PINO = [
+  "tagliatelle", "tagliatelli", "tagliolini", "fettuccine", "pappardelle",
+  "lasagne", "lasagna", "maccheroni", "maccheroncini", "fileja",
+  "spaghetti", "penne", "rigatoni", "fusilli", "orecchiette", "trofie",
+  "cavatelli", "strascinati", "bucatini", "linguine", "farfalle",
+  "conchiglie", "vermicelli", "ziti", "capellini",
+] as const;
+
+const RE_FORMATO_PASTA_PINO = new RegExp(`\\b(?:${FORMATI_PASTA_PINO.join("|")})\\b`);
+
+/** Formato di pasta riconosciuto sui metadati identitari del prodotto. */
+function identificaFormatoPastaPino(prodotto: ProdottoRicerca): boolean {
+  const identita = normalizza(
+    [prodotto.nome, prodotto.categoria].filter(Boolean).join(" ")
+  );
+  return RE_FORMATO_PASTA_PINO.test(identita);
+}
+
 export function prodottoPertinente(
   prodotto: ProdottoRicerca,
   termini: string[],
@@ -1385,6 +1417,17 @@ export function prodottoPertinente(
     richiedePastaAllUovo &&
     /\b(?:tagliatell[ei]|fettuccin[ei]|pappardell[ei]|lasagn[ae])\b/.test(campi) &&
     /\buov[oa]\b/.test(campi)
+  ) return true;
+  // La pasta è una categoria, non una parola: i formati (Tagliatelle, Fileja,
+  // Maccheroni) sono pasta anche quando il nome non contiene «pasta». Il match
+  // resta sui metadati identitari, quindi non basta una descrizione che cita
+  // il pastificio o un condimento. La scorciatoia vale solo per il soggetto
+  // nudo: un qualificatore esplicito («pasta all'uovo») resta obbligatorio e
+  // passa dalle regole già esistenti.
+  if (
+    termini.length === 1 &&
+    termini[0] === "pasta" &&
+    identificaFormatoPastaPino(prodotto)
   ) return true;
   // Il primo termine deve identificare il prodotto tramite nome/categoria.
   // La sola presenza nella descrizione (es. "conservati sott'olio") non basta.
@@ -1799,6 +1842,446 @@ export function soggettoPrincipalePino(query: string): string {
   return contenuto.find((t) => !ATTRIBUTI_DESCRITTIVI_PINO.has(t)) ?? contenuto[0];
 }
 
+function contieneSequenzaToken(token: string[], frase: string[]): boolean {
+  return token.some((_, indice) =>
+    frase.every((voce, offset) => token[indice + offset] === voce)
+  );
+}
+
+// ─── P1.3.5: quantità e unità di misura ──────────────────────────────────────
+
+type DimensioneQuantita = "volume" | "peso" | "lunghezza";
+
+type QuantitaNormalizzata = {
+  dimensione: DimensioneQuantita;
+  /** Valore nella unità base: ml, g oppure cm. */
+  valore: number;
+};
+
+const UNITA_MISURA: Record<
+  string,
+  { dimensione: DimensioneQuantita; fattore: number }
+> = {
+  // Volume, base millilitri.
+  l: { dimensione: "volume", fattore: 1000 },
+  litro: { dimensione: "volume", fattore: 1000 },
+  litri: { dimensione: "volume", fattore: 1000 },
+  ml: { dimensione: "volume", fattore: 1 },
+  millilitro: { dimensione: "volume", fattore: 1 },
+  millilitri: { dimensione: "volume", fattore: 1 },
+  cl: { dimensione: "volume", fattore: 10 },
+  centilitro: { dimensione: "volume", fattore: 10 },
+  centilitri: { dimensione: "volume", fattore: 10 },
+  dl: { dimensione: "volume", fattore: 100 },
+  decilitro: { dimensione: "volume", fattore: 100 },
+  decilitri: { dimensione: "volume", fattore: 100 },
+  // Peso, base grammi.
+  kg: { dimensione: "peso", fattore: 1000 },
+  chilogrammo: { dimensione: "peso", fattore: 1000 },
+  chilogrammi: { dimensione: "peso", fattore: 1000 },
+  chilo: { dimensione: "peso", fattore: 1000 },
+  chili: { dimensione: "peso", fattore: 1000 },
+  g: { dimensione: "peso", fattore: 1 },
+  grammo: { dimensione: "peso", fattore: 1 },
+  grammi: { dimensione: "peso", fattore: 1 },
+  etto: { dimensione: "peso", fattore: 100 },
+  etti: { dimensione: "peso", fattore: 100 },
+  ettogrammo: { dimensione: "peso", fattore: 100 },
+  ettogrammi: { dimensione: "peso", fattore: 100 },
+  // Lunghezza, base centimetri.
+  m: { dimensione: "lunghezza", fattore: 100 },
+  metro: { dimensione: "lunghezza", fattore: 100 },
+  metri: { dimensione: "lunghezza", fattore: 100 },
+  cm: { dimensione: "lunghezza", fattore: 1 },
+  centimetro: { dimensione: "lunghezza", fattore: 1 },
+  centimetri: { dimensione: "lunghezza", fattore: 1 },
+  mm: { dimensione: "lunghezza", fattore: 0.1 },
+  millimetro: { dimensione: "lunghezza", fattore: 0.1 },
+  millimetri: { dimensione: "lunghezza", fattore: 0.1 },
+};
+
+const RE_QUANTITA_NUMERICA = /\b(\d+(?:[.,]\d+)?)\s*(millilitri|millilitro|centilitri|centilitro|decilitri|decilitro|chilogrammi|chilogrammo|ettogrammi|ettogrammo|millimetri|millimetro|centimetri|centimetro|grammi|grammo|litri|litro|metri|metro|chili|chilo|etti|etto|kg|ml|cl|dl|cm|mm|m|l|g)\b/g;
+const RE_QUANTITA_PAROLE = /\b(un|uno|una|mezzo|mezza)\s+(millilitri|millilitro|centilitri|centilitro|decilitri|decilitro|chilogrammi|chilogrammo|ettogrammi|ettogrammo|millimetri|millimetro|centimetri|centimetro|grammi|grammo|litri|litro|metri|metro|chili|chilo|etti|etto|kg|ml|cl|dl|cm|mm|m|l|g)\b/g;
+const RE_QUANTITA_AMBIGUA = /\b\d+(?:[.,]\d+)?\s*(?:-|–|a|e|ed)\s*\d+(?:[.,]\d+)?\s*(?:millilitri|millilitro|centilitri|centilitro|decilitri|decilitro|chilogrammi|chilogrammo|ettogrammi|ettogrammo|millimetri|millimetro|centimetri|centimetro|grammi|grammo|litri|litro|metri|metro|chili|chilo|etti|etto|kg|ml|cl|dl|cm|mm|m|l|g)\b/;
+const RE_FRAZIONE_QUANTITA = /\b\d+\s*\/\s*\d+\s*(?:millilitri|millilitro|centilitri|centilitro|decilitri|decilitro|chilogrammi|chilogrammo|ettogrammi|ettogrammo|millimetri|millimetro|centimetri|centimetro|grammi|grammo|litri|litro|metri|metro|chili|chilo|etti|etto|kg|ml|cl|dl|cm|mm|m|l|g)\b/;
+
+function valoreNumericoQuantita(testo: string): number {
+  return Number(testo.replace(",", "."));
+}
+
+function unitaQuantita(testo: string): { dimensione: DimensioneQuantita; fattore: number } | null {
+  return UNITA_MISURA[normalizza(testo).trim()] ?? null;
+}
+
+/**
+ * Estrae solo quantità esplicite e non ambigue. Le unità sono convertite nella
+ * dimensione e nell'unità base, così 1 l, 100 cl e 1000 ml diventano lo stesso
+ * valore. Le frazioni e gli intervalli non vengono interpretati come certezza.
+ */
+function quantitaAmbigua(testo: string): boolean {
+  const pulito = normalizza(String(testo ?? ""));
+  return Boolean(
+    pulito && (RE_FRAZIONE_QUANTITA.test(pulito) || RE_QUANTITA_AMBIGUA.test(pulito))
+  );
+}
+
+function estraiQuantita(testo: string): QuantitaNormalizzata[] {
+  const pulito = normalizza(String(testo ?? ""));
+  if (!pulito || quantitaAmbigua(pulito)) return [];
+
+  const risultato: QuantitaNormalizzata[] = [];
+  const visti = new Set<string>();
+  const aggiungi = (dimensione: DimensioneQuantita, valore: number) => {
+    const normalizzato = Number(valore.toFixed(6));
+    const chiave = dimensione + ":" + normalizzato;
+    if (visti.has(chiave)) return;
+    visti.add(chiave);
+    risultato.push({ dimensione, valore: normalizzato });
+  };
+
+  for (const match of pulito.matchAll(RE_QUANTITA_NUMERICA)) {
+    const unita = unitaQuantita(match[2]);
+    if (!unita) continue;
+    let valore = valoreNumericoQuantita(match[1]) * unita.fattore;
+    const dopo = pulito.slice((match.index ?? 0) + match[0].length);
+    if (/^\s*(?:e|ed)\s+mezzo\b/.test(dopo)) valore += 0.5 * unita.fattore;
+    aggiungi(unita.dimensione, valore);
+  }
+
+  for (const match of pulito.matchAll(RE_QUANTITA_PAROLE)) {
+    const unita = unitaQuantita(match[2]);
+    if (!unita) continue;
+    const base = match[1] === "mezzo" || match[1] === "mezza" ? 0.5 : 1;
+    let valore = base * unita.fattore;
+    const dopo = pulito.slice((match.index ?? 0) + match[0].length);
+    if (/^\s*(?:e|ed)\s+mezzo\b/.test(dopo)) valore += 0.5 * unita.fattore;
+    aggiungi(unita.dimensione, valore);
+  }
+
+  return risultato;
+}
+
+function prodottoSoddisfaQuantita(
+  prodotto: ProdottoRicerca,
+  richieste: QuantitaNormalizzata[]
+): boolean {
+  if (richieste.length === 0) return true;
+  const disponibili = estraiQuantita(evidenzaMetadatiProdotto(prodotto));
+  return richieste.every((richiesta) =>
+    disponibili.some(
+      (disponibile) =>
+        disponibile.dimensione === richiesta.dimensione &&
+        Math.abs(disponibile.valore - richiesta.valore) < 0.000001
+    )
+  );
+}
+
+/**
+ * Evidenza testuale del prodotto per una caratteristica già riconosciuta.
+ * Include tutti i metadati disponibili, non solo `caratteristiche`: un campo
+ * vuoto non deve far scartare un prodotto se la stessa informazione è presente
+ * in descrizione, SEO, alt text, parole chiave o nome. Il nome del negozio non
+ * fa parte dei metadati del prodotto e non viene inserito nell'evidenza.
+ */
+function evidenzaMetadatiProdotto(prodotto: ProdottoRicerca): string {
+  return normalizza(
+    [
+      prodotto.nome,
+      prodotto.categoria,
+      prodotto.sottocategoria,
+      prodotto.marca,
+      ...(prodotto.parole_chiave ?? []),
+      ...(prodotto.caratteristiche ?? []),
+      prodotto.descrizione,
+      prodotto.descrizione_completa,
+      prodotto.seo_title,
+      prodotto.seo_description,
+      prodotto.alt_text_immagine,
+    ]
+      .filter(Boolean)
+      .join(" ")
+  );
+}
+
+// ─── P1.3.5: qualificazioni documentate ──────────────────────────────────────
+
+const PAROLE_BUDGET_QUALIFICAZIONE = new Set([
+  "sotto", "entro", "fino", "massimo", "minimo", "oltre", "sopra",
+  "tra", "fra", "euro", "€",
+]);
+
+const PAROLE_NON_QUALIFICANTI = new Set([
+  "un", "uno", "una", "il", "lo", "la", "i", "gli", "le",
+  "di", "del", "dello", "della", "dei", "degli", "delle",
+  "da", "dal", "dallo", "dalla", "dai", "dagli", "dalle",
+  "in", "nel", "nello", "nella", "nei", "negli", "nelle",
+  "con", "col", "coi", "su", "sul", "sullo", "sulla", "sui",
+  "sugli", "sulle", "per", "a", "al", "allo", "alla", "ai",
+  "agli", "alle", "e", "ed", "che", "piu", "meno", "circa",
+  "tipo", "come",
+]);
+
+const PAROLE_CORTESIA = new Set(["per", "favore", "grazie", "please"]);
+
+/**
+ * Estrae la parte qualificante della query dopo il soggetto, fermandosi prima
+ * del budget. Non inventa parole: usa solo i token già presenti nella query.
+ */
+function segmentoQualificazione(query: string, soggetto: string): string[] {
+  const tokenQuery = estraiToken(query);
+  const soggettoToken = estraiToken(soggetto)[0] ?? normalizza(soggetto).trim();
+  if (!soggettoToken) return [];
+  const indice = tokenQuery.indexOf(soggettoToken);
+  if (indice < 0) return [];
+  let segmento = tokenQuery.slice(indice);
+
+  const taglioBudget = segmento.findIndex((token) =>
+    PAROLE_BUDGET_QUALIFICAZIONE.has(token)
+  );
+  if (taglioBudget >= 0) segmento = segmento.slice(0, taglioBudget);
+
+  while (segmento.length > 0 && PAROLE_CORTESIA.has(segmento[segmento.length - 1])) {
+    segmento.pop();
+  }
+  while (
+    segmento.length > 1 &&
+    (PAROLE_NON_QUALIFICANTI.has(segmento[segmento.length - 1]) ||
+      /^\d+(?:[.,]\d+)?$/.test(segmento[segmento.length - 1]))
+  ) {
+    segmento.pop();
+  }
+  return segmento.length >= 2 ? segmento : [];
+}
+
+function fraseQualificanteSignificativa(token: string[]): boolean {
+  if (token.length < 2) return false;
+  if (PAROLE_NON_QUALIFICANTI.has(token[0])) return false;
+  if (PAROLE_NON_QUALIFICANTI.has(token[token.length - 1])) return false;
+  return token.some(
+    (voce) => voce.length >= 3 && !PAROLE_NON_QUALIFICANTI.has(voce)
+  );
+}
+
+/**
+ * Cerca una qualificazione documentata dai metadati del prodotto. La frase
+ * più lunga e meglio documentata vince; se nessun prodotto la documenta, viene
+ * restituita la frase della query (e il filtro restituirà zero risultati,
+ * invece di ricadere sulla ricerca generica).
+ */
+function scopriQualificazioneRichieste(
+  prodotti: ProdottoRicerca[],
+  query: string,
+  soggetto: string
+): string | null {
+  // Una quantità esplicita è gestita dal filtro numerico: non va confusa con
+  // una qualificazione testuale (es. "1 litro" non è una sottocategoria).
+  if (estraiQuantita(query).length > 0) return null;
+
+  const segmento = segmentoQualificazione(query, soggetto);
+  if (segmento.length < 2) return null;
+
+  const evidenze = prodotti.map((prodotto) =>
+    estraiToken(evidenzaMetadatiProdotto(prodotto))
+  );
+  const candidati: Array<{
+    frase: string;
+    lunghezza: number;
+    occorrenze: number;
+    posizione: number;
+  }> = [];
+
+  for (let lunghezza = Math.min(4, segmento.length); lunghezza >= 2; lunghezza--) {
+    for (let inizio = 0; inizio + lunghezza <= segmento.length; inizio++) {
+      const fraseToken = segmento.slice(inizio, inizio + lunghezza);
+      if (!fraseQualificanteSignificativa(fraseToken)) continue;
+      const occorrenze = evidenze.filter((evidenza) =>
+        contieneSequenzaToken(evidenza, fraseToken)
+      ).length;
+      if (occorrenze > 0) {
+        candidati.push({
+          frase: fraseToken.join(" "),
+          lunghezza,
+          occorrenze,
+          posizione: inizio,
+        });
+      }
+    }
+  }
+
+  if (candidati.length > 0) {
+    candidati.sort(
+      (a, b) =>
+        b.occorrenze - a.occorrenze ||
+        b.lunghezza - a.lunghezza ||
+        a.posizione - b.posizione
+    );
+    return candidati[0].frase;
+  }
+
+  return fraseQualificanteSignificativa(segmento) ? segmento.join(" ") : null;
+}
+
+function filtraProdottiPerQualificazioneDocumentata(
+  prodotti: ProdottoRicerca[],
+  query: string,
+  soggetto: string
+): ProdottoRicerca[] {
+  const frase = scopriQualificazioneRichieste(prodotti, query, soggetto);
+  if (!frase) return prodotti;
+  const tokenFrase = estraiToken(frase);
+  if (tokenFrase.length === 0) return prodotti;
+  return prodotti.filter((prodotto) =>
+    contieneSequenzaToken(
+      estraiToken(evidenzaMetadatiProdotto(prodotto)),
+      tokenFrase
+    )
+  );
+}
+
+/**
+ * Scopre una caratteristica richiesta usando la stessa evidenza completa dei
+ * metadati usata per la verifica. A differenza della qualificazione delle
+ * sottocategorie, questa ricerca non viene disattivata quando la query contiene
+ * una quantità: "pasta lavorata a mano da 1 kg" deve verificare sia la
+ * caratteristica sia il formato.
+ */
+function scopriCaratteristicaDocumentata(
+  prodotti: ProdottoRicerca[],
+  query: string,
+  soggetto?: string
+): string | null {
+  const tokenQuery = estraiToken(query);
+  const soggettoToken =
+    estraiToken(soggetto ?? soggettoPrincipalePino(query))[0] ?? "";
+  if (!soggettoToken || tokenQuery.length < 2) return null;
+
+  const evidenze = prodotti.map((prodotto) =>
+    estraiToken(evidenzaMetadatiProdotto(prodotto))
+  );
+  const candidati: Array<{
+    frase: string;
+    lunghezza: number;
+    occorrenze: number;
+    posizione: number;
+  }> = [];
+
+  for (let lunghezza = Math.min(6, tokenQuery.length); lunghezza >= 2; lunghezza--) {
+    for (let inizio = 0; inizio + lunghezza <= tokenQuery.length; inizio++) {
+      const fraseToken = tokenQuery.slice(inizio, inizio + lunghezza);
+      // Il soggetto identifica già il prodotto: la caratteristica è la parte
+      // restante della frase, non il nome del prodotto stesso.
+      if (fraseToken.includes(soggettoToken)) continue;
+      if (!fraseQualificanteSignificativa(fraseToken)) continue;
+      if (fraseToken.some((token) => PAROLE_BUDGET_QUALIFICAZIONE.has(token))) {
+        continue;
+      }
+      if (estraiQuantita(fraseToken.join(" ")).length > 0) continue;
+      const occorrenze = evidenze.filter((evidenza) =>
+        contieneSequenzaToken(evidenza, fraseToken)
+      ).length;
+      if (occorrenze > 0) {
+        candidati.push({
+          frase: fraseToken.join(" "),
+          lunghezza,
+          occorrenze,
+          posizione: inizio,
+        });
+      }
+    }
+  }
+
+  if (candidati.length === 0) return null;
+  candidati.sort(
+    (a, b) =>
+      b.lunghezza - a.lunghezza ||
+      b.occorrenze - a.occorrenze ||
+      a.posizione - b.posizione
+  );
+  return candidati[0].frase;
+}
+
+/**
+ * Caratteristiche esplicite richieste dalla query, ricavate dai metadati del
+ * prodotto. Solo le caratteristiche presenti come frase completa nella query
+ * contano: "fatta a mano" sì, la parola "mano" da sola no. Il filtro non crea
+ * corrispondenze: restringe i prodotti già ammessi dal gate del soggetto.
+ *
+ * La scoperta e la verifica usano tutti i metadati disponibili: se
+ * `caratteristiche` è vuoto ma la descrizione dichiara la stessa
+ * caratteristica, il prodotto resta ammesso. Anche una quantità con unità
+ * esplicita è un vincolo verificabile: "2 litri" non può essere soddisfatto da
+ * un prodotto che documenta solo "1 litro".
+ */
+function filtraProdottiPerCaratteristicheRichieste(
+  prodotti: ProdottoRicerca[],
+  query: string,
+  soggetto?: string,
+  soggettoScoperta?: string
+): ProdottoRicerca[] {
+  if (quantitaAmbigua(query)) return [];
+  const caratteristica = scopriCaratteristicaDocumentata(
+    prodotti,
+    query,
+    soggettoScoperta ?? soggetto
+  );
+  const richieste = new Set<string>(caratteristica ? [caratteristica] : []);
+  const richiesteQuantita = estraiQuantita(query);
+
+  const filtrati = prodotti.filter((prodotto) => {
+    const evidenza = estraiToken(evidenzaMetadatiProdotto(prodotto));
+    return (
+      [...richieste].every((richiesta) =>
+        contieneSequenzaToken(evidenza, estraiToken(richiesta))
+      ) && prodottoSoddisfaQuantita(prodotto, richiesteQuantita)
+    );
+  });
+
+  return soggetto
+    ? filtraProdottiPerQualificazioneDocumentata(filtrati, query, soggetto)
+    : filtrati;
+}
+
+/**
+ * Una sottocategoria esplicita nella query ("pasta tipica", "olio e condimenti")
+ * restringe i prodotti già ammessi dal soggetto. Si attiva solo quando la frase
+ * compare davvero nei metadati di un candidato: una categoria generica come
+ * "pasta" non attiva il filtro. La corrispondenza può usare la sottocategoria
+ * o una parola chiave dichiarata; il nome del negozio non viene considerato.
+ */
+function filtraProdottiPerSottocategoriaRichiesta(
+  prodotti: ProdottoRicerca[],
+  query: string,
+  soggetto?: string
+): ProdottoRicerca[] {
+  if (!soggetto) return prodotti;
+  return filtraProdottiPerQualificazioneDocumentata(prodotti, query, soggetto);
+}
+
+/**
+ * Gate alimentare completo: prima identifica il soggetto, poi applica le
+ * qualificazioni esplicite disponibili nei metadati. Il budget resta fuori da
+ * questo filtro e viene applicato dal percorso esistente.
+ */
+export function filtraProdottiAlimentariPino(
+  prodotti: ProdottoRicerca[],
+  query: string,
+  soggettoAlimentare: string
+): ProdottoRicerca[] {
+  const pertinenti = prodotti.filter((prodotto) =>
+    prodottoPertinente(prodotto, [soggettoAlimentare], [])
+  );
+  const filtrati = filtraProdottiPerCaratteristicheRichieste(
+    pertinenti,
+    query,
+    soggettoAlimentare
+  );
+  return filtraProdottiPerSottocategoriaRichiesta(
+    filtrati,
+    query,
+    soggettoAlimentare
+  );
+}
+
 /**
  * Gate di pertinenza per le richieste con un unico soggetto concreto.
  *
@@ -1814,7 +2297,8 @@ export function soggettoPrincipalePino(query: string): string {
  */
 export function filtraProdottiPerSoggettoUnico(
   prodotti: ProdottoRicerca[],
-  soggettoUnico: string
+  soggettoUnico: string,
+  queryCompleta: string = soggettoUnico
 ): ProdottoRicerca[] {
   // Il soggetto è il primo termine di contenuto: gli attributi ("nera", "in
   // legno") restano fuori dal controllo, quindi non c'è un AND sui termini e
@@ -1826,7 +2310,14 @@ export function filtraProdottiPerSoggettoUnico(
   const pertinenti = prodotti.filter((p) =>
     soggetti.some((soggetto) => prodottoIdentificaSoggetto(p, soggetto))
   );
-  if (pertinenti.length > 0) return pertinenti;
+  if (pertinenti.length > 0) {
+    return filtraProdottiPerCaratteristicheRichieste(
+      pertinenti,
+      queryCompleta,
+      undefined,
+      principale
+    );
+  }
 
   // Seconda verifica controllata: il soggetto non compare nel prodotto, ma un
   // ponte concettuale curato sì ("luce" → "Lampada"). Non basta un attributo
@@ -1837,13 +2328,25 @@ export function filtraProdottiPerSoggettoUnico(
     const coerenti = prodotti.filter((p) =>
       concetti.some((concetto) => prodottoIdentificaSoggetto(p, concetto))
     );
-    if (coerenti.length > 0) return coerenti;
+    if (coerenti.length > 0) {
+      return filtraProdottiPerCaratteristicheRichieste(
+        coerenti,
+        queryCompleta,
+        undefined,
+        principale
+      );
+    }
   }
 
   // Nessun prodotto identifica il soggetto: unico caso in cui proviamo il
   // refuso (sulla testa del nome prodotto), senza mai sostituire la parola
   // scritta dall'utente.
-  return prodotti.filter((p) => prodottoForseRefusoDiSoggetto(p, principale));
+  return filtraProdottiPerCaratteristicheRichieste(
+    prodotti.filter((p) => prodottoForseRefusoDiSoggetto(p, principale)),
+    queryCompleta,
+    undefined,
+    principale
+  );
 }
 
 // ─── S4.3: colore e materiale ────────────────────────────────────────────────
@@ -1979,6 +2482,21 @@ export function filtraProdottiPerAttributiPino(
   return esito;
 }
 
+/**
+ * Un prodotto rispetta una fascia VINCOLANTE solo con un prezzo reale dentro i
+ * limiti: prezzo assente, zero o negativo non è mai "conforme al budget".
+ */
+export function prodottoRispettaBudgetPino(
+  prodotto: ProdottoRicerca,
+  limiti: { maxPrice?: number | null; minPrice?: number | null } = {}
+): boolean {
+  const prezzo = prezzoNumerico(prodotto?.prezzo);
+  if (prezzo == null || prezzo <= 0) return false;
+  if (limiti.maxPrice != null && prezzo > Number(limiti.maxPrice)) return false;
+  if (limiti.minPrice != null && prezzo < Number(limiti.minPrice)) return false;
+  return true;
+}
+
 export async function searchProducts(
   query: string,
   opts: ToolParams = {}
@@ -1987,15 +2505,16 @@ export async function searchProducts(
   const q = (query ?? "").trim();
   if (!q) return [];
 
-  // FONTE UNICA DI VERITÀ: Pino interroga lo stesso Search Service della
-  // ricerca pubblica. Il retrieval NON viene riscritto qui: dopo la ricerca
-  // pubblica interviene solo un controllo di pertinenza Pino, limitato alle
-  // richieste con un unico soggetto concreto (vedi sotto), per non mostrare
-  // prodotti che il motore tollerante ha trovato solo per somiglianza.
-  const canonici = await searchCatalogoPubblico(q, { onErrore: segnalaErroreDatiPino });
-  let filtrate = [...(canonici.prodotti ?? [])].filter((p) =>
-    prodottoSoddisfaEsclusioni(p, opts?.esclusioni)
-  );
+  // Budget vincolante solo quando il chiamante lo dichiara (limiti espliciti).
+  const budgetRigido = opts.prezzoRigido === true && (opts.minPrice != null || opts.maxPrice != null);
+
+  const opzioniRicerca = budgetRigido
+    ? {
+        prezzoMin: opts.minPrice ?? undefined,
+        prezzoMax: opts.maxPrice ?? undefined,
+        onErrore: segnalaErroreDatiPino,
+      }
+    : { onErrore: segnalaErroreDatiPino };
 
   // Per le ricerche di alimenti il negozio non deve contribuire alla
   // pertinenza: "pasta" non deve restituire taralli solo perché il venditore
@@ -2004,8 +2523,37 @@ export async function searchProducts(
   const soggettoAlimentare = q.toLowerCase().match(
     /\b(pasta|pane|pizza|dolci?|gelato|torte?|biscotti|formaggio|salumi|prosciutto|carne|pesce|verdura|frutta|olio|miele|conserve|farina|riso|nutella|cipolla|pomodoro|bread|noodles|cake|cookies|cheese|meat|fish|vegetables|fruit|honey|flour|rice|onion|tomato)\b/
   )?.[1];
+
+  // FONTE UNICA DI VERITÀ: Pino interroga lo stesso Search Service della
+  // ricerca pubblica. Il retrieval NON viene riscritto qui: dopo la ricerca
+  // pubblica interviene solo un controllo di pertinenza Pino, limitato alle
+  // richieste con un unico soggetto concreto (vedi sotto), per non mostrare
+  // prodotti che il motore tollerante ha trovato solo per somiglianza.
+  // I limiti arrivano alla query Supabase (gte/lte sul prezzo) solo in modalità
+  // vincolante; senza budget il percorso resta identico a prima.
+  const canonici = await searchCatalogoPubblico(q, opzioniRicerca);
+
+  // La pasta è una categoria con molti nomi di formato: la query «pasta» non
+  // recupera le Tagliatelle, il cui nome non contiene la parola. Una seconda
+  // ricerca SOLO con i formati (stessi filtri di budget) completa il recupero;
+  // la pertinenza resta decisa dal gate qui sotto. Per le altre categorie il
+  // percorso resta identico.
+  const perFormatoPasta =
+    soggettoAlimentare === "pasta"
+      ? await searchCatalogoPubblico(FORMATI_PASTA_PINO.slice(0, 10).join(" "), opzioniRicerca)
+      : null;
+
+  let filtrate = [
+    ...(canonici.prodotti ?? []),
+    ...(perFormatoPasta?.prodotti ?? []),
+  ].filter((p) => prodottoSoddisfaEsclusioni(p, opts?.esclusioni));
+
   if (soggettoAlimentare) {
-    filtrate = filtrate.filter((p) => prodottoPertinente(p, [soggettoAlimentare], []));
+    filtrate = filtraProdottiAlimentariPino(
+      filtrate,
+      q,
+      soggettoAlimentare
+    );
   }
 
   // La ricerca pubblica tollera i refusi con wildcard ilike: "cane" produce
@@ -2015,7 +2563,7 @@ export async function searchProducts(
   // frasi complesse restano gestite dal planner semantico e non vengono
   // ristrette qui, per non perdere recall utile.
   if (!soggettoAlimentare) {
-    filtrate = filtraProdottiPerSoggettoUnico(filtrate, normalizzaQueryCatalogo(q));
+    filtrate = filtraProdottiPerSoggettoUnico(filtrate, normalizzaQueryCatalogo(q), q);
   }
 
   // I filtri espliciti si applicano solo dopo il retrieval canonico.

@@ -964,8 +964,8 @@ export function isOrdinamentoProdottiPubblici(value: unknown): value is Ordiname
 // Select comune della ricerca prodotti.
 // quantita_disponibile/quantita_riservata: necessarie per il badge "Esaurito"
 // nelle card pubbliche (Fase D).
-const SELECT_PRODOTTO_RICERCA =
-  "id, slug, negozio_id, nome, descrizione, categoria, sottocategoria, marca, colore, materiale, parole_chiave, caratteristiche, seo_title, seo_description, alt_text_immagine, prezzo, immagine_principale, quantita_disponibile, quantita_riservata, ha_varianti";
+export const SELECT_PRODOTTO_RICERCA =
+  "id, slug, negozio_id, nome, descrizione, descrizione_completa, categoria, sottocategoria, marca, colore, materiale, parole_chiave, caratteristiche, seo_title, seo_description, alt_text_immagine, prezzo, immagine_principale, quantita_disponibile, quantita_riservata, ha_varianti";
 
 /**
  * Id dei negozi pubblici (deleted_at non valorizzato).
@@ -1520,18 +1520,57 @@ export async function mappaProdottoRicerca(
   );
 }
 
+// ─── Metadati prodotto per il percorso interno ───────────────────────────────
+// Le colonne sono già nel catalogo; questi helper evitano che valori null,
+// stringhe vuote o tipi inattesi entrino nel DTO. Non modificano la riga
+// originale restituita da Supabase.
+
+function testoMetadato(valore: unknown): string | null {
+  if (typeof valore !== "string") return null;
+  const testo = valore.trim();
+  return testo || null;
+}
+
+function listaMetadati(valore: unknown): string[] {
+  const valori = Array.isArray(valore)
+    ? valore
+    : typeof valore === "string"
+      ? valore.split(",")
+      : [];
+  return valori
+    .filter((voce): voce is string => typeof voce === "string")
+    .map((voce) => voce.trim())
+    .filter(Boolean);
+}
+
+function normalizzaParoleChiaveMetadato(valore: unknown): string[] {
+  const viste = new Set<string>();
+  const risultato: string[] = [];
+  for (const chiave of listaMetadati(valore)) {
+    const normalizzata = normalizza(chiave).trim();
+    if (!normalizzata || viste.has(normalizzata)) continue;
+    viste.add(normalizzata);
+    risultato.push(normalizzata);
+  }
+  return risultato;
+}
+
 /**
  * Mapping puro di una riga prodotto verso il DTO condiviso.
  * Espone anche colore e materiale strutturati: senza questo passaggio la
  * ricerca li selezionava dal DB ma Pino poteva usarli solo se ripetuti nel
  * testo libero. I valori restano quelli del catalogo (nessuna normalizzazione
  * qui): il confronto canonico avviene nel filtro Pino.
+ *
+ * P1.2 conserva anche i metadati di catalogo. Sono proprietà NON enumerabili:
+ * il codice interno può leggerle, ma JSON.stringify / le risposte API non le
+ * espongono e il DTO pubblico resta compatibile.
  */
 export function mappaProdottoRiga(
   p: Record<string, unknown>,
   negozioNome = ""
 ): ProdottoRicerca {
-  return {
+  const prodotto: ProdottoRicerca = {
     id: p.id as string,
     slug: (p.slug as string) ?? null,
     negozio_id: p.negozio_id as string,
@@ -1549,6 +1588,29 @@ export function mappaProdottoRiga(
     ha_varianti: Boolean(p.ha_varianti),
     negozio_nome: negozioNome,
   };
+
+  Object.defineProperties(prodotto, {
+    sottocategoria: { value: testoMetadato(p.sottocategoria), enumerable: false },
+    marca: { value: testoMetadato(p.marca), enumerable: false },
+    parole_chiave: { value: listaMetadati(p.parole_chiave), enumerable: false },
+    parole_chiave_normalizzate: {
+      value: normalizzaParoleChiaveMetadato(p.parole_chiave),
+      enumerable: false,
+    },
+    caratteristiche: { value: listaMetadati(p.caratteristiche), enumerable: false },
+    descrizione_completa: {
+      value: testoMetadato(p.descrizione_completa),
+      enumerable: false,
+    },
+    seo_title: { value: testoMetadato(p.seo_title), enumerable: false },
+    seo_description: { value: testoMetadato(p.seo_description), enumerable: false },
+    alt_text_immagine: {
+      value: testoMetadato(p.alt_text_immagine),
+      enumerable: false,
+    },
+  });
+
+  return prodotto;
 }
 
 /**
@@ -1749,7 +1811,9 @@ async function cercaProdottiTolleranti(
 
   const { data, error } = await db
     .from("prodotti")
-    .select("id, slug, negozio_id, nome, descrizione, categoria, marca, sottocategoria, colore, materiale, prezzo, immagine_principale, quantita_disponibile, quantita_riservata, ha_varianti")
+    // Anche il recupero tollerante deve conservare gli stessi metadati della
+    // ricerca principale: nessuna query aggiuntiva, solo la select condivisa.
+    .select(SELECT_PRODOTTO_RICERCA)
     .eq("attivo", true)
     .in("negozio_id", negoziValidi)
     .or(filtri)

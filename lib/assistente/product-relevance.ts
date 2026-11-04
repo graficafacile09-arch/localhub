@@ -4,12 +4,35 @@ import { normalizza, estraiToken } from "../text-utils.ts";
 import { refusoPlausibile } from "./understanding.ts";
 import { SOTTOTIPI_PRODOTTO } from "../sottotipi-prodotto.ts";
 
+// Parole chiave che descrivono una categoria, un attributo o una provenienza:
+// non sono un'identità di marca. Servono a impedire che una keyword isolata
+// ("pasta", "olio", "alimentari") identifichi un prodotto solo perché è
+// dichiarata dal venditore. Il confronto con la keyword resta esatto: nessuna
+// somiglianza fuzzy viene introdotta.
+const CHIAVI_GENERICHE_NON_IDENTITARIE = new Set([
+  "alimentare", "alimentari", "pasta", "pane", "pizza", "dolce", "dolci",
+  "biscotti", "formaggio", "salumi", "carne", "pesce", "verdura", "frutta",
+  "olio", "miele", "conserve", "farina", "riso", "cipolla", "pomodoro",
+  "artigianale", "artigianali", "tipico", "tipica", "tipici", "tipiche",
+  "tradizionale", "tradizionali", "calabrese", "calabresi", "italiano",
+  "italiana", "eccellenze", "selezione", "demo", "prodotto", "prodotti",
+  "pelle", "cotone", "lino", "seta", "lana", "metallo", "argento", "oro",
+  "acciaio", "legno", "plastica", "vetro", "ceramica", "dop", "igp",
+]);
+
 export type ProdottoIdentificabile = {
   nome?: string | null;
   categoria?: string | null;
+  sottocategoria?: string | null;
+  marca?: string | null;
   descrizione?: string | null;
   descrizione_completa?: string | null;
   parole_chiave?: string[] | null;
+  parole_chiave_normalizzate?: string[] | null;
+  caratteristiche?: string[] | null;
+  seo_title?: string | null;
+  seo_description?: string | null;
+  alt_text_immagine?: string | null;
 };
 
 function tokenCompatibile(termine: string, token: string[]): boolean {
@@ -22,46 +45,97 @@ function tokenCompatibile(termine: string, token: string[]): boolean {
 }
 
 /**
- * Metadati che IDENTIFICANO il prodotto: nome e categoria. Le parole chiave
- * sono un contributo, non un'identità autosufficiente (vedi
- * `paroleChiaveProdotto`).
+ * Metadati che IDENTIFICANO il prodotto: nome, categoria, sottocategoria e
+ * marca. La marca è un dato del prodotto, non il nome del negozio: non viene
+ * mai usata la proprietà `negozio_nome`. Le parole chiave restano un contributo,
+ * non un'identità autosufficiente (vedi `paroleChiaveProdotto`).
  */
 function identitaProdotto(prodotto: ProdottoIdentificabile): string {
-  return normalizza([prodotto.nome, prodotto.categoria].filter(Boolean).join(" "));
+  return normalizza(
+    [
+      prodotto.nome,
+      prodotto.categoria,
+      prodotto.sottocategoria,
+      prodotto.marca,
+    ]
+      .filter(Boolean)
+      .join(" ")
+  );
 }
 
-/** Parole chiave dichiarate dal venditore, normalizzate. */
+/**
+ * Parole chiave dichiarate dal venditore, normalizzate. Quando P1.2 ha già
+ * prodotto la vista normalizzata, la si usa direttamente: evita di riscrivere
+ * la lista originale e mantiene una sola interpretazione dei metadati.
+ */
 function paroleChiaveProdotto(prodotto: ProdottoIdentificabile): string[] {
+  const normalizzate = (prodotto.parole_chiave_normalizzate ?? [])
+    .map((chiave) => normalizza(String(chiave ?? "")))
+    .filter(Boolean);
+  if (normalizzate.length > 0) return normalizzate;
   return (prodotto.parole_chiave ?? [])
     .map((chiave) => normalizza(String(chiave ?? "")))
     .filter(Boolean);
 }
 
 /**
- * Contesto discorsivo del prodotto (descrizioni libere). Non dimostra da solo
- * l'identità: "Filetti di cipolla" descritti come "conservati sott'olio" non
+ * Contesto di supporto del prodotto: descrizioni, caratteristiche, SEO e alt
+ * text. Non dimostra da solo l'identità e non può rendere pertinente un
+ * prodotto: "Filetti di cipolla" descritti come "conservati sott'olio" non
  * sono un prodotto che si chiama olio.
  *
- * Rimuove anche le formule redazionali che citano il venditore, non il
- * prodotto ("nella selezione demo di Mani in Pasta").
+ * Le caratteristiche e i campi SEO/alt sono quindi utilizzabili solo come
+ * conferma di un segnale già presente (identità o parola chiave). Rimuove le
+ * formule redazionali che citano il venditore, non il prodotto ("nella
+ * selezione demo di Mani in Pasta").
  */
 function dettagliDescrittivi(prodotto: ProdottoIdentificabile): string {
-  return [prodotto.descrizione, prodotto.descrizione_completa]
+  return [
+    prodotto.descrizione,
+    prodotto.descrizione_completa,
+    ...(prodotto.caratteristiche ?? []),
+    prodotto.seo_title,
+    prodotto.seo_description,
+    prodotto.alt_text_immagine,
+  ]
     .filter(Boolean)
     .join(" ")
     .replace(/\b(?:nella\s+)?selezione\s+demo\s+di\s+[^,.!?;]+/gi, " ");
 }
 
 /**
- * Il soggetto identifica il prodotto tramite nome/categoria. Le parole chiave
- * del venditore NON bastano da sole e nemmeno una descrizione che le citi di
- * passaggio ("con olio", "per uso alimentare"): serve un segnale di
- * classificazione vero, cioè o una parola chiave FRASE che contiene il soggetto
- * ("pasta calabrese") o una descrizione che NOMINA il soggetto in apertura
- * ("Pasta tradizionale calabrese…"). La descrizione resta contesto, non
- * identità (D1).
- * Non vengono considerati i dati del negozio: evitare che il nome dell'attività
- * o formule redazionali che lo citano alterino la pertinenza del prodotto.
+ * Una parola chiave può essere un segnale d'identità solo quando coincide
+ * esattamente con il soggetto e contiene almeno un token distintivo. La lista
+ * di esclusione impedisce che categorie e attributi generici diventino marche.
+ * Non vengono usati il nome del negozio né confronti fuzzy.
+ */
+function chiaveIdentificaMarca(
+  prodotto: ProdottoIdentificabile,
+  soggetto: string
+): boolean {
+  const chiavi = paroleChiaveProdotto(prodotto);
+  const testo = normalizza(soggetto).trim();
+  if (!testo || testo.length < 4) return false;
+  return chiavi.some((chiave) => {
+    if (chiave !== testo) return false;
+    const token = estraiToken(chiave);
+    if (token.length === 0 || token.length > 3) return false;
+    return token.some(
+      (t) => t.length >= 4 && !CHIAVI_GENERICHE_NON_IDENTITARIE.has(t)
+    );
+  });
+}
+
+/**
+ * Il soggetto identifica il prodotto tramite nome/categoria/sottocategoria/
+ * marca. Le parole chiave del venditore NON bastano da sole e nemmeno una
+ * descrizione che le citi di passaggio ("con olio", "per uso alimentare"):
+ * serve un segnale di classificazione vero, cioè o una parola chiave FRASE che
+ * contiene il soggetto ("pasta calabrese") o una descrizione che NOMINA il
+ * soggetto in apertura ("Pasta tradizionale calabrese…"). Descrizioni,
+ * caratteristiche, SEO e alt text restano contesto di supporto, non identità
+ * (D1). Un'unica eccezione esatta è una keyword-marca distintiva, gestita da
+ * `chiaveIdentificaMarca`; il nome del negozio non è mai un'identità.
  */
 export function prodottoIdentificatoDaSoggetto(
   prodotto: ProdottoIdentificabile,
@@ -96,8 +170,9 @@ export function prodottoIdentificatoDaSoggetto(
       estraiToken(dettagli).slice(0, 2).some((t) => corrisponde(t)));
   const confermataDalleDescrizioni =
     chiaveConfermata && (keywordClassificante || descrizioneNomina);
+  const chiaveMarca = chiaveIdentificaMarca(prodotto, soggetto);
 
-  return corrisponde(identita) || confermataDalleDescrizioni ||
+  return corrisponde(identita) || chiaveMarca || confermataDalleDescrizioni ||
     concetti.some((concetto) => {
       const c = normalizza(concetto);
       return Boolean(c) && (identita.includes(c) || dettagli.includes(c));
