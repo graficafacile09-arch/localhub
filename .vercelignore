@@ -10,3 +10,10 @@ dist/
 playwright-report/
 test-results/
 .vercel
+.backup-*
+.release-pino-main
+screenshots/
+.opencode/
+.freebuff/
+*.bundle
+*.zip

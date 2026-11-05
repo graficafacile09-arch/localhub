@@ -73,7 +73,11 @@ import {
   type RisultatiRecuperati,
 } from "./prompt";
 import { extractJsonFromText } from "@/lib/product-assistant/providers/utils";
-import { callGeminiText, type GeminiMessage } from "@/lib/ai/gemini-text";
+import {
+  callGeminiText,
+  type CallGeminiTextParams,
+  type GeminiMessage,
+} from "@/lib/ai/gemini-text";
 import {
   chiamaGeminiFunctionCalling,
   type GeminiFunctionCallingParams,
@@ -442,6 +446,164 @@ export function selezioneUtilizzabilePino(
 // backoff su 429/402 (quota) e timeout su ogni chiamata. L'assistente esegue
 // fino a 2 chiamate LLM per messaggio, quindi i picchi brevi di quota sono
 // gestiti dal retry interno.
+
+// ─── Fallback a costo zero: Gemini 429/402 → NVIDIA NIM (DeepSeek) ──────────
+//
+// Quando la quota Gemini è esaurita la selezione dei tool non deve fermarsi:
+// la stessa richiesta viene ripetuta su NVIDIA NIM, che espone un endpoint
+// OpenAI-compatibile. Se anche NVIDIA non risponde, viene rilanciato l'errore
+// ORIGINALE di Gemini, così il percorso deterministico già esistente (piano
+// locale, `searchAll`, messaggio di indisponibilità) resta l'ultimo livello e
+// la chat non si interrompe mai.
+//
+// La chiave NON sta nel codice: arriva da NVIDIA_NIM_API_KEY. Un segreto
+// scritto in un file versionato finisce nella storia di git, dove resta
+// leggibile anche dopo la rimozione.
+
+const NVIDIA_NIM_ENDPOINT = "https://integrate.api.nvidia.com/v1/chat/completions";
+/**
+ * `deepseek-ai/deepseek-v3` non compare nel catalogo pubblico NIM; l'ID
+ * DeepSeek realmente erogato è `deepseek-ai/deepseek-v4.1-flash`. Il modello
+ * resta sostituibile con NVIDIA_NIM_MODEL senza toccare il codice.
+ */
+const MODELLO_NVIDIA_FALLBACK = "deepseek-ai/deepseek-v4.1-flash";
+/**
+ * 4,5s su Gemini + 6s su NVIDIA = 10,5s nel caso peggiore: la somma con il
+ * planner semantico resta sotto la scadenza della rotta (25s).
+ */
+const TIMEOUT_NVIDIA_MS = 6_000;
+/** 0.3: determinismo sui dati di catalogo, come richiesto per il fallback. */
+const TEMPERATURA_NVIDIA = 0.3;
+const MAX_TOKENS_NVIDIA = 700;
+
+/** Messaggio in formato OpenAI: NIM accetta system/user/assistant. */
+export type MessaggioNvidia = {
+  role: "system" | "user" | "assistant";
+  content: string;
+};
+
+/**
+ * Riconosce gli errori in cui vale la pena passare a NVIDIA: quota/rate limit
+ * (status 429/402 o `Quota Gemini superata (HTTP 429).`) e attese scadute
+ * (`Timeout chiamata Gemini (4s).`, `deadline`, `ETIMEDOUT`).
+ * Gli altri errori (5xx, risposta vuota) NON attivano il provider di backup:
+ * restano al chiamante con il comportamento che già aveva.
+ */
+export function erroreGeminiRecuperabilePino(errore: unknown): boolean {
+  if (!errore) return false;
+  if (typeof errore === "object") {
+    const stato =
+      (errore as { status?: unknown }).status ??
+      (errore as { statusCode?: unknown }).statusCode;
+    if (stato === 429 || stato === 402 || stato === "429" || stato === "402") return true;
+    const codice = (errore as { code?: unknown }).code;
+    if (typeof codice === "string" && /ETIMEDOUT|TIMEOUT|DEADLINE/i.test(codice)) return true;
+  }
+  const testo = errore instanceof Error ? errore.message : String(errore);
+  return /429|402|quota|rate.?limit|timeout|deadline|etimedout/i.test(testo);
+}
+
+/**
+ * Chiamata di fallback su NVIDIA NIM (DeepSeek): fetch nativa, nessuna
+ * dipendenza nuova. Restituisce il testo della prima scelta; lancia su chiave
+ * assente, risposta HTTP non valida, timeout o risposta vuota — il chiamante
+ * decide come degradare.
+ */
+export async function chiamaDeepSeekSuNvidia(
+  systemPrompt: string,
+  messages: MessaggioNvidia[],
+  opzioni: { maxTokens?: number; timeoutMs?: number } = {}
+): Promise<string> {
+  const apiKey = process.env.NVIDIA_NIM_API_KEY?.trim();
+  if (!apiKey) {
+    throw new Error(
+      "Chiave API NVIDIA NIM mancante. Aggiungi NVIDIA_NIM_API_KEY alle variabili d'ambiente."
+    );
+  }
+  const model = process.env.NVIDIA_NIM_MODEL?.trim() || MODELLO_NVIDIA_FALLBACK;
+  const controller = new AbortController();
+  const timeoutMs = opzioni.timeoutMs ?? TIMEOUT_NVIDIA_MS;
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const corpo: MessaggioNvidia[] = systemPrompt.trim()
+      ? [{ role: "system", content: systemPrompt.trim() }, ...messages]
+      : messages;
+    const response = await fetch(NVIDIA_NIM_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        messages: corpo,
+        temperature: TEMPERATURA_NVIDIA,
+        max_tokens: opzioni.maxTokens ?? MAX_TOKENS_NVIDIA,
+        stream: false,
+      }),
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      // Nessun body in chiaro: contiene il token o dettagli interni.
+      throw new Error(`Errore NVIDIA NIM (HTTP ${response.status}).`);
+    }
+    const dati = (await response.json()) as {
+      choices?: Array<{ message?: { content?: string } }>;
+    };
+    const testo = (dati.choices?.[0]?.message?.content ?? "").trim();
+    if (!testo) throw new Error("Risposta NVIDIA NIM vuota.");
+    return testo;
+  } catch (caught: unknown) {
+    if (caught instanceof DOMException && caught.name === "AbortError") {
+      throw new Error(`Timeout chiamata NVIDIA NIM (${Math.round(timeoutMs / 1000)}s).`);
+    }
+    throw caught;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+/**
+ * Unico punto di chiamata LLM del percorso Pino: prova Gemini e, SOLO sulla
+ * quota esaurita, ripete la stessa richiesta su NVIDIA NIM. Il budget delle 2
+ * chiamate Gemini per richiesta resta valido perché la chiamata di backup non
+ * consuma budget Gemini.
+ */
+export async function chiamaGeminiConFallbackNvidia(
+  parametri: CallGeminiTextParams
+): Promise<string> {
+  try {
+    return await callGeminiText(parametri);
+  } catch (erroreGemini) {
+    if (!erroreGeminiRecuperabilePino(erroreGemini)) throw erroreGemini;
+    console.warn("[pino-fallback] Gemini lento o in quota. Switch su NVIDIA DeepSeek...");
+    const messaggi: MessaggioNvidia[] = [
+      ...(parametri.history ?? []).map((messaggio) => ({
+        role: messaggio.role === "model" ? ("assistant" as const) : ("user" as const),
+        content: messaggio.content,
+      })),
+      { role: "user" as const, content: parametri.userPrompt },
+    ];
+    try {
+      const testo = await chiamaDeepSeekSuNvidia(parametri.systemPrompt, messaggi, {
+        maxTokens: parametri.maxTokens,
+        timeoutMs: TIMEOUT_NVIDIA_MS,
+      });
+      console.info("[pino-fallback] Risposta NVIDIA DeepSeek utilizzata.");
+      return testo;
+    } catch (erroreNvidia) {
+      // Graceful degradation: si rilancia l'errore di Gemini, che il percorso
+      // deterministico del chiamante già sa gestire (piano locale, searchAll,
+      // messaggio di indisponibilità). Nessun crash della rotta.
+      console.warn(
+        "[pino-fallback] NVIDIA non disponibile, degrado sul percorso deterministico:",
+        erroreNvidia instanceof Error ? erroreNvidia.message : "errore sconosciuto"
+      );
+      throw erroreGemini;
+    }
+  }
+}
 
 // ─── Normalizzazione messaggi ────────────────────────────────────────────────
 
@@ -3159,12 +3321,14 @@ export async function chatConAssistente(
     if (!selezioneNativaOk) {
       try {
         const raw = await chiamataGeminiConBudgetPino(budgetGemini, () =>
-          callGeminiText({
+          chiamaGeminiConFallbackNvidia({
             systemPrompt: systemPromptPino,
             userPrompt: buildToolSelectionPrompt(storico, descriviIntento(analisi)),
             maxTokens: 450,
             temperature: 0.1,
-            timeoutMs: 45_000,
+            // 4,5s: oltre questa soglia Gemini è inutile per questo turno e
+            // il budget residuo va a NVIDIA (6s), restando sotto i 25s.
+            timeoutMs: 4_500,
           })
         );
         const parsed = JSON.parse(extractJsonFromText(raw)) as {
