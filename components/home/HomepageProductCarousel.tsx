@@ -86,6 +86,9 @@ export default function HomepageProductCarousel({
 
   return (
     <div>
+      {/* Con l'elenco espanso la griglia mostra già tutti i prodotti: il
+          carosello resta nascosto per non ripetere le stesse schede. */}
+      {!espanso && (
       <div className="relative md:px-10">
         {prodotti.length > 4 && (
           <button
@@ -162,6 +165,7 @@ export default function HomepageProductCarousel({
           })}
         </div>
       </div>
+      )}
 
       {mostraTutti && prodotti.length > 4 && (
         <>

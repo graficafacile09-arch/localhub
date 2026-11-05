@@ -17,7 +17,7 @@ const immaginiPerCategoria: { match: string[]; url: string }[] = [
   { match: ["computer", "pc", "laptop", "tablet"], url: pexelsProduct(18176581) },
   { match: ["palestra", "fitness", "allenamento", "yoga"], url: pexelsProduct(8933584) },
   { match: ["sportivo", "running", "corsa", "training"], url: pexelsProduct(8933584) },
-  { match: ["alimentazione", "cibo", "cucina", "ristorante"], url: pexelsProduct(10907746) },
+  { match: ["alimentazione", "alimentari", "cibo", "cucina", "ristorante"], url: pexelsProduct(10907746) },
   { match: ["farmacia", "salute", "medicinale", "integratori"], url: pexelsProduct(8657365) },
   { match: ["animali", "cane", "gatto", "pet", "toelettatura"], url: pexelsProduct(12064408) },
   { match: ["auto", "officina", "meccanico", "pneumatici"], url: pexelsProduct(29566871) },

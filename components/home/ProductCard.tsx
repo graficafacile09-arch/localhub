@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ShoppingCart, Store } from "lucide-react";
 import { getProdottoImmagine } from "@/lib/prodotti-immagini";
 import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
+import ProdottoImmagine from "@/components/home/ProdottoImmagine";
 
 type ProductCardProps = {
   id: string;
@@ -59,18 +60,13 @@ export default function ProductCard({
         href={`/prodotto/${slug}`}
         className="flex min-h-0 flex-1 flex-col"
       >
-        <div
-          className={`relative aspect-square w-full shrink-0 overflow-hidden border-b border-slate-200 ${prodottoTipico ? "bg-white" : "bg-slate-100"}`}
-        >
-          <div
-            role="img"
-            aria-label={nome}
-            className={`h-full w-full ${
-              prodottoTipico
-                ? "bg-contain bg-center bg-no-repeat"
-                : "bg-cover bg-center transition duration-300 group-hover:scale-105"
-            }`}
-            style={{ backgroundImage: `url(${imageUrl})` }}
+        <div className="relative aspect-square w-full shrink-0 overflow-hidden border-b border-slate-200 bg-slate-100">
+          <ProdottoImmagine
+            src={imageUrl}
+            alt={nome}
+            categoria={categoria ?? null}
+            contenuta={prodottoTipico}
+            className={prodottoTipico ? undefined : "group-hover:scale-105"}
           />
           {prodottoTipico && (
             <span className="absolute left-2.5 top-2.5 rounded-full bg-blue-900/90 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-white">
