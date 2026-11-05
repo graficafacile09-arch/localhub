@@ -92,7 +92,21 @@ export const FAQ_PINO = [
 
 const STOP = new Set(["che","come","cosa","quale","quali","dove","quando","perche","posso","puoi","sono","della","delle","degli","dello","nella","nelle","sulla","sulle","con","per","una","uno","gli","the","how","what","where","when","can","does","are","is","you","your","for","and"]);
 function tokenFaq(testo: string): string[] {
-  return testo.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g," ").trim().split(/\s+/).filter(t=>t.length>2&&!STOP.has(t));
+  const base = testo.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g," ").trim().split(/\s+/).filter(t=>t.length>2&&!STOP.has(t));
+  const sinonimi: Record<string, string[]> = {
+    funziona: ["piattaforma", "utilizzare"],
+    comprare: ["acquisto", "ordine"],
+    acquistare: ["acquisto", "ordine"],
+    ordinare: ["ordine", "checkout"],
+    pagare: ["pagamento"],
+    pagamenti: ["pagamento"],
+    venditore: ["venditori"],
+    registrazione: ["registrarmi", "account"],
+    account: ["registrazione"],
+    reso: ["resi", "rimborso"],
+    rimborsare: ["rimborso"],
+  };
+  return Array.from(new Set(base.flatMap(t => [t, ...(sinonimi[t] ?? [])])));
 }
 /** Risponde solo a domande con corrispondenza sufficientemente specifica nelle FAQ pubblicate. */
 export function trovaRispostaFaqPino(query: string): { domanda: string; risposta: string } | null {
@@ -104,5 +118,5 @@ export function trovaRispostaFaqPino(query: string): { domanda: string; risposta
     const score=matchedQ.length*3+matched.length, coverage=matched.length/token.length;
     if(!best||score>best.score) best={domanda:faq.domanda,risposta:faq.risposta,score,coverage};
   }
-  return best&&best.score>=6&&best.coverage>=0.5?{domanda:best.domanda,risposta:best.risposta}:null;
+  return best&&best.score>=5&&best.coverage>=0.5?{domanda:best.domanda,risposta:best.risposta}:null;
 }
