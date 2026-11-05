@@ -3,7 +3,7 @@ import {
   filtraNegoziPerPertinenzaConEspansione,
   terminiOriginali,
 } from "./ranking-negozi";
-import { estraiToken, normalizza } from "./text-utils";
+import { estraiToken, normalizza, equivalenzaSigla, soloSigle } from "./text-utils";
 import { espandiQueryConSinonimi, espandiQueryConSinonimiBase, sonoSinonimiDirettiProdotto } from "./ricerca-semantica";
 import {
   concettiIntento,
@@ -1288,6 +1288,10 @@ function haFiltriAddizionali(opts: CercaProdottiOptions): boolean {
  * totale (count exact quando conCount). Gestisce la pagina fuori intervallo
  * (PostgREST 416/PGRST103) restituendo pagina vuota con il total corretto.
  */
+// Fallback sigle: finestra di catalogo letta SOLO quando una query composta da
+// sole sigle non ha prodotto alcun risultato (nessun costo sul percorso normale).
+const LIMITE_FINESTRA_SIGLE = 200;
+
 async function cercaProdottiCore(
   ricerca: string,
   opts: {
@@ -1435,6 +1439,34 @@ async function cercaProdottiCore(
     if (tolleranti.length > 0) {
       risultati = unisciEsattiETolleranti(risultati, tolleranti, opts.limite);
     }
+  }
+
+  // Sigla isolata («evo», «dop», «igt»): la sigla non compare nei nomi del
+  // catalogo, quindi né il retrieval per sottostringa né quello tollerante sui
+  // refusi possono trovarla. Solo in questo caso si legge una finestra limitata
+  // del catalogo e si applica l'equivalenza per iniziali già usata dai gate di
+  // pertinenza: «evo» → «Extra Vergine di Oliva». Nessun dizionario di sinonimi
+  // da mantenere e nessuna espansione per le query normali.
+  if (!conFiltriExtra && paginaCorrente === 1 && risultati.length === 0 && soloSigle(ricerca)) {
+    const sigla = normalizza(ricerca).trim();
+    const { data: finestra } = await db
+      .from("prodotti")
+      .select(SELECT_PRODOTTO_RICERCA)
+      .eq("attivo", true)
+      .in("negozio_id", negoziValidi)
+      .limit(LIMITE_FINESTRA_SIGLE);
+    risultati = ((finestra ?? []) as Record<string, unknown>[])
+      .filter((riga) =>
+        equivalenzaSigla(
+          sigla,
+          normalizza(
+            [riga.nome, riga.categoria]
+              .filter((valore): valore is string => typeof valore === "string")
+              .join(" ")
+          )
+        )
+      )
+      .slice(0, opts.limite);
   }
 
   // V6-A: vincolo negativo applicato SOLO sui risultati finali (query intatta).

@@ -34,6 +34,7 @@ import {
   type MessaggioAssistente,
   type RispostaAssistente,
 } from "@/lib/assistente";
+import { costruisciContestoDinamicoPino } from "@/lib/assistente/contesto-dinamico";
 import { prendiOsservazioneTier0 } from "@/lib/assistente/shadow/integrazione";
 import { rilevaLinguaConversazionePino } from "@/lib/assistente/understanding";
 import { checkRateLimit } from "@/lib/rate-limiter";
@@ -76,6 +77,11 @@ function vuoleStreaming(request: Request): boolean {
 /**
  * Percorso AI con degradazione controllata. Non lancia mai.
  *
+ * 0. contesto dinamico: prima della chiamata AI il server interroga il motore
+ *    di ricerca TRADIZIONALE con il messaggio dell'utente e allega i risultati
+ *    reali (nomi, prezzi, negozi, disponibilità). La ricerca ha un proprio
+ *    timeout e try/catch: se il database è lento o giù, il messaggio originale
+ *    parte comunque, senza blocco di contesto.
  * 1. entro la scadenza: risposta dell'orchestratore Pino (invariata);
  * 2. timeout o errore: ricerca classica + messaggio preconfezionato;
  * 3. anche la ricerca classica fallisce: messaggio minimo di indisponibilità.
@@ -87,8 +93,15 @@ async function rispostaPino(
   messaggi: MessaggioAssistente[]
 ): Promise<{ risultato: RispostaAssistente; dalPercorsoAI: boolean }> {
   try {
+    // La ricerca tradizionale conta nella scadenza complessiva della rotta: un
+    // database lento non deve sommare il proprio ritardo a quello dell'AI.
     const esito = await conScadenzaPino(
-      chatConAssistente(messaggi),
+      (async () => {
+        const contesto = await costruisciContestoDinamicoPino(messaggi);
+        return chatConAssistente(messaggi, {
+          contestoDatabase: contesto?.blocco ?? null,
+        });
+      })(),
       SCADENZA_PERCORSO_AI_MS
     );
     if (esito.ok) {

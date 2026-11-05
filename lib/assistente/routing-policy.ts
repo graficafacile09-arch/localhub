@@ -4,11 +4,13 @@
  * essere deterministiche e testabili prima di eseguire i tool.
  */
 
-const FOOD_PRODUCTS = [
-  "pasta", "pane", "pizza", "dolce", "dolci", "gelato", "torta", "torte",
-  "biscotti", "formaggio", "pecorino", "salumi", "prosciutto", "carne", "pesce",
-  "verdura", "frutta", "olio", "miele", "conserve", "farina", "riso",
-  "nutella", "cipolla", "pomodoro", "bread", "noodles", "cake", "cookies", "cheese", "meat", "fish", "vegetables", "fruit", "honey", "flour", "rice", "onion", "tomato",
+// I soggetti alimentari (italiani e inglesi) vivono in `lexicon.ts`: un solo
+// posto da estendere per tutte le decisioni di routing di Pino.
+import { SOGGETTI_ALIMENTARI_PINO, SOGGETTI_ALIMENTARI_INGLESI_PINO } from "./lexicon.ts";
+
+const FOOD_PRODUCTS: readonly string[] = [
+  ...SOGGETTI_ALIMENTARI_PINO,
+  ...SOGGETTI_ALIMENTARI_INGLESI_PINO,
 ];
 
 /**
@@ -18,10 +20,7 @@ const FOOD_PRODUCTS = [
  * per sé una richiesta esplicita di quel prodotto, la seconda resta al livello
  * di intento (che cerca anche le attività, come prima).
  */
-const ENGLISH_FOOD_PRODUCTS = new Set([
-  "bread", "noodles", "cake", "cookies", "cheese", "meat", "fish",
-  "vegetables", "fruit", "honey", "flour", "rice", "onion", "tomato",
-]);
+const ENGLISH_FOOD_PRODUCTS = new Set(SOGGETTI_ALIMENTARI_INGLESI_PINO);
 
 function normalizza(testo: string): string {
   return String(testo ?? "")
@@ -103,4 +102,87 @@ export function richiestaCinemaPino(query: string): boolean {
 export function isBroadAttractionsRequest(query: string): boolean {
   const q = normalizza(query);
   return /\b(?:cosa vedere|luoghi da vedere|attrazioni?|attractions?|monumenti?|monuments?|visitare|dintorni|borghi?|villages?|turismo|tour|itinerario|things to see|places to visit|tourist attractions?|sights|what to visit|what can i visit|what should i see|surroundings|nearby places|tourism|itinerary)\b/.test(q);
+}
+
+// ─── Tabella di routing ──────────────────────────────────────────────────────
+
+/** Domini in cui una richiesta può finire prima di toccare i tool. */
+export type DominioRoutingPino =
+  | "cinema"
+  | "attrazioni"
+  | "eventi"
+  | "prodotti";
+
+/**
+ * Richiesta esplicita di eventi/rassegne: non è una richiesta di visita.
+ * Altrimenti parole come «eventi», «concerto» o «cosa succede stasera»
+ * finiscono nella guida Attrazioni solo perché la frase contiene la città.
+ */
+const RE_RICHIESTA_EVENTI_PINO =
+  /\b(?:eventi|evento|manifestazion\w*|rassegn\w*|concerti?|sagre?|fiere?|spettacol\w*|festival|events?|what'?s on|what is on|what'?s happening|cosa succede|che succede)\b/i;
+
+/**
+ * Parole che indicano un acquisto o un prodotto: «cerco un negozio di articoli
+ * per il teatro» non è una visita, anche se contiene «teatro».
+ */
+const RE_CONTESTO_ACQUISTO_PINO =
+  /\b(?:comprare|compro|acquistare|acquisto|negozi[oi]|boutique|commerciale|commerciali|supermercat[oi]|prodott[oi]|shampoo|regal[oi]|prezz[oi]|offerte?|sconti?|vendita|buy|buying|shop|shops|store|stores|malls?|products?|prices?|offers?|discounts?|sale|gifts?)\b/i;
+
+/** Vocabolario dei luoghi/attrazioni (la richiesta chiede la guida). */
+const RE_INTENTO_GUIDA_PINO =
+  /\b(muse[oi]|monument[oi]|attrazion[ei]|cosa vedere|luoghi da visitare|luoghi da vedere|visitare|palazz[oi]|castell[oi]|chies[ae]|teatr[oi]|biblioteca|archivio|borg[oh]i?|dintorni|centro storico|festival|mostre|parco|itinerario|turistic[oa]|museums?|monuments?|attractions?|things to see|places to visit|visit|palaces?|castles?|churches|theatres?|libraries|archives?|villages?|surroundings|historic center|historic centre|exhibitions?|parks?|itinerary|tourism|tourist|archaeological|amphitheat(?:re|er)s?|ruins?|sites?)\b/i;
+
+type RegolaRoutingPino = {
+  dominio: DominioRoutingPino;
+  /** Etichetta stabile della regola, utile nei log e nei test. */
+  motivo: string;
+  quando: (query: string) => boolean;
+};
+
+/**
+ * Regole in ordine di priorità: la prima che corrisponde decide il dominio.
+ *
+ * Era una catena di `if` dentro l'orchestratore, con l'ordine implicito nella
+ * posizione delle righe. Qui l'ordine è l'array, e aggiungere un dominio
+ * significa aggiungere una riga invece di cercare il punto giusto in 3800
+ * righe di codice.
+ */
+export const REGOLE_ROUTING_PINO: readonly RegolaRoutingPino[] = [
+  { dominio: "cinema", motivo: "richiesta_cinema", quando: richiestaCinemaPino },
+  {
+    dominio: "prodotti",
+    motivo: "contesto_acquisto",
+    quando: (query) => RE_CONTESTO_ACQUISTO_PINO.test(String(query ?? "")),
+  },
+  {
+    dominio: "eventi",
+    motivo: "richiesta_eventi",
+    quando: (query) => RE_RICHIESTA_EVENTI_PINO.test(normalizza(query)),
+  },
+  {
+    dominio: "prodotti",
+    motivo: "prodotto_commerciale",
+    quando: richiestaProdottoCommercialePino,
+  },
+  {
+    dominio: "attrazioni",
+    motivo: "intento_guida",
+    quando: (query) => RE_INTENTO_GUIDA_PINO.test(String(query ?? "")),
+  },
+];
+
+/**
+ * Dominio deciso per una richiesta, con il motivo che l'ha determinato.
+ * `null` quando nessuna regola corrisponde: la richiesta resta generica e la
+ * gestisce il resto dell'orchestratore.
+ */
+export function decidiDominioPino(
+  query: string
+): { dominio: DominioRoutingPino; motivo: string } | null {
+  for (const regola of REGOLE_ROUTING_PINO) {
+    if (regola.quando(String(query ?? ""))) {
+      return { dominio: regola.dominio, motivo: regola.motivo };
+    }
+  }
+  return null;
 }

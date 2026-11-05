@@ -106,6 +106,24 @@ test("product search subject must identify the product, not occur only in its de
   assert.equal(prodottoIdentificatoDaSoggetto({ nome: "Filetti di Cipolla", categoria: "Conserve" }, "olio", ["olio"]), false);
 });
 
+test("sigla e forma compatta equivalgono al nome esteso (evo ≡ extra vergine)", () => {
+  const olio = { nome: "Olio Extra Vergine di Oliva del Pollino", categoria: "Alimentari" };
+  // La sigla sciolta sulle iniziali: nessun sinonimo da mantenere per parola.
+  assert.equal(prodottoIdentificatoDaSoggetto(olio, "evo"), true);
+  // Forma compatta: "extravergine" ed "extra vergine" sono lo stesso concetto.
+  assert.equal(prodottoIdentificatoDaSoggetto(olio, "extravergine"), true);
+  // Direzione inversa: chi scrive esteso trova il prodotto catalogato con la sigla.
+  assert.equal(
+    prodottoIdentificatoDaSoggetto({ nome: "Olio EVO del Pollino", categoria: "Alimentari" }, "extra vergine"),
+    true
+  );
+  // Il gate resta stretto: la sigla non rende pertinente un altro prodotto.
+  assert.equal(
+    prodottoIdentificatoDaSoggetto({ nome: "Filetti di Cipolla Bianca", categoria: "Conserve" }, "evo"),
+    false
+  );
+});
+
 
 test("single English food nouns are recognized as English", () => {
   for (const query of ["cheese", "bread", "cookies", "cake", "noodles", "honey", "fish"]) {
