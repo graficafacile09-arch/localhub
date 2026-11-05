@@ -41,6 +41,7 @@ import {
   rilevaBudgetIndicativoPino,
   prezzoNumerico,
   filtraProdottiPerAttributiPino,
+  filtraDessertRichiestoPino,
   filtraProdottiPerDisponibilitaPino,
   notaDisponibilitaProdottiPino,
   rilevaRichiestaServizioPino,
@@ -3546,6 +3547,18 @@ export async function chatConAssistente(
     eventi,
     categorie,
   });
+
+  // Barriera dessert finale: il recupero semantico può aggiungere candidati
+  // dopo il filtro del primo searchProducts. La query originale governa il
+  // significato di "dolce"; il controllo precede qualsiasi output all'utente.
+  const prodottiPrimaFiltroDessert = prodotti.length;
+  prodotti = filtraDessertRichiestoPino(prodotti, domanda);
+  if (prodotti.length !== prodottiPrimaFiltroDessert) {
+    console.info("[pino-dessert-final-guard]", JSON.stringify({
+      rimossi: prodottiPrimaFiltroDessert - prodotti.length,
+      mantenuti: prodotti.length,
+    }));
+  }
 
   // S5.3 — Barriera finale di disponibilità: vale per la ricerca ordinaria,
   // per il fallback e per qualsiasi percorso che abbia prodotto risultati.
