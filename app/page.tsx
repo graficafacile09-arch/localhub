@@ -73,8 +73,10 @@ export default async function Home() {
   const [negozi, prodottiCatalogo, prodottiTipici, statoPreferiti] =
     await Promise.all([
       getNegoziInEvidenza(8),
-      getProdottiCatalogoHomepage(1000),
-      getProdottiTipici(200),
+      // La vetrina mostra poche decine di prodotti per categoria: 1000 righe
+      // (con descrizioni e immagini) erano lavoro e payload inutili.
+      getProdottiCatalogoHomepage(120),
+      getProdottiTipici(60),
       getStatoPreferitiPerPagina(),
     ]);
 
