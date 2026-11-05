@@ -68,7 +68,7 @@ test("la ricerca generica al plurale recupera tutte le farmacie", () => {
     tool: "searchPharmacies",
     stato: "tutte",
   });
-  assert.equal(pianoIntentoLocale("farmacia"), null);
+  assert.deepEqual(pianoIntentoLocale("farmacia"), { tool: "searchPharmacies", stato: "tutte" });
 });
 
 test("una richiesta naturale 'trova attrazioni' mantiene la guida ampia", () => {
@@ -180,6 +180,8 @@ test("una richiesta ampia senza termini specifici conserva la guida", () => {
     "Cosa posso visitare a Castrovillari?",
     "Ci sono monumenti da visitare?",
     "Trova attrazioni a Castrovillari",
+    "Cerco attrazioni a Castrovillari",
+    "Cosa c'è da vedere a Castrovillari?",
   ]) {
     const luoghi = searchAttractions(frase, 6);
     assert.ok(luoghi.length > 0, frase);
