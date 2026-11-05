@@ -1,5 +1,6 @@
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { modalitaTestPinoAttiva } from "@/lib/assistente/modalita-test";
 
 const DEFAULT_RATE_PER_MINUTE = 60;
 const DEFAULT_RATE_PER_HOUR = 1000;
@@ -92,6 +93,13 @@ export async function checkRateLimit(
   options: RateLimitOptions = {}
 ): Promise<RateLimitResult> {
   const subject = options.subject ?? "scan_log";
+
+  // Fase 3 — collaudo locale: nessuna RPC `consume_rate_limit` e nessuna riga
+  // di conteggio su scan_log. Le altre soglie (es. ordini) restano invariate.
+  if (subject === "scan_log" && modalitaTestPinoAttiva()) {
+    return { allowed: true };
+  }
+
   const { perMinute, perHour } = getLimits(subject, options);
   const label = options.reasonLabel ?? (subject === "ordini" ? "ordini" : "scansioni");
 

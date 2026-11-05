@@ -6,12 +6,22 @@ import {
   analizzaComprensionePino,
   costruisciStatoConversazionale,
   fondiVincoliPino,
+  limitiVincolantiPino,
   pianoLocaleIntelligente,
+  type PinoSemanticPlan,
 } from "../lib/assistente/semantica";
 import { analizzaIntentoPino } from "../lib/assistente/intent";
 import { rispostaPreferenzaLinguaPino } from "../lib/assistente/greetings";
-import { parametriFallbackPiano } from "../lib/assistente/index";
+import {
+  applicaBudgetVincolantePino,
+  filtraProdottiRecuperoPino,
+  invocazioniRegaloPino,
+  parametriFallbackPiano,
+  parametriRecuperoPino,
+} from "../lib/assistente/index";
+import type { ToolParams } from "../lib/assistente/tools";
 import type { PinoUnderstanding } from "../lib/assistente/understanding";
+import type { ProdottoRicerca } from "../lib/ricerca-ai";
 
 // ─── S4.1: il contratto PinoUnderstanding arriva all'orchestratore ────────
 //
@@ -191,8 +201,8 @@ test.describe("S4.1 — esclusioni e budget verso i tool", () => {
     expect(conPiano.minPrice).toBe(10);
   });
 
-  test("prezzi non validi vengono scartati, mai inventati", () => {
-    const base: PinoUnderstanding = {
+  test("zero esplicito valido, null/undefined assenti, negativi scartati", () => {
+    const zero: PinoUnderstanding = {
       lingua: "it",
       linguaPreferita: null,
       languagePreferenceOnly: false,
@@ -203,12 +213,52 @@ test.describe("S4.1 — esclusioni e budget verso i tool", () => {
       minPrice: 0,
       maxPrice: 0,
     };
-    expect(fondiVincoliPino(null, base)).toEqual({
+    expect(fondiVincoliPino(null, zero)).toEqual({
+      esclusioni: [],
+      minPrice: 0,
+      maxPrice: 0,
+    });
+    expect(parametriFallbackPiano(undefined, zero)).toEqual({
+      minPrice: 0,
+      maxPrice: 0,
+      prezzoRigido: true,
+    });
+
+    const nullo: PinoUnderstanding = {
+      ...zero,
+      minPrice: null,
+      maxPrice: null,
+    };
+    expect(fondiVincoliPino(null, nullo)).toEqual({
       esclusioni: [],
       minPrice: null,
       maxPrice: null,
     });
-    expect(parametriFallbackPiano(undefined, base)).toEqual({});
+    expect(parametriFallbackPiano(undefined, nullo)).toEqual({});
+
+    const nonDefinito = {
+      ...zero,
+      minPrice: undefined,
+      maxPrice: undefined,
+    } as unknown as PinoUnderstanding;
+    expect(fondiVincoliPino(null, nonDefinito)).toEqual({
+      esclusioni: [],
+      minPrice: null,
+      maxPrice: null,
+    });
+    expect(parametriFallbackPiano(undefined, nonDefinito)).toEqual({});
+
+    const negativi: PinoUnderstanding = {
+      ...zero,
+      minPrice: -1,
+      maxPrice: -5,
+    };
+    expect(fondiVincoliPino(null, negativi)).toEqual({
+      esclusioni: [],
+      minPrice: null,
+      maxPrice: null,
+    });
+    expect(parametriFallbackPiano(undefined, negativi)).toEqual({});
   });
 
   test("il budget resta una preferenza indicativa, non un filtro", () => {
@@ -216,9 +266,9 @@ test.describe("S4.1 — esclusioni e budget verso i tool", () => {
 
     expect(u.maxPrice).toBe(50);
     expect(fondiVincoliPino(null, u).maxPrice).toBe(50);
-    // Il valore viaggia nei parametri come preferenza (maxPrice) e nient'altro:
-    // nessun parametro di filtro rigido viene introdotto qui.
-    expect(parametriFallbackPiano(undefined, u)).toEqual({ maxPrice: 50 });
+    // Il valore viaggia nei parametri con il vincolo rigido: il budget richiesto
+    // dall'utente viene applicato, non solo ordinato.
+    expect(parametriFallbackPiano(undefined, u)).toEqual({ maxPrice: 50, prezzoRigido: true });
   });
 
   test("richiesta senza budget: nessun parametro di prezzo aggiunto", () => {
@@ -232,5 +282,189 @@ test.describe("S4.1 — esclusioni e budget verso i tool", () => {
       materiali: ["pelle"],
     });
     expect(fondiVincoliPino(null, u).maxPrice).toBeNull();
+  });
+});
+// ─── Budget esplicito: precedenza, normalizzazione, regali ─────────────────
+const PIANO_BASE: PinoSemanticPlan = {
+  surface: "products",
+  intent: "product",
+  query: "cuffie",
+  terms: ["cuffie"],
+  exclusions: [],
+  minPrice: null,
+  maxPrice: null,
+  city: null,
+  openNow: false,
+  confidence: "alta",
+};
+
+const COMPRENSIONE_BASE: PinoUnderstanding = {
+  lingua: "it",
+  linguaPreferita: null,
+  languagePreferenceOnly: false,
+  intent: "product",
+  soggetto: "cuffie",
+  attributi: { colori: [], materiali: [], destinatario: null, eta: null, provenienza: [], taglie: [], genere: null, altri: [] },
+  esclusioni: [],
+  minPrice: 20,
+  maxPrice: null,
+};
+
+test.describe("S4.1 — budget esplicito vincolante", () => {
+  test("precedenza esclusiva: il piano vince, la comprensione non si combina", () => {
+    expect(limitiVincolantiPino({ ...PIANO_BASE, maxPrice: 50 }, COMPRENSIONE_BASE)).toEqual({
+      minPrice: null,
+      maxPrice: 50,
+    });
+    expect(limitiVincolantiPino({ ...PIANO_BASE, minPrice: 30 }, { ...COMPRENSIONE_BASE, maxPrice: 999 })).toEqual({
+      minPrice: 30,
+      maxPrice: null,
+    });
+  });
+
+  test("senza limiti nel piano la comprensione è usata integralmente", () => {
+    expect(limitiVincolantiPino(PIANO_BASE, { ...COMPRENSIONE_BASE, maxPrice: 100 })).toEqual({
+      minPrice: 20,
+      maxPrice: 100,
+    });
+    expect(limitiVincolantiPino(PIANO_BASE, COMPRENSIONE_BASE)).toEqual({ minPrice: 20, maxPrice: null });
+  });
+
+  test("nessun limite valido: null, senza inventare valori", () => {
+    const vuota = { ...COMPRENSIONE_BASE, minPrice: -3, maxPrice: null };
+    expect(limitiVincolantiPino(PIANO_BASE, vuota)).toBeNull();
+    expect(limitiVincolantiPino(undefined, undefined)).toBeNull();
+    expect(limitiVincolantiPino(null, { ...COMPRENSIONE_BASE, minPrice: null, maxPrice: -3 })).toBeNull();
+    // Un piano senza limiti lascia intervenire la comprensione valida.
+    expect(limitiVincolantiPino({ ...PIANO_BASE, maxPrice: null }, { ...COMPRENSIONE_BASE, maxPrice: 40 })).toEqual({
+      minPrice: 20,
+      maxPrice: 40,
+    });
+  });
+
+  test("il modello non può attivare, disattivare o alterare il vincolo", () => {
+    const limiti = { minPrice: null, maxPrice: 50 };
+    const out = applicaBudgetVincolantePino(
+      [
+        { tool: "searchProducts", params: { query: "cuffie", maxPrice: null, prezzoRigido: true } },
+        { tool: "searchAll", params: { query: "cuffie", maxPrice: 9999 } },
+        { tool: "searchGiftCategories", params: { termini: ["cuffie"], maxPrice: 9999 } },
+        { tool: "searchStores", params: { query: "cuffie", prezzoRigido: true } },
+      ],
+      limiti
+    );
+    for (const invocazione of out.slice(0, 3)) {
+      expect(invocazione.params).toMatchObject({ maxPrice: 50, prezzoRigido: true });
+      expect((invocazione.params as ToolParams).minPrice).toBeUndefined();
+    }
+    expect((out[3].params as ToolParams).prezzoRigido).toBeUndefined();
+  });
+
+  test("senza limiti deterministici il flag del modello viene rimosso", () => {
+    const out = applicaBudgetVincolantePino(
+      [{ tool: "searchProducts", params: { query: "cuffie", prezzoRigido: true, maxPrice: 30 } }],
+      null
+    );
+    expect(out[0].params).toEqual({ query: "cuffie", maxPrice: 30 });
+  });
+
+  test("fallback: i limiti espliciti diventano vincolanti, senza budget restano assenti", () => {
+    const conBudget = comprensioneOrchestratore("Cerco un regalo entro 50 euro");
+    expect(parametriFallbackPiano(undefined, conBudget)).toEqual({ maxPrice: 50, prezzoRigido: true });
+
+    const conSoglia = comprensioneOrchestratore("Vorrei un regalo sopra 50 euro");
+    expect(parametriFallbackPiano(undefined, conSoglia)).toEqual({ minPrice: 50, prezzoRigido: true });
+
+    const senzaBudget = comprensioneOrchestratore("Cerco una borsa di pelle nera");
+    expect(parametriFallbackPiano(undefined, senzaBudget)).toEqual({ colori: ["nero"], materiali: ["pelle"] });
+  });
+
+  test("regali: 3 gruppi, 12 categorie, stesso limite su tutte", () => {
+    for (const limiti of [
+      { minPrice: null, maxPrice: 50 },
+      { minPrice: 50, maxPrice: null },
+    ]) {
+      const invocazioni = applicaBudgetVincolantePino(invocazioniRegaloPino(limiti.maxPrice, {}), limiti);
+      expect(invocazioni).toHaveLength(3);
+      const categorie = invocazioni.flatMap((i) => (i.params as ToolParams).termini ?? []);
+      expect(new Set(categorie).size).toBe(12);
+      for (const invocazione of invocazioni) {
+        expect(invocazione.tool).toBe("searchGiftCategories");
+        expect(invocazione.params).toMatchObject({
+          prezzoRigido: true,
+          ...(limiti.maxPrice != null ? { maxPrice: 50 } : {}),
+          ...(limiti.minPrice != null ? { minPrice: 50 } : {}),
+        });
+      }
+    }
+  });
+});
+
+// ─── Recupero alternative: gli stessi limiti vincolanti della ricerca ──────
+test.describe("S4.1 — budget vincolante nel recupero alternative", () => {
+  test("piano senza prezzo + comprensione con tetto: il recupero usa max 50", () => {
+    expect(parametriRecuperoPino(PIANO_BASE, { ...COMPRENSIONE_BASE, minPrice: null, maxPrice: 50 }))
+      .toEqual({ maxPrice: 50, prezzoRigido: true });
+  });
+
+  test("piano senza prezzo + comprensione con soglia: il recupero usa min 50", () => {
+    expect(parametriRecuperoPino(PIANO_BASE, { ...COMPRENSIONE_BASE, minPrice: 50, maxPrice: null }))
+      .toEqual({ minPrice: 50, prezzoRigido: true });
+  });
+
+  test("piano con un limite valido: prevale solo il piano, la comprensione non si combina", () => {
+    expect(
+      parametriRecuperoPino(
+        { ...PIANO_BASE, minPrice: 30 },
+        { ...COMPRENSIONE_BASE, minPrice: 10, maxPrice: 999 }
+      )
+    ).toEqual({ minPrice: 30, prezzoRigido: true });
+  });
+
+  test("nessun limite in entrambe le fonti: nessun prezzoRigido, nessun budget inventato", () => {
+    const params = parametriRecuperoPino(PIANO_BASE, { ...COMPRENSIONE_BASE, minPrice: null, maxPrice: null });
+    expect(params).toEqual({});
+    expect(params.prezzoRigido).toBeUndefined();
+    expect(params.maxPrice).toBeUndefined();
+    expect(params.minPrice).toBeUndefined();
+  });
+
+  test("città, esclusioni e apertura restano anche con il budget vincolante", () => {
+    const params = parametriRecuperoPino(
+      { ...PIANO_BASE, city: "Cosenza", exclusions: ["nero"], openNow: true },
+      { ...COMPRENSIONE_BASE, minPrice: 20, maxPrice: 50 }
+    );
+    expect(params).toEqual({
+      esclusioni: ["nero"],
+      citta: "Cosenza",
+      apertiOra: true,
+      maxPrice: 50,
+      minPrice: 20,
+      prezzoRigido: true,
+    });
+  });
+
+  test("nessun prodotto fuori fascia rientra dal recupero (confini inclusi)", () => {
+    const prodotto = (id: string, prezzo: number | null) =>
+      ({ id, nome: `Prodotto ${id}`, prezzo } as unknown as ProdottoRicerca);
+    const prodotti = [
+      prodotto("dieci", 10),
+      prodotto("venti", 20),
+      prodotto("cinquanta", 50),
+      prodotto("sessanta", 60),
+      prodotto("senza", null),
+      prodotto("zero", 0),
+    ];
+
+    expect(
+      filtraProdottiRecuperoPino(prodotti, { minPrice: 20, maxPrice: 50, prezzoRigido: true })
+        .map((p) => p.id)
+    ).toEqual(["venti", "cinquanta"]);
+    // Solo soglia: i prodotti senza prezzo o a zero non passano mai.
+    expect(
+      filtraProdottiRecuperoPino(prodotti, { minPrice: 20, prezzoRigido: true }).map((p) => p.id)
+    ).toEqual(["venti", "cinquanta", "sessanta"]);
+    // Senza flag vincolante la lista resta intatta.
+    expect(filtraProdottiRecuperoPino(prodotti, { maxPrice: 50 })).toHaveLength(prodotti.length);
   });
 });

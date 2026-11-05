@@ -18,6 +18,7 @@
  */
 
 import type { MessaggioAssistente } from "./index";
+import { buildToolMenuPrompt } from "./function-calling";
 import { rilevaLinguaConversazionePino } from "./understanding";
 import type {
   OffertaAssistente,
@@ -72,14 +73,7 @@ ${storico}
 ULTIMO MESSAGGIO UTENTE: "${domanda}"
 ${bloccoIntento}
 TOOL:
-- searchStores: query + opt {categoria, tipo, citta, termini} → negozi/attività
-- searchProducts: query + maxPrice/minPrice (numeri interi, euro) + opt {categoria} → prodotti
-- searchOffers: query opzionale → offerte/promozioni/sconti
-- searchEvents: query opzionale → eventi
-- searchAll: query → ricerca trasversale su negozi, prodotti, offerte, eventi e categorie; usalo per richieste ampie o ambigue
-- getCategories: nessun parametro → categorie con conteggio negozi
-- getWeather: nessun parametro → meteo aggiornato per Castrovillari, con condizioni attuali e previsione
-- searchPharmacies: stato "aperte" | "turno" | "tutte" → dati del widget Farmacia di turno di Castrovillari
+${buildToolMenuPrompt()}
 
 CAMPI STRUTTURATI (per searchStores, oltre a query):
 - categoria: la categoria/vetrina se chiaramente deducibile (es. "dottore/salute" → "salute e benessere", "parrucchiere" → "beauty").
@@ -116,6 +110,36 @@ Utente: "quale farmacia è di turno?" → {"tools":[{"tool":"searchPharmacies","
 Utente: "va bene" → {"tools":[],"directReply":"Perfetto! Dimmi pure cosa cerchi: posso aiutarti a trovare negozi, prodotti, offerte ed eventi nella tua città."}
 
 Rispondi SOLO con JSON valido, senza testo esterno. Anche se la richiesta è in inglese, i campi JSON restano invariati, ma directReply deve essere nella lingua dell'utente.`;
+}
+
+/**
+ * Prompt del percorso nativo: le descrizioni e gli schemi dei tool arrivano
+ * dalle `functionDeclarations`, non da una seconda lista nel testo.
+ */
+export function buildNativeFunctionCallingPrompt(
+  messages: MessaggioAssistente[],
+  intentHint?: string
+): string {
+  const storico = buildHistoryText(messages);
+  const ultimo = messages[messages.length - 1];
+  const domanda = ultimo && ultimo.role === "user" ? ultimo.content : "";
+  const inglese = rilevaLinguaConversazionePino(messages) === "en";
+  const bloccoIntento = intentHint ? `\nINTENTO RILEVATO: ${intentHint}\n` : "";
+
+  return `${inglese ? "RESPONSE LANGUAGE: English." : "LINGUA RISPOSTA: italiano."}
+Sei il motore di pianificazione di Pino. Scegli le funzioni necessarie usando la conversazione e l'ultima richiesta. Non eseguire le funzioni e non inventare dati: il client le validerà ed eseguirà.
+
+CONVERSAZIONE RECENTE:\n${storico}
+
+ULTIMO MESSAGGIO UTENTE: "${domanda}"
+${bloccoIntento}
+REGOLE:
+- Per una richiesta di catalogo, prodotti, negozi, offerte, eventi, meteo, farmacie o categorie, chiama almeno una funzione pertinente.
+- Per una richiesta di catalogo non rispondere soltanto con testo: se non serve una funzione, non produrre una risposta diretta.
+- Per saluti, identità, ringraziamenti, chiacchiera o domande sulla piattaforma puoi rispondere direttamente in testo, senza funzioni.
+- Usa al massimo 3 funzioni e non inventare nomi o parametri.
+- Non impostare mai prezzoRigido: il budget deterministico è deciso dal client.
+- Non inventare prodotti, prezzi, disponibilità, orari o luoghi.`;
 }
 
 // ─── Contesto risultati recuperati ───────────────────────────────────────────

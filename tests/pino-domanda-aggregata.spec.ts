@@ -7,7 +7,7 @@ import {
   componiRispostaAggregata,
 } from "../lib/assistente/aggregata";
 import type { ProdottoRicerca } from "../lib/ricerca-ai";
-import { prodottoPertinente } from "../lib/assistente/tools";
+import { prodottoPertinente, prodottoRispettaBudgetPino } from "../lib/assistente/tools";
 
 const prodotto = (
   nome: string,
@@ -105,6 +105,40 @@ test.describe("Pino — domande informative sul catalogo", () => {
       prodottoPertinente(prodotto("Biscotti all'uovo", 2, null, "Prodotti da forno"), ["pasta", "uovo"], [])
     ).toBe(false);
     expect(prodottoPertinente(prodotto("Tagliatelle secche"), ["pasta", "uovo"], [])).toBe(false);
+  });
+
+  test("i formati di pasta identificano la categoria senza la parola «pasta»", () => {
+    const fileja = prodotto("Fileja di Tropea", 2, null, "Alimentari");
+    const maccheroni = prodotto("Maccheroni al ferretto", 3.5, null, "Alimentari");
+    const tagliatelle = prodotto("Tagliatelle all'uovo", 3.5, null, "Alimentari");
+    for (const p of [fileja, maccheroni, tagliatelle]) {
+      expect(prodottoPertinente(p, ["pasta"], []), p.nome).toBe(true);
+    }
+
+    // La descrizione che cita il pastificio non rende pasta un altro prodotto.
+    const biscotti = prodotto(
+      "Biscotti tradizionali calabresi",
+      4,
+      "Selezione demo di Mani in Pasta",
+      "Dolciumi"
+    );
+    const taralli = prodotto(
+      "Taralli calabresi",
+      3,
+      "Selezione demo di Mani in Pasta",
+      "Alimentari"
+    );
+    expect(prodottoPertinente(biscotti, ["pasta"], [])).toBe(false);
+    expect(prodottoPertinente(taralli, ["pasta"], [])).toBe(false);
+  });
+
+  test("il filtro rigido in memoria rifiuta ogni prezzo positivo con tetto zero", () => {
+    for (const prezzo of [0.01, 2, 3.5]) {
+      expect(
+        prodottoRispettaBudgetPino(prodotto("Fileja di Tropea", prezzo), { maxPrice: 0 }),
+        String(prezzo)
+      ).toBe(false);
+    }
   });
 });
 

@@ -1,10 +1,11 @@
 /**
- * Pino Core v2 — isolated request planner prototype.
+ * Pino Core v2 — deterministic request planner.
  *
  * Pure, deterministic first stage: converts a user message into a typed plan.
  * It does not call an LLM, access Supabase, execute searches, or alter the
- * production Pino flow. The prototype can be evaluated offline and compared
- * against the existing planner before any integration is considered.
+ * production response. It is imported by the Shadow Tier 0 post-response
+ * observer; it is not yet the production planner. It depends on the shared
+ * production helpers `../understanding.ts` and `../routing-policy.ts`.
  */
 import {
   normalizzaQueryCatalogo,
@@ -63,10 +64,13 @@ const STORE =
 
 const PRICE_RANGE =
   /\b(?:tra|between|da)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)\s*(?:e|and|to|a)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)(?:\s*(?:euro|euros|eur))?\b/i;
+// `entro` e la forma composta `non oltre` sono limiti massimi. `oltre` resta un
+// limite minimo, ma solo quando non è preceduto dalla negazione: la lookbehind
+// impedisce di leggere `non oltre` come `oltre` (minimo) durante l'estrazione.
 const PRICE_MAX =
-  /\b(?:sotto|meno di|al massimo|massimo|max|under|below|less than|up to|no more than|not over|at most)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)(?:\s*(?:euro|euros|eur))?\b/i;
+  /\b(?:sotto|entro|meno di|al massimo|massimo|max|under|below|less than|up to|no more than|not over|at most|non oltre)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)(?:\s*(?:euro|euros|eur))?\b/i;
 const PRICE_MIN =
-  /\b(?:sopra|piu di|più di|oltre|almeno|minimo|over|above|more than|at least)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)(?:\s*(?:euro|euros|eur))?\b/i;
+  /\b(?:sopra|piu di|più di|(?<!non\s+)oltre|almeno|minimo|over|above|more than|at least)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)(?:\s*(?:euro|euros|eur))?\b/i;
 
 function normalizeIntentText(text: string): string {
   return String(text ?? "")

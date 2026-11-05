@@ -41,6 +41,9 @@ import {
   prodottoForseRefusoDiSoggetto,
 } from "./product-relevance";
 import { normalizzaQueryCatalogo } from "./understanding";
+import { CONTRATTI_STRUMENTO } from "./function-calling";
+
+export { CONTRATTI_STRUMENTO } from "./function-calling";
 
 // ─── M6-C1: segnalazione errori dati per Pino ───────────────────────────────
 //
@@ -143,8 +146,9 @@ export type ToolParams = {
   maxPrice?: number | null;
   minPrice?: number | null;
   /**
-   * Budget VINCOLANTE dichiarato dal chiamante: i limiti espliciti vengono
-   * inviati alla query invece di essere usati solo per l'ordinamento.
+   * Budget VINCOLANTE: i limiti espliciti scartano i prodotti fuori fascia
+   * (query Supabase + verifica finale) invece di ordinarli soltanto.
+   * Lo imposta solo l'orchestratore dai limiti deterministici, mai il modello.
    */
   prezzoRigido?: boolean;
   limit?: number;
@@ -229,50 +233,10 @@ const LIMITE_RISULTATI_MASSIMO = 20;
 /**
  * S1-A — Contratto dei parametri per strumento.
  *
- * Derivato dall'USO EFFETTIVO dei parametri nel codice, non dalle firme:
- * - `searchStores` legge termini/servizio/categoria/tipo/città/esclusioni/
- *   escludiNomi/apertiOra; il budget non è un suo filtro.
- * - `searchProducts` legge categoria/città/esclusioni/colori/
- *   materiali/escludiNomi/minPrice/maxPrice/apertiOra (città e orari tramite
- *   `filtraProdottiPerVincoliNegozio`) e IGNORA `termini`, che l'orchestratore
- *   azzera già prima della chiamata.
- * - `searchAll` inoltra i propri parametri ai sotto-tool: termini serve a
- *   `searchStores`, budget e attributi a `searchProducts`.
- * - `searchGiftCategories` legge `termini` (categorie regalo) e `limit`, e
- *   inoltra il resto a `searchProducts`; `query` è letta dall'orchestratore per
- *   il filtro di categoria del fan-out.
- * - `searchPharmacies` usa solo `stato` e `limit`; `getCategories` e
- *   `getWeather` non usano parametri.
- *
- * `sottocategoria` NON è supportata: il catalogo la conosce, Pino non la
- * inoltra (nessun ramo la legge), quindi il prompt non la promette più.
- * `query` è sempre ammessa dove l'orchestratore la usa per costruire la query
- * del tool (vedi `eseguiTool`).
+ * La definizione vive in `function-calling.ts` ed è condivisa con le
+ * dichiarazioni native Gemini e con il menu del percorso JSON. Qui resta solo
+ * l'import/export per compatibilità dei chiamanti esistenti.
  */
-export const CONTRATTI_STRUMENTO: Record<StrumentoPino, readonly (keyof ToolParams)[]> = {
-  searchStores: [
-    "query", "limit", "categoria", "tipo", "servizio", "citta", "termini",
-    "esclusioni", "escludiNomi", "apertiOra",
-  ],
-  searchProducts: [
-    "query", "limit", "categoria", "citta", "esclusioni",
-    "colori", "materiali", "escludiNomi", "minPrice", "maxPrice", "apertiOra",
-  ],
-  searchOffers: ["query", "limit"],
-  searchEvents: ["query", "limit"],
-  searchAll: [
-    "query", "limit", "categoria", "tipo", "servizio", "citta",
-    "termini", "esclusioni", "colori", "materiali", "escludiNomi", "minPrice",
-    "maxPrice", "apertiOra",
-  ],
-  getCategories: [],
-  getWeather: [],
-  searchPharmacies: ["stato", "limit"],
-  searchGiftCategories: [
-    "query", "limit", "termini", "categoria", "citta", "esclusioni", "colori",
-    "materiali", "escludiNomi", "minPrice", "maxPrice", "apertiOra",
-  ],
-};
 
 /** Chiavi note di `ToolParams`: tutto il resto è una chiave inventata. */
 const CHIAVI_TOOL_PARAMS: ReadonlySet<string> = new Set<string>([
@@ -318,7 +282,8 @@ function listaParametro(valore: unknown): string[] | undefined {
 function prezzoParametro(valore: unknown): number | undefined {
   if (valore === null) return undefined;
   const numero = Number(valore);
-  if (!Number.isFinite(numero) || numero <= 0 || numero > PREZZO_MASSIMO_AMMESSO) return undefined;
+  // Lo zero è un tetto esplicito valido ("entro 0 euro"): non va scartato.
+  if (!Number.isFinite(numero) || numero < 0 || numero > PREZZO_MASSIMO_AMMESSO) return undefined;
   return Math.round(numero * 100) / 100;
 }
 
@@ -330,7 +295,7 @@ function prezzoParametro(valore: unknown): number | undefined {
  *   con `chiave_non_ammessa:<campo>`: nessuna di esse era letta dal tool);
  * - stringhe: trim, rimozione caratteri di controllo, limite di lunghezza;
  * - liste: max 5 voci, senza duplicati (case-insensitive), senza voci vuote;
- * - prezzi: numeri finiti > 0; una fascia incoerente (min > max) viene
+ * - prezzi: numeri finiti >= 0 (lo zero è un tetto esplicito); una fascia incoerente (min > max) viene
  *   scartata per intero e segnalata;
  * - `limit`: intero 1..20, come `limita()` (nessuna modifica rispetto a oggi);
  * - `stato`: solo i valori dell'enum;
@@ -430,14 +395,17 @@ export function validaToolParams(
   else if (sorgente.maxPrice !== undefined && sorgente.maxPrice !== null) {
     problemi.push("maxPrice_non_valido");
   }
+  // Fascia invertita: si normalizza l'ordine. Cancellare entrambi i limiti
+  // significava perdere in silenzio il vincolo economico dell'utente.
   if (
     params.minPrice != null &&
     params.maxPrice != null &&
     params.minPrice > params.maxPrice
   ) {
-    delete params.minPrice;
-    delete params.maxPrice;
-    problemi.push("fascia_prezzo_incoerente");
+    const minimo = params.maxPrice;
+    params.maxPrice = params.minPrice;
+    params.minPrice = minimo;
+    problemi.push("fascia_prezzo_normalizzata");
   }
   if (sorgente.prezzoRigido !== undefined) {
     if (typeof sorgente.prezzoRigido === "boolean") params.prezzoRigido = sorgente.prezzoRigido;
@@ -2508,6 +2476,11 @@ export async function searchProducts(
   // Budget vincolante solo quando il chiamante lo dichiara (limiti espliciti).
   const budgetRigido = opts.prezzoRigido === true && (opts.minPrice != null || opts.maxPrice != null);
 
+  // Tetto esplicito pari a zero: nessun prodotto del catalogo ha prezzo <= 0,
+  // quindi il vincolo rigido non può ammettere risultati. Si evita la query
+  // senza trasformare lo zero in «budget assente».
+  if (budgetRigido && opts.maxPrice != null && Number(opts.maxPrice) <= 0) return [];
+
   const opzioniRicerca = budgetRigido
     ? {
         prezzoMin: opts.minPrice ?? undefined,
@@ -2603,6 +2576,11 @@ export async function searchProducts(
   const minPrice = opts.minPrice != null ? Number(opts.minPrice) : null;
   if (maxPrice !== null || minPrice !== null) {
     filtrate = ordinaProdottiPerBudget(filtrate, { maxPrice, minPrice });
+    // Rete di sicurezza dopo i filtri di pertinenza/città/orari: nessun prodotto
+    // fuori fascia (o senza prezzo) può sopravvivere a un vincolo esplicito.
+    if (budgetRigido) {
+      filtrate = filtrate.filter((p) => prodottoRispettaBudgetPino(p, { maxPrice, minPrice }));
+    }
   }
 
   const deduplicate = deduplicaPerId(filtrate);

@@ -136,3 +136,89 @@ test("explicit exclusions are carried into the plan", () => {
   assert.equal(plan.maxPrice, 8);
   assert.ok(plan.exclusions.some((item) => item.includes("glutine")));
 });
+
+// Parole che appartengono al vincolo di prezzo: non devono mai restare in query.
+const PAROLE_VINCOLO =
+  /\b(?:sotto|sopra|entro|oltre|massimo|minimo|meno|almeno|tra|euro|euros|eur|non|under|below|over|above|between|up to|no more than|not over|at most|less than|more than|max)\b/i;
+
+// I 15 enunciati del gruppo `budget` del corpus benchmark Core v2, con i valori
+// attesi già verificati: [testo, query, minPrice, maxPrice].
+const CASI_BUDGET = [
+  ["Cerco pasta sotto 5 euro", "pasta", null, 5],
+  ["Mi trovi un orologio sotto 100 euro", "orologio", null, 100],
+  ["Scarpe tra 50 e 120 euro", "scarpe", 50, 120],
+  ["Vorrei una borsa al massimo 80 euro", "borsa", null, 80],
+  ["Cerco un regalo meno di 30 euro", "regalo", null, 30],
+  ["Mi serve una giacca sopra 40 euro", "giacca", 40, null],
+  ["Find a watch under 100 euros", "orologio", null, 100],
+  ["Shoes between 40 and 90 euros", "scarpe", 40, 90],
+  ["A wallet below 25 euros", "portafoglio", null, 25],
+  ["Show me bags up to 60 euros", "borsa", null, 60],
+  ["Cerco olio entro 15 euro", "olio", null, 15],
+  ["Vorrei biscotti massimo 8 euro", "biscotti", null, 8],
+  ["Mi trovi cuffie non oltre 50 euro", "cuffie", null, 50],
+  ["Looking for a laptop over 300 euros", "computer portatile", 300, null],
+  ["Find perfume at least 20 euros", "profumo", 20, null],
+];
+
+test("all 15 benchmark budget cases keep bounds and a constraint-free query", () => {
+  for (const [text, query, minPrice, maxPrice] of CASI_BUDGET) {
+    const plan = planPinoCoreRequest(text);
+    assert.equal(plan.route, "catalog", text);
+    assert.equal(plan.surface, "products", text);
+    assert.equal(plan.query, query, text);
+    assert.equal(plan.minPrice, minPrice, text);
+    assert.equal(plan.maxPrice, maxPrice, text);
+    assert.equal(plan.subject, query.split(" ")[0], text);
+    assert.doesNotMatch(plan.query, PAROLE_VINCOLO, text);
+  }
+});
+
+test("entro is a maximum bound and never a minimum", () => {
+  const plan = planPinoCoreRequest("Cerco olio entro 15 euro");
+  assert.equal(plan.query, "olio");
+  assert.equal(plan.minPrice, null);
+  assert.equal(plan.maxPrice, 15);
+  assert.equal(plan.confidence, "high");
+  assert.doesNotMatch(plan.query, PAROLE_VINCOLO);
+});
+
+test("non oltre is a composed maximum bound and is never read as oltre", () => {
+  for (const text of [
+    "Mi trovi cuffie non oltre 50 euro",
+    "Mi trovi cuffie NON OLTRE 50 euro",
+    "Mi trovi cuffie non oltre 50",
+  ]) {
+    const plan = planPinoCoreRequest(text);
+    assert.equal(plan.query, "cuffie", text);
+    assert.equal(plan.minPrice, null, text);
+    assert.equal(plan.maxPrice, 50, text);
+    assert.doesNotMatch(plan.query, PAROLE_VINCOLO, text);
+    assert.doesNotMatch(plan.query, /\bnon\b/i, text);
+  }
+});
+
+test("oltre alone still means a minimum bound", () => {
+  const plan = planPinoCoreRequest("Cerco cuffie oltre 50 euro");
+  assert.equal(plan.query, "cuffie");
+  assert.equal(plan.minPrice, 50);
+  assert.equal(plan.maxPrice, null);
+  assert.doesNotMatch(plan.query, PAROLE_VINCOLO);
+});
+
+test("decimal amounts and decimal ranges are parsed without query residue", () => {
+  const cases = [
+    ["Cerco pasta sotto 5,50 euro", "pasta", null, 5.5],
+    ["Cerco olio entro 12,90 euro", "olio", null, 12.9],
+    ["Mi trovi cuffie non oltre 49,90 euro", "cuffie", null, 49.9],
+    ["Vorrei scarpe tra 49,90 e 129,90 euro", "scarpe", 49.9, 129.9],
+    ["Show me bags between 19.90 and 59.90 euros", "borsa", 19.9, 59.9],
+  ];
+  for (const [text, query, minPrice, maxPrice] of cases) {
+    const plan = planPinoCoreRequest(text);
+    assert.equal(plan.query, query, text);
+    assert.equal(plan.minPrice, minPrice, text);
+    assert.equal(plan.maxPrice, maxPrice, text);
+    assert.doesNotMatch(plan.query, PAROLE_VINCOLO, text);
+  }
+});

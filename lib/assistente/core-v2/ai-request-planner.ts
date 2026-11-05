@@ -33,6 +33,32 @@ type PlannerModelOutput = {
   reason: string;
 };
 
+/**
+ * Diagnostica opzionale del planner. Vive accanto al piano e non lo modifica:
+ * serve solo a spiegare perché una richiesta è finita sul planner deterministico.
+ */
+export type PinoPlannerDiagnosticOutcome =
+  | "ai_accepted"
+  | "ai_skipped"
+  | "provider_error"
+  | "timeout"
+  | "invalid_json"
+  | "invalid_schema"
+  | "fallback_invalid_plan";
+
+export type PinoPlannerDiagnostic = {
+  /** Identificativo fornito dal chiamante (es. id del caso di benchmark). */
+  requestId?: string;
+  outcome: PinoPlannerDiagnosticOutcome;
+  /** true solo quando la chiamata al provider è stata davvero tentata. */
+  attempted: boolean;
+  /** Codice HTTP del provider, quando disponibile. */
+  httpStatus?: number;
+  durationMs: number;
+  /** Motivo tecnico sintetico, già sanificato: mai prompt, chiavi o risposte. */
+  reason: string;
+};
+
 const ROUTES = new Set<PinoCoreRoute>([
   "conversation", "catalog", "attractions", "events", "weather", "pharmacies", "unknown",
 ]);
@@ -93,39 +119,81 @@ Regole fondamentali:
 }
 `;
 
-function parseModelOutput(raw: string): PlannerModelOutput | null {
-  const cleaned = raw.trim().replace(/^\`\`\`(?:json)?\s*/i, "").replace(/\s*\`\`\`$/, "");
+type PlannerParseResult =
+  | { ok: true; value: PlannerModelOutput }
+  | { ok: false; kind: "invalid_json" | "invalid_schema"; reason: string };
+
+/**
+ * Parsing dettagliato: distingue JSON non interpretabile (invalid_json) da JSON
+ * valido ma incompatibile con lo schema richiesto (invalid_schema).
+ */
+function parseModelOutputDetailed(raw: string): PlannerParseResult {
+  const cleaned = String(raw ?? "").trim().replace(/^\`\`\`(?:json)?\s*/i, "").replace(/\s*\`\`\`$/, "");
   const start = cleaned.indexOf("{");
   const end = cleaned.lastIndexOf("}");
-  if (start < 0 || end <= start) return null;
+  if (start < 0 || end <= start) {
+    return { ok: false, kind: "invalid_json", reason: "no_json_object" };
+  }
 
+  let value: Record<string, unknown>;
   try {
-    const value = JSON.parse(cleaned.slice(start, end + 1)) as Record<string, unknown>;
-    if (
-      typeof value.route !== "string" || !ROUTES.has(value.route as PinoCoreRoute) ||
-      typeof value.surface !== "string" || !SURFACES.has(value.surface as PinoCoreSurface) ||
-      (value.language !== "it" && value.language !== "en") ||
-      typeof value.query !== "string" ||
-      !(typeof value.subject === "string" || value.subject === null) ||
-      !Array.isArray(value.attributes) || !Array.isArray(value.exclusions) ||
-      typeof value.confidence !== "string" || !CONFIDENCES.has(value.confidence as PinoCoreConfidence) ||
-      typeof value.needsClarification !== "boolean"
-    ) return null;
+    const parsed = JSON.parse(cleaned.slice(start, end + 1)) as unknown;
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return { ok: false, kind: "invalid_schema", reason: "not_a_json_object" };
+    }
+    value = parsed as Record<string, unknown>;
+  } catch {
+    return { ok: false, kind: "invalid_json", reason: "json_parse_error" };
+  }
 
-    const strings = (items: unknown[]) => items
-      .filter((item): item is string => typeof item === "string")
-      .map((item) => item.trim().slice(0, 64))
-      .filter(Boolean)
-      .slice(0, 10);
+  if (typeof value.route !== "string" || !ROUTES.has(value.route as PinoCoreRoute)) {
+    return { ok: false, kind: "invalid_schema", reason: "route_not_allowed" };
+  }
+  if (typeof value.surface !== "string" || !SURFACES.has(value.surface as PinoCoreSurface)) {
+    return { ok: false, kind: "invalid_schema", reason: "surface_not_allowed" };
+  }
+  if (value.language !== "it" && value.language !== "en") {
+    return { ok: false, kind: "invalid_schema", reason: "language_not_allowed" };
+  }
+  if (typeof value.query !== "string") {
+    return { ok: false, kind: "invalid_schema", reason: "query_not_string" };
+  }
+  if (!(typeof value.subject === "string" || value.subject === null)) {
+    return { ok: false, kind: "invalid_schema", reason: "subject_not_string_null" };
+  }
+  if (!Array.isArray(value.attributes)) {
+    return { ok: false, kind: "invalid_schema", reason: "attributes_not_array" };
+  }
+  if (!Array.isArray(value.exclusions)) {
+    return { ok: false, kind: "invalid_schema", reason: "exclusions_not_array" };
+  }
+  if (typeof value.confidence !== "string" || !CONFIDENCES.has(value.confidence as PinoCoreConfidence)) {
+    return { ok: false, kind: "invalid_schema", reason: "confidence_not_allowed" };
+  }
+  if (typeof value.needsClarification !== "boolean") {
+    return { ok: false, kind: "invalid_schema", reason: "needs_clarification_not_boolean" };
+  }
 
-    const query = value.query.trim().slice(0, 160);
-    const subject = typeof value.subject === "string" ? value.subject.trim().slice(0, 80) || null : null;
-    const route = value.route as PinoCoreRoute;
-    const surface = value.surface as PinoCoreSurface;
-    if (route === "catalog" && (!query || !subject || surface === "none")) return null;
-    if (route !== "catalog" && surface !== "none") return null;
+  const strings = (items: unknown[]) => items
+    .filter((item): item is string => typeof item === "string")
+    .map((item) => item.trim().slice(0, 64))
+    .filter(Boolean)
+    .slice(0, 10);
 
-    return {
+  const query = value.query.trim().slice(0, 160);
+  const subject = typeof value.subject === "string" ? value.subject.trim().slice(0, 80) || null : null;
+  const route = value.route as PinoCoreRoute;
+  const surface = value.surface as PinoCoreSurface;
+  if (route === "catalog" && (!query || !subject || surface === "none")) {
+    return { ok: false, kind: "invalid_schema", reason: "catalog_requires_query_subject_surface" };
+  }
+  if (route !== "catalog" && surface !== "none") {
+    return { ok: false, kind: "invalid_schema", reason: "non_catalog_requires_surface_none" };
+  }
+
+  return {
+    ok: true,
+    value: {
       route,
       surface,
       language: value.language,
@@ -136,15 +204,56 @@ function parseModelOutput(raw: string): PlannerModelOutput | null {
       confidence: value.confidence as PinoCoreConfidence,
       needsClarification: value.needsClarification,
       reason: typeof value.reason === "string" ? value.reason.slice(0, 100) : "ai_planner",
-    };
-  } catch {
-    return null;
-  }
+    },
+  };
+}
+
+function parseModelOutput(raw: string): PlannerModelOutput | null {
+  const result = parseModelOutputDetailed(raw);
+  return result.ok ? result.value : null;
 }
 
 /** Exposed for deterministic offline tests; invalid model output is rejected. */
 export function parsePinoPlannerOutput(raw: string): PlannerModelOutput | null {
   return parseModelOutput(raw);
+}
+
+const LIMITE_MOTIVO = 160;
+
+/** Motivo diagnostico: nessuna chiave, nessun URL, nessun contenuto del prompt. */
+function sanificaMotivo(testo: unknown): string {
+  return String(testo ?? "")
+    .replace(/key=[^&\s"']+/gi, "key=[REDACTED]")
+    .replace(/AIza[0-9A-Za-z_-]{10,}/g, "[REDACTED]")
+    .replace(/sb_(?:secret|publishable)_[0-9A-Za-z_-]+/g, "[REDACTED]")
+    .replace(/https?:\/\/\S+/gi, "[URL]")
+    .replace(/[\r\n\t]+/g, " ")
+    .trim()
+    .slice(0, LIMITE_MOTIVO);
+}
+
+function statoHttpErrore(errore: unknown): number | undefined {
+  const candidati = [
+    (errore as { status?: unknown } | null)?.status,
+    (errore as { statusCode?: unknown } | null)?.statusCode,
+    (errore as { code?: unknown } | null)?.code,
+  ];
+  for (const candidato of candidati) {
+    const numero = typeof candidato === "string" ? Number(candidato) : candidato;
+    if (typeof numero === "number" && Number.isInteger(numero) && numero >= 400 && numero <= 599) {
+      return numero;
+    }
+  }
+  const messaggio = String((errore as Error | null)?.message ?? "");
+  const trovato = messaggio.match(/\bHTTP\s*(\d{3})\b/i) ?? messaggio.match(/\b([45]\d{2})\b/);
+  return trovato ? Number(trovato[1]) : undefined;
+}
+
+function erroreDiTimeout(errore: unknown): boolean {
+  const nome = String((errore as { name?: unknown } | null)?.name ?? "");
+  const messaggio = String((errore as Error | null)?.message ?? "");
+  if (/^(?:AbortError|TimeoutError)$/i.test(nome)) return true;
+  return /\b(?:timeout|timed out|ETIMEDOUT)\b/i.test(messaggio);
 }
 
 function mergePlan(
@@ -191,18 +300,53 @@ function mergePlan(
 /**
  * AI planning with a deterministic fallback. This function has no search,
  * database or write side effects. A caller may inject a model function in tests.
+ *
+ * `onDiagnostic` è opzionale e del tutto laterale: riceve un esito per ogni
+ * esecuzione, non riceve mai prompt/chiavi/risposte e non può far fallire il
+ * planner (le sue eccezioni vengono ignorate).
  */
 export async function planPinoCoreRequestWithAI(
   input: string,
   options: {
     history?: PinoPlannerContextMessage[];
     plannerCall?: (prompt: string) => Promise<string>;
+    requestId?: string;
+    onDiagnostic?: (diagnostic: PinoPlannerDiagnostic) => void;
   } = {},
 ): Promise<PinoCorePlan> {
+  const emetti = (
+    outcome: PinoPlannerDiagnosticOutcome,
+    dettagli: { attempted: boolean; durationMs: number; reason: string; httpStatus?: number },
+  ): void => {
+    const callback = options.onDiagnostic;
+    if (typeof callback !== "function") return;
+    try {
+      callback({
+        requestId: options.requestId,
+        outcome,
+        attempted: dettagli.attempted,
+        httpStatus: dettagli.httpStatus,
+        durationMs: dettagli.durationMs,
+        reason: sanificaMotivo(dettagli.reason) || outcome,
+      });
+    } catch {
+      // La diagnostica non deve mai influenzare il piano restituito.
+    }
+  };
+
   const original = String(input ?? "").trim();
   const deterministic = planPinoCoreRequest(original);
-  if (!original || deterministic.route === "conversation" ||
+  if (!original) {
+    emetti("ai_skipped", { attempted: false, durationMs: 0, reason: "empty_input" });
+    return deterministic;
+  }
+  if (deterministic.route === "conversation" ||
       ["weather", "pharmacies", "events", "attractions"].includes(deterministic.route)) {
+    emetti("ai_skipped", {
+      attempted: false,
+      durationMs: 0,
+      reason: `deterministic_route:${deterministic.route}`,
+    });
     return deterministic;
   }
 
@@ -216,8 +360,10 @@ export async function planPinoCoreRequestWithAI(
     `RICHIESTA ATTUALE:\n${original}`,
   ].filter(Boolean).join("\n\n");
 
+  const inizio = Date.now();
+  let raw: string;
   try {
-    const raw = options.plannerCall
+    raw = options.plannerCall
       ? await options.plannerCall(prompt)
       : await callGeminiText({
           systemPrompt: SYSTEM_PROMPT,
@@ -228,11 +374,45 @@ export async function planPinoCoreRequestWithAI(
           timeoutMs: 12_000,
           retries: 1,
         });
-    const parsed = parseModelOutput(raw);
-    return parsed ? mergePlan(original, deterministic, parsed) : deterministic;
-  } catch {
+  } catch (errore) {
     // Provider outage, missing key, timeout, quota or malformed output must
     // never block the assistant: use the offline planner unchanged.
+    const durationMs = Date.now() - inizio;
+    if (erroreDiTimeout(errore)) {
+      emetti("timeout", {
+        attempted: true,
+        durationMs,
+        reason: `gemini_timeout: ${(errore as Error | null)?.message ?? "aborted"}`,
+      });
+    } else {
+      const httpStatus = statoHttpErrore(errore);
+      emetti("provider_error", {
+        attempted: true,
+        durationMs,
+        httpStatus,
+        reason: `gemini_provider_error: ${(errore as Error | null)?.message ?? "unknown"}`,
+      });
+    }
     return deterministic;
   }
+
+  const durationMs = Date.now() - inizio;
+  const parsed = parseModelOutputDetailed(raw);
+  if (!parsed.ok) {
+    emetti(parsed.kind, { attempted: true, durationMs, reason: parsed.reason });
+    return deterministic;
+  }
+
+  const merged = mergePlan(original, deterministic, parsed.value);
+  if (!merged.reason.startsWith("ai:")) {
+    emetti("fallback_invalid_plan", { attempted: true, durationMs, reason: "merge_rejected" });
+    return merged;
+  }
+
+  emetti("ai_accepted", {
+    attempted: true,
+    durationMs,
+    reason: `accepted_route:${merged.route};surface:${merged.surface}`,
+  });
+  return merged;
 }

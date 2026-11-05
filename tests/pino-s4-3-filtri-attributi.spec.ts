@@ -10,6 +10,7 @@ import {
 import {
   filtraProdottiPerAttributiPino,
   ordinaProdottiPerBudget,
+  prodottoRispettaBudgetPino,
   validaToolParams,
 } from "../lib/assistente/tools";
 import type { ProdottoRicerca } from "../lib/ricerca-ai";
@@ -313,5 +314,21 @@ test.describe("S4.3 — vincoli verso i tool e il fallback", () => {
 
     const ordinati = ordinaProdottiPerBudget(filtrati.prodotti, { maxPrice: 50 });
     expect(ordinati.map((p) => p.prezzo)).toEqual([20, 70]);
+  });
+});
+// ─── S4.3 — budget vincolante: conformità dei prodotti ────────────────────
+test.describe("S4.3 — conformità al budget esplicito", () => {
+  test("prezzi mancanti, zero o negativi non sono mai conformi", () => {
+    for (const prezzo of [null, 0, -5]) {
+      const candidato = { ...prodotto("Prova"), prezzo } as ProdottoRicerca;
+      expect(prodottoRispettaBudgetPino(candidato)).toBe(false);
+    }
+  });
+
+  test("fascia minima e massima applicate insieme, confini inclusi", () => {
+    expect(prodottoRispettaBudgetPino(prodotto("Sotto", null, null, 49.99), { minPrice: 50 })).toBe(false);
+    expect(prodottoRispettaBudgetPino(prodotto("Soglia", null, null, 50), { minPrice: 50 })).toBe(true);
+    expect(prodottoRispettaBudgetPino(prodotto("Intervallo", null, null, 120), { minPrice: 50, maxPrice: 120 })).toBe(true);
+    expect(prodottoRispettaBudgetPino(prodotto("Sopra", null, null, 120.01), { minPrice: 50, maxPrice: 120 })).toBe(false);
   });
 });

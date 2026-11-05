@@ -77,6 +77,20 @@ test.describe("S4.8 — riconoscimento delle richieste di luoghi", () => {
     }
   });
 
+  test("un riferimento alla città non attiva la guida: «Cerco scarpe a Castrovillari» resta commerciale", () => {
+    for (const query of [
+      "Cerco scarpe a Castrovillari",
+      "Dove posso comprare scarpe a Castrovillari?",
+      "Scarpe in centro a Castrovillari",
+    ]) {
+      expect(richiestaGuidaAttrazioniPino(query), query).toBe(false);
+    }
+
+    // I nomi specifici del catalogo continuano a essere riconosciuti.
+    expect(richiestaGuidaAttrazioniPino("Archivio di Stato – Sezione di Castrovillari")).toBe(true);
+    expect(richiestaGuidaAttrazioniPino("Palazzo Varcasia")).toBe(true);
+  });
+
   test("le richieste di servizi restano commerciali", () => {
     for (const query of [
       "Cerco un parrucchiere che faccia taglio capelli",

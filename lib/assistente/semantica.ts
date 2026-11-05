@@ -241,6 +241,7 @@ export function analizzaComprensionePino(
  * nessun vincolo riconosciuto si perde nel percorso verso i tool. Le esclusioni
  * sono un'unione senza duplicati: aggiungere non significa sostituire.
  * I prezzi restano indicativi (D-1): qui si propagano, non si filtrano.
+ * Zero è un limite esplicito valido; null/undefined e negativi restano assenti.
  */
 export function fondiVincoliPino(
   piano: PinoSemanticPlan | null | undefined,
@@ -255,13 +256,131 @@ export function fondiVincoliPino(
   );
   const prezzoValido = (valore: unknown): number | null => {
     const numero = Number(valore);
-    return valore != null && Number.isFinite(numero) && numero > 0 ? numero : null;
+    return valore != null && Number.isFinite(numero) && numero >= 0 ? numero : null;
   };
   return {
     esclusioni,
     minPrice: prezzoValido(piano?.minPrice) ?? prezzoValido(comprensione.minPrice),
     maxPrice: prezzoValido(piano?.maxPrice) ?? prezzoValido(comprensione.maxPrice),
   };
+}
+
+// ─── Prezzo esplicito: unica fonte deterministica ───────────────────────────
+// `entro`, `non oltre`, `al massimo`, `fino a`, `inferiore a` sono tetti;
+// `sopra`, `oltre` (non negato), `almeno`, `superiore a` sono soglie minime.
+const RE_PREZZO_TETTO =
+  /(?:budget(?:\s+di)?|sotto|massimo|al massimo|meno di|inferiore a|entro|fino a|non oltre|under|below|up to|less than|no more than|not over|at most)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)/i;
+// `oltre` è un minimo SOLO senza negazione: "non oltre" è un tetto.
+const RE_PREZZO_SOGLIA =
+  /(?:sopra|superiore a|minimo|almeno|piu di|più di|(?<!non\s+)oltre|over|above|more than|at least)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)/i;
+const RE_PREZZO_INTERVALLO =
+  /(?:tra|da|between)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)\s*(?:e|a|and|to)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)(?:\s*(?:euro|euros|eur))?/i;
+const RE_PREZZO_GENERICO =
+  /(?:€\s*(\d+(?:[.,]\d+)?))|(\d+(?:[.,]\d+)?)\s*(?:euro|euros|eur)\b/i;
+
+/**
+ * UNICO estrattore di prezzo esplicito, condiviso da piano locale e fallback.
+ *
+ * Ordine: intervallo → tetto → soglia → importo generico. L'importo nudo
+ * ("50 euro", "€50", "con 50 euro") diventa un tetto SOLO quando la frase non
+ * contiene già un tetto o una soglia: così "oltre 50 euro" resta un minimo e
+ * non diventa anche un massimo. L'intervallo è sempre normalizzato min ≤ max.
+ */
+export function estraiPrezzoEsplicitoPino(
+  testo: string
+): { minPrice: number | null; maxPrice: number | null } {
+  const q = String(testo ?? "");
+  const numero = (valore: string) => Number(valore.replace(",", "."));
+  const intervallo = q.match(RE_PREZZO_INTERVALLO);
+  if (intervallo) {
+    const a = numero(intervallo[1]);
+    const b = numero(intervallo[2]);
+    if (Number.isFinite(a) && Number.isFinite(b)) {
+      return { minPrice: Math.min(a, b), maxPrice: Math.max(a, b) };
+    }
+  }
+  const tetto = q.match(RE_PREZZO_TETTO);
+  const soglia = q.match(RE_PREZZO_SOGLIA);
+  if (tetto || soglia) {
+    return {
+      minPrice: soglia ? numero(soglia[1]) : null,
+      maxPrice: tetto ? numero(tetto[1]) : null,
+    };
+  }
+  const generico = q.match(RE_PREZZO_GENERICO);
+  const valore = generico ? numero(generico[1] ?? generico[2]) : null;
+  return {
+    minPrice: null,
+    maxPrice: valore != null && Number.isFinite(valore) && valore > 0 ? valore : null,
+  };
+}
+
+/**
+ * Il budget del piano viene SOLO dall'estrazione deterministica della
+ * richiesta: i campi di prezzo restituiti dal modello non possono introdurre
+ * né rimuovere un vincolo. Uno zero "di riempimento" non diventa quindi un
+ * tetto, mentre «entro 0 euro» resta un tetto esplicito pari a zero.
+ */
+export function applicaLimitiEsplicitiPianoPino(
+  piano: PinoSemanticPlan,
+  richiesta: string
+): PinoSemanticPlan {
+  const limiti = estraiPrezzoEsplicitoPino(richiesta);
+  return { ...piano, minPrice: limiti.minPrice, maxPrice: limiti.maxPrice };
+}
+
+// Clausole economiche rimosse dalla query di retrieval: intervallo (anche
+// inglese), tetto/soglia (anche inglese), importi con valuta o simbolo.
+// Regola UNICA condivisa da piano locale e fallback: nessuna implementazione
+// duplicata e nessun residuo come «between», «above», «and» o importi.
+const RE_CLAUSOLA_PREZZO_INTERVALLO =
+  /(?:tra|fra|da|between|from)\s*(?:€|\$)?\s*\d+(?:[.,]\d+)?\s*(?:e|a|and|to)\s*(?:€|\$)?\s*\d+(?:[.,]\d+)?(?:\s*(?:euros|euro|eur))?/gi;
+const RE_CLAUSOLA_PREZZO_LIMITE =
+  /(?:budget(?:\s+di)?|non oltre|al massimo|massimo|sotto|meno di|inferiore a|entro|fino a|sopra|superiore a|minimo|almeno|piu di|più di|oltre|under|below|up to|less than|no more than|not over|at most|above|over|more than|at least)\s*(?:€|\$)?\s*\d+(?:[.,]\d+)?(?:\s*(?:euros|euro|eur))?/gi;
+
+export function rimuoviClausolePrezzoPino(testo: string): string {
+  return String(testo ?? "")
+    .replace(RE_CLAUSOLA_PREZZO_INTERVALLO, " ")
+    .replace(RE_CLAUSOLA_PREZZO_LIMITE, " ")
+    .replace(
+      /\b(?:ho|con|dispongo di|a disposizione(?: di)?)\s*(?:(?:un|il|il mio)\s+)?(?:budget(?:\s+di)?\s*)?(?:€\s*)?\d+(?:[.,]\d+)?\s*(?:euros|euro|eur)\b(?:\s+(?:da spendere|per)\b)?/gi,
+      " "
+    )
+    .replace(/\b\d+(?:[.,]\d+)?\s*(?:euros|euro|eur)\b/gi, " ")
+    .replace(/€\s*\d+(?:[.,]\d+)?/g, " ")
+    .replace(/\b(?:euros|euro|eur)\b/gi, " ")
+    .replace(/€/g, " ")
+    // Connettivi orfani rimasti in coda dopo la rimozione dell'importo
+    // («cuffie con», «pasta and»): non sono keyword di catalogo.
+    .replace(/\s+\b(?:e|ed|and|to|con|da|di|a|per|circa|tra|between|above|below|over|under|entro|fino)\b\s*$/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** Limiti validi di una singola interpretazione: null/undefined/negativi non contano; 0 è un limite esplicito valido. */
+function limitiPianoPino(
+  fonte?: { minPrice?: number | null; maxPrice?: number | null } | null
+): { minPrice: number | null; maxPrice: number | null } | null {
+  const valido = (valore: unknown): number | null => {
+    const numero = Number(valore);
+    return valore != null && Number.isFinite(numero) && numero >= 0 ? numero : null;
+  };
+  const min = valido(fonte?.minPrice);
+  const max = valido(fonte?.maxPrice);
+  return min == null && max == null ? null : { minPrice: min, maxPrice: max };
+}
+
+/**
+ * Budget ESPLICITO con precedenza ESCLUSIVA: se il piano semantico contiene
+ * almeno un limite valido si usano solo i suoi (anche quando l'altro è null);
+ * la comprensione subentra solo quando il piano non ne ha nessuno. Minimo di
+ * un'interpretazione e massimo dell'altra non vengono mai combinati.
+ */
+export function limitiVincolantiPino(
+  semantica?: PinoSemanticPlan | null,
+  comprensione?: PinoUnderstanding | null
+): { minPrice: number | null; maxPrice: number | null } | null {
+  return limitiPianoPino(semantica) ?? limitiPianoPino(comprensione);
 }
 
 const SCHEMA_PROMPT = `Interpreta una richiesta dell'utente per la ricerca locale di InCittà.
@@ -667,18 +786,8 @@ export function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalys
   // apertura e città vengono estratti separatamente, altrimenti il gate di
   // pertinenza potrebbe richiedere termini come "sotto" o "100" dentro al
   // prodotto e restituire zero risultati.
-  let minPrice: number | null = null;
-  let maxPrice: number | null = null;
-  const range = q.match(/(?:tra|da)\s*(\d+(?:[.,]\d+)?)\s*(?:e|a)\s*(\d+(?:[.,]\d+)?)/i);
-  const max = q.match(/(?:budget(?:\s+di)?|sotto|massimo|meno di|entro|fino a|under|below|up to|less than)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)/i) ?? q.match(/\b(?:ho|con|dispongo di|a disposizione(?: di)?)\s*(?:un budget(?:\s+di)?\s*)?(?:€\s*)?(\d+(?:[.,]\d+)?)\s*(?:euro|euros|eur)\b/i) ?? q.match(/(?:€\s*)(\d+(?:[.,]\d+)?)/i) ?? q.match(/\b(\d+(?:[.,]\d+)?)\s*(?:euro|euros|eur)\b/i);
-  const min = q.match(/(?:sopra|minimo|piu di|più di|oltre|over|above|more than)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)/i);
-  if (range) {
-    minPrice = Number(range[1].replace(",", "."));
-    maxPrice = Number(range[2].replace(",", "."));
-  } else {
-    if (max) maxPrice = Number(max[1].replace(",", "."));
-    if (min) minPrice = Number(min[1].replace(",", "."));
-  }
+  // Unico estrattore condiviso con il fallback: nessuna seconda interpretazione.
+  const { minPrice, maxPrice } = estraiPrezzoEsplicitoPino(q);
 
   // Negazione generica: "non nere", "senza glutine", "non in tessuto" ecc.
   // Catturiamo il termine negato saltando preposizioni e articoli: "non nere
@@ -703,29 +812,15 @@ export function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalys
     // "cipolla", non per le parole "quanto/costa".
     .replace(/\bquanto\s+(?:costa|costano|viene|vengono|vale|valgono)\b/gi, " ")
     .replace(/\b(?:prezzo|prezzi)\s+(?:di|del|della|dei|degli|delle)?\b/gi, " ")
-    // Importi espressi in modo colloquiale ("ho 100 euro", "con 100 euro")
-    // sono vincoli di budget, non keyword da cercare nel catalogo.
-    .replace(/\b(?:ho|con|dispongo di|a disposizione(?: di)?)\s*(?:(?:un|il|il mio)\s+)?(?:budget(?:\s+di)?\s*)?(?:€\s*)?\d+(?:[.,]\d+)?\s*(?:euro|euros|eur)\b(?:\s+(?:da spendere|per)\b)?/gi, " ")
-    .replace(/(?:tra|da)\s*\d+(?:[.,]\d+)?\s*(?:e|a)\s*\d+(?:[.,]\d+)?/gi, " ")
-    .replace(
-      /(?:budget(?:\s+di)?|non oltre|al massimo|sotto|massimo|meno di|entro|fino a|sopra|minimo|piu di|più di|oltre|under|below|up to|less than|no more than|not over|at most)\s*(?:€|\$)?\s*\d+(?:[.,]\d+)?/gi,
-      " "
-    )
-    // Qualsiasi importo con valuta rimasto ("da 99 euro", "€ 99,00") è ancora
-    // un budget: non deve restare nella query di retrieval.
-    .replace(/\b\d+(?:[.,]\d+)?\s*(?:euro|euros|eur)\b/gi, " ")
-    .replace(/€\s*\d+(?:[.,]\d+)?/g, " ")
-    // La valuta resta attaccata al numero ("sotto 30 euro"): va rimossa anche
-    // da sola, altrimenti entra nella query di retrieval e il gate di
-    // pertinenza dei prodotti — che richiede TUTTE le parole — azzera i
-    // risultati ("orologio euro" ⇒ 0 prodotti invece di 4).
-    .replace(/\b(?:euro|euros|eur)\b/gi, " ")
-    .replace(/€/g, " ")
     .replace(/\b(?:aperto|aperta|aperti|aperte)\s+(?:ora|adesso)\b|\b(?:open|opened)\s+(?:right\s+)?now\b|\bcurrently\s+open\b|\bopen\s+at\s+the\s+moment\b/gi, " ")
     .replace(/\b(?:ora|adesso)\b/gi, " ")
     // Punteggiatura residua ("regalo,"): non è una keyword di catalogo e
     // sporcherebbe la query mostrata all'utente.
     .replace(/[,;:]+/g, " ");
+
+  // Vincoli economici (italiano e inglese): la stessa pulizia del fallback,
+  // così nessuna clausola resta nella query di retrieval.
+  termine = rimuoviClausolePrezzoPino(termine);
 
   // Le clausole di esclusione non sono keyword di ricerca: vanno rimosse
   // insieme ai connettori ("non in tessuto" non deve lasciare né "non" né
@@ -794,16 +889,14 @@ export function fallbackPlan(query: string, analisi: PinoIntentAnalysis): PinoSe
   // Stesso estrattore del piano locale: le preposizioni non sono esclusioni e
   // non restano nella query ("non in tessuto" → tessuto, query senza clausola).
   const exclusions = estraiEsclusioniPino(q);
-  const qCatalogo = normalizzaQueryCatalogo(rimuoviClausoleEsclusionePino(q));
+  const qCatalogo = normalizzaQueryCatalogo(
+    rimuoviClausolePrezzoPino(rimuoviClausoleEsclusionePino(q))
+  );
   const tokens = qCatalogo
     .split(/[^a-z0-9]+/)
     .filter((t) => t.length >= 3)
-    .filter((t) => !/^(cerco|cerca|trovami|trova|vorrei|voglio|mi|serve|anzi|invece|pero|però|un|una|uno|per|con|di|a|da|il|lo|la|i|gli|le|e|in|su|del|della|dei|delle|sotto|sopra|massimo|minimo|euro)$/.test(t));
-  const mMax = q.match(/(?:sotto|massimo|fino a|entro|meno di|under|below|up to|less than|no more than|not over|at most)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)/i);
-  const mMin = q.match(/(?:sopra|minimo|piu di|più di|oltre|over|above|more than|at least)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)/i);
-  const mRange = q.match(/(?:tra|da|between)\s*(\d+(?:[.,]\d+)?)\s*(?:e|a|and|to)\s*(\d+(?:[.,]\d+)?)/i);
-  const maxPrice = mRange ? Number(mRange[2].replace(",", ".")) : mMax ? Number(mMax[1].replace(",", ".")) : null;
-  const minPrice = mRange ? Number(mRange[1].replace(",", ".")) : mMin ? Number(mMin[1].replace(",", ".")) : null;
+    .filter((t) => !/^(cerco|cerca|trovami|trova|vorrei|voglio|mi|serve|anzi|invece|pero|però|un|una|uno|per|con|di|a|da|il|lo|la|i|gli|le|e|in|su|del|della|dei|delle|sotto|sopra|massimo|minimo|inferiore|superiore|almeno|entro|oltre|non|euro)$/.test(t));
+  const { minPrice, maxPrice } = estraiPrezzoEsplicitoPino(q);
   const openNow = richiestaApertaOra(q);
   const surface =
     openNow && analisi.usaNegozi ? "stores" :

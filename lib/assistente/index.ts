@@ -37,6 +37,7 @@ import {
   searchPharmacies,
   orariPerNegozi,
   ordinaProdottiPerBudget,
+  prodottoRispettaBudgetPino,
   rilevaBudgetIndicativoPino,
   prezzoNumerico,
   filtraProdottiPerAttributiPino,
@@ -56,12 +57,17 @@ import {
 import {
   SYSTEM_PROMPT,
   buildToolSelectionPrompt,
+  buildNativeFunctionCallingPrompt,
   buildContextoRisultati,
   buildFinalPrompt,
   type RisultatiRecuperati,
 } from "./prompt";
 import { extractJsonFromText } from "@/lib/product-assistant/providers/utils";
-import { callGeminiText } from "@/lib/ai/gemini-text";
+import { callGeminiText, type GeminiMessage } from "@/lib/ai/gemini-text";
+import {
+  chiamaGeminiFunctionCalling,
+  type GeminiFunctionCallingParams,
+} from "@/lib/ai/gemini-function-calling";
 import { isAttractionNameQuery, searchAttractions } from "./attrazioni";
 import { normalizza } from "@/lib/text-utils";
 import type { NegozioRicerca, ProdottoRicerca } from "@/lib/ricerca-ai";
@@ -87,6 +93,9 @@ import {
   fallbackPlan,
   fondiVincoliPino,
   interpretaRichiestaPino,
+  estraiPrezzoEsplicitoPino,
+  applicaLimitiEsplicitiPianoPino,
+  limitiVincolantiPino,
   usaFastPathSemantico,
   type PinoSemanticPlan,
 } from "./semantica";
@@ -103,6 +112,15 @@ import {
   type FollowUp,
   type FollowUpTipo,
 } from "./conversazione";
+import {
+  TOOL_DEFINITIONS,
+  buildNativeToolDeclarations,
+  directReplyAmmessoPino,
+  parametriObbligatoriPresentiPino,
+  parseNativeFunctionCalls,
+} from "./function-calling";
+import { creaOsservazioneTier0 } from "./shadow/integrazione";
+import { shadowTier0Attivo, type DipendenzeTier0 } from "./shadow/tier0";
 
 // ─── Tipi pubblici ───────────────────────────────────────────────────────────
 
@@ -123,12 +141,118 @@ export interface RispostaAssistente {
   followUp?: FollowUpTipo;
 }
 
+/**
+ * Dipendenze di produzione della Shadow Tier 0: stesse funzioni del runtime,
+ * nessuna estrazione o verifica di prezzo duplicata.
+ */
+function dipendenzeShadowTier0(): DipendenzeTier0 {
+  return {
+    estraiPrezzo: estraiPrezzoEsplicitoPino,
+    rispettaBudget: (prodotto, limiti) =>
+      prodottoRispettaBudgetPino(prodotto as ProdottoRicerca, limiti),
+    prezzoNumerico,
+  };
+}
+
 // ─── Configurazione LLM ──────────────────────────────────────────────────────
 
 export type ToolInvocation = {
   tool?: string;
   params?: ToolParams;
 };
+
+export type NativeFunctionCallingProvider = (
+  input: GeminiFunctionCallingParams
+) => Promise<{ calls?: unknown; text?: string }>;
+
+export type EsitoSelezioneNativaPino =
+  | { ok: true; invocazioni: ToolInvocation[]; directReply: string | null; scartate: string[] }
+  | { ok: false; motivo: string; scartate: string[] };
+
+const STRUMENTI_NATIVI_AMMESSI: ReadonlySet<string> = new Set(
+  TOOL_DEFINITIONS.filter((definizione) => definizione.exposed).map(
+    (definizione) => definizione.name
+  )
+);
+
+/**
+ * P1.1 — selezione nativa sperimentale.
+ *
+ * Il provider restituisce soltanto function call. Qui vengono applicati:
+ * allowlist, parametri obbligatori, validazione TypeScript, budget
+ * deterministico e limite di 3 invocazioni. Nessuna esecuzione avviene in
+ * questo livello e nessun testo del modello viene registrato.
+ */
+export async function selezionaStrumentiNativoPino(
+  input: {
+    systemPrompt: string;
+    userPrompt: string;
+    history?: GeminiMessage[];
+    limiti: { minPrice: number | null; maxPrice: number | null } | null;
+    surface?: string | null;
+    intent?: string | null;
+    followUp?: boolean;
+  },
+  provider: NativeFunctionCallingProvider = chiamaGeminiFunctionCalling
+): Promise<EsitoSelezioneNativaPino> {
+  let risposta: { calls?: unknown; text?: string };
+  try {
+    risposta = await provider({
+      systemPrompt: input.systemPrompt,
+      userPrompt: input.userPrompt,
+      history: input.history,
+      declarations: buildNativeToolDeclarations(),
+      maxTokens: 450,
+      temperature: 0.1,
+      timeoutMs: 45_000,
+    });
+  } catch {
+    // Il provider non ha prodotto una risposta utilizzabile. Il chiamante
+    // riproverà con il percorso JSON legacy, entro lo stesso budget di 2.
+    return { ok: false, motivo: "provider_error", scartate: [] };
+  }
+
+  const scartate: string[] = [];
+  const candidate: ToolInvocation[] = [];
+  for (const call of parseNativeFunctionCalls(risposta.calls).slice(0, 3)) {
+    if (!STRUMENTI_NATIVI_AMMESSI.has(call.name)) {
+      scartate.push(call.name);
+      continue;
+    }
+    if (!parametriObbligatoriPresentiPino(call.name, call.args)) {
+      scartate.push(call.name);
+      continue;
+    }
+    candidate.push({ tool: call.name, params: { ...call.args } as ToolParams });
+  }
+
+  const validazione = validaInvocazioniPino(candidate, {
+    followUp: input.followUp,
+  });
+  const invocazioni = applicaBudgetVincolantePino(
+    validazione.invocazioni,
+    input.limiti
+  );
+  scartate.push(...validazione.scartate, ...validazione.parametriScartati);
+
+  if (invocazioni.length > 0) {
+    return { ok: true, invocazioni, directReply: null, scartate };
+  }
+
+  const testo = typeof risposta.text === "string" ? risposta.text.trim() : "";
+  if (
+    testo &&
+    directReplyAmmessoPino({ surface: input.surface, intent: input.intent })
+  ) {
+    return { ok: true, invocazioni: [], directReply: testo, scartate };
+  }
+
+  return {
+    ok: false,
+    motivo: testo ? "direct_reply_non_ammesso" : "nessuna_selezione",
+    scartate,
+  };
+}
 
 // ─── S1-A: contratto al confine e deduplica delle invocazioni ───────────────
 //
@@ -776,6 +900,34 @@ export function mergeEsitiInvocazioniPino(
 }
 
 /**
+ * Unico punto che rende vincolanti i limiti espliciti su ogni invocazione di
+ * catalogo. Il flag `prezzoRigido` è interno: viene sempre rimosso dal valore
+ * eventualmente fornito dal modello e ripristinato solo dai limiti del planner.
+ */
+export function applicaBudgetVincolantePino(
+  invocazioni: ToolInvocation[],
+  limiti: { minPrice: number | null; maxPrice: number | null } | null
+): ToolInvocation[] {
+  const cataloghi = new Set(["searchProducts", "searchAll", "searchGiftCategories"]);
+  return (Array.isArray(invocazioni) ? invocazioni : []).map((invocazione) => {
+    const params: ToolParams = { ...(invocazione.params ?? {}) };
+    // Il flag è interno: viene rimosso da OGNI invocazione, anche da strumenti
+    // che non lo ammettono, così un output del modello non può propagarlo.
+    delete params.prezzoRigido;
+    if (!cataloghi.has(String(invocazione?.tool ?? ""))) return { ...invocazione, params };
+    if (!limiti) return { ...invocazione, params };
+    // I limiti deterministici sostituiscono quelli del modello: il modello non
+    // può disattivare né allargare/stringere il vincolo.
+    if (limiti.minPrice != null) params.minPrice = limiti.minPrice;
+    else delete params.minPrice;
+    if (limiti.maxPrice != null) params.maxPrice = limiti.maxPrice;
+    else delete params.maxPrice;
+    params.prezzoRigido = true;
+    return { ...invocazione, params };
+  });
+}
+
+/**
  * Vincoli del piano semantico da conservare nel fallback di ricerca completa.
  * Il fallback non deve diventare un percorso alternativo che aggira i filtri
  * della ricerca principale: esclusioni, budget, città e orari restano attivi.
@@ -787,10 +939,20 @@ export function parametriFallbackPiano(
   domanda?: string
 ): ToolParams {
   const params: ToolParams = {};
+  // Budget esplicito: precedenza esclusiva piano → comprensione, poi vincolante.
+  // Il vincolo è esplicito solo nel percorso reale dell'orchestratore, dove il
+  // contratto di comprensione accompagna il piano; senza di esso i limiti
+  // restano la preferenza indicativa già esistente (D-1).
+  const limiti = limitiVincolantiPino(semantica, comprensione);
+  if (limiti) {
+    if (limiti.maxPrice != null) params.maxPrice = limiti.maxPrice;
+    if (limiti.minPrice != null) params.minPrice = limiti.minPrice;
+    // Il vincolo rigido esiste solo nel percorso reale, dove il contratto di
+    // comprensione accompagna il piano; senza di esso resta la preferenza D-1.
+    if (comprensione) params.prezzoRigido = true;
+  }
   if (semantica) {
     if (semantica.exclusions?.length) params.esclusioni = semantica.exclusions;
-    if (semantica.maxPrice != null) params.maxPrice = semantica.maxPrice;
-    if (semantica.minPrice != null) params.minPrice = semantica.minPrice;
     if (semantica.city) params.citta = semantica.city;
     if (semantica.openNow) params.apertiOra = true;
   }
@@ -803,12 +965,6 @@ export function parametriFallbackPiano(
     const daComprensione = fondiVincoliPino(undefined, comprensione);
     if (!params.esclusioni?.length && daComprensione.esclusioni.length > 0) {
       params.esclusioni = daComprensione.esclusioni;
-    }
-    if (params.maxPrice == null && daComprensione.maxPrice != null) {
-      params.maxPrice = daComprensione.maxPrice;
-    }
-    if (params.minPrice == null && daComprensione.minPrice != null) {
-      params.minPrice = daComprensione.minPrice;
     }
     // S4.3: colore e materiale restano attivi anche nel fallback.
     const attributi = attributiProdottiPino(comprensione, domanda);
@@ -1843,6 +1999,45 @@ async function rispostaFollowUp(input: {
 }
 
 /**
+ * Parametri della ricerca di secondo livello. Usa gli stessi limiti
+ * VINCOLANTI della ricerca principale (`limitiVincolantiPino`, precedenza
+ * esclusiva piano → comprensione): se il piano non ha prezzo ma il contratto
+ * di comprensione sì, il recupero non deve perdere il budget. Il flag
+ * `prezzoRigido` esiste solo quando c'è almeno un limite valido, così i
+ * percorsi senza budget restano identici a prima.
+ */
+export function parametriRecuperoPino(
+  piano: PinoSemanticPlan,
+  comprensione?: PinoUnderstanding | null
+): ToolParams {
+  const limiti = limitiVincolantiPino(piano, comprensione);
+  return {
+    ...(piano.exclusions.length ? { esclusioni: piano.exclusions } : {}),
+    ...(piano.city ? { citta: piano.city } : {}),
+    ...(piano.openNow ? { apertiOra: true } : {}),
+    ...(limiti?.maxPrice != null ? { maxPrice: limiti.maxPrice } : {}),
+    ...(limiti?.minPrice != null ? { minPrice: limiti.minPrice } : {}),
+    ...(limiti ? { prezzoRigido: true } : {}),
+  };
+}
+
+/**
+ * Barriera del recupero: con un budget vincolante nessun prodotto senza
+ * prezzo, a zero o fuori fascia può rientrare dai risultati di secondo
+ * livello. Senza `prezzoRigido` la lista resta intatta.
+ */
+export function filtraProdottiRecuperoPino(
+  prodotti: ProdottoRicerca[],
+  params: ToolParams
+): ProdottoRicerca[] {
+  if (params.prezzoRigido !== true) return prodotti;
+  const maxPrice = params.maxPrice ?? null;
+  const minPrice = params.minPrice ?? null;
+  if (maxPrice == null && minPrice == null) return prodotti;
+  return prodotti.filter((p) => prodottoRispettaBudgetPino(p, { maxPrice, minPrice }));
+}
+
+/**
  * Recupero intelligente quando la prima ricerca non restituisce nulla.
  * Pino non si ferma al primo zero: prova il concetto canonico, i termini
  * semantici alternativi e, quando ha senso, la superficie negozi per capire
@@ -1854,6 +2049,7 @@ async function recuperaAlternativeSemantiche(
   analisi: PinoIntentAnalysis,
   memoria: Awaited<ReturnType<typeof recuperaMemoria>>,
   semanticaIniziale?: PinoSemanticPlan,
+  comprensione?: PinoUnderstanding,
   maxInvocazioni: number = 3
 ): Promise<{
   negozi: NegozioRicerca[];
@@ -1879,12 +2075,10 @@ async function recuperaAlternativeSemantiche(
   }
 
   const esclusioni = piano.exclusions.length ? piano.exclusions : undefined;
+  // Limiti vincolanti condivisi con la ricerca principale: il recupero non è
+  // un percorso alternativo che aggira il budget esplicito.
   const baseParams: ToolParams = {
-    citta: piano.city ?? undefined,
-    esclusioni,
-    apertiOra: piano.openNow || undefined,
-    maxPrice: piano.maxPrice,
-    minPrice: piano.minPrice,
+    ...parametriRecuperoPino(piano, comprensione),
     limit: 8,
   };
 
@@ -1907,7 +2101,10 @@ async function recuperaAlternativeSemantiche(
     for (const q of candidati) {
       if (residue <= 0) break;
       residue -= 1;
-      const trovati = await searchProducts(q, { ...baseParams, query: q });
+      const trovati = filtraProdottiRecuperoPino(
+        await searchProducts(q, { ...baseParams, query: q }),
+        baseParams
+      );
       for (const p of trovati) {
         if (!prodottiTrovati.some((x) => x.id === p.id)) prodottiTrovati.push(p);
       }
@@ -2466,6 +2663,38 @@ export async function chatConAssistente(
   // (la storia è già troncata a 300 caratteri per messaggio).
   const domanda = (ultimo && ultimo.role === "user" ? ultimo.content : "").slice(0, 500);
 
+  type DatiShadowTier0 = {
+    limiti?: { minPrice: number | null; maxPrice: number | null } | null;
+    origine?: "traccia" | "testo" | "assente";
+    invocazioni?: string[];
+  };
+
+  // Fase 2 — tutte le uscite passano da qui: la risposta è restituita per
+  // riferimento, con gli stessi campi. Con la Shadow spenta non viene
+  // registrato nulla: nessuna valutazione e nessuna chiamata al planner.
+  const esci = <T extends RispostaAssistente>(
+    motivo: string,
+    risposta: T,
+    dati: DatiShadowTier0 = {}
+  ): T => {
+    if (shadowTier0Attivo()) {
+      creaOsservazioneTier0(
+        risposta,
+        {
+          messaggio: domanda,
+          prodotti: risposta.prodotti,
+          negoziRestituiti: risposta.negozi.length,
+          limitiProduzione: dati.limiti,
+          origineLimitiProduzione: dati.origine,
+          motivoUscita: motivo,
+          invocazioni: dati.invocazioni,
+        },
+        dipendenzeShadowTier0()
+      );
+    }
+    return risposta;
+  };
+
   // S4.1 — Una sola comprensione strutturata per richiesta.
   // Stato conversazionale, domanda contestuale e intento vengono calcolati qui
   // una volta sola e passati al contratto `PinoUnderstanding`, che non li
@@ -2487,13 +2716,13 @@ export async function chatConAssistente(
   const identitaDiretta = rispostaIdentitaPino(domanda);
   const rispostaDiretta = identitaDiretta ?? rispostaRelazionalePino(domanda, linguaConversazione) ?? rispostaSalutoPino(domanda);
   if (rispostaDiretta) {
-    return {
+    return esci("conversazione", {
       risposta: rispostaDiretta,
       negozi: [],
       prodotti: [],
       processingMs: Date.now() - inizio,
       source: "assistente",
-    };
+    }, { limiti: null, origine: "assente" });
   }
 
 
@@ -2505,7 +2734,7 @@ export async function chatConAssistente(
     ? rispostaPreferenzaLinguaPino(domanda)
     : null;
   if (comprensione.languagePreferenceOnly) {
-    return {
+    return esci("preferenza_lingua", {
       // Rete di sicurezza: anche se il testo non fosse disponibile, una
       // richiesta di sola lingua non deve MAI avviare una ricerca.
       risposta:
@@ -2517,19 +2746,19 @@ export async function chatConAssistente(
       prodotti: [],
       processingMs: Date.now() - inizio,
       source: "assistente",
-    };
+    }, { limiti: null, origine: "assente" });
   }
 
   // Risposta diretta e cordiale ai saluti semplici, senza passare dal planner.
   const salutoPino = rispostaSalutoPino(domanda);
   if (salutoPino) {
-    return {
+    return esci("saluto", {
       risposta: salutoPino,
       negozi: [],
       prodotti: [],
       processingMs: Date.now() - inizio,
       source: "assistente",
-    };
+    }, { limiti: null, origine: "assente" });
   }
 
   // Cinema: è un luogo/attività, non un prodotto. Nella guida Attrazioni di
@@ -2553,13 +2782,13 @@ export async function chatConAssistente(
             ? `\n\nAmong the events, these cinema-related initiatives are listed:\n\n${elenco}`
             : `\n\nTra gli eventi risultano queste iniziative legate al cinema:\n\n${elenco}`)
         : "");
-    return {
+    return esci("cinema", {
       risposta: rispostaCinema,
       negozi: [],
       prodotti: [],
       processingMs: Date.now() - inizio,
       source: "assistente",
-    };
+    }, { limiti: null, origine: "assente" });
   }
 
   // Guida turistica InCittà: usa lo stesso catalogo della pagina /attrazioni.
@@ -2582,25 +2811,25 @@ export async function chatConAssistente(
       const rispostaAttrazioni = linguaConversazione === "en"
         ? `I searched InCittà's Attractions guide. Here are the most relevant results:\n\n${elenco}\n\nFor opening hours, availability and event dates, always check the latest official sources.`
         : `Ho cercato nella guida Attrazioni di InCittà. Ecco i risultati più pertinenti:\n\n${elenco}\n\nPer orari, aperture e date degli eventi, verifica sempre le fonti ufficiali aggiornate.`;
-      return {
+      return esci("attrazioni", {
         risposta: rispostaAttrazioni,
         negozi: [],
         prodotti: [],
         processingMs: Date.now() - inizio,
         source: "assistente",
-      };
+      }, { limiti: null, origine: "assente" });
     }
 
     // La guida non ha un risultato pertinente: Pino si ferma qui e non delega
     // la richiesta a una ricerca commerciale. Il testo distingue l'assenza
     // nella guida dall'inesistenza del luogo in città.
-    return {
+    return esci("attrazioni_assenti", {
       risposta: rispostaGuidaAttrazioniAssentePino(linguaConversazione),
       negozi: [],
       prodotti: [],
       processingMs: Date.now() - inizio,
       source: "assistente",
-    };
+    }, { limiti: null, origine: "assente" });
   }
 
   // Pino Intent Layer v1: la classificazione avviene PRIMA di ogni ricerca e
@@ -2629,9 +2858,18 @@ export async function chatConAssistente(
     if (soggettoAggregato) {
       const limite = 20;
       const qualificatore = soggettoAggregato.qualificatore;
-      const prodottiSoggetto = await searchProducts(soggettoAggregato.soggetto, { limit: limite });
+      // Il conteggio aggregato non deve ignorare un budget esplicito già
+      // riconosciuto: entrambe le ricerche ricevono gli stessi limiti.
+      const limitiAggregato = limitiVincolantiPino(undefined, comprensione);
+      const paramsAggregato: ToolParams = {
+        limit: limite,
+        ...(limitiAggregato?.maxPrice != null ? { maxPrice: limitiAggregato.maxPrice } : {}),
+        ...(limitiAggregato?.minPrice != null ? { minPrice: limitiAggregato.minPrice } : {}),
+        ...(limitiAggregato ? { prezzoRigido: true } : {}),
+      };
+      const prodottiSoggetto = await searchProducts(soggettoAggregato.soggetto, paramsAggregato);
       const prodottiQualificatore = qualificatore
-        ? (await searchProducts(qualificatore, { limit: limite })).filter((p) =>
+        ? (await searchProducts(qualificatore, paramsAggregato)).filter((p) =>
             prodottoCorrispondeQualificatore(p, qualificatore)
           )
         : [];
@@ -2660,14 +2898,18 @@ export async function chatConAssistente(
         })
       );
 
-      return {
+      return esci("aggregata", {
         risposta,
         negozi: [],
         prodotti: prodottiQualificatore.length > 0 ? prodottiQualificatore : prodottiSoggetto,
         processingMs: Date.now() - inizio,
         source: "assistente",
         intent: analisi.intent,
-      };
+      }, {
+        limiti: limitiAggregato,
+        origine: limitiAggregato ? "traccia" : "assente",
+        invocazioni: ["searchProducts"],
+      });
     }
   }
 
@@ -2692,7 +2934,7 @@ export async function chatConAssistente(
   // M6-B1 — Budget condiviso: massimo due chiamate Gemini per richiesta,
   // prenotate PRIMA di partire (anche quando falliscono o vanno in timeout).
   const budgetGemini = creaBudgetGeminiPino();
-  const semantica = attivaPlannerSemantico
+  const semanticaGrezza = attivaPlannerSemantico
     ? await interpretaRichiestaPino(
         domandaSemantica,
         storico,
@@ -2703,9 +2945,18 @@ export async function chatConAssistente(
       )
     : undefined;
 
+  // Il modello non è la fonte del budget: solo l'estrazione deterministica
+  // dalla richiesta può introdurre o togliere un limite economico.
+  const semantica = semanticaGrezza
+    ? applicaLimitiEsplicitiPianoPino(semanticaGrezza, domanda)
+    : undefined;
+
   // S4.1 — Vincoli effettivi verso i tool: piano prioritario, contratto in
   // appoggio. Il budget resta una preferenza (D-1), non un filtro.
   const vincoliComprensione = fondiVincoliPino(semantica, comprensione);
+  // Budget ESPLICITO: una sola interpretazione, con precedenza esclusiva
+  // piano semantico → comprensione (nessuna combinazione dei due).
+  const limitiVincolanti = limitiVincolantiPino(semantica, comprensione);
 
   // S4.5 — Richiesta di servizio: riconosciuta sul testo della richiesta, non
   // sulle descrizioni del catalogo. Se c'è, il catalogo interrogato è quello
@@ -2736,31 +2987,87 @@ export async function chatConAssistente(
     followUp = piano.followUp ?? null;
     selezioneOk = true;
   } else {
-    try {
-      const raw = await chiamataGeminiConBudgetPino(budgetGemini, () =>
-        callGeminiText({
-          systemPrompt: SYSTEM_PROMPT,
-          userPrompt: buildToolSelectionPrompt(storico, descriviIntento(analisi)),
-          maxTokens: 450,
-          temperature: 0.1,
-          timeoutMs: 45_000,
-        })
-      );
-      const parsed = JSON.parse(extractJsonFromText(raw)) as {
-        tools?: ToolInvocation[];
-        directReply?: string | null;
-      };
-
-      if (parsed && typeof parsed.directReply === "string" && parsed.directReply.trim()) {
-        directReply = parsed.directReply.trim();
+    let selezioneNativaOk = false;
+    // P1.1 — percorso nativo sperimentale, spento di default. In produzione
+    // resta attivo il JSON prompting finché il flag non viene abilitato
+    // esplicitamente in un ambiente controllato.
+    if (process.env.PINO_NATIVE_FUNCTION_CALLING === "on") {
+      try {
+        const esitoNativo = await chiamataGeminiConBudgetPino(budgetGemini, () =>
+          selezionaStrumentiNativoPino({
+            systemPrompt: SYSTEM_PROMPT,
+            userPrompt: buildNativeFunctionCallingPrompt(
+              storico,
+              descriviIntento(analisi)
+            ),
+            history: storico.slice(0, -1).map((messaggio) => ({
+              role: messaggio.role === "assistant" ? "model" as const : "user" as const,
+              content: messaggio.content,
+            })),
+            limiti: limitiVincolanti,
+            surface: semantica?.surface ?? null,
+            intent: analisi.intent,
+          })
+        );
+        if (esitoNativo.ok) {
+          invocazioni = esitoNativo.invocazioni;
+          directReply = esitoNativo.directReply;
+          selezioneOk = true;
+          selezioneNativaOk = true;
+          console.info(
+            "[pino-native-tool]",
+            JSON.stringify({
+              invocazioni: invocazioni.map((t) => String(t.tool ?? "")),
+              scartate: esitoNativo.scartate,
+            })
+          );
+        } else {
+          console.warn(
+            "[pino-native-tool] selezione non utilizzabile, fallback JSON:",
+            esitoNativo.motivo
+          );
+        }
+      } catch (error) {
+        // Errore tecnico/timeout: il budget ha già contato la chiamata; il
+        // percorso JSON legacy resta il fallback, senza cambiare la risposta.
+        console.warn("[pino-native-tool] provider fallito, fallback JSON:", error);
       }
+    }
 
-      const tools = Array.isArray(parsed?.tools) ? parsed.tools.slice(0, 3) : [];
-      invocazioni = tools.filter((t) => typeof t.tool === "string" && t.tool.trim());
-      selezioneOk = true;
-    } catch (error) {
-      // Selezione fallita → ricerca completa di sicurezza sull'ultima domanda
-      console.warn("[assistente] Selezione tool fallita, uso searchAll:", error);
+    if (!selezioneNativaOk) {
+      try {
+        const raw = await chiamataGeminiConBudgetPino(budgetGemini, () =>
+          callGeminiText({
+            systemPrompt: SYSTEM_PROMPT,
+            userPrompt: buildToolSelectionPrompt(storico, descriviIntento(analisi)),
+            maxTokens: 450,
+            temperature: 0.1,
+            timeoutMs: 45_000,
+          })
+        );
+        const parsed = JSON.parse(extractJsonFromText(raw)) as {
+          tools?: ToolInvocation[];
+          directReply?: string | null;
+        };
+
+        if (parsed && typeof parsed.directReply === "string" && parsed.directReply.trim()) {
+          directReply = parsed.directReply.trim();
+        }
+
+        const tools = Array.isArray(parsed?.tools) ? parsed.tools.slice(0, 3) : [];
+        invocazioni = tools
+          .filter((t) => typeof t.tool === "string" && t.tool.trim())
+          .map((t) => {
+            // Il flag è interno: un modello non può rendere vincolante un budget.
+            const params = { ...(t.params ?? {}) } as ToolParams;
+            delete params.prezzoRigido;
+            return { ...t, params };
+          });
+        selezioneOk = true;
+      } catch (error) {
+        // Selezione fallita → ricerca completa di sicurezza sull'ultima domanda
+        console.warn("[assistente] Selezione tool fallita, uso searchAll:", error);
+      }
     }
   }
 
@@ -2811,6 +3118,7 @@ export async function chatConAssistente(
         minPrice: semantica.minPrice,
         esclusioni: vincoliComprensione.esclusioni,
         escludiNomi: [],
+        ...(limitiVincolanti ? { prezzoRigido: true } : {}),
       },
     }];
     directReply = null;
@@ -2823,15 +3131,9 @@ export async function chatConAssistente(
   // nel solo ramo con prezzo e il planner poteva restituire attività fuori tema.
   const richiestaCatalogoEsplicita =
     /\b(regalo|regali|regalare|idea regalo|idee regalo|prodotto|prodotti|orologio|orologi|scarpe|borsa|borse|telefono|telefoni|libro|libri|cuffie|smartwatch|gioiello|gioielli|anello|anelli|collana|collane|bracciale|bracciali|profumo|profumi|portafoglio|portafogli|cintura|cinture|occhiali|giocattolo|giocattoli|tablet|computer|auricolari|altoparlante|speaker|watch|watches|clock|clocks|shoes|handbag|bag|phone|book|headphones|jewelry|ring|necklace|bracelet|perfume|wallet|belt|glasses|toy|toys|earbuds|speaker)\b/i.test(domandaSemantica) || pianoProdottoAffidabile;
-  const importoCatalogo = domandaSemantica.match(/(?:budget(?:\s+di)?|massimo|fino a|entro|sotto|non oltre|al massimo|under|below|up to|less than|not over|at most)\s*(?:di\s*)?(?:€\s*)?(\d+(?:[.,]\d+)?)/i)
-    ?? domandaSemantica.match(/(?:€\s*)(\d+(?:[.,]\d+)?)/i)
-    ?? domandaSemantica.match(/(\d+(?:[.,]\d+)?)\s*(?:euros?|eur)\b/i);
-  const maxPriceCatalogo =
-    semantica?.maxPrice ??
-    vincoliComprensione.maxPrice ??
-    (importoCatalogo && !/\b(?:sopra|minimo|oltre|over|above|more than|at least)\b/i.test(domandaSemantica)
-      ? Number(importoCatalogo[1].replace(",", "."))
-      : undefined);
+  // Nessuna seconda estrazione del prezzo: il budget regalo è lo stesso limite
+  // deterministico che il normalizzatore rende vincolante.
+  const maxPriceCatalogo = limitiVincolanti?.maxPrice ?? undefined;
   const haToolProdotti = invocazioni.some((t) => t.tool === "searchProducts" || t.tool === "searchAll");
   const regaloGenerico = isGenericGiftRequest(domanda) || isGenericGiftRequest(domandaSemantica);
 
@@ -2865,7 +3167,8 @@ export async function chatConAssistente(
           query: queryCatalogo,
           limit: 8,
           maxPrice: maxPriceCatalogo,
-          minPrice: vincoliComprensione.minPrice ?? undefined,
+          minPrice: limitiVincolanti?.minPrice ?? undefined,
+          prezzoRigido: true,
           esclusioni: vincoliComprensione.esclusioni.length
             ? vincoliComprensione.esclusioni
             : undefined,
@@ -2876,7 +3179,7 @@ export async function chatConAssistente(
     } else {
       invocazioni = invocazioni.map((t) =>
         t.tool === "searchProducts" || t.tool === "searchAll"
-          ? { ...t, params: { ...(t.params ?? {}), maxPrice: maxPriceCatalogo } }
+          ? { ...t, params: { ...(t.params ?? {}), maxPrice: maxPriceCatalogo, prezzoRigido: true } }
           : t
       );
     }
@@ -2903,6 +3206,10 @@ export async function chatConAssistente(
   // S5.2.1 — Query di riserva: solo se l'invocazione è priva di una query
   // utilizzabile. Nessuna nuova chiamata tool, nessun vincolo rimosso.
   invocazioni = applicaQueryRiservaPino(invocazioni, comprensione);
+
+  // Budget esplicito → vincolante su TUTTE le invocazioni di catalogo, comprese
+  // quelle scelte da Gemini, che non può attivare né disattivare il filtro.
+  invocazioni = applicaBudgetVincolantePino(invocazioni, limitiVincolanti);
 
   // S1-A — Contratto al confine: nomi fuori allowlist e parametri non ammessi
   // vengono scartati PRIMA del limite, quindi non consumano il budget dei tre
@@ -2980,14 +3287,18 @@ export async function chatConAssistente(
   // l'indisponibilità temporanea, distinta dal messaggio S19 (selezione AI).
   const tutteLeFontiFallite = riepilogoTool.tutteFallite;
   if (tutteLeFontiFallite && !directReply) {
-    return {
+    return esci("fonti_non_disponibili", {
       risposta: messaggioFontiNonDisponibiliPino(linguaConversazione),
       negozi: [],
       prodotti: [],
       processingMs: Date.now() - inizio,
       source: "assistente",
       intent: analisi.intent,
-    };
+    }, {
+      limiti: limitiVincolanti,
+      origine: limitiVincolanti ? "traccia" : "assente",
+      invocazioni: invocazioni.map((t) => String(t.tool ?? "")),
+    });
   }
 
   // ── Recupero intelligente v3 ─────────────────────────────────────────────
@@ -3016,6 +3327,7 @@ export async function chatConAssistente(
       analisi,
       memoria,
       semantica,
+      comprensione,
       budgetInvocazioniRecuperoPino(invocazioni.length)
     );
     if (recupero.prodotti.length > 0 || recupero.negozi.length > 0) {
@@ -3123,14 +3435,18 @@ export async function chatConAssistente(
 
   // 2) Risposta diretta (chiacchiera / cortesia): nessuna ricerca
   if (directReply) {
-    return {
+    return esci("risposta_diretta", {
       risposta: directReply,
       negozi: [],
       prodotti: [],
       processingMs: Date.now() - inizio,
       source: "assistente",
       intent: analisi.intent,
-    };
+    }, {
+      limiti: limitiVincolanti,
+      origine: limitiVincolanti ? "traccia" : "assente",
+      invocazioni: invocazioni.map((t) => String(t.tool ?? "")),
+    });
   }
 
   // 3) Dati deterministici: meteo e farmacie non passano MAI dal modello
@@ -3144,14 +3460,18 @@ export async function chatConAssistente(
     haMeteo &&
     meteoSostituisceRispostaPino({ negozi, prodotti, offerte, eventi, categorie, farmacie })
   ) {
-    return {
+    return esci("meteo", {
       risposta: rispostaMeteoDeterministica(meteo, linguaConversazione),
       negozi: [],
       prodotti: [],
       processingMs: Date.now() - inizio,
       source: "assistente",
       intent: analisi.intent,
-    };
+    }, {
+      limiti: limitiVincolanti,
+      origine: limitiVincolanti ? "traccia" : "assente",
+      invocazioni: invocazioni.map((t) => String(t.tool ?? "")),
+    });
   }
 
   if (haFarmacie) {
@@ -3160,14 +3480,18 @@ export async function chatConAssistente(
     const motivoFebbre = REQUIRES_PHARMACY_REASON.test(domanda)
       ? (linguaConversazione === "en" ? "the symptoms you mentioned" : "i sintomi che hai indicato")
       : undefined;
-    return {
+    return esci("farmacie", {
       risposta: rispostaFarmacieDeterministica(farmacie, statoFarmacia, motivoFebbre, linguaConversazione),
       negozi: [],
       prodotti: [],
       processingMs: Date.now() - inizio,
       source: "assistente",
       intent: analisi.intent,
-    };
+    }, {
+      limiti: limitiVincolanti,
+      origine: limitiVincolanti ? "traccia" : "assente",
+      invocazioni: invocazioni.map((t) => String(t.tool ?? "")),
+    });
   }
 
   // 4) Fallback: ricerca completa SOLO se la selezione LLM è fallita.
@@ -3194,7 +3518,7 @@ export async function chatConAssistente(
       categorie = fallback.esito.categorie;
     }
   } else if (!directReply && !toolsEseguiti && !richiestaServizio) {
-    return {
+    return esci("selezione_vuota", {
       risposta: linguaConversazione === "en"
         ? "I'm here! I can help you find local shops, products, offers and events. What are you looking for?"
         : "Va bene, sono qui! Posso aiutarti a trovare negozi, prodotti, offerte ed eventi nella tua città. Dimmi pure cosa cerchi.",
@@ -3203,7 +3527,11 @@ export async function chatConAssistente(
       processingMs: Date.now() - inizio,
       source: "assistente",
       intent: analisi.intent,
-    };
+    }, {
+      limiti: limitiVincolanti,
+      origine: limitiVincolanti ? "traccia" : "assente",
+      invocazioni: invocazioni.map((t) => String(t.tool ?? "")),
+    });
   }
 
   // Correzione B (S19): un guasto della selezione AI non è un catalogo vuoto.
@@ -3253,7 +3581,7 @@ export async function chatConAssistente(
   // precedente (aperti ora / economici / vicino / altro). Nessuna ricerca
   // generica: se il filtro non è applicabile sui dati reali, Pino lo dichiara.
   if (followUp) {
-    return rispostaFollowUp({
+    return esci("follow_up", await rispostaFollowUp({
       followUp,
       negozi,
       prodotti,
@@ -3261,6 +3589,10 @@ export async function chatConAssistente(
       analisi,
       inizio,
       lingua: linguaConversazione,
+    }), {
+      limiti: limitiVincolanti,
+      origine: limitiVincolanti ? "traccia" : "assente",
+      invocazioni: invocazioni.map((t) => String(t.tool ?? "")),
     });
   }
 
@@ -3372,12 +3704,16 @@ export async function chatConAssistente(
     .filter((parte): parte is string => Boolean(parte && parte.trim()))
     .join("\n\n");
 
-  return {
+  return esci("finale", {
     risposta,
     negozi: negozi.slice(0, 8),
     prodotti: prodotti.slice(0, 10),
     processingMs: Date.now() - inizio,
     source: "assistente",
     intent: analisi.intent,
-  };
+  }, {
+    limiti: limitiVincolanti,
+    origine: limitiVincolanti ? "traccia" : "assente",
+    invocazioni: invocazioni.map((t) => String(t.tool ?? "")),
+  });
 }

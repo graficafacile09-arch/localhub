@@ -61,10 +61,10 @@ export function prelevaChiamataGeminiPino(budget: BudgetGeminiPino | undefined):
  * `ErroreBudgetGeminiPino`, che i chiamanti Pino trattano come assenza della
  * funzione AI (fallback deterministico), mai come errore mostrato all'utente.
  */
-export async function chiamataGeminiConBudgetPino(
+export async function chiamataGeminiConBudgetPino<T = string>(
   budget: BudgetGeminiPino | undefined,
-  chiamata: () => Promise<string>
-): Promise<string> {
+  chiamata: () => Promise<T>
+): Promise<T> {
   if (!prelevaChiamataGeminiPino(budget)) {
     throw new ErroreBudgetGeminiPino(budget?.limite ?? MASSIMO_CHIAMATE_GEMINI_PINO);
   }

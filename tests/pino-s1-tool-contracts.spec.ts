@@ -7,6 +7,7 @@ import {
   classificaProdottoPino,
   deduplicaPerId,
   normalizzaQueryOfferteEventiPino,
+  prodottoRispettaBudgetPino,
   searchAll,
   searchProducts,
   searchStores,
@@ -135,10 +136,11 @@ test.describe("S1 — validazione dei ToolParams", () => {
       apertiOra: "sì",
     });
 
-    expect(vincoli.params).toEqual({});
+    // Lo zero è un tetto esplicito valido e non viene scartato.
+    expect(vincoli.params).toEqual({ minPrice: 0 });
+    expect(validaToolParams("searchProducts", { maxPrice: 0 }).params).toEqual({ maxPrice: 0 });
     expect(vincoli.problemi).toEqual(
       expect.arrayContaining([
-        "minPrice_non_valido",
         "maxPrice_non_valido",
         "limit_non_valido",
         "apertiOra_non_valido",
@@ -159,11 +161,12 @@ test.describe("S1 — validazione dei ToolParams", () => {
     ]);
   });
 
-  test("fascia di prezzo incoerente: scartata per intero e segnalata", () => {
+  test("fascia di prezzo invertita: normalizzata senza perdere i limiti", () => {
     const esito = validaToolParams("searchProducts", { minPrice: 30, maxPrice: 5 });
-    expect(esito.params.minPrice).toBeUndefined();
-    expect(esito.params.maxPrice).toBeUndefined();
-    expect(esito.problemi).toContain("fascia_prezzo_incoerente");
+    expect(esito.params.minPrice).toBe(5);
+    expect(esito.params.maxPrice).toBe(30);
+    expect(esito.problemi).toContain("fascia_prezzo_normalizzata");
+    expect(esito.problemi).not.toContain("fascia_prezzo_incoerente");
   });
 
   test("input che non è un oggetto produce parametri vuoti", () => {
@@ -399,21 +402,21 @@ test.describe("S1-A — contratti per strumento", () => {
       ],
       searchProducts: [
         "query", "limit", "categoria", "citta", "esclusioni",
-        "colori", "materiali", "escludiNomi", "minPrice", "maxPrice", "apertiOra",
+        "colori", "materiali", "escludiNomi", "minPrice", "maxPrice", "prezzoRigido", "apertiOra",
       ],
       searchOffers: ["query", "limit"],
       searchEvents: ["query", "limit"],
       searchAll: [
         "query", "limit", "categoria", "tipo", "servizio", "citta",
         "termini", "esclusioni", "colori", "materiali", "escludiNomi", "minPrice",
-        "maxPrice", "apertiOra",
+        "maxPrice", "prezzoRigido", "apertiOra",
       ],
       getCategories: [],
       getWeather: [],
       searchPharmacies: ["stato", "limit"],
       searchGiftCategories: [
         "query", "limit", "termini", "categoria", "citta", "esclusioni", "colori",
-        "materiali", "escludiNomi", "minPrice", "maxPrice", "apertiOra",
+        "materiali", "escludiNomi", "minPrice", "maxPrice", "prezzoRigido", "apertiOra",
       ],
     };
 
@@ -528,5 +531,41 @@ test.describe("S1-A — query di offerte ed eventi", () => {
   test("le query valide restano identiche a prima (solo il caso)", () => {
     expect(normalizzaQueryOfferteEventiPino("Natale")).toBe("natale");
     expect(normalizzaQueryOfferteEventiPino("concerto live")).toBe("concerto live");
+  });
+});
+
+// ─── prezzoRigido: contratto e filtro di sicurezza ──────────────────────────
+test.describe("S1 — budget vincolante", () => {
+  test("prezzoRigido è ammesso solo dagli strumenti di catalogo", () => {
+    for (const strumento of ["searchProducts", "searchAll", "searchGiftCategories"] as const) {
+      const esito = validaToolParams(strumento, { prezzoRigido: true });
+      expect(esito.params.prezzoRigido, strumento).toBe(true);
+      expect(esito.problemi, strumento).not.toContain("chiave_non_ammessa:prezzoRigido");
+    }
+    const negozi = validaToolParams("searchStores", { prezzoRigido: true });
+    expect(negozi.params.prezzoRigido).toBeUndefined();
+    expect(negozi.problemi).toContain("chiave_non_ammessa:prezzoRigido");
+    expect(validaToolParams("searchProducts", { prezzoRigido: "sì" }).problemi).toContain(
+      "prezzoRigido_non_valido"
+    );
+  });
+
+  test("il filtro rigido scarta prezzi mancanti, zero, negativi e fuori fascia", () => {
+    const conPrezzo = (prezzo: number | null) =>
+      ({ ...prodotto("Prova", "Categoria"), prezzo } as ProdottoRicerca);
+    expect(prodottoRispettaBudgetPino(conPrezzo(null), { maxPrice: 50 })).toBe(false);
+    expect(prodottoRispettaBudgetPino(conPrezzo(0), { maxPrice: 50 })).toBe(false);
+    expect(prodottoRispettaBudgetPino(conPrezzo(-5), { maxPrice: 50 })).toBe(false);
+    expect(prodottoRispettaBudgetPino(conPrezzo(50.01), { maxPrice: 50 })).toBe(false);
+    expect(prodottoRispettaBudgetPino(conPrezzo(49.99), { minPrice: 50, maxPrice: 120 })).toBe(false);
+    expect(prodottoRispettaBudgetPino(conPrezzo(120.01), { minPrice: 50, maxPrice: 120 })).toBe(false);
+  });
+
+  test("i confini della fascia sono inclusi", () => {
+    const conPrezzo = (prezzo: number) => prodotto("Prova", "Categoria", { prezzo });
+    expect(prodottoRispettaBudgetPino(conPrezzo(50), { maxPrice: 50 })).toBe(true);
+    expect(prodottoRispettaBudgetPino(conPrezzo(50), { minPrice: 50, maxPrice: 120 })).toBe(true);
+    expect(prodottoRispettaBudgetPino(conPrezzo(120), { minPrice: 50, maxPrice: 120 })).toBe(true);
+    expect(prodottoRispettaBudgetPino(conPrezzo(5), { maxPrice: 5 })).toBe(true);
   });
 });

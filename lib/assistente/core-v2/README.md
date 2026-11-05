@@ -1,11 +1,25 @@
-# Pino Core v2 — isolated prototype
+# Pino Core v2 — deterministic planner and experimental modules
 
-This directory is an experimental, non-production implementation.
+This directory contains the deterministic Core V2 planner and experimental
+modules. The planner is not the production planner, but it is connected to the
+runtime through the Shadow Tier 0 observer.
 
-## Safety boundary
+## Integration status
 
-- Nothing in this directory is imported by the production Pino orchestrator.
-- No route, page, widget, public search behavior, Supabase query, or database schema is changed.
+- `request-planner.ts` is imported by `lib/assistente/shadow/tier0.ts` and is
+  executed only after the production response, through `after()` in
+  `app/api/assistente/route.ts`.
+- The Shadow observes route, surface, price limits and returned products. It
+  cannot alter the response, call Gemini, access Supabase or execute `fetch`.
+- `request-planner.ts` is not yet used to build the production response. The
+  production planner in `lib/assistente/semantica.ts` remains authoritative.
+- `request-planner.ts` depends on shared production helpers:
+  `../understanding.ts` and `../routing-policy.ts`.
+- `ai-request-planner.ts`, `product-evidence-ranker.ts` and
+  `production-intent-snapshot.ts` are still experimental/test-only and are not
+  imported by the runtime.
+- The Shadow does not change route behavior, pages, widgets, public search
+  results, Supabase queries or the database schema.
 - The deterministic planner is pure. The AI planner is a separate opt-in function and only calls Gemini to obtain a structured plan.
 - The AI planner performs no catalog search, database access, writes, or user-facing response generation.
 - If Gemini is unavailable, times out, exceeds quota, or returns invalid JSON, the deterministic planner is used unchanged.
@@ -22,8 +36,11 @@ The planner converts a natural-language request into:
 - open-now constraint and explicit exclusions;
 - confidence and clarification requirement.
 
-`request-planner.ts` is the offline deterministic v2 baseline.
-`ai-request-planner.ts` is the new structured AI planner. It accepts recent conversation context and supports an injected model function for offline tests. It is not connected to Pino.
+`request-planner.ts` is the deterministic v2 baseline used by the Shadow Tier 0
+observer. It is not connected to the production response path.
+`ai-request-planner.ts` is the structured AI planner. It accepts recent
+conversation context and supports an injected model function for offline tests.
+It is not connected to the production Pino runtime.
 
 ## Evaluation
 
@@ -71,4 +88,7 @@ The report measures route/surface accuracy, model-call success/fallback and late
 5. [ ] Compare route/surface/query accuracy, constraint extraction, false-positive searches, clarification quality, latency and fallback rate.
 6. [ ] Add conversation-state merging and explicit uncertainty handling.
 
-Do not connect this prototype to the assistant, merge it into `main`, or deploy it to production until the user has reviewed the comparison results and explicitly approved the next step.
+The deterministic planner is already connected to the Shadow observer. Do not
+connect it to the production response path, merge it into `main`, or deploy it
+to production until the user has reviewed the comparison results and explicitly
+approved the next step.
