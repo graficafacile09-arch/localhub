@@ -70,6 +70,7 @@ import {
   type GeminiFunctionCallingParams,
 } from "@/lib/ai/gemini-function-calling";
 import { isAttractionNameQuery, searchAttractions } from "./attrazioni";
+import { trovaRispostaFaqPino } from "./faq";
 import { normalizza } from "@/lib/text-utils";
 import type { NegozioRicerca, ProdottoRicerca } from "@/lib/ricerca-ai";
 import { pianoIntentoLocale } from "./local-intents";
@@ -2336,7 +2337,7 @@ const TERMINI_NEUTRI_GUIDA_PINO = new Set([
   "dalla","dai","dagli","dalle","nel","nella","nei","negli","nelle","su","sul",
   "sulla","per","con","senza","non","che","si","mi","ho","piu","c","ci",
   "dell","dello","all","allo","nell","nello","sull","sullo","dall","dallo",
-  "visitare","visit","visiting","visita","visite","vedere","see","seeing",
+  "visitare","visit","visiting","visita","visite","vedere","see","seeing","trova","trovare","cerca","cercare","fammi","elenca","show",
   "guardare","consigli","consigliami","mostrami",
   "what","can","i","the","a","an","any","there","some","me","you","we","do",
   "is","are","of","to","in","on","at","near","around","for","with","and","or",
@@ -2722,6 +2723,21 @@ export async function chatConAssistente(
       processingMs: Date.now() - inizio,
       source: "assistente",
     }, { limiti: null, origine: "assente" });
+  }
+
+  // FAQ pubbliche: risposte basate esclusivamente sui contenuti pubblicati in /faq.
+  // La soglia di corrispondenza evita di intercettare ricerche commerciali o richieste vaghe.
+  if (linguaConversazione === "it") {
+    const faq = trovaRispostaFaqPino(domanda);
+    if (faq) {
+      return esci("faq", {
+        risposta: `Secondo le FAQ di InCittà, **${faq.domanda}**\n\n${faq.risposta}\n\n[Consulta tutte le FAQ](/faq)`,
+        negozi: [],
+        prodotti: [],
+        processingMs: Date.now() - inizio,
+        source: "assistente",
+      }, { limiti: null, origine: "assente" });
+    }
   }
 
 

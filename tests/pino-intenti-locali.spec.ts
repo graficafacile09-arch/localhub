@@ -63,6 +63,13 @@ test("B3 sintomi → farmacia di turno", () => {
   }
 });
 
+test("B4 'farmacie' senza stato → elenco completo delle farmacie", () => {
+  expect(pianoIntentoLocale("Cerco farmacie a Castrovillari")).toEqual({
+    tool: "searchPharmacies",
+    stato: "tutte",
+  });
+});
+
 // ─── C. NESSUNA REGRESSIONE SULLE RICERCHE COMMERCIALI ───────────────────────
 
 test("C1 ricerche commerciali vere: MAI rubate al catalogo", () => {
