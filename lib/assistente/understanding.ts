@@ -364,7 +364,7 @@ const MATERIALI_PINO: Array<[string, string[]]> = [
   ["denim", ["denim", "jeans"]],
 ];
 
-const DESTINATARI_PINO: Array<[string, string[]]> = [
+export const DESTINATARI_PINO: Array<[string, string[]]> = [
   ["donna", ["donna", "donne", "woman", "women", "her"]],
   ["uomo", ["uomo", "uomini", "man", "men", "him"]],
   ["bambina", ["bambina", "bambine", "girl"]],

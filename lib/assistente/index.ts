@@ -4,7 +4,11 @@ import {
   rilevaLinguaPino,
   normalizzaQueryCatalogo,
 } from "./understanding";
-import { isExplicitFoodProductRequest, richiestaCinemaPino } from "./routing-policy";
+import {
+  isExplicitFoodProductRequest,
+  richiestaCinemaPino,
+  richiestaProdottoCommercialePino,
+} from "./routing-policy";
 import { rispostaIdentitaPino } from "./identity";
 import { rispostaSalutoPino, rispostaRelazionalePino, rispostaPreferenzaLinguaPino } from "./greetings";
 import { CATEGORIE_REGALO, isGenericGiftRequest, prodottoCorrispondeCategoriaRegalo } from "./gift-retrieval";
@@ -2470,6 +2474,9 @@ export function richiestaGuidaAttrazioniPino(query: string): boolean {
   if (RE_CONTESTO_ACQUISTO_PINO.test(testo)) return false;
   // Eventi e rassegne seguono il dominio eventi, non la guida turistica.
   if (RE_RICHIESTA_EVENTI_PINO.test(normalizza(testo))) return false;
+  // Acquisto esplicito di un prodotto: il toponimo nel testo non lo trasforma
+  // in una richiesta di visita (era il caso «Avete l'olio del Pollino?»).
+  if (richiestaProdottoCommercialePino(testo)) return false;
   if (isAttractionNameQuery(testo)) return true;
   if (!RE_INTENTO_GUIDA_PINO.test(testo)) return false;
   return true;

@@ -21,7 +21,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import AssistantMessage, { type ChatMessage } from "./AssistantMessage";
 import AssistantInput from "./AssistantInput";
 import TypingIndicator from "./TypingIndicator";
-import type { SearchResult } from "@/lib/search-service";
+import { chiediAPino } from "./pino-fetch";
 
 // ─── Suggerimenti iniziali ────────────────────────────────────────────────────
 
@@ -52,10 +52,9 @@ export default function AssistantChat() {
   const messagesRef = useRef<ChatMessage[]>([]);
 
   // SessionId della conversazione (parte del contratto dell'endpoint;
-  // il backend è stateless, ma la cronologia resta il veicolo del contesto).
-  const sessionIdRef = useRef<string>(
-    `ass-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
-  );
+  // il backend è stateless, ma la cronologia resta il veicolo del contesto),
+  // generato al primo invio: Date.now/Math.random non vanno usati nel render.
+  const sessionIdRef = useRef<string>("");
 
   useEffect(() => {
     messagesRef.current = messages;
@@ -127,20 +126,16 @@ export default function AssistantChat() {
     ];
 
     try {
-      const response = await fetch("/api/assistente", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: storico, sessionId: sessionIdRef.current }),
-      });
-
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(
-          (errData as { error?: string }).error ?? `Errore HTTP ${response.status}`
-        );
+      if (!sessionIdRef.current) {
+        sessionIdRef.current = `ass-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
       }
 
-      const data = (await response.json()) as SearchResult;
+      // Streaming NDJSON (con fallback JSON) tramite un unico client: così la
+      // chat mostra il progresso e non resta muta durante la ricerca.
+      const data = await chiediAPino({
+        messaggi: storico,
+        sessionId: sessionIdRef.current,
+      });
 
       let content = data.risposta?.trim() ?? "";
 

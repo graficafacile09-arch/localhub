@@ -1,7 +1,7 @@
 /**
  * LocalHub — API Route: /api/assistente
  *
- * Nuovo endpoint dell'Assistente AI pubblico di InCittà.
+ * Endpoint dell'Assistente AI pubblico di InCittà (Pino).
  * Riceve la cronologia recente della conversazione e restituisce la risposta
  * intelligente (comprensione intento + retrieval + ragionamento).
  *
@@ -9,21 +9,43 @@
  *   { messages: [{ role: "user" | "assistant", content: string }], sessionId?: string }
  *
  * Response (200):
- *   { risposta, negozi, prodotti, processingMs, source: "assistente", lingua }
+ *   JSON:    { risposta, negozi, prodotti, processingMs, source, lingua }
+ *   NDJSON:  {"type":"stato","fase":"ricerca"} + {"type":"risultato", ...}
+ *            (solo se il client invia `Accept: application/x-ndjson`)
+ *
+ * Garanzie di questa rotta:
+ * - nessun 500 e nessun 504 per colpa dell'AI: oltre la scadenza o in caso di
+ *   errore si usa la ricerca classica (`lib/search-service.ts`) e si risponde
+ *   comunque 200 con risultati reali (`lib/assistente/degradazione.ts`);
+ * - `maxDuration` esplicito: la funzione ha il tempo di completare il
+ *   fallback senza essere troncata dalla piattaforma;
+ * - lo streaming è opt-in: il contratto JSON storico resta invariato per
+ *   eventuali altri consumer.
  *
  * NOTA: /api/search resta invariato (altri consumer); questo endpoint viene
- * usato ESCLUSIVAMENTE da AssistantChat.
+ * usato dai componenti della chat (AssistantChat, AssistantPanel).
  *
  * @module app/api/assistente/route
- *
- * La logica AI resta quella della versione di riferimento delle ore 20:00.
  */
 
 import { NextResponse, after } from "next/server";
-import { chatConAssistente, type MessaggioAssistente } from "@/lib/assistente";
+import {
+  chatConAssistente,
+  type MessaggioAssistente,
+  type RispostaAssistente,
+} from "@/lib/assistente";
 import { prendiOsservazioneTier0 } from "@/lib/assistente/shadow/integrazione";
 import { rilevaLinguaConversazionePino } from "@/lib/assistente/understanding";
 import { checkRateLimit } from "@/lib/rate-limiter";
+import {
+  conScadenzaPino,
+  rispostaDegradataPino,
+  rispostaIndisponibilePino,
+} from "@/lib/assistente/degradazione";
+
+// Durata massima della funzione: senza questa dichiarazione vale il default
+// della piattaforma e una chiamata Gemini lenta diventa un 504.
+export const maxDuration = 60;
 
 // ─── Rate limit CONDIVISO DB-backed per IP (guardia anti-abuso) ────────────
 // L'endpoint è pubblico e ogni messaggio consuma token Gemini (chiave con
@@ -34,8 +56,101 @@ import { checkRateLimit } from "@/lib/rate-limiter";
 const MAX_PER_MINUTO = 20;
 const MAX_PER_ORA = 120;
 
+/** Oltre questa soglia il percorso AI viene abbandonato: meglio risultati
+ *  reali dalla ricerca classica che un'attesa infinita. */
+const SCADENZA_PERCORSO_AI_MS = 25_000;
+
+/** Content-Type dello stream opt-in (una riga JSON per evento). */
+const TIPO_STREAMING = "application/x-ndjson";
+
 function ipRichiedente(request: Request): string {
   return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "anon";
+}
+
+function vuoleStreaming(request: Request): boolean {
+  return (request.headers.get("accept") ?? "")
+    .toLowerCase()
+    .includes(TIPO_STREAMING);
+}
+
+/**
+ * Percorso AI con degradazione controllata. Non lancia mai.
+ *
+ * 1. entro la scadenza: risposta dell'orchestratore Pino (invariata);
+ * 2. timeout o errore: ricerca classica + messaggio preconfezionato;
+ * 3. anche la ricerca classica fallisce: messaggio minimo di indisponibilità.
+ *
+ * `dalPercorsoAI` dice se il risultato arriva davvero dall'orchestratore:
+ * solo in quel caso la route schedula l'osservazione Shadow Tier 0.
+ */
+async function rispostaPino(
+  messaggi: MessaggioAssistente[]
+): Promise<{ risultato: RispostaAssistente; dalPercorsoAI: boolean }> {
+  try {
+    const esito = await conScadenzaPino(
+      chatConAssistente(messaggi),
+      SCADENZA_PERCORSO_AI_MS
+    );
+    if (esito.ok) {
+      return { risultato: esito.valore, dalPercorsoAI: true };
+    }
+    console.warn(
+      "[/api/assistente] percorso AI oltre la scadenza, uso la ricerca classica"
+    );
+  } catch (error) {
+    console.error("[/api/assistente] Errore:", error);
+  }
+
+  try {
+    return { risultato: await rispostaDegradataPino(messaggi), dalPercorsoAI: false };
+  } catch (erroreRicerca) {
+    console.error(
+      "[/api/assistente] Anche la ricerca classica è fallita:",
+      erroreRicerca
+    );
+    return { risultato: rispostaIndisponibilePino(messaggi), dalPercorsoAI: false };
+  }
+}
+
+/**
+ * Risposta in streaming NDJSON: il primo chunk parte subito (il client mostra
+ * il progresso) e l'evento `risultato` porta lo stesso oggetto del JSON.
+ */
+function rispostaInStreaming(messaggi: MessaggioAssistente[]): Response {
+  const encoder = new TextEncoder();
+  const codiceLingua = rilevaLinguaConversazionePino(messaggi);
+
+  const stream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      const invia = (evento: unknown) => {
+        controller.enqueue(encoder.encode(`${JSON.stringify(evento)}\n`));
+      };
+
+      try {
+        invia({ type: "stato", fase: "ricerca" });
+        const esito = await rispostaPino(messaggi);
+        invia({ type: "risultato", ...esito.risultato, lingua: codiceLingua });
+      } catch {
+        // Rete di sicurezza: lo stream non si chiude mai senza un esito.
+        invia({
+          type: "risultato",
+          ...rispostaIndisponibilePino(messaggi),
+          lingua: codiceLingua,
+        });
+      } finally {
+        controller.close();
+      }
+    },
+  });
+
+  return new NextResponse(stream, {
+    status: 200,
+    headers: {
+      "Content-Type": `${TIPO_STREAMING}; charset=utf-8`,
+      "Cache-Control": "no-store, no-transform",
+      "X-Accel-Buffering": "no",
+    },
+  });
 }
 
 export async function POST(request: Request) {
@@ -81,8 +196,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Nessun messaggio valido." }, { status: 400 });
   }
 
-  try {
-    const risultato = await chatConAssistente(messaggi);
+  // Streaming opt-in: i client della chat lo richiedono, gli altri ricevono
+  // il JSON storico. In entrambi i casi lo status è 200.
+  if (vuoleStreaming(request)) {
+    return rispostaInStreaming(messaggi);
+  }
+
+  const esito = await rispostaPino(messaggi);
+  const risultato = esito.risultato;
+
+  if (esito.dalPercorsoAI) {
     // Shadow Tier 0 (Fase 2): l'osservazione è registrata da `chatConAssistente`
     // solo se il kill switch doppio è attivo; qui viene schedulata DOPO la
     // risposta, senza attese e senza toccare il JSON restituito.
@@ -101,17 +224,12 @@ export async function POST(request: Request) {
         // la risposta HTTP resta quella originale.
       }
     }
-    // La lingua dell'ultimo messaggio viaggia con la risposta: le etichette dei
-    // risultati (conteggi delle card) devono usare la stessa lingua del testo.
-    return NextResponse.json({
+  }
+
+  // La lingua dell'ultimo messaggio viaggia con la risposta: le etichette dei
+  // risultati (conteggi delle card) devono usare la stessa lingua del testo.
+  return NextResponse.json({
       ...risultato,
       lingua: rilevaLinguaConversazionePino(messaggi),
-    });
-  } catch (error: unknown) {
-    console.error("[/api/assistente] Errore:", error);
-    return NextResponse.json(
-      { error: "Si è verificato un errore interno. Riprova tra poco." },
-      { status: 500 }
-    );
-  }
+  });
 }

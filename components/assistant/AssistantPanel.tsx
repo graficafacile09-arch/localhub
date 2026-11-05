@@ -7,7 +7,7 @@ import AssistantInput from "./AssistantInput";
 import TypingIndicator from "./TypingIndicator";
 import PinoSprite, { type PinoMood } from "./PinoSprite";
 import { isPinoAreaRiservata, isPinoTransactionalRoute } from "./pino-route";
-import type { SearchResult } from "@/lib/search-service";
+import { chiediAPino } from "./pino-fetch";
 
 const SUGGESTIONS = [
   "Pizzeria vicino al centro",
@@ -38,9 +38,8 @@ export default function AssistantPanel() {
   // Cronologia recente + sessionId (contratto di /api/assistente: il backend
   // è stateless, la storia recente è il veicolo del contesto).
   const messagesRef = useRef<ChatMessage[]>([]);
-  const sessionIdRef = useRef<string>(
-    `ass-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
-  );
+  // Generato al primo invio: Date.now/Math.random non vanno usati nel render.
+  const sessionIdRef = useRef<string>("");
   // Query iniziale passata dalla barra di ricerca (pulsante ✨): viene inviata
   // automaticamente all'apertura, così l'utente non deve riscriverla.
   const pendingInitialRef = useRef<string | null>(null);
@@ -118,20 +117,16 @@ export default function AssistantPanel() {
     ];
 
     try {
-      const response = await fetch("/api/assistente", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: storico, sessionId: sessionIdRef.current }),
-      });
-
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(
-          (errData as { error?: string }).error ?? `Errore HTTP ${response.status}`
-        );
+      if (!sessionIdRef.current) {
+        sessionIdRef.current = `ass-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
       }
 
-      const data = (await response.json()) as SearchResult;
+      // Streaming NDJSON (con fallback JSON) tramite un unico client: così la
+      // chat mostra il progresso e non resta muta durante la ricerca.
+      const data = await chiediAPino({
+        messaggi: storico,
+        sessionId: sessionIdRef.current,
+      });
 
       let content = data.risposta?.trim() ?? "";
 

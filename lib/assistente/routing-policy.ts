@@ -58,6 +58,29 @@ export function isExplicitFoodProductRequest(query: string): boolean {
 }
 
 /**
+ * Richiesta commerciale di un prodotto alimentare («Avete l'olio del Pollino?»).
+ *
+ * Il toponimo da solo non basta a trasformare un acquisto in una visita
+ * turistica: senza questa guardia «Avete l'olio extravergine del Pollino?»
+ * finiva nella guida Attrazioni e l'utente riceveva il Parco invece dei
+ * prodotti. Nessun verbo di acquisto (o nessun soggetto di prodotto) = nessuna
+ * esclusione: «Vorrei visitare il Parco Nazionale del Pollino» resta un luogo.
+ */
+export function richiestaProdottoCommercialePino(query: string): boolean {
+  // L'apostrofo diventa spazio: in «l'olio» il soggetto è «olio» e senza
+  // questa normalizzazione il token sarebbe «lolio» (nessun prodotto trovato).
+  const q = normalizza(String(query ?? "").replace(/[’']/g, " "));
+  if (!q) return false;
+
+  const haSoggettoProdotto = FOOD_PRODUCTS.some((term) =>
+    new RegExp(`\\b${term}\\b`).test(q)
+  );
+  if (!haSoggettoProdotto) return false;
+
+  return /\b(?:avete|avete voi|vendete|comprate|cercate|cerco|sto cercando|trovami|mi serve|mi servirebbe|comprare|acquistare|acquisto|ordinare|ordino|prezzo|prezzi|quanto costa|quanto costano|costo|disponibile|disponibili|in vendita|sapete se avete|do you have|do you sell|how much|price|i need|i want|i'm looking for|im looking for)\b/.test(q);
+}
+
+/**
  * Richiesta di una sala cinematografica (o di andare al cinema).
  *
  * È un LUOGO/ATTIVITÀ, non un prodotto: deve essere gestita nel dominio

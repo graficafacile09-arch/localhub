@@ -19,6 +19,7 @@ import { normalizzaRichiesta } from "./local-intents";
 import {
   attributiVuotiPino,
   correggiTokenCatalogo,
+  DESTINATARI_PINO,
   estraiAttributiPino,
   estraiSoggettoPino,
   normalizzaQueryCatalogo,
@@ -495,6 +496,12 @@ export const TOKEN_SENZA_REFUSI = new Set([
   "articolari",
   "auricolare",
   "auricolari",
+  // Destinatari e legami familiari: sono parole italiane valide e non devono
+  // essere "corrette" verso un prodotto del catalogo. Senza questa protezione
+  // «regalo per mia moglie» diventava «regalo per mia maglia» (due sostituzioni
+  // su una parola di 6 lettere rientravano nella soglia dei refusi) e la
+  // ricerca finiva su un capo di abbigliamento mai richiesto.
+  ...DESTINATARI_PINO.flatMap(([canonico, sinonimi]) => [canonico, ...sinonimi]),
 ]);
 
 /** Vocabolario dei refusi di Pino (token → termine canonico). Esportato per i
@@ -524,7 +531,7 @@ export const VOCABOLARIO_PINO: Array<[string, string]> = (() => {
   return Array.from(mappa.entries());
 })();
 
-function correggiErroriBattitura(query: string): string {
+export function correggiErroriBattitura(query: string): string {
   // La correzione vive in understanding.ts ed è volutamente prudente: un
   // refuso plausibile viene corretto, una parola italiana valida no ("cane"
   // non deve diventare "pane", "voglio" non deve diventare "aglio").
