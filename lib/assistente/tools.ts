@@ -1351,7 +1351,7 @@ const FORMATI_PASTA_PINO = [
   "conchiglie", "vermicelli", "ziti", "capellini",
 ] as const;
 
-const RE_FORMATO_PASTA_PINO = new RegExp(`\\b(?:${FORMATI_PASTA_PINO.join("|")})\\b`);
+const RE_FORMATO_PASTA_PINO = new RegExp(`\b(?:${FORMATI_PASTA_PINO.join("|")})\b`);
 
 /** Formato di pasta riconosciuto sui metadati identitari del prodotto. */
 function identificaFormatoPastaPino(prodotto: ProdottoRicerca): boolean {
@@ -2240,7 +2240,7 @@ function richiestaDolceComeDessert(query: string, soggettoAlimentare: string): b
   const soggetto = normalizza(soggettoAlimentare).trim();
   if (soggetto !== "dolce" && soggetto !== "dolci") return false;
   const testo = normalizza(query);
-  return !/\\b(?:vino|vini|wine|peperone|peperoni|pepper|peppers|cipolla|cipolle|onion|onions|miele|honey)\\b/.test(testo);
+  return !/\b(?:vino|vini|wine|peperone|peperoni|pepper|peppers|cipolla|cipolle|onion|onions|miele|honey)\b/.test(testo);
 }
 
 /**
@@ -2253,10 +2253,10 @@ function prodottoEUnDessert(prodotto: ProdottoRicerca): boolean {
   const classificazione = normalizza(
     [prodotto.categoria, prodotto.sottocategoria].filter(Boolean).join(" ")
   );
-  if (/\\b(?:dolciumi|pasticceria|dessert|desserts|confectionery)\\b/.test(classificazione)) {
+  if (/\b(?:dolciumi|pasticceria|dessert|desserts|confectionery)\b/.test(classificazione)) {
     return true;
   }
-  if (/\\b(?:biscott[oi]|torrone|piparell[ae]|mostacciol[oi]|cannol[oi]|ciotaredd[ae]|crostata|tort[ae]|panettone|colomba|zeppol[ae]|pasticcin[oi]|gelato|brownie|cupcake|cake|cookies)\\b/.test(nome)) {
+  if (/\b(?:biscott[oi]|torrone|piparell[ae]|mostacciol[oi]|cannol[oi]|ciotaredd[ae]|crostata|tort[ae]|panettone|colomba|zeppol[ae]|pasticcin[oi]|gelato|brownie|cupcake|cake|cookies)\b/.test(nome)) {
     return true;
   }
   // Ciotaredda è un dolce locale: la classificazione è confermata dalla
@@ -2264,8 +2264,8 @@ function prodottoEUnDessert(prodotto: ProdottoRicerca): boolean {
   const dettagli = normalizza(
     [prodotto.descrizione, prodotto.descrizione_completa].filter(Boolean).join(" ")
   );
-  return /\\bciotaredd[ae]\\b/.test(nome) &&
-    /\\b(?:dolcetto tradizionale|simile ai mostaccioli)\\b/.test(dettagli);
+  return /\bciotaredd[ae]\b/.test(nome) &&
+    /\b(?:dolcetto tradizionale|simile ai mostaccioli)\b/.test(dettagli);
 }
 
 export function filtraProdottiAlimentariPino(
