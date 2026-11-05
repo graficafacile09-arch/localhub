@@ -2794,7 +2794,13 @@ export async function chatConAssistente(
   // Questo percorso precede Attrazioni, memoria e planner AI: uno zero risultati
   // è definitivo e non deve attivare ricerche su prodotti, eventi o luoghi.
   const analisi = analizzaIntentoPino(domanda);
-  if (analisi.intent === "service" && analisi.confidence === "alta") {
+  // La guida turistica ha precedenza: una domanda sui luoghi ("What museums
+  // can I visit?") non è una professione da cercare nel catalogo attività.
+  if (
+    analisi.intent === "service" &&
+    analisi.confidence === "alta" &&
+    !richiestaGuidaAttrazioniPino(domanda)
+  ) {
     const segnaleServizio = analisi.segnali.find((segnale) => segnale.startsWith("service:"));
     const professione = segnaleServizio?.slice("service:".length).trim();
     if (professione) {
