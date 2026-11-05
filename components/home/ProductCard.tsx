@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { ShoppingCart, Store } from "lucide-react";
 import { getProdottoImmagine } from "@/lib/prodotti-immagini";
@@ -63,19 +62,15 @@ export default function ProductCard({
         <div
           className={`relative aspect-square w-full shrink-0 overflow-hidden border-b border-slate-200 ${prodottoTipico ? "bg-white" : "bg-slate-100"}`}
         >
-          {/* Immagine servita dall'ottimizzatore (WebP ridimensionato, lazy):
-              prima arrivava il JPEG originale a piena risoluzione come
-              background-image CSS, senza srcset né lazy loading. */}
-          <Image
-            src={imageUrl}
-            alt={nome}
-            fill
-            sizes="(max-width: 640px) 45vw, (max-width: 1024px) 30vw, 300px"
-            className={
+          <div
+            role="img"
+            aria-label={nome}
+            className={`h-full w-full ${
               prodottoTipico
-                ? "object-contain"
-                : "object-cover transition duration-300 group-hover:scale-105"
-            }
+                ? "bg-contain bg-center bg-no-repeat"
+                : "bg-cover bg-center transition duration-300 group-hover:scale-105"
+            }`}
+            style={{ backgroundImage: `url(${imageUrl})` }}
           />
           {prodottoTipico && (
             <span className="absolute left-2.5 top-2.5 rounded-full bg-blue-900/90 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-white">
