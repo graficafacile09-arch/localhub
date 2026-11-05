@@ -79,5 +79,5 @@ export function richiestaCinemaPino(query: string): boolean {
 /** Richieste generiche in inglese/italiano che chiedono la guida Attrazioni. */
 export function isBroadAttractionsRequest(query: string): boolean {
   const q = normalizza(query);
-  return /\b(?:cosa vedere|cosa\s+c['’]?e\s+da\s+vedere|cosa visitare|posti da visitare|luoghi da vedere|luoghi interessanti|attrazioni?|attractions?|monumenti?|monuments?|visitare|dintorni|borghi?|villages?|turismo|tour|itinerario|things to see|places to visit|tourist attractions?|sights|what to visit|what can i visit|what should i see|surroundings|nearby places|tourism|itinerary)\b/.test(q);
+  return /\b(?:cosa vedere|cosa\s+c['’]?e\s+da\s+vedere|cosa visitare|cosa posso visitare|cosa posso vedere|posti da visitare|posti posso visitare|quali posti visitare|luoghi da vedere|luoghi interessanti|attrazioni?|attractions?|monumenti?|monuments?|visitare|dintorni|borghi?|villages?|turismo|tour|itinerario|things to see|places to visit|tourist attractions?|sights|what to visit|what can i visit|what should i see|surroundings|nearby places|tourism|itinerary)\b/.test(q);
 }
