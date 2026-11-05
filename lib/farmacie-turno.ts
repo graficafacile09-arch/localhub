@@ -153,14 +153,19 @@ export function inTurnoFarmacia(f: Pick<FarmaciaTurno, "stato" | "turno">): bool
 
 /** Parsa l'HTML della pagina in un elenco strutturato di farmacie. */
 export function parseFarmacieTurno(html: string): FarmaciaTurno[] {
+  // Il markup della fonte è cambiato più volte: non vincolarsi all'ordine
+  // degli attributi, alle virgolette o alla versione http/https di schema.org.
   const blocchi = html.split(
-    '<div itemscope itemtype="https://schema.org/Pharmacy" class="farmacia-box">'
+    /<div\b(?=[^>]*(?:itemtype=["'][^"']*schema\.org\/Pharmacy|class=["'][^"']*farmacia-box))[^>]*>/i
   );
   blocchi.shift();
 
   const farmacie: FarmaciaTurno[] = [];
   for (const blocco of blocchi) {
-    const nome = blocco.match(/class="pharmacyname">([^<]+)</)?.[1]?.trim();
+    const nome = (
+      blocco.match(/class=["'][^"']*pharmacyname[^"']*["'][^>]*>\s*([^<]+)/i)?.[1] ??
+      blocco.match(/itemprop=["']name["'][^>]*>\s*([^<]+)/i)?.[1]
+    )?.trim();
     if (!nome) continue;
 
     const stato = statoDaBlocco(blocco);
@@ -168,8 +173,8 @@ export function parseFarmacieTurno(html: string): FarmaciaTurno[] {
     const apertura = estraiCampoOrario(orari, /Apertura\s*:\s*([^\n]+)/i);
     // La fonte usa sia "Turno:" sia "Turno*:" (nota l'asterisco).
     const turno = estraiCampoOrario(orari, /Turno\s*\*?\s*:\s*([^\n]+)/i);
-    const telefono = blocco.match(/href="tel:([0-9+]+)"/)?.[1] ?? null;
-    const idf = blocco.match(/idf=(\d+)/)?.[1] ?? null;
+    const telefono = blocco.match(/href=["']tel:([0-9+ ]+)["']/i)?.[1]?.replace(/\s+/g, "") ?? null;
+    const idf = blocco.match(/[?&]idf=(\d+)/i)?.[1] ?? null;
 
     farmacie.push({
       id: idf ?? null,

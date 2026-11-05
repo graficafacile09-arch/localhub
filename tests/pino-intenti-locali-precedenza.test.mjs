@@ -8,6 +8,8 @@ import {
 } from "../lib/assistente/index.ts";
 import { isAttractionNameQuery, searchAttractions } from "../lib/assistente/attrazioni.ts";
 import { pianoIntentoLocale } from "../lib/assistente/local-intents.ts";
+import { trovaRispostaFaqPino } from "../lib/assistente/faq.ts";
+import { parseFarmacieTurno } from "../lib/farmacie-turno.ts";
 import { planPinoCoreRequest } from "../lib/assistente/core-v2/request-planner.ts";
 import { ATTRAZIONI_DINTORNI, ATTRAZIONI_LUOGHI } from "../lib/attrazioni-data.ts";
 
@@ -59,6 +61,39 @@ test("le farmacie con la città nel testo restano farmacie, non Attrazioni", asy
     assert.equal(richiestaGuidaAttrazioniPino(frase), false, frase);
     assert.equal(planPinoCoreRequest(frase).route, "pharmacies", frase);
   }
+});
+
+test("la ricerca generica al plurale recupera tutte le farmacie", () => {
+  assert.deepEqual(pianoIntentoLocale("Cerco farmacie a Castrovillari"), {
+    tool: "searchPharmacies",
+    stato: "tutte",
+  });
+  assert.equal(pianoIntentoLocale("farmacia"), null);
+});
+
+test("una richiesta naturale 'trova attrazioni' mantiene la guida ampia", () => {
+  const frase = "Trova attrazioni a Castrovillari";
+  assert.equal(richiestaGuidaAttrazioniPino(frase), true);
+  const luoghi = searchAttractions(frase, 6);
+  assert.ok(luoghi.length > 0);
+  assert.equal(filtraLuoghiPertinentiGuidaPino(frase, luoghi).length, luoghi.length);
+});
+
+test("Pino recupera le risposte pubblicate nelle FAQ", () => {
+  assert.match(trovaRispostaFaqPino("Come funziona InCittà?")?.risposta ?? "", /piattaforma digitale/i);
+  assert.match(trovaRispostaFaqPino("Quali metodi di pagamento posso utilizzare?")?.risposta ?? "", /checkout/i);
+  assert.equal(trovaRispostaFaqPino("Che tempo farà domani?"), null);
+});
+
+test("parser farmacie tollera markup con attributi riordinati", () => {
+  const html = "<div class='farmacia-box' itemtype='http://schema.org/Pharmacy' itemscope>" +
+    "<span itemprop='name'>Farmacia Test</span><span class='btorario'>TURNO</span>" +
+    "<a class='orario'>Apertura: 8:30-13:00<br>Turno*: fino alle 16:00</a>" +
+    "<a href='tel:0981123456'>0981123456</a></div>";
+  const dati = parseFarmacieTurno(html);
+  assert.equal(dati.length, 1);
+  assert.equal(dati[0].nome, "Farmacia Test");
+  assert.equal(dati[0].turno, "fino alle 16:00");
 });
 
 // ─── 2. Eventi e ricerche commerciali fuori dalla guida ─────────────────────
@@ -144,6 +179,7 @@ test("una richiesta ampia senza termini specifici conserva la guida", () => {
   for (const frase of [
     "Cosa posso visitare a Castrovillari?",
     "Ci sono monumenti da visitare?",
+    "Trova attrazioni a Castrovillari",
   ]) {
     const luoghi = searchAttractions(frase, 6);
     assert.ok(luoghi.length > 0, frase);

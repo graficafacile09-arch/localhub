@@ -15,7 +15,7 @@ import {
 } from "../lib/assistente/tools";
 import { getOffertePubbliche } from "../lib/offerte";
 import { getEventiPubblici } from "../lib/eventi";
-import { ErroreFonteFarmacie, getFarmacieTurnoCastrovillari } from "../lib/farmacie-turno";
+import { ErroreFonteFarmacie, getFarmacieTurnoCastrovillari, parseFarmacieTurno } from "../lib/farmacie-turno";
 
 // ─── M6-C3: errori offerte, eventi e farmacie ───────────────────────────────
 //
@@ -182,6 +182,23 @@ test.describe("M6-C3 — eventi", () => {
 });
 
 test.describe("M6-C3 — farmacie di turno", () => {
+  test("parser tollera attributi riordinati, virgolette singole e schema.org http", () => {
+    const html = "<div class='farmacia-box' itemtype='http://schema.org/Pharmacy' itemscope>" +
+      "<span itemprop='name'>Farmacia Test</span>" +
+      "<span class='btorario'>TURNO</span>" +
+      "<a class='orario'>Apertura: 8:30-13:00<br>Turno*: fino alle 16:00</a>" +
+      "<a href='tel:0981123456'>0981123456</a></div>";
+    const farmacie = parseFarmacieTurno(html);
+    expect(farmacie).toHaveLength(1);
+    expect(farmacie[0]).toMatchObject({
+      nome: "Farmacia Test",
+      stato: "turno",
+      apertura: "8:30-13:00",
+      turno: "fino alle 16:00",
+      telefono: "0981123456",
+    });
+  });
+
   test("risposta valida con farmacie: dati estratti, nessuna segnalazione", async () => {
     const { errori, segnalazione } = raccoglitore();
     const farmacie = await getFarmacieTurnoCastrovillari(
