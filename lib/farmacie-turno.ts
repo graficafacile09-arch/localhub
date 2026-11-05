@@ -201,7 +201,7 @@ export function parseFarmacieTurno(html: string): FarmaciaTurno[] {
       apertura: apertura ? decodifica(apertura) : null,
       turno: turno ? decodifica(turno) : null,
       telefono,
-      urlScheda: \`https://www.farmaciediturno.org/farmacia.asp?idf=\${idf}\`,
+      urlScheda: `https://www.farmaciediturno.org/farmacia.asp?idf=${idf}`,
     });
   }
   return estratte;
