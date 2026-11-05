@@ -4,6 +4,7 @@ import test from "node:test";
 import { mappaProdottoRiga } from "../lib/negozi.ts";
 import {
   filtraProdottiAlimentariPino,
+  filtraDessertRichiestoPino,
   filtraProdottiPerSoggettoUnico,
 } from "../lib/assistente/tools.ts";
 import {
@@ -507,5 +508,44 @@ test("P1.3.5 — 'vino dolce' resta una ricerca di vino e peperoni resta una ric
   assert.deepEqual(
     filtraProdottiAlimentariPino([peperone], "Cerco peperoni", "peperone").map((p) => p.id),
     ["peperone-dolce"]
+  );
+});
+
+
+test("P1.3.5 — la barriera finale impedisce al recupero semantico di reinserire falsi dessert", () => {
+  const peperone = prodotto({
+    id: "peperone-dolce",
+    nome: "Peperone secco dolce 100 g",
+    descrizione: "Peperone dolce essiccato.",
+  });
+  const miele = prodotto({
+    id: "miele",
+    nome: "Miele Millefiori",
+    descrizione: "Miele dal gusto dolce.",
+  });
+  const torrone = prodotto({
+    id: "torrone",
+    nome: "Torrone mielato",
+    categoria: "Dolciumi",
+  });
+  const piparelle = prodotto({
+    id: "piparelle",
+    nome: "Piparelle calabresi",
+    categoria: "Dolciumi",
+  });
+
+  // Simula il merge di risultati arrivati da un recupero secondario:
+  // la barriera deve agire anche se il candidato non è passato dal primo gate.
+  assert.deepEqual(
+    ids(filtraDessertRichiestoPino([peperone, miele, torrone, piparelle], "Voglio un dolce")),
+    ["torrone", "piparelle"]
+  );
+  assert.deepEqual(
+    ids(filtraDessertRichiestoPino([peperone, miele], "Cerco vino dolce")),
+    ["peperone-dolce", "miele"]
+  );
+  assert.deepEqual(
+    ids(filtraDessertRichiestoPino([peperone, miele], "Cerco peperoni")),
+    ["peperone-dolce", "miele"]
   );
 });
