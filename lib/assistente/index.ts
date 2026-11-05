@@ -35,6 +35,7 @@ import {
   searchAll,
   getWeatherCastrovillari,
   searchPharmacies,
+  inTurnoFarmacia,
   orariPerNegozi,
   ordinaProdottiPerBudget,
   prodottoRispettaBudgetPino,
@@ -2233,10 +2234,37 @@ function rispostaFarmacieDeterministica(
   const inglese = lingua === "en";
   const turnoTradotto = (turno: string | null | undefined) =>
     turno ? (inglese ? "on duty: " + turno : turno) : null;
+  // Prova del turno condivisa con il tool: la fonte può dichiarare "TURNO"
+  // senza la riga "Turno*:".
+  const diTurno = farmacie.filter(inTurnoFarmacia);
+  const dettagliTurno = (f: (typeof farmacie)[number]) =>
+    f.turno
+      ? turnoTradotto(f.turno)
+      : f.apertura
+        ? (inglese ? "on duty today, hours: " : "di turno oggi, orari: ") + f.apertura
+        : (inglese ? "on duty today" : "di turno oggi");
 
   if (statoRichiesto === "aperte") {
     const aperte = farmacie.filter((f) => f.stato === "aperta").slice(0, 5);
     if (aperte.length === 0) {
+      // La fonte non distingue lo stato "aperta" dal turno: le farmacie di
+      // turno sono comunque a disposizione, ma vanno dette come tali.
+      const disponibili = diTurno.slice(0, 3);
+      if (disponibili.length > 0) {
+        const elenco = disponibili
+          .map((f) => {
+            const dettagli = [
+              dettagliTurno(f),
+              f.indirizzo ? f.indirizzo : null,
+              f.telefono ? "tel. " + f.telefono : null,
+            ].filter(Boolean).join(" — ");
+            return "- **" + f.nome + "**" + (dettagli ? " — " + dettagli : "");
+          })
+          .join("\n");
+        return inglese
+          ? "The available data doesn't mark any pharmacy as open right now, but these are on duty:\n" + elenco
+          : "I dati di oggi non segnano nessuna farmacia come APERTA in questo momento, ma risultano di turno:\n" + elenco;
+      }
       return inglese
         ? "I can't verify any pharmacy as currently open in the available Castrovillari data. I won't list a pharmacy as open without confirmation."
         : "Al momento non risulta alcuna farmacia con stato APERTA verificato nei dati disponibili per Castrovillari. Non ti indico farmacie non verificate come aperte.";
@@ -2264,7 +2292,7 @@ function rispostaFarmacieDeterministica(
     }
 
     const elenco = farmacie.slice(0, 8).map((f) => {
-      const stato = f.turno
+      const stato = inTurnoFarmacia(f)
         ? (inglese ? "ON DUTY" : "DI TURNO")
         : f.stato === "aperta"
           ? (inglese ? "OPEN" : "APERTA")
@@ -2284,7 +2312,7 @@ function rispostaFarmacieDeterministica(
       : "Farmacie per cui ho dati disponibili:\n" + elenco;
   }
 
-  const turno = farmacie.filter((f) => Boolean(f.turno)).slice(0, 3);
+  const turno = diTurno.slice(0, 3);
   if (turno.length === 0) {
     const prefisso = motivo ? (inglese ? "For " : "Per ") + motivo + ", " : "";
     return inglese
@@ -2294,7 +2322,7 @@ function rispostaFarmacieDeterministica(
 
   const elenco = turno.map((f) => {
     const dettagli = [
-      turnoTradotto(f.turno),
+      dettagliTurno(f),
       f.indirizzo ? f.indirizzo : null,
       f.telefono ? "tel. " + f.telefono : null,
     ].filter(Boolean).join(" — ");

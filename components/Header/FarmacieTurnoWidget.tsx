@@ -7,7 +7,7 @@ type FarmaciaTurno = {
   id: string | null;
   nome: string;
   indirizzo: string | null;
-  stato: "aperta" | "chiusa";
+  stato: "aperta" | "chiusa" | "turno" | null;
   apertura: string | null;
   turno: string | null;
   telefono: string | null;
@@ -48,7 +48,7 @@ export default function FarmacieTurnoWidget() {
 
   if (!pronto || !dati) return null;
   // Non mostrare mai una farmacia come di turno se la fonte non lo dichiara esplicitamente.
-  const diTurno = dati.farmacie.find((f) => Boolean(f.turno));
+  const diTurno = dati.farmacie.find((f) => f.stato === "turno" || Boolean(f.turno));
   if (!diTurno) return null;
 
   const urlScheda = diTurno.urlScheda ?? URL_FONTE;
@@ -97,6 +97,12 @@ export default function FarmacieTurnoWidget() {
               <p className="flex items-start gap-2">
                 <Clock className="mt-0.5 h-4 w-4 shrink-0 text-slate-500" aria-hidden />
                 <span>{diTurno.apertura}</span>
+              </p>
+            )}
+            {diTurno.turno && (
+              <p className="flex items-start gap-2">
+                <Clock className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" aria-hidden />
+                <span>Di turno: {diTurno.turno}</span>
               </p>
             )}
             {diTurno.telefono && (

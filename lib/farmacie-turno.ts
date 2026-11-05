@@ -98,6 +98,59 @@ function estraiIndirizzo(blocco: string): string | null {
   return pulito || null;
 }
 
+/**
+ * Testo dell'orario di una farmacia. La fonte lo racchiude in un link con
+ * class `orario`, ma il markup varia (virgolette singole o doppie, attributi
+ * riordinati, link assente in alcune varianti): si legge il link quando c'è,
+ * altrimenti l'intero blocco, così apertura e turno non si perdono.
+ */
+function estraiTestoOrari(blocco: string): string {
+  const ancorato = blocco.match(
+    /class\s*=\s*["']?[^"'>]*\borario\b[^"'>]*["']?[^>]*>([\s\S]*?)<\/a>/i
+  )?.[1];
+  return ancorato ?? blocco;
+}
+
+/** Estrae un campo ("Apertura:" / "Turno*:") dal testo dell'orario. */
+function estraiCampoOrario(testo: string, etichetta: RegExp): string | null {
+  const righe = testo.replace(/<br\s*\/?>/gi, "\n").replace(/<[^>]+>/g, " ");
+  const valore = righe.match(etichetta)?.[1];
+  if (!valore) return null;
+  const pulito = decodifica(valore.replace(/\s+/g, " ").trim())
+    // Senza <br> tra i campi, il valore di "Apertura:" contiene anche il turno.
+    .replace(/\s*Turno\s*\*?\s*:.*$/i, "")
+    .replace(/[\s,;·-]+$/, "")
+    .trim();
+  return pulito || null;
+}
+
+/**
+ * Stato dichiarato dalla fonte. Il testo dell'etichetta può mancare o essere
+ * riscritto, mentre la classe (`cturno`, `cchiuso`, `caperto`) fa parte del
+ * markup: la si usa come prova del turno, non come ipotesi.
+ */
+function statoDaBlocco(blocco: string): FarmaciaTurno["stato"] {
+  const classe = blocco.match(/class\s*=\s*["'][^"']*\bbtorario\b[^"']*["']/i)?.[0] ?? "";
+  const etichetta = (
+    blocco.match(/class\s*=\s*["'][^"']*\bbtorario\b[^"']*["'][^>]*>\s*([^<]+)</i)?.[1] ?? ""
+  )
+    .trim()
+    .toUpperCase();
+  if (/\bcturno\b/i.test(classe) || etichetta === "TURNO") return "turno";
+  if (/\bcchius[oa]\b/i.test(classe) || etichetta === "CHIUSA" || etichetta === "CHIUSO") return "chiusa";
+  if (/\bcapert[oa]\b/i.test(classe) || etichetta === "APERTA" || etichetta === "APERTO") return "aperta";
+  return null;
+}
+
+/**
+ * Prova del turno: stato dichiarato o testo del turno. La fonte può segnalare
+ * la farmacia di turno con la sola etichetta "TURNO", senza la riga
+ * "Turno*:": scartarla produceva "nessuna farmacia di turno".
+ */
+export function inTurnoFarmacia(f: Pick<FarmaciaTurno, "stato" | "turno">): boolean {
+  return f.stato === "turno" || Boolean(f.turno);
+}
+
 /** Parsa l'HTML della pagina in un elenco strutturato di farmacie. */
 export function parseFarmacieTurno(html: string): FarmaciaTurno[] {
   const blocchi = html.split(
@@ -110,14 +163,11 @@ export function parseFarmacieTurno(html: string): FarmaciaTurno[] {
     const nome = blocco.match(/class="pharmacyname">([^<]+)</)?.[1]?.trim();
     if (!nome) continue;
 
-    const statoRaw = blocco
-      .match(/class="btorario[^"]*"[^>]*>\s*([^<]+)</)?.[1]
-      ?.trim()
-      .toUpperCase();
-    const orarioRaw = blocco.match(/class='orario'>([\s\S]*?)<\/a>/)?.[1] ?? "";
-    const apertura = orarioRaw.match(/Apertura:\s*([^<]+)/)?.[1]?.trim() ?? null;
+    const stato = statoDaBlocco(blocco);
+    const orari = estraiTestoOrari(blocco);
+    const apertura = estraiCampoOrario(orari, /Apertura\s*:\s*([^\n]+)/i);
     // La fonte usa sia "Turno:" sia "Turno*:" (nota l'asterisco).
-    const turno = orarioRaw.match(/Turno\*?:\s*([^<]+)/)?.[1]?.trim() ?? null;
+    const turno = estraiCampoOrario(orari, /Turno\s*\*?\s*:\s*([^\n]+)/i);
     const telefono = blocco.match(/href="tel:([0-9+]+)"/)?.[1] ?? null;
     const idf = blocco.match(/idf=(\d+)/)?.[1] ?? null;
 
@@ -125,16 +175,9 @@ export function parseFarmacieTurno(html: string): FarmaciaTurno[] {
       id: idf ?? null,
       nome: decodifica(nome),
       indirizzo: estraiIndirizzo(blocco),
-      stato:
-        statoRaw === "CHIUSA" || statoRaw === "CHIUSO"
-          ? "chiusa"
-          : statoRaw === "TURNO"
-            ? "turno"
-            : statoRaw === "APERTA" || statoRaw === "APERTO"
-              ? "aperta"
-              : null,
-      apertura: apertura ? decodifica(apertura) : null,
-      turno: turno ? decodifica(turno) : null,
+      stato,
+      apertura,
+      turno,
       telefono,
       urlScheda: idf
         ? `https://www.farmaciediturno.org/farmacia.asp?idf=${idf}`

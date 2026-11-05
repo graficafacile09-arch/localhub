@@ -20,7 +20,10 @@ import { search as searchCatalogoPubblico } from "@/lib/search-service";
 import { getOffertePubbliche } from "@/lib/offerte";
 import { getEventiPubblici } from "@/lib/eventi";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
-import { getFarmacieTurnoCastrovillari, type FarmaciaTurno } from "@/lib/farmacie-turno";
+import { getFarmacieTurnoCastrovillari, inTurnoFarmacia, type FarmaciaTurno } from "@/lib/farmacie-turno";
+
+/** Prova del turno condivisa con la risposta deterministica di Pino. */
+export { inTurnoFarmacia };
 import type { NegozioRicerca, ProdottoRicerca } from "@/lib/ricerca-ai";
 import { terminiSignificativi, similaritaLevenshtein } from "@/lib/search-tollerante";
 import { analizzaRichiesta } from "@/lib/ricerca-intento";
@@ -714,16 +717,18 @@ export async function searchPharmacies(
   const farmacie = await getFarmacieTurnoCastrovillari(segnalazione);
   const filtrate =
     stato === "turno"
-      ? farmacie.filter((f) => Boolean(f.turno))
+      ? farmacie.filter(inTurnoFarmacia)
       : stato === "aperte"
         ? (() => {
             const aperte = farmacie.filter((f) => f.stato === "aperta");
-            // Se la fonte non espone lo stato di apertura per nessuna farmacia,
-            // restituiamo solo le righe non verificate come avvertenza esplicita.
-            // Pino NON deve mai trasformarle in "aperte".
-            return aperte.length > 0
-              ? aperte
-              : farmacie.filter((f) => f.stato === null).slice(0, 3);
+            if (aperte.length > 0) return aperte;
+            // La fonte può dichiarare il turno senza uno stato "aperta": una
+            // farmacia di turno è comunque a disposizione. La risposta la
+            // etichetta come DI TURNO, mai come "aperta".
+            const diTurno = farmacie.filter(inTurnoFarmacia);
+            if (diTurno.length > 0) return diTurno;
+            // Nessuno stato verificabile: avvertenza esplicita, non "aperte".
+            return farmacie.filter((f) => f.stato === null).slice(0, 3);
           })()
         : farmacie;
 
