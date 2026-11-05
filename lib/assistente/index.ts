@@ -2843,7 +2843,11 @@ export async function chatConAssistente(
   if (
     analisi.intent === "service" &&
     analisi.confidence === "alta" &&
-    !richiestaGuidaAttrazioniPino(domanda)
+    !richiestaGuidaAttrazioniPino(domanda) &&
+    // "farmacia" è anche un servizio: senza questa guardia il ramo professione
+    // rispondeva "Non risultano farmacie nel catalogo" PRIMA del tool farmacie,
+    // che è l'unica fonte reale dei turni.
+    !pianoIntentoLocale(domanda)
   ) {
     const segnaleServizio = analisi.segnali.find((segnale) => segnale.startsWith("service:"));
     const professione = segnaleServizio?.slice("service:".length).trim();

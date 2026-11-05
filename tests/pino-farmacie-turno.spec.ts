@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
 import { expect, test } from "@playwright/test";
 
 import { getFarmacieTurnoCastrovillari, inTurnoFarmacia, parseFarmacieTurno } from "../lib/farmacie-turno";
@@ -131,6 +134,14 @@ test("searchPharmacies('tutte') restituisce l'intero elenco", async () => {
     const farmacie = await searchPharmacies("tutte", 8);
     expect(farmacie.map((f) => f.nome)).toEqual(["CATERINI-FILPO", "GIANNONI"]);
   });
+});
+
+test("il fast path delle professioni non intercetta le richieste di farmacie", () => {
+  const sorgente = readFileSync(join(process.cwd(), "lib/assistente/index.ts"), "utf8").replace(/\r\n/g, "\n");
+  // Il ramo "service" risponde dal catalogo negozi: deve restare fuori dal
+  // percorso delle farmacie, altrimenti la fonte reale dei turni non viene mai
+  // interrogata e Pino dice che le farmacie non esistono.
+  expect(sorgente).toMatch(/analisi\.intent === "service"[\s\S]{0,500}?!pianoIntentoLocale\(domanda\)/);
 });
 
 test("la fonte reale produce almeno una farmacia con turno verificabile", async () => {
