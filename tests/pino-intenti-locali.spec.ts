@@ -63,18 +63,20 @@ test("B3 sintomi → farmacia di turno", () => {
   }
 });
 
-test("B4 'farmacie' senza stato → elenco completo delle farmacie", () => {
-  expect(pianoIntentoLocale("Cerco farmacie a Castrovillari")).toEqual({
-    tool: "searchPharmacies",
-    stato: "tutte",
-  });
+test("B4 farmacia/farmacie senza stato → elenco completo delle farmacie", () => {
+  for (const q of ["farmacia", "farmacie", "Cerco farmacie a Castrovillari", "pharmacy", "pharmacies"]) {
+    expect(pianoIntentoLocale(q), q).toEqual({
+      tool: "searchPharmacies",
+      stato: "tutte",
+    });
+    expect(isLocalAssistantQuery(q), q).toBe(true);
+  }
 });
 
 // ─── C. NESSUNA REGRESSIONE SULLE RICERCHE COMMERCIALI ───────────────────────
 
 test("C1 ricerche commerciali vere: MAI rubate al catalogo", () => {
   const commerciali = [
-    "farmacia",
     "parafarmacia Castrovillari",
     "cerco una pizzeria",
     "occhiali da sole",
