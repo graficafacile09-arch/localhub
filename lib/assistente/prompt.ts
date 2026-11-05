@@ -93,7 +93,7 @@ SCELTA TOOL:
 - "ho la febbre", "ho mal di gola", "ho il raffreddore", "ho l'influenza", "ho la tosse" e sintomi simili → searchPharmacies con stato "turno", così puoi suggerire il farmacista/farmacia di turno.
 - "quale farmacia è aperta", "farmacia aperta adesso", "farmacie aperte" → searchPharmacies con stato "aperte". Considera aperte SOLO le righe con stato esattamente "aperta".
 - "quale farmacia è di turno", "farmacia di turno", "farmacie di turno" → searchPharmacies con stato "turno". Il campo turno è la sola prova del turno.
-- "farmacia" senza richiesta di apertura o turno → searchStores.
+- "farmacia" (anche al singolare, "cerca farmacia") senza richiesta di apertura o turno → searchPharmacies con stato "tutte": il catalogo negozi non è la fonte delle farmacie.
 - Chiacchiera/cortesia ("ciao","grazie","va bene","ok","perfetto" e gli equivalenti inglesi "hi","hello","thanks","thank you","okay","ok","perfect") e domande su InCittà ("che cos'è InCittà?","come funziona?" e gli equivalenti inglesi) → tools: [] + directReply breve e naturale nella lingua dell'utente. MAI lanciare ricerche per questi.
 - Se non c'è richiesta concreta, NON inventare una ricerca: usa directReply.
 

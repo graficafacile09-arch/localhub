@@ -63,12 +63,17 @@ test("le farmacie con la città nel testo restano farmacie, non Attrazioni", asy
   }
 });
 
-test("la ricerca generica al plurale recupera tutte le farmacie", () => {
+test("la ricerca generica, al singolare o al plurale, recupera tutte le farmacie", () => {
   assert.deepEqual(pianoIntentoLocale("Cerco farmacie a Castrovillari"), {
     tool: "searchPharmacies",
     stato: "tutte",
   });
-  assert.equal(pianoIntentoLocale("farmacia"), null);
+  // "farmacia" da sola è un intento locale: la fonte è il tool farmacie, non
+  // il catalogo negozi (che non conosce turni e orari delle farmacie).
+  assert.deepEqual(pianoIntentoLocale("farmacia"), {
+    tool: "searchPharmacies",
+    stato: "tutte",
+  });
 });
 
 test("una richiesta naturale 'trova attrazioni' mantiene la guida ampia", () => {

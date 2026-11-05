@@ -62,9 +62,11 @@ export function pianoIntentoLocale(query: string): PianoIntentoLocale | null {
 
   if (RE_METEO.test(q)) return { tool: "getWeather" };
 
-  const farmaciaGenerica = /\b(farmacie|pharmacies)\b/i.test(q);
-  const farmaciaConStato = /\b(aperta|aperte|aperto|aperti|adesso|ora|turno|di turno|open|opened|now|on duty|duty)\b/i.test(q);
-  if ((RE_FARMACIA.test(q) && (farmaciaGenerica || farmaciaConStato)) || RE_SINTOMO.test(q)) {
+  // Qualunque forma di "farmacia" (singolare, plurale, "cerca farmacia") è un
+  // intento locale: la fonte reale è il tool farmacie, non il catalogo negozi.
+  // Prima il singolare ricadeva sul catalogo e Pino rispondeva che in InCittà
+  // non risultavano farmacie, pur avendo i dati (e il turno) disponibili.
+  if (RE_FARMACIA.test(q) || RE_SINTOMO.test(q)) {
     const chiedeAperta = /apert|adesso|ora|in questo momento|open|now|right now|currently/i.test(q);
     const chiedeTurno = /\b(turno|di turno|on duty|duty)\b/i.test(q) || RE_SINTOMO.test(q);
     return {

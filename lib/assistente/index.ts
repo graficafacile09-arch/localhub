@@ -2292,25 +2292,47 @@ function rispostaFarmacieDeterministica(
         : "Al momento non ho dati verificati sulle farmacie di Castrovillari.";
     }
 
-    const elenco = farmacie.slice(0, 8).map((f) => {
-      const stato = inTurnoFarmacia(f)
+    const etichettaStato = (f: (typeof farmacie)[number]) =>
+      inTurnoFarmacia(f)
         ? (inglese ? "ON DUTY" : "DI TURNO")
         : f.stato === "aperta"
           ? (inglese ? "OPEN" : "APERTA")
           : f.stato === "chiusa"
             ? (inglese ? "CLOSED" : "CHIUSA")
             : (inglese ? "NOT VERIFIED" : "NON VERIFICATA");
+    const riga = (f: (typeof farmacie)[number], etichetta: string | null) => {
       const dettagli = [
         f.indirizzo ? f.indirizzo : null,
-        turnoTradotto(f.turno),
+        etichetta === null ? dettagliTurno(f) : turnoTradotto(f.turno),
         f.telefono ? "tel. " + f.telefono : null,
       ].filter(Boolean).join(" — ");
-      return "- **" + f.nome + "** — " + stato + (dettagli ? " — " + dettagli : "");
-    }).join("\n");
+      return "- **" + f.nome + "**" + (etichetta ? " — " + etichetta : "") +
+        (dettagli ? " — " + dettagli : "");
+    };
 
-    return inglese
-      ? "Pharmacies with available information:\n" + elenco
-      : "Farmacie per cui ho dati disponibili:\n" + elenco;
+    // La farmacia di turno va sempre in testa: chi chiede "farmacia" senza
+    // specificare lo stato deve vedere subito quella aperta adesso per il turno,
+    // poi le altre. Prima l'ordine dipendeva solo da come arrivava la fonte.
+    const inTurno = diTurno.slice(0, 3);
+    const altre = farmacie.filter((f) => !inTurnoFarmacia(f)).slice(0, 8);
+    const blocchi: string[] = [];
+    if (inTurno.length > 0) {
+      blocchi.push(
+        (inglese ? "On duty today:\n" : "Di turno oggi:\n") +
+          inTurno.map((f) => riga(f, null)).join("\n")
+      );
+    }
+    if (altre.length > 0) {
+      const titolo = inglese
+        ? (inTurno.length > 0
+            ? "Other pharmacies with available information:\n"
+            : "Pharmacies with available information:\n")
+        : (inTurno.length > 0
+            ? "Altre farmacie per cui ho dati disponibili:\n"
+            : "Farmacie per cui ho dati disponibili:\n");
+      blocchi.push(titolo + altre.map((f) => riga(f, etichettaStato(f))).join("\n"));
+    }
+    return blocchi.join("\n\n");
   }
 
   const turno = diTurno.slice(0, 3);
