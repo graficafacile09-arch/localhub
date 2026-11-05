@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ShoppingCart, Store } from "lucide-react";
 import { getProdottoImmagine } from "@/lib/prodotti-immagini";
+import { immagineOttimizzata } from "@/lib/immagini-ottimizzate";
 import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
 
 type ProductCardProps = {
@@ -49,7 +50,12 @@ export default function ProductCard({
   descrizione,
   esaurito,
 }: ProductCardProps) {
-  const imageUrl = getProdottoImmagine({ immagine_principale, categoria });
+  // La card è larga al massimo ~400 px: l'immagine passa dall'ottimizzatore
+  // (WebP ridimensionato) invece di scaricare il JPEG originale.
+  const imageUrl = immagineOttimizzata(
+    getProdottoImmagine({ immagine_principale, categoria }),
+    400
+  );
   const mostraPreferiti = preferitoAttivo !== undefined && autenticato !== undefined;
   const prezzoFormattato = Number.isFinite(prezzo) ? prezzo.toFixed(2) : String(prezzo);
 

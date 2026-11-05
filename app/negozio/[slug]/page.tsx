@@ -104,23 +104,6 @@ export default async function PaginaNegozio({
   const id = negozio.id as string;
   const slugCanonico = ((negozio.slug as string) ?? "").trim() || id;
 
-  // Catalogo del negozio: stessa query della ricerca pubblica, con negozioId.
-  const catalogo = await search(qCatalogo, {
-    negozioId: id,
-    sottocategoria: sottocategoria || undefined,
-    marca: marca || undefined,
-    colore: colore || undefined,
-    prezzoMin,
-    prezzoMax,
-    soloDisponibili: soloDisponibili || undefined,
-    ordina,
-    pagina,
-    perPagina: PER_PAGINA,
-  });
-  const prodotti = catalogo.prodotti as Record<string, unknown>[];
-  const totalCatalogo = catalogo.total;
-  const filtriDisponibili = await getFiltriDisponibiliProdotti();
-
   // Moduli attivi effettivi: STESSA risoluzione dell'editor
   // (getModuliAttiviNegozio dà priorità a data.tipo_attivita → profilo,
   // con fallback su negozi.moduli_attivi). Evita che un servizio salvato
@@ -128,14 +111,33 @@ export default async function PaginaNegozio({
   // nella scheda pubblica perché assente nei moduli_attivi grezzi.
   const moduliAttivi: string[] = getModuliAttiviNegozio(negozio as Negozio) ?? [];
 
-  let offerte: Offerta[] = [];
-  let eventi: Evento[] = [];
-  if (moduliAttivi.includes("offerte")) {
-    offerte = await getOffertePubblicheNegozio(id);
-  }
-  if (moduliAttivi.includes("eventi")) {
-    eventi = await getEventiPubbliciNegozio(id);
-  }
+  // Catalogo del negozio (stessa query della ricerca pubblica, con negozioId),
+  // filtri, offerte, eventi e preferiti non dipendono l'uno dall'altro: prima
+  // erano 5 roundtrip in cascata, ora partono insieme.
+  const [catalogo, filtriDisponibili, offerte, eventi, statoPreferiti] = await Promise.all([
+    search(qCatalogo, {
+      negozioId: id,
+      sottocategoria: sottocategoria || undefined,
+      marca: marca || undefined,
+      colore: colore || undefined,
+      prezzoMin,
+      prezzoMax,
+      soloDisponibili: soloDisponibili || undefined,
+      ordina,
+      pagina,
+      perPagina: PER_PAGINA,
+    }),
+    getFiltriDisponibiliProdotti(),
+    moduliAttivi.includes("offerte")
+      ? getOffertePubblicheNegozio(id)
+      : Promise.resolve<Offerta[]>([]),
+    moduliAttivi.includes("eventi")
+      ? getEventiPubbliciNegozio(id)
+      : Promise.resolve<Evento[]>([]),
+    getStatoPreferitiPerPagina(),
+  ]);
+  const prodotti = catalogo.prodotti as Record<string, unknown>[];
+  const totalCatalogo = catalogo.total;
 
   // Richiesta informazioni (negozi.data.richiesta_info): CTA solo se il
   // modulo è attivo nei moduli_attivi E la configurazione ha attiva === true.
@@ -176,8 +178,7 @@ export default async function PaginaNegozio({
       })
     : [];
 
-  // Stato preferiti per il pulsante "Salva negozio" e per le card prodotto.
-  const statoPreferiti = await getStatoPreferitiPerPagina();
+  // Stato preferiti: già risolto insieme al catalogo (vedi Promise.all sopra).
 
   const imageUrl = getNegozioCardImmagine({
     copertina_url: (negozio.copertina_url as string) ?? null,

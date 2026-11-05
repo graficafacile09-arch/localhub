@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
 export type AccountApprovalStatus = "pending" | "approved" | "rejected";
@@ -13,9 +14,9 @@ export type AccountApprovalStatus = "pending" | "approved" | "rejected";
  * "pending". Quindi una riga mancante indica uno stato non inizializzato e
  * va trattata come non approvato, non come approvato.
  */
-export async function getAccountApprovalStatus(
+export const getAccountApprovalStatus = cache(async (
   userId: string
-): Promise<AccountApprovalStatus> {
+): Promise<AccountApprovalStatus> => {
   try {
     const db = createAdminSupabaseClient();
     const { data, error } = await db
@@ -41,4 +42,4 @@ export async function getAccountApprovalStatus(
     );
     return "pending";
   }
-}
+});
