@@ -1,4 +1,3 @@
-import { cache } from "react";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
 /**
@@ -63,13 +62,8 @@ export async function getImpostazione(chiave: string): Promise<string | null> {
   return (data.valore as string | null) ?? null;
 }
 
-/**
- * Tutte le impostazioni PUBBLICHE, come mappa chiave → valore.
- *
- * `cache()`: generateMetadata e il layout root le chiedono entrambi nella
- * stessa richiesta: prima erano due query identiche per ogni pagina.
- */
-export const getImpostazioniPubbliche = cache(async (): Promise<Record<string, string | null>> => {
+/** Tutte le impostazioni PUBBLICHE, come mappa chiave → valore. */
+export async function getImpostazioniPubbliche(): Promise<Record<string, string | null>> {
   const db = getDb();
   if (!db) return {};
 
@@ -80,7 +74,7 @@ export const getImpostazioniPubbliche = cache(async (): Promise<Record<string, s
 
   if (error) return {};
   return toMappa(data as ImpostazionePiattaforma[]);
-});
+}
 
 /** Tutte le impostazioni per il pannello admin (con metadati). */
 export async function getImpostazioniAdmin(): Promise<ImpostazionePiattaforma[]> {

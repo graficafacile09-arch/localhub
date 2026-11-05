@@ -14,7 +14,6 @@ import {
   getProdottiTipici,
 } from "@/lib/negozi";
 import { getNegozioCardImmagine } from "@/lib/negozi-card-immagini";
-import { immagineOttimizzata } from "@/lib/immagini-ottimizzate";
 import HomepageProductShowcase, { ProductSectionCard } from "@/components/home/HomepageProductShowcase";
 import HomepageProductSwipeReveal from "@/components/home/HomepageProductSwipeReveal";
 import { chiavePreferito, getStatoPreferitiPerPagina } from "@/lib/cliente/favorites";
@@ -74,11 +73,8 @@ export default async function Home() {
   const [negozi, prodottiCatalogo, prodottiTipici, statoPreferiti] =
     await Promise.all([
       getNegoziInEvidenza(8),
-      // La vetrina mostra poche decine di prodotti per categoria: caricarne
-      // 1000 significava scaricare 1000 righe (descrizioni comprese) e
-      // 1000 immagini remote per una pagina che ne disegna una parte.
-      getProdottiCatalogoHomepage(120),
-      getProdottiTipici(60),
+      getProdottiCatalogoHomepage(1000),
+      getProdottiTipici(200),
       getStatoPreferitiPerPagina(),
     ]);
 
@@ -224,7 +220,7 @@ export default async function Home() {
                             role="img"
                             aria-label={negozio.nome}
                             className="absolute inset-0 bg-cover bg-center transition duration-300 group-hover:scale-105"
-                            style={{ backgroundImage: `url(${immagineOttimizzata(immaginiCopertina, 640)})` }}
+                            style={{ backgroundImage: `url(${immaginiCopertina})` }}
                           />
                           {logoNegozio && (
                             <div className="absolute bottom-3 left-3 flex h-14 w-14 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-white shadow-sm">
@@ -232,7 +228,7 @@ export default async function Home() {
                                 role="img"
                                 aria-label={`Logo ${negozio.nome}`}
                                 className="h-full w-full bg-cover bg-center"
-                                style={{ backgroundImage: `url(${immagineOttimizzata(logoNegozio, 128)})` }}
+                                style={{ backgroundImage: `url(${logoNegozio})` }}
                               />
                             </div>
                           )}

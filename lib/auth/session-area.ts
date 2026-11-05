@@ -1,4 +1,3 @@
-import { cache } from "react";
 import { cookies } from "next/headers";
 import type { NextResponse } from "next/server";
 import { apiError } from "@/lib/api/response";
@@ -31,14 +30,7 @@ export type SessioneArea = UtenteConRuoli & {
   correzione: boolean;
 };
 
-/**
- * Area attiva della sessione.
- *
- * `cache()`: header, pagina e preferiti la chiedono tutti nella stessa
- * richiesta. Prima ogni chiamata ripeteva autenticazione, approvazione e
- * lettura dei ruoli; ora il lavoro viene fatto una sola volta per richiesta.
- */
-export const getSessionArea = cache(async (): Promise<SessioneArea | null> => {
+export async function getSessionArea(): Promise<SessioneArea | null> {
   const auth = await getCurrentRuoli();
   if (!auth) return null;
 
@@ -52,7 +44,7 @@ export const getSessionArea = cache(async (): Promise<SessioneArea | null> => {
 
   if (!area) return null;
   return { user, role, ruoli, area, correzione };
-});
+}
 
 export type EsitoAreaApi =
   | { sessione: SessioneArea; error: null }

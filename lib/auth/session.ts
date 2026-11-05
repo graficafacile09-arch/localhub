@@ -1,8 +1,6 @@
-import { cache } from "react";
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
-import { getSupabaseConfig, isSupabaseConfigured } from "@/lib/supabase/config";
+import { isSupabaseConfigured } from "@/lib/supabase/config";
 import {
   getRuoliUtente,
   PRIORITA_RUOLO,
@@ -11,31 +9,8 @@ import {
 } from "@/lib/auth/roles";
 import { getAccountApprovalStatus } from "@/lib/auth/account-approval";
 
-/**
- * Utente della sessione corrente.
- *
- * - `cache()`: dentro la STESSA richiesta la funzione gira una volta sola,
- *   anche se layout, header e pagina la invocano (prima erano 2-3 chiamate).
- * - Senza cookie di sessione non si interroga Supabase Auth: una pagina
- *   pubblica visitata da anonimi non paga alcun roundtrip di autenticazione.
- */
-export const getCurrentUser = cache(async () => {
+export async function getCurrentUser() {
   if (!isSupabaseConfigured()) {
-    return null;
-  }
-
-  // Stessa verifica del proxy: i cookie Supabase si chiamano
-  // sb-<project-ref>-auth-token (eventualmente .0, .1, …).
-  const projectRef = new URL(getSupabaseConfig().url).hostname.split(".")[0] ?? "";
-  const prefissoCookie = projectRef ? `sb-${projectRef}-auth-token` : "";
-  const cookieStore = await cookies();
-  const haCookieSessione =
-    prefissoCookie.length > 0 &&
-    cookieStore.getAll().some(
-      (cookie) =>
-        cookie.name === prefissoCookie || cookie.name.startsWith(`${prefissoCookie}.`)
-    );
-  if (!haCookieSessione) {
     return null;
   }
 
@@ -63,7 +38,7 @@ export const getCurrentUser = cache(async () => {
 
     return null;
   }
-});
+}
 
 export async function requireCurrentUser(redirectTo = "/login") {
   const user = await getCurrentUser();
