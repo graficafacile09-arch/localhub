@@ -182,6 +182,7 @@ test("una richiesta ampia senza termini specifici conserva la guida", () => {
     "Trova attrazioni a Castrovillari",
     "Cerco attrazioni a Castrovillari",
     "Cosa c'è da vedere a Castrovillari?",
+    "Quali posti posso visitare a Castrovillari?",
   ]) {
     const luoghi = searchAttractions(frase, 6);
     assert.ok(luoghi.length > 0, frase);
