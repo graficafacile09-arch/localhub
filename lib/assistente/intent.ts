@@ -127,7 +127,6 @@ const L_SERVICE: string[] = [
   "cardiologo",
   "dermatologo",
   "veterinario",
-  "farmacia",
   "parafarmacia",
   "idraulico",
   "elettricista",
