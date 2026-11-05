@@ -62,7 +62,9 @@ export function pianoIntentoLocale(query: string): PianoIntentoLocale | null {
 
   if (RE_METEO.test(q)) return { tool: "getWeather" };
 
-  if (RE_FARMACIA.test(q) || RE_SINTOMO.test(q)) {
+  const farmaciaGenerica = /\b(farmacie|pharmacies)\b/i.test(q);
+  const farmaciaConStato = /\b(aperta|aperte|aperto|aperti|adesso|ora|turno|di turno|open|opened|now|on duty|duty)\b/i.test(q);
+  if ((RE_FARMACIA.test(q) && (farmaciaGenerica || farmaciaConStato)) || RE_SINTOMO.test(q)) {
     const chiedeAperta = /apert|adesso|ora|in questo momento|open|now|right now|currently/i.test(q);
     const chiedeTurno = /\b(turno|di turno|on duty|duty)\b/i.test(q) || RE_SINTOMO.test(q);
     return {
