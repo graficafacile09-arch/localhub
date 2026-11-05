@@ -54,7 +54,7 @@ export default function ProductCard({
   // (WebP ridimensionato) invece di scaricare il JPEG originale.
   const imageUrl = immagineOttimizzata(
     getProdottoImmagine({ immagine_principale, categoria }),
-    400
+    384
   );
   const mostraPreferiti = preferitoAttivo !== undefined && autenticato !== undefined;
   const prezzoFormattato = Number.isFinite(prezzo) ? prezzo.toFixed(2) : String(prezzo);

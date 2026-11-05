@@ -15,6 +15,23 @@
 const RE_REMOTO_OTTIMIZZABILE =
   /^https:\/\/(?:[a-z0-9-]+\.supabase\.co|images\.pexels\.com)\//i;
 
+/**
+ * L'ottimizzatore di Next accetta SOLO queste larghezze (deviceSizes +
+ * imageSizes di default): una `w` arbitraria risponde 400. La larghezza
+ * richiesta viene quindi arrotondata per eccesso alla prima ammessa.
+ */
+const LARGHEZZE_AMMESSE = [
+  16, 32, 48, 64, 96, 128, 256, 384, 640, 750, 828, 1080, 1200, 1920, 2048, 3840,
+] as const;
+
+function larghezzaAmmessa(larghezza: number): number {
+  const richiesta = Math.max(16, Math.round(larghezza));
+  return (
+    LARGHEZZE_AMMESSE.find((valore) => valore >= richiesta) ??
+    LARGHEZZE_AMMESSE[LARGHEZZE_AMMESSE.length - 1]
+  );
+}
+
 export function immagineOttimizzata(
   url: string | null | undefined,
   larghezza: number,
@@ -26,7 +43,7 @@ export function immagineOttimizzata(
   if (!valore || valore.includes("/_next/image")) return valore;
   if (!RE_REMOTO_OTTIMIZZABILE.test(valore)) return valore;
 
-  const w = Math.max(16, Math.min(3840, Math.round(larghezza)));
+  const w = larghezzaAmmessa(larghezza);
   const q = Math.max(1, Math.min(100, Math.round(qualita)));
   return `/_next/image?url=${encodeURIComponent(valore)}&w=${w}&q=${q}`;
 }
