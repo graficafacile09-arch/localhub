@@ -45,11 +45,11 @@ function rispostaFarmacieValida(html: string): boolean {
   // contiene la parola "farmacie": altrimenti il parser può restituire zero
   // e Pino comunica erroneamente che non esistono risultati.
   return (
-    /<div\\b[^>]*class\\s*=\\s*["'][^"']*farmacia-box/i.test(html) ||
-    /itemtype\\s*=\\s*["'][^"']*schema\\.org\\/Pharmacy/i.test(html) ||
-    /class\\s*=\\s*["'][^"']*pharmacyname/i.test(html) ||
-    /itemprop\\s*=\\s*["']name["']/i.test(html) ||
-    /href\\s*=\\s*["'][^"']*[?&]idf=\\d+/i.test(html)
+    /<div\b[^>]*class\s*=\s*["'][^"']*farmacia-box/i.test(html) ||
+    /itemtype\s*=\s*["'][^"']*schema\.org\/Pharmacy/i.test(html) ||
+    /class\s*=\s*["'][^"']*pharmacyname/i.test(html) ||
+    /itemprop\s*=\s*["']name["']/i.test(html) ||
+    /href\s*=\s*["'][^"']*[?&]idf=\d+/i.test(html)
   );
 }
 
