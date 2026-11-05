@@ -2319,7 +2319,7 @@ function rispostaFarmacieDeterministica(
 // affermare che il luogo non esista in città.
 
 const RE_INTENTO_GUIDA_PINO =
-  /\b(muse[oi]|monument[oi]|attrazion[ei]|cosa vedere|cosa\s+c['’]?e\s+da\s+vedere|cosa visitare|posti da visitare|luoghi interessanti|luoghi da visitare|luoghi da vedere|visitare|palazz[oi]|castell[oi]|chies[ae]|teatr[oi]|biblioteca|archivio|borg[oh]i?|dintorni|centro storico|festival|mostre|parco|itinerario|turistic[oa]|museums?|monuments?|attractions?|things to see|places to visit|visit|palaces?|castles?|churches|theatres?|libraries|archives?|villages?|surroundings|historic center|historic centre|exhibitions?|parks?|itinerary|tourism|tourist|archaeological|amphitheat(?:re|er)s?|ruins?|sites?)\b/i;
+  /\b(muse[oi]|monument[oi]|attrazion[ei]|cosa vedere|cosa\s+c['’]?e\s+da\s+vedere|cosa visitare|cosa posso visitare|cosa posso vedere|posti da visitare|posti posso visitare|quali posti visitare|luoghi interessanti|luoghi da visitare|luoghi da vedere|visitare|palazz[oi]|castell[oi]|chies[ae]|teatr[oi]|biblioteca|archivio|borg[oh]i?|dintorni|centro storico|festival|mostre|parco|itinerario|turistic[oa]|museums?|monuments?|attractions?|things to see|places to visit|visit|palaces?|castles?|churches|theatres?|libraries|archives?|villages?|surroundings|historic center|historic centre|exhibitions?|parks?|itinerary|tourism|tourist|archaeological|amphitheat(?:re|er)s?|ruins?|sites?)\b/i;
 
 // Parole che indicano un acquisto o un prodotto: «cerco un negozio di articoli
 // per il teatro» non è una visita, anche se contiene «teatro».
@@ -2353,7 +2353,7 @@ const TERMINI_NEUTRI_GUIDA_PINO = new Set([
   "exhibition","exhibitions","parco","parchi","park","parks","itinerario","itinerary",
   "turismo","tourism","turistico","turistica","tourist","archeologico","archeologica",
   "archeologici","archaeological","cultura","culture","arte","art","sito","siti",
-  "site","sites","evento","eventi","event","events","luogo","luoghi","place",
+  "site","sites","evento","eventi","event","events","luogo","luoghi","posti","interessanti","c'e","place",
   "castrovillari",
 ]);
 
