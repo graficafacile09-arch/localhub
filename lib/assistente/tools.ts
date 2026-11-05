@@ -2258,7 +2258,7 @@ export function filtraDessertRichiestoPino(
   queryOriginale: string
 ): ProdottoRicerca[] {
   const query = normalizza(queryOriginale);
-  if (!/\\bdolc[ei]\\b/.test(query)) return prodotti;
+  if (!/\bdolc[ei]\b/.test(query)) return prodotti;
   if (!richiestaDolceComeDessert(queryOriginale, "dolce")) return prodotti;
   return (prodotti ?? []).filter(prodottoEUnDessert);
 }
