@@ -29,6 +29,39 @@ function normalizza(t: string): string {
   return t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 }
 
+// Alias geografici/generici generati dai titoli del catalogo (per esempio
+// «Archivio di Stato – Sezione di Castrovillari» → «castrovillari»). Da soli
+// non identificano un'attrazione: «Cerco scarpe a Castrovillari» è una ricerca
+// commerciale. I nomi specifici del catalogo restano riconosciuti.
+//
+// L'elenco copre i toponimi e le parole geografiche generiche che possono
+// comparire in QUALSIASI richiesta («… a Castrovillari», «in provincia», «in
+// centro»): se identificassero una guida, ogni domanda su meteo, farmacie o
+// eventi con la città nel testo verrebbe dirottata sul ramo Attrazioni.
+const ALIAS_GEOGRAFICI_PINO = new Set([
+  "castrovillari",
+  "calabria",
+  "italia",
+  "provincia",
+  "comune",
+  "regione",
+  "citta",
+  "paese",
+  "localita",
+  "territorio",
+  "zona",
+  "centro",
+  "storico",
+]);
+
+/** Alias che possono identificare da soli un luogo del catalogo. */
+function aliasSpecifici(item: AttrazionePino): string[] {
+  return Array.from(new Set([item.nome, ...item.alias])).filter((voce) => {
+    const alias = normalizza(voce);
+    return alias.length >= 4 && !ALIAS_GEOGRAFICI_PINO.has(alias);
+  });
+}
+
 /**
  * Riconosce richieste che citano direttamente un luogo o evento del catalogo.
  * Consente a Pino di instradare anche messaggi brevi come "La Civita".
@@ -37,10 +70,7 @@ export function isAttractionNameQuery(query: string): boolean {
   const q = normalizza(query);
   if (q.length < 4 || q === "castrovillari") return false;
   return CATALOGO.some((item) =>
-    [item.nome, ...item.alias].some((value) => {
-      const alias = normalizza(value);
-      return alias.length >= 4 && q.includes(alias);
-    })
+    aliasSpecifici(item).some((alias) => q.includes(normalizza(alias)))
   );
 }
 
@@ -58,7 +88,7 @@ export function searchAttractions(query: string, limit = 6): AttrazionePino[] {
     const words = new Set(fields.split(" "));
     let score = fields.includes(q) ? 10 : 0;
     for (const token of tokens) if (words.has(token)) score += 3;
-    for (const alias of item.alias) if (normalizza(alias).length >= 4 && q.includes(normalizza(alias))) score += 7;
+    for (const alias of aliasSpecifici(item)) if (q.includes(normalizza(alias))) score += 7;
     if (broad && /dintorni|borgo|natura|passeggiate|storia|monumenti|cultura|architettura|evento|festival|museum|monument|church|historic|park|village|attraction|nature|culture/i.test(item.tipo)) score += 2;
     if (broad && tokens.length === 0) score += 1;
     // Una richiesta sui dintorni deve favorire i comuni e i luoghi esterni,

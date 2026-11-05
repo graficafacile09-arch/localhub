@@ -1,4 +1,9 @@
-import { rilevaLinguaPino, type PinoLanguage } from "./understanding.ts";
+import {
+  normalizzaRelazionale,
+  rilevaPreferenzaLinguaPino,
+  rilevaLinguaPino,
+  type PinoLanguage,
+} from "./understanding.ts";
 
 export function rispostaSalutoPino(input: string): string | null {
   const q = input.toLowerCase().replace(/[^a-z0-9à-ù]+/g, " ").trim();
@@ -22,18 +27,6 @@ export function rispostaSalutoPino(input: string): string | null {
   return null;
 }
 
-function normalizzaRelazionale(input: string): string {
-  return input.normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[’‘]/g, "'")
-    .toLowerCase()
-    .replace(/[^a-z0-9' ]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .replace(/\b2\b/g, "due")
-    .replace(/\bkiacchiere\b/g, "chiacchiere");
-}
-
 function distanzaRelazionale(a: string, b: string): number {
   const riga = Array.from({ length: b.length + 1 }, (_, i) => i);
   for (let i = 1; i <= a.length; i++) {
@@ -46,6 +39,27 @@ function distanzaRelazionale(a: string, b: string): number {
     }
   }
   return riga[b.length];
+}
+
+/**
+ * Riconosce una comunicazione sulla LINGUA della conversazione ("I speak
+ * English", "please answer in English", "vorrei parlare in inglese").
+ *
+ * Non è un elenco di frasi memorizzate: la frase è riconosciuta quando parla
+ * di italiano/inglese con un verbo di lingua e non contiene altro contenuto di
+ * ricerca. "I speak English and I'm looking for pasta" resta una ricerca di
+ * catalogo: la lingua viene già rilevata da rilevaLinguaPino.
+ */
+export function rispostaPreferenzaLinguaPino(input: string): string | null {
+  // Riconoscimento unico nel livello di comprensione (S3): qui resta solo la
+  // formulazione della risposta. Una preferenza accompagnata da una richiesta
+  // (`soloLingua: false`) non viene intercettata e segue il normale flusso.
+  const preferenza = rilevaPreferenzaLinguaPino(input);
+  if (!preferenza || !preferenza.soloLingua) return null;
+  if (preferenza.lingua === "it") {
+    return "Va bene — continuo in italiano. 😊 Posso aiutarti a trovare negozi, prodotti, offerte ed eventi su InCittà: cosa stai cercando?";
+  }
+  return "Of course — I'll continue in English. 😊 I can help you find shops, products, offers and events on InCittà: what are you looking for?";
 }
 
 export function rispostaRelazionalePino(input: string, lingua: PinoLanguage = rilevaLinguaPino(input)): string | null {

@@ -33,6 +33,25 @@ const getDb = () => {
   }
 };
 
+// ─── M6-C1: segnalazione degli errori dati ──────────────────────────────────
+// Le funzioni dati continuano a restituire liste vuote come prima: cambia solo
+// la POSSIBILITÀ di segnalare che il vuoto deriva da un errore tecnico. La
+// callback è additiva e assente per impostazione predefinita, quindi le pagine
+// InCittà e le API pubbliche mantengono esattamente il comportamento attuale.
+// La callback può lanciare: in quel caso l'eccezione interrompe la funzione e
+// raggiunge il chiamante (è il meccanismo usato dai tool di Pino).
+
+export type SegnalazioneErroriDati = {
+  onErrore?: (errore: unknown) => void;
+};
+
+export function segnalaErroreDati(
+  segnalazione: SegnalazioneErroriDati | undefined,
+  errore: unknown
+): void {
+  segnalazione?.onErrore?.(errore);
+}
+
 // ─── Località (V8) ────────────────────────────────────────────────────────────
 // Un negozio "è" in una città se il campo citta O l'indirizzo contengono la
 // località normalizzata (stessa semantica del filtro p_citta della RPC).
@@ -46,15 +65,22 @@ function negozioMatchaCitta(negozio: Record<string, unknown>, citta: string): bo
 
 /** Filtra i prodotti ai soli appartenenti a negozi nella città richiesta
  *  (i prodotti non hanno una città propria: la derivano dal negozio). */
-async function filtraProdottiPerCitta(
+export async function filtraProdottiPerCitta(
   db: ReturnType<typeof createAdminSupabaseClient>,
   risultati: Record<string, unknown>[],
-  citta: string
+  citta: string,
+  segnalazione?: SegnalazioneErroriDati
 ): Promise<Record<string, unknown>[]> {
   if (risultati.length === 0) return risultati;
   const ids = Array.from(new Set(risultati.map((p) => p.negozio_id as string).filter(Boolean)));
   if (ids.length === 0) return risultati;
-  const { data } = await db.from("negozi").select("id, citta, indirizzo").in("id", ids);
+  const { data, error } = await db.from("negozi").select("id, citta, indirizzo").in("id", ids);
+  // M6-C1.1: un guasto della sotto-query non deve azzerare i prodotti in
+  // silenzio. Senza callback il filtro si comporta come prima (nessun negozio
+  // riconosciuto); con la callback di Pino l'errore interrompe il percorso.
+  // Una query riuscita senza risultati NON e' un errore: il filtro puo'
+  // legittimamente escludere tutti i prodotti.
+  if (error) segnalaErroreDati(segnalazione, error);
   const inCitta = new Set(
     (data ?? [])
       .filter((n) => negozioMatchaCitta(n as Record<string, unknown>, citta))
@@ -292,9 +318,18 @@ export async function getNegoziInEvidenza(limit?: number) {
 
 // ─── Categorie ──────────────────────────────────────────────────────────────
 
-export async function getCategorie() {
-  const db = getDb();
-  if (!db) return [];
+export async function getCategorie(
+  segnalazione?: SegnalazioneErroriDati,
+  dbIniettato?: ReturnType<typeof createAdminSupabaseClient> | null
+) {
+  const db = dbIniettato === undefined ? getDb() : dbIniettato;
+  if (!db) {
+    segnalaErroreDati(
+      segnalazione,
+      new Error("Supabase non configurato: variabili del client admin mancanti.")
+    );
+    return [];
+  }
 
   const { data, error } = await db
     .from("categorie")
@@ -302,7 +337,11 @@ export async function getCategorie() {
     .eq("attivo", true)
     .order("ordine", { ascending: true });
 
+  // M6-C2: senza callback il comportamento resta quello preesistente (lista
+  // vuota). Con la callback di Pino l'errore interrompe il calcolo, cosi' non
+  // vengono mostrate categorie con conteggio zero al posto del dato reale.
   if (error) {
+    segnalaErroreDati(segnalazione, error);
     return [];
   }
 
@@ -322,12 +361,21 @@ export type CategoriaConNegozi = {
 // Il DB (public.categorie) arricchisce ogni voce con id/descrizione/sinonimi
 // e i conteggi reali; le categorie legacy presenti solo in DB restano intatte
 // ma non compaiono in questa lista (0 extra). ESATTAMENTE 2 query, zero N+1.
-export async function getCategorieConNegozi(): Promise<CategoriaConNegozi[]> {
-  const db = getDb();
+export async function getCategorieConNegozi(
+  segnalazione?: SegnalazioneErroriDati,
+  dbIniettato?: ReturnType<typeof createAdminSupabaseClient> | null
+): Promise<CategoriaConNegozi[]> {
+  const db = dbIniettato === undefined ? getDb() : dbIniettato;
 
-  const dbCategorie = await getCategorie();
+  // M6-C2: la segnalazione attraversa entrambe le query necessarie. Con la
+  // callback di Pino un guasto interrompe il calcolo: nessuna categoria viene
+  // presentata con conteggio zero come se fosse un dato reale. Senza callback
+  // il risultato resta esattamente quello preesistente (categorie statiche
+  // con conteggi a zero). Una categoria davvero senza negozi resta valida:
+  // in quel caso le query riescono e non viene segnalato nulla.
+  const dbCategorie = await getCategorie(segnalazione, db);
   const conteggi = dbCategorie.length
-    ? await getConteggiNegoziPerCategoria(dbCategorie)
+    ? await getConteggiNegoziPerCategoria(dbCategorie, segnalazione, db)
     : new Map<string, number>();
 
   // Mappa slug → categoria DB (per id/descrizione/sinonimi e conteggi reali).
@@ -460,9 +508,19 @@ function valoreCategoriaMatcha(valore: string, termini: readonly string[]): bool
 // lo STESSO criterio di cercaNegoziPerCategoria (uguaglianza esatta
 // case-insensitive su nome + sinonimi), così conteggio e negozi mostrati
 // coincidono sempre esattamente.
-export async function getConteggiNegoziPerCategoria(categorie: Categoria[]) {
-  const db = getDb();
-  if (!db) return new Map<string, number>();
+export async function getConteggiNegoziPerCategoria(
+  categorie: Categoria[],
+  segnalazione?: SegnalazioneErroriDati,
+  dbIniettato?: ReturnType<typeof createAdminSupabaseClient> | null
+) {
+  const db = dbIniettato === undefined ? getDb() : dbIniettato;
+  if (!db) {
+    segnalaErroreDati(
+      segnalazione,
+      new Error("Supabase non configurato: variabili del client admin mancanti.")
+    );
+    return new Map<string, number>();
+  }
 
   const { data, error } = await db
     .from("negozi")
@@ -470,7 +528,10 @@ export async function getConteggiNegoziPerCategoria(categorie: Categoria[]) {
     .eq("attivo", true)
     .is("deleted_at", null);
 
-  if (error) return new Map<string, number>();
+  if (error) {
+    segnalaErroreDati(segnalazione, error);
+    return new Map<string, number>();
+  }
 
   const conteggiPerValore = new Map<string, number>();
   for (const row of data ?? []) {
@@ -903,8 +964,8 @@ export function isOrdinamentoProdottiPubblici(value: unknown): value is Ordiname
 // Select comune della ricerca prodotti.
 // quantita_disponibile/quantita_riservata: necessarie per il badge "Esaurito"
 // nelle card pubbliche (Fase D).
-const SELECT_PRODOTTO_RICERCA =
-  "id, slug, negozio_id, nome, descrizione, categoria, sottocategoria, marca, colore, materiale, parole_chiave, caratteristiche, seo_title, seo_description, alt_text_immagine, prezzo, immagine_principale, quantita_disponibile, quantita_riservata, ha_varianti";
+export const SELECT_PRODOTTO_RICERCA =
+  "id, slug, negozio_id, nome, descrizione, descrizione_completa, categoria, sottocategoria, marca, colore, materiale, parole_chiave, caratteristiche, seo_title, seo_description, alt_text_immagine, prezzo, immagine_principale, quantita_disponibile, quantita_riservata, ha_varianti";
 
 /**
  * Id dei negozi pubblici (deleted_at non valorizzato).
@@ -912,14 +973,16 @@ const SELECT_PRODOTTO_RICERCA =
  * quindi NON è possibile il join PostgREST (PGRST200); escludiamo i negozi
  * soft-deleted con una subquery manuale via .in().
  */
-async function getNegoziPubbliciIds(
-  db: ReturnType<typeof createAdminSupabaseClient>
+export async function getNegoziPubbliciIds(
+  db: ReturnType<typeof createAdminSupabaseClient>,
+  segnalazione?: SegnalazioneErroriDati
 ): Promise<string[]> {
-  const { data } = await db
+  const { data, error } = await db
     .from("negozi")
     .select("id")
     .is("deleted_at", null)
     .limit(2000);
+  if (error) segnalaErroreDati(segnalazione, error);
   return ((data ?? []) as { id: string }[]).map((n) => n.id).filter(Boolean);
 }
 
@@ -1233,10 +1296,17 @@ async function cercaProdottiCore(
     perPagina?: number;
     conCount: boolean;
     filtri: CercaProdottiOptions;
-  }
+  },
+  segnalazione?: SegnalazioneErroriDati
 ): Promise<{ risultati: Record<string, unknown>[]; total: number | null }> {
   const db = getDb();
-  if (!db) return { risultati: [], total: null };
+  if (!db) {
+    segnalaErroreDati(
+      segnalazione,
+      new Error("Supabase non configurato: variabili del client admin mancanti.")
+    );
+    return { risultati: [], total: null };
+  }
 
   // Prodotti: sinonimi di categoria/commercio (NON il vocabolario dei profili
   // attività per evitare falsi positivi es. "dottore" → latte) + concetti
@@ -1280,7 +1350,7 @@ async function cercaProdottiCore(
   const conFiltriExtra = haFiltriAddizionali(opts.filtri);
 
   // Negozi pubblici (non soft-deleted): senza join FK, filtro via .in().
-  const negoziValidi = await getNegoziPubbliciIds(db);
+  const negoziValidi = await getNegoziPubbliciIds(db, segnalazione);
   if (negoziValidi.length === 0) return { risultati: [], total: 0 };
 
   let query = db
@@ -1336,7 +1406,10 @@ async function cercaProdottiCore(
     return { risultati: [], total: typeof totalCount === "number" ? totalCount : 0 };
   }
 
-  if (error) return { risultati: [], total };
+  if (error) {
+    segnalaErroreDati(segnalazione, error);
+    return { risultati: [], total };
+  }
 
   let risultati = (data ?? []) as Record<string, unknown>[];
 
@@ -1389,7 +1462,7 @@ async function cercaProdottiCore(
   // V8 — vincolo città sul negozio proprietario dei prodotti (i prodotti non
   // hanno una città propria: la derivano dal negozio, citta OR indirizzo).
   if (cittaProdotto) {
-    risultati = await filtraProdottiPerCitta(db, risultati, cittaProdotto);
+    risultati = await filtraProdottiPerCitta(db, risultati, cittaProdotto, segnalazione);
   }
 
   // La paginazione della ricerca libera avviene DOPO retrieval, ranking,
@@ -1404,28 +1477,108 @@ async function cercaProdottiCore(
   return { risultati, total };
 }
 
-/** Arricchisce i risultati con il nome del negozio (una sola query). */
-async function mappaProdottoRicerca(
-  risultati: Record<string, unknown>[]
+/**
+ * Arricchisce i risultati con il nome del negozio (una sola query).
+ *
+ * M6-C1.1: se l'arricchimento fallisce i prodotti gia' trovati non devono
+ * sparire in silenzio. L'errore viene segnalato con lo stesso meccanismo di
+ * M6-C1: senza callback il comportamento resta quello preesistente (i
+ * prodotti restano mappati senza nome negozio; lista vuota solo quando il
+ * client manca), con la callback di Pino l'eccezione raggiunge M6-A e lo
+ * stato diventa errore invece di vuoto.
+ * Una query riuscita con zero negozi NON e' un errore: i prodotti restano e
+ * vengono mappati senza nome negozio.
+ *
+ * Il terzo parametro esiste solo per i test, come per gli altri helper del
+ * file che ricevono il client: in produzione resta undefined e si usa getDb().
+ */
+export async function mappaProdottoRicerca(
+  risultati: Record<string, unknown>[],
+  segnalazione?: SegnalazioneErroriDati,
+  dbIniettato?: ReturnType<typeof createAdminSupabaseClient>
 ): Promise<ProdottoRicerca[]> {
-  const db = getDb();
-  if (!db) return [];
+  const db = dbIniettato ?? getDb();
+  if (!db) {
+    segnalaErroreDati(
+      segnalazione,
+      new Error("Supabase non configurato: variabili del client admin mancanti.")
+    );
+    return [];
+  }
 
   const negozioIds = Array.from(
     new Set(risultati.map((prodotto) => prodotto.negozio_id).filter(Boolean))
   );
-  const { data: negozi } = negozioIds.length
+  const { data: negozi, error } = negozioIds.length
     ? await db.from("negozi").select("id, nome").in("id", negozioIds).is("deleted_at", null)
-    : { data: [] };
+    : { data: [], error: null };
+  if (error) segnalaErroreDati(segnalazione, error);
   const nomiNegozi = new Map((negozi ?? []).map((negozio) => [negozio.id, negozio.nome]));
 
-  return risultati.map((p) => ({
+  return risultati.map((p) =>
+    mappaProdottoRiga(p, nomiNegozi.get(p.negozio_id as string) ?? "")
+  );
+}
+
+// ─── Metadati prodotto per il percorso interno ───────────────────────────────
+// Le colonne sono già nel catalogo; questi helper evitano che valori null,
+// stringhe vuote o tipi inattesi entrino nel DTO. Non modificano la riga
+// originale restituita da Supabase.
+
+function testoMetadato(valore: unknown): string | null {
+  if (typeof valore !== "string") return null;
+  const testo = valore.trim();
+  return testo || null;
+}
+
+function listaMetadati(valore: unknown): string[] {
+  const valori = Array.isArray(valore)
+    ? valore
+    : typeof valore === "string"
+      ? valore.split(",")
+      : [];
+  return valori
+    .filter((voce): voce is string => typeof voce === "string")
+    .map((voce) => voce.trim())
+    .filter(Boolean);
+}
+
+function normalizzaParoleChiaveMetadato(valore: unknown): string[] {
+  const viste = new Set<string>();
+  const risultato: string[] = [];
+  for (const chiave of listaMetadati(valore)) {
+    const normalizzata = normalizza(chiave).trim();
+    if (!normalizzata || viste.has(normalizzata)) continue;
+    viste.add(normalizzata);
+    risultato.push(normalizzata);
+  }
+  return risultato;
+}
+
+/**
+ * Mapping puro di una riga prodotto verso il DTO condiviso.
+ * Espone anche colore e materiale strutturati: senza questo passaggio la
+ * ricerca li selezionava dal DB ma Pino poteva usarli solo se ripetuti nel
+ * testo libero. I valori restano quelli del catalogo (nessuna normalizzazione
+ * qui): il confronto canonico avviene nel filtro Pino.
+ *
+ * P1.2 conserva anche i metadati di catalogo. Sono proprietà NON enumerabili:
+ * il codice interno può leggerle, ma JSON.stringify / le risposte API non le
+ * espongono e il DTO pubblico resta compatibile.
+ */
+export function mappaProdottoRiga(
+  p: Record<string, unknown>,
+  negozioNome = ""
+): ProdottoRicerca {
+  const prodotto: ProdottoRicerca = {
     id: p.id as string,
     slug: (p.slug as string) ?? null,
     negozio_id: p.negozio_id as string,
     nome: p.nome as string,
     descrizione: (p.descrizione as string) ?? null,
     categoria: (p.categoria as string) ?? null,
+    colore: (p.colore as string | null | undefined) ?? null,
+    materiale: (p.materiale as string | null | undefined) ?? null,
     prezzo: p.prezzo as number,
     immagine_principale: (p.immagine_principale as string) ?? null,
     quantita_disponibile:
@@ -1433,21 +1586,48 @@ async function mappaProdottoRicerca(
     quantita_riservata:
       p.quantita_riservata != null ? Number(p.quantita_riservata) : null,
     ha_varianti: Boolean(p.ha_varianti),
-    negozio_nome: nomiNegozi.get(p.negozio_id as string) ?? "",
-  }));
+    negozio_nome: negozioNome,
+  };
+
+  Object.defineProperties(prodotto, {
+    sottocategoria: { value: testoMetadato(p.sottocategoria), enumerable: false },
+    marca: { value: testoMetadato(p.marca), enumerable: false },
+    parole_chiave: { value: listaMetadati(p.parole_chiave), enumerable: false },
+    parole_chiave_normalizzate: {
+      value: normalizzaParoleChiaveMetadato(p.parole_chiave),
+      enumerable: false,
+    },
+    caratteristiche: { value: listaMetadati(p.caratteristiche), enumerable: false },
+    descrizione_completa: {
+      value: testoMetadato(p.descrizione_completa),
+      enumerable: false,
+    },
+    seo_title: { value: testoMetadato(p.seo_title), enumerable: false },
+    seo_description: { value: testoMetadato(p.seo_description), enumerable: false },
+    alt_text_immagine: {
+      value: testoMetadato(p.alt_text_immagine),
+      enumerable: false,
+    },
+  });
+
+  return prodotto;
 }
 
 /**
  * Ricerca pubblica storica: identica al comportamento precedente (nessun
  * count, limite fisso, fallback tollerante). Backward-compatible.
  */
-export async function cercaProdotti(ricerca: string, limit = 20): Promise<ProdottoRicerca[]> {
+export async function cercaProdotti(
+  ricerca: string,
+  limit = 20,
+  segnalazione?: SegnalazioneErroriDati
+): Promise<ProdottoRicerca[]> {
   const { risultati } = await cercaProdottiCore(ricerca, {
     limite: limit,
     conCount: false,
     filtri: {},
-  });
-  return mappaProdottoRicerca(risultati);
+  }, segnalazione);
+  return mappaProdottoRicerca(risultati, segnalazione);
 }
 
 /**
@@ -1456,7 +1636,8 @@ export async function cercaProdotti(ricerca: string, limit = 20): Promise<Prodot
  */
 export async function cercaProdottiConOpzioni(
   ricerca: string,
-  opts: CercaProdottiOptions = {}
+  opts: CercaProdottiOptions = {},
+  segnalazione?: SegnalazioneErroriDati
 ): Promise<RisultatoRicercaProdotti> {
   const perPagina = opts.perPagina && opts.perPagina > 0 ? Math.min(opts.perPagina, 60) : 12;
   const pagina = opts.pagina && opts.pagina > 0 ? Math.min(opts.pagina, 1000) : 1;
@@ -1467,10 +1648,10 @@ export async function cercaProdottiConOpzioni(
     perPagina,
     conCount: true,
     filtri: opts,
-  });
+  }, segnalazione);
 
   return {
-    prodotti: await mappaProdottoRicerca(risultati),
+    prodotti: await mappaProdottoRicerca(risultati, segnalazione),
     total: typeof total === "number" ? total : risultati.length,
   };
 }
@@ -1630,7 +1811,9 @@ async function cercaProdottiTolleranti(
 
   const { data, error } = await db
     .from("prodotti")
-    .select("id, slug, negozio_id, nome, descrizione, categoria, marca, sottocategoria, prezzo, immagine_principale, quantita_disponibile, quantita_riservata, ha_varianti")
+    // Anche il recupero tollerante deve conservare gli stessi metadati della
+    // ricerca principale: nessuna query aggiuntiva, solo la select condivisa.
+    .select(SELECT_PRODOTTO_RICERCA)
     .eq("attivo", true)
     .in("negozio_id", negoziValidi)
     .or(filtri)
@@ -1667,10 +1850,17 @@ async function cercaProdottiTolleranti(
 
 export async function cercaNegozi(
   ricerca: string,
-  opts: CercaNegoziOptions = {}
+  opts: CercaNegoziOptions = {},
+  segnalazione?: SegnalazioneErroriDati
 ) {
   const db = getDb();
-  if (!db) return [];
+  if (!db) {
+    segnalaErroreDati(
+      segnalazione,
+      new Error("Supabase non configurato: variabili del client admin mancanti.")
+    );
+    return [];
+  }
 
   // Espansione ADDITIVA: sinonimi esistenti + concetti d'intento (es. "ho sete" →
   // bevande/bar/caffetteria). I termini ORIGINALI significativi sono già dentro
@@ -1743,7 +1933,7 @@ export async function cercaNegozi(
       "[cercaNegozi] RPC non disponibile, fallback ilike:",
       (err as { message?: string })?.message ?? err
     );
-    righe = (await cercaNegoziLegacy(db, espansa, ricerca)) as any[];
+    righe = (await cercaNegoziLegacy(db, espansa, ricerca, segnalazione)) as any[];
   }
 
   // V6-A: vincolo negativo estratto una sola volta (mai tocca la query di
@@ -1797,10 +1987,11 @@ export async function cercaNegozi(
  * servizi_strutturati in jsonb). Serve solo quando la migration non è
  * applicata; il ranking finale (filtraNegoziPerPertinenza) resta identico.
  */
-async function cercaNegoziLegacy(
+export async function cercaNegoziLegacy(
   db: ReturnType<typeof createAdminSupabaseClient>,
   espansa: string,
-  ricerca: string
+  ricerca: string,
+  segnalazione?: SegnalazioneErroriDati
 ): Promise<unknown[]> {
   const termini = Array.from(new Set(espansa.split(/\s+/).filter(Boolean))).slice(0, 12);
   const elemento = (p: string) =>
@@ -1834,6 +2025,7 @@ async function cercaNegoziLegacy(
 
   if (error) {
     console.log(error);
+    segnalaErroreDati(segnalazione, error);
     return [];
   }
 

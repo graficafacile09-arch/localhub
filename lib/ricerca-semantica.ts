@@ -20,6 +20,7 @@
  */
 
 import { normalizza, radice } from "./text-utils";
+import { SOTTOTIPI_PRODOTTO } from "./sottotipi-prodotto.ts";
 
 // ─── Stopword — non sono mai termini di ricerca significativi ───────────────
 
@@ -62,6 +63,11 @@ export const SINONIMI_DIRETTI_PRODOTTO: string[][] = [
   ["zaino", "zaini"],
   ["giubbotto", "giubbino", "giaccone"],
   ["maglietta", "t-shirt", "tshirt", "tee"],
+  // Cuffie/auricolari e borsa/borsello sono lo stesso bene con nomi diversi nel
+  // catalogo: ricerca pubblica, ricerca negozi e gate Pino devono accettare
+  // entrambe le forme. Nessun altro sinonimo viene aggiunto qui.
+  ["cuffia", "cuffie", "auricolare", "auricolari"],
+  ["borsa", "borse", "borsello", "borselli"],
 ];
 
 export function espandiSinonimiDirettiProdotto(query: string): string[] {
@@ -192,6 +198,10 @@ export function espandiQueryConSinonimiBase(query: string): string {
   const terminiEspansi = new Set<string>([
     ...terminiBase,
     ...espandiSinonimiDirettiProdotto(query),
+    // Categoria generica → sottotipi realmente pubblicati ("formaggio" →
+    // "pecorino"): così il retrieval trova il prodotto specifico. La query
+    // originale resta nel set: l'espansione aggiunge, non sostituisce.
+    ...terminiBase.flatMap((termine) => SOTTOTIPI_PRODOTTO[termine] ?? []),
   ]);
   for (const termine of terminiBase) {
     for (const gruppo of Object.values(gruppiBase)) {

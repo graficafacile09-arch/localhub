@@ -1,4 +1,5 @@
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { modalitaTestPinoAttiva } from "./modalita-test";
 import { normalizzaRichiesta } from "./local-intents";
 import type { PinoIntentAnalysis } from "./intent";
 import type { PinoSemanticPlan } from "./semantica";
@@ -79,6 +80,13 @@ export async function registraEsitoMemoria(params: {
   memoriaUsata?: PinoMemoriaVoce[];
   semantica?: PinoSemanticPlan;
 }): Promise<void> {
+  // Fase 3 — collaudo locale: nessuna scrittura di apprendimento. Il guard è
+  // PRIMA della creazione del client: in modalità test non parte alcuna query.
+  if (modalitaTestPinoAttiva()) {
+    console.info("[pino-memoria] scrittura saltata: modalita_test");
+    return;
+  }
+
   try {
     const supabase = createAdminSupabaseClient();
     const termini = terminiDellaQuery(params.query, params.analisi);

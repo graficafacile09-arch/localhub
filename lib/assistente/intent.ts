@@ -29,6 +29,9 @@
 import { analizzaRichiesta } from "@/lib/ricerca-intento";
 import { equivalentiMorfologici } from "@/lib/search-tollerante";
 import { normalizzaRichiesta } from "./local-intents";
+// La traduzione inglese→italiano vive in un solo posto (understanding): il piano
+// la riusa invece di mantenere un secondo dizionario da tenere allineato.
+import { normalizzaQueryCatalogo } from "./understanding";
 
 // ─── Tipi pubblici ───────────────────────────────────────────────────────────
 
@@ -170,6 +173,18 @@ const L_SERVICE: string[] = [
   "affittacamere",
   "agriturismo",
   "visita",
+  // Equivalenti inglesi dei servizi già riconosciuti in italiano. Servono a
+  // impedire che "I need a doctor" venga classificato come acquisto: il passo
+  // servizi resta PRIMA della ricerca esplicita di un bene.
+  "doctor", "physician", "dentist", "orthodontist", "plumber", "electrician",
+  "carpenter", "painter", "mechanic", "hairdresser", "hairdressing", "barber",
+  "barbershop", "haircut", "hair cut", "beautician", "esthetician", "veterinarian",
+  "vet", "pharmacy", "pharmacist", "lawyer", "attorney", "accountant", "notary",
+  "architect", "engineer", "nail salon", "nail technician", "gym", "trainer",
+  // NB: "cinema"/"movie theater" NON sono qui. Il luogo cinema è gestito da
+  // `richiestaCinemaPino` prima dell'intento; inserirlo tra i servizi
+  // disattiverebbe la ricerca prodotti di richieste come "proiettori per il
+  // cinema" o "televisori per il cinema".
 ];
 
 const L_DRINK_NEED: string[] = ["sete", "bere", "dissetante", "qualcosa da bere", "da bere"];
@@ -253,6 +268,14 @@ const L_FOOD_NEED: string[] = [
 ];
 
 const L_FOOD: string[] = [
+  // Equivalenti inglesi dei soggetti alimentari concreti (stessa lista di
+  // L_FOOD_SOGGETTO). Senza di loro "bread" non aveva dominio alimentare:
+  // l'intento restava "product" con confidenza bassa e la richiesta non
+  // entrava nel piano deterministico. Solo nomi di alimento: nessun termine
+  // inglese di attività, così non si aprono falsi positivi.
+  "bread", "cheese", "meat", "fish", "vegetables", "vegetable", "fruit",
+  "fruits", "honey", "flour", "rice", "onion", "onions", "tomato",
+  "tomatoes", "cookies", "cookie", "cake", "noodles",
   // Attività / vetrine
   "ristorante",
   "ristoranti",
@@ -303,6 +326,11 @@ const L_FOOD: string[] = [
 
 // Soggetti alimentari "concreti": su questi ha senso cercare anche i PRODOTTI.
 const L_FOOD_SOGGETTO: string[] = [
+  // Stessi equivalenti inglesi di L_FOOD: sono loro a rendere "bread" un
+  // soggetto alimentare concreto per la ricerca prodotti.
+  "bread", "cheese", "meat", "fish", "vegetables", "vegetable", "fruit",
+  "fruits", "honey", "flour", "rice", "onion", "onions", "tomato",
+  "tomatoes", "cookies", "cookie", "cake", "noodles",
   "pizza",
   "pane",
   "pasta",
@@ -329,9 +357,12 @@ const L_FOOD_SOGGETTO: string[] = [
   "pomodoro",
 ];
 
-// Ricerca esplicita di un bene ("cerco pizza", "vorrei comprare una TV").
+// Ricerca esplicita di un bene ("cerco pizza", "vorrei comprare una TV") in
+// italiano e in inglese. Le forme inglesi richiedono un OGGETTO di acquisto
+// ("I want to buy…", "I want a…"): "I want to go to the cinema" non è un
+// acquisto e resta una richiesta di luogo.
 const RE_RICERCA_ESPLICITA =
-  /\b(cerco|cerca|cercando|sto cercando|trovami|trova|comprare|compro|acquistare|acquisto|vorrei|voglio|mi serve|mi servirebbe|ho bisogno di|dove posso comprare)\b/;
+  /\b(cerco|cerca|cercando|sto cercando|trovami|trova|comprare|compro|acquistare|acquisto|vorrei|voglio|mi serve|mi servirebbe|ho bisogno di|dove posso comprare|looking for|find me|show me|can you find|could you find)\b|\bi\s+want\s+to\s+(?:buy|purchase|order|get)\b|\bi\s+(?:want|need)\s+(?:a|an|some|the)\b|\bi'?d\s+like\s+(?:a|an|some|the)\b/;
 
 // ─── Matching ────────────────────────────────────────────────────────────────
 
@@ -555,21 +586,40 @@ export function pianoIntento(analisi: PinoIntentAnalysis, query: string): PinoTo
 
     case "food": {
       const soggetto = soggettoAlimentare(q);
-      const termini = unici([...(soggetto ? [soggetto] : []), ...PRIORITA_FOOD]).slice(0, 7);
+      // Il soggetto può arrivare in inglese ("bread", "cheese"): la query di
+      // catalogo deve essere italiana, come nel ramo esplicito di index.ts.
+      // La traduzione è quella condivisa di normalizzaQueryCatalogo, quindi non
+      // esiste un secondo dizionario da tenere allineato.
+      const soggettoCatalogo = soggetto
+        ? normalizzaQueryCatalogo(soggetto) || soggetto
+        : null;
+      const termini = unici([
+        ...(soggettoCatalogo ? [soggettoCatalogo] : []),
+        ...PRIORITA_FOOD,
+      ]).slice(0, 7);
       return termini.flatMap((t) => [
         negozi(t),
         // I prodotti si cercano SOLO sul soggetto alimentare concreto: i
         // termini generici da attività (panificio, forno, ristorante...) non
         // devono diventare query prodotto (trascinerebbero prodotti casuali).
-        ...(soggetto && t === soggetto ? [prodotti(t)] : []),
+        ...(soggettoCatalogo && t === soggettoCatalogo ? [prodotti(t)] : []),
       ]);
     }
 
     case "product": {
       if (analisi.dominio === "food") {
         const soggetto = soggettoAlimentare(q);
-        const termini = unici([...(soggetto ? [soggetto] : []), ...PRIORITA_FOOD]).slice(0, 7);
-        return [prodotti(q), ...termini.map(negozi)];
+        // Stessa regola del ramo "food": il soggetto e la query arrivano al
+        // catalogo in italiano, mai nella formulazione inglese.
+        const soggettoCatalogo = soggetto
+          ? normalizzaQueryCatalogo(soggetto) || soggetto
+          : null;
+        const queryProdotti = normalizzaQueryCatalogo(q) || q;
+        const termini = unici([
+          ...(soggettoCatalogo ? [soggettoCatalogo] : []),
+          ...PRIORITA_FOOD,
+        ]).slice(0, 7);
+        return [prodotti(queryProdotti), ...termini.map(negozi)];
       }
       return [prodotti(q), negozi(q)];
     }

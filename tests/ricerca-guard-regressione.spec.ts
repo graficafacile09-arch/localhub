@@ -17,6 +17,7 @@ import { expect, test } from "@playwright/test";
 import {
   espandiQueryConSinonimi,
   espandiQueryConSinonimiBase,
+  sonoSinonimiDirettiProdotto,
 } from "../lib/ricerca-semantica";
 import {
   patternIlikeTolleranti,
@@ -131,4 +132,39 @@ test("V3 'pizeria' → 'pizzeria' (inserzione doppia-z) coperta", () => {
   // %piz_eria% matcha "pizzeria" (la _ è la z doppia nel DB).
   expect(pattern.some((p) => p === "%piz_eria%")).toBe(true);
   expect(similaritaLevenshtein("pizeria", "pizzeria")).toBeGreaterThan(0.8);
+});
+
+// ─── D6: equivalenze cuffie/auricolari e borsa/borsello ─────────────────────
+// Il dizionario è CONDIVISO: la ricerca prodotti, quella negozi e il gate Pino
+// usano gli stessi gruppi. Qui si blocca sia il mancato recupero sia la
+// contaminazione di query estranee.
+
+test("D6 ricerca prodotti: 'cuffie' porta gli equivalenti auricolari", () => {
+  const token = espandiQueryConSinonimiBase("cuffie").split(/\s+/);
+  expect(token).toEqual(expect.arrayContaining(["cuffia", "cuffie", "auricolare", "auricolari"]));
+});
+
+test("D6 ricerca negozi: 'borsa' porta anche il borsello (singolare e plurale)", () => {
+  const token = espandiQueryConSinonimi("borsa").split(/\s+/);
+  expect(token).toEqual(expect.arrayContaining(["borsa", "borse", "borsello", "borselli"]));
+});
+
+test("D6 l'espansione non contamina le query estranee", () => {
+  const pizza = espandiQueryConSinonimi("pizza").split(/\s+/);
+  expect(pizza).not.toContain("auricolari");
+  expect(pizza).not.toContain("borsello");
+  const farmacia = espandiQueryConSinonimi("farmacia").split(/\s+/);
+  expect(farmacia).not.toContain("cuffie");
+  expect(farmacia).not.toContain("borse");
+});
+
+test("D6 equivalenze esplicite, con i quattro abbinamenti irrilevanti esclusi", () => {
+  expect(sonoSinonimiDirettiProdotto("cuffie", "auricolari")).toBe(true);
+  expect(sonoSinonimiDirettiProdotto("auricolari", "cuffie")).toBe(true);
+  expect(sonoSinonimiDirettiProdotto("borsa", "borsello")).toBe(true);
+  expect(sonoSinonimiDirettiProdotto("borselli", "borse")).toBe(true);
+  expect(sonoSinonimiDirettiProdotto("cuffie", "cappello")).toBe(false);
+  expect(sonoSinonimiDirettiProdotto("borsa", "cintura")).toBe(false);
+  expect(sonoSinonimiDirettiProdotto("auricolari", "altoparlante")).toBe(false);
+  expect(sonoSinonimiDirettiProdotto("borsello", "portafoglio")).toBe(false);
 });

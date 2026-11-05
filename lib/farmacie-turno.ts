@@ -13,8 +13,36 @@
  */
 
 /** Pagina "Orari di oggi" di farmaciediturno.org per Castrovillari (cod 78033). */
+import { segnalaErroreDati, type SegnalazioneErroriDati } from "./negozi";
+
 const URL_FARMACIE_TURNO = "https://www.farmaciediturno.org/comune.asp?cod=78033";
 const TIMEOUT_MS = 8_000;
+
+/**
+ * M6-C3 — motivo tecnico per cui la fonte non ha risposto correttamente.
+ * Il codice distingue HTTP, timeout, rete e risposta non riconosciuta: senza
+ * questa distinzione un guasto diventava "nessuna farmacia di turno".
+ */
+export class ErroreFonteFarmacie extends Error {
+  readonly code: string;
+
+  constructor(code: string) {
+    super("La fonte delle farmacie di turno non e' disponibile.");
+    this.name = "ErroreFonteFarmacie";
+    this.code = code;
+  }
+}
+
+/**
+ * Una risposta e' valida se contiene il markup atteso della pagina oppure, in
+ * assenza di farmacie, se e' una pagina completa del sito (testo lungo che
+ * parla di farmacie). Una pagina di errore/manutenzione non lo e'.
+ */
+function rispostaFarmacieValida(html: string): boolean {
+  if (!html.trim()) return false;
+  if (html.includes('class="farmacia-box"')) return true;
+  return html.length >= 200 && /farmaci/i.test(html);
+}
 
 export type FarmaciaTurno = {
   /** idf della farmacia sul sito esterno (se presente). */
@@ -120,32 +148,49 @@ export function parseFarmacieTurno(html: string): FarmaciaTurno[] {
  * Scarica la pagina di oggi e restituisce le farmacie di Castrovillari.
  * MAI throw: ogni problema viene loggato e restituisce una lista vuota.
  */
-export async function getFarmacieTurnoCastrovillari(): Promise<FarmaciaTurno[]> {
+export async function getFarmacieTurnoCastrovillari(
+  segnalazione?: SegnalazioneErroriDati,
+  fetchImpl: typeof fetch = fetch
+): Promise<FarmaciaTurno[]> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  let esito: { html: string | null; codice: string | null } = { html: null, codice: "RETE" };
   try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
-    let html = "";
-    try {
-      const res = await fetch(URL_FARMACIE_TURNO, {
-        headers: {
-          "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36",
-        },
-        signal: controller.signal,
-      });
-      if (!res.ok) {
-        console.error(`[farmacie-turno] farmaciediturno.org ha risposto HTTP ${res.status}`);
-        return [];
+    const res = await fetchImpl(URL_FARMACIE_TURNO, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36",
+      },
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      console.error("[farmacie-turno] farmaciediturno.org ha risposto HTTP " + res.status);
+      esito = { html: null, codice: "HTTP_" + res.status };
+    } else {
+      const html = await res.text();
+      if (rispostaFarmacieValida(html)) {
+        esito = { html, codice: null };
+      } else {
+        console.error("[farmacie-turno] risposta non riconosciuta");
+        esito = { html: null, codice: "RISPOSTA_NON_VALIDA" };
       }
-      html = await res.text();
-    } finally {
-      clearTimeout(timer);
     }
-    return parseFarmacieTurno(html);
   } catch (err) {
+    const timeout = (err as Error)?.name === "AbortError";
     console.error(
-      `[farmacie-turno] errore: ${(err as Error)?.name === "AbortError" ? "timeout" : (err as Error)?.message ?? "sconosciuto"}`
+      "[farmacie-turno] errore: " + (timeout ? "timeout" : (err as Error)?.message ?? "sconosciuto")
     );
+    esito = { html: null, codice: timeout ? "TIMEOUT" : "RETE" };
+  } finally {
+    clearTimeout(timer);
+  }
+
+  if (esito.codice !== null) {
+    // M6-C3: la segnalazione avviene FUORI dal try, cosi' l'eccezione
+    // dell'adapter Pino non viene riconvertita in errore di rete.
+    segnalaErroreDati(segnalazione, new ErroreFonteFarmacie(esito.codice));
     return [];
   }
+
+  return parseFarmacieTurno(esito.html ?? "");
 }

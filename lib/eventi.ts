@@ -1,4 +1,5 @@
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { segnalaErroreDati, type SegnalazioneErroriDati } from "./negozi";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { utenteAdminAutorizzato } from "@/lib/auth/roles";
 import { creaNotificaAdmin } from "@/lib/amministratore/notifiche";
@@ -423,9 +424,18 @@ export async function getEventiPubbliciNegozio(negozioId: string): Promise<Event
     });
 }
 
-export async function getEventiPubblici(): Promise<Evento[]> {
-  const db = getDb();
-  if (!db) return [];
+export async function getEventiPubblici(
+  segnalazione?: SegnalazioneErroriDati,
+  dbIniettato?: ReturnType<typeof createAdminSupabaseClient> | null
+): Promise<Evento[]> {
+  const db = dbIniettato === undefined ? getDb() : dbIniettato;
+  if (!db) {
+    segnalaErroreDati(
+      segnalazione,
+      new Error("Supabase non configurato: variabili del client admin mancanti.")
+    );
+    return [];
+  }
 
   const { data, error } = await db
     .from("eventi")
@@ -433,7 +443,13 @@ export async function getEventiPubblici(): Promise<Evento[]> {
     .eq("attivo", true)
     .order("data_inizio", { ascending: true });
 
-  if (error) return [];
+  // M6-C3: senza callback il comportamento resta quello preesistente (lista
+  // vuota). Con la callback di Pino l'errore interrompe il tool, cosi' un
+  // guasto non viene presentato come "nessun evento".
+  if (error) {
+    segnalaErroreDati(segnalazione, error);
+    return [];
+  }
 
   const ora = Date.now();
   return (data ?? [])

@@ -9,7 +9,7 @@
  *   { messages: [{ role: "user" | "assistant", content: string }], sessionId?: string }
  *
  * Response (200):
- *   { risposta, negozi, prodotti, processingMs, source: "assistente" }
+ *   { risposta, negozi, prodotti, processingMs, source: "assistente", lingua }
  *
  * NOTA: /api/search resta invariato (altri consumer); questo endpoint viene
  * usato ESCLUSIVAMENTE da AssistantChat.
@@ -19,8 +19,10 @@
  * La logica AI resta quella della versione di riferimento delle ore 20:00.
  */
 
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { chatConAssistente, type MessaggioAssistente } from "@/lib/assistente";
+import { prendiOsservazioneTier0 } from "@/lib/assistente/shadow/integrazione";
+import { rilevaLinguaConversazionePino } from "@/lib/assistente/understanding";
 import { checkRateLimit } from "@/lib/rate-limiter";
 
 // ─── Rate limit CONDIVISO DB-backed per IP (guardia anti-abuso) ────────────
@@ -81,7 +83,30 @@ export async function POST(request: Request) {
 
   try {
     const risultato = await chatConAssistente(messaggi);
-    return NextResponse.json(risultato);
+    // Shadow Tier 0 (Fase 2): l'osservazione è registrata da `chatConAssistente`
+    // solo se il kill switch doppio è attivo; qui viene schedulata DOPO la
+    // risposta, senza attese e senza toccare il JSON restituito.
+    const osservazione = prendiOsservazioneTier0(risultato);
+    if (osservazione) {
+      try {
+        after(() => {
+          try {
+            osservazione();
+          } catch {
+            // B2 — nessun errore dell'osservatore deve emergere dalla route.
+          }
+        });
+      } catch {
+        // Fuori da un contesto di richiesta Next `after()` può lanciare:
+        // la risposta HTTP resta quella originale.
+      }
+    }
+    // La lingua dell'ultimo messaggio viaggia con la risposta: le etichette dei
+    // risultati (conteggi delle card) devono usare la stessa lingua del testo.
+    return NextResponse.json({
+      ...risultato,
+      lingua: rilevaLinguaConversazionePino(messaggi),
+    });
   } catch (error: unknown) {
     console.error("[/api/assistente] Errore:", error);
     return NextResponse.json(

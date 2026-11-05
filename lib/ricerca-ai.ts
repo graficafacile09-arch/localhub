@@ -36,6 +36,26 @@ export type ProdottoRicerca = {
   nome: string;
   descrizione: string | null;
   categoria: string | null;
+  /** Colore strutturato del catalogo; null = dato non disponibile. */
+  colore?: string | null;
+  /** Materiale strutturato del catalogo; null = dato non disponibile. */
+  materiale?: string | null;
+  /**
+   * Metadati interni del catalogo. Sono disponibili al codice server-side che
+   * ne ha bisogno, ma non vengono enumerati nel DTO: le risposte pubbliche
+   * mantengono invariato il contratto esistente.
+   */
+  sottocategoria?: string | null;
+  marca?: string | null;
+  /** Parole chiave originali del catalogo, ripulite ma non riscritte. */
+  parole_chiave?: string[];
+  /** Vista normalizzata per il confronto interno; non sostituisce l'originale. */
+  parole_chiave_normalizzate?: string[];
+  caratteristiche?: string[];
+  descrizione_completa?: string | null;
+  seo_title?: string | null;
+  seo_description?: string | null;
+  alt_text_immagine?: string | null;
   prezzo: number;
   negozio_nome: string;
   immagine_principale: string | null;

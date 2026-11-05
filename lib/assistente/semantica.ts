@@ -10,10 +10,24 @@
  * con intent + termini originali.
  */
 import { callGeminiText } from "@/lib/ai/gemini-text";
+import {
+  chiamataGeminiConBudgetPino,
+  type BudgetGeminiPino,
+} from "./budget-gemini";
 import { extractJsonFromText } from "@/lib/product-assistant/providers/utils";
 import { normalizzaRichiesta } from "./local-intents";
-import { normalizzaQueryCatalogo, richiestaApertaOra } from "./understanding";
-import { rilevaLinguaPino } from "./understanding";
+import {
+  attributiVuotiPino,
+  correggiTokenCatalogo,
+  estraiAttributiPino,
+  estraiSoggettoPino,
+  normalizzaQueryCatalogo,
+  richiestaApertaOra,
+  rilevaPreferenzaLinguaPino,
+  rilevaLinguaConversazionePino,
+  rilevaLinguaPino,
+  type PinoUnderstanding,
+} from "./understanding";
 import { rilevaFollowUp } from "./conversazione";
 import { estraiCitta } from "@/lib/localita";
 import { analizzaIntentoPino, type PinoIntent, type PinoIntentAnalysis } from "./intent";
@@ -136,6 +150,239 @@ export function costruisciStatoConversazionale(
   };
 };
 
+/**
+ * S3 — Comprensione strutturata della richiesta.
+ *
+ * Compone le informazioni già prodotte dai livelli esistenti (lingua, intento,
+ * piano semantico) in un unico contratto tipizzato e aggiunge ciò che mancava:
+ * preferenza linguistica esplicita, attributi strutturati e soggetto distinto
+ * dagli attributi. Non applica filtri e non cambia la query di retrieval: il
+ * piano semantico resta l'unico responsabile della ricerca.
+ */
+export type PinoComprensionePrecalcolata = {
+  /** Domanda contestuale già calcolata dall'orchestratore. */
+  richiesta?: string;
+  /** Analisi dell'intento già calcolata sulla domanda contestuale. */
+  analisi?: PinoIntentAnalysis;
+  /** Piano locale già calcolato (se assente si calcola qui, una volta). */
+  piano?: PinoSemanticPlan | null;
+};
+
+export function analizzaComprensionePino(
+  input: string,
+  history: MessaggioAssistente[] = [],
+  precalcolato: PinoComprensionePrecalcolata = {}
+): PinoUnderstanding {
+  const testo = String(input ?? "").trim();
+  const storico =
+    history.length > 0 ? history : [{ role: "user" as const, content: testo }];
+  const preferenza = rilevaPreferenzaLinguaPino(testo);
+  // La preferenza esplicita vince sul rilevamento statistico della lingua.
+  const lingua = preferenza?.lingua ?? rilevaLinguaConversazionePino(storico);
+
+  // Solo comunicazione sulla lingua: nessun soggetto, nessun vincolo, nessuna
+  // query. È questa la condizione che tiene Pino lontano dalle ricerche
+  // commerciali non richieste ("I speak English").
+  if (preferenza?.soloLingua) {
+    return {
+      lingua,
+      linguaPreferita: preferenza.lingua,
+      languagePreferenceOnly: true,
+      intent: "generic",
+      soggetto: "",
+      attributi: attributiVuotiPino(),
+      esclusioni: [],
+      minPrice: null,
+      maxPrice: null,
+    };
+  }
+
+  // S4.1: l'orchestratore può passare la domanda contestuale e l'analisi che ha
+  // già calcolato, così la comprensione non le ricalcola. In assenza di valori
+  // precalcolati il comportamento è identico a prima.
+  const richiesta = precalcolato.richiesta?.trim()
+    ? precalcolato.richiesta
+    : arricchisciRichiestaConContesto(testo, storico);
+  const analisi = precalcolato.analisi ?? analizzaIntentoPino(richiesta);
+  const piano =
+    precalcolato.piano !== undefined
+      ? precalcolato.piano
+      : pianoLocaleIntelligente(richiesta, analisi);
+
+  // S6.2 — L'estrazione delle esclusioni non dipende dall'esistenza di un
+  // piano. Per le richieste brevi senza formule introduttive ("borsa without
+  // leather") `pianoLocaleIntelligente` resta `null`, ma il termine negato è
+  // già determinabile lessicalmente: se il piano non lo dichiara, la
+  // comprensione lo conserva comunque. Quando il piano c'è le sue esclusioni
+  // sono la fonte autorevole e non vengono duplicate.
+  const esclusioni = piano?.exclusions?.length
+    ? piano.exclusions
+    : estraiEsclusioniPino(richiesta);
+
+  return {
+    lingua,
+    linguaPreferita: preferenza?.lingua ?? null,
+    languagePreferenceOnly: false,
+    intent: piano?.intent ?? analisi.intent,
+    soggetto: estraiSoggettoPino(richiesta),
+    attributi: estraiAttributiPino(richiesta),
+    esclusioni,
+    minPrice: piano?.minPrice ?? null,
+    maxPrice: piano?.maxPrice ?? null,
+  };
+}
+
+/**
+ * S4.1 — Vincoli effettivi per il retrieval a partire dal piano semantico e dal
+ * contratto di comprensione.
+ *
+ * Il piano resta la fonte prioritaria (è ciò che l'utente ha chiesto in forma
+ * strutturata); il contratto interviene solo dove il piano non ha il dato, così
+ * nessun vincolo riconosciuto si perde nel percorso verso i tool. Le esclusioni
+ * sono un'unione senza duplicati: aggiungere non significa sostituire.
+ * I prezzi restano indicativi (D-1): qui si propagano, non si filtrano.
+ * Zero è un limite esplicito valido; null/undefined e negativi restano assenti.
+ */
+export function fondiVincoliPino(
+  piano: PinoSemanticPlan | null | undefined,
+  comprensione: PinoUnderstanding
+): { esclusioni: string[]; minPrice: number | null; maxPrice: number | null } {
+  const esclusioni = Array.from(
+    new Set(
+      [...(piano?.exclusions ?? []), ...comprensione.esclusioni]
+        .map((voce) => String(voce ?? "").trim())
+        .filter(Boolean)
+    )
+  );
+  const prezzoValido = (valore: unknown): number | null => {
+    const numero = Number(valore);
+    return valore != null && Number.isFinite(numero) && numero >= 0 ? numero : null;
+  };
+  return {
+    esclusioni,
+    minPrice: prezzoValido(piano?.minPrice) ?? prezzoValido(comprensione.minPrice),
+    maxPrice: prezzoValido(piano?.maxPrice) ?? prezzoValido(comprensione.maxPrice),
+  };
+}
+
+// ─── Prezzo esplicito: unica fonte deterministica ───────────────────────────
+// `entro`, `non oltre`, `al massimo`, `fino a`, `inferiore a` sono tetti;
+// `sopra`, `oltre` (non negato), `almeno`, `superiore a` sono soglie minime.
+const RE_PREZZO_TETTO =
+  /(?:budget(?:\s+di)?|sotto|massimo|al massimo|meno di|inferiore a|entro|fino a|non oltre|under|below|up to|less than|no more than|not over|at most)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)/i;
+// `oltre` è un minimo SOLO senza negazione: "non oltre" è un tetto.
+const RE_PREZZO_SOGLIA =
+  /(?:sopra|superiore a|minimo|almeno|piu di|più di|(?<!non\s+)oltre|over|above|more than|at least)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)/i;
+const RE_PREZZO_INTERVALLO =
+  /(?:tra|da|between)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)\s*(?:e|a|and|to)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)(?:\s*(?:euro|euros|eur))?/i;
+const RE_PREZZO_GENERICO =
+  /(?:€\s*(\d+(?:[.,]\d+)?))|(\d+(?:[.,]\d+)?)\s*(?:euro|euros|eur)\b/i;
+
+/**
+ * UNICO estrattore di prezzo esplicito, condiviso da piano locale e fallback.
+ *
+ * Ordine: intervallo → tetto → soglia → importo generico. L'importo nudo
+ * ("50 euro", "€50", "con 50 euro") diventa un tetto SOLO quando la frase non
+ * contiene già un tetto o una soglia: così "oltre 50 euro" resta un minimo e
+ * non diventa anche un massimo. L'intervallo è sempre normalizzato min ≤ max.
+ */
+export function estraiPrezzoEsplicitoPino(
+  testo: string
+): { minPrice: number | null; maxPrice: number | null } {
+  const q = String(testo ?? "");
+  const numero = (valore: string) => Number(valore.replace(",", "."));
+  const intervallo = q.match(RE_PREZZO_INTERVALLO);
+  if (intervallo) {
+    const a = numero(intervallo[1]);
+    const b = numero(intervallo[2]);
+    if (Number.isFinite(a) && Number.isFinite(b)) {
+      return { minPrice: Math.min(a, b), maxPrice: Math.max(a, b) };
+    }
+  }
+  const tetto = q.match(RE_PREZZO_TETTO);
+  const soglia = q.match(RE_PREZZO_SOGLIA);
+  if (tetto || soglia) {
+    return {
+      minPrice: soglia ? numero(soglia[1]) : null,
+      maxPrice: tetto ? numero(tetto[1]) : null,
+    };
+  }
+  const generico = q.match(RE_PREZZO_GENERICO);
+  const valore = generico ? numero(generico[1] ?? generico[2]) : null;
+  return {
+    minPrice: null,
+    maxPrice: valore != null && Number.isFinite(valore) && valore > 0 ? valore : null,
+  };
+}
+
+/**
+ * Il budget del piano viene SOLO dall'estrazione deterministica della
+ * richiesta: i campi di prezzo restituiti dal modello non possono introdurre
+ * né rimuovere un vincolo. Uno zero "di riempimento" non diventa quindi un
+ * tetto, mentre «entro 0 euro» resta un tetto esplicito pari a zero.
+ */
+export function applicaLimitiEsplicitiPianoPino(
+  piano: PinoSemanticPlan,
+  richiesta: string
+): PinoSemanticPlan {
+  const limiti = estraiPrezzoEsplicitoPino(richiesta);
+  return { ...piano, minPrice: limiti.minPrice, maxPrice: limiti.maxPrice };
+}
+
+// Clausole economiche rimosse dalla query di retrieval: intervallo (anche
+// inglese), tetto/soglia (anche inglese), importi con valuta o simbolo.
+// Regola UNICA condivisa da piano locale e fallback: nessuna implementazione
+// duplicata e nessun residuo come «between», «above», «and» o importi.
+const RE_CLAUSOLA_PREZZO_INTERVALLO =
+  /(?:tra|fra|da|between|from)\s*(?:€|\$)?\s*\d+(?:[.,]\d+)?\s*(?:e|a|and|to)\s*(?:€|\$)?\s*\d+(?:[.,]\d+)?(?:\s*(?:euros|euro|eur))?/gi;
+const RE_CLAUSOLA_PREZZO_LIMITE =
+  /(?:budget(?:\s+di)?|non oltre|al massimo|massimo|sotto|meno di|inferiore a|entro|fino a|sopra|superiore a|minimo|almeno|piu di|più di|oltre|under|below|up to|less than|no more than|not over|at most|above|over|more than|at least)\s*(?:€|\$)?\s*\d+(?:[.,]\d+)?(?:\s*(?:euros|euro|eur))?/gi;
+
+export function rimuoviClausolePrezzoPino(testo: string): string {
+  return String(testo ?? "")
+    .replace(RE_CLAUSOLA_PREZZO_INTERVALLO, " ")
+    .replace(RE_CLAUSOLA_PREZZO_LIMITE, " ")
+    .replace(
+      /\b(?:ho|con|dispongo di|a disposizione(?: di)?)\s*(?:(?:un|il|il mio)\s+)?(?:budget(?:\s+di)?\s*)?(?:€\s*)?\d+(?:[.,]\d+)?\s*(?:euros|euro|eur)\b(?:\s+(?:da spendere|per)\b)?/gi,
+      " "
+    )
+    .replace(/\b\d+(?:[.,]\d+)?\s*(?:euros|euro|eur)\b/gi, " ")
+    .replace(/€\s*\d+(?:[.,]\d+)?/g, " ")
+    .replace(/\b(?:euros|euro|eur)\b/gi, " ")
+    .replace(/€/g, " ")
+    // Connettivi orfani rimasti in coda dopo la rimozione dell'importo
+    // («cuffie con», «pasta and»): non sono keyword di catalogo.
+    .replace(/\s+\b(?:e|ed|and|to|con|da|di|a|per|circa|tra|between|above|below|over|under|entro|fino)\b\s*$/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** Limiti validi di una singola interpretazione: null/undefined/negativi non contano; 0 è un limite esplicito valido. */
+function limitiPianoPino(
+  fonte?: { minPrice?: number | null; maxPrice?: number | null } | null
+): { minPrice: number | null; maxPrice: number | null } | null {
+  const valido = (valore: unknown): number | null => {
+    const numero = Number(valore);
+    return valore != null && Number.isFinite(numero) && numero >= 0 ? numero : null;
+  };
+  const min = valido(fonte?.minPrice);
+  const max = valido(fonte?.maxPrice);
+  return min == null && max == null ? null : { minPrice: min, maxPrice: max };
+}
+
+/**
+ * Budget ESPLICITO con precedenza ESCLUSIVA: se il piano semantico contiene
+ * almeno un limite valido si usano solo i suoi (anche quando l'altro è null);
+ * la comprensione subentra solo quando il piano non ne ha nessuno. Minimo di
+ * un'interpretazione e massimo dell'altra non vengono mai combinati.
+ */
+export function limitiVincolantiPino(
+  semantica?: PinoSemanticPlan | null,
+  comprensione?: PinoUnderstanding | null
+): { minPrice: number | null; maxPrice: number | null } | null {
+  return limitiPianoPino(semantica) ?? limitiPianoPino(comprensione);
+}
+
 const SCHEMA_PROMPT = `Interpreta una richiesta dell'utente per la ricerca locale di InCittà.
 NON rispondere all'utente. Devi produrre SOLO JSON valido.
 
@@ -216,20 +463,6 @@ const CANONICI_RICERCA: Array<{ pattern: RegExp; termine: string; intent: PinoIn
   { pattern: /\bmaglietta|magliette|maglia|maglie\b/i, termine: "maglia", intent: "product" },
 ];
 
-function distanzaLevenshtein(a: string, b: string): number {
-  const prev = Array.from({ length: b.length + 1 }, (_, i) => i);
-  for (let i = 1; i <= a.length; i++) {
-    let diag = prev[0];
-    prev[0] = i;
-    for (let j = 1; j <= b.length; j++) {
-      const old = prev[j];
-      prev[j] = Math.min(prev[j] + 1, prev[j - 1] + 1, diag + (a[i - 1] === b[j - 1] ? 0 : 1));
-      diag = old;
-    }
-  }
-  return prev[b.length];
-}
-
 const VOCABOLARIO_PINO_BASE: Array<[string, string]> = [
   ["birra", "birra"], ["birretta", "birra"], ["birrette", "birra"],
   ["analcolica", "analcolica"], ["analcolico", "analcolica"],
@@ -249,7 +482,24 @@ const VOCABOLARIO_PINO_BASE: Array<[string, string]> = [
   ["maglia", "maglia"], ["maglietta", "maglia"], ["magliette", "maglia"],
 ];
 
-const VOCABOLARIO_PINO: Array<[string, string]> = (() => {
+/**
+ * Token che NON partecipano alla correzione automatica dei refusi.
+ *
+ * `auricolare`/`auricolari` sono a due modifiche da `articolare`/`articolari`:
+ * se entrassero nel vocabolario, `correggiTokenCatalogo` riscriverebbe una
+ * parola italiana valida ("dolore articolare" → "dolore auricolare"). Le due
+ * forme italiane sono escluse anche in ingresso, come seconda difesa.
+ */
+export const TOKEN_SENZA_REFUSI = new Set([
+  "articolare",
+  "articolari",
+  "auricolare",
+  "auricolari",
+]);
+
+/** Vocabolario dei refusi di Pino (token → termine canonico). Esportato per i
+ * test diretti della protezione `TOKEN_SENZA_REFUSI`. */
+export const VOCABOLARIO_PINO: Array<[string, string]> = (() => {
   const mappa = new Map<string, string>(VOCABOLARIO_PINO_BASE);
 
   // Riutilizziamo il vocabolario semantico già presente nel motore InCittà:
@@ -258,7 +508,7 @@ const VOCABOLARIO_PINO: Array<[string, string]> = (() => {
   for (const gruppo of SINONIMI_DIRETTI_PRODOTTO) {
     for (const voce of gruppo) {
       for (const token of normalizzaRichiesta(voce).split(/\s+/)) {
-        if (token.length >= 4) mappa.set(token, token);
+        if (token.length >= 4 && !TOKEN_SENZA_REFUSI.has(token)) mappa.set(token, token);
       }
     }
   }
@@ -266,7 +516,7 @@ const VOCABOLARIO_PINO: Array<[string, string]> = (() => {
   for (const gruppo of Object.values(SINONIMI_TIPO_ATTIVITA)) {
     for (const voce of gruppo) {
       for (const token of normalizzaRichiesta(voce).split(/\s+/)) {
-        if (token.length >= 4) mappa.set(token, token);
+        if (token.length >= 4 && !TOKEN_SENZA_REFUSI.has(token)) mappa.set(token, token);
       }
     }
   }
@@ -275,22 +525,14 @@ const VOCABOLARIO_PINO: Array<[string, string]> = (() => {
 })();
 
 function correggiErroriBattitura(query: string): string {
+  // La correzione vive in understanding.ts ed è volutamente prudente: un
+  // refuso plausibile viene corretto, una parola italiana valida no ("cane"
+  // non deve diventare "pane", "voglio" non deve diventare "aglio").
+  // I token in TOKEN_SENZA_REFUSI non vengono mai riscritti.
   return query.split(/(\s+)/).map((part) => {
-    if (!/^[A-Za-zÀ-ÖØ-öø-ÿ]+$/.test(part)) return part;
     const lower = part.toLocaleLowerCase("it-IT");
-    if (lower.length < 4) return part;
-    let best = lower;
-    let bestDistance = Infinity;
-    for (const [word, canonical] of VOCABOLARIO_PINO) {
-      if (Math.abs(word.length - lower.length) > 2) continue;
-      const d = distanzaLevenshtein(lower, word);
-      const soglia = lower.length <= 5 ? 1 : 2;
-      if (d <= soglia && d < bestDistance) {
-        best = canonical;
-        bestDistance = d;
-      }
-    }
-    return bestDistance < Infinity ? best : part;
+    if (TOKEN_SENZA_REFUSI.has(lower)) return part;
+    return correggiTokenCatalogo(part, VOCABOLARIO_PINO) ?? part;
   }).join("");
 }
 
@@ -485,6 +727,53 @@ export function usaFastPathSemantico(query: string, analisi: PinoIntentAnalysis)
     /\b(?:sotto|sopra|massimo|minimo|meno di|piu di|più di|entro|fino a|tra)\b/i.test(q);
 }
 
+// ─── Esclusioni negative ─────────────────────────────────────────────────────
+// "non in tessuto" deve escludere IL MATERIALE, non la preposizione "in":
+// tra la negazione e il termine negato possono stare preposizioni, articoli e
+// costrutti inglesi ("not made of plastic"). Connettori e articoli non sono mai
+// esclusioni autonome; il termine positivo non negato resta un attributo.
+const CONNETTORI_CLAUSOLA_ESCLUSIONE = [
+  "in", "di", "del", "dello", "della", "dei", "degli", "delle", "da",
+  "con", "a", "al", "allo", "alla", "ai", "agli", "alle", "su",
+  "il", "lo", "la", "i", "gli", "le", "un", "uno", "una",
+  "the", "an", "of", "from", "with", "made", "out",
+];
+
+// Parole che non possono MAI essere un'esclusione da sole (connettori, articoli
+// e formule di raccordo). Se la cattura le produce, vengono scartate.
+const PAROLE_NON_ESCLUSIONE = new Set([
+  ...CONNETTORI_CLAUSOLA_ESCLUSIONE,
+  "non", "senza", "not", "without", "solo", "soltanto", "piu", "più",
+  "molto", "poco", "troppo", "e", "ed", "o", "ma", "che",
+]);
+
+// Cattura: negazione + eventuali connettori + termine negato.
+function sorgenteClausolaEsclusione(): string {
+  return `\\b(?:non|senza|without|not)\\b\\s+(?:(?:${CONNETTORI_CLAUSOLA_ESCLUSIONE.join("|")})\\s+)*([a-zàèéìòù][a-zàèéìòù0-9-]*)`;
+}
+
+/**
+ * Estrae i termini effettivamente negati ("non in tessuto" → tessuto).
+ * Preposizioni, articoli e parole di raccordo non diventano esclusioni.
+ */
+export function estraiEsclusioniPino(testo: string): string[] {
+  const q = String(testo ?? "");
+  if (!q.trim()) return [];
+  const regex = new RegExp(sorgenteClausolaEsclusione(), "gi");
+  const esclusioni: string[] = [];
+  for (const occorrenza of q.matchAll(regex)) {
+    const voce = String(occorrenza[1] ?? "").trim().toLowerCase();
+    if (!voce || PAROLE_NON_ESCLUSIONE.has(voce)) continue;
+    esclusioni.push(voce);
+  }
+  return Array.from(new Set(esclusioni)).slice(0, 5);
+}
+
+/** Rimuove dalla query le clausole di esclusione già estratte. */
+export function rimuoviClausoleEsclusionePino(testo: string): string {
+  return String(testo ?? "").replace(new RegExp(sorgenteClausolaEsclusione(), "gi"), " ");
+}
+
 export function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): PinoSemanticPlan | null {
   const q = correggiErroriBattitura(normalizzaRichiesta(query)).trim();
   if (!q) return null;
@@ -497,29 +786,13 @@ export function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalys
   // apertura e città vengono estratti separatamente, altrimenti il gate di
   // pertinenza potrebbe richiedere termini come "sotto" o "100" dentro al
   // prodotto e restituire zero risultati.
-  let minPrice: number | null = null;
-  let maxPrice: number | null = null;
-  const range = q.match(/(?:tra|da)\s*(\d+(?:[.,]\d+)?)\s*(?:e|a)\s*(\d+(?:[.,]\d+)?)/i);
-  const max = q.match(/(?:budget(?:\s+di)?|sotto|massimo|meno di|entro|fino a|under|below|up to|less than)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)/i) ?? q.match(/\b(?:ho|con|dispongo di|a disposizione(?: di)?)\s*(?:un budget(?:\s+di)?\s*)?(?:€\s*)?(\d+(?:[.,]\d+)?)\s*(?:euro|euros|eur)\b/i) ?? q.match(/(?:€\s*)(\d+(?:[.,]\d+)?)/i) ?? q.match(/\b(\d+(?:[.,]\d+)?)\s*(?:euro|euros|eur)\b/i);
-  const min = q.match(/(?:sopra|minimo|piu di|più di|oltre|over|above|more than)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)/i);
-  if (range) {
-    minPrice = Number(range[1].replace(",", "."));
-    maxPrice = Number(range[2].replace(",", "."));
-  } else {
-    if (max) maxPrice = Number(max[1].replace(",", "."));
-    if (min) minPrice = Number(min[1].replace(",", "."));
-  }
+  // Unico estrattore condiviso con il fallback: nessuna seconda interpretazione.
+  const { minPrice, maxPrice } = estraiPrezzoEsplicitoPino(q);
 
-  // Negazione generica: "non nere", "senza glutine", "non usato" ecc.
-  // Catturiamo solo il termine immediatamente negato: "non nere eleganti"
-  // deve escludere "nere" e mantenere "eleganti" come attributo positivo.
-  const esclusioni = Array.from(new Set(
-    Array.from(q.matchAll(
-      /\b(?:non|senza)\s+([a-zàèéìòù][a-zàèéìòù0-9-]*)/gi
-    ))
-      .map((m) => m[1].trim())
-      .filter(Boolean)
-  )).slice(0, 5);
+  // Negazione generica: "non nere", "senza glutine", "non in tessuto" ecc.
+  // Catturiamo il termine negato saltando preposizioni e articoli: "non nere
+  // eleganti" esclude "nere" e mantiene "eleganti" come attributo positivo.
+  const esclusioni = estraiEsclusioniPino(q);
 
   let city: string | null = null;
   const cittaNota = estraiCitta(q);
@@ -539,37 +812,20 @@ export function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalys
     // "cipolla", non per le parole "quanto/costa".
     .replace(/\bquanto\s+(?:costa|costano|viene|vengono|vale|valgono)\b/gi, " ")
     .replace(/\b(?:prezzo|prezzi)\s+(?:di|del|della|dei|degli|delle)?\b/gi, " ")
-    // Importi espressi in modo colloquiale ("ho 100 euro", "con 100 euro")
-    // sono vincoli di budget, non keyword da cercare nel catalogo.
-    .replace(/\b(?:ho|con|dispongo di|a disposizione(?: di)?)\s*(?:(?:un|il|il mio)\s+)?(?:budget(?:\s+di)?\s*)?(?:€\s*)?\d+(?:[.,]\d+)?\s*(?:euro|euros|eur)\b(?:\s+(?:da spendere|per)\b)?/gi, " ")
-    .replace(/(?:tra|da)\s*\d+(?:[.,]\d+)?\s*(?:e|a)\s*\d+(?:[.,]\d+)?/gi, " ")
-    .replace(
-      /(?:budget(?:\s+di)?|non oltre|al massimo|sotto|massimo|meno di|entro|fino a|sopra|minimo|piu di|più di|oltre|under|below|up to|less than|no more than|not over|at most)\s*(?:€|\$)?\s*\d+(?:[.,]\d+)?/gi,
-      " "
-    )
-    // Qualsiasi importo con valuta rimasto ("da 99 euro", "€ 99,00") è ancora
-    // un budget: non deve restare nella query di retrieval.
-    .replace(/\b\d+(?:[.,]\d+)?\s*(?:euro|euros|eur)\b/gi, " ")
-    .replace(/€\s*\d+(?:[.,]\d+)?/g, " ")
-    // La valuta resta attaccata al numero ("sotto 30 euro"): va rimossa anche
-    // da sola, altrimenti entra nella query di retrieval e il gate di
-    // pertinenza dei prodotti — che richiede TUTTE le parole — azzera i
-    // risultati ("orologio euro" ⇒ 0 prodotti invece di 4).
-    .replace(/\b(?:euro|euros|eur)\b/gi, " ")
-    .replace(/€/g, " ")
     .replace(/\b(?:aperto|aperta|aperti|aperte)\s+(?:ora|adesso)\b|\b(?:open|opened)\s+(?:right\s+)?now\b|\bcurrently\s+open\b|\bopen\s+at\s+the\s+moment\b/gi, " ")
     .replace(/\b(?:ora|adesso)\b/gi, " ")
     // Punteggiatura residua ("regalo,"): non è una keyword di catalogo e
     // sporcherebbe la query mostrata all'utente.
     .replace(/[,;:]+/g, " ");
 
-  for (const esclusione of esclusioni) {
-    const escaped = esclusione.replace(/[.*+?^$()|[\]\\]/g, "\\$&");
-    termine = termine.replace(
-      new RegExp("\\b(?:non|senza)\\s+" + escaped + "\\b", "gi"),
-      " "
-    );
-  }
+  // Vincoli economici (italiano e inglese): la stessa pulizia del fallback,
+  // così nessuna clausola resta nella query di retrieval.
+  termine = rimuoviClausolePrezzoPino(termine);
+
+  // Le clausole di esclusione non sono keyword di ricerca: vanno rimosse
+  // insieme ai connettori ("non in tessuto" non deve lasciare né "non" né
+  // "in" nella query di retrieval).
+  termine = rimuoviClausoleEsclusionePino(termine);
 
   if (city) {
     const escapedCity = city.replace(/[.*+?^$()|[\]\\]/g, "\\$&");
@@ -628,22 +884,19 @@ export function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalys
   };
 }
 
-function fallbackPlan(query: string, analisi: PinoIntentAnalysis): PinoSemanticPlan {
+export function fallbackPlan(query: string, analisi: PinoIntentAnalysis): PinoSemanticPlan {
   const q = normalizzaRichiesta(query);
-  const qCatalogo = normalizzaQueryCatalogo(q);
+  // Stesso estrattore del piano locale: le preposizioni non sono esclusioni e
+  // non restano nella query ("non in tessuto" → tessuto, query senza clausola).
+  const exclusions = estraiEsclusioniPino(q);
+  const qCatalogo = normalizzaQueryCatalogo(
+    rimuoviClausolePrezzoPino(rimuoviClausoleEsclusionePino(q))
+  );
   const tokens = qCatalogo
     .split(/[^a-z0-9]+/)
     .filter((t) => t.length >= 3)
-    .filter((t) => !/^(cerco|cerca|trovami|trova|vorrei|voglio|mi|serve|anzi|invece|pero|però|un|una|uno|per|con|di|a|da|il|lo|la|i|gli|le|e|in|su|del|della|dei|delle|sotto|sopra|massimo|minimo|euro)$/.test(t));
-  const mMax = q.match(/(?:sotto|massimo|fino a|entro|meno di|under|below|up to|less than|no more than|not over|at most)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)/i);
-  const mMin = q.match(/(?:sopra|minimo|piu di|più di|oltre|over|above|more than|at least)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)/i);
-  const mRange = q.match(/(?:tra|da|between)\s*(\d+(?:[.,]\d+)?)\s*(?:e|a|and|to)\s*(\d+(?:[.,]\d+)?)/i);
-  const maxPrice = mRange ? Number(mRange[2].replace(",", ".")) : mMax ? Number(mMax[1].replace(",", ".")) : null;
-  const minPrice = mRange ? Number(mRange[1].replace(",", ".")) : mMin ? Number(mMin[1].replace(",", ".")) : null;
-  const exclusions: string[] = [];
-  const neg = q.match(/\b(?:non|senza)\s+([a-z0-9àèéìòù-]+)/);
-  if (neg?.[1]) exclusions.push(neg[1]);
-
+    .filter((t) => !/^(cerco|cerca|trovami|trova|vorrei|voglio|mi|serve|anzi|invece|pero|però|un|una|uno|per|con|di|a|da|il|lo|la|i|gli|le|e|in|su|del|della|dei|delle|sotto|sopra|massimo|minimo|inferiore|superiore|almeno|entro|oltre|non|euro)$/.test(t));
+  const { minPrice, maxPrice } = estraiPrezzoEsplicitoPino(q);
   const openNow = richiestaApertaOra(q);
   const surface =
     openNow && analisi.usaNegozi ? "stores" :
@@ -670,7 +923,8 @@ export async function interpretaRichiestaPino(
   history: MessaggioAssistente[],
   analisi: PinoIntentAnalysis,
   memoria: PinoMemoriaVoce[],
-  stato?: PinoConversationState
+  stato?: PinoConversationState,
+  budget?: BudgetGeminiPino
 ): Promise<PinoSemanticPlan> {
   // Lo stato strutturato è la fonte prioritaria per le conversazioni
   // multi-turno. La memoria semantica viene applicata comunque dopo la
@@ -719,18 +973,22 @@ export async function interpretaRichiestaPino(
       .map((m) => `${m.role}: ${m.content.slice(0, 240)}`)
       .join("\n");
 
-    const raw = await callGeminiText({
-      systemPrompt: SCHEMA_PROMPT,
-      userPrompt:
-        `Intento locale già riconosciuto: ${analisi.intent} / ${analisi.dominio}.\n` +
-        `Memoria semantica confermata: ${memoriaTesto}\n\n` +
-        `CONVERSAZIONE:\n${storico}\n\nRICHIESTA ATTUALE:\n${q}`,
-      maxTokens: 300,
-      temperature: 0,
-      json: true,
-      timeoutMs: 8_000,
-      retries: 1,
-    });
+    // M6-B1 — Budget condiviso con la selezione dei tool: a budget esaurito
+    // la chiamata non parte e vale il piano deterministico (catch sotto).
+    const raw = await chiamataGeminiConBudgetPino(budget, () =>
+      callGeminiText({
+        systemPrompt: SCHEMA_PROMPT,
+        userPrompt:
+          `Intento locale già riconosciuto: ${analisi.intent} / ${analisi.dominio}.\n` +
+          `Memoria semantica confermata: ${memoriaTesto}\n\n` +
+          `CONVERSAZIONE:\n${storico}\n\nRICHIESTA ATTUALE:\n${q}`,
+        maxTokens: 300,
+        temperature: 0,
+        json: true,
+        timeoutMs: 8_000,
+        retries: 1,
+      })
+    );
 
     const parsed = JSON.parse(extractJsonFromText(raw)) as Record<string, unknown>;
     const surface =

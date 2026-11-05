@@ -1,0 +1,7073 @@
+{
+  "versione": "P1.3.4",
+  "snapshot": {
+    "percorso": "C:\\Users\\denni\\Desktop\\localhub\\scripts\\pino-p1-3-3-catalog-snapshot-20261104.json",
+    "sha256": "4a9286a6c743098b57e8fb9500acedf178b2b5d3687521601a18eacd42e87175",
+    "prodottiAttivi": 37
+  },
+  "sorgente": "snapshot P1.3.3 per alimentari; fixture offline per non alimentari",
+  "distinzione": {
+    "recupero": "non eseguito: nessuna query Supabase",
+    "filtro": "gate P1.3.4 applicato ai candidati offline",
+    "endToEnd": false
+  },
+  "casi": [
+    {
+      "id": "nome-fileja",
+      "gruppo": "alimentare",
+      "catalogo": "snapshot",
+      "query": "Cerco Fileja di Tropea",
+      "motivazione": "Nome esatto; unico prodotto con questo nome.",
+      "inclusoNelleMetriche": true,
+      "prima": {
+        "incluso": true,
+        "restituiti": [
+          "1513"
+        ],
+        "attesi": [
+          "1513"
+        ],
+        "corretti": [
+          "1513"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1,
+        "dettagli": {
+          "candidati": [
+            {
+              "id": "218",
+              "nome": "Orologio cronografo Maserati in acciaio inossidabile"
+            },
+            {
+              "id": "1360",
+              "nome": "Orologio LiuJo in acciaio"
+            },
+            {
+              "id": "1361",
+              "nome": "Anello con pietra"
+            },
+            {
+              "id": "1371",
+              "nome": "Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1372",
+              "nome": "Filetti di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1373",
+              "nome": "Dolcezza di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1374",
+              "nome": "Miele Millefiori del Pollino"
+            },
+            {
+              "id": "1375",
+              "nome": "Miele di Castagno del Pollino"
+            },
+            {
+              "id": "1376",
+              "nome": "Olio Extra Vergine di Oliva del Pollino"
+            },
+            {
+              "id": "1377",
+              "nome": "Vino Magliocco del Pollino"
+            },
+            {
+              "id": "1378",
+              "nome": "Ciotaredda di Castrovillari"
+            },
+            {
+              "id": "1397",
+              "nome": "Caffè Kimbo Amalfi 1kg"
+            },
+            {
+              "id": "1430",
+              "nome": "Orologio cronografo da uomo con cinturino in pelle marrone"
+            },
+            {
+              "id": "1488",
+              "nome": "Pane Casereccio"
+            },
+            {
+              "id": "1489",
+              "nome": "Pizza margherita al pezzo"
+            },
+            {
+              "id": "1490",
+              "nome": "Tagliatelle all'uovo"
+            },
+            {
+              "id": "1491",
+              "nome": "Strascinati farina 00"
+            },
+            {
+              "id": "1492",
+              "nome": "Arancino mignon alla nduja piccante"
+            },
+            {
+              "id": "1493",
+              "nome": "Panino ciabatta"
+            },
+            {
+              "id": "1506",
+              "nome": "Orologio da polso Timberland con cinturino in pelle nera"
+            },
+            {
+              "id": "1507",
+              "nome": "Olio extravergine d’oliva calabrese"
+            },
+            {
+              "id": "1508",
+              "nome": "Pecorino del Monte Poro"
+            },
+            {
+              "id": "1509",
+              "nome": "Cipolla Rossa di Tropea IGP"
+            },
+            {
+              "id": "1510",
+              "nome": "’Nduja di Spilinga"
+            },
+            {
+              "id": "1511",
+              "nome": "Liquirizia di Calabria DOP"
+            },
+            {
+              "id": "1512",
+              "nome": "Piparelle calabresi"
+            },
+            {
+              "id": "1513",
+              "nome": "Fileja di Tropea"
+            },
+            {
+              "id": "1514",
+              "nome": "Torrone mielato di Bagnara Calabra"
+            },
+            {
+              "id": "1515",
+              "nome": "Peperone secco dolce 100 g"
+            },
+            {
+              "id": "1516",
+              "nome": "Fagiolo Poverello di Rotonda DOP"
+            },
+            {
+              "id": "1517",
+              "nome": "Maccheroni al ferretto"
+            },
+            {
+              "id": "1518",
+              "nome": "Olive schiacciate alla calabrese"
+            },
+            {
+              "id": "1519",
+              "nome": "Taralli calabresi"
+            },
+            {
+              "id": "1520",
+              "nome": "Miele al bergamotto 250 g"
+            },
+            {
+              "id": "1521",
+              "nome": "Miele millefiori 500 g"
+            },
+            {
+              "id": "1522",
+              "nome": "Marmellata di bergamotto 200 g"
+            },
+            {
+              "id": "1523",
+              "nome": "Biscotti tradizionali calabresi"
+            }
+          ],
+          "restituiti": [
+            {
+              "id": "1513",
+              "nome": "Fileja di Tropea"
+            }
+          ],
+          "attesi": [
+            {
+              "id": "1513",
+              "nome": "Fileja di Tropea"
+            }
+          ]
+        }
+      },
+      "dopo": {
+        "incluso": true,
+        "restituiti": [
+          "1513"
+        ],
+        "attesi": [
+          "1513"
+        ],
+        "corretti": [
+          "1513"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1,
+        "dettagli": {
+          "candidati": [
+            {
+              "id": "218",
+              "nome": "Orologio cronografo Maserati in acciaio inossidabile"
+            },
+            {
+              "id": "1360",
+              "nome": "Orologio LiuJo in acciaio"
+            },
+            {
+              "id": "1361",
+              "nome": "Anello con pietra"
+            },
+            {
+              "id": "1371",
+              "nome": "Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1372",
+              "nome": "Filetti di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1373",
+              "nome": "Dolcezza di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1374",
+              "nome": "Miele Millefiori del Pollino"
+            },
+            {
+              "id": "1375",
+              "nome": "Miele di Castagno del Pollino"
+            },
+            {
+              "id": "1376",
+              "nome": "Olio Extra Vergine di Oliva del Pollino"
+            },
+            {
+              "id": "1377",
+              "nome": "Vino Magliocco del Pollino"
+            },
+            {
+              "id": "1378",
+              "nome": "Ciotaredda di Castrovillari"
+            },
+            {
+              "id": "1397",
+              "nome": "Caffè Kimbo Amalfi 1kg"
+            },
+            {
+              "id": "1430",
+              "nome": "Orologio cronografo da uomo con cinturino in pelle marrone"
+            },
+            {
+              "id": "1488",
+              "nome": "Pane Casereccio"
+            },
+            {
+              "id": "1489",
+              "nome": "Pizza margherita al pezzo"
+            },
+            {
+              "id": "1490",
+              "nome": "Tagliatelle all'uovo"
+            },
+            {
+              "id": "1491",
+              "nome": "Strascinati farina 00"
+            },
+            {
+              "id": "1492",
+              "nome": "Arancino mignon alla nduja piccante"
+            },
+            {
+              "id": "1493",
+              "nome": "Panino ciabatta"
+            },
+            {
+              "id": "1506",
+              "nome": "Orologio da polso Timberland con cinturino in pelle nera"
+            },
+            {
+              "id": "1507",
+              "nome": "Olio extravergine d’oliva calabrese"
+            },
+            {
+              "id": "1508",
+              "nome": "Pecorino del Monte Poro"
+            },
+            {
+              "id": "1509",
+              "nome": "Cipolla Rossa di Tropea IGP"
+            },
+            {
+              "id": "1510",
+              "nome": "’Nduja di Spilinga"
+            },
+            {
+              "id": "1511",
+              "nome": "Liquirizia di Calabria DOP"
+            },
+            {
+              "id": "1512",
+              "nome": "Piparelle calabresi"
+            },
+            {
+              "id": "1513",
+              "nome": "Fileja di Tropea"
+            },
+            {
+              "id": "1514",
+              "nome": "Torrone mielato di Bagnara Calabra"
+            },
+            {
+              "id": "1515",
+              "nome": "Peperone secco dolce 100 g"
+            },
+            {
+              "id": "1516",
+              "nome": "Fagiolo Poverello di Rotonda DOP"
+            },
+            {
+              "id": "1517",
+              "nome": "Maccheroni al ferretto"
+            },
+            {
+              "id": "1518",
+              "nome": "Olive schiacciate alla calabrese"
+            },
+            {
+              "id": "1519",
+              "nome": "Taralli calabresi"
+            },
+            {
+              "id": "1520",
+              "nome": "Miele al bergamotto 250 g"
+            },
+            {
+              "id": "1521",
+              "nome": "Miele millefiori 500 g"
+            },
+            {
+              "id": "1522",
+              "nome": "Marmellata di bergamotto 200 g"
+            },
+            {
+              "id": "1523",
+              "nome": "Biscotti tradizionali calabresi"
+            }
+          ],
+          "restituiti": [
+            {
+              "id": "1513",
+              "nome": "Fileja di Tropea"
+            }
+          ],
+          "attesi": [
+            {
+              "id": "1513",
+              "nome": "Fileja di Tropea"
+            }
+          ]
+        }
+      },
+      "confronto": "invariato"
+    },
+    {
+      "id": "nome-pecorino",
+      "gruppo": "alimentare",
+      "catalogo": "snapshot",
+      "query": "Cerco Pecorino del Monte Poro",
+      "motivazione": "Nome esatto; unico prodotto con questo nome.",
+      "inclusoNelleMetriche": true,
+      "prima": {
+        "incluso": true,
+        "restituiti": [
+          "1508"
+        ],
+        "attesi": [
+          "1508"
+        ],
+        "corretti": [
+          "1508"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1,
+        "dettagli": {
+          "candidati": [
+            {
+              "id": "218",
+              "nome": "Orologio cronografo Maserati in acciaio inossidabile"
+            },
+            {
+              "id": "1360",
+              "nome": "Orologio LiuJo in acciaio"
+            },
+            {
+              "id": "1361",
+              "nome": "Anello con pietra"
+            },
+            {
+              "id": "1371",
+              "nome": "Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1372",
+              "nome": "Filetti di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1373",
+              "nome": "Dolcezza di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1374",
+              "nome": "Miele Millefiori del Pollino"
+            },
+            {
+              "id": "1375",
+              "nome": "Miele di Castagno del Pollino"
+            },
+            {
+              "id": "1376",
+              "nome": "Olio Extra Vergine di Oliva del Pollino"
+            },
+            {
+              "id": "1377",
+              "nome": "Vino Magliocco del Pollino"
+            },
+            {
+              "id": "1378",
+              "nome": "Ciotaredda di Castrovillari"
+            },
+            {
+              "id": "1397",
+              "nome": "Caffè Kimbo Amalfi 1kg"
+            },
+            {
+              "id": "1430",
+              "nome": "Orologio cronografo da uomo con cinturino in pelle marrone"
+            },
+            {
+              "id": "1488",
+              "nome": "Pane Casereccio"
+            },
+            {
+              "id": "1489",
+              "nome": "Pizza margherita al pezzo"
+            },
+            {
+              "id": "1490",
+              "nome": "Tagliatelle all'uovo"
+            },
+            {
+              "id": "1491",
+              "nome": "Strascinati farina 00"
+            },
+            {
+              "id": "1492",
+              "nome": "Arancino mignon alla nduja piccante"
+            },
+            {
+              "id": "1493",
+              "nome": "Panino ciabatta"
+            },
+            {
+              "id": "1506",
+              "nome": "Orologio da polso Timberland con cinturino in pelle nera"
+            },
+            {
+              "id": "1507",
+              "nome": "Olio extravergine d’oliva calabrese"
+            },
+            {
+              "id": "1508",
+              "nome": "Pecorino del Monte Poro"
+            },
+            {
+              "id": "1509",
+              "nome": "Cipolla Rossa di Tropea IGP"
+            },
+            {
+              "id": "1510",
+              "nome": "’Nduja di Spilinga"
+            },
+            {
+              "id": "1511",
+              "nome": "Liquirizia di Calabria DOP"
+            },
+            {
+              "id": "1512",
+              "nome": "Piparelle calabresi"
+            },
+            {
+              "id": "1513",
+              "nome": "Fileja di Tropea"
+            },
+            {
+              "id": "1514",
+              "nome": "Torrone mielato di Bagnara Calabra"
+            },
+            {
+              "id": "1515",
+              "nome": "Peperone secco dolce 100 g"
+            },
+            {
+              "id": "1516",
+              "nome": "Fagiolo Poverello di Rotonda DOP"
+            },
+            {
+              "id": "1517",
+              "nome": "Maccheroni al ferretto"
+            },
+            {
+              "id": "1518",
+              "nome": "Olive schiacciate alla calabrese"
+            },
+            {
+              "id": "1519",
+              "nome": "Taralli calabresi"
+            },
+            {
+              "id": "1520",
+              "nome": "Miele al bergamotto 250 g"
+            },
+            {
+              "id": "1521",
+              "nome": "Miele millefiori 500 g"
+            },
+            {
+              "id": "1522",
+              "nome": "Marmellata di bergamotto 200 g"
+            },
+            {
+              "id": "1523",
+              "nome": "Biscotti tradizionali calabresi"
+            }
+          ],
+          "restituiti": [
+            {
+              "id": "1508",
+              "nome": "Pecorino del Monte Poro"
+            }
+          ],
+          "attesi": [
+            {
+              "id": "1508",
+              "nome": "Pecorino del Monte Poro"
+            }
+          ]
+        }
+      },
+      "dopo": {
+        "incluso": true,
+        "restituiti": [
+          "1508"
+        ],
+        "attesi": [
+          "1508"
+        ],
+        "corretti": [
+          "1508"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1,
+        "dettagli": {
+          "candidati": [
+            {
+              "id": "218",
+              "nome": "Orologio cronografo Maserati in acciaio inossidabile"
+            },
+            {
+              "id": "1360",
+              "nome": "Orologio LiuJo in acciaio"
+            },
+            {
+              "id": "1361",
+              "nome": "Anello con pietra"
+            },
+            {
+              "id": "1371",
+              "nome": "Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1372",
+              "nome": "Filetti di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1373",
+              "nome": "Dolcezza di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1374",
+              "nome": "Miele Millefiori del Pollino"
+            },
+            {
+              "id": "1375",
+              "nome": "Miele di Castagno del Pollino"
+            },
+            {
+              "id": "1376",
+              "nome": "Olio Extra Vergine di Oliva del Pollino"
+            },
+            {
+              "id": "1377",
+              "nome": "Vino Magliocco del Pollino"
+            },
+            {
+              "id": "1378",
+              "nome": "Ciotaredda di Castrovillari"
+            },
+            {
+              "id": "1397",
+              "nome": "Caffè Kimbo Amalfi 1kg"
+            },
+            {
+              "id": "1430",
+              "nome": "Orologio cronografo da uomo con cinturino in pelle marrone"
+            },
+            {
+              "id": "1488",
+              "nome": "Pane Casereccio"
+            },
+            {
+              "id": "1489",
+              "nome": "Pizza margherita al pezzo"
+            },
+            {
+              "id": "1490",
+              "nome": "Tagliatelle all'uovo"
+            },
+            {
+              "id": "1491",
+              "nome": "Strascinati farina 00"
+            },
+            {
+              "id": "1492",
+              "nome": "Arancino mignon alla nduja piccante"
+            },
+            {
+              "id": "1493",
+              "nome": "Panino ciabatta"
+            },
+            {
+              "id": "1506",
+              "nome": "Orologio da polso Timberland con cinturino in pelle nera"
+            },
+            {
+              "id": "1507",
+              "nome": "Olio extravergine d’oliva calabrese"
+            },
+            {
+              "id": "1508",
+              "nome": "Pecorino del Monte Poro"
+            },
+            {
+              "id": "1509",
+              "nome": "Cipolla Rossa di Tropea IGP"
+            },
+            {
+              "id": "1510",
+              "nome": "’Nduja di Spilinga"
+            },
+            {
+              "id": "1511",
+              "nome": "Liquirizia di Calabria DOP"
+            },
+            {
+              "id": "1512",
+              "nome": "Piparelle calabresi"
+            },
+            {
+              "id": "1513",
+              "nome": "Fileja di Tropea"
+            },
+            {
+              "id": "1514",
+              "nome": "Torrone mielato di Bagnara Calabra"
+            },
+            {
+              "id": "1515",
+              "nome": "Peperone secco dolce 100 g"
+            },
+            {
+              "id": "1516",
+              "nome": "Fagiolo Poverello di Rotonda DOP"
+            },
+            {
+              "id": "1517",
+              "nome": "Maccheroni al ferretto"
+            },
+            {
+              "id": "1518",
+              "nome": "Olive schiacciate alla calabrese"
+            },
+            {
+              "id": "1519",
+              "nome": "Taralli calabresi"
+            },
+            {
+              "id": "1520",
+              "nome": "Miele al bergamotto 250 g"
+            },
+            {
+              "id": "1521",
+              "nome": "Miele millefiori 500 g"
+            },
+            {
+              "id": "1522",
+              "nome": "Marmellata di bergamotto 200 g"
+            },
+            {
+              "id": "1523",
+              "nome": "Biscotti tradizionali calabresi"
+            }
+          ],
+          "restituiti": [
+            {
+              "id": "1508",
+              "nome": "Pecorino del Monte Poro"
+            }
+          ],
+          "attesi": [
+            {
+              "id": "1508",
+              "nome": "Pecorino del Monte Poro"
+            }
+          ]
+        }
+      },
+      "confronto": "invariato"
+    },
+    {
+      "id": "categoria-pasta",
+      "gruppo": "alimentare",
+      "catalogo": "snapshot",
+      "query": "Cerco pasta",
+      "motivazione": "Tagliatelle, Strascinati, Fileja e Maccheroni sono gli unici formati di pasta; taralli e biscotti restano esclusi.",
+      "inclusoNelleMetriche": true,
+      "prima": {
+        "incluso": true,
+        "restituiti": [
+          "1490",
+          "1491",
+          "1513",
+          "1517"
+        ],
+        "attesi": [
+          "1490",
+          "1491",
+          "1513",
+          "1517"
+        ],
+        "corretti": [
+          "1490",
+          "1491",
+          "1513",
+          "1517"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1,
+        "dettagli": {
+          "candidati": [
+            {
+              "id": "218",
+              "nome": "Orologio cronografo Maserati in acciaio inossidabile"
+            },
+            {
+              "id": "1360",
+              "nome": "Orologio LiuJo in acciaio"
+            },
+            {
+              "id": "1361",
+              "nome": "Anello con pietra"
+            },
+            {
+              "id": "1371",
+              "nome": "Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1372",
+              "nome": "Filetti di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1373",
+              "nome": "Dolcezza di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1374",
+              "nome": "Miele Millefiori del Pollino"
+            },
+            {
+              "id": "1375",
+              "nome": "Miele di Castagno del Pollino"
+            },
+            {
+              "id": "1376",
+              "nome": "Olio Extra Vergine di Oliva del Pollino"
+            },
+            {
+              "id": "1377",
+              "nome": "Vino Magliocco del Pollino"
+            },
+            {
+              "id": "1378",
+              "nome": "Ciotaredda di Castrovillari"
+            },
+            {
+              "id": "1397",
+              "nome": "Caffè Kimbo Amalfi 1kg"
+            },
+            {
+              "id": "1430",
+              "nome": "Orologio cronografo da uomo con cinturino in pelle marrone"
+            },
+            {
+              "id": "1488",
+              "nome": "Pane Casereccio"
+            },
+            {
+              "id": "1489",
+              "nome": "Pizza margherita al pezzo"
+            },
+            {
+              "id": "1490",
+              "nome": "Tagliatelle all'uovo"
+            },
+            {
+              "id": "1491",
+              "nome": "Strascinati farina 00"
+            },
+            {
+              "id": "1492",
+              "nome": "Arancino mignon alla nduja piccante"
+            },
+            {
+              "id": "1493",
+              "nome": "Panino ciabatta"
+            },
+            {
+              "id": "1506",
+              "nome": "Orologio da polso Timberland con cinturino in pelle nera"
+            },
+            {
+              "id": "1507",
+              "nome": "Olio extravergine d’oliva calabrese"
+            },
+            {
+              "id": "1508",
+              "nome": "Pecorino del Monte Poro"
+            },
+            {
+              "id": "1509",
+              "nome": "Cipolla Rossa di Tropea IGP"
+            },
+            {
+              "id": "1510",
+              "nome": "’Nduja di Spilinga"
+            },
+            {
+              "id": "1511",
+              "nome": "Liquirizia di Calabria DOP"
+            },
+            {
+              "id": "1512",
+              "nome": "Piparelle calabresi"
+            },
+            {
+              "id": "1513",
+              "nome": "Fileja di Tropea"
+            },
+            {
+              "id": "1514",
+              "nome": "Torrone mielato di Bagnara Calabra"
+            },
+            {
+              "id": "1515",
+              "nome": "Peperone secco dolce 100 g"
+            },
+            {
+              "id": "1516",
+              "nome": "Fagiolo Poverello di Rotonda DOP"
+            },
+            {
+              "id": "1517",
+              "nome": "Maccheroni al ferretto"
+            },
+            {
+              "id": "1518",
+              "nome": "Olive schiacciate alla calabrese"
+            },
+            {
+              "id": "1519",
+              "nome": "Taralli calabresi"
+            },
+            {
+              "id": "1520",
+              "nome": "Miele al bergamotto 250 g"
+            },
+            {
+              "id": "1521",
+              "nome": "Miele millefiori 500 g"
+            },
+            {
+              "id": "1522",
+              "nome": "Marmellata di bergamotto 200 g"
+            },
+            {
+              "id": "1523",
+              "nome": "Biscotti tradizionali calabresi"
+            }
+          ],
+          "restituiti": [
+            {
+              "id": "1490",
+              "nome": "Tagliatelle all'uovo"
+            },
+            {
+              "id": "1491",
+              "nome": "Strascinati farina 00"
+            },
+            {
+              "id": "1513",
+              "nome": "Fileja di Tropea"
+            },
+            {
+              "id": "1517",
+              "nome": "Maccheroni al ferretto"
+            }
+          ],
+          "attesi": [
+            {
+              "id": "1490",
+              "nome": "Tagliatelle all'uovo"
+            },
+            {
+              "id": "1491",
+              "nome": "Strascinati farina 00"
+            },
+            {
+              "id": "1513",
+              "nome": "Fileja di Tropea"
+            },
+            {
+              "id": "1517",
+              "nome": "Maccheroni al ferretto"
+            }
+          ]
+        }
+      },
+      "dopo": {
+        "incluso": true,
+        "restituiti": [
+          "1490",
+          "1491",
+          "1513",
+          "1517"
+        ],
+        "attesi": [
+          "1490",
+          "1491",
+          "1513",
+          "1517"
+        ],
+        "corretti": [
+          "1490",
+          "1491",
+          "1513",
+          "1517"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1,
+        "dettagli": {
+          "candidati": [
+            {
+              "id": "218",
+              "nome": "Orologio cronografo Maserati in acciaio inossidabile"
+            },
+            {
+              "id": "1360",
+              "nome": "Orologio LiuJo in acciaio"
+            },
+            {
+              "id": "1361",
+              "nome": "Anello con pietra"
+            },
+            {
+              "id": "1371",
+              "nome": "Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1372",
+              "nome": "Filetti di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1373",
+              "nome": "Dolcezza di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1374",
+              "nome": "Miele Millefiori del Pollino"
+            },
+            {
+              "id": "1375",
+              "nome": "Miele di Castagno del Pollino"
+            },
+            {
+              "id": "1376",
+              "nome": "Olio Extra Vergine di Oliva del Pollino"
+            },
+            {
+              "id": "1377",
+              "nome": "Vino Magliocco del Pollino"
+            },
+            {
+              "id": "1378",
+              "nome": "Ciotaredda di Castrovillari"
+            },
+            {
+              "id": "1397",
+              "nome": "Caffè Kimbo Amalfi 1kg"
+            },
+            {
+              "id": "1430",
+              "nome": "Orologio cronografo da uomo con cinturino in pelle marrone"
+            },
+            {
+              "id": "1488",
+              "nome": "Pane Casereccio"
+            },
+            {
+              "id": "1489",
+              "nome": "Pizza margherita al pezzo"
+            },
+            {
+              "id": "1490",
+              "nome": "Tagliatelle all'uovo"
+            },
+            {
+              "id": "1491",
+              "nome": "Strascinati farina 00"
+            },
+            {
+              "id": "1492",
+              "nome": "Arancino mignon alla nduja piccante"
+            },
+            {
+              "id": "1493",
+              "nome": "Panino ciabatta"
+            },
+            {
+              "id": "1506",
+              "nome": "Orologio da polso Timberland con cinturino in pelle nera"
+            },
+            {
+              "id": "1507",
+              "nome": "Olio extravergine d’oliva calabrese"
+            },
+            {
+              "id": "1508",
+              "nome": "Pecorino del Monte Poro"
+            },
+            {
+              "id": "1509",
+              "nome": "Cipolla Rossa di Tropea IGP"
+            },
+            {
+              "id": "1510",
+              "nome": "’Nduja di Spilinga"
+            },
+            {
+              "id": "1511",
+              "nome": "Liquirizia di Calabria DOP"
+            },
+            {
+              "id": "1512",
+              "nome": "Piparelle calabresi"
+            },
+            {
+              "id": "1513",
+              "nome": "Fileja di Tropea"
+            },
+            {
+              "id": "1514",
+              "nome": "Torrone mielato di Bagnara Calabra"
+            },
+            {
+              "id": "1515",
+              "nome": "Peperone secco dolce 100 g"
+            },
+            {
+              "id": "1516",
+              "nome": "Fagiolo Poverello di Rotonda DOP"
+            },
+            {
+              "id": "1517",
+              "nome": "Maccheroni al ferretto"
+            },
+            {
+              "id": "1518",
+              "nome": "Olive schiacciate alla calabrese"
+            },
+            {
+              "id": "1519",
+              "nome": "Taralli calabresi"
+            },
+            {
+              "id": "1520",
+              "nome": "Miele al bergamotto 250 g"
+            },
+            {
+              "id": "1521",
+              "nome": "Miele millefiori 500 g"
+            },
+            {
+              "id": "1522",
+              "nome": "Marmellata di bergamotto 200 g"
+            },
+            {
+              "id": "1523",
+              "nome": "Biscotti tradizionali calabresi"
+            }
+          ],
+          "restituiti": [
+            {
+              "id": "1490",
+              "nome": "Tagliatelle all'uovo"
+            },
+            {
+              "id": "1491",
+              "nome": "Strascinati farina 00"
+            },
+            {
+              "id": "1513",
+              "nome": "Fileja di Tropea"
+            },
+            {
+              "id": "1517",
+              "nome": "Maccheroni al ferretto"
+            }
+          ],
+          "attesi": [
+            {
+              "id": "1490",
+              "nome": "Tagliatelle all'uovo"
+            },
+            {
+              "id": "1491",
+              "nome": "Strascinati farina 00"
+            },
+            {
+              "id": "1513",
+              "nome": "Fileja di Tropea"
+            },
+            {
+              "id": "1517",
+              "nome": "Maccheroni al ferretto"
+            }
+          ]
+        }
+      },
+      "confronto": "invariato"
+    },
+    {
+      "id": "categoria-formaggio",
+      "gruppo": "alimentare",
+      "catalogo": "snapshot",
+      "query": "Cerco formaggio",
+      "motivazione": "Pecorino è l'unico formaggio, tramite sottocategoria e caratteristica.",
+      "inclusoNelleMetriche": true,
+      "prima": {
+        "incluso": true,
+        "restituiti": [
+          "1508"
+        ],
+        "attesi": [
+          "1508"
+        ],
+        "corretti": [
+          "1508"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1,
+        "dettagli": {
+          "candidati": [
+            {
+              "id": "218",
+              "nome": "Orologio cronografo Maserati in acciaio inossidabile"
+            },
+            {
+              "id": "1360",
+              "nome": "Orologio LiuJo in acciaio"
+            },
+            {
+              "id": "1361",
+              "nome": "Anello con pietra"
+            },
+            {
+              "id": "1371",
+              "nome": "Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1372",
+              "nome": "Filetti di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1373",
+              "nome": "Dolcezza di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1374",
+              "nome": "Miele Millefiori del Pollino"
+            },
+            {
+              "id": "1375",
+              "nome": "Miele di Castagno del Pollino"
+            },
+            {
+              "id": "1376",
+              "nome": "Olio Extra Vergine di Oliva del Pollino"
+            },
+            {
+              "id": "1377",
+              "nome": "Vino Magliocco del Pollino"
+            },
+            {
+              "id": "1378",
+              "nome": "Ciotaredda di Castrovillari"
+            },
+            {
+              "id": "1397",
+              "nome": "Caffè Kimbo Amalfi 1kg"
+            },
+            {
+              "id": "1430",
+              "nome": "Orologio cronografo da uomo con cinturino in pelle marrone"
+            },
+            {
+              "id": "1488",
+              "nome": "Pane Casereccio"
+            },
+            {
+              "id": "1489",
+              "nome": "Pizza margherita al pezzo"
+            },
+            {
+              "id": "1490",
+              "nome": "Tagliatelle all'uovo"
+            },
+            {
+              "id": "1491",
+              "nome": "Strascinati farina 00"
+            },
+            {
+              "id": "1492",
+              "nome": "Arancino mignon alla nduja piccante"
+            },
+            {
+              "id": "1493",
+              "nome": "Panino ciabatta"
+            },
+            {
+              "id": "1506",
+              "nome": "Orologio da polso Timberland con cinturino in pelle nera"
+            },
+            {
+              "id": "1507",
+              "nome": "Olio extravergine d’oliva calabrese"
+            },
+            {
+              "id": "1508",
+              "nome": "Pecorino del Monte Poro"
+            },
+            {
+              "id": "1509",
+              "nome": "Cipolla Rossa di Tropea IGP"
+            },
+            {
+              "id": "1510",
+              "nome": "’Nduja di Spilinga"
+            },
+            {
+              "id": "1511",
+              "nome": "Liquirizia di Calabria DOP"
+            },
+            {
+              "id": "1512",
+              "nome": "Piparelle calabresi"
+            },
+            {
+              "id": "1513",
+              "nome": "Fileja di Tropea"
+            },
+            {
+              "id": "1514",
+              "nome": "Torrone mielato di Bagnara Calabra"
+            },
+            {
+              "id": "1515",
+              "nome": "Peperone secco dolce 100 g"
+            },
+            {
+              "id": "1516",
+              "nome": "Fagiolo Poverello di Rotonda DOP"
+            },
+            {
+              "id": "1517",
+              "nome": "Maccheroni al ferretto"
+            },
+            {
+              "id": "1518",
+              "nome": "Olive schiacciate alla calabrese"
+            },
+            {
+              "id": "1519",
+              "nome": "Taralli calabresi"
+            },
+            {
+              "id": "1520",
+              "nome": "Miele al bergamotto 250 g"
+            },
+            {
+              "id": "1521",
+              "nome": "Miele millefiori 500 g"
+            },
+            {
+              "id": "1522",
+              "nome": "Marmellata di bergamotto 200 g"
+            },
+            {
+              "id": "1523",
+              "nome": "Biscotti tradizionali calabresi"
+            }
+          ],
+          "restituiti": [
+            {
+              "id": "1508",
+              "nome": "Pecorino del Monte Poro"
+            }
+          ],
+          "attesi": [
+            {
+              "id": "1508",
+              "nome": "Pecorino del Monte Poro"
+            }
+          ]
+        }
+      },
+      "dopo": {
+        "incluso": true,
+        "restituiti": [
+          "1508"
+        ],
+        "attesi": [
+          "1508"
+        ],
+        "corretti": [
+          "1508"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1,
+        "dettagli": {
+          "candidati": [
+            {
+              "id": "218",
+              "nome": "Orologio cronografo Maserati in acciaio inossidabile"
+            },
+            {
+              "id": "1360",
+              "nome": "Orologio LiuJo in acciaio"
+            },
+            {
+              "id": "1361",
+              "nome": "Anello con pietra"
+            },
+            {
+              "id": "1371",
+              "nome": "Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1372",
+              "nome": "Filetti di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1373",
+              "nome": "Dolcezza di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1374",
+              "nome": "Miele Millefiori del Pollino"
+            },
+            {
+              "id": "1375",
+              "nome": "Miele di Castagno del Pollino"
+            },
+            {
+              "id": "1376",
+              "nome": "Olio Extra Vergine di Oliva del Pollino"
+            },
+            {
+              "id": "1377",
+              "nome": "Vino Magliocco del Pollino"
+            },
+            {
+              "id": "1378",
+              "nome": "Ciotaredda di Castrovillari"
+            },
+            {
+              "id": "1397",
+              "nome": "Caffè Kimbo Amalfi 1kg"
+            },
+            {
+              "id": "1430",
+              "nome": "Orologio cronografo da uomo con cinturino in pelle marrone"
+            },
+            {
+              "id": "1488",
+              "nome": "Pane Casereccio"
+            },
+            {
+              "id": "1489",
+              "nome": "Pizza margherita al pezzo"
+            },
+            {
+              "id": "1490",
+              "nome": "Tagliatelle all'uovo"
+            },
+            {
+              "id": "1491",
+              "nome": "Strascinati farina 00"
+            },
+            {
+              "id": "1492",
+              "nome": "Arancino mignon alla nduja piccante"
+            },
+            {
+              "id": "1493",
+              "nome": "Panino ciabatta"
+            },
+            {
+              "id": "1506",
+              "nome": "Orologio da polso Timberland con cinturino in pelle nera"
+            },
+            {
+              "id": "1507",
+              "nome": "Olio extravergine d’oliva calabrese"
+            },
+            {
+              "id": "1508",
+              "nome": "Pecorino del Monte Poro"
+            },
+            {
+              "id": "1509",
+              "nome": "Cipolla Rossa di Tropea IGP"
+            },
+            {
+              "id": "1510",
+              "nome": "’Nduja di Spilinga"
+            },
+            {
+              "id": "1511",
+              "nome": "Liquirizia di Calabria DOP"
+            },
+            {
+              "id": "1512",
+              "nome": "Piparelle calabresi"
+            },
+            {
+              "id": "1513",
+              "nome": "Fileja di Tropea"
+            },
+            {
+              "id": "1514",
+              "nome": "Torrone mielato di Bagnara Calabra"
+            },
+            {
+              "id": "1515",
+              "nome": "Peperone secco dolce 100 g"
+            },
+            {
+              "id": "1516",
+              "nome": "Fagiolo Poverello di Rotonda DOP"
+            },
+            {
+              "id": "1517",
+              "nome": "Maccheroni al ferretto"
+            },
+            {
+              "id": "1518",
+              "nome": "Olive schiacciate alla calabrese"
+            },
+            {
+              "id": "1519",
+              "nome": "Taralli calabresi"
+            },
+            {
+              "id": "1520",
+              "nome": "Miele al bergamotto 250 g"
+            },
+            {
+              "id": "1521",
+              "nome": "Miele millefiori 500 g"
+            },
+            {
+              "id": "1522",
+              "nome": "Marmellata di bergamotto 200 g"
+            },
+            {
+              "id": "1523",
+              "nome": "Biscotti tradizionali calabresi"
+            }
+          ],
+          "restituiti": [
+            {
+              "id": "1508",
+              "nome": "Pecorino del Monte Poro"
+            }
+          ],
+          "attesi": [
+            {
+              "id": "1508",
+              "nome": "Pecorino del Monte Poro"
+            }
+          ]
+        }
+      },
+      "confronto": "invariato"
+    },
+    {
+      "id": "marca-maserati",
+      "gruppo": "alimentare",
+      "catalogo": "snapshot",
+      "query": "Cerco Maserati",
+      "motivazione": "Marca dichiarata Maserati.",
+      "inclusoNelleMetriche": true,
+      "prima": {
+        "incluso": true,
+        "restituiti": [
+          "218"
+        ],
+        "attesi": [
+          "218"
+        ],
+        "corretti": [
+          "218"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1,
+        "dettagli": {
+          "candidati": [
+            {
+              "id": "218",
+              "nome": "Orologio cronografo Maserati in acciaio inossidabile"
+            },
+            {
+              "id": "1360",
+              "nome": "Orologio LiuJo in acciaio"
+            },
+            {
+              "id": "1361",
+              "nome": "Anello con pietra"
+            },
+            {
+              "id": "1371",
+              "nome": "Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1372",
+              "nome": "Filetti di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1373",
+              "nome": "Dolcezza di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1374",
+              "nome": "Miele Millefiori del Pollino"
+            },
+            {
+              "id": "1375",
+              "nome": "Miele di Castagno del Pollino"
+            },
+            {
+              "id": "1376",
+              "nome": "Olio Extra Vergine di Oliva del Pollino"
+            },
+            {
+              "id": "1377",
+              "nome": "Vino Magliocco del Pollino"
+            },
+            {
+              "id": "1378",
+              "nome": "Ciotaredda di Castrovillari"
+            },
+            {
+              "id": "1397",
+              "nome": "Caffè Kimbo Amalfi 1kg"
+            },
+            {
+              "id": "1430",
+              "nome": "Orologio cronografo da uomo con cinturino in pelle marrone"
+            },
+            {
+              "id": "1488",
+              "nome": "Pane Casereccio"
+            },
+            {
+              "id": "1489",
+              "nome": "Pizza margherita al pezzo"
+            },
+            {
+              "id": "1490",
+              "nome": "Tagliatelle all'uovo"
+            },
+            {
+              "id": "1491",
+              "nome": "Strascinati farina 00"
+            },
+            {
+              "id": "1492",
+              "nome": "Arancino mignon alla nduja piccante"
+            },
+            {
+              "id": "1493",
+              "nome": "Panino ciabatta"
+            },
+            {
+              "id": "1506",
+              "nome": "Orologio da polso Timberland con cinturino in pelle nera"
+            },
+            {
+              "id": "1507",
+              "nome": "Olio extravergine d’oliva calabrese"
+            },
+            {
+              "id": "1508",
+              "nome": "Pecorino del Monte Poro"
+            },
+            {
+              "id": "1509",
+              "nome": "Cipolla Rossa di Tropea IGP"
+            },
+            {
+              "id": "1510",
+              "nome": "’Nduja di Spilinga"
+            },
+            {
+              "id": "1511",
+              "nome": "Liquirizia di Calabria DOP"
+            },
+            {
+              "id": "1512",
+              "nome": "Piparelle calabresi"
+            },
+            {
+              "id": "1513",
+              "nome": "Fileja di Tropea"
+            },
+            {
+              "id": "1514",
+              "nome": "Torrone mielato di Bagnara Calabra"
+            },
+            {
+              "id": "1515",
+              "nome": "Peperone secco dolce 100 g"
+            },
+            {
+              "id": "1516",
+              "nome": "Fagiolo Poverello di Rotonda DOP"
+            },
+            {
+              "id": "1517",
+              "nome": "Maccheroni al ferretto"
+            },
+            {
+              "id": "1518",
+              "nome": "Olive schiacciate alla calabrese"
+            },
+            {
+              "id": "1519",
+              "nome": "Taralli calabresi"
+            },
+            {
+              "id": "1520",
+              "nome": "Miele al bergamotto 250 g"
+            },
+            {
+              "id": "1521",
+              "nome": "Miele millefiori 500 g"
+            },
+            {
+              "id": "1522",
+              "nome": "Marmellata di bergamotto 200 g"
+            },
+            {
+              "id": "1523",
+              "nome": "Biscotti tradizionali calabresi"
+            }
+          ],
+          "restituiti": [
+            {
+              "id": "218",
+              "nome": "Orologio cronografo Maserati in acciaio inossidabile"
+            }
+          ],
+          "attesi": [
+            {
+              "id": "218",
+              "nome": "Orologio cronografo Maserati in acciaio inossidabile"
+            }
+          ]
+        }
+      },
+      "dopo": {
+        "incluso": true,
+        "restituiti": [
+          "218"
+        ],
+        "attesi": [
+          "218"
+        ],
+        "corretti": [
+          "218"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1,
+        "dettagli": {
+          "candidati": [
+            {
+              "id": "218",
+              "nome": "Orologio cronografo Maserati in acciaio inossidabile"
+            },
+            {
+              "id": "1360",
+              "nome": "Orologio LiuJo in acciaio"
+            },
+            {
+              "id": "1361",
+              "nome": "Anello con pietra"
+            },
+            {
+              "id": "1371",
+              "nome": "Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1372",
+              "nome": "Filetti di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1373",
+              "nome": "Dolcezza di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1374",
+              "nome": "Miele Millefiori del Pollino"
+            },
+            {
+              "id": "1375",
+              "nome": "Miele di Castagno del Pollino"
+            },
+            {
+              "id": "1376",
+              "nome": "Olio Extra Vergine di Oliva del Pollino"
+            },
+            {
+              "id": "1377",
+              "nome": "Vino Magliocco del Pollino"
+            },
+            {
+              "id": "1378",
+              "nome": "Ciotaredda di Castrovillari"
+            },
+            {
+              "id": "1397",
+              "nome": "Caffè Kimbo Amalfi 1kg"
+            },
+            {
+              "id": "1430",
+              "nome": "Orologio cronografo da uomo con cinturino in pelle marrone"
+            },
+            {
+              "id": "1488",
+              "nome": "Pane Casereccio"
+            },
+            {
+              "id": "1489",
+              "nome": "Pizza margherita al pezzo"
+            },
+            {
+              "id": "1490",
+              "nome": "Tagliatelle all'uovo"
+            },
+            {
+              "id": "1491",
+              "nome": "Strascinati farina 00"
+            },
+            {
+              "id": "1492",
+              "nome": "Arancino mignon alla nduja piccante"
+            },
+            {
+              "id": "1493",
+              "nome": "Panino ciabatta"
+            },
+            {
+              "id": "1506",
+              "nome": "Orologio da polso Timberland con cinturino in pelle nera"
+            },
+            {
+              "id": "1507",
+              "nome": "Olio extravergine d’oliva calabrese"
+            },
+            {
+              "id": "1508",
+              "nome": "Pecorino del Monte Poro"
+            },
+            {
+              "id": "1509",
+              "nome": "Cipolla Rossa di Tropea IGP"
+            },
+            {
+              "id": "1510",
+              "nome": "’Nduja di Spilinga"
+            },
+            {
+              "id": "1511",
+              "nome": "Liquirizia di Calabria DOP"
+            },
+            {
+              "id": "1512",
+              "nome": "Piparelle calabresi"
+            },
+            {
+              "id": "1513",
+              "nome": "Fileja di Tropea"
+            },
+            {
+              "id": "1514",
+              "nome": "Torrone mielato di Bagnara Calabra"
+            },
+            {
+              "id": "1515",
+              "nome": "Peperone secco dolce 100 g"
+            },
+            {
+              "id": "1516",
+              "nome": "Fagiolo Poverello di Rotonda DOP"
+            },
+            {
+              "id": "1517",
+              "nome": "Maccheroni al ferretto"
+            },
+            {
+              "id": "1518",
+              "nome": "Olive schiacciate alla calabrese"
+            },
+            {
+              "id": "1519",
+              "nome": "Taralli calabresi"
+            },
+            {
+              "id": "1520",
+              "nome": "Miele al bergamotto 250 g"
+            },
+            {
+              "id": "1521",
+              "nome": "Miele millefiori 500 g"
+            },
+            {
+              "id": "1522",
+              "nome": "Marmellata di bergamotto 200 g"
+            },
+            {
+              "id": "1523",
+              "nome": "Biscotti tradizionali calabresi"
+            }
+          ],
+          "restituiti": [
+            {
+              "id": "218",
+              "nome": "Orologio cronografo Maserati in acciaio inossidabile"
+            }
+          ],
+          "attesi": [
+            {
+              "id": "218",
+              "nome": "Orologio cronografo Maserati in acciaio inossidabile"
+            }
+          ]
+        }
+      },
+      "confronto": "invariato"
+    },
+    {
+      "id": "parole-chiave-amarelli",
+      "gruppo": "alimentare",
+      "catalogo": "snapshot",
+      "query": "Cerco Amarelli",
+      "motivazione": "Amarelli è una parola chiave esatta e distintiva della Liquirizia di Calabria DOP.",
+      "inclusoNelleMetriche": true,
+      "prima": {
+        "incluso": true,
+        "restituiti": [],
+        "attesi": [
+          "1511"
+        ],
+        "corretti": [],
+        "falsiPositivi": [],
+        "falsiNegativi": [
+          "1511"
+        ],
+        "precisione": null,
+        "richiamo": 0,
+        "dettagli": {
+          "candidati": [
+            {
+              "id": "218",
+              "nome": "Orologio cronografo Maserati in acciaio inossidabile"
+            },
+            {
+              "id": "1360",
+              "nome": "Orologio LiuJo in acciaio"
+            },
+            {
+              "id": "1361",
+              "nome": "Anello con pietra"
+            },
+            {
+              "id": "1371",
+              "nome": "Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1372",
+              "nome": "Filetti di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1373",
+              "nome": "Dolcezza di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1374",
+              "nome": "Miele Millefiori del Pollino"
+            },
+            {
+              "id": "1375",
+              "nome": "Miele di Castagno del Pollino"
+            },
+            {
+              "id": "1376",
+              "nome": "Olio Extra Vergine di Oliva del Pollino"
+            },
+            {
+              "id": "1377",
+              "nome": "Vino Magliocco del Pollino"
+            },
+            {
+              "id": "1378",
+              "nome": "Ciotaredda di Castrovillari"
+            },
+            {
+              "id": "1397",
+              "nome": "Caffè Kimbo Amalfi 1kg"
+            },
+            {
+              "id": "1430",
+              "nome": "Orologio cronografo da uomo con cinturino in pelle marrone"
+            },
+            {
+              "id": "1488",
+              "nome": "Pane Casereccio"
+            },
+            {
+              "id": "1489",
+              "nome": "Pizza margherita al pezzo"
+            },
+            {
+              "id": "1490",
+              "nome": "Tagliatelle all'uovo"
+            },
+            {
+              "id": "1491",
+              "nome": "Strascinati farina 00"
+            },
+            {
+              "id": "1492",
+              "nome": "Arancino mignon alla nduja piccante"
+            },
+            {
+              "id": "1493",
+              "nome": "Panino ciabatta"
+            },
+            {
+              "id": "1506",
+              "nome": "Orologio da polso Timberland con cinturino in pelle nera"
+            },
+            {
+              "id": "1507",
+              "nome": "Olio extravergine d’oliva calabrese"
+            },
+            {
+              "id": "1508",
+              "nome": "Pecorino del Monte Poro"
+            },
+            {
+              "id": "1509",
+              "nome": "Cipolla Rossa di Tropea IGP"
+            },
+            {
+              "id": "1510",
+              "nome": "’Nduja di Spilinga"
+            },
+            {
+              "id": "1511",
+              "nome": "Liquirizia di Calabria DOP"
+            },
+            {
+              "id": "1512",
+              "nome": "Piparelle calabresi"
+            },
+            {
+              "id": "1513",
+              "nome": "Fileja di Tropea"
+            },
+            {
+              "id": "1514",
+              "nome": "Torrone mielato di Bagnara Calabra"
+            },
+            {
+              "id": "1515",
+              "nome": "Peperone secco dolce 100 g"
+            },
+            {
+              "id": "1516",
+              "nome": "Fagiolo Poverello di Rotonda DOP"
+            },
+            {
+              "id": "1517",
+              "nome": "Maccheroni al ferretto"
+            },
+            {
+              "id": "1518",
+              "nome": "Olive schiacciate alla calabrese"
+            },
+            {
+              "id": "1519",
+              "nome": "Taralli calabresi"
+            },
+            {
+              "id": "1520",
+              "nome": "Miele al bergamotto 250 g"
+            },
+            {
+              "id": "1521",
+              "nome": "Miele millefiori 500 g"
+            },
+            {
+              "id": "1522",
+              "nome": "Marmellata di bergamotto 200 g"
+            },
+            {
+              "id": "1523",
+              "nome": "Biscotti tradizionali calabresi"
+            }
+          ],
+          "restituiti": [],
+          "attesi": [
+            {
+              "id": "1511",
+              "nome": "Liquirizia di Calabria DOP"
+            }
+          ]
+        }
+      },
+      "dopo": {
+        "incluso": true,
+        "restituiti": [
+          "1511"
+        ],
+        "attesi": [
+          "1511"
+        ],
+        "corretti": [
+          "1511"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1,
+        "dettagli": {
+          "candidati": [
+            {
+              "id": "218",
+              "nome": "Orologio cronografo Maserati in acciaio inossidabile"
+            },
+            {
+              "id": "1360",
+              "nome": "Orologio LiuJo in acciaio"
+            },
+            {
+              "id": "1361",
+              "nome": "Anello con pietra"
+            },
+            {
+              "id": "1371",
+              "nome": "Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1372",
+              "nome": "Filetti di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1373",
+              "nome": "Dolcezza di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1374",
+              "nome": "Miele Millefiori del Pollino"
+            },
+            {
+              "id": "1375",
+              "nome": "Miele di Castagno del Pollino"
+            },
+            {
+              "id": "1376",
+              "nome": "Olio Extra Vergine di Oliva del Pollino"
+            },
+            {
+              "id": "1377",
+              "nome": "Vino Magliocco del Pollino"
+            },
+            {
+              "id": "1378",
+              "nome": "Ciotaredda di Castrovillari"
+            },
+            {
+              "id": "1397",
+              "nome": "Caffè Kimbo Amalfi 1kg"
+            },
+            {
+              "id": "1430",
+              "nome": "Orologio cronografo da uomo con cinturino in pelle marrone"
+            },
+            {
+              "id": "1488",
+              "nome": "Pane Casereccio"
+            },
+            {
+              "id": "1489",
+              "nome": "Pizza margherita al pezzo"
+            },
+            {
+              "id": "1490",
+              "nome": "Tagliatelle all'uovo"
+            },
+            {
+              "id": "1491",
+              "nome": "Strascinati farina 00"
+            },
+            {
+              "id": "1492",
+              "nome": "Arancino mignon alla nduja piccante"
+            },
+            {
+              "id": "1493",
+              "nome": "Panino ciabatta"
+            },
+            {
+              "id": "1506",
+              "nome": "Orologio da polso Timberland con cinturino in pelle nera"
+            },
+            {
+              "id": "1507",
+              "nome": "Olio extravergine d’oliva calabrese"
+            },
+            {
+              "id": "1508",
+              "nome": "Pecorino del Monte Poro"
+            },
+            {
+              "id": "1509",
+              "nome": "Cipolla Rossa di Tropea IGP"
+            },
+            {
+              "id": "1510",
+              "nome": "’Nduja di Spilinga"
+            },
+            {
+              "id": "1511",
+              "nome": "Liquirizia di Calabria DOP"
+            },
+            {
+              "id": "1512",
+              "nome": "Piparelle calabresi"
+            },
+            {
+              "id": "1513",
+              "nome": "Fileja di Tropea"
+            },
+            {
+              "id": "1514",
+              "nome": "Torrone mielato di Bagnara Calabra"
+            },
+            {
+              "id": "1515",
+              "nome": "Peperone secco dolce 100 g"
+            },
+            {
+              "id": "1516",
+              "nome": "Fagiolo Poverello di Rotonda DOP"
+            },
+            {
+              "id": "1517",
+              "nome": "Maccheroni al ferretto"
+            },
+            {
+              "id": "1518",
+              "nome": "Olive schiacciate alla calabrese"
+            },
+            {
+              "id": "1519",
+              "nome": "Taralli calabresi"
+            },
+            {
+              "id": "1520",
+              "nome": "Miele al bergamotto 250 g"
+            },
+            {
+              "id": "1521",
+              "nome": "Miele millefiori 500 g"
+            },
+            {
+              "id": "1522",
+              "nome": "Marmellata di bergamotto 200 g"
+            },
+            {
+              "id": "1523",
+              "nome": "Biscotti tradizionali calabresi"
+            }
+          ],
+          "restituiti": [
+            {
+              "id": "1511",
+              "nome": "Liquirizia di Calabria DOP"
+            }
+          ],
+          "attesi": [
+            {
+              "id": "1511",
+              "nome": "Liquirizia di Calabria DOP"
+            }
+          ]
+        }
+      },
+      "confronto": "migliorato"
+    },
+    {
+      "id": "caratteristica-bottiglia-litro",
+      "gruppo": "alimentare",
+      "catalogo": "snapshot",
+      "query": "Cerco olio in bottiglia da 1 litro",
+      "motivazione": "Solo l'olio calabrese dichiara 'Bottiglia da 1 litro'; l'altro olio non documenta il formato.",
+      "inclusoNelleMetriche": true,
+      "prima": {
+        "incluso": true,
+        "restituiti": [
+          "1376",
+          "1507"
+        ],
+        "attesi": [
+          "1507"
+        ],
+        "corretti": [
+          "1507"
+        ],
+        "falsiPositivi": [
+          "1376"
+        ],
+        "falsiNegativi": [],
+        "precisione": 0.5,
+        "richiamo": 1,
+        "dettagli": {
+          "candidati": [
+            {
+              "id": "218",
+              "nome": "Orologio cronografo Maserati in acciaio inossidabile"
+            },
+            {
+              "id": "1360",
+              "nome": "Orologio LiuJo in acciaio"
+            },
+            {
+              "id": "1361",
+              "nome": "Anello con pietra"
+            },
+            {
+              "id": "1371",
+              "nome": "Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1372",
+              "nome": "Filetti di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1373",
+              "nome": "Dolcezza di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1374",
+              "nome": "Miele Millefiori del Pollino"
+            },
+            {
+              "id": "1375",
+              "nome": "Miele di Castagno del Pollino"
+            },
+            {
+              "id": "1376",
+              "nome": "Olio Extra Vergine di Oliva del Pollino"
+            },
+            {
+              "id": "1377",
+              "nome": "Vino Magliocco del Pollino"
+            },
+            {
+              "id": "1378",
+              "nome": "Ciotaredda di Castrovillari"
+            },
+            {
+              "id": "1397",
+              "nome": "Caffè Kimbo Amalfi 1kg"
+            },
+            {
+              "id": "1430",
+              "nome": "Orologio cronografo da uomo con cinturino in pelle marrone"
+            },
+            {
+              "id": "1488",
+              "nome": "Pane Casereccio"
+            },
+            {
+              "id": "1489",
+              "nome": "Pizza margherita al pezzo"
+            },
+            {
+              "id": "1490",
+              "nome": "Tagliatelle all'uovo"
+            },
+            {
+              "id": "1491",
+              "nome": "Strascinati farina 00"
+            },
+            {
+              "id": "1492",
+              "nome": "Arancino mignon alla nduja piccante"
+            },
+            {
+              "id": "1493",
+              "nome": "Panino ciabatta"
+            },
+            {
+              "id": "1506",
+              "nome": "Orologio da polso Timberland con cinturino in pelle nera"
+            },
+            {
+              "id": "1507",
+              "nome": "Olio extravergine d’oliva calabrese"
+            },
+            {
+              "id": "1508",
+              "nome": "Pecorino del Monte Poro"
+            },
+            {
+              "id": "1509",
+              "nome": "Cipolla Rossa di Tropea IGP"
+            },
+            {
+              "id": "1510",
+              "nome": "’Nduja di Spilinga"
+            },
+            {
+              "id": "1511",
+              "nome": "Liquirizia di Calabria DOP"
+            },
+            {
+              "id": "1512",
+              "nome": "Piparelle calabresi"
+            },
+            {
+              "id": "1513",
+              "nome": "Fileja di Tropea"
+            },
+            {
+              "id": "1514",
+              "nome": "Torrone mielato di Bagnara Calabra"
+            },
+            {
+              "id": "1515",
+              "nome": "Peperone secco dolce 100 g"
+            },
+            {
+              "id": "1516",
+              "nome": "Fagiolo Poverello di Rotonda DOP"
+            },
+            {
+              "id": "1517",
+              "nome": "Maccheroni al ferretto"
+            },
+            {
+              "id": "1518",
+              "nome": "Olive schiacciate alla calabrese"
+            },
+            {
+              "id": "1519",
+              "nome": "Taralli calabresi"
+            },
+            {
+              "id": "1520",
+              "nome": "Miele al bergamotto 250 g"
+            },
+            {
+              "id": "1521",
+              "nome": "Miele millefiori 500 g"
+            },
+            {
+              "id": "1522",
+              "nome": "Marmellata di bergamotto 200 g"
+            },
+            {
+              "id": "1523",
+              "nome": "Biscotti tradizionali calabresi"
+            }
+          ],
+          "restituiti": [
+            {
+              "id": "1376",
+              "nome": "Olio Extra Vergine di Oliva del Pollino"
+            },
+            {
+              "id": "1507",
+              "nome": "Olio extravergine d’oliva calabrese"
+            }
+          ],
+          "attesi": [
+            {
+              "id": "1507",
+              "nome": "Olio extravergine d’oliva calabrese"
+            }
+          ]
+        }
+      },
+      "dopo": {
+        "incluso": true,
+        "restituiti": [
+          "1507"
+        ],
+        "attesi": [
+          "1507"
+        ],
+        "corretti": [
+          "1507"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1,
+        "dettagli": {
+          "candidati": [
+            {
+              "id": "218",
+              "nome": "Orologio cronografo Maserati in acciaio inossidabile"
+            },
+            {
+              "id": "1360",
+              "nome": "Orologio LiuJo in acciaio"
+            },
+            {
+              "id": "1361",
+              "nome": "Anello con pietra"
+            },
+            {
+              "id": "1371",
+              "nome": "Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1372",
+              "nome": "Filetti di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1373",
+              "nome": "Dolcezza di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1374",
+              "nome": "Miele Millefiori del Pollino"
+            },
+            {
+              "id": "1375",
+              "nome": "Miele di Castagno del Pollino"
+            },
+            {
+              "id": "1376",
+              "nome": "Olio Extra Vergine di Oliva del Pollino"
+            },
+            {
+              "id": "1377",
+              "nome": "Vino Magliocco del Pollino"
+            },
+            {
+              "id": "1378",
+              "nome": "Ciotaredda di Castrovillari"
+            },
+            {
+              "id": "1397",
+              "nome": "Caffè Kimbo Amalfi 1kg"
+            },
+            {
+              "id": "1430",
+              "nome": "Orologio cronografo da uomo con cinturino in pelle marrone"
+            },
+            {
+              "id": "1488",
+              "nome": "Pane Casereccio"
+            },
+            {
+              "id": "1489",
+              "nome": "Pizza margherita al pezzo"
+            },
+            {
+              "id": "1490",
+              "nome": "Tagliatelle all'uovo"
+            },
+            {
+              "id": "1491",
+              "nome": "Strascinati farina 00"
+            },
+            {
+              "id": "1492",
+              "nome": "Arancino mignon alla nduja piccante"
+            },
+            {
+              "id": "1493",
+              "nome": "Panino ciabatta"
+            },
+            {
+              "id": "1506",
+              "nome": "Orologio da polso Timberland con cinturino in pelle nera"
+            },
+            {
+              "id": "1507",
+              "nome": "Olio extravergine d’oliva calabrese"
+            },
+            {
+              "id": "1508",
+              "nome": "Pecorino del Monte Poro"
+            },
+            {
+              "id": "1509",
+              "nome": "Cipolla Rossa di Tropea IGP"
+            },
+            {
+              "id": "1510",
+              "nome": "’Nduja di Spilinga"
+            },
+            {
+              "id": "1511",
+              "nome": "Liquirizia di Calabria DOP"
+            },
+            {
+              "id": "1512",
+              "nome": "Piparelle calabresi"
+            },
+            {
+              "id": "1513",
+              "nome": "Fileja di Tropea"
+            },
+            {
+              "id": "1514",
+              "nome": "Torrone mielato di Bagnara Calabra"
+            },
+            {
+              "id": "1515",
+              "nome": "Peperone secco dolce 100 g"
+            },
+            {
+              "id": "1516",
+              "nome": "Fagiolo Poverello di Rotonda DOP"
+            },
+            {
+              "id": "1517",
+              "nome": "Maccheroni al ferretto"
+            },
+            {
+              "id": "1518",
+              "nome": "Olive schiacciate alla calabrese"
+            },
+            {
+              "id": "1519",
+              "nome": "Taralli calabresi"
+            },
+            {
+              "id": "1520",
+              "nome": "Miele al bergamotto 250 g"
+            },
+            {
+              "id": "1521",
+              "nome": "Miele millefiori 500 g"
+            },
+            {
+              "id": "1522",
+              "nome": "Marmellata di bergamotto 200 g"
+            },
+            {
+              "id": "1523",
+              "nome": "Biscotti tradizionali calabresi"
+            }
+          ],
+          "restituiti": [
+            {
+              "id": "1507",
+              "nome": "Olio extravergine d’oliva calabrese"
+            }
+          ],
+          "attesi": [
+            {
+              "id": "1507",
+              "nome": "Olio extravergine d’oliva calabrese"
+            }
+          ]
+        }
+      },
+      "confronto": "migliorato"
+    },
+    {
+      "id": "sottocategoria-pasta-tipica",
+      "gruppo": "alimentare",
+      "catalogo": "snapshot",
+      "query": "Cerco pasta tipica",
+      "motivazione": "Solo Fileja ha sottocategoria 'Pasta tipica' e la relativa parola chiave.",
+      "inclusoNelleMetriche": true,
+      "prima": {
+        "incluso": true,
+        "restituiti": [
+          "1490",
+          "1491",
+          "1513",
+          "1517"
+        ],
+        "attesi": [
+          "1513"
+        ],
+        "corretti": [
+          "1513"
+        ],
+        "falsiPositivi": [
+          "1490",
+          "1491",
+          "1517"
+        ],
+        "falsiNegativi": [],
+        "precisione": 0.25,
+        "richiamo": 1,
+        "dettagli": {
+          "candidati": [
+            {
+              "id": "218",
+              "nome": "Orologio cronografo Maserati in acciaio inossidabile"
+            },
+            {
+              "id": "1360",
+              "nome": "Orologio LiuJo in acciaio"
+            },
+            {
+              "id": "1361",
+              "nome": "Anello con pietra"
+            },
+            {
+              "id": "1371",
+              "nome": "Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1372",
+              "nome": "Filetti di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1373",
+              "nome": "Dolcezza di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1374",
+              "nome": "Miele Millefiori del Pollino"
+            },
+            {
+              "id": "1375",
+              "nome": "Miele di Castagno del Pollino"
+            },
+            {
+              "id": "1376",
+              "nome": "Olio Extra Vergine di Oliva del Pollino"
+            },
+            {
+              "id": "1377",
+              "nome": "Vino Magliocco del Pollino"
+            },
+            {
+              "id": "1378",
+              "nome": "Ciotaredda di Castrovillari"
+            },
+            {
+              "id": "1397",
+              "nome": "Caffè Kimbo Amalfi 1kg"
+            },
+            {
+              "id": "1430",
+              "nome": "Orologio cronografo da uomo con cinturino in pelle marrone"
+            },
+            {
+              "id": "1488",
+              "nome": "Pane Casereccio"
+            },
+            {
+              "id": "1489",
+              "nome": "Pizza margherita al pezzo"
+            },
+            {
+              "id": "1490",
+              "nome": "Tagliatelle all'uovo"
+            },
+            {
+              "id": "1491",
+              "nome": "Strascinati farina 00"
+            },
+            {
+              "id": "1492",
+              "nome": "Arancino mignon alla nduja piccante"
+            },
+            {
+              "id": "1493",
+              "nome": "Panino ciabatta"
+            },
+            {
+              "id": "1506",
+              "nome": "Orologio da polso Timberland con cinturino in pelle nera"
+            },
+            {
+              "id": "1507",
+              "nome": "Olio extravergine d’oliva calabrese"
+            },
+            {
+              "id": "1508",
+              "nome": "Pecorino del Monte Poro"
+            },
+            {
+              "id": "1509",
+              "nome": "Cipolla Rossa di Tropea IGP"
+            },
+            {
+              "id": "1510",
+              "nome": "’Nduja di Spilinga"
+            },
+            {
+              "id": "1511",
+              "nome": "Liquirizia di Calabria DOP"
+            },
+            {
+              "id": "1512",
+              "nome": "Piparelle calabresi"
+            },
+            {
+              "id": "1513",
+              "nome": "Fileja di Tropea"
+            },
+            {
+              "id": "1514",
+              "nome": "Torrone mielato di Bagnara Calabra"
+            },
+            {
+              "id": "1515",
+              "nome": "Peperone secco dolce 100 g"
+            },
+            {
+              "id": "1516",
+              "nome": "Fagiolo Poverello di Rotonda DOP"
+            },
+            {
+              "id": "1517",
+              "nome": "Maccheroni al ferretto"
+            },
+            {
+              "id": "1518",
+              "nome": "Olive schiacciate alla calabrese"
+            },
+            {
+              "id": "1519",
+              "nome": "Taralli calabresi"
+            },
+            {
+              "id": "1520",
+              "nome": "Miele al bergamotto 250 g"
+            },
+            {
+              "id": "1521",
+              "nome": "Miele millefiori 500 g"
+            },
+            {
+              "id": "1522",
+              "nome": "Marmellata di bergamotto 200 g"
+            },
+            {
+              "id": "1523",
+              "nome": "Biscotti tradizionali calabresi"
+            }
+          ],
+          "restituiti": [
+            {
+              "id": "1490",
+              "nome": "Tagliatelle all'uovo"
+            },
+            {
+              "id": "1491",
+              "nome": "Strascinati farina 00"
+            },
+            {
+              "id": "1513",
+              "nome": "Fileja di Tropea"
+            },
+            {
+              "id": "1517",
+              "nome": "Maccheroni al ferretto"
+            }
+          ],
+          "attesi": [
+            {
+              "id": "1513",
+              "nome": "Fileja di Tropea"
+            }
+          ]
+        }
+      },
+      "dopo": {
+        "incluso": true,
+        "restituiti": [
+          "1513"
+        ],
+        "attesi": [
+          "1513"
+        ],
+        "corretti": [
+          "1513"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1,
+        "dettagli": {
+          "candidati": [
+            {
+              "id": "218",
+              "nome": "Orologio cronografo Maserati in acciaio inossidabile"
+            },
+            {
+              "id": "1360",
+              "nome": "Orologio LiuJo in acciaio"
+            },
+            {
+              "id": "1361",
+              "nome": "Anello con pietra"
+            },
+            {
+              "id": "1371",
+              "nome": "Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1372",
+              "nome": "Filetti di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1373",
+              "nome": "Dolcezza di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1374",
+              "nome": "Miele Millefiori del Pollino"
+            },
+            {
+              "id": "1375",
+              "nome": "Miele di Castagno del Pollino"
+            },
+            {
+              "id": "1376",
+              "nome": "Olio Extra Vergine di Oliva del Pollino"
+            },
+            {
+              "id": "1377",
+              "nome": "Vino Magliocco del Pollino"
+            },
+            {
+              "id": "1378",
+              "nome": "Ciotaredda di Castrovillari"
+            },
+            {
+              "id": "1397",
+              "nome": "Caffè Kimbo Amalfi 1kg"
+            },
+            {
+              "id": "1430",
+              "nome": "Orologio cronografo da uomo con cinturino in pelle marrone"
+            },
+            {
+              "id": "1488",
+              "nome": "Pane Casereccio"
+            },
+            {
+              "id": "1489",
+              "nome": "Pizza margherita al pezzo"
+            },
+            {
+              "id": "1490",
+              "nome": "Tagliatelle all'uovo"
+            },
+            {
+              "id": "1491",
+              "nome": "Strascinati farina 00"
+            },
+            {
+              "id": "1492",
+              "nome": "Arancino mignon alla nduja piccante"
+            },
+            {
+              "id": "1493",
+              "nome": "Panino ciabatta"
+            },
+            {
+              "id": "1506",
+              "nome": "Orologio da polso Timberland con cinturino in pelle nera"
+            },
+            {
+              "id": "1507",
+              "nome": "Olio extravergine d’oliva calabrese"
+            },
+            {
+              "id": "1508",
+              "nome": "Pecorino del Monte Poro"
+            },
+            {
+              "id": "1509",
+              "nome": "Cipolla Rossa di Tropea IGP"
+            },
+            {
+              "id": "1510",
+              "nome": "’Nduja di Spilinga"
+            },
+            {
+              "id": "1511",
+              "nome": "Liquirizia di Calabria DOP"
+            },
+            {
+              "id": "1512",
+              "nome": "Piparelle calabresi"
+            },
+            {
+              "id": "1513",
+              "nome": "Fileja di Tropea"
+            },
+            {
+              "id": "1514",
+              "nome": "Torrone mielato di Bagnara Calabra"
+            },
+            {
+              "id": "1515",
+              "nome": "Peperone secco dolce 100 g"
+            },
+            {
+              "id": "1516",
+              "nome": "Fagiolo Poverello di Rotonda DOP"
+            },
+            {
+              "id": "1517",
+              "nome": "Maccheroni al ferretto"
+            },
+            {
+              "id": "1518",
+              "nome": "Olive schiacciate alla calabrese"
+            },
+            {
+              "id": "1519",
+              "nome": "Taralli calabresi"
+            },
+            {
+              "id": "1520",
+              "nome": "Miele al bergamotto 250 g"
+            },
+            {
+              "id": "1521",
+              "nome": "Miele millefiori 500 g"
+            },
+            {
+              "id": "1522",
+              "nome": "Marmellata di bergamotto 200 g"
+            },
+            {
+              "id": "1523",
+              "nome": "Biscotti tradizionali calabresi"
+            }
+          ],
+          "restituiti": [
+            {
+              "id": "1513",
+              "nome": "Fileja di Tropea"
+            }
+          ],
+          "attesi": [
+            {
+              "id": "1513",
+              "nome": "Fileja di Tropea"
+            }
+          ]
+        }
+      },
+      "confronto": "migliorato"
+    },
+    {
+      "id": "descrizione-pane-lievito",
+      "gruppo": "alimentare",
+      "catalogo": "snapshot",
+      "query": "Cerco pane con lievito madre",
+      "motivazione": "Pane Casereccio è l'unico pane; il lievito madre è un dettaglio descrittivo che non sostituisce l'identità.",
+      "inclusoNelleMetriche": true,
+      "prima": {
+        "incluso": true,
+        "restituiti": [
+          "1488"
+        ],
+        "attesi": [
+          "1488"
+        ],
+        "corretti": [
+          "1488"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1,
+        "dettagli": {
+          "candidati": [
+            {
+              "id": "218",
+              "nome": "Orologio cronografo Maserati in acciaio inossidabile"
+            },
+            {
+              "id": "1360",
+              "nome": "Orologio LiuJo in acciaio"
+            },
+            {
+              "id": "1361",
+              "nome": "Anello con pietra"
+            },
+            {
+              "id": "1371",
+              "nome": "Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1372",
+              "nome": "Filetti di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1373",
+              "nome": "Dolcezza di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1374",
+              "nome": "Miele Millefiori del Pollino"
+            },
+            {
+              "id": "1375",
+              "nome": "Miele di Castagno del Pollino"
+            },
+            {
+              "id": "1376",
+              "nome": "Olio Extra Vergine di Oliva del Pollino"
+            },
+            {
+              "id": "1377",
+              "nome": "Vino Magliocco del Pollino"
+            },
+            {
+              "id": "1378",
+              "nome": "Ciotaredda di Castrovillari"
+            },
+            {
+              "id": "1397",
+              "nome": "Caffè Kimbo Amalfi 1kg"
+            },
+            {
+              "id": "1430",
+              "nome": "Orologio cronografo da uomo con cinturino in pelle marrone"
+            },
+            {
+              "id": "1488",
+              "nome": "Pane Casereccio"
+            },
+            {
+              "id": "1489",
+              "nome": "Pizza margherita al pezzo"
+            },
+            {
+              "id": "1490",
+              "nome": "Tagliatelle all'uovo"
+            },
+            {
+              "id": "1491",
+              "nome": "Strascinati farina 00"
+            },
+            {
+              "id": "1492",
+              "nome": "Arancino mignon alla nduja piccante"
+            },
+            {
+              "id": "1493",
+              "nome": "Panino ciabatta"
+            },
+            {
+              "id": "1506",
+              "nome": "Orologio da polso Timberland con cinturino in pelle nera"
+            },
+            {
+              "id": "1507",
+              "nome": "Olio extravergine d’oliva calabrese"
+            },
+            {
+              "id": "1508",
+              "nome": "Pecorino del Monte Poro"
+            },
+            {
+              "id": "1509",
+              "nome": "Cipolla Rossa di Tropea IGP"
+            },
+            {
+              "id": "1510",
+              "nome": "’Nduja di Spilinga"
+            },
+            {
+              "id": "1511",
+              "nome": "Liquirizia di Calabria DOP"
+            },
+            {
+              "id": "1512",
+              "nome": "Piparelle calabresi"
+            },
+            {
+              "id": "1513",
+              "nome": "Fileja di Tropea"
+            },
+            {
+              "id": "1514",
+              "nome": "Torrone mielato di Bagnara Calabra"
+            },
+            {
+              "id": "1515",
+              "nome": "Peperone secco dolce 100 g"
+            },
+            {
+              "id": "1516",
+              "nome": "Fagiolo Poverello di Rotonda DOP"
+            },
+            {
+              "id": "1517",
+              "nome": "Maccheroni al ferretto"
+            },
+            {
+              "id": "1518",
+              "nome": "Olive schiacciate alla calabrese"
+            },
+            {
+              "id": "1519",
+              "nome": "Taralli calabresi"
+            },
+            {
+              "id": "1520",
+              "nome": "Miele al bergamotto 250 g"
+            },
+            {
+              "id": "1521",
+              "nome": "Miele millefiori 500 g"
+            },
+            {
+              "id": "1522",
+              "nome": "Marmellata di bergamotto 200 g"
+            },
+            {
+              "id": "1523",
+              "nome": "Biscotti tradizionali calabresi"
+            }
+          ],
+          "restituiti": [
+            {
+              "id": "1488",
+              "nome": "Pane Casereccio"
+            }
+          ],
+          "attesi": [
+            {
+              "id": "1488",
+              "nome": "Pane Casereccio"
+            }
+          ]
+        }
+      },
+      "dopo": {
+        "incluso": true,
+        "restituiti": [
+          "1488"
+        ],
+        "attesi": [
+          "1488"
+        ],
+        "corretti": [
+          "1488"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1,
+        "dettagli": {
+          "candidati": [
+            {
+              "id": "218",
+              "nome": "Orologio cronografo Maserati in acciaio inossidabile"
+            },
+            {
+              "id": "1360",
+              "nome": "Orologio LiuJo in acciaio"
+            },
+            {
+              "id": "1361",
+              "nome": "Anello con pietra"
+            },
+            {
+              "id": "1371",
+              "nome": "Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1372",
+              "nome": "Filetti di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1373",
+              "nome": "Dolcezza di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1374",
+              "nome": "Miele Millefiori del Pollino"
+            },
+            {
+              "id": "1375",
+              "nome": "Miele di Castagno del Pollino"
+            },
+            {
+              "id": "1376",
+              "nome": "Olio Extra Vergine di Oliva del Pollino"
+            },
+            {
+              "id": "1377",
+              "nome": "Vino Magliocco del Pollino"
+            },
+            {
+              "id": "1378",
+              "nome": "Ciotaredda di Castrovillari"
+            },
+            {
+              "id": "1397",
+              "nome": "Caffè Kimbo Amalfi 1kg"
+            },
+            {
+              "id": "1430",
+              "nome": "Orologio cronografo da uomo con cinturino in pelle marrone"
+            },
+            {
+              "id": "1488",
+              "nome": "Pane Casereccio"
+            },
+            {
+              "id": "1489",
+              "nome": "Pizza margherita al pezzo"
+            },
+            {
+              "id": "1490",
+              "nome": "Tagliatelle all'uovo"
+            },
+            {
+              "id": "1491",
+              "nome": "Strascinati farina 00"
+            },
+            {
+              "id": "1492",
+              "nome": "Arancino mignon alla nduja piccante"
+            },
+            {
+              "id": "1493",
+              "nome": "Panino ciabatta"
+            },
+            {
+              "id": "1506",
+              "nome": "Orologio da polso Timberland con cinturino in pelle nera"
+            },
+            {
+              "id": "1507",
+              "nome": "Olio extravergine d’oliva calabrese"
+            },
+            {
+              "id": "1508",
+              "nome": "Pecorino del Monte Poro"
+            },
+            {
+              "id": "1509",
+              "nome": "Cipolla Rossa di Tropea IGP"
+            },
+            {
+              "id": "1510",
+              "nome": "’Nduja di Spilinga"
+            },
+            {
+              "id": "1511",
+              "nome": "Liquirizia di Calabria DOP"
+            },
+            {
+              "id": "1512",
+              "nome": "Piparelle calabresi"
+            },
+            {
+              "id": "1513",
+              "nome": "Fileja di Tropea"
+            },
+            {
+              "id": "1514",
+              "nome": "Torrone mielato di Bagnara Calabra"
+            },
+            {
+              "id": "1515",
+              "nome": "Peperone secco dolce 100 g"
+            },
+            {
+              "id": "1516",
+              "nome": "Fagiolo Poverello di Rotonda DOP"
+            },
+            {
+              "id": "1517",
+              "nome": "Maccheroni al ferretto"
+            },
+            {
+              "id": "1518",
+              "nome": "Olive schiacciate alla calabrese"
+            },
+            {
+              "id": "1519",
+              "nome": "Taralli calabresi"
+            },
+            {
+              "id": "1520",
+              "nome": "Miele al bergamotto 250 g"
+            },
+            {
+              "id": "1521",
+              "nome": "Miele millefiori 500 g"
+            },
+            {
+              "id": "1522",
+              "nome": "Marmellata di bergamotto 200 g"
+            },
+            {
+              "id": "1523",
+              "nome": "Biscotti tradizionali calabresi"
+            }
+          ],
+          "restituiti": [
+            {
+              "id": "1488",
+              "nome": "Pane Casereccio"
+            }
+          ],
+          "attesi": [
+            {
+              "id": "1488",
+              "nome": "Pane Casereccio"
+            }
+          ]
+        }
+      },
+      "confronto": "invariato"
+    },
+    {
+      "id": "budget-miele-sotto-10",
+      "gruppo": "alimentare",
+      "catalogo": "snapshot",
+      "query": "Cerco miele sotto 10 euro",
+      "motivazione": "Miele di Castagno (11,90) è fuori budget; restano Millefiori del Pollino (9,90), bergamotto (5,50) e millefiori 500 g (6,00).",
+      "inclusoNelleMetriche": true,
+      "prima": {
+        "incluso": true,
+        "restituiti": [
+          "1520",
+          "1521",
+          "1374"
+        ],
+        "attesi": [
+          "1374",
+          "1520",
+          "1521"
+        ],
+        "corretti": [
+          "1520",
+          "1521",
+          "1374"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1,
+        "dettagli": {
+          "candidati": [
+            {
+              "id": "218",
+              "nome": "Orologio cronografo Maserati in acciaio inossidabile"
+            },
+            {
+              "id": "1360",
+              "nome": "Orologio LiuJo in acciaio"
+            },
+            {
+              "id": "1361",
+              "nome": "Anello con pietra"
+            },
+            {
+              "id": "1371",
+              "nome": "Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1372",
+              "nome": "Filetti di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1373",
+              "nome": "Dolcezza di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1374",
+              "nome": "Miele Millefiori del Pollino"
+            },
+            {
+              "id": "1375",
+              "nome": "Miele di Castagno del Pollino"
+            },
+            {
+              "id": "1376",
+              "nome": "Olio Extra Vergine di Oliva del Pollino"
+            },
+            {
+              "id": "1377",
+              "nome": "Vino Magliocco del Pollino"
+            },
+            {
+              "id": "1378",
+              "nome": "Ciotaredda di Castrovillari"
+            },
+            {
+              "id": "1397",
+              "nome": "Caffè Kimbo Amalfi 1kg"
+            },
+            {
+              "id": "1430",
+              "nome": "Orologio cronografo da uomo con cinturino in pelle marrone"
+            },
+            {
+              "id": "1488",
+              "nome": "Pane Casereccio"
+            },
+            {
+              "id": "1489",
+              "nome": "Pizza margherita al pezzo"
+            },
+            {
+              "id": "1490",
+              "nome": "Tagliatelle all'uovo"
+            },
+            {
+              "id": "1491",
+              "nome": "Strascinati farina 00"
+            },
+            {
+              "id": "1492",
+              "nome": "Arancino mignon alla nduja piccante"
+            },
+            {
+              "id": "1493",
+              "nome": "Panino ciabatta"
+            },
+            {
+              "id": "1506",
+              "nome": "Orologio da polso Timberland con cinturino in pelle nera"
+            },
+            {
+              "id": "1507",
+              "nome": "Olio extravergine d’oliva calabrese"
+            },
+            {
+              "id": "1508",
+              "nome": "Pecorino del Monte Poro"
+            },
+            {
+              "id": "1509",
+              "nome": "Cipolla Rossa di Tropea IGP"
+            },
+            {
+              "id": "1510",
+              "nome": "’Nduja di Spilinga"
+            },
+            {
+              "id": "1511",
+              "nome": "Liquirizia di Calabria DOP"
+            },
+            {
+              "id": "1512",
+              "nome": "Piparelle calabresi"
+            },
+            {
+              "id": "1513",
+              "nome": "Fileja di Tropea"
+            },
+            {
+              "id": "1514",
+              "nome": "Torrone mielato di Bagnara Calabra"
+            },
+            {
+              "id": "1515",
+              "nome": "Peperone secco dolce 100 g"
+            },
+            {
+              "id": "1516",
+              "nome": "Fagiolo Poverello di Rotonda DOP"
+            },
+            {
+              "id": "1517",
+              "nome": "Maccheroni al ferretto"
+            },
+            {
+              "id": "1518",
+              "nome": "Olive schiacciate alla calabrese"
+            },
+            {
+              "id": "1519",
+              "nome": "Taralli calabresi"
+            },
+            {
+              "id": "1520",
+              "nome": "Miele al bergamotto 250 g"
+            },
+            {
+              "id": "1521",
+              "nome": "Miele millefiori 500 g"
+            },
+            {
+              "id": "1522",
+              "nome": "Marmellata di bergamotto 200 g"
+            },
+            {
+              "id": "1523",
+              "nome": "Biscotti tradizionali calabresi"
+            }
+          ],
+          "restituiti": [
+            {
+              "id": "1520",
+              "nome": "Miele al bergamotto 250 g"
+            },
+            {
+              "id": "1521",
+              "nome": "Miele millefiori 500 g"
+            },
+            {
+              "id": "1374",
+              "nome": "Miele Millefiori del Pollino"
+            }
+          ],
+          "attesi": [
+            {
+              "id": "1374",
+              "nome": "Miele Millefiori del Pollino"
+            },
+            {
+              "id": "1520",
+              "nome": "Miele al bergamotto 250 g"
+            },
+            {
+              "id": "1521",
+              "nome": "Miele millefiori 500 g"
+            }
+          ]
+        }
+      },
+      "dopo": {
+        "incluso": true,
+        "restituiti": [
+          "1520",
+          "1521",
+          "1374"
+        ],
+        "attesi": [
+          "1374",
+          "1520",
+          "1521"
+        ],
+        "corretti": [
+          "1520",
+          "1521",
+          "1374"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1,
+        "dettagli": {
+          "candidati": [
+            {
+              "id": "218",
+              "nome": "Orologio cronografo Maserati in acciaio inossidabile"
+            },
+            {
+              "id": "1360",
+              "nome": "Orologio LiuJo in acciaio"
+            },
+            {
+              "id": "1361",
+              "nome": "Anello con pietra"
+            },
+            {
+              "id": "1371",
+              "nome": "Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1372",
+              "nome": "Filetti di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1373",
+              "nome": "Dolcezza di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1374",
+              "nome": "Miele Millefiori del Pollino"
+            },
+            {
+              "id": "1375",
+              "nome": "Miele di Castagno del Pollino"
+            },
+            {
+              "id": "1376",
+              "nome": "Olio Extra Vergine di Oliva del Pollino"
+            },
+            {
+              "id": "1377",
+              "nome": "Vino Magliocco del Pollino"
+            },
+            {
+              "id": "1378",
+              "nome": "Ciotaredda di Castrovillari"
+            },
+            {
+              "id": "1397",
+              "nome": "Caffè Kimbo Amalfi 1kg"
+            },
+            {
+              "id": "1430",
+              "nome": "Orologio cronografo da uomo con cinturino in pelle marrone"
+            },
+            {
+              "id": "1488",
+              "nome": "Pane Casereccio"
+            },
+            {
+              "id": "1489",
+              "nome": "Pizza margherita al pezzo"
+            },
+            {
+              "id": "1490",
+              "nome": "Tagliatelle all'uovo"
+            },
+            {
+              "id": "1491",
+              "nome": "Strascinati farina 00"
+            },
+            {
+              "id": "1492",
+              "nome": "Arancino mignon alla nduja piccante"
+            },
+            {
+              "id": "1493",
+              "nome": "Panino ciabatta"
+            },
+            {
+              "id": "1506",
+              "nome": "Orologio da polso Timberland con cinturino in pelle nera"
+            },
+            {
+              "id": "1507",
+              "nome": "Olio extravergine d’oliva calabrese"
+            },
+            {
+              "id": "1508",
+              "nome": "Pecorino del Monte Poro"
+            },
+            {
+              "id": "1509",
+              "nome": "Cipolla Rossa di Tropea IGP"
+            },
+            {
+              "id": "1510",
+              "nome": "’Nduja di Spilinga"
+            },
+            {
+              "id": "1511",
+              "nome": "Liquirizia di Calabria DOP"
+            },
+            {
+              "id": "1512",
+              "nome": "Piparelle calabresi"
+            },
+            {
+              "id": "1513",
+              "nome": "Fileja di Tropea"
+            },
+            {
+              "id": "1514",
+              "nome": "Torrone mielato di Bagnara Calabra"
+            },
+            {
+              "id": "1515",
+              "nome": "Peperone secco dolce 100 g"
+            },
+            {
+              "id": "1516",
+              "nome": "Fagiolo Poverello di Rotonda DOP"
+            },
+            {
+              "id": "1517",
+              "nome": "Maccheroni al ferretto"
+            },
+            {
+              "id": "1518",
+              "nome": "Olive schiacciate alla calabrese"
+            },
+            {
+              "id": "1519",
+              "nome": "Taralli calabresi"
+            },
+            {
+              "id": "1520",
+              "nome": "Miele al bergamotto 250 g"
+            },
+            {
+              "id": "1521",
+              "nome": "Miele millefiori 500 g"
+            },
+            {
+              "id": "1522",
+              "nome": "Marmellata di bergamotto 200 g"
+            },
+            {
+              "id": "1523",
+              "nome": "Biscotti tradizionali calabresi"
+            }
+          ],
+          "restituiti": [
+            {
+              "id": "1520",
+              "nome": "Miele al bergamotto 250 g"
+            },
+            {
+              "id": "1521",
+              "nome": "Miele millefiori 500 g"
+            },
+            {
+              "id": "1374",
+              "nome": "Miele Millefiori del Pollino"
+            }
+          ],
+          "attesi": [
+            {
+              "id": "1374",
+              "nome": "Miele Millefiori del Pollino"
+            },
+            {
+              "id": "1520",
+              "nome": "Miele al bergamotto 250 g"
+            },
+            {
+              "id": "1521",
+              "nome": "Miele millefiori 500 g"
+            }
+          ]
+        }
+      },
+      "confronto": "invariato"
+    },
+    {
+      "id": "nome-liquirizia-dop",
+      "gruppo": "alimentare",
+      "catalogo": "snapshot",
+      "query": "Cerco liquirizia DOP",
+      "motivazione": "Liquirizia di Calabria DOP è l'unico prodotto con liquirizia; DOP è nel nome.",
+      "inclusoNelleMetriche": true,
+      "prima": {
+        "incluso": true,
+        "restituiti": [
+          "1511"
+        ],
+        "attesi": [
+          "1511"
+        ],
+        "corretti": [
+          "1511"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1,
+        "dettagli": {
+          "candidati": [
+            {
+              "id": "218",
+              "nome": "Orologio cronografo Maserati in acciaio inossidabile"
+            },
+            {
+              "id": "1360",
+              "nome": "Orologio LiuJo in acciaio"
+            },
+            {
+              "id": "1361",
+              "nome": "Anello con pietra"
+            },
+            {
+              "id": "1371",
+              "nome": "Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1372",
+              "nome": "Filetti di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1373",
+              "nome": "Dolcezza di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1374",
+              "nome": "Miele Millefiori del Pollino"
+            },
+            {
+              "id": "1375",
+              "nome": "Miele di Castagno del Pollino"
+            },
+            {
+              "id": "1376",
+              "nome": "Olio Extra Vergine di Oliva del Pollino"
+            },
+            {
+              "id": "1377",
+              "nome": "Vino Magliocco del Pollino"
+            },
+            {
+              "id": "1378",
+              "nome": "Ciotaredda di Castrovillari"
+            },
+            {
+              "id": "1397",
+              "nome": "Caffè Kimbo Amalfi 1kg"
+            },
+            {
+              "id": "1430",
+              "nome": "Orologio cronografo da uomo con cinturino in pelle marrone"
+            },
+            {
+              "id": "1488",
+              "nome": "Pane Casereccio"
+            },
+            {
+              "id": "1489",
+              "nome": "Pizza margherita al pezzo"
+            },
+            {
+              "id": "1490",
+              "nome": "Tagliatelle all'uovo"
+            },
+            {
+              "id": "1491",
+              "nome": "Strascinati farina 00"
+            },
+            {
+              "id": "1492",
+              "nome": "Arancino mignon alla nduja piccante"
+            },
+            {
+              "id": "1493",
+              "nome": "Panino ciabatta"
+            },
+            {
+              "id": "1506",
+              "nome": "Orologio da polso Timberland con cinturino in pelle nera"
+            },
+            {
+              "id": "1507",
+              "nome": "Olio extravergine d’oliva calabrese"
+            },
+            {
+              "id": "1508",
+              "nome": "Pecorino del Monte Poro"
+            },
+            {
+              "id": "1509",
+              "nome": "Cipolla Rossa di Tropea IGP"
+            },
+            {
+              "id": "1510",
+              "nome": "’Nduja di Spilinga"
+            },
+            {
+              "id": "1511",
+              "nome": "Liquirizia di Calabria DOP"
+            },
+            {
+              "id": "1512",
+              "nome": "Piparelle calabresi"
+            },
+            {
+              "id": "1513",
+              "nome": "Fileja di Tropea"
+            },
+            {
+              "id": "1514",
+              "nome": "Torrone mielato di Bagnara Calabra"
+            },
+            {
+              "id": "1515",
+              "nome": "Peperone secco dolce 100 g"
+            },
+            {
+              "id": "1516",
+              "nome": "Fagiolo Poverello di Rotonda DOP"
+            },
+            {
+              "id": "1517",
+              "nome": "Maccheroni al ferretto"
+            },
+            {
+              "id": "1518",
+              "nome": "Olive schiacciate alla calabrese"
+            },
+            {
+              "id": "1519",
+              "nome": "Taralli calabresi"
+            },
+            {
+              "id": "1520",
+              "nome": "Miele al bergamotto 250 g"
+            },
+            {
+              "id": "1521",
+              "nome": "Miele millefiori 500 g"
+            },
+            {
+              "id": "1522",
+              "nome": "Marmellata di bergamotto 200 g"
+            },
+            {
+              "id": "1523",
+              "nome": "Biscotti tradizionali calabresi"
+            }
+          ],
+          "restituiti": [
+            {
+              "id": "1511",
+              "nome": "Liquirizia di Calabria DOP"
+            }
+          ],
+          "attesi": [
+            {
+              "id": "1511",
+              "nome": "Liquirizia di Calabria DOP"
+            }
+          ]
+        }
+      },
+      "dopo": {
+        "incluso": true,
+        "restituiti": [
+          "1511"
+        ],
+        "attesi": [
+          "1511"
+        ],
+        "corretti": [
+          "1511"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1,
+        "dettagli": {
+          "candidati": [
+            {
+              "id": "218",
+              "nome": "Orologio cronografo Maserati in acciaio inossidabile"
+            },
+            {
+              "id": "1360",
+              "nome": "Orologio LiuJo in acciaio"
+            },
+            {
+              "id": "1361",
+              "nome": "Anello con pietra"
+            },
+            {
+              "id": "1371",
+              "nome": "Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1372",
+              "nome": "Filetti di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1373",
+              "nome": "Dolcezza di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1374",
+              "nome": "Miele Millefiori del Pollino"
+            },
+            {
+              "id": "1375",
+              "nome": "Miele di Castagno del Pollino"
+            },
+            {
+              "id": "1376",
+              "nome": "Olio Extra Vergine di Oliva del Pollino"
+            },
+            {
+              "id": "1377",
+              "nome": "Vino Magliocco del Pollino"
+            },
+            {
+              "id": "1378",
+              "nome": "Ciotaredda di Castrovillari"
+            },
+            {
+              "id": "1397",
+              "nome": "Caffè Kimbo Amalfi 1kg"
+            },
+            {
+              "id": "1430",
+              "nome": "Orologio cronografo da uomo con cinturino in pelle marrone"
+            },
+            {
+              "id": "1488",
+              "nome": "Pane Casereccio"
+            },
+            {
+              "id": "1489",
+              "nome": "Pizza margherita al pezzo"
+            },
+            {
+              "id": "1490",
+              "nome": "Tagliatelle all'uovo"
+            },
+            {
+              "id": "1491",
+              "nome": "Strascinati farina 00"
+            },
+            {
+              "id": "1492",
+              "nome": "Arancino mignon alla nduja piccante"
+            },
+            {
+              "id": "1493",
+              "nome": "Panino ciabatta"
+            },
+            {
+              "id": "1506",
+              "nome": "Orologio da polso Timberland con cinturino in pelle nera"
+            },
+            {
+              "id": "1507",
+              "nome": "Olio extravergine d’oliva calabrese"
+            },
+            {
+              "id": "1508",
+              "nome": "Pecorino del Monte Poro"
+            },
+            {
+              "id": "1509",
+              "nome": "Cipolla Rossa di Tropea IGP"
+            },
+            {
+              "id": "1510",
+              "nome": "’Nduja di Spilinga"
+            },
+            {
+              "id": "1511",
+              "nome": "Liquirizia di Calabria DOP"
+            },
+            {
+              "id": "1512",
+              "nome": "Piparelle calabresi"
+            },
+            {
+              "id": "1513",
+              "nome": "Fileja di Tropea"
+            },
+            {
+              "id": "1514",
+              "nome": "Torrone mielato di Bagnara Calabra"
+            },
+            {
+              "id": "1515",
+              "nome": "Peperone secco dolce 100 g"
+            },
+            {
+              "id": "1516",
+              "nome": "Fagiolo Poverello di Rotonda DOP"
+            },
+            {
+              "id": "1517",
+              "nome": "Maccheroni al ferretto"
+            },
+            {
+              "id": "1518",
+              "nome": "Olive schiacciate alla calabrese"
+            },
+            {
+              "id": "1519",
+              "nome": "Taralli calabresi"
+            },
+            {
+              "id": "1520",
+              "nome": "Miele al bergamotto 250 g"
+            },
+            {
+              "id": "1521",
+              "nome": "Miele millefiori 500 g"
+            },
+            {
+              "id": "1522",
+              "nome": "Marmellata di bergamotto 200 g"
+            },
+            {
+              "id": "1523",
+              "nome": "Biscotti tradizionali calabresi"
+            }
+          ],
+          "restituiti": [
+            {
+              "id": "1511",
+              "nome": "Liquirizia di Calabria DOP"
+            }
+          ],
+          "attesi": [
+            {
+              "id": "1511",
+              "nome": "Liquirizia di Calabria DOP"
+            }
+          ]
+        }
+      },
+      "confronto": "invariato"
+    },
+    {
+      "id": "nonfood-borsa-pelle",
+      "gruppo": "non_alimentare",
+      "catalogo": "fixture",
+      "query": "Cerco una borsa in pelle",
+      "motivazione": "La fixture contiene tre prodotti pertinenti; il filtro non deve alterare il ramo non alimentare.",
+      "inclusoNelleMetriche": true,
+      "prima": {
+        "incluso": true,
+        "restituiti": [
+          "p13-borsa",
+          "p13-tracolla",
+          "p13-borsa-vintage"
+        ],
+        "attesi": [
+          "p13-borsa",
+          "p13-tracolla",
+          "p13-borsa-vintage"
+        ],
+        "corretti": [
+          "p13-borsa",
+          "p13-tracolla",
+          "p13-borsa-vintage"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1,
+        "dettagli": {
+          "candidati": [
+            {
+              "id": "p13-fileja",
+              "nome": "Fileja di Tropea"
+            },
+            {
+              "id": "p13-maccheroni",
+              "nome": "Maccheroni al ferretto"
+            },
+            {
+              "id": "p13-tagliatelle",
+              "nome": "Tagliatelle all'uovo"
+            },
+            {
+              "id": "p13-taralli",
+              "nome": "Taralli calabresi"
+            },
+            {
+              "id": "p13-biscotti",
+              "nome": "Biscotti tradizionali calabresi"
+            },
+            {
+              "id": "p13-scarpe",
+              "nome": "Scarpe running"
+            },
+            {
+              "id": "p13-borsa",
+              "nome": "Borsa in pelle"
+            },
+            {
+              "id": "p13-tracolla",
+              "nome": "Tracolla in pelle"
+            },
+            {
+              "id": "p13-cintura",
+              "nome": "Cintura artigianale"
+            },
+            {
+              "id": "p13-orologio",
+              "nome": "Orologio classico"
+            },
+            {
+              "id": "p13-borsa-vintage",
+              "nome": "Borsa vintage"
+            },
+            {
+              "id": "p13-tshirt",
+              "nome": "T-shirt con stampa"
+            }
+          ],
+          "restituiti": [
+            {
+              "id": "p13-borsa",
+              "nome": "Borsa in pelle"
+            },
+            {
+              "id": "p13-tracolla",
+              "nome": "Tracolla in pelle"
+            },
+            {
+              "id": "p13-borsa-vintage",
+              "nome": "Borsa vintage"
+            }
+          ],
+          "attesi": [
+            {
+              "id": "p13-borsa",
+              "nome": "Borsa in pelle"
+            },
+            {
+              "id": "p13-tracolla",
+              "nome": "Tracolla in pelle"
+            },
+            {
+              "id": "p13-borsa-vintage",
+              "nome": "Borsa vintage"
+            }
+          ]
+        }
+      },
+      "dopo": {
+        "incluso": true,
+        "restituiti": [
+          "p13-borsa",
+          "p13-tracolla",
+          "p13-borsa-vintage"
+        ],
+        "attesi": [
+          "p13-borsa",
+          "p13-tracolla",
+          "p13-borsa-vintage"
+        ],
+        "corretti": [
+          "p13-borsa",
+          "p13-tracolla",
+          "p13-borsa-vintage"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1,
+        "dettagli": {
+          "candidati": [
+            {
+              "id": "p13-fileja",
+              "nome": "Fileja di Tropea"
+            },
+            {
+              "id": "p13-maccheroni",
+              "nome": "Maccheroni al ferretto"
+            },
+            {
+              "id": "p13-tagliatelle",
+              "nome": "Tagliatelle all'uovo"
+            },
+            {
+              "id": "p13-taralli",
+              "nome": "Taralli calabresi"
+            },
+            {
+              "id": "p13-biscotti",
+              "nome": "Biscotti tradizionali calabresi"
+            },
+            {
+              "id": "p13-scarpe",
+              "nome": "Scarpe running"
+            },
+            {
+              "id": "p13-borsa",
+              "nome": "Borsa in pelle"
+            },
+            {
+              "id": "p13-tracolla",
+              "nome": "Tracolla in pelle"
+            },
+            {
+              "id": "p13-cintura",
+              "nome": "Cintura artigianale"
+            },
+            {
+              "id": "p13-orologio",
+              "nome": "Orologio classico"
+            },
+            {
+              "id": "p13-borsa-vintage",
+              "nome": "Borsa vintage"
+            },
+            {
+              "id": "p13-tshirt",
+              "nome": "T-shirt con stampa"
+            }
+          ],
+          "restituiti": [
+            {
+              "id": "p13-borsa",
+              "nome": "Borsa in pelle"
+            },
+            {
+              "id": "p13-tracolla",
+              "nome": "Tracolla in pelle"
+            },
+            {
+              "id": "p13-borsa-vintage",
+              "nome": "Borsa vintage"
+            }
+          ],
+          "attesi": [
+            {
+              "id": "p13-borsa",
+              "nome": "Borsa in pelle"
+            },
+            {
+              "id": "p13-tracolla",
+              "nome": "Tracolla in pelle"
+            },
+            {
+              "id": "p13-borsa-vintage",
+              "nome": "Borsa vintage"
+            }
+          ]
+        }
+      },
+      "confronto": "invariato"
+    },
+    {
+      "id": "nonfood-borsa-caratteristica",
+      "gruppo": "non_alimentare",
+      "catalogo": "fixture",
+      "query": "Cerco una borsa fatta a mano",
+      "motivazione": "Solo Borsa in pelle dichiara 'Fatta a mano'; è il comportamento già coperto da P1.3.",
+      "inclusoNelleMetriche": true,
+      "prima": {
+        "incluso": true,
+        "restituiti": [
+          "p13-borsa"
+        ],
+        "attesi": [
+          "p13-borsa"
+        ],
+        "corretti": [
+          "p13-borsa"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1,
+        "dettagli": {
+          "candidati": [
+            {
+              "id": "p13-fileja",
+              "nome": "Fileja di Tropea"
+            },
+            {
+              "id": "p13-maccheroni",
+              "nome": "Maccheroni al ferretto"
+            },
+            {
+              "id": "p13-tagliatelle",
+              "nome": "Tagliatelle all'uovo"
+            },
+            {
+              "id": "p13-taralli",
+              "nome": "Taralli calabresi"
+            },
+            {
+              "id": "p13-biscotti",
+              "nome": "Biscotti tradizionali calabresi"
+            },
+            {
+              "id": "p13-scarpe",
+              "nome": "Scarpe running"
+            },
+            {
+              "id": "p13-borsa",
+              "nome": "Borsa in pelle"
+            },
+            {
+              "id": "p13-tracolla",
+              "nome": "Tracolla in pelle"
+            },
+            {
+              "id": "p13-cintura",
+              "nome": "Cintura artigianale"
+            },
+            {
+              "id": "p13-orologio",
+              "nome": "Orologio classico"
+            },
+            {
+              "id": "p13-borsa-vintage",
+              "nome": "Borsa vintage"
+            },
+            {
+              "id": "p13-tshirt",
+              "nome": "T-shirt con stampa"
+            }
+          ],
+          "restituiti": [
+            {
+              "id": "p13-borsa",
+              "nome": "Borsa in pelle"
+            }
+          ],
+          "attesi": [
+            {
+              "id": "p13-borsa",
+              "nome": "Borsa in pelle"
+            }
+          ]
+        }
+      },
+      "dopo": {
+        "incluso": true,
+        "restituiti": [
+          "p13-borsa"
+        ],
+        "attesi": [
+          "p13-borsa"
+        ],
+        "corretti": [
+          "p13-borsa"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1,
+        "dettagli": {
+          "candidati": [
+            {
+              "id": "p13-fileja",
+              "nome": "Fileja di Tropea"
+            },
+            {
+              "id": "p13-maccheroni",
+              "nome": "Maccheroni al ferretto"
+            },
+            {
+              "id": "p13-tagliatelle",
+              "nome": "Tagliatelle all'uovo"
+            },
+            {
+              "id": "p13-taralli",
+              "nome": "Taralli calabresi"
+            },
+            {
+              "id": "p13-biscotti",
+              "nome": "Biscotti tradizionali calabresi"
+            },
+            {
+              "id": "p13-scarpe",
+              "nome": "Scarpe running"
+            },
+            {
+              "id": "p13-borsa",
+              "nome": "Borsa in pelle"
+            },
+            {
+              "id": "p13-tracolla",
+              "nome": "Tracolla in pelle"
+            },
+            {
+              "id": "p13-cintura",
+              "nome": "Cintura artigianale"
+            },
+            {
+              "id": "p13-orologio",
+              "nome": "Orologio classico"
+            },
+            {
+              "id": "p13-borsa-vintage",
+              "nome": "Borsa vintage"
+            },
+            {
+              "id": "p13-tshirt",
+              "nome": "T-shirt con stampa"
+            }
+          ],
+          "restituiti": [
+            {
+              "id": "p13-borsa",
+              "nome": "Borsa in pelle"
+            }
+          ],
+          "attesi": [
+            {
+              "id": "p13-borsa",
+              "nome": "Borsa in pelle"
+            }
+          ]
+        }
+      },
+      "confronto": "invariato"
+    },
+    {
+      "id": "nonfood-marca",
+      "gruppo": "non_alimentare",
+      "catalogo": "fixtureAmbiguita",
+      "query": "Cerco Pelletteria Rossi",
+      "motivazione": "La marca attraversa due negozi e non coincide con il catalogo di un singolo negozio.",
+      "inclusoNelleMetriche": true,
+      "prima": {
+        "incluso": true,
+        "restituiti": [
+          "a-borsa",
+          "a-cintura",
+          "a-borsa-borgo"
+        ],
+        "attesi": [
+          "a-borsa",
+          "a-cintura",
+          "a-borsa-borgo"
+        ],
+        "corretti": [
+          "a-borsa",
+          "a-cintura",
+          "a-borsa-borgo"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1,
+        "dettagli": {
+          "candidati": [
+            {
+              "id": "a-borsa",
+              "nome": "Borsa artigianale"
+            },
+            {
+              "id": "a-cintura",
+              "nome": "Cintura artigianale"
+            },
+            {
+              "id": "a-portafoglio",
+              "nome": "Portafoglio in pelle"
+            },
+            {
+              "id": "a-borsa-borgo",
+              "nome": "Borsa da viaggio"
+            }
+          ],
+          "restituiti": [
+            {
+              "id": "a-borsa",
+              "nome": "Borsa artigianale"
+            },
+            {
+              "id": "a-cintura",
+              "nome": "Cintura artigianale"
+            },
+            {
+              "id": "a-borsa-borgo",
+              "nome": "Borsa da viaggio"
+            }
+          ],
+          "attesi": [
+            {
+              "id": "a-borsa",
+              "nome": "Borsa artigianale"
+            },
+            {
+              "id": "a-cintura",
+              "nome": "Cintura artigianale"
+            },
+            {
+              "id": "a-borsa-borgo",
+              "nome": "Borsa da viaggio"
+            }
+          ]
+        }
+      },
+      "dopo": {
+        "incluso": true,
+        "restituiti": [
+          "a-borsa",
+          "a-cintura",
+          "a-borsa-borgo"
+        ],
+        "attesi": [
+          "a-borsa",
+          "a-cintura",
+          "a-borsa-borgo"
+        ],
+        "corretti": [
+          "a-borsa",
+          "a-cintura",
+          "a-borsa-borgo"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1,
+        "dettagli": {
+          "candidati": [
+            {
+              "id": "a-borsa",
+              "nome": "Borsa artigianale"
+            },
+            {
+              "id": "a-cintura",
+              "nome": "Cintura artigianale"
+            },
+            {
+              "id": "a-portafoglio",
+              "nome": "Portafoglio in pelle"
+            },
+            {
+              "id": "a-borsa-borgo",
+              "nome": "Borsa da viaggio"
+            }
+          ],
+          "restituiti": [
+            {
+              "id": "a-borsa",
+              "nome": "Borsa artigianale"
+            },
+            {
+              "id": "a-cintura",
+              "nome": "Cintura artigianale"
+            },
+            {
+              "id": "a-borsa-borgo",
+              "nome": "Borsa da viaggio"
+            }
+          ],
+          "attesi": [
+            {
+              "id": "a-borsa",
+              "nome": "Borsa artigianale"
+            },
+            {
+              "id": "a-cintura",
+              "nome": "Cintura artigianale"
+            },
+            {
+              "id": "a-borsa-borgo",
+              "nome": "Borsa da viaggio"
+            }
+          ]
+        }
+      },
+      "confronto": "invariato"
+    },
+    {
+      "id": "nonfood-marca-snapshot",
+      "gruppo": "non_alimentare",
+      "catalogo": "snapshot",
+      "query": "Cerco Maserati",
+      "motivazione": "Marca reale dell'orologio, distinta dal nome del negozio.",
+      "inclusoNelleMetriche": true,
+      "prima": {
+        "incluso": true,
+        "restituiti": [
+          "218"
+        ],
+        "attesi": [
+          "218"
+        ],
+        "corretti": [
+          "218"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1,
+        "dettagli": {
+          "candidati": [
+            {
+              "id": "218",
+              "nome": "Orologio cronografo Maserati in acciaio inossidabile"
+            },
+            {
+              "id": "1360",
+              "nome": "Orologio LiuJo in acciaio"
+            },
+            {
+              "id": "1361",
+              "nome": "Anello con pietra"
+            },
+            {
+              "id": "1371",
+              "nome": "Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1372",
+              "nome": "Filetti di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1373",
+              "nome": "Dolcezza di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1374",
+              "nome": "Miele Millefiori del Pollino"
+            },
+            {
+              "id": "1375",
+              "nome": "Miele di Castagno del Pollino"
+            },
+            {
+              "id": "1376",
+              "nome": "Olio Extra Vergine di Oliva del Pollino"
+            },
+            {
+              "id": "1377",
+              "nome": "Vino Magliocco del Pollino"
+            },
+            {
+              "id": "1378",
+              "nome": "Ciotaredda di Castrovillari"
+            },
+            {
+              "id": "1397",
+              "nome": "Caffè Kimbo Amalfi 1kg"
+            },
+            {
+              "id": "1430",
+              "nome": "Orologio cronografo da uomo con cinturino in pelle marrone"
+            },
+            {
+              "id": "1488",
+              "nome": "Pane Casereccio"
+            },
+            {
+              "id": "1489",
+              "nome": "Pizza margherita al pezzo"
+            },
+            {
+              "id": "1490",
+              "nome": "Tagliatelle all'uovo"
+            },
+            {
+              "id": "1491",
+              "nome": "Strascinati farina 00"
+            },
+            {
+              "id": "1492",
+              "nome": "Arancino mignon alla nduja piccante"
+            },
+            {
+              "id": "1493",
+              "nome": "Panino ciabatta"
+            },
+            {
+              "id": "1506",
+              "nome": "Orologio da polso Timberland con cinturino in pelle nera"
+            },
+            {
+              "id": "1507",
+              "nome": "Olio extravergine d’oliva calabrese"
+            },
+            {
+              "id": "1508",
+              "nome": "Pecorino del Monte Poro"
+            },
+            {
+              "id": "1509",
+              "nome": "Cipolla Rossa di Tropea IGP"
+            },
+            {
+              "id": "1510",
+              "nome": "’Nduja di Spilinga"
+            },
+            {
+              "id": "1511",
+              "nome": "Liquirizia di Calabria DOP"
+            },
+            {
+              "id": "1512",
+              "nome": "Piparelle calabresi"
+            },
+            {
+              "id": "1513",
+              "nome": "Fileja di Tropea"
+            },
+            {
+              "id": "1514",
+              "nome": "Torrone mielato di Bagnara Calabra"
+            },
+            {
+              "id": "1515",
+              "nome": "Peperone secco dolce 100 g"
+            },
+            {
+              "id": "1516",
+              "nome": "Fagiolo Poverello di Rotonda DOP"
+            },
+            {
+              "id": "1517",
+              "nome": "Maccheroni al ferretto"
+            },
+            {
+              "id": "1518",
+              "nome": "Olive schiacciate alla calabrese"
+            },
+            {
+              "id": "1519",
+              "nome": "Taralli calabresi"
+            },
+            {
+              "id": "1520",
+              "nome": "Miele al bergamotto 250 g"
+            },
+            {
+              "id": "1521",
+              "nome": "Miele millefiori 500 g"
+            },
+            {
+              "id": "1522",
+              "nome": "Marmellata di bergamotto 200 g"
+            },
+            {
+              "id": "1523",
+              "nome": "Biscotti tradizionali calabresi"
+            }
+          ],
+          "restituiti": [
+            {
+              "id": "218",
+              "nome": "Orologio cronografo Maserati in acciaio inossidabile"
+            }
+          ],
+          "attesi": [
+            {
+              "id": "218",
+              "nome": "Orologio cronografo Maserati in acciaio inossidabile"
+            }
+          ]
+        }
+      },
+      "dopo": {
+        "incluso": true,
+        "restituiti": [
+          "218"
+        ],
+        "attesi": [
+          "218"
+        ],
+        "corretti": [
+          "218"
+        ],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": 1,
+        "richiamo": 1,
+        "dettagli": {
+          "candidati": [
+            {
+              "id": "218",
+              "nome": "Orologio cronografo Maserati in acciaio inossidabile"
+            },
+            {
+              "id": "1360",
+              "nome": "Orologio LiuJo in acciaio"
+            },
+            {
+              "id": "1361",
+              "nome": "Anello con pietra"
+            },
+            {
+              "id": "1371",
+              "nome": "Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1372",
+              "nome": "Filetti di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1373",
+              "nome": "Dolcezza di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1374",
+              "nome": "Miele Millefiori del Pollino"
+            },
+            {
+              "id": "1375",
+              "nome": "Miele di Castagno del Pollino"
+            },
+            {
+              "id": "1376",
+              "nome": "Olio Extra Vergine di Oliva del Pollino"
+            },
+            {
+              "id": "1377",
+              "nome": "Vino Magliocco del Pollino"
+            },
+            {
+              "id": "1378",
+              "nome": "Ciotaredda di Castrovillari"
+            },
+            {
+              "id": "1397",
+              "nome": "Caffè Kimbo Amalfi 1kg"
+            },
+            {
+              "id": "1430",
+              "nome": "Orologio cronografo da uomo con cinturino in pelle marrone"
+            },
+            {
+              "id": "1488",
+              "nome": "Pane Casereccio"
+            },
+            {
+              "id": "1489",
+              "nome": "Pizza margherita al pezzo"
+            },
+            {
+              "id": "1490",
+              "nome": "Tagliatelle all'uovo"
+            },
+            {
+              "id": "1491",
+              "nome": "Strascinati farina 00"
+            },
+            {
+              "id": "1492",
+              "nome": "Arancino mignon alla nduja piccante"
+            },
+            {
+              "id": "1493",
+              "nome": "Panino ciabatta"
+            },
+            {
+              "id": "1506",
+              "nome": "Orologio da polso Timberland con cinturino in pelle nera"
+            },
+            {
+              "id": "1507",
+              "nome": "Olio extravergine d’oliva calabrese"
+            },
+            {
+              "id": "1508",
+              "nome": "Pecorino del Monte Poro"
+            },
+            {
+              "id": "1509",
+              "nome": "Cipolla Rossa di Tropea IGP"
+            },
+            {
+              "id": "1510",
+              "nome": "’Nduja di Spilinga"
+            },
+            {
+              "id": "1511",
+              "nome": "Liquirizia di Calabria DOP"
+            },
+            {
+              "id": "1512",
+              "nome": "Piparelle calabresi"
+            },
+            {
+              "id": "1513",
+              "nome": "Fileja di Tropea"
+            },
+            {
+              "id": "1514",
+              "nome": "Torrone mielato di Bagnara Calabra"
+            },
+            {
+              "id": "1515",
+              "nome": "Peperone secco dolce 100 g"
+            },
+            {
+              "id": "1516",
+              "nome": "Fagiolo Poverello di Rotonda DOP"
+            },
+            {
+              "id": "1517",
+              "nome": "Maccheroni al ferretto"
+            },
+            {
+              "id": "1518",
+              "nome": "Olive schiacciate alla calabrese"
+            },
+            {
+              "id": "1519",
+              "nome": "Taralli calabresi"
+            },
+            {
+              "id": "1520",
+              "nome": "Miele al bergamotto 250 g"
+            },
+            {
+              "id": "1521",
+              "nome": "Miele millefiori 500 g"
+            },
+            {
+              "id": "1522",
+              "nome": "Marmellata di bergamotto 200 g"
+            },
+            {
+              "id": "1523",
+              "nome": "Biscotti tradizionali calabresi"
+            }
+          ],
+          "restituiti": [
+            {
+              "id": "218",
+              "nome": "Orologio cronografo Maserati in acciaio inossidabile"
+            }
+          ],
+          "attesi": [
+            {
+              "id": "218",
+              "nome": "Orologio cronografo Maserati in acciaio inossidabile"
+            }
+          ]
+        }
+      },
+      "confronto": "invariato"
+    },
+    {
+      "id": "diagnostica-nome-negozio",
+      "gruppo": "diagnostico",
+      "catalogo": "snapshot",
+      "query": "Cerco Mani in Pasta",
+      "motivazione": "Mani in Pasta è un negozio: il termine 'Pasta' attiva il ramo alimentare, ma non esiste un insieme prodotto affidabile.",
+      "inclusoNelleMetriche": false,
+      "prima": {
+        "incluso": false,
+        "restituiti": [
+          "1490",
+          "1491",
+          "1513",
+          "1517"
+        ],
+        "attesi": null,
+        "corretti": [],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": null,
+        "richiamo": null,
+        "dettagli": {
+          "candidati": [
+            {
+              "id": "218",
+              "nome": "Orologio cronografo Maserati in acciaio inossidabile"
+            },
+            {
+              "id": "1360",
+              "nome": "Orologio LiuJo in acciaio"
+            },
+            {
+              "id": "1361",
+              "nome": "Anello con pietra"
+            },
+            {
+              "id": "1371",
+              "nome": "Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1372",
+              "nome": "Filetti di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1373",
+              "nome": "Dolcezza di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1374",
+              "nome": "Miele Millefiori del Pollino"
+            },
+            {
+              "id": "1375",
+              "nome": "Miele di Castagno del Pollino"
+            },
+            {
+              "id": "1376",
+              "nome": "Olio Extra Vergine di Oliva del Pollino"
+            },
+            {
+              "id": "1377",
+              "nome": "Vino Magliocco del Pollino"
+            },
+            {
+              "id": "1378",
+              "nome": "Ciotaredda di Castrovillari"
+            },
+            {
+              "id": "1397",
+              "nome": "Caffè Kimbo Amalfi 1kg"
+            },
+            {
+              "id": "1430",
+              "nome": "Orologio cronografo da uomo con cinturino in pelle marrone"
+            },
+            {
+              "id": "1488",
+              "nome": "Pane Casereccio"
+            },
+            {
+              "id": "1489",
+              "nome": "Pizza margherita al pezzo"
+            },
+            {
+              "id": "1490",
+              "nome": "Tagliatelle all'uovo"
+            },
+            {
+              "id": "1491",
+              "nome": "Strascinati farina 00"
+            },
+            {
+              "id": "1492",
+              "nome": "Arancino mignon alla nduja piccante"
+            },
+            {
+              "id": "1493",
+              "nome": "Panino ciabatta"
+            },
+            {
+              "id": "1506",
+              "nome": "Orologio da polso Timberland con cinturino in pelle nera"
+            },
+            {
+              "id": "1507",
+              "nome": "Olio extravergine d’oliva calabrese"
+            },
+            {
+              "id": "1508",
+              "nome": "Pecorino del Monte Poro"
+            },
+            {
+              "id": "1509",
+              "nome": "Cipolla Rossa di Tropea IGP"
+            },
+            {
+              "id": "1510",
+              "nome": "’Nduja di Spilinga"
+            },
+            {
+              "id": "1511",
+              "nome": "Liquirizia di Calabria DOP"
+            },
+            {
+              "id": "1512",
+              "nome": "Piparelle calabresi"
+            },
+            {
+              "id": "1513",
+              "nome": "Fileja di Tropea"
+            },
+            {
+              "id": "1514",
+              "nome": "Torrone mielato di Bagnara Calabra"
+            },
+            {
+              "id": "1515",
+              "nome": "Peperone secco dolce 100 g"
+            },
+            {
+              "id": "1516",
+              "nome": "Fagiolo Poverello di Rotonda DOP"
+            },
+            {
+              "id": "1517",
+              "nome": "Maccheroni al ferretto"
+            },
+            {
+              "id": "1518",
+              "nome": "Olive schiacciate alla calabrese"
+            },
+            {
+              "id": "1519",
+              "nome": "Taralli calabresi"
+            },
+            {
+              "id": "1520",
+              "nome": "Miele al bergamotto 250 g"
+            },
+            {
+              "id": "1521",
+              "nome": "Miele millefiori 500 g"
+            },
+            {
+              "id": "1522",
+              "nome": "Marmellata di bergamotto 200 g"
+            },
+            {
+              "id": "1523",
+              "nome": "Biscotti tradizionali calabresi"
+            }
+          ],
+          "restituiti": [
+            {
+              "id": "1490",
+              "nome": "Tagliatelle all'uovo"
+            },
+            {
+              "id": "1491",
+              "nome": "Strascinati farina 00"
+            },
+            {
+              "id": "1513",
+              "nome": "Fileja di Tropea"
+            },
+            {
+              "id": "1517",
+              "nome": "Maccheroni al ferretto"
+            }
+          ],
+          "attesi": []
+        }
+      },
+      "dopo": {
+        "incluso": false,
+        "restituiti": [
+          "1490",
+          "1491",
+          "1513",
+          "1517"
+        ],
+        "attesi": null,
+        "corretti": [],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": null,
+        "richiamo": null,
+        "dettagli": {
+          "candidati": [
+            {
+              "id": "218",
+              "nome": "Orologio cronografo Maserati in acciaio inossidabile"
+            },
+            {
+              "id": "1360",
+              "nome": "Orologio LiuJo in acciaio"
+            },
+            {
+              "id": "1361",
+              "nome": "Anello con pietra"
+            },
+            {
+              "id": "1371",
+              "nome": "Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1372",
+              "nome": "Filetti di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1373",
+              "nome": "Dolcezza di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1374",
+              "nome": "Miele Millefiori del Pollino"
+            },
+            {
+              "id": "1375",
+              "nome": "Miele di Castagno del Pollino"
+            },
+            {
+              "id": "1376",
+              "nome": "Olio Extra Vergine di Oliva del Pollino"
+            },
+            {
+              "id": "1377",
+              "nome": "Vino Magliocco del Pollino"
+            },
+            {
+              "id": "1378",
+              "nome": "Ciotaredda di Castrovillari"
+            },
+            {
+              "id": "1397",
+              "nome": "Caffè Kimbo Amalfi 1kg"
+            },
+            {
+              "id": "1430",
+              "nome": "Orologio cronografo da uomo con cinturino in pelle marrone"
+            },
+            {
+              "id": "1488",
+              "nome": "Pane Casereccio"
+            },
+            {
+              "id": "1489",
+              "nome": "Pizza margherita al pezzo"
+            },
+            {
+              "id": "1490",
+              "nome": "Tagliatelle all'uovo"
+            },
+            {
+              "id": "1491",
+              "nome": "Strascinati farina 00"
+            },
+            {
+              "id": "1492",
+              "nome": "Arancino mignon alla nduja piccante"
+            },
+            {
+              "id": "1493",
+              "nome": "Panino ciabatta"
+            },
+            {
+              "id": "1506",
+              "nome": "Orologio da polso Timberland con cinturino in pelle nera"
+            },
+            {
+              "id": "1507",
+              "nome": "Olio extravergine d’oliva calabrese"
+            },
+            {
+              "id": "1508",
+              "nome": "Pecorino del Monte Poro"
+            },
+            {
+              "id": "1509",
+              "nome": "Cipolla Rossa di Tropea IGP"
+            },
+            {
+              "id": "1510",
+              "nome": "’Nduja di Spilinga"
+            },
+            {
+              "id": "1511",
+              "nome": "Liquirizia di Calabria DOP"
+            },
+            {
+              "id": "1512",
+              "nome": "Piparelle calabresi"
+            },
+            {
+              "id": "1513",
+              "nome": "Fileja di Tropea"
+            },
+            {
+              "id": "1514",
+              "nome": "Torrone mielato di Bagnara Calabra"
+            },
+            {
+              "id": "1515",
+              "nome": "Peperone secco dolce 100 g"
+            },
+            {
+              "id": "1516",
+              "nome": "Fagiolo Poverello di Rotonda DOP"
+            },
+            {
+              "id": "1517",
+              "nome": "Maccheroni al ferretto"
+            },
+            {
+              "id": "1518",
+              "nome": "Olive schiacciate alla calabrese"
+            },
+            {
+              "id": "1519",
+              "nome": "Taralli calabresi"
+            },
+            {
+              "id": "1520",
+              "nome": "Miele al bergamotto 250 g"
+            },
+            {
+              "id": "1521",
+              "nome": "Miele millefiori 500 g"
+            },
+            {
+              "id": "1522",
+              "nome": "Marmellata di bergamotto 200 g"
+            },
+            {
+              "id": "1523",
+              "nome": "Biscotti tradizionali calabresi"
+            }
+          ],
+          "restituiti": [
+            {
+              "id": "1490",
+              "nome": "Tagliatelle all'uovo"
+            },
+            {
+              "id": "1491",
+              "nome": "Strascinati farina 00"
+            },
+            {
+              "id": "1513",
+              "nome": "Fileja di Tropea"
+            },
+            {
+              "id": "1517",
+              "nome": "Maccheroni al ferretto"
+            }
+          ],
+          "attesi": []
+        }
+      },
+      "confronto": "invariato"
+    },
+    {
+      "id": "diagnostica-generica-prodotto",
+      "gruppo": "diagnostico",
+      "catalogo": "snapshot",
+      "query": "Cerco prodotto IGP",
+      "motivazione": "Richiesta generica: 'prodotto' non identifica un alimento; il gate non deve essere misurato come se avesse un insieme atteso.",
+      "inclusoNelleMetriche": false,
+      "prima": {
+        "incluso": false,
+        "restituiti": [
+          "218",
+          "1360",
+          "1361",
+          "1371",
+          "1372",
+          "1373",
+          "1374",
+          "1375",
+          "1376",
+          "1377",
+          "1378",
+          "1397",
+          "1430",
+          "1488",
+          "1489",
+          "1490",
+          "1491",
+          "1492",
+          "1493",
+          "1506",
+          "1507",
+          "1508",
+          "1509",
+          "1510",
+          "1511",
+          "1512",
+          "1513",
+          "1514",
+          "1515",
+          "1516",
+          "1517",
+          "1518",
+          "1519",
+          "1520",
+          "1521",
+          "1522",
+          "1523"
+        ],
+        "attesi": null,
+        "corretti": [],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": null,
+        "richiamo": null,
+        "dettagli": {
+          "candidati": [
+            {
+              "id": "218",
+              "nome": "Orologio cronografo Maserati in acciaio inossidabile"
+            },
+            {
+              "id": "1360",
+              "nome": "Orologio LiuJo in acciaio"
+            },
+            {
+              "id": "1361",
+              "nome": "Anello con pietra"
+            },
+            {
+              "id": "1371",
+              "nome": "Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1372",
+              "nome": "Filetti di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1373",
+              "nome": "Dolcezza di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1374",
+              "nome": "Miele Millefiori del Pollino"
+            },
+            {
+              "id": "1375",
+              "nome": "Miele di Castagno del Pollino"
+            },
+            {
+              "id": "1376",
+              "nome": "Olio Extra Vergine di Oliva del Pollino"
+            },
+            {
+              "id": "1377",
+              "nome": "Vino Magliocco del Pollino"
+            },
+            {
+              "id": "1378",
+              "nome": "Ciotaredda di Castrovillari"
+            },
+            {
+              "id": "1397",
+              "nome": "Caffè Kimbo Amalfi 1kg"
+            },
+            {
+              "id": "1430",
+              "nome": "Orologio cronografo da uomo con cinturino in pelle marrone"
+            },
+            {
+              "id": "1488",
+              "nome": "Pane Casereccio"
+            },
+            {
+              "id": "1489",
+              "nome": "Pizza margherita al pezzo"
+            },
+            {
+              "id": "1490",
+              "nome": "Tagliatelle all'uovo"
+            },
+            {
+              "id": "1491",
+              "nome": "Strascinati farina 00"
+            },
+            {
+              "id": "1492",
+              "nome": "Arancino mignon alla nduja piccante"
+            },
+            {
+              "id": "1493",
+              "nome": "Panino ciabatta"
+            },
+            {
+              "id": "1506",
+              "nome": "Orologio da polso Timberland con cinturino in pelle nera"
+            },
+            {
+              "id": "1507",
+              "nome": "Olio extravergine d’oliva calabrese"
+            },
+            {
+              "id": "1508",
+              "nome": "Pecorino del Monte Poro"
+            },
+            {
+              "id": "1509",
+              "nome": "Cipolla Rossa di Tropea IGP"
+            },
+            {
+              "id": "1510",
+              "nome": "’Nduja di Spilinga"
+            },
+            {
+              "id": "1511",
+              "nome": "Liquirizia di Calabria DOP"
+            },
+            {
+              "id": "1512",
+              "nome": "Piparelle calabresi"
+            },
+            {
+              "id": "1513",
+              "nome": "Fileja di Tropea"
+            },
+            {
+              "id": "1514",
+              "nome": "Torrone mielato di Bagnara Calabra"
+            },
+            {
+              "id": "1515",
+              "nome": "Peperone secco dolce 100 g"
+            },
+            {
+              "id": "1516",
+              "nome": "Fagiolo Poverello di Rotonda DOP"
+            },
+            {
+              "id": "1517",
+              "nome": "Maccheroni al ferretto"
+            },
+            {
+              "id": "1518",
+              "nome": "Olive schiacciate alla calabrese"
+            },
+            {
+              "id": "1519",
+              "nome": "Taralli calabresi"
+            },
+            {
+              "id": "1520",
+              "nome": "Miele al bergamotto 250 g"
+            },
+            {
+              "id": "1521",
+              "nome": "Miele millefiori 500 g"
+            },
+            {
+              "id": "1522",
+              "nome": "Marmellata di bergamotto 200 g"
+            },
+            {
+              "id": "1523",
+              "nome": "Biscotti tradizionali calabresi"
+            }
+          ],
+          "restituiti": [
+            {
+              "id": "218",
+              "nome": "Orologio cronografo Maserati in acciaio inossidabile"
+            },
+            {
+              "id": "1360",
+              "nome": "Orologio LiuJo in acciaio"
+            },
+            {
+              "id": "1361",
+              "nome": "Anello con pietra"
+            },
+            {
+              "id": "1371",
+              "nome": "Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1372",
+              "nome": "Filetti di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1373",
+              "nome": "Dolcezza di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1374",
+              "nome": "Miele Millefiori del Pollino"
+            },
+            {
+              "id": "1375",
+              "nome": "Miele di Castagno del Pollino"
+            },
+            {
+              "id": "1376",
+              "nome": "Olio Extra Vergine di Oliva del Pollino"
+            },
+            {
+              "id": "1377",
+              "nome": "Vino Magliocco del Pollino"
+            },
+            {
+              "id": "1378",
+              "nome": "Ciotaredda di Castrovillari"
+            },
+            {
+              "id": "1397",
+              "nome": "Caffè Kimbo Amalfi 1kg"
+            },
+            {
+              "id": "1430",
+              "nome": "Orologio cronografo da uomo con cinturino in pelle marrone"
+            },
+            {
+              "id": "1488",
+              "nome": "Pane Casereccio"
+            },
+            {
+              "id": "1489",
+              "nome": "Pizza margherita al pezzo"
+            },
+            {
+              "id": "1490",
+              "nome": "Tagliatelle all'uovo"
+            },
+            {
+              "id": "1491",
+              "nome": "Strascinati farina 00"
+            },
+            {
+              "id": "1492",
+              "nome": "Arancino mignon alla nduja piccante"
+            },
+            {
+              "id": "1493",
+              "nome": "Panino ciabatta"
+            },
+            {
+              "id": "1506",
+              "nome": "Orologio da polso Timberland con cinturino in pelle nera"
+            },
+            {
+              "id": "1507",
+              "nome": "Olio extravergine d’oliva calabrese"
+            },
+            {
+              "id": "1508",
+              "nome": "Pecorino del Monte Poro"
+            },
+            {
+              "id": "1509",
+              "nome": "Cipolla Rossa di Tropea IGP"
+            },
+            {
+              "id": "1510",
+              "nome": "’Nduja di Spilinga"
+            },
+            {
+              "id": "1511",
+              "nome": "Liquirizia di Calabria DOP"
+            },
+            {
+              "id": "1512",
+              "nome": "Piparelle calabresi"
+            },
+            {
+              "id": "1513",
+              "nome": "Fileja di Tropea"
+            },
+            {
+              "id": "1514",
+              "nome": "Torrone mielato di Bagnara Calabra"
+            },
+            {
+              "id": "1515",
+              "nome": "Peperone secco dolce 100 g"
+            },
+            {
+              "id": "1516",
+              "nome": "Fagiolo Poverello di Rotonda DOP"
+            },
+            {
+              "id": "1517",
+              "nome": "Maccheroni al ferretto"
+            },
+            {
+              "id": "1518",
+              "nome": "Olive schiacciate alla calabrese"
+            },
+            {
+              "id": "1519",
+              "nome": "Taralli calabresi"
+            },
+            {
+              "id": "1520",
+              "nome": "Miele al bergamotto 250 g"
+            },
+            {
+              "id": "1521",
+              "nome": "Miele millefiori 500 g"
+            },
+            {
+              "id": "1522",
+              "nome": "Marmellata di bergamotto 200 g"
+            },
+            {
+              "id": "1523",
+              "nome": "Biscotti tradizionali calabresi"
+            }
+          ],
+          "attesi": []
+        }
+      },
+      "dopo": {
+        "incluso": false,
+        "restituiti": [
+          "218",
+          "1360",
+          "1361",
+          "1371",
+          "1372",
+          "1373",
+          "1374",
+          "1375",
+          "1376",
+          "1377",
+          "1378",
+          "1397",
+          "1430",
+          "1488",
+          "1489",
+          "1490",
+          "1491",
+          "1492",
+          "1493",
+          "1506",
+          "1507",
+          "1508",
+          "1509",
+          "1510",
+          "1511",
+          "1512",
+          "1513",
+          "1514",
+          "1515",
+          "1516",
+          "1517",
+          "1518",
+          "1519",
+          "1520",
+          "1521",
+          "1522",
+          "1523"
+        ],
+        "attesi": null,
+        "corretti": [],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": null,
+        "richiamo": null,
+        "dettagli": {
+          "candidati": [
+            {
+              "id": "218",
+              "nome": "Orologio cronografo Maserati in acciaio inossidabile"
+            },
+            {
+              "id": "1360",
+              "nome": "Orologio LiuJo in acciaio"
+            },
+            {
+              "id": "1361",
+              "nome": "Anello con pietra"
+            },
+            {
+              "id": "1371",
+              "nome": "Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1372",
+              "nome": "Filetti di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1373",
+              "nome": "Dolcezza di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1374",
+              "nome": "Miele Millefiori del Pollino"
+            },
+            {
+              "id": "1375",
+              "nome": "Miele di Castagno del Pollino"
+            },
+            {
+              "id": "1376",
+              "nome": "Olio Extra Vergine di Oliva del Pollino"
+            },
+            {
+              "id": "1377",
+              "nome": "Vino Magliocco del Pollino"
+            },
+            {
+              "id": "1378",
+              "nome": "Ciotaredda di Castrovillari"
+            },
+            {
+              "id": "1397",
+              "nome": "Caffè Kimbo Amalfi 1kg"
+            },
+            {
+              "id": "1430",
+              "nome": "Orologio cronografo da uomo con cinturino in pelle marrone"
+            },
+            {
+              "id": "1488",
+              "nome": "Pane Casereccio"
+            },
+            {
+              "id": "1489",
+              "nome": "Pizza margherita al pezzo"
+            },
+            {
+              "id": "1490",
+              "nome": "Tagliatelle all'uovo"
+            },
+            {
+              "id": "1491",
+              "nome": "Strascinati farina 00"
+            },
+            {
+              "id": "1492",
+              "nome": "Arancino mignon alla nduja piccante"
+            },
+            {
+              "id": "1493",
+              "nome": "Panino ciabatta"
+            },
+            {
+              "id": "1506",
+              "nome": "Orologio da polso Timberland con cinturino in pelle nera"
+            },
+            {
+              "id": "1507",
+              "nome": "Olio extravergine d’oliva calabrese"
+            },
+            {
+              "id": "1508",
+              "nome": "Pecorino del Monte Poro"
+            },
+            {
+              "id": "1509",
+              "nome": "Cipolla Rossa di Tropea IGP"
+            },
+            {
+              "id": "1510",
+              "nome": "’Nduja di Spilinga"
+            },
+            {
+              "id": "1511",
+              "nome": "Liquirizia di Calabria DOP"
+            },
+            {
+              "id": "1512",
+              "nome": "Piparelle calabresi"
+            },
+            {
+              "id": "1513",
+              "nome": "Fileja di Tropea"
+            },
+            {
+              "id": "1514",
+              "nome": "Torrone mielato di Bagnara Calabra"
+            },
+            {
+              "id": "1515",
+              "nome": "Peperone secco dolce 100 g"
+            },
+            {
+              "id": "1516",
+              "nome": "Fagiolo Poverello di Rotonda DOP"
+            },
+            {
+              "id": "1517",
+              "nome": "Maccheroni al ferretto"
+            },
+            {
+              "id": "1518",
+              "nome": "Olive schiacciate alla calabrese"
+            },
+            {
+              "id": "1519",
+              "nome": "Taralli calabresi"
+            },
+            {
+              "id": "1520",
+              "nome": "Miele al bergamotto 250 g"
+            },
+            {
+              "id": "1521",
+              "nome": "Miele millefiori 500 g"
+            },
+            {
+              "id": "1522",
+              "nome": "Marmellata di bergamotto 200 g"
+            },
+            {
+              "id": "1523",
+              "nome": "Biscotti tradizionali calabresi"
+            }
+          ],
+          "restituiti": [
+            {
+              "id": "218",
+              "nome": "Orologio cronografo Maserati in acciaio inossidabile"
+            },
+            {
+              "id": "1360",
+              "nome": "Orologio LiuJo in acciaio"
+            },
+            {
+              "id": "1361",
+              "nome": "Anello con pietra"
+            },
+            {
+              "id": "1371",
+              "nome": "Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1372",
+              "nome": "Filetti di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1373",
+              "nome": "Dolcezza di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1374",
+              "nome": "Miele Millefiori del Pollino"
+            },
+            {
+              "id": "1375",
+              "nome": "Miele di Castagno del Pollino"
+            },
+            {
+              "id": "1376",
+              "nome": "Olio Extra Vergine di Oliva del Pollino"
+            },
+            {
+              "id": "1377",
+              "nome": "Vino Magliocco del Pollino"
+            },
+            {
+              "id": "1378",
+              "nome": "Ciotaredda di Castrovillari"
+            },
+            {
+              "id": "1397",
+              "nome": "Caffè Kimbo Amalfi 1kg"
+            },
+            {
+              "id": "1430",
+              "nome": "Orologio cronografo da uomo con cinturino in pelle marrone"
+            },
+            {
+              "id": "1488",
+              "nome": "Pane Casereccio"
+            },
+            {
+              "id": "1489",
+              "nome": "Pizza margherita al pezzo"
+            },
+            {
+              "id": "1490",
+              "nome": "Tagliatelle all'uovo"
+            },
+            {
+              "id": "1491",
+              "nome": "Strascinati farina 00"
+            },
+            {
+              "id": "1492",
+              "nome": "Arancino mignon alla nduja piccante"
+            },
+            {
+              "id": "1493",
+              "nome": "Panino ciabatta"
+            },
+            {
+              "id": "1506",
+              "nome": "Orologio da polso Timberland con cinturino in pelle nera"
+            },
+            {
+              "id": "1507",
+              "nome": "Olio extravergine d’oliva calabrese"
+            },
+            {
+              "id": "1508",
+              "nome": "Pecorino del Monte Poro"
+            },
+            {
+              "id": "1509",
+              "nome": "Cipolla Rossa di Tropea IGP"
+            },
+            {
+              "id": "1510",
+              "nome": "’Nduja di Spilinga"
+            },
+            {
+              "id": "1511",
+              "nome": "Liquirizia di Calabria DOP"
+            },
+            {
+              "id": "1512",
+              "nome": "Piparelle calabresi"
+            },
+            {
+              "id": "1513",
+              "nome": "Fileja di Tropea"
+            },
+            {
+              "id": "1514",
+              "nome": "Torrone mielato di Bagnara Calabra"
+            },
+            {
+              "id": "1515",
+              "nome": "Peperone secco dolce 100 g"
+            },
+            {
+              "id": "1516",
+              "nome": "Fagiolo Poverello di Rotonda DOP"
+            },
+            {
+              "id": "1517",
+              "nome": "Maccheroni al ferretto"
+            },
+            {
+              "id": "1518",
+              "nome": "Olive schiacciate alla calabrese"
+            },
+            {
+              "id": "1519",
+              "nome": "Taralli calabresi"
+            },
+            {
+              "id": "1520",
+              "nome": "Miele al bergamotto 250 g"
+            },
+            {
+              "id": "1521",
+              "nome": "Miele millefiori 500 g"
+            },
+            {
+              "id": "1522",
+              "nome": "Marmellata di bergamotto 200 g"
+            },
+            {
+              "id": "1523",
+              "nome": "Biscotti tradizionali calabresi"
+            }
+          ],
+          "attesi": []
+        }
+      },
+      "confronto": "invariato"
+    },
+    {
+      "id": "diagnostica-descrizione-sola",
+      "gruppo": "diagnostico",
+      "catalogo": "snapshot",
+      "query": "Cerco lievito madre",
+      "motivazione": "La descrizione da sola non identifica il prodotto; il caso documenta il limite senza entrare nelle metriche.",
+      "inclusoNelleMetriche": false,
+      "prima": {
+        "incluso": false,
+        "restituiti": [],
+        "attesi": null,
+        "corretti": [],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": null,
+        "richiamo": null,
+        "dettagli": {
+          "candidati": [
+            {
+              "id": "218",
+              "nome": "Orologio cronografo Maserati in acciaio inossidabile"
+            },
+            {
+              "id": "1360",
+              "nome": "Orologio LiuJo in acciaio"
+            },
+            {
+              "id": "1361",
+              "nome": "Anello con pietra"
+            },
+            {
+              "id": "1371",
+              "nome": "Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1372",
+              "nome": "Filetti di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1373",
+              "nome": "Dolcezza di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1374",
+              "nome": "Miele Millefiori del Pollino"
+            },
+            {
+              "id": "1375",
+              "nome": "Miele di Castagno del Pollino"
+            },
+            {
+              "id": "1376",
+              "nome": "Olio Extra Vergine di Oliva del Pollino"
+            },
+            {
+              "id": "1377",
+              "nome": "Vino Magliocco del Pollino"
+            },
+            {
+              "id": "1378",
+              "nome": "Ciotaredda di Castrovillari"
+            },
+            {
+              "id": "1397",
+              "nome": "Caffè Kimbo Amalfi 1kg"
+            },
+            {
+              "id": "1430",
+              "nome": "Orologio cronografo da uomo con cinturino in pelle marrone"
+            },
+            {
+              "id": "1488",
+              "nome": "Pane Casereccio"
+            },
+            {
+              "id": "1489",
+              "nome": "Pizza margherita al pezzo"
+            },
+            {
+              "id": "1490",
+              "nome": "Tagliatelle all'uovo"
+            },
+            {
+              "id": "1491",
+              "nome": "Strascinati farina 00"
+            },
+            {
+              "id": "1492",
+              "nome": "Arancino mignon alla nduja piccante"
+            },
+            {
+              "id": "1493",
+              "nome": "Panino ciabatta"
+            },
+            {
+              "id": "1506",
+              "nome": "Orologio da polso Timberland con cinturino in pelle nera"
+            },
+            {
+              "id": "1507",
+              "nome": "Olio extravergine d’oliva calabrese"
+            },
+            {
+              "id": "1508",
+              "nome": "Pecorino del Monte Poro"
+            },
+            {
+              "id": "1509",
+              "nome": "Cipolla Rossa di Tropea IGP"
+            },
+            {
+              "id": "1510",
+              "nome": "’Nduja di Spilinga"
+            },
+            {
+              "id": "1511",
+              "nome": "Liquirizia di Calabria DOP"
+            },
+            {
+              "id": "1512",
+              "nome": "Piparelle calabresi"
+            },
+            {
+              "id": "1513",
+              "nome": "Fileja di Tropea"
+            },
+            {
+              "id": "1514",
+              "nome": "Torrone mielato di Bagnara Calabra"
+            },
+            {
+              "id": "1515",
+              "nome": "Peperone secco dolce 100 g"
+            },
+            {
+              "id": "1516",
+              "nome": "Fagiolo Poverello di Rotonda DOP"
+            },
+            {
+              "id": "1517",
+              "nome": "Maccheroni al ferretto"
+            },
+            {
+              "id": "1518",
+              "nome": "Olive schiacciate alla calabrese"
+            },
+            {
+              "id": "1519",
+              "nome": "Taralli calabresi"
+            },
+            {
+              "id": "1520",
+              "nome": "Miele al bergamotto 250 g"
+            },
+            {
+              "id": "1521",
+              "nome": "Miele millefiori 500 g"
+            },
+            {
+              "id": "1522",
+              "nome": "Marmellata di bergamotto 200 g"
+            },
+            {
+              "id": "1523",
+              "nome": "Biscotti tradizionali calabresi"
+            }
+          ],
+          "restituiti": [],
+          "attesi": []
+        }
+      },
+      "dopo": {
+        "incluso": false,
+        "restituiti": [],
+        "attesi": null,
+        "corretti": [],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": null,
+        "richiamo": null,
+        "dettagli": {
+          "candidati": [
+            {
+              "id": "218",
+              "nome": "Orologio cronografo Maserati in acciaio inossidabile"
+            },
+            {
+              "id": "1360",
+              "nome": "Orologio LiuJo in acciaio"
+            },
+            {
+              "id": "1361",
+              "nome": "Anello con pietra"
+            },
+            {
+              "id": "1371",
+              "nome": "Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1372",
+              "nome": "Filetti di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1373",
+              "nome": "Dolcezza di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1374",
+              "nome": "Miele Millefiori del Pollino"
+            },
+            {
+              "id": "1375",
+              "nome": "Miele di Castagno del Pollino"
+            },
+            {
+              "id": "1376",
+              "nome": "Olio Extra Vergine di Oliva del Pollino"
+            },
+            {
+              "id": "1377",
+              "nome": "Vino Magliocco del Pollino"
+            },
+            {
+              "id": "1378",
+              "nome": "Ciotaredda di Castrovillari"
+            },
+            {
+              "id": "1397",
+              "nome": "Caffè Kimbo Amalfi 1kg"
+            },
+            {
+              "id": "1430",
+              "nome": "Orologio cronografo da uomo con cinturino in pelle marrone"
+            },
+            {
+              "id": "1488",
+              "nome": "Pane Casereccio"
+            },
+            {
+              "id": "1489",
+              "nome": "Pizza margherita al pezzo"
+            },
+            {
+              "id": "1490",
+              "nome": "Tagliatelle all'uovo"
+            },
+            {
+              "id": "1491",
+              "nome": "Strascinati farina 00"
+            },
+            {
+              "id": "1492",
+              "nome": "Arancino mignon alla nduja piccante"
+            },
+            {
+              "id": "1493",
+              "nome": "Panino ciabatta"
+            },
+            {
+              "id": "1506",
+              "nome": "Orologio da polso Timberland con cinturino in pelle nera"
+            },
+            {
+              "id": "1507",
+              "nome": "Olio extravergine d’oliva calabrese"
+            },
+            {
+              "id": "1508",
+              "nome": "Pecorino del Monte Poro"
+            },
+            {
+              "id": "1509",
+              "nome": "Cipolla Rossa di Tropea IGP"
+            },
+            {
+              "id": "1510",
+              "nome": "’Nduja di Spilinga"
+            },
+            {
+              "id": "1511",
+              "nome": "Liquirizia di Calabria DOP"
+            },
+            {
+              "id": "1512",
+              "nome": "Piparelle calabresi"
+            },
+            {
+              "id": "1513",
+              "nome": "Fileja di Tropea"
+            },
+            {
+              "id": "1514",
+              "nome": "Torrone mielato di Bagnara Calabra"
+            },
+            {
+              "id": "1515",
+              "nome": "Peperone secco dolce 100 g"
+            },
+            {
+              "id": "1516",
+              "nome": "Fagiolo Poverello di Rotonda DOP"
+            },
+            {
+              "id": "1517",
+              "nome": "Maccheroni al ferretto"
+            },
+            {
+              "id": "1518",
+              "nome": "Olive schiacciate alla calabrese"
+            },
+            {
+              "id": "1519",
+              "nome": "Taralli calabresi"
+            },
+            {
+              "id": "1520",
+              "nome": "Miele al bergamotto 250 g"
+            },
+            {
+              "id": "1521",
+              "nome": "Miele millefiori 500 g"
+            },
+            {
+              "id": "1522",
+              "nome": "Marmellata di bergamotto 200 g"
+            },
+            {
+              "id": "1523",
+              "nome": "Biscotti tradizionali calabresi"
+            }
+          ],
+          "restituiti": [],
+          "attesi": []
+        }
+      },
+      "confronto": "invariato"
+    },
+    {
+      "id": "diagnostica-negozio-fixture",
+      "gruppo": "diagnostico",
+      "catalogo": "fixtureAmbiguita",
+      "query": "Cerco Emporio del Cuoio",
+      "motivazione": "Query di negozio; non va attribuita alla marca o a tutti i prodotti del negozio.",
+      "inclusoNelleMetriche": false,
+      "prima": {
+        "incluso": false,
+        "restituiti": [],
+        "attesi": null,
+        "corretti": [],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": null,
+        "richiamo": null,
+        "dettagli": {
+          "candidati": [
+            {
+              "id": "a-borsa",
+              "nome": "Borsa artigianale"
+            },
+            {
+              "id": "a-cintura",
+              "nome": "Cintura artigianale"
+            },
+            {
+              "id": "a-portafoglio",
+              "nome": "Portafoglio in pelle"
+            },
+            {
+              "id": "a-borsa-borgo",
+              "nome": "Borsa da viaggio"
+            }
+          ],
+          "restituiti": [],
+          "attesi": []
+        }
+      },
+      "dopo": {
+        "incluso": false,
+        "restituiti": [],
+        "attesi": null,
+        "corretti": [],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": null,
+        "richiamo": null,
+        "dettagli": {
+          "candidati": [
+            {
+              "id": "a-borsa",
+              "nome": "Borsa artigianale"
+            },
+            {
+              "id": "a-cintura",
+              "nome": "Cintura artigianale"
+            },
+            {
+              "id": "a-portafoglio",
+              "nome": "Portafoglio in pelle"
+            },
+            {
+              "id": "a-borsa-borgo",
+              "nome": "Borsa da viaggio"
+            }
+          ],
+          "restituiti": [],
+          "attesi": []
+        }
+      },
+      "confronto": "invariato"
+    },
+    {
+      "id": "diagnostica-borsa-snapshot",
+      "gruppo": "diagnostico",
+      "catalogo": "snapshot",
+      "query": "Cerco borsa in pelle",
+      "motivazione": "Lo snapshot reale non contiene borse: il caso è un controllo negativo, non un'etichetta di prodotto.",
+      "inclusoNelleMetriche": false,
+      "prima": {
+        "incluso": false,
+        "restituiti": [],
+        "attesi": null,
+        "corretti": [],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": null,
+        "richiamo": null,
+        "dettagli": {
+          "candidati": [
+            {
+              "id": "218",
+              "nome": "Orologio cronografo Maserati in acciaio inossidabile"
+            },
+            {
+              "id": "1360",
+              "nome": "Orologio LiuJo in acciaio"
+            },
+            {
+              "id": "1361",
+              "nome": "Anello con pietra"
+            },
+            {
+              "id": "1371",
+              "nome": "Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1372",
+              "nome": "Filetti di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1373",
+              "nome": "Dolcezza di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1374",
+              "nome": "Miele Millefiori del Pollino"
+            },
+            {
+              "id": "1375",
+              "nome": "Miele di Castagno del Pollino"
+            },
+            {
+              "id": "1376",
+              "nome": "Olio Extra Vergine di Oliva del Pollino"
+            },
+            {
+              "id": "1377",
+              "nome": "Vino Magliocco del Pollino"
+            },
+            {
+              "id": "1378",
+              "nome": "Ciotaredda di Castrovillari"
+            },
+            {
+              "id": "1397",
+              "nome": "Caffè Kimbo Amalfi 1kg"
+            },
+            {
+              "id": "1430",
+              "nome": "Orologio cronografo da uomo con cinturino in pelle marrone"
+            },
+            {
+              "id": "1488",
+              "nome": "Pane Casereccio"
+            },
+            {
+              "id": "1489",
+              "nome": "Pizza margherita al pezzo"
+            },
+            {
+              "id": "1490",
+              "nome": "Tagliatelle all'uovo"
+            },
+            {
+              "id": "1491",
+              "nome": "Strascinati farina 00"
+            },
+            {
+              "id": "1492",
+              "nome": "Arancino mignon alla nduja piccante"
+            },
+            {
+              "id": "1493",
+              "nome": "Panino ciabatta"
+            },
+            {
+              "id": "1506",
+              "nome": "Orologio da polso Timberland con cinturino in pelle nera"
+            },
+            {
+              "id": "1507",
+              "nome": "Olio extravergine d’oliva calabrese"
+            },
+            {
+              "id": "1508",
+              "nome": "Pecorino del Monte Poro"
+            },
+            {
+              "id": "1509",
+              "nome": "Cipolla Rossa di Tropea IGP"
+            },
+            {
+              "id": "1510",
+              "nome": "’Nduja di Spilinga"
+            },
+            {
+              "id": "1511",
+              "nome": "Liquirizia di Calabria DOP"
+            },
+            {
+              "id": "1512",
+              "nome": "Piparelle calabresi"
+            },
+            {
+              "id": "1513",
+              "nome": "Fileja di Tropea"
+            },
+            {
+              "id": "1514",
+              "nome": "Torrone mielato di Bagnara Calabra"
+            },
+            {
+              "id": "1515",
+              "nome": "Peperone secco dolce 100 g"
+            },
+            {
+              "id": "1516",
+              "nome": "Fagiolo Poverello di Rotonda DOP"
+            },
+            {
+              "id": "1517",
+              "nome": "Maccheroni al ferretto"
+            },
+            {
+              "id": "1518",
+              "nome": "Olive schiacciate alla calabrese"
+            },
+            {
+              "id": "1519",
+              "nome": "Taralli calabresi"
+            },
+            {
+              "id": "1520",
+              "nome": "Miele al bergamotto 250 g"
+            },
+            {
+              "id": "1521",
+              "nome": "Miele millefiori 500 g"
+            },
+            {
+              "id": "1522",
+              "nome": "Marmellata di bergamotto 200 g"
+            },
+            {
+              "id": "1523",
+              "nome": "Biscotti tradizionali calabresi"
+            }
+          ],
+          "restituiti": [],
+          "attesi": []
+        }
+      },
+      "dopo": {
+        "incluso": false,
+        "restituiti": [],
+        "attesi": null,
+        "corretti": [],
+        "falsiPositivi": [],
+        "falsiNegativi": [],
+        "precisione": null,
+        "richiamo": null,
+        "dettagli": {
+          "candidati": [
+            {
+              "id": "218",
+              "nome": "Orologio cronografo Maserati in acciaio inossidabile"
+            },
+            {
+              "id": "1360",
+              "nome": "Orologio LiuJo in acciaio"
+            },
+            {
+              "id": "1361",
+              "nome": "Anello con pietra"
+            },
+            {
+              "id": "1371",
+              "nome": "Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1372",
+              "nome": "Filetti di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1373",
+              "nome": "Dolcezza di Cipolla Bianca di Castrovillari"
+            },
+            {
+              "id": "1374",
+              "nome": "Miele Millefiori del Pollino"
+            },
+            {
+              "id": "1375",
+              "nome": "Miele di Castagno del Pollino"
+            },
+            {
+              "id": "1376",
+              "nome": "Olio Extra Vergine di Oliva del Pollino"
+            },
+            {
+              "id": "1377",
+              "nome": "Vino Magliocco del Pollino"
+            },
+            {
+              "id": "1378",
+              "nome": "Ciotaredda di Castrovillari"
+            },
+            {
+              "id": "1397",
+              "nome": "Caffè Kimbo Amalfi 1kg"
+            },
+            {
+              "id": "1430",
+              "nome": "Orologio cronografo da uomo con cinturino in pelle marrone"
+            },
+            {
+              "id": "1488",
+              "nome": "Pane Casereccio"
+            },
+            {
+              "id": "1489",
+              "nome": "Pizza margherita al pezzo"
+            },
+            {
+              "id": "1490",
+              "nome": "Tagliatelle all'uovo"
+            },
+            {
+              "id": "1491",
+              "nome": "Strascinati farina 00"
+            },
+            {
+              "id": "1492",
+              "nome": "Arancino mignon alla nduja piccante"
+            },
+            {
+              "id": "1493",
+              "nome": "Panino ciabatta"
+            },
+            {
+              "id": "1506",
+              "nome": "Orologio da polso Timberland con cinturino in pelle nera"
+            },
+            {
+              "id": "1507",
+              "nome": "Olio extravergine d’oliva calabrese"
+            },
+            {
+              "id": "1508",
+              "nome": "Pecorino del Monte Poro"
+            },
+            {
+              "id": "1509",
+              "nome": "Cipolla Rossa di Tropea IGP"
+            },
+            {
+              "id": "1510",
+              "nome": "’Nduja di Spilinga"
+            },
+            {
+              "id": "1511",
+              "nome": "Liquirizia di Calabria DOP"
+            },
+            {
+              "id": "1512",
+              "nome": "Piparelle calabresi"
+            },
+            {
+              "id": "1513",
+              "nome": "Fileja di Tropea"
+            },
+            {
+              "id": "1514",
+              "nome": "Torrone mielato di Bagnara Calabra"
+            },
+            {
+              "id": "1515",
+              "nome": "Peperone secco dolce 100 g"
+            },
+            {
+              "id": "1516",
+              "nome": "Fagiolo Poverello di Rotonda DOP"
+            },
+            {
+              "id": "1517",
+              "nome": "Maccheroni al ferretto"
+            },
+            {
+              "id": "1518",
+              "nome": "Olive schiacciate alla calabrese"
+            },
+            {
+              "id": "1519",
+              "nome": "Taralli calabresi"
+            },
+            {
+              "id": "1520",
+              "nome": "Miele al bergamotto 250 g"
+            },
+            {
+              "id": "1521",
+              "nome": "Miele millefiori 500 g"
+            },
+            {
+              "id": "1522",
+              "nome": "Marmellata di bergamotto 200 g"
+            },
+            {
+              "id": "1523",
+              "nome": "Biscotti tradizionali calabresi"
+            }
+          ],
+          "restituiti": [],
+          "attesi": []
+        }
+      },
+      "confronto": "invariato"
+    }
+  ],
+  "metriche": {
+    "alimentari": {
+      "prima": {
+        "casi": 11,
+        "micro": {
+          "precisione": 0.7895,
+          "richiamo": 0.9375,
+          "veriPositivi": 15,
+          "falsiPositivi": 4,
+          "falsiNegativi": 1,
+          "restituiti": 19,
+          "attesi": 16
+        },
+        "macro": {
+          "precisione": 0.875,
+          "richiamo": 0.9091,
+          "casiPrecisioneValidi": 10,
+          "casiRichiamoValidi": 11
+        }
+      },
+      "dopo": {
+        "casi": 11,
+        "micro": {
+          "precisione": 1,
+          "richiamo": 1,
+          "veriPositivi": 16,
+          "falsiPositivi": 0,
+          "falsiNegativi": 0,
+          "restituiti": 16,
+          "attesi": 16
+        },
+        "macro": {
+          "precisione": 1,
+          "richiamo": 1,
+          "casiPrecisioneValidi": 11,
+          "casiRichiamoValidi": 11
+        }
+      }
+    },
+    "nonAlimentari": {
+      "prima": {
+        "casi": 4,
+        "micro": {
+          "precisione": 1,
+          "richiamo": 1,
+          "veriPositivi": 8,
+          "falsiPositivi": 0,
+          "falsiNegativi": 0,
+          "restituiti": 8,
+          "attesi": 8
+        },
+        "macro": {
+          "precisione": 1,
+          "richiamo": 1,
+          "casiPrecisioneValidi": 4,
+          "casiRichiamoValidi": 4
+        }
+      },
+      "dopo": {
+        "casi": 4,
+        "micro": {
+          "precisione": 1,
+          "richiamo": 1,
+          "veriPositivi": 8,
+          "falsiPositivi": 0,
+          "falsiNegativi": 0,
+          "restituiti": 8,
+          "attesi": 8
+        },
+        "macro": {
+          "precisione": 1,
+          "richiamo": 1,
+          "casiPrecisioneValidi": 4,
+          "casiRichiamoValidi": 4
+        }
+      }
+    }
+  },
+  "casiMigliorati": [
+    "parole-chiave-amarelli",
+    "caratteristica-bottiglia-litro",
+    "sottocategoria-pasta-tipica"
+  ],
+  "casiPeggiorati": [],
+  "casiInvariati": [
+    "nome-fileja",
+    "nome-pecorino",
+    "categoria-pasta",
+    "categoria-formaggio",
+    "marca-maserati",
+    "descrizione-pane-lievito",
+    "budget-miele-sotto-10",
+    "nome-liquirizia-dop",
+    "nonfood-borsa-pelle",
+    "nonfood-borsa-caratteristica",
+    "nonfood-marca",
+    "nonfood-marca-snapshot",
+    "diagnostica-nome-negozio",
+    "diagnostica-generica-prodotto",
+    "diagnostica-descrizione-sola",
+    "diagnostica-negozio-fixture",
+    "diagnostica-borsa-snapshot"
+  ],
+  "diagnostici": [
+    {
+      "id": "diagnostica-nome-negozio",
+      "query": "Cerco Mani in Pasta",
+      "motivazione": "Mani in Pasta è un negozio: il termine 'Pasta' attiva il ramo alimentare, ma non esiste un insieme prodotto affidabile."
+    },
+    {
+      "id": "diagnostica-generica-prodotto",
+      "query": "Cerco prodotto IGP",
+      "motivazione": "Richiesta generica: 'prodotto' non identifica un alimento; il gate non deve essere misurato come se avesse un insieme atteso."
+    },
+    {
+      "id": "diagnostica-descrizione-sola",
+      "query": "Cerco lievito madre",
+      "motivazione": "La descrizione da sola non identifica il prodotto; il caso documenta il limite senza entrare nelle metriche."
+    },
+    {
+      "id": "diagnostica-negozio-fixture",
+      "query": "Cerco Emporio del Cuoio",
+      "motivazione": "Query di negozio; non va attribuita alla marca o a tutti i prodotti del negozio."
+    },
+    {
+      "id": "diagnostica-borsa-snapshot",
+      "query": "Cerco borsa in pelle",
+      "motivazione": "Lo snapshot reale non contiene borse: il caso è un controllo negativo, non un'etichetta di prodotto."
+    }
+  ]
+}
