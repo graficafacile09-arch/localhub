@@ -2,10 +2,13 @@ import Header from "@/components/Header/Header";
 import { getCategorieConNegozi } from "@/lib/negozi";
 import CategoryTile from "@/components/home/CategoryTile";
 import { OpenAssistantButton } from "@/components/assistant/OpenAssistantButton";
+import { getCurrentUser } from "@/lib/auth/session";
 import { Store, Sparkles } from "lucide-react";
 
 export default async function CategoriePage() {
   const categorieConNegozi = await getCategorieConNegozi();
+  // Pino è nascosto a chi ha effettuato l'accesso: niente pulsante morto.
+  const pinoVisibile = !(await getCurrentUser());
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -19,7 +22,7 @@ export default async function CategoriePage() {
           <p className="mt-1 text-xs text-slate-500">
             Scegli una categoria per trovare i negozi e le attività della tua città.
           </p>
-          <OpenAssistantButton label="Cerca con l'Assistente AI" />
+          {pinoVisibile && <OpenAssistantButton label="Cerca con l'Assistente AI" />}
         </div>
 
         {categorieConNegozi.length === 0 ? (
