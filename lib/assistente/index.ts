@@ -2319,7 +2319,7 @@ function rispostaFarmacieDeterministica(
 // affermare che il luogo non esista in città.
 
 const RE_INTENTO_GUIDA_PINO =
-  /\b(muse[oi]|monument[oi]|attrazion[ei]|cosa vedere|luoghi da visitare|luoghi da vedere|visitare|palazz[oi]|castell[oi]|chies[ae]|teatr[oi]|biblioteca|archivio|borg[oh]i?|dintorni|centro storico|festival|mostre|parco|itinerario|turistic[oa]|museums?|monuments?|attractions?|things to see|places to visit|visit|palaces?|castles?|churches|theatres?|libraries|archives?|villages?|surroundings|historic center|historic centre|exhibitions?|parks?|itinerary|tourism|tourist|archaeological|amphitheat(?:re|er)s?|ruins?|sites?)\b/i;
+  /\b(muse[oi]|monument[oi]|attrazion[ei]|cosa vedere|cosa\s+c['’]?e\s+da\s+vedere|cosa visitare|posti da visitare|luoghi interessanti|luoghi da visitare|luoghi da vedere|visitare|palazz[oi]|castell[oi]|chies[ae]|teatr[oi]|biblioteca|archivio|borg[oh]i?|dintorni|centro storico|festival|mostre|parco|itinerario|turistic[oa]|museums?|monuments?|attractions?|things to see|places to visit|visit|palaces?|castles?|churches|theatres?|libraries|archives?|villages?|surroundings|historic center|historic centre|exhibitions?|parks?|itinerary|tourism|tourist|archaeological|amphitheat(?:re|er)s?|ruins?|sites?)\b/i;
 
 // Parole che indicano un acquisto o un prodotto: «cerco un negozio di articoli
 // per il teatro» non è una visita, anche se contiene «teatro».
