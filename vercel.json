@@ -5,5 +5,8 @@
       "main": true,
       "feat/area-corriere-locale": true
     }
-  }
+  },
+  "regions": [
+    "fra1"
+  ]
 }
