@@ -223,9 +223,12 @@ test("P1.3.5 — sottocategoria documentata in ogni campo, non nel negozio", () 
       "pasta-alt",
     ]
   );
+  // Qualifica NON documentata: il gate degrada ai prodotti del soggetto
+  // (e `notaQualificazioneRilassataPino` dichiara che «tipica» non è
+  // confermata) invece di restituire zero e far credere che la pasta manchi.
   assert.deepEqual(
     esito([assente, soloNegozio], "Cerco pasta tipica", "pasta"),
-    []
+    ["pasta-assente", "pasta-solo-negozio"]
   );
 
   // La ricerca generica non deve essere trasformata in una qualificazione.
@@ -288,9 +291,15 @@ test("P1.3.5 — caratteristica scoperta in tutti i metadati, non nel negozio", 
     esito([...catalogo, assente, soloNegozio, nullo], "Cerco pasta lavorata a mano", "pasta"),
     campi.map(([id]) => `pasta-${id}`)
   );
+  // Caratteristica non documentata da nessun candidato: il gate degrada ai
+  // prodotti del soggetto e la risposta dichiara la qualifica non confermata.
   assert.deepEqual(
     esito([assente, soloNegozio, nullo], "Cerco pasta lavorata a mano", "pasta"),
-    []
+    [
+      "pasta-assente-caratteristica",
+      "pasta-solo-negozio-caratteristica",
+      "pasta-nulla",
+    ]
   );
 });
 
@@ -406,9 +415,11 @@ test("P1.3.5 — collisione nome negozio/prodotto e solo nome negozio", () => {
     esito([collisione], "Cerco pasta tipica", "pasta"),
     ["pasta-negozio-pasta"]
   );
+  // Il nome del negozio non fa scattare la qualifica (resta rilassata), ma il
+  // prodotto con il soggetto «pasta» non viene più azzerato.
   assert.deepEqual(
     esito([soloNegozio], "Cerco pasta tipica", "pasta"),
-    []
+    ["pasta-solo-negozio-finale"]
   );
 });
 
@@ -423,7 +434,8 @@ test("P1.3.5 — metadati nulli non provocano errori", () => {
     alt_text_immagine: null,
   });
   assert.doesNotThrow(() => esito([nullo], "Cerco pasta tipica", "pasta"));
-  assert.deepEqual(esito([nullo], "Cerco pasta tipica", "pasta"), []);
+  // Metadati nulli = qualifica non documentata, non prodotto inesistente.
+  assert.deepEqual(esito([nullo], "Cerco pasta tipica", "pasta"), ["pasta-nulla"]);
 });
 
 

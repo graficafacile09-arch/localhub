@@ -1,4 +1,4 @@
-import { normalizza, estraiToken } from "../text-utils.ts";
+import { normalizza, estraiToken, formaCompatta, equivalenzaSigla } from "../text-utils.ts";
 // Estensione esplicita: questo modulo è caricato anche dalla suite node
 // (`node --experimental-strip-types --test`), che non risolve gli alias.
 import { refusoPlausibile } from "./understanding.ts";
@@ -151,9 +151,17 @@ export function prodottoIdentificatoDaSoggetto(
   const corrisponde = (testo: string): boolean => {
     if (!testo) return false;
     const token = estraiToken(testo);
-    return soggetto.length < 4
-      ? token.includes(soggetto)
-      : testo.includes(soggetto) || tokenCompatibile(soggetto, token);
+    const diretto =
+      soggetto.length < 4
+        ? token.includes(soggetto)
+        : testo.includes(soggetto) || tokenCompatibile(soggetto, token);
+    // Stessa parola scritta diversamente («extravergine» ≡ «extra vergine») o
+    // sigla («evo» ≡ «Extra Vergine di Oliva»). L'equivalenza è strutturale:
+    // non serve aggiungere una coppia di sinonimi per ogni parola mancante.
+    if (diretto) return true;
+    const compatta = formaCompatta(soggetto);
+    if (compatta && formaCompatta(testo).includes(compatta)) return true;
+    return equivalenzaSigla(soggetto, testo);
   };
 
   // Parola chiave + descrizione concorde: la keyword non è autosufficiente.
@@ -270,6 +278,67 @@ export function prodottoIdentificaSoggetto(
   return token.some(
     (t) => varianti.has(t) || stessaFamiglia(soggetto, t)
   );
+}
+
+/**
+ * Esito spiegato della pertinenza di un prodotto rispetto al soggetto.
+ *
+ * Stessa logica dei predicati qui sopra, ma con una sola porta d'ingresso e
+ * l'elenco dei motivi. Serve a due cose concrete: i gate di Pino non vanno più
+ * letti come funzioni parallele che possono contraddirsi, e quando un prodotto
+ * viene scartato si può dire PERCHÉ (log e Shadow), senza indovinare.
+ *
+ * Ordine (identico a `classificaProdottoPino`): nome → categoria → parola
+ * chiave/descrizione confermata → famiglia lessicale → ponte concettuale →
+ * refuso. La descrizione da sola non identifica il prodotto (D1).
+ */
+export type ClassePertinenzaPino = "exact" | "synonym" | "semantic" | "weak";
+
+export type EsitoPertinenzaPino = {
+  classe: ClassePertinenzaPino | null;
+  /** Elenco leggibile dei motivi (nessun testo utente). */
+  motivi: string[];
+};
+
+export function spiegaPertinenzaProdotto(
+  prodotto: ProdottoIdentificabile,
+  soggetto: string | undefined,
+  concetti: readonly string[] = []
+): EsitoPertinenzaPino {
+  const chiave = normalizza(soggetto ?? "").trim();
+  if (!chiave) return { classe: null, motivi: ["soggetto_assente"] };
+
+  const nome = normalizza(prodotto?.nome ?? "");
+  const categoria = normalizza(prodotto?.categoria ?? "");
+  const compatta = formaCompatta(chiave);
+
+  if (nome.includes(chiave)) return { classe: "exact", motivi: ["soggetto_nel_nome"] };
+  if (compatta && formaCompatta(nome).includes(compatta)) {
+    return { classe: "exact", motivi: ["forma_compatta"] };
+  }
+  if (categoria.includes(chiave)) {
+    return { classe: "synonym", motivi: ["soggetto_nella_categoria"] };
+  }
+  if (compatta && formaCompatta(categoria).includes(compatta)) {
+    return { classe: "synonym", motivi: ["forma_compatta_nella_categoria"] };
+  }
+  // Sigla o nome esteso equivalgono ("evo" ≡ "Extra Vergine di Oliva").
+  if (equivalenzaSigla(chiave, `${nome} ${categoria}`)) {
+    return { classe: "exact", motivi: ["sigla"] };
+  }
+  if (prodottoIdentificatoDaSoggetto(prodotto, chiave)) {
+    return { classe: "semantic", motivi: ["parola_chiave_confermata"] };
+  }
+  if (prodottoIdentificaSoggetto(prodotto, chiave)) {
+    return { classe: "synonym", motivi: ["famiglia_lessicale"] };
+  }
+  if (concetti.some((concetto) => prodottoIdentificaSoggetto(prodotto, concetto))) {
+    return { classe: "semantic", motivi: ["ponte_concettuale"] };
+  }
+  if (prodottoForseRefusoDiSoggetto(prodotto, chiave)) {
+    return { classe: "weak", motivi: ["refuso"] };
+  }
+  return { classe: null, motivi: ["nessuna_corrispondenza"] };
 }
 
 /**

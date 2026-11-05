@@ -5,10 +5,12 @@ import {
   normalizzaQueryCatalogo,
 } from "./understanding";
 import {
+  decidiDominioPino,
   isExplicitFoodProductRequest,
   richiestaCinemaPino,
-  richiestaProdottoCommercialePino,
 } from "./routing-policy";
+import { soggettoAlimentarePino } from "./lexicon";
+import { messaggioQualificazioneRilassataPino } from "./messaggi-pino";
 import { rispostaIdentitaPino } from "./identity";
 import { rispostaSalutoPino, rispostaRelazionalePino, rispostaPreferenzaLinguaPino } from "./greetings";
 import { CATEGORIE_REGALO, isGenericGiftRequest, prodottoCorrispondeCategoriaRegalo } from "./gift-retrieval";
@@ -49,6 +51,8 @@ import {
   filtraDessertRichiestoPino,
   filtraProdottiPerDisponibilitaPino,
   notaDisponibilitaProdottiPino,
+  fraseQualificazionePino,
+  qualificazioneDocumentataPino,
   rilevaRichiestaServizioPino,
   serviziRichiestiPino,
   CONTRATTI_STRUMENTO,
@@ -2372,13 +2376,9 @@ function rispostaFarmacieDeterministica(
 // Pino lo dichiara e si ferma: non deve proporre prodotti o negozi casuali né
 // affermare che il luogo non esista in città.
 
-const RE_INTENTO_GUIDA_PINO =
-  /\b(muse[oi]|monument[oi]|attrazion[ei]|cosa vedere|luoghi da visitare|luoghi da vedere|visitare|palazz[oi]|castell[oi]|chies[ae]|teatr[oi]|biblioteca|archivio|borg[oh]i?|dintorni|centro storico|festival|mostre|parco|itinerario|turistic[oa]|museums?|monuments?|attractions?|things to see|places to visit|visit|palaces?|castles?|churches|theatres?|libraries|archives?|villages?|surroundings|historic center|historic centre|exhibitions?|parks?|itinerary|tourism|tourist|archaeological|amphitheat(?:re|er)s?|ruins?|sites?)\b/i;
-
-// Parole che indicano un acquisto o un prodotto: «cerco un negozio di articoli
-// per il teatro» non è una visita, anche se contiene «teatro».
-const RE_CONTESTO_ACQUISTO_PINO =
-  /\b(?:comprare|compro|acquistare|acquisto|negozi[oi]|boutique|commerciale|commerciali|supermercat[oi]|prodott[oi]|shampoo|regal[oi]|prezz[oi]|offerte?|sconti?|vendita|buy|buying|shop|shops|store|stores|malls?|products?|prices?|offers?|discounts?|sale|gifts?)\b/i;
+// Le regex del routing (eventi, guida, contesto d'acquisto) e la tabella che
+// le ordina vivono in `routing-policy.ts`: qui non esiste più una seconda
+// sequenza di decisioni da tenere allineata.
 
 // Parole di raccordo e categorie generiche di luogo: non identificano un
 // risultato specifico della guida, quindi non vengono usate per scartare.
@@ -2455,13 +2455,6 @@ function terminiSpecificiGuidaPino(query: string): string[] {
   );
 }
 
-// Una richiesta esplicita di eventi/rassegne non è una richiesta di visita:
-// resta al percorso eventi. Altrimenti parole come «eventi», «concerto» o
-// «cosa succede stasera» finiscono nella guida Attrazioni solo perché la frase
-// contiene il nome della città.
-const RE_RICHIESTA_EVENTI_PINO =
-  /\b(?:eventi|evento|manifestazion\w*|rassegn\w*|concerti?|sagre?|fiere?|spettacol\w*|festival|events?|what'?s on|what is on|what'?s happening|cosa succede|che succede)\b/i;
-
 /**
  * Riconosce una richiesta di luogo/attrazione, escludendo acquisti ed eventi.
  * Il nome di un luogo del catalogo resta sempre una richiesta valida, ma un
@@ -2469,17 +2462,14 @@ const RE_RICHIESTA_EVENTI_PINO =
  */
 export function richiestaGuidaAttrazioniPino(query: string): boolean {
   const testo = String(query ?? "");
-  // Un acquisto esplicito resta una ricerca commerciale anche quando contiene
-  // il nome o la categoria di un luogo («negozio di articoli per il teatro»).
-  if (RE_CONTESTO_ACQUISTO_PINO.test(testo)) return false;
-  // Eventi e rassegne seguono il dominio eventi, non la guida turistica.
-  if (RE_RICHIESTA_EVENTI_PINO.test(normalizza(testo))) return false;
-  // Acquisto esplicito di un prodotto: il toponimo nel testo non lo trasforma
-  // in una richiesta di visita (era il caso «Avete l'olio del Pollino?»).
-  if (richiestaProdottoCommercialePino(testo)) return false;
+  // Decisione unica e ordinata in `routing-policy.ts`: cinema, acquisto ed
+  // eventi vincono sull'intento turistico, esattamente come prima, ma la
+  // sequenza non vive più qui.
+  const decisione = decidiDominioPino(testo);
+  if (decisione && decisione.dominio !== "attrazioni") return false;
+  // Il nome di un luogo del catalogo resta sempre una richiesta valida.
   if (isAttractionNameQuery(testo)) return true;
-  if (!RE_INTENTO_GUIDA_PINO.test(testo)) return false;
-  return true;
+  return decisione?.dominio === "attrazioni";
 }
 
 /** Risposta onesta: assenza nella guida, non inesistenza nella città. */
@@ -2710,12 +2700,27 @@ export function invocazioniRegaloPino(
 
 // ─── Orchestratore principale ────────────────────────────────────────────────
 
+export type OpzioniChatPino = {
+  /**
+   * Contesto già verificato sul database (contesto dinamico lato server).
+   * Viaggia nel system prompt, NON nel messaggio utente: il parser
+   * deterministico (intento, refusi, soggetto) non deve leggerlo come parte
+   * della domanda.
+   */
+  contestoDatabase?: string | null;
+};
+
 export async function chatConAssistente(
-  messages: MessaggioAssistente[]
+  messages: MessaggioAssistente[],
+  opzioni?: OpzioniChatPino
 ): Promise<RispostaAssistente> {
   const inizio = Date.now();
   const storico = normalizzaMessaggi(messages);
   const ultimo = storico[storico.length - 1];
+  // Contesto dinamico: dati reali del database già verificati dalla rotta.
+  const systemPromptPino = opzioni?.contestoDatabase?.trim()
+    ? `${SYSTEM_PROMPT}\n\n${opzioni.contestoDatabase.trim()}`
+    : SYSTEM_PROMPT;
   // Cap sulla domanda: evita abuso di token e superfici di prompt injection
   // (la storia è già troncata a 300 caratteri per messaggio).
   const domanda = (ultimo && ultimo.role === "user" ? ultimo.content : "").slice(0, 500);
@@ -3112,7 +3117,7 @@ export async function chatConAssistente(
       try {
         const esitoNativo = await chiamataGeminiConBudgetPino(budgetGemini, () =>
           selezionaStrumentiNativoPino({
-            systemPrompt: SYSTEM_PROMPT,
+            systemPrompt: systemPromptPino,
             userPrompt: buildNativeFunctionCallingPrompt(
               storico,
               descriviIntento(analisi)
@@ -3155,7 +3160,7 @@ export async function chatConAssistente(
       try {
         const raw = await chiamataGeminiConBudgetPino(budgetGemini, () =>
           callGeminiText({
-            systemPrompt: SYSTEM_PROMPT,
+            systemPrompt: systemPromptPino,
             userPrompt: buildToolSelectionPrompt(storico, descriviIntento(analisi)),
             maxTokens: 450,
             temperature: 0.1,
@@ -3724,6 +3729,11 @@ export async function chatConAssistente(
     });
   }
 
+  // Tetto di risposta applicato PRIMA di comporre testo e contesto: il numero
+  // nella frase («Ho trovato 6 prodotti») e l'elenco restituito devono
+  // coincidere, altrimenti Pino annuncia sette voci e ne mostra sei.
+  prodotti = prodotti.slice(0, 6);
+
   // 5) Contesto strutturato per la risposta finale
   const risultati: RisultatiRecuperati = aRisultatiRecuperati(negozi, prodotti, {
     offerte,
@@ -3825,7 +3835,42 @@ export async function chatConAssistente(
   const notaFontiParziali = riepilogoTool.erroreParziale && !fontiFalliteSenzaRisultati
     ? notaFontiParzialiPino(linguaRisposta)
     : null;
-  const partiRisposta = [notaFontiParziali, notaRecupero, notaAttributi, notaContestoAttributi];
+  // Qualifica richiesta ma non documentata («olio dop», «pasta fresca»): il
+  // gate ha tenuto i prodotti del soggetto invece di azzerare, quindi la
+  // risposta deve dirlo senza fingere che la qualifica sia verificata.
+  const soggettoRichiesto = soggettoAlimentarePino(domanda);
+  const fraseQualificazione = fraseQualificazionePino(domanda, soggettoRichiesto);
+  const qualificazioneConfermata = fraseQualificazione
+    ? qualificazioneDocumentataPino(prodotti, soggettoRichiesto, fraseQualificazione)
+    : true;
+  const notaQualificazione = fraseQualificazione && !qualificazioneConfermata
+    ? messaggioQualificazioneRilassataPino(
+        linguaRisposta === "en" ? "en" : "it",
+        soggettoRichiesto ?? "",
+        fraseQualificazione
+      )
+    : null;
+  // Telemetria delle decisioni: una riga per messaggio, nessun dato personale,
+  // per sapere in produzione quali richieste finiscono a zero e perché.
+  console.info("[pino-decisione]", JSON.stringify({
+    intent: analisi.intent,
+    lingua: linguaRisposta,
+    soggetto: soggettoRichiesto,
+    qualificazione: fraseQualificazione,
+    qualificazioneConfermata,
+    prodotti: prodotti.length,
+    prodottiPrimaDisponibilita,
+    negozi: negozi.length,
+    invocazioni: invocazioni.length,
+    recuperoSemantico: Boolean(notaRecupero),
+  }));
+  const partiRisposta = [
+    notaFontiParziali,
+    notaRecupero,
+    notaQualificazione,
+    notaAttributi,
+    notaContestoAttributi,
+  ];
   if (notaDisponibilita && !soloProdottiEsauriti) partiRisposta.push(notaDisponibilita);
   partiRisposta.push(rispostaBaseEffettiva);
   const risposta = partiRisposta
@@ -3835,7 +3880,8 @@ export async function chatConAssistente(
   return esci("finale", {
     risposta,
     negozi: negozi.slice(0, 8),
-    prodotti: prodotti.slice(0, 10),
+    // Già limitati a 6 prima della composizione (vedi sopra).
+    prodotti,
     processingMs: Date.now() - inizio,
     source: "assistente",
     intent: analisi.intent,

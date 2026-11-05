@@ -29,7 +29,7 @@ import { terminiSignificativi, similaritaLevenshtein } from "@/lib/search-toller
 import { analizzaRichiesta } from "@/lib/ricerca-intento";
 import { espandiQueryConSinonimi, SINONIMI_DIRETTI_PRODOTTO } from "@/lib/ricerca-semantica";
 import { estraiCitta } from "@/lib/localita";
-import { normalizza, estraiToken } from "@/lib/text-utils";
+import { normalizza, estraiToken, equivalenzaSigla, formaCompatta } from "@/lib/text-utils";
 import {
   ATTRIBUTI_DESCRITTIVI_PINO,
   attributoCanonicoPino,
@@ -42,7 +42,11 @@ import {
   prodottoIdentificatoDaSoggetto,
   prodottoIdentificaSoggetto,
   prodottoForseRefusoDiSoggetto,
+  spiegaPertinenzaProdotto,
 } from "./product-relevance";
+// Soggetti generici e ponti concettuali: unica fonte in `lexicon.ts`, così non
+// esistono due copie da tenere allineate.
+import { PONTI_CONCETTUALI_PINO, SOGGETTI_GENERICI_PINO, soggettoAlimentarePino } from "./lexicon.ts";
 import { normalizzaQueryCatalogo } from "./understanding";
 import { CONTRATTI_STRUMENTO } from "./function-calling";
 
@@ -458,6 +462,24 @@ function registraClasse(risultato: object, classe: ClasseCorrispondenza | null):
   if (classe) classiRisultati.set(risultato, classe);
 }
 
+/** Motivi della classificazione: canale interno, non serializzato. */
+const motiviRisultati = new WeakMap<object, string[]>();
+
+function registraMotivi(risultato: object | null | undefined, motivi: string[]): void {
+  if (!risultato || typeof risultato !== "object" || motivi.length === 0) return;
+  motiviRisultati.set(risultato, [...motivi]);
+}
+
+/**
+ * Motivi con cui un risultato è stato classificato (es. `soggetto_nel_nome`,
+ * `famiglia_lessicale`, `refuso`, `nessuna_corrispondenza`). Servono a capire
+ * perché un prodotto è stato ammesso o scartato, senza testo utente.
+ */
+export function motiviCorrispondenza(risultato: object | null | undefined): string[] {
+  if (!risultato || typeof risultato !== "object") return [];
+  return motiviRisultati.get(risultato) ?? [];
+}
+
 /**
  * Classe di corrispondenza di un prodotto rispetto al soggetto della richiesta.
  *
@@ -479,18 +501,25 @@ export function classificaProdottoPino(
   const gruppo = SINONIMI_DIRETTI_PRODOTTO.find((voci) => voci.includes(principale)) ?? [];
   const forme = Array.from(new Set([principale, ...gruppo.map((voce) => normalizza(voce))]));
 
-  if (forme.some((forma) => forma && nome.includes(forma))) return "exact";
-  if (forme.some((forma) => forma && categoria.includes(forma))) return "synonym";
-  // Parola chiave + descrizione corroborata: identificazione semantica.
-  if (prodottoIdentificatoDaSoggetto(prodotto, principale)) return "semantic";
-  // Famiglia lessicale / varianti: equivalenza reale del soggetto.
-  if (prodottoIdentificaSoggetto(prodotto, principale)) return "synonym";
-  const concetti = CONCETTI_SOGGETTO_PINO[principale] ?? [];
-  if (concetti.some((concetto) => prodottoIdentificaSoggetto(prodotto, concetto))) {
-    return "semantic";
+  if (forme.some((forma) => forma && nome.includes(forma))) {
+    registraMotivi(prodotto, ["sinonimo_nel_nome"]);
+    return "exact";
   }
-  if (prodottoForseRefusoDiSoggetto(prodotto, principale)) return "weak";
-  return null;
+  if (forme.some((forma) => forma && categoria.includes(forma))) {
+    registraMotivi(prodotto, ["sinonimo_nella_categoria"]);
+    return "synonym";
+  }
+  // Unico punto di verifica per il resto della catena: nome → categoria →
+  // parola chiave/descrizione confermata → famiglia lessicale → ponte → refuso.
+  // I gate non sono più funzioni parallele che possono contraddirsi, e il
+  // motivo della classificazione resta disponibile (log/Shadow).
+  const esito = spiegaPertinenzaProdotto(
+    prodotto,
+    principale,
+    CONCETTI_SOGGETTO_PINO[principale] ?? []
+  );
+  registraMotivi(prodotto, esito.motivi);
+  return esito.classe as ClasseCorrispondenza | null;
 }
 
 /**
@@ -1348,7 +1377,7 @@ export async function searchStores(
 // solo sui metadati identitari (nome, categoria), mai sulla descrizione:
 // «Biscotti» e «Taralli» non diventano pasta perché la descrizione cita il
 // pastificio «Mani in Pasta».
-const FORMATI_PASTA_PINO = [
+export const FORMATI_PASTA_PINO = [
   "tagliatelle", "tagliatelli", "tagliolini", "fettuccine", "pappardelle",
   "lasagne", "lasagna", "maccheroni", "maccheroncini", "fileja",
   "spaghetti", "penne", "rigatoni", "fusilli", "orecchiette", "trofie",
@@ -1417,9 +1446,16 @@ export function prodottoPertinente(
   // già dimostrato: restano da verificare gli eventuali altri termini.
   const terminiDaVerificare = identificaDirettamente ? termini : termini.slice(1);
   const token = estraiToken(campi);
+  // Per le sigle («olio evo») la verifica guarda i metadati identitari, come il
+  // resto dei gate: «evo» ≡ «Extra Vergine di Oliva» senza dizionari dedicati.
+  const identitaSigla = normalizza(
+    [prodotto.nome, prodotto.categoria].filter(Boolean).join(" ")
+  );
   if (
     terminiDaVerificare.every((t) =>
-      t.length < 4 ? token.includes(t) : campi.includes(t) || tokenCompatibile(t, token)
+      t.length < 4
+        ? token.includes(t) || equivalenzaSigla(t, identitaSigla)
+        : campi.includes(t) || tokenCompatibile(t, token) || equivalenzaSigla(t, identitaSigla)
     )
   ) {
     return true;
@@ -1782,25 +1818,9 @@ const STOPWORD_SOGGETTO_PINO = new Set([
 // ricerca di scarpe. La fonte unica è `understanding.ts`, dove il vocabolario
 // è usato anche da `estraiAttributiPino`; qui non si mantiene una copia.
 
-// Soggetti generici: senza un oggetto concreto il gate non ha nulla da
-// verificare e non deve restringere la ricerca ("qualcosa di dolce").
-const SOGGETTI_GENERICI_PINO = new Set([
-  "qualcosa", "qualche", "cosa", "cose", "idea", "idee", "regalo", "regali",
-  "prodotto", "prodotti", "dolce", "dolci", "salato", "salata", "altro",
-  "altra", "altri", "altre", "simile", "simili",
-]);
-
-// Ponti concettuali ad alta precisione: il soggetto della richiesta può non
-// comparire nel nome del prodotto ("luce" → "Lampada da esterno"). Non è un
-// secondo motore di sinonimi e non è un fallback indiscriminato: sono pochi
-// gruppi curati, usati SOLO come seconda verifica quando la corrispondenza
-// diretta non ha trovato nulla, e solo sui metadati identitari del prodotto.
-const CONCETTI_SOGGETTO_PINO: Record<string, string[]> = {
-  luce: ["lampada", "lampadario", "lampadina", "illuminazione", "faretto", "faretti"],
-  illuminazione: ["lampada", "lampadario", "illuminazione", "faretto", "faretti"],
-  riscaldamento: ["stufa", "termosifone", "caldaia", "radiatore"],
-  pulizia: ["detergente", "detersivo", "sapone", "panno", "scopa"],
-};
+// Soggetti generici e ponti concettuali vivono in `lexicon.ts`: il gate non
+// mantiene più una copia propria di ciò che un altro strato già conosce.
+const CONCETTI_SOGGETTO_PINO = PONTI_CONCETTUALI_PINO;
 
 /**
  * Soggetto principale di una richiesta: primo termine di contenuto che non sia
@@ -1816,9 +1836,20 @@ export function soggettoPrincipalePino(query: string): string {
 }
 
 function contieneSequenzaToken(token: string[], frase: string[]): boolean {
-  return token.some((_, indice) =>
-    frase.every((voce, offset) => token[indice + offset] === voce)
-  );
+  if (
+    token.some((_, indice) =>
+      frase.every((voce, offset) => token[indice + offset] === voce)
+    )
+  ) {
+    return true;
+  }
+  // Stessa sequenza scritta in forma compatta: «extra vergine» ≡ «extravergine»,
+  // «olio extra-vergine» ≡ «olio extra vergine». Solo sequenze di almeno due
+  // parole: una parola singola ha già il confronto esatto.
+  if (frase.length < 2) return false;
+  const compatta = formaCompatta(frase.join(" "));
+  if (compatta.length < 4) return false;
+  return formaCompatta(token.join(" ")).includes(compatta);
 }
 
 // ─── P1.3.5: quantità e unità di misura ──────────────────────────────────────
@@ -2041,6 +2072,25 @@ function fraseQualificanteSignificativa(token: string[]): boolean {
  * restituita la frase della query (e il filtro restituirà zero risultati,
  * invece di ricadere sulla ricerca generica).
  */
+/**
+ * Vero se `token` è una forma alternativa (sigla o compatta) dell'identità di
+ * almeno un prodotto: «evo» ≡ «Extra Vergine di Oliva». In quel caso il token
+ * non è una qualificazione da pretendere nei metadati, ma lo stesso soggetto
+ * scritto diversamente.
+ */
+function qualificatoreEIdentitaPino(prodotti: ProdottoRicerca[], token: string): boolean {
+  return prodotti.some((prodotto) => {
+    const identita = normalizza(
+      [prodotto.nome, prodotto.categoria].filter(Boolean).join(" ")
+    );
+    if (!identita) return false;
+    return (
+      equivalenzaSigla(token, identita) ||
+      formaCompatta(identita).includes(formaCompatta(token))
+    );
+  });
+}
+
 function scopriQualificazioneRichieste(
   prodotti: ProdottoRicerca[],
   query: string,
@@ -2089,6 +2139,21 @@ function scopriQualificazioneRichieste(
         a.posizione - b.posizione
     );
     return candidati[0].frase;
+  }
+
+  // Fallback storico: la frase non documentata resta un vincolo (zero risultati
+  // invece della ricerca generica). Non vale però quando la parte oltre il
+  // soggetto è solo un MODO DIVERSO DI SCRIVERE l'identità del prodotto:«olio
+  // evo» non è «olio + qualificazione evo», è «olio extra vergine» e non deve
+  // azzerare i risultati.
+  const soggettoToken =
+    estraiToken(soggetto)[0] ?? normalizza(soggetto).trim();
+  const qualificatori = segmento.filter((token) => token !== soggettoToken);
+  if (
+    qualificatori.length > 0 &&
+    qualificatori.every((token) => qualificatoreEIdentitaPino(prodotti, token))
+  ) {
+    return null;
   }
 
   return fraseQualificanteSignificativa(segmento) ? segmento.join(" ") : null;
@@ -2200,7 +2265,10 @@ function filtraProdottiPerCaratteristicheRichieste(
   const richieste = new Set<string>(caratteristica ? [caratteristica] : []);
   const richiesteQuantita = estraiQuantita(query);
 
-  const filtrati = prodotti.filter((prodotto) => {
+  // Vincoli RIGIDI: caratteristica documentata e quantità esplicita. Se non
+  // sono soddisfatti la richiesta non ha risposta nel catalogo e non va
+  // inventata ("olio in bottiglia da 2 litri" resta vuoto).
+  const conCaratteristica = prodotti.filter((prodotto) => {
     const evidenza = estraiToken(evidenzaMetadatiProdotto(prodotto));
     return (
       [...richieste].every((richiesta) =>
@@ -2209,9 +2277,20 @@ function filtraProdottiPerCaratteristicheRichieste(
     );
   });
 
-  return soggetto
-    ? filtraProdottiPerQualificazioneDocumentata(filtrati, query, soggetto)
-    : filtrati;
+  if (!soggetto) return conCaratteristica;
+
+  const qualificati = filtraProdottiPerQualificazioneDocumentata(
+    conCaratteristica,
+    query,
+    soggetto
+  );
+  // Vincolo MORBIDO: una qualifica non documentata («pasta fresca», «olio
+  // dop») non cancella i prodotti del soggetto. Si tengono quelli del solo
+  // soggetto e la risposta dichiara che la qualifica non è confermata
+  // (`notaQualificazioneRilassataPino`): meglio «ecco l'olio, non è DOP» che
+  // «non ho trovato nulla». Quando invece la qualifica è documentata, il
+  // filtro resta stretto.
+  return qualificati.length > 0 ? qualificati : conCaratteristica;
 }
 
 /**
@@ -2228,6 +2307,57 @@ function filtraProdottiPerSottocategoriaRichiesta(
 ): ProdottoRicerca[] {
   if (!soggetto) return prodotti;
   return filtraProdottiPerQualificazioneDocumentata(prodotti, query, soggetto);
+}
+
+/**
+ * La parte qualificante della query ("dop" in "olio dop", "fresca" in
+ * "pasta fresca"), oppure `null` se non c'è nulla da qualificare.
+ *
+ * Non è un dizionario: usa solo le parole già scritte dall'utente, la stessa
+ * segmentazione del filtro. Una quantità esplicita è un vincolo numerico, non
+ * una qualifica testuale, e non produce nota.
+ */
+export function fraseQualificazionePino(
+  query: string,
+  soggetto: string | null
+): string | null {
+  if (!soggetto) return null;
+  if (estraiQuantita(query).length > 0) return null;
+  const segmento = segmentoQualificazione(query, soggetto);
+  if (!fraseQualificanteSignificativa(segmento)) return null;
+  const soggettoToken =
+    estraiToken(soggetto)[0] ?? normalizza(soggetto).trim();
+  const qualificatori = segmento.filter((token) => token !== soggettoToken);
+  if (qualificatori.length === 0) return null;
+  return segmento.join(" ");
+}
+
+/**
+ * Vero se la qualifica richiesta è davvero documentata dai prodotti restituiti.
+ * Le equivalenze di identità («evo» ≡ «Extra Vergine di Oliva») non sono
+ * qualifiche mancanti e valgono come confermate.
+ */
+export function qualificazioneDocumentataPino(
+  prodotti: ProdottoRicerca[],
+  soggetto: string | null,
+  frase: string
+): boolean {
+  const tokenFrase = estraiToken(frase);
+  if (tokenFrase.length === 0) return true;
+  const soggettoToken = estraiToken(soggetto ?? "")[0] ?? "";
+  const qualificatori = tokenFrase.filter((token) => token !== soggettoToken);
+  if (
+    qualificatori.length > 0 &&
+    qualificatori.every((token) => qualificatoreEIdentitaPino(prodotti, token))
+  ) {
+    return true;
+  }
+  return prodotti.some((prodotto) =>
+    contieneSequenzaToken(
+      estraiToken(evidenzaMetadatiProdotto(prodotto)),
+      tokenFrase
+    )
+  );
 }
 
 /**
@@ -2304,11 +2434,14 @@ export function filtraProdottiAlimentariPino(
     query,
     soggettoAlimentare
   );
-  return filtraProdottiPerSottocategoriaRichiesta(
+  const conSottocategoria = filtraProdottiPerSottocategoriaRichiesta(
     filtrati,
     query,
     soggettoAlimentare
   );
+  // Stessa degradazione morbida: la sottocategoria restringe quando è
+  // documentata, altrimenti non azzera i prodotti già ammessi dal soggetto.
+  return conSottocategoria.length > 0 ? conSottocategoria : filtrati;
 }
 
 /**
@@ -2554,9 +2687,9 @@ export async function searchProducts(
   // pertinenza: "pasta" non deve restituire taralli solo perché il venditore
   // si chiama "Mani in Pasta". Il soggetto deve identificare il prodotto
   // stesso (nome/categoria), non il nome dell'attività.
-  const soggettoAlimentare = q.toLowerCase().match(
-    /\b(pasta|pane|pizza|dolci?|gelato|torte?|biscotti|formaggio|salumi|prosciutto|carne|pesce|verdura|frutta|olio|miele|conserve|farina|riso|nutella|cipolla|pomodoro|bread|noodles|cake|cookies|cheese|meat|fish|vegetables|fruit|honey|flour|rice|onion|tomato)\b/
-  )?.[1];
+  // Il riconoscimento del soggetto alimentare è nella fonte unica del lessico
+  // (`lexicon.ts`): qui non esiste una seconda lista da tenere allineata.
+  const soggettoAlimentare = soggettoAlimentarePino(q);
 
   // FONTE UNICA DI VERITÀ: Pino interroga lo stesso Search Service della
   // ricerca pubblica. Il retrieval NON viene riscritto qui: dopo la ricerca

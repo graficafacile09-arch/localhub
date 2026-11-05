@@ -33,6 +33,7 @@ import { rilevaFollowUp } from "./conversazione";
 import { estraiCitta } from "@/lib/localita";
 import { analizzaIntentoPino, type PinoIntent, type PinoIntentAnalysis } from "./intent";
 import { SINONIMI_DIRETTI_PRODOTTO, SINONIMI_TIPO_ATTIVITA } from "@/lib/ricerca-semantica";
+import { CANONICI_CATALOGO_PINO, VOCABOLARIO_REFUSI_PINO } from "./lexicon.ts";
 import type { MessaggioAssistente } from "./index";
 import type { PinoMemoriaVoce } from "./memoria";
 
@@ -437,51 +438,13 @@ function numeroValido(value: unknown): number | null {
   return Number.isFinite(n) && n >= 0 && n <= 1000000 ? Math.round(n * 100) / 100 : null;
 }
 
-const CANONICI_RICERCA: Array<{ pattern: RegExp; termine: string; intent: PinoIntent }> = [
-  { pattern: /\bbir(?:ra|re|retta|rette|rettina|rettine)\b/i, termine: "birra", intent: "drink" },
-  { pattern: /\bvino|vini|vinello|vinelli\b/i, termine: "vino", intent: "drink" },
-  { pattern: /\bacqua|acque\b/i, termine: "acqua", intent: "drink" },
-  { pattern: /\b(?:pizza|pizze|pizzetta|pizzette)\b/i, termine: "pizza", intent: "food" },
-  { pattern: /\bpanino|panini|paninetto|paninetti\b/i, termine: "panino", intent: "food" },
-  // Generi alimentari comuni: canonizza singolare/plurale senza trasformare
-  // un alimento in un altro (nessuna espansione trasversale che crei falsi positivi).
-  { pattern: /\b(?:cipolla|cipolle)\b/i, termine: "cipolla", intent: "food" },
-  { pattern: /\b(?:patata|patate)\b/i, termine: "patata", intent: "food" },
-  { pattern: /\b(?:pomodoro|pomodori)\b/i, termine: "pomodoro", intent: "food" },
-  { pattern: /\baglio\b/i, termine: "aglio", intent: "food" },
-  { pattern: /\b(?:carota|carote)\b/i, termine: "carota", intent: "food" },
-  { pattern: /\b(?:zucchina|zucchine)\b/i, termine: "zucchina", intent: "food" },
-  { pattern: /\b(?:melanzana|melanzane)\b/i, termine: "melanzana", intent: "food" },
-  { pattern: /\b(?:peperone|peperoni)\b/i, termine: "peperone", intent: "food" },
-  { pattern: /\b(?:insalata|insalate)\b/i, termine: "insalata", intent: "food" },
-  { pattern: /\b(?:mela|mele)\b/i, termine: "mela", intent: "food" },
-  { pattern: /\b(?:pera|pere)\b/i, termine: "pera", intent: "food" },
-  { pattern: /\b(?:arancia|arance)\b/i, termine: "arancia", intent: "food" },
-  { pattern: /\b(?:limone|limoni)\b/i, termine: "limone", intent: "food" },
-  { pattern: /\b(?:banana|banane)\b/i, termine: "banana", intent: "food" },
-  { pattern: /\btelefono|telefoni|telefonino|telefonini|cellulare|cellulari|smartphone\b/i, termine: "telefono", intent: "product" },
-  { pattern: /\bscarpa|scarpe|scarpina|scarpine\b/i, termine: "scarpe", intent: "product" },
-  { pattern: /\bmaglietta|magliette|maglia|maglie\b/i, termine: "maglia", intent: "product" },
-];
+// Soggetti canonici del piano locale e vocabolario dei refusi: la conoscenza è
+// in `lexicon.ts`, qui nessuna lista da tenere allineata a mano.
+const CANONICI_RICERCA = CANONICI_CATALOGO_PINO;
 
-const VOCABOLARIO_PINO_BASE: Array<[string, string]> = [
-  ["birra", "birra"], ["birretta", "birra"], ["birrette", "birra"],
-  ["analcolica", "analcolica"], ["analcolico", "analcolica"],
-  ["vino", "vino"], ["vini", "vino"], ["acqua", "acqua"],
-  ["pizza", "pizza"], ["pizze", "pizza"], ["panino", "panino"], ["panini", "panino"],
-  ["cipolla", "cipolla"], ["cipolle", "cipolla"], ["patata", "patata"], ["patate", "patata"],
-  ["pomodoro", "pomodoro"], ["pomodori", "pomodoro"], ["aglio", "aglio"],
-  ["carota", "carota"], ["carote", "carota"], ["zucchina", "zucchina"], ["zucchine", "zucchina"],
-  ["melanzana", "melanzana"], ["melanzane", "melanzana"], ["peperone", "peperone"], ["peperoni", "peperone"],
-  ["insalata", "insalata"], ["insalate", "insalata"], ["mela", "mela"], ["mele", "mela"],
-  ["pera", "pera"], ["pere", "pera"], ["arancia", "arancia"], ["arance", "arancia"],
-  ["limone", "limone"], ["limoni", "limone"], ["banana", "banana"], ["banane", "banana"],
-  ["telefono", "telefono"], ["telefoni", "telefono"], ["telefonino", "telefono"],
-  ["orologio", "orologio"], ["orologi", "orologio"],
-  ["cellulare", "telefono"], ["smartphone", "telefono"],
-  ["scarpa", "scarpa"], ["scarpe", "scarpa"],
-  ["maglia", "maglia"], ["maglietta", "maglia"], ["magliette", "maglia"],
-];
+const VOCABOLARIO_PINO_BASE: Array<[string, string]> = VOCABOLARIO_REFUSI_PINO.map(
+  ([termine, canonico]) => [termine, canonico] as [string, string]
+);
 
 /**
  * Token che NON partecipano alla correzione automatica dei refusi.
