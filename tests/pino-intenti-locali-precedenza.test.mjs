@@ -144,6 +144,7 @@ test("una richiesta ampia senza termini specifici conserva la guida", () => {
   for (const frase of [
     "Cosa posso visitare a Castrovillari?",
     "Ci sono monumenti da visitare?",
+    "Trova attrazioni a Castrovillari",
   ]) {
     const luoghi = searchAttractions(frase, 6);
     assert.ok(luoghi.length > 0, frase);
