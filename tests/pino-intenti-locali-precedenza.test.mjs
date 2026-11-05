@@ -8,6 +8,7 @@ import {
 } from "../lib/assistente/index.ts";
 import { isAttractionNameQuery, searchAttractions } from "../lib/assistente/attrazioni.ts";
 import { pianoIntentoLocale } from "../lib/assistente/local-intents.ts";
+import { analizzaIntentoPino } from "../lib/assistente/intent.ts";
 import { trovaRispostaFaqPino } from "../lib/assistente/faq.ts";
 import { parseFarmacieTurno } from "../lib/farmacie-turno.ts";
 import { planPinoCoreRequest } from "../lib/assistente/core-v2/request-planner.ts";
@@ -71,6 +72,31 @@ test("la ricerca generica al plurale recupera tutte le farmacie", () => {
   assert.deepEqual(pianoIntentoLocale("farmacia"), { tool: "searchPharmacies", stato: "tutte" });
 });
 
+test("farmacia non viene più classificata come professione/negozio", () => {
+  for (const frase of ["farmacia", "farmacie a Castrovillari", "farmacia di turno"]) {
+    assert.notEqual(analizzaIntentoPino(frase).intent, "service", frase);
+    assert.equal(pianoIntentoLocale(frase)?.tool, "searchPharmacies", frase);
+  }
+});
+
+test("Pino esegue davvero il tool farmacie e restituisce i dati", async () => {
+  const html = '<div class="farmacia-box" itemscope itemtype="https://schema.org/Pharmacy">' +
+    '<span class="pharmacyname">Farmacia Test</span>' +
+    '<span class="address">Via Roma, 1<br>87012 Castrovillari (CS)</span>' +
+    '<span class="btorario">TURNO</span>' +
+    '<a class="orario">Apertura: 8:30-13:00<br>Turno: fino alle 16:00</a>' +
+    '<a href="tel:0981123456">Telefono</a><a href="?idf=123">Scheda</a></div>';
+  const fetchOriginale = globalThis.fetch;
+  globalThis.fetch = async () => new Response(html, { status: 200 });
+  try {
+    const risultato = await rispondi("Farmacia di turno a Castrovillari");
+    assert.match(risultato.risposta, /Farmacia Test/i);
+    assert.match(risultato.risposta, /0981123456/);
+  } finally {
+    globalThis.fetch = fetchOriginale;
+  }
+});
+
 test("una richiesta naturale 'trova attrazioni' mantiene la guida ampia", () => {
   const frase = "Trova attrazioni a Castrovillari";
   assert.equal(richiestaGuidaAttrazioniPino(frase), true);
@@ -94,6 +120,24 @@ test("parser farmacie tollera markup con attributi riordinati", () => {
   assert.equal(dati.length, 1);
   assert.equal(dati[0].nome, "Farmacia Test");
   assert.equal(dati[0].turno, "fino alle 16:00");
+});
+
+test("parser farmacie usa i link idf anche senza i vecchi div schema.org", () => {
+  const html = '<a href="/farmacia.asp?idf=321">Farmacia Link</a>' +
+    '<div>Via Roma, 12<br>87012 Castrovillari (CS)</div>' +
+    '<a href="/orario.asp?idf=321">APERTA</a>' +
+    '<a href="/orario.asp?idf=321">Apertura: 8:30-13:00 Turno: fino alle 16:00</a>' +
+    '<a href="tel:0981765432">Telefono</a>' +
+    '<a href="/farmacia.asp?idf=654">Farmacia Seconda</a>' +
+    '<div>Corso Italia, 5</div><a href="/orario.asp?idf=654">CHIUSA</a>';
+  const dati = parseFarmacieTurno(html);
+  assert.equal(dati.length, 2);
+  assert.equal(dati[0].nome, "Farmacia Link");
+  assert.equal(dati[0].stato, "aperta");
+  assert.equal(dati[0].turno, "fino alle 16:00");
+  assert.equal(dati[0].telefono, "0981765432");
+  assert.equal(dati[1].nome, "Farmacia Seconda");
+  assert.equal(dati[1].stato, "chiusa");
 });
 
 // ─── 2. Eventi e ricerche commerciali fuori dalla guida ─────────────────────
