@@ -1351,7 +1351,7 @@ const FORMATI_PASTA_PINO = [
   "conchiglie", "vermicelli", "ziti", "capellini",
 ] as const;
 
-const RE_FORMATO_PASTA_PINO = new RegExp(`\b(?:${FORMATI_PASTA_PINO.join("|")})\b`);
+const RE_FORMATO_PASTA_PINO = new RegExp(`\\b(?:${FORMATI_PASTA_PINO.join("|")})\\b`);
 
 /** Formato di pasta riconosciuto sui metadati identitari del prodotto. */
 function identificaFormatoPastaPino(prodotto: ProdottoRicerca): boolean {
