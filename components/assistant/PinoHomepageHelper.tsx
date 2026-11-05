@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { PINO_ASSET, PINO_ASSET_H, PINO_ASSET_W } from "./PinoSprite";
-import { isPinoTransactionalRoute } from "./pino-route";
+import { isPinoAreaRiservata, isPinoTransactionalRoute } from "./pino-route";
 
 const PINO_HOME_SRC = PINO_ASSET.neutral;
 const PINO_HOME_W = PINO_ASSET_W;
@@ -23,7 +23,7 @@ export default function PinoHomepageHelper() {
   const [isNearBottom, setIsNearBottom] = useState(false);
 
   useEffect(() => {
-    if (isAdminArea || isPinoTransactionalRoute(pathname)) {
+    if (isAdminArea || isPinoAreaRiservata(pathname) || isPinoTransactionalRoute(pathname)) {
       setHasReachedArea(false);
       setIsScrolling(false);
       setIsNearBottom(false);
@@ -85,7 +85,10 @@ export default function PinoHomepageHelper() {
     window.dispatchEvent(new Event("assistant:open"));
   }, []);
 
-  if (isAdminArea || isPinoTransactionalRoute(pathname)) return null;
+  // Nelle aree personali (venditore, cliente, corriere, amministratore) Pino non
+  // compare; sulle pagine pubbliche, homepage compresa, resta disponibile anche
+  // per chi ha effettuato l'accesso.
+  if (isAdminArea || isPinoAreaRiservata(pathname) || isPinoTransactionalRoute(pathname)) return null;
 
   // Sulla homepage manteniamo il comportamento esistente: Pino compare dopo
   // lo scroll iniziale. Nelle altre pagine è disponibile subito, ma scompare

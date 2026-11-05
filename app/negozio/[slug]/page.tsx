@@ -4,7 +4,6 @@ import type { Metadata } from "next";
 import Header from "@/components/Header/Header";
 import StoreProductCard from "@/components/negozio/StoreProductCard";
 import { OpenAssistantLink } from "@/components/assistant/OpenAssistantButton";
-import { getCurrentUser } from "@/lib/auth/session";
 import SearchFilters from "@/components/ricerca/SearchFilters";
 import SearchSort from "@/components/ricerca/SearchSort";
 import SearchPagination from "@/components/ricerca/SearchPagination";
@@ -30,23 +29,6 @@ import { getConfigPrenotazioni } from "@/lib/prenotazioni";
 import type { Negozio, ServizioStrutturato } from "@/types/negozio";
 
 type Params = { slug: string };
-
-/**
- * CTA dell'assistente: non viene resa quando c'è una sessione attiva, perché
- * Pino non è montato per gli utenti loggati (evita un pulsante senza effetto).
- */
-async function CtaAssistente() {
-  if (await getCurrentUser()) return null;
-
-  return (
-    <div className="mt-4 rounded-xl border border-blue-100 bg-blue-50 p-3 text-center">
-      <p className="text-xs text-slate-600">
-        Hai una domanda su questo negozio?
-      </p>
-      <OpenAssistantLink label="Chiedi all'AI" />
-    </div>
-  );
-}
 
 const PER_PAGINA = 12;
 
@@ -738,8 +720,13 @@ export default async function PaginaNegozio({
           </section>
         )}
 
-        {/* CTA AI — nascosta agli utenti loggati */}
-        <CtaAssistente />
+        {/* CTA AI */}
+        <div className="mt-4 rounded-xl border border-blue-100 bg-blue-50 p-3 text-center">
+          <p className="text-xs text-slate-600">
+            Hai una domanda su questo negozio?
+          </p>
+          <OpenAssistantLink label="Chiedi all'AI" />
+        </div>
       </div>
     </main>
   );

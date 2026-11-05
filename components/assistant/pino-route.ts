@@ -12,8 +12,13 @@
  *  - /checkout
  *  - /ordini/conferma/<id>
  *
- * Le altre pagine, inclusa la homepage, le aree amministratore/merchant e lo
- * storico ordini (/ordini), mantengono il comportamento esistente.
+ * Le altre pagine, inclusa la homepage e lo storico ordini (/ordini),
+ * mantengono il comportamento esistente.
+ *
+ * Le AREE PERSONALI (venditore, cliente, corriere, amministratore) sono
+ * escluse a parte, da `isPinoAreaRiservata`: Pino è l'assistente del sito
+ * pubblico e non compare nei menù delle aree. Chi ha fatto l'accesso e torna
+ * sulle pagine pubbliche (homepage compresa) lo vede normalmente.
  */
 
 const PREFIXI_TRANSIZIONALI = ["/carrello", "/checkout", "/ordini/conferma"] as const;
@@ -38,4 +43,22 @@ export function isPinoTransactionalRoute(pathname: string | null | undefined): b
   }
 
   return RE_DETTAGLIO_PRODOTTO.test(percorso) || RE_ACQUISTA.test(percorso);
+}
+
+/** Aree personali: nessun Pino nei menù né nelle pagine dell'area. */
+const PREFIXI_AREE_RISERVATE = ["/merchant", "/cliente", "/corriere", "/amministratore"] as const;
+
+/**
+ * `true` quando la rotta appartiene a un'area personale (venditore, cliente,
+ * corriere, amministratore). Indipendente dalla sessione: la homepage e le
+ * altre pagine pubbliche restano sempre coperte, anche da loggati.
+ */
+export function isPinoAreaRiservata(pathname: string | null | undefined): boolean {
+  if (!pathname) return false;
+
+  const percorso = (pathname.split("?")[0] || "/").replace(/\/+$/, "") || "/";
+
+  return PREFIXI_AREE_RISERVATE.some(
+    (prefisso) => percorso === prefisso || percorso.startsWith(prefisso + "/")
+  );
 }

@@ -4,7 +4,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { CartProvider } from "@/lib/carrello/CartContext";
 import { getImpostazioniPubbliche } from "@/lib/platform/settings";
 import { getSiteUrl } from "@/lib/site";
-import { getCurrentUser } from "@/lib/auth/session";
 import "./globals.css";
 import AreaTitleSync from "@/components/layout/AreaTitleSync";
 import PinoHomepageHelper from "@/components/assistant/PinoHomepageHelper";
@@ -80,10 +79,6 @@ export default async function RootLayout({
 }>) {
   const impostazioni = await getImpostazioniPubbliche();
   const footerText = impostazioni.footer_text?.trim() || DEFAULTS.footer_text;
-  // Pino è l'assistente per chi arriva dal sito pubblico: una volta effettuato
-  // l'accesso (venditore, cliente o altro ruolo) la sua UI non viene montata,
-  // né nel menù dell'area né sulle pagine pubbliche.
-  const utenteLoggato = Boolean(await getCurrentUser());
 
   return (
     <html
@@ -126,16 +121,12 @@ export default async function RootLayout({
           </div>
         </footer>
 
-        {!utenteLoggato && (
-          <>
-            <Suspense fallback={null}>
-              <PinoHomepageHelper />
-            </Suspense>
-            <Suspense fallback={null}>
-              <AssistantPanel />
-            </Suspense>
-          </>
-        )}
+        <Suspense fallback={null}>
+          <PinoHomepageHelper />
+        </Suspense>
+        <Suspense fallback={null}>
+          <AssistantPanel />
+        </Suspense>
         <CookieNotice />
       </body>
     </html>

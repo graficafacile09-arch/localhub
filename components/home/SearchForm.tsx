@@ -7,19 +7,12 @@ import { isLocalAssistantQuery } from "@/lib/assistente/local-intents";
 type SearchFormProps = {
   initialQuery?: string;
   compact?: boolean;
-  /** false quando Pino non è montato (utente loggato): le richieste locali non
-   *  vengono intercettate e la ricerca segue il flusso normale del sito. */
-  assistenteAttivo?: boolean;
 };
 
-export default function SearchForm({
-  initialQuery = "",
-  compact = false,
-  assistenteAttivo = true,
-}: SearchFormProps) {
+export default function SearchForm({ initialQuery = "", compact = false }: SearchFormProps) {
   useEffect(() => {
     const query = initialQuery.trim();
-    if (!query || !assistenteAttivo || !isLocalAssistantQuery(query)) return;
+    if (!query || !isLocalAssistantQuery(query)) return;
 
     // Ritarda l'evento di un tick: su /ricerca il listener globale di
     // AssistantPanel viene registrato da un componente fratello nel layout.
@@ -32,7 +25,7 @@ export default function SearchForm({
     }, 0);
 
     return () => window.clearTimeout(timer);
-  }, [initialQuery, assistenteAttivo]);
+  }, [initialQuery]);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     const input = event.currentTarget.elements.namedItem("q");
@@ -41,7 +34,7 @@ export default function SearchForm({
     // Meteo, farmacia/sintomi e richieste locali speciali vanno direttamente
     // a Pino. Non devono mai raggiungere /ricerca?q= e quindi non possono
     // essere interpretate come query catalogo/prodotto.
-    if (assistenteAttivo && isLocalAssistantQuery(query)) {
+    if (isLocalAssistantQuery(query)) {
       event.preventDefault();
       window.dispatchEvent(
         new CustomEvent("assistant:open", {

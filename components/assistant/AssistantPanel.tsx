@@ -6,7 +6,7 @@ import AssistantMessage, { type ChatMessage } from "./AssistantMessage";
 import AssistantInput from "./AssistantInput";
 import TypingIndicator from "./TypingIndicator";
 import PinoSprite, { type PinoMood } from "./PinoSprite";
-import { isPinoTransactionalRoute } from "./pino-route";
+import { isPinoAreaRiservata, isPinoTransactionalRoute } from "./pino-route";
 import type { SearchResult } from "@/lib/search-service";
 
 const SUGGESTIONS = [
@@ -198,7 +198,9 @@ export default function AssistantPanel() {
   // TASK 2 — nei flussi transazionali (carrello, checkout, pagamento, conferma
   // ordine) anche la chat resta nascosta. Lo stato non viene toccato: conversazione,
   // sessionId e cronologia sopravvivono e sono ancora lì al ritorno sulla homepage.
-  if (isAdminArea || isPinoTransactionalRoute(pathname)) return null;
+  // Pino non si apre nelle aree personali; sulle pagine pubbliche resta
+  // disponibile anche per gli utenti loggati.
+  if (isAdminArea || isPinoAreaRiservata(pathname) || isPinoTransactionalRoute(pathname)) return null;
 
   return (
     <>

@@ -5,7 +5,6 @@ import SearchFilters, { FILTRI_VUOTI } from "@/components/ricerca/SearchFilters"
 import SearchSort from "@/components/ricerca/SearchSort";
 import SearchPagination from "@/components/ricerca/SearchPagination";
 import { isLocalAssistantQuery } from "@/lib/assistente/local-intents";
-import { getCurrentUser } from "@/lib/auth/session";
 import { getCategoriaShowcase, getFiltriDisponibiliProdotti, isOrdinamentoProdottiPubblici, type OrdinamentoProdottiPubblici } from "@/lib/negozi";
 import { search } from "@/lib/search-service";
 import { prodottoEsaurito } from "@/lib/prodotti-disponibilita";
@@ -142,10 +141,7 @@ export default async function RicercaPage({
     if (!categoriaShowcase?.categoria) usaVetrina = false;
   }
 
-  // Pino non è montato per gli utenti loggati: la richiesta locale non viene
-  // intercettata e la ricerca segue il flusso normale del catalogo.
-  const assistenteAttivo = !(await getCurrentUser());
-  const richiestaPino = assistenteAttivo && isLocalAssistantQuery(termine);
+  const richiestaPino = isLocalAssistantQuery(termine);
 
   // Una richiesta riconoscibile come meteo/farmacia/sintomo non deve mai
   // entrare nel motore catalogo SSR. SearchForm aprirà Pino automaticamente
@@ -213,7 +209,7 @@ export default async function RicercaPage({
         {/* Barra ricerca — SEMPRE utilizzabile (form GET nativo verso /ricerca?q=) */}
         <div className="mb-3 flex flex-col gap-2 lg:flex-row lg:items-start">
           <div className="min-w-0 flex-1">
-            <SearchForm initialQuery={termine} assistenteAttivo={assistenteAttivo} />
+            <SearchForm initialQuery={termine} />
           </div>
         </div>
 
