@@ -424,3 +424,88 @@ test("P1.3.5 — metadati nulli non provocano errori", () => {
   assert.doesNotThrow(() => esito([nullo], "Cerco pasta tipica", "pasta"));
   assert.deepEqual(esito([nullo], "Cerco pasta tipica", "pasta"), []);
 });
+
+
+test("P1.3.5 — 'un dolce' restituisce dessert veri, non alimenti dal gusto dolce", () => {
+  const catalogo = [
+    prodotto({
+      id: "peperone-dolce",
+      nome: "Peperone secco dolce 100 g",
+      descrizione: "Peperone dolce essiccato.",
+    }),
+    prodotto({
+      id: "cipolla-dolce",
+      nome: "Cipolla Bianca di Castrovillari",
+      descrizione: "Prodotto agricolo. Dolce e delicata.",
+    }),
+    prodotto({
+      id: "miele-dolce",
+      nome: "Miele Millefiori del Pollino",
+      descrizione: "Miele dolce e aromatico.",
+    }),
+    prodotto({
+      id: "confettura-cipolla",
+      nome: "Dolcezza di Cipolla Bianca",
+      descrizione: "Confettura dolce di cipolla, da abbinare a formaggi e carni.",
+    }),
+    prodotto({
+      id: "liquirizia",
+      nome: "Liquirizia di Calabria DOP",
+      categoria: "Dolciumi",
+      sottocategoria: "Specialità dolciarie",
+    }),
+    prodotto({
+      id: "piparelle",
+      nome: "Piparelle calabresi",
+      categoria: "Dolciumi",
+      sottocategoria: "Biscotti tipici",
+    }),
+    prodotto({
+      id: "torrone",
+      nome: "Torrone mielato di Bagnara Calabra",
+      categoria: "Dolciumi",
+      sottocategoria: "Dolci tipici calabresi",
+    }),
+    prodotto({
+      id: "biscotti",
+      nome: "Biscotti tradizionali calabresi",
+      categoria: "Prodotti da forno",
+      sottocategoria: "Biscotti",
+    }),
+    prodotto({
+      id: "ciotaredda",
+      nome: "Ciotaredda di Castrovillari",
+      descrizione: "Dolcetto tradizionale di Castrovillari, simile ai mostaccioli.",
+    }),
+  ];
+  const attesi = ["liquirizia", "piparelle", "torrone", "biscotti", "ciotaredda"];
+  const ids = (query) =>
+    filtraProdottiAlimentariPino(catalogo, query, "dolce").map((p) => p.id);
+
+  assert.deepEqual(ids("Voglio un dolce"), attesi);
+  assert.deepEqual(ids("Cerco dei dolci"), attesi);
+  assert.deepEqual(ids("Vorrei qualcosa di dolce"), attesi);
+});
+
+test("P1.3.5 — 'vino dolce' resta una ricerca di vino e peperoni resta una ricerca di peperoni", () => {
+  const vino = prodotto({
+    id: "vino-dolce",
+    nome: "Vino passito dolce",
+    categoria: "Alimentari",
+    descrizione: "Vino passito dal gusto dolce.",
+  });
+  const peperone = prodotto({
+    id: "peperone-dolce",
+    nome: "Peperone secco dolce 100 g",
+    descrizione: "Peperone dolce essiccato.",
+  });
+
+  assert.deepEqual(
+    filtraProdottiAlimentariPino([vino], "Cerco vino dolce", "dolce").map((p) => p.id),
+    ["vino-dolce"]
+  );
+  assert.deepEqual(
+    filtraProdottiAlimentariPino([peperone], "Cerco peperoni", "peperone").map((p) => p.id),
+    ["peperone-dolce"]
+  );
+});
