@@ -44,6 +44,19 @@ const reportP133 = existsSync(PERCORSO_REPORT_P133)
   ? JSON.parse(readFileSync(PERCORSO_REPORT_P133, "utf8"))
   : null;
 
+/**
+ * Lo snapshot è versionato in LF e il sidecar contiene l'hash di quella forma
+ * canonica. Normalizzando i fine-riga prima dell'hash il controllo dà lo stesso
+ * esito su Windows (core.autocrlf=true, checkout CRLF) e su Linux (checkout LF),
+ * senza alterare il contenuto verificato.
+ */
+function normalizzaFineRighe(contenuto) {
+  return Buffer.from(
+    contenuto.toString("utf8").replace(/\r\n/g, "\n"),
+    "utf8"
+  );
+}
+
 function verificaSnapshot() {
   const sidecar = `${PERCORSO_SNAPSHOT}.sha256`;
   if (!existsSync(sidecar)) {
@@ -51,7 +64,7 @@ function verificaSnapshot() {
   }
   const atteso = readFileSync(sidecar, "utf8").trim().split(/\s+/)[0];
   const effettivo = createHash("sha256")
-    .update(readFileSync(PERCORSO_SNAPSHOT))
+    .update(normalizzaFineRighe(readFileSync(PERCORSO_SNAPSHOT)))
     .digest("hex");
   if (atteso !== effettivo) {
     throw new Error(`Hash snapshot non valido: atteso ${atteso}, effettivo ${effettivo}`);

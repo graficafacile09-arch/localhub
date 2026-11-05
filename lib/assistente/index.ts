@@ -2184,21 +2184,45 @@ export function espandiCategorieGuidaPino(query: string): string {
   );
 }
 
-function terminiSpecificiGuidaPino(query: string): string[] {
+// Parole che compaiono nelle descrizioni della guida ma non identificano un
+// luogo: «tempo», «stato» o «storia» non devono far sopravvivere un risultato
+// (per esempio il Castello Aragonese per la parola «tempo» nella descrizione).
+const PAROLE_GENERICHE_GUIDA_PINO = new Set([
+  "tempo", "stato", "storia", "storie", "orario", "orari",
+  "apertura", "chiusura", "prezzo", "prezzi", "informazioni",
+]);
+
+function terminiCandidatiGuidaPino(query: string): string[] {
   return normalizza(String(query ?? ""))
     .split(/[^a-z0-9]+/)
     .filter((termine) => termine.length >= 3 && !TERMINI_NEUTRI_GUIDA_PINO.has(termine));
 }
 
+function terminiSpecificiGuidaPino(query: string): string[] {
+  return terminiCandidatiGuidaPino(query).filter(
+    (termine) => !PAROLE_GENERICHE_GUIDA_PINO.has(termine)
+  );
+}
+
+// Una richiesta esplicita di eventi/rassegne non è una richiesta di visita:
+// resta al percorso eventi. Altrimenti parole come «eventi», «concerto» o
+// «cosa succede stasera» finiscono nella guida Attrazioni solo perché la frase
+// contiene il nome della città.
+const RE_RICHIESTA_EVENTI_PINO =
+  /\b(?:eventi|evento|manifestazion\w*|rassegn\w*|concerti?|sagre?|fiere?|spettacol\w*|festival|events?|what'?s on|what is on|what'?s happening|cosa succede|che succede)\b/i;
+
 /**
- * Riconosce una richiesta di luogo/attrazione, escludendo gli acquisti.
- * Il nome di un luogo del catalogo resta sempre una richiesta valida.
+ * Riconosce una richiesta di luogo/attrazione, escludendo acquisti ed eventi.
+ * Il nome di un luogo del catalogo resta sempre una richiesta valida, ma un
+ * toponimo da solo non basta: lo esclude `isAttractionNameQuery`.
  */
 export function richiestaGuidaAttrazioniPino(query: string): boolean {
   const testo = String(query ?? "");
   // Un acquisto esplicito resta una ricerca commerciale anche quando contiene
   // il nome o la categoria di un luogo («negozio di articoli per il teatro»).
   if (RE_CONTESTO_ACQUISTO_PINO.test(testo)) return false;
+  // Eventi e rassegne seguono il dominio eventi, non la guida turistica.
+  if (RE_RICHIESTA_EVENTI_PINO.test(normalizza(testo))) return false;
   if (isAttractionNameQuery(testo)) return true;
   if (!RE_INTENTO_GUIDA_PINO.test(testo)) return false;
   return true;
@@ -2220,12 +2244,20 @@ export function filtraLuoghiPertinentiGuidaPino(
   query: string,
   luoghi: ReturnType<typeof searchAttractions>
 ): ReturnType<typeof searchAttractions> {
+  // Nessun termine oltre alle parole di raccordo: richiesta ampia, la guida
+  // resta completa. Se invece l'unico termine è generico («tempo», «stato»,
+  // «storia»), nessun luogo è identificato: non si ripiega sull'elenco intero.
+  const candidati = terminiCandidatiGuidaPino(query);
+  if (candidati.length === 0) return luoghi;
   const specifici = terminiSpecificiGuidaPino(query);
-  if (specifici.length === 0) return luoghi;
+  if (specifici.length === 0) return [];
 
   return luoghi.filter((luogo) => {
+    // Solo i campi identitari: una parola della descrizione (o della query
+    // Google Maps, che ripete il nome della città) non rende pertinente un
+    // luogo. Così «tempo», «stato» e «storia» non identificano da sole nulla.
     const campi = normalizza(
-      [luogo.nome, luogo.tipo, luogo.descrizione, luogo.queryMaps, ...luogo.alias].join(" ")
+      [luogo.nome, luogo.tipo, ...luogo.alias].join(" ")
     ).split(/[^a-z0-9]+/);
     return specifici.some((termine) =>
       campi.some((campo) => {
@@ -2532,7 +2564,11 @@ export async function chatConAssistente(
 
   // Guida turistica InCittà: usa lo stesso catalogo della pagina /attrazioni.
   // Il filtro d'intento evita di deviare qui normali ricerche di prodotti o servizi.
-  const richiestaTuristica = richiestaGuidaAttrazioniPino(domanda);
+  // Meteo e farmacie sono intenti locali ESPLICITI e hanno precedenza sulla
+  // guida: senza questo controllo basta un toponimo nella frase («… a
+  // Castrovillari») perché la richiesta finisca nel ramo Attrazioni.
+  const intentoLocale = pianoIntentoLocale(domanda);
+  const richiestaTuristica = !intentoLocale && richiestaGuidaAttrazioniPino(domanda);
   const luoghi = filtraLuoghiPertinentiGuidaPino(
     domanda,
     searchAttractions(espandiCategorieGuidaPino(domanda), 6)
