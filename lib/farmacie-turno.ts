@@ -40,8 +40,17 @@ export class ErroreFonteFarmacie extends Error {
  */
 function rispostaFarmacieValida(html: string): boolean {
   if (!html.trim()) return false;
-  if (html.includes('class="farmacia-box"')) return true;
-  return html.length >= 200 && /farmaci/i.test(html);
+  // Riconosce varianti di markup e pagine che espongono direttamente i link
+  // alle schede farmacia. Non accettare una pagina HTML generica solo perché
+  // contiene la parola "farmacie": altrimenti il parser può restituire zero
+  // e Pino comunica erroneamente che non esistono risultati.
+  return (
+    /<div\\b[^>]*class\\s*=\\s*["'][^"']*farmacia-box/i.test(html) ||
+    /itemtype\\s*=\\s*["'][^"']*schema\\.org\\/Pharmacy/i.test(html) ||
+    /class\\s*=\\s*["'][^"']*pharmacyname/i.test(html) ||
+    /itemprop\\s*=\\s*["']name["']/i.test(html) ||
+    /href\\s*=\\s*["'][^"']*[?&]idf=\\d+/i.test(html)
+  );
 }
 
 export type FarmaciaTurno = {
@@ -149,7 +158,53 @@ export function parseFarmacieTurno(html: string): FarmaciaTurno[] {
         : null,
     });
   }
-  return farmacie;
+  if (farmacie.length > 0) return farmacie;
+
+  // Fallback per il layout a link: alcune versioni della pagina pubblicano
+  // nome, stato e orari come link con idf, senza i vecchi div schema.org.
+  const linkSchede = Array.from(
+    html.matchAll(/<a\b[^>]*href\s*=\s*["'][^"']*[?&]idf=(\d+)[^"']*["'][^>]*>([\s\S]*?)<\/a>/gi)
+  );
+  const viste = new Set<string>();
+  const estratte: FarmaciaTurno[] = [];
+  for (let i = 0; i < linkSchede.length; i++) {
+    const match = linkSchede[i];
+    const idf = match[1];
+    const nome = decodifica(match[2].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim());
+    if (
+      viste.has(idf) ||
+      nome.length < 3 ||
+      /^(scheda|orario|servizi|mappa|navigatore|aperta|aperto|chiusa|chiuso|turno|apertura)$/i.test(nome) ||
+      /^(apertura|turno)\s*:/i.test(nome)
+    ) continue;
+    viste.add(idf);
+    const prossimo = linkSchede.slice(i + 1).find((voce) => voce[1] !== idf);
+    const fine = prossimo?.index ?? html.length;
+    const blocco = html.slice(match.index + match[0].length, fine);
+    const testo = decodifica(
+      blocco.replace(/<br\s*\/?>/gi, " ").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ")
+    );
+    const statoMatch = testo.match(/\b(APERTA|APERTO|CHIUSA|CHIUSO|TURNO)\b/i)?.[1]?.toUpperCase();
+    const apertura = testo.match(/Apertura\s*:\s*([^|]+?)(?=\s+Turno\*?\s*:|$)/i)?.[1]?.trim() ?? null;
+    const turno = testo.match(/Turno\*?\s*:\s*([^|]+?)(?=\s+(?:Telefono|Servizi|Mappa)|$)/i)?.[1]?.trim() ?? null;
+    const indirizzo = testo.match(/\b(?:Via|Viale|Corso|Piazza|Contrada|Largo|Strada)\s+[^,]{2,90}(?:,\s*\d+[A-Za-z/]*)?/i)?.[0] ?? null;
+    const telefono = blocco.match(/href\s*=\s*["']tel:([0-9+ ]+)["']/i)?.[1]?.replace(/\s+/g, "") ??
+      testo.match(/\b0\d{5,11}\b/)?.[0] ?? null;
+    estratte.push({
+      id: idf,
+      nome,
+      indirizzo: indirizzo ? decodifica(indirizzo) : null,
+      stato:
+        statoMatch === "CHIUSA" || statoMatch === "CHIUSO" ? "chiusa" :
+        statoMatch === "TURNO" ? "turno" :
+        statoMatch === "APERTA" || statoMatch === "APERTO" ? "aperta" : null,
+      apertura: apertura ? decodifica(apertura) : null,
+      turno: turno ? decodifica(turno) : null,
+      telefono,
+      urlScheda: \`https://www.farmaciediturno.org/farmacia.asp?idf=\${idf}\`,
+    });
+  }
+  return estratte;
 }
 
 /**
@@ -176,10 +231,18 @@ export async function getFarmacieTurnoCastrovillari(
       esito = { html: null, codice: "HTTP_" + res.status };
     } else {
       const html = await res.text();
-      if (rispostaFarmacieValida(html)) {
+      const valide = rispostaFarmacieValida(html);
+      const estratte = valide ? parseFarmacieTurno(html) : [];
+      console.info("[farmacie-turno] lettura fonte", JSON.stringify({
+        httpStatus: res.status,
+        htmlLength: html.length,
+        strutturaRiconosciuta: valide,
+        farmacieEstratte: estratte.length,
+      }));
+      if (valide && estratte.length > 0) {
         esito = { html, codice: null };
       } else {
-        console.error("[farmacie-turno] risposta non riconosciuta");
+        console.error("[farmacie-turno] risposta non riconosciuta o parser senza risultati");
         esito = { html: null, codice: "RISPOSTA_NON_VALIDA" };
       }
     }
