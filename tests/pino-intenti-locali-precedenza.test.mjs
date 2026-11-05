@@ -89,7 +89,7 @@ test("Pino esegue davvero il tool farmacie e restituisce i dati", async () => {
   const fetchOriginale = globalThis.fetch;
   globalThis.fetch = async () => new Response(html, { status: 200 });
   try {
-    const risultato = await rispondi("Farmacia di turno a Castrovillari");
+    const risultato = await rispondi("farmacia");
     assert.match(risultato.risposta, /Farmacia Test/i);
     assert.match(risultato.risposta, /0981123456/);
   } finally {
@@ -97,12 +97,21 @@ test("Pino esegue davvero il tool farmacie e restituisce i dati", async () => {
   }
 });
 
-test("una richiesta naturale 'trova attrazioni' mantiene la guida ampia", () => {
-  const frase = "Trova attrazioni a Castrovillari";
-  assert.equal(richiestaGuidaAttrazioniPino(frase), true);
-  const luoghi = searchAttractions(frase, 6);
-  assert.ok(luoghi.length > 0);
-  assert.equal(filtraLuoghiPertinentiGuidaPino(frase, luoghi).length, luoghi.length);
+test("le richieste naturali di Attrazioni mantengono la guida ampia", async () => {
+  for (const frase of [
+    "Trova attrazioni a Castrovillari",
+    "Cerco attrazioni a Castrovillari",
+    "Cosa c'è da vedere a Castrovillari?",
+    "Quali posti posso visitare a Castrovillari?",
+  ]) {
+    assert.equal(richiestaGuidaAttrazioniPino(frase), true, frase);
+    const luoghi = searchAttractions(frase, 6);
+    assert.ok(luoghi.length > 0, frase);
+    assert.equal(filtraLuoghiPertinentiGuidaPino(frase, luoghi).length, luoghi.length, frase);
+    const risultato = await rispondi(frase);
+    assert.match(risultato.risposta, GUIDA, frase);
+    assert.match(risultato.risposta, /Museo|Castello|La Civita|Parco/i, frase);
+  }
 });
 
 test("Pino recupera le risposte pubblicate nelle FAQ", () => {
