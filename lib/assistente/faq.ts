@@ -92,7 +92,7 @@ export const FAQ_PINO = [
 
 const STOP = new Set(["che","come","cosa","quale","quali","dove","quando","perche","posso","puoi","sono","della","delle","degli","dello","nella","nelle","sulla","sulle","con","per","una","uno","gli","the","how","what","where","when","can","does","are","is","you","your","for","and"]);
 function tokenFaq(testo: string): string[] {
-  return testo.toLowerCase().normalize("NFD").replace(/[\\u0300-\\u036f]/g,"").replace(/[^a-z0-9]+/g," ").trim().split(/\\s+/).filter(t=>t.length>2&&!STOP.has(t));
+  return testo.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g," ").trim().split(/\s+/).filter(t=>t.length>2&&!STOP.has(t));
 }
 /** Risponde solo a domande con corrispondenza sufficientemente specifica nelle FAQ pubblicate. */
 export function trovaRispostaFaqPino(query: string): { domanda: string; risposta: string } | null {
