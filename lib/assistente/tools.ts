@@ -2248,6 +2248,21 @@ function richiestaDolceComeDessert(query: string, soggettoAlimentare: string): b
  * sottocategoria o su nomi riconoscibili di dolci: la parola "dolce" in una
  * descrizione (es. peperone dolce, miele dolce) non è prova sufficiente.
  */
+/**
+ * Barriera riutilizzabile sull'intera risposta: va applicata anche dopo il
+ * recupero semantico, che può aggiungere candidati non passati dal primo gate.
+ * La query è quella originale dell'utente, non la query riscritta dal planner.
+ */
+export function filtraDessertRichiestoPino(
+  prodotti: ProdottoRicerca[],
+  queryOriginale: string
+): ProdottoRicerca[] {
+  const query = normalizza(queryOriginale);
+  if (!/\\bdolc[ei]\\b/.test(query)) return prodotti;
+  if (!richiestaDolceComeDessert(queryOriginale, "dolce")) return prodotti;
+  return (prodotti ?? []).filter(prodottoEUnDessert);
+}
+
 function prodottoEUnDessert(prodotto: ProdottoRicerca): boolean {
   const nome = normalizza(prodotto.nome ?? "");
   const classificazione = normalizza(
