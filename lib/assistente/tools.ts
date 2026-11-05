@@ -2230,13 +2230,54 @@ function filtraProdottiPerSottocategoriaRichiesta(
  * qualificazioni esplicite disponibili nei metadati. Il budget resta fuori da
  * questo filtro e viene applicato dal percorso esistente.
  */
+/**
+ * "Dolce" usato come sostantivo indica un dessert, non qualunque alimento
+ * descritto come dolce. Se la query nomina esplicitamente un altro prodotto
+ * (vino, peperone, cipolla, miele), resta invece una ricerca di quell'alimento
+ * con il relativo attributo.
+ */
+function richiestaDolceComeDessert(query: string, soggettoAlimentare: string): boolean {
+  const soggetto = normalizza(soggettoAlimentare).trim();
+  if (soggetto !== "dolce" && soggetto !== "dolci") return false;
+  const testo = normalizza(query);
+  return !/\\b(?:vino|vini|wine|peperone|peperoni|pepper|peppers|cipolla|cipolle|onion|onions|miele|honey)\\b/.test(testo);
+}
+
+/**
+ * Classificazione positiva e conservativa dei dessert. Si basa su categoria/
+ * sottocategoria o su nomi riconoscibili di dolci: la parola "dolce" in una
+ * descrizione (es. peperone dolce, miele dolce) non è prova sufficiente.
+ */
+function prodottoEUnDessert(prodotto: ProdottoRicerca): boolean {
+  const nome = normalizza(prodotto.nome ?? "");
+  const classificazione = normalizza(
+    [prodotto.categoria, prodotto.sottocategoria].filter(Boolean).join(" ")
+  );
+  if (/\\b(?:dolciumi|pasticceria|dessert|desserts|confectionery)\\b/.test(classificazione)) {
+    return true;
+  }
+  if (/\\b(?:biscott[oi]|torrone|piparell[ae]|mostacciol[oi]|cannol[oi]|ciotaredd[ae]|crostata|tort[ae]|panettone|colomba|zeppol[ae]|pasticcin[oi]|gelato|brownie|cupcake|cake|cookies)\\b/.test(nome)) {
+    return true;
+  }
+  // Ciotaredda è un dolce locale: la classificazione è confermata dalla
+  // descrizione tradizionale, non dalla semplice presenza dell'aggettivo.
+  const dettagli = normalizza(
+    [prodotto.descrizione, prodotto.descrizione_completa].filter(Boolean).join(" ")
+  );
+  return /\\bciotaredd[ae]\\b/.test(nome) &&
+    /\\b(?:dolcetto tradizionale|simile ai mostaccioli)\\b/.test(dettagli);
+}
+
 export function filtraProdottiAlimentariPino(
   prodotti: ProdottoRicerca[],
   query: string,
   soggettoAlimentare: string
 ): ProdottoRicerca[] {
+  const dessertRichiesto = richiestaDolceComeDessert(query, soggettoAlimentare);
   const pertinenti = prodotti.filter((prodotto) =>
-    prodottoPertinente(prodotto, [soggettoAlimentare], [])
+    dessertRichiesto
+      ? prodottoEUnDessert(prodotto)
+      : prodottoPertinente(prodotto, [soggettoAlimentare], [])
   );
   const filtrati = filtraProdottiPerCaratteristicheRichieste(
     pertinenti,
