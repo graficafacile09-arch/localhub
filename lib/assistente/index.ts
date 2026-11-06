@@ -78,6 +78,7 @@ import {
   prodottoDocumentaRestrizionePino,
   allergeneAlimentarePino,
   condizioneAlimentarePino,
+  pulisciCorniceRicercaPino,
   restrizioneAlimentareRigidaPino,
 } from "./tools";
 import {
@@ -1581,6 +1582,7 @@ function pianoPredefinito(
       ],
     };
   }
+
   const RE_OFFERTE = /\bofferte\b|\bpromozion|\bsconti?\b|\bsaldo\b|\bsaldi\b|\boffers?\b|\bdeals?\b|\bdiscounts?\b|\bsales?\b/;
   const RE_EVENTI =
     /\beventi?\b|weekend|fine settimana|manifestazion|in programma|cosa c'è|cosa c'e|cosa succede|\bmostra\b|\bconcerto\b|\bfiera\b|\bevents?\b|what'?s on|what is on|\bconcerts?\b|\bfestivals?\b|\bexhibitions?\b/;
@@ -1811,7 +1813,9 @@ function pianoPredefinito(
         {
           tool: "searchProducts",
           params: {
-            query: pianoProdottoLocale.query,
+            query:
+              pulisciCorniceRicercaPino(pianoProdottoLocale.query) ||
+              pianoProdottoLocale.query,
             maxPrice: pianoProdottoLocale.maxPrice,
             minPrice: pianoProdottoLocale.minPrice,
             citta: pianoProdottoLocale.city ?? undefined,
@@ -1829,7 +1833,10 @@ function pianoPredefinito(
   // interrogare il catalogo prodotti, non aggiungere automaticamente panifici
   // e ristoranti. Questo evita che una ricerca "pasta" diventi una lista negozi.
   if (isExplicitFoodProductRequest(ultimo)) {
-    const queryProdotto = semantica?.query?.trim() || normalizzaQueryCatalogo(ultimo);
+    const queryProdotto =
+      semantica?.query?.trim() ||
+      pulisciCorniceRicercaPino(ultimo) ||
+      normalizzaQueryCatalogo(ultimo);
     return {
       directReply: null,
       tools: [{
@@ -1843,6 +1850,23 @@ function pianoPredefinito(
         },
       }],
     };
+  }
+
+  // Orari, indirizzo e telefono di un'attività: il soggetto va estratto dalla
+  // cornice («è aperto la domenica il Panificio Zini?» → «panificio zini»).
+  // Il ramo sta DOPO il prodotto esplicito per non dirottare «quanto costa il
+  // telefono?»: lì «telefono» è un bene, non un recapito.
+  const infoAttivitaRichiesta = rilevaRichiestaInfoAttivitaPino(ultimo);
+  if (infoAttivitaRichiesta) {
+    const soggettoInfo = estraiSoggettoInfoAttivitaPino(ultimo);
+    if (soggettoInfo) {
+      return {
+        directReply: null,
+        tools: [
+          { tool: "searchStores", params: { query: soggettoInfo, limit: 6 } },
+        ],
+      };
+    }
   }
 
   // ── Pino Semantic Planner v2 ─────────────────────────────────────────────
@@ -3509,8 +3533,19 @@ export async function chatConAssistente(
 
   // Il modello non è la fonte del budget: solo l'estrazione deterministica
   // dalla richiesta può introdurre o togliere un limite economico.
-  const semantica = semanticaGrezza
+  const semanticaConLimiti = semanticaGrezza
     ? applicaLimitiEsplicitiPianoPino(semanticaGrezza, domanda)
+    : undefined;
+  // La query del planner è già il soggetto del catalogo, ma può conservare la
+  // cornice conversazionale («mi consigli regalo»). La pulizia è la stessa usata
+  // dai tool, così risposta e ricerca non divergono.
+  const semantica = semanticaConLimiti
+    ? {
+        ...semanticaConLimiti,
+        query:
+          pulisciCorniceRicercaPino(semanticaConLimiti.query) ||
+          semanticaConLimiti.query,
+      }
     : undefined;
 
   // S4.1 — Vincoli effettivi verso i tool: piano prioritario, contratto in
