@@ -83,6 +83,40 @@ export function isLocalAssistantQuery(query: string): boolean {
   return pianoIntentoLocale(query) !== null;
 }
 
+/**
+ * Il tool meteo restituisce SOLO i dati verificati di Castrovillari. Una
+ * richiesta esplicita per un'altra città non deve ricevere quel meteo come se
+ * fosse la risposta: qui viene riconosciuta la città non coperta, così il
+ * chiamante può dichiararlo invece di inventare una previsione.
+ */
+const CITTA_COPERTE_METEO = new Set(["castrovillari"]);
+const CITTA_NOTE = new Set([
+  "roma", "milano", "napoli", "torino", "bologna", "firenze", "bari",
+  "palermo", "catania", "venezia", "genova", "cosenza", "matera",
+  "potenza", "reggio calabria", "catanzaro", "lamezia terme",
+]);
+const PAROLE_NON_CITTA = new Set([
+  "casa", "mare", "montagna", "campagna", "centro", "citta", "paese",
+  "zona", "qui", "qua", "fuori", "domani", "oggi", "stasera", "weekend",
+]);
+
+export function cittaMeteoNonCopertaPino(query: string): string | null {
+  const originale = String(query ?? "").trim();
+  if (!originale) return null;
+  const occorrenza = originale.match(/(?:^|\s)(?:a|ad|in|per|di|da)\s+([A-Za-zÀ-ÿ][A-Za-zÀ-ÿ' -]*)/i);
+  if (!occorrenza) return null;
+  const parola = occorrenza[1].trim().split(/\s+/)[0] ?? "";
+  if (!parola) return null;
+  const citta = normalizzaRichiesta(parola);
+  if (!citta || PAROLE_NON_CITTA.has(citta)) return null;
+  // Una parola minuscola è ambigua ("a casa", "in centro"): viene trattata
+  // come città solo se è un nome noto. Con la maiuscola è un nome proprio.
+  const inizialeMaiuscola = /^[A-ZÀ-ÖØ-Ý]/.test(parola);
+  if (!inizialeMaiuscola && !CITTA_NOTE.has(citta)) return null;
+  if (CITTA_COPERTE_METEO.has(citta)) return null;
+  return citta;
+}
+
 export function isWeatherQuery(query: string): boolean {
   return RE_METEO.test(normalizzaRichiesta(query));
 }

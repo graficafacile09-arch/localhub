@@ -82,6 +82,52 @@ export function patternSoggettoPino(forme: readonly string[]): RegExp {
 }
 
 /**
+ * Nomi di ATTIVITÀ (vetrine, non prodotti). Non sono soggetti di catalogo: la
+ * stessa parola non deve diventare un prodotto tramite il piano veloce
+ * ("pizzeria" non è "pizza", "bar" non è una bevanda). Servono a scegliere la
+ * superficie `stores` prima di qualsiasi planner.
+ */
+const ATTIVITA_BASE_PINO: ReadonlyArray<{
+  termine: string;
+  forme: readonly string[];
+  intent: PinoIntent;
+}> = [
+  { termine: "pizzeria", forme: ["pizzeria", "pizzerie"], intent: "food" },
+  { termine: "ristorante", forme: ["ristorante", "ristoranti"], intent: "food" },
+  { termine: "trattoria", forme: ["trattoria", "trattorie"], intent: "food" },
+  { termine: "panificio", forme: ["panificio", "panifici"], intent: "food" },
+  { termine: "panetteria", forme: ["panetteria", "panetterie"], intent: "food" },
+  { termine: "forno", forme: ["forno", "forni"], intent: "food" },
+  { termine: "gastronomia", forme: ["gastronomia", "gastronomie"], intent: "food" },
+  { termine: "macelleria", forme: ["macelleria", "macellerie"], intent: "food" },
+  { termine: "salumeria", forme: ["salumeria", "salumerie"], intent: "food" },
+  { termine: "pescheria", forme: ["pescheria", "pescherie"], intent: "food" },
+  { termine: "ortofrutta", forme: ["ortofrutta"], intent: "food" },
+  { termine: "fruttivendolo", forme: ["fruttivendolo", "fruttivendoli"], intent: "food" },
+  { termine: "pasticceria", forme: ["pasticceria", "pasticcerie"], intent: "food" },
+  { termine: "gelateria", forme: ["gelateria", "gelaterie"], intent: "food" },
+  { termine: "rosticceria", forme: ["rosticceria", "rosticcerie"], intent: "food" },
+  { termine: "tavola calda", forme: ["tavola calda"], intent: "food" },
+  { termine: "alimentari", forme: ["alimentari"], intent: "food" },
+  { termine: "bar", forme: ["bar"], intent: "drink" },
+  { termine: "enoteca", forme: ["enoteca", "enoteche"], intent: "drink" },
+  { termine: "birreria", forme: ["birreria", "birrerie"], intent: "drink" },
+  { termine: "vineria", forme: ["vineria", "vinerie"], intent: "drink" },
+  { termine: "caffetteria", forme: ["caffetteria", "caffetterie"], intent: "drink" },
+  { termine: "negozio", forme: ["negozio", "negozi"], intent: "generic" },
+];
+
+export const ATTIVITA_CATALOGO_PINO: ReadonlyArray<{
+  termine: string;
+  forme: readonly string[];
+  intent: PinoIntent;
+  pattern: RegExp;
+}> = ATTIVITA_BASE_PINO.map((attivita) => ({
+  ...attivita,
+  pattern: patternSoggettoPino(attivita.forme),
+}));
+
+/**
  * Soggetti del piano locale / fast path. Derivati: nessuna seconda lista da
  * mantenere allineata con `SOGGETTI_CATALOGO_PINO`.
  */

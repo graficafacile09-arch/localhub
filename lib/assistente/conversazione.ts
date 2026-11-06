@@ -89,6 +89,51 @@ export function soggettoPrecedente(utenti: string[]): string | null {
   return null;
 }
 
+// ─── Riferimenti a un risultato precedente ───────────────────────────────────
+
+export type RiferimentoRisultatoPino =
+  | { tipo: "ordinale"; indice: number; segnale: string }
+  | { tipo: "dimostrativo"; segnale: string };
+
+const ORDINALI_RISULTATO: Record<string, number> = {
+  primo: 0,
+  prima: 0,
+  secondo: 1,
+  seconda: 1,
+  terzo: 2,
+  terza: 2,
+  quarto: 3,
+  quarta: 3,
+  ultimo: -1,
+  ultima: -1,
+};
+
+/**
+ * Riconosce un riferimento secco a un risultato già mostrato: "il secondo",
+ * "la prima", "l'ultima", "quello lì". Non intercetta "secondo me" né le
+ * frasi lunghe: senza una lista precedente il riferimento non è risolvibile.
+ */
+export function rilevaRiferimentoRisultatoPino(query: string): RiferimentoRisultatoPino | null {
+  const q = normalizzaRichiesta(query ?? "").replace(/[?.!]+$/g, "").trim();
+  if (!q) return null;
+  if (q.split(/\s+/).filter(Boolean).length > 5) return null;
+  if (/\bsecondo\s+me\b/.test(q)) return null;
+
+  const ordinale = q.match(
+    /\b(?:il|la|lo|l)\s*['’]?\s*(primo|prima|secondo|seconda|terzo|terza|quarto|quarta|ultimo|ultima)\b/
+  );
+  if (ordinale) {
+    const parola = ordinale[1];
+    const indice = ORDINALI_RISULTATO[parola];
+    if (indice !== undefined) return { tipo: "ordinale", indice, segnale: ordinale[0] };
+  }
+
+  const dimostrativo = q.match(/\b(?:quello|quella)\s+(?:li|la|qua|qui)\b/);
+  if (dimostrativo) return { tipo: "dimostrativo", segnale: dimostrativo[0] };
+
+  return null;
+}
+
 // ─── Aperto ora (dato reale, nessuna stima) ──────────────────────────────────
 
 /**

@@ -675,6 +675,10 @@ export function normalizzaQueryCatalogo(testo: string): string {
     .trim();
   if (!q) return "";
 
+  // Articoli elisi ("l'olio", "dell'olio"): il catalogo non li usa come
+  // keyword e impedivano il riconoscimento del soggetto nel piano locale.
+  q = q.replace(/\b(?:l|dell|all|nell|sull|dall|coll)\s*['’]\s*/g, " ");
+
   // Normalize common cross-language catalog vocabulary before deterministic retrieval.
   // The semantic planner handles arbitrary phrasing; this shared bridge prevents
   // a valid English subject from reaching an Italian-only catalog untranslated.
@@ -743,6 +747,8 @@ export function normalizzaQueryCatalogo(testo: string): string {
   // Normalize common Italian catalog questions to the subject being requested.
   // In this question frame, plural "paste" refers to the pasta category.
   q = q.replace(/\b(?:quali|quanta|quanto|quanti|quante|che)\s+(?:tipi\s+di\s+)?past[ae]\b/gi, "pasta");
+  // "Quanto costa X?" è una cornice linguistica, non una keyword cercata.
+  q = q.replace(/\b(?:quanto|quanta|quanti|quante)\s+(?:costa|costano|viene|vengono|vale|valgono)\b/gi, " ");
 
   // Remove first-person budget framing BEFORE stripping the numeric amount.
   // Otherwise "I have 100 euros and want a watch" loses "100 euros" first,
@@ -751,14 +757,14 @@ export function normalizzaQueryCatalogo(testo: string): string {
 
   // Price ranges and constraints in either language.
   q = q
-    .replace(/\b(?:between|tra|da)\s*\$?\s*\d+(?:[.,]\d+)?\s*(?:and|e|a|to)\s*\$?\s*\d+(?:[.,]\d+)?\s*(?:euros?|eur|dollars?|usd|€|\$)?\b/gi, " ")
-    .replace(/\b(?:under|below|up to|less than|no more than|not over|over|above|more than|at least|at most|sotto|sopra|massimo|minimo|meno di|piu di|oltre|entro|fino a|non oltre|al massimo|budget(?: of| di)?)\s*(?:€|\$)?\s*\d+(?:[.,]\d+)?\s*(?:euros?|eur|dollars?|usd)?/gi, " ")
+    .replace(/\b(?:between|tra|da)\s*(?:(?:i|gli|il|lo|la|le|un|uno|una)\s+|l['’]\s*)?\$?\s*\d+(?:[.,]\d+)?\s*(?:and|e|a|to)\s*(?:(?:i|gli|il|lo|la|le|un|uno|una)\s+|l['’]\s*)?\$?\s*\d+(?:[.,]\d+)?\s*(?:euros?|eur|dollars?|usd|€|\$)?\b/gi, " ")
+    .replace(/\b(?:under|below|up to|less than|no more than|not over|over|above|more than|at least|at most|sotto|sopra|massimo|minimo|meno di|piu di|oltre|entro|fino a|non oltre|al massimo|budget(?: of| di)?)\s*(?:(?:i|gli|il|lo|la|le|un|uno|una)\s+|l['’]\s*)?(?:€|\$)?\s*\d+(?:[.,]\d+)?\s*(?:euros?|eur|dollars?|usd)?/gi, " ")
     .replace(/\b(?:i have|i've got|ive got|with|my budget is|budget of|ho|con|dispongo di|a disposizione(?: di)?)\s*(?:a budget of\s*)?(?:€|\$)?\s*\d+(?:[.,]\d+)?\s*(?:euros?|eur|dollars?|usd)\b/gi, " ")
     .replace(/(?:€|\$)\s*\d+(?:[.,]\d+)?/g, " ")
     .replace(/\b\d+(?:[.,]\d+)?\s*(?:euros?|eur|dollars?|usd)\b/gi, " ");
 
-  // Open-now wording is a constraint, not part of the catalog subject.
-  q = q.replace(/\b(?:aperto|aperta|aperti|aperte)\s+(?:ora|adesso)\b|\b(?:open|opened)\s+(?:right\s+)?now\b|\bcurrently\s+open\b|\bopen\s+at\s+the\s+moment\b/gi, " ");
+  // Open-now / opening-time wording is a constraint, not part of the subject.
+  q = q.replace(/\b(?:aperto|aperta|aperti|aperte)\s+(?:ora|adesso|oggi|domani|stasera|stamattina|pomeriggio)\b|\b(?:open|opened)\s+(?:right\s+)?now\b|\bcurrently\s+open\b|\bopen\s+at\s+the\s+moment\b/gi, " ");
 
   // Phrases that describe the act of searching rather than the desired item.
   q = q

@@ -13,7 +13,12 @@ import { soggettoAlimentarePino } from "./lexicon";
 import { messaggioQualificazioneRilassataPino } from "./messaggi-pino";
 import { rispostaIdentitaPino } from "./identity";
 import { rispostaSalutoPino, rispostaRelazionalePino, rispostaPreferenzaLinguaPino } from "./greetings";
-import { CATEGORIE_REGALO, isGenericGiftRequest, prodottoCorrispondeCategoriaRegalo } from "./gift-retrieval";
+import {
+  CATEGORIE_REGALO,
+  isGenericGiftRequest,
+  ordinaCategorieRegaloPino,
+  prodottoCorrispondeCategoriaRegalo,
+} from "./gift-retrieval";
 /**
  * LocalHub — Assistente AI: Orchestratore
  *
@@ -86,7 +91,12 @@ import { isAttractionNameQuery, searchAttractions } from "./attrazioni";
 import { trovaRispostaFaqPino } from "./faq";
 import { normalizza } from "@/lib/text-utils";
 import type { NegozioRicerca, ProdottoRicerca } from "@/lib/ricerca-ai";
-import { pianoIntentoLocale } from "./local-intents";
+import { cittaMeteoNonCopertaPino, pianoIntentoLocale } from "./local-intents";
+import { rilevaPeriodoEventiPino } from "./eventi-periodo";
+import {
+  rilevaRichiestaInfoAttivitaPino,
+  rispostaInfoAttivitaPino,
+} from "./info-attivita";
 import {
   analizzaIntentoPino,
   pianoIntento,
@@ -121,6 +131,7 @@ import {
 import type { PinoUnderstanding } from "./understanding";
 import {
   rilevaFollowUp,
+  rilevaRiferimentoRisultatoPino,
   soggettoPrecedente,
   apertoOra,
   motivoCategoria,
@@ -674,8 +685,18 @@ async function eseguiTool(
       // Query vuota = TUTTE le offerte attive (es. "ci sono offerte?").
       return { ...vuoto, offerte: await searchOffers(params?.query?.trim() || undefined, limit) };
     case "searchEvents":
-      // Query vuota = TUTTI gli eventi attivi (es. "cosa c'è questo weekend?").
-      return { ...vuoto, eventi: await searchEvents(params?.query?.trim() || undefined, limit) };
+      // Query vuota = TUTTI gli eventi attivi del periodo richiesto (es. "cosa
+      // c'è questo weekend?"): il periodo viene dalla richiesta sostanziale, non
+      // da una keyword passata al modello.
+      return {
+        ...vuoto,
+        eventi: await searchEvents(
+          params?.query?.trim() || undefined,
+          limit,
+          undefined,
+          rilevaPeriodoEventiPino(fallbackQuery)
+        ),
+      };
     case "searchAll": {
       const q = eQuerySostanziale(params?.query ?? "") || fallbackQuery;
       if (!q) return vuoto;
@@ -1497,6 +1518,20 @@ function pianoPredefinito(
   const pianoLocale = pianoIntentoLocale(utenti[utenti.length - 1] ?? "");
 
   if (pianoLocale?.tool === "getWeather") {
+    // Il tool restituisce il meteo verificato di Castrovillari e basta. Se
+    // l'utente chiede un'altra città, rispondere con quei dati sarebbe
+    // fuorviante: si dichiara il limite, senza inventare una previsione.
+    const cittaNonCoperta = cittaMeteoNonCopertaPino(utenti[utenti.length - 1] ?? "");
+    if (cittaNonCoperta) {
+      const etichetta =
+        cittaNonCoperta.charAt(0).toLocaleUpperCase("it-IT") + cittaNonCoperta.slice(1);
+      return {
+        directReply: inglese
+          ? `The verified weather service covers Castrovillari only: I don't have reliable data for ${etichetta}, and I won't make up a forecast. I can show you Castrovillari's weather if that helps.`
+          : `Il meteo verificato di InCittà copre solo Castrovillari: per ${etichetta} non ho dati affidabili e non voglio inventare una previsione. Se ti serve, posso darti il meteo di Castrovillari.`,
+        tools: [],
+      };
+    }
     return {
       directReply: null,
       tools: [{ tool: "getWeather", params: {} }],
@@ -1543,6 +1578,15 @@ function pianoPredefinito(
   if (RE_EVENTI.test(ultimo)) {
     // params vuoti = TUTTI gli eventi attivi (query non specificata)
     return { directReply: null, tools: [{ tool: "searchEvents", params: {} }] };
+  }
+
+  // "e domani?" dopo una richiesta di eventi resta sugli eventi, con il nuovo
+  // intervallo: non diventa una ricerca generica né perde il contesto.
+  if (utenti.length >= 2 && rilevaPeriodoEventiPino(ultimo)) {
+    const precedente = utenti[utenti.length - 2] ?? "";
+    if (RE_EVENTI.test(precedente)) {
+      return { directReply: null, tools: [{ tool: "searchEvents", params: {} }] };
+    }
   }
   if (RE_CHIACCHIERA.test(ultimo)) {
     return {
@@ -1628,6 +1672,55 @@ function pianoPredefinito(
       }
       return { directReply: null, tools, followUp };
     }
+  }
+
+  // ── Riferimenti a un risultato già mostrato ("il secondo", "quello lì") ──
+  // Senza questa risoluzione il riferimento diventava una ricerca generica su
+  // "secondo"/"quello". Il nome viene preso SOLO dall'elenco che Pino ha
+  // realmente mostrato; se non è risolvibile, Pino lo dice.
+  const riferimento = rilevaRiferimentoRisultatoPino(ultimo);
+  if (
+    riferimento &&
+    utenti.length >= 2 &&
+    ultimo.split(/\s+/).filter(Boolean).length <= 5
+  ) {
+    const nomi = nomiGiaMostrati(storico);
+    if (nomi.length === 0) {
+      return {
+        directReply: inglese
+          ? "I haven't shown you a list yet, so there's nothing to pick. Tell me what you're looking for first."
+          : "Non ho ancora mostrato una lista da cui scegliere. Dimmi prima cosa cerchi e poi potrai indicarmi il primo, il secondo o l'ultimo.",
+        tools: [],
+      };
+    }
+
+    let scelto: string | null = null;
+    if (riferimento.tipo === "ordinale") {
+      const indice = riferimento.indice < 0 ? nomi.length - 1 : riferimento.indice;
+      scelto = nomi[indice] ?? null;
+      if (!scelto) {
+        return {
+          directReply: inglese
+            ? `The previous list had ${nomi.length} results, so I can't pick that one. Tell me the name you're interested in.`
+            : `Nell'ultima lista c'erano ${nomi.length} risultati: non posso scegliere quello che mi hai indicato. Dimmi il nome di quello che ti interessa.`,
+          tools: [],
+        };
+      }
+    } else if (nomi.length === 1) {
+      scelto = nomi[0];
+    } else {
+      return {
+        directReply: inglese
+          ? `There are several results in the previous list: tell me the name of the one you mean (${nomi.slice(0, 5).join(", ")}).`
+          : `Nell'ultima lista ci sono più risultati: dimmi il nome di quello che intendi (${nomi.slice(0, 5).join(", ")}).`,
+        tools: [],
+      };
+    }
+
+    return {
+      directReply: null,
+      tools: [{ tool: "searchAll", params: { query: scelto, limit: 3 } }],
+    };
   }
 
   // Una richiesta esplicita di un alimento come bene da acquistare deve
@@ -2842,9 +2935,12 @@ export function budgetInvocazioniRecuperoPino(usate: number): number {
  */
 export function invocazioniRegaloPino(
   maxPrice?: number | null,
-  extra: ToolParams = {}
+  extra: ToolParams = {},
+  destinatario?: string | null
 ): ToolInvocation[] {
-  const categorie = [...CATEGORIE_REGALO];
+  // L'ordine cambia con il destinatario; l'insieme delle categorie resta lo
+  // stesso, così nessuna area del catalogo viene esclusa a priori.
+  const categorie = ordinaCategorieRegaloPino(destinatario);
   if (categorie.length === 0) return [];
   const gruppi = Math.min(MASSIMO_INVOCAZIONI_PINO, categorie.length);
   const dimensione = Math.ceil(categorie.length / gruppi);
@@ -3435,12 +3531,16 @@ export async function chatConAssistente(
     // per ID; il ranking e i filtri di pertinenza esistenti restano invariati.
     // Il budget, se presente, viene applicato a ogni ricerca e verificato di nuovo
     // dopo il merge. Nessuna chiamata a servizi esterni o nuove dipendenze.
-    invocazioni = invocazioniRegaloPino(maxPriceCatalogo, {
-      ...(vincoliComprensione.esclusioni.length
-        ? { esclusioni: vincoliComprensione.esclusioni }
-        : {}),
-      ...(semantica?.city ? { citta: semantica.city } : {}),
-    });
+    invocazioni = invocazioniRegaloPino(
+      maxPriceCatalogo,
+      {
+        ...(vincoliComprensione.esclusioni.length
+          ? { esclusioni: vincoliComprensione.esclusioni }
+          : {}),
+        ...(semantica?.city ? { citta: semantica.city } : {}),
+      },
+      comprensione.attributi.destinatario
+    );
     directReply = null;
     selezioneOk = true;
     console.info("[pino-gift-routing]", JSON.stringify({
@@ -3730,6 +3830,30 @@ export async function chatConAssistente(
     return esci("risposta_diretta", {
       risposta: directReply,
       negozi: [],
+      prodotti: [],
+      processingMs: Date.now() - inizio,
+      source: "assistente",
+      intent: analisi.intent,
+    }, {
+      limiti: limitiVincolanti,
+      origine: limitiVincolanti ? "traccia" : "assente",
+      invocazioni: invocazioni.map((t) => String(t.tool ?? "")),
+    });
+  }
+
+  // 2b) Domande informative su un'attività: orari, indirizzo e telefono sono
+  // dati del catalogo. La risposta è deterministica e dichiara i campi mancanti.
+  const infoAttivita = rilevaRichiestaInfoAttivitaPino(domanda);
+  if (infoAttivita && negozi.length > 0) {
+    const orari = await orariPerNegozi(negozi.map((negozio) => negozio.id));
+    return esci("info_attivita", {
+      risposta: rispostaInfoAttivitaPino(
+        negozi,
+        infoAttivita,
+        orari,
+        linguaConversazione
+      ),
+      negozi: negozi.slice(0, 3),
       prodotti: [],
       processingMs: Date.now() - inizio,
       source: "assistente",

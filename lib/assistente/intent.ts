@@ -448,7 +448,12 @@ function analisi(
  *   9. altrimenti product con confidence "bassa" (decide il planner LLM).
  */
 export function analizzaIntentoPino(query: string): PinoIntentAnalysis {
-  const q = normalizzaRichiesta(query ?? "");
+  // L'articolo eliso non è un soggetto a sé: "l'olio" deve classificarsi come
+  // "olio" (food), non cadere in "generic" e spegnere il piano locale.
+  const q = normalizzaRichiesta(query ?? "")
+    .replace(/\b(?:l|dell|all|nell|sull|dall|coll)\s*['’]\s*/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 
   if (!q) {
     return analisi("generic", "nessuno", "alta", [], false, false, ["vuota"]);

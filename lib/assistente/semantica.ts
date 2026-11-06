@@ -33,7 +33,11 @@ import { rilevaFollowUp } from "./conversazione";
 import { estraiCitta } from "@/lib/localita";
 import { analizzaIntentoPino, type PinoIntent, type PinoIntentAnalysis } from "./intent";
 import { SINONIMI_DIRETTI_PRODOTTO, SINONIMI_TIPO_ATTIVITA } from "@/lib/ricerca-semantica";
-import { CANONICI_CATALOGO_PINO, VOCABOLARIO_REFUSI_PINO } from "./lexicon.ts";
+import {
+  ATTIVITA_CATALOGO_PINO,
+  CANONICI_CATALOGO_PINO,
+  VOCABOLARIO_REFUSI_PINO,
+} from "./lexicon.ts";
 import type { MessaggioAssistente } from "./index";
 import type { PinoMemoriaVoce } from "./memoria";
 
@@ -434,13 +438,26 @@ export function fondiVincoliPino(
 // ─── Prezzo esplicito: unica fonte deterministica ───────────────────────────
 // `entro`, `non oltre`, `al massimo`, `fino a`, `inferiore a` sono tetti;
 // `sopra`, `oltre` (non negato), `almeno`, `superiore a` sono soglie minime.
-const RE_PREZZO_TETTO =
-  /(?:budget(?:\s+di)?|sotto|massimo|al massimo|meno di|inferiore a|entro|fino a|non oltre|under|below|up to|less than|no more than|not over|at most)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)/i;
+/**
+ * Determinante facoltativo tra la parola-chiave del prezzo e l'importo:
+ * "sotto i 10", "entro l'8", "sopra le 20". Senza questo, un articolo
+ * faceva sparire il vincolo ("e sotto i 300?" manteneva il budget vecchio di
+ * 500 euro) e lasciava residui tipo "olio sotto 10" nella query.
+ */
+const DET_PREZZO = String.raw`\s*(?:(?:i|gli|il|lo|la|le|un|uno|una)\s+|l\s*['’]\s*)?`;
+const RE_PREZZO_TETTO = new RegExp(
+  String.raw`(?:budget(?:\s+di)?|sotto|massimo|al massimo|meno di|inferiore a|entro|fino a|non oltre|under|below|up to|less than|no more than|not over|at most)${DET_PREZZO}(?:€\s*)?(\d+(?:[.,]\d+)?)`,
+  "i"
+);
 // `oltre` è un minimo SOLO senza negazione: "non oltre" è un tetto.
-const RE_PREZZO_SOGLIA =
-  /(?:sopra|superiore a|minimo|almeno|piu di|più di|(?<!non\s+)oltre|over|above|more than|at least)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)/i;
-const RE_PREZZO_INTERVALLO =
-  /(?:tra|da|between)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)\s*(?:e|a|and|to)\s*(?:€\s*)?(\d+(?:[.,]\d+)?)(?:\s*(?:euro|euros|eur))?/i;
+const RE_PREZZO_SOGLIA = new RegExp(
+  String.raw`(?:sopra|superiore a|minimo|almeno|piu di|più di|(?<!non\s+)oltre|over|above|more than|at least)${DET_PREZZO}(?:€\s*)?(\d+(?:[.,]\d+)?)`,
+  "i"
+);
+const RE_PREZZO_INTERVALLO = new RegExp(
+  String.raw`(?:tra|da|between)${DET_PREZZO}(?:€\s*)?(\d+(?:[.,]\d+)?)\s*(?:e|a|and|to)${DET_PREZZO}(?:€\s*)?(\d+(?:[.,]\d+)?)(?:\s*(?:euro|euros|eur))?`,
+  "i"
+);
 const RE_PREZZO_GENERICO =
   /(?:€\s*(\d+(?:[.,]\d+)?))|(\d+(?:[.,]\d+)?)\s*(?:euro|euros|eur)\b/i;
 
@@ -499,10 +516,14 @@ export function applicaLimitiEsplicitiPianoPino(
 // inglese), tetto/soglia (anche inglese), importi con valuta o simbolo.
 // Regola UNICA condivisa da piano locale e fallback: nessuna implementazione
 // duplicata e nessun residuo come «between», «above», «and» o importi.
-const RE_CLAUSOLA_PREZZO_INTERVALLO =
-  /(?:tra|fra|da|between|from)\s*(?:€|\$)?\s*\d+(?:[.,]\d+)?\s*(?:e|a|and|to)\s*(?:€|\$)?\s*\d+(?:[.,]\d+)?(?:\s*(?:euros|euro|eur))?/gi;
-const RE_CLAUSOLA_PREZZO_LIMITE =
-  /(?:budget(?:\s+di)?|non oltre|al massimo|massimo|sotto|meno di|inferiore a|entro|fino a|sopra|superiore a|minimo|almeno|piu di|più di|oltre|under|below|up to|less than|no more than|not over|at most|above|over|more than|at least)\s*(?:€|\$)?\s*\d+(?:[.,]\d+)?(?:\s*(?:euros|euro|eur))?/gi;
+const RE_CLAUSOLA_PREZZO_INTERVALLO = new RegExp(
+  String.raw`(?:tra|fra|da|between|from)${DET_PREZZO}(?:€|\$)?\d+(?:[.,]\d+)?\s*(?:e|a|and|to)${DET_PREZZO}(?:€|\$)?\d+(?:[.,]\d+)?(?:\s*(?:euros|euro|eur))?`,
+  "gi"
+);
+const RE_CLAUSOLA_PREZZO_LIMITE = new RegExp(
+  String.raw`(?:budget(?:\s+di)?|non oltre|al massimo|massimo|sotto|meno di|inferiore a|entro|fino a|sopra|superiore a|minimo|almeno|piu di|più di|oltre|under|below|up to|less than|no more than|not over|at most|above|over|more than|at least)${DET_PREZZO}(?:€|\$)?\d+(?:[.,]\d+)?(?:\s*(?:euros|euro|eur))?`,
+  "gi"
+);
 
 export function rimuoviClausolePrezzoPino(testo: string): string {
   return String(testo ?? "")
@@ -629,6 +650,10 @@ export const TOKEN_SENZA_REFUSI = new Set([
   // su una parola di 6 lettere rientravano nella soglia dei refusi) e la
   // ricerca finiva su un capo di abbigliamento mai richiesto.
   ...DESTINATARI_PINO.flatMap(([canonico, sinonimi]) => [canonico, ...sinonimi]),
+  // Nomi di attività: "pizzeria" non è un refuso di "pizza" e "bar" non è una
+  // bevanda. Senza questa protezione la correzione automatica riscriveva il
+  // nome della vetrina e la ricerca finiva sui prodotti.
+  ...ATTIVITA_CATALOGO_PINO.flatMap((attivita) => [attivita.termine, ...attivita.forme]),
 ]);
 
 /** Vocabolario dei refusi di Pino (token → termine canonico). Esportato per i
@@ -744,8 +769,10 @@ export function arricchisciRichiestaConContesto(
 
   const RE_RESET_PREZZO =
     /\b(?:lascia\s+perdere|togli|rimuovi|ignora)\s+(?:il\s+)?(?:filtro\s+)?(?:del\s+|di\s+)?prezzo\b|\b(?:senza|non\s+importa)\s+(?:il\s+)?(?:limite\s+di\s+)?prezzo\b/i;
-  const RE_CLAUSOLA_PREZZO =
-    /\b(?:budget(?:\s+di)?|sotto|sopra|massimo|minimo|meno\s+di|piu\s+di|più\s+di|entro|fino\s+a|tra|da|under|below|up\s+to|over|above|more\s+than|less\s+than|between)\s*(?:€\s*)?\d+(?:[.,]\d+)?(?:\s*(?:e|a|and|to)\s*(?:€\s*)?\d+(?:[.,]\d+)?)?/gi;
+  const RE_CLAUSOLA_PREZZO = new RegExp(
+    String.raw`\b(?:budget(?:\s+di)?|sotto|sopra|massimo|minimo|meno\s+di|piu\s+di|più\s+di|entro|fino\s+a|tra|da|under|below|up\s+to|over|above|more\s+than|less\s+than|between)${DET_PREZZO}(?:€\s*)?\d+(?:[.,]\d+)?(?:\s*(?:e|a|and|to)${DET_PREZZO}(?:€\s*)?\d+(?:[.,]\d+)?)?`,
+    "gi"
+  );
   const estraiCittaEsplicita = (testo: string): string | null => {
     const normalizzata = normalizzaRichiesta(testo);
     const citta = estraiCitta(normalizzata);
@@ -855,8 +882,13 @@ export function arricchisciRichiestaConContesto(
 }
 
 export function usaFastPathSemantico(query: string, analisi: PinoIntentAnalysis): boolean {
-  const q = correggiErroriBattitura(normalizzaRichiesta(query)).trim();
-  return CANONICI_RICERCA.some((x) => x.pattern.test(q)) ||
+  const qBase = normalizzaRichiesta(query)
+    .replace(/\b(?:l|dell|all|nell|sull|dall|coll)\s*['’]\s*/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const q = correggiErroriBattitura(qBase).trim();
+  return ATTIVITA_CATALOGO_PINO.some((x) => x.pattern.test(qBase)) ||
+    CANONICI_RICERCA.some((x) => x.pattern.test(q)) ||
     /\b(?:analcolic(?:a|o|he|i)|non\s+(?:alcol(?:ica|ico)?|alcol)|senza\s+(?:alcol(?:ica|ico)?|alcol))\b/i.test(q) ||
     /\b(?:sotto|sopra|massimo|minimo|meno di|piu di|più di|entro|fino a|tra)\b/i.test(q);
 }
@@ -909,12 +941,22 @@ export function rimuoviClausoleEsclusionePino(testo: string): string {
 }
 
 export function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalysis): PinoSemanticPlan | null {
-  const q = correggiErroriBattitura(normalizzaRichiesta(query)).trim();
+  // L'articolo eliso ("l'olio", "dell'olio") non deve impedire il match del
+  // soggetto: senza questa normalizzazione "quanto costa l'olio?" cadeva sul
+  // fallback generico con la query errata "costa olio".
+  const qBase = normalizzaRichiesta(query)
+    .replace(/\b(?:l|dell|all|nell|sull|dall|coll)\s*['’]\s*/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  // Le attività sono riconosciute PRIMA della correzione refusi: "pizzeria"
+  // non deve diventare "pizza" (prodotto) e la vetrina resta il soggetto.
+  const attivita = ATTIVITA_CATALOGO_PINO.find((x) => x.pattern.test(qBase));
+  const q = attivita ? qBase : correggiErroriBattitura(qBase).trim();
   if (!q) return null;
   const match = CANONICI_RICERCA.find((x) => x.pattern.test(q));
   const haEsclusioneAlcol = /\b(?:non|senza)\s+(?:alcol(?:ica|ico)?|alcol)\b|\banalcolic(?:a|o|he|i)\b/i.test(q);
   const haPrezzo = /\b(?:budget(?:\s+di)?|sotto|sopra|massimo|minimo|meno di|piu di|più di|entro|fino a|tra|under|below|up to|over|above|more than|less than|between)\b/i.test(q) || /\b(?:ho|con|dispongo di|a disposizione(?: di)?)\s*(?:€\s*)?\d+(?:[.,]\d+)?\s*(?:euro|euros|eur)\b/i.test(q) || /(?:€\s*)\d+(?:[.,]\d+)?|\b\d+(?:[.,]\d+)?\s*(?:euro|euros|eur)\b/i.test(q);
-  if (!match && !haEsclusioneAlcol && !haPrezzo && analisi.confidence === "bassa") return null;
+  if (!match && !attivita && !haEsclusioneAlcol && !haPrezzo && analisi.confidence === "bassa") return null;
 
   // I vincoli NON fanno parte della query di retrieval. Prezzo, negazioni,
   // apertura e città vengono estratti separatamente, altrimenti il gate di
@@ -938,6 +980,10 @@ export function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalys
   // Gli attributi positivi restano: "scarpe da uomo eleganti" deve continuare
   // a cercare scarpe da uomo eleganti, non solo "scarpe".
   let termine = q
+    // Domande informative sull'attività (orari, indirizzo, telefono): la
+    // cornice non è una keyword di catalogo. Togliendola, il soggetto reale
+    // ("panificio", "pizzeria Da Mario") arriva a `searchStores`.
+    .replace(/\b(?:a\s+che\s+ora|quando)\s+(?:apre|aprono|chiude|chiudono|aprite|chiudete)\b|\bdove\s+(?:si\s+trova|si\s+trovano|trovo|sta|sono|e)\b|\bdov['’]\s*e\b|(?:qual(?:e|i)\s+[eè]\s+)?(?:l['’]\s*)?(?:indirizzo|orari[oi]?|numero\s+di\s+telefono)\s+(?:di|del|della|dei|delle|dell['’])?/gi, " ")
     // Remove English conversational framing before single-token cleanup:
     // otherwise stripping the standalone "i" from "I'm" leaves an orphan "'m".
     .replace(/\b(?:i am looking for|i['’]m looking for|im looking for|looking for|i would like|i'd like|id like|i want|i need|can you find|could you find|find me|show me|help me find|please find|please show)\b/gi, " ")
@@ -946,7 +992,7 @@ export function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalys
     // "cipolla", non per le parole "quanto/costa".
     .replace(/\bquanto\s+(?:costa|costano|viene|vengono|vale|valgono)\b/gi, " ")
     .replace(/\b(?:prezzo|prezzi)\s+(?:di|del|della|dei|degli|delle)?\b/gi, " ")
-    .replace(/\b(?:aperto|aperta|aperti|aperte)\s+(?:ora|adesso)\b|\b(?:open|opened)\s+(?:right\s+)?now\b|\bcurrently\s+open\b|\bopen\s+at\s+the\s+moment\b/gi, " ")
+    .replace(/\b(?:aperto|aperta|aperti|aperte)\s+(?:ora|adesso)\b|\b(?:aperto|aperta|aperti|aperte)\s+(?:oggi|domani|stasera|stamattina|pomeriggio)\b|\b(?:open|opened)\s+(?:right\s+)?now\b|\bcurrently\s+open\b|\bopen\s+at\s+the\s+moment\b/gi, " ")
     .replace(/\b(?:ora|adesso)\b/gi, " ")
     // Punteggiatura residua ("regalo,"): non è una keyword di catalogo e
     // sporcherebbe la query mostrata all'utente.
@@ -978,10 +1024,13 @@ export function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalys
     .trim();
   termine = normalizzaQueryCatalogo(termine);
 
-  if (match) termine = normalizzaQueryCatalogo(termine.replace(match.pattern, match.termine)).trim();
+  if (match && !attivita) {
+    termine = normalizzaQueryCatalogo(termine.replace(match.pattern, match.termine)).trim();
+  }
+  termine = normalizzaQueryCatalogo(termine).trim();
   // Se non resta alcun termine di catalogo (es. "ho 99 euro", "budget di
   // 100 euro"), la query è vuota: non reimmettiamo la frase di budget.
-  if (!termine) termine = match?.termine ?? "";
+  if (!termine) termine = attivita?.termine ?? match?.termine ?? "";
 
   // "analcolica" resta una caratteristica positiva; la regola speciale del
   // retrieval la tratta correttamente senza escludere le vere analcoliche.
@@ -991,13 +1040,14 @@ export function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalys
 
   const openNow = richiestaApertaOra(q);
 
-  const intent = match?.intent ?? analisi.intent;
+  const intent = attivita?.intent ?? match?.intent ?? analisi.intent;
   // "aperto ora" su un'attività (pizzeria, farmacia, …) è una ricerca di
   // negozi. Le altre richieste restano guidate dall'intent: i flag
   // usaNegozi/usaProdotti valgono true quasi sempre, quindi usarli in
   // precedenza classificherebbe come "both" anche le query di catalogo
   // ("scarpe da uomo eleganti" deve restare "products").
   const surface: PinoSemanticPlan["surface"] =
+    attivita ? "stores" :
     openNow && analisi.usaNegozi ? "stores" :
     intent === "service" ? "stores" :
     intent === "generic" ? "none" : "products";
@@ -1007,19 +1057,26 @@ export function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalys
     intent,
     query: termine.slice(0, 120),
     terms: Array.from(
-      new Set([termine, ...(match ? [match.termine] : [])].filter((t) => t && t.trim()))
+      new Set(
+        [termine, ...(attivita ? [attivita.termine] : []), ...(match ? [match.termine] : [])].filter(
+          (t) => t && t.trim()
+        )
+      )
     ).slice(0, 5),
     exclusions: esclusioni,
     minPrice,
     maxPrice,
     city,
     openNow,
-    confidence: match || haEsclusioneAlcol || haPrezzo ? "alta" : analisi.confidence,
+    confidence: attivita || match || haEsclusioneAlcol || haPrezzo ? "alta" : analisi.confidence,
   };
 }
 
 export function fallbackPlan(query: string, analisi: PinoIntentAnalysis): PinoSemanticPlan {
-  const q = normalizzaRichiesta(query);
+  const q = normalizzaRichiesta(query)
+    .replace(/\b(?:l|dell|all|nell|sull|dall|coll)\s*['’]\s*/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
   // Stesso estrattore del piano locale: le preposizioni non sono esclusioni e
   // non restano nella query ("non in tessuto" → tessuto, query senza clausola).
   const exclusions = estraiEsclusioniPino(q);
@@ -1032,7 +1089,9 @@ export function fallbackPlan(query: string, analisi: PinoIntentAnalysis): PinoSe
     .filter((t) => !/^(cerco|cerca|trovami|trova|vorrei|voglio|mi|serve|anzi|invece|pero|però|un|una|uno|per|con|di|a|da|il|lo|la|i|gli|le|e|in|su|del|della|dei|delle|sotto|sopra|massimo|minimo|inferiore|superiore|almeno|entro|oltre|non|euro)$/.test(t));
   const { minPrice, maxPrice } = estraiPrezzoEsplicitoPino(q);
   const openNow = richiestaApertaOra(q);
+  const attivita = ATTIVITA_CATALOGO_PINO.find((x) => x.pattern.test(q));
   const surface =
+    attivita ? "stores" :
     openNow && analisi.usaNegozi ? "stores" :
     analisi.intent === "service" ? "stores" :
     analisi.intent === "generic" ? "none" :

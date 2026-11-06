@@ -22,6 +22,37 @@ export const CATEGORIE_REGALO = [
 ] as const;
 
 /**
+ * Categorie preferite per destinatario. Non escludono le altre: cambiano solo
+ * l'ordine del fan-out, così le idee più plausibili compaiono prima. Il
+ * destinatario resta un'informazione dichiarata, non un filtro rigido.
+ */
+const PREFERENZE_DESTINATARIO: Record<string, readonly string[]> = {
+  nonna: ["profumo", "libro", "orologio", "borsa", "portafoglio", "gioielli"],
+  nonno: ["orologio", "libro", "portafoglio", "profumo", "cuffie"],
+  madre: ["profumo", "borsa", "libro", "orologio", "gioielli"],
+  padre: ["orologio", "portafoglio", "libro", "cuffie", "profumo"],
+  moglie: ["gioielli", "profumo", "borsa", "collana", "orecchini"],
+  marito: ["orologio", "portafoglio", "cuffie", "libro"],
+  fidanzata: ["gioielli", "profumo", "borsa", "collana"],
+  fidanzato: ["orologio", "portafoglio", "cuffie"],
+  donna: ["borsa", "profumo", "gioielli", "orecchini", "collana"],
+  uomo: ["orologio", "portafoglio", "cuffie", "libro"],
+  bambina: ["libro", "accessorio", "cuffie", "borsa"],
+  bambino: ["libro", "accessorio", "cuffie"],
+  coppia: ["profumo", "libro", "accessorio", "orologio"],
+  famiglia: ["libro", "accessorio", "profumo"],
+};
+
+/** Ordina le categorie regalo mettendo prima quelle adatte al destinatario. */
+export function ordinaCategorieRegaloPino(destinatario?: string | null): string[] {
+  const base: string[] = [...CATEGORIE_REGALO];
+  const preferite = destinatario ? PREFERENZE_DESTINATARIO[destinatario] ?? [] : [];
+  if (preferite.length === 0) return base;
+  const testa = preferite.filter((categoria) => base.includes(categoria));
+  return [...testa, ...base.filter((categoria) => !testa.includes(categoria))];
+}
+
+/**
  * Verifica che un prodotto recuperato dal fan-out appartenga davvero alla
  * categoria interrogata: evita falsi positivi come un libro di cucina tra gli orologi.
  */

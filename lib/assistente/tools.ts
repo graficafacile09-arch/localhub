@@ -46,9 +46,15 @@ import {
 } from "./product-relevance";
 // Soggetti generici e ponti concettuali: unica fonte in `lexicon.ts`, così non
 // esistono due copie da tenere allineate.
-import { PONTI_CONCETTUALI_PINO, SOGGETTI_GENERICI_PINO, soggettoAlimentarePino } from "./lexicon.ts";
+import {
+  ATTIVITA_CATALOGO_PINO,
+  PONTI_CONCETTUALI_PINO,
+  SOGGETTI_GENERICI_PINO,
+  soggettoAlimentarePino,
+} from "./lexicon.ts";
 import { normalizzaQueryCatalogo } from "./understanding";
 import { CONTRATTI_STRUMENTO } from "./function-calling";
+import { eventoNelPeriodoPino, type PeriodoEventiPino } from "./eventi-periodo";
 
 export { CONTRATTI_STRUMENTO } from "./function-calling";
 
@@ -827,6 +833,31 @@ function classificazioneNegozio(n: Record<string, unknown>): string {
   );
 }
 
+/**
+ * Quando la richiesta nomina un'ATTIVITÀ specifica ("pizzeria", "panificio",
+ * "bar"), la vetrina deve essere davvero di quel tipo. Il solo match nella
+ * descrizione non basta: un panificio che vende pizza non è una pizzeria.
+ * L'identità è letta da nome/categoria/tipo, mai dalla descrizione.
+ * Restituisce true per le query che non nominano un'attività.
+ */
+export function negozioAttivitaCompatibilePino(
+  negozio: Record<string, unknown>,
+  query: string
+): boolean {
+  const attivita = ATTIVITA_CATALOGO_PINO.find((voce) =>
+    voce.pattern.test(normalizza(query))
+  );
+  if (!attivita) return true;
+  const data = (negozio.data ?? {}) as Record<string, unknown>;
+  const identita = normalizza(
+    [negozio.nome, negozio.categoria, negozio.sottocategoria, data.tipo_attivita]
+      .filter(Boolean)
+      .map(String)
+      .join(" ")
+  );
+  return attivita.pattern.test(identita);
+}
+
 // Somiglianza con i termini richiesti: sottostringa oppure un token vicino per
 // edit-distance (refuso/plurale). Soglia più alta sui termini corti, come nel
 // fallback tollerante esistente.
@@ -1306,8 +1337,10 @@ export async function searchStores(
       .split(/\s+/)
       .filter(Boolean)
       .map(normalizza);
-    pertinenti = attivi.filter((n) =>
-      negozioPertinente(n, terminiOriginali, concetti, espansi)
+    pertinenti = attivi.filter(
+      (n) =>
+        negozioPertinente(n, terminiOriginali, concetti, espansi) &&
+        negozioAttivitaCompatibilePino(n, base)
     );
   }
 
@@ -2848,19 +2881,26 @@ export async function searchOffers(
 export async function searchEvents(
   query?: string,
   limit = 8,
-  segnalazione: SegnalazioneErroriDati = segnalazioneDatiPino
+  segnalazione: SegnalazioneErroriDati = segnalazioneDatiPino,
+  periodo: PeriodoEventiPino | null = null
 ): Promise<EventoAssistente[]> {
   const q = normalizzaQueryOfferteEventiPino(query);
   const eventi = await getEventiPubblici(segnalazione);
 
+  // Il periodo è un filtro reale sulle date dell'evento, non una keyword. Un
+  // evento senza data non può essere confermato in un intervallo esplicito.
+  const nelPeriodo = periodo
+    ? eventi.filter((evento) => eventoNelPeriodoPino(evento, periodo))
+    : eventi;
+
   const filtrati = q
-    ? eventi.filter(
+    ? nelPeriodo.filter(
         (e) =>
           (e.titolo ?? "").toLowerCase().includes(q) ||
           (e.descrizione ?? "").toLowerCase().includes(q) ||
           (e.luogo ?? "").toLowerCase().includes(q)
       )
-    : eventi;
+    : nelPeriodo;
 
   const nomi = await nomiNegozi(filtrati.map((e) => e.negozio_id));
 
