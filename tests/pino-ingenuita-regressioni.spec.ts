@@ -226,6 +226,11 @@ test.describe("Pino — cornice di ricerca e sicurezza farmaci", () => {
     expect(pulisciCorniceRicercaPino("Mi serve un idraulico")).toBe("idraulico");
     // Il budget viene estratto separatamente da `normalizzaQueryCatalogo`: la
     // cornice «mi consigli» non deve restare nella query, il soggetto sì.
+    expect(pulisciCorniceRicercaPino("sono ciliaco trovami la pasta")).toBe("pasta");
+    expect(pulisciCorniceRicercaPino("Sono celiaco, cerco pane")).toBe("pane");
+    expect(
+      pulisciCorniceRicercaPino("Ho un'allergia al lattosio, cerco formaggio")
+    ).toBe("formaggio");
     expect(pulisciCorniceRicercaPino("Mi consigli un regalo sotto 20 euro")).toBe(
       "regalo"
     );

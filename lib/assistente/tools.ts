@@ -1359,6 +1359,13 @@ export function pulisciCorniceRicercaPino(query: string): string {
   const originale = normalizzaQueryCatalogo(query);
   if (!originale) return "";
   return originale
+    // La condizione personale non è un termine di catalogo: «sono ciliaco
+    // trovami la pasta» deve cercare «pasta», mentre il filtro «senza glutine»
+    // resta applicato a monte. «ciliaco» è un refuso frequente di «celiaco».
+    .replace(
+      /^(?:sono\s+(?:un[oa]?\s+)?(?:(?:celiac|ciliac)[oaie]|(?:celiachia|ciliachia))|sono\s+(?:allergic[oaie]|intollerante)\s+al\s+(?:glutine|lattosio)|ho\s+(?:un[oa]?\s*)?'?\s*(?:allergia|intolleranza)\s+al\s+(?:glutine|lattosio))[\s,.;:]*(?:e\s+)?/i,
+      ""
+    )
     .replace(
       /^(?:(?:mi|ti|ci)\s+)?(?:trovi|trova|trovami|cerchi|cerco|cerca|sto\s+cercando|vorrei|voglio|mi\s+serve|mi\s+servirebbe|mi\s+servono|ho\s+bisogno\s+di|avete|hai|mostrami|fammi\s+vedere|mi\s+fai\s+vedere|dove\s+(?:trovo|compro|posso\s+trovare|posso\s+comprare)|mi\s+consigli|mi\s+consiglieresti|consigliami|consigliatemi|puoi\s+consigliarmi|sapresti\s+consigliarmi)\s+/i,
       ""
@@ -2590,7 +2597,7 @@ export function restrizioneAlimentareRigidaPino(query: string): string | null {
   // «ho un'allergia al lattosio»). Entrambe devono attivare lo stesso filtro:
   // una condizione dichiarata non è una preferenza morbida.
   if (
-    /\bsenza\s+glutine\b|\bgluten\s*free\b|\bceliac[oaie]\b|\bceliachia\b|\bintolleran(?:te|za)\s+al\s+glutine\b|\ballergi(?:a|co|ca)\s+al\s+glutine\b|\bsensibil[ei]\s+al\s+glutine\b/.test(q)
+    /\bsenza\s+glutine\b|\bgluten\s*free\b|\b(?:celiac|ciliac)[oaie]\b|\b(?:celiachia|ciliachia)\b|\bintolleran(?:te|za)\s+al\s+glutine\b|\ballergi(?:a|co|ca)\s+al\s+glutine\b|\bsensibil[ei]\s+al\s+glutine\b/.test(q)
   ) {
     return "senza glutine";
   }
@@ -2648,7 +2655,7 @@ export function allergeneAlimentarePino(query: string): string | null {
 export function condizioneAlimentarePino(query: string): string | null {
   const q = normalizza(query);
   if (
-    /\bceliac[oaie]\b|\bceliachia\b|\bintolleran(?:te|za)\s+al\s+glutine\b|\ballergi(?:a|co|ca)\s+al\s+glutine\b|\bsensibil[ei]\s+al\s+glutine\b/.test(q)
+    /\b(?:celiac|ciliac)[oaie]\b|\b(?:celiachia|ciliachia)\b|\bintolleran(?:te|za)\s+al\s+glutine\b|\ballergi(?:a|co|ca)\s+al\s+glutine\b|\bsensibil[ei]\s+al\s+glutine\b/.test(q)
   ) {
     return "celiachia";
   }

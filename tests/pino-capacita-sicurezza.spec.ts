@@ -23,6 +23,12 @@ test.describe("Pino — sicurezza alimentare", () => {
       restrizioneAlimentareRigidaPino("Ho un'allergia al lattosio, cerco formaggio")
     ).toBe("senza lattosio");
     expect(condizioneAlimentarePino("Sono celiaco")).toBe("celiachia");
+    expect(
+      restrizioneAlimentareRigidaPino("sono ciliaco trovami la pasta")
+    ).toBe("senza glutine");
+    expect(condizioneAlimentarePino("sono ciliaco trovami la pasta")).toBe(
+      "celiachia"
+    );
     expect(allergeneAlimentarePino("Sono allergico alle noci")).toBe(
       "frutta a guscio"
     );
@@ -37,6 +43,18 @@ test.describe("Pino — sicurezza alimentare", () => {
     expect(risposta).toMatch(/Non posso verificare/);
     expect(risposta).toMatch(/non ti mostro opzioni non verificate/i);
     expect(risposta).toMatch(/contatta direttamente il venditore/i);
+  });
+
+  test("il percorso HTTP non mostra pasta comune a chi dichiara celiachia con refuso", async () => {
+    const r = await chatConAssistente([
+      { role: "user", content: "sono ciliaco trovami la pasta" },
+    ]);
+    for (const prodotto of r.prodotti) {
+      expect(
+        `${prodotto.nome} ${prodotto.descrizione ?? ""}`,
+        prodotto.nome
+      ).toMatch(/senza\s+glutine|gluten\s*free/i);
+    }
   });
 
   test("il percorso HTTP di chat non cerca biscotti per un allergico alle noci", async () => {

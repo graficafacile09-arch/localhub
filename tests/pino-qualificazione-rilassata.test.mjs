@@ -171,6 +171,11 @@ test("celiachia e allergia al lattosio attivano il filtro rigido anche come cond
   });
 
   assert.equal(restrizioneAlimentareRigidaPino("Sono celiaco, cerco pane"), "senza glutine");
+  assert.equal(
+    restrizioneAlimentareRigidaPino("sono ciliaco trovami la pasta"),
+    "senza glutine"
+  );
+  assert.equal(condizioneAlimentarePino("sono ciliaco trovami la pasta"), "celiachia");
   assert.deepEqual(
     ids(filtraProdottiAlimentariPino([paneComune], "Sono celiaco, cerco pane", "pane")),
     []
@@ -184,6 +189,29 @@ test("celiachia e allergia al lattosio attivano il filtro rigido anche come cond
       )
     ),
     ["pane-senza-glutine"]
+  );
+
+  const pastaComune = prodotto({
+    id: "pasta-comune",
+    nome: "Pasta di grano duro",
+    categoria: "Alimentari",
+    descrizione: "Pasta di semola di grano duro.",
+  });
+  const pastaSenzaGlutine = prodotto({
+    id: "pasta-senza-glutine",
+    nome: "Pasta senza glutine",
+    categoria: "Alimentari",
+    descrizione: "Prodotto senza glutine, certificato.",
+  });
+  assert.deepEqual(
+    ids(
+      filtraProdottiAlimentariPino(
+        [pastaComune, pastaSenzaGlutine],
+        "sono ciliaco trovami la pasta",
+        "pasta"
+      )
+    ),
+    ["pasta-senza-glutine"]
   );
 
   assert.equal(
