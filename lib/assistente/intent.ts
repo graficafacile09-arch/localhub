@@ -32,6 +32,7 @@ import { normalizzaRichiesta } from "./local-intents";
 // La traduzione inglese→italiano vive in un solo posto (understanding): il piano
 // la riusa invece di mantenere un secondo dizionario da tenere allineato.
 import { normalizzaQueryCatalogo } from "./understanding";
+import { ATTIVITA_CATALOGO_PINO } from "./lexicon.ts";
 
 // ─── Tipi pubblici ───────────────────────────────────────────────────────────
 
@@ -564,6 +565,17 @@ export function pianoIntento(analisi: PinoIntentAnalysis, query: string): PinoTo
   const negozi = (termine: string): PinoToolPlan => ({ tool: "searchStores", query: termine });
   const prodotti = (termine: string): PinoToolPlan => ({ tool: "searchProducts", query: termine });
 
+  // Nomi di attività: la vetrina è il soggetto, non un pretesto per il fan-out
+  // alimentare ("pizzeria" non deve cercare anche "panificio"). "negozio" è
+  // troppo generico e resta al percorso normale.
+  const qAttivita = normalizzaRichiesta(q)
+    .replace(/\b(?:aperto|aperta|aperti|aperte)\s+(?:ora|adesso|oggi|domani|stasera|stamattina|pomeriggio)\b/gi, " ")
+    .replace(/\b(?:ora|adesso)\b/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const attivita = ATTIVITA_CATALOGO_PINO.find((voce) => voce.pattern.test(qAttivita));
+  if (attivita && attivita.termine !== "negozio") return [negozi(qAttivita)];
+
   switch (analisi.intent) {
     case "generic":
       return [];
@@ -590,7 +602,15 @@ export function pianoIntento(analisi: PinoIntentAnalysis, query: string): PinoTo
     }
 
     case "food": {
-      const soggetto = soggettoAlimentare(q);
+      // La cornice di prezzo ("quanto costa l'olio?") non deve nascondere il
+      // soggetto: la ricerca prodotto usa la stessa pulizia del piano locale.
+      const qSoggetto = q
+        .replace(/\b(?:quanto|quanta|quanti|quante)\s+(?:costa|costano|viene|vengono|vale|valgono)\b/gi, " ")
+        .replace(/\b(?:l|dell|all|nell|sull|dall|coll)\s*['’]\s*/g, " ")
+        .replace(/[?.!,;:]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+      const soggetto = soggettoAlimentare(q) ?? soggettoAlimentare(qSoggetto);
       // Il soggetto può arrivare in inglese ("bread", "cheese"): la query di
       // catalogo deve essere italiana, come nel ramo esplicito di index.ts.
       // La traduzione è quella condivisa di normalizzaQueryCatalogo, quindi non

@@ -68,6 +68,7 @@ import {
   type ServizioAttivoPino,
   type ToolParams,
   type StrumentoPino,
+  negozioAttivitaCompatibilePino,
 } from "./tools";
 import {
   SYSTEM_PROMPT,
@@ -94,6 +95,7 @@ import type { NegozioRicerca, ProdottoRicerca } from "@/lib/ricerca-ai";
 import { cittaMeteoNonCopertaPino, pianoIntentoLocale } from "./local-intents";
 import { rilevaPeriodoEventiPino } from "./eventi-periodo";
 import {
+  estraiSoggettoInfoAttivitaPino,
   rilevaRichiestaInfoAttivitaPino,
   rispostaInfoAttivitaPino,
 } from "./info-attivita";
@@ -1563,6 +1565,17 @@ function pianoPredefinito(
     return { directReply: rispostaIdentita, tools: [] };
   }
 
+  // "vicino a me" è un limite di posizione, non una richiesta di eventi: va
+  // riconosciuto prima di RE_EVENTI ("cosa c'è vicino a me?" non è weekend).
+  if (/\bvicino a (?:me|te)\b/.test(ultimo) && nomiGiaMostrati(storico).length === 0) {
+    return {
+      directReply: inglese
+        ? "I don't know your location, so I can't calculate distances (the browser doesn't send geolocation to InCittà). Tell me the area or street and I'll filter by that."
+        : "Non conosco la tua posizione, quindi non posso calcolare le distanze (a InCittà non arriva la geolocalizzazione dal browser). Dimmi la zona o la via e filtro di conseguenza.",
+      tools: [],
+    };
+  }
+
   if (RE_PIATTAFORMA.test(ultimo)) {
     return {
       directReply: /\b(what|how)\b/i.test(ultimo)
@@ -1602,6 +1615,24 @@ function pianoPredefinito(
   // altro", "vicino a me"...) NON deve diventare una ricerca generica: mantiene
   // il SOGGETTO della richiesta precedente e ne modifica i risultati. Il filtro
   // viene applicato DOPO il recupero (vedi rispostaFollowUp).
+  // "aperto ora" da solo non ha un soggetto: non è una ricerca di prodotti.
+  if (/^(?:aperto|aperta|aperti|aperte)\s+(?:ora|adesso)\s*[?.!]*$/i.test(ultimo)) {
+    return {
+      directReply: inglese
+        ? "Open now — what should I check? Tell me the business or the type of shop (for example a bar, a pharmacy or a restaurant) and I'll check the published hours."
+        : "Aperto cosa? Dimmi l'attività o il tipo di negozio (per esempio bar, farmacia o ristorante) e controllo gli orari pubblicati.",
+      tools: [],
+    };
+  }
+  // "vicino a me" senza una lista precedente: dichiara il limite reale.
+  if (rilevaFollowUp(ultimo)?.tipo === "vicino" && nomiGiaMostrati(storico).length === 0) {
+    return {
+      directReply: inglese
+        ? "I don't know your location, so I can't calculate distances (the browser doesn't send geolocation to InCittà). Tell me the area or street and I'll filter by that."
+        : "Non conosco la tua posizione, quindi non posso calcolare le distanze (a InCittà non arriva la geolocalizzazione dal browser). Dimmi la zona o la via e filtro di conseguenza.",
+      tools: [],
+    };
+  }
   const followUp = rilevaFollowUp(ultimo);
   if (followUp && utenti.length >= 2 && (analisi.intent === "generic" || analisi.confidence === "bassa")) {
     const soggetto = soggettoPrecedente(utenti);
@@ -1852,13 +1883,20 @@ function pianoPredefinito(
   }
 
   if (analisi.confidence !== "bassa") {
-    const piano = pianoIntento(analisi, ultimo);
+    const soggettoInfo = rilevaRichiestaInfoAttivitaPino(ultimo)
+      ? estraiSoggettoInfoAttivitaPino(ultimo)
+      : "";
+    const piano = pianoIntento(analisi, soggettoInfo || ultimo);
     if (piano.length > 0) {
       return {
         directReply: null,
         tools: piano.map((t) => ({
           tool: t.tool,
-          params: { query: t.query, ...(t.tool === "searchProducts" ? { limit: 8 } : {}) },
+          params: {
+            query: t.query,
+            ...(t.tool === "searchProducts" ? { limit: 8 } : {}),
+            ...(t.tool === "searchStores" && semantica?.openNow ? { apertiOra: true } : {}),
+          },
         })),
       };
     }
@@ -3736,6 +3774,17 @@ export async function chatConAssistente(
         })
       );
     }
+    // Il recupero semantico non può reintrodurre un'attività incompatibile
+    // (es. un panificio per "pizzeria"): il gate vale anche sui risultati
+    // secondari, non solo sulla ricerca principale.
+    if (negozi.length > 0) {
+      negozi = negozi.filter((n) =>
+        negozioAttivitaCompatibilePino(
+          n as unknown as Record<string, unknown>,
+          domanda
+        )
+      );
+    }
   }
 
   // S4.3 — Barriera finale su colore e materiale: vale per la ricerca ordinaria,
@@ -4072,14 +4121,49 @@ export async function chatConAssistente(
   // Le direttive interne (notaVincolo) restano nel contesto tecnico e non
   // vengono mai passate alla composizione della risposta: l'utente vede solo
   // testo naturale, senza istruzioni operative.
-  const rispostaBase = fallbackTestuale(
-    risultati,
-    "",
-    analisi.intent,
-    semantica,
-    budgetPreferenza,
-    linguaRisposta
-  );
+  // Barriera finale sull'identità dell'attività: nessun percorso secondario
+  // (recupero semantico, fallback o merge) può mostrare un panificio per una
+  // richiesta di pizzeria. Il gate usa il testo originale dell'utente.
+  const richiestaUtenteOriginale =
+    [...storico].reverse().find((m) => m.role === "user")?.content ?? "";
+  if (negozi.length > 0 && richiestaUtenteOriginale) {
+    negozi = negozi.filter((n) =>
+      negozioAttivitaCompatibilePino(
+        n as unknown as Record<string, unknown>,
+        richiestaUtenteOriginale
+      )
+    );
+  }
+
+  const totaleRisultati =
+    negozi.length + prodotti.length + offerte.length + eventi.length + categorie.length;
+  const soloEventi = invocazioni.length > 0 && invocazioni.every((t) => t.tool === "searchEvents");
+  const soloOfferte = invocazioni.length > 0 && invocazioni.every((t) => t.tool === "searchOffers");
+  const soloNegozi = invocazioni.length > 0 && invocazioni.every((t) => t.tool === "searchStores");
+  // Un vuoto di eventi/offerte/attività non è un vuoto di prodotti: il
+  // messaggio deve restare nel dominio della richiesta, senza suggerire
+  // categorie o sinonimi che non c'entrano.
+  const rispostaBase =
+    totaleRisultati === 0 && soloEventi
+      ? (linguaRisposta === "en"
+          ? "There are no events published on InCittà right now. I won't make any up: try again later or ask me about shops and products."
+          : "Al momento non risultano eventi pubblicati su InCittà. Non ne invento: riprova più tardi oppure chiedimi di negozi e prodotti.")
+      : totaleRisultati === 0 && soloOfferte
+        ? (linguaRisposta === "en"
+            ? "There are no active offers published on InCittà right now. I won't make any up: try again later or ask me about products and shops."
+            : "Al momento non risultano offerte attive pubblicate su InCittà. Non ne invento: riprova più tardi oppure chiedimi di prodotti e negozi.")
+        : totaleRisultati === 0 && soloNegozi
+          ? (linguaRisposta === "en"
+              ? "No businesses matching these criteria are listed in the InCittà catalogue. Try another category or area."
+              : "Non risultano attività con questi criteri nel catalogo InCittà. Prova con un'altra categoria o zona.")
+          : fallbackTestuale(
+              risultati,
+              "",
+              analisi.intent,
+              semantica,
+              budgetPreferenza,
+              linguaRisposta
+            );
   // S4.5 — Per le richieste di servizio la risposta è deterministica e usa solo
   // i servizi restituiti dal tool (prezzo e durata inclusi o dichiarati assenti).
   const rispostaServizioTrovata = richiestaServizio

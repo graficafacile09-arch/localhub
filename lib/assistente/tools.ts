@@ -858,6 +858,32 @@ export function negozioAttivitaCompatibilePino(
   return attivita.pattern.test(identita);
 }
 
+/**
+ * Recall dedicato ai nomi di attività: la RPC semantica può perdere un nome
+ * corto come "bar" (lo confonde con "Barone") o restituire solo omonimi
+ * parziali. Questa query diretta recupera le vetrine che hanno davvero il
+ * termine nel nome/categoria; il gate di identità scarta comunque i falsi
+ * positivi. È un fallback di Pino, non una modifica alla ricerca pubblica.
+ */
+async function righeNegoziPerAttivitaPino(
+  termine: string
+): Promise<Record<string, unknown>[]> {
+  try {
+    const db = createAdminSupabaseClient();
+    const { data } = await db
+      .from("negozi")
+      .select("*")
+      .eq("attivo", true)
+      .is("deleted_at", null)
+      .limit(100);
+    return ((data ?? []) as Record<string, unknown>[]).filter((n) =>
+      negozioAttivitaCompatibilePino(n, termine)
+    );
+  } catch {
+    return [];
+  }
+}
+
 // Somiglianza con i termini richiesti: sottostringa oppure un token vicino per
 // edit-distance (refuso/plurale). Soglia più alta sui termini corti, come nel
 // fallback tollerante esistente.
@@ -1294,14 +1320,30 @@ export async function searchStores(
     return [];
   }
 
+  // "bar" è un nome di attività di tre lettere: senza passarlo esplicitamente
+  // al recall, la ricerca semantica lo scartava come token troppo corto e
+  // restituiva zero attività pur essendoci bar attivi in catalogo.
+  const attivitaRecall = ATTIVITA_CATALOGO_PINO.find(
+    (voce) =>
+      voce.pattern.test(normalizza(q)) ||
+      (opts?.termini ?? []).some((t) => voce.pattern.test(normalizza(t)))
+  )?.termine;
+  const terminiRecall = opts?.termini?.length
+    ? Array.from(new Set([...opts.termini, ...(attivitaRecall ? [attivitaRecall] : [])]))
+    : attivitaRecall
+      ? [attivitaRecall]
+      : undefined;
   const righe = await cercaNegozi(q || servizioRichiesto, {
     limit: limita(opts?.limit, 6, 20),
     categoria: opts?.categoria,
     tipo: opts?.tipo,
     citta: opts?.citta,
-    termini: opts?.termini?.length ? opts.termini : undefined,
+    termini: terminiRecall,
   }, segnalazioneDatiPino);
-  const attivi = (righe ?? []).filter(
+  const righeAttivita = attivitaRecall
+    ? await righeNegoziPerAttivitaPino(attivitaRecall)
+    : [];
+  const attivi = [...(righe ?? []), ...righeAttivita].filter(
     (n: Record<string, unknown>) => n.attivo !== false
   ).filter((n: Record<string, unknown>) =>
     !recordEscluso(
@@ -1324,6 +1366,10 @@ export async function searchStores(
   let pertinenti = candidati;
   if (!filtroEsplicito) {
     const base = q || (opts?.termini ?? []).join(" ");
+    // Se il planner ha ridotto "pizzeria" a "pizza", il gate deve comunque
+    // usare il nome dell'attività: altrimenti un panificio che vende pizza
+    // passa come pizzeria.
+    const baseGate = attivitaRecall ?? base;
     const citta = opts?.citta?.trim() || estraiCitta(base) || "";
     const tokenCitta = citta ? normalizza(citta) : "";
     const terminiOriginali = terminiSignificativi(base, 10)
@@ -1340,7 +1386,7 @@ export async function searchStores(
     pertinenti = attivi.filter(
       (n) =>
         negozioPertinente(n, terminiOriginali, concetti, espansi) &&
-        negozioAttivitaCompatibilePino(n, base)
+        negozioAttivitaCompatibilePino(n, baseGate)
     );
   }
 

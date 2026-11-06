@@ -983,7 +983,7 @@ export function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalys
     // Domande informative sull'attività (orari, indirizzo, telefono): la
     // cornice non è una keyword di catalogo. Togliendola, il soggetto reale
     // ("panificio", "pizzeria Da Mario") arriva a `searchStores`.
-    .replace(/\b(?:a\s+che\s+ora|quando)\s+(?:apre|aprono|chiude|chiudono|aprite|chiudete)\b|\bdove\s+(?:si\s+trova|si\s+trovano|trovo|sta|sono|e)\b|\bdov['’]\s*e\b|(?:qual(?:e|i)\s+[eè]\s+)?(?:l['’]\s*)?(?:indirizzo|orari[oi]?|numero\s+di\s+telefono)\s+(?:di|del|della|dei|delle|dell['’])?/gi, " ")
+    .replace(/\b(?:a\s+che\s+ora|quando)\s+(?:apre|aprono|chiude|chiudono|aprite|chiudete)\b|\bdove\s+(?:si\s+trova|si\s+trovano|trovo|sta|sono|e)\b|\bdov['’]\s*e\b|(?:qual(?:e|i)?\s+[eè]\s+)?(?:l['’]\s*)?(?:il|lo|la|i|gli|le)?\s*(?:indirizzo|orari[oi]?|telefono|numero\s+di\s+telefono)\b\s*(?:di|del|della|dei|delle|dell['’])?/gi, " ")
     // Remove English conversational framing before single-token cleanup:
     // otherwise stripping the standalone "i" from "I'm" leaves an orphan "'m".
     .replace(/\b(?:i am looking for|i['’]m looking for|im looking for|looking for|i would like|i'd like|id like|i want|i need|can you find|could you find|find me|show me|help me find|please find|please show)\b/gi, " ")

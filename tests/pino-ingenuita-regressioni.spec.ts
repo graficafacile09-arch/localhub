@@ -6,7 +6,7 @@ import {
   fallbackPlan,
   pianoLocaleIntelligente,
 } from "../lib/assistente/semantica";
-import { analizzaIntentoPino } from "../lib/assistente/intent";
+import { analizzaIntentoPino, pianoIntento } from "../lib/assistente/intent";
 import {
   cittaMeteoNonCopertaPino,
   pianoIntentoLocale,
@@ -14,6 +14,7 @@ import {
 import { negozioAttivitaCompatibilePino } from "../lib/assistente/tools";
 import {
   descriviOrariPino,
+  estraiSoggettoInfoAttivitaPino,
   rilevaRichiestaInfoAttivitaPino,
   rispostaInfoAttivitaPino,
 } from "../lib/assistente/info-attivita";
@@ -94,6 +95,17 @@ test.describe("Pino — nomi di attività", () => {
     expect(piano("pizza")?.surface).toBe("products");
     expect(piano("pizze")?.surface).toBe("products");
     expect(piano("pasta")?.surface).toBe("products");
+  });
+
+  test("la domanda di prezzo non perde il soggetto alimento", () => {
+    const analisi = analizzaIntentoPino("quanto costa l'olio?");
+    const invocazioni = pianoIntento(analisi, "quanto costa l'olio?");
+    expect(invocazioni.some((t) => t.tool === "searchProducts" && t.query === "olio")).toBe(
+      true
+    );
+    // Un'attività non deve tornare a essere cercata come prodotto.
+    const pizzeria = pianoIntento(analizzaIntentoPino("pizzeria"), "pizzeria");
+    expect(pizzeria.every((t) => t.tool === "searchStores")).toBe(true);
   });
 
   test("il fallback conosce le attività", () => {
@@ -191,6 +203,16 @@ test.describe("Pino — orari, indirizzo e telefono", () => {
     expect(rilevaRichiestaInfoAttivitaPino("qual è il telefono del bar?")) .toBe("telefono");
     expect(rilevaRichiestaInfoAttivitaPino("panificio aperto ora")).toBeNull();
     expect(rilevaRichiestaInfoAttivitaPino("cerco un panificio")).toBeNull();
+  });
+
+  test("estrae il soggetto dalle cornici informative", () => {
+    expect(estraiSoggettoInfoAttivitaPino("a che ora chiude il panificio?")).toBe("panificio");
+    expect(estraiSoggettoInfoAttivitaPino("orari del panificio Zini")).toBe("panificio zini");
+    expect(estraiSoggettoInfoAttivitaPino("qual e il telefono del panificio Zini?")).toBe(
+      "panificio zini"
+    );
+    expect(estraiSoggettoInfoAttivitaPino("where is Panificio Zini?")).toBe("panificio zini");
+    expect(piano("qual e il telefono del panificio Zini?")?.query).toBe("panificio zini");
   });
 
   test("formatta solo gli orari realmente registrati", () => {

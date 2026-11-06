@@ -51,6 +51,28 @@ export function rilevaRichiestaInfoAttivitaPino(input: string): InfoAttivitaPino
   return null;
 }
 
+/**
+ * Estrae il soggetto reale da una domanda informativa, togliendo la cornice
+ * ("qual è il telefono di", "a che ora chiude", "where is"). Serve al piano di
+ * ricerca: senza questa pulizia "qual e il telefono..." diventava una query di
+ * negozi e non arrivava mai al ramo informativo.
+ */
+export function estraiSoggettoInfoAttivitaPino(input: string): string {
+  return normalizzaRichiesta(input ?? "")
+    .replace(/\b(?:a\s+che\s+ora|quando)\s+(?:apre|aprono|chiude|chiudono|aprite|chiudete)\b/gi, " ")
+    .replace(/\bdove\s+(?:si\s+trova|si\s+trovano|trovo|sta|sono)\b/gi, " ")
+    .replace(/\b(?:what\s+time|when)\b/gi, " ")
+    .replace(/\b(?:does|do)\b/gi, " ")
+    .replace(/\bwhere\s+(?:is|are)\b/gi, " ")
+    .replace(/\b(?:open|closes?|opening|closing|hours|address|phone|telephone)\b/gi, " ")
+    .replace(/\b(?:qual(?:e|i)?\s+[eè]\s+)?(?:l['’]\s*)?(?:il|lo|la|i|gli|le)?\s*(?:indirizzo|orari[oi]?|telefono|numero\s+di\s+telefono)\b\s*(?:di|del|della|dei|delle|dell['’])?/gi, " ")
+    .replace(/[?.!,;:]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/^(?:il|lo|la|i|gli|le)\s+/i, "")
+    .trim();
+}
+
 function giornoCorrenteRoma(now: Date = new Date()): string {
   const nome = new Intl.DateTimeFormat("it-IT", {
     weekday: "long",
