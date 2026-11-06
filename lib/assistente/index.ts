@@ -118,6 +118,7 @@ import {
   arricchisciRichiestaConContesto,
   costruisciStatoConversazionale,
   fallbackPlan,
+  pianoLocaleIntelligente,
   fondiVincoliPino,
   interpretaRichiestaPino,
   estraiPrezzoEsplicitoPino,
@@ -1576,6 +1577,17 @@ function pianoPredefinito(
     };
   }
 
+  // "Dove si mangia bene?" è una richiesta di ristorazione, non un prodotto:
+  // senza questa guardia il correttore poteva leggere "mangia" come "maglia"
+  // e il planner finiva su un negozio di salute. La vetrina resta quella delle
+  // attività, con il termine gastronomico reale.
+  if (/\b(?:dove|posto|consigli(?:ami|atemi)?|qual(?:e|i))\b[\s\S]{0,40}\b(?:mangiare|mangia|mangiarsi)\b|\b(?:dove si mangia|dove mangiare)\b/i.test(ultimo)) {
+    return {
+      directReply: null,
+      tools: [{ tool: "searchStores", params: { query: "ristorante", limit: 8 } }],
+    };
+  }
+
   if (RE_PIATTAFORMA.test(ultimo)) {
     return {
       directReply: /\b(what|how)\b/i.test(ultimo)
@@ -1751,6 +1763,38 @@ function pianoPredefinito(
     return {
       directReply: null,
       tools: [{ tool: "searchAll", params: { query: scelto, limit: 3 } }],
+    };
+  }
+
+  // Il piano locale deterministico ha la precedenza sul planner semantico per
+  // un alimento concreto: "pasta", "quanto costa la pasta?" e "pasta sotto
+  // 5 euro" sono prodotti, non tre vetrine di negozi. Il planner LLM può
+  // classificare "pasta" come attività e perdere il catalogo; qui il soggetto
+  // alimentare e il budget già estratti restano la fonte autorevole.
+  const pianoProdottoLocale = pianoLocaleIntelligente(ultimo, analisi);
+  if (
+    pianoProdottoLocale?.surface === "products" &&
+    (pianoProdottoLocale.intent === "food" ||
+      pianoProdottoLocale.intent === "product" ||
+      pianoProdottoLocale.intent === "drink") &&
+    pianoProdottoLocale.query.trim()
+  ) {
+    return {
+      directReply: null,
+      tools: [
+        {
+          tool: "searchProducts",
+          params: {
+            query: pianoProdottoLocale.query,
+            maxPrice: pianoProdottoLocale.maxPrice,
+            minPrice: pianoProdottoLocale.minPrice,
+            esclusioni: pianoProdottoLocale.exclusions.length
+              ? pianoProdottoLocale.exclusions
+              : undefined,
+            limit: 8,
+          },
+        },
+      ],
     };
   }
 
@@ -3737,6 +3781,13 @@ export async function chatConAssistente(
   // semantico per capire il concetto, allargare morfologia/sinonimi e, se
   // utile, cercare anche le attività che possono avere quel prodotto.
   let notaRecupero: string | null = null;
+  // Una domanda su dove mangiare resta una ricerca di ristorazione: il
+  // recupero semantico non deve ripiegare su panifici o studi medici quando il
+  // catalogo non ha ristoranti pubblicati.
+  const richiestaRistorazionePino =
+    /\b(?:dove|posto|consigli(?:ami|atemi)?|qual(?:e|i))\b[\s\S]{0,40}\b(?:mangiare|mangia|mangiarsi)\b|\b(?:dove si mangia|dove mangiare)\b/i.test(
+      domanda
+    );
   if (
     selezioneOk &&
     !directReply &&
@@ -3747,6 +3798,7 @@ export async function chatConAssistente(
     prodotti.length === 0 &&
     offerte.length === 0 &&
     eventi.length === 0 &&
+    !richiestaRistorazionePino &&
     !invocazioni.some((t) =>
       t.tool === "getWeather" || t.tool === "searchPharmacies" || t.tool === "searchOffers" || t.tool === "searchEvents"
     )

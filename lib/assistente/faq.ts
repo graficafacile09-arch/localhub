@@ -91,6 +91,11 @@ export const FAQ_PINO = [
 ] as const;
 
 const STOP = new Set(["che","come","cosa","quale","quali","dove","quando","perche","posso","puoi","sono","della","delle","degli","dello","nella","nelle","sulla","sulle","con","per","una","uno","gli","the","how","what","where","when","can","does","are","is","you","your","for","and"]);
+function rispostaFaqNota(domanda: string): { domanda: string; risposta: string } | null {
+  const faq = FAQ_PINO.find((voce) => voce.domanda === domanda);
+  return faq ? { domanda: faq.domanda, risposta: faq.risposta } : null;
+}
+
 function tokenFaq(testo: string): string[] {
   const base = testo.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g," ").trim().split(/\s+/).filter(t=>t.length>2&&!STOP.has(t));
   const sinonimi: Record<string, string[]> = {
@@ -110,6 +115,26 @@ function tokenFaq(testo: string): string[] {
 }
 /** Risponde solo a domande con corrispondenza sufficientemente specifica nelle FAQ pubblicate. */
 export function trovaRispostaFaqPino(query: string): { domanda: string; risposta: string } | null {
+  const testo = String(query ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+  // Domande naturali su resi e consegna: il token scoring le perdeva perché
+  // la FAQ usa il plurale ("resi", "rimborsi") o il sinonimo "consegna"
+  // invece di "spedizione". La risposta resta quella pubblicata in /faq.
+  if (/\b(?:reso|resi|rimbors\w*|recesso|garanzia)\b/.test(testo)) {
+    const faq = rispostaFaqNota("Come funzionano resi, rimborsi e recesso?");
+    if (faq) return faq;
+  }
+  if (
+    /\b(?:spedizion\w*|consegn\w*|ritiro)\b/.test(testo) &&
+    !/\b(?:pagament\w*|pagare|metodo|metodi)\b/.test(testo)
+  ) {
+    const faq = rispostaFaqNota("Chi gestisce la consegna o il ritiro?");
+    if (faq) return faq;
+  }
   const token=tokenFaq(query); if(token.length<2) return null;
   let best: {domanda:string;risposta:string;score:number;coverage:number}|null=null;
   for(const faq of FAQ_PINO){

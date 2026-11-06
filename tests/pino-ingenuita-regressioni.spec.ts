@@ -98,6 +98,14 @@ test.describe("Pino — nomi di attività", () => {
   });
 
   test("la domanda di prezzo non perde il soggetto alimento", () => {
+    for (const [frase, atteso] of [
+      ["quanto costa la pasta?", "pasta"],
+      ["quanto costa il pane?", "pane"],
+    ] as const) {
+      const pianoProdotto = pianoLocaleIntelligente(frase, analizzaIntentoPino(frase));
+      expect(pianoProdotto?.surface, frase).toBe("products");
+      expect(pianoProdotto?.query, frase).toBe(atteso);
+    }
     const analisi = analizzaIntentoPino("quanto costa l'olio?");
     const invocazioni = pianoIntento(analisi, "quanto costa l'olio?");
     expect(invocazioni.some((t) => t.tool === "searchProducts" && t.query === "olio")).toBe(

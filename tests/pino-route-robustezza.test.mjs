@@ -124,6 +124,16 @@ test("i destinatari sono protetti dalla correzione dei refusi", () => {
   );
 });
 
+test("i verbi del mangiare non diventano capi di abbigliamento", () => {
+  for (const verbo of ["mangia", "mangio", "mangiare"]) {
+    assert.equal(TOKEN_SENZA_REFUSI.has(verbo), true, verbo);
+  }
+  assert.equal(
+    correggiErroriBattitura("dove si mangia bene?"),
+    "dove si mangia bene?"
+  );
+});
+
 test("i refusi veri continuano a essere corretti", () => {
   assert.equal(correggiTokenCatalogo("orologgio", VOCABOLARIO_PINO), "orologio");
   assert.equal(correggiTokenCatalogo("telefonno", VOCABOLARIO_PINO), "telefono");

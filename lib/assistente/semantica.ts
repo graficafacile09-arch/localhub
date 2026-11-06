@@ -650,6 +650,14 @@ export const TOKEN_SENZA_REFUSI = new Set([
   // su una parola di 6 lettere rientravano nella soglia dei refusi) e la
   // ricerca finiva su un capo di abbigliamento mai richiesto.
   ...DESTINATARI_PINO.flatMap(([canonico, sinonimi]) => [canonico, ...sinonimi]),
+  // Verbi del mangiare: "mangia" è una forma italiana valida e non deve
+  // diventare "maglia" (capo di abbigliamento) nella correzione refusi.
+  "mangia",
+  "mangio",
+  "mangi",
+  "mangiare",
+  "mangiarsi",
+  "mangiamo",
   // Nomi di attività: "pizzeria" non è un refuso di "pizza" e "bar" non è una
   // bevanda. Senza questa protezione la correzione automatica riscriveva il
   // nome della vetrina e la ricerca finiva sui prodotti.
