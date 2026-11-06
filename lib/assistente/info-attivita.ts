@@ -40,6 +40,17 @@ export function rilevaRichiestaInfoAttivitaPino(input: string): InfoAttivitaPino
   const orari = RE_ORARI.test(q) || RE_ORA_SPECIFICA.test(q);
   const indirizzo = RE_INDIRIZZO.test(q);
   const telefono = RE_TELEFONO.test(q);
+  const giorno = giornoRichiestoPino(q);
+
+  // «È aperto la domenica?» non è lo stato di adesso: è una domanda sugli
+  // orari di un giorno specifico. Va gestita prima di `richiestaApertaOra`,
+  // che riconosce solo «aperto ora/adesso».
+  if (
+    giorno &&
+    /\b(?:aperto|aperta|aperti|aperte|chiuso|chiusa|chiusi|chiuse|orari[oi]?|orario)\b/.test(q)
+  ) {
+    return "orari";
+  }
 
   // «Il panificio Zini è aperto ora?» chiede uno stato verificabile, non una
   // ricerca filtrata: se il filtro escludesse i chiusi non potremmo rispondere
@@ -72,6 +83,8 @@ export function estraiSoggettoInfoAttivitaPino(input: string): string {
     .replace(/\b(?:does|do)\b/gi, " ")
     .replace(/\bwhere\s+(?:is|are)\b/gi, " ")
     .replace(/\b(?:aperto|aperta|aperti|aperte)\s+(?:ora|adesso|oggi|domani)?\b/gi, " ")
+    .replace(/\b(?:aperto|aperta|aperti|aperte|chiuso|chiusa|chiusi|chiuse)\b/gi, " ")
+    .replace(/\b(?:il|lo|la|i|gli|le)?\s*(?:lunedi|martedi|mercoledi|giovedi|venerdi|sabato|domenica|monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/gi, " ")
     .replace(/\b(?:open|opened)\s+(?:right\s+)?now\b|\bcurrently\s+open\b/gi, " ")
     .replace(/\b(?:open|closes?|opening|closing|hours|address|phone|telephone)\b/gi, " ")
     .replace(/\b(?:qual(?:e|i)?\s+[eè]\s+)?(?:l['’]\s*)?(?:il|lo|la|i|gli|le)?\s*(?:indirizzo|orari[oi]?|telefono|numero\s+di\s+telefono)\b\s*(?:di|del|della|dei|delle|dell['’])?/gi, " ")
@@ -93,6 +106,50 @@ function giornoCorrenteRoma(now: Date = new Date()): string {
   return nome;
 }
 
+const GIORNI_PINO: Readonly<Record<string, string>> = {
+  lunedi: "lunedì",
+  martedi: "martedì",
+  mercoledi: "mercoledì",
+  giovedi: "giovedì",
+  venerdi: "venerdì",
+  sabato: "sabato",
+  domenica: "domenica",
+  monday: "lunedì",
+  tuesday: "martedì",
+  wednesday: "mercoledì",
+  thursday: "giovedì",
+  friday: "venerdì",
+  saturday: "sabato",
+  sunday: "domenica",
+};
+
+/**
+ * Giorno richiesto esplicitamente («domenica», «domani», «Sunday»). Restituisce
+ * la chiave usata da `Orari` e da `DAYS`, oppure null se la domanda non contiene
+ * un giorno. La conversione di «domani» usa il fuso Europe/Rome, come lo stato
+ * «aperto ora».
+ */
+export function giornoRichiestoPino(
+  input: string,
+  now: Date = new Date()
+): string | null {
+  const q = normalizzaRichiesta(input ?? "");
+  if (!q) return null;
+  if (/\bdomani\b|\btomorrow\b/.test(q)) {
+    return new Intl.DateTimeFormat("it-IT", {
+      weekday: "long",
+      timeZone: "Europe/Rome",
+    })
+      .format(new Date(now.getTime() + 86_400_000))
+      .toLowerCase();
+  }
+  if (/\boggi\b|\btoday\b/.test(q)) return giornoCorrenteRoma(now);
+  for (const [token, giorno] of Object.entries(GIORNI_PINO)) {
+    if (new RegExp(`\\b${token}\\b`).test(q)) return giorno;
+  }
+  return null;
+}
+
 /**
  * Testo degli orari registrati. Restituisce null quando il giorno non è
  * pubblicato o l'apertura è dichiarata senza fasce utilizzabili: Pino non
@@ -100,7 +157,7 @@ function giornoCorrenteRoma(now: Date = new Date()): string {
  */
 export function descriviOrariPino(
   orari: Orari | null | undefined,
-  opzioni: { giorno?: string; completo?: boolean } = {}
+  opzioni: { giorno?: string; completo?: boolean; etichetta?: "oggi" | "giorno" } = {}
 ): string | null {
   if (!orari || typeof orari !== "object") return null;
 
@@ -120,7 +177,9 @@ export function descriviOrariPino(
         ? fasce.map((f) => `${formatTime(f.open)}–${formatTime(f.close)}`).join(", ")
         : null;
     if (!testo) continue;
-    parti.push(opzioni.completo ? `${chiave}: ${testo}` : `oggi (${chiave}): ${testo}`);
+    const etichetta =
+      opzioni.etichetta === "giorno" ? chiave : `oggi (${chiave})`;
+    parti.push(opzioni.completo ? `${chiave}: ${testo}` : `${etichetta}: ${testo}`);
   }
 
   return parti.length > 0 ? parti.join("; ") : null;
@@ -131,7 +190,8 @@ export function rispostaInfoAttivitaPino(
   negozi: NegozioRicerca[],
   info: InfoAttivitaPino,
   orari: Map<string, Orari | null>,
-  lingua: "it" | "en" = "it"
+  lingua: "it" | "en" = "it",
+  opzioni: { giorno?: string | null } = {}
 ): string {
   const inglese = lingua === "en";
   const mostraStato = info === "stato";
@@ -158,6 +218,9 @@ export function rispostaInfoAttivitaPino(
     if (mostraOrari) {
       const testo = descriviOrariPino(orari.get(negozio.id) ?? null, {
         completo: orariCompleti,
+        ...(opzioni.giorno
+          ? { giorno: opzioni.giorno, etichetta: "giorno" as const }
+          : {}),
       });
       dettagli.push(
         testo ??

@@ -26,6 +26,7 @@ import { estraiCitta } from "../lib/localita";
 import {
   descriviOrariPino,
   estraiSoggettoInfoAttivitaPino,
+  giornoRichiestoPino,
   rilevaRichiestaInfoAttivitaPino,
   rispostaInfoAttivitaPino,
 } from "../lib/assistente/info-attivita";
@@ -223,6 +224,11 @@ test.describe("Pino — cornice di ricerca e sicurezza farmaci", () => {
     expect(pulisciCorniceRicercaPino("Mi trovi il Panificio Zini")).toBe("panificio zini");
     expect(pulisciCorniceRicercaPino("Vorrei comprare olio")).toBe("olio");
     expect(pulisciCorniceRicercaPino("Mi serve un idraulico")).toBe("idraulico");
+    // Il budget viene estratto separatamente da `normalizzaQueryCatalogo`: la
+    // cornice «mi consigli» non deve restare nella query, il soggetto sì.
+    expect(pulisciCorniceRicercaPino("Mi consigli un regalo sotto 20 euro")).toBe(
+      "regalo"
+    );
     expect(pulisciCorniceRicercaPino("panificio zini")).toBe("panificio zini");
   });
 
@@ -314,6 +320,9 @@ test.describe("Pino — orari, indirizzo e telefono", () => {
     expect(rilevaRichiestaInfoAttivitaPino("qual è il telefono del bar?")) .toBe("telefono");
     expect(rilevaRichiestaInfoAttivitaPino("panificio aperto ora")).toBe("stato");
     expect(rilevaRichiestaInfoAttivitaPino("il panificio Zini è aperto ora?")).toBe("stato");
+    expect(rilevaRichiestaInfoAttivitaPino("il panificio Zini è aperto la domenica?")).toBe(
+      "orari"
+    );
     expect(rilevaRichiestaInfoAttivitaPino("cerco un panificio")).toBeNull();
   });
 
@@ -325,6 +334,9 @@ test.describe("Pino — orari, indirizzo e telefono", () => {
     );
     expect(estraiSoggettoInfoAttivitaPino("where is Panificio Zini?")).toBe("panificio zini");
     expect(estraiSoggettoInfoAttivitaPino("il panificio Zini e aperto ora?")).toBe("panificio zini");
+    expect(estraiSoggettoInfoAttivitaPino("il panificio Zini e aperto la domenica?")).toBe(
+      "panificio zini"
+    );
     expect(piano("qual e il telefono del panificio Zini?")?.query).toBe("panificio zini");
   });
 
@@ -360,8 +372,17 @@ test.describe("Pino — orari, indirizzo e telefono", () => {
     expect(descriviOrariPino(orari, { giorno: "giovedì" })).toBe(
       "oggi (giovedì): 09:00–13:00, 15:00–19:00"
     );
+    expect(descriviOrariPino(orari, { giorno: "domenica", etichetta: "giorno" })).toBe(
+      "domenica: chiuso"
+    );
     expect(descriviOrariPino(orari, { completo: true })).toContain("domenica: chiuso");
     expect(descriviOrariPino(null)).toBeNull();
+    expect(
+      giornoRichiestoPino("il panificio è aperto domenica?", new Date("2026-11-06T12:00:00+01:00"))
+    ).toBe("domenica");
+    expect(
+      giornoRichiestoPino("il panificio è aperto domani?", new Date("2026-11-06T12:00:00+01:00"))
+    ).toBe("sabato");
   });
 
   test("la risposta usa indirizzo e telefono del negozio e dichiara i buchi", () => {
@@ -386,6 +407,28 @@ test.describe("Pino — orari, indirizzo e telefono", () => {
         } as Orari,
       ],
     ]);
+
+    const rispostaGiorno = rispostaInfoAttivitaPino(
+      [{ id: "n1", nome: "Panificio Zini", categoria: "Panificio" }],
+      "orari",
+      new Map([
+        [
+          "n1",
+          {
+            domenica: {
+              chiuso: true,
+              apertura1: "",
+              chiusura1: "",
+              apertura2: "",
+              chiusura2: "",
+            },
+          } as Orari,
+        ],
+      ]),
+      "it",
+      { giorno: "domenica" }
+    );
+    expect(rispostaGiorno).toContain("domenica: chiuso");
 
     const risposta = rispostaInfoAttivitaPino([negozio], "completa", orari);
     expect(risposta).toContain("Panificio Zini");

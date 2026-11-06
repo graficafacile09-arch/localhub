@@ -12,6 +12,7 @@ import {
 } from "./routing-policy";
 import { soggettoAlimentarePino } from "./lexicon";
 import {
+  messaggioCondizioneAlimentarePino,
   messaggioQualificazioneRilassataPino,
   messaggioRestrizioneAlimentarePino,
 } from "./messaggi-pino";
@@ -75,6 +76,8 @@ import {
   negozioAttivitaCompatibilePino,
   negozioProfessioneCompatibilePino,
   prodottoDocumentaRestrizionePino,
+  allergeneAlimentarePino,
+  condizioneAlimentarePino,
   restrizioneAlimentareRigidaPino,
 } from "./tools";
 import {
@@ -97,12 +100,19 @@ import {
 } from "@/lib/ai/gemini-function-calling";
 import { isAttractionNameQuery, searchAttractions } from "./attrazioni";
 import { trovaRispostaFaqPino } from "./faq";
+import {
+  richiestaIstruzioniInternePino,
+  rilevaAzioneNonDisponibilePino,
+  rispostaAzioneNonDisponibilePino,
+  rispostaIstruzioniInternePino,
+} from "./capacita";
 import { normalizza } from "@/lib/text-utils";
 import type { NegozioRicerca, ProdottoRicerca } from "@/lib/ricerca-ai";
 import { cittaMeteoNonCopertaPino, pianoIntentoLocale } from "./local-intents";
 import { rilevaPeriodoEventiPino } from "./eventi-periodo";
 import {
   estraiSoggettoInfoAttivitaPino,
+  giornoRichiestoPino,
   rilevaRichiestaInfoAttivitaPino,
   rispostaInfoAttivitaPino,
 } from "./info-attivita";
@@ -3161,6 +3171,54 @@ export async function chatConAssistente(
     }, { limiti: null, origine: "assente" });
   }
 
+  // Sicurezza alimentare: una condizione dichiarata non è una qualifica
+  // "morbida". Se il catalogo non può verificare l'allergene, o se manca un
+  // prodotto specifico da filtrare, Pino non propone alimenti o locali.
+  const condizioneAlimentare = condizioneAlimentarePino(domanda);
+  const allergeneNonVerificabile = restrizioneAlimentareRigida
+    ? null
+    : allergeneAlimentarePino(domanda);
+  if (
+    condizioneAlimentare &&
+    (allergeneNonVerificabile !== null || !isExplicitFoodProductRequest(domanda))
+  ) {
+    return esci("sicurezza_alimentare", {
+      risposta: messaggioCondizioneAlimentarePino(
+        linguaConversazione,
+        condizioneAlimentare,
+        restrizioneAlimentareRigida
+      ),
+      negozi: [],
+      prodotti: [],
+      processingMs: Date.now() - inizio,
+      source: "assistente",
+    }, { limiti: null, origine: "assente" });
+  }
+
+  // Istruzioni interne: nessuna ricerca, nessuna rivelazione del prompt.
+  if (richiestaIstruzioniInternePino(domanda)) {
+    return esci("istruzioni_interne", {
+      risposta: rispostaIstruzioniInternePino(linguaConversazione),
+      negozi: [],
+      prodotti: [],
+      processingMs: Date.now() - inizio,
+      source: "assistente",
+    }, { limiti: null, origine: "assente" });
+  }
+
+  // Azioni che Pino non può eseguire: prima delle FAQ, altrimenti «puoi
+  // ordinare tu?» viene intercettato dalla FAQ sull'acquisto come ospite.
+  const azioneNonDisponibile = rilevaAzioneNonDisponibilePino(domanda);
+  if (azioneNonDisponibile) {
+    return esci("azione_non_disponibile", {
+      risposta: rispostaAzioneNonDisponibilePino(azioneNonDisponibile, linguaConversazione),
+      negozi: [],
+      prodotti: [],
+      processingMs: Date.now() - inizio,
+      source: "assistente",
+    }, { limiti: null, origine: "assente" });
+  }
+
   // FAQ pubbliche: risposte basate esclusivamente sui contenuti pubblicati in /faq.
   // La soglia di corrispondenza evita di intercettare ricerche commerciali o richieste vaghe.
   if (linguaConversazione === "it") {
@@ -3985,7 +4043,8 @@ export async function chatConAssistente(
         negozi,
         infoAttivita,
         orari,
-        linguaConversazione
+        linguaConversazione,
+        { giorno: giornoRichiestoPino(domanda) }
       ),
       negozi: negozi.slice(0, 3),
       prodotti: [],

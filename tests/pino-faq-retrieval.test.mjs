@@ -24,15 +24,18 @@ test("FAQ: non risponde a richieste non coperte", () => {
   assert.equal(trovaRispostaFaqPino("Che tempo farà domani?"), null);
 });
 
-test("FAQ: apertura negozio e annullamento ordine usano le risposte pubblicate", () => {
+test("FAQ: apertura negozio usa la risposta pubblicata", () => {
   const apertura = trovaRispostaFaqPino("come apro un negozio?");
   assert.ok(apertura);
   assert.match(apertura.domanda, /aprire un negozio/i);
+});
 
-  const annullamento = trovaRispostaFaqPino("posso annullare un ordine?");
-  assert.ok(annullamento);
-  assert.match(annullamento.domanda, /ordine ha un problema/i);
-  assert.doesNotMatch(annullamento.risposta, /14 giorni/i);
+test("FAQ: l'annullamento non viene dirottato sulla FAQ generica dell'ordine", () => {
+  // Non esiste una FAQ pubblicata dedicata all'annullamento: la risposta
+  // generica «problema con l'ordine» non risponde alla domanda e non deve
+  // essere presentata come tale. Il ramo capacità di Pino gestisce l'azione.
+  assert.equal(trovaRispostaFaqPino("posso annullare un ordine?"), null);
+  assert.equal(trovaRispostaFaqPino("come cancello un acquisto?"), null);
 });
 
 test("FAQ: resi e spedizione usano le risposte pubblicate, senza policy inventate", () => {

@@ -1360,7 +1360,7 @@ export function pulisciCorniceRicercaPino(query: string): string {
   if (!originale) return "";
   return originale
     .replace(
-      /^(?:(?:mi|ti|ci)\s+)?(?:trovi|trova|trovami|cerchi|cerco|cerca|sto\s+cercando|vorrei|voglio|mi\s+serve|mi\s+servirebbe|mi\s+servono|ho\s+bisogno\s+di|avete|hai|mostrami|fammi\s+vedere|mi\s+fai\s+vedere|dove\s+(?:trovo|compro|posso\s+trovare|posso\s+comprare))\s+/i,
+      /^(?:(?:mi|ti|ci)\s+)?(?:trovi|trova|trovami|cerchi|cerco|cerca|sto\s+cercando|vorrei|voglio|mi\s+serve|mi\s+servirebbe|mi\s+servono|ho\s+bisogno\s+di|avete|hai|mostrami|fammi\s+vedere|mi\s+fai\s+vedere|dove\s+(?:trovo|compro|posso\s+trovare|posso\s+comprare)|mi\s+consigli|mi\s+consiglieresti|consigliami|consigliatemi|puoi\s+consigliarmi|sapresti\s+consigliarmi)\s+/i,
       ""
     )
     .replace(/^(?:comprare|acquistare|ordinare|prendere)\s+/i, "")
@@ -2585,9 +2585,78 @@ function prodottoEUnDessert(prodotto: ProdottoRicerca): boolean {
  */
 export function restrizioneAlimentareRigidaPino(query: string): string | null {
   const q = normalizza(query);
-  if (/\bsenza\s+glutine\b|\bgluten\s*free\b/.test(q)) return "senza glutine";
-  if (/\bsenza\s+lattosio\b|\blactose\s*free\b/.test(q)) return "senza lattosio";
+  // La restrizione può essere espressa come qualifica del prodotto
+  // («senza glutine») oppure come condizione della persona («sono celiaco»,
+  // «ho un'allergia al lattosio»). Entrambe devono attivare lo stesso filtro:
+  // una condizione dichiarata non è una preferenza morbida.
+  if (
+    /\bsenza\s+glutine\b|\bgluten\s*free\b|\bceliac[oaie]\b|\bceliachia\b|\bintolleran(?:te|za)\s+al\s+glutine\b|\ballergi(?:a|co|ca)\s+al\s+glutine\b|\bsensibil[ei]\s+al\s+glutine\b/.test(q)
+  ) {
+    return "senza glutine";
+  }
+  if (
+    /\bsenza\s+lattosio\b|\blactose\s*free\b|\bintolleran(?:te|za)\s+al\s+lattosio\b|\ballergi(?:a|co|ca)\s+al\s+lattosio\b/.test(q)
+  ) {
+    return "senza lattosio";
+  }
   return null;
+}
+
+/**
+ * Allergeni alimentari che il catalogo non sa verificare. Non basta il nome
+ * dell'alimento: serve una condizione dichiarata («sono allergico», «ho
+ * un'allergia», «sono intollerante»). Così «cerco noci» resta una ricerca
+ * normale, mentre «sono allergico alle noci» non produce consigli non sicuri.
+ */
+const ALLERGENI_ALIMENTARI_PINO: ReadonlyArray<{ etichetta: string; re: RegExp }> = [
+  { etichetta: "arachidi", re: /\barachid[ie]\b/ },
+  {
+    etichetta: "frutta a guscio",
+    re: /\b(?:noci|noce|nocciole|nocciola|mandorle|mandorla|pistacchi|pistacchio|anacardi|anacardo|pecan|macadamia|frutta\s+a\s+guscio)\b/,
+  },
+  { etichetta: "uova", re: /\buov[oaie]\b/ },
+  { etichetta: "soia", re: /\bsoia\b/ },
+  { etichetta: "pesce", re: /\bpesce\b/ },
+  { etichetta: "crostacei", re: /\bcrostace[oi]\b/ },
+  { etichetta: "molluschi", re: /\bmollusch[oi]\b/ },
+  { etichetta: "sesamo", re: /\bsesamo\b/ },
+  { etichetta: "sedano", re: /\bsedano\b/ },
+  { etichetta: "senape", re: /\bsenape\b/ },
+  { etichetta: "solfiti", re: /\bsolfit[oi]\b/ },
+  { etichetta: "lupini", re: /\blupin[oi]\b/ },
+  {
+    etichetta: "latte e latticini",
+    re: /\b(?:latte|latticini|formaggi[oi]?|yogurt|burro|panna)\b/,
+  },
+];
+
+const RE_CONDIZIONE_ALIMENTARE_PINO =
+  /\b(?:allergic[oaie]|allergia|intolleran(?:te|za)|sensibil[ei])\b/;
+
+/** Allergene alimentare esplicitamente associato a una condizione dichiarata. */
+export function allergeneAlimentarePino(query: string): string | null {
+  const q = normalizza(query);
+  if (!RE_CONDIZIONE_ALIMENTARE_PINO.test(q)) return null;
+  return ALLERGENI_ALIMENTARI_PINO.find(({ re }) => re.test(q))?.etichetta ?? null;
+}
+
+/**
+ * Condizione alimentare dichiarata, in forma leggibile. `celiachia` e
+ * `intolleranza al lattosio` hanno un filtro canonico; le altre allergie non
+ * hanno un dato verificabile nel catalogo e vanno gestite senza consigli.
+ */
+export function condizioneAlimentarePino(query: string): string | null {
+  const q = normalizza(query);
+  if (
+    /\bceliac[oaie]\b|\bceliachia\b|\bintolleran(?:te|za)\s+al\s+glutine\b|\ballergi(?:a|co|ca)\s+al\s+glutine\b|\bsensibil[ei]\s+al\s+glutine\b/.test(q)
+  ) {
+    return "celiachia";
+  }
+  if (/\bintolleran(?:te|za)\s+al\s+lattosio\b|\ballergi(?:a|co|ca)\s+al\s+lattosio\b/.test(q)) {
+    return "intolleranza al lattosio";
+  }
+  const allergene = allergeneAlimentarePino(q);
+  return allergene ? `allergia a ${allergene}` : null;
 }
 
 export function prodottoDocumentaRestrizionePino(

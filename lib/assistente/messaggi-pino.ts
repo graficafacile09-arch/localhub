@@ -46,3 +46,31 @@ export function messaggioRestrizioneAlimentarePino(
   }
   return `Nel catalogo non trovo prodotti con il requisito «${restrizione}» per «${soggetto}»: non ti mostro alternative non verificate per una restrizione alimentare.`;
 }
+
+/**
+ * Condizione alimentare dichiarata (celiachia, allergia, intolleranza) senza
+ * un prodotto specifico filtrabile. Pino non consiglia alimenti o locali che
+ * non può verificare e indica il passo sicuro: etichetta, certificazione o
+ * contatto diretto con il venditore.
+ */
+export function messaggioCondizioneAlimentarePino(
+  lingua: LinguaPino,
+  condizione: string,
+  restrizione: string | null = null
+): string {
+  const filtro = restrizione
+    ? lingua === "en"
+      ? ` If you are looking for a specific product, tell me which one and I'll filter only items that state “${restrizione}”.`
+      : ` Se cerchi un prodotto specifico, dimmi quale e filtro solo quelli che riportano «${restrizione}».`
+    : "";
+  if (lingua === "en") {
+    const condizioneEn =
+      condizione === "celiachia"
+        ? "coeliac disease"
+        : condizione === "intolleranza al lattosio"
+          ? "lactose intolerance"
+          : "a food allergy or intolerance";
+    return `I can't verify from the InCittà catalogue that a food or a venue is suitable for someone with ${condizioneEn}. I won't show unverified options: check the label or certification, or contact the seller directly.${filtro}`;
+  }
+  return `Non posso verificare dal catalogo InCittà che un alimento o un locale sia adatto a una persona con ${condizione}. Non ti mostro opzioni non verificate: controlla l'etichetta o la certificazione, oppure contatta direttamente il venditore.${filtro}`;
+}

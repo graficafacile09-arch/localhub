@@ -2,12 +2,19 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  allergeneAlimentarePino,
+  condizioneAlimentarePino,
   filtraProdottiAlimentariPino,
   fraseQualificazionePino,
   qualificazioneDocumentataPino,
+  restrizioneAlimentareRigidaPino,
 } from "../lib/assistente/tools.ts";
-import { messaggioQualificazioneRilassataPino } from "../lib/assistente/messaggi-pino.ts";
+import {
+  messaggioCondizioneAlimentarePino,
+  messaggioQualificazioneRilassataPino,
+} from "../lib/assistente/messaggi-pino.ts";
 import { decidiDominioPino } from "../lib/assistente/routing-policy.ts";
+import { rilevaAzioneNonDisponibilePino } from "../lib/assistente/capacita.ts";
 
 function prodotto(overrides = {}) {
   return {
@@ -141,6 +148,98 @@ test("il messaggio dichiara la qualifica non confermata senza dire che manca tut
   const inglese = messaggioQualificazioneRilassataPino("en", "olio", "olio dop");
   assert.match(inglese, /couldn't find a product labelled/);
   assert.match(inglese, /won't claim that qualifier/);
+});
+
+test("celiachia e allergia al lattosio attivano il filtro rigido anche come condizione", () => {
+  const paneComune = prodotto({
+    id: "pane-comune",
+    nome: "Pane Casereccio",
+    categoria: "Panificio",
+    descrizione: "Pane di semola di grano duro.",
+  });
+  const paneSenzaGlutine = prodotto({
+    id: "pane-senza-glutine",
+    nome: "Pane senza glutine",
+    categoria: "Panificio",
+    descrizione: "Prodotto senza glutine, certificato.",
+  });
+  const formaggio = prodotto({
+    id: "formaggio",
+    nome: "Pecorino del Monte Poro",
+    categoria: "Alimentari",
+    descrizione: "Formaggio di latte ovino.",
+  });
+
+  assert.equal(restrizioneAlimentareRigidaPino("Sono celiaco, cerco pane"), "senza glutine");
+  assert.deepEqual(
+    ids(filtraProdottiAlimentariPino([paneComune], "Sono celiaco, cerco pane", "pane")),
+    []
+  );
+  assert.deepEqual(
+    ids(
+      filtraProdottiAlimentariPino(
+        [paneComune, paneSenzaGlutine],
+        "Sono celiaco, cerco pane",
+        "pane"
+      )
+    ),
+    ["pane-senza-glutine"]
+  );
+
+  assert.equal(
+    restrizioneAlimentareRigidaPino("Ho un'allergia al lattosio, cerco formaggio"),
+    "senza lattosio"
+  );
+  assert.deepEqual(
+    ids(
+      filtraProdottiAlimentariPino(
+        [formaggio],
+        "Ho un'allergia al lattosio, cerco formaggio",
+        "formaggio"
+      )
+    ),
+    []
+  );
+});
+
+test("un allergene non verificabile non produce consigli alimentari", () => {
+  assert.equal(
+    allergeneAlimentarePino("Sono allergico alle noci, cerco biscotti"),
+    "frutta a guscio"
+  );
+  assert.equal(
+    condizioneAlimentarePino("Sono allergico alle noci, cerco biscotti"),
+    "allergia a frutta a guscio"
+  );
+  assert.equal(condizioneAlimentarePino("Sono allergico ai pollini"), null);
+  assert.match(
+    messaggioCondizioneAlimentarePino("it", "allergia a frutta a guscio"),
+    /Non posso verificare/
+  );
+  assert.match(
+    messaggioCondizioneAlimentarePino("en", "celiachia", "senza glutine"),
+    /can't verify/i
+  );
+});
+
+test("le azioni non eseguibili sono riconosciute prima delle FAQ", () => {
+  assert.equal(
+    rilevaAzioneNonDisponibilePino("Vorrei prenotare un tavolo per stasera"),
+    "prenotazione"
+  );
+  assert.equal(rilevaAzioneNonDisponibilePino("Puoi ordinare tu per me?"), "ordine");
+  assert.equal(rilevaAzioneNonDisponibilePino("Posso annullare un ordine?"), "annullamento");
+  assert.equal(
+    rilevaAzioneNonDisponibilePino("Qual è il tuo numero di telefono?"),
+    "contatto"
+  );
+  assert.equal(rilevaAzioneNonDisponibilePino("Come posso contattare InCittà?"), "contatto");
+  // Le domande informative restano alle FAQ pubblicate.
+  assert.equal(rilevaAzioneNonDisponibilePino("Come faccio un ordine?"), null);
+  assert.equal(
+    rilevaAzioneNonDisponibilePino("Quali metodi di pagamento posso utilizzare?"),
+    null
+  );
 });
 
 test("la tabella di routing decide il dominio in un solo posto", () => {

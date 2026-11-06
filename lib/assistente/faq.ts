@@ -133,11 +133,13 @@ export function trovaRispostaFaqPino(query: string): { domanda: string; risposta
     const faq = rispostaFaqNota("Come posso aprire un negozio su InCittà?");
     if (faq) return faq;
   }
+  // L'annullamento non ha una FAQ pubblicata dedicata: la risposta generica
+  // «problema con l'ordine» non risponde alla domanda. Il ramo capacità di
+  // Pino gestisce l'azione e indica il Venditore, senza inventare policy.
   if (
-    /\b(?:annull\w*|disdic\w*|cancell\w*)\b[\s\S]{0,40}\b(?:ordine|acquisto)\b/.test(testo)
+    /\b(?:annull\w*|disdic\w*|cancell\w*)\b[\s\S]{0,40}\b(?:ordine|acquisto|prenotazione|appuntamento)\b/.test(testo)
   ) {
-    const faq = rispostaFaqNota("Cosa faccio se il mio ordine ha un problema?");
-    if (faq) return faq;
+    return null;
   }
   if (/\b(?:reso|resi|rimbors\w*|recesso|garanzia)\b/.test(testo)) {
     const faq = rispostaFaqNota("Come funzionano resi, rimborsi e recesso?");
