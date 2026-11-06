@@ -37,34 +37,38 @@ import { CANONICI_CATALOGO_PINO, VOCABOLARIO_REFUSI_PINO } from "./lexicon.ts";
 import type { MessaggioAssistente } from "./index";
 import type { PinoMemoriaVoce } from "./memoria";
 
-// ─── Fallback a costo zero: Gemini 429/402 → NVIDIA NIM (DeepSeek) ──────────
+// ─── Fallback a costo zero: Gemini 429/402 → Groq (OpenAI-compatibile) ──────
 //
 // Il planner semantico è il primo consumatore di quota della richiesta: con
-// Gemini a 429 la comprensione AI si spegneva e restava solo il piano
-// deterministico. Qui la stessa richiesta viene ripetuta su NVIDIA NIM, che
-// espone un endpoint OpenAI-compatibile.
+// Gemini a 429 (o appeso oltre la soglia) la comprensione AI si spegneva e
+// restava solo il piano deterministico. Qui la stessa richiesta viene ripetuta
+// su Groq Cloud, che espone un endpoint OpenAI-compatibile.
 //
 // L'helper resta LOCALE a questo file: `index.ts` importa semantica, quindi
 // importare da lì la funzione creerebbe un ciclo ESM. La chiave arriva da
-// NVIDIA_NIM_API_KEY, mai dal codice.
-// Se anche NVIDIA fallisce viene rilanciato l'errore ORIGINALE di Gemini: il
+// GROQ_API_KEY, mai dal codice.
+// Se anche Groq fallisce viene rilanciato l'errore ORIGINALE di Gemini: il
 // catch di `interpretaRichiestaPino` conserva il percorso deterministico e la
 // rotta non va in crash.
 
-const NVIDIA_NIM_ENDPOINT = "https://integrate.api.nvidia.com/v1/chat/completions";
-/** Unico ID DeepSeek chat erogato da NIM; sostituibile con NVIDIA_NIM_MODEL. */
-const MODELLO_NVIDIA_FALLBACK = "deepseek-ai/deepseek-v4.1-flash";
+const GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
 /**
- * 4s su Gemini + 6s su NVIDIA = 10s nel caso peggiore, ampiamente dentro la
+ * `llama-3.3-70b-specdec` e `llama3-8b-8192` non sono più erogati: il
+ * sostituto indicato da Groq è `openai/gpt-oss-120b`, sostituibile con
+ * GROQ_MODEL.
+ */
+const MODELLO_GROQ_FALLBACK = "openai/gpt-oss-120b";
+/**
+ * 4s su Gemini + 6s su Groq = 10s nel caso peggiore, ampiamente dentro la
  * scadenza della rotta: il backup non deve allungare il percorso.
  */
-const TIMEOUT_NVIDIA_MS = 6_000;
+const TIMEOUT_GROQ_MS = 6_000;
 /** 0.3: determinismo sui dati di catalogo. */
-const TEMPERATURA_NVIDIA = 0.3;
-const MAX_TOKENS_NVIDIA = 300;
+const TEMPERATURA_GROQ = 0.3;
+const MAX_TOKENS_GROQ = 300;
 
-/** Messaggio in formato OpenAI: NIM accetta system/user/assistant. */
-type MessaggioNvidia = {
+/** Messaggio in formato OpenAI: Groq accetta system/user/assistant. */
+type MessaggioGroq = {
   role: "system" | "user" | "assistant";
   content: string;
 };
@@ -91,29 +95,29 @@ function erroreGeminiRecuperabilePino(errore: unknown): boolean {
 }
 
 /**
- * Chiamata di backup su NVIDIA NIM (DeepSeek): fetch nativa, nessuna
- * dipendenza nuova. Lancia su chiave assente, risposta non valida, timeout o
- * testo vuoto — il chiamante decide come degradare.
+ * Chiamata di backup su Groq Cloud: fetch nativa, nessuna dipendenza nuova.
+ * Lancia su chiave assente, risposta non valida, timeout o testo vuoto — il
+ * chiamante decide come degradare.
  */
-async function chiamaDeepSeekSuNvidia(
+async function chiamaBackupSuGroq(
   systemPrompt: string,
-  messages: MessaggioNvidia[],
+  messages: MessaggioGroq[],
   opzioni: { maxTokens?: number } = {}
 ): Promise<string> {
-  const apiKey = process.env.NVIDIA_NIM_API_KEY?.trim();
+  const apiKey = process.env.GROQ_API_KEY?.trim();
   if (!apiKey) {
     throw new Error(
-      "Chiave API NVIDIA NIM mancante. Aggiungi NVIDIA_NIM_API_KEY alle variabili d'ambiente."
+      "Chiave API Groq mancante. Aggiungi GROQ_API_KEY alle variabili d'ambiente."
     );
   }
-  const model = process.env.NVIDIA_NIM_MODEL?.trim() || MODELLO_NVIDIA_FALLBACK;
+  const model = process.env.GROQ_MODEL?.trim() || MODELLO_GROQ_FALLBACK;
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_NVIDIA_MS);
+  const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_GROQ_MS);
   try {
-    const corpo: MessaggioNvidia[] = systemPrompt.trim()
+    const corpo: MessaggioGroq[] = systemPrompt.trim()
       ? [{ role: "system", content: systemPrompt.trim() }, ...messages]
       : messages;
-    const response = await fetch(NVIDIA_NIM_ENDPOINT, {
+    const response = await fetch(GROQ_ENDPOINT, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -123,25 +127,25 @@ async function chiamaDeepSeekSuNvidia(
       body: JSON.stringify({
         model,
         messages: corpo,
-        temperature: TEMPERATURA_NVIDIA,
-        max_tokens: opzioni.maxTokens ?? MAX_TOKENS_NVIDIA,
+        temperature: TEMPERATURA_GROQ,
+        max_tokens: opzioni.maxTokens ?? MAX_TOKENS_GROQ,
         stream: false,
       }),
       signal: controller.signal,
     });
     if (!response.ok) {
       // Nessun body in chiaro: può contenere il token o dettagli interni.
-      throw new Error(`Errore NVIDIA NIM (HTTP ${response.status}).`);
+      throw new Error(`Errore Groq (HTTP ${response.status}).`);
     }
     const dati = (await response.json()) as {
       choices?: Array<{ message?: { content?: string } }>;
     };
     const testo = (dati.choices?.[0]?.message?.content ?? "").trim();
-    if (!testo) throw new Error("Risposta NVIDIA NIM vuota.");
+    if (!testo) throw new Error("Risposta Groq vuota.");
     return testo;
   } catch (caught: unknown) {
     if (caught instanceof DOMException && caught.name === "AbortError") {
-      throw new Error(`Timeout chiamata NVIDIA NIM (${Math.round(TIMEOUT_NVIDIA_MS / 1000)}s).`);
+      throw new Error(`Timeout chiamata Groq (${Math.round(TIMEOUT_GROQ_MS / 1000)}s).`);
     }
     throw caught;
   } finally {
@@ -150,12 +154,12 @@ async function chiamaDeepSeekSuNvidia(
 }
 
 /**
- * Prova Gemini e, SOLO sulla quota esaurita, ripete la stessa richiesta su
- * NVIDIA NIM con lo stesso system prompt. Gli errori non di quota restano al
- * chiamante senza cambio di provider. Il backup non consuma il budget delle 2
- * chiamate Gemini della richiesta.
+ * Prova Gemini e, solo quando l'errore è recuperabile (quota o timeout),
+ * ripete la stessa richiesta su Groq con lo stesso system prompt. Gli errori
+ * non recuperabili restano al chiamante senza cambio di provider. Il backup
+ * non consuma il budget delle 2 chiamate Gemini della richiesta.
  */
-async function chiamaGeminiConFallbackNvidia(
+async function chiamaGeminiConBackup(
   parametri: CallGeminiTextParams
 ): Promise<string> {
   try {
@@ -163,9 +167,9 @@ async function chiamaGeminiConFallbackNvidia(
   } catch (erroreGemini) {
     if (!erroreGeminiRecuperabilePino(erroreGemini)) throw erroreGemini;
     console.warn(
-      "[pino-semantic-fallback] Gemini lento o in quota. Switch preventivo su NVIDIA DeepSeek..."
+      "[pino-semantic-fallback] Gemini lento o in quota. Switch preventivo su Groq..."
     );
-    const messaggi: MessaggioNvidia[] = [
+    const messaggi: MessaggioGroq[] = [
       ...(parametri.history ?? []).map((messaggio) => ({
         role: messaggio.role === "model" ? ("assistant" as const) : ("user" as const),
         content: messaggio.content,
@@ -173,17 +177,17 @@ async function chiamaGeminiConFallbackNvidia(
       { role: "user" as const, content: parametri.userPrompt },
     ];
     try {
-      const testo = await chiamaDeepSeekSuNvidia(parametri.systemPrompt, messaggi, {
+      const testo = await chiamaBackupSuGroq(parametri.systemPrompt, messaggi, {
         maxTokens: parametri.maxTokens,
       });
-      console.info("[pino-semantic-fallback] Piano semantico prodotto da NVIDIA DeepSeek.");
+      console.info("[pino-semantic-fallback] Piano semantico prodotto da Groq.");
       return testo;
-    } catch (erroreNvidia) {
+    } catch (erroreGroq) {
       // Graceful degradation: si rilancia l'errore di Gemini, che il catch di
       // `interpretaRichiestaPino` già gestisce (piano locale, nessun crash).
       console.warn(
-        "[pino-semantic-fallback] NVIDIA non disponibile, degrado sul planner locale:",
-        erroreNvidia instanceof Error ? erroreNvidia.message : "errore sconosciuto"
+        "[pino-semantic-fallback] Groq non disponibile, degrado sul planner locale:",
+        erroreGroq instanceof Error ? erroreGroq.message : "errore sconosciuto"
       );
       throw erroreGemini;
     }
@@ -1099,7 +1103,7 @@ export async function interpretaRichiestaPino(
     // M6-B1 — Budget condiviso con la selezione dei tool: a budget esaurito
     // la chiamata non parte e vale il piano deterministico (catch sotto).
     const raw = await chiamataGeminiConBudgetPino(budget, () =>
-      chiamaGeminiConFallbackNvidia({
+      chiamaGeminiConBackup({
         systemPrompt: SCHEMA_PROMPT,
         userPrompt:
           `Intento locale già riconosciuto: ${analisi.intent} / ${analisi.dominio}.\n` +
@@ -1109,7 +1113,7 @@ export async function interpretaRichiestaPino(
         temperature: 0,
         json: true,
         // 4s: oltre questa soglia Gemini non è utile a questa richiesta e il
-        // turno passa a NVIDIA, che ha 6s propri.
+        // turno passa a Groq, che ha 6s propri.
         timeoutMs: 4_000,
         retries: 1,
       })
