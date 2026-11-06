@@ -67,6 +67,28 @@ test("una qualifica non documentata degrada al soggetto invece di azzerare", () 
   );
 });
 
+test("una restrizione alimentare non ammette alternative non verificate", () => {
+  assert.deepEqual(
+    ids(filtraProdottiAlimentariPino([pastaComune], "Cerco pasta senza glutine", "pasta")),
+    []
+  );
+  const pastaSenzaGlutine = prodotto({
+    id: "pasta-senza-glutine",
+    nome: "Pasta senza glutine",
+    descrizione: "Prodotto senza glutine, certificato.",
+  });
+  assert.deepEqual(
+    ids(
+      filtraProdottiAlimentariPino(
+        [pastaComune, pastaSenzaGlutine],
+        "Cerco pasta senza glutine",
+        "pasta"
+      )
+    ),
+    ["pasta-senza-glutine"]
+  );
+});
+
 test("la quantità esplicita resta un vincolo rigido, non una qualifica", () => {
   const olioUnLitro = prodotto({
     id: "olio-1l",

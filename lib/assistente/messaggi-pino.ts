@@ -30,3 +30,19 @@ export function messaggioQualificazioneRilassataPino(
   }
   return `Nel catalogo non trovo un prodotto con la qualifica «${qualificatore}» per «${soggetto}»: ti mostro quello che c'è, senza attribuirgli quella qualifica.`;
 }
+
+/**
+ * Restrizione alimentare non documentata: nessuna alternativa non verificata.
+ * A differenza della qualifica "morbida", qui non si mostrano prodotti del
+ * solo soggetto, perché potrebbero contraddire la restrizione.
+ */
+export function messaggioRestrizioneAlimentarePino(
+  lingua: LinguaPino,
+  soggetto: string,
+  restrizione: string
+): string {
+  if (lingua === "en") {
+    return `I couldn't find any product with the “${restrizione}” requirement for “${soggetto}”. I'm not showing unverified alternatives for a dietary restriction.`;
+  }
+  return `Nel catalogo non trovo prodotti con il requisito «${restrizione}» per «${soggetto}»: non ti mostro alternative non verificate per una restrizione alimentare.`;
+}

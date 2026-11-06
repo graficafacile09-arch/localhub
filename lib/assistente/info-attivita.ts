@@ -13,12 +13,15 @@ import { fasceNormalizzate } from "@/lib/orari";
 import { DAYS, formatTime, type DaySchedule, type Orari } from "@/types/negozio";
 import type { NegozioRicerca } from "@/lib/ricerca-ai";
 import { normalizzaRichiesta } from "./local-intents";
+import { apertoOra } from "./conversazione";
+import { richiestaApertaOra } from "./understanding";
 
 export type InfoAttivitaPino =
   | "orari"
   | "orari-settimanali"
   | "indirizzo"
   | "telefono"
+  | "stato"
   | "completa";
 
 const RE_ORARI = /\borari[oi]?\b|\borario\b|\bapertura\b|\bchiusura\b/;
@@ -38,6 +41,10 @@ export function rilevaRichiestaInfoAttivitaPino(input: string): InfoAttivitaPino
   const indirizzo = RE_INDIRIZZO.test(q);
   const telefono = RE_TELEFONO.test(q);
 
+  // «Il panificio Zini è aperto ora?» chiede uno stato verificabile, non una
+  // ricerca filtrata: se il filtro escludesse i chiusi non potremmo rispondere
+  // «chiuso». Lo stato viene calcolato dagli orari pubblicati.
+  if (richiestaApertaOra(q)) return "stato";
   if (orari && indirizzo) return "completa";
   if (orari) {
     // "orari" / "orario" chiede il quadro settimanale; "a che ora chiude"
@@ -64,12 +71,15 @@ export function estraiSoggettoInfoAttivitaPino(input: string): string {
     .replace(/\b(?:what\s+time|when)\b/gi, " ")
     .replace(/\b(?:does|do)\b/gi, " ")
     .replace(/\bwhere\s+(?:is|are)\b/gi, " ")
+    .replace(/\b(?:aperto|aperta|aperti|aperte)\s+(?:ora|adesso|oggi|domani)?\b/gi, " ")
+    .replace(/\b(?:open|opened)\s+(?:right\s+)?now\b|\bcurrently\s+open\b/gi, " ")
     .replace(/\b(?:open|closes?|opening|closing|hours|address|phone|telephone)\b/gi, " ")
     .replace(/\b(?:qual(?:e|i)?\s+[eè]\s+)?(?:l['’]\s*)?(?:il|lo|la|i|gli|le)?\s*(?:indirizzo|orari[oi]?|telefono|numero\s+di\s+telefono)\b\s*(?:di|del|della|dei|delle|dell['’])?/gi, " ")
     .replace(/[?.!,;:]+/g, " ")
     .replace(/\s+/g, " ")
     .trim()
     .replace(/^(?:il|lo|la|i|gli|le)\s+/i, "")
+    .replace(/\s+\b(?:e|is|are)\s*$/i, "")
     .trim();
 }
 
@@ -124,6 +134,7 @@ export function rispostaInfoAttivitaPino(
   lingua: "it" | "en" = "it"
 ): string {
   const inglese = lingua === "en";
+  const mostraStato = info === "stato";
   const mostraOrari = info === "orari" || info === "orari-settimanali" || info === "completa";
   const mostraIndirizzo = info === "indirizzo" || info === "completa";
   const mostraTelefono = info === "telefono" || info === "completa";
@@ -132,6 +143,18 @@ export function rispostaInfoAttivitaPino(
   const righe = negozi.slice(0, 3).map((negozio) => {
     const dettagli: string[] = [];
 
+    if (mostraStato) {
+      const stato = apertoOra(orari.get(negozio.id) ?? null);
+      dettagli.push(
+        stato === true
+          ? (inglese ? "open now" : "aperto ora")
+          : stato === false
+            ? (inglese ? "closed now" : "chiuso ora")
+            : (inglese
+                ? "status not verifiable: opening hours are missing or insufficient"
+                : "stato non verificabile: orari mancanti o non sufficienti")
+      );
+    }
     if (mostraOrari) {
       const testo = descriviOrariPino(orari.get(negozio.id) ?? null, {
         completo: orariCompleti,

@@ -20,7 +20,7 @@
  */
 
 import { fasceNormalizzate } from "@/lib/orari";
-import { ITALIAN_DAYS, type DaySchedule, type Orari } from "@/types/negozio";
+import type { DaySchedule, Orari } from "@/types/negozio";
 import { normalizzaRichiesta } from "./local-intents";
 
 // ─── Follow-up ───────────────────────────────────────────────────────────────
@@ -146,13 +146,25 @@ export function apertoOra(
   now: Date = new Date()
 ): boolean | null {
   if (!orari || typeof orari !== "object") return null;
-  const giorno = ITALIAN_DAYS[now.getDay()];
+  // Gli orari sono civili di Castrovillari: il confronto deve avvenire in
+  // Europe/Rome anche quando il server gira in UTC (Vercel). Con getHours()
+  // locali lo stato era sfasato di un'ora in produzione.
+  const parti = new Intl.DateTimeFormat("it-IT", {
+    timeZone: "Europe/Rome",
+    weekday: "long",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(now);
+  const parte = (tipo: string) => parti.find((voce) => voce.type === tipo)?.value ?? "";
+  const giorno = parte("weekday").toLocaleLowerCase("it-IT");
   const scheda = (orari as Record<string, DaySchedule | undefined>)[giorno];
   if (!scheda) return null;
   if (scheda.chiuso) return false;
   const fasce = fasceNormalizzate(scheda);
   if (fasce.length === 0) return null; // aperto dichiarato ma senza fasce: non verificabile
-  const minuti = now.getHours() * 60 + now.getMinutes();
+  const minuti = Number(parte("hour")) * 60 + Number(parte("minute"));
+  if (!Number.isFinite(minuti)) return null;
   return fasce.some((f) => minuti >= f.open && minuti < f.close);
 }
 

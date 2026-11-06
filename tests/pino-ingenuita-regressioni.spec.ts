@@ -11,7 +11,18 @@ import {
   cittaMeteoNonCopertaPino,
   pianoIntentoLocale,
 } from "../lib/assistente/local-intents";
-import { negozioAttivitaCompatibilePino } from "../lib/assistente/tools";
+import {
+  fraseQualificazionePino,
+  negozioAttivitaCompatibilePino,
+  negozioProfessioneCompatibilePino,
+  pulisciCorniceRicercaPino,
+} from "../lib/assistente/tools";
+import {
+  richiestaConsiglioFarmacoPino,
+  rispostaFarmacieDeterministica,
+} from "../lib/assistente/index";
+import { richiestaRistorazionePino } from "../lib/assistente/routing-policy";
+import { estraiCitta } from "../lib/localita";
 import {
   descriviOrariPino,
   estraiSoggettoInfoAttivitaPino,
@@ -165,6 +176,98 @@ test.describe("Pino — nomi di attività", () => {
 
 // ─── Articoli elisi nel soggetto ────────────────────────────────────────────
 
+test.describe("Pino — ristorazione e professioni", () => {
+  test("«dove mangiare» e «ho fame» restano richieste di ristorazione", () => {
+    for (const frase of [
+      "dove posso mangiare?",
+      "consigliami un posto per mangiare",
+      "vorrei mangiare qualcosa",
+      "ho fame",
+      "where can I eat?",
+      "I'm hungry",
+    ]) {
+      expect(richiestaRistorazionePino(frase), frase).toBe(true);
+    }
+    for (const frase of ["pane", "pizzeria", "vorrei mangiare una pizza"]) {
+      expect(richiestaRistorazionePino(frase), frase).toBe(false);
+    }
+  });
+
+  test("un otorino non viene presentato come dentista", () => {
+    const otorino = {
+      nome: "Dott. Bianchi Otorino",
+      categoria: "Salute e benessere",
+      data: { tipo_attivita: "Otorinolaringoiatra" },
+    };
+    expect(negozioProfessioneCompatibilePino(otorino, "dentista")).toBe(false);
+    expect(negozioProfessioneCompatibilePino(otorino, "medico")).toBe(true);
+    expect(
+      negozioProfessioneCompatibilePino(
+        { nome: "Studio Dentistico Rossi", categoria: "Salute e benessere" },
+        "dentista"
+      )
+    ).toBe(true);
+    expect(
+      negozioProfessioneCompatibilePino(
+        { nome: "Parrucchieri Rossi", categoria: "Bellezza" },
+        "parrucchiere"
+      )
+    ).toBe(true);
+  });
+});
+
+// ─── Città e qualificazioni ──────────────────────────────────────────────────
+
+test.describe("Pino — cornice di ricerca e sicurezza farmaci", () => {
+  test("la cornice conversazionale non nasconde il soggetto", () => {
+    expect(pulisciCorniceRicercaPino("Mi trovi il Panificio Zini")).toBe("panificio zini");
+    expect(pulisciCorniceRicercaPino("Vorrei comprare olio")).toBe("olio");
+    expect(pulisciCorniceRicercaPino("Mi serve un idraulico")).toBe("idraulico");
+    expect(pulisciCorniceRicercaPino("panificio zini")).toBe("panificio zini");
+  });
+
+  test("un consiglio su un farmaco non diventa una prescrizione", () => {
+    expect(richiestaConsiglioFarmacoPino("Ho mal di testa, che farmaco prendo?")).toBe(true);
+    expect(richiestaConsiglioFarmacoPino("Qual è la farmacia di turno?")).toBe(false);
+
+    const risposta = rispostaFarmacieDeterministica(
+      [
+        {
+          id: "f1",
+          nome: "Caterini-Filpo",
+          indirizzo: "Corso Giuseppe Garibaldi, 205/207",
+          stato: "turno",
+          apertura: null,
+          turno: "Tutto il giorno fino a domani",
+          telefono: "098121293",
+          urlScheda: null,
+        },
+      ],
+      "turno",
+      undefined,
+      "it",
+      { consiglioFarmaco: true }
+    );
+
+    expect(risposta).toContain("Non posso consigliarti un farmaco");
+    expect(risposta).toContain("farmacista");
+    expect(risposta).toContain("Caterini-Filpo");
+  });
+});
+
+test.describe("Pino — città e qualificazioni", () => {
+  test("la città è un vincolo di luogo, non una qualifica del prodotto", () => {
+    expect(estraiCitta("pasta a Roma")).toBe("roma");
+    expect(piano("pasta a Roma")?.city).toBe("roma");
+    expect(fraseQualificazionePino("pasta a Roma", "pasta")).toBeNull();
+    expect(fraseQualificazionePino("pasta under 5 euros", "pasta")).toBeNull();
+  });
+
+  test("una qualifica reale resta una qualifica", () => {
+    expect(fraseQualificazionePino("pasta senza glutine", "pasta")).toBe("pasta senza glutine");
+  });
+});
+
 test.describe("Pino — articoli elisi", () => {
   test("l'olio e quanto costa l'olio non perdono il soggetto", () => {
     for (const frase of ["l'olio", "dell'olio", "quanto costa l'olio?"]) {
@@ -209,7 +312,8 @@ test.describe("Pino — orari, indirizzo e telefono", () => {
       "indirizzo"
     );
     expect(rilevaRichiestaInfoAttivitaPino("qual è il telefono del bar?")) .toBe("telefono");
-    expect(rilevaRichiestaInfoAttivitaPino("panificio aperto ora")).toBeNull();
+    expect(rilevaRichiestaInfoAttivitaPino("panificio aperto ora")).toBe("stato");
+    expect(rilevaRichiestaInfoAttivitaPino("il panificio Zini è aperto ora?")).toBe("stato");
     expect(rilevaRichiestaInfoAttivitaPino("cerco un panificio")).toBeNull();
   });
 
@@ -220,7 +324,19 @@ test.describe("Pino — orari, indirizzo e telefono", () => {
       "panificio zini"
     );
     expect(estraiSoggettoInfoAttivitaPino("where is Panificio Zini?")).toBe("panificio zini");
+    expect(estraiSoggettoInfoAttivitaPino("il panificio Zini e aperto ora?")).toBe("panificio zini");
     expect(piano("qual e il telefono del panificio Zini?")?.query).toBe("panificio zini");
+  });
+
+  test("lo stato aperto/ora è verificato, non dedotto", () => {
+    const risposta = rispostaInfoAttivitaPino(
+      [{ id: "n1", nome: "Panificio Zini", categoria: "Panificio" }],
+      "stato",
+      new Map()
+    );
+    expect(risposta).toContain("Panificio Zini");
+    expect(risposta).toContain("stato non verificabile");
+    expect(risposta).not.toMatch(/\baperto ora\b/);
   });
 
   test("formatta solo gli orari realmente registrati", () => {

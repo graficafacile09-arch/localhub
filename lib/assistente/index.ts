@@ -8,9 +8,13 @@ import {
   decidiDominioPino,
   isExplicitFoodProductRequest,
   richiestaCinemaPino,
+  richiestaRistorazionePino,
 } from "./routing-policy";
 import { soggettoAlimentarePino } from "./lexicon";
-import { messaggioQualificazioneRilassataPino } from "./messaggi-pino";
+import {
+  messaggioQualificazioneRilassataPino,
+  messaggioRestrizioneAlimentarePino,
+} from "./messaggi-pino";
 import { rispostaIdentitaPino } from "./identity";
 import { rispostaSalutoPino, rispostaRelazionalePino, rispostaPreferenzaLinguaPino } from "./greetings";
 import {
@@ -69,6 +73,9 @@ import {
   type ToolParams,
   type StrumentoPino,
   negozioAttivitaCompatibilePino,
+  negozioProfessioneCompatibilePino,
+  prodottoDocumentaRestrizionePino,
+  restrizioneAlimentareRigidaPino,
 } from "./tools";
 import {
   SYSTEM_PROMPT,
@@ -1408,6 +1415,15 @@ const RE_VINCOLO = /^(e\s+)?(budget(?:\s+di)?|sotto|sopra|massimo|minimo|meno di
 const REQUIRES_PHARMACY_REASON =
   /\bfebbre\b|\btemperatura alta\b|\bmal di gola\b|\braffreddore\b|\binfluenza\b|\btosse\b|\bfever\b|\bsore throat\b|\bcold\b|\bflu\b|\bcough\b/i;
 
+// Una richiesta di consiglio su un farmaco non è una ricerca di farmacia:
+// Pino può indicare dove rivolgersi, ma non può prescrivere né suggerire dosi.
+const RE_CONSIGLIO_FARMACO =
+  /\b(?:che|quale)\s+(?:farmaco|medicinale)\b|\bcosa\s+(?:prendo|devo\s+prendere)\b|\bposso\s+prendere\b|\bconsigli\w*\s+(?:un\s+)?(?:farmaco|medicinale)\b|\b(?:dosaggio|dose|mg)\b|\bibuprofene\b|\bparacetamolo\b|\btachipirina\b|\bantibiotic\w*\b/i;
+
+export function richiestaConsiglioFarmacoPino(query: string): boolean {
+  return RE_CONSIGLIO_FARMACO.test(String(query ?? ""));
+}
+
 function eQuerySostanziale(q: string): string | null {
   const t = q.trim();
   if (!t || t.length <= 3) return null;
@@ -1581,7 +1597,7 @@ function pianoPredefinito(
   // senza questa guardia il correttore poteva leggere "mangia" come "maglia"
   // e il planner finiva su un negozio di salute. La vetrina resta quella delle
   // attività, con il termine gastronomico reale.
-  if (/\b(?:dove|posto|consigli(?:ami|atemi)?|qual(?:e|i))\b[\s\S]{0,40}\b(?:mangiare|mangia|mangiarsi)\b|\b(?:dove si mangia|dove mangiare)\b/i.test(ultimo)) {
+  if (richiestaRistorazionePino(ultimo)) {
     return {
       directReply: null,
       tools: [{ tool: "searchStores", params: { query: "ristorante", limit: 8 } }],
@@ -1788,6 +1804,7 @@ function pianoPredefinito(
             query: pianoProdottoLocale.query,
             maxPrice: pianoProdottoLocale.maxPrice,
             minPrice: pianoProdottoLocale.minPrice,
+            citta: pianoProdottoLocale.city ?? undefined,
             esclusioni: pianoProdottoLocale.exclusions.length
               ? pianoProdottoLocale.exclusions
               : undefined,
@@ -1927,9 +1944,8 @@ function pianoPredefinito(
   }
 
   if (analisi.confidence !== "bassa") {
-    const soggettoInfo = rilevaRichiestaInfoAttivitaPino(ultimo)
-      ? estraiSoggettoInfoAttivitaPino(ultimo)
-      : "";
+    const infoAttivita = rilevaRichiestaInfoAttivitaPino(ultimo);
+    const soggettoInfo = infoAttivita ? estraiSoggettoInfoAttivitaPino(ultimo) : "";
     const piano = pianoIntento(analisi, soggettoInfo || ultimo);
     if (piano.length > 0) {
       return {
@@ -1939,7 +1955,9 @@ function pianoPredefinito(
           params: {
             query: t.query,
             ...(t.tool === "searchProducts" ? { limit: 8 } : {}),
-            ...(t.tool === "searchStores" && semantica?.openNow ? { apertiOra: true } : {}),
+            ...(t.tool === "searchStores" && semantica?.openNow && infoAttivita !== "stato"
+              ? { apertiOra: true }
+              : {}),
           },
         })),
       };
@@ -2578,13 +2596,21 @@ export function rispostaMeteoDeterministica(
   );
 }
 
-function rispostaFarmacieDeterministica(
+export function rispostaFarmacieDeterministica(
   farmacie: Awaited<ReturnType<typeof searchPharmacies>>,
   statoRichiesto: ToolParams["stato"] = "turno",
   motivo?: string,
-  lingua: "it" | "en" = "it"
+  lingua: "it" | "en" = "it",
+  opzioni: { consiglioFarmaco?: boolean } = {}
 ): string {
   const inglese = lingua === "en";
+  const notaSicurezza = opzioni.consiglioFarmaco
+    ? (inglese
+        ? "I can't recommend a medicine or a dose. Ask a pharmacist or your doctor, especially if symptoms persist or you take other medicines."
+        : "Non posso consigliarti un farmaco né una dose: chiedi a un farmacista o al tuo medico, soprattutto se i sintomi persistono o assumi altri medicinali.")
+    : "";
+  const conNotaSicurezza = (testo: string) =>
+    notaSicurezza ? `${notaSicurezza}\n\n${testo}` : testo;
   const turnoTradotto = (turno: string | null | undefined) =>
     turno ? (inglese ? "on duty: " + turno : turno) : null;
   // Prova del turno condivisa con il tool: la fonte può dichiarare "TURNO"
@@ -2614,13 +2640,13 @@ function rispostaFarmacieDeterministica(
             return "- **" + f.nome + "**" + (dettagli ? " — " + dettagli : "");
           })
           .join("\n");
-        return inglese
+        return conNotaSicurezza(inglese
           ? "The available data doesn't mark any pharmacy as open right now, but these are on duty:\n" + elenco
-          : "I dati di oggi non segnano nessuna farmacia come APERTA in questo momento, ma risultano di turno:\n" + elenco;
+          : "I dati di oggi non segnano nessuna farmacia come APERTA in questo momento, ma risultano di turno:\n" + elenco);
       }
-      return inglese
+      return conNotaSicurezza(inglese
         ? "I can't verify any pharmacy as currently open in the available Castrovillari data. I won't list a pharmacy as open without confirmation."
-        : "Al momento non risulta alcuna farmacia con stato APERTA verificato nei dati disponibili per Castrovillari. Non ti indico farmacie non verificate come aperte.";
+        : "Al momento non risulta alcuna farmacia con stato APERTA verificato nei dati disponibili per Castrovillari. Non ti indico farmacie non verificate come aperte.");
     }
 
     const elenco = aperte.map((f) => {
@@ -2632,16 +2658,16 @@ function rispostaFarmacieDeterministica(
       return "- **" + f.nome + "**" + (dettagli ? " — " + dettagli : "");
     }).join("\n");
 
-    return inglese
+    return conNotaSicurezza(inglese
       ? "Based on today's verified data, these pharmacies are listed as open:\n" + elenco
-      : "Dai dati verificati di oggi risultano aperte:\n" + elenco;
+      : "Dai dati verificati di oggi risultano aperte:\n" + elenco);
   }
 
   if (statoRichiesto === "tutte") {
     if (farmacie.length === 0) {
-      return inglese
+      return conNotaSicurezza(inglese
         ? "I don't currently have verified pharmacy information for Castrovillari."
-        : "Al momento non ho dati verificati sulle farmacie di Castrovillari.";
+        : "Al momento non ho dati verificati sulle farmacie di Castrovillari.");
     }
 
     const etichettaStato = (f: (typeof farmacie)[number]) =>
@@ -2684,15 +2710,15 @@ function rispostaFarmacieDeterministica(
             : "Farmacie per cui ho dati disponibili:\n");
       blocchi.push(titolo + altre.map((f) => riga(f, etichettaStato(f))).join("\n"));
     }
-    return blocchi.join("\n\n");
+    return conNotaSicurezza(blocchi.join("\n\n"));
   }
 
   const turno = diTurno.slice(0, 3);
   if (turno.length === 0) {
     const prefisso = motivo ? (inglese ? "For " : "Per ") + motivo + ", " : "";
-    return inglese
+    return conNotaSicurezza(inglese
       ? prefisso + "no on-duty pharmacy is currently verified in the available Castrovillari data. I won't provide an unverified name."
-      : prefisso + "al momento non risulta alcuna farmacia di turno verificata nei dati disponibili per Castrovillari. Non ti indico un nome non verificato, per evitare un falso positivo.";
+      : prefisso + "al momento non risulta alcuna farmacia di turno verificata nei dati disponibili per Castrovillari. Non ti indico un nome non verificato, per evitare un falso positivo.");
   }
 
   const elenco = turno.map((f) => {
@@ -2710,7 +2736,7 @@ function rispostaFarmacieDeterministica(
       : ", puoi rivolgerti a una farmacia di turno. Dai dati verificati di oggi risulta:\n")
     : (inglese ? "Today's verified data shows these on-duty pharmacies:\n" : "Dai dati verificati di oggi risulta:\n");
 
-  return prefisso + elenco;
+  return conNotaSicurezza(prefisso + elenco);
 }
 
 // ─── Guida Attrazioni: intento di visita e pertinenza ──────────────────────
@@ -3071,6 +3097,7 @@ export async function chatConAssistente(
   // Cap sulla domanda: evita abuso di token e superfici di prompt injection
   // (la storia è già troncata a 300 caratteri per messaggio).
   const domanda = (ultimo && ultimo.role === "user" ? ultimo.content : "").slice(0, 500);
+  const restrizioneAlimentareRigida = restrizioneAlimentareRigidaPino(domanda);
 
   type DatiShadowTier0 = {
     limiti?: { minPrice: number | null; maxPrice: number | null } | null;
@@ -3233,7 +3260,15 @@ export async function chatConAssistente(
     const segnaleServizio = analisi.segnali.find((segnale) => segnale.startsWith("service:"));
     const professione = segnaleServizio?.slice("service:".length).trim();
     if (professione) {
-      const negozi = await searchStores(professione, { limit: 8 });
+      const negoziTrovati = await searchStores(professione, { limit: 8 });
+      // Un otorino non soddisfa «dentista»: la categoria sanitaria generica non
+      // basta. Il filtro professione usa solo l'identità dichiarata dell'attività.
+      const negozi = negoziTrovati.filter((n) =>
+        negozioProfessioneCompatibilePino(
+          n as unknown as Record<string, unknown>,
+          professione
+        )
+      );
       const inglese = linguaConversazione === "en";
       const plurale = inglese
         ? professione.endsWith("s") ? professione : professione + "s"
@@ -3586,6 +3621,7 @@ export async function chatConAssistente(
         limit: 8,
         maxPrice: semantica.maxPrice,
         minPrice: semantica.minPrice,
+        citta: semantica.city ?? undefined,
         esclusioni: vincoliComprensione.esclusioni,
         escludiNomi: [],
         ...(limitiVincolanti ? { prezzoRigido: true } : {}),
@@ -3784,10 +3820,6 @@ export async function chatConAssistente(
   // Una domanda su dove mangiare resta una ricerca di ristorazione: il
   // recupero semantico non deve ripiegare su panifici o studi medici quando il
   // catalogo non ha ristoranti pubblicati.
-  const richiestaRistorazionePino =
-    /\b(?:dove|posto|consigli(?:ami|atemi)?|qual(?:e|i))\b[\s\S]{0,40}\b(?:mangiare|mangia|mangiarsi)\b|\b(?:dove si mangia|dove mangiare)\b/i.test(
-      domanda
-    );
   if (
     selezioneOk &&
     !directReply &&
@@ -3795,10 +3827,11 @@ export async function chatConAssistente(
     !regaloGenerico &&
     !richiestaServizio &&
     negozi.length === 0 &&
+    !restrizioneAlimentareRigida &&
     prodotti.length === 0 &&
     offerte.length === 0 &&
     eventi.length === 0 &&
-    !richiestaRistorazionePino &&
+    !richiestaRistorazionePino(domanda) &&
     !invocazioni.some((t) =>
       t.tool === "getWeather" || t.tool === "searchPharmacies" || t.tool === "searchOffers" || t.tool === "searchEvents"
     )
@@ -3998,7 +4031,13 @@ export async function chatConAssistente(
       ? (linguaConversazione === "en" ? "the symptoms you mentioned" : "i sintomi che hai indicato")
       : undefined;
     return esci("farmacie", {
-      risposta: rispostaFarmacieDeterministica(farmacie, statoFarmacia, motivoFebbre, linguaConversazione),
+      risposta: rispostaFarmacieDeterministica(
+        farmacie,
+        statoFarmacia,
+        motivoFebbre,
+        linguaConversazione,
+        { consiglioFarmaco: richiestaConsiglioFarmacoPino(domanda) }
+      ),
       negozi: [],
       prodotti: [],
       processingMs: Date.now() - inizio,
@@ -4130,6 +4169,23 @@ export async function chatConAssistente(
   // coincidere, altrimenti Pino annuncia sette voci e ne mostra sei.
   prodotti = prodotti.slice(0, 6);
 
+  // Barriera finale sulle restrizioni alimentari: il piano può aver cercato
+  // solo il soggetto («pasta»), perdendo la qualifica «senza glutine». Il
+  // vincolo viene quindi riapplicato sui prodotti finali, dopo ogni recupero.
+  if (restrizioneAlimentareRigida) {
+    const prodottiPrimaRestrizione = prodotti.length;
+    prodotti = prodotti.filter((prodotto) =>
+      prodottoDocumentaRestrizionePino(prodotto, restrizioneAlimentareRigida)
+    );
+    if (prodotti.length !== prodottiPrimaRestrizione) {
+      console.info("[pino-restrizione-alimentare]", JSON.stringify({
+        restrizione: restrizioneAlimentareRigida,
+        rimossi: prodottiPrimaRestrizione - prodotti.length,
+        mantenuti: prodotti.length,
+      }));
+    }
+  }
+
   // 5) Contesto strutturato per la risposta finale
   const risultati: RisultatiRecuperati = aRisultatiRecuperati(negozi, prodotti, {
     offerte,
@@ -4179,10 +4235,16 @@ export async function chatConAssistente(
   const richiestaUtenteOriginale =
     [...storico].reverse().find((m) => m.role === "user")?.content ?? "";
   if (negozi.length > 0 && richiestaUtenteOriginale) {
+    // Per una richiesta di ristorazione il gate usa «ristorante»: un panificio
+    // o un alimentari non risponde a «dove posso mangiare?». Per le altre
+    // richieste resta il testo originale dell'utente.
+    const queryGateNegozi = richiestaRistorazionePino(richiestaUtenteOriginale)
+      ? "ristorante"
+      : richiestaUtenteOriginale;
     negozi = negozi.filter((n) =>
       negozioAttivitaCompatibilePino(
         n as unknown as Record<string, unknown>,
-        richiestaUtenteOriginale
+        queryGateNegozi
       )
     );
   }
@@ -4195,6 +4257,14 @@ export async function chatConAssistente(
   // Un vuoto di eventi/offerte/attività non è un vuoto di prodotti: il
   // messaggio deve restare nel dominio della richiesta, senza suggerire
   // categorie o sinonimi che non c'entrano.
+  const rispostaRestrizioneAlimentare =
+    restrizioneAlimentareRigida && totaleRisultati === 0
+      ? messaggioRestrizioneAlimentarePino(
+          linguaRisposta,
+          soggettoAlimentarePino(domanda) ?? "questo prodotto",
+          restrizioneAlimentareRigida
+        )
+      : null;
   const rispostaBase =
     totaleRisultati === 0 && soloEventi
       ? (linguaRisposta === "en"
@@ -4251,7 +4321,8 @@ export async function chatConAssistente(
   const rispostaFontiNonDisponibili = fontiFalliteSenzaRisultati
     ? messaggioFontiNonDisponibiliPino(linguaRisposta)
     : null;
-  const rispostaBaseEffettiva = rispostaIndisponibilitaAI ??
+  const rispostaBaseEffettiva = rispostaRestrizioneAlimentare ??
+    rispostaIndisponibilitaAI ??
     rispostaFontiNonDisponibili ??
     rispostaServizioTrovata ??
     (soloProdottiEsauriti ? notaDisponibilita! : rispostaBase);
@@ -4274,7 +4345,7 @@ export async function chatConAssistente(
   const qualificazioneConfermata = fraseQualificazione
     ? qualificazioneDocumentataPino(prodotti, soggettoRichiesto, fraseQualificazione)
     : true;
-  const notaQualificazione = fraseQualificazione && !qualificazioneConfermata
+  const notaQualificazione = fraseQualificazione && !qualificazioneConfermata && !rispostaRestrizioneAlimentare
     ? messaggioQualificazioneRilassataPino(
         linguaRisposta === "en" ? "en" : "it",
         soggettoRichiesto ?? "",

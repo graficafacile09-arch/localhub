@@ -124,6 +124,21 @@ export function trovaRispostaFaqPino(query: string): { domanda: string; risposta
   // Domande naturali su resi e consegna: il token scoring le perdeva perché
   // la FAQ usa il plurale ("resi", "rimborsi") o il sinonimo "consegna"
   // invece di "spedizione". La risposta resta quella pubblicata in /faq.
+  // Aprire un negozio e annullare un ordine hanno una risposta pubblicata:
+  // senza queste corrispondenze il planner produceva consigli generici non
+  // verificati, ignorando la FAQ ufficiale della piattaforma.
+  if (
+    /\b(?:aprire|apro|apri|apriamo|avviare|creare|registrare)\b[\s\S]{0,40}\b(?:negozio|attivita|venditore)\b/.test(testo)
+  ) {
+    const faq = rispostaFaqNota("Come posso aprire un negozio su InCittà?");
+    if (faq) return faq;
+  }
+  if (
+    /\b(?:annull\w*|disdic\w*|cancell\w*)\b[\s\S]{0,40}\b(?:ordine|acquisto)\b/.test(testo)
+  ) {
+    const faq = rispostaFaqNota("Cosa faccio se il mio ordine ha un problema?");
+    if (faq) return faq;
+  }
   if (/\b(?:reso|resi|rimbors\w*|recesso|garanzia)\b/.test(testo)) {
     const faq = rispostaFaqNota("Come funzionano resi, rimborsi e recesso?");
     if (faq) return faq;

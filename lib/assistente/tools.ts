@@ -834,6 +834,49 @@ function classificazioneNegozio(n: Record<string, unknown>): string {
 }
 
 /**
+ * Quando la richiesta nomina una professione ("dentista", "parrucchiere"),
+ * l'attività deve dichiarare quella professione nell'identità. La categoria
+ * generica «Salute e benessere» non basta: un otorino non è un dentista.
+ * Il confronto usa la radice della parola ("parrucchier-" copre
+ * parrucchiere/parrucchieri) e resta volutamente conservativo.
+ */
+export function negozioProfessioneCompatibilePino(
+  negozio: Record<string, unknown>,
+  professione: string
+): boolean {
+  const chiavi = normalizza(professione)
+    .split(/[^a-z0-9]+/)
+    .filter((token) => token.length >= 4);
+  if (chiavi.length === 0) return true;
+  const data = (negozio.data ?? {}) as Record<string, unknown>;
+  const servizi = Array.isArray(data.servizi)
+    ? data.servizi.filter((voce) => typeof voce === "string").join(" ")
+    : "";
+  const identita = normalizza(
+    [
+      negozio.nome,
+      negozio.categoria,
+      negozio.sottocategoria,
+      data.tipo_attivita,
+      servizi,
+    ]
+      .filter(Boolean)
+      .map(String)
+      .join(" ")
+  );
+  return chiavi.some((chiave) => {
+    if (
+      (chiave === "medico" || chiave === "dottore") &&
+      /\b(?:dott|doctor|medic|salute|ambulator|otorino|dentist)/.test(identita)
+    ) {
+      return true;
+    }
+    const radice = chiave.replace(/(?:a|e|i|o)$/, "");
+    return radice.length >= 4 && identita.includes(radice);
+  });
+}
+
+/**
  * Quando la richiesta nomina un'ATTIVITÀ specifica ("pizzeria", "panificio",
  * "bar"), la vetrina deve essere davvero di quel tipo. Il solo match nella
  * descrizione non basta: un panificio che vende pizza non è una pizzeria.
@@ -1306,12 +1349,31 @@ export function serviziNonDichiaratiPino(
   );
 }
 
+/**
+ * Toglie la cornice conversazionale dalla query di catalogo: "Mi trovi il
+ * Panificio Zini" e "Vorrei comprare olio" devono cercare il soggetto, non la
+ * frase intera. La pulizia è volutamente conservativa: interviene solo
+ * all'inizio della query e solo su forme di richiesta esplicite.
+ */
+export function pulisciCorniceRicercaPino(query: string): string {
+  const originale = normalizzaQueryCatalogo(query);
+  if (!originale) return "";
+  return originale
+    .replace(
+      /^(?:(?:mi|ti|ci)\s+)?(?:trovi|trova|trovami|cerchi|cerco|cerca|sto\s+cercando|vorrei|voglio|mi\s+serve|mi\s+servirebbe|mi\s+servono|ho\s+bisogno\s+di|avete|hai|mostrami|fammi\s+vedere|mi\s+fai\s+vedere|dove\s+(?:trovo|compro|posso\s+trovare|posso\s+comprare))\s+/i,
+      ""
+    )
+    .replace(/^(?:comprare|acquistare|ordinare|prendere)\s+/i, "")
+    .replace(/^(?:il|lo|la|i|gli|le|un|uno|una|del|dello|della|dei|degli|delle)\s+/i, "")
+    .trim() || originale;
+}
+
 export async function searchStores(
   query: string,
   opts: ToolParams = {}
 ): Promise<NegozioRicerca[]> {
   opts = validaToolParams("searchStores", opts).params;
-  const q = (query ?? "").trim();
+  const q = pulisciCorniceRicercaPino(query);
   // S4.4 — Servizio richiesto: se è l'unico criterio disponibile, diventa la
   // query di recall (un servizio senza soggetto resta una ricerca di attività).
   const servizioRichiesto = opts?.servizio?.trim() ?? "";
@@ -2091,6 +2153,10 @@ function evidenzaMetadatiProdotto(prodotto: ProdottoRicerca): string {
 const PAROLE_BUDGET_QUALIFICAZIONE = new Set([
   "sotto", "entro", "fino", "massimo", "minimo", "oltre", "sopra",
   "tra", "fra", "euro", "€",
+  // Stessi confini in inglese: senza questi, "pasta under 5 euros" produceva
+  // una nota di qualifica inesistente («pasta under 5 euros»).
+  "under", "below", "up", "less", "than", "over", "above", "more",
+  "least", "most", "budget", "of", "dollars", "dollar", "usd",
 ]);
 
 const PAROLE_NON_QUALIFICANTI = new Set([
@@ -2402,7 +2468,21 @@ export function fraseQualificazionePino(
 ): string | null {
   if (!soggetto) return null;
   if (estraiQuantita(query).length > 0) return null;
-  const segmento = segmentoQualificazione(query, soggetto);
+  // La città è un vincolo di luogo, non una qualifica del prodotto: senza
+  // questo filtro «pasta a Roma» diventava «pasta con qualifica a roma».
+  const citta = estraiCitta(query);
+  const tokenCitta = new Set(
+    citta ? normalizza(citta).split(/[^a-z0-9]+/).filter(Boolean) : []
+  );
+  const segmento = segmentoQualificazione(query, soggetto).filter(
+    (token) => !tokenCitta.has(token)
+  );
+  while (
+    segmento.length > 1 &&
+    PAROLE_NON_QUALIFICANTI.has(segmento[segmento.length - 1])
+  ) {
+    segmento.pop();
+  }
   if (!fraseQualificanteSignificativa(segmento)) return null;
   const soggettoToken =
     estraiToken(soggetto)[0] ?? normalizza(soggetto).trim();
@@ -2497,11 +2577,41 @@ function prodottoEUnDessert(prodotto: ProdottoRicerca): boolean {
     /\b(?:dolcetto tradizionale|simile ai mostaccioli)\b/.test(dettagli);
 }
 
+/**
+ * Restrizioni alimentari che non possono essere trattate come qualifiche
+ * "morbide": mostrare pasta normale per «senza glutine» non è un'alternativa,
+ * è un rischio. Restituisce l'etichetta canonica solo quando la richiesta la
+ * contiene esplicitamente.
+ */
+export function restrizioneAlimentareRigidaPino(query: string): string | null {
+  const q = normalizza(query);
+  if (/\bsenza\s+glutine\b|\bgluten\s*free\b/.test(q)) return "senza glutine";
+  if (/\bsenza\s+lattosio\b|\blactose\s*free\b/.test(q)) return "senza lattosio";
+  return null;
+}
+
+export function prodottoDocumentaRestrizionePino(
+  prodotto: ProdottoRicerca,
+  restrizione: string
+): boolean {
+  const evidenza = normalizza(evidenzaMetadatiProdotto(prodotto));
+  if (restrizione === "senza glutine") {
+    return /\bsenza\s+glutine\b|\bgluten\s*free\b/.test(evidenza);
+  }
+  return /\bsenza\s+lattosio\b|\blactose\s*free\b/.test(evidenza);
+}
+
 export function filtraProdottiAlimentariPino(
   prodotti: ProdottoRicerca[],
   query: string,
   soggettoAlimentare: string
 ): ProdottoRicerca[] {
+  const restrizione = restrizioneAlimentareRigidaPino(query);
+  if (restrizione) {
+    return prodotti.filter((prodotto) =>
+      prodottoDocumentaRestrizionePino(prodotto, restrizione)
+    );
+  }
   const dessertRichiesto = richiestaDolceComeDessert(query, soggettoAlimentare);
   const pertinenti = prodotti.filter((prodotto) =>
     dessertRichiesto
@@ -2743,7 +2853,7 @@ export async function searchProducts(
   opts: ToolParams = {}
 ): Promise<ProdottoRicerca[]> {
   opts = validaToolParams("searchProducts", opts).params;
-  const q = (query ?? "").trim();
+  const q = pulisciCorniceRicercaPino(query);
   if (!q) return [];
 
   // Budget vincolante solo quando il chiamante lo dichiara (limiti espliciti).
@@ -3028,7 +3138,7 @@ export async function searchAll(
   opts: ToolParams = {}
 ): Promise<RisultatoRicercaCompleta> {
   opts = validaToolParams("searchAll", opts).params;
-  const q = (query ?? "").trim();
+  const q = pulisciCorniceRicercaPino(query);
   if (!q) {
     return { negozi: [], prodotti: [], offerte: [], eventi: [], categorie: [], meteo: null, farmacie: [] };
   }

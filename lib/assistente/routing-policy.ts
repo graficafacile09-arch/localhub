@@ -33,6 +33,25 @@ function normalizza(testo: string): string {
 }
 
 /** Richiesta esplicita di un alimento come bene da cercare nel catalogo. */
+/**
+ * Richiesta di ristorazione: "dove si mangia", "vorrei mangiare qualcosa",
+ * "ho fame", "where can I eat". È un bisogno di posti/attività, non una
+ * ricerca di prodotti alimentari: senza questa guardia il planner può
+ * ripiegare su panifici o studi medici che non rispondono alla domanda.
+ */
+export function richiestaRistorazionePino(query: string): boolean {
+  const q = normalizza(String(query ?? ""));
+  if (!q) return false;
+  return (
+    /\b(?:dove|posto|consigli(?:ami|atemi)?|qual(?:e|i))\b[\s\S]{0,40}\b(?:mangiare|mangia|mangiarsi)\b/.test(q) ||
+    /\b(?:dove si mangia|dove mangiare|posto dove mangiare)\b/.test(q) ||
+    /\b(?:vorrei|voglio|mi va di|possiamo)\s+mangiare\s+(?:qualcosa|qualche cosa)\b/.test(q) ||
+    /\b(?:ho fame|qualcosa da mangiare)\b/.test(q) ||
+    /\b(?:where (?:can|should|do) i (?:eat|get something to eat)|where to eat|something to eat|a place to eat)\b/.test(q) ||
+    /\b(?:i (?:want|would like) to eat|i m hungry|im hungry|i am hungry)\b/.test(q)
+  );
+}
+
 export function isExplicitFoodProductRequest(query: string): boolean {
   const q = normalizza(query);
   if (!q) return false;

@@ -29,6 +29,23 @@ const CITTA_NOTEVOLI: string[] = [
   "trebisacce",
   "morano",
   "cassano",
+  // Città fuori copertura: servono a NON ignorare un vincolo esplicito. Se il
+  // catalogo non ha attività lì, Pino deve dirlo invece di mostrare risultati
+  // di Castrovillari come se fossero nella città richiesta.
+  "roma",
+  "milano",
+  "napoli",
+  "torino",
+  "bologna",
+  "firenze",
+  "bari",
+  "palermo",
+  "catania",
+  "venezia",
+  "genova",
+  "matera",
+  "potenza",
+  "catanzaro",
 ];
 
 const CITTA_SET: ReadonlySet<string> = new Set(CITTA_NOTEVOLI.map((c) => normalizza(c)));
