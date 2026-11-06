@@ -65,7 +65,13 @@ const MODELLO_GROQ_FALLBACK = "openai/gpt-oss-120b";
 const TIMEOUT_GROQ_MS = 6_000;
 /** 0.3: determinismo sui dati di catalogo. */
 const TEMPERATURA_GROQ = 0.3;
-const MAX_TOKENS_GROQ = 300;
+/**
+ * `openai/gpt-oss-120b` è un modello reasoning: spende ~150 token in
+ * `reasoning_tokens` prima di scrivere il JSON del piano. Con 300 il piano
+ * arrivava troncato o vuoto, quindi il tetto coincide con il minimo garantito
+ * (vedi `Math.max` nel body della richiesta).
+ */
+const MAX_TOKENS_GROQ = 700;
 
 /** Messaggio in formato OpenAI: Groq accetta system/user/assistant. */
 type MessaggioGroq = {
@@ -128,7 +134,8 @@ async function chiamaBackupSuGroq(
         model,
         messages: corpo,
         temperature: TEMPERATURA_GROQ,
-        max_tokens: opzioni.maxTokens ?? MAX_TOKENS_GROQ,
+        // Tetto minimo: il reasoning del modello consuma token prima del testo.
+        max_tokens: Math.max(opzioni.maxTokens ?? 0, MAX_TOKENS_GROQ),
         stream: false,
       }),
       signal: controller.signal,
