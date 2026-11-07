@@ -46,6 +46,8 @@ export function richiestaRistorazionePino(query: string): boolean {
     /\b(?:dove|posto|consigli(?:ami|atemi)?|qual(?:e|i))\b[\s\S]{0,40}\b(?:mangiare|mangia|mangiarsi)\b/.test(q) ||
     /\b(?:dove si mangia|dove mangiare|posto dove mangiare)\b/.test(q) ||
     /\b(?:vorrei|voglio|mi va di|possiamo)\s+mangiare\s+(?:qualcosa|qualche cosa)\b/.test(q) ||
+    /\bcosa\s+(?:posso|si\s+puo|si\s+può|potrei)\s+mangiare\b/.test(q) ||
+    /\bcosa\s+mangio\b|\bcosa\s+si\s+mangia\b/.test(q) ||
     /\b(?:ho fame|qualcosa da mangiare)\b/.test(q) ||
     /\b(?:where (?:can|should|do) i (?:eat|get something to eat)|where to eat|something to eat|a place to eat)\b/.test(q) ||
     /\b(?:i (?:want|would like) to eat|i m hungry|im hungry|i am hungry)\b/.test(q)

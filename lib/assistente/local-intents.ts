@@ -80,7 +80,7 @@ export function pianoIntentoLocale(query: string): PianoIntentoLocale | null {
 
 /** True se la richiesta deve essere gestita da Pino e NON dal catalogo. */
 export function isLocalAssistantQuery(query: string): boolean {
-  return pianoIntentoLocale(query) !== null;
+  return pianoIntentoLocale(query) !== null || richiestaOraDataPino(query) !== null;
 }
 
 /**
@@ -124,4 +124,56 @@ export function isWeatherQuery(query: string): boolean {
 export function isPharmacyQuery(query: string): boolean {
   const q = normalizzaRichiesta(query);
   return RE_FARMACIA.test(q) || RE_SINTOMO.test(q);
+}
+
+/**
+ * Ora e data sono dati deterministici: non devono passare dal planner né dal
+ * modello. Il riconoscimento è volutamente stretto, così «che ora apre il
+ * panificio?» resta una domanda sugli orari di un'attività.
+ */
+export type RichiestaOraDataPino = "ora" | "data" | "entrambe";
+
+const RE_ORA = /\b(?:che ore sono|che ora e|che ore fa|che ora sono|what time is it|what's the time|whats the time)\b/;
+const RE_DATA = /\b(?:che giorno e|che giorno siamo|che data e|data di oggi|che giorno e oggi|what day is it|what's the date|whats the date|today's date)\b/;
+
+export function richiestaOraDataPino(query: string): RichiestaOraDataPino | null {
+  const q = normalizzaRichiesta(query).replace(/[?.!]+$/g, "");
+  if (!q) return null;
+  const ora = RE_ORA.test(q);
+  const data = RE_DATA.test(q);
+  if (ora && data) return "entrambe";
+  if (ora) return "ora";
+  if (data) return "data";
+  return null;
+}
+
+/** Risposta deterministica in Europe/Rome, senza modello e senza ricerca. */
+export function rispostaOraDataPino(
+  query: string,
+  now: Date = new Date(),
+  lingua: "it" | "en" = "it"
+): string | null {
+  const richiesta = richiestaOraDataPino(query);
+  if (!richiesta) return null;
+  const orario = new Intl.DateTimeFormat("it-IT", {
+    timeZone: "Europe/Rome",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).format(now);
+  const data = new Intl.DateTimeFormat(lingua === "en" ? "en-GB" : "it-IT", {
+    timeZone: "Europe/Rome",
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(now);
+  if (lingua === "en") {
+    if (richiesta === "ora") return `It's ${orario}.`;
+    if (richiesta === "data") return `Today is ${data}.`;
+    return `Today is ${data}. It's ${orario}.`;
+  }
+  if (richiesta === "ora") return `Sono le ${orario}.`;
+  if (richiesta === "data") return `Oggi è ${data}.`;
+  return `Oggi è ${data}. Sono le ${orario}.`;
 }

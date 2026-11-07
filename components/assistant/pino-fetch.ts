@@ -36,6 +36,7 @@ export async function chiediAPino(input: {
     headers: {
       "Content-Type": "application/json",
       Accept: `${TIPO_STREAMING}, application/json`,
+      "x-pino-origine": "ui",
     },
     body: JSON.stringify({
       messages: input.messaggi,

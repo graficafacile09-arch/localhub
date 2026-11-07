@@ -13,6 +13,8 @@
  * @module lib/assistente/messaggi-pino
  */
 
+import { normalizzaRichiesta } from "./local-intents";
+
 export type LinguaPino = "it" | "en";
 
 /**
@@ -207,4 +209,34 @@ export function messaggioRistorazioneVuotaPino(lingua: LinguaPino): string {
     return "No restaurants, pizzerias, bakeries or food shops are currently listed in the InCittà catalogue, so I can't point you to a verified place to eat. I won't make one up: try again later or tell me a specific food product I can look for.";
   }
   return "Nel catalogo InCittà non risultano al momento ristoranti, pizzerie, panifici o alimentari pubblicati, quindi non posso indicarti un posto verificato dove mangiare. Non ne invento: riprova più tardi oppure dimmi un prodotto alimentare specifico che posso cercare.";
+}
+
+/**
+ * Nessuna attività aperta in questo momento. Il dato è verificato sugli orari
+ * pubblicati: non è un catalogo vuoto e non va comunicato con «prova un'altra
+ * categoria».
+ */
+export function messaggioNessunaAttivitaApertaPino(lingua: LinguaPino): string {
+  if (lingua === "en") {
+    return "No business in the InCittà catalogue is open right now according to its published opening hours. I won't list closed shops as if they were open: try again later or ask me about a specific business.";
+  }
+  return "Secondo gli orari pubblicati, in questo momento non risulta aperta nessuna attività del catalogo InCittà. Non ti elenco negozi chiusi come se fossero aperti: riprova più tardi oppure chiedimi di un'attività specifica.";
+}
+
+/**
+ * L'utente chiede di ordinare: Pino non completa ordini, ma il prodotto trovato
+ * resta utile. La nota accompagna i risultati invece di sostituirli.
+ */
+export function richiestaOrdinePino(query: string): boolean {
+  const q = normalizzaRichiesta(query ?? "");
+  if (!q) return false;
+  if (/\b(?:consigli|consiglio|dove|quale|quali)\b/.test(q)) return false;
+  return /\b(?:vorrei|voglio|desidero|mi\s+piacerebbe|potrei)\s+(?:ordinare|comprare|acquistare)\b/.test(q);
+}
+
+export function messaggioOrdineNonDisponibilePino(lingua: LinguaPino): string {
+  if (lingua === "en") {
+    return "I can't complete the order for you: the product is in the catalogue, but the purchase must be completed on the shop's website.";
+  }
+  return "Non posso completare l'ordine al posto tuo: il prodotto è nel catalogo, ma l'acquisto si conclude dal sito del negozio.";
 }

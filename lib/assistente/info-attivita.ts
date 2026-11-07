@@ -121,17 +121,74 @@ export function filtraNegoziNominatiPino(
   negozi: NegozioRicerca[],
   input: string
 ): NegozioRicerca[] {
-  const soggetto = estraiSoggettoInfoAttivitaPino(input);
-  const tokens = soggetto.split(/\s+/).filter((t) => t.length >= 3);
-  const distintivi = tokens.filter(
-    (t) => !ATTIVITA_CATALOGO_PINO.some((voce) => voce.pattern.test(t))
-  );
+  const distintivi = tokensDistintiviNegozioPino(input);
   if (distintivi.length === 0) return negozi;
   const filtrati = negozi.filter((negozio) => {
     const nome = normalizzaRichiesta(negozio.nome ?? "");
     return distintivi.some((t) => nome.includes(t));
   });
   return filtrati.length > 0 ? filtrati : negozi;
+}
+
+/** Token della domanda che possono identificare un'attività (non la categoria). */
+function tokensDistintiviNegozioPino(input: string): string[] {
+  const soggetto = estraiSoggettoInfoAttivitaPino(input);
+  return Array.from(
+    new Set(
+      soggetto
+        .split(/\s+/)
+        .filter((t) => t.length >= 3)
+        .filter(
+          (t) => !ATTIVITA_CATALOGO_PINO.some((voce) => voce.pattern.test(t))
+        )
+    )
+  );
+}
+
+/**
+ * Nome dell'attività nominata nella domanda, se compare tra i nomi noti
+ * (negozi restituiti o `negozio_nome` dei prodotti). Serve a distinguere
+ * «pane di Zini» (filtro sul negozio) da «pane integrale» (qualifica).
+ */
+export function nomeNegozioNominatoPino(
+  input: string,
+  nomi: ReadonlyArray<string | null | undefined>
+): string | null {
+  const distintivi = tokensDistintiviNegozioPino(input);
+  if (distintivi.length === 0) return null;
+  const trovato = nomi
+    .map((nome) => String(nome ?? "").trim())
+    .filter(Boolean)
+    .find((nome) => {
+      const normalizzato = normalizzaRichiesta(nome);
+      return distintivi.some((token) => normalizzato.includes(token));
+    });
+  return trovato ?? null;
+}
+
+function escapeRegExpPino(testo: string): string {
+  return testo.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/**
+ * Toglie dalla domanda il nome dell'attività, così «pane di Zini» non produce
+ * la nota «qualifica pane di zini»: il negozio è un filtro, non un attributo
+ * del prodotto.
+ */
+export function rimuoviNomeNegozioPino(input: string, nome: string): string {
+  let testo = normalizzaRichiesta(input ?? "");
+  for (const token of normalizzaRichiesta(nome ?? "")
+    .split(/\s+/)
+    .filter((t) => t.length >= 3)) {
+    testo = testo.replace(
+      new RegExp(`\\b${escapeRegExpPino(token)}\\b`, "gi"),
+      " "
+    );
+  }
+  return testo
+    .replace(/\b(?:di|del|della|dei|delle|da|presso)\b(?=\s*[?.!]|\s*$)/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function giornoCorrenteRoma(now: Date = new Date()): string {

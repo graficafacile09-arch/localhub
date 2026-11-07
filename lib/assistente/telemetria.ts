@@ -29,6 +29,14 @@ export type TurnoPinoTelemetria = {
   percorso: string;
   lingua?: string | null;
   motivo?: string | null;
+  /** Canale che ha prodotto il turno: ui, api o test. */
+  origine?: string | null;
+  /** true se la risposta è arrivata in streaming NDJSON. */
+  streaming?: boolean;
+  /** Commit/deploy che ha servito la risposta. */
+  release?: string | null;
+  /** Tempo speso nel contesto dinamico prima dell'orchestratore. */
+  msContesto?: number | null;
 };
 
 /**
@@ -55,6 +63,12 @@ const MOTIVI_SENZA_RICERCA: ReadonlySet<string> = new Set([
   "meteo",
   "farmacie",
   "aggregata",
+  "offerte_assenti",
+  "eventi_assenti",
+  "servizio_assente",
+  "orari",
+  "ora_data",
+  "follow_up",
 ]);
 
 export function calcolaEsitoTurnoPino(input: {
@@ -85,6 +99,10 @@ export async function registraTurnoPino(
       percorso: turno.percorso,
       lingua: turno.lingua ?? null,
       motivo: turno.motivo ?? null,
+      origine: turno.origine ?? null,
+      streaming: turno.streaming === true,
+      release: turno.release ?? null,
+      ms_contesto: turno.msContesto ?? null,
     });
     if (error) {
       // Migrazione non applicata: la telemetria è un di più, non un requisito

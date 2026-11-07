@@ -95,13 +95,20 @@ function vuoleStreaming(request: Request): boolean {
  */
 async function rispostaPino(
   messaggi: MessaggioAssistente[]
-): Promise<{ risultato: RispostaAssistente; dalPercorsoAI: boolean }> {
+): Promise<{
+  risultato: RispostaAssistente;
+  dalPercorsoAI: boolean;
+  msContesto: number | null;
+}> {
+  let msContesto: number | null = null;
   try {
     // La ricerca tradizionale conta nella scadenza complessiva della rotta: un
     // database lento non deve sommare il proprio ritardo a quello dell'AI.
     const esito = await conScadenzaPino(
       (async () => {
+        const inizioContesto = Date.now();
         const contesto = await costruisciContestoDinamicoPino(messaggi);
+        msContesto = Date.now() - inizioContesto;
         return chatConAssistente(messaggi, {
           contestoDatabase: contesto?.blocco ?? null,
         });
@@ -109,7 +116,7 @@ async function rispostaPino(
       SCADENZA_PERCORSO_AI_MS
     );
     if (esito.ok) {
-      return { risultato: esito.valore, dalPercorsoAI: true };
+      return { risultato: esito.valore, dalPercorsoAI: true, msContesto };
     }
     console.warn(
       "[/api/assistente] percorso AI oltre la scadenza, uso la ricerca classica"
@@ -119,21 +126,73 @@ async function rispostaPino(
   }
 
   try {
-    return { risultato: await rispostaDegradataPino(messaggi), dalPercorsoAI: false };
+    return {
+      risultato: await rispostaDegradataPino(messaggi),
+      dalPercorsoAI: false,
+      msContesto: null,
+    };
   } catch (erroreRicerca) {
     console.error(
       "[/api/assistente] Anche la ricerca classica è fallita:",
       erroreRicerca
     );
-    return { risultato: rispostaIndisponibilePino(messaggi), dalPercorsoAI: false };
+    return {
+      risultato: rispostaIndisponibilePino(messaggi),
+      dalPercorsoAI: false,
+      msContesto: null,
+    };
   }
+}
+
+/**
+ * Un solo punto di scrittura della telemetria, condiviso da JSON e streaming.
+ * Prima lo streaming usciva dalla route prima del blocco `after()`: ogni turno
+ * della chat reale non lasciava alcuna riga. La scrittura non è mai bloccante
+ * per la risposta (la funzione interna cattura ogni errore).
+ */
+async function registraTelemetriaTurno(input: {
+  messaggi: MessaggioAssistente[];
+  risultato: RispostaAssistente;
+  dalPercorsoAI: boolean;
+  origine: string;
+  streaming: boolean;
+  msContesto: number | null;
+}): Promise<void> {
+  const { messaggi, risultato, dalPercorsoAI, origine, streaming, msContesto } = input;
+  const ultimoUtente = messaggi[messaggi.length - 1];
+  const motivo = (risultato as { motivoUscita?: string }).motivoUscita ?? null;
+  const linguaTurno = rilevaLinguaConversazionePino(messaggi);
+  await registraTurnoPino({
+    domanda: ultimoUtente?.role === "user" ? ultimoUtente.content : "",
+    intent: (risultato as { intent?: string | null }).intent ?? null,
+    esito: !dalPercorsoAI
+      ? "degradato"
+      : calcolaEsitoTurnoPino({
+          motivo,
+          negozi: risultato.negozi.length,
+          prodotti: risultato.prodotti.length,
+        }),
+    negozi: risultato.negozi.length,
+    prodotti: risultato.prodotti.length,
+    ms: risultato.processingMs,
+    percorso: risultato.source,
+    lingua: linguaTurno,
+    motivo,
+    origine,
+    streaming,
+    release: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? null,
+    msContesto,
+  });
 }
 
 /**
  * Risposta in streaming NDJSON: il primo chunk parte subito (il client mostra
  * il progresso) e l'evento `risultato` porta lo stesso oggetto del JSON.
  */
-function rispostaInStreaming(messaggi: MessaggioAssistente[]): Response {
+function rispostaInStreaming(
+  messaggi: MessaggioAssistente[],
+  origine: string
+): Response {
   const encoder = new TextEncoder();
   const codiceLingua = rilevaLinguaConversazionePino(messaggi);
 
@@ -147,6 +206,17 @@ function rispostaInStreaming(messaggi: MessaggioAssistente[]): Response {
         invia({ type: "stato", fase: "ricerca" });
         const esito = await rispostaPino(messaggi);
         invia({ type: "risultato", ...esito.risultato, lingua: codiceLingua });
+        // Il risultato è già partito: la scrittura può attendere senza
+        // aggiungere latenza percepita, e garantisce la riga anche se la
+        // funzione viene congelata subito dopo la chiusura dello stream.
+        await registraTelemetriaTurno({
+          messaggi,
+          risultato: esito.risultato,
+          dalPercorsoAI: esito.dalPercorsoAI,
+          origine,
+          streaming: true,
+          msContesto: esito.msContesto,
+        });
       } catch {
         // Rete di sicurezza: lo stream non si chiude mai senza un esito.
         invia({
@@ -213,10 +283,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Nessun messaggio valido." }, { status: 400 });
   }
 
+  // Canale dichiarato dal client (la chat invia `x-pino-origine: ui`).
+  const origine =
+    request.headers.get("x-pino-origine") === "ui" ? "ui" : "api";
+
   // Streaming opt-in: i client della chat lo richiedono, gli altri ricevono
   // il JSON storico. In entrambi i casi lo status è 200.
   if (vuoleStreaming(request)) {
-    return rispostaInStreaming(messaggi);
+    return rispostaInStreaming(messaggi, origine);
   }
 
   const esito = await rispostaPino(messaggi);
@@ -226,25 +300,13 @@ export async function POST(request: Request) {
   // (`after`) così non aggiunge latenza e non può farla fallire. È il dataset
   // che mancava per capire quali richieste finiscono a zero e perché.
   after(() => {
-    const ultimoUtente = messaggi[messaggi.length - 1];
-    const motivo = (risultato as { motivoUscita?: string }).motivoUscita ?? null;
-    const linguaTurno = rilevaLinguaConversazionePino(messaggi);
-    void registraTurnoPino({
-      domanda: ultimoUtente?.role === "user" ? ultimoUtente.content : "",
-      intent: (risultato as { intent?: string | null }).intent ?? null,
-      esito: !esito.dalPercorsoAI
-        ? "degradato"
-        : calcolaEsitoTurnoPino({
-            motivo,
-            negozi: risultato.negozi.length,
-            prodotti: risultato.prodotti.length,
-          }),
-      negozi: risultato.negozi.length,
-      prodotti: risultato.prodotti.length,
-      ms: risultato.processingMs,
-      percorso: risultato.source,
-      lingua: linguaTurno,
-      motivo,
+    void registraTelemetriaTurno({
+      messaggi,
+      risultato,
+      dalPercorsoAI: esito.dalPercorsoAI,
+      origine,
+      streaming: false,
+      msContesto: esito.msContesto,
     });
   });
 

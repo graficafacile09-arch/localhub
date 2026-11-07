@@ -23,6 +23,7 @@
 
 import { search } from "@/lib/search-service";
 import { normalizza } from "@/lib/text-utils";
+import { pianoIntentoLocale, richiestaOraDataPino } from "./local-intents";
 
 /** Quanti prodotti allegare: pochi, reali e leggibili. */
 export const MASSIMO_PRODOTTI_CONTESTO_PINO = 5;
@@ -187,6 +188,9 @@ export async function costruisciContestoDinamicoPino(
 ): Promise<EsitoContestoDinamicoPino | null> {
   const testo = ultimoMessaggioUtente(messaggi);
   if (!testo) return null;
+  // Meteo, farmacie, ora e data non sono catalogo: una ricerca qui sarebbe
+  // una query sprecata a ogni turno (e «che ore sono» contiene «ore»).
+  if (pianoIntentoLocale(testo) || richiestaOraDataPino(testo)) return null;
   if (!richiedeCatalogoPino(testo)) return null;
 
   const query = testo.slice(0, 300);

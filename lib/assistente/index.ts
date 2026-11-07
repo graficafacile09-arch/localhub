@@ -20,6 +20,9 @@ import {
   messaggioPrezziPino,
   messaggioRestrizioneAlimentarePino,
   messaggioVuotoConCatalogoPino,
+  messaggioNessunaAttivitaApertaPino,
+  messaggioOrdineNonDisponibilePino,
+  richiestaOrdinePino,
 } from "./messaggi-pino";
 import {
   applicaCorrezioniPino,
@@ -129,13 +132,20 @@ import {
 } from "./capacita";
 import { normalizza } from "@/lib/text-utils";
 import type { NegozioRicerca, ProdottoRicerca } from "@/lib/ricerca-ai";
-import { cittaMeteoNonCopertaPino, pianoIntentoLocale } from "./local-intents";
+import {
+  cittaMeteoNonCopertaPino,
+  normalizzaRichiesta,
+  pianoIntentoLocale,
+  rispostaOraDataPino,
+} from "./local-intents";
 import { rilevaPeriodoEventiPino } from "./eventi-periodo";
 import {
   estraiSoggettoInfoAttivitaPino,
   filtraNegoziNominatiPino,
   giornoRichiestoPino,
+  nomeNegozioNominatoPino,
   rilevaRichiestaInfoAttivitaPino,
+  rimuoviNomeNegozioPino,
   rispostaInfoAttivitaPino,
 } from "./info-attivita";
 import {
@@ -175,6 +185,7 @@ import {
 import type { PinoUnderstanding } from "./understanding";
 import {
   correggiTokenCatalogo,
+  richiestaApertaOra,
   richiestaPrezzoSenzaSoggettoPino,
 } from "./understanding";
 import {
@@ -3331,6 +3342,9 @@ export async function chatConAssistente(
     limiti?: { minPrice: number | null; maxPrice: number | null } | null;
     origine?: "traccia" | "testo" | "assente";
     invocazioni?: string[];
+    /** Motivo registrato in telemetria quando il ramo è `finale` ma il vuoto
+     *  è una risposta onesta (nessuna offerta, nessun evento). */
+    motivoTelemetria?: string;
   };
 
   // Fase 2 — tutte le uscite passano da qui: la risposta è restituita per
@@ -3350,7 +3364,7 @@ export async function chatConAssistente(
       motivoUscita?: string;
       intent?: PinoIntent;
     };
-    conMetadati.motivoUscita = motivo;
+    conMetadati.motivoUscita = dati.motivoTelemetria ?? motivo;
     if (conMetadati.intent == null) conMetadati.intent = analisiSemantica.intent;
     if (shadowTier0Attivo()) {
       creaOsservazioneTier0(
@@ -3385,6 +3399,19 @@ export async function chatConAssistente(
     analisi: analisiSemantica,
   });
   const linguaConversazione = comprensione.lingua;
+
+  // Ora e data sono dati deterministici: nessun planner, nessun modello e
+  // nessuna ricerca di catalogo (prima «che ore sono?» costava ~7 s).
+  const rispostaOraData = rispostaOraDataPino(domanda, new Date(), linguaConversazione);
+  if (rispostaOraData) {
+    return esci("ora_data", {
+      risposta: rispostaOraData,
+      negozi: [],
+      prodotti: [],
+      processingMs: Date.now() - inizio,
+      source: "assistente",
+    }, { limiti: null, origine: "assente" });
+  }
 
   // Fast path conversazionale: non attendere memoria, planner semantico o Gemini
   // per saluti, domande personali e inviti a chiacchierare.
@@ -3669,14 +3696,14 @@ export async function chatConAssistente(
         : inglese
           ? `No ${plurale} are listed in the InCittà catalog.`
           : `Non risultano ${plurale} nel catalogo InCittà.`;
-      return {
+      return esci("servizio_assente", {
         risposta,
         negozi: negozi.slice(0, 8),
         prodotti: [],
         processingMs: Date.now() - inizio,
         source: "assistente",
         intent: analisi.intent,
-      };
+      }, { limiti: null, origine: "assente" });
     }
   }
 
@@ -4493,6 +4520,30 @@ export async function chatConAssistente(
     });
   }
 
+  // «Quali negozi sono aperti adesso?» non è un catalogo vuoto: se il filtro
+  // orari non lascia nulla, Pino dice che nessuna attività è aperta ora invece
+  // di elencare le categorie come se non avesse capito la domanda.
+  if (
+    richiestaApertaOra(domanda) &&
+    negozi.length === 0 &&
+    prodotti.length === 0 &&
+    offerte.length === 0 &&
+    eventi.length === 0
+  ) {
+    return esci("orari", {
+      risposta: messaggioNessunaAttivitaApertaPino(linguaConversazione),
+      negozi: [],
+      prodotti: [],
+      processingMs: Date.now() - inizio,
+      source: "assistente",
+      intent: analisi.intent,
+    }, {
+      limiti: limitiVincolanti,
+      origine: limitiVincolanti ? "traccia" : "assente",
+      invocazioni: invocazioni.map((t) => String(t.tool ?? "")),
+    });
+  }
+
   // 4) Fallback: ricerca completa SOLO se la selezione LLM è fallita.
   // Se l'LLM ha scelto tool che non hanno trovato nulla, i risultati sono
   // davvero vuoti → la risposta finale lo dirà onestamente.
@@ -4694,6 +4745,36 @@ export async function chatConAssistente(
     );
   }
 
+  // «Pane di Zini»: il nome dell'attività è un filtro, non una qualifica del
+  // prodotto. Senza questo passaggio la risposta parlava di «qualifica pane di
+  // zini» e poteva mostrare prodotti di altri negozi.
+  const nomiNegoziNoti = Array.from(
+    new Set(
+      [
+        ...negozi.map((n) => String(n.nome ?? "")),
+        ...prodotti.map((p) => String(p.negozio_nome ?? "")),
+      ].filter(Boolean)
+    )
+  );
+  const negozioNominato = nomeNegozioNominatoPino(domanda, nomiNegoziNoti);
+  const domandaSenzaNegozio = negozioNominato
+    ? rimuoviNomeNegozioPino(domanda, negozioNominato)
+    : domanda;
+  if (negozioNominato && prodotti.length > 0) {
+    const chiave = normalizzaRichiesta(negozioNominato)
+      .split(/\s+/)
+      .filter((t) => t.length >= 3)
+      .find((t) =>
+        prodotti.some((p) => normalizzaRichiesta(p.negozio_nome ?? "").includes(t))
+      );
+    if (chiave) {
+      const delNegozio = prodotti.filter((p) =>
+        normalizzaRichiesta(p.negozio_nome ?? "").includes(chiave)
+      );
+      if (delNegozio.length > 0) prodotti = delNegozio;
+    }
+  }
+
   const totaleRisultati =
     negozi.length + prodotti.length + offerte.length + eventi.length + categorie.length;
   const soloEventi = invocazioni.length > 0 && invocazioni.every((t) => t.tool === "searchEvents");
@@ -4816,8 +4897,9 @@ export async function chatConAssistente(
   // Qualifica richiesta ma non documentata («olio dop», «pasta fresca»): il
   // gate ha tenuto i prodotti del soggetto invece di azzerare, quindi la
   // risposta deve dirlo senza fingere che la qualifica sia verificata.
-  const soggettoRichiesto = soggettoAlimentarePino(domanda);
-  const fraseQualificazione = fraseQualificazionePino(domanda, soggettoRichiesto);
+  const soggettoRichiesto =
+    soggettoAlimentarePino(domandaSenzaNegozio) ?? soggettoAlimentarePino(domanda);
+  const fraseQualificazione = fraseQualificazionePino(domandaSenzaNegozio, soggettoRichiesto);
   const qualificazioneConfermata = fraseQualificazione
     ? qualificazioneDocumentataPino(prodotti, soggettoRichiesto, fraseQualificazione)
     : true;
@@ -4848,8 +4930,15 @@ export async function chatConAssistente(
   const notaCorrezione = correzioneUtente
     ? messaggioCorrezionePino(linguaRisposta === "en" ? "en" : "it")
     : null;
+  // «Vorrei ordinare una pizza» non è un ordine eseguibile, ma la pizza trovata
+  // resta utile: la nota accompagna i risultati invece di sostituirli.
+  const notaOrdine =
+    prodotti.length > 0 && richiestaOrdinePino(domanda)
+      ? messaggioOrdineNonDisponibilePino(linguaRisposta === "en" ? "en" : "it")
+      : null;
   const partiRisposta = [
     notaCorrezione,
+    notaOrdine,
     notaFontiParziali,
     // La nota del recupero semantico dichiara attività trovate: se il gate
     // finale le ha scartate tutte, la frase non deve restare (direbbe di aver
@@ -4877,5 +4966,13 @@ export async function chatConAssistente(
     limiti: limitiVincolanti,
     origine: limitiVincolanti ? "traccia" : "assente",
     invocazioni: invocazioni.map((t) => String(t.tool ?? "")),
+    // Un vuoto di offerte o eventi è una risposta riuscita: senza questo
+    // motivo la telemetria lo contava come «non ho capito».
+    motivoTelemetria:
+      totaleRisultati === 0 && soloEventi
+        ? "eventi_assenti"
+        : totaleRisultati === 0 && soloOfferte
+          ? "offerte_assenti"
+          : undefined,
   });
 }
