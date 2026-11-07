@@ -17,6 +17,7 @@ import {
   messaggioCondizioneAlimentarePino,
   messaggioRistorazioneVuotaPino,
   messaggioQualificazioneRilassataPino,
+  messaggioPrezziPino,
   messaggioRestrizioneAlimentarePino,
   messaggioVuotoConCatalogoPino,
 } from "./messaggi-pino";
@@ -58,6 +59,7 @@ import {
 import {
   searchStores,
   searchProducts,
+  contaAttivitaCatalogoPino,
   searchOffers,
   searchEvents,
   getCategoriesList,
@@ -117,9 +119,13 @@ import { isAttractionNameQuery, searchAttractions } from "./attrazioni";
 import { trovaRispostaFaqPino } from "./faq";
 import {
   richiestaIstruzioniInternePino,
+  richiestaLinguaParlataPino,
   rilevaAzioneNonDisponibilePino,
   rispostaAzioneNonDisponibilePino,
+  rispostaCapacitaLinguaPino,
   rispostaIstruzioniInternePino,
+  rispostaServizioNonCopertoPino,
+  servizioNonCopertoPino,
 } from "./capacita";
 import { normalizza } from "@/lib/text-utils";
 import type { NegozioRicerca, ProdottoRicerca } from "@/lib/ricerca-ai";
@@ -127,6 +133,7 @@ import { cittaMeteoNonCopertaPino, pianoIntentoLocale } from "./local-intents";
 import { rilevaPeriodoEventiPino } from "./eventi-periodo";
 import {
   estraiSoggettoInfoAttivitaPino,
+  filtraNegoziNominatiPino,
   giornoRichiestoPino,
   rilevaRichiestaInfoAttivitaPino,
   rispostaInfoAttivitaPino,
@@ -141,9 +148,11 @@ import {
 import { recuperaMemoria, registraEsitoMemoria } from "./memoria";
 import {
   rilevaDomandaAggregata,
+  rilevaConteggioAttivitaPino,
   risolviSoggettoAggregato,
   prodottoCorrispondeQualificatore,
   componiRispostaAggregata,
+  componiRispostaConteggioAttivitaPino,
 } from "./aggregata";
 import {
   analizzaComprensionePino,
@@ -164,6 +173,10 @@ import {
   creaBudgetGeminiPino,
 } from "./budget-gemini";
 import type { PinoUnderstanding } from "./understanding";
+import {
+  correggiTokenCatalogo,
+  richiestaPrezzoSenzaSoggettoPino,
+} from "./understanding";
 import {
   rilevaFollowUp,
   rilevaRiferimentoRisultatoPino,
@@ -200,6 +213,8 @@ export interface RispostaAssistente {
   intent?: PinoIntent;
   /** Follow-up conversazionale applicato (Pino Conversazionale v1). */
   followUp?: FollowUpTipo;
+  /** Ramo deterministico che ha chiuso il turno (telemetria). */
+  motivoUscita?: string;
 }
 
 /**
@@ -1459,6 +1474,29 @@ function eQuerySostanziale(q: string): string | null {
   );
   if (soloVincoli) return null;
   return t;
+}
+
+/**
+ * Vero se la categoria delle vetrine trovate corregge un refuso della domanda:
+ * "paneficio" → "Panificio". Serve solo a scegliere un'apertura coerente, non
+ * a modificare la ricerca.
+ */
+function negoziTrovatiPerCategoriaPino(
+  negozi: NegozioRicerca[],
+  domanda: string
+): boolean {
+  if (negozi.length === 0) return false;
+  const token = normalizza(domanda)
+    .split(/[^a-z0-9]+/)
+    .filter((t) => t.length >= 6);
+  if (token.length === 0) return false;
+  const vocabolario = new Map<string, string>();
+  for (const negozio of negozi) {
+    const categoria = normalizza(negozio.categoria ?? "");
+    if (categoria) vocabolario.set(categoria, categoria);
+  }
+  if (vocabolario.size === 0) return false;
+  return token.some((t) => correggiTokenCatalogo(t, vocabolario) !== null);
 }
 
 function ultimaQuerySostanziale(storico: MessaggioAssistente[]): string {
@@ -3284,6 +3322,17 @@ export async function chatConAssistente(
     risposta: T,
     dati: DatiShadowTier0 = {}
   ): T => {
+    // Ogni uscita porta con sé il ramo che l'ha prodotta e l'intento, anche
+    // quando il ramo deterministico non li dichiara: senza questi due campi la
+    // telemetria non distingueva una FAQ da una ricerca andata a vuoto.
+    // Nessuna copia: la risposta è arricchita sul posto (stesso riferimento),
+    // così l'osservatore e il chiamante vedono lo stesso oggetto.
+    const conMetadati = risposta as T & {
+      motivoUscita?: string;
+      intent?: PinoIntent;
+    };
+    conMetadati.motivoUscita = motivo;
+    if (conMetadati.intent == null) conMetadati.intent = analisiSemantica.intent;
     if (shadowTier0Attivo()) {
       creaOsservazioneTier0(
         risposta,
@@ -3380,6 +3429,24 @@ export async function chatConAssistente(
     }, { limiti: null, origine: "assente" });
   }
 
+  // Servizi civici che il catalogo non pubblica (parcheggi, taxi, banche…):
+  // dichiarare il limite è meglio che proporre la vetrina più vicina.
+  const servizioNonCoperto = servizioNonCopertoPino(domanda);
+  if (servizioNonCoperto) {
+    const categorieServizio = await riepilogoCategorieCatalogoPino();
+    return esci("servizio_non_coperto", {
+      risposta: rispostaServizioNonCopertoPino(
+        servizioNonCoperto,
+        linguaConversazione,
+        categorieServizio
+      ),
+      negozi: [],
+      prodotti: [],
+      processingMs: Date.now() - inizio,
+      source: "assistente",
+    }, { limiti: null, origine: "assente" });
+  }
+
   // FAQ pubbliche: risposte basate esclusivamente sui contenuti pubblicati in /faq.
   // La soglia di corrispondenza evita di intercettare ricerche commerciali o richieste vaghe.
   if (linguaConversazione === "it") {
@@ -3395,6 +3462,19 @@ export async function chatConAssistente(
     }
   }
 
+
+  // «Parli inglese?» chiede una capacità, non un cambio di lingua: va
+  // risposta subito, senza planner e senza intento `product`.
+  const linguaParlata = richiestaLinguaParlataPino(domanda);
+  if (linguaParlata) {
+    return esci("capacita_lingua", {
+      risposta: rispostaCapacitaLinguaPino(linguaParlata, domanda),
+      negozi: [],
+      prodotti: [],
+      processingMs: Date.now() - inizio,
+      source: "assistente",
+    }, { limiti: null, origine: "assente" });
+  }
 
   // Preferenza linguistica: "I speak English", "please answer in English",
   // "vorrei parlare in inglese" sono comunicazioni sulla conversazione, non
@@ -3424,6 +3504,38 @@ export async function chatConAssistente(
   if (salutoPino) {
     return esci("saluto", {
       risposta: salutoPino,
+      negozi: [],
+      prodotti: [],
+      processingMs: Date.now() - inizio,
+      source: "assistente",
+    }, { limiti: null, origine: "assente" });
+  }
+
+  // «Quanto costa?» da sola non è una ricerca: se c'è un soggetto nella
+  // conversazione Pino lo riusa e risponde coi prezzi reali; altrimenti chiede
+  // di cosa si parla. Prima questa domanda avviava il planner (oltre 6 s).
+  if (richiestaPrezzoSenzaSoggettoPino(domanda)) {
+    const soggettoPrezzo = normalizzaQueryCatalogo(ultimaQuerySostanziale(storico));
+    if (soggettoPrezzo) {
+      const prodottiPrezzo = await searchProducts(soggettoPrezzo, { limit: 5 });
+      if (prodottiPrezzo.length > 0) {
+        return esci("prezzo_contesto", {
+          risposta: messaggioPrezziPino(
+            linguaConversazione,
+            soggettoPrezzo,
+            prodottiPrezzo
+          ),
+          negozi: [],
+          prodotti: prodottiPrezzo.slice(0, 6),
+          processingMs: Date.now() - inizio,
+          source: "assistente",
+        }, { limiti: null, origine: "assente", invocazioni: ["searchProducts"] });
+      }
+    }
+    return esci("prezzo_senza_soggetto", {
+      risposta: linguaConversazione === "en"
+        ? "Tell me which product or business you mean and I'll check the published price."
+        : "Dimmi di quale prodotto o attività parli e controllo il prezzo pubblicato.",
       negozi: [],
       prodotti: [],
       processingMs: Date.now() - inizio,
@@ -3634,6 +3746,25 @@ export async function chatConAssistente(
         invocazioni: ["searchProducts"],
       });
     }
+  }
+
+  // Conteggio di attività: «quanti panifici ci sono?» non è una ricerca di
+  // prodotti né un elenco. Il numero viene dal catalogo reale.
+  const conteggioAttivita = rilevaConteggioAttivitaPino(domanda);
+  if (conteggioAttivita) {
+    const conteggio = await contaAttivitaCatalogoPino(conteggioAttivita.termine);
+    return esci("conteggio_attivita", {
+      risposta: componiRispostaConteggioAttivitaPino({
+        termine: conteggioAttivita.termine,
+        totale: conteggio.totale,
+        nomi: conteggio.nomi,
+        lingua: linguaConversazione,
+      }),
+      negozi: [],
+      prodotti: [],
+      processingMs: Date.now() - inizio,
+      source: "assistente",
+    }, { limiti: null, origine: "assente", invocazioni: ["searchStores"] });
   }
 
   // Meteo e farmacie sono intenti deterministici e non hanno bisogno di memoria.
@@ -4236,16 +4367,18 @@ export async function chatConAssistente(
   // dati del catalogo. La risposta è deterministica e dichiara i campi mancanti.
   const infoAttivita = rilevaRichiestaInfoAttivitaPino(domanda);
   if (infoAttivita && negozi.length > 0) {
-    const orari = await orariPerNegozi(negozi.map((negozio) => negozio.id));
+    // «Il Panificio Zini è aperto?» riguarda Zini, non tutti i panifici.
+    const negoziInfo = filtraNegoziNominatiPino(negozi, domanda);
+    const orari = await orariPerNegozi(negoziInfo.map((negozio) => negozio.id));
     return esci("info_attivita", {
       risposta: rispostaInfoAttivitaPino(
-        negozi,
+        negoziInfo,
         infoAttivita,
         orari,
         linguaConversazione,
         { giorno: giornoRichiestoPino(domanda) }
       ),
-      negozi: negozi.slice(0, 3),
+      negozi: negoziInfo.slice(0, 3),
       prodotti: [],
       processingMs: Date.now() - inizio,
       source: "assistente",
@@ -4521,15 +4654,20 @@ export async function chatConAssistente(
     restrizioneAlimentareRigida && totaleRisultati === 0
       ? messaggioRestrizioneAlimentarePino(
           linguaRisposta,
-          soggettoAlimentarePino(domanda) ?? "questo prodotto",
+          soggettoAlimentarePino(normalizzaQueryCatalogo(domanda)) ??
+            soggettoAlimentarePino(domanda) ??
+            "questo prodotto",
           restrizioneAlimentareRigida
         )
       : null;
   // Richiesta che nomina un'attività: l'apertura dice cosa ha trovato invece
   // di «non ho trovato esattamente quello che cerchi».
-  const attivitaNominata = ATTIVITA_CATALOGO_PINO.some((voce) =>
-    voce.pattern.test(normalizza(domanda))
-  );
+  const attivitaNominata =
+    ATTIVITA_CATALOGO_PINO.some((voce) => voce.pattern.test(normalizza(domanda))) ||
+    // Refuso nell'attività («paneficio»): se la categoria delle vetrine trovate
+    // è una correzione plausibile della domanda, l'apertura non deve dire «non
+    // ho trovato esattamente quello che cerchi» mentre le mostra.
+    negoziTrovatiPerCategoriaPino(negozi, domanda);
   const introduzioneAttivita =
     notaBisogno ??
     (negozi.length > 0 &&

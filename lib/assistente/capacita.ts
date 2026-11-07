@@ -52,8 +52,13 @@ export function rilevaAzioneNonDisponibilePino(query: string): AzionePino | null
     return "prenotazione";
   }
 
+  // L'ordine è un'azione di Pino solo se il verbo è riferito a lui. Il vecchio
+  // pattern accettava `mi` … `comprare` entro 35 caratteri, quindi «quale
+  // negozio mi consigli per comprare olio?» diventava un ordine e riceveva un
+  // rifiuto in pochi millisecondi.
   if (
-    /\b(?:puoi|potresti|mi|vorrei che tu|voglio che tu)\b[\s\S]{0,35}\b(?:ordinare|comprare|acquistare|completare)\b/.test(q) ||
+    /\b(?:puoi|potresti|sapresti|riesci a|sei in grado di)\s+(?:ordinare|comprare|acquistare|completare)\b/.test(q) ||
+    /\b(?:vorrei|voglio)\s+che\s+tu\s+(?:ordini|compri|acquisti|completi|ordinassi|comprassi|acquistassi|completassi)\b/.test(q) ||
     /\b(?:ordina|compra|acquista)\s+(?:tu|per me)\b/.test(q) ||
     /\bmi\s+(?:ordini|compri|acquisti)\b/.test(q) ||
     /\b(?:completa|concludi)\s+(?:l'|il)\s+ordine\b/.test(q)
@@ -62,7 +67,7 @@ export function rilevaAzioneNonDisponibilePino(query: string): AzionePino | null
   }
 
   if (
-    /\b(?:puoi|potresti|mi|vorrei che tu)\b[\s\S]{0,35}\b(?:pagare|effettuare|completare)\b[\s\S]{0,20}\b(?:pagamento|checkout)\b/.test(q) ||
+    /\b(?:puoi|potresti|sapresti)\s+(?:pagare|effettuare|completare)\b[\s\S]{0,20}\b(?:pagamento|checkout)\b/.test(q) ||
     /\b(?:paga|pagare)\s+(?:tu|per me)\b/.test(q)
   ) {
     return "pagamento";
@@ -111,6 +116,79 @@ export function rispostaAzioneNonDisponibilePino(
     case "contatto":
       return "Non posso metterti in contatto diretto con InCittà. Per l'assistenza usa i canali indicati nel sito; se cerchi un negozio, posso mostrarti i recapiti pubblicati sulla sua scheda.";
   }
+}
+
+/**
+ * Servizi civici/urbani che il catalogo InCittà non pubblica.
+ *
+ * Non è un elenco di parole da rifiutare: è la dichiarazione onesta di un
+ * limite. Senza questo livello «dove posso parcheggiare» riceveva il panificio
+ * più vicino, presentato come se fosse pertinente.
+ */
+const SERVIZI_NON_COPERTI_PINO: ReadonlyArray<{ termine: string; pattern: RegExp }> = [
+  { termine: "parcheggio", pattern: /\b(?:parcheggi\w*|parcheggio|posto\s+auto|posti\s+auto|parking)\b/ },
+  { termine: "distributore di carburante", pattern: /\b(?:benzina\w*|carburante|gasolio|distributore|rifornimento)\b/ },
+  { termine: "taxi", pattern: /\b(?:taxi|taxista)\b/ },
+  { termine: "trasporto pubblico", pattern: /\b(?:autobus|corriera|fermata\s+dei\s+mezzi|mezzi\s+pubblici)\b/ },
+  { termine: "stazione ferroviaria", pattern: /\b(?:treno|treni|stazione\s+ferroviaria|ferrovia)\b/ },
+  { termine: "banca o sportello bancomat", pattern: /\b(?:banca|banche|bancomat|atm)\b/ },
+  { termine: "ufficio postale", pattern: /\b(?:ufficio\s+postale|uffici\s+postali|poste)\b/ },
+  { termine: "pronto soccorso", pattern: /\b(?:pronto\s+soccorso|ospedale|ospedali|guardia\s+medica)\b/ },
+];
+
+/**
+ * Nome del servizio richiesto quando non è nel catalogo. Restituisce `null`
+ * per le richieste che il catalogo può coprire.
+ */
+export function servizioNonCopertoPino(query: string): string | null {
+  const q = normalizzaRichiesta(query ?? "");
+  if (!q) return null;
+  return SERVIZI_NON_COPERTI_PINO.find((voce) => voce.pattern.test(q))?.termine ?? null;
+}
+
+/** Risposta che dichiara il limite e non ricicla vetrine fuori tema. */
+export function rispostaServizioNonCopertoPino(
+  servizio: string,
+  lingua: LinguaPino = "it",
+  categorie: Array<{ categoria: string; negozi: number }> = []
+): string {
+  const elenco = categorie
+    .slice(0, 5)
+    .map((voce) => `${voce.categoria} (${voce.negozi})`)
+    .join(", ");
+  if (lingua === "en") {
+    return `I can't find **${servizio}** in the InCittà catalogue, and it's not a service I can verify: I won't suggest unrelated shops. I can help you with shops, products, offers and events.${elenco ? ` The catalogue currently lists: ${elenco}.` : ""}`;
+  }
+  return `Nel catalogo InCittà non trovo **${servizio}**: non è un servizio che posso verificare, quindi non ti propongo negozi che non c'entrano. Posso aiutarti con negozi, prodotti, offerte ed eventi.${elenco ? ` Le categorie presenti sono: ${elenco}.` : ""}`;
+}
+
+/**
+ * Domanda sulla lingua parlata («parli inglese?»): non è una preferenza e non
+ * è una ricerca di catalogo. La risposta dichiara la capacità senza avviare
+ * planner o retrieval.
+ */
+export function richiestaLinguaParlataPino(query: string): LinguaPino | null {
+  const q = normalizzaRichiesta(query ?? "");
+  if (/\b(?:parli|parlate|parla|sai\s+parlare|capisci)\b[\s\S]{0,20}\binglese\b/.test(q)) return "en";
+  if (/\b(?:do\s+you|can\s+you)\s+speak\s+english\b/.test(q)) return "en";
+  if (/\b(?:parli|parlate|parla|sai\s+parlare|capisci)\b[\s\S]{0,20}\bitaliano\b/.test(q)) return "it";
+  if (/\b(?:do\s+you|can\s+you)\s+speak\s+italian\b/.test(q)) return "it";
+  return null;
+}
+
+export function rispostaCapacitaLinguaPino(
+  linguaRichiesta: LinguaPino,
+  domanda = ""
+): string {
+  // La lingua della RISPOSTA è quella della domanda, non quella nominata:
+  // «parli inglese?» è italiano e va confermato in italiano. Solo una domanda
+  // scritta in inglese riceve una conferma in inglese.
+  const domandaInInglese =
+    /\b(?:do\s+you|can\s+you)\s+speak\s+english\b|^\s*speak\s+english\b/i.test(domanda);
+  if (linguaRichiesta === "en" && domandaInInglese) {
+    return "Yes, I speak Italian and English. You can write to me in either language: I'll reply in the language you use.";
+  }
+  return "Sì, parlo italiano e inglese. Puoi scrivermi in una delle due lingue: ti rispondo in quella che usi.";
 }
 
 /**

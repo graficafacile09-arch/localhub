@@ -15,6 +15,7 @@ import type { NegozioRicerca } from "@/lib/ricerca-ai";
 import { normalizzaRichiesta } from "./local-intents";
 import { apertoOra } from "./conversazione";
 import { richiestaApertaOra } from "./understanding";
+import { ATTIVITA_CATALOGO_PINO } from "./lexicon";
 
 export type InfoAttivitaPino =
   | "orari"
@@ -31,6 +32,11 @@ const RE_INDIRIZZO =
   /\bindirizzo\b|\bdove (?:si trova|si trovano|sta|sono|e|è)\b|\bdove si trova\b|\bcome (?:ci )?arrivo\b|\baddress\b|\bwhere is\b|\bwhere are\b/;
 const RE_TELEFONO =
   /\btelefono\b|\bnumero di telefono\b|\bcellulare\b|\bcontatt[oi]\b|\bchiamare\b|\bphone\b|\btelephone\b|\bcall\b/;
+// «Il Panificio Zini è aperto?» chiede lo stato di adesso: senza «ora» il test
+// precedente non lo riconosceva e la domanda finiva nella ricerca generica,
+// che restituiva tre panifici invece della scheda richiesta.
+const RE_STATO =
+  /\b(?:e|è)\s+(?:aperto|aperta|chiuso|chiusa)\b|(?:^|\s)(?:aperto|aperta|chiuso|chiusa)\s*\??$|\bis\s+(?:it|this|that)\s+open\b|\bare\s+(?:you|they)\s+open\b|\bopen\s*\??$/;
 
 /** Riconosce una domanda informativa esplicita su un'attività. */
 export function rilevaRichiestaInfoAttivitaPino(input: string): InfoAttivitaPino | null {
@@ -55,7 +61,15 @@ export function rilevaRichiestaInfoAttivitaPino(input: string): InfoAttivitaPino
   // «Il panificio Zini è aperto ora?» chiede uno stato verificabile, non una
   // ricerca filtrata: se il filtro escludesse i chiusi non potremmo rispondere
   // «chiuso». Lo stato viene calcolato dagli orari pubblicati.
-  if (richiestaApertaOra(q)) return "stato";
+  // «cerco un negozio aperto» resta una ricerca filtrata: lo stato si attiva
+  // per una domanda sull'attività, non per una richiesta di elenco.
+  if (
+    richiestaApertaOra(q) ||
+    (RE_STATO.test(q) &&
+      !/\b(?:cerco|voglio|vorrei|trova|trovami|mostrami|consiglia)\b/.test(q))
+  ) {
+    return "stato";
+  }
   if (orari && indirizzo) return "completa";
   if (orari) {
     // "orari" / "orario" chiede il quadro settimanale; "a che ora chiude"
@@ -94,6 +108,30 @@ export function estraiSoggettoInfoAttivitaPino(input: string): string {
     .replace(/^(?:il|lo|la|i|gli|le)\s+/i, "")
     .replace(/\s+\b(?:e|is|are)\s*$/i, "")
     .trim();
+}
+
+/**
+ * Se la domanda nomina un'attività precisa («il Panificio Zini»), la risposta
+ * informativa riguarda quella vetrina e non tutte quelle della categoria.
+ * Il filtro usa solo i token distintivi del nome: «panificio» è la categoria,
+ * «zini» è ciò che identifica l'attività. Se nessuna vetrina corrisponde si
+ * torna all'elenco completo, senza inventare un'assenza.
+ */
+export function filtraNegoziNominatiPino(
+  negozi: NegozioRicerca[],
+  input: string
+): NegozioRicerca[] {
+  const soggetto = estraiSoggettoInfoAttivitaPino(input);
+  const tokens = soggetto.split(/\s+/).filter((t) => t.length >= 3);
+  const distintivi = tokens.filter(
+    (t) => !ATTIVITA_CATALOGO_PINO.some((voce) => voce.pattern.test(t))
+  );
+  if (distintivi.length === 0) return negozi;
+  const filtrati = negozi.filter((negozio) => {
+    const nome = normalizzaRichiesta(negozio.nome ?? "");
+    return distintivi.some((t) => nome.includes(t));
+  });
+  return filtrati.length > 0 ? filtrati : negozi;
 }
 
 function giornoCorrenteRoma(now: Date = new Date()): string {

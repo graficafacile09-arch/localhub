@@ -19,6 +19,7 @@
 
 import type { ProdottoRicerca } from "@/lib/ricerca-ai";
 import { normalizzaRichiesta } from "./local-intents";
+import { ATTIVITA_CATALOGO_PINO } from "./lexicon";
 
 export type DomandaAggregata = {
   tipo: "conteggio" | "elenco";
@@ -51,6 +52,82 @@ export function rilevaDomandaAggregata(query: string): DomandaAggregata | null {
     tipo: conteggio ? "conteggio" : "elenco",
     riferimentoContesto: RE_RIFERIMENTO.test(q),
   };
+}
+
+/**
+ * Conteggio di ATTIVITÀ (vetrine): «quanti panifici ci sono?».
+ *
+ * `rilevaDomandaAggregata` copre solo i prodotti (tipi, varianti, articoli),
+ * quindi questa domanda cadeva nella ricerca generica e restituiva un elenco
+ * invece del numero. Le farmacie restano sul percorso dei turni, che è l'unica
+ * fonte reale dello stato di apertura.
+ */
+export function rilevaConteggioAttivitaPino(
+  query: string
+): { termine: string } | null {
+  const q = normalizzaRichiesta(query ?? "");
+  if (!q || !RE_CONTEGGIO.test(q)) return null;
+  if (/\b(?:farmaci\w*|aperto|aperta|aperti|aperte|open)\b/.test(q)) return null;
+  const attivita = ATTIVITA_CATALOGO_PINO.find((voce) => voce.pattern.test(q));
+  return attivita ? { termine: attivita.termine } : null;
+}
+
+const PLURALE_ATTIVITA_PINO: Readonly<Record<string, string>> = {
+  bar: "bar",
+  alimentari: "alimentari",
+  ortofrutta: "ortofrutta",
+  "tavola calda": "tavole calde",
+};
+
+const ATTIVITA_EN: Readonly<Record<string, string>> = {
+  panificio: "bakeries",
+  panetteria: "bakeries",
+  forno: "bakeries",
+  pizzeria: "pizzerias",
+  ristorante: "restaurants",
+  trattoria: "trattorias",
+  gastronomia: "delis",
+  macelleria: "butchers",
+  salumeria: "delis",
+  pescheria: "fish shops",
+  pasticceria: "pastry shops",
+  gelateria: "ice-cream shops",
+  rosticceria: "rotisseries",
+  alimentari: "groceries",
+  bar: "bars",
+  enoteca: "wine shops",
+  birreria: "breweries",
+  caffetteria: "coffee shops",
+  negozio: "shops",
+};
+
+function pluraleAttivitaPino(termine: string): string {
+  const noto = PLURALE_ATTIVITA_PINO[termine];
+  if (noto) return noto;
+  if (termine.endsWith("io")) return termine.slice(0, -2) + "i";
+  if (termine.endsWith("ia")) return termine.slice(0, -2) + "e";
+  if (termine.endsWith("a")) return termine.slice(0, -1) + "e";
+  if (termine.endsWith("o")) return termine.slice(0, -1) + "i";
+  return termine;
+}
+
+/** Risposta deterministica al conteggio, con i nomi reali del catalogo. */
+export function componiRispostaConteggioAttivitaPino(input: {
+  termine: string;
+  totale: number;
+  nomi: string[];
+  lingua?: "it" | "en";
+}): string {
+  const totale = Math.max(0, Math.round(Number(input.totale) || 0));
+  const nomi = input.nomi.filter(Boolean).slice(0, 8);
+  if (input.lingua === "en") {
+    if (totale === 0) return `No ${ATTIVITA_EN[input.termine] ?? input.termine} are currently listed in the InCittà catalogue.`;
+    return `The InCittà catalogue currently lists **${totale}** ${ATTIVITA_EN[input.termine] ?? input.termine}${nomi.length ? `: ${nomi.join(", ")}.` : "."}`;
+  }
+  if (totale === 0) return `Nel catalogo InCittà non risultano **${pluraleAttivitaPino(input.termine)}** attivi al momento.`;
+  const sostantivo = totale === 1 ? input.termine : pluraleAttivitaPino(input.termine);
+  const verbo = totale === 1 ? "c'è" : "ci sono";
+  return `Nel catalogo InCittà ${verbo} **${totale}** ${sostantivo}${nomi.length ? `: ${nomi.join(", ")}.` : "."}`;
 }
 
 // ─── Soggetto e filtro della conversazione ───────────────────────────────────

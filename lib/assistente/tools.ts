@@ -931,6 +931,36 @@ async function righeNegoziPerAttivitaPino(
 }
 
 /**
+ * Conteggio reale delle vetrine di un'attività («quanti panifici ci sono?»).
+ * Usa lo stesso gate di identità della ricerca: un negozio che vende pane non
+ * è un panificio. «negozio» conta l'intero catalogo attivo.
+ */
+export async function contaAttivitaCatalogoPino(
+  termine: string
+): Promise<{ totale: number; nomi: string[] }> {
+  try {
+    const db = createAdminSupabaseClient();
+    const { data } = await db
+      .from("negozi")
+      .select("*")
+      .eq("attivo", true)
+      .is("deleted_at", null)
+      .limit(300);
+    const righe = (data ?? []) as Record<string, unknown>[];
+    const filtrate =
+      termine === "negozio"
+        ? righe
+        : righe.filter((n) => negozioAttivitaCompatibilePino(n, termine));
+    return {
+      totale: filtrate.length,
+      nomi: filtrate.map((n) => String(n.nome ?? "")).filter(Boolean),
+    };
+  } catch {
+    return { totale: 0, nomi: [] };
+  }
+}
+
+/**
  * Categorie realmente pubblicate, con il numero di vetrine attive.
  *
  * Serve al messaggio di vuoto: «Prova con un'altra categoria» è inutile se
@@ -3074,7 +3104,21 @@ export async function searchProducts(
     // Rete di sicurezza dopo i filtri di pertinenza/città/orari: nessun prodotto
     // fuori fascia (o senza prezzo) può sopravvivere a un vincolo esplicito.
     if (budgetRigido) {
-      filtrate = filtrate.filter((p) => prodottoRispettaBudgetPino(p, { maxPrice, minPrice }));
+      const conformi = filtrate.filter((p) =>
+        prodottoRispettaBudgetPino(p, { maxPrice, minPrice })
+      );
+      // D-1: il budget è una preferenza, non un filtro assoluto. Se il vincolo
+      // rigido azzera tutto (vino a €14,90 per «sotto 10 euro»), le alternative
+      // ordinate per prezzo sono più utili di un vuoto: l'introduzione le
+      // etichetta come fuori budget. Lo zero esplicito resta un vuoto.
+      if (conformi.length > 0) {
+        filtrate = conformi;
+      } else {
+        console.info(
+          "[pino-budget-morbido]",
+          JSON.stringify({ maxPrice, minPrice, alternative: filtrate.length })
+        );
+      }
     }
   }
 

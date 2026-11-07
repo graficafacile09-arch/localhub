@@ -38,7 +38,10 @@ import { costruisciContestoDinamicoPino } from "@/lib/assistente/contesto-dinami
 import { prendiOsservazioneTier0 } from "@/lib/assistente/shadow/integrazione";
 import { rilevaLinguaConversazionePino } from "@/lib/assistente/understanding";
 import { checkRateLimit } from "@/lib/rate-limiter";
-import { registraTurnoPino } from "@/lib/assistente/telemetria";
+import {
+  calcolaEsitoTurnoPino,
+  registraTurnoPino,
+} from "@/lib/assistente/telemetria";
 import {
   conScadenzaPino,
   rispostaDegradataPino,
@@ -224,18 +227,24 @@ export async function POST(request: Request) {
   // che mancava per capire quali richieste finiscono a zero e perché.
   after(() => {
     const ultimoUtente = messaggi[messaggi.length - 1];
+    const motivo = (risultato as { motivoUscita?: string }).motivoUscita ?? null;
+    const linguaTurno = rilevaLinguaConversazionePino(messaggi);
     void registraTurnoPino({
       domanda: ultimoUtente?.role === "user" ? ultimoUtente.content : "",
       intent: (risultato as { intent?: string | null }).intent ?? null,
       esito: !esito.dalPercorsoAI
         ? "degradato"
-        : risultato.negozi.length + risultato.prodotti.length === 0
-          ? "vuoto"
-          : "ok",
+        : calcolaEsitoTurnoPino({
+            motivo,
+            negozi: risultato.negozi.length,
+            prodotti: risultato.prodotti.length,
+          }),
       negozi: risultato.negozi.length,
       prodotti: risultato.prodotti.length,
       ms: risultato.processingMs,
       percorso: risultato.source,
+      lingua: linguaTurno,
+      motivo,
     });
   });
 

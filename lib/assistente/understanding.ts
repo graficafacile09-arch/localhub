@@ -23,6 +23,16 @@ export function richiestaApertaOra(testo: string): boolean {
 }
 
 /**
+ * «Quanto costa?» / «how much is it?» senza soggetto: è una domanda di
+ * chiarimento (o un follow-up sul contesto), non una ricerca di catalogo.
+ */
+export function richiestaPrezzoSenzaSoggettoPino(testo: string): boolean {
+  const q = normalizzaRelazionale(testo);
+  if (!q) return false;
+  return /^(?:quanto\s+(?:costa|costano|viene|vengono)|how\s+much(?:\s+(?:is|are|does|do))?(?:\s+(?:it|this|that|they|these|those))?|what(?:'s|\s+is)\s+the\s+price)$/.test(q);
+}
+
+/**
  * Lingua riconoscibile dal solo testo, oppure `null` quando il messaggio è
  * troppo breve o ambiguo: in quel caso vale la lingua del contesto.
  */

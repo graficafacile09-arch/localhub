@@ -31,6 +31,28 @@ export function messaggioQualificazioneRilassataPino(
   return `Nel catalogo non trovo un prodotto con la qualifica «${qualificatore}» per «${soggetto}»: ti mostro quello che c'è, senza attribuirgli quella qualifica.`;
 }
 
+// Traduzioni usate SOLO nella risposta inglese: il soggetto e la restrizione
+// arrivano dal lessico italiano, che è la lingua del catalogo. Senza queste
+// mappe una frase inglese conteneva «senza glutine» e «questo prodotto».
+const SOGGETTI_ALIMENTARI_EN: Readonly<Record<string, string>> = {
+  pane: "bread", formaggio: "cheese", carne: "meat", pesce: "fish",
+  verdura: "vegetables", frutta: "fruit", miele: "honey", farina: "flour",
+  riso: "rice", cipolla: "onion", pomodoro: "tomato", biscotti: "cookies",
+  biscotto: "cookie", torta: "cake", pasta: "pasta", olio: "oil",
+  vino: "wine", birra: "beer", acqua: "water", latte: "milk", uova: "eggs",
+  legumi: "legumes", noci: "nuts", mandorle: "almonds",
+};
+
+const RESTRIZIONI_EN: Readonly<Record<string, string>> = {
+  "senza glutine": "gluten-free",
+  "senza lattosio": "lactose-free",
+  "senza zucchero": "sugar-free",
+  "senza uova": "egg-free",
+  "senza frutta a guscio": "nut-free",
+  vegano: "vegan",
+  vegetariano: "vegetarian",
+};
+
 /**
  * Restrizione alimentare non documentata: nessuna alternativa non verificata.
  * A differenza della qualifica "morbida", qui non si mostrano prodotti del
@@ -42,9 +64,36 @@ export function messaggioRestrizioneAlimentarePino(
   restrizione: string
 ): string {
   if (lingua === "en") {
-    return `I couldn't find any product with the “${restrizione}” requirement for “${soggetto}”. I'm not showing unverified alternatives for a dietary restriction.`;
+    const soggettoEn = SOGGETTI_ALIMENTARI_EN[soggetto.trim().toLowerCase()] ?? "this product";
+    const restrizioneEn = RESTRIZIONI_EN[restrizione.trim().toLowerCase()] ?? "dietary";
+    return `I couldn't find any ${soggettoEn} with the “${restrizioneEn}” requirement. I'm not showing unverified alternatives for a dietary restriction.`;
   }
   return `Nel catalogo non trovo prodotti con il requisito «${restrizione}» per «${soggetto}»: non ti mostro alternative non verificate per una restrizione alimentare.`;
+}
+
+/** Prezzi reali dei prodotti già recuperati, per «quanto costa?» in contesto. */
+export function messaggioPrezziPino(
+  lingua: LinguaPino,
+  soggetto: string,
+  prodotti: Array<{ nome?: string | null; prezzo?: unknown; negozio_nome?: string | null }>
+): string {
+  const euro = (valore: unknown): string | null => {
+    const numero = Number(valore);
+    if (!Number.isFinite(numero) || numero <= 0) return null;
+    return `€${numero.toFixed(2).replace(".", ",")}`;
+  };
+  const righe = prodotti
+    .slice(0, 5)
+    .map((prodotto) => {
+      const prezzo = euro(prodotto.prezzo);
+      const negozio = prodotto.negozio_nome ? ` — ${prodotto.negozio_nome}` : "";
+      return `- **${prodotto.nome ?? soggetto}**${prezzo ? `: ${prezzo}` : ""}${negozio}`;
+    })
+    .join("\n");
+  if (lingua === "en") {
+    return `Here are the published prices for **${soggetto}**:\n\n${righe}`;
+  }
+  return `Ecco i prezzi pubblicati per **${soggetto}**:\n\n${righe}`;
 }
 
 /**
