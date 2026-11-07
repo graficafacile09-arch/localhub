@@ -19,11 +19,20 @@ const RICHIESTE_METEO = [
   "come è il tempo",
   "che tempo fa",
   "che tempo fa?",
+  "che tempo farà domani a Castrovillari",
+  "che tempo fara domani a castrovillari",
+  "che tempo ci sarà domani",
+  "domani che tempo fa",
+  "che tempo è previsto per domani",
+  "come sarà il tempo domani",
   "meteo",
   "piove?",
   "pioverà",
   "quanti gradi ci sono",
+  "quanti gradi ci saranno domani",
   "che temperatura c'è",
+  "what will the weather be like tomorrow",
+  "will it rain tomorrow",
 ];
 
 for (const q of RICHIESTE_METEO) {
@@ -82,7 +91,17 @@ test("B5 'farmacia' al singolare e 'cerca farmacia' → farmacie vere, mai il ca
 
 // ─── C. NESSUNA REGRESSIONE SULLE RICERCHE COMMERCIALI ───────────────────────
 
-test("C1 ricerche commerciali vere: MAI rubate al catalogo", () => {
+test("C1 'quanto tempo ci vuole' resta una domanda sul tempo, non meteo", () => {
+  for (const q of [
+    "quanto tempo ci vuole per arrivare a Castrovillari",
+    "che tempo impiega il corriere",
+  ]) {
+    expect(pianoIntentoLocale(q), q).toBeNull();
+    expect(isLocalAssistantQuery(q), q).toBe(false);
+  }
+});
+
+test("C2 ricerche commerciali vere: MAI rubate al catalogo", () => {
   const commerciali = [
     "parafarmacia Castrovillari",
     "cerco una pizzeria",

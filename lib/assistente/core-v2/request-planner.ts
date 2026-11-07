@@ -16,6 +16,9 @@ import {
   isBroadAttractionsRequest,
   isExplicitFoodProductRequest,
 } from "../routing-policy.ts";
+// Un solo riconoscimento del meteo, condiviso con l'orchestratore: "come sarà
+// il tempo" e "che tempo farà" non devono esistere in due liste divergenti.
+import { isWeatherQuery } from "../local-intents.ts";
 
 export type PinoCoreRoute =
   | "conversation"
@@ -49,8 +52,6 @@ export type PinoCorePlan = {
 const GENERIC_VAGUE =
   /^(?:qualcosa(?:\s+di\s+\p{L}+)?|un qualcosa|consigliami qualcosa|non so cosa|anything|something(?:\s+nice)?|i don't know what|surprise me|whatever)\s*[!.?]*$/iu;
 
-const WEATHER =
-  /\b(?:meteo|tempo che fa|che tempo|previsioni|piove|piovera|piovera'?|piovere|piovendo|temperatura|weather|forecast|is it raining|will it rain)\b/i;
 const PHARMACY =
   /\b(?:farmacia|farmacie|farmacista|pharmacy|pharmacies|chemist)\b/i;
 const EVENTS =
@@ -176,7 +177,7 @@ export function planPinoCoreRequest(input: string): PinoCorePlan {
   if (isConversationalMessage(original)) {
     return { ...base, route: "conversation", surface: "none", confidence: "high", reason: "conversational_message" };
   }
-  if (WEATHER.test(intentText)) {
+  if (isWeatherQuery(original)) {
     return { ...base, route: "weather", surface: "none", confidence: "high", reason: "weather_intent" };
   }
   if (PHARMACY.test(intentText)) {

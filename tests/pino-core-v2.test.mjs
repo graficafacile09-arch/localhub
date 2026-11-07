@@ -103,6 +103,8 @@ test("events requests are routed independently from attractions", () => {
 
 test("weather and pharmacy requests use their dedicated routes", () => {
   assert.equal(planPinoCoreRequest("Che tempo fa domani?").route, "weather");
+  assert.equal(planPinoCoreRequest("Che tempo farà domani a Castrovillari?").route, "weather");
+  assert.equal(planPinoCoreRequest("Come sarà il tempo domani?").route, "weather");
   assert.equal(planPinoCoreRequest("Pioverà oggi?").route, "weather");
   assert.equal(planPinoCoreRequest("Quale farmacia è di turno?").route, "pharmacies");
 });

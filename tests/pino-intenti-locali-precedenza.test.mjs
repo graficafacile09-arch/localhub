@@ -51,6 +51,26 @@ test("«Che tempo fa oggi a Castrovillari?» è meteo e non Attrazioni", async (
   assert.match(r.risposta, /meteo/i);
 });
 
+test("il meteo riconosce anche il futuro e le frasi naturali", async () => {
+  for (const frase of [
+    "Che tempo farà domani a Castrovillari?",
+    "Che tempo fara domani a Castrovillari",
+    "Che tempo ci sarà domani",
+    "Domani che tempo fa",
+    "Come sarà il tempo domani",
+    "Che tempo è previsto per domani",
+  ]) {
+    assert.deepEqual(pianoIntentoLocale(frase), { tool: "getWeather" }, frase);
+    assert.equal(planPinoCoreRequest(frase).route, "weather", frase);
+    assert.equal(richiestaGuidaAttrazioniPino(frase), false, frase);
+  }
+
+  const r = await rispondi("Che tempo farà domani a Castrovillari?");
+  assert.doesNotMatch(r.risposta, GUIDA);
+  assert.doesNotMatch(r.risposta, CASTELLO);
+  assert.match(r.risposta, /meteo/i);
+});
+
 test("le farmacie con la città nel testo restano farmacie, non Attrazioni", async () => {
   for (const frase of [
     "Farmacia di turno a Castrovillari?",

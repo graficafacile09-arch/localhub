@@ -31,8 +31,14 @@ export function normalizzaRichiesta(testo: string): string {
     .trim();
 }
 
-const RE_METEO =
-  /\b(meteo|previsioni|che tempo fa|com'e il tempo|come e il tempo|come sara il tempo|piove|piovera|temperatura|quanti gradi|gradi ci sono|weather|forecast|what(?:'s| is) the weather|how(?:'s| is) the weather|will it rain|is it raining|temperature|how many degrees|degrees outside)\b/i;
+// Il meteo è una domanda sul tempo atmosferico, non su "quanto tempo"
+// serve per qualcosa: la lookahead negativa evita di rubare al catalogo
+// richieste come «che tempo impiega il corriere».
+const RE_METEO_IT =
+  /(?:\bmeteo\b|\bprevisioni\b|\bche tempo(?!\s+(?:ci vuole|impiega|serve|occorre|manca|dura))\b|\bcom'?e (?:il )?tempo\b|\bcome (?:e|sara|sarebbe) (?:il )?tempo\b|\bpiove\b|\bpiovera\b|\bpioggia\b|\btemperatur[ae]\b|\bquanti gradi\b|\bgradi (?:ci sono|ci saranno|domani|oggi|stasera)\b|\bquanto (?:fa|fara|sara) (?:caldo|freddo)\b|\b(?:c'e|ci sara|sara|e previsto)\s+(?:il\s+)?sole\b)/i;
+const RE_METEO_EN =
+  /(?:\bweather\b|\bforecast\b|\bwhat(?:'s| is| will be| will)? (?:the )?weather\b|\bhow(?:'s| is| will be| will)? (?:the )?weather\b|\bwill it (?:rain|be (?:sunny|rainy|cloudy|hot|cold))\b|\bis it (?:raining|going to rain|sunny|rainy|cloudy|hot|cold)\b|\btemperatur[ae]\b|\bhow many degrees\b|\bdegrees outside\b)/i;
+const RE_METEO = new RegExp(`${RE_METEO_IT.source}|${RE_METEO_EN.source}`, "i");
 
 const RE_FARMACIA = /\b(farmacia|farmacie|pharmacy|pharmacies)\b/i;
 
