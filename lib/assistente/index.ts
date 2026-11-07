@@ -26,6 +26,7 @@ import {
   messaggioCorrezionePino,
   registraCorrezionePino,
   rilevaCorrezionePino,
+  type CorrezioneRilevataPino,
 } from "./apprendimento";
 import { alternativeBisognoPino, rilevaBisognoPino } from "./bisogni";
 import { rispostaIdentitaPino } from "./identity";
@@ -3142,6 +3143,100 @@ export function invocazioniRegaloPino(
   return invocazioni.slice(0, MASSIMO_INVOCAZIONI_PINO);
 }
 
+// ─── Turno: correzioni apprese e bisogni senza risultati ─────────────────────
+// Erano due blocchi di ~40 righe dentro `chatConAssistente`, con stato locale
+// (`storico`, `negozi`, `notaBisogno`). Qui hanno un contratto esplicito e si
+// possono verificare da soli; la sequenza della pipeline resta invariata.
+
+/**
+ * Applica al turno la correzione dell'utente, se presente.
+ *
+ * 1. Il messaggio corrente è una correzione ("no, intendevo un panino"): si
+ *    salva in memoria e si sostituisce la domanda con il contenuto corretto.
+ * 2. La domanda ripete una correzione già appresa: si riapplica prima di
+ *    interpretare, così il difetto non si ripete.
+ *
+ * Restituisce la correzione rilevata nel turno (per la presa d'atto in
+ * risposta), oppure null.
+ */
+async function risolviCorrezioneTurnoPino(
+  storico: MessaggioAssistente[]
+): Promise<CorrezioneRilevataPino | null> {
+  const correzione = rilevaCorrezionePino(storico);
+  if (correzione) {
+    void registraCorrezionePino(correzione);
+    const indiceUltimo = storico.length - 1;
+    storico[indiceUltimo] = {
+      ...storico[indiceUltimo],
+      content:
+        correzione.tipo === "altro"
+          ? `${correzione.domandaPrecedente} ${correzione.correzione}`
+          : correzione.correzione,
+    };
+    return correzione;
+  }
+
+  const ultimaUtente = [...storico].reverse().find((m) => m.role === "user");
+  const parole = ultimaUtente?.content.trim().split(/\s+/).length ?? 0;
+  if (
+    ultimaUtente &&
+    parole > 0 &&
+    parole <= 6 &&
+    !rispostaIdentitaPino(ultimaUtente.content) &&
+    !rispostaSalutoPino(ultimaUtente.content)
+  ) {
+    const apprese = await correzioniAppresePino(ultimaUtente.content);
+    const corretta = applicaCorrezioniPino(ultimaUtente.content, apprese);
+    if (corretta !== ultimaUtente.content) {
+      const indice = storico.lastIndexOf(ultimaUtente);
+      storico[indice] = { ...ultimaUtente, content: corretta };
+      console.info("[pino-correzioni] applicata", JSON.stringify({ corretta }));
+    }
+  }
+  return null;
+}
+
+/**
+ * Alternative pubblicate per un bisogno rimasto senza risultati.
+ * Restituisce le vetrine e il testo che le introduce (null se non ce ne sono).
+ */
+async function cercaAlternativeBisognoPino(
+  domanda: string,
+  lingua: "it" | "en"
+): Promise<{ negozi: NegozioRicerca[]; nota: string | null }> {
+  const alternative = alternativeBisognoPino(domanda);
+  if (!alternative) return { negozi: [], nota: null };
+
+  const ricerche = await Promise.all(
+    alternative.termini.map((termine) =>
+      searchStores(termine, { limit: 8 }).catch(() => [] as NegozioRicerca[])
+    )
+  );
+  const visti = new Set<string>();
+  const attivita = ricerche.flat().filter((negozio) => {
+    const chiave = String(
+      (negozio as { slug?: string | null }).slug ?? negozio.nome
+    );
+    if (visti.has(chiave)) return false;
+    visti.add(chiave);
+    return true;
+  });
+  if (attivita.length === 0) return { negozi: [], nota: null };
+
+  console.info(
+    "[pino-bisogno-fallback]",
+    JSON.stringify({
+      bisogno: alternative.bisogno,
+      attivita: attivita.length,
+      termini: alternative.termini,
+    })
+  );
+  return {
+    negozi: attivita,
+    nota: messaggioBisognoSenzaLocaliPino(lingua, alternative.bisogno),
+  };
+}
+
 // ─── Orchestratore principale ────────────────────────────────────────────────
 
 export type OpzioniChatPino = {
@@ -3161,42 +3256,9 @@ export async function chatConAssistente(
   const inizio = Date.now();
   const storico = normalizzaMessaggi(messages);
 
-  // ── Correzione dell'utente: il segnale più diretto che la risposta
-  // precedente era sbagliata. "No, intendevo un panino" non è una nuova
-  // richiesta: è la correzione della precedente. La si salva (senza bloccare
-  // il turno) e si rilancia la ricerca sul contenuto corretto.
-  const correzioneUtente = rilevaCorrezionePino(storico);
-  if (correzioneUtente) {
-    void registraCorrezionePino(correzioneUtente);
-    const indiceUltimo = storico.length - 1;
-    storico[indiceUltimo] = {
-      ...storico[indiceUltimo],
-      content:
-        correzioneUtente.tipo === "altro"
-          ? `${correzioneUtente.domandaPrecedente} ${correzioneUtente.correzione}`
-          : correzioneUtente.correzione,
-    };
-  } else {
-    // Correzione già appresa per la stessa domanda: si riapplica PRIMA di
-    // interpretare, così lo stesso difetto non si ripete al turno successivo.
-    const ultimaUtente = [...storico].reverse().find((m) => m.role === "user");
-    const parole = ultimaUtente?.content.trim().split(/\s+/).length ?? 0;
-    if (
-      ultimaUtente &&
-      parole > 0 &&
-      parole <= 6 &&
-      !rispostaIdentitaPino(ultimaUtente.content) &&
-      !rispostaSalutoPino(ultimaUtente.content)
-    ) {
-      const apprese = await correzioniAppresePino(ultimaUtente.content);
-      const corretta = applicaCorrezioniPino(ultimaUtente.content, apprese);
-      if (corretta !== ultimaUtente.content) {
-        const indice = storico.lastIndexOf(ultimaUtente);
-        storico[indice] = { ...ultimaUtente, content: corretta };
-        console.info("[pino-correzioni] applicata", JSON.stringify({ corretta }));
-      }
-    }
-  }
+  // La correzione dell'utente (se c'è) viene applicata al turno prima di
+  // qualsiasi interpretazione: vedi `risolviCorrezioneTurnoPino`.
+  const correzioneUtente = await risolviCorrezioneTurnoPino(storico);
 
   const ultimo = storico[storico.length - 1];
   // Contesto dinamico: dati reali del database già verificati dalla rotta.
@@ -3949,11 +4011,8 @@ export async function chatConAssistente(
   }
 
   // ── Bisogni senza locali del tipo giusto ("ho fame", "ho sete") ────────
-  // Un bisogno non è una categoria del catalogo. Se il piano non trova il
-  // locale adatto, la risposta mostra le alternative pubblicate e dichiara
-  // cosa sono: un panificio non è un ristorante, un alimentare non è un bar.
-  // Vale anche per un'attività di cibo pronto richiesta per nome
-  // ("gastronomia") che il catalogo non pubblica.
+  // Un bisogno non è una categoria del catalogo: se il piano non trova il
+  // locale adatto, si mostrano le alternative pubblicate e lo si dichiara.
   let notaBisogno: string | null = null;
   if (
     !directReply &&
@@ -3961,38 +4020,12 @@ export async function chatConAssistente(
     negozi.length === 0 &&
     prodotti.length === 0
   ) {
-    const alternative = alternativeBisognoPino(domanda);
-    if (alternative) {
-      const ricercheAlternative = await Promise.all(
-        alternative.termini.map((termine) =>
-          searchStores(termine, { limit: 8 }).catch(() => [] as NegozioRicerca[])
-        )
-      );
-      const visti = new Set<string>();
-      const attivitaAlternative = ricercheAlternative.flat().filter((negozio) => {
-        const chiave = String(
-          (negozio as { slug?: string | null }).slug ?? negozio.nome
-        );
-        if (visti.has(chiave)) return false;
-        visti.add(chiave);
-        return true;
-      });
-      if (attivitaAlternative.length > 0) {
-        negozi = attivitaAlternative;
-        notaBisogno = messaggioBisognoSenzaLocaliPino(
-          linguaConversazione,
-          alternative.bisogno
-        );
-        console.info(
-          "[pino-bisogno-fallback]",
-          JSON.stringify({
-            bisogno: alternative.bisogno,
-            attivita: attivitaAlternative.length,
-            termini: alternative.termini,
-          })
-        );
-      }
-    }
+    const alternative = await cercaAlternativeBisognoPino(
+      domanda,
+      linguaConversazione
+    );
+    negozi = alternative.negozi;
+    notaBisogno = alternative.nota;
   }
 
   // M6-A — Tentate ≠ riuscite: solo le invocazioni completate senza eccezioni
