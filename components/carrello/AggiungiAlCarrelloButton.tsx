@@ -69,17 +69,6 @@ export default function AggiungiAlCarrelloButton({
     });
   };
 
-  if (soggettoVerificaEta) {
-    return (
-      <Link
-        href={`/prodotto/${slug}`}
-        className="flex w-full items-center justify-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-base font-bold text-amber-900 shadow-sm transition hover:bg-amber-100 active:scale-[0.98]"
-      >
-        🔞 Verifica età per acquistare
-      </Link>
-    );
-  }
-
   if (mostraOk) {
     return (
       <div className="w-full space-y-2">
