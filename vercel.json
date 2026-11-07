@@ -2,11 +2,20 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "git": {
     "deploymentEnabled": {
-      "main": true,
-      "feat/area-corriere-locale": true
+      "main": true
     }
   },
   "regions": [
     "fra1"
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/notizie",
+      "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/cron/pagamenti-scaduti",
+      "schedule": "30 5 * * *"
+    }
   ]
 }

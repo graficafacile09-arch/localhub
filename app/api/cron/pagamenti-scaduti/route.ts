@@ -3,12 +3,14 @@ import { apiError, apiOk } from "@/lib/api/response";
 import {
   elaboraPagamentiScadutiDettagli,
 } from "@/lib/pagamenti/sessioni";
+import { riparaEventiWebhookBloccati } from "@/lib/pagamenti/eventi-bloccati";
 
 /**
  * GET /api/cron/pagamenti-scaduti
  *
- * Independent payment-expiration sweep. This endpoint is intentionally not
- * registered as a Vercel cron: it is called by the existing external scheduler.
+ * Sweep dei pagamenti scaduti + riparazione degli eventi webhook rimasti
+ * bloccati. È registrato come cron Vercel giornaliero (vercel.json) e resta
+ * richiamabile dal vecchio scheduler esterno: entrambi sono idempotenti.
  */
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET ?? "";
@@ -27,11 +29,16 @@ export async function GET(request: Request) {
   }
 
   const result = await elaboraPagamentiScadutiDettagli();
+  // Indipendente dallo sweep: riporta in stato ritentabile gli eventi
+  // webhook fermi da oltre 24 ore (altrimenti invisibili).
+  const eventi = await riparaEventiWebhookBloccati();
+
   if (!result.ok) {
     return apiError("SWEEP_FAILED", "Impossibile completare lo sweep dei pagamenti scaduti.", 503, {
       candidati: result.candidati,
       processati: result.processati,
       falliti: result.falliti,
+      eventiWebhookRiparati: eventi.ok ? eventi.riparati : null,
     });
   }
 
@@ -40,6 +47,7 @@ export async function GET(request: Request) {
       candidati: result.candidati,
       processati: result.processati,
       falliti: result.falliti,
+      eventiWebhookRiparati: eventi.ok ? eventi.riparati : null,
     },
     200
   );

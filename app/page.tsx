@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Header from "@/components/Header/Header";
 import Link from "next/link";
 import Image from "next/image";
@@ -24,6 +25,15 @@ import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
 // dal merchant (il toggle "In evidenza" della dashboard), quindi non viene
 // prerenderizzata staticamente a build.
 export const dynamic = "force-dynamic";
+
+// Title e canonical espliciti: senza, la home ereditava il title di default e
+// nessuna delle due pagine principali dichiarava la propria URL canonica.
+export const metadata: Metadata = {
+  title: "InCittà | I negozi di Castrovillari on-line",
+  description:
+    "Trova i negozi, i prodotti e i servizi di Castrovillari: cerca, confronta e acquista dai commercianti della tua città.",
+  alternates: { canonical: "/" },
+};
 
 /**
  * Intestazione di sezione coerente (label + titolo + eventuale link):

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Header from "@/components/Header/Header";
 import { getNegozi, getNegoziInEvidenza } from "@/lib/negozi";
 import { getNegozioCardImmagine } from "@/lib/negozi-card-immagini";
@@ -9,6 +10,19 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, MapPin, Star, Tag } from "lucide-react";
 import { puoUsareNextImage } from "@/lib/immagini-remote";
+import { getSiteUrl } from "@/lib/site";
+
+// La pagina ereditava title e canonical dalla home: due URL con lo stesso
+// titolo e nessuna canonical dichiarata. Ora ha i propri.
+export async function generateMetadata(): Promise<Metadata> {
+  const impostazioni = await getImpostazioniPubbliche();
+  const citta = impostazioni.city_name?.trim() || "Castrovillari";
+  return {
+    title: `Negozi e attività di ${citta}`,
+    description: `L'elenco dei negozi e delle attività di ${citta}: orari, contatti, prodotti e servizi delle imprese locali.`,
+    alternates: { canonical: `${getSiteUrl()}/negozi` },
+  };
+}
 
 export default async function NegoziPage({
   searchParams,
