@@ -1499,6 +1499,25 @@ function negoziTrovatiPerCategoriaPino(
   return token.some((t) => correggiTokenCatalogo(t, vocabolario) !== null);
 }
 
+/**
+ * Refuso su una parola singola che è un'attività del catalogo: «paneficio» →
+ * «panificio». La correzione è deterministica, così la richiesta non paga il
+ * planner (oltre 7 s) per una parola che il lessico sa già correggere.
+ */
+function attivitaDaRefusoPino(
+  domanda: string
+): { termine: string; intent: PinoIntent } | null {
+  const token = normalizza(domanda).trim();
+  if (!/^[a-z]+$/.test(token) || token.length < 5) return null;
+  const vocabolario = new Map<string, string>(
+    ATTIVITA_CATALOGO_PINO.map((voce) => [voce.termine, voce.termine] as [string, string])
+  );
+  const corretto = correggiTokenCatalogo(token, vocabolario);
+  if (!corretto) return null;
+  const voce = ATTIVITA_CATALOGO_PINO.find((v) => v.termine === corretto);
+  return voce ? { termine: voce.termine, intent: voce.intent } : null;
+}
+
 function ultimaQuerySostanziale(storico: MessaggioAssistente[]): string {
   const utenti = storico.filter((m) => m.role === "user").map((m) => m.content);
   const ultima = utenti[utenti.length - 1] ?? "";
@@ -3571,6 +3590,39 @@ export async function chatConAssistente(
       processingMs: Date.now() - inizio,
       source: "assistente",
     }, { limiti: null, origine: "assente" });
+  }
+
+  // Refuso su un'attività («paneficio»): correzione deterministica, senza
+  // planner. Se la correzione non trova vetrine, si prosegue normalmente.
+  const attivitaRefuso = attivitaDaRefusoPino(domanda);
+  if (attivitaRefuso) {
+    const negoziRefuso = (
+      await searchStores(attivitaRefuso.termine, { limit: 6 })
+    ).filter((negozio) =>
+      negozioAttivitaCompatibilePino(
+        negozio as unknown as Record<string, unknown>,
+        attivitaRefuso.termine
+      )
+    );
+    if (negoziRefuso.length > 0) {
+      const elencoRefuso = negoziRefuso
+        .slice(0, 6)
+        .map(
+          (negozio) =>
+            `- **${negozio.nome}**${negozio.categoria ? ` (${negozio.categoria})` : ""}`
+        )
+        .join("\n");
+      return esci("refuso_attivita", {
+        risposta:
+          linguaConversazione === "en"
+            ? `I read **“${domanda}”** as **${attivitaRefuso.termine}**. Here are the businesses I found:\n\n${elencoRefuso}`
+            : `Ho interpretato **«${domanda}»** come **${attivitaRefuso.termine}**. Ecco le attività che ho trovato:\n\n${elencoRefuso}`,
+        negozi: negoziRefuso.slice(0, 6),
+        prodotti: [],
+        processingMs: Date.now() - inizio,
+        source: "assistente",
+      }, { limiti: null, origine: "assente", invocazioni: ["searchStores"] });
+    }
   }
 
   // Professioni riconosciute con certezza: un solo recupero sul catalogo attività.

@@ -3013,6 +3013,8 @@ export async function searchProducts(
         onErrore: segnalaErroreDatiPino,
       }
     : { onErrore: segnalaErroreDatiPino };
+  const opzioniMorbide = { onErrore: segnalaErroreDatiPino };
+  let opzioniRecupero = opzioniRicerca;
 
   // Per le ricerche di alimenti il negozio non deve contribuire alla
   // pertinenza: "pasta" non deve restituire taralli solo perché il venditore
@@ -3029,7 +3031,25 @@ export async function searchProducts(
   // prodotti che il motore tollerante ha trovato solo per somiglianza.
   // I limiti arrivano alla query Supabase (gte/lte sul prezzo) solo in modalità
   // vincolante; senza budget il percorso resta identico a prima.
-  const canonici = await searchCatalogoPubblico(q, opzioniRicerca);
+  let canonici = await searchCatalogoPubblico(q, opzioniRecupero);
+
+  // D-1: il budget è una preferenza. Se il tetto rigido non restituisce nulla
+  // (vino a €14,90 per «sotto 10 euro»), una seconda ricerca senza prezzo
+  // permette di mostrare le alternative più vicine, etichettate come fuori
+  // budget. Senza questa rete il vuoto del catalogo diventava un vuoto di
+  // risposta, pur esistendo il prodotto.
+  if (budgetRigido && (canonici.prodotti ?? []).length === 0) {
+    opzioniRecupero = opzioniMorbide;
+    canonici = await searchCatalogoPubblico(q, opzioniRecupero);
+    console.info(
+      "[pino-budget-morbido-retrieval]",
+      JSON.stringify({
+        maxPrice: opts.maxPrice ?? null,
+        minPrice: opts.minPrice ?? null,
+        alternative: (canonici.prodotti ?? []).length,
+      })
+    );
+  }
 
   // La pasta è una categoria con molti nomi di formato: la query «pasta» non
   // recupera le Tagliatelle, il cui nome non contiene la parola. Una seconda
@@ -3038,7 +3058,7 @@ export async function searchProducts(
   // percorso resta identico.
   const perFormatoPasta =
     soggettoAlimentare === "pasta"
-      ? await searchCatalogoPubblico(FORMATI_PASTA_PINO.slice(0, 10).join(" "), opzioniRicerca)
+      ? await searchCatalogoPubblico(FORMATI_PASTA_PINO.slice(0, 10).join(" "), opzioniRecupero)
       : null;
 
   let filtrate = [

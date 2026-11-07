@@ -678,11 +678,11 @@ test("F2: nei log non finisce il testo della conversazione", () => {
   assert.equal(/Mario|segreto|regalo|Cerco/.test(log.join(" ")), false);
 });
 
-test("F2: tutte le 24 uscite di index.ts passano dall'osservatore", () => {
+test("F2: tutte le 25 uscite di index.ts passano dall'osservatore", () => {
   const src = sorgente("lib/assistente/index.ts");
   const motivi = [...src.matchAll(/return esci\(\s*"([a-z_]+)"/g)].map((match) => match[1]);
 
-  assert.equal(motivi.length, 24, motivi.join(","));
+  assert.equal(motivi.length, 25, motivi.join(","));
   assert.deepEqual(
     new Set(motivi),
     new Set([
@@ -691,6 +691,7 @@ test("F2: tutte le 24 uscite di index.ts passano dall'osservatore", () => {
       "istruzioni_interne",
       "azione_non_disponibile",
       "servizio_non_coperto",
+      "refuso_attivita",
       "faq",
       "preferenza_lingua",
       "capacita_lingua",
