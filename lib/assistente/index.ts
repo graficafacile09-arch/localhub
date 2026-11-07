@@ -2990,6 +2990,61 @@ export function rispostaGuidaAttrazioniAssentePino(lingua: "it" | "en" = "it"): 
     : "Al momento non trovo informazioni su questo luogo nella guida Attrazioni di InCittà. Questo non significa necessariamente che non esista a Castrovillari. Non ti propongo negozi o prodotti che non c'entrano.";
 }
 
+/** Risposta condivisa per i risultati della guida Attrazioni. */
+export function rispostaGuidaAttrazioniTrovatePino(
+  luoghi: ReturnType<typeof searchAttractions>,
+  lingua: "it" | "en" = "it"
+): string {
+  const inglese = lingua === "en";
+  const elenco = luoghi
+    .map((luogo) => {
+      const maps =
+        "https://www.google.com/maps/search/?api=1&query=" +
+        encodeURIComponent(luogo.queryMaps);
+      return `- **${luogo.nome}** — ${luogo.tipo}. ${luogo.descrizione} [${inglese ? "Open in Google Maps" : "Apri su Google Maps"}](${maps})${luogo.url ? ` · [${inglese ? "Official source / website" : "Fonte / sito di riferimento"}](${luogo.url})` : ""}`;
+    })
+    .join("\n");
+  return inglese
+    ? `I searched InCittà's Attractions guide. Here are the most relevant results:\n\n${elenco}\n\nFor opening hours, availability and event dates, always check the latest official sources.`
+    : `Ho cercato nella guida Attrazioni di InCittà. Ecco i risultati più pertinenti:\n\n${elenco}\n\nPer orari, aperture e date degli eventi, verifica sempre le fonti ufficiali aggiornate.`;
+}
+
+// «Festival», «fest» e «sagra» sono eventi anche nella guida statica: se il
+// catalogo eventi non ha nulla, la guida resta una fonte valida da consultare.
+const RE_FESTIVAL_GUIDA_PINO = /\b(?:festival|fest|sagra|sagre)\b/i;
+const TERMINI_GENERICI_FESTIVAL_PINO = new Set([
+  "festival", "festivals", "fest", "sagra", "sagre",
+  "evento", "eventi", "event", "events",
+  "voglio", "vorrei", "andare", "go", "going", "to", "the",
+  "a", "al", "allo", "alla", "un", "uno", "una",
+  "di", "del", "della", "dei", "degli", "delle",
+  "in", "il", "lo", "la", "i", "gli", "le",
+  "che", "posso", "potrei", "mi", "piacerebbe",
+]);
+
+/**
+ * Festival presenti nella guida Attrazioni. Per una richiesta generica
+ * («un festival») restituisce le rassegne; se la richiesta nomina un festival
+ * specifico, conserva solo i risultati che condividono quel termine.
+ */
+function luoghiFestivalGuidaPino(query: string): ReturnType<typeof searchAttractions> {
+  const eventi = searchAttractions(query, 10).filter(
+    (luogo) => luogo.tipo === "Eventi e festival"
+  );
+  if (eventi.length === 0) return [];
+  const termini = normalizza(query)
+    .split(/[^a-z0-9]+/)
+    .filter((termine) => termine.length >= 3 && !TERMINI_GENERICI_FESTIVAL_PINO.has(termine));
+  if (termini.length === 0) return eventi.slice(0, 6);
+  const pertinenti = eventi.filter((luogo) => {
+    const campi = normalizza(
+      [luogo.nome, luogo.descrizione, ...luogo.alias].join(" ")
+    );
+    return termini.some((termine) => campi.includes(termine));
+  });
+  return (pertinenti.length > 0 ? pertinenti : eventi).slice(0, 6);
+}
+
 /**
  * Mantiene solo i luoghi che condividono un termine specifico con la richiesta.
  * Le domande ampie («cosa posso visitare?», «ci sono monumenti?») non hanno
@@ -3721,13 +3776,10 @@ export async function chatConAssistente(
   );
   if (richiestaTuristica) {
     if (luoghi.length > 0) {
-      const elenco = luoghi.map((luogo) => {
-        const maps = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(luogo.queryMaps);
-        return `- **${luogo.nome}** — ${luogo.tipo}. ${luogo.descrizione} [${linguaConversazione === "en" ? "Open in Google Maps" : "Apri su Google Maps"}](${maps})${luogo.url ? ` · [${linguaConversazione === "en" ? "Official source / website" : "Fonte / sito di riferimento"}](${luogo.url})` : ""}`;
-      }).join("\n");
-      const rispostaAttrazioni = linguaConversazione === "en"
-        ? `I searched InCittà's Attractions guide. Here are the most relevant results:\n\n${elenco}\n\nFor opening hours, availability and event dates, always check the latest official sources.`
-        : `Ho cercato nella guida Attrazioni di InCittà. Ecco i risultati più pertinenti:\n\n${elenco}\n\nPer orari, aperture e date degli eventi, verifica sempre le fonti ufficiali aggiornate.`;
+      const rispostaAttrazioni = rispostaGuidaAttrazioniTrovatePino(
+        luoghi,
+        linguaConversazione
+      );
       return esci("attrazioni", {
         risposta: rispostaAttrazioni,
         negozi: [],
@@ -4219,6 +4271,38 @@ export async function chatConAssistente(
     categorie = merge.categorie;
     if (merge.meteo) meteo = merge.meteo;
     farmacie = merge.farmacie;
+  }
+
+  // I festival possono essere nella guida Attrazioni anche quando il catalogo
+  // eventi è vuoto. Questo fallback è volutamente limitato ai festival: una
+  // richiesta generica di "eventi" resta sul catalogo eventi e non viene
+  // dirottata sulla guida.
+  if (
+    !directReply &&
+    eventi.length === 0 &&
+    negozi.length === 0 &&
+    prodotti.length === 0 &&
+    offerte.length === 0 &&
+    RE_FESTIVAL_GUIDA_PINO.test(domanda)
+  ) {
+    const festivalGuida = luoghiFestivalGuidaPino(domanda);
+    if (festivalGuida.length > 0) {
+      return esci("festival_guida", {
+        risposta: rispostaGuidaAttrazioniTrovatePino(
+          festivalGuida,
+          linguaConversazione
+        ),
+        negozi: [],
+        prodotti: [],
+        processingMs: Date.now() - inizio,
+        source: "assistente",
+        intent: analisi.intent,
+      }, {
+        limiti: limitiVincolanti,
+        origine: limitiVincolanti ? "traccia" : "assente",
+        invocazioni: invocazioni.map((t) => String(t.tool ?? "")),
+      });
+    }
   }
 
   // ── Bisogni senza locali del tipo giusto ("ho fame", "ho sete") ────────

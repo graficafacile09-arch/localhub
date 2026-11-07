@@ -116,6 +116,18 @@ test("le richieste di eventi non entrano nel ramo Attrazioni", async () => {
   assert.doesNotMatch(r.risposta, GUIDA);
 });
 
+test("i festival ripiegano sulla guida quando il catalogo eventi è vuoto", async () => {
+  for (const frase of ["Voglio andare al festival", "un festival"]) {
+    const r = await rispondi(frase);
+
+    assert.match(r.risposta, GUIDA, frase);
+    assert.match(r.risposta, /festival/i, frase);
+    assert.deepEqual(r.prodotti, [], frase);
+    assert.deepEqual(r.negozi, [], frase);
+    assert.doesNotMatch(r.risposta, /non risultano eventi pubblicati/i, frase);
+  }
+});
+
 test("«Cerco scarpe a Castrovillari» resta una ricerca di catalogo", async () => {
   const frase = "Cerco scarpe a Castrovillari";
 

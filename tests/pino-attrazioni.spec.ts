@@ -30,4 +30,14 @@ test.describe("Pino — ricerca nella guida Attrazioni", () => {
   test("una ricerca commerciale non restituisce attrazioni senza pertinenza", () => {
     expect(searchAttractions("orologio da uomo sotto 100 euro")).toHaveLength(0);
   });
+
+  test("trova i festival della guida anche con una frase naturale", () => {
+    for (const query of ["Voglio andare al festival", "un festival"]) {
+      const risultati = searchAttractions(query, 10).filter(
+        (voce) => voce.tipo === "Eventi e festival"
+      );
+      expect(risultati.length, query).toBeGreaterThan(0);
+      expect(risultati.some((voce) => /festival/i.test(voce.nome)), query).toBe(true);
+    }
+  });
 });

@@ -57,6 +57,7 @@ const MOTIVI_SENZA_RICERCA: ReadonlySet<string> = new Set([
   "cinema",
   "attrazioni",
   "attrazioni_assenti",
+  "festival_guida",
   "prezzo_senza_soggetto",
   "info_attivita",
   "conteggio_attivita",
