@@ -91,6 +91,65 @@ export function messaggioRistorazioneSenzaLocaliPino(lingua: LinguaPino): string
 }
 
 /**
+ * Bisogno senza locali del tipo giusto, ma con alternative alimentari
+ * pubblicate. Il testo distingue sempre ciò che manca da ciò che viene
+ * mostrato: un panificio non è un ristorante, un alimentare non è un bar.
+ */
+export function messaggioBisognoSenzaLocaliPino(
+  lingua: LinguaPino,
+  bisogno: "fame" | "sete" | "cibo_pronto"
+): string {
+  if (bisogno === "sete") {
+    return lingua === "en"
+      ? "No bars, cafés or wine shops are currently listed in the InCittà catalogue. These food shops are published: I can't verify their drinks, so I'm listing them only as reference points:"
+      : "Nel catalogo InCittà non risultano bar, caffetterie o enoteche pubblicati. Ci sono queste attività alimentari: non posso verificare le bevande, quindi te le mostro solo come punti di riferimento.";
+  }
+  if (bisogno === "cibo_pronto") {
+    return lingua === "en"
+      ? "No delicatessens or ready-meal shops are currently listed in the InCittà catalogue. These food businesses are published, and I'm showing them for what they are:"
+      : "Nel catalogo InCittà non risultano gastronomie o rosticcerie pubblicate. Ci sono queste attività alimentari: te le mostro per quello che sono.";
+  }
+  return messaggioRistorazioneSenzaLocaliPino(lingua);
+}
+
+/** Bisogno senza alcuna alternativa pubblicata. */
+export function messaggioBisognoVuotoPino(
+  lingua: LinguaPino,
+  bisogno: "fame" | "sete" | "cibo_pronto"
+): string {
+  if (bisogno === "sete") {
+    return lingua === "en"
+      ? "No bars, cafés or wine shops are currently listed in the InCittà catalogue, so I can't point you to a verified place to drink. I won't make one up: try again later or ask me about a specific product."
+      : "Nel catalogo InCittà non risultano bar, caffetterie o enoteche pubblicati, quindi non posso indicarti un locale verificato dove bere. Non ne invento: riprova più tardi oppure dimmi un prodotto specifico.";
+  }
+  if (bisogno === "cibo_pronto") {
+    return lingua === "en"
+      ? "No shops selling ready-to-eat food are currently listed in the InCittà catalogue. I won't make one up: try again later or ask me about a specific food product."
+      : "Nel catalogo InCittà non risultano attività di cibo pronto pubblicate. Non ne invento: riprova più tardi oppure dimmi un prodotto alimentare specifico.";
+  }
+  return messaggioRistorazioneVuotaPino(lingua);
+}
+
+/**
+ * Vuoto informato: elenca le categorie realmente pubblicate invece di
+ * suggerire genericamente «un'altra categoria» che l'utente non conosce.
+ */
+export function messaggioVuotoConCatalogoPino(
+  lingua: LinguaPino,
+  categorie: ReadonlyArray<{ categoria: string; negozi: number }>
+): string {
+  if (categorie.length === 0) {
+    return lingua === "en"
+      ? "No businesses matching these criteria are listed in the InCittà catalogue. Try another category or area."
+      : "Non risultano attività con questi criteri nel catalogo InCittà. Prova con un'altra categoria o zona.";
+  }
+  const elenco = categorie.map((voce) => `${voce.categoria} (${voce.negozi})`).join(", ");
+  return lingua === "en"
+    ? `No businesses matching these criteria are listed in the InCittà catalogue. The published categories are: ${elenco}. Try one of these or tell me what you're looking for.`
+    : `Nel catalogo InCittà non risultano attività con questi criteri. Le categorie pubblicate sono: ${elenco}. Prova con una di queste oppure dimmi cosa cerchi.`;
+}
+
+/**
  * Ristorazione senza alcuna alternativa alimentare: il vuoto è reale e non va
  * mascherato con un "prova un'altra categoria" che non aiuta.
  */

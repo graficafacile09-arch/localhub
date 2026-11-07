@@ -10,18 +10,24 @@ import {
   richiestaCinemaPino,
   richiestaRistorazionePino,
 } from "./routing-policy";
+import { ATTIVITA_CATALOGO_PINO, soggettoAlimentarePino } from "./lexicon";
 import {
-  ATTIVITA_CATALOGO_PINO,
-  ATTIVITA_CIBO_PRONTO_PINO,
-  soggettoAlimentarePino,
-} from "./lexicon";
-import {
+  messaggioBisognoSenzaLocaliPino,
+  messaggioBisognoVuotoPino,
   messaggioCondizioneAlimentarePino,
-  messaggioRistorazioneSenzaLocaliPino,
   messaggioRistorazioneVuotaPino,
   messaggioQualificazioneRilassataPino,
   messaggioRestrizioneAlimentarePino,
+  messaggioVuotoConCatalogoPino,
 } from "./messaggi-pino";
+import {
+  applicaCorrezioniPino,
+  correzioniAppresePino,
+  messaggioCorrezionePino,
+  registraCorrezionePino,
+  rilevaCorrezionePino,
+} from "./apprendimento";
+import { alternativeBisognoPino, rilevaBisognoPino } from "./bisogni";
 import { rispostaIdentitaPino } from "./identity";
 import { rispostaSalutoPino, rispostaRelazionalePino, rispostaPreferenzaLinguaPino } from "./greetings";
 import {
@@ -81,6 +87,7 @@ import {
   type StrumentoPino,
   negozioAttivitaCompatibilePino,
   negozioProfessioneCompatibilePino,
+  riepilogoCategorieCatalogoPino,
   prodottoDocumentaRestrizionePino,
   allergeneAlimentarePino,
   condizioneAlimentarePino,
@@ -1622,6 +1629,25 @@ function pianoPredefinito(
     };
   }
 
+  // Attività nominata con un termine del lessico ("panificio", "bar",
+  // "gelateria"): il piano deterministico sa già cosa cercare. Senza questo
+  // ramo la richiesta arrivava al planner LLM, che costava 4-6 s per
+  // restituire comunque zero risultati sui termini assenti dal catalogo.
+  const attivitaRichiesta = ATTIVITA_CATALOGO_PINO.find(
+    (voce) => voce.termine !== "negozio" && voce.pattern.test(normalizza(ultimo))
+  );
+  if (attivitaRichiesta) {
+    return {
+      directReply: null,
+      tools: [
+        {
+          tool: "searchStores",
+          params: { query: attivitaRichiesta.termine, limit: 8 },
+        },
+      ],
+    };
+  }
+
   if (RE_PIATTAFORMA.test(ultimo)) {
     return {
       directReply: /\b(what|how)\b/i.test(ultimo)
@@ -3134,6 +3160,44 @@ export async function chatConAssistente(
 ): Promise<RispostaAssistente> {
   const inizio = Date.now();
   const storico = normalizzaMessaggi(messages);
+
+  // ── Correzione dell'utente: il segnale più diretto che la risposta
+  // precedente era sbagliata. "No, intendevo un panino" non è una nuova
+  // richiesta: è la correzione della precedente. La si salva (senza bloccare
+  // il turno) e si rilancia la ricerca sul contenuto corretto.
+  const correzioneUtente = rilevaCorrezionePino(storico);
+  if (correzioneUtente) {
+    void registraCorrezionePino(correzioneUtente);
+    const indiceUltimo = storico.length - 1;
+    storico[indiceUltimo] = {
+      ...storico[indiceUltimo],
+      content:
+        correzioneUtente.tipo === "altro"
+          ? `${correzioneUtente.domandaPrecedente} ${correzioneUtente.correzione}`
+          : correzioneUtente.correzione,
+    };
+  } else {
+    // Correzione già appresa per la stessa domanda: si riapplica PRIMA di
+    // interpretare, così lo stesso difetto non si ripete al turno successivo.
+    const ultimaUtente = [...storico].reverse().find((m) => m.role === "user");
+    const parole = ultimaUtente?.content.trim().split(/\s+/).length ?? 0;
+    if (
+      ultimaUtente &&
+      parole > 0 &&
+      parole <= 6 &&
+      !rispostaIdentitaPino(ultimaUtente.content) &&
+      !rispostaSalutoPino(ultimaUtente.content)
+    ) {
+      const apprese = await correzioniAppresePino(ultimaUtente.content);
+      const corretta = applicaCorrezioniPino(ultimaUtente.content, apprese);
+      if (corretta !== ultimaUtente.content) {
+        const indice = storico.lastIndexOf(ultimaUtente);
+        storico[indice] = { ...ultimaUtente, content: corretta };
+        console.info("[pino-correzioni] applicata", JSON.stringify({ corretta }));
+      }
+    }
+  }
+
   const ultimo = storico[storico.length - 1];
   // Contesto dinamico: dati reali del database già verificati dalla rotta.
   const systemPromptPino = opzioni?.contestoDatabase?.trim()
@@ -3519,8 +3583,17 @@ export async function chatConAssistente(
       ? Promise.resolve([])
       : recuperaMemoria(domandaSemantica);
   const memoria = await memoriaPromise;
+  // Un'attività già riconosciuta dal lessico è una decisione deterministica:
+  // non serve il planner AI. Il filtro evita 4-6 s di attesa per richieste
+  // come "gelateria" o "bar", che il piano sa comunque gestire.
+  const attivitaChiaraPino = ATTIVITA_CATALOGO_PINO.some(
+    (voce) =>
+      voce.termine !== "negozio" &&
+      voce.pattern.test(normalizza(domandaSemantica))
+  );
   const attivaPlannerSemantico =
     !followUpBreve &&
+    !attivitaChiaraPino &&
     (
       usaFastPathSemantico(domandaSemantica, analisiSemantica) ||
       rilevaLinguaPino(domandaSemantica) === "en" ||
@@ -3875,44 +3948,50 @@ export async function chatConAssistente(
     farmacie = merge.farmacie;
   }
 
-  // ── Ristorazione: nessun locale pubblicato ──────────────────────────────
-  // «Ho fame» non è una ricerca di prodotto: il piano interroga ristoranti e
-  // pizzerie. Se il catalogo non ne ha, la risposta non deve fermarsi a «non
-  // risultano attività» mentre gastronomie, panifici e alimentari sono
-  // pubblicati. Si cercano quelle attività e si dichiara il vuoto reale,
-  // senza spacciarle per ristoranti con servizio al tavolo.
-  let notaRistorazione: string | null = null;
+  // ── Bisogni senza locali del tipo giusto ("ho fame", "ho sete") ────────
+  // Un bisogno non è una categoria del catalogo. Se il piano non trova il
+  // locale adatto, la risposta mostra le alternative pubblicate e dichiara
+  // cosa sono: un panificio non è un ristorante, un alimentare non è un bar.
+  // Vale anche per un'attività di cibo pronto richiesta per nome
+  // ("gastronomia") che il catalogo non pubblica.
+  let notaBisogno: string | null = null;
   if (
-    richiestaRistorazionePino(domanda) &&
     !directReply &&
     !followUp &&
     negozi.length === 0 &&
     prodotti.length === 0
   ) {
-    const ricercheCiboPronto = await Promise.all(
-      ATTIVITA_CIBO_PRONTO_PINO.map((termine) =>
-        searchStores(termine, { limit: 8 }).catch(() => [] as NegozioRicerca[])
-      )
-    );
-    const visti = new Set<string>();
-    const ciboPronto = ricercheCiboPronto.flat().filter((negozio) => {
-      const chiave = String(
-        (negozio as { slug?: string | null }).slug ?? negozio.nome
+    const alternative = alternativeBisognoPino(domanda);
+    if (alternative) {
+      const ricercheAlternative = await Promise.all(
+        alternative.termini.map((termine) =>
+          searchStores(termine, { limit: 8 }).catch(() => [] as NegozioRicerca[])
+        )
       );
-      if (visti.has(chiave)) return false;
-      visti.add(chiave);
-      return true;
-    });
-    if (ciboPronto.length > 0) {
-      negozi = ciboPronto;
-      notaRistorazione = messaggioRistorazioneSenzaLocaliPino(linguaConversazione);
-      console.info(
-        "[pino-ristorazione-fallback]",
-        JSON.stringify({
-          attivita: ciboPronto.length,
-          termini: ATTIVITA_CIBO_PRONTO_PINO,
-        })
-      );
+      const visti = new Set<string>();
+      const attivitaAlternative = ricercheAlternative.flat().filter((negozio) => {
+        const chiave = String(
+          (negozio as { slug?: string | null }).slug ?? negozio.nome
+        );
+        if (visti.has(chiave)) return false;
+        visti.add(chiave);
+        return true;
+      });
+      if (attivitaAlternative.length > 0) {
+        negozi = attivitaAlternative;
+        notaBisogno = messaggioBisognoSenzaLocaliPino(
+          linguaConversazione,
+          alternative.bisogno
+        );
+        console.info(
+          "[pino-bisogno-fallback]",
+          JSON.stringify({
+            bisogno: alternative.bisogno,
+            attivita: attivitaAlternative.length,
+            termini: alternative.termini,
+          })
+        );
+      }
     }
   }
 
@@ -4380,9 +4459,9 @@ export async function chatConAssistente(
   // richiesta di pizzeria. Il gate usa il testo originale dell'utente.
   const richiestaUtenteOriginale =
     [...storico].reverse().find((m) => m.role === "user")?.content ?? "";
-  // I risultati del fallback ristorazione sono già passati dal gate di
-  // attività dentro `searchStores`: rifiltrarli con «ristorante» li azzererebbe.
-  if (negozi.length > 0 && richiestaUtenteOriginale && !notaRistorazione) {
+  // I risultati del fallback bisogno sono già passati dal gate di attività
+  // dentro `searchStores`: rifiltrarli con «ristorante» li azzererebbe.
+  if (negozi.length > 0 && richiestaUtenteOriginale && !notaBisogno) {
     // Per una richiesta di ristorazione il gate usa «ristorante»: un panificio
     // o un alimentari non risponde a «dove posso mangiare?». Per le altre
     // richieste resta il testo originale dell'utente.
@@ -4419,7 +4498,7 @@ export async function chatConAssistente(
     voce.pattern.test(normalizza(domanda))
   );
   const introduzioneAttivita =
-    notaRistorazione ??
+    notaBisogno ??
     (negozi.length > 0 &&
     prodotti.length === 0 &&
     offerte.length === 0 &&
@@ -4429,8 +4508,17 @@ export async function chatConAssistente(
         ? "I found these businesses:"
         : "Ho trovato queste attività:"
       : null);
+  const bisognoDomanda = rilevaBisognoPino(domanda);
+  // Vuoto di attività: invece di «prova un'altra categoria» si elencano le
+  // categorie realmente pubblicate. Una sola query, e solo a risposta vuota.
+  const categorieCatalogo =
+    totaleRisultati === 0 && soloNegozi && !notaBisogno && !bisognoDomanda
+      ? await riepilogoCategorieCatalogoPino()
+      : [];
   const rispostaBase =
-    totaleRisultati === 0 && soloEventi
+    totaleRisultati === 0 && bisognoDomanda
+      ? messaggioBisognoVuotoPino(linguaRisposta, bisognoDomanda)
+      : totaleRisultati === 0 && soloEventi
       ? (linguaRisposta === "en"
           ? "There are no events published on InCittà right now. I won't make any up: try again later or ask me about shops and products."
           : "Al momento non risultano eventi pubblicati su InCittà. Non ne invento: riprova più tardi oppure chiedimi di negozi e prodotti.")
@@ -4441,9 +4529,7 @@ export async function chatConAssistente(
         : totaleRisultati === 0 && richiestaRistorazionePino(domanda)
           ? messaggioRistorazioneVuotaPino(linguaRisposta)
           : totaleRisultati === 0 && soloNegozi
-          ? (linguaRisposta === "en"
-              ? "No businesses matching these criteria are listed in the InCittà catalogue. Try another category or area."
-              : "Non risultano attività con questi criteri nel catalogo InCittà. Prova con un'altra categoria o zona.")
+          ? messaggioVuotoConCatalogoPino(linguaRisposta, categorieCatalogo)
           : fallbackTestuale(
               risultati,
               "",
@@ -4530,11 +4616,17 @@ export async function chatConAssistente(
     prodotti: prodotti.length,
     prodottiPrimaDisponibilita,
     negozi: negozi.length,
-    ristorazioneFallback: Boolean(notaRistorazione),
+    bisognoFallback: Boolean(notaBisogno),
+    correzione: Boolean(correzioneUtente),
     invocazioni: invocazioni.length,
     recuperoSemantico: Boolean(notaRecupero),
   }));
+  // Presa d'atto esplicita: l'utente ha corretto Pino, e Pino lo dice.
+  const notaCorrezione = correzioneUtente
+    ? messaggioCorrezionePino(linguaRisposta === "en" ? "en" : "it")
+    : null;
   const partiRisposta = [
+    notaCorrezione,
     notaFontiParziali,
     // La nota del recupero semantico dichiara attività trovate: se il gate
     // finale le ha scartate tutte, la frase non deve restare (direbbe di aver

@@ -38,6 +38,7 @@ import { costruisciContestoDinamicoPino } from "@/lib/assistente/contesto-dinami
 import { prendiOsservazioneTier0 } from "@/lib/assistente/shadow/integrazione";
 import { rilevaLinguaConversazionePino } from "@/lib/assistente/understanding";
 import { checkRateLimit } from "@/lib/rate-limiter";
+import { registraTurnoPino } from "@/lib/assistente/telemetria";
 import {
   conScadenzaPino,
   rispostaDegradataPino,
@@ -217,6 +218,26 @@ export async function POST(request: Request) {
 
   const esito = await rispostaPino(messaggi);
   const risultato = esito.risultato;
+
+  // Telemetria del turno: una riga per risposta, scritta DOPO la risposta
+  // (`after`) così non aggiunge latenza e non può farla fallire. È il dataset
+  // che mancava per capire quali richieste finiscono a zero e perché.
+  after(() => {
+    const ultimoUtente = messaggi[messaggi.length - 1];
+    void registraTurnoPino({
+      domanda: ultimoUtente?.role === "user" ? ultimoUtente.content : "",
+      intent: (risultato as { intent?: string | null }).intent ?? null,
+      esito: !esito.dalPercorsoAI
+        ? "degradato"
+        : risultato.negozi.length + risultato.prodotti.length === 0
+          ? "vuoto"
+          : "ok",
+      negozi: risultato.negozi.length,
+      prodotti: risultato.prodotti.length,
+      ms: risultato.processingMs,
+      percorso: risultato.source,
+    });
+  });
 
   if (esito.dalPercorsoAI) {
     // Shadow Tier 0 (Fase 2): l'osservazione è registrata da `chatConAssistente`

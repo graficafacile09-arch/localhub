@@ -898,7 +898,10 @@ export function negozioAttivitaCompatibilePino(
       .map(String)
       .join(" ")
   );
-  return attivita.pattern.test(identita);
+  // `patternIdentita` include gli equivalenti reali (panetteria ↔ panificio):
+  // senza, una richiesta «panetteria» restituiva zero su un catalogo che
+  // pubblica «Panificio Zini». Il recall resta invece sul termine originale.
+  return attivita.patternIdentita.test(identita);
 }
 
 /**
@@ -922,6 +925,39 @@ async function righeNegoziPerAttivitaPino(
     return ((data ?? []) as Record<string, unknown>[]).filter((n) =>
       negozioAttivitaCompatibilePino(n, termine)
     );
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Categorie realmente pubblicate, con il numero di vetrine attive.
+ *
+ * Serve al messaggio di vuoto: «Prova con un'altra categoria» è inutile se
+ * l'utente non sa quali categorie esistono. Una sola query, e solo quando la
+ * risposta sarebbe comunque vuota.
+ */
+export async function riepilogoCategorieCatalogoPino(): Promise<
+  Array<{ categoria: string; negozi: number }>
+> {
+  try {
+    const db = createAdminSupabaseClient();
+    const { data } = await db
+      .from("negozi")
+      .select("categoria")
+      .eq("attivo", true)
+      .is("deleted_at", null)
+      .limit(300);
+    const conteggi = new Map<string, number>();
+    for (const riga of (data ?? []) as Array<{ categoria?: string | null }>) {
+      const categoria = String(riga.categoria ?? "").trim();
+      if (!categoria) continue;
+      conteggi.set(categoria, (conteggi.get(categoria) ?? 0) + 1);
+    }
+    return [...conteggi.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6)
+      .map(([categoria, negozi]) => ({ categoria, negozi }));
   } catch {
     return [];
   }

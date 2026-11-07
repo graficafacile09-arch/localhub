@@ -117,15 +117,52 @@ const ATTIVITA_BASE_PINO: ReadonlyArray<{
   { termine: "negozio", forme: ["negozio", "negozi"], intent: "generic" },
 ];
 
+/**
+ * Equivalenze fra attività per il GATE di identità (non per il recall).
+ *
+ * Una panetteria è un panificio: se il catalogo pubblica «Panificio Zini»,
+ * la richiesta «panetteria» non deve restituire zero. Le equivalenze valgono
+ * solo nel confronto con l'identità della vetrina, così il recall di
+ * «pizzeria» non si allarga ai panifici.
+ */
+const EQUIVALENTI_ATTIVITA_PINO: Readonly<Record<string, readonly string[]>> = {
+  panetteria: ["panificio", "forno"],
+  panificio: ["panetteria", "forno"],
+  forno: ["panificio", "panetteria"],
+  ristorante: ["trattoria"],
+  trattoria: ["ristorante"],
+  gastronomia: ["rosticceria", "tavola calda"],
+  rosticceria: ["gastronomia", "tavola calda"],
+  "tavola calda": ["gastronomia", "rosticceria"],
+  bar: ["caffetteria"],
+  caffetteria: ["bar"],
+  enoteca: ["vineria"],
+  vineria: ["enoteca"],
+};
+
 export const ATTIVITA_CATALOGO_PINO: ReadonlyArray<{
   termine: string;
   forme: readonly string[];
   intent: PinoIntent;
+  /** Riconosce l'attività nella domanda dell'utente. */
   pattern: RegExp;
-}> = ATTIVITA_BASE_PINO.map((attivita) => ({
-  ...attivita,
-  pattern: patternSoggettoPino(attivita.forme),
-}));
+  /** Riconosce l'attività (ed equivalenti) nell'identità della vetrina. */
+  patternIdentita: RegExp;
+}> = ATTIVITA_BASE_PINO.map((attivita) => {
+  // Le forme degli equivalenti vengono unite SOLO qui: il gate di identità
+  // accetta «panificio» per «panetteria», mentre la domanda continua a essere
+  // riconosciuta dal suo termine originale.
+  const formeEquivalenti = (EQUIVALENTI_ATTIVITA_PINO[attivita.termine] ?? []).flatMap(
+    (termine) => ATTIVITA_BASE_PINO.find((voce) => voce.termine === termine)?.forme ?? []
+  );
+  return {
+    ...attivita,
+    pattern: patternSoggettoPino(attivita.forme),
+    patternIdentita: patternSoggettoPino(
+      Array.from(new Set([...attivita.forme, ...formeEquivalenti]))
+    ),
+  };
+});
 
 /**
  * Attività che vendono cibo pronto o fresco da asporto. Sono l'alternativa
@@ -138,6 +175,7 @@ export const ATTIVITA_CIBO_PRONTO_PINO: readonly string[] = [
   "panificio",
   "alimentari",
 ];
+
 
 /**
  * Soggetti del piano locale / fast path. Derivati: nessuna seconda lista da
