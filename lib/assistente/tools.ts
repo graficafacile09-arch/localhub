@@ -2990,6 +2990,20 @@ export function prodottoRispettaBudgetPino(
   return true;
 }
 
+/**
+ * Query senza attributi descrittivi (colore, materiale, destinatario, …).
+ * Serve solo al ripiego, quando la qualifica richiesta non è documentata dal
+ * catalogo: il soggetto resta intatto («vino rosso» → «vino»).
+ */
+function querySenzaQualificaPino(query: string): string {
+  const token = String(query ?? "")
+    .toLocaleLowerCase("it-IT")
+    .split(/[^a-z0-9\u00e0-\u00ff]+/)
+    .filter(Boolean)
+    .filter((t) => !ATTRIBUTI_DESCRITTIVI_PINO.has(t));
+  return token.join(" ").trim() || String(query ?? "").trim();
+}
+
 export async function searchProducts(
   query: string,
   opts: ToolParams = {}
@@ -3035,6 +3049,9 @@ export async function searchProducts(
   // vincolante; senza budget il percorso resta identico a prima.
   const canonici = await searchCatalogoPubblico(q, opzioniRicerca);
   let risultati = canonici;
+  // Il gate di pertinenza deve usare la stessa query del recupero: se il
+  // ripiego toglie un attributo, non può continuare a pretenderlo.
+  let qGate = q;
 
   // D-1: il budget è una preferenza. Se il tetto rigido non restituisce nulla
   // (vino a €14,90 per «sotto 10 euro»), una seconda ricerca senza prezzo
@@ -3043,12 +3060,14 @@ export async function searchProducts(
   // risposta, pur esistendo il prodotto.
   if (budgetRigido && (canonici.prodotti ?? []).length === 0) {
     opzioniPasta = opzioniMorbide;
-    risultati = await searchCatalogoPubblico(q, opzioniMorbide);
+    qGate = querySenzaQualificaPino(q);
+    risultati = await searchCatalogoPubblico(qGate, opzioniMorbide);
     console.info(
       "[pino-budget-morbido-retrieval]",
       JSON.stringify({
         maxPrice: opts.maxPrice ?? null,
         minPrice: opts.minPrice ?? null,
+        queryRilassata: qGate !== q ? qGate : null,
         alternative: (risultati.prodotti ?? []).length,
       })
     );
@@ -3072,7 +3091,7 @@ export async function searchProducts(
   if (soggettoAlimentare) {
     filtrate = filtraProdottiAlimentariPino(
       filtrate,
-      q,
+      qGate,
       soggettoAlimentare
     );
   }
@@ -3084,7 +3103,11 @@ export async function searchProducts(
   // frasi complesse restano gestite dal planner semantico e non vengono
   // ristrette qui, per non perdere recall utile.
   if (!soggettoAlimentare) {
-    filtrate = filtraProdottiPerSoggettoUnico(filtrate, normalizzaQueryCatalogo(q), q);
+    filtrate = filtraProdottiPerSoggettoUnico(
+      filtrate,
+      normalizzaQueryCatalogo(qGate),
+      qGate
+    );
   }
 
   // I filtri espliciti si applicano solo dopo il retrieval canonico.
@@ -3147,7 +3170,7 @@ export async function searchProducts(
 
   const deduplicate = deduplicaPerId(filtrate);
   // Classe calcolata internamente (non ancora mostrata all'utente).
-  assegnaClassiProdotti(deduplicate, q);
+  assegnaClassiProdotti(deduplicate, qGate);
   return deduplicate.slice(0, limita(opts.limit, 8, 20));
 }
 
