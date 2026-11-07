@@ -74,3 +74,29 @@ export function messaggioCondizioneAlimentarePino(
   }
   return `Non posso verificare dal catalogo InCittà che un alimento o un locale sia adatto a una persona con ${condizione}. Non ti mostro opzioni non verificate: controlla l'etichetta o la certificazione, oppure contatta direttamente il venditore.${filtro}`;
 }
+
+/**
+ * Ristorazione senza locali pubblicati: nel catalogo non risultano ristoranti,
+ * pizzerie o trattorie, ma ci sono attività alimentari reali (gastronomie,
+ * panifici, alimentari) che possono rispondere al bisogno "ho fame".
+ *
+ * Il testo NON le presenta come ristoranti e non finge una scelta che non
+ * esiste: dichiara il vuoto reale e motiva le alternative mostrate.
+ */
+export function messaggioRistorazioneSenzaLocaliPino(lingua: LinguaPino): string {
+  if (lingua === "en") {
+    return "No restaurants, pizzerias or trattorias are currently listed in the InCittà catalogue. For a quick bite, these food businesses are published — I'm showing them as what they are, not as restaurants:";
+  }
+  return "Nel catalogo InCittà non risultano ristoranti, pizzerie o trattorie pubblicati. Per mangiare qualcosa al volo ci sono queste attività alimentari: te le mostro per quello che sono, non come ristoranti.";
+}
+
+/**
+ * Ristorazione senza alcuna alternativa alimentare: il vuoto è reale e non va
+ * mascherato con un "prova un'altra categoria" che non aiuta.
+ */
+export function messaggioRistorazioneVuotaPino(lingua: LinguaPino): string {
+  if (lingua === "en") {
+    return "No restaurants, pizzerias, bakeries or food shops are currently listed in the InCittà catalogue, so I can't point you to a verified place to eat. I won't make one up: try again later or tell me a specific food product I can look for.";
+  }
+  return "Nel catalogo InCittà non risultano al momento ristoranti, pizzerie, panifici o alimentari pubblicati, quindi non posso indicarti un posto verificato dove mangiare. Non ne invento: riprova più tardi oppure dimmi un prodotto alimentare specifico che posso cercare.";
+}

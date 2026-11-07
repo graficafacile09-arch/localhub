@@ -10,9 +10,15 @@ import {
   richiestaCinemaPino,
   richiestaRistorazionePino,
 } from "./routing-policy";
-import { soggettoAlimentarePino } from "./lexicon";
+import {
+  ATTIVITA_CATALOGO_PINO,
+  ATTIVITA_CIBO_PRONTO_PINO,
+  soggettoAlimentarePino,
+} from "./lexicon";
 import {
   messaggioCondizioneAlimentarePino,
+  messaggioRistorazioneSenzaLocaliPino,
+  messaggioRistorazioneVuotaPino,
   messaggioQualificazioneRilassataPino,
   messaggioRestrizioneAlimentarePino,
 } from "./messaggi-pino";
@@ -2202,7 +2208,8 @@ export function fallbackTestuale(
   intent?: PinoIntent,
   semantica?: PinoSemanticPlan,
   budget?: number | null,
-  lingua: "it" | "en" = "it"
+  lingua: "it" | "en" = "it",
+  opzioni: { introduzione?: string | null } = {}
 ): string {
   const inglese = lingua === "en";
   const sezioni = sezioniRisultati(risultati, budget, lingua);
@@ -2258,8 +2265,12 @@ export function fallbackTestuale(
       introduzione += inglese ? `I found ${n} ${n === 1 ? "product" : "products"} matching your search.\n\n` : `Ho trovato ${n} ${n === 1 ? "prodotto" : "prodotti"} che ${n === 1 ? "corrisponde" : "corrispondono"} alla tua ricerca.\n\n`;
     }
   } else if (soloNegozi) {
-    introduzione +=
-      intent === "service"
+    // Un'apertura dedicata evita di dire «non ho trovato esattamente quello
+    // che cerchi» quando l'utente ha nominato un'attività e la vetrina
+    // trovata è proprio quella (es. «panificio» → Panificio Zini).
+    introduzione += opzioni.introduzione?.trim()
+      ? `${opzioni.introduzione.trim()}\n\n`
+      : intent === "service"
         ? (inglese ? "I did not find the exact item, but these businesses may help.\n\n" : "Non ho trovato quello che cerchi, ma queste attività potrebbero aiutarti.\n\n")
         : (inglese ? "I did not find an exact match, but these businesses may help.\n\n" : "Non ho trovato esattamente quello che cerchi, ma queste attività potrebbero aiutarti.\n\n");
   } else if (totale > 0) {
@@ -3864,6 +3875,47 @@ export async function chatConAssistente(
     farmacie = merge.farmacie;
   }
 
+  // ── Ristorazione: nessun locale pubblicato ──────────────────────────────
+  // «Ho fame» non è una ricerca di prodotto: il piano interroga ristoranti e
+  // pizzerie. Se il catalogo non ne ha, la risposta non deve fermarsi a «non
+  // risultano attività» mentre gastronomie, panifici e alimentari sono
+  // pubblicati. Si cercano quelle attività e si dichiara il vuoto reale,
+  // senza spacciarle per ristoranti con servizio al tavolo.
+  let notaRistorazione: string | null = null;
+  if (
+    richiestaRistorazionePino(domanda) &&
+    !directReply &&
+    !followUp &&
+    negozi.length === 0 &&
+    prodotti.length === 0
+  ) {
+    const ricercheCiboPronto = await Promise.all(
+      ATTIVITA_CIBO_PRONTO_PINO.map((termine) =>
+        searchStores(termine, { limit: 8 }).catch(() => [] as NegozioRicerca[])
+      )
+    );
+    const visti = new Set<string>();
+    const ciboPronto = ricercheCiboPronto.flat().filter((negozio) => {
+      const chiave = String(
+        (negozio as { slug?: string | null }).slug ?? negozio.nome
+      );
+      if (visti.has(chiave)) return false;
+      visti.add(chiave);
+      return true;
+    });
+    if (ciboPronto.length > 0) {
+      negozi = ciboPronto;
+      notaRistorazione = messaggioRistorazioneSenzaLocaliPino(linguaConversazione);
+      console.info(
+        "[pino-ristorazione-fallback]",
+        JSON.stringify({
+          attivita: ciboPronto.length,
+          termini: ATTIVITA_CIBO_PRONTO_PINO,
+        })
+      );
+    }
+  }
+
   // M6-A — Tentate ≠ riuscite: solo le invocazioni completate senza eccezioni
   // valgono come "tool eseguito".
   const riepilogoTool = riepilogoEsitiInvocazioniPino(esitiInvocazioni);
@@ -4328,7 +4380,9 @@ export async function chatConAssistente(
   // richiesta di pizzeria. Il gate usa il testo originale dell'utente.
   const richiestaUtenteOriginale =
     [...storico].reverse().find((m) => m.role === "user")?.content ?? "";
-  if (negozi.length > 0 && richiestaUtenteOriginale) {
+  // I risultati del fallback ristorazione sono già passati dal gate di
+  // attività dentro `searchStores`: rifiltrarli con «ristorante» li azzererebbe.
+  if (negozi.length > 0 && richiestaUtenteOriginale && !notaRistorazione) {
     // Per una richiesta di ristorazione il gate usa «ristorante»: un panificio
     // o un alimentari non risponde a «dove posso mangiare?». Per le altre
     // richieste resta il testo originale dell'utente.
@@ -4359,6 +4413,22 @@ export async function chatConAssistente(
           restrizioneAlimentareRigida
         )
       : null;
+  // Richiesta che nomina un'attività: l'apertura dice cosa ha trovato invece
+  // di «non ho trovato esattamente quello che cerchi».
+  const attivitaNominata = ATTIVITA_CATALOGO_PINO.some((voce) =>
+    voce.pattern.test(normalizza(domanda))
+  );
+  const introduzioneAttivita =
+    notaRistorazione ??
+    (negozi.length > 0 &&
+    prodotti.length === 0 &&
+    offerte.length === 0 &&
+    eventi.length === 0 &&
+    attivitaNominata
+      ? linguaRisposta === "en"
+        ? "I found these businesses:"
+        : "Ho trovato queste attività:"
+      : null);
   const rispostaBase =
     totaleRisultati === 0 && soloEventi
       ? (linguaRisposta === "en"
@@ -4368,7 +4438,9 @@ export async function chatConAssistente(
         ? (linguaRisposta === "en"
             ? "There are no active offers published on InCittà right now. I won't make any up: try again later or ask me about products and shops."
             : "Al momento non risultano offerte attive pubblicate su InCittà. Non ne invento: riprova più tardi oppure chiedimi di prodotti e negozi.")
-        : totaleRisultati === 0 && soloNegozi
+        : totaleRisultati === 0 && richiestaRistorazionePino(domanda)
+          ? messaggioRistorazioneVuotaPino(linguaRisposta)
+          : totaleRisultati === 0 && soloNegozi
           ? (linguaRisposta === "en"
               ? "No businesses matching these criteria are listed in the InCittà catalogue. Try another category or area."
               : "Non risultano attività con questi criteri nel catalogo InCittà. Prova con un'altra categoria o zona.")
@@ -4378,7 +4450,8 @@ export async function chatConAssistente(
               analisi.intent,
               semantica,
               budgetPreferenza,
-              linguaRisposta
+              linguaRisposta,
+              { introduzione: introduzioneAttivita }
             );
   // S4.5 — Per le richieste di servizio la risposta è deterministica e usa solo
   // i servizi restituiti dal tool (prezzo e durata inclusi o dichiarati assenti).
@@ -4457,12 +4530,16 @@ export async function chatConAssistente(
     prodotti: prodotti.length,
     prodottiPrimaDisponibilita,
     negozi: negozi.length,
+    ristorazioneFallback: Boolean(notaRistorazione),
     invocazioni: invocazioni.length,
     recuperoSemantico: Boolean(notaRecupero),
   }));
   const partiRisposta = [
     notaFontiParziali,
-    notaRecupero,
+    // La nota del recupero semantico dichiara attività trovate: se il gate
+    // finale le ha scartate tutte, la frase non deve restare (direbbe di aver
+    // trovato negozi che poi non compaiono).
+    negozi.length + prodotti.length > 0 ? notaRecupero : null,
     notaQualificazione,
     notaAttributi,
     notaContestoAttributi,

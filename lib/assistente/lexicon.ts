@@ -128,6 +128,18 @@ export const ATTIVITA_CATALOGO_PINO: ReadonlyArray<{
 }));
 
 /**
+ * Attività che vendono cibo pronto o fresco da asporto. Sono l'alternativa
+ * reale a "ho fame" quando il catalogo non ha ristoranti o pizzerie: la
+ * risposta le mostra per quello che sono (panificio, gastronomia, alimentari),
+ * senza spacciarle per locali con servizio al tavolo.
+ */
+export const ATTIVITA_CIBO_PRONTO_PINO: readonly string[] = [
+  "gastronomia",
+  "panificio",
+  "alimentari",
+];
+
+/**
  * Soggetti del piano locale / fast path. Derivati: nessuna seconda lista da
  * mantenere allineata con `SOGGETTI_CATALOGO_PINO`.
  */
