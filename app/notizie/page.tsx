@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { after } from "next/server";
 import { ArrowUpRight, Newspaper } from "lucide-react";
 import Header from "@/components/Header/Header";
 import {
@@ -7,7 +8,11 @@ import {
   getNotiziePubbliche,
 } from "@/lib/notizie-pubbliche";
 import { CATEGORIE_NOTIZIE } from "@/lib/notizie/types";
+import { aggiornaNotizieSeNecessario } from "@/lib/notizie/aggiornamento";
 import { getSiteUrl } from "@/lib/site";
+
+// Margine per l'import eseguito in `after()` (nessun effetto sul TTFB).
+export const maxDuration = 60;
 
 export const metadata: Metadata = {
   // title senza suffisso "| InCittà": lo aggiunge il template del layout.
@@ -21,6 +26,10 @@ export const metadata: Metadata = {
 
 export default async function NotiziePage() {
   const notizie = await getNotiziePubbliche();
+
+  // Se lo scheduler esterno è fermo, l'import riparte da qui dopo la risposta:
+  // la visita successiva trova già le notizie aggiornate.
+  after(aggiornaNotizieSeNecessario);
 
   return (
     <main className="min-h-screen bg-slate-50">

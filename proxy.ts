@@ -149,6 +149,9 @@ export async function proxy(request: NextRequest) {
     pathname === "/login" ||
     pathname.startsWith("/auth/") ||
     pathname.startsWith("/api/auth/") ||
+    // I job pianificati (cron) non devono fermarsi durante la manutenzione:
+    // bloccarli interrompe l'aggiornamento notizie e i job di pagamento.
+    pathname.startsWith("/api/cron/") ||
     pathname.startsWith("/manutenzione") ||
     pathname.startsWith("/account-in-attesa");
   if (!manutenzioneEsclusioni) {
