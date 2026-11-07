@@ -330,20 +330,22 @@ export async function POST(request: Request) {
   // Telemetria del turno: una riga per risposta, scritta DOPO la risposta
   // (`after`) così non aggiunge latenza e non può farla fallire. È il dataset
   // che mancava per capire quali richieste finiscono a zero e perché.
-  after(() => {
-    void registraTelemetriaTurno({
-      messaggi,
-      risultato,
-      dalPercorsoAI: esito.dalPercorsoAI,
-      origine,
-      streaming: false,
-      msContesto: esito.msContesto,
-    });
-    if (sessionId) {
-      // Salvo la domanda composta: così la sessione accumula anche gli
-      // attributi dei follow-up («e rosso?»), non solo il primo soggetto.
-      void salvaSessionePino({ sessionId, messaggi: messaggiPerPino });
-    }
+  after(async () => {
+    // `after` attende la promise: senza questo await la funzione può essere
+    // congelata prima che la sessione (e a volte la telemetria) sia scritta.
+    await Promise.all([
+      registraTelemetriaTurno({
+        messaggi,
+        risultato,
+        dalPercorsoAI: esito.dalPercorsoAI,
+        origine,
+        streaming: false,
+        msContesto: esito.msContesto,
+      }),
+      sessionId
+        ? salvaSessionePino({ sessionId, messaggi: messaggiPerPino })
+        : Promise.resolve(),
+    ]);
   });
 
   if (esito.dalPercorsoAI) {
