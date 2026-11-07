@@ -37,7 +37,7 @@ export default async function Header(_props: { homepage?: boolean } = {}) {
               alt="InCittà"
               width={1536}
               height={1024}
-              priority
+              preload
               sizes="(max-width: 374px) min(48vw, 154px), (max-width: 639px) min(56vw, 216px), (max-width: 1279px) min(56vw, 240px), 300px"
               className="-my-2 h-auto max-sm:w-[min(64vw,246px)] max-[374px]:w-[min(58vw,185px)] sm:w-[min(56vw,240px)] md:w-[260px] xl:w-[320px]"
             />

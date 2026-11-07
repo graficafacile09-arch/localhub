@@ -95,7 +95,11 @@ export default async function Home() {
                 alt="Coppia a Castrovillari"
                 fill
                 sizes="100vw"
-                priority
+                // `priority` è deprecata in Next 16: `preload` emette il
+                // <link rel="preload"> per l'immagine LCP, mentre
+                // `fetchPriority` alza la priorità del download dell'<img>.
+                preload
+                fetchPriority="high"
                 className="absolute inset-0 h-full w-full object-cover object-center md:object-[center_40%]"
               />
               <div

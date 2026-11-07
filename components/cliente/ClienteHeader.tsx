@@ -22,7 +22,7 @@ export default function ClienteHeader() {
               alt="LocalHub"
               width={1536}
               height={1024}
-              priority
+              preload
               className="h-auto w-[140px]"
             />
           </Link>
