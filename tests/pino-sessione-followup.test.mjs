@@ -57,6 +57,14 @@ test("la sessione ricostruisce soggetto, attributi e budget", () => {
     componiDomandaConSessionePino("e rosso?", { soggetto: "vino", attributi: [], maxPrice: null }),
     "vino rosso"
   );
+  assert.equal(
+    componiDomandaConSessionePino("e rosso?", sessione),
+    "vino rosso sotto 10 euro"
+  );
+  assert.equal(
+    componiDomandaConSessionePino("e sotto 20 euro?", sessione),
+    "vino rosso sotto 20 euro"
+  );
   // Una nuova ricerca non viene riscritta.
   assert.equal(
     componiDomandaConSessionePino("cerco del pane", sessione),

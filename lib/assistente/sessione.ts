@@ -93,8 +93,14 @@ export function componiDomandaConSessionePino(
   const attributi = sessione.attributi
     .map((attributo) => normalizzaRichiesta(attributo))
     .filter((attributo) => attributo && !testo.includes(attributo));
+  // Il budget appreso resta valido finché il turno non ne dichiara uno nuovo.
+  const haBudget = /\d|\b(?:euro|eur|€)\b/.test(testo);
+  const budget =
+    sessione.maxPrice !== null && !haBudget
+      ? ` sotto ${sessione.maxPrice} euro`
+      : "";
 
-  return `${sessione.soggetto}${attributi.length ? ` ${attributi.join(" ")}` : ""} ${testo}`.trim();
+  return `${sessione.soggetto}${attributi.length ? ` ${attributi.join(" ")}` : ""} ${testo}${budget}`.trim();
 }
 
 function conTimeoutSessione<T>(promessa: Promise<T>, millisecondi: number): Promise<T> {
