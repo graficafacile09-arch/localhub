@@ -476,27 +476,64 @@ function getTerminiCategoria(categoria: Categoria): string[] {
     .filter(Boolean);
 }
 
+// Nomi ufficiali delle categorie (normalizzati). Se negozi.categoria coincide
+// ESATTAMENTE con uno di questi, il negozio appartiene solo a quella categoria:
+// i sinonimi condivisi non devono allargarlo alle altre. Senza questo vincolo
+// "Salute e benessere" compariva anche in Beauty, Parafarmacia e Salute perché
+// quelle categorie condividono i sinonimi "benessere"/"salute".
+const NOMI_CATEGORIE_UFFICIALI = new Set(
+  CATEGORIE_NEGOZIO_META.map(({ nome }) => normalizza(nome).trim())
+);
+
+// Parole funzionali: non identificano una categoria. In particolare il token
+// "e" di "Salute e benessere" non deve far comparire il negozio in ogni
+// categoria il cui nome contiene una "e" (Ferramenta, Fiori e piante, ecc.).
+const TOKEN_CATEGORIA_NON_SIGNIFICATIVI = new Set([
+  "e", "ed", "di", "da", "del", "dello", "della", "dei", "degli", "delle",
+  "a", "al", "allo", "alla", "ai", "agli", "alle", "in", "con", "su", "per",
+  "il", "lo", "la", "i", "gli", "le", "un", "uno", "una",
+  "and", "the", "of", "with", "for",
+]);
+
+function tokenCategoriaSignificativi(testo: string): string[] {
+  return estraiToken(testo).filter(
+    (token) => token.length >= 2 && !TOKEN_CATEGORIA_NON_SIGNIFICATIVI.has(token)
+  );
+}
+
 // Matching TOKEN-BASED tra un valore negozi.categoria e i termini di una
 // categoria. Usa lo STESSO criterio in ogni punto (conteggi, showcase,
 // ricerca):
-//   1. se termini include direttamente il valore lowercase → match rapido
-//   2. altrimenti estrae TOKEN normalizzati (NFD + split [^a-z0-9]+) da
-//      entrambi e verifica che l'intersezione NON sia vuota.
+//   1. se il valore coincide con il NOME della categoria → match esatto
+//   2. se il valore è una categoria UFFICIALE diversa, non può appartenere
+//      ad altre categorie (anche se il suo nome è un sinonimo di queste)
+//   3. se il valore coincide con un sinonimo → match esatto
+//   4. altrimenti confronta i TOKEN significativi (esclusi articoli e
+//      connettivi) di valore e termini.
 // Così anche nomi categoria con " & " (es. "Tech & Elettronica" vs token
-// singolo "elettronica") o con accenti matchano correttamente.
-function valoreCategoriaMatcha(valore: string, termini: readonly string[]): boolean {
-  const v = valore.trim().toLowerCase();
+// singolo "elettronica") o con accenti matchano correttamente, senza finire in
+// categorie diverse che condividono una parola generica.
+function valoreCategoriaMatcha(
+  valore: string,
+  nomeCategoria: string,
+  termini: readonly string[]
+): boolean {
+  const v = normalizza(valore).trim();
   if (!v) return false;
-  if (termini.includes(v)) return true;
 
-  const tokenValore = estraiToken(v);
+  if (v === normalizza(nomeCategoria).trim()) return true;
+  if (NOMI_CATEGORIE_UFFICIALI.has(v)) return false;
+
+  const terminiNormalizzati = termini
+    .map((termine) => normalizza(termine).trim())
+    .filter(Boolean);
+  if (terminiNormalizzati.includes(v)) return true;
+
+  const tokenValore = tokenCategoriaSignificativi(v);
   if (tokenValore.length === 0) return false;
 
-  for (const termine of termini) {
-    const t = termine.trim();
-    if (!t) continue;
-    if (tokenValore.includes(normalizza(t).trim())) return true;
-    const tokenTermine = estraiToken(t);
+  for (const termine of terminiNormalizzati) {
+    const tokenTermine = tokenCategoriaSignificativi(termine);
     if (tokenTermine.some((tk) => tokenValore.includes(tk))) return true;
   }
   return false;
@@ -505,9 +542,8 @@ function valoreCategoriaMatcha(valore: string, termini: readonly string[]): bool
 // Conta i negozi ATTIVI (attivo=true e non nel Cestino) per ogni categoria.
 // Una sola query sul DB (seleziona solo la colonna categoria) e aggregazione in
 // memoria: nessuna query per singola categoria (niente N+1). Il matching usa
-// lo STESSO criterio di cercaNegoziPerCategoria (uguaglianza esatta
-// case-insensitive su nome + sinonimi), così conteggio e negozi mostrati
-// coincidono sempre esattamente.
+// lo STESSO criterio di cercaNegoziPerCategoria, così conteggio e negozi
+// mostrati coincidono sempre esattamente.
 export async function getConteggiNegoziPerCategoria(
   categorie: Categoria[],
   segnalazione?: SegnalazioneErroriDati,
@@ -545,7 +581,7 @@ export async function getConteggiNegoziPerCategoria(
     const termini = getTerminiCategoria(cat);
     let totale = 0;
     for (const [valore, count] of conteggiPerValore) {
-      if (valoreCategoriaMatcha(valore, termini)) totale += count;
+      if (valoreCategoriaMatcha(valore, cat.nome, termini)) totale += count;
     }
     conteggi.set(cat.id, totale);
   }
@@ -618,7 +654,9 @@ export async function cercaNegoziPerCategoria(categoria: Categoria) {
         .filter(Boolean)
     )
   );
-  const matching = valoriUnici.filter((valore) => valoreCategoriaMatcha(valore, termini));
+  const matching = valoriUnici.filter((valore) =>
+    valoreCategoriaMatcha(valore, categoria.nome, termini)
+  );
 
   if (matching.length === 0) return [];
 
@@ -709,7 +747,7 @@ export async function getCategoriaShowcase(slug: string): Promise<CategoriaShowc
 
   const negoziFiltrati = (negoziRaw ?? []).filter((n) => {
     const valore = ((n.categoria as string) ?? "").trim();
-    return valore && valoreCategoriaMatcha(valore, termini);
+    return valore && valoreCategoriaMatcha(valore, categoria.nome, termini);
   });
 
   if (negoziFiltrati.length === 0) {
