@@ -3014,7 +3014,9 @@ export async function searchProducts(
       }
     : { onErrore: segnalaErroreDatiPino };
   const opzioniMorbide = { onErrore: segnalaErroreDatiPino };
-  let opzioniRecupero = opzioniRicerca;
+  // Il primo recupero usa i limiti rigidi; se non trova nulla, il ripiego
+  // morbido vale anche per la ricerca dei formati di pasta.
+  let opzioniPasta = opzioniRicerca;
 
   // Per le ricerche di alimenti il negozio non deve contribuire alla
   // pertinenza: "pasta" non deve restituire taralli solo perché il venditore
@@ -3031,7 +3033,8 @@ export async function searchProducts(
   // prodotti che il motore tollerante ha trovato solo per somiglianza.
   // I limiti arrivano alla query Supabase (gte/lte sul prezzo) solo in modalità
   // vincolante; senza budget il percorso resta identico a prima.
-  let canonici = await searchCatalogoPubblico(q, opzioniRecupero);
+  const canonici = await searchCatalogoPubblico(q, opzioniRicerca);
+  let risultati = canonici;
 
   // D-1: il budget è una preferenza. Se il tetto rigido non restituisce nulla
   // (vino a €14,90 per «sotto 10 euro»), una seconda ricerca senza prezzo
@@ -3039,14 +3042,14 @@ export async function searchProducts(
   // budget. Senza questa rete il vuoto del catalogo diventava un vuoto di
   // risposta, pur esistendo il prodotto.
   if (budgetRigido && (canonici.prodotti ?? []).length === 0) {
-    opzioniRecupero = opzioniMorbide;
-    canonici = await searchCatalogoPubblico(q, opzioniRecupero);
+    opzioniPasta = opzioniMorbide;
+    risultati = await searchCatalogoPubblico(q, opzioniMorbide);
     console.info(
       "[pino-budget-morbido-retrieval]",
       JSON.stringify({
         maxPrice: opts.maxPrice ?? null,
         minPrice: opts.minPrice ?? null,
-        alternative: (canonici.prodotti ?? []).length,
+        alternative: (risultati.prodotti ?? []).length,
       })
     );
   }
@@ -3058,11 +3061,11 @@ export async function searchProducts(
   // percorso resta identico.
   const perFormatoPasta =
     soggettoAlimentare === "pasta"
-      ? await searchCatalogoPubblico(FORMATI_PASTA_PINO.slice(0, 10).join(" "), opzioniRecupero)
+      ? await searchCatalogoPubblico(FORMATI_PASTA_PINO.slice(0, 10).join(" "), opzioniPasta)
       : null;
 
   let filtrate = [
-    ...(canonici.prodotti ?? []),
+    ...(risultati.prodotti ?? []),
     ...(perFormatoPasta?.prodotti ?? []),
   ].filter((p) => prodottoSoddisfaEsclusioni(p, opts?.esclusioni));
 
