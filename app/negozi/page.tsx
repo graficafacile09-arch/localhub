@@ -5,8 +5,10 @@ import { chiavePreferito, getStatoPreferitiPerPagina } from "@/lib/cliente/favor
 import { getImpostazioniPubbliche } from "@/lib/platform/settings";
 import FavoritoButton from "@/components/cliente/preferiti/FavoritoButton";
 import ShareActivityButton from "@/components/negozio/ShareActivityButton";
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, MapPin, Star, Tag } from "lucide-react";
+import { puoUsareNextImage } from "@/lib/immagini-remote";
 
 export default async function NegoziPage({
   searchParams,
@@ -16,14 +18,14 @@ export default async function NegoziPage({
   const { featured } = await searchParams;
   const soloEvidenziati = featured === "1";
 
-  const impostazioni = await getImpostazioniPubbliche();
+  // Tre letture indipendenti: in parallelo costano un round-trip, in serie tre.
+  const [impostazioni, negozi, statoPreferiti] = await Promise.all([
+    getImpostazioniPubbliche(),
+    soloEvidenziati ? getNegoziInEvidenza() : getNegozi(),
+    getStatoPreferitiPerPagina(),
+  ]);
+
   const citta = impostazioni.city_name?.trim() || "Castrovillari";
-
-  const negozi = soloEvidenziati
-    ? await getNegoziInEvidenza()
-    : await getNegozi();
-
-  const statoPreferiti = await getStatoPreferitiPerPagina();
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -69,12 +71,24 @@ export default async function NegoziPage({
                 >
                   <Link href={`/negozio/${negozio.slug}`} className="group block">
                     <div className="relative aspect-[4/3] overflow-hidden rounded-t-2xl bg-slate-100">
-                      <div
-                        role="img"
-                        aria-label={negozio.nome}
-                        className="h-full w-full bg-cover bg-center"
-                        style={{ backgroundImage: `url(${imageUrl})` }}
-                      />
+                      {/* Copertina tramite next/image: resize + cache immutabile
+                          al posto del PNG originale senza cache CDN. */}
+                      {puoUsareNextImage(imageUrl) ? (
+                        <Image
+                          src={imageUrl}
+                          alt={negozio.nome}
+                          fill
+                          sizes="(max-width: 639px) 50vw, (max-width: 1023px) 33vw, 25vw"
+                          className="object-cover object-center"
+                        />
+                      ) : (
+                        <div
+                          role="img"
+                          aria-label={negozio.nome}
+                          className="h-full w-full bg-cover bg-center"
+                          style={{ backgroundImage: `url(${imageUrl})` }}
+                        />
+                      )}
                       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-900/25 to-transparent" />
                       <div className="absolute inset-x-0 bottom-0 p-3 sm:p-3.5">
                         {negozio.categoria && (
@@ -86,8 +100,19 @@ export default async function NegoziPage({
                         <div className="flex min-w-0 items-center gap-2">
                           {negozio.logo_url && (
                             <span className="h-7 w-7 shrink-0 overflow-hidden rounded-full bg-white shadow-sm">
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img src={negozio.logo_url} alt="" className="h-full w-full object-cover" />
+                              {puoUsareNextImage(negozio.logo_url) ? (
+                                <Image
+                                  src={negozio.logo_url}
+                                  alt=""
+                                  width={28}
+                                  height={28}
+                                  sizes="28px"
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                /* eslint-disable-next-line @next/next/no-img-element */
+                                <img src={negozio.logo_url} alt="" className="h-full w-full object-cover" />
+                              )}
                             </span>
                           )}
                           <h2 className="min-w-0 whitespace-normal break-words text-sm font-semibold leading-tight tracking-tight text-white drop-shadow-md sm:text-base">

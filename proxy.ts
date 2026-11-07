@@ -13,6 +13,32 @@ import {
 } from "@/lib/auth/area";
 import { GUEST_COOKIE } from "@/lib/auth/guest";
 
+// ── Stato manutenzione: cache in-memory per istanza ────────────────────────
+// Senza cache ogni richiesta (navigazione, RSC, prefetch) apriva una query
+// Supabase nel runtime Edge: era un costo fisso sul TTFB di tutte le pagine.
+// Il TTL è breve, così il toggle admin resta percepibile in pochi secondi; un
+// errore di lettura viene comunque memorizzato come "manutenzione off".
+const MANUTENZIONE_TTL_MS = 15_000;
+
+// Le tabelle di manutenzione non fanno parte dello schema tipizzato del client:
+// qui serve solo la lettura di una colonna booleana.
+type ClientManutenzione = {
+  from: (tabella: string) => {
+    select: (colonne: string) => {
+      eq: (colonna: string, valore: number) => {
+        maybeSingle: () => Promise<{
+          data: { enabled?: boolean } | null;
+          error: { message?: string } | null;
+        }>;
+      };
+    };
+  };
+};
+
+let cacheManutenzione:
+  | { tabella: string; attiva: boolean; scadenza: number }
+  | null = null;
+
 export async function proxy(request: NextRequest) {
   if (!isSupabaseConfigured()) {
     return NextResponse.next({ request });
@@ -126,30 +152,53 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/manutenzione") ||
     pathname.startsWith("/account-in-attesa");
   if (!manutenzioneEsclusioni) {
-    try {
-      const tabella = process.env.VERCEL_ENV === "production"
+    const tabella =
+      process.env.VERCEL_ENV === "production"
         ? "site_maintenance"
         : "site_maintenance_preview";
-      const { data: statoManutenzione, error: erroreManutenzione } = await (supabase as any)
-        .from(tabella)
-        .select("enabled")
-        .eq("id", 1)
-        .maybeSingle();
-      if (!erroreManutenzione && statoManutenzione?.enabled === true) {
-        if (pathname.startsWith("/api/")) {
-          return NextResponse.json(
-            { success: false, error: { code: "SITE_MAINTENANCE", message: "Il sito è temporaneamente in manutenzione." } },
-            { status: 503, headers: { "Cache-Control": "no-store", "Retry-After": "300" } }
-          );
-        }
-        const maintenanceResponse = NextResponse.rewrite(new URL("/manutenzione", request.url));
-        for (const cookie of response.cookies.getAll()) {
-          maintenanceResponse.cookies.set(cookie.name, cookie.value, cookie);
-        }
-        return maintenanceResponse;
+    const adesso = Date.now();
+
+    let manutenzioneAttiva: boolean;
+    if (
+      cacheManutenzione &&
+      cacheManutenzione.tabella === tabella &&
+      adesso < cacheManutenzione.scadenza
+    ) {
+      manutenzioneAttiva = cacheManutenzione.attiva;
+    } else {
+      manutenzioneAttiva = false;
+      try {
+        const clientManutenzione = supabase as unknown as ClientManutenzione;
+        const { data: statoManutenzione, error: erroreManutenzione } =
+          await clientManutenzione
+            .from(tabella)
+            .select("enabled")
+            .eq("id", 1)
+            .maybeSingle();
+        manutenzioneAttiva = !erroreManutenzione && statoManutenzione?.enabled === true;
+      } catch {
+        // Un errore di lettura non deve rendere irraggiungibile il sito.
+        manutenzioneAttiva = false;
       }
-    } catch {
-      // Un errore di lettura non deve rendere irraggiungibile il sito.
+      cacheManutenzione = {
+        tabella,
+        attiva: manutenzioneAttiva,
+        scadenza: adesso + MANUTENZIONE_TTL_MS,
+      };
+    }
+
+    if (manutenzioneAttiva) {
+      if (pathname.startsWith("/api/")) {
+        return NextResponse.json(
+          { success: false, error: { code: "SITE_MAINTENANCE", message: "Il sito è temporaneamente in manutenzione." } },
+          { status: 503, headers: { "Cache-Control": "no-store", "Retry-After": "300" } }
+        );
+      }
+      const maintenanceResponse = NextResponse.rewrite(new URL("/manutenzione", request.url));
+      for (const cookie of response.cookies.getAll()) {
+        maintenanceResponse.cookies.set(cookie.name, cookie.value, cookie);
+      }
+      return maintenanceResponse;
     }
   }
 

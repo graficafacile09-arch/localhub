@@ -71,10 +71,13 @@ export async function getCurrentRuoli(): Promise<UtenteConRuoli | null> {
   const user = await getCurrentUser();
   if (!user) return null;
 
-  const approvalStatus = await getAccountApprovalStatus(user.id);
+  // Approvazione e ruoli sono indipendenti: in parallelo risparmiamo un
+  // round-trip completo prima di poter renderizzare l'header.
+  const [approvalStatus, ruoli] = await Promise.all([
+    getAccountApprovalStatus(user.id),
+    getRuoliUtente(user.id),
+  ]);
   if (approvalStatus !== "approved") return null;
-
-  const ruoli = await getRuoliUtente(user.id);
   const role =
     ruoli.length === 0
       ? "customer"
@@ -97,8 +100,10 @@ export async function getApiUtente(
 ): Promise<{ user: NonNullable<Awaited<ReturnType<typeof getCurrentUser>>> | null; ok: boolean }> {
   const user = await getCurrentUser();
   if (!user) return { user: null, ok: false };
-  const approvalStatus = await getAccountApprovalStatus(user.id);
+  const [approvalStatus, ok] = await Promise.all([
+    getAccountApprovalStatus(user.id),
+    utenteHaRuoli(user.id, richiesti),
+  ]);
   if (approvalStatus !== "approved") return { user, ok: false };
-  const ok = await utenteHaRuoli(user.id, richiesti);
   return { user, ok };
 }

@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 
 /**
@@ -62,19 +63,27 @@ export async function getImpostazione(chiave: string): Promise<string | null> {
   return (data.valore as string | null) ?? null;
 }
 
-/** Tutte le impostazioni PUBBLICHE, come mappa chiave → valore. */
-export async function getImpostazioniPubbliche(): Promise<Record<string, string | null>> {
-  const db = getDb();
-  if (!db) return {};
+/**
+ * Tutte le impostazioni PUBBLICHE, come mappa chiave → valore.
+ *
+ * `cache` deduplica la lettura nella stessa richiesta: layout (footer),
+ * generateMetadata e pagina chiamano questa funzione e senza dedupe ogni
+ * chiamata era una query separata verso Supabase.
+ */
+export const getImpostazioniPubbliche = cache(
+  async (): Promise<Record<string, string | null>> => {
+    const db = getDb();
+    if (!db) return {};
 
-  const { data, error } = await db
-    .from("piattaforma_settings")
-    .select("chiave, valore")
-    .eq("pubblico", true);
+    const { data, error } = await db
+      .from("piattaforma_settings")
+      .select("chiave, valore")
+      .eq("pubblico", true);
 
-  if (error) return {};
-  return toMappa(data as ImpostazionePiattaforma[]);
-}
+    if (error) return {};
+    return toMappa(data as ImpostazionePiattaforma[]);
+  }
+);
 
 /** Tutte le impostazioni per il pannello admin (con metadati). */
 export async function getImpostazioniAdmin(): Promise<ImpostazionePiattaforma[]> {

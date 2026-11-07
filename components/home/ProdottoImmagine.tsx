@@ -1,12 +1,14 @@
 "use client";
 
-// Le foto dei prodotti arrivano da host arbitrari (non solo quelli elencati in
-// next.config images.remotePatterns), quindi si usa <img> con fallback proprio.
-/* eslint-disable @next/next/no-img-element */
+// Le foto dei prodotti possono arrivare da host arbitrari (non solo quelli
+// elencati in next.config images.remotePatterns): per gli host configurati si
+// usa next/image (resize + cache immutabile), per gli altri <img> con fallback.
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
+import Image from "next/image";
 import { ImageOff } from "lucide-react";
 import { getProdottoImmagine } from "@/lib/prodotti-immagini";
+import { puoUsareNextImage } from "@/lib/immagini-remote";
 
 type ProdottoImmagineProps = {
   /** URL già risolto con getProdottoImmagine. */
@@ -19,14 +21,18 @@ type ProdottoImmagineProps = {
   className?: string;
 };
 
+// Larghezze delle card prodotto: 2 colonne su mobile, 3/4 nelle vetrine larghe.
+const SIZES = "(max-width: 639px) 46vw, (max-width: 1023px) 30vw, 24vw";
+
 /**
  * Immagine della card prodotto con due reti di sicurezza:
  * 1. se l'URL specifico non risponde si passa all'immagine generica della
  *    categoria (stessa mappa di getProdottoImmagine);
  * 2. se anche quella fallisce, al posto del buco bianco compare una scheda
  *    neutra con il nome del prodotto.
- * Finché l'immagine non è pronta resta visibile un placeholder sfumato, così
- * la vetrina non mostra mai uno spazio vuoto.
+ * Il gradiente di sfondo resta dietro all'immagine: funge da placeholder
+ * durante il caricamento senza nasconderla se l'evento onLoad non arriva
+ * (immagine già in cache del browser).
  */
 export default function ProdottoImmagine({
   src,
@@ -40,18 +46,9 @@ export default function ProdottoImmagine({
     categoria,
   });
   // La card è montata per prodotto (key = id): la sorgente non cambia durante
-  // la vita del componente, quindi lo stato di caricamento è per-card.
+  // la vita del componente.
   const [corrente, setCorrente] = useState(src);
-  const [caricata, setCaricata] = useState(false);
   const [nonDisponibile, setNonDisponibile] = useState(false);
-  const imgRef = useRef<HTMLImageElement>(null);
-
-  // Immagine già in cache: l'evento onLoad può essere già passato, quindi si
-  // controlla lo stato reale dell'elemento invece di aspettarlo.
-  useEffect(() => {
-    const img = imgRef.current;
-    if (img && img.complete && img.naturalWidth > 0) setCaricata(true);
-  }, [corrente]);
 
   const gestisciErrore = () => {
     if (corrente !== immagineRiserva) {
@@ -61,13 +58,13 @@ export default function ProdottoImmagine({
     setNonDisponibile(true);
   };
 
+  const forma = contenuta ? "object-contain" : "object-cover";
+
   return (
     <div className="absolute inset-0">
       <div
         aria-hidden="true"
-        className={`absolute inset-0 bg-gradient-to-br from-slate-100 via-blue-50 to-slate-200 transition-opacity duration-300 ${
-          caricata ? "opacity-0" : "opacity-100 animate-pulse"
-        }`}
+        className="absolute inset-0 animate-pulse bg-gradient-to-br from-slate-100 via-blue-50 to-slate-200"
       />
       {nonDisponibile ? (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-2 text-center">
@@ -76,20 +73,25 @@ export default function ProdottoImmagine({
             {alt}
           </span>
         </div>
+      ) : puoUsareNextImage(corrente) ? (
+        <Image
+          src={corrente}
+          alt={alt}
+          fill
+          sizes={SIZES}
+          loading="lazy"
+          onError={gestisciErrore}
+          className={`${forma} ${className ?? ""}`}
+        />
       ) : (
+        // eslint-disable-next-line @next/next/no-img-element
         <img
-          ref={imgRef}
           src={corrente}
           alt={alt}
           loading="lazy"
           decoding="async"
-          onLoad={() => setCaricata(true)}
           onError={gestisciErrore}
-          className={`absolute inset-0 h-full w-full ${
-            contenuta ? "object-contain" : "object-cover"
-          } transition-opacity duration-300 ${
-            caricata ? "opacity-100" : "opacity-0"
-          } ${className ?? ""}`}
+          className={`absolute inset-0 h-full w-full ${forma} ${className ?? ""}`}
         />
       )}
     </div>

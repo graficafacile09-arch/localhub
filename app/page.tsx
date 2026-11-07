@@ -14,6 +14,7 @@ import {
   getProdottiTipici,
 } from "@/lib/negozi";
 import { getNegozioCardImmagine } from "@/lib/negozi-card-immagini";
+import { puoUsareNextImage } from "@/lib/immagini-remote";
 import HomepageProductShowcase, { ProductSectionCard } from "@/components/home/HomepageProductShowcase";
 import HomepageProductSwipeReveal from "@/components/home/HomepageProductSwipeReveal";
 import { chiavePreferito, getStatoPreferitiPerPagina } from "@/lib/cliente/favorites";
@@ -218,20 +219,44 @@ export default async function Home() {
                     >
                       <div>
                         <div className="relative h-48 w-full overflow-hidden rounded-t-2xl bg-slate-100">
-                          <div
-                            role="img"
-                            aria-label={negozio.nome}
-                            className="absolute inset-0 bg-cover bg-center transition duration-300 group-hover:scale-105"
-                            style={{ backgroundImage: `url(${immaginiCopertina})` }}
-                          />
+                          {/* Copertina servita dall'ottimizzatore: le immagini
+                              Supabase erano PNG a piena risoluzione senza cache
+                              CDN. Host non configurati ricadono sul CSS. */}
+                          {puoUsareNextImage(immaginiCopertina) ? (
+                            <Image
+                              src={immaginiCopertina}
+                              alt={negozio.nome}
+                              fill
+                              sizes="(max-width: 639px) 100vw, (max-width: 1023px) 50vw, 33vw"
+                              className="object-cover object-center transition duration-300 group-hover:scale-105"
+                            />
+                          ) : (
+                            <div
+                              role="img"
+                              aria-label={negozio.nome}
+                              className="absolute inset-0 bg-cover bg-center transition duration-300 group-hover:scale-105"
+                              style={{ backgroundImage: `url(${immaginiCopertina})` }}
+                            />
+                          )}
                           {logoNegozio && (
                             <div className="absolute bottom-3 left-3 flex h-14 w-14 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-white shadow-sm">
-                              <div
-                                role="img"
-                                aria-label={`Logo ${negozio.nome}`}
-                                className="h-full w-full bg-cover bg-center"
-                                style={{ backgroundImage: `url(${logoNegozio})` }}
-                              />
+                              {puoUsareNextImage(logoNegozio) ? (
+                                <Image
+                                  src={logoNegozio}
+                                  alt={`Logo ${negozio.nome}`}
+                                  width={56}
+                                  height={56}
+                                  sizes="56px"
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                <div
+                                  role="img"
+                                  aria-label={`Logo ${negozio.nome}`}
+                                  className="h-full w-full bg-cover bg-center"
+                                  style={{ backgroundImage: `url(${logoNegozio})` }}
+                                />
+                              )}
                             </div>
                           )}
                           {negozio.categoria && (
