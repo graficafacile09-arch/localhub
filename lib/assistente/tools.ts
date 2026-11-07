@@ -3048,30 +3048,9 @@ export async function searchProducts(
   // I limiti arrivano alla query Supabase (gte/lte sul prezzo) solo in modalità
   // vincolante; senza budget il percorso resta identico a prima.
   const canonici = await searchCatalogoPubblico(q, opzioniRicerca);
-  let risultati = canonici;
   // Il gate di pertinenza deve usare la stessa query del recupero: se il
   // ripiego toglie un attributo, non può continuare a pretenderlo.
   let qGate = q;
-
-  // D-1: il budget è una preferenza. Se il tetto rigido non restituisce nulla
-  // (vino a €14,90 per «sotto 10 euro»), una seconda ricerca senza prezzo
-  // permette di mostrare le alternative più vicine, etichettate come fuori
-  // budget. Senza questa rete il vuoto del catalogo diventava un vuoto di
-  // risposta, pur esistendo il prodotto.
-  if (budgetRigido && (canonici.prodotti ?? []).length === 0) {
-    opzioniPasta = opzioniMorbide;
-    qGate = querySenzaQualificaPino(q);
-    risultati = await searchCatalogoPubblico(qGate, opzioniMorbide);
-    console.info(
-      "[pino-budget-morbido-retrieval]",
-      JSON.stringify({
-        maxPrice: opts.maxPrice ?? null,
-        minPrice: opts.minPrice ?? null,
-        queryRilassata: qGate !== q ? qGate : null,
-        alternative: (risultati.prodotti ?? []).length,
-      })
-    );
-  }
 
   // La pasta è una categoria con molti nomi di formato: la query «pasta» non
   // recupera le Tagliatelle, il cui nome non contiene la parola. Una seconda
@@ -3084,7 +3063,7 @@ export async function searchProducts(
       : null;
 
   let filtrate = [
-    ...(risultati.prodotti ?? []),
+    ...(canonici.prodotti ?? []),
     ...(perFormatoPasta?.prodotti ?? []),
   ].filter((p) => prodottoSoddisfaEsclusioni(p, opts?.esclusioni));
 
@@ -3107,6 +3086,38 @@ export async function searchProducts(
       filtrate,
       normalizzaQueryCatalogo(qGate),
       qGate
+    );
+  }
+
+  // D-1 + qualifica: se il budget o un attributo azzerano la lista, si riprova
+  // senza prezzo e senza attributi descrittivi («vino rosso» → «vino»). Il
+  // gate usa la query rilassata, altrimenti continuerebbe a pretendere il
+  // colore che il catalogo non documenta. Il controllo sta DOPO il gate: prima
+  // di qui la lista poteva essere già vuota pur avendo il catalogo il prodotto.
+  if (budgetRigido && filtrate.length === 0) {
+    const qRilassata = querySenzaQualificaPino(q);
+    opzioniPasta = opzioniMorbide;
+    qGate = qRilassata;
+    const morbidi = await searchCatalogoPubblico(qRilassata, opzioniMorbide);
+    const candidati = (morbidi.prodotti ?? []).filter((p) =>
+      prodottoSoddisfaEsclusioni(p, opts?.esclusioni)
+    );
+    const soggettoRilassato = soggettoAlimentarePino(qRilassata);
+    filtrate = soggettoRilassato
+      ? filtraProdottiAlimentariPino(candidati, qRilassata, soggettoRilassato)
+      : filtraProdottiPerSoggettoUnico(
+          candidati,
+          normalizzaQueryCatalogo(qRilassata),
+          qRilassata
+        );
+    console.info(
+      "[pino-budget-morbido-retrieval]",
+      JSON.stringify({
+        maxPrice: opts.maxPrice ?? null,
+        minPrice: opts.minPrice ?? null,
+        queryRilassata: qRilassata !== q ? qRilassata : null,
+        alternative: filtrate.length,
+      })
     );
   }
 
