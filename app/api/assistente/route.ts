@@ -47,6 +47,14 @@ import {
   rispostaDegradataPino,
   rispostaIndisponibilePino,
 } from "@/lib/assistente/degradazione";
+import {
+  componiDomandaConSessionePino,
+  recuperaSessionePino,
+  salvaSessionePino,
+  sembraContinuazionePino,
+  sessionIdValidoPino,
+  type SessionePino,
+} from "@/lib/assistente/sessione";
 
 // Durata massima della funzione: senza questa dichiarazione vale il default
 // della piattaforma e una chiamata Gemini lenta diventa un 504.
@@ -191,7 +199,8 @@ async function registraTelemetriaTurno(input: {
  */
 function rispostaInStreaming(
   messaggi: MessaggioAssistente[],
-  origine: string
+  origine: string,
+  sessionId: string | null
 ): Response {
   const encoder = new TextEncoder();
   const codiceLingua = rilevaLinguaConversazionePino(messaggi);
@@ -217,6 +226,9 @@ function rispostaInStreaming(
           streaming: true,
           msContesto: esito.msContesto,
         });
+        if (sessionId) {
+          await salvaSessionePino({ sessionId, messaggi });
+        }
       } catch {
         // Rete di sicurezza: lo stream non si chiude mai senza un esito.
         invia({
@@ -287,13 +299,32 @@ export async function POST(request: Request) {
   const origine =
     request.headers.get("x-pino-origine") === "ui" ? "ui" : "api";
 
+  // Memoria di sessione: si legge solo per un messaggio breve di continuazione
+  // («e rosso?»), così le ricerche normali non pagano una query in più.
+  const sessionId = sessionIdValidoPino(body.sessionId) ? body.sessionId : null;
+  const ultimoUtente = [...messaggi].reverse().find((m) => m.role === "user");
+  const sessionePrecedente: SessionePino | null =
+    sessionId && ultimoUtente && sembraContinuazionePino(ultimoUtente.content)
+      ? await recuperaSessionePino(sessionId)
+      : null;
+  const messaggiPerPino = sessionePrecedente
+    ? messaggi.map((m, indice) =>
+        indice === messaggi.length - 1 && m.role === "user"
+          ? {
+              ...m,
+              content: componiDomandaConSessionePino(m.content, sessionePrecedente),
+            }
+          : m
+      )
+    : messaggi;
+
   // Streaming opt-in: i client della chat lo richiedono, gli altri ricevono
   // il JSON storico. In entrambi i casi lo status è 200.
   if (vuoleStreaming(request)) {
-    return rispostaInStreaming(messaggi, origine);
+    return rispostaInStreaming(messaggiPerPino, origine, sessionId);
   }
 
-  const esito = await rispostaPino(messaggi);
+  const esito = await rispostaPino(messaggiPerPino);
   const risultato = esito.risultato;
 
   // Telemetria del turno: una riga per risposta, scritta DOPO la risposta
@@ -308,6 +339,9 @@ export async function POST(request: Request) {
       streaming: false,
       msContesto: esito.msContesto,
     });
+    if (sessionId) {
+      void salvaSessionePino({ sessionId, messaggi });
+    }
   });
 
   if (esito.dalPercorsoAI) {

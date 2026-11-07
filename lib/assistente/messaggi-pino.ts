@@ -234,6 +234,20 @@ export function richiestaOrdinePino(query: string): boolean {
   return /\b(?:vorrei|voglio|desidero|mi\s+piacerebbe|potrei)\s+(?:ordinare|comprare|acquistare)\b/.test(q);
 }
 
+/**
+ * Attributo richiesto (colore, materiale, provenienza) che il catalogo non
+ * dichiara sui prodotti mostrati: la risposta non può confermarlo.
+ */
+export function messaggioAttributoNonDocumentatoPino(
+  lingua: LinguaPino,
+  attributi: string
+): string {
+  if (lingua === "en") {
+    return `The catalogue doesn't declare “${attributi}” for the products shown, so I can't confirm that attribute.`;
+  }
+  return `Il catalogo non dichiara «${attributi}» per i prodotti mostrati: non posso confermare quell'attributo.`;
+}
+
 export function messaggioOrdineNonDisponibilePino(lingua: LinguaPino): string {
   if (lingua === "en") {
     return "I can't complete the order for you: the product is in the catalogue, but the purchase must be completed on the shop's website.";

@@ -17,6 +17,7 @@ import {
   messaggioCondizioneAlimentarePino,
   messaggioRistorazioneVuotaPino,
   messaggioQualificazioneRilassataPino,
+  messaggioAttributoNonDocumentatoPino,
   messaggioPrezziPino,
   messaggioRestrizioneAlimentarePino,
   messaggioVuotoConCatalogoPino,
@@ -4898,7 +4899,9 @@ export async function chatConAssistente(
   // gate ha tenuto i prodotti del soggetto invece di azzerare, quindi la
   // risposta deve dirlo senza fingere che la qualifica sia verificata.
   const soggettoRichiesto =
-    soggettoAlimentarePino(domandaSenzaNegozio) ?? soggettoAlimentarePino(domanda);
+    soggettoAlimentarePino(domandaSenzaNegozio) ??
+    soggettoAlimentarePino(domandaSemantica) ??
+    soggettoAlimentarePino(domanda);
   const fraseQualificazione = fraseQualificazionePino(domandaSenzaNegozio, soggettoRichiesto);
   const qualificazioneConfermata = fraseQualificazione
     ? qualificazioneDocumentataPino(prodotti, soggettoRichiesto, fraseQualificazione)
@@ -4910,6 +4913,31 @@ export async function chatConAssistente(
         fraseQualificazione
       )
     : null;
+  // Attributo accumulato in un follow-up («e rosso?»): lo stato conversazionale
+  // lo conserva, ma la frase corrente non lo contiene. Se il catalogo non lo
+  // documenta, la risposta deve dirlo invece di ripetere solo il budget.
+  const attributiNonDocumentati = [
+    ...comprensione.attributi.colori,
+    ...comprensione.attributi.materiali,
+    ...comprensione.attributi.provenienza,
+    ...comprensione.attributi.altri,
+  ].filter(
+    (attributo) =>
+      // Solo gli attributi che arrivano dal contesto: se il turno corrente li
+      // cita già, la nota di qualificazione (quando serve) resta l'unica.
+      !normalizzaRichiesta(domanda).includes(normalizzaRichiesta(attributo)) &&
+      !qualificazioneDocumentataPino(prodotti, soggettoRichiesto, attributo)
+  );
+  const notaAttributiNonDocumentati =
+    !notaQualificazione &&
+    !rispostaRestrizioneAlimentare &&
+    prodotti.length > 0 &&
+    attributiNonDocumentati.length > 0
+      ? messaggioAttributoNonDocumentatoPino(
+          linguaRisposta === "en" ? "en" : "it",
+          attributiNonDocumentati.join(", ")
+        )
+      : null;
   // Telemetria delle decisioni: una riga per messaggio, nessun dato personale,
   // per sapere in produzione quali richieste finiscono a zero e perché.
   console.info("[pino-decisione]", JSON.stringify({
@@ -4945,6 +4973,7 @@ export async function chatConAssistente(
     // trovato negozi che poi non compaiono).
     negozi.length + prodotti.length > 0 ? notaRecupero : null,
     notaQualificazione,
+    notaAttributiNonDocumentati,
     notaAttributi,
     notaContestoAttributi,
   ];
