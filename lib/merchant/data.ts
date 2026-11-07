@@ -885,11 +885,16 @@ export async function updateMerchantProductForStore(
     origine_pubblicazione: input.originePubblicazione?.trim() || "manuale",
     prodotto_tipico: input.prodottoTipico ?? false,
     prodotto_offerta: input.prodottoOfferta ?? false,
-    soggetto_verifica_eta: input.soggettoVerificaEta ?? false,
     recesso_applicabile: input.recessoApplicabile ?? true,
     recesso_esclusione_codice: input.recessoApplicabile === false ? (input.recessoEsclusioneCodice ?? null) : null,
     recesso_esclusione_dettaglio: input.recessoApplicabile === false ? (input.recessoEsclusioneDettaglio?.trim() || null) : null,
   };
+
+  // Aggiornamento parziale: l'assenza del flag NON significa "disattiva".
+  // Il venditore può spegnerlo esplicitamente inviando false.
+  if (input.soggettoVerificaEta !== undefined) {
+    payload.soggetto_verifica_eta = input.soggettoVerificaEta;
+  }
 
   if (input.descrizioneCompleta !== undefined) payload.descrizione_completa = input.descrizioneCompleta.trim() || null;
   if (input.caratteristiche !== undefined) payload.caratteristiche = input.caratteristiche;

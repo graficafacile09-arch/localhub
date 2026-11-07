@@ -202,7 +202,12 @@ export async function PUT(
     originePubblicazione: payload.originePubblicazione ?? "manuale",
     prodottoTipico: payload.prodottoTipico ?? false,
     prodottoOfferta: payload.prodottoOfferta ?? false,
-    soggettoVerificaEta: payload.soggettoVerificaEta ?? false,
+    // Il flag età è opzionale negli aggiornamenti: se un client (wizard AI,
+    // scheda vecchia o chiamata parziale) non lo invia, NON deve azzerare il
+    // valore già salvato sul prodotto.
+    ...(payload.soggettoVerificaEta !== undefined
+      ? { soggettoVerificaEta: payload.soggettoVerificaEta }
+      : {}),
     recessoApplicabile: payload.recessoApplicabile ?? true,
     recessoEsclusioneCodice: payload.recessoEsclusioneCodice ?? null,
     recessoEsclusioneDettaglio: payload.recessoEsclusioneDettaglio ?? null,
