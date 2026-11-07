@@ -340,7 +340,9 @@ export async function POST(request: Request) {
       msContesto: esito.msContesto,
     });
     if (sessionId) {
-      void salvaSessionePino({ sessionId, messaggi });
+      // Salvo la domanda composta: così la sessione accumula anche gli
+      // attributi dei follow-up («e rosso?»), non solo il primo soggetto.
+      void salvaSessionePino({ sessionId, messaggi: messaggiPerPino });
     }
   });
 

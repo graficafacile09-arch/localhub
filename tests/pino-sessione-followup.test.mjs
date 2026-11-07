@@ -16,6 +16,7 @@ import {
   sessionIdValidoPino,
 } from "../lib/assistente/sessione.ts";
 import { messaggioAttributoNonDocumentatoPino } from "../lib/assistente/messaggi-pino.ts";
+import { estraiSoggettoPino } from "../lib/assistente/understanding.ts";
 
 const sorgente = (percorso) =>
   readFileSync(join(process.cwd(), percorso), "utf8").replace(/\r\n/g, "\n");
@@ -34,6 +35,12 @@ test("una continuazione breve è riconosciuta, una domanda nuova no", () => {
   assert.equal(sembraContinuazionePino("e sotto 10 euro?"), true);
   assert.equal(sembraContinuazionePino("quanto costa la spedizione?"), false);
   assert.equal(sembraContinuazionePino("cerco un vino"), false);
+});
+
+test("il soggetto della sessione non è la cornice «consigliami»", () => {
+  assert.equal(estraiSoggettoPino("consigliami un vino"), "vino");
+  assert.equal(estraiSoggettoPino("consigliami vino"), "vino");
+  assert.equal(estraiSoggettoPino("cerco del pane"), "pane");
 });
 
 test("la sessione ricostruisce soggetto, attributi e budget", () => {

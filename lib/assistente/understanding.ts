@@ -608,6 +608,8 @@ const STOPWORD_COMPRENSIONE = new Set([
   "in", "con", "su", "per", "tra", "fra", "che", "cosa", "quale", "quali", "come",
   "e", "ed", "o", "cerco", "cerca", "cercando", "vorrei", "voglio", "serve", "mi",
   "bisogno", "comprare", "compro", "acquistare", "trova", "trovami", "dammi", "anzi",
+  "consigliami", "consigli", "consiglia", "suggerisci", "suggeriscimi", "mostrami",
+  "fammi", "vedere", "recommend", "suggest",
   "invece", "non", "senza", "not", "without", "no", "the", "a", "an", "and", "or", "of", "for", "with", "to",
   "on", "some", "any", "please", "looking", "want", "need", "show", "find", "me", "i",
   "buy", "purchase", "get", "my", "speak", "speaking", "english", "italian", "inglese",
