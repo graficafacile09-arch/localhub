@@ -87,7 +87,7 @@ export default async function Home() {
       // La vetrina mostra poche decine di prodotti per categoria: 1000 righe
       // (con descrizioni e immagini) erano lavoro e payload inutili.
       getProdottiCatalogoHomepage(120),
-      getProdottiTipici(60),
+      getProdottiTipici(120),
       getStatoPreferitiPerPagina(),
     ]);
 
