@@ -84,11 +84,11 @@ export default function ProdottiModule({
     const normalizza = (valore: string) =>
       valore
         .normalize("NFD")
-        .replace(/[\\u0300-\\u036f]/g, "")
+        .replace(/[\u0300-\u036f]/g, "")
         .toLocaleLowerCase("it")
         .replace(/[^a-z0-9]+/g, " ")
         .trim();
-    const terminiRicerca = normalizza(ricerca).split(/\\s+/).filter(Boolean);
+    const terminiRicerca = normalizza(ricerca).split(/\s+/).filter(Boolean);
     return prodotti.filter((prodotto) => {
       const corrispondeNegozio =
         filtroNegozio === "tutti" || prodotto.negozioId === filtroNegozio;
