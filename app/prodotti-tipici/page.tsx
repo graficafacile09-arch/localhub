@@ -44,7 +44,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function ProdottiTipiciPage() {
   const [prodottiTipici, statoPreferiti] = await Promise.all([
-    getProdottiTipici(60),
+    getProdottiTipici(120),
     getStatoPreferitiPerPagina(),
   ]);
 
