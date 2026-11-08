@@ -12,6 +12,7 @@ import {
   Search,
   Store,
   Trash2,
+  X,
 } from "lucide-react";
 import type { ProdottoAdminRow } from "@/lib/amministratore/prodotti";
 import { getProdottoImmagine } from "@/lib/prodotti-immagini";
@@ -80,7 +81,14 @@ export default function ProdottiModule({
   }, [prodotti]);
 
   const filtrati = useMemo(() => {
-    const query = ricerca.trim().toLocaleLowerCase("it");
+    const normalizza = (valore: string) =>
+      valore
+        .normalize("NFD")
+        .replace(/[\\u0300-\\u036f]/g, "")
+        .toLocaleLowerCase("it")
+        .replace(/[^a-z0-9]+/g, " ")
+        .trim();
+    const terminiRicerca = normalizza(ricerca).split(/\\s+/).filter(Boolean);
     return prodotti.filter((prodotto) => {
       const corrispondeNegozio =
         filtroNegozio === "tutti" || prodotto.negozioId === filtroNegozio;
@@ -98,11 +106,11 @@ export default function ProdottiModule({
         filtroOfferta === "tutti" ||
         (filtroOfferta === "solo" && prodotto.prodottoOfferta) ||
         (filtroOfferta === "no" && !prodotto.prodottoOfferta);
+      const testoRicercabile = normalizza(
+        [prodotto.nome, prodotto.categoria ?? "", prodotto.negozioNome, prodotto.id].join(" ")
+      );
       const corrispondeRicerca =
-        !query ||
-        [prodotto.nome, prodotto.categoria ?? "", prodotto.negozioNome].some((valore) =>
-          valore.toLocaleLowerCase("it").includes(query)
-        );
+        terminiRicerca.length === 0 || terminiRicerca.every((termine) => testoRicercabile.includes(termine));
       return (
         corrispondeNegozio &&
         corrispondeStato &&
@@ -320,24 +328,47 @@ export default function ProdottiModule({
         </div>
       )}
 
-      {/* Barra strumenti: ricerca + filtri */}
-      <div className="card p-4 md:p-5">
-        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-          <label className="relative block min-w-0 flex-1 xl:max-w-sm">
-            <span className="sr-only">Cerca prodotti per nome, categoria o negozio</span>
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" aria-hidden />
+      {/* Ricerca ben visibile, separata dai filtri */}
+      <div className="card space-y-4 p-4 md:p-5">
+        <div className="space-y-2">
+          <label htmlFor="admin-prodotti-ricerca" className="block text-sm font-bold text-slate-800">
+            Cerca nel catalogo prodotti
+          </label>
+          <div className="relative w-full">
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-blue-600" aria-hidden />
             <input
+              id="admin-prodotti-ricerca"
               type="search"
               value={ricerca}
               onChange={(event) => {
                 setRicerca(event.target.value);
                 tornaAPaginaUno();
               }}
-              placeholder="Cerca nome, categoria o negozio..."
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-3 text-sm text-slate-700 outline-none transition placeholder:text-slate-400 focus:border-blue-400 focus:bg-white focus:ring-2 focus:ring-blue-100"
+              placeholder="Nome prodotto, categoria, negozio o ID..."
+              autoComplete="off"
+              className="min-h-12 w-full rounded-2xl border-2 border-blue-200 bg-white py-3 pl-12 pr-12 text-base font-medium text-slate-800 shadow-sm outline-none transition placeholder:font-normal placeholder:text-slate-400 hover:border-blue-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
             />
-          </label>
-          <div className="flex flex-wrap items-center gap-2">
+            {ricerca.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setRicerca("");
+                  tornaAPaginaUno();
+                }}
+                aria-label="Cancella ricerca"
+                title="Cancella ricerca"
+                className="absolute right-3 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              >
+                <X className="h-4 w-4" aria-hidden />
+              </button>
+            )}
+          </div>
+          <p className="text-xs text-slate-500" aria-live="polite">
+            {filtrati.length} {filtrati.length === 1 ? "risultato trovato" : "risultati trovati"}
+            {ricerca.trim() ? <> per <span className="font-semibold text-slate-700">“{ricerca.trim()}”</span></> : " nel catalogo filtrato"}
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
             <select
               value={filtroNegozio}
               onChange={(event) => {
@@ -442,7 +473,6 @@ export default function ProdottiModule({
               <option value={25}>25 righe</option>
               <option value={50}>50 righe</option>
             </select>
-          </div>
         </div>
       </div>
 
