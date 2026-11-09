@@ -2,8 +2,19 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Grid2X2, Home, MapPinned, Store, Tag } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ChevronDown, Grid2X2, Home, MapPinned, Store, Tag } from "lucide-react";
 import type { ComponentType } from "react";
+
+type VoceNav = {
+  label: string;
+  href: string;
+  icona: ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
+  badge: string | null;
+  micro: string | null;
+  attiva: boolean;
+  menu?: { label: string; href: string }[];
+};
 
 /**
  * Navigazione pubblica — UNICA fonte delle voci Home/Negozi/Offerte/Categorie.
@@ -41,16 +52,47 @@ import type { ComponentType } from "react";
 export default function HeaderNav({ overlay = false }: { overlay?: boolean } = {}) {
   const pathname = usePathname();
 
+  // Voce "Territorio": il click apre un menù a tendina con i link della guida.
+  // Il contenuto delle sezioni resta nella pagina /attrazioni, qui viene solo
+  // riorganizzato: "Sapori locali" è la prima voce e "Eventi" non è più
+  // elencato perché le sue schede sono già raccolte in Cultura e Sapori.
+  const [menuAperto, setMenuAperto] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuAperto) return;
+    function chiudiFuori(event: PointerEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuAperto(false);
+      }
+    }
+    document.addEventListener("pointerdown", chiudiFuori);
+    return () => document.removeEventListener("pointerdown", chiudiFuori);
+  }, [menuAperto]);
+
   // La voce "Offerte" resta IDENTICA alle altre (stessa struttura, larghezza,
   // font, padding): "SALDI" è un micro-badge rosso compatto ancorato
   // all'angolo dell'icona (il simbolo), visivamente subordinato a "Offerte"
   // e che NON allarga il tasto rispetto agli altri.
-  const voci = [
+  const voci: VoceNav[] = [
     { label: "Home", href: "/", icona: Home, badge: null, micro: null, attiva: pathname === "/" },
     { label: "Negozi", href: "/negozi", icona: Store, badge: null, micro: null, attiva: pathname === "/negozi" || pathname.startsWith("/negozi/") },
     { label: "Offerte", href: "/offerte", icona: Tag, badge: "SALDI", micro: null, attiva: pathname === "/offerte" || pathname.startsWith("/offerte/") },
     { label: "Categorie", href: "/categorie", icona: Grid2X2, badge: null, micro: null, attiva: pathname === "/categorie" || pathname.startsWith("/categorie/") },
-    { label: "Attrazioni", href: "/attrazioni", icona: MapPinned, badge: null, micro: null, attiva: pathname === "/attrazioni" || pathname.startsWith("/attrazioni/") },
+    {
+      label: "Territorio",
+      href: "/attrazioni",
+      icona: MapPinned,
+      badge: null,
+      micro: null,
+      attiva: pathname === "/attrazioni" || pathname.startsWith("/attrazioni/"),
+      menu: [
+        { label: "Sapori locali", href: "/attrazioni#sapori" },
+        { label: "Luoghi da vedere", href: "/attrazioni#luoghi" },
+        { label: "Cultura e tradizioni", href: "/attrazioni#cultura" },
+        { label: "Dintorni", href: "/attrazioni#dintorni" },
+      ],
+    },
   ];
 
   return (
@@ -68,15 +110,11 @@ export default function HeaderNav({ overlay = false }: { overlay?: boolean } = {
           />
         ))}
         {voci.map((voce) => {
-          const Icona = voce.icona as ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
-          return (
-            <Link
-              key={voce.href}
-              href={voce.href}
-              aria-label={voce.label}
-              aria-current={voce.attiva ? "page" : undefined}
-              className="incitta-public-nav-item group relative mx-1 flex min-w-0 flex-col items-center gap-1 px-1.5 py-1 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 sm:mx-1.5 sm:px-2 md:py-1 lg:mx-1 lg:px-1.5"
-            >
+          const Icona = voce.icona;
+          const classiVoce =
+            "incitta-public-nav-item group relative mx-1 flex min-w-0 flex-col items-center gap-1 px-1.5 py-1 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 sm:mx-1.5 sm:px-2 md:py-1 lg:mx-1 lg:px-1.5";
+          const contenuto = (
+            <>
               <span className="incitta-public-nav-icon relative flex h-10 w-10 items-center justify-center rounded-xl bg-yellow-400">
                 <Icona
                   aria-hidden
@@ -94,6 +132,12 @@ export default function HeaderNav({ overlay = false }: { overlay?: boolean } = {
 
               <span className={`incitta-public-nav-label whitespace-nowrap text-xs font-bold leading-none tracking-tight transition-colors duration-200 sm:text-sm ${overlay ? "text-white drop-shadow-sm" : "text-slate-900"}`}>
                 {voce.label}
+                {voce.menu && (
+                  <ChevronDown
+                    aria-hidden
+                    className={`ml-0.5 inline h-3 w-3 align-[-1px] transition-transform duration-200 ${menuAperto ? "rotate-180" : ""}`}
+                  />
+                )}
               </span>
 
               <span
@@ -102,6 +146,61 @@ export default function HeaderNav({ overlay = false }: { overlay?: boolean } = {
                   voce.attiva ? "bg-blue-600 opacity-100" : "bg-transparent opacity-0"
                 }`}
               />
+            </>
+          );
+
+          if (voce.menu) {
+            return (
+              <div
+                key={voce.href}
+                ref={menuRef}
+                className="relative flex min-w-0 justify-center"
+                onMouseLeave={() => setMenuAperto(false)}
+                onKeyDown={(event) => {
+                  if (event.key === "Escape") setMenuAperto(false);
+                }}
+              >
+                <button
+                  type="button"
+                  aria-expanded={menuAperto}
+                  aria-controls="menu-territorio"
+                  onClick={() => setMenuAperto((aperto) => !aperto)}
+                  className={classiVoce}
+                >
+                  {contenuto}
+                </button>
+
+                {menuAperto && (
+                  <div
+                    id="menu-territorio"
+                    aria-label="Sezioni della guida Territorio"
+                    className="absolute right-0 top-full z-50 mt-1 w-56 max-w-[80vw] overflow-hidden rounded-2xl border border-slate-200 bg-white py-1.5 shadow-xl"
+                  >
+                    {voce.menu.map((link) => (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        onClick={() => setMenuAperto(false)}
+                        className="block px-4 py-2.5 text-sm font-bold text-slate-800 transition-colors hover:bg-yellow-50 hover:text-blue-800 focus-visible:bg-yellow-50 focus-visible:outline-none"
+                      >
+                        {link.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          }
+
+          return (
+            <Link
+              key={voce.href}
+              href={voce.href}
+              aria-label={voce.label}
+              aria-current={voce.attiva ? "page" : undefined}
+              className={classiVoce}
+            >
+              {contenuto}
             </Link>
           );
         })}

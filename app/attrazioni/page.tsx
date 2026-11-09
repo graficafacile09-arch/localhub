@@ -40,10 +40,9 @@ export default function AttrazioniPage() {
 
       <nav aria-label="Sezioni della guida" className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur">
         <div className="mx-auto flex max-w-7xl gap-5 overflow-x-auto px-4 py-3 text-sm font-bold md:px-6">
+          <a className="whitespace-nowrap text-slate-700 hover:text-blue-700" href="#sapori">Sapori locali</a>
           <a className="whitespace-nowrap text-slate-700 hover:text-blue-700" href="#luoghi">Luoghi da vedere</a>
           <a className="whitespace-nowrap text-slate-700 hover:text-blue-700" href="#cultura">Cultura e tradizioni</a>
-          <a className="whitespace-nowrap text-slate-700 hover:text-blue-700" href="#eventi">Eventi</a>
-          <a className="whitespace-nowrap text-slate-700 hover:text-blue-700" href="#sapori">Sapori locali</a>
           <a className="whitespace-nowrap text-slate-700 hover:text-blue-700" href="#dintorni">Dintorni</a>
         </div>
       </nav>
