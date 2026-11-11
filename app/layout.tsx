@@ -29,7 +29,7 @@ const SITE_URL = getSiteUrl();
 
 const DEFAULTS = {
   site_name: "InCittà",
-  site_tagline: "Amazon della tua città",
+  site_tagline: "Filiere, Prodotti e Territori",
   footer_text: "© 2026 InCittà · Castrovillari",
 };
 
@@ -47,7 +47,7 @@ export async function generateMetadata(): Promise<Metadata> {
       template: `%s | ${nome}`,
     },
     description:
-      "Trova negozi, prodotti e servizi della tua città. Cerca, confronta e acquista localmente.",
+      "InCittà collega produttori, trasformatori, distributori e consumatori: le filiere dei territori arrivano in città.",
     openGraph: {
       siteName: nome,
       locale: "it_IT",

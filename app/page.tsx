@@ -29,9 +29,9 @@ export const dynamic = "force-dynamic";
 // Title e canonical espliciti: senza, la home ereditava il title di default e
 // nessuna delle due pagine principali dichiarava la propria URL canonica.
 export const metadata: Metadata = {
-  title: "InCittà | I negozi di Castrovillari on-line",
+  title: "InCittà | Filiere, Prodotti e Territori",
   description:
-    "Trova i negozi, i prodotti e i servizi di Castrovillari: cerca, confronta e acquista dai commercianti della tua città.",
+    "Una piattaforma che valorizza le produzioni, le imprese e le identità territoriali, collegando produttori, trasformatori, distributori e consumatori.",
   alternates: { canonical: "/" },
 };
 
@@ -357,8 +357,8 @@ export default async function Home() {
               InCittà
             </p>
             <p className="mt-2 max-w-xs text-[13px] leading-5 text-slate-400">
-              La vetrina digitale del commercio di Castrovillari: negozi, professionisti, prodotti
-              e servizi della tua città in un unico posto.
+              Le filiere dei territori arrivano in città: produzioni, imprese e identità
+              territoriali in rete, a partire dal Pollino e dalla Calabria.
             </p>
           </div>
 
