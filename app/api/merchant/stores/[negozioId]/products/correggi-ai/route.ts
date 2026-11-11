@@ -111,7 +111,7 @@ async function callLLM(
   draftJson: string,
   messaggio: string
 ): Promise<{ messaggio: string; suggestion: unknown }> {
-  const userPrompt = `DRAFT ATTUALE DEL PRODOTTO (JSON):\\n${draftJson}\\n\\n---\\nRICHIESTA DEL VENDITORE:\\n"${messaggio}"\\n\\nApplica la richiesta e restituisci SOLO il JSON richiesto.`;
+  const userPrompt = `DRAFT ATTUALE DEL PRODOTTO (JSON):\n${draftJson}\n\n---\nRICHIESTA DEL VENDITORE:\n"${messaggio}"\n\nApplica la richiesta e restituisci SOLO il JSON richiesto.`;
   const storicoGemini: GeminiMessage[] = storico.map((m) => ({
     role: m.role === "assistant" ? "model" : "user",
     content: m.content,
