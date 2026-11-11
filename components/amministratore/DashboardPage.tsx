@@ -313,14 +313,16 @@ export default function DashboardPage() {
 // ── Sotto-componenti ────────────────────────────────────────────────────────
 
 const etichettaRuolo: Record<string, string> = {
-  amministratore: "Admin",
+  amministratore: "Amministratore",
   commerciante: "Impresa e operatore",
+  corriere: "Operatore logistico",
   utente: "Consumatore",
 };
 
 const stileRuolo: Record<string, string> = {
   amministratore: "bg-blue-100 text-blue-700",
   commerciante: "bg-blue-100 text-blue-700",
+  corriere: "bg-amber-100 text-amber-700",
   utente: "bg-slate-100 text-slate-600",
 };
 
