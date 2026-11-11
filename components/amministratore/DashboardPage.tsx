@@ -146,8 +146,8 @@ export default function DashboardPage() {
       {/* ── KPI ────────────────────────────────────────────────────────── */}
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <KpiCard icon={Users} label="Utenti totali" value={kpi.utenti} sub="account registrati" accent={{ bg: "bg-blue-50", text: "text-blue-600" }} />
-        <KpiCard icon={ShoppingBag} label="Commercianti" value={kpi.commercianti} sub="con ruolo venditore" accent={{ bg: "bg-blue-50", text: "text-blue-600" }} />
-        <KpiCard icon={UserRound} label="Clienti" value={kpi.clienti} sub="con ruolo cliente" accent={{ bg: "bg-blue-50", text: "text-blue-600" }} />
+        <KpiCard icon={ShoppingBag} label="Imprese e operatori" value={kpi.commercianti} sub="con ruolo impresa" accent={{ bg: "bg-blue-50", text: "text-blue-600" }} />
+        <KpiCard icon={UserRound} label="Consumatori" value={kpi.clienti} sub="con ruolo consumatore" accent={{ bg: "bg-blue-50", text: "text-blue-600" }} />
         <KpiCard icon={Store} label="Negozi attivi" value={kpi.negoziAttivi} sub={`${kpi.negoziSospesi} sospesi`} accent={{ bg: "bg-blue-50", text: "text-blue-600" }} />
         <KpiCard icon={Trash2} label="Nel cestino" value={kpi.negoziCestino} sub="ripristinabili" accent={{ bg: "bg-yellow-50", text: "text-yellow-600" }} />
         <KpiCard icon={Package} label="Prodotti" value={kpi.prodotti} sub="pubblicati e attivi" accent={{ bg: "bg-yellow-50", text: "text-yellow-600" }} />
@@ -314,8 +314,8 @@ export default function DashboardPage() {
 
 const etichettaRuolo: Record<string, string> = {
   amministratore: "Admin",
-  commerciante: "Venditore",
-  utente: "Cliente",
+  commerciante: "Impresa e operatore",
+  utente: "Consumatore",
 };
 
 const stileRuolo: Record<string, string> = {

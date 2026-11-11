@@ -5,8 +5,8 @@ import { usePathname } from "next/navigation";
 
 const AREA_TITLES: Array<[string, string]> = [
   ["/amministratore", "Amministratore — InCittà"],
-  ["/cliente", "Area Clienti — LocalHub"],
-  ["/merchant", "Area Venditore — InCittà"],
+  ["/cliente", "Area consumatori — InCittà"],
+  ["/merchant", "Area imprese e operatori — InCittà"],
 ];
 
 export default function AreaTitleSync() {

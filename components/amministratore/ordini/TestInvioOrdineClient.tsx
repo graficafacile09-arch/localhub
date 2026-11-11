@@ -79,7 +79,7 @@ export default function TestInvioOrdineClient() {
         <p className="mt-1 text-sm leading-6 text-slate-600">
           Verifica end-to-end delle notifiche di un ordine (email, WhatsApp, ntfy, notifica
           admin) <strong>senza creare ordini reali</strong>, <strong>senza modificare lo stock</strong>{" "}
-          e <strong>senza generare pagamenti</strong>. Il flusso payment-first del cliente resta
+          e <strong>senza generare pagamenti</strong>. Il flusso payment-first del consumatore resta
           intatto: è uno strumento di diagnostica separato.
         </p>
 

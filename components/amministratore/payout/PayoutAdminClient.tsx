@@ -295,7 +295,7 @@ export default function PayoutAdminClient() {
         <div className="rounded-[1.75rem] border border-white/70 bg-white p-10 text-center shadow-sm">
           <p className="text-sm font-semibold text-slate-700">Nessun payout trovato</p>
           <p className="mt-1 text-xs text-slate-500">
-            I payout compaiono quando un venditore calcola un periodo.
+            I payout compaiono quando un&apos;impresa calcola un periodo.
           </p>
         </div>
       )}

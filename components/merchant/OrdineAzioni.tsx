@@ -95,7 +95,7 @@ function BonificoDirettoConferma({ endpoint, onDone }: { endpoint: string; onDon
   }
   return (
     <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-      <p className="text-sm font-bold text-amber-900">Pagamento tramite bonifico diretto al venditore</p>
+      <p className="text-sm font-bold text-amber-900">Pagamento tramite bonifico diretto all&apos;impresa</p>
       <p className="mt-1 text-xs leading-5 text-amber-800">Conferma solo dopo aver verificato l&apos;effettivo accredito sul conto indicato.</p>
       {!conferma ? (
         <button type="button" onClick={() => setConferma(true)} className="mt-3 rounded-xl bg-yellow-400 px-4 py-2.5 text-xs font-bold text-blue-800 hover:bg-yellow-300">
@@ -179,8 +179,8 @@ export default function OrdineAzioni({
       setSuccesso(
         statoDestinazione === "cancellato"
           ? stato === "in_preparazione"
-            ? "Ordine rifiutato per prodotto non disponibile. Il cliente riceverà un'email."
-            : "Ordine annullato. Il cliente riceverà un'email."
+            ? "Ordine rifiutato per prodotto non disponibile. Il consumatore riceverà un'email."
+            : "Ordine annullato. Il consumatore riceverà un'email."
           : stato === "in_preparazione" && statoDestinazione === "in_lavorazione"
             ? "Ordine accettato. La preparazione è iniziata."
             : "Stato aggiornato con successo."
@@ -353,8 +353,8 @@ export default function OrdineAzioni({
 
       {consegnaLocale && stato === "pronto" && (
         <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-          <p className="font-black">Pacco pronto per il corriere</p>
-          <p className="mt-1 text-xs leading-5 text-emerald-800">Il venditore ha completato la preparazione. Il ritiro e la conferma della consegna spettano al corriere.</p>
+          <p className="font-black">Pacco pronto per l&apos;operatore logistico</p>
+          <p className="mt-1 text-xs leading-5 text-emerald-800">L&apos;impresa ha completato la preparazione. Il ritiro e la conferma della consegna spettano all&apos;operatore logistico.</p>
         </div>
       )}
 
@@ -438,8 +438,8 @@ export default function OrdineAzioni({
               <p className="rounded-xl border border-blue-100 bg-blue-50/60 px-3.5 py-3 text-xs leading-5 text-blue-800">
                 <strong>Attenzione:</strong>{" "}
                 {stato === "in_preparazione"
-                  ? "stai rifiutando l'ordine perché il prodotto non è disponibile. Il cliente riceverà un'email e l'eventuale stock tracciato verrà ripristinato."
-                  : "vuoi davvero annullare questo ordine? Il cliente riceverà un'email di avviso con il motivo indicato e lo stock verrà ripristinato."}
+                  ? "stai rifiutando l'ordine perché il prodotto non è disponibile. Il consumatore riceverà un'email e l'eventuale stock tracciato verrà ripristinato."
+                  : "vuoi davvero annullare questo ordine? Il consumatore riceverà un'email di avviso con il motivo indicato e lo stock verrà ripristinato."}
                 {" "}L&apos;operazione non può essere annullata.
               </p>
 
@@ -504,7 +504,7 @@ export default function OrdineAzioni({
                     placeholder={
                       motivoSelezionato?.richiedeNota
                         ? "Descrivi il motivo dell'annullamento…"
-                        : "Eventuali dettagli per il cliente…"
+                        : "Eventuali dettagli per il consumatore…"
                     }
                     className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100"
                   />

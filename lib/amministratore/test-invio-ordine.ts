@@ -102,7 +102,7 @@ export function numeroOrdineTest(now = new Date()): string {
 /** Messaggio sintetico usato SOLO per il test (mai dati reali di clienti). */
 const DATI_TEST = {
   negozioNome: "NEGOZIO DI TEST — invio ordine",
-  clienteNome: "Cliente",
+  clienteNome: "Consumatore",
   clienteCognome: "Test",
   clienteTelefono: "3930000000",
   prodotto: "Prodotto di test",

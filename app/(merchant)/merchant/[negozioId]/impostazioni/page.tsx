@@ -60,7 +60,7 @@ export default async function MerchantSettingsPage({
                 {store.nome ?? "Il tuo negozio"}
               </h1>
               <p className="mt-2 max-w-xl text-sm leading-6 text-blue-100">
-                Tieni aggiornata la tua vetrina e fai conoscere il tuo negozio ai clienti.
+                Tieni aggiornata la tua vetrina e fai conoscere il tuo negozio ai consumatori.
               </p>
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 {store.categoria && (

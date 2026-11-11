@@ -152,7 +152,7 @@ export default function RimborsoSection({
               </span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-500">Netto venditore</span>
+              <span className="text-slate-500">Netto impresa</span>
               <span className="font-semibold text-slate-800">{formattaEuro(nettoVenditore)}</span>
             </div>
           </>
@@ -241,7 +241,7 @@ export default function RimborsoSection({
                   disabled={inviando}
                   rows={2}
                   maxLength={200}
-                  placeholder="Es. articolo non disponibile, richiesta cliente…"
+                  placeholder="Es. articolo non disponibile, richiesta consumatore…"
                   className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-900 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
                 />
               </div>

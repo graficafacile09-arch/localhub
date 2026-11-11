@@ -275,7 +275,7 @@ export default function PrenotazioneForm({
             {fatto.ora}
           </p>
           <p>
-            <span className="font-bold text-slate-800">Cliente: </span>
+            <span className="font-bold text-slate-800">Consumatore: </span>
             {fatto.cliente}
           </p>
         </div>

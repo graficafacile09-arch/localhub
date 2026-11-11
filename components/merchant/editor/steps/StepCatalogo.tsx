@@ -29,7 +29,7 @@ export default function StepCatalogo({ storeId, basePath, counts }: StepProps) {
             <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
             <p>
               Per rendere il negozio davvero pronto, aggiungi almeno un prodotto: è ciò che i
-              clienti possono acquistare o prenotare.
+              consumatori possono acquistare o prenotare.
             </p>
           </div>
         )}

@@ -379,7 +379,7 @@ export default function SpedizionePaccoConfig({
               Corrieri e servizi
             </p>
             <p className="mb-3 text-[11px] leading-4 text-slate-500">
-              Attiva solo i servizi che vuoi offrire ai tuoi clienti. Un servizio non
+              Attiva solo i servizi che vuoi offrire ai tuoi consumatori. Un servizio non
               attivato resta visibile ma non selezionabile al checkout.
             </p>
 
@@ -437,7 +437,7 @@ export default function SpedizionePaccoConfig({
                             </div>
                             <button type="button" onClick={salvaCostoLocale} disabled={busy} className="h-10 rounded-lg bg-blue-600 px-3 text-xs font-bold text-white disabled:opacity-50">Salva</button>
                           </div>
-                          <p className="mt-1 text-[11px] text-slate-500">Costo predefinito: €2,00. Il venditore può modificarlo.</p>
+                          <p className="mt-1 text-[11px] text-slate-500">Costo predefinito: €2,00. L&apos;impresa può modificarlo.</p>
                         </div>
                       )}
 
@@ -459,8 +459,8 @@ export default function SpedizionePaccoConfig({
                               </span>
                               <span className="block text-[11px] leading-4 text-slate-500">
                                 {m.spedizione_gratuita
-                                  ? "Il cliente non pagherà le spese di spedizione."
-                                  : "Se attiva, il cliente non pagherà le spese di spedizione per questo metodo."}
+                                  ? "Il consumatore non pagherà le spese di spedizione."
+                                  : "Se attiva, il consumatore non pagherà le spese di spedizione per questo metodo."}
                               </span>
                             </span>
                           </label>

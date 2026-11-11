@@ -383,9 +383,9 @@ async function BonificoDirettoInfo({ negozioId, negozioNome, importo, causale }:
   if (!dati) return null;
   return (
     <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-4">
-      <p className="text-sm font-bold text-amber-900">Bonifico bancario diretto al venditore</p>
+      <p className="text-sm font-bold text-amber-900">Bonifico bancario diretto all&apos;impresa</p>
       <div className="mt-3 space-y-1 text-sm text-slate-800">
-        <p><strong>Venditore:</strong> {negozioNome}</p>
+        <p><strong>Impresa:</strong> {negozioNome}</p>
         <p><strong>Intestatario conto:</strong> {dati.bankAccountName}</p>
         <p><strong>Banca:</strong> {dati.bankName}</p>
         <p><strong>IBAN:</strong> <span className="font-mono">{dati.iban}</span></p>

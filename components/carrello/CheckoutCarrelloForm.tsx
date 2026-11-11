@@ -1461,7 +1461,7 @@ function EsitoCheckoutView({
             </p>
             <dl className="mt-3 grid gap-2 text-sm sm:grid-cols-2">
               <div>
-                <dt className="text-[11px] font-semibold uppercase tracking-wide text-amber-800">Venditore</dt>
+                <dt className="text-[11px] font-semibold uppercase tracking-wide text-amber-800">Impresa</dt>
                 <dd className="font-bold text-amber-950">{esito.bonificoDiretto.venditoreNome}</dd>
               </div>
               <div>

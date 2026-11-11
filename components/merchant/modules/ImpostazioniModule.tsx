@@ -96,7 +96,7 @@ export default function ImpostazioniModule({ storeId }: Props) {
           <Toggle icon={<Smartphone className="h-4 w-4 text-slate-500" />} label="Mostra numero telefono" description="Mostra il telefono nella pagina pubblica" checked={form.mostra_telefono} onChange={(v) => setForm((f) => ({ ...f, mostra_telefono: v }))} />
           <Toggle icon={<MapPin className="h-4 w-4 text-slate-500" />} label="Mostra indirizzo" description="Mostra l'indirizzo nella pagina pubblica" checked={form.mostra_indirizzo} onChange={(v) => setForm((f) => ({ ...f, mostra_indirizzo: v }))} />
           <Toggle icon={<Clock className="h-4 w-4 text-slate-500" />} label="Mostra orari" description="Mostra la sezione orari nella pagina pubblica" checked={form.mostra_orari} onChange={(v) => setForm((f) => ({ ...f, mostra_orari: v }))} />
-          <Toggle icon={<MessageCircle className="h-4 w-4 text-slate-500" />} label="Accetta WhatsApp" description="Permetti ai clienti di contattarti via WhatsApp" checked={form.accetta_whatsapp} onChange={(v) => setForm((f) => ({ ...f, accetta_whatsapp: v }))} />
+          <Toggle icon={<MessageCircle className="h-4 w-4 text-slate-500" />} label="Accetta WhatsApp" description="Permetti ai consumatori di contattarti via WhatsApp" checked={form.accetta_whatsapp} onChange={(v) => setForm((f) => ({ ...f, accetta_whatsapp: v }))} />
           <Toggle icon={<Star className="h-4 w-4 text-slate-500" />} label="In evidenza" description="Il negozio appare nella sezione In Evidenza in homepage" checked={form.in_evidenza} onChange={(v) => setForm((f) => ({ ...f, in_evidenza: v }))} />
         </div>
 

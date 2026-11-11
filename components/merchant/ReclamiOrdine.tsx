@@ -172,7 +172,7 @@ export default function ReclamiOrdine({
           [reclamoId]: [...(prev[reclamoId] ?? []), msg],
         }));
       }
-      setSuccesso("Messaggio inviato al cliente. Verrà avvisato via email.");
+      setSuccesso("Messaggio inviato al consumatore. Verrà avvisato via email.");
       setTestoMessaggio("");
       setErroreInvio(null);
       router.refresh();
@@ -269,7 +269,7 @@ export default function ReclamiOrdine({
                     </span>
                     <div className="min-w-0 max-w-[85%] rounded-xl bg-slate-100 px-3.5 py-2.5 ring-1 ring-slate-200">
                       <p className="text-[11px] font-bold text-slate-700">
-                        {reclamo.clienteNome || "Cliente"}
+                        {reclamo.clienteNome || "Consumatore"}
                         <span className="ml-2 font-medium text-slate-400">
                           segnalazione iniziale
                         </span>
@@ -310,7 +310,7 @@ export default function ReclamiOrdine({
                             }`}
                           >
                             <p className="flex flex-wrap items-center gap-x-2 text-[11px] font-bold text-slate-700">
-                              {èVenditore ? msg.mittenteNome || "Negozio" : "Cliente"}
+                              {èVenditore ? msg.mittenteNome || "Negozio" : "Consumatore"}
                               <span className="font-medium text-slate-400">
                                 {formattaDataOraReclamo(msg.createdAt) || ""}
                               </span>
@@ -325,7 +325,7 @@ export default function ReclamiOrdine({
                   </ol>
                 ) : (
                   <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50/60 px-4 py-3 text-center text-xs text-slate-400">
-                    Nessuna risposta ancora: scrivi tu il primo messaggio al cliente.
+                    Nessuna risposta ancora: scrivi tu il primo messaggio al consumatore.
                   </p>
                 )}
 
@@ -350,7 +350,7 @@ export default function ReclamiOrdine({
                       placeholder={
                         reclamoChiuso
                           ? "Reclamo chiuso: non è possibile inviare messaggi."
-                          : "Scrivi una risposta al cliente…"
+                          : "Scrivi una risposta al consumatore…"
                       }
                       className="min-w-0 flex-1 resize-none rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none transition focus:border-blue-300 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
                     />

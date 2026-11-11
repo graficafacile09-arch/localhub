@@ -42,9 +42,9 @@ const ACCESSI_RAPIDI = [
     icon: Users,
   },
   {
-    label: "Corrieri locali",
+    label: "Logistica e consegne",
     href: "/amministratore/corrieri",
-    desc: "Approvazione corrieri locali",
+    desc: "Approvazione operatori logistici",
     icon: Truck,
   },
   {

@@ -118,7 +118,7 @@ export default function RichiestaInfoModule({ storeId }: Props) {
       <ModuleShell
         icon={<MessageSquare className="h-4 w-4" />}
         title="Richiesta informazioni"
-        subtitle="Ricevi richieste dai clienti dalla tua pagina."
+        subtitle="Ricevi richieste dai consumatori dalla tua pagina."
         id="richiesta_info"
       >
         <p className="text-sm text-slate-400">Caricamento...</p>
@@ -132,7 +132,7 @@ export default function RichiestaInfoModule({ storeId }: Props) {
     <ModuleShell
       icon={<MessageSquare className="h-4 w-4" />}
       title="Richiesta informazioni"
-      subtitle="Ricevi richieste dai clienti dalla tua pagina."
+      subtitle="Ricevi richieste dai consumatori dalla tua pagina."
       id="richiesta_info"
     >
       {senzaEmail && (
@@ -195,23 +195,23 @@ export default function RichiestaInfoModule({ storeId }: Props) {
             />
 
             <div>
-              <p className="mb-1.5 text-xs font-semibold text-slate-500">Dati cliente</p>
+              <p className="mb-1.5 text-xs font-semibold text-slate-500">Dati consumatore</p>
               <div className="space-y-1.5">
                 <Toggle
                   label="Email obbligatoria"
-                  description="Il cliente deve inserire la sua email"
+                  description="Il consumatore deve inserire la sua email"
                   checked={config.email_obbligatoria}
                   onChange={(v) => update({ email_obbligatoria: v })}
                 />
                 <Toggle
                   label="Telefono obbligatorio"
-                  description="Il cliente deve inserire il suo telefono"
+                  description="Il consumatore deve inserire il suo telefono"
                   checked={config.telefono_obbligatorio}
                   onChange={(v) => update({ telefono_obbligatorio: v })}
                 />
                 <Toggle
                   label="Messaggio obbligatorio"
-                  description="Il cliente deve scrivere un messaggio"
+                  description="Il consumatore deve scrivere un messaggio"
                   checked={config.messaggio_obbligatorio}
                   onChange={(v) => update({ messaggio_obbligatorio: v })}
                 />
@@ -234,7 +234,7 @@ export default function RichiestaInfoModule({ storeId }: Props) {
                 </span>
                 {config.attiva && (
                   <span className="flex items-center gap-1 text-[11px] font-semibold text-emerald-600">
-                    <Check className="h-3.5 w-3.5" /> Pulsante visibile ai clienti
+                    <Check className="h-3.5 w-3.5" /> Pulsante visibile ai consumatori
                   </span>
                 )}
               </div>

@@ -77,7 +77,7 @@ export default function ConsegneLocaliAdmin() {
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">Operatività</p>
           <h2 className="mt-1 text-xl font-black text-slate-900">Consegne locali</h2>
-          <p className="mt-1 text-sm text-slate-500">Assegna gli ordini del corriere locale esclusivamente ai corrieri approvati.</p>
+          <p className="mt-1 text-sm text-slate-500">Assegna gli ordini di logistica e consegne esclusivamente agli operatori logistici approvati.</p>
         </div>
       </div>
 

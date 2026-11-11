@@ -394,12 +394,12 @@ export default async function Home() {
             <ul className="mt-3 space-y-2.5 text-sm">
               <li>
                 <Link href="/login?area=cliente" className="transition hover:text-yellow-300">
-                  Area Clienti
+                  Area consumatori
                 </Link>
               </li>
               <li>
                 <Link href="/login?area=merchant" className="transition hover:text-yellow-300">
-                  Area Venditore
+                  Area imprese e operatori
                 </Link>
               </li>
               <li>

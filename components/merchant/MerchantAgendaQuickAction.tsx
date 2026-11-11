@@ -86,7 +86,7 @@ export default function MerchantAgendaQuickAction({
         <div className="min-w-0">
           <h2 className={`text-base font-bold tracking-tight ${titleClass}`}>Agenda</h2>
           <p className={`mt-0.5 text-xs leading-5 ${descriptionClass}`}>
-            {active ? "Calendario e appuntamenti dei clienti." : "Attiva l'Agenda per gestire gli appuntamenti."}
+            {active ? "Calendario e appuntamenti dei consumatori." : "Attiva l'Agenda per gestire gli appuntamenti."}
           </p>
           {error && <p className="mt-1 text-[10px] font-semibold text-red-600">{error}</p>}
         </div>

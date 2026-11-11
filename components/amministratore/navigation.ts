@@ -83,7 +83,7 @@ export const adminNavGroups: AdminNavGroup[] = [
         href: `${ADMIN_BASE}/prodotti`,
         label: "Prodotti",
         description:
-          "Supervisione del catalogo prodotti pubblicato dai commercianti.",
+          "Supervisione del catalogo prodotti pubblicato dalle imprese.",
         icon: Package,
       },
       {
@@ -118,7 +118,7 @@ export const adminNavGroups: AdminNavGroup[] = [
         href: `${ADMIN_BASE}/incassi`,
         label: "Incassi",
         description:
-          "Rendicontazione economica globale: GMV, commissioni piattaforma, rimborsi e netto venditori.",
+          "Rendicontazione economica globale: GMV, commissioni piattaforma, rimborsi e netto imprese.",
         icon: Wallet,
       },
       {

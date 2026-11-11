@@ -42,8 +42,8 @@ type VoceMenu = {
 
 /** Etichette del profilo commerciale, distinto dai ruoli tecnici. */
 const ETICHETTE_PROFILO: Record<ProfiloCommerciale, string> = {
-  acquirente: "Acquirente",
-  venditore: "Venditore",
+  acquirente: "Consumatore",
+  venditore: "Impresa e operatore",
   amministratore: "Amministratore",
   corriere: "Logistica e consegne",
 };
@@ -236,7 +236,7 @@ export default function AccountMenu({
                 className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition hover:bg-slate-50 hover:text-blue-700"
               >
                 <Truck className="h-4 w-4 shrink-0 text-emerald-600" aria-hidden />
-                Area Corriere Locale
+                Logistica e consegne
               </Link>
             </div>
           </div>

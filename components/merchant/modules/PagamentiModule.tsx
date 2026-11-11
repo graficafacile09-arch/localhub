@@ -75,8 +75,8 @@ const PROVIDER_INFO: Record<string, ProviderInfoEntry> = {
       "Nessuna chiave API richiesta: Stripe gestisce creazione account, registrazione e verifica (KYC/IBAN) nel suo portale. Apple Pay, Google Pay e Klarna sono gestiti da Stripe quando disponibili sull'account Connect.",
   },
   bonifico_diretto_venditore: {
-    nome: "Bonifico bancario diretto al venditore",
-    descrizione: "Pagamento manuale sul conto bancario del Venditore",
+    nome: "Bonifico bancario diretto all'impresa",
+    descrizione: "Pagamento manuale sul conto bancario dell'impresa",
     campoId: "",
     campoSecret: "",
     campoWebhook: "",
@@ -93,8 +93,8 @@ const METODI_INFO: Record<string, { nome: string; descrizione: string }> = {
   sepa_debit: { nome: "SEPA", descrizione: "Addebito diretto SEPA" },
   bonifico_istantaneo: { nome: "Bonifico istantaneo", descrizione: "Pagamento tramite Stripe" },
   bonifico_diretto_venditore: {
-    nome: "Bonifico bancario diretto al venditore",
-    descrizione: "Pagamento manuale sul conto bancario del Venditore",
+    nome: "Bonifico bancario diretto all'impresa",
+    descrizione: "Pagamento manuale sul conto bancario dell'impresa",
   },
 };
 
@@ -413,7 +413,7 @@ export default function PagamentiModule({ storeId }: Props) {
         <p className="text-xs leading-5 text-yellow-900">
           Ci sono <strong>due passaggi distinti</strong>: prima configura e attiva il{" "}
           <strong>provider</strong> (collegando il gateway), poi abilita il relativo{" "}
-          <strong>metodo al checkout</strong> per renderlo selezionabile dai clienti.
+          <strong>metodo al checkout</strong> per renderlo selezionabile dai consumatori.
           Un metodo online è disponibile solo se il suo provider è configurato E il metodo
           è abilitato.
         </p>
@@ -564,7 +564,7 @@ export default function PagamentiModule({ storeId }: Props) {
                           Apple Pay e Google Pay sono gestiti da Stripe (Dynamic Payment
                           Methods) e compaiono automaticamente quando abilitati nel Dashboard
                           Stripe. Non vengono richiesti né mostrati Secret Key o Webhook Secret
-                          del venditore. Al termine dell&apos;onboarding verrai riportato su
+                          dell&apos;impresa. Al termine dell&apos;onboarding verrai riportato su
                           /ritorno-stripe.
                         </p>
                       </div>
@@ -782,7 +782,7 @@ export default function PagamentiModule({ storeId }: Props) {
             Metodi mostrati al checkout
           </p>
           <p className="mb-3 text-[11px] leading-4 text-slate-400">
-            Abilita i metodi che i clienti possono selezionare. Un metodo online diventa
+            Abilita i metodi che i consumatori possono selezionare. Un metodo online diventa
             realmente selezionabile solo se il relativo provider è configurato e attivo
             (sezione sopra).
           </p>

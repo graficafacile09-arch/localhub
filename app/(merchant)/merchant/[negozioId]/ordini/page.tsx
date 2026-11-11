@@ -150,7 +150,7 @@ export default async function MerchantOrdiniPage({
           title={filtro === "tutti" ? "Nessun ordine ricevuto" : "Nessun ordine in questo filtro"}
           description={
             filtro === "tutti"
-              ? "Quando un cliente effettua un acquisto dal sito, l'ordine comparirà qui con tutti i dettagli da gestire."
+              ? "Quando un consumatore effettua un acquisto dal sito, l'ordine comparirà qui con tutti i dettagli da gestire."
               : "Non ci sono ordini nello stato selezionato. Prova un altro filtro."
           }
           action={
@@ -170,7 +170,7 @@ export default async function MerchantOrdiniPage({
           title={filtro === "reclami" ? "Nessun reclamo aperto" : "Nessun ordine in questo filtro"}
           description={
             filtro === "reclami"
-              ? "Quando un cliente segnala un problema su un ordine, il reclamo comparirà qui."
+              ? "Quando un consumatore segnala un problema su un ordine, il reclamo comparirà qui."
               : "Non ci sono ordini nello stato selezionato. Prova un altro filtro."
           }
           action={

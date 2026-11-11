@@ -421,7 +421,7 @@ export default function UtentiDettaglioModal({
             <p className="leading-6">
               Questo è l&apos;account amministratore autorizzato della piattaforma:
               il ruolo Amministratore è permanente e l&apos;account non può essere
-              eliminato. I ruoli Cliente e Venditore restano gestibili.
+              eliminato. I ruoli Consumatore e Impresa e operatore restano gestibili.
             </p>
           </div>
         )}

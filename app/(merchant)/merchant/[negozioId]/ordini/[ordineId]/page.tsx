@@ -184,7 +184,7 @@ export default async function MerchantOrdineDettaglioPage({
         ruolo="venditore"
         sottoTitolo={
           ordine.stato === "cancellato"
-            ? "Ordine terminale: lo stock è stato ripristinato (se tracciato) e il cliente è stato avvisato via email."
+            ? "Ordine terminale: lo stock è stato ripristinato (se tracciato) e il consumatore è stato avvisato via email."
             : undefined
         }
       />
@@ -288,7 +288,7 @@ export default async function MerchantOrdineDettaglioPage({
           />
 
           {ordine.note && (
-            <Sezione icon={MessageSquareText} titolo="Note del cliente">
+            <Sezione icon={MessageSquareText} titolo="Note del consumatore">
               <p className="text-sm leading-6 text-slate-700">{ordine.note}</p>
             </Sezione>
           )}

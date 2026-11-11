@@ -25,7 +25,7 @@ export default function AffidaCorriereLocale({ negozioId, ordineId }: Props) {
       );
       const json = await response.json();
       if (!response.ok) {
-        setError(json?.error?.message ?? "Impossibile caricare i corrieri.");
+        setError(json?.error?.message ?? "Impossibile caricare gli operatori logistici.");
         return;
       }
       setCorrieri(json?.data?.corrieri ?? []);
@@ -62,7 +62,7 @@ export default function AffidaCorriereLocale({ negozioId, ordineId }: Props) {
         return;
       }
       setStato("assegnata");
-      setMessage("Consegna affidata al corriere. Il corriere può ora gestirla dalla sua area.");
+      setMessage("Consegna affidata all'operatore logistico. Può ora gestirla dalla sua area.");
     } catch {
       setError("Errore di rete. Riprova.");
     } finally {
@@ -75,7 +75,7 @@ export default function AffidaCorriereLocale({ negozioId, ordineId }: Props) {
       <section className="rounded-[1.75rem] border-2 border-blue-100 bg-gradient-to-br from-blue-50 to-white p-5 shadow-sm">
         <div className="flex items-center gap-3 text-sm font-semibold text-blue-800">
           <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
-          Caricamento affidamento corriere…
+          Caricamento affidamento operatore logistico…
         </div>
       </section>
     );
@@ -90,9 +90,9 @@ export default function AffidaCorriereLocale({ negozioId, ordineId }: Props) {
           </span>
           <div>
             <p className="text-xs font-black uppercase tracking-[0.18em] text-blue-700">Consegna locale</p>
-            <h2 className="mt-1 text-xl font-black text-slate-900">Affida corriere</h2>
+            <h2 className="mt-1 text-xl font-black text-slate-900">Affida operatore logistico</h2>
             <p className="mt-1 max-w-xl text-sm leading-6 text-slate-600">
-              Scegli il corriere locale approvato che dovrà prendere in carico questo ordine.
+              Scegli l&apos;operatore logistico approvato che dovrà prendere in carico questo ordine.
             </p>
           </div>
         </div>
@@ -104,14 +104,14 @@ export default function AffidaCorriereLocale({ negozioId, ordineId }: Props) {
 
       {corrieri.length === 0 ? (
         <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-          <p className="font-black">Nessun corriere approvato disponibile</p>
-          <p className="mt-1 text-xs leading-5">Un amministratore deve approvare almeno un account corriere prima di poter affidare la consegna.</p>
+          <p className="font-black">Nessun operatore logistico approvato disponibile</p>
+          <p className="mt-1 text-xs leading-5">Un amministratore deve approvare almeno un account operatore logistico prima di poter affidare la consegna.</p>
         </div>
       ) : (
         <div className="mt-5 flex flex-col gap-3 md:flex-row md:items-end">
           <div className="min-w-0 flex-1">
             <label htmlFor={`corriere-locale-${ordineId}`} className="text-xs font-black uppercase tracking-wide text-slate-500">
-              Corriere approvato
+              Operatore logistico approvato
             </label>
             <select
               id={`corriere-locale-${ordineId}`}
@@ -120,7 +120,7 @@ export default function AffidaCorriereLocale({ negozioId, ordineId }: Props) {
               disabled={saving}
               className="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-800 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
             >
-              <option value="">Seleziona un corriere…</option>
+              <option value="">Seleziona un operatore logistico…</option>
               {corrieri.map((courier) => (
                 <option key={courier.userId} value={courier.userId}>
                   {courier.nome} {courier.cognome}
@@ -135,7 +135,7 @@ export default function AffidaCorriereLocale({ negozioId, ordineId }: Props) {
             className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-yellow-400 px-6 py-3 text-sm font-black text-blue-900 shadow-sm transition hover:bg-yellow-300 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : <Truck className="h-4 w-4" aria-hidden />}
-            {saving ? "Affidamento…" : "Affida corriere"}
+            {saving ? "Affidamento…" : "Affida operatore logistico"}
           </button>
         </div>
       )}

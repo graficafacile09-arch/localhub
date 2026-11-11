@@ -64,15 +64,15 @@ export const RUOLI_UTENTE: Record<
     chip: "bg-blue-50 text-blue-700 ring-blue-200",
   },
   commerciante: {
-    label: "Venditore",
+    label: "Impresa e operatore",
     chip: "bg-emerald-50 text-emerald-700 ring-emerald-200",
   },
   corriere: {
-    label: "Corriere",
+    label: "Operatore logistico",
     chip: "bg-amber-50 text-amber-700 ring-amber-200",
   },
   utente: {
-    label: "Cliente",
+    label: "Consumatore",
     chip: "bg-slate-100 text-slate-600 ring-slate-200",
   },
 };

@@ -132,7 +132,7 @@ export default function ConsegneLocali() {
 
   const communications = items.filter((i) => i.comunicazioni_non_lette > 0);
 
-  if (loading) return <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-500">Caricamento dashboard corriere…</div>;
+  if (loading) return <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-500">Caricamento dashboard logistica e consegne…</div>;
 
   return (
     <div className="space-y-6">
@@ -172,7 +172,7 @@ export default function ConsegneLocali() {
                 {url && <a href={url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-bold text-blue-700"><MapPin className="h-4 w-4" />Navigazione</a>}
                 <button onClick={() => setChat(chat === i.ordine_id ? null : i.ordine_id)} className="inline-flex items-center gap-2 rounded-xl border border-blue-200 bg-white px-4 py-2 text-sm font-bold text-blue-700"><MessageCircle className="h-4 w-4" />{chat === i.ordine_id ? "Chiudi comunicazioni" : "Comunicazioni"}{i.comunicazioni_non_lette > 0 ? ` · ${i.comunicazioni_non_lette}` : ""}</button>
                 {isReadyForPickup(i) && <button disabled={busy === i.ordine_id} onClick={() => void update(i.ordine_id, "ritirata")} className="inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-4 py-2 text-sm font-bold text-white disabled:opacity-50"><PackageCheck className="h-4 w-4" />{busy === i.ordine_id ? "Aggiornamento…" : "Ritira pacco"}</button>}
-                {isWaitingForSeller(i) && <span className="inline-flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-800"><Clock3 className="h-4 w-4" />In attesa che il venditore prepari il pacco</span>}
+                {isWaitingForSeller(i) && <span className="inline-flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-800"><Clock3 className="h-4 w-4" />In attesa che l&apos;impresa prepari il pacco</span>}
                 {(actions[i.stato] ?? []).map((a) => <button key={a.stato} disabled={busy === i.ordine_id} onClick={() => void update(i.ordine_id, a.stato)} className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold text-white disabled:opacity-50 ${a.stato === "problema_consegna" || a.stato === "annullata" ? "bg-red-600" : "bg-emerald-700"}`}>{a.stato === "consegnata" ? <CheckCircle2 className="h-4 w-4" /> : a.stato === "ritirata" ? <PackageCheck className="h-4 w-4" /> : a.stato === "problema_consegna" ? <AlertTriangle className="h-4 w-4" /> : <Truck className="h-4 w-4" />}{busy === i.ordine_id ? "Aggiornamento…" : a.label}</button>)}
               </div>
               {chat === i.ordine_id && <div className="mt-4"><OrdineComunicazioni ordineId={i.ordine_id} /></div>}
@@ -183,7 +183,7 @@ export default function ConsegneLocali() {
 
       <section id="comunicazioni" className="scroll-mt-24 rounded-2xl border border-blue-100 bg-blue-50/50 p-5 shadow-sm">
         <div className="flex items-center gap-2"><MessageCircle className="h-5 w-5 text-blue-700" /><h2 className="text-lg font-black text-slate-900">Comunicazioni</h2>{stats.nonLetti > 0 && <span className="rounded-full bg-blue-600 px-2.5 py-1 text-xs font-bold text-white">{stats.nonLetti} non letti</span>}</div>
-        <p className="mt-1 text-sm text-slate-600">Cliente, venditore e corriere parlano nello stesso ordine. Le conversazioni con messaggi nuovi sono evidenziate nelle consegne.</p>
+        <p className="mt-1 text-sm text-slate-600">Consumatore, impresa e operatore logistico parlano nello stesso ordine. Le conversazioni con messaggi nuovi sono evidenziate nelle consegne.</p>
         {communications.length > 0 ? <div className="mt-4 space-y-2">{communications.map((i) => <button key={i.ordine_id} onClick={() => { setFilter("tutte"); setChat(i.ordine_id); document.getElementById("consegne")?.scrollIntoView({ behavior: "smooth" }); }} className="flex w-full items-center justify-between rounded-xl bg-white p-3 text-left shadow-sm hover:bg-blue-50"><span className="font-bold text-slate-800">Ordine {i.ordini?.numero ?? i.ordine_id}</span><span className="text-sm font-black text-blue-700">{i.comunicazioni_non_lette} nuovi</span></button>)}</div> : <p className="mt-4 rounded-xl bg-white p-4 text-sm text-slate-500">Nessun nuovo messaggio.</p>}
       </section>
 

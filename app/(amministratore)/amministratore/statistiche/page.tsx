@@ -304,8 +304,8 @@ function BarroneOrizzontale({
 
 const ETICHETTA_RUOLO: Record<string, string> = {
   amministratore: "Amministratori",
-  commerciante: "Commercianti",
-  utente: "Utenti",
+  commerciante: "Imprese e operatori",
+  utente: "Consumatori",
 };
 
 function BarroneRuoli({ dati }: { dati: { chiave: string; count: number }[] }) {

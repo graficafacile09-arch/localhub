@@ -25,7 +25,7 @@ import { EVENTO_AGGIORNA_NOTIFICHE } from "./notifiche-eventi";
 const ETICHETTE_TIPO: Record<string, string> = {
   ordine_nuovo: "Ordine",
   segnalazione_nuova: "Segnalazione",
-  venditore_registrato: "Venditore",
+  venditore_registrato: "Impresa e operatore",
   negozio_creato: "Negozio",
   prodotto_creato: "Prodotto",
   offerta_creata: "Offerta",

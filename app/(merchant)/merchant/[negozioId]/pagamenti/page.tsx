@@ -27,7 +27,7 @@ export default async function MerchantPagamentiPage({
       <MerchantEmptyState
         title="Configurazione database richiesta"
         description={
-          storeResult.errorMessage ?? "Esegui la migrazione SQL per attivare l'area venditore."
+          storeResult.errorMessage ?? "Esegui la migrazione SQL per attivare l'area imprese e operatori."
         }
       />
     );

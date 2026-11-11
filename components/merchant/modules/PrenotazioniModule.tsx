@@ -382,7 +382,7 @@ export default function PrenotazioniModule({ storeId, markReadAgenda = false }: 
       <ModuleShell
         icon={<CalendarCheck className="h-4 w-4" />}
         title="Agenda"
-        subtitle="Ricevi e gestisci gli appuntamenti dei clienti."
+        subtitle="Ricevi e gestisci gli appuntamenti dei consumatori."
         id="prenotazioni"
       >
         <p className="text-sm text-slate-400">Caricamento...</p>
@@ -394,7 +394,7 @@ export default function PrenotazioniModule({ storeId, markReadAgenda = false }: 
     <ModuleShell
       icon={<CalendarCheck className="h-4 w-4" />}
       title="Agenda"
-      subtitle="Ricevi e gestisci gli appuntamenti dei clienti."
+      subtitle="Ricevi e gestisci gli appuntamenti dei consumatori."
       id="prenotazioni"
     >
       <div className="space-y-4">
@@ -416,7 +416,7 @@ export default function PrenotazioniModule({ storeId, markReadAgenda = false }: 
                 Servizi prenotabili
               </p>
               <p className="mt-1 text-xs text-slate-500">
-                Crea qui le prestazioni che il cliente potrà scegliere in Agenda. La durata
+                Crea qui le prestazioni che il consumatore potrà scegliere in Agenda. La durata
                 determina automaticamente la durata dell&apos;appuntamento.
               </p>
             </div>
@@ -546,7 +546,7 @@ export default function PrenotazioniModule({ storeId, markReadAgenda = false }: 
         <Toggle
           icon={<CalendarCheck className="h-4 w-4 text-blue-600" />}
           label="Attiva agenda"
-          description="Consenti ai clienti di prenotare i tuoi servizi"
+          description="Consenti ai consumatori di prenotare i tuoi servizi"
           checked={config.attiva}
           onChange={(v) => update({ attiva: v })}
         />

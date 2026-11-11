@@ -547,14 +547,14 @@ export default function MerchantProductForm({
         <Toggle
           icon={<span className="text-base" aria-hidden>18+</span>}
           label="Richiede verifica della maggiore età"
-          description="Attiva questa opzione per prodotti la cui vendita è riservata ai maggiorenni. Il checkout richiederà la conferma del cliente e l'ordine segnalerà al venditore che deve effettuare i controlli previsti dalla legge."
+          description="Attiva questa opzione per prodotti la cui vendita è riservata ai maggiorenni. Il checkout richiederà la conferma del consumatore e l'ordine segnalerà all'impresa che deve effettuare i controlli previsti dalla legge."
           checked={soggettoVerificaEta}
           onChange={(v) => {
             setSoggettoVerificaEta(v);
             notifyDirty(v !== Boolean(initialValues.soggetto_verifica_eta));
           }}
         />
-        {soggettoVerificaEta ? <p className="mt-2 text-[10px] leading-4 text-amber-800">La conferma online non sostituisce il controllo dell'identità richiesto al venditore nei casi previsti dalla legge.</p> : null}
+        {soggettoVerificaEta ? <p className="mt-2 text-[10px] leading-4 text-amber-800">La conferma online non sostituisce il controllo dell'identità richiesto all&apos;impresa nei casi previsti dalla legge.</p> : null}
       </div>
 
       {/* Banner prezzo AI */}
