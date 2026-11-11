@@ -33,7 +33,7 @@ REGOLE ASSOLUTE:
 6. Gli array (paroleChiave, caratteristiche, ingredienti, allergeni) devono restare array di stringhe.
 7. "filtriCatalogo" deve restare un oggetto chiave-valore stringa (oppure null).
 8. Usa ESATTAMENTE i nomi dei campi presenti nel JSON del draft (camelCase); non inventare chiavi snake_case.
-8. Rispondi SEMPRE in italiano, in modo conversazionale, breve e con elenchi puntati quando riepiloghi i cambiamenti.
+9. Rispondi SEMPRE in italiano, in modo conversazionale, breve e con elenchi puntati quando riepiloghi i cambiamenti.
 
 RISPOSTA: restituisci SOLO JSON valido con questa struttura esatta:
 {
