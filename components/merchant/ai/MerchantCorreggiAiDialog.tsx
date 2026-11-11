@@ -231,8 +231,14 @@ export default function MerchantCorreggiAiDialog({
         ]);
         setHistory((prev) => [...prev, draft]);
       } catch (caught) {
-        setErroreInvio(caught instanceof Error ? caught.message : "Errore imprevisto.");
-        setMessaggi((prev) => prev.slice(0, -1)); // rimuovi il messaggio utente non andato a buon fine
+        // Conserva il testo (anche se proviene dalla trascrizione): l'utente deve
+        // poterlo leggere e ritentare senza doverlo dettare o riscrivere.
+        setInput(messaggio);
+        setErroreInvio(
+          caught instanceof Error
+            ? caught.message
+            : "Errore imprevisto durante la correzione. Il testo è stato conservato."
+        );
       } finally {
         setInCaricamento(false);
       }

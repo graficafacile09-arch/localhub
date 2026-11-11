@@ -6,6 +6,8 @@ import { diffCorrezioni, mergeSuggestion } from "@/lib/product-assistant/corregg
 import type { ProductVisionSuggestion } from "@/lib/product-assistant/types";
 import { callGeminiText, type GeminiMessage } from "@/lib/ai/gemini-text";
 
+export const maxDuration = 45;
+
 /**
  * POST /api/merchant/stores/[negozioId]/products/correggi-ai
  *
@@ -27,10 +29,11 @@ REGOLE ASSOLUTE:
 2. Modifica ESCLUSIVAMENTE i campi coinvolti dalla richiesta. Tutti gli altri campi devono restare IDENTICI ai valori ricevuti.
 3. Se la richiesta dice di correggere solo un campo (es. "correggi solo la descrizione"), tocca solo quel campo.
 4. Se la richiesta NON è una correzione (es. "va bene", "grazie", "perfetto", saluti), NON modificare nulla e rispondi che il prodotto è pronto.
-5. "stato_condizione" può essere solo "nuovo", "usato" o "ricondizionato".
-6. Gli array (parole_chiave, caratteristiche, ingredienti, allergeni) devono restare array di stringhe.
-7. "filtri_catalogo" deve restare un oggetto chiave-valore stringa (oppure null).
-8. Rispondi SEMPRE in italiano, in modo conversazionale, breve e con elenchi puntati quando riepiloghi i cambiamenti.
+5. "statoCondizione" può essere solo "nuovo", "usato" o "ricondizionato".
+6. Gli array (paroleChiave, caratteristiche, ingredienti, allergeni) devono restare array di stringhe.
+7. "filtriCatalogo" deve restare un oggetto chiave-valore stringa (oppure null).
+8. Usa ESATTAMENTE i nomi dei campi presenti nel JSON del draft (camelCase); non inventare chiavi snake_case.
+9. Rispondi SEMPRE in italiano, in modo conversazionale, breve e con elenchi puntati quando riepiloghi i cambiamenti.
 
 RISPOSTA: restituisci SOLO JSON valido con questa struttura esatta:
 {
@@ -38,29 +41,106 @@ RISPOSTA: restituisci SOLO JSON valido con questa struttura esatta:
   "suggestion": { ...draft COMPLETO aggiornato con TUTTI i campi... }
 }`;
 
+async function callOpenRouterText(
+  storico: MessaggioConversazione[],
+  userPrompt: string
+): Promise<string> {
+  const apiKey = process.env.OPENROUTER_API_KEY;
+  if (!apiKey) throw new Error("Provider AI di riserva non configurato.");
+
+  const model = process.env.OPENROUTER_MODEL?.trim() || "qwen/qwen2.5-vl-72b-instruct";
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15_000);
+
+  try {
+    const messages = [
+      { role: "system", content: SYSTEM_PROMPT },
+      ...storico.map((m) => ({
+        role: m.role,
+        content: m.content,
+      })),
+      { role: "user", content: userPrompt },
+    ];
+
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://www.incitta.online",
+        "X-Title": "InCittà",
+      },
+      body: JSON.stringify({
+        model,
+        messages,
+        max_tokens: 2000,
+        temperature: 0.2,
+      }),
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      throw new Error(`OpenRouter non disponibile (HTTP ${response.status}).`);
+    }
+
+    const data = (await response.json()) as {
+      choices?: Array<{ message?: { content?: string | Array<{ text?: string }> } }>;
+    };
+    const value = data.choices?.[0]?.message?.content;
+    const text = typeof value === "string"
+      ? value.trim()
+      : Array.isArray(value)
+        ? value.map((part) => part.text ?? "").join("").trim()
+        : "";
+
+    if (!text) throw new Error("Il provider AI di riserva ha restituito una risposta vuota.");
+    return text;
+  } catch (caught: unknown) {
+    if (caught instanceof DOMException && caught.name === "AbortError") {
+      throw new Error("Timeout provider AI di riserva (15s).");
+    }
+    if (caught instanceof Error) throw caught;
+    throw new Error("Errore provider AI di riserva.");
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
 async function callLLM(
   storico: MessaggioConversazione[],
   draftJson: string,
   messaggio: string
 ): Promise<{ messaggio: string; suggestion: unknown }> {
-  // Ruoli Gemini: "assistant" → "model" (Gemini non accetta "assistant").
+  const userPrompt = `DRAFT ATTUALE DEL PRODOTTO (JSON):\n${draftJson}\n\n---\nRICHIESTA DEL VENDITORE:\n"${messaggio}"\n\nApplica la richiesta e restituisci SOLO il JSON richiesto.`;
   const storicoGemini: GeminiMessage[] = storico.map((m) => ({
     role: m.role === "assistant" ? "model" : "user",
     content: m.content,
   }));
 
-  const content = await callGeminiText({
-    systemPrompt: SYSTEM_PROMPT,
-    history: storicoGemini,
-    userPrompt: `DRAFT ATTUALE DEL PRODOTTO (JSON):\n${draftJson}\n\n---\nRICHIESTA DEL VENDITORE:\n"${messaggio}"\n\nApplica la richiesta e restituisci SOLO il JSON richiesto.`,
-    maxTokens: 2000,
-    temperature: 0.2,
-    json: true,
-    timeoutMs: 60_000,
-  });
+  let content: string;
+  try {
+    // Una sola chiamata breve: evita tre tentativi lunghi quando Gemini è irraggiungibile.
+    content = await callGeminiText({
+      systemPrompt: SYSTEM_PROMPT,
+      history: storicoGemini,
+      userPrompt,
+      maxTokens: 2000,
+      temperature: 0.2,
+      json: true,
+      timeoutMs: 12_000,
+      retries: 1,
+    });
+  } catch (geminiError) {
+    const reason = geminiError instanceof Error ? geminiError.message : "errore Gemini";
+    console.warn("[correggi-ai] Gemini non disponibile; attivo il provider di riserva:", reason);
+    content = await callOpenRouterText(storico, userPrompt);
+  }
 
   const jsonStr = extractJsonFromText(content);
   const parsed = JSON.parse(jsonStr) as Record<string, unknown>;
+  if (!parsed.suggestion || typeof parsed.suggestion !== "object" || Array.isArray(parsed.suggestion)) {
+    throw new Error("La risposta AI non contiene una correzione prodotto valida. Riprova.");
+  }
 
   const messaggioRisposta =
     typeof parsed.messaggio === "string" && parsed.messaggio.trim()
