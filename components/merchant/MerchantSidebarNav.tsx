@@ -53,7 +53,7 @@ export default function MerchantSidebarNav({
             {storeName}
           </span>
           <span className="block truncate text-[11px] font-medium text-slate-500">
-            Pannello venditore
+            Pannello imprese e operatori
           </span>
         </span>
       </div>

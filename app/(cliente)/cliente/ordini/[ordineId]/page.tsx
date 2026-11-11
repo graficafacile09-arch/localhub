@@ -34,7 +34,7 @@ import StatoSpedizioneLive from "@/components/ordini/StatoSpedizioneLive";
 type Params = { ordineId: string };
 
 export const metadata = {
-  title: "Dettaglio ordine — Area Clienti",
+  title: "Dettaglio ordine — Area consumatori",
 };
 
 export const dynamic = "force-dynamic";
@@ -138,7 +138,7 @@ export default async function OrdineDettaglioPage({ params }: { params: Promise<
         totale={ordine.totale}
         createdAt={ordine.createdAt}
         modalita={ordine.modalita}
-        eyebrow="Area Clienti"
+        eyebrow="Area consumatori"
         identita={
           <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <span>

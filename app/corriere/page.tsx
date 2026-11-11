@@ -30,7 +30,7 @@ export default async function CorrierePage() {
             </span>
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">InCittà</p>
-              <h1 className="text-xl font-extrabold text-slate-900">Area Corriere Locale</h1>
+              <h1 className="text-xl font-extrabold text-slate-900">Area logistica e consegne</h1>
               <p className="text-sm text-slate-500">Ciao {nome}, ecco il tuo centro di lavoro.</p>
             </div>
           </div>

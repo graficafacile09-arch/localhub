@@ -118,7 +118,7 @@ export default function ClienteShell({
           className="fixed inset-0 z-50 md:hidden"
           role="dialog"
           aria-modal="true"
-          aria-label="Menu Area Clienti"
+          aria-label="Menu Area consumatori"
         >
           <div
             className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm"
@@ -136,7 +136,7 @@ export default function ClienteShell({
                   <ShoppingBasket className="h-4 w-4 text-white" aria-hidden />
                 </span>
                 <p className="text-xs font-black uppercase tracking-[0.15em] text-blue-100">
-                  Area Clienti
+                  Area consumatori
                 </p>
               </div>
               <button

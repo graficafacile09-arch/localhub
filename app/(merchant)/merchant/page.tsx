@@ -11,7 +11,7 @@ import { getConteggiOrdiniNonLetti } from "@/lib/merchant/ordini";
  * logica, grafica ed esperienza restano identiche.
  */
 export default async function MerchantHomePage({
-  labelArea = "Area Venditore",
+  labelArea = "Area imprese e operatori",
   area = "merchant",
 }: {
   labelArea?: string;

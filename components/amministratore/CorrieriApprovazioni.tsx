@@ -42,7 +42,7 @@ export default function CorrieriApprovazioni({ iniziali }: { iniziali: Corriere[
             <Truck className="h-7 w-7" aria-hidden />
           </div>
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">Area Corriere Locale</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">Area logistica e consegne</p>
             <h1 className="mt-1.5 text-2xl font-black tracking-tight text-slate-900 md:text-3xl">Approvazione corrieri</h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">Gestisci le richieste dei corrieri locali. L'approvazione usa lo stesso sistema account già presente nella piattaforma.</p>
           </div>

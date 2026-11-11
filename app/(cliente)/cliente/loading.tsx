@@ -4,7 +4,7 @@
  */
 export default function ClienteLoading() {
   return (
-    <div className="space-y-5" aria-busy="true" aria-label="Caricamento Area Clienti">
+    <div className="space-y-5" aria-busy="true" aria-label="Caricamento Area consumatori">
       {/* Intestazione skeleton */}
       <div className="card p-6 md:p-8">
         <div className="h-3 w-28 animate-pulse rounded-full bg-slate-200" />

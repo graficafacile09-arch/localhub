@@ -98,7 +98,7 @@ export default async function MerchantOrdiniPage({
           </span>
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
-              Area venditore
+              Area imprese e operatori
             </p>
             <h1 className="mt-1.5 text-2xl font-black tracking-tight text-slate-900 md:text-3xl">
               Ordini di {storeResult.data.nome}

@@ -59,7 +59,7 @@ export default function ClienteSidebar({
   ];
 
   return (
-    <nav aria-label="Menu Area Clienti" className="incitta-desktop-area-nav space-y-1">
+    <nav aria-label="Menu Area consumatori" className="incitta-desktop-area-nav space-y-1">
       {/* ── Blocco brand (solo sidebar desktop espansa) ───────────────────── */}
       {withHeader && !collapsed && (
         <div className="mb-4 flex items-center gap-3 rounded-2xl bg-blue-600 px-4 py-3.5 text-white shadow-sm">
@@ -67,7 +67,7 @@ export default function ClienteSidebar({
             <ShoppingBasket className="h-5 w-5" aria-hidden />
           </span>
           <span className="min-w-0">
-            <span className="block text-sm font-black tracking-tight">Area Clienti</span>
+            <span className="block text-sm font-black tracking-tight">Area consumatori</span>
             <span className="block truncate text-[11px] text-blue-100">
               Il tuo spazio personale su InCittà
             </span>

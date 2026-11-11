@@ -197,7 +197,7 @@ export default function ImpostazioniClienteModule() {
           </span>
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
-              Area Clienti
+              Area consumatori
             </p>
             <h1 className="mt-1.5 text-3xl font-black tracking-tight text-slate-900">
               Impostazioni

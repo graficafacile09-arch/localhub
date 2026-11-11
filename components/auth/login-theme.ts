@@ -66,17 +66,16 @@ export type TemaLogin = {
 /** CLIENTE — consumer, caldo e accogliente: scoperta e acquisto in città. */
 const temaCliente: TemaLogin = {
   id: "cliente",
-  eyebrow: "LocalHub · Area Clienti",
+  eyebrow: "INCITTÀ · AREA CONSUMATORI",
   eyebrowClass: "text-orange-600",
   IconaBadge: ShoppingBag,
   badgeClass:
     "flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-400 to-amber-500 text-white shadow-md shadow-orange-500/30",
   titoloLogin: "Bentornato!",
   titoloRegistrati: "Crea il tuo account",
-  sottotitoloLogin:
-    "Accedi per ritrovare i tuoi negozi preferiti e continuare gli acquisti nella tua città.",
+  sottotitoloLogin: "Accedi per scoprire prodotti, imprese e filiere.",
   sottotitoloRegistrati:
-    "Scopri e sostieni le attività locali della tua città, ogni giorno.",
+    "Scopri prodotti, imprese e filiere dei territori, ogni giorno.",
   titoloClass: "text-3xl font-black tracking-tight text-slate-900",
   sottotitoloClass: "text-sm leading-6 text-slate-600",
   sfondoClass: "bg-[#fdf8f2]",
@@ -91,17 +90,17 @@ const temaCliente: TemaLogin = {
     "card w-full max-w-md overflow-hidden rounded-3xl border-orange-100 shadow-[0_24px_60px_-30px_rgba(234,88,12,0.4)]",
   chips: [
     {
-      testo: "Negozi vicini",
+      testo: "Prodotti",
       classe:
         "rounded-full border border-orange-200 bg-orange-50 px-2.5 py-0.5 text-[11px] font-semibold text-orange-700",
     },
     {
-      testo: "Offerte locali",
+      testo: "Filiere",
       classe:
         "rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold text-amber-700",
     },
     {
-      testo: "Ritiro in negozio",
+      testo: "Imprese",
       classe:
         "rounded-full border border-sky-200 bg-sky-50 px-2.5 py-0.5 text-[11px] font-semibold text-sky-700",
     },
@@ -122,7 +121,7 @@ const temaCliente: TemaLogin = {
     "rounded-2xl border border-orange-200 bg-orange-50/70 px-4 py-3",
   erroreCampoClass: "text-xs font-semibold text-red-600",
   notaFooter: {
-    testo: "Ogni acquisto sostiene il commercio della tua città.",
+    testo: "Le filiere dei territori incontrano le città.",
     classe: "mt-6 max-w-md text-center text-xs text-orange-900/50",
   },
 };
@@ -130,17 +129,17 @@ const temaCliente: TemaLogin = {
 /** VENDITORE — operativo e professionale: gestione di attività e vendite. */
 const temaMerchant: TemaLogin = {
   id: "merchant",
-  eyebrow: "LocalHub · Area Venditore",
+  eyebrow: "INCITTÀ · IMPRESE E OPERATORI",
   eyebrowClass: "text-slate-500",
   IconaBadge: Store,
   badgeClass:
     "flex h-11 w-11 items-center justify-center rounded-lg bg-slate-900 text-white shadow-md shadow-slate-900/30",
-  titoloLogin: "Accesso esercente",
-  titoloRegistrati: "Apri il tuo negozio",
+  titoloLogin: "Accesso imprese e operatori",
+  titoloRegistrati: "Registra la tua impresa",
   sottotitoloLogin:
-    "Gestisci ordini, catalogo e vendite della tua attività da un unico pannello operativo.",
+    "Gestisci ordini, prodotti e attività dal tuo pannello operativo.",
   sottotitoloRegistrati:
-    "Crea l'account della tua attività e inizia a vendere sulla tua città.",
+    "Crea l'account della tua impresa e gestisci ordini, prodotti e attività.",
   titoloClass: "text-3xl font-extrabold tracking-tight text-slate-900",
   sottotitoloClass: "text-sm leading-6 text-slate-600",
   sfondoClass: "bg-slate-100",
@@ -159,12 +158,12 @@ const temaMerchant: TemaLogin = {
         "rounded-md border border-slate-300 bg-slate-50 px-2 py-0.5 text-[11px] font-semibold text-slate-600",
     },
     {
-      testo: "Catalogo",
+      testo: "Prodotti",
       classe:
         "rounded-md border border-slate-300 bg-slate-50 px-2 py-0.5 text-[11px] font-semibold text-slate-600",
     },
     {
-      testo: "Vendite",
+      testo: "Attività",
       classe:
         "rounded-md border border-slate-300 bg-slate-50 px-2 py-0.5 text-[11px] font-semibold text-slate-600",
     },
@@ -185,7 +184,7 @@ const temaMerchant: TemaLogin = {
   boxSecondarioClass: "rounded-xl border border-slate-300 bg-slate-50 px-4 py-3",
   erroreCampoClass: "text-xs font-semibold text-red-600",
   notaFooter: {
-    testo: "Strumento operativo riservato agli esercenti di LocalHub.",
+    testo: "Area riservata alle imprese e agli operatori di InCittà.",
     classe: "mt-6 max-w-md text-center text-xs text-slate-500",
   },
 };
@@ -193,17 +192,16 @@ const temaMerchant: TemaLogin = {
 /** CORRIERE LOCALE — operativo, essenziale e orientato alle consegne. */
 const temaCourier: TemaLogin = {
   id: "courier",
-  eyebrow: "InCittà · Area Corriere Locale",
+  eyebrow: "INCITTÀ · LOGISTICA E CONSEGNE",
   eyebrowClass: "text-emerald-700",
   IconaBadge: Truck,
   badgeClass:
     "flex h-11 w-11 items-center justify-center rounded-lg bg-emerald-700 text-white shadow-md shadow-emerald-700/25",
-  titoloLogin: "Area Corriere Locale",
-  titoloRegistrati: "Registrati come corriere locale",
-  sottotitoloLogin:
-    "Accedi per gestire le consegne locali e visualizzare gli ordini assegnati.",
+  titoloLogin: "Accesso logistica e consegne",
+  titoloRegistrati: "Registrati come operatore logistico",
+  sottotitoloLogin: "Gestisci ritiri, trasporti e consegne.",
   sottotitoloRegistrati:
-    "Crea il tuo account corriere. L'accesso operativo sarà disponibile dopo l'approvazione amministrativa.",
+    "Crea il tuo account. L'accesso operativo sarà disponibile dopo l'approvazione amministrativa.",
   titoloClass: "text-3xl font-extrabold tracking-tight text-slate-900",
   sottotitoloClass: "text-sm leading-6 text-slate-600",
   sfondoClass: "bg-emerald-50/60",
@@ -248,7 +246,7 @@ const temaCourier: TemaLogin = {
   boxSecondarioClass: "rounded-xl border border-emerald-200 bg-emerald-50/70 px-4 py-3",
   erroreCampoClass: "text-xs font-semibold text-red-600",
   notaFooter: {
-    testo: "Area riservata ai corrieri locali approvati da InCittà.",
+    testo: "Area riservata agli operatori di logistica approvati da InCittà.",
     classe: "mt-6 max-w-md text-center text-xs text-emerald-900/50",
   },
 };

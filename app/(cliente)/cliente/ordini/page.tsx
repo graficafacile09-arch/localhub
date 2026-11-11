@@ -12,7 +12,7 @@ import ClienteEmptyState from "@/components/cliente/ClienteEmptyState";
 import { OrderCard } from "@/components/ordini/OrderCard";
 
 export const metadata = {
-  title: "I miei ordini — Area Clienti",
+  title: "I miei ordini — Area consumatori",
 };
 
 export const dynamic = "force-dynamic";
@@ -68,7 +68,7 @@ export default async function OrdiniPage({
           </span>
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
-              Area Clienti
+              Area consumatori
             </p>
             <h1 className="mt-1.5 text-3xl font-black tracking-tight text-slate-900">
               I miei ordini

@@ -12,7 +12,7 @@ import NegoziPreferitiCard from "@/components/cliente/dashboard/NegoziPreferitiC
 import EventiConsigliatiCard from "@/components/cliente/dashboard/EventiConsigliatiCard";
 
 export const metadata = {
-  title: "Dashboard — Area Clienti",
+  title: "Dashboard — Area consumatori",
 };
 
 // La dashboard rifletterà in tempo reale i dati dell'utente nelle fasi
@@ -54,7 +54,7 @@ export default async function ClienteDashboardPage() {
               </span>
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-700">
-                  Area Clienti
+                  Area consumatori
                 </p>
                 <h1 className="mt-1.5 text-3xl font-black tracking-tight text-slate-900">
                   Il mio account

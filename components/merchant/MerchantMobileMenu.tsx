@@ -42,7 +42,7 @@ export default function MerchantMobileMenu({
       <div className="mb-3 flex items-center justify-between rounded-2xl bg-blue-700 px-4 py-3 text-white shadow-sm">
         <div className="min-w-0">
           <p className="text-xs font-black uppercase tracking-[0.22em] text-blue-100">
-            {isAdmin ? "Area Amministratore" : "Area Venditore"}
+            {isAdmin ? "Area Amministratore" : "Area imprese e operatori"}
           </p>
           {!isAdmin && storeName ? (
             <p className="mt-1 truncate text-sm font-black text-white">{storeName}</p>

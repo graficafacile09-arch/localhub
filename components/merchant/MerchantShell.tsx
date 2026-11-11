@@ -45,7 +45,7 @@ export default function MerchantShell({
 }) {
   const currentStore = stores.find((store) => store.id === currentStoreId) ?? null;
   const isAdmin = area === "admin";
-  const areaTitle = isAdmin ? "Area Amministratore" : "Area Venditore";
+  const areaTitle = isAdmin ? "Area Amministratore" : "Area imprese e operatori";
   const areaHref = isAdmin ? "/amministratore" : "/merchant";
 
   return (
@@ -79,7 +79,7 @@ export default function MerchantShell({
           <div className="flex items-center gap-3">
             <div className="rounded-xl border border-white/15 bg-white/10 px-4 py-2.5 text-right">
               <p className="max-w-[260px] truncate text-xs font-semibold text-white">{user.email}</p>
-              <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-blue-100">{isAdmin ? "amministratore" : "venditore"}</p>
+              <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-blue-100">{isAdmin ? "amministratore" : "imprese e operatori"}</p>
             </div>
             <form action="/api/auth/signout" method="post">
               <button type="submit" className="inline-flex h-11 items-center gap-2 rounded-xl bg-yellow-400 px-4 text-sm font-bold text-blue-950 transition hover:bg-yellow-300"><LogOut className="h-4 w-4" /> Esci</button>

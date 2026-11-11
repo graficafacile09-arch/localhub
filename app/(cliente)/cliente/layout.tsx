@@ -10,9 +10,9 @@ import { filtraOrdiniCliente } from "@/lib/cliente/ordini-format";
 import type { OrdineClienteLista } from "@/lib/cliente/types";
 
 export const metadata = {
-  title: "Area Clienti — LocalHub",
+  title: "Area consumatori — InCittà",
   description:
-    "La tua area personale su LocalHub: ordini, preferiti, profilo e impostazioni.",
+    "La tua area personale su InCittà: ordini, preferiti, profilo e impostazioni.",
 };
 
 /**

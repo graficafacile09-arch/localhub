@@ -208,7 +208,7 @@ function Shell({
             className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
           >
             <ArrowLeft className="h-4 w-4" />
-            Area venditore
+            Area imprese e operatori
           </Link>
         </div>
       </div>

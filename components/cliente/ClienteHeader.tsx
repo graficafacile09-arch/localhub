@@ -33,11 +33,11 @@ export default function ClienteHeader() {
             <div className="flex items-center gap-2.5">
               <ShoppingBasket className="h-5 w-5 text-blue-200" aria-hidden />
               <span className="text-2xl font-black tracking-tight text-white">
-                Area Clienti
+                Area consumatori
               </span>
             </div>
             <p className="mt-1 text-sm text-blue-100">
-              La tua area personale su LocalHub
+              La tua area personale su InCittà
             </p>
           </div>
         </div>
