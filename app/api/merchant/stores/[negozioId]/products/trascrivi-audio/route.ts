@@ -13,7 +13,9 @@ import { canManageStore } from "@/lib/merchant/data";
  * ⚠️ QUESTO ENDPOINT NON SCRIVE MAI NEL DATABASE.
  */
 
-const TRASCRIZIONE_MODEL = process.env.TRASCRIZIONE_AUDIO_MODEL ?? "whisper-large-v3";
+const TRASCRIZIONE_MODEL = process.env.TRASCRIZIONE_AUDIO_MODEL?.trim() || "whisper-large-v3-turbo";
+export const maxDuration = 35;
+
 const MAX_AUDIO_BYTES = 10 * 1024 * 1024; // 10 MB
 
 export async function POST(
@@ -60,7 +62,7 @@ export async function POST(
     }
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 60000);
+    const timeoutId = setTimeout(() => controller.abort(), 25_000);
 
     let testo = "";
     try {
@@ -90,7 +92,7 @@ export async function POST(
     } catch (caught: unknown) {
       clearTimeout(timeoutId);
       if (caught instanceof DOMException && caught.name === "AbortError") {
-        throw new Error("Timeout trascrizione audio (60s).");
+        throw new Error("Timeout trascrizione audio (25s).");
       }
       if (caught instanceof Error) throw caught;
       throw new Error("Errore sconosciuto trascrizione audio.");
