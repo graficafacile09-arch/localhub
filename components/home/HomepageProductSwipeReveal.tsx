@@ -119,7 +119,7 @@ export default function HomepageProductSwipeReveal({
         className={`relative overflow-hidden bg-[#e5edf7] md:h-[600px] ${androidTabletViewport ? "incitta-android-tablet" : ""}`}
         onTouchStartCapture={onTouchStart}
         onTouchEndCapture={onTouchEnd}
-        aria-label="Homepage InCittà: scorri orizzontalmente per passare dalla foto ai prodotti"
+        aria-label="Homepage Radici Calabria: scorri orizzontalmente per passare dalla copertina alle filiere"
       >
         <div
           className={`transition-transform duration-300 ease-out md:absolute md:inset-0 ${showProducts ? "absolute inset-0 -translate-x-full md:-translate-x-full" : "relative translate-x-0 md:translate-x-0"}`}
@@ -132,7 +132,7 @@ export default function HomepageProductSwipeReveal({
         <div
           className={`transition-transform duration-300 ease-out [&>section]:min-h-full ${showProducts ? "relative w-full translate-x-0 overflow-visible md:absolute md:inset-0 md:overflow-y-auto" : "absolute inset-0 w-full translate-x-full overflow-y-auto md:overflow-y-auto"}`}
           aria-hidden={!showProducts}
-          id="homepage-prodotti"
+          id="homepage-filiere"
         >
           {products}
         </div>
@@ -142,10 +142,10 @@ export default function HomepageProductSwipeReveal({
             type="button"
             onClick={openProducts}
             data-home-hero-swipe
-            aria-label="Scopri i prodotti: scorri per vedere i prodotti"
+            aria-label="Scopri la filiera: scorri per esplorare le filiere"
             className="absolute bottom-3 left-1/2 z-20 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-yellow-300/90 bg-yellow-400/95 px-3 py-1.5 text-[11px] font-bold text-blue-900 shadow-md shadow-slate-950/20 transition hover:bg-yellow-300 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 md:hidden"
           >
-            <span>Scopri i prodotti</span>
+            <span>Scopri la filiera</span>
             <span className="incitta-swipe-cue relative inline-block h-[14px] w-14 translate-y-[1px] align-middle" aria-hidden="true">
               <MoveLeft className="incitta-swipe-cue-arrow absolute right-0 top-1/2 h-4 w-12 text-blue-800" strokeWidth={2.8} />
               <Pointer className="incitta-swipe-cue-hand absolute left-0 top-[3px] h-[18px] w-[18px] text-blue-800" strokeWidth={2.3} />
@@ -158,9 +158,9 @@ export default function HomepageProductSwipeReveal({
           onClick={() => (showProducts ? closeProducts() : openProducts())}
           data-home-hero-swipe
           data-home-products-swipe
-          aria-label={showProducts ? "Torna alla foto della homepage" : "Mostra i prodotti"}
+          aria-label={showProducts ? "Torna alla foto della homepage" : "Mostra le filiere"}
           aria-expanded={showProducts}
-          aria-controls="homepage-prodotti"
+          aria-controls="homepage-filiere"
           className="group absolute bottom-5 right-5 z-20 hidden min-h-11 items-center gap-3 rounded-full border border-white/25 bg-blue-950/90 py-1.5 pl-5 pr-1.5 text-sm font-bold text-white shadow-[0_10px_30px_-12px_rgba(2,6,23,0.8)] backdrop-blur-md transition duration-200 hover:-translate-y-0.5 hover:bg-blue-900 hover:shadow-[0_14px_34px_-12px_rgba(2,6,23,0.9)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-300 focus-visible:ring-offset-2 focus-visible:ring-offset-blue-900 md:inline-flex"
         >
           {showProducts ? (
@@ -172,7 +172,7 @@ export default function HomepageProductSwipeReveal({
             </>
           ) : (
             <>
-              <span>Scopri i prodotti</span>
+              <span>Scopri la filiera</span>
               <span className="flex h-8 w-8 items-center justify-center rounded-full bg-yellow-400 text-blue-950 transition group-hover:translate-x-0.5 group-hover:bg-yellow-300">
                 <ArrowRight className="h-4 w-4" aria-hidden />
               </span>
