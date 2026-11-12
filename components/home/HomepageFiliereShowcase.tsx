@@ -43,7 +43,7 @@ const FILIERE: FilieraCard[] = [
       "Clementine di Calabria IGP",
       "Limone di Rocca Imperiale IGP",
       "Cedro di Santa Maria del Cedro DOP",
-      "Bergamotto di Reggio Calabria DOP",
+      "Olio essenziale di Bergamotto di Reggio Calabria DOP",
     ],
     dettaglio:
       "Le Clementine di Calabria IGP ammettono otto varietà e sono coltivate in tutte e cinque le province; la Piana di Sibari è uno dei principali areali.",
@@ -93,7 +93,7 @@ const FILIERE: FilieraCard[] = [
     fonteFoto: "https://commons.wikimedia.org/wiki/File:Fileja.jpg",
     fonteInfo:
       "https://www.arsacweb.it/wp-content/uploads/2023/09/Opuscolo-DOP-IGP-PAT_web.pdf",
-    etichettaFonte: "ARSAC e Regione Calabria · opuscolo DOP, IGP e PAT",
+    etichettaFonte: "ARSAC e Regione Calabria · fileja tra i PAT",
   },
   {
     numero: "05",
@@ -201,8 +201,8 @@ const FILIERE: FilieraCard[] = [
     licenzaFoto: "CC BY-SA 4.0",
     fonteFoto:
       "https://commons.wikimedia.org/wiki/File:Fichi_essiccati_-_fichi_calijati_in_Calabria.jpg",
-    fonteInfo: "https://www.arsacweb.it/fichi-di-cosenza-dop/",
-    etichettaFonte: "ARSAC · Fichi di Cosenza DOP",
+    fonteInfo: "https://www.arsacweb.it/wp-content/uploads/2023/09/Opuscolo-DOP-IGP-PAT_web.pdf",
+    etichettaFonte: "ARSAC · Fichi DOP e Torrone IGP",
   },
   {
     numero: "10",
