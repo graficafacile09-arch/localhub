@@ -43,7 +43,7 @@ const FILIERE: FilieraCard[] = [
       "Clementine di Calabria IGP",
       "Limone di Rocca Imperiale IGP",
       "Cedro di Santa Maria del Cedro DOP",
-      "Olio essenziale di Bergamotto di Reggio Calabria DOP",
+      "Bergamotto di Reggio Calabria – olio essenziale DOP",
     ],
     dettaglio:
       "Le Clementine di Calabria IGP ammettono otto varietà e sono coltivate in tutte e cinque le province; la Piana di Sibari è uno dei principali areali.",
