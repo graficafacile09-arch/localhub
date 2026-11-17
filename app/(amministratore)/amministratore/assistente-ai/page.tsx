@@ -43,7 +43,7 @@ export default function AssistenteAiPage() {
               Assistente AI
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-              Analizza e consulta i dati reali della piattaforma InCitt&#224;.
+              Analizza e consulta i dati reali della piattaforma Radici Calabria.
               L&#8217;assistente lavora in modalit&#224; <strong>sola consultazione</strong>:
               pu&#242; cercare, aggregare e spiegare i dati, ma non pu&#242; modificare,
               eliminare o creare risorse.

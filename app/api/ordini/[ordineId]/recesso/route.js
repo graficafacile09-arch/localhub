@@ -102,7 +102,7 @@ async function inviaRicevuta(richiestaId) {
     "<ul style=\"margin:0;padding-left:20px;\">" + articoliHtml + "</ul>" +
     "<p style=\"margin:20px 0 0;font-size:14px;line-height:1.6;color:#475569;\">La richiesta è stata trasmessa al venditore per la gestione del reso e del rimborso, quando previsto.</p>" +
     "<div style=\"margin-top:24px;text-align:center;\"><a href=\"" + link + "\" style=\"display:inline-block;background:#2563eb;color:#fff;text-decoration:none;padding:13px 28px;border-radius:12px;font-size:14px;font-weight:700;\">Visualizza ordine</a></div>" +
-    "<p style=\"margin:20px 0 0;font-size:11px;line-height:1.6;color:#94a3b8;text-align:center;\">Email transazionale relativa alla tua richiesta di recesso su InCittà.</p>" +
+    "<p style=\"margin:20px 0 0;font-size:11px;line-height:1.6;color:#94a3b8;text-align:center;\">Email transazionale relativa alla tua richiesta di recesso su Radici Calabria.</p>" +
     "</div></div></body></html>";
 
   const testo = "Ciao " + String(richiesta.cliente_nome) + ",\n\n" +
@@ -117,7 +117,7 @@ async function inviaRicevuta(richiestaId) {
   const emailResult = await resend.emails.send({
     from: FROM_EMAIL,
     to: String(richiesta.cliente_email),
-    subject: "Ricevuta richiesta di recesso " + String(richiesta.numero) + " — InCittà",
+    subject: "Ricevuta richiesta di recesso " + String(richiesta.numero) + " — Radici Calabria",
     html,
     text: testo,
     ...(REPLY_TO_EMAIL ? { replyTo: REPLY_TO_EMAIL } : {}),
@@ -154,11 +154,11 @@ async function inviaRicevuta(richiestaId) {
     await resend.emails.send({
       from: FROM_EMAIL,
       to: String(richiesta.venditore_email),
-      subject: "Nuova richiesta di recesso " + String(richiesta.numero) + " — ordine InCittà",
+      subject: "Nuova richiesta di recesso " + String(richiesta.numero) + " — ordine Radici Calabria",
       html:
         "<!DOCTYPE html><html lang=\"it\"><body style=\"margin:0;padding:0;background:#f1f5f9;font-family:Arial,Helvetica,sans-serif;\">" +
         "<div style=\"max-width:560px;margin:0 auto;padding:24px 16px;\"><div style=\"background:#2563eb;border-radius:16px 16px 0 0;padding:22px;color:#fff;\">" +
-        "<div style=\"font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:#dbeafe;font-weight:700;\">InCittà — attenzione richiesta</div>" +
+        "<div style=\"font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:#dbeafe;font-weight:700;\">Radici Calabria — attenzione richiesta</div>" +
         "<div style=\"margin-top:7px;font-size:21px;font-weight:800;\">Nuova richiesta di recesso</div>" +
         "</div><div style=\"background:#fff;border-radius:0 0 16px 16px;padding:24px;\">" +
         "<p style=\"margin:0;font-size:15px;color:#0f172a;\">È stata registrata una richiesta di recesso relativa a un tuo ordine.</p>" +

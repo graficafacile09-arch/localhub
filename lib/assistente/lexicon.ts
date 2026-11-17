@@ -217,9 +217,20 @@ export const VOCABOLARIO_REFUSI_PINO: ReadonlyArray<readonly [string, string]> =
  * pasta» (acquisto) da «voglio mangiare» (ristorazione) e da una visita.
  * L'elenco è deliberatamente invariato rispetto al comportamento storico.
  */
+/**
+ * Termini con cui il catalogo pubblica le bevande. Servono a tradurre un
+ * bisogno generico ("ho sete") in una ricerca di prodotti reali: non esiste
+ * una parola unica che copra acqua, birra, vino e bibite, e la categoria del
+ * prodotto può essere "alcolici" senza contenere "bevande".
+ */
+export const TERMINI_BEVANDE_PINO: readonly string[] = [
+  "bevande", "alcolici", "bibite", "birra", "vino", "acqua", "succo", "succhi", "spremuta",
+];
+
 export const SOGGETTI_ALIMENTARI_PINO: readonly string[] = [
   "pasta", "pane", "pizza", "dolce", "dolci", "gelato", "torta", "torte",
-  "biscotti", "formaggio", "pecorino", "salumi", "prosciutto", "carne", "pesce",
+  "biscotti", "formaggio", "formaggi", "pecorino", "salumi", "prosciutto", "carne", "pesce",
+  "fungo", "funghi",
   "verdura", "frutta", "olio", "miele", "conserve", "farina", "riso",
   "nutella", "cipolla", "pomodoro",
 ];
@@ -256,6 +267,8 @@ export function soggettoAlimentarePino(query: string): string | null {
  * verifica quando la corrispondenza diretta non ha trovato nulla.
  */
 export const PONTI_CONCETTUALI_PINO: Readonly<Record<string, readonly string[]>> = {
+  bevande: TERMINI_BEVANDE_PINO,
+  sete: TERMINI_BEVANDE_PINO,
   luce: ["lampada", "lampadario", "lampadina", "illuminazione", "faretto", "faretti"],
   illuminazione: ["lampada", "lampadario", "illuminazione", "faretto", "faretti"],
   riscaldamento: ["stufa", "termosifone", "caldaia", "radiatore"],

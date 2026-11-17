@@ -454,7 +454,7 @@ export default function SettingsSections({
                   {nome}
                 </h2>
                 <p className="mt-1 text-sm text-slate-500">
-                  {[categoria, citta].filter(Boolean).join(" · ") || "La tua vetrina su InCittà"}
+                  {[categoria, citta].filter(Boolean).join(" · ") || "La tua vetrina su Radici Calabria"}
                 </p>
               </div>
 

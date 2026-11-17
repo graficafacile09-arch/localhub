@@ -6,15 +6,20 @@ import { eseguiImportNotizie } from "@/lib/notizie/import";
 /**
  * POST /api/cron/notizie (chiamato anche via GET per semplicità Vercel Cron)
  *
- * Job di aggiornamento dell'aggregatore Notizie CV. Protetto da CRON_SECRET
+ * Job di aggiornamento dell'aggregatore Notizie (agricoltura calabrese).
+ * Protetto da CRON_SECRET
  * (Authorization: Bearer <CRON_SECRET>, confronto a tempo costante).
  *
  * - Legge le fonti attive, rispetta frequenza_minuti, acquisisce, filtra
- *   Castrovillari, deduplica e inserisce le nuove notizie.
+ *   sulla linea editoriale agricola, deduplica e inserisce le novità.
  * - `?dryRun=1`: NON scrive nel database (verifica sicura, nessun dato
  *   toccato) — utile per test manuali.
  * - Sempre JSON riepilogativo: { imported, skipped, errors, perFonte }.
  */
+// Fino a 10 fonti (2 istituzionali + 8 discovery): ampiamente oltre il
+// default di 10s, così il job non viene troncato a metà import.
+export const maxDuration = 60;
+
 export async function GET(req: Request) {
   return esegui(req);
 }

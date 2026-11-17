@@ -13,7 +13,7 @@ type ShopResultCardProps = {
 function buildWhatsAppUrl(telefono: string, nomeNegozio: string): string {
   const number = normalizzaNumeroWhatsApp(telefono);
   const msg = encodeURIComponent(
-    `Ciao! Ho trovato "${nomeNegozio}" su InCittà e vorrei informazioni.`
+    `Ciao! Ho trovato "${nomeNegozio}" su Radici Calabria e vorrei informazioni.`
   );
   return `https://wa.me/${number}?text=${msg}`;
 }

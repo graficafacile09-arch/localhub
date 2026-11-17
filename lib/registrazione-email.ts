@@ -80,23 +80,23 @@ export async function inviaEmailRegistrazioneUtente(opts: {
 
   return inviaEmail({
     to: opts.to,
-    subject: "Registrazione ricevuta — InCittà",
+    subject: "Registrazione ricevuta — Radici Calabria",
     html: `
       <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:28px;color:#334155">
         <h2 style="margin:0 0 16px;color:#0f172a">Registrazione ricevuta</h2>
         <p style="line-height:1.65">Ciao ${nome},</p>
         <p style="line-height:1.65">
-          la tua registrazione a <strong>InCittà</strong> è stata completata
+          la tua registrazione a <strong>Radici Calabria</strong> è stata completata
           come ${area}.
         </p>
         ${negozio ? `<p style="line-height:1.65">Negozio indicato: <strong>${negozio}</strong>.</p>` : ""}
         <div style="margin:20px 0;padding:16px;border-radius:14px;background:#f8fafc;border:1px solid #e2e8f0">
-          <p style="margin:0 0 10px;font-weight:bold;color:#0f172a">Le tue credenziali InCittà</p>
+          <p style="margin:0 0 10px;font-weight:bold;color:#0f172a">Le tue credenziali Radici Calabria</p>
           <p style="margin:0 0 6px;line-height:1.65"><strong>Username:</strong> ${username}</p>
           <p style="margin:0;line-height:1.65"><strong>Password:</strong> ${password}</p>
         </div>
         <p style="line-height:1.65">
-          <strong>Conserva queste credenziali:</strong> ti serviranno per accedere a InCittà dopo l'approvazione del tuo account.
+          <strong>Conserva queste credenziali:</strong> ti serviranno per accedere a Radici Calabria dopo l'approvazione del tuo account.
         </p>
         <p style="line-height:1.65">
           Il tuo account è ora <strong>in attesa di approvazione amministrativa</strong>.
@@ -108,7 +108,7 @@ export async function inviaEmailRegistrazioneUtente(opts: {
           verrà modificato.
         </p>
         <p style="margin-top:24px;color:#64748b;font-size:13px">
-          Questa è una comunicazione automatica di InCittà.
+          Questa è una comunicazione automatica di Radici Calabria.
         </p>
       </div>
     `,
@@ -133,12 +133,12 @@ export async function inviaEmailNuovaRegistrazioneAdmin(opts: {
 
   return inviaEmail({
     to: ADMIN_EMAIL,
-    subject: "Nuova registrazione da approvare — InCittà",
+    subject: "Nuova registrazione da approvare — Radici Calabria",
     html: `
       <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:28px;color:#334155">
         <h2 style="margin:0 0 16px;color:#0f172a">Nuova registrazione da approvare</h2>
         <p style="line-height:1.65">
-          È stato creato un nuovo account InCittà che richiede approvazione amministrativa.
+          È stato creato un nuovo account Radici Calabria che richiede approvazione amministrativa.
         </p>
         <div style="margin:20px 0;padding:16px;border-radius:14px;background:#f8fafc">
           <p style="margin:0 0 8px"><strong>Nome:</strong> ${nome}</p>
@@ -166,13 +166,13 @@ export async function inviaEmailEsitoApprovazione(opts: {
   if (opts.approvato) {
     return inviaEmail({
       to: opts.to,
-      subject: "Account approvato — InCittà",
+      subject: "Account approvato — Radici Calabria",
       html: `
         <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:28px;color:#334155">
           <h2 style="margin:0 0 16px;color:#0f172a">Account approvato</h2>
           <p style="line-height:1.65">Ciao ${nome},</p>
           <p style="line-height:1.65">
-            il tuo account InCittà è stato <strong>approvato dall'amministratore</strong>.
+            il tuo account Radici Calabria è stato <strong>approvato dall'amministratore</strong>.
             Da questo momento puoi utilizzare le aree personali della piattaforma.
           </p>
         </div>
@@ -186,13 +186,13 @@ export async function inviaEmailEsitoApprovazione(opts: {
 
   return inviaEmail({
     to: opts.to,
-    subject: "Esito registrazione — InCittà",
+    subject: "Esito registrazione — Radici Calabria",
     html: `
       <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:28px;color:#334155">
         <h2 style="margin:0 0 16px;color:#0f172a">Registrazione non approvata</h2>
         <p style="line-height:1.65">Ciao ${nome},</p>
         <p style="line-height:1.65">
-          l'amministratore ha rifiutato la richiesta di approvazione del tuo account InCittà.
+          l'amministratore ha rifiutato la richiesta di approvazione del tuo account Radici Calabria.
         </p>
         ${motivo}
         <p style="line-height:1.65">

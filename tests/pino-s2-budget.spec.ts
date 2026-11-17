@@ -47,6 +47,8 @@ const risultati = (
   })),
   offerte: [],
   eventi: [],
+  notizie: [],
+  contenuti: [],
   categorie: [],
   meteo: null,
   farmacie: [],

@@ -32,9 +32,9 @@ const run = (calls, text = "", extra = {}) =>
     async () => ({ calls, text })
   );
 
-test("dichiara tutti gli otto strumenti esposti e lascia il regalo interno", () => {
-  assert.equal(TOOL_DEFINITIONS.length, 9);
-  assert.equal(TOOL_DEFINITIONS.filter((t) => t.exposed).length, 8);
+test("dichiara tutti gli strumenti esposti e lascia il regalo interno", () => {
+  assert.equal(TOOL_DEFINITIONS.length, 11);
+  assert.equal(TOOL_DEFINITIONS.filter((t) => t.exposed).length, 10);
 
   const dichiarazioni = buildNativeToolDeclarations();
   const nomi = dichiarazioni.map((d) => d.name).sort();
@@ -42,7 +42,9 @@ test("dichiara tutti gli otto strumenti esposti e lascia il regalo interno", () 
     "getCategories",
     "getWeather",
     "searchAll",
+    "searchContent",
     "searchEvents",
+    "searchNews",
     "searchOffers",
     "searchPharmacies",
     "searchProducts",

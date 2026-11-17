@@ -36,8 +36,10 @@ import { SINONIMI_DIRETTI_PRODOTTO, SINONIMI_TIPO_ATTIVITA } from "@/lib/ricerca
 import {
   ATTIVITA_CATALOGO_PINO,
   CANONICI_CATALOGO_PINO,
+  TERMINI_BEVANDE_PINO,
   VOCABOLARIO_REFUSI_PINO,
 } from "./lexicon.ts";
+import { rilevaBisognoPino } from "./bisogni";
 import type { MessaggioAssistente } from "./index";
 import type { PinoMemoriaVoce } from "./memoria";
 
@@ -570,7 +572,7 @@ export function limitiVincolantiPino(
   return limitiPianoPino(semantica) ?? limitiPianoPino(comprensione);
 }
 
-const SCHEMA_PROMPT = `Interpreta una richiesta dell'utente per la ricerca locale di InCittà.
+const SCHEMA_PROMPT = `Interpreta una richiesta dell'utente per la ricerca locale di Radici Calabria.
 NON rispondere all'utente. Devi produrre SOLO JSON valido.
 
 Regole:
@@ -669,7 +671,7 @@ export const TOKEN_SENZA_REFUSI = new Set([
 export const VOCABOLARIO_PINO: Array<[string, string]> = (() => {
   const mappa = new Map<string, string>(VOCABOLARIO_PINO_BASE);
 
-  // Riutilizziamo il vocabolario semantico già presente nel motore InCittà:
+  // Riutilizziamo il vocabolario semantico già presente nel motore Radici Calabria:
   // errori di battitura su prodotti, categorie e servizi vengono corretti
   // verso un termine reale già conosciuto dal catalogo.
   for (const gruppo of SINONIMI_DIRETTI_PRODOTTO) {
@@ -1039,6 +1041,14 @@ export function pianoLocaleIntelligente(query: string, analisi: PinoIntentAnalys
   // Se non resta alcun termine di catalogo (es. "ho 99 euro", "budget di
   // 100 euro"), la query è vuota: non reimmettiamo la frase di budget.
   if (!termine) termine = attivita?.termine ?? match?.termine ?? "";
+
+  // "Ho sete" non è il nome di un prodotto: "sete" non esiste nel catalogo e
+  // il gate di pertinenza lo rifiuterebbe. Il bisogno va tradotto nella
+  // famiglia reale delle bevande; per una bevanda concreta ("una birra") il
+  // match del lessico resta invece la fonte prioritaria.
+  if (!match && !attivita && rilevaBisognoPino(qBase) === "sete") {
+    termine = TERMINI_BEVANDE_PINO[0];
+  }
 
   // "analcolica" resta una caratteristica positiva; la regola speciale del
   // retrieval la tratta correttamente senza escludere le vere analcoliche.

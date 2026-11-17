@@ -1,5 +1,5 @@
 /**
- * PAGAMENTI — COMMISSIONE PIATTAFORMA InCittà (V1, solo server).
+ * PAGAMENTI — COMMISSIONE PIATTAFORMA Radici Calabria (V1, solo server).
  *
  * La commissione è la fonte di ricavo della piattaforma sul marketplace:
  *   - percentuale configurata SOLO server-side (piattaforma_config →

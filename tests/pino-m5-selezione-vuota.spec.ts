@@ -46,7 +46,7 @@ test.describe("M5-A — quando la selezione è utilizzabile", () => {
   test("piano deterministico con risposta diretta: nessuna ricerca", () => {
     // Forma reale dei piani deterministici di identità/piattaforma/chiacchiera.
     const piano = {
-      directReply: "InCittà è la piattaforma locale della tua città.",
+      directReply: "Radici Calabria è la piattaforma locale della tua città.",
       tools: [] as Array<{ tool: string; params?: Record<string, unknown> }>,
     };
 

@@ -10,9 +10,9 @@ import { filtraOrdiniCliente } from "@/lib/cliente/ordini-format";
 import type { OrdineClienteLista } from "@/lib/cliente/types";
 
 export const metadata = {
-  title: "Area consumatori — InCittà",
+  title: "Area consumatori — Radici Calabria",
   description:
-    "La tua area personale su InCittà: ordini, preferiti, profilo e impostazioni.",
+    "La tua area personale su Radici Calabria: ordini, preferiti, profilo e impostazioni.",
 };
 
 /**

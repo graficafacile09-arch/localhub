@@ -66,6 +66,8 @@ const MOTIVI_SENZA_RICERCA: ReadonlySet<string> = new Set([
   "aggregata",
   "offerte_assenti",
   "eventi_assenti",
+  "notizie_assenti",
+  "contenuti_assenti",
   "servizio_assente",
   "orari",
   "ora_data",

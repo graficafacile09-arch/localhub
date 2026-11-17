@@ -25,7 +25,7 @@ const prodotto = (
   immagine_principale: null,
 });
 
-// Prodotti reali del catalogo InCittà per la ricerca "pasta".
+// Prodotti reali del catalogo Radici Calabria per la ricerca "pasta".
 const CATALOGO_PASTA = [
   prodotto("Fileja di Tropea", 2),
   prodotto("Taralli calabresi", 3),
@@ -185,7 +185,7 @@ test.describe("Pino — risposta aggregata basata sui dati", () => {
       lingua: "en",
     });
 
-    expect(risposta).toContain("The InCittà catalog lists 4 products");
+    expect(risposta).toContain("The Radici Calabria catalog lists 4 products");
     expect(risposta).toContain("This count is based only on product listings");
   });
 

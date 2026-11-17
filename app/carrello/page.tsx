@@ -4,7 +4,7 @@ import CarrelloPageClient from "@/components/carrello/CarrelloPageClient";
 
 export const metadata: Metadata = {
   title: "Carrello",
-  description: "Il tuo carrello su InCittà: prodotti dai negozi della tua città.",
+  description: "Il tuo carrello su Radici Calabria: prodotti dalle filiere del territorio.",
 };
 
 export default function PaginaCarrello() {

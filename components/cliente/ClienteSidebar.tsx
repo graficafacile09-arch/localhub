@@ -69,7 +69,7 @@ export default function ClienteSidebar({
           <span className="min-w-0">
             <span className="block text-sm font-black tracking-tight">Area consumatori</span>
             <span className="block truncate text-[11px] text-blue-100">
-              Il tuo spazio personale su InCittà
+              Il tuo spazio personale su Radici Calabria
             </span>
           </span>
         </div>

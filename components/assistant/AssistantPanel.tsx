@@ -6,7 +6,11 @@ import AssistantMessage, { type ChatMessage } from "./AssistantMessage";
 import AssistantInput from "./AssistantInput";
 import TypingIndicator from "./TypingIndicator";
 import PinoSprite, { type PinoMood } from "./PinoSprite";
-import { isPinoAreaRiservata, isPinoTransactionalRoute } from "./pino-route";
+import {
+  isPinoAreaRiservata,
+  isPinoSezioneNascosta,
+  isPinoTransactionalRoute,
+} from "./pino-route";
 import { chiediAPino } from "./pino-fetch";
 
 const SUGGESTIONS = [
@@ -195,7 +199,13 @@ export default function AssistantPanel() {
   // sessionId e cronologia sopravvivono e sono ancora lì al ritorno sulla homepage.
   // Pino non si apre nelle aree personali; sulle pagine pubbliche resta
   // disponibile anche per gli utenti loggati.
-  if (isAdminArea || isPinoAreaRiservata(pathname) || isPinoTransactionalRoute(pathname)) return null;
+  if (
+    isAdminArea ||
+    isPinoAreaRiservata(pathname) ||
+    isPinoTransactionalRoute(pathname) ||
+    isPinoSezioneNascosta(pathname)
+  )
+    return null;
 
   return (
     <>
@@ -217,7 +227,7 @@ export default function AssistantPanel() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
               </svg>
             </div>
-            <span className="text-sm font-bold text-slate-900">Pino assistente virtuale di InCittà</span>
+            <span className="text-sm font-bold text-slate-900">Pino assistente virtuale di Radici Calabria</span>
           </div>
           <button
             type="button"
@@ -242,7 +252,7 @@ export default function AssistantPanel() {
                   In cosa posso esserti utile?
                 </h2>
                 <p className="mt-1 text-xs text-slate-500">
-                  Sono il tuo assistente allo shopping su InCittà. Posso aiutarti a trovare negozi, prodotti e servizi nella tua città.
+                  Sono il tuo assistente allo shopping su Radici Calabria. Posso aiutarti a trovare negozi, prodotti e servizi nella tua città.
                 </p>
               </div>
               <div className="flex flex-wrap justify-center gap-1.5">

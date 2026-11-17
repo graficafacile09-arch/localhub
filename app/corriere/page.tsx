@@ -29,7 +29,7 @@ export default async function CorrierePage() {
               <Truck className="h-5 w-5" aria-hidden="true" />
             </span>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">InCittà</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">Radici Calabria</p>
               <h1 className="text-xl font-extrabold text-slate-900">Area logistica e consegne</h1>
               <p className="text-sm text-slate-500">Ciao {nome}, ecco il tuo centro di lavoro.</p>
             </div>

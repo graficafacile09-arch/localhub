@@ -3,7 +3,7 @@
  *
  * Separa nettamente DUE concetti:
  *
- *   A) CATALOGO (lib/pagamenti/catalogo.ts) — cosa InCittà SUPPORTA.
+ *   A) CATALOGO (lib/pagamenti/catalogo.ts) — cosa Radici Calabria SUPPORTA.
  *      Sempre restituito: ogni metodo del catalogo è presente nella risposta,
  *      indipendentemente dalla configurazione del negozio.
  *
@@ -217,7 +217,7 @@ async function metodoAttivatoDalNegozio(negozioId: string, metodo: string): Prom
 }
 /**
  * Metodi di pagamento per il checkout del negozio: SEMPRE l'intero catalogo
- * supportato da InCittà, ognuno con il flag `disponibile` reale.
+ * supportato da Radici Calabria, ognuno con il flag `disponibile` reale.
  *
  * - carta/klarna/bonifico_istantaneo: `disponibile = true` SOLO se il metodo
  *   è attivo e il connected account Stripe è pronto;

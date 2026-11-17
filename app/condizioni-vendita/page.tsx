@@ -5,7 +5,7 @@ import { getSiteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Condizioni di vendita",
-  description: "Condizioni di vendita per gli ordini effettuati tramite InCittà.",
+  description: "Condizioni di vendita per gli ordini effettuati tramite Radici Calabria.",
   alternates: {
     canonical: `${getSiteUrl()}/condizioni-vendita`,
   },
@@ -17,19 +17,19 @@ const sezioni = [
     contenuto: (
       <p>
         Le presenti Condizioni descrivono le regole generali applicabili alle vendite di
-        prodotti, servizi o altre prestazioni offerte dai Venditori tramite InCittà. Le
+        prodotti, servizi o altre prestazioni offerte dai Venditori tramite Radici Calabria. Le
         condizioni specifiche dell'offerta, dell'ordine e del Venditore integrano questo
         documento quando rese disponibili all'Acquirente.
       </p>
     ),
   },
   {
-    titolo: "2. Ruolo di InCittà",
+    titolo: "2. Ruolo di Radici Calabria",
     contenuto: (
       <p>
-        InCittà mette a disposizione una piattaforma e un'infrastruttura tecnologica per la
+        Radici Calabria mette a disposizione una piattaforma e un'infrastruttura tecnologica per la
         pubblicazione delle offerte, il checkout, la gestione tecnica degli ordini, le
-        comunicazioni e gli strumenti tecnici collegati al pagamento. InCittà non è presentata
+        comunicazioni e gli strumenti tecnici collegati al pagamento. Radici Calabria non è presentata
         come il Venditore dei prodotti o servizi pubblicati sulla piattaforma, fatti salvi gli
         obblighi direttamente applicabili secondo la normativa vigente.
       </p>
@@ -128,7 +128,7 @@ const sezioni = [
       <p>
         La conclusione della vendita o del rapporto relativo alla prestazione è regolata dalle
         condizioni applicabili alla specifica offerta e dal rapporto tra Acquirente e Venditore.
-        La registrazione o conferma tecnica sulla piattaforma non descrive InCittà come parte
+        La registrazione o conferma tecnica sulla piattaforma non descrive Radici Calabria come parte
         venditrice.
       </p>
     ),
@@ -151,7 +151,7 @@ const sezioni = [
         configurazione, tramite Stripe Connect sui relativi account collegati del Venditore,
         secondo il metodo mostrato nel checkout. Il catalogo tecnico può comprendere carta,
         Klarna, PayPal, SEPA Direct Debit e bonifico istantaneo quando disponibili per il
-        negozio interessato. InCittà fornisce l'infrastruttura tecnica del processo e non è il
+        negozio interessato. Radici Calabria fornisce l'infrastruttura tecnica del processo e non è il
         Venditore né il creditore del prezzo della vendita.
       </p>
     ),
@@ -160,13 +160,13 @@ const sezioni = [
     titolo: "14. Elaborazione tecnica del pagamento",
     contenuto: (
       <p>
-        InCittà può trasmettere al provider i dati necessari, ricevere gli esiti tecnici e
+        Radici Calabria può trasmettere al provider i dati necessari, ricevere gli esiti tecnici e
         aggiornare lo stato dell'ordine o del checkout. PayPal, Klarna, SEPA Direct Debit e
         bonifico istantaneo sono utilizzati, quando disponibili, attraverso l'integrazione
         Stripe; il bonifico istantaneo non è un bonifico bancario ordinario diretto al Venditore.
         Eventuali verifiche, autorizzazioni, rifiuti o ritardi dipendenti dal provider seguono le
         procedure del provider e il flusso applicabile. Le commissioni eventualmente spettanti a
-        InCittà sono distinte dal prezzo della vendita secondo la configurazione applicabile e
+        Radici Calabria sono distinte dal prezzo della vendita secondo la configurazione applicabile e
         gli accordi con il Venditore.
       </p>
     ),
@@ -176,7 +176,7 @@ const sezioni = [
     contenuto: (
       <p>
         Il Venditore cura la consegna, il ritiro o l'esecuzione del servizio secondo l'offerta
-        e l'ordine. InCittà fornisce gli strumenti tecnici per trasmettere e seguire le
+        e l'ordine. Radici Calabria fornisce gli strumenti tecnici per trasmettere e seguire le
         informazioni dell'ordine, ma non esegue normalmente la consegna o la prestazione del
         Venditore.
       </p>
@@ -197,7 +197,7 @@ const sezioni = [
     titolo: "17. Comunicazioni relative all'ordine",
     contenuto: (
       <p>
-        InCittà può inviare comunicazioni tecniche sulla ricezione, sul pagamento e sullo stato
+        Radici Calabria può inviare comunicazioni tecniche sulla ricezione, sul pagamento e sullo stato
         dell'ordine. Il Venditore può inviare comunicazioni operative o commerciali relative
         alla vendita, alla consegna, al ritiro o alla prestazione.
       </p>
@@ -209,7 +209,7 @@ const sezioni = [
       <p>
         L'annullamento dell'ordine può avvenire nei casi e secondo le modalità previste
         dall'offerta, dalle condizioni applicabili, dal flusso tecnico e dalla normativa. Il
-        Venditore gestisce gli aspetti commerciali dell'annullamento; InCittà può aggiornare
+        Venditore gestisce gli aspetti commerciali dell'annullamento; Radici Calabria può aggiornare
         tecnicamente lo stato e trasmettere le comunicazioni previste.
       </p>
     ),
@@ -240,7 +240,7 @@ const sezioni = [
     contenuto: (
       <p>
         I resi sono gestiti dal Venditore secondo le condizioni della vendita, le informazioni
-        dell'offerta e la normativa applicabile. InCittà può mettere a disposizione strumenti
+        dell'offerta e la normativa applicabile. Radici Calabria può mettere a disposizione strumenti
         tecnici per comunicare la richiesta e conservarne le informazioni.
       </p>
     ),
@@ -250,7 +250,7 @@ const sezioni = [
     contenuto: (
       <p>
         Il Venditore gestisce la decisione commerciale sul rimborso nei casi applicabili. Dopo
-        le autorizzazioni previste dal workflow, InCittà può eseguire tecnicamente il rimborso
+        le autorizzazioni previste dal workflow, Radici Calabria può eseguire tecnicamente il rimborso
         tramite il provider, secondo la configurazione del pagamento, e comunicare l'esito
         tecnico. Un reclamo o una richiesta non comportano automaticamente un rimborso e
         l'esecuzione tecnica non sostituisce la decisione commerciale del soggetto competente.
@@ -262,7 +262,7 @@ const sezioni = [
     contenuto: (
       <p>
         Il Venditore gestisce gli obblighi relativi alla garanzia legale, alla conformità e ai
-        rimedi applicabili al prodotto o servizio nei limiti previsti dalla legge. InCittà non
+        rimedi applicabili al prodotto o servizio nei limiti previsti dalla legge. Radici Calabria non
         assume la garanzia commerciale del prodotto e non sostituisce il Venditore nella gestione
         della richiesta, fatti salvi gli obblighi direttamente applicabili alla piattaforma.
       </p>
@@ -274,7 +274,7 @@ const sezioni = [
       <p>
         L'Acquirente può utilizzare gli strumenti messi a disposizione dalla piattaforma per
         comunicare problemi relativi all'ordine. Il Venditore è il principale interlocutore per
-        le questioni commerciali della vendita; InCittà gestisce tecnicamente il sistema di
+        le questioni commerciali della vendita; Radici Calabria gestisce tecnicamente il sistema di
         comunicazione, conservazione e gli eventuali meccanismi di escalation previsti.
       </p>
     ),
@@ -285,7 +285,7 @@ const sezioni = [
       <p>
         Le richieste relative a prodotti o servizi non conformi devono essere comunicate al
         Venditore attraverso i canali disponibili. Il Venditore valuta e gestisce i rimedi
-        applicabili secondo le condizioni della vendita e la normativa, mentre InCittà può
+        applicabili secondo le condizioni della vendita e la normativa, mentre Radici Calabria può
         fornire supporto tecnico agli strumenti di comunicazione e tracciamento.
       </p>
     ),
@@ -316,14 +316,14 @@ const sezioni = [
     ),
   },
   {
-    titolo: "28. Limitazioni del ruolo di InCittà",
+    titolo: "28. Limitazioni del ruolo di Radici Calabria",
     contenuto: (
       <p>
-        InCittà non determina autonomamente i prezzi e le offerte dei Venditori, non vende
+        Radici Calabria non determina autonomamente i prezzi e le offerte dei Venditori, non vende
         direttamente i loro prodotti o servizi, non determina la disponibilità commerciale, non
         esegue normalmente la consegna o la prestazione, non assume la garanzia commerciale del
         prodotto e non sostituisce il Venditore nella gestione ordinaria del rapporto commerciale.
-        InCittà fornisce la piattaforma e gli strumenti tecnici necessari alla gestione
+        Radici Calabria fornisce la piattaforma e gli strumenti tecnici necessari alla gestione
         dell'ordine, senza limitare responsabilità o diritti inderogabili previsti dalla legge.
       </p>
     ),
@@ -333,7 +333,7 @@ const sezioni = [
     contenuto: (
       <p>
         Possono verificarsi manutenzioni, aggiornamenti, errori, ritardi o interruzioni dovuti a
-        fattori tecnici o a servizi di terzi. InCittà adotta misure ragionevoli per mantenere i
+        fattori tecnici o a servizi di terzi. Radici Calabria adotta misure ragionevoli per mantenere i
         propri strumenti disponibili e sicuri e può comunicare gli eventi tecnici rilevanti
         attraverso i canali disponibili.
       </p>
@@ -356,7 +356,7 @@ const sezioni = [
       <p>
         Le comunicazioni relative al prodotto, al servizio, alla consegna, al ritiro, alla
         prestazione, al recesso, al reso, alla garanzia o al rimborso commerciale devono essere
-        indirizzate al Venditore. InCittà può fornire assistenza tecnica sui propri strumenti,
+        indirizzate al Venditore. Radici Calabria può fornire assistenza tecnica sui propri strumenti,
         sul checkout, sulle comunicazioni e sul tracciamento tecnico dell'ordine.
       </p>
     ),

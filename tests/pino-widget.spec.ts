@@ -23,7 +23,7 @@ const POS_KEY = "incitta_pino_position_v1";
 
 const WIDGET = '[data-testid="pino-widget"]';
 const FLOATING = '[data-testid="pino-floating"]';
-const CTA_CHAT = "Apri l'assistente AI di InCittà";
+const CTA_CHAT = "Apri l'assistente AI di Radici Calabria";
 const TASTO_CHIUDI_CHAT = "Chiudi assistente";
 
 type Riquadro = { x: number; y: number; width: number; height: number };

@@ -20,7 +20,7 @@ async function callLLM(prompt: string, systemPrompt: string): Promise<string> {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
         "HTTP-Referer": "https://www.incitta.online",
-        "X-Title": "InCittà Admin Assistant",
+        "X-Title": "Radici Calabria Admin Assistant",
       },
       body: JSON.stringify({
         model: ADMIN_ASSISTANT_MODEL,
@@ -67,7 +67,7 @@ async function callLLM(prompt: string, systemPrompt: string): Promise<string> {
   }
 }
 
-const SYSTEM_PROMPT = `Sei l'Assistente AI dell'Area Amministrazione di InCittà.
+const SYSTEM_PROMPT = `Sei l'Assistente AI dell'Area Amministrazione di Radici Calabria.
 
 REGOLE ASSOLUTE:
 1. USA ESCLUSIVAMENTE i dati forniti nel contesto. NON inventare MAI numeri, negozi, utenti, vendite, ricavi, ordini, statistiche.
@@ -79,7 +79,7 @@ REGOLE ASSOLUTE:
 7. Quando citi numeri, specifica sempre la fonte (es. "Dai dati: 42 negozi attivi").
 8. Se l'amministratore chiede azioni distruttive (eliminare, modificare, cestinare), spiega che l'assistente è in modalità SOLO CONSULTAZIONE e indica dove trovare la funzione nel pannello.
 
-Il contesto che ricevi contiene dati REALI e aggiornati del database InCittà.`;
+Il contesto che ricevi contiene dati REALI e aggiornati del database Radici Calabria.`;
 
 export async function POST(request: Request) {
   const { error } = await requireApiArea("admin");

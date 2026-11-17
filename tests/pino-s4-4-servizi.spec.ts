@@ -187,6 +187,6 @@ test.describe("S4.4 — contratto del parametro servizio", () => {
     expect(mapping).toBeGreaterThan(-1);
     // Il filtro lavora sui dati grezzi, prima del mapping che perde `data`.
     expect(filtro).toBeLessThan(mapping);
-    expect(sorgente).toContain("if (!richiestoServizio) return base;");
+    expect(sorgente).toContain("if (!richiestoServizio && !serviziTutti) return base;");
   });
 });

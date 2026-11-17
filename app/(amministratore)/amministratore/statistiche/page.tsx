@@ -46,7 +46,7 @@ export default async function StatistichePage() {
               Statistiche piattaforma
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-              Analisi dei dati reali di InCittà: negozi, prodotti, utenti,
+              Analisi dei dati reali di Radici Calabria: negozi, prodotti, utenti,
               scansioni AI e categorie. Valori esatti dal database, demo e
               account di test esclusi.
             </p>

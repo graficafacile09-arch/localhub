@@ -64,12 +64,12 @@ export default function ProdottoImmagine({
     <div className="absolute inset-0">
       <div
         aria-hidden="true"
-        className="absolute inset-0 animate-pulse bg-gradient-to-br from-slate-100 via-blue-50 to-slate-200"
+        className="absolute inset-0 animate-pulse bg-gradient-to-br from-[#f4efe4] via-[#fbf9f4] to-[#efe9db]"
       />
       {nonDisponibile ? (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 px-2 text-center">
-          <ImageOff className="h-5 w-5 text-slate-400" aria-hidden />
-          <span className="line-clamp-2 text-[10px] font-bold uppercase tracking-wide text-slate-500">
+          <ImageOff className="h-5 w-5 text-[#b98f6b]" aria-hidden />
+          <span className="line-clamp-2 text-[10px] font-bold uppercase tracking-wide text-[#8a8378]">
             {alt}
           </span>
         </div>

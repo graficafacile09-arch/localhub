@@ -11,7 +11,7 @@ export default function RegolamentoConsegnePage() {
             href="/"
             className="text-sm font-semibold text-blue-700 underline-offset-2 hover:underline"
           >
-            ← Torna a InCittà
+            ← Torna a Radici Calabria
           </Link>
         </div>
 
@@ -26,11 +26,11 @@ export default function RegolamentoConsegnePage() {
           <section className="rounded-2xl border border-blue-100 bg-blue-50 p-5">
             <h2 className="text-xl font-bold text-slate-900">In breve</h2>
             <p className="mt-2">
-              InCittà mette a disposizione un'infrastruttura tecnologica e
+              Radici Calabria mette a disposizione un'infrastruttura tecnologica e
               strumenti digitali per la gestione degli ordini e per facilitare
               il contatto autonomo tra venditori e soggetti terzi che effettuano
               consegne locali. La spedizione e la consegna materiale non sono
-              svolte, organizzate o controllate da InCittà, ma sono effettuate
+              svolte, organizzate o controllate da Radici Calabria, ma sono effettuate
               autonomamente da soggetti terzi.
             </p>
             <p className="mt-2">
@@ -47,7 +47,7 @@ export default function RegolamentoConsegnePage() {
             <p className="mt-2">
               Il presente regolamento disciplina l'utilizzo delle funzionalità
               tecnologiche di consegna locale collegate agli ordini effettuati
-              tramite InCittà e chiarisce i ruoli e le responsabilità dei
+              tramite Radici Calabria e chiarisce i ruoli e le responsabilità dei
               soggetti coinvolti. Esso integra, per quanto riguarda le
               consegne locali, i termini e le condizioni generali della
               piattaforma.
@@ -55,9 +55,9 @@ export default function RegolamentoConsegnePage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-slate-900">2. Ruolo di InCittà</h2>
+            <h2 className="text-xl font-bold text-slate-900">2. Ruolo di Radici Calabria</h2>
             <p className="mt-2">
-              InCittà opera esclusivamente quale fornitore di infrastruttura
+              Radici Calabria opera esclusivamente quale fornitore di infrastruttura
               digitale e mero intermediario tecnico. Mette a disposizione
               strumenti per la gestione dell'ordine, l'assegnazione autonoma
               del corriere da parte dei soggetti interessati, la comunicazione
@@ -69,13 +69,13 @@ export default function RegolamentoConsegnePage() {
               corrieri e consumatori. L'accesso dei venditori alla vetrina
               digitale e agli strumenti di vendita è invece regolato da
               contratti B2B e dai relativi corrispettivi, canoni e tariffe.
-              I pagamenti effettuati dai venditori a InCittà riguardano
+              I pagamenti effettuati dai venditori a Radici Calabria riguardano
               esclusivamente la vetrina digitale, la fornitura tecnologica e
               gli strumenti di vendita e non costituiscono compensi per la
               consegna né percentuali sul relativo corrispettivo.
             </p>
             <p className="mt-2">
-              InCittà non instaura rapporti di lavoro con vettori, corrieri o
+              Radici Calabria non instaura rapporti di lavoro con vettori, corrieri o
               personale impiegato nella consegna, non assume il ruolo di datore
               di lavoro e non è prestatore materiale del servizio di consegna
               né organizzatore dell'attività logistica o del personale.
@@ -85,7 +85,7 @@ export default function RegolamentoConsegnePage() {
               obblighi previsti dalla legge dipendono dai fatti concreti e
               dalla normativa applicabile. Nessuna disposizione del presente
               regolamento esclude obblighi inderogabili o responsabilità che
-              la legge eventualmente ponga a carico di InCittà o degli altri
+              la legge eventualmente ponga a carico di Radici Calabria o degli altri
               soggetti coinvolti.
             </p>
           </section>
@@ -105,7 +105,7 @@ export default function RegolamentoConsegnePage() {
               l'accettazione, la preparazione, il ritiro del pacco, la presa in
               consegna, la consegna e l'eventuale segnalazione di un problema.
               Tali stati non costituiscono verifica, certificazione o garanzia
-              da parte di InCittà dell'effettiva esecuzione della consegna
+              da parte di Radici Calabria dell'effettiva esecuzione della consegna
               materiale.
             </p>
           </section>
@@ -132,7 +132,7 @@ export default function RegolamentoConsegnePage() {
             <h2 className="text-xl font-bold text-slate-900">5. Soggetto terzo che effettua il servizio</h2>
             <p className="mt-2">
               Il trasporto e la consegna materiale sono effettuati da soggetti
-              terzi indipendenti rispetto a InCittà. Il soggetto che presta il
+              terzi indipendenti rispetto a Radici Calabria. Il soggetto che presta il
               servizio è esclusivamente responsabile dell'organizzazione della
               propria attività, dei mezzi utilizzati e degli obblighi derivanti
               dalla legge e dai rapporti contrattuali effettivamente instaurati
@@ -163,7 +163,7 @@ export default function RegolamentoConsegnePage() {
               problemi relativi alla consegna.
             </p>
             <p className="mt-2">
-              L'approvazione dell'account da parte dell'amministrazione InCittà
+              L'approvazione dell'account da parte dell'amministrazione Radici Calabria
               abilita esclusivamente l'accesso tecnico all'area corriere. Tale
               approvazione non costituisce certificazione professionale,
               assunzione, autorizzazione amministrativa all'esercizio
@@ -176,7 +176,7 @@ export default function RegolamentoConsegnePage() {
           <section>
             <h2 className="text-xl font-bold text-slate-900">7. Rapporti di lavoro e compensi</h2>
             <p className="mt-2">
-              InCittà non stabilisce tariffe o compensi dei corrieri, non
+              Radici Calabria non stabilisce tariffe o compensi dei corrieri, non
               organizza il lavoro, non determina turni, orari o soglie di
               disponibilità, non impartisce direttive vincolanti sull'attività
               lavorativa e non gestisce ferie, assenze o altri aspetti del
@@ -190,9 +190,9 @@ export default function RegolamentoConsegnePage() {
               accordi e la normativa applicabile.
             </p>
             <p className="mt-2">
-              I pagamenti effettuati dai venditori a InCittà sono esclusivamente
+              I pagamenti effettuati dai venditori a Radici Calabria sono esclusivamente
               relativi alla vetrina digitale, alla fornitura tecnologica e agli
-              strumenti di vendita previsti dai rapporti B2B. InCittà non
+              strumenti di vendita previsti dai rapporti B2B. Radici Calabria non
               trattiene percentuali, commissioni o ricavi propri sulle tariffe
               di consegna materiale e non determina né gestisce la remunerazione
               del corriere o del vettore.
@@ -224,12 +224,12 @@ export default function RegolamentoConsegnePage() {
               indicato secondo le configurazioni del venditore o secondo gli
               accordi tra venditore e soggetto che effettua la consegna. I
               relativi flussi economici tra venditore e prestatore del servizio
-              di consegna sono esterni a InCittà.
+              di consegna sono esterni a Radici Calabria.
             </p>
             <p className="mt-2">
-              I ricavi di InCittà derivano esclusivamente dalla vetrina
+              I ricavi di Radici Calabria derivano esclusivamente dalla vetrina
               digitale e dai servizi tecnologici e dagli strumenti di vendita
-              forniti ai venditori nell'ambito dei rapporti B2B. InCittà non
+              forniti ai venditori nell'ambito dei rapporti B2B. Radici Calabria non
               percepisce alcuna quota, tariffa o provvigione sul corrispettivo
               della consegna materiale e non determina la remunerazione del
               corriere o del vettore.
@@ -237,7 +237,7 @@ export default function RegolamentoConsegnePage() {
             <p className="mt-2">
               La visualizzazione del costo di consegna sulla piattaforma ha
               funzione informativa e operativa e non comporta l'assunzione da
-              parte di InCittà del ruolo di prestatore, vettore o organizzatore
+              parte di Radici Calabria del ruolo di prestatore, vettore o organizzatore
               della logistica materiale.
             </p>
           </section>
@@ -256,7 +256,7 @@ export default function RegolamentoConsegnePage() {
               essere registrati, ove possibile, attraverso gli strumenti
               disponibili sulla piattaforma e gestiti tra venditore,
               consumatore e soggetto che effettua la consegna, secondo le
-              rispettive responsabilità. InCittà resta estranea alla gestione
+              rispettive responsabilità. Radici Calabria resta estranea alla gestione
               materiale della controversia, fatti salvi gli obblighi
               inderogabili previsti dalla legge.
             </p>
@@ -272,7 +272,7 @@ export default function RegolamentoConsegnePage() {
             </p>
             <p className="mt-2">
               Il trattamento dei dati personali avviene secondo l'Informativa
-              Privacy di InCittà e la normativa applicabile, incluso il
+              Privacy di Radici Calabria e la normativa applicabile, incluso il
               Regolamento (UE) 2016/679 (GDPR). Ciascun utente professionale
               opera quale autonomo titolare del trattamento per i dati trattati
               nell'ambito delle proprie attività, nei limiti e secondo le
@@ -286,18 +286,18 @@ export default function RegolamentoConsegnePage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-bold text-slate-900">12. Responsabilità e limiti del ruolo di InCittà</h2>
+            <h2 className="text-xl font-bold text-slate-900">12. Responsabilità e limiti del ruolo di Radici Calabria</h2>
             <p className="mt-2">
               Ciascun soggetto resta responsabile degli obblighi che gli
               competono in base alla legge, ai contratti e alle concrete
-              attività svolte. InCittà risponde esclusivamente del corretto
+              attività svolte. Radici Calabria risponde esclusivamente del corretto
               funzionamento tecnico degli strumenti digitali messi a
               disposizione, nei limiti delle proprie condizioni d'uso e della
               normativa applicabile.
             </p>
             <p className="mt-2">
               In qualità di infrastruttura tecnologica e intermediario tecnico,
-              InCittà non assume la responsabilità materiale della consegna e,
+              Radici Calabria non assume la responsabilità materiale della consegna e,
               nei limiti consentiti dalla legge, non risponde della conformità,
               sicurezza o liceità dei prodotti, dell'esecuzione del contratto
               di vendita tra consumatore e venditore né dei danni, smarrimenti,
@@ -337,7 +337,7 @@ export default function RegolamentoConsegnePage() {
             </p>
             <p className="mt-2">
               Il presente regolamento deve essere interpretato insieme alle
-              altre condizioni e informative pubblicate da InCittà. I separati
+              altre condizioni e informative pubblicate da Radici Calabria. I separati
               contratti bilaterali con venditori e partner logistici prevalgono,
               nei limiti consentiti dalla legge, per quanto riguarda gli
               specifici rapporti contrattuali da essi disciplinati.
@@ -346,7 +346,7 @@ export default function RegolamentoConsegnePage() {
 
           <section className="border-t border-slate-200 pt-6 text-sm text-slate-500">
             <p>
-              © 2026 InCittà · Castrovillari · Privacy · Termini e condizioni
+              © 2026 Radici Calabria · Castrovillari · Privacy · Termini e condizioni
             </p>
           </section>
         </div>

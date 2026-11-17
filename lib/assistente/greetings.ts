@@ -13,7 +13,7 @@ export function rispostaSalutoPino(input: string): string | null {
     buonasera: "Buonasera!", "buonasera pino": "Buonasera!",
     "buon pomeriggio": "Buon pomeriggio!",
   };
-  if (it[q]) return it[q] + " 😊 Dimmi pure cosa ti piacerebbe cercare o scoprire su InCittà: ti aiuto volentieri!";
+  if (it[q]) return it[q] + " 😊 Dimmi pure cosa ti piacerebbe cercare o scoprire su Radici Calabria: ti aiuto volentieri!";
   const en: Record<string, string> = {
     hi: "Hi!", "hi pino": "Hi!", "hi there": "Hi there!", hey: "Hey!", "hey pino": "Hey!",
     hello: "Hello!", "hello pino": "Hello!", "hello there": "Hello there!",
@@ -23,7 +23,7 @@ export function rispostaSalutoPino(input: string): string | null {
     "good night": "Good night!", "good night pino": "Good night!", howdy: "Hey there!",
     "hey there": "Hey there!", "what s up": "Hey there!",
   };
-  if (en[q]) return en[q] + " 😊 What would you like to find or discover on InCittà? I'm happy to help!";
+  if (en[q]) return en[q] + " 😊 What would you like to find or discover on Radici Calabria? I'm happy to help!";
   return null;
 }
 
@@ -57,9 +57,9 @@ export function rispostaPreferenzaLinguaPino(input: string): string | null {
   const preferenza = rilevaPreferenzaLinguaPino(input);
   if (!preferenza || !preferenza.soloLingua) return null;
   if (preferenza.lingua === "it") {
-    return "Va bene — continuo in italiano. 😊 Posso aiutarti a trovare negozi, prodotti, offerte ed eventi su InCittà: cosa stai cercando?";
+    return "Va bene — continuo in italiano. 😊 Posso aiutarti a trovare negozi, prodotti, offerte ed eventi su Radici Calabria: cosa stai cercando?";
   }
-  return "Of course — I'll continue in English. 😊 I can help you find shops, products, offers and events on InCittà: what are you looking for?";
+  return "Of course — I'll continue in English. 😊 I can help you find shops, products, offers and events on Radici Calabria: what are you looking for?";
 }
 
 export function rispostaRelazionalePino(input: string, lingua: PinoLanguage = rilevaLinguaPino(input)): string | null {

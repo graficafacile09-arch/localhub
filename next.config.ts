@@ -59,6 +59,9 @@ const nextConfig: NextConfig = {
         hostname: `*.${dominio}`,
       })),
     ],
+    // Il logo dell'header usa una qualità più alta del default (testo sottile:
+    // a 75 la scritta CALABRIA perde nitidezza nella ricodifica).
+    qualities: [75, 95],
     // Le immagini prodotto sono salvate con nome UUID: quando un commerciante
     // cambia foto cambia anche l'URL, quindi la variante ottimizzata può
     // restare in cache CDN molto più dei 4 ore di default.

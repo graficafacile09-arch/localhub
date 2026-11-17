@@ -161,8 +161,8 @@ export default function ProductVariantSelector({
       {/* Desktop: immagine a sinistra; dettagli, varianti e acquisto a destra. Mobile invariato. */}
       <div className="min-w-0">
       {/* Immagine (variante se ha immagine propria, altrimenti prodotto padre) */}
-      <div className="overflow-hidden rounded-xl">
-        <div className="relative aspect-square max-h-[400px] overflow-hidden bg-slate-100">
+      <div className="rd-scheda overflow-hidden">
+        <div className="relative aspect-square max-h-[520px] overflow-hidden bg-[#f4efe4]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={immagineMostrata}
@@ -174,20 +174,20 @@ export default function ProductVariantSelector({
       </div>
 
       <div className="min-w-0">
-      <div className="mt-4 md:mt-0">
+      <div className="rd-scheda mt-4 p-5 sm:p-6 md:mt-0">
         <div className="flex items-start justify-between gap-4">
           <div className="min-w-0 flex-1">
-            <h1 className="text-xl font-black tracking-tight text-slate-900">{nome}</h1>
+            <h1 className="mt-1 text-[1.65rem] font-extrabold leading-[1.12] tracking-tight text-[#1b3624]">{nome}</h1>
             {categoria && (
-              <p className="mt-0.5 text-xs font-semibold text-blue-600">{categoria}</p>
+              <p className="rd-occhiello mt-2">{categoria}</p>
             )}
           </div>
           <div className="shrink-0 text-right">
-            <p className="text-2xl font-black text-blue-700">
+            <p className="text-[1.9rem] font-extrabold leading-none tracking-tight text-[#1b3624] tabular-nums">
               €{prezzoMostrato.toFixed(2)}
             </p>
             {statoCondizione && (
-              <p className="text-[10px] font-medium uppercase tracking-wide text-slate-400">
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#8a8378]">
                 {statoCondizione}
               </p>
             )}
@@ -195,7 +195,7 @@ export default function ProductVariantSelector({
         </div>
 
         {descrizione && (
-          <p className="mt-3 text-sm leading-6 text-slate-600">{descrizione}</p>
+          <p className="mt-4 border-t border-[#e5ded0] pt-4 text-sm leading-7 text-[#57534e]">{descrizione}</p>
         )}
 
         {/* Selettore attributi */}
@@ -206,7 +206,7 @@ export default function ProductVariantSelector({
               const selezionato = String(selezioni[chiave] ?? "");
               return (
                 <div key={chiave}>
-                  <p className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                  <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#8a8378]">
                     {chiave}
                   </p>
                   <div className="mt-2 flex flex-wrap gap-2">
@@ -220,8 +220,8 @@ export default function ProductVariantSelector({
                           aria-pressed={attivo}
                           className={`rounded-lg border px-3 py-1.5 text-sm font-semibold transition ${
                             attivo
-                              ? "border-yellow-400 bg-yellow-400 text-blue-900 shadow-sm"
-                              : "border-slate-200 bg-white text-slate-700 hover:border-yellow-300 hover:bg-yellow-50 hover:text-yellow-800"
+                              ? "border-[#24462f] bg-[#24462f] text-[#faf9f5] shadow-sm"
+                              : "border-[#e5ded0] bg-white text-[#3f3a33] hover:border-[#d5a83a] hover:bg-[#fdfbf6] hover:text-[#24462f]"
                           }`}
                         >
                           {valore}
@@ -237,7 +237,7 @@ export default function ProductVariantSelector({
 
         {/* Nome variante selezionata */}
         {varianteSelezionata?.nome && (
-          <p className="mt-3 text-xs font-semibold text-slate-500">
+          <p className="mt-3 text-xs font-semibold text-[#6b6459]">
             Variante: {varianteSelezionata.nome}
           </p>
         )}
@@ -247,12 +247,12 @@ export default function ProductVariantSelector({
           <div className="mt-3 flex items-center gap-2">
             <span
               className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold ${
-                !esaurito ? "bg-blue-50 text-blue-700" : "bg-blue-50 text-blue-600"
+                !esaurito ? "bg-[#f4efe4] text-[#24462f]" : "bg-[#f4efe4] text-[#8a5a3b]"
               }`}
             >
               <span
                 className={`inline-block h-1.5 w-1.5 rounded-full ${
-                  !esaurito ? "bg-blue-500" : "bg-blue-500"
+                  !esaurito ? "bg-[#24462f]" : "bg-[#8a5a3b]"
                 }`}
               />
               {!esaurito ? `${disponibile} disponibili` : "Esaurito"}
@@ -261,13 +261,13 @@ export default function ProductVariantSelector({
         )}
 
         {nessunaAcquistabile && (
-          <div className="mt-4 rounded-xl border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm font-semibold text-yellow-700">
+          <div className="mt-4 rounded-xl border border-[#e5ded0] bg-[#f4efe4] px-4 py-3 text-sm font-semibold text-[#24462f]">
             Prodotto non disponibile.
           </div>
         )}
 
         {/* Nota informativa (coerente con la gestione aggregata del catalogo) */}
-        <p className="mt-2 text-[11px] leading-4 text-slate-400">
+        <p className="mt-2 text-[11px] leading-[1.5] text-[#8a8378]">
           Il prezzo e la disponibilità dipendono dalla variante selezionata. Per i
           prodotti con varianti prezzo e stock del prodotto vengono aggregati
           automaticamente dal sistema.
@@ -285,7 +285,7 @@ export default function ProductVariantSelector({
           negozio proprietario (regola auto-acquisto, blocco anche API) */}
       <div className="mt-4 space-y-2">
         {eIlMioProdotto ? (
-          <div className="flex w-full items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-base font-bold text-blue-700">
+          <div className="flex w-full items-center justify-center gap-2 rounded-xl border border-[#e5ded0] bg-[#f4efe4] px-4 py-3 text-base font-bold text-[#24462f]">
             <Store className="h-5 w-5 shrink-0" aria-hidden />
             Il tuo prodotto
           </div>
@@ -294,7 +294,7 @@ export default function ProductVariantSelector({
             {acquistabile && hrefAcquista ? (
               <Link
                 href={hrefAcquista}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-yellow-400 px-4 py-3 text-base font-bold text-blue-800 shadow-sm transition hover:bg-yellow-300"
+                className="rd-azione w-full py-3.5 text-base"
               >
                 <ShoppingBag className="h-5 w-5" />
                 ACQUISTA
@@ -304,7 +304,7 @@ export default function ProductVariantSelector({
                 type="button"
                 disabled
                 aria-disabled="true"
-                className="flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-xl bg-slate-300 px-4 py-3 text-base font-bold text-white"
+                className="flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-xl bg-[#e5ded0] px-4 py-3 text-base font-bold text-[#8a8378]"
               >
                 <ShoppingBag className="h-5 w-5" />
                 {nessunaAcquistabile || esaurito ? "Non disponibile" : "Seleziona una variante"}

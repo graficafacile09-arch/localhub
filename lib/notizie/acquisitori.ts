@@ -166,7 +166,7 @@ export function estraiTestoPulito(html: string | null | undefined, max = 320): s
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/&#39;|&apos;/g, "'")
-    .replace(/&quot;/g, '"')
+    .replace(/&quot;/g, '"').replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n))).replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCodePoint(parseInt(n, 16))).replace(/L[’']articolo[\s\S]*?sembra essere il primo su[\s\S]*$/i, "")
     .replace(/\s+/g, " ")
     .trim();
   if (!senzaTag) return null;

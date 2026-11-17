@@ -2,7 +2,7 @@
  * Pino — «Ho fame» non deve finire in un vicolo cieco.
  *
  * Difetto osservato in produzione: «ho fame» rispondeva in ~500 ms, senza AI,
- * con «Non risultano attività con questi criteri nel catalogo InCittà. Prova
+ * con «Non risultano attività con questi criteri nel catalogo Radici Calabria. Prova
  * con un'altra categoria o zona.» mentre il catalogo pubblica gastronomie,
  * panifici e alimentari. Il piano deterministico cercava un solo termine
  * («ristorante») e non aveva alcun ripiego sul cibo pronto.

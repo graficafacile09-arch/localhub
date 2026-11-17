@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 
 /**
  * Pagina "Ordini" dell'area venditore.
- * Card CONDIVISE (OrderCard) con il linguaggio visivo "Ordini InCittà":
+ * Card CONDIVISE (OrderCard) con il linguaggio visivo "Ordini Radici Calabria":
  * numero + sintesi prodotto, cliente, data/ora, foto prodotto, totale,
  * stato. KPI per stato + banner "NUOVI ORDINI" + filtri (incluso Reclami,
  * che filtra in memoria su haReclamoAperto). OWNERSHIP server-side

@@ -81,7 +81,7 @@ function makeNotizia(p: {
     originalUrl: p.url,
     externalId: p.guid ?? null,
     publishedAt: p.data ?? "2026-09-03T10:00:00.000Z",
-    category: "Territorio",
+    category: "Agricoltura",
     imageUrl: null,
     dedupHash: calcolaDedupHash(title),
     urlHash: calcolaUrlHash(p.url),
@@ -181,7 +181,7 @@ function unitTests() {
     source: "Test Fonte P1",
   };
   const n = normalizzaVoce(
-    { id: FONTI_ID.GOOGLE_NEWS_CV, nome: "Google News · Castrovillari", tipo: "rss", urlFeed: null, urlLista: null, urlBase: "https://news.google.com", categoriaDefault: "Territorio", attiva: true, frequenzaMinuti: 60, scoperta: true },
+    { id: FONTI_ID.GOOGLE_NEWS_CV, nome: "Google News · Castrovillari", tipo: "rss", urlFeed: null, urlLista: null, urlBase: "https://news.google.com", categoriaDefault: "Agricoltura", attiva: true, frequenzaMinuti: 60, scoperta: true },
     voce
   );
   check("urlHash presente", typeof n.urlHash === "string" && n.urlHash.length === 64);

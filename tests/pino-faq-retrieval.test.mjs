@@ -2,14 +2,14 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { trovaRispostaFaqPino } from "../lib/assistente/faq.ts";
 
-test("FAQ: trova informazioni su InCittà", () => {
-  const faq = trovaRispostaFaqPino("Che cos'è InCittà?");
+test("FAQ: trova informazioni su Radici Calabria", () => {
+  const faq = trovaRispostaFaqPino("Che cos'è Radici Calabria?");
   assert.ok(faq);
   assert.match(faq.risposta, /piattaforma digitale/i);
 });
 
 test("FAQ: riconosce domande naturali sul funzionamento", () => {
-  const faq = trovaRispostaFaqPino("Come funziona InCittà?");
+  const faq = trovaRispostaFaqPino("Come funziona Radici Calabria?");
   assert.ok(faq);
   assert.match(faq.risposta, /piattaforma digitale/i);
 });

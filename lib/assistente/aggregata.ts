@@ -55,6 +55,31 @@ export function rilevaDomandaAggregata(query: string): DomandaAggregata | null {
 }
 
 /**
+ * «Che varianti ha la Birra Mythos?» non è un conteggio aggregato: è una
+ * domanda su un prodotto concreto. Va lasciata al catalogo, che può allegare
+ * le varianti attive pubblicate.
+ */
+export function rilevaRichiestaVariantiProdottoPino(query: string): boolean {
+  const q = normalizzaRichiesta(query ?? "");
+  return /\b(?:varianti|versioni)\b/.test(q);
+}
+
+/** «che varianti ha la Birra Mythos?» → «birra mythos». */
+export function estraiSoggettoVariantiPino(query: string): string {
+  return normalizzaRichiesta(query ?? "")
+    .replace(
+      /\b(?:che|quali|quante|quanti|mi|puoi|potresti|dire|mostrare|elencare|sapere|dimmi)\b/g,
+      " "
+    )
+    .replace(/\b(?:varianti|versioni)\b/g, " ")
+    .replace(/\b(?:ha|hanno|ci sono|sono|disponibili|previste|previsti)\b/g, " ")
+    .replace(/\b(?:di|del|dello|della|dei|degli|delle|per|il|lo|la|i|gli|le)\b/g, " ")
+    .replace(/[?.!,;:]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
  * Conteggio di ATTIVITÀ (vetrine): «quanti panifici ci sono?».
  *
  * `rilevaDomandaAggregata` copre solo i prodotti (tipi, varianti, articoli),
@@ -121,13 +146,13 @@ export function componiRispostaConteggioAttivitaPino(input: {
   const totale = Math.max(0, Math.round(Number(input.totale) || 0));
   const nomi = input.nomi.filter(Boolean).slice(0, 8);
   if (input.lingua === "en") {
-    if (totale === 0) return `No ${ATTIVITA_EN[input.termine] ?? input.termine} are currently listed in the InCittà catalogue.`;
-    return `The InCittà catalogue currently lists **${totale}** ${ATTIVITA_EN[input.termine] ?? input.termine}${nomi.length ? `: ${nomi.join(", ")}.` : "."}`;
+    if (totale === 0) return `No ${ATTIVITA_EN[input.termine] ?? input.termine} are currently listed in the Radici Calabria catalogue.`;
+    return `The Radici Calabria catalogue currently lists **${totale}** ${ATTIVITA_EN[input.termine] ?? input.termine}${nomi.length ? `: ${nomi.join(", ")}.` : "."}`;
   }
-  if (totale === 0) return `Nel catalogo InCittà non risultano **${pluraleAttivitaPino(input.termine)}** attivi al momento.`;
+  if (totale === 0) return `Nel catalogo Radici Calabria non risultano **${pluraleAttivitaPino(input.termine)}** attivi al momento.`;
   const sostantivo = totale === 1 ? input.termine : pluraleAttivitaPino(input.termine);
   const verbo = totale === 1 ? "c'è" : "ci sono";
-  return `Nel catalogo InCittà ${verbo} **${totale}** ${sostantivo}${nomi.length ? `: ${nomi.join(", ")}.` : "."}`;
+  return `Nel catalogo Radici Calabria ${verbo} **${totale}** ${sostantivo}${nomi.length ? `: ${nomi.join(", ")}.` : "."}`;
 }
 
 // ─── Soggetto e filtro della conversazione ───────────────────────────────────
@@ -272,9 +297,9 @@ export type EsitoAggregato = {
 };
 
 const CAVEAT =
-  "Il conteggio si basa solo sulle schede pubblicate dai negozi su InCittà: non è un elenco esaustivo delle varietà esistenti.";
+  "Il conteggio si basa solo sulle schede pubblicate dai negozi su Radici Calabria: non è un elenco esaustivo delle varietà esistenti.";
 const CAVEAT_EN =
-  "This count is based only on product listings published by shops on InCittà; it is not an exhaustive list of all existing varieties.";
+  "This count is based only on product listings published by shops on Radici Calabria; it is not an exhaustive list of all existing varieties.";
 
 function unici(prodotti: ProdottoRicerca[]): ProdottoRicerca[] {
   const visti = new Set<string>();
@@ -324,17 +349,17 @@ export function componiRispostaAggregata(esito: EsitoAggregato): string {
   if (!esito.qualificatore) {
     if (base.length === 0) {
       return inglese
-        ? "The InCittà catalog has no listed products for “" + soggetto + "”, so I can't give you a count. I won't make one up. I can try a synonym, a broader category or a specific shop."
-        : "Nel catalogo InCittà non risultano prodotti per «" + soggetto + "», quindi non posso dirti quanti ce ne sono: non invento un conteggio. Posso provare con un sinonimo, una categoria più ampia o un negozio specifico.";
+        ? "The Radici Calabria catalog has no listed products for “" + soggetto + "”, so I can't give you a count. I won't make one up. I can try a synonym, a broader category or a specific shop."
+        : "Nel catalogo Radici Calabria non risultano prodotti per «" + soggetto + "», quindi non posso dirti quanti ce ne sono: non invento un conteggio. Posso provare con un sinonimo, una categoria più ampia o un negozio specifico.";
     }
     const quanti = conteggio(base.length, limite, inglese);
     const apertura = inglese
       ? (tipo === "conteggio"
-        ? "The InCittà catalog lists " + quanti + " for “" + soggetto + "”."
-        : "I found " + quanti + " in the InCittà catalog for “" + soggetto + "”.")
+        ? "The Radici Calabria catalog lists " + quanti + " for “" + soggetto + "”."
+        : "I found " + quanti + " in the Radici Calabria catalog for “" + soggetto + "”.")
       : (tipo === "conteggio"
-        ? "Nel catalogo InCittà risultano " + quanti + " per «" + soggetto + "»."
-        : "Nel catalogo InCittà ho trovato " + quanti + " per «" + soggetto + "».");
+        ? "Nel catalogo Radici Calabria risultano " + quanti + " per «" + soggetto + "»."
+        : "Nel catalogo Radici Calabria ho trovato " + quanti + " per «" + soggetto + "».");
     const nota = base.length >= limite
       ? (inglese
         ? " The search is limited to " + limite + " results, so the actual number may be higher."
@@ -346,12 +371,12 @@ export function componiRispostaAggregata(esito: EsitoAggregato): string {
   if (filtrati.length === 0) {
     if (base.length === 0) {
       return inglese
-        ? "No products for “" + soggetto + "” match the “" + esito.qualificatore + "” filter, and I couldn't find any for “" + soggetto + "” in the InCittà catalog even without that filter. I can't provide a reliable count, and I won't make one up."
-        : "Con il filtro «" + esito.qualificatore + "» non risulta alcun prodotto per «" + soggetto + "», e nel catalogo InCittà non trovo prodotti per «" + soggetto + "» nemmeno senza filtro. Non posso darti un conteggio affidabile e non invento un numero.";
+        ? "No products for “" + soggetto + "” match the “" + esito.qualificatore + "” filter, and I couldn't find any for “" + soggetto + "” in the Radici Calabria catalog even without that filter. I can't provide a reliable count, and I won't make one up."
+        : "Con il filtro «" + esito.qualificatore + "» non risulta alcun prodotto per «" + soggetto + "», e nel catalogo Radici Calabria non trovo prodotti per «" + soggetto + "» nemmeno senza filtro. Non posso darti un conteggio affidabile e non invento un numero.";
     }
     return inglese
-      ? "No products for “" + soggetto + "” match the “" + esito.qualificatore + "” filter. Without that filter, the InCittà catalog lists " + conteggio(base.length, limite, true) + " for “" + soggetto + "”:\n\n" + elenco(base) + "\n\n" + caveat
-      : "Con il filtro «" + esito.qualificatore + "» non risulta alcun prodotto per «" + soggetto + "». Senza quel filtro il catalogo InCittà ha " + conteggio(base.length, limite) + " per «" + soggetto + "»:\n\n" + elenco(base) + "\n\n" + caveat;
+      ? "No products for “" + soggetto + "” match the “" + esito.qualificatore + "” filter. Without that filter, the Radici Calabria catalog lists " + conteggio(base.length, limite, true) + " for “" + soggetto + "”:\n\n" + elenco(base) + "\n\n" + caveat
+      : "Con il filtro «" + esito.qualificatore + "» non risulta alcun prodotto per «" + soggetto + "». Senza quel filtro il catalogo Radici Calabria ha " + conteggio(base.length, limite) + " per «" + soggetto + "»:\n\n" + elenco(base) + "\n\n" + caveat;
   }
 
   const nota = filtrati.length >= limite
@@ -372,6 +397,6 @@ export function componiRispostaAggregata(esito: EsitoAggregato): string {
   }
 
   return inglese
-    ? "The InCittà catalog lists " + conteggio(base.length, limite, true) + " for “" + soggetto + "”; " + filtrati.length + " " + (filtrati.length === 1 ? "matches" : "match") + " the active “" + esito.qualificatore + "” filter." + nota + "\n\n" + elenco(filtrati) + "\n\n" + caveat
-    : "Per «" + soggetto + "» il catalogo InCittà ha " + conteggio(base.length, limite) + "; " + filtrati.length + " " + (filtrati.length === 1 ? "corrisponde" : "corrispondono") + " al filtro «" + esito.qualificatore + "» già attivo." + nota + "\n\n" + elenco(filtrati) + "\n\n" + caveat;
+    ? "The Radici Calabria catalog lists " + conteggio(base.length, limite, true) + " for “" + soggetto + "”; " + filtrati.length + " " + (filtrati.length === 1 ? "matches" : "match") + " the active “" + esito.qualificatore + "” filter." + nota + "\n\n" + elenco(filtrati) + "\n\n" + caveat
+    : "Per «" + soggetto + "» il catalogo Radici Calabria ha " + conteggio(base.length, limite) + "; " + filtrati.length + " " + (filtrati.length === 1 ? "corrisponde" : "corrispondono") + " al filtro «" + esito.qualificatore + "» già attivo." + nota + "\n\n" + elenco(filtrati) + "\n\n" + caveat;
 }

@@ -5,7 +5,7 @@ import { getSiteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Cookie Policy",
-  description: "Informazioni sui cookie e sulle tecnologie analoghe utilizzate da InCittà.",
+  description: "Informazioni sui cookie e sulle tecnologie analoghe utilizzate da Radici Calabria.",
   alternates: {
     canonical: `${getSiteUrl()}/cookie`,
   },
@@ -27,7 +27,7 @@ const sezioni = [
     titolo: "2. Perché vengono utilizzati",
     contenuto: (
       <p>
-        InCittà può utilizzare cookie e tecnologie analoghe per rendere disponibili le funzioni
+        Radici Calabria può utilizzare cookie e tecnologie analoghe per rendere disponibili le funzioni
         richieste, mantenere la sicurezza, gestire la sessione, ricordare preferenze e migliorare
         il funzionamento tecnico della piattaforma. Le categorie non necessarie vengono trattate
         secondo le regole e le scelte applicabili all'utente.
@@ -83,7 +83,7 @@ const sezioni = [
     contenuto: (
       <p>
         Alcuni servizi esterni collegati alla piattaforma possono utilizzare proprie tecnologie
-        secondo le rispettive informative e configurazioni. InCittà non indica in questa pagina
+        secondo le rispettive informative e configurazioni. Radici Calabria non indica in questa pagina
         fornitori o cookie specifici che non siano stati verificati nel progetto.
       </p>
     ),
@@ -222,7 +222,7 @@ export default function CookiePolicyPage() {
 
           <div className="space-y-8 px-6 py-7 text-[15px] leading-7 text-slate-700 md:px-10 md:py-9">
             <p>
-              Questa Cookie Policy integra la Privacy Policy di InCittà per quanto riguarda i
+              Questa Cookie Policy integra la Privacy Policy di Radici Calabria per quanto riguarda i
               cookie e le tecnologie analoghe utilizzate in relazione alla piattaforma.
             </p>
             {sezioni.map((sezione) => (

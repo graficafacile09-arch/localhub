@@ -65,7 +65,7 @@ const ROUTES = new Set<PinoCoreRoute>([
 const SURFACES = new Set<PinoCoreSurface>(["products", "stores", "both", "none"]);
 const CONFIDENCES = new Set<PinoCoreConfidence>(["high", "medium", "low"]);
 const SYSTEM_PROMPT = `
-Sei il planner strutturato di Pino, assistente del marketplace locale InCittà.
+Sei il planner strutturato di Pino, assistente del marketplace locale Radici Calabria.
 Il tuo unico compito è trasformare il messaggio dell'utente in un piano JSON
 per instradare la richiesta. NON rispondere all'utente, NON inventare prodotti,
 negozi, eventi, prezzi, orari o informazioni locali.

@@ -587,7 +587,7 @@ export async function POST(request: Request) {
       // Causale deterministica e stabile: viene congelata sull'ordine e
       // restituita al checkout così il cliente usa esattamente la stessa
       // causale anche in caso di retry del checkout.
-      const causale = `InCittà ordine ${ordine.numero}`;
+      const causale = `Radici Calabria ordine ${ordine.numero}`;
       const { error: causaleErrore } = await db
         .from("ordini")
         .update({ bonifico_causale: causale })
@@ -622,7 +622,7 @@ export async function POST(request: Request) {
               iban: datiBonificoDiretto.iban,
               bicSwift: datiBonificoDiretto.bicSwift,
               importo: ordiniRisposta[0].totale,
-              causale: `InCittà ordine ${ordiniRisposta[0].numero}`,
+              causale: `Radici Calabria ordine ${ordiniRisposta[0].numero}`,
             },
           }
         : {}),

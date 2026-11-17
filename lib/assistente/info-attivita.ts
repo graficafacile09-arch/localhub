@@ -2,7 +2,7 @@
  * Pino — informazioni pubblicate su un'attività.
  *
  * "A che ora chiude il panificio?" non è una ricerca di prodotti: è una domanda
- * su dati che InCittà possiede (orari, indirizzo, telefono). La risposta viene
+ * su dati che Radici Calabria possiede (orari, indirizzo, telefono). La risposta viene
  * composta qui, in modo deterministico, così il modello non può inventare un
  * orario o un recapito. Se il dato non è pubblicato, Pino lo dichiara.
  *
@@ -81,6 +81,44 @@ export function rilevaRichiestaInfoAttivitaPino(input: string): InfoAttivitaPino
   if (indirizzo) return "indirizzo";
   if (telefono) return "telefono";
   return null;
+}
+
+/**
+ * «Quali servizi offre il Panificio Zini?» non è una ricerca per categoria:
+ * chiede l'elenco dei servizi pubblicati da una specifica attività. Il
+ * riconoscimento è separato da `rilevaRichiestaServizioPino`, che cerca un
+ * servizio nominato (taglio, visita, ...).
+ */
+const RE_RICHIESTA_SERVIZI_ATTIVITA =
+  /\b(?:quali|che|cosa|what)\s+servizi?\b|\bservizi?\s+(?:offre|offrono|offerti|disponibili|ha|hanno|di|del|dello|della|dei|degli|delle)\b/i;
+
+export function rilevaRichiestaServiziAttivitaPino(input: string): boolean {
+  const q = normalizzaRichiesta(input ?? "");
+  return Boolean(q) && RE_RICHIESTA_SERVIZI_ATTIVITA.test(q);
+}
+
+/**
+ * Soggetto dell'attività per una richiesta generica di servizi.
+ * «Quali servizi offre il Panificio Zini?» → «panificio zini».
+ */
+export function estraiSoggettoServiziAttivitaPino(input: string): string {
+  return normalizzaRichiesta(input ?? "")
+    .replace(/\b(?:quali|che|cosa|what)\s+servizi?\b/gi, " ")
+    .replace(
+      /\bservizi?\s+(?:offre|offrono|offerti|disponibili|ha|hanno)\b/gi,
+      " "
+    )
+    .replace(/\b(?:servizi?|services?)\b/gi, " ")
+    .replace(/\b(?:offre|offrono|offerti|disponibili|ha|hanno)\b/gi, " ")
+    .replace(
+      /\b(?:di|del|dello|della|dei|degli|delle|da|dal|dallo|dalla|dai|dagli|dalle|presso)\b/gi,
+      " "
+    )
+    .replace(/[?.!,;:]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/^(?:il|lo|la|i|gli|le)\s+/i, "")
+    .trim();
 }
 
 /**
@@ -320,22 +358,22 @@ export function rispostaInfoAttivitaPino(
       dettagli.push(
         testo ??
           (inglese
-            ? "opening hours not published on InCittà"
-            : "orari non pubblicati su InCittà")
+            ? "opening hours not published on Radici Calabria"
+            : "orari non pubblicati su Radici Calabria")
       );
     }
     if (mostraIndirizzo) {
       dettagli.push(
         negozio.indirizzo
           ? (inglese ? `address: ${negozio.indirizzo}` : `indirizzo: ${negozio.indirizzo}`)
-          : (inglese ? "address not published on InCittà" : "indirizzo non pubblicato su InCittà")
+          : (inglese ? "address not published on Radici Calabria" : "indirizzo non pubblicato su Radici Calabria")
       );
     }
     if (mostraTelefono) {
       dettagli.push(
         negozio.telefono
           ? (inglese ? `phone: ${negozio.telefono}` : `telefono: ${negozio.telefono}`)
-          : (inglese ? "phone not published on InCittà" : "telefono non pubblicato su InCittà")
+          : (inglese ? "phone not published on Radici Calabria" : "telefono non pubblicato su Radici Calabria")
       );
     }
 
@@ -343,8 +381,8 @@ export function rispostaInfoAttivitaPino(
   });
 
   const introduzione = inglese
-    ? "Here is the information published on InCittà:"
-    : "Ecco le informazioni pubblicate su InCittà:";
+    ? "Here is the information published on Radici Calabria:"
+    : "Ecco le informazioni pubblicate su Radici Calabria:";
   const nota = inglese
     ? "If a detail is missing, the business hasn't published it: I won't fill it in."
     : "Se un dato manca, l'attività non lo ha pubblicato: non lo invento.";

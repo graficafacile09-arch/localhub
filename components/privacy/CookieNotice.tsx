@@ -46,7 +46,7 @@ export default function CookieNotice() {
         </span>
 
         <p className="min-w-0 flex-1 text-[11px] leading-4 text-slate-600 sm:text-xs sm:leading-5">
-          InCittà utilizza cookie tecnici necessari al funzionamento del sito.
+          Radici Calabria utilizza cookie tecnici necessari al funzionamento del sito.
           <Link
             href="/cookie"
             className="ml-1 font-semibold text-blue-700 underline-offset-2 hover:underline"

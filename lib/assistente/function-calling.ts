@@ -111,6 +111,9 @@ export const TOOL_DEFINITIONS: readonly DefinizioneStrumentoPino[] = [
         categoria: PARAMETRI_COMUNI_CATALOGO.categoria,
         tipo: testo("Tipo di attività o profilo professionale."),
         servizio: testo("Servizio richiesto dell'attività."),
+        serviziTutti: booleano(
+          "True per elencare tutti i servizi pubblicati dall'attività, quando la richiesta è generica."
+        ),
         citta: PARAMETRI_COMUNI_CATALOGO.citta,
         termini: lista("Parole chiave e sinonimi utili al recupero."),
         esclusioni: PARAMETRI_COMUNI_CATALOGO.esclusioni,
@@ -121,7 +124,7 @@ export const TOOL_DEFINITIONS: readonly DefinizioneStrumentoPino[] = [
       additionalProperties: false,
     },
     allowedParams: [
-      "query", "limit", "categoria", "tipo", "servizio", "citta", "termini",
+      "query", "limit", "categoria", "tipo", "servizio", "serviziTutti", "citta", "termini",
       "esclusioni", "escludiNomi", "apertiOra",
     ],
     exposed: true,
@@ -184,8 +187,38 @@ export const TOOL_DEFINITIONS: readonly DefinizioneStrumentoPino[] = [
     exposed: true,
   },
   {
+    name: "searchNews",
+    description: "Cerca le ultime notizie pubblicate su Radici Calabria, con fonte e link.",
+    parameters: {
+      type: "object",
+      properties: {
+        query: testo("Tema, luogo o persona delle notizie; vuoto per le ultime pubblicate."),
+        limit: PARAMETRI_COMUNI_CATALOGO.limit,
+      },
+      required: [],
+      additionalProperties: false,
+    },
+    allowedParams: ["query", "limit"],
+    exposed: true,
+  },
+  {
+    name: "searchContent",
+    description: "Cerca articoli e contenuti editoriali pubblicati su Radici Calabria.",
+    parameters: {
+      type: "object",
+      properties: {
+        query: testo("Tema, luogo o parola chiave dei contenuti; vuoto per i più recenti."),
+        limit: PARAMETRI_COMUNI_CATALOGO.limit,
+      },
+      required: [],
+      additionalProperties: false,
+    },
+    allowedParams: ["query", "limit"],
+    exposed: true,
+  },
+  {
     name: "searchAll",
-    description: "Cerca trasversalmente negozi, prodotti, offerte, eventi e categorie.",
+    description: "Cerca trasversalmente negozi, prodotti, offerte, eventi, notizie, contenuti e categorie.",
     parameters: {
       type: "object",
       properties: {

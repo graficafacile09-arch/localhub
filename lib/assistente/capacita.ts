@@ -76,7 +76,7 @@ export function rilevaAzioneNonDisponibilePino(query: string): AzionePino | null
   if (
     /\b(?:puoi|potresti)\s+(?:contattare|chiamare|telefonare)\b/.test(q) ||
     (/\b(?:contattare|contatto|telefonare|chiamare)\b/.test(q) &&
-      /\b(?:incitta|piattaforma|assistenza|supporto|voi|vostro|vostra)\b/.test(q)) ||
+      /\b(?:radici|calabria|piattaforma|assistenza|supporto|voi|vostro|vostra)\b/.test(q)) ||
     /\b(?:qual e|dove trovo|mi dai|dammi)\b[\s\S]{0,20}\b(?:tuo|vostro)\s+(?:numero|telefono|email|mail|indirizzo)\b/.test(q)
   ) {
     return "contatto";
@@ -97,11 +97,11 @@ export function rispostaAzioneNonDisponibilePino(
       case "ordine":
         return "I can't complete orders or purchases for you. I can help you find the product and get to the shop's checkout, but the order must be placed on the website.";
       case "annullamento":
-        return "I can't cancel an order from the assistant. Check the order status and contact the seller using the published details; for a technical issue, use InCittà's support channels.";
+        return "I can't cancel an order from the assistant. Check the order status and contact the seller using the published details; for a technical issue, use Radici Calabria's support channels.";
       case "pagamento":
         return "I can't make payments. The available method is the one shown in the shop's checkout; if you want, I can tell you what the public FAQs say about payment methods.";
       case "contatto":
-        return "I can't put you in direct contact with InCittà. Use the support channels listed on the website; if you're looking for a shop, I can show you the contact details published on its page.";
+        return "I can't put you in direct contact with Radici Calabria. Use the support channels listed on the website; if you're looking for a shop, I can show you the contact details published on its page.";
     }
   }
   switch (azione) {
@@ -110,16 +110,16 @@ export function rispostaAzioneNonDisponibilePino(
     case "ordine":
       return "Non posso completare ordini o acquisti al posto tuo. Posso aiutarti a trovare il prodotto e a capire come arrivare al checkout del negozio; l'ordine va concluso dal sito.";
     case "annullamento":
-      return "Non posso annullare un ordine dall'assistente. Controlla lo stato dell'ordine e contatta il Venditore usando i recapiti disponibili; per un problema tecnico usa i canali di assistenza InCittà.";
+      return "Non posso annullare un ordine dall'assistente. Controlla lo stato dell'ordine e contatta il Venditore usando i recapiti disponibili; per un problema tecnico usa i canali di assistenza Radici Calabria.";
     case "pagamento":
       return "Non posso eseguire pagamenti. Il metodo disponibile è quello mostrato nel checkout del negozio; se vuoi, ti dico cosa riportano le FAQ pubbliche sui metodi di pagamento.";
     case "contatto":
-      return "Non posso metterti in contatto diretto con InCittà. Per l'assistenza usa i canali indicati nel sito; se cerchi un negozio, posso mostrarti i recapiti pubblicati sulla sua scheda.";
+      return "Non posso metterti in contatto diretto con Radici Calabria. Per l'assistenza usa i canali indicati nel sito; se cerchi un negozio, posso mostrarti i recapiti pubblicati sulla sua scheda.";
   }
 }
 
 /**
- * Servizi civici/urbani che il catalogo InCittà non pubblica.
+ * Servizi civici/urbani che il catalogo Radici Calabria non pubblica.
  *
  * Non è un elenco di parole da rifiutare: è la dichiarazione onesta di un
  * limite. Senza questo livello «dove posso parcheggiare» riceveva il panificio
@@ -157,9 +157,9 @@ export function rispostaServizioNonCopertoPino(
     .map((voce) => `${voce.categoria} (${voce.negozi})`)
     .join(", ");
   if (lingua === "en") {
-    return `I can't find **${servizio}** in the InCittà catalogue, and it's not a service I can verify: I won't suggest unrelated shops. I can help you with shops, products, offers and events.${elenco ? ` The catalogue currently lists: ${elenco}.` : ""}`;
+    return `I can't find **${servizio}** in the Radici Calabria catalogue, and it's not a service I can verify: I won't suggest unrelated shops. I can help you with shops, products, offers and events.${elenco ? ` The catalogue currently lists: ${elenco}.` : ""}`;
   }
-  return `Nel catalogo InCittà non trovo **${servizio}**: non è un servizio che posso verificare, quindi non ti propongo negozi che non c'entrano. Posso aiutarti con negozi, prodotti, offerte ed eventi.${elenco ? ` Le categorie presenti sono: ${elenco}.` : ""}`;
+  return `Nel catalogo Radici Calabria non trovo **${servizio}**: non è un servizio che posso verificare, quindi non ti propongo negozi che non c'entrano. Posso aiutarti con negozi, prodotti, offerte ed eventi.${elenco ? ` Le categorie presenti sono: ${elenco}.` : ""}`;
 }
 
 /**
@@ -213,6 +213,6 @@ export function richiestaIstruzioniInternePino(query: string): boolean {
 /** Rifiuto deterministico, senza eseguire ricerche e senza esporre istruzioni. */
 export function rispostaIstruzioniInternePino(lingua: LinguaPino = "it"): string {
   return lingua === "en"
-    ? "I can't show or change my internal instructions. I can help you with shops, products, offers and events in InCittà."
-    : "Non posso mostrare o modificare le mie istruzioni interne. Posso aiutarti con negozi, prodotti, offerte ed eventi di InCittà.";
+    ? "I can't show or change my internal instructions. I can help you with shops, products, offers and events in Radici Calabria."
+    : "Non posso mostrare o modificare le mie istruzioni interne. Posso aiutarti con negozi, prodotti, offerte ed eventi di Radici Calabria.";
 }

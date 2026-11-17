@@ -25,7 +25,7 @@ export default function UltimoAcquistoCard({
       label="Ultimo acquisto"
       description={
         descrizione === "—"
-          ? "Non hai ancora effettuato acquisti: inizia a esplorare i negozi della tua città."
+          ? "Non hai ancora effettuato acquisti: inizia a esplorare i negozi del territorio."
           : descrizione
       }
       badge={stato ? <StatoBadge stato={stato} /> : undefined}

@@ -1,27 +1,52 @@
 /**
- * AGGREGATORE NOTIZIE CV — tipi condivisi.
+ * AGGREGATORE NOTIZIE — tipi condivisi.
  *
  * Tipi interni del modulo notizie: rappresentano una notizia NORMALIZZATA
  * (formato unico indipendente dalla fonte) e la configurazione delle fonti.
+ *
+ * Linea editoriale: agricoltura e agroalimentare calabrese. Le categorie qui
+ * sotto sono usate sia per classificare i contenuti all'import sia per
+ * filtrare la pagina /notizie; il tipo di contenuto distingue notizie,
+ * eventi, fiere, bollettini tecnici e opportunità (bandi, contributi).
  */
 
-/** Categorie V1 — semplici, coerenti ed estendibili. */
+/** Categorie editoriali della sezione Notizie (agricoltura calabrese). */
 export type CategoriaNotizia =
-  | "Comune"
-  | "Territorio"
-  | "Cultura"
-  | "Ambiente"
-  | "Protezione civile"
-  | "Istituzioni";
+  | "Agricoltura"
+  | "Filiere e produzioni"
+  | "Vino e viticoltura"
+  | "Olio e olivicoltura"
+  | "Prodotti tipici e qualità"
+  | "Eventi e fiere"
+  | "Politiche agricole e finanziamenti"
+  | "Innovazione e ricerca"
+  | "Mercati ed esportazioni"
+  | "Territori e biodiversità";
 
 export const CATEGORIE_NOTIZIE: CategoriaNotizia[] = [
-  "Comune",
-  "Territorio",
-  "Cultura",
-  "Ambiente",
-  "Protezione civile",
-  "Istituzioni",
+  "Eventi e fiere",
+  "Olio e olivicoltura",
+  "Vino e viticoltura",
+  "Prodotti tipici e qualità",
+  "Filiere e produzioni",
+  "Politiche agricole e finanziamenti",
+  "Mercati ed esportazioni",
+  "Innovazione e ricerca",
+  "Territori e biodiversità",
+  "Agricoltura",
 ];
+
+/**
+ * Tipologia editoriale del contenuto. Non è una copia dell'articolo: è una
+ * classificazione deterministica calcolata da titolo ed estratto, usata per
+ * l'etichetta discreta sulla scheda e per distinguere gli eventi futuri.
+ */
+export type TipoContenuto =
+  | "notizia"
+  | "evento"
+  | "fiera"
+  | "bollettino"
+  | "opportunita";
 
 /** Tipo di acquisizione: feed RSS/XML oppure parsing HTML. */
 export type TipoFonte = "rss" | "html";
@@ -31,10 +56,10 @@ export type TipoFonte = "rss" | "html";
  * `url_feed` è la sorgente RSS/XML; `url_lista` la pagina HTML di fallback
  * (per le fonti html è la pagina da parsare).
  *
- * `scoperta` = fonte di DISCOVERY (V2, es. Google News RSS): i risultati non
+ * `scoperta` = fonte di DISCOVERY (es. Google News RSS): i risultati non
  * sono emessi dalla fonte stessa ma trovati tramite ricerca. Per queste fonti
  * valgono regole dedicate: finestra temporale, dedup intra-run e
- * attribuzione per-testata. Le fonti istituzionali V1 hanno `scoperta=false`.
+ * attribuzione per-testata. Le fonti istituzionali hanno `scoperta=false`.
  */
 export interface FonteNotizie {
   id: string;
@@ -46,7 +71,7 @@ export interface FonteNotizie {
   categoriaDefault: CategoriaNotizia;
   attiva: boolean;
   frequenzaMinuti: number;
-  /** Fonte di discovery (Google News): true solo per le nuove fonti V2. */
+  /** Fonte di discovery (Google News): true solo per le fonti di ricerca. */
   scoperta: boolean;
   /** Ultima esecuzione del job (da notizie_fonti.ultima_esecuzione). */
   ultimaEsecuzione?: string | null;

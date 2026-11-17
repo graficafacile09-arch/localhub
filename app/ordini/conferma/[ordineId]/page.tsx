@@ -29,7 +29,7 @@ import { getDatiBonificoDiretto } from "@/lib/pagamenti/metodi-pubblici";
 type Params = { ordineId: string };
 
 export const metadata = {
-  title: "Stato ordine — InCittà",
+  title: "Stato ordine — Radici Calabria",
 };
 
 /** Breve messaggio in base allo stato reale dell'ordine. */
@@ -38,7 +38,7 @@ function messaggioStato(ordine: OrdinePersistito): string {
     case "cancellato":
       return "Purtroppo il negozio ha dovuto annullare questo ordine.";
     case "consegnato":
-      return "Il tuo ordine è stato completato. Grazie per aver acquistato su InCittà!";
+      return "Il tuo ordine è stato completato. Grazie per aver acquistato su Radici Calabria!";
     case "confermato":
       return "Il negozio ha confermato il tuo ordine e sta preparando i prodotti.";
     case "pronto":
@@ -154,7 +154,7 @@ export default async function ConfermaOrdinePage({
               negozioId={ordine.negozioId}
               negozioNome={ordine.negozioNome}
               importo={ordine.totale}
-              causale={ordine.bonificoCausale ?? `Ordine #${ordine.numero} - Marketplace InCittà`}
+              causale={ordine.bonificoCausale ?? `Ordine #${ordine.numero} - Marketplace Radici Calabria`}
             />
           )}
 
@@ -394,7 +394,7 @@ async function BonificoDirettoInfo({ negozioId, negozioNome, importo, causale }:
         <p><strong>Causale:</strong> {causale}</p>
       </div>
       <p className="mt-3 rounded-lg bg-white/70 p-3 text-xs leading-5 text-amber-950">
-        ATTENZIONE: Stai effettuando un pagamento diretto sul conto corrente del venditore {negozioNome}. InCittà fornisce solo l&apos;infrastruttura tecnologica e non riceve né gestisce questo denaro. Per qualsiasi problema legato al pagamento o alla spedizione, il riferimento commerciale è il venditore sopra indicato.
+        ATTENZIONE: Stai effettuando un pagamento diretto sul conto corrente del venditore {negozioNome}. Radici Calabria fornisce solo l&apos;infrastruttura tecnologica e non riceve né gestisce questo denaro. Per qualsiasi problema legato al pagamento o alla spedizione, il riferimento commerciale è il venditore sopra indicato.
       </p>
     </div>
   );
