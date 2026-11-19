@@ -30,7 +30,7 @@ export default function RadiciScanPage() {
         sommario="Scatta o carica una foto dell'etichetta: RadiciScan confronta la denominazione con le fonti ufficiali."
       />
 
-      <div className="rd-guscio py-5 md:py-7">
+      <div className="rd-guscio py-4 md:py-6">
         <RadiciScanStudio />
       </div>
     </main>

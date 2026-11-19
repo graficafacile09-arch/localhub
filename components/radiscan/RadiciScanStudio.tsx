@@ -501,25 +501,9 @@ export default function RadiciScanStudio() {
 
   return (
     <section className="rd-fascia p-4 md:p-6" aria-busy={fase === "analisi"}>
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <p className="rd-occhiello">
-            <ScanLine aria-hidden />
-            Fotografia e verifica
-          </p>
-          <h2 className="rd-titolo-scheda mt-1 text-xl md:text-2xl">
-            Analizza un prodotto
-          </h2>
-          <p className="mt-1.5 max-w-2xl text-sm leading-6 text-[#57534e]">
-            Scatta o carica una foto dell&apos;etichetta: RadiciScan legge i dati
-            visibili e li confronta con le fonti ufficiali.
-          </p>
-        </div>
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-[#e5ded0] bg-white px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.08em] text-[#6b6459]">
-          <ShieldCheck className="h-3.5 w-3.5 text-[#24462f]" aria-hidden />
-          Nessuna immagine conservata
-        </span>
-      </div>
+      <h2 className="rd-titolo-scheda text-xl md:text-2xl">
+        Analizza un prodotto
+      </h2>
 
       <ul className="mt-4 grid gap-2 border-t border-[#e5ded0] pt-3 sm:grid-cols-3 sm:gap-4">
         <li className="flex items-start gap-2">
