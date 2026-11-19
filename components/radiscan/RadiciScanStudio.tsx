@@ -31,8 +31,28 @@ import {
   type ErroreApi,
 } from "./logica";
 
-type Fase = "inizio" | "anteprima" | "analisi" | "esito" | "errore";
+type Fase = "inizio" | "fotocamera" | "anteprima" | "analisi" | "esito" | "errore";
 type SorgenteImmagine = ImageBitmap | HTMLImageElement;
+
+const LATO_MASSIMO_SCATTO = 2000;
+
+function messaggioFotocamera(causa: unknown): string {
+  const nome =
+    typeof causa === "object" && causa !== null && "name" in causa
+      ? String((causa as { name?: unknown }).name ?? "")
+      : "";
+
+  if (nome === "NotAllowedError" || nome === "SecurityError") {
+    return "Permesso fotocamera negato. Abilitalo nelle impostazioni del browser oppure carica un'immagine.";
+  }
+  if (nome === "NotFoundError" || nome === "DevicesNotFoundError") {
+    return "Nessuna fotocamera disponibile su questo dispositivo. Carica un'immagine dalla galleria o dal computer.";
+  }
+  if (nome === "NotReadableError" || nome === "TrackStartError") {
+    return "La fotocamera è occupata da un altro programma. Chiudila e riprova, oppure carica un'immagine.";
+  }
+  return "Non riesco ad aprire la fotocamera. Carica un'immagine dalla galleria o dal computer.";
+}
 
 function dimensioniSorgente(sorgente: SorgenteImmagine): {
   larghezza: number;
@@ -161,15 +181,31 @@ export default function RadiciScanStudio() {
   const [erroreStato, setErroreStato] = useState(0);
   const [erroreLocale, setErroreLocale] = useState<string | null>(null);
   const [trascinando, setTrascinando] = useState(false);
+  const [avvioFotocamera, setAvvioFotocamera] = useState(false);
+  const [erroreFotocamera, setErroreFotocamera] = useState<string | null>(null);
+  const [scattoDaFotocamera, setScattoDaFotocamera] = useState(false);
 
   const inputGalleria = useRef<HTMLInputElement | null>(null);
   const inputFotocamera = useRef<HTMLInputElement | null>(null);
   const anteprimaRef = useRef<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const idGalleria = useId();
   const idFotocamera = useId();
 
+  function fermaFotocamera() {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((traccia) => traccia.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+  }
+
   useEffect(() => {
     return () => {
+      fermaFotocamera();
       if (anteprimaRef.current) {
         URL.revokeObjectURL(anteprimaRef.current);
         anteprimaRef.current = null;
@@ -177,7 +213,140 @@ export default function RadiciScanStudio() {
     };
   }, []);
 
-  async function gestisciFile(scelto: File | null | undefined) {
+  useEffect(() => {
+    if (fase !== "fotocamera") return;
+
+    let annullato = false;
+    setAvvioFotocamera(true);
+    setErroreFotocamera(null);
+
+    async function avviaFotocamera() {
+      try {
+        if (!navigator.mediaDevices?.getUserMedia) {
+          throw new Error("getUserMedia non disponibile");
+        }
+
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: "environment" },
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
+          audio: false,
+        });
+
+        if (annullato) {
+          stream.getTracks().forEach((traccia) => traccia.stop());
+          return;
+        }
+
+        streamRef.current = stream;
+        const video = videoRef.current;
+        if (video) {
+          video.srcObject = stream;
+          await video.play().catch(() => undefined);
+        }
+      } catch (causa) {
+        if (!annullato) setErroreFotocamera(messaggioFotocamera(causa));
+      } finally {
+        if (!annullato) setAvvioFotocamera(false);
+      }
+    }
+
+    void avviaFotocamera();
+
+    return () => {
+      annullato = true;
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((traccia) => traccia.stop());
+        streamRef.current = null;
+      }
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
+    };
+  }, [fase]);
+
+  function apriFotocamera() {
+    if (fase === "analisi") return;
+    setErroreLocale(null);
+    setErroreFotocamera(null);
+    setFase("fotocamera");
+  }
+
+  function annullaFotocamera() {
+    fermaFotocamera();
+    setAvvioFotocamera(false);
+    setErroreFotocamera(null);
+    setFase("inizio");
+  }
+
+  function riapriFotocamera() {
+    if (anteprimaRef.current) {
+      URL.revokeObjectURL(anteprimaRef.current);
+      anteprimaRef.current = null;
+    }
+    setAnteprima(null);
+    setFile(null);
+    setEsito(null);
+    setDaCache(false);
+    setErrore(null);
+    setErroreStato(0);
+    setErroreLocale(null);
+    setErroreFotocamera(null);
+    setScattoDaFotocamera(false);
+    setFase("fotocamera");
+  }
+
+  function scattaFoto() {
+    const video = videoRef.current;
+    if (!video || video.videoWidth === 0 || video.videoHeight === 0) {
+      setErroreFotocamera(
+        "La fotocamera non è ancora pronta. Attendi un istante e riprova."
+      );
+      return;
+    }
+
+    const scala = Math.min(
+      1,
+      LATO_MASSIMO_SCATTO / Math.max(video.videoWidth, video.videoHeight)
+    );
+    const larghezza = Math.max(1, Math.round(video.videoWidth * scala));
+    const altezza = Math.max(1, Math.round(video.videoHeight * scala));
+    const canvas = document.createElement("canvas");
+    canvas.width = larghezza;
+    canvas.height = altezza;
+    const contesto = canvas.getContext("2d");
+
+    if (!contesto) {
+      setErroreFotocamera("Non riesco a preparare lo scatto. Riprova.");
+      return;
+    }
+
+    contesto.drawImage(video, 0, 0, larghezza, altezza);
+    canvas.toBlob(
+      (blob) => {
+        if (!blob) {
+          setErroreFotocamera("Non riesco a salvare lo scatto. Riprova.");
+          return;
+        }
+
+        fermaFotocamera();
+        const scatto = new File([blob], "radiscan-scatto.jpg", {
+          type: "image/jpeg",
+        });
+        setScattoDaFotocamera(true);
+        void gestisciFile(scatto, true);
+      },
+      "image/jpeg",
+      0.92
+    );
+  }
+
+  async function gestisciFile(
+    scelto: File | null | undefined,
+    daFotocamera = false
+  ) {
     if (!scelto || fase === "analisi") return;
 
     setErroreLocale(null);
@@ -187,6 +356,7 @@ export default function RadiciScanStudio() {
     const validazione = validaFileLocale(scelto);
     if (!validazione.ok) {
       setErroreLocale(validazione.messaggio);
+      if (daFotocamera) setFase("inizio");
       return;
     }
 
@@ -203,8 +373,10 @@ export default function RadiciScanStudio() {
       setFile(normalizzato);
       setEsito(null);
       setDaCache(false);
+      setScattoDaFotocamera(daFotocamera);
       setFase("anteprima");
     } catch (causa) {
+      if (daFotocamera) setFase("inizio");
       setErroreLocale(
         causa instanceof Error ? causa.message : "Immagine non leggibile."
       );
@@ -214,7 +386,7 @@ export default function RadiciScanStudio() {
   function onFileInput(event: ChangeEvent<HTMLInputElement>) {
     const scelto = event.target.files?.[0] ?? null;
     event.target.value = "";
-    void gestisciFile(scelto);
+    void gestisciFile(scelto, false);
   }
 
   function onDrop(event: DragEvent<HTMLDivElement>) {
@@ -294,6 +466,11 @@ export default function RadiciScanStudio() {
   function reset() {
     if (fase === "analisi") return;
 
+    fermaFotocamera();
+    setAvvioFotocamera(false);
+    setErroreFotocamera(null);
+    setScattoDaFotocamera(false);
+
     if (anteprimaRef.current) {
       URL.revokeObjectURL(anteprimaRef.current);
       anteprimaRef.current = null;
@@ -355,6 +532,112 @@ export default function RadiciScanStudio() {
         </div>
       ) : null}
 
+      {fase === "fotocamera" ? (
+        <div className="mt-5 rounded-2xl border border-[#e5ded0] bg-[#0d1a12] p-3">
+          <div className="relative overflow-hidden rounded-xl bg-black">
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className="max-h-[420px] w-full object-contain"
+              aria-label="Anteprima della fotocamera"
+            />
+            {avvioFotocamera ? (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/70 text-white">
+                <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
+                <p className="text-xs font-semibold">Apertura fotocamera…</p>
+              </div>
+            ) : null}
+          </div>
+
+          {erroreFotocamera ? (
+            <div
+              role="alert"
+              className="mt-3 rounded-xl border border-red-300/40 bg-red-950/40 p-3 text-sm leading-6 text-red-100"
+            >
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                <span>{erroreFotocamera}</span>
+              </div>
+              <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                <label
+                  htmlFor={idGalleria}
+                  className="rd-azione cursor-pointer justify-center px-4 py-2.5"
+                >
+                  <ImagePlus className="h-4 w-4" aria-hidden />
+                  Carica un&apos;immagine
+                </label>
+                <label
+                  htmlFor={idFotocamera}
+                  className="rd-azione-tenue cursor-pointer justify-center px-4 py-2.5"
+                >
+                  <Camera className="h-4 w-4" aria-hidden />
+                  Usa fotocamera del dispositivo
+                </label>
+                <button
+                  type="button"
+                  onClick={annullaFotocamera}
+                  className="px-4 py-2.5 text-sm font-semibold text-white/80 transition hover:text-white"
+                >
+                  Annulla
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <p className="mt-3 text-center text-xs leading-5 text-white/70">
+                Inquadra l&apos;etichetta e scatta. Su smartphone viene richiesta
+                la fotocamera posteriore, quando disponibile.
+              </p>
+              <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={scattaFoto}
+                  disabled={avvioFotocamera}
+                  className="rd-azione flex-1 justify-center px-4 py-2.5 disabled:cursor-wait disabled:opacity-60"
+                >
+                  <Camera className="h-4 w-4" aria-hidden />
+                  Scatta foto
+                </button>
+                <label
+                  htmlFor={idGalleria}
+                  className="rd-azione-tenue cursor-pointer justify-center px-4 py-2.5"
+                >
+                  <ImagePlus className="h-4 w-4" aria-hidden />
+                  Carica dalla galleria
+                </label>
+                <button
+                  type="button"
+                  onClick={annullaFotocamera}
+                  className="px-4 py-2.5 text-sm font-semibold text-white/80 transition hover:text-white"
+                >
+                  Annulla
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      ) : null}
+
+      <input
+        ref={inputGalleria}
+        id={idGalleria}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        className="sr-only"
+        onChange={onFileInput}
+      />
+      <input
+        ref={inputFotocamera}
+        id={idFotocamera}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        capture="environment"
+        className="sr-only"
+        onChange={onFileInput}
+      />
+
       {fase === "inizio" ? (
         <div
           onDrop={onDrop}
@@ -381,36 +664,21 @@ export default function RadiciScanStudio() {
               <ImagePlus className="h-4 w-4" aria-hidden />
               Carica immagine
             </label>
-            <label
-              htmlFor={idFotocamera}
-              className="rd-azione-tenue cursor-pointer px-5 py-2.5 sm:hidden"
+            <button
+              type="button"
+              onClick={apriFotocamera}
+              className="rd-azione-tenue px-5 py-2.5"
             >
               <Camera className="h-4 w-4" aria-hidden />
               Scatta foto
-            </label>
+            </button>
           </div>
 
           <p className="mt-3 text-xs leading-5 text-[#8a8378]">
-            JPEG, PNG o WebP · ridotta a massimo 3 MB · la foto non viene conservata
+            Su PC si apre la webcam; su smartphone la fotocamera posteriore,
+            quando disponibile. JPEG, PNG o WebP · massimo 3 MB · la foto non
+            viene conservata.
           </p>
-
-          <input
-            ref={inputGalleria}
-            id={idGalleria}
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            className="sr-only"
-            onChange={onFileInput}
-          />
-          <input
-            ref={inputFotocamera}
-            id={idFotocamera}
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            capture="environment"
-            className="sr-only"
-            onChange={onFileInput}
-          />
         </div>
       ) : null}
 
@@ -454,6 +722,17 @@ export default function RadiciScanStudio() {
                   ? "Analisi in corso…"
                   : "Analizza con RadiciScan"}
               </button>
+              {scattoDaFotocamera ? (
+                <button
+                  type="button"
+                  onClick={riapriFotocamera}
+                  disabled={fase === "analisi"}
+                  className="rd-azione-tenue w-full px-5 py-2.5 disabled:opacity-60"
+                >
+                  <Camera className="h-4 w-4" aria-hidden />
+                  Ripeti foto
+                </button>
+              ) : null}
               <button
                 type="button"
                 onClick={reset}
