@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import Header from "@/components/Header/Header";
 import IntestazionePagina from "@/components/editoriale/IntestazionePagina";
 import RadiciScanStudio from "@/components/radiscan/RadiciScanStudio";
 import { getSiteUrl } from "@/lib/site";
-import { ScanLine, ShoppingBasket } from "lucide-react";
+import { ScanLine } from "lucide-react";
 
 // Pagina RadiciScan — riconoscimento e verifica documentale dei prodotti.
 //
@@ -28,16 +27,10 @@ export default function RadiciScanPage() {
         occhiello="Riconoscimento e verifica documentale"
         titolo="RadiciScan"
         icona={ScanLine}
-        sommario="Fotografa un prodotto, leggi l'etichetta e confronta la denominazione con il registro delle fonti ufficiali."
-        azione={
-          <Link href="/filiere/prodotti" className="rd-azione">
-            <ShoppingBasket className="h-4 w-4" aria-hidden />
-            Scopri i prodotti della filiera
-          </Link>
-        }
+        sommario="Scatta o carica una foto dell'etichetta: RadiciScan confronta la denominazione con le fonti ufficiali."
       />
 
-      <div className="rd-guscio py-7 md:py-10">
+      <div className="rd-guscio py-5 md:py-7">
         <RadiciScanStudio />
       </div>
     </main>

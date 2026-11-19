@@ -500,8 +500,8 @@ export default function RadiciScanStudio() {
     : "";
 
   return (
-    <section className="rd-fascia p-5 md:p-8" aria-busy={fase === "analisi"}>
-      <div className="flex flex-wrap items-start justify-between gap-3">
+    <section className="rd-fascia p-4 md:p-6" aria-busy={fase === "analisi"}>
+      <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <p className="rd-occhiello">
             <ScanLine aria-hidden />
@@ -510,10 +510,9 @@ export default function RadiciScanStudio() {
           <h2 className="rd-titolo-scheda mt-1 text-xl md:text-2xl">
             Analizza un prodotto
           </h2>
-          <p className="mt-2 max-w-2xl text-sm leading-7 text-[#57534e]">
-            Scatta o carica una foto dell&apos;etichetta. RadiciScan legge le
-            informazioni visibili e le confronta con il registro delle fonti
-            ufficiali.
+          <p className="mt-1.5 max-w-2xl text-sm leading-6 text-[#57534e]">
+            Scatta o carica una foto dell&apos;etichetta: RadiciScan legge i dati
+            visibili e li confronta con le fonti ufficiali.
           </p>
         </div>
         <span className="inline-flex items-center gap-1.5 rounded-full border border-[#e5ded0] bg-white px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.08em] text-[#6b6459]">
@@ -521,6 +520,51 @@ export default function RadiciScanStudio() {
           Nessuna immagine conservata
         </span>
       </div>
+
+      <ul className="mt-4 grid gap-2 border-t border-[#e5ded0] pt-3 sm:grid-cols-3 sm:gap-4">
+        <li className="flex items-start gap-2">
+          <Camera
+            className="mt-0.5 h-4 w-4 shrink-0 text-[#24462f]"
+            aria-hidden
+          />
+          <div>
+            <p className="text-xs font-bold leading-4 text-[#1b3624]">
+              Fotografa il prodotto
+            </p>
+            <p className="mt-0.5 text-[11px] leading-4 text-[#6b6459]">
+              Inquadra l&apos;etichetta, senza riflessi.
+            </p>
+          </div>
+        </li>
+        <li className="flex items-start gap-2">
+          <ScanLine
+            className="mt-0.5 h-4 w-4 shrink-0 text-[#24462f]"
+            aria-hidden
+          />
+          <div>
+            <p className="text-xs font-bold leading-4 text-[#1b3624]">
+              Leggi l&apos;etichetta
+            </p>
+            <p className="mt-0.5 text-[11px] leading-4 text-[#6b6459]">
+              Controlla nome, denominazione e territorio.
+            </p>
+          </div>
+        </li>
+        <li className="flex items-start gap-2">
+          <ImagePlus
+            className="mt-0.5 h-4 w-4 shrink-0 text-[#24462f]"
+            aria-hidden
+          />
+          <div>
+            <p className="text-xs font-bold leading-4 text-[#1b3624]">
+              Carica una fotografia
+            </p>
+            <p className="mt-0.5 text-[11px] leading-4 text-[#6b6459]">
+              In alternativa, usa galleria o computer.
+            </p>
+          </div>
+        </li>
+      </ul>
 
       {erroreLocale ? (
         <div
@@ -643,14 +687,14 @@ export default function RadiciScanStudio() {
           onDrop={onDrop}
           onDragOver={onDragOver}
           onDragLeave={() => setTrascinando(false)}
-          className={`mt-5 rounded-2xl border-2 border-dashed p-5 text-center transition md:p-8 ${
+          className={`mt-4 rounded-2xl border-2 border-dashed p-4 text-center transition md:p-5 ${
             trascinando
               ? "border-[#d5a83a] bg-[#fbf6e8]"
               : "border-[#e5ded0] bg-[#fffdf7]"
           }`}
         >
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#24462f] text-white shadow-[0_12px_24px_-16px_rgba(27,54,36,0.9)]">
-            <ImagePlus className="h-6 w-6" aria-hidden />
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#24462f] text-white shadow-[0_12px_24px_-16px_rgba(27,54,36,0.9)]">
+            <ImagePlus className="h-5 w-5" aria-hidden />
           </div>
           <p className="mt-3 text-sm font-bold text-[#1b3624]">
             Trascina qui una foto, oppure
@@ -674,10 +718,12 @@ export default function RadiciScanStudio() {
             </button>
           </div>
 
-          <p className="mt-3 text-xs leading-5 text-[#8a8378]">
+          <p className="mt-2 text-[11px] leading-4 text-[#8a8378]">
             Su PC si apre la webcam; su smartphone la fotocamera posteriore,
-            quando disponibile. JPEG, PNG o WebP · massimo 3 MB · la foto non
-            viene conservata.
+            quando disponibile.
+            <span className="mt-0.5 block">
+              JPEG, PNG o WebP · massimo 3 MB · la foto non viene conservata.
+            </span>
           </p>
         </div>
       ) : null}
@@ -808,7 +854,7 @@ export default function RadiciScanStudio() {
         <ScanRisultato esito={esito} cache={daCache} onReset={reset} />
       ) : null}
 
-      <div className="mt-6 flex items-start gap-2 rounded-xl border border-[#e8dfc9] bg-[#fbf6e8] p-3">
+      <div className="mt-5 flex items-start gap-2 rounded-xl border border-[#e8dfc9] bg-[#fbf6e8] p-3">
         <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#24462f]" aria-hidden />
         <p className="text-xs leading-5 text-[#57534e]">
           RadiciScan verifica la documentazione della denominazione, non
