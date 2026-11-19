@@ -1,6 +1,7 @@
 import { CODICI_ERRORE, ErroreRadiciScan } from "@/lib/radiscan/errori";
 import { creaProviderGemini } from "@/lib/radiscan/gemini";
 import { creaHandlerAnalisi } from "@/lib/radiscan/handler";
+import { creaRicercaEAmbrosia } from "@/lib/radiscan/ricerca";
 import {
   creaRepositorySupabase,
   type ClientDatiRadiciScan,
@@ -55,6 +56,7 @@ export async function POST(request: Request): Promise<Response> {
         createAdminSupabaseClient() as unknown as ClientDatiRadiciScan
       ),
     creaProvider: () => creaProviderGemini(),
+    creaRicerca: () => creaRicercaEAmbrosia(),
     saleQuota: process.env.RADISCAN_QUOTA_SALT ?? null,
     // Segreto HMAC della cache: se assente il riuso è disattivato.
     segretoCache: process.env.RADISCAN_CACHE_SECRET ?? null,

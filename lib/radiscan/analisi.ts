@@ -2,6 +2,10 @@ import { erroreInput, erroreSchema } from "./errori";
 import type { FonteUfficiale } from "./fonti";
 import { componiEsito } from "./livelli";
 import { buildPromptRadiciScan, VERSIONE_PROMPT } from "./prompt";
+import {
+  ricercaNonDisponibile,
+  ricercaNonEseguita,
+} from "./ricerca";
 import { analizzaOutputModello } from "./schema";
 import {
   MIME_AMMESSI,
@@ -9,7 +13,9 @@ import {
   type IngressoAnalisi,
   type MetaAnalisi,
   type MimeAmmesso,
+  type EsitoRicercaDocumentale,
   type ProviderRadiciScan,
+  type ProviderRicercaDocumentale,
 } from "./tipi";
 import { verificaDenominazione } from "./verifica";
 
@@ -54,6 +60,8 @@ function validaIngresso(ingresso: IngressoAnalisi): {
 
 export interface DipendenzeAnalisi {
   provider: ProviderRadiciScan;
+  /** Provider documentale: se assente la ricerca è dichiarata non eseguita. */
+  ricerca?: ProviderRicercaDocumentale;
   registro: readonly FonteUfficiale[];
   adesso?: Date;
   /** Interruzione richiesta dalla route (timeout complessivo). */
@@ -89,7 +97,27 @@ export async function analizzaProdotto(
     throw erroreSchema(`Output del modello non conforme: ${schema.motivo}`);
   }
 
-  const verifica = verificaDenominazione(schema.valore.riconoscimento, registro);
+  let ricerca: EsitoRicercaDocumentale;
+  if (dipendenze.ricerca) {
+    try {
+      ricerca = await dipendenze.ricerca.cerca({
+        riconoscimento: schema.valore.riconoscimento,
+        signal,
+      });
+    } catch {
+      // La ricerca esterna è un'informazione aggiuntiva: un suo errore non
+      // deve trasformarsi in "nessuna prova" né far fallire l'analisi.
+      ricerca = ricercaNonDisponibile();
+    }
+  } else {
+    ricerca = ricercaNonEseguita();
+  }
+
+  const verifica = verificaDenominazione(
+    schema.valore.riconoscimento,
+    registro,
+    ricerca
+  );
   const esito = componiEsito({
     riconoscimento: schema.valore.riconoscimento,
     verifica,

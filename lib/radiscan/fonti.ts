@@ -55,6 +55,23 @@ export const DOMINI_UFFICIALI = [
   "www.arsacweb.it",
 ] as const;
 
+/**
+ * Domini ammessi per una prova documentale recuperata online.
+ *
+ * Non sono la whitelist delle fonti curate: una prova eAmbrosia o un atto
+ * EUR-Lex può essere mostrato all'utente senza diventare una riga di
+ * `radiscan_fonti` e senza poter sostenere da solo il livello verificato.
+ */
+export const DOMINI_PROVE_UFFICIALI = [
+  "ec.europa.eu",
+  "webgate.ec.europa.eu",
+  "eur-lex.europa.eu",
+  "data.europa.eu",
+  "www.masaf.gov.it",
+  "www.regione.calabria.it",
+  "www.arsacweb.it",
+] as const;
+
 export type DominioUfficiale = (typeof DOMINI_UFFICIALI)[number];
 
 /** Riga di `public.radiscan_fonti` come letta dall'applicazione. */
@@ -132,4 +149,27 @@ export function isUrlFonteUfficiale(valore: string | null | undefined): boolean 
   if (url.hash !== "") return false;
 
   return dominioUfficiale(url.hostname) !== null;
+}
+
+/**
+ * URL https di una prova documentale ufficiale. È più ampia della whitelist
+ * delle fonti curate perché include eAmbrosia e gli atti EUR-Lex, ma resta
+ * un'allowlist chiusa: nessun host arbitrario può comparire come prova.
+ */
+export function isUrlProvaUfficiale(valore: string | null | undefined): boolean {
+  if (typeof valore !== "string" || valore.trim() === "") return false;
+
+  let url: URL;
+  try {
+    url = new URL(valore.trim());
+  } catch {
+    return false;
+  }
+
+  if (url.protocol !== "https:") return false;
+  if (url.username !== "" || url.password !== "") return false;
+  if (url.port !== "") return false;
+  if (url.hash !== "") return false;
+
+  return (DOMINI_PROVE_UFFICIALI as readonly string[]).includes(url.hostname);
 }

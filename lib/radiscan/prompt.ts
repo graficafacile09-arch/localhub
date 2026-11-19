@@ -9,7 +9,7 @@
  * del prompt richiede di incrementarla, così nessun esito vecchio viene
  * riusato (vincolo della migration 20261118 sulla chiave primaria).
  */
-export const VERSIONE_PROMPT = "radiscan-1.0.0";
+export const VERSIONE_PROMPT = "radiscan-2.0.0";
 
 const RIGHE = [
   "Sei RadiciScan, un servizio che aiuta a riconoscere prodotti agroalimentari e a leggere le informazioni visibili in etichetta.",

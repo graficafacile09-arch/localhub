@@ -20,7 +20,7 @@ export type Livello = (typeof LIVELLI)[number];
 /** Etichette per l'interfaccia: mai sinonimi di "autentico". */
 export const ETICHETTE_LIVELLO: Record<Livello, string> = {
   verificato: "Denominazione confermata da una fonte ufficiale registrata",
-  coerente_non_verificato: "Coerente con le fonti disponibili, non verificato",
+  coerente_non_verificato: "Riscontro parziale: documenti pertinenti, prodotto non confermato",
   non_verificato: "Riconoscimento non confermato",
   incongruenza_possibile: "Possibile incongruenza da controllare",
 };
@@ -55,6 +55,64 @@ export interface RiconoscimentoAi {
   incongruenzeRilevate: string[];
 }
 
+/**
+ * Prove documentali recuperate da una fonte ufficiale esterna.
+ *
+ * La distinzione è strutturale: un risultato di ricerca non può essere
+ * presentato come fonte ufficiale, e una fonte informativa non può sostenere
+ * il livello `verificato`.
+ */
+export type TipoProva = "ufficiale" | "informativa" | "risultato_ricerca";
+
+export type StatoProva =
+  | "registrata"
+  | "pubblicata"
+  | "in_domanda"
+  | "rimossa"
+  | "sconosciuto";
+
+export interface ProvaDocumentale {
+  /** Identificativo stabile della prova (es. `eambrosia:EUGI...`). */
+  id: string;
+  tipo: TipoProva;
+  denominazione: string;
+  schemaQualita: SchemaQualita | null;
+  ente: string;
+  titolo: string;
+  url: string;
+  riferimentoNormativo: string | null;
+  riferimentoUrl: string | null;
+  documentoUrl: string | null;
+  estratto: string | null;
+  consultataIl: string;
+  relazione: string;
+  stato: StatoProva;
+}
+
+export type StatoRicercaDocumentale =
+  | "ok"
+  | "non_disponibile"
+  | "non_eseguita";
+
+export interface EsitoRicercaDocumentale {
+  stato: StatoRicercaDocumentale;
+  fonte: "eAmbrosia" | null;
+  consultataIl: string | null;
+  query: string[];
+  prove: ProvaDocumentale[];
+  messaggio: string | null;
+}
+
+export interface RichiestaRicercaDocumentale {
+  riconoscimento: RiconoscimentoAi;
+  signal?: AbortSignal;
+}
+
+export interface ProviderRicercaDocumentale {
+  nome: string;
+  cerca(input: RichiestaRicercaDocumentale): Promise<EsitoRicercaDocumentale>;
+}
+
 /** Proiezione pubblica della fonte: solo campi del registro. */
 export interface FontePubblica {
   /** UUID della riga `radiscan_fonti`: è il valore di `fonte_id`. */
@@ -76,7 +134,9 @@ export type EsitoVerifica =
   | "nessuna_denominazione"
   | "fonte_non_verificabile"
   | "territorio_incoerente"
-  | "schema_incoerente";
+  | "schema_incoerente"
+  | "riscontro_parziale"
+  | "ricerca_non_disponibile";
 
 export interface VerificaDocumentale {
   esito: EsitoVerifica;
@@ -84,6 +144,10 @@ export interface VerificaDocumentale {
   fonte: FontePubblica | null;
   denominazioneVerificata: string | null;
   motivazione: string;
+  /** Prove recuperate, anche quando non bastano per il livello verificato. */
+  prove: ProvaDocumentale[];
+  /** Esito tecnico della ricerca: assenza di prove ed errore sono distinti. */
+  ricerca: EsitoRicercaDocumentale;
 }
 
 /**
