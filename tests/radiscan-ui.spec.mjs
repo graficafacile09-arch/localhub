@@ -250,3 +250,13 @@ test("UI: nessun import da Vision, venditori o moduli server", () => {
   assert.match(pagina, /RadiciScan/);
   assert.doesNotMatch(pagina, /TerraQ/);
 });
+
+test("UI: RadiciScan ha webcam, fotocamera posteriore, scatto ripetibile e galleria", () => {
+  const studio = leggi("components/radiscan/RadiciScanStudio.tsx");
+  assert.match(studio, /navigator\.mediaDevices\.getUserMedia/);
+  assert.match(studio, /facingMode:\s*\{\s*ideal:\s*["']environment["']/);
+  assert.match(studio, /Ripeti foto/);
+  assert.match(studio, /capture=["']environment["']/);
+  assert.match(studio, /Carica dalla galleria/);
+  assert.match(studio, /canvas\.toBlob/);
+});
