@@ -34,7 +34,7 @@ import {
 type Fase = "inizio" | "fotocamera" | "anteprima" | "analisi" | "esito" | "errore";
 type SorgenteImmagine = ImageBitmap | HTMLImageElement;
 
-const LATO_MASSIMO_SCATTO = 2000;
+const LATO_MASSIMO_SCATTO = 1800;
 
 function messaggioFotocamera(causa: unknown): string {
   const nome =
@@ -102,7 +102,7 @@ function canvasToBlob(canvas: HTMLCanvasElement, qualità: number): Promise<Blob
 }
 
 /**
- * Normalizzazione conservativa: lato massimo 2400 px, qualità 0,92, nessun
+ * Normalizzazione conservativa: lato massimo 1800 px, qualità 0,88, nessun
  * filtro di contrasto o nitidezza. La qualità scende solo se il file supera
  * i 3 MiB; il ridimensionamento successivo resta sopra i 1200 px.
  */
@@ -116,7 +116,7 @@ async function normalizzaImmagine(file: File): Promise<File> {
     }
 
     let latoMassimo = LATO_MASSIMO;
-    let qualità = 0.92;
+    let qualità = 0.88;
 
     for (let tentativo = 0; tentativo < 7; tentativo++) {
       const dimensioni = calcolaLato(
