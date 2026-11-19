@@ -81,7 +81,7 @@ test("UI: i quattro livelli finiscono nei quattro gruppi distinti", () => {
 
 test("UI: le etichette distinguono verificato, non documentato e non verificato", () => {
   assert.match(ETICHETTE_GRUPPO.verificato.titolo, /verificata/i);
-  assert.match(ETICHETTE_GRUPPO.non_documentato.titolo, /non sufficientemente documentato/i);
+  assert.match(ETICHETTE_GRUPPO.non_documentato.titolo, /riscontro parziale/i);
   assert.match(ETICHETTE_GRUPPO.non_verificato.titolo, /non verificato/i);
   assert.match(ETICHETTE_GRUPPO.incongruenza.titolo, /incongruenza/i);
 
@@ -237,6 +237,11 @@ test("UI: nessun import da Vision, venditori o moduli server", () => {
     assert.doesNotMatch(sorgente, /from\s+["']@\/lib\/radiscan["']/, percorso);
     assert.doesNotMatch(sorgente, /dangerouslySetInnerHTML/, percorso);
   }
+
+  const risultato = leggi("components/radiscan/ScanRisultato.tsx");
+  assert.match(risultato, /Prove documentali/);
+  assert.match(risultato, /Ricerca non completata/);
+  assert.match(risultato, /SchedaProva/);
 
   const studio = leggi("components/radiscan/RadiciScanStudio.tsx");
   assert.match(studio, /^"use client";/);

@@ -1,5 +1,6 @@
 import type {
   EsitoAnalisi,
+  EsitoRicercaDocumentale,
   Livello,
   RiconoscimentoAi,
   VerificaDocumentale,
@@ -48,6 +49,14 @@ export function componiEsito(input: {
 
   const verificato = livello === "verificato";
   const fonteId = verifica.fonte?.id ?? null;
+  const ricerca: EsitoRicercaDocumentale = verifica.ricerca ?? {
+    stato: "non_eseguita",
+    fonte: null,
+    consultataIl: null,
+    query: [],
+    prove: [],
+    messaggio: "Ricerca documentale non eseguita.",
+  };
   const denominazioneVerificata = verificato
     ? (verifica.denominazioneVerificata ?? null)
     : null;
@@ -67,7 +76,13 @@ export function componiEsito(input: {
     // `fonte_id` e in `esito->>'fonteId'`, come richiede la migration.
     fonteId,
     denominazioneVerificata,
-    verifica: { ...verifica, livello, motivazione },
+    verifica: {
+      ...verifica,
+      livello,
+      motivazione,
+      prove: verifica.prove ?? [],
+      ricerca,
+    },
     avvertenza: AVVERTENZA_BASE,
     versionePrompt,
   };

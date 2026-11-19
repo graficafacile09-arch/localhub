@@ -29,11 +29,13 @@ const {
   interpretaRigaQuota,
   isUrlFonteUfficiale,
   limitiQuota,
+  denominazioniEquivalenti,
   normalizzaDenominazione,
   normalizzaTesto,
   scadenzaCache,
   selezionaEsitoInCache,
   territoriCoerenti,
+  variantiParola,
   TTL_CACHE_GIORNI,
   TTL_CACHE_MS,
   validaChiaveQuota,
@@ -62,6 +64,28 @@ function fonte(override = {}) {
     riferimentoNormativo: "Reg. (UE) 2024/1143, art. 22",
     consultataIl: "2026-11-18",
     attiva: true,
+    ...override,
+  };
+}
+
+function prova(override = {}) {
+  return {
+    id: "eambrosia:EUGI00000014301",
+    tipo: "ufficiale",
+    denominazione: "Pecorino Crotonese",
+    schemaQualita: "DOP",
+    ente: "Commissione europea — DG Agricoltura e sviluppo rurale (eAmbrosia)",
+    titolo: "eAmbrosia — Pecorino Crotonese (PDO)",
+    url: "https://ec.europa.eu/agriculture/eambrosia/geographical-indications-register/details/EUGI00000014301",
+    riferimentoNormativo: "Official Journal L 341, 27.11.2014",
+    riferimentoUrl:
+      "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=OJ:JOL_2014_341_R_0001",
+    documentoUrl:
+      "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=OJ:JOL_2014_341_R_0001",
+    estratto: "Scheda EUGI00000014301 · stato: registrata · tipo: PDO",
+    consultataIl: "2026-11-19",
+    relazione: "Corrispondenza esatta con la denominazione letta.",
+    stato: "registrata",
     ...override,
   };
 }
@@ -287,6 +311,52 @@ test("verifica: registro vuoto non produce mai verificato", () => {
   assert.notEqual(esito.livello, "verificato");
   assert.equal(esito.fonte, null);
   assert.equal(esito.denominazioneVerificata, null);
+});
+
+test("verifica: prova eAmbrosia esatta senza fonte curata => riscontro parziale", () => {
+  const ricerca = {
+    stato: "ok",
+    fonte: "eAmbrosia",
+    consultataIl: "2026-11-19",
+    query: ["pecorino crotonese"],
+    prove: [prova()],
+    messaggio: null,
+  };
+
+  const esito = verificaDenominazione(riconoscimento(), [], ricerca);
+  assert.equal(esito.esito, "riscontro_parziale");
+  assert.equal(esito.livello, "coerente_non_verificato");
+  assert.equal(esito.denominazioneVerificata, null);
+  assert.equal(esito.prove.length, 1);
+  assert.equal(esito.prove[0].tipo, "ufficiale");
+  assert.equal(esito.ricerca.stato, "ok");
+  assert.match(esito.motivazione, /prova.*ufficiale/i);
+});
+
+test("verifica: errore di ricerca non equivale ad assenza di prove", () => {
+  const ricerca = {
+    stato: "non_disponibile",
+    fonte: "eAmbrosia",
+    consultataIl: "2026-11-19",
+    query: ["pecorino crotonese"],
+    prove: [],
+    messaggio:
+      "La ricerca nel registro eAmbrosia non è stata completata. L'esito non dimostra l'assenza di fonti.",
+  };
+
+  const esito = verificaDenominazione(riconoscimento(), [], ricerca);
+  assert.equal(esito.esito, "ricerca_non_disponibile");
+  assert.equal(esito.livello, "non_verificato");
+  assert.match(esito.motivazione, /non dimostra l'assenza/i);
+  assert.equal(esito.ricerca.stato, "non_disponibile");
+});
+
+test("verifica: varianti morfologiche controllate, non somiglianza fuzzy", () => {
+  assert.equal(denominazioniEquivalenti("Peperone di Senise", "Peperoni di Senise"), true);
+  assert.equal(denominazioniEquivalenti("Fico di Cosenza", "Fichi di Cosenza"), true);
+  assert.equal(denominazioniEquivalenti("Pecorino Crotonese", "Pecorino Romano"), false);
+  assert.ok(variantiParola("peperone").includes("peperoni"));
+  assert.ok(variantiParola("fichi").includes("fico"));
 });
 
 // ─── Livelli e composizione dell'esito ─────────────────────────────────────

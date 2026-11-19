@@ -3,12 +3,14 @@ import {
   Award,
   CheckCircle2,
   ExternalLink,
+  FileSearch,
   FileText,
   Info,
+  Landmark,
   RotateCcw,
   type LucideIcon,
 } from "lucide-react";
-import type { EsitoAnalisi } from "@/lib/radiscan/tipi";
+import type { EsitoAnalisi, ProvaDocumentale } from "@/lib/radiscan/tipi";
 import {
   ETICHETTE_GRUPPO,
   gruppoDaLivello,
@@ -57,6 +59,133 @@ function Campo({
         {valore?.trim() || "Non indicato"}
       </dd>
     </div>
+  );
+}
+
+const ETICHETTA_PROVA: Record<ProvaDocumentale["tipo"], string> = {
+  ufficiale: "Fonte ufficiale",
+  informativa: "Fonte informativa",
+  risultato_ricerca: "Risultato di ricerca",
+};
+
+function SchedaProva({ prova }: { prova: ProvaDocumentale }) {
+  const documentoDiverso =
+    prova.documentoUrl && prova.documentoUrl !== prova.url
+      ? prova.documentoUrl
+      : null;
+
+  return (
+    <article className="rounded-xl border border-[#d8e4da] bg-[#f8fbf8] p-4">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <span className="rd-et">{ETICHETTA_PROVA[prova.tipo]}</span>
+          <h4 className="mt-2 text-sm font-black leading-5 text-[#1b3624]">
+            {prova.titolo}
+          </h4>
+          <p className="mt-0.5 text-xs leading-5 text-[#57534e]">{prova.ente}</p>
+        </div>
+        <Landmark className="h-5 w-5 shrink-0 text-[#24462f]" aria-hidden />
+      </div>
+
+      {prova.estratto ? (
+        <p className="mt-3 rounded-lg border border-[#e5ded0] bg-white px-3 py-2 text-xs leading-5 text-[#57534e]">
+          {prova.estratto}
+        </p>
+      ) : null}
+
+      <p className="mt-2 text-xs leading-5 text-[#57534e]">{prova.relazione}</p>
+
+      <dl className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
+        <div>
+          <dt className="font-bold text-[#6b6459]">Stato</dt>
+          <dd className="text-[#1b3624]">
+            {prova.stato.replaceAll("_", " ")}
+          </dd>
+        </div>
+        <div>
+          <dt className="font-bold text-[#6b6459]">Consultata il</dt>
+          <dd className="text-[#1b3624]">{prova.consultataIl}</dd>
+        </div>
+        {prova.schemaQualita ? (
+          <div>
+            <dt className="font-bold text-[#6b6459]">Schema</dt>
+            <dd className="text-[#1b3624]">{prova.schemaQualita}</dd>
+          </div>
+        ) : null}
+        {prova.riferimentoNormativo ? (
+          <div className={prova.schemaQualita ? undefined : "sm:col-span-2"}>
+            <dt className="font-bold text-[#6b6459]">Riferimento</dt>
+            <dd className="text-[#1b3624]">{prova.riferimentoNormativo}</dd>
+          </div>
+        ) : null}
+      </dl>
+
+      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2">
+        <a
+          href={prova.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="rd-link-freccia"
+        >
+          Apri la scheda ufficiale
+          <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+        </a>
+        {documentoDiverso ? (
+          <a
+            href={documentoDiverso}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rd-link-freccia"
+          >
+            Apri il documento originale
+            <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+          </a>
+        ) : null}
+      </div>
+    </article>
+  );
+}
+
+function AvvisoRicerca({
+  ricerca,
+}: {
+  ricerca: EsitoAnalisi["verifica"]["ricerca"] | null | undefined;
+}) {
+  if (!ricerca) return null;
+
+  if (ricerca.stato === "non_disponibile") {
+    return (
+      <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
+        <div className="flex items-start gap-2">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" aria-hidden />
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-amber-900">
+              Ricerca non completata
+            </p>
+            <p className="mt-1 text-sm leading-6 text-amber-900">
+              {ricerca.messaggio ??
+                "Il registro ufficiale non ha risposto. Questo esito non dimostra l'assenza di fonti."}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (ricerca.stato === "non_eseguita") {
+    return (
+      <p className="mt-4 rounded-xl border border-[#e5ded0] bg-white p-4 text-xs leading-5 text-[#6b6459]">
+        {ricerca.messaggio ?? "Ricerca documentale non eseguita."}
+      </p>
+    );
+  }
+
+  return (
+    <p className="mt-4 rounded-xl border border-[#e5ded0] bg-white p-4 text-xs leading-5 text-[#6b6459]">
+      Nessun documento pertinente è stato trovato nel registro eAmbrosia
+      consultato il {ricerca.consultataIl ?? "data non disponibile"}. L&apos;assenza
+      di risultati non dimostra che la denominazione non esista.
+    </p>
   );
 }
 
@@ -134,6 +263,8 @@ export default function ScanRisultato({
     ? riconoscimento.incongruenzeRilevate
     : [];
   const fonte = esito.verifica?.fonte ?? null;
+  const prove = Array.isArray(esito.verifica?.prove) ? esito.verifica.prove : [];
+  const ricerca = esito.verifica?.ricerca ?? null;
   const motivazione =
     esito.verifica?.motivazione?.trim() || "Nessuna motivazione disponibile.";
   const avvertenza =
@@ -227,14 +358,30 @@ export default function ScanRisultato({
           <p className="mt-2 text-sm leading-6 text-[#57534e]">{motivazione}</p>
         </div>
 
-        {fonte ? (
-          <SchedaFonte fonte={fonte} />
+        {prove.length > 0 ? (
+          <div className="mt-4">
+            <div className="flex items-center gap-2">
+              <FileSearch className="h-4 w-4 text-[#24462f]" aria-hidden />
+              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#24462f]">
+                Prove documentali ({prove.length})
+              </p>
+            </div>
+            {ricerca?.messaggio ? (
+              <p className="mt-2 text-xs leading-5 text-[#8a5a3b]">
+                {ricerca.messaggio}
+              </p>
+            ) : null}
+            <div className="mt-3 space-y-3">
+              {prove.map((prova) => (
+                <SchedaProva key={prova.id} prova={prova} />
+              ))}
+            </div>
+          </div>
         ) : (
-          <p className="mt-4 rounded-xl border border-[#e5ded0] bg-white p-4 text-xs leading-5 text-[#6b6459]">
-            Nessuna fonte ufficiale è associata a questo esito. Il riconoscimento
-            resta un&apos;indicazione da controllare.
-          </p>
+          <AvvisoRicerca ricerca={ricerca} />
         )}
+
+        {fonte ? <SchedaFonte fonte={fonte} /> : null}
 
         {incongruenze.length > 0 ? (
           <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">

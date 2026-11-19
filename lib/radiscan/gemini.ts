@@ -18,12 +18,13 @@ const MODELLO_PREDEFINITO = "gemini-flash-lite-latest";
 const TIMEOUT_PREDEFINITO_MS = 25_000;
 const MAX_OUTPUT_TOKENS = 700;
 /**
- * Deve restare allineato a `TIMEOUT_ANALISI_MS` di `handler.ts` (30 s).
+ * Deve restare allineato a `TIMEOUT_ANALISI_MS` di `handler.ts` (40 s).
  * Il margine copre il lavoro della route precedente alla chiamata al provider
  * (lettura registro, quota, cache), così il secondo tentativo non consuma
- * tempo oltre la scadenza complessiva della route.
+ * tempo oltre la scadenza complessiva della route. I 10 s aggiuntivi lasciano
+ * spazio alla ricerca documentale successiva al riconoscimento.
  */
-const TIMEOUT_ROUTE_MS = 30_000;
+const TIMEOUT_ROUTE_MS = 40_000;
 const MARGINE_BUDGET_ROUTE_MS = 1_000;
 const BACKOFF_RETRY_MS = 400;
 const STATI_HTTP_RITENTABILI = new Set([500, 502, 503, 504]);

@@ -21,7 +21,12 @@ import {
 import { VERSIONE_PROMPT } from "./prompt";
 import { estraiImmagine } from "./richiesta";
 import type { RepositoryRadiciScan, RigaAnalisi } from "./repository";
-import type { EsitoAnalisi, MetaAnalisi, ProviderRadiciScan } from "./tipi";
+import type {
+  EsitoAnalisi,
+  MetaAnalisi,
+  ProviderRadiciScan,
+  ProviderRicercaDocumentale,
+} from "./tipi";
 
 /**
  * RadiciScan — handler della route `POST /api/radiscan/analisi`.
@@ -38,13 +43,15 @@ import type { EsitoAnalisi, MetaAnalisi, ProviderRadiciScan } from "./tipi";
  * - senza `RADISCAN_CACHE_SECRET` la cache è disattivata, non l'analisi.
  */
 
-const TIMEOUT_ANALISI_MS = 30_000;
+const TIMEOUT_ANALISI_MS = 40_000;
 const SALE_MINIMO = 16;
 
 export interface DipendenzeHandler {
   utenteCorrente: () => Promise<{ id: string } | null>;
   creaRepository: () => RepositoryRadiciScan | Promise<RepositoryRadiciScan>;
   creaProvider: () => ProviderRadiciScan;
+  /** Provider documentale; la route passa eAmbrosia. */
+  creaRicerca?: () => ProviderRicercaDocumentale;
   saleQuota: string | null;
   /** Segreto HMAC della cache: assente => nessun riuso della cache. */
   segretoCache?: string | null;
@@ -312,7 +319,12 @@ export function creaHandlerAnalisi(dipendenze: DipendenzeHandler) {
             mimeType: immagine.mime,
             improntaImmagine: immagine.impronta ?? undefined,
           },
-          { provider, registro, signal: controller.signal }
+          {
+            provider,
+            ricerca: dipendenze.creaRicerca?.(),
+            registro,
+            signal: controller.signal,
+          }
         );
         esito = risultato.esito;
         meta = risultato.meta;
@@ -346,8 +358,12 @@ export function creaHandlerAnalisi(dipendenze: DipendenzeHandler) {
 
     // La scrittura in cache è best-effort: non fa fallire un'analisi già
     // registrata e non introduce dati sensibili. Senza chiave HMAC non si
-    // scrive nulla.
-    if (!cache && chiaveCache) {
+    // scrive nulla. Un errore della ricerca documentale non viene cachato:
+    // altrimenti un timeout di eAmbrosia diventerebbe un'assenza di prove
+    // per trenta giorni.
+    const ricercaNonRiuscita =
+      esito.verifica.ricerca?.stato === "non_disponibile";
+    if (!cache && chiaveCache && !ricercaNonRiuscita) {
       try {
         await repository.scriviCache(creaRigaCache(chiaveCache, esito, istante));
       } catch {

@@ -44,6 +44,7 @@ test("isolamento: elenco dei moduli RadiciScan", () => {
     "prompt.ts",
     "quote.ts",
     "repository.ts",
+    "ricerca.ts",
     "richiesta.ts",
     "schema.ts",
     "tipi.ts",
@@ -75,7 +76,7 @@ test("isolamento: nessun import dal percorso venditori o da infrastrutture condi
     assert.ok(!/AIza[0-9A-Za-z_-]{10,}/.test(sorgente), `${nome} contiene una chiave hardcoded`);
     assert.ok(!/\bconsole\./.test(sorgente), `${nome} scrive su console`);
 
-    if (nome !== "gemini.ts") {
+    if (nome !== "gemini.ts" && nome !== "ricerca.ts") {
       assert.ok(!/\bfetch\s*\(/.test(sorgente), `${nome} apre una connessione di rete`);
     }
   }
