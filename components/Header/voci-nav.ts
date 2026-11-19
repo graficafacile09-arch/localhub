@@ -11,7 +11,7 @@ export type VoceNavigazione = { label: string; href: string };
 export const VOCI_NAV: VoceNavigazione[] = [
   { label: "Home", href: "/" },
   { label: "Aziende", href: "/negozi" },
-  { label: "TerraQ", href: "/prodotti" },
+  { label: "RadiciScan", href: "/prodotti" },
   { label: "Filiere", href: "/filiere" },
   { label: "Territorio", href: "/territorio" },
   { label: "Notizie", href: "/notizie" },
