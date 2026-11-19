@@ -27,11 +27,10 @@ export const MAX_IMMAGINE_BYTES = 3 * 1024 * 1024;
 export const MAX_FILE_ORIGINALE_BYTES = 25 * 1024 * 1024;
 
 /**
- * Lato massimo della ricodifica: 2400 px. È volutamente alto perché la
- * leggibilità delle etichette viene prima della riduzione del peso; la
- * qualità scende solo se il file supera il limite.
+ * Lato massimo della ricodifica: 1800 px. Riduce il payload inviato al modello
+ * mantenendo una risoluzione adatta alla lettura delle etichette.
  */
-export const LATO_MASSIMO = 2400;
+export const LATO_MASSIMO = 1800;
 export const LATO_MINIMO = 1200;
 
 export type GruppoEsito =
