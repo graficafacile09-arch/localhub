@@ -44,7 +44,7 @@ export default function HeaderNav({ overlay = false }: { overlay?: boolean } = {
       micro: null,
       attiva: pathname === "/filiere" || pathname.startsWith("/filiere/"),
     },
-    { label: "TerraQ", href: "/prodotti", icona: Box, badge: null, micro: null, attiva: pathname === "/prodotti" || pathname.startsWith("/prodotti/") },
+    { label: "RadiciScan", href: "/prodotti", icona: Box, badge: null, micro: null, attiva: pathname === "/prodotti" || pathname.startsWith("/prodotti/") },
     {
       label: "Territorio",
       href: "/territorio",
@@ -95,13 +95,7 @@ export default function HeaderNav({ overlay = false }: { overlay?: boolean } = {
                 voce.attiva ? "text-white" : "text-forest"
               }`}
             >
-              {voce.label === "TerraQ" ? (
-                <>
-                  Terra<span className="text-[#8a5a3b]">Q</span>
-                </>
-              ) : (
-                voce.label
-              )}
+              {voce.label}
             </span>
 
             {voce.badge && (

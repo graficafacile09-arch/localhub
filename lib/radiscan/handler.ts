@@ -43,7 +43,7 @@ import type {
  * - senza `RADISCAN_CACHE_SECRET` la cache è disattivata, non l'analisi.
  */
 
-const TIMEOUT_ANALISI_MS = 40_000;
+const TIMEOUT_ANALISI_MS = 55_000;
 const SALE_MINIMO = 16;
 
 export interface DipendenzeHandler {
