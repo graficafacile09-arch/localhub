@@ -77,6 +77,27 @@ function fonte(override = {}) {
   };
 }
 
+function provaEAmbrosia() {
+  return {
+    id: "eambrosia:EUGI00000014301",
+    tipo: "ufficiale",
+    denominazione: "Pecorino Crotonese",
+    schemaQualita: "DOP",
+    ente: "Commissione europea — DG Agricoltura e sviluppo rurale (eAmbrosia)",
+    titolo: "eAmbrosia — Pecorino Crotonese (PDO)",
+    url: "https://ec.europa.eu/agriculture/eambrosia/geographical-indications-register/details/EUGI00000014301",
+    riferimentoNormativo: "Official Journal L 341, 27.11.2014",
+    riferimentoUrl:
+      "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=OJ:JOL_2014_341_R_0001",
+    documentoUrl:
+      "https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=OJ:JOL_2014_341_R_0001",
+    estratto: "Scheda EUGI00000014301 · stato: registrata",
+    consultataIl: "2026-11-18",
+    relazione: "Corrispondenza esatta con la denominazione letta.",
+    stato: "registrata",
+  };
+}
+
 function creaRepositoryFinto(over = {}) {
   const chiamate = { registro: 0, cache: [], cacheScritte: [], analisi: [], quote: [] };
   return {
@@ -98,8 +119,8 @@ function creaRepositoryFinto(over = {}) {
     async consumaQuota(chiave, modalita) {
       chiamate.quote.push({ chiave, modalita });
       return modalita === "anonimo"
-        ? { consentita: true, usatiOggi: 1, limiteGiorno: 15, limiteMinuto: 3 }
-        : { consentita: true, usatiOggi: 1, limiteGiorno: 60, limiteMinuto: 10 };
+        ? { consentita: true, usatiOggi: 1, limiteGiorno: 100, limiteMinuto: 10 }
+        : { consentita: true, usatiOggi: 1, limiteGiorno: 300, limiteMinuto: 30 };
     },
     ...over,
   };
@@ -129,11 +150,13 @@ function creaAmbiente({
   sale = SALE,
   segretoCache = SEGRETO_CACHE,
   creaRepository,
+  creaRicerca,
 } = {}) {
   const handler = creaHandlerAnalisi({
     utenteCorrente: utenteCorrente ?? (async () => utente),
     creaRepository: creaRepository ?? (() => repository),
     creaProvider: () => provider.provider,
+    creaRicerca,
     saleQuota: sale,
     segretoCache,
     adesso: () => new Date("2026-11-18T10:00:00.000Z"),
@@ -346,11 +369,11 @@ test("route: quota superata risponde 429 senza chiamare l'AI", async () => {
       quote.push({ chiave, modalita });
       return {
         consentita: false,
-        motivo: "Hai raggiunto il limite di 3 analisi al minuto. Riprova tra poco.",
+        motivo: "Hai raggiunto il limite di 10 analisi al minuto. Riprova tra poco.",
         riprovaTraSecondi: 42,
-        usatiOggi: 3,
-        limiteGiorno: 15,
-        limiteMinuto: 3,
+        usatiOggi: 10,
+        limiteGiorno: 100,
+        limiteMinuto: 10,
       };
     },
   });
@@ -363,7 +386,59 @@ test("route: quota superata risponde 429 senza chiamare l'AI", async () => {
   assert.equal(risposta.headers.get("retry-after"), "42");
   const corpo = await risposta.json();
   assert.equal(corpo.errore.codice, "QUOTA_SUPERATA");
+  assert.equal(
+    corpo.errore.messaggio,
+    "Hai raggiunto il limite di 10 analisi al minuto. Riprova tra poco."
+  );
+  assert.deepEqual(corpo.quota, {
+    usatiOggi: 10,
+    limiteGiorno: 100,
+    limiteMinuto: 10,
+  });
+  assert.equal(risposta.headers.get("x-radiciscan-limite-giorno"), "100");
+  assert.equal(risposta.headers.get("x-radiciscan-limite-minuto"), "10");
   assert.equal(quote.length, 1);
+  assert.equal(provider.stato.chiamate, 0);
+  assert.equal(repository.chiamate.analisi.length, 0);
+});
+
+test("route: quota autenticata superata risponde 429 senza chiamare l'AI", async () => {
+  const repository = creaRepositoryFinto({
+    async consumaQuota() {
+      return {
+        consentita: false,
+        motivo: "Hai raggiunto il limite di 30 analisi al minuto. Riprova tra poco.",
+        riprovaTraSecondi: 30,
+        usatiOggi: 30,
+        limiteGiorno: 300,
+        limiteMinuto: 30,
+      };
+    },
+  });
+  const provider = creaProviderFinto();
+  const { handler } = creaAmbiente({
+    repository,
+    provider,
+    utente: { id: UUID_UTENTE },
+  });
+
+  const risposta = await handlerVercel(handler, richiestaMultipart());
+
+  assert.equal(risposta.status, 429);
+  assert.equal(risposta.headers.get("retry-after"), "30");
+  const corpo = await risposta.json();
+  assert.equal(corpo.errore.codice, "QUOTA_SUPERATA");
+  assert.equal(
+    corpo.errore.messaggio,
+    "Hai raggiunto il limite di 30 analisi al minuto. Riprova tra poco."
+  );
+  assert.deepEqual(corpo.quota, {
+    usatiOggi: 30,
+    limiteGiorno: 300,
+    limiteMinuto: 30,
+  });
+  assert.equal(risposta.headers.get("x-radiciscan-limite-giorno"), "300");
+  assert.equal(risposta.headers.get("x-radiciscan-limite-minuto"), "30");
   assert.equal(provider.stato.chiamate, 0);
   assert.equal(repository.chiamate.analisi.length, 0);
 });
@@ -616,6 +691,79 @@ test("route: senza fonte documentale non esiste alcun verificato", async () => {
   assert.equal(repository.chiamate.cacheScritte[0].fonteId, null);
 });
 
+test("route: prova eAmbrosia esatta senza fonte curata => riscontro parziale", async () => {
+  const repository = creaRepositoryFinto({
+    async leggiRegistro() {
+      return [];
+    },
+  });
+  const ricerca = {
+    nome: "eAmbrosia-finto",
+    async cerca() {
+      return {
+        stato: "ok",
+        fonte: "eAmbrosia",
+        consultataIl: "2026-11-18",
+        query: ["pecorino crotonese"],
+        prove: [provaEAmbrosia()],
+        messaggio: null,
+      };
+    },
+  };
+  const { handler } = creaAmbiente({
+    repository,
+    creaRicerca: () => ricerca,
+  });
+
+  const risposta = await handlerVercel(handler, richiestaMultipart());
+  assert.equal(risposta.status, 200);
+  const corpo = await risposta.json();
+
+  assert.equal(corpo.esito.livello, "coerente_non_verificato");
+  assert.equal(corpo.esito.verifica.esito, "riscontro_parziale");
+  assert.equal(corpo.esito.verifica.prove.length, 1);
+  assert.equal(corpo.esito.verifica.prove[0].id, "eambrosia:EUGI00000014301");
+  assert.equal(corpo.esito.fonteId, null);
+  assert.equal(corpo.esito.denominazioneVerificata, null);
+  assert.equal(repository.chiamate.analisi[0].livello, "coerente_non_verificato");
+  assert.equal(repository.chiamate.cacheScritte.length, 1);
+});
+
+test("route: errore eAmbrosia => esito esplicito e nessuna cache", async () => {
+  const repository = creaRepositoryFinto({
+    async leggiRegistro() {
+      return [];
+    },
+  });
+  const ricerca = {
+    nome: "eAmbrosia-finto",
+    async cerca() {
+      return {
+        stato: "non_disponibile",
+        fonte: "eAmbrosia",
+        consultataIl: "2026-11-18",
+        query: ["pecorino crotonese"],
+        prove: [],
+        messaggio:
+          "La ricerca nel registro eAmbrosia non è stata completata. L'esito non dimostra l'assenza di fonti.",
+      };
+    },
+  };
+  const { handler } = creaAmbiente({
+    repository,
+    creaRicerca: () => ricerca,
+  });
+
+  const risposta = await handlerVercel(handler, richiestaMultipart());
+  assert.equal(risposta.status, 200);
+  const corpo = await risposta.json();
+
+  assert.equal(corpo.esito.livello, "non_verificato");
+  assert.equal(corpo.esito.verifica.esito, "ricerca_non_disponibile");
+  assert.match(corpo.esito.verifica.motivazione, /non dimostra l'assenza/i);
+  assert.equal(repository.chiamate.cacheScritte.length, 0);
+});
+
 test("cache: un verificato valido evita l'AI e conserva fonte_id", async () => {
   const rigaCache = rigaCacheDi(esitoVerificatoDiProva());
   const repository = creaRepositoryFinto({
@@ -863,8 +1011,8 @@ function clientFinto({ registro = [], cache = null } = {}) {
             retry_after: 0,
             reason: null,
             usati_oggi: 0,
-            limite_giorno: 15,
-            limite_minuto: 3,
+            limite_giorno: 100,
+            limite_minuto: 10,
           },
         ],
         error: null,

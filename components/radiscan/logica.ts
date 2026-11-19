@@ -50,9 +50,9 @@ export const ETICHETTE_GRUPPO: Record<
       "La denominazione letta corrisponde a una fonte ufficiale registrata e completa.",
   },
   non_documentato: {
-    titolo: "Non sufficientemente documentato",
+    titolo: "Riscontro parziale",
     descrizione:
-      "Le indicazioni sono compatibili con le fonti disponibili, ma la denominazione non è confermata.",
+      "Sono stati trovati documenti pertinenti, ma non bastano a confermare il prodotto specifico.",
   },
   non_verificato: {
     titolo: "Non verificato",

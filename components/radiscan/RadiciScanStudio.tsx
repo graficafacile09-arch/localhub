@@ -217,8 +217,7 @@ export default function RadiciScanStudio() {
     if (fase !== "fotocamera") return;
 
     let annullato = false;
-    setAvvioFotocamera(true);
-    setErroreFotocamera(null);
+    const video = videoRef.current;
 
     async function avviaFotocamera() {
       try {
@@ -241,7 +240,6 @@ export default function RadiciScanStudio() {
         }
 
         streamRef.current = stream;
-        const video = videoRef.current;
         if (video) {
           video.srcObject = stream;
           await video.play().catch(() => undefined);
@@ -261,8 +259,8 @@ export default function RadiciScanStudio() {
         streamRef.current.getTracks().forEach((traccia) => traccia.stop());
         streamRef.current = null;
       }
-      if (videoRef.current) {
-        videoRef.current.srcObject = null;
+      if (video) {
+        video.srcObject = null;
       }
     };
   }, [fase]);
@@ -270,6 +268,7 @@ export default function RadiciScanStudio() {
   function apriFotocamera() {
     if (fase === "analisi") return;
     setErroreLocale(null);
+    setAvvioFotocamera(true);
     setErroreFotocamera(null);
     setFase("fotocamera");
   }
@@ -293,6 +292,7 @@ export default function RadiciScanStudio() {
     setErrore(null);
     setErroreStato(0);
     setErroreLocale(null);
+    setAvvioFotocamera(true);
     setErroreFotocamera(null);
     setScattoDaFotocamera(false);
     setFase("fotocamera");
@@ -501,9 +501,26 @@ export default function RadiciScanStudio() {
 
   return (
     <section className="rd-fascia p-4 md:p-6" aria-busy={fase === "analisi"}>
-      <h2 className="rd-titolo-scheda text-xl md:text-2xl">
-        Analizza un prodotto
-      </h2>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="rd-occhiello">
+            <ScanLine aria-hidden />
+            Fotografia e verifica
+          </p>
+          <h2 className="rd-titolo-scheda mt-1 text-xl md:text-2xl">
+            Analizza un prodotto
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm leading-7 text-[#57534e]">
+            Scatta o carica una foto dell&apos;etichetta. RadiciScan legge le
+            informazioni visibili e le confronta con il registro delle fonti
+            ufficiali.
+          </p>
+        </div>
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-[#e5ded0] bg-white px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.08em] text-[#6b6459]">
+          <ShieldCheck className="h-3.5 w-3.5 text-[#24462f]" aria-hidden />
+          Nessuna immagine conservata
+        </span>
+      </div>
 
       <ul className="mt-4 grid gap-2 border-t border-[#e5ded0] pt-3 sm:grid-cols-3 sm:gap-4">
         <li className="flex items-start gap-2">

@@ -4,6 +4,7 @@ export * from "./fonti";
 export * from "./prompt";
 export * from "./schema";
 export * from "./verifica";
+export * from "./ricerca";
 export * from "./livelli";
 export * from "./cache";
 export * from "./quote";

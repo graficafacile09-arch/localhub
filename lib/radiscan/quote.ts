@@ -5,8 +5,8 @@ import { CODICI_ERRORE, ErroreRadiciScan, erroreQuotaNonDisponibile } from "./er
  * RadiciScan — quote autonome.
  *
  * Rispecchia la RPC `radiscan_consume_usage(text, text, text)` della
- * migration 20261118: modalità `anonimo` / `autenticato`, limiti derivati
- * dalla modalità, chiave tra 16 e 128 caratteri.
+ * migration 20261125 (incrementale sulla 20261118): modalità `anonimo` /
+ * `autenticato`, limiti derivati dalla modalità, chiave tra 16 e 128 caratteri.
  *
  * Regola non negoziabile: qualunque anomalia (errore RPC, risposta vuota o
  * malformata, limiti diversi da quelli attesi) produce un'eccezione. Non
@@ -15,8 +15,8 @@ import { CODICI_ERRORE, ErroreRadiciScan, erroreQuotaNonDisponibile } from "./er
  */
 
 export const LIMITI_QUOTA = {
-  anonimo: { minuto: 3, giorno: 15 },
-  autenticato: { minuto: 10, giorno: 60 },
+  anonimo: { minuto: 10, giorno: 100 },
+  autenticato: { minuto: 30, giorno: 300 },
 } as const;
 
 export type ModalitaQuota = keyof typeof LIMITI_QUOTA;
