@@ -66,7 +66,7 @@ export default function HeaderNav({ overlay = false }: { overlay?: boolean } = {
     >
       {voci.map((voce) => {
         const Icona = voce.icona;
-        const classiVoce = `group relative flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-full border px-2 py-2 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest focus-visible:ring-offset-2 sm:flex-none sm:flex-row sm:gap-1.5 sm:px-3 sm:py-2.5 md:px-4 lg:gap-2 lg:px-5 lg:py-3 xl:gap-3.5 xl:px-[38px] xl:py-3 ${
+        const classiVoce = `group relative flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-full border px-1 py-2 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-forest focus-visible:ring-offset-2 max-[359px]:px-0.5 sm:w-[113px] sm:flex-none sm:flex-row sm:gap-1 sm:px-2 sm:py-2.5 md:w-[137px] md:gap-1.5 md:px-4 lg:w-[149px] lg:gap-2 lg:px-5 lg:py-3 xl:w-[208px] xl:gap-3.5 xl:px-[37px] xl:py-3 ${
           voce.attiva
             ? "border-forest bg-forest text-white"
             : "border-gold-soft bg-cream text-forest hover:border-gold hover:bg-[#f4ecdc]"
@@ -91,7 +91,7 @@ export default function HeaderNav({ overlay = false }: { overlay?: boolean } = {
                 spagnolo, tedesco) vanno a capo invece di uscire dal riquadro
                 e sovrapporsi alle voci accanto. Da sm in su restano su una riga. */}
             <span
-              className={`incitta-public-nav-label max-w-full hyphens-auto break-words text-balance text-center text-[10px] font-semibold leading-tight tracking-tight sm:whitespace-nowrap sm:text-[14px] md:text-[15px] xl:text-[18px] ${
+              className={`incitta-public-nav-label max-w-full whitespace-nowrap text-center text-[10px] font-semibold leading-tight tracking-tight max-[359px]:text-[9px] sm:text-[14px] md:text-[15px] xl:text-[18px] ${
                 voce.attiva ? "text-white" : "text-forest"
               }`}
             >
