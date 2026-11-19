@@ -119,8 +119,8 @@ function creaRepositoryFinto(over = {}) {
     async consumaQuota(chiave, modalita) {
       chiamate.quote.push({ chiave, modalita });
       return modalita === "anonimo"
-        ? { consentita: true, usatiOggi: 1, limiteGiorno: 15, limiteMinuto: 3 }
-        : { consentita: true, usatiOggi: 1, limiteGiorno: 60, limiteMinuto: 10 };
+        ? { consentita: true, usatiOggi: 1, limiteGiorno: 100, limiteMinuto: 10 }
+        : { consentita: true, usatiOggi: 1, limiteGiorno: 300, limiteMinuto: 30 };
     },
     ...over,
   };
@@ -369,11 +369,11 @@ test("route: quota superata risponde 429 senza chiamare l'AI", async () => {
       quote.push({ chiave, modalita });
       return {
         consentita: false,
-        motivo: "Hai raggiunto il limite di 3 analisi al minuto. Riprova tra poco.",
+        motivo: "Hai raggiunto il limite di 10 analisi al minuto. Riprova tra poco.",
         riprovaTraSecondi: 42,
-        usatiOggi: 3,
-        limiteGiorno: 15,
-        limiteMinuto: 3,
+        usatiOggi: 10,
+        limiteGiorno: 100,
+        limiteMinuto: 10,
       };
     },
   });
@@ -386,7 +386,59 @@ test("route: quota superata risponde 429 senza chiamare l'AI", async () => {
   assert.equal(risposta.headers.get("retry-after"), "42");
   const corpo = await risposta.json();
   assert.equal(corpo.errore.codice, "QUOTA_SUPERATA");
+  assert.equal(
+    corpo.errore.messaggio,
+    "Hai raggiunto il limite di 10 analisi al minuto. Riprova tra poco."
+  );
+  assert.deepEqual(corpo.quota, {
+    usatiOggi: 10,
+    limiteGiorno: 100,
+    limiteMinuto: 10,
+  });
+  assert.equal(risposta.headers.get("x-radiciscan-limite-giorno"), "100");
+  assert.equal(risposta.headers.get("x-radiciscan-limite-minuto"), "10");
   assert.equal(quote.length, 1);
+  assert.equal(provider.stato.chiamate, 0);
+  assert.equal(repository.chiamate.analisi.length, 0);
+});
+
+test("route: quota autenticata superata risponde 429 senza chiamare l'AI", async () => {
+  const repository = creaRepositoryFinto({
+    async consumaQuota() {
+      return {
+        consentita: false,
+        motivo: "Hai raggiunto il limite di 30 analisi al minuto. Riprova tra poco.",
+        riprovaTraSecondi: 30,
+        usatiOggi: 30,
+        limiteGiorno: 300,
+        limiteMinuto: 30,
+      };
+    },
+  });
+  const provider = creaProviderFinto();
+  const { handler } = creaAmbiente({
+    repository,
+    provider,
+    utente: { id: UUID_UTENTE },
+  });
+
+  const risposta = await handlerVercel(handler, richiestaMultipart());
+
+  assert.equal(risposta.status, 429);
+  assert.equal(risposta.headers.get("retry-after"), "30");
+  const corpo = await risposta.json();
+  assert.equal(corpo.errore.codice, "QUOTA_SUPERATA");
+  assert.equal(
+    corpo.errore.messaggio,
+    "Hai raggiunto il limite di 30 analisi al minuto. Riprova tra poco."
+  );
+  assert.deepEqual(corpo.quota, {
+    usatiOggi: 30,
+    limiteGiorno: 300,
+    limiteMinuto: 30,
+  });
+  assert.equal(risposta.headers.get("x-radiciscan-limite-giorno"), "300");
+  assert.equal(risposta.headers.get("x-radiciscan-limite-minuto"), "30");
   assert.equal(provider.stato.chiamate, 0);
   assert.equal(repository.chiamate.analisi.length, 0);
 });
@@ -959,8 +1011,8 @@ function clientFinto({ registro = [], cache = null } = {}) {
             retry_after: 0,
             reason: null,
             usati_oggi: 0,
-            limite_giorno: 15,
-            limite_minuto: 3,
+            limite_giorno: 100,
+            limite_minuto: 10,
           },
         ],
         error: null,

@@ -172,16 +172,16 @@ test("UI: errore e quota estratti solo se la forma è valida", () => {
   const errore = estraiErrore({
     success: false,
     errore: { codice: "QUOTA_SUPERATA", messaggio: "Limite." },
-    quota: { usatiOggi: 15, limiteGiorno: 15, limiteMinuto: 3 },
+    quota: { usatiOggi: 100, limiteGiorno: 100, limiteMinuto: 10 },
   });
 
   assert.equal(errore.codice, "QUOTA_SUPERATA");
   assert.deepEqual(errore.quota, {
-    usatiOggi: 15,
-    limiteGiorno: 15,
-    limiteMinuto: 3,
+    usatiOggi: 100,
+    limiteGiorno: 100,
+    limiteMinuto: 10,
   });
-  assert.match(descriviQuota(errore.quota), /15.*15.*3/);
+  assert.match(descriviQuota(errore.quota), /100.*100.*10/);
 
   assert.equal(estraiErrore(null), null);
   assert.equal(estraiErrore({ success: false }), null);

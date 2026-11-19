@@ -21,6 +21,11 @@ const radice = (percorso) => fileURLToPath(new URL(`../${percorso}`, import.meta
 const CARTELLA = radice("lib/radiscan");
 const SQL = readFileSync(radice("supabase/migrations/20261118_radiscan_core.sql"), "utf8");
 const sqlNorm = SQL.replace(/\s+/g, " ");
+const SQL_QUOTE = readFileSync(
+  radice("supabase/migrations/20261125_radiscan_quote_collaudo.sql"),
+  "utf8"
+);
+const sqlQuoteNorm = SQL_QUOTE.replace(/\s+/g, " ");
 
 const radiscan = await import("@/lib/radiscan");
 const { LIVELLI, LIMITI_QUOTA, TTL_CACHE_GIORNI, VERSIONE_PROMPT } = radiscan;
@@ -111,22 +116,26 @@ test("compatibilità 2A: livelli identici al vincolo del database", () => {
 
 test("compatibilità 2A: RPC quota, modalità e limiti", () => {
   assert.ok(
-    sqlNorm.includes(
+    sqlQuoteNorm.includes(
       "create or replace function public.radiscan_consume_usage( p_chiave text, p_modalita text, p_etichetta text default 'analisi' )"
     ),
     "firma RPC (text, text, text) attesa"
   );
-  assert.ok(sqlNorm.includes("if v_modalita = 'anonimo' then v_limite_minuto := 3; v_limite_giorno := 15;"));
   assert.ok(
-    sqlNorm.includes(
-      "elsif v_modalita = 'autenticato' then v_limite_minuto := 10; v_limite_giorno := 60;"
+    sqlQuoteNorm.includes(
+      "if v_modalita = 'anonimo' then v_limite_minuto := 10; v_limite_giorno := 100;"
+    )
+  );
+  assert.ok(
+    sqlQuoteNorm.includes(
+      "elsif v_modalita = 'autenticato' then v_limite_minuto := 30; v_limite_giorno := 300;"
     )
   );
 
-  assert.equal(LIMITI_QUOTA.anonimo.minuto, 3);
-  assert.equal(LIMITI_QUOTA.anonimo.giorno, 15);
-  assert.equal(LIMITI_QUOTA.autenticato.minuto, 10);
-  assert.equal(LIMITI_QUOTA.autenticato.giorno, 60);
+  assert.equal(LIMITI_QUOTA.anonimo.minuto, 10);
+  assert.equal(LIMITI_QUOTA.anonimo.giorno, 100);
+  assert.equal(LIMITI_QUOTA.autenticato.minuto, 30);
+  assert.equal(LIMITI_QUOTA.autenticato.giorno, 300);
 });
 
 test("compatibilità 2A: chiave di quota tra 16 e 128 caratteri", () => {
