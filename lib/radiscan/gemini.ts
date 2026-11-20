@@ -14,7 +14,9 @@ import type { MimeAmmesso, ProviderRadiciScan } from "./tipi";
  */
 
 const BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models";
-const MODELLO_PREDEFINITO = "gemini-flash-lite-latest";
+// Flash completo: il modello Lite tende a perdere dettagli grafici piccoli
+// come i bollini di qualità sulle confezioni.
+const MODELLO_PREDEFINITO = "gemini-2.5-flash";
 const TIMEOUT_PREDEFINITO_MS = 35_000;
 const MAX_OUTPUT_TOKENS = 1000;
 /**
@@ -119,11 +121,21 @@ export function creaProviderGemini(
   return {
     nome: "gemini",
     modello,
-    async genera({ prompt, immagineBase64, mimeType, signal }) {
+    async genera({ prompt, immagineBase64, mimeType, immagineDettaglioBase64, signal }) {
+      const parti: Array<Record<string, unknown>> = [
+        { text: prompt },
+        { inlineData: { mimeType, data: immagineBase64 } },
+      ];
+      if (immagineDettaglioBase64) {
+        parti.push({
+          text: "DETTAGLIO INGRANDITO: esamina con particolare attenzione i bollini e i marchi di qualità presenti su questa porzione della stessa confezione. Non ignorare il marchio solo perché è piccolo nell'immagine completa.",
+        });
+        parti.push({ inlineData: { mimeType: "image/jpeg", data: immagineDettaglioBase64 } });
+      }
       const body = JSON.stringify({
         contents: [
           {
-            parts: [{ text: prompt }, { inlineData: { mimeType, data: immagineBase64 } }],
+            parts: parti,
           },
         ],
         generationConfig: {
