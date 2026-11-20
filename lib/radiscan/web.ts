@@ -136,6 +136,8 @@ export interface OpzioniRicercaWeb {
   leggiPagineUfficiali?: boolean;
   maxPagine?: number;
   maxFonti?: number;
+  /** Disattiva la scansione sequenziale dei link interni nel percorso rapido. */
+  seguiCollegamentiInterni?: boolean;
 }
 
 export interface RichiestaRicercaWeb {
@@ -852,40 +854,25 @@ async function cercaQuery(
 
   const urlDdg = new URL(`https://${HOST_DDG}/html/`);
   urlDdg.searchParams.set("q", query);
-  const htmlDdg = await scaricaHtml(
-    urlDdg.toString(),
-    fetchImpl,
-    timeoutMs,
-    signal,
-    [HOST_DDG]
-  );
+  const urlBing = new URL(`https://${HOST_BING}/search`);
+  urlBing.searchParams.set("q", query);
+  urlBing.searchParams.set("setlang", "it");
+  urlBing.searchParams.set("cc", "IT");
+
+  // I due motori keyless vengono interrogati insieme: Bing non aspetta più
+  // il timeout completo di DuckDuckGo prima di partire.
+  const [htmlDdg, htmlBing] = await Promise.all([
+    scaricaHtml(urlDdg.toString(), fetchImpl, timeoutMs, signal, [HOST_DDG]),
+    scaricaHtml(urlBing.toString(), fetchImpl, timeoutMs, signal, [HOST_BING]),
+  ]);
   let risultati = htmlDdg ? estraiRisultatiDdg(htmlDdg) : [];
-  // Compatibilità con il vecchio markup DuckDuckGo Lite (`result-link`):
-  // alcuni mirror e risposte di prova usano ancora quella forma.
   if (risultati.length === 0 && htmlDdg) risultati = estraiRisultati(htmlDdg);
   let motore: string | null = risultati.length > 0 ? "duckduckgo" : null;
-  let trasportoOk = htmlDdg !== null;
+  let trasportoOk = htmlDdg !== null || htmlBing !== null;
 
-  if (risultati.length === 0) {
-    const urlBing = new URL(`https://${HOST_BING}/search`);
-    urlBing.searchParams.set("q", query);
-    urlBing.searchParams.set("setlang", "it");
-    urlBing.searchParams.set("cc", "IT");
-    const htmlBing = await scaricaHtml(
-      urlBing.toString(),
-      fetchImpl,
-      timeoutMs,
-      signal,
-      [HOST_BING]
-    );
-    trasportoOk = trasportoOk || htmlBing !== null;
-    if (htmlBing) {
-      const daBing = estraiRisultatiBing(htmlBing);
-      if (daBing.length > 0) {
-        risultati = daBing;
-        motore = "bing";
-      }
-    }
+  if (risultati.length === 0 && htmlBing) {
+    risultati = estraiRisultatiBing(htmlBing);
+    if (risultati.length > 0) motore = "bing";
   }
 
   // Ultimo fallback strutturato: Wikipedia risponde anche quando i motori
@@ -914,15 +901,19 @@ export function costruisciQuery(riconoscimento: RiconoscimentoAi): string[] {
   const prodotto = riconoscimento.prodotto.trim();
   const territorio = riconoscimento.territorioProposto?.trim() || null;
 
+  const schemaProtetto = /DOP|IGP|STG/i.test(
+    `${riconoscimento.schemaProposto ?? ""} ${denominazione ?? ""}`
+  );
+  const area = territorio || "Calabria";
   const candidati = [
     produttore && prodotto ? `${produttore} ${prodotto}` : null,
+    produttore ? `${produttore} sito ufficiale prodotti catalogo` : `${prodotto} produttore ${area}`,
+    `${prodotto} ${area} filiera produzione origine`,
+    produttore ? `${produttore} ${area} azienda produzione` : `${prodotto} ${area} consorzio produttori`,
+    schemaProtetto && denominazione ? `${denominazione} registro europeo DOP IGP` : null,
+    `${prodotto} consorzio associazione produttori ${area}`,
+    `${prodotto} Regione Calabria ARSAC produzione`,
     produttore && denominazione ? `${produttore} ${denominazione}` : null,
-    produttore ? `${produttore} salumi` : null,
-    denominazione ? `${denominazione} registro DOP` : null,
-    territorio ? `${prodotto} ${territorio}` : prodotto,
-    `${prodotto} consorzio di tutela`,
-    `${prodotto} organismo di controllo`,
-    produttore ? `${produttore} sito ufficiale prodotti` : `${prodotto} sito ufficiale`,
   ];
 
   const viste = new Set<string>();
@@ -1072,7 +1063,9 @@ async function completaFonti(
     })
   );
 
-  // Un solo livello di collegamenti interni pertinenti, entro il budget.
+  // La scansione dei link interni è utile nell'approfondimento, ma non deve
+  // rallentare il primo risultato: nel percorso rapido viene disattivata.
+  if (opzioni.seguiCollegamentiInterni !== false) {
   const paroleChiave = new Set([
     ...tokenizza(riconoscimento.prodotto),
     ...tokenizza(riconoscimento.denominazioneProposta ?? ""),
@@ -1117,6 +1110,7 @@ async function completaFonti(
       dichiarazione,
       rilevanza: "media",
     });
+  }
   }
 
   // Dopo la lettura, una pagina generica (un omonimo, un comune) non resta
