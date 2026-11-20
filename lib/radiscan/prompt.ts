@@ -25,9 +25,10 @@ const RIGHE = [
   "- Riconosci i loghi grafici ufficiali DOP/PDO, IGP/PGI e STG anche quando le lettere non sono leggibili. Valuta forma, composizione e colori: DOP UE normalmente rosso/giallo, IGP UE blu/giallo.",
   "- Se un logo ufficiale è distintivo e chiaramente riconoscibile, indica lo schema in schema_proposto e descrivilo in indicatori_etichetta e certificazioni specificando che è un riconoscimento visivo.",
   "- Non confondere bollini decorativi, bandiere, marchi commerciali o cerchi colorati con loghi DOP/IGP. Se il simbolo è ambiguo o sfocato, non attribuire uno schema e segnala l'incertezza nelle note.",
-  "- L'assenza della sigla nel testo OCR non smentisce un logo grafico riconoscibile. Segnala una contraddizione solo se è chiaramente visibile un altro schema incompatibile."
+  "- L'assenza della sigla nel testo OCR non smentisce un logo grafico riconoscibile. Segnala una contraddizione solo se è chiaramente visibile un altro schema incompatibile.",
   "- Segnala le anomalie esclusivamente come possibili incongruenze, mai come frodi o accuse.",
-  "- Non dedurre la denominazione dal solo aspetto del prodotto: serve una scritta leggibile oppure un logo ufficiale distintivo chiaramente riconoscibile.\n  "- Se il logo è riconoscibile ma il nome della denominazione non è leggibile, indica lo schema e il logo, senza inventare il nome della denominazione.",",
+  "- Non dedurre la denominazione dal solo aspetto del prodotto: serve una scritta leggibile oppure un logo ufficiale distintivo chiaramente riconoscibile.",
+  "- Se il logo è riconoscibile ma il nome della denominazione non è leggibile, indica lo schema e il logo, senza inventare il nome della denominazione.",
   "- Non dedurre il produttore dal nome del prodotto o dal territorio: serve una scritta.",
   "",
   "COSA OSSERVARE:",
