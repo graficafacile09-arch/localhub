@@ -63,62 +63,123 @@ function leggiabilita(confidenza: number): "buona" | "parziale" | "scarsa" {
   return "scarsa";
 }
 
+type WorkerTesseract = Awaited<
+  ReturnType<typeof import("tesseract.js").createWorker>
+>;
+
+// Un'istanza serverless calda riutilizza il worker e i dati linguistici già
+// caricati. Le scansioni sullo stesso processo sono serializzate: Tesseract
+// non viene usato contemporaneamente da due richieste.
+let workerCondiviso: WorkerTesseract | null = null;
+let workerInCreazione: Promise<WorkerTesseract> | null = null;
+let chiaveLingueWorker: string | null = null;
+let codaWorker: Promise<void> = Promise.resolve();
+
+async function ottieniWorker(
+  modulo: typeof import("tesseract.js"),
+  lingue: readonly string[]
+): Promise<WorkerTesseract> {
+  const chiaveLingue = lingue.join("+");
+  if (workerCondiviso && chiaveLingueWorker === chiaveLingue) {
+    return workerCondiviso;
+  }
+  if (workerInCreazione) return workerInCreazione;
+
+  workerInCreazione = (async () => {
+    if (workerCondiviso) {
+      await workerCondiviso.terminate().catch(() => undefined);
+      workerCondiviso = null;
+      chiaveLingueWorker = null;
+    }
+
+    const radice = process.cwd().replace(/\\/g, "/");
+    const worker = await modulo.createWorker([...lingue], 1, {
+      cachePath: "/tmp/radiscan-ocr",
+      workerPath: `${radice}/node_modules/tesseract.js/src/worker-script/node/index.js`,
+      corePath: `${radice}/node_modules/tesseract.js-core`,
+      logger: () => {},
+      errorHandler: () => {},
+    });
+    await worker.setParameters({
+      tessedit_pageseg_mode: "11",
+      preserve_interword_spaces: "1",
+    });
+    workerCondiviso = worker;
+    chiaveLingueWorker = chiaveLingue;
+    return worker;
+  })().catch((errore) => {
+    workerInCreazione = null;
+    throw errore;
+  }).finally(() => {
+    workerInCreazione = null;
+  });
+
+  return workerInCreazione;
+}
+
 /**
- * Motore predefinito. Il caricamento dei modelli linguistici avviene al primo
- * uso e viene conservato nella cache temporanea dell'istanza; una nuova
- * istanza serverless paga un solo caricamento.
+ * Motore predefinito. Il worker resta caldo per la vita dell'istanza
+ * serverless: le richieste successive evitano di ricrearlo e ricaricare i
+ * dati linguistici. Un timeout o un abort distrugge il worker per sicurezza.
  */
 export function creaMotoreOcrTesseract(): MotoreOcr {
   return {
     async riconosci(immagine, { lingue, signal }) {
-      const nomeModulo = "tesseract.js";
-      const modulo = await import(nomeModulo);
-
-      let preparata = immagine;
-      try {
-        const sharpModule = await import("sharp");
-        const sharp = sharpModule.default ?? sharpModule;
-        preparata = await sharp(immagine)
-          .rotate()
-          .grayscale()
-          .normalize()
-          .resize({
-            width: LIMITI_OCR.larghezzaPreprocessamento,
-            fit: "inside",
-            withoutEnlargement: false,
-          })
-          .sharpen({ sigma: 1 })
-          .png()
-          .toBuffer();
-      } catch {
-        // Il preprocessamento è un miglioramento, non un requisito.
-      }
-
-      // Percorsi espliciti: su Vercel il cwd è /var/task e il worker deve
-      // essere quello tracciato da Next (outputFileTracingIncludes).
-      const radice = process.cwd().replace(/\\/g, "/");
-      const worker = await modulo.createWorker([...lingue], 1, {
-        cachePath: "/tmp/radiscan-ocr",
-        workerPath: `${radice}/node_modules/tesseract.js/src/worker-script/node/index.js`,
-        corePath: `${radice}/node_modules/tesseract.js-core`,
-        logger: () => {},
-        errorHandler: () => {},
+      let rilasciaCoda!: () => void;
+      const precedente = codaWorker;
+      codaWorker = new Promise<void>((resolve) => {
+        rilasciaCoda = resolve;
       });
+      await precedente;
 
-      // Le etichette distribuiscono testi piccoli fra blocchi, sigilli e fascette:
-      // PSM 11 (sparse text) evita di assumere una sola colonna o un solo blocco.
-      await worker.setParameters({
-        tessedit_pageseg_mode: "11",
-        preserve_interword_spaces: "1",
-      });
-
-      const annulla = () => {
-        void worker.terminate().catch(() => undefined);
-      };
-      signal?.addEventListener("abort", annulla, { once: true });
-      if (signal?.aborted) annulla();
-
+      let worker: WorkerTesseract | null = null;
+      let annulla: (() => void) | null = null;
       try {
+        if (signal?.aborted) {
+          const errore = new Error("OCR interrotto");
+          errore.name = "AbortError";
+          throw errore;
+        }
+
+        let preparata = immagine;
+        try {
+          const sharpModule = await import("sharp");
+          const sharp = sharpModule.default ?? sharpModule;
+          preparata = await sharp(immagine)
+            .rotate()
+            .grayscale()
+            .normalize()
+            .resize({
+              width: LIMITI_OCR.larghezzaPreprocessamento,
+              fit: "inside",
+              withoutEnlargement: false,
+            })
+            .sharpen({ sigma: 1 })
+            .png()
+            .toBuffer();
+        } catch {
+          // Il preprocessamento è un miglioramento, non un requisito.
+        }
+
+        const modulo = await import("tesseract.js");
+        worker = await ottieniWorker(modulo, lingue);
+
+        annulla = () => {
+          if (workerCondiviso === worker) {
+            workerCondiviso = null;
+            chiaveLingueWorker = null;
+            workerInCreazione = null;
+          }
+          void worker?.terminate().catch(() => undefined);
+        };
+        signal?.addEventListener("abort", annulla, { once: true });
+        if (signal?.aborted) {
+          annulla();
+          const errore = new Error("OCR interrotto");
+          errore.name = "AbortError";
+          throw errore;
+        }
+
         const esito = await worker.recognize(preparata);
         const dati = esito?.data ?? {};
         const testo = typeof dati.text === "string" ? dati.text : "";
@@ -131,9 +192,19 @@ export function creaMotoreOcrTesseract(): MotoreOcr {
           : paroleDi(testo);
 
         return { testo, confidenza, parole };
+      } catch (errore) {
+        if (signal?.aborted && worker && !annulla) {
+          if (workerCondiviso === worker) {
+            workerCondiviso = null;
+            chiaveLingueWorker = null;
+            workerInCreazione = null;
+          }
+          await worker.terminate().catch(() => undefined);
+        }
+        throw errore;
       } finally {
-        signal?.removeEventListener("abort", annulla);
-        await worker.terminate().catch(() => undefined);
+        if (annulla) signal?.removeEventListener("abort", annulla);
+        rilasciaCoda();
       }
     },
   };
