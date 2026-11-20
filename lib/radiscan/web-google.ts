@@ -32,6 +32,11 @@ const MODELLI = [
 const TIMEOUT_MODELLO_MS = 8_000;
 const MAX_TEMPO_GROUNDING_MS = 14_000;
 const MAX_CANDIDATI = 22;
+// Quota e autorizzazione Google sono a livello di progetto/chiave, non di modello.
+// Evita di ripetere la stessa richiesta su quattro modelli quando il provider
+// ha già risposto 429/401/403. Il cooldown è solo in memoria e si riapre da sé.
+const COOLDOWN_GROUNDING_MS = 30_000;
+let groundingDisabilitatoFino = 0;
 
 export interface OpzioniRicercaGoogle extends OpzioniRicercaWeb {
   apiKey?: string;
@@ -134,6 +139,10 @@ async function cercaGrounding(
   modelli: string[],
   signal?: AbortSignal
 ): Promise<{ candidati: CandidatoWeb[]; query: string[] }> {
+  if (groundingDisabilitatoFino > Date.now()) {
+    return { candidati: [], query: [] };
+  }
+
   const prompt = promptRicerca(riconoscimento);
   const scadenza = Date.now() + MAX_TEMPO_GROUNDING_MS;
 
@@ -161,7 +170,16 @@ async function cercaGrounding(
       });
 
       if (!risposta.ok) {
-        // Log sanificato: nessuna chiave, nessun prompt, nessun contenuto.
+        // 429 e 401/403 non dipendono dal modello: provare gli altri nomi
+        // ripete richieste destinate a fallire e allunga la scansione.
+        if ([401, 403, 429].includes(risposta.status)) {
+          groundingDisabilitatoFino = Date.now() + COOLDOWN_GROUNDING_MS;
+          console.warn(
+            `[radiscan][web] motore=google modello=${modello} http=${risposta.status} circuito=30s esito=non_disponibile`
+          );
+          break;
+        }
+        // Un 404 può invece indicare solo un modello non disponibile.
         console.warn(
           `[radiscan][web] motore=google modello=${modello} http=${risposta.status} esito=non_disponibile`
         );
