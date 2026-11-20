@@ -898,7 +898,7 @@ async function cercaQuery(
  * produttore non deve restringere la ricerca della denominazione nel registro,
  * e viceversa.
  */
-export export function costruisciQuery(riconoscimento: RiconoscimentoAi): string[] {
+export function costruisciQuery(riconoscimento: RiconoscimentoAi): string[] {
   const produttore = riconoscimento.produttore?.trim() || null;
   const denominazione = riconoscimento.denominazioneProposta?.trim() || null;
   const prodotto = riconoscimento.prodotto.trim();
