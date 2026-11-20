@@ -25,6 +25,7 @@ const {
   urlRisultato,
   svuotaCacheWeb,
   verificaProduttore,
+  verificaDenominazione,
   leggiAllegati,
   analizzaProdotto,
   LIMITI_LETTURA,
@@ -452,6 +453,64 @@ test("documenti: il budget complessivo produce parziale e dichiara il taglio", a
 });
 
 // ─── Produttore e filiera ─────────────────────────────────────────────────
+
+test("verifica: una DOP esatta e registrata in eAmbrosia non è un riscontro parziale", () => {
+  const prova = {
+    id: "eambrosia:EU00001",
+    tipo: "ufficiale",
+    denominazione: "Caciocavallo Silano",
+    schemaQualita: "DOP",
+    ente: "Commissione europea — eAmbrosia",
+    titolo: "eAmbrosia — Caciocavallo Silano (PDO)",
+    url: "https://ec.europa.eu/agriculture/eambrosia/geographical-indications-register/details/EU00001",
+    riferimentoNormativo: "Regolamento UE di registrazione",
+    riferimentoUrl: null,
+    documentoUrl: null,
+    estratto: "Stato: registrata · tipo PDO",
+    consultataIl: "2026-11-20",
+    relazione: "Corrispondenza esatta con la denominazione letta",
+    stato: "registrata",
+    allegati: [],
+    gruppoProduttori: null,
+    sedeGruppo: null,
+  };
+  const ricerca = {
+    stato: "ok",
+    fonte: "eAmbrosia",
+    consultataIl: "2026-11-20",
+    query: ["caciocavallo silano"],
+    prove: [prova],
+    messaggio: null,
+    lettura: {
+      stato: "completa",
+      documenti: [{
+        id: "10001",
+        titolo: "disciplinare.pdf",
+        url: "https://webgate.ec.europa.eu/eambrosia-api/api/v1/attachments/10001",
+        tipo: "disciplinare",
+        stato: "letto",
+        associazionePagine: "pagine",
+        pagineTotali: 1,
+        pagineLette: 1,
+        pagineNonLette: 0,
+        motivo: null,
+        sezioni: [{ pagina: 1, testo: "Disciplinare della DOP Caciocavallo Silano: zona di produzione e requisiti." }],
+        troncato: false,
+      }],
+      pagineLette: 1,
+      pagineTotali: 1,
+      consultataIl: "2026-11-20",
+      messaggio: "Lettura completa.",
+      notaPagine: null,
+    },
+  };
+
+  const esito = verificaDenominazione(riconoscimento(), [], ricerca);
+  assert.equal(esito.livello, "coerente_non_verificato");
+  assert.match(esito.motivazione, /Denominazione DOP confermata/i);
+  assert.doesNotMatch(esito.motivazione, /riscontro parziale/i);
+  assert.match(esito.motivazione, /non costituiscono autenticazione della singola confezione/i);
+});
 
 test("produttore: la denominazione DOP non autentica la confezione", () => {
   const ai = riconoscimento();
