@@ -221,6 +221,7 @@ export default function RadiciScanStudio() {
   const anteprimaRef = useRef<string | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const risultatoRef = useRef<HTMLDivElement | null>(null);
   const idGalleria = useId();
   const idFotocamera = useId();
 
@@ -243,6 +244,17 @@ export default function RadiciScanStudio() {
       }
     };
   }, []);
+
+  // Quando l'analisi termina, porta il risultato principale in primo piano.
+  useEffect(() => {
+    if (fase !== "esito") return;
+
+    const frame = window.requestAnimationFrame(() => {
+      risultatoRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [fase]);
 
   useEffect(() => {
     if (fase !== "fotocamera") return;
@@ -535,71 +547,12 @@ export default function RadiciScanStudio() {
 
   return (
     <section className="rd-fascia p-4 md:p-6" aria-busy={fase === "analisi"}>
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="rd-occhiello">
-            <ScanLine aria-hidden />
-            Fotografia e verifica
-          </p>
-          <h2 className="rd-titolo-scheda mt-1 text-xl md:text-2xl">
-            Analizza un prodotto
-          </h2>
-          <p className="mt-2 max-w-2xl text-sm leading-7 text-[#57534e]">
-            Scatta o carica una foto dell&apos;etichetta. RadiciScan legge le
-            informazioni visibili e le confronta con il registro delle fonti
-            ufficiali.
-          </p>
-        </div>
+      <div className="mb-3 flex justify-end">
         <span className="inline-flex items-center gap-1.5 rounded-full border border-[#e5ded0] bg-white px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.08em] text-[#6b6459]">
           <ShieldCheck className="h-3.5 w-3.5 text-[#24462f]" aria-hidden />
-          Nessuna immagine conservata
+          Foto non conservata
         </span>
       </div>
-
-      <ul className="mt-4 grid gap-2 border-t border-[#e5ded0] pt-3 sm:grid-cols-3 sm:gap-4">
-        <li className="flex items-start gap-2">
-          <Camera
-            className="mt-0.5 h-4 w-4 shrink-0 text-[#24462f]"
-            aria-hidden
-          />
-          <div>
-            <p className="text-xs font-bold leading-4 text-[#1b3624]">
-              Fotografa il prodotto
-            </p>
-            <p className="mt-0.5 text-[11px] leading-4 text-[#6b6459]">
-              Inquadra l&apos;etichetta, senza riflessi.
-            </p>
-          </div>
-        </li>
-        <li className="flex items-start gap-2">
-          <ScanLine
-            className="mt-0.5 h-4 w-4 shrink-0 text-[#24462f]"
-            aria-hidden
-          />
-          <div>
-            <p className="text-xs font-bold leading-4 text-[#1b3624]">
-              Leggi l&apos;etichetta
-            </p>
-            <p className="mt-0.5 text-[11px] leading-4 text-[#6b6459]">
-              Controlla nome, denominazione e territorio.
-            </p>
-          </div>
-        </li>
-        <li className="flex items-start gap-2">
-          <ImagePlus
-            className="mt-0.5 h-4 w-4 shrink-0 text-[#24462f]"
-            aria-hidden
-          />
-          <div>
-            <p className="text-xs font-bold leading-4 text-[#1b3624]">
-              Carica una fotografia
-            </p>
-            <p className="mt-0.5 text-[11px] leading-4 text-[#6b6459]">
-              In alternativa, usa galleria o computer.
-            </p>
-          </div>
-        </li>
-      </ul>
 
       {erroreLocale ? (
         <div
@@ -778,12 +731,7 @@ export default function RadiciScanStudio() {
             <div>
               <p className="text-sm font-bold text-[#1b3624]">Foto pronta</p>
               <p className="mt-1 text-sm leading-6 text-[#57534e]">
-                Controlla che l&apos;etichetta sia leggibile e che il prodotto sia
-                centrato nell&apos;immagine.
-              </p>
-              <p className="mt-2 text-xs leading-5 text-[#8a8378]">
-                L&apos;immagine viene ridimensionata nel browser e inviata solo per
-                questa analisi.
+                Controlla che l&apos;etichetta sia leggibile.
               </p>
             </div>
 
@@ -886,15 +834,15 @@ export default function RadiciScanStudio() {
       ) : null}
 
       {fase === "esito" && esito ? (
-        <ScanRisultato esito={esito} cache={daCache} onReset={reset} />
+        <div ref={risultatoRef} className="scroll-mt-6">
+          <ScanRisultato esito={esito} cache={daCache} onReset={reset} />
+        </div>
       ) : null}
 
       <div className="mt-5 flex items-start gap-2 rounded-xl border border-[#e8dfc9] bg-[#fbf6e8] p-3">
         <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-[#24462f]" aria-hidden />
         <p className="text-xs leading-5 text-[#57534e]">
-          RadiciScan verifica la documentazione della denominazione, non
-          certifica il singolo esemplare. L&apos;immagine non viene conservata:
-          viene inviata solo per l&apos;analisi in corso.
+          La foto è usata solo per questa analisi. L&apos;esito non autentica il singolo lotto.
         </p>
       </div>
     </section>
