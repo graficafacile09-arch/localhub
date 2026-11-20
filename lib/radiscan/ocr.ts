@@ -63,9 +63,13 @@ function leggiabilita(confidenza: number): "buona" | "parziale" | "scarsa" {
   return "scarsa";
 }
 
-type WorkerTesseract = Awaited<
-  ReturnType<typeof import("tesseract.js").createWorker>
->;
+interface WorkerTesseract {
+  setParameters(parametri: Record<string, string>): Promise<unknown>;
+  recognize(immagine: Buffer): Promise<{
+    data?: { text?: unknown; confidence?: unknown; words?: unknown[] };
+  }>;
+  terminate(): Promise<unknown>;
+}
 
 // Un'istanza serverless calda riutilizza il worker e i dati linguistici già
 // caricati. Le scansioni sullo stesso processo sono serializzate: Tesseract
@@ -93,13 +97,13 @@ async function ottieniWorker(
     }
 
     const radice = process.cwd().replace(/\\/g, "/");
-    const worker = await modulo.createWorker([...lingue], 1, {
+    const worker = (await modulo.createWorker([...lingue], 1, {
       cachePath: "/tmp/radiscan-ocr",
       workerPath: `${radice}/node_modules/tesseract.js/src/worker-script/node/index.js`,
       corePath: `${radice}/node_modules/tesseract.js-core`,
       logger: () => {},
       errorHandler: () => {},
-    });
+    })) as unknown as WorkerTesseract;
     await worker.setParameters({
       tessedit_pageseg_mode: "11",
       preserve_interword_spaces: "1",
