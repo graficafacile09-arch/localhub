@@ -285,7 +285,7 @@ async function cercaConTavily(
       },
       body: JSON.stringify({
         query,
-        search_depth: "basic",
+        search_depth: "fast",
         chunks_per_source: 3,
         max_results: MAX_RISULTATI_QUERY,
         topic: "general",
