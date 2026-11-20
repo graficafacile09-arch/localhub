@@ -1,5 +1,6 @@
 import type { FonteWeb, RiconoscimentoAi, RicercaWeb } from "./tipi";
 import {
+  costruisciQuery,
   creaRicercaWeb,
   hostPubblico,
   sintetizzaFontiWeb,
@@ -11,15 +12,15 @@ import {
 import { creaRicercaWebGoogle } from "./web-google";
 
 /**
- * RadiciScan — Tavily Search come provider primario indipendente da Gemini.
+ * RadiciScan — Tavily Search come secondo livello indipendente da Gemini.
  *
  * Tavily restituisce URL, titolo, estratto e metadati di risultati realmente
  * trovati sul web. Le pagine vengono poi aperte dal lettore comune: uno
  * snippet non viene mai presentato come documento letto.
  *
  * Limiti:
- * - massimo 6 query per analisi, una chiamata Search per query;
- * - `search_depth: "basic"` (1 credito per ricerca);
+ * - massimo 4 query nel percorso di rinforzo, una chiamata Search per query;
+ * - `search_depth: "fast"` (1 credito per ricerca);
  * - massimo 5 risultati per query, deduplicati per URL;
  * - cache in memoria di 10 minuti, separata per query;
  * - timeout per query e fallback dichiarato.
@@ -30,13 +31,13 @@ import { creaRicercaWebGoogle } from "./web-google";
 
 const ENDPOINT = "https://api.tavily.com/search";
 const ENDPOINT_ESTRAZIONE = "https://api.tavily.com/extract";
-const MAX_QUERY_TAVILY = 6;
-const MAX_RISULTATI_QUERY = 6;
-const MAX_CANDIDATI = 24;
-const MAX_ESTRAZIONE = 5;
+const MAX_QUERY_TAVILY = 2;
+const MAX_RISULTATI_QUERY = 5;
+const MAX_CANDIDATI = 10;
+const MAX_ESTRAZIONE = 1;
 const MAX_CARATTERI_ESTRATTO = 6_000;
-const TIMEOUT_RICERCA_MS = 8_000;
-const TIMEOUT_ESTRAZIONE_MS = 15_000;
+const TIMEOUT_RICERCA_MS = 5_000;
+const TIMEOUT_ESTRAZIONE_MS = 5_000;
 const TTL_CACHE_MS = 10 * 60 * 1000;
 
 export interface OpzioniRicercaTavily extends OpzioniRicercaWeb {
@@ -155,29 +156,24 @@ export function costruisciQueryTavily(riconoscimento: RiconoscimentoAi): string[
   const denominazione = riconoscimento.denominazioneProposta?.trim() || null;
   const prodotto = riconoscimento.prodotto.trim();
 
-  const candidati = produttore
-    ? [
-        produttore,
-        denominazione ? `${produttore} ${denominazione}` : `${produttore} ${prodotto}`,
-        `Filiera ${produttore} salumi DOP`,
-        denominazione
-          ? `${denominazione} registro europeo`
-          : `${prodotto} registro europeo DOP`,
-        `${denominazione ?? prodotto} certificazioni ARSAC RINA organismi di controllo`,
-        `${denominazione ?? prodotto} RINA Agroqualità prodotti tipici DOP`,
-      ]
-    : [
-        prodotto,
-        denominazione ? `${denominazione} DOP` : `${prodotto} DOP`,
-        `${prodotto} registro europeo DOP`,
-        `${prodotto} consorzio di tutela`,
-        `${prodotto} certificazioni ARSAC RINA organismo di controllo`,
-        `${prodotto} RINA Agroqualità prodotti tipici DOP`,
-      ];
+  const schemaProtetto = /DOP|IGP|STG/i.test(
+    `${riconoscimento.schemaProposto ?? ""} ${denominazione ?? ""}`
+  );
+  const area = riconoscimento.territorioProposto?.trim() || "Calabria";
+  const candidati = [
+    produttore && prodotto ? `${produttore} ${prodotto}` : `${prodotto} produttore ${area}`,
+    `${denominazione ?? prodotto} ARSAC RINA organismo di controllo`,
+    produttore ? `${produttore} sito ufficiale prodotti catalogo` : `${prodotto} ${area} produttori`,
+    `${prodotto} ${area} filiera produzione origine`,
+    produttore ? `${produttore} ${area} azienda produzione` : `${prodotto} ${area} consorzio associazione`,
+    schemaProtetto && denominazione ? `${denominazione} registro europeo DOP IGP` : null,
+    `${prodotto} Regione Calabria ARSAC produzione`,
+  ];
 
   const viste = new Set<string>();
   const query: string[] = [];
   for (const candidato of candidati) {
+    if (!candidato) continue;
     const pulita = candidato.replace(/\s+/g, " ").trim().slice(0, 140);
     const chiave = normalizzaQuery(pulita);
     if (chiave.length < 4 || viste.has(chiave)) continue;
@@ -256,7 +252,7 @@ async function cercaConTavily(
   // è il modo più affidabile per far emergere ARSAC e RINA senza affidarsi
   // alla sola ranking del motore generalista.
   const dominiIstituzionali = /ARSAC RINA|RINA Agroqualità/i.test(query)
-    ? ["arsacweb.it", "www.arsacweb.it", "rina.org", "www.rina.org"]
+    ? ["arsacweb.it", "www.arsacweb.it", "rina.org", "www.rina.org", "masaf.gov.it", "www.masaf.gov.it", "regione.calabria.it", "www.regione.calabria.it", "ec.europa.eu"]
     : null;
   const chiave = `q:${normalizzaQuery(query)}`;
   const memorizzato = daCache(chiave, adesso);
@@ -289,8 +285,8 @@ async function cercaConTavily(
       },
       body: JSON.stringify({
         query,
-        search_depth: "basic",
-        chunks_per_source: 3,
+        search_depth: "fast",
+        chunks_per_source: 1,
         max_results: MAX_RISULTATI_QUERY,
         topic: "general",
         language: "it",
@@ -418,7 +414,7 @@ async function estraiPagine(
         extract_depth: "basic",
         format: "markdown",
         include_usage: true,
-        timeout: 15,
+        timeout: 5,
       }),
       signal: controller.signal,
     });
@@ -739,6 +735,142 @@ export function creaRicercaWebTavily(
           creditiTotali,
           pagineEstratte: estrazione.estratte,
         },
+      };
+    },
+  };
+}
+
+
+/**
+ * Motore web a priorità costo/velocità:
+ * 1) ricerca keyless rapida su DuckDuckGo + Bing in parallelo;
+ * 2) Tavily viene interrogato soltanto se le fonti gratuite non bastano;
+ * 3) le fonti dei due passaggi vengono deduplicate e valutate insieme.
+ *
+ * "Sufficiente" significa almeno due domini indipendenti con fonti pertinenti,
+ * includendo un produttore e una fonte istituzionale/di filiera, oppure due
+ * fonti istituzionali. Un solo snippet commerciale non basta.
+ */
+function fontiKeylessSufficienti(fonti: readonly FonteWeb[]): boolean {
+  const ammesse = fonti.filter(
+    (fonte) =>
+      (fonte.metodoLettura === "http" || fonte.metodoLettura === "tavily_extract") &&
+      fonte.rilevanza !== "bassa" &&
+      [
+        "produttore",
+        "ufficiale_eu",
+        "ufficiale_it",
+        "regionale",
+        "certificazione",
+        "consorzio",
+      ].includes(fonte.natura)
+  );
+  const domini = new Set(ammesse.map((fonte) => fonte.dominio));
+  if (domini.size < 2) return false;
+
+  const produttori = ammesse.some((fonte) => fonte.natura === "produttore");
+  const istituzionali = ammesse.filter((fonte) =>
+    ["ufficiale_eu", "ufficiale_it", "regionale", "certificazione", "consorzio"].includes(
+      fonte.natura
+    )
+  );
+  return (produttori && istituzionali.length > 0) || istituzionali.length >= 2;
+}
+
+/** Tavily è un secondo livello, mai un prerequisito per ottenere una ricerca web. */
+export function creaRicercaWebIbrida(
+  opzioni: OpzioniRicercaTavily = {}
+): ProviderRicercaWeb {
+  const fetchImpl = opzioni.fetchImpl ?? fetch;
+  const apiKey = (opzioni.apiKey ?? process.env.TAVILY_API_KEY ?? "").trim();
+  const keyless = creaRicercaWeb({
+    ...opzioni,
+    fetchImpl,
+    timeoutQueryMs: Math.min(opzioni.timeoutQueryMs ?? 3_500, 3_500),
+    timeoutPaginaMs: Math.min(opzioni.timeoutPaginaMs ?? 3_500, 3_500),
+    maxPagine: Math.min(opzioni.maxPagine ?? 3, 3),
+    maxFonti: Math.min(opzioni.maxFonti ?? 8, 8),
+    seguiCollegamentiInterni: false,
+    usaWikipedia: false,
+  });
+  const tavily = creaRicercaWebTavily({
+    ...opzioni,
+    fetchImpl,
+    maxQuery: Math.min(opzioni.maxQuery ?? 2, 2),
+    timeoutRicercaMs: Math.min(opzioni.timeoutRicercaMs ?? 5_000, 5_000),
+    maxPagine: Math.min(opzioni.maxPagine ?? 4, 4),
+    maxFonti: Math.min(opzioni.maxFonti ?? 12, 12),
+    seguiCollegamentiInterni: false,
+  });
+
+  return {
+    nome: "web-ibrida",
+    async cerca(input: RichiestaRicercaWeb): Promise<RicercaWeb> {
+      const avvio = Date.now();
+      const queryRapide = costruisciQuery(input.riconoscimento).slice(0, 2);
+      const rapido = await keyless.cerca({
+        ...input,
+        query: queryRapide,
+      });
+
+      if (fontiKeylessSufficienti(rapido.fonti)) {
+        return {
+          ...rapido,
+          motore: `keyless:${rapido.motore ?? "web"}`,
+          durataMs: Date.now() - avvio,
+          messaggio: rapido.messaggio,
+        };
+      }
+
+      // Senza chiave Tavily si conserva comunque il risultato gratuito:
+      // non si blocca l'analisi e non si simula una ricerca a pagamento.
+      if (!apiKey) {
+        return {
+          ...rapido,
+          motore: rapido.motore ?? "keyless",
+          durataMs: Date.now() - avvio,
+        };
+      }
+
+      const approfondito = await tavily.cerca(input);
+      const perUrl = new Map<string, FonteWeb>();
+      for (const fonte of [...rapido.fonti, ...approfondito.fonti]) {
+        const esistente = perUrl.get(fonte.url);
+        if (
+          !esistente ||
+          (!esistente.lettoIntegralmente && fonte.lettoIntegralmente)
+        ) {
+          perUrl.set(fonte.url, fonte);
+        }
+      }
+      const fonti = [...perUrl.values()].map((fonte, indice) => ({
+        ...fonte,
+        id: `web:${indice + 1}`,
+      }));
+
+      if (fonti.length === 0) {
+        return {
+          ...approfondito,
+          fonti: [],
+          query: [...new Set([...queryRapide, ...approfondito.query])],
+          durataMs: Date.now() - avvio,
+          motore: approfondito.motore ?? "keyless+tavily",
+        };
+      }
+
+      return {
+        ...approfondito,
+        stato: "ok",
+        consultataIl: approfondito.consultataIl ?? rapido.consultataIl,
+        query: [...new Set([...queryRapide, ...approfondito.query])],
+        fonti,
+        messaggio:
+          approfondito.messaggio && rapido.fonti.length > 0
+            ? `${approfondito.messaggio} Conservate anche le fonti della ricerca keyless iniziale.`
+            : approfondito.messaggio,
+        durataMs: Date.now() - avvio,
+        motore: `keyless+tavily:${approfondito.motore ?? "tavily"}`,
+        sintesi: sintetizzaFontiWeb(input.riconoscimento, fonti),
       };
     },
   };
