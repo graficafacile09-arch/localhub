@@ -7,7 +7,7 @@
  * nessuna fonte dopo query alternative, visualizzazione dei link.
  *
  * Le risposte HTTP sono finte, ma la pipeline è quella reale: parsing,
- * deduplica, classificazione, lettura delle pagine e sintesi A-E.
+ * deduplica, classificazione, lettura delle pagine e sintesi A-F.
  */
 import test, { beforeEach } from "node:test";
 import assert from "node:assert/strict";
@@ -141,7 +141,7 @@ const RISULTATI_MADEO = [
   },
 ];
 
-test("Madeo: query separate, pagine ufficiali e produttore lette, sintesi A-E", async () => {
+test("Madeo: query separate, pagine ufficiali e produttore lette, sintesi A-F", async () => {
   const esito = await creaRicercaWeb({
     fetchImpl: fintoFetch({ elenco: RISULTATI_MADEO }),
     adesso: () => new Date("2026-11-20T10:00:00Z"),
@@ -167,6 +167,7 @@ test("Madeo: query separate, pagine ufficiali e produttore lette, sintesi A-E", 
   assert.equal(esito.sintesi.denominazione.stato, "menzionata");
   assert.equal(esito.sintesi.produttore.stato, "dichiarata");
   assert.match(esito.sintesi.produttore.testo, /dichiarazione aziendale/i);
+  assert.equal(esito.sintesi.filieraCalabrese.stato, "supportata");
   assert.equal(esito.sintesi.confezione.stato, "non_verificabile");
 });
 
@@ -193,6 +194,61 @@ test("produttore senza denominazione: nessuna denominazione inventata", async ()
   assert.equal(esito.sintesi.denominazione.stato, "non_confermata");
   assert.equal(esito.sintesi.produttore.stato, "dichiarata");
   assert.equal(esito.sintesi.marchio.stato, "menzionata");
+});
+
+test("prodotto non DOP: filiera calabrese valutata con fonti aziendali e indipendenti", () => {
+  const riconoscimentoNonDop = riconoscimento({
+    prodotto: "Pecorino Crotonese",
+    denominazioneProposta: null,
+    schemaProposto: null,
+    territorioProposto: "Calabria",
+    produttore: "Caseificio del Marchesato",
+  });
+  const fonti = [
+    {
+      id: "web:1",
+      titolo: "Caseificio del Marchesato — Pecorino Crotonese",
+      ente: "caseificiomarchesato.it",
+      url: "https://www.caseificiomarchesato.it/pecorino-crotonese",
+      dominio: "www.caseificiomarchesato.it",
+      natura: "produttore",
+      attendibilita: "media",
+      consultataIl: "2026-11-20",
+      dataDocumento: null,
+      estratto: "Il Caseificio del Marchesato produce Pecorino Crotonese e lavora il latte nello stabilimento di Crotone, Calabria.",
+      riferimentoNormativo: null,
+      pagineLette: null,
+      lettoIntegralmente: true,
+      metodoLettura: "http",
+      relazione: "Pagina letta.",
+      dichiarazione: "aziendale",
+      rilevanza: "alta",
+    },
+    {
+      id: "web:2",
+      titolo: "ARSAC — filiera casearia crotonese",
+      ente: "arsacweb.it",
+      url: "https://www.arsacweb.it/filiera-casearia-crotonese",
+      dominio: "www.arsacweb.it",
+      natura: "regionale",
+      attendibilita: "alta",
+      consultataIl: "2026-11-20",
+      dataDocumento: null,
+      estratto: "La produzione del Pecorino Crotonese è parte della filiera casearia della Calabria, con lavorazioni nel territorio di Crotone.",
+      riferimentoNormativo: null,
+      pagineLette: null,
+      lettoIntegralmente: true,
+      metodoLettura: "http",
+      relazione: "Pagina letta.",
+      dichiarazione: "indipendente",
+      rilevanza: "alta",
+    },
+  ];
+
+  const sintesi = sintetizzaFontiWeb(riconoscimentoNonDop, fonti);
+  assert.equal(sintesi.denominazione.stato, "non_confermata");
+  assert.equal(sintesi.filieraCalabrese.stato, "supportata");
+  assert.equal(sintesi.confezione.stato, "non_verificabile");
 });
 
 test("marchio commerciale diverso dalla denominazione", async () => {
