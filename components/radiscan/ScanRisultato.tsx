@@ -854,6 +854,10 @@ function BloccoMultifonte({ esito }: { esito: EsitoAnalisi }) {
                       <span className="text-[10px] font-bold uppercase tracking-[0.06em] text-emerald-800">
                         Documento letto
                       </span>
+                    ) : fonte.metodoLettura === "tavily_extract" ? (
+                      <span className="text-[10px] font-bold uppercase tracking-[0.06em] text-[#8a5a3b]">
+                        Estratto con Tavily
+                      </span>
                     ) : fonte.pagineLette ? (
                       <span className="text-[10px] font-bold uppercase tracking-[0.06em] text-[#8a8378]">
                         {fonte.pagineLette} pagine lette

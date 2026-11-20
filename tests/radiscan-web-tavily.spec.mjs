@@ -316,6 +316,7 @@ test("Tavily Extract recupera una pagina bloccata al lettore HTTP", async () => 
   const filiera = esito.fonti.find((fonte) => fonte.url === home);
   assert.ok(filiera);
   assert.equal(filiera.lettoIntegralmente, true);
+  assert.equal(filiera.metodoLettura, "tavily_extract");
   assert.match(filiera.estratto ?? "", /Soppressata di Calabria DOP/);
   assert.match(filiera.relazione, /Tavily Extract/);
 

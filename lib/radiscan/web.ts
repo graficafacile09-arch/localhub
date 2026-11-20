@@ -818,8 +818,10 @@ function pertinenteAlQuery(
   // RINA/Agroqualità pubblica pagine generali sui prodotti DOP: sono
   // pertinenti come organismo di controllo anche senza il nome del salume.
   if (
-    (/(^|\.)rina\.org$/.test(hostGrezzo) || host.includes("agroqualita")) &&
-    /dop|igp|prodotti tipici|certificaz/.test(testo)
+    (/(^|\.)rina\.org$/.test(hostGrezzo) ||
+      /(^|\.)arsacweb\.it$/.test(hostGrezzo) ||
+      host.includes("agroqualita")) &&
+    /dop|igp|salumi|prodotti tipici|certificaz/.test(testo)
   ) {
     return true;
   }
@@ -1060,6 +1062,7 @@ async function completaFonti(
       fonte.estratto = letta.estratto || fonte.estratto;
       fonte.pagineLette = letta.pagineLette;
       fonte.lettoIntegralmente = letta.completo;
+      fonte.metodoLettura = "http";
       fonte.relazione = `Pagina letta (${letta.completo ? "integralmente" : "parzialmente"}) dopo la query "${fonte.relazione.match(/query "([^"]+)"/)?.[1] ?? ""}".`;
       for (const collegamento of letta.collegamenti) {
         collegamentiDaSeguire.push({ ...collegamento, da: fonte });
@@ -1107,6 +1110,7 @@ async function completaFonti(
       riferimentoNormativo: null,
       pagineLette: letta.pagineLette,
       lettoIntegralmente: letta.completo,
+      metodoLettura: "http",
       relazione: `Collegamento pertinente seguito dalla pagina ${collegamento.da.url}.`,
       dichiarazione,
       rilevanza: "media",

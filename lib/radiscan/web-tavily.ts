@@ -252,6 +252,12 @@ async function cercaConTavily(
   adesso: number,
   signal?: AbortSignal
 ): Promise<EsitoQueryTavily> {
+  // Per la query dedicata agli organismi di controllo si limita il dominio:
+  // è il modo più affidabile per far emergere ARSAC e RINA senza affidarsi
+  // alla sola ranking del motore generalista.
+  const dominiIstituzionali = /ARSAC RINA/i.test(query)
+    ? ["arsacweb.it", "www.arsacweb.it", "rina.org", "www.rina.org"]
+    : null;
   const chiave = `q:${normalizzaQuery(query)}`;
   const memorizzato = daCache(chiave, adesso);
   if (memorizzato) {
@@ -292,6 +298,7 @@ async function cercaConTavily(
         include_raw_content: false,
         include_images: false,
         include_usage: true,
+        ...(dominiIstituzionali ? { include_domains: dominiIstituzionali } : {}),
       }),
       signal: controller.signal,
     });
@@ -346,6 +353,31 @@ interface EsitoEstrazione {
   fallite: number;
 }
 
+function estrattoRilevante(
+  contenuto: string,
+  riconoscimento: RiconoscimentoAi
+): string {
+  const minuscolo = contenuto.toLocaleLowerCase("it");
+  const chiavi = [
+    riconoscimento.prodotto,
+    riconoscimento.denominazioneProposta ?? "",
+    riconoscimento.produttore ?? "",
+  ]
+    .map((voce) => voce.toLocaleLowerCase("it").trim())
+    .filter((voce) => voce.length >= 4);
+
+  let posizione = -1;
+  for (const chiave of chiavi) {
+    const trovata = minuscolo.indexOf(chiave);
+    if (trovata >= 0 && (posizione < 0 || trovata < posizione)) {
+      posizione = trovata;
+    }
+  }
+
+  const inizio = posizione > 350 ? posizione - 350 : 0;
+  return contenuto.slice(inizio, inizio + 1_800).trim();
+}
+
 /**
  * Tavily Extract completa la lettura quando il fetch diretto della pagina
  * fallisce (403, timeout, pagina resa solo lato client). Non sostituisce la
@@ -354,6 +386,7 @@ interface EsitoEstrazione {
  */
 async function estraiPagine(
   fonti: FonteWeb[],
+  riconoscimento: RiconoscimentoAi,
   apiKey: string,
   fetchImpl: typeof fetch,
   signal?: AbortSignal
@@ -414,9 +447,10 @@ async function estraiPagine(
       const contenuto =
         typeof record.raw_content === "string" ? record.raw_content.trim() : "";
       if (contenuto.length < 20) continue;
-      fonte.estratto = contenuto.slice(0, MAX_CARATTERI_ESTRATTO);
+      fonte.estratto = estrattoRilevante(contenuto, riconoscimento);
       fonte.lettoIntegralmente = contenuto.length <= MAX_CARATTERI_ESTRATTO;
       fonte.pagineLette = null;
+      fonte.metodoLettura = "tavily_extract";
       fonte.relazione =
         "Pagina estratta con Tavily Extract dopo la ricerca web: contenuto recuperato, non certificazione della confezione.";
       fonte.dataDocumento = dataIso(record.published_date) ?? fonte.dataDocumento;
@@ -426,12 +460,16 @@ async function estraiPagine(
     const fallite = Array.isArray(payload?.failed_results)
       ? payload.failed_results.length
       : Math.max(0, urls.length - estratte);
-    const crediti =
+    const dichiarati =
       typeof payload?.usage?.credits === "number" &&
       Number.isFinite(payload.usage.credits) &&
-      payload.usage.credits >= 0
+      payload.usage.credits > 0
         ? payload.usage.credits
-        : Math.ceil(estratte / 5);
+        : 0;
+    // La documentazione Tavily segnala che `usage.credits` può essere 0
+    // finché non si raggiungono 5 estrazioni: si contabilizza comunque il
+    // blocco basic (1 credito per 5 URL).
+    const crediti = dichiarati > 0 ? dichiarati : Math.ceil(estratte / 5);
     console.info(
       `[radiscan][web] motore=tavily-estract richieste=${urls.length} estratte=${estratte} fallite=${fallite} crediti=${crediti} esito=${estratte > 0 ? "ok" : "senza_contenuto"}`
     );
@@ -643,7 +681,13 @@ export function creaRicercaWebTavily(
         .slice(0, MAX_ESTRAZIONE);
       const estrazione: EsitoEstrazione =
         daEstrarre.length > 0
-          ? await estraiPagine(daEstrarre, apiKey, fetchImpl, input.signal)
+          ? await estraiPagine(
+              daEstrarre,
+              input.riconoscimento,
+              apiKey,
+              fetchImpl,
+              input.signal
+            )
           : { crediti: 0, estratte: 0, fallite: 0 };
       const creditiTotali = crediti + estrazione.crediti;
       console.info(

@@ -416,6 +416,8 @@ export interface FonteWeb {
   riferimentoNormativo: string | null;
   pagineLette: number | null;
   lettoIntegralmente: boolean;
+  /** Come è stato recuperato il contenuto: HTTP diretto o Tavily Extract. */
+  metodoLettura?: "http" | "tavily_extract";
   relazione: string;
   /** Dichiarazione aziendale ≠ verifica indipendente. */
   dichiarazione?: DichiarazioneFonte;
