@@ -133,9 +133,6 @@ export async function analizzaProdotto(
     throw erroreSchema(`Output del modello non conforme: ${schema.motivo}`);
   }
 
-  const ocr = await ocrPromise;
-  const ocrMs = ocr ? ocr.durataMs : Date.now() - ocrAvvio;
-
   const riconoscimento = schema.valore.riconoscimento;
   const codiceBarre =
     ingresso.codiceBarre?.trim() ||
@@ -174,6 +171,11 @@ export async function analizzaProdotto(
     barcodePromise,
   ]);
   const documentiMs = Date.now() - documentiAvvio;
+
+  // OCR continua in parallelo a registro, ricerca web e barcode: non blocca
+  // l'avvio delle verifiche quando il modello visivo ha già identificato il prodotto.
+  const ocr = await ocrPromise;
+  const ocrMs = ocr ? ocr.durataMs : Date.now() - ocrAvvio;
 
   const { etichetta, discrepanze } = estraiEtichetta(ocr, riconoscimento);
 
