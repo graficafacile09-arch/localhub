@@ -198,7 +198,7 @@ test("Tavily non configurato: nessuna chiamata e nessun risultato simulato", asy
   assert.equal(chiamate, 0);
 });
 
-test("Tavily: sei query separate, pagine ufficiali lette e metadati conservati", async () => {
+test("Tavily: quattro query mirate, pagine ufficiali lette e metadati conservati", async () => {
   const query = costruisciQueryTavily(riconoscimento());
   const risultatiPerQuery = Object.fromEntries(
     query.map((voce) => [voce, RISULTATI.slice(0, 5)])
@@ -215,9 +215,9 @@ test("Tavily: sei query separate, pagine ufficiali lette e metadati conservati",
   assert.equal(esito.stato, "ok");
   assert.equal(esito.motore, "tavily");
   assert.equal(esito.consultataIl, "2026-11-20");
-  assert.equal(esito.consumi.creditiRicerca, 6);
-  assert.equal(esito.consumi.creditiTotali, 6);
-  assert.equal(esito.query.length, 6);
+  assert.equal(esito.consumi.creditiRicerca, 4);
+  assert.equal(esito.consumi.creditiTotali, 4);
+  assert.equal(esito.query.length, 4);
   assert.ok(esito.query.some((voce) => /Madeo/i.test(voce)));
   assert.ok(esito.query.some((voce) => /Madeo sito ufficiale prodotti catalogo/i.test(voce)));
   assert.ok(esito.query.some((query) => /registro europeo/i.test(query)));
@@ -231,7 +231,7 @@ test("Tavily: sei query separate, pagine ufficiali lette e metadati conservati",
     )
   );
 
-  assert.equal(chiamateTavily.length, 6);
+  assert.equal(chiamateTavily.length, 4);
   assert.ok(chiamateTavily.every((chiamata) => chiamata.body.search_depth === "fast"));
   assert.ok(
     chiamateTavily.every(
@@ -320,7 +320,7 @@ test("Tavily Extract recupera una pagina bloccata al lettore HTTP", async () => 
   assert.ok(chiamateExtract[0].urls.includes(prodotto));
   assert.equal(chiamateExtract[0].authorization, "Bearer chiave-di-test");
   assert.equal(esito.consumi.creditiEstrazione, 1);
-  assert.equal(esito.consumi.creditiTotali, 7);
+  assert.equal(esito.consumi.creditiTotali, 5);
 
   const filiera = esito.fonti.find((fonte) => fonte.url === home);
   assert.ok(filiera);
@@ -399,9 +399,9 @@ test("Tavily: una query fallita non elimina le fonti delle altre", async () => {
 
   assert.equal(esito.stato, "ok");
   assert.equal(esito.motore, "tavily");
-  assert.equal(chiamateTavily.length, 6);
+  assert.equal(chiamateTavily.length, 4);
   assert.ok(esito.fonti.length > 0);
-  assert.match(esito.messaggio, /1\/6 ricerche non riuscite/i);
+  assert.match(esito.messaggio, /1\/4 ricerche non riuscite/i);
   assert.match(esito.messaggio, new RegExp(query[2].replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
 });
 
