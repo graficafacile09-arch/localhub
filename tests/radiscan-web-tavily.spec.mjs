@@ -223,6 +223,13 @@ test("Tavily: sei query separate, pagine ufficiali lette e metadati conservati",
   assert.ok(esito.query.includes("Filiera Madeo salumi DOP"));
   assert.ok(esito.query.some((query) => /registro europeo/i.test(query)));
   assert.ok(esito.query.some((query) => /ARSAC RINA/i.test(query)));
+  assert.ok(
+    chiamateTavily.some((chiamata) =>
+      Array.isArray(chiamata.body.include_domains) &&
+      chiamata.body.include_domains.includes("arsacweb.it") &&
+      chiamata.body.include_domains.includes("rina.org")
+    )
+  );
 
   assert.equal(chiamateTavily.length, 6);
   assert.ok(
@@ -324,6 +331,27 @@ test("Tavily Extract recupera una pagina bloccata al lettore HTTP", async () => 
   assert.ok(scheda);
   assert.equal(scheda.lettoIntegralmente, true);
   assert.match(scheda.estratto ?? "", /Salumificio Madeo/);
+});
+
+test("RINA generica non diventa una fonte della denominazione", async () => {
+  const generica = [
+    {
+      title: "Certificazione Organismi di Attestazione FGAS - RINA Italy",
+      url: "https://www.rina.org/it/fgas-307-2008",
+      content: "Certificazione degli organismi di attestazione FGAS.",
+      score: 0.8,
+    },
+  ];
+  const risultatiPerQuery = Object.fromEntries(
+    costruisciQueryTavily(riconoscimento()).map((query) => [query, generica])
+  );
+  const { fetchImpl } = fintoFetch({ risultatiPerQuery });
+  const esito = await creaRicercaWebTavily({
+    apiKey: "chiave-di-test",
+    fetchImpl,
+  }).cerca({ riconoscimento: riconoscimento() });
+
+  assert.ok(!esito.fonti.some((fonte) => fonte.dominio === "www.rina.org"));
 });
 
 test("produttore con ragione sociale: il nome distintivo collega le fonti", async () => {

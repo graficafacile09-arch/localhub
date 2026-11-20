@@ -163,7 +163,7 @@ export function costruisciQueryTavily(riconoscimento: RiconoscimentoAi): string[
         denominazione
           ? `${denominazione} registro europeo`
           : `${prodotto} registro europeo DOP`,
-        `${produttore} certificazioni ARSAC RINA organismi di controllo`,
+        `${denominazione ?? prodotto} certificazioni ARSAC RINA organismi di controllo`,
         `${produttore} sito ufficiale prodotti`,
       ]
     : [
@@ -356,7 +356,7 @@ interface EsitoEstrazione {
 function estrattoRilevante(
   contenuto: string,
   riconoscimento: RiconoscimentoAi
-): string {
+): string | null {
   const minuscolo = contenuto.toLocaleLowerCase("it");
   const chiavi = [
     riconoscimento.prodotto,
@@ -374,6 +374,9 @@ function estrattoRilevante(
     }
   }
 
+  // Se il contenuto estratto non parla del prodotto o del produttore, meglio
+  // conservare lo snippet pertinente del motore che mostrare un menu cookie.
+  if (posizione < 0) return null;
   const inizio = posizione > 350 ? posizione - 350 : 0;
   return contenuto.slice(inizio, inizio + 1_800).trim();
 }
@@ -447,7 +450,8 @@ async function estraiPagine(
       const contenuto =
         typeof record.raw_content === "string" ? record.raw_content.trim() : "";
       if (contenuto.length < 20) continue;
-      fonte.estratto = estrattoRilevante(contenuto, riconoscimento);
+      const rilevante = estrattoRilevante(contenuto, riconoscimento);
+      if (rilevante) fonte.estratto = rilevante;
       fonte.lettoIntegralmente = contenuto.length <= MAX_CARATTERI_ESTRATTO;
       fonte.pagineLette = null;
       fonte.metodoLettura = "tavily_extract";
@@ -676,7 +680,13 @@ export function creaRicercaWebTavily(
       // trasformare uno snippet in un documento letto.
       const daEstrarre = esito.fonti
         .filter(
-          (fonte) => fonte.pagineLette === null && !fonte.lettoIntegralmente
+          (fonte) =>
+            fonte.pagineLette === null &&
+            !fonte.lettoIntegralmente &&
+            (fonte.rilevanza !== "bassa" ||
+              fonte.natura === "certificazione" ||
+              fonte.natura === "ufficiale_it" ||
+              fonte.natura === "regionale")
         )
         .slice(0, MAX_ESTRAZIONE);
       const estrazione: EsitoEstrazione =

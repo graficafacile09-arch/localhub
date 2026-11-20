@@ -821,7 +821,9 @@ function pertinenteAlQuery(
     (/(^|\.)rina\.org$/.test(hostGrezzo) ||
       /(^|\.)arsacweb\.it$/.test(hostGrezzo) ||
       host.includes("agroqualita")) &&
-    /dop|igp|salumi|prodotti tipici|certificaz/.test(testo)
+    /dop|igp|salumi|prodotti tipici|denominazione di origine|indicazione geografica/.test(
+      testo
+    )
   ) {
     return true;
   }
