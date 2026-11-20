@@ -203,8 +203,7 @@ test("Tavily: sei query separate, pagine ufficiali lette e metadati conservati",
   const risultatiPerQuery = Object.fromEntries(
     query.map((voce) => [voce, RISULTATI.slice(0, 5)])
   );
-  // RINA è la sesta fonte: la si mette in testa a una query specifica, come
-  // farebbe un motore che la considera pertinente per l'organismo di controllo.
+  // La ricerca mirata agli organismi di controllo è la quarta query.
   risultatiPerQuery[query[3]] = [RISULTATI[5], ...RISULTATI.slice(0, 4)];
   const { fetchImpl, chiamateTavily } = fintoFetch({ risultatiPerQuery });
   const esito = await creaRicercaWebTavily({
@@ -219,11 +218,11 @@ test("Tavily: sei query separate, pagine ufficiali lette e metadati conservati",
   assert.equal(esito.consumi.creditiRicerca, 6);
   assert.equal(esito.consumi.creditiTotali, 6);
   assert.equal(esito.query.length, 6);
-  assert.ok(esito.query.includes("Madeo"));
-  assert.ok(esito.query.includes("Filiera Madeo salumi DOP"));
+  assert.ok(esito.query.some((voce) => /Madeo/i.test(voce)));
+  assert.ok(esito.query.some((voce) => /Madeo sito ufficiale prodotti catalogo/i.test(voce)));
   assert.ok(esito.query.some((query) => /registro europeo/i.test(query)));
   assert.ok(esito.query.some((query) => /ARSAC RINA/i.test(query)));
-  assert.ok(esito.query.some((query) => /RINA Agroqualità/i.test(query)));
+  assert.ok(esito.query.some((query) => /ARSAC RINA organismo/i.test(query)));
   assert.ok(
     chiamateTavily.some((chiamata) =>
       Array.isArray(chiamata.body.include_domains) &&
@@ -233,6 +232,7 @@ test("Tavily: sei query separate, pagine ufficiali lette e metadati conservati",
   );
 
   assert.equal(chiamateTavily.length, 6);
+  assert.ok(chiamateTavily.every((chiamata) => chiamata.body.search_depth === "fast"));
   assert.ok(
     chiamateTavily.every(
       (chiamata) => chiamata.authorization === "Bearer chiave-di-test"
