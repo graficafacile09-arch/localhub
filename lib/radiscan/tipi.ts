@@ -484,6 +484,8 @@ export interface ProviderRadiciScan {
     prompt: string;
     immagineBase64: string;
     mimeType: MimeAmmesso;
+    /** Ritaglio ingrandito dell'etichetta, quando generabile. */
+    immagineDettaglioBase64?: string;
     signal?: AbortSignal;
   }): Promise<{ testo: string }>;
 }
