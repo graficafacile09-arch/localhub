@@ -75,32 +75,26 @@ function riconoscimento(override = {}) {
 
 // ─── Retry Gemini ────────────────────────────────────────────────────────
 
-test("gemini: ritenta una sola volta dopo un timeout transitorio del tentativo", async () => {
+test("gemini: un timeout interno non viene ritentato e non allunga la scansione", async () => {
   let chiamate = 0;
   const provider = creaProviderGemini({
     apiKey: "test-key",
     timeoutMs: 2_000,
     fetchImpl: async () => {
       chiamate += 1;
-      if (chiamate === 1) {
-        throw new DOMException("timeout transitorio", "AbortError");
-      }
-      return new Response(
-        JSON.stringify({
-          candidates: [{ content: { parts: [{ text: JSON.stringify({ prodotto: "Caciocavallo Silano" }) }] } }],
-        }),
-        { status: 200, headers: { "content-type": "application/json" } }
-      );
+      throw new DOMException("timeout interno", "AbortError");
     },
   });
 
-  const risultato = await provider.genera({
-    prompt: "test",
-    immagineBase64: "AQID",
-    mimeType: "image/jpeg",
-  });
-  assert.equal(chiamate, 2);
-  assert.match(risultato.testo, /Caciocavallo Silano/);
+  await assert.rejects(
+    provider.genera({
+      prompt: "test",
+      immagineBase64: "AQID",
+      mimeType: "image/jpeg",
+    }),
+    /tempo previsto/i
+  );
+  assert.equal(chiamate, 1);
 });
 
 // ─── OCR ──────────────────────────────────────────────────────────────────
@@ -175,14 +169,15 @@ test("etichetta: OCR e modello in disaccordo producono discrepanze, senza scegli
   assert.equal(etichetta.produttore.valore, "Caseificio San Lorenzo S.r.l.");
 });
 
-test("etichetta: una sigla qualità non letta dall'OCR resta una discrepanza", () => {
-  const testo = "CACIOCAVALLO\nProdotto da: Caseificio San Lorenzo S.r.l.";
-  const { discrepanze } = estraiEtichetta(ocr({ testo }), riconoscimento());
-  assert.ok(
-    discrepanze.some(
-      (voce) => voce.campo === "certificazione" && /non legge quella sigla/i.test(voce.messaggio)
-    )
-  );
+test("etichetta: un logo DOP riconosciuto visivamente non è smentito dall'OCR che non legge la sigla", () => {
+  const testo = "CACIOCAVALLO\\nProdotto da: Caseificio San Lorenzo S.r.l.";
+  const ai = riconoscimento({
+    indicatoriEtichetta: ["Logo grafico DOP UE rosso e giallo riconosciuto visivamente"],
+    certificazioni: ["DOP (logo grafico UE riconosciuto visivamente)"],
+  });
+  const { discrepanze } = estraiEtichetta(ocr({ testo }), ai);
+  assert.equal(discrepanze.some((voce) => voce.campo === "certificazione"), false);
+  assert.equal(discrepanze.some((voce) => voce.campo === "schema_qualita"), false);
 });
 
 test("etichetta: PAT è dichiarato tradizionale, mai certificazione di origine", () => {
