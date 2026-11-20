@@ -754,6 +754,7 @@ export function creaRicercaWebTavily(
 function fontiKeylessSufficienti(fonti: readonly FonteWeb[]): boolean {
   const ammesse = fonti.filter(
     (fonte) =>
+      (fonte.metodoLettura === "http" || fonte.metodoLettura === "tavily_extract") &&
       fonte.rilevanza !== "bassa" &&
       [
         "produttore",
@@ -834,7 +835,13 @@ export function creaRicercaWebIbrida(
       const approfondito = await tavily.cerca(input);
       const perUrl = new Map<string, FonteWeb>();
       for (const fonte of [...rapido.fonti, ...approfondito.fonti]) {
-        if (!perUrl.has(fonte.url)) perUrl.set(fonte.url, fonte);
+        const esistente = perUrl.get(fonte.url);
+        if (
+          !esistente ||
+          (!esistente.lettoIntegralmente && fonte.lettoIntegralmente)
+        ) {
+          perUrl.set(fonte.url, fonte);
+        }
       }
       const fonti = [...perUrl.values()].map((fonte, indice) => ({
         ...fonte,
