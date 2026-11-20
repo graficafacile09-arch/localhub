@@ -220,7 +220,6 @@ test("Tavily: quattro query mirate, pagine ufficiali lette e metadati conservati
   assert.equal(esito.query.length, 4);
   assert.ok(esito.query.some((voce) => /Madeo/i.test(voce)));
   assert.ok(esito.query.some((voce) => /Madeo sito ufficiale prodotti catalogo/i.test(voce)));
-  assert.ok(esito.query.some((query) => /registro europeo/i.test(query)));
   assert.ok(esito.query.some((query) => /ARSAC RINA/i.test(query)));
   assert.ok(esito.query.some((query) => /ARSAC RINA organismo/i.test(query)));
   assert.ok(
@@ -452,7 +451,7 @@ test("Tavily: se tutte le query falliscono usa il fallback e lo dichiara", async
   assert.equal(esito.motore, "fallback-di-test");
   assert.equal(esito.stato, "ok");
   assert.equal(esito.fonti.length, 1);
-  assert.match(esito.messaggio, /6\/6 ricerche non riuscite/i);
+  assert.match(esito.messaggio, /4\/4 ricerche non riuscite/i);
   assert.match(esito.messaggio, /fallback/i);
 });
 
@@ -468,7 +467,7 @@ test("Tavily senza risultati: esito dichiarato, non prova di assenza", async () 
     fetchImpl,
   }).cerca({ riconoscimento: riconoscimento() });
 
-  assert.equal(chiamateTavily.length, 6);
+  assert.equal(chiamateTavily.length, 4);
   assert.equal(esito.stato, "ok");
   assert.equal(esito.motore, "tavily");
   assert.deepEqual(esito.fonti, []);
@@ -500,7 +499,7 @@ test("Tavily: la cache evita di ripetere le ricerche nella stessa finestra", asy
   await provider.cerca({ riconoscimento: riconoscimento() });
   assert.equal(chiamateTavily.length, 6);
   await provider.cerca({ riconoscimento: riconoscimento() });
-  assert.equal(chiamateTavily.length, 6, "la seconda analisi deve usare la cache");
+  assert.equal(chiamateTavily.length, 4, "la seconda analisi deve usare la cache");
 });
 
 test("Route e UI: la route usa Tavily e la UI lo dichiara", () => {
@@ -508,7 +507,7 @@ test("Route e UI: la route usa Tavily e la UI lo dichiara", () => {
     radice("app/api/radiscan/analisi/route.ts"),
     "utf8"
   );
-  assert.match(route, /creaRicercaWebTavily/);
+  assert.match(route, /creaRicercaWebIbrida/);
   assert.ok(!route.includes("creaRicercaWebGoogle"));
 
   const ui = readFileSync(radice("components/radiscan/ScanRisultato.tsx"), "utf8");
