@@ -207,7 +207,7 @@ export function creaProviderGemini(
                 CODICI_ERRORE.PROVIDER_TIMEOUT,
                 "Il provider non ha risposto entro il tempo previsto."
               ),
-              !signal?.aborted
+              false
             );
           }
           throw new ErroreTentativo(
