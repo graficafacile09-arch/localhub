@@ -112,9 +112,7 @@ export function creaProviderGemini(
 ): ProviderRadiciScan {
   const apiKey = opzioni.apiKey ?? chiaveDaAmbiente();
   const modello =
-    opzioni.modello?.trim() ||
-    process.env.GEMINI_MODEL?.trim() ||
-    MODELLO_PREDEFINITO;
+    opzioni.modello?.trim() || MODELLO_PREDEFINITO;
   const timeoutMs = opzioni.timeoutMs ?? TIMEOUT_PREDEFINITO_MS;
   const fetchImpl = opzioni.fetchImpl ?? fetch;
 
