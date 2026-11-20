@@ -108,11 +108,39 @@ export async function analizzaProdotto(
       })
     : Promise.resolve(null);
 
+  // Invia al modello anche un dettaglio ingrandito della zona etichetta:
+  // i bollini DOP/IGP sono spesso troppo piccoli nella foto completa.
+  // Il ritaglio non sostituisce né altera l'originale e, se Sharp fallisce,
+  // l'analisi prosegue con l'immagine originale.
+  let immagineDettaglioBase64: string | undefined;
+  try {
+    const sharpModule = await import("sharp");
+    const sharp = sharpModule.default ?? sharpModule;
+    const buffer = Buffer.from(base64, "base64");
+    const metadata = await sharp(buffer).metadata();
+    if (metadata.width && metadata.height && metadata.width >= 240 && metadata.height >= 180) {
+      const left = Math.floor(metadata.width * 0.20);
+      const top = Math.floor(metadata.height * 0.04);
+      const width = Math.max(1, Math.min(metadata.width - left, Math.floor(metadata.width * 0.78)));
+      const height = Math.max(1, Math.min(metadata.height - top, Math.floor(metadata.height * 0.92)));
+      const dettaglio = await sharp(buffer)
+        .rotate()
+        .extract({ left, top, width, height })
+        .resize({ width: 1500, fit: "inside", withoutEnlargement: false })
+        .jpeg({ quality: 90 })
+        .toBuffer();
+      immagineDettaglioBase64 = dettaglio.toString("base64");
+    }
+  } catch {
+    // Il ritaglio è un supporto al riconoscimento, mai un requisito.
+  }
+
   const aiAvvio = Date.now();
   const { testo } = await provider.genera({
     prompt: buildPromptRadiciScan(),
     immagineBase64: base64,
     mimeType: mime,
+    immagineDettaglioBase64,
     signal,
   });
   const identificazioneMs = Date.now() - aiAvvio;
