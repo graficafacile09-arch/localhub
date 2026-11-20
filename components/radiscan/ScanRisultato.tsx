@@ -848,25 +848,26 @@ export default function ScanRisultato({
   cache: boolean;
   onReset: () => void;
 }) {
-  const gruppo = gruppoDaLivello(esito.livello);
-  const stile = STILE[gruppo];
   const prove = Array.isArray(esito.verifica?.prove) ? esito.verifica.prove : [];
-  const proveDopRegistrate = prove.filter(
+  const dopUfficialmenteRegistrata = prove.some(
     (prova) =>
       prova.tipo === "ufficiale" &&
       prova.stato === "registrata" &&
       prova.schemaQualita === "DOP" &&
       prova.relazione.startsWith("Corrispondenza esatta")
   );
-  // La denominazione DOP può essere confermata dal registro UE anche se
-  // la confezione fotografata non è autenticata: non chiamare questo esito
-  // "riscontro parziale" quando la prova ufficiale è esatta e registrata.
-  const dopUfficialmenteRegistrata = proveDopRegistrate.length === 1;
+  // Una DOP esatta e attiva nel registro UE è un riconoscimento positivo,
+  // anche se gli allegati accessori non sono tutti disponibili. Non equivale
+  // all'autenticazione della singola confezione, del lotto o del produttore.
+  const gruppo = dopUfficialmenteRegistrata
+    ? "verificato"
+    : gruppoDaLivello(esito.livello);
+  const stile = STILE[gruppo];
   const etichetta = dopUfficialmenteRegistrata
     ? {
-        titolo: "DOP ufficialmente registrata",
+        titolo: "DOP riconosciuta",
         descrizione:
-          "La denominazione esatta risulta registrata nel registro ufficiale dell'Unione europea. La confezione, il lotto e il produttore fotografati restano verifiche distinte.",
+          "La corrispondenza esatta risulta registrata nel registro ufficiale dell'Unione europea. La documentazione accessoria può essere incompleta: il riconoscimento della denominazione non autentica la singola confezione, il lotto o il produttore.",
       }
     : ETICHETTE_GRUPPO[gruppo];
   const Icona = stile.icona;
