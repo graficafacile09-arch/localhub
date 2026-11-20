@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 
 const { creaRicercaWebIbrida } = await import("@/lib/radiscan");
 
-function riconoscimento() {
+function riconoscimento(overrides = {}) {
   return {
     prodotto: "Soppressata di Calabria",
     categoria: "Salumi",
@@ -15,6 +15,7 @@ function riconoscimento() {
     note: null,
     incongruenzeRilevate: [],
     produttore: "Madeo",
+    ...overrides,
   };
 }
 
