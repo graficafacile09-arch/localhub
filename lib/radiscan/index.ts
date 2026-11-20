@@ -10,6 +10,7 @@ export * from "./etichetta";
 export * from "./barcode";
 export * from "./web";
 export * from "./web-google";
+export * from "./web-tavily";
 export * from "./produttore";
 export * from "./pdf";
 export * from "./documenti";

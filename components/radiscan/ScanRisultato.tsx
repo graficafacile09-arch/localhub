@@ -828,7 +828,7 @@ function BloccoMultifonte({ esito }: { esito: EsitoAnalisi }) {
             </div>
             <span className="rd-et">
               {web.stato === "ok"
-                ? `${web.motore === "google_grounding" ? "Google Search" : "Motori web"} · ${web.consultataIl ?? "data non disponibile"}`
+                ? `${web.motore === "tavily" ? "Tavily Search" : web.motore === "google_grounding" ? "Google Search" : "Motori web"} · ${web.consultataIl ?? "data non disponibile"}`
                 : "Non disponibile"}
             </span>
           </div>

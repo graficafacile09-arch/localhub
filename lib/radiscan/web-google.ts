@@ -12,10 +12,10 @@ import {
 /**
  * RadiciScan — ricerca web tramite Google Search (grounding Gemini).
  *
- * È il motore primario perché restituisce URL realmente usati da Google
- * Search, non conoscenze del modello. I metadati di grounding contengono le
- * query eseguite e i collegamenti alle fonti: solo quegli URL vengono passati
- * alla lettura delle pagine.
+ * È il provider di riserva di Tavily. Restituisce URL realmente usati da
+ * Google Search, non conoscenze del modello. I metadati di grounding
+ * contengono le query eseguite e i collegamenti alle fonti: solo quegli URL
+ * vengono passati alla lettura delle pagine.
  *
  * Nessuna nuova chiave: usa `GEMINI_API_KEY`, già necessaria al servizio.
  * Se il grounding non è disponibile (modello assente, quota, nessun chunk)
@@ -189,8 +189,8 @@ async function cercaGrounding(
 }
 
 /**
- * Provider ibrido: Google grounding come primario, motori keyless come
- * riserva. Restituisce sempre il motore effettivo e non inventa fonti.
+ * Provider ibrido di riserva: Google grounding, poi motori keyless.
+ * Restituisce sempre il motore effettivo e non inventa fonti.
  */
 export function creaRicercaWebGoogle(
   opzioni: OpzioniRicercaGoogle = {}

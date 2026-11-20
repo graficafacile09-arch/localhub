@@ -14,9 +14,9 @@ import type {
 /**
  * RadiciScan — ricerca web multifonte.
  *
- * Il motore primario è Google Search tramite grounding Gemini (`web-google`);
- * qui restano i motori keyless di riserva (DuckDuckGo HTML, Bing HTML e
- * Wikipedia) e tutta la parte comune:
+ * Il motore primario è Tavily (`web-tavily`); Google grounding e i motori
+ * keyless (DuckDuckGo HTML, Bing HTML e Wikipedia) restano riserve. Qui vive
+ * tutta la parte comune:
  * - query separate per denominazione, produttore, marchio, prodotto,
  *   consorzio e organismo di controllo;
  * - deduplica degli URL e filtro di pertinenza;
@@ -106,6 +106,10 @@ export interface CandidatoWeb {
   url: string;
   estratto: string | null;
   query: string;
+  /** Punteggio di pertinenza dichiarato dal motore, se disponibile. */
+  punteggio?: number;
+  /** Data del documento dichiarata dal motore, normalizzata ISO. */
+  dataDocumento?: string | null;
 }
 
 export interface OpzioniRicercaWeb {
@@ -775,6 +779,7 @@ function pertinenteAlQuery(
   const haProduttore = [...paroleProduttore].some((parola) =>
     testo.includes(parola)
   );
+  const hostGrezzo = hostDa(risultato.url);
   const hostDelProduttore = [...paroleProduttore].some((parola) =>
     host.includes(parola)
   );
@@ -783,6 +788,15 @@ function pertinenteAlQuery(
   );
 
   if (haProdotto) return true;
+
+  // RINA/Agroqualità pubblica pagine generali sui prodotti DOP: sono
+  // pertinenti come organismo di controllo anche senza il nome del salume.
+  if (
+    (/(^|\.)rina\.org$/.test(hostGrezzo) || host.includes("agroqualita")) &&
+    /dop|igp|prodotti tipici|certificaz/.test(testo)
+  ) {
+    return true;
+  }
 
   // La homepage di un produttore può non ripetere il nome del prodotto nello
   // snippet: la si ammette e si verifica il contenuto dopo la lettura.
@@ -936,7 +950,8 @@ function creaFonte(
     natura,
     attendibilita,
     consultataIl,
-    dataDocumento: null,
+    dataDocumento:
+      "dataDocumento" in risultato ? risultato.dataDocumento ?? null : null,
     estratto: risultato.estratto,
     riferimentoNormativo: null,
     pagineLette: null,
@@ -1091,7 +1106,11 @@ async function completaFonti(
     );
 
     if (paroleProduttore.size > 0 && !ufficiale && !haProduttore) return false;
-    if (fonte.pagineLette === null && !fonte.lettoIntegralmente) return haProd;
+    // Anche una pagina istituzionale non leggibile resta un risultato utile,
+    // ma non viene presentata come documento letto.
+    if (fonte.pagineLette === null && !fonte.lettoIntegralmente) {
+      return ufficiale || haProd;
+    }
     return ufficiale || haProd;
   });
 }
