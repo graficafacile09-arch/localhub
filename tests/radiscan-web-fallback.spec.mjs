@@ -72,6 +72,35 @@ test("web: se DuckDuckGo risponde 202 si usa Bing come fallback", async () => {
   assert.equal(masaf.attendibilita, "alta");
 });
 
+test("web: se i motori generalisti sono KO si usa Wikipedia strutturata", async () => {
+  svuotaCacheWeb();
+  const provider = creaRicercaWeb({
+    leggiPagineUfficiali: false,
+    fetchImpl: async (url) => {
+      if (String(url).includes("api.php")) {
+        return new Response(
+          JSON.stringify({
+            query: {
+              search: [
+                { title: "Caciocavallo Silano", snippet: "Formaggio <b>DOP</b> della Calabria" },
+              ],
+            },
+          }),
+          { status: 200, headers: { "content-type": "application/json" } }
+        );
+      }
+      return new Response("", { status: 503 });
+    },
+  });
+
+  const esito = await provider.cerca({ riconoscimento: riconoscimento() });
+  assert.equal(esito.stato, "ok");
+  const wiki = esito.fonti.find((fonte) => fonte.dominio === "it.wikipedia.org");
+  assert.ok(wiki);
+  assert.equal(wiki.natura, "informativo");
+  assert.match(wiki.estratto, /Formaggio DOP/);
+});
+
 test("web: entrambi i motori KO restano non_disponibile", async () => {
   svuotaCacheWeb();
   const esito = await creaRicercaWeb({

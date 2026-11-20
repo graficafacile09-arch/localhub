@@ -93,8 +93,13 @@ export function creaMotoreOcrTesseract(): MotoreOcr {
         // Il preprocessamento è un miglioramento, non un requisito.
       }
 
+      // Percorsi espliciti: su Vercel il cwd è /var/task e il worker deve
+      // essere quello tracciato da Next (outputFileTracingIncludes).
+      const radice = process.cwd().replace(/\\/g, "/");
       const worker = await modulo.createWorker([...lingue], 1, {
         cachePath: "/tmp/radiscan-ocr",
+        workerPath: `${radice}/node_modules/tesseract.js/src/worker-script/node/index.js`,
+        corePath: `${radice}/node_modules/tesseract.js-core`,
         logger: () => {},
         errorHandler: () => {},
       });

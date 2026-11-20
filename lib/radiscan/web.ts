@@ -448,7 +448,8 @@ async function scaricaHtml(
   url: string,
   fetchImpl: typeof fetch,
   timeoutMs: number,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  seguiRedirect = false
 ): Promise<string | null> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -465,11 +466,24 @@ async function scaricaHtml(
         "User-Agent":
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Safari/537.36",
       },
-      redirect: "error",
+      redirect: seguiRedirect ? "follow" : "error",
       cache: "no-store",
       signal: controller.signal,
     });
     if (!risposta.ok) return null;
+    if (seguiRedirect && risposta.url) {
+      // Il redirect è ammesso solo verso gli host dei motori: nessuna
+      // destinazione arbitraria viene seguita. `Response` sintetiche (test)
+      // non espongono `url`: in quel caso non c'è un redirect da validare.
+      const host = new URL(risposta.url).hostname;
+      if (
+        host !== HOST_RICERCA &&
+        host !== HOST_RICERCA_BING &&
+        host !== "it.wikipedia.org"
+      ) {
+        return null;
+      }
+    }
     const bytes = await leggiBytesLimitati(risposta, MAX_RISPOSTA_RICERCA);
     if (!bytes) return null;
     return new TextDecoder("utf-8").decode(bytes);
@@ -478,6 +492,51 @@ async function scaricaHtml(
   } finally {
     clearTimeout(timer);
     signal?.removeEventListener("abort", annulla);
+  }
+}
+
+interface RispostaWikipedia {
+  query?: { search?: Array<{ title?: unknown; snippet?: unknown }> };
+}
+
+/** Wikipedia è una fonte informativa strutturata, non una certificazione. */
+async function cercaWikipedia(
+  query: string,
+  fetchImpl: typeof fetch,
+  timeoutMs: number,
+  signal?: AbortSignal
+): Promise<RisultatoGrezzo[]> {
+  const url = new URL("https://it.wikipedia.org/w/api.php");
+  url.search = new URLSearchParams({
+    action: "query",
+    list: "search",
+    srsearch: query,
+    srlimit: "3",
+    format: "json",
+    utf8: "1",
+  }).toString();
+
+  const testo = await scaricaHtml(url.toString(), fetchImpl, timeoutMs, signal, true);
+  if (!testo) return [];
+  try {
+    const payload = JSON.parse(testo) as RispostaWikipedia;
+    const voci = payload.query?.search ?? [];
+    return voci
+      .map((voce) => {
+        if (typeof voce.title !== "string" || !voce.title.trim()) return null;
+        const titolo = voce.title.trim();
+        return {
+          titolo: `Wikipedia — ${titolo}`,
+          url: `https://it.wikipedia.org/wiki/${encodeURIComponent(titolo.replace(/ /g, "_"))}`,
+          estratto:
+            typeof voce.snippet === "string"
+              ? soloTesto(voce.snippet).slice(0, 500)
+              : null,
+        };
+      })
+      .filter((voce): voce is RisultatoGrezzo => voce !== null);
+  } catch {
+    return [];
   }
 }
 
@@ -503,7 +562,13 @@ async function cercaQuery(
     urlBing.searchParams.set("q", query);
     urlBing.searchParams.set("setlang", "it");
     urlBing.searchParams.set("cc", "IT");
-    const htmlBing = await scaricaHtml(urlBing.toString(), fetchImpl, timeoutMs, signal);
+    const htmlBing = await scaricaHtml(
+      urlBing.toString(),
+      fetchImpl,
+      timeoutMs,
+      signal,
+      true
+    );
     if (htmlBing) {
       const daBing = estraiRisultatiBing(htmlBing);
       if (daBing.length > 0) {
@@ -512,6 +577,16 @@ async function cercaQuery(
       } else if (htmlDdg === null) {
         errore = true;
       }
+    }
+  }
+
+  // Ultimo fallback strutturato: Wikipedia risponde anche quando i motori
+  // generalisti bloccano gli IP dei data center. Resta una fonte informativa.
+  if (risultati.length === 0) {
+    const daWikipedia = await cercaWikipedia(query, fetchImpl, timeoutMs, signal);
+    if (daWikipedia.length > 0) {
+      risultati = daWikipedia;
+      errore = false;
     }
   }
 
