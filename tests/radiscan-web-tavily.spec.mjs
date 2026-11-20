@@ -223,6 +223,7 @@ test("Tavily: sei query separate, pagine ufficiali lette e metadati conservati",
   assert.ok(esito.query.includes("Filiera Madeo salumi DOP"));
   assert.ok(esito.query.some((query) => /registro europeo/i.test(query)));
   assert.ok(esito.query.some((query) => /ARSAC RINA/i.test(query)));
+  assert.ok(esito.query.some((query) => /RINA Agroqualità/i.test(query)));
   assert.ok(
     chiamateTavily.some((chiamata) =>
       Array.isArray(chiamata.body.include_domains) &&

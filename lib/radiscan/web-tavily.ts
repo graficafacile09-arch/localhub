@@ -164,7 +164,7 @@ export function costruisciQueryTavily(riconoscimento: RiconoscimentoAi): string[
           ? `${denominazione} registro europeo`
           : `${prodotto} registro europeo DOP`,
         `${denominazione ?? prodotto} certificazioni ARSAC RINA organismi di controllo`,
-        `${produttore} sito ufficiale prodotti`,
+        `${denominazione ?? prodotto} RINA Agroqualità prodotti tipici DOP`,
       ]
     : [
         prodotto,
@@ -172,7 +172,7 @@ export function costruisciQueryTavily(riconoscimento: RiconoscimentoAi): string[
         `${prodotto} registro europeo DOP`,
         `${prodotto} consorzio di tutela`,
         `${prodotto} certificazioni ARSAC RINA organismo di controllo`,
-        `${prodotto} sito ufficiale`,
+        `${prodotto} RINA Agroqualità prodotti tipici DOP`,
       ];
 
   const viste = new Set<string>();
@@ -255,7 +255,7 @@ async function cercaConTavily(
   // Per la query dedicata agli organismi di controllo si limita il dominio:
   // è il modo più affidabile per far emergere ARSAC e RINA senza affidarsi
   // alla sola ranking del motore generalista.
-  const dominiIstituzionali = /ARSAC RINA/i.test(query)
+  const dominiIstituzionali = /ARSAC RINA|RINA Agroqualità/i.test(query)
     ? ["arsacweb.it", "www.arsacweb.it", "rina.org", "www.rina.org"]
     : null;
   const chiave = `q:${normalizzaQuery(query)}`;
@@ -377,7 +377,9 @@ function estrattoRilevante(
   // Se il contenuto estratto non parla del prodotto o del produttore, meglio
   // conservare lo snippet pertinente del motore che mostrare un menu cookie.
   if (posizione < 0) return null;
-  const inizio = posizione > 350 ? posizione - 350 : 0;
+  // Pochi caratteri di contesto prima della parola chiave: l'estratto
+  // mostrato in UI deve contenere subito il dato pertinente, non il menu.
+  const inizio = posizione > 80 ? posizione - 80 : 0;
   return contenuto.slice(inizio, inizio + 1_800).trim();
 }
 
