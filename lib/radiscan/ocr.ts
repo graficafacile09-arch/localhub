@@ -19,7 +19,10 @@ import type { OcrRisultato } from "./tipi";
  */
 
 export const LIMITI_OCR = {
-  timeoutMs: 18_000,
+  // Su Vercel la prima chiamata scarica i modelli linguistici in /tmp: 18 s
+  // non bastavano (misurato 18,0 s di timeout in Preview). 38 s lasciano
+  // margine restando sotto il budget di 55 s della route.
+  timeoutMs: 38_000,
   maxCaratteri: 16_000,
   lingue: ["ita", "eng"],
   larghezzaPreprocessamento: 1600,
@@ -198,6 +201,13 @@ export async function leggiEtichettaOcr(
     };
   } catch (causa) {
     const timeout = causa instanceof Error && causa.message === "timeout";
+    // Solo il nome dell'errore: nessun messaggio interno, nessun path, nessun
+    // dato dell'immagine. Serve a distinguere un motore assente da un modello
+    // non scaricabile senza esporre dettagli di configurazione.
+    const nome =
+      causa instanceof Error && /^[A-Za-z][A-Za-z0-9_.-]{0,40}$/.test(causa.name)
+        ? causa.name
+        : null;
     return {
       stato: "non_disponibile",
       testo: "",
@@ -208,7 +218,7 @@ export async function leggiEtichettaOcr(
       durataMs: (opzioni.adesso ?? Date.now)() - avvio,
       motivo: timeout
         ? "OCR non completato entro il tempo previsto: nessun testo è stato letto."
-        : "OCR non disponibile in questo ambiente: nessun testo è stato letto.",
+        : `OCR non disponibile in questo ambiente${nome ? ` (${nome})` : ""}: nessun testo è stato letto.`,
       avvisi: [],
     };
   } finally {

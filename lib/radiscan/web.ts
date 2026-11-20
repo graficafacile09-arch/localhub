@@ -28,6 +28,14 @@ import type {
  */
 
 const HOST_RICERCA = "lite.duckduckgo.com";
+const HOST_RICERCA_BING = "www.bing.com";
+/**
+ * DuckDuckGo Lite può rispondere 202 (challenge) dagli IP dei data center:
+ * in quel caso si usa Bing HTML come secondo motore, senza chiavi API.
+ * Se anche il secondo motore fallisce, la ricerca è dichiarata non
+ * disponibile, mai "nessuna fonte".
+ */
+const ABILITA_FALLBACK_BING = true;
 const MAX_RISPOSTA_RICERCA = 500_000;
 const MAX_PAGINA = 400_000;
 const MAX_QUERY = 4;
@@ -179,6 +187,62 @@ function classeNatura(
   return { natura: "informativo", attendibilita: "bassa" };
 }
 
+/** Valida un URL finale già decodificato (https, senza credenziali/porta/IP). */
+function validaUrlFinale(finale: URL): string | null {
+  if (finale.protocol !== "https:") return null;
+  if (finale.username !== "" || finale.password !== "") return null;
+  if (finale.port !== "") return null;
+  if (finale.hash !== "") return null;
+  if (finale.hostname === "duckduckgo.com" || finale.hostname.endsWith(".duckduckgo.com")) {
+    return null;
+  }
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(finale.hostname) || finale.hostname.includes(":")) {
+    return null;
+  }
+  return finale.toString();
+}
+
+/** Decodifica il redirect Bing (`/ck/a?...&u=a1<base64url>`). */
+export function urlBing(valore: string): string | null {
+  try {
+    const iniziale = new URL(valore, "https://www.bing.com");
+    if (iniziale.hostname === HOST_RICERCA_BING && iniziale.pathname.startsWith("/ck/a")) {
+      const u = iniziale.searchParams.get("u");
+      if (!u || !u.startsWith("a1")) return null;
+      const base64 = u
+        .slice(2)
+        .replace(/-/g, "+")
+        .replace(/_/g, "/");
+      const padded = base64 + "=".repeat((4 - (base64.length % 4)) % 4);
+      return validaUrlFinale(new URL(Buffer.from(padded, "base64").toString("utf8")));
+    }
+    return validaUrlFinale(iniziale);
+  } catch {
+    return null;
+  }
+}
+
+/** Parser dei risultati Bing (`li.b_algo`). */
+export function estraiRisultatiBing(html: string): RisultatoGrezzo[] {
+  const risultati: RisultatoGrezzo[] = [];
+  for (const blocco of html.split(/<li class=["']b_algo["'][^>]*>/i).slice(1)) {
+    const link = /<h2[^>]*>\s*<a[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/i.exec(blocco);
+    if (!link) continue;
+    const url = urlBing(decodificaEntita(link[1]));
+    if (!url) continue;
+    const titolo = soloTesto(link[2]).slice(0, 200);
+    if (!titolo) continue;
+    const snippet = /<p[^>]*>([\s\S]*?)<\/p>/i.exec(blocco);
+    risultati.push({
+      titolo,
+      url,
+      estratto: snippet ? soloTesto(snippet[1]).slice(0, 500) : null,
+    });
+    if (risultati.length >= MAX_RISULTATI_QUERY) break;
+  }
+  return risultati;
+}
+
 function puoLeggerePagina(host: string): boolean {
   const pulito = host.toLowerCase().replace(/\.$/, "");
   return (
@@ -199,17 +263,7 @@ export function urlRisultato(valore: string): string | null {
       finale = new URL(uddg);
     }
 
-    if (finale.protocol !== "https:") return null;
-    if (finale.username !== "" || finale.password !== "") return null;
-    if (finale.port !== "") return null;
-    if (finale.hash !== "") return null;
-    if (finale.hostname === "duckduckgo.com" || finale.hostname.endsWith(".duckduckgo.com")) {
-      return null;
-    }
-    if (/^\d{1,3}(\.\d{1,3}){3}$/.test(finale.hostname) || finale.hostname.includes(":")) {
-      return null;
-    }
-    return finale.toString();
+    return validaUrlFinale(finale);
   } catch {
     return null;
   }
@@ -390,17 +444,12 @@ export function costruisciQuery(riconoscimento: RiconoscimentoAi): string[] {
   return query;
 }
 
-async function cercaQuery(
-  query: string,
+async function scaricaHtml(
+  url: string,
   fetchImpl: typeof fetch,
   timeoutMs: number,
-  adesso: number,
   signal?: AbortSignal
-): Promise<{ risultati: RisultatoGrezzo[]; errore: boolean }> {
-  const chiave = `q:${normalizza(query)}`;
-  const inMemoria = daCache<RisultatoGrezzo[]>(chiave, adesso);
-  if (inMemoria) return { risultati: inMemoria, errore: false };
-
+): Promise<string | null> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   const annulla = () => controller.abort();
@@ -408,9 +457,7 @@ async function cercaQuery(
   if (signal?.aborted) controller.abort();
 
   try {
-    const url = new URL(`https://${HOST_RICERCA}/`);
-    url.searchParams.set("q", query);
-    const risposta = await fetchImpl(url.toString(), {
+    const risposta = await fetchImpl(url, {
       method: "GET",
       headers: {
         Accept: "text/html,application/xhtml+xml",
@@ -422,20 +469,54 @@ async function cercaQuery(
       cache: "no-store",
       signal: controller.signal,
     });
-    if (!risposta.ok) return { risultati: [], errore: true };
-
+    if (!risposta.ok) return null;
     const bytes = await leggiBytesLimitati(risposta, MAX_RISPOSTA_RICERCA);
-    if (!bytes) return { risultati: [], errore: true };
-
-    const risultati = estraiRisultati(new TextDecoder("utf-8").decode(bytes));
-    inCache(chiave, risultati, adesso);
-    return { risultati, errore: false };
+    if (!bytes) return null;
+    return new TextDecoder("utf-8").decode(bytes);
   } catch {
-    return { risultati: [], errore: true };
+    return null;
   } finally {
     clearTimeout(timer);
     signal?.removeEventListener("abort", annulla);
   }
+}
+
+async function cercaQuery(
+  query: string,
+  fetchImpl: typeof fetch,
+  timeoutMs: number,
+  adesso: number,
+  signal?: AbortSignal
+): Promise<{ risultati: RisultatoGrezzo[]; errore: boolean }> {
+  const chiave = `q:${normalizza(query)}`;
+  const inMemoria = daCache<RisultatoGrezzo[]>(chiave, adesso);
+  if (inMemoria) return { risultati: inMemoria, errore: false };
+
+  const urlDdg = new URL(`https://${HOST_RICERCA}/`);
+  urlDdg.searchParams.set("q", query);
+  const htmlDdg = await scaricaHtml(urlDdg.toString(), fetchImpl, timeoutMs, signal);
+  let risultati = htmlDdg ? estraiRisultati(htmlDdg) : [];
+  let errore = htmlDdg === null;
+
+  if (ABILITA_FALLBACK_BING && risultati.length === 0) {
+    const urlBing = new URL(`https://${HOST_RICERCA_BING}/search`);
+    urlBing.searchParams.set("q", query);
+    urlBing.searchParams.set("setlang", "it");
+    urlBing.searchParams.set("cc", "IT");
+    const htmlBing = await scaricaHtml(urlBing.toString(), fetchImpl, timeoutMs, signal);
+    if (htmlBing) {
+      const daBing = estraiRisultatiBing(htmlBing);
+      if (daBing.length > 0) {
+        risultati = daBing;
+        errore = false;
+      } else if (htmlDdg === null) {
+        errore = true;
+      }
+    }
+  }
+
+  if (risultati.length > 0) inCache(chiave, risultati, adesso);
+  return { risultati, errore };
 }
 
 export function creaRicercaWeb(opzioni: OpzioniRicercaWeb = {}): ProviderRicercaWeb {
