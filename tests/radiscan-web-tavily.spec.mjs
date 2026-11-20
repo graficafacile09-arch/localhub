@@ -289,6 +289,7 @@ test("Tavily: sei query separate, pagine ufficiali lette e metadati conservati",
   assert.equal(sintesi.produttore.stato, "dichiarata");
   assert.equal(sintesi.marchio.stato, "menzionata");
   assert.equal(sintesi.prodotto.stato, "menzionata");
+  assert.equal(sintesi.filieraCalabrese.stato, "supportata");
   assert.equal(sintesi.confezione.stato, "non_verificabile");
 });
 
