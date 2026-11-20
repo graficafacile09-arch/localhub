@@ -27,7 +27,7 @@ export default function RadiciScanPage() {
         occhiello="Riconoscimento e verifica documentale"
         titolo="RadiciScan"
         icona={ScanLine}
-        sommario="Scatta o carica una foto dell'etichetta: RadiciScan confronta la denominazione con le fonti ufficiali."
+        sommario="Carica o scatta una foto dell'etichetta per avviare la verifica."
       />
 
       <div className="rd-guscio py-4 md:py-6">
