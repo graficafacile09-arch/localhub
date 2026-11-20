@@ -26,6 +26,7 @@ const {
   svuotaCacheWeb,
   verificaProduttore,
   verificaDenominazione,
+  creaProviderGemini,
   leggiAllegati,
   analizzaProdotto,
   LIMITI_LETTURA,
@@ -71,6 +72,36 @@ function riconoscimento(override = {}) {
     ...override,
   };
 }
+
+// ─── Retry Gemini ────────────────────────────────────────────────────────
+
+test("gemini: ritenta una sola volta dopo un timeout transitorio del tentativo", async () => {
+  let chiamate = 0;
+  const provider = creaProviderGemini({
+    apiKey: "test-key",
+    timeoutMs: 2_000,
+    fetchImpl: async () => {
+      chiamate += 1;
+      if (chiamate === 1) {
+        throw new DOMException("timeout transitorio", "AbortError");
+      }
+      return new Response(
+        JSON.stringify({
+          candidates: [{ content: { parts: [{ text: "{\\"prodotto\\":\\"Caciocavallo Silano\\"}" }] } }],
+        }),
+        { status: 200, headers: { "content-type": "application/json" } }
+      );
+    },
+  });
+
+  const risultato = await provider.genera({
+    prompt: "test",
+    immagineBase64: "AQID",
+    mimeType: "image/jpeg",
+  });
+  assert.equal(chiamate, 2);
+  assert.match(risultato.testo, /Caciocavallo Silano/);
+});
 
 // ─── OCR ──────────────────────────────────────────────────────────────────
 
