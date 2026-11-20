@@ -9,8 +9,8 @@
  * del prompt richiede di incrementarla, così nessun esito vecchio viene
  * riusato (vincolo della migration 20261118 sulla chiave primaria).
  */
-// 2.2.0: il modello propone anche i campi strutturati dell'etichetta, che
-// l'OCR conferma o smentisce. La versione invalida la cache precedente.
+// 2.3.0: il modello riconosce anche i loghi grafici; OCR e visione restano distinti.
+// La versione invalida la cache precedente.
 export const VERSIONE_PROMPT = "radiscan-2.3.0";
 
 const RIGHE = [
