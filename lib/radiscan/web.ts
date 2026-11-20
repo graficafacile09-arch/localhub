@@ -14,8 +14,8 @@ import type {
 /**
  * RadiciScan — ricerca web multifonte.
  *
- * Il motore primario è Tavily (`web-tavily`); Google grounding e i motori
- * keyless (DuckDuckGo HTML, Bing HTML e Wikipedia) restano riserve. Qui vive
+ * Il percorso primario usa i motori keyless (DuckDuckGo HTML e Bing HTML);
+ * Tavily è un secondo livello quando le fonti gratuite non bastano. Qui vive
  * tutta la parte comune:
  * - query separate per denominazione, produttore, marchio, prodotto,
  *   consorzio e organismo di controllo;
