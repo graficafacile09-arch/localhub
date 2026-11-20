@@ -20,9 +20,8 @@ import type {
  * Due livelli di prova, tenuti distinti:
  * - il registro curato `radiscan_fonti` può sostenere `verificato`, perché
  *   ogni riga `denominazione` è stata controllata e resa completa;
- * - la ricerca eAmbrosia restituisce prove ufficiali, ma non crea da sola
- *   una fonte curata: una corrispondenza esatta produce `riscontro_parziale`
- *   finché la scheda non entra nel registro.
+ * - una registrazione esatta e attiva in eAmbrosia conferma lo status della
+ *   denominazione anche se non duplicata nel registro curato RadiciScan.
  *
  * Il confronto con il registro resta esatto dopo normalizzazione. Per la
  * ricerca esterna è ammessa una sola variazione morfologica documentata
@@ -249,11 +248,12 @@ function motivazioneRiscontroParziale(
   }
 
   if (prova.stato === "registrata") {
+    const schema = prova.schemaQualita ?? "denominazione protetta";
     return (
-      `Riscontro parziale: "${prova.denominazione}" è iscritta nel registro eAmbrosia ` +
-      `(${prova.riferimentoNormativo ?? "atto ufficiale"}). La prova è ufficiale, ma la scheda ` +
-      "del disciplinare non è ancora acquisita nel registro curato RadiciScan: il prodotto " +
-      "specifico non è confermato."
+      `Denominazione ${schema} confermata: "${prova.denominazione}" risulta registrata ` +
+      `nel registro ufficiale eAmbrosia (${prova.riferimentoNormativo ?? "scheda UE"}). ` +
+      "La registrazione e la documentazione ufficiale confermano lo status della denominazione; " +
+      "non costituiscono autenticazione della singola confezione, del lotto o del produttore."
     );
   }
 
@@ -283,10 +283,10 @@ function motivazioneRiscontroParziale(
  * ufficiali recuperate online. Restituisce sempre una motivazione leggibile
  * e non usa mai dati del modello come se fossero fonte.
  *
- * NOTA: la lettura dei documenti non può mai alzare il livello. Anche un
- * disciplinare letto per intero resta `riscontro_parziale` finché la scheda
- * non entra nel registro curato: i documenti provano la denominazione, non
- * la confezione fotografata.
+ * Una registrazione esatta e attiva in eAmbrosia conferma lo status della
+ * denominazione anche se non duplicata nel registro curato RadiciScan.
+ * Il livello applicativo resta distinto dall'autenticazione della confezione:
+ * la prova europea non identifica il singolo lotto o produttore fotografato.
  */
 function verificaBase(
   riconoscimento: RiconoscimentoAi,
