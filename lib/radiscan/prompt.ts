@@ -9,9 +9,9 @@
  * del prompt richiede di incrementarla, così nessun esito vecchio viene
  * riusato (vincolo della migration 20261118 sulla chiave primaria).
  */
-// 2.3.0: il modello riconosce anche i loghi grafici; OCR e visione restano distinti.
+// 2.4.0: invia al modello anche un dettaglio ingrandito e usa Gemini Flash completo; OCR e visione restano distinti.
 // La versione invalida la cache precedente.
-export const VERSIONE_PROMPT = "radiscan-2.3.0";
+export const VERSIONE_PROMPT = "radiscan-2.4.0";
 
 const RIGHE = [
   "Sei RadiciScan, un servizio che aiuta a riconoscere prodotti agroalimentari e a leggere le informazioni visibili in etichetta.",
