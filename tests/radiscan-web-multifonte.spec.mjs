@@ -517,7 +517,7 @@ test("Google grounding non disponibile: fallback keyless dichiarato", async () =
   assert.equal(esito.stato, "ok");
 });
 
-test("UI: sezione FONTI TROVATE, cinque verifiche e link apribili", () => {
+test("UI: sezione FONTI TROVATE, sei verifiche e link apribili", () => {
   const sorgente = readFileSync(
     radice("components/radiscan/ScanRisultato.tsx"),
     "utf8"
@@ -525,7 +525,8 @@ test("UI: sezione FONTI TROVATE, cinque verifiche e link apribili", () => {
   assert.match(sorgente, /FONTI TROVATE/);
   assert.match(sorgente, /BloccoSintesiFonti/);
   assert.match(sorgente, /A\. Denominazione DOP\/IGP registrata/);
-  assert.match(sorgente, /E\. Autenticità della singola confezione e del lotto/);
+  assert.match(sorgente, /E\. Filiera calabrese: origine e produzione/);
+  assert.match(sorgente, /F\. Autenticità della singola confezione e del lotto/);
   assert.match(sorgente, /target="_blank"/);
   assert.match(sorgente, /rel="noopener noreferrer"/);
 });
