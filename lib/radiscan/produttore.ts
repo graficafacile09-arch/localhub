@@ -56,10 +56,13 @@ function evidenzaWeb(web: RicercaWeb | null, richiesta: (testo: string) => boole
   return web.fonti
     .filter(
       (fonte) =>
+        // Una fonte è evidenza solo se il contenuto della pagina è stato
+        // scaricato e letto integralmente. Titolo e snippet del motore di
+        // ricerca sono indizi di ricerca, non prove documentali.
+        fonte.lettoIntegralmente === true &&
         (fonte.natura === "ufficiale_eu" ||
           fonte.natura === "ufficiale_it" ||
-          fonte.natura === "regionale" ||
-          fonte.natura === "consorzio") &&
+          fonte.natura === "regionale") &&
         richiesta(`${fonte.titolo} ${fonte.estratto ?? ""}`)
     )
     .slice(0, 3)
