@@ -850,7 +850,25 @@ export default function ScanRisultato({
 }) {
   const gruppo = gruppoDaLivello(esito.livello);
   const stile = STILE[gruppo];
-  const etichetta = ETICHETTE_GRUPPO[gruppo];
+  const prove = Array.isArray(esito.verifica?.prove) ? esito.verifica.prove : [];
+  const proveDopRegistrate = prove.filter(
+    (prova) =>
+      prova.tipo === "ufficiale" &&
+      prova.stato === "registrata" &&
+      prova.schemaQualita === "DOP" &&
+      prova.relazione.startsWith("Corrispondenza esatta")
+  );
+  // La denominazione DOP può essere confermata dal registro UE anche se
+  // la confezione fotografata non è autenticata: non chiamare questo esito
+  // "riscontro parziale" quando la prova ufficiale è esatta e registrata.
+  const dopUfficialmenteRegistrata = proveDopRegistrate.length === 1;
+  const etichetta = dopUfficialmenteRegistrata
+    ? {
+        titolo: "DOP ufficialmente registrata",
+        descrizione:
+          "La denominazione esatta risulta registrata nel registro ufficiale dell'Unione europea. La confezione, il lotto e il produttore fotografati restano verifiche distinte.",
+      }
+    : ETICHETTE_GRUPPO[gruppo];
   const Icona = stile.icona;
 
   const riconoscimento = esito.riconoscimento;
@@ -861,7 +879,6 @@ export default function ScanRisultato({
     ? riconoscimento.incongruenzeRilevate
     : [];
   const fonte = esito.verifica?.fonte ?? null;
-  const prove = Array.isArray(esito.verifica?.prove) ? esito.verifica.prove : [];
   const ricerca = esito.verifica?.ricerca ?? null;
   const lettura = ricerca?.lettura ?? null;
   const provenienza = esito.verifica?.provenienza ?? null;
