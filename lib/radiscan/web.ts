@@ -1073,20 +1073,26 @@ async function completaFonti(
   }
 
   // Dopo la lettura, una pagina generica (un omonimo, un comune) non resta
-  // una fonte solo perché il produttore era citato nello snippet. Le pagine
-  // non leggibili restano visibili come risultati, senza diventare documenti.
+  // una fonte solo perché lo snippet contiene il prodotto o il territorio.
+  // Se l'etichetta indica un produttore, una fonte non istituzionale deve
+  // citarlo: altrimenti non è una fonte su quel produttore.
+  const paroleProduttore = tokenizza(riconoscimento.produttore ?? "");
   return scelte.filter((fonte) => {
-    if (fonte.pagineLette === null && !fonte.lettoIntegralmente) return true;
-    if (
+    const ufficiale =
       fonte.natura === "ufficiale_eu" ||
       fonte.natura === "ufficiale_it" ||
       fonte.natura === "regionale" ||
       fonte.natura === "certificazione" ||
-      fonte.natura === "consorzio"
-    ) {
-      return true;
-    }
-    return haProdottoInTesto(`${fonte.titolo} ${fonte.estratto ?? ""}`, riconoscimento);
+      fonte.natura === "consorzio";
+    const testo = `${fonte.titolo} ${fonte.estratto ?? ""}`;
+    const haProd = haProdottoInTesto(testo, riconoscimento);
+    const haProduttore = [...paroleProduttore].some((parola) =>
+      normalizza(testo).includes(parola)
+    );
+
+    if (paroleProduttore.size > 0 && !ufficiale && !haProduttore) return false;
+    if (fonte.pagineLette === null && !fonte.lettoIntegralmente) return haProd;
+    return ufficiale || haProd;
   });
 }
 
