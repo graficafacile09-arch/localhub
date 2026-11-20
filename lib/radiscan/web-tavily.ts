@@ -39,6 +39,10 @@ const MAX_CARATTERI_ESTRATTO = 6_000;
 const TIMEOUT_RICERCA_MS = 5_000;
 const TIMEOUT_ESTRAZIONE_MS = 5_000;
 const TTL_CACHE_MS = 10 * 60 * 1000;
+// Una 401 indica una chiave Tavily non autorizzata: non ripetere due query
+// identiche né riprovare a ogni scansione finché la configurazione non cambia.
+const COOLDOWN_AUTORIZZAZIONE_MS = 10 * 60 * 1000;
+let tavilyNonAutorizzatoFino = 0;
 
 export interface OpzioniRicercaTavily extends OpzioniRicercaWeb {
   apiKey?: string;
@@ -301,6 +305,9 @@ async function cercaConTavily(
     http = risposta.status;
 
     if (!risposta.ok) {
+      if (http === 401 || http === 403) {
+        tavilyNonAutorizzatoFino = Date.now() + COOLDOWN_AUTORIZZAZIONE_MS;
+      }
       console.warn(
         `[radiscan][web] motore=tavily indice=${indice + 1} http=${http} risultati=0 crediti=0 esito=non_disponibile`
       );
@@ -561,6 +568,18 @@ export function creaRicercaWebTavily(
             creditiTotali: 0,
             pagineEstratte: 0,
           },
+        };
+      }
+
+      if (tavilyNonAutorizzatoFino > Date.now()) {
+        const fallback = creaFallback(opzioni);
+        const esitoFallback = await fallback.cerca(input);
+        return {
+          ...esitoFallback,
+          query,
+          motore: esitoFallback.motore ?? fallback.nome,
+          messaggio: `Tavily temporaneamente escluso dopo una risposta 401/403: verificare TAVILY_API_KEY. ${esitoFallback.messaggio ?? ""}`.trim(),
+          durataMs: Date.now() - avvio,
         };
       }
 
