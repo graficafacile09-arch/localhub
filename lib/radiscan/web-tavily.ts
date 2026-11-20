@@ -166,6 +166,7 @@ export function costruisciQueryTavily(riconoscimento: RiconoscimentoAi): string[
     produttore ? `${produttore} ${area} azienda produzione` : `${prodotto} ${area} consorzio associazione`,
     schemaProtetto && denominazione ? `${denominazione} registro europeo DOP IGP` : null,
     `${prodotto} Regione Calabria ARSAC produzione`,
+    `${denominazione ?? prodotto} ARSAC RINA organismo di controllo`,
   ];
 
   const viste = new Set<string>();
@@ -505,7 +506,7 @@ export function creaRicercaWebTavily(
   const adesso = opzioni.adesso ?? (() => new Date());
   const timeoutRicerca = opzioni.timeoutRicercaMs ?? TIMEOUT_RICERCA_MS;
   const limiteQuery = Math.min(
-    Math.max(opzioni.maxQuery ?? 3, 1),
+    Math.max(opzioni.maxQuery ?? MAX_QUERY_TAVILY, 1),
     MAX_QUERY_TAVILY
   );
 
