@@ -19,7 +19,7 @@ import { creaRicercaWebGoogle } from "./web-google";
  *
  * Limiti:
  * - massimo 6 query per analisi, una chiamata Search per query;
- * - `search_depth: "basic"` (1 credito per ricerca);
+ * - `search_depth: "fast"` (1 credito per ricerca);
  * - massimo 5 risultati per query, deduplicati per URL;
  * - cache in memoria di 10 minuti, separata per query;
  * - timeout per query e fallback dichiarato.
@@ -30,13 +30,13 @@ import { creaRicercaWebGoogle } from "./web-google";
 
 const ENDPOINT = "https://api.tavily.com/search";
 const ENDPOINT_ESTRAZIONE = "https://api.tavily.com/extract";
-const MAX_QUERY_TAVILY = 6;
+const MAX_QUERY_TAVILY = 4;
 const MAX_RISULTATI_QUERY = 6;
-const MAX_CANDIDATI = 24;
-const MAX_ESTRAZIONE = 5;
+const MAX_CANDIDATI = 20;
+const MAX_ESTRAZIONE = 2;
 const MAX_CARATTERI_ESTRATTO = 6_000;
-const TIMEOUT_RICERCA_MS = 8_000;
-const TIMEOUT_ESTRAZIONE_MS = 15_000;
+const TIMEOUT_RICERCA_MS = 5_000;
+const TIMEOUT_ESTRAZIONE_MS = 7_000;
 const TTL_CACHE_MS = 10 * 60 * 1000;
 
 export interface OpzioniRicercaTavily extends OpzioniRicercaWeb {
@@ -155,25 +155,18 @@ export function costruisciQueryTavily(riconoscimento: RiconoscimentoAi): string[
   const denominazione = riconoscimento.denominazioneProposta?.trim() || null;
   const prodotto = riconoscimento.prodotto.trim();
 
-  const candidati = produttore
-    ? [
-        produttore,
-        denominazione ? `${produttore} ${denominazione}` : `${produttore} ${prodotto}`,
-        `Filiera ${produttore} salumi DOP`,
-        denominazione
-          ? `${denominazione} registro europeo`
-          : `${prodotto} registro europeo DOP`,
-        `${denominazione ?? prodotto} certificazioni ARSAC RINA organismi di controllo`,
-        `${denominazione ?? prodotto} RINA Agroqualità prodotti tipici DOP`,
-      ]
-    : [
-        prodotto,
-        denominazione ? `${denominazione} DOP` : `${prodotto} DOP`,
-        `${prodotto} registro europeo DOP`,
-        `${prodotto} consorzio di tutela`,
-        `${prodotto} certificazioni ARSAC RINA organismo di controllo`,
-        `${prodotto} RINA Agroqualità prodotti tipici DOP`,
-      ];
+  const schemaProtetto = /DOP|IGP|STG/i.test(
+    `${riconoscimento.schemaProposto ?? ""} ${denominazione ?? ""}`
+  );
+  const area = riconoscimento.territorioProposto?.trim() || "Calabria";
+  const candidati = [
+    produttore && prodotto ? `${produttore} ${prodotto}` : `${prodotto} produttore ${area}`,
+    produttore ? `${produttore} sito ufficiale prodotti catalogo` : `${prodotto} ${area} produttori`,
+    `${prodotto} ${area} filiera produzione origine`,
+    produttore ? `${produttore} ${area} azienda produzione` : `${prodotto} ${area} consorzio associazione`,
+    schemaProtetto && denominazione ? `${denominazione} registro europeo DOP IGP` : null,
+    `${prodotto} Regione Calabria ARSAC produzione`,
+  ];
 
   const viste = new Set<string>();
   const query: string[] = [];
@@ -512,7 +505,7 @@ export function creaRicercaWebTavily(
   const adesso = opzioni.adesso ?? (() => new Date());
   const timeoutRicerca = opzioni.timeoutRicercaMs ?? TIMEOUT_RICERCA_MS;
   const limiteQuery = Math.min(
-    Math.max(opzioni.maxQuery ?? MAX_QUERY_TAVILY, 1),
+    Math.max(opzioni.maxQuery ?? 3, 1),
     MAX_QUERY_TAVILY
   );
 
