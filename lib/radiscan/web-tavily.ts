@@ -163,10 +163,10 @@ export function costruisciQueryTavily(riconoscimento: RiconoscimentoAi): string[
     produttore && prodotto ? `${produttore} ${prodotto}` : `${prodotto} produttore ${area}`,
     produttore ? `${produttore} sito ufficiale prodotti catalogo` : `${prodotto} ${area} produttori`,
     `${prodotto} ${area} filiera produzione origine`,
+    `${denominazione ?? prodotto} ARSAC RINA organismo di controllo`,
     produttore ? `${produttore} ${area} azienda produzione` : `${prodotto} ${area} consorzio associazione`,
     schemaProtetto && denominazione ? `${denominazione} registro europeo DOP IGP` : null,
     `${prodotto} Regione Calabria ARSAC produzione`,
-    `${denominazione ?? prodotto} ARSAC RINA organismo di controllo`,
   ];
 
   const viste = new Set<string>();
@@ -792,7 +792,7 @@ export function creaRicercaWebIbrida(
   const tavily = creaRicercaWebTavily({
     ...opzioni,
     fetchImpl,
-    maxQuery: Math.min(opzioni.maxQuery ?? 3, 3),
+    maxQuery: Math.min(opzioni.maxQuery ?? 4, 4),
     timeoutRicercaMs: Math.min(opzioni.timeoutRicercaMs ?? 5_000, 5_000),
     maxPagine: Math.min(opzioni.maxPagine ?? 4, 4),
     maxFonti: Math.min(opzioni.maxFonti ?? 12, 12),
