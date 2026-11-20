@@ -79,7 +79,15 @@ export async function POST(request: Request): Promise<Response> {
     creaOcr: () => creaMotoreOcrTesseract(),
     // Prima motori keyless rapidi; Tavily interviene soltanto se le fonti
     // gratuite non bastano a sostenere l'identificazione.
-    creaWeb: () => creaRicercaWebIbrida(),
+    creaWeb: () =>
+      creaRicercaWebIbrida({
+        maxQuery: 2,
+        maxPagine: 3,
+        maxFonti: 8,
+        timeoutQueryMs: 3_500,
+        timeoutPaginaMs: 3_500,
+        timeoutRicercaMs: 5_000,
+      }),
     creaBarcode: (codice) => cercaBarcode(codice),
     saleQuota: process.env.RADISCAN_QUOTA_SALT ?? null,
     // Segreto HMAC della cache: se assente il riuso è disattivato.
