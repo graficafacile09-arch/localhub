@@ -45,7 +45,7 @@ test("ricerca keyless sufficiente: Tavily non viene chiamato", async () => {
     const target = String(url);
     if (target.includes("html.duckduckgo.com")) {
       const query = new URL(target).searchParams.get("q") ?? "";
-      if (query.includes("calabrese")) {
+      if (query.toLowerCase().includes("calabrese") || query.toLowerCase().includes("madeo srl")) {
         return new Response("<html><body>nessun risultato</body></html>", { status: 200 });
       }
       const html = query.includes("filiera")
@@ -130,6 +130,7 @@ test("fonti keyless insufficienti: Tavily fast interviene come secondo livello",
       prodotto: "Soppressata calabrese",
       denominazioneProposta: null,
       schemaProposto: null,
+      produttore: "Madeo Srl",
     }),
   });
 
