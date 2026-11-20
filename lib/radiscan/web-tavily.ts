@@ -1,5 +1,6 @@
 import type { FonteWeb, RiconoscimentoAi, RicercaWeb } from "./tipi";
 import {
+  costruisciQuery,
   creaRicercaWeb,
   hostPubblico,
   sintetizzaFontiWeb,
@@ -18,7 +19,7 @@ import { creaRicercaWebGoogle } from "./web-google";
  * snippet non viene mai presentato come documento letto.
  *
  * Limiti:
- * - massimo 6 query per analisi, una chiamata Search per query;
+ * - massimo 4 query nel percorso di rinforzo, una chiamata Search per query;
  * - `search_depth: "fast"` (1 credito per ricerca);
  * - massimo 5 risultati per query, deduplicati per URL;
  * - cache in memoria di 10 minuti, separata per query;
@@ -172,6 +173,7 @@ export function costruisciQueryTavily(riconoscimento: RiconoscimentoAi): string[
   const viste = new Set<string>();
   const query: string[] = [];
   for (const candidato of candidati) {
+    if (!candidato) continue;
     const pulita = candidato.replace(/\s+/g, " ").trim().slice(0, 140);
     const chiave = normalizzaQuery(pulita);
     if (chiave.length < 4 || viste.has(chiave)) continue;
