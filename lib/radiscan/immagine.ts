@@ -75,6 +75,8 @@ export interface ImmagineValida {
   /** `null` quando `RADISCAN_CACHE_SECRET` non è configurato. */
   impronta: string | null;
   byte: number;
+  /** Codice a barre letto dal client e validato (checksum) dal server. */
+  codiceBarre?: string | null;
 }
 
 /**

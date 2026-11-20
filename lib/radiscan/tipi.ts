@@ -53,6 +53,17 @@ export interface RiconoscimentoAi {
   note: string | null;
   /** Sempre formulate come possibilità, mai come accuse. */
   incongruenzeRilevate: string[];
+  /**
+   * Campi facoltativi letti in etichetta. Sono ipotesi del modello: l'OCR
+   * li conferma o li smentisce e la discrepanza resta visibile all'utente.
+   */
+  produttore?: string | null;
+  stabilimento?: string | null;
+  indirizzo?: string | null;
+  lotto?: string | null;
+  codiceBarre?: string | null;
+  ingredienti?: string[];
+  certificazioni?: string[];
 }
 
 /**
@@ -293,6 +304,162 @@ export interface EsitoAnalisi {
   verifica: VerificaDocumentale;
   avvertenza: string;
   versionePrompt: string;
+  /** Lettura OCR, separata dalle ipotesi del modello visivo. */
+  ocr?: OcrRisultato | null;
+  /** Campi strutturati con provenienza esplicita. */
+  etichetta?: EtichettaEstratta | null;
+  /** Divergenze OCR/modello, mai risolte d'ufficio. */
+  discrepanze?: Discrepanza[];
+  /** Ricerca web multifonte, distinta dal registro ufficiale. */
+  web?: RicercaWeb | null;
+  /** Scheda di banca dati prodotti, se è stato letto un codice a barre. */
+  barcode?: SchedaProdottoBarcode | null;
+  /** Controlli separati su produttore, stabilimento e filiera. */
+  produttore?: VerificaProduttore | null;
+  /** Tempi misurati per fase. */
+  tempi?: TempiAnalisi | null;
+}
+
+// ─── OCR, etichetta e controllo incrociato ────────────────────────────────
+
+/**
+ * Esito OCR separato dalle ipotesi del modello visivo.
+ *
+ * `stato: non_disponibile` significa che il motore OCR non ha potuto
+ * leggere: non equivale a "etichetta illeggibile" né a "nessun dato".
+ */
+export interface OcrRisultato {
+  stato: "ok" | "non_disponibile" | "non_eseguito";
+  testo: string;
+  /** Confidenza media dichiarata dal motore, 0-100. */
+  confidenza: number;
+  paroleLette: number;
+  caratteri: number;
+  lingue: string[];
+  durataMs: number;
+  motivo: string | null;
+  avvisi: string[];
+}
+
+/** Valore di un campo con la sua provenienza esplicita. */
+export interface CampoEtichetta {
+  valore: string | null;
+  fonte: "ocr" | "ai" | "ocr_e_ai" | null;
+}
+
+/** Estrazione strutturata: nessun campo viene inventato se non è leggibile. */
+export interface EtichettaEstratta {
+  nomeCommerciale: CampoEtichetta;
+  denominazioneLegale: CampoEtichetta;
+  produttore: CampoEtichetta;
+  stabilimento: CampoEtichetta;
+  indirizzo: CampoEtichetta;
+  lotto: CampoEtichetta;
+  codiceBarre: CampoEtichetta;
+  ingredienti: string[];
+  certificazioni: string[];
+  territorioDichiarato: string[];
+  /** Livello di leggibilità dichiarato dal motore OCR. */
+  leggibilita: "buona" | "parziale" | "scarsa" | "sconosciuta";
+}
+
+/**
+ * Divergenza fra OCR e modello visivo. Non viene risolta scegliendo un
+ * vincitore: entrambi i valori sono conservati e la discrepanza è mostrata.
+ */
+export interface Discrepanza {
+  campo: string;
+  ocr: string | null;
+  ai: string | null;
+  gravita: "bassa" | "media";
+  messaggio: string;
+}
+
+// ─── Ricerca web e banche dati prodotto ───────────────────────────────────
+
+export type NaturaFonteWeb =
+  | "ufficiale_eu"
+  | "ufficiale_it"
+  | "regionale"
+  | "consorzio"
+  | "produttore"
+  | "database_prodotti"
+  | "informativo"
+  | "commerciale";
+
+export type AttendibilitaFonte = "alta" | "media" | "bassa";
+
+/** Fonte web con metadati minimi verificabili. Nessun URL è costruito a mano. */
+export interface FonteWeb {
+  id: string;
+  titolo: string;
+  ente: string;
+  url: string;
+  dominio: string;
+  natura: NaturaFonteWeb;
+  attendibilita: AttendibilitaFonte;
+  consultataIl: string;
+  dataDocumento: string | null;
+  estratto: string | null;
+  riferimentoNormativo: string | null;
+  pagineLette: number | null;
+  lettoIntegralmente: boolean;
+  relazione: string;
+}
+
+export interface RicercaWeb {
+  stato: "ok" | "non_disponibile" | "non_eseguita";
+  consultataIl: string | null;
+  query: string[];
+  fonti: FonteWeb[];
+  messaggio: string | null;
+  durataMs: number;
+}
+
+/** Scheda di una banca dati prodotti, distinta da una certificazione. */
+export interface SchedaProdottoBarcode {
+  codice: string;
+  trovato: boolean;
+  nome: string | null;
+  marchio: string | null;
+  etichette: string[];
+  luoghiProduzione: string[];
+  categorie: string[];
+  url: string;
+  fonte: "OpenFoodFacts";
+  attendibilita: "media";
+  consultataIl: string;
+  messaggio: string;
+}
+
+// ─── Verifica del produttore e tempi ──────────────────────────────────────
+
+export type StatoControllo =
+  | "documentato"
+  | "non_documentato"
+  | "non_verificabile"
+  | "incoerente";
+
+export interface ControlloProduttore {
+  id: string;
+  etichetta: string;
+  stato: StatoControllo;
+  dettaglio: string;
+  evidenze: EvidenzaProvenienza[];
+}
+
+export interface VerificaProduttore {
+  controlli: ControlloProduttore[];
+  sintesi: string;
+}
+
+/** Tempi reali misurati, non stime. */
+export interface TempiAnalisi {
+  identificazioneMs: number;
+  ocrMs: number;
+  documentiMs: number;
+  webMs: number;
+  totaleMs: number;
 }
 
 export interface IngressoAnalisi {
@@ -305,6 +472,8 @@ export interface IngressoAnalisi {
    * o ritagliate hanno impronte diverse.
    */
   improntaImmagine?: string;
+  /** Codice a barre letto dal client o dall'OCR, se disponibile. */
+  codiceBarre?: string | null;
 }
 
 /** Contratto del provider: implementabile da un finto nei test. */
@@ -324,4 +493,5 @@ export interface MetaAnalisi {
   modello: string;
   durataMs: number;
   versionePrompt: string;
+  fasi?: TempiAnalisi;
 }

@@ -2,12 +2,15 @@ import {
   AlertTriangle,
   Award,
   CheckCircle2,
+  Clock,
   ExternalLink,
   FileSearch,
   FileText,
+  Globe,
   Info,
   Landmark,
   RotateCcw,
+  Search,
   type LucideIcon,
 } from "lucide-react";
 import type {
@@ -527,6 +530,315 @@ function BloccoProvenienza({
   );
 }
 
+const ETICHETTA_ATTENDIBILITA = {
+  alta: "Attendibilità alta",
+  media: "Attendibilità media",
+  bassa: "Attendibilità bassa",
+} as const;
+
+const ETICHETTA_NATURA: Record<string, string> = {
+  ufficiale_eu: "Fonte ufficiale UE",
+  ufficiale_it: "Fonte ufficiale italiana",
+  regionale: "Fonte regionale",
+  consorzio: "Consorzio di tutela",
+  produttore: "Sito del produttore",
+  database_prodotti: "Banca dati prodotti",
+  informativo: "Fonte informativa",
+  commerciale: "Fonte commerciale",
+};
+
+const ETICHETTA_CONTROLLO: Record<string, string> = {
+  documentato: "Documentato",
+  non_documentato: "Non documentato",
+  non_verificabile: "Non verificabile",
+  incoerente: "Da controllare",
+};
+
+function BloccoMultifonte({ esito }: { esito: EsitoAnalisi }) {
+  const ocr = esito.ocr ?? null;
+  const etichetta = esito.etichetta ?? null;
+  const discrepanze = Array.isArray(esito.discrepanze) ? esito.discrepanze : [];
+  const web = esito.web ?? null;
+  const barcode = esito.barcode ?? null;
+  const produttore = esito.produttore ?? null;
+  const tempi = esito.tempi ?? null;
+
+  const campi = etichetta
+    ? [
+        ["Nome commerciale", etichetta.nomeCommerciale],
+        ["Denominazione legale", etichetta.denominazioneLegale],
+        ["Produttore", etichetta.produttore],
+        ["Stabilimento", etichetta.stabilimento],
+        ["Indirizzo", etichetta.indirizzo],
+        ["Lotto", etichetta.lotto],
+        ["Codice a barre", etichetta.codiceBarre],
+      ].filter(([, campo]) => (campo as { valore: string | null }).valore)
+    : [];
+
+  if (!ocr && !etichetta && discrepanze.length === 0 && !web && !barcode && !produttore) {
+    return null;
+  }
+
+  return (
+    <div className="mt-4 space-y-4">
+      {ocr ? (
+        <div className="rounded-xl border border-[#d8e4da] bg-[#f8fbf8] p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Search className="h-4 w-4 text-[#24462f]" aria-hidden />
+              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#24462f]">
+                Lettura OCR dell&apos;etichetta
+              </p>
+            </div>
+            <span className="rd-et">
+              {ocr.stato === "ok"
+                ? `Confidenza ${ocr.confidenza}% · ${ocr.paroleLette} parole`
+                : "OCR non disponibile"}
+            </span>
+          </div>
+          <p className="mt-2 text-xs leading-5 text-[#57534e]">
+            {ocr.stato === "ok"
+              ? "Questa è la trascrizione del motore OCR: resta separata dalle ipotesi del modello visivo."
+              : ocr.motivo ?? "Nessun testo letto."}
+          </p>
+          {ocr.stato === "ok" && ocr.testo ? (
+            <details className="mt-2 rounded-lg border border-[#e5ded0] bg-white p-3">
+              <summary className="cursor-pointer text-xs font-bold text-[#1b3624]">
+                Testo letto ({ocr.caratteri} caratteri)
+              </summary>
+              <pre className="mt-2 max-h-72 overflow-auto whitespace-pre-wrap break-words text-xs leading-5 text-[#57534e]">
+                {ocr.testo}
+              </pre>
+            </details>
+          ) : null}
+          {ocr.avvisi.length > 0 ? (
+            <ul className="mt-2 space-y-1 text-xs leading-5 text-[#8a5a3b]">
+              {ocr.avvisi.map((avviso) => (
+                <li key={avviso}>• {avviso}</li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+      ) : null}
+
+      {etichetta ? (
+        <div className="rounded-xl border border-[#e5ded0] bg-[#fffdf7] p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <FileText className="h-4 w-4 text-[#8a5a3b]" aria-hidden />
+              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#8a5a3b]">
+                Dati estratti dall&apos;etichetta
+              </p>
+            </div>
+            <span className="rd-et">Leggibilità {etichetta.leggibilita}</span>
+          </div>
+          {campi.length > 0 ? (
+            <dl className="mt-3 grid gap-2 sm:grid-cols-2">
+              {campi.map(([nome, campo]) => {
+                const valore = (campo as { valore: string | null }).valore!;
+                const fonte = (campo as { fonte: string | null }).fonte;
+                return (
+                  <div key={nome as string} className="rd-dato">
+                    <dt className="text-[10px] font-black uppercase tracking-[0.14em] text-[#8a8378]">
+                      {nome as string}
+                    </dt>
+                    <dd className="mt-1 text-sm font-bold leading-5 text-[#1b3624]">
+                      {valore}{" "}
+                      {fonte ? (
+                        <span className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#8a8378]">
+                          ({fonte === "ocr_e_ai" ? "OCR e modello" : fonte})
+                        </span>
+                      ) : null}
+                    </dd>
+                  </div>
+                );
+              })}
+            </dl>
+          ) : (
+            <p className="mt-2 text-sm leading-6 text-[#57534e]">
+              Nessun campo strutturato è stato letto con sufficiente certezza.
+            </p>
+          )}
+          {etichetta.certificazioni.length > 0 ? (
+            <div className="mt-3">
+              <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#8a8378]">
+                Sigle e certificazioni lette
+              </p>
+              <ul className="mt-2 flex flex-wrap gap-1.5">
+                {etichetta.certificazioni.map((voce) => (
+                  <li key={voce} className="rd-et">
+                    {voce}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+          {etichetta.ingredienti.length > 0 ? (
+            <p className="mt-3 text-xs leading-5 text-[#57534e]">
+              <span className="font-bold text-[#1b3624]">Ingredienti: </span>
+              {etichetta.ingredienti.join(", ")}
+            </p>
+          ) : null}
+          {etichetta.territorioDichiarato.length > 0 ? (
+            <p className="mt-2 text-xs leading-5 text-[#57534e]">
+              <span className="font-bold text-[#1b3624]">Territorio dichiarato: </span>
+              {etichetta.territorioDichiarato.join(", ")}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
+      {discrepanze.length > 0 ? (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-amber-700" aria-hidden />
+            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-amber-900">
+              Discrepanze OCR / modello ({discrepanze.length})
+            </p>
+          </div>
+          <ul className="mt-2 space-y-2 text-xs leading-5 text-amber-900">
+            {discrepanze.map((voce, indice) => (
+              <li key={`${voce.campo}-${indice}`}>
+                <span className="font-bold uppercase tracking-[0.06em]">
+                  {voce.campo} · gravità {voce.gravita}
+                </span>
+                <p className="mt-0.5">{voce.messaggio}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {barcode ? (
+        <div className="rounded-xl border border-[#d8e4da] bg-[#f8fbf8] p-4">
+          <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#24462f]">
+            Banca dati prodotti · {barcode.fonte}
+          </p>
+          <p className="mt-2 text-sm font-bold text-[#1b3624]">
+            {barcode.trovato
+              ? `${barcode.nome ?? "Prodotto senza nome"}${barcode.marchio ? ` · ${barcode.marchio}` : ""}`
+              : "Nessuna scheda trovata"}
+          </p>
+          <p className="mt-1 text-xs leading-5 text-[#57534e]">
+            Codice {barcode.codice} · {barcode.messaggio}
+          </p>
+          {barcode.etichette.length > 0 ? (
+            <p className="mt-1 text-xs leading-5 text-[#57534e]">
+              Etichette dichiarate nella banca dati: {barcode.etichette.join(", ")}
+            </p>
+          ) : null}
+          <a
+            href={barcode.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-[#24462f] underline"
+          >
+            Scheda OpenFoodFacts <ExternalLink className="h-3 w-3" aria-hidden />
+          </a>
+        </div>
+      ) : null}
+
+      {web && web.stato !== "non_eseguita" ? (
+        <div className="rounded-xl border border-[#d8e4da] bg-white p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <Globe className="h-4 w-4 text-[#24462f]" aria-hidden />
+              <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#24462f]">
+                Ricerca web multifonte ({web.fonti.length})
+              </p>
+            </div>
+            <span className="rd-et">{web.stato === "ok" ? "Completata" : "Non disponibile"}</span>
+          </div>
+          {web.messaggio ? (
+            <p className="mt-2 text-xs leading-5 text-[#8a5a3b]">{web.messaggio}</p>
+          ) : null}
+          {web.fonti.length > 0 ? (
+            <ul className="mt-3 space-y-2">
+              {web.fonti.map((fonte) => (
+                <li key={fonte.id} className="rounded-lg border border-[#e5ded0] bg-[#fffdf7] p-3">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="rd-et">{ETICHETTA_NATURA[fonte.natura] ?? fonte.natura}</span>
+                    <span className="text-[10px] font-bold uppercase tracking-[0.06em] text-[#8a8378]">
+                      {ETICHETTA_ATTENDIBILITA[fonte.attendibilita]}
+                    </span>
+                    {fonte.lettoIntegralmente ? (
+                      <span className="text-[10px] font-bold uppercase tracking-[0.06em] text-emerald-800">
+                        Documento letto
+                      </span>
+                    ) : fonte.pagineLette ? (
+                      <span className="text-[10px] font-bold uppercase tracking-[0.06em] text-[#8a8378]">
+                        {fonte.pagineLette} pagine lette
+                      </span>
+                    ) : null}
+                  </div>
+                  <a
+                    href={fonte.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-1 inline-flex items-start gap-1 text-sm font-bold leading-5 text-[#1b3624] underline"
+                  >
+                    {fonte.titolo}
+                    <ExternalLink className="mt-1 h-3 w-3 shrink-0" aria-hidden />
+                  </a>
+                  <p className="mt-0.5 text-xs leading-5 text-[#57534e]">{fonte.ente}</p>
+                  {fonte.estratto ? (
+                    <p className="mt-1 line-clamp-4 text-xs leading-5 text-[#57534e]">
+                      {fonte.estratto}
+                    </p>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+      ) : null}
+
+      {produttore ? (
+        <div className="rounded-xl border border-[#e5ded0] bg-[#fffdf7] p-4">
+          <div className="flex items-center gap-2">
+            <Award className="h-4 w-4 text-[#8a5a3b]" aria-hidden />
+            <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#8a5a3b]">
+              Produttore e filiera · controlli separati
+            </p>
+          </div>
+          <p className="mt-2 text-xs leading-5 text-[#57534e]">{produttore.sintesi}</p>
+          <ul className="mt-2 space-y-1.5">
+            {produttore.controlli.map((controllo) => (
+              <li key={controllo.id} className="text-xs leading-5">
+                <span className="font-bold text-[#1b3624]">{controllo.etichetta}: </span>
+                <span
+                  className={
+                    controllo.stato === "documentato"
+                      ? "font-bold text-emerald-800"
+                      : controllo.stato === "incoerente"
+                        ? "font-bold text-amber-800"
+                        : "font-bold text-[#6b6459]"
+                  }
+                >
+                  {ETICHETTA_CONTROLLO[controllo.stato] ?? controllo.stato}
+                </span>
+                <span className="text-[#57534e]"> — {controllo.dettaglio}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {tempi ? (
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-[#e5ded0] bg-white px-4 py-3 text-[11px] font-semibold text-[#6b6459]">
+          <Clock className="h-3.5 w-3.5" aria-hidden />
+          <span>Tempi reali:</span>
+          <span>identificazione {(tempi.identificazioneMs / 1000).toFixed(1)} s</span>
+          <span>OCR {(tempi.ocrMs / 1000).toFixed(1)} s</span>
+          <span>documenti {(tempi.documentiMs / 1000).toFixed(1)} s</span>
+          <span>web {(tempi.webMs / 1000).toFixed(1)} s</span>
+          <span className="font-black text-[#1b3624]">totale {(tempi.totaleMs / 1000).toFixed(1)} s</span>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export default function ScanRisultato({
   esito,
   cache,
@@ -674,6 +986,8 @@ export default function ScanRisultato({
         {fonte ? <SchedaFonte fonte={fonte} /> : null}
 
         {provenienza ? <BloccoProvenienza provenienza={provenienza} /> : null}
+
+        <BloccoMultifonte esito={esito} />
 
         {incongruenze.length > 0 ? (
           <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">

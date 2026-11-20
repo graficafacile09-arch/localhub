@@ -37,9 +37,11 @@ const FILES = readdirSync(CARTELLA)
 test("isolamento: elenco dei moduli RadiciScan", () => {
   assert.deepEqual(FILES, [
     "analisi.ts",
+    "barcode.ts",
     "cache.ts",
     "documenti.ts",
     "errori.ts",
+    "etichetta.ts",
     "filiera.ts",
     "fonti.ts",
     "gemini.ts",
@@ -48,7 +50,9 @@ test("isolamento: elenco dei moduli RadiciScan", () => {
     "immagine.ts",
     "index.ts",
     "livelli.ts",
+    "ocr.ts",
     "pdf.ts",
+    "produttore.ts",
     "prompt.ts",
     "quote.ts",
     "repository.ts",
@@ -57,6 +61,7 @@ test("isolamento: elenco dei moduli RadiciScan", () => {
     "schema.ts",
     "tipi.ts",
     "verifica.ts",
+    "web.ts",
   ]);
 });
 
@@ -84,8 +89,15 @@ test("isolamento: nessun import dal percorso venditori o da infrastrutture condi
     assert.ok(!/AIza[0-9A-Za-z_-]{10,}/.test(sorgente), `${nome} contiene una chiave hardcoded`);
     assert.ok(!/\bconsole\./.test(sorgente), `${nome} scrive su console`);
 
-    if (nome !== "gemini.ts" && nome !== "ricerca.ts") {
+    if (!["gemini.ts", "ricerca.ts", "web.ts", "barcode.ts"].includes(nome)) {
       assert.ok(!/\bfetch\s*\(/.test(sorgente), `${nome} apre una connessione di rete`);
+    }
+
+    if (nome !== "ocr.ts") {
+      assert.ok(
+        !/tesseract\.js|["']sharp["']/.test(sorgente),
+        `${nome} importa un motore OCR o di elaborazione immagini fuori da ocr.ts`
+      );
     }
   }
 });

@@ -30,6 +30,9 @@
     "resend": "^6.18.1",
     "stripe": "^22.5.0"
   },
+  "optionalDependencies": {
+    "tesseract.js": "^7.0.0"
+  },
   "devDependencies": {
     "@playwright/test": "^1.62.0",
     "@supabase/supabase-js": "^2.110.8",

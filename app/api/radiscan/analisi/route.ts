@@ -1,7 +1,10 @@
+import { cercaBarcode } from "@/lib/radiscan/barcode";
 import { CODICI_ERRORE, ErroreRadiciScan } from "@/lib/radiscan/errori";
 import { creaProviderGemini } from "@/lib/radiscan/gemini";
 import { creaHandlerAnalisi } from "@/lib/radiscan/handler";
+import { creaMotoreOcrTesseract } from "@/lib/radiscan/ocr";
 import { creaRicercaEAmbrosia } from "@/lib/radiscan/ricerca";
+import { creaRicercaWeb } from "@/lib/radiscan/web";
 import {
   creaRepositorySupabase,
   type ClientDatiRadiciScan,
@@ -24,6 +27,7 @@ import { createServerSupabaseClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+// OCR + modello + documenti + web: il budget interno è 55 s.
 export const maxDuration = 60;
 
 async function utenteCorrente(): Promise<{ id: string } | null> {
@@ -58,6 +62,9 @@ export async function POST(request: Request): Promise<Response> {
       ),
     creaProvider: () => creaProviderGemini(),
     creaRicerca: () => creaRicercaEAmbrosia(),
+    creaOcr: () => creaMotoreOcrTesseract(),
+    creaWeb: () => creaRicercaWeb(),
+    creaBarcode: (codice) => cercaBarcode(codice),
     saleQuota: process.env.RADISCAN_QUOTA_SALT ?? null,
     // Segreto HMAC della cache: se assente il riuso è disattivato.
     segretoCache: process.env.RADISCAN_CACHE_SECRET ?? null,

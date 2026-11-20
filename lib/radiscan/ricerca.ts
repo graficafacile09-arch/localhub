@@ -152,8 +152,9 @@ function linkAllegato(valore: unknown): { id: string; titolo: string } | null {
 
 /**
  * Allegati realmente dichiarati dalla scheda, con l'URL ufficiale costruito
- * sull'identificativo. I riepiloghi sono nove: si conservano l'italiano e,
- * solo in mancanza, l'inglese, per non sprecare budget della route.
+ * sull'identificativo. Si conservano TUTTI i riepiloghi pubblicati, in tutte
+ * le lingue, perché la documentazione multilingua può contenere tabelle e
+ * riferimenti assenti nella versione italiana.
  */
 function allegatiDaRiga(riga: RigaEAmbrosia): AllegatoEAmbrosia[] {
   const allegati: AllegatoEAmbrosia[] = [];
@@ -178,17 +179,14 @@ function allegatiDaRiga(riga: RigaEAmbrosia): AllegatoEAmbrosia[] {
         .map((voce) => linkAllegato(voce))
         .filter((voce): voce is { id: string; titolo: string } => voce !== null)
     : [];
-  // L'italiano è preferito; un riepilogo inglese resta come riserva perché
-  // alcuni id italiani pubblicati nella scheda rispondono 404 (verificato su
-  // Caciocavallo Silano). La lettura tenta al massimo due documenti.
-  const italiano = riepiloghi.filter((voce) => /_IT([._]|$)/i.test(voce.titolo));
-  const inglese = riepiloghi.filter((voce) => /_EN([._]|$)/i.test(voce.titolo));
-  const preferiti = [
-    ...italiano.slice(0, 1),
-    ...inglese.slice(0, 1),
-    ...(italiano.length === 0 && inglese.length === 0 ? riepiloghi.slice(0, 1) : []),
-  ];
-  for (const voce of preferiti) {
+  // Tutti i riepiloghi sono documenti pertinenti (multilingua): si conservano
+  // tutti, ordinando prima l'italiano e poi l'inglese per leggibilità.
+  const riepiloghiOrdinati = [...riepiloghi].sort((a, b) => {
+    const peso = (voce: { titolo: string }) =>
+      /_IT([._]|$)/i.test(voce.titolo) ? 0 : /_EN([._]|$)/i.test(voce.titolo) ? 1 : 2;
+    return peso(a) - peso(b);
+  });
+  for (const voce of riepiloghiOrdinati) {
     aggiungi(voce, "riepilogo");
   }
 

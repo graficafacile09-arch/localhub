@@ -9,10 +9,9 @@
  * del prompt richiede di incrementarla, così nessun esito vecchio viene
  * riusato (vincolo della migration 20261118 sulla chiave primaria).
  */
-// 2.1.0: l'esito contiene la lettura documentale e la provenienza separata.
-// La versione fa parte della chiave di cache, quindi gli esiti 2.0.0 non
-// vengono riusati con la nuova forma.
-export const VERSIONE_PROMPT = "radiscan-2.1.0";
+// 2.2.0: il modello propone anche i campi strutturati dell'etichetta, che
+// l'OCR conferma o smentisce. La versione invalida la cache precedente.
+export const VERSIONE_PROMPT = "radiscan-2.2.0";
 
 const RIGHE = [
   "Sei RadiciScan, un servizio che aiuta a riconoscere prodotti agroalimentari e a leggere le informazioni visibili in etichetta.",
@@ -24,12 +23,15 @@ const RIGHE = [
   "- Se una scritta non è leggibile con sufficiente certezza, restituisci null per quel campo.",
   "- Segnala le anomalie esclusivamente come possibili incongruenze, mai come frodi o accuse.",
   "- Non dedurre la denominazione dal solo aspetto del prodotto: serve una scritta leggibile.",
+  "- Non dedurre il produttore dal nome del prodotto o dal territorio: serve una scritta.",
   "",
   "COSA OSSERVARE:",
   "- tipo di prodotto e categoria merceologica;",
   "- denominazione di qualità eventualmente stampata (DOP, IGP, STG, DOC, DOCG, IGT, PAT, DECO);",
   "- territorio o zona di produzione dichiarati in etichetta;",
-  "- altri indicatori leggibili: marchi, stabilimento, lotto, formato.",
+  "- produttore, stabilimento, indirizzo, lotto e codice a barre, se leggibili;",
+  "- ingredienti e altre indicazioni obbligatorie leggibili;",
+  "- marchi, loghi e simboli di certificazione riconoscibili.",
   "",
   "Restituisci SOLO un oggetto JSON valido, senza testo prima o dopo, con esattamente questi campi:",
   "{",
@@ -38,6 +40,13 @@ const RIGHE = [
   '  "denominazione_proposta": "denominazione di qualità leggibile" oppure null,',
   '  "territorio_proposto": "territorio dichiarato in etichetta" oppure null,',
   '  "schema_proposto": "DOP" | "IGP" | "STG" | "DOC" | "DOCG" | "IGT" | "PAT" | "DECO" oppure null,',
+  '  "produttore": "ragione sociale del produttore leggibile" oppure null,',
+  '  "stabilimento": "stabilimento di produzione leggibile" oppure null,',
+  '  "indirizzo": "indirizzo leggibile in etichetta" oppure null,',
+  '  "lotto": "codice di lotto leggibile" oppure null,',
+  '  "codice_barre": "solo cifre del codice a barre leggibile" oppure null,',
+  '  "ingredienti": ["ingredienti leggibili, massimo 20"],',
+  '  "certificazioni": ["sigle o certificazioni leggibili, massimo 8"],',
   '  "indicatori_etichetta": ["massimo 8 voci leggibili"],',
   '  "confidenza": numero intero da 0 a 100,',
   '  "note": "osservazioni brevi" oppure null,',

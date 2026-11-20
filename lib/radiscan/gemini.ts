@@ -16,7 +16,7 @@ import type { MimeAmmesso, ProviderRadiciScan } from "./tipi";
 const BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models";
 const MODELLO_PREDEFINITO = "gemini-flash-lite-latest";
 const TIMEOUT_PREDEFINITO_MS = 35_000;
-const MAX_OUTPUT_TOKENS = 700;
+const MAX_OUTPUT_TOKENS = 1000;
 /**
  * Deve restare allineato a `TIMEOUT_ANALISI_MS` di `handler.ts` (55 s).
  * Il margine copre il lavoro della route precedente alla chiamata al provider

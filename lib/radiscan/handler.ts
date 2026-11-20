@@ -12,6 +12,7 @@ import { CODICI_ERRORE, ErroreRadiciScan } from "./errori";
 import type { FonteUfficiale } from "./fonti";
 import { ipAttendibile } from "./identita";
 import type { ImmagineValida } from "./immagine";
+import type { MotoreOcr } from "./ocr";
 import {
   creaChiaveQuotaAnonima,
   creaChiaveQuotaAutenticata,
@@ -26,7 +27,9 @@ import type {
   MetaAnalisi,
   ProviderRadiciScan,
   ProviderRicercaDocumentale,
+  SchedaProdottoBarcode,
 } from "./tipi";
+import type { ProviderRicercaWeb } from "./web";
 
 /**
  * RadiciScan — handler della route `POST /api/radiscan/analisi`.
@@ -52,6 +55,12 @@ export interface DipendenzeHandler {
   creaProvider: () => ProviderRadiciScan;
   /** Provider documentale; la route passa eAmbrosia. */
   creaRicerca?: () => ProviderRicercaDocumentale;
+  /** Motore OCR delle etichette; assente => OCR dichiarato non eseguito. */
+  creaOcr?: () => MotoreOcr;
+  /** Ricerca web multifonte. */
+  creaWeb?: () => ProviderRicercaWeb;
+  /** Interrogazione della banca dati prodotti per codice a barre. */
+  creaBarcode?: (codice: string) => Promise<SchedaProdottoBarcode>;
   saleQuota: string | null;
   /** Segreto HMAC della cache: assente => nessun riuso della cache. */
   segretoCache?: string | null;
@@ -318,10 +327,14 @@ export function creaHandlerAnalisi(dipendenze: DipendenzeHandler) {
             immagineBase64: immagine.base64,
             mimeType: immagine.mime,
             improntaImmagine: immagine.impronta ?? undefined,
+            codiceBarre: immagine.codiceBarre ?? null,
           },
           {
             provider,
             ricerca: dipendenze.creaRicerca?.(),
+            ocr: dipendenze.creaOcr?.(),
+            web: dipendenze.creaWeb?.(),
+            cercaBarcode: dipendenze.creaBarcode,
             registro,
             signal: controller.signal,
           }

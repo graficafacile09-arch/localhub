@@ -1,3 +1,4 @@
+import { validaBarcode } from "./barcode";
 import { CODICI_ERRORE, ErroreRadiciScan, erroreInput } from "./errori";
 import {
   decodificaBase64Strict,
@@ -23,6 +24,12 @@ import {
  * solo su un buffer già validato. `Content-Length` è usato come precontrollo,
  * mai come garanzia: è un header controllato dal client.
  */
+
+function barcodeDa(valore: unknown): string | null {
+  if (typeof valore !== "string") return null;
+  const esito = validaBarcode(valore);
+  return esito.valido ? esito.normalizzato : null;
+}
 
 function erroreTroppoGrande(): ErroreRadiciScan {
   return new ErroreRadiciScan(
@@ -111,7 +118,11 @@ async function daMultipart(
   }
 
   const contenuto = Buffer.from(await file.arrayBuffer());
-  return validaImmagine(contenuto, file.type, segretoCache);
+  const immagine = validaImmagine(contenuto, file.type, segretoCache);
+  return {
+    ...immagine,
+    codiceBarre: barcodeDa(form.get("codiceBarre") ?? form.get("barcode")),
+  };
 }
 
 function daJson(buffer: Buffer, segretoCache: string | null): ImmagineValida {
@@ -130,7 +141,11 @@ function daJson(buffer: Buffer, segretoCache: string | null): ImmagineValida {
   const mime = typeof record.mimeType === "string" ? record.mimeType : "";
 
   const contenuto = decodificaBase64Strict(base64);
-  return validaImmagine(contenuto, mime, segretoCache);
+  const immagine = validaImmagine(contenuto, mime, segretoCache);
+  return {
+    ...immagine,
+    codiceBarre: barcodeDa(record.codiceBarre ?? record.barcode),
+  };
 }
 
 export async function estraiImmagine(

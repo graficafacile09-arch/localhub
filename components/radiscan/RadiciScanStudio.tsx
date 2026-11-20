@@ -171,6 +171,37 @@ async function normalizzaImmagine(file: File): Promise<File> {
   }
 }
 
+interface RilevatoreBarcode {
+  detect(source: ImageBitmap): Promise<Array<{ rawValue?: string }>>;
+}
+
+/**
+ * Legge un codice a barre EAN/UPC dal file, se il browser espone
+ * BarcodeDetector. Non è un requisito: in assenza dell'API si procede senza.
+ */
+async function rilevaCodiceBarre(file: File): Promise<string | null> {
+  const costruttore = (
+    globalThis as unknown as {
+      BarcodeDetector?: new (opzioni?: { formats?: string[] }) => RilevatoreBarcode;
+    }
+  ).BarcodeDetector;
+  if (!costruttore || typeof createImageBitmap !== "function") return null;
+
+  try {
+    const bitmap = await createImageBitmap(file);
+    try {
+      const rilevatore = new costruttore({ formats: ["ean_13", "ean_8", "upc_a"] });
+      const codici = await rilevatore.detect(bitmap);
+      const cifre = (codici[0]?.rawValue ?? "").replace(/\D/g, "");
+      return cifre.length >= 8 && cifre.length <= 13 ? cifre : null;
+    } finally {
+      bitmap.close();
+    }
+  } catch {
+    return null;
+  }
+}
+
 export default function RadiciScanStudio() {
   const [fase, setFase] = useState<Fase>("inizio");
   const [file, setFile] = useState<File | null>(null);
@@ -411,6 +442,9 @@ export default function RadiciScanStudio() {
 
     const corpo = new FormData();
     corpo.append("immagine", file);
+    // Il codice a barre è facoltativo: il server lo rivalida comunque.
+    const codiceBarre = await rilevaCodiceBarre(file);
+    if (codiceBarre) corpo.append("codiceBarre", codiceBarre);
 
     try {
       // Il Content-Type non viene impostato a mano: il browser aggiunge il

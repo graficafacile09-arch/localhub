@@ -23,6 +23,8 @@ const CONTENT_SECURITY_POLICY = [
 const nextConfig: NextConfig = {
   // Non esporre la tecnologia usata (header X-Powered-By).
   poweredByHeader: false,
+  // tesseract.js carica worker e modelli a runtime: resta fuori dal bundle.
+  serverExternalPackages: ["tesseract.js"],
   // Permette al dev server di servire risorse a richieste originate da
   // 127.0.0.1 (necessario per i test E2E con browser in sviluppo).
   allowedDevOrigins: ["127.0.0.1", "localhost"],

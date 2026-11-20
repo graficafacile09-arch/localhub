@@ -1,5 +1,10 @@
 import { estraiTestoPdf } from "./pdf";
-import type { AllegatoEAmbrosia, DocumentoLetto, LetturaDocumentale } from "./tipi";
+import type {
+  AllegatoEAmbrosia,
+  DocumentoLetto,
+  LetturaDocumentale,
+  SezioneDocumento,
+} from "./tipi";
 
 /**
  * RadiciScan — lettura degli allegati ufficiali eAmbrosia.
@@ -29,18 +34,23 @@ const PERCORSO_ALLEGATI = "/eambrosia-api/api/v1/attachments/";
 const RE_ALLEGATO = /^[0-9]{1,12}$/;
 
 export const LIMITI_LETTURA = {
-  timeoutTotaleMs: 5_000,
-  timeoutDocumentoMs: 4_000,
-  maxDocumenti: 2,
-  maxPagine: 10,
-  maxBytes: 4_000_000,
-  maxCaratteriSezione: 4_000,
+  timeoutTotaleMs: 25_000,
+  timeoutDocumentoMs: 20_000,
+  // Nessun tetto arbitrario di documenti o pagine: si legge tutto ciò che la
+  // scheda pubblica. Il budget di tempo e di caratteri resta dichiarato.
+  maxDocumenti: Number.POSITIVE_INFINITY,
+  maxPagine: Number.POSITIVE_INFINITY,
+  maxBytes: 15_000_000,
+  maxCaratteriSezione: 20_000,
+  maxCaratteriTotali: 400_000,
+  concorrenza: 3,
 } as const;
 
 export const NOTA_PAGINE =
   "Le pagine sono numerate secondo gli oggetti pagina del PDF quando l'associazione è leggibile; " +
   "altrimenti i testi sono sezioni numerate e non vengono presentati come pagine. " +
-  "L'estrazione non è un OCR e non interpreta immagini o mappe.";
+  "L'OCR è applicato alle fotografie dell'etichetta, non alle pagine rasterizzate dei PDF: " +
+  "una scansione PDF resta dichiarata non estraibile.";
 
 export interface OpzioniLettura {
   fetchImpl?: typeof fetch;
@@ -50,6 +60,10 @@ export interface OpzioniLettura {
   maxPagine?: number;
   maxBytes?: number;
   maxCaratteriSezione?: number;
+  /** Tetto del testo conservato complessivamente: superarlo produce `parziale`. */
+  maxCaratteriTotali?: number;
+  /** Download paralleli con concorrenza controllata. */
+  concorrenza?: number;
   adesso?: () => Date;
   signal?: AbortSignal;
 }
@@ -350,7 +364,9 @@ function messaggioLettura(documenti: readonly DocumentoLetto[], pagineLette: num
   if (parziali > 0) parti.push(`${parziali} documento/i letto/i solo in parte.`);
   if (nonDisponibili > 0) parti.push(`${nonDisponibili} allegato/i non scaricato/i.`);
   if (nonEstraibili > 0) {
-    parti.push(`${nonEstraibili} allegato/i scaricato/i senza testo estraibile (nessun OCR).`);
+    parti.push(
+      `${nonEstraibili} allegato/i scaricato/i senza testo estraibile (OCR PDF non disponibile).`
+    );
   }
   return parti.join(" ");
 }
@@ -376,6 +392,9 @@ export async function leggiAllegati(
     maxBytes: opzioni.maxBytes ?? LIMITI_LETTURA.maxBytes,
     maxCaratteriSezione:
       opzioni.maxCaratteriSezione ?? LIMITI_LETTURA.maxCaratteriSezione,
+    maxCaratteriTotali:
+      opzioni.maxCaratteriTotali ?? LIMITI_LETTURA.maxCaratteriTotali,
+    concorrenza: Math.max(1, opzioni.concorrenza ?? LIMITI_LETTURA.concorrenza),
   };
 
   const visti = new Set<string>();
@@ -396,16 +415,61 @@ export async function leggiAllegati(
   }
 
   const scadenza = Date.now() + limiti.timeoutTotaleMs;
-  const documenti: DocumentoLetto[] = [];
-  for (const allegato of scelti) {
-    documenti.push(
-      await leggiUnDocumento(allegato, {
+  const risultati: DocumentoLetto[] = new Array(scelti.length);
+  let prossimo = 0;
+  const operaio = async () => {
+    for (;;) {
+      const indice = prossimo;
+      prossimo += 1;
+      if (indice >= scelti.length) return;
+      risultati[indice] = await leggiUnDocumento(scelti[indice], {
         ...limiti,
         fetchImpl,
         signal: opzioni.signal,
         scadenza,
-      })
-    );
+      });
+    }
+  };
+  await Promise.all(
+    Array.from(
+      { length: Math.min(limiti.concorrenza, scelti.length) },
+      () => operaio()
+    )
+  );
+  const documenti = risultati;
+
+  // Tetto del testo complessivo: se si supera, il documento diventa
+  // `parziale` e il taglio viene dichiarato, mai nascosto.
+  let residuoCaratteri = limiti.maxCaratteriTotali;
+  for (const documento of documenti) {
+    if (documento.sezioni.length === 0) continue;
+    const sezioni: SezioneDocumento[] = [];
+    let tagliato = documento.troncato;
+    for (const sezione of documento.sezioni) {
+      if (residuoCaratteri <= 0) {
+        tagliato = true;
+        break;
+      }
+      const testoSezione = sezione.testo.slice(0, residuoCaratteri);
+      if (testoSezione.length < sezione.testo.length) tagliato = true;
+      sezioni.push({ pagina: sezione.pagina, testo: testoSezione });
+      residuoCaratteri -= testoSezione.length;
+    }
+    if (tagliato && sezioni.length < documento.sezioni.length) {
+      documento.pagineLette = sezioni.length;
+      documento.pagineNonLette = Math.max(
+        documento.pagineNonLette,
+        documento.sezioni.length - sezioni.length
+      );
+    }
+    documento.sezioni = sezioni;
+    documento.troncato = tagliato;
+    if (tagliato && documento.stato === "letto") {
+      documento.stato = "parziale";
+      documento.motivo =
+        `${documento.motivo ? `${documento.motivo} ` : ""}` +
+        `Testo complessivo troncato al budget di ${limiti.maxCaratteriTotali} caratteri.`;
+    }
   }
 
   const pagineLette = documenti.reduce(

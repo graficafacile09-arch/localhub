@@ -165,6 +165,22 @@ export function analizzaOutputModello(testo: string): EsitoSchema {
           avvisi,
           "incongruenze_rilevate"
         ),
+        produttore: testoNormalizzato(payload.produttore, MAX_TESTO_BREVE),
+        stabilimento: testoNormalizzato(payload.stabilimento, MAX_TESTO_BREVE),
+        indirizzo: testoNormalizzato(payload.indirizzo, MAX_TESTO),
+        lotto: testoNormalizzato(payload.lotto, 40),
+        codiceBarre: (() => {
+          const codice = testoNormalizzato(payload.codice_barre, 20);
+          if (!codice) return null;
+          const cifre = codice.replace(/[\s-]/g, "");
+          if (!/^\d{8,14}$/.test(cifre)) {
+            avvisi.push("codice_barre: valore non numerico o lunghezza non valida, ignorato");
+            return null;
+          }
+          return cifre;
+        })(),
+        ingredienti: elencoTesti(payload.ingredienti, avvisi, "ingredienti"),
+        certificazioni: elencoTesti(payload.certificazioni, avvisi, "certificazioni"),
       },
       avvisi,
     },
