@@ -487,7 +487,7 @@ function BloccoProvenienza({
         </div>
 
         <RigaProvenienza
-          titolo="Collegamento con la Calabria"
+          titolo="Territorio della denominazione DOP/IGP"
           stato={provenienza.territorio.stato}
           motivo={provenienza.territorio.motivo}
           evidenze={provenienza.territorio.evidenze}
@@ -496,7 +496,7 @@ function BloccoProvenienza({
         <div className="rounded-xl border border-[#d8e4da] bg-[#f8fbf8] p-3">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-sm font-black text-[#1b3624]">
-              Appartenenza a una filiera riconosciuta
+              Gruppo di produttori riconosciuto
             </p>
             <span className="rounded-full border border-black/10 bg-white/70 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-[#57534e]">
               {ETICHETTA_STATO_PROVENIENZA[provenienza.filiera.stato]}
