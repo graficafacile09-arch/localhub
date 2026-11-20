@@ -10,7 +10,13 @@ import {
   RotateCcw,
   type LucideIcon,
 } from "lucide-react";
-import type { EsitoAnalisi, ProvaDocumentale } from "@/lib/radiscan/tipi";
+import type {
+  DocumentoLetto,
+  EsitoAnalisi,
+  LetturaDocumentale,
+  ProvaDocumentale,
+  ValutazioneProvenienza,
+} from "@/lib/radiscan/tipi";
 import {
   ETICHETTE_GRUPPO,
   gruppoDaLivello,
@@ -69,6 +75,8 @@ const ETICHETTA_PROVA: Record<ProvaDocumentale["tipo"], string> = {
 };
 
 function SchedaProva({ prova }: { prova: ProvaDocumentale }) {
+  // Gli esiti salvati prima di questa versione non hanno `allegati`.
+  const allegati = Array.isArray(prova.allegati) ? prova.allegati : [];
   const documentoDiverso =
     prova.documentoUrl && prova.documentoUrl !== prova.url
       ? prova.documentoUrl
@@ -118,7 +126,41 @@ function SchedaProva({ prova }: { prova: ProvaDocumentale }) {
             <dd className="text-[#1b3624]">{prova.riferimentoNormativo}</dd>
           </div>
         ) : null}
+        {prova.gruppoProduttori ? (
+          <div className="sm:col-span-2">
+            <dt className="font-bold text-[#6b6459]">Gruppo riconosciuto</dt>
+            <dd className="text-[#1b3624]">
+              {prova.gruppoProduttori}
+              {prova.sedeGruppo ? ` — ${prova.sedeGruppo.replace(/\s+/g, " ")}` : ""}
+            </dd>
+          </div>
+        ) : null}
       </dl>
+
+      {allegati.length > 0 ? (
+        <div className="mt-3">
+          <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#8a8378]">
+            Allegati dichiarati dalla scheda ({allegati.length})
+          </p>
+          <ul className="mt-1.5 space-y-1">
+            {allegati.map((allegato) => (
+              <li key={allegato.id}>
+                <a
+                  href={allegato.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-semibold text-[#24462f] underline underline-offset-2"
+                >
+                  {allegato.titolo}
+                </a>
+                <span className="ml-1 text-[11px] text-[#8a8378]">
+                  ({allegato.tipo === "disciplinare" ? "disciplinare" : "riepilogo"})
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
 
       <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2">
         <a
@@ -241,6 +283,250 @@ function SchedaFonte({
   );
 }
 
+const ETICHETTA_LETTURA: Record<LetturaDocumentale["stato"], string> = {
+  completa: "Tutti gli allegati disponibili sono stati letti",
+  parziale: "Lettura parziale degli allegati",
+  non_disponibile: "Allegati non letti",
+  non_tentata: "Nessun allegato documentale da leggere",
+};
+
+const STILE_PROVENIENZA: Record<
+  ValutazioneProvenienza["territorio"]["stato"],
+  string
+> = {
+  documentato: "border-emerald-200 bg-emerald-50 text-emerald-900",
+  non_documentato: "border-amber-200 bg-amber-50 text-amber-900",
+  non_verificabile: "border-slate-200 bg-slate-50 text-slate-700",
+};
+
+const ETICHETTA_STATO_PROVENIENZA: Record<
+  ValutazioneProvenienza["territorio"]["stato"],
+  string
+> = {
+  documentato: "Documentato",
+  non_documentato: "Non documentato",
+  non_verificabile: "Non verificabile",
+};
+
+function SchedaDocumentoLetto({ documento }: { documento: DocumentoLetto }) {
+  const associazione = documento.associazionePagine ?? "pagine";
+  const unita = associazione === "pagine" ? "pagine" : "sezioni di testo";
+  const etichettaBlocco = associazione === "pagine" ? "Pagina" : "Sezione";
+
+  return (
+    <article className="rounded-xl border border-[#d8e4da] bg-white p-3">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <p className="text-sm font-black leading-5 text-[#1b3624]">
+            {documento.titolo}
+          </p>
+          <p className="text-[11px] text-[#6b6459]">
+            {documento.tipo === "disciplinare"
+              ? "Disciplinare (single document)"
+              : "Riepilogo ufficiale"}
+          </p>
+        </div>
+        <span className="rd-et">{documento.stato.replaceAll("_", " ")}</span>
+      </div>
+
+      <p className="mt-2 text-xs leading-5 text-[#57534e]">
+        {associazione === "pagine"
+          ? `Pagine lette: ${documento.pagineLette}${
+              documento.pagineTotali !== null
+                ? ` di ${documento.pagineTotali}`
+                : " (totale non dichiarato dal PDF)"
+            }${documento.pagineNonLette > 0 ? ` · ${documento.pagineNonLette} non lette` : ""}`
+          : `Sezioni di testo lette: ${documento.pagineLette} (il PDF non permette di associarle alle pagine)`}
+      </p>
+
+      {documento.motivo ? (
+        <p className="mt-1 text-xs leading-5 text-[#8a5a3b]">{documento.motivo}</p>
+      ) : null}
+
+      {documento.sezioni.length > 0 ? (
+        <details className="mt-2">
+          <summary className="cursor-pointer text-xs font-bold text-[#24462f]">
+            Testo estratto ({documento.sezioni.length} {unita})
+          </summary>
+          <div className="mt-2 space-y-2">
+            {documento.sezioni.map((sezione) => (
+              <div
+                key={sezione.pagina}
+                className="rounded-lg border border-[#e5ded0] bg-[#fffdf7] p-2"
+              >
+                <p className="text-[10px] font-black uppercase tracking-[0.14em] text-[#8a8378]">
+                  {etichettaBlocco} {sezione.pagina}
+                </p>
+                <p className="mt-1 max-h-40 overflow-y-auto whitespace-pre-wrap text-[11px] leading-5 text-[#57534e]">
+                  {sezione.testo}
+                </p>
+              </div>
+            ))}
+          </div>
+        </details>
+      ) : null}
+
+      <a
+        href={documento.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="rd-link-freccia mt-2"
+      >
+        Apri l&apos;allegato ufficiale
+        <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+      </a>
+    </article>
+  );
+}
+
+function BloccoLettura({ lettura }: { lettura: LetturaDocumentale }) {
+  return (
+    <div className="mt-4">
+      <div className="flex items-center gap-2">
+        <FileText className="h-4 w-4 text-[#24462f]" aria-hidden />
+        <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#24462f]">
+          Lettura dei documenti ufficiali
+        </p>
+      </div>
+      <div className="mt-2 rounded-xl border border-[#d8e4da] bg-[#f8fbf8] p-4">
+        <p className="text-sm font-black text-[#1b3624]">
+          {ETICHETTA_LETTURA[lettura.stato]}
+        </p>
+        <p className="mt-1 text-xs leading-5 text-[#57534e]">{lettura.messaggio}</p>
+        {lettura.notaPagine ? (
+          <p className="mt-1 text-[11px] leading-5 text-[#8a8378]">
+            {lettura.notaPagine}
+          </p>
+        ) : null}
+        {lettura.documenti.length > 0 ? (
+          <div className="mt-3 space-y-2">
+            {lettura.documenti.map((documento) => (
+              <SchedaDocumentoLetto key={documento.id} documento={documento} />
+            ))}
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function RigaProvenienza({
+  titolo,
+  stato,
+  motivo,
+  evidenze,
+}: {
+  titolo: string;
+  stato: ValutazioneProvenienza["territorio"]["stato"];
+  motivo: string;
+  evidenze: ValutazioneProvenienza["territorio"]["evidenze"];
+}) {
+  return (
+    <div className={`rounded-xl border p-3 ${STILE_PROVENIENZA[stato]}`}>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm font-black">{titolo}</p>
+        <span className="rounded-full border border-black/10 bg-white/70 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em]">
+          {ETICHETTA_STATO_PROVENIENZA[stato]}
+        </span>
+      </div>
+      <p className="mt-1 text-xs leading-5">{motivo}</p>
+      {evidenze.length > 0 ? (
+        <ul className="mt-2 space-y-1.5">
+          {evidenze.map((evidenza, indice) => (
+            <li key={`${indice}-${evidenza.fonte}`} className="text-[11px] leading-5">
+              <span className="font-bold">{evidenza.fonte}</span>
+              {evidenza.pagina !== null ? `, pagina ${evidenza.pagina}` : ""}
+              <span className="block italic opacity-80">“{evidenza.estratto}”</span>
+              {evidenza.url ? (
+                <a
+                  href={evidenza.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline underline-offset-2"
+                >
+                  Apri la fonte
+                </a>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
+
+function BloccoProvenienza({
+  provenienza,
+}: {
+  provenienza: ValutazioneProvenienza;
+}) {
+  return (
+    <div className="mt-4">
+      <div className="flex items-center gap-2">
+        <Landmark className="h-4 w-4 text-[#24462f]" aria-hidden />
+        <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#24462f]">
+          Denominazione, territorio, filiera e confezione
+        </p>
+      </div>
+
+      <div className="mt-2 space-y-2">
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-amber-900">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm font-black">Confezione fotografata</p>
+            <span className="rounded-full border border-black/10 bg-white/70 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em]">
+              Non verificabile
+            </span>
+          </div>
+          <p className="mt-1 text-xs leading-5">{provenienza.confezione.messaggio}</p>
+        </div>
+
+        <RigaProvenienza
+          titolo="Collegamento con la Calabria"
+          stato={provenienza.territorio.stato}
+          motivo={provenienza.territorio.motivo}
+          evidenze={provenienza.territorio.evidenze}
+        />
+
+        <div className="rounded-xl border border-[#d8e4da] bg-[#f8fbf8] p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm font-black text-[#1b3624]">
+              Appartenenza a una filiera riconosciuta
+            </p>
+            <span className="rounded-full border border-black/10 bg-white/70 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-[#57534e]">
+              {ETICHETTA_STATO_PROVENIENZA[provenienza.filiera.stato]}
+            </span>
+          </div>
+          <p className="mt-1 text-xs leading-5 text-[#57534e]">
+            {provenienza.filiera.motivo}
+          </p>
+          {provenienza.filiera.evidenze.length > 0 ? (
+            <ul className="mt-2 space-y-1">
+              {provenienza.filiera.evidenze.map((evidenza) => (
+                <li key={evidenza.fonte} className="text-[11px] leading-5 text-[#57534e]">
+                  <span className="font-bold">{evidenza.fonte}</span>: {evidenza.estratto}
+                  {evidenza.url ? (
+                    <>
+                      {" "}
+                      <a
+                        href={evidenza.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline underline-offset-2"
+                      >
+                        Apri la fonte
+                      </a>
+                    </>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function ScanRisultato({
   esito,
   cache,
@@ -265,6 +551,8 @@ export default function ScanRisultato({
   const fonte = esito.verifica?.fonte ?? null;
   const prove = Array.isArray(esito.verifica?.prove) ? esito.verifica.prove : [];
   const ricerca = esito.verifica?.ricerca ?? null;
+  const lettura = ricerca?.lettura ?? null;
+  const provenienza = esito.verifica?.provenienza ?? null;
   const motivazione =
     esito.verifica?.motivazione?.trim() || "Nessuna motivazione disponibile.";
   const avvertenza =
@@ -381,7 +669,11 @@ export default function ScanRisultato({
           <AvvisoRicerca ricerca={ricerca} />
         )}
 
+        {lettura ? <BloccoLettura lettura={lettura} /> : null}
+
         {fonte ? <SchedaFonte fonte={fonte} /> : null}
+
+        {provenienza ? <BloccoProvenienza provenienza={provenienza} /> : null}
 
         {incongruenze.length > 0 ? (
           <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">

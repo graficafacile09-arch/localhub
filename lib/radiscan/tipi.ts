@@ -71,6 +71,17 @@ export type StatoProva =
   | "rimossa"
   | "sconosciuto";
 
+/** Allegato documentale pubblicato nella scheda eAmbrosia. */
+export interface AllegatoEAmbrosia {
+  /** Identificativo usato dall'endpoint `/api/v1/attachments/{id}`. */
+  id: string;
+  /** Nome del file dichiarato dal registro (es. `IT_0117_0003_SUM_IT_O.pdf`). */
+  titolo: string;
+  url: string;
+  /** `disciplinare` = singleDocument, `riepilogo` = summarySheets. */
+  tipo: "disciplinare" | "riepilogo";
+}
+
 export interface ProvaDocumentale {
   /** Identificativo stabile della prova (es. `eambrosia:EUGI...`). */
   id: string;
@@ -87,6 +98,117 @@ export interface ProvaDocumentale {
   consultataIl: string;
   relazione: string;
   stato: StatoProva;
+  /** Allegati PDF realmente indicati dalla scheda, con URL ufficiale. */
+  allegati: AllegatoEAmbrosia[];
+  /** Gruppo di produttori riconosciuto trascritto dalla scheda, se presente. */
+  gruppoProduttori: string | null;
+  /** Sede dichiarata dal gruppo riconosciuto, se presente. */
+  sedeGruppo: string | null;
+}
+
+// ─── Lettura documentale ───────────────────────────────────────────────────
+
+/**
+ * Stato di un singolo allegato. `parziale` significa che il PDF è leggibile
+ * ma non è stato letto per intero (limite di pagine o tempo).
+ */
+export type StatoDocumento =
+  | "letto"
+  | "parziale"
+  | "non_estraibile"
+  | "non_disponibile";
+
+export interface SezioneDocumento {
+  pagina: number;
+  testo: string;
+}
+
+export interface DocumentoLetto {
+  id: string;
+  titolo: string;
+  url: string;
+  tipo: AllegatoEAmbrosia["tipo"];
+  stato: StatoDocumento;
+  /**
+   * `pagine`: testi associati agli oggetti pagina del PDF.
+   * `ordine_flussi`: associazione non disponibile, i testi sono sezioni.
+   */
+  associazionePagine: "pagine" | "ordine_flussi";
+  /** Pagine dichiarate dal PDF, se riconoscibili. */
+  pagineTotali: number | null;
+  pagineLette: number;
+  pagineNonLette: number;
+  motivo: string | null;
+  sezioni: SezioneDocumento[];
+  troncato: boolean;
+}
+
+/**
+ * Completezza complessiva della lettura. Nessun valore implica che il singolo
+ * prodotto fotografato sia certificato: la lettura riguarda la denominazione.
+ */
+export type StatoLetturaDocumentale =
+  | "completa"
+  | "parziale"
+  | "non_disponibile"
+  | "non_tentata";
+
+export interface LetturaDocumentale {
+  stato: StatoLetturaDocumentale;
+  documenti: DocumentoLetto[];
+  pagineLette: number;
+  pagineTotali: number | null;
+  consultataIl: string;
+  messaggio: string;
+  /**
+   * Le pagine sono associate agli oggetti pagina quando il PDF lo consente;
+   * in caso contrario i testi sono sezioni e non vengono chiamati pagine.
+   */
+  notaPagine: string | null;
+}
+
+// ─── Provenienza, territorio e filiera ─────────────────────────────────────
+
+/**
+ * `documentato`: esiste un documento ufficiale letto che lo afferma.
+ * `non_documentato`: i documenti consultati non lo affermano.
+ * `non_verificabile`: manca la prova documentale di base.
+ */
+export type StatoProvenienza =
+  | "documentato"
+  | "non_documentato"
+  | "non_verificabile";
+
+export interface EvidenzaProvenienza {
+  fonte: string;
+  url: string | null;
+  pagina: number | null;
+  estratto: string;
+}
+
+/**
+ * Valutazione separata di ciò che la fotografia può e non può dimostrare.
+ *
+ * Le tre voci non sono intercambiabili: un prodotto fabbricato in Calabria non
+ * è un prodotto DOP, e l'iscrizione di un consorzio non certifica la singola
+ * confezione.
+ */
+export interface ValutazioneProvenienza {
+  confezione: {
+    stato: "non_verificabile";
+    messaggio: string;
+  };
+  territorio: {
+    stato: StatoProvenienza;
+    evidenze: EvidenzaProvenienza[];
+    motivo: string;
+  };
+  filiera: {
+    stato: StatoProvenienza;
+    ente: string | null;
+    evidenze: EvidenzaProvenienza[];
+    motivo: string;
+  };
 }
 
 export type StatoRicercaDocumentale =
@@ -101,6 +223,8 @@ export interface EsitoRicercaDocumentale {
   query: string[];
   prove: ProvaDocumentale[];
   messaggio: string | null;
+  /** Lettura degli allegati della prova principale, con completezza dichiarata. */
+  lettura: LetturaDocumentale | null;
 }
 
 export interface RichiestaRicercaDocumentale {
@@ -148,6 +272,8 @@ export interface VerificaDocumentale {
   prove: ProvaDocumentale[];
   /** Esito tecnico della ricerca: assenza di prove ed errore sono distinti. */
   ricerca: EsitoRicercaDocumentale;
+  /** Territorio, filiera e confezione, tenuti separati dalla denominazione. */
+  provenienza: ValutazioneProvenienza;
 }
 
 /**

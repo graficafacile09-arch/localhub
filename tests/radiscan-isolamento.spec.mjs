@@ -38,7 +38,9 @@ test("isolamento: elenco dei moduli RadiciScan", () => {
   assert.deepEqual(FILES, [
     "analisi.ts",
     "cache.ts",
+    "documenti.ts",
     "errori.ts",
+    "filiera.ts",
     "fonti.ts",
     "gemini.ts",
     "handler.ts",
@@ -46,6 +48,7 @@ test("isolamento: elenco dei moduli RadiciScan", () => {
     "immagine.ts",
     "index.ts",
     "livelli.ts",
+    "pdf.ts",
     "prompt.ts",
     "quote.ts",
     "repository.ts",
