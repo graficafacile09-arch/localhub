@@ -45,6 +45,9 @@ test("ricerca keyless sufficiente: Tavily non viene chiamato", async () => {
     const target = String(url);
     if (target.includes("html.duckduckgo.com")) {
       const query = new URL(target).searchParams.get("q") ?? "";
+      if (query.includes("calabrese")) {
+        return new Response("<html><body>nessun risultato</body></html>", { status: 200 });
+      }
       const html = query.includes("filiera")
         ? risultatoDdg("MASAF — Soppressata di Calabria DOP", URL_MASAF, "Denominazione di origine protetta.")
         : risultatoDdg("Filiera Madeo", URL_MADEO, "Madeo produce Soppressata di Calabria in Calabria.");
