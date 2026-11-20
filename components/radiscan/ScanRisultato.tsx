@@ -21,6 +21,7 @@ import type {
   ValutazioneProvenienza,
 } from "@/lib/radiscan/tipi";
 import {
+  dopRiconosciuta,
   ETICHETTE_GRUPPO,
   gruppoDaLivello,
   type GruppoEsito,
@@ -849,13 +850,7 @@ export default function ScanRisultato({
   onReset: () => void;
 }) {
   const prove = Array.isArray(esito.verifica?.prove) ? esito.verifica.prove : [];
-  const dopUfficialmenteRegistrata = prove.some(
-    (prova) =>
-      prova.tipo === "ufficiale" &&
-      prova.stato === "registrata" &&
-      prova.schemaQualita === "DOP" &&
-      prova.relazione.startsWith("Corrispondenza esatta")
-  );
+  const dopUfficialmenteRegistrata = dopRiconosciuta(prove);
   // Una DOP esatta e attiva nel registro UE è un riconoscimento positivo,
   // anche se gli allegati accessori non sono tutti disponibili. Non equivale
   // all'autenticazione della singola confezione, del lotto o del produttore.

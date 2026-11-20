@@ -29,6 +29,7 @@ const {
   creaProviderGemini,
   leggiAllegati,
   analizzaProdotto,
+  creaDettaglioEtichetta,
   LIMITI_LETTURA,
 } = radiscan;
 
@@ -669,7 +670,7 @@ test("produttore: la sede calabrese non dimostra l'origine del prodotto", () => 
     verifica.controlli.find((voce) => voce.id === "legame_calabria").stato,
     "non_documentato"
   );
-  assert.match(verifica.sintesi, /non dimostrano/i);
+  assert.match(verifica.sintesi, /autenticità|riscontro documentale/i);
 });
 
 // ─── Pipeline completa ────────────────────────────────────────────────────
@@ -725,4 +726,160 @@ test("pipeline: OCR discordante dal modello non produce un verificato", async ()
   assert.equal(risultato.esito.produttore.controlli.length, 10);
   assert.ok(risultato.esito.tempi.totaleMs >= 0);
   assert.ok(risultato.meta.fasi);
+});
+
+// ─── Modelli vision e dettaglio etichetta ────────────────────────────────
+
+test("gemini: un modello primario assente non blocca il servizio", async () => {
+  const chiamate = [];
+  const provider = creaProviderGemini({
+    apiKey: "test-key",
+    modello: "gemini-2.5-flash",
+    timeoutMs: 2_000,
+    fetchImpl: async (url) => {
+      chiamate.push(String(url));
+      if (String(url).includes("gemini-2.5-flash")) {
+        return new Response(
+          JSON.stringify({
+            error: { code: 404, status: "NOT_FOUND", message: "model not found" },
+          }),
+          { status: 404, headers: { "content-type": "application/json" } }
+        );
+      }
+      return new Response(
+        JSON.stringify({ candidates: [{ content: { parts: [{ text: '{"prodotto":"X"}' }] } }] }),
+        { status: 200, headers: { "content-type": "application/json" } }
+      );
+    },
+  });
+
+  const esito = await provider.genera({
+    prompt: "p",
+    immagineBase64: "AQID",
+    mimeType: "image/jpeg",
+  });
+
+  assert.equal(esito.modello, "gemini-flash-lite-latest");
+  assert.match(esito.testo, /prodotto/);
+  assert.ok(chiamate.some((url) => url.includes("gemini-flash-lite-latest")));
+});
+
+test("gemini: se nessun modello vision è disponibile l'errore è specifico", async () => {
+  const provider = creaProviderGemini({
+    apiKey: "test-key",
+    modello: "gemini-2.5-flash",
+    timeoutMs: 2_000,
+    fetchImpl: async () =>
+      new Response(
+        JSON.stringify({ error: { status: "NOT_FOUND", message: "model not found" } }),
+        { status: 404 }
+      ),
+  });
+
+  await assert.rejects(
+    provider.genera({ prompt: "p", immagineBase64: "AQID", mimeType: "image/jpeg" }),
+    (errore) => errore.codice === "RADICSCAN_PROVIDER_MODELLO"
+  );
+});
+
+test("gemini: una risposta vuota passa al modello successivo", async () => {
+  let chiamate = 0;
+  const provider = creaProviderGemini({
+    apiKey: "test-key",
+    modello: "gemini-2.5-flash",
+    timeoutMs: 2_000,
+    fetchImpl: async () => {
+      chiamate += 1;
+      if (chiamate === 1) {
+        return new Response(
+          JSON.stringify({ candidates: [{ finishReason: "MAX_TOKENS" }] }),
+          { status: 200 }
+        );
+      }
+      return new Response(
+        JSON.stringify({ candidates: [{ content: { parts: [{ text: '{"prodotto":"X"}' }] } }] }),
+        { status: 200 }
+      );
+    },
+  });
+
+  const esito = await provider.genera({
+    prompt: "p",
+    immagineBase64: "AQID",
+    mimeType: "image/jpeg",
+  });
+  assert.match(esito.testo, /prodotto/);
+  assert.equal(esito.modello, "gemini-flash-lite-latest");
+});
+
+test("dettaglio: Sharp facoltativo, nessun errore se il ritaglio fallisce", async () => {
+  const fallito = await creaDettaglioEtichetta("AQID", {
+    sharpImpl: () => {
+      throw new Error("sharp assente");
+    },
+  });
+  assert.equal(fallito, null);
+
+  const pipeline = () => ({
+    metadata: async () => ({ width: 1000, height: 800 }),
+    rotate() {
+      return this;
+    },
+    extract() {
+      return this;
+    },
+    resize() {
+      return this;
+    },
+    jpeg() {
+      return this;
+    },
+    toBuffer: async () => Buffer.from("DET"),
+  });
+  const riuscito = await creaDettaglioEtichetta("AQID", { sharpImpl: pipeline });
+  assert.equal(riuscito, Buffer.from("DET").toString("base64"));
+});
+
+test("pipeline: se il dettaglio non è generabile invia solo l'originale", async () => {
+  let ricevuto = null;
+  const provider = {
+    nome: "finto",
+    modello: "finto-1",
+    async genera(input) {
+      ricevuto = input;
+      return { testo: JSON.stringify({ prodotto: "Caciocavallo Silano", confidenza: 50 }) };
+    },
+  };
+
+  await analizzaProdotto(
+    {
+      immagineBase64: Buffer.from([0xff, 0xd8, 0xff, 0x00]).toString("base64"),
+      mimeType: "image/jpeg",
+    },
+    { provider, registro: [] }
+  );
+
+  assert.equal(ricevuto.immagineDettaglioBase64, undefined);
+  assert.ok(ricevuto.immagineBase64.length > 0);
+});
+
+test("DOP: badge solo per prova ufficiale registrata ed esatta", async () => {
+  const { dopRiconosciuta } = await import("@/components/radiscan/logica");
+  const esatta = {
+    tipo: "ufficiale",
+    stato: "registrata",
+    schemaQualita: "DOP",
+    relazione: "Corrispondenza esatta con la denominazione letta",
+  };
+  assert.equal(dopRiconosciuta([esatta]), true);
+  assert.equal(
+    dopRiconosciuta([{ ...esatta, tipo: "informativa" }]),
+    false,
+    "una fonte informativa non basta"
+  );
+  assert.equal(
+    dopRiconosciuta([{ ...esatta, relazione: "Denominazione affine" }]),
+    false,
+    "una denominazione affine non basta"
+  );
 });

@@ -39,6 +39,7 @@ test("isolamento: elenco dei moduli RadiciScan", () => {
     "analisi.ts",
     "barcode.ts",
     "cache.ts",
+    "dettaglio.ts",
     "documenti.ts",
     "errori.ts",
     "etichetta.ts",
@@ -87,16 +88,22 @@ test("isolamento: nessun import dal percorso venditori o da infrastrutture condi
     assert.ok(!/scritturaFile|writeFile|appendFile/.test(sorgente), `${nome} scrive su disco`);
     assert.ok(!/localStorage|sessionStorage/.test(sorgente), `${nome} usa storage`);
     assert.ok(!/AIza[0-9A-Za-z_-]{10,}/.test(sorgente), `${nome} contiene una chiave hardcoded`);
-    assert.ok(!/\bconsole\./.test(sorgente), `${nome} scrive su console`);
+    // Solo il provider Gemini registra diagnosi sanificate (modello e stato
+    // HTTP), utili a distinguere modello assente, quota e configurazione.
+    if (nome !== "gemini.ts") {
+      assert.ok(!/\bconsole\./.test(sorgente), `${nome} scrive su console`);
+    }
 
     if (!["gemini.ts", "ricerca.ts", "web.ts", "barcode.ts"].includes(nome)) {
       assert.ok(!/\bfetch\s*\(/.test(sorgente), `${nome} apre una connessione di rete`);
     }
 
-    if (nome !== "ocr.ts") {
+    // Sharp è confinato ai moduli che elaborano l'immagine: OCR e ritaglio
+    // facoltativo del dettaglio etichetta. Ogni altro modulo non lo importa.
+    if (!["ocr.ts", "dettaglio.ts"].includes(nome)) {
       assert.ok(
         !/tesseract\.js|["']sharp["']/.test(sorgente),
-        `${nome} importa un motore OCR o di elaborazione immagini fuori da ocr.ts`
+        `${nome} importa un motore OCR o di elaborazione immagini fuori da ocr.ts/dettaglio.ts`
       );
     }
   }

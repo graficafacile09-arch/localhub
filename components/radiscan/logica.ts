@@ -65,6 +65,28 @@ export const ETICHETTE_GRUPPO: Record<
   },
 };
 
+/**
+ * Una DOP è riconosciuta solo con una prova ufficiale registrata e una
+ * corrispondenza esatta della denominazione. Un risultato informativo o una
+ * denominazione affine non basta, e non autentica la singola confezione.
+ */
+export function dopRiconosciuta(
+  prove: readonly {
+    tipo: string;
+    stato: string;
+    schemaQualita: string | null;
+    relazione: string;
+  }[]
+): boolean {
+  return prove.some(
+    (prova) =>
+      prova.tipo === "ufficiale" &&
+      prova.stato === "registrata" &&
+      prova.schemaQualita === "DOP" &&
+      prova.relazione.startsWith("Corrispondenza esatta")
+  );
+}
+
 export function gruppoDaLivello(livello: Livello): GruppoEsito {
   switch (livello) {
     case "verificato":
@@ -307,6 +329,14 @@ export function messaggioErrore(input: {
 
   if (stato === 504 || codice === "ANALISI_SCADUTA") {
     return "L'analisi ha impiegato troppo tempo. Riprova con la stessa foto.";
+  }
+
+  if (codice === "MODELLO_NON_DISPONIBILE") {
+    return "Il modello di riconoscimento non è disponibile in questo momento. Riprova tra poco.";
+  }
+
+  if (codice === "CONFIGURAZIONE_NON_DISPONIBILE") {
+    return "Il servizio di riconoscimento non è configurato correttamente. Riprova più tardi.";
   }
 
   if (

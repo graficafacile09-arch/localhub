@@ -115,8 +115,18 @@ function rispostaErrore(causa: unknown): Response {
     case CODICI_ERRORE.PROVIDER_RETE:
     case CODICI_ERRORE.PROVIDER_RISPOSTA:
       return errore(502, "ANALISI_NON_RIUSCITA", "Il servizio di analisi non ha risposto correttamente.");
+    case CODICI_ERRORE.PROVIDER_MODELLO:
+      return errore(
+        503,
+        "MODELLO_NON_DISPONIBILE",
+        "Il modello di riconoscimento non è disponibile. Riprova più tardi."
+      );
     case CODICI_ERRORE.PROVIDER_CONFIGURAZIONE:
-      return errore(503, "ANALISI_NON_DISPONIBILE", "Servizio di analisi non disponibile.");
+      return errore(
+        503,
+        "CONFIGURAZIONE_NON_DISPONIBILE",
+        "Il servizio di riconoscimento non è configurato correttamente."
+      );
     case CODICI_ERRORE.QUOTA_NON_DISPONIBILE:
     case CODICI_ERRORE.QUOTA_CONFIGURAZIONE:
       return errore(503, "QUOTA_NON_DISPONIBILE", "Non riesco a verificare la quota. Riprova tra poco.");

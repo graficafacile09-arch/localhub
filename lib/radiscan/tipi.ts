@@ -487,7 +487,7 @@ export interface ProviderRadiciScan {
     /** Ritaglio ingrandito dell'etichetta, quando generabile. */
     immagineDettaglioBase64?: string;
     signal?: AbortSignal;
-  }): Promise<{ testo: string }>;
+  }): Promise<{ testo: string; modello?: string }>;
 }
 
 export interface MetaAnalisi {

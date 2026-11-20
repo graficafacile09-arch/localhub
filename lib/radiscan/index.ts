@@ -17,6 +17,7 @@ export * from "./livelli";
 export * from "./cache";
 export * from "./quote";
 export * from "./gemini";
+export * from "./dettaglio";
 export * from "./immagine";
 export * from "./identita";
 export * from "./richiesta";

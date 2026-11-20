@@ -330,7 +330,7 @@ test("verifica: prova eAmbrosia esatta senza fonte curata => riscontro parziale"
   assert.equal(esito.prove.length, 1);
   assert.equal(esito.prove[0].tipo, "ufficiale");
   assert.equal(esito.ricerca.stato, "ok");
-  assert.match(esito.motivazione, /prova.*ufficiale/i);
+  assert.match(esito.motivazione, /registro ufficiale eAmbrosia/i);
 });
 
 test("verifica: errore di ricerca non equivale ad assenza di prove", () => {
