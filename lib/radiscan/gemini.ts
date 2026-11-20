@@ -199,12 +199,15 @@ export function creaProviderGemini(
             throw new ErroreTentativo(errore, false);
           }
           if (errore instanceof Error && errore.name === "AbortError") {
+            // Timeout interno del singolo tentativo: può essere transitorio e
+            // merita un secondo tentativo se la route non è stata annullata.
+            // Un abort della route, invece, non va mai ritentato.
             throw new ErroreTentativo(
               new ErroreRadiciScan(
                 CODICI_ERRORE.PROVIDER_TIMEOUT,
                 "Il provider non ha risposto entro il tempo previsto."
               ),
-              false
+              !signal?.aborted
             );
           }
           throw new ErroreTentativo(
