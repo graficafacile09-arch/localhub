@@ -798,8 +798,8 @@ export function creaRicercaWebIbrida(
     fetchImpl,
     maxQuery: Math.min(opzioni.maxQuery ?? 2, 2),
     timeoutRicercaMs: Math.min(opzioni.timeoutRicercaMs ?? 5_000, 5_000),
-    maxPagine: Math.min(opzioni.maxPagine ?? 4, 4),
-    maxFonti: Math.min(opzioni.maxFonti ?? 12, 12),
+    maxPagine: Math.min(opzioni.maxPagine ?? 3, 3),
+    maxFonti: Math.min(opzioni.maxFonti ?? 8, 8),
     seguiCollegamentiInterni: false,
   });
 
